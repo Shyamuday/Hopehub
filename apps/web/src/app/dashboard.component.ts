@@ -5,9 +5,9 @@ import { Router } from '@angular/router';
 import { RealtimeChannel } from '@supabase/supabase-js';
 import { AppFooterComponent } from './app-footer.component';
 import { AppHeaderComponent } from './app-header.component';
-import { AuthService } from './auth.service';
 import { ClinicApiService } from './clinic-api.service';
-import { Consultation, Disease, Doctor } from './models';
+import { AuthService } from './auth/auth.service';
+import { Disease, Consultation, Doctor } from './models';
 
 @Component({
   selector: 'app-dashboard',
@@ -241,7 +241,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     readonly auth: AuthService,
     private readonly api: ClinicApiService,
     private readonly router: Router
-  ) {}
+  ) { }
 
   ngOnInit() {
     this.loadBaseData();

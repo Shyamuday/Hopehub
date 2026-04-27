@@ -1,7 +1,6 @@
 import { Routes } from '@angular/router';
 import { AboutComponent } from './about.component';
 import { DashboardComponent } from './dashboard.component';
-import { LoginComponent } from './login.component';
 import {
   ChronicCareComponent,
   ContactComponent,
@@ -13,6 +12,7 @@ import {
   WhySuccessfulComponent
 } from './public-pages.component';
 import { roleGuard } from './role.guard';
+import { LoginComponent } from './auth/login.component';
 
 export const routes: Routes = [
   { path: 'about', component: AboutComponent },

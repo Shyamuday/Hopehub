@@ -3,8 +3,8 @@ import { Component } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { AppFooterComponent } from './app-footer.component';
 import { AppHeaderComponent } from './app-header.component';
-import { homeopathyApproaches } from './constants/approaches/homeopathy-approaches.constants';
-import { diseaseInfos } from './constants/diseases/disease-info.constants';
+import { diseaseInfos } from './disease/disease-info.constants';
+import { homeopathyApproaches } from './treatment-approach/homeopathy-approaches.constants';
 
 const whatsappLink =
   'https://wa.me/919876543210?text=Hi%20Betelgeuse%20Clinic%2C%20I%20want%20to%20know%20more';
@@ -308,7 +308,7 @@ export class DiseaseDetailComponent {
   readonly defaultWarning = 'This service is not for emergency care. For severe, sudden, or rapidly worsening symptoms, seek immediate offline medical help.';
   readonly disease = diseaseInfos.find((item) => item.slug === this.route.snapshot.paramMap.get('slug'));
 
-  constructor(private readonly route: ActivatedRoute) {}
+  constructor(private readonly route: ActivatedRoute) { }
 }
 
 @Component({

@@ -1,9 +1,9 @@
 import { Injectable } from '@angular/core';
 import { from, map } from 'rxjs';
 import { RealtimeChannel } from '@supabase/supabase-js';
-import { Consultation, Disease, Doctor } from './models';
 import { supabase } from './supabase.client';
 import { environment } from '../environments/environment';
+import { Consultation, Disease, Doctor } from './models';
 
 type RazorpayOrderResponse = {
   orderId: string;
@@ -433,11 +433,11 @@ export class ClinicApiService {
       disease: this.toDisease(row['disease']),
       payment: row['payment']
         ? {
-            id: row['payment'].id,
-            amountInPaise: row['payment'].amount_in_paise,
-            status: row['payment'].status,
-            providerOrderId: row['payment'].provider_order_id
-          }
+          id: row['payment'].id,
+          amountInPaise: row['payment'].amount_in_paise,
+          status: row['payment'].status,
+          providerOrderId: row['payment'].provider_order_id
+        }
         : null,
       messages: (row['messages'] || [])
         .map((message: Record<string, any>) => ({
@@ -449,11 +449,11 @@ export class ClinicApiService {
         .sort((a: { createdAt: string }, b: { createdAt: string }) => a.createdAt.localeCompare(b.createdAt)),
       prescription: row['prescription']
         ? {
-            id: row['prescription'].id,
-            notes: row['prescription'].notes,
-            fileUrl: row['prescription'].file_url,
-            createdAt: row['prescription'].created_at
-          }
+          id: row['prescription'].id,
+          notes: row['prescription'].notes,
+          fileUrl: row['prescription'].file_url,
+          createdAt: row['prescription'].created_at
+        }
         : null
     };
   }
