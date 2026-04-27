@@ -3,22 +3,39 @@ import { Component } from '@angular/core';
 @Component({
   selector: 'app-home-how-it-works-section',
   template: `
-    <section class="content-grid three">
-      <article class="panel">
-        <p class="eyebrow">Step 1</p>
-        <h2>Share chronic history</h2>
-        <p>Tell us duration, recurrence, triggers, and previous treatment details through a structured intake.</p>
-      </article>
-      <article class="panel">
-        <p class="eyebrow">Step 2</p>
-        <h2>Doctor reviews patterns</h2>
-        <p>Our internal doctor panel reviews history and symptom patterns before planning the care path.</p>
-      </article>
-      <article class="panel">
-        <p class="eyebrow">Step 3</p>
-        <h2>Continue planned follow-up</h2>
-        <p>Track progress with secure chat, prescription updates, and continuity-focused follow-up.</p>
-      </article>
+    <section class="how-it-works-section">
+      <div class="section-header">
+        <p class="eyebrow">How it works</p>
+        <h2 class="section-title">Simple, structured care in 3 steps</h2>
+        <p class="section-subtitle">No rushed appointments. No repeated explanations. Just methodical care.</p>
+      </div>
+
+      <div class="steps-grid">
+        <article class="step-card">
+          <div class="step-number">1</div>
+          <div class="step-icon">📋</div>
+          <h3>Share your history</h3>
+          <p>Complete a structured intake covering duration, triggers, past treatments, and symptom patterns.</p>
+        </article>
+        
+        <div class="step-connector"></div>
+        
+        <article class="step-card">
+          <div class="step-number">2</div>
+          <div class="step-icon">👨‍⚕️</div>
+          <h3>Doctor reviews & plans</h3>
+          <p>Our panel reviews your case thoroughly and creates a personalized care pathway.</p>
+        </article>
+        
+        <div class="step-connector"></div>
+        
+        <article class="step-card">
+          <div class="step-number">3</div>
+          <div class="step-icon">📈</div>
+          <h3>Ongoing follow-up</h3>
+          <p>Track progress with secure messaging, prescription updates, and scheduled check-ins.</p>
+        </article>
+      </div>
     </section>
   `
 })
