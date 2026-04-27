@@ -3,7 +3,9 @@ import { Component } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { AppFooterComponent } from './app-footer.component';
 import { AppHeaderComponent } from './app-header.component';
+import { AuthFormOverlayComponent } from './auth/auth-form-overlay.component';
 import { diseaseInfos } from './disease/disease-info.constants';
+import { AppOverlayService } from './overlay.service';
 import { homeopathyApproaches } from './treatment-approach/homeopathy-approaches.constants';
 
 const whatsappLink =
@@ -287,7 +289,7 @@ export class TreatmentsComponent {
               <h2>Book a consultation for {{ disease.shortName }}.</h2>
               <p>Complete a short intake and our internal doctor panel will guide the next step.</p>
             </div>
-            <a class="primary home-action" href="/login">Book consultation</a>
+            <a class="primary home-action" href="/login" (click)="openAuthOverlay($event)">Book consultation</a>
           </section>
         } @else {
           <section class="page-hero panel">
@@ -308,7 +310,18 @@ export class DiseaseDetailComponent {
   readonly defaultWarning = 'This service is not for emergency care. For severe, sudden, or rapidly worsening symptoms, seek immediate offline medical help.';
   readonly disease = diseaseInfos.find((item) => item.slug === this.route.snapshot.paramMap.get('slug'));
 
-  constructor(private readonly route: ActivatedRoute) { }
+  constructor(
+    private readonly route: ActivatedRoute,
+    private readonly overlayService: AppOverlayService
+  ) { }
+
+  openAuthOverlay(event: Event) {
+    event.preventDefault();
+    this.overlayService.open(AuthFormOverlayComponent, {
+      width: '480px',
+      panelClass: 'app-overlay-panel'
+    });
+  }
 }
 
 @Component({

@@ -1,6 +1,8 @@
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { AuthFormOverlayComponent } from './auth/auth-form-overlay.component';
 import { User } from './models';
+import { AppOverlayService } from './overlay.service';
 
 @Component({
   selector: 'app-header',
@@ -26,7 +28,7 @@ import { User } from './models';
           <a href="/about">About us</a>
           <a href="/treatments">Treatments</a>
           <a href="/safety">Safety</a>
-          <a href="#login-card">Login</a>
+          <a href="/login" (click)="openAuthOverlay($event)">Login</a>
           <a [href]="whatsappLink" target="_blank" rel="noopener">WhatsApp</a>
         </nav>
       }
@@ -38,4 +40,14 @@ export class AppHeaderComponent {
   @Input() user: User | null | undefined;
   @Input() whatsappLink = '';
   @Output() logout = new EventEmitter<void>();
+
+  constructor(private readonly overlayService: AppOverlayService) { }
+
+  openAuthOverlay(event: Event) {
+    event.preventDefault();
+    this.overlayService.open(AuthFormOverlayComponent, {
+      width: '480px',
+      panelClass: 'app-overlay-panel'
+    });
+  }
 }

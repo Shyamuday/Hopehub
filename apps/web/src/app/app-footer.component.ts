@@ -1,4 +1,6 @@
 import { Component, Input } from '@angular/core';
+import { AuthFormOverlayComponent } from './auth/auth-form-overlay.component';
+import { AppOverlayService } from './overlay.service';
 
 @Component({
   selector: 'app-footer',
@@ -16,7 +18,7 @@ import { Component, Input } from '@angular/core';
         <a href="/contact">Contact</a>
         <a href="/privacy-terms">Privacy / Terms</a>
         <a href="/safety">Safety</a>
-        <a href="#login-card">Book consultation</a>
+        <a href="/login" (click)="openAuthOverlay($event)">Book consultation</a>
         <a [href]="whatsappLink" target="_blank" rel="noopener">WhatsApp support</a>
       </div>
     </footer>
@@ -24,4 +26,14 @@ import { Component, Input } from '@angular/core';
 })
 export class AppFooterComponent {
   @Input() whatsappLink = '';
+
+  constructor(private readonly overlayService: AppOverlayService) { }
+
+  openAuthOverlay(event: Event) {
+    event.preventDefault();
+    this.overlayService.open(AuthFormOverlayComponent, {
+      width: '480px',
+      panelClass: 'app-overlay-panel'
+    });
+  }
 }

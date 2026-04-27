@@ -12,7 +12,6 @@ import {
   WhySuccessfulComponent
 } from './public-pages.component';
 import { roleGuard } from './role.guard';
-import { LoginComponent } from './auth/login.component';
 import { HomeComponent } from './home.component';
 
 export const routes: Routes = [
@@ -97,15 +96,7 @@ export const routes: Routes = [
         'Review safety guidance, medical disclaimers, and emergency-care boundaries for Vitalis Clinic consultations.'
     }
   },
-  {
-    path: 'login',
-    component: LoginComponent,
-    data: {
-      seoTitle: 'Vitalis Clinic | Doctor-Led Digital Care',
-      seoDescription:
-        'Book online consultation with Vitalis Clinic through a guided intake, secure payment, and doctor-led follow-up.'
-    }
-  },
+  { path: 'login', redirectTo: '', pathMatch: 'full' },
   {
     path: 'patient/dashboard',
     component: DashboardComponent,
