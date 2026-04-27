@@ -2,7 +2,7 @@ import { Component, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { Observable, finalize } from 'rxjs';
+import { Observable } from 'rxjs';
 import { AuthService } from './auth.service';
 import { AppFooterComponent } from '../app-footer.component';
 import { AppHeaderComponent } from '../app-header.component';
@@ -112,20 +112,26 @@ import { AppHeaderComponent } from '../app-header.component';
             </div>
           }
 
-          @if (message()) {
-            <p class="notice">{{ message() }}</p>
-          }
         </div>
       </main>
 
       <app-footer [whatsappLink]="whatsappLink" />
 
-      @if (isProcessing()) {
+      @if (overlayOpen()) {
         <div class="process-overlay" aria-live="polite" aria-busy="true">
           <div class="process-card">
-            <span class="spinner"></span>
+            @if (overlayState() === 'loading') {
+              <span class="spinner"></span>
+            } @else if (overlayState() === 'success') {
+              <span class="status-icon success-icon">✓</span>
+            } @else {
+              <span class="status-icon error-icon">!</span>
+            }
             <strong>{{ processLabel() }}</strong>
-            <small>Please wait while we securely process your request.</small>
+            <small>{{ overlayMessage() }}</small>
+            @if (overlayState() !== 'loading') {
+              <button type="button" class="secondary" (click)="closeOverlay()">Close</button>
+            }
           </div>
         </div>
       }
@@ -138,8 +144,10 @@ import { AppHeaderComponent } from '../app-header.component';
 })
 export class LoginComponent {
   readonly mode = signal<'patient' | 'staff'>('patient');
-  readonly message = signal('');
-  readonly isProcessing = signal(false);
+  readonly isProcessing = signal(false); // kept for button disabling
+  readonly overlayOpen = signal(false);
+  readonly overlayState = signal<'loading' | 'success' | 'error'>('loading');
+  readonly overlayMessage = signal('Please wait while we securely process your request.');
   readonly processLabel = signal('Processing...');
   readonly whatsappLink =
     'https://wa.me/919876543210?text=Hi%20Vitalis%20Clinic%2C%20I%20want%20to%20book%20a%20consultation';
@@ -167,53 +175,81 @@ export class LoginComponent {
 
   requestOtp() {
     this.process('Sending OTP...', this.auth.requestOtp(this.patient.mobile)).subscribe({
-      next: (response) => this.message.set(`Development OTP: ${response.devOtp}`),
-      error: () => this.message.set('Could not request OTP.')
+      next: (response) => this.showSuccess(`OTP sent successfully. Development OTP: ${response.devOtp}`),
+      error: () => this.showError('Could not request OTP.')
     });
   }
 
   loginPatient() {
     this.process('Logging in patient...', this.auth.patientLogin(this.patient)).subscribe({
       next: ({ user }) => this.router.navigateByUrl(this.auth.dashboardFor(user.role)),
-      error: (error) => this.message.set(error.error?.message || 'Patient login failed.')
+      error: (error) => this.showError(error.error?.message || 'Patient login failed.')
     });
   }
 
   loginStaff() {
     this.process('Logging in staff...', this.auth.staffLogin(this.staff)).subscribe({
       next: ({ user }) => this.router.navigateByUrl(this.auth.dashboardFor(user.role)),
-      error: (error) => this.message.set(error.error?.message || 'Staff login failed.')
+      error: (error) => this.showError(error.error?.message || 'Staff login failed.')
     });
   }
 
   forgotPassword() {
     this.process('Sending reset link...', this.auth.forgotPassword(this.forgot.email)).subscribe({
-      next: (response) => {
-        this.message.set(response.message);
-      },
-      error: () => this.message.set('Could not send reset link.')
+      next: (response) => this.showSuccess(response.message || 'Reset link sent successfully.'),
+      error: () => this.showError('Could not send reset link.')
     });
   }
 
   resetPassword() {
     this.process('Resetting password...', this.auth.resetPassword({ token: '', password: this.forgot.password })).subscribe({
       next: ({ user }) => this.router.navigateByUrl(this.auth.dashboardFor(user.role)),
-      error: (error) => this.message.set(error.error?.message || 'Password reset failed.')
+      error: (error) => this.showError(error.error?.message || 'Password reset failed.')
     });
   }
 
   loginWithGoogle() {
     this.process('Signing in with Google...', this.auth.googleLogin()).subscribe({
-      next: (response) => this.message.set(response.message),
-      error: (error) => this.message.set(error.error?.message || 'Google login failed.')
+      next: (response) => this.showSuccess(response.message || 'Google sign-in initiated.'),
+      error: (error) => this.showError(error.error?.message || 'Google login failed.')
     });
   }
 
   private process<T>(label: string, request$: Observable<T>) {
-    this.message.set('');
+    this.overlayOpen.set(true);
+    this.overlayState.set('loading');
+    this.overlayMessage.set('Please wait while we securely process your request.');
     this.processLabel.set(label);
     this.isProcessing.set(true);
 
-    return request$.pipe(finalize(() => this.isProcessing.set(false)));
+    return new Observable<T>((observer) => {
+      const subscription = request$.subscribe({
+        next: (value) => observer.next(value),
+        error: (error) => {
+          this.isProcessing.set(false);
+          observer.error(error);
+        },
+        complete: () => {
+          this.isProcessing.set(false);
+          observer.complete();
+        }
+      });
+
+      return () => subscription.unsubscribe();
+    });
+  }
+
+  closeOverlay() {
+    this.overlayOpen.set(false);
+  }
+
+  private showSuccess(message: string) {
+    this.overlayState.set('success');
+    this.overlayMessage.set(message);
+  }
+
+  private showError(message: string) {
+    this.overlayState.set('error');
+    this.overlayMessage.set(message);
   }
 }
