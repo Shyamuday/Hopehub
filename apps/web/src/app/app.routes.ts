@@ -9,7 +9,8 @@ import {
   FaqComponent,
   PrivacyTermsComponent,
   SafetyComponent,
-  TreatmentsComponent
+  TreatmentsComponent,
+  WhySuccessfulComponent
 } from './public-pages.component';
 import { roleGuard } from './role.guard';
 
@@ -21,6 +22,7 @@ export const routes: Routes = [
   { path: 'skin-care', redirectTo: 'treatments/skin-care', pathMatch: 'full' },
   { path: 'chronic-care', component: ChronicCareComponent },
   { path: 'faq', component: FaqComponent },
+  { path: 'why-successful', component: WhySuccessfulComponent },
   { path: 'contact', component: ContactComponent },
   { path: 'privacy-terms', component: PrivacyTermsComponent },
   { path: 'safety', component: SafetyComponent },

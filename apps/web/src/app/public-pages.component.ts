@@ -4,6 +4,7 @@ import { ActivatedRoute } from '@angular/router';
 import { AppFooterComponent } from './app-footer.component';
 import { AppHeaderComponent } from './app-header.component';
 import { diseaseInfos } from './disease-info.constants';
+import { homeopathyApproaches } from './homeopathy-approaches.constants';
 
 const whatsappLink =
   'https://wa.me/919876543210?text=Hi%20Betelgeuse%20Clinic%2C%20I%20want%20to%20know%20more';
@@ -540,4 +541,133 @@ export class PrivacyTermsComponent {
 })
 export class SafetyComponent {
   readonly whatsappLink = whatsappLink;
+}
+
+@Component({
+  selector: 'app-why-successful',
+  imports: [CommonModule, AppHeaderComponent, AppFooterComponent],
+  template: `
+    <section class="public-shell">
+      <app-header subtitle="Why we are successful" [whatsappLink]="whatsappLink" />
+      <main class="content-page">
+        <section class="page-hero panel">
+          <p class="eyebrow">Why We Are Successful</p>
+          <h1>Structured homeopathy, clear case logic, and disciplined follow-up.</h1>
+          <p>
+            Our outcomes come from method-driven case-taking, individualized prescribing, and safe escalation. We do
+            not rely on random remedy selection.
+          </p>
+        </section>
+
+        <section class="content-grid two">
+          <article class="panel">
+            <h2>What makes the model work</h2>
+            <ul>
+              <li>Each case is captured with a repeatable structure before prescribing.</li>
+              <li>Mental, physical, and pathology data are interpreted together.</li>
+              <li>Remedy decisions are reviewed through follow-up, not one-time judgment.</li>
+              <li>Safety red flags trigger offline referral when needed.</li>
+            </ul>
+          </article>
+          <article class="panel">
+            <h2>How this differs from generic treatment advice</h2>
+            <ul>
+              <li>We use method-specific frameworks, not symptom-only matching.</li>
+              <li>Approach selection changes by case complexity and chronicity.</li>
+              <li>Investigation and diagnosis are integrated with homeopathy planning.</li>
+              <li>Documentation is designed for continuity and digital follow-up.</li>
+            </ul>
+          </article>
+        </section>
+
+        <section class="faq-list">
+          <h2>Our Homeopathy Approaches</h2>
+          @for (method of approaches; track method.slug) {
+            <article class="panel">
+              <p class="eyebrow">{{ method.slug }}</p>
+              <h3>{{ method.title }}</h3>
+              @if (method.developedBy) {
+                <p><strong>Developed by:</strong> {{ method.developedBy }}</p>
+              }
+              <p>{{ method.shortDescription }}</p>
+              <p><strong>Primary focus:</strong> {{ method.focus }}</p>
+
+              <h4>Best for</h4>
+              <ul>
+                @for (item of method.bestFor; track item) {
+                  <li>{{ item }}</li>
+                }
+              </ul>
+
+              <h4>Process steps</h4>
+              <ul>
+                @for (step of method.processSteps; track step) {
+                  <li>{{ step }}</li>
+                }
+              </ul>
+
+              <section class="content-grid two">
+                <div>
+                  <h4>Strengths</h4>
+                  <ul>
+                    @for (point of method.strengths; track point) {
+                      <li>{{ point }}</li>
+                    }
+                  </ul>
+                </div>
+                <div>
+                  <h4>Limits</h4>
+                  <ul>
+                    @for (point of method.limits; track point) {
+                      <li>{{ point }}</li>
+                    }
+                  </ul>
+                </div>
+              </section>
+
+              @if (method.digitalMapping?.length) {
+                <h4>Digital case-sheet mapping</h4>
+                <div class="values-list">
+                  @for (key of method.digitalMapping; track key) {
+                    <span>{{ key }}</span>
+                  }
+                </div>
+              }
+
+              @if (method.uiFlow?.length) {
+                <h4>Suggested UI flow</h4>
+                <ul>
+                  @for (step of method.uiFlow; track step) {
+                    <li>{{ step }}</li>
+                  }
+                </ul>
+              }
+
+              @if (method.uiComponents?.length) {
+                <h4>Suggested Angular components</h4>
+                <div class="values-list">
+                  @for (component of method.uiComponents; track component) {
+                    <span>{{ component }}</span>
+                  }
+                </div>
+              }
+            </article>
+          }
+        </section>
+
+        <section class="panel warning-panel">
+          <h2>Clinical safety note</h2>
+          <p>
+            Homeopathy frameworks support structure and decision quality, but final remedy choice still depends on
+            doctor skill, case quality, and follow-up response. Emergencies require immediate offline care.
+          </p>
+        </section>
+      </main>
+      <app-footer [whatsappLink]="whatsappLink" />
+    </section>
+  `
+})
+export class WhySuccessfulComponent {
+  readonly whatsappLink = whatsappLink;
+  readonly approaches = homeopathyApproaches;
 }
