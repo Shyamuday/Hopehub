@@ -13,6 +13,7 @@ import {
 } from './public-pages.component';
 import { roleGuard } from './role.guard';
 import { LoginComponent } from './auth/login.component';
+import { HomeComponent } from './home.component';
 
 export const routes: Routes = [
   {
@@ -135,6 +136,14 @@ export const routes: Routes = [
       seoDescription: 'Manage clinic operations, doctor assignment, and reporting in the Vitalis Clinic admin dashboard.'
     }
   },
-  { path: '', redirectTo: 'login', pathMatch: 'full' },
-  { path: '**', redirectTo: 'login' }
+  {
+    path: '',
+    component: HomeComponent,
+    data: {
+      seoTitle: 'Vitalis Clinic | Doctor-Led Digital Care',
+      seoDescription:
+        'Vitalis Clinic offers guided, doctor-led digital consultations with secure intake, follow-up, and patient support.'
+    }
+  },
+  { path: '**', redirectTo: '' }
 ];
