@@ -4,112 +4,120 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Observable, finalize } from 'rxjs';
 import { AuthService } from './auth.service';
+import { AppFooterComponent } from './app-footer.component';
+import { AppHeaderComponent } from './app-header.component';
 
 @Component({
   selector: 'app-login',
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, AppHeaderComponent, AppFooterComponent],
   template: `
-    <section class="auth-page">
-      <div class="home-hero">
-        <p class="eyebrow">Betelgeuse Clinic</p>
-        <h1>Doctor-led care for hair fall, skin, and wellness concerns.</h1>
-        <p class="hero-copy">
-          Choose your health concern, complete a short intake, pay securely, and get assigned to our internal doctor panel.
-        </p>
+    <section class="public-shell">
+      <app-header subtitle="Digital clinic" [whatsappLink]="whatsappLink" />
 
-        <div class="home-actions">
-          <a class="primary home-action" href="#login-card">Book consultation</a>
-          <a class="whatsapp-action" [href]="whatsappLink" target="_blank" rel="noopener">
-            Chat on WhatsApp
-          </a>
-        </div>
+      <main class="auth-page">
+        <div class="home-hero">
+          <p class="eyebrow">Betelgeuse Clinic</p>
+          <h1>Doctor-led care for hair fall, skin, and wellness concerns.</h1>
+          <p class="hero-copy">
+            Choose your health concern, complete a short intake, pay securely, and get assigned to our internal doctor panel.
+          </p>
 
-        <div class="trust-grid">
-          <div>
-            <strong>₹499</strong>
-            <span>Hair fall consult</span>
+          <div class="home-actions">
+            <a class="primary home-action" href="#login-card">Book consultation</a>
+            <a class="whatsapp-action" [href]="whatsappLink" target="_blank" rel="noopener">
+              Chat on WhatsApp
+            </a>
           </div>
-          <div>
-            <strong>Chat-first</strong>
-            <span>Low data usage</span>
-          </div>
-          <div>
-            <strong>Private</strong>
-            <span>No public doctor listings</span>
-          </div>
-        </div>
-      </div>
 
-      <div class="auth-card">
-        <span id="login-card"></span>
-        <p class="eyebrow">Betelgeuse Clinic</p>
-        <h2>Login to continue</h2>
-        <p class="muted">Patients use mobile OTP. Doctors and admins use internal credentials.</p>
-
-        <div class="tabs">
-          <button [disabled]="isProcessing()" [class.active]="mode() === 'patient'" (click)="mode.set('patient')">Patient</button>
-          <button [disabled]="isProcessing()" [class.active]="mode() === 'staff'" (click)="mode.set('staff')">Doctor/Admin</button>
-        </div>
-
-        @if (mode() === 'patient') {
-          <form (ngSubmit)="loginPatient()">
-            <label>
-              Name
-              <input name="name" [(ngModel)]="patient.name" placeholder="Your name" />
-            </label>
-            <label>
-              Mobile number
-              <input name="mobile" [(ngModel)]="patient.mobile" placeholder="9876543210" />
-            </label>
-            <div class="otp-row">
-              <label>
-                OTP
-                <input name="otp" [(ngModel)]="patient.otp" placeholder="123456" />
-              </label>
-              <button type="button" class="secondary" [disabled]="isProcessing()" (click)="requestOtp()">Get OTP</button>
+          <div class="trust-grid">
+            <div>
+              <strong>₹499</strong>
+              <span>Hair fall consult</span>
             </div>
-            <button class="primary" type="submit" [disabled]="isProcessing()">Login as patient</button>
-          </form>
-
-          <div class="divider-text">or</div>
-          <form (ngSubmit)="loginWithGoogle()">
-            <button class="secondary" type="submit" [disabled]="isProcessing()">Continue with Google</button>
-            <p class="muted">Uses the Google provider configured in Supabase Auth.</p>
-          </form>
-        } @else {
-          <form (ngSubmit)="loginStaff()">
-            <label>
-              Email
-              <input name="email" [(ngModel)]="staff.email" placeholder="doctor@betelgeuseclinic.local" />
-            </label>
-            <label>
-              Password
-              <input name="password" type="password" [(ngModel)]="staff.password" placeholder="Password@123" />
-            </label>
-            <button class="primary" type="submit" [disabled]="isProcessing()">Login</button>
-          </form>
-
-          <div class="forgot-box">
-            <h3>Forgot password</h3>
-            <label>
-              Staff email
-              <input name="forgotEmail" [(ngModel)]="forgot.email" placeholder="doctor@betelgeuseclinic.local" />
-            </label>
-            <button class="secondary" type="button" [disabled]="isProcessing()" (click)="forgotPassword()">Send reset link</button>
-            <p class="muted">Open the email reset link, then enter a new password below.</p>
-
-            <label>
-              New password
-              <input name="newPassword" type="password" [(ngModel)]="forgot.password" placeholder="New password" />
-            </label>
-            <button class="secondary" type="button" [disabled]="isProcessing()" (click)="resetPassword()">Reset and login</button>
+            <div>
+              <strong>Chat-first</strong>
+              <span>Low data usage</span>
+            </div>
+            <div>
+              <strong>Private</strong>
+              <span>No public doctor listings</span>
+            </div>
           </div>
-        }
+        </div>
 
-        @if (message()) {
-          <p class="notice">{{ message() }}</p>
-        }
-      </div>
+        <div class="auth-card">
+          <span id="login-card"></span>
+          <p class="eyebrow">Betelgeuse Clinic</p>
+          <h2>Login to continue</h2>
+          <p class="muted">Patients use mobile OTP. Doctors and admins use internal credentials.</p>
+
+          <div class="tabs">
+            <button [disabled]="isProcessing()" [class.active]="mode() === 'patient'" (click)="mode.set('patient')">Patient</button>
+            <button [disabled]="isProcessing()" [class.active]="mode() === 'staff'" (click)="mode.set('staff')">Doctor/Admin</button>
+          </div>
+
+          @if (mode() === 'patient') {
+            <form (ngSubmit)="loginPatient()">
+              <label>
+                Name
+                <input name="name" [(ngModel)]="patient.name" placeholder="Your name" />
+              </label>
+              <label>
+                Mobile number
+                <input name="mobile" [(ngModel)]="patient.mobile" placeholder="9876543210" />
+              </label>
+              <div class="otp-row">
+                <label>
+                  OTP
+                  <input name="otp" [(ngModel)]="patient.otp" placeholder="123456" />
+                </label>
+                <button type="button" class="secondary" [disabled]="isProcessing()" (click)="requestOtp()">Get OTP</button>
+              </div>
+              <button class="primary" type="submit" [disabled]="isProcessing()">Login as patient</button>
+            </form>
+
+            <div class="divider-text">or</div>
+            <form (ngSubmit)="loginWithGoogle()">
+              <button class="secondary" type="submit" [disabled]="isProcessing()">Continue with Google</button>
+              <p class="muted">Uses the Google provider configured in Supabase Auth.</p>
+            </form>
+          } @else {
+            <form (ngSubmit)="loginStaff()">
+              <label>
+                Email
+                <input name="email" [(ngModel)]="staff.email" placeholder="doctor@betelgeuseclinic.local" />
+              </label>
+              <label>
+                Password
+                <input name="password" type="password" [(ngModel)]="staff.password" placeholder="Password@123" />
+              </label>
+              <button class="primary" type="submit" [disabled]="isProcessing()">Login</button>
+            </form>
+
+            <div class="forgot-box">
+              <h3>Forgot password</h3>
+              <label>
+                Staff email
+                <input name="forgotEmail" [(ngModel)]="forgot.email" placeholder="doctor@betelgeuseclinic.local" />
+              </label>
+              <button class="secondary" type="button" [disabled]="isProcessing()" (click)="forgotPassword()">Send reset link</button>
+              <p class="muted">Open the email reset link, then enter a new password below.</p>
+
+              <label>
+                New password
+                <input name="newPassword" type="password" [(ngModel)]="forgot.password" placeholder="New password" />
+              </label>
+              <button class="secondary" type="button" [disabled]="isProcessing()" (click)="resetPassword()">Reset and login</button>
+            </div>
+          }
+
+          @if (message()) {
+            <p class="notice">{{ message() }}</p>
+          }
+        </div>
+      </main>
+
+      <app-footer [whatsappLink]="whatsappLink" />
 
       @if (isProcessing()) {
         <div class="process-overlay" aria-live="polite" aria-busy="true">

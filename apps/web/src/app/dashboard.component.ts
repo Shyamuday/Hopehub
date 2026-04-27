@@ -3,25 +3,17 @@ import { Component, OnDestroy, OnInit, computed, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { RealtimeChannel } from '@supabase/supabase-js';
+import { AppFooterComponent } from './app-footer.component';
+import { AppHeaderComponent } from './app-header.component';
 import { AuthService } from './auth.service';
 import { ClinicApiService } from './clinic-api.service';
 import { Consultation, Disease, Doctor } from './models';
 
 @Component({
   selector: 'app-dashboard',
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, AppHeaderComponent, AppFooterComponent],
   template: `
-    <header class="topbar">
-      <div>
-        <p class="eyebrow">Betelgeuse Clinic MVP</p>
-        <h1>{{ title() }}</h1>
-      </div>
-      <div class="user-chip">
-        <span>{{ auth.user()?.name }}</span>
-        <strong>{{ auth.user()?.role }}</strong>
-        <button class="secondary" (click)="logout()">Logout</button>
-      </div>
-    </header>
+    <app-header [subtitle]="title()" [user]="auth.user()" [whatsappLink]="whatsappLink" (logout)="logout()" />
 
     <main class="dashboard">
       @if (isLoading()) {
@@ -214,6 +206,8 @@ import { Consultation, Disease, Doctor } from './models';
     @if (notice()) {
       <div class="toast">{{ notice() }}</div>
     }
+
+    <app-footer [whatsappLink]="whatsappLink" />
   `
 })
 export class DashboardComponent implements OnInit, OnDestroy {
@@ -226,6 +220,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
   readonly isLoading = signal(false);
   readonly isProcessing = signal(false);
   readonly title = computed(() => `${this.auth.user()?.role?.toLowerCase()} dashboard`);
+  readonly whatsappLink =
+    'https://wa.me/919876543210?text=Hi%20Betelgeuse%20Clinic%2C%20I%20need%20help%20with%20my%20consultation';
   private realtimeChannel?: RealtimeChannel;
 
   selectedDiseaseId = '';
