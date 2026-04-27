@@ -3,8 +3,8 @@ import { Component } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { AppFooterComponent } from './app-footer.component';
 import { AppHeaderComponent } from './app-header.component';
-import { diseaseInfos } from './disease-info.constants';
-import { homeopathyApproaches } from './homeopathy-approaches.constants';
+import { homeopathyApproaches } from './constants/approaches/homeopathy-approaches.constants';
+import { diseaseInfos } from './constants/diseases/disease-info.constants';
 
 const whatsappLink =
   'https://wa.me/919876543210?text=Hi%20Betelgeuse%20Clinic%2C%20I%20want%20to%20know%20more';
