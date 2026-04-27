@@ -28,7 +28,8 @@ import { AppOverlayService } from './overlay.service';
           <a href="/about">About us</a>
           <a href="/treatments">Treatments</a>
           <a href="/safety">Safety</a>
-          <a href="/login" (click)="openAuthOverlay($event)">Login</a>
+          <a href="/login" (click)="openAuthOverlay($event, 'patient')">Login</a>
+          <a href="/login" (click)="openAuthOverlay($event, 'staff')">Doctor login</a>
           <a [href]="whatsappLink" target="_blank" rel="noopener">WhatsApp</a>
         </nav>
       }
@@ -43,9 +44,10 @@ export class AppHeaderComponent {
 
   constructor(private readonly overlayService: AppOverlayService) { }
 
-  openAuthOverlay(event: Event) {
+  openAuthOverlay(event: Event, mode: 'patient' | 'staff' = 'patient') {
     event.preventDefault();
     this.overlayService.open(AuthFormOverlayComponent, {
+      data: { mode },
       width: '480px',
       panelClass: 'app-overlay-panel'
     });

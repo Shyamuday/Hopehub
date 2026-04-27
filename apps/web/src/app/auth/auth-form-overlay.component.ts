@@ -3,10 +3,14 @@ import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Observable } from 'rxjs';
-import { APP_OVERLAY_REF } from '../overlay.tokens';
+import { APP_OVERLAY_DATA, APP_OVERLAY_REF } from '../overlay.tokens';
 import { AppOverlayRef, AppOverlayService } from '../overlay.service';
 import { AuthStatusOverlayComponent } from './auth-status-overlay.component';
 import { AuthService } from './auth.service';
+
+type AuthFormOverlayData = {
+  mode?: 'patient' | 'staff';
+};
 
 @Component({
   selector: 'app-auth-form-overlay',
@@ -14,13 +18,8 @@ import { AuthService } from './auth.service';
   template: `
     <div class="auth-card">
       <p class="eyebrow">Vitalis Clinic</p>
-      <h2>Login to continue</h2>
-      <p class="muted">Patients use mobile OTP. Doctors and admins use internal credentials.</p>
-
-      <div class="tabs">
-        <button [disabled]="isProcessing()" [class.active]="mode() === 'patient'" (click)="mode.set('patient')">Patient</button>
-        <button [disabled]="isProcessing()" [class.active]="mode() === 'staff'" (click)="mode.set('staff')">Doctor/Admin</button>
-      </div>
+      <h2>{{ mode() === 'staff' ? 'Doctor login' : 'Login to continue' }}</h2>
+      <p class="muted">{{ mode() === 'staff' ? 'Doctors and admins use internal credentials.' : 'Patients use mobile OTP.' }}</p>
 
       @if (mode() === 'patient') {
         <form (ngSubmit)="loginPatient()">
@@ -80,7 +79,8 @@ import { AuthService } from './auth.service';
   `
 })
 export class AuthFormOverlayComponent {
-  readonly mode = signal<'patient' | 'staff'>('patient');
+  private readonly overlayData = (inject(APP_OVERLAY_DATA) as AuthFormOverlayData | null) || {};
+  readonly mode = signal<'patient' | 'staff'>(this.overlayData.mode || 'patient');
   readonly isProcessing = signal(false);
   private activeOverlayRef?: AppOverlayRef;
 

@@ -29,9 +29,10 @@ export class AppFooterComponent {
 
   constructor(private readonly overlayService: AppOverlayService) { }
 
-  openAuthOverlay(event: Event) {
+  openAuthOverlay(event: Event, mode: 'patient' | 'staff' = 'patient') {
     event.preventDefault();
     this.overlayService.open(AuthFormOverlayComponent, {
+      data: { mode },
       width: '480px',
       panelClass: 'app-overlay-panel'
     });
