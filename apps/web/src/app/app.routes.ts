@@ -2,10 +2,28 @@ import { Routes } from '@angular/router';
 import { AboutComponent } from './about.component';
 import { DashboardComponent } from './dashboard.component';
 import { LoginComponent } from './login.component';
+import {
+  ChronicCareComponent,
+  ContactComponent,
+  DiseaseDetailComponent,
+  FaqComponent,
+  PrivacyTermsComponent,
+  SafetyComponent,
+  TreatmentsComponent
+} from './public-pages.component';
 import { roleGuard } from './role.guard';
 
 export const routes: Routes = [
   { path: 'about', component: AboutComponent },
+  { path: 'treatments', component: TreatmentsComponent },
+  { path: 'treatments/:slug', component: DiseaseDetailComponent },
+  { path: 'hair-fall', redirectTo: 'treatments/hair-fall', pathMatch: 'full' },
+  { path: 'skin-care', redirectTo: 'treatments/skin-care', pathMatch: 'full' },
+  { path: 'chronic-care', component: ChronicCareComponent },
+  { path: 'faq', component: FaqComponent },
+  { path: 'contact', component: ContactComponent },
+  { path: 'privacy-terms', component: PrivacyTermsComponent },
+  { path: 'safety', component: SafetyComponent },
   { path: 'login', component: LoginComponent },
   {
     path: 'patient/dashboard',

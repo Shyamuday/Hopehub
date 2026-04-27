@@ -11,6 +11,11 @@ import { Component, Input } from '@angular/core';
 
       <div class="footer-links">
         <a href="/about">About us</a>
+        <a href="/treatments">Treatments</a>
+        <a href="/faq">FAQ</a>
+        <a href="/contact">Contact</a>
+        <a href="/privacy-terms">Privacy / Terms</a>
+        <a href="/safety">Safety</a>
         <a href="#login-card">Book consultation</a>
         <a [href]="whatsappLink" target="_blank" rel="noopener">WhatsApp support</a>
       </div>

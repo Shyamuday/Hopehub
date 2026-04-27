@@ -24,6 +24,8 @@ import { User } from './models';
       } @else {
         <nav class="header-actions" aria-label="Primary navigation">
           <a href="/about">About us</a>
+          <a href="/treatments">Treatments</a>
+          <a href="/safety">Safety</a>
           <a href="#login-card">Login</a>
           <a [href]="whatsappLink" target="_blank" rel="noopener">WhatsApp</a>
         </nav>
