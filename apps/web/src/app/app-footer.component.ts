@@ -10,6 +10,7 @@ import { Component, Input } from '@angular/core';
       </div>
 
       <div class="footer-links">
+        <a href="/about">About us</a>
         <a href="#login-card">Book consultation</a>
         <a [href]="whatsappLink" target="_blank" rel="noopener">WhatsApp support</a>
       </div>

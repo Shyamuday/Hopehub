@@ -164,6 +164,65 @@ p {
   gap: 1.25rem;
 }
 
+.about-page {
+  display: grid;
+  gap: 1.25rem;
+  padding: clamp(1rem, 4vw, 4rem);
+}
+
+.about-hero {
+  max-width: 980px;
+}
+
+.about-hero h1 {
+  max-width: 900px;
+  color: #102033;
+  font-size: clamp(2rem, 5vw, 4rem);
+  line-height: 1;
+  letter-spacing: -0.05em;
+}
+
+.about-hero p,
+.about-grid p,
+.mission-grid p,
+.about-cta p {
+  color: #526070;
+  line-height: 1.7;
+}
+
+.about-grid,
+.mission-grid {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.about-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.mission-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.values-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.values-list span {
+  border-radius: 999px;
+  background: #eef5ff;
+  color: #174ea6;
+  padding: 0.65rem 0.9rem;
+  font-weight: 800;
+}
+
+.about-cta {
+  align-items: center;
+  grid-template-columns: 1fr auto;
+}
+
 .home-hero h1 {
   margin-bottom: 0;
   color: #102033;
@@ -558,7 +617,10 @@ p {
 
   .grid.two,
   .stats,
-  .hero {
+  .hero,
+  .about-grid,
+  .mission-grid,
+  .about-cta {
     grid-template-columns: 1fr;
   }
 
