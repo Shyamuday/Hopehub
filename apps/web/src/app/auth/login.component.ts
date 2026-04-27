@@ -6,6 +6,8 @@ import { Observable } from 'rxjs';
 import { AuthService } from './auth.service';
 import { AppFooterComponent } from '../app-footer.component';
 import { AppHeaderComponent } from '../app-header.component';
+import { AppOverlayRef, AppOverlayService } from '../overlay.service';
+import { AuthStatusOverlayComponent } from './auth-status-overlay.component';
 
 
 @Component({
@@ -117,25 +119,6 @@ import { AppHeaderComponent } from '../app-header.component';
 
       <app-footer [whatsappLink]="whatsappLink" />
 
-      @if (overlayOpen()) {
-        <div class="process-overlay" aria-live="polite" aria-busy="true">
-          <div class="process-card">
-            @if (overlayState() === 'loading') {
-              <span class="spinner"></span>
-            } @else if (overlayState() === 'success') {
-              <span class="status-icon success-icon">✓</span>
-            } @else {
-              <span class="status-icon error-icon">!</span>
-            }
-            <strong>{{ processLabel() }}</strong>
-            <small>{{ overlayMessage() }}</small>
-            @if (overlayState() !== 'loading') {
-              <button type="button" class="secondary" (click)="closeOverlay()">Close</button>
-            }
-          </div>
-        </div>
-      }
-
       <a class="whatsapp-float" [href]="whatsappLink" target="_blank" rel="noopener" aria-label="Chat on WhatsApp">
         WhatsApp
       </a>
@@ -145,12 +128,9 @@ import { AppHeaderComponent } from '../app-header.component';
 export class LoginComponent {
   readonly mode = signal<'patient' | 'staff'>('patient');
   readonly isProcessing = signal(false); // kept for button disabling
-  readonly overlayOpen = signal(false);
-  readonly overlayState = signal<'loading' | 'success' | 'error'>('loading');
-  readonly overlayMessage = signal('Please wait while we securely process your request.');
-  readonly processLabel = signal('Processing...');
   readonly whatsappLink =
     'https://wa.me/919876543210?text=Hi%20Vitalis%20Clinic%2C%20I%20want%20to%20book%20a%20consultation';
+  private activeOverlayRef?: AppOverlayRef;
 
   patient = {
     name: 'Patient',
@@ -170,7 +150,8 @@ export class LoginComponent {
 
   constructor(
     private readonly auth: AuthService,
-    private readonly router: Router
+    private readonly router: Router,
+    private readonly overlayService: AppOverlayService
   ) { }
 
   requestOtp() {
@@ -182,14 +163,20 @@ export class LoginComponent {
 
   loginPatient() {
     this.process('Logging in patient...', this.auth.patientLogin(this.patient)).subscribe({
-      next: ({ user }) => this.router.navigateByUrl(this.auth.dashboardFor(user.role)),
+      next: ({ user }) => {
+        this.closeActiveOverlay();
+        this.router.navigateByUrl(this.auth.dashboardFor(user.role));
+      },
       error: (error) => this.showError(error.error?.message || 'Patient login failed.')
     });
   }
 
   loginStaff() {
     this.process('Logging in staff...', this.auth.staffLogin(this.staff)).subscribe({
-      next: ({ user }) => this.router.navigateByUrl(this.auth.dashboardFor(user.role)),
+      next: ({ user }) => {
+        this.closeActiveOverlay();
+        this.router.navigateByUrl(this.auth.dashboardFor(user.role));
+      },
       error: (error) => this.showError(error.error?.message || 'Staff login failed.')
     });
   }
@@ -203,7 +190,10 @@ export class LoginComponent {
 
   resetPassword() {
     this.process('Resetting password...', this.auth.resetPassword({ token: '', password: this.forgot.password })).subscribe({
-      next: ({ user }) => this.router.navigateByUrl(this.auth.dashboardFor(user.role)),
+      next: ({ user }) => {
+        this.closeActiveOverlay();
+        this.router.navigateByUrl(this.auth.dashboardFor(user.role));
+      },
       error: (error) => this.showError(error.error?.message || 'Password reset failed.')
     });
   }
@@ -216,10 +206,7 @@ export class LoginComponent {
   }
 
   private process<T>(label: string, request$: Observable<T>) {
-    this.overlayOpen.set(true);
-    this.overlayState.set('loading');
-    this.overlayMessage.set('Please wait while we securely process your request.');
-    this.processLabel.set(label);
+    this.openAuthOverlay('loading', label, 'Please wait while we securely process your request.');
     this.isProcessing.set(true);
 
     return new Observable<T>((observer) => {
@@ -239,17 +226,25 @@ export class LoginComponent {
     });
   }
 
-  closeOverlay() {
-    this.overlayOpen.set(false);
+  private closeActiveOverlay() {
+    this.activeOverlayRef?.close();
+    this.activeOverlayRef = undefined;
   }
 
   private showSuccess(message: string) {
-    this.overlayState.set('success');
-    this.overlayMessage.set(message);
+    this.openAuthOverlay('success', 'Completed', message);
   }
 
   private showError(message: string) {
-    this.overlayState.set('error');
-    this.overlayMessage.set(message);
+    this.openAuthOverlay('error', 'Request failed', message);
+  }
+
+  private openAuthOverlay(state: 'loading' | 'success' | 'error', label: string, message: string) {
+    this.closeActiveOverlay();
+    this.activeOverlayRef = this.overlayService.open(AuthStatusOverlayComponent, {
+      data: { state, label, message },
+      disableClose: state === 'loading',
+      width: '360px'
+    });
   }
 }
