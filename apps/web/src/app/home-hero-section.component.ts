@@ -20,20 +20,6 @@ import { AppOverlayService } from './overlay.service';
           </a>
         </div>
 
-        <div class="trust-grid">
-          <div>
-            <strong>₹499</strong>
-            <span>Hair fall consult</span>
-          </div>
-          <div>
-            <strong>Chat-first</strong>
-            <span>Low data usage</span>
-          </div>
-          <div>
-            <strong>Private</strong>
-            <span>No public doctor listings</span>
-          </div>
-        </div>
       </div>
     </section>
   `

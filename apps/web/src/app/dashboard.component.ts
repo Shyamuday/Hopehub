@@ -29,7 +29,7 @@ import { Disease, Consultation, Doctor } from './models';
             <h2>Hair Fall Treatment</h2>
             <p>Book a chat consultation for diagnosis, prescription, and follow-up guidance.</p>
           </div>
-          <strong>₹499</strong>
+          <strong>Fee shown at payment</strong>
         </section>
 
         <section class="grid two">
