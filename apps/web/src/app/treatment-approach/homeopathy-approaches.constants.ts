@@ -42,7 +42,7 @@ export const homeopathyApproaches: HomeopathyApproach[] = [
 ].map((approach) => ({
   ...approach,
   seo: {
-    metaTitle: `${approach.title} | Vitalis Clinic`,
+    metaTitle: `${approach.title} | Vitalis Care`,
     metaDescription: approach.shortDescription,
     keywords: Array.from(
       new Set([
@@ -50,12 +50,12 @@ export const homeopathyApproaches: HomeopathyApproach[] = [
         `${approach.slug} homeopathy`,
         'homeopathy method',
         'clinical homeopathy',
-        'Vitalis Clinic',
+        'Vitalis Care',
         'doctor-led care',
         ...(approach.bestFor || []).slice(0, 4)
       ])
     ),
-    ogTitle: `${approach.title} Approach | Vitalis Clinic`,
+    ogTitle: `${approach.title} Approach | Vitalis Care`,
     ogDescription: approach.shortDescription,
     ...(approach.seo || {})
   }

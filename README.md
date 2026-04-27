@@ -1,4 +1,4 @@
-# Vitalis Clinic Platform
+# Vitalis Care Platform
 
 Hybrid MVP for a single-brand clinic platform.
 

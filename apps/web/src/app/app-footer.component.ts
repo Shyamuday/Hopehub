@@ -7,7 +7,7 @@ import { AppOverlayService } from './overlay.service';
   template: `
     <footer class="app-footer">
       <div>
-        <strong>Vitalis Clinic</strong>
+        <strong>Vitalis Care</strong>
         <p>Doctor-led online consultations under one trusted clinic brand.</p>
       </div>
 

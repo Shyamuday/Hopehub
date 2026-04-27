@@ -8,7 +8,7 @@ import { AppOverlayService } from './overlay.service';
     <section class="about-cta panel">
       <div>
         <p class="eyebrow">Ready to begin?</p>
-        <h2>Start your consultation with Vitalis Clinic.</h2>
+        <h2>Start your consultation with Vitalis Care.</h2>
         <p>Book online in minutes, or chat with us first on WhatsApp for guidance.</p>
       </div>
       <div class="home-actions">

@@ -59,7 +59,7 @@ export const skinCareDiseaseInfo: DiseaseInfo = {
       answer: 'Yes. Clear photos in good lighting help the doctor understand the pattern better.'
     }
   ],
-  reviewedBy: 'Vitalis Clinic care team',
+  reviewedBy: 'Vitalis Care care team',
   lastUpdated: '2026-04-27',
   references: ['Clinical review by consultation doctor'],
   careApproach: [

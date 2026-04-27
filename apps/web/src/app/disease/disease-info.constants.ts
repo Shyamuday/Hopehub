@@ -36,7 +36,7 @@ function buildDiseaseSeo(disease: DiseaseInfo): DiseaseInfo['seo'] {
     disease.name,
     `${disease.shortName} treatment`,
     `${disease.shortName} consultation`,
-    'Vitalis Clinic',
+    'Vitalis Care',
     'online doctor consultation',
     'digital clinic',
     'chronic care',
@@ -44,13 +44,13 @@ function buildDiseaseSeo(disease: DiseaseInfo): DiseaseInfo['seo'] {
   ];
 
   return {
-    metaTitle: `${disease.name} Treatment | Vitalis Clinic`,
+    metaTitle: `${disease.name} Treatment | Vitalis Care`,
     metaDescription:
-      disease.summary || disease.about || `Learn about ${disease.name} treatment and care approach at Vitalis Clinic.`,
+      disease.summary || disease.about || `Learn about ${disease.name} treatment and care approach at Vitalis Care.`,
     keywords: Array.from(new Set(defaultKeywords)),
-    ogTitle: `${disease.name} Care | Vitalis Clinic`,
+    ogTitle: `${disease.name} Care | Vitalis Care`,
     ogDescription:
-      disease.summary || `Doctor-led consultation and care approach for ${disease.name} at Vitalis Clinic.`,
+      disease.summary || `Doctor-led consultation and care approach for ${disease.name} at Vitalis Care.`,
     ogImage: disease.imageUrl,
     canonicalPath: `/treatments/${disease.slug}`
   };

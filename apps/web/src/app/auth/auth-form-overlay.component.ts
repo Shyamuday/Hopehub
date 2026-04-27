@@ -17,7 +17,7 @@ type AuthFormOverlayData = {
   imports: [CommonModule, FormsModule],
   template: `
     <div class="auth-card">
-      <p class="eyebrow">Vitalis Clinic</p>
+      <p class="eyebrow">Vitalis Care</p>
       <h2>{{ mode() === 'staff' ? 'Doctor login' : 'Login to continue' }}</h2>
       <p class="muted">{{ mode() === 'staff' ? 'Doctors and admins use internal credentials.' : 'Patients use mobile OTP.' }}</p>
 

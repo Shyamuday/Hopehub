@@ -219,7 +219,7 @@ export class ClinicApiService {
         key: order.razorpayKeyId,
         amount: order.amountInPaise,
         currency: order.currency,
-        name: 'Vitalis Clinic',
+        name: 'Vitalis Care',
         description: consultation.disease.name,
         order_id: order.orderId,
         prefill: {

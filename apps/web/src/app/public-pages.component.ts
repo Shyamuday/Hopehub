@@ -22,7 +22,7 @@ const whatsappLink =
           <p class="eyebrow">Treatments</p>
           <h1>Focused care programs for chronic, recurring, and lifestyle-linked concerns.</h1>
           <p>
-            Vitalis Clinic starts with focused online consultations and gradually builds treatment plans around
+            Vitalis Care starts with focused online consultations and gradually builds treatment plans around
             follow-up, symptom tracking, and doctor-led guidance.
           </p>
         </section>
@@ -533,7 +533,7 @@ export class PrivacyTermsComponent {
           <p class="eyebrow">Safety / Trust</p>
           <h1>Not for emergency care.</h1>
           <p>
-            Vitalis Clinic is for planned online consultation and follow-up. If you have severe symptoms, sudden
+            Vitalis Care is for planned online consultation and follow-up. If you have severe symptoms, sudden
             worsening, breathing difficulty, chest pain, fainting, heavy bleeding, severe allergic reaction, high fever,
             or any emergency, seek immediate offline medical care.
           </p>

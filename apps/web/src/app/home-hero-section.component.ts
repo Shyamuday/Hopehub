@@ -7,7 +7,7 @@ import { AppOverlayService } from './overlay.service';
   template: `
     <section class="panel">
       <div class="home-hero">
-        <p class="eyebrow">Vitalis Clinic</p>
+        <p class="eyebrow">Vitalis Care</p>
         <h1>Doctor-led care for your health concerns.</h1>
         <p class="hero-copy">
           Choose your health concern, complete a short intake, pay securely, and get assigned to our internal doctor panel.
