@@ -462,6 +462,86 @@ p {
   padding-top: 1rem;
 }
 
+.back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  border: 0;
+  background: transparent;
+  color: #64748b;
+  padding: 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin-bottom: 0.5rem;
+}
+
+.back-btn:hover {
+  color: #0f62fe;
+}
+
+.link-btn {
+  border: 0;
+  background: transparent;
+  color: #0f62fe;
+  padding: 0.5rem 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+}
+
+.link-btn:hover {
+  text-decoration: underline;
+}
+
+.success-notice {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.success-notice h2 {
+  margin: 0;
+}
+
+.notice-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #e8f8ef;
+  color: #087443;
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.step-divider {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: #64748b;
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin: 0.5rem 0;
+}
+
+.step-divider::before,
+.step-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: #e3e9f2;
+}
+
+.error-text {
+  color: #dc2626;
+  font-size: 0.85rem;
+  margin: 0;
+}
+
 .divider-text {
   display: flex;
   align-items: center;
