@@ -10,10 +10,41 @@ import { AuthService } from './auth.service';
   imports: [CommonModule, FormsModule],
   template: `
     <section class="auth-page">
-      <div class="auth-card">
+      <div class="home-hero">
         <p class="eyebrow">Betelgeuse Clinic</p>
-        <h1>One app for patients, doctors, and admin</h1>
-        <p class="muted">Patients use mobile OTP. Doctors and admins use credentials created internally.</p>
+        <h1>Doctor-led care for hair fall, skin, and wellness concerns.</h1>
+        <p class="hero-copy">
+          Choose your health concern, complete a short intake, pay securely, and get assigned to our internal doctor panel.
+        </p>
+
+        <div class="home-actions">
+          <a class="primary home-action" href="#login-card">Book consultation</a>
+          <a class="whatsapp-action" [href]="whatsappLink" target="_blank" rel="noopener">
+            Chat on WhatsApp
+          </a>
+        </div>
+
+        <div class="trust-grid">
+          <div>
+            <strong>₹499</strong>
+            <span>Hair fall consult</span>
+          </div>
+          <div>
+            <strong>Chat-first</strong>
+            <span>Low data usage</span>
+          </div>
+          <div>
+            <strong>Private</strong>
+            <span>No public doctor listings</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="auth-card">
+        <span id="login-card"></span>
+        <p class="eyebrow">Betelgeuse Clinic</p>
+        <h2>Login to continue</h2>
+        <p class="muted">Patients use mobile OTP. Doctors and admins use internal credentials.</p>
 
         <div class="tabs">
           <button [disabled]="isProcessing()" [class.active]="mode() === 'patient'" (click)="mode.set('patient')">Patient</button>
@@ -89,6 +120,10 @@ import { AuthService } from './auth.service';
           </div>
         </div>
       }
+
+      <a class="whatsapp-float" [href]="whatsappLink" target="_blank" rel="noopener" aria-label="Chat on WhatsApp">
+        WhatsApp
+      </a>
     </section>
   `
 })
@@ -97,6 +132,8 @@ export class LoginComponent {
   readonly message = signal('');
   readonly isProcessing = signal(false);
   readonly processLabel = signal('Processing...');
+  readonly whatsappLink =
+    'https://wa.me/919876543210?text=Hi%20Betelgeuse%20Clinic%2C%20I%20want%20to%20book%20a%20consultation';
 
   patient = {
     name: 'Patient',

@@ -60,7 +60,7 @@ import { Consultation, Disease, Doctor } from './models';
             }
 
             <button class="primary" [disabled]="isProcessing()" (click)="bookConsultation()">Create consultation</button>
-            <p class="muted">After booking, use the payment button in consultation history to mark Razorpay dev payment as paid.</p>
+            <p class="muted">After booking, pay securely with Razorpay to move your consultation to doctor assignment.</p>
           </div>
 
           <ng-container *ngTemplateOutlet="consultationList"></ng-container>
