@@ -65,6 +65,15 @@ export type DiseaseInfo = {
   careApproach: string[];
   details: string[];
   warning?: string;
+  seo?: {
+    metaTitle?: string;
+    metaDescription?: string;
+    keywords?: string[];
+    ogTitle?: string;
+    ogDescription?: string;
+    ogImage?: string;
+    canonicalPath?: string;
+  };
 };
 
 export type HomeopathyApproach = {
@@ -80,6 +89,13 @@ export type HomeopathyApproach = {
   digitalMapping?: string[];
   uiFlow?: string[];
   uiComponents?: string[];
+  seo?: {
+    metaTitle?: string;
+    metaDescription?: string;
+    keywords?: string[];
+    ogTitle?: string;
+    ogDescription?: string;
+  };
 };
 
 export type Payment = {

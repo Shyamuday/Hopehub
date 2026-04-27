@@ -14,7 +14,7 @@ import { respiratoryDiseaseInfo } from './respiratory-disease-info.constants';
 import { sexualHealthDiseaseInfo } from './sexual-health-disease-info.constants';
 import { skinCareDiseaseInfo } from './skin-care-disease-info.constants';
 
-export const diseaseInfos: DiseaseInfo[] = [
+const baseDiseases: DiseaseInfo[] = [
   hairFallDiseaseInfo,
   skinCareDiseaseInfo,
   chronicCareDiseaseInfo,
@@ -30,3 +30,36 @@ export const diseaseInfos: DiseaseInfo[] = [
   sexualHealthDiseaseInfo,
   mentalHealthDiseaseInfo
 ];
+
+function buildDiseaseSeo(disease: DiseaseInfo): DiseaseInfo['seo'] {
+  const defaultKeywords = [
+    disease.name,
+    `${disease.shortName} treatment`,
+    `${disease.shortName} consultation`,
+    'Vitalis Clinic',
+    'online doctor consultation',
+    'digital clinic',
+    'chronic care',
+    'homeopathy-led care'
+  ];
+
+  return {
+    metaTitle: `${disease.name} Treatment | Vitalis Clinic`,
+    metaDescription:
+      disease.summary || disease.about || `Learn about ${disease.name} treatment and care approach at Vitalis Clinic.`,
+    keywords: Array.from(new Set(defaultKeywords)),
+    ogTitle: `${disease.name} Care | Vitalis Clinic`,
+    ogDescription:
+      disease.summary || `Doctor-led consultation and care approach for ${disease.name} at Vitalis Clinic.`,
+    ogImage: disease.imageUrl,
+    canonicalPath: `/treatments/${disease.slug}`
+  };
+}
+
+export const diseaseInfos: DiseaseInfo[] = baseDiseases.map((disease) => ({
+  ...disease,
+  seo: {
+    ...buildDiseaseSeo(disease),
+    ...(disease.seo || {})
+  }
+}));

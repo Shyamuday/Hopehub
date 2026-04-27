@@ -39,4 +39,24 @@ export const homeopathyApproaches: HomeopathyApproach[] = [
   sehgalMethodApproach,
   protocolBasedApproach,
   integratedHybridApproach
-];
+].map((approach) => ({
+  ...approach,
+  seo: {
+    metaTitle: `${approach.title} | Vitalis Clinic`,
+    metaDescription: approach.shortDescription,
+    keywords: Array.from(
+      new Set([
+        approach.title,
+        `${approach.slug} homeopathy`,
+        'homeopathy method',
+        'clinical homeopathy',
+        'Vitalis Clinic',
+        'doctor-led care',
+        ...(approach.bestFor || []).slice(0, 4)
+      ])
+    ),
+    ogTitle: `${approach.title} Approach | Vitalis Clinic`,
+    ogDescription: approach.shortDescription,
+    ...(approach.seo || {})
+  }
+}));
