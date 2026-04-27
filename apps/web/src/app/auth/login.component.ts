@@ -18,7 +18,7 @@ import { AppHeaderComponent } from '../app-header.component';
       <main class="auth-page">
         <div class="home-hero">
           <p class="eyebrow">Vitalis Clinic</p>
-          <h1>Doctor-led care for hair fall, skin, and wellness concerns.</h1>
+          <h1>Doctor-led care for your health concerns.</h1>
           <p class="hero-copy">
             Choose your health concern, complete a short intake, pay securely, and get assigned to our internal doctor panel.
           </p>
