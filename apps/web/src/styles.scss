@@ -385,6 +385,13 @@ p {
   text-decoration: none;
 }
 
+.wa-icon {
+  width: 1.1rem;
+  height: 1.1rem;
+  flex: 0 0 auto;
+  margin-right: 0.35rem;
+}
+
 .whatsapp-action {
   border: 1px solid rgba(8, 116, 67, 0.2);
   border-radius: 999px;
@@ -604,6 +611,10 @@ p {
   font-weight: 900;
   text-decoration: none;
   box-shadow: 0 16px 34px rgba(19, 164, 95, 0.34);
+}
+
+.whatsapp-float .wa-icon {
+  margin-right: 0.25rem;
 }
 
 .hero-panel {
