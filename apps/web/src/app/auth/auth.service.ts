@@ -42,6 +42,13 @@ export class AuthService {
     );
   }
 
+  patientPasswordLogin(payload: { identifier: string; password: string }) {
+    return from(this.supabaseAuth.signInPatientWithPassword(payload.identifier, payload.password)).pipe(
+      map((user: User): AuthResponse => ({ token: '', user })),
+      tap((response: AuthResponse) => this.persistSession(response))
+    );
+  }
+
   staffLogin(payload: { email: string; password: string }) {
     return from(this.supabaseAuth.signInWithEmail(payload.email, payload.password)).pipe(
       map((user: User): AuthResponse => ({ token: '', user })),

@@ -23,31 +23,53 @@ type ForgotStep = 'none' | 'email' | 'sent' | 'reset';
 
       @if (mode() === 'patient') {
         <h2>Login to continue</h2>
-        <p class="muted">Patients use mobile OTP.</p>
+        <p class="muted">Use email/mobile with password, or choose mobile OTP as a separate option.</p>
 
-        <form (ngSubmit)="loginPatient()">
+        <form (ngSubmit)="loginPatientWithPassword()">
           <label>
-            Name
-            <input name="name" [(ngModel)]="patient.name" placeholder="Your name" />
+            Email or mobile number
+            <input
+              name="identifier"
+              [(ngModel)]="patientCredentials.identifier"
+              placeholder="Enter Gmail or mobile number"
+            />
+          </label>
+          <label>
+            Password
+            <input
+              name="patientPassword"
+              type="password"
+              [(ngModel)]="patientCredentials.password"
+              placeholder="Enter your password"
+            />
+          </label>
+          <button class="primary" type="submit" [disabled]="isProcessing()">Login</button>
+        </form>
+
+        <div class="divider-text">or continue with Gmail</div>
+        <form (ngSubmit)="loginWithGoogle()">
+          <button class="secondary" type="submit" [disabled]="isProcessing()">Continue with Gmail</button>
+          <p class="muted">Uses the Google provider configured in Supabase Auth.</p>
+        </form>
+
+        <div class="divider-text">or login with mobile OTP</div>
+        <form (ngSubmit)="loginPatientWithOtp()">
+          <label>
+            Full name
+            <input name="otpName" [(ngModel)]="patientOtp.name" placeholder="Enter your full name" />
           </label>
           <label>
             Mobile number
-            <input name="mobile" [(ngModel)]="patient.mobile" placeholder="9876543210" />
+            <input name="otpMobile" [(ngModel)]="patientOtp.mobile" placeholder="Enter 10-digit mobile number" />
           </label>
           <div class="otp-row">
             <label>
               OTP
-              <input name="otp" [(ngModel)]="patient.otp" placeholder="123456" />
+              <input name="otpCode" [(ngModel)]="patientOtp.otp" placeholder="Enter 6-digit OTP" />
             </label>
-            <button type="button" class="secondary" [disabled]="isProcessing()" (click)="requestOtp()">Get OTP</button>
+            <button type="button" class="secondary" [disabled]="isProcessing()" (click)="requestOtp()">Send OTP</button>
           </div>
-          <button class="primary" type="submit" [disabled]="isProcessing()">Login as patient</button>
-        </form>
-
-        <div class="divider-text">or</div>
-        <form (ngSubmit)="loginWithGoogle()">
-          <button class="secondary" type="submit" [disabled]="isProcessing()">Continue with Google</button>
-          <p class="muted">Uses the Google provider configured in Supabase Auth.</p>
+          <button class="secondary" type="submit" [disabled]="isProcessing()">Continue with OTP</button>
         </form>
       } @else {
         <!-- Staff Login / Forgot Password Flow -->
@@ -144,10 +166,15 @@ export class AuthFormOverlayComponent {
   readonly forgotStep = signal<ForgotStep>('none');
   private activeOverlayRef?: AppOverlayRef;
 
-  patient = {
-    name: 'Patient',
-    mobile: '9876543210',
-    otp: '123456'
+  patientCredentials = {
+    identifier: '',
+    password: ''
+  };
+
+  patientOtp = {
+    name: '',
+    mobile: '',
+    otp: ''
   };
 
   staff = {
@@ -178,14 +205,24 @@ export class AuthFormOverlayComponent {
   }
 
   requestOtp() {
-    this.process('Sending OTP...', this.auth.requestOtp(this.patient.mobile)).subscribe({
+    this.process('Sending OTP...', this.auth.requestOtp(this.patientOtp.mobile)).subscribe({
       next: (response) => this.showSuccess(`OTP sent successfully. Development OTP: ${response.devOtp}`),
       error: () => this.showError('Could not request OTP.')
     });
   }
 
-  loginPatient() {
-    this.process('Logging in patient...', this.auth.patientLogin(this.patient)).subscribe({
+  loginPatientWithOtp() {
+    this.process('Logging in patient...', this.auth.patientLogin(this.patientOtp)).subscribe({
+      next: ({ user }) => {
+        this.closeAllOverlays();
+        this.router.navigateByUrl(this.auth.dashboardFor(user.role));
+      },
+      error: (error) => this.showError(error.error?.message || 'Patient login failed.')
+    });
+  }
+
+  loginPatientWithPassword() {
+    this.process('Logging in patient...', this.auth.patientPasswordLogin(this.patientCredentials)).subscribe({
       next: ({ user }) => {
         this.closeAllOverlays();
         this.router.navigateByUrl(this.auth.dashboardFor(user.role));

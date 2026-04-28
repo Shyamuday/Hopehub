@@ -62,6 +62,28 @@ export class SupabaseAuthService {
     return this.loadProfile(data.user.id);
   }
 
+  async signInPatientWithPassword(identifier: string, password: string) {
+    const normalizedIdentifier = identifier.trim();
+    const isEmail = normalizedIdentifier.includes('@');
+    const signInResult = isEmail
+      ? await supabase.auth.signInWithPassword({ email: normalizedIdentifier, password })
+      : await supabase.auth.signInWithPassword({ phone: normalizedIdentifier, password });
+    const { data, error } = signInResult;
+    if (error) {
+      throw error;
+    }
+
+    if (!data.user) {
+      throw new Error('Supabase did not return a user.');
+    }
+
+    return this.loadProfile(data.user.id, {
+      name: data.user.user_metadata['full_name'] || data.user.email || 'Patient',
+      mobile: isEmail ? undefined : normalizedIdentifier,
+      email: data.user.email || undefined
+    });
+  }
+
   async signInWithGoogle() {
     return supabase.auth.signInWithOAuth({
       provider: 'google',
