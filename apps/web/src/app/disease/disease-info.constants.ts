@@ -6,6 +6,7 @@ import { diabetesMellitusDiseaseInfo } from './diabetes-mellitus-disease-info.co
 import { gallstoneDiseaseInfo } from './gallstone-disease-info.constants';
 import { hairFallDiseaseInfo } from './hair-fall-disease-info.constants';
 import { hypertensionDiseaseInfo } from './hypertension-disease-info.constants';
+import { kidneyStoneDiseaseInfo } from './kidney-stone-disease-info.constants';
 import { liverCirrhosisDiseaseInfo } from './liver-cirrhosis-disease-info.constants';
 import { mentalHealthDiseaseInfo } from './mental-health-disease-info.constants';
 import { musculoskeletalDiseaseInfo } from './musculoskeletal-disease-info.constants';
@@ -15,6 +16,7 @@ import { sexualHealthDiseaseInfo } from './sexual-health-disease-info.constants'
 import { skinCareDiseaseInfo } from './skin-care-disease-info.constants';
 
 const baseDiseases: DiseaseInfo[] = [
+  kidneyStoneDiseaseInfo,
   hairFallDiseaseInfo,
   skinCareDiseaseInfo,
   chronicCareDiseaseInfo,

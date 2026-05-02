@@ -55,8 +55,29 @@ export const chronicCareDiseaseInfo: DiseaseInfo = {
   },
   faq: [
     {
-      question: 'Can rare cases be solved online?',
-      answer: 'Online care can support history review and follow-up, but some cases may require offline examination or tests.'
+      question: 'Can rare or unusual cases be managed online?',
+      answer:
+        'Online care can support detailed history review, pattern analysis, and follow-up for many chronic and rare cases. Some cases may require offline examination or specific tests that cannot be done remotely. The doctor will guide you on what can be managed online and when an in-person visit is needed.'
+    },
+    {
+      question: 'Should I stop my current medicines before starting homeopathic treatment?',
+      answer:
+        'No. Never stop existing medicines without the advice of your treating doctor. Homeopathic treatment can be started alongside current medications in most cases. The doctor will review your current treatment and advise on any adjustments over time based on your response.'
+    },
+    {
+      question: 'How long does chronic care take to show results?',
+      answer:
+        'Chronic conditions that have developed over months or years typically need weeks to months of consistent treatment to show meaningful improvement. Progress is tracked through follow-up consultations. Improvement in sleep, energy, and general well-being often appears before the main complaint resolves.'
+    },
+    {
+      question: 'What information should I bring to a chronic care consultation?',
+      answer:
+        'Bring a timeline of your symptoms — when they started, what makes them better or worse, what treatments you have tried, and how you responded. Previous reports, prescriptions, and test results are very helpful. The more complete your history, the better the doctor can understand your case.'
+    },
+    {
+      question: 'Can homeopathy help with conditions that have not responded to other treatments?',
+      answer:
+        'Homeopathy takes a different approach — it looks at the whole person, not just the diagnosis. Cases that have not responded to standard treatment sometimes do well with individualized homeopathic prescribing, particularly when the constitutional and mental-emotional picture is clear. Results depend on case quality, chronicity, and consistency of follow-up.'
     }
   ],
   reviewedBy: 'Vitalis Care and Research Centre care team',

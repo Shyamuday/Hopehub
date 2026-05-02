@@ -29,6 +29,38 @@ export const respiratoryDiseaseInfo: DiseaseInfo = {
   severityLevel: 'Stable chronic follow-up can be managed online; acute severe breathlessness requires urgent offline emergency care.',
   whenToSeeDoctor: 'Consult for repeated wheeze, persistent cough, night symptoms, or reduced exercise tolerance.',
   emergencySigns: ['Severe breathlessness at rest', 'Bluish lips', 'Inability to speak full sentences', 'Low oxygen signs'],
+  faq: [
+    {
+      question: 'What is the difference between asthma and COPD?',
+      answer:
+        'Asthma is typically an allergic or inflammatory airway condition that often starts in childhood or young adulthood, with reversible airway narrowing triggered by allergens, exercise, or cold air. COPD (chronic obstructive pulmonary disease) is usually caused by long-term smoking or smoke exposure, develops in older adults, and involves progressive, largely irreversible airflow limitation. Both cause breathlessness and wheeze but have different causes, triggers, and long-term management.'
+    },
+    {
+      question: 'Can asthma be cured?',
+      answer:
+        'Asthma cannot be cured, but it can be very well controlled. With the right treatment — inhalers, trigger avoidance, and follow-up — most people with asthma can live without significant symptoms. Some children with mild asthma see improvement as they grow older. Homeopathy may support long-term reduction in recurrence tendency alongside conventional management.'
+    },
+    {
+      question: 'Are inhalers safe for long-term use?',
+      answer:
+        'Yes. Inhaled medications deliver medicine directly to the airways in very small doses, minimizing systemic side effects. Preventer inhalers (corticosteroids) used regularly are safe for long-term use and are far safer than repeated oral steroids or uncontrolled asthma. Correct inhaler technique is essential for effectiveness.'
+    },
+    {
+      question: 'Does homeopathy help with respiratory conditions?',
+      answer:
+        'Homeopathy may be considered as supportive care for recurring respiratory tendency — frequent colds, seasonal wheeze, and chronic cough patterns. Remedies like Arsenicum album, Antimonium tartaricum, Ipecacuanha, and Natrum sulphuricum are used based on individual symptom patterns. It does not replace inhalers or emergency bronchodilators in acute attacks.'
+    },
+    {
+      question: 'Can I consult online for asthma or COPD?',
+      answer:
+        'Yes. Stable chronic follow-up, trigger review, inhaler technique guidance, and seasonal management planning are well-suited for online consultation. Acute severe breathlessness, low oxygen, inability to speak in full sentences, or bluish lips requires immediate emergency care.'
+    },
+    {
+      question: 'What are common asthma triggers I should avoid?',
+      answer:
+        'Common triggers include dust mites, pet dander, pollen, mold, smoke (cigarette and wood), strong perfumes, cold air, exercise, respiratory infections, and air pollution. Identifying your personal triggers through a symptom diary and reducing exposure is one of the most effective ways to reduce attack frequency.'
+    }
+  ],
   careApproach: [
     'Identify disease pattern and seasonal triggers',
     'Review prior exacerbations and current control level',
