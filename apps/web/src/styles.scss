@@ -114,27 +114,33 @@ p {
   position: sticky;
   top: 0;
   z-index: 9;
-  background: rgba(246, 248, 251, 0.78);
-  backdrop-filter: blur(14px);
+  border-bottom: 1px solid rgba(227, 233, 242, 0.9);
+  background: rgba(255, 255, 255, 0.86);
+  backdrop-filter: blur(16px);
+  box-shadow: 0 8px 24px rgba(16, 32, 51, 0.06);
 }
 
 .brand {
   display: inline-flex;
   align-items: center;
-  gap: 0.7rem;
+  gap: 0.8rem;
   color: #172033;
   text-decoration: none;
 }
 
 .brand-mark {
   display: inline-grid;
-  width: 42px;
-  height: 42px;
+  width: 44px;
+  height: 44px;
   place-items: center;
-  border-radius: 14px;
-  background: linear-gradient(135deg, #0f62fe, #13a45f);
+  border-radius: 15px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: linear-gradient(135deg, #0f62fe, #10b981);
   color: #fff;
-  font-weight: 900;
+  font-size: 1.05rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  box-shadow: 0 10px 22px rgba(15, 98, 254, 0.28);
 }
 
 .brand strong,
@@ -142,9 +148,16 @@ p {
   display: block;
 }
 
+.brand strong {
+  font-size: 1.02rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
 .brand small {
   color: #64748b;
-  font-size: 0.8rem;
+  font-size: 0.77rem;
+  font-weight: 600;
 }
 
 .header-actions,
@@ -159,6 +172,66 @@ p {
   color: #0f62fe;
   font-weight: 800;
   text-decoration: none;
+}
+
+.header-actions {
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.header-actions > a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  border-radius: 999px;
+  padding: 0.35rem 0.8rem;
+  color: #24344d;
+  font-size: 0.88rem;
+  font-weight: 700;
+  transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+}
+
+.header-actions > a:hover {
+  background: #eef4ff;
+  color: #0f62fe;
+  transform: translateY(-1px);
+}
+
+.header-actions .header-cta {
+  background: linear-gradient(135deg, #0f62fe, #2563eb);
+  color: #fff;
+  box-shadow: 0 10px 20px rgba(15, 98, 254, 0.2);
+}
+
+.header-actions .header-cta:hover {
+  background: linear-gradient(135deg, #0b57e6, #1d4ed8);
+  color: #fff;
+}
+
+.header-actions .header-cta.secondary {
+  background: #e8f8ef;
+  color: #087443;
+  box-shadow: none;
+}
+
+.header-actions .header-cta.secondary:hover {
+  background: #d9f3e6;
+  color: #06693c;
+}
+
+.header-actions .icon-link {
+  width: 38px;
+  min-width: 38px;
+  padding: 0;
+  border: 1px solid rgba(8, 116, 67, 0.2);
+  background: #e8f8ef;
+  color: #087443;
+}
+
+.header-actions .icon-link:hover {
+  background: #d9f3e6;
+  color: #06693c;
 }
 
 .app-footer {
@@ -263,6 +336,29 @@ p {
 .faq-list {
   display: grid;
   gap: 1.25rem;
+}
+
+.category-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+}
+
+.category-pill {
+  border: 1px solid #d5ddea;
+  border-radius: 999px;
+  background: #fff;
+  color: #334155;
+  min-height: 38px;
+  padding: 0.45rem 0.85rem;
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
+.category-pill.active {
+  border-color: #0f62fe;
+  background: #e9f1ff;
+  color: #0f62fe;
 }
 
 .content-grid.two {
@@ -389,7 +485,7 @@ p {
   width: 1.1rem;
   height: 1.1rem;
   flex: 0 0 auto;
-  margin-right: 0.35rem;
+  margin-right: 0;
 }
 
 .whatsapp-action {
@@ -614,7 +710,7 @@ p {
 }
 
 .whatsapp-float .wa-icon {
-  margin-right: 0.25rem;
+  margin-right: 0;
 }
 
 .hero-panel {
@@ -1133,7 +1229,13 @@ p {
   .header-actions,
   .footer-links {
     width: 100%;
-    justify-content: space-between;
+    justify-content: flex-start;
+  }
+
+  .header-actions > a {
+    min-height: 36px;
+    padding: 0.35rem 0.7rem;
+    font-size: 0.84rem;
   }
 
   .home-hero {
