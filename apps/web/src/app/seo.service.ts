@@ -16,9 +16,9 @@ export class SeoService {
 
   // Replace with your production domain after deployment.
   private readonly siteUrl = 'https://vitalisclinic.com';
-  private readonly defaultTitle = 'Vitalis Care | Doctor-Led Digital Care';
+  private readonly defaultTitle = 'Vitalis Care and Research Centre | Doctor-Led Digital Care';
   private readonly defaultDescription =
-    'Vitalis Care provides doctor-led online consultations with structured intake, follow-up, and secure digital care.';
+    'Vitalis Care and Research Centre provides doctor-led online consultations with structured intake, follow-up, and secure digital care.';
   private readonly defaultImage = `${this.siteUrl}/favicon.ico`;
 
   init() {
@@ -93,13 +93,13 @@ export class SeoService {
 
     const allKeywords = homeopathyApproaches.flatMap((approach) => approach.seo?.keywords || []);
     return {
-      metaTitle: 'Homeopathy Approaches | Vitalis Care',
+      metaTitle: 'Homeopathy Approaches | Vitalis Care and Research Centre',
       metaDescription:
-        'Explore structured homeopathy approaches used at Vitalis Care, including case frameworks, strengths, and limitations.',
+        'Explore structured homeopathy approaches used at Vitalis Care and Research Centre, including case frameworks, strengths, and limitations.',
       keywords: Array.from(new Set(allKeywords)).slice(0, 30),
-      ogTitle: 'Homeopathy Approaches at Vitalis Care',
+      ogTitle: 'Homeopathy Approaches at Vitalis Care and Research Centre',
       ogDescription:
-        'Compare method-led homeopathy approaches and their digital care mapping at Vitalis Care.'
+        'Compare method-led homeopathy approaches and their digital care mapping at Vitalis Care and Research Centre.'
     };
   }
 }

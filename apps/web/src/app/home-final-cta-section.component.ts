@@ -8,7 +8,7 @@ import { AppOverlayService } from './overlay.service';
     <!-- Why Choose Us Section -->
     <section class="why-choose-section">
       <div class="section-header">
-        <p class="eyebrow">Why Vitalis Care</p>
+        <p class="eyebrow">Why Vitalis Care and Research Centre</p>
         <h2 class="section-title">Built for chronic conditions, not quick fixes</h2>
       </div>
       

@@ -1,0 +1,12 @@
+[build]
+  command = "npm run build"
+  publish = "dist/web/browser"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+# Redirect all routes to index.html for Angular client-side routing
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

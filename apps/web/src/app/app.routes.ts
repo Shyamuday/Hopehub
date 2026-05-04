@@ -19,18 +19,18 @@ export const routes: Routes = [
     path: 'about',
     component: AboutComponent,
     data: {
-      seoTitle: 'About Vitalis Care | Doctor-Led Digital Care',
+      seoTitle: 'About Vitalis Care and Research Centre | Doctor-Led Digital Care',
       seoDescription:
-        'Learn about Vitalis Care, our doctor-led approach, and our mission to deliver trusted, guided digital healthcare.'
+        'Learn about Vitalis Care and Research Centre, our doctor-led approach, and our mission to deliver trusted, guided digital healthcare.'
     }
   },
   {
     path: 'treatments',
     component: TreatmentsComponent,
     data: {
-      seoTitle: 'Treatments | Vitalis Care',
+      seoTitle: 'Treatments | Vitalis Care and Research Centre',
       seoDescription:
-        'Explore treatment pathways at Vitalis Care for chronic, recurring, and long-running health concerns.'
+        'Explore treatment pathways at Vitalis Care and Research Centre for chronic, recurring, and long-running health concerns.'
     }
   },
   {

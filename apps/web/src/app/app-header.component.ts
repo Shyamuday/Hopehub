@@ -12,7 +12,7 @@ import { AppOverlayService } from './overlay.service';
       <a class="brand" href="/">
         <span class="brand-mark">B</span>
         <span>
-          <strong>Vitalis Care</strong>
+          <strong>Vitalis Care and Research Centre</strong>
           <small>{{ subtitle }}</small>
         </span>
       </a>

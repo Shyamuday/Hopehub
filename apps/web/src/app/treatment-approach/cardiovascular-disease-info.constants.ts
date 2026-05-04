@@ -34,6 +34,38 @@ export const cardiovascularDiseaseInfo: DiseaseInfo = {
   severityLevel: 'Stable chronic cases can be guided online; acute chest pain or sudden breathlessness needs emergency offline care.',
   whenToSeeDoctor: 'Consult early for recurrent chest symptoms, low exercise tolerance, high BP history, or known lipid abnormalities.',
   emergencySigns: ['Severe chest pain', 'Sudden breathlessness', 'Fainting', 'Stroke-like symptoms'],
+  faq: [
+    {
+      question: 'What is the difference between a heart attack and cardiac arrest?',
+      answer:
+        'A heart attack (myocardial infarction) occurs when a blocked artery cuts off blood supply to part of the heart muscle. The heart usually keeps beating. Cardiac arrest is when the heart suddenly stops beating entirely, causing loss of consciousness and no pulse. A heart attack can trigger cardiac arrest. Both are emergencies — call for help immediately.'
+    },
+    {
+      question: 'Can cardiovascular disease be prevented?',
+      answer:
+        'Yes, significantly. Most cardiovascular disease is driven by modifiable risk factors — high blood pressure, high cholesterol, diabetes, smoking, obesity, and physical inactivity. Controlling these through lifestyle changes and medication when needed can dramatically reduce the risk of heart attack and stroke. Early screening and consistent follow-up are key.'
+    },
+    {
+      question: 'What cholesterol levels should I aim for?',
+      answer:
+        'General targets: LDL (bad cholesterol) below 100 mg/dL for most adults, below 70 mg/dL for those with existing heart disease or high risk. HDL (good cholesterol) above 40 mg/dL for men and above 50 mg/dL for women. Triglycerides below 150 mg/dL. Your doctor will set personalized targets based on your overall cardiovascular risk.'
+    },
+    {
+      question: 'Can I consult online for cardiovascular care?',
+      answer:
+        'Yes. Stable chronic cardiovascular follow-up, risk factor management, medication review, and lifestyle guidance are well-suited for online consultation. Acute chest pain, sudden breathlessness, fainting, or stroke-like symptoms (face drooping, arm weakness, speech difficulty) require immediate emergency care — do not wait for an online consultation.'
+    },
+    {
+      question: 'Does homeopathy help with cardiovascular conditions?',
+      answer:
+        'Homeopathy may be considered as supportive care for stress-related symptoms, palpitations, and constitutional management in stable cardiovascular conditions. It does not replace essential cardiac medications. Never stop prescribed heart or blood pressure medicines to try homeopathy alone — this can be life-threatening.'
+    },
+    {
+      question: 'How does obesity affect heart health?',
+      answer:
+        'Obesity increases the workload on the heart, raises blood pressure, worsens cholesterol levels, promotes insulin resistance, and triggers chronic inflammation — all of which accelerate cardiovascular disease. Even a 5–10% reduction in body weight significantly improves blood pressure, cholesterol, and blood sugar, reducing cardiovascular risk.'
+    }
+  ],
   careApproach: [
     'Assess overall cardiovascular risk and current symptoms',
     'Review comorbid conditions and medication history',

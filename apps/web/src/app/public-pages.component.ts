@@ -1,16 +1,17 @@
 import { CommonModule } from '@angular/common';
-import { Component, signal } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { AppFooterComponent } from './app-footer.component';
 import { AppHeaderComponent } from './app-header.component';
 import { AuthFormOverlayComponent } from './auth/auth-form-overlay.component';
 import { diseaseCategoryList } from './disease/disease-category-list.constants';
 import { diseaseInfos } from './disease/disease-info.constants';
+import { DiseaseInfo } from './models';
 import { AppOverlayService } from './overlay.service';
 import { homeopathyApproaches } from './treatment-approach/homeopathy-approaches.constants';
 
 const whatsappLink =
-  'https://wa.me/919876543210?text=Hi%20Vitalis%20Clinic%2C%20I%20want%20to%20know%20more';
+  'https://wa.me/919876543210?text=Hi%20Vitalis%20Care%20and%20Research%20Centre%2C%20I%20want%20to%20know%20more';
 
 @Component({
   selector: 'app-treatments',
@@ -23,7 +24,7 @@ const whatsappLink =
           <p class="eyebrow">Treatments</p>
           <h1>Focused care programs for chronic, recurring, and lifestyle-linked concerns.</h1>
           <p>
-            Vitalis Care starts with focused online consultations and gradually builds treatment plans around
+            Vitalis Care and Research Centre starts with focused online consultations and gradually builds treatment plans around
             follow-up, symptom tracking, and doctor-led guidance.
           </p>
         </section>
@@ -148,37 +149,37 @@ export class TreatmentsComponent {
   imports: [CommonModule, AppHeaderComponent, AppFooterComponent],
   template: `
     <section class="public-shell">
-      <app-header [subtitle]="disease?.shortName || 'Treatment'" [whatsappLink]="whatsappLink" />
+      <app-header [subtitle]="disease()?.shortName || 'Treatment'" [whatsappLink]="whatsappLink" />
 
       <main class="content-page">
-        @if (disease) {
+        @if (disease(); as d) {
           <section class="disease-hero panel">
             <div>
               <p class="eyebrow">Treatment detail</p>
-              <h1>{{ disease.name }}</h1>
-              <p>{{ disease.summary }}</p>
+              <h1>{{ d.name }}</h1>
+              <p>{{ d.summary }}</p>
               <div class="disease-meta">
-                @if (disease.category) {
-                  <span>{{ disease.category }}</span>
+                @if (d.category) {
+                  <span>{{ d.category }}</span>
                 }
-                @if (disease.diseaseType) {
-                  <span>{{ disease.diseaseType }}</span>
+                @if (d.diseaseType) {
+                  <span>{{ d.diseaseType }}</span>
                 }
-                @if (disease.icdCode) {
-                  <span>ICD: {{ disease.icdCode }}</span>
+                @if (d.icdCode) {
+                  <span>ICD: {{ d.icdCode }}</span>
                 }
               </div>
             </div>
-            <img [src]="disease.imageUrl" [alt]="disease.imageAlt" />
+            <img [src]="d.imageUrl" [alt]="d.imageAlt" />
           </section>
 
-          @if (disease.ourApproach) {
+          @if (d.ourApproach) {
             <section class="panel root-cause-panel">
               <p class="eyebrow">Our approach</p>
-              <h2>{{ disease.ourApproach.title }}</h2>
-              <p>{{ disease.ourApproach.intro }}</p>
+              <h2>{{ d.ourApproach.title }}</h2>
+              <p>{{ d.ourApproach.intro }}</p>
               <div class="values-list">
-                @for (point of disease.ourApproach.points; track point) {
+                @for (point of d.ourApproach.points; track point) {
                   <span>{{ point }}</span>
                 }
               </div>
@@ -187,10 +188,10 @@ export class TreatmentsComponent {
 
           <section class="content-grid two">
             <article class="panel">
-              <h2>About {{ disease.shortName }}</h2>
-              <p>{{ disease.about }}</p>
+              <h2>About {{ d.shortName }}</h2>
+              <p>{{ d.about }}</p>
               <div class="detail-list">
-                @for (item of disease.details; track item) {
+                @for (item of d.details; track item) {
                   <p>{{ item }}</p>
                 }
               </div>
@@ -199,7 +200,7 @@ export class TreatmentsComponent {
             <article class="panel">
               <h2>Common symptoms</h2>
               <ul>
-                @for (symptom of disease.symptoms; track symptom) {
+                @for (symptom of d.symptoms; track symptom) {
                   <li>{{ symptom }}</li>
                 }
               </ul>
@@ -207,22 +208,22 @@ export class TreatmentsComponent {
           </section>
 
           <section class="content-grid two">
-            @if (disease.causes?.length) {
+            @if (d.causes?.length) {
               <article class="panel">
                 <h2>Possible causes</h2>
                 <ul>
-                  @for (cause of disease.causes; track cause) {
+                  @for (cause of d.causes; track cause) {
                     <li>{{ cause }}</li>
                   }
                 </ul>
               </article>
             }
 
-            @if (disease.riskFactors?.length) {
+            @if (d.riskFactors?.length) {
               <article class="panel">
                 <h2>Risk factors</h2>
                 <ul>
-                  @for (risk of disease.riskFactors; track risk) {
+                  @for (risk of d.riskFactors; track risk) {
                     <li>{{ risk }}</li>
                   }
                 </ul>
@@ -231,18 +232,18 @@ export class TreatmentsComponent {
           </section>
 
           <section class="content-grid two">
-            @if (disease.diagnosis) {
+            @if (d.diagnosis) {
               <article class="panel">
                 <h2>Diagnosis approach</h2>
-                <p>{{ disease.diagnosis }}</p>
+                <p>{{ d.diagnosis }}</p>
               </article>
             }
 
-            @if (disease.tests?.length) {
+            @if (d.tests?.length) {
               <article class="panel">
                 <h2>Tests, if needed</h2>
                 <ul>
-                  @for (test of disease.tests; track test) {
+                  @for (test of d.tests; track test) {
                     <li>{{ test }}</li>
                   }
                 </ul>
@@ -250,43 +251,43 @@ export class TreatmentsComponent {
             }
           </section>
 
-          @if (disease.treatmentOptions) {
+          @if (d.treatmentOptions) {
             <section class="panel">
               <h2>Treatment options</h2>
               <div class="treatment-options">
-                @if (disease.treatmentOptions.allopathy) {
-                  <div><strong>Allopathy</strong><p>{{ disease.treatmentOptions.allopathy }}</p></div>
+                @if (d.treatmentOptions.allopathy) {
+                  <div><strong>Allopathy</strong><p>{{ d.treatmentOptions.allopathy }}</p></div>
                 }
-                @if (disease.treatmentOptions.ayurveda) {
-                  <div><strong>Ayurveda</strong><p>{{ disease.treatmentOptions.ayurveda }}</p></div>
+                @if (d.treatmentOptions.ayurveda) {
+                  <div><strong>Ayurveda</strong><p>{{ d.treatmentOptions.ayurveda }}</p></div>
                 }
-                @if (disease.treatmentOptions.homeopathy) {
-                  <div><strong>Homeopathy</strong><p>{{ disease.treatmentOptions.homeopathy }}</p></div>
+                @if (d.treatmentOptions.homeopathy) {
+                  <div><strong>Homeopathy</strong><p>{{ d.treatmentOptions.homeopathy }}</p></div>
                 }
-                @if (disease.treatmentOptions.lifestyle) {
-                  <div><strong>Lifestyle</strong><p>{{ disease.treatmentOptions.lifestyle }}</p></div>
+                @if (d.treatmentOptions.lifestyle) {
+                  <div><strong>Lifestyle</strong><p>{{ d.treatmentOptions.lifestyle }}</p></div>
                 }
               </div>
             </section>
           }
 
           <section class="content-grid two">
-            @if (disease.homeCare?.length) {
+            @if (d.homeCare?.length) {
               <article class="panel">
                 <h2>Home care</h2>
                 <ul>
-                  @for (item of disease.homeCare; track item) {
+                  @for (item of d.homeCare; track item) {
                     <li>{{ item }}</li>
                   }
                 </ul>
               </article>
             }
 
-            @if (disease.prevention?.length) {
+            @if (d.prevention?.length) {
               <article class="panel">
                 <h2>Prevention</h2>
                 <ul>
-                  @for (item of disease.prevention; track item) {
+                  @for (item of d.prevention; track item) {
                     <li>{{ item }}</li>
                   }
                 </ul>
@@ -298,7 +299,7 @@ export class TreatmentsComponent {
             <article class="panel">
               <h2>Our care approach</h2>
               <ul>
-                @for (step of disease.careApproach; track step) {
+                @for (step of d.careApproach; track step) {
                   <li>{{ step }}</li>
                 }
               </ul>
@@ -306,11 +307,11 @@ export class TreatmentsComponent {
 
             <article class="panel warning-panel">
               <h2>Safety note</h2>
-              <p>{{ disease.warning || defaultWarning }}</p>
-              @if (disease.emergencySigns?.length) {
+              <p>{{ d.warning || defaultWarning }}</p>
+              @if (d.emergencySigns?.length) {
                 <h3>Emergency signs</h3>
                 <ul>
-                  @for (sign of disease.emergencySigns; track sign) {
+                  @for (sign of d.emergencySigns; track sign) {
                     <li>{{ sign }}</li>
                   }
                 </ul>
@@ -319,46 +320,46 @@ export class TreatmentsComponent {
           </section>
 
           <section class="content-grid three">
-            @if (disease.severityLevel) {
-              <article class="panel"><h2>Severity</h2><p>{{ disease.severityLevel }}</p></article>
+            @if (d.severityLevel) {
+              <article class="panel"><h2>Severity</h2><p>{{ d.severityLevel }}</p></article>
             }
-            @if (disease.whenToSeeDoctor) {
-              <article class="panel"><h2>When to see doctor</h2><p>{{ disease.whenToSeeDoctor }}</p></article>
+            @if (d.whenToSeeDoctor) {
+              <article class="panel"><h2>When to see doctor</h2><p>{{ d.whenToSeeDoctor }}</p></article>
             }
-            @if (disease.duration) {
-              <article class="panel"><h2>Expected duration</h2><p>{{ disease.duration }}</p></article>
+            @if (d.duration) {
+              <article class="panel"><h2>Expected duration</h2><p>{{ d.duration }}</p></article>
             }
           </section>
 
           <section class="content-grid two">
-            @if (disease.stages?.length) {
+            @if (d.stages?.length) {
               <article class="panel">
                 <h2>Care stages</h2>
                 <ul>
-                  @for (stage of disease.stages; track stage) {
+                  @for (stage of d.stages; track stage) {
                     <li>{{ stage }}</li>
                   }
                 </ul>
               </article>
             }
 
-            @if (disease.commonIn) {
+            @if (d.commonIn) {
               <article class="panel">
                 <h2>Common in</h2>
-                @if (disease.commonIn.ageGroup) {
-                  <p><strong>Age group:</strong> {{ disease.commonIn.ageGroup }}</p>
+                @if (d.commonIn.ageGroup) {
+                  <p><strong>Age group:</strong> {{ d.commonIn.ageGroup }}</p>
                 }
-                @if (disease.commonIn.gender) {
-                  <p><strong>Gender:</strong> {{ disease.commonIn.gender }}</p>
+                @if (d.commonIn.gender) {
+                  <p><strong>Gender:</strong> {{ d.commonIn.gender }}</p>
                 }
               </article>
             }
           </section>
 
-          @if (disease.faq?.length) {
+          @if (d.faq?.length) {
             <section class="faq-list">
               <h2>FAQ</h2>
-              @for (item of disease.faq; track item.question) {
+              @for (item of d.faq; track item.question) {
                 <article class="panel">
                   <h3>{{ item.question }}</h3>
                   <p>{{ item.answer }}</p>
@@ -368,21 +369,21 @@ export class TreatmentsComponent {
           }
 
           <section class="panel review-panel">
-            @if (disease.reviewedBy) {
-              <p><strong>Reviewed by:</strong> {{ disease.reviewedBy }}</p>
+            @if (d.reviewedBy) {
+              <p><strong>Reviewed by:</strong> {{ d.reviewedBy }}</p>
             }
-            @if (disease.lastUpdated) {
-              <p><strong>Last updated:</strong> {{ disease.lastUpdated }}</p>
+            @if (d.lastUpdated) {
+              <p><strong>Last updated:</strong> {{ d.lastUpdated }}</p>
             }
-            @if (disease.references && disease.references.length) {
-              <p><strong>References:</strong> {{ disease.references.join(', ') }}</p>
+            @if (d.references && d.references.length) {
+              <p><strong>References:</strong> {{ d.references.join(', ') }}</p>
             }
           </section>
 
           <section class="about-cta panel">
             <div>
               <p class="eyebrow">Ready to begin?</p>
-              <h2>Book a consultation for {{ disease.shortName }}.</h2>
+              <h2>Book a consultation for {{ d.shortName }}.</h2>
               <p>Complete a short intake and our internal doctor panel will guide the next step.</p>
             </div>
             <a class="primary home-action" href="/login" (click)="openAuthOverlay($event)">Book consultation</a>
@@ -401,15 +402,23 @@ export class TreatmentsComponent {
     </section>
   `
 })
-export class DiseaseDetailComponent {
+export class DiseaseDetailComponent implements OnInit {
   readonly whatsappLink = whatsappLink;
   readonly defaultWarning = 'This service is not for emergency care. For severe, sudden, or rapidly worsening symptoms, seek immediate offline medical help.';
-  readonly disease = diseaseInfos.find((item) => item.slug === this.route.snapshot.paramMap.get('slug'));
+  readonly disease = signal<DiseaseInfo | undefined>(undefined);
 
   constructor(
     private readonly route: ActivatedRoute,
     private readonly overlayService: AppOverlayService
   ) { }
+
+  ngOnInit() {
+    this.route.paramMap.subscribe((params) => {
+      const slug = params.get('slug');
+      this.disease.set(diseaseInfos.find((item) => item.slug === slug));
+      window.scrollTo(0, 0);
+    });
+  }
 
   openAuthOverlay(event: Event, mode: 'patient' | 'staff' = 'patient') {
     event.preventDefault();
@@ -548,7 +557,7 @@ export class ChronicCareComponent {
           <h1>Common questions before booking.</h1>
         </section>
         <section class="faq-list">
-          <article class="panel"><h2>Can I choose my doctor?</h2><p>No. Vitalis assigns from the internal doctor panel based on your concern and availability.</p></article>
+          <article class="panel"><h2>Can I choose my doctor?</h2><p>No. Vitalis Care and Research Centre assigns from the internal doctor panel based on your concern and availability.</p></article>
           <article class="panel"><h2>Is this emergency care?</h2><p>No. This platform is not for emergencies or critical symptoms.</p></article>
           <article class="panel"><h2>Do you use homeopathy?</h2><p>Our approach is homeopathy-led and low-medicine where suitable, guided by doctor assessment.</p></article>
           <article class="panel"><h2>Will I get a prescription?</h2><p>Yes, after consultation if the doctor finds it appropriate.</p></article>
@@ -633,7 +642,7 @@ export class PrivacyTermsComponent {
           <p class="eyebrow">Safety / Trust</p>
           <h1>Not for emergency care.</h1>
           <p>
-            Vitalis Care is for planned online consultation and follow-up. If you have severe symptoms, sudden
+            Vitalis Care and Research Centre is for planned online consultation and follow-up. If you have severe symptoms, sudden
             worsening, breathing difficulty, chest pain, fainting, heavy bleeding, severe allergic reaction, high fever,
             or any emergency, seek immediate offline medical care.
           </p>

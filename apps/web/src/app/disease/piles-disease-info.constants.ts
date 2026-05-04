@@ -28,6 +28,38 @@ export const pilesDiseaseInfo: DiseaseInfo = {
   severityLevel: 'Mild to moderate cases can be guided online; heavy bleeding or severe pain needs urgent in-person care.',
   whenToSeeDoctor: 'Consult for recurrent bleeding, painful swelling, persistent symptoms, or suspected fissure/fistula overlap.',
   emergencySigns: ['Heavy rectal bleeding', 'Severe persistent pain', 'Fever with anal swelling'],
+  faq: [
+    {
+      question: 'What is the difference between internal and external piles?',
+      answer:
+        'Internal piles develop inside the rectum and are usually painless but may bleed. External piles develop under the skin around the anus and can be painful, especially if a clot forms (thrombosed hemorrhoid). Many people have both. Grade and type determine the treatment approach.'
+    },
+    {
+      question: 'Can piles be treated without surgery?',
+      answer:
+        'Yes. Most mild to moderate piles (Grade 1 and 2) respond well to dietary changes, fiber supplementation, hydration, sitz baths, and topical or oral medications. Grade 3 and 4 piles, or those that do not respond to conservative care, may need procedures like rubber band ligation, sclerotherapy, or surgery. Your doctor will assess the grade and guide the appropriate path.'
+    },
+    {
+      question: 'Does homeopathy help with piles?',
+      answer:
+        'Homeopathy has a well-established role in piles management. Remedies like Aesculus hippocastanum, Hamamelis, Nux vomica, Collinsonia, and Aloe socotrina are commonly used based on the symptom pattern — bleeding, pain, burning, prolapse tendency, and associated constipation. Constitutional treatment helps reduce recurrence.'
+    },
+    {
+      question: 'Is rectal bleeding always from piles?',
+      answer:
+        'No. While piles are a common cause of rectal bleeding, other conditions — anal fissure, polyps, inflammatory bowel disease, or colorectal cancer — can also cause bleeding. Any rectal bleeding should be evaluated by a doctor, especially if it is persistent, associated with change in bowel habits, or occurs in people above 40.'
+    },
+    {
+      question: 'Can I consult online for piles?',
+      answer:
+        'Yes. Symptom review, dietary guidance, medication advice, and follow-up are suitable for online consultation. Heavy or persistent bleeding, severe pain, fever with anal swelling, or suspected fistula needs in-person clinical examination.'
+    },
+    {
+      question: 'What dietary changes help with piles?',
+      answer:
+        'Increase dietary fiber through fruits, vegetables, whole grains, and legumes. Drink at least 2–2.5 litres of water daily. Avoid straining during bowel movements — do not delay when you feel the urge. Reduce spicy, processed, and low-fiber foods. Regular physical activity also helps maintain bowel regularity.'
+    }
+  ],
   careApproach: [
     'Understand symptom severity and bleeding pattern',
     'Differentiate piles from other anorectal conditions',

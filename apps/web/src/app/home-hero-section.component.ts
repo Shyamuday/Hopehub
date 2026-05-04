@@ -7,7 +7,7 @@ import { AppOverlayService } from './overlay.service';
   template: `
     <section class="panel hero-panel">
       <div class="home-hero">
-        <p class="eyebrow">Vitalis Care | Doctor-led digital clinic</p>
+        <p class="eyebrow">Vitalis Care and Research Centre | Doctor-led digital clinic</p>
         <h1>Chronic care that actually follows through.</h1>
         <p class="hero-copy">
           We specialize in long-running conditions that need deeper history, pattern tracking, and disciplined follow-up — not quick-fix consultations.

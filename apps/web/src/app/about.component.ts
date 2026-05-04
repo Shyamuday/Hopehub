@@ -14,7 +14,7 @@ import { AppHeaderComponent } from './app-header.component';
           <p class="eyebrow">Who we are</p>
           <h1>We are a doctor-led digital clinic for chronic, rare, and long-running health concerns.</h1>
           <p>
-            Vitalis Care brings structured online care under one trusted clinic brand. Patients do not browse
+            Vitalis Care and Research Centre brings structured online care under one trusted clinic brand. Patients do not browse
             random doctor listings. They choose their health problem, share symptoms, and our internal care team guides
             the consultation journey.
           </p>
@@ -99,5 +99,5 @@ import { AppHeaderComponent } from './app-header.component';
 })
 export class AboutComponent {
   readonly whatsappLink =
-    'https://wa.me/919876543210?text=Hi%20Vitalis%20Clinic%2C%20I%20want%20to%20know%20more%20about%20your%20care';
+    'https://wa.me/919876543210?text=Hi%20Vitalis%20Care%20and%20Research%20Centre%2C%20I%20want%20to%20know%20more%20about%20your%20care';
 }

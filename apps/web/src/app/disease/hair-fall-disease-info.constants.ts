@@ -68,7 +68,7 @@ export const hairFallDiseaseInfo: DiseaseInfo = {
       answer: 'The doctor may request scalp or hairline photos during chat for better assessment.'
     }
   ],
-  reviewedBy: 'Vitalis Care care team',
+  reviewedBy: 'Vitalis Care and Research Centre care team',
   lastUpdated: '2026-04-27',
   references: ['Clinical review by consultation doctor', 'Patient-provided history and symptom tracking'],
   careApproach: [

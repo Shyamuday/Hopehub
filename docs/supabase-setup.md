@@ -1,6 +1,6 @@
 # Supabase Setup Guide
 
-Use this when you are ready to connect Vitalis Care to a real Supabase project.
+Use this when you are ready to connect Vitalis Care and Research Centre to a real Supabase project.
 
 ## 1. Create Supabase Project
 

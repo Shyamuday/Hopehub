@@ -55,11 +55,37 @@ export const skinCareDiseaseInfo: DiseaseInfo = {
   },
   faq: [
     {
-      question: 'Can I send skin photos?',
-      answer: 'Yes. Clear photos in good lighting help the doctor understand the pattern better.'
+      question: 'Can I send skin photos during consultation?',
+      answer:
+        'Yes. Clear photos in good natural lighting help the doctor understand the pattern, distribution, and severity of your skin condition much better. Take photos of the affected area from multiple angles. Avoid heavy filters or editing. The doctor may request additional photos during the chat consultation.'
+    },
+    {
+      question: 'Does homeopathy help with skin conditions?',
+      answer:
+        'Homeopathy has a strong track record in chronic and recurring skin conditions — acne, eczema, psoriasis, urticaria, and pigmentation. Remedies are selected based on the full symptom picture including triggers, modalities, and constitutional pattern. The goal is to reduce the recurring tendency, not just suppress the current flare.'
+    },
+    {
+      question: 'Why does my skin condition keep coming back?',
+      answer:
+        'Recurring skin conditions are usually driven by an underlying tendency — hormonal, allergic, stress-related, or constitutional. Suppressing flares with creams without addressing the root pattern leads to recurrence. Identifying your personal triggers (products, foods, stress, weather, hormonal cycle) and treating the underlying tendency is the key to long-term control.'
+    },
+    {
+      question: 'Are steroid creams safe for long-term use?',
+      answer:
+        'No. Long-term unsupervised use of topical steroid creams causes skin thinning, increased sensitivity, rebound flares when stopped, and in some cases systemic effects. They have a role in short-term management of specific conditions under medical supervision, but should not be used continuously without a doctor\'s guidance.'
+    },
+    {
+      question: 'Can I consult online for skin conditions?',
+      answer:
+        'Yes. Most recurring skin concerns — acne, eczema, pigmentation, rashes, and allergy tendency — are well-suited for online consultation with photo review. Severe swelling, rapidly spreading infection, breathing difficulty after a skin reaction, or high fever with skin symptoms needs urgent in-person or emergency care.'
+    },
+    {
+      question: 'What is the difference between eczema and psoriasis?',
+      answer:
+        'Eczema (atopic dermatitis) is an inflammatory condition causing itchy, dry, and inflamed skin, often linked to allergy tendency and triggered by irritants or stress. Psoriasis is an autoimmune condition causing thick, scaly, silvery plaques, most commonly on elbows, knees, and scalp. Both are chronic and recurring but have different triggers, appearances, and treatment approaches.'
     }
   ],
-  reviewedBy: 'Vitalis Care care team',
+  reviewedBy: 'Vitalis Care and Research Centre care team',
   lastUpdated: '2026-04-27',
   references: ['Clinical review by consultation doctor'],
   careApproach: [

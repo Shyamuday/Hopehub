@@ -42,5 +42,5 @@ import { HomeTreatmentsSectionComponent } from './home-treatments-section.compon
 })
 export class HomeComponent {
   readonly whatsappLink =
-    'https://wa.me/919876543210?text=Hi%20Vitalis%20Clinic%2C%20I%20want%20to%20book%20a%20consultation';
+    'https://wa.me/919876543210?text=Hi%20Vitalis%20Care%20and%20Research%20Centre%2C%20I%20want%20to%20book%20a%20consultation';
 }

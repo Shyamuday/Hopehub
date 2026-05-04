@@ -19,7 +19,7 @@ type ForgotStep = 'none' | 'email' | 'sent' | 'reset';
   imports: [CommonModule, FormsModule],
   template: `
     <div class="auth-card">
-      <p class="eyebrow">Vitalis Care</p>
+      <p class="eyebrow">Vitalis Care and Research Centre</p>
 
       @if (mode() === 'patient') {
         <h2>Login to continue</h2>
@@ -199,9 +199,9 @@ export class AuthFormOverlayComponent {
 
   canResetPassword(): boolean {
     return !!(this.forgot.password &&
-              this.forgot.confirmPassword &&
-              this.forgot.password === this.forgot.confirmPassword &&
-              this.forgot.password.length >= 6);
+      this.forgot.confirmPassword &&
+      this.forgot.password === this.forgot.confirmPassword &&
+      this.forgot.password.length >= 6);
   }
 
   requestOtp() {
