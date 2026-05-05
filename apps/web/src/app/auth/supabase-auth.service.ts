@@ -118,7 +118,7 @@ export class SupabaseAuthService {
   }
 
   dashboardFor(role: Role) {
-    if (role === 'ADMIN' || role === 'SUPER_ADMIN') {
+    if (role === 'ADMIN') {
       return '/admin/dashboard';
     }
 

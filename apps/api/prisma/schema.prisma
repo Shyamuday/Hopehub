@@ -10,7 +10,6 @@ enum Role {
   PATIENT
   DOCTOR
   ADMIN
-  SUPER_ADMIN
 }
 
 enum ConsultationStatus {

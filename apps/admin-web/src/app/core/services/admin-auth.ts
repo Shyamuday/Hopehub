@@ -25,8 +25,8 @@ export class AdminAuth {
         this.http.post<{ token: string; user: { role: string } }>(`${this.apiBase}/auth/staff-login`, { email, password })
       );
 
-      if (response.user.role !== 'ADMIN' && response.user.role !== 'SUPER_ADMIN') {
-        return { ok: false as const, message: 'Only admin or super admin can login to this app.' };
+      if (response.user.role !== 'ADMIN') {
+        return { ok: false as const, message: 'Only admin can login to this app.' };
       }
 
       localStorage.setItem(this.tokenKey, response.token);

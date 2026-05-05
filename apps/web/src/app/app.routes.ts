@@ -122,7 +122,7 @@ export const routes: Routes = [
     component: DashboardComponent,
     canActivate: [roleGuard],
     data: {
-      roles: ['ADMIN', 'SUPER_ADMIN'],
+      roles: ['ADMIN'],
       seoTitle: 'Admin Dashboard | Vitalis Care',
       seoDescription: 'Manage clinic operations, doctor assignment, and reporting in the Vitalis Care admin dashboard.'
     }

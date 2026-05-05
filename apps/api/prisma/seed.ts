@@ -22,17 +22,6 @@ async function main() {
     }
   });
 
-  const superAdmin = await prisma.user.upsert({
-    where: { email: 'superadmin@vitalisclinic.local' },
-    update: {},
-    create: {
-      name: 'Clinic Super Admin',
-      email: 'superadmin@vitalisclinic.local',
-      passwordHash,
-      role: Role.SUPER_ADMIN
-    }
-  });
-
   const doctorUser = await prisma.user.upsert({
     where: { email: 'doctor@vitalisclinic.local' },
     update: {},
@@ -149,7 +138,6 @@ async function main() {
 
   console.log('Seeded demo admin, doctor, and disease catalog.');
   console.log(`Admin login: ${admin.email} / Password@123`);
-  console.log(`Super admin login: ${superAdmin.email} / Password@123`);
 }
 
 main()
