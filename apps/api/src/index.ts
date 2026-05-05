@@ -5,7 +5,7 @@ import bcrypt from 'bcryptjs';
 import Razorpay from 'razorpay';
 import crypto from 'node:crypto';
 import { OAuth2Client } from 'google-auth-library';
-import { ConsultationStatus, PaymentStatus, Role } from '@prisma/client';
+import { ConsultationStatus, PaymentStatus, PrescriptionStatus, Role } from '@prisma/client';
 import { z } from 'zod';
 import { allowRoles, authRequired, signToken } from './auth.js';
 import { prisma } from './db.js';
@@ -62,6 +62,20 @@ function includeConsultationRelations() {
       include: { sender: { select: publicUserSelect } },
       orderBy: { createdAt: 'asc' as const }
     }
+  };
+}
+
+function includePrescriptionRelations() {
+  return {
+    consultation: {
+      select: {
+        id: true,
+        disease: { select: { id: true, name: true } }
+      }
+    },
+    uploadedBy: { select: publicUserSelect },
+    patient: { select: publicUserSelect },
+    items: { orderBy: { sortOrder: 'asc' as const } }
   };
 }
 
@@ -481,41 +495,150 @@ app.post(
 );
 
 app.post(
-  '/consultations/:id/prescription',
+  '/doctor/appointments/:id/prescriptions',
   authRequired,
   allowRoles(Role.DOCTOR, Role.ADMIN),
   asyncRoute(async (req, res) => {
     const body = z
       .object({
+        diagnosis: z.string().min(3),
+        advice: z.string().min(3).optional(),
         notes: z.string().min(5),
-        fileUrl: z.string().url().optional().or(z.literal(''))
+        fileUrl: z.string().url().optional().or(z.literal('')),
+        followUpDate: z.coerce.date().optional(),
+        status: z.nativeEnum(PrescriptionStatus).default(PrescriptionStatus.DRAFT),
+        items: z
+          .array(
+            z.object({
+              medicineName: z.string().min(2),
+              strength: z.string().min(1).optional(),
+              dose: z.string().min(1).optional(),
+              frequency: z.string().min(1).optional(),
+              duration: z.string().min(1).optional(),
+              instructions: z.string().min(1).optional()
+            })
+          )
+          .min(1)
       })
       .parse(req.body);
 
     const consultation = await prisma.consultation.findUniqueOrThrow({ where: { id: routeParam(req, 'id') } });
     if (req.user!.role === Role.DOCTOR && consultation.assignedDoctorId !== req.user!.id) {
-      return res.status(403).json({ message: 'Only the assigned doctor can upload prescription' });
+      return res.status(403).json({ message: 'Only the assigned doctor can manage prescription' });
     }
 
-    const prescription = await prisma.prescription.upsert({
-      where: { consultationId: consultation.id },
-      update: {
-        notes: body.notes,
-        fileUrl: body.fileUrl || null,
-        uploadedById: req.user!.id
-      },
-      create: {
-        consultationId: consultation.id,
-        uploadedById: req.user!.id,
-        notes: body.notes,
-        fileUrl: body.fileUrl || null
-      }
+    const prescription = await prisma.$transaction(async (tx) => {
+      const upserted = await tx.prescription.upsert({
+        where: { consultationId: consultation.id },
+        update: {
+          diagnosis: body.diagnosis,
+          advice: body.advice || null,
+          notes: body.notes,
+          fileUrl: body.fileUrl || null,
+          followUpDate: body.followUpDate || null,
+          status: body.status,
+          uploadedById: req.user!.id
+        },
+        create: {
+          consultationId: consultation.id,
+          uploadedById: req.user!.id,
+          patientId: consultation.patientId,
+          diagnosis: body.diagnosis,
+          advice: body.advice || null,
+          notes: body.notes,
+          fileUrl: body.fileUrl || null,
+          followUpDate: body.followUpDate || null,
+          status: body.status
+        }
+      });
+
+      await tx.prescriptionItem.deleteMany({ where: { prescriptionId: upserted.id } });
+      await tx.prescriptionItem.createMany({
+        data: body.items.map((item, index) => ({
+          prescriptionId: upserted.id,
+          medicineName: item.medicineName,
+          strength: item.strength,
+          dose: item.dose,
+          frequency: item.frequency,
+          duration: item.duration,
+          instructions: item.instructions,
+          sortOrder: index
+        }))
+      });
+
+      return tx.prescription.findUniqueOrThrow({
+        where: { id: upserted.id },
+        include: includePrescriptionRelations()
+      });
     });
 
     await prisma.consultation.update({
       where: { id: consultation.id },
-      data: { status: ConsultationStatus.PRESCRIPTION_UPLOADED }
+      data: {
+        status:
+          body.status === PrescriptionStatus.PUBLISHED
+            ? ConsultationStatus.PRESCRIPTION_UPLOADED
+            : consultation.status
+      }
     });
+
+    res.status(201).json({ prescription });
+  })
+);
+
+app.get(
+  '/doctor/prescriptions/:id',
+  authRequired,
+  allowRoles(Role.DOCTOR, Role.ADMIN),
+  asyncRoute(async (req, res) => {
+    const prescription = await prisma.prescription.findUnique({
+      where: { id: routeParam(req, 'id') },
+      include: includePrescriptionRelations()
+    });
+
+    if (!prescription) {
+      return res.status(404).json({ message: 'Prescription not found' });
+    }
+
+    if (req.user!.role === Role.DOCTOR && prescription.uploadedById !== req.user!.id) {
+      return res.status(403).json({ message: 'Access denied' });
+    }
+
+    res.json({ prescription });
+  })
+);
+
+app.get(
+  '/patient/prescriptions',
+  authRequired,
+  allowRoles(Role.PATIENT),
+  asyncRoute(async (req, res) => {
+    const prescriptions = await prisma.prescription.findMany({
+      where: {
+        patientId: req.user!.id,
+        status: PrescriptionStatus.PUBLISHED
+      },
+      include: includePrescriptionRelations(),
+      orderBy: { createdAt: 'desc' }
+    });
+
+    res.json({ prescriptions });
+  })
+);
+
+app.get(
+  '/patient/prescriptions/:id',
+  authRequired,
+  allowRoles(Role.PATIENT),
+  asyncRoute(async (req, res) => {
+    const prescription = await prisma.prescription.findUnique({
+      where: { id: routeParam(req, 'id') },
+      include: includePrescriptionRelations()
+    });
+
+    if (!prescription || prescription.patientId !== req.user!.id || prescription.status !== PrescriptionStatus.PUBLISHED) {
+      return res.status(404).json({ message: 'Prescription not found' });
+    }
 
     res.json({ prescription });
   })

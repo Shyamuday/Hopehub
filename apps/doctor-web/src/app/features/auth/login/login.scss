@@ -1,0 +1,43 @@
+.login-card {
+  width: min(460px, 100%);
+  margin: 5rem auto;
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  padding: 1.25rem;
+}
+
+h2 {
+  margin: 0 0 0.5rem;
+}
+
+p {
+  margin: 0 0 1rem;
+  color: #4b5563;
+}
+
+form {
+  display: grid;
+  gap: 0.55rem;
+}
+
+input {
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 0.55rem 0.65rem;
+}
+
+button {
+  margin-top: 0.5rem;
+  border: 0;
+  border-radius: 8px;
+  padding: 0.65rem 0.85rem;
+  cursor: pointer;
+  background: #2563eb;
+  color: #fff;
+}
+
+.error {
+  color: #b91c1c;
+  margin: 0.3rem 0;
+}

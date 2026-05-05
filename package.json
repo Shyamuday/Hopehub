@@ -5,9 +5,11 @@
   "scripts": {
     "dev": "npm run dev --prefix apps/api",
     "dev:web": "npm start --prefix apps/web",
+    "dev:doctor": "npm start --prefix apps/doctor-web",
     "dev:api": "npm run dev --prefix apps/api",
     "build": "npm run build --prefix apps/api && npm run build --prefix apps/web",
     "build:web": "npm run build --prefix apps/web",
+    "build:doctor": "npm run build --prefix apps/doctor-web",
     "build:api": "npm run build --prefix apps/api",
     "lint": "npm run lint --prefix apps/api",
     "prisma:generate": "npm run prisma:generate --prefix apps/api",

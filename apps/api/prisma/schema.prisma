@@ -28,6 +28,12 @@ enum PaymentStatus {
   FAILED
 }
 
+enum PrescriptionStatus {
+  DRAFT
+  PUBLISHED
+  CANCELLED
+}
+
 model User {
   id                  String         @id @default(cuid())
   name                String
@@ -41,6 +47,7 @@ model User {
   doctorConsults      Consultation[] @relation("DoctorConsultations")
   messages            Message[]
   uploadedPrescriptions Prescription[]
+  patientPrescriptions Prescription[] @relation("PatientPrescriptions")
   passwordResetTokens PasswordResetToken[]
   createdAt           DateTime       @default(now())
   updatedAt           DateTime       @updatedAt
@@ -120,12 +127,35 @@ model Message {
 }
 
 model Prescription {
-  id             String       @id @default(cuid())
-  consultationId String       @unique
+  id             String             @id @default(cuid())
+  consultationId String             @unique
   uploadedById   String
+  patientId      String
+  diagnosis      String
+  advice         String?
   notes          String
   fileUrl        String?
-  consultation   Consultation @relation(fields: [consultationId], references: [id])
-  uploadedBy     User         @relation(fields: [uploadedById], references: [id])
-  createdAt      DateTime     @default(now())
+  followUpDate   DateTime?
+  status         PrescriptionStatus @default(DRAFT)
+  consultation   Consultation       @relation(fields: [consultationId], references: [id])
+  uploadedBy     User               @relation(fields: [uploadedById], references: [id])
+  patient        User               @relation("PatientPrescriptions", fields: [patientId], references: [id])
+  items          PrescriptionItem[]
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+}
+
+model PrescriptionItem {
+  id          String       @id @default(cuid())
+  prescriptionId String
+  medicineName String
+  strength    String?
+  dose        String?
+  frequency   String?
+  duration    String?
+  instructions String?
+  sortOrder   Int          @default(0)
+  prescription Prescription @relation(fields: [prescriptionId], references: [id], onDelete: Cascade)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
 }

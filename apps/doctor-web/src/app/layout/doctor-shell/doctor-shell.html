@@ -1,0 +1,17 @@
+<main class="doctor-shell">
+  <header class="topbar">
+    <h1>Doctor Console</h1>
+    <button type="button" (click)="logout()">Logout</button>
+  </header>
+
+  <nav class="tabs">
+    <a routerLink="/dashboard" routerLinkActive="active">Dashboard</a>
+    <a routerLink="/appointments" routerLinkActive="active">Appointments</a>
+    <a routerLink="/patients" routerLinkActive="active">Patients</a>
+    <a routerLink="/profile" routerLinkActive="active">Profile</a>
+  </nav>
+
+  <section class="content">
+    <router-outlet />
+  </section>
+</main>
