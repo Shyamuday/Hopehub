@@ -807,37 +807,63 @@ app.get(
   })
 );
 
+const prescriptionItemInputSchema = z.object({
+  medicineName: z.string().min(2),
+  strength: z.string().min(1).optional(),
+  dose: z.string().min(1).optional(),
+  frequency: z.string().min(1).optional(),
+  duration: z.string().min(1).optional(),
+  instructions: z.string().min(1).optional(),
+  durationDays: z.number().int().min(1).max(120).optional(),
+  intakeTimes: z.array(z.string().regex(/^\d{2}:\d{2}$/)).min(1).max(6).optional()
+});
+
+const prescriptionInputSchema = z.object({
+  methodOptionId: z.string().min(1),
+  diagnosedDiseaseOptionId: z.string().min(1),
+  diagnosis: z.string().min(3),
+  advice: z.string().min(3).optional(),
+  notes: z.string().min(5),
+  fileUrl: z.string().url().optional().or(z.literal('')),
+  followUpDate: z.coerce.date().optional(),
+  status: z.nativeEnum(PrescriptionStatus).default(PrescriptionStatus.DRAFT),
+  items: z.array(prescriptionItemInputSchema).min(1)
+});
+
+app.get(
+  '/doctor/appointments/:id/prescriptions',
+  authRequired,
+  allowRoles(Role.DOCTOR, Role.ADMIN),
+  asyncRoute(async (req, res) => {
+    const consultation = await prisma.consultation.findUnique({
+      where: { id: routeParam(req, 'id') },
+      select: { id: true, assignedDoctorId: true }
+    });
+
+    if (!consultation) {
+      return res.status(404).json({ message: 'Consultation not found' });
+    }
+
+    if (req.user!.role === Role.DOCTOR && consultation.assignedDoctorId !== req.user!.id) {
+      return res.status(403).json({ message: 'Access denied' });
+    }
+
+    const prescriptions = await prisma.prescription.findMany({
+      where: { consultationId: consultation.id },
+      include: includePrescriptionRelations(),
+      orderBy: { version: 'desc' }
+    });
+
+    res.json({ prescriptions });
+  })
+);
+
 app.post(
   '/doctor/appointments/:id/prescriptions',
   authRequired,
   allowRoles(Role.DOCTOR, Role.ADMIN),
   asyncRoute(async (req, res) => {
-    const body = z
-      .object({
-        methodOptionId: z.string().min(1),
-        diagnosedDiseaseOptionId: z.string().min(1),
-        diagnosis: z.string().min(3),
-        advice: z.string().min(3).optional(),
-        notes: z.string().min(5),
-        fileUrl: z.string().url().optional().or(z.literal('')),
-        followUpDate: z.coerce.date().optional(),
-        status: z.nativeEnum(PrescriptionStatus).default(PrescriptionStatus.DRAFT),
-        items: z
-          .array(
-            z.object({
-              medicineName: z.string().min(2),
-              strength: z.string().min(1).optional(),
-              dose: z.string().min(1).optional(),
-              frequency: z.string().min(1).optional(),
-              duration: z.string().min(1).optional(),
-              instructions: z.string().min(1).optional(),
-              durationDays: z.number().int().min(1).max(120).optional(),
-              intakeTimes: z.array(z.string().regex(/^\d{2}:\d{2}$/)).min(1).max(6).optional()
-            })
-          )
-          .min(1)
-      })
-      .parse(req.body);
+    const body = prescriptionInputSchema.parse(req.body);
 
     const consultation = await prisma.consultation.findUniqueOrThrow({ where: { id: routeParam(req, 'id') } });
     if (req.user!.role === Role.DOCTOR && consultation.assignedDoctorId !== req.user!.id) {
@@ -938,6 +964,112 @@ app.post(
     });
 
     res.status(201).json({ prescription });
+  })
+);
+
+app.put(
+  '/doctor/prescriptions/:id',
+  authRequired,
+  allowRoles(Role.DOCTOR, Role.ADMIN),
+  asyncRoute(async (req, res) => {
+    const body = prescriptionInputSchema.parse(req.body);
+    const prescription = await prisma.prescription.findUnique({
+      where: { id: routeParam(req, 'id') },
+      include: { consultation: { select: { assignedDoctorId: true } } }
+    });
+
+    if (!prescription) {
+      return res.status(404).json({ message: 'Prescription not found' });
+    }
+
+    if (!prescription.isLatest) {
+      return res.status(400).json({ message: 'Only the latest version can be edited.' });
+    }
+
+    if (prescription.status === PrescriptionStatus.PUBLISHED) {
+      return res.status(400).json({ message: 'Published prescriptions cannot be edited. Create follow-up version.' });
+    }
+
+    if (req.user!.role === Role.DOCTOR && prescription.consultation.assignedDoctorId !== req.user!.id) {
+      return res.status(403).json({ message: 'Access denied' });
+    }
+
+    const [methodOption, diagnosedDiseaseOption] = await Promise.all([
+      prisma.prescriptionOption.findFirst({
+        where: { id: body.methodOptionId, type: PrescriptionOptionType.METHOD }
+      }),
+      prisma.prescriptionOption.findFirst({
+        where: { id: body.diagnosedDiseaseOptionId, type: PrescriptionOptionType.DIAGNOSED_DISEASE }
+      })
+    ]);
+
+    if (!methodOption || !diagnosedDiseaseOption) {
+      return res.status(400).json({ message: 'Invalid prescription method or diagnosed disease option.' });
+    }
+
+    const updated = await prisma.$transaction(async (tx) => {
+      const updatedPrescription = await tx.prescription.update({
+        where: { id: prescription.id },
+        data: {
+          methodOptionId: methodOption.id,
+          diagnosedDiseaseOptionId: diagnosedDiseaseOption.id,
+          diagnosis: body.diagnosis,
+          advice: body.advice || null,
+          notes: body.notes,
+          fileUrl: body.fileUrl || null,
+          followUpDate: body.followUpDate || null,
+          status: body.status,
+          uploadedById: req.user!.id
+        }
+      });
+
+      await tx.prescriptionItem.deleteMany({ where: { prescriptionId: updatedPrescription.id } });
+
+      const createdItems = [];
+      for (const [index, item] of body.items.entries()) {
+        const createdItem = await tx.prescriptionItem.create({
+          data: {
+            prescriptionId: updatedPrescription.id,
+            medicineName: item.medicineName,
+            strength: item.strength,
+            dose: item.dose,
+            frequency: item.frequency,
+            duration: item.duration,
+            instructions: item.instructions,
+            durationDays: item.durationDays,
+            intakeTimes: item.intakeTimes,
+            sortOrder: index
+          }
+        });
+        createdItems.push(createdItem);
+      }
+
+      await tx.medicineDoseEvent.deleteMany({ where: { prescriptionId: updatedPrescription.id } });
+      if (body.status === PrescriptionStatus.PUBLISHED) {
+        const events = buildDoseScheduleEvents({
+          patientId: updatedPrescription.patientId,
+          prescriptionId: updatedPrescription.id,
+          prescriptionItems: createdItems
+        });
+        if (events.length) {
+          await tx.medicineDoseEvent.createMany({ data: events });
+        }
+      }
+
+      return tx.prescription.findUniqueOrThrow({
+        where: { id: updatedPrescription.id },
+        include: includePrescriptionRelations()
+      });
+    });
+
+    if (body.status === PrescriptionStatus.PUBLISHED) {
+      await prisma.consultation.update({
+        where: { id: updated.consultation.id },
+        data: { status: ConsultationStatus.PRESCRIPTION_UPLOADED }
+      });
+    }
+
+    res.json({ prescription: updated });
   })
 );
 

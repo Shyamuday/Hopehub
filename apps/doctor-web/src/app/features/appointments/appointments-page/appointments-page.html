@@ -1,9 +1,30 @@
 <h2>Create Prescription</h2>
-<p>Fast entry with dropdowns for method and diagnosed disease.</p>
+<p>Draft, edit, and publish multi-medicine prescriptions with follow-up versions.</p>
 
 <div class="grid">
   <label for="consultationId">Consultation ID</label>
   <input id="consultationId" name="consultationId" [(ngModel)]="consultationId" />
+  <div class="actions">
+    <button type="button" (click)="loadConsultationPrescriptions()">Load history</button>
+    <button type="button" (click)="resetEditorForFollowUp()">New follow-up version</button>
+  </div>
+
+  @if (loadedPrescriptions.length) {
+    <label for="existingVersion">Existing Versions</label>
+    <select
+      id="existingVersion"
+      name="existingVersion"
+      [ngModel]="editingPrescriptionId"
+      (ngModelChange)="selectPrescriptionById($event)"
+    >
+      <option value="">Select version</option>
+      @for (item of loadedPrescriptions; track item.id) {
+        <option [value]="item.id">
+          v{{ item.version }} - {{ item.status }}
+        </option>
+      }
+    </select>
+  }
 
   <label for="method">Homeopathy Method</label>
   <select id="method" name="method" [(ngModel)]="methodOptionId">
@@ -37,11 +58,45 @@
 
   <label for="notes">Prescription Notes</label>
   <textarea id="notes" name="notes" [(ngModel)]="notes"></textarea>
+
+  <h3>Medicines</h3>
+  @for (row of medicineRows; track $index) {
+    <div class="medicine-card">
+      <label>Medicine name</label>
+      <input [name]="'medicineName' + $index" [(ngModel)]="row.medicineName" />
+
+      <label>Strength</label>
+      <input [name]="'strength' + $index" [(ngModel)]="row.strength" />
+
+      <label>Dose</label>
+      <input [name]="'dose' + $index" [(ngModel)]="row.dose" />
+
+      <label>Frequency</label>
+      <input [name]="'frequency' + $index" [(ngModel)]="row.frequency" placeholder="e.g. twice daily" />
+
+      <label>Duration text</label>
+      <input [name]="'duration' + $index" [(ngModel)]="row.duration" placeholder="e.g. 2 weeks" />
+
+      <label>Duration days</label>
+      <input [name]="'durationDays' + $index" [(ngModel)]="row.durationDays" type="number" min="1" max="120" />
+
+      <label>Intake times (comma separated HH:mm)</label>
+      <input [name]="'intakeTimes' + $index" [(ngModel)]="row.intakeTimesText" placeholder="09:00,21:00" />
+
+      <label>Instructions</label>
+      <textarea [name]="'instructions' + $index" [(ngModel)]="row.instructions"></textarea>
+
+      <button type="button" (click)="removeMedicineRow($index)">Remove medicine</button>
+    </div>
+  }
+
+  <button type="button" (click)="addMedicineRow()">Add medicine</button>
 </div>
 
 <div class="actions">
   <button type="button" (click)="loadOptions()">Reload options</button>
-  <button type="button" (click)="createPrescription()">Save Prescription</button>
+  <button type="button" (click)="savePrescription('DRAFT')">Save Draft</button>
+  <button type="button" (click)="savePrescription('PUBLISHED')">Publish</button>
 </div>
 
 @if (message) {
