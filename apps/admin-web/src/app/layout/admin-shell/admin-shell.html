@@ -1,0 +1,16 @@
+<main class="admin-shell">
+  <header class="topbar">
+    <h1>Admin Console</h1>
+    <button type="button" (click)="logout()">Logout</button>
+  </header>
+
+  <nav class="tabs">
+    <a routerLink="/dashboard" routerLinkActive="active">Dashboard</a>
+    <a routerLink="/doctors" routerLinkActive="active">Doctors</a>
+    <a routerLink="/consumers" routerLinkActive="active">Consumers</a>
+  </nav>
+
+  <section class="content">
+    <router-outlet />
+  </section>
+</main>

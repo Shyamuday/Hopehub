@@ -1,0 +1,16 @@
+<section class="panel">
+  <h2>Consumers (Patients)</h2>
+  @for (consumer of consumers; track consumer.id) {
+    <article class="card">
+      <strong>{{ consumer.name }}</strong>
+      <p>{{ consumer.email || 'No email' }} | {{ consumer.mobile || 'No mobile' }}</p>
+      <small>Total consultations: {{ consumer.consultations }}</small>
+    </article>
+  } @empty {
+    <p>No consumers found.</p>
+  }
+</section>
+
+@if (error) {
+  <p class="error">{{ error }}</p>
+}

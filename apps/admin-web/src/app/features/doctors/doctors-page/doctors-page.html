@@ -1,0 +1,36 @@
+<section class="panel">
+  <h2>Pending Doctor Approvals</h2>
+  @for (doctor of pendingDoctors; track doctor.id) {
+    <article class="card">
+      <strong>{{ doctor.name }}</strong>
+      <p>{{ doctor.email }}</p>
+      <small>{{ doctor.doctorProfile?.specialty || 'Specialty not set' }}</small>
+      <div class="actions">
+        <button type="button" (click)="approveDoctor(doctor.id)">Approve</button>
+        <button type="button" (click)="rejectDoctor(doctor.id)">Keep Pending</button>
+      </div>
+    </article>
+  } @empty {
+    <p>No pending doctor enrollments.</p>
+  }
+</section>
+
+<section class="panel">
+  <h2>All Doctors</h2>
+  @for (doctor of doctors; track doctor.id) {
+    <article class="card">
+      <strong>{{ doctor.name }}</strong>
+      <p>{{ doctor.email }}</p>
+      <small>{{ doctor.doctorProfile?.specialty || 'Specialty not set' }} | {{ doctor.isActive ? 'Active' : 'Inactive' }}</small>
+    </article>
+  } @empty {
+    <p>No doctors found.</p>
+  }
+</section>
+
+@if (message) {
+  <p class="success">{{ message }}</p>
+}
+@if (error) {
+  <p class="error">{{ error }}</p>
+}

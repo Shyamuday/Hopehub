@@ -1,0 +1,18 @@
+<section class="stats">
+  <article class="card">
+    <h3>Revenue</h3>
+    <p>{{ revenueInPaise / 100 | currency: 'INR' }}</p>
+  </article>
+  <article class="card">
+    <h3>Active Doctors</h3>
+    <p>{{ activeDoctors }}</p>
+  </article>
+  <article class="card">
+    <h3>Consultations</h3>
+    <p>{{ consultationsCount }}</p>
+  </article>
+</section>
+
+@if (error) {
+  <p class="error">{{ error }}</p>
+}
