@@ -26,9 +26,9 @@ export class Auth {
       );
 
       localStorage.setItem(this.tokenKey, response.token);
-      return true;
-    } catch {
-      return false;
+      return { ok: true as const };
+    } catch (error: any) {
+      return { ok: false as const, message: error?.error?.message || 'Invalid login or API unavailable.' };
     }
   }
 
@@ -41,17 +41,19 @@ export class Auth {
     registrationNo?: string;
   }) {
     if (!payload.name || !payload.email || !payload.password || !payload.specialty) {
-      return false;
+      return { ok: false as const, message: 'Name, email, password, and specialty are required.' };
     }
 
     try {
       const response = await firstValueFrom(
-        this.http.post<{ token: string }>(`${this.apiBase}/doctor/enroll`, payload)
+        this.http.post<{ message?: string }>(`${this.apiBase}/doctor/enroll`, payload)
       );
-      localStorage.setItem(this.tokenKey, response.token);
-      return true;
-    } catch {
-      return false;
+      return {
+        ok: true as const,
+        message: response.message || 'Enrollment submitted. Wait for admin approval.'
+      };
+    } catch (error: any) {
+      return { ok: false as const, message: error?.error?.message || 'Could not enroll doctor account.' };
     }
   }
 

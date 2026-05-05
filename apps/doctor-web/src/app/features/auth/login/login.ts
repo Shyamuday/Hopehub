@@ -15,6 +15,7 @@ export class Login {
   email = '';
   password = '';
   error = '';
+  message = '';
   name = '';
   mobile = '';
   specialty = '';
@@ -27,9 +28,10 @@ export class Login {
 
   async submit() {
     this.error = '';
-    const ok = await this.auth.login(this.email, this.password);
-    if (!ok) {
-      this.error = 'Invalid login or API unavailable.';
+    this.message = '';
+    const result = await this.auth.login(this.email, this.password);
+    if (!result.ok) {
+      this.error = result.message;
       return;
     }
 
@@ -38,7 +40,8 @@ export class Login {
 
   async enroll() {
     this.error = '';
-    const ok = await this.auth.enrollDoctor({
+    this.message = '';
+    const result = await this.auth.enrollDoctor({
       name: this.name,
       email: this.email,
       mobile: this.mobile || undefined,
@@ -47,11 +50,12 @@ export class Login {
       registrationNo: this.registrationNo || undefined
     });
 
-    if (!ok) {
-      this.error = 'Could not enroll doctor account.';
+    if (!result.ok) {
+      this.error = result.message;
       return;
     }
 
-    void this.router.navigateByUrl('/dashboard');
+    this.mode = 'signin';
+    this.message = result.message;
   }
 }

@@ -262,6 +262,7 @@ app.post(
         mobile: body.mobile,
         passwordHash,
         role: Role.DOCTOR,
+        isActive: false,
         doctorProfile: {
           create: {
             specialty: body.specialty,
@@ -272,7 +273,11 @@ app.post(
       select: publicUserSelect
     });
 
-    res.status(201).json(toAuthResponse(doctor));
+    res.status(201).json({
+      doctor,
+      approvalStatus: 'PENDING',
+      message: 'Enrollment submitted. Please wait for admin approval before login.'
+    });
   })
 );
 
@@ -365,7 +370,15 @@ app.post(
       select: { ...publicUserSelect, passwordHash: true, isActive: true }
     });
 
-    if (!user?.passwordHash || !user.isActive || user.role === Role.PATIENT) {
+    if (!user?.passwordHash || user.role === Role.PATIENT) {
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
+
+    if (!user.isActive && user.role === Role.DOCTOR) {
+      return res.status(403).json({ message: 'Doctor account is pending admin approval.' });
+    }
+
+    if (!user.isActive) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
@@ -513,6 +526,53 @@ app.get(
     });
 
     res.json({ doctors });
+  })
+);
+
+app.get(
+  '/admin/doctors/pending',
+  authRequired,
+  allowRoles(Role.ADMIN),
+  asyncRoute(async (_req, res) => {
+    const pendingDoctors = await prisma.user.findMany({
+      where: { role: Role.DOCTOR, isActive: false },
+      select: { ...publicUserSelect, isActive: true, createdAt: true, doctorProfile: true },
+      orderBy: { createdAt: 'asc' }
+    });
+
+    res.json({ pendingDoctors });
+  })
+);
+
+app.post(
+  '/admin/doctors/:id/approve',
+  authRequired,
+  allowRoles(Role.ADMIN),
+  asyncRoute(async (req, res) => {
+    const doctorId = routeParam(req, 'id');
+    const doctor = await prisma.user.update({
+      where: { id: doctorId },
+      data: { isActive: true },
+      select: { ...publicUserSelect, isActive: true, doctorProfile: true }
+    });
+
+    res.json({ doctor, message: 'Doctor approved successfully.' });
+  })
+);
+
+app.post(
+  '/admin/doctors/:id/reject',
+  authRequired,
+  allowRoles(Role.ADMIN),
+  asyncRoute(async (req, res) => {
+    const doctorId = routeParam(req, 'id');
+    const doctor = await prisma.user.update({
+      where: { id: doctorId },
+      data: { isActive: false },
+      select: { ...publicUserSelect, isActive: true, doctorProfile: true }
+    });
+
+    res.json({ doctor, message: 'Doctor marked as not approved.' });
   })
 );
 

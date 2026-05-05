@@ -18,6 +18,9 @@
       @if (error) {
         <p class="error">{{ error }}</p>
       }
+      @if (message) {
+        <p class="success">{{ message }}</p>
+      }
 
       <button type="submit">Sign in</button>
     </form>
@@ -46,6 +49,9 @@
 
       @if (error) {
         <p class="error">{{ error }}</p>
+      }
+      @if (message) {
+        <p class="success">{{ message }}</p>
       }
 
       <button type="submit">Create account</button>
