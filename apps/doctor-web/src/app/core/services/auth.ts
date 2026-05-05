@@ -32,6 +32,29 @@ export class Auth {
     }
   }
 
+  async enrollDoctor(payload: {
+    name: string;
+    email: string;
+    mobile?: string;
+    password: string;
+    specialty: string;
+    registrationNo?: string;
+  }) {
+    if (!payload.name || !payload.email || !payload.password || !payload.specialty) {
+      return false;
+    }
+
+    try {
+      const response = await firstValueFrom(
+        this.http.post<{ token: string }>(`${this.apiBase}/doctor/enroll`, payload)
+      );
+      localStorage.setItem(this.tokenKey, response.token);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
   logout() {
     localStorage.removeItem(this.tokenKey);
   }

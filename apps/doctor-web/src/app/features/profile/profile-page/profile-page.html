@@ -1,2 +1,41 @@
-<h2>Profile</h2>
-<p>Placeholder page for doctor profile, clinic details, and preferences.</p>
+<section class="profile-card">
+  <h2>Doctor Profile</h2>
+
+  @if (isLoading) {
+    <p>Loading profile...</p>
+  }
+
+  <div class="grid">
+    <label for="name">Name</label>
+    <input id="name" name="name" [(ngModel)]="name" />
+
+    <label for="email">Email</label>
+    <input id="email" name="email" [value]="email" readonly />
+
+    <label for="mobile">Mobile</label>
+    <input id="mobile" name="mobile" [(ngModel)]="mobile" />
+
+    <label for="specialty">Specialty</label>
+    <input id="specialty" name="specialty" [(ngModel)]="specialty" />
+
+    <label for="registrationNo">Registration Number</label>
+    <input id="registrationNo" name="registrationNo" [(ngModel)]="registrationNo" />
+  </div>
+
+  <label class="checkbox">
+    <input type="checkbox" name="isAvailable" [(ngModel)]="isAvailable" />
+    Available for consultations
+  </label>
+
+  <div class="actions">
+    <button type="button" (click)="loadProfile()">Reload</button>
+    <button type="button" (click)="saveProfile()">Save Profile</button>
+  </div>
+
+  @if (message) {
+    <p class="success">{{ message }}</p>
+  }
+  @if (error) {
+    <p class="error">{{ error }}</p>
+  }
+</section>
