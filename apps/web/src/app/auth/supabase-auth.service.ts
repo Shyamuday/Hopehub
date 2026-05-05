@@ -7,6 +7,10 @@ import { supabase } from '../supabase.client';
 export class SupabaseAuthService {
   readonly user = signal<User | null>(null);
 
+  setAuthenticatedUser(user: User | null) {
+    this.user.set(user);
+  }
+
   async bootstrapSession() {
     const { data } = await supabase.auth.getUser();
     if (!data.user) {
@@ -114,7 +118,7 @@ export class SupabaseAuthService {
   }
 
   dashboardFor(role: Role) {
-    if (role === 'ADMIN') {
+    if (role === 'ADMIN' || role === 'SUPER_ADMIN') {
       return '/admin/dashboard';
     }
 

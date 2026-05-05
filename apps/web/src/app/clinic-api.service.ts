@@ -26,16 +26,18 @@ declare global {
 
 @Injectable({ providedIn: 'root' })
 export class ClinicApiService {
+  private readonly backendTokenKey = 'clinic_token';
+
   diseases() {
     return from(this.fetchDiseases());
   }
 
   consultations() {
-    return from(this.fetchConsultations());
+    return from(this.fetchConsultationsViaApiOrSupabase());
   }
 
   createConsultation(payload: { diseaseId: string; intakeAnswers: Record<string, string> }) {
-    return from(this.insertConsultation(payload));
+    return from(this.createConsultationViaApiOrSupabase(payload));
   }
 
   createPaymentOrder(consultationId: string) {
@@ -47,7 +49,7 @@ export class ClinicApiService {
   }
 
   sendMessage(consultationId: string, body: string) {
-    return from(this.insertMessage(consultationId, body));
+    return from(this.sendMessageViaApiOrSupabase(consultationId, body));
   }
 
   uploadPrescription(consultationId: string, payload: { notes: string; fileUrl?: string }) {
@@ -59,7 +61,7 @@ export class ClinicApiService {
   }
 
   doctors() {
-    return from(this.fetchDoctors());
+    return from(this.fetchDoctorsViaApiOrSupabase());
   }
 
   createDoctor(payload: {
@@ -70,23 +72,15 @@ export class ClinicApiService {
     specialty: string;
     registrationNo?: string;
   }) {
-    return from(supabase.functions.invoke('create-doctor', { body: payload })).pipe(
-      map(({ data, error }) => {
-        if (error) {
-          throw error;
-        }
-
-        return data;
-      })
-    );
+    return from(this.createDoctorViaApi(payload));
   }
 
   assignDoctor(consultationId: string, doctorId: string) {
-    return from(this.assignDoctorToConsultation(consultationId, doctorId));
+    return from(this.assignDoctorViaApiOrSupabase(consultationId, doctorId));
   }
 
   reports() {
-    return from(this.fetchReports());
+    return from(this.fetchReportsViaApiOrSupabase());
   }
 
   patientPrescriptions() {
@@ -152,6 +146,42 @@ export class ClinicApiService {
     return { consultations: (data || []).map((row) => this.toConsultation(row)) };
   }
 
+  private get backendToken() {
+    return localStorage.getItem(this.backendTokenKey) || '';
+  }
+
+  private async apiFetch<T>(path: string, init?: RequestInit) {
+    const response = await fetch(`${environment.apiUrl}${path}`, {
+      ...init,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(this.backendToken ? { Authorization: `Bearer ${this.backendToken}` } : {}),
+        ...(init?.headers || {})
+      }
+    });
+
+    if (!response.ok) {
+      let message = 'Request failed.';
+      try {
+        message = (await response.json())?.message || message;
+      } catch {
+        // no-op
+      }
+      throw new Error(message);
+    }
+
+    return (await response.json()) as T;
+  }
+
+  private async fetchConsultationsViaApiOrSupabase() {
+    if (!this.backendToken) {
+      throw new Error('Backend session missing. Please login again.');
+    }
+
+    const response = await this.apiFetch<{ consultations: Array<Record<string, any>> }>('/consultations');
+    return { consultations: (response.consultations || []).map((row) => this.toConsultationFromApi(row)) };
+  }
+
   private async insertConsultation(payload: { diseaseId: string; intakeAnswers: Record<string, string> }) {
     const {
       data: { user }
@@ -196,6 +226,17 @@ export class ClinicApiService {
     }
 
     return { consultation };
+  }
+
+  private async createConsultationViaApiOrSupabase(payload: { diseaseId: string; intakeAnswers: Record<string, string> }) {
+    if (!this.backendToken) {
+      throw new Error('Backend session missing. Please login again.');
+    }
+
+    return this.apiFetch('/consultations', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
   }
 
   private async markPaymentPaid(consultationId: string) {
@@ -336,6 +377,17 @@ export class ClinicApiService {
     return { ok: true };
   }
 
+  private async sendMessageViaApiOrSupabase(consultationId: string, body: string) {
+    if (!this.backendToken) {
+      throw new Error('Backend session missing. Please login again.');
+    }
+
+    return this.apiFetch(`/consultations/${consultationId}/messages`, {
+      method: 'POST',
+      body: JSON.stringify({ body })
+    });
+  }
+
   private async upsertPrescription(consultationId: string, payload: { notes: string; fileUrl?: string }) {
     const {
       data: { user }
@@ -392,6 +444,14 @@ export class ClinicApiService {
     };
   }
 
+  private async fetchDoctorsViaApiOrSupabase() {
+    if (!this.backendToken) {
+      throw new Error('Backend session missing. Please login again.');
+    }
+
+    return this.apiFetch<{ doctors: Doctor[] }>('/admin/doctors');
+  }
+
   private async assignDoctorToConsultation(consultationId: string, doctorId: string) {
     const { error } = await supabase
       .from('consultations')
@@ -405,6 +465,17 @@ export class ClinicApiService {
     return { ok: true };
   }
 
+  private async assignDoctorViaApiOrSupabase(consultationId: string, doctorId: string) {
+    if (!this.backendToken) {
+      throw new Error('Backend session missing. Please login again.');
+    }
+
+    return this.apiFetch(`/consultations/${consultationId}/assign`, {
+      method: 'POST',
+      body: JSON.stringify({ doctorId })
+    });
+  }
+
   private async fetchReports() {
     const [{ consultations }, { doctors }] = await Promise.all([this.fetchConsultations(), this.fetchDoctors()]);
     const revenueInPaise = consultations
@@ -416,6 +487,32 @@ export class ClinicApiService {
       activeDoctors: doctors.filter((doctor) => doctor.isActive).length,
       consultations
     };
+  }
+
+  private async fetchReportsViaApiOrSupabase() {
+    if (!this.backendToken) {
+      throw new Error('Backend session missing. Please login again.');
+    }
+
+    return this.apiFetch<{ revenueInPaise: number; activeDoctors: number; consultations: unknown[] }>('/admin/reports');
+  }
+
+  private async createDoctorViaApi(payload: {
+    name: string;
+    email: string;
+    mobile?: string;
+    password: string;
+    specialty: string;
+    registrationNo?: string;
+  }) {
+    if (!this.backendToken) {
+      throw new Error('Backend session missing. Please login again.');
+    }
+
+    return this.apiFetch('/admin/doctors', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
   }
 
   private async fetchPatientPrescriptions() {
@@ -585,6 +682,39 @@ export class ClinicApiService {
           createdAt: row['prescription'].created_at
         }
         : null
+    };
+  }
+
+  private toConsultationFromApi(row: Record<string, any>): Consultation {
+    const prescriptions = row['prescriptions'] || [];
+    const latestPrescription = prescriptions[0] || null;
+
+    return {
+      id: row['id'],
+      status: row['status'],
+      intakeAnswers: row['intakeAnswers'] || {},
+      createdAt: row['createdAt'],
+      patient: row['patient'],
+      assignedDoctor: row['assignedDoctor'] || null,
+      disease: row['disease'],
+      payment: row['payment'] || null,
+      messages: row['messages'] || [],
+      prescription: latestPrescription
+        ? {
+            id: latestPrescription.id,
+            notes: latestPrescription.notes,
+            fileUrl: latestPrescription.fileUrl,
+            createdAt: latestPrescription.createdAt
+          }
+        : null,
+      prescriptions: prescriptions.map((prescription: Record<string, any>) => ({
+        id: prescription.id,
+        version: prescription.version,
+        diagnosis: prescription.diagnosis,
+        notes: prescription.notes,
+        fileUrl: prescription.fileUrl,
+        createdAt: prescription.createdAt
+      }))
     };
   }
 }

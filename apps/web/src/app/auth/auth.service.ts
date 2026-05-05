@@ -1,7 +1,9 @@
 import { Injectable, computed, inject } from '@angular/core';
-import { from, map, tap } from 'rxjs';
+import { HttpClient } from '@angular/common/http';
+import { firstValueFrom, from, map, tap } from 'rxjs';
 import { Role, User } from '../models';
 import { SupabaseAuthService } from './supabase-auth.service';
+import { environment } from '../../environments/environment';
 
 type AuthResponse = {
   token: string;
@@ -13,15 +15,33 @@ const tokenKey = 'clinic_token';
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly supabaseAuth = inject(SupabaseAuthService);
+  private readonly http = inject(HttpClient);
+  private readonly apiBase = environment.apiUrl;
 
   readonly user = this.supabaseAuth.user.asReadonly();
   readonly isLoggedIn = computed(() => Boolean(this.user()));
 
   constructor() {
-    void this.supabaseAuth.bootstrapSession();
+    void this.bootstrapSession();
   }
 
-  bootstrapSession() {
+  async bootstrapSession() {
+    const token = this.token;
+    if (token) {
+      try {
+        const response = await firstValueFrom(
+          this.http.get<{ user: User }>(`${this.apiBase}/me`, {
+            headers: { Authorization: `Bearer ${token}` }
+          })
+        );
+        this.supabaseAuth.setAuthenticatedUser(response.user);
+        return response.user;
+      } catch {
+        localStorage.removeItem(tokenKey);
+        this.supabaseAuth.setAuthenticatedUser(null);
+      }
+    }
+
     return this.supabaseAuth.bootstrapSession();
   }
 
@@ -30,14 +50,15 @@ export class AuthService {
   }
 
   requestOtp(mobile: string) {
-    return from(this.supabaseAuth.signInPatientWithOtp(mobile)).pipe(
-      map(() => ({ devOtp: 'Check SMS from Supabase' }))
-    );
+    return from(
+      firstValueFrom(this.http.post<{ devOtp?: string }>(`${this.apiBase}/auth/request-otp`, { mobile }))
+    ).pipe(map((response) => ({ devOtp: response.devOtp || 'Check SMS from backend' })));
   }
 
   patientLogin(payload: { name: string; mobile: string; otp: string }) {
-    return from(this.supabaseAuth.verifyPatientOtp(payload.name, payload.mobile, payload.otp)).pipe(
-      map((user: User): AuthResponse => ({ token: '', user })),
+    return from(
+      firstValueFrom(this.http.post<AuthResponse>(`${this.apiBase}/auth/patient-login`, payload))
+    ).pipe(
       tap((response: AuthResponse) => this.persistSession(response))
     );
   }
@@ -50,8 +71,9 @@ export class AuthService {
   }
 
   staffLogin(payload: { email: string; password: string }) {
-    return from(this.supabaseAuth.signInWithEmail(payload.email, payload.password)).pipe(
-      map((user: User): AuthResponse => ({ token: '', user })),
+    return from(
+      firstValueFrom(this.http.post<AuthResponse>(`${this.apiBase}/auth/staff-login`, payload))
+    ).pipe(
       tap((response: AuthResponse) => this.persistSession(response))
     );
   }
@@ -89,7 +111,7 @@ export class AuthService {
   }
 
   dashboardFor(role: Role) {
-    if (role === 'ADMIN') {
+    if (role === 'ADMIN' || role === 'SUPER_ADMIN') {
       return '/admin/dashboard';
     }
 
@@ -101,6 +123,9 @@ export class AuthService {
   }
 
   private persistSession(response: AuthResponse) {
-    localStorage.setItem(tokenKey, response.token);
+    if (response.token) {
+      localStorage.setItem(tokenKey, response.token);
+    }
+    this.supabaseAuth.setAuthenticatedUser(response.user);
   }
 }

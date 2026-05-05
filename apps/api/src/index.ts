@@ -498,7 +498,7 @@ app.get(
 app.post(
   '/admin/diseases',
   authRequired,
-  allowRoles(Role.ADMIN),
+  allowRoles(Role.ADMIN, Role.SUPER_ADMIN),
   asyncRoute(async (req, res) => {
     const body = z
       .object({
@@ -517,7 +517,7 @@ app.post(
 app.get(
   '/admin/doctors',
   authRequired,
-  allowRoles(Role.ADMIN),
+  allowRoles(Role.ADMIN, Role.SUPER_ADMIN),
   asyncRoute(async (_req, res) => {
     const doctors = await prisma.user.findMany({
       where: { role: Role.DOCTOR },
@@ -532,7 +532,7 @@ app.get(
 app.get(
   '/admin/doctors/pending',
   authRequired,
-  allowRoles(Role.ADMIN),
+  allowRoles(Role.SUPER_ADMIN),
   asyncRoute(async (_req, res) => {
     const pendingDoctors = await prisma.user.findMany({
       where: { role: Role.DOCTOR, isActive: false },
@@ -547,7 +547,7 @@ app.get(
 app.post(
   '/admin/doctors/:id/approve',
   authRequired,
-  allowRoles(Role.ADMIN),
+  allowRoles(Role.SUPER_ADMIN),
   asyncRoute(async (req, res) => {
     const doctorId = routeParam(req, 'id');
     const doctor = await prisma.user.update({
@@ -563,7 +563,7 @@ app.post(
 app.post(
   '/admin/doctors/:id/reject',
   authRequired,
-  allowRoles(Role.ADMIN),
+  allowRoles(Role.SUPER_ADMIN),
   asyncRoute(async (req, res) => {
     const doctorId = routeParam(req, 'id');
     const doctor = await prisma.user.update({
@@ -579,7 +579,7 @@ app.post(
 app.post(
   '/admin/doctors',
   authRequired,
-  allowRoles(Role.ADMIN),
+  allowRoles(Role.SUPER_ADMIN),
   asyncRoute(async (req, res) => {
     const body = z
       .object({
@@ -694,7 +694,7 @@ app.get(
 app.post(
   '/consultations/:id/assign',
   authRequired,
-  allowRoles(Role.ADMIN),
+  allowRoles(Role.ADMIN, Role.SUPER_ADMIN),
   asyncRoute(async (req, res) => {
     const body = z.object({ doctorId: z.string().min(1) }).parse(req.body);
     const doctor = await prisma.user.findFirstOrThrow({
@@ -1475,7 +1475,7 @@ app.post(
 app.get(
   '/admin/reports',
   authRequired,
-  allowRoles(Role.ADMIN),
+  allowRoles(Role.ADMIN, Role.SUPER_ADMIN),
   asyncRoute(async (_req, res) => {
     const [consultations, revenue, doctors] = await Promise.all([
       prisma.consultation.groupBy({ by: ['status'], _count: true }),
