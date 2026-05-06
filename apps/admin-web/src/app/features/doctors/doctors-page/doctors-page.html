@@ -94,6 +94,13 @@
       <p>Registration No: {{ selectedDoctor.doctorProfile?.registrationNo || 'N/A' }}</p>
       <p>Status: {{ selectedDoctor.isActive ? 'Active' : 'Inactive' }}</p>
       <p>Available: {{ selectedDoctor.doctorProfile?.isAvailable ? 'Yes' : 'No' }}</p>
+      <div class="actions">
+        @if (selectedDoctor.isActive) {
+          <button type="button" (click)="toggleDoctorStatus(selectedDoctor.id, false)">Deactivate</button>
+        } @else {
+          <button type="button" (click)="toggleDoctorStatus(selectedDoctor.id, true)">Activate</button>
+        }
+      </div>
     </article>
   } @else {
     <p>Select a doctor from the list to view profile details.</p>

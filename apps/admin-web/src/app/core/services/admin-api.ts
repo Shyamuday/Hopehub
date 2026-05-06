@@ -76,6 +76,12 @@ export class AdminApi {
     return firstValueFrom(this.http.post(`${this.apiBase}/admin/doctors/${doctorId}/reject`, {}, { headers: this.headers() }));
   }
 
+  setDoctorStatus(doctorId: string, isActive: boolean) {
+    return firstValueFrom(
+      this.http.post(`${this.apiBase}/admin/doctors/${doctorId}/status`, { isActive }, { headers: this.headers() })
+    );
+  }
+
   getConsultations() {
     return firstValueFrom(
       this.http.get<{ consultations: Array<any> }>(`${this.apiBase}/consultations`, { headers: this.headers() })
@@ -100,6 +106,15 @@ export class AdminApi {
           sortDirection: params.sortDirection ?? 'desc'
         }
       })
+    );
+  }
+
+  getConsumerDetail(consumerId: string) {
+    return firstValueFrom(
+      this.http.get<{ consumer: any; consultations: Array<any>; adherence: any }>(
+        `${this.apiBase}/admin/consumers/${consumerId}`,
+        { headers: this.headers() }
+      )
     );
   }
 }

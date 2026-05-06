@@ -14,6 +14,7 @@
   @for (consumer of visibleConsumers(); track consumer.id) {
     <article class="card">
       <strong>{{ consumer.name }}</strong>
+      <button type="button" class="link" (click)="selectConsumer(consumer.id)">View details</button>
       <p>{{ consumer.email || 'No email' }} | {{ consumer.mobile || 'No mobile' }}</p>
       <small>Total consultations: {{ consumer.consultations }}</small>
     </article>
@@ -25,6 +26,34 @@
       <button type="button" [class.active]="page === p" (click)="setPage(p)">{{ p }}</button>
     }
   </div>
+</section>
+
+<section class="panel">
+  <h2>Consumer Details</h2>
+  @if (detailLoading) {
+    <p>Loading detail...</p>
+  } @else if (consumerDetail; as detail) {
+    <article class="card">
+      <strong>{{ detail.consumer.name }}</strong>
+      <p>{{ detail.consumer.email || 'No email' }} | {{ detail.consumer.mobile || 'No mobile' }}</p>
+      <small>Adherence: {{ detail.adherence.percent }}% (Taken {{ detail.adherence.taken }} / {{ detail.adherence.total }})</small>
+      <small>Skipped: {{ detail.adherence.skipped }} | Missed: {{ detail.adherence.missed }}</small>
+    </article>
+
+    <h3>Recent Consultations</h3>
+    @for (consultation of detail.consultations; track consultation.id) {
+      <article class="card">
+        <strong>{{ consultation.disease?.name || 'Consultation' }}</strong>
+        <p>Status: {{ consultation.status }} | Date: {{ consultation.createdAt | date: 'medium' }}</p>
+        <small>Assigned doctor: {{ consultation.assignedDoctor?.name || 'Not assigned' }}</small>
+        <small>Prescriptions: {{ consultation.prescriptions?.length || 0 }}</small>
+      </article>
+    } @empty {
+      <p>No consultations found for this consumer.</p>
+    }
+  } @else {
+    <p>Select a consumer to view details.</p>
+  }
 </section>
 
 @if (error) {

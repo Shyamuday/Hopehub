@@ -11,6 +11,30 @@ type Consumer = {
   consultations: number;
 };
 
+type ConsumerDetail = {
+  consumer: {
+    id: string;
+    name: string;
+    email?: string;
+    mobile?: string;
+  };
+  consultations: Array<{
+    id: string;
+    status: string;
+    createdAt: string;
+    disease?: { name?: string };
+    assignedDoctor?: { name?: string } | null;
+    prescriptions?: Array<{ id: string; status?: string }>;
+  }>;
+  adherence: {
+    total: number;
+    taken: number;
+    skipped: number;
+    missed: number;
+    percent: number;
+  };
+};
+
 @Component({
   selector: 'app-consumers-page',
   imports: [CommonModule, FormsModule],
@@ -19,6 +43,9 @@ type Consumer = {
 })
 export class ConsumersPage {
   consumers: Consumer[] = [];
+  selectedConsumerId = '';
+  consumerDetail: ConsumerDetail | null = null;
+  detailLoading = false;
   searchTerm = '';
   sortBy: 'name' | 'consultations' = 'consultations';
   sortDirection: 'asc' | 'desc' = 'desc';
@@ -43,6 +70,14 @@ export class ConsumersPage {
       });
       this.consumers = response.consumers || [];
       this.totalPagesCount = Math.max(1, Number(response.pagination?.totalPages || 1));
+      if (!this.selectedConsumerId) {
+        this.selectedConsumerId = this.consumers[0]?.id || '';
+      }
+      if (this.selectedConsumerId) {
+        await this.loadConsumerDetail(this.selectedConsumerId);
+      } else {
+        this.consumerDetail = null;
+      }
     } catch {
       this.error = 'Could not load consumers.';
     }
@@ -63,6 +98,24 @@ export class ConsumersPage {
 
   pages() {
     return Array.from({ length: this.totalPages() }, (_, index) => index + 1);
+  }
+
+  async selectConsumer(consumerId: string) {
+    this.selectedConsumerId = consumerId;
+    await this.loadConsumerDetail(consumerId);
+  }
+
+  private async loadConsumerDetail(consumerId: string) {
+    this.detailLoading = true;
+    this.error = '';
+    try {
+      this.consumerDetail = (await this.api.getConsumerDetail(consumerId)) as ConsumerDetail;
+    } catch {
+      this.error = 'Could not load consumer details.';
+      this.consumerDetail = null;
+    } finally {
+      this.detailLoading = false;
+    }
   }
 
 }

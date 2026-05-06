@@ -718,6 +718,50 @@ app.get(
   })
 );
 
+app.get(
+  '/admin/consumers/:id',
+  authRequired,
+  allowRoles(Role.ADMIN),
+  asyncRoute(async (req, res) => {
+    const patientId = routeParam(req, 'id');
+    const patient = await prisma.user.findFirst({
+      where: { id: patientId, role: Role.PATIENT },
+      select: publicUserSelect
+    });
+
+    if (!patient) {
+      return res.status(404).json({ message: 'Consumer not found' });
+    }
+
+    const consultations = await prisma.consultation.findMany({
+      where: { patientId },
+      include: includeConsultationRelations(),
+      orderBy: { createdAt: 'desc' },
+      take: 20
+    });
+
+    const [totalDoseEvents, takenDoseEvents, skippedDoseEvents, missedDoseEvents] = await Promise.all([
+      prisma.medicineDoseEvent.count({ where: { patientId } }),
+      prisma.medicineDoseEvent.count({ where: { patientId, status: DoseEventStatus.TAKEN } }),
+      prisma.medicineDoseEvent.count({ where: { patientId, status: DoseEventStatus.SKIPPED } }),
+      prisma.medicineDoseEvent.count({ where: { patientId, status: DoseEventStatus.MISSED } })
+    ]);
+
+    const adherencePercent = totalDoseEvents ? Math.round((takenDoseEvents / totalDoseEvents) * 100) : 0;
+    res.json({
+      consumer: patient,
+      consultations,
+      adherence: {
+        total: totalDoseEvents,
+        taken: takenDoseEvents,
+        skipped: skippedDoseEvents,
+        missed: missedDoseEvents,
+        percent: adherencePercent
+      }
+    });
+  })
+);
+
 app.post(
   '/admin/doctors/:id/approve',
   authRequired,
@@ -747,6 +791,34 @@ app.post(
     });
 
     res.json({ doctor, message: 'Doctor marked as not approved.' });
+  })
+);
+
+app.post(
+  '/admin/doctors/:id/status',
+  authRequired,
+  allowRoles(Role.ADMIN),
+  asyncRoute(async (req, res) => {
+    const doctorId = routeParam(req, 'id');
+    const body = z.object({ isActive: z.boolean() }).parse(req.body);
+    const existing = await prisma.user.findFirst({
+      where: { id: doctorId, role: Role.DOCTOR },
+      select: { id: true }
+    });
+    if (!existing) {
+      return res.status(404).json({ message: 'Doctor not found' });
+    }
+
+    const doctor = await prisma.user.update({
+      where: { id: doctorId },
+      data: { isActive: body.isActive },
+      select: { ...publicUserSelect, isActive: true, doctorProfile: true }
+    });
+
+    res.json({
+      doctor,
+      message: body.isActive ? 'Doctor activated successfully.' : 'Doctor deactivated successfully.'
+    });
   })
 );
 

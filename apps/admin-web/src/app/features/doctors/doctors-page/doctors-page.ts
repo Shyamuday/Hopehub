@@ -101,6 +101,19 @@ export class DoctorsPage {
     }
   }
 
+  async toggleDoctorStatus(doctorId: string, makeActive: boolean) {
+    this.message = '';
+    this.error = '';
+    try {
+      await this.api.setDoctorStatus(doctorId, makeActive);
+      this.message = makeActive ? 'Doctor activated.' : 'Doctor deactivated.';
+      await this.load();
+      this.selectedDoctorId = doctorId;
+    } catch {
+      this.error = 'Could not update doctor status.';
+    }
+  }
+
   togglePendingDoctorSelection(doctorId: string, checked: boolean) {
     if (checked) {
       if (!this.selectedPendingDoctorIds.includes(doctorId)) {
