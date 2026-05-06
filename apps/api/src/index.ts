@@ -27,6 +27,8 @@ const googleClient = googleClientId ? new OAuth2Client(googleClientId) : null;
 const razorpayKeyId = process.env.RAZORPAY_KEY_ID || '';
 const razorpayKeySecret = process.env.RAZORPAY_KEY_SECRET || '';
 const razorpayWebhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET || '';
+const doseOverdueSweepEnabled = (process.env.DOSE_OVERDUE_SWEEP_ENABLED || 'true').toLowerCase() !== 'false';
+const doseOverdueSweepIntervalMs = Math.max(60_000, Number(process.env.DOSE_OVERDUE_SWEEP_INTERVAL_MS || 5 * 60_000));
 
 app.use(cors({ origin: webOrigin, credentials: true }));
 app.use('/payments/razorpay-webhook', express.raw({ type: 'application/json' }));
@@ -216,6 +218,23 @@ function verifyRazorpaySignature(payload: {
     .digest('hex');
 
   return crypto.timingSafeEqual(Buffer.from(digest), Buffer.from(payload.razorpaySignature));
+}
+
+async function markOverdueDosesAsMissed() {
+  const now = new Date();
+  const result = await prisma.medicineDoseEvent.updateMany({
+    where: {
+      status: DoseEventStatus.PENDING,
+      scheduledFor: { lt: now }
+    },
+    data: {
+      status: DoseEventStatus.MISSED
+    }
+  });
+
+  if (result.count > 0) {
+    console.info(`[scheduler] Marked ${result.count} overdue dose event(s) as MISSED`);
+  }
 }
 
 app.get('/health', (_req, res) => {
@@ -1751,4 +1770,20 @@ app.use((error: unknown, _req: express.Request, res: express.Response, _next: ex
 
 app.listen(port, () => {
   console.log(`Clinic API running on http://localhost:${port}`);
+  if (!doseOverdueSweepEnabled) {
+    console.log('[scheduler] Overdue dose sweep disabled');
+    return;
+  }
+
+  console.log(`[scheduler] Overdue dose sweep enabled (interval: ${doseOverdueSweepIntervalMs}ms)`);
+  void markOverdueDosesAsMissed().catch((error) => {
+    console.error('[scheduler] Initial overdue sweep failed', error);
+  });
+
+  const timer = setInterval(() => {
+    void markOverdueDosesAsMissed().catch((error) => {
+      console.error('[scheduler] Overdue sweep failed', error);
+    });
+  }, doseOverdueSweepIntervalMs);
+  timer.unref();
 });
