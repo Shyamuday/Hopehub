@@ -516,117 +516,81 @@ export class ClinicApiService {
   }
 
   private async fetchPatientPrescriptions() {
-    const {
-      data: { user }
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      throw new Error('Login required.');
+    if (!this.backendToken) {
+      throw new Error('Backend session missing. Please login again.');
     }
 
-    const { data, error } = await supabase
-      .from('prescriptions')
-      .select(
-        `
-          *,
-          method_option:prescription_options!prescriptions_method_option_id_fkey(label),
-          diagnosed_disease_option:prescription_options!prescriptions_diagnosed_disease_option_id_fkey(label),
-          items:prescription_items(*)
-        `
-      )
-      .eq('patient_id', user.id)
-      .eq('status', 'PUBLISHED')
-      .order('created_at', { ascending: false });
+    const response = await this.apiFetch<{ prescriptions: Array<Record<string, any>> }>('/patient/prescriptions');
+    return { prescriptions: (response.prescriptions || []).map((row) => this.toPatientPrescriptionFromApi(row)) };
+  }
 
-    if (error) {
-      throw error;
+  private async fetchTodayDoseEvents() {
+    if (!this.backendToken) {
+      throw new Error('Backend session missing. Please login again.');
     }
 
-    const prescriptions: Prescription[] = (data || []).map((row: Record<string, any>) => ({
+    const response = await this.apiFetch<{ doses: Array<Record<string, any>> }>('/patient/today-doses');
+    return { doseEvents: (response.doses || []).map((row) => this.toDoseEventFromApi(row)) };
+  }
+
+  private async updateDoseEventStatus(doseEventId: string, status: 'TAKEN' | 'SKIPPED', note?: string) {
+    if (!this.backendToken) {
+      throw new Error('Backend session missing. Please login again.');
+    }
+
+    if (status === 'TAKEN') {
+      return this.apiFetch(`/patient/dose-events/${doseEventId}/take`, { method: 'POST' });
+    }
+
+    return this.apiFetch(`/patient/dose-events/${doseEventId}/skip`, {
+      method: 'POST',
+      body: JSON.stringify(note ? { note } : {})
+    });
+  }
+
+  private toPatientPrescriptionFromApi(row: Record<string, any>): Prescription {
+    return {
       id: row['id'],
       version: row['version'],
       diagnosis: row['diagnosis'],
       advice: row['advice'],
-      notes: row['notes'],
-      fileUrl: row['file_url'],
+      notes: row['notes'] || '',
+      fileUrl: row['fileUrl'],
       status: row['status'],
-      followUpDate: row['follow_up_date'],
-      method: row['method_option']?.label || null,
-      diagnosedDisease: row['diagnosed_disease_option']?.label || null,
+      followUpDate: row['followUpDate'],
+      method: row['methodOption']?.label || null,
+      diagnosedDisease: row['diagnosedDiseaseOption']?.label || null,
       items: (row['items'] || []).map((item: Record<string, any>) => ({
         id: item['id'],
-        medicineName: item['medicine_name'],
+        medicineName: item['medicineName'],
         strength: item['strength'],
         dose: item['dose'],
         frequency: item['frequency'],
         duration: item['duration'],
         instructions: item['instructions']
       })),
-      createdAt: row['created_at']
-    }));
-
-    return { prescriptions };
+      createdAt: row['createdAt']
+    };
   }
 
-  private async fetchTodayDoseEvents() {
-    const {
-      data: { user }
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      throw new Error('Login required.');
-    }
-
-    const start = new Date();
-    start.setHours(0, 0, 0, 0);
-    const end = new Date(start);
-    end.setDate(end.getDate() + 1);
-
-    const { data, error } = await supabase
-      .from('medicine_dose_events')
-      .select('*, prescription_item:prescription_items(*)')
-      .eq('patient_id', user.id)
-      .gte('scheduled_for', start.toISOString())
-      .lt('scheduled_for', end.toISOString())
-      .order('scheduled_for', { ascending: true });
-
-    if (error) {
-      throw error;
-    }
-
-    const doseEvents: DoseEvent[] = (data || []).map((row: Record<string, any>) => ({
+  private toDoseEventFromApi(row: Record<string, any>): DoseEvent {
+    return {
       id: row['id'],
-      scheduledFor: row['scheduled_for'],
+      scheduledFor: row['scheduledFor'],
       status: row['status'],
       note: row['note'],
-      takenAt: row['taken_at'],
-      skippedAt: row['skipped_at'],
+      takenAt: row['takenAt'],
+      skippedAt: row['skippedAt'],
       prescriptionItem: {
-        id: row['prescription_item']?.id || '',
-        medicineName: row['prescription_item']?.medicine_name || 'Medicine',
-        strength: row['prescription_item']?.strength,
-        dose: row['prescription_item']?.dose,
-        frequency: row['prescription_item']?.frequency,
-        duration: row['prescription_item']?.duration,
-        instructions: row['prescription_item']?.instructions
+        id: row['prescriptionItem']?.id || '',
+        medicineName: row['prescriptionItem']?.medicineName || 'Medicine',
+        strength: row['prescriptionItem']?.strength,
+        dose: row['prescriptionItem']?.dose,
+        frequency: row['prescriptionItem']?.frequency,
+        duration: row['prescriptionItem']?.duration,
+        instructions: row['prescriptionItem']?.instructions
       }
-    }));
-
-    return { doseEvents };
-  }
-
-  private async updateDoseEventStatus(doseEventId: string, status: 'TAKEN' | 'SKIPPED', note?: string) {
-    const payload =
-      status === 'TAKEN'
-        ? { status, taken_at: new Date().toISOString(), skipped_at: null }
-        : { status, skipped_at: new Date().toISOString(), note: note || null };
-    const { error } = await supabase.from('medicine_dose_events').update(payload).eq('id', doseEventId);
-
-    if (error) {
-      throw error;
-    }
-
-    return { ok: true };
+    };
   }
 
   private toDisease(row: Record<string, any>): Disease {
@@ -701,19 +665,19 @@ export class ClinicApiService {
       messages: row['messages'] || [],
       prescription: latestPrescription
         ? {
-            id: latestPrescription.id,
-            notes: latestPrescription.notes,
-            fileUrl: latestPrescription.fileUrl,
-            createdAt: latestPrescription.createdAt
+            id: latestPrescription['id'],
+            notes: latestPrescription['notes'],
+            fileUrl: latestPrescription['fileUrl'],
+            createdAt: latestPrescription['createdAt']
           }
         : null,
       prescriptions: prescriptions.map((prescription: Record<string, any>) => ({
-        id: prescription.id,
-        version: prescription.version,
-        diagnosis: prescription.diagnosis,
-        notes: prescription.notes,
-        fileUrl: prescription.fileUrl,
-        createdAt: prescription.createdAt
+        id: prescription['id'],
+        version: prescription['version'],
+        diagnosis: prescription['diagnosis'],
+        notes: prescription['notes'],
+        fileUrl: prescription['fileUrl'],
+        createdAt: prescription['createdAt']
       }))
     };
   }

@@ -38,6 +38,8 @@ export class DoctorsPage {
   pageSize = 6;
   doctorsPage = 1;
   pendingPage = 1;
+  doctorsTotalPagesCount = 1;
+  pendingTotalPagesCount = 1;
 
   error = '';
   message = '';
@@ -49,9 +51,25 @@ export class DoctorsPage {
   async load() {
     this.error = '';
     try {
-      const [allDoctors, pending] = await Promise.all([this.api.getDoctors(), this.api.getPendingDoctors()]);
+      const [allDoctors, pending] = await Promise.all([
+        this.api.getDoctorsPaged({
+          page: this.doctorsPage,
+          pageSize: this.pageSize,
+          q: this.searchTerm,
+          status: this.statusFilter,
+          sortBy: this.sortBy,
+          sortDirection: this.sortDirection
+        }),
+        this.api.getPendingDoctorsPaged({
+          page: this.pendingPage,
+          pageSize: this.pageSize,
+          q: this.pendingSearchTerm
+        })
+      ]);
       this.doctors = allDoctors.doctors || [];
       this.pendingDoctors = pending.pendingDoctors || [];
+      this.doctorsTotalPagesCount = Math.max(1, Number(allDoctors.pagination?.totalPages || 1));
+      this.pendingTotalPagesCount = Math.max(1, Number(pending.pagination?.totalPages || 1));
       this.selectedPendingDoctorIds = [];
       this.selectedDoctorId = this.visibleDoctors()[0]?.id || '';
     } catch {
@@ -149,30 +167,30 @@ export class DoctorsPage {
     }
   }
 
-  setDoctorsPage(page: number) {
+  async setDoctorsPage(page: number) {
     this.doctorsPage = page;
+    await this.load();
   }
 
-  setPendingPage(page: number) {
+  async setPendingPage(page: number) {
     this.pendingPage = page;
+    await this.load();
   }
 
   visibleDoctors() {
-    const filtered = this.sortedDoctors(this.filteredDoctors(this.doctors));
-    return this.paginate(filtered, this.doctorsPage, this.pageSize);
+    return this.doctors;
   }
 
   visiblePendingDoctors() {
-    const filtered = this.sortedDoctors(this.filteredPendingDoctors(this.pendingDoctors));
-    return this.paginate(filtered, this.pendingPage, this.pageSize);
+    return this.pendingDoctors;
   }
 
   doctorsTotalPages() {
-    return Math.max(1, Math.ceil(this.filteredDoctors(this.doctors).length / this.pageSize));
+    return this.doctorsTotalPagesCount;
   }
 
   pendingTotalPages() {
-    return Math.max(1, Math.ceil(this.filteredPendingDoctors(this.pendingDoctors).length / this.pageSize));
+    return this.pendingTotalPagesCount;
   }
 
   doctorsPages() {
@@ -187,68 +205,4 @@ export class DoctorsPage {
     return this.doctors.find((doctor) => doctor.id === this.selectedDoctorId) || null;
   }
 
-  private filteredDoctors(input: Doctor[]) {
-    const search = this.searchTerm.trim().toLowerCase();
-    return input.filter((doctor) => {
-      const statusOk =
-        this.statusFilter === 'ALL' ||
-        (this.statusFilter === 'ACTIVE' && doctor.isActive) ||
-        (this.statusFilter === 'INACTIVE' && !doctor.isActive);
-
-      if (!statusOk) {
-        return false;
-      }
-
-      if (!search) {
-        return true;
-      }
-
-      return [doctor.name, doctor.email || '', doctor.mobile || '', doctor.doctorProfile?.specialty || '']
-        .join(' ')
-        .toLowerCase()
-        .includes(search);
-    });
-  }
-
-  private filteredPendingDoctors(input: Doctor[]) {
-    const search = this.pendingSearchTerm.trim().toLowerCase();
-    return input.filter((doctor) => {
-      if (!search) {
-        return true;
-      }
-
-      return [doctor.name, doctor.email || '', doctor.mobile || '', doctor.doctorProfile?.specialty || '']
-        .join(' ')
-        .toLowerCase()
-        .includes(search);
-    });
-  }
-
-  private sortedDoctors(input: Doctor[]) {
-    const sorted = [...input];
-    sorted.sort((a, b) => {
-      let left = '';
-      let right = '';
-
-      if (this.sortBy === 'createdAt') {
-        left = a.createdAt || '';
-        right = b.createdAt || '';
-      } else if (this.sortBy === 'status') {
-        left = a.isActive ? 'ACTIVE' : 'INACTIVE';
-        right = b.isActive ? 'ACTIVE' : 'INACTIVE';
-      } else {
-        left = a.name || '';
-        right = b.name || '';
-      }
-
-      const compare = left.localeCompare(right);
-      return this.sortDirection === 'asc' ? compare : -compare;
-    });
-    return sorted;
-  }
-
-  private paginate<T>(input: T[], page: number, pageSize: number) {
-    const start = (Math.max(page, 1) - 1) * pageSize;
-    return input.slice(start, start + pageSize);
-  }
 }

@@ -24,6 +24,7 @@ export class ConsumersPage {
   sortDirection: 'asc' | 'desc' = 'desc';
   pageSize = 8;
   page = 1;
+  totalPagesCount = 1;
   error = '';
 
   constructor(private readonly api: AdminApi) {
@@ -33,72 +34,35 @@ export class ConsumersPage {
   async load() {
     this.error = '';
     try {
-      const response = await this.api.getConsultations();
-      const consultations = response.consultations || [];
-      const grouped = new Map<string, Consumer>();
-
-      for (const consultation of consultations) {
-        const patient = consultation.patient;
-        if (!patient?.id) {
-          continue;
-        }
-
-        const existing = grouped.get(patient.id);
-        if (existing) {
-          existing.consultations += 1;
-          continue;
-        }
-
-        grouped.set(patient.id, {
-          id: patient.id,
-          name: patient.name || 'Unknown',
-          email: patient.email || '',
-          mobile: patient.mobile || '',
-          consultations: 1
-        });
-      }
-
-      this.consumers = Array.from(grouped.values()).sort((a, b) => b.consultations - a.consultations);
+      const response = await this.api.getConsumersPaged({
+        page: this.page,
+        pageSize: this.pageSize,
+        q: this.searchTerm,
+        sortBy: this.sortBy,
+        sortDirection: this.sortDirection
+      });
+      this.consumers = response.consumers || [];
+      this.totalPagesCount = Math.max(1, Number(response.pagination?.totalPages || 1));
     } catch {
       this.error = 'Could not load consumers.';
     }
   }
 
-  setPage(page: number) {
+  async setPage(page: number) {
     this.page = page;
+    await this.load();
   }
 
   visibleConsumers() {
-    const filtered = this.filteredConsumers();
-    const start = (Math.max(this.page, 1) - 1) * this.pageSize;
-    return filtered.slice(start, start + this.pageSize);
+    return this.consumers;
   }
 
   totalPages() {
-    return Math.max(1, Math.ceil(this.filteredConsumers().length / this.pageSize));
+    return this.totalPagesCount;
   }
 
   pages() {
     return Array.from({ length: this.totalPages() }, (_, index) => index + 1);
   }
 
-  private filteredConsumers() {
-    const search = this.searchTerm.trim().toLowerCase();
-    const filtered = this.consumers.filter((consumer) => {
-      if (!search) {
-        return true;
-      }
-
-      return [consumer.name, consumer.email || '', consumer.mobile || ''].join(' ').toLowerCase().includes(search);
-    });
-
-    filtered.sort((a, b) => {
-      const left = this.sortBy === 'name' ? a.name : String(a.consultations);
-      const right = this.sortBy === 'name' ? b.name : String(b.consultations);
-      const compare = left.localeCompare(right, undefined, { numeric: true });
-      return this.sortDirection === 'asc' ? compare : -compare;
-    });
-
-    return filtered;
-  }
 }

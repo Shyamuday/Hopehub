@@ -2,11 +2,11 @@
   <h2>Consumers (Patients)</h2>
   <div class="toolbar">
     <input placeholder="Search consumers..." name="searchTerm" [(ngModel)]="searchTerm" (ngModelChange)="setPage(1)" />
-    <select name="sortBy" [(ngModel)]="sortBy">
+    <select name="sortBy" [(ngModel)]="sortBy" (ngModelChange)="setPage(1)">
       <option value="consultations">Sort by consultations</option>
       <option value="name">Sort by name</option>
     </select>
-    <select name="sortDirection" [(ngModel)]="sortDirection">
+    <select name="sortDirection" [(ngModel)]="sortDirection" (ngModelChange)="setPage(1)">
       <option value="desc">Desc</option>
       <option value="asc">Asc</option>
     </select>

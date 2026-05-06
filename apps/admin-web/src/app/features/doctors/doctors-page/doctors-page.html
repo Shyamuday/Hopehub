@@ -56,12 +56,12 @@
       <option value="ACTIVE">Active only</option>
       <option value="INACTIVE">Inactive only</option>
     </select>
-    <select name="sortBy" [(ngModel)]="sortBy">
+    <select name="sortBy" [(ngModel)]="sortBy" (ngModelChange)="setDoctorsPage(1)">
       <option value="name">Sort by name</option>
       <option value="createdAt">Sort by created time</option>
       <option value="status">Sort by status</option>
     </select>
-    <select name="sortDirection" [(ngModel)]="sortDirection">
+    <select name="sortDirection" [(ngModel)]="sortDirection" (ngModelChange)="setDoctorsPage(1)">
       <option value="asc">Asc</option>
       <option value="desc">Desc</option>
     </select>

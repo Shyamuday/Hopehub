@@ -164,8 +164,33 @@ function routeParam(req: express.Request, key: string) {
   return Array.isArray(value) ? value[0] : value;
 }
 
+function queryText(req: express.Request, key: string) {
+  const value = req.query[key];
+  if (Array.isArray(value)) {
+    return String(value[0] || '');
+  }
+
+  return typeof value === 'string' ? value : '';
+}
+
+function queryPositiveInt(req: express.Request, key: string, fallback: number, min = 1, max = 100) {
+  const parsed = Number(queryText(req, key));
+  if (!Number.isFinite(parsed)) {
+    return fallback;
+  }
+
+  return Math.min(max, Math.max(min, Math.floor(parsed)));
+}
+
 function hashToken(token: string) {
   return crypto.createHash('sha256').update(token).digest('hex');
+}
+
+function logAuthEvent(event: 'staff_login_success' | 'staff_login_failure', details: Record<string, unknown>) {
+  console.info(`[auth] ${event}`, {
+    at: new Date().toISOString(),
+    ...details
+  });
 }
 
 function randomToken() {
@@ -371,23 +396,28 @@ app.post(
     });
 
     if (!user?.passwordHash || user.role === Role.PATIENT) {
+      logAuthEvent('staff_login_failure', { email: body.email, reason: 'invalid_credentials' });
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
     if (!user.isActive && user.role === Role.DOCTOR) {
+      logAuthEvent('staff_login_failure', { userId: user.id, role: user.role, reason: 'doctor_pending_approval' });
       return res.status(403).json({ message: 'Doctor account is pending admin approval.' });
     }
 
     if (!user.isActive) {
+      logAuthEvent('staff_login_failure', { userId: user.id, role: user.role, reason: 'inactive_account' });
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
     const isValid = await bcrypt.compare(body.password, user.passwordHash);
     if (!isValid) {
+      logAuthEvent('staff_login_failure', { userId: user.id, role: user.role, reason: 'invalid_credentials' });
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
     const { passwordHash: _passwordHash, isActive: _isActive, ...safeUser } = user;
+    logAuthEvent('staff_login_success', { userId: safeUser.id, role: safeUser.role });
     res.json(toAuthResponse(safeUser));
   })
 );
@@ -518,14 +548,55 @@ app.get(
   '/admin/doctors',
   authRequired,
   allowRoles(Role.ADMIN),
-  asyncRoute(async (_req, res) => {
+  asyncRoute(async (req, res) => {
+    const page = queryPositiveInt(req, 'page', 1);
+    const pageSize = queryPositiveInt(req, 'pageSize', 10);
+    const query = queryText(req, 'q').trim();
+    const status = queryText(req, 'status').toUpperCase();
+    const sortBy = queryText(req, 'sortBy');
+    const sortDirection = queryText(req, 'sortDirection').toLowerCase() === 'asc' ? 'asc' : 'desc';
+
+    const where = {
+      role: Role.DOCTOR,
+      ...(status === 'ACTIVE' ? { isActive: true } : {}),
+      ...(status === 'INACTIVE' ? { isActive: false } : {}),
+      ...(query
+        ? {
+            OR: [
+              { name: { contains: query, mode: 'insensitive' as const } },
+              { email: { contains: query, mode: 'insensitive' as const } },
+              { mobile: { contains: query, mode: 'insensitive' as const } },
+              { doctorProfile: { specialty: { contains: query, mode: 'insensitive' as const } } }
+            ]
+          }
+        : {})
+    };
+
+    const orderBy =
+      sortBy === 'name'
+        ? ({ name: sortDirection } as const)
+        : sortBy === 'status'
+          ? ({ isActive: sortDirection } as const)
+          : ({ createdAt: sortDirection } as const);
+
+    const total = await prisma.user.count({ where });
     const doctors = await prisma.user.findMany({
-      where: { role: Role.DOCTOR },
-      select: { ...publicUserSelect, isActive: true, doctorProfile: true },
-      orderBy: { createdAt: 'desc' }
+      where,
+      select: { ...publicUserSelect, isActive: true, createdAt: true, doctorProfile: true },
+      orderBy,
+      skip: (page - 1) * pageSize,
+      take: pageSize
     });
 
-    res.json({ doctors });
+    res.json({
+      doctors,
+      pagination: {
+        page,
+        pageSize,
+        total,
+        totalPages: Math.max(1, Math.ceil(total / pageSize))
+      }
+    });
   })
 );
 
@@ -533,14 +604,117 @@ app.get(
   '/admin/doctors/pending',
   authRequired,
   allowRoles(Role.ADMIN),
-  asyncRoute(async (_req, res) => {
+  asyncRoute(async (req, res) => {
+    const page = queryPositiveInt(req, 'page', 1);
+    const pageSize = queryPositiveInt(req, 'pageSize', 10);
+    const query = queryText(req, 'q').trim();
+
+    const where = {
+      role: Role.DOCTOR,
+      isActive: false,
+      ...(query
+        ? {
+            OR: [
+              { name: { contains: query, mode: 'insensitive' as const } },
+              { email: { contains: query, mode: 'insensitive' as const } },
+              { mobile: { contains: query, mode: 'insensitive' as const } },
+              { doctorProfile: { specialty: { contains: query, mode: 'insensitive' as const } } }
+            ]
+          }
+        : {})
+    };
+
+    const total = await prisma.user.count({ where });
     const pendingDoctors = await prisma.user.findMany({
-      where: { role: Role.DOCTOR, isActive: false },
+      where,
       select: { ...publicUserSelect, isActive: true, createdAt: true, doctorProfile: true },
-      orderBy: { createdAt: 'asc' }
+      orderBy: { createdAt: 'asc' },
+      skip: (page - 1) * pageSize,
+      take: pageSize
     });
 
-    res.json({ pendingDoctors });
+    res.json({
+      pendingDoctors,
+      pagination: {
+        page,
+        pageSize,
+        total,
+        totalPages: Math.max(1, Math.ceil(total / pageSize))
+      }
+    });
+  })
+);
+
+app.get(
+  '/admin/consumers',
+  authRequired,
+  allowRoles(Role.ADMIN),
+  asyncRoute(async (req, res) => {
+    const page = queryPositiveInt(req, 'page', 1);
+    const pageSize = queryPositiveInt(req, 'pageSize', 10);
+    const query = queryText(req, 'q').trim().toLowerCase();
+    const sortBy = queryText(req, 'sortBy');
+    const sortDirection = queryText(req, 'sortDirection').toLowerCase() === 'asc' ? 'asc' : 'desc';
+
+    const consultations = await prisma.consultation.findMany({
+      select: {
+        patient: { select: publicUserSelect }
+      }
+    });
+
+    const grouped = new Map<string, { id: string; name: string; email: string; mobile: string; consultations: number }>();
+    for (const row of consultations) {
+      const patient = row.patient;
+      if (!patient?.id) {
+        continue;
+      }
+
+      const existing = grouped.get(patient.id);
+      if (existing) {
+        existing.consultations += 1;
+        continue;
+      }
+
+      grouped.set(patient.id, {
+        id: patient.id,
+        name: patient.name || 'Unknown',
+        email: patient.email || '',
+        mobile: patient.mobile || '',
+        consultations: 1
+      });
+    }
+
+    const filtered = Array.from(grouped.values()).filter((consumer) => {
+      if (!query) {
+        return true;
+      }
+
+      return [consumer.name, consumer.email, consumer.mobile].join(' ').toLowerCase().includes(query);
+    });
+
+    filtered.sort((a, b) => {
+      if (sortBy === 'name') {
+        const compare = a.name.localeCompare(b.name);
+        return sortDirection === 'asc' ? compare : -compare;
+      }
+
+      const compare = a.consultations - b.consultations;
+      return sortDirection === 'asc' ? compare : -compare;
+    });
+
+    const total = filtered.length;
+    const start = (page - 1) * pageSize;
+    const consumers = filtered.slice(start, start + pageSize);
+
+    res.json({
+      consumers,
+      pagination: {
+        page,
+        pageSize,
+        total,
+        totalPages: Math.max(1, Math.ceil(total / pageSize))
+      }
+    });
   })
 );
 
