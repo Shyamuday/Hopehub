@@ -16,7 +16,7 @@ import {
 import { z } from 'zod';
 import { allowRoles, authRequired, signToken } from './auth.js';
 import { prisma } from './db.js';
-import { ConsoleNotificationProvider, NotificationService } from './notifications.js';
+import { createNotificationService, type NotificationChannel } from './notifications.js';
 import { supabaseAdmin } from './supabase.js';
 
 const app = express();
@@ -32,7 +32,11 @@ const doseOverdueSweepEnabled = (process.env.DOSE_OVERDUE_SWEEP_ENABLED || 'true
 const doseOverdueSweepIntervalMs = Math.max(60_000, Number(process.env.DOSE_OVERDUE_SWEEP_INTERVAL_MS || 5 * 60_000));
 const doseReminderSweepEnabled = (process.env.DOSE_REMINDER_SWEEP_ENABLED || 'true').toLowerCase() !== 'false';
 const doseReminderWindowMinutes = Math.max(5, Number(process.env.DOSE_REMINDER_WINDOW_MINUTES || 30));
-const notificationService = new NotificationService(new ConsoleNotificationProvider());
+const enabledNotificationChannels = (process.env.NOTIFICATION_CHANNELS || 'IN_APP')
+  .split(',')
+  .map((value) => value.trim().toUpperCase())
+  .filter(Boolean) as NotificationChannel[];
+const notificationService = createNotificationService(enabledNotificationChannels);
 
 app.use(cors({ origin: webOrigin, credentials: true }));
 app.use('/payments/razorpay-webhook', express.raw({ type: 'application/json' }));
@@ -252,17 +256,19 @@ async function markOverdueDosesAsMissed() {
 
   console.info(`[scheduler] Marked ${result.count} overdue dose event(s) as MISSED`);
   await notificationService.sendBatch(
-    overdueEvents.map((event) => ({
-      eventType: 'DOSE_MISSED' as const,
-      channel: 'IN_APP' as const,
-      recipientId: event.patientId,
-      recipientName: event.patient?.name,
-      recipientMobile: event.patient?.mobile,
-      recipientEmail: event.patient?.email,
-      title: 'Dose marked missed',
-      body: `${event.prescriptionItem?.medicineName || 'Medicine'} dose at ${event.scheduledFor.toISOString()} was marked missed.`,
-      metadata: { doseEventId: event.id, scheduledFor: event.scheduledFor.toISOString() }
-    }))
+    overdueEvents.flatMap((event) =>
+      enabledNotificationChannels.map((channel) => ({
+        eventType: 'DOSE_MISSED' as const,
+        channel,
+        recipientId: event.patientId,
+        recipientName: event.patient?.name,
+        recipientMobile: event.patient?.mobile,
+        recipientEmail: event.patient?.email,
+        title: 'Dose marked missed',
+        body: `${event.prescriptionItem?.medicineName || 'Medicine'} dose at ${event.scheduledFor.toISOString()} was marked missed.`,
+        metadata: { doseEventId: event.id, scheduledFor: event.scheduledFor.toISOString() }
+      }))
+    )
   );
 }
 
@@ -293,17 +299,19 @@ async function emitUpcomingDoseReminders() {
   }
 
   await notificationService.sendBatch(
-    upcomingEvents.map((event) => ({
-      eventType: 'DOSE_REMINDER' as const,
-      channel: 'IN_APP' as const,
-      recipientId: event.patientId,
-      recipientName: event.patient?.name,
-      recipientMobile: event.patient?.mobile,
-      recipientEmail: event.patient?.email,
-      title: 'Medicine reminder',
-      body: `Upcoming dose for ${event.prescriptionItem?.medicineName || 'medicine'} at ${event.scheduledFor.toISOString()}.`,
-      metadata: { doseEventId: event.id, scheduledFor: event.scheduledFor.toISOString() }
-    }))
+    upcomingEvents.flatMap((event) =>
+      enabledNotificationChannels.map((channel) => ({
+        eventType: 'DOSE_REMINDER' as const,
+        channel,
+        recipientId: event.patientId,
+        recipientName: event.patient?.name,
+        recipientMobile: event.patient?.mobile,
+        recipientEmail: event.patient?.email,
+        title: 'Medicine reminder',
+        body: `Upcoming dose for ${event.prescriptionItem?.medicineName || 'medicine'} at ${event.scheduledFor.toISOString()}.`,
+        metadata: { doseEventId: event.id, scheduledFor: event.scheduledFor.toISOString() }
+      }))
+    )
   );
 }
 
@@ -1944,6 +1952,7 @@ app.listen(port, () => {
   } else {
     console.log(`[scheduler] Dose reminder sweep enabled (window: ${doseReminderWindowMinutes} minutes)`);
   }
+  console.log(`[scheduler] Notification channels: ${enabledNotificationChannels.join(', ') || 'none'}`);
   void runDoseSchedulers().catch((error) => {
     console.error('[scheduler] Initial dose scheduler run failed', error);
   });
