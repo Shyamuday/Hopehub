@@ -62,9 +62,24 @@ model User {
   patientPrescriptions Prescription[] @relation("PatientPrescriptions")
   createdPrescriptionOptions PrescriptionOption[] @relation("PrescriptionOptionCreator")
   doseEvents           MedicineDoseEvent[] @relation("PatientDoseEvents")
+  reminderPreference  ReminderPreference?
   passwordResetTokens PasswordResetToken[]
   createdAt           DateTime       @default(now())
   updatedAt           DateTime       @updatedAt
+}
+
+model ReminderPreference {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  inApp           Boolean  @default(true)
+  sms             Boolean  @default(true)
+  whatsapp        Boolean  @default(false)
+  push            Boolean  @default(false)
+  quietHoursStart String   @default("22:00")
+  quietHoursEnd   String   @default("07:00")
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 }
 
 model PasswordResetToken {

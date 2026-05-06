@@ -53,7 +53,6 @@ const defaultReminderPreference: ReminderPreference = {
   quietHoursStart: '22:00',
   quietHoursEnd: '07:00'
 };
-const reminderPreferenceStore = new Map<string, ReminderPreference>();
 
 app.use(cors({ origin: webOrigin, credentials: true }));
 app.use('/payments/razorpay-webhook', express.raw({ type: 'application/json' }));
@@ -1584,7 +1583,18 @@ app.get(
   authRequired,
   allowRoles(Role.PATIENT),
   asyncRoute(async (req, res) => {
-    const preferences = reminderPreferenceStore.get(req.user!.id) || defaultReminderPreference;
+    const stored = await prisma.reminderPreference.findUnique({
+      where: { userId: req.user!.id },
+      select: {
+        inApp: true,
+        sms: true,
+        whatsapp: true,
+        push: true,
+        quietHoursStart: true,
+        quietHoursEnd: true
+      }
+    });
+    const preferences = stored || defaultReminderPreference;
     res.json({ preferences });
   })
 );
@@ -1604,7 +1614,13 @@ app.put(
         quietHoursEnd: z.string().regex(/^\d{2}:\d{2}$/)
       })
       .parse(req.body);
-    reminderPreferenceStore.set(req.user!.id, body);
+
+    await prisma.reminderPreference.upsert({
+      where: { userId: req.user!.id },
+      create: { userId: req.user!.id, ...body },
+      update: body
+    });
+
     res.json({ preferences: body, message: 'Reminder preferences saved.' });
   })
 );
