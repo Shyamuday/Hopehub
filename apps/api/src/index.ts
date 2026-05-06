@@ -37,6 +37,23 @@ const enabledNotificationChannels = (process.env.NOTIFICATION_CHANNELS || 'IN_AP
   .map((value) => value.trim().toUpperCase())
   .filter(Boolean) as NotificationChannel[];
 const notificationService = createNotificationService(enabledNotificationChannels);
+type ReminderPreference = {
+  inApp: boolean;
+  sms: boolean;
+  whatsapp: boolean;
+  push: boolean;
+  quietHoursStart: string;
+  quietHoursEnd: string;
+};
+const defaultReminderPreference: ReminderPreference = {
+  inApp: true,
+  sms: true,
+  whatsapp: false,
+  push: false,
+  quietHoursStart: '22:00',
+  quietHoursEnd: '07:00'
+};
+const reminderPreferenceStore = new Map<string, ReminderPreference>();
 
 app.use(cors({ origin: webOrigin, credentials: true }));
 app.use('/payments/razorpay-webhook', express.raw({ type: 'application/json' }));
@@ -1562,6 +1579,36 @@ app.get(
   })
 );
 
+app.get(
+  '/patient/reminder-preferences',
+  authRequired,
+  allowRoles(Role.PATIENT),
+  asyncRoute(async (req, res) => {
+    const preferences = reminderPreferenceStore.get(req.user!.id) || defaultReminderPreference;
+    res.json({ preferences });
+  })
+);
+
+app.put(
+  '/patient/reminder-preferences',
+  authRequired,
+  allowRoles(Role.PATIENT),
+  asyncRoute(async (req, res) => {
+    const body = z
+      .object({
+        inApp: z.boolean(),
+        sms: z.boolean(),
+        whatsapp: z.boolean(),
+        push: z.boolean(),
+        quietHoursStart: z.string().regex(/^\d{2}:\d{2}$/),
+        quietHoursEnd: z.string().regex(/^\d{2}:\d{2}$/)
+      })
+      .parse(req.body);
+    reminderPreferenceStore.set(req.user!.id, body);
+    res.json({ preferences: body, message: 'Reminder preferences saved.' });
+  })
+);
+
 app.post(
   '/patient/dose-events/:id/take',
   authRequired,
@@ -1584,6 +1631,37 @@ app.post(
     });
 
     res.json({ doseEvent: updated });
+  })
+);
+
+app.post(
+  '/patient/dose-events/:id/snooze',
+  authRequired,
+  allowRoles(Role.PATIENT),
+  asyncRoute(async (req, res) => {
+    const body = z.object({ minutes: z.number().int().min(5).max(120).optional() }).parse(req.body);
+    const event = await prisma.medicineDoseEvent.findUnique({
+      where: { id: routeParam(req, 'id') }
+    });
+
+    if (!event || event.patientId !== req.user!.id) {
+      return res.status(404).json({ message: 'Dose event not found' });
+    }
+    if (event.status !== DoseEventStatus.PENDING) {
+      return res.status(400).json({ message: 'Only pending doses can be snoozed.' });
+    }
+
+    const minutes = body.minutes || 15;
+    const scheduledFor = new Date(event.scheduledFor.getTime() + minutes * 60 * 1000);
+    const updated = await prisma.medicineDoseEvent.update({
+      where: { id: event.id },
+      data: {
+        scheduledFor,
+        note: `Snoozed by ${minutes} min at ${new Date().toISOString()}`
+      }
+    });
+
+    res.json({ doseEvent: updated, message: `Dose snoozed by ${minutes} minutes.` });
   })
 );
 

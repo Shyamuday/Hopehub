@@ -61,6 +61,10 @@ import { Disease, Consultation, Doctor, DoseEvent, Prescription } from './models
         <section class="grid two">
           <div class="panel">
             <h2>Today&apos;s Medicines</h2>
+            <label>
+              Snooze minutes
+              <input type="number" min="5" max="120" [(ngModel)]="snoozeMinutes" />
+            </label>
             <div class="cards">
               @for (dose of todayDoseEvents(); track dose.id) {
                 <article class="consult-card">
@@ -74,6 +78,7 @@ import { Disease, Consultation, Doctor, DoseEvent, Prescription } from './models
                     <div class="actions">
                       <button class="primary" [disabled]="isProcessing()" (click)="markDoseTaken(dose.id)">Taken</button>
                       <button class="secondary" [disabled]="isProcessing()" (click)="skipDose(dose.id)">Skip</button>
+                      <button class="secondary" [disabled]="isProcessing()" (click)="snoozeDose(dose.id)">Snooze</button>
                     </div>
                   }
                 </article>
@@ -81,6 +86,23 @@ import { Disease, Consultation, Doctor, DoseEvent, Prescription } from './models
                 <p class="muted">No medicine reminders for today.</p>
               }
             </div>
+          </div>
+
+          <div class="panel">
+            <h2>Reminder Preferences</h2>
+            <label><input type="checkbox" [(ngModel)]="reminderPreferences.inApp" /> In-app</label>
+            <label><input type="checkbox" [(ngModel)]="reminderPreferences.sms" /> SMS</label>
+            <label><input type="checkbox" [(ngModel)]="reminderPreferences.whatsapp" /> WhatsApp</label>
+            <label><input type="checkbox" [(ngModel)]="reminderPreferences.push" /> Push</label>
+            <label>
+              Quiet hours start
+              <input [(ngModel)]="reminderPreferences.quietHoursStart" placeholder="22:00" />
+            </label>
+            <label>
+              Quiet hours end
+              <input [(ngModel)]="reminderPreferences.quietHoursEnd" placeholder="07:00" />
+            </label>
+            <button class="primary" [disabled]="isProcessing()" (click)="saveReminderPreferences()">Save preferences</button>
           </div>
 
           <div class="panel">
@@ -276,6 +298,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   selectedDiseaseId = '';
   intakeAnswers: Record<string, string> = {};
   messageBody = '';
+  snoozeMinutes = 15;
   prescription = { notes: '', fileUrl: '' };
   assignment = { consultationId: '', doctorId: '' };
   doctorForm = {
@@ -284,6 +307,14 @@ export class DashboardComponent implements OnInit, OnDestroy {
     mobile: '',
     password: 'Password@123',
     specialty: 'Dermatology'
+  };
+  reminderPreferences = {
+    inApp: true,
+    sms: true,
+    whatsapp: false,
+    push: false,
+    quietHoursStart: '22:00',
+    quietHoursEnd: '07:00'
   };
 
   constructor(
@@ -431,8 +462,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   skipDose(doseEventId: string) {
+    const note = prompt('Reason for skipping this dose?', '') || undefined;
     this.isProcessing.set(true);
-    this.api.skipDose(doseEventId).subscribe({
+    this.api.skipDose(doseEventId, note).subscribe({
       next: () => {
         this.showNotice('Dose skipped.');
         this.loadPatientMedicationData();
@@ -440,6 +472,33 @@ export class DashboardComponent implements OnInit, OnDestroy {
       error: (error) => {
         this.isProcessing.set(false);
         this.showNotice(error.error?.message || error.message || 'Could not skip dose.');
+      },
+      complete: () => this.isProcessing.set(false)
+    });
+  }
+
+  snoozeDose(doseEventId: string) {
+    this.isProcessing.set(true);
+    this.api.snoozeDose(doseEventId, Number(this.snoozeMinutes) || 15).subscribe({
+      next: () => {
+        this.showNotice('Dose snoozed.');
+        this.loadPatientMedicationData();
+      },
+      error: (error) => {
+        this.isProcessing.set(false);
+        this.showNotice(error.error?.message || error.message || 'Could not snooze dose.');
+      },
+      complete: () => this.isProcessing.set(false)
+    });
+  }
+
+  saveReminderPreferences() {
+    this.isProcessing.set(true);
+    this.api.saveReminderPreferences(this.reminderPreferences).subscribe({
+      next: () => this.showNotice('Reminder preferences saved.'),
+      error: (error) => {
+        this.isProcessing.set(false);
+        this.showNotice(error.error?.message || error.message || 'Could not save reminder preferences.');
       },
       complete: () => this.isProcessing.set(false)
     });
@@ -537,6 +596,13 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   private loadPatientMedicationData() {
+    this.api.reminderPreferences().subscribe({
+      next: ({ preferences }) => {
+        this.reminderPreferences = preferences;
+      },
+      error: (error) => this.showNotice(error.error?.message || error.message || 'Could not load reminder preferences.')
+    });
+
     this.api.patientPrescriptions().subscribe({
       next: ({ prescriptions }) => this.patientPrescriptions.set(prescriptions),
       error: (error) => this.showNotice(error.error?.message || error.message || 'Could not load prescriptions.')

@@ -99,6 +99,25 @@ export class ClinicApiService {
     return from(this.updateDoseEventStatus(doseEventId, 'SKIPPED', note));
   }
 
+  snoozeDose(doseEventId: string, minutes = 15) {
+    return from(this.snoozeDoseEvent(doseEventId, minutes));
+  }
+
+  reminderPreferences() {
+    return from(this.fetchReminderPreferences());
+  }
+
+  saveReminderPreferences(preferences: {
+    inApp: boolean;
+    sms: boolean;
+    whatsapp: boolean;
+    push: boolean;
+    quietHoursStart: string;
+    quietHoursEnd: string;
+  }) {
+    return from(this.updateReminderPreferences(preferences));
+  }
+
   watchClinicChanges(onChange: () => void): RealtimeChannel {
     return supabase
       .channel('clinic-dashboard-changes')
@@ -545,6 +564,52 @@ export class ClinicApiService {
     return this.apiFetch(`/patient/dose-events/${doseEventId}/skip`, {
       method: 'POST',
       body: JSON.stringify(note ? { note } : {})
+    });
+  }
+
+  private async snoozeDoseEvent(doseEventId: string, minutes: number) {
+    if (!this.backendToken) {
+      throw new Error('Backend session missing. Please login again.');
+    }
+
+    return this.apiFetch(`/patient/dose-events/${doseEventId}/snooze`, {
+      method: 'POST',
+      body: JSON.stringify({ minutes })
+    });
+  }
+
+  private async fetchReminderPreferences() {
+    if (!this.backendToken) {
+      throw new Error('Backend session missing. Please login again.');
+    }
+
+    return this.apiFetch<{
+      preferences: {
+        inApp: boolean;
+        sms: boolean;
+        whatsapp: boolean;
+        push: boolean;
+        quietHoursStart: string;
+        quietHoursEnd: string;
+      };
+    }>('/patient/reminder-preferences');
+  }
+
+  private async updateReminderPreferences(preferences: {
+    inApp: boolean;
+    sms: boolean;
+    whatsapp: boolean;
+    push: boolean;
+    quietHoursStart: string;
+    quietHoursEnd: string;
+  }) {
+    if (!this.backendToken) {
+      throw new Error('Backend session missing. Please login again.');
+    }
+
+    return this.apiFetch('/patient/reminder-preferences', {
+      method: 'PUT',
+      body: JSON.stringify(preferences)
     });
   }
 
