@@ -1,7 +1,7 @@
 import twilio from 'twilio';
 
 export type NotificationChannel = 'IN_APP' | 'SMS' | 'WHATSAPP' | 'EMAIL' | 'PUSH';
-export type NotificationEventType = 'DOSE_REMINDER' | 'DOSE_MISSED';
+export type NotificationEventType = 'DOSE_REMINDER' | 'DOSE_MISSED' | 'BOOKING_CONFIRMED';
 
 export type NotificationMessage = {
   eventType: NotificationEventType;

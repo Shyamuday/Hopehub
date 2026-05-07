@@ -96,6 +96,113 @@ button:disabled {
   cursor: pointer;
 }
 
+.consult-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.consult-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.consult-meta, .consult-doctor {
+  font-size: 0.85rem;
+  color: #6b7280;
+  margin: 0;
+}
+
+.status-pill {
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.2rem 0.55rem;
+  border-radius: 99px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+
+  &.status-paid          { background: #d1fae5; color: #065f46; }
+  &.status-assigned      { background: #dbeafe; color: #1e40af; }
+  &.status-in_progress   { background: #fef3c7; color: #92400e; }
+  &.status-completed     { background: #f3f4f6; color: #374151; }
+  &.status-payment_pending { background: #fef9c3; color: #713f12; }
+  &.status-cancelled     { background: #fee2e2; color: #991b1b; }
+}
+
+.btn-assign {
+  margin-top: 0.35rem;
+  align-self: flex-start;
+  background: #2563eb;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 0.4rem 0.85rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:hover:not(:disabled) { background: #1d4ed8; }
+}
+
+.assign-panel {
+  margin-top: 0.5rem;
+  padding: 0.75rem;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.assign-label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: #374151;
+
+  select {
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 0.4rem 0.55rem;
+    font-size: 0.85rem;
+  }
+}
+
+.assign-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.btn-confirm {
+  background: #16a34a;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 0.4rem 0.85rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:hover:not(:disabled) { background: #15803d; }
+}
+
+.btn-cancel {
+  background: transparent;
+  border: 1px solid #d1d5db;
+  color: #374151;
+  border-radius: 8px;
+  padding: 0.4rem 0.85rem;
+  font-size: 0.82rem;
+  cursor: pointer;
+
+  &:hover:not(:disabled) { background: #f3f4f6; }
+}
+
 @media (max-width: 768px) {
   .panel {
     padding: 0.85rem;

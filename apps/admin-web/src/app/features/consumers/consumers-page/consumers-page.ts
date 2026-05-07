@@ -35,6 +35,12 @@ type ConsumerDetail = {
   };
 };
 
+type ActiveDoctor = {
+  id: string;
+  name: string;
+  doctorProfile?: { specialty?: string } | null;
+};
+
 @Component({
   selector: 'app-consumers-page',
   imports: [CommonModule, FormsModule],
@@ -56,8 +62,54 @@ export class ConsumersPage {
   listError = '';
   detailError = '';
 
+  activeDoctors: ActiveDoctor[] = [];
+  assigningConsultationId = '';
+  assignDoctorId = '';
+  assignError = '';
+  assigning = false;
+
   constructor(private readonly api: AdminApi) {
     void this.load();
+    void this.loadDoctors();
+  }
+
+  private async loadDoctors() {
+    try {
+      const res = await this.api.getActiveDoctors();
+      this.activeDoctors = res.doctors || [];
+    } catch {
+      // non-critical; assignment dropdown will just be empty
+    }
+  }
+
+  startAssign(consultationId: string) {
+    this.assigningConsultationId = consultationId;
+    this.assignDoctorId = this.activeDoctors[0]?.id || '';
+    this.assignError = '';
+  }
+
+  cancelAssign() {
+    this.assigningConsultationId = '';
+    this.assignDoctorId = '';
+    this.assignError = '';
+  }
+
+  async confirmAssign() {
+    if (!this.assigningConsultationId || !this.assignDoctorId) return;
+    this.assigning = true;
+    this.assignError = '';
+    try {
+      await this.api.assignDoctor(this.assigningConsultationId, this.assignDoctorId);
+      this.assigningConsultationId = '';
+      this.assignDoctorId = '';
+      if (this.selectedConsumerId) {
+        await this.loadConsumerDetail(this.selectedConsumerId);
+      }
+    } catch {
+      this.assignError = 'Could not assign doctor. Please try again.';
+    } finally {
+      this.assigning = false;
+    }
   }
 
   async load() {

@@ -4,6 +4,7 @@ import { AdminLogin } from './features/auth/admin-login/admin-login';
 import { AdminDashboard } from './features/dashboard/admin-dashboard/admin-dashboard';
 import { ConsumersPage } from './features/consumers/consumers-page/consumers-page';
 import { DoctorsPage } from './features/doctors/doctors-page/doctors-page';
+import { DiseasesPage } from './features/diseases/diseases-page/diseases-page';
 import { AdminShell } from './layout/admin-shell/admin-shell';
 
 export const routes: Routes = [
@@ -16,7 +17,8 @@ export const routes: Routes = [
       { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
       { path: 'dashboard', component: AdminDashboard },
       { path: 'doctors', component: DoctorsPage },
-      { path: 'consumers', component: ConsumersPage }
+      { path: 'consumers', component: ConsumersPage },
+      { path: 'diseases', component: DiseasesPage }
     ]
   },
   { path: '**', redirectTo: '' }

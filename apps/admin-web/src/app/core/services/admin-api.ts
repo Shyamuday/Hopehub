@@ -185,4 +185,35 @@ export class AdminApi {
       )
     );
   }
+
+  assignDoctor(consultationId: string, doctorId: string) {
+    return firstValueFrom(
+      this.http.post(`${this.apiBase}/consultations/${consultationId}/assign`, { doctorId })
+    );
+  }
+
+  getActiveDoctors() {
+    return firstValueFrom(
+      this.http.get<{ doctors: Array<{ id: string; name: string; doctorProfile?: { specialty?: string } | null }> }>(
+        `${this.apiBase}/admin/doctors`,
+        { params: { status: 'ACTIVE', pageSize: '100', page: '1', q: '', sortBy: 'name', sortDirection: 'asc' } }
+      )
+    );
+  }
+
+  getDiseases() {
+    return firstValueFrom(
+      this.http.get<{ diseases: Array<{ id: string; name: string; description: string; feeInPaise: number; isActive: boolean; intakeQuestions: string[] }> }>(
+        `${this.apiBase}/admin/diseases/list`
+      )
+    );
+  }
+
+  createDisease(payload: { name: string; description: string; feeInPaise: number; intakeQuestions: string[] }) {
+    return firstValueFrom(this.http.post(`${this.apiBase}/admin/diseases`, payload));
+  }
+
+  updateDisease(id: string, payload: { name: string; description: string; feeInPaise: number; isActive: boolean; intakeQuestions: string[] }) {
+    return firstValueFrom(this.http.put(`${this.apiBase}/admin/diseases/${id}`, payload));
+  }
 }

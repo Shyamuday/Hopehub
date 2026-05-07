@@ -769,6 +769,16 @@ app.get(
   })
 );
 
+app.get(
+  '/admin/diseases/list',
+  authRequired,
+  allowRoles(Role.ADMIN),
+  asyncRoute(async (_req, res) => {
+    const diseases = await prisma.disease.findMany({ orderBy: { name: 'asc' } });
+    res.json({ diseases });
+  })
+);
+
 app.post(
   '/admin/diseases',
   authRequired,
@@ -785,6 +795,29 @@ app.post(
 
     const disease = await prisma.disease.create({ data: body });
     res.status(201).json({ disease });
+  })
+);
+
+app.put(
+  '/admin/diseases/:id',
+  authRequired,
+  allowRoles(Role.ADMIN),
+  asyncRoute(async (req, res) => {
+    const body = z
+      .object({
+        name: z.string().min(3),
+        description: z.string().min(3),
+        feeInPaise: z.number().int().positive(),
+        isActive: z.boolean(),
+        intakeQuestions: z.array(z.string().min(1)).min(1)
+      })
+      .parse(req.body);
+
+    const disease = await prisma.disease.update({
+      where: { id: routeParam(req, 'id') },
+      data: body
+    });
+    res.json({ disease });
   })
 );
 
@@ -2212,7 +2245,11 @@ app.post(
     const consultationId = routeParam(req, 'consultationId');
     const consultation = await prisma.consultation.findUnique({
       where: { id: consultationId },
-      include: { payment: true }
+      include: {
+        payment: true,
+        patient: { select: { id: true, name: true, mobile: true, email: true } },
+        disease: { select: { name: true } }
+      }
     });
     if (!consultation) {
       return res.status(404).json({ message: 'Consultation not found.' });
@@ -2240,6 +2277,22 @@ app.post(
       where: { id: consultation.id },
       data: { status: ConsultationStatus.PAID }
     });
+
+    const patient = consultation.patient;
+    if (patient) {
+      void notificationService.sendBatch(
+        enabledNotificationChannels.map((channel) => ({
+          eventType: 'BOOKING_CONFIRMED' as const,
+          channel,
+          recipientId: patient.id,
+          recipientName: patient.name,
+          recipientMobile: patient.mobile,
+          recipientEmail: patient.email,
+          title: 'Booking confirmed — Vitalis Care',
+          body: `Your consultation for ${consultation.disease?.name || 'your concern'} has been booked and payment received. A doctor will be assigned shortly.`
+        }))
+      );
+    }
 
     res.json({ ok: true });
   })
@@ -2302,6 +2355,29 @@ app.post(
       where: { id: payment.consultationId },
       data: { status: ConsultationStatus.PAID }
     });
+
+    const consultationForNotif = await prisma.consultation.findUnique({
+      where: { id: payment.consultationId },
+      select: {
+        patient: { select: { id: true, name: true, mobile: true, email: true } },
+        disease: { select: { name: true } }
+      }
+    });
+    const webhookPatient = consultationForNotif?.patient;
+    if (webhookPatient) {
+      void notificationService.sendBatch(
+        enabledNotificationChannels.map((channel) => ({
+          eventType: 'BOOKING_CONFIRMED' as const,
+          channel,
+          recipientId: webhookPatient.id,
+          recipientName: webhookPatient.name,
+          recipientMobile: webhookPatient.mobile,
+          recipientEmail: webhookPatient.email,
+          title: 'Booking confirmed — Vitalis Care',
+          body: `Your consultation for ${consultationForNotif?.disease?.name || 'your concern'} has been booked and payment received. A doctor will be assigned shortly.`
+        }))
+      );
+    }
 
     res.json({ ok: true });
   })

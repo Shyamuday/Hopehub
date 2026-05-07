@@ -1,0 +1,135 @@
+<section class="panel">
+  <div class="panel-header">
+    <h2>Diseases &amp; Intake Questions</h2>
+    <button type="button" class="btn-primary" (click)="showCreateForm = !showCreateForm">
+      {{ showCreateForm ? 'Cancel' : '+ New Disease' }}
+    </button>
+  </div>
+
+  @if (showCreateForm) {
+    <div class="create-form">
+      <h3>New Disease</h3>
+      <div class="field-row">
+        <label class="field">
+          Name
+          <input name="newName" [(ngModel)]="newDisease.name" placeholder="e.g. Psoriasis" />
+        </label>
+        <label class="field">
+          Fee (₹)
+          <input name="newFee" type="number" [(ngModel)]="newDisease.feeInPaise" placeholder="e.g. 50000 = ₹500" />
+          <span class="field-hint">Enter in paise (₹1 = 100 paise)</span>
+        </label>
+      </div>
+      <label class="field">
+        Description
+        <textarea name="newDesc" [(ngModel)]="newDisease.description" rows="2" placeholder="Brief description shown to patients"></textarea>
+      </label>
+
+      <div class="questions-editor">
+        <p class="qs-label">Intake Questions</p>
+        @for (q of newDisease.intakeQuestions; track $index) {
+          <div class="question-row">
+            <span>{{ $index + 1 }}. {{ q }}</span>
+            <button type="button" class="btn-remove" (click)="removeNewQuestion($index)">✕</button>
+          </div>
+        } @empty {
+          <p class="qs-empty">No questions yet.</p>
+        }
+        <div class="add-question-row">
+          <input name="newDiseaseQ" [(ngModel)]="newDiseaseQuestion" placeholder="Type question and press Add" (keyup.enter)="addNewQuestion()" />
+          <button type="button" class="btn-add-q" (click)="addNewQuestion()">Add</button>
+        </div>
+      </div>
+
+      @if (createError) {
+        <p class="error">{{ createError }}</p>
+      }
+      <button type="button" class="btn-save" (click)="createDisease()" [disabled]="creating">
+        {{ creating ? 'Creating…' : 'Create Disease' }}
+      </button>
+    </div>
+  }
+
+  @if (loading) {
+    <p class="loading-text">Loading diseases...</p>
+  } @else if (error) {
+    <div class="error-row">
+      <p class="error">{{ error }}</p>
+      <button type="button" class="retry-btn" (click)="load()">Retry</button>
+    </div>
+  } @else {
+    @for (disease of diseases; track disease.id) {
+      <article class="disease-card" [class.editing]="editingId === disease.id">
+
+        @if (editingId !== disease.id) {
+          <div class="disease-header">
+            <div>
+              <strong>{{ disease.name }}</strong>
+              <span class="fee-badge">{{ feeToCurrency(disease.feeInPaise) }}</span>
+              @if (!disease.isActive) {
+                <span class="inactive-badge">Inactive</span>
+              }
+            </div>
+            <button type="button" class="btn-edit" (click)="startEdit(disease)">Edit</button>
+          </div>
+          <p class="disease-desc">{{ disease.description }}</p>
+          <div class="question-list-read">
+            @for (q of disease.intakeQuestions; track $index) {
+              <span class="q-chip">{{ q }}</span>
+            }
+          </div>
+
+        } @else {
+          <h4>Editing: {{ disease.name }}</h4>
+          <div class="field-row">
+            <label class="field">
+              Name
+              <input name="draftName" [(ngModel)]="draft.name" />
+            </label>
+            <label class="field">
+              Fee (paise)
+              <input name="draftFee" type="number" [(ngModel)]="draft.feeInPaise" />
+              <span class="field-hint">{{ feeToCurrency(draft.feeInPaise) }}</span>
+            </label>
+          </div>
+          <label class="field">
+            Description
+            <textarea name="draftDesc" [(ngModel)]="draft.description" rows="2"></textarea>
+          </label>
+          <label class="field checkbox-field">
+            <input type="checkbox" name="draftActive" [(ngModel)]="draft.isActive" />
+            Active (visible to patients)
+          </label>
+
+          <div class="questions-editor">
+            <p class="qs-label">Intake Questions</p>
+            @for (q of draft.intakeQuestions; track $index) {
+              <div class="question-row">
+                <span>{{ $index + 1 }}. {{ q }}</span>
+                <button type="button" class="btn-remove" (click)="removeDraftQuestion($index)">✕</button>
+              </div>
+            } @empty {
+              <p class="qs-empty">No questions. Add at least one.</p>
+            }
+            <div class="add-question-row">
+              <input name="draftNewQ" [(ngModel)]="draftNewQuestion" placeholder="New question…" (keyup.enter)="addDraftQuestion()" />
+              <button type="button" class="btn-add-q" (click)="addDraftQuestion()">Add</button>
+            </div>
+          </div>
+
+          @if (saveError) {
+            <p class="error">{{ saveError }}</p>
+          }
+          <div class="edit-actions">
+            <button type="button" class="btn-save" (click)="saveEdit()" [disabled]="saving || !draft.name || !draft.intakeQuestions.length">
+              {{ saving ? 'Saving…' : 'Save Changes' }}
+            </button>
+            <button type="button" class="btn-cancel" (click)="cancelEdit()" [disabled]="saving">Cancel</button>
+          </div>
+        }
+      </article>
+    } @empty {
+      <p class="empty-state">No diseases configured yet.</p>
+    }
+  }
+</section>

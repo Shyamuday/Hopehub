@@ -56,11 +56,46 @@
 
     <h3>Recent Consultations</h3>
     @for (consultation of detail.consultations; track consultation.id) {
-      <article class="card">
-        <strong>{{ consultation.disease?.name || 'Consultation' }}</strong>
-        <p>Status: {{ consultation.status }} | Date: {{ consultation.createdAt | date: 'medium' }}</p>
-        <small>Assigned doctor: {{ consultation.assignedDoctor?.name || 'Not assigned' }}</small>
+      <article class="card consult-card">
+        <div class="consult-header">
+          <strong>{{ consultation.disease?.name || 'Consultation' }}</strong>
+          <span class="status-pill" [class]="'status-' + consultation.status.toLowerCase()">{{ consultation.status }}</span>
+        </div>
+        <p class="consult-meta">{{ consultation.createdAt | date: 'mediumDate' }}</p>
+        <p class="consult-doctor">
+          Doctor: <strong>{{ consultation.assignedDoctor?.name || '—' }}</strong>
+        </p>
         <small>Prescriptions: {{ consultation.prescriptions?.length || 0 }}</small>
+
+        @if (consultation.status === 'PAID' && assigningConsultationId !== consultation.id) {
+          <button type="button" class="btn-assign" (click)="startAssign(consultation.id)" [disabled]="assigning">
+            Assign Doctor
+          </button>
+        }
+
+        @if (assigningConsultationId === consultation.id) {
+          <div class="assign-panel">
+            <label class="assign-label">
+              Select doctor
+              <select [(ngModel)]="assignDoctorId" name="assignDoctorId">
+                @for (doctor of activeDoctors; track doctor.id) {
+                  <option [value]="doctor.id">
+                    {{ doctor.name }}@if (doctor.doctorProfile?.specialty) { — {{ doctor.doctorProfile!.specialty }}}
+                  </option>
+                }
+              </select>
+            </label>
+            @if (assignError) {
+              <p class="error">{{ assignError }}</p>
+            }
+            <div class="assign-actions">
+              <button type="button" class="btn-confirm" (click)="confirmAssign()" [disabled]="assigning || !assignDoctorId">
+                {{ assigning ? 'Assigning…' : 'Confirm' }}
+              </button>
+              <button type="button" class="btn-cancel" (click)="cancelAssign()" [disabled]="assigning">Cancel</button>
+            </div>
+          </div>
+        }
       </article>
     } @empty {
       <p>No consultations found for this consumer.</p>
