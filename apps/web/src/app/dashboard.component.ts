@@ -8,10 +8,13 @@ import { AppHeaderComponent } from './app-header.component';
 import { ClinicApiService } from './clinic-api.service';
 import { AuthService } from './auth/auth.service';
 import { BillingPlan, Consultation, Disease, Doctor, DoseEvent, Prescription } from './models';
+import { PaymentStatusOverlayComponent } from './payment-status-overlay.component';
+
+type PaymentFlowState = 'IDLE' | 'CREATING_ORDER' | 'OPENING_CHECKOUT' | 'VERIFYING' | 'SUCCESS' | 'ERROR';
 
 @Component({
   selector: 'app-dashboard',
-  imports: [CommonModule, FormsModule, AppHeaderComponent, AppFooterComponent],
+  imports: [CommonModule, FormsModule, AppHeaderComponent, AppFooterComponent, PaymentStatusOverlayComponent],
   template: `
     <app-header [subtitle]="title()" [user]="auth.user()" [whatsappLink]="whatsappLink" (logout)="logout()" />
 
@@ -233,7 +236,9 @@ import { BillingPlan, Consultation, Disease, Doctor, DoseEvent, Prescription } f
                 <small>Amount: {{ (consultation.payment?.amountInPaise || 0) / 100 | currency: 'INR' }}</small>
               </button>
               @if (auth.user()?.role === 'PATIENT' && consultation.status === 'PAYMENT_PENDING') {
-                <button class="primary" [disabled]="isProcessing()" (click)="pay(consultation)">Pay now</button>
+                <button class="primary" [disabled]="isProcessing() || paymentFlowState() !== 'IDLE'" (click)="pay(consultation)">
+                  Pay now
+                </button>
               }
               @if (consultation.prescription || consultation.prescriptions?.length) {
                 <p class="success">Prescription uploaded</p>
@@ -300,6 +305,15 @@ import { BillingPlan, Consultation, Disease, Doctor, DoseEvent, Prescription } f
       </div>
     </ng-template>
 
+    <app-payment-status-overlay
+      [state]="paymentFlowState()"
+      [title]="paymentFlowTitle()"
+      [message]="paymentFlowMessage()"
+      [canRetry]="!!paymentFlowConsultation()"
+      (retry)="retryPayment()"
+      (close)="closePaymentOverlay()"
+    />
+
     @if (notice()) {
       <div class="toast">{{ notice() }}</div>
     }
@@ -319,6 +333,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
   readonly notice = signal('');
   readonly isLoading = signal(false);
   readonly isProcessing = signal(false);
+  readonly paymentFlowState = signal<PaymentFlowState>('IDLE');
+  readonly paymentFlowConsultation = signal<Consultation | null>(null);
+  readonly paymentFlowError = signal('');
   readonly title = computed(() => `${this.auth.user()?.role?.toLowerCase()} dashboard`);
   readonly whatsappLink =
     'https://wa.me/919876543210?text=Hi%20Vitalis%20Care%20and%20Research%20Centre%2C%20I%20need%20help%20with%20my%20consultation';
@@ -411,33 +428,82 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   pay(consultation: Consultation) {
+    this.paymentFlowConsultation.set(consultation);
+    this.paymentFlowError.set('');
+    this.paymentFlowState.set('CREATING_ORDER');
     this.isProcessing.set(true);
     this.api.createPaymentOrder(consultation.id).subscribe({
-      next: (order) =>
+      next: (order) => {
+        this.paymentFlowState.set('OPENING_CHECKOUT');
         this.api
           .openRazorpayCheckout(consultation, order)
           .then((payment) => {
+            this.paymentFlowState.set('VERIFYING');
             this.api.verifyPayment(consultation.id, payment).subscribe({
               next: () => {
+                this.paymentFlowState.set('SUCCESS');
                 this.showNotice('Payment verified. Admin can assign doctor now.');
                 this.loadConsultations();
               },
               error: (error) => {
                 this.isProcessing.set(false);
-                this.showNotice(error.error?.message || error.message || 'Payment verification failed.');
+                this.paymentFlowState.set('ERROR');
+                this.paymentFlowError.set(error.error?.message || error.message || 'Payment verification failed.');
+                this.showNotice(this.paymentFlowError());
               },
               complete: () => this.isProcessing.set(false)
             });
           })
           .catch((error) => {
             this.isProcessing.set(false);
-            this.showNotice(error.message || 'Payment was not completed.');
-          }),
+            this.paymentFlowState.set('ERROR');
+            this.paymentFlowError.set(error.message || 'Payment was not completed.');
+            this.showNotice(this.paymentFlowError());
+          });
+      },
       error: (error) => {
         this.isProcessing.set(false);
-        this.showNotice(error.error?.message || error.message || 'Payment failed.');
+        this.paymentFlowState.set('ERROR');
+        this.paymentFlowError.set(error.error?.message || error.message || 'Payment failed.');
+        this.showNotice(this.paymentFlowError());
       }
     });
+  }
+
+  paymentFlowTitle() {
+    const state = this.paymentFlowState();
+    if (state === 'CREATING_ORDER') return 'Creating secure order';
+    if (state === 'OPENING_CHECKOUT') return 'Opening Razorpay checkout';
+    if (state === 'VERIFYING') return 'Verifying payment';
+    if (state === 'SUCCESS') return 'Payment successful';
+    if (state === 'ERROR') return 'Payment failed';
+    return '';
+  }
+
+  paymentFlowMessage() {
+    const state = this.paymentFlowState();
+    if (state === 'CREATING_ORDER') return 'Preparing your order details.';
+    if (state === 'OPENING_CHECKOUT') return 'Complete payment in the Razorpay popup.';
+    if (state === 'VERIFYING') return 'Please wait while we verify with the gateway.';
+    if (state === 'SUCCESS') return 'Your consultation is now ready for doctor assignment.';
+    if (state === 'ERROR') return this.paymentFlowError() || 'Something went wrong. Please try again.';
+    return '';
+  }
+
+  retryPayment() {
+    const consultation = this.paymentFlowConsultation();
+    if (!consultation) {
+      return;
+    }
+    this.pay(consultation);
+  }
+
+  closePaymentOverlay() {
+    if (this.paymentFlowState() === 'SUCCESS' || this.paymentFlowState() === 'ERROR') {
+      this.paymentFlowState.set('IDLE');
+      this.paymentFlowError.set('');
+      this.paymentFlowConsultation.set(null);
+    }
   }
 
   setActive(consultation: Consultation) {
