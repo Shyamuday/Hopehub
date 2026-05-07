@@ -5,16 +5,36 @@ import { Router } from '@angular/router';
 import { RealtimeChannel } from '@supabase/supabase-js';
 import { AppFooterComponent } from './app-footer.component';
 import { AppHeaderComponent } from './app-header.component';
+import { AdminStatsComponent } from './admin-stats.component';
+import { BookConsultationPanelComponent, BookConsultationPayload } from './book-consultation-panel.component';
+import { ConsultationDetailComponent, PrescriptionPayload, SendMessagePayload } from './consultation-detail.component';
+import { ConsultationListComponent } from './consultation-list.component';
+import { PaymentStatusOverlayComponent } from './payment-status-overlay.component';
+import { PrescriptionHistoryComponent } from './prescription-history.component';
+import { ReminderPreferencesComponent, ReminderPrefs } from './reminder-preferences.component';
+import { TodayMedicinesComponent } from './today-medicines.component';
 import { ClinicApiService } from './clinic-api.service';
 import { AuthService } from './auth/auth.service';
 import { BillingPlan, Consultation, Disease, Doctor, DoseEvent, Prescription } from './models';
-import { PaymentStatusOverlayComponent } from './payment-status-overlay.component';
 
 type PaymentFlowState = 'IDLE' | 'CREATING_ORDER' | 'OPENING_CHECKOUT' | 'VERIFYING' | 'SUCCESS' | 'ERROR';
 
 @Component({
   selector: 'app-dashboard',
-  imports: [CommonModule, FormsModule, AppHeaderComponent, AppFooterComponent, PaymentStatusOverlayComponent],
+  imports: [
+    CommonModule,
+    FormsModule,
+    AppHeaderComponent,
+    AppFooterComponent,
+    AdminStatsComponent,
+    BookConsultationPanelComponent,
+    ConsultationDetailComponent,
+    ConsultationListComponent,
+    PaymentStatusOverlayComponent,
+    PrescriptionHistoryComponent,
+    ReminderPreferencesComponent,
+    TodayMedicinesComponent,
+  ],
   template: `
     <app-header [subtitle]="title()" [user]="auth.user()" [whatsappLink]="whatsappLink" (logout)="logout()" />
 
@@ -36,149 +56,68 @@ type PaymentFlowState = 'IDLE' | 'CREATING_ORDER' | 'OPENING_CHECKOUT' | 'VERIFY
         </section>
 
         <section class="grid two">
-          <div class="panel">
-            <h2>Book Consultation</h2>
-            <label>
-              Purchase type
-              <select [(ngModel)]="purchaseType">
-                <option value="ONE_TIME">One-time appointment</option>
-                <option value="PLAN">Plan purchase</option>
-              </select>
-            </label>
-            @if (purchaseType === 'PLAN') {
-              <label>
-                Select plan
-                <select [(ngModel)]="selectedPlanCode">
-                  @for (plan of billingPlans(); track plan.code) {
-                    @if (plan.code !== 'ONE_TIME') {
-                      <option [value]="plan.code">
-                        {{ plan.name }} - {{ plan.priceInPaise / 100 | currency: 'INR' }}
-                      </option>
-                    }
-                  }
-                </select>
-              </label>
-              <p class="muted">{{ selectedPlan()?.description }}</p>
-            }
-            <label>
-              Select problem
-              <select [(ngModel)]="selectedDiseaseId" (change)="resetAnswers()">
-                @for (disease of diseases(); track disease.id) {
-                  <option [value]="disease.id">{{ disease.name }} - {{ disease.feeInPaise / 100 | currency: 'INR' }}</option>
-                }
-              </select>
-            </label>
-
-            @for (question of selectedDisease()?.intakeQuestions || []; track question) {
-              <label>
-                {{ question }}
-                <input [(ngModel)]="intakeAnswers[question]" placeholder="Type your answer" />
-              </label>
-            }
-
-            <button class="primary" [disabled]="isProcessing()" (click)="bookConsultation()">Create consultation</button>
-            <p class="muted">
-              Payable now:
-              <strong>{{ estimatedPayableInPaise() / 100 | currency: 'INR' }}</strong>.
-              After payment, consultation moves to doctor assignment.
-            </p>
-          </div>
-
-          <ng-container *ngTemplateOutlet="consultationList"></ng-container>
+          <app-book-consultation-panel
+            [diseases]="diseases()"
+            [plans]="billingPlans()"
+            [disabled]="isProcessing()"
+            (booked)="onBooked($event)"
+          />
+          <app-consultation-list
+            [consultations]="consultations()"
+            [activeId]="activeConsultation()?.id ?? null"
+            [userRole]="auth.user()?.role ?? null"
+            [disabled]="isProcessing()"
+            [paymentIdle]="paymentFlowState() === 'IDLE'"
+            (selected)="setActive($event)"
+            (pay)="pay($event)"
+          />
         </section>
 
         <section class="grid two">
-          <div class="panel">
-            <h2>Today&apos;s Medicines</h2>
-            <label>
-              Snooze minutes
-              <input type="number" min="5" max="120" [(ngModel)]="snoozeMinutes" />
-            </label>
-            <div class="cards">
-              @for (dose of todayDoseEvents(); track dose.id) {
-                <article class="consult-card">
-                  <strong>{{ dose.prescriptionItem.medicineName }}</strong>
-                  <span>
-                    {{ dose.scheduledFor | date: 'shortTime' }} |
-                    {{ dose.prescriptionItem.dose || 'Dose as advised' }}
-                  </span>
-                  <small>Status: {{ dose.status }}</small>
-                  @if (dose.status === 'PENDING') {
-                    <div class="actions">
-                      <button class="primary" [disabled]="isProcessing()" (click)="markDoseTaken(dose.id)">Taken</button>
-                      <button class="secondary" [disabled]="isProcessing()" (click)="skipDose(dose.id)">Skip</button>
-                      <button class="secondary" [disabled]="isProcessing()" (click)="snoozeDose(dose.id)">Snooze</button>
-                    </div>
-                  }
-                </article>
-              } @empty {
-                <p class="muted">No medicine reminders for today.</p>
-              }
-            </div>
-          </div>
-
-          <div class="panel">
-            <h2>Reminder Preferences</h2>
-            <label><input type="checkbox" [(ngModel)]="reminderPreferences.inApp" /> In-app</label>
-            <label><input type="checkbox" [(ngModel)]="reminderPreferences.sms" /> SMS</label>
-            <label><input type="checkbox" [(ngModel)]="reminderPreferences.whatsapp" /> WhatsApp</label>
-            <label><input type="checkbox" [(ngModel)]="reminderPreferences.push" /> Push</label>
-            <label>
-              Quiet hours start
-              <input [(ngModel)]="reminderPreferences.quietHoursStart" placeholder="22:00" />
-            </label>
-            <label>
-              Quiet hours end
-              <input [(ngModel)]="reminderPreferences.quietHoursEnd" placeholder="07:00" />
-            </label>
-            <button class="primary" [disabled]="isProcessing()" (click)="saveReminderPreferences()">Save preferences</button>
-          </div>
-
-          <div class="panel">
-            <h2>Prescription History</h2>
-            <div class="cards">
-              @for (prescription of patientPrescriptions(); track prescription.id) {
-                <article class="consult-card">
-                  <strong>{{ prescription.diagnosis || 'Prescription' }} (v{{ prescription.version || 1 }})</strong>
-                  <span>{{ prescription.createdAt | date: 'medium' }}</span>
-                  <small>{{ prescription.method || 'Method not specified' }}</small>
-                  @if (prescription.items?.length) {
-                    <p class="muted">
-                      Medicines:
-                      {{ prescription.items?.length }}
-                    </p>
-                  }
-                </article>
-              } @empty {
-                <p class="muted">No prescriptions published yet.</p>
-              }
-            </div>
-          </div>
+          <app-today-medicines
+            [doseEvents]="todayDoseEvents()"
+            [disabled]="isProcessing()"
+            [snoozeMinutes]="snoozeMinutes"
+            (snoozeMinutesChange)="snoozeMinutes = $event"
+            (taken)="markDoseTaken($event)"
+            (skipped)="skipDose($event)"
+            (snoozed)="snoozeDose($event)"
+          />
+          <app-reminder-preferences
+            [prefs]="reminderPreferences"
+            [disabled]="isProcessing()"
+            (saved)="onSavePreferences($event)"
+          />
+          <app-prescription-history [prescriptions]="patientPrescriptions()" />
         </section>
       }
 
       @if (auth.user()?.role === 'DOCTOR') {
         <section class="grid two">
-          <ng-container *ngTemplateOutlet="consultationList"></ng-container>
-          <ng-container *ngTemplateOutlet="activeConsultationTools"></ng-container>
+          <app-consultation-list
+            [consultations]="consultations()"
+            [activeId]="activeConsultation()?.id ?? null"
+            [userRole]="auth.user()?.role ?? null"
+            [disabled]="isProcessing()"
+            (selected)="setActive($event)"
+          />
+          <app-consultation-detail
+            [consultation]="activeConsultation()"
+            [userRole]="auth.user()?.role ?? null"
+            [disabled]="isProcessing()"
+            (messageSent)="onMessageSent($event)"
+            (uploadPrescription)="onUploadPrescription($event)"
+            (complete)="onComplete()"
+          />
         </section>
       }
 
       @if (auth.user()?.role === 'ADMIN') {
-        <section class="stats">
-          <div class="panel">
-            <span>Total revenue</span>
-            <strong>{{ (report()?.revenueInPaise || 0) / 100 | currency: 'INR' }}</strong>
-          </div>
-          <div class="panel">
-            <span>Active doctors</span>
-            <strong>{{ report()?.activeDoctors || 0 }}</strong>
-          </div>
-          <div class="panel">
-            <span>Consultations</span>
-            <strong>{{ consultations().length }}</strong>
-          </div>
-        </section>
+        <app-admin-stats
+          [revenueInPaise]="report()?.revenueInPaise || 0"
+          [activeDoctors]="report()?.activeDoctors || 0"
+          [consultationsCount]="consultations().length"
+        />
 
         <section class="grid two">
           <div class="panel">
@@ -216,94 +155,24 @@ type PaymentFlowState = 'IDLE' | 'CREATING_ORDER' | 'OPENING_CHECKOUT' | 'VERIFY
         </section>
 
         <section class="grid two">
-          <ng-container *ngTemplateOutlet="consultationList"></ng-container>
-          <ng-container *ngTemplateOutlet="activeConsultationTools"></ng-container>
+          <app-consultation-list
+            [consultations]="consultations()"
+            [activeId]="activeConsultation()?.id ?? null"
+            [userRole]="auth.user()?.role ?? null"
+            [disabled]="isProcessing()"
+            (selected)="setActive($event)"
+          />
+          <app-consultation-detail
+            [consultation]="activeConsultation()"
+            [userRole]="auth.user()?.role ?? null"
+            [disabled]="isProcessing()"
+            (messageSent)="onMessageSent($event)"
+            (uploadPrescription)="onUploadPrescription($event)"
+            (complete)="onComplete()"
+          />
         </section>
       }
     </main>
-
-    <ng-template #consultationList>
-      <div class="panel">
-        <h2>Consultations</h2>
-        <div class="cards">
-          @for (consultation of consultations(); track consultation.id) {
-            <article class="consult-card" [class.active]="activeConsultation()?.id === consultation.id">
-              <button class="link-card" (click)="setActive(consultation)">
-                <strong>{{ consultation.disease.name }}</strong>
-                <span>{{ consultation.patient.name }}</span>
-                <small>{{ consultation.status }}</small>
-                <small>Plan: {{ consultation.billingPlanCode || consultation.payment?.billingPlanCode || 'ONE_TIME' }}</small>
-                <small>Amount: {{ (consultation.payment?.amountInPaise || 0) / 100 | currency: 'INR' }}</small>
-              </button>
-              @if (auth.user()?.role === 'PATIENT' && consultation.status === 'PAYMENT_PENDING') {
-                <button class="primary" [disabled]="isProcessing() || paymentFlowState() !== 'IDLE'" (click)="pay(consultation)">
-                  Pay now
-                </button>
-              }
-              @if (consultation.prescription || consultation.prescriptions?.length) {
-                <p class="success">Prescription uploaded</p>
-              }
-            </article>
-          } @empty {
-            <p class="muted">No consultations yet.</p>
-          }
-        </div>
-      </div>
-    </ng-template>
-
-    <ng-template #activeConsultationTools>
-      <div class="panel">
-        @if (activeConsultation(); as consultation) {
-          <h2>{{ consultation.disease.name }}</h2>
-          <p class="muted">Patient: {{ consultation.patient.name }} | Doctor: {{ consultation.assignedDoctor?.name || 'Not assigned' }}</p>
-
-          <h3>Intake answers</h3>
-          @for (answer of consultation.intakeAnswers | keyvalue; track answer.key) {
-            <p><strong>{{ answer.key }}:</strong> {{ answer.value }}</p>
-          }
-
-          <h3>Chat</h3>
-          <div class="chat-box">
-            @for (message of consultation.messages; track message.id) {
-              <p><strong>{{ message.sender.name }}:</strong> {{ message.body }}</p>
-            } @empty {
-              <p class="muted">No messages yet.</p>
-            }
-          </div>
-          <label>
-            New message
-            <textarea [(ngModel)]="messageBody"></textarea>
-          </label>
-          <button class="secondary" [disabled]="isProcessing()" (click)="sendMessage(consultation)">Send message</button>
-
-          @if (auth.user()?.role !== 'PATIENT') {
-            <h3>Prescription</h3>
-            <label>
-              Notes
-              <textarea [(ngModel)]="prescription.notes"></textarea>
-            </label>
-            <label>
-              File URL
-              <input [(ngModel)]="prescription.fileUrl" placeholder="https://..." />
-            </label>
-            <button class="primary" [disabled]="isProcessing()" (click)="uploadPrescription(consultation)">Upload prescription</button>
-            <button class="secondary" [disabled]="isProcessing()" (click)="completeConsultation(consultation)">Mark complete</button>
-          }
-
-          @if (consultation.prescription) {
-            <div class="prescription">
-              <h3>Prescription for patient</h3>
-              <p>{{ consultation.prescription.notes }}</p>
-              @if (consultation.prescription.fileUrl) {
-                <a [href]="consultation.prescription.fileUrl" target="_blank" rel="noopener">Open prescription file</a>
-              }
-            </div>
-          }
-        } @else {
-          <p class="muted">Select a consultation to view details.</p>
-        }
-      </div>
-    </ng-template>
 
     <app-payment-status-overlay
       [state]="paymentFlowState()"
@@ -341,13 +210,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     'https://wa.me/919876543210?text=Hi%20Vitalis%20Care%20and%20Research%20Centre%2C%20I%20need%20help%20with%20my%20consultation';
   private realtimeChannel?: RealtimeChannel;
 
-  selectedDiseaseId = '';
-  purchaseType: 'ONE_TIME' | 'PLAN' = 'ONE_TIME';
-  selectedPlanCode = '';
-  intakeAnswers: Record<string, string> = {};
-  messageBody = '';
   snoozeMinutes = 15;
-  prescription = { notes: '', fileUrl: '' };
   assignment = { consultationId: '', doctorId: '' };
   doctorForm = {
     name: 'Dr. New Doctor',
@@ -356,7 +219,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     password: 'Password@123',
     specialty: 'Dermatology'
   };
-  reminderPreferences = {
+  reminderPreferences: ReminderPrefs = {
     inApp: true,
     sms: true,
     whatsapp: false,
@@ -382,47 +245,24 @@ export class DashboardComponent implements OnInit, OnDestroy {
     }
   }
 
-  selectedDisease() {
-    return this.diseases().find((disease) => disease.id === this.selectedDiseaseId);
-  }
-
-  selectedPlan() {
-    return this.billingPlans().find((plan) => plan.code === this.selectedPlanCode) || null;
-  }
-
-  estimatedPayableInPaise() {
-    if (this.purchaseType === 'PLAN') {
-      return this.selectedPlan()?.priceInPaise || 0;
-    }
-    return this.selectedDisease()?.feeInPaise || 0;
-  }
-
-  resetAnswers() {
-    this.intakeAnswers = {};
-  }
-
-  bookConsultation() {
-    if (!this.selectedDiseaseId) {
-      return this.showNotice('Select a disease first.');
-    }
-
+  onBooked(payload: BookConsultationPayload) {
     this.isProcessing.set(true);
     this.api
       .createConsultation({
-        diseaseId: this.selectedDiseaseId,
-        intakeAnswers: this.intakeAnswers,
-        purchaseType: this.purchaseType,
-        ...(this.purchaseType === 'PLAN' ? { planCode: this.selectedPlanCode } : {})
+        diseaseId: payload.diseaseId,
+        intakeAnswers: payload.intakeAnswers,
+        purchaseType: payload.purchaseType,
+        ...(payload.purchaseType === 'PLAN' ? { planCode: payload.planCode } : {})
       })
       .subscribe({
-      next: () => {
-        this.showNotice('Consultation created. Complete payment to continue.');
-        this.loadConsultations();
-      },
-      error: (error) => {
-        this.isProcessing.set(false);
-        this.showNotice(error.error?.message || error.message || 'Could not create consultation.');
-      },
+        next: () => {
+          this.showNotice('Consultation created. Complete payment to continue.');
+          this.loadConsultations();
+        },
+        error: (error) => {
+          this.isProcessing.set(false);
+          this.showNotice(error.error?.message || error.message || 'Could not create consultation.');
+        },
         complete: () => this.isProcessing.set(false)
       });
   }
@@ -492,9 +332,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   retryPayment() {
     const consultation = this.paymentFlowConsultation();
-    if (!consultation) {
-      return;
-    }
+    if (!consultation) return;
     this.pay(consultation);
   }
 
@@ -508,21 +346,12 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   setActive(consultation: Consultation) {
     this.activeConsultation.set(consultation);
-    this.prescription.notes = consultation.prescription?.notes || '';
-    this.prescription.fileUrl = consultation.prescription?.fileUrl || '';
   }
 
-  sendMessage(consultation: Consultation) {
-    if (!this.messageBody.trim()) {
-      return;
-    }
-
+  onMessageSent(payload: SendMessagePayload) {
     this.isProcessing.set(true);
-    this.api.sendMessage(consultation.id, this.messageBody).subscribe({
-      next: () => {
-        this.messageBody = '';
-        this.loadConsultations();
-      },
+    this.api.sendMessage(payload.consultation.id, payload.body).subscribe({
+      next: () => this.loadConsultations(),
       error: (error) => {
         this.isProcessing.set(false);
         this.showNotice(error.error?.message || error.message || 'Could not send message.');
@@ -531,9 +360,11 @@ export class DashboardComponent implements OnInit, OnDestroy {
     });
   }
 
-  uploadPrescription(consultation: Consultation) {
+  onUploadPrescription(payload: PrescriptionPayload) {
+    const consultation = this.activeConsultation();
+    if (!consultation) return;
     this.isProcessing.set(true);
-    this.api.uploadPrescription(consultation.id, this.prescription).subscribe({
+    this.api.uploadPrescription(consultation.id, payload).subscribe({
       next: () => {
         this.showNotice('Prescription uploaded.');
         this.loadConsultations();
@@ -546,7 +377,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
     });
   }
 
-  completeConsultation(consultation: Consultation) {
+  onComplete() {
+    const consultation = this.activeConsultation();
+    if (!consultation) return;
     this.isProcessing.set(true);
     this.api.completeConsultation(consultation.id).subscribe({
       next: () => {
@@ -607,9 +440,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
     });
   }
 
-  saveReminderPreferences() {
+  onSavePreferences(prefs: ReminderPrefs) {
     this.isProcessing.set(true);
-    this.api.saveReminderPreferences(this.reminderPreferences).subscribe({
+    this.api.saveReminderPreferences(prefs).subscribe({
       next: () => this.showNotice('Reminder preferences saved.'),
       error: (error) => {
         this.isProcessing.set(false);
@@ -663,7 +496,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.api.diseases().subscribe({
       next: ({ diseases }) => {
         this.diseases.set(diseases);
-        this.selectedDiseaseId = diseases[0]?.id || '';
         this.isLoading.set(false);
       },
       error: (error) => {
@@ -672,22 +504,13 @@ export class DashboardComponent implements OnInit, OnDestroy {
       }
     });
     this.api.billingPlans().subscribe({
-      next: ({ plans }) => {
-        this.billingPlans.set(plans || []);
-        this.selectedPlanCode =
-          (plans || []).find((plan) => plan.code !== 'ONE_TIME')?.code ||
-          (plans || [])[0]?.code ||
-          '';
-      },
-      error: () => {
-        // keep disease-based one-time fallback
-      }
+      next: ({ plans }) => this.billingPlans.set(plans || []),
+      error: () => { /* keep disease-based one-time fallback */ }
     });
     this.loadConsultations();
     if (this.auth.user()?.role === 'PATIENT') {
       this.loadPatientMedicationData();
     }
-
     if (this.auth.user()?.role === 'ADMIN') {
       this.loadAdminData();
     }
@@ -699,7 +522,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
         this.consultations.set(consultations);
         this.activeConsultation.set(
           this.activeConsultation()
-            ? consultations.find((consultation) => consultation.id === this.activeConsultation()?.id) || null
+            ? consultations.find((c) => c.id === this.activeConsultation()?.id) || null
             : consultations[0] || null
         );
         this.assignment.consultationId = consultations[0]?.id || this.assignment.consultationId;
@@ -724,17 +547,13 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   private loadPatientMedicationData() {
     this.api.reminderPreferences().subscribe({
-      next: ({ preferences }) => {
-        this.reminderPreferences = preferences;
-      },
+      next: ({ preferences }) => { this.reminderPreferences = preferences; },
       error: (error) => this.showNotice(error.error?.message || error.message || 'Could not load reminder preferences.')
     });
-
     this.api.patientPrescriptions().subscribe({
       next: ({ prescriptions }) => this.patientPrescriptions.set(prescriptions),
       error: (error) => this.showNotice(error.error?.message || error.message || 'Could not load prescriptions.')
     });
-
     this.api.todayDoseEvents().subscribe({
       next: ({ doseEvents }) => this.todayDoseEvents.set(doseEvents),
       error: (error) => this.showNotice(error.error?.message || error.message || 'Could not load today medicines.')
