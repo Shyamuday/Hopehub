@@ -1,57 +1,75 @@
 <section class="panel">
   <h2>Create Doctor</h2>
   <div class="toolbar">
-    <input placeholder="Name" name="createName" [(ngModel)]="createName" />
-    <input placeholder="Email" name="createEmail" [(ngModel)]="createEmail" />
-    <input placeholder="Mobile" name="createMobile" [(ngModel)]="createMobile" />
-    <input placeholder="Password" name="createPassword" type="password" [(ngModel)]="createPassword" />
-    <input placeholder="Specialty" name="createSpecialty" [(ngModel)]="createSpecialty" />
-    <input placeholder="Registration No" name="createRegistrationNo" [(ngModel)]="createRegistrationNo" />
-    <button type="button" (click)="createDoctor()">Create</button>
+    <input placeholder="Name" name="createName" [(ngModel)]="createName" [disabled]="mutating" />
+    <input placeholder="Email" name="createEmail" [(ngModel)]="createEmail" [disabled]="mutating" />
+    <input placeholder="Mobile" name="createMobile" [(ngModel)]="createMobile" [disabled]="mutating" />
+    <input placeholder="Password" name="createPassword" type="password" [(ngModel)]="createPassword" [disabled]="mutating" />
+    <input placeholder="Specialty" name="createSpecialty" [(ngModel)]="createSpecialty" [disabled]="mutating" />
+    <input placeholder="Registration No" name="createRegistrationNo" [(ngModel)]="createRegistrationNo" [disabled]="mutating" />
+    <button type="button" (click)="createDoctor()" [disabled]="mutating || loading">
+      {{ mutating ? 'Creating...' : 'Create' }}
+    </button>
   </div>
 </section>
 
 <section class="panel">
   <h2>Pending Doctor Approvals</h2>
+
+  @if (loading) {
+    <p class="loading-text">Loading...</p>
+  }
+
   <div class="toolbar">
     <input
       placeholder="Search pending doctors..."
       name="pendingSearchTerm"
       [(ngModel)]="pendingSearchTerm"
       (ngModelChange)="setPendingPage(1)"
+      [disabled]="loading"
     />
     <label class="select-all">
       <input
         type="checkbox"
         [checked]="allVisiblePendingSelected()"
         (change)="toggleSelectAllVisiblePending($any($event.target).checked)"
+        [disabled]="loading || mutating"
       />
       Select visible
     </label>
-    <button type="button" (click)="bulkApproveSelected()">Bulk Approve</button>
-    <button type="button" (click)="bulkRejectSelected()">Bulk Keep Pending</button>
+    <button type="button" (click)="bulkApproveSelected()" [disabled]="loading || mutating || !selectedPendingDoctorIds.length">
+      {{ mutating ? 'Working...' : 'Bulk Approve' }}
+    </button>
+    <button type="button" (click)="bulkRejectSelected()" [disabled]="loading || mutating || !selectedPendingDoctorIds.length">
+      Bulk Keep Pending
+    </button>
   </div>
 
-  @for (doctor of visiblePendingDoctors(); track doctor.id) {
-    <article class="card">
-      <label class="select-doctor">
-        <input
-          type="checkbox"
-          [checked]="isPendingDoctorSelected(doctor.id)"
-          (change)="togglePendingDoctorSelection(doctor.id, $any($event.target).checked)"
-        />
-        Select
-      </label>
-      <strong>{{ doctor.name }}</strong>
-      <p>{{ doctor.email }} | {{ doctor.mobile || 'No mobile' }}</p>
-      <small>{{ doctor.doctorProfile?.specialty || 'Specialty not set' }} | {{ doctor.doctorProfile?.registrationNo || 'No registration no.' }}</small>
-      <div class="actions">
-        <button type="button" (click)="approveDoctor(doctor.id)">Approve</button>
-        <button type="button" (click)="rejectDoctor(doctor.id)">Keep Pending</button>
-      </div>
-    </article>
-  } @empty {
-    <p>No pending doctor enrollments.</p>
+  @if (!loading) {
+    @for (doctor of visiblePendingDoctors(); track doctor.id) {
+      <article class="card">
+        <label class="select-doctor">
+          <input
+            type="checkbox"
+            [checked]="isPendingDoctorSelected(doctor.id)"
+            (change)="togglePendingDoctorSelection(doctor.id, $any($event.target).checked)"
+            [disabled]="mutating"
+          />
+          Select
+        </label>
+        <strong>{{ doctor.name }}</strong>
+        <p>{{ doctor.email }} | {{ doctor.mobile || 'No mobile' }}</p>
+        <small>{{ doctor.doctorProfile?.specialty || 'Specialty not set' }} | {{ doctor.doctorProfile?.registrationNo || 'No registration no.' }}</small>
+        <div class="actions">
+          <button type="button" (click)="approveDoctor(doctor.id)" [disabled]="mutating">
+            {{ mutating ? '...' : 'Approve' }}
+          </button>
+          <button type="button" (click)="rejectDoctor(doctor.id)" [disabled]="mutating">Keep Pending</button>
+        </div>
+      </article>
+    } @empty {
+      <p class="empty-state">No pending doctor enrollments.</p>
+    }
   }
   <div class="pagination">
     @for (page of pendingPages(); track page) {
@@ -80,14 +98,17 @@
     </select>
   </div>
 
-  @for (doctor of visibleDoctors(); track doctor.id) {
-    <article class="card">
-      <strong>{{ doctor.name }}</strong> <button type="button" class="link" (click)="setSelectedDoctor(doctor.id)">View details</button>
-      <p>{{ doctor.email }} | {{ doctor.mobile || 'No mobile' }}</p>
-      <small>{{ doctor.doctorProfile?.specialty || 'Specialty not set' }} | {{ doctor.isActive ? 'Active' : 'Inactive' }}</small>
-    </article>
-  } @empty {
-    <p>No doctors found.</p>
+  @if (!loading) {
+    @for (doctor of visibleDoctors(); track doctor.id) {
+      <article class="card">
+        <strong>{{ doctor.name }}</strong>
+        <button type="button" class="link" (click)="setSelectedDoctor(doctor.id)" [disabled]="mutating">View details</button>
+        <p>{{ doctor.email }} | {{ doctor.mobile || 'No mobile' }}</p>
+        <small>{{ doctor.doctorProfile?.specialty || 'Specialty not set' }} | {{ doctor.isActive ? 'Active' : 'Inactive' }}</small>
+      </article>
+    } @empty {
+      <p class="empty-state">No doctors found.</p>
+    }
   }
   <div class="pagination">
     @for (page of doctorsPages(); track page) {
@@ -109,25 +130,31 @@
       <p>Available: {{ selectedDoctor.doctorProfile?.isAvailable ? 'Yes' : 'No' }}</p>
       <div class="actions">
         @if (selectedDoctor.isActive) {
-          <button type="button" (click)="toggleDoctorStatus(selectedDoctor.id, false)">Deactivate</button>
+          <button type="button" (click)="toggleDoctorStatus(selectedDoctor.id, false)" [disabled]="mutating">
+            {{ mutating ? '...' : 'Deactivate' }}
+          </button>
         } @else {
-          <button type="button" (click)="toggleDoctorStatus(selectedDoctor.id, true)">Activate</button>
+          <button type="button" (click)="toggleDoctorStatus(selectedDoctor.id, true)" [disabled]="mutating">
+            {{ mutating ? '...' : 'Activate' }}
+          </button>
         }
       </div>
     </article>
     <article class="card">
       <h3>Edit Doctor</h3>
       <div class="toolbar">
-        <input placeholder="Name" name="editName" [(ngModel)]="editName" />
-        <input placeholder="Email" name="editEmail" [(ngModel)]="editEmail" />
-        <input placeholder="Mobile" name="editMobile" [(ngModel)]="editMobile" />
-        <input placeholder="Specialty" name="editSpecialty" [(ngModel)]="editSpecialty" />
-        <input placeholder="Registration No" name="editRegistrationNo" [(ngModel)]="editRegistrationNo" />
+        <input placeholder="Name" name="editName" [(ngModel)]="editName" [disabled]="mutating" />
+        <input placeholder="Email" name="editEmail" [(ngModel)]="editEmail" [disabled]="mutating" />
+        <input placeholder="Mobile" name="editMobile" [(ngModel)]="editMobile" [disabled]="mutating" />
+        <input placeholder="Specialty" name="editSpecialty" [(ngModel)]="editSpecialty" [disabled]="mutating" />
+        <input placeholder="Registration No" name="editRegistrationNo" [(ngModel)]="editRegistrationNo" [disabled]="mutating" />
         <label>
-          <input type="checkbox" name="editIsAvailable" [(ngModel)]="editIsAvailable" />
+          <input type="checkbox" name="editIsAvailable" [(ngModel)]="editIsAvailable" [disabled]="mutating" />
           Available
         </label>
-        <button type="button" (click)="saveDoctorEdits()">Save</button>
+        <button type="button" (click)="saveDoctorEdits()" [disabled]="mutating">
+          {{ mutating ? 'Saving...' : 'Save' }}
+        </button>
       </div>
     </article>
   } @else {
@@ -139,5 +166,8 @@
   <p class="success">{{ message }}</p>
 }
 @if (error) {
-  <p class="error">{{ error }}</p>
+  <div class="error-row">
+    <p class="error">{{ error }}</p>
+    <button type="button" class="retry-btn" (click)="load()" [disabled]="loading || mutating">Retry</button>
+  </div>
 }

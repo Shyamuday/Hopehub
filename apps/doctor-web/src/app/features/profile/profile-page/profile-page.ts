@@ -23,6 +23,7 @@ export class ProfilePage {
   message = '';
   error = '';
   isLoading = false;
+  saving = false;
 
   constructor(
     private readonly http: HttpClient,
@@ -73,6 +74,7 @@ export class ProfilePage {
   async saveProfile() {
     this.message = '';
     this.error = '';
+    this.saving = true;
     try {
       await firstValueFrom(
         this.http.put(
@@ -90,6 +92,8 @@ export class ProfilePage {
       this.message = 'Profile updated successfully.';
     } catch {
       this.error = 'Could not save profile.';
+    } finally {
+      this.saving = false;
     }
   }
 }

@@ -45,6 +45,7 @@ export class ConsumersPage {
   consumers: Consumer[] = [];
   selectedConsumerId = '';
   consumerDetail: ConsumerDetail | null = null;
+  listLoading = false;
   detailLoading = false;
   searchTerm = '';
   sortBy: 'name' | 'consultations' = 'consultations';
@@ -52,14 +53,16 @@ export class ConsumersPage {
   pageSize = 8;
   page = 1;
   totalPagesCount = 1;
-  error = '';
+  listError = '';
+  detailError = '';
 
   constructor(private readonly api: AdminApi) {
     void this.load();
   }
 
   async load() {
-    this.error = '';
+    this.listLoading = true;
+    this.listError = '';
     try {
       const response = await this.api.getConsumersPaged({
         page: this.page,
@@ -79,7 +82,9 @@ export class ConsumersPage {
         this.consumerDetail = null;
       }
     } catch {
-      this.error = 'Could not load consumers.';
+      this.listError = 'Could not load consumers.';
+    } finally {
+      this.listLoading = false;
     }
   }
 
@@ -107,11 +112,11 @@ export class ConsumersPage {
 
   private async loadConsumerDetail(consumerId: string) {
     this.detailLoading = true;
-    this.error = '';
+    this.detailError = '';
     try {
       this.consumerDetail = (await this.api.getConsumerDetail(consumerId)) as ConsumerDetail;
     } catch {
-      this.error = 'Could not load consumer details.';
+      this.detailError = 'Could not load consumer details.';
       this.consumerDetail = null;
     } finally {
       this.detailLoading = false;

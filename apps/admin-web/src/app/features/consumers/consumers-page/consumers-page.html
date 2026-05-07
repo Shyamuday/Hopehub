@@ -11,15 +11,24 @@
       <option value="asc">Asc</option>
     </select>
   </div>
-  @for (consumer of visibleConsumers(); track consumer.id) {
-    <article class="card">
-      <strong>{{ consumer.name }}</strong>
-      <button type="button" class="link" (click)="selectConsumer(consumer.id)">View details</button>
-      <p>{{ consumer.email || 'No email' }} | {{ consumer.mobile || 'No mobile' }}</p>
-      <small>Total consultations: {{ consumer.consultations }}</small>
-    </article>
-  } @empty {
-    <p>No consumers found.</p>
+  @if (listLoading) {
+    <p class="loading-text">Loading consumers...</p>
+  } @else if (listError) {
+    <div class="error-row">
+      <p class="error">{{ listError }}</p>
+      <button type="button" class="retry-btn" (click)="load()">Retry</button>
+    </div>
+  } @else {
+    @for (consumer of visibleConsumers(); track consumer.id) {
+      <article class="card">
+        <strong>{{ consumer.name }}</strong>
+        <button type="button" class="link" (click)="selectConsumer(consumer.id)" [disabled]="detailLoading">View details</button>
+        <p>{{ consumer.email || 'No email' }} | {{ consumer.mobile || 'No mobile' }}</p>
+        <small>Total consultations: {{ consumer.consultations }}</small>
+      </article>
+    } @empty {
+      <p class="empty-state">No consumers found.</p>
+    }
   }
   <div class="pagination">
     @for (p of pages(); track p) {
@@ -31,7 +40,12 @@
 <section class="panel">
   <h2>Consumer Details</h2>
   @if (detailLoading) {
-    <p>Loading detail...</p>
+    <p class="loading-text">Loading details...</p>
+  } @else if (detailError) {
+    <div class="error-row">
+      <p class="error">{{ detailError }}</p>
+      <button type="button" class="retry-btn" (click)="selectConsumer(selectedConsumerId)">Retry</button>
+    </div>
   } @else if (consumerDetail; as detail) {
     <article class="card">
       <strong>{{ detail.consumer.name }}</strong>
@@ -56,6 +70,3 @@
   }
 </section>
 
-@if (error) {
-  <p class="error">{{ error }}</p>
-}

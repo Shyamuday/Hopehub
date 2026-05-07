@@ -1,7 +1,19 @@
 <section class="panel">
-  <h2>Doctor Payment Dashboard</h2>
-  <button type="button" (click)="loadSummary()">Refresh</button>
-  @if (summary; as data) {
+  <div class="panel-header">
+    <h2>Doctor Payment Dashboard</h2>
+    <button type="button" (click)="loadSummary()" [disabled]="loading">
+      {{ loading ? 'Refreshing...' : 'Refresh' }}
+    </button>
+  </div>
+
+  @if (loading && !summary) {
+    <p class="loading-text">Loading payment summary...</p>
+  } @else if (error) {
+    <div class="error-row">
+      <p class="error">{{ error }}</p>
+      <button type="button" class="retry-btn" (click)="loadSummary()">Retry</button>
+    </div>
+  } @else if (summary; as data) {
     <div class="stats">
       <article class="card">
         <h3>Paid Consultations</h3>
@@ -12,28 +24,30 @@
         <p>{{ data.totals.grossInPaise / 100 | currency: 'INR' }}</p>
       </article>
       <article class="card">
-        <h3>Estimated Earnings ({{ data.doctorSharePercent }}%)</h3>
+        <h3>Your Earnings ({{ data.doctorSharePercent }}%)</h3>
         <p>{{ data.totals.estimatedDoctorEarningsInPaise / 100 | currency: 'INR' }}</p>
       </article>
     </div>
+  } @else {
+    <p class="empty-state">No payment data available yet.</p>
   }
 </section>
 
 <section class="panel">
   <h3>Recent Paid Consultations</h3>
-  @for (item of summary?.payments || []; track item.id) {
-    <article class="card">
-      <strong>{{ item.consultation?.patient?.name || 'Patient' }} - {{ item.consultation?.disease?.name || 'Consultation' }}</strong>
-      <p>
-        {{ item.amountInPaise / 100 | currency: 'INR' }} | Plan: {{ item.billingPlanCode || 'ONE_TIME' }} | Paid:
-        {{ item.createdAt | date: 'medium' }}
-      </p>
-    </article>
-  } @empty {
-    <p>No paid consultations yet.</p>
+  @if (loading && !summary) {
+    <p class="loading-text">Loading...</p>
+  } @else {
+    @for (item of summary?.payments || []; track item.id) {
+      <article class="card">
+        <strong>{{ item.consultation?.patient?.name || 'Patient' }} — {{ item.consultation?.disease?.name || 'Consultation' }}</strong>
+        <p>
+          {{ item.amountInPaise / 100 | currency: 'INR' }} | Plan: {{ item.billingPlanCode || 'ONE_TIME' }} |
+          {{ item.createdAt | date: 'mediumDate' }}
+        </p>
+      </article>
+    } @empty {
+      <p class="empty-state">No paid consultations yet.</p>
+    }
   }
 </section>
-
-@if (error) {
-  <p class="error">{{ error }}</p>
-}

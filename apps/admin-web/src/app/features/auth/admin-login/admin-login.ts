@@ -13,6 +13,7 @@ export class AdminLogin {
   email = '';
   password = '';
   error = '';
+  submitting = false;
 
   constructor(
     private readonly auth: AdminAuth,
@@ -21,12 +22,16 @@ export class AdminLogin {
 
   async submit() {
     this.error = '';
-    const result = await this.auth.login(this.email, this.password);
-    if (!result.ok) {
-      this.error = result.message;
-      return;
+    this.submitting = true;
+    try {
+      const result = await this.auth.login(this.email, this.password);
+      if (!result.ok) {
+        this.error = result.message;
+        return;
+      }
+      void this.router.navigateByUrl('/dashboard');
+    } finally {
+      this.submitting = false;
     }
-
-    void this.router.navigateByUrl('/dashboard');
   }
 }

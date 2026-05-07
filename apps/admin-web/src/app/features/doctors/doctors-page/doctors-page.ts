@@ -41,6 +41,8 @@ export class DoctorsPage {
   doctorsTotalPagesCount = 1;
   pendingTotalPagesCount = 1;
 
+  loading = false;
+  mutating = false;
   error = '';
   message = '';
   editName = '';
@@ -61,6 +63,7 @@ export class DoctorsPage {
   }
 
   async load() {
+    this.loading = true;
     this.error = '';
     try {
       const [allDoctors, pending] = await Promise.all([
@@ -87,36 +90,45 @@ export class DoctorsPage {
       this.syncEditFormFromSelectedDoctor();
     } catch {
       this.error = 'Could not load doctors.';
+    } finally {
+      this.loading = false;
     }
   }
 
   async approveDoctor(doctorId: string) {
     this.message = '';
     this.error = '';
+    this.mutating = true;
     try {
       await this.api.approveDoctor(doctorId);
       this.message = 'Doctor approved.';
       await this.load();
     } catch {
       this.error = 'Could not approve doctor.';
+    } finally {
+      this.mutating = false;
     }
   }
 
   async rejectDoctor(doctorId: string) {
     this.message = '';
     this.error = '';
+    this.mutating = true;
     try {
       await this.api.rejectDoctor(doctorId);
       this.message = 'Doctor kept as pending/inactive.';
       await this.load();
     } catch {
       this.error = 'Could not update doctor status.';
+    } finally {
+      this.mutating = false;
     }
   }
 
   async toggleDoctorStatus(doctorId: string, makeActive: boolean) {
     this.message = '';
     this.error = '';
+    this.mutating = true;
     try {
       await this.api.setDoctorStatus(doctorId, makeActive);
       this.message = makeActive ? 'Doctor activated.' : 'Doctor deactivated.';
@@ -125,6 +137,8 @@ export class DoctorsPage {
       this.syncEditFormFromSelectedDoctor();
     } catch {
       this.error = 'Could not update doctor status.';
+    } finally {
+      this.mutating = false;
     }
   }
 
@@ -136,6 +150,7 @@ export class DoctorsPage {
       return;
     }
 
+    this.mutating = true;
     try {
       await this.api.updateDoctor(doctorId, {
         name: this.editName.trim(),
@@ -151,12 +166,15 @@ export class DoctorsPage {
       this.syncEditFormFromSelectedDoctor();
     } catch {
       this.error = 'Could not update doctor profile.';
+    } finally {
+      this.mutating = false;
     }
   }
 
   async createDoctor() {
     this.message = '';
     this.error = '';
+    this.mutating = true;
     try {
       await this.api.createDoctor({
         name: this.createName.trim(),
@@ -176,6 +194,8 @@ export class DoctorsPage {
       await this.load();
     } catch {
       this.error = 'Could not create doctor.';
+    } finally {
+      this.mutating = false;
     }
   }
 
@@ -220,12 +240,15 @@ export class DoctorsPage {
 
     this.message = '';
     this.error = '';
+    this.mutating = true;
     try {
       await Promise.all(this.selectedPendingDoctorIds.map((id) => this.api.approveDoctor(id)));
       this.message = `${this.selectedPendingDoctorIds.length} doctors approved.`;
       await this.load();
     } catch {
       this.error = 'Could not complete bulk approve.';
+    } finally {
+      this.mutating = false;
     }
   }
 
@@ -236,12 +259,15 @@ export class DoctorsPage {
 
     this.message = '';
     this.error = '';
+    this.mutating = true;
     try {
       await Promise.all(this.selectedPendingDoctorIds.map((id) => this.api.rejectDoctor(id)));
       this.message = `${this.selectedPendingDoctorIds.length} doctors kept pending.`;
       await this.load();
     } catch {
       this.error = 'Could not complete bulk reject.';
+    } finally {
+      this.mutating = false;
     }
   }
 

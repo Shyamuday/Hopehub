@@ -13,6 +13,7 @@ import { environment } from '../../../../environments/environment';
 })
 export class DashboardHome {
   private readonly apiBase = environment.apiUrl;
+  loading = false;
   error = '';
   summary: {
     doctorSharePercent: number;
@@ -38,6 +39,7 @@ export class DashboardHome {
   }
 
   async loadSummary() {
+    this.loading = true;
     this.error = '';
     try {
       this.summary = await firstValueFrom(
@@ -47,6 +49,8 @@ export class DashboardHome {
       );
     } catch {
       this.error = 'Could not load payment summary.';
+    } finally {
+      this.loading = false;
     }
   }
 }

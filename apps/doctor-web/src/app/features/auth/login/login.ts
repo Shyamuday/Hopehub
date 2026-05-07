@@ -16,6 +16,7 @@ export class Login {
   password = '';
   error = '';
   message = '';
+  submitting = false;
   name = '';
   mobile = '';
   specialty = '';
@@ -29,33 +30,42 @@ export class Login {
   async submit() {
     this.error = '';
     this.message = '';
-    const result = await this.auth.login(this.email, this.password);
-    if (!result.ok) {
-      this.error = result.message;
-      return;
+    this.submitting = true;
+    try {
+      const result = await this.auth.login(this.email, this.password);
+      if (!result.ok) {
+        this.error = result.message;
+        return;
+      }
+      void this.router.navigateByUrl('/dashboard');
+    } finally {
+      this.submitting = false;
     }
-
-    void this.router.navigateByUrl('/dashboard');
   }
 
   async enroll() {
     this.error = '';
     this.message = '';
-    const result = await this.auth.enrollDoctor({
-      name: this.name,
-      email: this.email,
-      mobile: this.mobile || undefined,
-      password: this.password,
-      specialty: this.specialty,
-      registrationNo: this.registrationNo || undefined
-    });
+    this.submitting = true;
+    try {
+      const result = await this.auth.enrollDoctor({
+        name: this.name,
+        email: this.email,
+        mobile: this.mobile || undefined,
+        password: this.password,
+        specialty: this.specialty,
+        registrationNo: this.registrationNo || undefined
+      });
 
-    if (!result.ok) {
-      this.error = result.message;
-      return;
+      if (!result.ok) {
+        this.error = result.message;
+        return;
+      }
+
+      this.mode = 'signin';
+      this.message = result.message;
+    } finally {
+      this.submitting = false;
     }
-
-    this.mode = 'signin';
-    this.message = result.message;
   }
 }

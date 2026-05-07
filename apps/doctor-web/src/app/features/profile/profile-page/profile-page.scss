@@ -40,6 +40,42 @@ button {
 
 .error {
   color: #b91c1c;
+  font-size: 0.875rem;
+  margin: 0;
+}
+
+.loading-text {
+  color: #6b7280;
+  font-size: 0.875rem;
+  margin-bottom: 0.5rem;
+}
+
+.dimmed {
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+.error-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.retry-btn {
+  background: transparent;
+  border: 1px solid #d1d5db;
+  color: #374151;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  padding: 0.35rem 0.7rem;
+
+  &:hover:not(:disabled) { background: #f3f4f6; }
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 @media (max-width: 768px) {

@@ -2,10 +2,10 @@
   <h2>Doctor Profile</h2>
 
   @if (isLoading) {
-    <p>Loading profile...</p>
+    <p class="loading-text">Loading profile...</p>
   }
 
-  <div class="grid">
+  <div class="grid" [class.dimmed]="isLoading">
     <label for="name">Name</label>
     <input id="name" name="name" [(ngModel)]="name" />
 
@@ -28,14 +28,23 @@
   </label>
 
   <div class="actions">
-    <button type="button" (click)="loadProfile()">Reload</button>
-    <button type="button" (click)="saveProfile()">Save Profile</button>
+    <button type="button" (click)="loadProfile()" [disabled]="isLoading || saving">
+      {{ isLoading ? 'Loading...' : 'Reload' }}
+    </button>
+    <button type="button" (click)="saveProfile()" [disabled]="isLoading || saving">
+      {{ saving ? 'Saving...' : 'Save Profile' }}
+    </button>
   </div>
 
   @if (message) {
     <p class="success">{{ message }}</p>
   }
-  @if (error) {
-    <p class="error">{{ error }}</p>
+  @if (error && !isLoading) {
+    <div class="error-row">
+      <p class="error">{{ error }}</p>
+      @if (!saving) {
+        <button type="button" class="retry-btn" (click)="loadProfile()">Retry</button>
+      }
+    </div>
   }
 </section>
