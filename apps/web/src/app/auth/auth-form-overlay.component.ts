@@ -10,6 +10,7 @@ import { AuthService } from './auth.service';
 
 type AuthFormOverlayData = {
   mode?: 'patient' | 'staff';
+  initialForgotStep?: ForgotStep;
 };
 
 type ForgotStep = 'none' | 'email' | 'sent' | 'reset';
@@ -142,7 +143,7 @@ type ForgotStep = 'none' | 'email' | 'sent' | 'reset';
             <form (ngSubmit)="resetPassword()">
               <label>
                 New password
-                <input name="newPassword" type="password" [(ngModel)]="forgot.password" placeholder="Enter new password" />
+                <input name="newPassword" type="password" [(ngModel)]="forgot.password" placeholder="Min 8 characters" />
               </label>
               <label>
                 Confirm password
@@ -163,7 +164,7 @@ export class AuthFormOverlayComponent {
   private readonly overlayData = (inject(APP_OVERLAY_DATA) as AuthFormOverlayData | null) || {};
   readonly mode = signal<'patient' | 'staff'>(this.overlayData.mode || 'patient');
   readonly isProcessing = signal(false);
-  readonly forgotStep = signal<ForgotStep>('none');
+  readonly forgotStep = signal<ForgotStep>(this.overlayData.initialForgotStep || 'none');
   private activeOverlayRef?: AppOverlayRef;
 
   patientCredentials = {
@@ -178,12 +179,12 @@ export class AuthFormOverlayComponent {
   };
 
   staff = {
-    email: 'admin@vitalisclinic.local',
-    password: 'Password@123'
+    email: '',
+    password: ''
   };
 
   forgot = {
-    email: 'admin@vitalisclinic.local',
+    email: '',
     password: '',
     confirmPassword: ''
   };
@@ -201,7 +202,7 @@ export class AuthFormOverlayComponent {
     return !!(this.forgot.password &&
       this.forgot.confirmPassword &&
       this.forgot.password === this.forgot.confirmPassword &&
-      this.forgot.password.length >= 6);
+      this.forgot.password.length >= 8);
   }
 
   requestOtp() {

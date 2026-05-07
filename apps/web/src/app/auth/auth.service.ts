@@ -1,8 +1,9 @@
 import { Injectable, computed, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { firstValueFrom, from, map, tap } from 'rxjs';
+import { firstValueFrom, from, map, switchMap, tap } from 'rxjs';
 import { Role, User } from '../models';
 import { SupabaseAuthService } from './supabase-auth.service';
+import { supabase } from '../supabase.client';
 import { environment } from '../../environments/environment';
 
 type AuthResponse = {
@@ -42,7 +43,44 @@ export class AuthService {
       }
     }
 
-    return this.supabaseAuth.bootstrapSession();
+    const user = await this.supabaseAuth.bootstrapSession();
+    if (user) {
+      try {
+        await this.tryExchangeSupabaseSession();
+      } catch {
+        // exchange is best-effort; Supabase-only session still works for public content
+      }
+    }
+
+    return user;
+  }
+
+  private async tryExchangeSupabaseSession(): Promise<void> {
+    const { data } = await supabase.auth.getSession();
+    const accessToken = data.session?.access_token;
+    if (!accessToken) return;
+
+    const response = await firstValueFrom(
+      this.http.post<AuthResponse>(`${this.apiBase}/auth/supabase-exchange`, { supabaseToken: accessToken })
+    );
+    this.persistSession(response);
+  }
+
+  private exchangeSupabaseSession(user: User) {
+    return from(supabase.auth.getSession()).pipe(
+      switchMap(({ data }) => {
+        const accessToken = data.session?.access_token;
+        if (!accessToken) {
+          const response: AuthResponse = { token: '', user };
+          this.persistSession(response);
+          return [response];
+        }
+
+        return this.http.post<AuthResponse>(`${this.apiBase}/auth/supabase-exchange`, { supabaseToken: accessToken }).pipe(
+          tap((response) => this.persistSession(response))
+        );
+      })
+    );
   }
 
   get token() {
@@ -65,8 +103,7 @@ export class AuthService {
 
   patientPasswordLogin(payload: { identifier: string; password: string }) {
     return from(this.supabaseAuth.signInPatientWithPassword(payload.identifier, payload.password)).pipe(
-      map((user: User): AuthResponse => ({ token: '', user })),
-      tap((response: AuthResponse) => this.persistSession(response))
+      switchMap((user: User) => this.exchangeSupabaseSession(user))
     );
   }
 

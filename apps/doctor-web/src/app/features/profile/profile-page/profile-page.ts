@@ -1,8 +1,7 @@
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
-import { Auth } from '../../../core/services/auth';
 import { environment } from '../../../../environments/environment';
 
 @Component({
@@ -25,17 +24,8 @@ export class ProfilePage {
   isLoading = false;
   saving = false;
 
-  constructor(
-    private readonly http: HttpClient,
-    private readonly auth: Auth
-  ) {
+  constructor(private readonly http: HttpClient) {
     void this.loadProfile();
-  }
-
-  private headers() {
-    return new HttpHeaders({
-      Authorization: `Bearer ${this.auth.token()}`
-    });
   }
 
   async loadProfile() {
@@ -54,7 +44,7 @@ export class ProfilePage {
               isAvailable?: boolean;
             } | null;
           };
-        }>(`${this.apiBase}/doctor/profile`, { headers: this.headers() })
+        }>(`${this.apiBase}/doctor/profile`)
       );
 
       const profile = response.profile;
@@ -77,17 +67,13 @@ export class ProfilePage {
     this.saving = true;
     try {
       await firstValueFrom(
-        this.http.put(
-          `${this.apiBase}/doctor/profile`,
-          {
-            name: this.name,
-            mobile: this.mobile,
-            specialty: this.specialty,
-            registrationNo: this.registrationNo,
-            isAvailable: this.isAvailable
-          },
-          { headers: this.headers() }
-        )
+        this.http.put(`${this.apiBase}/doctor/profile`, {
+          name: this.name,
+          mobile: this.mobile,
+          specialty: this.specialty,
+          registrationNo: this.registrationNo,
+          isAvailable: this.isAvailable
+        })
       );
       this.message = 'Profile updated successfully.';
     } catch {

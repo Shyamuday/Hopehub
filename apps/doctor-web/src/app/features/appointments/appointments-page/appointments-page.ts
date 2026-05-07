@@ -1,10 +1,9 @@
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { DatePipe } from '@angular/common';
 import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-import { Auth } from '../../../core/services/auth';
 import { environment } from '../../../../environments/environment';
 
 type OptionType = 'METHOD' | 'DIAGNOSED_DISEASE';
@@ -81,7 +80,6 @@ export class AppointmentsPage {
 
   constructor(
     private readonly http: HttpClient,
-    private readonly auth: Auth,
     private readonly route: ActivatedRoute
   ) {
     this.consultationId = this.route.snapshot.queryParamMap.get('consultationId') || '';
@@ -91,16 +89,9 @@ export class AppointmentsPage {
     }
   }
 
-  private headers() {
-    return new HttpHeaders({
-      Authorization: `Bearer ${this.auth.token()}`
-    });
-  }
-
   private async loadByType(type: OptionType) {
     const response = await firstValueFrom(
       this.http.get<{ options: PrescriptionOption[] }>(`${this.apiBase}/doctor/prescription-options`, {
-        headers: this.headers(),
         params: { type }
       })
     );
@@ -144,8 +135,7 @@ export class AppointmentsPage {
       const response = await firstValueFrom(
         this.http.post<{ option: PrescriptionOption }>(
           `${this.apiBase}/doctor/prescription-options`,
-          { type, label },
-          { headers: this.headers() }
+          { type, label }
         )
       );
 
@@ -190,8 +180,7 @@ export class AppointmentsPage {
     try {
       const response = await firstValueFrom(
         this.http.get<{ prescriptions: LoadedPrescription[] }>(
-          `${this.apiBase}/doctor/appointments/${this.consultationId}/prescriptions`,
-          { headers: this.headers() }
+          `${this.apiBase}/doctor/appointments/${this.consultationId}/prescriptions`
         )
       );
       this.loadedPrescriptions = response.prescriptions || [];
@@ -406,16 +395,12 @@ export class AppointmentsPage {
       const payload = this.buildPayload(targetStatus);
       if (this.editingPrescriptionId) {
         await firstValueFrom(
-          this.http.put(`${this.apiBase}/doctor/prescriptions/${this.editingPrescriptionId}`, payload, {
-            headers: this.headers()
-          })
+          this.http.put(`${this.apiBase}/doctor/prescriptions/${this.editingPrescriptionId}`, payload)
         );
         this.message = targetStatus === 'PUBLISHED' ? 'Draft updated and published.' : 'Draft updated.';
       } else {
         await firstValueFrom(
-          this.http.post(`${this.apiBase}/doctor/appointments/${this.consultationId}/prescriptions`, payload, {
-            headers: this.headers()
-          })
+          this.http.post(`${this.apiBase}/doctor/appointments/${this.consultationId}/prescriptions`, payload)
         );
         this.message = targetStatus === 'PUBLISHED' ? 'Follow-up prescription created and published.' : 'Draft created.';
       }

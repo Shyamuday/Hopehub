@@ -13,6 +13,7 @@ import {
 } from './public-pages.component';
 import { roleGuard } from './role.guard';
 import { HomeComponent } from './home.component';
+import { AuthResetCallbackComponent } from './auth/auth-reset-callback.component';
 
 export const routes: Routes = [
   {
@@ -97,6 +98,7 @@ export const routes: Routes = [
     }
   },
   { path: 'login', redirectTo: '', pathMatch: 'full' },
+  { path: 'auth/reset', component: AuthResetCallbackComponent },
   {
     path: 'patient/dashboard',
     component: DashboardComponent,

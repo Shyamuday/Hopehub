@@ -1,10 +1,9 @@
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { CommonModule, DatePipe } from '@angular/common';
 import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 import { Router } from '@angular/router';
-import { Auth } from '../../../core/services/auth';
 import { environment } from '../../../../environments/environment';
 
 type DoseEvent = {
@@ -72,16 +71,9 @@ export class PatientsPage {
 
   constructor(
     private readonly http: HttpClient,
-    private readonly auth: Auth,
     private readonly router: Router
   ) {
     void this.loadWorklist();
-  }
-
-  private headers() {
-    return new HttpHeaders({
-      Authorization: `Bearer ${this.auth.token()}`
-    });
   }
 
   async loadTrend() {
@@ -103,16 +95,10 @@ export class PatientsPage {
 
     const [trendResult, eventsResult] = await Promise.allSettled([
       firstValueFrom(
-        this.http.get<PatientsPage['summary']>(`${this.apiBase}/doctor/patients/${id}/adherence-trend`, {
-          headers: this.headers(),
-          params
-        })
+        this.http.get<PatientsPage['summary']>(`${this.apiBase}/doctor/patients/${id}/adherence-trend`, { params })
       ),
       firstValueFrom(
-        this.http.get<{ events: DoseEvent[] }>(`${this.apiBase}/doctor/patients/${id}/dose-events`, {
-          headers: this.headers(),
-          params
-        })
+        this.http.get<{ events: DoseEvent[] }>(`${this.apiBase}/doctor/patients/${id}/dose-events`, { params })
       )
     ]);
 
@@ -138,9 +124,7 @@ export class PatientsPage {
     this.worklistLoading = true;
     try {
       const response = await firstValueFrom(
-        this.http.get<{ consultations: WorklistConsultation[] }>(`${this.apiBase}/consultations`, {
-          headers: this.headers()
-        })
+        this.http.get<{ consultations: WorklistConsultation[] }>(`${this.apiBase}/consultations`)
       );
       this.consultations = response.consultations || [];
     } catch {

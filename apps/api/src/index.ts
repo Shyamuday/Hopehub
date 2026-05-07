@@ -18,6 +18,7 @@ import {
 import { z } from 'zod';
 import { allowRoles, authRequired, signToken } from './auth.js';
 import { prisma } from './db.js';
+import { supabaseAdmin } from './supabase.js';
 import { createNotificationService, type NotificationChannel } from './notifications.js';
 
 const app = express();
@@ -270,7 +271,7 @@ function hashToken(token: string) {
   return crypto.createHash('sha256').update(token).digest('hex');
 }
 
-function logAuthEvent(event: 'staff_login_success' | 'staff_login_failure', details: Record<string, unknown>) {
+function logAuthEvent(event: 'staff_login_success' | 'staff_login_failure' | 'supabase_exchange', details: Record<string, unknown>) {
   console.info(`[auth] ${event}`, {
     at: new Date().toISOString(),
     ...details
@@ -641,10 +642,11 @@ app.post(
       }
     });
 
-    res.json({
-      message: 'Development reset token generated.',
-      resetToken: token
-    });
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`[dev] Password reset token for ${body.email}: ${token}`);
+    }
+
+    res.json({ message: 'If the account exists, reset instructions have been sent.' });
   })
 );
 
@@ -702,6 +704,51 @@ app.post(
       select: publicUserSelect
     });
 
+    res.json(toAuthResponse(user));
+  })
+);
+
+app.post(
+  '/auth/supabase-exchange',
+  asyncRoute(async (req, res) => {
+    const body = z.object({ supabaseToken: z.string().min(10) }).parse(req.body);
+
+    if (!supabaseAdmin) {
+      return res.status(503).json({ message: 'Supabase is not configured on the server.' });
+    }
+
+    const { data, error } = await supabaseAdmin.auth.getUser(body.supabaseToken);
+    if (error || !data.user) {
+      return res.status(401).json({ message: 'Invalid or expired Supabase token.' });
+    }
+
+    const supabaseUser = data.user;
+    const email = supabaseUser.email ?? null;
+    const mobile = supabaseUser.phone ?? null;
+
+    const whereClause = email
+      ? { email }
+      : mobile
+        ? { mobile }
+        : null;
+
+    if (!whereClause) {
+      return res.status(400).json({ message: 'Supabase user has no email or mobile to match.' });
+    }
+
+    const user = await prisma.user.upsert({
+      where: whereClause,
+      update: {},
+      create: {
+        name: supabaseUser.user_metadata?.['full_name'] || email || mobile || 'Patient',
+        email,
+        mobile,
+        role: Role.PATIENT
+      },
+      select: publicUserSelect
+    });
+
+    logAuthEvent('supabase_exchange', { userId: user.id, role: user.role });
     res.json(toAuthResponse(user));
   })
 );

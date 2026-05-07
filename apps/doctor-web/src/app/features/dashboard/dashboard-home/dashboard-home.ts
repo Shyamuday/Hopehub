@@ -1,8 +1,7 @@
 import { CommonModule } from '@angular/common';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { Component } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
-import { Auth } from '../../../core/services/auth';
 import { environment } from '../../../../environments/environment';
 
 @Component({
@@ -25,17 +24,8 @@ export class DashboardHome {
     payments: Array<any>;
   } | null = null;
 
-  constructor(
-    private readonly http: HttpClient,
-    private readonly auth: Auth
-  ) {
+  constructor(private readonly http: HttpClient) {
     void this.loadSummary();
-  }
-
-  private headers() {
-    return new HttpHeaders({
-      Authorization: `Bearer ${this.auth.token()}`
-    });
   }
 
   async loadSummary() {
@@ -43,9 +33,7 @@ export class DashboardHome {
     this.error = '';
     try {
       this.summary = await firstValueFrom(
-        this.http.get<DashboardHome['summary']>(`${this.apiBase}/doctor/payments/summary`, {
-          headers: this.headers()
-        })
+        this.http.get<DashboardHome['summary']>(`${this.apiBase}/doctor/payments/summary`)
       );
     } catch {
       this.error = 'Could not load payment summary.';

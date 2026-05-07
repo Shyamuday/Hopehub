@@ -19,7 +19,17 @@ declare global {
   }
 }
 
-const jwtSecret = process.env.JWT_SECRET || 'dev-only-secret';
+const DEFAULT_SECRET = 'dev-only-secret';
+const jwtSecret = process.env.JWT_SECRET || DEFAULT_SECRET;
+
+if (jwtSecret === DEFAULT_SECRET) {
+  if (process.env.NODE_ENV === 'production') {
+    console.error('FATAL: JWT_SECRET must be set in production. Refusing to start.');
+    process.exit(1);
+  } else {
+    console.warn('[auth] WARNING: JWT_SECRET is not set — using insecure dev-only secret. Set JWT_SECRET before deploying.');
+  }
+}
 
 export function signToken(user: AuthUser) {
   return jwt.sign(user, jwtSecret, { expiresIn: '7d' });

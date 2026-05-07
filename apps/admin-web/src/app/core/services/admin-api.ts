@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { AdminAuth } from './admin-auth';
 import { environment } from '../../../environments/environment';
@@ -15,20 +15,13 @@ export class AdminApi {
     private readonly auth: AdminAuth
   ) {}
 
-  private headers() {
-    return new HttpHeaders({
-      Authorization: `Bearer ${this.auth.token()}`
-    });
-  }
-
   getReports() {
-    return firstValueFrom(this.http.get(`${this.apiBase}/admin/reports`, { headers: this.headers() }));
+    return firstValueFrom(this.http.get(`${this.apiBase}/admin/reports`));
   }
 
   getAuditLogs(page = 1, pageSize = 20) {
     return firstValueFrom(
       this.http.get<{ logs: Array<any>; pagination: any }>(`${this.apiBase}/admin/audit-logs`, {
-        headers: this.headers(),
         params: { page: String(page), pageSize: String(pageSize) }
       })
     );
@@ -47,7 +40,6 @@ export class AdminApi {
         summary: { total: number; paid: number; failedCount: number; pendingCount: number };
         pagination: any;
       }>(`${this.apiBase}/admin/payments`, {
-        headers: this.headers(),
         params: {
           page: String(params.page ?? 1),
           pageSize: String(params.pageSize ?? 10),
@@ -75,9 +67,7 @@ export class AdminApi {
     if (params.from) query.set('from', params.from);
     if (params.to) query.set('to', params.to);
     const response = await fetch(`${this.apiBase}/admin/payments?${query.toString()}`, {
-      headers: {
-        Authorization: `Bearer ${this.auth.token()}`
-      }
+      headers: { Authorization: `Bearer ${this.auth.token()}` }
     });
     if (!response.ok) {
       throw new Error('Could not export payments CSV.');
@@ -103,7 +93,6 @@ export class AdminApi {
   }) {
     return firstValueFrom(
       this.http.get<{ doctors: Array<any>; pagination: any }>(`${this.apiBase}/admin/doctors`, {
-        headers: this.headers(),
         params: {
           page: String(params.page ?? 1),
           pageSize: String(params.pageSize ?? 6),
@@ -119,7 +108,6 @@ export class AdminApi {
   getPendingDoctorsPaged(params: { page?: number; pageSize?: number; q?: string }) {
     return firstValueFrom(
       this.http.get<{ pendingDoctors: Array<any>; pagination: any }>(`${this.apiBase}/admin/doctors/pending`, {
-        headers: this.headers(),
         params: {
           page: String(params.page ?? 1),
           pageSize: String(params.pageSize ?? 6),
@@ -130,17 +118,15 @@ export class AdminApi {
   }
 
   approveDoctor(doctorId: string) {
-    return firstValueFrom(this.http.post(`${this.apiBase}/admin/doctors/${doctorId}/approve`, {}, { headers: this.headers() }));
+    return firstValueFrom(this.http.post(`${this.apiBase}/admin/doctors/${doctorId}/approve`, {}));
   }
 
   rejectDoctor(doctorId: string) {
-    return firstValueFrom(this.http.post(`${this.apiBase}/admin/doctors/${doctorId}/reject`, {}, { headers: this.headers() }));
+    return firstValueFrom(this.http.post(`${this.apiBase}/admin/doctors/${doctorId}/reject`, {}));
   }
 
   setDoctorStatus(doctorId: string, isActive: boolean) {
-    return firstValueFrom(
-      this.http.post(`${this.apiBase}/admin/doctors/${doctorId}/status`, { isActive }, { headers: this.headers() })
-    );
+    return firstValueFrom(this.http.post(`${this.apiBase}/admin/doctors/${doctorId}/status`, { isActive }));
   }
 
   updateDoctor(
@@ -154,7 +140,7 @@ export class AdminApi {
       isAvailable: boolean;
     }
   ) {
-    return firstValueFrom(this.http.put(`${this.apiBase}/admin/doctors/${doctorId}`, payload, { headers: this.headers() }));
+    return firstValueFrom(this.http.put(`${this.apiBase}/admin/doctors/${doctorId}`, payload));
   }
 
   createDoctor(payload: {
@@ -165,13 +151,11 @@ export class AdminApi {
     specialty: string;
     registrationNo?: string;
   }) {
-    return firstValueFrom(this.http.post(`${this.apiBase}/admin/doctors`, payload, { headers: this.headers() }));
+    return firstValueFrom(this.http.post(`${this.apiBase}/admin/doctors`, payload));
   }
 
   getConsultations() {
-    return firstValueFrom(
-      this.http.get<{ consultations: Array<any> }>(`${this.apiBase}/consultations`, { headers: this.headers() })
-    );
+    return firstValueFrom(this.http.get<{ consultations: Array<any> }>(`${this.apiBase}/consultations`));
   }
 
   getConsumersPaged(params: {
@@ -183,7 +167,6 @@ export class AdminApi {
   }) {
     return firstValueFrom(
       this.http.get<{ consumers: Array<any>; pagination: any }>(`${this.apiBase}/admin/consumers`, {
-        headers: this.headers(),
         params: {
           page: String(params.page ?? 1),
           pageSize: String(params.pageSize ?? 8),
@@ -198,8 +181,7 @@ export class AdminApi {
   getConsumerDetail(consumerId: string) {
     return firstValueFrom(
       this.http.get<{ consumer: any; consultations: Array<any>; adherence: any }>(
-        `${this.apiBase}/admin/consumers/${consumerId}`,
-        { headers: this.headers() }
+        `${this.apiBase}/admin/consumers/${consumerId}`
       )
     );
   }
