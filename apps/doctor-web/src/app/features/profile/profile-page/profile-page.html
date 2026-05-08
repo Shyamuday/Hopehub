@@ -1,5 +1,9 @@
 <section class="profile-card">
-  <h2>Doctor Profile</h2>
+  <h2>Your professional profile</h2>
+  <p class="lede">
+    This platform supports <strong>homoeopathic</strong> practitioners. Share your qualifications, council
+    registration, and credentials so patients and administrators can verify your background.
+  </p>
 
   @if (isLoading) {
     <p class="loading-text">Loading profile...</p>
@@ -13,26 +17,177 @@
     <input id="email" name="email" [value]="email" readonly />
 
     <label for="mobile">Mobile</label>
-    <input id="mobile" name="mobile" [(ngModel)]="mobile" />
+    <input id="mobile" name="mobile" [(ngModel)]="mobile" type="tel" />
 
-    <label for="specialty">Specialty</label>
-    <input id="specialty" name="specialty" [(ngModel)]="specialty" />
+    <label for="specialty">Practice focus</label>
+    <input
+      id="specialty"
+      name="specialty"
+      [(ngModel)]="specialty"
+      placeholder="e.g. Classical homoeopathy, chronic case management"
+    />
 
-    <label for="registrationNo">Registration Number</label>
-    <input id="registrationNo" name="registrationNo" [(ngModel)]="registrationNo" />
+    <label for="registrationNo">National / central registration (if applicable)</label>
+    <input
+      id="registrationNo"
+      name="registrationNo"
+      [(ngModel)]="registrationNo"
+      placeholder="e.g. A-12345 (if you hold a national register number)"
+    />
+
+    <label for="stateCouncilName">State homoeopathic council</label>
+    <input
+      id="stateCouncilName"
+      name="stateCouncilName"
+      [(ngModel)]="stateCouncilName"
+      placeholder="e.g. Board / council name as registered"
+    />
+
+    <label for="stateCouncilRegNo">State council registration number</label>
+    <input
+      id="stateCouncilRegNo"
+      name="stateCouncilRegNo"
+      [(ngModel)]="stateCouncilRegNo"
+      placeholder="Registration number with your state council"
+    />
+
+    <label for="yearsExperience">Years in practice (optional)</label>
+    <input
+      id="yearsExperience"
+      name="yearsExperience"
+      type="number"
+      min="0"
+      max="80"
+      [ngModel]="yearsExperience"
+      (ngModelChange)="onYearsChange($event)"
+      placeholder="e.g. 12"
+    />
+
+    <label for="qualifications" class="span-2">Degrees &amp; qualifications</label>
+    <textarea
+      id="qualifications"
+      name="qualifications"
+      class="span-2"
+      rows="3"
+      [(ngModel)]="qualifications"
+      placeholder="BHMS, MD (Hom), diplomas, institutional awards…"
+    ></textarea>
+
+    <label for="homoeopathyMethods" class="span-2">Homoeopathic methods &amp; approaches</label>
+    <textarea
+      id="homoeopathyMethods"
+      name="homoeopathyMethods"
+      class="span-2"
+      rows="3"
+      [(ngModel)]="homoeopathyMethods"
+      placeholder="e.g. Constitutional prescribing, organopathy, LM potencies…"
+    ></textarea>
+
+    <label for="clinicalFocus" class="span-2">Clinical focus</label>
+    <textarea
+      id="clinicalFocus"
+      name="clinicalFocus"
+      class="span-2"
+      rows="3"
+      [(ngModel)]="clinicalFocus"
+      placeholder="Conditions or patient groups you most often support (homoeopathic care)"
+    ></textarea>
+
+    <label for="languagesSpoken">Languages spoken with patients</label>
+    <input
+      id="languagesSpoken"
+      name="languagesSpoken"
+      [(ngModel)]="languagesSpoken"
+      placeholder="e.g. Hindi, English, Marathi"
+    />
+
+    <label for="bio" class="span-2">About your practice</label>
+    <textarea
+      id="bio"
+      name="bio"
+      class="span-2"
+      rows="4"
+      [(ngModel)]="bio"
+      placeholder="Short introduction: your philosophy of care, clinic locations, online follow-up, etc."
+    ></textarea>
   </div>
+
+  <section class="credentials">
+    <h3>Verification documents</h3>
+    <p class="hint">JPG, PNG, WebP, or PDF — up to 15 MB each. Replacing a file overwrites the previous upload.</p>
+
+    <div class="credential-row">
+      <div>
+        <span class="credential-label">Degree / BHMS or MD (Hom) certificate</span>
+        @if (degreeCertificateUrl) {
+          <a class="doc-link" [href]="degreeCertificateUrl" target="_blank" rel="noopener">View uploaded file</a>
+        } @else {
+          <span class="muted">No file yet</span>
+        }
+      </div>
+      <label class="upload-btn">
+        <input
+          type="file"
+          accept="image/jpeg,image/png,image/webp,application/pdf"
+          [disabled]="!!uploadBusy"
+          (change)="onCredentialSelected('DEGREE', $event)"
+        />
+        {{ uploadBusy === 'DEGREE' ? 'Uploading…' : 'Upload' }}
+      </label>
+    </div>
+
+    <div class="credential-row">
+      <div>
+        <span class="credential-label">State council registration certificate</span>
+        @if (councilRegCertificateUrl) {
+          <a class="doc-link" [href]="councilRegCertificateUrl" target="_blank" rel="noopener">View uploaded file</a>
+        } @else {
+          <span class="muted">No file yet</span>
+        }
+      </div>
+      <label class="upload-btn">
+        <input
+          type="file"
+          accept="image/jpeg,image/png,image/webp,application/pdf"
+          [disabled]="!!uploadBusy"
+          (change)="onCredentialSelected('COUNCIL_REG', $event)"
+        />
+        {{ uploadBusy === 'COUNCIL_REG' ? 'Uploading…' : 'Upload' }}
+      </label>
+    </div>
+
+    <div class="credential-row">
+      <div>
+        <span class="credential-label">Other credential (optional)</span>
+        @if (otherCredentialUrl) {
+          <a class="doc-link" [href]="otherCredentialUrl" target="_blank" rel="noopener">View uploaded file</a>
+        } @else {
+          <span class="muted">No file yet</span>
+        }
+      </div>
+      <label class="upload-btn">
+        <input
+          type="file"
+          accept="image/jpeg,image/png,image/webp,application/pdf"
+          [disabled]="!!uploadBusy"
+          (change)="onCredentialSelected('OTHER', $event)"
+        />
+        {{ uploadBusy === 'OTHER' ? 'Uploading…' : 'Upload' }}
+      </label>
+    </div>
+  </section>
 
   <label class="checkbox">
     <input type="checkbox" name="isAvailable" [(ngModel)]="isAvailable" />
-    Available for consultations
+    Available for new consultations
   </label>
 
   <div class="actions">
     <button type="button" (click)="loadProfile()" [disabled]="isLoading || saving">
-      {{ isLoading ? 'Loading...' : 'Reload' }}
+      {{ isLoading ? 'Loading…' : 'Reload' }}
     </button>
-    <button type="button" (click)="saveProfile()" [disabled]="isLoading || saving">
-      {{ saving ? 'Saving...' : 'Save Profile' }}
+    <button type="button" (click)="saveProfile()" [disabled]="isLoading || saving || !!uploadBusy">
+      {{ saving ? 'Saving…' : 'Save profile' }}
     </button>
   </div>
 
@@ -42,7 +197,7 @@
   @if (error && !isLoading) {
     <div class="error-row">
       <p class="error">{{ error }}</p>
-      @if (!saving) {
+      @if (!saving && !uploadBusy) {
         <button type="button" class="retry-btn" (click)="loadProfile()">Retry</button>
       }
     </div>

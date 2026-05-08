@@ -4,6 +4,8 @@ import cors from 'cors';
 import bcrypt from 'bcryptjs';
 import Razorpay from 'razorpay';
 import crypto from 'node:crypto';
+import fs from 'node:fs/promises';
+import path from 'node:path';
 import { OAuth2Client } from 'google-auth-library';
 import {
   BillingPlanType,
@@ -17,12 +19,26 @@ import {
 } from '@prisma/client';
 import { z } from 'zod';
 import { allowRoles, authRequired, signToken } from './auth.js';
+import {
+  attachmentUploadMiddleware,
+  buildAttachmentStoragePath,
+  buildDoctorCredentialStoragePath,
+  coerceAttachmentKind,
+  hydrateConsultationAttachments,
+  hydrateConsultationsAttachments,
+  persistConsultationAttachment,
+  resolveAttachmentFileUrl,
+  serializeAttachmentRecord
+} from './consultation-attachments.js';
 import { prisma } from './db.js';
 import { supabaseAdmin } from './supabase.js';
 import { createNotificationService, type NotificationChannel } from './notifications.js';
 
 const app = express();
 const port = Number(process.env.PORT || 4000);
+function apiPublicBaseUrl() {
+  return (process.env.API_PUBLIC_URL || `http://localhost:${port}`).replace(/\/$/, '');
+}
 const webOrigin = process.env.WEB_ORIGIN || 'http://localhost:4200';
 const devOtp = process.env.DEV_OTP || '123456';
 const googleClientId = process.env.GOOGLE_CLIENT_ID || '';
@@ -115,6 +131,11 @@ async function ensureBillingPlans() {
 
 app.use(cors({ origin: webOrigin, credentials: true }));
 app.use('/payments/razorpay-webhook', express.raw({ type: 'application/json' }));
+
+const uploadsAttachmentRoot = path.join(process.cwd(), 'uploads', 'consultation-attachments');
+void fs.mkdir(uploadsAttachmentRoot, { recursive: true }).catch(() => {});
+app.use('/uploads/consultation-attachments', express.static(uploadsAttachmentRoot));
+
 app.use(express.json());
 
 const asyncRoute =
@@ -129,6 +150,73 @@ const publicUserSelect = {
   mobile: true,
   role: true
 } as const;
+
+const doctorProfileApiDbSelect = {
+  specialty: true,
+  registrationNo: true,
+  isAvailable: true,
+  bio: true,
+  qualifications: true,
+  homoeopathyMethods: true,
+  clinicalFocus: true,
+  languagesSpoken: true,
+  yearsExperience: true,
+  stateCouncilName: true,
+  stateCouncilRegNo: true,
+  degreeCertificatePath: true,
+  councilRegCertificatePath: true,
+  otherCredentialPath: true
+} as const;
+
+type DoctorProfileDb = Prisma.DoctorGetPayload<{ select: typeof doctorProfileApiDbSelect }>;
+
+async function serializeDoctorProfileForApi(dp: DoctorProfileDb | null) {
+  if (!dp) {
+    return null;
+  }
+  const base = apiPublicBaseUrl();
+  const {
+    degreeCertificatePath,
+    councilRegCertificatePath,
+    otherCredentialPath,
+    ...rest
+  } = dp;
+  const [degreeCertificateUrl, councilRegCertificateUrl, otherCredentialUrl] = await Promise.all([
+    degreeCertificatePath ? resolveAttachmentFileUrl(degreeCertificatePath, base) : Promise.resolve(null),
+    councilRegCertificatePath ? resolveAttachmentFileUrl(councilRegCertificatePath, base) : Promise.resolve(null),
+    otherCredentialPath ? resolveAttachmentFileUrl(otherCredentialPath, base) : Promise.resolve(null)
+  ]);
+  return {
+    ...rest,
+    degreeCertificateUrl: degreeCertificateUrl || null,
+    councilRegCertificateUrl: councilRegCertificateUrl || null,
+    otherCredentialUrl: otherCredentialUrl || null
+  };
+}
+
+const doctorProfileUpdateBody = z.object({
+  name: z.string().min(2),
+  mobile: z.string().min(8).optional().or(z.literal('')),
+  specialty: z.string().min(2),
+  registrationNo: z.string().max(120).optional().or(z.literal('')),
+  isAvailable: z.boolean().optional().default(true),
+  bio: z.string().max(8000).optional().or(z.literal('')),
+  qualifications: z.string().max(4000).optional().or(z.literal('')),
+  homoeopathyMethods: z.string().max(4000).optional().or(z.literal('')),
+  clinicalFocus: z.string().max(4000).optional().or(z.literal('')),
+  languagesSpoken: z.string().max(500).optional().or(z.literal('')),
+  yearsExperience: z.number().int().min(0).max(80).optional().nullable(),
+  stateCouncilName: z.string().max(200).optional().or(z.literal('')),
+  stateCouncilRegNo: z.string().max(120).optional().or(z.literal(''))
+});
+
+function emptyDoctorText(value: string | undefined) {
+  if (value === undefined) {
+    return undefined;
+  }
+  const t = value.trim();
+  return t.length ? t : null;
+}
 
 function toAuthResponse(user: {
   id: string;
@@ -160,6 +248,10 @@ function includeConsultationRelations() {
     messages: {
       include: { sender: { select: publicUserSelect } },
       orderBy: { createdAt: 'asc' as const }
+    },
+    attachments: {
+      include: { uploadedBy: { select: publicUserSelect } },
+      orderBy: { createdAt: 'desc' as const }
     }
   };
 }
@@ -509,26 +601,28 @@ app.get(
   authRequired,
   allowRoles(Role.DOCTOR, Role.ADMIN),
   asyncRoute(async (req, res) => {
-    const profile = await prisma.user.findUnique({
+    const row = await prisma.user.findUnique({
       where: { id: req.user!.id },
       select: {
         ...publicUserSelect,
         isActive: true,
         doctorProfile: {
-          select: {
-            specialty: true,
-            registrationNo: true,
-            isAvailable: true
-          }
+          select: doctorProfileApiDbSelect
         }
       }
     });
 
-    if (!profile) {
+    if (!row) {
       return res.status(404).json({ message: 'Doctor profile not found' });
     }
 
-    res.json({ profile });
+    const { doctorProfile, ...profile } = row;
+    res.json({
+      profile: {
+        ...profile,
+        doctorProfile: await serializeDoctorProfileForApi(doctorProfile)
+      }
+    });
   })
 );
 
@@ -537,15 +631,21 @@ app.put(
   authRequired,
   allowRoles(Role.DOCTOR, Role.ADMIN),
   asyncRoute(async (req, res) => {
-    const body = z
-      .object({
-        name: z.string().min(2),
-        mobile: z.string().min(8).optional().or(z.literal('')),
-        specialty: z.string().min(2),
-        registrationNo: z.string().optional().or(z.literal('')),
-        isAvailable: z.boolean().optional().default(true)
-      })
-      .parse(req.body);
+    const body = doctorProfileUpdateBody.parse(req.body);
+
+    const docCore = {
+      specialty: body.specialty,
+      registrationNo: emptyDoctorText(body.registrationNo ?? undefined) ?? null,
+      isAvailable: body.isAvailable,
+      bio: emptyDoctorText(body.bio) ?? null,
+      qualifications: emptyDoctorText(body.qualifications) ?? null,
+      homoeopathyMethods: emptyDoctorText(body.homoeopathyMethods) ?? null,
+      clinicalFocus: emptyDoctorText(body.clinicalFocus) ?? null,
+      languagesSpoken: emptyDoctorText(body.languagesSpoken) ?? null,
+      stateCouncilName: emptyDoctorText(body.stateCouncilName) ?? null,
+      stateCouncilRegNo: emptyDoctorText(body.stateCouncilRegNo) ?? null,
+      yearsExperience: body.yearsExperience ?? null
+    };
 
     const updated = await prisma.user.update({
       where: { id: req.user!.id },
@@ -554,16 +654,8 @@ app.put(
         mobile: body.mobile || null,
         doctorProfile: {
           upsert: {
-            create: {
-              specialty: body.specialty,
-              registrationNo: body.registrationNo || null,
-              isAvailable: body.isAvailable
-            },
-            update: {
-              specialty: body.specialty,
-              registrationNo: body.registrationNo || null,
-              isAvailable: body.isAvailable
-            }
+            create: docCore,
+            update: docCore
           }
         }
       },
@@ -571,16 +663,83 @@ app.put(
         ...publicUserSelect,
         isActive: true,
         doctorProfile: {
-          select: {
-            specialty: true,
-            registrationNo: true,
-            isAvailable: true
-          }
+          select: doctorProfileApiDbSelect
         }
       }
     });
 
-    res.json({ profile: updated });
+    const { doctorProfile, ...profile } = updated;
+    res.json({
+      profile: {
+        ...profile,
+        doctorProfile: await serializeDoctorProfileForApi(doctorProfile)
+      }
+    });
+  })
+);
+
+const doctorCredentialKindSchema = z.enum(['DEGREE', 'COUNCIL_REG', 'OTHER']);
+
+app.post(
+  '/doctor/profile/credential',
+  authRequired,
+  allowRoles(Role.DOCTOR, Role.ADMIN),
+  attachmentUploadMiddleware,
+  asyncRoute(async (req, res) => {
+    const file = req.file;
+    if (!file?.buffer) {
+      return res.status(400).json({ message: 'File is required (JPG, PNG, WebP, or PDF).' });
+    }
+
+    let kind: z.infer<typeof doctorCredentialKindSchema>;
+    try {
+      kind = doctorCredentialKindSchema.parse(
+        typeof req.body?.kind === 'string' ? req.body.kind : undefined
+      );
+    } catch {
+      return res.status(400).json({ message: 'kind must be DEGREE, COUNCIL_REG, or OTHER.' });
+    }
+
+    const pathField =
+      kind === 'DEGREE'
+        ? 'degreeCertificatePath'
+        : kind === 'COUNCIL_REG'
+          ? 'councilRegCertificatePath'
+          : 'otherCredentialPath';
+
+    const storagePath = buildDoctorCredentialStoragePath(req.user!.id, kind, file.originalname || 'upload');
+    await persistConsultationAttachment(storagePath, file.buffer, file.mimetype);
+
+    const existing = await prisma.doctor.findUnique({
+      where: { userId: req.user!.id },
+      select: { specialty: true }
+    });
+    const specialty =
+      existing?.specialty?.trim() && existing.specialty.trim().length > 0
+        ? existing.specialty.trim()
+        : 'Registered homoeopathic practitioner';
+
+    await prisma.doctor.upsert({
+      where: { userId: req.user!.id },
+      create: {
+        userId: req.user!.id,
+        specialty,
+        [pathField]: storagePath
+      },
+      update: {
+        [pathField]: storagePath
+      }
+    });
+
+    const signed = await resolveAttachmentFileUrl(storagePath, apiPublicBaseUrl());
+    const urlPayload =
+      kind === 'DEGREE'
+        ? { degreeCertificateUrl: signed || null }
+        : kind === 'COUNCIL_REG'
+          ? { councilRegCertificateUrl: signed || null }
+          : { otherCredentialUrl: signed || null };
+
+    res.json({ kind, ...urlPayload });
   })
 );
 
@@ -1067,7 +1226,7 @@ app.get(
     const adherencePercent = totalDoseEvents ? Math.round((takenDoseEvents / totalDoseEvents) * 100) : 0;
     res.json({
       consumer: patient,
-      consultations,
+      consultations: await hydrateConsultationsAttachments(consultations, apiPublicBaseUrl()),
       adherence: {
         total: totalDoseEvents,
         taken: takenDoseEvents,
@@ -1371,7 +1530,9 @@ app.post(
       include: includeConsultationRelations()
     });
 
-    res.status(201).json({ consultation });
+    res.status(201).json({
+      consultation: await hydrateConsultationAttachments(consultation, apiPublicBaseUrl())
+    });
   })
 );
 
@@ -1392,7 +1553,9 @@ app.get(
       orderBy: { createdAt: 'desc' }
     });
 
-    res.json({ consultations });
+    res.json({
+      consultations: await hydrateConsultationsAttachments(consultations, apiPublicBaseUrl())
+    });
   })
 );
 
@@ -1416,7 +1579,9 @@ app.get(
       return res.status(403).json({ message: 'Access denied' });
     }
 
-    res.json({ consultation });
+    res.json({
+      consultation: await hydrateConsultationAttachments(consultation, apiPublicBaseUrl())
+    });
   })
 );
 
@@ -1458,7 +1623,9 @@ app.post(
       );
     }
 
-    res.json({ consultation });
+    res.json({
+      consultation: await hydrateConsultationAttachments(consultation, apiPublicBaseUrl())
+    });
   })
 );
 
@@ -1495,6 +1662,68 @@ app.post(
     }
 
     res.status(201).json({ message });
+  })
+);
+
+app.post(
+  '/consultations/:id/attachments',
+  authRequired,
+  attachmentUploadMiddleware,
+  asyncRoute(async (req, res) => {
+    const consultationId = routeParam(req, 'id');
+    const consultation = await prisma.consultation.findUnique({ where: { id: consultationId } });
+
+    if (!consultation) {
+      return res.status(404).json({ message: 'Consultation not found' });
+    }
+
+    const canUpload =
+      req.user!.role === Role.ADMIN ||
+      consultation.patientId === req.user!.id ||
+      consultation.assignedDoctorId === req.user!.id;
+
+    if (!canUpload) {
+      return res.status(403).json({ message: 'Access denied' });
+    }
+
+    if (
+      req.user!.role === Role.DOCTOR &&
+      consultation.assignedDoctorId &&
+      consultation.assignedDoctorId !== req.user!.id
+    ) {
+      return res.status(403).json({ message: 'Only the assigned doctor can attach files to this consultation.' });
+    }
+
+    const file = 'file' in req ? (req as Express.Request & { file?: Express.Multer.File }).file : undefined;
+    if (!file?.buffer) {
+      return res.status(400).json({ message: 'File required (form field name: file).' });
+    }
+
+    const kind = coerceAttachmentKind(req.user!.role, typeof req.body?.kind === 'string' ? req.body.kind : undefined);
+    const captionRaw = typeof req.body?.caption === 'string' ? req.body.caption.trim() : '';
+    const caption = captionRaw ? captionRaw.slice(0, 500) : undefined;
+
+    const storagePath = buildAttachmentStoragePath(consultationId, file.originalname || 'upload');
+    await persistConsultationAttachment(storagePath, file.buffer, file.mimetype);
+
+    const created = await prisma.consultationAttachment.create({
+      data: {
+        consultationId,
+        uploadedById: req.user!.id,
+        kind,
+        storagePath,
+        fileName: file.originalname || null,
+        mimeType: file.mimetype,
+        caption: caption || null
+      },
+      include: { uploadedBy: { select: publicUserSelect } }
+    });
+
+    const attachment = await serializeAttachmentRecord(
+      created as unknown as Record<string, unknown>,
+      apiPublicBaseUrl()
+    );
+    res.status(201).json({ attachment });
   })
 );
 
@@ -2477,7 +2706,9 @@ app.post(
       include: includeConsultationRelations()
     });
 
-    res.json({ consultation: updated });
+    res.json({
+      consultation: await hydrateConsultationAttachments(updated, apiPublicBaseUrl())
+    });
   })
 );
 

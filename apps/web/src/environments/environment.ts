@@ -3,4 +3,6 @@ export const environment = {
   apiUrl: 'http://localhost:4000',
   supabaseUrl: 'https://zjbesigagyoqfvouqsed.supabase.co',
   supabaseAnonKey: 'sb_publishable_xiRZ389iXVBa0Cf0jyj80w_BHyIxw4g',
+  /** Vitalis Doctor web app base URL (shown to staff using the patient portal). */
+  doctorPortalUrl: ''
 };

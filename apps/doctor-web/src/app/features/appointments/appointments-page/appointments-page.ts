@@ -66,6 +66,17 @@ type LoadedPrescription = {
   }>;
 };
 
+type ConsultationAttachmentRow = {
+  id: string;
+  kind: string;
+  fileName?: string | null;
+  mimeType?: string | null;
+  caption?: string | null;
+  fileUrl: string;
+  createdAt?: string;
+  uploadedBy?: { name?: string };
+};
+
 @Component({
   selector: 'app-appointments-page',
   imports: [FormsModule, DatePipe],
@@ -97,6 +108,11 @@ export class AppointmentsPage {
   pendingSaveStatus: 'DRAFT' | 'PUBLISHED' | null = null;
   consultationStatus = '';
   confirmingClose = false;
+
+  attachments: ConsultationAttachmentRow[] = [];
+  clinicalAttachmentCaption = '';
+  uploadingClinicalAttachment = false;
+  clinicalAttachmentMessage = '';
 
   templates: PrescriptionTemplate[] = [];
   templatesLoading = false;
@@ -207,14 +223,31 @@ export class AppointmentsPage {
       return;
     }
 
+    const id = this.consultationId.trim();
+
     try {
-      const response = await firstValueFrom(
+      const rxRes = await firstValueFrom(
         this.http.get<{ prescriptions: LoadedPrescription[]; consultation?: { status: string } }>(
-          `${this.apiBase}/doctor/appointments/${this.consultationId}/prescriptions`
+          `${this.apiBase}/doctor/appointments/${id}/prescriptions`
         )
       );
-      this.loadedPrescriptions = response.prescriptions || [];
-      this.consultationStatus = response.consultation?.status || '';
+      this.loadedPrescriptions = rxRes.prescriptions || [];
+      this.consultationStatus = rxRes.consultation?.status || '';
+
+      try {
+        const detailRes = await firstValueFrom(
+          this.http.get<{ consultation: { attachments?: ConsultationAttachmentRow[]; status: string } }>(
+            `${this.apiBase}/consultations/${id}`
+          )
+        );
+        this.attachments = detailRes.consultation?.attachments || [];
+        if (!this.consultationStatus) {
+          this.consultationStatus = detailRes.consultation?.status || '';
+        }
+      } catch {
+        this.attachments = [];
+      }
+
       if (this.loadedPrescriptions.length) {
         this.selectPrescription(this.loadedPrescriptions[0]);
       } else {
@@ -223,6 +256,46 @@ export class AppointmentsPage {
       }
     } catch {
       this.error = 'Could not load prescription history.';
+    }
+  }
+
+  attachmentKindLabel(kind: string): string {
+    if (kind === 'PATIENT_REPORT') return 'Patient report';
+    if (kind === 'DOCTOR_CLINICAL') return 'Clinical / clinic photo';
+    return 'File';
+  }
+
+  async uploadClinicalAttachment(ev: Event) {
+    const input = ev.target as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = '';
+    const id = this.consultationId.trim();
+    if (!file || !id) return;
+
+    this.uploadingClinicalAttachment = true;
+    this.clinicalAttachmentMessage = '';
+
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      fd.append('kind', 'DOCTOR_CLINICAL');
+      if (this.clinicalAttachmentCaption.trim()) {
+        fd.append('caption', this.clinicalAttachmentCaption.trim().slice(0, 500));
+      }
+
+      const response = await firstValueFrom(
+        this.http.post<{ attachment: ConsultationAttachmentRow }>(
+          `${this.apiBase}/consultations/${id}/attachments`,
+          fd
+        )
+      );
+      this.attachments = [response.attachment, ...this.attachments];
+      this.clinicalAttachmentCaption = '';
+      this.clinicalAttachmentMessage = 'Uploaded.';
+    } catch {
+      this.clinicalAttachmentMessage = 'Upload failed.';
+    } finally {
+      this.uploadingClinicalAttachment = false;
     }
   }
 

@@ -41,6 +41,68 @@
     <button type="button" (click)="resetEditorForFollowUp()">New follow-up version</button>
   </div>
 
+  <div class="attachments-panel">
+    <h3>Consultation files (online & clinic)</h3>
+    <p class="hint">Labs from patient and clinical photos you attach here are visible to both sides.</p>
+    @if (attachments.length) {
+      <ul class="attachment-list">
+        @for (att of attachments; track att.id) {
+          <li>
+            <strong>{{ attachmentKindLabel(att.kind) }}</strong>
+            @if (att.fileName) {
+              <span> · {{ att.fileName }}</span>
+            }
+            · {{ att.createdAt ? (att.createdAt | date: 'short') : '' }}
+            @if (att.uploadedBy?.name) {
+              <span> · {{ att.uploadedBy?.name }}</span>
+            }
+            @if (att.caption) {
+              — {{ att.caption }}
+            }
+            @if (att.fileUrl) {
+              · <a [href]="att.fileUrl" target="_blank" rel="noopener">Open</a>
+            }
+          </li>
+        }
+      </ul>
+    } @else {
+      <p class="hint">Load consultation history to see uploads.</p>
+    }
+    <label class="block-label">
+      Caption (optional)
+      <input name="clinicalAttachmentCaption" [(ngModel)]="clinicalAttachmentCaption" />
+    </label>
+    <div class="attachment-buttons">
+      <label class="btn-secondary">
+        Camera / clinic photo
+        <input
+          type="file"
+          hidden
+          accept="image/*"
+          capture="environment"
+          [disabled]="uploadingClinicalAttachment || !consultationId.trim()"
+          (change)="uploadClinicalAttachment($event)"
+        />
+      </label>
+      <label class="btn-secondary">
+        Upload image / PDF
+        <input
+          type="file"
+          hidden
+          accept="image/*,application/pdf"
+          [disabled]="uploadingClinicalAttachment || !consultationId.trim()"
+          (change)="uploadClinicalAttachment($event)"
+        />
+      </label>
+      @if (uploadingClinicalAttachment) {
+        <span class="hint">Uploading…</span>
+      }
+      @if (clinicalAttachmentMessage) {
+        <span class="hint">{{ clinicalAttachmentMessage }}</span>
+      }
+    </div>
+  </div>
+
   @if (loadedPrescriptions.length) {
     <div class="timeline">
       @for (item of loadedPrescriptions; track item.id) {

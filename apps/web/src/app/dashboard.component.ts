@@ -17,6 +17,7 @@ import { PatientProfileComponent } from './patient-profile.component';
 import { ClinicApiService } from './clinic-api.service';
 import { AuthService } from './auth/auth.service';
 import { BillingPlan, Consultation, Disease, Doctor, DoseEvent, Prescription } from './models';
+import { environment } from '../environments/environment';
 
 type PaymentFlowState = 'IDLE' | 'CREATING_ORDER' | 'OPENING_CHECKOUT' | 'VERIFYING' | 'SUCCESS' | 'ERROR';
 
@@ -75,6 +76,17 @@ type PaymentFlowState = 'IDLE' | 'CREATING_ORDER' | 'OPENING_CHECKOUT' | 'VERIFY
           />
         </section>
 
+        <section class="panel">
+          <app-consultation-detail
+            [consultation]="activeConsultation()"
+            [userRole]="auth.user()?.role ?? null"
+            [disabled]="isProcessing()"
+            [doctorPortalUrl]="doctorPortalUrl"
+            (messageSent)="onMessageSent($event)"
+            (attachmentsChanged)="loadConsultations()"
+          />
+        </section>
+
         <section class="grid two">
           <app-today-medicines
             [doseEvents]="todayDoseEvents()"
@@ -111,9 +123,9 @@ type PaymentFlowState = 'IDLE' | 'CREATING_ORDER' | 'OPENING_CHECKOUT' | 'VERIFY
             [consultation]="activeConsultation()"
             [userRole]="auth.user()?.role ?? null"
             [disabled]="isProcessing()"
+            [doctorPortalUrl]="doctorPortalUrl"
             (messageSent)="onMessageSent($event)"
-            (uploadPrescription)="onUploadPrescription($event)"
-            (complete)="onComplete()"
+            (attachmentsChanged)="loadConsultations()"
           />
         </section>
       }
@@ -172,9 +184,11 @@ type PaymentFlowState = 'IDLE' | 'CREATING_ORDER' | 'OPENING_CHECKOUT' | 'VERIFY
             [consultation]="activeConsultation()"
             [userRole]="auth.user()?.role ?? null"
             [disabled]="isProcessing()"
+            [doctorPortalUrl]="doctorPortalUrl"
             (messageSent)="onMessageSent($event)"
             (uploadPrescription)="onUploadPrescription($event)"
             (complete)="onComplete()"
+            (attachmentsChanged)="loadConsultations()"
           />
         </section>
       }
@@ -197,6 +211,7 @@ type PaymentFlowState = 'IDLE' | 'CREATING_ORDER' | 'OPENING_CHECKOUT' | 'VERIFY
   `
 })
 export class DashboardComponent implements OnInit, OnDestroy {
+  readonly doctorPortalUrl = environment.doctorPortalUrl || '';
   readonly diseases = signal<Disease[]>([]);
   readonly billingPlans = signal<BillingPlan[]>([]);
   readonly consultations = signal<Consultation[]>([]);

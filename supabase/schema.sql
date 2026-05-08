@@ -295,3 +295,8 @@ with check (
   bucket_id = 'prescriptions'
   and public.current_role() in ('DOCTOR', 'ADMIN')
 );
+
+-- Consultation attachments are uploaded via API (service role); bucket must exist for Supabase Storage.
+insert into storage.buckets (id, name, public)
+values ('consultation-attachments', 'consultation-attachments', false)
+on conflict (id) do nothing;

@@ -3,7 +3,7 @@ import { from, map } from 'rxjs';
 import { RealtimeChannel } from '@supabase/supabase-js';
 import { supabase } from './supabase.client';
 import { environment } from '../environments/environment';
-import { BillingPlan, Consultation, Disease, Doctor, DoseEvent, Prescription } from './models';
+import { BillingPlan, Consultation, ConsultationAttachment, Disease, Doctor, DoseEvent, Prescription } from './models';
 
 type RazorpayOrderResponse = {
   orderId: string;
@@ -63,6 +63,10 @@ export class ClinicApiService {
 
   uploadPrescription(consultationId: string, payload: { notes: string; fileUrl?: string }) {
     return from(this.upsertPrescription(consultationId, payload));
+  }
+
+  uploadConsultationAttachment(consultationId: string, file: File, caption = '', kind?: string) {
+    return from(this.postConsultationAttachment(consultationId, file, caption, kind));
   }
 
   completeConsultation(consultationId: string) {
@@ -400,6 +404,45 @@ export class ClinicApiService {
     });
   }
 
+  private async postConsultationAttachment(
+    consultationId: string,
+    file: File,
+    caption: string,
+    kind?: string
+  ): Promise<{ attachment: Record<string, unknown> }> {
+    const token = this.backendToken;
+    if (!token) {
+      throw new Error('Backend session missing. Please login again.');
+    }
+
+    const fd = new FormData();
+    fd.append('file', file);
+    if (caption.trim()) {
+      fd.append('caption', caption.trim());
+    }
+    if (kind) {
+      fd.append('kind', kind);
+    }
+
+    const response = await fetch(`${environment.apiUrl}/consultations/${consultationId}/attachments`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+      body: fd
+    });
+
+    if (!response.ok) {
+      let message = 'Upload failed.';
+      try {
+        message = (await response.json() as { message?: string })?.message || message;
+      } catch {
+        // no-op
+      }
+      throw new Error(message);
+    }
+
+    return (await response.json()) as { attachment: Record<string, unknown> };
+  }
+
   private async upsertPrescription(consultationId: string, payload: { notes: string; fileUrl?: string }) {
     const {
       data: { user }
@@ -711,9 +754,54 @@ export class ClinicApiService {
     };
   }
 
+  private mapPrescriptionFromApi(row: Record<string, any>): Prescription {
+    return {
+      id: row['id'],
+      version: row['version'],
+      diagnosis: row['diagnosis'],
+      advice: row['advice'] ?? null,
+      notes: row['notes'] ?? '',
+      fileUrl: row['fileUrl'] ?? null,
+      status: row['status'],
+      followUpDate: row['followUpDate'] ?? null,
+      method: row['methodOption']?.label ?? null,
+      diagnosedDisease: row['diagnosedDiseaseOption']?.label ?? null,
+      items: (row['items'] || []).map((item: Record<string, any>) => ({
+        id: item['id'],
+        medicineName: item['medicineName'],
+        strength: item['strength'],
+        dose: item['dose'],
+        frequency: item['frequency'],
+        duration: item['duration'],
+        instructions: item['instructions']
+      })),
+      createdAt: row['createdAt']
+    };
+  }
+
+  private pickConsultationPrescriptionSnapshot(prescriptions: Record<string, any>[]): Prescription | null {
+    if (!prescriptions.length) return null;
+    const published = prescriptions.find((p) => p['status'] === 'PUBLISHED');
+    const chosen = published ?? prescriptions[0];
+    return this.mapPrescriptionFromApi(chosen);
+  }
+
+  private mapAttachmentFromApi(row: Record<string, any>): ConsultationAttachment {
+    return {
+      id: row['id'],
+      kind: row['kind'],
+      fileName: row['fileName'] ?? null,
+      mimeType: row['mimeType'] ?? null,
+      caption: row['caption'] ?? null,
+      fileUrl: row['fileUrl'] || '',
+      createdAt: row['createdAt'],
+      uploadedBy: row['uploadedBy']
+    };
+  }
+
   private toConsultationFromApi(row: Record<string, any>): Consultation {
     const prescriptions = row['prescriptions'] || [];
-    const latestPrescription = prescriptions[0] || null;
+    const attachments = (row['attachments'] || []).map((item: Record<string, any>) => this.mapAttachmentFromApi(item));
 
     return {
       id: row['id'],
@@ -736,22 +824,9 @@ export class ClinicApiService {
           }
         : null,
       messages: row['messages'] || [],
-      prescription: latestPrescription
-        ? {
-            id: latestPrescription['id'],
-            notes: latestPrescription['notes'],
-            fileUrl: latestPrescription['fileUrl'],
-            createdAt: latestPrescription['createdAt']
-          }
-        : null,
-      prescriptions: prescriptions.map((prescription: Record<string, any>) => ({
-        id: prescription['id'],
-        version: prescription['version'],
-        diagnosis: prescription['diagnosis'],
-        notes: prescription['notes'],
-        fileUrl: prescription['fileUrl'],
-        createdAt: prescription['createdAt']
-      }))
+      prescription: this.pickConsultationPrescriptionSnapshot(prescriptions),
+      prescriptions: prescriptions.map((prescription: Record<string, any>) => this.mapPrescriptionFromApi(prescription)),
+      attachments
     };
   }
 }

@@ -64,6 +64,7 @@ apps/*/.cache/
 # Prisma and generated local output
 apps/api/dist/
 apps/api/prisma/migrations/dev.db*
+apps/api/uploads/
 
 # Supabase local state
 .branches/

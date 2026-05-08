@@ -132,9 +132,23 @@ model Doctor {
   specialty      String
   registrationNo String?
   isAvailable    Boolean  @default(true)
-  user           User     @relation(fields: [userId], references: [id])
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+
+  bio                  String?
+  qualifications       String?
+  homoeopathyMethods   String?
+  clinicalFocus        String?
+  languagesSpoken      String?
+  yearsExperience      Int?
+  stateCouncilName     String?
+  stateCouncilRegNo    String?
+
+  degreeCertificatePath     String?
+  councilRegCertificatePath String?
+  otherCredentialPath       String?
+
+  user      User     @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Disease {
