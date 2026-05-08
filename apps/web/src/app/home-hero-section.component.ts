@@ -1,7 +1,9 @@
 import { CommonModule } from '@angular/common';
-import { Component, Input, computed, signal } from '@angular/core';
+import { Component, Input, DestroyRef, computed, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { firstValueFrom } from 'rxjs';
 import { AuthService } from './auth/auth.service';
 
@@ -9,7 +11,7 @@ type BookStep = 'form' | 'otp' | 'loading' | 'done';
 
 @Component({
   selector: 'app-home-hero-section',
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, TranslatePipe],
   styles: [`
     .hero-layout {
       display: grid;
@@ -151,92 +153,99 @@ type BookStep = 'form' | 'otp' | 'loading' | 'done';
       <div class="hero-layout">
         <div class="hero-main">
           <div class="home-hero">
-            <p class="eyebrow">Vitalis Care and Research Centre | Homeopathy-led chronic care online</p>
-            <h1>Chronic care rooted in individualized homeopathic practice.</h1>
-            <p class="hero-copy">
-              Structured case-taking, remedy selection supervised by doctors, and follow-ups designed for recurring and
-              long-running complaints — aligned with continuity of care rather than rushed one-off prescriptions.
-            </p>
+            <p class="eyebrow">{{ 'home.hero.eyebrow' | translate }}</p>
+            <h1>{{ 'home.hero.title' | translate }}</h1>
+            <p class="hero-copy">{{ 'home.hero.subtitle' | translate }}</p>
           </div>
 
           <div class="hero-trust-row">
             <div class="trust-item">
               <span class="trust-icon">✓</span>
-              <span>Licensed doctors</span>
+              <span>{{ 'home.hero.trust.licensed' | translate }}</span>
             </div>
             <div class="trust-item">
               <span class="trust-icon">✓</span>
-              <span>Secure &amp; private</span>
+              <span>{{ 'home.hero.trust.secure' | translate }}</span>
             </div>
             <div class="trust-item">
               <span class="trust-icon">✓</span>
-              <span>Follow-up included</span>
+              <span>{{ 'home.hero.trust.followUp' | translate }}</span>
             </div>
           </div>
         </div>
 
-        <aside class="hero-aside" [attr.aria-label]="bookingAsideLabel()">
+        <aside class="hero-aside" [attr.aria-label]="asideAriaLabel()">
           <div class="booking-card">
           @switch (step()) {
             @case ('form') {
-              <h3>Book an appointment</h3>
-              <p class="bc-sub">Enter your details — we'll send a one-time code to your mobile.</p>
+              <h3>{{ 'home.hero.booking.titleForm' | translate }}</h3>
+              <p class="bc-sub">{{ 'home.hero.booking.subForm' | translate }}</p>
               <div class="bc-fields">
                 <input
                   name="bcName"
                   [(ngModel)]="name"
-                  placeholder="Your full name"
+                  [placeholder]="('home.hero.booking.placeholderName' | translate)"
                   autocomplete="name"
                 />
                 <input
                   name="bcMobile"
                   [(ngModel)]="mobile"
-                  placeholder="Mobile number (10 digits)"
+                  [placeholder]="('home.hero.booking.placeholderMobile' | translate)"
                   inputmode="tel"
                   autocomplete="tel"
                 />
                 <button class="bc-btn" type="button" [disabled]="busy()" (click)="sendOtp()">
-                  {{ busy() ? 'Sending OTP…' : 'Book Appointment →' }}
+                  @if (busy()) {
+                    {{ 'home.hero.booking.submitBusy' | translate }}
+                  } @else {
+                    {{ 'home.hero.booking.submitIdle' | translate }}
+                  }
                 </button>
               </div>
               @if (error()) {
                 <p class="bc-error">{{ error() }}</p>
               }
-              <p class="bc-hint">No spam. OTP valid for 5 minutes.</p>
+              <p class="bc-hint">{{ 'home.hero.booking.hintOtp' | translate }}</p>
             }
 
             @case ('otp') {
-              <h3>Verify your number</h3>
+              <h3>{{ 'home.hero.booking.titleOtp' | translate }}</h3>
               <p class="bc-otp-who">
-                OTP sent to <strong>{{ mobile }}</strong>
+                {{ 'home.hero.booking.otpLead' | translate }} <strong>{{ mobile }}</strong>
               </p>
               <div class="bc-fields">
                 <input
                   name="bcOtp"
                   [(ngModel)]="otp"
-                  placeholder="Enter 6-digit OTP"
+                  [placeholder]="('home.hero.booking.placeholderOtp' | translate)"
                   inputmode="numeric"
                   maxlength="6"
                 />
                 <button class="bc-btn" type="button" [disabled]="busy() || otp.length < 4" (click)="verifyOtp()">
-                  {{ busy() ? 'Verifying…' : 'Confirm & Continue →' }}
+                  @if (busy()) {
+                    {{ 'home.hero.booking.confirmBusy' | translate }}
+                  } @else {
+                    {{ 'home.hero.booking.confirmIdle' | translate }}
+                  }
                 </button>
               </div>
               @if (error()) {
                 <p class="bc-error">{{ error() }}</p>
               }
-              <button class="bc-back" type="button" (click)="goBack()">← Change number</button>
+              <button class="bc-back" type="button" (click)="goBack()">
+                {{ 'home.hero.booking.backChange' | translate }}
+              </button>
             }
 
             @case ('loading') {
               <div class="bc-loading" aria-live="polite">
                 <div class="bc-spinner"></div>
-                <span>Setting up your account…</span>
+                <span>{{ 'home.hero.booking.loadingAccount' | translate }}</span>
               </div>
             }
 
             @case ('done') {
-              <div class="bc-done" aria-live="polite">✓ Verified! Taking you to your dashboard…</div>
+              <div class="bc-done" aria-live="polite">{{ 'home.hero.booking.doneToast' | translate }}</div>
             }
           }
           </div>
@@ -246,6 +255,22 @@ type BookStep = 'form' | 'otp' | 'loading' | 'done';
   `
 })
 export class HomeHeroSectionComponent {
+  private readonly translate = inject(TranslateService);
+
+  /** Re-read translations when locale changes without full navigation. */
+  private readonly localeTick = signal(0);
+
+  readonly asideAriaLabel = computed(() => {
+    this.localeTick();
+    const k: Record<BookStep, string> = {
+      form: 'home.hero.booking.aria.form',
+      otp: 'home.hero.booking.aria.otp',
+      loading: 'home.hero.booking.aria.loading',
+      done: 'home.hero.booking.aria.done'
+    };
+    return this.translate.instant(k[this.step()]);
+  });
+
   @Input() whatsappLink = '';
 
   name = '';
@@ -256,29 +281,27 @@ export class HomeHeroSectionComponent {
   readonly busy = signal(false);
   readonly error = signal('');
 
-  readonly bookingAsideLabel = computed(() => {
-    switch (this.step()) {
-      case 'otp':
-        return 'Verify your phone number with OTP';
-      case 'loading':
-        return 'Completing sign in';
-      case 'done':
-        return 'Signed in successfully';
-      default:
-        return 'Book an appointment';
-    }
-  });
-
   constructor(
     private readonly auth: AuthService,
-    private readonly router: Router
-  ) {}
+    private readonly router: Router,
+    destroyRef: DestroyRef
+  ) {
+    this.translate.onLangChange
+      .pipe(takeUntilDestroyed(destroyRef))
+      .subscribe(() => this.localeTick.update((n) => n + 1));
+  }
 
   async sendOtp() {
     const name = this.name.trim();
     const mobile = this.mobile.trim().replace(/\s+/g, '');
-    if (!name) { this.error.set('Please enter your full name.'); return; }
-    if (!/^\d{10}$/.test(mobile)) { this.error.set('Enter a valid 10-digit mobile number.'); return; }
+    if (!name) {
+      this.error.set(this.translate.instant('home.hero.booking.validation.nameRequired'));
+      return;
+    }
+    if (!/^\d{10}$/.test(mobile)) {
+      this.error.set(this.translate.instant('home.hero.booking.validation.mobileInvalid'));
+      return;
+    }
 
     this.error.set('');
     this.busy.set(true);
@@ -287,14 +310,19 @@ export class HomeHeroSectionComponent {
       this.mobile = mobile;
       this.step.set('otp');
     } catch (err: any) {
-      this.error.set(err?.error?.message || 'Could not send OTP. Please try again.');
+      this.error.set(
+        err?.error?.message || this.translate.instant('home.hero.booking.validation.otpSendFailed')
+      );
     } finally {
       this.busy.set(false);
     }
   }
 
   async verifyOtp() {
-    if (!this.otp.trim()) { this.error.set('Enter the OTP.'); return; }
+    if (!this.otp.trim()) {
+      this.error.set(this.translate.instant('home.hero.booking.validation.otpMissing'));
+      return;
+    }
     this.error.set('');
     this.busy.set(true);
     this.step.set('loading');
@@ -306,7 +334,9 @@ export class HomeHeroSectionComponent {
       setTimeout(() => void this.router.navigateByUrl(this.auth.dashboardFor(response.user.role)), 600);
     } catch (err: any) {
       this.step.set('otp');
-      this.error.set(err?.error?.message || 'Incorrect OTP. Please try again.');
+      this.error.set(
+        err?.error?.message || this.translate.instant('home.hero.booking.validation.otpWrong')
+      );
     } finally {
       this.busy.set(false);
     }

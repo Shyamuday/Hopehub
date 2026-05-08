@@ -16,6 +16,119 @@
     "digitalClinicTagline": "Homeopathy-led digital clinic",
     "chatWhatsAppAria": "Chat on WhatsApp"
   },
+  "home": {
+    "hero": {
+      "eyebrow": "Vitalis Care and Research Centre | Homeopathy-led chronic care online",
+      "title": "Chronic care rooted in individualized homeopathic practice.",
+      "subtitle": "Structured case-taking, remedy selection supervised by doctors, and follow-ups designed for recurring and long-running complaints — aligned with continuity of care rather than rushed one-off prescriptions.",
+      "trust": {
+        "licensed": "Licensed doctors",
+        "secure": "Secure & private",
+        "followUp": "Follow-up included"
+      },
+      "booking": {
+        "aria": {
+          "form": "Book an appointment",
+          "otp": "Verify your phone number with OTP",
+          "loading": "Completing sign in",
+          "done": "Signed in successfully"
+        },
+        "titleForm": "Book an appointment",
+        "subForm": "Enter your details — we'll send a one-time code to your mobile.",
+        "titleOtp": "Verify your number",
+        "otpLead": "OTP sent to",
+        "placeholderName": "Your full name",
+        "placeholderMobile": "Mobile number (10 digits)",
+        "placeholderOtp": "Enter 6-digit OTP",
+        "submitIdle": "Book Appointment →",
+        "submitBusy": "Sending OTP…",
+        "confirmIdle": "Confirm & Continue →",
+        "confirmBusy": "Verifying…",
+        "hintOtp": "No spam. OTP valid for 5 minutes.",
+        "backChange": "← Change number",
+        "loadingAccount": "Setting up your account…",
+        "doneToast": "✓ Verified! Taking you to your dashboard…",
+        "validation": {
+          "nameRequired": "Please enter your full name.",
+          "mobileInvalid": "Enter a valid 10-digit mobile number.",
+          "otpMissing": "Enter the OTP.",
+          "otpSendFailed": "Could not send OTP. Please try again.",
+          "otpWrong": "Incorrect OTP. Please try again."
+        }
+      }
+    },
+    "stats": {
+      "consultations": "Consultations completed",
+      "doctors": "Experienced doctors",
+      "rating": "Patient rating",
+      "followUpCompliance": "Follow-up compliance"
+    },
+    "treatments": {
+      "featuredBadge": "Primary focus",
+      "featuredTitle": "Chronic & recurring homoeopathic care",
+      "featuredBody": "Long-running conditions need whole-person intake, individualized prescribing where appropriate, and follow-up — consistent with structured homeopathic case management rather than episodic dispensing.",
+      "featuredBullets": {
+        "a": "Structured symptom & lifestyle intake",
+        "b": "Doctor-led remedy planning & review",
+        "c": "Follow-ups for response and dosing"
+      },
+      "featuredCta": "Explore chronic care →",
+      "otherBadge": "Also available",
+      "otherTitle": "Condition-specific pathways",
+      "otherBody": "Guided care for hair, skin, respiratory tendency, piles, renal colic tendencies, and more — documented with the same escalation and referral discipline as our chronic-care model.",
+      "otherBullets": {
+        "a": "Dermatological & recurrent skin tendency",
+        "b": "Hair fall & related patterns",
+        "c": "Other guideline-led treatment pages"
+      },
+      "otherCta": "View all treatments →"
+    },
+    "howItWorks": {
+      "eyebrow": "How it works",
+      "title": "Simple, structured care in 3 steps",
+      "subtitle": "Homoeopathic care depends on coherent history-taking and follow-up responses — digital tools here support those steps under doctor supervision.",
+      "steps": {
+        "1Title": "Structured history",
+        "1Body": "Cover duration, modalities, thirst, temperament, aggravations, past treatments — the kind of fields homoeopathic case-taking relies on.",
+        "2Title": "Doctor review & prescribing",
+        "2Body": "Assigned doctors reconcile your narrative with indications, escalation rules, and an individualized prescribing plan appropriate to chronic care.",
+        "3Title": "Follow-up & remedy response",
+        "3Body": "Secure messaging, prescription updates, and check-ins geared to judging remedy response safely over time."
+      }
+    },
+    "safetyFaq": {
+      "safetyTitle": "Safety first",
+      "safetyBody": "This platform is not for emergencies. Severe pain, breathing trouble, heavy bleeding, or sudden worsening symptoms require immediate offline medical care.",
+      "safetyLink": "Read full safety guidance",
+      "faqTitle": "Common questions",
+      "faqIntro": "Learn how assignments work, what to expect after payment, how homoeopathic follow-up is paced, and when we escalate offline.",
+      "methodologyLead": "For methodology and escalation logic,",
+      "methodologyLink": "structured homoeopathy overview →",
+      "faqLink": "View FAQ"
+    },
+    "finalCta": {
+      "benefitsEyebrow": "Why Vitalis Care and Research Centre",
+      "benefitsTitle": "Built around homoeopathic continuity, not one-off dosing",
+      "bPrivateTitle": "Private & secure",
+      "bPrivateBody": "End-to-end encrypted consultations with strict data privacy.",
+      "bPatternTitle": "Mentals, modalities & relapse pattern",
+      "bPatternBody": "Clinical documentation emphasises relapse tendency and characteristic symptoms — anchors for prudent homoeopathic follow-up.",
+      "bDoctorTitle": "Doctor continuity",
+      "bDoctorBody": "Same doctor follows your case through the entire care journey.",
+      "bFollowUpsTitle": "Easy follow-ups",
+      "bFollowUpsBody": "Secure chat and scheduled check-ins without rebooking fees.",
+      "ctaEyebrow": "Ready to start?",
+      "ctaTitle": "Begin your chronic homoeopathic care journey today.",
+      "ctaBody": "Start a supervised consultation pathway, ask whether your case suits our methodology, or read how we blend clinical safety with structured homoeopathic practice.",
+      "bookConsultation": "Book consultation",
+      "bookConsultAria": "Book consultation (opens login)"
+    },
+    "launchBanner": {
+      "ariaTopic": "Care topic from your search",
+      "eyebrow": "Care tailored to what you looked for",
+      "readGuide": "Read the full guide"
+    }
+  },
   "dashboard": {
     "subtitle": {
       "PATIENT": "Patient dashboard",

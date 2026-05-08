@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, Input } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { TranslatePipe } from '@ngx-translate/core';
 import type { DiseaseInfo } from './interfaces';
 
 /**
@@ -10,7 +11,7 @@ import type { DiseaseInfo } from './interfaces';
 @Component({
   selector: 'app-home-launch-banner',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, TranslatePipe],
   styles: [`
     :host { display: block; }
     .home-launch-banner {
@@ -41,12 +42,14 @@ import type { DiseaseInfo } from './interfaces';
   `],
   template: `
     @if (disease) {
-      <section class="panel home-launch-banner" aria-label="Care topic from your search">
-        <p class="eyebrow">Care tailored to what you looked for</p>
+      <section class="panel home-launch-banner" [attr.aria-label]="'home.launchBanner.ariaTopic' | translate">
+        <p class="eyebrow">{{ 'home.launchBanner.eyebrow' | translate }}</p>
         <h2 class="home-launch-title">{{ disease.shortName }}</h2>
         <p class="home-launch-summary">{{ disease.summary }}</p>
         <div class="home-launch-actions">
-          <a class="primary home-action" [routerLink]="['/treatments', disease.slug]">Read the full guide</a>
+          <a class="primary home-action" [routerLink]="['/treatments', disease.slug]">
+            {{ 'home.launchBanner.readGuide' | translate }}
+          </a>
         </div>
       </section>
     }

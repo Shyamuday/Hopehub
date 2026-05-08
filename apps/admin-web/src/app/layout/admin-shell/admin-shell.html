@@ -1,37 +1,40 @@
 <main class="admin-shell">
-  <header class="topbar">
-    <div class="topbar-titles">
+  <header class="app-header-bar">
+    <div class="header-brand">
       <h1>Admin Console</h1>
       @if (auth.user(); as u) {
         <p class="user-line">{{ u.name }}<span class="dim"> · task access only where permitted</span></p>
       }
     </div>
-    <button type="button" (click)="logout()">Logout</button>
-  </header>
 
-  <nav class="tabs" aria-label="Admin sections">
-    @if (canAny(P.REPORTS_VIEW, P.PAYMENTS_READ, P.AUDIT_READ)) {
-      <a routerLink="/dashboard" routerLinkActive="active">Dashboard</a>
-    }
-    @if (canAll(P.CONSULTATIONS_READ)) {
-      <a routerLink="/consultations" routerLinkActive="active">Consultations</a>
-    }
-    @if (canAll(P.DOCTORS_READ)) {
-      <a routerLink="/doctors" routerLinkActive="active">Doctors</a>
-    }
-    @if (canAll(P.CONSUMERS_READ)) {
-      <a routerLink="/consumers" routerLinkActive="active">Consumers</a>
-    }
-    @if (canAll(P.DISEASES_READ)) {
-      <a routerLink="/diseases" routerLinkActive="active">Diseases</a>
-    }
-    @if (canAll(P.LOCATIONS_READ)) {
-      <a routerLink="/locations" routerLinkActive="active">Locations</a>
-    }
-    @if (canAll(P.STAFF_READ)) {
-      <a routerLink="/staff" routerLinkActive="active">Staff</a>
-    }
-  </nav>
+    <nav class="header-nav" aria-label="Admin sections">
+      @if (canAny(P.REPORTS_VIEW, P.PAYMENTS_READ, P.AUDIT_READ)) {
+        <a routerLink="/dashboard" routerLinkActive="active">Dashboard</a>
+      }
+      @if (canAll(P.CONSULTATIONS_READ)) {
+        <a routerLink="/consultations" routerLinkActive="active">Consultations</a>
+      }
+      @if (canAll(P.DOCTORS_READ)) {
+        <a routerLink="/doctors" routerLinkActive="active">Doctors</a>
+      }
+      @if (canAll(P.CONSUMERS_READ)) {
+        <a routerLink="/consumers" routerLinkActive="active">Consumers</a>
+      }
+      @if (canAll(P.DISEASES_READ)) {
+        <a routerLink="/diseases" routerLinkActive="active">Diseases</a>
+      }
+      @if (canAll(P.LOCATIONS_READ)) {
+        <a routerLink="/locations" routerLinkActive="active">Locations</a>
+      }
+      @if (canAll(P.STAFF_READ)) {
+        <a routerLink="/staff" routerLinkActive="active">Staff</a>
+      }
+    </nav>
+
+    <div class="header-actions">
+      <button type="button" class="btn-logout" (click)="logout()">Logout</button>
+    </div>
+  </header>
 
   <section class="content">
     <router-outlet />

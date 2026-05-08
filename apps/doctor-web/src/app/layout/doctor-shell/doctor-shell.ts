@@ -1,5 +1,5 @@
-import { Component } from '@angular/core';
-import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { Component, inject } from '@angular/core';
+import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { Auth } from '../../core/services/auth';
 
 @Component({
@@ -9,9 +9,11 @@ import { Auth } from '../../core/services/auth';
   styleUrl: './doctor-shell.scss',
 })
 export class DoctorShell {
-  constructor(private readonly auth: Auth) {}
+  private readonly auth = inject(Auth);
+  private readonly router = inject(Router);
 
   logout() {
     this.auth.logout();
+    void this.router.navigateByUrl('/login');
   }
 }

@@ -1,3 +1,64 @@
+:host {
+  display: block;
+  min-height: 100vh;
+  background: #f4f7fb;
+}
+
+.login-header-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem 1rem;
+  padding: 0.75rem 1.25rem;
+  background: #0f172a;
+  color: #fff;
+  border-bottom: 1px solid #1e293b;
+}
+
+.login-brand {
+  color: #fff;
+  text-decoration: none;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.login-brand:hover {
+  color: #e2e8f0;
+}
+
+.login-nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.nav-pill {
+  font-size: 0.875rem;
+  padding: 0.4rem 0.65rem;
+  border-radius: 8px;
+  color: #cbd5e1;
+}
+
+.nav-pill.active {
+  background: #2563eb;
+  color: #fff;
+}
+
+.nav-link-external {
+  font-size: 0.875rem;
+  color: #93c5fd;
+  text-decoration: none;
+  padding: 0.4rem 0.65rem;
+  border-radius: 8px;
+}
+
+.nav-link-external:hover {
+  background: #334155;
+  color: #fff;
+}
+
 .login-card {
   width: min(460px, 100%);
   margin: 5rem auto;

@@ -1,9 +1,15 @@
-<section class="login-card">
-  <div class="switcher">
-    <button type="button" [class.active]="mode === 'signin'" (click)="mode = 'signin'">Sign in</button>
-    <button type="button" [class.active]="mode === 'enroll'" (click)="mode = 'enroll'">Enroll</button>
-  </div>
+<header class="login-header-bar">
+  <a routerLink="/login" class="login-brand">Doctor Console</a>
+  <nav class="login-nav" aria-label="Login navigation">
+    <button type="button" class="nav-tab" [class.active]="mode === 'signin'" (click)="mode = 'signin'">Sign in</button>
+    <button type="button" class="nav-tab" [class.active]="mode === 'enroll'" (click)="mode = 'enroll'">Enroll</button>
+    @if (patientPortalUrl) {
+      <a [href]="patientPortalUrl" class="nav-link-external" target="_blank" rel="noopener noreferrer">Patient site</a>
+    }
+  </nav>
+</header>
 
+<section class="login-card">
   @if (mode === 'signin') {
     <h2>Doctor Login</h2>
     <p>Use your doctor account to access dashboard and patient workflows.</p>

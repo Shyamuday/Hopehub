@@ -1,63 +1,58 @@
 import { Component } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { TranslatePipe } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-home-treatments-section',
-  imports: [RouterLink],
+  imports: [RouterLink, TranslatePipe],
   template: `
     <!-- Stats Section -->
     <section class="stats-section">
       <div class="stat-card">
         <span class="stat-number">5,000+</span>
-        <span class="stat-label">Consultations completed</span>
+        <span class="stat-label">{{ 'home.stats.consultations' | translate }}</span>
       </div>
       <div class="stat-card">
         <span class="stat-number">12+</span>
-        <span class="stat-label">Experienced doctors</span>
+        <span class="stat-label">{{ 'home.stats.doctors' | translate }}</span>
       </div>
       <div class="stat-card">
         <span class="stat-number">4.8★</span>
-        <span class="stat-label">Patient rating</span>
+        <span class="stat-label">{{ 'home.stats.rating' | translate }}</span>
       </div>
       <div class="stat-card">
         <span class="stat-number">92%</span>
-        <span class="stat-label">Follow-up compliance</span>
+        <span class="stat-label">{{ 'home.stats.followUpCompliance' | translate }}</span>
       </div>
     </section>
 
     <!-- Treatment Cards -->
     <section class="content-grid two">
       <article class="panel treatment-card featured-card">
-        <div class="card-badge">Primary focus</div>
+        <div class="card-badge">{{ 'home.treatments.featuredBadge' | translate }}</div>
         <div class="card-icon">🩺</div>
-        <h2>Chronic & recurring homoeopathic care</h2>
-        <p>
-          Long-running conditions need whole-person intake, individualized prescribing where appropriate, and follow-up —
-          consistent with structured homeopathic case management rather than episodic dispensing.
-        </p>
+        <h2>{{ 'home.treatments.featuredTitle' | translate }}</h2>
+        <p>{{ 'home.treatments.featuredBody' | translate }}</p>
         <ul class="feature-list">
-          <li>Structured symptom & lifestyle intake</li>
-          <li>Doctor-led remedy planning & review</li>
-          <li>Follow-ups for response and dosing</li>
+          <li>{{ 'home.treatments.featuredBullets.a' | translate }}</li>
+          <li>{{ 'home.treatments.featuredBullets.b' | translate }}</li>
+          <li>{{ 'home.treatments.featuredBullets.c' | translate }}</li>
         </ul>
-        <a routerLink="/chronic-care" class="card-link">Explore chronic care →</a>
+        <a routerLink="/chronic-care" class="card-link">{{ 'home.treatments.featuredCta' | translate }}</a>
       </article>
       <article class="panel treatment-card">
-        <div class="card-badge secondary-badge">Also available</div>
+        <div class="card-badge secondary-badge">{{ 'home.treatments.otherBadge' | translate }}</div>
         <div class="card-icon">💊</div>
-        <h2>Condition-specific pathways</h2>
-        <p>
-          Guided care for hair, skin, respiratory tendency, piles, renal colic tendencies, and more — documented with
-          the same escalation and referral discipline as our chronic-care model.
-        </p>
+        <h2>{{ 'home.treatments.otherTitle' | translate }}</h2>
+        <p>{{ 'home.treatments.otherBody' | translate }}</p>
         <ul class="feature-list">
-          <li>Dermatological & recurrent skin tendency</li>
-          <li>Hair fall & related patterns</li>
-          <li>Other guideline-led treatment pages</li>
+          <li>{{ 'home.treatments.otherBullets.a' | translate }}</li>
+          <li>{{ 'home.treatments.otherBullets.b' | translate }}</li>
+          <li>{{ 'home.treatments.otherBullets.c' | translate }}</li>
         </ul>
-        <a routerLink="/treatments" class="card-link">View all treatments →</a>
+        <a routerLink="/treatments" class="card-link">{{ 'home.treatments.otherCta' | translate }}</a>
       </article>
     </section>
   `
 })
-export class HomeTreatmentsSectionComponent { }
+export class HomeTreatmentsSectionComponent {}

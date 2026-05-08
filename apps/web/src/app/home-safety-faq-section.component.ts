@@ -1,30 +1,27 @@
 import { Component } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { TranslatePipe } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-home-safety-faq-section',
-  imports: [RouterLink],
+  imports: [RouterLink, TranslatePipe],
   template: `
     <section class="content-grid two">
       <article class="panel warning-panel">
-        <h2>Safety first</h2>
-        <p>
-          This platform is not for emergencies. Severe pain, breathing trouble, heavy bleeding, or sudden worsening
-          symptoms require immediate offline medical care.
-        </p>
-        <a routerLink="/safety">Read full safety guidance</a>
+        <h2>{{ 'home.safetyFaq.safetyTitle' | translate }}</h2>
+        <p>{{ 'home.safetyFaq.safetyBody' | translate }}</p>
+        <a routerLink="/safety">{{ 'home.safetyFaq.safetyLink' | translate }}</a>
       </article>
       <article class="panel">
-        <h2>Common questions</h2>
-        <p>Learn how assignments work, what to expect after payment, how homoeopathic follow-up is paced, and when we escalate offline.</p>
+        <h2>{{ 'home.safetyFaq.faqTitle' | translate }}</h2>
+        <p>{{ 'home.safetyFaq.faqIntro' | translate }}</p>
         <p class="muted home-faq-deeper-link">
-          For methodology and escalation logic,
-          <a routerLink="/why-successful" class="card-link">
-            structured homoeopathy overview →</a>
+          {{ 'home.safetyFaq.methodologyLead' | translate }}
+          <a routerLink="/why-successful" class="card-link">{{ 'home.safetyFaq.methodologyLink' | translate }}</a>
         </p>
-        <a routerLink="/faq">View FAQ</a>
+        <a routerLink="/faq">{{ 'home.safetyFaq.faqLink' | translate }}</a>
       </article>
     </section>
   `
 })
-export class HomeSafetyFaqSectionComponent { }
+export class HomeSafetyFaqSectionComponent {}

@@ -1,3 +1,15 @@
+<header class="login-header-bar">
+  <a routerLink="/login" class="login-brand">Admin Console</a>
+  <nav class="login-nav" aria-label="Login navigation">
+    <span class="nav-pill active" aria-current="page">Sign in</span>
+    @if (patientPortalUrl) {
+      <a [href]="patientPortalUrl" class="nav-link-external" target="_blank" rel="noopener noreferrer">
+        Patient site
+      </a>
+    }
+  </nav>
+</header>
+
 <section class="login-card">
   <h2>Admin Login</h2>
   <p>Manage doctors and consumers from one console.</p>

@@ -1,15 +1,18 @@
 import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { AdminAuth } from '../../../core/services/admin-auth';
+import { environment } from '../../../../environments/environment';
 
 @Component({
   selector: 'app-admin-login',
-  imports: [FormsModule],
+  imports: [FormsModule, RouterLink],
   templateUrl: './admin-login.html',
   styleUrl: './admin-login.scss'
 })
 export class AdminLogin {
+  readonly patientPortalUrl = environment.patientPortalUrl?.trim() || '';
+
   email = '';
   password = '';
   error = '';
