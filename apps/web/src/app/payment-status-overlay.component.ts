@@ -1,12 +1,13 @@
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { TranslatePipe } from '@ngx-translate/core';
 
 type PaymentFlowState = 'IDLE' | 'CREATING_ORDER' | 'OPENING_CHECKOUT' | 'VERIFYING' | 'SUCCESS' | 'ERROR';
 
 @Component({
   selector: 'app-payment-status-overlay',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, TranslatePipe],
   template: `
     @if (state !== 'IDLE') {
       <section class="process-overlay">
@@ -25,9 +26,9 @@ type PaymentFlowState = 'IDLE' | 'CREATING_ORDER' | 'OPENING_CHECKOUT' | 'VERIFY
           @if (state === 'SUCCESS' || state === 'ERROR') {
             <div class="actions">
               @if (state === 'ERROR' && canRetry) {
-                <button class="primary" type="button" (click)="retry.emit()">Retry payment</button>
+                <button class="primary" type="button" (click)="retry.emit()">{{ 'patient.payment.retry' | translate }}</button>
               }
-              <button class="secondary" type="button" (click)="dismiss.emit()">Close</button>
+              <button class="secondary" type="button" (click)="dismiss.emit()">{{ 'patient.payment.close' | translate }}</button>
             </div>
           }
         </article>

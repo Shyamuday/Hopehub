@@ -1,7 +1,8 @@
 import { CommonModule, formatDate } from '@angular/common';
-import { Component, type OnDestroy, type OnInit, computed, signal } from '@angular/core';
+import { Component, type OnDestroy, type OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import { AppFooterComponent } from './app-footer.component';
 import { AppHeaderComponent } from './app-header.component';
@@ -26,6 +27,7 @@ import {
 } from './patient/patient-worksheet-booking-bridge';
 import { ClinicApiService } from './clinic-api/clinic-api.service';
 import { AuthService } from './auth/auth.service';
+import { adminHasAllPermissions, ADMIN_PERMISSIONS } from './auth/staff-permissions';
 import type { BillingPlan, ClinicLocation, Consultation, Disease, Doctor, DoseEvent, Prescription } from './interfaces';
 import { environment } from '../environments/environment';
 
@@ -47,11 +49,13 @@ type PaymentFlowState = 'IDLE' | 'CREATING_ORDER' | 'OPENING_CHECKOUT' | 'VERIFY
     ReminderPreferencesComponent,
     TodayMedicinesComponent,
     PatientProfileComponent,
-    RouterLink
+    RouterLink,
+    TranslatePipe
   ],
   templateUrl: './dashboard.component.html',
 })
 export class DashboardComponent implements OnInit, OnDestroy {
+  readonly adminPerm = ADMIN_PERMISSIONS;
   readonly doctorPortalUrl = environment.doctorPortalUrl || '';
   readonly patientXp = environment.patientExperience;
   readonly whatsappLink = buildPatientWhatsAppLink(
@@ -75,7 +79,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   readonly paymentFlowState = signal<PaymentFlowState>('IDLE');
   readonly paymentFlowConsultation = signal<Consultation | null>(null);
   readonly paymentFlowError = signal('');
-  readonly title = computed(() => `${this.auth.user()?.role?.toLowerCase()} dashboard`);
+  readonly headerSubtitle = signal('');
   readonly worksheetBookingDraft = signal<WorksheetBookingDraft | null>(null);
   private realtimeChannel?: RealtimeChannel;
 
@@ -100,10 +104,27 @@ export class DashboardComponent implements OnInit, OnDestroy {
   constructor(
     readonly auth: AuthService,
     private readonly api: ClinicApiService,
-    private readonly router: Router
-  ) { }
+    private readonly router: Router,
+    private readonly translate: TranslateService
+  ) {
+    this.translate.onLangChange.subscribe(() => this.refreshHeaderSubtitle());
+  }
+
+  private refreshHeaderSubtitle() {
+    const r = this.auth.user()?.role;
+    if (!r) {
+      this.headerSubtitle.set('');
+      return;
+    }
+    this.headerSubtitle.set(this.translate.instant(`dashboard.subtitle.${r}`));
+  }
+
+  canAdmin(...codes: string[]) {
+    return adminHasAllPermissions(this.auth.user(), ...codes);
+  }
 
   ngOnInit() {
+    this.refreshHeaderSubtitle();
     if (this.auth.user()?.role === 'PATIENT') {
       this.worksheetBookingDraft.set(readWorksheetBookingDraft());
     }
@@ -137,7 +158,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
         next: () => {
           clearWorksheetBookingDraft();
           this.worksheetBookingDraft.set(null);
-          this.showNotice('Consultation created. Complete payment to continue.');
+          this.showNotice(this.translate.instant('notice.consultationCreated'));
           this.loadConsultations();
         },
         error: (error) => {
@@ -163,7 +184,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
             this.api.verifyPayment(consultation.id, payment).subscribe({
               next: () => {
                 this.paymentFlowState.set('SUCCESS');
-                this.showNotice('Payment verified. Admin can assign doctor now.');
+                this.showNotice(this.translate.instant('notice.paymentVerified'));
                 this.loadConsultations();
               },
               error: (error) => {
@@ -193,23 +214,27 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   paymentFlowTitle() {
     const state = this.paymentFlowState();
-    if (state === 'CREATING_ORDER') return 'Creating secure order';
-    if (state === 'OPENING_CHECKOUT') return 'Opening Razorpay checkout';
-    if (state === 'VERIFYING') return 'Verifying payment';
-    if (state === 'SUCCESS') return 'Payment successful';
-    if (state === 'ERROR') return 'Payment failed';
+    const t = this.translate.instant.bind(this.translate);
+    if (state === 'CREATING_ORDER') return t('patient.payment.titleCreating');
+    if (state === 'OPENING_CHECKOUT') return t('patient.payment.titleCheckout');
+    if (state === 'VERIFYING') return t('patient.payment.titleVerifying');
+    if (state === 'SUCCESS') return t('patient.payment.titleSuccess');
+    if (state === 'ERROR') return t('patient.payment.titleError');
     return '';
   }
 
   paymentFlowMessage() {
     const state = this.paymentFlowState();
-    if (state === 'CREATING_ORDER') return 'Preparing your order details.';
-    if (state === 'OPENING_CHECKOUT') return 'Complete payment in the Razorpay popup.';
-    if (state === 'VERIFYING') return 'Please wait while we verify with the gateway.';
+    const t = this.translate.instant.bind(this.translate);
+    if (state === 'CREATING_ORDER') return t('patient.payment.msgCreating');
+    if (state === 'OPENING_CHECKOUT') return t('patient.payment.msgCheckout');
+    if (state === 'VERIFYING') return t('patient.payment.msgVerifying');
     if (state === 'SUCCESS') {
-      return 'Your consultation is now ready for doctor assignment. You’ll see updates here once a doctor is assigned.';
+      return t('patient.payment.msgSuccess');
     }
-    if (state === 'ERROR') return this.paymentFlowError() || 'Something went wrong. Please try again.';
+    if (state === 'ERROR') {
+      return this.paymentFlowError() || t('patient.payment.msgErrorGeneric');
+    }
     return '';
   }
 
@@ -293,7 +318,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   skipDose(doseEventId: string) {
-    const note = prompt('Reason for skipping this dose?', '') || undefined;
+    const note = prompt(this.translate.instant('notice.skipDosePrompt'), '') || undefined;
     this.isProcessing.set(true);
     this.api.skipDose(doseEventId, note).subscribe({
       next: () => {
@@ -340,13 +365,13 @@ export class DashboardComponent implements OnInit, OnDestroy {
     const summary = [rx.medicineName, rx.strength, rx.dose, rx.frequency].filter(Boolean).join(' · ');
     const text = `[Medicine / dose: ${summary} — scheduled ${when}, status: ${dose.status}]\n\n`;
     this.patientChatCompose.update((prev) => ({ token: prev.token + 1, text }));
-    this.showNotice('Draft added below in Chat — add details and send.');
+    this.showNotice(this.translate.instant('notice.draftChatAdded'));
   }
 
   onSavePreferences(prefs: ReminderPrefs) {
     this.isProcessing.set(true);
     this.api.saveReminderPreferences(prefs).subscribe({
-      next: () => this.showNotice('Reminder preferences saved.'),
+      next: () => this.showNotice(this.translate.instant('notice.reminderSaved')),
       error: (error) => {
         this.isProcessing.set(false);
         this.showNotice(error.error?.message || error.message || 'Could not save reminder preferences.');
@@ -426,6 +451,12 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   loadConsultations() {
+    const user = this.auth.user();
+    if (user?.role === 'ADMIN' && !adminHasAllPermissions(user, ADMIN_PERMISSIONS.CONSULTATIONS_READ)) {
+      this.consultations.set([]);
+      this.activeConsultation.set(null);
+      return;
+    }
     this.api.consultations().subscribe({
       next: ({ consultations }) => {
         this.consultations.set(consultations);
@@ -441,17 +472,26 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   private loadAdminData() {
-    this.api.doctors().subscribe({
-      next: ({ doctors }) => {
-        this.doctors.set(doctors);
-        this.assignment.doctorId = doctors[0]?.id || this.assignment.doctorId;
-      },
-      error: (error) => this.showNotice(error.error?.message || error.message || 'Could not load doctors.')
-    });
-    this.api.reports().subscribe({
-      next: (report) => this.report.set(report),
-      error: (error) => this.showNotice(error.error?.message || error.message || 'Could not load reports.')
-    });
+    const user = this.auth.user();
+    if (adminHasAllPermissions(user, ADMIN_PERMISSIONS.DOCTORS_READ)) {
+      this.api.doctors().subscribe({
+        next: ({ doctors }) => {
+          this.doctors.set(doctors);
+          this.assignment.doctorId = doctors[0]?.id || this.assignment.doctorId;
+        },
+        error: (error) => this.showNotice(error.error?.message || error.message || 'Could not load doctors.')
+      });
+    } else {
+      this.doctors.set([]);
+    }
+    if (adminHasAllPermissions(user, ADMIN_PERMISSIONS.REPORTS_VIEW)) {
+      this.api.reports().subscribe({
+        next: (report) => this.report.set(report),
+        error: (error) => this.showNotice(error.error?.message || error.message || 'Could not load reports.')
+      });
+    } else {
+      this.report.set(null);
+    }
   }
 
   private loadPatientMedicationData() {

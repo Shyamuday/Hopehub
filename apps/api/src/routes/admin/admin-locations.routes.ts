@@ -5,6 +5,7 @@ import { allowRoles, authRequired } from '../../auth.js';
 import { prisma } from '../../db.js';
 import { asyncRoute } from '../../middleware/async-route.js';
 import { routeParam } from '../../lib/http-params.js';
+import { PERMISSIONS, requirePermissions } from '../../staff-permissions.js';
 
 const locationBody = z.object({
   name: z.string().min(2),
@@ -25,6 +26,7 @@ export function registerAdminLocationRoutes(app: express.Application) {
     '/admin/locations',
     authRequired,
     allowRoles(Role.ADMIN),
+    requirePermissions(PERMISSIONS.LOCATIONS_READ),
     asyncRoute(async (_req, res) => {
       const locations = await prisma.clinicLocation.findMany({
         orderBy: [{ isActive: 'desc' }, { sortOrder: 'asc' }, { name: 'asc' }]
@@ -37,6 +39,7 @@ export function registerAdminLocationRoutes(app: express.Application) {
     '/admin/locations',
     authRequired,
     allowRoles(Role.ADMIN),
+    requirePermissions(PERMISSIONS.LOCATIONS_WRITE),
     asyncRoute(async (req, res) => {
       const body = locationBody.parse(req.body);
       const loc = await prisma.clinicLocation.create({
@@ -62,6 +65,7 @@ export function registerAdminLocationRoutes(app: express.Application) {
     '/admin/locations/:id',
     authRequired,
     allowRoles(Role.ADMIN),
+    requirePermissions(PERMISSIONS.LOCATIONS_WRITE),
     asyncRoute(async (req, res) => {
       const body = locationBody.parse(req.body);
       const loc = await prisma.clinicLocation.update({

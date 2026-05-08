@@ -2,15 +2,15 @@ import { type Role } from './interfaces';
 
 /** Visitor / logged-out primary navigation (sheet + desktop). */
 export type GuestHeaderNavItem =
-  | { id: string; type: 'route'; label: string; routerLink: string; linkClass?: string }
-  | { id: string; type: 'auth'; label: string; authMode: 'patient' | 'staff'; linkClass?: string }
-  | { id: string; type: 'whatsapp'; ariaLabel: string };
+  | { id: string; type: 'route'; labelKey: string; routerLink: string; linkClass?: string }
+  | { id: string; type: 'auth'; labelKey: string; authMode: 'patient' | 'staff'; linkClass?: string }
+  | { id: string; type: 'whatsapp'; ariaLabelKey: string };
 
 /** Links in the signed-in user chip (before name / role / logout). */
 export type AuthenticatedHeaderNavItem = {
   id: string;
   type: 'route';
-  label: string;
+  labelKey: string;
   routerLink: string;
   linkClass?: string;
   /** When set, the link is shown only for these roles. */
@@ -24,25 +24,25 @@ export const DEFAULT_HEADER_BRAND = {
 } as const;
 
 export const DEFAULT_GUEST_HEADER_NAV: GuestHeaderNavItem[] = [
-  { id: 'about', type: 'route', label: 'About us', routerLink: '/about' },
-  { id: 'treatments', type: 'route', label: 'Treatments', routerLink: '/treatments' },
-  { id: 'safety', type: 'route', label: 'Safety', routerLink: '/safety' },
-  { id: 'login', type: 'auth', label: 'Login', authMode: 'patient', linkClass: 'header-cta' },
+  { id: 'about', type: 'route', labelKey: 'nav.about', routerLink: '/about' },
+  { id: 'treatments', type: 'route', labelKey: 'nav.treatments', routerLink: '/treatments' },
+  { id: 'safety', type: 'route', labelKey: 'nav.safety', routerLink: '/safety' },
+  { id: 'login', type: 'auth', labelKey: 'nav.login', authMode: 'patient', linkClass: 'header-cta' },
   {
     id: 'doctor-login',
     type: 'auth',
-    label: 'Doctor login',
+    labelKey: 'nav.doctorLogin',
     authMode: 'staff',
     linkClass: 'header-cta secondary'
   },
-  { id: 'whatsapp', type: 'whatsapp', ariaLabel: 'WhatsApp' }
+  { id: 'whatsapp', type: 'whatsapp', ariaLabelKey: 'nav.whatsapp' }
 ];
 
 export const DEFAULT_USER_HEADER_NAV: AuthenticatedHeaderNavItem[] = [
   {
     id: 'self-assessment',
     type: 'route',
-    label: 'Self-assessment',
+    labelKey: 'nav.selfAssessment',
     routerLink: '/patient/self-diagnosis',
     linkClass: 'user-chip-nav',
     roles: ['PATIENT']

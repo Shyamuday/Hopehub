@@ -1,39 +1,40 @@
-<app-header [subtitle]="title()" [user]="auth.user()" [whatsappLink]="whatsappLink" (logout)="logout()" />
+<app-header [subtitle]="headerSubtitle()" [user]="auth.user()" [whatsappLink]="whatsappLink" (logout)="logout()" />
 
 <main class="dashboard">
   @if (isLoading()) {
     <section class="panel">
-      <p class="muted">Loading clinic data...</p>
+      <p class="muted">{{ 'common.loadingClinicData' | translate }}</p>
     </section>
   }
 
   @if (auth.user()?.role === 'PATIENT') {
     <section class="panel hero hero-panel">
       <div>
-        <p class="eyebrow">{{ patientXp.dashboardHero.eyebrow }}</p>
-        <h2>{{ patientXp.dashboardHero.title }}</h2>
-        <p>{{ patientXp.dashboardHero.subtitle }}</p>
-        <div class="hero-trust-row" role="navigation" aria-label="Trust and safety">
+        <p class="eyebrow">{{ 'patient.dashboard.heroEyebrow' | translate }}</p>
+        <h2>{{ 'patient.dashboard.heroTitle' | translate }}</h2>
+        <p>{{ 'patient.dashboard.heroSubtitle' | translate }}</p>
+        <div class="hero-trust-row" role="navigation" [attr.aria-label]="'patient.dashboard.trustNavAria' | translate">
           <a routerLink="/safety" class="trust-item">
             <span class="trust-icon" aria-hidden="true">!</span>
-            Safety and emergencies
+            {{ 'patient.dashboard.safetyEmergencies' | translate }}
           </a>
           <a routerLink="/privacy-terms" class="trust-item">
             <span class="trust-icon" aria-hidden="true">i</span>
-            Privacy and data
+            {{ 'patient.dashboard.privacyData' | translate }}
           </a>
         </div>
       </div>
-      <strong>{{ patientXp.dashboardHero.feeNote }}</strong>
+      <strong>{{ 'patient.dashboard.feeNote' | translate }}</strong>
     </section>
 
     <section class="panel">
-      <h2>Self-assessment worksheets</h2>
+      <h2>{{ 'patient.dashboard.selfAssessmentTitle' | translate }}</h2>
       <p class="muted">
-        Optional structured notes for your own reference. They are not a medical diagnosis and do not replace a
-        consultation. Saved answers can be pulled into your booking form below.
+        {{ 'patient.dashboard.selfAssessmentBody' | translate }}
       </p>
-      <button type="button" class="primary" routerLink="/patient/self-diagnosis">Open worksheets</button>
+      <button type="button" class="primary" routerLink="/patient/self-diagnosis">
+        {{ 'patient.dashboard.openWorksheets' | translate }}
+      </button>
     </section>
 
     <section class="grid two">
@@ -117,66 +118,82 @@
   }
 
   @if (auth.user()?.role === 'ADMIN') {
-    <app-admin-stats
-      [revenueInPaise]="report()?.revenueInPaise || 0"
-      [activeDoctors]="report()?.activeDoctors || 0"
-      [consultationsCount]="consultations().length"
-    />
+    @if (canAdmin(adminPerm.REPORTS_VIEW) || canAdmin(adminPerm.CONSULTATIONS_READ)) {
+      <app-admin-stats
+        [revenueInPaise]="canAdmin(adminPerm.REPORTS_VIEW) ? report()?.revenueInPaise || 0 : 0"
+        [activeDoctors]="canAdmin(adminPerm.REPORTS_VIEW) ? report()?.activeDoctors || 0 : 0"
+        [consultationsCount]="canAdmin(adminPerm.CONSULTATIONS_READ) ? consultations().length : 0"
+      />
+    }
 
     <section class="grid two">
-      <div class="panel">
-        <h2>Add Doctor</h2>
-        <label>Name <input [(ngModel)]="doctorForm.name" /></label>
-        <label>Email <input [(ngModel)]="doctorForm.email" /></label>
-        <label>Mobile <input [(ngModel)]="doctorForm.mobile" /></label>
-        <label>Specialty <input [(ngModel)]="doctorForm.specialty" /></label>
-        <label>Password <input type="password" [(ngModel)]="doctorForm.password" /></label>
-        <button class="primary" (click)="createDoctor()">Create doctor</button>
-      </div>
+      @if (canAdmin(adminPerm.DOCTORS_WRITE)) {
+        <div class="panel">
+          <h2>Add Doctor</h2>
+          <label>Name <input [(ngModel)]="doctorForm.name" /></label>
+          <label>Email <input [(ngModel)]="doctorForm.email" /></label>
+          <label>Mobile <input [(ngModel)]="doctorForm.mobile" /></label>
+          <label>Specialty <input [(ngModel)]="doctorForm.specialty" /></label>
+          <label>Password <input type="password" [(ngModel)]="doctorForm.password" /></label>
+          <button class="primary" (click)="createDoctor()">Create doctor</button>
+        </div>
+      }
 
-      <div class="panel">
-        <h2>Manual Assignment</h2>
-        <label>
-          Consultation
-          <select [(ngModel)]="assignment.consultationId">
-            @for (consultation of consultations(); track consultation.id) {
-              <option [value]="consultation.id">
-                {{ consultation.patient.name }} - {{ consultation.disease.name }} - {{ consultation.status }}
-              </option>
-            }
-          </select>
-        </label>
-        <label>
-          Doctor
-          <select [(ngModel)]="assignment.doctorId">
-            @for (doctor of doctors(); track doctor.id) {
-              <option [value]="doctor.id">{{ doctor.name }} - {{ doctor.doctorProfile?.specialty }}</option>
-            }
-          </select>
-        </label>
-        <button class="primary" (click)="assignDoctor()">Assign doctor</button>
-      </div>
+      @if (
+        canAdmin(adminPerm.ASSIGNMENTS_WRITE) &&
+        canAdmin(adminPerm.CONSULTATIONS_READ) &&
+        canAdmin(adminPerm.DOCTORS_READ)
+      ) {
+        <div class="panel">
+          <h2>Manual Assignment</h2>
+          <label>
+            Consultation
+            <select [(ngModel)]="assignment.consultationId">
+              @for (consultation of consultations(); track consultation.id) {
+                <option [value]="consultation.id">
+                  {{ consultation.patient.name }} - {{ consultation.disease.name }} - {{ consultation.status }}
+                </option>
+              }
+            </select>
+          </label>
+          <label>
+            Doctor
+            <select [(ngModel)]="assignment.doctorId">
+              @for (doctor of doctors(); track doctor.id) {
+                <option [value]="doctor.id">{{ doctor.name }} - {{ doctor.doctorProfile?.specialty }}</option>
+              }
+            </select>
+          </label>
+          <button class="primary" (click)="assignDoctor()">Assign doctor</button>
+        </div>
+      }
     </section>
 
-    <section class="grid two">
-      <app-consultation-list
-        [consultations]="consultations()"
-        [activeId]="activeConsultation()?.id ?? null"
-        [userRole]="auth.user()?.role ?? null"
-        [disabled]="isProcessing()"
-        (selected)="setActive($event)"
-      />
-      <app-consultation-detail
-        [consultation]="activeConsultation()"
-        [userRole]="auth.user()?.role ?? null"
-        [disabled]="isProcessing()"
-        [doctorPortalUrl]="doctorPortalUrl"
-        (messageSent)="onMessageSent($event)"
-        (uploadPrescription)="onUploadPrescription($event)"
-        (complete)="onComplete()"
-        (attachmentsChanged)="loadConsultations()"
-      />
-    </section>
+    @if (canAdmin(adminPerm.CONSULTATIONS_READ)) {
+      <section class="grid two">
+        <app-consultation-list
+          [consultations]="consultations()"
+          [activeId]="activeConsultation()?.id ?? null"
+          [userRole]="auth.user()?.role ?? null"
+          [disabled]="isProcessing()"
+          (selected)="setActive($event)"
+        />
+        <app-consultation-detail
+          [consultation]="activeConsultation()"
+          [userRole]="auth.user()?.role ?? null"
+          [disabled]="isProcessing()"
+          [doctorPortalUrl]="doctorPortalUrl"
+          (messageSent)="onMessageSent($event)"
+          (uploadPrescription)="onUploadPrescription($event)"
+          (complete)="onComplete()"
+          (attachmentsChanged)="loadConsultations()"
+        />
+      </section>
+    } @else {
+      <section class="panel">
+        <p class="muted">You do not have permission to view or manage consultations.</p>
+      </section>
+    }
   }
 </main>
 

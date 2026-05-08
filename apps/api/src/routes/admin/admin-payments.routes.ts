@@ -4,12 +4,14 @@ import { allowRoles, authRequired } from '../../auth.js';
 import { prisma } from '../../db.js';
 import { asyncRoute } from '../../middleware/async-route.js';
 import { queryPositiveInt, queryText } from '../../lib/http-params.js';
+import { PERMISSIONS, requirePermissions, staffHasAllPermissions } from '../../staff-permissions.js';
 
 export function registerAdminPaymentRoutes(app: express.Application) {
   app.get(
     '/admin/payments',
     authRequired,
     allowRoles(Role.ADMIN),
+    requirePermissions(PERMISSIONS.PAYMENTS_READ),
     asyncRoute(async (req, res) => {
       const page = queryPositiveInt(req, 'page', 1);
       const pageSize = queryPositiveInt(req, 'pageSize', 20, 1, 100);
@@ -54,6 +56,12 @@ export function registerAdminPaymentRoutes(app: express.Application) {
       ]);
 
       if (exportType === 'csv') {
+        if (!staffHasAllPermissions(req.user, PERMISSIONS.PAYMENTS_EXPORT)) {
+          return res.status(403).json({
+            message: 'Insufficient permissions for this action.',
+            required: [PERMISSIONS.PAYMENTS_EXPORT]
+          });
+        }
         const lines = [
           'paymentId,consultationId,patientName,doctorName,disease,billingPlanCode,amountInPaise,status,providerOrderId,providerPaymentId,createdAt'
         ];

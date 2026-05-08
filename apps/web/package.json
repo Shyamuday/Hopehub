@@ -6,6 +6,7 @@
     "start": "ng serve",
     "build": "ng build",
     "lint": "tsc -p tsconfig.app.json --noEmit",
+    "i18n:sync": "node scripts/sync-indian-i18n.mjs",
     "watch": "ng build --watch --configuration development",
     "test": "ng test"
   },
@@ -19,6 +20,8 @@
     "@angular/forms": "^21.2.0",
     "@angular/platform-browser": "^21.2.0",
     "@angular/router": "^21.2.0",
+    "@ngx-translate/core": "^17.0.0",
+    "@ngx-translate/http-loader": "^17.0.0",
     "@supabase/supabase-js": "^2.104.1",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0"

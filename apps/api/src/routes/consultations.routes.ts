@@ -3,6 +3,12 @@ import { ConsultationChannel, ConsultationStatus, PaymentStatus, Role } from '@p
 import { z } from 'zod';
 import { allowRoles, authRequired } from '../auth.js';
 import {
+  PERMISSIONS,
+  requirePermissions,
+  requirePermissionsIfAdmin,
+  staffHasAllPermissions
+} from '../staff-permissions.js';
+import {
   attachmentUploadMiddleware,
   buildAttachmentStoragePath,
   coerceAttachmentKind,
@@ -117,6 +123,7 @@ export function registerConsultationRoutes(app: express.Application) {
   app.get(
     '/consultations',
     authRequired,
+    requirePermissionsIfAdmin(PERMISSIONS.CONSULTATIONS_READ),
     asyncRoute(async (req, res) => {
       const where =
         req.user!.role === Role.PATIENT
@@ -140,6 +147,7 @@ export function registerConsultationRoutes(app: express.Application) {
   app.get(
     '/consultations/:id',
     authRequired,
+    requirePermissionsIfAdmin(PERMISSIONS.CONSULTATIONS_READ),
     asyncRoute(async (req, res) => {
       const consultation = await prisma.consultation.findUnique({
         where: { id: routeParam(req, 'id') },
@@ -167,6 +175,7 @@ export function registerConsultationRoutes(app: express.Application) {
     '/consultations/:id/assign',
     authRequired,
     allowRoles(Role.ADMIN),
+    requirePermissions(PERMISSIONS.ASSIGNMENTS_WRITE),
     asyncRoute(async (req, res) => {
       const body = z.object({ doctorId: z.string().min(1) }).parse(req.body);
       const doctor = await prisma.user.findFirstOrThrow({
@@ -215,7 +224,7 @@ export function registerConsultationRoutes(app: express.Application) {
       const consultation = await prisma.consultation.findUniqueOrThrow({ where: { id: routeParam(req, 'id') } });
 
       const canChat =
-        req.user!.role === Role.ADMIN ||
+        (req.user!.role === Role.ADMIN && staffHasAllPermissions(req.user, PERMISSIONS.CONSULTATIONS_READ)) ||
         consultation.patientId === req.user!.id ||
         consultation.assignedDoctorId === req.user!.id;
 
@@ -256,7 +265,7 @@ export function registerConsultationRoutes(app: express.Application) {
       }
 
       const canUpload =
-        req.user!.role === Role.ADMIN ||
+        (req.user!.role === Role.ADMIN && staffHasAllPermissions(req.user, PERMISSIONS.CONSULTATIONS_READ)) ||
         consultation.patientId === req.user!.id ||
         consultation.assignedDoctorId === req.user!.id;
 
@@ -311,6 +320,12 @@ export function registerConsultationRoutes(app: express.Application) {
     allowRoles(Role.DOCTOR, Role.ADMIN),
     asyncRoute(async (req, res) => {
       const consultation = await prisma.consultation.findUniqueOrThrow({ where: { id: routeParam(req, 'id') } });
+      if (
+        req.user!.role === Role.ADMIN &&
+        !staffHasAllPermissions(req.user, PERMISSIONS.CONSULTATIONS_READ)
+      ) {
+        return res.status(403).json({ message: 'Access denied' });
+      }
       if (req.user!.role === Role.DOCTOR && consultation.assignedDoctorId !== req.user!.id) {
         return res.status(403).json({ message: 'Only the assigned doctor can complete consultation' });
       }

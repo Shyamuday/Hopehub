@@ -4,6 +4,7 @@ import { Component, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { filter, map, switchMap, tap } from 'rxjs';
 import { forkJoin } from 'rxjs';
 import { AppFooterComponent } from '../app-footer.component';
@@ -21,7 +22,6 @@ import { selfDiagnosisToolByKey } from './self-diagnosis.constants';
 import { SelfDiagnosisFieldRowsComponent } from './self-diagnosis-field-rows/self-diagnosis-field-rows.component';
 import {
   type MethodIntakeAddonFile,
-  type MethodIntakeField,
   type MethodIntakeFlatRow,
   flattenMethodIntakeFields,
   methodIntakeRowsWithSectionHeaders,
@@ -36,6 +36,7 @@ import {
     CommonModule,
     FormsModule,
     RouterLink,
+    TranslatePipe,
     AppHeaderComponent,
     AppFooterComponent,
     SelfDiagnosisFieldRowsComponent
@@ -48,6 +49,7 @@ export class SelfDiagnosisToolComponent {
   private readonly router = inject(Router);
   private readonly http = inject(HttpClient);
   private readonly api = inject(ClinicApiService);
+  private readonly translate = inject(TranslateService);
   readonly auth = inject(AuthService);
 
   readonly pageTitle = signal('Worksheet');
@@ -130,7 +132,7 @@ export class SelfDiagnosisToolComponent {
           this.loading.set(false);
         },
         error: () => {
-          this.loadError.set('Could not load this worksheet. Check your connection and try again.');
+          this.loadError.set(this.translate.instant('patient.selfDiagnosis.loadError'));
           this.loading.set(false);
         }
       });
@@ -166,17 +168,15 @@ export class SelfDiagnosisToolComponent {
             toolLabel: def.label,
             summaryText: summary
           });
-          this.saveNotice.set(
-            'Saved to your account. On your dashboard, booking can include these notes in your consultation intake.'
-          );
+          this.saveNotice.set(this.translate.instant('patient.selfDiagnosis.saveNoticeWithSummary'));
         } else {
           clearWorksheetBookingDraft();
-          this.saveNotice.set('Saved to your account. Add worksheet answers if you want to copy them into a future booking.');
+          this.saveNotice.set(this.translate.instant('patient.selfDiagnosis.saveNoticeEmpty'));
         }
         this.saving.set(false);
       },
       error: (err: { error?: { message?: string }; message?: string }) => {
-        this.saveError.set(err.error?.message || err.message || 'Could not save.');
+        this.saveError.set(err.error?.message || err.message || this.translate.instant('patient.selfDiagnosis.saveErrorGeneric'));
         this.saving.set(false);
       }
     });

@@ -3,28 +3,28 @@
 <main class="dashboard">
   <section class="panel">
     <p class="muted">
-      <a routerLink="/patient/self-diagnosis">← All worksheets</a>
+      <a routerLink="/patient/self-diagnosis">{{ 'patient.selfDiagnosis.toolAll' | translate }}</a>
       ·
-      <a routerLink="/patient/dashboard">Dashboard</a>
+      <a routerLink="/patient/dashboard">{{ 'patient.selfDiagnosis.toolDashboard' | translate }}</a>
     </p>
     <h1>{{ title() }}</h1>
     @if (description()) {
       <p class="lede">{{ description() }}</p>
     }
     <p class="disclaimer">
-      This worksheet is for your personal notes. It is not a diagnosis or treatment plan from a doctor.
+      {{ 'patient.selfDiagnosis.disclaimer' | translate }}
     </p>
     <p class="muted crisis-line">
-      <strong>Emergency?</strong> Use local emergency services.
-      <a routerLink="/safety">Safety</a>
+      {{ 'patient.selfDiagnosis.toolCrisis' | translate }}
+      <a routerLink="/safety">{{ 'patient.selfDiagnosis.toolSafety' | translate }}</a>
       ·
-      <a routerLink="/privacy-terms">Privacy</a>
+      <a routerLink="/privacy-terms">{{ 'patient.selfDiagnosis.toolPrivacy' | translate }}</a>
     </p>
   </section>
 
   @if (loading()) {
     <section class="panel">
-      <p class="muted">Loading…</p>
+      <p class="muted">{{ 'patient.selfDiagnosis.loading' | translate }}</p>
     </section>
   } @else if (loadError()) {
     <section class="panel">
@@ -43,7 +43,7 @@
 
       <div class="save-row">
         <button type="button" class="primary" [disabled]="saving()" (click)="save()">
-          {{ saving() ? 'Saving…' : 'Save to my account' }}
+          {{ saving() ? ('patient.selfDiagnosis.saving' | translate) : ('patient.selfDiagnosis.save' | translate) }}
         </button>
       </div>
     </section>

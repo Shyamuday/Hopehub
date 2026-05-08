@@ -1,5 +1,6 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { TranslatePipe } from '@ngx-translate/core';
 
 export type ReminderPrefs = {
   inApp: boolean;
@@ -20,47 +21,52 @@ export type ReminderChannelsLive = {
 @Component({
   selector: 'app-reminder-preferences',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, TranslatePipe],
   template: `
     <div class="panel">
-      <h2>Reminder preferences</h2>
+      <h2>{{ 'patient.reminders.title' | translate }}</h2>
       <p class="muted footnote">
-        Preferences are stored on your account. Only channels marked <strong>active</strong> may send notifications today —
-        others are shown for when we roll them out.
+        {{ 'patient.reminders.footnote' | translate }}
       </p>
       <label>
-        <input type="checkbox" [(ngModel)]="prefs.inApp" [disabled]="disabled || !channelsLive.inApp" /> In-app
+        <input type="checkbox" [(ngModel)]="prefs.inApp" [disabled]="disabled || !channelsLive.inApp" />
+        {{ 'patient.reminders.inApp' | translate }}
         @if (!channelsLive.inApp) {
-          <span class="muted">(not available)</span>
+          <span class="muted">{{ 'patient.reminders.notAvailable' | translate }}</span>
         }
       </label>
       <label>
-        <input type="checkbox" [(ngModel)]="prefs.sms" [disabled]="disabled || !channelsLive.sms" /> SMS
+        <input type="checkbox" [(ngModel)]="prefs.sms" [disabled]="disabled || !channelsLive.sms" />
+        {{ 'patient.reminders.sms' | translate }}
         @if (!channelsLive.sms) {
-          <span class="muted">(coming soon)</span>
+          <span class="muted">{{ 'patient.reminders.comingSoon' | translate }}</span>
         }
       </label>
       <label>
-        <input type="checkbox" [(ngModel)]="prefs.whatsapp" [disabled]="disabled || !channelsLive.whatsapp" /> WhatsApp
+        <input type="checkbox" [(ngModel)]="prefs.whatsapp" [disabled]="disabled || !channelsLive.whatsapp" />
+        {{ 'patient.reminders.whatsapp' | translate }}
         @if (!channelsLive.whatsapp) {
-          <span class="muted">(coming soon)</span>
+          <span class="muted">{{ 'patient.reminders.comingSoon' | translate }}</span>
         }
       </label>
       <label>
-        <input type="checkbox" [(ngModel)]="prefs.push" [disabled]="disabled || !channelsLive.push" /> Push (browser)
+        <input type="checkbox" [(ngModel)]="prefs.push" [disabled]="disabled || !channelsLive.push" />
+        {{ 'patient.reminders.push' | translate }}
         @if (!channelsLive.push) {
-          <span class="muted">(coming soon)</span>
+          <span class="muted">{{ 'patient.reminders.comingSoon' | translate }}</span>
         }
       </label>
       <label>
-        Quiet hours start
+        {{ 'patient.reminders.quietStart' | translate }}
         <input [(ngModel)]="prefs.quietHoursStart" placeholder="22:00" />
       </label>
       <label>
-        Quiet hours end
+        {{ 'patient.reminders.quietEnd' | translate }}
         <input [(ngModel)]="prefs.quietHoursEnd" placeholder="07:00" />
       </label>
-      <button type="button" class="primary" [disabled]="disabled" (click)="saved.emit(prefs)">Save preferences</button>
+      <button type="button" class="primary" [disabled]="disabled" (click)="saved.emit(prefs)">
+        {{ 'patient.reminders.save' | translate }}
+      </button>
     </div>
   `,
   styles: [

@@ -62,7 +62,12 @@ export function registerAuthRoutes(app: express.Application) {
       const body = z.object({ email: z.string().email(), password: z.string().min(8) }).parse(req.body);
       const user = await prisma.user.findUnique({
         where: { email: body.email },
-        select: { ...publicUserSelect, passwordHash: true, isActive: true }
+        select: {
+          ...publicUserSelect,
+          passwordHash: true,
+          isActive: true,
+          staffProfile: { select: { isSuperAdmin: true, permissionCodes: true } }
+        }
       });
 
       if (!user?.passwordHash || user.role === Role.PATIENT) {
@@ -86,9 +91,20 @@ export function registerAuthRoutes(app: express.Application) {
         return res.status(401).json({ message: 'Invalid credentials' });
       }
 
-      const { passwordHash, isActive, ...safeUser } = user;
+      const { passwordHash, isActive, staffProfile, ...rest } = user;
       void passwordHash;
       void isActive;
+      const staffSummary =
+        rest.role === Role.ADMIN
+          ? staffProfile
+            ? {
+                isSuperAdmin: staffProfile.isSuperAdmin,
+                permissionCodes: staffProfile.permissionCodes
+              }
+            : null
+          : undefined;
+      const safeUser =
+        rest.role === Role.ADMIN ? { ...rest, staffProfile: staffSummary ?? null } : rest;
       logAuthEvent('staff_login_success', { userId: safeUser.id, role: safeUser.role });
       res.json(toAuthResponse(safeUser));
     })
@@ -143,7 +159,28 @@ export function registerAuthRoutes(app: express.Application) {
         prisma.passwordResetToken.update({ where: { id: resetToken.id }, data: { usedAt: new Date() } })
       ]);
 
-      res.json(toAuthResponse(resetToken.user));
+      const user = await prisma.user.findUniqueOrThrow({
+        where: { id: resetToken.userId },
+        select: {
+          ...publicUserSelect,
+          staffProfile: { select: { isSuperAdmin: true, permissionCodes: true } }
+        }
+      });
+      const { staffProfile, ...rest } = user;
+      const responseUser =
+        rest.role === Role.ADMIN
+          ? {
+              ...rest,
+              staffProfile: staffProfile
+                ? {
+                    isSuperAdmin: staffProfile.isSuperAdmin,
+                    permissionCodes: staffProfile.permissionCodes
+                  }
+                : null
+            }
+          : rest;
+
+      res.json(toAuthResponse(responseUser));
     })
   );
 
@@ -224,6 +261,28 @@ export function registerAuthRoutes(app: express.Application) {
   );
 
   app.get('/me', authRequired, (req, res) => {
-    res.json({ user: req.user });
+    const u = req.user!;
+    if (u.role === Role.ADMIN) {
+      res.json({
+        user: {
+          id: u.id,
+          name: u.name,
+          role: u.role,
+          email: u.email,
+          mobile: u.mobile,
+          staffProfile: u.staffProfile ?? null
+        }
+      });
+      return;
+    }
+    res.json({
+      user: {
+        id: u.id,
+        name: u.name,
+        role: u.role,
+        email: u.email,
+        mobile: u.mobile
+      }
+    });
   });
 }

@@ -5,12 +5,14 @@ import { prisma } from '../../db.js';
 import { publicUserSelect } from '../../db/prisma-includes.js';
 import { asyncRoute } from '../../middleware/async-route.js';
 import { queryPositiveInt, queryText } from '../../lib/http-params.js';
+import { PERMISSIONS, requirePermissions } from '../../staff-permissions.js';
 
 export function registerAdminDoctorListRoutes(app: express.Application) {
   app.get(
     '/admin/doctors',
     authRequired,
     allowRoles(Role.ADMIN),
+    requirePermissions(PERMISSIONS.DOCTORS_READ),
     asyncRoute(async (req, res) => {
       const page = queryPositiveInt(req, 'page', 1);
       const pageSize = queryPositiveInt(req, 'pageSize', 10);
@@ -67,6 +69,7 @@ export function registerAdminDoctorListRoutes(app: express.Application) {
     '/admin/doctors/pending',
     authRequired,
     allowRoles(Role.ADMIN),
+    requirePermissions(PERMISSIONS.DOCTORS_READ),
     asyncRoute(async (req, res) => {
       const page = queryPositiveInt(req, 'page', 1);
       const pageSize = queryPositiveInt(req, 'pageSize', 10);

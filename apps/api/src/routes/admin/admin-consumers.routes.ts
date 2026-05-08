@@ -7,12 +7,14 @@ import { includeConsultationRelations, publicUserSelect } from '../../db/prisma-
 import { asyncRoute } from '../../middleware/async-route.js';
 import { queryPositiveInt, queryText, routeParam } from '../../lib/http-params.js';
 import { apiPublicBaseUrl } from '../../server/config.js';
+import { PERMISSIONS, requirePermissions } from '../../staff-permissions.js';
 
 export function registerAdminConsumerRoutes(app: express.Application) {
   app.get(
     '/admin/consumers',
     authRequired,
     allowRoles(Role.ADMIN),
+    requirePermissions(PERMISSIONS.CONSUMERS_READ),
     asyncRoute(async (req, res) => {
       const page = queryPositiveInt(req, 'page', 1);
       const pageSize = queryPositiveInt(req, 'pageSize', 10);
@@ -89,6 +91,7 @@ export function registerAdminConsumerRoutes(app: express.Application) {
     '/admin/consumers/:id',
     authRequired,
     allowRoles(Role.ADMIN),
+    requirePermissions(PERMISSIONS.CONSUMERS_READ),
     asyncRoute(async (req, res) => {
       const patientId = routeParam(req, 'id');
       const patient = await prisma.user.findFirst({

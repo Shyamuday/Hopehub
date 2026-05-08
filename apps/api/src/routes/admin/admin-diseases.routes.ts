@@ -5,12 +5,14 @@ import { allowRoles, authRequired } from '../../auth.js';
 import { prisma } from '../../db.js';
 import { asyncRoute } from '../../middleware/async-route.js';
 import { routeParam } from '../../lib/http-params.js';
+import { PERMISSIONS, requirePermissions } from '../../staff-permissions.js';
 
 export function registerAdminDiseaseRoutes(app: express.Application) {
   app.get(
     '/admin/diseases/list',
     authRequired,
     allowRoles(Role.ADMIN),
+    requirePermissions(PERMISSIONS.DISEASES_READ),
     asyncRoute(async (_req, res) => {
       const diseases = await prisma.disease.findMany({ orderBy: { name: 'asc' } });
       res.json({ diseases });
@@ -21,6 +23,7 @@ export function registerAdminDiseaseRoutes(app: express.Application) {
     '/admin/diseases',
     authRequired,
     allowRoles(Role.ADMIN),
+    requirePermissions(PERMISSIONS.DISEASES_WRITE),
     asyncRoute(async (req, res) => {
       const body = z
         .object({
@@ -40,6 +43,7 @@ export function registerAdminDiseaseRoutes(app: express.Application) {
     '/admin/diseases/:id',
     authRequired,
     allowRoles(Role.ADMIN),
+    requirePermissions(PERMISSIONS.DISEASES_WRITE),
     asyncRoute(async (req, res) => {
       const body = z
         .object({

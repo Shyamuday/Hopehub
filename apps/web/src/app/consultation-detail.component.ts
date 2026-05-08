@@ -1,9 +1,10 @@
 import { CommonModule, DatePipe } from '@angular/common';
 import { Component, EventEmitter, inject, Input, type OnChanges, Output, type SimpleChanges } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { firstValueFrom } from 'rxjs';
 import { ClinicApiService } from './clinic-api/clinic-api.service';
-import { CONSULTATION_CHANNEL_LABELS, type Consultation, type Prescription, type Role } from './interfaces';
+import { type Consultation, type Prescription, type Role } from './interfaces';
 
 export type SendMessagePayload = { consultation: Consultation; body: string };
 export type PrescriptionPayload = { notes: string; fileUrl: string };
@@ -11,7 +12,7 @@ export type PrescriptionPayload = { notes: string; fileUrl: string };
 @Component({
   selector: 'app-consultation-detail',
   standalone: true,
-  imports: [CommonModule, FormsModule, DatePipe],
+  imports: [CommonModule, FormsModule, DatePipe, TranslatePipe],
   styles: [
     `
       .attachment-actions {
@@ -65,11 +66,12 @@ export type PrescriptionPayload = { notes: string; fileUrl: string };
           }
         </p>
         <p class="muted">
-          Patient: {{ consultation.patient.name }} |
-          Doctor: {{ consultation.assignedDoctor?.name || 'Not assigned' }}
+          {{ 'consultation.patientLabel' | translate }} {{ consultation.patient.name }} |
+          {{ 'consultation.doctorLabel' | translate }}
+          {{ consultation.assignedDoctor?.name || ('consultation.notAssigned' | translate) }}
         </p>
 
-        <h3>Intake answers</h3>
+        <h3>{{ 'consultation.intakeTitle' | translate }}</h3>
         @for (answer of consultation.intakeAnswers | keyvalue; track answer.key) {
           <p><strong>{{ answer.key }}:</strong> {{ answer.value }}</p>
         }
@@ -77,31 +79,33 @@ export type PrescriptionPayload = { notes: string; fileUrl: string };
         @if (visiblePrescription()) {
           @let rx = visiblePrescription()!;
           <div class="rx-readonly">
-            <h3>Diagnosis & prescription</h3>
-            <p><strong>Diagnosis summary:</strong> {{ rx.diagnosis || '—' }}</p>
+            <h3>{{ 'consultation.rxTitle' | translate }}</h3>
+            <p>
+              <strong>{{ 'consultation.diagnosisSummary' | translate }}</strong> {{ rx.diagnosis || ('consultation.dash' | translate) }}
+            </p>
             @if (rx.diagnosedDisease) {
-              <p><strong>Condition:</strong> {{ rx.diagnosedDisease }}</p>
+              <p><strong>{{ 'consultation.condition' | translate }}</strong> {{ rx.diagnosedDisease }}</p>
             }
             @if (rx.method) {
-              <p><strong>Method:</strong> {{ rx.method }}</p>
+              <p><strong>{{ 'consultation.method' | translate }}</strong> {{ rx.method }}</p>
             }
             @if (rx.advice) {
-              <p><strong>Advice:</strong> {{ rx.advice }}</p>
+              <p><strong>{{ 'consultation.advice' | translate }}</strong> {{ rx.advice }}</p>
             }
             @if (rx.notes) {
-              <p><strong>Notes:</strong> {{ rx.notes }}</p>
+              <p><strong>{{ 'consultation.notes' | translate }}</strong> {{ rx.notes }}</p>
             }
             @if (rx.methodIntakeAnswers && methodIntakeEntries(rx.methodIntakeAnswers).length) {
-              <p><strong>Method-specific details</strong></p>
+              <p><strong>{{ 'consultation.methodDetails' | translate }}</strong></p>
               @for (entry of methodIntakeEntries(rx.methodIntakeAnswers); track entry.k) {
                 <p><strong>{{ entry.k.replaceAll('_', ' ') }}:</strong> {{ entry.v }}</p>
               }
             }
             @if (rx.followUpDate) {
-              <p><strong>Follow-up:</strong> {{ rx.followUpDate | date: 'mediumDate' }}</p>
+              <p><strong>{{ 'consultation.followUp' | translate }}</strong> {{ rx.followUpDate | date: 'mediumDate' }}</p>
             }
             @if (rx.items?.length) {
-              <p><strong>Medicines</strong></p>
+              <p><strong>{{ 'consultation.medicines' | translate }}</strong></p>
               <ul>
                 @for (item of rx.items; track item.id) {
                   <li>
@@ -121,19 +125,19 @@ export type PrescriptionPayload = { notes: string; fileUrl: string };
             }
             @if (rx.fileUrl) {
               <p>
-                <a [href]="rx.fileUrl" target="_blank" rel="noopener">Open attached prescription file</a>
+                <a [href]="rx.fileUrl" target="_blank" rel="noopener">{{ 'consultation.openRxFile' | translate }}</a>
               </p>
             }
             @if (userRole === 'PATIENT') {
-              <p class="muted">Your doctor manages updates in the Doctor app. You can view published plans here.</p>
+              <p class="muted">{{ 'consultation.rxPatientHint' | translate }}</p>
             }
           </div>
         } @else if (userRole === 'PATIENT') {
-          <p class="muted">When your doctor publishes a prescription, it will appear here.</p>
+          <p class="muted">{{ 'consultation.rxPending' | translate }}</p>
         }
 
         @if (consultation.attachments?.length) {
-          <h3>Files & reports</h3>
+          <h3>{{ 'consultation.attachmentsTitle' | translate }}</h3>
           @for (att of consultation.attachments; track att.id) {
             <div class="attachment-card">
               <p>
@@ -148,23 +152,23 @@ export type PrescriptionPayload = { notes: string; fileUrl: string };
                 <p class="muted">{{ att.caption }}</p>
               }
               @if (att.fileUrl) {
-                <a [href]="att.fileUrl" target="_blank" rel="noopener">Open</a>
+                <a [href]="att.fileUrl" target="_blank" rel="noopener">{{ 'consultation.attachmentOpen' | translate }}</a>
               }
             </div>
           }
         }
 
         @if (canUploadAttachments()) {
-          <h3>Upload reports or photos</h3>
-          <p class="muted">Images (camera or gallery) and PDF lab reports. Max 15 MB.</p>
-          <label>Optional caption <input [(ngModel)]="attachmentCaption" /></label>
+          <h3>{{ 'consultation.uploadTitle' | translate }}</h3>
+          <p class="muted">{{ 'consultation.uploadHint' | translate }}</p>
+          <label>{{ 'consultation.captionOptional' | translate }} <input [(ngModel)]="attachmentCaption" /></label>
           <div class="attachment-actions">
             <label class="secondary-btn">
-              Take photo
+              {{ 'consultation.takePhoto' | translate }}
               <input type="file" accept="image/*" capture="environment" [disabled]="attachmentBusy || disabled" (change)="onAttach($event)" />
             </label>
             <label class="secondary-btn">
-              Choose file
+              {{ 'consultation.chooseFile' | translate }}
               <input type="file" accept="image/*,application/pdf" [disabled]="attachmentBusy || disabled" (change)="onAttach($event)" />
             </label>
           </div>
@@ -176,53 +180,56 @@ export type PrescriptionPayload = { notes: string; fileUrl: string };
         @if (userRole === 'DOCTOR') {
           <div class="notice">
             <p>
-              <strong>Doctor workspace:</strong> prescriptions, medicine versions, and clinical photos are managed in the Vitalis
-              Doctor app.
+              <strong>{{ 'consultation.doctorWorkspace' | translate }}</strong> {{ 'consultation.doctorWorkspaceBody' | translate }}
               @if (doctorPortalUrl) {
-                <a [href]="doctorPortalUrl" target="_blank" rel="noopener">Open Doctor app</a>
+                <a [href]="doctorPortalUrl" target="_blank" rel="noopener">{{ 'consultation.openDoctorApp' | translate }}</a>
               }
             </p>
           </div>
         }
 
-        <h3>Chat</h3>
+        <h3>{{ 'consultation.chatTitle' | translate }}</h3>
         <div class="chat-box">
           @for (message of consultation.messages; track message.id) {
             <p><strong>{{ message.sender.name }}:</strong> {{ message.body }}</p>
           } @empty {
-            <p class="muted">No messages yet.</p>
+            <p class="muted">{{ 'consultation.noMessages' | translate }}</p>
           }
         </div>
         <label>
-          New message
-          <textarea [(ngModel)]="messageBody" rows="4" placeholder="Ask a question or describe how you feel on the medicines…"></textarea>
+          {{ 'consultation.newMessage' | translate }}
+          <textarea
+            [(ngModel)]="messageBody"
+            rows="4"
+            [placeholder]="'consultation.messagePlaceholder' | translate"></textarea>
         </label>
-        <p class="muted chat-hint">Use this chat for questions, side effects, or updates while you follow your plan.</p>
-        <button class="secondary" [disabled]="disabled" (click)="emitSendMessage()">Send message</button>
+        <p class="muted chat-hint">{{ 'consultation.chatHint' | translate }}</p>
+        <button class="secondary" [disabled]="disabled" (click)="emitSendMessage()">{{ 'consultation.sendMessage' | translate }}</button>
 
         @if (userRole === 'ADMIN') {
-          <h3>Legacy prescription file (admin)</h3>
+          <h3>{{ 'consultation.admin.legacyTitle' | translate }}</h3>
           <label>
-            Notes
+            {{ 'consultation.admin.notes' | translate }}
             <textarea [(ngModel)]="prescription.notes"></textarea>
           </label>
           <label>
-            File URL
+            {{ 'consultation.admin.fileUrl' | translate }}
             <input [(ngModel)]="prescription.fileUrl" placeholder="https://..." />
           </label>
           <button class="primary" [disabled]="disabled" (click)="uploadPrescription.emit({ notes: prescription.notes, fileUrl: prescription.fileUrl })">
-            Upload prescription
+            {{ 'consultation.admin.upload' | translate }}
           </button>
-          <button class="secondary" [disabled]="disabled" (click)="complete.emit()">Mark complete</button>
+          <button class="secondary" [disabled]="disabled" (click)="complete.emit()">{{ 'consultation.admin.markComplete' | translate }}</button>
         }
       } @else {
-        <p class="muted">Select a consultation to view details.</p>
+        <p class="muted">{{ 'consultation.selectConsultation' | translate }}</p>
       }
     </div>
   `
 })
 export class ConsultationDetailComponent implements OnChanges {
   private readonly api = inject(ClinicApiService);
+  private readonly translate = inject(TranslateService);
 
   @Input() consultation: Consultation | null = null;
   @Input() userRole: Role | null = null;
@@ -245,7 +252,7 @@ export class ConsultationDetailComponent implements OnChanges {
   private lastAppliedComposeToken = 0;
 
   consultationChannelLabel(c: Consultation): string {
-    return CONSULTATION_CHANNEL_LABELS[c.channel] || c.channel;
+    return this.translate.instant(`patient.book.channel.${c.channel}`);
   }
 
   methodIntakeEntries(answers: Record<string, string>): { k: string; v: string }[] {
@@ -297,9 +304,8 @@ export class ConsultationDetailComponent implements OnChanges {
   }
 
   attachmentKindLabel(kind: string): string {
-    if (kind === 'PATIENT_REPORT') return 'Patient report / labs';
-    if (kind === 'DOCTOR_CLINICAL') return 'Clinical photo / doctor upload';
-    return 'Attachment';
+    const k = kind === 'PATIENT_REPORT' || kind === 'DOCTOR_CLINICAL' ? kind : 'OTHER';
+    return this.translate.instant(`consultation.attachmentKind.${k}`);
   }
 
   uploadAttachmentKind(): string {
@@ -319,10 +325,10 @@ export class ConsultationDetailComponent implements OnChanges {
         this.api.uploadConsultationAttachment(this.consultation.id, file, this.attachmentCaption, this.uploadAttachmentKind())
       );
       this.attachmentCaption = '';
-      this.attachmentNotice = 'Uploaded.';
+      this.attachmentNotice = this.translate.instant('consultation.uploadOk');
       this.attachmentsChanged.emit();
     } catch (err) {
-      this.attachmentNotice = err instanceof Error ? err.message : 'Upload failed.';
+      this.attachmentNotice = err instanceof Error ? err.message : this.translate.instant('consultation.uploadFailed');
     } finally {
       this.attachmentBusy = false;
     }

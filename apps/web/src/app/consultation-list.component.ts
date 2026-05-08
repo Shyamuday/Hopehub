@@ -1,15 +1,16 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, inject, Input, Output } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { type Consultation, type Role, CONSULTATION_CHANNEL_LABELS } from './interfaces';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
+import { type Consultation, type Role } from './interfaces';
 
 @Component({
   selector: 'app-consultation-list',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, TranslatePipe],
   template: `
     <div class="panel">
-      <h2>Your consultations</h2>
+      <h2>{{ 'patient.consultations.title' | translate }}</h2>
       <div class="cards">
         @for (consultation of consultations; track consultation.id) {
           <article class="consult-card" [class.active]="activeId === consultation.id">
@@ -18,49 +19,59 @@ import { type Consultation, type Role, CONSULTATION_CHANNEL_LABELS } from './int
               <span>{{ consultation.patient.name }}</span>
               <small class="channel-pill">{{ channelLine(consultation) }}</small>
               @if (userRole === 'PATIENT') {
-                <small class="journey-hint">{{ patientJourneyLabel(consultation.status) }}</small>
+                <small class="journey-hint">{{ ('patient.consultations.journey.' + consultation.status) | translate }}</small>
               } @else {
                 <small>{{ consultation.status }}</small>
               }
-              <small>Plan: {{ consultation.billingPlanCode || consultation.payment?.billingPlanCode || 'ONE_TIME' }}</small>
-              <small>Amount: {{ (consultation.payment?.amountInPaise || 0) / 100 | currency: 'INR' }}</small>
+              <small
+                >{{ 'patient.consultations.planPrefix' | translate }}
+                {{ consultation.billingPlanCode || consultation.payment?.billingPlanCode || 'ONE_TIME' }}</small
+              >
+              <small
+                >{{ 'patient.consultations.amountPrefix' | translate }}
+                {{ (consultation.payment?.amountInPaise || 0) / 100 | currency: 'INR' }}</small
+              >
             </button>
             @if (userRole === 'PATIENT' && consultation.status === 'PAYMENT_PENDING') {
               <button
                 type="button"
                 class="primary"
                 [disabled]="disabled || !paymentIdle"
-                (click)="pay.emit(consultation); $event.stopPropagation()"
-              >
-                Pay now
+                (click)="pay.emit(consultation); $event.stopPropagation()">
+                {{ 'patient.consultations.payNow' | translate }}
               </button>
             }
             @if (userRole === 'PATIENT' && consultation.status === 'COMPLETED') {
               <p class="muted rebook">
-                Need a new visit?
-                <a routerLink="/patient/dashboard" fragment="book-consultation">Book another consultation</a>
+                {{ 'patient.consultations.rebookPrompt' | translate }}
+                <a routerLink="/patient/dashboard" fragment="book-consultation">{{
+                  'patient.consultations.rebookLink' | translate
+                }}</a>
               </p>
             }
             @if (consultation.prescription || consultation.prescriptions?.length) {
-              <p class="success">Prescription on file — open this case to view details.</p>
+              <p class="success">{{ 'patient.consultations.rxOnFile' | translate }}</p>
             }
           </article>
         } @empty {
           @if (userRole === 'PATIENT') {
             <div class="empty-consultations patient-empty">
-              <p><strong>No consultations yet.</strong></p>
-              <p class="muted">
-                When you’re ready, use <strong>Book consultation</strong> below, or complete a self-assessment worksheet first —
-                saved worksheet notes can be added automatically when you book.
+              <p>
+                <strong>{{ 'patient.consultations.emptyTitle' | translate }}</strong>
               </p>
               <p class="muted">
-                <a routerLink="/patient/dashboard" fragment="book-consultation">Go to booking</a>
+                {{ 'patient.consultations.emptyBody' | translate }}
+              </p>
+              <p class="muted">
+                <a routerLink="/patient/dashboard" fragment="book-consultation">{{
+                  'patient.consultations.goBooking' | translate
+                }}</a>
                 ·
-                <a routerLink="/patient/self-diagnosis">Open worksheets</a>
+                <a routerLink="/patient/self-diagnosis">{{ 'patient.consultations.openWorksheets' | translate }}</a>
               </p>
             </div>
           } @else {
-            <p class="muted">No consultations yet.</p>
+            <p class="muted">{{ 'patient.consultations.emptyTitle' | translate }}</p>
           }
         }
       </div>
@@ -89,6 +100,8 @@ import { type Consultation, type Role, CONSULTATION_CHANNEL_LABELS } from './int
   ]
 })
 export class ConsultationListComponent {
+  private readonly translate = inject(TranslateService);
+
   @Input() consultations: Consultation[] = [];
   @Input() activeId: string | null = null;
   @Input() userRole: Role | null = null;
@@ -99,31 +112,10 @@ export class ConsultationListComponent {
   @Output() pay = new EventEmitter<Consultation>();
 
   channelLine(c: Consultation): string {
-    const ch = CONSULTATION_CHANNEL_LABELS[c.channel] || c.channel;
+    const ch = this.translate.instant(`patient.book.channel.${c.channel}`);
     if (c.location?.name) {
       return `${ch} · ${c.location.name}`;
     }
     return ch;
-  }
-
-  patientJourneyLabel(status: Consultation['status']): string {
-    switch (status) {
-      case 'PAYMENT_PENDING':
-        return 'Next step: complete payment to confirm your consultation.';
-      case 'PAID':
-        return 'Paid — we will assign a doctor. You’ll use chat here once assigned.';
-      case 'ASSIGNED':
-        return 'Doctor assigned — open this case to message them.';
-      case 'IN_PROGRESS':
-        return 'In progress — keep messaging your doctor in this consultation.';
-      case 'PRESCRIPTION_UPLOADED':
-        return 'Prescription shared — review medicines and today’s doses below.';
-      case 'COMPLETED':
-        return 'Completed — you can book a new consultation anytime.';
-      case 'CANCELLED':
-        return 'This consultation was cancelled.';
-      default:
-        return status;
-    }
   }
 }

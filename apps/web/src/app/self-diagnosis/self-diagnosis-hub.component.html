@@ -1,23 +1,20 @@
-<app-header [subtitle]="pageTitle" [user]="auth.user()" [whatsappLink]="whatsappLink" (logout)="logout()" />
+<app-header [subtitle]="hubPageTitle()" [user]="auth.user()" [whatsappLink]="whatsappLink" (logout)="logout()" />
 
 <main class="dashboard">
   <section class="panel">
-    <p class="eyebrow">For your notes only</p>
-    <h1>Self-assessment worksheets</h1>
+    <p class="eyebrow">{{ 'patient.selfDiagnosis.hubEyebrow' | translate }}</p>
+    <h1>{{ 'patient.selfDiagnosis.hubTitle' | translate }}</h1>
     <p class="lede">
-      These forms mirror the kingdom and miasm sections used in clinical method intake. Filling them out does
-      <strong>not</strong>
-      replace a consultation and is not a medical diagnosis. Your answers are saved privately on your account.
+      {{ 'patient.selfDiagnosis.hubBody' | translate }}
     </p>
     <p class="muted crisis-line">
-      <strong>Emergency or crisis?</strong>
-      Call your local emergency number or go to the nearest hospital. This site is not for emergencies.
-      <a routerLink="/safety">Safety boundaries</a>
+      {{ 'patient.selfDiagnosis.crisis' | translate }}
+      <a routerLink="/safety">{{ 'patient.selfDiagnosis.safetyLink' | translate }}</a>
       ·
-      <a routerLink="/privacy-terms">Privacy</a>
+      <a routerLink="/privacy-terms">{{ 'patient.selfDiagnosis.privacyLink' | translate }}</a>
     </p>
     <p class="muted">
-      <a routerLink="/patient/dashboard">← Back to dashboard</a>
+      <a routerLink="/patient/dashboard">{{ 'patient.selfDiagnosis.backDashboard' | translate }}</a>
     </p>
   </section>
 
@@ -26,7 +23,9 @@
       <li class="panel tool-card">
         <h2>{{ tool.label }}</h2>
         <p class="muted">{{ tool.description }}</p>
-        <button type="button" class="primary" [routerLink]="['/patient/self-diagnosis', tool.key]">Open worksheet</button>
+        <button type="button" class="primary" [routerLink]="['/patient/self-diagnosis', tool.key]">
+          {{ 'patient.selfDiagnosis.openWorksheet' | translate }}
+        </button>
       </li>
     }
   </ul>

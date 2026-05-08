@@ -1,7 +1,8 @@
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, type OnChanges, Output, type SimpleChanges } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { type BillingPlan, type ClinicLocation, type Disease, type ConsultationChannel, CONSULTATION_CHANNEL_LABELS } from './interfaces';
+import { TranslatePipe } from '@ngx-translate/core';
+import { type BillingPlan, type ClinicLocation, type Disease, type ConsultationChannel } from './interfaces';
 import {
   SELF_ASSESSMENT_WORKSHEET_INTAKE_KEY,
   type WorksheetBookingDraft,
@@ -20,76 +21,79 @@ export type BookConsultationPayload = {
 @Component({
   selector: 'app-book-consultation-panel',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, TranslatePipe],
   template: `
     <div class="panel" id="book-consultation">
-      <h2>Book consultation</h2>
+      <h2>{{ 'patient.book.title' | translate }}</h2>
 
       @if (worksheetBookingDraft) {
         <div class="worksheet-prefill">
-          <p class="muted">
-            Notes from your saved worksheet <strong>{{ worksheetBookingDraft.toolLabel }}</strong> are included below. Edit
-            them before you book — they are sent with your intake.
-          </p>
+          <p class="muted">{{ 'patient.book.worksheetBlurb' | translate: { label: worksheetBookingDraft.toolLabel } }}</p>
           <label>
-            Worksheet notes (optional)
+            {{ 'patient.book.worksheetNotesLabel' | translate }}
             <textarea
               [(ngModel)]="worksheetNotesText"
               rows="6"
-              placeholder="Summarize what you want the doctor to see from your worksheet"
+              [placeholder]="'patient.book.worksheetNotesPlaceholder' | translate"
             ></textarea>
           </label>
-          <button type="button" class="secondary" (click)="dismissWorksheetDraft()">Clear worksheet notes</button>
+          <button type="button" class="secondary" (click)="dismissWorksheetDraft()">
+            {{ 'patient.book.clearWorksheetNotes' | translate }}
+          </button>
         </div>
       }
 
       <label>
-        Purchase type
+        {{ 'patient.book.purchaseType' | translate }}
         <select [(ngModel)]="purchaseType">
-          <option value="ONE_TIME">One-time appointment</option>
-          <option value="PLAN">Plan purchase</option>
+          <option value="ONE_TIME">{{ 'patient.book.oneTime' | translate }}</option>
+          <option value="PLAN">{{ 'patient.book.plan' | translate }}</option>
         </select>
       </label>
 
       <label>
-        Consultation type
+        {{ 'patient.book.consultationType' | translate }}
         <select [(ngModel)]="channel">
-          <option value="ONLINE_CHAT">{{ channelLabels.ONLINE_CHAT }}</option>
-          <option value="VIDEO">{{ channelLabels.VIDEO }}</option>
-          <option value="PHONE">{{ channelLabels.PHONE }}</option>
-          <option value="IN_CLINIC">{{ channelLabels.IN_CLINIC }}</option>
+          <option value="ONLINE_CHAT">{{ 'patient.book.channel.ONLINE_CHAT' | translate }}</option>
+          <option value="VIDEO">{{ 'patient.book.channel.VIDEO' | translate }}</option>
+          <option value="PHONE">{{ 'patient.book.channel.PHONE' | translate }}</option>
+          <option value="IN_CLINIC">{{ 'patient.book.channel.IN_CLINIC' | translate }}</option>
         </select>
       </label>
 
       @if (channel === 'IN_CLINIC') {
         <label>
-          Clinic location <span class="req">*</span>
+          {{ 'patient.book.clinicLocationReq' | translate }} <span class="req">*</span>
           <select [(ngModel)]="selectedLocationId" [disabled]="!locations.length">
-            <option value="">— Select a centre —</option>
+            <option value="">{{ 'patient.book.selectCentre' | translate }}</option>
             @for (loc of locations; track loc.id) {
               <option [value]="loc.id">{{ locationOptionLabel(loc) }}</option>
             }
           </select>
         </label>
         @if (!locations.length) {
-          <p class="muted">No active clinic locations yet. Choose online consultation or contact support.</p>
+          <p class="muted">{{ 'patient.book.noLocations' | translate }}</p>
         }
       } @else {
         <label>
-          Preferred centre (optional)
+          {{ 'patient.book.preferredCentre' | translate }}
           <select [(ngModel)]="selectedLocationId">
-            <option value="">— No preference —</option>
+            <option value="">{{ 'patient.book.noPreference' | translate }}</option>
             @for (loc of locations; track loc.id) {
               <option [value]="loc.id">{{ locationOptionLabel(loc) }}</option>
             }
           </select>
         </label>
-        <p class="muted">We use this for records and follow-up; your visit stays {{ channelLabels[channel] }}.</p>
+        <p class="muted">
+          {{ 'patient.book.preferredCentreHintBefore' | translate }}
+          <strong>{{ ('patient.book.channel.' + channel) | translate }}</strong
+          >{{ 'patient.book.preferredCentreHintAfter' | translate }}
+        </p>
       }
 
       @if (purchaseType === 'PLAN') {
         <label>
-          Select plan
+          {{ 'patient.book.selectPlan' | translate }}
           <select [(ngModel)]="selectedPlanCode">
             @for (plan of plans; track plan.code) {
               @if (plan.code !== 'ONE_TIME') {
@@ -106,7 +110,7 @@ export type BookConsultationPayload = {
       }
 
       <label>
-        Select problem
+        {{ 'patient.book.selectProblem' | translate }}
         <select [(ngModel)]="selectedDiseaseId" (ngModelChange)="resetAnswers()">
           @for (disease of diseases; track disease.id) {
             <option [value]="disease.id">
@@ -119,7 +123,7 @@ export type BookConsultationPayload = {
       @for (question of intakeQuestions(); track question) {
         <label>
           {{ question }}
-          <input [(ngModel)]="intakeAnswers[question]" placeholder="Type your answer" />
+          <input [(ngModel)]="intakeAnswers[question]" [placeholder]="'patient.book.answerPlaceholder' | translate" />
         </label>
       }
 
@@ -127,12 +131,12 @@ export type BookConsultationPayload = {
         class="primary"
         [disabled]="disabled || !selectedDiseaseId || !canSubmitChannelLocation()"
         (click)="submit()">
-        Create consultation
+        {{ 'patient.book.createConsultation' | translate }}
       </button>
       <p class="muted">
-        Payable now:
-        <strong>{{ estimatedAmount() / 100 | currency: 'INR' }}</strong>.
-        After payment, consultation moves to doctor assignment.
+        {{ 'patient.book.payableNow' | translate }}
+        <strong>{{ estimatedAmount() / 100 | currency: 'INR' }}</strong
+        >. {{ 'patient.book.afterPayment' | translate }}
       </p>
     </div>
   `,
@@ -146,8 +150,6 @@ export type BookConsultationPayload = {
   ]
 })
 export class BookConsultationPanelComponent implements OnChanges {
-  readonly channelLabels = CONSULTATION_CHANNEL_LABELS;
-
   @Input() diseases: Disease[] = [];
   @Input() plans: BillingPlan[] = [];
   @Input() locations: ClinicLocation[] = [];

@@ -11,6 +11,7 @@ import {
   signal
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { TranslatePipe } from '@ngx-translate/core';
 import {
   type AuthenticatedHeaderNavItem,
   DEFAULT_GUEST_HEADER_NAV,
@@ -20,11 +21,12 @@ import {
 } from './app-header.nav-data';
 import { AuthFormOverlayComponent } from './auth/auth-form-overlay.component';
 import { type User } from './interfaces';
+import { LanguageSwitcherComponent } from './i18n/language-switcher.component';
 import { AppOverlayService } from './overlay.service';
 
 @Component({
   selector: 'app-header',
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, TranslatePipe, LanguageSwitcherComponent],
   template: `
     <header
       class="app-header"
@@ -40,16 +42,17 @@ import { AppOverlayService } from './overlay.service';
 
       @if (user) {
         <div class="user-chip">
+          <app-language-switcher />
           @for (link of userNavEffective; track link.id) {
             <a
               [routerLink]="link.routerLink"
               [class]="link.linkClass || 'user-chip-nav'"
-              >{{ link.label }}</a
+              >{{ link.labelKey | translate }}</a
             >
           }
           <span>{{ user.name }}</span>
           <strong>{{ user.role }}</strong>
-          <button class="secondary" type="button" (click)="logout.emit()">Logout</button>
+          <button class="secondary" type="button" (click)="logout.emit()">{{ 'common.logout' | translate }}</button>
         </div>
       } @else {
         <button
@@ -88,17 +91,20 @@ import { AppOverlayService } from './overlay.service';
           [attr.aria-hidden]="true"></div>
 
         <nav id="header-primary-nav" class="header-actions header-nav-sheet" aria-label="Primary navigation">
+          <app-language-switcher />
           @for (item of guestNavEffective; track item.id) {
             @switch (item.type) {
               @case ('route') {
-                <a [routerLink]="item.routerLink" (click)="closeMenu()" [class]="item.linkClass || ''">{{ item.label }}</a>
+                <a [routerLink]="item.routerLink" (click)="closeMenu()" [class]="item.linkClass || ''">{{
+                  item.labelKey | translate
+                }}</a>
               }
               @case ('auth') {
                 <a
                   href="/login"
                   [class]="item.linkClass || ''"
                   (click)="openAuthOverlay($event, item.authMode)"
-                  >{{ item.label }}</a
+                  >{{ item.labelKey | translate }}</a
                 >
               }
               @case ('whatsapp') {
@@ -107,7 +113,7 @@ import { AppOverlayService } from './overlay.service';
                   [href]="whatsappLink"
                   target="_blank"
                   rel="noopener"
-                  [attr.aria-label]="item.ariaLabel"
+                  [attr.aria-label]="item.ariaLabelKey | translate"
                   (click)="closeMenu()">
                   <svg class="wa-icon" viewBox="0 0 24 24" aria-hidden="true">
                     <path

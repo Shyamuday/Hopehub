@@ -1,7 +1,13 @@
 import type { NextFunction, Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import type { Role } from '@prisma/client';
+import { Role as PrismaRole } from '@prisma/client';
 import { prisma } from './db.js';
+
+export type StaffProfileSummary = {
+  isSuperAdmin: boolean;
+  permissionCodes: string[];
+};
 
 export type AuthUser = {
   id: string;
@@ -9,6 +15,10 @@ export type AuthUser = {
   name: string;
   email?: string | null;
   mobile?: string | null;
+  /**
+   * Present only for ADMIN. `null` = no profile row yet (legacy full access).
+   */
+  staffProfile?: StaffProfileSummary | null;
 };
 
 declare global {
@@ -32,7 +42,17 @@ if (jwtSecret === DEFAULT_SECRET) {
 }
 
 export function signToken(user: AuthUser) {
-  return jwt.sign(user, jwtSecret, { expiresIn: '7d' });
+  return jwt.sign(
+    {
+      id: user.id,
+      name: user.name,
+      role: user.role,
+      email: user.email ?? null,
+      mobile: user.mobile ?? null
+    },
+    jwtSecret,
+    { expiresIn: '7d' }
+  );
 }
 
 export async function authRequired(req: Request, res: Response, next: NextFunction) {
@@ -47,14 +67,44 @@ export async function authRequired(req: Request, res: Response, next: NextFuncti
     const decoded = jwt.verify(token, jwtSecret) as AuthUser;
     const user = await prisma.user.findUnique({
       where: { id: decoded.id },
-      select: { id: true, name: true, role: true, email: true, mobile: true, isActive: true }
+      select: {
+        id: true,
+        name: true,
+        role: true,
+        email: true,
+        mobile: true,
+        isActive: true,
+        staffProfile: {
+          select: {
+            isSuperAdmin: true,
+            permissionCodes: true
+          }
+        }
+      }
     });
 
     if (!user?.isActive) {
       return res.status(401).json({ message: 'User is inactive or missing' });
     }
 
-    req.user = user;
+    const staffProfile =
+      user.role === PrismaRole.ADMIN
+        ? user.staffProfile
+          ? {
+              isSuperAdmin: user.staffProfile.isSuperAdmin,
+              permissionCodes: user.staffProfile.permissionCodes
+            }
+          : null
+        : undefined;
+
+    req.user = {
+      id: user.id,
+      name: user.name,
+      role: user.role,
+      email: user.email,
+      mobile: user.mobile,
+      staffProfile
+    };
     next();
   } catch {
     return res.status(401).json({ message: 'Invalid or expired token' });

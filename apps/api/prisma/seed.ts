@@ -22,6 +22,16 @@ async function main() {
     }
   });
 
+  await prisma.staffProfile.upsert({
+    where: { userId: admin.id },
+    update: { isSuperAdmin: true },
+    create: {
+      userId: admin.id,
+      isSuperAdmin: true,
+      permissionCodes: []
+    }
+  });
+
   const doctorUser = await prisma.user.upsert({
     where: { email: 'doctor@vitalisclinic.local' },
     update: {},

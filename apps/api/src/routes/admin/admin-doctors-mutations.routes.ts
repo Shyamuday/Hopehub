@@ -8,12 +8,14 @@ import { publicUserSelect } from '../../db/prisma-includes.js';
 import { asyncRoute } from '../../middleware/async-route.js';
 import { writeAuditLog } from '../../lib/audit.js';
 import { routeParam } from '../../lib/http-params.js';
+import { PERMISSIONS, requirePermissions } from '../../staff-permissions.js';
 
 export function registerAdminDoctorMutationRoutes(app: express.Application) {
   app.post(
     '/admin/doctors/:id/approve',
     authRequired,
     allowRoles(Role.ADMIN),
+    requirePermissions(PERMISSIONS.DOCTORS_WRITE),
     asyncRoute(async (req, res) => {
       const doctorId = routeParam(req, 'id');
       const doctor = await prisma.user.update({
@@ -38,6 +40,7 @@ export function registerAdminDoctorMutationRoutes(app: express.Application) {
     '/admin/doctors/:id/reject',
     authRequired,
     allowRoles(Role.ADMIN),
+    requirePermissions(PERMISSIONS.DOCTORS_WRITE),
     asyncRoute(async (req, res) => {
       const doctorId = routeParam(req, 'id');
       const doctor = await prisma.user.update({
@@ -62,6 +65,7 @@ export function registerAdminDoctorMutationRoutes(app: express.Application) {
     '/admin/doctors/:id/status',
     authRequired,
     allowRoles(Role.ADMIN),
+    requirePermissions(PERMISSIONS.DOCTORS_WRITE),
     asyncRoute(async (req, res) => {
       const doctorId = routeParam(req, 'id');
       const body = z.object({ isActive: z.boolean() }).parse(req.body);
@@ -98,6 +102,7 @@ export function registerAdminDoctorMutationRoutes(app: express.Application) {
     '/admin/doctors',
     authRequired,
     allowRoles(Role.ADMIN),
+    requirePermissions(PERMISSIONS.DOCTORS_WRITE),
     asyncRoute(async (req, res) => {
       const body = z
         .object({
@@ -145,6 +150,7 @@ export function registerAdminDoctorMutationRoutes(app: express.Application) {
     '/admin/doctors/:id',
     authRequired,
     allowRoles(Role.ADMIN),
+    requirePermissions(PERMISSIONS.DOCTORS_WRITE),
     asyncRoute(async (req, res) => {
       const doctorId = routeParam(req, 'id');
       const body = z

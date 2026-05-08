@@ -4,12 +4,14 @@ import { allowRoles, authRequired } from '../../auth.js';
 import { prisma } from '../../db.js';
 import { asyncRoute } from '../../middleware/async-route.js';
 import { queryPositiveInt } from '../../lib/http-params.js';
+import { PERMISSIONS, requirePermissions } from '../../staff-permissions.js';
 
 export function registerAdminAuditRoutes(app: express.Application) {
   app.get(
     '/admin/audit-logs',
     authRequired,
     allowRoles(Role.ADMIN),
+    requirePermissions(PERMISSIONS.AUDIT_READ),
     asyncRoute(async (req, res) => {
       const page = queryPositiveInt(req, 'page', 1);
       const pageSize = queryPositiveInt(req, 'pageSize', 20);
