@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
 import { AppFooterComponent } from '../app-footer.component';
 import { AppHeaderComponent } from '../app-header.component';
-import { homeopathyApproaches } from '../treatment-approach/homeopathy-approaches.constants';
+import { homeopathyApproaches } from '../constants';
 import { PUBLIC_WHATSAPP_LINK } from './public-whatsapp';
 
 @Component({

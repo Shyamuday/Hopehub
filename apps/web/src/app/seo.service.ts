@@ -3,8 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { Meta, Title } from '@angular/platform-browser';
 import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
 import { filter } from 'rxjs';
-import { diseaseInfos } from './disease/disease-info.constants';
-import { homeopathyApproaches } from './treatment-approach/homeopathy-approaches.constants';
+import { diseaseInfos, homeopathyApproaches } from './constants';
 
 @Injectable({ providedIn: 'root' })
 export class SeoService {

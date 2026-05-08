@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, signal } from '@angular/core';
 import { AppFooterComponent } from '../app-footer.component';
 import { AppHeaderComponent } from '../app-header.component';
-import { diseaseCategoryList } from '../disease/disease-category-list.constants';
+import { diseaseCategoryList } from '../constants';
 import { AppOverlayService } from '../overlay.service';
 import { openPublicAuthOverlay } from './open-public-auth-overlay';
 import { PUBLIC_WHATSAPP_LINK } from './public-whatsapp';

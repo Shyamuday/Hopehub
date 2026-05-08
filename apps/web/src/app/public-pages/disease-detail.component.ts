@@ -3,7 +3,7 @@ import { Component, OnInit, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { AppFooterComponent } from '../app-footer.component';
 import { AppHeaderComponent } from '../app-header.component';
-import { diseaseInfos } from '../disease/disease-info.constants';
+import { diseaseInfos } from '../constants';
 import type { DiseaseInfo } from '../interfaces';
 import { AppOverlayService } from '../overlay.service';
 import { openPublicAuthOverlay } from './open-public-auth-overlay';
