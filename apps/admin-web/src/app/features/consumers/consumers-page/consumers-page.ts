@@ -20,6 +20,11 @@ type ConsumerDetail = {
     name: string;
     email?: string;
     mobile?: string;
+    deliveryAddressLine1?: string | null;
+    deliveryAddressLine2?: string | null;
+    deliveryCity?: string | null;
+    deliveryState?: string | null;
+    deliveryPincode?: string | null;
   };
   consultations: Array<{
     id: string;

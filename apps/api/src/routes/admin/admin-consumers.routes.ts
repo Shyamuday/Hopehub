@@ -96,7 +96,14 @@ export function registerAdminConsumerRoutes(app: express.Application) {
       const patientId = routeParam(req, 'id');
       const patient = await prisma.user.findFirst({
         where: { id: patientId, role: Role.PATIENT },
-        select: publicUserSelect
+        select: {
+          ...publicUserSelect,
+          deliveryAddressLine1: true,
+          deliveryAddressLine2: true,
+          deliveryCity: true,
+          deliveryState: true,
+          deliveryPincode: true
+        }
       });
 
       if (!patient) {

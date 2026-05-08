@@ -18,6 +18,11 @@ type Profile = {
   currentMedications?: string | null;
   chronicConditions?: string | null;
   hasPassword?: boolean;
+  deliveryAddressLine1?: string | null;
+  deliveryAddressLine2?: string | null;
+  deliveryCity?: string | null;
+  deliveryState?: string | null;
+  deliveryPincode?: string | null;
 };
 
 @Component({
@@ -65,6 +70,8 @@ type Profile = {
     .account-section .lede { font-size: .84rem; color: #6b7280; margin: 0 0 1rem; line-height: 1.45; }
     .inline-link { color: #2563eb; font-weight: 600; text-decoration: underline; }
     .inline-link:hover { color: #1d4ed8; }
+    .subhead { font-size: .95rem; margin: 1.25rem 0 0.5rem; color: #374151; }
+    .section-hint { margin: 0 0 0.85rem; font-size: .8rem; color: #6b7280; line-height: 1.4; }
   `],
   template: `
     <div class="profile-panel">
@@ -105,6 +112,29 @@ type Profile = {
           <label>Chronic conditions</label>
           <textarea name="chronicConditions" [(ngModel)]="chronicConditions"
             placeholder="e.g. Diabetes, hypertension, thyroid (leave blank if none)"></textarea>
+        </div>
+
+        <h3 class="subhead">Medicine delivery address</h3>
+        <p class="section-hint">Optional. Used when your care team arranges courier or pharmacy delivery. You can update this anytime.</p>
+        <div class="field">
+          <label for="pt-del1">Address line 1</label>
+          <input id="pt-del1" name="deliveryLine1" [(ngModel)]="deliveryLine1" placeholder="House / flat, street" />
+        </div>
+        <div class="field">
+          <label for="pt-del2">Address line 2</label>
+          <input id="pt-del2" name="deliveryLine2" [(ngModel)]="deliveryLine2" placeholder="Area, landmark (optional)" />
+        </div>
+        <div class="field">
+          <label for="pt-city">City</label>
+          <input id="pt-city" name="deliveryCity" [(ngModel)]="deliveryCity" />
+        </div>
+        <div class="field">
+          <label for="pt-state">State</label>
+          <input id="pt-state" name="deliveryState" [(ngModel)]="deliveryState" />
+        </div>
+        <div class="field">
+          <label for="pt-pin">PIN code</label>
+          <input id="pt-pin" name="deliveryPincode" [(ngModel)]="deliveryPincode" placeholder="e.g. 834001" />
         </div>
 
         <div class="save-row">
@@ -198,6 +228,11 @@ export class PatientProfileComponent implements OnInit {
   allergies = '';
   currentMedications = '';
   chronicConditions = '';
+  deliveryLine1 = '';
+  deliveryLine2 = '';
+  deliveryCity = '';
+  deliveryState = '';
+  deliveryPincode = '';
   currentPassword = '';
   newPassword = '';
   confirmPassword = '';
@@ -241,6 +276,11 @@ export class PatientProfileComponent implements OnInit {
       this.allergies = profile.allergies || '';
       this.currentMedications = profile.currentMedications || '';
       this.chronicConditions = profile.chronicConditions || '';
+      this.deliveryLine1 = profile.deliveryAddressLine1 || '';
+      this.deliveryLine2 = profile.deliveryAddressLine2 || '';
+      this.deliveryCity = profile.deliveryCity || '';
+      this.deliveryState = profile.deliveryState || '';
+      this.deliveryPincode = profile.deliveryPincode || '';
     } catch {
       this.errorMsg.set('Could not load profile.');
     } finally {
@@ -259,7 +299,12 @@ export class PatientProfileComponent implements OnInit {
           name: this.name.trim(),
           allergies: this.allergies.trim() || undefined,
           currentMedications: this.currentMedications.trim() || undefined,
-          chronicConditions: this.chronicConditions.trim() || undefined
+          chronicConditions: this.chronicConditions.trim() || undefined,
+          deliveryAddressLine1: this.deliveryLine1.trim() || null,
+          deliveryAddressLine2: this.deliveryLine2.trim() || null,
+          deliveryCity: this.deliveryCity.trim() || null,
+          deliveryState: this.deliveryState.trim() || null,
+          deliveryPincode: this.deliveryPincode.trim() || null
         })
       });
       this.profile.set(profile);

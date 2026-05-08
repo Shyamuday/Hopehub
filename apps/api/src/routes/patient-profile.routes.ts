@@ -83,20 +83,26 @@ export function registerPatientProfileRoutes(app: express.Application) {
         chronicConditions: body.chronicConditions
       };
 
-      const setDelivery = (key: keyof Prisma.UserUpdateInput, v: string | null | undefined) => {
-        if (v === undefined || v === null) {
-          data[key] = null;
-        } else {
-          const t = v.trim();
-          data[key] = t.length ? t : null;
-        }
-      };
-
-      if (Object.hasOwn(raw, 'deliveryAddressLine1')) setDelivery('deliveryAddressLine1', body.deliveryAddressLine1 ?? null);
-      if (Object.hasOwn(raw, 'deliveryAddressLine2')) setDelivery('deliveryAddressLine2', body.deliveryAddressLine2 ?? null);
-      if (Object.hasOwn(raw, 'deliveryCity')) setDelivery('deliveryCity', body.deliveryCity ?? null);
-      if (Object.hasOwn(raw, 'deliveryState')) setDelivery('deliveryState', body.deliveryState ?? null);
-      if (Object.hasOwn(raw, 'deliveryPincode')) setDelivery('deliveryPincode', body.deliveryPincode ?? null);
+      if (Object.hasOwn(raw, 'deliveryAddressLine1')) {
+        const v = body.deliveryAddressLine1;
+        data.deliveryAddressLine1 = typeof v === 'string' ? v.trim() || null : null;
+      }
+      if (Object.hasOwn(raw, 'deliveryAddressLine2')) {
+        const v = body.deliveryAddressLine2;
+        data.deliveryAddressLine2 = typeof v === 'string' ? v.trim() || null : null;
+      }
+      if (Object.hasOwn(raw, 'deliveryCity')) {
+        const v = body.deliveryCity;
+        data.deliveryCity = typeof v === 'string' ? v.trim() || null : null;
+      }
+      if (Object.hasOwn(raw, 'deliveryState')) {
+        const v = body.deliveryState;
+        data.deliveryState = typeof v === 'string' ? v.trim() || null : null;
+      }
+      if (Object.hasOwn(raw, 'deliveryPincode')) {
+        const v = body.deliveryPincode;
+        data.deliveryPincode = typeof v === 'string' ? v.trim() || null : null;
+      }
 
       const updated = await prisma.user.update({
         where: { id: req.user!.id },

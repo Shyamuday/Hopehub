@@ -27,6 +27,38 @@
   margin-bottom: 0.5rem;
 }
 
+.delivery-block {
+  margin: 0.75rem 0;
+  padding: 0.65rem 0.75rem;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+
+  h4 {
+    margin: 0 0 0.45rem;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #475569;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+  }
+
+  p {
+    margin: 0.15rem 0;
+    font-size: 0.875rem;
+    color: #1e293b;
+  }
+
+  .muted {
+    color: #64748b;
+    margin: 0;
+  }
+
+  .small {
+    font-size: 0.8rem;
+  }
+}
+
 .pagination {
   display: flex;
   gap: 0.4rem;

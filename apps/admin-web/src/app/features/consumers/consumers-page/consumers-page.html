@@ -50,6 +50,34 @@
     <article class="card">
       <strong>{{ detail.consumer.name }}</strong>
       <p>{{ detail.consumer.email || 'No email' }} | {{ detail.consumer.mobile || 'No mobile' }}</p>
+      <div class="delivery-block">
+        <h4>Delivery address</h4>
+        @if (
+          detail.consumer.deliveryAddressLine1 ||
+          detail.consumer.deliveryAddressLine2 ||
+          detail.consumer.deliveryCity ||
+          detail.consumer.deliveryState ||
+          detail.consumer.deliveryPincode
+        ) {
+          @if (detail.consumer.deliveryAddressLine1) {
+            <p>{{ detail.consumer.deliveryAddressLine1 }}</p>
+          }
+          @if (detail.consumer.deliveryAddressLine2) {
+            <p>{{ detail.consumer.deliveryAddressLine2 }}</p>
+          }
+          @if (detail.consumer.deliveryCity) {
+            <p>{{ detail.consumer.deliveryCity }}</p>
+          }
+          @if (detail.consumer.deliveryState) {
+            <p>{{ detail.consumer.deliveryState }}</p>
+          }
+          @if (detail.consumer.deliveryPincode) {
+            <p>PIN: {{ detail.consumer.deliveryPincode }}</p>
+          }
+        } @else {
+          <p class="muted small">No delivery address on file.</p>
+        }
+      </div>
       <small>Adherence: {{ detail.adherence.percent }}% (Taken {{ detail.adherence.taken }} / {{ detail.adherence.total }})</small>
       <small>Skipped: {{ detail.adherence.skipped }} | Missed: {{ detail.adherence.missed }}</small>
     </article>
