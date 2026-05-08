@@ -1,0 +1,9 @@
+@if (group && rows.length) {
+  <div class="diagnosis-panel diagnosis-panel--miasm">
+    <h3>{{ heading }}</h3>
+    @if (description) {
+      <p class="hint diagnosis-desc">{{ description }}</p>
+    }
+    <app-method-intake-field-rows [idPrefix]="idPrefix" [rows]="rows" [values]="values" />
+  </div>
+}

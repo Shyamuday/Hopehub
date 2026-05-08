@@ -1,7 +1,7 @@
 {
-  "schemaVersion": 3,
-  "title": "Kingdom classification",
-  "description": "Merged after decision_support. Keys: kingdom_classification__*",
+  "schemaVersion": 4,
+  "title": "Kingdom diagnosis",
+  "description": "Plant / mineral / animal map. Separate card; keys unchanged: kingdom_classification__*",
   "group": {
     "key": "kingdom_classification",
     "label": "Kingdom (plant / mineral / animal)",
@@ -44,8 +44,8 @@
       },
       {
         "key": "kingdom_hypothesis",
-        "label": "Kingdom — working hypothesis",
-        "type": "select",
+        "label": "Kingdom — patterns with intensity (1 = strongest here)",
+        "type": "ranked_checklist",
         "options": [
           "Plant — sensitivity & reactivity; inner ‘it affects / hurts me’",
           "Mineral — structure & completeness; identity, position, performance (issue with self)",
@@ -53,7 +53,8 @@
           "Imponderable / other non WPM",
           "Unclear — needs more differentiation",
           "Mixed / transitional picture"
-        ]
+        ],
+        "helper": "Tick all that fit this case; use intensity to show how loud each line is (cumulative picture)."
       },
       {
         "key": "kingdom_confidence",

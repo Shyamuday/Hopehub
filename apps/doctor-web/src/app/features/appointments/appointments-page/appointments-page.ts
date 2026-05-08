@@ -20,88 +20,34 @@ import {
   type MethodIntakeFlatRow,
   type MethodIntakeProfile,
   flattenMethodIntakeFields,
-  mergeMethodIntakeGlobalFields,
+  migrateLegacyMiasmTenNonRanked,
+  migrateLegacyRankedFieldsForGroup,
+  methodIntakeRowsWithSectionHeaders,
   resolveMethodIntakeProfile
 } from './method-intake';
-
-type OptionType = 'METHOD' | 'DIAGNOSED_DISEASE';
-
-type TemplateItem = {
-  medicineName: string;
-  strength?: string;
-  dose?: string;
-  frequency?: string;
-  duration?: string;
-  instructions?: string;
-  sortOrder?: number;
-};
-
-type PrescriptionTemplate = {
-  id: string;
-  name: string;
-  diagnosis: string;
-  advice?: string | null;
-  notes: string;
-  items: TemplateItem[];
-};
-
-type PrescriptionOption = {
-  id: string;
-  label: string;
-};
-
-type MedicineRow = {
-  /** Encodes CGHS pick as tab-separated code, name, potency, amount; or `__other__`; or empty. */
-  formularyKey: string;
-  medicineName: string;
-  strength: string;
-  dose: string;
-  frequency: string;
-  duration: string;
-  durationDays: number;
-  instructions: string;
-  intakeTimesText: string;
-};
-
-type LoadedPrescription = {
-  id: string;
-  version: number;
-  status: 'DRAFT' | 'PUBLISHED' | 'CANCELLED';
-  createdAt?: string;
-  followUpDate?: string | null;
-  diagnosis: string;
-  advice?: string | null;
-  notes: string;
-  methodOptionId?: string | null;
-  diagnosedDiseaseOptionId?: string | null;
-  methodIntakeAnswers?: Record<string, string> | null;
-  methodOption?: { id?: string; label?: string } | null;
-  items: Array<{
-    medicineName: string;
-    strength?: string | null;
-    dose?: string | null;
-    frequency?: string | null;
-    duration?: string | null;
-    durationDays?: number | null;
-    instructions?: string | null;
-    intakeTimes?: string[] | null;
-  }>;
-};
-
-type ConsultationAttachmentRow = {
-  id: string;
-  kind: string;
-  fileName?: string | null;
-  mimeType?: string | null;
-  caption?: string | null;
-  fileUrl: string;
-  createdAt?: string;
-  uploadedBy?: { name?: string };
-};
+import { KingdomDiagnosisPanelComponent } from './kingdom-diagnosis-panel/kingdom-diagnosis-panel.component';
+import { MiasmDiagnosisPanelComponent } from './miasm-diagnosis-panel/miasm-diagnosis-panel.component';
+import type {
+  ConsultationAttachmentRow,
+  LoadedPrescription,
+  MedicineRow,
+  MethodIntakeUiPanel,
+  OptionType,
+  PrescriptionOption,
+  PrescriptionTemplate
+} from './appointments-page.types';
+import {
+  attachmentKindLabel as formatAttachmentKind,
+  createEmptyMedicineRow,
+  mapPrescriptionItemsToMedicineRows,
+  mapTemplateItemsToMedicineRows,
+  prescriptionSafetyReport as evaluatePrescriptionSafety
+} from './appointments-page.utils';
+import { FORMULARY_LOAD_ERROR, METHOD_INTAKE_CONFIG_ERROR } from './appointments-page.constants';
 
 @Component({
   selector: 'app-appointments-page',
-  imports: [FormsModule, DatePipe],
+  imports: [FormsModule, DatePipe, KingdomDiagnosisPanelComponent, MiasmDiagnosisPanelComponent],
   templateUrl: './appointments-page.html',
   styleUrl: './appointments-page.scss'
 })
@@ -143,7 +89,7 @@ export class AppointmentsPage implements OnInit {
   savingTemplate = false;
   savingTemplateError = '';
   deletingTemplateId = '';
-  medicineRows: MedicineRow[] = [this.newMedicineRow()];
+  medicineRows: MedicineRow[] = [createEmptyMedicineRow()];
 
   /** CGHS Homoeopathic Formulary (JSON in public/data). */
   formulary: CghsFormularyEntry[] = [];
@@ -153,9 +99,13 @@ export class AppointmentsPage implements OnInit {
 
   /** Homeopathy method → contextual intake fields (JSON in public/data). */
   methodIntakeConfig: MethodIntakeConfig | null = null;
-  /** Kingdom + miasm addons merged into global fields (see apps/web/data homeopathy-*-intake.json). */
-  private kingdomIntakeGroup: MethodIntakeField | null = null;
-  private miasmIntakeGroup: MethodIntakeField | null = null;
+  /** Kingdom / miasm addons: separate diagnosis tools (same storage keys as before). */
+  kingdomIntakeGroup: MethodIntakeField | null = null;
+  miasmIntakeGroup: MethodIntakeField | null = null;
+  kingdomDiagnosisTitle = 'Kingdom diagnosis';
+  kingdomDiagnosisDescription = '';
+  miasmDiagnosisTitle = 'Miasm diagnosis';
+  miasmDiagnosisDescription = '';
   methodIntakeValues: Record<string, string> = {};
   methodIntakeLoadError = '';
 
@@ -195,31 +145,49 @@ export class AppointmentsPage implements OnInit {
       const kg = kingdomRes?.group;
       if (kg?.type === 'structured_group' && kg.key === 'kingdom_classification') {
         this.kingdomIntakeGroup = kg;
+        this.kingdomDiagnosisTitle = (kingdomRes?.title ?? '').trim() || 'Kingdom diagnosis';
+        this.kingdomDiagnosisDescription = (kingdomRes?.description ?? '').trim();
       } else {
         this.kingdomIntakeGroup = null;
+        this.kingdomDiagnosisTitle = 'Kingdom diagnosis';
+        this.kingdomDiagnosisDescription = '';
       }
       const mg = miasmRes?.group;
       if (mg?.type === 'structured_group' && mg.key === 'miasm_classification') {
         this.miasmIntakeGroup = mg;
+        this.miasmDiagnosisTitle = (miasmRes?.title ?? '').trim() || 'Miasm diagnosis';
+        this.miasmDiagnosisDescription = (miasmRes?.description ?? '').trim();
       } else {
         this.miasmIntakeGroup = null;
+        this.miasmDiagnosisTitle = 'Miasm diagnosis';
+        this.miasmDiagnosisDescription = '';
       }
+      this.ensureMethodIntakeKeys();
     } catch {
       this.methodIntakeConfig = null;
       this.kingdomIntakeGroup = null;
       this.miasmIntakeGroup = null;
-      this.methodIntakeLoadError =
-        'Method intake config missing — run `npm run build:cghs-formulary` from repo root so JSON in apps/web/data is copied to the doctor app.';
+      this.kingdomDiagnosisDescription = '';
+      this.miasmDiagnosisDescription = '';
+      this.methodIntakeLoadError = METHOD_INTAKE_CONFIG_ERROR;
     }
   }
 
-  /** Base `globalFields` plus kingdom and miasm addons (`*_classification__*` keys). */
-  private effectiveGlobalFields(): MethodIntakeField[] {
-    return mergeMethodIntakeGlobalFields(
-      this.methodIntakeConfig?.globalFields,
-      this.kingdomIntakeGroup,
-      this.miasmIntakeGroup
-    );
+  /** Base global fields from main method JSON only (no kingdom/miasm). */
+  private baseGlobalFields(): MethodIntakeField[] {
+    return this.methodIntakeConfig?.globalFields?.length ? [...this.methodIntakeConfig.globalFields] : [];
+  }
+
+  /** All structured groups whose keys must exist on `methodIntakeValues` for save/hydrate. */
+  private allMethodIntakeFieldGroups(): MethodIntakeField[] {
+    const out: MethodIntakeField[] = [...this.baseGlobalFields()];
+    if (this.kingdomIntakeGroup) {
+      out.push(this.kingdomIntakeGroup);
+    }
+    if (this.miasmIntakeGroup) {
+      out.push(this.miasmIntakeGroup);
+    }
+    return out;
   }
 
   selectedMethodLabel(): string {
@@ -231,24 +199,37 @@ export class AppointmentsPage implements OnInit {
     return resolveMethodIntakeProfile(this.methodIntakeConfig, this.selectedMethodLabel());
   }
 
-  /** Flat profile fields + global add-ons, with section headings for the template. */
+  /**
+   * Method-specific capture: active profile + base global fields only.
+   * Kingdom and miasm render in `app-kingdom-diagnosis-panel` / `app-miasm-diagnosis-panel`.
+   */
   methodIntakeFlatRows(): Array<MethodIntakeFlatRow & { showSectionHeader: boolean }> {
     const p = this.activeMethodProfile();
     if (!p) {
       return [];
     }
     const rows: MethodIntakeFlatRow[] = flattenMethodIntakeFields(p.fields);
-    if (this.effectiveGlobalFields().length) {
-      rows.push(...flattenMethodIntakeFields(this.effectiveGlobalFields()));
+    if (this.baseGlobalFields().length) {
+      rows.push(...flattenMethodIntakeFields(this.baseGlobalFields()));
     }
-    let prevSection: string | undefined;
-    return rows.map((r) => {
-      const showSectionHeader = Boolean(r.section && r.section !== prevSection);
-      if (r.section) {
-        prevSection = r.section;
-      }
-      return { ...r, showSectionHeader };
-    });
+    return methodIntakeRowsWithSectionHeaders(rows);
+  }
+
+  /** Method + method global fields only (kingdom/miasm use dedicated panels). */
+  methodIntakeUiPanels(): MethodIntakeUiPanel[] {
+    const panels: MethodIntakeUiPanel[] = [];
+    const p = this.activeMethodProfile();
+    if (p) {
+      panels.push({
+        id: 'method',
+        heading: 'Method-specific case capture',
+        description: '',
+        profileTitle: p.title,
+        profileHelper: p.helper,
+        rows: this.methodIntakeFlatRows()
+      });
+    }
+    return panels;
   }
 
   onMethodOptionChanged() {
@@ -259,20 +240,14 @@ export class AppointmentsPage implements OnInit {
   private resetMethodIntakeForActiveProfile() {
     const p = this.activeMethodProfile();
     this.methodIntakeValues = {};
-    if (!p) {
-      return;
-    }
-    for (const key of allMethodIntakeStorageKeys(p, this.effectiveGlobalFields())) {
+    for (const key of allMethodIntakeStorageKeys(p, this.allMethodIntakeFieldGroups())) {
       this.methodIntakeValues[key] = '';
     }
   }
 
   private ensureMethodIntakeKeys() {
-    const p = this.activeMethodProfile();
-    if (!p) {
-      return;
-    }
-    for (const key of allMethodIntakeStorageKeys(p, this.effectiveGlobalFields())) {
+    const keys = allMethodIntakeStorageKeys(this.activeMethodProfile(), this.allMethodIntakeFieldGroups());
+    for (const key of keys) {
       if (this.methodIntakeValues[key] === undefined) {
         this.methodIntakeValues[key] = '';
       }
@@ -287,15 +262,14 @@ export class AppointmentsPage implements OnInit {
       }
     }
     this.ensureMethodIntakeKeys();
+    migrateLegacyMiasmTenNonRanked(this.methodIntakeValues);
+    migrateLegacyRankedFieldsForGroup(this.methodIntakeValues, this.kingdomIntakeGroup);
+    migrateLegacyRankedFieldsForGroup(this.methodIntakeValues, this.miasmIntakeGroup);
   }
 
   private serializeMethodIntake(): Record<string, string> | undefined {
-    const p = this.activeMethodProfile();
-    if (!p) {
-      return undefined;
-    }
     const out: Record<string, string> = {};
-    for (const key of allMethodIntakeStorageKeys(p, this.effectiveGlobalFields())) {
+    for (const key of allMethodIntakeStorageKeys(this.activeMethodProfile(), this.allMethodIntakeFieldGroups())) {
       const v = (this.methodIntakeValues[key] || '').trim();
       if (v) {
         out[key] = v;
@@ -324,20 +298,6 @@ export class AppointmentsPage implements OnInit {
     }
   }
 
-  private newMedicineRow(): MedicineRow {
-    return {
-      formularyKey: '',
-      medicineName: '',
-      strength: '',
-      dose: '',
-      frequency: '',
-      duration: '',
-      durationDays: 7,
-      instructions: '',
-      intakeTimesText: '09:00,21:00'
-    };
-  }
-
   private async loadFormulary() {
     this.formularyLoadError = '';
     try {
@@ -347,8 +307,7 @@ export class AppointmentsPage implements OnInit {
       this.formulary = res.entries || [];
     } catch {
       this.formulary = [];
-      this.formularyLoadError =
-        'CGHS formulary file missing or invalid — run `npm run build:cghs-formulary` from the repo root. You can still enter medicines manually.';
+      this.formularyLoadError = FORMULARY_LOAD_ERROR;
     } finally {
       this.formularyLoaded = true;
       this.refreshFormularyKeysOnRows();
@@ -419,7 +378,7 @@ export class AppointmentsPage implements OnInit {
   }
 
   addMedicineRow() {
-    this.medicineRows = [...this.medicineRows, this.newMedicineRow()];
+    this.medicineRows = [...this.medicineRows, createEmptyMedicineRow()];
   }
 
   removeMedicineRow(index: number) {
@@ -476,9 +435,7 @@ export class AppointmentsPage implements OnInit {
   }
 
   attachmentKindLabel(kind: string): string {
-    if (kind === 'PATIENT_REPORT') return 'Patient report';
-    if (kind === 'DOCTOR_CLINICAL') return 'Clinical / clinic photo';
-    return 'File';
+    return formatAttachmentKind(kind);
   }
 
   async uploadClinicalAttachment(ev: Event) {
@@ -528,19 +485,7 @@ export class AppointmentsPage implements OnInit {
       ? new Date(prescription.followUpDate).toISOString().substring(0, 10)
       : '';
     this.status = prescription.status === 'PUBLISHED' ? 'PUBLISHED' : 'DRAFT';
-    this.medicineRows = (prescription.items || []).length
-      ? (prescription.items || []).map((item) => ({
-          formularyKey: matchFormularyKey(this.formulary, item.medicineName || '', item.strength || '', item.dose || ''),
-          medicineName: item.medicineName || '',
-          strength: item.strength || '',
-          dose: item.dose || '',
-          frequency: item.frequency || '',
-          duration: item.duration || '',
-          durationDays: item.durationDays || 7,
-          instructions: item.instructions || '',
-          intakeTimesText: (item.intakeTimes || ['09:00']).join(',')
-        }))
-      : [this.newMedicineRow()];
+    this.medicineRows = mapPrescriptionItemsToMedicineRows(this.formulary, prescription.items);
   }
 
   selectPrescriptionById(prescriptionId: string) {
@@ -573,19 +518,7 @@ export class AppointmentsPage implements OnInit {
     this.hydrateMethodIntakeFromPrescription(prescription.methodIntakeAnswers);
     this.followUpDate = '';
     this.status = 'DRAFT';
-    this.medicineRows = (prescription.items || []).length
-      ? (prescription.items || []).map((item) => ({
-          formularyKey: matchFormularyKey(this.formulary, item.medicineName || '', item.strength || '', item.dose || ''),
-          medicineName: item.medicineName || '',
-          strength: item.strength || '',
-          dose: item.dose || '',
-          frequency: item.frequency || '',
-          duration: item.duration || '',
-          durationDays: item.durationDays || 7,
-          instructions: item.instructions || '',
-          intakeTimesText: (item.intakeTimes || ['09:00']).join(',')
-        }))
-      : [this.newMedicineRow()];
+    this.medicineRows = mapPrescriptionItemsToMedicineRows(this.formulary, prescription.items);
     this.message = `Follow-up draft started from v${prescription.version}.`;
     this.error = '';
   }
@@ -610,48 +543,11 @@ export class AppointmentsPage implements OnInit {
     this.followUpDate = '';
     this.loadedMethodLabel = '';
     this.methodIntakeValues = {};
-    this.medicineRows = [this.newMedicineRow()];
+    this.medicineRows = [createEmptyMedicineRow()];
   }
 
-  private normalizeMedicineName(name: string) {
-    return name.trim().toLowerCase().replace(/\s+/g, ' ');
-  }
-
-  prescriptionSafetyReport(): {
-    duplicateMedicines: string[];
-    conflictingMedicines: string[];
-  } {
-    const groups = new Map<string, MedicineRow[]>();
-    for (const row of this.medicineRows) {
-      const key = this.normalizeMedicineName(row.medicineName);
-      if (!key) {
-        continue;
-      }
-      const list = groups.get(key);
-      if (list) {
-        list.push(row);
-      } else {
-        groups.set(key, [row]);
-      }
-    }
-
-    const duplicateMedicines: string[] = [];
-    const conflictingMedicines: string[] = [];
-    for (const rows of groups.values()) {
-      if (rows.length < 2) {
-        continue;
-      }
-      const displayName = rows[0].medicineName.trim() || rows[0].medicineName;
-      duplicateMedicines.push(displayName);
-      const signatures = new Set(
-        rows.map((r) => `${(r.dose || '').trim()}|${(r.frequency || '').trim()}`)
-      );
-      if (signatures.size > 1) {
-        conflictingMedicines.push(displayName);
-      }
-    }
-
-    return { duplicateMedicines, conflictingMedicines };
+  prescriptionSafetyReport() {
+    return evaluatePrescriptionSafety(this.medicineRows);
   }
 
   dismissSafetyConfirm() {
@@ -759,19 +655,7 @@ export class AppointmentsPage implements OnInit {
     this.diagnosis = template.diagnosis || '';
     this.advice = template.advice || '';
     this.notes = template.notes || '';
-    this.medicineRows = template.items.length
-      ? template.items.map((item) => ({
-          formularyKey: matchFormularyKey(this.formulary, item.medicineName, item.strength || '', item.dose || ''),
-          medicineName: item.medicineName,
-          strength: item.strength || '',
-          dose: item.dose || '',
-          frequency: item.frequency || '',
-          duration: item.duration || '',
-          durationDays: 0,
-          instructions: item.instructions || '',
-          intakeTimesText: ''
-        }))
-      : [this.newMedicineRow()];
+    this.medicineRows = mapTemplateItemsToMedicineRows(this.formulary, template.items);
     this.message = `Template "${template.name}" applied. Review and adjust before saving.`;
   }
 

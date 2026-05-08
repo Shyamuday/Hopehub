@@ -1,0 +1,22 @@
+.diagnosis-panel {
+  margin: 0.5rem 0 0.75rem;
+  padding: 0.75rem;
+  border-radius: 10px;
+  border: 1px solid #e9d5ff;
+  background: #faf5ff;
+
+  h3 {
+    margin: 0 0 0.35rem;
+    color: #5b21b6;
+  }
+}
+
+.diagnosis-desc {
+  margin: 0 0 0.75rem;
+}
+
+.diagnosis-panel--miasm .method-intake-section {
+  color: #6b21a8;
+  border-bottom: 1px solid #e9d5ff;
+  padding-bottom: 0.25rem;
+}

@@ -1,7 +1,7 @@
 {
   "schemaVersion": 10,
   "title": "Homeopathy method intake (structured clinical data)",
-  "description": "Method profiles + global fields. Kingdom and miasm addons merged after clinical blocks (separate JSON). Potency, Hering, HOM-CASE, HCCR below.",
+  "description": "Method profiles + global fields. Kingdom diagnosis and Miasm diagnosis load as separate cards; keys unchanged.",
   "defaultProfileId": "general",
   "globalFields": [
     {

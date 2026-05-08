@@ -1,0 +1,22 @@
+.diagnosis-panel {
+  margin: 0.5rem 0 0.75rem;
+  padding: 0.75rem;
+  border-radius: 10px;
+  border: 1px solid #a7f3d0;
+  background: #ecfdf5;
+
+  h3 {
+    margin: 0 0 0.35rem;
+    color: #065f46;
+  }
+}
+
+.diagnosis-desc {
+  margin: 0 0 0.75rem;
+}
+
+.diagnosis-panel--kingdom .method-intake-section {
+  color: #047857;
+  border-bottom: 1px solid #a7f3d0;
+  padding-bottom: 0.25rem;
+}

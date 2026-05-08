@@ -1,0 +1,91 @@
+@for (row of rows; track row.storageKey) {
+  @if (row.showSectionHeader && row.section) {
+    <h4 class="method-intake-section">{{ row.section }}</h4>
+  }
+  @if (row.type === 'ranked_checklist') {
+    <div class="ranked-field" [attr.id]="'mi-' + idPrefix + '-wrap-' + row.storageKey">
+      <div class="ranked-field-head">
+        <span class="ranked-field-label">{{ row.label }}</span>
+        @if (row.helper) {
+          <span class="hint ranked-field-hint">{{ row.helper }}</span>
+        }
+        <button type="button" class="btn-auto-intensity" (click)="autoIntensityInListOrder(row.storageKey, row.options || [])">
+          Auto intensity 1→n (list order)
+        </button>
+      </div>
+      <p class="hint ranked-field-note">Tick every pattern that fits; intensity 1 = strongest in this case. Several lines can be active at once (cumulative).</p>
+      <ul class="ranked-option-list">
+        @for (opt of row.options || []; track opt) {
+          <li class="ranked-option-row">
+            <label class="ranked-check">
+              <input
+                type="checkbox"
+                [checked]="rankedChecked(row.storageKey, opt)"
+                (change)="toggleRanked(row.storageKey, row.options || [], opt, $any($event.target).checked)"
+              />
+              <span class="ranked-option-text">{{ opt }}</span>
+            </label>
+            @if (rankedChecked(row.storageKey, opt)) {
+              <label class="ranked-intensity">
+                <span class="sr-only">Intensity for {{ opt }}</span>
+                <select
+                  [ngModel]="rankedIntensity(row.storageKey, opt)"
+                  (ngModelChange)="setRankedIntensity(row.storageKey, opt, +$event)"
+                >
+                  @for (n of intensityOptions; track n) {
+                    <option [value]="n">{{ n }}</option>
+                  }
+                </select>
+              </label>
+            }
+          </li>
+        }
+      </ul>
+    </div>
+  } @else {
+    <label [attr.for]="'mi-' + idPrefix + '-' + row.storageKey" class="standard-field-label">
+      {{ row.label }}
+      @if (row.helper) {
+        <span class="hint block-hint">{{ row.helper }}</span>
+      }
+      @if (row.type === 'textarea') {
+        <textarea
+          [id]="'mi-' + idPrefix + '-' + row.storageKey"
+          [name]="'mi-' + idPrefix + '-' + row.storageKey"
+          rows="3"
+          [(ngModel)]="values[row.storageKey]"
+          [placeholder]="row.placeholder || ''"
+        ></textarea>
+      } @else if (row.type === 'select') {
+        <select
+          [id]="'mi-' + idPrefix + '-' + row.storageKey"
+          [name]="'mi-' + idPrefix + '-' + row.storageKey"
+          [(ngModel)]="values[row.storageKey]"
+        >
+          <option value="">— Select —</option>
+          @for (opt of row.options || []; track opt) {
+            <option [value]="opt">{{ opt }}</option>
+          }
+        </select>
+      } @else if (row.type === 'checkbox') {
+        <span class="method-intake-check">
+          <input
+            type="checkbox"
+            [id]="'mi-' + idPrefix + '-' + row.storageKey"
+            [name]="'mi-' + idPrefix + '-' + row.storageKey"
+            [checked]="values[row.storageKey] === 'yes'"
+            (change)="values[row.storageKey] = $any($event.target).checked ? 'yes' : ''"
+          />
+        </span>
+      } @else {
+        <input
+          [id]="'mi-' + idPrefix + '-' + row.storageKey"
+          [name]="'mi-' + idPrefix + '-' + row.storageKey"
+          type="text"
+          [(ngModel)]="values[row.storageKey]"
+          [placeholder]="row.placeholder || ''"
+        />
+      }
+    </label>
+  }
+}

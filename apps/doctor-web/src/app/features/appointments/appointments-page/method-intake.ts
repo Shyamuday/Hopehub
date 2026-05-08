@@ -1,7 +1,10 @@
+/** Rank 1 = strongest likelihood; stored as JSON on one storage key, e.g. `{"Plant — …": 1}`. */
+export const RANKED_CHECKLIST_MAX = 10;
+
 export type MethodIntakeSubField = {
   key: string;
   label: string;
-  type: 'text' | 'textarea' | 'select' | 'checkbox';
+  type: 'text' | 'textarea' | 'select' | 'checkbox' | 'ranked_checklist';
   options?: string[];
   placeholder?: string;
   helper?: string;
@@ -11,7 +14,7 @@ export type MethodIntakeField =
   | {
       key: string;
       label: string;
-      type: 'text' | 'textarea' | 'select' | 'checkbox';
+      type: 'text' | 'textarea' | 'select' | 'checkbox' | 'ranked_checklist';
       options?: string[];
       placeholder?: string;
       helper?: string;
@@ -98,7 +101,7 @@ export function mergeGlobalFieldsWithKingdom(
 export type MethodIntakeFlatRow = {
   storageKey: string;
   label: string;
-  type: 'text' | 'textarea' | 'select' | 'checkbox';
+  type: 'text' | 'textarea' | 'select' | 'checkbox' | 'ranked_checklist';
   options?: string[];
   placeholder?: string;
   /** Section heading (e.g. parent group or “Scientific add-ons”). */
@@ -108,6 +111,56 @@ export type MethodIntakeFlatRow = {
 
 function isStructuredGroup(f: MethodIntakeField): f is Extract<MethodIntakeField, { type: 'structured_group' }> {
   return f.type === 'structured_group';
+}
+
+export function parseRankedChecklistJson(raw: string | null | undefined): Record<string, number> {
+  const t = (raw ?? '').trim();
+  if (!t) {
+    return {};
+  }
+  try {
+    const o = JSON.parse(t) as Record<string, unknown>;
+    if (!o || typeof o !== 'object' || Array.isArray(o)) {
+      return {};
+    }
+    const out: Record<string, number> = {};
+    for (const [k, v] of Object.entries(o)) {
+      const n = typeof v === 'number' ? v : Number(v);
+      if (Number.isFinite(n)) {
+        const r = Math.round(n);
+        if (r >= 1 && r <= RANKED_CHECKLIST_MAX) {
+          out[k] = r;
+        }
+      }
+    }
+    return out;
+  } catch {
+    return {};
+  }
+}
+
+export function stringifyRankedChecklist(obj: Record<string, number>): string {
+  const keys = Object.keys(obj);
+  if (!keys.length) {
+    return '';
+  }
+  return JSON.stringify(obj);
+}
+
+/** Migrate legacy single-select string to `{"option": 1}` when it matches an option. */
+export function migrateLegacyRankedChecklistValue(raw: string | null | undefined, options: string[]): string {
+  const t = (raw ?? '').trim();
+  if (!t) {
+    return '';
+  }
+  const parsed = parseRankedChecklistJson(t);
+  if (Object.keys(parsed).length) {
+    return t;
+  }
+  if (options.includes(t)) {
+    return stringifyRankedChecklist({ [t]: 1 });
+  }
+  return t;
 }
 
 export function flattenMethodIntakeFields(
@@ -121,17 +174,20 @@ export function flattenMethodIntakeFields(
       const section = sectionPrefix || f.label;
       for (const sf of f.sub_fields) {
         const storageKey = `${f.key}__${sf.key}`;
+        let rowType: MethodIntakeFlatRow['type'] = 'text';
+        if (sf.type === 'select') {
+          rowType = 'select';
+        } else if (sf.type === 'textarea') {
+          rowType = 'textarea';
+        } else if (sf.type === 'checkbox') {
+          rowType = 'checkbox';
+        } else if (sf.type === 'ranked_checklist') {
+          rowType = 'ranked_checklist';
+        }
         rows.push({
           storageKey,
           label: sf.label,
-          type:
-            sf.type === 'select'
-              ? 'select'
-              : sf.type === 'textarea'
-                ? 'textarea'
-                : sf.type === 'checkbox'
-                  ? 'checkbox'
-                  : 'text',
+          type: rowType,
           options: sf.options,
           placeholder: sf.placeholder,
           section,
@@ -139,17 +195,20 @@ export function flattenMethodIntakeFields(
         });
       }
     } else {
+      let rowType: MethodIntakeFlatRow['type'] = 'text';
+      if (f.type === 'select') {
+        rowType = 'select';
+      } else if (f.type === 'textarea') {
+        rowType = 'textarea';
+      } else if (f.type === 'checkbox') {
+        rowType = 'checkbox';
+      } else if (f.type === 'ranked_checklist') {
+        rowType = 'ranked_checklist';
+      }
       rows.push({
         storageKey: f.key,
         label: f.label,
-        type:
-          f.type === 'select'
-            ? 'select'
-            : f.type === 'textarea'
-              ? 'textarea'
-              : f.type === 'checkbox'
-                ? 'checkbox'
-                : 'text',
+        type: rowType,
         options: f.options,
         placeholder: f.placeholder,
         section: sectionPrefix || undefined,
@@ -164,10 +223,8 @@ export function allMethodIntakeStorageKeys(
   profile: MethodIntakeProfile | null,
   globalFields?: MethodIntakeField[] | null
 ): string[] {
-  if (!profile) {
-    return [];
-  }
-  const fromProfile = flattenMethodIntakeFields(profile.fields).map((r) => r.storageKey);
+  const fromProfile =
+    profile?.fields?.length ? flattenMethodIntakeFields(profile.fields).map((r) => r.storageKey) : [];
   const fromGlobal = globalFields?.length
     ? flattenMethodIntakeFields(globalFields).map((r) => r.storageKey)
     : [];
@@ -194,4 +251,53 @@ export function resolveMethodIntakeProfile(
   }
   const fallback = config.profiles.find((p) => p.id === config.defaultProfileId);
   return fallback ?? config.profiles[0] ?? null;
+}
+
+/** Section headers for method-intake template `@for` rows. */
+export function methodIntakeRowsWithSectionHeaders(
+  rows: MethodIntakeFlatRow[]
+): Array<MethodIntakeFlatRow & { showSectionHeader: boolean }> {
+  let prevSection: string | undefined;
+  return rows.map((r) => {
+    const showSectionHeader = Boolean(r.section && r.section !== prevSection);
+    if (r.section) {
+      prevSection = r.section;
+    }
+    return { ...r, showSectionHeader };
+  });
+}
+
+/** Migrate legacy single-select on ranked_checklist keys; unknown strings left unchanged. */
+export function migrateLegacyRankedFieldsForGroup(
+  values: Record<string, string>,
+  group: MethodIntakeField | null | undefined
+): void {
+  if (!group || group.type !== 'structured_group') {
+    return;
+  }
+  const prefix = `${group.key}__`;
+  for (const sf of group.sub_fields) {
+    if (sf.type !== 'ranked_checklist' || !sf.options?.length) {
+      continue;
+    }
+    const storageKey = `${prefix}${sf.key}`;
+    const migrated = migrateLegacyRankedChecklistValue(values[storageKey], sf.options);
+    if (migrated !== (values[storageKey] || '').trim()) {
+      values[storageKey] = migrated;
+    }
+  }
+}
+
+/** Miasm: old single-select could be Unclear / Deferred on the ten-miasm key. */
+export function migrateLegacyMiasmTenNonRanked(values: Record<string, string>): void {
+  const hypKey = 'miasm_classification__miasm_ten_hypothesis';
+  const fbKey = 'miasm_classification__miasm_ten_ranking_fallback';
+  const raw = (values[hypKey] || '').trim();
+  if (!raw || Object.keys(parseRankedChecklistJson(raw)).length) {
+    return;
+  }
+  if (raw === 'Unclear' || raw === 'Deferred — totality only') {
+    values[fbKey] = raw;
+    values[hypKey] = '';
+  }
 }

@@ -3,7 +3,7 @@
   "title": "CGHS Homoeopathic Formulary (22nd Edition)",
   "description": "Canonical formulary list for the doctor app. Edit entries here after import, or adjust markdown and re-run npm run import:cghs-formulary.",
   "sourceFile": "apps/web/data/cghs-homoeopathic-formulary.json",
-  "syncedAt": "2026-05-08T10:19:57.745Z",
+  "syncedAt": "2026-05-08T10:40:34.088Z",
   "entryCount": 932,
   "entries": [
     {

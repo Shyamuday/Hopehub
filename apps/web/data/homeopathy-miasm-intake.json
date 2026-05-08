@@ -1,7 +1,7 @@
 {
-  "schemaVersion": 4,
-  "title": "Miasm classification",
-  "description": "Classical triad and ten-miasm pace. Merged after kingdom. Keys: miasm_classification__*",
+  "schemaVersion": 5,
+  "title": "Miasm diagnosis",
+  "description": "Classical triad and ten-miasm pace. Separate card; keys: miasm_classification__*",
   "group": {
     "key": "miasm_classification",
     "label": "Miasm (pace, depth, layers)",
@@ -69,8 +69,8 @@
       },
       {
         "key": "miasm_ten_hypothesis",
-        "label": "Ten-miasm — working label (Sankaran sequence)",
-        "type": "select",
+        "label": "Ten-miasm — patterns with intensity (1 = strongest here)",
+        "type": "ranked_checklist",
         "options": [
           "Acute — sudden violent threat; panic, do-or-die",
           "Typhoid — crisis effort to survive; then collapse",
@@ -81,7 +81,16 @@
           "Cancer — perfection/control vs looming chaos",
           "Tubercular — trapped; need escape; hectic change",
           "Leprosy — disgust, isolation, outcast",
-          "Syphilitic — destruction; degenerative feel",
+          "Syphilitic — destruction; degenerative feel"
+        ],
+        "helper": "Several miasm lines can coexist; intensity ranks relative weight in this consultation."
+      },
+      {
+        "key": "miasm_ten_ranking_fallback",
+        "label": "If not using intensity ranks above",
+        "type": "select",
+        "options": [
+          "— Using ranks above —",
           "Unclear",
           "Deferred — totality only"
         ]

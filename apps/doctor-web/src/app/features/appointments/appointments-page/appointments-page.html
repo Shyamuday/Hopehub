@@ -161,33 +161,41 @@
   @if (methodIntakeLoadError) {
     <p class="formulary-error" role="status">{{ methodIntakeLoadError }}</p>
   }
-  @if (activeMethodProfile()) {
-    @let mip = activeMethodProfile()!;
+  @for (panel of methodIntakeUiPanels(); track panel.id) {
     <div class="method-intake-panel">
-      <h3>Method-specific case capture</h3>
-      <p class="method-intake-title">{{ mip.title }}</p>
-      @if (mip.helper) {
-        <p class="hint">{{ mip.helper }}</p>
+      <h3>{{ panel.heading }}</h3>
+      @if (panel.description) {
+        <p class="hint">{{ panel.description }}</p>
       }
-      @for (row of methodIntakeFlatRows(); track row.storageKey) {
+      @if (panel.profileTitle) {
+        <p class="method-intake-title">{{ panel.profileTitle }}</p>
+      }
+      @if (panel.profileHelper) {
+        <p class="hint">{{ panel.profileHelper }}</p>
+      }
+      @for (row of panel.rows; track row.storageKey) {
         @if (row.showSectionHeader && row.section) {
           <h4 class="method-intake-section">{{ row.section }}</h4>
         }
-        <label [attr.for]="'mi-' + row.storageKey">
+        <label [attr.for]="'mi-' + panel.id + '-' + row.storageKey">
           {{ row.label }}
           @if (row.helper) {
             <span class="hint block-hint">{{ row.helper }}</span>
           }
           @if (row.type === 'textarea') {
             <textarea
-              [id]="'mi-' + row.storageKey"
-              [name]="'mi-' + row.storageKey"
+              [id]="'mi-' + panel.id + '-' + row.storageKey"
+              [name]="'mi-' + panel.id + '-' + row.storageKey"
               rows="3"
               [(ngModel)]="methodIntakeValues[row.storageKey]"
               [placeholder]="row.placeholder || ''"
             ></textarea>
           } @else if (row.type === 'select') {
-            <select [id]="'mi-' + row.storageKey" [name]="'mi-' + row.storageKey" [(ngModel)]="methodIntakeValues[row.storageKey]">
+            <select
+              [id]="'mi-' + panel.id + '-' + row.storageKey"
+              [name]="'mi-' + panel.id + '-' + row.storageKey"
+              [(ngModel)]="methodIntakeValues[row.storageKey]"
+            >
               <option value="">— Select —</option>
               @for (opt of row.options || []; track opt) {
                 <option [value]="opt">{{ opt }}</option>
@@ -197,16 +205,16 @@
             <span class="method-intake-check">
               <input
                 type="checkbox"
-                [id]="'mi-' + row.storageKey"
-                [name]="'mi-' + row.storageKey"
+                [id]="'mi-' + panel.id + '-' + row.storageKey"
+                [name]="'mi-' + panel.id + '-' + row.storageKey"
                 [checked]="methodIntakeValues[row.storageKey] === 'yes'"
                 (change)="methodIntakeValues[row.storageKey] = $any($event.target).checked ? 'yes' : ''"
               />
             </span>
           } @else {
             <input
-              [id]="'mi-' + row.storageKey"
-              [name]="'mi-' + row.storageKey"
+              [id]="'mi-' + panel.id + '-' + row.storageKey"
+              [name]="'mi-' + panel.id + '-' + row.storageKey"
               type="text"
               [(ngModel)]="methodIntakeValues[row.storageKey]"
               [placeholder]="row.placeholder || ''"
@@ -214,8 +222,26 @@
           }
         </label>
       }
-      <p class="hint">Saved with the prescription as structured fields (in addition to your free-text notes).</p>
+      @if (panel.id === 'method') {
+        <p class="hint">Saved with the prescription as structured fields (in addition to your free-text notes).</p>
+      }
     </div>
+  }
+  @if (kingdomIntakeGroup) {
+    <app-kingdom-diagnosis-panel
+      [group]="kingdomIntakeGroup"
+      [heading]="kingdomDiagnosisTitle"
+      [description]="kingdomDiagnosisDescription"
+      [values]="methodIntakeValues"
+    />
+  }
+  @if (miasmIntakeGroup) {
+    <app-miasm-diagnosis-panel
+      [group]="miasmIntakeGroup"
+      [heading]="miasmDiagnosisTitle"
+      [description]="miasmDiagnosisDescription"
+      [values]="methodIntakeValues"
+    />
   }
 
   <label for="diagnosedDisease">Diagnosed Disease</label>
