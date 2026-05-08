@@ -4,6 +4,8 @@ import { Meta, Title } from '@angular/platform-browser';
 import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
 import { filter } from 'rxjs';
 import { diseaseInfos, homeopathyApproaches } from './constants';
+import { resolveHomeLaunchDisease } from './home-launch-disease';
+import { homeLaunchQueryFromUrlTree, isHomePath } from './home-launch-query';
 
 @Injectable({ providedIn: 'root' })
 export class SeoService {
@@ -25,14 +27,14 @@ export class SeoService {
       .pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd))
       .subscribe(() => {
         const routeData = this.getLeafRoute(this.activatedRoute).snapshot.data;
-        const diseaseSeo = this.getDiseaseSeoFromUrl();
+        const diseaseSeo = { ...this.getHomeLaunchDiseaseSeo(), ...this.getDiseaseSeoFromUrl() };
         const approachSeo = this.getApproachSeoFromPage();
 
         const seoTitle = diseaseSeo.metaTitle || approachSeo.metaTitle || routeData['seoTitle'] || this.defaultTitle;
         const seoDescription =
           diseaseSeo.metaDescription || approachSeo.metaDescription || routeData['seoDescription'] || this.defaultDescription;
         const seoKeywords = diseaseSeo.keywords || approachSeo.keywords || routeData['seoKeywords'] || [];
-        const canonicalPath = diseaseSeo.canonicalPath || this.router.url;
+        const canonicalPath = diseaseSeo.canonicalPath || this.stripQueryForCanonical(this.router.url);
         const canonicalUrl = `${this.siteUrl}${canonicalPath === '/' ? '' : canonicalPath}`;
         const ogTitle = diseaseSeo.ogTitle || approachSeo.ogTitle || seoTitle;
         const ogDescription = diseaseSeo.ogDescription || approachSeo.ogDescription || seoDescription;
@@ -83,6 +85,20 @@ export class SeoService {
 
     const slug = decodeURIComponent(match[1]);
     return diseaseInfos.find((item) => item.slug === slug)?.seo || {};
+  }
+
+  /** Homepage `/?for=` / `?keyword=` — matches the single launch banner; treatment URL SEO wins when path is `/treatments/:slug`. */
+  private getHomeLaunchDiseaseSeo() {
+    if (!isHomePath(this.router.url)) {
+      return {};
+    }
+    const tree = this.router.parseUrl(this.router.url);
+    const disease = resolveHomeLaunchDisease(homeLaunchQueryFromUrlTree(tree));
+    return disease?.seo || {};
+  }
+
+  private stripQueryForCanonical(url: string) {
+    return url.split('?')[0].split('#')[0] || '/';
   }
 
   private getApproachSeoFromPage() {

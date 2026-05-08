@@ -1,9 +1,15 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { ActivatedRoute } from '@angular/router';
+import { map } from 'rxjs/operators';
 import { AppFooterComponent } from './app-footer.component';
 import { AppHeaderComponent } from './app-header.component';
 import { HomeFinalCtaSectionComponent } from './home-final-cta-section.component';
 import { HomeHeroSectionComponent } from './home-hero-section.component';
 import { HomeHowItWorksSectionComponent } from './home-how-it-works-section.component';
+import { HomeLaunchBannerComponent } from './home-launch-banner.component';
+import { resolveHomeLaunchDisease } from './home-launch-disease';
+import { homeLaunchQueryFromParamMap } from './home-launch-query';
 import { HomeSafetyFaqSectionComponent } from './home-safety-faq-section.component';
 import { HomeTreatmentsSectionComponent } from './home-treatments-section.component';
 
@@ -12,6 +18,7 @@ import { HomeTreatmentsSectionComponent } from './home-treatments-section.compon
   imports: [
     AppHeaderComponent,
     AppFooterComponent,
+    HomeLaunchBannerComponent,
     HomeHeroSectionComponent,
     HomeTreatmentsSectionComponent,
     HomeHowItWorksSectionComponent,
@@ -23,6 +30,7 @@ import { HomeTreatmentsSectionComponent } from './home-treatments-section.compon
       <app-header subtitle="Digital clinic" [whatsappLink]="whatsappLink" />
 
       <main class="content-page">
+        <app-home-launch-banner [disease]="launchDisease()" />
         <app-home-hero-section [whatsappLink]="whatsappLink" />
         <app-home-treatments-section />
         <app-home-how-it-works-section />
@@ -41,6 +49,14 @@ import { HomeTreatmentsSectionComponent } from './home-treatments-section.compon
   `
 })
 export class HomeComponent {
+  private readonly route = inject(ActivatedRoute);
+
   readonly whatsappLink =
     'https://wa.me/919876543210?text=Hi%20Vitalis%20Care%20and%20Research%20Centre%2C%20I%20want%20to%20book%20a%20consultation';
+
+  /** Disease-specific copy only for the single launch banner; rest of the page stays default. */
+  readonly launchDisease = toSignal(
+    this.route.queryParamMap.pipe(map((q) => resolveHomeLaunchDisease(homeLaunchQueryFromParamMap(q)))),
+    { initialValue: null }
+  );
 }
