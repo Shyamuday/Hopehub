@@ -250,6 +250,7 @@ model Prescription {
   diagnosis      String
   advice         String?
   notes          String
+  methodIntakeAnswers Json?
   fileUrl        String?
   followUpDate   DateTime?
   status         PrescriptionStatus @default(DRAFT)

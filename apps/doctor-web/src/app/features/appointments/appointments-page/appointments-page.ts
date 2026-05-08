@@ -12,6 +12,17 @@ import {
   matchFormularyKey,
   parseFormularyPick
 } from './cghs-formulary';
+import {
+  allMethodIntakeStorageKeys,
+  type MethodIntakeAddonFile,
+  type MethodIntakeConfig,
+  type MethodIntakeField,
+  type MethodIntakeFlatRow,
+  type MethodIntakeProfile,
+  flattenMethodIntakeFields,
+  mergeMethodIntakeGlobalFields,
+  resolveMethodIntakeProfile
+} from './method-intake';
 
 type OptionType = 'METHOD' | 'DIAGNOSED_DISEASE';
 
@@ -63,6 +74,8 @@ type LoadedPrescription = {
   notes: string;
   methodOptionId?: string | null;
   diagnosedDiseaseOptionId?: string | null;
+  methodIntakeAnswers?: Record<string, string> | null;
+  methodOption?: { id?: string; label?: string } | null;
   items: Array<{
     medicineName: string;
     strength?: string | null;
@@ -138,6 +151,17 @@ export class AppointmentsPage implements OnInit {
   formularyLoaded = false;
   formularyLoadError = '';
 
+  /** Homeopathy method → contextual intake fields (JSON in public/data). */
+  methodIntakeConfig: MethodIntakeConfig | null = null;
+  /** Kingdom + miasm addons merged into global fields (see apps/web/data homeopathy-*-intake.json). */
+  private kingdomIntakeGroup: MethodIntakeField | null = null;
+  private miasmIntakeGroup: MethodIntakeField | null = null;
+  methodIntakeValues: Record<string, string> = {};
+  methodIntakeLoadError = '';
+
+  /** Method label when opening a version (id-only payloads). */
+  private loadedMethodLabel = '';
+
   constructor(
     private readonly http: HttpClient,
     private readonly route: ActivatedRoute
@@ -152,6 +176,132 @@ export class AppointmentsPage implements OnInit {
 
   ngOnInit() {
     void this.loadFormulary();
+    void this.loadMethodIntakeConfig();
+  }
+
+  private async loadMethodIntakeConfig() {
+    this.methodIntakeLoadError = '';
+    try {
+      const [main, kingdomRes, miasmRes] = await Promise.all([
+        firstValueFrom(this.http.get<MethodIntakeConfig>('data/homeopathy-method-intake.json')),
+        firstValueFrom(this.http.get<MethodIntakeAddonFile>('data/homeopathy-kingdom-intake.json')).catch(() => null),
+        firstValueFrom(this.http.get<MethodIntakeAddonFile>('data/homeopathy-miasm-intake.json')).catch(() => null)
+      ]);
+      if (main?.profiles?.length) {
+        this.methodIntakeConfig = main;
+      } else {
+        this.methodIntakeConfig = null;
+      }
+      const kg = kingdomRes?.group;
+      if (kg?.type === 'structured_group' && kg.key === 'kingdom_classification') {
+        this.kingdomIntakeGroup = kg;
+      } else {
+        this.kingdomIntakeGroup = null;
+      }
+      const mg = miasmRes?.group;
+      if (mg?.type === 'structured_group' && mg.key === 'miasm_classification') {
+        this.miasmIntakeGroup = mg;
+      } else {
+        this.miasmIntakeGroup = null;
+      }
+    } catch {
+      this.methodIntakeConfig = null;
+      this.kingdomIntakeGroup = null;
+      this.miasmIntakeGroup = null;
+      this.methodIntakeLoadError =
+        'Method intake config missing — run `npm run build:cghs-formulary` from repo root so JSON in apps/web/data is copied to the doctor app.';
+    }
+  }
+
+  /** Base `globalFields` plus kingdom and miasm addons (`*_classification__*` keys). */
+  private effectiveGlobalFields(): MethodIntakeField[] {
+    return mergeMethodIntakeGlobalFields(
+      this.methodIntakeConfig?.globalFields,
+      this.kingdomIntakeGroup,
+      this.miasmIntakeGroup
+    );
+  }
+
+  selectedMethodLabel(): string {
+    const fromList = this.methods.find((m) => m.id === this.methodOptionId)?.label;
+    return (fromList || this.loadedMethodLabel || '').trim();
+  }
+
+  activeMethodProfile(): MethodIntakeProfile | null {
+    return resolveMethodIntakeProfile(this.methodIntakeConfig, this.selectedMethodLabel());
+  }
+
+  /** Flat profile fields + global add-ons, with section headings for the template. */
+  methodIntakeFlatRows(): Array<MethodIntakeFlatRow & { showSectionHeader: boolean }> {
+    const p = this.activeMethodProfile();
+    if (!p) {
+      return [];
+    }
+    const rows: MethodIntakeFlatRow[] = flattenMethodIntakeFields(p.fields);
+    if (this.effectiveGlobalFields().length) {
+      rows.push(...flattenMethodIntakeFields(this.effectiveGlobalFields()));
+    }
+    let prevSection: string | undefined;
+    return rows.map((r) => {
+      const showSectionHeader = Boolean(r.section && r.section !== prevSection);
+      if (r.section) {
+        prevSection = r.section;
+      }
+      return { ...r, showSectionHeader };
+    });
+  }
+
+  onMethodOptionChanged() {
+    this.loadedMethodLabel = '';
+    this.resetMethodIntakeForActiveProfile();
+  }
+
+  private resetMethodIntakeForActiveProfile() {
+    const p = this.activeMethodProfile();
+    this.methodIntakeValues = {};
+    if (!p) {
+      return;
+    }
+    for (const key of allMethodIntakeStorageKeys(p, this.effectiveGlobalFields())) {
+      this.methodIntakeValues[key] = '';
+    }
+  }
+
+  private ensureMethodIntakeKeys() {
+    const p = this.activeMethodProfile();
+    if (!p) {
+      return;
+    }
+    for (const key of allMethodIntakeStorageKeys(p, this.effectiveGlobalFields())) {
+      if (this.methodIntakeValues[key] === undefined) {
+        this.methodIntakeValues[key] = '';
+      }
+    }
+  }
+
+  private hydrateMethodIntakeFromPrescription(raw: Record<string, string> | null | undefined) {
+    this.methodIntakeValues = {};
+    if (raw && typeof raw === 'object') {
+      for (const [k, v] of Object.entries(raw)) {
+        this.methodIntakeValues[k] = typeof v === 'string' ? v : '';
+      }
+    }
+    this.ensureMethodIntakeKeys();
+  }
+
+  private serializeMethodIntake(): Record<string, string> | undefined {
+    const p = this.activeMethodProfile();
+    if (!p) {
+      return undefined;
+    }
+    const out: Record<string, string> = {};
+    for (const key of allMethodIntakeStorageKeys(p, this.effectiveGlobalFields())) {
+      const v = (this.methodIntakeValues[key] || '').trim();
+      if (v) {
+        out[key] = v;
+      }
+    }
+    return Object.keys(out).length ? out : undefined;
   }
 
   private async loadByType(type: OptionType) {
@@ -368,10 +518,12 @@ export class AppointmentsPage implements OnInit {
   selectPrescription(prescription: LoadedPrescription) {
     this.editingPrescriptionId = prescription.id;
     this.methodOptionId = prescription.methodOptionId || '';
+    this.loadedMethodLabel = prescription.methodOption?.label || '';
     this.diagnosedDiseaseOptionId = prescription.diagnosedDiseaseOptionId || '';
     this.diagnosis = prescription.diagnosis || '';
     this.advice = prescription.advice || '';
     this.notes = prescription.notes || '';
+    this.hydrateMethodIntakeFromPrescription(prescription.methodIntakeAnswers);
     this.followUpDate = prescription.followUpDate
       ? new Date(prescription.followUpDate).toISOString().substring(0, 10)
       : '';
@@ -413,10 +565,12 @@ export class AppointmentsPage implements OnInit {
   startFollowUpFrom(prescription: LoadedPrescription) {
     this.editingPrescriptionId = '';
     this.methodOptionId = prescription.methodOptionId || '';
+    this.loadedMethodLabel = prescription.methodOption?.label || '';
     this.diagnosedDiseaseOptionId = prescription.diagnosedDiseaseOptionId || '';
     this.diagnosis = prescription.diagnosis || '';
     this.advice = prescription.advice || '';
     this.notes = prescription.notes || '';
+    this.hydrateMethodIntakeFromPrescription(prescription.methodIntakeAnswers);
     this.followUpDate = '';
     this.status = 'DRAFT';
     this.medicineRows = (prescription.items || []).length
@@ -454,6 +608,8 @@ export class AppointmentsPage implements OnInit {
     this.advice = '';
     this.notes = '';
     this.followUpDate = '';
+    this.loadedMethodLabel = '';
+    this.methodIntakeValues = {};
     this.medicineRows = [this.newMedicineRow()];
   }
 
@@ -517,6 +673,7 @@ export class AppointmentsPage implements OnInit {
       diagnosedDiseaseOptionId: this.diagnosedDiseaseOptionId,
       diagnosis: this.diagnosis,
       notes: this.notes,
+      methodIntakeAnswers: this.serializeMethodIntake(),
       advice: this.advice || undefined,
       followUpDate: this.followUpDate || undefined,
       status: targetStatus,

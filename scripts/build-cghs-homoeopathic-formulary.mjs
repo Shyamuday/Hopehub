@@ -50,3 +50,19 @@ const output = {
 fs.mkdirSync(path.dirname(outPath), { recursive: true });
 fs.writeFileSync(outPath, JSON.stringify(output, null, 2), 'utf8');
 console.log(`Synced ${entryCount} entries → ${path.relative(root, outPath)}`);
+
+/** Copy other reference JSON from apps/web/data (method intake, kingdom & miasm addons, diagnosis taxonomy, etc.) */
+const webDataDir = path.join(root, 'apps', 'web', 'data');
+const doctorDataDir = path.join(root, 'apps', 'doctor-web', 'public', 'data');
+if (fs.existsSync(webDataDir)) {
+  for (const name of fs.readdirSync(webDataDir)) {
+    if (!name.endsWith('.json') || name === 'cghs-homoeopathic-formulary.json') {
+      continue;
+    }
+    const from = path.join(webDataDir, name);
+    const to = path.join(doctorDataDir, name);
+    fs.mkdirSync(doctorDataDir, { recursive: true });
+    fs.copyFileSync(from, to);
+    console.log(`Copied → ${path.relative(root, to)}`);
+  }
+}

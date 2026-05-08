@@ -50,6 +50,7 @@ const prescriptionInputSchema = z.object({
   diagnosis: z.string().min(3),
   advice: z.string().min(3).optional(),
   notes: z.string().min(5),
+  methodIntakeAnswers: z.record(z.string(), z.string()).optional(),
   fileUrl: z.string().url().optional().or(z.literal('')),
   followUpDate: z.coerce.date().optional(),
   status: z.nativeEnum(PrescriptionStatus).default(PrescriptionStatus.DRAFT),
@@ -271,6 +272,7 @@ export function registerDoctorPrescriptionRoutes(app: express.Application) {
             diagnosis: body.diagnosis,
             advice: body.advice || null,
             notes: body.notes,
+            methodIntakeAnswers: body.methodIntakeAnswers ?? undefined,
             fileUrl: body.fileUrl || null,
             followUpDate: body.followUpDate || null,
             status: body.status
@@ -398,6 +400,7 @@ export function registerDoctorPrescriptionRoutes(app: express.Application) {
             diagnosis: body.diagnosis,
             advice: body.advice || null,
             notes: body.notes,
+            methodIntakeAnswers: body.methodIntakeAnswers ?? undefined,
             fileUrl: body.fileUrl || null,
             followUpDate: body.followUpDate || null,
             status: body.status,

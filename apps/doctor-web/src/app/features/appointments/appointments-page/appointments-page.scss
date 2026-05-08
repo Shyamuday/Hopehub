@@ -57,6 +57,71 @@ h3 {
   max-width: 100%;
 }
 
+.method-intake-panel {
+  margin: 0.5rem 0 0.75rem;
+  padding: 0.75rem;
+  border-radius: 10px;
+  border: 1px solid #bae6fd;
+  background: #f0f9ff;
+
+  /* Stack label + control; full-width selects/inputs on narrow screens */
+  label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    font-weight: 600;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+
+    input:not([type='checkbox']),
+    select,
+    textarea {
+      width: 100%;
+      max-width: 100%;
+      box-sizing: border-box;
+    }
+  }
+
+  .method-intake-title {
+    font-weight: 600;
+    margin: 0.25rem 0;
+    color: #0c4a6e;
+  }
+
+  .method-intake-section {
+    font-size: 0.875rem;
+    font-weight: 600;
+    margin: 0.85rem 0 0.35rem;
+    color: #075985;
+    border-bottom: 1px solid #bae6fd;
+  }
+
+  .method-intake-check {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-start;
+    margin-top: 0.15rem;
+    min-width: 2.75rem;
+    min-height: 2.75rem;
+    box-sizing: border-box;
+
+    input[type='checkbox'] {
+      width: 1.35rem;
+      height: 1.35rem;
+      margin: 0;
+      flex-shrink: 0;
+      cursor: pointer;
+    }
+  }
+
+  .block-hint {
+    display: block;
+    font-weight: 400;
+    margin: 0.15rem 0 0.35rem;
+  }
+}
+
 code {
   font-size: 0.88em;
   background: #f1f5f9;
@@ -389,6 +454,40 @@ button {
 }
 
 @media (max-width: 768px) {
+  .grid {
+    padding-left: max(0.5rem, env(safe-area-inset-left, 0px));
+    padding-right: max(0.5rem, env(safe-area-inset-right, 0px));
+    padding-bottom: max(0.75rem, env(safe-area-inset-bottom, 0px));
+  }
+
+  /* 16px+ avoids iOS zoom on focus; min height improves touch targets */
+  input:not([type='checkbox']):not([type='file']):not([type='hidden']),
+  select {
+    font-size: 1rem;
+    min-height: 2.75rem;
+  }
+
+  textarea {
+    font-size: 1rem;
+    min-height: 6.5rem;
+  }
+
+  .method-intake-panel {
+    padding: 0.85rem 0.65rem;
+
+    .method-intake-section {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      margin-left: -0.15rem;
+      margin-right: -0.15rem;
+      padding: 0.5rem 0.35rem 0.35rem;
+      background: #f0f9ff;
+      border-bottom: 1px solid #bae6fd;
+      box-shadow: 0 4px 8px rgba(15, 23, 42, 0.04);
+    }
+  }
+
   .inline {
     display: grid;
     grid-template-columns: 1fr;
@@ -403,6 +502,25 @@ button {
     align-items: flex-start;
     flex-direction: column;
     gap: 0.35rem;
+  }
+
+  .templates-bar {
+    padding-left: max(0.65rem, env(safe-area-inset-left, 0px));
+    padding-right: max(0.65rem, env(safe-area-inset-right, 0px));
+  }
+
+  .grid > input,
+  .grid > select,
+  .grid > textarea {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .btn-template,
+  .btn-template-del,
+  .btn-save-tpl {
+    min-height: 2.75rem;
+    padding: 0.4rem 0.75rem;
   }
 }
 

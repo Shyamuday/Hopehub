@@ -1,0 +1,255 @@
+{
+  "schemaVersion": 3,
+  "title": "Kingdom classification",
+  "description": "Merged after decision_support. Keys: kingdom_classification__*",
+  "group": {
+    "key": "kingdom_classification",
+    "label": "Kingdom (plant / mineral / animal)",
+    "type": "structured_group",
+    "sub_fields": [
+      {
+        "key": "kingdom_framework_caution",
+        "label": "Weight in this case",
+        "type": "select",
+        "options": [
+          "Active narrowing for remedy",
+          "Background context only",
+          "Not used this visit"
+        ]
+      },
+      {
+        "key": "kingdom_navigation_step",
+        "label": "Where you are narrowing (broad → narrow)",
+        "type": "select",
+        "options": [
+          "Establishing kingdom (plant / mineral / animal)",
+          "Kingdom set — refining subkingdom",
+          "Subkingdom set — refining source / remedy",
+          "Unclear — need more depth"
+        ],
+        "helper": "Flow: kingdom → subkingdom → source. Miasm (pace/depth) is recorded separately."
+      },
+      {
+        "key": "kingdom_sensation_level",
+        "label": "Case-taking depth used for kingdom (Sensation Method)",
+        "type": "select",
+        "options": [
+          "Level 1–3: name / fact / feeling (preliminary)",
+          "Level 4: delusion",
+          "Level 5: vital sensation (primary kingdom cue)",
+          "Not yet at sensation level",
+          "Not assessed"
+        ],
+        "helper": "Kingdom from core sensation / nature of state (esp. Level 5). Miasm pace is separate."
+      },
+      {
+        "key": "kingdom_hypothesis",
+        "label": "Kingdom — working hypothesis",
+        "type": "select",
+        "options": [
+          "Plant — sensitivity & reactivity; inner ‘it affects / hurts me’",
+          "Mineral — structure & completeness; identity, position, performance (issue with self)",
+          "Animal — survival; competition; victim vs aggressor; hierarchy; split",
+          "Imponderable / other non WPM",
+          "Unclear — needs more differentiation",
+          "Mixed / transitional picture"
+        ]
+      },
+      {
+        "key": "kingdom_confidence",
+        "label": "Confidence in kingdom",
+        "type": "select",
+        "options": ["Low", "Moderate", "High"]
+      },
+      {
+        "key": "kingdom_narrative_pattern",
+        "label": "Chief story style (three-kingdom talk pattern)",
+        "type": "select",
+        "options": [
+          "Structured / dated / ordered (mineral cue)",
+          "‘After me; must beat it’ survival story (animal cue)",
+          "‘Affects / hurts me’ — weepy, inner impact (plant cue)",
+          "Mixed / unclear",
+          "N/A"
+        ],
+        "helper": "Sankaran: e.g. headache with date-time structure vs pursued vs ‘really affects me, I weep’."
+      },
+      {
+        "key": "kingdom_patient_phrases",
+        "label": "Patient’s own language (verbatim)",
+        "type": "textarea",
+        "placeholder": "Exact phrases: incompleteness, attacked, hierarchy, ‘if only I were complete’, sensory hurt…"
+      },
+      {
+        "key": "mineral_structure_lack",
+        "label": "If mineral: central structure ‘lack’",
+        "type": "select",
+        "options": [
+          "N/A — not mineral",
+          "Identity",
+          "Stamina",
+          "Support",
+          "Confidence",
+          "Relationship",
+          "Security / position / power",
+          "Completeness / fear of losing completeness",
+          "Several — notes",
+          "Not differentiated"
+        ],
+        "helper": "Mineral: problem felt as own lack/stability, not primarily ‘what they did to me’."
+      },
+      {
+        "key": "mineral_with_self_not_other",
+        "label": "If mineral: ‘with self’ narrative",
+        "type": "textarea",
+        "placeholder": "e.g. bear with others because not independent; insecurity is the core issue…"
+      },
+      {
+        "key": "mineral_periodic_row",
+        "label": "If mineral: periodic row (stage stuck)",
+        "type": "select",
+        "options": [
+          "N/A — not mineral",
+          "Row 1: conception & existence",
+          "Row 2: fetal life & birth / separation",
+          "Row 3: identity & nourishment",
+          "Row 4: security & task",
+          "Row 5: creativity & performance",
+          "Row 6: responsibility",
+          "Row 7: letting-go / disintegration",
+          "Not yet differentiated"
+        ]
+      },
+      {
+        "key": "mineral_column_perception",
+        "label": "If mineral: column (perception, not outer success)",
+        "type": "select",
+        "options": [
+          "N/A — not mineral",
+          "Left — lack, dependence, incomplete structure",
+          "Middle — successful at row function",
+          "Right — loss; alone; complete without help; falling apart",
+          "Not yet differentiated"
+        ],
+        "helper": "Successful in reality but feels powerless → column from that perceived loss."
+      },
+      {
+        "key": "mineral_metal_row",
+        "label": "If mineral + metal: defense vs performance row",
+        "type": "select",
+        "options": [
+          "N/A — not mineral or not metal",
+          "Row 4 — defense-heavy metals (Mn, Fe, Co, Ni, Cu, Zn)",
+          "Row 5 — performance metals (Rh, Pd, Ag, Cd, In…)",
+          "Row 6 — heaviest defense/performance line (Os… Tl)",
+          "Not yet differentiated"
+        ]
+      },
+      {
+        "key": "mineral_subgroup",
+        "label": "If mineral: class (metal / ion / salt / acid)",
+        "type": "select",
+        "options": [
+          "N/A — not mineral",
+          "Metal",
+          "Cation — IA relate / IIA support / III confusion–cobweb",
+          "Anion — V alone-unloved / VI huge effort / VII betrayed / IV C–Si unreactive",
+          "Salt — two qualities same situation/sentence",
+          "Acid — constant struggle then collapse (that element)",
+          "Not yet differentiated"
+        ]
+      },
+      {
+        "key": "plant_talk_organisation",
+        "label": "If plant: talk organisation",
+        "type": "select",
+        "options": [
+          "N/A — not plant",
+          "Emotional, sentimental, less ordered (typical plant)",
+          "Very structured — double-check not mineral",
+          "Not yet differentiated"
+        ]
+      },
+      {
+        "key": "plant_family_sensation",
+        "label": "If plant: family shared sensation",
+        "type": "textarea",
+        "placeholder": "One nucleus for the family (e.g. injured/hurt); Arnica vs Chamomilla same hurt, different expression."
+      },
+      {
+        "key": "plant_expression_pattern",
+        "label": "If plant: expression mode",
+        "type": "select",
+        "options": [
+          "N/A — not plant",
+          "Sensation as such",
+          "Passive reaction",
+          "Active reaction",
+          "Compensation",
+          "Not yet differentiated"
+        ],
+        "helper": "Same family sensation may be passive, active, or compensatory."
+      },
+      {
+        "key": "plant_family_miasm_note",
+        "label": "If plant: same family, different remedy (optional)",
+        "type": "textarea",
+        "placeholder": "e.g. shock group: Nux vs Gels vs Ign — depth differentiated under Miasm section, not here."
+      },
+      {
+        "key": "animal_local_sensation",
+        "label": "If animal: local sensations",
+        "type": "select",
+        "options": [
+          "N/A — not animal",
+          "No single clear local — many locals (cue)",
+          "Locals keep collapsing to survival / hierarchy / one vs other",
+          "Strong local but narrative still animal",
+          "Not yet differentiated"
+        ]
+      },
+      {
+        "key": "animal_gestures_energy",
+        "label": "If animal: gestures & energy (one thing acting on other)",
+        "type": "textarea",
+        "placeholder": "Pounce, bite, tear, chase; hands show attack vs victim."
+      },
+      {
+        "key": "animal_subkingdom_hint",
+        "label": "If animal: subkingdom",
+        "type": "select",
+        "options": [
+          "N/A — not animal",
+          "Mammals / birds — herd, group cost",
+          "Reptiles — strike, predator–prey",
+          "Insects / arachnids — pace, trapped, hyper",
+          "Predatory mammals — cheetah-like speed cue",
+          "Other / fish / blend",
+          "Not yet differentiated"
+        ]
+      },
+      {
+        "key": "animal_herd_vs_solitary",
+        "label": "If animal: herd vs solitary",
+        "type": "select",
+        "options": [
+          "N/A — not animal",
+          "Herd / group — mammals or birds",
+          "Solitary — herd less relevant",
+          "Unclear"
+        ]
+      },
+      {
+        "key": "animal_high_pace",
+        "label": "If animal: extreme pace / restlessness",
+        "type": "select",
+        "options": [
+          "N/A — not animal",
+          "Very high — consider Insecta / Arachnida vs fast predator mammal",
+          "Moderate",
+          "Low — hierarchy without speed"
+        ]
+      }
+    ]
+  }
+}

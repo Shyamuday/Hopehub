@@ -19,6 +19,8 @@ export type Prescription = {
   followUpDate?: string | null;
   method?: string | null;
   diagnosedDisease?: string | null;
+  /** Structured fields from doctor app (homeopathy method intake). */
+  methodIntakeAnswers?: Record<string, string> | null;
   items?: PrescriptionItem[];
   createdAt: string;
 };

@@ -1,0 +1,108 @@
+{
+  "schemaVersion": 4,
+  "title": "Miasm classification",
+  "description": "Classical triad and ten-miasm pace. Merged after kingdom. Keys: miasm_classification__*",
+  "group": {
+    "key": "miasm_classification",
+    "label": "Miasm (pace, depth, layers)",
+    "type": "structured_group",
+    "sub_fields": [
+      {
+        "key": "miasm_documentation_purpose",
+        "label": "Weight in this case",
+        "type": "select",
+        "options": [
+          "Primary axis for differential",
+          "Supporting context only",
+          "Not weighted this visit",
+          "Revisit after partial / failed simillimum"
+        ]
+      },
+      {
+        "key": "miasm_active_dormant",
+        "label": "Active vs dormant",
+        "type": "select",
+        "options": [
+          "Predominantly active",
+          "Mostly dormant / background",
+          "Mixed / shifting",
+          "Not assessed"
+        ]
+      },
+      {
+        "key": "miasm_hahnemann_acute_frame",
+        "label": "Acute infectious pattern (Organon sense)",
+        "type": "select",
+        "options": [
+          "N/A — chronic focus",
+          "Short prodrome / classic acute",
+          "Longer prodrome",
+          "Not classifying"
+        ]
+      },
+      {
+        "key": "miasm_classical_triad_lead",
+        "label": "Classical triad — leading theme",
+        "type": "select",
+        "options": [
+          "Psora — sensitivity, deficiency, struggle outward",
+          "Sycosis — excess, fixation, secrecy",
+          "Syphilis — destruction, disorder, depth",
+          "Acute picture dominant",
+          "Pseudo-psora / tubercular",
+          "Cancer / deep structural control",
+          "Blended / unclear",
+          "Totality-first — no fixed triad label"
+        ]
+      },
+      {
+        "key": "miasm_energy_level",
+        "label": "Case-taking depth (miasm cue)",
+        "type": "select",
+        "options": [
+          "From facts / feelings",
+          "Delusion / sensation (levels 4–5)",
+          "Energy / pace / desperation (level 6)",
+          "Not assessed"
+        ],
+        "helper": "Kingdom = source pattern; miasm = pace and depth."
+      },
+      {
+        "key": "miasm_ten_hypothesis",
+        "label": "Ten-miasm — working label (Sankaran sequence)",
+        "type": "select",
+        "options": [
+          "Acute — sudden violent threat; panic, do-or-die",
+          "Typhoid — crisis effort to survive; then collapse",
+          "Malaria — stuck + periodic attacks",
+          "Ringworm — try/succeed/fail; hope vs despair",
+          "Psoric — long struggle vs outer obstacles",
+          "Sycotic — hide fixed weakness; slow, obsessive",
+          "Cancer — perfection/control vs looming chaos",
+          "Tubercular — trapped; need escape; hectic change",
+          "Leprosy — disgust, isolation, outcast",
+          "Syphilitic — destruction; degenerative feel",
+          "Unclear",
+          "Deferred — totality only"
+        ]
+      },
+      {
+        "key": "miasm_confidence",
+        "label": "Confidence",
+        "type": "select",
+        "options": ["Low", "Moderate", "High"]
+      },
+      {
+        "key": "miasm_nosode_intercurrent_policy",
+        "label": "Nosode / intercurrent",
+        "type": "select",
+        "options": [
+          "No nosode",
+          "Nosode only if clearly indicated",
+          "Intercurrent planned / given — see notes",
+          "Not discussed"
+        ]
+      }
+    ]
+  }
+}

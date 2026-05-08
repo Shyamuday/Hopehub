@@ -1,0 +1,726 @@
+{
+  "schemaVersion": 10,
+  "title": "Homeopathy method intake (structured clinical data)",
+  "description": "Method profiles + global fields. Kingdom and miasm addons merged after clinical blocks (separate JSON). Potency, Hering, HOM-CASE, HCCR below.",
+  "defaultProfileId": "general",
+  "globalFields": [
+    {
+      "key": "hom_case_core",
+      "label": "HOM-CASE–aligned capture (CARE supplement)",
+      "type": "structured_group",
+      "sub_fields": [
+        {
+          "key": "homeopathy_type",
+          "label": "Type of homeopathy",
+          "type": "select",
+          "options": [
+            "Individualized classical",
+            "Formula / combination",
+            "Isopathy",
+            "Mixed / hybrid",
+            "Other"
+          ]
+        },
+        {
+          "key": "medication_profile",
+          "label": "Medication profile (nomenclature, trade names, potency & scale)",
+          "type": "textarea",
+          "placeholder": "Per HOM-CASE: remedies/constituents, potencies, manufacturer if known…"
+        },
+        {
+          "key": "galenic_form",
+          "label": "Galenic form",
+          "type": "select",
+          "options": [
+            "Globules / dry dose",
+            "Liquid (ethanol)",
+            "LM / Q liquid",
+            "Tablets",
+            "Other / mixed"
+          ]
+        },
+        {
+          "key": "dosage_pattern",
+          "label": "Dosage / repetition pattern",
+          "type": "textarea",
+          "placeholder": "How given: frequency, in water, plussing, etc."
+        },
+        {
+          "key": "objective_evidence",
+          "label": "Objective evidence (labs, imaging, exam)",
+          "type": "textarea",
+          "placeholder": "HOM-CASE: external measurements or clinician-observed findings where applicable…"
+        },
+        {
+          "key": "homeopathic_aggravation",
+          "label": "Homeopathic aggravation",
+          "type": "select",
+          "options": [
+            "None / not assessed",
+            "Possible — mild, transient per guideline definition",
+            "Observed — see notes",
+            "Unclear"
+          ],
+          "helper": "Expected mild transient worsening after dose that resolves with overall improvement (HPUS clinical data / HOM-CASE)."
+        },
+        {
+          "key": "aggravation_notes",
+          "label": "Aggravation details",
+          "type": "textarea",
+          "placeholder": "Timing, duration, relationship to dose, subsequent improvement…"
+        }
+      ]
+    },
+    {
+      "key": "decision_support",
+      "label": "Clinical decision support (triad / prognostic factors)",
+      "type": "structured_group",
+      "sub_fields": [
+        {
+          "key": "characteristic_symptom_1",
+          "label": "Characteristic symptom 1 (triad)",
+          "type": "textarea",
+          "placeholder": "First striking, individualizing symptom…"
+        },
+        {
+          "key": "characteristic_symptom_2",
+          "label": "Characteristic symptom 2",
+          "type": "textarea"
+        },
+        {
+          "key": "characteristic_symptom_3",
+          "label": "Characteristic symptom 3",
+          "type": "textarea"
+        },
+        {
+          "key": "prognostic_lr_notes",
+          "label": "Prognostic factors / LR-style reasoning (optional)",
+          "type": "textarea",
+          "placeholder": "Symptoms as prognostic factors; Bayes / likelihood-ratio style notes if documented…"
+        }
+      ]
+    },
+    {
+      "key": "monarch_causality",
+      "label": "MONARCH — causal attribution to remedy",
+      "type": "structured_group",
+      "sub_fields": [
+        {
+          "key": "monarch_total_score",
+          "label": "MONARCH total score (if calculated)",
+          "type": "text",
+          "placeholder": "e.g. 8"
+        },
+        {
+          "key": "monarch_domain_notes",
+          "label": "Domain scores or narrative",
+          "type": "textarea",
+          "placeholder": "Modified Naranjo for homeopathy: temporal relation, dechallenge, direction of cure, etc."
+        }
+      ]
+    },
+    {
+      "key": "potency_selection",
+      "label": "Potency selection & repetition (clinical framework)",
+      "type": "structured_group",
+      "sub_fields": [
+        {
+          "key": "symptom_similarity",
+          "label": "Symptom similarity (patient vs remedy)",
+          "type": "select",
+          "options": [
+            "High — many characteristic / PQRS features match → higher potency bias",
+            "Moderate",
+            "Low — few reliable matches → lower potency bias"
+          ],
+          "helper": "High similarity → higher susceptibility → higher potency tendency; low similarity → lower potency (per classic teaching)."
+        },
+        {
+          "key": "age_susceptibility",
+          "label": "Age (reactivity cue)",
+          "type": "select",
+          "options": [
+            "Child / young adult — often higher reactivity",
+            "Middle age",
+            "Elderly — often lower reactivity (senile change cue)"
+          ]
+        },
+        {
+          "key": "temperament_constitution",
+          "label": "Constitution / temperament",
+          "type": "select",
+          "options": [
+            "Nervous / sanguine / choleric — quicker reaction; high-potency bias in teaching",
+            "Phlegmatic / slower reaction — low-potency bias in teaching",
+            "Mixed / not classified"
+          ]
+        },
+        {
+          "key": "habits_environment",
+          "label": "Habits & environment",
+          "type": "select",
+          "options": [
+            "Sedentary / intellectual work — often higher susceptibility in texts",
+            "Chemical / tobacco exposure — often lower-potency cue",
+            "Average / mixed",
+            "Not specified"
+          ]
+        },
+        {
+          "key": "pathological_stage",
+          "label": "Pathological / tissue change",
+          "type": "select",
+          "options": [
+            "Early / predominantly functional",
+            "Advanced structural / organ change — lower-potency cue in texts",
+            "Unclear / N/A"
+          ]
+        },
+        {
+          "key": "seat_of_disease",
+          "label": "Seat of disease (organ involvement)",
+          "type": "select",
+          "options": [
+            "Vital organ prominently involved — low-potency cue in teaching",
+            "No clear vital-organ predominance",
+            "N/A"
+          ]
+        },
+        {
+          "key": "acute_vs_chronic_nature",
+          "label": "Nature & intensity (acute vs chronic)",
+          "type": "select",
+          "options": [
+            "Acute — recent; memory fresh; high similarity may favour higher potency",
+            "Chronic — long duration; similarity often weaker → moderate / lower potency bias",
+            "Subacute / mixed"
+          ]
+        },
+        {
+          "key": "duration_stage",
+          "label": "Stage / duration (chronicity)",
+          "type": "select",
+          "options": [
+            "Short course",
+            "Prolonged chronic — low-potency / gentle repetition cue in teaching",
+            "N/A (acute only)"
+          ]
+        },
+        {
+          "key": "prior_allopathic",
+          "label": "Previous allopathic / suppressive treatment",
+          "type": "select",
+          "options": [
+            "None significant",
+            "Substantial prior — some teachers note curative response may need higher potency",
+            "Unknown"
+          ]
+        },
+        {
+          "key": "potency_band_intent",
+          "label": "Potency band intended (working hypothesis)",
+          "type": "select",
+          "options": [
+            "Lower range (e.g. 6C–30C context)",
+            "Mid range",
+            "Higher range (e.g. 200C+ context)",
+            "LM / Q (liquid potency scale)",
+            "Undecided — first prescription test dose"
+          ]
+        },
+        {
+          "key": "dose_form_quantity",
+          "label": "Form & quantity (globules, liquid, etc.)",
+          "type": "textarea",
+          "placeholder": "Galenic form, number of drops / pills, in water, etc. — minimum effective stimulus."
+        },
+        {
+          "key": "repetition_principle",
+          "label": "Repetition principle (Organon 6th §245–251 spirit)",
+          "type": "select",
+          "options": [
+            "Do not repeat while the previous dose is still acting beneficially",
+            "Repeat only when prior dose clearly exhausted / picture plateaus",
+            "Acute / emergency — shorter intervals per case",
+            "Chronic — single dose may act a long time; minimal repetition"
+          ],
+          "helper": "Classic rule: not too seldom, not too often — wait for the remedy to complete its useful action before repeating."
+        },
+        {
+          "key": "acute_repetition_interval",
+          "label": "If repeating in acute course: interval",
+          "type": "select",
+          "options": [
+            "N/A — not using frequent repetition",
+            "About every 4 hours",
+            "About every 8 hours",
+            "About every 12 hours",
+            "Other — see notes"
+          ],
+          "helper": "High potency often single dose; in acute/emergency, repeats at short intervals may be used per judgment."
+        },
+        {
+          "key": "golden_hold_while_improving",
+          "label": "Rule 1: Not repeating / changing while patient is clearly improving",
+          "type": "checkbox"
+        },
+        {
+          "key": "golden_hold_hering_direction",
+          "label": "Rule 2: Not changing while course follows Hering’s law (within→out, above→down, reverse order)",
+          "type": "checkbox"
+        },
+        {
+          "key": "golden_hold_discharge_eruption",
+          "label": "Rule 3: Not changing remedy when discharge or eruption follows the dose (observe)",
+          "type": "checkbox"
+        },
+        {
+          "key": "golden_rules_notes",
+          "label": "If rules don’t apply — explain",
+          "type": "textarea",
+          "placeholder": "Brief justification when the classic hold-rules are overridden…"
+        },
+        {
+          "key": "potency_repetition_notes",
+          "label": "Potency & repetition — clinical notes",
+          "type": "textarea",
+          "placeholder": "Tie together similarity, seat, pathology, acute/chronic, minimum dose, and your repetition plan…"
+        }
+      ]
+    },
+    {
+      "key": "potency_followup",
+      "label": "Potency rationale & smart follow-up",
+      "type": "structured_group",
+      "sub_fields": [
+        {
+          "key": "potency_rationale",
+          "label": "Summary rationale category (cross-check with Potency selection block above)",
+          "type": "select",
+          "options": [
+            "Susceptibility-led",
+            "Disease depth / chronicity",
+            "Acute vs chronic context",
+            "Response to prior dose",
+            "Protocol or line rules",
+            "Other — see notes"
+          ],
+          "helper": "Shortcut label; detail belongs in Potency selection & repetition and notes."
+        },
+        {
+          "key": "potency_rationale_notes",
+          "label": "Potency / posology notes",
+          "type": "textarea"
+        }
+      ]
+    },
+    {
+      "key": "hering_markers",
+      "label": "Hering's law markers (tick at follow-up if observed)",
+      "type": "structured_group",
+      "sub_fields": [
+        {
+          "key": "within_to_outward",
+          "label": "Direction: within → outward",
+          "type": "checkbox"
+        },
+        {
+          "key": "above_downward",
+          "label": "Direction: above → downward",
+          "type": "checkbox"
+        },
+        {
+          "key": "reverse_order_hierarchy",
+          "label": "Symptoms resolve in reverse order of appearance",
+          "type": "checkbox"
+        },
+        {
+          "key": "brief_old_symptom_return",
+          "label": "Brief return of old symptoms then improvement",
+          "type": "checkbox"
+        }
+      ]
+    },
+    {
+      "key": "susceptibility_scale",
+      "label": "Susceptibility (1–10)",
+      "type": "select",
+      "options": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"],
+      "helper": "Relates to posology; align with potency rationale above."
+    },
+    {
+      "key": "differential_diagnosis",
+      "label": "Differential diagnosis / remedies ruled out",
+      "type": "textarea",
+      "placeholder": "Remedies considered and excluded, with rationale…"
+    },
+    {
+      "key": "redline_symptoms",
+      "label": "Red-line / success markers at follow-up",
+      "type": "textarea",
+      "placeholder": "Which outcomes must move for this prescription to be on track?"
+    },
+    {
+      "key": "research_export",
+      "label": "HCCR / repository submission (aligns with MoHFW Ayush HCCR guidance)",
+      "type": "structured_group",
+      "sub_fields": [
+        {
+          "key": "hccr_prerequisites",
+          "label": "Prerequisites noted",
+          "type": "select",
+          "options": [
+            "N/A — not targeting HCCR",
+            "HCCR registration + T&Cs reviewed (practitioner)",
+            "Review pending — before portal submit",
+            "Other repository only (not HCCR)"
+          ],
+          "helper": "HCCR expects a registered portal user and awareness of published terms; consent rules below apply before identifiable data is shared."
+        },
+        {
+          "key": "case_type_hccr",
+          "label": "Case type (per HCCR invite)",
+          "type": "select",
+          "options": [
+            "Historical / cured — full record available",
+            "Prospective — documented on standardized template",
+            "Not classified / internal documentation only"
+          ]
+        },
+        {
+          "key": "consent_pathway",
+          "label": "Consent pathway (identifiable living patient vs exceptions)",
+          "type": "select",
+          "options": [
+            "Written patient consent — HCCR form (EN/HI) obtained & on file",
+            "Guardian consent — child or minor",
+            "Guardian consent — patient lacks decision-making capacity",
+            "Deceased patient — relative permission (courtesy/ethics)",
+            "Doctor’s declaration only — retrospective / no fresh patient consent possible",
+            "Verbal consent only — declaration route per HCCR",
+            "Not applicable — fully de-identified narrative (confirm locally)",
+            "Pending / not yet obtained"
+          ],
+          "helper": "HCCR: publication of identifiable living patient data needs explicit consent; upload signed consent where required. Doctor declaration applies only under portal rules for defined situations."
+        },
+        {
+          "key": "consent_or_declaration_docs",
+          "label": "Consent / declaration documentation",
+          "type": "textarea",
+          "placeholder": "Where the signed patient consent or doctor’s declaration is stored (e.g. clinic file ID, upload filename on HCCR, date). HCCR requires upload where applicable."
+        },
+        {
+          "key": "case_keywords",
+          "label": "Case-report keywords (2–5)",
+          "type": "textarea",
+          "placeholder": "CARE/HOM-CASE-style keywords for indexing…"
+        },
+        {
+          "key": "anonymized_share_consent",
+          "label": "De-identified / limited dataset sharing (if no identifiers submitted)",
+          "type": "select",
+          "options": [
+            "Not discussed / N/A",
+            "Declined",
+            "Consented — publication or repository",
+            "Consented — internal audit only"
+          ]
+        },
+        {
+          "key": "repository_notes",
+          "label": "Target repository & submission status",
+          "type": "textarea",
+          "placeholder": "e.g. HCCR draft submitted; journal; other registry…"
+        }
+      ]
+    }
+  ],
+  "profiles": [
+    {
+      "id": "eight_box",
+      "title": "8-Box Synergy framework (cross-verification)",
+      "match": ["synergy", "8-box", "eight box", "sankaran", "sankaran synergy", "eight_box"],
+      "helper": "Remedy confidence grows when the same pattern appears across multiple ‘boxes’ of the case.",
+      "fields": [
+        {
+          "key": "box_4_physical_generals",
+          "label": "Box 4: Physical generals (filters)",
+          "type": "structured_group",
+          "sub_fields": [
+            {
+              "key": "thermal",
+              "label": "Thermal state",
+              "type": "select",
+              "options": ["Chilly", "Hot", "Ambithermal"]
+            },
+            {
+              "key": "thirst",
+              "label": "Thirst profile",
+              "type": "select",
+              "options": ["Thirsty", "Thirstless", "Small quantities (sips)"]
+            },
+            {
+              "key": "side",
+              "label": "Laterality",
+              "type": "select",
+              "options": ["Left", "Right", "Diagonal", "Alternating"]
+            }
+          ]
+        },
+        {
+          "key": "box_7_miasm",
+          "label": "Box 7: Miasmatic pace",
+          "type": "select",
+          "options": [
+            "Acute",
+            "Typhoid",
+            "Malaria",
+            "Sycotic",
+            "Cancer",
+            "Tubercular",
+            "Syphilitic"
+          ]
+        },
+        {
+          "key": "box_8_kingdom",
+          "label": "Box 8: Kingdom source",
+          "type": "select",
+          "options": [
+            "Plant (sensitivity)",
+            "Mineral (structure)",
+            "Animal (survival)",
+            "Imponderable"
+          ]
+        },
+        {
+          "key": "other_boxes_notes",
+          "label": "Other boxes / cross-check notes (free text)",
+          "type": "textarea",
+          "placeholder": "Brief notes for boxes 1–3, 5–6, or cross-cutting themes not captured above…"
+        }
+      ]
+    },
+    {
+      "id": "sensation",
+      "title": "Sensation / vital level (depth of experience)",
+      "match": ["sensation", "scholten", "kingdom", "vital level", "7 level"],
+      "helper": "Science of the case improves when the level of experience is explicit (name → fact → … → energy).",
+      "fields": [
+        {
+          "key": "level_of_experience",
+          "label": "Deepest level reached in case-taking",
+          "type": "select",
+          "options": [
+            "Level 1: Name",
+            "Level 2: Fact",
+            "Level 3: Emotion",
+            "Level 4: Delusion",
+            "Level 5: Sensation",
+            "Level 6: Energy"
+          ],
+          "helper": "Select the deepest level the patient reached during the interview."
+        },
+        {
+          "key": "non_human_language",
+          "label": "Non-human experience (the ‘it’)",
+          "type": "textarea",
+          "placeholder": "Hand gestures, source language, abstract descriptions of core sensation / energy…"
+        },
+        {
+          "key": "kingdom_notes",
+          "label": "Kingdom / family notes (optional)",
+          "type": "textarea",
+          "placeholder": "Plant / mineral / animal mapping, row or group, if used…"
+        }
+      ]
+    },
+    {
+      "id": "boenninghausen",
+      "title": "Boenninghausen / Boger (complete symptom, analogy)",
+      "match": ["boenninghausen", "boger", "analogy", "grand generalisation"],
+      "helper": "Strongest for physically-led cases; build each complete symptom clearly.",
+      "fields": [
+        {
+          "key": "complete_symptom",
+          "label": "Complete symptom breakdown",
+          "type": "structured_group",
+          "sub_fields": [
+            {
+              "key": "location",
+              "label": "Location & extension",
+              "type": "text",
+              "placeholder": "Where and how it spreads…"
+            },
+            {
+              "key": "sensation",
+              "label": "Sensation (PQRS)",
+              "type": "text",
+              "placeholder": "Quality of pain / sensation…"
+            },
+            {
+              "key": "modality",
+              "label": "Modality (better / worse)",
+              "type": "text",
+              "placeholder": "Aggravations and ameliorations…"
+            },
+            {
+              "key": "concomitant",
+              "label": "Concomitant (associated symptoms)",
+              "type": "text",
+              "placeholder": "Apparently unrelated symptoms that move with the chief…"
+            }
+          ]
+        },
+        {
+          "key": "additional_complete_symptoms",
+          "label": "Further complete symptoms (optional)",
+          "type": "textarea",
+          "placeholder": "Second or third complete symptoms if needed for repertorisation…"
+        }
+      ]
+    },
+    {
+      "id": "kentian",
+      "title": "Kentian / mental totality (hierarchy)",
+      "match": ["kentian", "kent"],
+      "helper": "Top-down: will and intellect before particulars when this method leads.",
+      "fields": [
+        {
+          "key": "mental_hierarchy",
+          "label": "Mental hierarchy",
+          "type": "structured_group",
+          "sub_fields": [
+            {
+              "key": "will",
+              "label": "The will (loves, hates, fears)",
+              "type": "textarea",
+              "placeholder": "Aversions, desires, fears, striking will-related symptoms…"
+            },
+            {
+              "key": "intellect",
+              "label": "Intellect (memory, concentration)",
+              "type": "textarea",
+              "placeholder": "Cognitive pattern, mistakes, time sense…"
+            },
+            {
+              "key": "morals",
+              "label": "Morals & disposition",
+              "type": "textarea",
+              "placeholder": "Ethical stance, guilt, honour, sensitivity to injustice…"
+            }
+          ]
+        },
+        {
+          "key": "generals_particulars",
+          "label": "Generals & particulars (supporting)",
+          "type": "textarea",
+          "placeholder": "Physical generals and locals that confirm or qualify the mental picture…"
+        }
+      ]
+    },
+    {
+      "id": "classical",
+      "title": "Classical / constitutional / totality",
+      "match": ["classical", "constitutional", "totality", "miasmatic"],
+      "helper": "Broad totality-oriented documentation.",
+      "fields": [
+        {
+          "key": "mental_emotional",
+          "label": "Mental & emotional picture",
+          "type": "textarea",
+          "placeholder": "Prominent emotions, anxieties, sensitivities…"
+        },
+        {
+          "key": "physical_generals",
+          "label": "Physical generals & PQRS",
+          "type": "textarea",
+          "placeholder": "Thermal, thirst, appetite, sleep, energy, rare/strange symptoms…"
+        },
+        {
+          "key": "modalities",
+          "label": "Modalities",
+          "type": "textarea",
+          "placeholder": "Better / worse from time, weather, motion, food…"
+        },
+        {
+          "key": "rubric_or_repertory",
+          "label": "Repertory / rubric notes (optional)",
+          "type": "textarea",
+          "placeholder": "Main rubrics or remedy families…"
+        }
+      ]
+    },
+    {
+      "id": "protocol",
+      "title": "Protocol / Banerji / formula",
+      "match": ["banerji", "protocol", "formula", "predictive", "hybrid"],
+      "helper": "Named lines, potency rules, and when to advance or change.",
+      "fields": [
+        {
+          "key": "protocol_name_or_lines",
+          "label": "Protocol or remedy lines",
+          "type": "textarea",
+          "placeholder": "Named protocol, remedy sequence, potencies and spacing…"
+        },
+        {
+          "key": "indication_snapshot",
+          "label": "Indication in this patient",
+          "type": "textarea",
+          "placeholder": "Why this protocol fits this presentation…"
+        },
+        {
+          "key": "follow_up_rules",
+          "label": "Follow-up / change rules",
+          "type": "textarea",
+          "placeholder": "When to repeat, change potency, add next line…"
+        }
+      ]
+    },
+    {
+      "id": "clinical",
+      "title": "Clinical / acute emphasis",
+      "match": ["clinical", "acute"],
+      "helper": "Focused acute or lesion-oriented prescribing.",
+      "fields": [
+        {
+          "key": "acute_onset",
+          "label": "Onset & course",
+          "type": "textarea",
+          "placeholder": "Sudden/gradual, triggers, progression…"
+        },
+        {
+          "key": "key_findings",
+          "label": "Key findings",
+          "type": "textarea",
+          "placeholder": "Examination / local keynotes…"
+        },
+        {
+          "key": "first_prescription_rationale",
+          "label": "First prescription rationale",
+          "type": "textarea",
+          "placeholder": "Why this remedy now…"
+        }
+      ]
+    },
+    {
+      "id": "general",
+      "title": "General method notes",
+      "match": [],
+      "helper": "When no keyword profile matches; still use scientific add-ons below.",
+      "fields": [
+        {
+          "key": "method_focus",
+          "label": "How you are applying the selected method",
+          "type": "textarea",
+          "placeholder": "Brief focus for this prescription round…"
+        },
+        {
+          "key": "case_notes",
+          "label": "Case notes relevant to remedy choice",
+          "type": "textarea",
+          "placeholder": "Structured or narrative data you want captured…"
+        }
+      ]
+    }
+  ]
+}

@@ -133,6 +133,11 @@ export function mapPrescriptionFromApi(row: Record<string, unknown>): Prescripti
     followUpDate: (row['followUpDate'] as string | null) ?? null,
     method: (row['methodOption'] as { label?: string } | undefined)?.label ?? null,
     diagnosedDisease: (row['diagnosedDiseaseOption'] as { label?: string } | undefined)?.label ?? null,
+    methodIntakeAnswers:
+      (row['methodIntakeAnswers'] as Record<string, string> | null | undefined) &&
+      typeof row['methodIntakeAnswers'] === 'object'
+        ? (row['methodIntakeAnswers'] as Record<string, string>)
+        : null,
     items: ((row['items'] as Record<string, unknown>[]) || []).map((item) => ({
       id: item['id'] as string,
       medicineName: item['medicineName'] as string,

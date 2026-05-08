@@ -82,6 +82,12 @@ export type PrescriptionPayload = { notes: string; fileUrl: string };
             @if (rx.notes) {
               <p><strong>Notes:</strong> {{ rx.notes }}</p>
             }
+            @if (rx.methodIntakeAnswers && methodIntakeEntries(rx.methodIntakeAnswers).length) {
+              <p><strong>Method-specific details</strong></p>
+              @for (entry of methodIntakeEntries(rx.methodIntakeAnswers); track entry.k) {
+                <p><strong>{{ entry.k.replaceAll('_', ' ') }}:</strong> {{ entry.v }}</p>
+              }
+            }
             @if (rx.followUpDate) {
               <p><strong>Follow-up:</strong> {{ rx.followUpDate | date: 'mediumDate' }}</p>
             }
@@ -228,6 +234,12 @@ export class ConsultationDetailComponent implements OnChanges {
   attachmentBusy = false;
   attachmentNotice = '';
   private lastAppliedComposeToken = 0;
+
+  methodIntakeEntries(answers: Record<string, string>): { k: string; v: string }[] {
+    return Object.entries(answers)
+      .filter(([, v]) => (v || '').trim().length > 0)
+      .map(([k, v]) => ({ k, v: v.trim() }));
+  }
 
   ngOnChanges(changes: SimpleChanges) {
     this.attachmentNotice = '';
