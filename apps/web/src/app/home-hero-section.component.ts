@@ -182,12 +182,6 @@ type BookStep = 'form' | 'otp' | 'loading' | 'done';
               <p class="bc-sub">{{ 'home.hero.booking.subForm' | translate }}</p>
               <div class="bc-fields">
                 <input
-                  name="bcName"
-                  [(ngModel)]="name"
-                  [placeholder]="('home.hero.booking.placeholderName' | translate)"
-                  autocomplete="name"
-                />
-                <input
                   name="bcMobile"
                   [(ngModel)]="mobile"
                   [placeholder]="('home.hero.booking.placeholderMobile' | translate)"
@@ -273,7 +267,6 @@ export class HomeHeroSectionComponent {
 
   @Input() whatsappLink = '';
 
-  name = '';
   mobile = '';
   otp = '';
 
@@ -292,12 +285,7 @@ export class HomeHeroSectionComponent {
   }
 
   async sendOtp() {
-    const name = this.name.trim();
     const mobile = this.mobile.trim().replace(/\s+/g, '');
-    if (!name) {
-      this.error.set(this.translate.instant('home.hero.booking.validation.nameRequired'));
-      return;
-    }
     if (!/^\d{10}$/.test(mobile)) {
       this.error.set(this.translate.instant('home.hero.booking.validation.mobileInvalid'));
       return;
@@ -328,7 +316,7 @@ export class HomeHeroSectionComponent {
     this.step.set('loading');
     try {
       const response = await firstValueFrom(
-        this.auth.patientLogin({ name: this.name.trim(), mobile: this.mobile, otp: this.otp.trim() })
+        this.auth.patientLogin({ mobile: this.mobile, otp: this.otp.trim() })
       );
       this.step.set('done');
       setTimeout(() => void this.router.navigateByUrl(this.auth.dashboardFor(response.user.role)), 600);

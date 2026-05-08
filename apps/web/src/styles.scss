@@ -1535,13 +1535,59 @@ body.header-menu-no-scroll {
 }
 
 .app-overlay-backdrop {
-  background: rgba(15, 23, 42, 0.42);
-  backdrop-filter: blur(3px);
+  background: rgba(12, 32, 60, 0.38);
+  backdrop-filter: blur(12px) saturate(1.2);
+  -webkit-backdrop-filter: blur(12px) saturate(1.2);
 }
 
 .app-overlay-panel {
   display: grid;
   place-items: center;
+}
+
+/* Glass treatment for login / auth dialogs (CDK overlay) */
+.app-overlay-panel .auth-card {
+  background: linear-gradient(
+    155deg,
+    rgba(255, 255, 255, 0.76) 0%,
+    rgba(246, 248, 251, 0.42) 48%,
+    rgba(255, 255, 255, 0.55) 100%
+  );
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  box-shadow:
+    0 28px 56px rgba(15, 32, 58, 0.2),
+    0 0 0 1px rgba(255, 255, 255, 0.45) inset,
+    inset 0 1px 0 rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(24px) saturate(1.45);
+  -webkit-backdrop-filter: blur(24px) saturate(1.45);
+}
+
+.app-overlay-panel .auth-card .muted {
+  color: rgba(71, 85, 105, 0.95);
+}
+
+.app-overlay-panel .auth-card input,
+.app-overlay-panel .auth-card textarea {
+  background: rgba(255, 255, 255, 0.82);
+  border-color: rgba(213, 221, 234, 0.85);
+}
+
+.app-overlay-panel .auth-card .secondary {
+  background: rgba(233, 241, 255, 0.92);
+}
+
+.app-overlay-panel .process-card {
+  background: linear-gradient(
+    155deg,
+    rgba(255, 255, 255, 0.8) 0%,
+    rgba(246, 248, 251, 0.5) 100%
+  );
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  box-shadow:
+    0 24px 52px rgba(15, 32, 58, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.65);
+  backdrop-filter: blur(22px) saturate(1.35);
+  -webkit-backdrop-filter: blur(22px) saturate(1.35);
 }
 
 .process-card {

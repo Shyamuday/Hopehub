@@ -93,9 +93,17 @@ export class AuthService {
     ).pipe(map((response) => ({ devOtp: response.devOtp || 'Check SMS from backend' })));
   }
 
-  patientLogin(payload: { name: string; mobile: string; otp: string }) {
+  patientLogin(payload: { mobile: string; otp: string; name?: string }) {
+    const body: { mobile: string; otp: string; name?: string } = {
+      mobile: payload.mobile,
+      otp: payload.otp
+    };
+    const trimmed = payload.name?.trim();
+    if (trimmed && trimmed.length >= 2) {
+      body.name = trimmed;
+    }
     return from(
-      firstValueFrom(this.http.post<AuthResponse>(`${this.apiBase}/auth/patient-login`, payload))
+      firstValueFrom(this.http.post<AuthResponse>(`${this.apiBase}/auth/patient-login`, body))
     ).pipe(
       tap((response: AuthResponse) => this.persistSession(response))
     );

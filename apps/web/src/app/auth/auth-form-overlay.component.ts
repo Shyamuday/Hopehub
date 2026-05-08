@@ -76,16 +76,12 @@ type PatientAuthStep = 'signin' | 'register' | 'forgot' | 'forgot-sent' | 'reset
             <button type="button" class="back-btn" (click)="goPatientStep('signin')">← Back to login</button>
             <h2>Mobile number &amp; OTP</h2>
             <p class="muted">
-              Enter your <strong>full name</strong> and <strong>mobile number</strong>. Tap <strong>Send OTP</strong>, enter the
-              code (SMS or, in development, the code shown on screen), then tap <strong>Continue with OTP</strong>. Works for new
-              and existing patients.
+              Enter your <strong>mobile number</strong>. Tap <strong>Send OTP</strong>, enter the code (SMS or, in development, the
+              code shown on screen), then tap <strong>Continue with OTP</strong>. Works for new and existing patients — no name
+              required.
             </p>
 
             <form (ngSubmit)="loginPatientWithOtp()">
-              <label>
-                Full name
-                <input name="otpName" [(ngModel)]="patientOtp.name" placeholder="Enter your full name" />
-              </label>
               <label>
                 Mobile number
                 <input name="otpMobile" [(ngModel)]="patientOtp.mobile" placeholder="Enter 10-digit mobile number" />
@@ -294,7 +290,6 @@ export class AuthFormOverlayComponent {
   };
 
   patientOtp = {
-    name: '',
     mobile: '',
     otp: ''
   };

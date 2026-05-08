@@ -31,11 +31,14 @@ export function registerAuthRoutes(app: express.Application) {
     asyncRoute(async (req, res) => {
       const body = z
         .object({
-          name: z.string().min(2).default('Patient'),
           mobile: z.string().min(8),
-          otp: z.string().min(4)
+          otp: z.string().min(4),
+          name: z.string().trim().max(120).optional()
         })
         .parse(req.body);
+
+      const resolvedName =
+        body.name && body.name.length >= 2 ? body.name : undefined;
 
       if (body.otp !== devOtp) {
         return res.status(401).json({ message: 'Invalid OTP' });
@@ -43,9 +46,9 @@ export function registerAuthRoutes(app: express.Application) {
 
       const user = await prisma.user.upsert({
         where: { mobile: body.mobile },
-        update: { name: body.name },
+        update: resolvedName ? { name: resolvedName } : {},
         create: {
-          name: body.name,
+          name: resolvedName ?? 'Patient',
           mobile: body.mobile,
           role: Role.PATIENT
         },

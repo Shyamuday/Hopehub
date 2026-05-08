@@ -36,7 +36,7 @@
           "done": "Signed in successfully"
         },
         "titleForm": "Book an appointment",
-        "subForm": "Enter your details — we'll send a one-time code to your mobile.",
+        "subForm": "Enter your mobile number — we'll send a one-time code by SMS.",
         "titleOtp": "Verify your number",
         "otpLead": "OTP sent to",
         "placeholderName": "Your full name",
