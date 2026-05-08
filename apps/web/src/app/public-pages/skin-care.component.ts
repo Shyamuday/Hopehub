@@ -1,0 +1,46 @@
+import { Component } from '@angular/core';
+import { AppFooterComponent } from '../app-footer.component';
+import { AppHeaderComponent } from '../app-header.component';
+import { PUBLIC_WHATSAPP_LINK } from './public-whatsapp';
+
+@Component({
+  selector: 'app-skin-care',
+  imports: [AppHeaderComponent, AppFooterComponent],
+  template: `
+    <section class="public-shell">
+      <app-header subtitle="Skin care" [whatsappLink]="whatsappLink" />
+      <main class="content-page">
+        <section class="page-hero panel">
+          <p class="eyebrow">Skin Care</p>
+          <h1>Care for recurring skin issues, sensitivity, acne, pigmentation, and allergies.</h1>
+          <p>
+            Skin concerns often need history, triggers, routine review, and follow-up. We focus on practical care with
+            a gentle treatment approach.
+          </p>
+        </section>
+        <section class="content-grid two">
+          <div class="panel">
+            <h2>We commonly support</h2>
+            <ul>
+              <li>Acne and recurring breakouts</li>
+              <li>Rashes, itching, and allergy tendency</li>
+              <li>Pigmentation and uneven skin tone</li>
+              <li>Sensitive skin and product reactions</li>
+            </ul>
+          </div>
+          <div class="panel warning-panel">
+            <h2>Important</h2>
+            <p>
+              Severe swelling, breathing difficulty, spreading infection, high fever, burns, or rapidly worsening skin
+              symptoms need urgent offline medical care.
+            </p>
+          </div>
+        </section>
+      </main>
+      <app-footer [whatsappLink]="whatsappLink" />
+    </section>
+  `
+})
+export class SkinCareComponent {
+  readonly whatsappLink = PUBLIC_WHATSAPP_LINK;
+}

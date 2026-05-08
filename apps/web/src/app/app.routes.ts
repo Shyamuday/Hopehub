@@ -10,7 +10,7 @@ import {
   SafetyComponent,
   TreatmentsComponent,
   WhySuccessfulComponent
-} from './public-pages.component';
+} from './public-pages';
 import { roleGuard } from './role.guard';
 import { HomeComponent } from './home.component';
 import { AuthResetCallbackComponent } from './auth/auth-reset-callback.component';

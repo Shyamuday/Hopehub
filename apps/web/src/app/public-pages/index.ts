@@ -1,0 +1,10 @@
+export { ChronicCareComponent } from './chronic-care.component';
+export { ContactComponent } from './contact.component';
+export { DiseaseDetailComponent } from './disease-detail.component';
+export { FaqComponent } from './faq.component';
+export { HairFallComponent } from './hair-fall.component';
+export { PrivacyTermsComponent } from './privacy-terms.component';
+export { SafetyComponent } from './safety.component';
+export { SkinCareComponent } from './skin-care.component';
+export { TreatmentsComponent } from './treatments.component';
+export { WhySuccessfulComponent } from './why-successful.component';

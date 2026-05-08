@@ -1,0 +1,45 @@
+import { Component } from '@angular/core';
+import { AppFooterComponent } from '../app-footer.component';
+import { AppHeaderComponent } from '../app-header.component';
+import { PUBLIC_WHATSAPP_LINK } from './public-whatsapp';
+
+@Component({
+  selector: 'app-safety',
+  imports: [AppHeaderComponent, AppFooterComponent],
+  template: `
+    <section class="public-shell">
+      <app-header subtitle="Safety and trust" [whatsappLink]="whatsappLink" />
+      <main class="content-page">
+        <section class="page-hero panel warning-panel">
+          <p class="eyebrow">Safety / Trust</p>
+          <h1>Not for emergency care.</h1>
+          <p>
+            Vitalis Care and Research Centre is for planned online consultation and follow-up. If you have severe
+            symptoms, sudden worsening, breathing difficulty, chest pain, fainting, heavy bleeding, severe allergic
+            reaction, high fever, or any emergency, seek immediate offline medical care.
+          </p>
+        </section>
+        <section class="content-grid two">
+          <div class="panel">
+            <h2>Medical disclaimer</h2>
+            <p>
+              Online consultation supports care decisions but does not replace emergency services, physical examination
+              when needed, or hospital care.
+            </p>
+          </div>
+          <div class="panel">
+            <h2>Refund and cancellation</h2>
+            <p>
+              Refunds depend on payment status, consultation assignment, and whether the doctor has started the
+              consultation. Final policy should be confirmed before public launch.
+            </p>
+          </div>
+        </section>
+      </main>
+      <app-footer [whatsappLink]="whatsappLink" />
+    </section>
+  `
+})
+export class SafetyComponent {
+  readonly whatsappLink = PUBLIC_WHATSAPP_LINK;
+}

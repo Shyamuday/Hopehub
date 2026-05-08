@@ -3,7 +3,15 @@ import { from, map } from 'rxjs';
 import { RealtimeChannel } from '@supabase/supabase-js';
 import { supabase } from './supabase.client';
 import { environment } from '../environments/environment';
-import { BillingPlan, Consultation, ConsultationAttachment, Disease, Doctor, DoseEvent, Prescription } from './models';
+import { BillingPlan, Consultation, Disease, Doctor, DoseEvent, Prescription } from './models';
+import {
+  mapConsultationFromApi,
+  mapConsultationFromSupabaseRow,
+  mapDiseaseFromSupabaseRow,
+  mapDoseEventFromApi,
+  mapPatientPrescriptionFromApi,
+  mapUserFromSupabaseProfile
+} from './clinic-api-mappers';
 
 type RazorpayOrderResponse = {
   orderId: string;
@@ -152,7 +160,7 @@ export class ClinicApiService {
       throw error;
     }
 
-    return { diseases: (data || []).map(this.toDisease) };
+    return { diseases: (data || []).map((row) => mapDiseaseFromSupabaseRow(row as Record<string, unknown>)) };
   }
 
   private async fetchConsultations() {
@@ -175,7 +183,7 @@ export class ClinicApiService {
       throw error;
     }
 
-    return { consultations: (data || []).map((row) => this.toConsultation(row)) };
+    return { consultations: (data || []).map((row) => mapConsultationFromSupabaseRow(row as Record<string, unknown>)) };
   }
 
   private get backendToken() {
@@ -211,7 +219,7 @@ export class ClinicApiService {
     }
 
     const response = await this.apiFetch<{ consultations: Array<Record<string, any>> }>('/consultations');
-    return { consultations: (response.consultations || []).map((row) => this.toConsultationFromApi(row)) };
+    return { consultations: (response.consultations || []).map((row) => mapConsultationFromApi(row as Record<string, unknown>)) };
   }
 
   private async insertConsultation(payload: { diseaseId: string; intakeAnswers: Record<string, string> }) {
@@ -488,7 +496,7 @@ export class ClinicApiService {
 
     return {
       doctors: (data || []).map((row): Doctor => ({
-        ...this.toUser(row.profile),
+        ...mapUserFromSupabaseProfile(row.profile as Record<string, unknown> | null),
         isActive: row.profile?.is_active ?? true,
         doctorProfile: {
           specialty: row.specialty,
@@ -576,7 +584,7 @@ export class ClinicApiService {
     }
 
     const response = await this.apiFetch<{ prescriptions: Array<Record<string, any>> }>('/patient/prescriptions');
-    return { prescriptions: (response.prescriptions || []).map((row) => this.toPatientPrescriptionFromApi(row)) };
+    return { prescriptions: (response.prescriptions || []).map((row) => mapPatientPrescriptionFromApi(row as Record<string, unknown>)) };
   }
 
   private async fetchTodayDoseEvents() {
@@ -585,7 +593,7 @@ export class ClinicApiService {
     }
 
     const response = await this.apiFetch<{ doses: Array<Record<string, any>> }>('/patient/today-doses');
-    return { doseEvents: (response.doses || []).map((row) => this.toDoseEventFromApi(row)) };
+    return { doseEvents: (response.doses || []).map((row) => mapDoseEventFromApi(row as Record<string, unknown>)) };
   }
 
   private async updateDoseEventStatus(doseEventId: string, status: 'TAKEN' | 'SKIPPED', note?: string) {
@@ -647,186 +655,5 @@ export class ClinicApiService {
       method: 'PUT',
       body: JSON.stringify(preferences)
     });
-  }
-
-  private toPatientPrescriptionFromApi(row: Record<string, any>): Prescription {
-    return {
-      id: row['id'],
-      version: row['version'],
-      diagnosis: row['diagnosis'],
-      advice: row['advice'],
-      notes: row['notes'] || '',
-      fileUrl: row['fileUrl'],
-      status: row['status'],
-      followUpDate: row['followUpDate'],
-      method: row['methodOption']?.label || null,
-      diagnosedDisease: row['diagnosedDiseaseOption']?.label || null,
-      items: (row['items'] || []).map((item: Record<string, any>) => ({
-        id: item['id'],
-        medicineName: item['medicineName'],
-        strength: item['strength'],
-        dose: item['dose'],
-        frequency: item['frequency'],
-        duration: item['duration'],
-        instructions: item['instructions']
-      })),
-      createdAt: row['createdAt']
-    };
-  }
-
-  private toDoseEventFromApi(row: Record<string, any>): DoseEvent {
-    return {
-      id: row['id'],
-      scheduledFor: row['scheduledFor'],
-      status: row['status'],
-      note: row['note'],
-      takenAt: row['takenAt'],
-      skippedAt: row['skippedAt'],
-      prescriptionItem: {
-        id: row['prescriptionItem']?.id || '',
-        medicineName: row['prescriptionItem']?.medicineName || 'Medicine',
-        strength: row['prescriptionItem']?.strength,
-        dose: row['prescriptionItem']?.dose,
-        frequency: row['prescriptionItem']?.frequency,
-        duration: row['prescriptionItem']?.duration,
-        instructions: row['prescriptionItem']?.instructions
-      }
-    };
-  }
-
-  private toDisease(row: Record<string, any>): Disease {
-    return {
-      id: row['id'],
-      name: row['name'],
-      description: row['description'],
-      feeInPaise: row['fee_in_paise'],
-      intakeQuestions: row['intake_questions'] || []
-    };
-  }
-
-  private toUser(row: Record<string, any> | null): Doctor {
-    return {
-      id: row?.['id'] || '',
-      name: row?.['name'] || 'Unknown',
-      mobile: row?.['mobile'] || null,
-      role: row?.['role'] || 'PATIENT',
-      isActive: row?.['is_active'] ?? true
-    };
-  }
-
-  private toConsultation(row: Record<string, any>): Consultation {
-    return {
-      id: row['id'],
-      status: row['status'],
-      intakeAnswers: row['intake_answers'] || {},
-      createdAt: row['created_at'],
-      patient: this.toUser(row['patient']),
-      assignedDoctor: row['assigned_doctor'] ? this.toUser(row['assigned_doctor']) : null,
-      disease: this.toDisease(row['disease']),
-      billingPlanCode: row['billing_plan_code'] || null,
-      pricingSnapshot: row['pricing_snapshot'] || null,
-      payment: row['payment']
-        ? {
-            id: row['payment'].id,
-            amountInPaise: row['payment'].amount_in_paise,
-            status: row['payment'].status,
-            billingPlanCode: row['payment'].billing_plan_code || null,
-            lineItems: row['payment'].line_items || null,
-            providerOrderId: row['payment'].provider_order_id
-          }
-        : null,
-      messages: (row['messages'] || [])
-        .map((message: Record<string, any>) => ({
-          id: message['id'],
-          body: message['body'],
-          createdAt: message['created_at'],
-          sender: this.toUser(message['sender'])
-        }))
-        .sort((a: { createdAt: string }, b: { createdAt: string }) => a.createdAt.localeCompare(b.createdAt)),
-      prescription: row['prescription']
-        ? {
-          id: row['prescription'].id,
-          notes: row['prescription'].notes,
-          fileUrl: row['prescription'].file_url,
-          createdAt: row['prescription'].created_at
-        }
-        : null
-    };
-  }
-
-  private mapPrescriptionFromApi(row: Record<string, any>): Prescription {
-    return {
-      id: row['id'],
-      version: row['version'],
-      diagnosis: row['diagnosis'],
-      advice: row['advice'] ?? null,
-      notes: row['notes'] ?? '',
-      fileUrl: row['fileUrl'] ?? null,
-      status: row['status'],
-      followUpDate: row['followUpDate'] ?? null,
-      method: row['methodOption']?.label ?? null,
-      diagnosedDisease: row['diagnosedDiseaseOption']?.label ?? null,
-      items: (row['items'] || []).map((item: Record<string, any>) => ({
-        id: item['id'],
-        medicineName: item['medicineName'],
-        strength: item['strength'],
-        dose: item['dose'],
-        frequency: item['frequency'],
-        duration: item['duration'],
-        instructions: item['instructions']
-      })),
-      createdAt: row['createdAt']
-    };
-  }
-
-  private pickConsultationPrescriptionSnapshot(prescriptions: Record<string, any>[]): Prescription | null {
-    if (!prescriptions.length) return null;
-    const published = prescriptions.find((p) => p['status'] === 'PUBLISHED');
-    const chosen = published ?? prescriptions[0];
-    return this.mapPrescriptionFromApi(chosen);
-  }
-
-  private mapAttachmentFromApi(row: Record<string, any>): ConsultationAttachment {
-    return {
-      id: row['id'],
-      kind: row['kind'],
-      fileName: row['fileName'] ?? null,
-      mimeType: row['mimeType'] ?? null,
-      caption: row['caption'] ?? null,
-      fileUrl: row['fileUrl'] || '',
-      createdAt: row['createdAt'],
-      uploadedBy: row['uploadedBy']
-    };
-  }
-
-  private toConsultationFromApi(row: Record<string, any>): Consultation {
-    const prescriptions = row['prescriptions'] || [];
-    const attachments = (row['attachments'] || []).map((item: Record<string, any>) => this.mapAttachmentFromApi(item));
-
-    return {
-      id: row['id'],
-      status: row['status'],
-      intakeAnswers: row['intakeAnswers'] || {},
-      createdAt: row['createdAt'],
-      patient: row['patient'],
-      assignedDoctor: row['assignedDoctor'] || null,
-      disease: row['disease'],
-      billingPlanCode: row['billingPlanCode'] || null,
-      pricingSnapshot: row['pricingSnapshot'] || null,
-      payment: row['payment']
-        ? {
-            id: row['payment'].id,
-            amountInPaise: row['payment'].amountInPaise,
-            status: row['payment'].status,
-            billingPlanCode: row['payment'].billingPlanCode || null,
-            lineItems: row['payment'].lineItems || null,
-            providerOrderId: row['payment'].providerOrderId || null
-          }
-        : null,
-      messages: row['messages'] || [],
-      prescription: this.pickConsultationPrescriptionSnapshot(prescriptions),
-      prescriptions: prescriptions.map((prescription: Record<string, any>) => this.mapPrescriptionFromApi(prescription)),
-      attachments
-    };
   }
 }
