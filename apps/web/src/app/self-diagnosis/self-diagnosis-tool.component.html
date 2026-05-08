@@ -1,0 +1,47 @@
+<app-header [subtitle]="pageTitle()" [user]="auth.user()" [whatsappLink]="whatsappLink" (logout)="logout()" />
+
+<main class="dashboard">
+  <section class="panel">
+    <p class="muted">
+      <a routerLink="/patient/self-diagnosis">← All worksheets</a>
+      ·
+      <a routerLink="/patient/dashboard">Dashboard</a>
+    </p>
+    <h1>{{ title() }}</h1>
+    @if (description()) {
+      <p class="lede">{{ description() }}</p>
+    }
+    <p class="disclaimer">
+      This worksheet is for your personal notes. It is not a diagnosis or treatment plan from a doctor.
+    </p>
+  </section>
+
+  @if (loading()) {
+    <section class="panel">
+      <p class="muted">Loading…</p>
+    </section>
+  } @else if (loadError()) {
+    <section class="panel">
+      <p class="msg-err">{{ loadError() }}</p>
+    </section>
+  } @else {
+    <section class="panel form-panel">
+      <app-self-diagnosis-field-rows [idPrefix]="idPrefix()" [rows]="rows()" [values]="formValues" />
+
+      @if (saveNotice()) {
+        <p class="msg-ok">{{ saveNotice() }}</p>
+      }
+      @if (saveError()) {
+        <p class="msg-err">{{ saveError() }}</p>
+      }
+
+      <div class="save-row">
+        <button type="button" class="primary" [disabled]="saving()" (click)="save()">
+          {{ saving() ? 'Saving…' : 'Save to my account' }}
+        </button>
+      </div>
+    </section>
+  }
+</main>
+
+<app-footer />

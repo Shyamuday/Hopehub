@@ -134,3 +134,24 @@ export async function restUpdateReminderPreferences(apiFetch: JsonApiFetch, pref
 export async function restFetchDoctors(apiFetch: JsonApiFetch) {
   return apiFetch<{ doctors: Doctor[] }>('/admin/doctors');
 }
+
+export type PatientSelfDiagnosisResultRow = {
+  toolKey: string;
+  answers: Record<string, string>;
+  updatedAt: string;
+};
+
+export async function restFetchPatientSelfDiagnosis(apiFetch: JsonApiFetch) {
+  return apiFetch<{ results: PatientSelfDiagnosisResultRow[] }>('/patient/self-diagnosis');
+}
+
+export async function restUpsertPatientSelfDiagnosis(
+  apiFetch: JsonApiFetch,
+  toolKey: string,
+  answers: Record<string, string>
+) {
+  return apiFetch<{ result: PatientSelfDiagnosisResultRow; message: string }>(
+    `/patient/self-diagnosis/${encodeURIComponent(toolKey)}`,
+    { method: 'PUT', body: JSON.stringify({ answers }) }
+  );
+}

@@ -14,6 +14,8 @@ import {
 import { roleGuard } from './role.guard';
 import { HomeComponent } from './home.component';
 import { AuthResetCallbackComponent } from './auth/auth-reset-callback.component';
+import { SelfDiagnosisHubComponent } from './self-diagnosis/self-diagnosis-hub.component';
+import { SelfDiagnosisToolComponent } from './self-diagnosis/self-diagnosis-tool.component';
 
 export const routes: Routes = [
   {
@@ -107,6 +109,27 @@ export const routes: Routes = [
       roles: ['PATIENT'],
       seoTitle: 'Patient Dashboard | Vitalis Care',
       seoDescription: 'Manage your consultations, messages, and prescriptions in the Vitalis Care patient dashboard.'
+    }
+  },
+  {
+    path: 'patient/self-diagnosis',
+    component: SelfDiagnosisHubComponent,
+    canActivate: [roleGuard],
+    data: {
+      roles: ['PATIENT'],
+      seoTitle: 'Self-assessment worksheets | Vitalis Care',
+      seoDescription:
+        'Optional kingdom and miasm worksheets for your personal notes. Not a substitute for a doctor consultation.'
+    }
+  },
+  {
+    path: 'patient/self-diagnosis/:toolKey',
+    component: SelfDiagnosisToolComponent,
+    canActivate: [roleGuard],
+    data: {
+      roles: ['PATIENT'],
+      seoTitle: 'Self-assessment worksheet | Vitalis Care',
+      seoDescription: 'Structured self-assessment notes saved to your Vitalis Care account.'
     }
   },
   {

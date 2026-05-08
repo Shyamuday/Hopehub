@@ -1,7 +1,7 @@
 import { CommonModule, formatDate } from '@angular/common';
 import { Component, type OnDestroy, type OnInit, computed, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import { AppFooterComponent } from './app-footer.component';
 import { AppHeaderComponent } from './app-header.component';
@@ -41,6 +41,7 @@ type PaymentFlowState = 'IDLE' | 'CREATING_ORDER' | 'OPENING_CHECKOUT' | 'VERIFY
     ReminderPreferencesComponent,
     TodayMedicinesComponent,
     PatientProfileComponent,
+    RouterLink
   ],
   templateUrl: './dashboard.component.html',
 })

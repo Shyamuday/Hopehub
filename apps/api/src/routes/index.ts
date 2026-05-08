@@ -9,6 +9,7 @@ import { registerDoctorPrescriptionRoutes } from './doctor-prescriptions.routes.
 import { registerHealthRoutes } from './health.js';
 import { registerPatientCareRoutes } from './patient-care.routes.js';
 import { registerPatientProfileRoutes } from './patient-profile.routes.js';
+import { registerPatientSelfDiagnosisRoutes } from './patient-self-diagnosis.routes.js';
 import { registerPaymentRoutes } from './payments.routes.js';
 
 export function registerAllRoutes(app: express.Application) {
@@ -21,6 +22,7 @@ export function registerAllRoutes(app: express.Application) {
   registerConsultationRoutes(app);
   registerDoctorPrescriptionRoutes(app);
   registerPatientCareRoutes(app);
+  registerPatientSelfDiagnosisRoutes(app);
   registerDoctorAdherenceRoutes(app);
   registerPaymentRoutes(app);
 }

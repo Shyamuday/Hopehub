@@ -1,0 +1,28 @@
+<app-header [subtitle]="pageTitle" [user]="auth.user()" [whatsappLink]="whatsappLink" (logout)="logout()" />
+
+<main class="dashboard">
+  <section class="panel">
+    <p class="eyebrow">For your notes only</p>
+    <h1>Self-assessment worksheets</h1>
+    <p class="lede">
+      These forms mirror the kingdom and miasm sections used in clinical method intake. Filling them out does
+      <strong>not</strong>
+      replace a consultation and is not a medical diagnosis. Your answers are saved privately on your account.
+    </p>
+    <p class="muted">
+      <a routerLink="/patient/dashboard">← Back to dashboard</a>
+    </p>
+  </section>
+
+  <ul class="tool-list">
+    @for (tool of tools; track tool.key) {
+      <li class="panel tool-card">
+        <h2>{{ tool.label }}</h2>
+        <p class="muted">{{ tool.description }}</p>
+        <button type="button" class="primary" [routerLink]="['/patient/self-diagnosis', tool.key]">Open worksheet</button>
+      </li>
+    }
+  </ul>
+</main>
+
+<app-footer />

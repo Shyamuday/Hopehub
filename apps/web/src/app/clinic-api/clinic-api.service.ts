@@ -121,6 +121,14 @@ export class ClinicApiService {
     return from(this.updateReminderPreferences(preferences));
   }
 
+  patientSelfDiagnosisList() {
+    return from(this.fetchPatientSelfDiagnosis());
+  }
+
+  savePatientSelfDiagnosis(toolKey: string, answers: Record<string, string>) {
+    return from(this.upsertPatientSelfDiagnosis(toolKey, answers));
+  }
+
   watchClinicChanges(onChange: () => void): RealtimeChannel {
     return supabase
       .channel('clinic-dashboard-changes')
@@ -231,5 +239,15 @@ export class ClinicApiService {
   private async updateReminderPreferences(preferences: ReminderPreferencePayload) {
     assertBackendSession(this.backendToken);
     return rest.restUpdateReminderPreferences(this.apiFetch, preferences);
+  }
+
+  private async fetchPatientSelfDiagnosis() {
+    assertBackendSession(this.backendToken);
+    return rest.restFetchPatientSelfDiagnosis(this.apiFetch);
+  }
+
+  private async upsertPatientSelfDiagnosis(toolKey: string, answers: Record<string, string>) {
+    assertBackendSession(this.backendToken);
+    return rest.restUpsertPatientSelfDiagnosis(this.apiFetch, toolKey, answers);
   }
 }

@@ -80,6 +80,8 @@ model User {
   doseEvents           MedicineDoseEvent[] @relation("PatientDoseEvents")
   consultationAttachments ConsultationAttachment[]
   reminderPreference  ReminderPreference?
+  /** Patient-owned self-diagnosis worksheets (kingdom, miasm, future tools). */
+  selfDiagnosisResults PatientSelfDiagnosisResult[]
   auditLogs          AuditLog[]      @relation("AuditActor")
   passwordResetTokens PasswordResetToken[]
   createdAt           DateTime       @default(now())
@@ -236,6 +238,20 @@ model Message {
   consultation   Consultation @relation(fields: [consultationId], references: [id])
   sender         User         @relation(fields: [senderId], references: [id])
   createdAt      DateTime     @default(now())
+}
+
+/** Optional patient worksheets (not a medical diagnosis). Keys: kingdom, miasm, … extensible. */
+model PatientSelfDiagnosisResult {
+  id        String   @id @default(cuid())
+  patientId String
+  toolKey   String
+  answers   Json
+  patient   User     @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([patientId, toolKey])
+  @@index([patientId])
 }
 
 model Prescription {
