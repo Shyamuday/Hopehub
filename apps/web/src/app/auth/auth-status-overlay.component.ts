@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject } from '@angular/core';
 import { APP_OVERLAY_DATA, APP_OVERLAY_REF } from '../overlay.tokens';
-import { AppOverlayRef } from '../overlay.service';
+import { type AppOverlayRef } from '../overlay.service';
 
 type AuthStatusOverlayData = {
   state: 'loading' | 'success' | 'error';

@@ -1,7 +1,7 @@
 import { Component, Input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { AuthFormOverlayComponent } from './auth/auth-form-overlay.component';
-import { AppOverlayService } from './overlay.service';
+import { type AppOverlayService } from './overlay.service';
 
 @Component({
   selector: 'app-footer',

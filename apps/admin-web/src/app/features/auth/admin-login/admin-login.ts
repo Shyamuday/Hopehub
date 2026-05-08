@@ -1,7 +1,7 @@
 import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
-import { AdminAuth } from '../../../core/services/admin-auth';
+import { type Router } from '@angular/router';
+import { type AdminAuth } from '../../../core/services/admin-auth';
 
 @Component({
   selector: 'app-admin-login',

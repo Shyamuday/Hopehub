@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { type HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
-import { AdminAuth } from './admin-auth';
+import { type AdminAuth } from './admin-auth';
 import { environment } from '../../../environments/environment';
 
 @Injectable({

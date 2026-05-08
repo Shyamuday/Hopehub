@@ -1,4 +1,4 @@
-import { DiseaseInfo } from '../../interfaces';
+import { type DiseaseInfo } from '../../interfaces';
 
 export const chronicCareDiseaseInfo: DiseaseInfo = {
   slug: 'chronic-care',

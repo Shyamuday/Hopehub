@@ -1,11 +1,11 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, signal } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { Component, type OnInit, signal } from '@angular/core';
+import { type ActivatedRoute } from '@angular/router';
 import { AppFooterComponent } from '../app-footer.component';
 import { AppHeaderComponent } from '../app-header.component';
 import { diseaseInfos } from '../constants';
 import type { DiseaseInfo } from '../interfaces';
-import { AppOverlayService } from '../overlay.service';
+import { type AppOverlayService } from '../overlay.service';
 import { openPublicAuthOverlay } from './open-public-auth-overlay';
 import { PUBLIC_WHATSAPP_LINK } from './public-whatsapp';
 

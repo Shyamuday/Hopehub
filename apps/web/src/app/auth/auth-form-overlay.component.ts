@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Observable } from 'rxjs';
 import { APP_OVERLAY_DATA, APP_OVERLAY_REF } from '../overlay.tokens';
-import { AppOverlayRef, AppOverlayService } from '../overlay.service';
+import { type AppOverlayRef, AppOverlayService } from '../overlay.service';
 import { AuthStatusOverlayComponent } from './auth-status-overlay.component';
 import { AuthService } from './auth.service';
 

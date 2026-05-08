@@ -1,22 +1,26 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnDestroy, OnInit, computed, signal } from '@angular/core';
+import { Component, type OnDestroy, type OnInit, computed, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
-import { RealtimeChannel } from '@supabase/supabase-js';
+import { type Router } from '@angular/router';
+import { type RealtimeChannel } from '@supabase/supabase-js';
 import { AppFooterComponent } from './app-footer.component';
 import { AppHeaderComponent } from './app-header.component';
 import { AdminStatsComponent } from './admin-stats.component';
-import { BookConsultationPanelComponent, BookConsultationPayload } from './book-consultation-panel.component';
-import { ConsultationDetailComponent, PrescriptionPayload, SendMessagePayload } from './consultation-detail.component';
+import { BookConsultationPanelComponent, type BookConsultationPayload } from './book-consultation-panel.component';
+import {
+  ConsultationDetailComponent,
+  type PrescriptionPayload,
+  type SendMessagePayload
+} from './consultation-detail.component';
 import { ConsultationListComponent } from './consultation-list.component';
 import { PaymentStatusOverlayComponent } from './payment-status-overlay.component';
 import { PrescriptionHistoryComponent } from './prescription-history.component';
-import { ReminderPreferencesComponent, ReminderPrefs } from './reminder-preferences.component';
+import { ReminderPreferencesComponent, type ReminderPrefs } from './reminder-preferences.component';
 import { TodayMedicinesComponent } from './today-medicines.component';
 import { PatientProfileComponent } from './patient-profile.component';
-import { ClinicApiService } from './clinic-api/clinic-api.service';
-import { AuthService } from './auth/auth.service';
-import { BillingPlan, Consultation, Disease, Doctor, DoseEvent, Prescription } from './interfaces';
+import { type ClinicApiService } from './clinic-api/clinic-api.service';
+import { type AuthService } from './auth/auth.service';
+import type { BillingPlan, Consultation, Disease, Doctor, DoseEvent, Prescription } from './interfaces';
 import { environment } from '../environments/environment';
 
 type PaymentFlowState = 'IDLE' | 'CREATING_ORDER' | 'OPENING_CHECKOUT' | 'VERIFYING' | 'SUCCESS' | 'ERROR';

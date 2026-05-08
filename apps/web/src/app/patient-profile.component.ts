@@ -1,8 +1,8 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, type OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { environment } from '../environments/environment';
-import { AuthService } from './auth/auth.service';
+import { type AuthService } from './auth/auth.service';
 
 type Profile = {
   id: string;

@@ -1,5 +1,5 @@
 import { chronicCareDiseaseInfo } from './chronic-care-disease-info.constants';
-import { DiseaseInfo } from '../../interfaces';
+import { type DiseaseInfo } from '../../interfaces';
 import { cardiovascularDiseaseInfo } from '../treatment-approach/cardiovascular-disease-info.constants';
 import { chronicKidneyDiseaseInfo } from './chronic-kidney-disease-info.constants';
 import { diabetesMellitusDiseaseInfo } from './diabetes-mellitus-disease-info.constants';

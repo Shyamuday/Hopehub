@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, Output } from '@angular/core';
-import { Consultation, Role } from './interfaces';
+import { type Consultation, type Role } from './interfaces';
 
 @Component({
   selector: 'app-consultation-list',

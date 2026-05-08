@@ -1,4 +1,4 @@
-import { HomeopathyApproach } from '../../interfaces';
+import { type HomeopathyApproach } from '../../interfaces';
 
 export const protocolBasedApproach: HomeopathyApproach = {
   slug: 'protocol-based-prescribing',

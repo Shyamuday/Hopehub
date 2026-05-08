@@ -1,4 +1,4 @@
-import { Routes } from '@angular/router';
+import { type Routes } from '@angular/router';
 import { adminAuthGuard } from './core/guards/admin-auth-guard';
 import { AdminLogin } from './features/auth/admin-login/admin-login';
 import { AdminDashboard } from './features/dashboard/admin-dashboard/admin-dashboard';

@@ -1,5 +1,5 @@
 import type express from 'express';
-import { PaymentStatus, Prisma, Role } from '@prisma/client';
+import { PaymentStatus, type Prisma, Role } from '@prisma/client';
 import { allowRoles, authRequired } from '../../auth.js';
 import { prisma } from '../../db.js';
 import { asyncRoute } from '../../middleware/async-route.js';

@@ -1,8 +1,8 @@
 import { CommonModule, DOCUMENT } from '@angular/common';
-import { Component, effect, EventEmitter, HostListener, inject, Input, OnDestroy, Output, signal } from '@angular/core';
+import { Component, effect, EventEmitter, HostListener, inject, Input, type OnDestroy, Output, signal } from '@angular/core';
 import { AuthFormOverlayComponent } from './auth/auth-form-overlay.component';
-import { User } from './interfaces';
-import { AppOverlayService } from './overlay.service';
+import { type User } from './interfaces';
+import { type AppOverlayService } from './overlay.service';
 
 @Component({
   selector: 'app-header',

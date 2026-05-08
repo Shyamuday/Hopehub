@@ -1,4 +1,4 @@
-import { Routes } from '@angular/router';
+import { type Routes } from '@angular/router';
 import { doctorAuthGuard } from './core/guards/doctor-auth-guard';
 import { Login } from './features/auth/login/login';
 import { AppointmentsPage } from './features/appointments/appointments-page/appointments-page';

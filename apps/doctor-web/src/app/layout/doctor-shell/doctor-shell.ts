@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
-import { Auth } from '../../core/services/auth';
+import { type Auth } from '../../core/services/auth';
 
 @Component({
   selector: 'app-doctor-shell',

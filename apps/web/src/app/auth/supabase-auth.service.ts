@@ -1,5 +1,5 @@
 import { Injectable, signal } from '@angular/core';
-import { Role, User } from '../interfaces';
+import { type Role, type User } from '../interfaces';
 import { supabase } from '../supabase.client';
 
 

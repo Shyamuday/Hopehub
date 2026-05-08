@@ -1,5 +1,5 @@
-import { Injectable, Injector, Type, inject } from '@angular/core';
-import { Overlay, OverlayConfig, OverlayRef } from '@angular/cdk/overlay';
+import { Injectable, Injector, type Type, inject } from '@angular/core';
+import { Overlay, OverlayConfig, type OverlayRef } from '@angular/cdk/overlay';
 import { ComponentPortal } from '@angular/cdk/portal';
 import { Subject } from 'rxjs';
 import { APP_OVERLAY_DATA, APP_OVERLAY_REF } from './overlay.tokens';

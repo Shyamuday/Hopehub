@@ -1,4 +1,4 @@
-import { HomeopathyApproach } from '../../interfaces';
+import { type HomeopathyApproach } from '../../interfaces';
 
 export const eightBoxCaseStructureApproach: HomeopathyApproach = {
   slug: 'eight-box-case-structure',

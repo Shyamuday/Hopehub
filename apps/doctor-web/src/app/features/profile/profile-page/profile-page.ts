@@ -1,4 +1,4 @@
-import { HttpClient } from '@angular/common/http';
+import { type HttpClient } from '@angular/common/http';
 import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';

@@ -19,7 +19,8 @@
     "mobile:admin:sync": "npm run sync --prefix apps/mobile-admin",
     "format": "prettier --write \"apps/**/*.{ts,html,scss,css,json}\" \"docs/**/*.md\"",
     "format:check": "prettier --check \"apps/**/*.{ts,html,scss,css,json}\" \"docs/**/*.md\"",
-    "lint": "npm run lint --prefix apps/api",
+    "lint:eslint": "eslint apps/api apps/web apps/doctor-web apps/admin-web",
+    "lint": "npm run lint:eslint && npm run lint --prefix apps/api",
     "prisma:generate": "npm run prisma:generate --prefix apps/api",
     "prisma:migrate": "npm run prisma:migrate --prefix apps/api",
     "seed": "npm run seed --prefix apps/api"

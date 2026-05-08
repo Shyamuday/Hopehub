@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, Input, inject } from '@angular/core';
-import { Prescription } from './interfaces';
+import { type Prescription } from './interfaces';
 import { environment } from '../environments/environment';
 import { AuthService } from './auth/auth.service';
 

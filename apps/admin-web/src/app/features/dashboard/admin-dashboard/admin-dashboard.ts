@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { AdminApi } from '../../../core/services/admin-api';
+import { type AdminApi } from '../../../core/services/admin-api';
 
 @Component({
   selector: 'app-admin-dashboard',

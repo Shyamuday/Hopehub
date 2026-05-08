@@ -1,9 +1,9 @@
-import { HttpClient } from '@angular/common/http';
+import { type HttpClient } from '@angular/common/http';
 import { CommonModule, DatePipe } from '@angular/common';
 import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
-import { Router } from '@angular/router';
+import { type Router } from '@angular/router';
 import { environment } from '../../../../environments/environment';
 
 type DoseEvent = {

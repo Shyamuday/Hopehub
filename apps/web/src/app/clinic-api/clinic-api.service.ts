@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { from } from 'rxjs';
-import { RealtimeChannel } from '@supabase/supabase-js';
+import { type RealtimeChannel } from '@supabase/supabase-js';
 import { environment } from '../../environments/environment';
 import type { Consultation } from '../interfaces';
 import { supabase } from '../supabase.client';

@@ -1,9 +1,9 @@
 import { CommonModule, DatePipe } from '@angular/common';
-import { Component, EventEmitter, inject, Input, OnChanges, Output } from '@angular/core';
+import { Component, EventEmitter, inject, Input, type OnChanges, Output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 import { ClinicApiService } from './clinic-api/clinic-api.service';
-import { Consultation, Prescription, Role } from './interfaces';
+import { type Consultation, type Prescription, type Role } from './interfaces';
 
 export type SendMessagePayload = { consultation: Consultation; body: string };
 export type PrescriptionPayload = { notes: string; fileUrl: string };

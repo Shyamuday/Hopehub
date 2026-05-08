@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, type OnInit, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { AppOverlayService } from '../overlay.service';
 import { AuthFormOverlayComponent } from './auth-form-overlay.component';

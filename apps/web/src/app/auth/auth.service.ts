@@ -1,7 +1,7 @@
 import { Injectable, computed, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom, from, map, switchMap, tap } from 'rxjs';
-import { Role, User } from '../interfaces';
+import { type Role, type User } from '../interfaces';
 import { SupabaseAuthService } from './supabase-auth.service';
 import { supabase } from '../supabase.client';
 import { environment } from '../../environments/environment';

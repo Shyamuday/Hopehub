@@ -1,7 +1,7 @@
 import type { Prisma } from '@prisma/client';
 import { resolveAttachmentFileUrl } from '../consultation-attachments.js';
 import { apiPublicBaseUrl } from '../server/config.js';
-import { doctorProfileApiDbSelect } from './prisma-includes.js';
+import { type doctorProfileApiDbSelect } from './prisma-includes.js';
 
 export type DoctorProfileDb = Prisma.DoctorGetPayload<{ select: typeof doctorProfileApiDbSelect }>;
 
