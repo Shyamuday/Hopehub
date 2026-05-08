@@ -76,6 +76,12 @@ model User {
   allergies           String?
   currentMedications  String?
   chronicConditions   String?
+  /** Optional shipping / medicine delivery address (patient). */
+  deliveryAddressLine1 String?
+  deliveryAddressLine2 String?
+  deliveryCity         String?
+  deliveryState        String?
+  deliveryPincode      String?
   doctorProfile       Doctor?
   patientConsults     Consultation[] @relation("PatientConsultations")
   doctorConsults      Consultation[] @relation("DoctorConsultations")

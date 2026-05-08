@@ -1,7 +1,9 @@
 import { Component } from '@angular/core';
+import { RouterLink } from '@angular/router';
 
 @Component({
   selector: 'app-home-treatments-section',
+  imports: [RouterLink],
   template: `
     <!-- Stats Section -->
     <section class="stats-section">
@@ -35,7 +37,7 @@ import { Component } from '@angular/core';
           <li>Pattern tracking over time</li>
           <li>Regular follow-up check-ins</li>
         </ul>
-        <a href="/chronic-care" class="card-link">Explore chronic care →</a>
+        <a routerLink="/chronic-care" class="card-link">Explore chronic care →</a>
       </article>
       <article class="panel treatment-card">
         <div class="card-badge secondary-badge">Also available</div>
@@ -47,7 +49,7 @@ import { Component } from '@angular/core';
           <li>Hair fall treatment</li>
           <li>Lifestyle conditions</li>
         </ul>
-        <a href="/treatments" class="card-link">View all treatments →</a>
+        <a routerLink="/treatments" class="card-link">View all treatments →</a>
       </article>
     </section>
   `

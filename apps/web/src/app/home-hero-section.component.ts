@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, Input, signal } from '@angular/core';
+import { Component, Input, computed, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
@@ -11,12 +11,44 @@ type BookStep = 'form' | 'otp' | 'loading' | 'done';
   selector: 'app-home-hero-section',
   imports: [CommonModule, FormsModule],
   styles: [`
+    .hero-layout {
+      display: grid;
+      gap: 1.75rem;
+      align-items: start;
+    }
+    .hero-main {
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+      min-width: 0;
+    }
+    @media (max-width: 899px) {
+      .booking-card {
+        margin-inline: auto;
+        width: min(440px, 100%);
+      }
+    }
+    @media (min-width: 900px) {
+      .hero-layout {
+        grid-template-columns: minmax(0, 1fr) minmax(280px, 400px);
+        gap: clamp(1.75rem, 4vw, 2.75rem);
+      }
+      .hero-aside {
+        position: sticky;
+        top: max(5.5rem, calc(env(safe-area-inset-top, 0px) + 4.5rem));
+      }
+      .booking-card {
+        margin-top: 0;
+        max-width: none;
+        width: 100%;
+      }
+    }
     .booking-card {
       background: #fff;
       border: 1.5px solid #e5e7eb;
       border-radius: 16px;
       padding: 1.5rem 1.75rem;
-      margin-top: 1.5rem;
+      margin-top: 0;
       box-shadow: 0 2px 12px rgba(0,0,0,.06);
       max-width: 440px;
     }
@@ -116,15 +148,34 @@ type BookStep = 'form' | 'otp' | 'loading' | 'done';
   `],
   template: `
     <section class="panel hero-panel">
-      <div class="home-hero">
-        <p class="eyebrow">Vitalis Care and Research Centre | Doctor-led digital clinic</p>
-        <h1>Chronic care that actually follows through.</h1>
-        <p class="hero-copy">
-          We specialize in long-running conditions that need deeper history, pattern tracking, and disciplined follow-up — not quick-fix consultations.
-        </p>
+      <div class="hero-layout">
+        <div class="hero-main">
+          <div class="home-hero">
+            <p class="eyebrow">Vitalis Care and Research Centre | Doctor-led digital clinic</p>
+            <h1>Chronic care that actually follows through.</h1>
+            <p class="hero-copy">
+              We specialize in long-running conditions that need deeper history, pattern tracking, and disciplined follow-up — not quick-fix consultations.
+            </p>
+          </div>
 
-        <!-- ── Inline booking card ── -->
-        <div class="booking-card">
+          <div class="hero-trust-row">
+            <div class="trust-item">
+              <span class="trust-icon">✓</span>
+              <span>Licensed doctors</span>
+            </div>
+            <div class="trust-item">
+              <span class="trust-icon">✓</span>
+              <span>Secure &amp; private</span>
+            </div>
+            <div class="trust-item">
+              <span class="trust-icon">✓</span>
+              <span>Follow-up included</span>
+            </div>
+          </div>
+        </div>
+
+        <aside class="hero-aside" [attr.aria-label]="bookingAsideLabel()">
+          <div class="booking-card">
           @switch (step()) {
             @case ('form') {
               <h3>Book an appointment</h3>
@@ -177,32 +228,18 @@ type BookStep = 'form' | 'otp' | 'loading' | 'done';
             }
 
             @case ('loading') {
-              <div class="bc-loading">
+              <div class="bc-loading" aria-live="polite">
                 <div class="bc-spinner"></div>
                 <span>Setting up your account…</span>
               </div>
             }
 
             @case ('done') {
-              <div class="bc-done">✓ Verified! Taking you to your dashboard…</div>
+              <div class="bc-done" aria-live="polite">✓ Verified! Taking you to your dashboard…</div>
             }
           }
-        </div>
-
-        <div class="hero-trust-row" style="margin-top:1.25rem">
-          <div class="trust-item">
-            <span class="trust-icon">✓</span>
-            <span>Licensed doctors</span>
           </div>
-          <div class="trust-item">
-            <span class="trust-icon">✓</span>
-            <span>Secure &amp; private</span>
-          </div>
-          <div class="trust-item">
-            <span class="trust-icon">✓</span>
-            <span>Follow-up included</span>
-          </div>
-        </div>
+        </aside>
       </div>
     </section>
   `
@@ -217,6 +254,19 @@ export class HomeHeroSectionComponent {
   readonly step = signal<BookStep>('form');
   readonly busy = signal(false);
   readonly error = signal('');
+
+  readonly bookingAsideLabel = computed(() => {
+    switch (this.step()) {
+      case 'otp':
+        return 'Verify your phone number with OTP';
+      case 'loading':
+        return 'Completing sign in';
+      case 'done':
+        return 'Signed in successfully';
+      default:
+        return 'Book an appointment';
+    }
+  });
 
   constructor(
     private readonly auth: AuthService,

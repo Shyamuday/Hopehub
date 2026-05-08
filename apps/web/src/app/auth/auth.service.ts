@@ -1,6 +1,6 @@
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable, computed, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { firstValueFrom, from, map, switchMap, tap } from 'rxjs';
+import { catchError, firstValueFrom, from, map, switchMap, tap, throwError } from 'rxjs';
 import { type Role, type User } from '../interfaces';
 import { SupabaseAuthService } from './supabase-auth.service';
 import { supabase } from '../supabase.client';
@@ -102,8 +102,20 @@ export class AuthService {
   }
 
   patientPasswordLogin(payload: { identifier: string; password: string }) {
-    return from(this.supabaseAuth.signInPatientWithPassword(payload.identifier, payload.password)).pipe(
-      switchMap((user: User) => this.exchangeSupabaseSession(user))
+    return this.http.post<AuthResponse>(`${this.apiBase}/auth/patient-password-login`, payload).pipe(
+      tap((response) => this.persistSession(response)),
+      catchError((err: HttpErrorResponse) => {
+        const code =
+          err.error && typeof err.error === 'object' && 'code' in err.error
+            ? (err.error as { code?: string }).code
+            : undefined;
+        if (err.status === 401 && code === 'PASSWORD_NOT_SET') {
+          return from(this.supabaseAuth.signInPatientWithPassword(payload.identifier, payload.password)).pipe(
+            switchMap((user: User) => this.exchangeSupabaseSession(user))
+          );
+        }
+        return throwError(() => err);
+      })
     );
   }
 
@@ -132,6 +144,41 @@ export class AuthService {
       }),
       tap((response: AuthResponse) => this.persistSession(response))
     );
+  }
+
+  /**
+   * Sets or updates the clinic account password (Prisma). Optional: syncs Supabase password when a session exists.
+   * When you already have a password, pass currentPassword.
+   */
+  patientUpdatePassword(payload: { newPassword: string; currentPassword?: string }) {
+    const token = this.token;
+    if (!token) {
+      return throwError(() => new Error('Not signed in.'));
+    }
+    return this.http
+      .post<{ ok: boolean }>(`${this.apiBase}/patient/account/password`, payload, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      .pipe(
+        switchMap(() =>
+          from(
+            (async () => {
+              const { data } = await supabase.auth.getSession();
+              if (data.session) {
+                const { error } = await supabase.auth.updateUser({ password: payload.newPassword });
+                if (error) {
+                  console.warn('[auth] Supabase password sync skipped:', error.message);
+                }
+              }
+              try {
+                await this.tryExchangeSupabaseSession();
+              } catch {
+                // ignore
+              }
+            })()
+          )
+        )
+      );
   }
 
   googleLogin() {

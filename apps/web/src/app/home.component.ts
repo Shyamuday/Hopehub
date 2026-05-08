@@ -30,7 +30,7 @@ import { TranslateService } from '@ngx-translate/core';
     <section class="public-shell">
       <app-header [subtitle]="headerTagline()" [whatsappLink]="whatsappLink" />
 
-      <main class="content-page">
+      <main id="main-content" class="content-page" tabindex="-1">
         <app-home-launch-banner [disease]="launchDisease()" />
         <app-home-hero-section [whatsappLink]="whatsappLink" />
         <app-home-treatments-section />

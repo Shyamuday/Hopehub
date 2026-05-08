@@ -57,6 +57,59 @@ export function registerAuthRoutes(app: express.Application) {
   );
 
   app.post(
+    '/auth/patient-password-login',
+    asyncRoute(async (req, res) => {
+      const body = z
+        .object({
+          identifier: z.string().min(3),
+          password: z.string().min(8)
+        })
+        .parse(req.body);
+
+      const raw = body.identifier.trim();
+      const isEmail = raw.includes('@');
+      const identifier = isEmail ? raw.toLowerCase() : raw;
+
+      const user = await prisma.user.findFirst({
+        where: {
+          role: Role.PATIENT,
+          isActive: true,
+          ...(isEmail ? { email: identifier } : { mobile: identifier })
+        },
+        select: {
+          ...publicUserSelect,
+          passwordHash: true
+        }
+      });
+
+      if (!user) {
+        logAuthEvent('patient_password_login_failure', { reason: 'unknown_user', isEmail });
+        return res.status(401).json({ message: 'Invalid credentials' });
+      }
+
+      if (!user.passwordHash) {
+        logAuthEvent('patient_password_login_fallback', { userId: user.id, reason: 'no_prisma_password' });
+        return res.status(401).json({
+          message:
+            'No password on file for this clinic account. Use OTP sign-in or the same password you use with email/mobile auth.',
+          code: 'PASSWORD_NOT_SET'
+        });
+      }
+
+      const valid = await bcrypt.compare(body.password, user.passwordHash);
+      if (!valid) {
+        logAuthEvent('patient_password_login_failure', { userId: user.id, reason: 'bad_password' });
+        return res.status(401).json({ message: 'Invalid credentials' });
+      }
+
+      const { passwordHash: _h, ...safe } = user;
+      void _h;
+      logAuthEvent('patient_password_login_success', { userId: safe.id });
+      res.json(toAuthResponse(safe));
+    })
+  );
+
+  app.post(
     '/auth/staff-login',
     asyncRoute(async (req, res) => {
       const body = z.object({ email: z.string().email(), password: z.string().min(8) }).parse(req.body);
