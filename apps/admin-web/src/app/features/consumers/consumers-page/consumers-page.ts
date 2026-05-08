@@ -1,6 +1,9 @@
 import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
+import { ADMIN_PERMISSIONS, adminHasAllPermissions } from '../../../core/admin-permissions';
+import { AdminAuth } from '../../../core/services/admin-auth';
 import { AdminApi } from '../../../core/services/admin-api';
 
 type Consumer = {
@@ -68,12 +71,30 @@ export class ConsumersPage {
   assignError = '';
   assigning = false;
 
-  constructor(private readonly api: AdminApi) {
+  pendingFocusId: string | null = null;
+
+  constructor(
+    private readonly api: AdminApi,
+    private readonly route: ActivatedRoute,
+    readonly auth: AdminAuth
+  ) {
+    this.pendingFocusId = this.route.snapshot.queryParamMap.get('focus');
     void this.load();
-    void this.loadDoctors();
+    void this.loadDoctorsIfNeeded();
   }
 
-  private async loadDoctors() {
+  canAssign() {
+    return adminHasAllPermissions(
+      this.auth.user(),
+      ADMIN_PERMISSIONS.ASSIGNMENTS_WRITE,
+      ADMIN_PERMISSIONS.DOCTORS_READ
+    );
+  }
+
+  private async loadDoctorsIfNeeded() {
+    if (!this.canAssign()) {
+      return;
+    }
     try {
       const res = await this.api.getActiveDoctors();
       this.activeDoctors = res.doctors || [];
@@ -125,9 +146,12 @@ export class ConsumersPage {
       });
       this.consumers = response.consumers || [];
       this.totalPagesCount = Math.max(1, Number(response.pagination?.totalPages || 1));
-      if (!this.selectedConsumerId) {
-        this.selectedConsumerId = this.consumers[0]?.id || '';
-      }
+
+      const focus = this.pendingFocusId;
+      this.pendingFocusId = null;
+      const fromFocus = focus && this.consumers.some((c) => c.id === focus) ? focus : '';
+      this.selectedConsumerId = fromFocus || this.consumers[0]?.id || '';
+
       if (this.selectedConsumerId) {
         await this.loadConsumerDetail(this.selectedConsumerId);
       } else {

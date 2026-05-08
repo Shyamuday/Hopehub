@@ -1,6 +1,8 @@
 import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { ADMIN_PERMISSIONS, adminHasAllPermissions } from '../../../core/admin-permissions';
+import { AdminAuth } from '../../../core/services/admin-auth';
 import { AdminApi } from '../../../core/services/admin-api';
 
 type StaffRow = {
@@ -40,8 +42,15 @@ export class StaffPage {
   saveError = '';
   saving = false;
 
-  constructor(private readonly api: AdminApi) {
+  constructor(
+    private readonly api: AdminApi,
+    readonly auth: AdminAuth
+  ) {
     void this.load();
+  }
+
+  canWrite() {
+    return adminHasAllPermissions(this.auth.user(), ADMIN_PERMISSIONS.STAFF_WRITE);
   }
 
   async load() {
@@ -66,6 +75,7 @@ export class StaffPage {
   }
 
   startEdit(row: StaffRow) {
+    if (!this.canWrite()) return;
     this.editingId = row.id;
     const sp = row.staffProfile;
     this.draftSuper = sp?.isSuperAdmin ?? false;
@@ -97,7 +107,7 @@ export class StaffPage {
   }
 
   async save() {
-    if (!this.editingId) return;
+    if (!this.editingId || !this.canWrite()) return;
     this.saving = true;
     this.saveError = '';
     try {

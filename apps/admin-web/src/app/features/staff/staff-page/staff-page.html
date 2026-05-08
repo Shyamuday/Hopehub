@@ -35,7 +35,13 @@
   } @else {
     <div class="preset-legend">
       <h3>Recommended role presets</h3>
-      <p class="muted small">Use when editing an admin — applies the code bundle to the draft (you can edit the list before save).</p>
+      <p class="muted small">
+        @if (canWrite()) {
+          Use when editing an admin — applies the code bundle to the draft (you can edit the list before save).
+        } @else {
+          Reference only. Changes require <code>admin.staff.write</code>.
+        }
+      </p>
       <ul class="preset-list">
         @for (p of presets; track p.id) {
           <li>
@@ -60,10 +66,13 @@
                 <span class="inactive-badge">Inactive</span>
               }
             </div>
-            <button type="button" class="btn-edit" (click)="startEdit(row)">Edit</button>
+            @if (canWrite()) {
+              <button type="button" class="btn-edit" (click)="startEdit(row)">Edit</button>
+            }
           </div>
           <p class="codes-display">{{ formatCodes(row) }}</p>
         } @else {
+          @if (canWrite()) {
           <h4>Edit {{ row.name }}</h4>
           <label class="field checkbox-field">
             <input type="checkbox" [(ngModel)]="draftSuper" name="super{{ row.id }}" />
@@ -89,6 +98,10 @@
             <button type="button" class="btn-save" (click)="save()" [disabled]="saving">Save</button>
             <button type="button" class="btn-cancel" (click)="cancelEdit()" [disabled]="saving">Cancel</button>
           </div>
+          } @else {
+            <p class="muted">You don’t have permission to change staff. Close to return to the list.</p>
+            <button type="button" class="btn-cancel" (click)="cancelEdit()">Close</button>
+          }
         }
       </article>
     } @empty {

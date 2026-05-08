@@ -1,16 +1,36 @@
 <main class="admin-shell">
   <header class="topbar">
-    <h1>Admin Console</h1>
+    <div class="topbar-titles">
+      <h1>Admin Console</h1>
+      @if (auth.user(); as u) {
+        <p class="user-line">{{ u.name }}<span class="dim"> · task access only where permitted</span></p>
+      }
+    </div>
     <button type="button" (click)="logout()">Logout</button>
   </header>
 
-  <nav class="tabs">
-    <a routerLink="/dashboard" routerLinkActive="active">Dashboard</a>
-    <a routerLink="/doctors" routerLinkActive="active">Doctors</a>
-    <a routerLink="/consumers" routerLinkActive="active">Consumers</a>
-    <a routerLink="/diseases" routerLinkActive="active">Diseases</a>
-    <a routerLink="/locations" routerLinkActive="active">Locations</a>
-    <a routerLink="/staff" routerLinkActive="active">Staff</a>
+  <nav class="tabs" aria-label="Admin sections">
+    @if (canAny(P.REPORTS_VIEW, P.PAYMENTS_READ, P.AUDIT_READ)) {
+      <a routerLink="/dashboard" routerLinkActive="active">Dashboard</a>
+    }
+    @if (canAll(P.CONSULTATIONS_READ)) {
+      <a routerLink="/consultations" routerLinkActive="active">Consultations</a>
+    }
+    @if (canAll(P.DOCTORS_READ)) {
+      <a routerLink="/doctors" routerLinkActive="active">Doctors</a>
+    }
+    @if (canAll(P.CONSUMERS_READ)) {
+      <a routerLink="/consumers" routerLinkActive="active">Consumers</a>
+    }
+    @if (canAll(P.DISEASES_READ)) {
+      <a routerLink="/diseases" routerLinkActive="active">Diseases</a>
+    }
+    @if (canAll(P.LOCATIONS_READ)) {
+      <a routerLink="/locations" routerLinkActive="active">Locations</a>
+    }
+    @if (canAll(P.STAFF_READ)) {
+      <a routerLink="/staff" routerLinkActive="active">Staff</a>
+    }
   </nav>
 
   <section class="content">

@@ -1,0 +1,45 @@
+<section class="panel">
+  <div class="panel-intro">
+    <h2>Consultations</h2>
+    <p class="muted">
+      Use this list for follow-ups and coordination. Open a patient’s full profile under <a routerLink="/consumers">Consumers</a>
+      for adherence and history.
+    </p>
+  </div>
+
+  @if (loading) {
+    <p class="muted">Loading…</p>
+  } @else if (error) {
+    <p class="error">{{ error }}</p>
+    <button type="button" class="retry" (click)="load()">Retry</button>
+  } @else {
+    @for (c of consultations; track c.id) {
+      <article class="card">
+        <div class="row-top">
+          <strong>{{ c.patient?.name || 'Patient' }}</strong>
+          <span class="pill" [class]="'st-' + c.status.toLowerCase().replaceAll('_', '-')">{{ c.status }}</span>
+        </div>
+        <p class="meta">
+          {{ c.disease?.name || 'Consultation' }} · {{ c.createdAt | date: 'medium' }}
+        </p>
+        <p class="meta">
+          @if (c.patient?.mobile) {
+            <a [href]="'tel:' + c.patient!.mobile" class="phone">{{ c.patient!.mobile }}</a>
+          } @else {
+            <span class="muted">No phone on file</span>
+          }
+          @if (c.assignedDoctor?.name) {
+            · Dr. {{ c.assignedDoctor!.name }}
+          } @else {
+            · <span class="warn">Unassigned</span>
+          }
+        </p>
+        @if (c.patient?.id) {
+          <a class="link" [routerLink]="['/consumers']" [queryParams]="{ focus: c.patient!.id }">Patient record →</a>
+        }
+      </article>
+    } @empty {
+      <p class="muted">No consultations found.</p>
+    }
+  }
+</section>

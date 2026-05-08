@@ -1,6 +1,8 @@
 import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { ADMIN_PERMISSIONS, adminHasAllPermissions } from '../../../core/admin-permissions';
+import { AdminAuth } from '../../../core/services/admin-auth';
 import { AdminApi } from '../../../core/services/admin-api';
 
 type Doctor = {
@@ -58,8 +60,15 @@ export class DoctorsPage {
   createSpecialty = '';
   createRegistrationNo = '';
 
-  constructor(private readonly api: AdminApi) {
+  constructor(
+    private readonly api: AdminApi,
+    readonly auth: AdminAuth
+  ) {
     void this.load();
+  }
+
+  canWrite() {
+    return adminHasAllPermissions(this.auth.user(), ADMIN_PERMISSIONS.DOCTORS_WRITE);
   }
 
   async load() {

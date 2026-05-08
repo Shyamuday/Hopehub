@@ -1,3 +1,4 @@
+@if (canWrite()) {
 <section class="panel">
   <h2>Create Doctor</h2>
   <div class="toolbar">
@@ -12,6 +13,7 @@
     </button>
   </div>
 </section>
+}
 
 <section class="panel">
   <h2>Pending Doctor Approvals</h2>
@@ -20,6 +22,7 @@
     <p class="loading-text">Loading...</p>
   }
 
+  @if (canWrite()) {
   <div class="toolbar">
     <input
       placeholder="Search pending doctors..."
@@ -44,10 +47,12 @@
       Bulk Keep Pending
     </button>
   </div>
+  }
 
   @if (!loading) {
     @for (doctor of visiblePendingDoctors(); track doctor.id) {
       <article class="card">
+        @if (canWrite()) {
         <label class="select-doctor">
           <input
             type="checkbox"
@@ -57,15 +62,18 @@
           />
           Select
         </label>
+        }
         <strong>{{ doctor.name }}</strong>
         <p>{{ doctor.email }} | {{ doctor.mobile || 'No mobile' }}</p>
         <small>{{ doctor.doctorProfile?.specialty || 'Specialty not set' }} | {{ doctor.doctorProfile?.registrationNo || 'No registration no.' }}</small>
+        @if (canWrite()) {
         <div class="actions">
           <button type="button" (click)="approveDoctor(doctor.id)" [disabled]="mutating">
             {{ mutating ? '...' : 'Approve' }}
           </button>
           <button type="button" (click)="rejectDoctor(doctor.id)" [disabled]="mutating">Keep Pending</button>
         </div>
+        }
       </article>
     } @empty {
       <p class="empty-state">No pending doctor enrollments.</p>
@@ -128,6 +136,7 @@
       <p>Registration No: {{ selectedDoctor.doctorProfile?.registrationNo || 'N/A' }}</p>
       <p>Status: {{ selectedDoctor.isActive ? 'Active' : 'Inactive' }}</p>
       <p>Available: {{ selectedDoctor.doctorProfile?.isAvailable ? 'Yes' : 'No' }}</p>
+      @if (canWrite()) {
       <div class="actions">
         @if (selectedDoctor.isActive) {
           <button type="button" (click)="toggleDoctorStatus(selectedDoctor.id, false)" [disabled]="mutating">
@@ -139,7 +148,9 @@
           </button>
         }
       </div>
+      }
     </article>
+    @if (canWrite()) {
     <article class="card">
       <h3>Edit Doctor</h3>
       <div class="toolbar">
@@ -157,6 +168,7 @@
         </button>
       </div>
     </article>
+    }
   } @else {
     <p>Select a doctor from the list to view profile details.</p>
   }

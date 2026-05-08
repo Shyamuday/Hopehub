@@ -1,6 +1,8 @@
 import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { ADMIN_PERMISSIONS, adminHasAllPermissions } from '../../../core/admin-permissions';
+import { AdminAuth } from '../../../core/services/admin-auth';
 import { AdminApi } from '../../../core/services/admin-api';
 
 @Component({
@@ -10,6 +12,8 @@ import { AdminApi } from '../../../core/services/admin-api';
   styleUrl: './admin-dashboard.scss'
 })
 export class AdminDashboard {
+  readonly P = ADMIN_PERMISSIONS;
+
   revenueInPaise = 0;
   activeDoctors = 0;
   consultationsCount = 0;
@@ -35,26 +39,61 @@ export class AdminDashboard {
   csvError = '';
   error = '';
 
-  constructor(private readonly api: AdminApi) {
+  constructor(
+    private readonly api: AdminApi,
+    readonly auth: AdminAuth
+  ) {
     void this.load();
+  }
+
+  canReport() {
+    return adminHasAllPermissions(this.auth.user(), this.P.REPORTS_VIEW);
+  }
+
+  canPayments() {
+    return adminHasAllPermissions(this.auth.user(), this.P.PAYMENTS_READ);
+  }
+
+  canPaymentsExport() {
+    return adminHasAllPermissions(this.auth.user(), this.P.PAYMENTS_EXPORT);
+  }
+
+  canAudit() {
+    return adminHasAllPermissions(this.auth.user(), this.P.AUDIT_READ);
   }
 
   async load() {
     this.error = '';
     try {
-      const report = (await this.api.getReports()) as {
-        revenueInPaise: number;
-        activeDoctors: number;
-        consultations: Array<unknown>;
-      };
-      this.revenueInPaise = report.revenueInPaise || 0;
-      this.activeDoctors = report.activeDoctors || 0;
-      this.consultationsCount = report.consultations?.length || 0;
-      const audit = await this.api.getAuditLogs(1, 15);
-      this.auditLogs = audit.logs || [];
-      await this.loadPayments();
+      if (this.canReport()) {
+        const report = (await this.api.getReports()) as {
+          revenueInPaise: number;
+          activeDoctors: number;
+          consultations: Array<unknown>;
+        };
+        this.revenueInPaise = report.revenueInPaise || 0;
+        this.activeDoctors = report.activeDoctors || 0;
+        this.consultationsCount = report.consultations?.length || 0;
+      } else {
+        this.revenueInPaise = 0;
+        this.activeDoctors = 0;
+        this.consultationsCount = 0;
+      }
+
+      if (this.canAudit()) {
+        const audit = await this.api.getAuditLogs(1, 15);
+        this.auditLogs = audit.logs || [];
+      } else {
+        this.auditLogs = [];
+      }
+
+      if (this.canPayments()) {
+        await this.loadPayments();
+      } else {
+        this.payments = [];
+      }
     } catch {
-      this.error = 'Could not load admin dashboard summary.';
+      this.error = 'Could not load one or more dashboard sections.';
     }
   }
 
@@ -112,7 +151,7 @@ export class AdminDashboard {
       link.click();
       URL.revokeObjectURL(url);
     } catch {
-      this.csvError = 'CSV export failed. Please try again.';
+      this.csvError = 'CSV export failed. You may need admin.payments.export.';
     } finally {
       this.csvExporting = false;
     }

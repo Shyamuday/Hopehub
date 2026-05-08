@@ -1,12 +1,14 @@
 <section class="panel">
   <div class="panel-header">
     <h2>Diseases &amp; Intake Questions</h2>
+    @if (canWrite()) {
     <button type="button" class="btn-primary" (click)="showCreateForm = !showCreateForm">
       {{ showCreateForm ? 'Cancel' : '+ New Disease' }}
     </button>
+    }
   </div>
 
-  @if (showCreateForm) {
+  @if (canWrite() && showCreateForm) {
     <div class="create-form">
       <h3>New Disease</h3>
       <div class="field-row">
@@ -70,7 +72,9 @@
                 <span class="inactive-badge">Inactive</span>
               }
             </div>
+            @if (canWrite()) {
             <button type="button" class="btn-edit" (click)="startEdit(disease)">Edit</button>
+            }
           </div>
           <p class="disease-desc">{{ disease.description }}</p>
           <div class="question-list-read">
@@ -80,6 +84,7 @@
           </div>
 
         } @else {
+          @if (canWrite()) {
           <h4>Editing: {{ disease.name }}</h4>
           <div class="field-row">
             <label class="field">
@@ -126,6 +131,7 @@
             </button>
             <button type="button" class="btn-cancel" (click)="cancelEdit()" [disabled]="saving">Cancel</button>
           </div>
+          }
         }
       </article>
     } @empty {

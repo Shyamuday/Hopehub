@@ -1,5 +1,6 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { ADMIN_PERMISSIONS, adminHasAllPermissions, adminHasAnyPermission } from '../../core/admin-permissions';
 import { AdminAuth } from '../../core/services/admin-auth';
 
 @Component({
@@ -9,10 +10,18 @@ import { AdminAuth } from '../../core/services/admin-auth';
   styleUrl: './admin-shell.scss'
 })
 export class AdminShell {
-  constructor(
-    private readonly auth: AdminAuth,
-    private readonly router: Router
-  ) {}
+  readonly auth = inject(AdminAuth);
+  readonly P = ADMIN_PERMISSIONS;
+
+  constructor(private readonly router: Router) {}
+
+  canAll(...codes: string[]) {
+    return adminHasAllPermissions(this.auth.user(), ...codes);
+  }
+
+  canAny(...codes: string[]) {
+    return adminHasAnyPermission(this.auth.user(), ...codes);
+  }
 
   logout() {
     this.auth.logout();

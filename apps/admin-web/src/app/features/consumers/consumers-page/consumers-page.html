@@ -67,13 +67,13 @@
         </p>
         <small>Prescriptions: {{ consultation.prescriptions?.length || 0 }}</small>
 
-        @if (consultation.status === 'PAID' && assigningConsultationId !== consultation.id) {
+        @if (canAssign() && consultation.status === 'PAID' && assigningConsultationId !== consultation.id) {
           <button type="button" class="btn-assign" (click)="startAssign(consultation.id)" [disabled]="assigning">
             Assign Doctor
           </button>
         }
 
-        @if (assigningConsultationId === consultation.id) {
+        @if (canAssign() && assigningConsultationId === consultation.id) {
           <div class="assign-panel">
             <label class="assign-label">
               Select doctor

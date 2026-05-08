@@ -29,7 +29,7 @@ export class AdminLogin {
         this.error = result.message;
         return;
       }
-      void this.router.navigateByUrl('/dashboard');
+      void this.router.navigateByUrl('/');
     } finally {
       this.submitting = false;
     }

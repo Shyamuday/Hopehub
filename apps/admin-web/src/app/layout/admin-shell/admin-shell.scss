@@ -12,6 +12,22 @@
   color: #fff;
 }
 
+.topbar-titles h1 {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.user-line {
+  margin: 0.25rem 0 0;
+  font-size: 0.8rem;
+  color: #e2e8f0;
+}
+
+.user-line .dim {
+  color: #94a3b8;
+  font-weight: 400;
+}
+
 .tabs {
   display: flex;
   gap: 0.75rem;
@@ -52,6 +68,10 @@ button {
     align-items: flex-start;
     gap: 0.65rem;
     padding: 0.9rem 1rem;
+  }
+
+  .topbar button {
+    align-self: stretch;
   }
 
   .tabs {

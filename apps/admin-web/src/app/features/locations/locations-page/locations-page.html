@@ -6,12 +6,14 @@
         Sites where patients can book <strong>in-clinic</strong> visits. Shown in the patient app when they choose an in-person consultation.
       </p>
     </div>
+    @if (canWrite()) {
     <button type="button" class="btn-primary" (click)="showCreateForm = !showCreateForm">
       {{ showCreateForm ? 'Cancel' : '+ New location' }}
     </button>
+    }
   </div>
 
-  @if (showCreateForm) {
+  @if (canWrite() && showCreateForm) {
     <div class="create-form">
       <h3>New location</h3>
       <div class="field-row">
@@ -95,7 +97,9 @@
               }
               <span class="sort-badge">Order {{ loc.sortOrder }}</span>
             </div>
+            @if (canWrite()) {
             <button type="button" class="btn-edit" (click)="startEdit(loc)">Edit</button>
+            }
           </div>
           <p class="loc-address">{{ formatAddress(loc) }}</p>
           @if (loc.phone) {
@@ -104,6 +108,7 @@
             <p class="loc-meta">{{ loc.timezone }}</p>
           }
         } @else {
+          @if (canWrite()) {
           <h4>Editing {{ loc.name }}</h4>
           <div class="field-row">
             <label class="field">
@@ -164,6 +169,7 @@
             <button type="button" class="btn-save" (click)="saveEdit()" [disabled]="saving">Save</button>
             <button type="button" class="btn-cancel" (click)="cancelEdit()" [disabled]="saving">Cancel</button>
           </div>
+          }
         }
       </article>
     } @empty {

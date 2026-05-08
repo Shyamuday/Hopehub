@@ -4,6 +4,7 @@ import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { AdminAuth } from '../services/admin-auth';
 import { environment } from '../../../environments/environment';
+import type { AdminUser } from '../admin-permissions';
 
 export const adminAuthGuard: CanActivateFn = async () => {
   const auth = inject(AdminAuth);
@@ -15,7 +16,8 @@ export const adminAuthGuard: CanActivateFn = async () => {
   }
 
   try {
-    await firstValueFrom(http.get(`${environment.apiUrl}/me`));
+    const res = await firstValueFrom(http.get<{ user: AdminUser }>(`${environment.apiUrl}/me`));
+    auth.setUser(res.user);
     return true;
   } catch {
     auth.logout();

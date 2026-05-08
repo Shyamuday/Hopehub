@@ -1,19 +1,22 @@
-<section class="stats">
-  <article class="card">
-    <h3>Revenue Collected</h3>
-    <p>{{ revenueInPaise / 100 | currency: 'INR' }}</p>
-  </article>
-  <article class="card">
-    <h3>Active Doctors</h3>
-    <p>{{ activeDoctors }}</p>
-  </article>
-  <article class="card">
-    <h3>Consultations</h3>
-    <p>{{ consultationsCount }}</p>
-  </article>
-</section>
+@if (canReport()) {
+  <section class="stats">
+    <article class="card">
+      <h3>Revenue Collected</h3>
+      <p>{{ revenueInPaise / 100 | currency: 'INR' }}</p>
+    </article>
+    <article class="card">
+      <h3>Active Doctors</h3>
+      <p>{{ activeDoctors }}</p>
+    </article>
+    <article class="card">
+      <h3>Consultations</h3>
+      <p>{{ consultationsCount }}</p>
+    </article>
+  </section>
+}
 
-<section class="panel">
+@if (canPayments()) {
+  <section class="panel">
   <div class="panel-header">
     <h3>Finance Operations</h3>
   </div>
@@ -43,14 +46,16 @@
       <button type="button" class="btn-ghost" (click)="clearPaymentFilters()" [disabled]="paymentsLoading">
         Clear
       </button>
-      <button
-        type="button"
-        class="btn-export"
-        (click)="exportPaymentsCsv()"
-        [disabled]="csvExporting || paymentsLoading"
-      >
-        {{ csvExporting ? 'Exporting...' : 'Export CSV' }}
-      </button>
+      @if (canPaymentsExport()) {
+        <button
+          type="button"
+          class="btn-export"
+          (click)="exportPaymentsCsv()"
+          [disabled]="csvExporting || paymentsLoading"
+        >
+          {{ csvExporting ? 'Exporting...' : 'Export CSV' }}
+        </button>
+      }
     </div>
   </div>
 
@@ -137,8 +142,10 @@
     }
   }
 </section>
+}
 
-<section class="panel">
+@if (canAudit()) {
+  <section class="panel">
   <h3>Recent Admin Audit Trail</h3>
   @for (log of auditLogs; track log.id) {
     <article class="card">
@@ -150,6 +157,7 @@
     <p class="empty-state">No audit activity yet.</p>
   }
 </section>
+}
 
 @if (error) {
   <p class="error">{{ error }}</p>
