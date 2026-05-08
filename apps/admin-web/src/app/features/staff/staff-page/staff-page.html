@@ -1,0 +1,98 @@
+<section class="panel">
+  <div class="panel-header">
+    <div>
+      <h2>Staff &amp; permissions</h2>
+      <p class="panel-sub">
+        Task-limited admins use <strong>permission codes</strong>; presets below match recommended roles. Super admin and
+        <code>admin.full</code> stay separate (owner / break-glass only).
+      </p>
+    </div>
+    <button type="button" class="btn-secondary" (click)="load()" [disabled]="loading">Refresh</button>
+  </div>
+
+  @if (governance['principle']) {
+    <aside class="governance-box">
+      <p><strong>Principle.</strong> {{ governance['principle'] }}</p>
+      @if (governance['superAdmin']) {
+        <p><strong>Owners.</strong> {{ governance['superAdmin'] }}</p>
+      }
+      @if (governance['staffWrite']) {
+        <p><strong>Governance.</strong> {{ governance['staffWrite'] }}</p>
+      }
+      @if (governance['presetsAreHints']) {
+        <p class="muted">{{ governance['presetsAreHints'] }}</p>
+      }
+    </aside>
+  }
+
+  @if (loading) {
+    <p class="loading-text">Loading…</p>
+  } @else if (loadError) {
+    <div class="error-row">
+      <p class="error">{{ loadError }}</p>
+      <button type="button" class="retry-btn" (click)="load()">Retry</button>
+    </div>
+  } @else {
+    <div class="preset-legend">
+      <h3>Recommended role presets</h3>
+      <p class="muted small">Use when editing an admin — applies the code bundle to the draft (you can edit the list before save).</p>
+      <ul class="preset-list">
+        @for (p of presets; track p.id) {
+          <li>
+            <span class="preset-cluster">{{ clusterLabel(p.cluster) }}</span>
+            <strong>{{ p.label }}</strong>
+            — {{ p.summary }}
+            <code class="codes">{{ p.permissionCodes.join(', ') }}</code>
+          </li>
+        }
+      </ul>
+    </div>
+
+    <h3>Admin accounts</h3>
+    @for (row of staff; track row.id) {
+      <article class="staff-card" [class.editing]="editingId === row.id">
+        @if (editingId !== row.id) {
+          <div class="staff-row">
+            <div>
+              <strong>{{ row.name }}</strong>
+              <span class="email">{{ row.email || '—' }}</span>
+              @if (row.isActive === false) {
+                <span class="inactive-badge">Inactive</span>
+              }
+            </div>
+            <button type="button" class="btn-edit" (click)="startEdit(row)">Edit</button>
+          </div>
+          <p class="codes-display">{{ formatCodes(row) }}</p>
+        } @else {
+          <h4>Edit {{ row.name }}</h4>
+          <label class="field checkbox-field">
+            <input type="checkbox" [(ngModel)]="draftSuper" name="super{{ row.id }}" />
+            Super admin (full access; ignores permission list)
+          </label>
+          <label class="field">
+            Apply preset (optional)
+            <select [(ngModel)]="selectedPresetId" name="preset{{ row.id }}" (ngModelChange)="applyPreset()">
+              <option value="">— Choose preset —</option>
+              @for (p of presets; track p.id) {
+                <option [value]="p.id">{{ p.label }}</option>
+              }
+            </select>
+          </label>
+          <label class="field">
+            Permission codes (one per line or comma-separated)
+            <textarea [(ngModel)]="draftCodes" name="codes{{ row.id }}" rows="5" [disabled]="draftSuper"></textarea>
+          </label>
+          @if (saveError) {
+            <p class="error">{{ saveError }}</p>
+          }
+          <div class="edit-actions">
+            <button type="button" class="btn-save" (click)="save()" [disabled]="saving">Save</button>
+            <button type="button" class="btn-cancel" (click)="cancelEdit()" [disabled]="saving">Cancel</button>
+          </div>
+        }
+      </article>
+    } @empty {
+      <p class="empty-state">No admin users found.</p>
+    }
+  }
+</section>

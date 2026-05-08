@@ -272,4 +272,41 @@ export class AdminApi {
   ) {
     return firstValueFrom(this.http.put(`${this.apiBase}/admin/locations/${id}`, payload));
   }
+
+  getPermissionPresets() {
+    return firstValueFrom(
+      this.http.get<{
+        clusters: Record<string, string>;
+        presets: Array<{
+          id: string;
+          label: string;
+          summary: string;
+          cluster: string;
+          permissionCodes: string[];
+        }>;
+        governance: Record<string, string>;
+      }>(`${this.apiBase}/admin/permission-presets`)
+    );
+  }
+
+  getStaff() {
+    return firstValueFrom(
+      this.http.get<{
+        staff: Array<{
+          id: string;
+          name: string;
+          email?: string | null;
+          mobile?: string | null;
+          role: string;
+          isActive?: boolean;
+          createdAt?: string;
+          staffProfile: { isSuperAdmin: boolean; permissionCodes: string[]; updatedAt?: string } | null;
+        }>;
+      }>(`${this.apiBase}/admin/staff`)
+    );
+  }
+
+  updateStaff(userId: string, body: { isSuperAdmin?: boolean; permissionCodes?: string[] }) {
+    return firstValueFrom(this.http.put(`${this.apiBase}/admin/staff/${userId}`, body));
+  }
 }

@@ -6,12 +6,14 @@ import { registerAdminDoctorListRoutes } from './admin-doctors-list.routes.js';
 import { registerAdminDoctorMutationRoutes } from './admin-doctors-mutations.routes.js';
 import { registerAdminLocationRoutes } from './admin-locations.routes.js';
 import { registerAdminPaymentRoutes } from './admin-payments.routes.js';
+import { registerAdminPermissionPresetRoutes } from './admin-permission-presets.routes.js';
 import { registerAdminReportsRoutes } from './admin-reports.routes.js';
 import { registerAdminStaffRoutes } from './admin-staff.routes.js';
 
 /** Admin API: one register function per feature area. */
 export function registerAdminRoutes(app: express.Application) {
   registerAdminStaffRoutes(app);
+  registerAdminPermissionPresetRoutes(app);
   registerAdminDiseaseRoutes(app);
   registerAdminLocationRoutes(app);
   registerAdminDoctorListRoutes(app);
