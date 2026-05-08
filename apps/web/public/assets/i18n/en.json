@@ -14,7 +14,9 @@
     "loadingClinicData": "Loading clinic data…",
     "dashboard": "dashboard",
     "digitalClinicTagline": "Homeopathy-led digital clinic",
-    "chatWhatsAppAria": "Chat on WhatsApp"
+    "chatWhatsAppAria": "Chat on WhatsApp",
+    "backToTop": "Back to top",
+    "backToTopAria": "Scroll back to top of page"
   },
   "home": {
     "hero": {

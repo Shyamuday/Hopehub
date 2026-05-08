@@ -42,7 +42,6 @@ import { TranslatePipe } from '@ngx-translate/core';
       </article>
       <article class="panel treatment-card">
         <div class="card-badge secondary-badge">{{ 'home.treatments.otherBadge' | translate }}</div>
-        <div class="card-icon">💊</div>
         <h2>{{ 'home.treatments.otherTitle' | translate }}</h2>
         <p>{{ 'home.treatments.otherBody' | translate }}</p>
         <ul class="feature-list">
