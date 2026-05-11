@@ -39,7 +39,7 @@ Do not put `DATABASE_URL` or service role key in frontend files.
 Set secrets in `apps/api/.env`:
 
 ```env
-DATABASE_URL="postgresql://postgres:<DB_PASSWORD>@db.<project-ref>.supabase.co:5432/postgres?sslmode=require"
+DATABASE_URL="postgresql://postgres:<DB_PASSWORD>@db.<project-ref>.supabase.co:5432/postgres?sslmode=verify-full"
 JWT_SECRET="change-this-before-production"
 PORT=4000
 WEB_ORIGIN="http://localhost:4200"
@@ -78,18 +78,33 @@ npm run prisma:generate
 
 ## 6) If you get P1001 (cannot reach DB)
 
-If direct host/port `5432` is blocked on your network:
+Symptoms: `Can't reach database server at db.<project-ref>.supabase.co` or Prisma `P1001`.
 
-- Use Supabase Session Pooler URI (`:6543`) for runtime connectivity:
+Work through these in order:
+
+1. **Project running**  
+   In the Supabase dashboard, open the project and **restore it** if it is paused (free-tier projects pause after inactivity). Wait until the project shows as ready.
+
+2. **Fresh URI**  
+   Go to **Project Settings → Database → Connection string → URI**. Paste into `apps/api/.env` as `DATABASE_URL`. Do not guess the hostname: Supabase may show a **pooler** host (for example `aws-0-<region>.pooler.supabase.com`) instead of `db.<ref>.supabase.co`.
+
+3. **DNS**  
+   If `db.<ref>.supabase.co` does not resolve (Windows: `Test-NetConnection db.<ref>.supabase.co -Port 5432`), your network may block Supabase DNS or the project ref is wrong. Use the URI exactly as copied from the dashboard, or try another network/VPN.
+
+4. **Port 5432 blocked**  
+   Some networks block outbound `5432`. Use the **Session pooler** URI on port **6543** from the same Database settings page. For Prisma + PgBouncer-style pooling, include `pgbouncer=true` in the query string when the provider recommends it.
 
 ```env
-DATABASE_URL="postgresql://postgres.<project-ref>:<DB_PASSWORD>@<pooler-host>:6543/postgres?sslmode=require&pgbouncer=true&connection_limit=1"
+DATABASE_URL="postgresql://postgres.<project-ref>:<DB_PASSWORD>@<pooler-host-from-dashboard>:6543/postgres?sslmode=verify-full&pgbouncer=true"
 ```
 
 Notes:
 
-- `prisma migrate dev` works best with direct DB access.
-- Pooler URI is commonly used where direct TCP access is restricted.
+- `prisma migrate dev` is easiest with **direct** database access (`:5432`). Use the direct URI for migrations when possible; use the pooler for day-to-day API runs if only the pooler works on your network.
+- After changing `DATABASE_URL`, verify with: `npm run db:verify --prefix apps/api` (from repo root: `npm run db:verify`).
+
+5. **SSL / `pg` warning**  
+   Use `sslmode=verify-full` in `DATABASE_URL` (matches current `pg` behavior and avoids deprecation noise from plain `require`).
 
 ## 7) Auth-specific checklist
 

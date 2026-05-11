@@ -11,6 +11,7 @@
     "lint": "tsc --noEmit",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
+    "db:verify": "node scripts/verify-db.mjs",
     "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {

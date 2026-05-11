@@ -10,6 +10,7 @@ import {
   doseReminderWindowMinutes,
   enabledNotificationChannels
 } from './server/config.js';
+import { logStartupDbError } from './server/db-startup-log.js';
 import { ensureBillingPlans } from './services/billing-plans.js';
 import { runDoseSchedulers } from './services/dose-scheduler.js';
 
@@ -23,9 +24,7 @@ registerErrorHandler(app);
 
 app.listen(port, () => {
   console.log(`Clinic API running on http://localhost:${port}`);
-  void ensureBillingPlans().catch((error) => {
-    console.error('[billing] Failed to ensure billing plans', error);
-  });
+  void ensureBillingPlans().catch((error) => logStartupDbError('billing', error));
   if (!doseOverdueSweepEnabled) {
     console.log('[scheduler] Overdue dose sweep disabled');
   } else {
@@ -37,14 +36,10 @@ app.listen(port, () => {
     console.log(`[scheduler] Dose reminder sweep enabled (window: ${doseReminderWindowMinutes} minutes)`);
   }
   console.log(`[scheduler] Notification channels: ${enabledNotificationChannels.join(', ') || 'none'}`);
-  void runDoseSchedulers().catch((error) => {
-    console.error('[scheduler] Initial dose scheduler run failed', error);
-  });
+  void runDoseSchedulers().catch((error) => logStartupDbError('scheduler', error));
 
   const timer = setInterval(() => {
-    void runDoseSchedulers().catch((error) => {
-      console.error('[scheduler] Dose scheduler run failed', error);
-    });
+    void runDoseSchedulers().catch((error) => logStartupDbError('scheduler', error));
   }, doseOverdueSweepIntervalMs);
   timer.unref();
 });

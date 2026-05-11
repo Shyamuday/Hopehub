@@ -47,7 +47,7 @@ export default tseslint.config(
   },
   {
     name: 'repo-node-scripts',
-    files: ['scripts/**/*.mjs'],
+    files: ['scripts/**/*.mjs', 'apps/api/scripts/**/*.mjs'],
     languageOptions: {
       ecmaVersion: 2022,
       sourceType: 'module',

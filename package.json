@@ -25,6 +25,7 @@
     "lint": "npm run lint:eslint && npm run lint --prefix apps/api",
     "prisma:generate": "npm run prisma:generate --prefix apps/api",
     "prisma:migrate": "npm run prisma:migrate --prefix apps/api",
+    "db:verify": "npm run db:verify --prefix apps/api",
     "seed": "npm run seed --prefix apps/api",
     "supabase": "supabase",
     "supabase:login": "supabase login",
