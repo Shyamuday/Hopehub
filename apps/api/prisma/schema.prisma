@@ -310,3 +310,151 @@ model PrescriptionTemplateItem {
   instructions String?
   sortOrder    Int                  @default(0)
 }
+
+// ─── Medicine Store Management ───────────────────────────────────────────────
+
+enum StoreRole {
+  MANAGER
+  STAFF
+}
+
+enum StockMovementType {
+  PURCHASE_IN
+  SALE_OUT
+  ADJUSTMENT_IN
+  ADJUSTMENT_OUT
+  TRANSFER_IN
+  TRANSFER_OUT
+  EXPIRED_REMOVAL
+}
+
+enum StockStatus {
+  ACTIVE
+  LOW_STOCK
+  OUT_OF_STOCK
+  DISCONTINUED
+}
+
+model Store {
+  id        String          @id @default(cuid())
+  name      String
+  code      String          @unique
+  address   String?
+  phone     String?
+  isActive  Boolean         @default(true)
+  racks     StoreRack[]
+  stocks    MedicineStock[]
+  staff     StoreStaff[]
+  movements StockMovement[]
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+}
+
+model StoreStaff {
+  id        String      @id @default(cuid())
+  name      String
+  staffCode String      @unique
+  pinHash   String
+  role      StoreRole   @default(STAFF)
+  storeId   String
+  store     Store       @relation(fields: [storeId], references: [id])
+  isActive  Boolean     @default(true)
+  movements StockMovement[]
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+}
+
+model StoreRack {
+  id           String          @id @default(cuid())
+  storeId      String
+  store        Store           @relation(fields: [storeId], references: [id])
+  rackCode     String
+  shelfCode    String
+  boxCode      String
+  label        String?
+  potencyColor String?
+  stocks       MedicineStock[]
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  @@unique([storeId, rackCode, shelfCode, boxCode])
+  @@index([storeId])
+}
+
+model StoreMedicine {
+  id            String          @id @default(cuid())
+  name          String
+  shortName     String?
+  alternateName String?
+  manufacturer  String?
+  potency       String
+  category      String?
+  description   String?
+  minStockLevel Int             @default(10)
+  isActive      Boolean         @default(true)
+  qrCode        String?         @unique
+  barcode       String?         @unique
+  stocks        MedicineStock[]
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  @@index([name])
+  @@index([potency])
+}
+
+model MedicineStock {
+  id          String          @id @default(cuid())
+  medicineId  String
+  storeId     String
+  rackId      String?
+  currentQty  Int             @default(0)
+  status      StockStatus     @default(ACTIVE)
+  medicine    StoreMedicine   @relation(fields: [medicineId], references: [id])
+  store       Store           @relation(fields: [storeId], references: [id])
+  rack        StoreRack?      @relation(fields: [rackId], references: [id])
+  batches     StockBatch[]
+  movements   StockMovement[]
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  @@unique([medicineId, storeId])
+  @@index([storeId, status])
+}
+
+model StockBatch {
+  id                   String        @id @default(cuid())
+  stockId              String
+  batchNumber          String
+  manufacturer         String?
+  purchaseDate         DateTime      @default(now())
+  expiryDate           DateTime
+  purchasePricePerUnit Int
+  sellingPricePerUnit  Int
+  qty                  Int
+  stock                MedicineStock @relation(fields: [stockId], references: [id])
+  movements            StockMovement[]
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+
+  @@index([expiryDate])
+  @@index([stockId])
+}
+
+model StockMovement {
+  id        String            @id @default(cuid())
+  stockId   String
+  storeId   String
+  batchId   String?
+  staffId   String?
+  type      StockMovementType
+  qty       Int
+  note      String?
+  stock     MedicineStock     @relation(fields: [stockId], references: [id])
+  store     Store             @relation(fields: [storeId], references: [id])
+  batch     StockBatch?       @relation(fields: [batchId], references: [id])
+  staff     StoreStaff?       @relation(fields: [staffId], references: [id])
+  createdAt DateTime          @default(now())
+
+  @@index([storeId, createdAt])
+  @@index([stockId])
+}

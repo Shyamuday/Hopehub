@@ -23,11 +23,13 @@ import { z } from 'zod';
 import { allowRoles, authRequired, type AuthUser, signToken } from './auth.js';
 import { prisma } from './db.js';
 import { createNotificationService, type NotificationChannel } from './notifications.js';
+import { storeRouter } from './store-routes.js';
 
 const app = express();
 const httpServer = createServer(app);
 const port = Number(process.env.PORT || 4000);
 const webOrigin = process.env.WEB_ORIGIN || 'http://localhost:4200';
+const storeOrigin = process.env.STORE_ORIGIN || 'http://localhost:4300';
 
 const io = new SocketIoServer(httpServer, {
   cors: { origin: webOrigin, credentials: true }
@@ -168,7 +170,7 @@ async function ensureBillingPlans() {
   );
 }
 
-app.use(cors({ origin: webOrigin, credentials: true }));
+app.use(cors({ origin: [webOrigin, storeOrigin], credentials: true }));
 app.use('/payments/razorpay-webhook', express.raw({ type: 'application/json' }));
 app.use(express.json());
 
@@ -3017,6 +3019,9 @@ app.get(
     });
   })
 );
+
+// ─── Store Management Routes ──────────────────────────────────────────────────
+app.use('/store', storeRouter);
 
 app.use((error: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
   if (error instanceof z.ZodError) {
