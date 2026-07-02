@@ -414,7 +414,8 @@ export class ShellComponent {
     { path: '/doctors', label: 'Doctors', icon: '🩺' },
     { path: '/store-staff', label: 'Store Staff', icon: '🧑‍💼' },
     { path: '/stores', label: 'Stores', icon: '🏪' },
-    { path: '/leaves', label: 'Leaves', icon: '📋' }
+    { path: '/leaves', label: 'Leaves', icon: '📋' },
+    { path: '/payroll', label: 'Payroll', icon: '💰' }
   ];
 
   userInitial() {
