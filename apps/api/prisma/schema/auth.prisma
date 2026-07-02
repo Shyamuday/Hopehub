@@ -30,6 +30,8 @@ model User {
   doseEvents           MedicineDoseEvent[] @relation("PatientDoseEvents")
   reminderPreference  ReminderPreference?
   auditLogs          AuditLog[]      @relation("AuditActor")
+  supportNotesAuthored SupportCaseNote[] @relation("SupportNoteAuthor")
+  patientSupportNotes  SupportCaseNote[] @relation("PatientSupportNotes")
   passwordResetTokens PasswordResetToken[]
   hrProfile          HrProfile?
   hrStoreAccess      HrStoreAccess[] @relation("HrUserAccess")

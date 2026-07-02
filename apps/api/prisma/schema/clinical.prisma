@@ -49,6 +49,7 @@ model Consultation {
   payment         Payment?
   messages        Message[]
   prescriptions   Prescription[]
+  supportNotes    SupportCaseNote[]
   createdAt       DateTime           @default(now())
   updatedAt       DateTime           @updatedAt
 }
@@ -90,4 +91,29 @@ model Message {
   consultation   Consultation @relation(fields: [consultationId], references: [id])
   sender         User         @relation(fields: [senderId], references: [id])
   createdAt      DateTime     @default(now())
+}
+
+enum SupportNoteCategory {
+  GENERAL
+  BILLING
+  ADHERENCE
+  TECHNICAL
+  ESCALATION
+}
+
+model SupportCaseNote {
+  id             String              @id @default(cuid())
+  patientId      String
+  consultationId String?
+  authorId       String
+  category       SupportNoteCategory @default(GENERAL)
+  body           String
+  patient        User                @relation("PatientSupportNotes", fields: [patientId], references: [id], onDelete: Cascade)
+  author         User                @relation("SupportNoteAuthor", fields: [authorId], references: [id], onDelete: Restrict)
+  consultation   Consultation?       @relation(fields: [consultationId], references: [id], onDelete: SetNull)
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+
+  @@index([patientId, createdAt])
+  @@index([consultationId])
 }

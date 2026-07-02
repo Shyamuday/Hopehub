@@ -137,6 +137,8 @@ Minimum acceptance:
 
 ### 3) Admin Support Tools
 
+**Status: Done** — per-patient support context (flags, read-only consultation timeline, reminder prefs, recent audit) and append-only case notes with categories; audit log on each note.
+
 - Case notes, safer troubleshooting workflows
 
 ### 4) Adherence Risk Cohorts

@@ -65,6 +65,12 @@ export class AdminApi {
   getConsumerDetail(...args: Parameters<AdminCatalogApi['getConsumerDetail']>) {
     return this.catalog.getConsumerDetail(...(args as Parameters<AdminCatalogApi['getConsumerDetail']>));
   }
+  getConsumerSupport(...args: Parameters<AdminCatalogApi['getConsumerSupport']>) {
+    return this.catalog.getConsumerSupport(...(args as Parameters<AdminCatalogApi['getConsumerSupport']>));
+  }
+  addConsumerSupportNote(...args: Parameters<AdminCatalogApi['addConsumerSupportNote']>) {
+    return this.catalog.addConsumerSupportNote(...(args as Parameters<AdminCatalogApi['addConsumerSupportNote']>));
+  }
   assignDoctor(...args: Parameters<AdminCatalogApi['assignDoctor']>) {
     return this.catalog.assignDoctor(...(args as Parameters<AdminCatalogApi['assignDoctor']>));
   }

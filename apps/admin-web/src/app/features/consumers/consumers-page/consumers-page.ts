@@ -9,6 +9,11 @@ import {
 } from '../constants/consumers-list.constants';
 import { PatientIdCardComponent, type PatientIdCardData } from '../../../shared/patient-id-card/patient-id-card';
 import { environment } from '../../../environments/environment';
+import {
+  SUPPORT_NOTE_CATEGORIES,
+  SUPPORT_NOTE_CATEGORY_STYLES,
+  type SupportNoteCategory
+} from '../constants/support-note.constants';
 
 type Consumer = {
   id: string;
@@ -61,6 +66,48 @@ type ActiveDoctor = {
   doctorProfile?: { specialty?: string } | null;
 };
 
+type SupportNote = {
+  id: string;
+  category: SupportNoteCategory;
+  body: string;
+  consultationId?: string | null;
+  createdAt: string;
+  author?: { name?: string; email?: string };
+  consultation?: { id: string; status: string; disease?: { name?: string } } | null;
+};
+
+type SupportContext = {
+  account: { isActive: boolean; patientCode?: string | null; mobile?: string | null; email?: string | null };
+  reminderPreferences?: {
+    inApp: boolean;
+    sms: boolean;
+    whatsapp: boolean;
+    push: boolean;
+    quietHoursStart: string;
+    quietHoursEnd: string;
+  } | null;
+  consultations: Array<{
+    id: string;
+    status: string;
+    diseaseName: string;
+    doctorName?: string | null;
+    paymentStatus?: string | null;
+    prescriptionCount: number;
+    messageCount: number;
+    createdAt: string;
+  }>;
+  adherenceSummary: { total: number; taken: number; skipped: number; missed: number; percent: number | null };
+  flags: string[];
+  recentAudit: Array<{
+    id: string;
+    action: string;
+    summary?: string | null;
+    createdAt: string;
+    actorName?: string | null;
+  }>;
+  safeActions: string[];
+};
+
 @Component({
   selector: 'app-consumers-page',
   imports: [CommonModule, FormsModule, PatientIdCardComponent],
@@ -87,6 +134,20 @@ export class ConsumersPage {
   assignDoctorId = '';
   assignError = '';
   assigning = false;
+
+  detailTab: 'overview' | 'support' = 'overview';
+  supportLoading = false;
+  supportError = '';
+  supportNotes: SupportNote[] = [];
+  supportContext: SupportContext | null = null;
+  noteCategory: SupportNoteCategory = 'GENERAL';
+  noteBody = '';
+  noteConsultationId = '';
+  savingNote = false;
+  noteError = '';
+
+  readonly supportCategories = SUPPORT_NOTE_CATEGORIES;
+  readonly categoryStyles = SUPPORT_NOTE_CATEGORY_STYLES;
 
   constructor(private readonly api: AdminApi) {
     void this.load();
@@ -123,7 +184,10 @@ export class ConsumersPage {
       this.assigningConsultationId = '';
       this.assignDoctorId = '';
       if (this.selectedConsumerId) {
-        await this.loadConsumerDetail(this.selectedConsumerId);
+        await Promise.all([
+          this.loadConsumerDetail(this.selectedConsumerId),
+          this.loadSupport(this.selectedConsumerId)
+        ]);
       }
     } catch {
       this.assignError = 'Could not assign doctor. Please try again.';
@@ -149,7 +213,10 @@ export class ConsumersPage {
         this.selectedConsumerId = this.consumers[0]?.id || '';
       }
       if (this.selectedConsumerId) {
-        await this.loadConsumerDetail(this.selectedConsumerId);
+        await Promise.all([
+          this.loadConsumerDetail(this.selectedConsumerId),
+          this.loadSupport(this.selectedConsumerId)
+        ]);
       } else {
         this.consumerDetail = null;
       }
@@ -179,7 +246,57 @@ export class ConsumersPage {
 
   async selectConsumer(consumerId: string) {
     this.selectedConsumerId = consumerId;
-    await this.loadConsumerDetail(consumerId);
+    this.detailTab = 'overview';
+    await Promise.all([this.loadConsumerDetail(consumerId), this.loadSupport(consumerId)]);
+  }
+
+  setDetailTab(tab: 'overview' | 'support') {
+    this.detailTab = tab;
+  }
+
+  async loadSupport(consumerId: string) {
+    this.supportLoading = true;
+    this.supportError = '';
+    try {
+      const response = await this.api.getConsumerSupport(consumerId);
+      this.supportNotes = response.notes || [];
+      this.supportContext = response.context || null;
+    } catch {
+      this.supportError = 'Could not load support context.';
+      this.supportNotes = [];
+      this.supportContext = null;
+    } finally {
+      this.supportLoading = false;
+    }
+  }
+
+  async submitSupportNote() {
+    if (!this.selectedConsumerId) return;
+    const body = this.noteBody.trim();
+    if (body.length < 2) {
+      this.noteError = 'Enter at least 2 characters.';
+      return;
+    }
+    this.savingNote = true;
+    this.noteError = '';
+    try {
+      await this.api.addConsumerSupportNote(this.selectedConsumerId, {
+        category: this.noteCategory,
+        body,
+        consultationId: this.noteConsultationId || undefined
+      });
+      this.noteBody = '';
+      this.noteConsultationId = '';
+      await this.loadSupport(this.selectedConsumerId);
+    } catch {
+      this.noteError = 'Could not save support note.';
+    } finally {
+      this.savingNote = false;
+    }
+  }
+
+  categoryStyle(category: SupportNoteCategory) {
+    return this.categoryStyles[category] ?? this.categoryStyles.GENERAL;
   }
 
   private async loadConsumerDetail(consumerId: string) {

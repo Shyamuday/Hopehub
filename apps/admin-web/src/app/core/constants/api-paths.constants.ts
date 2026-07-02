@@ -10,6 +10,8 @@ export const API_PATHS = {
     DOCTORS: '/admin/doctors',
     DOCTORS_PENDING: '/admin/doctors/pending',
     CONSUMERS: '/admin/consumers',
+    CONSUMER_SUPPORT: (id: string) => `/admin/consumers/${id}/support`,
+    CONSUMER_SUPPORT_NOTES: (id: string) => `/admin/consumers/${id}/support-notes`,
     DISEASES: '/admin/diseases',
     DISEASES_LIST: '/admin/diseases/list',
     FINANCE: {

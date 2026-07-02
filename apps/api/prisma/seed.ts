@@ -1,4 +1,4 @@
-import { PrismaClient, PrescriptionOptionType, Role, ConsultationStatus, PrescriptionStatus, DoseEventStatus } from '@prisma/client';
+import { PrismaClient, PrescriptionOptionType, Role, ConsultationStatus, PrescriptionStatus, DoseEventStatus, SupportNoteCategory } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import bcrypt from 'bcryptjs';
 
@@ -366,6 +366,19 @@ async function main() {
       }
     ],
     skipDuplicates: true
+  });
+
+  await prisma.supportCaseNote.upsert({
+    where: { id: 'seed-support-note-rahul' },
+    update: {},
+    create: {
+      id: 'seed-support-note-rahul',
+      patientId: patientOne.id,
+      authorId: admin.id,
+      consultationId: 'seed-consultation-rahul',
+      category: SupportNoteCategory.ADHERENCE,
+      body: 'Demo: patient reported missed evening dose. Confirmed SMS reminders are on; suggested reviewing snooze presets in the patient app.'
+    }
   });
 
   console.log('Seeded demo admin, doctor, disease catalog, and demo patients.');

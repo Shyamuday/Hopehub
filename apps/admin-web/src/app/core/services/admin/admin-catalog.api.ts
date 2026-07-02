@@ -48,6 +48,21 @@ export class AdminCatalogApi extends AdminApiBase {
     );
   }
 
+  getConsumerSupport(consumerId: string) {
+    return firstValueFrom(
+      this.http.get<{ notes: Array<any>; context: any }>(`${this.apiBase}${API_PATHS.ADMIN.CONSUMER_SUPPORT(consumerId)}`)
+    );
+  }
+
+  addConsumerSupportNote(
+    consumerId: string,
+    payload: { category: string; body: string; consultationId?: string }
+  ) {
+    return firstValueFrom(
+      this.http.post<{ note: any }>(`${this.apiBase}${API_PATHS.ADMIN.CONSUMER_SUPPORT_NOTES(consumerId)}`, payload)
+    );
+  }
+
   assignDoctor(consultationId: string, doctorId: string) {
     return firstValueFrom(
       this.http.post(`${this.apiBase}${API_PATHS.CONSULTATIONS}/${consultationId}/assign`, { doctorId })
