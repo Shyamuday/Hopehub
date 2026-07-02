@@ -1,0 +1,98 @@
+
+    <div class="pp">
+      <div class="pp-hdr">
+        <div>
+          <h2 class="pp-title">💰 Payroll Summary</h2>
+          <p class="pp-sub">Monthly salary overview with leave deductions</p>
+        </div>
+        <div class="hdr-actions">
+          <input type="month" [(ngModel)]="selectedMonth" (change)="load()" class="month-inp" />
+          <button class="btn-export" (click)="exportCSV()">⬇ Export CSV</button>
+        </div>
+      </div>
+
+      @if (loading()) {
+        <div class="loading"><div class="spinner"></div></div>
+      } @else {
+        <!-- Summary Cards -->
+        <div class="summary-cards">
+          <div class="scard">
+            <div class="sc-val">{{ rows().length }}</div>
+            <div class="sc-lbl">Employees</div>
+          </div>
+          <div class="scard gross">
+            <div class="sc-val">₹{{ paise2k(summary().totalGross) }}</div>
+            <div class="sc-lbl">Total Gross</div>
+          </div>
+          <div class="scard net">
+            <div class="sc-val">₹{{ paise2k(summary().totalNet) }}</div>
+            <div class="sc-lbl">Total Net Payout</div>
+          </div>
+          <div class="scard leave">
+            <div class="sc-val">{{ summary().totalLeave }}</div>
+            <div class="sc-lbl">Total Leave Days</div>
+          </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="ftabs">
+          @for (f of typeFilters; track f.value) {
+            <button class="ftab" [class.active]="typeFilter() === f.value" (click)="typeFilter.set(f.value)">{{ f.label }}</button>
+          }
+          <input class="search-sm" [(ngModel)]="q" placeholder="🔍 Search…" />
+        </div>
+
+        <!-- Table -->
+        <div class="table-wrap">
+          <table class="pt">
+            <thead>
+              <tr>
+                <th>Employee</th>
+                <th>Type</th>
+                <th>Designation</th>
+                <th>Dept / Store</th>
+                <th class="num">Gross (₹)</th>
+                <th class="num">Leave Days</th>
+                <th class="num">Deduction (₹)</th>
+                <th class="num net-col">Net Payout (₹)</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (r of filtered(); track r.id) {
+                <tr>
+                  <td>
+                    <div class="emp-name">{{ r.name }}</div>
+                    <span class="status-dot" [style.color]="statusColor(r.employeeStatus)">● {{ r.employeeStatus }}</span>
+                  </td>
+                  <td>
+                    <span class="type-badge" [class.doc]="r.empType === 'DOCTOR'">
+                      {{ r.empType === 'DOCTOR' ? '🩺' : '🏪' }} {{ r.empType === 'DOCTOR' ? 'Doctor' : 'Staff' }}
+                    </span>
+                  </td>
+                  <td>{{ r.designation ?? '—' }}</td>
+                  <td>{{ r.department ?? '—' }}</td>
+                  <td class="num">{{ fmt(r.grossPaise) }}</td>
+                  <td class="num" [style.color]="r.leaveDays > 0 ? '#fb923c' : 'inherit'">{{ r.leaveDays }}</td>
+                  <td class="num deduction">{{ fmt(r.grossPaise - r.netPaise) }}</td>
+                  <td class="num net-col"><strong>{{ fmt(r.netPaise) }}</strong></td>
+                </tr>
+              }
+            </tbody>
+            <tfoot>
+              <tr class="total-row">
+                <td colspan="4"><strong>Total ({{ filtered().length }} employees)</strong></td>
+                <td class="num"><strong>{{ fmt(filteredGross()) }}</strong></td>
+                <td class="num"><strong>{{ filteredLeave() }}</strong></td>
+                <td class="num deduction"><strong>{{ fmt(filteredGross() - filteredNet()) }}</strong></td>
+                <td class="num net-col"><strong>{{ fmt(filteredNet()) }}</strong></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+        @if (filtered().length === 0) {
+          <div class="empty"><div>💰</div><p>No payroll data found</p></div>
+        }
+      }
+    </div>
+    @if (toast()) { <div class="toast">{{ toast() }}</div> }
+  

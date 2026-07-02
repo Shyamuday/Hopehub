@@ -1,0 +1,105 @@
+
+    <div class="page">
+      <div class="page-header">
+        <h1 class="page-title">🗺️ Rack Map</h1>
+        <p class="page-sub">Visual store layout — click a rack to see contents</p>
+      </div>
+
+      @if (loading()) {
+        <div class="loading-state">
+          <div class="spinner-big"></div>
+          <p>Loading rack map...</p>
+        </div>
+      } @else if (racks().length === 0) {
+        <div class="empty-state">
+          <div class="empty-icon">🏗️</div>
+          <h3>No racks set up yet</h3>
+          <p>Ask your manager to add rack locations.</p>
+        </div>
+      } @else {
+        <!-- Rack grid grouped by rack code -->
+        <div class="rack-groups">
+          @for (group of groupedRacks(); track group.rackCode) {
+            <div class="rack-group">
+              <div class="rack-header">
+                <span class="rack-label">Rack {{ group.rackCode }}</span>
+                <span class="rack-count">{{ group.racks.length }} locations</span>
+              </div>
+              <div class="rack-grid">
+                @for (rack of group.racks; track rack.id) {
+                  <button
+                    class="rack-cell"
+                    [class.selected]="selectedRack()?.id === rack.id"
+                    [class.populated]="rack.medicineCount > 0"
+                    [style.border-color]="getPotencyColor(rack.potencyColor)"
+                    (click)="toggleRack(rack)">
+                    <div class="cell-code">{{ rack.boxCode }}</div>
+                    <div class="cell-shelf">S{{ rack.shelfCode }}</div>
+                    <div class="cell-count" [class.populated]="rack.medicineCount > 0">
+                      {{ rack.medicineCount }}
+                    </div>
+                    @if (rack.potencyColor) {
+                      <div class="cell-dot" [style.background]="getPotencyColor(rack.potencyColor)"></div>
+                    }
+                  </button>
+                }
+              </div>
+            </div>
+          }
+        </div>
+
+        <!-- Selected rack details -->
+        @if (selectedRack()) {
+          <div class="rack-detail">
+            <div class="detail-header">
+              <div>
+                <div class="detail-title">Rack {{ selectedRack()!.rackCode }} → Shelf {{ selectedRack()!.shelfCode }} → Box {{ selectedRack()!.boxCode }}</div>
+                @if (selectedRack()!.label) {
+                  <div class="detail-label">{{ selectedRack()!.label }}</div>
+                }
+              </div>
+              <button class="close-btn" (click)="selectedRack.set(null)">✕</button>
+            </div>
+
+            @if (selectedRack()!.potencyColor) {
+              <div class="potency-row">
+                <span class="potency-dot" [style.background]="getPotencyColor(selectedRack()!.potencyColor)"></span>
+                <span class="potency-name">{{ potencyLabel(selectedRack()!.potencyColor) }}</span>
+              </div>
+            }
+
+            @if (selectedRack()!.medicines.length === 0) {
+              <div class="detail-empty">📭 This location is empty</div>
+            } @else {
+              <div class="med-list">
+                @for (m of selectedRack()!.medicines; track m.id) {
+                  <a class="med-row" [routerLink]="['/medicine', m.id]">
+                    <div class="med-info">
+                      <span class="med-name">{{ m.name }}</span>
+                      <span class="med-potency">{{ m.potency }}</span>
+                    </div>
+                    <div class="med-qty" [class.low]="m.status === 'LOW_STOCK'" [class.zero]="m.status === 'OUT_OF_STOCK'">
+                      {{ m.currentQty }}
+                    </div>
+                  </a>
+                }
+              </div>
+            }
+          </div>
+        }
+
+        <!-- Legend -->
+        <div class="legend">
+          <div class="legend-title">Potency Color Code</div>
+          <div class="legend-items">
+            @for (item of potencyLegend; track item.label) {
+              <div class="legend-item">
+                <span class="legend-dot" [style.background]="item.color"></span>
+                <span class="legend-label">{{ item.label }}</span>
+              </div>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  

@@ -6,7 +6,7 @@ import { AuthFormOverlayComponent } from './auth-form-overlay.component';
 @Component({
   selector: 'app-auth-reset-callback',
   imports: [],
-  template: `<div class="reset-callback"><p>Processing reset link…</p></div>`,
+  templateUrl: './auth-reset-callback.component.html',
   styleUrl: './auth-reset-callback.component.scss'
 })
 export class AuthResetCallbackComponent implements OnInit {

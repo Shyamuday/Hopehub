@@ -1,0 +1,144 @@
+
+    <div class="page">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">💊 Medicines</h1>
+          <p class="page-sub">Manage your medicine master list</p>
+        </div>
+        <button class="btn-add" (click)="openModal()">+ Add Medicine</button>
+      </div>
+
+      <!-- Search & Filter -->
+      <div class="filter-row">
+        <input class="input search-input" [(ngModel)]="searchQuery" (ngModelChange)="onSearch()" placeholder="Search medicines..." />
+        <select class="input select-sm" [(ngModel)]="potencyFilter" (ngModelChange)="onSearch()">
+          <option value="">All Potencies</option>
+          @for (p of potencies; track p) { <option [value]="p">{{ p }}</option> }
+        </select>
+      </div>
+
+      @if (loading()) {
+        <div class="loading-state"><div class="spinner-big"></div></div>
+      } @else if (medicines().length === 0) {
+        <div class="empty-state">
+          <div class="empty-icon">💊</div>
+          <h3>No medicines found</h3>
+          <p>{{ searchQuery ? 'Try a different search term' : 'Add your first medicine to get started' }}</p>
+        </div>
+      } @else {
+        <div class="medicine-table">
+          <div class="table-header">
+            <span>Medicine</span>
+            <span>Potency</span>
+            <span>Stock</span>
+            <span>Location</span>
+            <span>Actions</span>
+          </div>
+          @for (m of medicines(); track m.id) {
+            <div class="table-row" [class.inactive]="!m.isActive">
+              <div class="med-cell">
+                <div class="med-name">{{ m.name }}</div>
+                @if (m.manufacturer) { <div class="med-mfr">{{ m.manufacturer }}</div> }
+              </div>
+              <div class="td">
+                <span class="potency-badge">{{ m.potency }}</span>
+              </div>
+              <div class="td">
+                <span class="stock-num" [class.low]="m.status === 'LOW_STOCK'" [class.zero]="m.status === 'OUT_OF_STOCK'">
+                  {{ m.currentQty }}
+                </span>
+              </div>
+              <div class="td">
+                @if (m.rack) {
+                  <span class="loc-badge">📍 {{ m.rack.locationString }}</span>
+                } @else {
+                  <span class="no-loc">—</span>
+                }
+              </div>
+              <div class="td actions">
+                <a [routerLink]="['/medicine', m.id]" class="btn-sm btn-view">View</a>
+                <button class="btn-sm btn-edit" (click)="openEdit(m)">Edit</button>
+              </div>
+            </div>
+          }
+        </div>
+
+        <!-- Pagination -->
+        @if (totalPages() > 1) {
+          <div class="pagination">
+            <button [disabled]="page() === 1" (click)="changePage(page() - 1)">←</button>
+            <span>{{ page() }} / {{ totalPages() }}</span>
+            <button [disabled]="page() === totalPages()" (click)="changePage(page() + 1)">→</button>
+          </div>
+        }
+      }
+    </div>
+
+    <!-- Add/Edit Modal -->
+    @if (showModal()) {
+      <div class="modal-overlay" (click)="closeModal()">
+        <div class="modal" (click)="$event.stopPropagation()">
+          <div class="modal-header">
+            <h2>{{ editingId() ? 'Edit Medicine' : 'Add Medicine' }}</h2>
+            <button class="close-btn" (click)="closeModal()">✕</button>
+          </div>
+
+          <div class="modal-body">
+            <div class="form-grid">
+              <div class="form-group span2">
+                <label>Medicine Name *</label>
+                <input class="input" [(ngModel)]="form.name" placeholder="e.g. Arsenicum Album" />
+              </div>
+              <div class="form-group">
+                <label>Short Name</label>
+                <input class="input" [(ngModel)]="form.shortName" placeholder="e.g. Ars Alb" />
+              </div>
+              <div class="form-group">
+                <label>Alternate Name</label>
+                <input class="input" [(ngModel)]="form.alternateName" placeholder="Other names" />
+              </div>
+              <div class="form-group">
+                <label>Potency *</label>
+                <select class="input" [(ngModel)]="form.potency">
+                  <option value="">Select potency</option>
+                  @for (p of potencies; track p) { <option [value]="p">{{ p }}</option> }
+                  <option [value]="customPotencyValue">Custom...</option>
+                </select>
+                @if (form.potency === customPotencyValue) {
+                  <input class="input" style="margin-top: 8px;" [(ngModel)]="form.customPotency" placeholder="Enter custom potency" />
+                }
+              </div>
+              <div class="form-group">
+                <label>Category</label>
+                <select class="input" [(ngModel)]="form.category">
+                  <option value="">Select category</option>
+                  @for (c of categories; track c) { <option [value]="c">{{ c }}</option> }
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Manufacturer</label>
+                <input class="input" [(ngModel)]="form.manufacturer" placeholder="e.g. SBL, Reckeweg" />
+              </div>
+              <div class="form-group">
+                <label>Min Stock Level</label>
+                <input class="input" type="number" [(ngModel)]="form.minStockLevel" min="0" placeholder="10" />
+              </div>
+              <div class="form-group span2">
+                <label>Description</label>
+                <input class="input" [(ngModel)]="form.description" placeholder="Optional notes about this medicine" />
+              </div>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button class="btn-cancel" (click)="closeModal()">Cancel</button>
+            <button class="btn-save" [disabled]="!isFormValid() || saving()" (click)="save()">
+              @if (saving()) { <span class="btn-spinner"></span> } @else { {{ editingId() ? 'Save Changes' : 'Add Medicine' }} }
+            </button>
+          </div>
+
+          @if (saveError()) { <div class="save-error">⚠️ {{ saveError() }}</div> }
+        </div>
+      </div>
+    }
+  

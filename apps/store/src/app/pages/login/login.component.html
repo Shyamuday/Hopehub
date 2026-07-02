@@ -1,0 +1,88 @@
+
+    <div class="login-bg">
+      <div class="login-container">
+        <!-- Logo & Brand -->
+        <div class="brand">
+          <div class="brand-icon">🌿</div>
+          <h1>Vitalis Store</h1>
+          <p>Homeopathic Medicine Management</p>
+        </div>
+
+        <!-- Mode Toggle -->
+        <div class="mode-toggle">
+          <button class="mode-btn" [class.active]="mode() === 'pin'" (click)="mode.set('pin')">
+            🔢 Staff PIN
+          </button>
+          <button class="mode-btn" [class.active]="mode() === 'manager'" (click)="mode.set('manager')">
+            👔 Manager
+          </button>
+        </div>
+
+        <!-- PIN Mode -->
+        @if (mode() === 'pin') {
+          <div class="pin-section fade-in">
+            <div class="form-group" style="margin-bottom: 16px;">
+              <label>Staff ID</label>
+              <input class="input" type="text" [(ngModel)]="staffId" placeholder="Enter your staff ID" />
+            </div>
+
+            <div class="pin-display">
+              <div class="pin-dots">
+                @for (i of [0,1,2,3,4,5]; track i) {
+                  <div class="pin-dot" [class.filled]="i < pin().length" [class.active]="i === pin().length"></div>
+                }
+              </div>
+              <p class="pin-hint">Enter 4–6 digit PIN</p>
+            </div>
+
+            <div class="keypad">
+              @for (key of keypadKeys; track key) {
+                <button
+                  class="keypad-btn"
+                  [class.keypad-special]="key === '⌫' || key === '✓'"
+                  [class.keypad-confirm]="key === '✓'"
+                  [class.keypad-delete]="key === '⌫'"
+                  (click)="onKeypad(key)"
+                  [disabled]="loading()">
+                  {{ key }}
+                </button>
+              }
+            </div>
+          </div>
+        }
+
+        <!-- Manager Mode -->
+        @if (mode() === 'manager') {
+          <div class="manager-section fade-in">
+            <div class="form-group">
+              <label>Email</label>
+              <input class="input" type="email" [(ngModel)]="email" placeholder="manager@store.com" autocomplete="email" />
+            </div>
+            <div class="form-group" style="margin-top: 14px;">
+              <label>Password</label>
+              <div class="password-wrap">
+                <input class="input" [type]="showPassword() ? 'text' : 'password'" [(ngModel)]="password" placeholder="••••••••" autocomplete="current-password" />
+                <button class="show-pass-btn" (click)="showPassword.update(v => !v)">
+                  {{ showPassword() ? '🙈' : '👁️' }}
+                </button>
+              </div>
+            </div>
+            <button class="btn btn-primary login-btn" (click)="loginManager()" [disabled]="loading() || !email || !password">
+              @if (loading()) {
+                <span class="btn-spinner"></span> Logging in...
+              } @else {
+                Sign In as Manager
+              }
+            </button>
+          </div>
+        }
+
+        <!-- Error -->
+        @if (error()) {
+          <div class="error-msg fade-in">
+            ⚠️ {{ error() }}
+          </div>
+        }
+      </div>
+    </div>
+  

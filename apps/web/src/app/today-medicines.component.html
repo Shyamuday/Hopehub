@@ -1,0 +1,30 @@
+
+    <div class="panel">
+      <h2>Today&apos;s Medicines</h2>
+      <label>
+        Snooze minutes
+        <input type="number" min="5" max="120" [(ngModel)]="snoozeMinutes" (ngModelChange)="snoozeMinutesChange.emit($event)" />
+      </label>
+      <div class="cards">
+        @for (dose of doseEvents; track dose.id) {
+          <article class="consult-card">
+            <strong>{{ dose.prescriptionItem.medicineName }}</strong>
+            <span>
+              {{ dose.scheduledFor | date: 'shortTime' }} |
+              {{ dose.prescriptionItem.dose || 'Dose as advised' }}
+            </span>
+            <small>Status: {{ dose.status }}</small>
+            @if (dose.status === 'PENDING') {
+              <div class="actions">
+                <button class="primary" [disabled]="disabled" (click)="taken.emit(dose.id)">Taken</button>
+                <button class="secondary" [disabled]="disabled" (click)="skipped.emit(dose.id)">Skip</button>
+                <button class="secondary" [disabled]="disabled" (click)="snoozed.emit(dose.id)">Snooze</button>
+              </div>
+            }
+          </article>
+        } @empty {
+          <p class="muted">No medicine reminders for today.</p>
+        }
+      </div>
+    </div>
+  

@@ -1,0 +1,71 @@
+
+    <div class="pp">
+      <div class="pp-hdr">
+        <div>
+          <h2 class="pp-title">💰 Payroll Summary</h2>
+          <p class="pp-sub">Monthly salary overview with leave deductions</p>
+        </div>
+        <div class="hdr-actions">
+          <input type="month" [(ngModel)]="selectedMonth" (change)="load()" class="month-inp" />
+          <button class="btn-export" (click)="exportCSV()">⬇ CSV</button>
+        </div>
+      </div>
+
+      @if (loading()) {
+        <div class="loading"><div class="spinner"></div></div>
+      } @else {
+        <div class="summary-cards">
+          <div class="scard"><div class="sc-val">{{ rows().length }}</div><div class="sc-lbl">Employees</div></div>
+          <div class="scard gross"><div class="sc-val">₹{{ paise2k(summary().totalGross) }}</div><div class="sc-lbl">Gross</div></div>
+          <div class="scard net"><div class="sc-val">₹{{ paise2k(summary().totalNet) }}</div><div class="sc-lbl">Net Payout</div></div>
+          <div class="scard leave"><div class="sc-val">{{ summary().totalLeave }}</div><div class="sc-lbl">Leave Days</div></div>
+        </div>
+
+        <div class="ftabs">
+          @for (f of typeFilters; track f.value) {
+            <button class="ftab" [class.active]="typeFilter() === f.value" (click)="typeFilter.set(f.value)">{{ f.label }}</button>
+          }
+          <input class="search-sm" [(ngModel)]="q" placeholder="🔍 Name…" />
+        </div>
+
+        <div class="table-wrap">
+          <table class="pt">
+            <thead>
+              <tr>
+                <th>Employee</th><th>Type</th><th>Designation</th>
+                <th class="r">Gross (₹)</th><th class="r">Leave</th>
+                <th class="r">Deduct (₹)</th><th class="r net">Net (₹)</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (r of filtered(); track r.id) {
+                <tr>
+                  <td>
+                    <div class="name">{{ r.name }}</div>
+                    <span class="dot" [style.color]="sc(r.employeeStatus)">● {{ r.employeeStatus }}</span>
+                  </td>
+                  <td><span class="type" [class.doc]="r.empType==='DOCTOR'">{{ r.empType==='DOCTOR'?'🩺':'🏪' }}</span></td>
+                  <td>{{ r.designation ?? '—' }}</td>
+                  <td class="r">{{ fmt(r.grossPaise) }}</td>
+                  <td class="r lv">{{ r.leaveDays }}</td>
+                  <td class="r ded">{{ fmt(r.grossPaise - r.netPaise) }}</td>
+                  <td class="r net"><strong>{{ fmt(r.netPaise) }}</strong></td>
+                </tr>
+              }
+            </tbody>
+            <tfoot>
+              <tr class="tot">
+                <td colspan="3"><strong>Total ({{ filtered().length }})</strong></td>
+                <td class="r"><strong>{{ fmt(fGross()) }}</strong></td>
+                <td class="r"><strong>{{ fLeave() }}</strong></td>
+                <td class="r ded"><strong>{{ fmt(fGross()-fNet()) }}</strong></td>
+                <td class="r net"><strong>{{ fmt(fNet()) }}</strong></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+        @if (filtered().length === 0) { <div class="empty">💰<p>No data</p></div> }
+      }
+    </div>
+    @if (toast()) { <div class="toast">{{ toast() }}</div> }
+  

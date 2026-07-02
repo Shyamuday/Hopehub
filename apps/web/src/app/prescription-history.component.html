@@ -1,0 +1,31 @@
+
+    <div class="panel">
+      <h2>Prescription History</h2>
+      <div class="cards">
+        @for (prescription of prescriptions; track prescription.id) {
+          <article class="consult-card">
+            <div class="rx-card">
+              <div class="rx-info">
+                <strong>{{ prescription.diagnosis || 'Prescription' }} (v{{ prescription.version || 1 }})</strong>
+                <span>{{ prescription.createdAt | date: 'mediumDate' }}</span>
+                <small>{{ prescription.method || 'Method not specified' }}</small>
+                @if (prescription.items?.length) {
+                  <p class="muted">{{ prescription.items?.length }} medicine(s)</p>
+                }
+                @if (prescription.followUpDate) {
+                  <p class="muted">Follow-up: {{ prescription.followUpDate | date: 'mediumDate' }}</p>
+                }
+              </div>
+              <div class="rx-actions">
+                <button class="btn-pdf" type="button" (click)="downloadPdf(prescription.id)">
+                  &#x21E9; PDF
+                </button>
+              </div>
+            </div>
+          </article>
+        } @empty {
+          <p class="muted">No prescriptions published yet.</p>
+        }
+      </div>
+    </div>
+  

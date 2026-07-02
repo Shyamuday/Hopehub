@@ -1,0 +1,166 @@
+
+    <div class="page">
+      <div class="page-header">
+        <h1 class="page-title">👥 Staff Activity</h1>
+        <p class="page-sub">Track what every team member is doing</p>
+      </div>
+
+      <!-- Period selector -->
+      <div class="period-tabs">
+        @for (p of periods; track p.value) {
+          <button class="period-btn" [class.active]="period() === p.value" (click)="setPeriod(p.value)">
+            {{ p.label }}
+          </button>
+        }
+      </div>
+
+      @if (loading()) {
+        <div class="loading-state"><div class="spinner-big"></div></div>
+      } @else {
+
+        <!-- Leaderboard row -->
+        @if (topThree().length > 0) {
+          <div class="leaderboard">
+            @for (s of topThree(); track s.staffId; let i = $index) {
+              <button class="leader-card" [class.gold]="i === 0" [class.silver]="i === 1" [class.bronze]="i === 2"
+                      (click)="openDetail(s)">
+                <div class="leader-rank">{{ ['🥇','🥈','🥉'][i] }}</div>
+                <div class="leader-avatar">{{ s.name.charAt(0).toUpperCase() }}</div>
+                <div class="leader-name">{{ s.name }}</div>
+                <div class="leader-actions">{{ s.totalActions }} actions</div>
+                <div class="leader-qty">
+                  <span class="in">+{{ s.totalQtyIn }}</span>
+                  <span class="sep">/</span>
+                  <span class="out">−{{ s.totalQtyOut }}</span>
+                </div>
+              </button>
+            }
+          </div>
+        }
+
+        <!-- Full staff table -->
+        <div class="staff-list">
+          @for (s of staffList(); track s.staffId) {
+            <div class="staff-row" (click)="openDetail(s)">
+              <div class="staff-left">
+                <div class="staff-avatar" [class.manager]="s.role === managerRole">
+                  {{ s.name.charAt(0).toUpperCase() }}
+                </div>
+                <div class="staff-info">
+                  <div class="staff-name">{{ s.name }}</div>
+                  <div class="staff-meta">
+                    <span class="staff-code">{{ s.staffCode }}</span>
+                    <span class="staff-role" [class.manager]="s.role === managerRole">{{ s.role }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="staff-stats">
+                <div class="stat-chip">
+                  <span class="stat-num">{{ s.totalActions }}</span>
+                  <span class="stat-lbl">actions</span>
+                </div>
+                <div class="stat-chip in-chip">
+                  <span class="stat-num">+{{ s.totalQtyIn }}</span>
+                  <span class="stat-lbl">in</span>
+                </div>
+                <div class="stat-chip out-chip">
+                  <span class="stat-num">−{{ s.totalQtyOut }}</span>
+                  <span class="stat-lbl">out</span>
+                </div>
+              </div>
+
+              <div class="activity-bar-wrap">
+                @if (maxActions() > 0) {
+                  <div class="activity-bar" [style.width.%]="(s.totalActions / maxActions()) * 100"></div>
+                }
+              </div>
+
+              <div class="chevron">›</div>
+            </div>
+          }
+        </div>
+
+        @if (staffList().length === 0) {
+          <div class="empty-state">
+            <div class="empty-icon">👤</div>
+            <h3>No activity yet</h3>
+            <p>No staff movements recorded for this period.</p>
+          </div>
+        }
+      }
+    </div>
+
+    <!-- Staff detail drawer -->
+    @if (detailOpen() && detail()) {
+      <div class="drawer-overlay" (click)="closeDetail()">
+        <div class="drawer" (click)="$event.stopPropagation()">
+          <div class="drawer-header">
+            <div class="detail-avatar" [class.manager]="detail()!.staff.role === managerRole">
+              {{ detail()!.staff.name.charAt(0).toUpperCase() }}
+            </div>
+            <div>
+              <div class="detail-name">{{ detail()!.staff.name }}</div>
+              <div class="detail-meta">
+                <span class="staff-code">{{ detail()!.staff.staffCode }}</span>
+                <span class="staff-role" [class.manager]="detail()!.staff.role === managerRole">{{ detail()!.staff.role }}</span>
+              </div>
+            </div>
+            <button class="close-btn" (click)="closeDetail()">✕</button>
+          </div>
+
+          <!-- Breakdown cards -->
+          <div class="breakdown-grid">
+            @for (b of detail()!.breakdown; track b.type) {
+              <div class="breakdown-card">
+                <div class="bc-icon">{{ typeIcon(b.type) }}</div>
+                <div class="bc-info">
+                  <div class="bc-label">{{ typeLabel(b.type) }}</div>
+                  <div class="bc-stats">
+                    <span class="bc-count">{{ b.count }}×</span>
+                    <span class="bc-qty" [style.color]="typeColor(b.type)">{{ b.qty }} bottles</span>
+                  </div>
+                </div>
+              </div>
+            }
+            @if (detail()!.breakdown.length === 0) {
+              <div class="no-breakdown">No actions in this period</div>
+            }
+          </div>
+
+          <!-- Period toggle for detail -->
+          <div class="detail-period-row">
+            @for (p of periods; track p.value) {
+              <button class="period-btn sm" [class.active]="detailPeriod() === p.value" (click)="setDetailPeriod(p.value)">
+                {{ p.label }}
+              </button>
+            }
+          </div>
+
+          <!-- Recent movements -->
+          <div class="recent-header">Recent Movements</div>
+          <div class="recent-list">
+            @for (m of detail()!.recentMovements; track m.id) {
+              <div class="recent-row">
+                <span class="r-icon">{{ typeIcon(m.type) }}</span>
+                <div class="r-info">
+                  <span class="r-med">{{ m.medicineName }}</span>
+                  <span class="r-potency">{{ m.potency }}</span>
+                  @if (m.note) { <span class="r-note">"{{ m.note }}"</span> }
+                </div>
+                <div class="r-right">
+                  <span class="r-qty" [style.color]="typeColor(m.type)">
+                    {{ isOut(m.type) ? '−' : '+' }}{{ m.qty }}
+                  </span>
+                  <span class="r-time">{{ m.createdAt | date:'dd MMM, h:mm a' }}</span>
+                </div>
+              </div>
+            }
+            @if (detail()!.recentMovements.length === 0) {
+              <div class="no-recent">No recent movements</div>
+            }
+          </div>
+        </div>
+      </div>
+    }
+  

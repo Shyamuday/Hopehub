@@ -1,0 +1,46 @@
+
+    <div class="page">
+      <div class="page-header">
+        <h1 class="page-title">📋 Movement History</h1>
+        <p class="page-sub">All stock in/out transactions</p>
+      </div>
+
+      @if (loading() && movements().length === 0) {
+        <div class="loading-state"><div class="spinner-big"></div></div>
+      } @else if (movements().length === 0) {
+        <div class="empty-state">
+          <div class="empty-icon">📋</div>
+          <h3>No movements yet</h3>
+          <p>Stock transactions will appear here.</p>
+        </div>
+      } @else {
+        <div class="movement-list">
+          @for (m of movements(); track m.id) {
+            <div class="movement-card">
+              <div class="movement-icon">{{ typeIcon(m.type) }}</div>
+              <div class="movement-info">
+                <div class="movement-medicine">{{ m.medicineName }} <span class="potency">{{ m.potency }}</span></div>
+                <div class="movement-meta">
+                  <span class="type-badge" [style.color]="typeColor(m.type)">{{ typeLabel(m.type) }}</span>
+                  @if (m.staffName) { <span class="staff">by {{ m.staffName }}</span> }
+                  @if (m.note) { <span class="note">"{{ m.note }}"</span> }
+                </div>
+                <div class="movement-time">{{ m.createdAt | date:'dd MMM yyyy, h:mm a' }}</div>
+              </div>
+              <div class="movement-qty" [style.color]="typeColor(m.type)">
+                {{ isOut(m.type) ? '−' : '+' }}{{ m.qty }}
+              </div>
+            </div>
+          }
+        </div>
+
+        @if (hasMore()) {
+          <div class="load-more-wrap">
+            <button class="load-more-btn" [disabled]="loading()" (click)="loadMore()">
+              @if (loading()) { <span class="btn-spinner"></span> Loading... } @else { Load More }
+            </button>
+          </div>
+        }
+      }
+    </div>
+  

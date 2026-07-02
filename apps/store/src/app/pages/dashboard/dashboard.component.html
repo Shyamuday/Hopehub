@@ -1,0 +1,148 @@
+
+    <div class="page-content">
+      <!-- Header -->
+      <div class="dash-header">
+        <div>
+          <h1>Good {{ greeting() }},</h1>
+          <p>{{ auth.staff()?.name ?? 'Staff' }} · {{ auth.staff()?.storeName ?? 'Store' }}</p>
+        </div>
+        <div class="header-badge">{{ auth.staff()?.role === 'MANAGER' ? '👔' : '🧑‍💼' }}</div>
+      </div>
+
+      @if (loading()) {
+        <div style="display:flex;justify-content:center;padding:40px">
+          <div class="spinner"></div>
+        </div>
+      }
+
+      @if (stats(); as s) {
+        <!-- Stats grid -->
+        <div class="stats-grid" style="margin-bottom: 20px;">
+          <div class="stat-card">
+            <div class="stat-icon">💊</div>
+            <div class="stat-value teal">{{ s.totalMedicines | number }}</div>
+            <div class="stat-label">Total Medicines</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">💰</div>
+            <div class="stat-value green">₹{{ formatValue(s.totalStockValue) }}</div>
+            <div class="stat-label">Stock Value</div>
+          </div>
+          <div class="stat-card" [class.warn]="s.lowStockCount > 0">
+            <div class="stat-icon">⚠️</div>
+            <div class="stat-value" [class.red]="s.lowStockCount > 0" [class.green]="s.lowStockCount === 0">
+              {{ s.lowStockCount }}
+            </div>
+            <div class="stat-label">Low Stock</div>
+          </div>
+          <div class="stat-card" [class.warn]="s.expiringCount > 0">
+            <div class="stat-icon">📅</div>
+            <div class="stat-value" [class.yellow]="s.expiringCount > 0" [class.green]="s.expiringCount === 0">
+              {{ s.expiringCount }}
+            </div>
+            <div class="stat-label">Expiring Soon</div>
+          </div>
+        </div>
+
+        <!-- Quick actions -->
+        <div class="quick-actions">
+          <a class="quick-btn" routerLink="/stock-in">
+            <span class="qb-icon">📦</span>
+            <span>Add Stock</span>
+          </a>
+          <a class="quick-btn" routerLink="/stock-out">
+            <span class="qb-icon">📤</span>
+            <span>Remove</span>
+          </a>
+          <a class="quick-btn" routerLink="/search">
+            <span class="qb-icon">🔍</span>
+            <span>Search</span>
+          </a>
+          <a class="quick-btn" routerLink="/rack-map">
+            <span class="qb-icon">🗺️</span>
+            <span>Rack Map</span>
+          </a>
+        </div>
+
+        <!-- Alerts banner -->
+        @if (s.lowStockCount > 0 || s.expiringCount > 0) {
+          <a class="alerts-banner" routerLink="/alerts">
+            <div class="alerts-content">
+              <span class="alerts-icon">🔔</span>
+              <div>
+                <div class="alerts-title">Attention Required</div>
+                <div class="alerts-sub">
+                  @if (s.lowStockCount > 0) { <span class="alert-pill red">{{ s.lowStockCount }} low stock</span> }
+                  @if (s.expiringCount > 0) { <span class="alert-pill yellow">{{ s.expiringCount }} expiring</span> }
+                </div>
+              </div>
+            </div>
+            <span class="chevron">›</span>
+          </a>
+        }
+
+        <!-- Low stock medicines -->
+        @if (s.topLowStock.length > 0) {
+          <div class="section">
+            <div class="section-header">
+              <h2>⚠️ Low Stock</h2>
+              <a routerLink="/alerts" class="see-all">See all</a>
+            </div>
+            <div class="list">
+              @for (med of s.topLowStock; track med.id) {
+                <a class="medicine-item" [routerLink]="['/medicines', med.id]">
+                  <div class="med-status-dot" [class]="getStatusClass(med)"></div>
+                  <div class="med-info">
+                    <div class="med-name">{{ med.name }}</div>
+                    <div class="med-sub">
+                      <span class="badge" [class]="getPotencyClass(med.potency)">{{ med.potency }}</span>
+                      @if (med.rack) { <span style="color: #64748b; font-size:12px">· {{ med.rack.locationString }}</span> }
+                    </div>
+                  </div>
+                  <div class="med-qty" [class.red]="med.currentQty === 0" [class.yellow]="med.currentQty > 0">
+                    {{ med.currentQty }}
+                    <div style="font-size:11px;color:#64748b">units</div>
+                  </div>
+                </a>
+              }
+            </div>
+          </div>
+        }
+
+        <!-- Recent movements -->
+        @if (s.recentMovements.length > 0) {
+          <div class="section">
+            <div class="section-header">
+              <h2>📋 Recent Activity</h2>
+              <a routerLink="/movements" class="see-all">See all</a>
+            </div>
+            <div class="list">
+              @for (m of s.recentMovements.slice(0, 5); track m.id) {
+                <div class="movement-item">
+                  <div class="move-type-icon" [class]="getMoveClass(m.type)">
+                    {{ getMoveIcon(m.type) }}
+                  </div>
+                  <div class="med-info">
+                    <div class="med-name">{{ m.medicineName }}</div>
+                    <div class="med-sub" style="font-size:12px;color:#64748b">
+                      {{ m.type.replace('_', ' ') }} · {{ m.createdAt | date:'MMM d, h:mm a' }}
+                    </div>
+                  </div>
+                  <div class="move-qty" [class.green]="isInbound(m.type)" [class.red]="!isInbound(m.type)">
+                    {{ isInbound(m.type) ? '+' : '-' }}{{ m.qty }}
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+        }
+      }
+
+      @if (error()) {
+        <div class="error-card">
+          <p>{{ error() }}</p>
+          <button class="btn btn-secondary btn-sm" (click)="load()">Retry</button>
+        </div>
+      }
+    </div>
+  

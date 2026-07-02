@@ -2,22 +2,6 @@ import { Component } from '@angular/core';
 
 @Component({
   selector: 'app-home-safety-faq-section',
-  template: `
-    <section class="content-grid two">
-      <article class="panel warning-panel">
-        <h2>Safety first</h2>
-        <p>
-          This platform is not for emergencies. Severe pain, breathing trouble, heavy bleeding, or sudden worsening
-          symptoms require immediate offline medical care.
-        </p>
-        <a href="/safety">Read full safety guidance</a>
-      </article>
-      <article class="panel">
-        <h2>Common questions</h2>
-        <p>Learn about doctor assignment, consultation flow, and prescriptions before booking.</p>
-        <a href="/faq">View FAQ</a>
-      </article>
-    </section>
-  `
+  templateUrl: './home-safety-faq-section.component.html'
 })
 export class HomeSafetyFaqSectionComponent { }

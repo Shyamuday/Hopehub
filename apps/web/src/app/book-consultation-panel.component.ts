@@ -15,64 +15,7 @@ export type BookConsultationPayload = {
   selector: 'app-book-consultation-panel',
   standalone: true,
   imports: [CommonModule, FormsModule],
-  template: `
-    <div class="panel">
-      <h2>Book Consultation</h2>
-
-      <label>
-        Purchase type
-        <select [(ngModel)]="purchaseType">
-          <option [value]="PURCHASE_TYPES.ONE_TIME">One-time appointment</option>
-          <option [value]="PURCHASE_TYPES.PLAN">Plan purchase</option>
-        </select>
-      </label>
-
-      @if (purchaseType === PURCHASE_TYPES.PLAN) {
-        <label>
-          Select plan
-          <select [(ngModel)]="selectedPlanCode">
-            @for (plan of plans; track plan.code) {
-              @if (plan.code !== BILLING_PLAN_CODES.ONE_TIME) {
-                <option [value]="plan.code">
-                  {{ plan.name }} — {{ plan.priceInPaise / 100 | currency: CURRENCY_CODE }}
-                </option>
-              }
-            }
-          </select>
-        </label>
-        @if (selectedPlanDescription()) {
-          <p class="muted">{{ selectedPlanDescription() }}</p>
-        }
-      }
-
-      <label>
-        Select problem
-        <select [(ngModel)]="selectedDiseaseId" (ngModelChange)="resetAnswers()">
-          @for (disease of diseases; track disease.id) {
-            <option [value]="disease.id">
-              {{ disease.name }} — {{ disease.feeInPaise / 100 | currency: CURRENCY_CODE }}
-            </option>
-          }
-        </select>
-      </label>
-
-      @for (question of intakeQuestions(); track question) {
-        <label>
-          {{ question }}
-          <input [(ngModel)]="intakeAnswers[question]" placeholder="Type your answer" />
-        </label>
-      }
-
-      <button class="primary" [disabled]="disabled || !selectedDiseaseId" (click)="submit()">
-        Create consultation
-      </button>
-      <p class="muted">
-        Payable now:
-        <strong>{{ estimatedAmount() / 100 | currency: CURRENCY_CODE }}</strong>.
-        After payment, consultation moves to doctor assignment.
-      </p>
-    </div>
-  `
+  templateUrl: './book-consultation-panel.component.html'
 })
 export class BookConsultationPanelComponent implements OnChanges {
   readonly PURCHASE_TYPES = PURCHASE_TYPES;

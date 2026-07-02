@@ -12,24 +12,7 @@ type AuthStatusOverlayData = {
 @Component({
   selector: 'app-auth-status-overlay',
   imports: [CommonModule],
-  template: `
-    <div class="process-card" aria-live="polite" [attr.aria-busy]="data.state === 'loading'">
-      @if (data.state === 'loading') {
-        <span class="spinner"></span>
-      } @else if (data.state === 'success') {
-        <span class="status-icon success-icon">✓</span>
-      } @else {
-        <span class="status-icon error-icon">!</span>
-      }
-
-      <strong>{{ data.label }}</strong>
-      <small>{{ data.message }}</small>
-
-      @if (data.state !== 'loading') {
-        <button type="button" class="secondary" (click)="overlayRef.close()">Close</button>
-      }
-    </div>
-  `
+  templateUrl: './auth-status-overlay.component.html'
 })
 export class AuthStatusOverlayComponent {
   readonly data = inject(APP_OVERLAY_DATA) as AuthStatusOverlayData;

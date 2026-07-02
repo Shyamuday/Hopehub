@@ -20,57 +20,7 @@ type Profile = {
   standalone: true,
   imports: [CommonModule, FormsModule],
   styleUrl: './patient-profile.component.scss',
-  template: `
-    <div class="profile-panel">
-      <h2>My Profile</h2>
-
-      @if (loading()) {
-        <p class="loading-text">Loading profile…</p>
-      } @else {
-        <div class="field">
-          <label>Full name</label>
-          <input name="name" [(ngModel)]="name" placeholder="Your full name" />
-        </div>
-
-        <div class="field">
-          <label>Mobile</label>
-          <p class="readonly-val">{{ profile()?.mobile || '—' }}</p>
-          <span class="hint">Mobile cannot be changed after registration.</span>
-        </div>
-
-        <div class="field">
-          <label>Email</label>
-          <p class="readonly-val">{{ profile()?.email || '—' }}</p>
-        </div>
-
-        <div class="field">
-          <label>Known allergies</label>
-          <textarea name="allergies" [(ngModel)]="allergies"
-            placeholder="e.g. Penicillin, dust, pollen (leave blank if none)"></textarea>
-        </div>
-
-        <div class="field">
-          <label>Current medications</label>
-          <textarea name="currentMedications" [(ngModel)]="currentMedications"
-            placeholder="List any medicines you take regularly"></textarea>
-        </div>
-
-        <div class="field">
-          <label>Chronic conditions</label>
-          <textarea name="chronicConditions" [(ngModel)]="chronicConditions"
-            placeholder="e.g. Diabetes, hypertension, thyroid (leave blank if none)"></textarea>
-        </div>
-
-        <div class="save-row">
-          <button class="btn-save" type="button" (click)="save()" [disabled]="saving()">
-            {{ saving() ? 'Saving…' : 'Save Profile' }}
-          </button>
-          @if (successMsg()) { <span class="msg-ok">✓ {{ successMsg() }}</span> }
-          @if (errorMsg()) { <span class="msg-err">{{ errorMsg() }}</span> }
-        </div>
-      }
-    </div>
-  `
+  templateUrl: './patient-profile.component.html'
 })
 export class PatientProfileComponent implements OnInit {
   readonly loading = signal(true);
