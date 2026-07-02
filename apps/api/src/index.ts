@@ -35,6 +35,7 @@ import { patientsRouter } from './routes/patients.js';
 import { scanRouter } from './routes/scan.js';
 import { doctorWorklistRouter } from './routes/doctor-worklist.js';
 import { analyticsRouter } from './routes/analytics.js';
+import { devRouter } from './routes/dev.js';
 
 // ── Schedulers ─────────────────────────────────────────────────────────────────
 import {
@@ -102,6 +103,8 @@ app.use(cors({
 }));
 app.use('/payments/razorpay-webhook', express.raw({ type: 'application/json' }));
 app.use(express.json());
+
+app.use(devRouter);
 
 // Rate limiting
 const otpLimiter = rateLimit({

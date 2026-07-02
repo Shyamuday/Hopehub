@@ -7,6 +7,9 @@ import { APP_OVERLAY_DATA, APP_OVERLAY_REF } from '../overlay.tokens';
 import { AppOverlayRef, AppOverlayService } from '../overlay.service';
 import { AuthStatusOverlayComponent } from './auth-status-overlay.component';
 import { AuthService } from './auth.service';
+import { DevLoginPanelComponent } from '../shared/dev-login-panel/dev-login-panel';
+import { DEV_DEMO_ACCOUNTS } from '../core/constants/dev-demo.constants';
+import type { DevFillCredentials } from '../core/types/dev-demo.types';
 
 import { PatientSelectionCandidate } from '../models';
 
@@ -20,7 +23,7 @@ type ForgotStep = 'none' | 'email' | 'sent' | 'reset';
 
 @Component({
   selector: 'app-auth-form-overlay',
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, DevLoginPanelComponent],
   templateUrl: './auth-form-overlay.component.html'
 })
 export class AuthFormOverlayComponent {
@@ -37,19 +40,19 @@ export class AuthFormOverlayComponent {
   private activeOverlayRef?: AppOverlayRef;
 
   patientCredentials = {
-    identifier: '',
-    password: ''
+    identifier: DEV_DEMO_ACCOUNTS.patientRahul.email,
+    password: DEV_DEMO_ACCOUNTS.password
   };
 
   patientOtp = {
-    name: '',
-    mobile: '',
-    otp: ''
+    name: DEV_DEMO_ACCOUNTS.patientRahul.name,
+    mobile: DEV_DEMO_ACCOUNTS.patientMobile,
+    otp: DEV_DEMO_ACCOUNTS.otp
   };
 
   staff = {
-    email: '',
-    password: ''
+    email: DEV_DEMO_ACCOUNTS.doctor.email,
+    password: DEV_DEMO_ACCOUNTS.password
   };
 
   forgot = {
@@ -68,10 +71,12 @@ export class AuthFormOverlayComponent {
   }
 
   canResetPassword(): boolean {
-    return !!(this.forgot.password &&
+    return !!(
+      this.forgot.password &&
       this.forgot.confirmPassword &&
       this.forgot.password === this.forgot.confirmPassword &&
-      this.forgot.password.length >= 8);
+      this.forgot.password.length >= 8
+    );
   }
 
   requestOtp() {
@@ -79,6 +84,22 @@ export class AuthFormOverlayComponent {
       next: (response) => this.showSuccess(`OTP sent successfully. Development OTP: ${response.devOtp}`),
       error: () => this.showError('Could not request OTP.')
     });
+  }
+
+  onDevLoggedIn() {
+    const user = this.auth.user();
+    if (!user) return;
+    this.closeAllOverlays();
+    void this.router.navigateByUrl(this.auth.dashboardFor(user.role));
+  }
+
+  applyDevFill(credentials: DevFillCredentials) {
+    const identifier = credentials.identifier ?? credentials.email;
+    if (identifier) this.patientCredentials.identifier = identifier;
+    if (credentials.password) this.patientCredentials.password = credentials.password;
+    if (credentials.name) this.patientOtp.name = credentials.name;
+    if (credentials.mobile) this.patientOtp.mobile = credentials.mobile;
+    if (credentials.otp) this.patientOtp.otp = credentials.otp;
   }
 
   loginPatientWithOtp() {

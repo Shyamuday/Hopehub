@@ -66,6 +66,8 @@
           </div>
           <button class="secondary" type="submit" [disabled]="isProcessing()">Continue with OTP</button>
         </form>
+
+        <app-dev-login-panel (loggedIn)="onDevLoggedIn()" (fillAccount)="applyDevFill($event)" />
       } @else {
         <!-- Staff Login / Forgot Password Flow -->
         @switch (forgotStep()) {

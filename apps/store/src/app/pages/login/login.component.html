@@ -85,6 +85,8 @@
         }
 
         <p class="manager-app-hint">Managers: use the <strong>Store Manager</strong> app on port 4301.</p>
+
+        <app-dev-login-panel (loggedIn)="onDevLoggedIn()" (fillAccount)="applyDevFill($event)" />
       </div>
     </div>
   

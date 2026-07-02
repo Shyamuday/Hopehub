@@ -25,7 +25,7 @@ router.post(
     } else {
       console.info(`[otp] DEV — OTP for ${mobile}: ${otp}`);
     }
-    res.json({ message: 'OTP sent.' });
+    res.json({ message: 'OTP sent.', ...(!isProduction ? { devOtp: otp } : {}) });
   })
 );
 

@@ -4,10 +4,13 @@ import { FormsModule } from '@angular/forms';
 import { StoreApiService } from '../../services/store-api.service';
 import { StoreAuthService } from '../../services/store-auth.service';
 import { STORE_STAFF_ROLES } from '../../core/constants/auth.constants';
+import { DevLoginPanelComponent } from '../../shared/dev-login-panel/dev-login-panel';
+import { DEV_DEMO_ACCOUNTS } from '../../core/constants/dev-demo.constants';
+import type { DevFillCredentials } from '../../core/types/dev-demo.types';
 
 @Component({
   selector: 'app-login',
-  imports: [FormsModule],
+  imports: [FormsModule, DevLoginPanelComponent],
   templateUrl: './login.component.html',
   styleUrl: './login.component.scss'
 })
@@ -17,8 +20,8 @@ export class LoginComponent {
   private router = inject(Router);
   private route = inject(ActivatedRoute);
 
-  email = '';
-  password = '';
+  email = DEV_DEMO_ACCOUNTS.storeManager.email;
+  password = DEV_DEMO_ACCOUNTS.password;
   showPassword = signal(false);
   loading = signal(false);
   error = signal('');
@@ -53,5 +56,14 @@ export class LoginComponent {
         this.error.set(err.error?.message || 'Invalid email or password');
       }
     });
+  }
+
+  onDevLoggedIn() {
+    this.navigateAfterLogin();
+  }
+
+  applyDevFill(credentials: DevFillCredentials) {
+    if (credentials.email) this.email = credentials.email;
+    if (credentials.password) this.password = credentials.password;
   }
 }

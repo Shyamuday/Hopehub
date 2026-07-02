@@ -92,6 +92,32 @@ Razorpay payment setup steps are in `docs/razorpay-setup.md`.
 
 ## Demo Features
 
+### Dev demo system (local only)
+
+After migrating and seeding, every app login screen shows a **Dev quick login** panel (hidden in production builds).
+
+```powershell
+npm run prisma:migrate --prefix apps/api
+npm run seed --prefix apps/api
+```
+
+| App | Port | Quick-login persona |
+|-----|------|---------------------|
+| Patient | 4200 | Rahul / Priya |
+| Admin | 4201 | Clinic Admin |
+| Doctor | 4202 | Dr. Meera Sharma |
+| Store staff | 4300 | Counter Staff |
+| Store manager | 4301 | Ranchi Store Manager |
+| HR | 4400 | HR Manager |
+
+**Shared credentials:** `Password@123` (staff/admin/doctor/patients/manager) · **PIN** `Password@123` for store staff `RNC-STF1` · **OTP** `123456` · patient mobile `9876543210`
+
+On each login screen in dev: demo **emails show automatically**, the first account **fills the form on load**, click **Fill** to switch demo users, then use normal **Sign in** (any other email works too), or **Instant** for one-click JWT login.
+
+Full guide (JSON): `GET http://localhost:4000/dev/demo-guide` · one-click tokens: `POST /dev/quick-login` with `{ "persona": "admin", "app": "admin-web" }`
+
+Disable in dev: set `DISABLE_DEV_DEMO=true` in API `.env`.
+
 - Patient OTP and password register/login
 - Staff email/password login
 - Forgot/reset password flow (email-based for patients, token-based for staff)

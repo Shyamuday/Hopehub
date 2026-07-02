@@ -41,6 +41,12 @@ export class HrAuthService {
     );
   }
 
+  applyDevAuth(response: AuthResponse) {
+    localStorage.setItem(AUTH_TOKEN_KEY, response.token);
+    localStorage.setItem(AUTH_USER_KEY, JSON.stringify(response.user));
+    this.currentUser.set(response.user);
+  }
+
   logout() {
     localStorage.removeItem(AUTH_TOKEN_KEY);
     localStorage.removeItem(AUTH_USER_KEY);

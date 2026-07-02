@@ -39,6 +39,10 @@ export class AdminAuth {
     }
   }
 
+  applyDevLogin(token: string) {
+    localStorage.setItem(this.tokenKey, token);
+  }
+
   logout() {
     localStorage.removeItem(this.tokenKey);
   }

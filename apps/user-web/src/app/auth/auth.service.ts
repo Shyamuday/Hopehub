@@ -110,6 +110,10 @@ export class AuthService {
     );
   }
 
+  applyDevSession(response: AuthResponse) {
+    this.persistSession(response);
+  }
+
   logout() {
     localStorage.removeItem(AUTH_TOKEN_KEY);
     this.patientAuth.setAuthenticatedUser(null);

@@ -4,17 +4,21 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { DEFAULT_AUTHED_ROUTE, ROUTE_PATHS } from '../../../core/constants/app-routes.constants';
 import { Auth } from '../../../core/services/auth';
 
+import { DevLoginPanelComponent } from '../../../shared/dev-login-panel/dev-login-panel';
+import { DEV_DEMO_ACCOUNTS } from '../../../core/constants/dev-demo.constants';
+import type { DevFillCredentials } from '../../../core/types/dev-demo.types';
+
 @Component({
   selector: 'app-login',
-  imports: [FormsModule],
+  imports: [FormsModule, DevLoginPanelComponent],
   templateUrl: './login.html',
   styleUrl: './login.scss',
 })
 export class Login {
   mode: 'signin' | 'enroll' = 'signin';
 
-  email = '';
-  password = '';
+  email = DEV_DEMO_ACCOUNTS.doctor.email;
+  password = DEV_DEMO_ACCOUNTS.password;
   error = '';
   message = '';
   submitting = false;
@@ -48,6 +52,15 @@ export class Login {
     } finally {
       this.submitting = false;
     }
+  }
+
+  onDevLoggedIn() {
+    void this.navigateAfterLogin();
+  }
+
+  applyDevFill(credentials: DevFillCredentials) {
+    if (credentials.email) this.email = credentials.email;
+    if (credentials.password) this.password = credentials.password;
   }
 
   async enroll() {

@@ -37,5 +37,7 @@
         }
 
         <p class="staff-app-hint">Counter staff should use the <strong>Store Staff</strong> app on port 4300.</p>
+
+        <app-dev-login-panel (loggedIn)="onDevLoggedIn()" (fillAccount)="applyDevFill($event)" />
       </div>
     </div>

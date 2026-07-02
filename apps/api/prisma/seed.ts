@@ -1,6 +1,12 @@
-import { PrismaClient, PrescriptionOptionType, Role, ConsultationStatus, PrescriptionStatus, DoseEventStatus, SupportNoteCategory, ProductEventCategory } from '@prisma/client';
+import { PrismaClient, PrescriptionOptionType, Role, ConsultationStatus, PrescriptionStatus, DoseEventStatus, SupportNoteCategory, ProductEventCategory, PaymentStatus } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import bcrypt from 'bcryptjs';
+import {
+  DEV_DEMO_ACCOUNTS,
+  DEV_DEMO_PASSWORD,
+  DEV_PATIENT_MOBILE,
+  DEV_SEED_IDS
+} from '../src/dev/demo-manifest.js';
 
 const adapter = new PrismaPg({
   connectionString: process.env.DATABASE_URL
@@ -9,48 +15,75 @@ const adapter = new PrismaPg({
 const prisma = new PrismaClient({ adapter });
 
 async function main() {
-  const passwordHash = await bcrypt.hash('Password@123', 10);
+  const passwordHash = await bcrypt.hash(DEV_DEMO_PASSWORD, 10);
 
   const admin = await prisma.user.upsert({
-    where: { email: 'admin@vitalisclinic.local' },
-    update: {},
+    where: { email: DEV_DEMO_ACCOUNTS.admin.email },
+    update: { isActive: true },
     create: {
-      name: 'Clinic Admin',
-      email: 'admin@vitalisclinic.local',
+      name: DEV_DEMO_ACCOUNTS.admin.name,
+      email: DEV_DEMO_ACCOUNTS.admin.email,
       passwordHash,
       role: Role.ADMIN
     }
   });
 
   const doctorUser = await prisma.user.upsert({
-    where: { email: 'doctor@vitalisclinic.local' },
-    update: {},
+    where: { email: DEV_DEMO_ACCOUNTS.doctor.email },
+    update: { isActive: true, mobile: DEV_DEMO_ACCOUNTS.doctor.mobile },
     create: {
-      name: 'Dr. Meera Sharma',
-      email: 'doctor@vitalisclinic.local',
-      mobile: '9000000001',
+      name: DEV_DEMO_ACCOUNTS.doctor.name,
+      email: DEV_DEMO_ACCOUNTS.doctor.email,
+      mobile: DEV_DEMO_ACCOUNTS.doctor.mobile,
       passwordHash,
-      role: Role.DOCTOR
+      role: Role.DOCTOR,
+      isActive: true
     }
   });
 
   await prisma.doctor.upsert({
     where: { userId: doctorUser.id },
-    update: {},
+    update: {
+      specialty: DEV_DEMO_ACCOUNTS.doctor.specialty,
+      registrationNo: DEV_DEMO_ACCOUNTS.doctor.registrationNo
+    },
     create: {
       userId: doctorUser.id,
-      specialty: 'Dermatology',
-      registrationNo: 'MCI-DEMO-001'
+      specialty: DEV_DEMO_ACCOUNTS.doctor.specialty,
+      registrationNo: DEV_DEMO_ACCOUNTS.doctor.registrationNo
+    }
+  });
+
+  const hrUser = await prisma.user.upsert({
+    where: { email: DEV_DEMO_ACCOUNTS.hr.email },
+    update: { isActive: true, passwordHash, role: Role.HR },
+    create: {
+      name: DEV_DEMO_ACCOUNTS.hr.name,
+      email: DEV_DEMO_ACCOUNTS.hr.email,
+      passwordHash,
+      role: Role.HR,
+      isActive: true
+    }
+  });
+
+  await prisma.hrProfile.upsert({
+    where: { userId: hrUser.id },
+    update: { employeeId: DEV_DEMO_ACCOUNTS.hr.employeeId },
+    create: {
+      userId: hrUser.id,
+      employeeId: DEV_DEMO_ACCOUNTS.hr.employeeId,
+      designation: 'HR Manager',
+      department: 'Human Resources'
     }
   });
 
   const ranchiStore = await prisma.store.upsert({
-    where: { code: 'RNC' },
+    where: { code: DEV_DEMO_ACCOUNTS.store.code },
     update: {},
     create: {
-      name: 'Vitalis Care — Ranchi',
-      code: 'RNC',
-      address: 'Ranchi, Jharkhand'
+      name: DEV_DEMO_ACCOUNTS.store.name,
+      code: DEV_DEMO_ACCOUNTS.store.code,
+      address: DEV_DEMO_ACCOUNTS.store.address
     }
   });
 
@@ -59,19 +92,29 @@ async function main() {
     data: { clinicStoreId: ranchiStore.id }
   });
 
-  const managerPinHash = await bcrypt.hash('Password@123', 10);
+  await prisma.hrStoreAccess.upsert({
+    where: { hrUserId_storeId: { hrUserId: hrUser.id, storeId: ranchiStore.id } },
+    update: {},
+    create: {
+      hrUserId: hrUser.id,
+      storeId: ranchiStore.id,
+      grantedById: admin.id
+    }
+  });
+
+  const managerPinHash = await bcrypt.hash(DEV_DEMO_PASSWORD, 10);
   await prisma.storeStaff.upsert({
-    where: { staffCode: 'RNC-MGR' },
+    where: { staffCode: DEV_DEMO_ACCOUNTS.storeManager.staffCode },
     update: {
-      email: 'manager@ranchi.vitalis.local',
+      email: DEV_DEMO_ACCOUNTS.storeManager.email,
       pinHash: managerPinHash,
       role: 'MANAGER',
       isActive: true
     },
     create: {
-      name: 'Ranchi Store Manager',
-      staffCode: 'RNC-MGR',
-      email: 'manager@ranchi.vitalis.local',
+      name: DEV_DEMO_ACCOUNTS.storeManager.name,
+      staffCode: DEV_DEMO_ACCOUNTS.storeManager.staffCode,
+      email: DEV_DEMO_ACCOUNTS.storeManager.email,
       pinHash: managerPinHash,
       role: 'MANAGER',
       storeId: ranchiStore.id,
@@ -82,11 +125,11 @@ async function main() {
   });
 
   await prisma.storeStaff.upsert({
-    where: { staffCode: 'RNC-STF1' },
+    where: { staffCode: DEV_DEMO_ACCOUNTS.storeStaff.staffCode },
     update: { pinHash: managerPinHash, isActive: true },
     create: {
-      name: 'Counter Staff Demo',
-      staffCode: 'RNC-STF1',
+      name: DEV_DEMO_ACCOUNTS.storeStaff.name,
+      staffCode: DEV_DEMO_ACCOUNTS.storeStaff.staffCode,
       pinHash: managerPinHash,
       role: 'STAFF',
       storeId: ranchiStore.id,
@@ -94,24 +137,24 @@ async function main() {
     }
   });
 
-  const sharedMobile = '9876543210';
   const patientOne = await prisma.user.upsert({
-    where: { email: 'patient1@vitalisclinic.local' },
+    where: { email: DEV_DEMO_ACCOUNTS.patientRahul.email },
     update: {
-      patientCode: 'RNC-000001',
+      patientCode: DEV_DEMO_ACCOUNTS.patientRahul.patientCode,
       homeClinicStoreId: ranchiStore.id,
-      mobile: sharedMobile,
+      mobile: DEV_PATIENT_MOBILE,
+      passwordHash,
       allergies: 'Sulfa drugs (rash)',
       currentMedications: 'None',
       chronicConditions: 'Seasonal hair fall, mild dandruff'
     },
     create: {
-      name: 'Rahul Verma',
-      email: 'patient1@vitalisclinic.local',
-      mobile: sharedMobile,
+      name: DEV_DEMO_ACCOUNTS.patientRahul.name,
+      email: DEV_DEMO_ACCOUNTS.patientRahul.email,
+      mobile: DEV_PATIENT_MOBILE,
       passwordHash,
       role: Role.PATIENT,
-      patientCode: 'RNC-000001',
+      patientCode: DEV_DEMO_ACCOUNTS.patientRahul.patientCode,
       homeClinicStoreId: ranchiStore.id,
       allergies: 'Sulfa drugs (rash)',
       currentMedications: 'None',
@@ -120,32 +163,90 @@ async function main() {
   });
 
   const patientTwo = await prisma.user.upsert({
-    where: { email: 'patient2@vitalisclinic.local' },
-    update: { patientCode: 'RNC-000002', homeClinicStoreId: ranchiStore.id, mobile: sharedMobile },
+    where: { email: DEV_DEMO_ACCOUNTS.patientPriya.email },
+    update: {
+      patientCode: DEV_DEMO_ACCOUNTS.patientPriya.patientCode,
+      homeClinicStoreId: ranchiStore.id,
+      mobile: DEV_PATIENT_MOBILE,
+      passwordHash
+    },
     create: {
-      name: 'Priya Verma',
-      email: 'patient2@vitalisclinic.local',
-      mobile: sharedMobile,
+      name: DEV_DEMO_ACCOUNTS.patientPriya.name,
+      email: DEV_DEMO_ACCOUNTS.patientPriya.email,
+      mobile: DEV_PATIENT_MOBILE,
       passwordHash,
       role: Role.PATIENT,
-      patientCode: 'RNC-000002',
+      patientCode: DEV_DEMO_ACCOUNTS.patientPriya.patientCode,
       homeClinicStoreId: ranchiStore.id
+    }
+  });
+
+  await prisma.disease.upsert({
+    where: { name: 'Hair Fall Treatment' },
+    update: {},
+    create: {
+      name: 'Hair Fall Treatment',
+      description: 'First MVP niche focused on hair fall diagnosis, prescription, and follow-up guidance.',
+      feeInPaise: 49900,
+      intakeQuestions: [
+        'How long have you had hair fall?',
+        'Do you have dandruff, itching, or scalp infection?',
+        'Any recent fever, stress, weight loss, or medication?',
+        'Do you have family history of baldness?',
+        'Upload photos during chat if the doctor asks.'
+      ]
+    }
+  });
+
+  await prisma.disease.upsert({
+    where: { name: 'Skin Issues' },
+    update: {},
+    create: {
+      name: 'Skin Issues',
+      description: 'Secondary category for acne, rashes, pigmentation, and allergy complaints.',
+      feeInPaise: 59900,
+      intakeQuestions: [
+        'What skin issue are you facing?',
+        'How long has it been present?',
+        'Is there itching, pain, discharge, or fever?',
+        'Have you used any medicine or cream already?'
+      ]
     }
   });
 
   const hairFall = await prisma.disease.findUnique({ where: { name: 'Hair Fall Treatment' } });
   if (hairFall) {
     const consultation = await prisma.consultation.upsert({
-      where: { id: 'seed-consultation-rahul' },
+      where: { id: DEV_SEED_IDS.consultationRahul },
       update: {},
       create: {
-        id: 'seed-consultation-rahul',
+        id: DEV_SEED_IDS.consultationRahul,
         patientId: patientOne.id,
         assignedDoctorId: doctorUser.id,
         diseaseId: hairFall.id,
         clinicStoreId: ranchiStore.id,
         status: ConsultationStatus.IN_PROGRESS,
         intakeAnswers: []
+      }
+    });
+
+    await prisma.payment.upsert({
+      where: { consultationId: consultation.id },
+      update: { status: PaymentStatus.PAID, amountInPaise: hairFall.feeInPaise },
+      create: {
+        consultationId: consultation.id,
+        amountInPaise: hairFall.feeInPaise,
+        billingPlanCode: 'ONE_TIME',
+        status: PaymentStatus.PAID,
+        providerPaymentId: 'demo_seed_payment_rahul',
+        lineItems: {
+          purchaseType: 'ONE_TIME',
+          diseaseName: hairFall.name,
+          diseaseFeeInPaise: hairFall.feeInPaise,
+          planCode: 'ONE_TIME',
+          planName: 'One-time consultation',
+          consultationsLimit: 1
+        }
       }
     });
 
@@ -225,7 +326,6 @@ async function main() {
         }
       });
 
-      // Demo adherence cohort: Rahul — mostly missed/skipped over prior 7 days (high risk)
       for (let dayOffset = 2; dayOffset <= 8; dayOffset++) {
         const base = new Date(today.getFullYear(), today.getMonth(), today.getDate() - dayOffset);
         const slots: Array<{ hour: number; status: DoseEventStatus; note?: string }> = [
@@ -269,10 +369,10 @@ async function main() {
     });
 
     await prisma.consultation.upsert({
-      where: { id: 'seed-consultation-priya-assigned' },
+      where: { id: DEV_SEED_IDS.consultationPriya },
       update: {},
       create: {
-        id: 'seed-consultation-priya-assigned',
+        id: DEV_SEED_IDS.consultationPriya,
         patientId: patientTwo.id,
         assignedDoctorId: doctorUser.id,
         diseaseId: hairFall.id,
@@ -282,39 +382,6 @@ async function main() {
       }
     });
   }
-
-  await prisma.disease.upsert({
-    where: { name: 'Hair Fall Treatment' },
-    update: {},
-    create: {
-      name: 'Hair Fall Treatment',
-      description: 'First MVP niche focused on hair fall diagnosis, prescription, and follow-up guidance.',
-      feeInPaise: 49900,
-      intakeQuestions: [
-        'How long have you had hair fall?',
-        'Do you have dandruff, itching, or scalp infection?',
-        'Any recent fever, stress, weight loss, or medication?',
-        'Do you have family history of baldness?',
-        'Upload photos during chat if the doctor asks.'
-      ]
-    }
-  });
-
-  await prisma.disease.upsert({
-    where: { name: 'Skin Issues' },
-    update: {},
-    create: {
-      name: 'Skin Issues',
-      description: 'Secondary category for acne, rashes, pigmentation, and allergy complaints.',
-      feeInPaise: 59900,
-      intakeQuestions: [
-        'What skin issue are you facing?',
-        'How long has it been present?',
-        'Is there itching, pain, discharge, or fever?',
-        'Have you used any medicine or cream already?'
-      ]
-    }
-  });
 
   const defaultMethods = [
     'Classical Homeopathy',
@@ -402,13 +469,13 @@ async function main() {
   });
 
   await prisma.supportCaseNote.upsert({
-    where: { id: 'seed-support-note-rahul' },
+    where: { id: DEV_SEED_IDS.supportNoteRahul },
     update: {},
     create: {
-      id: 'seed-support-note-rahul',
+      id: DEV_SEED_IDS.supportNoteRahul,
       patientId: patientOne.id,
       authorId: admin.id,
-      consultationId: 'seed-consultation-rahul',
+      consultationId: DEV_SEED_IDS.consultationRahul,
       category: SupportNoteCategory.ADHERENCE,
       body: 'Demo: patient reported missed evening dose. Confirmed SMS reminders are on; suggested reviewing snooze presets in the patient app.'
     }
@@ -423,12 +490,12 @@ async function main() {
 
   const demoFunnelEvents = [
     { id: 'seed-event-login', name: 'patient.login', actorId: patientOne.id, actorRole: Role.PATIENT, createdAt: daysAgo(6) },
-    { id: 'seed-event-booked', name: 'consultation.booked', actorId: patientOne.id, actorRole: Role.PATIENT, createdAt: daysAgo(6), properties: { consultationId: 'seed-consultation-rahul' } },
-    { id: 'seed-event-pay-init', name: 'payment.initiated', actorId: patientOne.id, actorRole: Role.PATIENT, createdAt: daysAgo(6), properties: { consultationId: 'seed-consultation-rahul' } },
-    { id: 'seed-event-pay-done', name: 'payment.completed', actorId: patientOne.id, actorRole: Role.PATIENT, createdAt: daysAgo(5), properties: { consultationId: 'seed-consultation-rahul' } },
-    { id: 'seed-event-assigned', name: 'consultation.assigned', actorId: admin.id, actorRole: Role.ADMIN, createdAt: daysAgo(5), properties: { consultationId: 'seed-consultation-rahul', doctorId: doctorUser.id } },
-    { id: 'seed-event-rx', name: 'prescription.published', actorId: doctorUser.id, actorRole: Role.DOCTOR, createdAt: daysAgo(4), properties: { consultationId: 'seed-consultation-rahul' } },
-    { id: 'seed-event-dose', name: 'dose.taken', actorId: patientOne.id, actorRole: Role.PATIENT, createdAt: daysAgo(3), properties: { consultationId: 'seed-consultation-rahul' } },
+    { id: 'seed-event-booked', name: 'consultation.booked', actorId: patientOne.id, actorRole: Role.PATIENT, createdAt: daysAgo(6), properties: { consultationId: DEV_SEED_IDS.consultationRahul } },
+    { id: 'seed-event-pay-init', name: 'payment.initiated', actorId: patientOne.id, actorRole: Role.PATIENT, createdAt: daysAgo(6), properties: { consultationId: DEV_SEED_IDS.consultationRahul } },
+    { id: 'seed-event-pay-done', name: 'payment.completed', actorId: patientOne.id, actorRole: Role.PATIENT, createdAt: daysAgo(5), properties: { consultationId: DEV_SEED_IDS.consultationRahul } },
+    { id: 'seed-event-assigned', name: 'consultation.assigned', actorId: admin.id, actorRole: Role.ADMIN, createdAt: daysAgo(5), properties: { consultationId: DEV_SEED_IDS.consultationRahul, doctorId: doctorUser.id } },
+    { id: 'seed-event-rx', name: 'prescription.published', actorId: doctorUser.id, actorRole: Role.DOCTOR, createdAt: daysAgo(4), properties: { consultationId: DEV_SEED_IDS.consultationRahul } },
+    { id: 'seed-event-dose', name: 'dose.taken', actorId: patientOne.id, actorRole: Role.PATIENT, createdAt: daysAgo(3), properties: { consultationId: DEV_SEED_IDS.consultationRahul } },
     { id: 'seed-event-worklist', name: 'doctor.worklist_viewed', actorId: doctorUser.id, actorRole: Role.DOCTOR, category: ProductEventCategory.ENGAGEMENT, createdAt: daysAgo(2), properties: { view: 'ALL' } }
   ];
 
@@ -448,12 +515,17 @@ async function main() {
     });
   }
 
-  console.log('Seeded demo admin, doctor, disease catalog, and demo patients.');
-  console.log(`Admin login: ${admin.email} / Password@123`);
-  console.log(`Demo patients: ${patientOne.patientCode} (Rahul), ${patientTwo.patientCode} (Priya) — shared mobile ${sharedMobile}`);
-  console.log('Store manager login: manager@ranchi.vitalis.local / Password@123');
-  console.log('Store staff PIN: RNC-STF1 / Password@123');
-  console.log('Scan QR: http://localhost:4000/go/p/RNC-000001');
+  console.log('── Dev demo seed complete ──');
+  console.log(`Shared password/PIN: ${DEV_DEMO_PASSWORD}`);
+  console.log(`Patient OTP (dev): ${process.env.DEV_OTP || '123456'} · mobile ${DEV_PATIENT_MOBILE}`);
+  console.log(`Admin: ${DEV_DEMO_ACCOUNTS.admin.email}`);
+  console.log(`Doctor: ${DEV_DEMO_ACCOUNTS.doctor.email}`);
+  console.log(`HR: ${DEV_DEMO_ACCOUNTS.hr.email}`);
+  console.log(`Patients: ${DEV_DEMO_ACCOUNTS.patientRahul.patientCode} (Rahul), ${DEV_DEMO_ACCOUNTS.patientPriya.patientCode} (Priya)`);
+  console.log(`Store manager: ${DEV_DEMO_ACCOUNTS.storeManager.email}`);
+  console.log(`Store staff PIN: ${DEV_DEMO_ACCOUNTS.storeStaff.staffCode} / ${DEV_DEMO_PASSWORD}`);
+  console.log(`Demo guide: http://localhost:4000/dev/demo-guide`);
+  console.log(`Scan QR: http://localhost:4000/go/p/${DEV_DEMO_ACCOUNTS.patientRahul.patientCode}`);
 }
 
 main()
