@@ -1,4 +1,83 @@
 <section class="panel">
+  <h2>Find Patient</h2>
+  <p class="muted">Search your clinic branch first (e.g. Ranchi). One mobile can have multiple family members — pick the right profile.</p>
+  <div class="toolbar">
+    <input
+      placeholder="Mobile, email, patient code (RNC-000001), name, or ID"
+      name="patientSearchQuery"
+      [(ngModel)]="patientSearchQuery"
+      (keyup.enter)="searchPatients()"
+    />
+    <select name="patientSearchScope" [(ngModel)]="patientSearchScope">
+      <option value="auto">Clinic first, then global</option>
+      <option value="clinic">My clinic only</option>
+      <option value="global">All branches</option>
+    </select>
+    <button type="button" (click)="searchPatients()" [disabled]="patientSearchLoading">
+      {{ patientSearchLoading ? 'Searching...' : 'Search' }}
+    </button>
+    <button type="button" class="ghost" (click)="searchPatients(true)" [disabled]="patientSearchLoading">Global search</button>
+    <button type="button" class="ghost" (click)="showCreatePatient = !showCreatePatient">+ Register patient</button>
+  </div>
+  @if (patientSearchHint) {
+    <p class="muted">{{ patientSearchHint }}</p>
+  }
+  @if (patientSearchError) {
+    <p class="error">{{ patientSearchError }}</p>
+  }
+  @if (patientSearchResults.length) {
+    <div class="patient-results">
+      @for (patient of patientSearchResults; track patient.id) {
+        <article class="card patient-card" [class.selected]="selectedPatient?.id === patient.id">
+          <strong>{{ patient.name }}</strong>
+          <p>
+            <span class="code">{{ patient.patientCode || patient.id }}</span>
+            @if (patient.mobile) { · {{ patient.mobile }} }
+            @if (patient.email) { · {{ patient.email }} }
+          </p>
+          @if (patient.homeClinicStore) {
+            <small class="muted">Clinic: {{ patient.homeClinicStore.name }} ({{ patient.homeClinicStore.code }})</small>
+          }
+          <div class="actions">
+            <button type="button" (click)="selectPatient(patient)">Select &amp; load adherence</button>
+          </div>
+        </article>
+      }
+    </div>
+  }
+</section>
+
+@if (showCreatePatient) {
+<section class="panel">
+  <h3>Register walk-in patient</h3>
+  <p class="muted">Email and mobile are optional. A unique patient code is assigned automatically.</p>
+  <div class="toolbar column">
+    <input placeholder="Full name *" name="createPatientName" [(ngModel)]="createPatientName" />
+    <input placeholder="Mobile (optional, can be shared by family)" name="createPatientMobile" [(ngModel)]="createPatientMobile" />
+    <input placeholder="Email (optional)" name="createPatientEmail" [(ngModel)]="createPatientEmail" />
+    <button type="button" (click)="createPatient()" [disabled]="createPatientSaving">
+      {{ createPatientSaving ? 'Saving...' : 'Create patient' }}
+    </button>
+  </div>
+  @if (createPatientError) {
+    <p class="error">{{ createPatientError }}</p>
+  }
+</section>
+}
+
+@if (patientCardLoading) {
+<section class="panel">
+  <p class="muted">Loading patient card...</p>
+</section>
+} @else if (patientCard) {
+<section class="panel card-panel">
+  <h2>Patient reference card</h2>
+  <p class="muted">Print and give this card to the patient. They should bring it to every visit.</p>
+  <app-patient-id-card [card]="patientCard" />
+</section>
+}
+
+<section class="panel">
   <h2>Doctor Worklist</h2>
   <div class="toolbar">
     <input placeholder="Search patient, disease, status, id" name="worklistSearch" [(ngModel)]="worklistSearch" />
@@ -28,7 +107,7 @@
     <article class="card">
       <strong>{{ item.patient?.name || 'Patient' }} - {{ item.disease?.name || 'Consultation' }}</strong>
       <p>Status: {{ item.status }} | Created: {{ item.createdAt | date: 'medium' }}</p>
-      <small>Patient ID: {{ item.patient?.id }}</small>
+      <small>Patient: {{ item.patient?.patientCode || item.patient?.id }}</small>
       <div class="actions"><button type="button" (click)="openInAppointments(item.id)">Open in Appointments</button></div>
     </article>
   } @empty {
@@ -44,7 +123,7 @@
     <article class="card">
       <strong>{{ item.patient?.name || 'Patient' }} - {{ item.disease?.name || 'Consultation' }}</strong>
       <p>Status: {{ item.status }} | Created: {{ item.createdAt | date: 'medium' }}</p>
-      <small>Patient ID: {{ item.patient?.id }}</small>
+      <small>Patient: {{ item.patient?.patientCode || item.patient?.id }}</small>
       <div class="actions"><button type="button" (click)="openInAppointments(item.id)">Open in Appointments</button></div>
     </article>
   } @empty {
@@ -80,7 +159,7 @@
 <section class="panel">
   <h2>Patient Adherence Trend</h2>
   <div class="toolbar">
-    <input placeholder="Enter patient ID" name="patientId" [(ngModel)]="patientId" />
+    <input placeholder="Enter patient code, mobile, email, or ID" name="patientId" [(ngModel)]="patientId" />
     <select name="days" [(ngModel)]="days">
       <option [ngValue]="7">Last 7 days</option>
       <option [ngValue]="30">Last 30 days</option>

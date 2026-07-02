@@ -15,6 +15,10 @@ export const API_PATHS = {
     SELF_DOCTOR_LEAVE: '/hr/self/doctor-leave'
   },
   PATIENTS: {
+    SEARCH: '/patients/search',
+    BY_MOBILE: (mobile: string) => `/patients/by-mobile/${encodeURIComponent(mobile)}`,
+    DETAIL: (id: string) => `/patients/${id}`,
+    CREATE: '/patients',
     ADHERENCE_TREND: (id: string) => `/doctor/patients/${id}/adherence-trend`,
     DOSE_EVENTS: (id: string) => `/doctor/patients/${id}/dose-events`
   }

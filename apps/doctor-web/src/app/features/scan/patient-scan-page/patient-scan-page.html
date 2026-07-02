@@ -1,0 +1,46 @@
+<section class="scan-page">
+  <header class="scan-header">
+    <a [routerLink]="['/', 'patients']" class="back-link">← Patients</a>
+    <h1>Scanned patient</h1>
+    <p class="code">{{ patientCode() }}</p>
+  </header>
+
+  @if (loading()) {
+    <p class="status">Loading patient…</p>
+  } @else if (error()) {
+    <div class="error-panel">
+      <p>{{ error() }}</p>
+      <button type="button" class="btn" (click)="openPatients()">Go to patients</button>
+    </div>
+  } @else if (scanResult(); as result) {
+    <article class="patient-panel">
+      <h2>{{ result.patient.name }}</h2>
+      @if (result.patient.mobile) {
+        <p class="meta">{{ result.patient.mobile }}</p>
+      }
+      @if (result.patient.homeClinicStore) {
+        <p class="meta clinic">{{ result.patient.homeClinicStore.name }} ({{ result.patient.homeClinicStore.code }})</p>
+      }
+
+      <div class="actions">
+        @if (result.primaryConsultationId) {
+          <button type="button" class="btn primary" (click)="openPrescribe()">Open consultation & prescribe</button>
+        } @else {
+          <button type="button" class="btn primary" (click)="openPatients()">Find or register patient</button>
+        }
+      </div>
+
+      @if (result.consultations.length) {
+        <section class="consult-list">
+          <h3>Active consultations</h3>
+          @for (c of result.consultations; track c.id) {
+            <button type="button" class="consult-row" (click)="openConsultation(c.id)">
+              <span>{{ c.disease?.name || 'Consultation' }}</span>
+              <small>{{ c.status }} · {{ c.createdAt | date: 'mediumDate' }}</small>
+            </button>
+          }
+        </section>
+      }
+    </article>
+  }
+</section>

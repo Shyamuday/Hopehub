@@ -44,6 +44,21 @@ async function main() {
     }
   });
 
+  const ranchiStore = await prisma.store.upsert({
+    where: { code: 'RNC' },
+    update: {},
+    create: {
+      name: 'Vitalis Care — Ranchi',
+      code: 'RNC',
+      address: 'Ranchi, Jharkhand'
+    }
+  });
+
+  await prisma.doctor.update({
+    where: { userId: doctorUser.id },
+    data: { clinicStoreId: ranchiStore.id }
+  });
+
   await prisma.disease.upsert({
     where: { name: 'Hair Fall Treatment' },
     update: {},

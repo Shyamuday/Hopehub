@@ -7,6 +7,8 @@ import { Router } from '@angular/router';
 import { environment } from '../../../../environments/environment';
 import { API_PATHS } from '../../../core/constants/api-paths.constants';
 import { ROUTE_PATHS } from '../../../core/constants/app-routes.constants';
+import { PatientsApiService, type PatientIdCardData, type PatientSearchResult } from '../patients-api.service';
+import { PatientIdCardComponent } from '../patient-id-card/patient-id-card';
 
 type DoseEvent = {
   id: string;
@@ -21,7 +23,7 @@ type WorklistConsultation = {
   id: string;
   status: 'ASSIGNED' | 'IN_PROGRESS' | 'PRESCRIPTION_UPLOADED' | 'COMPLETED' | string;
   createdAt: string;
-  patient?: { id: string; name: string; mobile?: string | null };
+  patient?: { id: string; name: string; mobile?: string | null; patientCode?: string | null };
   disease?: { name?: string };
   prescriptions?: Array<{
     id: string;
@@ -34,7 +36,7 @@ type WorklistConsultation = {
 
 @Component({
   selector: 'app-patients-page',
-  imports: [FormsModule, CommonModule, DatePipe],
+  imports: [FormsModule, CommonModule, DatePipe, PatientIdCardComponent],
   templateUrl: './patients-page.html',
   styleUrl: './patients-page.scss'
 })
@@ -45,6 +47,23 @@ export class PatientsPage {
   consultations: WorklistConsultation[] = [];
   worklistSearch = '';
   worklistView: 'ALL' | 'ASSIGNED' | 'IN_PROGRESS' | 'FOLLOW_UP_DUE' = 'ALL';
+
+  patientSearchQuery = '';
+  patientSearchScope: 'auto' | 'clinic' | 'global' = 'auto';
+  patientSearchLoading = false;
+  patientSearchError = '';
+  patientSearchHint = '';
+  patientSearchResults: PatientSearchResult[] = [];
+  selectedPatient: PatientSearchResult | null = null;
+  patientCard: PatientIdCardData | null = null;
+  patientCardLoading = false;
+
+  showCreatePatient = false;
+  createPatientName = '';
+  createPatientEmail = '';
+  createPatientMobile = '';
+  createPatientSaving = false;
+  createPatientError = '';
 
   patientId = '';
   days: 7 | 30 = 7;
@@ -73,9 +92,104 @@ export class PatientsPage {
 
   constructor(
     private readonly http: HttpClient,
-    private readonly router: Router
+    private readonly router: Router,
+    private readonly patientsApi: PatientsApiService
   ) {
     void this.loadWorklist();
+  }
+
+  async searchPatients(forceGlobal = false) {
+    this.patientSearchError = '';
+    this.patientSearchHint = '';
+    this.patientSearchResults = [];
+    this.selectedPatient = null;
+    const q = this.patientSearchQuery.trim();
+    if (q.length < 2) {
+      this.patientSearchError = 'Enter mobile, email, patient ID, or name (min 2 chars).';
+      return;
+    }
+
+    this.patientSearchLoading = true;
+    try {
+      const scope = forceGlobal ? 'global' : this.patientSearchScope;
+      const response = await this.patientsApi.searchPatients(q, scope);
+      this.patientSearchResults = response.patients;
+      this.patientSearchHint = response.hint || (response.scopeUsed === 'clinic' ? 'Showing patients from your clinic branch.' : response.scopeUsed === 'global' ? 'Showing patients from all branches.' : '');
+      if (!this.patientSearchResults.length && scope !== 'global') {
+        this.patientSearchHint = 'No patients at your clinic. Try global search.';
+      }
+    } catch {
+      this.patientSearchError = 'Could not search patients.';
+    } finally {
+      this.patientSearchLoading = false;
+    }
+  }
+
+  selectPatient(patient: PatientSearchResult) {
+    this.selectedPatient = patient;
+    this.patientId = patient.id;
+    void this.loadPatientCard(patient.id);
+    void this.loadTrend();
+  }
+
+  private async loadPatientCard(patientId: string) {
+    this.patientCardLoading = true;
+    this.patientCard = null;
+    try {
+      const response = await this.patientsApi.getPatientCard(patientId);
+      this.patientCard = response.card;
+    } catch {
+      if (this.selectedPatient?.patientCode) {
+        this.patientCard = {
+          patientCode: this.selectedPatient.patientCode,
+          name: this.selectedPatient.name,
+          mobile: this.selectedPatient.mobile,
+          email: this.selectedPatient.email,
+          clinic: this.selectedPatient.homeClinicStore ?? null,
+          issuedAt: new Date().toISOString()
+        };
+      }
+    } finally {
+      this.patientCardLoading = false;
+    }
+  }
+
+  async createPatient() {
+    this.createPatientError = '';
+    const name = this.createPatientName.trim();
+    if (!name) {
+      this.createPatientError = 'Name is required.';
+      return;
+    }
+    this.createPatientSaving = true;
+    try {
+      const response = await this.patientsApi.createPatient({
+        name,
+        email: this.createPatientEmail.trim() || undefined,
+        mobile: this.createPatientMobile.trim() || undefined
+      });
+      this.message = `Patient created: ${response.patient.patientCode || response.patient.id}`;
+      this.showCreatePatient = false;
+      this.createPatientName = '';
+      this.createPatientEmail = '';
+      this.createPatientMobile = '';
+      this.patientSearchResults = [response.patient];
+      this.selectPatient(response.patient);
+      if (response.patient.patientCode) {
+        this.patientCard = {
+          patientCode: response.patient.patientCode,
+          name: response.patient.name,
+          mobile: response.patient.mobile,
+          email: response.patient.email,
+          clinic: response.patient.homeClinicStore ?? null,
+          issuedAt: new Date().toISOString()
+        };
+      }
+    } catch {
+      this.createPatientError = 'Could not create patient. Check email is not already used.';
+    } finally {
+      this.createPatientSaving = false;
+    }
   }
 
   async loadTrend() {
@@ -85,7 +199,7 @@ export class PatientsPage {
     this.doseEvents = [];
     const id = this.patientId.trim();
     if (!id) {
-      this.error = 'Enter patient ID.';
+      this.error = 'Select or enter a patient.';
       return;
     }
 
@@ -149,6 +263,7 @@ export class PatientsPage {
     const haystack = [
       item.patient?.name || '',
       item.patient?.id || '',
+      item.patient?.patientCode || '',
       item.patient?.mobile || '',
       item.disease?.name || '',
       item.status || ''

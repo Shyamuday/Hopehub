@@ -35,7 +35,9 @@ export const publicUserSelect = {
   name: true,
   email: true,
   mobile: true,
-  role: true
+  role: true,
+  patientCode: true,
+  homeClinicStoreId: true
 } as const;
 
 export function toAuthResponse(user: {
@@ -44,9 +46,23 @@ export function toAuthResponse(user: {
   role: Role;
   email?: string | null;
   mobile?: string | null;
+  patientCode?: string | null;
 }) {
   return { token: signToken(user), user };
 }
+
+export const patientProfileSelect = {
+  id: true,
+  name: true,
+  email: true,
+  mobile: true,
+  patientCode: true,
+  homeClinicStoreId: true,
+  homeClinicStore: { select: { id: true, name: true, code: true, address: true } },
+  allergies: true,
+  currentMedications: true,
+  chronicConditions: true
+} as const;
 
 export function logAuthEvent(
   event: 'staff_login_success' | 'staff_login_failure' | 'patient_login',

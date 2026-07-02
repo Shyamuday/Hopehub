@@ -16,6 +16,7 @@ import { StaffActivityComponent } from './pages/staff-activity/staff-activity.co
 import { StaffHrComponent } from './pages/staff-hr/staff-hr.component';
 import { MyPayPage } from './pages/my-pay/my-pay-page';
 import { StoreExpensesPage } from './pages/store-expenses/store-expenses-page';
+import { PatientScanComponent } from './pages/patient-scan/patient-scan.component';
 
 export const routes: Routes = [
   { path: ROUTE_PATHS.LOGIN, component: LoginComponent },
@@ -38,6 +39,7 @@ export const routes: Routes = [
       { path: ROUTE_PATHS.STAFF_HR, component: StaffHrComponent },
       { path: ROUTE_PATHS.MY_PAY, component: MyPayPage },
       { path: ROUTE_PATHS.STORE_EXPENSES, component: StoreExpensesPage },
+      { path: ROUTE_PATHS.PATIENT_SCAN, component: PatientScanComponent },
     ]
   },
   { path: '**', redirectTo: '' }

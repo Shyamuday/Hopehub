@@ -1,0 +1,39 @@
+<div class="card-shell">
+  <div class="id-card">
+    <header class="id-card-header">
+      <p class="brand">Vitalis Care</p>
+      @if (card.clinic) {
+        <p class="clinic">{{ card.clinic.name }} <span class="clinic-code">({{ card.clinic.code }})</span></p>
+      } @else {
+        <p class="clinic">Patient reference card</p>
+      }
+    </header>
+
+    <div class="id-card-body">
+      <div class="id-card-main">
+        <p class="label">Patient ID</p>
+        <p class="patient-code">{{ card.patientCode }}</p>
+        <p class="patient-name">{{ card.name }}</p>
+        @if (card.mobile) {
+          <p class="contact">{{ card.mobile }}</p>
+        }
+        @if (card.email) {
+          <p class="contact">{{ card.email }}</p>
+        }
+      </div>
+      <div class="id-card-qr">
+        <img [src]="qrImageUrl" width="120" height="120" alt="Scan for quick access" />
+        <p class="qr-hint">Scan at clinic</p>
+      </div>
+    </div>
+
+    <footer class="id-card-footer">
+      <p>Show this ID or scan the QR at every visit for quick lookup.</p>
+      @if (card.issuedAt) {
+        <small>Issued {{ card.issuedAt | date: 'mediumDate' }}</small>
+      }
+    </footer>
+  </div>
+
+  <button type="button" class="print-btn" (click)="print()">Print patient card</button>
+</div>

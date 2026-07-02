@@ -32,6 +32,8 @@ model Store {
   staff     StoreStaff[]
   movements StockMovement[]
   doctors   Doctor[]        @relation("DoctorClinic")
+  homePatients User[]       @relation("PatientHomeClinic")
+  consultations Consultation[] @relation("ConsultationClinic")
   hrAccess  HrStoreAccess[]
   expenses  BusinessExpense[]
   createdAt DateTime        @default(now())

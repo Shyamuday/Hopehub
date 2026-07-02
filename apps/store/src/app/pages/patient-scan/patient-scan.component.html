@@ -1,0 +1,62 @@
+<section class="scan-page">
+  <header class="scan-header">
+    <a routerLink="/dashboard" class="back-link">← Dashboard</a>
+    <h1>Medicines to give</h1>
+    <p class="code">{{ patientCode() }}</p>
+  </header>
+
+  @if (loading()) {
+    <p class="status">Loading…</p>
+  } @else if (error()) {
+    <div class="error-panel">
+      <p>{{ error() }}</p>
+    </div>
+  } @else if (scanResult(); as result) {
+    <article class="patient-panel">
+      <h2>{{ result.patient.name }}</h2>
+      @if (result.patient.mobile) {
+        <p class="meta">{{ result.patient.mobile }}</p>
+      }
+      <p class="pending-badge">{{ result.pendingCount }} dose(s) pending today</p>
+    </article>
+
+    @if (result.todayDoses.length) {
+      <section class="dose-list">
+        <h3>Today's schedule</h3>
+        @for (dose of result.todayDoses; track dose.id) {
+          <div class="dose-card" [class.pending]="dose.status === 'PENDING' || dose.status === 'MISSED'">
+            <div class="dose-top">
+              <strong>{{ dose.medicineName }}</strong>
+              <span class="status-pill" [class]="dose.status.toLowerCase()">{{ dose.status }}</span>
+            </div>
+            <p class="time">{{ dose.scheduledFor | date: 'shortTime' }}</p>
+            @if (dose.dose || dose.frequency) {
+              <p class="detail">{{ dose.dose }} · {{ dose.frequency }}</p>
+            }
+            @if (dose.instructions) {
+              <p class="instructions">{{ dose.instructions }}</p>
+            }
+          </div>
+        }
+      </section>
+    } @else {
+      <p class="empty">No doses scheduled for today.</p>
+    }
+
+    @if (result.prescription?.items?.length) {
+      <section class="rx-list">
+        <h3>Current prescription</h3>
+        <p class="diagnosis">{{ result.prescription!.diagnosis }}</p>
+        @for (item of result.prescription!.items; track item.medicineName) {
+          <div class="rx-item">
+            <strong>{{ item.medicineName }}</strong>
+            @if (item.strength) { <span>{{ item.strength }}</span> }
+            @if (item.dose || item.frequency) {
+              <p>{{ item.dose }} · {{ item.frequency }} · {{ item.duration }}</p>
+            }
+          </div>
+        }
+      </section>
+    }
+  }
+</section>

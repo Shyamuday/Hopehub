@@ -1,8 +1,10 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { authRequired } from '../../auth.js';
+import { Role } from '@prisma/client';
+import { authRequired, allowRoles } from '../../auth.js';
 import { prisma } from '../../db.js';
-import { asyncRoute } from '../../utils/helpers.js';
+import { asyncRoute, patientProfileSelect } from '../../utils/helpers.js';
+import { buildPatientIdCard } from '../../services/patient-identity.js';
 
 export function registerAuthProfileRoutes(router: Router) {
 // ─── Patient profile ───────────────────────────────────────────────────────────
@@ -18,17 +20,22 @@ router.get(
   asyncRoute(async (req, res) => {
     const user = await prisma.user.findUniqueOrThrow({
       where: { id: req.user!.id },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        mobile: true,
-        allergies: true,
-        currentMedications: true,
-        chronicConditions: true
-      }
+      select: patientProfileSelect
     });
     res.json({ profile: user });
+  })
+);
+
+router.get(
+  '/patient/card',
+  authRequired,
+  allowRoles(Role.PATIENT),
+  asyncRoute(async (req, res) => {
+    const card = await buildPatientIdCard(req.user!.id);
+    if (!card) {
+      return res.status(404).json({ message: 'Patient ID card is not available yet.' });
+    }
+    res.json({ card });
   })
 );
 
@@ -49,7 +56,7 @@ router.put(
     const updated = await prisma.user.update({
       where: { id: req.user!.id },
       data: body,
-      select: { id: true, name: true, email: true, mobile: true, allergies: true, currentMedications: true, chronicConditions: true }
+      select: patientProfileSelect
     });
 
     res.json({ profile: updated });

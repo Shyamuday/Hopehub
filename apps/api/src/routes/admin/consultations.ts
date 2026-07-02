@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { z } from 'zod';
 import { Role } from '@prisma/client';
 import type { Server as SocketIoServer } from 'socket.io';
 import { authRequired, allowRoles } from '../../auth.js';
@@ -66,12 +67,17 @@ export function registerAdminConsultationRoutes(router: Router, io: SocketIoServ
     asyncRoute(async (req, res) => {
       const body = z.object({ doctorId: z.string().min(1) }).parse(req.body);
       const doctor = await prisma.user.findFirstOrThrow({
-        where: { id: body.doctorId, role: Role.DOCTOR, isActive: true }
+        where: { id: body.doctorId, role: Role.DOCTOR, isActive: true },
+        include: { doctorProfile: { select: { clinicStoreId: true } } }
       });
 
       const consultation = await prisma.consultation.update({
         where: { id: routeParam(req, 'id') },
-        data: { assignedDoctorId: doctor.id, status: 'ASSIGNED' as const },
+        data: {
+          assignedDoctorId: doctor.id,
+          status: 'ASSIGNED' as const,
+          clinicStoreId: doctor.doctorProfile?.clinicStoreId ?? undefined
+        },
         include: {
           patient: { select: { id: true, name: true, mobile: true, email: true } },
           disease: { select: { name: true } }

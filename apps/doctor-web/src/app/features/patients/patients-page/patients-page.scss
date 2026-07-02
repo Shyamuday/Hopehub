@@ -13,6 +13,42 @@
   flex-wrap: wrap;
 }
 
+.toolbar.column {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.patient-results {
+  display: grid;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.patient-card.selected {
+  border-color: #6366f1;
+  background: #eef2ff;
+}
+
+.patient-card .code {
+  font-family: ui-monospace, monospace;
+  font-weight: 700;
+}
+
+button.ghost {
+  background: transparent;
+  border: 1px solid #cbd5e1;
+}
+
+.muted {
+  color: #64748b;
+  font-size: 0.9rem;
+}
+
+.card-panel {
+  border-color: #c7d2fe;
+  background: #f8fafc;
+}
+
 input,
 select {
   border: 1px solid #cbd5e1;

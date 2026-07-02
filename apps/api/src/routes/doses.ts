@@ -5,6 +5,7 @@ import { authRequired, allowRoles } from '../auth.js';
 import { prisma } from '../db.js';
 import { DEFAULT_REMINDER_PREFERENCE } from '../constants/reminder-preferences.constants.js';
 import { asyncRoute, routeParam, queryPositiveInt } from '../utils/helpers.js';
+import { doctorCanAccessPatient } from '../services/patient-identity.js';
 
 export const router = Router();
 
@@ -147,11 +148,8 @@ router.get(
   asyncRoute(async (req, res) => {
     const patientId = routeParam(req, 'id');
     if (req.user!.role === Role.DOCTOR) {
-      const linked = await prisma.consultation.findFirst({
-        where: { patientId, assignedDoctorId: req.user!.id },
-        select: { id: true }
-      });
-      if (!linked) return res.status(403).json({ message: 'Access denied' });
+      const allowed = await doctorCanAccessPatient(req.user!.id, patientId);
+      if (!allowed) return res.status(403).json({ message: 'Access denied' });
     }
 
     const [total, taken, skipped, missed] = await Promise.all([
@@ -175,11 +173,8 @@ router.get(
     const days = queryPositiveInt(req, 'days', 7, 1, 30);
 
     if (req.user!.role === Role.DOCTOR) {
-      const linked = await prisma.consultation.findFirst({
-        where: { patientId, assignedDoctorId: req.user!.id },
-        select: { id: true }
-      });
-      if (!linked) return res.status(403).json({ message: 'Access denied' });
+      const allowed = await doctorCanAccessPatient(req.user!.id, patientId);
+      if (!allowed) return res.status(403).json({ message: 'Access denied' });
     }
 
     const end = new Date();
@@ -249,11 +244,8 @@ router.get(
     const days = queryPositiveInt(req, 'days', 7, 1, 30);
 
     if (req.user!.role === Role.DOCTOR) {
-      const linked = await prisma.consultation.findFirst({
-        where: { patientId, assignedDoctorId: req.user!.id },
-        select: { id: true }
-      });
-      if (!linked) return res.status(403).json({ message: 'Access denied' });
+      const allowed = await doctorCanAccessPatient(req.user!.id, patientId);
+      if (!allowed) return res.status(403).json({ message: 'Access denied' });
     }
 
     const since = new Date();

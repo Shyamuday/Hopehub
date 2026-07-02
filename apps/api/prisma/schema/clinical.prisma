@@ -37,6 +37,7 @@ model Consultation {
   patientId       String
   diseaseId       String
   assignedDoctorId String?
+  clinicStoreId    String?
   status          ConsultationStatus @default(PAYMENT_PENDING)
   billingPlanCode String?
   pricingSnapshot Json?
@@ -44,6 +45,7 @@ model Consultation {
   patient         User               @relation("PatientConsultations", fields: [patientId], references: [id])
   disease         Disease            @relation(fields: [diseaseId], references: [id])
   assignedDoctor  User?              @relation("DoctorConsultations", fields: [assignedDoctorId], references: [id])
+  clinicStore     Store?             @relation("ConsultationClinic", fields: [clinicStoreId], references: [id])
   payment         Payment?
   messages        Message[]
   prescriptions   Prescription[]

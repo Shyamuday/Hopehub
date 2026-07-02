@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { Role } from '@prisma/client';
 import { authRequired, allowRoles } from '../../auth.js';
 import { prisma } from '../../db.js';
-import { asyncRoute, routeParam, queryText, queryPositiveInt, publicUserSelect } from '../../utils/helpers.js';
+import { asyncRoute, routeParam, queryText, queryPositiveInt, publicUserSelect, includeConsultationRelations } from '../../utils/helpers.js';
 
 export function registerAdminConsumerRoutes(router: Router) {
   // ─── Consumers ────────────────────────────────────────────────────────────────
@@ -20,17 +20,17 @@ export function registerAdminConsumerRoutes(router: Router) {
 
       const consultations = await prisma.consultation.findMany({ select: { patient: { select: publicUserSelect } } });
 
-      const grouped = new Map<string, { id: string; name: string; email: string; mobile: string; consultations: number }>();
+      const grouped = new Map<string, { id: string; name: string; email: string; mobile: string; patientCode: string; consultations: number }>();
       for (const row of consultations) {
         const patient = row.patient;
         if (!patient?.id) continue;
         const existing = grouped.get(patient.id);
         if (existing) { existing.consultations += 1; continue; }
-        grouped.set(patient.id, { id: patient.id, name: patient.name || 'Unknown', email: patient.email || '', mobile: patient.mobile || '', consultations: 1 });
+        grouped.set(patient.id, { id: patient.id, name: patient.name || 'Unknown', email: patient.email || '', mobile: patient.mobile || '', patientCode: patient.patientCode || '', consultations: 1 });
       }
 
       const filtered = Array.from(grouped.values()).filter((c) =>
-        !query || [c.name, c.email, c.mobile].join(' ').toLowerCase().includes(query)
+        !query || [c.name, c.email, c.mobile, c.patientCode, c.id].join(' ').toLowerCase().includes(query)
       );
 
       filtered.sort((a, b) => {

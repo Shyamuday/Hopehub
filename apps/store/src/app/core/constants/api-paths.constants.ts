@@ -25,7 +25,8 @@ export const STORE_API_PATHS = {
     DETAIL_ACTIVITY: (staffId: string) => `/staff/${staffId}/activity`,
     MY_PAYSLIP: '/staff/my-payslip'
   },
-  EXPENSES: '/expenses'
+  EXPENSES: '/expenses',
+  SCAN_PATIENT: (patientCode: string) => `/scan/patient/${encodeURIComponent(patientCode)}`
 } as const;
 
 export const HR_API_PATHS = {

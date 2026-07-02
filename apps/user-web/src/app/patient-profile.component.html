@@ -1,10 +1,49 @@
 
+    @if (patientCard(); as card) {
+      <section class="id-card-panel">
+        <h2>My clinic card</h2>
+        <p class="card-hint">Bring this ID to every visit. Staff can find your record quickly with this number.</p>
+        <div class="id-card" id="patient-id-card-print">
+          <header class="id-card-header">
+            <p class="brand">Vitalis Care</p>
+            @if (card.clinic) {
+              <p class="clinic">{{ card.clinic.name }} ({{ card.clinic.code }})</p>
+            }
+          </header>
+          <div class="id-card-body">
+            <div class="id-card-main">
+              <p class="label">Patient ID</p>
+              <p class="patient-code">{{ card.patientCode }}</p>
+              <p class="patient-name">{{ card.name }}</p>
+              @if (card.mobile) { <p class="contact">{{ card.mobile }}</p> }
+            </div>
+            <div class="id-card-qr">
+              <img [src]="qrImageUrl(card)" width="120" height="120" alt="Scan for quick access" />
+              <p class="qr-hint">Scan at clinic</p>
+            </div>
+          </div>
+          <footer class="id-card-footer">
+            <p>Keep this card safe for future consultations.</p>
+          </footer>
+        </div>
+        <button type="button" class="btn-print" (click)="printCard()">Print my card</button>
+      </section>
+    }
+
     <div class="profile-panel">
       <h2>My Profile</h2>
 
       @if (loading()) {
         <p class="loading-text">Loading profile…</p>
       } @else {
+        @if (profile()?.patientCode) {
+          <div class="field">
+            <label>Patient ID</label>
+            <p class="readonly-val patient-code-inline">{{ profile()?.patientCode }}</p>
+            <span class="hint">This is your permanent clinic reference number.</span>
+          </div>
+        }
+
         <div class="field">
           <label>Full name</label>
           <input name="name" [(ngModel)]="name" placeholder="Your full name" />
@@ -48,4 +87,3 @@
         </div>
       }
     </div>
-  

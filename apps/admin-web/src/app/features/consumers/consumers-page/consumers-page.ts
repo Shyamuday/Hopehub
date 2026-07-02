@@ -7,13 +7,15 @@ import {
   CONSUMERS_PAGE_SIZE,
   type ConsumerSortField
 } from '../constants/consumers-list.constants';
-import type { SortDirection } from '../../../shared/constants/filter.constants';
+import { PatientIdCardComponent, type PatientIdCardData } from '../../../shared/patient-id-card/patient-id-card';
+import { environment } from '../../../environments/environment';
 
 type Consumer = {
   id: string;
   name: string;
   email?: string;
   mobile?: string;
+  patientCode?: string;
   consultations: number;
 };
 
@@ -23,6 +25,7 @@ type ConsumerDetail = {
     name: string;
     email?: string;
     mobile?: string;
+    patientCode?: string;
   };
   consultations: Array<{
     id: string;
@@ -49,7 +52,7 @@ type ActiveDoctor = {
 
 @Component({
   selector: 'app-consumers-page',
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, PatientIdCardComponent],
   templateUrl: './consumers-page.html',
   styleUrl: './consumers-page.scss'
 })
@@ -179,6 +182,21 @@ export class ConsumersPage {
     } finally {
       this.detailLoading = false;
     }
+  }
+
+  patientIdCard(): PatientIdCardData | null {
+    const consumer = this.consumerDetail?.consumer;
+    if (!consumer?.patientCode) {
+      return null;
+    }
+    return {
+      patientCode: consumer.patientCode,
+      name: consumer.name,
+      mobile: consumer.mobile ?? null,
+      email: consumer.email ?? null,
+      issuedAt: new Date().toISOString(),
+      scanUrl: `${environment.apiUrl}/go/p/${encodeURIComponent(consumer.patientCode)}`
+    };
   }
 
 }

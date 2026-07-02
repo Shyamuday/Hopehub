@@ -13,7 +13,8 @@ export const API_PATHS = {
     DOSE_SKIP: (id: string) => `/patient/dose-events/${id}/skip`,
     DOSE_SNOOZE: (id: string) => `/patient/dose-events/${id}/snooze`,
     REMINDER_PREFERENCES: '/patient/reminder-preferences',
-    PROFILE: '/patient/profile'
+    PROFILE: '/patient/profile',
+    CARD: '/patient/card'
   },
   ADMIN: {
     DOCTORS: '/admin/doctors',

@@ -7,6 +7,8 @@ import { registerStoreMedicineRoutes } from './medicines.js';
 import { registerStoreRackRoutes } from './racks.js';
 import { registerStoreSetupRoutes } from './setup.js';
 import { registerStoreStaffRoutes } from './staff.js';
+import { registerStorePatientRoutes } from './patients.js';
+import { registerStoreScanRoutes } from './scan.js';
 import { registerStoreStockRoutes } from './stock.js';
 
 export const storeRouter = Router();
@@ -20,3 +22,5 @@ registerStoreDashboardRoutes(storeRouter);
 registerStoreSetupRoutes(storeRouter);
 registerStoreStaffRoutes(storeRouter);
 registerStoreExpenseRoutes(storeRouter);
+registerStorePatientRoutes(storeRouter);
+registerStoreScanRoutes(storeRouter);

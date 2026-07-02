@@ -1,31 +1,259 @@
+:host {
+  display: grid;
+  gap: 1rem;
+}
 
-    .profile-panel {
-      background: #fff;
-      border: 1px solid #e5e7eb;
-      border-radius: 14px;
-      padding: 1.5rem;
-      max-width: 560px;
-    }
-    h2 { font-size: 1.1rem; margin: 0 0 1.25rem; }
-    .field { display: flex; flex-direction: column; gap: .3rem; margin-bottom: .85rem; }
-    .field label { font-size: .82rem; font-weight: 600; color: #374151; }
-    .field input, .field textarea {
-      border: 1.5px solid #d1d5db; border-radius: 9px;
-      padding: .55rem .7rem; font-size: .9rem;
-      transition: border-color .15s;
-      &:focus { outline: none; border-color: #2563eb; }
-    }
-    .field textarea { resize: vertical; min-height: 72px; }
-    .field .hint { font-size: .75rem; color: #9ca3af; }
-    .field .readonly-val { font-size: .9rem; color: #6b7280; padding: .2rem 0; }
-    .save-row { display: flex; align-items: center; gap: .75rem; margin-top: 1rem; }
-    .btn-save {
-      background: #2563eb; color: #fff; border: none; border-radius: 9px;
-      padding: .6rem 1.25rem; font-size: .9rem; font-weight: 700; cursor: pointer;
-      &:hover:not(:disabled) { background: #1d4ed8; }
-      &:disabled { opacity: .55; cursor: not-allowed; }
-    }
-    .msg-ok { color: #16a34a; font-size: .83rem; font-weight: 600; }
-    .msg-err { color: #dc2626; font-size: .83rem; }
-    .loading-text { color: #6b7280; font-size: .875rem; }
-  
+.id-card-panel {
+  background: #fff;
+  border: 1px solid #c7d2fe;
+  border-radius: 14px;
+  padding: 1.25rem;
+  max-width: 420px;
+}
+
+.card-hint {
+  margin: 0 0 1rem;
+  color: #64748b;
+  font-size: 0.88rem;
+}
+
+.id-card {
+  border: 2px solid #312e81;
+  border-radius: 16px;
+  overflow: hidden;
+  background: linear-gradient(160deg, #ffffff 0%, #eef2ff 100%);
+}
+
+.id-card-header {
+  background: linear-gradient(135deg, #312e81, #4338ca);
+  color: #fff;
+  padding: 0.9rem 1rem;
+}
+
+.brand {
+  margin: 0;
+  font-size: 0.78rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.clinic {
+  margin: 0.2rem 0 0;
+  font-weight: 700;
+}
+
+.id-card-body {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 1rem;
+}
+
+.id-card-main {
+  flex: 1;
+  text-align: center;
+  min-width: 0;
+}
+
+.label {
+  margin: 0;
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+.patient-code {
+  margin: 0.35rem 0 0.5rem;
+  font-size: 2rem;
+  font-weight: 800;
+  font-family: ui-monospace, monospace;
+  color: #312e81;
+}
+
+.patient-name {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.contact {
+  margin: 0.2rem 0 0;
+  color: #475569;
+}
+
+.id-card-qr {
+  flex-shrink: 0;
+  text-align: center;
+}
+
+.id-card-qr img {
+  display: block;
+  border-radius: 8px;
+  border: 1px solid #c7d2fe;
+  background: #fff;
+}
+
+.qr-hint {
+  margin: 0.25rem 0 0;
+  font-size: 0.65rem;
+  color: #64748b;
+  text-transform: uppercase;
+}
+
+.id-card-footer {
+  padding: 0.75rem 1rem 1rem;
+  border-top: 1px dashed #c7d2fe;
+  text-align: center;
+}
+
+.id-card-footer p {
+  margin: 0;
+  font-size: 0.82rem;
+  color: #334155;
+}
+
+.btn-print {
+  margin-top: 0.75rem;
+  border: none;
+  border-radius: 9px;
+  padding: 0.6rem 1rem;
+  background: #4338ca;
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.profile-panel {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  padding: 1.5rem;
+  max-width: 560px;
+}
+
+h2 {
+  font-size: 1.1rem;
+  margin: 0 0 1.25rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin-bottom: 0.85rem;
+}
+
+.field label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #374151;
+}
+
+.field input,
+.field textarea {
+  border: 1.5px solid #d1d5db;
+  border-radius: 9px;
+  padding: 0.55rem 0.7rem;
+  font-size: 0.9rem;
+}
+
+.field input:focus,
+.field textarea:focus {
+  outline: none;
+  border-color: #2563eb;
+}
+
+.field textarea {
+  resize: vertical;
+  min-height: 72px;
+}
+
+.field .hint {
+  font-size: 0.75rem;
+  color: #9ca3af;
+}
+
+.field .readonly-val {
+  font-size: 0.9rem;
+  color: #6b7280;
+  padding: 0.2rem 0;
+}
+
+.patient-code-inline {
+  font-family: ui-monospace, monospace;
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #312e81;
+}
+
+.save-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.btn-save {
+  background: #2563eb;
+  color: #fff;
+  border: none;
+  border-radius: 9px;
+  padding: 0.6rem 1.25rem;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.btn-save:hover:not(:disabled) {
+  background: #1d4ed8;
+}
+
+.btn-save:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.msg-ok {
+  color: #16a34a;
+  font-size: 0.83rem;
+  font-weight: 600;
+}
+
+.msg-err {
+  color: #dc2626;
+  font-size: 0.83rem;
+}
+
+.loading-text {
+  color: #6b7280;
+  font-size: 0.875rem;
+}
+
+@media print {
+  .btn-print,
+  .profile-panel,
+  .btn-save {
+    display: none !important;
+  }
+}
+
+:global(body.printing-patient-card) * {
+  visibility: hidden;
+}
+
+:global(body.printing-patient-card) .id-card-panel,
+:global(body.printing-patient-card) .id-card-panel * {
+  visibility: visible;
+}
+
+:global(body.printing-patient-card) .id-card-panel {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: #fff;
+  max-width: none;
+  border: none;
+}

@@ -158,4 +158,33 @@ export class StoreApiService {
   }): Observable<{ expense: any }> {
     return this.http.post<{ expense: any }>(`${this.base}${STORE_API_PATHS.EXPENSES}`, data);
   }
+
+  scanPatient(patientCode: string): Observable<{
+    patient: { id: string; name: string; patientCode?: string | null; mobile?: string | null };
+    todayDoses: Array<{
+      id: string;
+      scheduledFor: string;
+      status: string;
+      medicineName: string;
+      strength?: string | null;
+      dose?: string | null;
+      frequency?: string | null;
+      instructions?: string | null;
+    }>;
+    pendingCount: number;
+    prescription?: {
+      id: string;
+      diagnosis: string;
+      items: Array<{
+        medicineName: string;
+        strength?: string | null;
+        dose?: string | null;
+        frequency?: string | null;
+        duration?: string | null;
+        instructions?: string | null;
+      }>;
+    } | null;
+  }> {
+    return this.http.get(`${this.base}${STORE_API_PATHS.SCAN_PATIENT(patientCode)}`);
+  }
 }

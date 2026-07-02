@@ -1,0 +1,137 @@
+.card-shell {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.id-card {
+  width: min(100%, 360px);
+  border: 2px solid #312e81;
+  border-radius: 16px;
+  overflow: hidden;
+  background: linear-gradient(160deg, #ffffff 0%, #eef2ff 100%);
+  color: #0f172a;
+}
+
+.id-card-header {
+  background: linear-gradient(135deg, #312e81, #4338ca);
+  color: #fff;
+  padding: 0.9rem 1rem;
+}
+
+.brand {
+  margin: 0;
+  font-size: 0.78rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.clinic {
+  margin: 0.2rem 0 0;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.id-card-body {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 1.1rem 1rem;
+}
+
+.id-card-main {
+  flex: 1;
+  text-align: center;
+  min-width: 0;
+}
+
+.label {
+  margin: 0;
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+.patient-code {
+  margin: 0.35rem 0 0.5rem;
+  font-size: 2rem;
+  font-weight: 800;
+  font-family: ui-monospace, monospace;
+  color: #312e81;
+}
+
+.patient-name {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.contact {
+  margin: 0.2rem 0 0;
+  font-size: 0.92rem;
+  color: #475569;
+}
+
+.id-card-qr {
+  flex-shrink: 0;
+  text-align: center;
+}
+
+.id-card-qr img {
+  display: block;
+  border-radius: 8px;
+  border: 1px solid #c7d2fe;
+  background: #fff;
+}
+
+.qr-hint {
+  margin: 0.25rem 0 0;
+  font-size: 0.65rem;
+  color: #64748b;
+  text-transform: uppercase;
+}
+
+.id-card-footer {
+  padding: 0.75rem 1rem 1rem;
+  border-top: 1px dashed #c7d2fe;
+  text-align: center;
+}
+
+.id-card-footer p {
+  margin: 0;
+  font-size: 0.82rem;
+}
+
+.print-btn {
+  border: none;
+  border-radius: 10px;
+  padding: 0.55rem 0.9rem;
+  background: #4338ca;
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+@media print {
+  .print-btn {
+    display: none !important;
+  }
+}
+
+:global(body.printing-patient-card) * {
+  visibility: hidden;
+}
+
+:global(body.printing-patient-card) app-patient-id-card,
+:global(body.printing-patient-card) app-patient-id-card * {
+  visibility: visible;
+}
+
+:global(body.printing-patient-card) app-patient-id-card {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: #fff;
+}

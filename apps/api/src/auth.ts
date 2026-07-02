@@ -10,6 +10,7 @@ export type AuthUser = {
   name: string;
   email?: string | null;
   mobile?: string | null;
+  patientCode?: string | null;
 };
 
 declare global {
@@ -47,7 +48,7 @@ export async function authRequired(req: Request, res: Response, next: NextFuncti
     const decoded = jwt.verify(token, jwtSecret) as AuthUser;
     const user = await prisma.user.findUnique({
       where: { id: decoded.id },
-      select: { id: true, name: true, role: true, email: true, mobile: true, isActive: true }
+      select: { id: true, name: true, role: true, email: true, mobile: true, patientCode: true, isActive: true }
     });
 
     if (!user?.isActive) {

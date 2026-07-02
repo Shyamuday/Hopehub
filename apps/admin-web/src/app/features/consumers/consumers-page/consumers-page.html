@@ -22,6 +22,7 @@
     @for (consumer of visibleConsumers(); track consumer.id) {
       <article class="card">
         <strong>{{ consumer.name }}</strong>
+        <p class="patient-code-badge">{{ consumer.patientCode || 'No ID yet' }}</p>
         <button type="button" class="link" (click)="selectConsumer(consumer.id)" [disabled]="detailLoading">View details</button>
         <p>{{ consumer.email || 'No email' }} | {{ consumer.mobile || 'No mobile' }}</p>
         <small>Total consultations: {{ consumer.consultations }}</small>
@@ -49,10 +50,19 @@
   } @else if (consumerDetail; as detail) {
     <article class="card">
       <strong>{{ detail.consumer.name }}</strong>
+      <p class="patient-code-badge">{{ detail.consumer.patientCode || detail.consumer.id }}</p>
       <p>{{ detail.consumer.email || 'No email' }} | {{ detail.consumer.mobile || 'No mobile' }}</p>
       <small>Adherence: {{ detail.adherence.percent }}% (Taken {{ detail.adherence.taken }} / {{ detail.adherence.total }})</small>
       <small>Skipped: {{ detail.adherence.skipped }} | Missed: {{ detail.adherence.missed }}</small>
     </article>
+
+    @if (patientIdCard(); as card) {
+      <div class="card-panel">
+        <h3>Printable patient card</h3>
+        <p class="muted">Give this card to the patient for future visits.</p>
+        <app-patient-id-card [card]="card" />
+      </div>
+    }
 
     <h3>Recent Consultations</h3>
     @for (consultation of detail.consultations; track consultation.id) {

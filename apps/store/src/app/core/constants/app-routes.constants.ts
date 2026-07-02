@@ -12,7 +12,8 @@ export const ROUTE_PATHS = {
   STAFF_ACTIVITY: 'staff-activity',
   STAFF_HR: 'staff-hr',
   MY_PAY: 'my-pay',
-  STORE_EXPENSES: 'store-expenses'
+  STORE_EXPENSES: 'store-expenses',
+  PATIENT_SCAN: 'scan/patient/:patientCode'
 } as const;
 
 export const DEFAULT_AUTHED_ROUTE = ROUTE_PATHS.DASHBOARD;

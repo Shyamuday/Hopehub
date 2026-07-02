@@ -38,10 +38,15 @@ export function createConsultationsRouter(io: SocketIoServer) {
       }
 
       const amountInPaise = body.purchaseType === 'ONE_TIME' ? disease.feeInPaise : selectedPlan.priceInPaise;
+      const patient = await prisma.user.findUniqueOrThrow({
+        where: { id: req.user!.id },
+        select: { homeClinicStoreId: true }
+      });
       const consultation = await prisma.consultation.create({
         data: {
           patientId: req.user!.id,
           diseaseId: disease.id,
+          clinicStoreId: patient.homeClinicStoreId,
           intakeAnswers: body.intakeAnswers,
           billingPlanCode: selectedPlan.code,
           pricingSnapshot: {
@@ -127,12 +132,17 @@ export function createConsultationsRouter(io: SocketIoServer) {
     asyncRoute(async (req, res) => {
       const body = z.object({ doctorId: z.string().min(1) }).parse(req.body);
       const doctor = await prisma.user.findFirstOrThrow({
-        where: { id: body.doctorId, role: Role.DOCTOR, isActive: true }
+        where: { id: body.doctorId, role: Role.DOCTOR, isActive: true },
+        include: { doctorProfile: { select: { clinicStoreId: true } } }
       });
 
       const consultation = await prisma.consultation.update({
         where: { id: routeParam(req, 'id') },
-        data: { assignedDoctorId: doctor.id, status: ConsultationStatus.ASSIGNED },
+        data: {
+          assignedDoctorId: doctor.id,
+          status: ConsultationStatus.ASSIGNED,
+          clinicStoreId: doctor.doctorProfile?.clinicStoreId ?? undefined
+        },
         include: { ...includeConsultationRelations(), patient: { select: { id: true, name: true, mobile: true, email: true } } }
       });
 

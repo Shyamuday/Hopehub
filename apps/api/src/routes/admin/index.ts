@@ -6,6 +6,7 @@ import { registerAdminConsumerRoutes } from './consumers.js';
 import { registerAdminDoctorRoutes } from './doctors.js';
 import { registerAdminPaymentRoutes } from './payments.js';
 import { registerAdminReportRoutes } from './reports.js';
+import { registerAdminPatientLookupRoutes } from '../store/patients.js';
 
 export function createAdminRouter(io: SocketIoServer) {
   const router = Router();
@@ -16,6 +17,7 @@ export function createAdminRouter(io: SocketIoServer) {
   registerAdminConsultationRoutes(router, io);
   registerAdminPaymentRoutes(router);
   registerAdminReportRoutes(router);
+  registerAdminPatientLookupRoutes(router);
 
   return router;
 }

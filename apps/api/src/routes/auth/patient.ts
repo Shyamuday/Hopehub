@@ -1,8 +1,10 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import bcrypt from 'bcryptjs';
+import { Role } from '@prisma/client';
 import { prisma } from '../../db.js';
 import { getMailTransporter, smtpFrom } from '../../services/mail.js';
+import { createPatientRecord, normalizeMobile } from '../../services/patient-identity.js';
 import { asyncRoute, publicUserSelect, toAuthResponse, logAuthEvent, hashToken, randomToken } from '../../utils/helpers.js';
 import { webOrigin } from './shared.js';
 
@@ -22,30 +24,41 @@ router.post(
       .parse(req.body);
 
     const email = body.email || null;
-    const mobile = body.mobile || null;
+    const mobile = normalizeMobile(body.mobile);
     if (!email && !mobile) {
       return res.status(400).json({ message: 'Email or mobile is required.' });
     }
 
-    const existing = await prisma.user.findFirst({
-      where: email ? { email } : { mobile: mobile! },
-      select: { id: true, passwordHash: true }
-    });
-
-    if (existing?.passwordHash) {
-      return res.status(409).json({ message: 'Account already exists. Please log in.' });
+    if (email) {
+      const existingEmail = await prisma.user.findFirst({
+        where: { email, role: Role.PATIENT },
+        select: { id: true, passwordHash: true }
+      });
+      if (existingEmail?.passwordHash) {
+        return res.status(409).json({ message: 'Account already exists. Please log in.' });
+      }
     }
 
     const passwordHash = await bcrypt.hash(body.password, 10);
-    const user = existing
-      ? await prisma.user.update({ where: { id: existing.id }, data: { name: body.name, passwordHash }, select: publicUserSelect })
-      : await prisma.user.create({
-          data: { name: body.name, email, mobile, passwordHash, role: Role.PATIENT },
-          select: publicUserSelect
-        });
+    let user;
+    if (email) {
+      const existingEmail = await prisma.user.findFirst({
+        where: { email, role: Role.PATIENT },
+        select: { id: true }
+      });
+      user = existingEmail
+        ? await prisma.user.update({
+            where: { id: existingEmail.id },
+            data: { name: body.name, passwordHash, mobile: mobile ?? undefined },
+            select: publicUserSelect
+          })
+        : await createPatientRecord({ name: body.name, email, mobile, passwordHash });
+    } else {
+      user = await createPatientRecord({ name: body.name, mobile, passwordHash });
+    }
 
     logAuthEvent('patient_login', { userId: user.id, event: 'register' });
-    res.status(201).json(toAuthResponse(user));
+    res.status(201).json(toAuthResponse({ ...user, role: Role.PATIENT }));
   })
 );
 
@@ -54,20 +67,71 @@ router.post(
   asyncRoute(async (req, res) => {
     const body = z.object({ identifier: z.string().min(3), password: z.string().min(1) }).parse(req.body);
     const isEmail = body.identifier.includes('@');
-    const user = await prisma.user.findFirst({
-      where: isEmail ? { email: body.identifier } : { mobile: body.identifier },
+    const candidates = await prisma.user.findMany({
+      where: isEmail
+        ? { email: body.identifier, role: Role.PATIENT }
+        : { mobile: normalizeMobile(body.identifier) ?? body.identifier, role: Role.PATIENT },
       select: { ...publicUserSelect, passwordHash: true, isActive: true, role: true }
     });
 
-    if (!user || !user.passwordHash || user.role !== Role.PATIENT) {
+    const matches = [];
+    for (const user of candidates) {
+      if (!user.passwordHash || !user.isActive) continue;
+      const isValid = await bcrypt.compare(body.password, user.passwordHash);
+      if (isValid) matches.push(user);
+    }
+
+    if (!matches.length) {
+      return res.status(401).json({ message: 'Invalid credentials.' });
+    }
+
+    if (matches.length > 1) {
+      return res.json({
+        requiresPatientSelection: true,
+        patients: matches.map(({ passwordHash: _ph, isActive: _ia, role: _r, ...safe }) => safe)
+      });
+    }
+
+    const { passwordHash: _ph, isActive: _ia, ...safeUser } = matches[0];
+    logAuthEvent('patient_login', { userId: safeUser.id, event: 'password_login' });
+    res.json(toAuthResponse(safeUser));
+  })
+);
+
+router.post(
+  '/auth/patient-login/password-select',
+  asyncRoute(async (req, res) => {
+    const body = z
+      .object({
+        identifier: z.string().min(3),
+        password: z.string().min(1),
+        patientId: z.string().min(1)
+      })
+      .parse(req.body);
+
+    const isEmail = body.identifier.includes('@');
+    const user = await prisma.user.findFirst({
+      where: {
+        id: body.patientId,
+        role: Role.PATIENT,
+        ...(isEmail
+          ? { email: body.identifier }
+          : { mobile: normalizeMobile(body.identifier) ?? body.identifier })
+      },
+      select: { ...publicUserSelect, passwordHash: true, isActive: true }
+    });
+
+    if (!user?.passwordHash || !user.isActive) {
       return res.status(401).json({ message: 'Invalid credentials.' });
     }
 
     const isValid = await bcrypt.compare(body.password, user.passwordHash);
-    if (!isValid) return res.status(401).json({ message: 'Invalid credentials.' });
+    if (!isValid) {
+      return res.status(401).json({ message: 'Invalid credentials.' });
+    }
 
     const { passwordHash: _ph, isActive: _ia, ...safeUser } = user;
-    logAuthEvent('patient_login', { userId: safeUser.id, event: 'password_login' });
+    logAuthEvent('patient_login', { userId: safeUser.id, event: 'password_select' });
     res.json(toAuthResponse(safeUser));
   })
 );

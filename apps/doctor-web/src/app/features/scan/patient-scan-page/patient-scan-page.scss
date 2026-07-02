@@ -1,0 +1,97 @@
+.scan-page {
+  display: grid;
+  gap: 1rem;
+  max-width: 560px;
+}
+
+.scan-header h1 {
+  margin: 0.25rem 0 0;
+}
+
+.code {
+  margin: 0.25rem 0 0;
+  font-family: ui-monospace, monospace;
+  color: #4338ca;
+  font-weight: 700;
+}
+
+.back-link {
+  color: #64748b;
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+
+.status {
+  color: #64748b;
+}
+
+.error-panel {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 12px;
+  padding: 1rem;
+}
+
+.patient-panel {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 1.25rem;
+}
+
+.patient-panel h2 {
+  margin: 0;
+}
+
+.meta {
+  margin: 0.35rem 0 0;
+  color: #475569;
+}
+
+.meta.clinic {
+  color: #4338ca;
+  font-weight: 600;
+}
+
+.actions {
+  margin-top: 1rem;
+}
+
+.btn {
+  border: none;
+  border-radius: 10px;
+  padding: 0.65rem 1rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.btn.primary {
+  background: #4338ca;
+  color: #fff;
+}
+
+.consult-list {
+  margin-top: 1.25rem;
+}
+
+.consult-list h3 {
+  margin: 0 0 0.5rem;
+  font-size: 0.95rem;
+}
+
+.consult-row {
+  display: grid;
+  gap: 0.15rem;
+  width: 100%;
+  text-align: left;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 0.75rem;
+  margin-bottom: 0.5rem;
+  background: #f8fafc;
+  cursor: pointer;
+}
+
+.consult-row small {
+  color: #64748b;
+}

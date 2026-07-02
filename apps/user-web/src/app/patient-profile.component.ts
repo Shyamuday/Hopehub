@@ -10,9 +10,21 @@ type Profile = {
   name: string;
   email?: string | null;
   mobile?: string | null;
+  patientCode?: string | null;
+  homeClinicStore?: { id: string; name: string; code: string; address?: string | null } | null;
   allergies?: string | null;
   currentMedications?: string | null;
   chronicConditions?: string | null;
+};
+
+type PatientIdCard = {
+  patientCode: string;
+  name: string;
+  email?: string | null;
+  mobile?: string | null;
+  clinic?: { id: string; name: string; code: string; address?: string | null } | null;
+  issuedAt?: string;
+  scanUrl?: string;
 };
 
 @Component({
@@ -28,6 +40,7 @@ export class PatientProfileComponent implements OnInit {
   readonly successMsg = signal('');
   readonly errorMsg = signal('');
   readonly profile = signal<Profile | null>(null);
+  readonly patientCard = signal<PatientIdCard | null>(null);
 
   name = '';
   allergies = '';
@@ -64,11 +77,41 @@ export class PatientProfileComponent implements OnInit {
       this.allergies = profile.allergies || '';
       this.currentMedications = profile.currentMedications || '';
       this.chronicConditions = profile.chronicConditions || '';
+
+      try {
+        const { card } = await this.apiFetch<{ card: PatientIdCard }>(API_PATHS.PATIENT.CARD);
+        this.patientCard.set(card);
+      } catch {
+        if (profile.patientCode) {
+          this.patientCard.set({
+            patientCode: profile.patientCode,
+            name: profile.name,
+            mobile: profile.mobile,
+            email: profile.email,
+            clinic: profile.homeClinicStore ?? null,
+            scanUrl: `${environment.apiUrl}/go/p/${encodeURIComponent(profile.patientCode)}`
+          });
+        }
+      }
     } catch {
       this.errorMsg.set('Could not load profile.');
     } finally {
       this.loading.set(false);
     }
+  }
+
+  printCard() {
+    document.body.classList.add('printing-patient-card');
+    window.print();
+    window.setTimeout(() => document.body.classList.remove('printing-patient-card'), 500);
+  }
+
+  scanUrl(card: PatientIdCard): string {
+    return card.scanUrl ?? `${environment.apiUrl}/go/p/${encodeURIComponent(card.patientCode)}`;
+  }
+
+  qrImageUrl(card: PatientIdCard): string {
+    return `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(this.scanUrl(card))}`;
   }
 
   async save() {
@@ -88,8 +131,9 @@ export class PatientProfileComponent implements OnInit {
       this.profile.set(profile);
       this.successMsg.set('Profile saved.');
       setTimeout(() => this.successMsg.set(''), 3000);
-    } catch (err: any) {
-      this.errorMsg.set(err?.message || 'Could not save profile.');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Could not save profile.';
+      this.errorMsg.set(message);
     } finally {
       this.saving.set(false);
     }

@@ -31,6 +31,8 @@ import { createConsultationsRouter } from './routes/consultations.js';
 import { createPrescriptionsRouter } from './routes/prescriptions.js';
 import { createPaymentsRouter } from './routes/payments.js';
 import { financeRouter } from './routes/finance.js';
+import { patientsRouter } from './routes/patients.js';
+import { scanRouter } from './routes/scan.js';
 
 // ── Schedulers ─────────────────────────────────────────────────────────────────
 import {
@@ -108,6 +110,8 @@ const authLimiter = rateLimit({
 
 app.use('/auth/request-otp', otpLimiter);
 app.use('/auth/patient-login', authLimiter);
+app.use('/auth/patient-login/select', authLimiter);
+app.use('/auth/patient-login/password-select', authLimiter);
 app.use('/auth/staff-login', authLimiter);
 app.use('/hr/auth/login', authLimiter);
 app.use('/store/auth/manager-login', authLimiter);
@@ -128,6 +132,8 @@ app.use(createConsultationsRouter(io));
 app.use(createPrescriptionsRouter(io));
 app.use(createPaymentsRouter(io));
 app.use(financeRouter);
+app.use(patientsRouter);
+app.use(scanRouter);
 app.use('/store', storeRouter);
 app.use('/hr', hrRouter);
 
