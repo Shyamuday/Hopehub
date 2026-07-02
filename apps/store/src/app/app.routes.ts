@@ -17,6 +17,7 @@ import { StaffHrComponent } from './pages/staff-hr/staff-hr.component';
 import { MyPayPage } from './pages/my-pay/my-pay-page';
 import { StoreExpensesPage } from './pages/store-expenses/store-expenses-page';
 import { PatientScanComponent } from './pages/patient-scan/patient-scan.component';
+import { PatientsPage } from './pages/patients/patients-page';
 
 export const routes: Routes = [
   { path: ROUTE_PATHS.LOGIN, component: LoginComponent },
@@ -28,6 +29,7 @@ export const routes: Routes = [
       { path: '', pathMatch: 'full', redirectTo: DEFAULT_AUTHED_ROUTE },
       { path: ROUTE_PATHS.DASHBOARD, component: DashboardComponent },
       { path: ROUTE_PATHS.SEARCH, component: SearchComponent },
+      { path: ROUTE_PATHS.PATIENTS, component: PatientsPage },
       { path: ROUTE_PATHS.MEDICINE_DETAIL, component: MedicineDetailComponent },
       { path: ROUTE_PATHS.STOCK_IN, component: StockInComponent },
       { path: ROUTE_PATHS.STOCK_OUT, component: StockOutComponent },

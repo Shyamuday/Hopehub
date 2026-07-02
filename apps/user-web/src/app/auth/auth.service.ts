@@ -2,7 +2,7 @@ import { Injectable, computed, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom, from, tap } from 'rxjs';
 import { AUTH_PATHS, AUTH_TOKEN_KEY, ROLE_DASHBOARD_PATHS } from '../core/constants/auth.constants';
-import { Role, User } from '../models';
+import { Role, User, type PatientSelectionResponse } from '../models';
 import { PatientAuthService } from './patient-auth.service';
 import { environment } from '../../environments/environment';
 
@@ -55,15 +55,27 @@ export class AuthService {
   }
 
   patientLogin(payload: { name: string; mobile: string; otp: string }) {
-    return this.http.post<AuthResponse>(`${this.apiBase}${AUTH_PATHS.PATIENT_LOGIN}`, payload).pipe(
+    return this.http
+      .post<AuthResponse | PatientSelectionResponse>(`${this.apiBase}${AUTH_PATHS.PATIENT_LOGIN}`, payload)
+      .pipe(tap((response) => this.persistIfAuthenticated(response)));
+  }
+
+  patientLoginSelect(payload: { mobile: string; otp: string; patientId: string }) {
+    return this.http.post<AuthResponse>(`${this.apiBase}${AUTH_PATHS.PATIENT_LOGIN_SELECT}`, payload).pipe(
       tap((response) => this.persistSession(response))
     );
   }
 
   patientPasswordLogin(payload: { identifier: string; password: string }) {
     return from(this.patientAuth.signInWithPassword(payload.identifier, payload.password)).pipe(
-      tap((response) => this.persistSession(response))
+      tap((response) => this.persistIfAuthenticated(response))
     );
+  }
+
+  patientPasswordLoginSelect(payload: { identifier: string; password: string; patientId: string }) {
+    return from(
+      this.patientAuth.signInWithPasswordSelect(payload.identifier, payload.password, payload.patientId)
+    ).pipe(tap((response) => this.persistSession(response)));
   }
 
   patientRegister(payload: { name: string; email?: string; mobile?: string; password: string }) {
@@ -107,6 +119,12 @@ export class AuthService {
     if (role === 'ADMIN') return ROLE_DASHBOARD_PATHS.ADMIN;
     if (role === 'DOCTOR') return ROLE_DASHBOARD_PATHS.DOCTOR;
     return ROLE_DASHBOARD_PATHS.PATIENT;
+  }
+
+  private persistIfAuthenticated(response: AuthResponse | PatientSelectionResponse) {
+    if ('token' in response) {
+      this.persistSession(response);
+    }
   }
 
   private persistSession(response: AuthResponse) {

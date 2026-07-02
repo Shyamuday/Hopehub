@@ -1,5 +1,5 @@
 import { Component, inject, signal, computed } from '@angular/core';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { StoreApiService } from '../../services/store-api.service';
 import { StoreAuthService } from '../../services/store-auth.service';
@@ -14,6 +14,12 @@ export class LoginComponent {
   private api = inject(StoreApiService);
   private auth = inject(StoreAuthService);
   private router = inject(Router);
+  private route = inject(ActivatedRoute);
+
+  private navigateAfterLogin(): void {
+    const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl');
+    void this.router.navigateByUrl(returnUrl && returnUrl.startsWith('/') ? returnUrl : '/');
+  }
 
   mode = signal<'pin' | 'manager'>('pin');
   pin = signal('');
@@ -51,7 +57,8 @@ export class LoginComponent {
     this.api.loginPin(this.staffId.trim(), this.pin()).subscribe({
       next: (res) => {
         this.auth.setAuth(res.token, res.staff);
-        this.router.navigate(['/']);
+        this.loading.set(false);
+        this.navigateAfterLogin();
       },
       error: (err) => {
         this.loading.set(false);
@@ -67,7 +74,8 @@ export class LoginComponent {
     this.api.loginManager(this.email, this.password).subscribe({
       next: (res) => {
         this.auth.setAuth(res.token, res.staff);
-        this.router.navigate(['/']);
+        this.loading.set(false);
+        this.navigateAfterLogin();
       },
       error: (err) => {
         this.loading.set(false);

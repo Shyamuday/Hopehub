@@ -36,6 +36,16 @@
             @if (dose.instructions) {
               <p class="instructions">{{ dose.instructions }}</p>
             }
+            @if (canMarkGiven(dose.status)) {
+              <button
+                type="button"
+                class="btn-give"
+                [disabled]="markingDoseId() === dose.id"
+                (click)="markGiven(dose.id)"
+              >
+                {{ markingDoseId() === dose.id ? 'Saving…' : 'Mark as given' }}
+              </button>
+            }
           </div>
         }
       </section>

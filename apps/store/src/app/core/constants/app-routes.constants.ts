@@ -13,6 +13,7 @@ export const ROUTE_PATHS = {
   STAFF_HR: 'staff-hr',
   MY_PAY: 'my-pay',
   STORE_EXPENSES: 'store-expenses',
+  PATIENTS: 'patients',
   PATIENT_SCAN: 'scan/patient/:patientCode'
 } as const;
 
@@ -21,6 +22,7 @@ export const DEFAULT_AUTHED_ROUTE = ROUTE_PATHS.DASHBOARD;
 export const NAV_ITEMS = [
   { path: `/${ROUTE_PATHS.DASHBOARD}`, label: 'Dashboard', icon: '🏠' },
   { path: `/${ROUTE_PATHS.SEARCH}`, label: 'Search', icon: '🔍' },
+  { path: `/${ROUTE_PATHS.PATIENTS}`, label: 'Patients', icon: '🪪' },
   { path: `/${ROUTE_PATHS.STOCK_IN}`, label: 'Stock In', icon: '📦' },
   { path: `/${ROUTE_PATHS.STOCK_OUT}`, label: 'Stock Out', icon: '📤' },
   { path: `/${ROUTE_PATHS.ALERTS}`, label: 'Alerts', icon: '🔔' },

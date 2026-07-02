@@ -1,0 +1,125 @@
+.patients-page {
+  display: grid;
+  gap: 1rem;
+}
+
+.page-header h1 {
+  margin: 0;
+}
+
+.page-header p {
+  margin: 0.35rem 0 0;
+  color: #64748b;
+}
+
+.search-bar {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.search-bar input {
+  flex: 1;
+  min-width: 220px;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  padding: 0.7rem 0.85rem;
+}
+
+.btn {
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  padding: 0.65rem 0.9rem;
+  background: #fff;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.btn.primary {
+  background: #0f766e;
+  border-color: #0f766e;
+  color: #fff;
+}
+
+.patient-list {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.patient-card {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: center;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 0.9rem 1rem;
+}
+
+.patient-card h2 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.code {
+  margin: 0.2rem 0 0;
+  font-family: ui-monospace, monospace;
+  color: #0f766e;
+  font-weight: 700;
+}
+
+.meta {
+  margin: 0.15rem 0 0;
+  color: #64748b;
+  font-size: 0.9rem;
+}
+
+.scope-hint,
+.status {
+  color: #64748b;
+}
+
+.error-panel,
+.error-text {
+  color: #b91c1c;
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  z-index: 40;
+}
+
+.modal {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 50;
+  width: min(92vw, 420px);
+  background: #fff;
+  border-radius: 14px;
+  padding: 1.25rem;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.modal label {
+  display: grid;
+  gap: 0.35rem;
+  font-size: 0.9rem;
+}
+
+.modal input {
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 0.6rem 0.75rem;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}

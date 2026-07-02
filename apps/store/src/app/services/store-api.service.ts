@@ -187,4 +187,37 @@ export class StoreApiService {
   }> {
     return this.http.get(`${this.base}${STORE_API_PATHS.SCAN_PATIENT(patientCode)}`);
   }
+
+  searchPatients(q: string, scope: 'auto' | 'clinic' | 'global' = 'auto') {
+    const params = new HttpParams().set('q', q).set('scope', scope);
+    return this.http.get<{
+      patients: Array<{
+        id: string;
+        name: string;
+        patientCode?: string | null;
+        mobile?: string | null;
+        email?: string | null;
+        homeClinicStore?: { id: string; name: string; code: string } | null;
+      }>;
+      scopeUsed: 'clinic' | 'global' | 'none';
+    }>(`${this.base}${STORE_API_PATHS.PATIENTS.SEARCH}`, { params });
+  }
+
+  createPatient(payload: { name: string; mobile?: string; email?: string }) {
+    return this.http.post<{
+      patient: {
+        id: string;
+        name: string;
+        patientCode?: string | null;
+        mobile?: string | null;
+      };
+    }>(`${this.base}${STORE_API_PATHS.PATIENTS.CREATE}`, payload);
+  }
+
+  markDoseGiven(doseId: string) {
+    return this.http.post<{ doseEvent: { id: string; status: string }; message: string }>(
+      `${this.base}${STORE_API_PATHS.SCAN_DOSE_GIVE(doseId)}`,
+      {}
+    );
+  }
 }

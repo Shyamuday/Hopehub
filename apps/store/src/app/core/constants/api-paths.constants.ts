@@ -26,7 +26,13 @@ export const STORE_API_PATHS = {
     MY_PAYSLIP: '/staff/my-payslip'
   },
   EXPENSES: '/expenses',
-  SCAN_PATIENT: (patientCode: string) => `/scan/patient/${encodeURIComponent(patientCode)}`
+  PATIENTS: {
+    SEARCH: '/patients/search',
+    CREATE: '/patients',
+    BY_MOBILE: (mobile: string) => `/patients/by-mobile/${encodeURIComponent(mobile)}`
+  },
+  SCAN_PATIENT: (patientCode: string) => `/scan/patient/${encodeURIComponent(patientCode)}`,
+  SCAN_DOSE_GIVE: (doseId: string) => `/scan/dose-events/${encodeURIComponent(doseId)}/give`
 } as const;
 
 export const HR_API_PATHS = {

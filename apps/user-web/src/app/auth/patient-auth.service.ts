@@ -2,7 +2,7 @@ import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { AUTH_PATHS, ROLE_DASHBOARD_PATHS } from '../core/constants/auth.constants';
-import { Role, User } from '../models';
+import { Role, User, type PatientSelectionResponse } from '../models';
 import { environment } from '../../environments/environment';
 
 type AuthResponse = { token: string; user: User };
@@ -24,9 +24,25 @@ export class PatientAuthService {
     );
   }
 
-  async signInWithPassword(identifier: string, password: string): Promise<AuthResponse> {
+  async signInWithPassword(
+    identifier: string,
+    password: string
+  ): Promise<AuthResponse | PatientSelectionResponse> {
     return firstValueFrom(
-      this.http.post<AuthResponse>(`${this.apiBase}/auth/patient-login-password`, { identifier, password })
+      this.http.post<AuthResponse | PatientSelectionResponse>(`${this.apiBase}/auth/patient-login-password`, {
+        identifier,
+        password
+      })
+    );
+  }
+
+  async signInWithPasswordSelect(identifier: string, password: string, patientId: string): Promise<AuthResponse> {
+    return firstValueFrom(
+      this.http.post<AuthResponse>(`${this.apiBase}${AUTH_PATHS.PATIENT_PASSWORD_SELECT}`, {
+        identifier,
+        password,
+        patientId
+      })
     );
   }
 

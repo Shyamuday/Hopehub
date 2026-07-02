@@ -1,0 +1,75 @@
+<section class="patients-page">
+  <header class="page-header">
+    <h1>Patients</h1>
+    <p>Search by name, mobile, or patient ID. Scan a card to give medicines.</p>
+  </header>
+
+  <div class="search-bar">
+    <input
+      type="search"
+      placeholder="Search patient name, mobile, or ID…"
+      [ngModel]="query()"
+      (ngModelChange)="onSearch($event)"
+    />
+    @if (isManager()) {
+      <button type="button" class="btn primary" (click)="openRegister()">Register walk-in</button>
+    }
+  </div>
+
+  @if (loading()) {
+    <p class="status">Searching…</p>
+  } @else if (error()) {
+    <div class="error-panel">{{ error() }}</div>
+  } @else if (query().trim().length >= 2) {
+    <p class="scope-hint">
+      @if (scopeUsed() === 'clinic') { Showing patients linked to this clinic first. }
+      @else if (scopeUsed() === 'global') { Showing results from all clinics. }
+      @else { No patients found. }
+    </p>
+
+    <div class="patient-list">
+      @for (patient of patients(); track patient.id) {
+        <article class="patient-card">
+          <div>
+            <h2>{{ patient.name }}</h2>
+            <p class="code">{{ patient.patientCode || 'No ID yet' }}</p>
+            @if (patient.mobile) { <p class="meta">{{ patient.mobile }}</p> }
+          </div>
+          <div class="actions">
+            @if (patient.patientCode) {
+              <button type="button" class="btn primary" (click)="openScan(patient.patientCode)">Give medicines</button>
+            }
+          </div>
+        </article>
+      }
+    </div>
+  }
+
+  @if (registerOpen()) {
+    <div class="modal-backdrop" (click)="closeRegister()"></div>
+    <div class="modal">
+      <h2>Register walk-in patient</h2>
+      <label>
+        Full name
+        <input [(ngModel)]="registerForm.name" placeholder="Patient full name" />
+      </label>
+      <label>
+        Mobile
+        <input [(ngModel)]="registerForm.mobile" placeholder="10-digit mobile (optional)" />
+      </label>
+      <label>
+        Email
+        <input [(ngModel)]="registerForm.email" placeholder="Email (optional)" />
+      </label>
+      @if (registerError()) {
+        <p class="error-text">{{ registerError() }}</p>
+      }
+      <div class="modal-actions">
+        <button type="button" class="btn" (click)="closeRegister()">Cancel</button>
+        <button type="button" class="btn primary" [disabled]="registerSaving()" (click)="createPatient()">
+          {{ registerSaving() ? 'Saving…' : 'Create & open' }}
+        </button>
+      </div>
+    </div>
+  }
+</section>

@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { ROUTE_PATHS } from '../../../core/constants/app-routes.constants';
 import { Auth } from '../../../core/services/auth';
 
@@ -25,8 +25,14 @@ export class Login {
 
   constructor(
     private readonly auth: Auth,
-    private readonly router: Router
+    private readonly router: Router,
+    private readonly route: ActivatedRoute
   ) {}
+
+  private navigateAfterLogin(): void {
+    const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl');
+    void this.router.navigateByUrl(returnUrl && returnUrl.startsWith('/') ? returnUrl : `/${ROUTE_PATHS.DASHBOARD}`);
+  }
 
   async submit() {
     this.error = '';
@@ -38,7 +44,7 @@ export class Login {
         this.error = result.message;
         return;
       }
-      void this.router.navigateByUrl(`/${ROUTE_PATHS.DASHBOARD}`);
+      void this.navigateAfterLogin();
     } finally {
       this.submitting = false;
     }

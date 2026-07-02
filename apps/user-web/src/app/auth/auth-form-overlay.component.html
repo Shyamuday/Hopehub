@@ -2,7 +2,21 @@
     <div class="auth-card">
       <p class="eyebrow">Vitalis Care and Research Centre</p>
 
-      @if (mode() === 'patient') {
+      @if (patientSelection(); as selection) {
+        <h2>Who is logging in?</h2>
+        <p class="muted">Multiple patient profiles use this mobile number. Choose yours to continue.</p>
+        <div class="patient-pick-list">
+          @for (patient of selection.patients; track patient.id) {
+            <button type="button" class="patient-pick" (click)="selectPatient(patient.id)">
+              <strong>{{ patient.name }}</strong>
+              @if (patient.patientCode) {
+                <span>{{ patient.patientCode }}</span>
+              }
+            </button>
+          }
+        </div>
+        <button type="button" class="link-btn" (click)="cancelPatientSelection()">← Back to login</button>
+      } @else if (mode() === 'patient') {
         <h2>Login to continue</h2>
         <p class="muted">Use email/mobile with password, or choose mobile OTP as a separate option.</p>
 

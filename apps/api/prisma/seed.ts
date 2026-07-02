@@ -1,4 +1,4 @@
-import { PrismaClient, PrescriptionOptionType, Role } from '@prisma/client';
+import { PrismaClient, PrescriptionOptionType, Role, ConsultationStatus, PrescriptionStatus, DoseEventStatus } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import bcrypt from 'bcryptjs';
 
@@ -58,6 +58,111 @@ async function main() {
     where: { userId: doctorUser.id },
     data: { clinicStoreId: ranchiStore.id }
   });
+
+  const sharedMobile = '9876543210';
+  const patientOne = await prisma.user.upsert({
+    where: { email: 'patient1@vitalisclinic.local' },
+    update: { patientCode: 'RNC-000001', homeClinicStoreId: ranchiStore.id, mobile: sharedMobile },
+    create: {
+      name: 'Rahul Verma',
+      email: 'patient1@vitalisclinic.local',
+      mobile: sharedMobile,
+      passwordHash,
+      role: Role.PATIENT,
+      patientCode: 'RNC-000001',
+      homeClinicStoreId: ranchiStore.id
+    }
+  });
+
+  const patientTwo = await prisma.user.upsert({
+    where: { email: 'patient2@vitalisclinic.local' },
+    update: { patientCode: 'RNC-000002', homeClinicStoreId: ranchiStore.id, mobile: sharedMobile },
+    create: {
+      name: 'Priya Verma',
+      email: 'patient2@vitalisclinic.local',
+      mobile: sharedMobile,
+      passwordHash,
+      role: Role.PATIENT,
+      patientCode: 'RNC-000002',
+      homeClinicStoreId: ranchiStore.id
+    }
+  });
+
+  const hairFall = await prisma.disease.findUnique({ where: { name: 'Hair Fall Treatment' } });
+  if (hairFall) {
+    const consultation = await prisma.consultation.upsert({
+      where: { id: 'seed-consultation-rahul' },
+      update: {},
+      create: {
+        id: 'seed-consultation-rahul',
+        patientId: patientOne.id,
+        assignedDoctorId: doctorUser.id,
+        diseaseId: hairFall.id,
+        clinicStoreId: ranchiStore.id,
+        status: ConsultationStatus.IN_PROGRESS,
+        intakeAnswers: []
+      }
+    });
+
+    const existingRx = await prisma.prescription.findFirst({
+      where: { consultationId: consultation.id, isLatest: true }
+    });
+
+    if (!existingRx) {
+      const prescription = await prisma.prescription.create({
+        data: {
+          consultationId: consultation.id,
+          uploadedById: doctorUser.id,
+          patientId: patientOne.id,
+          version: 1,
+          isLatest: true,
+          diagnosis: 'Hair Fall',
+          notes: 'Demo prescription for store scan testing.',
+          status: PrescriptionStatus.PUBLISHED,
+          items: {
+            create: [
+              {
+                medicineName: 'Arnica Montana',
+                strength: '30C',
+                dose: '4 pills',
+                frequency: 'Twice daily',
+                duration: '7 days',
+                durationDays: 7,
+                intakeTimes: ['09:00', '21:00'],
+                sortOrder: 0
+              }
+            ]
+          }
+        },
+        include: { items: true }
+      });
+
+      const item = prescription.items[0];
+      const today = new Date();
+      const morning = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 9, 0, 0);
+      const evening = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 21, 0, 0);
+
+      await prisma.medicineDoseEvent.createMany({
+        data: [
+          {
+            patientId: patientOne.id,
+            prescriptionId: prescription.id,
+            prescriptionItemId: item.id,
+            scheduledFor: morning,
+            status: DoseEventStatus.PENDING
+          },
+          {
+            patientId: patientOne.id,
+            prescriptionId: prescription.id,
+            prescriptionItemId: item.id,
+            scheduledFor: evening,
+            status: DoseEventStatus.PENDING
+          }
+        ],
+        skipDuplicates: true
+      });
+    }
+  }
 
   await prisma.disease.upsert({
     where: { name: 'Hair Fall Treatment' },
@@ -151,8 +256,10 @@ async function main() {
     });
   }
 
-  console.log('Seeded demo admin, doctor, and disease catalog.');
+  console.log('Seeded demo admin, doctor, disease catalog, and demo patients.');
   console.log(`Admin login: ${admin.email} / Password@123`);
+  console.log(`Demo patients: ${patientOne.patientCode} (Rahul), ${patientTwo.patientCode} (Priya) — shared mobile ${sharedMobile}`);
+  console.log('Scan QR: http://localhost:4000/go/p/RNC-000001');
 }
 
 main()

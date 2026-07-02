@@ -52,6 +52,8 @@ export class PatientScanComponent implements OnInit {
   readonly scanResult = signal<ScanResponse | null>(null);
   readonly patientCode = signal('');
 
+  readonly markingDoseId = signal<string | null>(null);
+
   ngOnInit(): void {
     const code = this.route.snapshot.paramMap.get('patientCode') ?? '';
     this.patientCode.set(code);
@@ -72,5 +74,23 @@ export class PatientScanComponent implements OnInit {
         this.loading.set(false);
       }
     });
+  }
+
+  markGiven(doseId: string): void {
+    this.markingDoseId.set(doseId);
+    this.api.markDoseGiven(doseId).subscribe({
+      next: () => {
+        this.markingDoseId.set(null);
+        this.load(this.patientCode());
+      },
+      error: (err) => {
+        this.markingDoseId.set(null);
+        this.error.set(err.error?.message || 'Could not mark dose as given.');
+      }
+    });
+  }
+
+  canMarkGiven(status: string): boolean {
+    return status === 'PENDING' || status === 'MISSED';
   }
 }

@@ -8,6 +8,8 @@ import { AppOverlayRef, AppOverlayService } from '../overlay.service';
 import { AuthStatusOverlayComponent } from './auth-status-overlay.component';
 import { AuthService } from './auth.service';
 
+import { PatientSelectionCandidate } from '../models';
+
 type AuthFormOverlayData = {
   mode?: 'patient' | 'staff';
   initialForgotStep?: ForgotStep;
@@ -27,6 +29,11 @@ export class AuthFormOverlayComponent {
   readonly isProcessing = signal(false);
   readonly forgotStep = signal<ForgotStep>(this.overlayData.initialForgotStep || 'none');
   readonly resetToken = signal<string>(this.overlayData.resetToken || '');
+  readonly patientSelection = signal<{
+    mode: 'otp' | 'password';
+    mobile?: string;
+    patients: PatientSelectionCandidate[];
+  } | null>(null);
   private activeOverlayRef?: AppOverlayRef;
 
   patientCredentials = {
@@ -76,19 +83,80 @@ export class AuthFormOverlayComponent {
 
   loginPatientWithOtp() {
     this.process('Logging in patient...', this.auth.patientLogin(this.patientOtp)).subscribe({
-      next: ({ user }) => {
+      next: (response) => {
+        if ('requiresPatientSelection' in response) {
+          this.patientSelection.set({
+            mode: 'otp',
+            mobile: response.mobile || this.patientOtp.mobile,
+            patients: response.patients
+          });
+          this.closeActiveOverlay();
+          return;
+        }
         this.closeAllOverlays();
-        this.router.navigateByUrl(this.auth.dashboardFor(user.role));
+        this.router.navigateByUrl(this.auth.dashboardFor(response.user.role));
       },
       error: (error) => this.showError(error.error?.message || 'Patient login failed.')
     });
   }
 
-  loginPatientWithPassword() {
-    this.process('Logging in patient...', this.auth.patientPasswordLogin(this.patientCredentials)).subscribe({
+  selectPatient(patientId: string) {
+    const selection = this.patientSelection();
+    if (!selection) return;
+
+    if (selection.mode === 'otp') {
+      this.process(
+        'Signing in...',
+        this.auth.patientLoginSelect({
+          mobile: selection.mobile || this.patientOtp.mobile,
+          otp: this.patientOtp.otp,
+          patientId
+        })
+      ).subscribe({
+        next: ({ user }) => {
+          this.patientSelection.set(null);
+          this.closeAllOverlays();
+          this.router.navigateByUrl(this.auth.dashboardFor(user.role));
+        },
+        error: (error) => this.showError(error.error?.message || 'Could not sign in to selected profile.')
+      });
+      return;
+    }
+
+    this.process(
+      'Signing in...',
+      this.auth.patientPasswordLoginSelect({
+        identifier: this.patientCredentials.identifier,
+        password: this.patientCredentials.password,
+        patientId
+      })
+    ).subscribe({
       next: ({ user }) => {
+        this.patientSelection.set(null);
         this.closeAllOverlays();
         this.router.navigateByUrl(this.auth.dashboardFor(user.role));
+      },
+      error: (error) => this.showError(error.error?.message || 'Could not sign in to selected profile.')
+    });
+  }
+
+  cancelPatientSelection() {
+    this.patientSelection.set(null);
+  }
+
+  loginPatientWithPassword() {
+    this.process('Logging in patient...', this.auth.patientPasswordLogin(this.patientCredentials)).subscribe({
+      next: (response) => {
+        if ('requiresPatientSelection' in response) {
+          this.patientSelection.set({
+            mode: 'password',
+            patients: response.patients
+          });
+          this.closeActiveOverlay();
+          return;
+        }
+        this.closeAllOverlays();
+        this.router.navigateByUrl(this.auth.dashboardFor(response.user.role));
       },
       error: (error) => this.showError(error.error?.message || 'Patient login failed.')
     });

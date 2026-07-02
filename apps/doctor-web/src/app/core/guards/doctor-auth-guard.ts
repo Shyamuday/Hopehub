@@ -7,13 +7,13 @@ import { AUTH_PATHS } from '../constants/auth.constants';
 import { Auth } from '../services/auth';
 import { environment } from '../../../environments/environment';
 
-export const doctorAuthGuard: CanActivateFn = async () => {
+export const doctorAuthGuard: CanActivateFn = async (_route, state) => {
   const auth = inject(Auth);
   const router = inject(Router);
   const http = inject(HttpClient);
 
   if (!auth.isLoggedIn()) {
-    return router.createUrlTree(['/', ROUTE_PATHS.LOGIN]);
+    return router.createUrlTree(['/', ROUTE_PATHS.LOGIN], { queryParams: { returnUrl: state.url } });
   }
 
   try {
@@ -21,6 +21,6 @@ export const doctorAuthGuard: CanActivateFn = async () => {
     return true;
   } catch {
     auth.logout();
-    return router.createUrlTree(['/', ROUTE_PATHS.LOGIN]);
+    return router.createUrlTree(['/', ROUTE_PATHS.LOGIN], { queryParams: { returnUrl: state.url } });
   }
 };

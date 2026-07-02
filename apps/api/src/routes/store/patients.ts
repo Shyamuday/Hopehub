@@ -11,7 +11,6 @@ export function registerStorePatientRoutes(router: Router) {
   router.get(
     '/patients/search',
     storeAuthMiddleware,
-    requireManager,
     asyncRoute(async (req, res) => {
       const q = queryText(req, 'q').trim();
       if (q.length < 2) {
@@ -25,7 +24,7 @@ export function registerStorePatientRoutes(router: Router) {
     })
   );
 
-  // POST /store/patients — register walk-in at this branch
+  // POST /store/patients — register walk-in at this branch (managers only)
   router.post(
     '/patients',
     storeAuthMiddleware,
@@ -61,7 +60,6 @@ export function registerStorePatientRoutes(router: Router) {
   router.get(
     '/patients/by-mobile/:mobile',
     storeAuthMiddleware,
-    requireManager,
     asyncRoute(async (req, res) => {
       const mobile = normalizeMobile(routeParam(req, 'mobile'));
       if (!mobile) {

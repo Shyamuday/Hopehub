@@ -5,7 +5,22 @@ export type User = {
   name: string;
   email?: string | null;
   mobile?: string | null;
+  patientCode?: string | null;
   role: Role;
+};
+
+export type PatientSelectionCandidate = {
+  id: string;
+  name: string;
+  email?: string | null;
+  mobile?: string | null;
+  patientCode?: string | null;
+};
+
+export type PatientSelectionResponse = {
+  requiresPatientSelection: true;
+  mobile?: string;
+  patients: PatientSelectionCandidate[];
 };
 
 export type Disease = {

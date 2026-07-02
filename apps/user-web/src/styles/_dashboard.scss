@@ -170,3 +170,27 @@
   background: #fee2e2;
   color: #b91c1c;
 }
+
+.patient-pick-list {
+  display: grid;
+  gap: 0.5rem;
+  margin: 1rem 0;
+}
+
+.patient-pick {
+  display: grid;
+  gap: 0.15rem;
+  width: 100%;
+  text-align: left;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  padding: 0.75rem 0.9rem;
+  background: #f8fafc;
+  cursor: pointer;
+}
+
+.patient-pick span {
+  font-family: ui-monospace, monospace;
+  color: #4338ca;
+  font-size: 0.85rem;
+}

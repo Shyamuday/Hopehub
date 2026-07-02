@@ -95,4 +95,36 @@ export function registerStoreScanRoutes(router: Router) {
       });
     })
   );
+
+  // POST /store/scan/dose-events/:id/give — staff marks dose as given at counter
+  router.post(
+    '/scan/dose-events/:id/give',
+    storeAuthMiddleware,
+    asyncRoute(async (req, res) => {
+      const event = await prisma.medicineDoseEvent.findUnique({
+        where: { id: routeParam(req, 'id') },
+        select: { id: true, patientId: true, status: true }
+      });
+
+      if (!event) {
+        return res.status(404).json({ message: 'Dose event not found.' });
+      }
+
+      if (event.status !== DoseEventStatus.PENDING && event.status !== DoseEventStatus.MISSED) {
+        return res.status(400).json({ message: 'This dose is already completed.' });
+      }
+
+      const { staffId, name } = getStoreStaff(req);
+      const updated = await prisma.medicineDoseEvent.update({
+        where: { id: event.id },
+        data: {
+          status: DoseEventStatus.TAKEN,
+          takenAt: new Date(),
+          note: `Given by store staff ${name} (${staffId})`
+        }
+      });
+
+      res.json({ doseEvent: updated, message: 'Dose marked as given.' });
+    })
+  );
 }
