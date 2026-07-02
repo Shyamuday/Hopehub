@@ -41,6 +41,17 @@ export class AdminReportsApi extends AdminApiBase {
     );
   }
 
+  getAdherenceRisk(params: { days?: number; minDoses?: number } = {}) {
+    return firstValueFrom(
+      this.http.get<any>(`${this.apiBase}${API_PATHS.ADMIN.ADHERENCE_RISK}`, {
+        params: {
+          days: String(params.days ?? 7),
+          minDoses: String(params.minDoses ?? 5)
+        }
+      })
+    );
+  }
+
   getPayments(params: {
     page?: number;
     pageSize?: number;

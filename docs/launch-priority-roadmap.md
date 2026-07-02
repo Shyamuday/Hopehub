@@ -143,6 +143,8 @@ Minimum acceptance:
 
 ### 4) Adherence Risk Cohorts
 
+**Status: Done** — `GET /admin/adherence/risk-cohorts` groups patients into high/medium/on-track cohorts with platform trend, trend alerts (drops, high missed, unexplained skips), dedicated Adherence Risk page, and dashboard summary.
+
 - Trend alerts for at-risk patient groups
 
 ### 5) Prescription PDF / Share

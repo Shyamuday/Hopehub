@@ -20,6 +20,7 @@ import {
 })
 export class AdminDashboard {
   readonly auditPath = `/${ROUTE_PATHS.AUDIT}`;
+  readonly adherencePath = `/${ROUTE_PATHS.ADHERENCE}`;
   readonly formatAuditAction = formatAuditAction;
   revenueInPaise = 0;
   activeDoctors = 0;
@@ -46,6 +47,8 @@ export class AdminDashboard {
   csvExporting = false;
   csvError = '';
   error = '';
+  adherenceSummary = { highRiskCount: 0, mediumRiskCount: 0, alertCount: 0, platformAdherencePercent: 0 };
+  adherenceAlerts: Array<{ patientName: string; message: string; severity: string }> = [];
 
   constructor(private readonly api: AdminApi) {
     void this.load();
@@ -64,7 +67,7 @@ export class AdminDashboard {
       this.consultationsCount = report.consultations?.length || 0;
       const audit = await this.api.getAuditLogs({ page: 1, pageSize: AUDIT_LOGS_PAGE_SIZE });
       this.auditLogs = audit.logs || [];
-      await this.loadPayments();
+      await Promise.all([this.loadPayments(), this.loadAdherenceSummary()]);
     } catch {
       this.error = 'Could not load admin dashboard summary.';
     }
@@ -127,6 +130,21 @@ export class AdminDashboard {
       this.csvError = 'CSV export failed. Please try again.';
     } finally {
       this.csvExporting = false;
+    }
+  }
+
+  private async loadAdherenceSummary() {
+    try {
+      const report = await this.api.getAdherenceRisk({ days: 7, minDoses: 5 });
+      this.adherenceSummary = {
+        highRiskCount: report.summary?.highRiskCount ?? 0,
+        mediumRiskCount: report.summary?.mediumRiskCount ?? 0,
+        alertCount: report.summary?.alertCount ?? 0,
+        platformAdherencePercent: report.summary?.platformAdherencePercent ?? 0
+      };
+      this.adherenceAlerts = (report.alerts ?? []).slice(0, 3);
+    } catch {
+      this.adherenceAlerts = [];
     }
   }
 }

@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { AdminApi } from '../../../core/services/admin-api';
 import {
   CONSUMERS_LIST_DEFAULTS,
@@ -149,7 +150,14 @@ export class ConsumersPage {
   readonly supportCategories = SUPPORT_NOTE_CATEGORIES;
   readonly categoryStyles = SUPPORT_NOTE_CATEGORY_STYLES;
 
-  constructor(private readonly api: AdminApi) {
+  constructor(
+    private readonly api: AdminApi,
+    private readonly route: ActivatedRoute
+  ) {
+    const consumerId = this.route.snapshot.queryParamMap.get('consumerId');
+    if (consumerId) {
+      this.selectedConsumerId = consumerId;
+    }
     void this.load();
     void this.loadDoctors();
   }
@@ -211,6 +219,8 @@ export class ConsumersPage {
       this.totalPagesCount = Math.max(1, Number(response.pagination?.totalPages || 1));
       if (!this.selectedConsumerId) {
         this.selectedConsumerId = this.consumers[0]?.id || '';
+      } else if (!this.consumers.some((c) => c.id === this.selectedConsumerId)) {
+        // Deep-linked consumer may not be on current page of results — still load detail.
       }
       if (this.selectedConsumerId) {
         await Promise.all([

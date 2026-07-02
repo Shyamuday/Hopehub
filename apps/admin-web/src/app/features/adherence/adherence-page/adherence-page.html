@@ -1,0 +1,157 @@
+<section class="panel">
+  <div class="panel-head">
+    <div>
+      <h2>Adherence risk cohorts</h2>
+      <p class="muted">Patients grouped by medicine adherence with trend alerts for proactive outreach.</p>
+    </div>
+    <a class="link-btn" [routerLink]="consumersPath">All consumers</a>
+  </div>
+
+  <div class="toolbar">
+    <select name="windowDays" [(ngModel)]="windowDays" (change)="applyFilters()">
+      @for (opt of windowOptions; track opt.value) {
+        <option [ngValue]="opt.value">{{ opt.label }}</option>
+      }
+    </select>
+    <select name="minDoses" [(ngModel)]="minDoses" (change)="applyFilters()">
+      @for (opt of minDoseOptions; track opt.value) {
+        <option [ngValue]="opt.value">{{ opt.label }}</option>
+      }
+    </select>
+    <button type="button" (click)="applyFilters()" [disabled]="loading">Refresh</button>
+  </div>
+
+  @if (loading) {
+    <p class="loading-text">Loading adherence report…</p>
+  } @else if (error) {
+    <div class="error-row">
+      <p class="error">{{ error }}</p>
+      <button type="button" class="retry-btn" (click)="load()">Retry</button>
+    </div>
+  } @else if (report) {
+    <div class="summary-cards">
+      <div class="card">
+        <div class="val">{{ report.summary.platformAdherencePercent }}%</div>
+        <div class="lbl">Platform adherence</div>
+      </div>
+      <div class="card high">
+        <div class="val">{{ report.summary.highRiskCount }}</div>
+        <div class="lbl">High risk</div>
+      </div>
+      <div class="card medium">
+        <div class="val">{{ report.summary.mediumRiskCount }}</div>
+        <div class="lbl">Medium risk</div>
+      </div>
+      <div class="card ok">
+        <div class="val">{{ report.summary.onTrackCount }}</div>
+        <div class="lbl">On track</div>
+      </div>
+      <div class="card alerts">
+        <div class="val">{{ report.summary.alertCount }}</div>
+        <div class="lbl">Active alerts</div>
+      </div>
+    </div>
+
+    @if (report.alerts.length) {
+      <section class="alerts-block">
+        <h3>Trend alerts</h3>
+        @for (alert of report.alerts; track alert.patientId + alert.type) {
+          <article class="alert-row">
+            <span class="sev" [style.background]="alertStyles[alert.severity].bg" [style.color]="alertStyles[alert.severity].color">
+              {{ alert.severity }}
+            </span>
+            <div class="alert-body">
+              <strong>{{ alert.patientName }}</strong>
+              @if (alert.patientCode) {
+                <span class="code">{{ alert.patientCode }}</span>
+              }
+              <p>{{ alert.message }}</p>
+            </div>
+            <a class="link-btn small" [routerLink]="consumerLink(alert.patientId)" [queryParams]="consumerQuery(alert.patientId)">Open consumer</a>
+          </article>
+        }
+      </section>
+    }
+
+    <section class="trend-block">
+      <h3>Platform trend ({{ report.windowDays }} days)</h3>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th class="num">Doses</th>
+              <th class="num">Taken</th>
+              <th class="num">Missed</th>
+              <th class="num">Skipped</th>
+              <th class="num">Adherence</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (day of report.platformTrend; track day.date) {
+              <tr>
+                <td>{{ day.date }}</td>
+                <td class="num">{{ day.total }}</td>
+                <td class="num">{{ day.taken }}</td>
+                <td class="num">{{ day.missed }}</td>
+                <td class="num">{{ day.skipped }}</td>
+                <td class="num">{{ day.adherencePercent }}%</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="cohorts-block">
+      <div class="tier-tabs">
+        <button type="button" class="ttab high" [class.active]="activeTier === 'HIGH_RISK'" (click)="setTier('HIGH_RISK')">
+          {{ tierLabels.HIGH_RISK }} ({{ report.cohorts.HIGH_RISK.length }})
+        </button>
+        <button type="button" class="ttab medium" [class.active]="activeTier === 'MEDIUM_RISK'" (click)="setTier('MEDIUM_RISK')">
+          {{ tierLabels.MEDIUM_RISK }} ({{ report.cohorts.MEDIUM_RISK.length }})
+        </button>
+        <button type="button" class="ttab ok" [class.active]="activeTier === 'ON_TRACK'" (click)="setTier('ON_TRACK')">
+          {{ tierLabels.ON_TRACK }} ({{ report.cohorts.ON_TRACK.length }})
+        </button>
+      </div>
+
+      @if (!activeCohort().length) {
+        <p class="empty-state">No patients in this cohort for the selected window.</p>
+      } @else {
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Patient</th>
+                <th>Code</th>
+                <th class="num">Adherence</th>
+                <th class="num">Trend</th>
+                <th class="num">Taken</th>
+                <th class="num">Missed</th>
+                <th class="num">Skipped</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of activeCohort(); track row.patientId) {
+                <tr>
+                  <td>{{ row.name }}</td>
+                  <td class="code">{{ row.patientCode || '—' }}</td>
+                  <td class="num"><strong>{{ row.adherencePercent }}%</strong></td>
+                  <td class="num" [class.down]="(row.trendDelta ?? 0) < 0" [class.up]="(row.trendDelta ?? 0) > 0">
+                    {{ trendLabel(row.trendDelta) }}
+                  </td>
+                  <td class="num">{{ row.stats.taken }}</td>
+                  <td class="num">{{ row.stats.missed }}</td>
+                  <td class="num">{{ row.stats.skipped }}</td>
+                  <td><a class="link-btn small" [routerLink]="consumerLink(row.patientId)" [queryParams]="consumerQuery(row.patientId)">View</a></td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </section>
+  }
+</section>

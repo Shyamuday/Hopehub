@@ -6,6 +6,7 @@ export const API_PATHS = {
   ADMIN: {
     REPORTS: '/admin/reports',
     AUDIT_LOGS: '/admin/audit-logs',
+    ADHERENCE_RISK: '/admin/adherence/risk-cohorts',
     PAYMENTS: '/admin/payments',
     DOCTORS: '/admin/doctors',
     DOCTORS_PENDING: '/admin/doctors/pending',

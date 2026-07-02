@@ -17,6 +17,7 @@ import { PayrollPage } from './features/payroll/payroll-page/payroll-page';
 import { PaymentsPage } from './features/payments/payments-page/payments-page';
 import { FinancePage } from './features/finance/finance-page/finance-page';
 import { AuditPage } from './features/audit/audit-page/audit-page';
+import { AdherencePage } from './features/adherence/adherence-page/adherence-page';
 
 export const routes: Routes = [
   { path: ROUTE_PATHS.LOGIN, component: AdminLogin },
@@ -38,6 +39,7 @@ export const routes: Routes = [
       { path: ROUTE_PATHS.CONSULTATIONS, component: ConsultationsPage },
       { path: ROUTE_PATHS.PAYMENTS, component: PaymentsPage },
       { path: ROUTE_PATHS.AUDIT, component: AuditPage },
+      { path: ROUTE_PATHS.ADHERENCE, component: AdherencePage },
       { path: ROUTE_PATHS.FINANCE, component: FinancePage },
       { path: ROUTE_PATHS.PAYROLL, component: PayrollPage }
     ]

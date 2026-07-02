@@ -224,6 +224,39 @@ async function main() {
           status: DoseEventStatus.MISSED
         }
       });
+
+      // Demo adherence cohort: Rahul — mostly missed/skipped over prior 7 days (high risk)
+      for (let dayOffset = 2; dayOffset <= 8; dayOffset++) {
+        const base = new Date(today.getFullYear(), today.getMonth(), today.getDate() - dayOffset);
+        const slots: Array<{ hour: number; status: DoseEventStatus; note?: string }> = [
+          { hour: 9, status: dayOffset % 2 === 0 ? DoseEventStatus.MISSED : DoseEventStatus.SKIPPED },
+          { hour: 21, status: DoseEventStatus.MISSED }
+        ];
+        if (dayOffset === 7) {
+          slots[0] = { hour: 9, status: DoseEventStatus.TAKEN };
+          slots[1] = { hour: 21, status: DoseEventStatus.TAKEN };
+        }
+        for (const slot of slots) {
+          const scheduledFor = new Date(base.getFullYear(), base.getMonth(), base.getDate(), slot.hour, 0, 0);
+          await prisma.medicineDoseEvent.upsert({
+            where: {
+              prescriptionItemId_scheduledFor: {
+                prescriptionItemId: item.id,
+                scheduledFor
+              }
+            },
+            update: { status: slot.status, note: slot.note ?? null },
+            create: {
+              patientId: patientOne.id,
+              prescriptionId: prescription.id,
+              prescriptionItemId: item.id,
+              scheduledFor,
+              status: slot.status,
+              note: slot.note ?? null
+            }
+          });
+        }
+      }
     }
 
     const followUpDue = new Date();

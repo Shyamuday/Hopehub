@@ -140,6 +140,27 @@
 
 <section class="panel">
   <div class="panel-header">
+    <h3>Adherence risk</h3>
+    <a class="link-btn" [routerLink]="adherencePath">View cohorts</a>
+  </div>
+  <div class="adherence-summary">
+    <span>Platform: <strong>{{ adherenceSummary.platformAdherencePercent }}%</strong></span>
+    <span class="warn">High risk: <strong>{{ adherenceSummary.highRiskCount }}</strong></span>
+    <span>Medium: <strong>{{ adherenceSummary.mediumRiskCount }}</strong></span>
+    <span>Alerts: <strong>{{ adherenceSummary.alertCount }}</strong></span>
+  </div>
+  @for (alert of adherenceAlerts; track alert.patientName + alert.message) {
+    <article class="card alert-card">
+      <strong>{{ alert.patientName }}</strong>
+      <p>{{ alert.message }}</p>
+    </article>
+  } @empty {
+    <p class="empty-state">No adherence alerts in the last 7 days.</p>
+  }
+</section>
+
+<section class="panel">
+  <div class="panel-header">
     <h3>Recent admin audit trail</h3>
     <a class="link-btn" [routerLink]="auditPath">View all</a>
   </div>
