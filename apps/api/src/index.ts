@@ -22,15 +22,15 @@ import { storeRouter } from './routes/store/index.js';
 import { hrRouter } from './routes/hr/index.js';
 
 // ── Route modules ──────────────────────────────────────────────────────────────
-import { router as authRouter } from './routes/auth.js';
+import { router as authRouter } from './routes/auth/index.js';
 import { router as catalogRouter } from './routes/catalog.js';
 import { router as slotsRouter } from './routes/slots.js';
 import { router as dosesRouter } from './routes/doses.js';
-import { createAdminRouter } from './routes/admin.js';
+import { createAdminRouter } from './routes/admin/index.js';
 import { createConsultationsRouter } from './routes/consultations.js';
-import { createPrescriptionsRouter } from './routes/prescriptions.js';
+import { createPrescriptionsRouter } from './routes/prescriptions/index.js';
 import { createPaymentsRouter } from './routes/payments.js';
-import { financeRouter } from './routes/finance.js';
+import { financeRouter } from './routes/finance/index.js';
 import { patientsRouter } from './routes/patients.js';
 import { scanRouter } from './routes/scan.js';
 import { doctorWorklistRouter } from './routes/doctor-worklist.js';

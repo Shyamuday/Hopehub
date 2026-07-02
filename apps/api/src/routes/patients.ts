@@ -2,8 +2,8 @@ import { Router } from 'express';
 import { z } from 'zod';
 import bcrypt from 'bcryptjs';
 import { Role } from '@prisma/client';
-import { authRequired, allowRoles } from '../../auth.js';
-import { prisma } from '../../db.js';
+import { authRequired, allowRoles } from '../auth.js';
+import { prisma } from '../db.js';
 import { asyncRoute, queryText, routeParam } from '../../utils/helpers.js';
 import {
   buildPatientIdCard,
@@ -215,3 +215,4 @@ patientsRouter.post(
     res.json({ patient });
   })
 );
+
