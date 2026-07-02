@@ -2,6 +2,20 @@
 
 Clinic platform — Angular frontend + pure Node.js/Express/TypeScript backend.
 
+## Apps
+
+| App | Path | Port |
+|-----|------|------|
+| Patient | `apps/user-web` | 4200 |
+| Admin | `apps/admin-web` | 4201 |
+| Doctor | `apps/doctor-web` | 4202 |
+| Store staff | `apps/store` | 4300 |
+| Store manager | `apps/store-manager-web` | 4301 |
+| HR | `apps/hr-web` | 4400 |
+| API | `apps/api` | 4000 |
+
+For the full role/app roadmap and phasing (receptionist, clinic manager, supplier portal, etc.), see **[docs/platform-ecosystem-architecture.md](docs/platform-ecosystem-architecture.md)**.
+
 ## Stack
 
 - Patient web app: `apps/user-web` (Angular)
