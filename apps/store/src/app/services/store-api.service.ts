@@ -18,7 +18,9 @@ import {
   MedicineDetailResponse,
   AlertsLowStockResponse,
   AlertsExpiringResponse,
-  StockMovement
+  StockMovement,
+  StaffActivityResponse,
+  StaffDetailResponse
 } from '../models';
 
 @Injectable({ providedIn: 'root' })
@@ -96,5 +98,16 @@ export class StoreApiService {
       .set('page', page.toString())
       .set('pageSize', pageSize.toString());
     return this.http.get<MovementsResponse>(`${this.base}/movements`, { params });
+  }
+
+  // Staff Activity
+  getStaffActivity(period = 'today'): Observable<StaffActivityResponse> {
+    const params = new HttpParams().set('period', period);
+    return this.http.get<StaffActivityResponse>(`${this.base}/staff/activity`, { params });
+  }
+
+  getStaffDetail(staffId: string, period = 'week'): Observable<StaffDetailResponse> {
+    const params = new HttpParams().set('period', period);
+    return this.http.get<StaffDetailResponse>(`${this.base}/staff/${staffId}/activity`, { params });
   }
 }

@@ -47,6 +47,10 @@ import { StoreAuthService } from '../../services/store-auth.service';
               <span class="link-icon">💊</span>
               <span>Medicines</span>
             </a>
+            <a class="sidebar-link" routerLink="/staff-activity" routerLinkActive="active">
+              <span class="link-icon">👥</span>
+              <span>Staff Activity</span>
+            </a>
           }
         </div>
 
@@ -113,6 +117,11 @@ import { StoreAuthService } from '../../services/store-auth.service';
               <a class="more-link" routerLink="/movements" (click)="showMore.set(false)">
                 <span>📋</span> Movement History
               </a>
+              @if (auth.isManager()) {
+                <a class="more-link" routerLink="/staff-activity" (click)="showMore.set(false)">
+                  <span>👥</span> Staff Activity
+                </a>
+              }
             </nav>
             <div class="divider"></div>
             <button class="more-logout" (click)="logout()">

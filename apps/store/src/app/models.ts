@@ -153,3 +153,35 @@ export interface AlertsLowStockResponse {
 export interface AlertsExpiringResponse {
   batches: StockBatch[];
 }
+
+export interface StaffActivity {
+  staffId: string;
+  name: string;
+  staffCode: string;
+  role: 'MANAGER' | 'STAFF';
+  totalActions: number;
+  totalQtyIn: number;
+  totalQtyOut: number;
+  breakdown: { type: string; count: number; qty: number }[];
+}
+
+export interface StaffActivityResponse {
+  period: string;
+  since: string;
+  staff: StaffActivity[];
+}
+
+export interface StaffDetailResponse {
+  staff: { id: string; name: string; staffCode: string; role: string; createdAt: string };
+  period: string;
+  breakdown: { type: string; count: number; qty: number }[];
+  recentMovements: {
+    id: string;
+    type: string;
+    qty: number;
+    note?: string;
+    medicineName: string;
+    potency: string;
+    createdAt: string;
+  }[];
+}

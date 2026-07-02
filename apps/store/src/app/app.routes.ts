@@ -11,6 +11,7 @@ import { AlertsComponent } from './pages/alerts/alerts.component';
 import { RackMapComponent } from './pages/rack-map/rack-map.component';
 import { MedicinesAdminComponent } from './pages/medicines-admin/medicines-admin.component';
 import { MovementsComponent } from './pages/movements/movements.component';
+import { StaffActivityComponent } from './pages/staff-activity/staff-activity.component';
 
 export const routes: Routes = [
   { path: 'login', component: LoginComponent },
@@ -29,6 +30,7 @@ export const routes: Routes = [
       { path: 'rack-map', component: RackMapComponent },
       { path: 'medicines', component: MedicinesAdminComponent },
       { path: 'movements', component: MovementsComponent },
+      { path: 'staff-activity', component: StaffActivityComponent },
     ]
   },
   { path: '**', redirectTo: '' }
