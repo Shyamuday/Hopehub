@@ -103,6 +103,29 @@ button {
   color: #b91c1c;
 }
 
+.safety-intro {
+  margin: 0 0 0.5rem;
+  font-size: 0.875rem;
+}
+
+.muted {
+  color: #64748b;
+}
+
+.safety-info {
+  border: 1px solid #93c5fd;
+  background: #eff6ff;
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  margin: 0.5rem 0 0.75rem;
+  color: #1e40af;
+}
+
+.safety-info ul {
+  margin: 0.35rem 0 0 1.1rem;
+  padding: 0;
+}
+
 /* ── Live safety warning (shows while typing) ──────────────── */
 .safety-warnings {
   border: 1px solid #f59e0b;
@@ -140,6 +163,12 @@ button {
   margin-bottom: 0.65rem;
   color: #92400e;
   font-size: 0.95rem;
+}
+
+.safety-confirm-note {
+  color: #78350f;
+  font-size: 0.875rem;
+  margin: 0 0 0.65rem;
 }
 
 .safety-confirm-list {

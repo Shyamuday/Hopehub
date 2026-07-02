@@ -1,4 +1,5 @@
 import { DatePipe } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
 import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
@@ -10,6 +11,7 @@ import type {
   PrescriptionOption,
   PrescriptionTemplate
 } from './appointments-page.types';
+import { analyzePrescriptionSafety, type PrescriptionSafetyReport } from '../prescription-safety';
 
 @Component({
   selector: 'app-appointments-page',
@@ -244,45 +246,8 @@ export class AppointmentsPage {
     this.medicineRows = [this.newMedicineRow()];
   }
 
-  private normalizeMedicineName(name: string) {
-    return name.trim().toLowerCase().replace(/\s+/g, ' ');
-  }
-
-  prescriptionSafetyReport(): {
-    duplicateMedicines: string[];
-    conflictingMedicines: string[];
-  } {
-    const groups = new Map<string, MedicineRow[]>();
-    for (const row of this.medicineRows) {
-      const key = this.normalizeMedicineName(row.medicineName);
-      if (!key) {
-        continue;
-      }
-      const list = groups.get(key);
-      if (list) {
-        list.push(row);
-      } else {
-        groups.set(key, [row]);
-      }
-    }
-
-    const duplicateMedicines: string[] = [];
-    const conflictingMedicines: string[] = [];
-    for (const rows of groups.values()) {
-      if (rows.length < 2) {
-        continue;
-      }
-      const displayName = rows[0].medicineName.trim() || rows[0].medicineName;
-      duplicateMedicines.push(displayName);
-      const signatures = new Set(
-        rows.map((r) => `${(r.dose || '').trim()}|${(r.frequency || '').trim()}`)
-      );
-      if (signatures.size > 1) {
-        conflictingMedicines.push(displayName);
-      }
-    }
-
-    return { duplicateMedicines, conflictingMedicines };
+  prescriptionSafetyReport(): PrescriptionSafetyReport {
+    return analyzePrescriptionSafety(this.medicineRows);
   }
 
   dismissSafetyConfirm() {
@@ -295,10 +260,10 @@ export class AppointmentsPage {
     }
     const status = this.pendingSaveStatus;
     this.pendingSaveStatus = null;
-    await this.executeSave(status);
+    await this.executeSave(status, true);
   }
 
-  private buildPayload(targetStatus: 'DRAFT' | 'PUBLISHED') {
+  private buildPayload(targetStatus: 'DRAFT' | 'PUBLISHED', safetyAcknowledged = false) {
     return {
       methodOptionId: this.methodOptionId,
       diagnosedDiseaseOptionId: this.diagnosedDiseaseOptionId,
@@ -307,6 +272,7 @@ export class AppointmentsPage {
       advice: this.advice || undefined,
       followUpDate: this.followUpDate || undefined,
       status: targetStatus,
+      safetyAcknowledged,
       items: this.medicineRows.map((row) => ({
         medicineName: row.medicineName,
         strength: row.strength || undefined,
@@ -338,20 +304,20 @@ export class AppointmentsPage {
       return;
     }
 
-    const { duplicateMedicines, conflictingMedicines } = this.prescriptionSafetyReport();
-    if (duplicateMedicines.length || conflictingMedicines.length) {
+    const safety = this.prescriptionSafetyReport();
+    if (safety.requiresConfirmation) {
       this.pendingSaveStatus = targetStatus;
       return;
     }
 
-    void this.executeSave(targetStatus);
+    void this.executeSave(targetStatus, false);
   }
 
-  private async executeSave(targetStatus: 'DRAFT' | 'PUBLISHED') {
+  private async executeSave(targetStatus: 'DRAFT' | 'PUBLISHED', safetyAcknowledged: boolean) {
     this.saving = true;
     this.error = '';
     try {
-      const payload = this.buildPayload(targetStatus);
+      const payload = this.buildPayload(targetStatus, safetyAcknowledged);
       await this.prescriptions.savePrescription(
         this.consultationId,
         this.editingPrescriptionId || null,
@@ -365,8 +331,18 @@ export class AppointmentsPage {
           ? 'Follow-up prescription created and published.'
           : 'Draft created.';
       await this.loadConsultationPrescriptions();
-    } catch {
-      this.error = 'Could not save prescription. Check consultation assignment and draft state.';
+    } catch (error: unknown) {
+      if (error instanceof HttpErrorResponse && error.status === 409) {
+        const body = error.error as { message?: string; safety?: PrescriptionSafetyReport };
+        if (body.safety?.requiresConfirmation) {
+          this.pendingSaveStatus = targetStatus;
+        }
+        this.error = body.message || 'Review safety warnings and confirm to proceed.';
+      } else if (error instanceof HttpErrorResponse) {
+        this.error = (error.error as { message?: string })?.message || 'Could not save prescription. Check consultation assignment and draft state.';
+      } else {
+        this.error = 'Could not save prescription. Check consultation assignment and draft state.';
+      }
     } finally {
       this.saving = false;
     }

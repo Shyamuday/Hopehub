@@ -115,32 +115,42 @@
   <label for="followUpDate">Follow-up Date (optional)</label>
   <input id="followUpDate" name="followUpDate" type="date" [(ngModel)]="followUpDate" />
 
-  <h3>Medicines</h3>
+  <h3>Remedies</h3>
+  <p class="safety-intro muted">In homeopathy, the same remedy at different potencies is normal. Warnings apply only when the same potency is repeated or dose/frequency conflicts.</p>
   @let safety = prescriptionSafetyReport();
-  @if (safety.duplicateMedicines.length || safety.conflictingMedicines.length) {
+  @if (safety.multiplePotencies.length) {
+    <div class="safety-info" role="status">
+      <p><strong>Multiple potencies</strong> (allowed — review only):</p>
+      <ul>
+        @for (item of safety.multiplePotencies; track item.medicineName) {
+          <li>{{ item.medicineName }}: {{ item.strengths.join(', ') }}</li>
+        }
+      </ul>
+    </div>
+  }
+  @if (safety.duplicatePotencyLines.length || safety.conflictingDose.length) {
     <div class="safety-warnings" role="status">
-      @if (safety.duplicateMedicines.length) {
+      @for (item of safety.duplicatePotencyLines; track item.medicineName + item.strength) {
         <p>
-          <strong>Duplicate medicines</strong> (same name more than once):
-          {{ safety.duplicateMedicines.join(', ') }}
+          <strong>Repeated line</strong> — {{ item.medicineName }} at {{ item.strength }} appears {{ item.count }} times.
         </p>
       }
-      @if (safety.conflictingMedicines.length) {
+      @for (item of safety.conflictingDose; track item.medicineName + item.strength) {
         <p>
-          <strong>Dose or frequency differs</strong> between lines for:
-          {{ safety.conflictingMedicines.join(', ') }}
+          <strong>Dose/frequency mismatch</strong> — {{ item.medicineName }} at {{ item.strength }}:
+          {{ item.details.join(' vs ') }}
         </p>
       }
-      <p class="safety-hint">Fix the warnings above, or use the action buttons to proceed with explicit confirmation.</p>
+      <p class="safety-hint">Save or publish will ask you to confirm before proceeding.</p>
     </div>
   }
   @for (row of medicineRows; track $index) {
     <div class="medicine-card">
-      <label>Medicine name</label>
+      <label>Remedy name</label>
       <input [name]="'medicineName' + $index" [(ngModel)]="row.medicineName" />
 
-      <label>Strength</label>
-      <input [name]="'strength' + $index" [(ngModel)]="row.strength" />
+      <label>Potency (e.g. 30C, 200C, 1M)</label>
+      <input [name]="'strength' + $index" [(ngModel)]="row.strength" placeholder="30C" />
 
       <label>Dose</label>
       <input [name]="'dose' + $index" [(ngModel)]="row.dose" />
@@ -171,14 +181,23 @@
   @let safety = prescriptionSafetyReport();
   <div class="safety-confirm" role="alert">
     <div class="safety-confirm-header">
-      <strong>Safety warnings — confirm to proceed</strong>
+      <strong>Confirm homeopathy prescription warnings</strong>
     </div>
+    <p class="safety-confirm-note">
+      Same remedy at different potencies is fine. Please confirm only if the repeated lines below are intentional.
+    </p>
     <ul class="safety-confirm-list">
-      @for (name of safety.duplicateMedicines; track name) {
-        <li><span class="warn-type">Duplicate:</span> {{ name }} appears more than once</li>
+      @for (item of safety.duplicatePotencyLines; track item.medicineName + item.strength) {
+        <li>
+          <span class="warn-type">Repeated:</span>
+          {{ item.medicineName }} at {{ item.strength }} ({{ item.count }} lines)
+        </li>
       }
-      @for (name of safety.conflictingMedicines; track name) {
-        <li><span class="warn-type">Conflict:</span> {{ name }} has different dose or frequency across lines</li>
+      @for (item of safety.conflictingDose; track item.medicineName + item.strength) {
+        <li>
+          <span class="warn-type">Conflict:</span>
+          {{ item.medicineName }} at {{ item.strength }} — {{ item.details.join(' vs ') }}
+        </li>
       }
     </ul>
     <p class="safety-confirm-question">

@@ -69,6 +69,8 @@ Minimum acceptance:
 
 ### 4) Prescription Safety Guardrails (Doctor)
 
+**Status: Done** — homeopathy-aware checks: multiple potencies allowed; warns on repeated same potency or conflicting dose/frequency; explicit confirm to save/publish.
+
 Add basic safety checks in prescription editor:
 
 - Duplicate medicine warning (same medicine in same prescription)

@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { ConsultationStatus, PrescriptionStatus, Role } from '@prisma/client';
+import { ConsultationStatus, PrescriptionOptionType, PrescriptionStatus, Role } from '@prisma/client';
 import type { Server as SocketIoServer } from 'socket.io';
 import { authRequired, allowRoles } from '../../auth.js';
 import { prisma } from '../../db.js';
@@ -12,6 +12,18 @@ import {
 } from '../../utils/helpers.js';
 import { enabledNotificationChannels, notificationService } from '../../services/notification-service.js';
 import { prescriptionInputSchema } from './shared.js';
+import { analyzePrescriptionSafety } from '../../services/prescription-safety.js';
+
+function assertPrescriptionSafetyAcknowledged(
+  items: Array<{ medicineName: string; strength?: string; dose?: string; frequency?: string }>,
+  safetyAcknowledged: boolean
+) {
+  const safety = analyzePrescriptionSafety(items);
+  if (safety.requiresConfirmation && !safetyAcknowledged) {
+    return { ok: false as const, safety };
+  }
+  return { ok: true as const, safety };
+}
 
 export function registerDoctorPrescriptionRoutes(router: Router, io: SocketIoServer) {
   // ─── Prescriptions (doctor) ────────────────────────────────────────────────────
@@ -60,6 +72,14 @@ export function registerDoctorPrescriptionRoutes(router: Router, io: SocketIoSer
 
       if (!methodOption || !diagnosedDiseaseOption) {
         return res.status(400).json({ message: 'Invalid prescription method or diagnosed disease option.' });
+      }
+
+      const safetyCheck = assertPrescriptionSafetyAcknowledged(body.items, body.safetyAcknowledged);
+      if (!safetyCheck.ok) {
+        return res.status(409).json({
+          message: 'Prescription has safety warnings. Review and confirm to proceed.',
+          safety: safetyCheck.safety
+        });
       }
 
       const prescription = await prisma.$transaction(async (tx) => {
@@ -160,6 +180,14 @@ export function registerDoctorPrescriptionRoutes(router: Router, io: SocketIoSer
 
       if (!methodOption || !diagnosedDiseaseOption) {
         return res.status(400).json({ message: 'Invalid prescription method or diagnosed disease option.' });
+      }
+
+      const safetyCheck = assertPrescriptionSafetyAcknowledged(body.items, body.safetyAcknowledged);
+      if (!safetyCheck.ok) {
+        return res.status(409).json({
+          message: 'Prescription has safety warnings. Review and confirm to proceed.',
+          safety: safetyCheck.safety
+        });
       }
 
       const updated = await prisma.$transaction(async (tx) => {
