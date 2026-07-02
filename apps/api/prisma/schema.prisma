@@ -10,6 +10,7 @@ enum Role {
   PATIENT
   DOCTOR
   ADMIN
+  HR
 }
 
 enum ConsultationStatus {
@@ -75,6 +76,8 @@ model User {
   reminderPreference  ReminderPreference?
   auditLogs          AuditLog[]      @relation("AuditActor")
   passwordResetTokens PasswordResetToken[]
+  hrProfile          HrProfile?
+  leaveApprovals     LeaveRequest[]  @relation("LeaveApprovals")
   createdAt           DateTime       @default(now())
   updatedAt           DateTime       @updatedAt
 }
@@ -146,8 +149,64 @@ model Doctor {
   emergencyPhone   String?
 
   joiningLetter    JoiningLetter?
+  leaveRequests    LeaveRequest[]
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
+}
+
+model HrProfile {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  employeeId  String?  @unique
+  designation String   @default("HR Manager")
+  department  String   @default("Human Resources")
+  user        User     @relation(fields: [userId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+enum LeaveType {
+  CASUAL
+  SICK
+  EARNED
+  UNPAID
+  MATERNITY
+  PATERNITY
+}
+
+enum LeaveStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+enum EmployeeType {
+  DOCTOR
+  STORE_STAFF
+}
+
+model LeaveRequest {
+  id           String       @id @default(cuid())
+  employeeType EmployeeType
+  doctorId     String?
+  storeStaffId String?
+  type         LeaveType
+  status       LeaveStatus  @default(PENDING)
+  startDate    DateTime
+  endDate      DateTime
+  totalDays    Int
+  reason       String
+  hrNote       String?
+  approvedById String?
+  approvedBy   User?        @relation("LeaveApprovals", fields: [approvedById], references: [id])
+  doctor       Doctor?      @relation(fields: [doctorId], references: [id])
+  storeStaff   StoreStaff?  @relation(fields: [storeStaffId], references: [id])
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  @@index([employeeType, status])
+  @@index([startDate, endDate])
 }
 
 model Disease {
@@ -431,6 +490,7 @@ model StoreStaff {
 
   movements        StockMovement[]
   joiningLetter    JoiningLetter?
+  leaveRequests    LeaveRequest[]
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
 }
