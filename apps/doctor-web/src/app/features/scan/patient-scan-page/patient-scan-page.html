@@ -22,6 +22,8 @@
         <p class="meta clinic">{{ result.patient.homeClinicStore.name }} ({{ result.patient.homeClinicStore.code }})</p>
       }
 
+      <app-patient-health-profile [profile]="result.patient" [compact]="true" />
+
       <div class="actions">
         @if (result.primaryConsultationId) {
           <button type="button" class="btn primary" (click)="openPrescribe()">Open consultation & prescribe</button>

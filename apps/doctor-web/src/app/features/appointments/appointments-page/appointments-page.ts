@@ -12,10 +12,14 @@ import type {
   PrescriptionTemplate
 } from './appointments-page.types';
 import { analyzePrescriptionSafety, type PrescriptionSafetyReport } from '../prescription-safety';
+import {
+  PatientHealthProfileComponent,
+  type PatientClinicalProfile
+} from '../../../shared/patient-health-profile/patient-health-profile';
 
 @Component({
   selector: 'app-appointments-page',
-  imports: [FormsModule, DatePipe],
+  imports: [FormsModule, DatePipe, PatientHealthProfileComponent],
   templateUrl: './appointments-page.html',
   styleUrl: './appointments-page.scss'
 })
@@ -51,6 +55,7 @@ export class AppointmentsPage {
   savingTemplateError = '';
   deletingTemplateId = '';
   medicineRows: MedicineRow[] = [this.newMedicineRow()];
+  patientClinical: PatientClinicalProfile | null = null;
 
   constructor(
     private readonly prescriptions: AppointmentsPrescriptionsService,
@@ -145,6 +150,13 @@ export class AppointmentsPage {
       const response = await this.prescriptions.loadConsultationPrescriptions(this.consultationId);
       this.loadedPrescriptions = response.prescriptions || [];
       this.consultationStatus = response.consultation?.status || '';
+      this.patientClinical = response.patient
+        ? {
+            allergies: response.patient.allergies,
+            currentMedications: response.patient.currentMedications,
+            chronicConditions: response.patient.chronicConditions
+          }
+        : null;
       if (this.loadedPrescriptions.length) {
         this.selectPrescription(this.loadedPrescriptions[0]);
       } else {

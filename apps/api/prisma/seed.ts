@@ -97,7 +97,14 @@ async function main() {
   const sharedMobile = '9876543210';
   const patientOne = await prisma.user.upsert({
     where: { email: 'patient1@vitalisclinic.local' },
-    update: { patientCode: 'RNC-000001', homeClinicStoreId: ranchiStore.id, mobile: sharedMobile },
+    update: {
+      patientCode: 'RNC-000001',
+      homeClinicStoreId: ranchiStore.id,
+      mobile: sharedMobile,
+      allergies: 'Sulfa drugs (rash)',
+      currentMedications: 'None',
+      chronicConditions: 'Seasonal hair fall, mild dandruff'
+    },
     create: {
       name: 'Rahul Verma',
       email: 'patient1@vitalisclinic.local',
@@ -105,7 +112,10 @@ async function main() {
       passwordHash,
       role: Role.PATIENT,
       patientCode: 'RNC-000001',
-      homeClinicStoreId: ranchiStore.id
+      homeClinicStoreId: ranchiStore.id,
+      allergies: 'Sulfa drugs (rash)',
+      currentMedications: 'None',
+      chronicConditions: 'Seasonal hair fall, mild dandruff'
     }
   });
 

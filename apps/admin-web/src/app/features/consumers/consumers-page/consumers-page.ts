@@ -26,6 +26,9 @@ type ConsumerDetail = {
     email?: string;
     mobile?: string;
     patientCode?: string;
+    allergies?: string | null;
+    currentMedications?: string | null;
+    chronicConditions?: string | null;
   };
   consultations: Array<{
     id: string;

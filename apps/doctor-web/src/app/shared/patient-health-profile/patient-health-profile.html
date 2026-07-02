@@ -1,0 +1,21 @@
+<section class="health-profile" [class.compact]="compact">
+  <h3>Clinical profile</h3>
+  @if (!hasAny()) {
+    <p class="empty-state">No allergies, medications, or chronic conditions recorded by the patient yet.</p>
+  } @else {
+    <div class="health-grid">
+      <article class="health-item" [class.alert]="profile.allergies?.trim()">
+        <span class="label">Allergies</span>
+        <p>{{ profile.allergies?.trim() || 'None reported' }}</p>
+      </article>
+      <article class="health-item">
+        <span class="label">Current medications</span>
+        <p>{{ profile.currentMedications?.trim() || 'None reported' }}</p>
+      </article>
+      <article class="health-item">
+        <span class="label">Chronic conditions</span>
+        <p>{{ profile.chronicConditions?.trim() || 'None reported' }}</p>
+      </article>
+    </div>
+  }
+</section>

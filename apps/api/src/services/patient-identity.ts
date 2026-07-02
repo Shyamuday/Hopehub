@@ -10,6 +10,9 @@ export const patientListSelect = {
   patientCode: true,
   homeClinicStoreId: true,
   homeClinicStore: { select: { id: true, name: true, code: true, address: true } },
+  allergies: true,
+  currentMedications: true,
+  chronicConditions: true,
   createdAt: true
 } as const;
 

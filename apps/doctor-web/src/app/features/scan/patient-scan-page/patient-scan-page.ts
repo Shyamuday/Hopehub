@@ -5,12 +5,16 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { ROUTE_PATHS } from '../../../core/constants/app-routes.constants';
+import { PatientHealthProfileComponent } from '../../../shared/patient-health-profile/patient-health-profile';
 
 type ScanPatient = {
   id: string;
   name: string;
   patientCode?: string | null;
   mobile?: string | null;
+  allergies?: string | null;
+  currentMedications?: string | null;
+  chronicConditions?: string | null;
   homeClinicStore?: { id: string; name: string; code: string } | null;
 };
 
@@ -29,7 +33,7 @@ type ScanResponse = {
 
 @Component({
   selector: 'app-patient-scan-page',
-  imports: [CommonModule, DatePipe, RouterLink],
+  imports: [CommonModule, DatePipe, RouterLink, PatientHealthProfileComponent],
   templateUrl: './patient-scan-page.html',
   styleUrl: './patient-scan-page.scss'
 })

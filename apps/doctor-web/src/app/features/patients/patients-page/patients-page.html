@@ -83,6 +83,12 @@
 </section>
 }
 
+@if (patientClinical) {
+<section class="panel">
+  <app-patient-health-profile [profile]="patientClinical" />
+</section>
+}
+
 <section class="panel">
   <h2>Patient Adherence Trend</h2>
   <div class="toolbar">

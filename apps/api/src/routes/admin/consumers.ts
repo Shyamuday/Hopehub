@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { Role, DoseEventStatus } from '@prisma/client';
 import { authRequired, allowRoles } from '../../auth.js';
 import { prisma } from '../../db.js';
-import { asyncRoute, routeParam, queryText, queryPositiveInt, publicUserSelect, includeConsultationRelations } from '../../utils/helpers.js';
+import { asyncRoute, routeParam, queryText, queryPositiveInt, publicUserSelect, patientProfileSelect, includeConsultationRelations } from '../../utils/helpers.js';
 
 export function registerAdminConsumerRoutes(router: Router) {
   // ─── Consumers ────────────────────────────────────────────────────────────────
@@ -56,7 +56,10 @@ export function registerAdminConsumerRoutes(router: Router) {
     allowRoles(Role.ADMIN),
     asyncRoute(async (req, res) => {
       const patientId = routeParam(req, 'id');
-      const patient = await prisma.user.findFirst({ where: { id: patientId, role: Role.PATIENT }, select: publicUserSelect });
+      const patient = await prisma.user.findFirst({
+        where: { id: patientId, role: Role.PATIENT },
+        select: patientProfileSelect
+      });
       if (!patient) return res.status(404).json({ message: 'Consumer not found' });
 
       const consultations = await prisma.consultation.findMany({

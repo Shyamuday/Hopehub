@@ -28,7 +28,7 @@ export class PrescriptionHistoryComponent {
     const blobUrl = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = blobUrl;
-    link.download = `vitalis-prescription-${prescriptionId.slice(0, 8)}.html`;
+    link.download = `vitalis-prescription-${prescriptionId.slice(0, 8)}.pdf`;
     link.click();
     setTimeout(() => URL.revokeObjectURL(blobUrl), BLOB_REVOKE_MS);
   }

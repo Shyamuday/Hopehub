@@ -21,6 +21,9 @@ export type PatientSearchResult = {
   patientCode?: string | null;
   homeClinicStoreId?: string | null;
   homeClinicStore?: { id: string; name: string; code: string; address?: string | null } | null;
+  allergies?: string | null;
+  currentMedications?: string | null;
+  chronicConditions?: string | null;
   createdAt?: string;
 };
 

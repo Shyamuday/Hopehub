@@ -8,7 +8,8 @@ import {
   asyncRoute,
   routeParam,
   includePrescriptionRelations,
-  buildDoseScheduleEvents
+  buildDoseScheduleEvents,
+  patientProfileSelect
 } from '../../utils/helpers.js';
 import { enabledNotificationChannels, notificationService } from '../../services/notification-service.js';
 import { prescriptionInputSchema } from './shared.js';
@@ -35,7 +36,12 @@ export function registerDoctorPrescriptionRoutes(router: Router, io: SocketIoSer
     asyncRoute(async (req, res) => {
       const consultation = await prisma.consultation.findUnique({
         where: { id: routeParam(req, 'id') },
-        select: { id: true, assignedDoctorId: true, status: true }
+        select: {
+          id: true,
+          assignedDoctorId: true,
+          status: true,
+          patient: { select: patientProfileSelect }
+        }
       });
 
       if (!consultation) return res.status(404).json({ message: 'Consultation not found' });
@@ -49,7 +55,11 @@ export function registerDoctorPrescriptionRoutes(router: Router, io: SocketIoSer
         orderBy: { version: 'desc' }
       });
 
-      res.json({ prescriptions, consultation: { status: consultation.status } });
+      res.json({
+        prescriptions,
+        consultation: { status: consultation.status },
+        patient: consultation.patient
+      });
     })
   );
 

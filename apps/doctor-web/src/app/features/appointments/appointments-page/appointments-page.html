@@ -1,6 +1,10 @@
 <h2>Create Prescription</h2>
 <p>Draft, edit, and publish multi-medicine prescriptions with follow-up versions.</p>
 
+@if (patientClinical) {
+  <app-patient-health-profile [profile]="patientClinical" />
+}
+
 <div class="templates-bar">
   <span class="templates-label">Templates</span>
   @if (templatesLoading) {

@@ -43,6 +43,55 @@
   font-size: 0.95rem;
 }
 
+.health-profile-panel {
+  margin: 1rem 0;
+  padding: 1rem;
+  background: #fffbeb;
+  border: 1px solid #fcd34d;
+  border-radius: 12px;
+
+  h3 {
+    margin: 0 0 0.75rem;
+    font-size: 0.95rem;
+    color: #92400e;
+  }
+}
+
+.health-grid {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.health-item {
+  .label {
+    display: block;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #78716c;
+    margin-bottom: 0.2rem;
+  }
+
+  p {
+    margin: 0;
+    font-size: 0.9rem;
+    color: #1c1917;
+    white-space: pre-wrap;
+  }
+
+  &.alert {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 8px;
+    padding: 0.55rem 0.65rem;
+
+    .label {
+      color: #b91c1c;
+    }
+  }
+}
+
 .card-panel {
   margin: 1rem 0;
   padding: 1rem;

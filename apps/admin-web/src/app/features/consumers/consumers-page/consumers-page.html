@@ -56,6 +56,28 @@
       <small>Skipped: {{ detail.adherence.skipped }} | Missed: {{ detail.adherence.missed }}</small>
     </article>
 
+    <section class="health-profile-panel">
+      <h3>Clinical profile</h3>
+      @if (detail.consumer.allergies?.trim() || detail.consumer.currentMedications?.trim() || detail.consumer.chronicConditions?.trim()) {
+        <div class="health-grid">
+          <article class="health-item" [class.alert]="detail.consumer.allergies?.trim()">
+            <span class="label">Allergies</span>
+            <p>{{ detail.consumer.allergies?.trim() || 'None reported' }}</p>
+          </article>
+          <article class="health-item">
+            <span class="label">Current medications</span>
+            <p>{{ detail.consumer.currentMedications?.trim() || 'None reported' }}</p>
+          </article>
+          <article class="health-item">
+            <span class="label">Chronic conditions</span>
+            <p>{{ detail.consumer.chronicConditions?.trim() || 'None reported' }}</p>
+          </article>
+        </div>
+      } @else {
+        <p class="empty-state">No allergies, medications, or chronic conditions recorded yet.</p>
+      }
+    </section>
+
     @if (detail.doseNotes?.length) {
       <h3>Skipped &amp; missed dose notes (7 days)</h3>
       @for (note of detail.doseNotes; track note.id) {

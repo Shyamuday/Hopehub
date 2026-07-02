@@ -9,6 +9,10 @@ import { API_PATHS } from '../../../core/constants/api-paths.constants';
 import { ROUTE_PATHS } from '../../../core/constants/app-routes.constants';
 import { PatientsApiService, type PatientIdCardData, type PatientSearchResult } from '../patients-api.service';
 import { PatientIdCardComponent } from '../patient-id-card/patient-id-card';
+import {
+  PatientHealthProfileComponent,
+  type PatientClinicalProfile
+} from '../../../shared/patient-health-profile/patient-health-profile';
 
 type DoseEvent = {
   id: string;
@@ -21,7 +25,7 @@ type DoseEvent = {
 
 @Component({
   selector: 'app-patients-page',
-  imports: [FormsModule, CommonModule, DatePipe, PatientIdCardComponent, RouterLink],
+  imports: [FormsModule, CommonModule, DatePipe, PatientIdCardComponent, RouterLink, PatientHealthProfileComponent],
   templateUrl: './patients-page.html',
   styleUrl: './patients-page.scss'
 })
@@ -54,6 +58,7 @@ export class PatientsPage {
   doseEvents: DoseEvent[] = [];
   doseEventsLoading = false;
   doseEventsError = '';
+  patientClinical: PatientClinicalProfile | null = null;
 
   summary: {
     patientId: string;
@@ -106,8 +111,27 @@ export class PatientsPage {
   selectPatient(patient: PatientSearchResult) {
     this.selectedPatient = patient;
     this.patientId = patient.id;
+    this.patientClinical = {
+      allergies: patient.allergies,
+      currentMedications: patient.currentMedications,
+      chronicConditions: patient.chronicConditions
+    };
     void this.loadPatientCard(patient.id);
     void this.loadTrend();
+  }
+
+  private async loadPatientClinical(patientId: string) {
+    try {
+      const response = await this.patientsApi.getPatient(patientId);
+      const patient = response.patient;
+      this.patientClinical = {
+        allergies: patient.allergies,
+        currentMedications: patient.currentMedications,
+        chronicConditions: patient.chronicConditions
+      };
+    } catch {
+      this.patientClinical = null;
+    }
   }
 
   private async loadPatientCard(patientId: string) {
@@ -184,6 +208,7 @@ export class PatientsPage {
     this.loading = true;
     this.doseEventsLoading = true;
     this.doseEventsError = '';
+    void this.loadPatientClinical(id);
 
     const params = { days: String(this.days) };
 

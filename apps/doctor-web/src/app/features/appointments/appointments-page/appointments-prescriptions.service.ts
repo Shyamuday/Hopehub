@@ -37,9 +37,17 @@ export class AppointmentsPrescriptionsService {
 
   loadConsultationPrescriptions(consultationId: string) {
     return firstValueFrom(
-      this.http.get<{ prescriptions: LoadedPrescription[]; consultation?: { status: string } }>(
-        `${this.apiBase}${API_PATHS.DOCTOR.APPOINTMENT_PRESCRIPTIONS(consultationId)}`
-      )
+      this.http.get<{
+        prescriptions: LoadedPrescription[];
+        consultation?: { status: string };
+        patient?: {
+          id: string;
+          name: string;
+          allergies?: string | null;
+          currentMedications?: string | null;
+          chronicConditions?: string | null;
+        };
+      }>(`${this.apiBase}${API_PATHS.DOCTOR.APPOINTMENT_PRESCRIPTIONS(consultationId)}`)
     );
   }
 

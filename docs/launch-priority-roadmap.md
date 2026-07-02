@@ -127,12 +127,29 @@ Minimum acceptance:
 
 ## Phase 2 (After Launch Baseline)
 
-- Doctor prescription templates (reusable medicine sets)
-- Patient profile expansion (allergies, chronic history, current meds)
-- Admin support tools (case notes, safer troubleshooting workflows)
-- Adherence risk cohorts and trend alerts
-- Better prescription PDF/share experience
-- Product analytics instrumentation for core funnels
+### 1) Doctor Prescription Templates
+
+**Status: Done** — per-doctor templates API (`/doctor/prescription-templates`); apply/save/delete from the appointments prescription editor.
+
+### 2) Patient Profile Expansion (Clinical Context)
+
+**Status: Done** — patients edit allergies, current meds, and chronic conditions in user-web; doctors see clinical profile when prescribing, scanning, or viewing adherence; admins see it on consumer detail.
+
+### 3) Admin Support Tools
+
+- Case notes, safer troubleshooting workflows
+
+### 4) Adherence Risk Cohorts
+
+- Trend alerts for at-risk patient groups
+
+### 5) Prescription PDF / Share
+
+- Better download and share experience
+
+### 6) Product Analytics
+
+- Instrumentation for core funnels
 
 ## Recommended Implementation Order
 
