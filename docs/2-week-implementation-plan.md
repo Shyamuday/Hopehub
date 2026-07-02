@@ -32,7 +32,7 @@ Acceptance:
 
 ### Day 2: Remove Remaining Direct Supabase Calls in Web App
 
-Frontend (`apps/web`):
+Frontend (`apps/user-web`):
 
 - Replace any direct Supabase reads for prescriptions and dose events with backend endpoints.
 - Keep frontend only for UI state and API calls.
@@ -40,9 +40,9 @@ Frontend (`apps/web`):
 
 Files to touch:
 
-- `apps/web/src/app/clinic-api.service.ts`
-- `apps/web/src/app/dashboard.component.ts`
-- `apps/web/src/app/auth/auth.service.ts`
+- `apps/user-web/src/app/clinic-api.service.ts`
+- `apps/user-web/src/app/dashboard.component.ts`
+- `apps/user-web/src/app/auth/auth.service.ts`
 
 Acceptance:
 
@@ -101,7 +101,7 @@ Acceptance:
 Suggested paths:
 
 - `apps/api/tests/*`
-- `apps/web/src/app/**/*.spec.ts`
+- `apps/user-web/src/app/**/*.spec.ts`
 - `apps/doctor-web/src/app/**/*.spec.ts`
 - `apps/admin-web/src/app/**/*.spec.ts`
 

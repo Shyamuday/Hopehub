@@ -84,7 +84,7 @@ npm run dev:api
 Run Angular:
 
 ```powershell
-npm run dev:web
+npm run dev:user
 ```
 
 Use Razorpay test card/payment methods from Razorpay documentation.

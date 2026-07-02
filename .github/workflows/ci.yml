@@ -13,7 +13,7 @@ jobs:
       matrix:
         app:
           - apps/api
-          - apps/web
+          - apps/user-web
           - apps/doctor-web
           - apps/admin-web
 

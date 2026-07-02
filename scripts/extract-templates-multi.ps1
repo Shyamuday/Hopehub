@@ -1,4 +1,4 @@
-$filePath = "C:\Users\Admin\Documents\Betelgeuse-\apps\web\src\app\public-pages.component.ts"
+$filePath = "C:\Users\Admin\Documents\Betelgeuse-\apps\user-web\src\app\public-pages.component.ts"
 $content = [System.IO.File]::ReadAllText($filePath)
 $dir = Split-Path $filePath -Parent
 $pattern = 'selector:\s*''([^'']+)''[\s\S]*?\r?\n\s*template:\s*`([\s\S]*?)`'

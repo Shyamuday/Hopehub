@@ -1,5 +1,5 @@
 $originalPath = "C:\Users\Admin\Documents\Betelgeuse-\scripts\public-pages.original.ts"
-$tsPath = "C:\Users\Admin\Documents\Betelgeuse-\apps\web\src\app\public-pages.component.ts"
+$tsPath = "C:\Users\Admin\Documents\Betelgeuse-\apps\user-web\src\app\public-pages.component.ts"
 $dir = Split-Path $tsPath -Parent
 $original = [System.IO.File]::ReadAllText($originalPath)
 

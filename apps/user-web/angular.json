@@ -7,7 +7,7 @@
   },
   "newProjectRoot": "projects",
   "projects": {
-    "web": {
+    "user-web": {
       "projectType": "application",
       "schematics": {
         "@schematics/angular:component": {
@@ -90,10 +90,10 @@
           "builder": "@angular/build:dev-server",
           "configurations": {
             "production": {
-              "buildTarget": "web:build:production"
+              "buildTarget": "user-web:build:production"
             },
             "development": {
-              "buildTarget": "web:build:development"
+              "buildTarget": "user-web:build:development"
             }
           },
           "defaultConfiguration": "development"

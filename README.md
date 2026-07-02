@@ -4,7 +4,7 @@ Clinic platform — Angular frontend + pure Node.js/Express/TypeScript backend.
 
 ## Stack
 
-- Patient web app: `apps/web` (Angular)
+- Patient web app: `apps/user-web` (Angular)
 - Admin web app: `apps/admin-web` (Angular)
 - Doctor web app: `apps/doctor-web` (Angular)
 - Backend API: `apps/api` (Express 5 + TypeScript + Prisma)
@@ -45,9 +45,9 @@ npm run seed --prefix apps/api
 ## Local Development
 
 ```powershell
-npm install --prefix apps/web
+npm install --prefix apps/user-web
 npm install --prefix apps/api
-npm run dev:web      # Patient web on :4200
+npm run dev:user     # Patient web on :4200
 npm run dev:api      # API on :4000
 ```
 

@@ -1,5 +1,5 @@
-$srcPath = "C:\Users\Admin\Documents\Betelgeuse-\apps\web\src\styles.scss"
-$outDir = "C:\Users\Admin\Documents\Betelgeuse-\apps\web\src\styles"
+$srcPath = "C:\Users\Admin\Documents\Betelgeuse-\apps\user-web\src\styles.scss"
+$outDir = "C:\Users\Admin\Documents\Betelgeuse-\apps\user-web\src\styles"
 New-Item -ItemType Directory -Force -Path $outDir | Out-Null
 $lines = [System.IO.File]::ReadAllLines($srcPath)
 
