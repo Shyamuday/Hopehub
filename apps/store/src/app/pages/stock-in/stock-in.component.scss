@@ -1,0 +1,239 @@
+
+    .page {
+      padding: 20px;
+      max-width: 680px;
+      margin: 0 auto;
+      color: white;
+    }
+
+    .page-header {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 24px;
+
+      .page-title { font-size: 22px; font-weight: 800; margin: 0 0 4px; }
+      .page-sub { font-size: 14px; color: #64748b; margin: 0; }
+    }
+
+    .back-btn {
+      padding: 8px 14px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.1);
+      background: transparent;
+      color: #94a3b8;
+      cursor: pointer;
+      font-size: 14px;
+      white-space: nowrap;
+      margin-top: 4px;
+      transition: all 0.2s;
+
+      &:hover { background: rgba(255,255,255,0.06); color: white; }
+    }
+
+    .form-card {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 20px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .form-section {
+      .section-label {
+        font-size: 13px;
+        font-weight: 700;
+        color: #0891b2;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 14px;
+      }
+    }
+
+    .search-row {
+      position: relative;
+
+      .input { padding-right: 40px; width: 100%; }
+    }
+
+    .spinner-sm {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 18px;
+      height: 18px;
+      border: 2px solid rgba(8,145,178,0.2);
+      border-top-color: #0891b2;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .search-dropdown {
+      margin-top: 6px;
+      background: #132238;
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 14px;
+      overflow: hidden;
+    }
+
+    .search-result {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      padding: 12px 16px;
+      border: none;
+      background: transparent;
+      color: white;
+      cursor: pointer;
+      text-align: left;
+      transition: all 0.15s;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+
+      &:last-child { border-bottom: none; }
+      &:hover { background: rgba(8,145,178,0.1); }
+
+      .result-name { flex: 1; font-size: 14px; font-weight: 600; }
+      .result-potency {
+        padding: 2px 8px;
+        border-radius: 6px;
+        background: rgba(8,145,178,0.15);
+        color: #06b6d4;
+        font-size: 12px;
+        font-weight: 600;
+      }
+      .result-stock {
+        font-size: 12px;
+        color: #64748b;
+
+        &.low { color: #f97316; }
+      }
+    }
+
+    .selected-medicine {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(8,145,178,0.08);
+      border: 1px solid rgba(8,145,178,0.25);
+      border-radius: 14px;
+      padding: 14px 16px;
+
+      .selected-name { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
+      .selected-meta { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+      .potency-badge { padding: 2px 8px; border-radius: 6px; background: rgba(8,145,178,0.15); color: #06b6d4; font-size: 12px; font-weight: 600; }
+      .mfr { font-size: 12px; color: #64748b; }
+      .stock-chip { font-size: 12px; color: #94a3b8; &.low { color: #fb923c; } }
+    }
+
+    .clear-btn {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.1);
+      background: transparent;
+      color: #64748b;
+      cursor: pointer;
+      font-size: 14px;
+      flex-shrink: 0;
+
+      &:hover { background: rgba(239,68,68,0.1); color: #f87171; }
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+
+      @media (max-width: 520px) { grid-template-columns: 1fr; }
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+
+      label { font-size: 13px; font-weight: 600; color: #94a3b8; }
+    }
+
+    .input {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 12px;
+      padding: 12px 14px;
+      color: white;
+      font-size: 14px;
+      width: 100%;
+      box-sizing: border-box;
+      transition: all 0.2s;
+
+      &::placeholder { color: #475569; }
+      &:focus { outline: none; border-color: #0891b2; background: rgba(8,145,178,0.05); }
+
+      option { background: #132238; color: white; }
+    }
+
+    .summary-card {
+      background: rgba(8,145,178,0.06);
+      border: 1px solid rgba(8,145,178,0.15);
+      border-radius: 14px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .summary-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 14px;
+      color: #94a3b8;
+
+      .summary-val { font-weight: 700; color: white; &.highlight { color: #06b6d4; } &.positive { color: #4ade80; } }
+    }
+
+    .btn-submit {
+      width: 100%;
+      padding: 16px;
+      border-radius: 14px;
+      border: none;
+      background: linear-gradient(135deg, #0891b2, #0e7490);
+      color: white;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+
+      &:hover:not(:disabled) { box-shadow: 0 6px 20px rgba(8,145,178,0.4); transform: translateY(-1px); }
+      &:disabled { opacity: 0.5; cursor: not-allowed; }
+    }
+
+    .btn-spinner {
+      width: 18px;
+      height: 18px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+
+    .error-msg, .success-msg {
+      padding: 12px 16px;
+      border-radius: 12px;
+      font-size: 14px;
+      text-align: center;
+    }
+
+    .error-msg { background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.2); color: #f87171; }
+    .success-msg { background: rgba(74,222,128,0.1); border: 1px solid rgba(74,222,128,0.2); color: #4ade80; }
+  

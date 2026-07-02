@@ -19,37 +19,7 @@ type Profile = {
   selector: 'app-patient-profile',
   standalone: true,
   imports: [CommonModule, FormsModule],
-  styles: [`
-    .profile-panel {
-      background: #fff;
-      border: 1px solid #e5e7eb;
-      border-radius: 14px;
-      padding: 1.5rem;
-      max-width: 560px;
-    }
-    h2 { font-size: 1.1rem; margin: 0 0 1.25rem; }
-    .field { display: flex; flex-direction: column; gap: .3rem; margin-bottom: .85rem; }
-    .field label { font-size: .82rem; font-weight: 600; color: #374151; }
-    .field input, .field textarea {
-      border: 1.5px solid #d1d5db; border-radius: 9px;
-      padding: .55rem .7rem; font-size: .9rem;
-      transition: border-color .15s;
-      &:focus { outline: none; border-color: #2563eb; }
-    }
-    .field textarea { resize: vertical; min-height: 72px; }
-    .field .hint { font-size: .75rem; color: #9ca3af; }
-    .field .readonly-val { font-size: .9rem; color: #6b7280; padding: .2rem 0; }
-    .save-row { display: flex; align-items: center; gap: .75rem; margin-top: 1rem; }
-    .btn-save {
-      background: #2563eb; color: #fff; border: none; border-radius: 9px;
-      padding: .6rem 1.25rem; font-size: .9rem; font-weight: 700; cursor: pointer;
-      &:hover:not(:disabled) { background: #1d4ed8; }
-      &:disabled { opacity: .55; cursor: not-allowed; }
-    }
-    .msg-ok { color: #16a34a; font-size: .83rem; font-weight: 600; }
-    .msg-err { color: #dc2626; font-size: .83rem; }
-    .loading-text { color: #6b7280; font-size: .875rem; }
-  `],
+  styleUrl: './patient-profile.component.scss',
   template: `
     <div class="profile-panel">
       <h2>My Profile</h2>

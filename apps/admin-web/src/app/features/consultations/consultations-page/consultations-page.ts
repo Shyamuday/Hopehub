@@ -156,63 +156,7 @@ import {
 
     @if (toast()) { <div class="toast">{{ toast() }}</div> }
   `,
-  styles: [`
-    .cp { padding: 24px; max-width: 1100px; margin: 0 auto; color: white; }
-    .cp-hdr { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 20px; }
-    .cp-title { font-size: 20px; font-weight: 800; margin: 0 0 4px; }
-    .cp-sub { font-size: 13px; color: #64748b; margin: 0; }
-    .hdr-stats { display: flex; gap: 8px; align-items: flex-start; }
-    .stat-pill { padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 700; &.unassigned { background: rgba(251,146,60,0.12); color: #fb923c; } }
-    .filters { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
-    .search { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 10px 14px; color: white; font-size: 14px; outline: none; width: 100%; box-sizing: border-box; &:focus { border-color: rgba(99,102,241,0.4); } }
-    .ftabs { display: flex; gap: 6px; flex-wrap: wrap; }
-    .ftab { padding: 7px 14px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); background: transparent; color: #64748b; font-size: 12px; font-weight: 600; cursor: pointer; &.active { background: rgba(99,102,241,0.15); border-color: rgba(99,102,241,0.4); color: #a5b4fc; } &.sm { padding: 5px 11px; font-size: 11px; } }
-    .loading { text-align: center; padding: 60px; }
-    .spinner { width: 32px; height: 32px; border: 3px solid rgba(99,102,241,0.2); border-top-color: #6366f1; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto; }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    .table-wrap { overflow-x: auto; }
-    .ct { width: 100%; border-collapse: collapse; font-size: 13px; }
-    .ct th { padding: 10px 12px; text-align: left; font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid rgba(255,255,255,0.07); }
-    .ct td { padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.04); vertical-align: middle; }
-    .ct tr:hover td { background: rgba(255,255,255,0.02); }
-    .ct tr.unassigned-row td { background: rgba(251,146,60,0.03); }
-    .pat-name { font-weight: 600; margin-bottom: 2px; }
-    .pat-mobile { font-size: 11px; color: #64748b; }
-    .disease-pill { padding: 3px 8px; border-radius: 6px; background: rgba(139,92,246,0.12); color: #c4b5fd; font-size: 11px; font-weight: 600; }
-    .status-badge { padding: 3px 9px; border-radius: 20px; font-size: 11px; font-weight: 800; }
-    .pay-badge { padding: 2px 7px; border-radius: 6px; font-size: 11px; font-weight: 700; }
-    .pay-amt { font-size: 11px; color: #64748b; margin-top: 2px; }
-    .date-txt { font-size: 12px; color: #64748b; }
-    .doc-assigned { font-size: 12px; color: #4ade80; font-weight: 600; }
-    .unassigned-txt { font-size: 12px; color: #fb923c; font-style: italic; }
-    .btn-assign { padding: 6px 14px; border-radius: 8px; border: none; background: linear-gradient(135deg,#6366f1,#4f46e5); color: white; font-size: 12px; font-weight: 700; cursor: pointer; white-space: nowrap; }
-    .btn-reassign { padding: 6px 14px; border-radius: 8px; border: 1px solid rgba(99,102,241,0.3); background: transparent; color: #a5b4fc; font-size: 12px; font-weight: 700; cursor: pointer; white-space: nowrap; }
-    .empty { text-align: center; padding: 60px; color: #64748b; }
-    .empty > div:first-child { font-size: 40px; margin-bottom: 10px; }
-    .pagination { display: flex; align-items: center; justify-content: center; gap: 16px; margin-top: 20px; font-size: 13px; color: #94a3b8; }
-    .pagination button { padding: 6px 14px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); background: transparent; color: #94a3b8; cursor: pointer; &:disabled { opacity: 0.3; cursor: default; } }
-    .btn-primary { padding: 10px 18px; border-radius: 10px; border: none; background: linear-gradient(135deg,#6366f1,#4f46e5); color: white; font-size: 13px; font-weight: 700; cursor: pointer; &:disabled { opacity: 0.5; } }
-    .btn-ghost { padding: 10px 16px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.12); background: transparent; color: #94a3b8; font-size: 13px; cursor: pointer; }
-    .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 400; display: flex; align-items: center; justify-content: center; padding: 20px; }
-    .modal { background: #0f1623; border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; width: 100%; max-width: 440px; max-height: 88vh; overflow-y: auto; animation: popIn 0.2s ease; }
-    @keyframes popIn { from { transform: scale(0.96); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-    .mhdr { display: flex; align-items: flex-start; justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid rgba(255,255,255,0.07); }
-    .mhdr h3 { font-size: 14px; font-weight: 800; margin: 0 0 3px; }
-    .mhdr-sub { font-size: 12px; color: #64748b; margin: 0; }
-    .close-btn { width: 26px; height: 26px; border-radius: 7px; border: 1px solid rgba(255,255,255,0.1); background: transparent; color: #64748b; cursor: pointer; flex-shrink: 0; margin-top: 2px; }
-    .mbody { padding: 14px 18px; }
-    .mfooter { padding: 12px 18px; display: flex; gap: 8px; justify-content: flex-end; border-top: 1px solid rgba(255,255,255,0.07); }
-    .ferr { margin: 0 18px 14px; padding: 9px 12px; border-radius: 8px; background: rgba(248,113,113,0.1); border: 1px solid rgba(248,113,113,0.3); color: #f87171; font-size: 12px; }
-    .doc-list { display: flex; flex-direction: column; gap: 6px; max-height: 300px; overflow-y: auto; }
-    .doc-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.07); cursor: pointer; transition: all 0.15s; &:hover { background: rgba(255,255,255,0.04); } &.selected { background: rgba(99,102,241,0.1); border-color: rgba(99,102,241,0.4); } }
-    .doc-av { width: 34px; height: 34px; border-radius: 10px; background: rgba(99,102,241,0.15); display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 800; color: #a5b4fc; flex-shrink: 0; }
-    .doc-info { flex: 1; }
-    .doc-name { font-size: 13px; font-weight: 700; }
-    .doc-spec { font-size: 11px; color: #64748b; }
-    .check { color: #4ade80; font-weight: 800; }
-    .empty-sm { text-align: center; padding: 20px; color: #64748b; font-size: 13px; }
-    .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: rgba(74,222,128,0.12); border: 1px solid rgba(74,222,128,0.3); color: #4ade80; padding: 10px 20px; border-radius: 12px; font-size: 13px; font-weight: 600; z-index: 600; }
-  `]
+  styleUrl: './consultations-page.scss'
 })
 export class ConsultationsPage implements OnInit {
   private api = inject(AdminApi);

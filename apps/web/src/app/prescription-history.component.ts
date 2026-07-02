@@ -10,17 +10,7 @@ import { AuthService } from './auth/auth.service';
   selector: 'app-prescription-history',
   standalone: true,
   imports: [CommonModule],
-  styles: [`
-    .rx-card { display: flex; justify-content: space-between; align-items: flex-start; gap: .5rem; flex-wrap: wrap; }
-    .rx-info { flex: 1; min-width: 0; }
-    .rx-actions { display: flex; gap: .4rem; flex-shrink: 0; }
-    .btn-pdf {
-      background: #dbeafe; color: #1e40af; border: none; border-radius: 8px;
-      padding: .3rem .75rem; font-size: .78rem; font-weight: 600; cursor: pointer;
-      white-space: nowrap;
-      &:hover { background: #bfdbfe; }
-    }
-  `],
+  styleUrl: './prescription-history.component.scss',
   template: `
     <div class="panel">
       <h2>Prescription History</h2>

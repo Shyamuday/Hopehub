@@ -1,0 +1,39 @@
+
+    .ml { padding: 24px; max-width: 700px; margin: 0 auto; color: white; }
+    .ml-hdr { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 24px; }
+    .ml-title { font-size: 20px; font-weight: 800; margin: 0 0 4px; }
+    .ml-sub { font-size: 13px; color: #64748b; margin: 0; }
+    .loading { text-align: center; padding: 60px; }
+    .spinner { width: 32px; height: 32px; border: 3px solid rgba(99,102,241,0.2); border-top-color: #6366f1; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .leave-list { display: flex; flex-direction: column; gap: 10px; }
+    .leave-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 14px; padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .lc-body { flex: 1; }
+    .lc-top { display: flex; gap: 8px; align-items: center; margin-bottom: 5px; }
+    .leave-type { font-size: 12px; font-weight: 700; color: #a5b4fc; background: rgba(99,102,241,0.1); padding: 2px 8px; border-radius: 6px; }
+    .days-badge { font-size: 11px; font-weight: 700; color: #64748b; background: rgba(255,255,255,0.05); padding: 2px 8px; border-radius: 6px; }
+    .lc-dates { font-size: 13px; color: #94a3b8; margin-bottom: 4px; }
+    .lc-reason { font-size: 12px; color: #64748b; font-style: italic; }
+    .lc-note { font-size: 12px; color: #94a3b8; margin-top: 3px; }
+    .lc-by { font-size: 11px; color: #475569; margin-top: 2px; }
+    .status-badge { padding: 5px 11px; border-radius: 20px; font-size: 11px; font-weight: 800; white-space: nowrap; flex-shrink: 0; }
+    .empty { text-align: center; padding: 60px; color: #64748b; }
+    .empty > div:first-child { font-size: 40px; margin-bottom: 10px; }
+    .btn-primary { padding: 10px 18px; border-radius: 10px; border: none; background: linear-gradient(135deg,#6366f1,#4f46e5); color: white; font-size: 13px; font-weight: 700; cursor: pointer; white-space: nowrap; &:disabled { opacity: 0.5; } }
+    .btn-ghost { padding: 10px 16px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.12); background: transparent; color: #94a3b8; font-size: 13px; cursor: pointer; }
+    .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 400; display: flex; align-items: center; justify-content: center; padding: 20px; }
+    .modal { background: #0f1623; border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; width: 100%; max-width: 420px; animation: popIn 0.2s ease; }
+    @keyframes popIn { from { transform: scale(0.96); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    .mhdr { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid rgba(255,255,255,0.07); }
+    .mhdr h3 { font-size: 14px; font-weight: 800; margin: 0; }
+    .close-btn { width: 26px; height: 26px; border-radius: 7px; border: 1px solid rgba(255,255,255,0.1); background: transparent; color: #64748b; cursor: pointer; }
+    .mbody { padding: 14px 18px; display: flex; flex-direction: column; gap: 10px; }
+    .mfooter { padding: 12px 18px; display: flex; gap: 8px; justify-content: flex-end; border-top: 1px solid rgba(255,255,255,0.07); }
+    .ferr { margin: 0 18px 14px; padding: 9px 12px; border-radius: 8px; background: rgba(248,113,113,0.1); border: 1px solid rgba(248,113,113,0.3); color: #f87171; font-size: 12px; }
+    .fg { display: flex; flex-direction: column; gap: 5px; }
+    .frow { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    label { font-size: 12px; color: #94a3b8; font-weight: 600; }
+    input, select, textarea { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 8px 11px; color: white; font-size: 13px; outline: none; &:focus { border-color: rgba(99,102,241,0.5); } option { background: #1e293b; } }
+    textarea { resize: vertical; min-height: 72px; }
+    .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: rgba(74,222,128,0.12); border: 1px solid rgba(74,222,128,0.3); color: #4ade80; padding: 10px 20px; border-radius: 12px; font-size: 13px; font-weight: 600; z-index: 600; }
+  

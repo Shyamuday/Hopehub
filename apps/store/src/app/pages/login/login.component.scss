@@ -1,0 +1,232 @@
+
+    .login-bg {
+      min-height: 100vh;
+      background: linear-gradient(160deg, #0a1628 0%, #0f2040 40%, #0e3a5c 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      overflow-y: auto;
+    }
+
+    .login-container {
+      width: 100%;
+      max-width: 380px;
+    }
+
+    .brand {
+      text-align: center;
+      margin-bottom: 28px;
+
+      .brand-icon {
+        font-size: 52px;
+        margin-bottom: 12px;
+        filter: drop-shadow(0 4px 12px rgba(8,145,178,0.4));
+      }
+
+      h1 {
+        font-size: 26px;
+        font-weight: 800;
+        color: white;
+        letter-spacing: -0.5px;
+        margin-bottom: 6px;
+      }
+
+      p {
+        font-size: 14px;
+        color: #64748b;
+      }
+    }
+
+    .mode-toggle {
+      display: flex;
+      background: rgba(255,255,255,0.06);
+      border-radius: 14px;
+      padding: 4px;
+      margin-bottom: 24px;
+      gap: 4px;
+    }
+
+    .mode-btn {
+      flex: 1;
+      padding: 12px;
+      border-radius: 10px;
+      border: none;
+      background: transparent;
+      color: #64748b;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+
+      &.active {
+        background: #0891b2;
+        color: white;
+        box-shadow: 0 2px 8px rgba(8,145,178,0.4);
+      }
+    }
+
+    .pin-section, .manager-section {
+      background: rgba(255,255,255,0.04);
+      border-radius: 20px;
+      padding: 20px;
+      border: 1px solid rgba(255,255,255,0.07);
+    }
+
+    .pin-display {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .pin-dots {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      margin-bottom: 8px;
+    }
+
+    .pin-dot {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      border: 2px solid #64748b;
+      transition: all 0.15s;
+
+      &.filled {
+        background: #0891b2;
+        border-color: #0891b2;
+        transform: scale(1.1);
+        box-shadow: 0 0 8px rgba(8,145,178,0.5);
+      }
+
+      &.active {
+        border-color: #06b6d4;
+        animation: pulse 1s infinite;
+      }
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.15); }
+    }
+
+    .pin-hint {
+      font-size: 12px;
+      color: #475569;
+    }
+
+    .keypad {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+
+    .keypad-btn {
+      height: 68px;
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.06);
+      color: white;
+      font-size: 22px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+
+      &:hover:not(:disabled) {
+        background: rgba(255,255,255,0.1);
+        transform: translateY(-1px);
+      }
+
+      &:active:not(:disabled) {
+        transform: scale(0.94);
+        background: rgba(8,145,178,0.2);
+      }
+
+      &:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+      }
+    }
+
+    .keypad-delete {
+      background: rgba(239,68,68,0.1);
+      border-color: rgba(239,68,68,0.2);
+      color: #f87171;
+      font-size: 20px;
+
+      &:hover:not(:disabled) {
+        background: rgba(239,68,68,0.18);
+      }
+    }
+
+    .keypad-confirm {
+      background: linear-gradient(135deg, #0891b2, #0e7490);
+      border-color: transparent;
+      font-size: 20px;
+      box-shadow: 0 4px 12px rgba(8,145,178,0.4);
+
+      &:hover:not(:disabled) {
+        box-shadow: 0 6px 16px rgba(8,145,178,0.5);
+      }
+    }
+
+    .manager-section {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .password-wrap {
+      position: relative;
+
+      .input { padding-right: 44px; }
+    }
+
+    .show-pass-btn {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 18px;
+      opacity: 0.7;
+
+      &:hover { opacity: 1; }
+    }
+
+    .login-btn {
+      width: 100%;
+      margin-top: 18px;
+      height: 52px;
+      font-size: 16px;
+    }
+
+    .btn-spinner {
+      width: 18px;
+      height: 18px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      display: inline-block;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .error-msg {
+      margin-top: 16px;
+      background: rgba(239,68,68,0.1);
+      border: 1px solid rgba(239,68,68,0.25);
+      border-radius: 12px;
+      padding: 12px 16px;
+      font-size: 14px;
+      color: #f87171;
+      text-align: center;
+    }
+  

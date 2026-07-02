@@ -1,0 +1,37 @@
+
+    .pp { padding: 24px; max-width: 1100px; margin: 0 auto; color: white; }
+    .pp-hdr { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 24px; flex-wrap: wrap; }
+    .pp-title { font-size: 20px; font-weight: 800; margin: 0 0 4px; }
+    .pp-sub { font-size: 13px; color: #64748b; margin: 0; }
+    .hdr-actions { display: flex; gap: 8px; align-items: center; }
+    .month-inp { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 9px; padding: 8px 12px; color: white; font-size: 13px; outline: none; &:focus { border-color: rgba(99,102,241,0.5); } }
+    .btn-export { padding: 9px 16px; border-radius: 9px; border: 1px solid rgba(99,102,241,0.3); background: rgba(99,102,241,0.08); color: #a5b4fc; font-size: 13px; font-weight: 700; cursor: pointer; }
+
+    .loading { text-align: center; padding: 60px; }
+    .spinner { width: 32px; height: 32px; border: 3px solid rgba(99,102,241,0.2); border-top-color: #6366f1; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .summary-cards { display: grid; grid-template-columns: repeat(auto-fill,minmax(160px,1fr)); gap: 12px; margin-bottom: 20px; }
+    .scard { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 14px; padding: 16px; text-align: center; &.gross { border-color: rgba(99,102,241,0.2); } &.net { border-color: rgba(74,222,128,0.2); } &.leave { border-color: rgba(251,146,60,0.2); } }
+    .sc-val { font-size: 22px; font-weight: 800; margin-bottom: 4px; }
+    .sc-lbl { font-size: 12px; color: #64748b; }
+
+    .ftabs { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin-bottom: 14px; }
+    .ftab { padding: 6px 13px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); background: transparent; color: #64748b; font-size: 12px; font-weight: 600; cursor: pointer; &.active { background: rgba(99,102,241,0.15); border-color: rgba(99,102,241,0.4); color: #a5b4fc; } }
+    .search-sm { margin-left: auto; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 9px; padding: 6px 12px; color: white; font-size: 12px; outline: none; width: 160px; }
+
+    .table-wrap { overflow-x: auto; }
+    .pt { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .pt th { padding: 9px 10px; text-align: left; font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; border-bottom: 1px solid rgba(255,255,255,0.07); &.num { text-align: right; } }
+    .pt td { padding: 11px 10px; border-bottom: 1px solid rgba(255,255,255,0.04); vertical-align: middle; &.num { text-align: right; } }
+    .pt tr:hover td { background: rgba(255,255,255,0.02); }
+    .emp-name { font-weight: 600; margin-bottom: 2px; }
+    .status-dot { font-size: 11px; color: #64748b; }
+    .type-badge { padding: 2px 8px; border-radius: 6px; background: rgba(8,145,178,0.12); color: #06b6d4; font-size: 11px; font-weight: 700; &.doc { background: rgba(99,102,241,0.12); color: #a5b4fc; } }
+    .deduction { color: #f87171; }
+    .net-col { color: #4ade80; }
+    .total-row td { background: rgba(99,102,241,0.06); border-top: 1px solid rgba(99,102,241,0.2); font-size: 13px; }
+    .empty { text-align: center; padding: 60px; color: #64748b; }
+    .empty > div:first-child { font-size: 40px; margin-bottom: 10px; }
+    .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: rgba(74,222,128,0.12); border: 1px solid rgba(74,222,128,0.3); color: #4ade80; padding: 10px 20px; border-radius: 12px; font-size: 13px; font-weight: 600; z-index: 600; }
+  

@@ -1,0 +1,104 @@
+
+    .booking-card {
+      background: #fff;
+      border: 1.5px solid #e5e7eb;
+      border-radius: 16px;
+      padding: 1.5rem 1.75rem;
+      margin-top: 1.5rem;
+      box-shadow: 0 2px 12px rgba(0,0,0,.06);
+      max-width: 440px;
+    }
+    .booking-card h3 {
+      margin: 0 0 .1rem;
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: #111827;
+    }
+    .booking-card .bc-sub {
+      font-size: .83rem;
+      color: #6b7280;
+      margin: 0 0 1rem;
+    }
+    .bc-fields {
+      display: flex;
+      flex-direction: column;
+      gap: .65rem;
+    }
+    .bc-fields input {
+      width: 100%;
+      box-sizing: border-box;
+      border: 1.5px solid #d1d5db;
+      border-radius: 10px;
+      padding: .65rem .85rem;
+      font-size: .93rem;
+      outline: none;
+      transition: border-color .15s;
+      &:focus { border-color: #2563eb; }
+    }
+    .bc-btn {
+      width: 100%;
+      background: #2563eb;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      padding: .7rem 1rem;
+      font-size: .95rem;
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: .25rem;
+      transition: background .15s;
+      &:hover:not(:disabled) { background: #1d4ed8; }
+      &:disabled { opacity: .55; cursor: not-allowed; }
+    }
+    .bc-error {
+      color: #dc2626;
+      font-size: .8rem;
+      margin: .4rem 0 0;
+    }
+    .bc-hint {
+      font-size: .78rem;
+      color: #9ca3af;
+      margin: .5rem 0 0;
+      text-align: center;
+    }
+    .bc-otp-who {
+      font-size: .83rem;
+      color: #374151;
+      margin: 0 0 .85rem;
+      strong { color: #111827; }
+    }
+    .bc-back {
+      background: none;
+      border: none;
+      color: #6b7280;
+      font-size: .8rem;
+      cursor: pointer;
+      padding: .35rem 0 0;
+      text-decoration: underline;
+      &:hover { color: #374151; }
+    }
+    .bc-loading {
+      display: flex;
+      align-items: center;
+      gap: .6rem;
+      color: #6b7280;
+      font-size: .9rem;
+      padding: .5rem 0;
+    }
+    .bc-spinner {
+      width: 18px;
+      height: 18px;
+      border: 2.5px solid #e5e7eb;
+      border-top-color: #2563eb;
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .bc-done {
+      text-align: center;
+      padding: .25rem 0;
+      font-size: .9rem;
+      color: #065f46;
+      font-weight: 600;
+    }
+  

@@ -7,16 +7,7 @@ import { AuthFormOverlayComponent } from './auth-form-overlay.component';
   selector: 'app-auth-reset-callback',
   imports: [],
   template: `<div class="reset-callback"><p>Processing reset link…</p></div>`,
-  styles: [`
-    .reset-callback {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
-      font-family: inherit;
-      color: #6b7280;
-    }
-  `]
+  styleUrl: './auth-reset-callback.component.scss'
 })
 export class AuthResetCallbackComponent implements OnInit {
   private readonly overlayService = inject(AppOverlayService);
