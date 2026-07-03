@@ -39,7 +39,7 @@ export function createWarehouseRouter() {
     asyncRoute(async (req, res) => {
       const warehouseId = await resolveWarehouseStoreId(req.user!.id, req.user!.role);
       const effectiveId =
-        warehouseId ?? queryText(req, 'warehouseId') || undefined;
+        warehouseId ?? (queryText(req, 'warehouseId') || undefined);
       if (!effectiveId) {
         return res.status(400).json({ message: 'Warehouse selection is required for admin users.' });
       }
@@ -69,7 +69,7 @@ export function createWarehouseRouter() {
       const warehouseId = await resolveWarehouseStoreId(req.user!.id, req.user!.role);
       const status = queryText(req, 'status') as StockTransferStatus | undefined;
       const transfers = await listStockTransfers({
-        fromStoreId: warehouseId ?? queryText(req, 'warehouseId') || undefined,
+        fromStoreId: warehouseId ?? (queryText(req, 'warehouseId') || undefined),
         status: status || undefined
       });
       res.json({ transfers });

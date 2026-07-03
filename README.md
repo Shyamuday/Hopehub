@@ -16,6 +16,8 @@ Clinic platform — Angular frontend + pure Node.js/Express/TypeScript backend.
 
 For the full role/app roadmap and phasing (receptionist, clinic manager, supplier portal, etc.), see **[docs/platform-ecosystem-architecture.md](docs/platform-ecosystem-architecture.md)**.
 
+For AI-assisted case analysis (image upload, camera capture, rubric suggestions), see **[docs/case-analysis-ai-enrichment.md](docs/case-analysis-ai-enrichment.md)**.
+
 ## Stack
 
 - Patient web app: `apps/user-web` (Angular)

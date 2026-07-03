@@ -41,7 +41,7 @@ export function createSupplierRouter() {
       }
       const status = queryText(req, 'status') as any;
       const orders = await listPurchaseOrders({
-        supplierId: supplierId ?? queryText(req, 'supplierId') || undefined,
+        supplierId: supplierId ?? (queryText(req, 'supplierId') || undefined),
         status: status || undefined
       });
       res.json({ orders });
