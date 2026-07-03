@@ -1,0 +1,146 @@
+
+    <div class="po-page">
+      <div class="po-hdr">
+        <div>
+          <h2>Purchase Orders</h2>
+          <p class="muted">Create and track supplier purchase orders across branches</p>
+        </div>
+        <button type="button" class="btn-primary" (click)="openCreate()">+ New PO</button>
+      </div>
+
+      <div class="toolbar">
+        <select [(ngModel)]="statusFilter" (ngModelChange)="load()">
+          <option value="">All statuses</option>
+          <option value="DRAFT">Draft</option>
+          <option value="SENT">Sent</option>
+          <option value="CONFIRMED">Confirmed</option>
+          <option value="DISPATCHED">Dispatched</option>
+          <option value="RECEIVED">Received</option>
+          <option value="CANCELLED">Cancelled</option>
+        </select>
+        <select [(ngModel)]="storeFilter" (ngModelChange)="load()">
+          <option value="">All stores</option>
+          @for (store of stores(); track store.id) {
+            <option [value]="store.id">{{ store.name }}</option>
+          }
+        </select>
+        <button type="button" class="btn-sec" (click)="load()">Refresh</button>
+      </div>
+
+      @if (loading()) {
+        <p class="loading-text">Loading purchase orders…</p>
+      } @else if (error()) {
+        <div class="error-row">
+          <p class="error">{{ error() }}</p>
+          <button type="button" class="retry-btn" (click)="load()">Retry</button>
+        </div>
+      } @else if (!orders().length) {
+        <p class="empty-state">No purchase orders yet.</p>
+      } @else {
+        <div class="po-list">
+          @for (order of orders(); track order.id) {
+            <article class="po-card">
+              <div class="po-head">
+                <strong>{{ order.poNumber }}</strong>
+                <span class="status">{{ order.status }}</span>
+              </div>
+              <p class="muted">{{ order.supplier?.name }} → {{ order.store?.name }}</p>
+              <small>{{ order.createdAt | date: 'medium' }} · {{ order.lines?.length || 0 }} line(s)</small>
+              <button type="button" class="link-btn" (click)="viewOrder(order.id)">View details</button>
+            </article>
+          }
+        </div>
+      }
+    </div>
+
+    @if (modal()) {
+      <div class="overlay" (click)="closeModal()">
+        <div class="modal wide" (click)="$event.stopPropagation()">
+          <div class="mhdr">
+            <h3>New Purchase Order</h3>
+            <button type="button" class="close-btn" (click)="closeModal()">✕</button>
+          </div>
+          <div class="mbody">
+            <div class="grid2">
+              <label>Supplier
+                <select [(ngModel)]="poForm.supplierId">
+                  <option value="">Select supplier</option>
+                  @for (s of suppliers(); track s.id) {
+                    <option [value]="s.id">{{ s.name }} ({{ s.code }})</option>
+                  }
+                </select>
+              </label>
+              <label>Store
+                <select [(ngModel)]="poForm.storeId">
+                  @for (s of stores(); track s.id) {
+                    <option [value]="s.id">{{ s.name }}</option>
+                  }
+                </select>
+              </label>
+            </div>
+            <label>Notes <input [(ngModel)]="poForm.notes" placeholder="Optional" /></label>
+            <label class="check"><input type="checkbox" [(ngModel)]="poForm.send" /> Send to supplier immediately</label>
+
+            <div class="med-search">
+              <input [(ngModel)]="medicineQuery" placeholder="Search medicines (min 2 chars)" (keyup.enter)="searchMedicines()" />
+              <button type="button" class="btn-sec" (click)="searchMedicines()" [disabled]="medicineSearching()">
+                {{ medicineSearching() ? '…' : 'Search' }}
+              </button>
+            </div>
+            @if (medicineResults().length) {
+              <div class="med-results">
+                @for (m of medicineResults(); track m.id) {
+                  <button type="button" class="chip-btn" (click)="addLine(m)">+ {{ m.name }} {{ m.potency }}</button>
+                }
+              </div>
+            }
+
+            @if (lines().length) {
+              <table class="lines-table">
+                <thead><tr><th>Medicine</th><th>Qty</th><th>Unit price (paise)</th><th></th></tr></thead>
+                <tbody>
+                  @for (line of lines(); track line.medicineId) {
+                    <tr>
+                      <td>{{ line.label }}</td>
+                      <td><input type="number" min="1" [(ngModel)]="line.qtyOrdered" /></td>
+                      <td><input type="number" min="0" [(ngModel)]="line.unitPriceInPaise" /></td>
+                      <td><button type="button" class="link-btn" (click)="removeLine(line.medicineId)">Remove</button></td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            }
+          </div>
+          <div class="mfooter">
+            <button type="button" class="btn-ghost" (click)="closeModal()">Cancel</button>
+            <button type="button" class="btn-primary" [disabled]="saving()" (click)="saveOrder()">
+              {{ saving() ? 'Creating…' : 'Create PO' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    }
+
+    @if (detail(); as order) {
+      <div class="overlay" (click)="closeModal()">
+        <div class="modal wide" (click)="$event.stopPropagation()">
+          <div class="mhdr">
+            <h3>{{ order.poNumber }}</h3>
+            <button type="button" class="close-btn" (click)="closeModal()">✕</button>
+          </div>
+          <div class="mbody">
+            <p><strong>Status:</strong> {{ order.status }}</p>
+            <p><strong>Supplier:</strong> {{ order.supplier?.name }}</p>
+            <p><strong>Store:</strong> {{ order.store?.name }}</p>
+            @if (order.notes) { <p><strong>Notes:</strong> {{ order.notes }}</p> }
+            <ul>
+              @for (line of order.lines || []; track line.id) {
+                <li>{{ line.medicine?.name }} {{ line.medicine?.potency }} — qty {{ line.qtyOrdered }}</li>
+              }
+            </ul>
+          </div>
+        </div>
+      </div>
+    }
+
+    @if (toast()) { <div class="toast">{{ toast() }}</div> }

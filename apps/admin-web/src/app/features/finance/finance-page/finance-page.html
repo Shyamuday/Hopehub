@@ -55,6 +55,40 @@
         </table>
       </div>
     }
+    @case ('outstanding') {
+      <div class="panel">
+        <h3>Outstanding payments</h3>
+        <p class="branch-note">Consultations with pending or failed payment (latest 200).</p>
+        @if (!outstanding().length) {
+          <p class="empty-state">No outstanding payments.</p>
+        } @else {
+          <table>
+            <thead>
+              <tr>
+                <th>Patient</th>
+                <th>Disease</th>
+                <th>Doctor</th>
+                <th>Status</th>
+                <th class="num">Amount</th>
+                <th>Created</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (payment of outstanding(); track payment.id) {
+                <tr>
+                  <td>{{ payment.consultation?.patient?.name || '—' }}</td>
+                  <td>{{ payment.consultation?.disease?.name || '—' }}</td>
+                  <td>{{ payment.consultation?.assignedDoctor?.name || 'Unassigned' }}</td>
+                  <td>{{ payment.status }}</td>
+                  <td class="num">{{ formatPaise(payment.amountInPaise) }}</td>
+                  <td>{{ payment.createdAt | date: 'mediumDate' }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
+      </div>
+    }
     @case ('branches') {
       <div class="panel">
         <h3>Branch P&L — {{ selectedMonth }}</h3>

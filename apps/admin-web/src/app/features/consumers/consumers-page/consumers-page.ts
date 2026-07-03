@@ -148,6 +148,16 @@ export class ConsumersPage {
   savingNote = false;
   noteError = '';
 
+  showRegister = false;
+  registerForm = { name: '', email: '', mobile: '', homeClinicStoreId: '' };
+  registerSaving = false;
+  registerError = '';
+  registerMessage = '';
+  patientSearchQuery = '';
+  patientSearchLoading = false;
+  patientSearchResults: Array<any> = [];
+  stores: Array<{ id: string; name: string; code: string }> = [];
+
   readonly supportCategories = SUPPORT_NOTE_CATEGORIES;
   readonly categoryStyles = SUPPORT_NOTE_CATEGORY_STYLES;
 
@@ -161,6 +171,20 @@ export class ConsumersPage {
     }
     void this.load();
     void this.loadDoctors();
+    void this.loadStores();
+  }
+
+  private async loadStores() {
+    try {
+      const response = await this.api.getAdminStores();
+      this.stores = (response.stores || []).map((store: any) => ({
+        id: store.id,
+        name: store.name,
+        code: store.code
+      }));
+    } catch {
+      this.stores = [];
+    }
   }
 
   private async loadDoctors() {
@@ -336,6 +360,56 @@ export class ConsumersPage {
       issuedAt: new Date().toISOString(),
       scanUrl: `${environment.apiUrl}/go/p/${encodeURIComponent(consumer.patientCode)}`
     };
+  }
+
+  async searchPatientsGlobal() {
+    const q = this.patientSearchQuery.trim();
+    if (q.length < 2) return;
+    this.patientSearchLoading = true;
+    try {
+      const response = await this.api.searchPatients(q, { scope: 'global' });
+      this.patientSearchResults = response.patients || [];
+    } catch {
+      this.patientSearchResults = [];
+    } finally {
+      this.patientSearchLoading = false;
+    }
+  }
+
+  selectSearchedPatient(patientId: string) {
+    void this.selectConsumer(patientId);
+    this.patientSearchResults = [];
+    this.patientSearchQuery = '';
+  }
+
+  async registerPatient() {
+    this.registerError = '';
+    this.registerMessage = '';
+    const name = this.registerForm.name.trim();
+    if (!name) {
+      this.registerError = 'Name is required.';
+      return;
+    }
+    this.registerSaving = true;
+    try {
+      const response = await this.api.registerPatient({
+        name,
+        email: this.registerForm.email.trim() || undefined,
+        mobile: this.registerForm.mobile.trim() || undefined,
+        homeClinicStoreId: this.registerForm.homeClinicStoreId || null
+      });
+      this.registerMessage = `Patient registered: ${response.patient.patientCode || response.patient.id}`;
+      this.registerForm = { name: '', email: '', mobile: '', homeClinicStoreId: '' };
+      this.showRegister = false;
+      await this.load();
+      if (response.patient.id) {
+        await this.selectConsumer(response.patient.id);
+      }
+    } catch (e: any) {
+      this.registerError = e?.error?.message || 'Could not register patient.';
+    } finally {
+      this.registerSaving = false;
+    }
   }
 
 }

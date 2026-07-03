@@ -38,6 +38,7 @@ export class FinancePage implements OnInit {
   medicine = signal<{ movements: any[]; totalInPaise: number }>({ movements: [], totalInPaise: 0 });
   clinicExpenses = signal<any[]>([]);
   storeExpenses = signal<any[]>([]);
+  outstanding = signal<any[]>([]);
   stores = signal<any[]>([]);
 
   expenseModal = signal(false);
@@ -99,6 +100,9 @@ export class FinancePage implements OnInit {
   loadTab(): void {
     if (this.tab() === 'overview') {
       this.api.getFinanceSummary(this.selectedMonth).then(s => this.summary.set(s)).catch(() => {});
+    }
+    if (this.tab() === 'outstanding') {
+      this.api.getOutstandingPayments().then(r => this.outstanding.set(r.payments || [])).catch(() => {});
     }
     if (this.tab() === 'branches') {
       this.api.getBranchPnl(this.selectedMonth).then(r => {

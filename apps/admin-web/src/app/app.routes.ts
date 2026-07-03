@@ -19,6 +19,7 @@ import { FinancePage } from './features/finance/finance-page/finance-page';
 import { AuditPage } from './features/audit/audit-page/audit-page';
 import { AdherencePage } from './features/adherence/adherence-page/adherence-page';
 import { AnalyticsPage } from './features/analytics/analytics-page/analytics-page';
+import { PurchaseOrdersPage } from './features/purchase-orders/purchase-orders-page/purchase-orders-page';
 
 export const routes: Routes = [
   { path: ROUTE_PATHS.LOGIN, component: AdminLogin },
@@ -37,6 +38,7 @@ export const routes: Routes = [
       { path: ROUTE_PATHS.EMPLOYEES, component: EmployeesPage },
       { path: ROUTE_PATHS.LEAVES, component: LeavesPage },
       { path: ROUTE_PATHS.STORES, component: StoresPage },
+      { path: ROUTE_PATHS.PURCHASE_ORDERS, component: PurchaseOrdersPage },
       { path: ROUTE_PATHS.CONSULTATIONS, component: ConsultationsPage },
       { path: ROUTE_PATHS.PAYMENTS, component: PaymentsPage },
       { path: ROUTE_PATHS.AUDIT, component: AuditPage },

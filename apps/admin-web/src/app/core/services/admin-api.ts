@@ -4,6 +4,7 @@ import { AdminDoctorsApi } from './admin/admin-doctors.api';
 import { AdminCatalogApi } from './admin/admin-catalog.api';
 import { AdminHrApi } from './admin/admin-hr.api';
 import { AdminFinanceApi } from './admin/admin-finance.api';
+import { AdminOpsApi } from './admin/admin-ops.api';
 
 @Injectable({
   providedIn: 'root'
@@ -14,7 +15,8 @@ export class AdminApi {
     private readonly doctors: AdminDoctorsApi,
     private readonly catalog: AdminCatalogApi,
     private readonly hr: AdminHrApi,
-    private readonly finance: AdminFinanceApi
+    private readonly finance: AdminFinanceApi,
+    private readonly ops: AdminOpsApi
   ) {}
 
   getReports(...args: Parameters<AdminReportsApi['getReports']>) {
@@ -217,5 +219,32 @@ export class AdminApi {
   }
   exportAccountantBundle(...args: Parameters<AdminFinanceApi['exportAccountantBundle']>) {
     return this.finance.exportAccountantBundle(...(args as Parameters<AdminFinanceApi['exportAccountantBundle']>));
+  }
+  searchPatients(...args: Parameters<AdminOpsApi['searchPatients']>) {
+    return this.ops.searchPatients(...(args as Parameters<AdminOpsApi['searchPatients']>));
+  }
+  registerPatient(...args: Parameters<AdminOpsApi['registerPatient']>) {
+    return this.ops.registerPatient(...(args as Parameters<AdminOpsApi['registerPatient']>));
+  }
+  getPurchaseOrders(...args: Parameters<AdminOpsApi['getPurchaseOrders']>) {
+    return this.ops.getPurchaseOrders(...(args as Parameters<AdminOpsApi['getPurchaseOrders']>));
+  }
+  getPurchaseOrder(...args: Parameters<AdminOpsApi['getPurchaseOrder']>) {
+    return this.ops.getPurchaseOrder(...(args as Parameters<AdminOpsApi['getPurchaseOrder']>));
+  }
+  createPurchaseOrder(...args: Parameters<AdminOpsApi['createPurchaseOrder']>) {
+    return this.ops.createPurchaseOrder(...(args as Parameters<AdminOpsApi['createPurchaseOrder']>));
+  }
+  getSuppliers(...args: Parameters<AdminOpsApi['getSuppliers']>) {
+    return this.ops.getSuppliers(...(args as Parameters<AdminOpsApi['getSuppliers']>));
+  }
+  searchMedicines(...args: Parameters<AdminOpsApi['searchMedicines']>) {
+    return this.ops.searchMedicines(...(args as Parameters<AdminOpsApi['searchMedicines']>));
+  }
+  getAdminStore(...args: Parameters<AdminHrApi['getAdminStore']>) {
+    return this.hr.getAdminStore(...(args as Parameters<AdminHrApi['getAdminStore']>));
+  }
+  updateAdminStore(...args: Parameters<AdminHrApi['updateAdminStore']>) {
+    return this.hr.updateAdminStore(...(args as Parameters<AdminHrApi['updateAdminStore']>));
   }
 }

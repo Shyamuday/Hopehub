@@ -39,6 +39,78 @@ router.post('/stores', hrAuthMiddleware, asyncRoute(async (req, res) => {
   res.status(201).json({ store });
 }));
 
+// GET /hr/stores/:storeId — store detail with full staff roster
+router.get('/stores/:storeId', hrAuthMiddleware, asyncRoute(async (req, res) => {
+  const storeId = req.params['storeId'] as string;
+  const { storeIds } = getAccess(req);
+  if (storeIds && !storeIds.includes(storeId)) {
+    res.status(403).json({ error: 'Access denied' });
+    return;
+  }
+
+  const store = await prisma.store.findUnique({
+    where: { id: storeId },
+    include: {
+      _count: { select: { staff: true } },
+      staff: {
+        orderBy: [{ role: 'asc' }, { name: 'asc' }],
+        select: {
+          id: true,
+          name: true,
+          staffCode: true,
+          email: true,
+          phone: true,
+          role: true,
+          designation: true,
+          isActive: true,
+          employeeStatus: true,
+          joiningDate: true
+        }
+      },
+      hrAccess: { include: { hrUser: { select: { id: true, name: true, email: true } } } }
+    }
+  });
+
+  if (!store) {
+    res.status(404).json({ error: 'Store not found' });
+    return;
+  }
+  res.json({ store });
+}));
+
+// PATCH /hr/stores/:storeId — update store details or active flag
+router.patch('/stores/:storeId', hrAuthMiddleware, asyncRoute(async (req, res) => {
+  const storeId = req.params['storeId'] as string;
+  const { storeIds } = getAccess(req);
+  if (storeIds && !storeIds.includes(storeId)) {
+    res.status(403).json({ error: 'Access denied' });
+    return;
+  }
+
+  const { name, address, phone, isActive } = req.body as {
+    name?: string;
+    address?: string;
+    phone?: string;
+    isActive?: boolean;
+  };
+
+  const store = await prisma.store.update({
+    where: { id: storeId },
+    data: {
+      ...(name !== undefined ? { name } : {}),
+      ...(address !== undefined ? { address } : {}),
+      ...(phone !== undefined ? { phone } : {}),
+      ...(isActive !== undefined ? { isActive } : {})
+    },
+    include: {
+      _count: { select: { staff: true } },
+      staff: { where: { role: HR_ROLES.MANAGER }, select: { id: true, name: true, email: true, isActive: true, employeeStatus: true } },
+      hrAccess: { include: { hrUser: { select: { id: true, name: true, email: true } } } }
+    }
+  });
+  res.json({ store });
+}));
+
 // POST /hr/stores/:storeId/managers — HR creates a store manager
 router.post(HR_API_ROUTES.STORE_MANAGERS, hrAuthMiddleware, asyncRoute(async (req, res) => {
   const storeId = req.params['storeId'] as string;

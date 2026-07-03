@@ -400,8 +400,9 @@ button {
   }
 
   .actions button {
-    flex: 1 1 140px;
-    min-height: 40px;
+    flex: 1 1 100%;
+    min-height: 44px;
+    width: 100%;
   }
 
   .timeline-head {

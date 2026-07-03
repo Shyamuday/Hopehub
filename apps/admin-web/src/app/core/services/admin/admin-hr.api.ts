@@ -124,6 +124,19 @@ export class AdminHrApi extends AdminApiBase {
     return firstValueFrom(this.http.post<{ store: any }>(`${this.apiBase}${API_PATHS.HR.STORES}`, data));
   }
 
+  getAdminStore(storeId: string) {
+    return firstValueFrom(this.http.get<{ store: any }>(`${this.apiBase}${API_PATHS.HR.STORES}/${storeId}`));
+  }
+
+  updateAdminStore(
+    storeId: string,
+    data: { name?: string; address?: string; phone?: string; isActive?: boolean }
+  ) {
+    return firstValueFrom(
+      this.http.patch<{ store: any }>(`${this.apiBase}${API_PATHS.HR.STORES}/${storeId}`, data)
+    );
+  }
+
   createAdminManager(storeId: string, data: any) {
     return firstValueFrom(this.http.post<{ manager: any }>(`${this.apiBase}${API_PATHS.HR.STORES}/${storeId}/managers`, data));
   }

@@ -1,7 +1,9 @@
 export const STORE_MODAL_TYPES = {
   STORE: 'store',
+  EDIT: 'edit',
   MANAGER: 'manager',
-  STAFF: 'staff'
+  STAFF: 'staff',
+  ROSTER: 'roster'
 } as const;
 
 export type StoreModalType = (typeof STORE_MODAL_TYPES)[keyof typeof STORE_MODAL_TYPES];

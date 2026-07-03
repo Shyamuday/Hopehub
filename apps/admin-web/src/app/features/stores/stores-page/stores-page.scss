@@ -45,6 +45,10 @@
 
     .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 400; display: flex; align-items: center; justify-content: center; padding: 20px; }
     .modal { background: #0f1623; border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; width: 100%; max-width: 420px; max-height: 88vh; overflow-y: auto; animation: popIn 0.2s ease; }
+    .modal.wide { max-width: 560px; }
+    .roster-row { display: flex; justify-content: space-between; align-items: center; gap: 0.75rem; padding: 0.55rem 0; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    .roster-row small { display: block; color: #64748b; }
+    .check-row { flex-direction: row; align-items: center; gap: 0.5rem; }
     @keyframes popIn { from { transform: scale(0.96); opacity: 0; } to { transform: scale(1); opacity: 1; } }
     .mhdr { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid rgba(255,255,255,0.07); }
     .mhdr h3 { font-size: 14px; font-weight: 800; margin: 0; }

@@ -22,6 +22,7 @@ export class StoresPage implements OnInit {
 
   readonly storeAppPort = STORE_APP_PORT;
   readonly storeStatusColors = STORE_STATUS_COLORS;
+  readonly modalTypes = STORE_MODAL_TYPES;
 
   stores = signal<any[]>([]);
   loading = signal(true);
@@ -29,12 +30,15 @@ export class StoresPage implements OnInit {
   saving = signal(false);
   modal = signal<StoreModalType | null>(null);
   selectedStore = signal<any>(null);
+  roster = signal<any[]>([]);
+  rosterLoading = signal(false);
   err = signal('');
   toast = signal('');
 
-  storeForm = { name:'', code:'', address:'', phone:'' };
-  mgrForm = { name:'', email:'', password:'', designation: STORE_FORM_DEFAULTS.MANAGER_DESIGNATION, joiningDate:'' };
-  staffForm = { name:'', staffCode:'', pin:'', designation: STORE_FORM_DEFAULTS.STAFF_DESIGNATION, phone:'', joiningDate:'' };
+  storeForm = { name: '', code: '', address: '', phone: '' };
+  editForm = { name: '', address: '', phone: '', isActive: true };
+  mgrForm = { name: '', email: '', password: '', designation: STORE_FORM_DEFAULTS.MANAGER_DESIGNATION, joiningDate: '' };
+  staffForm = { name: '', staffCode: '', pin: '', designation: STORE_FORM_DEFAULTS.STAFF_DESIGNATION, phone: '', joiningDate: '' };
 
   ngOnInit(): void { this.load(); }
 
@@ -47,18 +51,45 @@ export class StoresPage implements OnInit {
   }
 
   openModal(m: StoreModalType): void { this.err.set(''); this.modal.set(m); }
+
+  openEditModal(s: any): void {
+    this.selectedStore.set(s);
+    this.editForm = { name: s.name, address: s.address || '', phone: s.phone || '', isActive: s.isActive !== false };
+    this.err.set('');
+    this.modal.set(STORE_MODAL_TYPES.EDIT);
+  }
+
   openManagerModal(s: any): void {
     this.selectedStore.set(s);
-    this.mgrForm = { name:'', email:'', password:'', designation: STORE_FORM_DEFAULTS.MANAGER_DESIGNATION, joiningDate:'' };
+    this.mgrForm = { name: '', email: '', password: '', designation: STORE_FORM_DEFAULTS.MANAGER_DESIGNATION, joiningDate: '' };
     this.err.set('');
     this.modal.set(STORE_MODAL_TYPES.MANAGER);
   }
+
   openStaffModal(s: any): void {
     this.selectedStore.set(s);
-    this.staffForm = { name:'', staffCode:'', pin:'', designation: STORE_FORM_DEFAULTS.STAFF_DESIGNATION, phone:'', joiningDate:'' };
+    this.staffForm = { name: '', staffCode: '', pin: '', designation: STORE_FORM_DEFAULTS.STAFF_DESIGNATION, phone: '', joiningDate: '' };
     this.err.set('');
     this.modal.set(STORE_MODAL_TYPES.STAFF);
   }
+
+  async openRosterModal(s: any): Promise<void> {
+    this.selectedStore.set(s);
+    this.roster.set([]);
+    this.rosterLoading.set(true);
+    this.err.set('');
+    this.modal.set(STORE_MODAL_TYPES.ROSTER);
+    try {
+      const response = await this.api.getAdminStore(s.id);
+      this.roster.set(response.store.staff || []);
+      this.selectedStore.set(response.store);
+    } catch {
+      this.err.set('Could not load staff roster.');
+    } finally {
+      this.rosterLoading.set(false);
+    }
+  }
+
   closeModal(): void { this.modal.set(null); this.err.set(''); }
 
   async saveStore(): Promise<void> {
@@ -66,9 +97,22 @@ export class StoresPage implements OnInit {
     this.saving.set(true);
     try {
       const r = await this.api.createAdminStore(this.storeForm);
-      this.stores.update(list => [...list, { ...r.store, _count:{ staff:0 }, staff:[] }]);
+      this.stores.update(list => [...list, { ...r.store, _count: { staff: 0 }, staff: [] }]);
       this.modal.set(null);
       this.showToast(`Store "${r.store.name}" created`);
+    } catch (e: any) { this.err.set(e?.error?.error ?? 'Failed'); }
+    finally { this.saving.set(false); }
+  }
+
+  async saveEdit(): Promise<void> {
+    const store = this.selectedStore();
+    if (!store) return;
+    this.saving.set(true);
+    try {
+      const r = await this.api.updateAdminStore(store.id, this.editForm);
+      this.stores.update(list => list.map(item => item.id === store.id ? { ...item, ...r.store } : item));
+      this.modal.set(null);
+      this.showToast(`Store "${r.store.name}" updated`);
     } catch (e: any) { this.err.set(e?.error?.error ?? 'Failed'); }
     finally { this.saving.set(false); }
   }
@@ -97,6 +141,16 @@ export class StoresPage implements OnInit {
       this.load();
     } catch (e: any) { this.err.set(e?.error?.error ?? 'Failed'); }
     finally { this.saving.set(false); }
+  }
+
+  async toggleStaffStatus(member: any): Promise<void> {
+    try {
+      await this.api.setAdminStoreStaffStatus(member.id, { isActive: !member.isActive });
+      this.roster.update(list => list.map(row => row.id === member.id ? { ...row, isActive: !member.isActive } : row));
+      this.showToast(`${member.name} ${member.isActive ? 'deactivated' : 'activated'}`);
+    } catch {
+      this.showToast('Could not update staff status.');
+    }
   }
 
   private showToast(msg: string): void {

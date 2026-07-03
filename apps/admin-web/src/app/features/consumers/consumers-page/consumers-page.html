@@ -1,5 +1,48 @@
 <section class="panel">
-  <h2>Consumers (Patients)</h2>
+  <div class="toolbar spaced">
+    <h2>Consumers (Patients)</h2>
+    <button type="button" class="btn-primary" (click)="showRegister = !showRegister">
+      {{ showRegister ? 'Close register' : '+ Register patient' }}
+    </button>
+  </div>
+
+  @if (showRegister) {
+    <div class="register-box">
+      <h3>Register new patient</h3>
+      <div class="register-grid">
+        <input placeholder="Full name *" [(ngModel)]="registerForm.name" name="registerName" />
+        <input placeholder="Mobile (optional)" [(ngModel)]="registerForm.mobile" name="registerMobile" />
+        <input placeholder="Email (optional)" [(ngModel)]="registerForm.email" name="registerEmail" />
+        <select [(ngModel)]="registerForm.homeClinicStoreId" name="registerClinic">
+          <option value="">No home clinic</option>
+          @for (store of stores; track store.id) {
+            <option [value]="store.id">{{ store.name }} ({{ store.code }})</option>
+          }
+        </select>
+      </div>
+      <button type="button" (click)="registerPatient()" [disabled]="registerSaving">
+        {{ registerSaving ? 'Saving…' : 'Create patient' }}
+      </button>
+      @if (registerError) { <p class="error">{{ registerError }}</p> }
+      @if (registerMessage) { <p class="success">{{ registerMessage }}</p> }
+    </div>
+  }
+
+  <div class="toolbar">
+    <input placeholder="Global patient search (mobile, code, name)…" [(ngModel)]="patientSearchQuery" name="patientSearch" (keyup.enter)="searchPatientsGlobal()" />
+    <button type="button" (click)="searchPatientsGlobal()" [disabled]="patientSearchLoading">Search all</button>
+  </div>
+  @if (patientSearchResults.length) {
+    <div class="search-results">
+      @for (patient of patientSearchResults; track patient.id) {
+        <button type="button" class="search-hit" (click)="selectSearchedPatient(patient.id)">
+          <strong>{{ patient.name }}</strong>
+          <small>{{ patient.patientCode || patient.id }} · {{ patient.mobile || 'no mobile' }}</small>
+        </button>
+      }
+    </div>
+  }
+
   <div class="toolbar">
     <input placeholder="Search consumers..." name="searchTerm" [(ngModel)]="searchTerm" (ngModelChange)="setPage(1)" />
     <select name="sortBy" [(ngModel)]="sortBy" (ngModelChange)="setPage(1)">

@@ -12,6 +12,11 @@ export const API_PATHS = {
     DOCTORS: '/admin/doctors',
     DOCTORS_PENDING: '/admin/doctors/pending',
     CONSUMERS: '/admin/consumers',
+    PATIENTS_SEARCH: '/admin/patients/search',
+    PATIENTS: '/admin/patients',
+    PURCHASE_ORDERS: '/admin/purchase-orders',
+    SUPPLIERS: '/admin/suppliers',
+    MEDICINES: '/admin/medicines',
     CONSUMER_SUPPORT: (id: string) => `/admin/consumers/${id}/support`,
     CONSUMER_SUPPORT_NOTES: (id: string) => `/admin/consumers/${id}/support-notes`,
     DISEASES: '/admin/diseases',
@@ -38,6 +43,7 @@ export const API_PATHS = {
     LEAVES: '/hr/leaves',
     STORES: '/hr/stores',
     STORE_STAFF: '/hr/store/staff',
+    STORE_STAFF_STATUS: (id: string) => `/hr/store/staff/${id}/status`,
     PAYROLL: '/hr/payroll'
   }
 } as const;

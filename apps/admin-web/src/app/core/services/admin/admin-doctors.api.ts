@@ -67,7 +67,7 @@ export class AdminDoctorsApi extends AdminApiBase {
   }
 
   setDoctorStatus(doctorId: string, isActive: boolean) {
-    return firstValueFrom(this.http.post(`${this.apiBase}${API_PATHS.ADMIN.DOCTORS}/${doctorId}/status`, { isActive }));
+    return firstValueFrom(this.http.put(`${this.apiBase}${API_PATHS.ADMIN.DOCTORS}/${doctorId}/status`, { isActive }));
   }
 
   updateDoctor(

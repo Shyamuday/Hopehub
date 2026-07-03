@@ -1,27 +1,68 @@
 <main class="doctor-shell">
   <header class="topbar">
-    <div class="identity">
-      <h1>Doctor Console</h1>
-      @if (!loadingSession) {
-        <div class="doctor-meta">
-          <strong>{{ doctorName }}</strong>
-          <span class="type-badge">{{ doctorTypeLabel }}</span>
+    <div class="topbar-start">
+      <button type="button" class="menu-btn" aria-label="Open menu" (click)="openMenu()">☰</button>
+      <div class="identity">
+        <p class="app-title">Doctor Console</p>
+        @if (!loadingSession) {
+          <div class="doctor-meta">
+            <strong>{{ doctorName }}</strong>
+            <span class="type-badge">{{ doctorTypeLabel }}</span>
+          </div>
+        }
+      </div>
+    </div>
+    <button type="button" class="logout-btn" (click)="logout()">Logout</button>
+  </header>
+
+  <nav class="tabs desktop-nav" aria-label="Main navigation">
+    @for (item of navItems; track item.path) {
+      <a [routerLink]="item.path" routerLinkActive="active">
+        <span class="tab-icon" aria-hidden="true">{{ item.icon }}</span>
+        <span>{{ item.label }}</span>
+      </a>
+    }
+  </nav>
+
+  @if (menuOpen()) {
+    <button type="button" class="overlay" aria-label="Close menu" (click)="closeMenu()"></button>
+    <aside class="drawer" aria-label="Navigation menu">
+      <div class="drawer-header">
+        <div class="drawer-identity">
+          <strong>{{ doctorName || 'Doctor' }}</strong>
+          @if (doctorTypeLabel) {
+            <span class="type-badge drawer-badge">{{ doctorTypeLabel }}</span>
+          }
           @if (specialtyLabel) {
             <span class="specialty">{{ specialtyLabel }}</span>
           }
         </div>
-      }
-    </div>
-    <button type="button" (click)="logout()">Logout</button>
-  </header>
-
-  <nav class="tabs">
-    @for (item of navItems; track item.path) {
-      <a [routerLink]="item.path" routerLinkActive="active">{{ item.label }}</a>
-    }
-  </nav>
+        <button type="button" class="drawer-close" aria-label="Close menu" (click)="closeMenu()">×</button>
+      </div>
+      <nav class="drawer-nav">
+        @for (item of navItems; track item.path) {
+          <a [routerLink]="item.path" routerLinkActive="active" (click)="closeMenu()">
+            <span class="tab-icon" aria-hidden="true">{{ item.icon }}</span>
+            <span>{{ item.label }}</span>
+          </a>
+        }
+      </nav>
+      <div class="drawer-footer">
+        <button type="button" class="drawer-logout" (click)="logout()">Sign out</button>
+      </div>
+    </aside>
+  }
 
   <section class="content">
     <router-outlet />
   </section>
+
+  <nav class="bottom-nav" aria-label="Quick navigation">
+    @for (item of navItems; track item.path) {
+      <a [routerLink]="item.path" routerLinkActive="active" class="bottom-nav-item">
+        <span class="bottom-nav-icon" aria-hidden="true">{{ item.icon }}</span>
+        <span class="bottom-nav-label">{{ item.shortLabel }}</span>
+      </a>
+    }
+  </nav>
 </main>

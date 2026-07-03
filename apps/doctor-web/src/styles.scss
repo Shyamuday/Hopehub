@@ -1,13 +1,8 @@
+@import 'styles/tokens';
+@import 'styles/base';
+@import 'styles/components';
+@import 'styles/ux-states';
+
 * {
   box-sizing: border-box;
 }
-
-html,
-body {
-  margin: 0;
-  font-family: Inter, "Segoe UI", Arial, sans-serif;
-  background: #f4f7fb;
-  color: #0f172a;
-}
-
-@import 'styles/ux-states';
