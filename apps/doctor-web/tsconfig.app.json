@@ -1,18 +1,21 @@
-/* To learn more about Typescript configuration file: https://www.typescriptlang.org/docs/handbook/tsconfig-json.html. */
-/* To learn more about Angular compiler options: https://angular.dev/reference/configs/angular-compiler-options. */
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
+    "ignoreDeprecations": "6.0",
+    "paths": {
+      "@vitalis/platform-nav": ["../../libs/platform-nav/src/index.ts"],
+      "@vitalis/platform-nav/*": ["../../libs/platform-nav/src/*"],
+      "@vitalis/platform-ui": ["../../libs/platform-ui/src/index.ts"],
+      "@vitalis/platform-ui/*": ["../../libs/platform-ui/src/*"],
+      "@vitalis/app-notifications/*": ["../../shared/app-notifications/*"],
+      "@vitalis/role-task-guides": ["../../shared/role-task-guides/index.ts"],
+      "@vitalis/role-task-guides/*": ["../../shared/role-task-guides/*"]
+    },
     "outDir": "./out-tsc/app",
     "types": []
   },
-  "include": [
-    "src/**/*.ts",
-    "../../shared/role-task-guides/**/*.ts"
-  ],
-  "exclude": [
-    "src/**/*.spec.ts"
-  ],
+  "include": ["src/**/*.ts"],
+  "exclude": ["src/**/*.spec.ts"],
   "angularCompilerOptions": {
     "extendedDiagnostics": {
       "checks": {

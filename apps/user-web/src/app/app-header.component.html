@@ -13,7 +13,7 @@
 
       @if (user) {
         <div class="user-chip">
-          <app-notification-bell-host />
+          <app-notification-bell-host [config]="bellConfig" />
           <span>{{ user.name }}</span>
           <strong>{{ user.role }}</strong>
           <button class="secondary" type="button" (click)="logout.emit()">Logout</button>

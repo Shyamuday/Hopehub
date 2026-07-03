@@ -1,4 +1,4 @@
-import { Injectable ServiceService } from '@angular/core';
+import { Service } from '@angular/core';
 import { API_PATHS } from '../constants/api-paths.constants';
 import { ClinicApiClient } from '../../clinic-api/clinic-api.client';
 

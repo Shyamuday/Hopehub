@@ -1,4 +1,4 @@
-import { Injectable ServiceService } from '@angular/core';
+import { Service } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { AdminAuth } from '../admin-auth';
@@ -12,10 +12,6 @@ import { AdminApiBase } from './admin-api-base';
 
 @Service()
 export class AdminDoctorsApi extends AdminApiBase {
-  constructor(http: HttpClient, auth: AdminAuth) {
-    super(http, auth);
-  }
-
   getDoctors() {
     return this.getDoctorsPaged({});
   }

@@ -7,9 +7,9 @@ import { APP_OVERLAY_DATA, APP_OVERLAY_REF } from '../overlay.tokens';
 import { AppOverlayRef, AppOverlayService } from '../overlay.service';
 import { AuthStatusOverlayComponent } from './auth-status-overlay.component';
 import { AuthService } from './auth.service';
-import { DevLoginPanelComponent } from '../shared/dev-login-panel/dev-login-panel';
+import { DevLoginPanelComponent } from '@vitalis/platform-ui';
 import { DEV_DEMO_ACCOUNTS } from '../core/constants/dev-demo.constants';
-import type { DevFillCredentials } from '../core/types/dev-demo.types';
+import type { DevFillCredentials } from '@vitalis/platform-ui';
 
 import { PatientSelectionCandidate } from '../models';
 

@@ -29,7 +29,7 @@
                 <button class="btn-pdf ghost" type="button" [disabled]="isBusy(prescription.id)" (click)="printPdf(prescription)">
                   Print
                 </button>
-                @if (canShare()) {
+                @if (canShareFiles()) {
                   <button class="btn-pdf share" type="button" [disabled]="isBusy(prescription.id)" (click)="sharePdf(prescription)">
                     Share
                   </button>

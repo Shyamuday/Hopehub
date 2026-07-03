@@ -1,4 +1,4 @@
-import { Injectable ServiceService } from '@angular/core';
+import { Service } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { AdminAuth } from '../admin-auth';
@@ -10,10 +10,6 @@ import { AdminApiBase } from './admin-api-base';
 
 @Service()
 export class AdminHrApi extends AdminApiBase {
-  constructor(http: HttpClient, auth: AdminAuth) {
-    super(http, auth);
-  }
-
   // HR — Doctors
   getHrDoctors() {
     return firstValueFrom(this.http.get<{ doctors: Array<any> }>(`${this.apiBase}${API_PATHS.HR.DOCTORS}`));

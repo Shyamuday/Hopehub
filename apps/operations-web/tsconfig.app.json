@@ -1,17 +1,24 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
+    "ignoreDeprecations": "6.0",
+    "paths": {
+      "@vitalis/platform-nav": ["../../libs/platform-nav/src/index.ts"],
+      "@vitalis/platform-nav/*": ["../../libs/platform-nav/src/*"],
+      "@vitalis/platform-ui": ["../../libs/platform-ui/src/index.ts"],
+      "@vitalis/platform-ui/*": ["../../libs/platform-ui/src/*"],
+      "@vitalis/app-notifications/*": ["../../shared/app-notifications/*"],
+      "@vitalis/role-task-guides": ["../../shared/role-task-guides/index.ts"],
+      "@vitalis/role-task-guides/*": ["../../shared/role-task-guides/*"]
+    },
     "outDir": "./out-tsc/app",
     "types": []
   },
   "files": ["src/main.ts"],
   "include": [
     "src/**/*.ts",
-    "../../shared/role-task-guides/**/*.ts",
-    "../../libs/platform-nav/src/**/*.ts",
     "../admin-web/src/app/features/**/*.ts",
-    "../admin-web/src/app/core/**/*.ts",
-    "../admin-web/src/app/shared/**/*.ts"
+    "../admin-web/src/app/core/**/*.ts"
   ],
   "exclude": [
     "../admin-web/src/app/app.routes.ts",

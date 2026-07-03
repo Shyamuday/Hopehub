@@ -3,9 +3,9 @@ import { Router } from '@angular/router';
 import { form, FormField, required } from '@angular/forms/signals';
 import { AdminAuth } from '../../../core/services/admin-auth';
 import { DEFAULT_AUTHED_ROUTE } from '../../../core/constants/app-routes.constants';
-import { DevLoginPanelComponent } from '../../../shared/dev-login-panel/dev-login-panel';
+import { DevLoginPanelComponent } from '@vitalis/platform-ui';
 import { DEV_DEMO_ACCOUNTS } from '../../../core/constants/dev-demo.constants';
-import type { DevFillCredentials } from '../../../core/types/dev-demo.types';
+import type { DevFillCredentials } from '@vitalis/platform-ui';
 
 @Component({
   selector: 'app-admin-login',
@@ -18,8 +18,8 @@ export class AdminLogin {
   private readonly router = inject(Router);
 
   readonly loginModel = signal({
-    email: DEV_DEMO_ACCOUNTS.admin.email,
-    password: DEV_DEMO_ACCOUNTS.password
+    email: DEV_DEMO_ACCOUNTS.admin.email as string,
+    password: DEV_DEMO_ACCOUNTS.password as string
   });
   readonly loginForm = form(this.loginModel, (schema) => {
     required(schema.email, { message: 'Email is required' });

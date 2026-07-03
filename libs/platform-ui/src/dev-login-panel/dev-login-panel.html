@@ -1,0 +1,27 @@
+@if (enabled) {
+  <aside class="dev-login-panel">
+    <p class="dev-tag">Dev only</p>
+    <h3>{{ title }}</h3>
+    <p class="dev-note">{{ note }}</p>
+    @for (persona of personas(); track persona.id) {
+      <div class="dev-row">
+        <div class="dev-row-meta">
+          <strong>{{ persona.label }}</strong>
+          <code>{{ persona.loginLabel }}</code>
+        </div>
+        <div class="dev-row-actions">
+          <button type="button" class="dev-btn ghost" [disabled]="loading()" (click)="emitFill(persona)">Fill</button>
+          <button type="button" class="dev-btn" [disabled]="loading()" (click)="quickLogin(persona.id)">Instant</button>
+        </div>
+      </div>
+    }
+    @if (password()) {
+      <p class="dev-creds">
+        Password: <strong>{{ password() }}</strong>
+        @if (showPatientCreds && otp()) { · OTP: <strong>{{ otp() }}</strong> }
+        @if (showPatientCreds && patientMobile()) { · Mobile: <strong>{{ patientMobile() }}</strong> }
+      </p>
+    }
+    @if (error()) { <p class="dev-error">{{ error() }}</p> }
+  </aside>
+}

@@ -2,6 +2,13 @@
   "name": "vitalis-clinic-platform",
   "version": "0.1.0",
   "private": true,
+  "workspaces": [
+    "apps/api",
+    "apps/user-web",
+    "apps/doctor-web",
+    "apps/admin-web",
+    "apps/operations-web"
+  ],
   "scripts": {
     "dev": "npm run dev --prefix apps/api",
     "dev:user": "npm start --prefix apps/user-web",

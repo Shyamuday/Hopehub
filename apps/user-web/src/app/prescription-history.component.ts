@@ -1,25 +1,28 @@
 import { CommonModule } from '@angular/common';
-import { Component, Input, inject, signal } from '@angular/core';
+import { Component, Input, injectAsync, onIdle, signal } from '@angular/core';
 import { Prescription } from './models';
-import { PrescriptionPdfService } from './core/services/prescription-pdf.service';
 
 @Component({
   selector: 'app-prescription-history',
   standalone: true,
   imports: [CommonModule],
   styleUrl: './prescription-history.component.scss',
-  templateUrl: './prescription-history.component.html',
+  templateUrl: './prescription-history.component.html'
 })
 export class PrescriptionHistoryComponent {
   @Input() prescriptions: Prescription[] = [];
 
-  private readonly pdf = inject(PrescriptionPdfService);
+  private readonly pdf = injectAsync(
+    () => import('./core/services/prescription-pdf.service').then((module) => module.PrescriptionPdfService),
+    { prefetch: onIdle }
+  );
 
   readonly busyId = signal('');
   readonly error = signal('');
+  readonly canShareFiles = signal(false);
 
-  canShare() {
-    return this.pdf.canNativeShareFiles();
+  constructor() {
+    void this.pdf().then((service) => this.canShareFiles.set(service.canNativeShareFiles()));
   }
 
   isBusy(id: string) {
@@ -27,28 +30,30 @@ export class PrescriptionHistoryComponent {
   }
 
   async viewPdf(prescription: Prescription) {
-    await this.run(prescription.id, () => this.pdf.viewInBrowser(prescription.id));
+    await this.run(prescription.id, async () => (await this.pdf()).viewInBrowser(prescription.id));
   }
 
   async downloadPdf(prescription: Prescription) {
-    await this.run(prescription.id, () => this.pdf.download(prescription.id));
+    await this.run(prescription.id, async () => (await this.pdf()).download(prescription.id));
   }
 
   async printPdf(prescription: Prescription) {
-    await this.run(prescription.id, () => this.pdf.print(prescription.id));
+    await this.run(prescription.id, async () => (await this.pdf()).print(prescription.id));
   }
 
   async sharePdf(prescription: Prescription) {
     await this.run(prescription.id, async () => {
-      const meta = await this.pdf.fetchShareMeta(prescription.id);
-      await this.pdf.shareNative(prescription.id, meta);
+      const service = await this.pdf();
+      const meta = await service.fetchShareMeta(prescription.id);
+      await service.shareNative(prescription.id, meta);
     });
   }
 
   async shareWhatsApp(prescription: Prescription) {
     await this.run(prescription.id, async () => {
-      const meta = await this.pdf.fetchShareMeta(prescription.id);
-      const url = this.pdf.whatsAppShareUrl(meta.shareText);
+      const service = await this.pdf();
+      const meta = await service.fetchShareMeta(prescription.id);
+      const url = service.whatsAppShareUrl(meta.shareText);
       window.open(url, '_blank', 'noopener,noreferrer');
     });
   }

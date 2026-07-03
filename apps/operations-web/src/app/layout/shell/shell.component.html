@@ -44,7 +44,7 @@
           <button class="menu-btn" (click)="sidebarOpen.set(true)">☰</button>
           <div class="topbar-title">{{ pageTitle() }}</div>
           <div class="topbar-right">
-            <app-notification-bell-host />
+            <app-notification-bell-host [config]="bellConfig()" />
             <div class="topbar-user">
               <div class="topbar-avatar">{{ userInitial() }}</div>
               <span class="topbar-name">{{ auth.currentUser()?.name }}</span>

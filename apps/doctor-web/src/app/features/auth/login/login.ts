@@ -1,37 +1,43 @@
-import { Component } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { Component, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { DEFAULT_AUTHED_ROUTE, ROUTE_PATHS } from '../../../core/constants/app-routes.constants';
+import { form, FormField, required } from '@angular/forms/signals';
+import { FormsModule } from '@angular/forms';
+import { DEFAULT_AUTHED_ROUTE } from '../../../core/constants/app-routes.constants';
 import { Auth } from '../../../core/services/auth';
-
-import { DevLoginPanelComponent } from '../../../shared/dev-login-panel/dev-login-panel';
+import { DevLoginPanelComponent } from '@vitalis/platform-ui';
 import { DEV_DEMO_ACCOUNTS } from '../../../core/constants/dev-demo.constants';
-import type { DevFillCredentials } from '../../../core/types/dev-demo.types';
+import type { DevFillCredentials } from '@vitalis/platform-ui';
 
 @Component({
   selector: 'app-login',
-  imports: [FormsModule, DevLoginPanelComponent],
+  imports: [FormField, FormsModule, DevLoginPanelComponent],
   templateUrl: './login.html',
-  styleUrl: './login.scss',
+  styleUrl: './login.scss'
 })
 export class Login {
-  mode: 'signin' | 'enroll' = 'signin';
+  private readonly auth = inject(Auth);
+  private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
 
-  email = DEV_DEMO_ACCOUNTS.doctor.email;
-  password = DEV_DEMO_ACCOUNTS.password;
-  error = '';
-  message = '';
-  submitting = false;
+  mode = signal<'signin' | 'enroll'>('signin');
+
+  readonly signInModel = signal({
+    email: DEV_DEMO_ACCOUNTS.doctor.email as string,
+    password: DEV_DEMO_ACCOUNTS.password as string
+  });
+  readonly signInForm = form(this.signInModel, (schema) => {
+    required(schema.email, { message: 'Email is required' });
+    required(schema.password, { message: 'Password is required' });
+  });
+
+  error = signal('');
+  message = signal('');
+  submitting = signal(false);
+
   name = '';
   mobile = '';
   specialty = '';
   registrationNo = '';
-
-  constructor(
-    private readonly auth: Auth,
-    private readonly router: Router,
-    private readonly route: ActivatedRoute
-  ) {}
 
   private navigateAfterLogin(): void {
     const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl');
@@ -39,18 +45,20 @@ export class Login {
   }
 
   async submit() {
-    this.error = '';
-    this.message = '';
-    this.submitting = true;
+    if (this.signInForm().invalid()) return;
+    const { email, password } = this.signInModel();
+    this.error.set('');
+    this.message.set('');
+    this.submitting.set(true);
     try {
-      const result = await this.auth.login(this.email, this.password);
+      const result = await this.auth.login(email, password);
       if (!result.ok) {
-        this.error = result.message;
+        this.error.set(result.message);
         return;
       }
       void this.navigateAfterLogin();
     } finally {
-      this.submitting = false;
+      this.submitting.set(false);
     }
   }
 
@@ -59,33 +67,37 @@ export class Login {
   }
 
   applyDevFill(credentials: DevFillCredentials) {
-    if (credentials.email) this.email = credentials.email;
-    if (credentials.password) this.password = credentials.password;
+    this.signInModel.update((model) => ({
+      ...model,
+      ...(credentials.email ? { email: credentials.email } : {}),
+      ...(credentials.password ? { password: credentials.password } : {})
+    }));
   }
 
   async enroll() {
-    this.error = '';
-    this.message = '';
-    this.submitting = true;
+    const { email, password } = this.signInModel();
+    this.error.set('');
+    this.message.set('');
+    this.submitting.set(true);
     try {
       const result = await this.auth.enrollDoctor({
         name: this.name,
-        email: this.email,
+        email,
         mobile: this.mobile || undefined,
-        password: this.password,
+        password,
         specialty: this.specialty,
         registrationNo: this.registrationNo || undefined
       });
 
       if (!result.ok) {
-        this.error = result.message;
+        this.error.set(result.message);
         return;
       }
 
-      this.mode = 'signin';
-      this.message = result.message;
+      this.mode.set('signin');
+      this.message.set(result.message);
     } finally {
-      this.submitting = false;
+      this.submitting.set(false);
     }
   }
 }

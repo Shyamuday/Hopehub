@@ -1,14 +1,15 @@
 import { CommonModule, DOCUMENT } from '@angular/common';
 import { Component, effect, EventEmitter, HostListener, inject, Input, OnDestroy, Output, signal } from '@angular/core';
+import { NotificationBellHostComponent } from '@vitalis/platform-ui';
+import { environment } from '../environments/environment';
+import { AUTH_TOKEN_KEY } from './core/constants/auth.constants';
 import { AuthFormOverlayComponent } from './auth/auth-form-overlay.component';
 import { User } from './models';
 import { AppOverlayService } from './overlay.service';
-import { NotificationBellHost } from './shared/notification-bell-host/notification-bell-host';
 
 @Component({
   selector: 'app-header',
-  imports: [CommonModule, NotificationBellHost]
-,
+  imports: [CommonModule, NotificationBellHostComponent],
   templateUrl: './app-header.component.html',
 })
 export class AppHeaderComponent implements OnDestroy {
@@ -18,6 +19,11 @@ export class AppHeaderComponent implements OnDestroy {
   @Output() logout = new EventEmitter<void>();
 
   readonly menuOpen = signal(false);
+  readonly bellConfig = {
+    apiBase: environment.apiUrl,
+    tokenKey: AUTH_TOKEN_KEY,
+    apiPath: '/notifications'
+  };
 
   private readonly document = inject(DOCUMENT);
 

@@ -1,4 +1,4 @@
-import { Injectable ServiceService } from '@angular/core';
+import { inject, Service } from '@angular/core';
 import { AdminReportsApi } from './admin/admin-reports.api';
 import { AdminDoctorsApi } from './admin/admin-doctors.api';
 import { AdminCatalogApi } from './admin/admin-catalog.api';
@@ -8,14 +8,12 @@ import { AdminOpsApi } from './admin/admin-ops.api';
 
 @Service()
 export class AdminApi {
-  constructor(
-    private readonly reports: AdminReportsApi,
-    private readonly doctors: AdminDoctorsApi,
-    private readonly catalog: AdminCatalogApi,
-    private readonly hr: AdminHrApi,
-    private readonly finance: AdminFinanceApi,
-    private readonly ops: AdminOpsApi
-  ) {}
+  private readonly reports = inject(AdminReportsApi);
+  private readonly doctors = inject(AdminDoctorsApi);
+  private readonly catalog = inject(AdminCatalogApi);
+  private readonly hr = inject(AdminHrApi);
+  private readonly finance = inject(AdminFinanceApi);
+  private readonly ops = inject(AdminOpsApi);
 
   getReports(...args: Parameters<AdminReportsApi['getReports']>) {
     return this.reports.getReports(...(args as Parameters<AdminReportsApi['getReports']>));

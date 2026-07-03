@@ -1,7 +1,8 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
-import { RoleTaskGuideComponent } from '../../shared/role-task-guide/role-task-guide.component';
-import { NotificationBellHost } from '../../shared/notification-bell-host/notification-bell-host';
+import { RoleTaskGuideComponent, NotificationBellHostComponent } from '@vitalis/platform-ui';
+import { environment } from '../../../environments/environment';
+import { AUTH_TOKEN_KEY } from '../../core/constants/auth.constants';
 import { Auth } from '../../core/services/auth';
 import { DoctorSessionService } from '../../core/services/doctor-session';
 
@@ -25,7 +26,7 @@ const NAV_ICONS: Record<string, { icon: string; shortLabel: string }> = {
 
 @Component({
   selector: 'app-doctor-shell',
-  imports: [RouterLink, RouterLinkActive, RouterOutlet, RoleTaskGuideComponent, NotificationBellHost],
+  imports: [RouterLink, RouterLinkActive, RouterOutlet, RoleTaskGuideComponent, NotificationBellHostComponent],
   templateUrl: './doctor-shell.html',
   styleUrl: './doctor-shell.scss',
 })
@@ -37,6 +38,12 @@ export class DoctorShell implements OnInit {
   doctorTypeKey: string | null = null;
   loadingSession = true;
   menuOpen = signal(false);
+
+  readonly bellConfig = {
+    apiBase: environment.apiUrl,
+    tokenKey: AUTH_TOKEN_KEY,
+    apiPath: '/notifications'
+  };
 
   constructor(
     private readonly auth: Auth,

@@ -1,8 +1,8 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { httpResource } from '@angular/common/http';
-import { environment } from '../../environments/environment';
-import { API_PATHS } from '../core/constants/api-paths.constants';
+import { environment } from '../../../environments/environment';
+import { API_PATHS } from '../../core/constants/api-paths.constants';
 import { DashboardData } from '../../models';
 
 @Component({

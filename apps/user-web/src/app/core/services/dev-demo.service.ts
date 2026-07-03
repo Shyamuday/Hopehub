@@ -4,12 +4,12 @@ import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { AuthService } from '../../auth/auth.service';
 import type { User } from '../../models';
-import type { DevAppGuide } from '../types/dev-demo.types';
+import type { DevAppGuide, DevDemoPort, DevFillCredentials, DevPersona } from '@vitalis/platform-ui';
 
-export type { DevFillCredentials, DevPersona, DevAppGuide } from '../types/dev-demo.types';
+export type { DevFillCredentials, DevPersona, DevAppGuide };
 
 @Service()
-export class DevDemoService {
+export class DevDemoService implements DevDemoPort {
   private readonly http = inject(HttpClient);
   private readonly auth = inject(AuthService);
   readonly enabled = !environment.production;

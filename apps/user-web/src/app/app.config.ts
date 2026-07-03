@@ -5,9 +5,11 @@ import {
   withExperimentalAutoCleanupInjectors,
   withExperimentalPlatformNavigation
 } from '@angular/router';
+import { DEV_DEMO_PORT } from '@vitalis/platform-ui';
 
 import { routes } from './app.routes';
 import { authInterceptor } from './auth/auth.interceptor';
+import { DevDemoService } from './core/services/dev-demo.service';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -18,6 +20,7 @@ export const appConfig: ApplicationConfig = {
       withExperimentalPlatformNavigation(),
       withExperimentalAutoCleanupInjectors()
     ),
-    provideHttpClient(withXhr(), withInterceptors([authInterceptor]))
+    provideHttpClient(withXhr(), withInterceptors([authInterceptor])),
+    { provide: DEV_DEMO_PORT, useExisting: DevDemoService }
   ]
 };

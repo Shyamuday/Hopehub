@@ -1,21 +1,28 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, computed, inject, OnInit } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { RoleTaskGuideComponent, NotificationBellHostComponent } from '@vitalis/platform-ui';
+import { environment } from '../../environments/environment';
+import { AUTH_TOKEN_KEY } from '../core/constants/auth.constants';
 import { NAV_ITEMS } from '../../../../admin-web/src/app/core/constants/app-routes.constants';
-import { RoleTaskGuideComponent } from '../shared/role-task-guide/role-task-guide.component';
-import { NotificationBellHost } from '../shared/notification-bell-host/notification-bell-host';
 import { PlatformAuthService } from '../services/platform-auth.service';
 import { ADMIN_ROUTE_CAPABILITIES } from './admin.guards';
 
 @Component({
   selector: 'app-admin-embed-shell',
   standalone: true,
-  imports: [RouterLink, RouterLinkActive, RouterOutlet, RoleTaskGuideComponent, NotificationBellHost],
+  imports: [RouterLink, RouterLinkActive, RouterOutlet, RoleTaskGuideComponent, NotificationBellHostComponent],
   templateUrl: './admin-embed-shell.component.html',
   styleUrl: './admin-embed-shell.component.scss'
 })
 export class AdminEmbedShellComponent implements OnInit {
   private auth = inject(PlatformAuthService);
   private router = inject(Router);
+
+  readonly bellConfig = computed(() => ({
+    apiBase: environment.apiUrl,
+    tokenKey: AUTH_TOKEN_KEY,
+    apiPath: '/notifications'
+  }));
 
   ngOnInit(): void {
     (globalThis as { __ADMIN_ROUTE_BASE__?: string }).__ADMIN_ROUTE_BASE__ = 'admin';

@@ -2,9 +2,9 @@ import { Component, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { form, FormField, required } from '@angular/forms/signals';
 import { PlatformAuthService } from '../../services/platform-auth.service';
-import { DevLoginPanelComponent } from '../../shared/dev-login-panel/dev-login-panel';
+import { DevLoginPanelComponent } from '@vitalis/platform-ui';
 import { DEV_DEMO_ACCOUNTS } from '../../core/constants/dev-demo.constants';
-import type { DevFillCredentials } from '../../core/types/dev-demo.types';
+import type { DevFillCredentials } from '@vitalis/platform-ui';
 
 @Component({
   selector: 'app-login',

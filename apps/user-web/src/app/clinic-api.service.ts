@@ -1,4 +1,4 @@
-import { Injectable ServiceService } from '@angular/core';
+import { Service } from '@angular/core';
 import { from } from 'rxjs';
 import { io, Socket } from 'socket.io-client';
 import { API_PATHS } from './core/constants/api-paths.constants';

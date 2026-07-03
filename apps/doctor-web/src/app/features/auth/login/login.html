@@ -1,29 +1,43 @@
 <section class="login-card">
   <div class="switcher">
-    <button type="button" [class.active]="mode === 'signin'" (click)="mode = 'signin'">Sign in</button>
-    <button type="button" [class.active]="mode === 'enroll'" (click)="mode = 'enroll'">Enroll</button>
+    <button type="button" [class.active]="mode() === 'signin'" (click)="mode.set('signin')">Sign in</button>
+    <button type="button" [class.active]="mode() === 'enroll'" (click)="mode.set('enroll')">Enroll</button>
   </div>
 
-  @if (mode === 'signin') {
+  @if (mode() === 'signin') {
     <h2>Doctor Login</h2>
     <p>Use your doctor account to access dashboard and patient workflows.</p>
 
     <form (ngSubmit)="submit()">
       <label for="email">Email</label>
-      <input id="email" name="email" [(ngModel)]="email" type="email" />
+      <input id="email" [formField]="signInForm.email" type="email" />
+      @if (signInForm.email().invalid() && signInForm.email().touched()) {
+        <p class="error">
+          @for (fieldError of signInForm.email().errors(); track fieldError.kind) {
+            <span>{{ fieldError.message }}</span>
+          }
+        </p>
+      }
 
       <label for="password">Password</label>
-      <input id="password" name="password" [(ngModel)]="password" type="password" />
-
-      @if (error) {
-        <p class="error">{{ error }}</p>
+      <input id="password" [formField]="signInForm.password" type="password" />
+      @if (signInForm.password().invalid() && signInForm.password().touched()) {
+        <p class="error">
+          @for (fieldError of signInForm.password().errors(); track fieldError.kind) {
+            <span>{{ fieldError.message }}</span>
+          }
+        </p>
       }
-      @if (message) {
-        <p class="success">{{ message }}</p>
+
+      @if (error()) {
+        <p class="error">{{ error() }}</p>
+      }
+      @if (message()) {
+        <p class="success">{{ message() }}</p>
       }
 
-      <button type="submit" [disabled]="submitting">
-        {{ submitting ? 'Signing in...' : 'Sign in' }}
+      <button type="submit" [disabled]="submitting() || signInForm().invalid()">
+        {{ submitting() ? 'Signing in...' : 'Sign in' }}
       </button>
     </form>
 
@@ -37,7 +51,7 @@
       <input id="name" name="name" [(ngModel)]="name" />
 
       <label for="enrollEmail">Email</label>
-      <input id="enrollEmail" name="enrollEmail" [(ngModel)]="email" type="email" />
+      <input id="enrollEmail" [formField]="signInForm.email" type="email" />
 
       <label for="mobile">Mobile</label>
       <input id="mobile" name="mobile" [(ngModel)]="mobile" />
@@ -49,17 +63,17 @@
       <input id="registrationNo" name="registrationNo" [(ngModel)]="registrationNo" />
 
       <label for="enrollPassword">Password</label>
-      <input id="enrollPassword" name="enrollPassword" [(ngModel)]="password" type="password" />
+      <input id="enrollPassword" [formField]="signInForm.password" type="password" />
 
-      @if (error) {
-        <p class="error">{{ error }}</p>
+      @if (error()) {
+        <p class="error">{{ error() }}</p>
       }
-      @if (message) {
-        <p class="success">{{ message }}</p>
+      @if (message()) {
+        <p class="success">{{ message() }}</p>
       }
 
-      <button type="submit" [disabled]="submitting">
-        {{ submitting ? 'Creating account...' : 'Create account' }}
+      <button type="submit" [disabled]="submitting() || signInForm().invalid()">
+        {{ submitting() ? 'Creating account...' : 'Create account' }}
       </button>
     </form>
   }

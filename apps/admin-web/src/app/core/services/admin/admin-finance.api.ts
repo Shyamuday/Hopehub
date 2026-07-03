@@ -1,4 +1,4 @@
-import { Injectable ServiceService } from '@angular/core';
+import { Service } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { AdminAuth } from '../admin-auth';
@@ -8,10 +8,6 @@ import { AdminApiBase } from './admin-api-base';
 
 @Service()
 export class AdminFinanceApi extends AdminApiBase {
-  constructor(http: HttpClient, auth: AdminAuth) {
-    super(http, auth);
-  }
-
   getFinanceSummary(month?: string) {
     return firstValueFrom(
       this.http.get<any>(`${this.apiBase}${API_PATHS.ADMIN.FINANCE.SUMMARY}`, {

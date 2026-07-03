@@ -1,0 +1,17 @@
+---
+description: Angular v22 patterns for Vitalis clinic platform apps
+globs: apps/**/*.{ts,html,scss}
+alwaysApply: false
+---
+
+# Angular v22 conventions
+
+- Use `@Service()` instead of `@Injectable({ providedIn: 'root' })` for root singletons.
+- Prefer `provideZonelessChangeDetection()`; do not add `zone.js` polyfills.
+- Configure routers with `withExperimentalPlatformNavigation()` and `withExperimentalAutoCleanupInjectors()`.
+- Use Signal Forms (`form`, `FormField`, `required` from `@angular/forms/signals`) for new forms.
+- Fetch list/dashboard data with `httpResource` from `@angular/common/http` when params are signal-driven.
+- Lazy-load heavy services with `injectAsync(() => import('...').then(m => m.ServiceClass), { prefetch: onIdle })`.
+- Rely on default OnPush change detection; avoid `ChangeDetectionStrategy.Eager` unless truly needed.
+- Use Angular Aria primitives (`@angular/aria/*`) for menus, dialogs, and other interactive shell widgets.
+- Prefer template spread, multi-case `@switch`, and short arrow functions in templates where they reduce boilerplate.

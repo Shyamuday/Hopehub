@@ -1,19 +1,26 @@
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { Component, computed, inject, signal, OnInit } from '@angular/core';
 import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
-import { RoleTaskGuideComponent } from '../../shared/role-task-guide/role-task-guide.component';
-import { NotificationBellHost } from '../../shared/notification-bell-host/notification-bell-host';
+import { RoleTaskGuideComponent, NotificationBellHostComponent } from '@vitalis/platform-ui';
+import { environment } from '../../../environments/environment';
+import { AUTH_TOKEN_KEY } from '../../core/constants/auth.constants';
 import { PlatformAuthService } from '../../services/platform-auth.service';
 
 @Component({
   selector: 'app-shell',
   standalone: true,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, RoleTaskGuideComponent, NotificationBellHost],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, RoleTaskGuideComponent, NotificationBellHostComponent],
   templateUrl: './shell.component.html',
   styleUrl: './shell.component.scss'
 })
 export class ShellComponent implements OnInit {
   auth = inject(PlatformAuthService);
   sidebarOpen = signal(false);
+
+  readonly bellConfig = computed(() => ({
+    apiBase: environment.apiUrl,
+    tokenKey: AUTH_TOKEN_KEY,
+    apiPath: this.auth.isStoreSession() ? '/store/notifications' : '/notifications'
+  }));
 
   ngOnInit(): void {
     if (this.auth.isLoggedIn() && !this.auth.capabilities().length) {

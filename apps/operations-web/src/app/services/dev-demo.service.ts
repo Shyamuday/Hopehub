@@ -1,16 +1,16 @@
-import { inject, Service } from '@angular/core';
+import { Service, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { PlatformAuthService } from './platform-auth.service';
 import type { AuthResponse } from '../models';
+import type { DevAppGuide, DevDemoPort, DevFillCredentials, DevPersona } from '@vitalis/platform-ui';
 import type { StaffLoginResponse } from './platform-auth.service';
-import type { DevAppGuide } from '../core/types/dev-demo.types';
 
-export type { DevFillCredentials, DevPersona, DevAppGuide } from '../core/types/dev-demo.types';
+export type { DevFillCredentials, DevPersona, DevAppGuide };
 
 @Service()
-export class DevDemoService {
+export class DevDemoService implements DevDemoPort {
   private readonly http = inject(HttpClient);
   private readonly auth = inject(PlatformAuthService);
   readonly enabled = !environment.production;

@@ -5,7 +5,7 @@
       <h1>Admin Console</h1>
     </div>
     <div class="topbar-actions">
-      <app-notification-bell-host />
+      <app-notification-bell-host [config]="bellConfig()" />
       <button type="button" (click)="logout()">Logout</button>
     </div>
   </header>

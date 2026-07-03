@@ -1,4 +1,4 @@
-import { Injectable ServiceService } from '@angular/core';
+import { inject, Service } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../environments/environment';
@@ -7,10 +7,9 @@ import { API_PATHS } from '../constants/api-paths.constants';
 
 @Service()
 export class AdminAuth {
+  private readonly http = inject(HttpClient);
   private readonly tokenKey = AUTH_TOKEN_KEY;
   private readonly apiBase = environment.apiUrl;
-
-  constructor(private readonly http: HttpClient) {}
 
   isLoggedIn() {
     return Boolean(localStorage.getItem(this.tokenKey));

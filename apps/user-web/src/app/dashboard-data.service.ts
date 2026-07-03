@@ -1,4 +1,4 @@
-import { signal, Service } from '@angular/core';
+import { inject, signal, Service } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ClinicApiService } from './clinic-api.service';
 import { ProductAnalyticsService } from './core/services/product-analytics.service';
@@ -9,10 +9,8 @@ import { ReminderPrefs } from './reminder-preferences.component';
 
 @Service()
 export class DashboardDataService {
-  constructor(
-    private readonly api: ClinicApiService,
-    private readonly auth: AuthService
-  ) {}
+  private readonly api = inject(ClinicApiService);
+  private readonly auth = inject(AuthService);
 
   loadDiseases(): Observable<{ diseases: Disease[] }> {
     return this.api.diseases();
@@ -75,10 +73,8 @@ export class DashboardPaymentService {
   readonly paymentFlowConsultation = signal<Consultation | null>(null);
   readonly paymentFlowError = signal('');
 
-  constructor(
-    private readonly api: ClinicApiService,
-    private readonly analytics: ProductAnalyticsService
-  ) {}
+  private readonly api = inject(ClinicApiService);
+  private readonly analytics = inject(ProductAnalyticsService);
 
   pay(
     consultation: Consultation,

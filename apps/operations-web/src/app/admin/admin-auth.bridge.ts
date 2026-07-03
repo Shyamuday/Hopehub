@@ -1,5 +1,4 @@
 import { inject, Service } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { PlatformAuthService } from '../services/platform-auth.service';
 import { AdminAuth } from '../../../../admin-web/src/app/core/services/admin-auth';
@@ -8,10 +7,6 @@ import { AdminAuth } from '../../../../admin-web/src/app/core/services/admin-aut
 @Service()
 export class AdminAuthBridge extends AdminAuth {
   private readonly platform = inject(PlatformAuthService);
-
-  constructor() {
-    super(inject(HttpClient));
-  }
 
   override isLoggedIn() {
     return this.platform.isLoggedIn();
