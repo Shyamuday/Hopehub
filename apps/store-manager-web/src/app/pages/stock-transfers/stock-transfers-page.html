@@ -1,0 +1,48 @@
+<div class="page">
+  <div class="hdr">
+    <div>
+      <h2>Incoming stock transfers</h2>
+      <p>Receive in-transit transfers from the central warehouse</p>
+    </div>
+    <button type="button" class="btn" (click)="load()" [disabled]="loading()">Refresh</button>
+  </div>
+
+  @if (loading()) {
+    <p class="muted">Loading…</p>
+  } @else if (error()) {
+    <div class="error-row">
+      <p class="error">{{ error() }}</p>
+      <button type="button" class="btn" (click)="load()">Retry</button>
+    </div>
+  } @else if (!transfers().length) {
+    <p class="muted">No in-transit transfers awaiting receipt.</p>
+  } @else {
+    @for (transfer of transfers(); track transfer.id) {
+      <div class="card">
+        <div class="card-top">
+          <div>
+            <strong>{{ transfer.transferNumber }}</strong>
+            <div class="muted">{{ transfer.fromStore?.name }} · {{ transfer.dispatchedAt | date:'mediumDate' }}</div>
+          </div>
+          <span class="pill">{{ transfer.status }}</span>
+        </div>
+        @for (line of transfer.lines; track line.id) {
+          <div class="line">
+            {{ line.medicine.name }} {{ line.medicine.potency }} — {{ line.qtyDispatched }} units
+            @if (line.batchNumber) { · batch {{ line.batchNumber }} }
+          </div>
+        }
+        <button
+          type="button"
+          class="btn primary"
+          (click)="submitReceive(transfer.id)"
+          [disabled]="receivingId() === transfer.id"
+        >
+          {{ receivingId() === transfer.id ? 'Receiving…' : 'Receive transfer' }}
+        </button>
+      </div>
+    }
+  }
+
+  @if (toast()) { <div class="toast">{{ toast() }}</div> }
+</div>

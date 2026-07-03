@@ -42,6 +42,12 @@ export const DEV_DEMO_ACCOUNTS = {
     code: 'VPS',
     employeeId: 'SUP-001'
   },
+  warehouse: {
+    email: 'warehouse@vitalisclinic.local',
+    name: 'Central Warehouse Manager',
+    code: 'WH',
+    employeeId: 'WH-001'
+  },
   patientRahul: {
     email: 'patient1@vitalisclinic.local',
     name: 'Rahul Verma',
@@ -56,6 +62,11 @@ export const DEV_DEMO_ACCOUNTS = {
     code: 'RNC',
     name: 'Vitalis Care — Ranchi',
     address: 'Ranchi, Jharkhand'
+  },
+  warehouseStore: {
+    code: 'WH',
+    name: 'Vitalis Central Warehouse — Kolkata',
+    address: 'Kolkata, West Bengal'
   },
   storeManager: {
     email: 'manager@ranchi.vitalis.local',
@@ -85,6 +96,7 @@ export const DEV_DEMO_APPS = [
   { id: 'clinic-manager-web', label: 'Clinic manager', port: 4600, url: SERVER_CONFIG.ORIGINS.CLINIC_MANAGER },
   { id: 'accountant-web', label: 'Accountant', port: 4700, url: SERVER_CONFIG.ORIGINS.ACCOUNTANT },
   { id: 'supplier-web', label: 'Supplier portal', port: 4800, url: SERVER_CONFIG.ORIGINS.SUPPLIER },
+  { id: 'warehouse-web', label: 'Warehouse hub', port: 4900, url: SERVER_CONFIG.ORIGINS.WAREHOUSE },
   { id: 'api', label: 'API + demo guide', port: 4000, url: SERVER_CONFIG.API_PUBLIC_URL }
 ] as const;
 
@@ -171,6 +183,14 @@ export const DEV_DEMO_PERSONAS: DevDemoPersona[] = [
     authKind: 'platform',
     description: 'View purchase orders and confirm dispatch to clinic stores.',
     testHints: ['Open sent PO', 'Confirm delivery date', 'Store manager posts GRN']
+  },
+  {
+    id: 'warehouse',
+    label: 'Central Warehouse (Kolkata)',
+    app: 'warehouse-web',
+    authKind: 'platform',
+    description: 'Central stock hub — create transfers and dispatch to branch stores.',
+    testHints: ['Dashboard stock', 'Create transfer to Ranchi', 'Dispatch with batch', 'Branch receives transfer']
   },
   {
     id: 'store-staff',
@@ -270,6 +290,12 @@ export const DEV_DEMO_ALL_ACCOUNTS = [
     password: DEV_DEMO_PASSWORD
   },
   {
+    role: 'Warehouse manager',
+    app: 'warehouse-web',
+    login: DEV_DEMO_ACCOUNTS.warehouse.email,
+    password: DEV_DEMO_PASSWORD
+  },
+  {
     role: 'Patient — Rahul',
     app: 'user-web',
     login: DEV_DEMO_ACCOUNTS.patientRahul.email,
@@ -309,7 +335,8 @@ const PERSONA_EMAIL: Record<string, string> = {
   receptionist: DEV_DEMO_ACCOUNTS.receptionist.email,
   'clinic-manager': DEV_DEMO_ACCOUNTS.clinicManager.email,
   accountant: DEV_DEMO_ACCOUNTS.accountant.email,
-  supplier: DEV_DEMO_ACCOUNTS.supplier.email
+  supplier: DEV_DEMO_ACCOUNTS.supplier.email,
+  warehouse: DEV_DEMO_ACCOUNTS.warehouse.email
 };
 
 export function getPersonaCredentials(personaId: string): DevDemoPersonaCredentials {
@@ -349,6 +376,8 @@ export function getPersonaCredentials(personaId: string): DevDemoPersonaCredenti
       return { email: DEV_DEMO_ACCOUNTS.accountant.email, password };
     case 'supplier':
       return { email: DEV_DEMO_ACCOUNTS.supplier.email, password };
+    case 'warehouse':
+      return { email: DEV_DEMO_ACCOUNTS.warehouse.email, password };
     case 'store-staff':
       return { staffCode: DEV_DEMO_ACCOUNTS.storeStaff.staffCode, pin: password, password };
     case 'store-manager':

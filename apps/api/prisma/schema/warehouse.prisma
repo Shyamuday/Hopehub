@@ -1,0 +1,37 @@
+model StockTransfer {
+  id             String              @id @default(cuid())
+  transferNumber String              @unique
+  fromStoreId    String
+  toStoreId      String
+  status         StockTransferStatus @default(PENDING_DISPATCH)
+  notes          String?
+  createdById    String?
+  dispatchedAt   DateTime?
+  receivedAt     DateTime?
+  fromStore      Store               @relation("TransferFrom", fields: [fromStoreId], references: [id])
+  toStore        Store               @relation("TransferTo", fields: [toStoreId], references: [id])
+  lines          StockTransferLine[]
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+
+  @@index([fromStoreId, status])
+  @@index([toStoreId, status])
+}
+
+model StockTransferLine {
+  id                    String        @id @default(cuid())
+  transferId            String
+  medicineId            String
+  qtyRequested          Int
+  qtyDispatched         Int           @default(0)
+  qtyReceived           Int           @default(0)
+  sourceBatchId         String?
+  batchNumber           String?
+  expiryDate            DateTime?
+  purchasePricePerUnit  Int?
+  sellingPricePerUnit   Int?
+  transfer              StockTransfer @relation(fields: [transferId], references: [id], onDelete: Cascade)
+  medicine              StoreMedicine @relation(fields: [medicineId], references: [id])
+
+  @@index([transferId])
+}

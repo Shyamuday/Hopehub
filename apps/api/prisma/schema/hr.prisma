@@ -134,6 +134,20 @@ model AccountantProfile {
   updatedAt   DateTime @updatedAt
 }
 
+model WarehouseManagerProfile {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  warehouseId String
+  employeeId  String?  @unique
+  designation String   @default("Warehouse Manager")
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  warehouse   Store    @relation(fields: [warehouseId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([warehouseId])
+}
+
 model LeaveRequest {
   id           String       @id @default(cuid())
   employeeType EmployeeType

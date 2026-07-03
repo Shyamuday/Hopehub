@@ -60,3 +60,33 @@ export type ConsultationSummary = {
   patient?: { id: string; name: string; patientCode?: string | null };
   disease?: { id: string; name: string };
 };
+
+export type MateriaMedicaSection = {
+  id: string;
+  depth: number;
+  heading?: string | null;
+  content: string;
+  sortOrder: number;
+};
+
+export type MateriaMedicaKeyRubric = {
+  rubricId: string;
+  weight: number | null;
+  grade: number;
+  rubric: {
+    id: string;
+    chapter: string;
+    subchapter?: string | null;
+    text: string;
+    parentPath?: string | null;
+    source?: { id: string; name: string };
+  };
+};
+
+export type MateriaMedicaResponse = {
+  remedy: RepertoryRemedyRef;
+  source: { id: string; code: string; name: string; author?: string | null; year?: number | null } | null;
+  sections: MateriaMedicaSection[];
+  caseRubrics?: MateriaMedicaKeyRubric[];
+  keyRubrics: MateriaMedicaKeyRubric[];
+};

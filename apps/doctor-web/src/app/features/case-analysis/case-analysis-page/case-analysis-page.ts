@@ -4,7 +4,16 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ROUTE_PATHS } from '../../../core/constants/app-routes.constants';
 import { CaseAnalysisApiService } from '../case-analysis-api.service';
-import type { CaseAnalysis, ConsultationSummary, RepertorySource, RubricSearchResult, SelectedRubric } from '../case-analysis-page.types';
+import type {
+  CaseAnalysis,
+  ConsultationSummary,
+  MateriaMedicaResponse,
+  RepertoryRemedyRef,
+  RepertorySource,
+  RubricSearchResult,
+  SelectedRubric
+} from '../case-analysis-page.types';
+import { formatRubricPath, rubricPathSegments } from '../rubric-path.util';
 
 @Component({
   selector: 'app-case-analysis-page',
@@ -35,8 +44,15 @@ export class CaseAnalysisPage {
   saving = false;
   repertorizing = false;
   selectingRemedyId = '';
+  focusedRemedy: RepertoryRemedyRef | null = null;
+  materiaMedica: MateriaMedicaResponse | null = null;
+  loadingMateriaMedica = false;
+  materiaMedicaError = '';
   error = '';
   message = '';
+
+  readonly formatRubricPath = formatRubricPath;
+  readonly rubricPathSegments = rubricPathSegments;
 
   constructor(
     private readonly api: CaseAnalysisApiService,
@@ -91,6 +107,37 @@ export class CaseAnalysisPage {
       rubric: item.rubric || undefined
     }));
     this.maxResultScore = analysis.results[0]?.totalScore || 0;
+    if (analysis.selectedRemedy && this.focusedRemedy?.id !== analysis.selectedRemedy.id) {
+      void this.focusRemedy(analysis.selectedRemedy);
+    }
+  }
+
+  async focusRemedy(remedy: RepertoryRemedyRef) {
+    this.focusedRemedy = remedy;
+    this.materiaMedica = null;
+    this.materiaMedicaError = '';
+    this.loadingMateriaMedica = true;
+
+    try {
+      this.materiaMedica = await this.api.loadMateriaMedica(remedy.id, {
+        analysisId: this.analysis?.id,
+        repertorySourceId: this.analysis?.source?.id
+      });
+    } catch {
+      this.materiaMedicaError = 'Could not load materia medica for this remedy.';
+    } finally {
+      this.loadingMateriaMedica = false;
+    }
+  }
+
+  clearFocusedRemedy() {
+    this.focusedRemedy = null;
+    this.materiaMedica = null;
+    this.materiaMedicaError = '';
+  }
+
+  isFocusedRemedy(remedyId: string) {
+    return this.focusedRemedy?.id === remedyId;
   }
 
   scorePercent(score: number) {
@@ -204,6 +251,7 @@ export class CaseAnalysisPage {
     this.message = '';
     try {
       this.analysis = await this.api.selectRemedy(this.analysis.id, remedy.id);
+      await this.focusRemedy(remedy);
       this.message = `${remedy.name} selected as the case remedy.`;
     } catch {
       this.error = 'Could not select remedy.';

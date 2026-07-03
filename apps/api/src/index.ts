@@ -39,11 +39,13 @@ import { createReceptionRouter } from './routes/reception/router.js';
 import { createClinicManagerRouter } from './routes/clinic-manager/router.js';
 import { createAccountantRouter } from './routes/accountant/router.js';
 import { createSupplierRouter } from './routes/supplier/router.js';
+import { createWarehouseRouter } from './routes/warehouse/router.js';
 import { devRouter } from './routes/dev.js';
 import { createRepertoryRouter } from './routes/repertory/index.js';
 import { ReceptionScopeError } from './routes/reception/shared.js';
 import { ClinicManagerScopeError } from './services/clinic-manager-hub.js';
 import { PurchaseOrderError } from './services/purchase-orders.js';
+import { StockTransferError } from './services/stock-transfers.js';
 
 // ── Schedulers ─────────────────────────────────────────────────────────────────
 import {
@@ -72,7 +74,8 @@ const {
   RECEPTIONIST: receptionistOrigin,
   CLINIC_MANAGER: clinicManagerOrigin,
   ACCOUNTANT: accountantOrigin,
-  SUPPLIER: supplierOrigin
+  SUPPLIER: supplierOrigin,
+  WAREHOUSE: warehouseOrigin
 } = SERVER_CONFIG.ORIGINS;
 
 // ── Socket.IO ──────────────────────────────────────────────────────────────────
@@ -110,7 +113,7 @@ io.on('connection', (socket) => {
 // ── Middleware ─────────────────────────────────────────────────────────────────
 
 app.use(cors({
-  origin: [webOrigin, adminOrigin, doctorOrigin, storeOrigin, storeManagerOrigin, hrOrigin, receptionistOrigin, clinicManagerOrigin, accountantOrigin, supplierOrigin],
+  origin: [webOrigin, adminOrigin, doctorOrigin, storeOrigin, storeManagerOrigin, hrOrigin, receptionistOrigin, clinicManagerOrigin, accountantOrigin, supplierOrigin, warehouseOrigin],
   credentials: true
 }));
 app.use('/payments/razorpay-webhook', express.raw({ type: 'application/json' }));
@@ -170,6 +173,7 @@ app.use(createReceptionRouter(io));
 app.use(createClinicManagerRouter(io));
 app.use(createAccountantRouter());
 app.use(createSupplierRouter());
+app.use(createWarehouseRouter());
 
 // ── Global error handler ───────────────────────────────────────────────────────
 
@@ -181,6 +185,9 @@ app.use((error: unknown, _req: express.Request, res: express.Response, _next: ex
     return res.status(400).json({ message: error.message });
   }
   if (error instanceof PurchaseOrderError) {
+    return res.status(400).json({ message: error.message });
+  }
+  if (error instanceof StockTransferError) {
     return res.status(400).json({ message: error.message });
   }
   if (error instanceof z.ZodError) {

@@ -237,4 +237,13 @@ export class StoreApiService {
   ) {
     return this.http.post<any>(`${this.base}${STORE_API_PATHS.PURCHASE_ORDER_GRN(orderId)}`, payload);
   }
+
+  getStockTransfers(status?: string) {
+    const params = status ? new HttpParams().set('status', status) : undefined;
+    return this.http.get<{ transfers: any[] }>(`${this.base}${STORE_API_PATHS.STOCK_TRANSFERS}`, { params });
+  }
+
+  postStockTransferReceive(transferId: string) {
+    return this.http.post<any>(`${this.base}${STORE_API_PATHS.STOCK_TRANSFER_RECEIVE(transferId)}`, {});
+  }
 }

@@ -1,0 +1,217 @@
+
+    <div class="page">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">🏪 Store Management</h1>
+          <p class="page-sub">Create stores, assign managers and staff</p>
+        </div>
+        <button class="btn-primary" (click)="openCreateStore()">+ New Store</button>
+      </div>
+
+      @if (loading()) {
+        <div class="loading"><div class="spinner"></div></div>
+      } @else {
+        <div class="store-grid">
+          @for (store of stores(); track store.id) {
+            <div class="store-card">
+              <div class="store-header">
+                <div class="store-icon">🏪</div>
+                <div class="store-info">
+                  <div class="store-name">{{ store.name }}</div>
+                  <div class="store-code">{{ store.code }}</div>
+                </div>
+                <div class="store-status" [class.inactive]="!store.isActive">
+                  {{ store.isActive ? 'Active' : 'Inactive' }}
+                </div>
+              </div>
+
+              @if (store.address) {
+                <div class="store-addr">📍 {{ store.address }}</div>
+              }
+              @if (store.phone) {
+                <div class="store-addr">📞 {{ store.phone }}</div>
+              }
+
+              <div class="store-stats">
+                <div class="stat">
+                  <span class="stat-n">{{ store._count?.staff ?? 0 }}</span>
+                  <span class="stat-l">Staff</span>
+                </div>
+                <div class="stat">
+                  <span class="stat-n">{{ managerCount(store) }}</span>
+                  <span class="stat-l">Managers</span>
+                </div>
+              </div>
+
+              <!-- Managers list -->
+              @if ((store.staff ?? []).length > 0) {
+                <div class="managers-section">
+                  <div class="ms-title">Managers</div>
+                  @for (m of store.staff ?? []; track m.id) {
+                    <div class="manager-row">
+                      <div class="m-avatar">{{ m.name.charAt(0).toUpperCase() }}</div>
+                      <div class="m-info">
+                        <div class="m-name">{{ m.name }}</div>
+                        @if (m.email) { <div class="m-email">{{ m.email }}</div> }
+                      </div>
+                      <span class="m-status" [style.color]="m.isActive ? '#4ade80' : '#f87171'">
+                        {{ m.isActive ? '● Active' : '● Inactive' }}
+                      </span>
+                    </div>
+                  }
+                </div>
+              }
+
+              <div class="store-actions">
+                <button class="btn-sec" (click)="openCreateManager(store)">+ Manager</button>
+                <button class="btn-sec" (click)="openCreateStaff(store)">+ Staff</button>
+              </div>
+            </div>
+          }
+        </div>
+
+        @if (stores().length === 0) {
+          <div class="empty">
+            <div class="ei">🏪</div>
+            <h3>No stores yet</h3>
+            <p>Create your first store to get started.</p>
+            <button class="btn-primary" (click)="openCreateStore()">Create Store</button>
+          </div>
+        }
+      }
+    </div>
+
+    <!-- Create Store Modal -->
+    @if (modal() === 'store') {
+      <div class="modal-overlay" (click)="closeModal()">
+        <div class="modal" (click)="$event.stopPropagation()">
+          <div class="modal-header">
+            <h2>🏪 Create New Store</h2>
+            <button class="close-btn" (click)="closeModal()">✕</button>
+          </div>
+          <div class="modal-body">
+            <div class="fg">
+              <label>Store Name *</label>
+              <input [(ngModel)]="storeForm.name" placeholder="e.g. Main Branch" />
+            </div>
+            <div class="fg">
+              <label>Store Code * (unique, e.g. MAIN01)</label>
+              <input [(ngModel)]="storeForm.code" placeholder="MAIN01" style="text-transform:uppercase" />
+            </div>
+            <div class="fg">
+              <label>Address</label>
+              <textarea [(ngModel)]="storeForm.address" rows="2" placeholder="Full address..."></textarea>
+            </div>
+            <div class="fg">
+              <label>Phone</label>
+              <input [(ngModel)]="storeForm.phone" placeholder="+91 99999 00000" />
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn-ghost" (click)="closeModal()">Cancel</button>
+            <button class="btn-primary" [disabled]="saving()" (click)="saveStore()">
+              {{ saving() ? 'Creating…' : 'Create Store' }}
+            </button>
+          </div>
+          @if (error()) { <div class="error-msg">⚠️ {{ error() }}</div> }
+        </div>
+      </div>
+    }
+
+    <!-- Create Manager Modal -->
+    @if (modal() === 'manager') {
+      <div class="modal-overlay" (click)="closeModal()">
+        <div class="modal" (click)="$event.stopPropagation()">
+          <div class="modal-header">
+            <h2>👔 Add Manager — {{ selectedStore()?.name }}</h2>
+            <button class="close-btn" (click)="closeModal()">✕</button>
+          </div>
+          <div class="modal-body">
+            <div class="info-box">
+              Managers log in with <strong>email + password</strong> on the Store App.
+            </div>
+            <div class="fg">
+              <label>Full Name *</label>
+              <input [(ngModel)]="managerForm.name" placeholder="Store Manager Name" />
+            </div>
+            <div class="fg">
+              <label>Email *</label>
+              <input type="email" [(ngModel)]="managerForm.email" placeholder="manager@store.com" />
+            </div>
+            <div class="fg">
+              <label>Password * (min 6 characters)</label>
+              <input type="password" [(ngModel)]="managerForm.password" placeholder="Set a strong password" />
+            </div>
+            <div class="fg">
+              <label>Designation</label>
+              <input [(ngModel)]="managerForm.designation" placeholder="Store Manager" />
+            </div>
+            <div class="fg">
+              <label>Joining Date</label>
+              <input type="date" [(ngModel)]="managerForm.joiningDate" />
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn-ghost" (click)="closeModal()">Cancel</button>
+            <button class="btn-primary" [disabled]="saving()" (click)="saveManager()">
+              {{ saving() ? 'Creating…' : 'Create Manager' }}
+            </button>
+          </div>
+          @if (error()) { <div class="error-msg">⚠️ {{ error() }}</div> }
+        </div>
+      </div>
+    }
+
+    <!-- Create Staff Modal -->
+    @if (modal() === 'staff') {
+      <div class="modal-overlay" (click)="closeModal()">
+        <div class="modal" (click)="$event.stopPropagation()">
+          <div class="modal-header">
+            <h2>🧑‍💼 Add Staff — {{ selectedStore()?.name }}</h2>
+            <button class="close-btn" (click)="closeModal()">✕</button>
+          </div>
+          <div class="modal-body">
+            <div class="info-box">
+              Staff log in with a <strong>PIN</strong> on the Store App — no email needed.
+            </div>
+            <div class="fg">
+              <label>Full Name *</label>
+              <input [(ngModel)]="staffForm.name" placeholder="Staff Member Name" />
+            </div>
+            <div class="fg">
+              <label>Staff Code * (unique ID, e.g. S001)</label>
+              <input [(ngModel)]="staffForm.staffCode" placeholder="S001" style="text-transform:uppercase" />
+            </div>
+            <div class="fg">
+              <label>PIN * (4–8 digits)</label>
+              <input type="password" [(ngModel)]="staffForm.pin" placeholder="e.g. 1234" maxlength="8" />
+            </div>
+            <div class="fg">
+              <label>Designation</label>
+              <input [(ngModel)]="staffForm.designation" placeholder="Store Assistant" />
+            </div>
+            <div class="fg">
+              <label>Phone</label>
+              <input type="tel" [(ngModel)]="staffForm.phone" placeholder="+91 99999 00000" />
+            </div>
+            <div class="fg">
+              <label>Joining Date</label>
+              <input type="date" [(ngModel)]="staffForm.joiningDate" />
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn-ghost" (click)="closeModal()">Cancel</button>
+            <button class="btn-primary" [disabled]="saving()" (click)="saveStaff()">
+              {{ saving() ? 'Creating…' : 'Add Staff' }}
+            </button>
+          </div>
+          @if (error()) { <div class="error-msg">⚠️ {{ error() }}</div> }
+        </div>
+      </div>
+    }
+
+    <!-- Success toast -->
+    @if (toast()) {
+      <div class="toast">✅ {{ toast() }}</div>
+    }
+  

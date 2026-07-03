@@ -222,6 +222,30 @@ button:disabled {
   letter-spacing: 0.03em;
 }
 
+.rubric-path {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.2rem;
+  margin-bottom: 0.35rem;
+  font-size: 0.74rem;
+  line-height: 1.35;
+}
+
+.path-segment {
+  color: #64748b;
+
+  &.is-leaf {
+    color: #0f172a;
+    font-weight: 600;
+  }
+}
+
+.path-sep {
+  color: #94a3b8;
+  font-size: 0.7rem;
+}
+
 .rubric-text {
   margin: 0 0 0.45rem;
   line-height: 1.4;
@@ -330,6 +354,22 @@ button:disabled {
     border-color: #0f766e;
     box-shadow: 0 0 0 1px #0f766e;
   }
+
+  &.is-focused {
+    border-color: #6366f1;
+    box-shadow: 0 0 0 1px #6366f1;
+  }
+}
+
+.result-focus {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  text-align: left;
+  cursor: pointer;
+  width: 100%;
+  font: inherit;
+  color: inherit;
 }
 
 .rank-badge {
@@ -402,6 +442,96 @@ button:disabled {
   strong {
     display: block;
   }
+}
+
+.mm-panel {
+  border-color: #c7d2fe;
+  background: linear-gradient(180deg, #fafaff 0%, #fff 100%);
+}
+
+.mm-remedy-title {
+  margin: 0.2rem 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35rem;
+}
+
+.mm-close {
+  background: #e2e8f0;
+  color: #334155;
+}
+
+.mm-source {
+  margin: 0 0 0.75rem;
+  font-size: 0.82rem;
+}
+
+.mm-sections {
+  display: grid;
+  gap: 0.65rem;
+  max-height: 280px;
+  overflow: auto;
+  padding-right: 0.15rem;
+}
+
+.mm-section {
+  h4 {
+    margin: 0 0 0.25rem;
+    font-size: 0.88rem;
+    color: #0f766e;
+  }
+
+  p {
+    margin: 0;
+    font-size: 0.88rem;
+    line-height: 1.45;
+    color: #334155;
+  }
+}
+
+.mm-rubrics {
+  margin-top: 0.85rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #e5e7eb;
+
+  h4 {
+    margin: 0 0 0.45rem;
+    font-size: 0.88rem;
+  }
+
+  ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 0.4rem;
+  }
+
+  li {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.45rem;
+    align-items: start;
+    font-size: 0.84rem;
+    line-height: 1.35;
+  }
+}
+
+.mm-grade {
+  display: inline-grid;
+  place-items: center;
+  min-width: 1.35rem;
+  height: 1.35rem;
+  border-radius: 6px;
+  background: #0f172a;
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.mm-error {
+  color: #b91c1c;
 }
 
 .alert {

@@ -28,6 +28,32 @@ export type OorepRubricRemedyRow = {
   weight: number;
 };
 
+export type OorepMmInfoRow = {
+  id: number;
+  abbrev: string;
+  fullTitle: string;
+  authorLastName: string | null;
+  authorFirstName: string | null;
+  year: number | null;
+  license: string | null;
+  displayTitle: string | null;
+};
+
+export type OorepMmChapterRow = {
+  id: number;
+  mmInfoId: number;
+  heading: string;
+  remedyId: number;
+};
+
+export type OorepMmSectionRow = {
+  id: number;
+  mmChapterId: number;
+  depth: number;
+  heading: string | null;
+  content: string;
+};
+
 function unescapeCopyValue(value: string) {
   return value === '\\N' ? null : value;
 }
@@ -99,6 +125,51 @@ export function parseRubricRemedyRow(fields: string[]): OorepRubricRemedyRow | n
   const weight = Number(fields[3]);
   if (!abbrev || !Number.isFinite(rubricId) || !Number.isFinite(remedyId) || !Number.isFinite(weight)) return null;
   return { abbrev, rubricId, remedyId, weight: Math.min(4, Math.max(1, weight || 1)) };
+}
+
+export function parseMmInfoRow(fields: string[]): OorepMmInfoRow | null {
+  if (fields.length < 11) return null;
+  const id = Number(fields[0]);
+  const abbrev = fields[1];
+  if (!Number.isFinite(id) || !abbrev) return null;
+  const year = Number(fields[6]);
+  return {
+    id,
+    abbrev,
+    fullTitle: fields[2] || abbrev,
+    authorLastName: unescapeCopyValue(fields[3]),
+    authorFirstName: unescapeCopyValue(fields[4]),
+    year: Number.isFinite(year) ? year : null,
+    license: unescapeCopyValue(fields[7]),
+    displayTitle: unescapeCopyValue(fields[10])
+  };
+}
+
+export function parseMmChapterRow(fields: string[]): OorepMmChapterRow | null {
+  if (fields.length < 4) return null;
+  const id = Number(fields[0]);
+  const mmInfoId = Number(fields[1]);
+  const heading = fields[2];
+  const remedyId = Number(fields[3]);
+  if (!Number.isFinite(id) || !Number.isFinite(mmInfoId) || !heading || !Number.isFinite(remedyId)) return null;
+  return { id, mmInfoId, heading, remedyId };
+}
+
+export function parseMmSectionRow(fields: string[]): OorepMmSectionRow | null {
+  if (fields.length < 7) return null;
+  const id = Number(fields[0]);
+  const mmChapterId = Number(fields[1]);
+  const depth = Number(fields[2]);
+  const heading = unescapeCopyValue(fields[5]);
+  const content = unescapeCopyValue(fields[6]);
+  if (!Number.isFinite(id) || !Number.isFinite(mmChapterId) || !content) return null;
+  return {
+    id,
+    mmChapterId,
+    depth: Number.isFinite(depth) ? depth : 1,
+    heading,
+    content
+  };
 }
 
 export function splitFullPath(fullPath: string) {

@@ -1,8 +1,9 @@
-import { PrismaClient, PrescriptionOptionType, Role, ConsultationStatus, PrescriptionStatus, DoseEventStatus, SupportNoteCategory, ProductEventCategory, PaymentStatus } from '@prisma/client';
+import { PrismaClient, PrescriptionOptionType, Role, ConsultationStatus, PrescriptionStatus, DoseEventStatus, SupportNoteCategory, ProductEventCategory, PaymentStatus, StoreKind, StockStatus } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import bcrypt from 'bcryptjs';
 import { seedRepertory } from './seeds/repertory-seed.js';
 import { createPurchaseOrder } from '../src/services/purchase-orders.js';
+import { createStockTransfer } from '../src/services/stock-transfers.js';
 import {
   DEV_DEMO_ACCOUNTS,
   DEV_DEMO_PASSWORD,
@@ -15,6 +16,60 @@ const adapter = new PrismaPg({
 });
 
 const prisma = new PrismaClient({ adapter });
+
+async function seedStoreStock(
+  storeId: string,
+  medicineId: string,
+  batchNumber: string,
+  qty: number,
+  purchasePricePerUnit: number,
+  sellingPricePerUnit: number
+) {
+  const expiryDate = new Date();
+  expiryDate.setFullYear(expiryDate.getFullYear() + 2);
+
+  let stock = await prisma.medicineStock.findUnique({
+    where: { medicineId_storeId: { medicineId, storeId } }
+  });
+
+  if (!stock) {
+    stock = await prisma.medicineStock.create({
+      data: {
+        medicineId,
+        storeId,
+        currentQty: 0,
+        status: StockStatus.OUT_OF_STOCK
+      }
+    });
+  }
+
+  const existingBatch = await prisma.stockBatch.findFirst({
+    where: { stockId: stock.id, batchNumber }
+  });
+  if (existingBatch) return;
+
+  await prisma.stockBatch.create({
+    data: {
+      stockId: stock.id,
+      batchNumber,
+      expiryDate,
+      purchasePricePerUnit,
+      sellingPricePerUnit,
+      qty
+    }
+  });
+
+  const medicine = await prisma.storeMedicine.findUnique({ where: { id: medicineId } });
+  const newQty = stock.currentQty + qty;
+  const minLevel = medicine?.minStockLevel ?? 10;
+  const status =
+    newQty <= 0 ? StockStatus.OUT_OF_STOCK : newQty <= minLevel ? StockStatus.LOW_STOCK : StockStatus.ACTIVE;
+
+  await prisma.medicineStock.update({
+    where: { id: stock.id },
+    data: { currentQty: newQty, status }
+  });
+}
 
 async function main() {
   const passwordHash = await bcrypt.hash(DEV_DEMO_PASSWORD, 10);
@@ -81,11 +136,28 @@ async function main() {
 
   const ranchiStore = await prisma.store.upsert({
     where: { code: DEV_DEMO_ACCOUNTS.store.code },
-    update: {},
+    update: { kind: StoreKind.BRANCH },
     create: {
       name: DEV_DEMO_ACCOUNTS.store.name,
       code: DEV_DEMO_ACCOUNTS.store.code,
-      address: DEV_DEMO_ACCOUNTS.store.address
+      address: DEV_DEMO_ACCOUNTS.store.address,
+      kind: StoreKind.BRANCH
+    }
+  });
+
+  const warehouseStore = await prisma.store.upsert({
+    where: { code: DEV_DEMO_ACCOUNTS.warehouseStore.code },
+    update: {
+      name: DEV_DEMO_ACCOUNTS.warehouseStore.name,
+      address: DEV_DEMO_ACCOUNTS.warehouseStore.address,
+      kind: StoreKind.WAREHOUSE,
+      isActive: true
+    },
+    create: {
+      name: DEV_DEMO_ACCOUNTS.warehouseStore.name,
+      code: DEV_DEMO_ACCOUNTS.warehouseStore.code,
+      address: DEV_DEMO_ACCOUNTS.warehouseStore.address,
+      kind: StoreKind.WAREHOUSE
     }
   });
 
@@ -202,6 +274,29 @@ async function main() {
     create: { userId: supplierUser.id, supplierId: supplierEntity.id }
   });
 
+  const warehouseUser = await prisma.user.upsert({
+    where: { email: DEV_DEMO_ACCOUNTS.warehouse.email },
+    update: { isActive: true, passwordHash, role: Role.WAREHOUSE_MANAGER },
+    create: {
+      name: DEV_DEMO_ACCOUNTS.warehouse.name,
+      email: DEV_DEMO_ACCOUNTS.warehouse.email,
+      passwordHash,
+      role: Role.WAREHOUSE_MANAGER,
+      isActive: true
+    }
+  });
+
+  await prisma.warehouseManagerProfile.upsert({
+    where: { userId: warehouseUser.id },
+    update: { warehouseId: warehouseStore.id, employeeId: DEV_DEMO_ACCOUNTS.warehouse.employeeId },
+    create: {
+      userId: warehouseUser.id,
+      warehouseId: warehouseStore.id,
+      employeeId: DEV_DEMO_ACCOUNTS.warehouse.employeeId,
+      designation: 'Warehouse Manager'
+    }
+  });
+
   const demoMedicineArnica = await prisma.storeMedicine.upsert({
     where: { id: 'seed-store-med-arnica-30' },
     update: { isActive: true },
@@ -239,6 +334,25 @@ async function main() {
       lines: [
         { medicineId: demoMedicineArnica.id, qtyOrdered: 100, unitPriceInPaise: 4500 },
         { medicineId: demoMedicineSulphur.id, qtyOrdered: 60, unitPriceInPaise: 5200 }
+      ]
+    });
+  }
+
+  await seedStoreStock(warehouseStore.id, demoMedicineArnica.id, 'WH-ARN-30-001', 500, 4200, 5500);
+  await seedStoreStock(warehouseStore.id, demoMedicineSulphur.id, 'WH-SUL-200-001', 300, 4800, 6200);
+
+  const existingDemoTransfer = await prisma.stockTransfer.findFirst({
+    where: { fromStoreId: warehouseStore.id, toStoreId: ranchiStore.id }
+  });
+  if (!existingDemoTransfer) {
+    await createStockTransfer({
+      fromStoreId: warehouseStore.id,
+      toStoreId: ranchiStore.id,
+      notes: 'Demo replenishment transfer to Ranchi branch',
+      createdById: admin.id,
+      lines: [
+        { medicineId: demoMedicineArnica.id, qtyRequested: 40 },
+        { medicineId: demoMedicineSulphur.id, qtyRequested: 25 }
       ]
     });
   }

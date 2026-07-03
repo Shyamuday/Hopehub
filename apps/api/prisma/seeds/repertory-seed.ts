@@ -135,6 +135,77 @@ const EXTRA_REMEDIES: RemedySeed[] = [
   { name: 'Nux moschata', abbreviation: 'Nux-m.' }
 ];
 
+const MATERIA_MEDICA_SAMPLES: Record<
+  string,
+  Array<{ heading: string | null; content: string; depth?: number }>
+> = {
+  'Ars.': [
+    {
+      heading: 'Mind',
+      content:
+        'Great anguish and restlessness. Fear of death. Thinks it useless to take medicine. Despair drives from place to place.'
+    },
+    {
+      heading: 'Generalities',
+      content:
+        'Burning pains, ameliorated by heat. Great prostration. Periodicity. Complaints return at same hour.'
+    }
+  ],
+  'Nat-m.': [
+    {
+      heading: 'Mind',
+      content:
+        'Ailments from grief, disappointed love, and suppressed emotions. Wants to be alone. Consolation aggravates.'
+    },
+    {
+      heading: 'Head',
+      content: 'Throbbing headache from sunrise to sunset. Hammering pains. Worse from mental exertion.'
+    }
+  ],
+  'Puls.': [
+    {
+      heading: 'Mind',
+      content: 'Mild, gentle, yielding disposition. Weeps easily. Changeable mood. Wants open air.'
+    },
+    {
+      heading: 'Stomach',
+      content: 'Thirstlessness with many complaints. Nausea worse in warm room, better in open air.'
+    }
+  ],
+  'Nux-v.': [
+    {
+      heading: 'Mind',
+      content: 'Irritable, oversensitive, fault-finding. Cannot bear noises, odors, or light. Driven to business.'
+    },
+    {
+      heading: 'Stomach',
+      content: 'Desire for stimulants. Nausea in morning. Worse after eating or overindulgence.'
+    }
+  ],
+  'Sulph.': [
+    {
+      heading: 'Mind',
+      content: 'Philosophical, lazy, selfish. Religious melancholy. Averse to bathing.'
+    },
+    {
+      heading: 'Skin',
+      content: 'Dry, scaly, unhealthy skin. Itching, burning, worse from heat of bed and washing.'
+    }
+  ]
+};
+
+function rubricParentPath(rubric: RubricSeed) {
+  if (rubric.parentPath) return rubric.parentPath;
+  const segments = rubric.text
+    .split(',')
+    .map((part) => part.trim())
+    .filter(Boolean);
+  if (segments.length > 1) {
+    return [rubric.chapter, ...segments.slice(0, -1)].join(' > ');
+  }
+  return rubric.chapter;
+}
+
 function remedyKey(name: string) {
   return normalizeRepertoryText(name);
 }
@@ -194,7 +265,7 @@ export async function seedRepertory(prisma: PrismaClient) {
           subchapter: rubric.subchapter || null,
           text: rubric.text,
           normalizedText,
-          parentPath: rubric.parentPath || `${rubric.chapter}`
+          parentPath: rubricParentPath(rubric)
         }
       }));
 
@@ -217,5 +288,44 @@ export async function seedRepertory(prisma: PrismaClient) {
         }
       });
     }
+  }
+
+  const mmSource = await prisma.materiaMedicaSource.upsert({
+    where: { code: 'BOERICKE_SAMPLE' },
+    update: {
+      name: 'Pocket Manual (sample)',
+      author: 'William Boericke',
+      year: 1906,
+      license: 'Development sample excerpts',
+      isActive: true
+    },
+    create: {
+      code: 'BOERICKE_SAMPLE',
+      name: 'Pocket Manual (sample)',
+      author: 'William Boericke',
+      year: 1906,
+      license: 'Development sample excerpts',
+      isActive: true
+    }
+  });
+
+  for (const [abbrev, sections] of Object.entries(MATERIA_MEDICA_SAMPLES)) {
+    const remedyId = remedyIdByAbbrev.get(abbrev);
+    if (!remedyId) continue;
+
+    await prisma.materiaMedicaSection.deleteMany({
+      where: { sourceId: mmSource.id, remedyId }
+    });
+
+    await prisma.materiaMedicaSection.createMany({
+      data: sections.map((section, index) => ({
+        sourceId: mmSource.id,
+        remedyId,
+        depth: section.depth ?? 2,
+        heading: section.heading,
+        content: section.content,
+        sortOrder: index + 1
+      }))
+    });
   }
 }

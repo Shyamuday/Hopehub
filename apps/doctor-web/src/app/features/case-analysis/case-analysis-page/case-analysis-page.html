@@ -92,8 +92,15 @@
               @for (rubric of searchResults; track rubric.id) {
                 <article class="rubric-result" [class.added]="hasRubric(rubric.id)">
                   <div class="rubric-body">
-                    <span class="chapter-tag">{{ rubric.chapter }}</span>
-                    <p class="rubric-text">{{ rubric.text }}</p>
+                    <nav class="rubric-path" aria-label="Rubric location">
+                      @for (segment of rubricPathSegments(rubric); track segment; let last = $last) {
+                        <span class="path-segment" [class.is-leaf]="last">{{ segment }}</span>
+                        @if (!last) {
+                          <span class="path-sep" aria-hidden="true">›</span>
+                        }
+                      }
+                    </nav>
+                    <p class="rubric-text">{{ formatRubricPath(rubric) }}</p>
                     @if (rubric.remedies.length) {
                       <div class="remedy-chips">
                         @for (link of rubric.remedies; track link.remedy.id) {
@@ -132,8 +139,17 @@
               @for (item of selectedRubrics; track item.rubricId) {
                 <article class="selected-item">
                   <div>
-                    <span class="chapter-tag">{{ item.rubric?.chapter || 'Rubric' }}</span>
-                    <p>{{ item.rubric?.text }}</p>
+                    @if (item.rubric) {
+                      <nav class="rubric-path" aria-label="Rubric location">
+                        @for (segment of rubricPathSegments(item.rubric); track segment; let last = $last) {
+                          <span class="path-segment" [class.is-leaf]="last">{{ segment }}</span>
+                          @if (!last) {
+                            <span class="path-sep" aria-hidden="true">›</span>
+                          }
+                        }
+                      </nav>
+                    }
+                    <p>{{ item.rubric ? formatRubricPath(item.rubric) : 'Rubric' }}</p>
                   </div>
                   <div class="selected-actions">
                     <div class="weight-picker" role="group" aria-label="Symptom weight">
@@ -189,9 +205,10 @@
                   class="result-card"
                   [class.is-top]="result.rank <= 3"
                   [class.is-selected]="analysis.selectedRemedy?.id === result.remedy.id"
+                  [class.is-focused]="isFocusedRemedy(result.remedy.id)"
                 >
                   <div class="rank-badge">{{ result.rank }}</div>
-                  <div class="result-body">
+                  <button type="button" class="result-body result-focus" (click)="focusRemedy(result.remedy)">
                     <div class="result-head">
                       <strong>{{ result.remedy.name }}</strong>
                       <span class="abbrev">{{ result.remedy.abbreviation }}</span>
@@ -203,7 +220,7 @@
                       <span class="score-label">Score {{ result.totalScore }}</span>
                     </div>
                     <small class="muted">Covers {{ result.coverage }} selected rubric{{ result.coverage === 1 ? '' : 's' }}</small>
-                  </div>
+                  </button>
                   <button
                     type="button"
                     class="btn-select"
@@ -234,6 +251,77 @@
             </div>
           }
         </section>
+
+        @if (focusedRemedy) {
+          <section class="panel mm-panel">
+            <div class="panel-title-row">
+              <div>
+                <h3>Materia medica</h3>
+                <p class="mm-remedy-title">
+                  <strong>{{ focusedRemedy.name }}</strong>
+                  <span class="abbrev">{{ focusedRemedy.abbreviation }}</span>
+                </p>
+              </div>
+              <button type="button" class="btn-icon mm-close" (click)="clearFocusedRemedy()" title="Close panel">×</button>
+            </div>
+
+            @if (loadingMateriaMedica) {
+              <p class="hint">Loading remedy profile…</p>
+            } @else if (materiaMedicaError) {
+              <p class="hint mm-error">{{ materiaMedicaError }}</p>
+            } @else if (materiaMedica) {
+              @if (materiaMedica.source) {
+                <p class="mm-source muted">
+                  {{ materiaMedica.source.name }}
+                  @if (materiaMedica.source.author) {
+                    · {{ materiaMedica.source.author }}
+                  }
+                  @if (materiaMedica.source.year) {
+                    · {{ materiaMedica.source.year }}
+                  }
+                </p>
+              }
+
+              @if (materiaMedica.sections.length) {
+                <div class="mm-sections">
+                  @for (section of materiaMedica.sections; track section.id) {
+                    <article class="mm-section">
+                      @if (section.heading) {
+                        <h4>{{ section.heading }}</h4>
+                      }
+                      <p>{{ section.content }}</p>
+                    </article>
+                  }
+                </div>
+              } @else {
+                <p class="hint">No materia medica text loaded yet for this remedy.</p>
+              }
+
+              @if (materiaMedica.keyRubrics.length) {
+                <div class="mm-rubrics">
+                  <h4>
+                    @if (materiaMedica.caseRubrics?.length) {
+                      Matching case rubrics
+                    } @else {
+                      Key repertory rubrics
+                    }
+                  </h4>
+                  <ul>
+                    @for (item of materiaMedica.keyRubrics; track item.rubricId) {
+                      <li>
+                        <span class="mm-grade">{{ item.grade }}</span>
+                        <span>{{ formatRubricPath(item.rubric) }}</span>
+                        @if (item.weight) {
+                          <small class="muted">· weight {{ item.weight }}</small>
+                        }
+                      </li>
+                    }
+                  </ul>
+                </div>
+              }
+            }
+          </section>
+        }
       </div>
     </div>
   }

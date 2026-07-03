@@ -1,0 +1,90 @@
+<div class="queue-page">
+  <div class="hdr">
+    <div>
+      <h2>Front desk queue</h2>
+      <p>Walk-ins and bookings for your clinic branch</p>
+    </div>
+    <button type="button" class="btn-refresh" (click)="load()" [disabled]="loading()">Refresh</button>
+  </div>
+
+  <div class="summary">
+    <div class="pill">Total {{ summary().total }}</div>
+    <div class="pill warn">Payment due {{ summary().awaitingPayment }}</div>
+    <div class="pill info">Doctor pending {{ summary().awaitingDoctor }}</div>
+    <div class="pill ok">In progress {{ summary().inProgress }}</div>
+  </div>
+
+  <div class="filters">
+    @for (f of statusFilters; track f.value) {
+      <button type="button" class="ftab" [class.active]="statusFilter === f.value" (click)="statusFilter = f.value; load()">
+        {{ f.label }}
+      </button>
+    }
+    <input class="search" [(ngModel)]="q" (keyup.enter)="load()" placeholder="Search patient, mobile, ID…" />
+    <button type="button" class="btn-apply" (click)="load()">Search</button>
+  </div>
+
+  @if (loading()) {
+    <p class="loading-text">Loading queue…</p>
+  } @else if (error()) {
+    <div class="error-row">
+      <p class="error">{{ error() }}</p>
+      <button type="button" class="retry-btn" (click)="load()">Retry</button>
+    </div>
+  } @else if (!consultations().length) {
+    <p class="empty-state">No consultations in this queue view.</p>
+  } @else {
+    <div class="cards">
+      @for (c of consultations(); track c.id) {
+        <div class="card">
+          <div class="card-top">
+            <div>
+              <div class="name">{{ c.patient?.name ?? 'Patient' }}</div>
+              <div class="meta">
+                {{ c.patient?.patientCode ?? '—' }}
+                @if (c.patient?.mobile) { · {{ c.patient?.mobile }} }
+              </div>
+            </div>
+            <span class="status">{{ c.status }}</span>
+          </div>
+          <div class="detail">{{ c.disease?.name }} · ₹{{ formatPaise(c.payment?.amountInPaise ?? c.disease?.feeInPaise ?? 0) }}</div>
+          <div class="detail subtle">{{ c.createdAt | date:'medium' }}</div>
+          @if (c.assignedDoctor) {
+            <div class="detail">Doctor: {{ c.assignedDoctor.name }}</div>
+          }
+          <div class="actions">
+            @if (c.status === 'PAYMENT_PENDING') {
+              <button type="button" class="btn-primary" (click)="collectCash(c)">Record cash</button>
+            }
+            @if (c.status === 'PAID' || c.status === 'ASSIGNED') {
+              <button type="button" class="btn-secondary" (click)="openAssign(c)">
+                {{ c.assignedDoctor ? 'Reassign' : 'Assign doctor' }}
+              </button>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>
+
+@if (assignTarget()) {
+  <div class="modal-backdrop" (click)="closeAssign()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <h3>Assign doctor</h3>
+      <p>{{ assignTarget()!.patient?.name }} — {{ assignTarget()!.disease?.name }}</p>
+      <select [(ngModel)]="selectedDoctorId">
+        <option value="">Select doctor</option>
+        @for (d of doctors(); track d.id) {
+          <option [value]="d.id">{{ d.name }} ({{ d.specialty }})</option>
+        }
+      </select>
+      <div class="modal-actions">
+        <button type="button" (click)="closeAssign()">Cancel</button>
+        <button type="button" class="btn-primary" [disabled]="!selectedDoctorId" (click)="submitAssign()">Assign</button>
+      </div>
+    </div>
+  </div>
+}
+
+@if (toast()) { <div class="toast">{{ toast() }}</div> }

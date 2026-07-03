@@ -3,7 +3,13 @@ import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { API_PATHS } from '../../core/constants/api-paths.constants';
-import type { CaseAnalysis, ConsultationSummary, RepertorySource, RubricSearchResult } from './case-analysis-page.types';
+import type {
+  CaseAnalysis,
+  ConsultationSummary,
+  MateriaMedicaResponse,
+  RepertorySource,
+  RubricSearchResult
+} from './case-analysis-page.types';
 
 @Injectable({ providedIn: 'root' })
 export class CaseAnalysisApiService {
@@ -70,5 +76,16 @@ export class CaseAnalysisApiService {
         remedyId
       })
     ).then((response) => response.analysis);
+  }
+
+  loadMateriaMedica(remedyId: string, options?: { analysisId?: string; repertorySourceId?: string }) {
+    return firstValueFrom(
+      this.http.get<MateriaMedicaResponse>(`${this.apiBase}${API_PATHS.DOCTOR.REPERTORY_REMEDY_MATERIA_MEDICA(remedyId)}`, {
+        params: {
+          ...(options?.analysisId ? { analysisId: options.analysisId } : {}),
+          ...(options?.repertorySourceId ? { repertorySourceId: options.repertorySourceId } : {})
+        }
+      })
+    );
   }
 }

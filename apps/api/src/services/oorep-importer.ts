@@ -9,6 +9,7 @@ import {
   splitFullPath,
   type OorepInfoRow
 } from './oorep-sql-parser.js';
+import { importMateriaMedicaFromOorep } from './oorep-mm-importer.js';
 
 const SOURCE_CODE_BY_ABBREV: Record<string, RepertorySourceCode> = {
   publicum: RepertorySourceCode.OOREP_PUBLICUM,
@@ -242,6 +243,9 @@ export async function importOorepSqlDump(prisma: PrismaClient, options: ImportOp
       linkBatchSize
     );
   }
+
+  console.log('[oorep-import] importing materia medica...');
+  await importMateriaMedicaFromOorep(prisma, options.sqlPath);
 
   console.log('[oorep-import] complete');
 }

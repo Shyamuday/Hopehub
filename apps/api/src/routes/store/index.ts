@@ -11,6 +11,7 @@ import { registerStorePatientRoutes } from './patients.js';
 import { registerStoreScanRoutes } from './scan.js';
 import { registerStoreHrRoutes } from './hr.js';
 import { registerStorePurchaseOrderRoutes } from './purchase-orders.js';
+import { registerStoreStockTransferRoutes } from './stock-transfers.js';
 import { registerStoreStockRoutes } from './stock.js';
 
 export const storeRouter = Router();
@@ -20,6 +21,7 @@ registerStoreMedicineRoutes(storeRouter);
 registerStoreRackRoutes(storeRouter);
 registerStoreStockRoutes(storeRouter);
 registerStorePurchaseOrderRoutes(storeRouter);
+registerStoreStockTransferRoutes(storeRouter);
 registerStoreAlertRoutes(storeRouter);
 registerStoreDashboardRoutes(storeRouter);
 registerStoreSetupRoutes(storeRouter);

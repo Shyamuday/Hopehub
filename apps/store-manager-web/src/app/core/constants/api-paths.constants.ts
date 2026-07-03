@@ -38,5 +38,7 @@ export const STORE_API_PATHS = {
   },
   PURCHASE_ORDERS: '/purchase-orders',
   PURCHASE_ORDER: (id: string) => `/purchase-orders/${id}`,
-  PURCHASE_ORDER_GRN: (id: string) => `/purchase-orders/${id}/grn`
+  PURCHASE_ORDER_GRN: (id: string) => `/purchase-orders/${id}/grn`,
+  STOCK_TRANSFERS: '/stock-transfers',
+  STOCK_TRANSFER_RECEIVE: (id: string) => `/stock-transfers/${id}/receive`
 } as const;

@@ -30,10 +30,42 @@ model HomeopathicRemedy {
   rubricLinks      RepertoryRubricRemedy[]
   analysisResults  CaseAnalysisResult[]
   selectedAnalyses CaseAnalysis[]          @relation("SelectedRemedy")
+  materiaMedica    MateriaMedicaSection[]
   createdAt        DateTime                @default(now())
   updatedAt        DateTime                @updatedAt
 
   @@index([abbreviation])
+}
+
+model MateriaMedicaSource {
+  id            String                 @id @default(cuid())
+  oorepMmInfoId Int?                   @unique
+  code          String                 @unique
+  name          String
+  author        String?
+  year          Int?
+  license       String?
+  isActive      Boolean                @default(true)
+  sections      MateriaMedicaSection[]
+  createdAt     DateTime               @default(now())
+  updatedAt     DateTime               @updatedAt
+}
+
+model MateriaMedicaSection {
+  id             String              @id @default(cuid())
+  sourceId       String
+  remedyId       String
+  oorepSectionId Int?                @unique
+  depth          Int                 @default(1)
+  heading        String?
+  content        String
+  sortOrder      Int                 @default(0)
+  source         MateriaMedicaSource @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  remedy         HomeopathicRemedy   @relation(fields: [remedyId], references: [id], onDelete: Cascade)
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+
+  @@index([remedyId, sourceId, sortOrder])
 }
 
 model RepertoryRubric {

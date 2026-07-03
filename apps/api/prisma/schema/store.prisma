@@ -20,6 +20,18 @@ enum StockStatus {
   DISCONTINUED
 }
 
+enum StoreKind {
+  BRANCH
+  WAREHOUSE
+}
+
+enum StockTransferStatus {
+  PENDING_DISPATCH
+  IN_TRANSIT
+  RECEIVED
+  CANCELLED
+}
+
 model Store {
   id        String          @id @default(cuid())
   name      String
@@ -27,6 +39,7 @@ model Store {
   address   String?
   phone     String?
   isActive  Boolean         @default(true)
+  kind      StoreKind       @default(BRANCH)
   racks     StoreRack[]
   stocks    MedicineStock[]
   staff     StoreStaff[]
@@ -40,6 +53,9 @@ model Store {
   expenses  BusinessExpense[]
   purchaseOrders PurchaseOrder[]
   goodsReceipts  GoodsReceiptNote[]
+  transfersOut   StockTransfer[] @relation("TransferFrom")
+  transfersIn    StockTransfer[] @relation("TransferTo")
+  warehouseManagers WarehouseManagerProfile[]
   createdAt DateTime        @default(now())
   updatedAt DateTime        @updatedAt
 }
@@ -111,6 +127,7 @@ model StoreMedicine {
   barcode       String?         @unique
   stocks        MedicineStock[]
   orderLines    PurchaseOrderLine[]
+  transferLines StockTransferLine[]
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
 

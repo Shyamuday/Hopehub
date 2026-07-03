@@ -23,6 +23,7 @@ jobs:
           - apps/clinic-manager-web
           - apps/accountant-web
           - apps/supplier-web
+          - apps/warehouse-web
 
     defaults:
       run:

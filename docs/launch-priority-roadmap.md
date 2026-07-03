@@ -224,7 +224,10 @@ Minimum acceptance:
 
 ### 3) Warehouse / Central Inventory (Platform Phase 3)
 
-**Status: Next** — multi-branch central stock and transfers when scale requires it (see `docs/platform-ecosystem-architecture.md`).
+**Status: Done** — `WAREHOUSE_MANAGER` role + `WarehouseManagerProfile`; `StoreKind` (`BRANCH`/`WAREHOUSE`); `StockTransfer` models; warehouse API (`/warehouse/dashboard`, `/transfers`, dispatch); store manager receive (`POST /store/stock-transfers/:id/receive`) updates stock via `TRANSFER_IN`; `warehouse-web` on port 4900; demo warehouse in Kolkata with pending transfer to Ranchi; demo persona `warehouse@vitalisclinic.local`.
+
+- Central warehouse stock hub and branch transfer workflow
+- Dispatch deducts warehouse batches; branch receive posts `TRANSFER_IN`
 
 ## Recommended Implementation Order
 
