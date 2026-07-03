@@ -1,0 +1,91 @@
+<div class="page">
+  <div class="hdr">
+    <div>
+      <h2>Patient follow-ups</h2>
+      <p>Adherence cohorts for your branch — prioritize high-risk patients</p>
+    </div>
+    <div class="hdr-actions">
+      <select [(ngModel)]="days" (change)="load()" class="days-select">
+        <option [ngValue]="7">Last 7 days</option>
+        <option [ngValue]="14">Last 14 days</option>
+        <option [ngValue]="30">Last 30 days</option>
+      </select>
+      <button type="button" class="btn-refresh" (click)="load()" [disabled]="loading()">Refresh</button>
+    </div>
+  </div>
+
+  @if (loading()) {
+    <p class="loading-text">Loading cohorts…</p>
+  } @else if (error()) {
+    <div class="error-row">
+      <p class="error">{{ error() }}</p>
+      <button type="button" class="retry-btn" (click)="load()">Retry</button>
+    </div>
+  } @else if (data(); as d) {
+    <div class="tabs">
+      <button type="button" [class.active]="activeTab() === 'HIGH_RISK'" (click)="activeTab.set('HIGH_RISK')">
+        High risk ({{ d.cohorts?.HIGH_RISK?.length ?? 0 }})
+      </button>
+      <button type="button" [class.active]="activeTab() === 'MEDIUM_RISK'" (click)="activeTab.set('MEDIUM_RISK')">
+        Medium ({{ d.cohorts?.MEDIUM_RISK?.length ?? 0 }})
+      </button>
+      <button type="button" [class.active]="activeTab() === 'ON_TRACK'" (click)="activeTab.set('ON_TRACK')">
+        On track ({{ d.cohorts?.ON_TRACK?.length ?? 0 }})
+      </button>
+      <button type="button" [class.active]="activeTab() === 'ALERTS'" (click)="activeTab.set('ALERTS')">
+        Alerts ({{ d.alerts?.length ?? 0 }})
+      </button>
+    </div>
+
+    @if (activeTab() === 'ALERTS') {
+      @if (!d.alerts?.length) {
+        <p class="empty">No alerts in this window.</p>
+      } @else {
+        <div class="list">
+          @for (alert of d.alerts; track alert.patientId + alert.type) {
+            <div class="card" [class.high]="alert.severity === 'HIGH'">
+              <div class="card-title">{{ alert.patientName }} · {{ alert.patientCode ?? '—' }}</div>
+              <div class="card-msg">{{ alert.message }}</div>
+              <div class="card-meta">{{ alert.adherencePercent }}% adherence</div>
+            </div>
+          }
+        </div>
+      }
+    } @else if (activeTab() === 'HIGH_RISK' || activeTab() === 'MEDIUM_RISK' || activeTab() === 'ON_TRACK') {
+      @if (!activeCohortRows().length) {
+        <p class="empty">No patients in this cohort.</p>
+      } @else {
+        <div class="table-wrap">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Patient</th>
+                <th>Code</th>
+                <th>Mobile</th>
+                <th class="num">Adherence</th>
+                <th class="num">Trend</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of activeCohortRows(); track row.patientId) {
+                <tr>
+                  <td>{{ row.name }}</td>
+                  <td>{{ row.patientCode ?? '—' }}</td>
+                  <td>{{ row.mobile ?? '—' }}</td>
+                  <td class="num">{{ row.adherencePercent }}%</td>
+                  <td class="num">
+                    @if (row.trendDelta !== null) {
+                      {{ row.trendDelta > 0 ? '+' : '' }}{{ row.trendDelta }}%
+                    } @else {
+                      —
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    }
+  }
+</div>

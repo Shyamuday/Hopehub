@@ -1,0 +1,31 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "./out-tsc/app",
+    "types": []
+  },
+  "files": ["src/main.ts"],
+  "include": [
+    "src/**/*.ts",
+    "../../shared/role-task-guides/**/*.ts",
+    "../../libs/platform-nav/src/**/*.ts",
+    "../admin-web/src/app/features/**/*.ts",
+    "../admin-web/src/app/core/**/*.ts",
+    "../admin-web/src/app/shared/**/*.ts"
+  ],
+  "exclude": [
+    "../admin-web/src/app/app.routes.ts",
+    "../admin-web/src/app/app.config.ts",
+    "../admin-web/src/app/app.ts",
+    "../admin-web/src/app/layout/admin-shell/**",
+    "../admin-web/src/app/features/auth/**"
+  ],
+  "angularCompilerOptions": {
+    "extendedDiagnostics": {
+      "checks": {
+        "nullishCoalescingNotNullable": "suppress",
+        "optionalChainNotNullable": "suppress"
+      }
+    }
+  }
+}

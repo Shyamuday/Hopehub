@@ -3,7 +3,7 @@ import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { AdminApi } from '../../../core/services/admin-api';
-import { ROUTE_PATHS } from '../../../core/constants/app-routes.constants';
+import { adminNavPath, ROUTE_PATHS } from '../../../core/constants/app-routes.constants';
 import {
   AUDIT_ACTION_OPTIONS,
   AUDIT_PAGE_SIZE,
@@ -34,7 +34,7 @@ export class AuditPage {
   readonly actionOptions = AUDIT_ACTION_OPTIONS;
   readonly targetTypeOptions = AUDIT_TARGET_TYPE_OPTIONS;
   readonly formatAuditAction = formatAuditAction;
-  readonly doctorsPath = `/${ROUTE_PATHS.DOCTORS}`;
+  readonly doctorsPath = adminNavPath(ROUTE_PATHS.DOCTORS);
 
   logs: AuditLog[] = [];
   page = 1;

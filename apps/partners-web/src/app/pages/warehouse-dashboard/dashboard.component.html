@@ -1,0 +1,46 @@
+<div class="page">
+  <div class="hdr">
+    <div>
+      <h2>Central warehouse</h2>
+      <p>Stock on hand and transfer pipeline</p>
+    </div>
+    <button type="button" class="btn-refresh" (click)="load()" [disabled]="loading()">Refresh</button>
+  </div>
+
+  @if (loading()) {
+    <p class="loading-text">Loading dashboard…</p>
+  } @else if (error()) {
+    <div class="error-row">
+      <p class="error">{{ error() }}</p>
+      <button type="button" class="retry-btn" (click)="load()">Retry</button>
+    </div>
+  } @else if (dashboard(); as data) {
+    <div class="kpis">
+      <div class="kpi"><span class="kpi-val">{{ data.kpis.skuCount }}</span><span class="kpi-label">SKUs</span></div>
+      <div class="kpi"><span class="kpi-val">{{ data.kpis.totalUnits }}</span><span class="kpi-label">Total units</span></div>
+      <div class="kpi"><span class="kpi-val">{{ data.kpis.pendingDispatch }}</span><span class="kpi-label">Pending dispatch</span></div>
+      <div class="kpi"><span class="kpi-val">{{ data.kpis.inTransit }}</span><span class="kpi-label">In transit</span></div>
+    </div>
+
+    <h3>Stock on hand — {{ data.warehouse.name }}</h3>
+    @if (!data.stock.length) {
+      <p class="empty">No stock in warehouse.</p>
+    } @else {
+      <div class="cards">
+        @for (row of data.stock; track row.stockId) {
+          <div class="card">
+            <div class="card-top">
+              <strong>{{ row.name }} {{ row.potency }}</strong>
+              <span class="status">{{ row.currentQty }} units · {{ row.status }}</span>
+            </div>
+            @for (batch of row.batches; track batch.id) {
+              <div class="line">
+                Batch {{ batch.batchNumber }} — {{ batch.qty }} units · exp {{ batch.expiryDate | date:'mediumDate' }}
+              </div>
+            }
+          </div>
+        }
+      </div>
+    }
+  }
+</div>

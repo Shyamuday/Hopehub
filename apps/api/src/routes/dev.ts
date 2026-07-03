@@ -18,6 +18,7 @@ import {
   getPersonaEmail,
   getPersonaLoginLabel,
   isDevDemoEnabled,
+  personaMatchesApp,
   personasForApp,
   personasWithCredentialsForApp
 } from '../dev/demo-manifest.js';
@@ -95,7 +96,7 @@ devRouter.post(
     if (!persona) {
       return res.status(400).json({ message: 'Unknown demo persona.' });
     }
-    if (body.app && persona.app !== body.app) {
+    if (body.app && !personaMatchesApp(persona, body.app)) {
       return res.status(400).json({ message: 'This persona is not valid for the current app.' });
     }
 

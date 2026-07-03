@@ -1,0 +1,42 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "./out-tsc/app",
+    "types": []
+  },
+  "files": ["src/main.ts"],
+  "include": [
+    "src/**/*.ts",
+    "../../shared/role-task-guides/**/*.ts",
+    "../../libs/platform-nav/src/**/*.ts"
+  ],
+  "exclude": [
+    "src/app/pages/dashboard/**",
+    "src/app/pages/doctors/**",
+    "src/app/pages/employees/**",
+    "src/app/pages/leaves/**",
+    "src/app/pages/payroll/**",
+    "src/app/pages/stores/**",
+    "src/app/pages/store-staff/**",
+    "src/app/pages/queue/**",
+    "src/app/pages/walk-in/**",
+    "src/app/pages/hub-dashboard/**",
+    "src/app/pages/roster/**",
+    "src/app/pages/schedules/**",
+    "src/app/pages/reports/**",
+    "src/app/pages/finance/**",
+    "src/app/services/hr-api.service.ts",
+    "src/app/services/reception-api.service.ts",
+    "src/app/services/accountant-api.service.ts",
+    "src/app/services/clinic-manager-api.service.ts",
+    "src/app/shared/employee-drawer/**"
+  ],
+  "angularCompilerOptions": {
+    "extendedDiagnostics": {
+      "checks": {
+        "nullishCoalescingNotNullable": "suppress",
+        "optionalChainNotNullable": "suppress"
+      }
+    }
+  }
+}

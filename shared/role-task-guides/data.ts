@@ -450,6 +450,48 @@ export const ROLE_TASK_GUIDES: RoleTaskGuide[] = [
   },
 
   {
+    appKey: 'operations-web',
+    roleTitle: 'Operations Staff',
+    tagline: 'One portal for clinic operations — your menu adapts to your role after login.',
+    responsibilities: [
+      'Use only the screens your role is authorized for (HR, reception, branch, call center, etc.).',
+      'Complete daily tasks shown in the role guide at the top of each page.',
+      'Escalate issues outside your permissions to clinic manager or platform admin.'
+    ],
+    dailyTasks: [
+      { title: 'Sign in', detail: 'Use staff email and password — the app routes you to your default workspace.', when: 'Start of shift' },
+      { title: 'Check your nav', detail: 'Sidebar shows only what your role can access (follow-ups, queue, HR, branch P&L, etc.).', when: 'After login' },
+      { title: 'Platform admin', detail: 'Admins open Admin console from the nav for full platform configuration.', when: 'Admin only' }
+    ],
+    boundaries: [
+      'Do not share staff credentials.',
+      'Do not use screens that are not in your navigation — access is blocked by capability checks.',
+      'Clinical changes belong to doctors; financial approvals may require admin or accountant roles.'
+    ]
+  },
+
+  {
+    appKey: 'partners-web',
+    roleTitle: 'External Partner',
+    tagline: 'One portal for suppliers, logistics, diagnostics, corporate wellness, and insurance partners.',
+    responsibilities: [
+      'Fulfill your organization\'s obligations on the platform (orders, deliveries, claims, enrollments).',
+      'Keep status updates accurate and timely.',
+      'Use only partner screens assigned to your account type.'
+    ],
+    dailyTasks: [
+      { title: 'Open your default view', detail: 'Login routes you to orders, warehouse, deliveries, lab referrals, accounts, or claims.', when: 'Start of day' },
+      { title: 'Process queue', detail: 'Work through pending items in your primary screen.', when: 'Daily' },
+      { title: 'Update statuses', detail: 'Mark progress at each workflow step so clinics see live status.', when: 'Per item' }
+    ],
+    boundaries: [
+      'Do not access other partners\' data.',
+      'Do not share patient-identifiable information outside approved channels.',
+      'Account or contract changes require Vitalis platform admin.'
+    ]
+  },
+
+  {
     appKey: 'insurance-web',
     roleTitle: 'Insurance Partner',
     tagline: 'Submit and track reimbursement claims for covered patients.',

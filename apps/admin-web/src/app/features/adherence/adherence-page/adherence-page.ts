@@ -3,7 +3,7 @@ import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { AdminApi } from '../../../core/services/admin-api';
-import { ROUTE_PATHS } from '../../../core/constants/app-routes.constants';
+import { adminNavPath, adminRouteLink, ROUTE_PATHS } from '../../../core/constants/app-routes.constants';
 import {
   ADHERENCE_MIN_DOSE_OPTIONS,
   ADHERENCE_WINDOW_OPTIONS,
@@ -71,7 +71,7 @@ export class AdherencePage {
   readonly minDoseOptions = ADHERENCE_MIN_DOSE_OPTIONS;
   readonly tierLabels = RISK_TIER_LABELS;
   readonly alertStyles = ALERT_SEVERITY_STYLES;
-  readonly consumersPath = `/${ROUTE_PATHS.CONSUMERS}`;
+  readonly consumersPath = adminNavPath(ROUTE_PATHS.CONSUMERS);
 
   windowDays = 7;
   minDoses = 5;
@@ -119,8 +119,8 @@ export class AdherencePage {
     return this.report?.cohorts[this.activeTier] ?? [];
   }
 
-  consumerLink(patientId: string) {
-    return ['/', ROUTE_PATHS.CONSUMERS];
+  consumerLink(_patientId: string) {
+    return adminRouteLink(ROUTE_PATHS.CONSUMERS);
   }
 
   consumerQuery(patientId: string) {

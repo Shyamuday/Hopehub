@@ -1,0 +1,47 @@
+<div class="page">
+  <div class="hdr">
+    <div>
+      <h2>Recent consultations</h2>
+      <p>Latest consults across the platform for call-center context</p>
+    </div>
+    <button type="button" class="btn-refresh" (click)="load()" [disabled]="loading()">Refresh</button>
+  </div>
+
+  @if (loading()) {
+    <p class="loading-text">Loading…</p>
+  } @else if (error()) {
+    <p class="error">{{ error() }}</p>
+  } @else if (!consultations().length) {
+    <p class="empty">No consultations yet.</p>
+  } @else {
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Patient</th>
+            <th>Concern</th>
+            <th>Doctor</th>
+            <th>Branch</th>
+            <th>Status</th>
+            <th>Created</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (c of consultations(); track c.id) {
+            <tr>
+              <td>
+                <div>{{ c.patient?.name }}</div>
+                <div class="sub">{{ c.patient?.patientCode }}</div>
+              </td>
+              <td>{{ c.disease?.name ?? '—' }}</td>
+              <td>{{ c.assignedDoctor?.name ?? '—' }}</td>
+              <td>{{ c.clinicStore?.name ?? '—' }}</td>
+              <td>{{ c.status }}</td>
+              <td>{{ c.createdAt | date: 'short' }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</div>

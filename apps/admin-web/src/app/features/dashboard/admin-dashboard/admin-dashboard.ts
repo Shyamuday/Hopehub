@@ -3,7 +3,7 @@ import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { AdminApi } from '../../../core/services/admin-api';
-import { ROUTE_PATHS } from '../../../core/constants/app-routes.constants';
+import { adminNavPath, ROUTE_PATHS } from '../../../core/constants/app-routes.constants';
 import { formatAuditAction } from '../../audit/constants/audit.constants';
 import {
   AUDIT_LOGS_PAGE_SIZE,
@@ -20,8 +20,8 @@ import {
   styleUrl: './admin-dashboard.scss'
 })
 export class AdminDashboard {
-  readonly auditPath = `/${ROUTE_PATHS.AUDIT}`;
-  readonly adherencePath = `/${ROUTE_PATHS.ADHERENCE}`;
+  readonly auditPath = adminNavPath(ROUTE_PATHS.AUDIT);
+  readonly adherencePath = adminNavPath(ROUTE_PATHS.ADHERENCE);
   readonly formatAuditAction = formatAuditAction;
   revenueInPaise = 0;
   activeDoctors = 0;

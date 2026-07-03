@@ -1,0 +1,109 @@
+<div class="page">
+  <div class="hdr">
+    <div>
+      <h2>Lab referrals</h2>
+      <p>Accept clinic referrals and publish test results</p>
+    </div>
+    <button type="button" class="btn-refresh" (click)="load()" [disabled]="loading()">Refresh</button>
+  </div>
+
+  @if (loading()) {
+    <p class="loading-text">Loading referrals…</p>
+  } @else if (error()) {
+    <div class="error-row">
+      <p class="error">{{ error() }}</p>
+      <button type="button" class="retry-btn" (click)="load()">Retry</button>
+    </div>
+  } @else if (!referrals().length) {
+    <p class="empty">No lab referrals yet.</p>
+  } @else {
+    <div class="cards">
+      @for (referral of referrals(); track referral.id) {
+        <div class="card">
+          <div class="card-top">
+            <div>
+              <div class="po">{{ referral.referralNumber }}</div>
+              <div class="meta">
+                {{ referral.patient?.name }} ({{ referral.patient?.patientCode }}) · {{ referral.store?.name }}
+              </div>
+              <div class="meta">{{ referral.createdAt | date:'mediumDate' }}</div>
+            </div>
+            <span class="status" [class.sent]="referral.status === 'SENT'" [class.ready]="referral.status === 'RESULT_READY'">
+              {{ referral.status }}
+            </span>
+          </div>
+          @if (referral.clinicalNotes) {
+            <div class="note">Clinical note: {{ referral.clinicalNotes }}</div>
+          }
+          <div class="lines">
+            @for (line of referral.lines; track line.id) {
+              <div class="line">
+                {{ line.testName }}
+                @if (line.testCode) { ({{ line.testCode }}) }
+                @if (line.specimen) { · {{ line.specimen }} }
+                @if (line.resultSummary) {
+                  <div class="result">Result: {{ line.resultSummary }}</div>
+                }
+              </div>
+            }
+          </div>
+          @if (referral.status === 'SENT') {
+            <button type="button" class="btn-primary" (click)="openAccept(referral)">Accept referral</button>
+          }
+          @if (referral.status === 'ACCEPTED') {
+            <button type="button" class="btn-primary" (click)="advance(referral.id, 'SAMPLE_COLLECTED')">Mark sample collected</button>
+            <button type="button" class="btn-secondary" (click)="openResults(referral)">Submit results</button>
+          }
+          @if (referral.status === 'SAMPLE_COLLECTED') {
+            <button type="button" class="btn-primary" (click)="advance(referral.id, 'IN_PROGRESS')">Start processing</button>
+            <button type="button" class="btn-secondary" (click)="openResults(referral)">Submit results</button>
+          }
+          @if (referral.status === 'IN_PROGRESS') {
+            <button type="button" class="btn-primary" (click)="openResults(referral)">Submit results</button>
+          }
+        </div>
+      }
+    </div>
+  }
+
+  @if (acceptingId(); as id) {
+    <div class="modal-backdrop" (click)="closeAccept()">
+      <div class="modal" (click)="$event.stopPropagation()">
+        <h3>Accept referral</h3>
+        <label>Expected result date</label>
+        <input type="date" [(ngModel)]="expectedResultDate" />
+        <label>Notes to clinic</label>
+        <textarea [(ngModel)]="partnerNotes" rows="3" placeholder="Sample collection window, prep instructions…"></textarea>
+        <div class="modal-actions">
+          <button type="button" (click)="closeAccept()">Cancel</button>
+          <button type="button" class="btn-primary" (click)="submitAccept(id)">Accept</button>
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (resultsId()) {
+    <div class="modal-backdrop" (click)="closeResults()">
+      <div class="modal wide" (click)="$event.stopPropagation()">
+        <h3>Publish results</h3>
+        @for (line of resultLines(); track line.lineId) {
+          <div class="result-line">
+            <div class="result-title">{{ line.testName }}</div>
+            <label>Summary</label>
+            <textarea [(ngModel)]="line.resultSummary" rows="2" placeholder="e.g. TSH 2.1 mIU/L (normal)"></textarea>
+            <label>Report URL (optional)</label>
+            <input [(ngModel)]="line.resultFileUrl" placeholder="https://…" />
+          </div>
+        }
+        <div class="modal-actions">
+          <button type="button" (click)="closeResults()">Cancel</button>
+          <button type="button" class="btn-primary" (click)="submitResults()">Publish results</button>
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (toast()) {
+    <div class="toast">{{ toast() }}</div>
+  }
+</div>

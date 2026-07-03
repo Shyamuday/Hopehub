@@ -1,0 +1,78 @@
+<div class="page">
+  <div class="hdr">
+    <div>
+      <h2>Branch dashboard</h2>
+      @if (data()?.branch) {
+        <p>{{ data().branch.storeName }} ({{ data().branch.storeCode }}) · {{ data().month }}</p>
+      } @else {
+        <p>Branch P&amp;L and operations snapshot</p>
+      }
+    </div>
+    <div class="hdr-actions">
+      <input type="month" [(ngModel)]="selectedMonth" (change)="load()" class="month-inp" />
+      <button type="button" class="btn-refresh" (click)="load()" [disabled]="loading()">Refresh</button>
+    </div>
+  </div>
+
+  @if (loading()) {
+    <p class="loading-text">Loading dashboard…</p>
+  } @else if (error()) {
+    <div class="error-row">
+      <p class="error">{{ error() }}</p>
+      <button type="button" class="retry-btn" (click)="load()">Retry</button>
+    </div>
+  } @else if (data(); as d) {
+    @if (d.branch; as b) {
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-label">Consultation revenue</div>
+          <div class="kpi-value">₹{{ formatPaise(b.consultationRevenueInPaise) }}</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Medicine revenue</div>
+          <div class="kpi-value">₹{{ formatPaise(b.medicineRevenueInPaise) }}</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Payroll</div>
+          <div class="kpi-value">₹{{ formatPaise(b.payrollCostInPaise) }}</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Net estimate</div>
+          <div class="kpi-value" [class.positive]="b.netEstimateInPaise >= 0" [class.negative]="b.netEstimateInPaise < 0">
+            ₹{{ formatPaise(b.netEstimateInPaise) }}
+          </div>
+        </div>
+      </div>
+    }
+
+    @if (d.operations; as ops) {
+      <section class="section">
+        <h3>Today&apos;s operations</h3>
+        <div class="kpi-grid">
+          <div class="kpi-card">
+            <div class="kpi-label">Consultations today</div>
+            <div class="kpi-value">{{ ops.kpis.consultationsToday }}</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Revenue today</div>
+            <div class="kpi-value">₹{{ formatPaise(ops.kpis.revenueTodayInPaise) }}</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Medicine sales</div>
+            <div class="kpi-value">₹{{ formatPaise(ops.kpis.medicineSalesTodayInPaise) }}</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Staff on duty</div>
+            <div class="kpi-value">{{ ops.kpis.activeDoctors + ops.kpis.activeStoreStaff }}</div>
+          </div>
+        </div>
+        <div class="summary">
+          <div class="pill warn">Payment due {{ ops.queue.paymentPending }}</div>
+          <div class="pill info">Awaiting doctor {{ ops.queue.awaitingDoctor }}</div>
+          <div class="pill">In progress {{ ops.queue.inProgress }}</div>
+          <div class="pill ok">Completed {{ ops.queue.completed }}</div>
+        </div>
+      </section>
+    }
+  }
+</div>

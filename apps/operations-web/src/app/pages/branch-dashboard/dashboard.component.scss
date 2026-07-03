@@ -1,0 +1,22 @@
+.page { padding: 1.25rem; }
+.hdr { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap; }
+.hdr h2 { margin: 0; }
+.hdr p { margin: 0.25rem 0 0; color: #64748b; }
+.hdr-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+.month-inp { padding: 0.45rem 0.6rem; border: 1px solid #cbd5e1; border-radius: 8px; }
+.kpi-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 0.75rem; margin-bottom: 1.25rem; }
+.kpi-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1rem; }
+.kpi-label { color: #64748b; font-size: 0.85rem; }
+.kpi-value { font-size: 1.35rem; font-weight: 700; margin-top: 0.25rem; }
+.kpi-value.positive { color: #047857; }
+.kpi-value.negative { color: #b91c1c; }
+.section { margin-bottom: 1.25rem; }
+.section h3 { margin: 0 0 0.75rem; font-size: 1rem; }
+.summary { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.pill { padding: 0.35rem 0.65rem; border-radius: 999px; background: #f1f5f9; font-size: 0.85rem; }
+.pill.warn { background: #fef3c7; }
+.pill.info { background: #dbeafe; }
+.pill.ok { background: #d1fae5; }
+.btn-refresh, .retry-btn { border-radius: 8px; padding: 0.5rem 0.85rem; cursor: pointer; border: 1px solid #cbd5e1; background: #fff; }
+.error-row { display: flex; align-items: center; gap: 0.75rem; }
+.error { color: #b91c1c; margin: 0; }

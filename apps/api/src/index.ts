@@ -97,7 +97,9 @@ const {
   CALL_CENTER: callCenterOrigin,
   MARKETING: marketingOrigin,
   CORPORATE_WELLNESS: corporateWellnessOrigin,
-  INSURANCE: insuranceOrigin
+  INSURANCE: insuranceOrigin,
+  OPERATIONS: operationsOrigin,
+  PARTNERS: partnersOrigin
 } = SERVER_CONFIG.ORIGINS;
 
 // ── Socket.IO ──────────────────────────────────────────────────────────────────
@@ -121,7 +123,9 @@ const socketOrigins = [
   callCenterOrigin,
   marketingOrigin,
   corporateWellnessOrigin,
-  insuranceOrigin
+  insuranceOrigin,
+  operationsOrigin,
+  partnersOrigin
 ];
 
 const io = new SocketIoServer(httpServer, {
@@ -179,7 +183,7 @@ io.on('connection', (socket) => {
 // ── Middleware ─────────────────────────────────────────────────────────────────
 
 app.use(cors({
-  origin: [webOrigin, adminOrigin, doctorOrigin, storeOrigin, storeManagerOrigin, hrOrigin, receptionistOrigin, clinicManagerOrigin, accountantOrigin, supplierOrigin, warehouseOrigin, deliveryOrigin, diagnosticOrigin, branchOwnerOrigin, coordinatorOrigin, callCenterOrigin, marketingOrigin, corporateWellnessOrigin, insuranceOrigin],
+  origin: [webOrigin, adminOrigin, doctorOrigin, storeOrigin, storeManagerOrigin, hrOrigin, receptionistOrigin, clinicManagerOrigin, accountantOrigin, supplierOrigin, warehouseOrigin, deliveryOrigin, diagnosticOrigin, branchOwnerOrigin, coordinatorOrigin, callCenterOrigin, marketingOrigin, corporateWellnessOrigin, insuranceOrigin, operationsOrigin, partnersOrigin],
   credentials: true
 }));
 app.use('/payments/razorpay-webhook', express.raw({ type: 'application/json' }));

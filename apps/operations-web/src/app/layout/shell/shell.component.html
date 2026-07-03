@@ -1,0 +1,77 @@
+
+    <div class="shell">
+      <aside class="sidebar" [class.open]="sidebarOpen()">
+        <div class="sidebar-header">
+          <div class="logo">
+            <span class="logo-icon">🏥</span>
+            <span class="logo-text">Operations</span>
+          </div>
+          <button class="sidebar-close" (click)="sidebarOpen.set(false)">✕</button>
+        </div>
+
+        <nav class="sidebar-nav">
+          @for (item of navItems(); track item.path) {
+            <a
+              [routerLink]="item.path"
+              routerLinkActive="active"
+              class="nav-item"
+              (click)="sidebarOpen.set(false)"
+            >
+              <span class="nav-icon">{{ item.icon }}</span>
+              <span class="nav-label">{{ item.label }}</span>
+            </a>
+          }
+        </nav>
+
+        <div class="sidebar-footer">
+          <div class="user-info">
+            <div class="user-avatar">{{ userInitial() }}</div>
+            <div class="user-details">
+              <div class="user-name">{{ auth.currentUser()?.name }}</div>
+              <div class="user-role">{{ roleLabel() }}</div>
+            </div>
+          </div>
+          <button class="logout-btn" (click)="auth.logout()" title="Logout">⬡</button>
+        </div>
+      </aside>
+
+      @if (sidebarOpen()) {
+        <div class="overlay" (click)="sidebarOpen.set(false)"></div>
+      }
+
+      <div class="main">
+        <header class="topbar">
+          <button class="menu-btn" (click)="sidebarOpen.set(true)">☰</button>
+          <div class="topbar-title">{{ pageTitle() }}</div>
+          <div class="topbar-right">
+            <app-notification-bell-host />
+            <div class="topbar-user">
+              <div class="topbar-avatar">{{ userInitial() }}</div>
+              <span class="topbar-name">{{ auth.currentUser()?.name }}</span>
+            </div>
+            <button class="topbar-logout" (click)="auth.logout()" title="Logout">
+              <span>⏻</span>
+            </button>
+          </div>
+        </header>
+
+        <main class="content">
+          <app-role-task-guide appKey="operations-web" theme="dark" />
+          <router-outlet />
+        </main>
+
+        <nav class="bottom-nav">
+          @for (item of navItems(); track item.path) {
+            <a
+              [routerLink]="item.path"
+              routerLinkActive="active"
+              class="bottom-nav-item"
+            >
+              <span class="bottom-nav-icon">{{ item.icon }}</span>
+              <span class="bottom-nav-label">{{ item.label }}</span>
+            </a>
+          }
+        </nav>
+      </div>
+    </div>
+  

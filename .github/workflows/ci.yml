@@ -15,23 +15,10 @@ jobs:
           - apps/api
           - apps/user-web
           - apps/doctor-web
-          - apps/admin-web
+          - apps/operations-web
+          - apps/partners-web
           - apps/store
           - apps/store-manager-web
-          - apps/hr-web
-          - apps/receptionist-web
-          - apps/clinic-manager-web
-          - apps/accountant-web
-          - apps/supplier-web
-          - apps/warehouse-web
-          - apps/delivery-web
-          - apps/diagnostic-web
-          - apps/branch-owner-web
-          - apps/coordinator-web
-          - apps/callcenter-web
-          - apps/marketing-web
-          - apps/corporate-wellness-web
-          - apps/insurance-web
 
     defaults:
       run:

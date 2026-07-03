@@ -148,6 +148,8 @@ export const DEV_DEMO_APPS = [
   { id: 'marketing-web', label: 'Marketing', port: 5500, url: SERVER_CONFIG.ORIGINS.MARKETING },
   { id: 'corporate-wellness-web', label: 'Corporate wellness', port: 5600, url: SERVER_CONFIG.ORIGINS.CORPORATE_WELLNESS },
   { id: 'insurance-web', label: 'Insurance partner', port: 5700, url: SERVER_CONFIG.ORIGINS.INSURANCE },
+  { id: 'operations-web', label: 'Operations (unified staff)', port: 5800, url: SERVER_CONFIG.ORIGINS.OPERATIONS },
+  { id: 'partners-web', label: 'Partners (unified external)', port: 5900, url: SERVER_CONFIG.ORIGINS.PARTNERS },
   { id: 'api', label: 'API + demo guide', port: 4000, url: SERVER_CONFIG.API_PUBLIC_URL }
 ] as const;
 
@@ -600,5 +602,33 @@ export function getPersonaEmail(personaId: string) {
 }
 
 export function personasForApp(appId: string) {
-  return DEV_DEMO_PERSONAS.filter((persona) => persona.app === appId);
+  return DEV_DEMO_PERSONAS.filter((persona) => personaMatchesApp(persona, appId));
+}
+
+const OPERATIONS_SOURCE_APPS = new Set([
+  'admin-web',
+  'hr-web',
+  'receptionist-web',
+  'clinic-manager-web',
+  'accountant-web',
+  'branch-owner-web',
+  'coordinator-web',
+  'callcenter-web',
+  'marketing-web'
+]);
+
+const PARTNERS_SOURCE_APPS = new Set([
+  'supplier-web',
+  'warehouse-web',
+  'delivery-web',
+  'diagnostic-web',
+  'corporate-wellness-web',
+  'insurance-web'
+]);
+
+export function personaMatchesApp(persona: DevDemoPersona, appId: string): boolean {
+  if (persona.app === appId) return true;
+  if (appId === 'operations-web' && OPERATIONS_SOURCE_APPS.has(persona.app)) return true;
+  if (appId === 'partners-web' && PARTNERS_SOURCE_APPS.has(persona.app)) return true;
+  return false;
 }

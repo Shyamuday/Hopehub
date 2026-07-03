@@ -1,0 +1,12 @@
+.page { padding: 1.25rem; }
+.hdr h2 { margin: 0; }
+.hdr p { margin: 0.25rem 0 1rem; color: #64748b; }
+.search-row { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
+.search-row input { flex: 1; padding: 0.55rem 0.75rem; border: 1px solid #cbd5e1; border-radius: 8px; }
+.search-row button { padding: 0.55rem 1rem; border-radius: 8px; border: none; background: #0f766e; color: #fff; cursor: pointer; }
+.table-wrap { overflow-x: auto; }
+.table { width: 100%; min-width: 640px; border-collapse: collapse; background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; }
+.table th, .table td { padding: 0.65rem 0.85rem; text-align: left; border-bottom: 1px solid #f1f5f9; font-size: 0.9rem; }
+.table th { background: #f8fafc; }
+.empty, .error { color: #64748b; }
+.error { color: #b91c1c; }

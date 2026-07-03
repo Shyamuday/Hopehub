@@ -1,0 +1,66 @@
+<div class="page">
+  <div class="hdr">
+    <div>
+      <h2>Corporate accounts</h2>
+      <p>Wellness program enrollments by corporate client</p>
+    </div>
+    <button type="button" class="btn-refresh" (click)="load()" [disabled]="loading()">Refresh</button>
+  </div>
+
+  @if (loading()) {
+    <p class="loading-text">Loading accounts…</p>
+  } @else if (error()) {
+    <p class="error">{{ error() }}</p>
+  } @else if (!accounts().length) {
+    <p class="empty">No corporate accounts.</p>
+  } @else {
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Code</th>
+            <th>Name</th>
+            <th>Contact</th>
+            <th class="num">Enrolled</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (a of accounts(); track a.id) {
+            <tr>
+              <td>{{ a.code }}</td>
+              <td>{{ a.name }}</td>
+              <td>{{ a.contactEmail ?? '—' }}</td>
+              <td class="num">{{ a.enrollmentCount }}</td>
+              <td><button type="button" class="link-btn" (click)="openAccount(a.id)">View</button></td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+
+  @if (selectedId()) {
+    <div class="drawer-backdrop" (click)="closeDetail()"></div>
+    <aside class="drawer">
+      <div class="drawer-hdr">
+        <h3>Enrollments</h3>
+        <button type="button" (click)="closeDetail()">✕</button>
+      </div>
+      @if (enrollmentsLoading()) {
+        <p>Loading…</p>
+      } @else if (!enrollments().length) {
+        <p class="empty">No enrollments.</p>
+      } @else {
+        <div class="enroll-list">
+          @for (e of enrollments(); track e.id) {
+            <div class="enroll-card">
+              <div class="name">{{ e.patient?.name }}</div>
+              <div class="meta">{{ e.patient?.patientCode }} · {{ e.patient?.mobile ?? e.patient?.email }}</div>
+            </div>
+          }
+        </div>
+      }
+    </aside>
+  }
+</div>

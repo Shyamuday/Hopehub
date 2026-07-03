@@ -5,12 +5,28 @@ import { authRequired, allowRoles } from '../../auth.js';
 import { prisma } from '../../db.js';
 import { asyncRoute, patientProfileSelect } from '../../utils/helpers.js';
 import { buildPatientIdCard } from '../../services/patient-identity.js';
+import {
+  capabilitiesForRole,
+  defaultRouteForRole,
+  portalForRole,
+  sessionPayloadForUser
+} from '../../constants/rbac-helpers.js';
 
 export function registerAuthProfileRoutes(router: Router) {
-// ─── Patient profile ───────────────────────────────────────────────────────────
+// ─── Session / profile ───────────────────────────────────────────────────────
 
 router.get('/me', authRequired, (req, res) => {
-  res.json({ user: req.user });
+  res.json(sessionPayloadForUser(req.user!));
+});
+
+router.get('/capabilities', authRequired, (req, res) => {
+  const role = req.user!.role;
+  res.json({
+    role,
+    capabilities: capabilitiesForRole(role),
+    portal: portalForRole(role),
+    defaultRoute: defaultRouteForRole(role)
+  });
 });
 
 router.get(

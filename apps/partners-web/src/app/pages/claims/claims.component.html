@@ -1,0 +1,65 @@
+<div class="page">
+  <div class="hdr">
+    <div>
+      <h2>Insurance claims</h2>
+      <p>View and submit reimbursement claims for enrolled patients</p>
+    </div>
+    <div class="hdr-actions">
+      <button type="button" class="btn-primary" (click)="showForm.set(true)">New claim</button>
+      <button type="button" class="btn-refresh" (click)="load()" [disabled]="loading()">Refresh</button>
+    </div>
+  </div>
+
+  @if (loading()) {
+    <p class="loading-text">Loading claims…</p>
+  } @else if (error()) {
+    <p class="error">{{ error() }}</p>
+  } @else if (!claims().length) {
+    <p class="empty">No claims yet.</p>
+  } @else {
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Claim #</th>
+            <th>Patient</th>
+            <th>Status</th>
+            <th class="num">Amount</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (c of claims(); track c.id) {
+            <tr>
+              <td>{{ c.claimNumber }}</td>
+              <td>{{ c.patient?.name }} ({{ c.patient?.patientCode }})</td>
+              <td><span class="status">{{ c.status }}</span></td>
+              <td class="num">₹{{ formatPaise(c.claimAmountInPaise) }}</td>
+              <td>{{ c.description ?? '—' }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+
+  @if (showForm()) {
+    <div class="modal-backdrop" (click)="showForm.set(false)"></div>
+    <div class="modal">
+      <h3>Submit claim</h3>
+      <label>Patient ID <input [(ngModel)]="form.patientId" placeholder="User cuid from patient record" /></label>
+      <label>Amount (₹) <input type="number" [(ngModel)]="form.amountRupees" min="1" step="0.01" /></label>
+      <label>Description <textarea [(ngModel)]="form.description" rows="3"></textarea></label>
+      <div class="modal-actions">
+        <button type="button" (click)="showForm.set(false)">Cancel</button>
+        <button type="button" class="btn-primary" [disabled]="submitting()" (click)="submitClaim()">
+          {{ submitting() ? 'Submitting…' : 'Submit' }}
+        </button>
+      </div>
+    </div>
+  }
+
+  @if (toast()) {
+    <div class="toast">{{ toast() }}</div>
+  }
+</div>

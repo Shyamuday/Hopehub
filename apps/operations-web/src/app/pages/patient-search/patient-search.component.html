@@ -1,0 +1,47 @@
+<div class="page">
+  <div class="hdr">
+    <div>
+      <h2>Patient search</h2>
+      <p>Find patients by name, mobile, email, or patient code</p>
+    </div>
+  </div>
+
+  <div class="search-row">
+    <input type="search" [(ngModel)]="query" (keyup.enter)="search()" placeholder="Type at least 2 characters…" />
+    <button type="button" (click)="search()" [disabled]="loading()">Search</button>
+  </div>
+
+  @if (error()) {
+    <p class="error">{{ error() }}</p>
+  }
+  @if (loading()) {
+    <p class="loading-text">Searching…</p>
+  } @else if (query.trim().length >= 2 && !patients().length) {
+    <p class="empty">No patients found.</p>
+  } @else if (patients().length) {
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Code</th>
+            <th>Mobile</th>
+            <th>Email</th>
+            <th>Home clinic</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (p of patients(); track p.id) {
+            <tr>
+              <td>{{ p.name }}</td>
+              <td>{{ p.patientCode ?? '—' }}</td>
+              <td>{{ p.mobile ?? '—' }}</td>
+              <td>{{ p.email ?? '—' }}</td>
+              <td>{{ p.homeClinicStore?.name ?? '—' }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</div>

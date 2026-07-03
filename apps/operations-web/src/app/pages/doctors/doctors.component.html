@@ -1,0 +1,73 @@
+
+    <div class="page">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">🩺 Doctors</h1>
+          <p class="page-sub">{{ doctors().length }} doctors in the system</p>
+        </div>
+      </div>
+
+      @if (loading()) {
+        <div class="loading-state">
+          <div class="spinner-lg"></div>
+          <p>Loading doctors...</p>
+        </div>
+      } @else if (doctors().length === 0) {
+        <div class="empty-state">
+          <div class="empty-icon">🩺</div>
+          <p>No doctors found</p>
+        </div>
+      } @else {
+        <div class="card-grid">
+          @for (doc of doctors(); track doc.id) {
+            <div class="doctor-card" (click)="openDrawer(doc)">
+              <div class="card-header-row">
+                <div class="doc-avatar">{{ doc.name.charAt(0).toUpperCase() }}</div>
+                <span class="badge" [class]="statusClass(doc.employeeStatus)">{{ doc.employeeStatus }}</span>
+              </div>
+
+              <div class="doc-name">{{ doc.name }}</div>
+              @if (doc.doctorTypeLabel) {
+                <div class="doc-type">{{ doc.doctorTypeLabel }}</div>
+              }
+              @if (doc.specialty) {
+                <div class="doc-specialty">🔬 {{ doc.specialty }}</div>
+              }
+              <div class="doc-designation text-muted">{{ doc.designation ?? 'Doctor' }}</div>
+
+              <div class="doc-details">
+                @if (doc.department) {
+                  <div class="detail-chip">🏥 {{ doc.department }}</div>
+                }
+                @if (doc.workShift) {
+                  <div class="detail-chip">
+                    🕐 {{ doc.workShift }}
+                    @if (doc.shiftStart && doc.shiftEnd) {
+                      ({{ doc.shiftStart }}–{{ doc.shiftEnd }})
+                    }
+                  </div>
+                }
+                @if (doc.joiningDate) {
+                  <div class="detail-chip">📅 {{ doc.joiningDate | date:'dd MMM yyyy' }}</div>
+                }
+                @if (doc.hasLetter) {
+                  <div class="detail-chip badge-letter">📄 Letter</div>
+                }
+              </div>
+
+              <div class="card-footer">
+                <span class="view-link">View Details →</span>
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </div>
+
+    <app-employee-drawer
+      [employee]="selectedDoctor()"
+      [visible]="drawerOpen()"
+      (closed)="drawerOpen.set(false)"
+      (saved)="onSaved($event)"
+    />
+  

@@ -19,7 +19,9 @@ export const SERVER_CONFIG = {
     CALL_CENTER: process.env.CALL_CENTER_ORIGIN || 'http://localhost:5400',
     MARKETING: process.env.MARKETING_ORIGIN || 'http://localhost:5500',
     CORPORATE_WELLNESS: process.env.CORPORATE_WELLNESS_ORIGIN || 'http://localhost:5600',
-    INSURANCE: process.env.INSURANCE_ORIGIN || 'http://localhost:5700'
+    INSURANCE: process.env.INSURANCE_ORIGIN || 'http://localhost:5700',
+    OPERATIONS: process.env.OPERATIONS_ORIGIN || 'http://localhost:5800',
+    PARTNERS: process.env.PARTNERS_ORIGIN || 'http://localhost:5900'
   },
   API_PUBLIC_URL: process.env.API_PUBLIC_URL || process.env.API_URL || 'http://localhost:4000',
   SMTP: {

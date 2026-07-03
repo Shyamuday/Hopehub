@@ -332,6 +332,126 @@ exports.ROLE_TASK_GUIDES = [
             'Do not change medicine doses without consulting your doctor.',
             'Do not use another person\'s account for your treatment.'
         ]
+    },
+    {
+        appKey: 'branch-owner-web',
+        roleTitle: 'Branch Owner',
+        tagline: 'Franchise P&L and branch operations for your clinic location.',
+        responsibilities: [
+            'Monitor branch revenue, payroll, and net estimate monthly.',
+            'Review today\'s consultation and medicine sales KPIs.',
+            'Escalate operational issues to clinic manager or platform admin.'
+        ],
+        dailyTasks: [
+            { title: 'Open branch dashboard', detail: 'Check month P&L and today\'s operations snapshot.', when: 'Start of week' },
+            { title: 'Review queue health', detail: 'Ensure payment-pending and awaiting-doctor counts are manageable.', when: 'Daily' },
+            { title: 'Month-end review', detail: 'Compare consultation vs medicine revenue and payroll costs.', when: 'Month end' }
+        ],
+        boundaries: [
+            'Do not alter clinical prescriptions or patient records.',
+            'Do not create platform admin or HR accounts — contact admin.',
+            'Financial exports are for your branch only — do not share externally without policy approval.'
+        ]
+    },
+    {
+        appKey: 'coordinator-web',
+        roleTitle: 'Patient Coordinator',
+        tagline: 'Follow up with patients on medicine adherence for your branch.',
+        responsibilities: [
+            'Review high-risk adherence cohorts for your home-clinic patients.',
+            'Prioritize outreach to patients with dropping adherence.',
+            'Coordinate with doctors on patients who need intervention.'
+        ],
+        dailyTasks: [
+            { title: 'Check high-risk cohort', detail: 'Open follow-ups and review patients below adherence threshold.', when: 'Daily' },
+            { title: 'Work alerts tab', detail: 'Address unexplained missed doses and adherence drops.', when: 'Daily' },
+            { title: 'Call or message patients', detail: 'Use patient mobile/code from the list for outreach.', when: 'Per alert' }
+        ],
+        boundaries: [
+            'Do not change prescriptions — escalate to the treating doctor.',
+            'Do not access patients outside your assigned branch cohort.',
+            'Do not share patient health data outside authorized channels.'
+        ]
+    },
+    {
+        appKey: 'callcenter-web',
+        roleTitle: 'Call Center Agent',
+        tagline: 'Phone support — find patients and see recent consultation context.',
+        responsibilities: [
+            'Search patients by name, mobile, email, or patient code.',
+            'Review recent consultations to answer patient calls accurately.',
+            'Escalate clinical questions to doctors or coordinators.'
+        ],
+        dailyTasks: [
+            { title: 'Patient lookup', detail: 'Search before every call to confirm identity and home clinic.', when: 'Per call' },
+            { title: 'Recent consults', detail: 'Check latest consultation status when patient asks about their case.', when: 'As needed' },
+            { title: 'Escalate', detail: 'Transfer medical or payment disputes to reception or clinic manager.', when: 'When required' }
+        ],
+        boundaries: [
+            'Do not give medical advice or dosing instructions.',
+            'Do not modify patient records or prescriptions.',
+            'Do not share one patient\'s data with another caller.'
+        ]
+    },
+    {
+        appKey: 'marketing-web',
+        roleTitle: 'Marketing Manager',
+        tagline: 'Read-only product funnel analytics for growth decisions.',
+        responsibilities: [
+            'Track patient journey conversion across booking, payment, Rx, and doses.',
+            'Report funnel drop-offs to admin and leadership.',
+            'Use data to inform campaigns — no direct patient messaging from this portal.'
+        ],
+        dailyTasks: [
+            { title: 'Review funnel table', detail: 'Compare step conversion for the selected time window.', when: 'Weekly' },
+            { title: 'Check summary KPIs', detail: 'Logins, bookings, payments, prescriptions published.', when: 'Weekly' },
+            { title: 'Share insights', detail: 'Document trends for admin product analytics review.', when: 'Monthly' }
+        ],
+        boundaries: [
+            'Read-only access — cannot change patient or clinical data.',
+            'Do not export patient-identifiable data for external ad platforms without compliance approval.',
+            'Coordinate broadcast campaigns through admin notifications.'
+        ]
+    },
+    {
+        appKey: 'corporate-wellness-web',
+        roleTitle: 'Corporate Wellness Partner',
+        tagline: 'Manage employee wellness enrollments for your organization.',
+        responsibilities: [
+            'View corporate account and enrolled employees.',
+            'Verify enrollment status for HR wellness programs.',
+            'Coordinate with Vitalis admin for new corporate accounts.'
+        ],
+        dailyTasks: [
+            { title: 'Accounts list', detail: 'Open your corporate account and review enrollment count.', when: 'Weekly' },
+            { title: 'Enrollment detail', detail: 'View enrolled employees and their patient codes.', when: 'As needed' },
+            { title: 'HR coordination', detail: 'Align new hires with wellness enrollment process.', when: 'On hire' }
+        ],
+        boundaries: [
+            'Do not access clinical records beyond enrollment visibility.',
+            'Do not share employee health data outside your organization\'s policy.',
+            'Enrollment changes for new accounts go through platform admin.'
+        ]
+    },
+    {
+        appKey: 'insurance-web',
+        roleTitle: 'Insurance Partner',
+        tagline: 'Submit and track reimbursement claims for covered patients.',
+        responsibilities: [
+            'Review submitted claims and their status.',
+            'Create new claims with patient ID and amount.',
+            'Follow up on under-review and rejected claims.'
+        ],
+        dailyTasks: [
+            { title: 'Claims inbox', detail: 'Check new and pending claims at start of day.', when: 'Daily' },
+            { title: 'Submit claim', detail: 'Use patient ID from Vitalis records and accurate amount in rupees.', when: 'Per claim' },
+            { title: 'Status follow-up', detail: 'Track SUBMITTED and UNDER_REVIEW claims.', when: 'Weekly' }
+        ],
+        boundaries: [
+            'Only submit claims for valid covered patients.',
+            'Do not alter claim amounts after submission without process approval.',
+            'Patient clinical details are confidential — use only for claim adjudication.'
+        ]
     }
 ];
 function getRoleTaskGuide(appKey, variantKey) {
