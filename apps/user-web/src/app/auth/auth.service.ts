@@ -84,12 +84,6 @@ export class AuthService {
     );
   }
 
-  staffLogin(payload: { email: string; password: string }) {
-    return this.http.post<AuthResponse>(`${this.apiBase}${AUTH_PATHS.STAFF_LOGIN}`, payload).pipe(
-      tap((response) => this.persistSession(response))
-    );
-  }
-
   googleLogin(idToken: string) {
     return this.http.post<AuthResponse>(`${this.apiBase}${AUTH_PATHS.GOOGLE}`, { idToken }).pipe(
       tap((response) => this.persistSession(response))
@@ -98,10 +92,6 @@ export class AuthService {
 
   forgotPassword(email: string) {
     return from(this.patientAuth.forgotPassword(email));
-  }
-
-  staffForgotPassword(email: string) {
-    return this.http.post<{ message: string }>(`${this.apiBase}${AUTH_PATHS.FORGOT_PASSWORD}`, { email });
   }
 
   resetPassword(payload: { token: string; password: string }) {

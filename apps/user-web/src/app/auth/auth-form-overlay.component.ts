@@ -14,12 +14,11 @@ import type { DevFillCredentials } from '@vitalis/platform-ui';
 import { PatientSelectionCandidate } from '../models';
 
 type AuthFormOverlayData = {
-  mode?: 'patient' | 'staff';
   initialForgotStep?: ForgotStep;
   resetToken?: string;
 };
 
-type ForgotStep = 'none' | 'email' | 'sent' | 'reset';
+type ForgotStep = 'none' | 'reset';
 
 @Component({
   selector: 'app-auth-form-overlay',
@@ -28,7 +27,6 @@ type ForgotStep = 'none' | 'email' | 'sent' | 'reset';
 })
 export class AuthFormOverlayComponent {
   private readonly overlayData = (inject(APP_OVERLAY_DATA) as AuthFormOverlayData | null) || {};
-  readonly mode = signal<'patient' | 'staff'>(this.overlayData.mode || 'patient');
   readonly isProcessing = signal(false);
   readonly forgotStep = signal<ForgotStep>(this.overlayData.initialForgotStep || 'none');
   readonly resetToken = signal<string>(this.overlayData.resetToken || '');
@@ -52,12 +50,6 @@ export class AuthFormOverlayComponent {
   });
   readonly patientOtpForm = form(this.patientOtpModel);
 
-  readonly staffModel = signal({
-    email: DEV_DEMO_ACCOUNTS.doctor.email as string,
-    password: DEV_DEMO_ACCOUNTS.password as string,
-  });
-  readonly staffForm = form(this.staffModel);
-
   readonly forgotModel = signal({
     email: '',
     password: '',
@@ -69,10 +61,6 @@ export class AuthFormOverlayComponent {
   private readonly router = inject(Router);
   private readonly overlayService = inject(AppOverlayService);
   private readonly hostOverlayRef = inject(APP_OVERLAY_REF) as AppOverlayRef;
-
-  goToForgotStep(step: ForgotStep) {
-    this.forgotStep.set(step);
-  }
 
   canResetPassword(): boolean {
     const forgot = this.forgotModel();
@@ -204,30 +192,6 @@ export class AuthFormOverlayComponent {
         this.router.navigateByUrl(this.auth.dashboardFor(response.user.role));
       },
       error: (error) => this.showError(error.error?.message || 'Patient login failed.'),
-    });
-  }
-
-  loginStaff() {
-    this.process('Logging in staff...', this.auth.staffLogin(this.staffModel())).subscribe({
-      next: ({ user }) => {
-        this.closeAllOverlays();
-        this.router.navigateByUrl(this.auth.dashboardFor(user.role));
-      },
-      error: (error) => this.showError(error.error?.message || 'Staff login failed.'),
-    });
-  }
-
-  forgotPassword() {
-    const { email } = this.forgotModel();
-    this.process(
-      'Sending reset link...',
-      this.auth.staffForgotPassword(email),
-    ).subscribe({
-      next: () => {
-        this.closeActiveOverlay();
-        this.goToForgotStep('sent');
-      },
-      error: () => this.showError('Could not send reset link.'),
     });
   }
 

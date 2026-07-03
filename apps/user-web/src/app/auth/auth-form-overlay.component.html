@@ -16,7 +16,25 @@
           }
         </div>
         <button type="button" class="link-btn" (click)="cancelPatientSelection()">← Back to login</button>
-      } @else if (mode() === 'patient') {
+      } @else if (forgotStep() === 'reset' && resetToken()) {
+        <h2>Set new password</h2>
+        <p class="muted">Enter your new password below.</p>
+
+        <form (ngSubmit)="resetPassword()">
+          <label>
+            New password
+            <input [formField]="forgotForm.password" type="password" attr.placeholder="Min 8 characters" />
+          </label>
+          <label>
+            Confirm password
+            <input [formField]="forgotForm.confirmPassword" type="password" attr.placeholder="Confirm new password" />
+          </label>
+          @if (forgotModel().password && forgotModel().confirmPassword && forgotModel().password !== forgotModel().confirmPassword) {
+            <p class="error-text">Passwords do not match</p>
+          }
+          <button class="primary" type="submit" [disabled]="isProcessing() || !canResetPassword()">Reset password & login</button>
+        </form>
+      } @else {
         <h2>Login to continue</h2>
         <p class="muted">Use email/mobile with password, or choose mobile OTP as a separate option.</p>
 
@@ -66,84 +84,5 @@
         </form>
 
         <app-dev-login-panel (loggedIn)="onDevLoggedIn()" (fillAccount)="applyDevFill($event)" />
-      } @else {
-        @switch (forgotStep()) {
-          @case ('none') {
-            <h2>Doctor login</h2>
-            <p class="muted">Doctors and admins use internal credentials.</p>
-
-            <form (ngSubmit)="loginStaff()">
-              <label>
-                Email
-                <input [formField]="staffForm.email" attr.placeholder="doctor@vitalisclinic.local" />
-              </label>
-              <label>
-                Password
-                <input [formField]="staffForm.password" type="password" attr.placeholder="Password@123" />
-              </label>
-              <button class="primary" type="submit" [disabled]="isProcessing()">Login</button>
-            </form>
-
-            <button type="button" class="link-btn" (click)="goToForgotStep('email')">
-              Forgot password?
-            </button>
-          }
-
-          @case ('email') {
-            <button type="button" class="back-btn" (click)="goToForgotStep('none')">← Back to login</button>
-            <h2>Forgot password</h2>
-            <p class="muted">Enter your registered email to receive a password reset link.</p>
-
-            <form (ngSubmit)="forgotPassword()">
-              <label>
-                Staff email
-                <input [formField]="forgotForm.email" attr.placeholder="doctor@vitalisclinic.local" />
-              </label>
-              <button class="primary" type="submit" [disabled]="isProcessing()">Send reset link</button>
-            </form>
-          }
-
-          @case ('sent') {
-            <button type="button" class="back-btn" (click)="goToForgotStep('none')">← Back to login</button>
-            <div class="success-notice">
-              <span class="notice-icon">✓</span>
-              <h2>Reset link sent</h2>
-            </div>
-            <p class="muted">We've sent a password reset link to <strong>{{ forgotModel().email }}</strong>. Please check your inbox and click the link.</p>
-
-            <div class="step-divider">
-              <span>After clicking the link</span>
-            </div>
-
-            <button class="primary" type="button" (click)="goToForgotStep('reset')">
-              I've clicked the link → Enter new password
-            </button>
-
-            <button type="button" class="link-btn" (click)="forgotPassword()">
-              Didn't receive? Resend link
-            </button>
-          }
-
-          @case ('reset') {
-            <button type="button" class="back-btn" (click)="goToForgotStep('sent')">← Back</button>
-            <h2>Set new password</h2>
-            <p class="muted">Enter your new password below.</p>
-
-            <form (ngSubmit)="resetPassword()">
-              <label>
-                New password
-                <input [formField]="forgotForm.password" type="password" attr.placeholder="Min 8 characters" />
-              </label>
-              <label>
-                Confirm password
-                <input [formField]="forgotForm.confirmPassword" type="password" attr.placeholder="Confirm new password" />
-              </label>
-              @if (forgotModel().password && forgotModel().confirmPassword && forgotModel().password !== forgotModel().confirmPassword) {
-                <p class="error-text">Passwords do not match</p>
-              }
-              <button class="primary" type="submit" [disabled]="isProcessing() || !canResetPassword()">Reset password & login</button>
-            </form>
-          }
-        }
       }
     </div>

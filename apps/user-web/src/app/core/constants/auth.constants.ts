@@ -6,9 +6,7 @@ export const AUTH_PATHS = {
   PATIENT_LOGIN_SELECT: '/auth/patient-login/select',
   PATIENT_PASSWORD_SELECT: '/auth/patient-login/password-select',
   PATIENT_REGISTER: '/auth/patient-register',
-  STAFF_LOGIN: '/auth/staff-login',
   GOOGLE: '/auth/google',
-  FORGOT_PASSWORD: '/auth/forgot-password',
   ME: '/me'
 } as const;
 

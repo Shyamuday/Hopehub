@@ -50,10 +50,9 @@ export class TreatmentsComponent {
     this.selectedIssueName.set(diseaseName);
   }
 
-  openAuthOverlay(event: Event, mode: 'patient' | 'staff' = 'patient') {
+  openAuthOverlay(event: Event) {
     event.preventDefault();
     this.overlayService.open(AuthFormOverlayComponent, {
-      data: { mode },
       width: '480px',
       panelClass: 'app-overlay-panel',
     });
