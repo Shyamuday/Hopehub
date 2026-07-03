@@ -10,6 +10,7 @@ import { ConsultationDetailComponent, PrescriptionPayload, SendMessagePayload } 
 import { ConsultationListComponent } from './consultation-list.component';
 import { PaymentStatusOverlayComponent } from './payment-status-overlay.component';
 import { PrescriptionHistoryComponent } from './prescription-history.component';
+import { LabResultsComponent } from './lab-results.component';
 import { ReminderPreferencesComponent, ReminderPrefs } from './reminder-preferences.component';
 import { TodayMedicinesComponent } from './today-medicines.component';
 import { PatientProfileComponent } from './patient-profile.component';
@@ -20,7 +21,7 @@ import { ROUTE_PATHS } from './core/constants/app-routes.constants';
 import { WHATSAPP_CONTACT_URL } from './core/constants/branding.constants';
 import { DEFAULT_QUIET_HOURS, DEFAULT_SNOOZE_MINUTES, NOTICE_DISMISS_MS } from './core/constants/timing.constants';
 import { PURCHASE_TYPES } from './core/constants/billing.constants';
-import { BillingPlan, Consultation, Disease, DoseEvent, Doctor, Prescription } from './models';
+import { BillingPlan, Consultation, Disease, DoseEvent, Doctor, LabResult, Prescription } from './models';
 
 @Component({
   selector: 'app-dashboard',
@@ -35,6 +36,7 @@ import { BillingPlan, Consultation, Disease, DoseEvent, Doctor, Prescription } f
     ConsultationListComponent,
     PaymentStatusOverlayComponent,
     PrescriptionHistoryComponent,
+    LabResultsComponent,
     ReminderPreferencesComponent,
     TodayMedicinesComponent,
     PatientProfileComponent,
@@ -49,6 +51,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   readonly report = signal<{ revenueInPaise: number; activeDoctors: number; consultations: unknown[] } | null>(null);
   readonly activeConsultation = signal<Consultation | null>(null);
   readonly patientPrescriptions = signal<Prescription[]>([]);
+  readonly patientLabResults = signal<LabResult[]>([]);
   readonly todayDoseEvents = signal<DoseEvent[]>([]);
   readonly dosesNeedingReason = signal<DoseEvent[]>([]);
   readonly notice = signal('');
@@ -383,6 +386,10 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.dataService.loadPatientPrescriptions().subscribe({
       next: ({ prescriptions }) => this.patientPrescriptions.set(prescriptions),
       error: (error) => this.showNotice(error.error?.message || error.message || 'Could not load prescriptions.')
+    });
+    this.dataService.loadPatientLabResults().subscribe({
+      next: ({ referrals }) => this.patientLabResults.set(referrals),
+      error: (error) => this.showNotice(error.error?.message || error.message || 'Could not load lab results.')
     });
     this.dataService.loadMedicineReminders().subscribe({
       next: ({ today, needingReason }) => {

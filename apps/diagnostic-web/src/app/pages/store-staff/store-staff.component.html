@@ -1,0 +1,70 @@
+
+    <div class="page">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">🏪 Store Staff</h1>
+          <p class="page-sub">{{ staff().length }} store staff members</p>
+        </div>
+      </div>
+
+      @if (loading()) {
+        <div class="loading-state">
+          <div class="spinner-lg"></div>
+          <p>Loading store staff...</p>
+        </div>
+      } @else if (staff().length === 0) {
+        <div class="empty-state">
+          <div class="empty-icon">🏪</div>
+          <p>No store staff found</p>
+        </div>
+      } @else {
+        <div class="card-grid">
+          @for (member of staff(); track member.id) {
+            <div class="staff-card" (click)="openDrawer(member)">
+              <div class="card-header-row">
+                <div class="staff-avatar">{{ member.name.charAt(0).toUpperCase() }}</div>
+                <span class="badge" [class]="statusClass(member.employeeStatus)">{{ member.employeeStatus }}</span>
+              </div>
+
+              <div class="staff-name">{{ member.name }}</div>
+              @if (member.storeName) {
+                <div class="staff-store">🏪 {{ member.storeName }}</div>
+              }
+              <div class="staff-role text-muted">{{ member.designation ?? 'Store Staff' }}</div>
+
+              <div class="staff-details">
+                @if (member.department) {
+                  <div class="detail-chip">🏢 {{ member.department }}</div>
+                }
+                @if (member.workShift) {
+                  <div class="detail-chip">
+                    🕐 {{ member.workShift }}
+                    @if (member.shiftStart && member.shiftEnd) {
+                      ({{ member.shiftStart }}–{{ member.shiftEnd }})
+                    }
+                  </div>
+                }
+                @if (member.joiningDate) {
+                  <div class="detail-chip">📅 {{ member.joiningDate | date:'dd MMM yyyy' }}</div>
+                }
+                @if (member.hasLetter) {
+                  <div class="detail-chip badge-letter">📄 Letter</div>
+                }
+              </div>
+
+              <div class="card-footer">
+                <span class="view-link">View Details →</span>
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </div>
+
+    <app-employee-drawer
+      [employee]="selectedMember()"
+      [visible]="drawerOpen()"
+      (closed)="drawerOpen.set(false)"
+      (saved)="onSaved($event)"
+    />
+  

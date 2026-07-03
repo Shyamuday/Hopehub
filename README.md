@@ -18,6 +18,8 @@ For the full role/app roadmap and phasing (receptionist, clinic manager, supplie
 
 For AI-assisted case analysis (image upload, camera capture, rubric suggestions), see **[docs/case-analysis-ai-enrichment.md](docs/case-analysis-ai-enrichment.md)**.
 
+For homeopathic doctor types (Chief Consultant, Intern, Specialist, etc.), see **[docs/homeopathic-doctor-types.md](docs/homeopathic-doctor-types.md)**.
+
 ## Stack
 
 - Patient web app: `apps/user-web` (Angular)

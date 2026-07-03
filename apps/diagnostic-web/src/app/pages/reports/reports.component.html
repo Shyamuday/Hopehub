@@ -1,0 +1,113 @@
+<div class="page">
+  <div class="hdr">
+    <div>
+      <h2>Finance reports</h2>
+      <p>Month summary, branch P&amp;L, and GST-ready export bundle</p>
+    </div>
+    <div class="hdr-actions">
+      <select [(ngModel)]="branchExportFilter" class="branch-filter" title="Optional branch filter for export">
+        <option value="">All branches</option>
+        <option value="CLINIC">Clinic (online / unallocated)</option>
+        @for (row of branchPnl(); track row.storeId ?? row.storeCode) {
+          @if (row.storeId) {
+            <option [value]="row.storeId">{{ row.storeName }}</option>
+          }
+        }
+      </select>
+      <button type="button" class="btn-export" [disabled]="exporting() || loading()" (click)="exportBundle()">
+        {{ exporting() ? 'Exporting…' : 'Export bundle' }}
+      </button>
+      <input type="month" [(ngModel)]="selectedMonth" (change)="load()" class="month-inp" />
+      <button type="button" class="btn-refresh" (click)="load()" [disabled]="loading()">Refresh</button>
+    </div>
+  </div>
+
+  @if (loading()) {
+    <p class="loading-text">Loading reports…</p>
+  } @else if (error()) {
+    <div class="error-row">
+      <p class="error">{{ error() }}</p>
+      <button type="button" class="retry-btn" (click)="load()">Retry</button>
+    </div>
+  } @else {
+    @if (summary(); as s) {
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-label">Total revenue</div>
+          <div class="kpi-value">₹{{ formatPaise(s.totalRevenueInPaise) }}</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Payroll</div>
+          <div class="kpi-value">₹{{ formatPaise(s.payrollCostInPaise) }}</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Expenses</div>
+          <div class="kpi-value">₹{{ formatPaise(s.totalExpensesInPaise) }}</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Net estimate</div>
+          <div class="kpi-value" [class.positive]="s.netEstimateInPaise >= 0" [class.negative]="s.netEstimateInPaise < 0">
+            ₹{{ formatPaise(s.netEstimateInPaise) }}
+          </div>
+        </div>
+      </div>
+    }
+
+    <section class="section">
+      <h3>Branch P&amp;L — {{ selectedMonth }}</h3>
+      <p class="note">Per-branch revenue, payroll, and expenses. Clinic-level costs appear under “Clinic (online / unallocated)”.</p>
+      @if (!branchPnl().length) {
+        <p class="empty">No branch data for this month.</p>
+      } @else {
+        <div class="table-wrap">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Branch</th>
+                <th class="num">Consultation</th>
+                <th class="num">Medicine</th>
+                <th class="num">Payroll</th>
+                <th class="num">Store exp.</th>
+                <th class="num">Clinic exp.</th>
+                <th class="num">Net</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of branchPnl(); track row.storeId ?? row.storeCode) {
+                <tr>
+                  <td>
+                    <div class="branch-name">{{ row.storeName }}</div>
+                    <div class="branch-code">{{ row.storeCode }}</div>
+                  </td>
+                  <td class="num">₹{{ formatPaise(row.consultationRevenueInPaise) }}</td>
+                  <td class="num">₹{{ formatPaise(row.medicineRevenueInPaise) }}</td>
+                  <td class="num">₹{{ formatPaise(row.payrollCostInPaise) }}</td>
+                  <td class="num">₹{{ formatPaise(row.storeExpensesInPaise) }}</td>
+                  <td class="num">₹{{ formatPaise(row.clinicExpensesInPaise) }}</td>
+                  <td class="num" [class.positive]="row.netEstimateInPaise >= 0" [class.negative]="row.netEstimateInPaise < 0">
+                    ₹{{ formatPaise(row.netEstimateInPaise) }}
+                  </td>
+                </tr>
+              }
+              @if (branchTotals(); as t) {
+                <tr class="totals-row">
+                  <td><strong>Total</strong></td>
+                  <td class="num"><strong>₹{{ formatPaise(t.consultationRevenueInPaise) }}</strong></td>
+                  <td class="num"><strong>₹{{ formatPaise(t.medicineRevenueInPaise) }}</strong></td>
+                  <td class="num"><strong>₹{{ formatPaise(t.payrollCostInPaise) }}</strong></td>
+                  <td class="num"><strong>₹{{ formatPaise(t.storeExpensesInPaise) }}</strong></td>
+                  <td class="num"><strong>₹{{ formatPaise(t.clinicExpensesInPaise) }}</strong></td>
+                  <td class="num"><strong>₹{{ formatPaise(t.netEstimateInPaise) }}</strong></td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </section>
+  }
+
+  @if (toast()) {
+    <div class="toast">{{ toast() }}</div>
+  }
+</div>

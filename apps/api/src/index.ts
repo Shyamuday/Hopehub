@@ -41,6 +41,8 @@ import { createAccountantRouter } from './routes/accountant/router.js';
 import { createSupplierRouter } from './routes/supplier/router.js';
 import { createWarehouseRouter } from './routes/warehouse/router.js';
 import { createDeliveryRouter } from './routes/delivery/router.js';
+import { createDiagnosticRouter } from './routes/diagnostic/router.js';
+import { labReferralsRouter } from './routes/lab-referrals.js';
 import { devRouter } from './routes/dev.js';
 import { createRepertoryRouter } from './routes/repertory/index.js';
 import { ReceptionScopeError } from './routes/reception/shared.js';
@@ -48,6 +50,7 @@ import { ClinicManagerScopeError } from './services/clinic-manager-hub.js';
 import { PurchaseOrderError } from './services/purchase-orders.js';
 import { StockTransferError } from './services/stock-transfers.js';
 import { MedicineDeliveryError } from './services/medicine-deliveries.js';
+import { LabReferralError } from './services/lab-referrals.js';
 
 // ── Schedulers ─────────────────────────────────────────────────────────────────
 import {
@@ -78,7 +81,8 @@ const {
   ACCOUNTANT: accountantOrigin,
   SUPPLIER: supplierOrigin,
   WAREHOUSE: warehouseOrigin,
-  DELIVERY: deliveryOrigin
+  DELIVERY: deliveryOrigin,
+  DIAGNOSTIC: diagnosticOrigin
 } = SERVER_CONFIG.ORIGINS;
 
 // ── Socket.IO ──────────────────────────────────────────────────────────────────
@@ -116,7 +120,7 @@ io.on('connection', (socket) => {
 // ── Middleware ─────────────────────────────────────────────────────────────────
 
 app.use(cors({
-  origin: [webOrigin, adminOrigin, doctorOrigin, storeOrigin, storeManagerOrigin, hrOrigin, receptionistOrigin, clinicManagerOrigin, accountantOrigin, supplierOrigin, warehouseOrigin, deliveryOrigin],
+  origin: [webOrigin, adminOrigin, doctorOrigin, storeOrigin, storeManagerOrigin, hrOrigin, receptionistOrigin, clinicManagerOrigin, accountantOrigin, supplierOrigin, warehouseOrigin, deliveryOrigin, diagnosticOrigin],
   credentials: true
 }));
 app.use('/payments/razorpay-webhook', express.raw({ type: 'application/json' }));
@@ -178,6 +182,8 @@ app.use(createAccountantRouter());
 app.use(createSupplierRouter());
 app.use(createWarehouseRouter());
 app.use(createDeliveryRouter());
+app.use(createDiagnosticRouter());
+app.use(labReferralsRouter);
 
 // ── Global error handler ───────────────────────────────────────────────────────
 
@@ -195,6 +201,9 @@ app.use((error: unknown, _req: express.Request, res: express.Response, _next: ex
     return res.status(400).json({ message: error.message });
   }
   if (error instanceof MedicineDeliveryError) {
+    return res.status(400).json({ message: error.message });
+  }
+  if (error instanceof LabReferralError) {
     return res.status(400).json({ message: error.message });
   }
   if (error instanceof z.ZodError) {

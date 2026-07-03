@@ -164,6 +164,30 @@ export type PrescriptionItem = {
   instructions?: string | null;
 };
 
+export type LabReferralLine = {
+  id: string;
+  testName: string;
+  testCode?: string | null;
+  specimen?: string | null;
+  resultSummary?: string | null;
+  resultFileUrl?: string | null;
+  completedAt?: string | null;
+};
+
+export type LabResult = {
+  id: string;
+  referralNumber: string;
+  status: string;
+  clinicalNotes?: string | null;
+  expectedResultDate?: string | null;
+  completedAt?: string | null;
+  createdAt: string;
+  diagnosticCenter: { id: string; code: string; name: string; phone?: string | null };
+  store: { id: string; name: string; code: string };
+  lines: LabReferralLine[];
+  totals: { testCount: number; completedTests: number };
+};
+
 export type DoseEvent = {
   id: string;
   scheduledFor: string;

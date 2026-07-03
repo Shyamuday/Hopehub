@@ -1,0 +1,145 @@
+
+    <div class="page">
+      <div class="page-header">
+        <h1 class="page-title">Dashboard</h1>
+        <p class="page-sub">Welcome back! Here's what's happening.</p>
+      </div>
+
+      @if (loading()) {
+        <div class="loading-state">
+          <div class="spinner-lg"></div>
+          <p>Loading dashboard...</p>
+        </div>
+      } @else if (data()) {
+        <!-- Stat Cards -->
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon blue">👥</div>
+            <div class="stat-info">
+              <div class="stat-value">{{ data()!.totalEmployees }}</div>
+              <div class="stat-label">Total Employees</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon green">🩺</div>
+            <div class="stat-info">
+              <div class="stat-value">{{ data()!.activeDoctors }}</div>
+              <div class="stat-label">Active Doctors</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon purple">🏪</div>
+            <div class="stat-info">
+              <div class="stat-value">{{ data()!.activeStoreStaff }}</div>
+              <div class="stat-label">Active Store Staff</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon orange">📋</div>
+            <div class="stat-info">
+              <div class="stat-value">{{ data()!.pendingLeaves }}</div>
+              <div class="stat-label">Pending Leaves</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bottom Row -->
+        <div class="bottom-row">
+          <!-- Recent Joins -->
+          <div class="card recent-joins">
+            <div class="card-header">
+              <h2 class="card-title">Recent Joins</h2>
+              <span class="card-badge">Last 5</span>
+            </div>
+            <div class="table-wrap">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Type</th>
+                    <th>Designation</th>
+                    <th>Joined</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (emp of data()!.recentJoins; track emp.id) {
+                    <tr>
+                      <td>
+                        <div class="emp-cell">
+                          <div class="emp-avatar">{{ emp.name.charAt(0) }}</div>
+                          <span>{{ emp.name }}</span>
+                        </div>
+                      </td>
+                      <td>
+                        <span class="badge" [class]="emp.empType === 'DOCTOR' ? 'badge-blue' : 'badge-purple'">
+                          {{ emp.empType === 'DOCTOR' ? '🩺 Doctor' : '🏪 Staff' }}
+                        </span>
+                      </td>
+                      <td class="text-muted">{{ emp.designation ?? '—' }}</td>
+                      <td class="text-muted">{{ emp.joiningDate | date:'dd MMM yyyy' }}</td>
+                    </tr>
+                  } @empty {
+                    <tr><td colspan="4" class="empty-row">No recent joins</td></tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Leave Stats -->
+          <div class="card leave-stats">
+            <div class="card-header">
+              <h2 class="card-title">Leave Summary</h2>
+            </div>
+            <div class="leave-pie">
+              <div class="leave-stat pending">
+                <div class="leave-count">{{ data()!.leaveStats.PENDING }}</div>
+                <div class="leave-type-label">Pending</div>
+                <div class="leave-bar">
+                  <div
+                    class="leave-fill pending-fill"
+                    [style.width]="leavePercent('PENDING') + '%'"
+                  ></div>
+                </div>
+              </div>
+              <div class="leave-stat approved">
+                <div class="leave-count">{{ data()!.leaveStats.APPROVED }}</div>
+                <div class="leave-type-label">Approved</div>
+                <div class="leave-bar">
+                  <div
+                    class="leave-fill approved-fill"
+                    [style.width]="leavePercent('APPROVED') + '%'"
+                  ></div>
+                </div>
+              </div>
+              <div class="leave-stat rejected">
+                <div class="leave-count">{{ data()!.leaveStats.REJECTED }}</div>
+                <div class="leave-type-label">Rejected</div>
+                <div class="leave-bar">
+                  <div
+                    class="leave-fill rejected-fill"
+                    [style.width]="leavePercent('REJECTED') + '%'"
+                  ></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="leave-total">
+              Total: <strong>{{ totalLeaves() }}</strong> leaves
+            </div>
+
+            <div class="breakdown-grid">
+              <div class="breakdown-item">
+                <div class="bd-label">Total Doctors</div>
+                <div class="bd-value">{{ data()!.totalDoctors }}</div>
+              </div>
+              <div class="breakdown-item">
+                <div class="bd-label">Total Store Staff</div>
+                <div class="bd-value">{{ data()!.totalStoreStaff }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+  

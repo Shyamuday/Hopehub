@@ -5,7 +5,20 @@
     <input placeholder="Email" name="createEmail" [(ngModel)]="createEmail" [disabled]="mutating" />
     <input placeholder="Mobile" name="createMobile" [(ngModel)]="createMobile" [disabled]="mutating" />
     <input placeholder="Password" name="createPassword" type="password" [(ngModel)]="createPassword" [disabled]="mutating" />
-    <input placeholder="Specialty" name="createSpecialty" [(ngModel)]="createSpecialty" [disabled]="mutating" />
+    <select name="createDoctorType" [(ngModel)]="createDoctorType" [disabled]="mutating">
+      @for (option of doctorTypeOptions; track option.value) {
+        <option [value]="option.value">{{ option.label }}</option>
+      }
+    </select>
+    @if (isSpecialistType(createDoctorType)) {
+      <select name="createSpecialtyFocus" [(ngModel)]="createSpecialtyFocus" [disabled]="mutating">
+        <option value="">Select specialty focus</option>
+        @for (option of specialtyFocusOptions; track option.value) {
+          <option [value]="option.value">{{ option.label }}</option>
+        }
+      </select>
+    }
+    <input placeholder="Specialty (optional override)" name="createSpecialty" [(ngModel)]="createSpecialty" [disabled]="mutating" />
     <input placeholder="Registration No" name="createRegistrationNo" [(ngModel)]="createRegistrationNo" [disabled]="mutating" />
     <button type="button" (click)="createDoctor()" [disabled]="mutating || loading">
       {{ mutating ? 'Creating...' : 'Create' }}
@@ -59,7 +72,7 @@
         </label>
         <strong>{{ doctor.name }}</strong>
         <p>{{ doctor.email }} | {{ doctor.mobile || 'No mobile' }}</p>
-        <small>{{ doctor.doctorProfile?.specialty || 'Specialty not set' }} | {{ doctor.doctorProfile?.registrationNo || 'No registration no.' }}</small>
+        <small>{{ doctorTypeLabel(doctor.doctorProfile?.doctorType) }} | {{ doctor.doctorProfile?.specialty || 'Specialty not set' }} | {{ doctor.doctorProfile?.registrationNo || 'No registration no.' }}</small>
         <div class="actions">
           <button type="button" (click)="approveDoctor(doctor.id)" [disabled]="mutating">
             {{ mutating ? '...' : 'Approve' }}
@@ -104,7 +117,7 @@
         <strong>{{ doctor.name }}</strong>
         <button type="button" class="link" (click)="setSelectedDoctor(doctor.id)" [disabled]="mutating">View details</button>
         <p>{{ doctor.email }} | {{ doctor.mobile || 'No mobile' }}</p>
-        <small>{{ doctor.doctorProfile?.specialty || 'Specialty not set' }} | {{ doctor.isActive ? 'Active' : 'Inactive' }}</small>
+        <small>{{ doctorTypeLabel(doctor.doctorProfile?.doctorType) }} | {{ doctor.doctorProfile?.specialty || 'Specialty not set' }} | {{ doctor.isActive ? 'Active' : 'Inactive' }}</small>
       </article>
     } @empty {
       <p class="empty-state">No doctors found.</p>
@@ -124,6 +137,10 @@
       <strong>{{ selectedDoctor.name }}</strong>
       <p>Email: {{ selectedDoctor.email || 'N/A' }}</p>
       <p>Mobile: {{ selectedDoctor.mobile || 'N/A' }}</p>
+      <p>Doctor type: {{ doctorTypeLabel(selectedDoctor.doctorProfile?.doctorType) }}</p>
+      @if (specialtyFocusLabel(selectedDoctor.doctorProfile?.specialtyFocus)) {
+        <p>Specialty focus: {{ specialtyFocusLabel(selectedDoctor.doctorProfile?.specialtyFocus) }}</p>
+      }
       <p>Specialty: {{ selectedDoctor.doctorProfile?.specialty || 'N/A' }}</p>
       <p>Registration No: {{ selectedDoctor.doctorProfile?.registrationNo || 'N/A' }}</p>
       <p>Status: {{ selectedDoctor.isActive ? 'Active' : 'Inactive' }}</p>
@@ -146,7 +163,20 @@
         <input placeholder="Name" name="editName" [(ngModel)]="editName" [disabled]="mutating" />
         <input placeholder="Email" name="editEmail" [(ngModel)]="editEmail" [disabled]="mutating" />
         <input placeholder="Mobile" name="editMobile" [(ngModel)]="editMobile" [disabled]="mutating" />
-        <input placeholder="Specialty" name="editSpecialty" [(ngModel)]="editSpecialty" [disabled]="mutating" />
+        <select name="editDoctorType" [(ngModel)]="editDoctorType" [disabled]="mutating">
+          @for (option of doctorTypeOptions; track option.value) {
+            <option [value]="option.value">{{ option.label }}</option>
+          }
+        </select>
+        @if (isSpecialistType(editDoctorType)) {
+          <select name="editSpecialtyFocus" [(ngModel)]="editSpecialtyFocus" [disabled]="mutating">
+            <option value="">Select specialty focus</option>
+            @for (option of specialtyFocusOptions; track option.value) {
+              <option [value]="option.value">{{ option.label }}</option>
+            }
+          </select>
+        }
+        <input placeholder="Specialty (optional override)" name="editSpecialty" [(ngModel)]="editSpecialty" [disabled]="mutating" />
         <input placeholder="Registration No" name="editRegistrationNo" [(ngModel)]="editRegistrationNo" [disabled]="mutating" />
         <label>
           <input type="checkbox" name="editIsAvailable" [(ngModel)]="editIsAvailable" [disabled]="mutating" />

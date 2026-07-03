@@ -23,6 +23,28 @@ type DoseEvent = {
   medicineName: string;
 };
 
+type LabReferralLine = {
+  id: string;
+  testName: string;
+  testCode?: string | null;
+  resultSummary?: string | null;
+  resultFileUrl?: string | null;
+  completedAt?: string | null;
+};
+
+type LabReferral = {
+  id: string;
+  referralNumber: string;
+  status: string;
+  clinicalNotes?: string | null;
+  partnerNotes?: string | null;
+  completedAt?: string | null;
+  createdAt: string;
+  diagnosticCenter: { name: string; code: string };
+  lines: LabReferralLine[];
+  totals: { testCount: number; completedTests: number };
+};
+
 @Component({
   selector: 'app-patients-page',
   imports: [FormsModule, CommonModule, DatePipe, PatientIdCardComponent, RouterLink, PatientHealthProfileComponent],
@@ -59,6 +81,9 @@ export class PatientsPage {
   doseEventsLoading = false;
   doseEventsError = '';
   patientClinical: PatientClinicalProfile | null = null;
+  labReferrals: LabReferral[] = [];
+  labReferralsLoading = false;
+  labReferralsError = '';
 
   summary: {
     patientId: string;
@@ -199,6 +224,8 @@ export class PatientsPage {
     this.message = '';
     this.summary = null;
     this.doseEvents = [];
+    this.labReferrals = [];
+    this.labReferralsError = '';
     const id = this.patientId.trim();
     if (!id) {
       this.error = 'Select or enter a patient.';
@@ -236,5 +263,29 @@ export class PatientsPage {
     } else {
       this.doseEventsError = 'Could not load dose notes.';
     }
+
+    void this.loadLabReferrals(id);
+  }
+
+  private async loadLabReferrals(patientId: string) {
+    this.labReferralsLoading = true;
+    this.labReferralsError = '';
+    this.labReferrals = [];
+    try {
+      const response = await firstValueFrom(
+        this.http.get<{ referrals: LabReferral[] }>(`${this.apiBase}${API_PATHS.PATIENTS.LAB_REFERRALS(patientId)}`)
+      );
+      this.labReferrals = response.referrals || [];
+    } catch {
+      this.labReferralsError = 'Could not load lab referrals.';
+    } finally {
+      this.labReferralsLoading = false;
+    }
+  }
+
+  labStatusClass(status: string) {
+    if (status === 'RESULT_READY') return 'lab-status ready';
+    if (status === 'CANCELLED') return 'lab-status cancelled';
+    return 'lab-status pending';
   }
 }

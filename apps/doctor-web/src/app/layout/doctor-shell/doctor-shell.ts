@@ -1,7 +1,7 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
-import { NAV_ITEMS } from '../../core/constants/app-routes.constants';
 import { Auth } from '../../core/services/auth';
+import { DoctorSessionService } from '../../core/services/doctor-session';
 
 @Component({
   selector: 'app-doctor-shell',
@@ -9,12 +9,34 @@ import { Auth } from '../../core/services/auth';
   templateUrl: './doctor-shell.html',
   styleUrl: './doctor-shell.scss',
 })
-export class DoctorShell {
-  readonly navItems = NAV_ITEMS;
+export class DoctorShell implements OnInit {
+  navItems: Array<{ path: string; label: string }> = [];
+  doctorName = '';
+  doctorTypeLabel = '';
+  specialtyLabel = '';
+  loadingSession = true;
 
-  constructor(private readonly auth: Auth) {}
+  constructor(
+    private readonly auth: Auth,
+    private readonly session: DoctorSessionService
+  ) {}
+
+  async ngOnInit() {
+    try {
+      const profile = await this.session.load();
+      this.doctorName = profile.name;
+      this.doctorTypeLabel = profile.doctorProfile?.doctorTypeLabel || 'Doctor';
+      this.specialtyLabel = profile.doctorProfile?.specialty || '';
+      this.navItems = this.session.navItems();
+    } catch {
+      this.navItems = this.session.navItems();
+    } finally {
+      this.loadingSession = false;
+    }
+  }
 
   logout() {
+    this.session.clear();
     this.auth.logout();
   }
 }

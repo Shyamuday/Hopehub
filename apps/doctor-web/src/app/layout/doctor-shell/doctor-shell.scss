@@ -1,75 +1,87 @@
 .doctor-shell {
   min-height: 100vh;
-  background: #f4f7fb;
+  background: #f8fafc;
 }
 
 .topbar {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
+  gap: 1rem;
   padding: 1rem 1.25rem;
-  background: #0f172a;
+  background: #0f766e;
   color: #fff;
+
+  h1 {
+    margin: 0 0 0.35rem;
+    font-size: 1.2rem;
+  }
 }
 
-.topbar h1 {
-  margin: 0;
-  font-size: 1.125rem;
+.identity {
+  min-width: 0;
+}
+
+.doctor-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.88rem;
+
+  strong {
+    font-weight: 700;
+  }
+}
+
+.type-badge {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  font-size: 0.76rem;
+  font-weight: 600;
+}
+
+.specialty {
+  color: #ccfbf1;
+  font-size: 0.82rem;
 }
 
 .topbar button {
   border: 0;
   border-radius: 8px;
-  padding: 0.5rem 0.75rem;
+  padding: 0.5rem 0.85rem;
+  background: #fff;
+  color: #0f766e;
+  font-weight: 600;
   cursor: pointer;
 }
 
 .tabs {
   display: flex;
-  gap: 0.75rem;
-  padding: 0.75rem 1.25rem;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  padding: 0.75rem 1rem;
   background: #fff;
-  border-bottom: 1px solid #e5e7eb;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-}
+  border-bottom: 1px solid #e2e8f0;
 
-.tabs a {
-  text-decoration: none;
-  color: #1f2937;
-  padding: 0.45rem 0.75rem;
-  border-radius: 8px;
-  white-space: nowrap;
-}
+  a {
+    padding: 0.45rem 0.75rem;
+    border-radius: 8px;
+    color: #334155;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.9rem;
 
-.tabs a.active {
-  background: #dbeafe;
-  color: #1d4ed8;
+    &.active {
+      background: #ccfbf1;
+      color: #0f766e;
+    }
+  }
 }
 
 .content {
-  padding: 1rem 1.25rem;
-}
-
-@media (max-width: 768px) {
-  .topbar {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.65rem;
-    padding: 0.9rem 1rem;
-  }
-
-  .tabs {
-    padding: 0.6rem 1rem;
-    gap: 0.5rem;
-  }
-
-  .tabs a {
-    padding: 0.5rem 0.7rem;
-    font-size: 0.92rem;
-  }
-
-  .content {
-    padding: 0.85rem 1rem;
-  }
+  padding: 1rem;
 }

@@ -13,8 +13,9 @@ export const DEV_DEMO_ACCOUNTS = {
     email: 'doctor@vitalisclinic.local',
     name: 'Dr. Meera Sharma',
     mobile: '9000000001',
-    specialty: 'Dermatology',
-    registrationNo: 'MCI-DEMO-001'
+    specialty: 'Homeopathy',
+    registrationNo: 'MCI-DEMO-001',
+    doctorType: 'CHIEF_CONSULTANT'
   },
   hr: {
     email: 'hr@vitalisclinic.local',
@@ -52,6 +53,12 @@ export const DEV_DEMO_ACCOUNTS = {
     email: 'delivery@vitalisclinic.local',
     name: 'Ranchi Delivery Executive',
     employeeId: 'DEL-001'
+  },
+  diagnostic: {
+    email: 'lab@vitalisclinic.local',
+    name: 'Vitalis Diagnostics Lab',
+    code: 'VDL',
+    employeeId: 'LAB-001'
   },
   patientRahul: {
     email: 'patient1@vitalisclinic.local',
@@ -103,6 +110,7 @@ export const DEV_DEMO_APPS = [
   { id: 'supplier-web', label: 'Supplier portal', port: 4800, url: SERVER_CONFIG.ORIGINS.SUPPLIER },
   { id: 'warehouse-web', label: 'Warehouse hub', port: 4900, url: SERVER_CONFIG.ORIGINS.WAREHOUSE },
   { id: 'delivery-web', label: 'Delivery executive', port: 5000, url: SERVER_CONFIG.ORIGINS.DELIVERY },
+  { id: 'diagnostic-web', label: 'Diagnostic center', port: 5100, url: SERVER_CONFIG.ORIGINS.DIAGNOSTIC },
   { id: 'api', label: 'API + demo guide', port: 4000, url: SERVER_CONFIG.API_PUBLIC_URL }
 ] as const;
 
@@ -205,6 +213,14 @@ export const DEV_DEMO_PERSONAS: DevDemoPersona[] = [
     authKind: 'platform',
     description: 'Last-mile home medicine delivery with OTP proof of delivery.',
     testHints: ['Accept pending order', 'Pick up from store', 'Complete with OTP 123456']
+  },
+  {
+    id: 'diagnostic',
+    label: 'Vitalis Diagnostics Lab',
+    app: 'diagnostic-web',
+    authKind: 'platform',
+    description: 'External lab partner — accept referrals and publish test results.',
+    testHints: ['Open sent referral', 'Accept & schedule', 'Submit CBC/thyroid results']
   },
   {
     id: 'store-staff',
@@ -316,6 +332,12 @@ export const DEV_DEMO_ALL_ACCOUNTS = [
     password: DEV_DEMO_PASSWORD
   },
   {
+    role: 'Diagnostic lab partner',
+    app: 'diagnostic-web',
+    login: DEV_DEMO_ACCOUNTS.diagnostic.email,
+    password: DEV_DEMO_PASSWORD
+  },
+  {
     role: 'Patient — Rahul',
     app: 'user-web',
     login: DEV_DEMO_ACCOUNTS.patientRahul.email,
@@ -357,7 +379,8 @@ const PERSONA_EMAIL: Record<string, string> = {
   accountant: DEV_DEMO_ACCOUNTS.accountant.email,
   supplier: DEV_DEMO_ACCOUNTS.supplier.email,
   warehouse: DEV_DEMO_ACCOUNTS.warehouse.email,
-  delivery: DEV_DEMO_ACCOUNTS.delivery.email
+  delivery: DEV_DEMO_ACCOUNTS.delivery.email,
+  diagnostic: DEV_DEMO_ACCOUNTS.diagnostic.email
 };
 
 export function getPersonaCredentials(personaId: string): DevDemoPersonaCredentials {
@@ -401,6 +424,8 @@ export function getPersonaCredentials(personaId: string): DevDemoPersonaCredenti
       return { email: DEV_DEMO_ACCOUNTS.warehouse.email, password };
     case 'delivery':
       return { email: DEV_DEMO_ACCOUNTS.delivery.email, password };
+    case 'diagnostic':
+      return { email: DEV_DEMO_ACCOUNTS.diagnostic.email, password };
     case 'store-staff':
       return { staffCode: DEV_DEMO_ACCOUNTS.storeStaff.staffCode, pin: password, password };
     case 'store-manager':

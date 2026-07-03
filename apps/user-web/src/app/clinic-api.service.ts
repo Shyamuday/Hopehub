@@ -6,7 +6,7 @@ import { DEFAULT_SNOOZE_MINUTES } from './core/constants/timing.constants';
 import { RAZORPAY_CHECKOUT } from './core/constants/branding.constants';
 import { SOCKET_EVENTS, SOCKET_TRANSPORTS } from './core/constants/socket.constants';
 import { environment } from '../environments/environment';
-import { BillingPlan, Consultation, Doctor } from './models';
+import { BillingPlan, Consultation, Doctor, LabResult } from './models';
 import { ClinicApiClient } from './clinic-api/clinic-api.client';
 import {
   mapConsultationFromApi,
@@ -115,6 +115,10 @@ export class ClinicApiService {
 
   patientPrescriptions() {
     return from(this.fetchPatientPrescriptions());
+  }
+
+  patientLabResults() {
+    return from(this.fetchPatientLabResults());
   }
 
   todayDoseEvents() {
@@ -246,6 +250,15 @@ export class ClinicApiService {
 
     const response = await this.client.apiFetch<{ prescriptions: Array<Record<string, unknown>> }>(API_PATHS.PATIENT.PRESCRIPTIONS);
     return { prescriptions: (response.prescriptions || []).map((row) => mapPatientPrescriptionFromApi(row)) };
+  }
+
+  private async fetchPatientLabResults() {
+    if (!this.client.backendToken) {
+      throw new Error('Backend session missing. Please login again.');
+    }
+
+    const response = await this.client.apiFetch<{ referrals: LabResult[] }>(API_PATHS.PATIENT.LAB_RESULTS);
+    return { referrals: response.referrals || [] };
   }
 
   private async fetchTodayDoseEvents() {

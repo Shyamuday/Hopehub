@@ -1,0 +1,11 @@
+
+    .lab-card { display: flex; flex-direction: column; gap: .65rem; }
+    .lab-info { display: flex; flex-direction: column; gap: .2rem; }
+    .lab-lines {
+      margin: 0; padding: 0; list-style: none; display: grid; gap: .55rem;
+      li {
+        border-top: 1px solid #e2e8f0; padding-top: .5rem;
+        p { margin: .25rem 0 0; font-size: .9rem; color: #334155; }
+        a { font-size: .82rem; }
+      }
+    }

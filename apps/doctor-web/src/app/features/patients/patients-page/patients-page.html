@@ -89,6 +89,47 @@
 </section>
 }
 
+@if (patientId) {
+<section class="panel">
+  <h2>Lab Referrals &amp; Results</h2>
+  @if (labReferralsLoading) {
+    <p class="muted">Loading lab referrals...</p>
+  } @else if (labReferralsError) {
+    <p class="error">{{ labReferralsError }}</p>
+  } @else if (labReferrals.length) {
+    @for (referral of labReferrals; track referral.id) {
+      <article class="card lab-referral-card">
+        <div class="lab-referral-head">
+          <strong>{{ referral.referralNumber }}</strong>
+          <span [class]="labStatusClass(referral.status)">{{ referral.status.replace('_', ' ') }}</span>
+        </div>
+        <p class="muted">{{ referral.diagnosticCenter.name }} · {{ referral.createdAt | date: 'mediumDate' }}</p>
+        @if (referral.clinicalNotes) {
+          <p><em>Clinical notes:</em> {{ referral.clinicalNotes }}</p>
+        }
+        <ul class="lab-lines">
+          @for (line of referral.lines; track line.id) {
+            <li>
+              <strong>{{ line.testName }}</strong>
+              @if (line.resultSummary) {
+                <p>{{ line.resultSummary }}</p>
+              } @else {
+                <p class="muted">Awaiting result</p>
+              }
+              @if (line.resultFileUrl) {
+                <a [href]="line.resultFileUrl" target="_blank" rel="noopener noreferrer">Report file</a>
+              }
+            </li>
+          }
+        </ul>
+      </article>
+    }
+  } @else {
+    <p class="muted">No lab referrals for this patient.</p>
+  }
+</section>
+}
+
 <section class="panel">
   <h2>Patient Adherence Trend</h2>
   <div class="toolbar">

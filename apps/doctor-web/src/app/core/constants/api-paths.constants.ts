@@ -30,6 +30,7 @@ export const API_PATHS = {
     DETAIL: (id: string) => `/patients/${id}`,
     CREATE: '/patients',
     ADHERENCE_TREND: (id: string) => `/doctor/patients/${id}/adherence-trend`,
-    DOSE_EVENTS: (id: string) => `/doctor/patients/${id}/dose-events`
+    DOSE_EVENTS: (id: string) => `/doctor/patients/${id}/dose-events`,
+    LAB_REFERRALS: (id: string) => `/doctor/patients/${id}/lab-referrals`
   }
 } as const;

@@ -1,14 +1,19 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { Role } from '@prisma/client';
+import { HomeopathicDoctorType, Role } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import { authRequired, allowRoles } from '../../auth.js';
 import { prisma } from '../../db.js';
+import {
+  doctorProfileSchema,
+  doctorProfileSelect,
+  doctorTypeLabel,
+  specialtyFocusLabel,
+  toDoctorProfilePayload
+} from '../../constants/homeopathic-doctor-types.js';
 import { asyncRoute, publicUserSelect, toAuthResponse, logAuthEvent } from '../../utils/helpers.js';
 
 export function registerAuthDoctorRoutes(router: Router) {
-// ─── Doctor enrollment & profile ───────────────────────────────────────────────
-
 router.post(
   '/doctor/enroll',
   asyncRoute(async (req, res) => {
@@ -32,7 +37,13 @@ router.post(
         passwordHash,
         role: Role.DOCTOR,
         isActive: false,
-        doctorProfile: { create: { specialty: body.specialty, registrationNo: body.registrationNo } }
+        doctorProfile: {
+          create: toDoctorProfilePayload({
+            doctorType: HomeopathicDoctorType.JUNIOR_DOCTOR,
+            specialty: body.specialty,
+            registrationNo: body.registrationNo
+          })
+        }
       },
       select: publicUserSelect
     });
@@ -55,12 +66,21 @@ router.get(
       select: {
         ...publicUserSelect,
         isActive: true,
-        doctorProfile: { select: { specialty: true, registrationNo: true, isAvailable: true } }
+        doctorProfile: { select: doctorProfileSelect }
       }
     });
 
     if (!profile) return res.status(404).json({ message: 'Doctor profile not found' });
-    res.json({ profile });
+
+    const doctorProfile = profile.doctorProfile
+      ? {
+          ...profile.doctorProfile,
+          doctorTypeLabel: doctorTypeLabel(profile.doctorProfile.doctorType),
+          specialtyFocusLabel: specialtyFocusLabel(profile.doctorProfile.specialtyFocus)
+        }
+      : null;
+
+    res.json({ profile: { ...profile, doctorProfile } });
   })
 );
 
@@ -79,6 +99,19 @@ router.put(
       })
       .parse(req.body);
 
+    const existing = await prisma.doctor.findUnique({
+      where: { userId: req.user!.id },
+      select: { doctorType: true, specialtyFocus: true }
+    });
+
+    const profilePayload = toDoctorProfilePayload({
+      doctorType: existing?.doctorType ?? HomeopathicDoctorType.JUNIOR_DOCTOR,
+      specialtyFocus: existing?.specialtyFocus,
+      specialty: body.specialty,
+      registrationNo: body.registrationNo,
+      isAvailable: body.isAvailable
+    });
+
     const updated = await prisma.user.update({
       where: { id: req.user!.id },
       data: {
@@ -86,19 +119,31 @@ router.put(
         mobile: body.mobile || null,
         doctorProfile: {
           upsert: {
-            create: { specialty: body.specialty, registrationNo: body.registrationNo || null, isAvailable: body.isAvailable },
-            update: { specialty: body.specialty, registrationNo: body.registrationNo || null, isAvailable: body.isAvailable }
+            create: profilePayload,
+            update: {
+              specialty: profilePayload.specialty,
+              registrationNo: profilePayload.registrationNo,
+              isAvailable: profilePayload.isAvailable
+            }
           }
         }
       },
       select: {
         ...publicUserSelect,
         isActive: true,
-        doctorProfile: { select: { specialty: true, registrationNo: true, isAvailable: true } }
+        doctorProfile: { select: doctorProfileSelect }
       }
     });
 
-    res.json({ profile: updated });
+    const doctorProfile = updated.doctorProfile
+      ? {
+          ...updated.doctorProfile,
+          doctorTypeLabel: doctorTypeLabel(updated.doctorProfile.doctorType),
+          specialtyFocusLabel: specialtyFocusLabel(updated.doctorProfile.specialtyFocus)
+        }
+      : null;
+
+    res.json({ profile: { ...updated, doctorProfile } });
   })
 );
 

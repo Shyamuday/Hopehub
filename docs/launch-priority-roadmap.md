@@ -238,6 +238,20 @@ Minimum acceptance:
 - Last-mile home medicine delivery for patients
 - OTP proof on handover; store manager schedules deliveries
 
+### 2) Diagnostic Center Portal (Platform Phase 4)
+
+**Status: Done** — `DIAGNOSTIC_PARTNER` role + `DiagnosticCenterProfile`; `LabReferral` models; diagnostic API (`/diagnostic/referrals`, accept/advance/results); admin create (`POST /admin/lab-referrals`); `diagnostic-web` on port 5100; demo referral for Rahul; demo persona `lab@vitalisclinic.local`.
+
+- External lab partner portal for test referrals and result publishing
+- Clinic admin sends referrals; lab accepts and posts structured results
+
+### 3) Doctor & Patient Lab Results View
+
+**Status: Done** — Patient API (`GET /patient/lab-results`); doctor API (`GET /doctor/patients/:id/lab-referrals`); lab results panel on patient dashboard (`user-web`); lab referrals section on doctor Patients page; demo referral auto-published as `RESULT_READY` for Rahul on seed.
+
+- Patients see published `RESULT_READY` results with per-test summaries
+- Doctors see full referral timeline (pending + published) for assigned patients
+
 ## Recommended Implementation Order
 
 1. Doctor worklist + follow-up due

@@ -5,6 +5,16 @@
     <p class="loading-text">Loading profile...</p>
   }
 
+  @if (doctorTypeLabel) {
+    <div class="role-banner">
+      <span class="role-label">{{ doctorTypeLabel }}</span>
+      @if (specialtyFocusLabel) {
+        <span class="focus-label">{{ specialtyFocusLabel }}</span>
+      }
+      <p class="role-note">Role and grade are assigned by clinic admin or HR.</p>
+    </div>
+  }
+
   <div class="grid" [class.dimmed]="isLoading">
     <label for="name">Name</label>
     <input id="name" name="name" [(ngModel)]="name" />

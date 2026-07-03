@@ -51,6 +51,7 @@ model Consultation {
   prescriptions   Prescription[]
   supportNotes    SupportCaseNote[]
   caseAnalyses    CaseAnalysis[]
+  labReferrals    LabReferral[]
   createdAt       DateTime           @default(now())
   updatedAt       DateTime           @updatedAt
 }

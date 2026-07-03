@@ -4,7 +4,7 @@ import { ClinicApiService } from './clinic-api.service';
 import { ProductAnalyticsService } from './core/services/product-analytics.service';
 import { PRODUCT_ANALYTICS_EVENTS } from './core/constants/analytics.constants';
 import { AuthService } from './auth/auth.service';
-import { BillingPlan, Consultation, Disease, Doctor, DoseEvent, Prescription } from './models';
+import { BillingPlan, Consultation, Disease, Doctor, DoseEvent, LabResult, Prescription } from './models';
 import { ReminderPrefs } from './reminder-preferences.component';
 
 @Injectable({ providedIn: 'root' })
@@ -40,6 +40,10 @@ export class DashboardDataService {
 
   loadPatientPrescriptions(): Observable<{ prescriptions: Prescription[] }> {
     return this.api.patientPrescriptions();
+  }
+
+  loadPatientLabResults(): Observable<{ referrals: LabResult[] }> {
+    return this.api.patientLabResults();
   }
 
   loadTodayDoseEvents(): Observable<{ doseEvents: DoseEvent[] }> {

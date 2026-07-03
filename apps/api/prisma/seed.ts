@@ -1,10 +1,11 @@
-import { PrismaClient, PrescriptionOptionType, Role, ConsultationStatus, PrescriptionStatus, DoseEventStatus, SupportNoteCategory, ProductEventCategory, PaymentStatus, StoreKind, StockStatus } from '@prisma/client';
+import { PrismaClient, PrescriptionOptionType, Role, ConsultationStatus, PrescriptionStatus, DoseEventStatus, SupportNoteCategory, ProductEventCategory, PaymentStatus, StoreKind, StockStatus, HomeopathicDoctorType } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import bcrypt from 'bcryptjs';
 import { seedRepertory } from './seeds/repertory-seed.js';
 import { createPurchaseOrder } from '../src/services/purchase-orders.js';
 import { createStockTransfer } from '../src/services/stock-transfers.js';
 import { createMedicineDelivery } from '../src/services/medicine-deliveries.js';
+import { createLabReferral, publishDemoLabResults } from '../src/services/lab-referrals.js';
 import {
   DEV_DEMO_ACCOUNTS,
   DEV_DEMO_PASSWORD,
@@ -103,13 +104,17 @@ async function main() {
   await prisma.doctor.upsert({
     where: { userId: doctorUser.id },
     update: {
-      specialty: DEV_DEMO_ACCOUNTS.doctor.specialty,
-      registrationNo: DEV_DEMO_ACCOUNTS.doctor.registrationNo
+      specialty: 'Homeopathy',
+      registrationNo: DEV_DEMO_ACCOUNTS.doctor.registrationNo,
+      doctorType: HomeopathicDoctorType.CHIEF_CONSULTANT,
+      designation: 'Chief Consultant'
     },
     create: {
       userId: doctorUser.id,
-      specialty: DEV_DEMO_ACCOUNTS.doctor.specialty,
-      registrationNo: DEV_DEMO_ACCOUNTS.doctor.registrationNo
+      specialty: 'Homeopathy',
+      registrationNo: DEV_DEMO_ACCOUNTS.doctor.registrationNo,
+      doctorType: HomeopathicDoctorType.CHIEF_CONSULTANT,
+      designation: 'Chief Consultant'
     }
   });
 
@@ -320,6 +325,40 @@ async function main() {
       employeeId: DEV_DEMO_ACCOUNTS.delivery.employeeId,
       designation: 'Delivery Executive'
     }
+  });
+
+  const diagnosticEntity = await prisma.diagnosticCenter.upsert({
+    where: { code: DEV_DEMO_ACCOUNTS.diagnostic.code },
+    update: {
+      name: DEV_DEMO_ACCOUNTS.diagnostic.name,
+      email: DEV_DEMO_ACCOUNTS.diagnostic.email,
+      isActive: true
+    },
+    create: {
+      code: DEV_DEMO_ACCOUNTS.diagnostic.code,
+      name: DEV_DEMO_ACCOUNTS.diagnostic.name,
+      email: DEV_DEMO_ACCOUNTS.diagnostic.email,
+      address: 'Ranchi, Jharkhand',
+      phone: '+91 9000000099'
+    }
+  });
+
+  const diagnosticUser = await prisma.user.upsert({
+    where: { email: DEV_DEMO_ACCOUNTS.diagnostic.email },
+    update: { isActive: true, passwordHash, role: Role.DIAGNOSTIC_PARTNER },
+    create: {
+      name: DEV_DEMO_ACCOUNTS.diagnostic.name,
+      email: DEV_DEMO_ACCOUNTS.diagnostic.email,
+      passwordHash,
+      role: Role.DIAGNOSTIC_PARTNER,
+      isActive: true
+    }
+  });
+
+  await prisma.diagnosticCenterProfile.upsert({
+    where: { userId: diagnosticUser.id },
+    update: { diagnosticCenterId: diagnosticEntity.id },
+    create: { userId: diagnosticUser.id, diagnosticCenterId: diagnosticEntity.id }
   });
 
   const demoMedicineArnica = await prisma.storeMedicine.upsert({
@@ -814,6 +853,28 @@ async function main() {
       ]
     });
   }
+
+  const existingDemoLabReferral = await prisma.labReferral.findFirst({
+    where: { storeId: ranchiStore.id, patientId: patientOne.id, diagnosticCenterId: diagnosticEntity.id }
+  });
+  let demoLabReferralId = existingDemoLabReferral?.id;
+  if (!demoLabReferralId) {
+    const created = await createLabReferral({
+      diagnosticCenterId: diagnosticEntity.id,
+      storeId: ranchiStore.id,
+      patientId: patientOne.id,
+      consultationId: DEV_SEED_IDS.consultationRahul,
+      clinicalNotes: 'Rule out thyroid imbalance; baseline CBC for hair fall workup',
+      createdById: admin.id,
+      lines: [
+        { testName: 'Complete Blood Count (CBC)', testCode: 'CBC', specimen: 'Blood' },
+        { testName: 'Thyroid Profile (TSH, T3, T4)', testCode: 'THY', specimen: 'Blood' }
+      ],
+      send: true
+    });
+    demoLabReferralId = created.id;
+  }
+  await publishDemoLabResults(demoLabReferralId);
 
   console.log('── Dev demo seed complete ──');
   console.log(`Shared password/PIN: ${DEV_DEMO_PASSWORD}`);

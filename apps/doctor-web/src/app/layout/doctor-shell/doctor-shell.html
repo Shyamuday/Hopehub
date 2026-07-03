@@ -1,16 +1,27 @@
-<main class="doctor-shell">
-  <header class="topbar">
-    <h1>Doctor Console</h1>
-    <button type="button" (click)="logout()">Logout</button>
-  </header>
-
-  <nav class="tabs">
-    @for (item of navItems; track item.path) {
-      <a [routerLink]="item.path" routerLinkActive="active">{{ item.label }}</a>
-    }
-  </nav>
-
-  <section class="content">
-    <router-outlet />
-  </section>
-</main>
+<main class="doctor-shell">
+  <header class="topbar">
+    <div class="identity">
+      <h1>Doctor Console</h1>
+      @if (!loadingSession) {
+        <div class="doctor-meta">
+          <strong>{{ doctorName }}</strong>
+          <span class="type-badge">{{ doctorTypeLabel }}</span>
+          @if (specialtyLabel) {
+            <span class="specialty">{{ specialtyLabel }}</span>
+          }
+        </div>
+      }
+    </div>
+    <button type="button" (click)="logout()">Logout</button>
+  </header>
+
+  <nav class="tabs">
+    @for (item of navItems; track item.path) {
+      <a [routerLink]="item.path" routerLinkActive="active">{{ item.label }}</a>
+    }
+  </nav>
+
+  <section class="content">
+    <router-outlet />
+  </section>
+</main>

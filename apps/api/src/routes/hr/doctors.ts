@@ -1,9 +1,10 @@
 import { Router } from 'express';
-import { EmployeeStatus, WorkShift } from '@prisma/client';
+import { EmployeeStatus, HomeopathicDoctorType, HomeopathicSpecialtyFocus, WorkShift } from '@prisma/client';
 import { HR_API_ROUTES } from '../../constants/hr-api-routes.constants.js';
 import { prisma } from '../../db.js';
 import { asyncRoute } from '../../utils/helpers.js';
 import { formatSalary, formatShift, generateLetterNumber, getAccess, hrAuthMiddleware } from './shared.js';
+import { doctorTypeLabel } from '../../constants/homeopathic-doctor-types.js';
 
 export function registerHrDoctorRoutes(router: Router) {
 // ─── Doctor HR (accessible to HR + Admin) ────────────────────────────────────
@@ -42,7 +43,8 @@ router.put('/doctors/:id', hrAuthMiddleware, asyncRoute(async (req, res) => {
   const {
     designation, department, phone, address, joiningDate, probationEndDate,
     salaryPerMonth, consultationFee, workShift, shiftStart, shiftEnd,
-    weeklyOffDays, emergencyContact, emergencyPhone, employeeStatus, employeeId
+    weeklyOffDays, emergencyContact, emergencyPhone, employeeStatus, employeeId,
+    doctorType, specialtyFocus
   } = req.body as Record<string, unknown>;
 
   const updated = await prisma.doctor.update({
@@ -63,7 +65,9 @@ router.put('/doctors/:id', hrAuthMiddleware, asyncRoute(async (req, res) => {
       emergencyContact: emergencyContact as string | undefined,
       emergencyPhone: emergencyPhone as string | undefined,
       employeeStatus: employeeStatus as EmployeeStatus | undefined,
-      employeeId: employeeId as string | undefined
+      employeeId: employeeId as string | undefined,
+      doctorType: doctorType as HomeopathicDoctorType | undefined,
+      specialtyFocus: specialtyFocus as HomeopathicSpecialtyFocus | null | undefined
     },
     include: { user: { select: { id: true, name: true, email: true } } }
   });
@@ -85,8 +89,9 @@ router.post(HR_API_ROUTES.DOCTOR_LETTER, hrAuthMiddleware, asyncRoute(async (req
     organizationAddress: clinicAddress ?? '',
     employeeName: doctor.user.name, employeeEmail: doctor.user.email ?? '',
     employeeCode: doctor.employeeId ?? `DOC-${doctor.id.slice(0, 6).toUpperCase()}`,
-    designation: doctor.designation ?? 'Doctor',
+    designation: doctor.designation ?? doctorTypeLabel(doctor.doctorType),
     department: doctor.department ?? doctor.specialty,
+    doctorType: doctorTypeLabel(doctor.doctorType),
     specialty: doctor.specialty, registrationNo: doctor.registrationNo ?? 'N/A',
     joiningDate: doctor.joiningDate ? doctor.joiningDate.toISOString() : issuedDate.toISOString(),
     probationEndDate: doctor.probationEndDate?.toISOString() ?? null,

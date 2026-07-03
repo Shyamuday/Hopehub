@@ -1,0 +1,35 @@
+
+    <div class="panel">
+      <h2>Lab Results</h2>
+      <div class="cards">
+        @for (referral of referrals; track referral.id) {
+          <article class="consult-card">
+            <div class="lab-card">
+              <div class="lab-info">
+                <strong>{{ referral.referralNumber }}</strong>
+                <span>{{ referral.diagnosticCenter.name }}</span>
+                <small>Published {{ referral.completedAt | date: 'mediumDate' }}</small>
+                @if (referral.clinicalNotes) {
+                  <p class="muted">{{ referral.clinicalNotes }}</p>
+                }
+              </div>
+              <ul class="lab-lines">
+                @for (line of referral.lines; track line.id) {
+                  <li>
+                    <strong>{{ line.testName }}</strong>
+                    @if (line.resultSummary) {
+                      <p>{{ line.resultSummary }}</p>
+                    }
+                    @if (line.resultFileUrl) {
+                      <a [href]="line.resultFileUrl" target="_blank" rel="noopener noreferrer">View report file</a>
+                    }
+                  </li>
+                }
+              </ul>
+            </div>
+          </article>
+        } @empty {
+          <p class="muted">No lab results published yet.</p>
+        }
+      </div>
+    </div>

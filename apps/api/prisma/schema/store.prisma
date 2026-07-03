@@ -58,6 +58,7 @@ model Store {
   warehouseManagers WarehouseManagerProfile[]
   medicineDeliveries MedicineDelivery[]
   deliveryExecutives DeliveryExecutiveProfile[]
+  labReferrals       LabReferral[]
   createdAt DateTime        @default(now())
   updatedAt DateTime        @updatedAt
 }

@@ -2,6 +2,37 @@
   max-width: 720px;
 }
 
+.role-banner {
+  margin: 0 0 1rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid #c7d2fe;
+  border-radius: 12px;
+  background: #eef2ff;
+}
+
+.role-label {
+  display: inline-block;
+  margin-right: 0.45rem;
+  font-weight: 700;
+  color: #1e3a8a;
+}
+
+.focus-label {
+  display: inline-block;
+  padding: 0.12rem 0.45rem;
+  border-radius: 999px;
+  background: #dbeafe;
+  color: #1d4ed8;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.role-note {
+  margin: 0.45rem 0 0;
+  color: #64748b;
+  font-size: 0.84rem;
+}
+
 .grid {
   display: grid;
   gap: 0.5rem;

@@ -13,6 +13,13 @@ import {
   writeAuditLog
 } from '../../utils/helpers.js';
 import { enabledNotificationChannels, notificationService } from '../../services/notification-service.js';
+import {
+  doctorProfileSchema,
+  doctorProfileSelect,
+  doctorTypeLabel,
+  specialtyFocusLabel,
+  toDoctorProfilePayload
+} from '../../constants/homeopathic-doctor-types.js';
 
 export function registerAdminDoctorRoutes(router: Router) {
   // ─── Doctors ──────────────────────────────────────────────────────────────────
@@ -184,12 +191,14 @@ export function registerAdminDoctorRoutes(router: Router) {
           email: z.string().email(),
           mobile: z.string().min(8).optional(),
           password: z.string().min(8),
-          specialty: z.string().min(2),
+          specialty: z.string().min(2).optional(),
           registrationNo: z.string().optional()
         })
+        .merge(doctorProfileSchema())
         .parse(req.body);
 
       const passwordHash = await bcrypt.hash(body.password, 10);
+      const profilePayload = toDoctorProfilePayload(body);
       const doctor = await prisma.user.create({
         data: {
           name: body.name,
@@ -197,9 +206,9 @@ export function registerAdminDoctorRoutes(router: Router) {
           mobile: body.mobile,
           passwordHash,
           role: Role.DOCTOR,
-          doctorProfile: { create: { specialty: body.specialty, registrationNo: body.registrationNo } }
+          doctorProfile: { create: profilePayload }
         },
-        select: { ...publicUserSelect, doctorProfile: true }
+        select: { ...publicUserSelect, doctorProfile: { select: doctorProfileSelect } }
       });
       await writeAuditLog({
         actorId: req.user!.id,
@@ -208,7 +217,7 @@ export function registerAdminDoctorRoutes(router: Router) {
         targetType: 'doctor',
         targetId: doctor.id,
         summary: 'Doctor account created by admin.',
-        metadata: { specialty: body.specialty }
+        metadata: { specialty: profilePayload.specialty, doctorType: profilePayload.doctorType }
       });
       res.status(201).json({ doctor });
     })
@@ -228,7 +237,7 @@ export function registerAdminDoctorRoutes(router: Router) {
           email: true,
           mobile: true,
           isActive: true,
-          doctorProfile: { select: { specialty: true, registrationNo: true, isAvailable: true } }
+          doctorProfile: { select: { specialty: true, registrationNo: true, isAvailable: true, doctorType: true, specialtyFocus: true } }
         }
       });
       if (!existing) return res.status(404).json({ message: 'Doctor not found' });
@@ -238,11 +247,14 @@ export function registerAdminDoctorRoutes(router: Router) {
           name: z.string().min(2),
           email: z.string().email(),
           mobile: z.string().min(8).optional().or(z.literal('')),
-          specialty: z.string().min(2),
+          specialty: z.string().min(2).optional(),
           registrationNo: z.string().optional().or(z.literal('')),
           isAvailable: z.boolean().optional().default(true)
         })
+        .merge(doctorProfileSchema())
         .parse(req.body);
+
+      const profilePayload = toDoctorProfilePayload(body);
 
       const doctor = await prisma.user.update({
         where: { id: doctorId },
@@ -252,12 +264,12 @@ export function registerAdminDoctorRoutes(router: Router) {
           mobile: body.mobile || null,
           doctorProfile: {
             upsert: {
-              create: { specialty: body.specialty, registrationNo: body.registrationNo || null, isAvailable: body.isAvailable },
-              update: { specialty: body.specialty, registrationNo: body.registrationNo || null, isAvailable: body.isAvailable }
+              create: profilePayload,
+              update: profilePayload
             }
           }
         },
-        select: { ...publicUserSelect, isActive: true, doctorProfile: true }
+        select: { ...publicUserSelect, isActive: true, doctorProfile: { select: doctorProfileSelect } }
       });
       await writeAuditLog({
         actorId: req.user!.id,
@@ -274,15 +286,19 @@ export function registerAdminDoctorRoutes(router: Router) {
             isActive: existing.isActive,
             specialty: existing.doctorProfile?.specialty ?? null,
             registrationNo: existing.doctorProfile?.registrationNo ?? null,
-            isAvailable: existing.doctorProfile?.isAvailable ?? null
+            isAvailable: existing.doctorProfile?.isAvailable ?? null,
+            doctorType: existing.doctorProfile?.doctorType ?? null,
+            specialtyFocus: existing.doctorProfile?.specialtyFocus ?? null
           },
           after: {
             name: body.name,
             email: body.email,
             mobile: body.mobile || null,
-            specialty: body.specialty,
-            registrationNo: body.registrationNo || null,
-            isAvailable: body.isAvailable
+            specialty: profilePayload.specialty,
+            registrationNo: profilePayload.registrationNo,
+            isAvailable: profilePayload.isAvailable,
+            doctorType: profilePayload.doctorType,
+            specialtyFocus: profilePayload.specialtyFocus
           }
         }
       });

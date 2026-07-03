@@ -8,6 +8,14 @@ import {
   type DoctorSortField,
   type DoctorStatusFilter
 } from '../constants/doctors-list.constants';
+import {
+  DOCTOR_TYPE_OPTIONS,
+  SPECIALTY_FOCUS_OPTIONS,
+  DOCTOR_TYPE_LABELS,
+  SPECIALTY_FOCUS_LABELS,
+  type HomeopathicDoctorType,
+  type HomeopathicSpecialtyFocus
+} from '../constants/doctor-types.constants';
 import type { SortDirection } from '../../../shared/constants/filter.constants';
 
 type Doctor = {
@@ -21,6 +29,8 @@ type Doctor = {
     specialty?: string;
     registrationNo?: string;
     isAvailable?: boolean;
+    doctorType?: HomeopathicDoctorType;
+    specialtyFocus?: HomeopathicSpecialtyFocus | null;
   };
 };
 
@@ -31,6 +41,9 @@ type Doctor = {
   styleUrl: './doctors-page.scss'
 })
 export class DoctorsPage {
+  readonly doctorTypeOptions = DOCTOR_TYPE_OPTIONS;
+  readonly specialtyFocusOptions = SPECIALTY_FOCUS_OPTIONS;
+
   doctors: Doctor[] = [];
   pendingDoctors: Doctor[] = [];
   selectedPendingDoctorIds: string[] = [];
@@ -64,6 +77,10 @@ export class DoctorsPage {
   createPassword = '';
   createSpecialty = '';
   createRegistrationNo = '';
+  createDoctorType: HomeopathicDoctorType = 'JUNIOR_DOCTOR';
+  createSpecialtyFocus: HomeopathicSpecialtyFocus | '' = '';
+  editDoctorType: HomeopathicDoctorType = 'JUNIOR_DOCTOR';
+  editSpecialtyFocus: HomeopathicSpecialtyFocus | '' = '';
 
   constructor(private readonly api: AdminApi) {
     void this.load();
@@ -165,7 +182,9 @@ export class DoctorsPage {
         mobile: this.editMobile.trim(),
         specialty: this.editSpecialty.trim(),
         registrationNo: this.editRegistrationNo.trim(),
-        isAvailable: this.editIsAvailable
+        isAvailable: this.editIsAvailable,
+        doctorType: this.editDoctorType,
+        specialtyFocus: this.editDoctorType === 'SPECIALIST_CONSULTANT' ? this.editSpecialtyFocus || null : null
       });
       this.message = 'Doctor profile updated.';
       await this.load();
@@ -189,7 +208,9 @@ export class DoctorsPage {
         mobile: this.createMobile.trim(),
         password: this.createPassword,
         specialty: this.createSpecialty.trim(),
-        registrationNo: this.createRegistrationNo.trim()
+        registrationNo: this.createRegistrationNo.trim(),
+        doctorType: this.createDoctorType,
+        specialtyFocus: this.createDoctorType === 'SPECIALIST_CONSULTANT' ? this.createSpecialtyFocus || null : null
       });
       this.message = 'Doctor created successfully.';
       this.createName = '';
@@ -198,6 +219,8 @@ export class DoctorsPage {
       this.createPassword = '';
       this.createSpecialty = '';
       this.createRegistrationNo = '';
+      this.createDoctorType = 'JUNIOR_DOCTOR';
+      this.createSpecialtyFocus = '';
       await this.load();
     } catch {
       this.error = 'Could not create doctor.';
@@ -333,6 +356,20 @@ export class DoctorsPage {
     this.editSpecialty = selected.doctorProfile?.specialty || '';
     this.editRegistrationNo = selected.doctorProfile?.registrationNo || '';
     this.editIsAvailable = selected.doctorProfile?.isAvailable ?? true;
+    this.editDoctorType = selected.doctorProfile?.doctorType || 'JUNIOR_DOCTOR';
+    this.editSpecialtyFocus = selected.doctorProfile?.specialtyFocus || '';
+  }
+
+  isSpecialistType(type: HomeopathicDoctorType) {
+    return type === 'SPECIALIST_CONSULTANT';
+  }
+
+  doctorTypeLabel(type?: HomeopathicDoctorType) {
+    return type ? DOCTOR_TYPE_LABELS[type] : 'Not set';
+  }
+
+  specialtyFocusLabel(focus?: HomeopathicSpecialtyFocus | null) {
+    return focus ? SPECIALTY_FOCUS_LABELS[focus] : '';
   }
 
 }

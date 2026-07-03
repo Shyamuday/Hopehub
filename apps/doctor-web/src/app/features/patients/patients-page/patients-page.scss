@@ -39,6 +39,59 @@ button.ghost {
   border: 1px solid #cbd5e1;
 }
 
+.lab-referral-card {
+  margin-bottom: 0.65rem;
+}
+
+.lab-referral-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.lab-status {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+}
+
+.lab-status.ready {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.lab-status.pending {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.lab-status.cancelled {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.lab-lines {
+  margin: 0.5rem 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.45rem;
+
+  li {
+    border-top: 1px solid #e5e7eb;
+    padding-top: 0.45rem;
+
+    p {
+      margin: 0.2rem 0 0;
+      font-size: 0.9rem;
+    }
+  }
+}
+
 .muted {
   color: #64748b;
   font-size: 0.9rem;

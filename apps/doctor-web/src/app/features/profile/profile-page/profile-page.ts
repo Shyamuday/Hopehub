@@ -4,6 +4,8 @@ import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { API_PATHS } from '../../../core/constants/api-paths.constants';
+import type { DoctorProfileSummary } from '../../../core/constants/doctor-types.constants';
+import { DoctorSessionService } from '../../../core/services/doctor-session';
 
 @Component({
   selector: 'app-profile-page',
@@ -20,12 +22,17 @@ export class ProfilePage {
   specialty = '';
   registrationNo = '';
   isAvailable = true;
+  doctorTypeLabel = '';
+  specialtyFocusLabel = '';
   message = '';
   error = '';
   isLoading = false;
   saving = false;
 
-  constructor(private readonly http: HttpClient) {
+  constructor(
+    private readonly http: HttpClient,
+    private readonly session: DoctorSessionService
+  ) {
     void this.loadProfile();
   }
 
@@ -39,11 +46,7 @@ export class ProfilePage {
             name: string;
             email?: string | null;
             mobile?: string | null;
-            doctorProfile?: {
-              specialty?: string;
-              registrationNo?: string | null;
-              isAvailable?: boolean;
-            } | null;
+            doctorProfile?: DoctorProfileSummary | null;
           };
         }>(`${this.apiBase}${API_PATHS.DOCTOR.PROFILE}`)
       );
@@ -55,6 +58,8 @@ export class ProfilePage {
       this.specialty = profile.doctorProfile?.specialty || '';
       this.registrationNo = profile.doctorProfile?.registrationNo || '';
       this.isAvailable = profile.doctorProfile?.isAvailable ?? true;
+      this.doctorTypeLabel = profile.doctorProfile?.doctorTypeLabel || 'Doctor';
+      this.specialtyFocusLabel = profile.doctorProfile?.specialtyFocusLabel || '';
     } catch {
       this.error = 'Could not load profile.';
     } finally {
@@ -76,6 +81,7 @@ export class ProfilePage {
           isAvailable: this.isAvailable
         })
       );
+      await this.session.load(true);
       this.message = 'Profile updated successfully.';
     } catch {
       this.error = 'Could not save profile.';

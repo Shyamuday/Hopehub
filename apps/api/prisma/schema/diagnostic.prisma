@@ -1,0 +1,76 @@
+enum LabReferralStatus {
+  SENT
+  ACCEPTED
+  SAMPLE_COLLECTED
+  IN_PROGRESS
+  RESULT_READY
+  CANCELLED
+}
+
+model DiagnosticCenter {
+  id        String                    @id @default(cuid())
+  code      String                    @unique
+  name      String
+  email     String?
+  phone     String?
+  address   String?
+  gstin     String?
+  isActive  Boolean                   @default(true)
+  profiles  DiagnosticCenterProfile[]
+  referrals LabReferral[]
+  createdAt DateTime                  @default(now())
+  updatedAt DateTime                  @updatedAt
+}
+
+model DiagnosticCenterProfile {
+  id                 String           @id @default(cuid())
+  userId             String           @unique
+  diagnosticCenterId String
+  user               User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  diagnosticCenter   DiagnosticCenter @relation(fields: [diagnosticCenterId], references: [id])
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+
+  @@index([diagnosticCenterId])
+}
+
+model LabReferral {
+  id                   String            @id @default(cuid())
+  referralNumber       String            @unique
+  diagnosticCenterId   String
+  storeId              String
+  patientId            String
+  consultationId       String?
+  status               LabReferralStatus @default(SENT)
+  clinicalNotes        String?
+  partnerNotes         String?
+  expectedResultDate   DateTime?
+  acceptedAt           DateTime?
+  completedAt          DateTime?
+  createdById          String?
+  diagnosticCenter     DiagnosticCenter  @relation(fields: [diagnosticCenterId], references: [id])
+  store                Store             @relation(fields: [storeId], references: [id])
+  patient              User              @relation("PatientLabReferrals", fields: [patientId], references: [id])
+  consultation         Consultation?     @relation(fields: [consultationId], references: [id])
+  lines                LabReferralLine[]
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
+
+  @@index([diagnosticCenterId, status])
+  @@index([storeId, status])
+  @@index([patientId])
+}
+
+model LabReferralLine {
+  id              String      @id @default(cuid())
+  referralId      String
+  testName        String
+  testCode        String?
+  specimen        String?
+  resultSummary   String?
+  resultFileUrl   String?
+  completedAt     DateTime?
+  referral        LabReferral @relation(fields: [referralId], references: [id], onDelete: Cascade)
+
+  @@index([referralId])
+}

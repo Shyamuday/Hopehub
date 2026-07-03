@@ -76,9 +76,11 @@ export class AdminDoctorsApi extends AdminApiBase {
       name: string;
       email: string;
       mobile?: string;
-      specialty: string;
+      specialty?: string;
       registrationNo?: string;
       isAvailable: boolean;
+      doctorType?: string;
+      specialtyFocus?: string | null;
     }
   ) {
     return firstValueFrom(this.http.put(`${this.apiBase}${API_PATHS.ADMIN.DOCTORS}/${doctorId}`, payload));
@@ -89,8 +91,10 @@ export class AdminDoctorsApi extends AdminApiBase {
     email: string;
     mobile?: string;
     password: string;
-    specialty: string;
+    specialty?: string;
     registrationNo?: string;
+    doctorType?: string;
+    specialtyFocus?: string | null;
   }) {
     return firstValueFrom(this.http.post(`${this.apiBase}${API_PATHS.ADMIN.DOCTORS}`, payload));
   }
