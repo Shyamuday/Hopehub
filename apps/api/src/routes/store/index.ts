@@ -10,6 +10,7 @@ import { registerStoreStaffRoutes } from './staff.js';
 import { registerStorePatientRoutes } from './patients.js';
 import { registerStoreScanRoutes } from './scan.js';
 import { registerStoreHrRoutes } from './hr.js';
+import { registerStorePurchaseOrderRoutes } from './purchase-orders.js';
 import { registerStoreStockRoutes } from './stock.js';
 
 export const storeRouter = Router();
@@ -18,6 +19,7 @@ registerStoreAuthRoutes(storeRouter);
 registerStoreMedicineRoutes(storeRouter);
 registerStoreRackRoutes(storeRouter);
 registerStoreStockRoutes(storeRouter);
+registerStorePurchaseOrderRoutes(storeRouter);
 registerStoreAlertRoutes(storeRouter);
 registerStoreDashboardRoutes(storeRouter);
 registerStoreSetupRoutes(storeRouter);

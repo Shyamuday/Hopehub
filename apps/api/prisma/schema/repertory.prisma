@@ -1,5 +1,7 @@
 enum RepertorySourceCode {
   REPERTORIUM_PUBLICUM
+  OOREP_PUBLICUM
+  OOREP_KENT_DE
 }
 
 enum CaseAnalysisStatus {
@@ -21,6 +23,7 @@ model RepertorySource {
 
 model HomeopathicRemedy {
   id               String                  @id @default(cuid())
+  oorepRemedyId    Int?                    @unique
   name             String
   abbreviation     String
   normalizedName   String                  @unique
@@ -36,6 +39,7 @@ model HomeopathicRemedy {
 model RepertoryRubric {
   id             String                  @id @default(cuid())
   sourceId       String
+  externalId     Int?
   chapter        String
   subchapter     String?
   text           String
@@ -47,6 +51,7 @@ model RepertoryRubric {
   createdAt      DateTime                @default(now())
   updatedAt      DateTime                @updatedAt
 
+  @@unique([sourceId, externalId])
   @@index([sourceId, chapter])
   @@index([normalizedText])
 }

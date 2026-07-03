@@ -57,7 +57,9 @@ export function registerCaseAnalysisRoutes(router: Router) {
       const body = updateAnalysisSchema.parse(req.body);
       const defaultSource = body.sourceId
         ? await prisma.repertorySource.findUnique({ where: { id: body.sourceId } })
-        : await prisma.repertorySource.findFirst({ where: { isActive: true }, orderBy: { name: 'asc' } });
+        : (await prisma.repertorySource.findFirst({ where: { isActive: true, code: 'OOREP_PUBLICUM' } })) ||
+          (await prisma.repertorySource.findFirst({ where: { isActive: true, code: 'REPERTORIUM_PUBLICUM' } })) ||
+          (await prisma.repertorySource.findFirst({ where: { isActive: true }, orderBy: { name: 'asc' } }));
 
       if (!defaultSource) {
         return res.status(400).json({ message: 'No active repertory source configured.' });

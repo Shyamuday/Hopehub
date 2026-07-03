@@ -38,6 +38,8 @@ model Store {
   receptionists ReceptionistProfile[]
   clinicManagers ClinicManagerProfile[]
   expenses  BusinessExpense[]
+  purchaseOrders PurchaseOrder[]
+  goodsReceipts  GoodsReceiptNote[]
   createdAt DateTime        @default(now())
   updatedAt DateTime        @updatedAt
 }
@@ -72,6 +74,7 @@ model StoreStaff {
   movements        StockMovement[]
   joiningLetter    JoiningLetter?
   leaveRequests    LeaveRequest[]
+  goodsReceipts    GoodsReceiptNote[]
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
 }
@@ -107,6 +110,7 @@ model StoreMedicine {
   qrCode        String?         @unique
   barcode       String?         @unique
   stocks        MedicineStock[]
+  orderLines    PurchaseOrderLine[]
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
 

@@ -140,6 +140,14 @@ function remedyKey(name: string) {
 }
 
 export async function seedRepertory(prisma: PrismaClient) {
+  const importedCount = await prisma.repertoryRubric.count({
+    where: { source: { code: { in: ['OOREP_PUBLICUM', 'OOREP_KENT_DE'] } } }
+  });
+  if (importedCount > 1000) {
+    console.log(`[seed] skipping mini repertory sample (${importedCount} OOREP rubrics already imported)`);
+    return;
+  }
+
   const source = await prisma.repertorySource.upsert({
     where: { code: RepertorySourceCode.REPERTORIUM_PUBLICUM },
     update: {

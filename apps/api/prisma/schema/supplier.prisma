@@ -1,0 +1,103 @@
+enum PurchaseOrderStatus {
+  DRAFT
+  SENT
+  CONFIRMED
+  PARTIALLY_RECEIVED
+  RECEIVED
+  CANCELLED
+}
+
+model Supplier {
+  id        String            @id @default(cuid())
+  code      String            @unique
+  name      String
+  email     String?
+  phone     String?
+  address   String?
+  gstin     String?
+  isActive  Boolean           @default(true)
+  profiles  SupplierProfile[]
+  orders    PurchaseOrder[]
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+}
+
+model SupplierProfile {
+  id         String   @id @default(cuid())
+  userId     String   @unique
+  supplierId String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  supplier   Supplier @relation(fields: [supplierId], references: [id])
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([supplierId])
+}
+
+model PurchaseOrder {
+  id                   String              @id @default(cuid())
+  poNumber             String              @unique
+  supplierId           String
+  storeId              String
+  status               PurchaseOrderStatus @default(DRAFT)
+  notes                String?
+  supplierNotes        String?
+  expectedDeliveryDate DateTime?
+  confirmedAt          DateTime?
+  createdById          String?
+  supplier             Supplier            @relation(fields: [supplierId], references: [id])
+  store                Store               @relation(fields: [storeId], references: [id])
+  lines                PurchaseOrderLine[]
+  grns                 GoodsReceiptNote[]
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+
+  @@index([supplierId, status])
+  @@index([storeId, status])
+}
+
+model PurchaseOrderLine {
+  id                String        @id @default(cuid())
+  purchaseOrderId   String
+  medicineId        String
+  qtyOrdered        Int
+  qtyReceived       Int           @default(0)
+  unitPriceInPaise  Int
+  purchaseOrder     PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+  medicine          StoreMedicine @relation(fields: [medicineId], references: [id])
+  receiptLines      GoodsReceiptLine[]
+
+  @@index([purchaseOrderId])
+}
+
+model GoodsReceiptNote {
+  id                String             @id @default(cuid())
+  grnNumber         String             @unique
+  purchaseOrderId   String
+  storeId           String
+  receivedByStaffId String?
+  note              String?
+  purchaseOrder     PurchaseOrder      @relation(fields: [purchaseOrderId], references: [id])
+  store             Store              @relation(fields: [storeId], references: [id])
+  staff             StoreStaff?        @relation(fields: [receivedByStaffId], references: [id])
+  lines             GoodsReceiptLine[]
+  createdAt         DateTime           @default(now())
+
+  @@index([purchaseOrderId])
+  @@index([storeId, createdAt])
+}
+
+model GoodsReceiptLine {
+  id                    String            @id @default(cuid())
+  grnId                 String
+  purchaseOrderLineId   String
+  qtyReceived           Int
+  batchNumber           String
+  expiryDate            DateTime
+  purchasePricePerUnit  Int
+  sellingPricePerUnit   Int
+  grn                   GoodsReceiptNote  @relation(fields: [grnId], references: [id], onDelete: Cascade)
+  purchaseOrderLine     PurchaseOrderLine @relation(fields: [purchaseOrderLineId], references: [id])
+
+  @@index([grnId])
+}

@@ -214,4 +214,27 @@ export class StoreApiService {
       };
     }>(`${this.base}${STORE_API_PATHS.PATIENTS.CREATE}`, payload);
   }
+
+  getPurchaseOrders(status?: string) {
+    const params = status ? new HttpParams().set('status', status) : undefined;
+    return this.http.get<{ orders: any[] }>(`${this.base}${STORE_API_PATHS.PURCHASE_ORDERS}`, { params });
+  }
+
+  postPurchaseOrderGrn(
+    orderId: string,
+    payload: {
+      note?: string;
+      lines: Array<{
+        purchaseOrderLineId: string;
+        qtyReceived: number;
+        batchNumber: string;
+        expiryDate: string;
+        purchasePricePerUnit: number;
+        sellingPricePerUnit: number;
+        manufacturer?: string;
+      }>;
+    }
+  ) {
+    return this.http.post<any>(`${this.base}${STORE_API_PATHS.PURCHASE_ORDER_GRN(orderId)}`, payload);
+  }
 }

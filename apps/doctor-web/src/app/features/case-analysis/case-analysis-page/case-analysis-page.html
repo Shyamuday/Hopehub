@@ -1,151 +1,240 @@
-<h2>Case Analysis</h2>
-<p class="muted">Search rubrics, repertorize symptoms, and choose a remedy for this consultation.</p>
-
-<div class="toolbar">
-  <label for="consultationId">Consultation ID</label>
-  <div class="toolbar-row">
-    <input id="consultationId" name="consultationId" [(ngModel)]="consultationId" placeholder="Paste consultation ID" />
-    <button type="button" (click)="load()" [disabled]="loading || !consultationId.trim()">Load</button>
-    @if (consultationId.trim()) {
-      <a class="link-btn" [routerLink]="['/', appointmentsPath]" [queryParams]="{ consultationId }">Open prescription</a>
-    }
-  </div>
-</div>
-
-@if (error) {
-  <p class="error">{{ error }}</p>
-}
-@if (message) {
-  <p class="message">{{ message }}</p>
-}
-
-@if (consultation) {
-  <section class="panel summary">
-    <strong>{{ consultation.patient?.name || 'Patient' }}</strong>
-    <span>{{ consultation.disease?.name || 'Consultation' }}</span>
-    <small>Status: {{ consultation.status }} · ID {{ consultation.id }}</small>
-  </section>
-}
-
-@if (analysis) {
-  <section class="panel">
-    <div class="panel-head">
-      <h3>Selected rubrics</h3>
-      <button type="button" (click)="saveRubrics()" [disabled]="saving">Save rubrics</button>
+<section class="page">
+  <header class="hero">
+    <div>
+      <a class="back-link" [routerLink]="['/', worklistPath]">← Worklist</a>
+      <h2>Case Analysis</h2>
+      <p class="muted">Search symptoms, repertorize, and select a remedy for this consultation.</p>
     </div>
-
-    <div class="search-row">
-      <input
-        name="rubricSearch"
-        [(ngModel)]="rubricQuery"
-        placeholder="Search symptoms (e.g. anxiety morning, nausea)"
-        (keyup.enter)="searchRubrics()"
-      />
-      <button type="button" (click)="searchRubrics()" [disabled]="searching || rubricQuery.trim().length < 2">
-        {{ searching ? 'Searching…' : 'Search' }}
-      </button>
-    </div>
-
-    @if (searchResults.length) {
-      <div class="search-results">
-        @for (rubric of searchResults; track rubric.id) {
-          <article class="rubric-card">
-            <div>
-              <strong>{{ rubric.chapter }}</strong>
-              <p>{{ rubric.text }}</p>
-              <small>
-                @for (link of rubric.remedies; track link.remedy.id; let last = $last) {
-                  {{ link.remedy.abbreviation }}({{ link.grade }})@if (!last) {, }
-                }
-              </small>
-            </div>
-            <button type="button" (click)="addRubric(rubric)" [disabled]="hasRubric(rubric.id)">
-              {{ hasRubric(rubric.id) ? 'Added' : 'Add' }}
-            </button>
-          </article>
-        }
+    @if (consultationId) {
+      <div class="hero-actions">
+        <a class="btn-secondary" [routerLink]="['/', appointmentsPath]" [queryParams]="{ consultationId }">
+          Prescription
+        </a>
       </div>
     }
+  </header>
 
-    @if (selectedRubrics.length) {
-      <div class="selected-list">
-        @for (item of selectedRubrics; track item.rubricId) {
-          <article class="selected-card">
-            <div>
-              <strong>{{ item.rubric?.chapter || 'Rubric' }}</strong>
-              <p>{{ item.rubric?.text }}</p>
-            </div>
-            <label>
-              Weight
-              <select [(ngModel)]="item.weight" [name]="'weight-' + item.rubricId">
-                <option [ngValue]="1">1</option>
-                <option [ngValue]="2">2</option>
-                <option [ngValue]="3">3</option>
-                <option [ngValue]="4">4</option>
-              </select>
-            </label>
-            <button type="button" class="ghost" (click)="removeRubric(item.rubricId)">Remove</button>
-          </article>
-        }
-      </div>
-    } @else {
-      <p class="hint">Add at least one rubric to repertorize.</p>
-    }
+  @if (error) {
+    <div class="alert alert-error">{{ error }}</div>
+  }
+  @if (message) {
+    <div class="alert alert-success">{{ message }}</div>
+  }
 
-    <div class="actions">
-      <button type="button" (click)="runRepertorization()" [disabled]="repertorizing || !selectedRubrics.length">
-        {{ repertorizing ? 'Analyzing…' : 'Repertorize' }}
-      </button>
-    </div>
-  </section>
-
-  <section class="panel">
-    <h3>Analysis results</h3>
-    @if (analysis.results.length) {
-      <table>
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Remedy</th>
-            <th>Score</th>
-            <th>Coverage</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (result of analysis.results; track result.remedy.id) {
-            <tr [class.selected]="analysis.selectedRemedy?.id === result.remedy.id">
-              <td>{{ result.rank }}</td>
-              <td>
-                <strong>{{ result.remedy.name }}</strong>
-                <small>{{ result.remedy.abbreviation }}</small>
-              </td>
-              <td>{{ result.totalScore }}</td>
-              <td>{{ result.coverage }}</td>
-              <td>
-                <button type="button" (click)="chooseRemedy(result.remedy)" [disabled]="selectingRemedyId === result.remedy.id">
-                  {{ analysis.selectedRemedy?.id === result.remedy.id ? 'Selected' : 'Select' }}
-                </button>
-              </td>
-            </tr>
+  @if (!consultationId) {
+    <section class="panel empty-panel">
+      <h3>Open a consultation first</h3>
+      <p class="muted">Go to your worklist and choose <strong>Case analysis</strong> on a case.</p>
+      <a class="btn-primary" [routerLink]="['/', worklistPath]">Go to worklist</a>
+    </section>
+  } @else if (loading) {
+    <section class="panel loading-panel">
+      <p>Loading case analysis…</p>
+    </section>
+  } @else if (analysis) {
+    @if (consultation) {
+      <section class="patient-banner">
+        <div>
+          <strong>{{ consultation.patient?.name || 'Patient' }}</strong>
+          <span class="muted">{{ consultation.disease?.name || 'Consultation' }}</span>
+        </div>
+        <div class="banner-meta">
+          <span class="badge">{{ consultation.status }}</span>
+          @if (analysis.source?.name) {
+            <span class="badge badge-soft">{{ analysis.source?.name }}</span>
           }
-        </tbody>
-      </table>
-    } @else {
-      <p class="hint">Run repertorization to see ranked remedies.</p>
+        </div>
+      </section>
     }
 
-    @if (analysis.selectedRemedy) {
-      <div class="selected-remedy">
-        <strong>Chosen remedy:</strong> {{ analysis.selectedRemedy.name }} ({{ analysis.selectedRemedy.abbreviation }})
-        <button type="button" (click)="openPrescriptionWithRemedy()">Use in prescription</button>
+    <div class="steps">
+      <span class="step" [class.done]="selectedRubrics.length > 0">1. Symptoms</span>
+      <span class="step" [class.done]="analysis.results.length > 0">2. Repertorize</span>
+      <span class="step" [class.done]="!!analysis.selectedRemedy">3. Remedy</span>
+    </div>
+
+    <div class="workspace">
+      <div class="column">
+        <section class="panel">
+          <div class="panel-title-row">
+            <h3>Symptom search</h3>
+            @if (sources.length) {
+              <select class="source-select" name="repertorySource" [(ngModel)]="selectedSourceId">
+                @for (source of sources; track source.id) {
+                  <option [value]="source.id">
+                    {{ source.name }}@if (source.rubricCount) { · {{ source.rubricCount | number }} rubrics }
+                  </option>
+                }
+              </select>
+            }
+          </div>
+
+          <div class="search-box">
+            <input
+              name="rubricSearch"
+              [(ngModel)]="rubricQuery"
+              placeholder="e.g. anxiety morning, nausea, grief suppressed"
+              (keyup.enter)="searchRubrics()"
+            />
+            <button type="button" class="btn-primary" (click)="searchRubrics()" [disabled]="searching || rubricQuery.trim().length < 2">
+              {{ searching ? 'Searching…' : 'Search' }}
+            </button>
+          </div>
+
+          @if (searching) {
+            <p class="hint">Searching repertory…</p>
+          } @else if (rubricQuery.trim().length >= 2 && !searchResults.length && searchedOnce) {
+            <p class="hint">No rubrics found. Try fewer or different keywords.</p>
+          }
+
+          @if (searchResults.length) {
+            <div class="result-list">
+              @for (rubric of searchResults; track rubric.id) {
+                <article class="rubric-result" [class.added]="hasRubric(rubric.id)">
+                  <div class="rubric-body">
+                    <span class="chapter-tag">{{ rubric.chapter }}</span>
+                    <p class="rubric-text">{{ rubric.text }}</p>
+                    @if (rubric.remedies.length) {
+                      <div class="remedy-chips">
+                        @for (link of rubric.remedies; track link.remedy.id) {
+                          <span class="chip" [attr.data-grade]="link.grade">
+                            {{ link.remedy.abbreviation }}
+                            <small>{{ link.grade }}</small>
+                          </span>
+                        }
+                      </div>
+                    }
+                  </div>
+                  <button
+                    type="button"
+                    class="btn-add"
+                    (click)="addRubric(rubric)"
+                    [disabled]="hasRubric(rubric.id)"
+                  >
+                    {{ hasRubric(rubric.id) ? 'Added' : '+ Add' }}
+                  </button>
+                </article>
+              }
+            </div>
+          }
+        </section>
+
+        <section class="panel">
+          <div class="panel-title-row">
+            <h3>Case rubrics <span class="count-pill">{{ selectedRubrics.length }}</span></h3>
+            <button type="button" class="btn-secondary btn-sm" (click)="saveRubrics()" [disabled]="saving || !selectedRubrics.length">
+              Save
+            </button>
+          </div>
+
+          @if (selectedRubrics.length) {
+            <div class="selected-list">
+              @for (item of selectedRubrics; track item.rubricId) {
+                <article class="selected-item">
+                  <div>
+                    <span class="chapter-tag">{{ item.rubric?.chapter || 'Rubric' }}</span>
+                    <p>{{ item.rubric?.text }}</p>
+                  </div>
+                  <div class="selected-actions">
+                    <div class="weight-picker" role="group" aria-label="Symptom weight">
+                      @for (w of weightOptions; track w) {
+                        <button
+                          type="button"
+                          class="weight-btn"
+                          [class.active]="item.weight === w"
+                          (click)="item.weight = w"
+                        >
+                          {{ w }}
+                        </button>
+                      }
+                    </div>
+                    <button type="button" class="btn-icon" (click)="removeRubric(item.rubricId)" title="Remove">×</button>
+                  </div>
+                </article>
+              }
+            </div>
+            <button
+              type="button"
+              class="btn-primary btn-block"
+              (click)="runRepertorization()"
+              [disabled]="repertorizing"
+            >
+              {{ repertorizing ? 'Repertorizing…' : 'Repertorize case' }}
+            </button>
+          } @else {
+            <p class="hint">Search and add symptoms that match the patient. Assign weight 1–4 by importance.</p>
+          }
+        </section>
+
+        <section class="panel notes-panel">
+          <h3>Analysis notes</h3>
+          <textarea
+            name="analysisNotes"
+            [(ngModel)]="notes"
+            rows="4"
+            placeholder="Key observations, modalities, mentals, or follow-up thoughts…"
+          ></textarea>
+          <button type="button" class="btn-secondary btn-sm" (click)="saveNotes()" [disabled]="saving">Save notes</button>
+        </section>
       </div>
-    }
-  </section>
 
-  <section class="panel">
-    <h3>Case notes</h3>
-    <textarea name="analysisNotes" [(ngModel)]="notes" rows="4" placeholder="Clinical notes for this analysis"></textarea>
-    <button type="button" (click)="saveNotes()" [disabled]="saving">Save notes</button>
-  </section>
-}
+      <div class="column results-column">
+        <section class="panel results-panel">
+          <h3>Remedy analysis</h3>
+
+          @if (analysis.results.length) {
+            <div class="results-list">
+              @for (result of analysis.results; track result.remedy.id) {
+                <article
+                  class="result-card"
+                  [class.is-top]="result.rank <= 3"
+                  [class.is-selected]="analysis.selectedRemedy?.id === result.remedy.id"
+                >
+                  <div class="rank-badge">{{ result.rank }}</div>
+                  <div class="result-body">
+                    <div class="result-head">
+                      <strong>{{ result.remedy.name }}</strong>
+                      <span class="abbrev">{{ result.remedy.abbreviation }}</span>
+                    </div>
+                    <div class="score-row">
+                      <div class="score-bar">
+                        <span class="score-fill" [style.width.%]="scorePercent(result.totalScore)"></span>
+                      </div>
+                      <span class="score-label">Score {{ result.totalScore }}</span>
+                    </div>
+                    <small class="muted">Covers {{ result.coverage }} selected rubric{{ result.coverage === 1 ? '' : 's' }}</small>
+                  </div>
+                  <button
+                    type="button"
+                    class="btn-select"
+                    (click)="chooseRemedy(result.remedy)"
+                    [disabled]="selectingRemedyId === result.remedy.id"
+                  >
+                    {{ analysis.selectedRemedy?.id === result.remedy.id ? 'Selected' : 'Select' }}
+                  </button>
+                </article>
+              }
+            </div>
+          } @else {
+            <div class="empty-results">
+              <p class="hint">Add rubrics and run repertorization to see ranked remedies here.</p>
+            </div>
+          }
+
+          @if (analysis.selectedRemedy) {
+            <div class="chosen-remedy">
+              <div>
+                <small class="muted">Chosen simillimum</small>
+                <strong>{{ analysis.selectedRemedy.name }}</strong>
+                <span class="abbrev">{{ analysis.selectedRemedy.abbreviation }}</span>
+              </div>
+              <button type="button" class="btn-primary" (click)="openPrescriptionWithRemedy()">
+                Use in prescription →
+              </button>
+            </div>
+          }
+        </section>
+      </div>
+    </div>
+  }
+</section>

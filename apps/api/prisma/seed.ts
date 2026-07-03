@@ -2,6 +2,7 @@ import { PrismaClient, PrescriptionOptionType, Role, ConsultationStatus, Prescri
 import { PrismaPg } from '@prisma/adapter-pg';
 import bcrypt from 'bcryptjs';
 import { seedRepertory } from './seeds/repertory-seed.js';
+import { createPurchaseOrder } from '../src/services/purchase-orders.js';
 import {
   DEV_DEMO_ACCOUNTS,
   DEV_DEMO_PASSWORD,
@@ -170,6 +171,77 @@ async function main() {
       designation: 'Accountant'
     }
   });
+
+  const supplierEntity = await prisma.supplier.upsert({
+    where: { code: DEV_DEMO_ACCOUNTS.supplier.code },
+    update: { name: DEV_DEMO_ACCOUNTS.supplier.name, email: DEV_DEMO_ACCOUNTS.supplier.email, isActive: true },
+    create: {
+      code: DEV_DEMO_ACCOUNTS.supplier.code,
+      name: DEV_DEMO_ACCOUNTS.supplier.name,
+      email: DEV_DEMO_ACCOUNTS.supplier.email,
+      address: 'Kolkata, West Bengal',
+      gstin: '19AABCV1234F1Z5'
+    }
+  });
+
+  const supplierUser = await prisma.user.upsert({
+    where: { email: DEV_DEMO_ACCOUNTS.supplier.email },
+    update: { isActive: true, passwordHash, role: Role.SUPPLIER },
+    create: {
+      name: DEV_DEMO_ACCOUNTS.supplier.name,
+      email: DEV_DEMO_ACCOUNTS.supplier.email,
+      passwordHash,
+      role: Role.SUPPLIER,
+      isActive: true
+    }
+  });
+
+  await prisma.supplierProfile.upsert({
+    where: { userId: supplierUser.id },
+    update: { supplierId: supplierEntity.id },
+    create: { userId: supplierUser.id, supplierId: supplierEntity.id }
+  });
+
+  const demoMedicineArnica = await prisma.storeMedicine.upsert({
+    where: { id: 'seed-store-med-arnica-30' },
+    update: { isActive: true },
+    create: {
+      id: 'seed-store-med-arnica-30',
+      name: 'Arnica Montana',
+      potency: '30C',
+      manufacturer: 'Vitalis Pharma',
+      minStockLevel: 20
+    }
+  });
+
+  const demoMedicineSulphur = await prisma.storeMedicine.upsert({
+    where: { id: 'seed-store-med-sulphur-200' },
+    update: { isActive: true },
+    create: {
+      id: 'seed-store-med-sulphur-200',
+      name: 'Sulphur',
+      potency: '200C',
+      manufacturer: 'Vitalis Pharma',
+      minStockLevel: 15
+    }
+  });
+
+  const existingDemoPo = await prisma.purchaseOrder.findFirst({
+    where: { storeId: ranchiStore.id, supplierId: supplierEntity.id }
+  });
+  if (!existingDemoPo) {
+    await createPurchaseOrder({
+      supplierId: supplierEntity.id,
+      storeId: ranchiStore.id,
+      notes: 'Demo replenishment for Ranchi store',
+      createdById: admin.id,
+      send: true,
+      lines: [
+        { medicineId: demoMedicineArnica.id, qtyOrdered: 100, unitPriceInPaise: 4500 },
+        { medicineId: demoMedicineSulphur.id, qtyOrdered: 60, unitPriceInPaise: 5200 }
+      ]
+    });
+  }
 
   const managerPinHash = await bcrypt.hash(DEV_DEMO_PASSWORD, 10);
   await prisma.storeStaff.upsert({

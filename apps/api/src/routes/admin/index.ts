@@ -10,6 +10,7 @@ import { registerAdminPatientLookupRoutes } from '../store/patients.js';
 import { registerAdminSupportRoutes } from './support.js';
 import { registerAdminAdherenceRoutes } from './adherence.js';
 import { registerAdminAnalyticsRoutes } from '../analytics.js';
+import { registerAdminPurchaseOrderRoutes } from './purchase-orders.js';
 
 export function createAdminRouter(io: SocketIoServer) {
   const router = Router();
@@ -24,6 +25,7 @@ export function createAdminRouter(io: SocketIoServer) {
   registerAdminPaymentRoutes(router);
   registerAdminReportRoutes(router);
   registerAdminPatientLookupRoutes(router);
+  registerAdminPurchaseOrderRoutes(router);
 
   return router;
 }

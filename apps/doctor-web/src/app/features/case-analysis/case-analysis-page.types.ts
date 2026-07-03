@@ -3,6 +3,7 @@ export type RepertorySource = {
   code: string;
   name: string;
   description?: string | null;
+  rubricCount?: number;
 };
 
 export type RepertoryRemedyRef = {

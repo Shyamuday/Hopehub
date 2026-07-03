@@ -38,10 +38,12 @@ import { analyticsRouter } from './routes/analytics.js';
 import { createReceptionRouter } from './routes/reception/router.js';
 import { createClinicManagerRouter } from './routes/clinic-manager/router.js';
 import { createAccountantRouter } from './routes/accountant/router.js';
+import { createSupplierRouter } from './routes/supplier/router.js';
 import { devRouter } from './routes/dev.js';
 import { createRepertoryRouter } from './routes/repertory/index.js';
 import { ReceptionScopeError } from './routes/reception/shared.js';
 import { ClinicManagerScopeError } from './services/clinic-manager-hub.js';
+import { PurchaseOrderError } from './services/purchase-orders.js';
 
 // ── Schedulers ─────────────────────────────────────────────────────────────────
 import {
@@ -69,7 +71,8 @@ const {
   HR: hrOrigin,
   RECEPTIONIST: receptionistOrigin,
   CLINIC_MANAGER: clinicManagerOrigin,
-  ACCOUNTANT: accountantOrigin
+  ACCOUNTANT: accountantOrigin,
+  SUPPLIER: supplierOrigin
 } = SERVER_CONFIG.ORIGINS;
 
 // ── Socket.IO ──────────────────────────────────────────────────────────────────
@@ -107,7 +110,7 @@ io.on('connection', (socket) => {
 // ── Middleware ─────────────────────────────────────────────────────────────────
 
 app.use(cors({
-  origin: [webOrigin, adminOrigin, doctorOrigin, storeOrigin, storeManagerOrigin, hrOrigin, receptionistOrigin, clinicManagerOrigin, accountantOrigin],
+  origin: [webOrigin, adminOrigin, doctorOrigin, storeOrigin, storeManagerOrigin, hrOrigin, receptionistOrigin, clinicManagerOrigin, accountantOrigin, supplierOrigin],
   credentials: true
 }));
 app.use('/payments/razorpay-webhook', express.raw({ type: 'application/json' }));
@@ -166,6 +169,7 @@ app.use('/hr', hrRouter);
 app.use(createReceptionRouter(io));
 app.use(createClinicManagerRouter(io));
 app.use(createAccountantRouter());
+app.use(createSupplierRouter());
 
 // ── Global error handler ───────────────────────────────────────────────────────
 
@@ -174,6 +178,9 @@ app.use((error: unknown, _req: express.Request, res: express.Response, _next: ex
     return res.status(400).json({ message: error.message });
   }
   if (error instanceof ClinicManagerScopeError) {
+    return res.status(400).json({ message: error.message });
+  }
+  if (error instanceof PurchaseOrderError) {
     return res.status(400).json({ message: error.message });
   }
   if (error instanceof z.ZodError) {

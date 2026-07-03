@@ -1,0 +1,63 @@
+<div class="page">
+  <div class="hdr">
+    <div>
+      <h2>Incoming purchase orders</h2>
+      <p>Post goods receipt (GRN) when supplier deliveries arrive</p>
+    </div>
+    <button type="button" class="btn" (click)="load()" [disabled]="loading()">Refresh</button>
+  </div>
+
+  @if (loading()) {
+    <p class="muted">Loading…</p>
+  } @else if (error()) {
+    <div class="error-row">
+      <p class="error">{{ error() }}</p>
+      <button type="button" class="btn" (click)="load()">Retry</button>
+    </div>
+  } @else if (!orders().length) {
+    <p class="muted">No confirmed purchase orders awaiting receipt.</p>
+  } @else {
+    @for (order of orders(); track order.id) {
+      <div class="card">
+        <div class="card-top">
+          <div>
+            <strong>{{ order.poNumber }}</strong>
+            <div class="muted">{{ order.supplier?.name }} · {{ order.createdAt | date:'mediumDate' }}</div>
+          </div>
+          <span class="pill">{{ order.status }}</span>
+        </div>
+        @for (line of order.lines; track line.id) {
+          <div class="line">{{ line.medicine.name }} {{ line.medicine.potency }} — {{ line.qtyReceived }}/{{ line.qtyOrdered }}</div>
+        }
+        <button type="button" class="btn primary" (click)="openReceive(order)">Post GRN</button>
+      </div>
+    }
+  }
+
+  @if (receivingId()) {
+    <div class="modal-backdrop" (click)="closeReceive()">
+      <div class="modal" (click)="$event.stopPropagation()">
+        <h3>Goods receipt</h3>
+        @for (line of receiveLines(); track line.purchaseOrderLineId) {
+          <div class="recv-line">
+            <div class="recv-title">{{ line.label }} (max {{ line.qtyRemaining }})</div>
+            <div class="recv-grid">
+              <label>Qty <input type="number" [(ngModel)]="line.qtyReceived" min="1" [max]="line.qtyRemaining" /></label>
+              <label>Batch <input [(ngModel)]="line.batchNumber" /></label>
+              <label>Expiry <input type="date" [(ngModel)]="line.expiryDate" /></label>
+              <label>Buy ₹ <input type="number" [(ngModel)]="line.purchasePricePerUnit" /></label>
+              <label>Sell ₹ <input type="number" [(ngModel)]="line.sellingPricePerUnit" /></label>
+            </div>
+          </div>
+        }
+        <label>Note <input [(ngModel)]="note" placeholder="Optional receipt note" /></label>
+        <div class="actions">
+          <button type="button" class="btn" (click)="closeReceive()">Cancel</button>
+          <button type="button" class="btn primary" (click)="submitReceive()">Post GRN</button>
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (toast()) { <div class="toast">{{ toast() }}</div> }
+</div>

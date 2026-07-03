@@ -6,6 +6,7 @@ enum Role {
   RECEPTIONIST
   CLINIC_MANAGER
   ACCOUNTANT
+  SUPPLIER
 }
 
 model User {
@@ -41,6 +42,7 @@ model User {
   receptionistProfile    ReceptionistProfile?
   clinicManagerProfile   ClinicManagerProfile?
   accountantProfile      AccountantProfile?
+  supplierProfile        SupplierProfile?
   hrStoreAccess          HrStoreAccess[] @relation("HrUserAccess")
   hrStoreGrants      HrStoreAccess[] @relation("HrAccessGrantor")
   leaveApprovals     LeaveRequest[]  @relation("LeaveApprovals")

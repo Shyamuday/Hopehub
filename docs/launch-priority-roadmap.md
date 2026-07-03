@@ -217,10 +217,14 @@ Minimum acceptance:
 
 ### 2) Supplier Portal (Platform Phase 3)
 
-**Status: Next** — purchase orders and goods receipt (GRN) linked to store inventory (see `docs/platform-ecosystem-architecture.md`).
+**Status: Done** — `SUPPLIER` role + `SupplierProfile`; `Supplier`, `PurchaseOrder`, `GoodsReceiptNote` models; supplier API (`/supplier/purchase-orders`, confirm dispatch); store manager GRN (`POST /store/purchase-orders/:id/grn`) updates stock via `PURCHASE_IN`; `supplier-web` on port 4800; demo PO seeded for Ranchi; demo persona `supplier@vitalisclinic.local`.
 
 - Supplier-facing PO and delivery confirmation
 - GRN updates store stock on receipt
+
+### 3) Warehouse / Central Inventory (Platform Phase 3)
+
+**Status: Next** — multi-branch central stock and transfers when scale requires it (see `docs/platform-ecosystem-architecture.md`).
 
 ## Recommended Implementation Order
 

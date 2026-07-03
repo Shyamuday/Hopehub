@@ -36,6 +36,12 @@ export const DEV_DEMO_ACCOUNTS = {
     name: 'Finance Accountant Demo',
     employeeId: 'ACC-001'
   },
+  supplier: {
+    email: 'supplier@vitalisclinic.local',
+    name: 'Vitalis Pharma Supplies',
+    code: 'VPS',
+    employeeId: 'SUP-001'
+  },
   patientRahul: {
     email: 'patient1@vitalisclinic.local',
     name: 'Rahul Verma',
@@ -78,6 +84,7 @@ export const DEV_DEMO_APPS = [
   { id: 'receptionist-web', label: 'Reception desk', port: 4500, url: SERVER_CONFIG.ORIGINS.RECEPTIONIST },
   { id: 'clinic-manager-web', label: 'Clinic manager', port: 4600, url: SERVER_CONFIG.ORIGINS.CLINIC_MANAGER },
   { id: 'accountant-web', label: 'Accountant', port: 4700, url: SERVER_CONFIG.ORIGINS.ACCOUNTANT },
+  { id: 'supplier-web', label: 'Supplier portal', port: 4800, url: SERVER_CONFIG.ORIGINS.SUPPLIER },
   { id: 'api', label: 'API + demo guide', port: 4000, url: SERVER_CONFIG.API_PUBLIC_URL }
 ] as const;
 
@@ -156,6 +163,14 @@ export const DEV_DEMO_PERSONAS: DevDemoPersona[] = [
     authKind: 'platform',
     description: 'GST-ready branch P&L, month summary, and accountant CSV export bundle.',
     testHints: ['Month summary', 'Branch P&L table', 'Export bundle CSV']
+  },
+  {
+    id: 'supplier',
+    label: 'Vitalis Pharma Supplies',
+    app: 'supplier-web',
+    authKind: 'platform',
+    description: 'View purchase orders and confirm dispatch to clinic stores.',
+    testHints: ['Open sent PO', 'Confirm delivery date', 'Store manager posts GRN']
   },
   {
     id: 'store-staff',
@@ -249,6 +264,12 @@ export const DEV_DEMO_ALL_ACCOUNTS = [
     password: DEV_DEMO_PASSWORD
   },
   {
+    role: 'Supplier',
+    app: 'supplier-web',
+    login: DEV_DEMO_ACCOUNTS.supplier.email,
+    password: DEV_DEMO_PASSWORD
+  },
+  {
     role: 'Patient — Rahul',
     app: 'user-web',
     login: DEV_DEMO_ACCOUNTS.patientRahul.email,
@@ -287,7 +308,8 @@ const PERSONA_EMAIL: Record<string, string> = {
   hr: DEV_DEMO_ACCOUNTS.hr.email,
   receptionist: DEV_DEMO_ACCOUNTS.receptionist.email,
   'clinic-manager': DEV_DEMO_ACCOUNTS.clinicManager.email,
-  accountant: DEV_DEMO_ACCOUNTS.accountant.email
+  accountant: DEV_DEMO_ACCOUNTS.accountant.email,
+  supplier: DEV_DEMO_ACCOUNTS.supplier.email
 };
 
 export function getPersonaCredentials(personaId: string): DevDemoPersonaCredentials {
@@ -325,6 +347,8 @@ export function getPersonaCredentials(personaId: string): DevDemoPersonaCredenti
       return { email: DEV_DEMO_ACCOUNTS.clinicManager.email, password };
     case 'accountant':
       return { email: DEV_DEMO_ACCOUNTS.accountant.email, password };
+    case 'supplier':
+      return { email: DEV_DEMO_ACCOUNTS.supplier.email, password };
     case 'store-staff':
       return { staffCode: DEV_DEMO_ACCOUNTS.storeStaff.staffCode, pin: password, password };
     case 'store-manager':

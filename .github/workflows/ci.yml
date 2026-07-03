@@ -22,6 +22,7 @@ jobs:
           - apps/receptionist-web
           - apps/clinic-manager-web
           - apps/accountant-web
+          - apps/supplier-web
 
     defaults:
       run:

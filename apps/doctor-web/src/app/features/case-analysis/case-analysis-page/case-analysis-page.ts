@@ -1,27 +1,34 @@
+import { DecimalPipe } from '@angular/common';
 import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ROUTE_PATHS } from '../../../core/constants/app-routes.constants';
 import { CaseAnalysisApiService } from '../case-analysis-api.service';
-import type { CaseAnalysis, ConsultationSummary, RubricSearchResult, SelectedRubric } from '../case-analysis-page.types';
+import type { CaseAnalysis, ConsultationSummary, RepertorySource, RubricSearchResult, SelectedRubric } from '../case-analysis-page.types';
 
 @Component({
   selector: 'app-case-analysis-page',
-  imports: [FormsModule, RouterLink],
+  imports: [FormsModule, RouterLink, DecimalPipe],
   templateUrl: './case-analysis-page.html',
   styleUrl: './case-analysis-page.scss'
 })
 export class CaseAnalysisPage {
   readonly appointmentsPath = ROUTE_PATHS.APPOINTMENTS;
+  readonly worklistPath = ROUTE_PATHS.WORKLIST;
+  readonly weightOptions = [1, 2, 3, 4] as const;
 
   consultationId = '';
   consultation: ConsultationSummary | null = null;
   analysis: CaseAnalysis | null = null;
+  sources: RepertorySource[] = [];
+  selectedSourceId = '';
   selectedRubrics: SelectedRubric[] = [];
   notes = '';
 
   rubricQuery = '';
   searchResults: RubricSearchResult[] = [];
+  searchedOnce = false;
+  maxResultScore = 0;
 
   loading = false;
   searching = false;
@@ -37,8 +44,18 @@ export class CaseAnalysisPage {
     private readonly router: Router
   ) {
     this.consultationId = this.route.snapshot.paramMap.get('consultationId') || '';
+    void this.loadSources();
     if (this.consultationId) {
       void this.load();
+    }
+  }
+
+  async loadSources() {
+    try {
+      this.sources = await this.api.loadSources();
+      this.selectedSourceId = this.sources[0]?.id || '';
+    } catch {
+      this.sources = [];
     }
   }
 
@@ -52,7 +69,10 @@ export class CaseAnalysisPage {
     try {
       const response = await this.api.loadConsultationAnalyses(id);
       this.consultation = response.consultation;
-      this.analysis = response.analyses[0] || (await this.api.createAnalysis(id, {}));
+      this.analysis =
+        response.analyses[0] ||
+        (await this.api.createAnalysis(id, { sourceId: this.selectedSourceId || undefined }));
+      this.selectedSourceId = this.analysis.source?.id || this.selectedSourceId;
       this.hydrateFromAnalysis(this.analysis);
     } catch {
       this.error = 'Could not load case analysis for this consultation.';
@@ -70,6 +90,12 @@ export class CaseAnalysisPage {
       weight: item.weight,
       rubric: item.rubric || undefined
     }));
+    this.maxResultScore = analysis.results[0]?.totalScore || 0;
+  }
+
+  scorePercent(score: number) {
+    if (!this.maxResultScore) return 0;
+    return Math.max(8, Math.round((score / this.maxResultScore) * 100));
   }
 
   async searchRubrics() {
@@ -78,10 +104,12 @@ export class CaseAnalysisPage {
 
     this.searching = true;
     this.error = '';
+    this.searchedOnce = true;
     try {
-      this.searchResults = await this.api.searchRubrics(q, this.analysis?.source?.id);
+      this.searchResults = await this.api.searchRubrics(q, this.selectedSourceId || this.analysis?.source?.id);
     } catch {
       this.error = 'Rubric search failed.';
+      this.searchResults = [];
     } finally {
       this.searching = false;
     }
@@ -107,6 +135,7 @@ export class CaseAnalysisPage {
         }
       }
     ];
+    this.message = 'Symptom added to case.';
   }
 
   removeRubric(rubricId: string) {
@@ -128,7 +157,7 @@ export class CaseAnalysisPage {
     try {
       this.analysis = await this.api.updateAnalysis(this.analysis.id, { rubrics: this.rubricPayload() });
       this.hydrateFromAnalysis(this.analysis);
-      this.message = 'Rubrics saved.';
+      this.message = 'Case rubrics saved.';
     } catch {
       this.error = 'Could not save rubrics.';
     } finally {
@@ -160,7 +189,7 @@ export class CaseAnalysisPage {
       await this.saveRubrics();
       this.analysis = await this.api.repertorize(this.analysis.id);
       this.hydrateFromAnalysis(this.analysis);
-      this.message = 'Repertorization complete.';
+      this.message = 'Repertorization complete. Review ranked remedies on the right.';
     } catch {
       this.error = 'Repertorization failed. Add rubrics and try again.';
     } finally {
@@ -175,7 +204,7 @@ export class CaseAnalysisPage {
     this.message = '';
     try {
       this.analysis = await this.api.selectRemedy(this.analysis.id, remedy.id);
-      this.message = `${remedy.name} selected.`;
+      this.message = `${remedy.name} selected as the case remedy.`;
     } catch {
       this.error = 'Could not select remedy.';
     } finally {

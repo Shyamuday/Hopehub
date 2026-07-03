@@ -35,5 +35,8 @@ export const STORE_API_PATHS = {
     STAFF: '/hr/staff',
     STAFF_DETAIL: (id: string) => `/hr/staff/${id}`,
     STAFF_LETTER: (id: string) => `/hr/staff/${id}/letter`
-  }
+  },
+  PURCHASE_ORDERS: '/purchase-orders',
+  PURCHASE_ORDER: (id: string) => `/purchase-orders/${id}`,
+  PURCHASE_ORDER_GRN: (id: string) => `/purchase-orders/${id}/grn`
 } as const;

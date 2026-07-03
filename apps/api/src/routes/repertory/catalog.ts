@@ -15,9 +15,20 @@ export function registerRepertoryCatalogRoutes(router: Router) {
       const sources = await prisma.repertorySource.findMany({
         where: { isActive: true },
         orderBy: { name: 'asc' },
-        select: { id: true, code: true, name: true, description: true }
+        select: {
+          id: true,
+          code: true,
+          name: true,
+          description: true,
+          _count: { select: { rubrics: true } }
+        }
       });
-      res.json({ sources });
+      res.json({
+        sources: sources.map(({ _count, ...source }) => ({
+          ...source,
+          rubricCount: _count.rubrics
+        }))
+      });
     })
   );
 
