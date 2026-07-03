@@ -1,11 +1,12 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { AppFooterComponent } from './app-footer.component';
 import { AppHeaderComponent } from './app-header.component';
 
 @Component({
   selector: 'app-about',
   imports: [AppHeaderComponent, AppFooterComponent],
-  templateUrl: './about.component.html'
+  changeDetection: ChangeDetectionStrategy.Eager,
+  templateUrl: './about.component.html',
 })
 export class AboutComponent {
   readonly whatsappLink =

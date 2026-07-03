@@ -1,0 +1,72 @@
+<div class="page">
+  <div class="hdr">
+    <div>
+      <h2>Purchase orders</h2>
+      <p>Review clinic orders and confirm dispatch</p>
+    </div>
+    <button type="button" class="btn-refresh" (click)="load()" [disabled]="loading()">Refresh</button>
+  </div>
+
+  @if (loading()) {
+    <p class="loading-text">Loading orders…</p>
+  } @else if (error()) {
+    <div class="error-row">
+      <p class="error">{{ error() }}</p>
+      <button type="button" class="retry-btn" (click)="load()">Retry</button>
+    </div>
+  } @else if (!orders().length) {
+    <p class="empty">No purchase orders yet.</p>
+  } @else {
+    <div class="cards">
+      @for (order of orders(); track order.id) {
+        <div class="card">
+          <div class="card-top">
+            <div>
+              <div class="po">{{ order.poNumber }}</div>
+              <div class="meta">{{ order.store?.name }} · {{ order.createdAt | date:'mediumDate' }}</div>
+            </div>
+            <span class="status" [class.sent]="order.status === 'SENT'" [class.confirmed]="order.status === 'CONFIRMED'">
+              {{ order.status }}
+            </span>
+          </div>
+          <div class="lines">
+            @for (line of order.lines; track line.id) {
+              <div class="line">
+                {{ line.medicine.name }} {{ line.medicine.potency }} — {{ line.qtyOrdered }} units @ ₹{{ formatPaise(line.unitPriceInPaise) }}
+              </div>
+            }
+          </div>
+          <div class="total">Order total: ₹{{ formatPaise(order.totals?.totalInPaise ?? 0) }}</div>
+          @if (order.notes) {
+            <div class="note">Clinic note: {{ order.notes }}</div>
+          }
+          @if (order.status === 'SENT') {
+            <button type="button" class="btn-primary" (click)="openConfirm(order)">Confirm dispatch</button>
+          } @else if (order.expectedDeliveryDate) {
+            <div class="note">Expected delivery: {{ order.expectedDeliveryDate | date:'mediumDate' }}</div>
+          }
+        </div>
+      }
+    </div>
+  }
+
+  @if (confirmingId(); as id) {
+    <div class="modal-backdrop" (click)="closeConfirm()">
+      <div class="modal" (click)="$event.stopPropagation()">
+        <h3>Confirm dispatch</h3>
+        <label>Expected delivery</label>
+        <input type="date" [(ngModel)]="expectedDeliveryDate" />
+        <label>Notes to clinic</label>
+        <textarea [(ngModel)]="supplierNotes" rows="3" placeholder="Dispatch details, courier, etc."></textarea>
+        <div class="modal-actions">
+          <button type="button" (click)="closeConfirm()">Cancel</button>
+          <button type="button" class="btn-primary" (click)="submitConfirm(id)">Confirm</button>
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (toast()) {
+    <div class="toast">{{ toast() }}</div>
+  }
+</div>

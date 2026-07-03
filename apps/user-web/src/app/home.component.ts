@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { WHATSAPP_CONTACT_URL } from './core/constants/branding.constants';
 import { AppFooterComponent } from './app-footer.component';
 import { AppHeaderComponent } from './app-header.component';
@@ -17,9 +17,10 @@ import { HomeTreatmentsSectionComponent } from './home-treatments-section.compon
     HomeTreatmentsSectionComponent,
     HomeHowItWorksSectionComponent,
     HomeSafetyFaqSectionComponent,
-    HomeFinalCtaSectionComponent
+    HomeFinalCtaSectionComponent,
   ],
-  templateUrl: './home.component.html'
+  changeDetection: ChangeDetectionStrategy.Eager,
+  templateUrl: './home.component.html',
 })
 export class HomeComponent {
   readonly whatsappLink = WHATSAPP_CONTACT_URL;

@@ -1,5 +1,5 @@
 import { CommonModule, DatePipe } from '@angular/common';
-import { Component, Input, OnDestroy, OnInit, signal } from '@angular/core';
+import { Component, Input, OnDestroy, OnInit, signal, ChangeDetectionStrategy } from '@angular/core';
 import type { InAppNotificationItem, NotificationBellConfig } from './types';
 
 @Component({
@@ -7,6 +7,7 @@ import type { InAppNotificationItem, NotificationBellConfig } from './types';
   standalone: true,
   imports: [CommonModule, DatePipe],
   templateUrl: './notification-bell.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './notification-bell.component.scss'
 })
 export class NotificationBellComponent implements OnInit, OnDestroy {

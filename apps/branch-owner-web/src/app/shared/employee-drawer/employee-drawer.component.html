@@ -1,0 +1,222 @@
+
+    @if (visible) {
+      <!-- Backdrop -->
+      <div class="backdrop" (click)="close()"></div>
+
+      <!-- Drawer -->
+      <div class="drawer">
+        <!-- Header -->
+        <div class="drawer-header">
+          <div class="drawer-avatar">{{ employee!.name.charAt(0).toUpperCase() }}</div>
+          <div class="drawer-info">
+            <div class="drawer-name">{{ employee!.name }}</div>
+            <div class="drawer-meta">
+              <span class="badge" [class]="statusClass(employee!.employeeStatus)">
+                {{ employee!.employeeStatus }}
+              </span>
+              <span class="badge" [class]="employee!.empType === 'DOCTOR' ? 'badge-blue' : 'badge-purple'">
+                {{ employee!.empType === 'DOCTOR' ? '🩺 Doctor' : '🏪 Staff' }}
+              </span>
+            </div>
+          </div>
+          <button class="close-btn" (click)="close()">✕</button>
+        </div>
+
+        <!-- Tabs -->
+        <div class="tabs">
+          <button class="tab" [class.active]="activeTab() === 'profile'" (click)="activeTab.set('profile')">Profile</button>
+          <button class="tab" [class.active]="activeTab() === 'shift'" (click)="activeTab.set('shift')">Shift &amp; Timing</button>
+          <button class="tab" [class.active]="activeTab() === 'letter'" (click)="setLetterTab()">Letter</button>
+        </div>
+
+        <!-- Tab Content -->
+        <div class="drawer-body">
+          <!-- Profile Tab -->
+          @if (activeTab() === 'profile') {
+            <div class="tab-content">
+              <div class="form-grid">
+                <div class="form-group">
+                  <label class="form-label">Employee ID</label>
+                  <input class="form-input" [(ngModel)]="form.employeeId" placeholder="EMP001" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Designation</label>
+                  <input class="form-input" [(ngModel)]="form.designation" placeholder="Senior Doctor" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Department</label>
+                  <input class="form-input" [(ngModel)]="form.department" placeholder="Cardiology" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Joining Date</label>
+                  <input class="form-input" type="date" [(ngModel)]="form.joiningDate" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Probation End Date</label>
+                  <input class="form-input" type="date" [(ngModel)]="form.probationEndDate" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Salary (₹)</label>
+                  <input class="form-input" type="number" [(ngModel)]="form.salary" placeholder="50000" />
+                </div>
+                <div class="form-group full-width">
+                  <label class="form-label">Emergency Contact</label>
+                  <input class="form-input" [(ngModel)]="form.emergencyContact" placeholder="+91 98765 43210" />
+                </div>
+                <div class="form-group full-width">
+                  <label class="form-label">Employee Status</label>
+                  <select class="form-input" [(ngModel)]="form.employeeStatus">
+                    <option value="ACTIVE">Active</option>
+                    <option value="ON_LEAVE">On Leave</option>
+                    <option value="RESIGNED">Resigned</option>
+                    <option value="TERMINATED">Terminated</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          }
+
+          <!-- Shift Tab -->
+          @if (activeTab() === 'shift') {
+            <div class="tab-content">
+              <div class="form-group">
+                <label class="form-label">Work Shift</label>
+                <div class="shift-grid">
+                  @for (s of shifts; track s.value) {
+                    <button
+                      class="shift-btn"
+                      [class.active]="form.workShift === s.value"
+                      (click)="form.workShift = s.value"
+                    >{{ s.label }}</button>
+                  }
+                </div>
+              </div>
+
+              <div class="form-grid mt-16">
+                <div class="form-group">
+                  <label class="form-label">Shift Start</label>
+                  <input class="form-input" type="time" [(ngModel)]="form.shiftStart" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Shift End</label>
+                  <input class="form-input" type="time" [(ngModel)]="form.shiftEnd" />
+                </div>
+              </div>
+
+              <div class="form-group mt-16">
+                <label class="form-label">Weekly Off Days</label>
+                <div class="days-grid">
+                  @for (day of weekdays; track day) {
+                    <button
+                      class="day-btn"
+                      [class.active]="form.weeklyOffDays.includes(day)"
+                      (click)="toggleDay(day)"
+                    >{{ day.slice(0, 3) }}</button>
+                  }
+                </div>
+              </div>
+            </div>
+          }
+
+          <!-- Letter Tab -->
+          @if (activeTab() === 'letter') {
+            <div class="tab-content">
+              @if (letterLoading()) {
+                <div class="letter-loading">
+                  <div class="spinner-sm"></div>
+                  <p>Loading letter...</p>
+                </div>
+              } @else if (letter()) {
+                <div class="letter-actions">
+                  <button class="btn-outline" (click)="printLetter()">🖨️ Print / PDF</button>
+                  <button class="btn-outline" (click)="letter.set(null)">↺ Regenerate</button>
+                </div>
+                <div class="print-area letter-preview">
+                  <div class="letter-head">
+                    <h2>{{ letter()!.clinicName ?? 'Medical Center' }}</h2>
+                    @if (letter()!.clinicAddress) {
+                      <p>{{ letter()!.clinicAddress }}</p>
+                    }
+                    <hr />
+                  </div>
+                  <div class="letter-date">Date: {{ today | date:'dd MMMM yyyy' }}</div>
+                  <div class="letter-subject">
+                    <strong>Subject: Employment Verification Letter</strong>
+                  </div>
+                  <div class="letter-body">
+                    <p>To Whom It May Concern,</p>
+                    <p>
+                      This is to certify that <strong>{{ employee!.name }}</strong>
+                      @if (employee!.employeeId) {
+                        (Employee ID: {{ employee!.employeeId }})
+                      }
+                      is currently employed with us as
+                      <strong>{{ employee!.designation ?? 'Employee' }}</strong>
+                      @if (employee!.department) {
+                        in the {{ employee!.department }} department
+                      }.
+                    </p>
+                    @if (employee!.joiningDate) {
+                      <p>
+                        The employee has been with our organization since
+                        <strong>{{ employee!.joiningDate | date:'dd MMMM yyyy' }}</strong>.
+                      </p>
+                    }
+                    <p>This letter is issued upon request for official purposes.</p>
+                    <br />
+                    <p>Yours sincerely,</p>
+                    <br />
+                    <p><strong>HR Department</strong></p>
+                  </div>
+                </div>
+              } @else {
+                <div class="letter-empty">
+                  <div class="letter-empty-icon">📄</div>
+                  <p>No letter generated yet</p>
+                  @if (employee!.empType === 'DOCTOR') {
+                    <div class="clinic-form">
+                      <div class="form-group">
+                        <label class="form-label">Clinic Name (optional)</label>
+                        <input class="form-input" [(ngModel)]="clinicName" placeholder="City Medical Center" />
+                      </div>
+                      <div class="form-group">
+                        <label class="form-label">Clinic Address (optional)</label>
+                        <input class="form-input" [(ngModel)]="clinicAddress" placeholder="123 Main St, City" />
+                      </div>
+                    </div>
+                  }
+                  <button class="btn-primary" (click)="generateLetter()" [disabled]="letterGenerating()">
+                    @if (letterGenerating()) {
+                      <span class="spinner-sm"></span> Generating...
+                    } @else {
+                      Generate Letter
+                    }
+                  </button>
+                </div>
+              }
+            </div>
+          }
+        </div>
+
+        <!-- Footer -->
+        @if (activeTab() !== 'letter') {
+          <div class="drawer-footer">
+            @if (saveError()) {
+              <div class="save-error">⚠️ {{ saveError() }}</div>
+            }
+            @if (saveSuccess()) {
+              <div class="save-success">✓ Saved successfully!</div>
+            }
+            <button class="btn-secondary" (click)="close()">Cancel</button>
+            <button class="btn-primary" (click)="save()" [disabled]="saving()">
+              @if (saving()) {
+                <span class="spinner-sm"></span> Saving...
+              } @else {
+                Save Changes
+              }
+            </button>
+          </div>
+        }
+      </div>
+    }
+  

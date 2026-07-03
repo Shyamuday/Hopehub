@@ -1,4 +1,4 @@
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { Component, inject, signal, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DatePipe } from '@angular/common';
 import { HrApiService } from '../../services/hr-api.service';
@@ -16,6 +16,7 @@ type FilterStatus = 'ALL' | 'ACTIVE' | 'ON_LEAVE' | 'RESIGNED' | 'TERMINATED';
   standalone: true,
   imports: [FormsModule, DatePipe, EmployeeDrawerComponent],
   templateUrl: './employees.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './employees.component.scss'
 })
 export class EmployeesComponent implements OnInit {

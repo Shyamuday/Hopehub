@@ -13,7 +13,13 @@ export const SERVER_CONFIG = {
     SUPPLIER: process.env.SUPPLIER_ORIGIN || 'http://localhost:4800',
     WAREHOUSE: process.env.WAREHOUSE_ORIGIN || 'http://localhost:4900',
     DELIVERY: process.env.DELIVERY_ORIGIN || 'http://localhost:5000',
-    DIAGNOSTIC: process.env.DIAGNOSTIC_ORIGIN || 'http://localhost:5100'
+    DIAGNOSTIC: process.env.DIAGNOSTIC_ORIGIN || 'http://localhost:5100',
+    BRANCH_OWNER: process.env.BRANCH_OWNER_ORIGIN || 'http://localhost:5200',
+    COORDINATOR: process.env.COORDINATOR_ORIGIN || 'http://localhost:5300',
+    CALL_CENTER: process.env.CALL_CENTER_ORIGIN || 'http://localhost:5400',
+    MARKETING: process.env.MARKETING_ORIGIN || 'http://localhost:5500',
+    CORPORATE_WELLNESS: process.env.CORPORATE_WELLNESS_ORIGIN || 'http://localhost:5600',
+    INSURANCE: process.env.INSURANCE_ORIGIN || 'http://localhost:5700'
   },
   API_PUBLIC_URL: process.env.API_PUBLIC_URL || process.env.API_URL || 'http://localhost:4000',
   SMTP: {

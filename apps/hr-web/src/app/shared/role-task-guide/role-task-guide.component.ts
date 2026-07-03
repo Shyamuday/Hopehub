@@ -1,4 +1,4 @@
-import { Component, Input, OnInit, signal } from '@angular/core';
+import { Component, Input, OnInit, signal, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { getRoleTaskGuide } from '../../../../../../shared/role-task-guides/data';
 import type { RoleTaskGuide } from '../../../../../../shared/role-task-guides/types';
@@ -8,6 +8,7 @@ import type { RoleTaskGuide } from '../../../../../../shared/role-task-guides/ty
   standalone: true,
   imports: [CommonModule],
   templateUrl: './role-task-guide.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './role-task-guide.component.scss'
 })
 export class RoleTaskGuideComponent implements OnInit {

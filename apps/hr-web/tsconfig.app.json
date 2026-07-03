@@ -5,5 +5,16 @@
     "types": []
   },
   "files": ["src/main.ts"],
-  "include": ["src/**/*.ts", "../../shared/role-task-guides/**/*.ts"]
+  "include": [
+    "src/**/*.ts",
+    "../../shared/role-task-guides/**/*.ts"
+  ],
+  "angularCompilerOptions": {
+    "extendedDiagnostics": {
+      "checks": {
+        "nullishCoalescingNotNullable": "suppress",
+        "optionalChainNotNullable": "suppress"
+      }
+    }
+  }
 }

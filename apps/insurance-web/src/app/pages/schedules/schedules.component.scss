@@ -1,0 +1,16 @@
+.page { padding: 1.25rem; }
+.hdr { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; margin-bottom: 1rem; }
+.hdr h2 { margin: 0; }
+.hdr p { margin: 0.25rem 0 0; color: #64748b; }
+.range { color: #64748b; margin-bottom: 1rem; }
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 0.75rem; }
+.card { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1rem; }
+.card.booked { border-color: #93c5fd; background: #eff6ff; }
+.card.blocked { border-color: #fca5a5; background: #fef2f2; opacity: 0.85; }
+.name { font-weight: 700; }
+.meta { color: #64748b; font-size: 0.85rem; margin-top: 0.25rem; }
+.status { margin-top: 0.5rem; font-size: 0.8rem; font-weight: 700; color: #0f766e; }
+.empty { color: #64748b; }
+.btn-refresh, .retry-btn { border-radius: 8px; padding: 0.5rem 0.85rem; cursor: pointer; border: 1px solid #cbd5e1; background: #fff; }
+.error-row { display: flex; align-items: center; gap: 0.75rem; }
+.error { color: #b91c1c; margin: 0; }

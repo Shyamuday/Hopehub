@@ -1,5 +1,5 @@
 import { DatePipe } from '@angular/common';
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, signal, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AdminApi } from '../../../core/services/admin-api';
 import { TOAST_DURATION_MS } from '../../../core/constants/timing.constants';
@@ -8,6 +8,7 @@ import { TOAST_DURATION_MS } from '../../../core/constants/timing.constants';
   selector: 'app-security-page',
   imports: [FormsModule, DatePipe],
   templateUrl: './security-page.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './security-page.scss'
 })
 export class SecurityPage implements OnInit {

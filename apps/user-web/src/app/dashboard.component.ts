@@ -1,13 +1,27 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnDestroy, OnInit, computed, signal } from '@angular/core';
+import {
+  Component,
+  OnDestroy,
+  OnInit,
+  computed,
+  signal,
+  ChangeDetectionStrategy,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { RoleTaskGuideComponent } from './shared/role-task-guide/role-task-guide.component';
 import { AppFooterComponent } from './app-footer.component';
 import { AppHeaderComponent } from './app-header.component';
 import { AdminStatsComponent } from './admin-stats.component';
-import { BookConsultationPanelComponent, BookConsultationPayload } from './book-consultation-panel.component';
-import { ConsultationDetailComponent, PrescriptionPayload, SendMessagePayload } from './consultation-detail.component';
+import {
+  BookConsultationPanelComponent,
+  BookConsultationPayload,
+} from './book-consultation-panel.component';
+import {
+  ConsultationDetailComponent,
+  PrescriptionPayload,
+  SendMessagePayload,
+} from './consultation-detail.component';
 import { ConsultationListComponent } from './consultation-list.component';
 import { PaymentStatusOverlayComponent } from './payment-status-overlay.component';
 import { PrescriptionHistoryComponent } from './prescription-history.component';
@@ -20,9 +34,21 @@ import { DashboardDataService, DashboardPaymentService } from './dashboard-data.
 import { AuthService } from './auth/auth.service';
 import { ROUTE_PATHS } from './core/constants/app-routes.constants';
 import { WHATSAPP_CONTACT_URL } from './core/constants/branding.constants';
-import { DEFAULT_QUIET_HOURS, DEFAULT_SNOOZE_MINUTES, NOTICE_DISMISS_MS } from './core/constants/timing.constants';
+import {
+  DEFAULT_QUIET_HOURS,
+  DEFAULT_SNOOZE_MINUTES,
+  NOTICE_DISMISS_MS,
+} from './core/constants/timing.constants';
 import { PURCHASE_TYPES } from './core/constants/billing.constants';
-import { BillingPlan, Consultation, Disease, DoseEvent, Doctor, LabResult, Prescription } from './models';
+import {
+  BillingPlan,
+  Consultation,
+  Disease,
+  DoseEvent,
+  Doctor,
+  LabResult,
+  Prescription,
+} from './models';
 
 @Component({
   selector: 'app-dashboard',
@@ -43,14 +69,19 @@ import { BillingPlan, Consultation, Disease, DoseEvent, Doctor, LabResult, Presc
     PatientProfileComponent,
     RoleTaskGuideComponent,
   ],
-  templateUrl: './dashboard.component.html'
+  changeDetection: ChangeDetectionStrategy.Eager,
+  templateUrl: './dashboard.component.html',
 })
 export class DashboardComponent implements OnInit, OnDestroy {
   readonly diseases = signal<Disease[]>([]);
   readonly billingPlans = signal<BillingPlan[]>([]);
   readonly consultations = signal<Consultation[]>([]);
   readonly doctors = signal<Doctor[]>([]);
-  readonly report = signal<{ revenueInPaise: number; activeDoctors: number; consultations: unknown[] } | null>(null);
+  readonly report = signal<{
+    revenueInPaise: number;
+    activeDoctors: number;
+    consultations: unknown[];
+  } | null>(null);
   readonly activeConsultation = signal<Consultation | null>(null);
   readonly patientPrescriptions = signal<Prescription[]>([]);
   readonly patientLabResults = signal<LabResult[]>([]);
@@ -70,7 +101,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     email: 'newdoctor@vitalisclinic.local',
     mobile: '',
     password: 'Password@123',
-    specialty: 'Dermatology'
+    specialty: 'Dermatology',
   };
   reminderPreferences: ReminderPrefs = {
     inApp: true,
@@ -78,7 +109,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     whatsapp: false,
     push: false,
     quietHoursStart: DEFAULT_QUIET_HOURS.START,
-    quietHoursEnd: DEFAULT_QUIET_HOURS.END
+    quietHoursEnd: DEFAULT_QUIET_HOURS.END,
   };
 
   constructor(
@@ -86,7 +117,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     private readonly api: ClinicApiService,
     private readonly dataService: DashboardDataService,
     readonly paymentService: DashboardPaymentService,
-    private readonly router: Router
+    private readonly router: Router,
   ) {}
 
   paymentFlowState() {
@@ -115,7 +146,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
         diseaseId: payload.diseaseId,
         intakeAnswers: payload.intakeAnswers,
         purchaseType: payload.purchaseType,
-        ...(payload.purchaseType === PURCHASE_TYPES.PLAN ? { planCode: payload.planCode } : {})
+        ...(payload.purchaseType === PURCHASE_TYPES.PLAN ? { planCode: payload.planCode } : {}),
       })
       .subscribe({
         next: () => {
@@ -124,9 +155,11 @@ export class DashboardComponent implements OnInit, OnDestroy {
         },
         error: (error) => {
           this.isProcessing.set(false);
-          this.showNotice(error.error?.message || error.message || 'Could not create consultation.');
+          this.showNotice(
+            error.error?.message || error.message || 'Could not create consultation.',
+          );
         },
-        complete: () => this.isProcessing.set(false)
+        complete: () => this.isProcessing.set(false),
       });
   }
 
@@ -138,7 +171,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
         this.loadConsultations();
       },
       (message) => this.showNotice(message),
-      (processing) => this.isProcessing.set(processing)
+      (processing) => this.isProcessing.set(processing),
     );
   }
 
@@ -157,7 +190,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
         this.loadConsultations();
       },
       (message) => this.showNotice(message),
-      (processing) => this.isProcessing.set(processing)
+      (processing) => this.isProcessing.set(processing),
     );
   }
 
@@ -177,7 +210,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
         this.isProcessing.set(false);
         this.showNotice(error.error?.message || error.message || 'Could not send message.');
       },
-      complete: () => this.isProcessing.set(false)
+      complete: () => this.isProcessing.set(false),
     });
   }
 
@@ -194,7 +227,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
         this.isProcessing.set(false);
         this.showNotice(error.error?.message || error.message || 'Could not upload prescription.');
       },
-      complete: () => this.isProcessing.set(false)
+      complete: () => this.isProcessing.set(false),
     });
   }
 
@@ -209,9 +242,11 @@ export class DashboardComponent implements OnInit, OnDestroy {
       },
       error: (error) => {
         this.isProcessing.set(false);
-        this.showNotice(error.error?.message || error.message || 'Could not complete consultation.');
+        this.showNotice(
+          error.error?.message || error.message || 'Could not complete consultation.',
+        );
       },
-      complete: () => this.isProcessing.set(false)
+      complete: () => this.isProcessing.set(false),
     });
   }
 
@@ -226,7 +261,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
         this.isProcessing.set(false);
         this.showNotice(error.error?.message || error.message || 'Could not mark dose as taken.');
       },
-      complete: () => this.isProcessing.set(false)
+      complete: () => this.isProcessing.set(false),
     });
   }
 
@@ -241,7 +276,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
         this.isProcessing.set(false);
         this.showNotice(error.error?.message || error.message || 'Could not skip dose.');
       },
-      complete: () => this.isProcessing.set(false)
+      complete: () => this.isProcessing.set(false),
     });
   }
 
@@ -256,7 +291,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
         this.isProcessing.set(false);
         this.showNotice(error.error?.message || error.message || 'Could not snooze dose.');
       },
-      complete: () => this.isProcessing.set(false)
+      complete: () => this.isProcessing.set(false),
     });
   }
 
@@ -271,7 +306,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
         this.isProcessing.set(false);
         this.showNotice(error.error?.message || error.message || 'Could not save reason.');
       },
-      complete: () => this.isProcessing.set(false)
+      complete: () => this.isProcessing.set(false),
     });
   }
 
@@ -281,9 +316,11 @@ export class DashboardComponent implements OnInit, OnDestroy {
       next: () => this.showNotice('Reminder preferences saved.'),
       error: (error) => {
         this.isProcessing.set(false);
-        this.showNotice(error.error?.message || error.message || 'Could not save reminder preferences.');
+        this.showNotice(
+          error.error?.message || error.message || 'Could not save reminder preferences.',
+        );
       },
-      complete: () => this.isProcessing.set(false)
+      complete: () => this.isProcessing.set(false),
     });
   }
 
@@ -298,7 +335,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
         this.isProcessing.set(false);
         this.showNotice(error.error?.message || error.message || 'Could not create doctor.');
       },
-      complete: () => this.isProcessing.set(false)
+      complete: () => this.isProcessing.set(false),
     });
   }
 
@@ -317,7 +354,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
         this.isProcessing.set(false);
         this.showNotice(error.error?.message || error.message || 'Could not assign doctor.');
       },
-      complete: () => this.isProcessing.set(false)
+      complete: () => this.isProcessing.set(false),
     });
   }
 
@@ -336,11 +373,13 @@ export class DashboardComponent implements OnInit, OnDestroy {
       error: (error) => {
         this.isLoading.set(false);
         this.showNotice(error.error?.message || error.message || 'Could not load diseases.');
-      }
+      },
     });
     this.dataService.loadBillingPlans().subscribe({
       next: ({ plans }) => this.billingPlans.set(plans || []),
-      error: () => { /* keep disease-based one-time fallback */ }
+      error: () => {
+        /* keep disease-based one-time fallback */
+      },
     });
     this.loadConsultations();
     if (this.dataService.isPatient()) {
@@ -358,11 +397,12 @@ export class DashboardComponent implements OnInit, OnDestroy {
         this.activeConsultation.set(
           this.activeConsultation()
             ? consultations.find((c) => c.id === this.activeConsultation()?.id) || null
-            : consultations[0] || null
+            : consultations[0] || null,
         );
         this.assignment.consultationId = consultations[0]?.id || this.assignment.consultationId;
       },
-      error: (error) => this.showNotice(error.error?.message || error.message || 'Could not load consultations.')
+      error: (error) =>
+        this.showNotice(error.error?.message || error.message || 'Could not load consultations.'),
     });
   }
 
@@ -372,33 +412,45 @@ export class DashboardComponent implements OnInit, OnDestroy {
         this.doctors.set(doctors);
         this.assignment.doctorId = doctors[0]?.id || this.assignment.doctorId;
       },
-      error: (error) => this.showNotice(error.error?.message || error.message || 'Could not load doctors.')
+      error: (error) =>
+        this.showNotice(error.error?.message || error.message || 'Could not load doctors.'),
     });
     this.dataService.loadReports().subscribe({
       next: (report) => this.report.set(report),
-      error: (error) => this.showNotice(error.error?.message || error.message || 'Could not load reports.')
+      error: (error) =>
+        this.showNotice(error.error?.message || error.message || 'Could not load reports.'),
     });
   }
 
   private loadPatientMedicationData() {
     this.dataService.loadReminderPreferences().subscribe({
-      next: ({ preferences }) => { this.reminderPreferences = preferences; },
-      error: (error) => this.showNotice(error.error?.message || error.message || 'Could not load reminder preferences.')
+      next: ({ preferences }) => {
+        this.reminderPreferences = preferences;
+      },
+      error: (error) =>
+        this.showNotice(
+          error.error?.message || error.message || 'Could not load reminder preferences.',
+        ),
     });
     this.dataService.loadPatientPrescriptions().subscribe({
       next: ({ prescriptions }) => this.patientPrescriptions.set(prescriptions),
-      error: (error) => this.showNotice(error.error?.message || error.message || 'Could not load prescriptions.')
+      error: (error) =>
+        this.showNotice(error.error?.message || error.message || 'Could not load prescriptions.'),
     });
     this.dataService.loadPatientLabResults().subscribe({
       next: ({ referrals }) => this.patientLabResults.set(referrals),
-      error: (error) => this.showNotice(error.error?.message || error.message || 'Could not load lab results.')
+      error: (error) =>
+        this.showNotice(error.error?.message || error.message || 'Could not load lab results.'),
     });
     this.dataService.loadMedicineReminders().subscribe({
       next: ({ today, needingReason }) => {
         this.todayDoseEvents.set(today);
         this.dosesNeedingReason.set(needingReason);
       },
-      error: (error) => this.showNotice(error.error?.message || error.message || 'Could not load medicine reminders.')
+      error: (error) =>
+        this.showNotice(
+          error.error?.message || error.message || 'Could not load medicine reminders.',
+        ),
     });
   }
 

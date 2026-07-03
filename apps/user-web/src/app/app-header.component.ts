@@ -1,5 +1,16 @@
 import { CommonModule, DOCUMENT } from '@angular/common';
-import { Component, effect, EventEmitter, HostListener, inject, Input, OnDestroy, Output, signal } from '@angular/core';
+import {
+  Component,
+  effect,
+  EventEmitter,
+  HostListener,
+  inject,
+  Input,
+  OnDestroy,
+  Output,
+  signal,
+  ChangeDetectionStrategy,
+} from '@angular/core';
 import { AuthFormOverlayComponent } from './auth/auth-form-overlay.component';
 import { User } from './models';
 import { AppOverlayService } from './overlay.service';
@@ -8,7 +19,8 @@ import { NotificationBellHost } from './shared/notification-bell-host/notificati
 @Component({
   selector: 'app-header',
   imports: [CommonModule, NotificationBellHost],
-  templateUrl: './app-header.component.html'
+  changeDetection: ChangeDetectionStrategy.Eager,
+  templateUrl: './app-header.component.html',
 })
 export class AppHeaderComponent implements OnDestroy {
   @Input() subtitle = 'Digital clinic';
@@ -54,7 +66,7 @@ export class AppHeaderComponent implements OnDestroy {
     this.overlayService.open(AuthFormOverlayComponent, {
       data: { mode },
       width: '480px',
-      panelClass: 'app-overlay-panel'
+      panelClass: 'app-overlay-panel',
     });
   }
 }

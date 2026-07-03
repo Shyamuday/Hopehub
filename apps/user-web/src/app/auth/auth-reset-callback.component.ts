@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AppOverlayService } from '../overlay.service';
 import { AuthFormOverlayComponent } from './auth-form-overlay.component';
@@ -7,7 +7,8 @@ import { AuthFormOverlayComponent } from './auth-form-overlay.component';
   selector: 'app-auth-reset-callback',
   imports: [],
   templateUrl: './auth-reset-callback.component.html',
-  styleUrl: './auth-reset-callback.component.scss'
+  changeDetection: ChangeDetectionStrategy.Eager,
+  styleUrl: './auth-reset-callback.component.scss',
 })
 export class AuthResetCallbackComponent implements OnInit {
   private readonly overlayService = inject(AppOverlayService);
@@ -21,7 +22,7 @@ export class AuthResetCallbackComponent implements OnInit {
       this.overlayService.open(AuthFormOverlayComponent, {
         data: { mode: 'patient', initialForgotStep: 'reset', resetToken: token },
         width: '480px',
-        panelClass: 'app-overlay-panel'
+        panelClass: 'app-overlay-panel',
       });
     }
 

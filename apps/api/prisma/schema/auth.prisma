@@ -10,6 +10,12 @@ enum Role {
   WAREHOUSE_MANAGER
   DELIVERY_EXECUTIVE
   DIAGNOSTIC_PARTNER
+  BRANCH_OWNER
+  PATIENT_COORDINATOR
+  CALL_CENTER
+  MARKETING
+  CORPORATE_WELLNESS
+  INSURANCE_PARTNER
 }
 
 model User {
@@ -49,6 +55,14 @@ model User {
   warehouseManagerProfile WarehouseManagerProfile?
   deliveryExecutiveProfile DeliveryExecutiveProfile?
   diagnosticCenterProfile  DiagnosticCenterProfile?
+  branchOwnerProfile       BranchOwnerProfile?
+  patientCoordinatorProfile PatientCoordinatorProfile?
+  callCenterProfile        CallCenterProfile?
+  marketingProfile         MarketingProfile?
+  corporateWellnessProfile CorporateWellnessProfile?
+  insurancePartnerProfile  InsurancePartnerProfile?
+  corporateEnrollments     CorporateEnrollment[] @relation("CorporateEnrollments")
+  insuranceClaims          InsuranceClaim[]      @relation("PatientInsuranceClaims")
   assignedDeliveries     MedicineDelivery[] @relation("AssignedDeliveries")
   patientDeliveries      MedicineDelivery[] @relation("PatientDeliveries")
   patientLabReferrals    LabReferral[]      @relation("PatientLabReferrals")

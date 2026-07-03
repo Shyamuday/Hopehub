@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { AdminApi } from '../../../core/services/admin-api';
@@ -114,6 +114,7 @@ type SupportContext = {
   selector: 'app-consumers-page',
   imports: [CommonModule, FormsModule, PatientIdCardComponent],
   templateUrl: './consumers-page.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './consumers-page.scss'
 })
 export class ConsumersPage {

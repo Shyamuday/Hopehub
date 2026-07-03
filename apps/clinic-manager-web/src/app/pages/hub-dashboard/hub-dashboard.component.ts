@@ -1,10 +1,11 @@
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { Component, inject, signal, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { ClinicManagerApiService } from '../../services/clinic-manager-api.service';
 
 @Component({
   selector: 'app-hub-dashboard',
   standalone: true,
   templateUrl: './hub-dashboard.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './hub-dashboard.component.scss'
 })
 export class HubDashboardComponent implements OnInit {

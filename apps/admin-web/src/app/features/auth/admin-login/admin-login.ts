@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AdminAuth } from '../../../core/services/admin-auth';
@@ -11,6 +11,7 @@ import type { DevFillCredentials } from '../../../core/types/dev-demo.types';
   selector: 'app-admin-login',
   imports: [FormsModule, DevLoginPanelComponent],
   templateUrl: './admin-login.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './admin-login.scss'
 })
 export class AdminLogin {

@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AdminApi } from '../../../core/services/admin-api';
 import { CURRENCY_CODE, CURRENCY_LOCALE, PAISE_PER_RUPEE } from '../../../shared/constants/currency.constants';
@@ -17,6 +17,7 @@ type Disease = {
   selector: 'app-diseases-page',
   imports: [CommonModule, FormsModule],
   templateUrl: './diseases-page.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './diseases-page.scss'
 })
 export class DiseasesPage {

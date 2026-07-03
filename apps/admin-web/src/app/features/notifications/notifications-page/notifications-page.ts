@@ -1,5 +1,5 @@
 import { DatePipe } from '@angular/common';
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, signal, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AdminApi } from '../../../core/services/admin-api';
 import { TOAST_DURATION_MS } from '../../../core/constants/timing.constants';
@@ -8,6 +8,7 @@ import { TOAST_DURATION_MS } from '../../../core/constants/timing.constants';
   selector: 'app-notifications-page',
   imports: [FormsModule, DatePipe],
   templateUrl: './notifications-page.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './notifications-page.scss'
 })
 export class NotificationsPage implements OnInit {

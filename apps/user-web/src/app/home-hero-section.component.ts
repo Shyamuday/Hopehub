@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, Input, signal } from '@angular/core';
+import { Component, Input, signal, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
@@ -12,7 +12,8 @@ type BookStep = 'form' | 'otp' | 'loading' | 'done';
   selector: 'app-home-hero-section',
   imports: [CommonModule, FormsModule],
   styleUrl: './home-hero-section.component.scss',
-  templateUrl: './home-hero-section.component.html'
+  changeDetection: ChangeDetectionStrategy.Eager,
+  templateUrl: './home-hero-section.component.html',
 })
 export class HomeHeroSectionComponent {
   @Input() whatsappLink = '';
@@ -27,14 +28,20 @@ export class HomeHeroSectionComponent {
 
   constructor(
     private readonly auth: AuthService,
-    private readonly router: Router
-  ) { }
+    private readonly router: Router,
+  ) {}
 
   async sendOtp() {
     const name = this.name.trim();
     const mobile = this.mobile.trim().replace(/\s+/g, '');
-    if (!name) { this.error.set('Please enter your full name.'); return; }
-    if (!/^\d{10}$/.test(mobile)) { this.error.set('Enter a valid 10-digit mobile number.'); return; }
+    if (!name) {
+      this.error.set('Please enter your full name.');
+      return;
+    }
+    if (!/^\d{10}$/.test(mobile)) {
+      this.error.set('Enter a valid 10-digit mobile number.');
+      return;
+    }
 
     this.error.set('');
     this.busy.set(true);
@@ -50,17 +57,27 @@ export class HomeHeroSectionComponent {
   }
 
   async verifyOtp() {
-    if (!this.otp.trim()) { this.error.set('Enter the OTP.'); return; }
+    if (!this.otp.trim()) {
+      this.error.set('Enter the OTP.');
+      return;
+    }
     this.error.set('');
     this.busy.set(true);
     this.step.set('loading');
     try {
       const response = await firstValueFrom(
-        this.auth.patientLogin({ name: this.name.trim(), mobile: this.mobile, otp: this.otp.trim() })
+        this.auth.patientLogin({
+          name: this.name.trim(),
+          mobile: this.mobile,
+          otp: this.otp.trim(),
+        }),
       );
       this.step.set('done');
       if ('user' in response) {
-        setTimeout(() => void this.router.navigateByUrl(this.auth.dashboardFor(response.user.role)), POST_LOGIN_REDIRECT_DELAY_MS);
+        setTimeout(
+          () => void this.router.navigateByUrl(this.auth.dashboardFor(response.user.role)),
+          POST_LOGIN_REDIRECT_DELAY_MS,
+        );
       }
     } catch (err: any) {
       this.step.set('otp');

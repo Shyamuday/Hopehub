@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { HrAuthService } from '../../services/hr-auth.service';
@@ -12,6 +12,7 @@ import type { DevFillCredentials } from '../../core/types/dev-demo.types';
   standalone: true,
   imports: [FormsModule, DevLoginPanelComponent],
   templateUrl: './login.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './login.component.scss'
 })
 export class LoginComponent {

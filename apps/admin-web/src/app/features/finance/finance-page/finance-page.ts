@@ -1,4 +1,4 @@
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { Component, inject, signal, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DatePipe } from '@angular/common';
 import { AdminApi } from '../../../core/services/admin-api';
@@ -16,6 +16,7 @@ import {
   selector: 'app-finance-page',
   imports: [FormsModule, DatePipe],
   templateUrl: './finance-page.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './finance-page.scss'
 })
 export class FinancePage implements OnInit {

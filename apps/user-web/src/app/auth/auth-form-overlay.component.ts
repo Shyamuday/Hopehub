@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Observable } from 'rxjs';
@@ -24,7 +24,8 @@ type ForgotStep = 'none' | 'email' | 'sent' | 'reset';
 @Component({
   selector: 'app-auth-form-overlay',
   imports: [CommonModule, FormsModule, DevLoginPanelComponent],
-  templateUrl: './auth-form-overlay.component.html'
+  changeDetection: ChangeDetectionStrategy.Eager,
+  templateUrl: './auth-form-overlay.component.html',
 })
 export class AuthFormOverlayComponent {
   private readonly overlayData = (inject(APP_OVERLAY_DATA) as AuthFormOverlayData | null) || {};
@@ -41,24 +42,24 @@ export class AuthFormOverlayComponent {
 
   patientCredentials: { identifier: string; password: string } = {
     identifier: DEV_DEMO_ACCOUNTS.patientRahul.email,
-    password: DEV_DEMO_ACCOUNTS.password
+    password: DEV_DEMO_ACCOUNTS.password,
   };
 
   patientOtp: { name: string; mobile: string; otp: string } = {
     name: DEV_DEMO_ACCOUNTS.patientRahul.name,
     mobile: DEV_DEMO_ACCOUNTS.patientMobile,
-    otp: DEV_DEMO_ACCOUNTS.otp
+    otp: DEV_DEMO_ACCOUNTS.otp,
   };
 
   staff: { email: string; password: string } = {
     email: DEV_DEMO_ACCOUNTS.doctor.email,
-    password: DEV_DEMO_ACCOUNTS.password
+    password: DEV_DEMO_ACCOUNTS.password,
   };
 
   forgot = {
     email: '',
     password: '',
-    confirmPassword: ''
+    confirmPassword: '',
   };
 
   private readonly auth = inject(AuthService);
@@ -81,8 +82,9 @@ export class AuthFormOverlayComponent {
 
   requestOtp() {
     this.process('Sending OTP...', this.auth.requestOtp(this.patientOtp.mobile)).subscribe({
-      next: (response) => this.showSuccess(`OTP sent successfully. Development OTP: ${response.devOtp}`),
-      error: () => this.showError('Could not request OTP.')
+      next: (response) =>
+        this.showSuccess(`OTP sent successfully. Development OTP: ${response.devOtp}`),
+      error: () => this.showError('Could not request OTP.'),
     });
   }
 
@@ -109,7 +111,7 @@ export class AuthFormOverlayComponent {
           this.patientSelection.set({
             mode: 'otp',
             mobile: response.mobile || this.patientOtp.mobile,
-            patients: response.patients
+            patients: response.patients,
           });
           this.closeActiveOverlay();
           return;
@@ -117,7 +119,7 @@ export class AuthFormOverlayComponent {
         this.closeAllOverlays();
         this.router.navigateByUrl(this.auth.dashboardFor(response.user.role));
       },
-      error: (error) => this.showError(error.error?.message || 'Patient login failed.')
+      error: (error) => this.showError(error.error?.message || 'Patient login failed.'),
     });
   }
 
@@ -131,15 +133,16 @@ export class AuthFormOverlayComponent {
         this.auth.patientLoginSelect({
           mobile: selection.mobile || this.patientOtp.mobile,
           otp: this.patientOtp.otp,
-          patientId
-        })
+          patientId,
+        }),
       ).subscribe({
         next: ({ user }) => {
           this.patientSelection.set(null);
           this.closeAllOverlays();
           this.router.navigateByUrl(this.auth.dashboardFor(user.role));
         },
-        error: (error) => this.showError(error.error?.message || 'Could not sign in to selected profile.')
+        error: (error) =>
+          this.showError(error.error?.message || 'Could not sign in to selected profile.'),
       });
       return;
     }
@@ -149,15 +152,16 @@ export class AuthFormOverlayComponent {
       this.auth.patientPasswordLoginSelect({
         identifier: this.patientCredentials.identifier,
         password: this.patientCredentials.password,
-        patientId
-      })
+        patientId,
+      }),
     ).subscribe({
       next: ({ user }) => {
         this.patientSelection.set(null);
         this.closeAllOverlays();
         this.router.navigateByUrl(this.auth.dashboardFor(user.role));
       },
-      error: (error) => this.showError(error.error?.message || 'Could not sign in to selected profile.')
+      error: (error) =>
+        this.showError(error.error?.message || 'Could not sign in to selected profile.'),
     });
   }
 
@@ -166,12 +170,15 @@ export class AuthFormOverlayComponent {
   }
 
   loginPatientWithPassword() {
-    this.process('Logging in patient...', this.auth.patientPasswordLogin(this.patientCredentials)).subscribe({
+    this.process(
+      'Logging in patient...',
+      this.auth.patientPasswordLogin(this.patientCredentials),
+    ).subscribe({
       next: (response) => {
         if ('requiresPatientSelection' in response) {
           this.patientSelection.set({
             mode: 'password',
-            patients: response.patients
+            patients: response.patients,
           });
           this.closeActiveOverlay();
           return;
@@ -179,7 +186,7 @@ export class AuthFormOverlayComponent {
         this.closeAllOverlays();
         this.router.navigateByUrl(this.auth.dashboardFor(response.user.role));
       },
-      error: (error) => this.showError(error.error?.message || 'Patient login failed.')
+      error: (error) => this.showError(error.error?.message || 'Patient login failed.'),
     });
   }
 
@@ -189,17 +196,20 @@ export class AuthFormOverlayComponent {
         this.closeAllOverlays();
         this.router.navigateByUrl(this.auth.dashboardFor(user.role));
       },
-      error: (error) => this.showError(error.error?.message || 'Staff login failed.')
+      error: (error) => this.showError(error.error?.message || 'Staff login failed.'),
     });
   }
 
   forgotPassword() {
-    this.process('Sending reset link...', this.auth.staffForgotPassword(this.forgot.email)).subscribe({
+    this.process(
+      'Sending reset link...',
+      this.auth.staffForgotPassword(this.forgot.email),
+    ).subscribe({
       next: () => {
         this.closeActiveOverlay();
         this.goToForgotStep('sent');
       },
-      error: () => this.showError('Could not send reset link.')
+      error: () => this.showError('Could not send reset link.'),
     });
   }
 
@@ -210,12 +220,15 @@ export class AuthFormOverlayComponent {
       return;
     }
 
-    this.process('Resetting password...', this.auth.resetPassword({ token, password: this.forgot.password })).subscribe({
+    this.process(
+      'Resetting password...',
+      this.auth.resetPassword({ token, password: this.forgot.password }),
+    ).subscribe({
       next: ({ user }) => {
         this.closeAllOverlays();
         this.router.navigateByUrl(this.auth.dashboardFor(user.role));
       },
-      error: (error) => this.showError(error.error?.message || 'Password reset failed.')
+      error: (error) => this.showError(error.error?.message || 'Password reset failed.'),
     });
   }
 
@@ -231,7 +244,8 @@ export class AuthFormOverlayComponent {
     }
 
     googleAccounts.id.initialize({
-      client_id: (window as unknown as Record<string, unknown>)['GOOGLE_CLIENT_ID'] as string || '',
+      client_id:
+        ((window as unknown as Record<string, unknown>)['GOOGLE_CLIENT_ID'] as string) || '',
       callback: (response: Record<string, unknown>) => {
         const idToken = response['credential'] as string;
         this.process('Signing in with Google...', this.auth.googleLogin(idToken)).subscribe({
@@ -239,9 +253,9 @@ export class AuthFormOverlayComponent {
             this.closeAllOverlays();
             this.router.navigateByUrl(this.auth.dashboardFor(user.role));
           },
-          error: (error) => this.showError(error.error?.message || 'Google login failed.')
+          error: (error) => this.showError(error.error?.message || 'Google login failed.'),
         });
-      }
+      },
     });
 
     googleAccounts.id.prompt();
@@ -261,7 +275,7 @@ export class AuthFormOverlayComponent {
         complete: () => {
           this.isProcessing.set(false);
           observer.complete();
-        }
+        },
       });
 
       return () => subscription.unsubscribe();
@@ -291,7 +305,7 @@ export class AuthFormOverlayComponent {
     this.activeOverlayRef = this.overlayService.open(AuthStatusOverlayComponent, {
       data: { state, label, message },
       disableClose: state === 'loading',
-      width: '360px'
+      width: '360px',
     });
   }
 }

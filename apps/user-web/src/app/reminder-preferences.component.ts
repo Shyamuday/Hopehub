@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DEFAULT_QUIET_HOURS } from './core/constants/timing.constants';
 
@@ -16,11 +16,19 @@ export type ReminderPrefs = {
   standalone: true,
   imports: [FormsModule],
   templateUrl: './reminder-preferences.component.html',
-  styleUrl: './reminder-preferences.component.scss'
+  changeDetection: ChangeDetectionStrategy.Eager,
+  styleUrl: './reminder-preferences.component.scss',
 })
 export class ReminderPreferencesComponent {
   readonly DEFAULT_QUIET_HOURS = DEFAULT_QUIET_HOURS;
-  @Input() prefs: ReminderPrefs = { inApp: true, sms: false, whatsapp: false, push: false, quietHoursStart: '', quietHoursEnd: '' };
+  @Input() prefs: ReminderPrefs = {
+    inApp: true,
+    sms: false,
+    whatsapp: false,
+    push: false,
+    quietHoursStart: '',
+    quietHoursEnd: '',
+  };
   @Input() disabled = false;
 
   @Output() saved = new EventEmitter<ReminderPrefs>();

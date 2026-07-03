@@ -1,7 +1,18 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, OnChanges, Output } from '@angular/core';
+import {
+  Component,
+  EventEmitter,
+  Input,
+  OnChanges,
+  Output,
+  ChangeDetectionStrategy,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { BILLING_PLAN_CODES, CURRENCY_CODE, PURCHASE_TYPES } from './core/constants/billing.constants';
+import {
+  BILLING_PLAN_CODES,
+  CURRENCY_CODE,
+  PURCHASE_TYPES,
+} from './core/constants/billing.constants';
 import { BillingPlan, Disease } from './models';
 
 export type BookConsultationPayload = {
@@ -15,7 +26,8 @@ export type BookConsultationPayload = {
   selector: 'app-book-consultation-panel',
   standalone: true,
   imports: [CommonModule, FormsModule],
-  templateUrl: './book-consultation-panel.component.html'
+  changeDetection: ChangeDetectionStrategy.Eager,
+  templateUrl: './book-consultation-panel.component.html',
 })
 export class BookConsultationPanelComponent implements OnChanges {
   readonly PURCHASE_TYPES = PURCHASE_TYPES;
@@ -26,7 +38,8 @@ export class BookConsultationPanelComponent implements OnChanges {
   @Input() disabled = false;
   @Output() booked = new EventEmitter<BookConsultationPayload>();
 
-  purchaseType: typeof PURCHASE_TYPES.ONE_TIME | typeof PURCHASE_TYPES.PLAN = PURCHASE_TYPES.ONE_TIME;
+  purchaseType: typeof PURCHASE_TYPES.ONE_TIME | typeof PURCHASE_TYPES.PLAN =
+    PURCHASE_TYPES.ONE_TIME;
   selectedPlanCode = '';
   selectedDiseaseId = '';
   intakeAnswers: Record<string, string> = {};
@@ -36,7 +49,8 @@ export class BookConsultationPanelComponent implements OnChanges {
       this.selectedDiseaseId = this.diseases[0].id;
     }
     if (!this.selectedPlanCode) {
-      this.selectedPlanCode = this.plans.find((p) => p.code !== BILLING_PLAN_CODES.ONE_TIME)?.code || '';
+      this.selectedPlanCode =
+        this.plans.find((p) => p.code !== BILLING_PLAN_CODES.ONE_TIME)?.code || '';
     }
   }
 
@@ -69,7 +83,7 @@ export class BookConsultationPanelComponent implements OnChanges {
       diseaseId: this.selectedDiseaseId,
       intakeAnswers: { ...this.intakeAnswers },
       purchaseType: this.purchaseType,
-      ...(this.purchaseType === PURCHASE_TYPES.PLAN ? { planCode: this.selectedPlanCode } : {})
+      ...(this.purchaseType === PURCHASE_TYPES.PLAN ? { planCode: this.selectedPlanCode } : {}),
     });
   }
 }

@@ -1,4 +1,4 @@
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { Component, inject, signal, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DatePipe } from '@angular/common';
 import { ReceptionApiService } from '../../services/reception-api.service';
@@ -17,6 +17,7 @@ const STATUS_FILTERS = [
   standalone: true,
   imports: [FormsModule, DatePipe],
   templateUrl: './queue.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './queue.component.scss'
 })
 export class QueueComponent implements OnInit {

@@ -1,4 +1,4 @@
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { Component, inject, signal, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { HrApiService } from '../../services/hr-api.service';
 import { Doctor } from '../../models';
@@ -10,6 +10,7 @@ import { employeeStatusBadgeClass } from '../../shared/constants/employee-status
   standalone: true,
   imports: [DatePipe, EmployeeDrawerComponent],
   templateUrl: './doctors.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './doctors.component.scss'
 })
 export class DoctorsComponent implements OnInit {

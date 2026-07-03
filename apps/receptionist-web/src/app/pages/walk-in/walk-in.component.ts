@@ -1,4 +1,4 @@
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { Component, inject, signal, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ReceptionApiService } from '../../services/reception-api.service';
@@ -9,6 +9,7 @@ import { ROUTE_PATHS } from '../../core/constants/app-routes.constants';
   standalone: true,
   imports: [FormsModule],
   templateUrl: './walk-in.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './walk-in.component.scss'
 })
 export class WalkInComponent implements OnInit {

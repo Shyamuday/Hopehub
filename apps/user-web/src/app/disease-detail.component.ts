@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, signal, ChangeDetectionStrategy } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { AppFooterComponent } from './app-footer.component';
 import { AppHeaderComponent } from './app-header.component';
@@ -12,17 +12,19 @@ import { AppOverlayService } from './overlay.service';
 @Component({
   selector: 'app-disease-detail',
   imports: [CommonModule, AppHeaderComponent, AppFooterComponent],
-  templateUrl: './disease-detail.component.html'
+  changeDetection: ChangeDetectionStrategy.Eager,
+  templateUrl: './disease-detail.component.html',
 })
 export class DiseaseDetailComponent implements OnInit {
   readonly whatsappLink = WHATSAPP_CONTACT_URL;
-  readonly defaultWarning = 'This service is not for emergency care. For severe, sudden, or rapidly worsening symptoms, seek immediate offline medical help.';
+  readonly defaultWarning =
+    'This service is not for emergency care. For severe, sudden, or rapidly worsening symptoms, seek immediate offline medical help.';
   readonly disease = signal<DiseaseInfo | undefined>(undefined);
 
   constructor(
     private readonly route: ActivatedRoute,
-    private readonly overlayService: AppOverlayService
-  ) { }
+    private readonly overlayService: AppOverlayService,
+  ) {}
 
   ngOnInit() {
     this.route.paramMap.subscribe((params) => {
@@ -37,7 +39,7 @@ export class DiseaseDetailComponent implements OnInit {
     this.overlayService.open(AuthFormOverlayComponent, {
       data: { mode },
       width: '480px',
-      panelClass: 'app-overlay-panel'
+      panelClass: 'app-overlay-panel',
     });
   }
 }

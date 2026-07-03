@@ -1,7 +1,8 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 
 @Component({
   selector: 'app-home-treatments-section',
-  templateUrl: './home-treatments-section.component.html'
+  changeDetection: ChangeDetectionStrategy.Eager,
+  templateUrl: './home-treatments-section.component.html',
 })
-export class HomeTreatmentsSectionComponent { }
+export class HomeTreatmentsSectionComponent {}

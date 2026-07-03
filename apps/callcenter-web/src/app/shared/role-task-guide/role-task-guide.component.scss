@@ -1,0 +1,260 @@
+.role-guide {
+  margin-bottom: 1rem;
+  border: 1px solid #c7d2fe;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #eef2ff 0%, #fff 45%);
+  box-shadow: 0 2px 12px rgba(15, 23, 42, 0.06);
+  overflow: hidden;
+}
+
+.role-guide.theme-dark {
+  border-color: #1e2d45;
+  background: linear-gradient(180deg, #111827 0%, #0d1424 100%);
+  color: #f0f4ff;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.35);
+}
+
+.role-guide-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 1rem 1rem 0.75rem;
+  flex-wrap: wrap;
+}
+
+.eyebrow {
+  margin: 0 0 0.2rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #0f766e;
+}
+
+.theme-dark .eyebrow {
+  color: #22d3ee;
+}
+
+.role-guide-title-block h2 {
+  margin: 0 0 0.35rem;
+  font-size: 1.15rem;
+  line-height: 1.25;
+}
+
+.tagline {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.45;
+  color: #475569;
+}
+
+.theme-dark .tagline {
+  color: #8ba3c7;
+}
+
+.role-guide-actions {
+  display: flex;
+  gap: 0.35rem;
+  flex-shrink: 0;
+}
+
+.btn-text {
+  border: 0;
+  background: transparent;
+  color: #0f766e;
+  font-weight: 600;
+  font-size: 0.82rem;
+  padding: 0.35rem 0.55rem;
+  border-radius: 8px;
+  cursor: pointer;
+  min-height: 36px;
+}
+
+.theme-dark .btn-text {
+  color: #22d3ee;
+}
+
+.btn-text:hover {
+  background: rgba(15, 118, 110, 0.08);
+}
+
+.theme-dark .btn-text:hover {
+  background: rgba(6, 182, 212, 0.12);
+}
+
+.btn-muted {
+  color: #64748b;
+}
+
+.theme-dark .btn-muted {
+  color: #4a6285;
+}
+
+.role-guide-body {
+  display: grid;
+  gap: 0.85rem;
+  padding: 0 1rem 1rem;
+}
+
+.role-guide-column h3 {
+  margin: 0 0 0.5rem;
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.role-guide-column ul,
+.task-list {
+  margin: 0;
+  padding-left: 1.15rem;
+}
+
+.role-guide-column li,
+.task-list li {
+  font-size: 0.88rem;
+  line-height: 1.45;
+  margin-bottom: 0.35rem;
+}
+
+.task-list {
+  list-style: none;
+  padding-left: 0;
+  counter-reset: task-step;
+}
+
+.task-list li {
+  position: relative;
+  padding-left: 2rem;
+  margin-bottom: 0.65rem;
+  counter-increment: task-step;
+}
+
+.task-list li::before {
+  content: counter(task-step);
+  position: absolute;
+  left: 0;
+  top: 0.1rem;
+  width: 1.4rem;
+  height: 1.4rem;
+  border-radius: 999px;
+  background: #0f766e;
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 700;
+  display: grid;
+  place-items: center;
+}
+
+.theme-dark .task-list li::before {
+  background: #0891b2;
+}
+
+.task-list strong {
+  display: inline;
+  margin-right: 0.35rem;
+}
+
+.task-list p {
+  margin: 0.2rem 0 0;
+  color: #475569;
+}
+
+.theme-dark .task-list p {
+  color: #8ba3c7;
+}
+
+.when-badge {
+  display: inline-block;
+  margin-left: 0.25rem;
+  padding: 0.05rem 0.4rem;
+  border-radius: 999px;
+  background: #e2e8f0;
+  color: #334155;
+  font-size: 0.68rem;
+  font-weight: 600;
+  vertical-align: middle;
+}
+
+.theme-dark .when-badge {
+  background: #1a2236;
+  color: #8ba3c7;
+}
+
+.boundaries {
+  border-top: 1px dashed #fecaca;
+  padding-top: 0.65rem;
+}
+
+.theme-dark .boundaries {
+  border-top-color: #3f1d1d;
+}
+
+.boundaries h3 {
+  color: #b91c1c;
+}
+
+.theme-dark .boundaries h3 {
+  color: #f87171;
+}
+
+.boundaries li {
+  color: #7f1d1d;
+}
+
+.theme-dark .boundaries li {
+  color: #fca5a5;
+}
+
+.role-guide.is-collapsed .role-guide-header {
+  padding-bottom: 1rem;
+}
+
+.role-guide-reopen {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-bottom: 0.85rem;
+  border: 1px dashed #99f6e4;
+  border-radius: 999px;
+  background: #f0fdfa;
+  color: #0f766e;
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 0.45rem 0.85rem;
+  cursor: pointer;
+  min-height: 40px;
+}
+
+.role-guide-reopen.theme-dark {
+  border-color: #1e2d45;
+  background: #111827;
+  color: #22d3ee;
+}
+
+@media (min-width: 768px) {
+  .role-guide-body {
+    grid-template-columns: 1fr 1.2fr;
+  }
+
+  .boundaries {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (min-width: 1024px) {
+  .role-guide-body {
+    grid-template-columns: 1fr 1.2fr 1fr;
+  }
+
+  .boundaries {
+    grid-column: auto;
+    border-top: 0;
+    padding-top: 0;
+    border-left: 1px dashed #fecaca;
+    padding-left: 0.85rem;
+  }
+
+  .theme-dark .boundaries {
+    border-left-color: #3f1d1d;
+  }
+}

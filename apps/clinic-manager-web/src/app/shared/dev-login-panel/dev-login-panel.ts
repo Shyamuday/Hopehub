@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, OnInit, Output, inject, signal } from '@angular/core';
+import { Component, EventEmitter, OnInit, Output, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { DevDemoService, type DevFillCredentials, type DevPersona } from '../../services/dev-demo.service';
 
 @Component({
@@ -7,6 +7,7 @@ import { DevDemoService, type DevFillCredentials, type DevPersona } from '../../
   standalone: true,
   imports: [CommonModule],
   templateUrl: './dev-login-panel.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './dev-login-panel.scss'
 })
 export class DevLoginPanelComponent implements OnInit {

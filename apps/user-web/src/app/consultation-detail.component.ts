@@ -1,5 +1,12 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, OnChanges, Output } from '@angular/core';
+import {
+  Component,
+  EventEmitter,
+  Input,
+  OnChanges,
+  Output,
+  ChangeDetectionStrategy,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Consultation, Role } from './models';
 
@@ -10,7 +17,8 @@ export type PrescriptionPayload = { notes: string; fileUrl: string };
   selector: 'app-consultation-detail',
   standalone: true,
   imports: [CommonModule, FormsModule],
-  templateUrl: './consultation-detail.component.html'
+  changeDetection: ChangeDetectionStrategy.Eager,
+  templateUrl: './consultation-detail.component.html',
 })
 export class ConsultationDetailComponent implements OnChanges {
   @Input() consultation: Consultation | null = null;
@@ -28,7 +36,7 @@ export class ConsultationDetailComponent implements OnChanges {
     this.messageBody = '';
     this.prescription = {
       notes: this.consultation?.prescription?.notes || '',
-      fileUrl: this.consultation?.prescription?.fileUrl || ''
+      fileUrl: this.consultation?.prescription?.fileUrl || '',
     };
   }
 

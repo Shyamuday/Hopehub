@@ -1,4 +1,4 @@
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { Component, inject, signal, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DatePipe } from '@angular/common';
 import { AdminApi } from '../../../core/services/admin-api';
@@ -13,6 +13,7 @@ import {
   selector: 'app-payments-page',
   imports: [FormsModule, DatePipe],
   templateUrl: './payments-page.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './payments-page.scss'
 })
 export class PaymentsPage implements OnInit {

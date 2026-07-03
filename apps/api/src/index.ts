@@ -42,6 +42,12 @@ import { createSupplierRouter } from './routes/supplier/router.js';
 import { createWarehouseRouter } from './routes/warehouse/router.js';
 import { createDeliveryRouter } from './routes/delivery/router.js';
 import { createDiagnosticRouter } from './routes/diagnostic/router.js';
+import { createBranchOwnerRouter } from './routes/branch-owner/router.js';
+import { createCoordinatorRouter } from './routes/coordinator/router.js';
+import { createCallCenterRouter } from './routes/call-center/router.js';
+import { createMarketingRouter } from './routes/marketing/router.js';
+import { createCorporateWellnessRouter } from './routes/corporate-wellness/router.js';
+import { createInsuranceRouter } from './routes/insurance/router.js';
 import { labReferralsRouter } from './routes/lab-referrals.js';
 import { notificationsRouter } from './routes/notifications.js';
 import { devRouter } from './routes/dev.js';
@@ -85,7 +91,13 @@ const {
   SUPPLIER: supplierOrigin,
   WAREHOUSE: warehouseOrigin,
   DELIVERY: deliveryOrigin,
-  DIAGNOSTIC: diagnosticOrigin
+  DIAGNOSTIC: diagnosticOrigin,
+  BRANCH_OWNER: branchOwnerOrigin,
+  COORDINATOR: coordinatorOrigin,
+  CALL_CENTER: callCenterOrigin,
+  MARKETING: marketingOrigin,
+  CORPORATE_WELLNESS: corporateWellnessOrigin,
+  INSURANCE: insuranceOrigin
 } = SERVER_CONFIG.ORIGINS;
 
 // ── Socket.IO ──────────────────────────────────────────────────────────────────
@@ -103,7 +115,13 @@ const socketOrigins = [
   supplierOrigin,
   warehouseOrigin,
   deliveryOrigin,
-  diagnosticOrigin
+  diagnosticOrigin,
+  branchOwnerOrigin,
+  coordinatorOrigin,
+  callCenterOrigin,
+  marketingOrigin,
+  corporateWellnessOrigin,
+  insuranceOrigin
 ];
 
 const io = new SocketIoServer(httpServer, {
@@ -161,7 +179,7 @@ io.on('connection', (socket) => {
 // ── Middleware ─────────────────────────────────────────────────────────────────
 
 app.use(cors({
-  origin: [webOrigin, adminOrigin, doctorOrigin, storeOrigin, storeManagerOrigin, hrOrigin, receptionistOrigin, clinicManagerOrigin, accountantOrigin, supplierOrigin, warehouseOrigin, deliveryOrigin, diagnosticOrigin],
+  origin: [webOrigin, adminOrigin, doctorOrigin, storeOrigin, storeManagerOrigin, hrOrigin, receptionistOrigin, clinicManagerOrigin, accountantOrigin, supplierOrigin, warehouseOrigin, deliveryOrigin, diagnosticOrigin, branchOwnerOrigin, coordinatorOrigin, callCenterOrigin, marketingOrigin, corporateWellnessOrigin, insuranceOrigin],
   credentials: true
 }));
 app.use('/payments/razorpay-webhook', express.raw({ type: 'application/json' }));
@@ -225,6 +243,12 @@ app.use(createSupplierRouter());
 app.use(createWarehouseRouter());
 app.use(createDeliveryRouter());
 app.use(createDiagnosticRouter());
+app.use(createBranchOwnerRouter());
+app.use(createCoordinatorRouter());
+app.use(createCallCenterRouter());
+app.use(createMarketingRouter());
+app.use(createCorporateWellnessRouter());
+app.use(createInsuranceRouter());
 app.use(labReferralsRouter);
 app.use(notificationsRouter);
 

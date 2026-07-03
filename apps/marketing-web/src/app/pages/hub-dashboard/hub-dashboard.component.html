@@ -1,0 +1,67 @@
+<div class="page">
+  <div class="hdr">
+    <div>
+      <h2>Branch dashboard</h2>
+      @if (data()?.store) {
+        <p>{{ data().store.name }} ({{ data().store.code }}) · {{ data().date }}</p>
+      } @else {
+        <p>Today&apos;s operations snapshot</p>
+      }
+    </div>
+    <button type="button" class="btn-refresh" (click)="load()" [disabled]="loading()">Refresh</button>
+  </div>
+
+  @if (loading()) {
+    <p class="loading-text">Loading dashboard…</p>
+  } @else if (error()) {
+    <div class="error-row">
+      <p class="error">{{ error() }}</p>
+      <button type="button" class="retry-btn" (click)="load()">Retry</button>
+    </div>
+  } @else if (data(); as d) {
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-label">Consultations today</div>
+        <div class="kpi-value">{{ d.kpis.consultationsToday }}</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Revenue today</div>
+        <div class="kpi-value">₹{{ formatPaise(d.kpis.revenueTodayInPaise) }}</div>
+        <div class="kpi-sub">{{ d.kpis.paidConsultationsToday }} paid</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Medicine sales</div>
+        <div class="kpi-value">₹{{ formatPaise(d.kpis.medicineSalesTodayInPaise) }}</div>
+        <div class="kpi-sub">{{ d.kpis.medicineSalesCount }} sales</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Staff on duty</div>
+        <div class="kpi-value">{{ d.kpis.activeDoctors + d.kpis.activeStoreStaff }}</div>
+        <div class="kpi-sub">{{ d.kpis.onLeaveToday }} on leave today</div>
+      </div>
+    </div>
+
+    <section class="section">
+      <h3>Queue snapshot</h3>
+      <div class="summary">
+        <div class="pill warn">Payment due {{ d.queue.paymentPending }}</div>
+        <div class="pill info">Awaiting doctor {{ d.queue.awaitingDoctor }}</div>
+        <div class="pill">Assigned {{ d.queue.assigned }}</div>
+        <div class="pill ok">In progress {{ d.queue.inProgress }}</div>
+        <div class="pill">Completed {{ d.queue.completed }}</div>
+      </div>
+    </section>
+
+    @if (d.monthPnl) {
+      <section class="section">
+        <h3>Month P&amp;L ({{ d.month }})</h3>
+        <div class="pnl-grid">
+          <div><span>Consultation revenue</span><strong>₹{{ formatPaise(d.monthPnl.consultationRevenueInPaise) }}</strong></div>
+          <div><span>Medicine revenue</span><strong>₹{{ formatPaise(d.monthPnl.medicineRevenueInPaise) }}</strong></div>
+          <div><span>Payroll</span><strong>₹{{ formatPaise(d.monthPnl.payrollCostInPaise) }}</strong></div>
+          <div><span>Net estimate</span><strong>₹{{ formatPaise(d.monthPnl.netEstimateInPaise) }}</strong></div>
+        </div>
+      </section>
+    }
+  }
+</div>

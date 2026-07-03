@@ -1,0 +1,31 @@
+.page { padding: 1.25rem; }
+.hdr { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap; }
+.hdr h2 { margin: 0; }
+.hdr p { margin: 0.25rem 0 0; color: #64748b; }
+.hdr-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+.month-inp, .branch-filter { padding: 0.45rem 0.6rem; border: 1px solid #cbd5e1; border-radius: 8px; }
+.kpi-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 0.75rem; margin-bottom: 1.25rem; }
+.kpi-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1rem; }
+.kpi-label { color: #64748b; font-size: 0.85rem; }
+.kpi-value { font-size: 1.35rem; font-weight: 700; margin-top: 0.25rem; }
+.kpi-value.positive { color: #047857; }
+.kpi-value.negative { color: #b91c1c; }
+.section { margin-bottom: 1.25rem; }
+.section h3 { margin: 0 0 0.35rem; font-size: 1rem; }
+.note { color: #64748b; font-size: 0.85rem; margin: 0 0 0.75rem; }
+.table-wrap { overflow-x: auto; }
+.table { width: 100%; min-width: 720px; border-collapse: collapse; background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; }
+.table th, .table td { padding: 0.65rem 0.85rem; text-align: left; border-bottom: 1px solid #f1f5f9; font-size: 0.9rem; }
+.table th { background: #f8fafc; color: #475569; font-weight: 600; }
+.num { text-align: right; white-space: nowrap; }
+.num.positive { color: #047857; }
+.num.negative { color: #b91c1c; }
+.totals-row { background: #f8fafc; }
+.branch-name { font-weight: 600; }
+.branch-code { color: #64748b; font-size: 0.8rem; }
+.empty { color: #64748b; }
+.btn-refresh, .btn-export, .retry-btn { border-radius: 8px; padding: 0.5rem 0.85rem; cursor: pointer; border: 1px solid #cbd5e1; background: #fff; }
+.btn-export { background: #0f766e; color: #fff; border-color: #0f766e; }
+.error-row { display: flex; align-items: center; gap: 0.75rem; }
+.error { color: #b91c1c; margin: 0; }
+.toast { position: fixed; bottom: 1rem; right: 1rem; background: #0f172a; color: #fff; padding: 0.75rem 1rem; border-radius: 8px; }

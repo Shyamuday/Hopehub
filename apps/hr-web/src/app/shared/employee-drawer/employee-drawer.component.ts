@@ -1,4 +1,4 @@
-import { Component, inject, signal, Input, Output, EventEmitter, OnChanges, SimpleChanges } from '@angular/core';
+import { Component, inject, signal, Input, Output, EventEmitter, OnChanges, SimpleChanges, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DatePipe } from '@angular/common';
 import { HrApiService } from '../../services/hr-api.service';
@@ -37,6 +37,7 @@ interface EmployeeForm {
   standalone: true,
   imports: [FormsModule, DatePipe],
   templateUrl: './employee-drawer.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './employee-drawer.component.scss'
 })
 export class EmployeeDrawerComponent implements OnChanges {

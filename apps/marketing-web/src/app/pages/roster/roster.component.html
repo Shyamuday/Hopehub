@@ -1,0 +1,73 @@
+<div class="page">
+  <div class="hdr">
+    <div>
+      <h2>Staff roster</h2>
+      <p>Attendance and shift visibility for your branch</p>
+    </div>
+    <div class="hdr-actions">
+      <input type="date" [(ngModel)]="date" (change)="load()" />
+      <button type="button" class="btn-refresh" (click)="load()" [disabled]="loading()">Refresh</button>
+    </div>
+  </div>
+
+  @if (loading()) {
+    <p class="loading-text">Loading roster…</p>
+  } @else if (error()) {
+    <div class="error-row">
+      <p class="error">{{ error() }}</p>
+      <button type="button" class="retry-btn" (click)="load()">Retry</button>
+    </div>
+  } @else if (roster(); as r) {
+    <div class="summary">
+      <div class="pill">Total {{ r.summary.total }}</div>
+      <div class="pill warn">On leave {{ r.summary.onLeave }}</div>
+      <div class="pill ok">Expected {{ r.summary.expected }}</div>
+    </div>
+
+    <section class="section">
+      <h3>Doctors</h3>
+      @if (!r.doctors.length) {
+        <p class="empty">No doctors assigned to this branch.</p>
+      } @else {
+        <table class="table">
+          <thead>
+            <tr><th>Name</th><th>Shift</th><th>Status</th><th>Attendance</th></tr>
+          </thead>
+          <tbody>
+            @for (row of r.doctors; track row.id) {
+              <tr>
+                <td>{{ row.name }}</td>
+                <td>{{ row.shift }}</td>
+                <td>{{ row.employeeStatus }}</td>
+                <td><span class="badge" [class.leave]="row.attendance === 'ON_LEAVE'">{{ attendanceLabel(row.attendance) }}</span></td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+    </section>
+
+    <section class="section">
+      <h3>Store staff</h3>
+      @if (!r.storeStaff.length) {
+        <p class="empty">No store staff at this branch.</p>
+      } @else {
+        <table class="table">
+          <thead>
+            <tr><th>Name</th><th>Shift</th><th>Status</th><th>Attendance</th></tr>
+          </thead>
+          <tbody>
+            @for (row of r.storeStaff; track row.id) {
+              <tr>
+                <td>{{ row.name }}</td>
+                <td>{{ row.shift }}</td>
+                <td>{{ row.employeeStatus }}</td>
+                <td><span class="badge" [class.leave]="row.attendance === 'ON_LEAVE'">{{ attendanceLabel(row.attendance) }}</span></td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+    </section>
+  }
+</div>

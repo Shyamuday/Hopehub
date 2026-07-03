@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { AdminApi } from '../../../core/services/admin-api';
@@ -27,6 +27,7 @@ type AuditLog = {
   selector: 'app-audit-page',
   imports: [CommonModule, FormsModule, RouterLink],
   templateUrl: './audit-page.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './audit-page.scss'
 })
 export class AuditPage {

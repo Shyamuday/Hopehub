@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, signal, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DatePipe } from '@angular/common';
 import { AdminApi } from '../../../core/services/admin-api';
@@ -26,6 +26,7 @@ import {
   selector: 'app-doctor-hr',
   imports: [FormsModule, DatePipe],
   templateUrl: './doctor-hr.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './doctor-hr.scss'
 })
 export class DoctorHrComponent implements OnInit {

@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AdminApi } from '../../../core/services/admin-api';
 import {
@@ -38,6 +38,7 @@ type Doctor = {
   selector: 'app-doctors-page',
   imports: [CommonModule, FormsModule],
   templateUrl: './doctors-page.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './doctors-page.scss'
 })
 export class DoctorsPage {

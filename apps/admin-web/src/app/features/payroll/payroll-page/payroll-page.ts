@@ -1,4 +1,4 @@
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { Component, inject, signal, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AdminApi } from '../../../core/services/admin-api';
 import {
@@ -19,6 +19,7 @@ interface PayrollRow {
   selector: 'app-payroll-page',
   imports: [FormsModule],
   templateUrl: './payroll-page.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './payroll-page.scss'
 })
 export class PayrollPage implements OnInit {

@@ -1,0 +1,118 @@
+enum InsuranceClaimStatus {
+  SUBMITTED
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+  PAID
+}
+
+model BranchOwnerProfile {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  storeId     String
+  employeeId  String?  @unique
+  designation String   @default("Branch Owner")
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  store       Store    @relation(fields: [storeId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([storeId])
+}
+
+model PatientCoordinatorProfile {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  storeId     String
+  employeeId  String?  @unique
+  designation String   @default("Patient Coordinator")
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  store       Store    @relation(fields: [storeId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([storeId])
+}
+
+model CallCenterProfile {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  employeeId  String?  @unique
+  designation String   @default("Call Center Agent")
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model MarketingProfile {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  employeeId  String?  @unique
+  designation String   @default("Marketing Manager")
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model CorporateAccount {
+  id          String              @id @default(cuid())
+  code        String              @unique
+  name        String
+  contactEmail String?
+  isActive    Boolean             @default(true)
+  enrollments CorporateEnrollment[]
+  profiles    CorporateWellnessProfile[]
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+}
+
+model CorporateWellnessProfile {
+  id            String           @id @default(cuid())
+  userId        String           @unique
+  corporateId   String
+  user          User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  corporate     CorporateAccount @relation(fields: [corporateId], references: [id])
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  @@index([corporateId])
+}
+
+model CorporateEnrollment {
+  id          String           @id @default(cuid())
+  corporateId String
+  patientId   String
+  corporate   CorporateAccount @relation(fields: [corporateId], references: [id], onDelete: Cascade)
+  patient     User             @relation("CorporateEnrollments", fields: [patientId], references: [id], onDelete: Cascade)
+  createdAt   DateTime         @default(now())
+
+  @@unique([corporateId, patientId])
+  @@index([corporateId])
+}
+
+model InsurancePartnerProfile {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  companyName String
+  companyCode String   @unique
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  claims      InsuranceClaim[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model InsuranceClaim {
+  id                 String               @id @default(cuid())
+  claimNumber        String               @unique
+  partnerId          String
+  patientId          String
+  status             InsuranceClaimStatus @default(SUBMITTED)
+  claimAmountInPaise Int
+  description        String?
+  partner            InsurancePartnerProfile @relation(fields: [partnerId], references: [id])
+  patient            User                 @relation("PatientInsuranceClaims", fields: [patientId], references: [id])
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+
+  @@index([partnerId, status])
+}

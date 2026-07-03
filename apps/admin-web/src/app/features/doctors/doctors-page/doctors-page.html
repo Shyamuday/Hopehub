@@ -72,7 +72,7 @@
         </label>
         <strong>{{ doctor.name }}</strong>
         <p>{{ doctor.email }} | {{ doctor.mobile || 'No mobile' }}</p>
-        <small>{{ doctorTypeLabel(doctor.doctorProfile?.doctorType) }} | {{ doctor.doctorProfile?.specialty || 'Specialty not set' }} | {{ doctor.doctorProfile?.registrationNo || 'No registration no.' }}</small>
+        <small>{{ doctorTypeLabel($safeNavigationMigration(doctor.doctorProfile?.doctorType)) }} | {{ doctor.doctorProfile?.specialty || 'Specialty not set' }} | {{ doctor.doctorProfile?.registrationNo || 'No registration no.' }}</small>
         <div class="actions">
           <button type="button" (click)="approveDoctor(doctor.id)" [disabled]="mutating">
             {{ mutating ? '...' : 'Approve' }}
@@ -117,7 +117,7 @@
         <strong>{{ doctor.name }}</strong>
         <button type="button" class="link" (click)="setSelectedDoctor(doctor.id)" [disabled]="mutating">View details</button>
         <p>{{ doctor.email }} | {{ doctor.mobile || 'No mobile' }}</p>
-        <small>{{ doctorTypeLabel(doctor.doctorProfile?.doctorType) }} | {{ doctor.doctorProfile?.specialty || 'Specialty not set' }} | {{ doctor.isActive ? 'Active' : 'Inactive' }}</small>
+        <small>{{ doctorTypeLabel($safeNavigationMigration(doctor.doctorProfile?.doctorType)) }} | {{ doctor.doctorProfile?.specialty || 'Specialty not set' }} | {{ doctor.isActive ? 'Active' : 'Inactive' }}</small>
       </article>
     } @empty {
       <p class="empty-state">No doctors found.</p>
@@ -137,9 +137,9 @@
       <strong>{{ selectedDoctor.name }}</strong>
       <p>Email: {{ selectedDoctor.email || 'N/A' }}</p>
       <p>Mobile: {{ selectedDoctor.mobile || 'N/A' }}</p>
-      <p>Doctor type: {{ doctorTypeLabel(selectedDoctor.doctorProfile?.doctorType) }}</p>
-      @if (specialtyFocusLabel(selectedDoctor.doctorProfile?.specialtyFocus)) {
-        <p>Specialty focus: {{ specialtyFocusLabel(selectedDoctor.doctorProfile?.specialtyFocus) }}</p>
+      <p>Doctor type: {{ doctorTypeLabel($safeNavigationMigration(selectedDoctor.doctorProfile?.doctorType)) }}</p>
+      @if (specialtyFocusLabel($safeNavigationMigration(selectedDoctor.doctorProfile?.specialtyFocus))) {
+        <p>Specialty focus: {{ specialtyFocusLabel($safeNavigationMigration(selectedDoctor.doctorProfile?.specialtyFocus)) }}</p>
       }
       <p>Specialty: {{ selectedDoctor.doctorProfile?.specialty || 'N/A' }}</p>
       <p>Registration No: {{ selectedDoctor.doctorProfile?.registrationNo || 'N/A' }}</p>

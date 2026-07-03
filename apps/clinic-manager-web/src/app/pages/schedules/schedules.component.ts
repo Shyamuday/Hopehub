@@ -1,10 +1,11 @@
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { Component, inject, signal, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { ClinicManagerApiService } from '../../services/clinic-manager-api.service';
 
 @Component({
   selector: 'app-schedules',
   standalone: true,
   templateUrl: './schedules.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './schedules.component.scss'
 })
 export class SchedulesComponent implements OnInit {

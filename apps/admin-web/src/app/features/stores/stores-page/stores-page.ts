@@ -1,4 +1,4 @@
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { Component, inject, signal, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AdminApi } from '../../../core/services/admin-api';
 import { TOAST_DURATION_MS } from '../../../core/constants/timing.constants';
@@ -15,6 +15,7 @@ import {
   selector: 'app-stores-page',
   imports: [FormsModule],
   templateUrl: './stores-page.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './stores-page.scss'
 })
 export class StoresPage implements OnInit {

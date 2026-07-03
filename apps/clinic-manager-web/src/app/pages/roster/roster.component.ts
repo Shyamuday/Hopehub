@@ -1,4 +1,4 @@
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { Component, inject, signal, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ClinicManagerApiService } from '../../services/clinic-manager-api.service';
 
@@ -7,6 +7,7 @@ import { ClinicManagerApiService } from '../../services/clinic-manager-api.servi
   standalone: true,
   imports: [FormsModule],
   templateUrl: './roster.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './roster.component.scss'
 })
 export class RosterComponent implements OnInit {

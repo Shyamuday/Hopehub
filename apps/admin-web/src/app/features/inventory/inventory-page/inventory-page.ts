@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, signal, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AdminApi } from '../../../core/services/admin-api';
 
@@ -6,6 +6,7 @@ import { AdminApi } from '../../../core/services/admin-api';
   selector: 'app-inventory-page',
   imports: [FormsModule],
   templateUrl: './inventory-page.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './inventory-page.scss'
 })
 export class InventoryPage implements OnInit {

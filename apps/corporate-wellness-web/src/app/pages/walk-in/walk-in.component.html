@@ -1,0 +1,43 @@
+<div class="walk-in-page">
+  <div class="hdr">
+    <h2>Walk-in registration</h2>
+    <p>Register a patient at the desk and add them to the queue</p>
+  </div>
+
+  <form class="form" (ngSubmit)="submit()">
+    <label>Name
+      <input [(ngModel)]="form.name" name="name" required />
+    </label>
+    <label>Mobile
+      <input [(ngModel)]="form.mobile" name="mobile" required />
+    </label>
+    <label>Email (optional)
+      <input [(ngModel)]="form.email" name="email" type="email" />
+    </label>
+    <label>Concern / disease
+      <select [(ngModel)]="form.diseaseId" name="diseaseId" required>
+        <option value="">Select…</option>
+        @for (d of diseases(); track d.id) {
+          <option [value]="d.id">{{ d.name }} — ₹{{ formatPaise(d.feeInPaise) }}</option>
+        }
+      </select>
+    </label>
+    <label>Notes (optional)
+      <textarea [(ngModel)]="form.notes" name="notes" rows="2"></textarea>
+    </label>
+    <label class="check">
+      <input type="checkbox" [(ngModel)]="form.collectCash" name="collectCash" />
+      Cash collected at desk
+    </label>
+
+    @if (error()) {
+      <p class="error">{{ error() }}</p>
+    }
+
+    <button type="submit" class="btn-primary" [disabled]="loading()">
+      {{ loading() ? 'Saving…' : 'Register & add to queue' }}
+    </button>
+  </form>
+</div>
+
+@if (toast()) { <div class="toast">{{ toast() }}</div> }

@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, signal, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { API_PATHS } from './core/constants/api-paths.constants';
 import { environment } from '../environments/environment';
@@ -32,7 +32,8 @@ type PatientIdCard = {
   standalone: true,
   imports: [CommonModule, FormsModule],
   styleUrl: './patient-profile.component.scss',
-  templateUrl: './patient-profile.component.html'
+  changeDetection: ChangeDetectionStrategy.Eager,
+  templateUrl: './patient-profile.component.html',
 })
 export class PatientProfileComponent implements OnInit {
   readonly loading = signal(true);
@@ -53,7 +54,9 @@ export class PatientProfileComponent implements OnInit {
     void this.load();
   }
 
-  private get token() { return this.auth.token || ''; }
+  private get token() {
+    return this.auth.token || '';
+  }
 
   private async apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
     const res = await fetch(`${environment.apiUrl}${path}`, {
@@ -61,8 +64,8 @@ export class PatientProfileComponent implements OnInit {
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${this.token}`,
-        ...(init?.headers || {})
-      }
+        ...(init?.headers || {}),
+      },
     });
     if (!res.ok) throw new Error((await res.json())?.message || 'Request failed');
     return res.json() as Promise<T>;
@@ -90,7 +93,7 @@ export class PatientProfileComponent implements OnInit {
             mobile: profile.mobile,
             email: profile.email,
             clinic: profile.homeClinicStore ?? null,
-            scanUrl: `${environment.apiUrl}/go/p/${encodeURIComponent(profile.patientCode)}`
+            scanUrl: `${environment.apiUrl}/go/p/${encodeURIComponent(profile.patientCode)}`,
           });
         }
       }
@@ -126,8 +129,8 @@ export class PatientProfileComponent implements OnInit {
           name: this.name.trim(),
           allergies: this.allergies.trim() || undefined,
           currentMedications: this.currentMedications.trim() || undefined,
-          chronicConditions: this.chronicConditions.trim() || undefined
-        })
+          chronicConditions: this.chronicConditions.trim() || undefined,
+        }),
       });
       this.profile.set(profile);
       this.successMsg.set('Profile saved.');

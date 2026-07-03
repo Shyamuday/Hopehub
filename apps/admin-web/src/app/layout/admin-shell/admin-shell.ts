@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { RoleTaskGuideComponent } from '../../shared/role-task-guide/role-task-guide.component';
 import { NotificationBellHost } from '../../shared/notification-bell-host/notification-bell-host';
@@ -9,6 +9,7 @@ import { NAV_ITEMS, ROUTE_PATHS } from '../../core/constants/app-routes.constant
   selector: 'app-admin-shell',
   imports: [RouterLink, RouterLinkActive, RouterOutlet, RoleTaskGuideComponent, NotificationBellHost],
   templateUrl: './admin-shell.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './admin-shell.scss'
 })
 export class AdminShell {

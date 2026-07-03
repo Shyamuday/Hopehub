@@ -1,4 +1,4 @@
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { Component, inject, signal, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DatePipe } from '@angular/common';
 import { HrApiService } from '../../services/hr-api.service';
@@ -13,6 +13,7 @@ type TabStatus = 'ALL' | 'PENDING' | 'APPROVED' | 'REJECTED';
   standalone: true,
   imports: [FormsModule, DatePipe],
   templateUrl: './leaves.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './leaves.component.scss'
 })
 export class LeavesComponent implements OnInit {

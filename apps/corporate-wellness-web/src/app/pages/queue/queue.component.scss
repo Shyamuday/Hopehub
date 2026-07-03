@@ -1,0 +1,28 @@
+.queue-page { padding: 1.25rem; }
+.hdr { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; margin-bottom: 1rem; }
+.hdr h2 { margin: 0; }
+.hdr p { margin: 0.25rem 0 0; color: #64748b; }
+.summary { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem; }
+.pill { background: #fff; border: 1px solid #e2e8f0; border-radius: 999px; padding: 0.35rem 0.75rem; font-size: 0.85rem; }
+.pill.warn { border-color: #fcd34d; background: #fffbeb; }
+.pill.info { border-color: #93c5fd; background: #eff6ff; }
+.pill.ok { border-color: #6ee7b7; background: #ecfdf5; }
+.filters { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem; align-items: center; }
+.ftab { border: 1px solid #cbd5e1; background: #fff; border-radius: 999px; padding: 0.4rem 0.8rem; cursor: pointer; }
+.ftab.active { background: #0f766e; color: #fff; border-color: #0f766e; }
+.search { flex: 1; min-width: 200px; padding: 0.5rem 0.7rem; border: 1px solid #cbd5e1; border-radius: 8px; }
+.btn-apply, .btn-refresh, .btn-primary, .btn-secondary { border-radius: 8px; padding: 0.5rem 0.85rem; cursor: pointer; border: 1px solid transparent; }
+.btn-primary { background: #0f766e; color: #fff; }
+.btn-secondary { background: #fff; border-color: #cbd5e1; }
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 0.75rem; }
+.card { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1rem; }
+.card-top { display: flex; justify-content: space-between; gap: 0.75rem; }
+.name { font-weight: 700; }
+.meta, .detail.subtle { color: #64748b; font-size: 0.85rem; }
+.status { font-size: 0.75rem; font-weight: 700; color: #0f766e; }
+.actions { display: flex; gap: 0.5rem; margin-top: 0.75rem; }
+.modal-backdrop { position: fixed; inset: 0; background: rgba(15,23,42,0.45); display: grid; place-items: center; z-index: 50; }
+.modal { background: #fff; border-radius: 12px; padding: 1.25rem; width: min(420px, 92vw); display: grid; gap: 0.75rem; }
+.modal select { padding: 0.5rem; border: 1px solid #cbd5e1; border-radius: 8px; }
+.modal-actions { display: flex; justify-content: flex-end; gap: 0.5rem; }
+.toast { position: fixed; bottom: 1rem; right: 1rem; background: #0f172a; color: #fff; padding: 0.75rem 1rem; border-radius: 8px; }

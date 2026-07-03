@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, signal } from '@angular/core';
+import { Component, signal, ChangeDetectionStrategy } from '@angular/core';
 import { AppFooterComponent } from './app-footer.component';
 import { AppHeaderComponent } from './app-header.component';
 import { AuthFormOverlayComponent } from './auth/auth-form-overlay.component';
@@ -10,7 +10,8 @@ import { AppOverlayService } from './overlay.service';
 @Component({
   selector: 'app-treatments',
   imports: [CommonModule, AppHeaderComponent, AppFooterComponent],
-  templateUrl: './treatments.component.html'
+  changeDetection: ChangeDetectionStrategy.Eager,
+  templateUrl: './treatments.component.html',
 })
 export class TreatmentsComponent {
   readonly whatsappLink = WHATSAPP_CONTACT_URL;
@@ -19,7 +20,7 @@ export class TreatmentsComponent {
   readonly selectedSubSectionId = signal(this.categories[0]?.subSections[0]?.id || '');
   readonly selectedIssueName = signal('');
 
-  constructor(private readonly overlayService: AppOverlayService) { }
+  constructor(private readonly overlayService: AppOverlayService) {}
 
   get selectedCategory() {
     return this.categories.find((item) => item.id === this.selectedCategoryId()) || null;
@@ -54,7 +55,7 @@ export class TreatmentsComponent {
     this.overlayService.open(AuthFormOverlayComponent, {
       data: { mode },
       width: '480px',
-      panelClass: 'app-overlay-panel'
+      panelClass: 'app-overlay-panel',
     });
   }
 }

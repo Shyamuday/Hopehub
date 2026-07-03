@@ -1,4 +1,4 @@
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { Component, inject, signal, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DatePipe } from '@angular/common';
 import { AdminApi } from '../../../core/services/admin-api';
@@ -25,6 +25,7 @@ import {
   selector: 'app-leaves-page',
   imports: [FormsModule, DatePipe],
   templateUrl: './leaves-page.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './leaves-page.scss'
 })
 export class LeavesPage implements OnInit {

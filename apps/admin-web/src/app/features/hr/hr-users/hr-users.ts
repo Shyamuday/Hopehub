@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, signal, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AdminApi } from '../../../core/services/admin-api';
 import { TOAST_DURATION_LONG_MS } from '../../../core/constants/timing.constants';
@@ -8,6 +8,7 @@ import { HR_USER_DEFAULTS } from '../constants/hr-user-form.constants';
   selector: 'app-hr-users',
   imports: [FormsModule],
   templateUrl: './hr-users.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './hr-users.scss'
 })
 export class HrUsersComponent implements OnInit {

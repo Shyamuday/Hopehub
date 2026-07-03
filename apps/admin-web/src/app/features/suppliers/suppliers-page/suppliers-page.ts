@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, signal, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AdminApi } from '../../../core/services/admin-api';
 import { TOAST_DURATION_MS } from '../../../core/constants/timing.constants';
@@ -7,6 +7,7 @@ import { TOAST_DURATION_MS } from '../../../core/constants/timing.constants';
   selector: 'app-suppliers-page',
   imports: [FormsModule],
   templateUrl: './suppliers-page.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './suppliers-page.scss'
 })
 export class SuppliersPage implements OnInit {

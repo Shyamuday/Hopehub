@@ -1,4 +1,4 @@
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { Component, inject, signal, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
@@ -16,6 +16,7 @@ interface PayrollRow {
   standalone: true,
   imports: [FormsModule],
   templateUrl: './payroll.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './payroll.component.scss'
 })
 export class PayrollComponent implements OnInit {

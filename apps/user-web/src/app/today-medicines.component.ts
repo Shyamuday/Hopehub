@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DoseEvent } from './models';
 
@@ -8,7 +8,7 @@ export const DOSE_SKIP_REASONS = [
   'Side effects',
   'Not at home',
   'Ran out of medicine',
-  'Doctor advised to pause'
+  'Doctor advised to pause',
 ] as const;
 
 export const DOSE_MISSED_REASONS = [
@@ -16,7 +16,7 @@ export const DOSE_MISSED_REASONS = [
   'Was travelling',
   'Felt unwell',
   'Could not find medicine',
-  'Phone was off / no reminder'
+  'Phone was off / no reminder',
 ] as const;
 
 export const SNOOZE_OPTIONS = [15, 30, 60] as const;
@@ -26,7 +26,8 @@ export const SNOOZE_OPTIONS = [15, 30, 60] as const;
   standalone: true,
   imports: [CommonModule, FormsModule],
   templateUrl: './today-medicines.component.html',
-  styleUrl: './today-medicines.component.scss'
+  changeDetection: ChangeDetectionStrategy.Eager,
+  styleUrl: './today-medicines.component.scss',
 })
 export class TodayMedicinesComponent {
   readonly skipReasons = DOSE_SKIP_REASONS;

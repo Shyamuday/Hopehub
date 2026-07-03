@@ -1,0 +1,168 @@
+
+    <div class="page">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Leave Management</h1>
+          <p class="page-sub">{{ total() }} leave records</p>
+        </div>
+        <button class="btn-primary" (click)="showAddModal.set(true)">+ Add Leave</button>
+      </div>
+
+      <!-- Status Tabs -->
+      <div class="status-tabs">
+        @for (tab of tabs; track tab.value) {
+          <button
+            class="status-tab"
+            [class.active]="activeTab() === tab.value"
+            (click)="setTab(tab.value)"
+          >{{ tab.label }}</button>
+        }
+      </div>
+
+      <!-- Leaves List -->
+      @if (loading()) {
+        <div class="loading-state">
+          <div class="spinner-lg"></div>
+          <p>Loading leaves...</p>
+        </div>
+      } @else if (leaves().length === 0) {
+        <div class="empty-state">
+          <div class="empty-icon">📋</div>
+          <p>No {{ activeTab() === 'ALL' ? '' : activeTab().toLowerCase() + ' ' }}leave records found</p>
+        </div>
+      } @else {
+        <div class="leaves-list">
+          @for (leave of leaves(); track leave.id) {
+            <div class="leave-card">
+              <div class="leave-top">
+                <div class="leave-type-badge">
+                  <span class="type-icon">{{ leaveIcon(leave.type) }}</span>
+                  <span class="type-label">{{ leave.type }}</span>
+                </div>
+                <span class="badge" [class]="statusClass(leave.status)">{{ leave.status }}</span>
+              </div>
+
+              <div class="leave-body">
+                <div class="leave-emp">
+                  <div class="emp-avatar">{{ (leave.employeeName ?? 'U').charAt(0) }}</div>
+                  <div>
+                    <div class="emp-name">{{ leave.employeeName ?? 'Unknown Employee' }}</div>
+                    <div class="emp-type text-muted">{{ leave.employeeType }}</div>
+                  </div>
+                </div>
+
+                <div class="leave-dates">
+                  <div class="date-range">
+                    <span class="date-label">From</span>
+                    <span class="date-val">{{ leave.startDate | date:'dd MMM yyyy' }}</span>
+                  </div>
+                  <span class="date-arrow">→</span>
+                  <div class="date-range">
+                    <span class="date-label">To</span>
+                    <span class="date-val">{{ leave.endDate | date:'dd MMM yyyy' }}</span>
+                  </div>
+                  @if (leave.totalDays) {
+                    <div class="days-chip">{{ leave.totalDays }} day{{ leave.totalDays === 1 ? '' : 's' }}</div>
+                  }
+                </div>
+
+                @if (leave.reason) {
+                  <div class="leave-reason">
+                    <span class="reason-label">Reason:</span>
+                    <span class="reason-text">{{ leave.reason }}</span>
+                  </div>
+                }
+
+                @if (leave.hrNote) {
+                  <div class="hr-note">
+                    <span class="note-label">HR Note:</span>
+                    <span>{{ leave.hrNote }}</span>
+                  </div>
+                }
+              </div>
+
+              @if (leave.status === 'PENDING') {
+                <div class="leave-actions">
+                  <input
+                    class="note-input"
+                    [(ngModel)]="hrNotes[leave.id]"
+                    placeholder="Add HR note (optional)..."
+                  />
+                  <button
+                    class="btn-approve"
+                    (click)="updateLeave(leave, 'APPROVED')"
+                    [disabled]="updatingId() === leave.id"
+                  >✓ Approve</button>
+                  <button
+                    class="btn-reject"
+                    (click)="updateLeave(leave, 'REJECTED')"
+                    [disabled]="updatingId() === leave.id"
+                  >✕ Reject</button>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      }
+    </div>
+
+    <!-- Add Leave Modal -->
+    @if (showAddModal()) {
+      <div class="modal-backdrop" (click)="closeModal()">
+        <div class="modal" (click)="$event.stopPropagation()">
+          <div class="modal-header">
+            <h2>Add Leave Record</h2>
+            <button class="close-btn" (click)="closeModal()">✕</button>
+          </div>
+          <div class="modal-body">
+            @if (addError()) {
+              <div class="error-banner">⚠️ {{ addError() }}</div>
+            }
+            <div class="form-grid">
+              <div class="form-group full-width">
+                <label class="form-label">Employee Type</label>
+                <select class="form-input" [(ngModel)]="addForm.employeeType">
+                  <option value="DOCTOR">Doctor</option>
+                  <option value="STORE_STAFF">Store Staff</option>
+                </select>
+              </div>
+              <div class="form-group full-width">
+                <label class="form-label">Employee ID</label>
+                <input class="form-input" [(ngModel)]="addForm.employeeId" placeholder="Doctor or Staff ID" />
+              </div>
+              <div class="form-group full-width">
+                <label class="form-label">Leave Type</label>
+                <select class="form-input" [(ngModel)]="addForm.type">
+                  @for (lt of leaveTypes; track lt) {
+                    <option [value]="lt">{{ lt }}</option>
+                  }
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Start Date</label>
+                <input class="form-input" type="date" [(ngModel)]="addForm.startDate" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">End Date</label>
+                <input class="form-input" type="date" [(ngModel)]="addForm.endDate" />
+              </div>
+              <div class="form-group full-width">
+                <label class="form-label">Reason</label>
+                <textarea class="form-input" [(ngModel)]="addForm.reason" rows="3" placeholder="Reason for leave..."></textarea>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn-secondary" (click)="closeModal()">Cancel</button>
+            <button class="btn-primary" (click)="submitLeave()" [disabled]="addLoading()">
+              @if (addLoading()) {
+                <span class="spinner-sm"></span> Adding...
+              } @else {
+                Add Leave
+              }
+            </button>
+          </div>
+        </div>
+      </div>
+    }
+  

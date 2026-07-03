@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AdminApi } from '../../../core/services/admin-api';
 import { ANALYTICS_WINDOW_OPTIONS } from '../constants/analytics.constants';
@@ -37,6 +37,7 @@ type AnalyticsReport = {
   selector: 'app-analytics-page',
   imports: [CommonModule, FormsModule],
   templateUrl: './analytics-page.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './analytics-page.scss'
 })
 export class AnalyticsPage {
