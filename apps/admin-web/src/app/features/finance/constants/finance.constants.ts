@@ -1,5 +1,6 @@
 export const FINANCE_TABS = [
   { id: 'overview', label: 'Overview' },
+  { id: 'branches', label: 'Branch P&L' },
   { id: 'consultation', label: 'Consultation Revenue' },
   { id: 'medicine', label: 'Medicine Revenue' },
   { id: 'clinic-expenses', label: 'Clinic Expenses' },

@@ -25,7 +25,9 @@ export const API_PATHS = {
       OUTSTANDING: '/admin/finance/outstanding',
       PAYSLIP: (type: string, id: string) => `/admin/finance/payslip/${type}/${id}`,
       EXPENSES: '/admin/finance/expenses',
-      EXPENSES_SUMMARY: '/admin/finance/expenses/summary'
+      EXPENSES_SUMMARY: '/admin/finance/expenses/summary',
+      BRANCHES: '/admin/finance/branches',
+      EXPORT_BUNDLE: '/admin/finance/export-bundle'
     }
   },
   CONSULTATIONS: '/consultations',

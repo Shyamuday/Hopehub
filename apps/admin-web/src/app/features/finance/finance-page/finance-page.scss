@@ -1,5 +1,15 @@
 .fin-page { padding: 1.5rem; }
-.fin-hdr { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem; }
+.fin-hdr { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem; gap: 1rem; flex-wrap: wrap; }
+.fin-actions { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+.branch-filter { padding: 0.45rem 0.6rem; border: 1px solid #cbd5e1; border-radius: 8px; background: #fff; max-width: 220px; }
+.btn-export { border: 1px solid #0f766e; background: #fff; color: #0f766e; border-radius: 8px; padding: 0.55rem 0.9rem; cursor: pointer; font-weight: 600; }
+.btn-export:disabled { opacity: 0.6; cursor: not-allowed; }
+.branch-note { color: #64748b; font-size: 0.9rem; margin: 0 0 1rem; }
+.branch-name { font-weight: 600; }
+.branch-code { color: #64748b; font-size: 0.8rem; }
+.branch-table .positive { color: #0f766e; font-weight: 600; }
+.branch-table .negative { color: #b91c1c; font-weight: 600; }
+.branch-table .totals-row { background: #f8fafc; }
 .fin-hdr h2 { margin: 0; }
 .fin-hdr p { margin: 0.25rem 0 0; color: #64748b; }
 .tabs { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem; }

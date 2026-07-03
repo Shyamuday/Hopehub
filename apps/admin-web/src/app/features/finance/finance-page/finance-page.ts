@@ -24,10 +24,14 @@ export class FinancePage implements OnInit {
   tab = signal<FinanceTabId>('overview');
   loading = signal(true);
   error = signal('');
+  exporting = signal(false);
+  branchExportFilter = '';
   selectedMonth = new Date().toISOString().slice(0, 7);
   toast = signal('');
 
   summary = signal<any>(null);
+  branchPnl = signal<any[]>([]);
+  branchTotals = signal<any>(null);
   trend = signal<any[]>([]);
   byDoctor = signal<any[]>([]);
   byDisease = signal<any[]>([]);
@@ -68,14 +72,17 @@ export class FinancePage implements OnInit {
     this.error.set('');
     Promise.all([
       this.api.getFinanceSummary(this.selectedMonth),
+      this.api.getBranchPnl(this.selectedMonth),
       this.api.getRevenueTrend(6),
       this.api.getRevenueByDoctor(this.selectedMonth),
       this.api.getRevenueByDisease(this.selectedMonth),
       this.api.getMedicineRevenue({ from: this.medicineFrom || undefined, to: this.medicineTo || undefined, storeId: this.storeFilter || undefined }),
       this.api.getExpenses({ level: 'CLINIC' }),
       this.api.getExpenses({ level: 'STORE', storeId: this.storeFilter || undefined })
-    ]).then(([summary, trend, byDoctor, byDisease, medicine, clinicExpenses, storeExpenses]) => {
+    ]).then(([summary, branchData, trend, byDoctor, byDisease, medicine, clinicExpenses, storeExpenses]) => {
       this.summary.set(summary);
+      this.branchPnl.set(branchData.branches ?? []);
+      this.branchTotals.set(branchData.totals ?? null);
       this.trend.set(trend.rows);
       this.byDoctor.set(byDoctor.rows);
       this.byDisease.set(byDisease.rows);
@@ -92,6 +99,12 @@ export class FinancePage implements OnInit {
   loadTab(): void {
     if (this.tab() === 'overview') {
       this.api.getFinanceSummary(this.selectedMonth).then(s => this.summary.set(s)).catch(() => {});
+    }
+    if (this.tab() === 'branches') {
+      this.api.getBranchPnl(this.selectedMonth).then(r => {
+        this.branchPnl.set(r.branches ?? []);
+        this.branchTotals.set(r.totals ?? null);
+      }).catch(() => {});
     }
     if (this.tab() === 'medicine') {
       this.api.getMedicineRevenue({ from: this.medicineFrom || undefined, to: this.medicineTo || undefined, storeId: this.storeFilter || undefined })
@@ -159,5 +172,30 @@ export class FinancePage implements OnInit {
       this.toast.set('Expense deleted');
       setTimeout(() => this.toast.set(''), 2500);
     });
+  }
+
+  async exportBundle(): Promise<void> {
+    this.exporting.set(true);
+    try {
+      const csv = await this.api.exportAccountantBundle({
+        month: this.selectedMonth,
+        storeId: this.branchExportFilter || undefined
+      });
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      const suffix = this.branchExportFilter ? `-${this.branchExportFilter}` : '';
+      anchor.download = `accountant-bundle-${this.selectedMonth}${suffix}.csv`;
+      anchor.click();
+      URL.revokeObjectURL(url);
+      this.toast.set('Accountant bundle exported');
+      setTimeout(() => this.toast.set(''), 2500);
+    } catch {
+      this.toast.set('Export failed');
+      setTimeout(() => this.toast.set(''), 2500);
+    } finally {
+      this.exporting.set(false);
+    }
   }
 }

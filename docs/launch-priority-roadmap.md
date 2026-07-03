@@ -187,10 +187,17 @@ Minimum acceptance:
 
 ### 3) Branch Finance Exports (Accountant basics)
 
-**Status: Next** — extend admin finance with branch-scoped P&L summary and GST-ready payroll/payment export bundles (see `docs/platform-ecosystem-architecture.md` Phase 3).
+**Status: Done** — `GET /admin/finance/branches` per-store P&L (consultation, medicine, payroll, store/clinic expenses, net); `GET /admin/finance/export-bundle` multi-section GST-ready CSV (branch P&L, payments, medicine sales, payroll, expenses); admin Finance “Branch P&L” tab and accountant bundle export with optional branch filter.
 
 - Per-branch revenue vs payroll vs expenses
 - Downloadable CSV bundles for accountant reconciliation
+
+### 4) Front Desk / Receptionist (Platform Phase 2)
+
+**Status: Next** — receptionist app or consolidated front-desk flows for walk-in registration, appointment queue, and payment collection (see `docs/platform-ecosystem-architecture.md`).
+
+- Dedicated receptionist role and app
+- Walk-in patient registration and queue management
 
 ## Recommended Implementation Order
 

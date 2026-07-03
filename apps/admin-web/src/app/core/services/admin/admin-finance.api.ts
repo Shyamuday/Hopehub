@@ -98,4 +98,25 @@ export class AdminFinanceApi extends AdminApiBase {
   deleteExpense(id: string) {
     return firstValueFrom(this.http.delete(`${this.apiBase}${API_PATHS.ADMIN.FINANCE.EXPENSES}/${id}`));
   }
+
+  getBranchPnl(month?: string) {
+    return firstValueFrom(
+      this.http.get<any>(`${this.apiBase}${API_PATHS.ADMIN.FINANCE.BRANCHES}`, {
+        params: month ? { month } : {}
+      })
+    );
+  }
+
+  async exportAccountantBundle(params: { month: string; storeId?: string }) {
+    const query = new URLSearchParams({ month: params.month });
+    if (params.storeId) query.set('storeId', params.storeId);
+    const response = await fetch(
+      `${this.apiBase}${API_PATHS.ADMIN.FINANCE.EXPORT_BUNDLE}?${query.toString()}`,
+      { headers: { Authorization: `Bearer ${this.auth.token()}` } }
+    );
+    if (!response.ok) {
+      throw new Error('Could not export accountant bundle.');
+    }
+    return response.text();
+  }
 }

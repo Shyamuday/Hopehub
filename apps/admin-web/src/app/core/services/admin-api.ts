@@ -212,4 +212,10 @@ export class AdminApi {
   deleteExpense(...args: Parameters<AdminFinanceApi['deleteExpense']>) {
     return this.finance.deleteExpense(...(args as Parameters<AdminFinanceApi['deleteExpense']>));
   }
+  getBranchPnl(...args: Parameters<AdminFinanceApi['getBranchPnl']>) {
+    return this.finance.getBranchPnl(...(args as Parameters<AdminFinanceApi['getBranchPnl']>));
+  }
+  exportAccountantBundle(...args: Parameters<AdminFinanceApi['exportAccountantBundle']>) {
+    return this.finance.exportAccountantBundle(...(args as Parameters<AdminFinanceApi['exportAccountantBundle']>));
+  }
 }

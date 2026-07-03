@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { PaymentStatus, Role, StockMovementType } from '@prisma/client';
+import { PaymentStatus, Role, StockMovementType, ExpenseLevel } from '@prisma/client';
 import { authRequired, allowRoles } from '../../auth.js';
 import { prisma } from '../../db.js';
 import { asyncRoute, queryText, routeParam } from '../../utils/helpers.js';
