@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, ChangeDetectionStrategy } from '@angular/core';
 
 export type PatientClinicalProfile = {
   allergies?: string | null;
@@ -10,6 +10,7 @@ export type PatientClinicalProfile = {
   selector: 'app-patient-health-profile',
   imports: [],
   templateUrl: './patient-health-profile.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './patient-health-profile.scss'
 })
 export class PatientHealthProfileComponent {

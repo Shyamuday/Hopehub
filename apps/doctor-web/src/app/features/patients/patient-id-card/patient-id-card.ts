@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, ChangeDetectionStrategy } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { environment } from '../../../../environments/environment';
 
@@ -16,6 +16,7 @@ export type PatientIdCardData = {
   selector: 'app-patient-id-card',
   imports: [DatePipe],
   templateUrl: './patient-id-card.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './patient-id-card.scss'
 })
 export class PatientIdCardComponent {

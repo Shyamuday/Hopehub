@@ -1,5 +1,5 @@
 import { CommonModule, DatePipe } from '@angular/common';
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ROUTE_PATHS } from '../../../core/constants/app-routes.constants';
@@ -9,6 +9,7 @@ import { WorklistApiService, type WorklistItem, type WorklistView } from '../wor
   selector: 'app-worklist-page',
   imports: [CommonModule, DatePipe, FormsModule, RouterLink],
   templateUrl: './worklist-page.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './worklist-page.scss'
 })
 export class WorklistPage {

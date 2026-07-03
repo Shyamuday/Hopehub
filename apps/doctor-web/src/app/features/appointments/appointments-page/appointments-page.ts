@@ -1,6 +1,6 @@
 import { DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, inject } from '@angular/core';
+import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { RouterLink } from '@angular/router';
@@ -24,6 +24,7 @@ import {
   selector: 'app-appointments-page',
   imports: [FormsModule, DatePipe, PatientHealthProfileComponent, RouterLink],
   templateUrl: './appointments-page.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './appointments-page.scss'
 })
 export class AppointmentsPage {

@@ -1,5 +1,5 @@
 import { HttpClient } from '@angular/common/http';
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../../environments/environment';
@@ -11,6 +11,7 @@ import { DoctorSessionService } from '../../../core/services/doctor-session';
   selector: 'app-profile-page',
   imports: [FormsModule],
   templateUrl: './profile-page.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './profile-page.scss'
 })
 export class ProfilePage {

@@ -1,5 +1,5 @@
 import { DecimalPipe } from '@angular/common';
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ROUTE_PATHS } from '../../../core/constants/app-routes.constants';
@@ -19,6 +19,7 @@ import { formatRubricPath, rubricPathSegments } from '../rubric-path.util';
   selector: 'app-case-analysis-page',
   imports: [FormsModule, RouterLink, DecimalPipe],
   templateUrl: './case-analysis-page.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './case-analysis-page.scss'
 })
 export class CaseAnalysisPage {

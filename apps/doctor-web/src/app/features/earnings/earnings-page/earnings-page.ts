@@ -1,4 +1,4 @@
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { Component, inject, signal, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
@@ -10,6 +10,7 @@ import { formatPaise, paiseToK } from '../constants/earnings.constants';
   selector: 'app-earnings-page',
   imports: [FormsModule],
   templateUrl: './earnings-page.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './earnings-page.scss'
 })
 export class EarningsPage implements OnInit {

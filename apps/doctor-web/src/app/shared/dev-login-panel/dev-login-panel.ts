@@ -1,11 +1,12 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, OnInit, Output, inject, signal } from '@angular/core';
+import { Component, EventEmitter, OnInit, Output, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { DevDemoService, type DevFillCredentials, type DevPersona } from '../../core/services/dev-demo.service';
 
 @Component({
   selector: 'app-dev-login-panel',
   imports: [CommonModule],
   templateUrl: './dev-login-panel.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './dev-login-panel.scss'
 })
 export class DevLoginPanelComponent implements OnInit {

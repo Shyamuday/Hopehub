@@ -1,4 +1,4 @@
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { Component, inject, signal, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
@@ -32,6 +32,7 @@ function generateSlots(start: string, end: string, stepMins: number): { startTim
   selector: 'app-slots-page',
   imports: [FormsModule],
   templateUrl: './slots-page.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './slots-page.scss'
 })
 export class SlotsPage implements OnInit {

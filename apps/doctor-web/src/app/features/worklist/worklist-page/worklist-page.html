@@ -83,7 +83,7 @@
         <button type="button" (click)="openInAppointments(item.id)">Open appointment</button>
         <button type="button" class="ghost" (click)="openCaseAnalysis(item.id)">Case analysis</button>
         @if (item.patient?.patientCode) {
-          <button type="button" class="ghost" (click)="scanPatient(item.patient?.patientCode)">Scan patient</button>
+          <button type="button" class="ghost" (click)="scanPatient($safeNavigationMigration(item.patient?.patientCode))">Scan patient</button>
         }
       </div>
     </article>
@@ -128,7 +128,7 @@
         <button type="button" (click)="openInAppointments(item.id)">Open appointment</button>
         <button type="button" class="ghost" (click)="openCaseAnalysis(item.id)">Case analysis</button>
         @if (item.patient?.patientCode) {
-          <button type="button" class="ghost" (click)="scanPatient(item.patient?.patientCode)">Scan patient</button>
+          <button type="button" class="ghost" (click)="scanPatient($safeNavigationMigration(item.patient?.patientCode))">Scan patient</button>
         }
       </div>
     </article>

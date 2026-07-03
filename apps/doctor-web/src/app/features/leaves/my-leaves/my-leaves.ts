@@ -1,4 +1,4 @@
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { Component, inject, signal, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DatePipe } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
@@ -18,6 +18,7 @@ import {
   selector: 'app-my-leaves',
   imports: [FormsModule, DatePipe],
   templateUrl: './my-leaves.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './my-leaves.scss'
 })
 export class MyLeaves implements OnInit {

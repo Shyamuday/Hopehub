@@ -1,4 +1,4 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, signal, ChangeDetectionStrategy } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { RoleTaskGuideComponent } from '../../shared/role-task-guide/role-task-guide.component';
 import { NotificationBellHost } from '../../shared/notification-bell-host/notification-bell-host';
@@ -27,6 +27,7 @@ const NAV_ICONS: Record<string, { icon: string; shortLabel: string }> = {
   selector: 'app-doctor-shell',
   imports: [RouterLink, RouterLinkActive, RouterOutlet, RoleTaskGuideComponent, NotificationBellHost],
   templateUrl: './doctor-shell.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './doctor-shell.scss',
 })
 export class DoctorShell implements OnInit {
