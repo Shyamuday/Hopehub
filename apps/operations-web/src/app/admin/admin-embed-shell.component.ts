@@ -3,7 +3,7 @@ import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/rou
 import { RoleTaskGuideComponent, NotificationBellHostComponent } from '@vitalis/platform-ui';
 import { environment } from '../../environments/environment';
 import { AUTH_TOKEN_KEY } from '../core/constants/auth.constants';
-import { NAV_ITEMS } from '../../../../admin-web/src/app/core/constants/app-routes.constants';
+import { NAV_ITEMS } from '@vitalis/admin-console/core/constants/app-routes.constants';
 import { PlatformAuthService } from '../services/platform-auth.service';
 import { ADMIN_ROUTE_CAPABILITIES } from './admin.guards';
 

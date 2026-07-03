@@ -7,7 +7,6 @@
           We specialize in long-running conditions that need deeper history, pattern tracking, and disciplined follow-up — not quick-fix consultations.
         </p>
 
-        <!-- ── Inline booking card ── -->
         <div class="booking-card">
           @switch (step()) {
             @case ('form') {
@@ -15,15 +14,13 @@
               <p class="bc-sub">Enter your details — we'll send a one-time code to your mobile.</p>
               <div class="bc-fields">
                 <input
-                  name="bcName"
-                  [(ngModel)]="name"
-                  placeholder="Your full name"
+                  [formField]="bookingForm.name"
+                  attr.placeholder="Your full name"
                   autocomplete="name"
                 />
                 <input
-                  name="bcMobile"
-                  [(ngModel)]="mobile"
-                  placeholder="Mobile number (10 digits)"
+                  [formField]="bookingForm.mobile"
+                  attr.placeholder="Mobile number (10 digits)"
                   inputmode="tel"
                   autocomplete="tel"
                 />
@@ -40,17 +37,15 @@
             @case ('otp') {
               <h3>Verify your number</h3>
               <p class="bc-otp-who">
-                OTP sent to <strong>{{ mobile }}</strong>
+                OTP sent to <strong>{{ bookingFormModel().mobile }}</strong>
               </p>
               <div class="bc-fields">
                 <input
-                  name="bcOtp"
-                  [(ngModel)]="otp"
+                  [formField]="bookingForm.otp"
                   placeholder="Enter 6-digit OTP"
                   inputmode="numeric"
-                  maxlength="6"
                 />
-                <button class="bc-btn" type="button" [disabled]="busy() || otp.length < 4" (click)="verifyOtp()">
+                <button class="bc-btn" type="button" [disabled]="busy() || bookingFormModel().otp.length < 4" (click)="verifyOtp()">
                   {{ busy() ? 'Verifying…' : 'Confirm & Continue →' }}
                 </button>
               </div>
@@ -89,4 +84,3 @@
         </div>
       </div>
     </section>
-  

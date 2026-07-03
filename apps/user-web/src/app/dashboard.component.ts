@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnDestroy, OnInit, computed, signal } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
+import { form, FormField } from '@angular/forms/signals';
 import { Router } from '@angular/router';
 import { RoleTaskGuideComponent } from '@vitalis/platform-ui';
 import { AppFooterComponent } from './app-footer.component';
@@ -47,7 +47,7 @@ import {
   selector: 'app-dashboard',
   imports: [
     CommonModule,
-    FormsModule,
+    FormField,
     AppHeaderComponent,
     AppFooterComponent,
     AdminStatsComponent,
@@ -66,6 +66,12 @@ import {
   templateUrl: './dashboard.component.html',
 })
 export class DashboardComponent implements OnInit, OnDestroy {
+  private readonly api = inject(ClinicApiService);
+  private readonly dataService = inject(DashboardDataService);
+  readonly paymentService = inject(DashboardPaymentService);
+  private readonly router = inject(Router);
+  readonly auth = inject(AuthService);
+
   readonly diseases = signal<Disease[]>([]);
   readonly billingPlans = signal<BillingPlan[]>([]);
   readonly consultations = signal<Consultation[]>([]);
@@ -87,15 +93,20 @@ export class DashboardComponent implements OnInit, OnDestroy {
   readonly whatsappLink = WHATSAPP_CONTACT_URL;
   private realtimeChannel?: { unsubscribe(): void };
 
-  snoozeMinutes = DEFAULT_SNOOZE_MINUTES;
-  assignment = { consultationId: '', doctorId: '' };
-  doctorForm = {
+  readonly snoozeMinutes = signal(DEFAULT_SNOOZE_MINUTES);
+
+  readonly doctorFormModel = signal({
     name: 'Dr. New Doctor',
     email: 'newdoctor@vitalisclinic.local',
     mobile: '',
     password: 'Password@123',
     specialty: 'Dermatology',
-  };
+  });
+  readonly doctorForm = form(this.doctorFormModel);
+
+  readonly assignmentModel = signal({ consultationId: '', doctorId: '' });
+  readonly assignmentForm = form(this.assignmentModel);
+
   reminderPreferences: ReminderPrefs = {
     inApp: true,
     sms: true,
@@ -104,14 +115,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
     quietHoursStart: DEFAULT_QUIET_HOURS.START,
     quietHoursEnd: DEFAULT_QUIET_HOURS.END,
   };
-
-  constructor(
-    readonly auth: AuthService,
-    private readonly api: ClinicApiService,
-    private readonly dataService: DashboardDataService,
-    readonly paymentService: DashboardPaymentService,
-    private readonly router: Router,
-  ) {}
 
   paymentFlowState() {
     return this.paymentService.paymentFlowState();
@@ -319,7 +322,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   createDoctor() {
     this.isProcessing.set(true);
-    this.api.createDoctor(this.doctorForm).subscribe({
+    this.api.createDoctor(this.doctorFormModel()).subscribe({
       next: () => {
         this.showNotice('Doctor created.');
         this.loadAdminData();
@@ -333,12 +336,13 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   assignDoctor() {
-    if (!this.assignment.consultationId || !this.assignment.doctorId) {
+    const assignment = this.assignmentModel();
+    if (!assignment.consultationId || !assignment.doctorId) {
       return this.showNotice('Select consultation and doctor.');
     }
 
     this.isProcessing.set(true);
-    this.api.assignDoctor(this.assignment.consultationId, this.assignment.doctorId).subscribe({
+    this.api.assignDoctor(assignment.consultationId, assignment.doctorId).subscribe({
       next: () => {
         this.showNotice('Doctor assigned.');
         this.loadConsultations();
@@ -392,7 +396,11 @@ export class DashboardComponent implements OnInit, OnDestroy {
             ? consultations.find((c) => c.id === this.activeConsultation()?.id) || null
             : consultations[0] || null,
         );
-        this.assignment.consultationId = consultations[0]?.id || this.assignment.consultationId;
+        const current = this.assignmentModel();
+        this.assignmentModel.set({
+          consultationId: consultations[0]?.id || current.consultationId,
+          doctorId: current.doctorId,
+        });
       },
       error: (error) =>
         this.showNotice(error.error?.message || error.message || 'Could not load consultations.'),
@@ -403,7 +411,11 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.dataService.loadDoctors().subscribe({
       next: ({ doctors }) => {
         this.doctors.set(doctors);
-        this.assignment.doctorId = doctors[0]?.id || this.assignment.doctorId;
+        const current = this.assignmentModel();
+        this.assignmentModel.set({
+          consultationId: current.consultationId,
+          doctorId: doctors[0]?.id || current.doctorId,
+        });
       },
       error: (error) =>
         this.showNotice(error.error?.message || error.message || 'Could not load doctors.'),

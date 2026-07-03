@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject, signal } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { form, FormField } from '@angular/forms/signals';
 import { Router } from '@angular/router';
 import { Observable } from 'rxjs';
 import { APP_OVERLAY_DATA, APP_OVERLAY_REF } from '../overlay.tokens';
@@ -23,8 +23,7 @@ type ForgotStep = 'none' | 'email' | 'sent' | 'reset';
 
 @Component({
   selector: 'app-auth-form-overlay',
-  imports: [CommonModule, FormsModule, DevLoginPanelComponent]
-,
+  imports: [CommonModule, FormField, DevLoginPanelComponent],
   templateUrl: './auth-form-overlay.component.html',
 })
 export class AuthFormOverlayComponent {
@@ -40,27 +39,31 @@ export class AuthFormOverlayComponent {
   } | null>(null);
   private activeOverlayRef?: AppOverlayRef;
 
-  patientCredentials: { identifier: string; password: string } = {
-    identifier: DEV_DEMO_ACCOUNTS.patientRahul.email,
-    password: DEV_DEMO_ACCOUNTS.password,
-  };
+  readonly patientCredentialsModel = signal({
+    identifier: DEV_DEMO_ACCOUNTS.patientRahul.email as string,
+    password: DEV_DEMO_ACCOUNTS.password as string,
+  });
+  readonly patientCredentialsForm = form(this.patientCredentialsModel);
 
-  patientOtp: { name: string; mobile: string; otp: string } = {
-    name: DEV_DEMO_ACCOUNTS.patientRahul.name,
-    mobile: DEV_DEMO_ACCOUNTS.patientMobile,
-    otp: DEV_DEMO_ACCOUNTS.otp,
-  };
+  readonly patientOtpModel = signal({
+    name: DEV_DEMO_ACCOUNTS.patientRahul.name as string,
+    mobile: DEV_DEMO_ACCOUNTS.patientMobile as string,
+    otp: DEV_DEMO_ACCOUNTS.otp as string,
+  });
+  readonly patientOtpForm = form(this.patientOtpModel);
 
-  staff: { email: string; password: string } = {
-    email: DEV_DEMO_ACCOUNTS.doctor.email,
-    password: DEV_DEMO_ACCOUNTS.password,
-  };
+  readonly staffModel = signal({
+    email: DEV_DEMO_ACCOUNTS.doctor.email as string,
+    password: DEV_DEMO_ACCOUNTS.password as string,
+  });
+  readonly staffForm = form(this.staffModel);
 
-  forgot = {
+  readonly forgotModel = signal({
     email: '',
     password: '',
     confirmPassword: '',
-  };
+  });
+  readonly forgotForm = form(this.forgotModel);
 
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
@@ -72,16 +75,18 @@ export class AuthFormOverlayComponent {
   }
 
   canResetPassword(): boolean {
+    const forgot = this.forgotModel();
     return !!(
-      this.forgot.password &&
-      this.forgot.confirmPassword &&
-      this.forgot.password === this.forgot.confirmPassword &&
-      this.forgot.password.length >= 8
+      forgot.password &&
+      forgot.confirmPassword &&
+      forgot.password === forgot.confirmPassword &&
+      forgot.password.length >= 8
     );
   }
 
   requestOtp() {
-    this.process('Sending OTP...', this.auth.requestOtp(this.patientOtp.mobile)).subscribe({
+    const { mobile } = this.patientOtpModel();
+    this.process('Sending OTP...', this.auth.requestOtp(mobile)).subscribe({
       next: (response) =>
         this.showSuccess(`OTP sent successfully. Development OTP: ${response.devOtp}`),
       error: () => this.showError('Could not request OTP.'),
@@ -97,20 +102,30 @@ export class AuthFormOverlayComponent {
 
   applyDevFill(credentials: DevFillCredentials) {
     const identifier = credentials.identifier ?? credentials.email;
-    if (identifier) this.patientCredentials.identifier = identifier;
-    if (credentials.password) this.patientCredentials.password = credentials.password;
-    if (credentials.name) this.patientOtp.name = credentials.name;
-    if (credentials.mobile) this.patientOtp.mobile = credentials.mobile;
-    if (credentials.otp) this.patientOtp.otp = credentials.otp;
+    if (identifier) {
+      this.patientCredentialsModel.update((m) => ({ ...m, identifier }));
+    }
+    if (credentials.password) {
+      this.patientCredentialsModel.update((m) => ({ ...m, password: credentials.password! }));
+    }
+    if (credentials.name) {
+      this.patientOtpModel.update((m) => ({ ...m, name: credentials.name! }));
+    }
+    if (credentials.mobile) {
+      this.patientOtpModel.update((m) => ({ ...m, mobile: credentials.mobile! }));
+    }
+    if (credentials.otp) {
+      this.patientOtpModel.update((m) => ({ ...m, otp: credentials.otp! }));
+    }
   }
 
   loginPatientWithOtp() {
-    this.process('Logging in patient...', this.auth.patientLogin(this.patientOtp)).subscribe({
+    this.process('Logging in patient...', this.auth.patientLogin(this.patientOtpModel())).subscribe({
       next: (response) => {
         if ('requiresPatientSelection' in response) {
           this.patientSelection.set({
             mode: 'otp',
-            mobile: response.mobile || this.patientOtp.mobile,
+            mobile: response.mobile || this.patientOtpModel().mobile,
             patients: response.patients,
           });
           this.closeActiveOverlay();
@@ -128,11 +143,12 @@ export class AuthFormOverlayComponent {
     if (!selection) return;
 
     if (selection.mode === 'otp') {
+      const otp = this.patientOtpModel();
       this.process(
         'Signing in...',
         this.auth.patientLoginSelect({
-          mobile: selection.mobile || this.patientOtp.mobile,
-          otp: this.patientOtp.otp,
+          mobile: selection.mobile || otp.mobile,
+          otp: otp.otp,
           patientId,
         }),
       ).subscribe({
@@ -147,11 +163,12 @@ export class AuthFormOverlayComponent {
       return;
     }
 
+    const credentials = this.patientCredentialsModel();
     this.process(
       'Signing in...',
       this.auth.patientPasswordLoginSelect({
-        identifier: this.patientCredentials.identifier,
-        password: this.patientCredentials.password,
+        identifier: credentials.identifier,
+        password: credentials.password,
         patientId,
       }),
     ).subscribe({
@@ -172,7 +189,7 @@ export class AuthFormOverlayComponent {
   loginPatientWithPassword() {
     this.process(
       'Logging in patient...',
-      this.auth.patientPasswordLogin(this.patientCredentials),
+      this.auth.patientPasswordLogin(this.patientCredentialsModel()),
     ).subscribe({
       next: (response) => {
         if ('requiresPatientSelection' in response) {
@@ -191,7 +208,7 @@ export class AuthFormOverlayComponent {
   }
 
   loginStaff() {
-    this.process('Logging in staff...', this.auth.staffLogin(this.staff)).subscribe({
+    this.process('Logging in staff...', this.auth.staffLogin(this.staffModel())).subscribe({
       next: ({ user }) => {
         this.closeAllOverlays();
         this.router.navigateByUrl(this.auth.dashboardFor(user.role));
@@ -201,9 +218,10 @@ export class AuthFormOverlayComponent {
   }
 
   forgotPassword() {
+    const { email } = this.forgotModel();
     this.process(
       'Sending reset link...',
-      this.auth.staffForgotPassword(this.forgot.email),
+      this.auth.staffForgotPassword(email),
     ).subscribe({
       next: () => {
         this.closeActiveOverlay();
@@ -215,6 +233,7 @@ export class AuthFormOverlayComponent {
 
   resetPassword() {
     const token = this.resetToken();
+    const { password } = this.forgotModel();
     if (!token) {
       this.showError('Reset token is missing. Please request a new password reset link.');
       return;
@@ -222,7 +241,7 @@ export class AuthFormOverlayComponent {
 
     this.process(
       'Resetting password...',
-      this.auth.resetPassword({ token, password: this.forgot.password }),
+      this.auth.resetPassword({ token, password }),
     ).subscribe({
       next: ({ user }) => {
         this.closeAllOverlays();

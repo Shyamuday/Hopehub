@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { CommonModule, DatePipe } from '@angular/common';
-import { Component, signal } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { Component, inject, signal } from '@angular/core';
+import { form, FormField } from '@angular/forms/signals';
 import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../../environments/environment';
@@ -61,18 +61,30 @@ type AdherenceSummary = {
   }>;
 };
 
+function emptyCreatePatientModel() {
+  return { name: '', email: '', mobile: '' };
+}
+
 @Component({
   selector: 'app-patients-page',
-  imports: [FormsModule, CommonModule, DatePipe, PatientIdCardComponent, RouterLink, PatientHealthProfileComponent],
+  imports: [FormField, CommonModule, DatePipe, PatientIdCardComponent, RouterLink, PatientHealthProfileComponent],
   templateUrl: './patients-page.html',
   styleUrl: './patients-page.scss'
 })
 export class PatientsPage {
-  readonly worklistPath = `/${ROUTE_PATHS.WORKLIST}`;
+  private readonly http = inject(HttpClient);
+  private readonly patientsApi = inject(PatientsApiService);
   private readonly apiBase = environment.apiUrl;
 
-  patientSearchQuery = '';
-  patientSearchScope: 'auto' | 'clinic' | 'global' = 'auto';
+  readonly worklistPath = `/${ROUTE_PATHS.WORKLIST}`;
+
+  readonly searchModel = signal({ patientSearchQuery: '', patientSearchScope: 'auto' as 'auto' | 'clinic' | 'global' });
+  readonly searchForm = form(this.searchModel);
+  readonly createPatientModel = signal(emptyCreatePatientModel());
+  readonly createPatientForm = form(this.createPatientModel);
+  readonly trendModel = signal({ patientId: '', days: 7 as 7 | 30 });
+  readonly trendForm = form(this.trendModel);
+
   readonly patientSearchLoading = signal(false);
   readonly patientSearchError = signal('');
   readonly patientSearchHint = signal('');
@@ -82,14 +94,9 @@ export class PatientsPage {
   readonly patientCardLoading = signal(false);
 
   showCreatePatient = false;
-  createPatientName = '';
-  createPatientEmail = '';
-  createPatientMobile = '';
   readonly createPatientSaving = signal(false);
   readonly createPatientError = signal('');
 
-  patientId = '';
-  days: 7 | 30 = 7;
   readonly loading = signal(false);
   readonly error = signal('');
   readonly message = signal('');
@@ -102,17 +109,13 @@ export class PatientsPage {
   readonly labReferralsError = signal('');
   readonly summary = signal<AdherenceSummary | null>(null);
 
-  constructor(
-    private readonly http: HttpClient,
-    private readonly patientsApi: PatientsApiService
-  ) {}
-
   async searchPatients(forceGlobal = false) {
     this.patientSearchError.set('');
     this.patientSearchHint.set('');
     this.patientSearchResults.set([]);
     this.selectedPatient.set(null);
-    const q = this.patientSearchQuery.trim();
+    const { patientSearchQuery, patientSearchScope } = this.searchModel();
+    const q = patientSearchQuery.trim();
     if (q.length < 2) {
       this.patientSearchError.set('Enter mobile, email, patient ID, or name (min 2 chars).');
       return;
@@ -120,7 +123,7 @@ export class PatientsPage {
 
     this.patientSearchLoading.set(true);
     try {
-      const scope = forceGlobal ? 'global' : this.patientSearchScope;
+      const scope = forceGlobal ? 'global' : patientSearchScope;
       const response = await this.patientsApi.searchPatients(q, scope);
       this.patientSearchResults.set(response.patients);
       this.patientSearchHint.set(
@@ -143,7 +146,7 @@ export class PatientsPage {
 
   selectPatient(patient: PatientSearchResult) {
     this.selectedPatient.set(patient);
-    this.patientId = patient.id;
+    this.trendModel.update((model) => ({ ...model, patientId: patient.id }));
     this.patientClinical.set({
       allergies: patient.allergies,
       currentMedications: patient.currentMedications,
@@ -192,23 +195,22 @@ export class PatientsPage {
 
   async createPatient() {
     this.createPatientError.set('');
-    const name = this.createPatientName.trim();
-    if (!name) {
+    const { name, email, mobile } = this.createPatientModel();
+    const trimmedName = name.trim();
+    if (!trimmedName) {
       this.createPatientError.set('Name is required.');
       return;
     }
     this.createPatientSaving.set(true);
     try {
       const response = await this.patientsApi.createPatient({
-        name,
-        email: this.createPatientEmail.trim() || undefined,
-        mobile: this.createPatientMobile.trim() || undefined
+        name: trimmedName,
+        email: email.trim() || undefined,
+        mobile: mobile.trim() || undefined
       });
       this.message.set(`Patient created: ${response.patient.patientCode || response.patient.id}`);
       this.showCreatePatient = false;
-      this.createPatientName = '';
-      this.createPatientEmail = '';
-      this.createPatientMobile = '';
+      this.createPatientModel.set(emptyCreatePatientModel());
       this.patientSearchResults.set([response.patient]);
       this.selectPatient(response.patient);
       if (response.patient.patientCode) {
@@ -235,7 +237,8 @@ export class PatientsPage {
     this.doseEvents.set([]);
     this.labReferrals.set([]);
     this.labReferralsError.set('');
-    const id = this.patientId.trim();
+    const { patientId, days } = this.trendModel();
+    const id = patientId.trim();
     if (!id) {
       this.error.set('Select or enter a patient.');
       return;
@@ -246,7 +249,7 @@ export class PatientsPage {
     this.doseEventsError.set('');
     void this.loadPatientClinical(id);
 
-    const params = { days: String(this.days) };
+    const params = { days: String(days) };
 
     const [trendResult, eventsResult] = await Promise.allSettled([
       firstValueFrom(
@@ -262,7 +265,7 @@ export class PatientsPage {
 
     if (trendResult.status === 'fulfilled') {
       this.summary.set(trendResult.value);
-      this.message.set(`Loaded ${this.days}-day adherence trend.`);
+      this.message.set(`Loaded ${days}-day adherence trend.`);
     } else {
       this.error.set('Could not load adherence trend for this patient.');
     }

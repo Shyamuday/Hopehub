@@ -7,8 +7,7 @@
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true,
-    "outDir": "dist",
-    "rootDir": "."
+    "outDir": "dist"
   },
-  "include": ["src/**/*.ts", "prisma/**/*.ts", "../../shared/role-task-guides/**/*.ts"]
+  "include": ["src/**/*.ts", "prisma/**/*.ts"]
 }

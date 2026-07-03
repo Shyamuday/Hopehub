@@ -1,11 +1,11 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { form, FormField } from '@angular/forms/signals';
 import { MarketingApiService } from '../../services/marketing-api.service';
 
 @Component({
   selector: 'app-funnels',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormField],
   templateUrl: './funnels.component.html',
   styleUrl: './funnels.component.scss'
 })
@@ -14,8 +14,10 @@ export class FunnelsComponent implements OnInit {
 
   loading = signal(true);
   error = signal('');
-  days = 30;
   data = signal<any>(null);
+
+  readonly filterModel = signal({ days: '30' });
+  readonly filterForm = form(this.filterModel);
 
   ngOnInit(): void {
     this.load();
@@ -24,7 +26,7 @@ export class FunnelsComponent implements OnInit {
   load(): void {
     this.loading.set(true);
     this.error.set('');
-    this.api.getFunnels(this.days)
+    this.api.getFunnels(Number(this.filterModel().days))
       .then((res) => {
         this.data.set(res);
         this.loading.set(false);

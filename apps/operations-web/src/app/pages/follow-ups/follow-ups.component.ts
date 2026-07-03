@@ -1,11 +1,11 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { form, FormField } from '@angular/forms/signals';
 import { CoordinatorApiService } from '../../services/coordinator-api.service';
 
 @Component({
   selector: 'app-follow-ups',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormField],
   templateUrl: './follow-ups.component.html',
   styleUrl: './follow-ups.component.scss'
 })
@@ -14,9 +14,11 @@ export class FollowUpsComponent implements OnInit {
 
   loading = signal(true);
   error = signal('');
-  days = 7;
   data = signal<any>(null);
   activeTab = signal<'HIGH_RISK' | 'MEDIUM_RISK' | 'ON_TRACK' | 'ALERTS'>('HIGH_RISK');
+
+  readonly filterModel = signal({ days: '7' });
+  readonly filterForm = form(this.filterModel);
 
   ngOnInit(): void {
     this.load();
@@ -25,7 +27,7 @@ export class FollowUpsComponent implements OnInit {
   load(): void {
     this.loading.set(true);
     this.error.set('');
-    this.api.getFollowUps(this.days)
+    this.api.getFollowUps(Number(this.filterModel().days))
       .then((res) => {
         this.data.set(res);
         this.loading.set(false);

@@ -1,27 +1,37 @@
 import { HttpClient } from '@angular/common/http';
-import { Component } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { Component, inject, signal } from '@angular/core';
+import { form, FormField } from '@angular/forms/signals';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { API_PATHS } from '../../../core/constants/api-paths.constants';
 import type { DoctorProfileSummary } from '../../../core/constants/doctor-types.constants';
 import { DoctorSessionService } from '../../../core/services/doctor-session';
 
+function emptyProfileModel() {
+  return {
+    name: '',
+    email: '',
+    mobile: '',
+    specialty: '',
+    registrationNo: '',
+    isAvailable: true
+  };
+}
+
 @Component({
   selector: 'app-profile-page',
-  imports: [FormsModule],
+  imports: [FormField],
   templateUrl: './profile-page.html',
   styleUrl: './profile-page.scss'
 })
 export class ProfilePage {
+  private readonly http = inject(HttpClient);
+  private readonly session = inject(DoctorSessionService);
   private readonly apiBase = environment.apiUrl;
 
-  name = '';
-  email = '';
-  mobile = '';
-  specialty = '';
-  registrationNo = '';
-  isAvailable = true;
+  readonly profileModel = signal(emptyProfileModel());
+  readonly profileForm = form(this.profileModel);
+
   doctorTypeLabel = '';
   specialtyFocusLabel = '';
   message = '';
@@ -29,10 +39,7 @@ export class ProfilePage {
   isLoading = false;
   saving = false;
 
-  constructor(
-    private readonly http: HttpClient,
-    private readonly session: DoctorSessionService
-  ) {
+  constructor() {
     void this.loadProfile();
   }
 
@@ -52,12 +59,14 @@ export class ProfilePage {
       );
 
       const profile = response.profile;
-      this.name = profile.name || '';
-      this.email = profile.email || '';
-      this.mobile = profile.mobile || '';
-      this.specialty = profile.doctorProfile?.specialty || '';
-      this.registrationNo = profile.doctorProfile?.registrationNo || '';
-      this.isAvailable = profile.doctorProfile?.isAvailable ?? true;
+      this.profileModel.set({
+        name: profile.name || '',
+        email: profile.email || '',
+        mobile: profile.mobile || '',
+        specialty: profile.doctorProfile?.specialty || '',
+        registrationNo: profile.doctorProfile?.registrationNo || '',
+        isAvailable: profile.doctorProfile?.isAvailable ?? true
+      });
       this.doctorTypeLabel = profile.doctorProfile?.doctorTypeLabel || 'Doctor';
       this.specialtyFocusLabel = profile.doctorProfile?.specialtyFocusLabel || '';
     } catch {
@@ -68,17 +77,18 @@ export class ProfilePage {
   }
 
   async saveProfile() {
+    const form = this.profileModel();
     this.message = '';
     this.error = '';
     this.saving = true;
     try {
       await firstValueFrom(
         this.http.put(`${this.apiBase}${API_PATHS.DOCTOR.PROFILE}`, {
-          name: this.name,
-          mobile: this.mobile,
-          specialty: this.specialty,
-          registrationNo: this.registrationNo,
-          isAvailable: this.isAvailable
+          name: form.name,
+          mobile: form.mobile,
+          specialty: form.specialty,
+          registrationNo: form.registrationNo,
+          isAvailable: form.isAvailable
         })
       );
       await this.session.load(true);

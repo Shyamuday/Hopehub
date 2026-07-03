@@ -46,15 +46,15 @@
           <div class="mbody">
             <div class="fg">
               <label>Leave Type *</label>
-              <select [(ngModel)]="form.type">
+              <select [formField]="leaveRequestForm.type">
                 @for (t of leaveTypes; track t) { <option [value]="t">{{ t }}</option> }
               </select>
             </div>
             <div class="frow">
-              <div class="fg"><label>Start Date *</label><input type="date" [(ngModel)]="form.startDate" /></div>
-              <div class="fg"><label>End Date *</label><input type="date" [(ngModel)]="form.endDate" /></div>
+              <div class="fg"><label>Start Date *</label><input type="date" [formField]="leaveRequestForm.startDate" /></div>
+              <div class="fg"><label>End Date *</label><input type="date" [formField]="leaveRequestForm.endDate" /></div>
             </div>
-            <div class="fg"><label>Reason</label><textarea [(ngModel)]="form.reason" rows="3" placeholder="Brief reason for leave…"></textarea></div>
+            <div class="fg"><label>Reason</label><textarea [formField]="leaveRequestForm.reason" rows="3" placeholder="Brief reason for leave…"></textarea></div>
           </div>
           <div class="mfooter">
             <button class="btn-ghost" (click)="closeModal()">Cancel</button>

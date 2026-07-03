@@ -1,7 +1,6 @@
 import { Component, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { form, FormField, required } from '@angular/forms/signals';
-import { FormsModule } from '@angular/forms';
 import { DEFAULT_AUTHED_ROUTE } from '../../../core/constants/app-routes.constants';
 import { Auth } from '../../../core/services/auth';
 import { DevLoginPanelComponent } from '@vitalis/platform-ui';
@@ -10,7 +9,7 @@ import type { DevFillCredentials } from '@vitalis/platform-ui';
 
 @Component({
   selector: 'app-login',
-  imports: [FormField, FormsModule, DevLoginPanelComponent],
+  imports: [FormField, DevLoginPanelComponent],
   templateUrl: './login.html',
   styleUrl: './login.scss'
 })
@@ -30,14 +29,20 @@ export class Login {
     required(schema.password, { message: 'Password is required' });
   });
 
+  readonly enrollModel = signal({
+    name: '',
+    mobile: '',
+    specialty: '',
+    registrationNo: ''
+  });
+  readonly enrollForm = form(this.enrollModel, (schema) => {
+    required(schema.name, { message: 'Name is required' });
+    required(schema.specialty, { message: 'Specialty is required' });
+  });
+
   error = signal('');
   message = signal('');
   submitting = signal(false);
-
-  name = '';
-  mobile = '';
-  specialty = '';
-  registrationNo = '';
 
   private navigateAfterLogin(): void {
     const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl');
@@ -75,18 +80,20 @@ export class Login {
   }
 
   async enroll() {
+    if (this.signInForm().invalid() || this.enrollForm().invalid()) return;
     const { email, password } = this.signInModel();
+    const { name, mobile, specialty, registrationNo } = this.enrollModel();
     this.error.set('');
     this.message.set('');
     this.submitting.set(true);
     try {
       const result = await this.auth.enrollDoctor({
-        name: this.name,
+        name,
         email,
-        mobile: this.mobile || undefined,
+        mobile: mobile || undefined,
         password,
-        specialty: this.specialty,
-        registrationNo: this.registrationNo || undefined
+        specialty,
+        registrationNo: registrationNo || undefined
       });
 
       if (!result.ok) {

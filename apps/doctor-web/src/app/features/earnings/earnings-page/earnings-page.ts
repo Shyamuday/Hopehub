@@ -1,5 +1,5 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { form, FormField } from '@angular/forms/signals';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../../environments/environment';
@@ -8,7 +8,7 @@ import { formatPaise, paiseToK } from '../constants/earnings.constants';
 
 @Component({
   selector: 'app-earnings-page',
-  imports: [FormsModule],
+  imports: [FormField],
   templateUrl: './earnings-page.html',
   styleUrl: './earnings-page.scss'
 })
@@ -17,11 +17,13 @@ export class EarningsPage implements OnInit {
   private apiBase = environment.apiUrl;
 
   loading = signal(true);
-  selectedMonth = new Date().toISOString().slice(0, 7);
   payslip = signal<any>(null);
   history = signal<any[]>([]);
   consultationSummary = signal<any>(null);
   error = signal('');
+
+  readonly monthModel = signal({ selectedMonth: new Date().toISOString().slice(0, 7) });
+  readonly monthForm = form(this.monthModel);
 
   readonly formatPaise = formatPaise;
   readonly paiseToK = paiseToK;
@@ -35,7 +37,7 @@ export class EarningsPage implements OnInit {
     this.error.set('');
     try {
       const [payslipRes, summary] = await Promise.all([
-        firstValueFrom(this.http.get<any>(`${this.apiBase}${API_PATHS.DOCTOR.MY_PAYSLIP}`, { params: { month: this.selectedMonth } })),
+        firstValueFrom(this.http.get<any>(`${this.apiBase}${API_PATHS.DOCTOR.MY_PAYSLIP}`, { params: { month: this.monthModel().selectedMonth } })),
         firstValueFrom(this.http.get<any>(`${this.apiBase}${API_PATHS.DOCTOR.PAYMENTS_SUMMARY}`))
       ]);
       this.payslip.set(payslipRes.payslip);

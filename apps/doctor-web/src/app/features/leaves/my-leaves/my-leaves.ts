@@ -1,5 +1,5 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { form, FormField } from '@angular/forms/signals';
 import { DatePipe } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
@@ -14,9 +14,13 @@ import {
   LEAVE_TYPES
 } from '../constants/leave.constants';
 
+function emptyLeaveRequest() {
+  return { type: DEFAULT_LEAVE_TYPE, startDate: '', endDate: '', reason: '' };
+}
+
 @Component({
   selector: 'app-my-leaves',
-  imports: [FormsModule, DatePipe],
+  imports: [FormField, DatePipe],
   templateUrl: './my-leaves.html',
   styleUrl: './my-leaves.scss'
 })
@@ -32,7 +36,8 @@ export class MyLeaves implements OnInit {
   err = signal('');
   toast = signal('');
 
-  form = { type: DEFAULT_LEAVE_TYPE, startDate: '', endDate: '', reason: '' };
+  readonly leaveRequestModel = signal(emptyLeaveRequest());
+  readonly leaveRequestForm = form(this.leaveRequestModel);
   leaveTypes = LEAVE_TYPES;
 
   ngOnInit(): void { this.load(); }
@@ -48,16 +53,21 @@ export class MyLeaves implements OnInit {
      .catch(() => this.loading.set(false));
   }
 
-  openModal(): void { this.form = { type: DEFAULT_LEAVE_TYPE, startDate: '', endDate: '', reason: '' }; this.err.set(''); this.modal.set(true); }
+  openModal(): void {
+    this.leaveRequestModel.set(emptyLeaveRequest());
+    this.err.set('');
+    this.modal.set(true);
+  }
   closeModal(): void { this.modal.set(false); }
 
   async submit(): Promise<void> {
-    if (!this.form.startDate || !this.form.endDate) { this.err.set('Start and end dates are required'); return; }
+    const form = this.leaveRequestModel();
+    if (!form.startDate || !form.endDate) { this.err.set('Start and end dates are required'); return; }
     this.saving.set(true);
     const token = this.auth.token();
     try {
       await firstValueFrom(
-        this.http.post(`${this.base}${API_PATHS.HR.SELF_DOCTOR_LEAVE}`, this.form, {
+        this.http.post(`${this.base}${API_PATHS.HR.SELF_DOCTOR_LEAVE}`, form, {
           headers: { Authorization: `Bearer ${token}` }
         })
       );

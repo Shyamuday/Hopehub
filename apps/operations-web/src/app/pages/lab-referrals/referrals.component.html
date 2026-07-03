@@ -71,9 +71,9 @@
       <div class="modal" (click)="$event.stopPropagation()">
         <h3>Accept referral</h3>
         <label>Expected result date</label>
-        <input type="date" [(ngModel)]="expectedResultDate" />
+        <input type="date" [formField]="acceptForm.expectedResultDate" />
         <label>Notes to clinic</label>
-        <textarea [(ngModel)]="partnerNotes" rows="3" placeholder="Sample collection window, prep instructions…"></textarea>
+        <textarea [formField]="acceptForm.partnerNotes" rows="3" attr.placeholder="Sample collection window, prep instructions…"></textarea>
         <div class="modal-actions">
           <button type="button" (click)="closeAccept()">Cancel</button>
           <button type="button" class="btn-primary" (click)="submitAccept(id)">Accept</button>
@@ -86,13 +86,13 @@
     <div class="modal-backdrop" (click)="closeResults()">
       <div class="modal wide" (click)="$event.stopPropagation()">
         <h3>Publish results</h3>
-        @for (line of resultLines(); track line.lineId) {
+        @for (line of resultsFormModel().lines; track line.lineId; let i = $index) {
           <div class="result-line">
             <div class="result-title">{{ line.testName }}</div>
             <label>Summary</label>
-            <textarea [(ngModel)]="line.resultSummary" rows="2" placeholder="e.g. TSH 2.1 mIU/L (normal)"></textarea>
+            <textarea [formField]="resultsForm.lines[i].resultSummary" rows="2" attr.placeholder="e.g. TSH 2.1 mIU/L (normal)"></textarea>
             <label>Report URL (optional)</label>
-            <input [(ngModel)]="line.resultFileUrl" placeholder="https://…" />
+            <input [formField]="resultsForm.lines[i].resultFileUrl" attr.placeholder="https://…" />
           </div>
         }
         <div class="modal-actions">

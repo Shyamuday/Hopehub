@@ -48,19 +48,19 @@
 
     <form (ngSubmit)="enroll()">
       <label for="name">Full name</label>
-      <input id="name" name="name" [(ngModel)]="name" />
+      <input id="name" [formField]="enrollForm.name" />
 
       <label for="enrollEmail">Email</label>
       <input id="enrollEmail" [formField]="signInForm.email" type="email" />
 
       <label for="mobile">Mobile</label>
-      <input id="mobile" name="mobile" [(ngModel)]="mobile" />
+      <input id="mobile" [formField]="enrollForm.mobile" />
 
       <label for="specialty">Specialty</label>
-      <input id="specialty" name="specialty" [(ngModel)]="specialty" />
+      <input id="specialty" [formField]="enrollForm.specialty" />
 
       <label for="registrationNo">Registration number</label>
-      <input id="registrationNo" name="registrationNo" [(ngModel)]="registrationNo" />
+      <input id="registrationNo" [formField]="enrollForm.registrationNo" />
 
       <label for="enrollPassword">Password</label>
       <input id="enrollPassword" [formField]="signInForm.password" type="password" />
@@ -72,7 +72,7 @@
         <p class="success">{{ message() }}</p>
       }
 
-      <button type="submit" [disabled]="submitting() || signInForm().invalid()">
+      <button type="submit" [disabled]="submitting() || signInForm().invalid() || enrollForm().invalid()">
         {{ submitting() ? 'Creating account...' : 'Create account' }}
       </button>
     </form>

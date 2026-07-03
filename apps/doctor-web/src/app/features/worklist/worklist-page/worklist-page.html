@@ -9,22 +9,22 @@
 </section>
 
 <section class="count-row">
-  <button type="button" class="count-card" [class.active]="view === 'ALL'" (click)="setView('ALL')">
+  <button type="button" class="count-card" [class.active]="filterModel().view === 'ALL'" (click)="setView('ALL')">
     <span class="count">{{ counts().assigned + counts().inProgress + counts().followUpDue }}</span>
     <span class="label">All active</span>
   </button>
-  <button type="button" class="count-card" [class.active]="view === 'ASSIGNED'" (click)="setView('ASSIGNED')">
+  <button type="button" class="count-card" [class.active]="filterModel().view === 'ASSIGNED'" (click)="setView('ASSIGNED')">
     <span class="count">{{ counts().assigned }}</span>
     <span class="label">Assigned</span>
   </button>
-  <button type="button" class="count-card" [class.active]="view === 'IN_PROGRESS'" (click)="setView('IN_PROGRESS')">
+  <button type="button" class="count-card" [class.active]="filterModel().view === 'IN_PROGRESS'" (click)="setView('IN_PROGRESS')">
     <span class="count">{{ counts().inProgress }}</span>
     <span class="label">In progress</span>
   </button>
   <button
     type="button"
     class="count-card urgent"
-    [class.active]="view === 'FOLLOW_UP_DUE'"
+    [class.active]="filterModel().view === 'FOLLOW_UP_DUE'"
     (click)="setView('FOLLOW_UP_DUE')"
   >
     <span class="count">{{ counts().followUpDue }}</span>
@@ -36,11 +36,10 @@
   <div class="toolbar">
     <input
       placeholder="Search patient, code, disease, status..."
-      name="worklistSearch"
-      [(ngModel)]="search"
+      [formField]="filterForm.search"
       (keyup.enter)="load()"
     />
-    <select name="worklistView" [(ngModel)]="view" (ngModelChange)="load()">
+    <select [formField]="filterForm.view" (change)="load()">
       <option value="ALL">All sections</option>
       <option value="ASSIGNED">Assigned only</option>
       <option value="IN_PROGRESS">In-progress only</option>
@@ -83,7 +82,7 @@
         <button type="button" (click)="openInAppointments(item.id)">Open appointment</button>
         <button type="button" class="ghost" (click)="openCaseAnalysis(item.id)">Case analysis</button>
         @if (item.patient?.patientCode) {
-          <button type="button" class="ghost" (click)="scanPatient($safeNavigationMigration(item.patient?.patientCode))">Scan patient</button>
+          <button type="button" class="ghost" (click)="scanPatient(item.patient?.patientCode)">Scan patient</button>
         }
       </div>
     </article>
@@ -128,7 +127,7 @@
         <button type="button" (click)="openInAppointments(item.id)">Open appointment</button>
         <button type="button" class="ghost" (click)="openCaseAnalysis(item.id)">Case analysis</button>
         @if (item.patient?.patientCode) {
-          <button type="button" class="ghost" (click)="scanPatient($safeNavigationMigration(item.patient?.patientCode))">Scan patient</button>
+          <button type="button" class="ghost" (click)="scanPatient(item.patient?.patientCode)">Scan patient</button>
         }
       </div>
     </article>

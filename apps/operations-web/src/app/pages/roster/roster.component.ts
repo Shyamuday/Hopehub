@@ -1,5 +1,5 @@
 import { Component, signal } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { form, FormField } from '@angular/forms/signals';
 import { httpResource } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 import { API_PATHS } from '../../core/constants/api-paths.constants';
@@ -8,16 +8,17 @@ import { RosterData } from '../../models';
 @Component({
   selector: 'app-roster',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormField],
   templateUrl: './roster.component.html',
   styleUrl: './roster.component.scss'
 })
 export class RosterComponent {
-  readonly date = signal(new Date().toISOString().slice(0, 10));
+  readonly filterModel = signal({ date: new Date().toISOString().slice(0, 10) });
+  readonly filterForm = form(this.filterModel);
 
   readonly rosterResource = httpResource<RosterData>(() => ({
     url: `${environment.apiUrl}${API_PATHS.CLINIC_MANAGER.ROSTER}`,
-    params: { date: this.date() }
+    params: { date: this.filterModel().date }
   }));
 
   loading = () => this.rosterResource.isLoading();

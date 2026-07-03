@@ -1,12 +1,16 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { form, FormField } from '@angular/forms/signals';
 import { DatePipe } from '@angular/common';
 import { SupplierApiService } from '../../services/supplier-api.service';
+
+function emptyConfirmForm() {
+  return { supplierNotes: '', expectedDeliveryDate: '' };
+}
 
 @Component({
   selector: 'app-orders',
   standalone: true,
-  imports: [FormsModule, DatePipe],
+  imports: [FormField, DatePipe],
   templateUrl: './orders.component.html',
   styleUrl: './orders.component.scss'
 })
@@ -18,8 +22,9 @@ export class OrdersComponent implements OnInit {
   orders = signal<any[]>([]);
   toast = signal('');
   confirmingId = signal<string | null>(null);
-  supplierNotes = '';
-  expectedDeliveryDate = '';
+
+  readonly confirmFormModel = signal(emptyConfirmForm());
+  readonly confirmForm = form(this.confirmFormModel);
 
   ngOnInit(): void {
     this.load();
@@ -45,21 +50,23 @@ export class OrdersComponent implements OnInit {
 
   openConfirm(order: any): void {
     this.confirmingId.set(order.id);
-    this.supplierNotes = order.supplierNotes ?? '';
-    this.expectedDeliveryDate = order.expectedDeliveryDate?.slice(0, 10) ?? '';
+    this.confirmFormModel.set({
+      supplierNotes: order.supplierNotes ?? '',
+      expectedDeliveryDate: order.expectedDeliveryDate?.slice(0, 10) ?? ''
+    });
   }
 
   closeConfirm(): void {
     this.confirmingId.set(null);
-    this.supplierNotes = '';
-    this.expectedDeliveryDate = '';
+    this.confirmFormModel.set(emptyConfirmForm());
   }
 
   async submitConfirm(id: string): Promise<void> {
+    const form = this.confirmFormModel();
     try {
       await this.api.confirmOrder(id, {
-        supplierNotes: this.supplierNotes || undefined,
-        expectedDeliveryDate: this.expectedDeliveryDate || undefined
+        supplierNotes: form.supplierNotes || undefined,
+        expectedDeliveryDate: form.expectedDeliveryDate || undefined
       });
       this.showToast('Purchase order confirmed');
       this.closeConfirm();

@@ -13,9 +13,9 @@
           <span class="search-icon">🔍</span>
           <input
             class="search-input"
-            [(ngModel)]="searchQuery"
-            (ngModelChange)="onSearch()"
-            placeholder="Search by name, designation..."
+            [formField]="searchForm.q"
+            (input)="onSearch()"
+            attr.placeholder="Search by name, designation..."
           />
         </div>
         <div class="filter-tabs">

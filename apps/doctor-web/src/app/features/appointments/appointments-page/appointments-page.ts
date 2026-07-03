@@ -1,7 +1,7 @@
 import { DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, inject } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { Component, inject, signal } from '@angular/core';
+import { form, FormField } from '@angular/forms/signals';
 import { ActivatedRoute } from '@angular/router';
 import { RouterLink } from '@angular/router';
 import { ROUTE_PATHS } from '../../../core/constants/app-routes.constants';
@@ -20,30 +20,58 @@ import {
   type PatientClinicalProfile
 } from '../../../shared/patient-health-profile/patient-health-profile';
 
+function newMedicineRow(): MedicineRow {
+  return {
+    medicineName: '',
+    strength: '',
+    dose: '',
+    frequency: '',
+    duration: '',
+    durationDays: 7,
+    instructions: '',
+    intakeTimesText: '09:00,21:00'
+  };
+}
+
+function emptyPrescriptionModel() {
+  return {
+    consultationId: '',
+    methodOptionId: '',
+    diagnosedDiseaseOptionId: '',
+    diagnosis: '',
+    notes: '',
+    advice: '',
+    followUpDate: '',
+    editingPrescriptionId: '',
+    medicineRows: [newMedicineRow()] as MedicineRow[]
+  };
+}
+
 @Component({
   selector: 'app-appointments-page',
-  imports: [FormsModule, DatePipe, PatientHealthProfileComponent, RouterLink],
+  imports: [FormField, DatePipe, PatientHealthProfileComponent, RouterLink],
   templateUrl: './appointments-page.html',
   styleUrl: './appointments-page.scss'
 })
 export class AppointmentsPage {
+  private readonly prescriptions = inject(AppointmentsPrescriptionsService);
+  private readonly prescriptionPdf = inject(PrescriptionPdfService);
+  private readonly route = inject(ActivatedRoute);
+
   readonly caseAnalysisPath = ROUTE_PATHS.CASE_ANALYSIS;
-  consultationId = '';
-  methodOptionId = '';
-  diagnosedDiseaseOptionId = '';
-  diagnosis = '';
-  notes = '';
-  advice = '';
-  followUpDate = '';
+  readonly prescriptionModel = signal(this.createInitialPrescriptionModel());
+  readonly prescriptionForm = form(this.prescriptionModel);
+  readonly templateModel = signal({ templateName: '' });
+  readonly templateForm = form(this.templateModel);
+  readonly optionDraftModel = signal({ newMethod: '', newDiagnosedDisease: '' });
+  readonly optionDraftForm = form(this.optionDraftModel);
+
   status: 'DRAFT' | 'PUBLISHED' = 'DRAFT';
-  editingPrescriptionId = '';
   loadedPrescriptions: LoadedPrescription[] = [];
 
   methods: PrescriptionOption[] = [];
   diagnosedDiseases: PrescriptionOption[] = [];
 
-  newMethod = '';
-  newDiagnosedDisease = '';
   message = '';
   error = '';
   saving = false;
@@ -54,30 +82,29 @@ export class AppointmentsPage {
   templates: PrescriptionTemplate[] = [];
   templatesLoading = false;
   showSaveTemplateForm = false;
-  templateName = '';
   savingTemplate = false;
   savingTemplateError = '';
   deletingTemplateId = '';
-  medicineRows: MedicineRow[] = [this.newMedicineRow()];
   patientClinical: PatientClinicalProfile | null = null;
   pdfBusyId = '';
   pdfError = '';
 
-  constructor(
-    private readonly prescriptions: AppointmentsPrescriptionsService,
-    private readonly prescriptionPdf: PrescriptionPdfService,
-    private readonly route: ActivatedRoute
-  ) {
-    this.consultationId = this.route.snapshot.queryParamMap.get('consultationId') || '';
-    const remedySuggestion = this.route.snapshot.queryParamMap.get('remedy') || '';
-    if (remedySuggestion) {
-      this.medicineRows[0].medicineName = remedySuggestion;
-    }
+  constructor() {
     void this.loadOptions();
     void this.loadTemplates();
-    if (this.consultationId) {
+    if (this.prescriptionModel().consultationId) {
       void this.loadConsultationPrescriptions();
     }
+  }
+
+  private createInitialPrescriptionModel() {
+    const consultationId = this.route.snapshot.queryParamMap.get('consultationId') || '';
+    const remedySuggestion = this.route.snapshot.queryParamMap.get('remedy') || '';
+    const medicineRows = [newMedicineRow()];
+    if (remedySuggestion) {
+      medicineRows[0].medicineName = remedySuggestion;
+    }
+    return { ...emptyPrescriptionModel(), consultationId, medicineRows };
   }
 
   async loadOptions() {
@@ -94,24 +121,12 @@ export class AppointmentsPage {
     }
   }
 
-  private newMedicineRow(): MedicineRow {
-    return {
-      medicineName: '',
-      strength: '',
-      dose: '',
-      frequency: '',
-      duration: '',
-      durationDays: 7,
-      instructions: '',
-      intakeTimesText: '09:00,21:00'
-    };
-  }
-
   async addOption(type: OptionType) {
     this.message = '';
     this.error = '';
 
-    const label = type === 'METHOD' ? this.newMethod.trim() : this.newDiagnosedDisease.trim();
+    const draft = this.optionDraftModel();
+    const label = type === 'METHOD' ? draft.newMethod.trim() : draft.newDiagnosedDisease.trim();
     if (!label) {
       return;
     }
@@ -120,15 +135,15 @@ export class AppointmentsPage {
       const response = await this.prescriptions.addOption(type, label);
 
       if (type === 'METHOD') {
-        this.newMethod = '';
+        this.optionDraftModel.update((model) => ({ ...model, newMethod: '' }));
         this.methods = [...this.methods, response.option].sort((a, b) => a.label.localeCompare(b.label));
-        this.methodOptionId = response.option.id;
+        this.prescriptionModel.update((model) => ({ ...model, methodOptionId: response.option.id }));
       } else {
-        this.newDiagnosedDisease = '';
+        this.optionDraftModel.update((model) => ({ ...model, newDiagnosedDisease: '' }));
         this.diagnosedDiseases = [...this.diagnosedDiseases, response.option].sort((a, b) =>
           a.label.localeCompare(b.label)
         );
-        this.diagnosedDiseaseOptionId = response.option.id;
+        this.prescriptionModel.update((model) => ({ ...model, diagnosedDiseaseOptionId: response.option.id }));
       }
       this.message = 'Option added successfully.';
     } catch {
@@ -137,28 +152,36 @@ export class AppointmentsPage {
   }
 
   addMedicineRow() {
-    this.medicineRows = [...this.medicineRows, this.newMedicineRow()];
+    this.prescriptionModel.update((model) => ({
+      ...model,
+      medicineRows: [...model.medicineRows, newMedicineRow()]
+    }));
   }
 
   removeMedicineRow(index: number) {
-    if (this.medicineRows.length === 1) {
+    const medicineRows = this.prescriptionModel().medicineRows;
+    if (medicineRows.length === 1) {
       return;
     }
 
-    this.medicineRows = this.medicineRows.filter((_, idx) => idx !== index);
+    this.prescriptionModel.update((model) => ({
+      ...model,
+      medicineRows: model.medicineRows.filter((_, idx) => idx !== index)
+    }));
   }
 
   async loadConsultationPrescriptions() {
     this.message = '';
     this.error = '';
-    this.editingPrescriptionId = '';
-    if (!this.consultationId.trim()) {
+    this.prescriptionModel.update((model) => ({ ...model, editingPrescriptionId: '' }));
+    const consultationId = this.prescriptionModel().consultationId.trim();
+    if (!consultationId) {
       this.error = 'Please enter consultation id.';
       return;
     }
 
     try {
-      const response = await this.prescriptions.loadConsultationPrescriptions(this.consultationId);
+      const response = await this.prescriptions.loadConsultationPrescriptions(consultationId);
       this.loadedPrescriptions = response.prescriptions || [];
       this.consultationStatus = response.consultation?.status || '';
       this.patientClinical = response.patient
@@ -180,28 +203,31 @@ export class AppointmentsPage {
   }
 
   selectPrescription(prescription: LoadedPrescription) {
-    this.editingPrescriptionId = prescription.id;
-    this.methodOptionId = prescription.methodOptionId || '';
-    this.diagnosedDiseaseOptionId = prescription.diagnosedDiseaseOptionId || '';
-    this.diagnosis = prescription.diagnosis || '';
-    this.advice = prescription.advice || '';
-    this.notes = prescription.notes || '';
-    this.followUpDate = prescription.followUpDate
-      ? new Date(prescription.followUpDate).toISOString().substring(0, 10)
-      : '';
+    this.prescriptionModel.update((model) => ({
+      ...model,
+      editingPrescriptionId: prescription.id,
+      methodOptionId: prescription.methodOptionId || '',
+      diagnosedDiseaseOptionId: prescription.diagnosedDiseaseOptionId || '',
+      diagnosis: prescription.diagnosis || '',
+      advice: prescription.advice || '',
+      notes: prescription.notes || '',
+      followUpDate: prescription.followUpDate
+        ? new Date(prescription.followUpDate).toISOString().substring(0, 10)
+        : '',
+      medicineRows: (prescription.items || []).length
+        ? (prescription.items || []).map((item) => ({
+            medicineName: item.medicineName || '',
+            strength: item.strength || '',
+            dose: item.dose || '',
+            frequency: item.frequency || '',
+            duration: item.duration || '',
+            durationDays: item.durationDays || 7,
+            instructions: item.instructions || '',
+            intakeTimesText: (item.intakeTimes || ['09:00']).join(',')
+          }))
+        : [newMedicineRow()]
+    }));
     this.status = prescription.status === 'PUBLISHED' ? 'PUBLISHED' : 'DRAFT';
-    this.medicineRows = (prescription.items || []).length
-      ? (prescription.items || []).map((item) => ({
-          medicineName: item.medicineName || '',
-          strength: item.strength || '',
-          dose: item.dose || '',
-          frequency: item.frequency || '',
-          duration: item.duration || '',
-          durationDays: item.durationDays || 7,
-          instructions: item.instructions || '',
-          intakeTimesText: (item.intakeTimes || ['09:00']).join(',')
-        }))
-      : [this.newMedicineRow()];
   }
 
   selectPrescriptionById(prescriptionId: string) {
@@ -224,26 +250,29 @@ export class AppointmentsPage {
   }
 
   startFollowUpFrom(prescription: LoadedPrescription) {
-    this.editingPrescriptionId = '';
-    this.methodOptionId = prescription.methodOptionId || '';
-    this.diagnosedDiseaseOptionId = prescription.diagnosedDiseaseOptionId || '';
-    this.diagnosis = prescription.diagnosis || '';
-    this.advice = prescription.advice || '';
-    this.notes = prescription.notes || '';
-    this.followUpDate = '';
+    this.prescriptionModel.update((model) => ({
+      ...model,
+      editingPrescriptionId: '',
+      methodOptionId: prescription.methodOptionId || '',
+      diagnosedDiseaseOptionId: prescription.diagnosedDiseaseOptionId || '',
+      diagnosis: prescription.diagnosis || '',
+      advice: prescription.advice || '',
+      notes: prescription.notes || '',
+      followUpDate: '',
+      medicineRows: (prescription.items || []).length
+        ? (prescription.items || []).map((item) => ({
+            medicineName: item.medicineName || '',
+            strength: item.strength || '',
+            dose: item.dose || '',
+            frequency: item.frequency || '',
+            duration: item.duration || '',
+            durationDays: item.durationDays || 7,
+            instructions: item.instructions || '',
+            intakeTimesText: (item.intakeTimes || ['09:00']).join(',')
+          }))
+        : [newMedicineRow()]
+    }));
     this.status = 'DRAFT';
-    this.medicineRows = (prescription.items || []).length
-      ? (prescription.items || []).map((item) => ({
-          medicineName: item.medicineName || '',
-          strength: item.strength || '',
-          dose: item.dose || '',
-          frequency: item.frequency || '',
-          duration: item.duration || '',
-          durationDays: item.durationDays || 7,
-          instructions: item.instructions || '',
-          intakeTimesText: (item.intakeTimes || ['09:00']).join(',')
-        }))
-      : [this.newMedicineRow()];
     this.message = `Follow-up draft started from v${prescription.version}.`;
     this.error = '';
   }
@@ -260,17 +289,20 @@ export class AppointmentsPage {
   }
 
   resetEditorForFollowUp() {
-    this.editingPrescriptionId = '';
+    this.prescriptionModel.update((model) => ({
+      ...model,
+      editingPrescriptionId: '',
+      diagnosis: '',
+      advice: '',
+      notes: '',
+      followUpDate: '',
+      medicineRows: [newMedicineRow()]
+    }));
     this.status = 'DRAFT';
-    this.diagnosis = '';
-    this.advice = '';
-    this.notes = '';
-    this.followUpDate = '';
-    this.medicineRows = [this.newMedicineRow()];
   }
 
   prescriptionSafetyReport(): PrescriptionSafetyReport {
-    return analyzePrescriptionSafety(this.medicineRows);
+    return analyzePrescriptionSafety(this.prescriptionModel().medicineRows);
   }
 
   dismissSafetyConfirm() {
@@ -287,16 +319,17 @@ export class AppointmentsPage {
   }
 
   private buildPayload(targetStatus: 'DRAFT' | 'PUBLISHED', safetyAcknowledged = false) {
+    const form = this.prescriptionModel();
     return {
-      methodOptionId: this.methodOptionId,
-      diagnosedDiseaseOptionId: this.diagnosedDiseaseOptionId,
-      diagnosis: this.diagnosis,
-      notes: this.notes,
-      advice: this.advice || undefined,
-      followUpDate: this.followUpDate || undefined,
+      methodOptionId: form.methodOptionId,
+      diagnosedDiseaseOptionId: form.diagnosedDiseaseOptionId,
+      diagnosis: form.diagnosis,
+      notes: form.notes,
+      advice: form.advice || undefined,
+      followUpDate: form.followUpDate || undefined,
       status: targetStatus,
       safetyAcknowledged,
-      items: this.medicineRows.map((row) => ({
+      items: form.medicineRows.map((row) => ({
         medicineName: row.medicineName,
         strength: row.strength || undefined,
         dose: row.dose || undefined,
@@ -317,12 +350,13 @@ export class AppointmentsPage {
     this.error = '';
     this.pendingSaveStatus = null;
 
-    if (!this.consultationId || !this.methodOptionId || !this.diagnosedDiseaseOptionId || !this.diagnosis || !this.notes) {
+    const form = this.prescriptionModel();
+    if (!form.consultationId || !form.methodOptionId || !form.diagnosedDiseaseOptionId || !form.diagnosis || !form.notes) {
       this.error = 'Please fill consultation id, method, diagnosed disease, diagnosis and notes.';
       return;
     }
 
-    if (this.medicineRows.some((row) => !row.medicineName.trim())) {
+    if (form.medicineRows.some((row) => !row.medicineName.trim())) {
       this.error = 'Each medicine row must include medicine name.';
       return;
     }
@@ -337,16 +371,17 @@ export class AppointmentsPage {
   }
 
   private async executeSave(targetStatus: 'DRAFT' | 'PUBLISHED', safetyAcknowledged: boolean) {
+    const form = this.prescriptionModel();
     this.saving = true;
     this.error = '';
     try {
       const payload = this.buildPayload(targetStatus, safetyAcknowledged);
       await this.prescriptions.savePrescription(
-        this.consultationId,
-        this.editingPrescriptionId || null,
+        form.consultationId,
+        form.editingPrescriptionId || null,
         payload
       );
-      this.message = this.editingPrescriptionId
+      this.message = form.editingPrescriptionId
         ? targetStatus === 'PUBLISHED'
           ? 'Draft updated and published.'
           : 'Draft updated.'
@@ -383,28 +418,32 @@ export class AppointmentsPage {
   }
 
   applyTemplate(template: PrescriptionTemplate) {
-    this.diagnosis = template.diagnosis || '';
-    this.advice = template.advice || '';
-    this.notes = template.notes || '';
-    this.medicineRows = template.items.length
-      ? template.items.map((item) => ({
-          medicineName: item.medicineName,
-          strength: item.strength || '',
-          dose: item.dose || '',
-          frequency: item.frequency || '',
-          duration: item.duration || '',
-          durationDays: 0,
-          instructions: item.instructions || '',
-          intakeTimesText: ''
-        }))
-      : [this.newMedicineRow()];
+    this.prescriptionModel.update((model) => ({
+      ...model,
+      diagnosis: template.diagnosis || '',
+      advice: template.advice || '',
+      notes: template.notes || '',
+      medicineRows: template.items.length
+        ? template.items.map((item) => ({
+            medicineName: item.medicineName,
+            strength: item.strength || '',
+            dose: item.dose || '',
+            frequency: item.frequency || '',
+            duration: item.duration || '',
+            durationDays: 0,
+            instructions: item.instructions || '',
+            intakeTimesText: ''
+          }))
+        : [newMedicineRow()]
+    }));
     this.message = `Template "${template.name}" applied. Review and adjust before saving.`;
   }
 
   async saveAsTemplate() {
-    const name = this.templateName.trim();
+    const name = this.templateModel().templateName.trim();
+    const form = this.prescriptionModel();
     if (!name) { this.savingTemplateError = 'Enter a template name.'; return; }
-    if (!this.medicineRows.some((r) => r.medicineName.trim())) {
+    if (!form.medicineRows.some((r) => r.medicineName.trim())) {
       this.savingTemplateError = 'Add at least one medicine.'; return;
     }
     this.savingTemplate = true;
@@ -412,10 +451,10 @@ export class AppointmentsPage {
     try {
       await this.prescriptions.saveTemplate({
         name,
-        diagnosis: this.diagnosis,
-        advice: this.advice,
-        notes: this.notes,
-        items: this.medicineRows
+        diagnosis: form.diagnosis,
+        advice: form.advice,
+        notes: form.notes,
+        items: form.medicineRows
           .filter((r) => r.medicineName.trim())
           .map((r, i) => ({
             medicineName: r.medicineName,
@@ -427,7 +466,7 @@ export class AppointmentsPage {
             sortOrder: i
           }))
       });
-      this.templateName = '';
+      this.templateModel.set({ templateName: '' });
       this.showSaveTemplateForm = false;
       await this.loadTemplates();
       this.message = `Template "${name}" saved.`;
@@ -484,10 +523,11 @@ export class AppointmentsPage {
   }
 
   async closeConsultation() {
+    const consultationId = this.prescriptionModel().consultationId;
     this.saving = true;
     this.error = '';
     try {
-      await this.prescriptions.closeConsultation(this.consultationId);
+      await this.prescriptions.closeConsultation(consultationId);
       this.consultationStatus = 'COMPLETED';
       this.confirmingClose = false;
       this.message = 'Consultation marked as completed.';

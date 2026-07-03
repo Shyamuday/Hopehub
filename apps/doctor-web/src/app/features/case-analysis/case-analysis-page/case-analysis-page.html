@@ -59,7 +59,7 @@
           <div class="panel-title-row">
             <h3>Symptom search</h3>
             @if (sources().length) {
-              <select class="source-select" name="repertorySource" [(ngModel)]="selectedSourceId">
+              <select class="source-select" [formField]="searchForm.selectedSourceId">
                 @for (source of sources(); track source.id) {
                   <option [value]="source.id">
                     {{ source.name }}@if (source.rubricCount) { · {{ source.rubricCount | number }} rubrics }
@@ -71,19 +71,18 @@
 
           <div class="search-box">
             <input
-              name="rubricSearch"
-              [(ngModel)]="rubricQuery"
+              [formField]="searchForm.rubricQuery"
               placeholder="e.g. anxiety morning, nausea, grief suppressed"
               (keyup.enter)="searchRubrics()"
             />
-            <button type="button" class="btn-primary" (click)="searchRubrics()" [disabled]="searching() || rubricQuery.trim().length < 2">
+            <button type="button" class="btn-primary" (click)="searchRubrics()" [disabled]="searching() || searchModel().rubricQuery.trim().length < 2">
               {{ searching() ? 'Searching…' : 'Search' }}
             </button>
           </div>
 
           @if (searching()) {
             <p class="hint">Searching repertory…</p>
-          } @else if (rubricQuery.trim().length >= 2 && !searchResults().length && searchedOnce()) {
+          } @else if (searchModel().rubricQuery.trim().length >= 2 && !searchResults().length && searchedOnce()) {
             <p class="hint">No rubrics found. Try fewer or different keywords.</p>
           }
 
@@ -185,8 +184,7 @@
         <section class="panel notes-panel">
           <h3>Analysis notes</h3>
           <textarea
-            name="analysisNotes"
-            [(ngModel)]="notes"
+            [formField]="notesForm.notes"
             rows="4"
             placeholder="Key observations, modalities, mentals, or follow-up thoughts…"
           ></textarea>

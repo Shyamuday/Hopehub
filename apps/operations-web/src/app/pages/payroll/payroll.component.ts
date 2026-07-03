@@ -1,5 +1,5 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { form, FormField } from '@angular/forms/signals';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../environments/environment';
@@ -14,7 +14,7 @@ interface PayrollRow {
 @Component({
   selector: 'app-payroll',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormField],
   templateUrl: './payroll.component.html',
   styleUrl: './payroll.component.scss'
 })
@@ -26,9 +26,13 @@ export class PayrollComponent implements OnInit {
   loading = signal(true);
   summary = signal({ totalGross: 0, totalNet: 0, totalLeave: 0, headcount: 0 });
   typeFilter = signal<string>('ALL');
-  q = '';
   toast = signal('');
-  selectedMonth = new Date().toISOString().slice(0, 7);
+
+  readonly filterModel = signal({
+    month: new Date().toISOString().slice(0, 7),
+    q: ''
+  });
+  readonly filterForm = form(this.filterModel);
 
   typeFilters = [
     { label: 'All', value: 'ALL' },
@@ -42,16 +46,17 @@ export class PayrollComponent implements OnInit {
     this.loading.set(true);
     firstValueFrom(
       this.http.get<{ rows: PayrollRow[]; summary: any }>(`${this.base}/hr/payroll`, {
-        params: { month: this.selectedMonth }
+        params: { month: this.filterModel().month }
       })
     ).then(r => { this.rows.set(r.rows); this.summary.set(r.summary); this.loading.set(false); })
      .catch(() => this.loading.set(false));
   }
 
   filtered(): PayrollRow[] {
+    const q = this.filterModel().q;
     return this.rows().filter(r => {
       if (this.typeFilter() !== 'ALL' && r.empType !== this.typeFilter()) return false;
-      if (this.q && !r.name.toLowerCase().includes(this.q.toLowerCase())) return false;
+      if (q && !r.name.toLowerCase().includes(q.toLowerCase())) return false;
       return true;
     });
   }
@@ -75,6 +80,7 @@ export class PayrollComponent implements OnInit {
   }
 
   exportCSV(): void {
+    const month = this.filterModel().month;
     const lines = ['Name,Type,Designation,Department,Gross,Leave Days,Deduction,Net'];
     for (const r of this.filtered()) {
       lines.push(`"${r.name}","${r.empType}","${r.designation??''}","${r.department??''}",${r.grossPaise/100},${r.leaveDays},${(r.grossPaise-r.netPaise)/100},${r.netPaise/100}`);
@@ -82,7 +88,7 @@ export class PayrollComponent implements OnInit {
     const blob = new Blob([lines.join('\n')], { type: 'text/csv' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = `payroll-${this.selectedMonth}.csv`;
+    a.download = `payroll-${month}.csv`;
     a.click();
     this.toast.set('CSV exported ✓');
     setTimeout(() => this.toast.set(''), 2500);

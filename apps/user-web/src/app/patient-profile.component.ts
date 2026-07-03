@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, signal } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { Component, OnInit, inject, signal } from '@angular/core';
+import { form, FormField } from '@angular/forms/signals';
 import { API_PATHS } from './core/constants/api-paths.constants';
 import { environment } from '../environments/environment';
 import { AuthService } from './auth/auth.service';
@@ -27,14 +27,25 @@ type PatientIdCard = {
   scanUrl?: string;
 };
 
+function emptyProfileForm() {
+  return {
+    name: '',
+    allergies: '',
+    currentMedications: '',
+    chronicConditions: '',
+  };
+}
+
 @Component({
   selector: 'app-patient-profile',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormField],
   styleUrl: './patient-profile.component.scss',
   templateUrl: './patient-profile.component.html',
 })
 export class PatientProfileComponent implements OnInit {
+  private readonly auth = inject(AuthService);
+
   readonly loading = signal(true);
   readonly saving = signal(false);
   readonly successMsg = signal('');
@@ -42,12 +53,8 @@ export class PatientProfileComponent implements OnInit {
   readonly profile = signal<Profile | null>(null);
   readonly patientCard = signal<PatientIdCard | null>(null);
 
-  name = '';
-  allergies = '';
-  currentMedications = '';
-  chronicConditions = '';
-
-  constructor(private readonly auth: AuthService) {}
+  readonly profileFormModel = signal(emptyProfileForm());
+  readonly profileForm = form(this.profileFormModel);
 
   ngOnInit() {
     void this.load();
@@ -76,10 +83,12 @@ export class PatientProfileComponent implements OnInit {
     try {
       const { profile } = await this.apiFetch<{ profile: Profile }>(API_PATHS.PATIENT.PROFILE);
       this.profile.set(profile);
-      this.name = profile.name;
-      this.allergies = profile.allergies || '';
-      this.currentMedications = profile.currentMedications || '';
-      this.chronicConditions = profile.chronicConditions || '';
+      this.profileFormModel.set({
+        name: profile.name,
+        allergies: profile.allergies || '',
+        currentMedications: profile.currentMedications || '',
+        chronicConditions: profile.chronicConditions || '',
+      });
 
       try {
         const { card } = await this.apiFetch<{ card: PatientIdCard }>(API_PATHS.PATIENT.CARD);
@@ -118,6 +127,7 @@ export class PatientProfileComponent implements OnInit {
   }
 
   async save() {
+    const form = this.profileFormModel();
     this.saving.set(true);
     this.successMsg.set('');
     this.errorMsg.set('');
@@ -125,10 +135,10 @@ export class PatientProfileComponent implements OnInit {
       const { profile } = await this.apiFetch<{ profile: Profile }>(API_PATHS.PATIENT.PROFILE, {
         method: 'PUT',
         body: JSON.stringify({
-          name: this.name.trim(),
-          allergies: this.allergies.trim() || undefined,
-          currentMedications: this.currentMedications.trim() || undefined,
-          chronicConditions: this.chronicConditions.trim() || undefined,
+          name: form.name.trim(),
+          allergies: form.allergies.trim() || undefined,
+          currentMedications: form.currentMedications.trim() || undefined,
+          chronicConditions: form.chronicConditions.trim() || undefined,
         }),
       });
       this.profile.set(profile);

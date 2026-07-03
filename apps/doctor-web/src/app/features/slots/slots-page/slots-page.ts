@@ -1,5 +1,5 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { form, FormField } from '@angular/forms/signals';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../../environments/environment';
@@ -30,7 +30,7 @@ function generateSlots(start: string, end: string, stepMins: number): { startTim
 
 @Component({
   selector: 'app-slots-page',
-  imports: [FormsModule],
+  imports: [FormField],
   templateUrl: './slots-page.html',
   styleUrl: './slots-page.scss'
 })
@@ -46,8 +46,8 @@ export class SlotsPage implements OnInit {
   weekStart = signal(this.mondayOf(new Date()));
   weekDates = signal(this.buildWeek(this.mondayOf(new Date())));
 
-  newStart = '09:00';
-  newEnd = '09:30';
+  readonly slotDraftModel = signal({ newStart: '09:00', newEnd: '09:30' });
+  readonly slotDraftForm = form(this.slotDraftModel);
   templates = SLOT_TEMPLATES;
 
   ngOnInit(): void { this.load(); }
@@ -101,14 +101,15 @@ export class SlotsPage implements OnInit {
   }
 
   async addSlot(): Promise<void> {
-    if (!this.newStart || !this.newEnd || this.newEnd <= this.newStart) {
+    const { newStart, newEnd } = this.slotDraftModel();
+    if (!newStart || !newEnd || newEnd <= newStart) {
       this.showToast('Invalid time range'); return;
     }
     const token = this.auth.token();
     try {
       await firstValueFrom(
         this.http.post<{ slot: Slot }>(`${this.base}${API_PATHS.DOCTOR.SLOTS}`, {
-          date: this.selectedDate(), startTime: this.newStart, endTime: this.newEnd
+          date: this.selectedDate(), startTime: newStart, endTime: newEnd
         }, { headers: { Authorization: `Bearer ${token}` } })
       );
       this.load();

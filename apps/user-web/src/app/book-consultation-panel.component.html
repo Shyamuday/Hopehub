@@ -4,16 +4,16 @@
 
       <label>
         Purchase type
-        <select [(ngModel)]="purchaseType">
+        <select [formField]="bookingForm.purchaseType">
           <option [value]="PURCHASE_TYPES.ONE_TIME">One-time appointment</option>
           <option [value]="PURCHASE_TYPES.PLAN">Plan purchase</option>
         </select>
       </label>
 
-      @if (purchaseType === PURCHASE_TYPES.PLAN) {
+      @if (bookingFormModel().purchaseType === PURCHASE_TYPES.PLAN) {
         <label>
           Select plan
-          <select [(ngModel)]="selectedPlanCode">
+          <select [formField]="bookingForm.selectedPlanCode">
             @for (plan of plans; track plan.code) {
               @if (plan.code !== BILLING_PLAN_CODES.ONE_TIME) {
                 <option [value]="plan.code">
@@ -30,7 +30,7 @@
 
       <label>
         Select problem
-        <select [(ngModel)]="selectedDiseaseId" (ngModelChange)="resetAnswers()">
+        <select [formField]="bookingForm.selectedDiseaseId" (change)="onDiseaseChange()">
           @for (disease of diseases; track disease.id) {
             <option [value]="disease.id">
               {{ disease.name }} — {{ disease.feeInPaise / 100 | currency: CURRENCY_CODE }}
@@ -42,11 +42,15 @@
       @for (question of intakeQuestions(); track question) {
         <label>
           {{ question }}
-          <input [(ngModel)]="intakeAnswers[question]" placeholder="Type your answer" />
+          <input
+            [value]="intakeAnswer(question)"
+            (input)="patchIntakeAnswer(question, $event)"
+            attr.placeholder="Type your answer"
+          />
         </label>
       }
 
-      <button class="primary" [disabled]="disabled || !selectedDiseaseId" (click)="submit()">
+      <button class="primary" [disabled]="disabled || !bookingFormModel().selectedDiseaseId" (click)="submit()">
         Create consultation
       </button>
       <p class="muted">
@@ -55,4 +59,3 @@
         After payment, consultation moves to doctor assignment.
       </p>
     </div>
-  

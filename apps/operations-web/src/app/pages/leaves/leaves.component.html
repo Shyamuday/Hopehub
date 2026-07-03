@@ -85,7 +85,8 @@
                 <div class="leave-actions">
                   <input
                     class="note-input"
-                    [(ngModel)]="hrNotes[leave.id]"
+                    [value]="hrNoteFor(leave.id)"
+                    (input)="setHrNote(leave.id, $any($event.target).value)"
                     placeholder="Add HR note (optional)..."
                   />
                   <button
@@ -121,18 +122,18 @@
             <div class="form-grid">
               <div class="form-group full-width">
                 <label class="form-label">Employee Type</label>
-                <select class="form-input" [(ngModel)]="addForm.employeeType">
+                <select class="form-input" [formField]="addForm.employeeType">
                   <option value="DOCTOR">Doctor</option>
                   <option value="STORE_STAFF">Store Staff</option>
                 </select>
               </div>
               <div class="form-group full-width">
                 <label class="form-label">Employee ID</label>
-                <input class="form-input" [(ngModel)]="addForm.employeeId" placeholder="Doctor or Staff ID" />
+                <input class="form-input" [formField]="addForm.employeeId" attr.placeholder="Doctor or Staff ID" />
               </div>
               <div class="form-group full-width">
                 <label class="form-label">Leave Type</label>
-                <select class="form-input" [(ngModel)]="addForm.type">
+                <select class="form-input" [formField]="addForm.type">
                   @for (lt of leaveTypes; track lt) {
                     <option [value]="lt">{{ lt }}</option>
                   }
@@ -140,15 +141,15 @@
               </div>
               <div class="form-group">
                 <label class="form-label">Start Date</label>
-                <input class="form-input" type="date" [(ngModel)]="addForm.startDate" />
+                <input class="form-input" type="date" [formField]="addForm.startDate" />
               </div>
               <div class="form-group">
                 <label class="form-label">End Date</label>
-                <input class="form-input" type="date" [(ngModel)]="addForm.endDate" />
+                <input class="form-input" type="date" [formField]="addForm.endDate" />
               </div>
               <div class="form-group full-width">
                 <label class="form-label">Reason</label>
-                <textarea class="form-input" [(ngModel)]="addForm.reason" rows="3" placeholder="Reason for leave..."></textarea>
+                <textarea class="form-input" [formField]="addForm.reason" rows="3" attr.placeholder="Reason for leave..."></textarea>
               </div>
             </div>
           </div>

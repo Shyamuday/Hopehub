@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, OnChanges, Output } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { Component, EventEmitter, Input, OnChanges, Output, signal } from '@angular/core';
+import { form, FormField } from '@angular/forms/signals';
 import {
   BILLING_PLAN_CODES,
   CURRENCY_CODE,
@@ -15,11 +15,26 @@ export type BookConsultationPayload = {
   planCode?: string;
 };
 
+type BookingForm = {
+  purchaseType: typeof PURCHASE_TYPES.ONE_TIME | typeof PURCHASE_TYPES.PLAN;
+  selectedPlanCode: string;
+  selectedDiseaseId: string;
+  intakeAnswers: Record<string, string>;
+};
+
+function emptyBookingForm(): BookingForm {
+  return {
+    purchaseType: PURCHASE_TYPES.ONE_TIME,
+    selectedPlanCode: '',
+    selectedDiseaseId: '',
+    intakeAnswers: {},
+  };
+}
+
 @Component({
   selector: 'app-book-consultation-panel',
   standalone: true,
-  imports: [CommonModule, FormsModule]
-,
+  imports: [CommonModule, FormField],
   templateUrl: './book-consultation-panel.component.html',
 })
 export class BookConsultationPanelComponent implements OnChanges {
@@ -31,28 +46,32 @@ export class BookConsultationPanelComponent implements OnChanges {
   @Input() disabled = false;
   @Output() booked = new EventEmitter<BookConsultationPayload>();
 
-  purchaseType: typeof PURCHASE_TYPES.ONE_TIME | typeof PURCHASE_TYPES.PLAN =
-    PURCHASE_TYPES.ONE_TIME;
-  selectedPlanCode = '';
-  selectedDiseaseId = '';
-  intakeAnswers: Record<string, string> = {};
+  readonly bookingFormModel = signal<BookingForm>(emptyBookingForm());
+  readonly bookingForm = form(this.bookingFormModel);
 
   ngOnChanges() {
-    if (!this.selectedDiseaseId && this.diseases.length) {
-      this.selectedDiseaseId = this.diseases[0].id;
+    const current = this.bookingFormModel();
+    const updates: Partial<BookingForm> = {};
+    if (!current.selectedDiseaseId && this.diseases.length) {
+      updates.selectedDiseaseId = this.diseases[0].id;
     }
-    if (!this.selectedPlanCode) {
-      this.selectedPlanCode =
+    if (!current.selectedPlanCode) {
+      updates.selectedPlanCode =
         this.plans.find((p) => p.code !== BILLING_PLAN_CODES.ONE_TIME)?.code || '';
+    }
+    if (Object.keys(updates).length) {
+      this.bookingFormModel.update((m) => ({ ...m, ...updates }));
     }
   }
 
   selectedDisease() {
-    return this.diseases.find((d) => d.id === this.selectedDiseaseId) || null;
+    const { selectedDiseaseId } = this.bookingFormModel();
+    return this.diseases.find((d) => d.id === selectedDiseaseId) || null;
   }
 
   selectedPlanDescription() {
-    return this.plans.find((p) => p.code === this.selectedPlanCode)?.description || null;
+    const { selectedPlanCode } = this.bookingFormModel();
+    return this.plans.find((p) => p.code === selectedPlanCode)?.description || null;
   }
 
   intakeQuestions() {
@@ -60,23 +79,37 @@ export class BookConsultationPanelComponent implements OnChanges {
   }
 
   estimatedAmount() {
-    if (this.purchaseType === PURCHASE_TYPES.PLAN) {
-      return this.plans.find((p) => p.code === this.selectedPlanCode)?.priceInPaise || 0;
+    const { purchaseType, selectedPlanCode } = this.bookingFormModel();
+    if (purchaseType === PURCHASE_TYPES.PLAN) {
+      return this.plans.find((p) => p.code === selectedPlanCode)?.priceInPaise || 0;
     }
     return this.selectedDisease()?.feeInPaise || 0;
   }
 
-  resetAnswers() {
-    this.intakeAnswers = {};
+  onDiseaseChange() {
+    this.bookingFormModel.update((m) => ({ ...m, intakeAnswers: {} }));
+  }
+
+  patchIntakeAnswer(question: string, event: Event) {
+    const value = (event.target as HTMLInputElement).value;
+    this.bookingFormModel.update((m) => ({
+      ...m,
+      intakeAnswers: { ...m.intakeAnswers, [question]: value },
+    }));
+  }
+
+  intakeAnswer(question: string): string {
+    return this.bookingFormModel().intakeAnswers[question] ?? '';
   }
 
   submit() {
-    if (!this.selectedDiseaseId) return;
+    const form = this.bookingFormModel();
+    if (!form.selectedDiseaseId) return;
     this.booked.emit({
-      diseaseId: this.selectedDiseaseId,
-      intakeAnswers: { ...this.intakeAnswers },
-      purchaseType: this.purchaseType,
-      ...(this.purchaseType === PURCHASE_TYPES.PLAN ? { planCode: this.selectedPlanCode } : {}),
+      diseaseId: form.selectedDiseaseId,
+      intakeAnswers: { ...form.intakeAnswers },
+      purchaseType: form.purchaseType,
+      ...(form.purchaseType === PURCHASE_TYPES.PLAN ? { planCode: form.selectedPlanCode } : {}),
     });
   }
 }

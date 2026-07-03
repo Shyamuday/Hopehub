@@ -11,7 +11,7 @@ import { CLINIC_API_BASE_URL, CLINIC_AUTH_TOKEN_KEY } from '@vitalis/clinic-api'
 import { routes } from './app.routes';
 import { authInterceptor } from './core/interceptors/auth.interceptor';
 import { AUTH_TOKEN_KEY } from './core/constants/auth.constants';
-import { AdminAuth } from '../../../admin-web/src/app/core/services/admin-auth';
+import { AdminAuth } from '@vitalis/admin-console/core/services/admin-auth';
 import { AdminAuthBridge } from './admin/admin-auth.bridge';
 import { DevDemoService } from './services/dev-demo.service';
 import { environment } from '../environments/environment';

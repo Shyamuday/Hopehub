@@ -22,7 +22,7 @@
         </div>
         <label>
           New message
-          <textarea [(ngModel)]="messageBody"></textarea>
+          <textarea [formField]="detailForm.messageBody"></textarea>
         </label>
         <button class="secondary" [disabled]="disabled" (click)="emitSendMessage()">
           Send message
@@ -32,13 +32,13 @@
           <h3>Prescription</h3>
           <label>
             Notes
-            <textarea [(ngModel)]="prescription.notes"></textarea>
+            <textarea [formField]="detailForm.prescriptionNotes"></textarea>
           </label>
           <label>
             File URL
-            <input [(ngModel)]="prescription.fileUrl" placeholder="https://..." />
+            <input [formField]="detailForm.prescriptionFileUrl" attr.placeholder="https://..." />
           </label>
-          <button class="primary" [disabled]="disabled" (click)="uploadPrescription.emit({ notes: prescription.notes, fileUrl: prescription.fileUrl })">
+          <button class="primary" [disabled]="disabled" (click)="emitUploadPrescription()">
             Upload prescription
           </button>
           <button class="secondary" [disabled]="disabled" (click)="complete.emit()">
@@ -61,4 +61,3 @@
         <p class="muted">Select a consultation to view details.</p>
       }
     </div>
-  

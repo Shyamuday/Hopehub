@@ -5,7 +5,7 @@
       <p>Attendance and shift visibility for your branch</p>
     </div>
     <div class="hdr-actions">
-      <input type="date" [ngModel]="date()" (ngModelChange)="date.set($event)" />
+      <input type="date" [formField]="filterForm.date" (change)="reload()" />
       <button type="button" class="btn-refresh" (click)="reload()" [disabled]="loading()">Refresh</button>
     </div>
   </div>

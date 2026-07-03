@@ -5,28 +5,28 @@
 
       <div class="channel-grid">
         <label class="channel">
-          <input type="checkbox" [(ngModel)]="prefs.inApp" />
+          <input type="checkbox" [formField]="prefsForm.inApp" />
           <span>
             <strong>In-app</strong>
             <small>Dashboard reminders while you are logged in</small>
           </span>
         </label>
         <label class="channel">
-          <input type="checkbox" [(ngModel)]="prefs.sms" />
+          <input type="checkbox" [formField]="prefsForm.sms" />
           <span>
             <strong>SMS</strong>
             <small>Text message to your registered mobile</small>
           </span>
         </label>
         <label class="channel">
-          <input type="checkbox" [(ngModel)]="prefs.whatsapp" />
+          <input type="checkbox" [formField]="prefsForm.whatsapp" />
           <span>
             <strong>WhatsApp</strong>
             <small>Requires an opted-in WhatsApp number</small>
           </span>
         </label>
         <label class="channel">
-          <input type="checkbox" [(ngModel)]="prefs.push" />
+          <input type="checkbox" [formField]="prefsForm.push" />
           <span>
             <strong>Push</strong>
             <small>Browser / app notifications when enabled</small>
@@ -37,13 +37,13 @@
       <div class="quiet-hours">
         <label>
           Quiet hours start
-          <input type="time" [(ngModel)]="prefs.quietHoursStart" [placeholder]="DEFAULT_QUIET_HOURS.START" />
+          <input type="time" [formField]="prefsForm.quietHoursStart" [attr.placeholder]="DEFAULT_QUIET_HOURS.START" />
         </label>
         <label>
           Quiet hours end
-          <input type="time" [(ngModel)]="prefs.quietHoursEnd" [placeholder]="DEFAULT_QUIET_HOURS.END" />
+          <input type="time" [formField]="prefsForm.quietHoursEnd" [attr.placeholder]="DEFAULT_QUIET_HOURS.END" />
         </label>
       </div>
 
-      <button class="primary" [disabled]="disabled" (click)="saved.emit(prefs)">Save preferences</button>
+      <button class="primary" [disabled]="disabled" (click)="save()">Save preferences</button>
     </div>

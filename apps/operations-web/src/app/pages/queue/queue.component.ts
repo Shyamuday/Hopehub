@@ -1,5 +1,5 @@
 import { Component, inject, signal } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { form, FormField } from '@angular/forms/signals';
 import { DatePipe } from '@angular/common';
 import { httpResource } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
@@ -20,7 +20,7 @@ const EMPTY_SUMMARY = { total: 0, awaitingPayment: 0, awaitingDoctor: 0, inProgr
 @Component({
   selector: 'app-queue',
   standalone: true,
-  imports: [FormsModule, DatePipe],
+  imports: [FormField, DatePipe],
   templateUrl: './queue.component.html',
   styleUrl: './queue.component.scss'
 })
@@ -29,10 +29,12 @@ export class QueueComponent {
 
   readonly statusFilter = signal('');
   readonly query = signal('');
-  searchInput = '';
+  readonly searchModel = signal({ q: '' });
+  readonly searchForm = form(this.searchModel);
   toast = signal('');
   assignTarget = signal<QueueConsultation | null>(null);
-  selectedDoctorId = '';
+  readonly assignFormModel = signal({ doctorId: '' });
+  readonly assignForm = form(this.assignFormModel);
 
   readonly statusFilters = STATUS_FILTERS;
 
@@ -61,7 +63,7 @@ export class QueueComponent {
   doctors = () => this.doctorsResource.value()?.doctors ?? [];
 
   applySearch(): void {
-    this.query.set(this.searchInput.trim());
+    this.query.set(this.searchModel().q.trim());
   }
 
   reload(): void {
@@ -84,19 +86,20 @@ export class QueueComponent {
 
   openAssign(item: QueueConsultation): void {
     this.assignTarget.set(item);
-    this.selectedDoctorId = item.assignedDoctor?.id ?? '';
+    this.assignFormModel.set({ doctorId: item.assignedDoctor?.id ?? '' });
   }
 
   closeAssign(): void {
     this.assignTarget.set(null);
-    this.selectedDoctorId = '';
+    this.assignFormModel.set({ doctorId: '' });
   }
 
   async submitAssign(): Promise<void> {
     const target = this.assignTarget();
-    if (!target || !this.selectedDoctorId) return;
+    const doctorId = this.assignFormModel().doctorId;
+    if (!target || !doctorId) return;
     try {
-      await this.api.assignDoctor(target.id, this.selectedDoctorId);
+      await this.api.assignDoctor(target.id, doctorId);
       this.showToast('Doctor assigned');
       this.closeAssign();
       this.reload();

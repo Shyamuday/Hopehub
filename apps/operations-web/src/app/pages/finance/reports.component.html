@@ -5,7 +5,7 @@
       <p>Month summary, branch P&amp;L, and GST-ready export bundle</p>
     </div>
     <div class="hdr-actions">
-      <select [(ngModel)]="branchExportFilter" class="branch-filter" title="Optional branch filter for export">
+      <select [formField]="filterForm.branchExportFilter" class="branch-filter" title="Optional branch filter for export">
         <option value="">All branches</option>
         <option value="CLINIC">Clinic (online / unallocated)</option>
         @for (row of branchPnl(); track row.storeId ?? row.storeCode) {
@@ -17,7 +17,7 @@
       <button type="button" class="btn-export" [disabled]="exporting() || loading()" (click)="exportBundle()">
         {{ exporting() ? 'Exporting…' : 'Export bundle' }}
       </button>
-      <input type="month" [(ngModel)]="selectedMonth" (change)="load()" class="month-inp" />
+      <input type="month" [formField]="filterForm.month" (change)="load()" class="month-inp" />
       <button type="button" class="btn-refresh" (click)="load()" [disabled]="loading()">Refresh</button>
     </div>
   </div>
@@ -54,7 +54,7 @@
     }
 
     <section class="section">
-      <h3>Branch P&amp;L — {{ selectedMonth }}</h3>
+      <h3>Branch P&amp;L — {{ filterModel().month }}</h3>
       <p class="note">Per-branch revenue, payroll, and expenses. Clinic-level costs appear under “Clinic (online / unallocated)”.</p>
       @if (!branchPnl().length) {
         <p class="empty">No branch data for this month.</p>

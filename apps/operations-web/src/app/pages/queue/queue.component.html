@@ -20,7 +20,7 @@
         {{ f.label }}
       </button>
     }
-    <input class="search" [(ngModel)]="searchInput" (keyup.enter)="applySearch()" placeholder="Search patient, mobile, ID…" />
+    <input class="search" [formField]="searchForm.q" (keyup.enter)="applySearch()" attr.placeholder="Search patient, mobile, ID…" />
     <button type="button" class="btn-apply" (click)="applySearch()">Search</button>
   </div>
 
@@ -73,7 +73,7 @@
     <div class="modal" (click)="$event.stopPropagation()">
       <h3>Assign doctor</h3>
       <p>{{ assignTarget()!.patient?.name }} — {{ assignTarget()!.disease?.name }}</p>
-      <select [(ngModel)]="selectedDoctorId">
+      <select [formField]="assignForm.doctorId">
         <option value="">Select doctor</option>
         @for (d of doctors(); track d.id) {
           <option [value]="d.id">{{ d.name }} ({{ d.specialty }})</option>
@@ -81,7 +81,7 @@
       </select>
       <div class="modal-actions">
         <button type="button" (click)="closeAssign()">Cancel</button>
-        <button type="button" class="btn-primary" [disabled]="!selectedDoctorId" (click)="submitAssign()">Assign</button>
+        <button type="button" class="btn-primary" [disabled]="!assignFormModel().doctorId" (click)="submitAssign()">Assign</button>
       </div>
     </div>
   </div>

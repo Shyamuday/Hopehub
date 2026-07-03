@@ -32,9 +32,9 @@
 
       <!-- Manual add -->
       <div class="manual-add">
-        <input type="time" [(ngModel)]="newStart" />
+        <input type="time" [formField]="slotDraftForm.newStart" />
         <span>to</span>
-        <input type="time" [(ngModel)]="newEnd" />
+        <input type="time" [formField]="slotDraftForm.newEnd" />
         <button class="btn-primary" (click)="addSlot()">+ Add Slot</button>
       </div>
 

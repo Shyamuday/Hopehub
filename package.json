@@ -35,7 +35,7 @@
     "dev:partners": "npm run dev:operations",
     "dev:api": "npm run dev --prefix apps/api",
     "build": "npm run build --prefix apps/api && npm run build --prefix apps/user-web",
-    "build:all": "npm run build --prefix apps/api && npm run build --prefix apps/user-web && npm run build --prefix apps/doctor-web && npm run build --prefix apps/operations-web",
+    "build:all": "npm run build --prefix apps/user-web && npm run build --prefix apps/doctor-web && npm run build --prefix apps/operations-web",
     "build:user": "npm run build --prefix apps/user-web",
     "build:doctor": "npm run build --prefix apps/doctor-web",
     "build:admin": "npm run build --prefix apps/operations-web",

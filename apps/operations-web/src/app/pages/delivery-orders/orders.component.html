@@ -63,9 +63,9 @@
         <h3>Proof of delivery</h3>
         <p class="muted">Ask the patient for the OTP sent when the order was created.</p>
         <label>OTP</label>
-        <input [(ngModel)]="otp" inputmode="numeric" />
+        <input [formField]="completeForm.otp" inputmode="numeric" />
         <label>Note (optional)</label>
-        <input [(ngModel)]="proofNote" placeholder="Handed to patient / security" />
+        <input [formField]="completeForm.proofNote" attr.placeholder="Handed to patient / security" />
         <div class="modal-actions">
           <button type="button" (click)="closeComplete()">Cancel</button>
           <button type="button" class="btn-primary" (click)="submitComplete()">Complete delivery</button>
@@ -79,7 +79,7 @@
       <div class="modal" (click)="$event.stopPropagation()">
         <h3>Mark delivery failed</h3>
         <label>Reason</label>
-        <textarea [(ngModel)]="failReason" rows="3" placeholder="Patient unavailable, wrong address, etc."></textarea>
+        <textarea [formField]="failForm.reason" rows="3" attr.placeholder="Patient unavailable, wrong address, etc."></textarea>
         <div class="modal-actions">
           <button type="button" (click)="closeFail()">Cancel</button>
           <button type="button" class="btn-primary" (click)="submitFail()">Confirm failed</button>

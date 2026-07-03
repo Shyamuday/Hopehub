@@ -17,23 +17,23 @@
 
   <div class="grid" [class.dimmed]="isLoading">
     <label for="name">Name</label>
-    <input id="name" name="name" [(ngModel)]="name" />
+    <input id="name" [formField]="profileForm.name" />
 
     <label for="email">Email</label>
-    <input id="email" name="email" [value]="email" readonly />
+    <input id="email" name="email" [value]="profileModel().email" readonly />
 
     <label for="mobile">Mobile</label>
-    <input id="mobile" name="mobile" [(ngModel)]="mobile" />
+    <input id="mobile" [formField]="profileForm.mobile" />
 
     <label for="specialty">Specialty</label>
-    <input id="specialty" name="specialty" [(ngModel)]="specialty" />
+    <input id="specialty" [formField]="profileForm.specialty" />
 
     <label for="registrationNo">Registration Number</label>
-    <input id="registrationNo" name="registrationNo" [(ngModel)]="registrationNo" />
+    <input id="registrationNo" [formField]="profileForm.registrationNo" />
   </div>
 
   <label class="checkbox">
-    <input type="checkbox" name="isAvailable" [(ngModel)]="isAvailable" />
+    <input type="checkbox" [formField]="profileForm.isAvailable" />
     Available for consultations
   </label>
 

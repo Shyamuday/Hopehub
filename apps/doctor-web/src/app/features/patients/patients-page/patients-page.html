@@ -10,11 +10,10 @@
   <div class="toolbar">
     <input
       placeholder="Mobile, email, patient code (RNC-000001), name, or ID"
-      name="patientSearchQuery"
-      [(ngModel)]="patientSearchQuery"
+      [formField]="searchForm.patientSearchQuery"
       (keyup.enter)="searchPatients()"
     />
-    <select name="patientSearchScope" [(ngModel)]="patientSearchScope">
+    <select [formField]="searchForm.patientSearchScope">
       <option value="auto">Clinic first, then global</option>
       <option value="clinic">My clinic only</option>
       <option value="global">All branches</option>
@@ -58,9 +57,9 @@
   <h3>Register walk-in patient</h3>
   <p class="muted">Email and mobile are optional. A unique patient code is assigned automatically.</p>
   <div class="toolbar column">
-    <input placeholder="Full name *" name="createPatientName" [(ngModel)]="createPatientName" />
-    <input placeholder="Mobile (optional, can be shared by family)" name="createPatientMobile" [(ngModel)]="createPatientMobile" />
-    <input placeholder="Email (optional)" name="createPatientEmail" [(ngModel)]="createPatientEmail" />
+    <input placeholder="Full name *" [formField]="createPatientForm.name" />
+    <input placeholder="Mobile (optional, can be shared by family)" [formField]="createPatientForm.mobile" />
+    <input placeholder="Email (optional)" [formField]="createPatientForm.email" />
     <button type="button" (click)="createPatient()" [disabled]="createPatientSaving()">
       {{ createPatientSaving() ? 'Saving...' : 'Create patient' }}
     </button>
@@ -89,7 +88,7 @@
 </section>
 }
 
-@if (patientId) {
+@if (trendModel().patientId) {
 <section class="panel">
   <h2>Lab Referrals &amp; Results</h2>
   @if (labReferralsLoading()) {
@@ -133,10 +132,10 @@
 <section class="panel">
   <h2>Patient Adherence Trend</h2>
   <div class="toolbar">
-    <input placeholder="Enter patient code, mobile, email, or ID" name="patientId" [(ngModel)]="patientId" />
-    <select name="days" [(ngModel)]="days">
-      <option [ngValue]="7">Last 7 days</option>
-      <option [ngValue]="30">Last 30 days</option>
+    <input placeholder="Enter patient code, mobile, email, or ID" [formField]="trendForm.patientId" />
+    <select [formField]="trendForm.days">
+      <option [value]="7">Last 7 days</option>
+      <option [value]="30">Last 30 days</option>
     </select>
     <button type="button" (click)="loadTrend()" [disabled]="loading()">{{ loading() ? 'Loading...' : 'Load Trend' }}</button>
   </div>
@@ -179,7 +178,7 @@
 
 <section class="panel">
   <h3>Dose Notes — Skipped &amp; Missed</h3>
-  <p class="panel-sub">Individual doses where a reason or note was recorded in the last {{ days }} days.</p>
+  <p class="panel-sub">Individual doses where a reason or note was recorded in the last {{ trendModel().days }} days.</p>
 
   @if (doseEventsLoading()) {
     <p class="muted">Loading dose notes...</p>

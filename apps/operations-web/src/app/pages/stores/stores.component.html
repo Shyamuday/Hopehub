@@ -92,19 +92,19 @@
           <div class="modal-body">
             <div class="fg">
               <label>Store Name *</label>
-              <input [(ngModel)]="storeForm.name" placeholder="e.g. Main Branch" />
+              <input [formField]="storeForm.name" attr.placeholder="e.g. Main Branch" />
             </div>
             <div class="fg">
               <label>Store Code * (unique, e.g. MAIN01)</label>
-              <input [(ngModel)]="storeForm.code" placeholder="MAIN01" style="text-transform:uppercase" />
+              <input [formField]="storeForm.code" attr.placeholder="MAIN01" style="text-transform:uppercase" />
             </div>
             <div class="fg">
               <label>Address</label>
-              <textarea [(ngModel)]="storeForm.address" rows="2" placeholder="Full address..."></textarea>
+              <textarea [formField]="storeForm.address" rows="2" attr.placeholder="Full address..."></textarea>
             </div>
             <div class="fg">
               <label>Phone</label>
-              <input [(ngModel)]="storeForm.phone" placeholder="+91 99999 00000" />
+              <input [formField]="storeForm.phone" attr.placeholder="+91 99999 00000" />
             </div>
           </div>
           <div class="modal-footer">
@@ -132,23 +132,23 @@
             </div>
             <div class="fg">
               <label>Full Name *</label>
-              <input [(ngModel)]="managerForm.name" placeholder="Store Manager Name" />
+              <input [formField]="managerForm.name" attr.placeholder="Store Manager Name" />
             </div>
             <div class="fg">
               <label>Email *</label>
-              <input type="email" [(ngModel)]="managerForm.email" placeholder="manager@store.com" />
+              <input type="email" [formField]="managerForm.email" attr.placeholder="manager@store.com" />
             </div>
             <div class="fg">
               <label>Password * (min 6 characters)</label>
-              <input type="password" [(ngModel)]="managerForm.password" placeholder="Set a strong password" />
+              <input type="password" [formField]="managerForm.password" attr.placeholder="Set a strong password" />
             </div>
             <div class="fg">
               <label>Designation</label>
-              <input [(ngModel)]="managerForm.designation" placeholder="Store Manager" />
+              <input [formField]="managerForm.designation" attr.placeholder="Store Manager" />
             </div>
             <div class="fg">
               <label>Joining Date</label>
-              <input type="date" [(ngModel)]="managerForm.joiningDate" />
+              <input type="date" [formField]="managerForm.joiningDate" />
             </div>
           </div>
           <div class="modal-footer">
@@ -176,31 +176,31 @@
             </div>
             <div class="fg">
               <label>Full Name *</label>
-              <input [(ngModel)]="staffForm.name" placeholder="Staff Member Name" />
+              <input [formField]="staffForm.name" attr.placeholder="Staff Member Name" />
             </div>
             <div class="fg">
               <label>Staff Code * (unique ID, e.g. S001)</label>
-              <input [(ngModel)]="staffForm.staffCode" placeholder="S001" style="text-transform:uppercase" />
+              <input [formField]="staffForm.staffCode" attr.placeholder="S001" style="text-transform:uppercase" />
             </div>
             <div class="fg">
               <label>Email *</label>
-              <input type="email" [(ngModel)]="staffForm.email" placeholder="staff@store.vitalis.local" />
+              <input type="email" [formField]="staffForm.email" attr.placeholder="staff@store.vitalis.local" />
             </div>
             <div class="fg">
               <label>Password * (min 8 characters)</label>
-              <input type="password" [(ngModel)]="staffForm.password" placeholder="Initial password" />
+              <input type="password" [formField]="staffForm.password" attr.placeholder="Initial password" />
             </div>
             <div class="fg">
               <label>Designation</label>
-              <input [(ngModel)]="staffForm.designation" placeholder="Store Assistant" />
+              <input [formField]="staffForm.designation" attr.placeholder="Store Assistant" />
             </div>
             <div class="fg">
               <label>Phone</label>
-              <input type="tel" [(ngModel)]="staffForm.phone" placeholder="+91 99999 00000" />
+              <input type="tel" [formField]="staffForm.phone" attr.placeholder="+91 99999 00000" />
             </div>
             <div class="fg">
               <label>Joining Date</label>
-              <input type="date" [(ngModel)]="staffForm.joiningDate" />
+              <input type="date" [formField]="staffForm.joiningDate" />
             </div>
           </div>
           <div class="modal-footer">

@@ -51,7 +51,7 @@
 
         <div class="field">
           <label>Full name</label>
-          <input name="name" [(ngModel)]="name" placeholder="Your full name" />
+          <input [formField]="profileForm.name" attr.placeholder="Your full name" />
         </div>
 
         <div class="field">
@@ -67,20 +67,20 @@
 
         <div class="field">
           <label>Known allergies</label>
-          <textarea name="allergies" [(ngModel)]="allergies"
-            placeholder="e.g. Penicillin, dust, pollen (leave blank if none)"></textarea>
+          <textarea [formField]="profileForm.allergies"
+            attr.placeholder="e.g. Penicillin, dust, pollen (leave blank if none)"></textarea>
         </div>
 
         <div class="field">
           <label>Current medications</label>
-          <textarea name="currentMedications" [(ngModel)]="currentMedications"
-            placeholder="List any medicines you take regularly"></textarea>
+          <textarea [formField]="profileForm.currentMedications"
+            attr.placeholder="List any medicines you take regularly"></textarea>
         </div>
 
         <div class="field">
           <label>Chronic conditions</label>
-          <textarea name="chronicConditions" [(ngModel)]="chronicConditions"
-            placeholder="e.g. Diabetes, hypertension, thyroid (leave blank if none)"></textarea>
+          <textarea [formField]="profileForm.chronicConditions"
+            attr.placeholder="e.g. Diabetes, hypertension, thyroid (leave blank if none)"></textarea>
         </div>
 
         <div class="save-row">

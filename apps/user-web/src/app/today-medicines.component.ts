@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, Output } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { Component, EventEmitter, Input, OnChanges, Output, signal } from '@angular/core';
+import { form, FormField } from '@angular/forms/signals';
 import { DoseEvent } from './models';
 
 export const DOSE_SKIP_REASONS = [
@@ -24,11 +24,11 @@ export const SNOOZE_OPTIONS = [15, 30, 60] as const;
 @Component({
   selector: 'app-today-medicines',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormField],
   templateUrl: './today-medicines.component.html',
   styleUrl: './today-medicines.component.scss',
 })
-export class TodayMedicinesComponent {
+export class TodayMedicinesComponent implements OnChanges {
   readonly skipReasons = DOSE_SKIP_REASONS;
   readonly missedReasons = DOSE_MISSED_REASONS;
   readonly snoozeOptions = SNOOZE_OPTIONS;
@@ -45,23 +45,33 @@ export class TodayMedicinesComponent {
   @Output() snoozeMinutesChange = new EventEmitter<number>();
 
   skippingDoseId = '';
-  skipNote = '';
   explainingDoseId = '';
-  explainNote = '';
+
+  readonly skipNoteModel = signal({ note: '' });
+  readonly skipNoteForm = form(this.skipNoteModel);
+
+  readonly explainNoteModel = signal({ note: '' });
+  readonly explainNoteForm = form(this.explainNoteModel);
+
+  readonly snoozeModel = signal({ minutes: 30 });
+
+  ngOnChanges() {
+    this.snoozeModel.set({ minutes: this.snoozeMinutes });
+  }
 
   startSkip(doseId: string) {
     this.skippingDoseId = doseId;
-    this.skipNote = '';
+    this.skipNoteModel.set({ note: '' });
     this.explainingDoseId = '';
   }
 
   cancelSkip() {
     this.skippingDoseId = '';
-    this.skipNote = '';
+    this.skipNoteModel.set({ note: '' });
   }
 
   confirmSkip(doseId: string) {
-    const note = this.skipNote.trim();
+    const note = this.skipNoteModel().note.trim();
     if (note.length < 2) {
       return;
     }
@@ -71,17 +81,17 @@ export class TodayMedicinesComponent {
 
   startExplain(doseId: string) {
     this.explainingDoseId = doseId;
-    this.explainNote = '';
+    this.explainNoteModel.set({ note: '' });
     this.skippingDoseId = '';
   }
 
   cancelExplain() {
     this.explainingDoseId = '';
-    this.explainNote = '';
+    this.explainNoteModel.set({ note: '' });
   }
 
   confirmExplain(doseId: string) {
-    const note = this.explainNote.trim();
+    const note = this.explainNoteModel().note.trim();
     if (note.length < 2) {
       return;
     }
@@ -89,8 +99,22 @@ export class TodayMedicinesComponent {
     this.cancelExplain();
   }
 
+  setSkipReason(reason: string) {
+    this.skipNoteModel.set({ note: reason });
+  }
+
+  setExplainReason(reason: string) {
+    this.explainNoteModel.set({ note: reason });
+  }
+
+  onSnoozeMinutesSelect(event: Event) {
+    const minutes = Number((event.target as HTMLSelectElement).value);
+    this.snoozeModel.set({ minutes });
+    this.snoozeMinutesChange.emit(minutes);
+  }
+
   applySnoozePreset(doseId: string, minutes: number) {
-    this.snoozeMinutes = minutes;
+    this.snoozeModel.set({ minutes });
     this.snoozeMinutesChange.emit(minutes);
     this.snoozed.emit({ id: doseId, minutes });
   }

@@ -1,12 +1,32 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { form, FormField } from '@angular/forms/signals';
 import { HrApiService } from '../../services/hr-api.service';
 import { StoreInfo } from '../../models';
 import { TOAST_DURATION_MS } from '../../core/constants/timing.constants';
 
+function emptyStoreForm() {
+  return { name: '', code: '', address: '', phone: '' };
+}
+
+function emptyManagerForm() {
+  return { name: '', email: '', password: '', designation: 'Store Manager', joiningDate: '' };
+}
+
+function emptyStaffForm() {
+  return {
+    name: '',
+    staffCode: '',
+    email: '',
+    password: '',
+    designation: 'Store Assistant',
+    phone: '',
+    joiningDate: ''
+  };
+}
+
 @Component({
   selector: 'app-stores',
-  imports: [FormsModule],
+  imports: [FormField],
   templateUrl: './stores.component.html',
   styleUrl: './stores.component.scss'
 })
@@ -21,9 +41,12 @@ export class StoresComponent implements OnInit {
   error = signal('');
   toast = signal('');
 
-  storeForm = { name: '', code: '', address: '', phone: '' };
-  managerForm = { name: '', email: '', password: '', designation: 'Store Manager', joiningDate: '' };
-  staffForm = { name: '', staffCode: '', email: '', password: '', designation: 'Store Assistant', phone: '', joiningDate: '' };
+  readonly storeFormModel = signal(emptyStoreForm());
+  readonly storeForm = form(this.storeFormModel);
+  readonly managerFormModel = signal(emptyManagerForm());
+  readonly managerForm = form(this.managerFormModel);
+  readonly staffFormModel = signal(emptyStaffForm());
+  readonly staffForm = form(this.staffFormModel);
 
   ngOnInit(): void { this.load(); }
 
@@ -40,21 +63,21 @@ export class StoresComponent implements OnInit {
   }
 
   openCreateStore(): void {
-    this.storeForm = { name: '', code: '', address: '', phone: '' };
+    this.storeFormModel.set(emptyStoreForm());
     this.error.set('');
     this.modal.set('store');
   }
 
   openCreateManager(store: StoreInfo): void {
     this.selectedStore.set(store);
-    this.managerForm = { name: '', email: '', password: '', designation: 'Store Manager', joiningDate: '' };
+    this.managerFormModel.set(emptyManagerForm());
     this.error.set('');
     this.modal.set('manager');
   }
 
   openCreateStaff(store: StoreInfo): void {
     this.selectedStore.set(store);
-    this.staffForm = { name: '', staffCode: '', email: '', password: '', designation: 'Store Assistant', phone: '', joiningDate: '' };
+    this.staffFormModel.set(emptyStaffForm());
     this.error.set('');
     this.modal.set('staff');
   }
@@ -62,10 +85,11 @@ export class StoresComponent implements OnInit {
   closeModal(): void { this.modal.set(null); this.error.set(''); }
 
   saveStore(): void {
-    if (!this.storeForm.name || !this.storeForm.code) { this.error.set('Name and code are required'); return; }
+    const f = this.storeFormModel();
+    if (!f.name || !f.code) { this.error.set('Name and code are required'); return; }
     this.saving.set(true);
     this.error.set('');
-    this.api.createStore(this.storeForm).subscribe({
+    this.api.createStore(f).subscribe({
       next: (r) => {
         this.stores.update(list => [...list, { ...r.store, _count: { staff: 0 }, staff: [] }]);
         this.saving.set(false);
@@ -77,13 +101,14 @@ export class StoresComponent implements OnInit {
   }
 
   saveManager(): void {
-    if (!this.managerForm.name || !this.managerForm.email || !this.managerForm.password) {
+    const f = this.managerFormModel();
+    if (!f.name || !f.email || !f.password) {
       this.error.set('Name, email and password are required'); return;
     }
-    if (this.managerForm.password.length < 6) { this.error.set('Password must be at least 6 characters'); return; }
+    if (f.password.length < 6) { this.error.set('Password must be at least 6 characters'); return; }
     this.saving.set(true);
     this.error.set('');
-    this.api.createManager(this.selectedStore()!.id, this.managerForm).subscribe({
+    this.api.createManager(this.selectedStore()!.id, f).subscribe({
       next: (r) => {
         this.load();
         this.saving.set(false);
@@ -95,13 +120,14 @@ export class StoresComponent implements OnInit {
   }
 
   saveStaff(): void {
-    if (!this.staffForm.name || !this.staffForm.staffCode || !this.staffForm.email || !this.staffForm.password) {
+    const f = this.staffFormModel();
+    if (!f.name || !f.staffCode || !f.email || !f.password) {
       this.error.set('Name, staff code, email, and password are required'); return;
     }
-    if (this.staffForm.password.length < 8) { this.error.set('Password must be at least 8 characters'); return; }
+    if (f.password.length < 8) { this.error.set('Password must be at least 8 characters'); return; }
     this.saving.set(true);
     this.error.set('');
-    this.api.createStoreStaff(this.selectedStore()!.id, this.staffForm).subscribe({
+    this.api.createStoreStaff(this.selectedStore()!.id, f).subscribe({
       next: (r) => {
         this.load();
         this.saving.set(false);

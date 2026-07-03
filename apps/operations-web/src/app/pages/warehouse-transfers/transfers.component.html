@@ -56,25 +56,25 @@
       <div class="modal wide" (click)="$event.stopPropagation()">
         <h3>New transfer</h3>
         <label>Branch</label>
-        <select [(ngModel)]="createToStoreId">
+        <select [formField]="createForm.toStoreId">
           @for (branch of branches(); track branch.id) {
             <option [value]="branch.id">{{ branch.name }} ({{ branch.code }})</option>
           }
         </select>
         <label>Notes</label>
-        <input [(ngModel)]="createNotes" placeholder="Optional transfer note" />
+        <input [formField]="createForm.notes" attr.placeholder="Optional transfer note" />
         <div class="line-actions">
           <strong>Lines</strong>
           <button type="button" (click)="addCreateLine()">+ Add line</button>
         </div>
-        @for (line of createLines(); track $index) {
+        @for (line of createFormModel().lines; track $index; let i = $index) {
           <div class="recv-line">
-            <select [(ngModel)]="line.medicineId" (ngModelChange)="onCreateMedicineChange(line)">
+            <select [formField]="createForm.lines[i].medicineId" (change)="onCreateMedicineChange(i)">
               @for (row of stock(); track row.medicineId) {
                 <option [value]="row.medicineId">{{ row.name }} {{ row.potency }} ({{ row.currentQty }} avail)</option>
               }
             </select>
-            <label>Qty <input type="number" [(ngModel)]="line.qtyRequested" min="1" /></label>
+            <label>Qty <input type="number" [formField]="createForm.lines[i].qtyRequested" attr.min="1" /></label>
           </div>
         }
         <div class="modal-actions">
@@ -89,13 +89,13 @@
     <div class="modal-backdrop" (click)="closeDispatch()">
       <div class="modal wide" (click)="$event.stopPropagation()">
         <h3>Dispatch transfer</h3>
-        @for (line of dispatchLines(); track line.transferLineId) {
+        @for (line of dispatchFormModel().lines; track line.transferLineId; let i = $index) {
           <div class="recv-line">
             <div class="recv-title">{{ line.label }} (max {{ line.qtyRequested }})</div>
             <div class="recv-grid">
-              <label>Qty <input type="number" [(ngModel)]="line.qtyDispatched" min="1" [max]="line.qtyRequested" /></label>
+              <label>Qty <input type="number" [formField]="dispatchForm.lines[i].qtyDispatched" attr.min="1" /></label>
               <label>Source batch
-                <select [(ngModel)]="line.sourceBatchId">
+                <select [formField]="dispatchForm.lines[i].sourceBatchId">
                   @for (batch of line.batchOptions; track batch.id) {
                     <option [value]="batch.id">{{ batch.label }}</option>
                   }

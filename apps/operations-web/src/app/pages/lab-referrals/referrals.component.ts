@@ -1,5 +1,5 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { form, FormField } from '@angular/forms/signals';
 import { DatePipe } from '@angular/common';
 import { DiagnosticApiService } from '../../services/diagnostic-api.service';
 
@@ -10,10 +10,18 @@ type ResultLine = {
   resultFileUrl: string;
 };
 
+function emptyAcceptForm() {
+  return { partnerNotes: '', expectedResultDate: '' };
+}
+
+function emptyResultsForm() {
+  return { lines: [] as ResultLine[] };
+}
+
 @Component({
   selector: 'app-referrals',
   standalone: true,
-  imports: [FormsModule, DatePipe],
+  imports: [FormField, DatePipe],
   templateUrl: './referrals.component.html',
   styleUrl: './referrals.component.scss'
 })
@@ -26,11 +34,12 @@ export class ReferralsComponent implements OnInit {
   toast = signal('');
 
   acceptingId = signal<string | null>(null);
-  partnerNotes = '';
-  expectedResultDate = '';
-
   resultsId = signal<string | null>(null);
-  resultLines = signal<ResultLine[]>([]);
+
+  readonly acceptFormModel = signal(emptyAcceptForm());
+  readonly acceptForm = form(this.acceptFormModel);
+  readonly resultsFormModel = signal(emptyResultsForm());
+  readonly resultsForm = form(this.resultsFormModel);
 
   ngOnInit(): void {
     this.load();
@@ -52,21 +61,23 @@ export class ReferralsComponent implements OnInit {
 
   openAccept(referral: any): void {
     this.acceptingId.set(referral.id);
-    this.partnerNotes = referral.partnerNotes ?? '';
-    this.expectedResultDate = referral.expectedResultDate?.slice(0, 10) ?? '';
+    this.acceptFormModel.set({
+      partnerNotes: referral.partnerNotes ?? '',
+      expectedResultDate: referral.expectedResultDate?.slice(0, 10) ?? ''
+    });
   }
 
   closeAccept(): void {
     this.acceptingId.set(null);
-    this.partnerNotes = '';
-    this.expectedResultDate = '';
+    this.acceptFormModel.set(emptyAcceptForm());
   }
 
   async submitAccept(id: string): Promise<void> {
+    const form = this.acceptFormModel();
     try {
       await this.api.acceptReferral(id, {
-        partnerNotes: this.partnerNotes || undefined,
-        expectedResultDate: this.expectedResultDate || undefined
+        partnerNotes: form.partnerNotes || undefined,
+        expectedResultDate: form.expectedResultDate || undefined
       });
       this.showToast('Referral accepted');
       this.closeAccept();
@@ -88,25 +99,25 @@ export class ReferralsComponent implements OnInit {
 
   openResults(referral: any): void {
     this.resultsId.set(referral.id);
-    this.resultLines.set(
-      referral.lines.map((line: any) => ({
+    this.resultsFormModel.set({
+      lines: referral.lines.map((line: any) => ({
         lineId: line.id,
         testName: line.testName,
         resultSummary: line.resultSummary ?? '',
         resultFileUrl: line.resultFileUrl ?? ''
       }))
-    );
+    });
   }
 
   closeResults(): void {
     this.resultsId.set(null);
-    this.resultLines.set([]);
+    this.resultsFormModel.set(emptyResultsForm());
   }
 
   async submitResults(): Promise<void> {
     const id = this.resultsId();
     if (!id) return;
-    const lines = this.resultLines()
+    const lines = this.resultsFormModel().lines
       .filter((line) => line.resultSummary.trim())
       .map((line) => ({
         lineId: line.lineId,

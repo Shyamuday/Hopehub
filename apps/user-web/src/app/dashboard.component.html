@@ -45,8 +45,8 @@
             [todayDoses]="todayDoseEvents()"
             [needingReason]="dosesNeedingReason()"
             [disabled]="isProcessing()"
-            [snoozeMinutes]="snoozeMinutes"
-            (snoozeMinutesChange)="snoozeMinutes = $event"
+            [snoozeMinutes]="snoozeMinutes()"
+            (snoozeMinutesChange)="snoozeMinutes.set($event)"
             (taken)="markDoseTaken($event)"
             (skipped)="skipDose($event)"
             (snoozed)="snoozeDose($event)"
@@ -96,11 +96,11 @@
         <section class="grid two">
           <div class="panel">
             <h2>Add Doctor</h2>
-            <label>Name <input [(ngModel)]="doctorForm.name" /></label>
-            <label>Email <input [(ngModel)]="doctorForm.email" /></label>
-            <label>Mobile <input [(ngModel)]="doctorForm.mobile" /></label>
-            <label>Specialty <input [(ngModel)]="doctorForm.specialty" /></label>
-            <label>Password <input type="password" [(ngModel)]="doctorForm.password" /></label>
+            <label>Name <input [formField]="doctorForm.name" /></label>
+            <label>Email <input [formField]="doctorForm.email" /></label>
+            <label>Mobile <input [formField]="doctorForm.mobile" /></label>
+            <label>Specialty <input [formField]="doctorForm.specialty" /></label>
+            <label>Password <input type="password" [formField]="doctorForm.password" /></label>
             <button class="primary" (click)="createDoctor()">Create doctor</button>
           </div>
 
@@ -108,7 +108,7 @@
             <h2>Manual Assignment</h2>
             <label>
               Consultation
-              <select [(ngModel)]="assignment.consultationId">
+              <select [formField]="assignmentForm.consultationId">
                 @for (consultation of consultations(); track consultation.id) {
                   <option [value]="consultation.id">
                     {{ consultation.patient.name }} - {{ consultation.disease.name }} - {{ consultation.status }}
@@ -118,7 +118,7 @@
             </label>
             <label>
               Doctor
-              <select [(ngModel)]="assignment.doctorId">
+              <select [formField]="assignmentForm.doctorId">
                 @for (doctor of doctors(); track doctor.id) {
                   <option [value]="doctor.id">{{ doctor.name }} - {{ doctor.doctorProfile?.specialty }}</option>
                 }

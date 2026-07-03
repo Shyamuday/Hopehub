@@ -4,7 +4,7 @@
       <h2>My Earnings</h2>
       <p>Salary, consultation share, and net estimated pay</p>
     </div>
-    <input type="month" [(ngModel)]="selectedMonth" (change)="load()" />
+    <input type="month" [formField]="monthForm.selectedMonth" (change)="load()" />
   </div>
 
   @if (loading()) {

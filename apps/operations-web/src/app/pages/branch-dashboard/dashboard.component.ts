@@ -1,5 +1,5 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { form, FormField } from '@angular/forms/signals';
 import { BranchOwnerApiService } from '../../services/branch-owner-api.service';
 
 function formatPaise(paise: number): string {
@@ -9,7 +9,7 @@ function formatPaise(paise: number): string {
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormField],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.scss'
 })
@@ -18,7 +18,9 @@ export class DashboardComponent implements OnInit {
 
   loading = signal(true);
   error = signal('');
-  selectedMonth = new Date().toISOString().slice(0, 7);
+
+  readonly filterModel = signal({ month: new Date().toISOString().slice(0, 7) });
+  readonly filterForm = form(this.filterModel);
   data = signal<any>(null);
 
   readonly formatPaise = formatPaise;
@@ -30,7 +32,7 @@ export class DashboardComponent implements OnInit {
   load(): void {
     this.loading.set(true);
     this.error.set('');
-    this.api.getDashboard(this.selectedMonth)
+    this.api.getDashboard(this.filterModel().month)
       .then((res) => {
         this.data.set(res);
         this.loading.set(false);

@@ -13,7 +13,11 @@
       "@vitalis/hr-ui": ["libs/hr-ui/src/index.ts"],
       "@vitalis/hr-ui/*": ["libs/hr-ui/src/*"],
       "@vitalis/store-ui": ["libs/store-ui/src/index.ts"],
-      "@vitalis/store-ui/*": ["libs/store-ui/src/*"]
+      "@vitalis/store-ui/*": ["libs/store-ui/src/*"],
+      "@vitalis/contracts": ["libs/contracts/src/index.ts"],
+      "@vitalis/contracts/*": ["libs/contracts/src/*"],
+      "@vitalis/admin-console": ["libs/admin-console/src/index.ts"],
+      "@vitalis/admin-console/*": ["apps/admin-web/src/app/*"]
     }
   }
 }

@@ -19,12 +19,12 @@
             <div class="reason-form">
               <div class="chip-row">
                 @for (reason of missedReasons; track reason) {
-                  <button type="button" class="chip" [disabled]="disabled" (click)="explainNote = reason">{{ reason }}</button>
+                  <button type="button" class="chip" [disabled]="disabled" (click)="setExplainReason(reason)">{{ reason }}</button>
                 }
               </div>
-              <textarea rows="2" placeholder="Why was this dose missed or skipped?" [(ngModel)]="explainNote"></textarea>
+              <textarea rows="2" attr.placeholder="Why was this dose missed or skipped?" [formField]="explainNoteForm.note"></textarea>
               <div class="actions">
-                <button type="button" class="primary" [disabled]="disabled || explainNote.trim().length < 2" (click)="confirmExplain(dose.id)">
+                <button type="button" class="primary" [disabled]="disabled || explainNoteModel().note.trim().length < 2" (click)="confirmExplain(dose.id)">
                   Save reason
                 </button>
                 <button type="button" class="secondary" [disabled]="disabled" (click)="cancelExplain()">Cancel</button>
@@ -44,9 +44,13 @@
     <h3>Today&apos;s schedule</h3>
     <label class="snooze-default">
       Default snooze
-      <select [ngModel]="snoozeMinutes" (ngModelChange)="snoozeMinutesChange.emit($event)" [disabled]="disabled">
+      <select
+        [value]="snoozeModel().minutes"
+        (change)="onSnoozeMinutesSelect($event)"
+        [disabled]="disabled"
+      >
         @for (minutes of snoozeOptions; track minutes) {
-          <option [ngValue]="minutes">{{ minutes }} minutes</option>
+          <option [value]="minutes">{{ minutes }} minutes</option>
         }
       </select>
     </label>
@@ -72,12 +76,12 @@
               <div class="reason-form">
                 <div class="chip-row">
                   @for (reason of skipReasons; track reason) {
-                    <button type="button" class="chip" [disabled]="disabled" (click)="skipNote = reason">{{ reason }}</button>
+                    <button type="button" class="chip" [disabled]="disabled" (click)="setSkipReason(reason)">{{ reason }}</button>
                   }
                 </div>
-                <textarea rows="2" placeholder="Why are you skipping this dose?" [(ngModel)]="skipNote"></textarea>
+                <textarea rows="2" attr.placeholder="Why are you skipping this dose?" [formField]="skipNoteForm.note"></textarea>
                 <div class="actions">
-                  <button type="button" class="primary" [disabled]="disabled || skipNote.trim().length < 2" (click)="confirmSkip(dose.id)">
+                  <button type="button" class="primary" [disabled]="disabled || skipNoteModel().note.trim().length < 2" (click)="confirmSkip(dose.id)">
                     Confirm skip
                   </button>
                   <button type="button" class="secondary" [disabled]="disabled" (click)="cancelSkip()">Cancel</button>
@@ -87,8 +91,8 @@
               <div class="actions">
                 <button type="button" class="primary" [disabled]="disabled" (click)="taken.emit(dose.id)">Taken</button>
                 <button type="button" class="secondary" [disabled]="disabled" (click)="startSkip(dose.id)">Skip</button>
-                <button type="button" class="secondary" [disabled]="disabled" (click)="applySnoozePreset(dose.id, snoozeMinutes)">
-                  Snooze {{ snoozeMinutes }}m
+                <button type="button" class="secondary" [disabled]="disabled" (click)="applySnoozePreset(dose.id, snoozeModel().minutes)">
+                  Snooze {{ snoozeModel().minutes }}m
                 </button>
               </div>
               <div class="chip-row compact">

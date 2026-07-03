@@ -1,5 +1,5 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { form, FormField } from '@angular/forms/signals';
 import { AccountantApiService } from '../../services/accountant-api.service';
 
 function formatPaise(paise: number): string {
@@ -9,7 +9,7 @@ function formatPaise(paise: number): string {
 @Component({
   selector: 'app-reports',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormField],
   templateUrl: './reports.component.html',
   styleUrl: './reports.component.scss'
 })
@@ -20,8 +20,12 @@ export class ReportsComponent implements OnInit {
   error = signal('');
   exporting = signal(false);
   toast = signal('');
-  selectedMonth = new Date().toISOString().slice(0, 7);
-  branchExportFilter = '';
+
+  readonly filterModel = signal({
+    month: new Date().toISOString().slice(0, 7),
+    branchExportFilter: ''
+  });
+  readonly filterForm = form(this.filterModel);
 
   summary = signal<any>(null);
   branchPnl = signal<any[]>([]);
@@ -36,9 +40,10 @@ export class ReportsComponent implements OnInit {
   load(): void {
     this.loading.set(true);
     this.error.set('');
+    const month = this.filterModel().month;
     Promise.all([
-      this.api.getSummary(this.selectedMonth),
-      this.api.getBranches(this.selectedMonth)
+      this.api.getSummary(month),
+      this.api.getBranches(month)
     ])
       .then(([summary, branchData]) => {
         this.summary.set(summary);
@@ -54,17 +59,18 @@ export class ReportsComponent implements OnInit {
 
   async exportBundle(): Promise<void> {
     this.exporting.set(true);
+    const { month, branchExportFilter } = this.filterModel();
     try {
       const csv = await this.api.exportBundle({
-        month: this.selectedMonth,
-        storeId: this.branchExportFilter || undefined
+        month,
+        storeId: branchExportFilter || undefined
       });
       const blob = new Blob([csv], { type: 'text/csv' });
       const url = URL.createObjectURL(blob);
       const anchor = document.createElement('a');
       anchor.href = url;
-      const suffix = this.branchExportFilter ? `-${this.branchExportFilter}` : '';
-      anchor.download = `accountant-bundle-${this.selectedMonth}${suffix}.csv`;
+      const suffix = branchExportFilter ? `-${branchExportFilter}` : '';
+      anchor.download = `accountant-bundle-${month}${suffix}.csv`;
       anchor.click();
       URL.revokeObjectURL(url);
       this.showToast('Accountant bundle exported');

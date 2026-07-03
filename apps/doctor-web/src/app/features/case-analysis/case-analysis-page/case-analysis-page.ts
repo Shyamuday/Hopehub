@@ -1,6 +1,6 @@
 import { DecimalPipe } from '@angular/common';
-import { Component, signal } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { Component, inject, signal } from '@angular/core';
+import { form, FormField } from '@angular/forms/signals';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ROUTE_PATHS } from '../../../core/constants/app-routes.constants';
 import { CaseAnalysisApiService } from '../case-analysis-api.service';
@@ -18,23 +18,28 @@ import { formatRubricPath, rubricPathSegments } from '../rubric-path.util';
 @Component({
   selector: 'app-case-analysis-page',
   host: { class: 'case-analysis-page' },
-  imports: [FormsModule, RouterLink, DecimalPipe],
+  imports: [FormField, RouterLink, DecimalPipe],
   templateUrl: './case-analysis-page.html'
 })
 export class CaseAnalysisPage {
+  private readonly api = inject(CaseAnalysisApiService);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+
   readonly appointmentsPath = ROUTE_PATHS.APPOINTMENTS;
   readonly worklistPath = ROUTE_PATHS.WORKLIST;
   readonly weightOptions = [1, 2, 3, 4] as const;
 
-  consultationId = '';
+  readonly consultationId = this.route.snapshot.paramMap.get('consultationId') || '';
   readonly consultation = signal<ConsultationSummary | null>(null);
   readonly analysis = signal<CaseAnalysis | null>(null);
   readonly sources = signal<RepertorySource[]>([]);
-  selectedSourceId = '';
   readonly selectedRubrics = signal<SelectedRubric[]>([]);
-  notes = '';
 
-  rubricQuery = '';
+  readonly searchModel = signal({ selectedSourceId: '', rubricQuery: '' });
+  readonly searchForm = form(this.searchModel);
+  readonly notesModel = signal({ notes: '' });
+  readonly notesForm = form(this.notesModel);
   readonly searchResults = signal<RubricSearchResult[]>([]);
   readonly searchedOnce = signal(false);
   readonly maxResultScore = signal(0);
@@ -54,12 +59,7 @@ export class CaseAnalysisPage {
   readonly formatRubricPath = formatRubricPath;
   readonly rubricPathSegments = rubricPathSegments;
 
-  constructor(
-    private readonly api: CaseAnalysisApiService,
-    private readonly route: ActivatedRoute,
-    private readonly router: Router
-  ) {
-    this.consultationId = this.route.snapshot.paramMap.get('consultationId') || '';
+  constructor() {
     void this.loadSources();
     if (this.consultationId) {
       void this.load();
@@ -70,7 +70,10 @@ export class CaseAnalysisPage {
     try {
       const nextSources = await this.api.loadSources();
       this.sources.set(nextSources);
-      this.selectedSourceId = nextSources[0]?.id || '';
+      this.searchModel.update((model) => ({
+        ...model,
+        selectedSourceId: model.selectedSourceId || nextSources[0]?.id || ''
+      }));
     } catch {
       this.sources.set([]);
     }
@@ -88,9 +91,12 @@ export class CaseAnalysisPage {
       this.consultation.set(response.consultation);
       const nextAnalysis =
         response.analyses[0] ||
-        (await this.api.createAnalysis(id, { sourceId: this.selectedSourceId || undefined }));
+        (await this.api.createAnalysis(id, { sourceId: this.searchModel().selectedSourceId || undefined }));
       this.analysis.set(nextAnalysis);
-      this.selectedSourceId = nextAnalysis.source?.id || this.selectedSourceId;
+      this.searchModel.update((model) => ({
+        ...model,
+        selectedSourceId: nextAnalysis.source?.id || model.selectedSourceId
+      }));
       this.hydrateFromAnalysis(nextAnalysis);
     } catch {
       this.error.set('Could not load case analysis for this consultation.');
@@ -102,7 +108,7 @@ export class CaseAnalysisPage {
   }
 
   private hydrateFromAnalysis(nextAnalysis: CaseAnalysis) {
-    this.notes = nextAnalysis.notes || '';
+    this.notesModel.set({ notes: nextAnalysis.notes || '' });
     this.selectedRubrics.set(
       nextAnalysis.rubrics.map((item) => ({
         rubricId: item.rubricId,
@@ -153,7 +159,7 @@ export class CaseAnalysisPage {
   }
 
   async searchRubrics() {
-    const q = this.rubricQuery.trim();
+    const q = this.searchModel().rubricQuery.trim();
     if (q.length < 2) return;
 
     this.searching.set(true);
@@ -161,7 +167,7 @@ export class CaseAnalysisPage {
     this.searchedOnce.set(true);
     try {
       this.searchResults.set(
-        await this.api.searchRubrics(q, this.selectedSourceId || this.analysis()?.source?.id)
+        await this.api.searchRubrics(q, this.searchModel().selectedSourceId || this.analysis()?.source?.id)
       );
     } catch {
       this.error.set('Rubric search failed.');
@@ -230,7 +236,7 @@ export class CaseAnalysisPage {
     this.error.set('');
     this.message.set('');
     try {
-      const updated = await this.api.updateAnalysis(currentAnalysis.id, { notes: this.notes });
+      const updated = await this.api.updateAnalysis(currentAnalysis.id, { notes: this.notesModel().notes });
       this.analysis.set(updated);
       this.message.set('Notes saved.');
     } catch {

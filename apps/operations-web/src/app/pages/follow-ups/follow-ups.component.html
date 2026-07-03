@@ -5,10 +5,10 @@
       <p>Adherence cohorts for your branch — prioritize high-risk patients</p>
     </div>
     <div class="hdr-actions">
-      <select [(ngModel)]="days" (change)="load()" class="days-select">
-        <option [ngValue]="7">Last 7 days</option>
-        <option [ngValue]="14">Last 14 days</option>
-        <option [ngValue]="30">Last 30 days</option>
+      <select [formField]="filterForm.days" (change)="load()" class="days-select">
+        <option [value]="7">Last 7 days</option>
+        <option [value]="14">Last 14 days</option>
+        <option [value]="30">Last 30 days</option>
       </select>
       <button type="button" class="btn-refresh" (click)="load()" [disabled]="loading()">Refresh</button>
     </div>
