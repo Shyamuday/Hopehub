@@ -1,4 +1,4 @@
-import { Service } from '@angular/core';
+import { Service, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../../environments/environment';
@@ -16,7 +16,7 @@ import type {
 export class AppointmentsPrescriptionsService {
   private readonly apiBase = environment.apiUrl;
 
-  constructor(private readonly http: HttpClient) {}
+  private readonly http = inject(HttpClient);
 
   loadOptions(type: OptionType) {
     return firstValueFrom(

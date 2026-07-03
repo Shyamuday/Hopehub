@@ -1,6 +1,7 @@
 import { CommonModule, DatePipe } from '@angular/common';
 import { Component, effect, Input, OnDestroy, OnInit, signal, viewChild } from '@angular/core';
 import { Menu, MenuItem, MenuTrigger } from '@angular/aria/menu';
+import { io, type Socket } from 'socket.io-client';
 import type { InAppNotificationItem, NotificationBellConfig } from './types';
 
 @Component({
@@ -21,10 +22,11 @@ export class NotificationBellComponent implements OnInit, OnDestroy {
   error = signal('');
 
   private pollTimer: ReturnType<typeof setInterval> | null = null;
+  private socket: Socket | null = null;
 
   constructor() {
     effect(() => {
-      if (this.notificationMenu()?.expanded()) {
+      if (this.notificationMenu()?.visible()) {
         void this.loadItems();
       }
     });
@@ -34,15 +36,36 @@ export class NotificationBellComponent implements OnInit, OnDestroy {
     void this.refreshUnread();
     const pollMs = this.config.pollMs ?? 30000;
     this.pollTimer = setInterval(() => void this.refreshUnread(), pollMs);
+    this.connectSocket();
   }
 
   ngOnDestroy(): void {
     if (this.pollTimer) clearInterval(this.pollTimer);
+    this.socket?.disconnect();
+    this.socket = null;
   }
 
   private token(): string | null {
     if (typeof localStorage === 'undefined') return null;
     return localStorage.getItem(this.config.tokenKey);
+  }
+
+  private connectSocket(): void {
+    if (this.config.socketEnabled === false) return;
+    const token = this.token();
+    if (!token) return;
+
+    this.socket = io(this.config.apiBase, {
+      auth: { token },
+      transports: ['websocket', 'polling']
+    });
+
+    this.socket.on('notification:new', (payload: InAppNotificationItem) => {
+      this.unreadCount.update((count: number) => count + 1);
+      if (this.notificationMenu()?.visible()) {
+        this.items.update((list: InAppNotificationItem[]) => [payload, ...list].slice(0, 20));
+      }
+    });
   }
 
   private async apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
@@ -56,9 +79,7 @@ export class NotificationBellComponent implements OnInit, OnDestroy {
         ...(init?.headers ?? {})
       }
     });
-    if (!response.ok) {
-      throw new Error('Request failed');
-    }
+    if (!response.ok) throw new Error('Request failed');
     return response.json() as Promise<T>;
   }
 
@@ -79,6 +100,7 @@ export class NotificationBellComponent implements OnInit, OnDestroy {
         `${this.config.apiPath}?page=1&pageSize=20`
       );
       this.items.set(result.notifications);
+      await this.refreshUnread();
     } catch {
       this.error.set('Could not load notifications.');
     } finally {

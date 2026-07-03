@@ -1,12 +1,20 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
+    "baseUrl": ".",
     "ignoreDeprecations": "6.0",
     "paths": {
+      "@angular/core": ["../../node_modules/@angular/core"],
+      "@angular/common": ["../../node_modules/@angular/common"],
+      "tslib": ["../../node_modules/tslib"],
       "@vitalis/platform-nav": ["../../libs/platform-nav/src/index.ts"],
       "@vitalis/platform-nav/*": ["../../libs/platform-nav/src/*"],
       "@vitalis/platform-ui": ["../../libs/platform-ui/src/index.ts"],
       "@vitalis/platform-ui/*": ["../../libs/platform-ui/src/*"],
+      "@vitalis/app-notifications/notification-bell.component": [
+        "../../shared/app-notifications/notification-bell.component.ts"
+      ],
+      "@vitalis/app-notifications/types": ["../../shared/app-notifications/types.ts"],
       "@vitalis/app-notifications/*": ["../../shared/app-notifications/*"],
       "@vitalis/role-task-guides": ["../../shared/role-task-guides/index.ts"],
       "@vitalis/role-task-guides/*": ["../../shared/role-task-guides/*"]

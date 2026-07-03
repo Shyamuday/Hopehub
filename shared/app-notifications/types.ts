@@ -14,4 +14,5 @@ export type NotificationBellConfig = {
   /** `/notifications` for platform users, `/store/notifications` for store staff */
   apiPath: string;
   pollMs?: number;
+  socketEnabled?: boolean;
 };

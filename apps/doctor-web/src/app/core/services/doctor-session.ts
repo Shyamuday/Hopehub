@@ -1,4 +1,4 @@
-import { Service } from '@angular/core';
+import { Service, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../environments/environment';
@@ -18,7 +18,7 @@ export class DoctorSessionService {
   private readonly apiBase = environment.apiUrl;
   private session: DoctorSession | null = null;
 
-  constructor(private readonly http: HttpClient) {}
+  private readonly http = inject(HttpClient);
 
   async load(force = false) {
     if (this.session && !force) return this.session;

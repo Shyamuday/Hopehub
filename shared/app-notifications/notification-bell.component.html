@@ -21,12 +21,7 @@
     } @else {
       <ul class="list" role="presentation">
         @for (item of items(); track item.id) {
-          <li
-            ngMenuItem
-            [value]="item.id"
-            [class.unread]="!item.readAt"
-            (click)="markRead(item)"
-          >
+          <li ngMenuItem [value]="item.id" [class.unread]="!item.readAt" (click)="markRead(item)">
             <div class="title">{{ item.title }}</div>
             <div class="body">{{ item.body }}</div>
             <div class="time muted">{{ item.createdAt | date: 'short' }}</div>

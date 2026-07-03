@@ -1,13 +1,17 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
+    "baseUrl": ".",
     "ignoreDeprecations": "6.0",
     "paths": {
+      "@angular/*": ["../../node_modules/@angular/*"],
+      "@angular/aria/*": ["../../node_modules/@angular/aria/*"],
+      "@angular/cdk/*": ["../../node_modules/@angular/cdk/*"],
+      "tslib": ["../../node_modules/tslib"],
       "@vitalis/platform-nav": ["../../libs/platform-nav/src/index.ts"],
       "@vitalis/platform-nav/*": ["../../libs/platform-nav/src/*"],
       "@vitalis/platform-ui": ["../../libs/platform-ui/src/index.ts"],
       "@vitalis/platform-ui/*": ["../../libs/platform-ui/src/*"],
-      "@vitalis/app-notifications/*": ["../../shared/app-notifications/*"],
       "@vitalis/role-task-guides": ["../../shared/role-task-guides/index.ts"],
       "@vitalis/role-task-guides/*": ["../../shared/role-task-guides/*"]
     },

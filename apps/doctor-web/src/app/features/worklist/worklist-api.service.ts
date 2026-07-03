@@ -1,5 +1,5 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Service } from '@angular/core';
+import { Service, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { API_PATHS } from '../../core/constants/api-paths.constants';
@@ -32,7 +32,7 @@ export type WorklistResponse = {
 export class WorklistApiService {
   private readonly apiBase = environment.apiUrl;
 
-  constructor(private readonly http: HttpClient) {}
+  private readonly http = inject(HttpClient);
 
   loadWorklist(view: WorklistView = 'ALL', q = '') {
     let params = new HttpParams().set('view', view);

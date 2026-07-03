@@ -1,7 +1,7 @@
-import { Service } from '@angular/core';
+import { Service, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
-import { environment } from '../../../../environments/environment';
+import { environment } from '../../../environments/environment';
 
 export type PatientIdCardData = {
   patientCode: string;
@@ -38,7 +38,7 @@ export type PatientSearchResponse = {
 export class PatientsApiService {
   private readonly apiBase = environment.apiUrl;
 
-  constructor(private readonly http: HttpClient) {}
+  private readonly http = inject(HttpClient);
 
   searchPatients(q: string, scope: 'auto' | 'clinic' | 'global' = 'auto', clinicStoreId?: string) {
     return firstValueFrom(
