@@ -134,8 +134,8 @@
   <div class="toolbar">
     <input placeholder="Enter patient code, mobile, email, or ID" [formField]="trendForm.patientId" />
     <select [formField]="trendForm.days">
-      <option [value]="7">Last 7 days</option>
-      <option [value]="30">Last 30 days</option>
+      <option value="7">Last 7 days</option>
+      <option value="30">Last 30 days</option>
     </select>
     <button type="button" (click)="loadTrend()" [disabled]="loading()">{{ loading() ? 'Loading...' : 'Load Trend' }}</button>
   </div>

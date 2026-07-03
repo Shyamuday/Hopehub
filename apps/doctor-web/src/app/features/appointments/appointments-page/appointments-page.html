@@ -26,7 +26,7 @@
   </button>
   @if (showSaveTemplateForm) {
     <div class="save-tpl-form">
-      <input name="templateName" [(ngModel)]="templateName" placeholder="Template name (e.g. Hair Fall — Acute)" />
+      <input [formField]="templateForm.templateName" placeholder="Template name (e.g. Hair Fall — Acute)" />
       <button type="button" (click)="saveAsTemplate()" [disabled]="savingTemplate">
         {{ savingTemplate ? 'Saving…' : 'Save' }}
       </button>
@@ -39,19 +39,19 @@
 
 <div class="grid">
   <label for="consultationId">Consultation ID</label>
-  <input id="consultationId" name="consultationId" [(ngModel)]="consultationId" />
+  <input id="consultationId" [formField]="prescriptionForm.consultationId" />
   <div class="actions">
     <button type="button" (click)="loadConsultationPrescriptions()">Load history</button>
     <button type="button" (click)="resetEditorForFollowUp()">New follow-up version</button>
-    @if (consultationId) {
-      <a class="link-btn" [routerLink]="['/', caseAnalysisPath, consultationId, 'case-analysis']">Case analysis</a>
+    @if (prescriptionModel().consultationId) {
+      <a class="link-btn" [routerLink]="['/', caseAnalysisPath, prescriptionModel().consultationId, 'case-analysis']">Case analysis</a>
     }
   </div>
 
   @if (loadedPrescriptions.length) {
     <div class="timeline">
       @for (item of loadedPrescriptions; track item.id) {
-        <article class="timeline-card" [class.active]="editingPrescriptionId === item.id">
+        <article class="timeline-card" [class.active]="prescriptionModel().editingPrescriptionId === item.id">
           <div class="timeline-head">
             <strong>v{{ item.version }}</strong>
             <span [class]="versionBadgeClass(item.status)">{{ item.status }}</span>
@@ -78,9 +78,8 @@
     <label for="existingVersion">Existing Versions</label>
     <select
       id="existingVersion"
-      name="existingVersion"
-      [ngModel]="editingPrescriptionId"
-      (ngModelChange)="selectPrescriptionById($event)"
+      [formField]="prescriptionForm.editingPrescriptionId"
+      (change)="selectPrescriptionById(prescriptionModel().editingPrescriptionId)"
     >
       <option value="">Select version</option>
       @for (item of loadedPrescriptions; track item.id) {
@@ -92,40 +91,40 @@
   }
 
   <label for="method">Homeopathy Method</label>
-  <select id="method" name="method" [(ngModel)]="methodOptionId">
+  <select id="method" [formField]="prescriptionForm.methodOptionId">
     <option value="">Select method</option>
     @for (item of methods; track item.id) {
       <option [value]="item.id">{{ item.label }}</option>
     }
   </select>
   <div class="inline">
-    <input name="newMethod" [(ngModel)]="newMethod" placeholder="Add new method" />
+    <input [formField]="optionDraftForm.newMethod" placeholder="Add new method" />
     <button type="button" (click)="addOption('METHOD')">Add</button>
   </div>
 
   <label for="diagnosedDisease">Diagnosed Disease</label>
-  <select id="diagnosedDisease" name="diagnosedDisease" [(ngModel)]="diagnosedDiseaseOptionId">
+  <select id="diagnosedDisease" [formField]="prescriptionForm.diagnosedDiseaseOptionId">
     <option value="">Select diagnosed disease</option>
     @for (item of diagnosedDiseases; track item.id) {
       <option [value]="item.id">{{ item.label }}</option>
     }
   </select>
   <div class="inline">
-    <input name="newDiagnosedDisease" [(ngModel)]="newDiagnosedDisease" placeholder="Add diagnosed disease" />
+    <input [formField]="optionDraftForm.newDiagnosedDisease" placeholder="Add diagnosed disease" />
     <button type="button" (click)="addOption('DIAGNOSED_DISEASE')">Add</button>
   </div>
 
   <label for="diagnosis">Diagnosis Summary</label>
-  <input id="diagnosis" name="diagnosis" [(ngModel)]="diagnosis" />
+  <input id="diagnosis" [formField]="prescriptionForm.diagnosis" />
 
   <label for="advice">Advice (optional)</label>
-  <textarea id="advice" name="advice" [(ngModel)]="advice"></textarea>
+  <textarea id="advice" [formField]="prescriptionForm.advice"></textarea>
 
   <label for="notes">Prescription Notes</label>
-  <textarea id="notes" name="notes" [(ngModel)]="notes"></textarea>
+  <textarea id="notes" [formField]="prescriptionForm.notes"></textarea>
 
   <label for="followUpDate">Follow-up Date (optional)</label>
-  <input id="followUpDate" name="followUpDate" type="date" [(ngModel)]="followUpDate" />
+  <input id="followUpDate" type="date" [formField]="prescriptionForm.followUpDate" />
 
   <h3>Remedies</h3>
   <p class="safety-intro muted">In homeopathy, the same remedy at different potencies is normal. Warnings apply only when the same potency is repeated or dose/frequency conflicts.</p>
@@ -156,31 +155,31 @@
       <p class="safety-hint">Save or publish will ask you to confirm before proceeding.</p>
     </div>
   }
-  @for (row of medicineRows; track $index) {
+  @for (row of prescriptionModel().medicineRows; track $index) {
     <div class="medicine-card">
       <label>Remedy name</label>
-      <input [name]="'medicineName' + $index" [(ngModel)]="row.medicineName" />
+      <input [formField]="prescriptionForm.medicineRows[$index].medicineName" />
 
       <label>Potency (e.g. 30C, 200C, 1M)</label>
-      <input [name]="'strength' + $index" [(ngModel)]="row.strength" placeholder="30C" />
+      <input [formField]="prescriptionForm.medicineRows[$index].strength" placeholder="30C" />
 
       <label>Dose</label>
-      <input [name]="'dose' + $index" [(ngModel)]="row.dose" />
+      <input [formField]="prescriptionForm.medicineRows[$index].dose" />
 
       <label>Frequency</label>
-      <input [name]="'frequency' + $index" [(ngModel)]="row.frequency" placeholder="e.g. twice daily" />
+      <input [formField]="prescriptionForm.medicineRows[$index].frequency" placeholder="e.g. twice daily" />
 
       <label>Duration text</label>
-      <input [name]="'duration' + $index" [(ngModel)]="row.duration" placeholder="e.g. 2 weeks" />
+      <input [formField]="prescriptionForm.medicineRows[$index].duration" placeholder="e.g. 2 weeks" />
 
       <label>Duration days</label>
-      <input [name]="'durationDays' + $index" [(ngModel)]="row.durationDays" type="number" min="1" max="120" />
+      <input [formField]="prescriptionForm.medicineRows[$index].durationDays" type="number" />
 
       <label>Intake times (comma separated HH:mm)</label>
-      <input [name]="'intakeTimes' + $index" [(ngModel)]="row.intakeTimesText" placeholder="09:00,21:00" />
+      <input [formField]="prescriptionForm.medicineRows[$index].intakeTimesText" placeholder="09:00,21:00" />
 
       <label>Instructions</label>
-      <textarea [name]="'instructions' + $index" [(ngModel)]="row.instructions"></textarea>
+      <textarea [formField]="prescriptionForm.medicineRows[$index].instructions"></textarea>
 
       <button type="button" (click)="removeMedicineRow($index)">Remove medicine</button>
     </div>
@@ -238,7 +237,7 @@
   </button>
 </div>
 
-@if (consultationId && consultationStatus && consultationStatus !== 'COMPLETED') {
+@if (prescriptionModel().consultationId && consultationStatus && consultationStatus !== 'COMPLETED') {
   <div class="close-consultation-row">
     <span class="status-badge">Status: {{ consultationStatus }}</span>
     @if (!confirmingClose) {

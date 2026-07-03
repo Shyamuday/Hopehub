@@ -82,7 +82,7 @@ export class PatientsPage {
   readonly searchForm = form(this.searchModel);
   readonly createPatientModel = signal(emptyCreatePatientModel());
   readonly createPatientForm = form(this.createPatientModel);
-  readonly trendModel = signal({ patientId: '', days: 7 as 7 | 30 });
+  readonly trendModel = signal({ patientId: '', days: '7' });
   readonly trendForm = form(this.trendModel);
 
   readonly patientSearchLoading = signal(false);
@@ -237,7 +237,8 @@ export class PatientsPage {
     this.doseEvents.set([]);
     this.labReferrals.set([]);
     this.labReferralsError.set('');
-    const { patientId, days } = this.trendModel();
+    const { patientId, days: daysStr } = this.trendModel();
+    const days = Number(daysStr) as 7 | 30;
     const id = patientId.trim();
     if (!id) {
       this.error.set('Select or enter a patient.');
