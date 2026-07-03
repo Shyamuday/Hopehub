@@ -229,6 +229,15 @@ Minimum acceptance:
 - Central warehouse stock hub and branch transfer workflow
 - Dispatch deducts warehouse batches; branch receive posts `TRANSFER_IN`
 
+## Phase 5 (Growth & Ecosystem)
+
+### 1) Delivery Executive App (Platform Phase 4)
+
+**Status: Done** — `DELIVERY_EXECUTIVE` role + `DeliveryExecutiveProfile`; `MedicineDelivery` models with OTP proof; delivery API (`/delivery/orders`, accept/pickup/complete/fail); store manager create (`POST /store/deliveries`); `delivery-web` on port 5000; demo pending delivery for Rahul (OTP `123456`); demo persona `delivery@vitalisclinic.local`.
+
+- Last-mile home medicine delivery for patients
+- OTP proof on handover; store manager schedules deliveries
+
 ## Recommended Implementation Order
 
 1. Doctor worklist + follow-up due

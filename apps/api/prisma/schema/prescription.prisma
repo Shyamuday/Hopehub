@@ -38,6 +38,7 @@ model Prescription {
   diagnosedDiseaseOption PrescriptionOption? @relation("PrescriptionDiagnosedDisease", fields: [diagnosedDiseaseOptionId], references: [id])
   items          PrescriptionItem[]
   doseEvents     MedicineDoseEvent[]
+  medicineDeliveries MedicineDelivery[]
   createdAt      DateTime           @default(now())
   updatedAt      DateTime           @updatedAt
 

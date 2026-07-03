@@ -4,9 +4,11 @@ import bcrypt from 'bcryptjs';
 import { seedRepertory } from './seeds/repertory-seed.js';
 import { createPurchaseOrder } from '../src/services/purchase-orders.js';
 import { createStockTransfer } from '../src/services/stock-transfers.js';
+import { createMedicineDelivery } from '../src/services/medicine-deliveries.js';
 import {
   DEV_DEMO_ACCOUNTS,
   DEV_DEMO_PASSWORD,
+  DEV_DEMO_OTP,
   DEV_PATIENT_MOBILE,
   DEV_SEED_IDS
 } from '../src/dev/demo-manifest.js';
@@ -294,6 +296,29 @@ async function main() {
       warehouseId: warehouseStore.id,
       employeeId: DEV_DEMO_ACCOUNTS.warehouse.employeeId,
       designation: 'Warehouse Manager'
+    }
+  });
+
+  const deliveryUser = await prisma.user.upsert({
+    where: { email: DEV_DEMO_ACCOUNTS.delivery.email },
+    update: { isActive: true, passwordHash, role: Role.DELIVERY_EXECUTIVE },
+    create: {
+      name: DEV_DEMO_ACCOUNTS.delivery.name,
+      email: DEV_DEMO_ACCOUNTS.delivery.email,
+      passwordHash,
+      role: Role.DELIVERY_EXECUTIVE,
+      isActive: true
+    }
+  });
+
+  await prisma.deliveryExecutiveProfile.upsert({
+    where: { userId: deliveryUser.id },
+    update: { storeId: ranchiStore.id, employeeId: DEV_DEMO_ACCOUNTS.delivery.employeeId },
+    create: {
+      userId: deliveryUser.id,
+      storeId: ranchiStore.id,
+      employeeId: DEV_DEMO_ACCOUNTS.delivery.employeeId,
+      designation: 'Delivery Executive'
     }
   });
 
@@ -771,6 +796,24 @@ async function main() {
   }
 
   await seedRepertory(prisma);
+
+  const existingDemoDelivery = await prisma.medicineDelivery.findFirst({
+    where: { storeId: ranchiStore.id, patientId: patientOne.id, status: 'PENDING' }
+  });
+  if (!existingDemoDelivery) {
+    await createMedicineDelivery({
+      storeId: ranchiStore.id,
+      patientId: patientOne.id,
+      deliveryAddress: 'Flat 4B, Harmu Housing Colony, Ranchi, Jharkhand',
+      deliveryPhone: DEV_PATIENT_MOBILE,
+      notes: 'Demo home medicine delivery for Rahul Verma',
+      otp: DEV_DEMO_OTP,
+      lines: [
+        { medicineId: demoMedicineArnica.id, label: 'Arnica Montana 30C', qty: 2 },
+        { medicineId: demoMedicineSulphur.id, label: 'Sulphur 200C', qty: 1 }
+      ]
+    });
+  }
 
   console.log('── Dev demo seed complete ──');
   console.log(`Shared password/PIN: ${DEV_DEMO_PASSWORD}`);

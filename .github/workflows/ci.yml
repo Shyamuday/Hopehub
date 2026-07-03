@@ -24,6 +24,7 @@ jobs:
           - apps/accountant-web
           - apps/supplier-web
           - apps/warehouse-web
+          - apps/delivery-web
 
     defaults:
       run:

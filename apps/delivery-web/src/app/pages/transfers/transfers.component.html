@@ -1,0 +1,118 @@
+<div class="page">
+  <div class="hdr">
+    <div>
+      <h2>Stock transfers</h2>
+      <p>Create and dispatch transfers to branch stores</p>
+    </div>
+    <div class="hdr-actions">
+      <button type="button" class="btn-refresh" (click)="load()" [disabled]="loading()">Refresh</button>
+      <button type="button" class="btn-primary" (click)="openCreate()" [disabled]="loading() || !stock().length">New transfer</button>
+    </div>
+  </div>
+
+  @if (loading()) {
+    <p class="loading-text">Loading transfers…</p>
+  } @else if (error()) {
+    <div class="error-row">
+      <p class="error">{{ error() }}</p>
+      <button type="button" class="retry-btn" (click)="load()">Retry</button>
+    </div>
+  } @else if (!transfers().length) {
+    <p class="empty">No transfers yet.</p>
+  } @else {
+    <div class="cards">
+      @for (transfer of transfers(); track transfer.id) {
+        <div class="card">
+          <div class="card-top">
+            <div>
+              <div class="po">{{ transfer.transferNumber }}</div>
+              <div class="meta">{{ transfer.toStore?.name }} · {{ transfer.createdAt | date:'mediumDate' }}</div>
+            </div>
+            <span class="status" [class.pending]="transfer.status === 'PENDING_DISPATCH'" [class.transit]="transfer.status === 'IN_TRANSIT'">
+              {{ transfer.status }}
+            </span>
+          </div>
+          <div class="lines">
+            @for (line of transfer.lines; track line.id) {
+              <div class="line">
+                {{ line.medicine.name }} {{ line.medicine.potency }} — req {{ line.qtyRequested }}
+                @if (line.qtyDispatched) { · sent {{ line.qtyDispatched }} }
+              </div>
+            }
+          </div>
+          @if (transfer.notes) {
+            <div class="note">{{ transfer.notes }}</div>
+          }
+          @if (transfer.status === 'PENDING_DISPATCH') {
+            <button type="button" class="btn-primary" (click)="openDispatch(transfer)">Dispatch</button>
+          }
+        </div>
+      }
+    </div>
+  }
+
+  @if (creating()) {
+    <div class="modal-backdrop" (click)="closeCreate()">
+      <div class="modal wide" (click)="$event.stopPropagation()">
+        <h3>New transfer</h3>
+        <label>Branch</label>
+        <select [(ngModel)]="createToStoreId">
+          @for (branch of branches(); track branch.id) {
+            <option [value]="branch.id">{{ branch.name }} ({{ branch.code }})</option>
+          }
+        </select>
+        <label>Notes</label>
+        <input [(ngModel)]="createNotes" placeholder="Optional transfer note" />
+        <div class="line-actions">
+          <strong>Lines</strong>
+          <button type="button" (click)="addCreateLine()">+ Add line</button>
+        </div>
+        @for (line of createLines(); track $index) {
+          <div class="recv-line">
+            <select [(ngModel)]="line.medicineId" (ngModelChange)="onCreateMedicineChange(line)">
+              @for (row of stock(); track row.medicineId) {
+                <option [value]="row.medicineId">{{ row.name }} {{ row.potency }} ({{ row.currentQty }} avail)</option>
+              }
+            </select>
+            <label>Qty <input type="number" [(ngModel)]="line.qtyRequested" min="1" /></label>
+          </div>
+        }
+        <div class="modal-actions">
+          <button type="button" (click)="closeCreate()">Cancel</button>
+          <button type="button" class="btn-primary" (click)="submitCreate()">Create</button>
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (dispatchingId()) {
+    <div class="modal-backdrop" (click)="closeDispatch()">
+      <div class="modal wide" (click)="$event.stopPropagation()">
+        <h3>Dispatch transfer</h3>
+        @for (line of dispatchLines(); track line.transferLineId) {
+          <div class="recv-line">
+            <div class="recv-title">{{ line.label }} (max {{ line.qtyRequested }})</div>
+            <div class="recv-grid">
+              <label>Qty <input type="number" [(ngModel)]="line.qtyDispatched" min="1" [max]="line.qtyRequested" /></label>
+              <label>Source batch
+                <select [(ngModel)]="line.sourceBatchId">
+                  @for (batch of line.batchOptions; track batch.id) {
+                    <option [value]="batch.id">{{ batch.label }}</option>
+                  }
+                </select>
+              </label>
+            </div>
+          </div>
+        }
+        <div class="modal-actions">
+          <button type="button" (click)="closeDispatch()">Cancel</button>
+          <button type="button" class="btn-primary" (click)="submitDispatch()">Dispatch</button>
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (toast()) {
+    <div class="toast">{{ toast() }}</div>
+  }
+</div>

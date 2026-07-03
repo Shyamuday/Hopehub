@@ -11,7 +11,8 @@ export const SERVER_CONFIG = {
     CLINIC_MANAGER: process.env.CLINIC_MANAGER_ORIGIN || 'http://localhost:4600',
     ACCOUNTANT: process.env.ACCOUNTANT_ORIGIN || 'http://localhost:4700',
     SUPPLIER: process.env.SUPPLIER_ORIGIN || 'http://localhost:4800',
-    WAREHOUSE: process.env.WAREHOUSE_ORIGIN || 'http://localhost:4900'
+    WAREHOUSE: process.env.WAREHOUSE_ORIGIN || 'http://localhost:4900',
+    DELIVERY: process.env.DELIVERY_ORIGIN || 'http://localhost:5000'
   },
   API_PUBLIC_URL: process.env.API_PUBLIC_URL || process.env.API_URL || 'http://localhost:4000',
   SMTP: {

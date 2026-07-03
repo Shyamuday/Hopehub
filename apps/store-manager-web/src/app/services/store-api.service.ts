@@ -246,4 +246,19 @@ export class StoreApiService {
   postStockTransferReceive(transferId: string) {
     return this.http.post<any>(`${this.base}${STORE_API_PATHS.STOCK_TRANSFER_RECEIVE(transferId)}`, {});
   }
+
+  getDeliveries(status?: string) {
+    const params = status ? new HttpParams().set('status', status) : undefined;
+    return this.http.get<{ deliveries: any[] }>(`${this.base}${STORE_API_PATHS.DELIVERIES}`, { params });
+  }
+
+  postDelivery(payload: {
+    patientId: string;
+    deliveryAddress: string;
+    deliveryPhone: string;
+    notes?: string;
+    lines: Array<{ medicineId?: string; label: string; qty: number }>;
+  }) {
+    return this.http.post<any>(`${this.base}${STORE_API_PATHS.DELIVERIES}`, payload);
+  }
 }

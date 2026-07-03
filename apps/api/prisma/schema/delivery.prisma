@@ -1,0 +1,51 @@
+enum MedicineDeliveryStatus {
+  PENDING
+  ASSIGNED
+  OUT_FOR_DELIVERY
+  DELIVERED
+  FAILED
+  CANCELLED
+}
+
+model MedicineDelivery {
+  id                   String                 @id @default(cuid())
+  deliveryNumber       String                 @unique
+  storeId              String
+  patientId            String
+  prescriptionId       String?
+  assignedExecutiveId  String?
+  status               MedicineDeliveryStatus @default(PENDING)
+  deliveryAddress      String
+  deliveryPhone        String
+  notes                String?
+  otpHash              String?
+  failureReason        String?
+  proofNote            String?
+  assignedAt           DateTime?
+  pickedUpAt           DateTime?
+  deliveredAt          DateTime?
+  failedAt             DateTime?
+  store                Store                  @relation(fields: [storeId], references: [id])
+  patient              User                   @relation("PatientDeliveries", fields: [patientId], references: [id])
+  prescription         Prescription?          @relation(fields: [prescriptionId], references: [id])
+  assignedExecutive    User?                  @relation("AssignedDeliveries", fields: [assignedExecutiveId], references: [id])
+  lines                MedicineDeliveryLine[]
+  createdAt            DateTime               @default(now())
+  updatedAt            DateTime               @updatedAt
+
+  @@index([storeId, status])
+  @@index([assignedExecutiveId, status])
+  @@index([patientId])
+}
+
+model MedicineDeliveryLine {
+  id         String           @id @default(cuid())
+  deliveryId String
+  medicineId String?
+  label      String
+  qty        Int
+  delivery   MedicineDelivery @relation(fields: [deliveryId], references: [id], onDelete: Cascade)
+  medicine   StoreMedicine?   @relation(fields: [medicineId], references: [id])
+
+  @@index([deliveryId])
+}

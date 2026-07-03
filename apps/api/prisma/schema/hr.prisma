@@ -148,6 +148,20 @@ model WarehouseManagerProfile {
   @@index([warehouseId])
 }
 
+model DeliveryExecutiveProfile {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  storeId     String
+  employeeId  String?  @unique
+  designation String   @default("Delivery Executive")
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  store       Store    @relation(fields: [storeId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([storeId])
+}
+
 model LeaveRequest {
   id           String       @id @default(cuid())
   employeeType EmployeeType

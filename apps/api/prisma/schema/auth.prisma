@@ -8,6 +8,7 @@ enum Role {
   ACCOUNTANT
   SUPPLIER
   WAREHOUSE_MANAGER
+  DELIVERY_EXECUTIVE
 }
 
 model User {
@@ -45,6 +46,9 @@ model User {
   accountantProfile      AccountantProfile?
   supplierProfile        SupplierProfile?
   warehouseManagerProfile WarehouseManagerProfile?
+  deliveryExecutiveProfile DeliveryExecutiveProfile?
+  assignedDeliveries     MedicineDelivery[] @relation("AssignedDeliveries")
+  patientDeliveries      MedicineDelivery[] @relation("PatientDeliveries")
   hrStoreAccess          HrStoreAccess[] @relation("HrUserAccess")
   hrStoreGrants      HrStoreAccess[] @relation("HrAccessGrantor")
   leaveApprovals     LeaveRequest[]  @relation("LeaveApprovals")

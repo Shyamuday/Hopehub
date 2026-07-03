@@ -12,7 +12,8 @@ export const ROUTE_PATHS = {
   STORE_EXPENSES: 'store-expenses',
   PATIENTS: 'patients',
   PURCHASE_ORDERS: 'purchase-orders',
-  STOCK_TRANSFERS: 'stock-transfers'
+  STOCK_TRANSFERS: 'stock-transfers',
+  DELIVERIES: 'deliveries'
 } as const;
 
 export const DEFAULT_AUTHED_ROUTE = ROUTE_PATHS.DASHBOARD;
@@ -27,6 +28,7 @@ export const NAV_ITEMS = [
   { path: `/${ROUTE_PATHS.STORE_EXPENSES}`, label: 'Expenses', icon: '💰' },
   { path: `/${ROUTE_PATHS.PURCHASE_ORDERS}`, label: 'Incoming POs', icon: '📦' },
   { path: `/${ROUTE_PATHS.STOCK_TRANSFERS}`, label: 'Transfers', icon: '🚚' },
+  { path: `/${ROUTE_PATHS.DELIVERIES}`, label: 'Deliveries', icon: '🛵' },
   { path: `/${ROUTE_PATHS.MOVEMENTS}`, label: 'Movements', icon: '📋' },
   { path: `/${ROUTE_PATHS.ALERTS}`, label: 'Alerts', icon: '🔔' },
   { path: `/${ROUTE_PATHS.RACK_MAP}`, label: 'Rack Map', icon: '🗺️' }

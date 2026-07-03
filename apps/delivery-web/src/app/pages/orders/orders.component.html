@@ -1,0 +1,94 @@
+<div class="page">
+  <div class="hdr">
+    <div>
+      <h2>Home deliveries</h2>
+      <p>Accept, pick up, and complete with patient OTP</p>
+    </div>
+    <button type="button" class="btn-refresh" (click)="load()" [disabled]="loading()">Refresh</button>
+  </div>
+
+  @if (loading()) {
+    <p class="loading-text">Loading deliveries…</p>
+  } @else if (error()) {
+    <div class="error-row">
+      <p class="error">{{ error() }}</p>
+      <button type="button" class="retry-btn" (click)="load()">Retry</button>
+    </div>
+  } @else if (!orders().length) {
+    <p class="empty">No deliveries in your queue.</p>
+  } @else {
+    <div class="cards">
+      @for (order of orders(); track order.id) {
+        <div class="card">
+          <div class="card-top">
+            <div>
+              <div class="po">{{ order.deliveryNumber }}</div>
+              <div class="meta">{{ order.patient?.name }} · {{ order.patient?.patientCode }}</div>
+            </div>
+            <span class="status" [class.pending]="order.status === 'PENDING'" [class.assigned]="order.status === 'ASSIGNED'" [class.transit]="order.status === 'OUT_FOR_DELIVERY'">
+              {{ order.status }}
+            </span>
+          </div>
+          <div class="address">{{ order.deliveryAddress }}</div>
+          <div class="phone">📞 {{ order.deliveryPhone }}</div>
+          <div class="lines">
+            @for (line of order.lines; track line.id) {
+              <div class="line">{{ line.label }} × {{ line.qty }}</div>
+            }
+          </div>
+          @if (order.notes) {
+            <div class="note">Store note: {{ order.notes }}</div>
+          }
+          <div class="actions">
+            @if (order.status === 'PENDING') {
+              <button type="button" class="btn-primary" (click)="accept(order.id)">Accept</button>
+            }
+            @if (order.status === 'ASSIGNED') {
+              <button type="button" class="btn-primary" (click)="pickup(order.id)">Pick up from store</button>
+              <button type="button" class="btn-secondary" (click)="openFail(order.id)">Mark failed</button>
+            }
+            @if (order.status === 'OUT_FOR_DELIVERY') {
+              <button type="button" class="btn-primary" (click)="openComplete(order)">Complete (OTP)</button>
+              <button type="button" class="btn-secondary" (click)="openFail(order.id)">Mark failed</button>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+  @if (completingId()) {
+    <div class="modal-backdrop" (click)="closeComplete()">
+      <div class="modal" (click)="$event.stopPropagation()">
+        <h3>Proof of delivery</h3>
+        <p class="muted">Ask the patient for the OTP sent when the order was created.</p>
+        <label>OTP</label>
+        <input [(ngModel)]="otp" inputmode="numeric" />
+        <label>Note (optional)</label>
+        <input [(ngModel)]="proofNote" placeholder="Handed to patient / security" />
+        <div class="modal-actions">
+          <button type="button" (click)="closeComplete()">Cancel</button>
+          <button type="button" class="btn-primary" (click)="submitComplete()">Complete delivery</button>
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (failingId()) {
+    <div class="modal-backdrop" (click)="closeFail()">
+      <div class="modal" (click)="$event.stopPropagation()">
+        <h3>Mark delivery failed</h3>
+        <label>Reason</label>
+        <textarea [(ngModel)]="failReason" rows="3" placeholder="Patient unavailable, wrong address, etc."></textarea>
+        <div class="modal-actions">
+          <button type="button" (click)="closeFail()">Cancel</button>
+          <button type="button" class="btn-primary" (click)="submitFail()">Confirm failed</button>
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (toast()) {
+    <div class="toast">{{ toast() }}</div>
+  }
+</div>

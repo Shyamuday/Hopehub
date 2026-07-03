@@ -1,0 +1,88 @@
+<div class="page">
+  <div class="hdr">
+    <div>
+      <h2>Home deliveries</h2>
+      <p>Schedule medicine delivery for patients — executive completes with OTP</p>
+    </div>
+    <div class="hdr-actions">
+      <button type="button" class="btn" (click)="load()" [disabled]="loading()">Refresh</button>
+      <button type="button" class="btn primary" (click)="openCreate()">New delivery</button>
+    </div>
+  </div>
+
+  @if (loading()) {
+    <p class="muted">Loading…</p>
+  } @else if (error()) {
+    <div class="error-row">
+      <p class="error">{{ error() }}</p>
+      <button type="button" class="btn" (click)="load()">Retry</button>
+    </div>
+  } @else if (!deliveries().length) {
+    <p class="muted">No home deliveries yet.</p>
+  } @else {
+    @for (delivery of deliveries(); track delivery.id) {
+      <div class="card">
+        <div class="card-top">
+          <div>
+            <strong>{{ delivery.deliveryNumber }}</strong>
+            <div class="muted">{{ delivery.patient?.name }} · {{ delivery.createdAt | date:'medium' }}</div>
+          </div>
+          <span class="pill">{{ delivery.status }}</span>
+        </div>
+        <div class="line">{{ delivery.deliveryAddress }} · {{ delivery.deliveryPhone }}</div>
+        @for (line of delivery.lines; track line.id) {
+          <div class="line">{{ line.label }} × {{ line.qty }}</div>
+        }
+      </div>
+    }
+  }
+
+  @if (creating()) {
+    <div class="modal-backdrop" (click)="closeCreate()">
+      <div class="modal" (click)="$event.stopPropagation()">
+        <h3>Schedule home delivery</h3>
+        @if (createdOtp()) {
+          <div class="otp-box">
+            <strong>Patient OTP (share for handover):</strong>
+            <div class="otp-val">{{ createdOtp() }}</div>
+            <button type="button" class="btn primary" (click)="closeCreate()">Done</button>
+          </div>
+        } @else {
+          <label>Patient</label>
+          <input [(ngModel)]="patientQuery" (input)="searchPatients()" placeholder="Search name or patient code" />
+          @if (patientHits().length) {
+            <div class="hits">
+              @for (p of patientHits(); track p.id) {
+                <button type="button" class="hit" (click)="pickPatient(p)">
+                  {{ p.name }} · {{ p.patientCode }}
+                </button>
+              }
+            </div>
+          }
+          <label>Delivery address</label>
+          <input [(ngModel)]="deliveryAddress" />
+          <label>Phone</label>
+          <input [(ngModel)]="deliveryPhone" />
+          <label>Notes</label>
+          <input [(ngModel)]="notes" placeholder="Optional" />
+          <div class="line-actions">
+            <strong>Items</strong>
+            <button type="button" (click)="addLine()">+ Add line</button>
+          </div>
+          @for (line of lines(); track $index) {
+            <div class="recv-line">
+              <input [(ngModel)]="line.label" placeholder="Medicine label" />
+              <label>Qty <input type="number" [(ngModel)]="line.qty" min="1" /></label>
+            </div>
+          }
+          <div class="actions">
+            <button type="button" class="btn" (click)="closeCreate()">Cancel</button>
+            <button type="button" class="btn primary" (click)="submitCreate()" [disabled]="!selectedPatient()">Create</button>
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  @if (toast()) { <div class="toast">{{ toast() }}</div> }
+</div>

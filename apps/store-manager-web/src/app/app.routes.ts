@@ -16,6 +16,7 @@ import { StoreExpensesPage } from './pages/store-expenses/store-expenses-page';
 import { PatientsPage } from './pages/patients/patients-page';
 import { PurchaseOrdersPage } from './pages/purchase-orders/purchase-orders-page';
 import { StockTransfersPage } from './pages/stock-transfers/stock-transfers-page';
+import { DeliveriesPage } from './pages/deliveries/deliveries-page';
 
 export const routes: Routes = [
   { path: ROUTE_PATHS.LOGIN, component: LoginComponent },
@@ -37,7 +38,8 @@ export const routes: Routes = [
       { path: ROUTE_PATHS.STAFF_HR, component: StaffHrComponent },
       { path: ROUTE_PATHS.STORE_EXPENSES, component: StoreExpensesPage },
       { path: ROUTE_PATHS.PURCHASE_ORDERS, component: PurchaseOrdersPage },
-      { path: ROUTE_PATHS.STOCK_TRANSFERS, component: StockTransfersPage }
+      { path: ROUTE_PATHS.STOCK_TRANSFERS, component: StockTransfersPage },
+      { path: ROUTE_PATHS.DELIVERIES, component: DeliveriesPage }
     ]
   },
   { path: '**', redirectTo: '' }

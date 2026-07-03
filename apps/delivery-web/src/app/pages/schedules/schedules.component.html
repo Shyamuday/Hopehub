@@ -1,0 +1,38 @@
+<div class="page">
+  <div class="hdr">
+    <div>
+      <h2>Doctor schedules</h2>
+      <p>Upcoming slots for branch doctors</p>
+    </div>
+    <button type="button" class="btn-refresh" (click)="load()" [disabled]="loading()">Refresh</button>
+  </div>
+
+  @if (loading()) {
+    <p class="loading-text">Loading schedules…</p>
+  } @else if (error()) {
+    <div class="error-row">
+      <p class="error">{{ error() }}</p>
+      <button type="button" class="retry-btn" (click)="load()">Retry</button>
+    </div>
+  } @else if (schedules(); as s) {
+    <p class="range">{{ s.from }} → {{ s.to }}</p>
+
+    @if (!s.slots.length) {
+      <p class="empty">No doctor slots in this range.</p>
+    } @else {
+      <div class="cards">
+        @for (slot of s.slots; track slot.id) {
+          <div class="card" [class.blocked]="slot.isBlocked" [class.booked]="slot.isBooked">
+            <div class="name">{{ slot.doctorName }}</div>
+            <div class="meta">{{ slot.date }} · {{ slot.startTime }}–{{ slot.endTime }}</div>
+            <div class="status">
+              @if (slot.isBlocked) { Blocked }
+              @else if (slot.isBooked) { Booked }
+              @else { Available }
+            </div>
+          </div>
+        }
+      </div>
+    }
+  }
+</div>

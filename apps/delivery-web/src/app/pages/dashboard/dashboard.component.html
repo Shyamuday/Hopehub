@@ -1,0 +1,26 @@
+<div class="page">
+  <div class="hdr">
+    <div>
+      <h2>Delivery dashboard</h2>
+      <p>Today's runs and queue snapshot</p>
+    </div>
+    <button type="button" class="btn-refresh" (click)="load()" [disabled]="loading()">Refresh</button>
+  </div>
+
+  @if (loading()) {
+    <p class="loading-text">Loading dashboard…</p>
+  } @else if (error()) {
+    <div class="error-row">
+      <p class="error">{{ error() }}</p>
+      <button type="button" class="retry-btn" (click)="load()">Retry</button>
+    </div>
+  } @else if (dashboard(); as data) {
+    <div class="kpis">
+      <div class="kpi"><span class="kpi-val">{{ data.kpis.pending }}</span><span class="kpi-label">Pending pickup</span></div>
+      <div class="kpi"><span class="kpi-val">{{ data.kpis.assigned }}</span><span class="kpi-label">Assigned to you</span></div>
+      <div class="kpi"><span class="kpi-val">{{ data.kpis.outForDelivery }}</span><span class="kpi-label">Out for delivery</span></div>
+      <div class="kpi"><span class="kpi-val">{{ data.kpis.deliveredToday }}</span><span class="kpi-label">Delivered today</span></div>
+    </div>
+    <p class="hint">Open <strong>Deliveries</strong> to accept orders, pick up from store, and complete with patient OTP.</p>
+  }
+</div>
