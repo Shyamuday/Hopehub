@@ -1,16 +1,17 @@
 import { Component, computed, inject, OnInit } from '@angular/core';
-import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { Router, RouterOutlet } from '@angular/router';
 import { RoleTaskGuideComponent, NotificationBellHostComponent } from '@vitalis/platform-ui';
 import { environment } from '../../environments/environment';
 import { AUTH_TOKEN_KEY } from '../core/constants/auth.constants';
 import { NAV_ITEMS } from '@vitalis/admin-console/core/constants/app-routes.constants';
+import { AdminNavTabsComponent } from '@vitalis/admin-console/layout/admin-nav-tabs/admin-nav-tabs.component';
 import { PlatformAuthService } from '../services/platform-auth.service';
 import { ADMIN_ROUTE_CAPABILITIES } from './admin.guards';
 
 @Component({
   selector: 'app-admin-embed-shell',
   standalone: true,
-  imports: [RouterLink, RouterLinkActive, RouterOutlet, RoleTaskGuideComponent, NotificationBellHostComponent],
+  imports: [RouterOutlet, RoleTaskGuideComponent, NotificationBellHostComponent, AdminNavTabsComponent],
   templateUrl: './admin-embed-shell.component.html',
   styleUrl: './admin-embed-shell.component.scss'
 })

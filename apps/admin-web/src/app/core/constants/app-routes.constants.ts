@@ -71,3 +71,57 @@ export const NAV_ITEMS = [
   { path: adminNavPath(ROUTE_PATHS.FINANCE), label: '📊 Finance' },
   { path: adminNavPath(ROUTE_PATHS.PAYROLL), label: '💰 Payroll' }
 ] as const;
+
+export type AdminNavItem = { path: string; label: string };
+
+export type AdminNavGroup = {
+  id: string;
+  label: string;
+  segments: readonly string[];
+};
+
+/** Logical groupings for the admin tab bar (segments match ROUTE_PATHS values). */
+export const NAV_GROUPS: AdminNavGroup[] = [
+  {
+    id: 'overview',
+    label: 'Overview',
+    segments: [ROUTE_PATHS.DASHBOARD, ROUTE_PATHS.ANALYTICS, ROUTE_PATHS.ADHERENCE]
+  },
+  {
+    id: 'clinical',
+    label: 'Clinical',
+    segments: [ROUTE_PATHS.DOCTORS, ROUTE_PATHS.CONSUMERS, ROUTE_PATHS.DISEASES, ROUTE_PATHS.CONSULTATIONS]
+  },
+  {
+    id: 'people',
+    label: 'People & HR',
+    segments: [ROUTE_PATHS.HR, ROUTE_PATHS.HR_USERS, ROUTE_PATHS.EMPLOYEES, ROUTE_PATHS.LEAVES, ROUTE_PATHS.PAYROLL]
+  },
+  {
+    id: 'stores',
+    label: 'Stores & stock',
+    segments: [
+      ROUTE_PATHS.STORES,
+      ROUTE_PATHS.PURCHASE_ORDERS,
+      ROUTE_PATHS.SUPPLIERS,
+      ROUTE_PATHS.MEDICINES,
+      ROUTE_PATHS.INVENTORY
+    ]
+  },
+  {
+    id: 'finance',
+    label: 'Finance',
+    segments: [ROUTE_PATHS.PAYMENTS, ROUTE_PATHS.FINANCE]
+  },
+  {
+    id: 'platform',
+    label: 'Platform',
+    segments: [
+      ROUTE_PATHS.NOTIFICATIONS,
+      ROUTE_PATHS.ADMIN_USERS,
+      ROUTE_PATHS.ECOSYSTEM_USERS,
+      ROUTE_PATHS.AUDIT,
+      ROUTE_PATHS.SECURITY
+    ]
+  }
+];

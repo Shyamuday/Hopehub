@@ -34,7 +34,8 @@
   "include": [
     "src/**/*.ts",
     "../admin-web/src/app/features/**/*.ts",
-    "../admin-web/src/app/core/**/*.ts"
+    "../admin-web/src/app/core/**/*.ts",
+    "../admin-web/src/app/layout/admin-nav-tabs/**/*.ts"
   ],
   "exclude": [
     "../admin-web/src/app/app.routes.ts",

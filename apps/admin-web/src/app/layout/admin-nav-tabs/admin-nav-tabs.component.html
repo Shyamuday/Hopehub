@@ -1,0 +1,50 @@
+<nav class="admin-nav" aria-label="Admin sections">
+  <div class="admin-nav-groups" role="tablist" aria-label="Section groups">
+    @for (group of visibleGroups(); track group.id) {
+      <button
+        type="button"
+        class="group-btn"
+        role="tab"
+        [class.active]="activeGroupId() === group.id"
+        [attr.aria-selected]="activeGroupId() === group.id"
+        (click)="selectGroup(group.id)"
+      >
+        {{ group.label }}
+      </button>
+    }
+  </div>
+
+  <div class="admin-nav-tabs-wrap">
+    <button
+      type="button"
+      class="scroll-btn"
+      aria-label="Scroll tabs left"
+      [disabled]="!canScrollLeft()"
+      (click)="scroll(-1)"
+    >
+      ‹
+    </button>
+
+    <div
+      #tabsScroll
+      class="admin-nav-tabs"
+      role="tablist"
+      [attr.aria-label]="'Pages in ' + activeGroupLabel()"
+      (scroll)="onTabsScroll()"
+    >
+      @for (item of activeGroupItems(); track item.path) {
+        <a [routerLink]="item.path" routerLinkActive="active" role="tab">{{ item.label }}</a>
+      }
+    </div>
+
+    <button
+      type="button"
+      class="scroll-btn"
+      aria-label="Scroll tabs right"
+      [disabled]="!canScrollRight()"
+      (click)="scroll(1)"
+    >
+      ›
+    </button>
+  </div>
+</nav>

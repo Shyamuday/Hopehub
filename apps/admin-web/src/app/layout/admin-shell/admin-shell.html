@@ -1,17 +1,15 @@
 <main class="admin-shell">
-  <header class="topbar">
-    <h1>Admin Console</h1>
-    <div class="topbar-actions">
-      <app-notification-bell-host [config]="bellConfig" />
-      <button type="button" (click)="logout()">Logout</button>
+  <header class="admin-header">
+    <div class="topbar">
+      <h1>Admin Console</h1>
+      <div class="topbar-actions">
+        <app-notification-bell-host [config]="bellConfig" />
+        <button type="button" class="logout-btn" (click)="logout()">Logout</button>
+      </div>
     </div>
-  </header>
 
-  <nav class="tabs">
-    @for (item of navItems; track item.path) {
-      <a [routerLink]="item.path" routerLinkActive="active">{{ item.label }}</a>
-    }
-  </nav>
+    <app-admin-nav-tabs [items]="navItems" />
+  </header>
 
   <section class="content">
     <app-role-task-guide appKey="admin-web" />

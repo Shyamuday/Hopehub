@@ -4,11 +4,12 @@ import { RoleTaskGuideComponent, NotificationBellHostComponent } from '@vitalis/
 import { environment } from '../../../environments/environment';
 import { AUTH_TOKEN_KEY } from '../../core/constants/auth.constants';
 import { AdminAuth } from '../../core/services/admin-auth';
+import { AdminNavTabsComponent } from '../admin-nav-tabs/admin-nav-tabs.component';
 import { NAV_ITEMS, ROUTE_PATHS } from '../../core/constants/app-routes.constants';
 
 @Component({
   selector: 'app-admin-shell',
-  imports: [RouterLink, RouterLinkActive, RouterOutlet, RoleTaskGuideComponent, NotificationBellHostComponent],
+  imports: [RouterOutlet, RoleTaskGuideComponent, NotificationBellHostComponent, AdminNavTabsComponent],
   templateUrl: './admin-shell.html',
   styleUrl: './admin-shell.scss'
 })
