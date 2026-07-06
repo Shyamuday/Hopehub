@@ -8,6 +8,7 @@ export type PlatformNavItem = {
 /** Navigation for the unified operations portal (staff, partners, store). */
 export const OPERATIONS_NAV_ITEMS: PlatformNavItem[] = [
   { path: '/admin/dashboard', label: 'Admin console', icon: '⚙️', capability: 'admin.dashboard' },
+  { path: '/admin/staff', label: 'Staff permissions', icon: '🛡️', capability: 'admin.users' },
   { path: '/admin/ecosystem-users', label: 'Portal users', icon: '🌐', capability: 'admin.ecosystem_users' },
   { path: '/dashboard', label: 'HR dashboard', icon: '📊', capability: 'hr.portal' },
   { path: '/employees', label: 'Employees', icon: '👥', capability: 'hr.portal' },
@@ -18,6 +19,7 @@ export const OPERATIONS_NAV_ITEMS: PlatformNavItem[] = [
   { path: '/payroll', label: 'Payroll', icon: '💰', capability: 'hr.portal' },
   { path: '/walk-in', label: 'Walk-in', icon: '🚶', capability: 'receptionist.portal' },
   { path: '/queue', label: 'Queue', icon: '📟', capability: 'receptionist.portal' },
+  { path: '/scan', label: 'Scan patient', icon: '📷', capability: 'patient.scan' },
   { path: '/clinic-dashboard', label: 'Clinic hub', icon: '🏥', capability: 'clinic_manager.portal' },
   { path: '/roster', label: 'Roster', icon: '📅', capability: 'clinic_manager.portal' },
   { path: '/schedules', label: 'Schedules', icon: '🗓️', capability: 'clinic_manager.portal' },

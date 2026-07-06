@@ -6,8 +6,12 @@ export const ROUTE_PATHS = {
   FAQ: 'faq',
   CONTACT: 'contact',
   SAFETY: 'safety',
-  PRIVACY: 'privacy',
+  PRIVACY: 'privacy-terms',
   WHY_SUCCESSFUL: 'why-successful',
+  OUR_DOCTORS: 'our-doctors',
+  BLOG: 'blog',
+  TESTIMONIALS: 'testimonials',
+  CAREERS: 'careers',
   PATIENT_DASHBOARD: 'patient/dashboard',
   PATIENT_PROFILE: 'patient/profile',
   AUTH_RESET: 'auth/reset'

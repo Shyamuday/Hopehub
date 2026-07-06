@@ -1,0 +1,59 @@
+import { ADMIN_PERMISSIONS, staffHasAllPermissions, type StaffUser } from './admin-permissions';
+import { ROUTE_PATHS } from './constants/app-routes.constants';
+
+const ROUTE_PERMISSIONS: Record<string, string[]> = {
+  [ROUTE_PATHS.DASHBOARD]: [ADMIN_PERMISSIONS.REPORTS_VIEW, ADMIN_PERMISSIONS.PAYMENTS_READ, ADMIN_PERMISSIONS.AUDIT_READ],
+  [ROUTE_PATHS.DOCTORS]: [ADMIN_PERMISSIONS.DOCTORS_READ],
+  [ROUTE_PATHS.CONSUMERS]: [ADMIN_PERMISSIONS.CONSUMERS_READ],
+  [ROUTE_PATHS.DISEASES]: [ADMIN_PERMISSIONS.DISEASES_READ, ADMIN_PERMISSIONS.CATALOG_READ],
+  [ROUTE_PATHS.HR]: [ADMIN_PERMISSIONS.DOCTORS_READ],
+  [ROUTE_PATHS.HR_USERS]: [ADMIN_PERMISSIONS.STAFF_READ],
+  [ROUTE_PATHS.EMPLOYEES]: [ADMIN_PERMISSIONS.CONSUMERS_READ],
+  [ROUTE_PATHS.LEAVES]: [ADMIN_PERMISSIONS.CONSUMERS_READ],
+  [ROUTE_PATHS.STORES]: [ADMIN_PERMISSIONS.INVENTORY_READ],
+  [ROUTE_PATHS.PURCHASE_ORDERS]: [ADMIN_PERMISSIONS.INVENTORY_READ],
+  [ROUTE_PATHS.SUPPLIERS]: [ADMIN_PERMISSIONS.CATALOG_READ],
+  [ROUTE_PATHS.MEDICINES]: [ADMIN_PERMISSIONS.CATALOG_READ],
+  [ROUTE_PATHS.INVENTORY]: [ADMIN_PERMISSIONS.INVENTORY_READ],
+  [ROUTE_PATHS.VACANCIES]: [ADMIN_PERMISSIONS.HR_WRITE],
+  [ROUTE_PATHS.NOTIFICATIONS]: [ADMIN_PERMISSIONS.NOTIFICATIONS_WRITE],
+  [ROUTE_PATHS.ADMIN_USERS]: [ADMIN_PERMISSIONS.STAFF_WRITE],
+  [ROUTE_PATHS.STAFF]: [ADMIN_PERMISSIONS.STAFF_READ],
+  [ROUTE_PATHS.ECOSYSTEM_USERS]: [ADMIN_PERMISSIONS.ECOSYSTEM_USERS_WRITE],
+  [ROUTE_PATHS.CONSULTATIONS]: [ADMIN_PERMISSIONS.CONSULTATIONS_READ],
+  [ROUTE_PATHS.PAYMENTS]: [ADMIN_PERMISSIONS.PAYMENTS_READ],
+  [ROUTE_PATHS.AUDIT]: [ADMIN_PERMISSIONS.AUDIT_READ],
+  [ROUTE_PATHS.SECURITY]: [ADMIN_PERMISSIONS.AUDIT_READ],
+  [ROUTE_PATHS.ADHERENCE]: [ADMIN_PERMISSIONS.REPORTS_VIEW],
+  [ROUTE_PATHS.ANALYTICS]: [ADMIN_PERMISSIONS.REPORTS_VIEW],
+  [ROUTE_PATHS.FINANCE]: [ADMIN_PERMISSIONS.PAYMENTS_READ],
+  [ROUTE_PATHS.PAYROLL]: [ADMIN_PERMISSIONS.PAYMENTS_READ]
+};
+
+export function navItemsForUser(
+  items: ReadonlyArray<{ path: string; label: string }>,
+  user: StaffUser | null
+) {
+  return items.filter((item) => {
+    const segment = item.path.split('/').filter(Boolean).pop() ?? '';
+    const required = ROUTE_PERMISSIONS[segment];
+    if (!required?.length) return true;
+    return required.some((code) => staffHasAllPermissions(user, code));
+  });
+}
+
+export function pickFirstAllowedRoute(user: StaffUser | null): string | null {
+  if (!user || (user.role !== 'ADMIN' && user.role !== 'HR')) return null;
+  const P = ADMIN_PERMISSIONS;
+  if (staffHasAny(user, P.REPORTS_VIEW, P.PAYMENTS_READ, P.AUDIT_READ)) return `/${ROUTE_PATHS.DASHBOARD}`;
+  if (staffHasAllPermissions(user, P.CONSULTATIONS_READ)) return `/${ROUTE_PATHS.CONSULTATIONS}`;
+  if (staffHasAllPermissions(user, P.CONSUMERS_READ)) return `/${ROUTE_PATHS.CONSUMERS}`;
+  if (staffHasAllPermissions(user, P.DOCTORS_READ)) return `/${ROUTE_PATHS.DOCTORS}`;
+  if (staffHasAllPermissions(user, P.DISEASES_READ)) return `/${ROUTE_PATHS.DISEASES}`;
+  if (staffHasAllPermissions(user, P.STAFF_READ)) return `/${ROUTE_PATHS.STAFF}`;
+  return null;
+}
+
+function staffHasAny(user: StaffUser | null, ...codes: string[]) {
+  return codes.some((c) => staffHasAllPermissions(user, c));
+}

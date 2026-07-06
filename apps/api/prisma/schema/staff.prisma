@@ -1,0 +1,10 @@
+/// Per-user permission overrides for admin console and ops portal access.
+model StaffProfile {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  isSuperAdmin    Boolean  @default(false)
+  permissionCodes String[] @default([])
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}

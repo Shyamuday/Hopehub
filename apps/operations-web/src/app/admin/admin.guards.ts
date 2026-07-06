@@ -26,13 +26,19 @@ export const ADMIN_ROUTE_CAPABILITIES: Record<string, string> = {
   adherence: 'admin.dashboard',
   analytics: 'admin.dashboard',
   finance: 'admin.finance',
+  staff: 'admin.users',
   payroll: 'admin.finance'
 };
 
 export const adminSectionGuard: CanActivateFn = () => {
   const auth = inject(PlatformAuthService);
   const router = inject(Router);
-  if (auth.capabilities().some((cap) => cap.startsWith('admin.'))) {
+  const user = auth.currentUser();
+  const caps = auth.capabilities();
+  if (caps.some((cap) => cap.startsWith('admin.'))) {
+    return true;
+  }
+  if (user?.role === 'HR' && caps.includes('hr.portal')) {
     return true;
   }
   return router.createUrlTree([`/${auth.defaultRoute()}`]);

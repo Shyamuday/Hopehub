@@ -19,9 +19,15 @@ import { registerAdminNotificationRoutes } from './notifications.js';
 import { registerAdminRbacRoutes } from './rbac.js';
 import { registerAdminEcosystemUserRoutes } from './ecosystem-users.js';
 import { registerAdminPortalUserRoutes } from './portal-users.js';
+import { registerAdminStaffRoutes } from './admin-staff.routes.js';
+import { registerAdminPermissionPresetRoutes } from './admin-permission-presets.routes.js';
+import { registerAdminVacancyRoutes } from './vacancies.js';
+import { adminPermissionMiddleware } from '../../admin-route-permissions.js';
 
 export function createAdminRouter(io: SocketIoServer) {
   const router = Router();
+
+  router.use(adminPermissionMiddleware);
 
   registerAdminDoctorRoutes(router);
   registerAdminConsumerRoutes(router);
@@ -42,6 +48,9 @@ export function createAdminRouter(io: SocketIoServer) {
   registerAdminRbacRoutes(router);
   registerAdminEcosystemUserRoutes(router);
   registerAdminPortalUserRoutes(router);
+  registerAdminStaffRoutes(router);
+  registerAdminPermissionPresetRoutes(router);
+  registerAdminVacancyRoutes(router);
 
   return router;
 }

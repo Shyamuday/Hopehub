@@ -47,8 +47,13 @@ export function toAuthResponse(user: {
   email?: string | null;
   mobile?: string | null;
   patientCode?: string | null;
+  staffProfile?: { isSuperAdmin: boolean; permissionCodes: string[] } | null;
 }) {
-  return { token: signToken(user), user };
+  const { staffProfile, ...core } = user;
+  return {
+    token: signToken(core),
+    user: staffProfile === undefined ? user : { ...user, staffProfile: staffProfile ?? null }
+  };
 }
 
 export const patientProfileSelect = {

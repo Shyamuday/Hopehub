@@ -17,6 +17,7 @@ export type DoctorNavItem = {
 
 const NAV_ICONS: Record<string, { icon: string; shortLabel: string }> = {
   Worklist: { icon: '📋', shortLabel: 'Work' },
+  Scan: { icon: '📷', shortLabel: 'Scan' },
   Dashboard: { icon: '📊', shortLabel: 'Home' },
   Appointments: { icon: '🩺', shortLabel: 'Appts' },
   Repertory: { icon: '📖', shortLabel: 'Rep' },

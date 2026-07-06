@@ -1,0 +1,88 @@
+.scan-panel {
+  display: grid;
+  gap: 1rem;
+  max-width: 520px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 1.25rem;
+}
+
+header h2 {
+  margin: 0 0 0.35rem;
+  font-size: 1.2rem;
+}
+
+.hint {
+  margin: 0;
+  color: #64748b;
+  font-size: 0.9rem;
+}
+
+.camera-block {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.camera-video,
+.camera-placeholder {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border-radius: 12px;
+  background: #0f172a;
+  object-fit: cover;
+}
+
+.camera-placeholder {
+  display: grid;
+  place-items: center;
+  color: #94a3b8;
+  font-size: 0.9rem;
+}
+
+.manual {
+  display: grid;
+  gap: 0.4rem;
+  font-size: 0.9rem;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.5rem;
+}
+
+input {
+  padding: 0.6rem 0.75rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+}
+
+.btn {
+  border: none;
+  border-radius: 8px;
+  padding: 0.6rem 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.btn.primary {
+  background: #0f766e;
+  color: #fff;
+}
+
+.btn.secondary {
+  background: #eef2ff;
+  color: #312e81;
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.error {
+  margin: 0;
+  color: #b91c1c;
+  font-size: 0.85rem;
+}

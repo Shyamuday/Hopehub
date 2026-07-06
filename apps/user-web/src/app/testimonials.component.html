@@ -1,0 +1,70 @@
+
+    <section class="public-shell">
+      <app-header subtitle="Patient stories" [whatsappLink]="whatsappLink" />
+
+      <main class="content-page">
+
+        <section class="page-hero panel">
+          <p class="eyebrow">Patient stories</p>
+          <h1>Real results from patients who chose a different path.</h1>
+          <p>
+            These are real experiences from patients who came to Vitalis Care and Research Centre with long-standing
+            chronic conditions and found lasting relief through structured, doctor-led homeopathic care.
+          </p>
+        </section>
+
+        <section class="testimonials-stats content-grid two">
+          @for (stat of stats; track stat.label) {
+            <div class="panel testimonial-stat-card">
+              <strong class="testimonial-stat-value">{{ stat.value }}</strong>
+              <p>{{ stat.label }}</p>
+            </div>
+          }
+        </section>
+
+        <section class="testimonials-grid">
+          @for (t of testimonials; track t.name) {
+            <article class="panel testimonial-card">
+              <div class="testimonial-stars">
+                @for (s of stars; track s) {
+                  <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"
+                    [style.color]="s <= t.stars ? '#f59e0b' : '#e2e8f0'">
+                    <path fill="currentColor" d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                  </svg>
+                }
+              </div>
+              <blockquote class="testimonial-quote">
+                &ldquo;{{ t.quote }}&rdquo;
+              </blockquote>
+              <div class="testimonial-author">
+                <div class="testimonial-avatar">{{ t.initials }}</div>
+                <div>
+                  <strong>{{ t.name }}</strong>
+                  <p>{{ t.location }} &middot; {{ t.condition }}</p>
+                  <p class="testimonial-duration">{{ t.duration }}</p>
+                </div>
+              </div>
+            </article>
+          }
+        </section>
+
+        <section class="panel about-cta">
+          <div>
+            <p class="eyebrow">Your story could be next</p>
+            <h2>Start your care journey today.</h2>
+            <p>
+              Book a consultation and let our clinical team guide you toward lasting relief from chronic symptoms
+              through a structured, patient-first approach.
+            </p>
+          </div>
+          <a class="whatsapp-action" [href]="whatsappLink" target="_blank" rel="noopener" aria-label="Chat on WhatsApp">
+            <svg class="wa-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path fill="currentColor" d="M19.05 4.91A9.82 9.82 0 0 0 12.07 2C6.64 2 2.2 6.41 2.2 11.85c0 1.74.45 3.43 1.31 4.93L2 22l5.38-1.41a9.9 9.9 0 0 0 4.69 1.2h.01c5.43 0 9.87-4.41 9.87-9.85a9.75 9.75 0 0 0-2.9-7.03zm-6.98 15.2h-.01a8.2 8.2 0 0 1-4.17-1.14l-.3-.18-3.19.84.85-3.12-.2-.32a8.1 8.1 0 0 1-1.24-4.33c0-4.48 3.68-8.12 8.21-8.12 2.19 0 4.24.85 5.8 2.4a8.04 8.04 0 0 1 2.4 5.73c0 4.48-3.69 8.12-8.15 8.12zm4.45-6.07c-.24-.12-1.43-.7-1.65-.78-.22-.08-.38-.12-.54.12-.16.24-.62.78-.76.94-.14.16-.28.18-.52.06-.24-.12-1.01-.37-1.92-1.17a7.1 7.1 0 0 1-1.33-1.65c-.14-.24-.02-.37.1-.49.11-.11.24-.28.36-.42.12-.14.16-.24.24-.4.08-.16.04-.3-.02-.42-.06-.12-.54-1.3-.74-1.78-.2-.48-.4-.4-.54-.4h-.46c-.16 0-.42.06-.64.3-.22.24-.84.82-.84 2s.86 2.31.98 2.47c.12.16 1.68 2.57 4.08 3.6.57.25 1.02.4 1.37.52.58.18 1.1.15 1.52.09.46-.07 1.43-.58 1.63-1.14.2-.56.2-1.04.14-1.14-.06-.1-.22-.16-.46-.28z"/>
+            </svg>
+          </a>
+        </section>
+
+      </main>
+
+      <app-footer [whatsappLink]="whatsappLink" />
+    </section>

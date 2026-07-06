@@ -162,6 +162,37 @@ async function main() {
     }
   });
 
+  await prisma.staffProfile.upsert({
+    where: { userId: admin.id },
+    update: { isSuperAdmin: true, permissionCodes: [] },
+    create: { userId: admin.id, isSuperAdmin: true, permissionCodes: [] }
+  });
+
+  await prisma.staffProfile.upsert({
+    where: { userId: hrUser.id },
+    update: {
+      isSuperAdmin: false,
+      permissionCodes: [
+        'admin.staff.read',
+        'admin.staff.write',
+        'admin.doctors.read',
+        'admin.doctors.write',
+        'ops.hr.portal'
+      ]
+    },
+    create: {
+      userId: hrUser.id,
+      isSuperAdmin: false,
+      permissionCodes: [
+        'admin.staff.read',
+        'admin.staff.write',
+        'admin.doctors.read',
+        'admin.doctors.write',
+        'ops.hr.portal'
+      ]
+    }
+  });
+
   const ranchiStore = await prisma.store.upsert({
     where: { code: DEV_DEMO_ACCOUNTS.store.code },
     update: { kind: StoreKind.BRANCH },

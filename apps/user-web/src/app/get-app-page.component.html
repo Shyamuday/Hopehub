@@ -1,0 +1,20 @@
+<section class="public-shell">
+  <app-header subtitle="Patient app" [whatsappLink]="whatsappLink" />
+
+  <main class="content-page get-app-page">
+    <header class="page-intro">
+      <h1>Get the Vitalis patient app</h1>
+      <p>
+        Install on your phone to book doctors, track medicines, and receive reminders.
+        You do not need an account to download — register inside the app when you are ready.
+      </p>
+    </header>
+
+    <app-download-qr
+      title="Scan to install"
+      subtitle="Point your camera at the code below, or use the store buttons."
+    />
+  </main>
+
+  <app-footer [whatsappLink]="whatsappLink" />
+</section>

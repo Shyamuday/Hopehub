@@ -1,0 +1,202 @@
+
+<div class="page">
+
+  <div class="page-header">
+    <div>
+      <h2>Vacancies</h2>
+      <p class="muted">Manage job openings published on the careers page</p>
+    </div>
+    <div class="actions">
+      <button type="button" class="btn-primary" (click)="openCreate()">+ New vacancy</button>
+    </div>
+  </div>
+
+  <!-- Summary chips -->
+  <div class="vacancy-summary">
+    <button type="button"
+      class="summary-chip"
+      [class.active]="statusFilter() === 'ALL'"
+      (click)="setFilter('ALL')">
+      All &nbsp;<strong>{{ summary().DRAFT + summary().OPEN + summary().CLOSED }}</strong>
+    </button>
+    <button type="button"
+      class="summary-chip summary-chip--open"
+      [class.active]="statusFilter() === 'OPEN'"
+      (click)="setFilter('OPEN')">
+      Open &nbsp;<strong>{{ summary().OPEN }}</strong>
+    </button>
+    <button type="button"
+      class="summary-chip summary-chip--draft"
+      [class.active]="statusFilter() === 'DRAFT'"
+      (click)="setFilter('DRAFT')">
+      Draft &nbsp;<strong>{{ summary().DRAFT }}</strong>
+    </button>
+    <button type="button"
+      class="summary-chip summary-chip--closed"
+      [class.active]="statusFilter() === 'CLOSED'"
+      (click)="setFilter('CLOSED')">
+      Closed &nbsp;<strong>{{ summary().CLOSED }}</strong>
+    </button>
+  </div>
+
+  @if (loading()) {
+    <p class="muted">Loading vacancies…</p>
+  } @else if (vacancies().length === 0) {
+    <div class="empty-state">
+      <p>No vacancies found.</p>
+      <button type="button" class="btn-primary" (click)="openCreate()">Create your first vacancy</button>
+    </div>
+  } @else {
+    <div class="vacancy-list">
+      @for (v of vacancies(); track v.id) {
+        <div class="vacancy-card" [class.vacancy-card--urgent]="v.isUrgent">
+          <div class="vacancy-card-header" (click)="toggleExpand(v.id)" style="cursor:pointer">
+            <div class="vacancy-card-meta">
+              <div class="vacancy-title-row">
+                @if (v.isUrgent) {
+                  <span class="urgent-badge">Urgent</span>
+                }
+                <strong>{{ v.title }}</strong>
+              </div>
+              <div class="vacancy-tags">
+                <span class="tag">{{ v.department }}</span>
+                <span class="tag tag--type">{{ jobTypeLabel(v.jobType) }}</span>
+                <span class="tag tag--loc">{{ locationLabel(v.locationType) }}{{ v.location ? ' — ' + v.location : '' }}</span>
+                @if (v.salaryRange) {
+                  <span class="tag tag--salary">{{ v.salaryRange }}</span>
+                }
+              </div>
+            </div>
+            <div class="vacancy-card-actions">
+              <span [class]="statusClass(v.status)">{{ v.status }}</span>
+              @if (v.deadline) {
+                <span class="deadline">Deadline: {{ v.deadline | date:'mediumDate' }}</span>
+              }
+              <button type="button" class="btn-sm" (click)="$event.stopPropagation(); openEdit(v)">Edit</button>
+              @if (v.status !== 'OPEN') {
+                <button type="button" class="btn-sm btn-sm--success" (click)="$event.stopPropagation(); quickStatus(v, 'OPEN')">Publish</button>
+              }
+              @if (v.status === 'OPEN') {
+                <button type="button" class="btn-sm" (click)="$event.stopPropagation(); quickStatus(v, 'DRAFT')">Unpublish</button>
+              }
+              @if (v.status !== 'CLOSED') {
+                <button type="button" class="btn-sm btn-sm--danger" (click)="$event.stopPropagation(); closeVacancy(v)">Close</button>
+              }
+            </div>
+          </div>
+
+          @if (expandedId() === v.id) {
+            <div class="vacancy-card-detail">
+              <p class="vacancy-description">{{ v.description }}</p>
+              @if (v.responsibilities?.length) {
+                <div class="vacancy-section">
+                  <strong>Responsibilities</strong>
+                  <ul>
+                    @for (r of v.responsibilities; track r) { <li>{{ r }}</li> }
+                  </ul>
+                </div>
+              }
+              @if (v.requirements?.length) {
+                <div class="vacancy-section">
+                  <strong>Requirements</strong>
+                  <ul>
+                    @for (r of v.requirements; track r) { <li>{{ r }}</li> }
+                  </ul>
+                </div>
+              }
+              <p class="vacancy-meta-footer">
+                Created {{ v.createdAt | date:'mediumDate' }}
+              </p>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  }
+
+</div>
+
+<!-- Create / Edit modal -->
+@if (modal()) {
+  <div class="overlay" (click)="closeModal()">
+    <div class="modal modal--wide" (click)="$event.stopPropagation()">
+      <h3>{{ modal() === 'create' ? 'New vacancy' : 'Edit vacancy' }}</h3>
+
+      <div class="form-row">
+        <label class="form-col-2">Title
+          <input [formField]="vacancyForm.title" placeholder="e.g. Homeopathic Consultant" />
+        </label>
+        <label>Department
+          <select [formField]="vacancyForm.department">
+            @for (d of departments; track d) { <option [value]="d">{{ d }}</option> }
+          </select>
+        </label>
+      </div>
+
+      <div class="form-row">
+        <label>Job type
+          <select [formField]="vacancyForm.jobType">
+            @for (t of jobTypes; track t) {
+              <option [value]="t">{{ jobTypeLabel(t) }}</option>
+            }
+          </select>
+        </label>
+        <label>Work mode
+          <select [formField]="vacancyForm.locationType">
+            @for (l of locationTypes; track l) {
+              <option [value]="l">{{ locationLabel(l) }}</option>
+            }
+          </select>
+        </label>
+        <label>Location (city / clinic)
+          <input [formField]="vacancyForm.location" placeholder="e.g. Mumbai, Remote" />
+        </label>
+      </div>
+
+      <div class="form-row">
+        <label>Salary / stipend range
+          <input [formField]="vacancyForm.salaryRange" placeholder="e.g. ₹30,000 – ₹45,000 / month" />
+        </label>
+        <label>Application deadline
+          <input type="date" [formField]="vacancyForm.deadline" />
+        </label>
+        <label>Status
+          <select [formField]="vacancyForm.status">
+            @for (s of statuses; track s) { <option [value]="s">{{ s }}</option> }
+          </select>
+        </label>
+      </div>
+
+      <label>Description
+        <textarea [formField]="vacancyForm.description" rows="4"
+          placeholder="Describe the role, team context, and day-to-day responsibilities…"></textarea>
+      </label>
+
+      <label>Responsibilities <span class="hint">(one per line)</span>
+        <textarea [formField]="vacancyForm.responsibilitiesText" rows="4"
+          placeholder="Conduct structured online consultations&#10;Perform case-taking and repertory analysis&#10;…"></textarea>
+      </label>
+
+      <label>Requirements <span class="hint">(one per line)</span>
+        <textarea [formField]="vacancyForm.requirementsText" rows="4"
+          placeholder="BHMS or MD (Homeopathy) from a recognized institution&#10;Minimum 2 years of clinical practice&#10;…"></textarea>
+      </label>
+
+      <label class="check">
+        <input type="checkbox" [formField]="vacancyForm.isUrgent" />
+        Mark as urgent hiring
+      </label>
+
+      @if (error()) { <p class="error">{{ error() }}</p> }
+
+      <div class="actions">
+        <button type="button" (click)="closeModal()">Cancel</button>
+        <button type="button" class="btn-primary" [disabled]="saving()" (click)="save()">
+          {{ saving() ? 'Saving…' : (modal() === 'create' ? 'Create vacancy' : 'Save changes') }}
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+@if (toast()) { <div class="toast">{{ toast() }}</div> }

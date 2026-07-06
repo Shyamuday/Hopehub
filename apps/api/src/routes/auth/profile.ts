@@ -11,23 +11,28 @@ import {
   portalForRole,
   sessionPayloadForUser
 } from '../../constants/rbac-helpers.js';
+import { attachStaffProfile } from '../../staff-profile.js';
 
 export function registerAuthProfileRoutes(router: Router) {
 // ─── Session / profile ───────────────────────────────────────────────────────
 
-router.get('/me', authRequired, (req, res) => {
-  res.json(sessionPayloadForUser(req.user!));
-});
+router.get('/me', authRequired, asyncRoute(async (req, res) => {
+  const withProfile = await attachStaffProfile(req.user!);
+  res.json(sessionPayloadForUser(withProfile));
+}));
 
-router.get('/capabilities', authRequired, (req, res) => {
-  const role = req.user!.role;
+router.get('/capabilities', authRequired, asyncRoute(async (req, res) => {
+  const withProfile = await attachStaffProfile(req.user!);
+  const role = withProfile.role;
+  const roleCaps = capabilitiesForRole(role);
+  const capabilities = sessionPayloadForUser(withProfile).capabilities;
   res.json({
     role,
-    capabilities: capabilitiesForRole(role),
+    capabilities,
     portal: portalForRole(role),
-    defaultRoute: defaultRouteForRole(role)
+    defaultRoute: defaultRouteForRole(role, capabilities)
   });
-});
+}));
 
 router.get(
   '/patient/profile',

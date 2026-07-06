@@ -1,4 +1,3 @@
-
     @if (patientCard(); as card) {
       <section class="id-card-panel">
         <h2>My clinic card</h2>
@@ -27,6 +26,14 @@
           </footer>
         </div>
         <button type="button" class="btn-print" (click)="printCard()">Print my card</button>
+      </section>
+    } @else {
+      <section class="id-card-panel">
+        <app-download-qr
+          [compact]="true"
+          title="Share the app with family"
+          subtitle="Anyone can scan to install — no patient ID needed yet."
+        />
       </section>
     }
 

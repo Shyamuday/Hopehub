@@ -128,7 +128,7 @@
   }
 
   .app-header.app-header--guest.menu-open .header-actions.header-nav-sheet {
-    max-height: min(78vh, 520px);
+    max-height: min(88vh, 640px);
     opacity: 1;
     transform: translate3d(0, 0, 0);
     pointer-events: auto;
@@ -181,7 +181,7 @@
     animation: header-nav-link-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) backwards;
   }
 
-  @for $i from 1 through 8 {
+  @for $i from 1 through 10 {
     .app-header.app-header--guest.menu-open .header-actions > a:nth-child(#{$i}) {
       animation-delay: #{0.035 + ($i - 1) * 0.045}s;
     }

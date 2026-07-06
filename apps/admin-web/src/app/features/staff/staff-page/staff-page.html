@@ -1,0 +1,105 @@
+<section class="panel">
+  <div class="panel-header">
+    <div>
+      <h2>Staff &amp; permissions</h2>
+      <p class="panel-sub">
+        Assign <strong>multiple powers per email</strong> for admin console and ops portal access. Admins and HR
+        (with <code>admin.staff.write</code>) can manage users below.
+      </p>
+    </div>
+    <button type="button" class="btn-secondary" (click)="load()" [disabled]="loading()">Refresh</button>
+  </div>
+
+  @if (governance()['principle']) {
+    <aside class="governance-box">
+      <p><strong>Principle.</strong> {{ governance()['principle'] }}</p>
+      @if (governance()['staffWrite']) {
+        <p><strong>Who can edit.</strong> {{ governance()['staffWrite'] }}</p>
+      }
+    </aside>
+  }
+
+  @if (loading()) {
+    <p class="loading-text">Loading…</p>
+  } @else if (loadError()) {
+    <div class="error-row">
+      <p class="error">{{ loadError() }}</p>
+      <button type="button" class="retry-btn" (click)="load()">Retry</button>
+    </div>
+  } @else {
+    <div class="preset-legend">
+      <h3>Quick presets</h3>
+      <ul class="preset-list">
+        @for (p of presets(); track p.id) {
+          <li>
+            <span class="preset-cluster">{{ clusterLabel(p.cluster) }}</span>
+            <strong>{{ p.label }}</strong> — {{ p.summary }}
+          </li>
+        }
+      </ul>
+    </div>
+
+    <h3>Staff accounts</h3>
+    @for (row of staff(); track row.id) {
+      <article class="staff-card" [class.editing]="editingId() === row.id">
+        @if (editingId() !== row.id) {
+          <div class="staff-row">
+            <div>
+              <strong>{{ row.name }}</strong>
+              <span class="email">{{ row.email || '—' }}</span>
+              <span class="role-badge">{{ row.role }}</span>
+            </div>
+            @if (canWrite()) {
+              <button type="button" class="btn-edit" (click)="startEdit(row)">Edit powers</button>
+            }
+          </div>
+          <p class="codes-display">{{ formatCodes(row) }}</p>
+        } @else {
+          <h4>Edit {{ row.name }} ({{ row.role }})</h4>
+          <label class="field checkbox-field">
+            <input type="checkbox" [ngModel]="draftSuper()" (ngModelChange)="draftSuper.set($event)" />
+            Super admin (full access)
+          </label>
+
+          <label class="field">
+            Apply preset
+            <select [ngModel]="selectedPresetId()" (ngModelChange)="selectedPresetId.set($event); applyPreset()">
+              <option value="">— Choose preset —</option>
+              @for (p of presets(); track p.id) {
+                <option [value]="p.id">{{ p.label }}</option>
+              }
+            </select>
+          </label>
+
+          @for (group of permissionGroups; track group.label) {
+            <fieldset class="perm-group" [disabled]="draftSuper()">
+              <legend>{{ group.label }}</legend>
+              <div class="perm-grid">
+                @for (code of group.codes; track code) {
+                  <label class="perm-chip">
+                    <input
+                      type="checkbox"
+                      [checked]="isCodeChecked(code)"
+                      (change)="toggleCode(code, $any($event.target).checked)"
+                    />
+                    <span>{{ labelForCode(code) }}</span>
+                  </label>
+                }
+              </div>
+            </fieldset>
+          }
+
+          @if (saveError()) {
+            <p class="error">{{ saveError() }}</p>
+          }
+          <div class="edit-actions">
+            <button type="button" class="btn-save" (click)="save()" [disabled]="saving()">Save</button>
+            <button type="button" class="btn-cancel" (click)="cancelEdit()" [disabled]="saving()">Cancel</button>
+          </div>
+        }
+      </article>
+    } @empty {
+      <p class="empty-state">No staff users found.</p>
+    }
+  }
+</section>

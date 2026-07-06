@@ -304,4 +304,31 @@ export class AdminOpsApi extends AdminApiBase {
       this.http.patch<{ user: any }>(`${this.apiBase}${API_PATHS.ADMIN.PORTAL_USER_STATUS(id)}`, { isActive })
     );
   }
+
+  listVacancies(params?: { status?: string; department?: string }) {
+    return firstValueFrom(
+      this.http.get<{ vacancies: any[]; summary: { DRAFT: number; OPEN: number; CLOSED: number } }>(
+        `${this.apiBase}${API_PATHS.ADMIN.VACANCIES}`,
+        { params: { ...(params?.status ? { status: params.status } : {}), ...(params?.department ? { department: params.department } : {}) } }
+      )
+    );
+  }
+
+  createVacancy(payload: Record<string, unknown>) {
+    return firstValueFrom(
+      this.http.post<{ vacancy: any }>(`${this.apiBase}${API_PATHS.ADMIN.VACANCIES}`, payload)
+    );
+  }
+
+  updateVacancy(id: string, payload: Record<string, unknown>) {
+    return firstValueFrom(
+      this.http.patch<{ vacancy: any }>(`${this.apiBase}${API_PATHS.ADMIN.VACANCY_BY_ID(id)}`, payload)
+    );
+  }
+
+  closeVacancy(id: string) {
+    return firstValueFrom(
+      this.http.delete<{ vacancy: any }>(`${this.apiBase}${API_PATHS.ADMIN.VACANCY_BY_ID(id)}`)
+    );
+  }
 }

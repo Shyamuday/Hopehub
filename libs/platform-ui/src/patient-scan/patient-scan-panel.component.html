@@ -1,0 +1,39 @@
+<section class="scan-panel">
+  <header>
+    <h2>{{ title() }}</h2>
+    <p class="hint">{{ hint() }}</p>
+  </header>
+
+  @if (cameraSupported()) {
+    <div class="camera-block">
+      @if (cameraOn()) {
+        <video #video class="camera-video" playsinline muted></video>
+      } @else {
+        <div class="camera-placeholder">Camera preview</div>
+      }
+      <button type="button" class="btn secondary" [disabled]="loading()" (click)="toggleCamera()">
+        {{ cameraOn() ? 'Stop camera' : 'Use camera' }}
+      </button>
+      @if (cameraError()) {
+        <p class="error">{{ cameraError() }}</p>
+      }
+    </div>
+  }
+
+  <label class="manual">
+    <span>Patient ID or QR link</span>
+    <div class="row">
+      <input
+        type="text"
+        [value]="manualCode()"
+        (input)="manualCode.set(($any($event.target).value ?? '').toString())"
+        (keydown)="onManualKeydown($event)"
+        placeholder="RNC-000001"
+        [disabled]="loading()"
+      />
+      <button type="button" class="btn primary" [disabled]="loading()" (click)="submitManual()">
+        {{ loading() ? 'Opening…' : 'Open' }}
+      </button>
+    </div>
+  </label>
+</section>

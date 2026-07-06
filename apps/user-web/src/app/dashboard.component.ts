@@ -22,6 +22,7 @@ import { LabResultsComponent } from './lab-results.component';
 import { ReminderPreferencesComponent, ReminderPrefs } from './reminder-preferences.component';
 import { TodayMedicinesComponent } from './today-medicines.component';
 import { PatientProfileComponent } from './patient-profile.component';
+import { AppDownloadQrComponent } from './shared/app-download-qr/app-download-qr.component';
 import { ClinicApiService } from './clinic-api.service';
 import { DashboardDataService, DashboardPaymentService } from './dashboard-data.service';
 import { AuthService } from './auth/auth.service';
@@ -60,6 +61,7 @@ import {
     ReminderPreferencesComponent,
     TodayMedicinesComponent,
     PatientProfileComponent,
+    AppDownloadQrComponent,
     RoleTaskGuideComponent,
   ]
 ,

@@ -61,6 +61,7 @@ model User {
   marketingProfile         MarketingProfile?
   corporateWellnessProfile CorporateWellnessProfile?
   insurancePartnerProfile  InsurancePartnerProfile?
+  staffProfile             StaffProfile?
   corporateEnrollments     CorporateEnrollment[] @relation("CorporateEnrollments")
   insuranceClaims          InsuranceClaim[]      @relation("PatientInsuranceClaims")
   assignedDeliveries     MedicineDelivery[] @relation("AssignedDeliveries")

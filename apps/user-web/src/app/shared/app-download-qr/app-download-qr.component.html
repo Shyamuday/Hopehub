@@ -1,0 +1,30 @@
+<section class="app-download-card" [class.compact]="compact()">
+  <div class="copy">
+    <p class="eyebrow">Free patient app</p>
+    <h3>{{ title() }}</h3>
+    <p class="subtitle">{{ subtitle() }}</p>
+
+    <div class="store-links">
+      @if (links().androidUrl) {
+        <a class="store-btn android" [href]="links().androidUrl" target="_blank" rel="noopener">
+          Google Play
+        </a>
+      }
+      @if (links().iosUrl) {
+        <a class="store-btn ios" [href]="links().iosUrl" target="_blank" rel="noopener">
+          App Store
+        </a>
+      }
+      <a class="store-btn web" [href]="links().webAppUrl">Open in browser</a>
+    </div>
+
+    <p class="fine-print">
+      Scan even if you are not a patient yet — install first, register later.
+    </p>
+  </div>
+
+  <div class="qr-block">
+    <img [src]="qrUrl()" width="160" height="160" alt="QR code to download Vitalis patient app" />
+    <p class="qr-label">Scan to download</p>
+  </div>
+</section>

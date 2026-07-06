@@ -1,6 +1,10 @@
 import { Role } from '@prisma/client';
 import { RBAC_CAPABILITIES } from './rbac-matrix.constants.js';
 import { STORE_ROLES } from './store-api-routes.constants.js';
+import {
+  capabilitiesFromStaffProfile,
+  type StaffProfileSummary
+} from '../permission-capabilities.js';
 
 export type PortalId = 'patient' | 'clinical' | 'operations';
 
@@ -43,11 +47,12 @@ export const OPERATIONS_DEFAULT_ROUTE: Partial<Record<Role, string>> = {
   INSURANCE_PARTNER: 'claims'
 };
 
-export const STORE_COUNTER_CAPABILITIES = ['store_counter.portal', 'store.stock'] as const;
+export const STORE_COUNTER_CAPABILITIES = ['store_counter.portal', 'store.stock', 'patient.scan'] as const;
 export const STORE_MANAGER_CAPABILITIES = [
   'store_manager.portal',
   'store.stock',
-  'store_counter.portal'
+  'store_counter.portal',
+  'patient.scan'
 ] as const;
 
 export function capabilitiesForRole(role: Role): string[] {
@@ -58,10 +63,21 @@ export function portalForRole(role: Role): PortalId {
   return ROLE_PORTAL[role] ?? 'operations';
 }
 
-export function defaultRouteForRole(role: Role): string {
+export function defaultRouteForRole(role: Role, capabilities?: string[]): string {
   const portal = portalForRole(role);
   if (portal === 'clinical') return 'worklist';
   if (portal === 'patient') return 'dashboard';
+
+  const caps = capabilities ?? capabilitiesForRole(role);
+  if (caps.some((c) => c.startsWith('admin.'))) {
+    if (caps.includes('admin.dashboard')) return 'admin/dashboard';
+    if (caps.includes('admin.consultations')) return 'admin/consultations';
+    if (caps.includes('admin.consumers')) return 'admin/consumers';
+    if (caps.includes('admin.doctors')) return 'admin/doctors';
+    if (caps.includes('admin.users')) return 'admin/staff';
+    return 'admin/dashboard';
+  }
+
   return OPERATIONS_DEFAULT_ROUTE[role] ?? 'dashboard';
 }
 
@@ -72,14 +88,16 @@ export function sessionPayloadForUser(user: {
   email?: string | null;
   mobile?: string | null;
   patientCode?: string | null;
+  staffProfile?: StaffProfileSummary | null;
 }) {
-  const capabilities = capabilitiesForRole(user.role);
+  const roleCaps = capabilitiesForRole(user.role);
+  const capabilities = capabilitiesFromStaffProfile(user.role, user.staffProfile, roleCaps);
   const portal = portalForRole(user.role);
   return {
     user,
     capabilities,
     portal,
-    defaultRoute: defaultRouteForRole(user.role)
+    defaultRoute: defaultRouteForRole(user.role, capabilities)
   };
 }
 

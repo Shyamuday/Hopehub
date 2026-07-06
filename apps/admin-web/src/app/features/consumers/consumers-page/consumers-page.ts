@@ -175,8 +175,13 @@ export class ConsumersPage {
     private readonly route: ActivatedRoute
   ) {
     const consumerId = this.route.snapshot.queryParamMap.get('consumerId');
+    const patientCode = this.route.snapshot.queryParamMap.get('patientCode');
     if (consumerId) {
       this.selectedConsumerId = consumerId;
+    }
+    if (patientCode) {
+      this.patientSearchModel.set({ q: patientCode });
+      void this.searchPatientsGlobal();
     }
     void this.load();
     void this.loadDoctors();

@@ -9,6 +9,10 @@ export interface HrUser {
   name: string;
   email: string;
   role: string;
+  staffProfile?: {
+    isSuperAdmin: boolean;
+    permissionCodes: string[];
+  } | null;
   hrProfile?: {
     designation?: string;
     department?: string;

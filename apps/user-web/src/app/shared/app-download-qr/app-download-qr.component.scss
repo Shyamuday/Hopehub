@@ -1,0 +1,109 @@
+.app-download-card {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 1.25rem;
+  align-items: center;
+  padding: 1.25rem 1.35rem;
+  border-radius: 16px;
+  border: 1px solid #bbf7d0;
+  background: linear-gradient(135deg, #f0fdf4 0%, #ecfeff 100%);
+}
+
+.app-download-card.compact {
+  grid-template-columns: 1fr;
+  text-align: center;
+}
+
+.eyebrow {
+  margin: 0 0 0.25rem;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #0f766e;
+  font-weight: 700;
+}
+
+h3 {
+  margin: 0 0 0.35rem;
+  font-size: 1.2rem;
+}
+
+.subtitle {
+  margin: 0 0 0.85rem;
+  color: #475569;
+  line-height: 1.45;
+  font-size: 0.92rem;
+}
+
+.store-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.compact .store-links {
+  justify-content: center;
+}
+
+.store-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.45rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.store-btn.android {
+  background: #0f766e;
+  color: #fff;
+}
+
+.store-btn.ios {
+  background: #0f172a;
+  color: #fff;
+}
+
+.store-btn.web {
+  background: #fff;
+  color: #0f766e;
+  border: 1px solid #99f6e4;
+}
+
+.fine-print {
+  margin: 0.75rem 0 0;
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
+.qr-block {
+  display: grid;
+  gap: 0.35rem;
+  justify-items: center;
+}
+
+.qr-block img {
+  border-radius: 12px;
+  background: #fff;
+  padding: 0.35rem;
+  border: 1px solid #e2e8f0;
+}
+
+.qr-label {
+  margin: 0;
+  font-size: 0.78rem;
+  color: #64748b;
+  font-weight: 600;
+}
+
+@media (max-width: 720px) {
+  .app-download-card:not(.compact) {
+    grid-template-columns: 1fr;
+  }
+
+  .qr-block {
+    justify-items: start;
+  }
+}

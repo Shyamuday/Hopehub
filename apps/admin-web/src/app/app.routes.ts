@@ -26,7 +26,10 @@ import { MedicinesPage } from './features/medicines/medicines-page/medicines-pag
 import { InventoryPage } from './features/inventory/inventory-page/inventory-page';
 import { NotificationsPage } from './features/notifications/notifications-page/notifications-page';
 import { SecurityPage } from './features/security/security-page/security-page';
+import { AdminPatientScanLauncherPage } from './features/scan/admin-patient-scan-launcher-page';
 import { EcosystemUsersPage } from './features/ecosystem-users/ecosystem-users-page/ecosystem-users-page';
+import { StaffPage } from './features/staff/staff-page/staff-page';
+import { VacanciesPage } from './features/vacancies/vacancies-page/vacancies-page';
 
 export const routes: Routes = [
   { path: ROUTE_PATHS.LOGIN, component: AdminLogin },
@@ -39,7 +42,9 @@ export const routes: Routes = [
       { path: ROUTE_PATHS.DASHBOARD, component: AdminDashboard },
       { path: ROUTE_PATHS.DOCTORS, component: DoctorsPage },
       { path: ROUTE_PATHS.CONSUMERS, component: ConsumersPage },
+      { path: ROUTE_PATHS.SCAN, component: AdminPatientScanLauncherPage },
       { path: ROUTE_PATHS.DISEASES, component: DiseasesPage },
+      { path: ROUTE_PATHS.VACANCIES, component: VacanciesPage },
       { path: ROUTE_PATHS.HR, component: DoctorHrComponent },
       { path: ROUTE_PATHS.HR_USERS, component: HrUsersComponent },
       { path: ROUTE_PATHS.EMPLOYEES, component: EmployeesPage },
@@ -51,6 +56,7 @@ export const routes: Routes = [
       { path: ROUTE_PATHS.INVENTORY, component: InventoryPage },
       { path: ROUTE_PATHS.NOTIFICATIONS, component: NotificationsPage },
       { path: ROUTE_PATHS.ADMIN_USERS, component: AdminUsersPage },
+      { path: ROUTE_PATHS.STAFF, component: StaffPage },
       { path: ROUTE_PATHS.ECOSYSTEM_USERS, component: EcosystemUsersPage },
       { path: ROUTE_PATHS.CONSULTATIONS, component: ConsultationsPage },
       { path: ROUTE_PATHS.PAYMENTS, component: PaymentsPage },

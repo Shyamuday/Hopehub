@@ -1,12 +1,16 @@
 import { Routes } from '@angular/router';
 import { AboutComponent } from './about.component';
+import { BlogComponent } from './blog.component';
+import { CareersComponent } from './careers.component';
 import { DashboardComponent } from './dashboard.component';
 import { ChronicCareComponent } from './chronic-care.component';
 import { ContactComponent } from './contact.component';
 import { DiseaseDetailComponent } from './disease-detail.component';
 import { FaqComponent } from './faq.component';
+import { OurDoctorsComponent } from './our-doctors.component';
 import { PrivacyTermsComponent } from './privacy-terms.component';
 import { SafetyComponent } from './safety.component';
+import { TestimonialsComponent } from './testimonials.component';
 import { TreatmentsComponent } from './treatments.component';
 import { WhySuccessfulComponent } from './why-successful.component';
 import { roleGuard } from './role.guard';
@@ -39,6 +43,42 @@ export const routes: Routes = [
       seoTitle: 'Treatment Details | Vitalis Care',
       seoDescription:
         'Read treatment details, common symptoms, care approach, and safety guidance at Vitalis Care.'
+    }
+  },
+  {
+    path: 'our-doctors',
+    component: OurDoctorsComponent,
+    data: {
+      seoTitle: 'Our Doctors | Vitalis Care and Research Centre',
+      seoDescription:
+        'Meet the qualified homeopathic doctors at Vitalis Care. Our internal clinical team is matched to patients based on their condition for personalised, long-term care.'
+    }
+  },
+  {
+    path: 'blog',
+    component: BlogComponent,
+    data: {
+      seoTitle: 'Health Blog | Vitalis Care and Research Centre',
+      seoDescription:
+        'Evidence-informed articles on chronic care, homeopathy, hair and skin health, mental wellness, and healthy living from the Vitalis Care clinical team.'
+    }
+  },
+  {
+    path: 'testimonials',
+    component: TestimonialsComponent,
+    data: {
+      seoTitle: 'Patient Stories | Vitalis Care and Research Centre',
+      seoDescription:
+        'Read real patient experiences from Vitalis Care. Patients with chronic conditions share how doctor-led homeopathic care helped them find lasting relief.'
+    }
+  },
+  {
+    path: 'careers',
+    component: CareersComponent,
+    data: {
+      seoTitle: 'Careers | Vitalis Care and Research Centre',
+      seoDescription:
+        'Join the Vitalis Care team. We are hiring homeopathic doctors, care coordinators, pharmacists, and operations staff who are passionate about patient-first healthcare.'
     }
   },
   { path: 'hair-fall', redirectTo: 'treatments/hair-fall', pathMatch: 'full' },
@@ -97,6 +137,20 @@ export const routes: Routes = [
   },
   { path: 'login', redirectTo: '', pathMatch: 'full' },
   { path: 'auth/reset', component: AuthResetCallbackComponent },
+  {
+    path: 'get-app',
+    loadComponent: () => import('./get-app-page.component').then((m) => m.GetAppPageComponent),
+    data: {
+      seoTitle: 'Download Vitalis Patient App',
+      seoDescription: 'Scan the QR code to install the Vitalis patient app. No account required to download.'
+    }
+  },
+  {
+    path: 'patient/scan',
+    loadComponent: () => import('./user-patient-scan-page').then((m) => m.UserPatientScanPage),
+    canActivate: [roleGuard],
+    data: { roles: ['PATIENT'], seoTitle: 'Scan patient ID | Vitalis Care' }
+  },
   {
     path: 'patient/dashboard',
     component: DashboardComponent,

@@ -23,7 +23,10 @@ export const ROUTE_PATHS = {
   INVENTORY: 'inventory',
   NOTIFICATIONS: 'notifications',
   SECURITY: 'security',
-  ECOSYSTEM_USERS: 'ecosystem-users'
+  ECOSYSTEM_USERS: 'ecosystem-users',
+  STAFF: 'staff',
+  SCAN: 'scan',
+  VACANCIES: 'vacancies'
 } as const;
 
 /** When embedded in operations-web, set `globalThis.__ADMIN_ROUTE_BASE__ = 'admin'`. */
@@ -49,7 +52,9 @@ export const NAV_ITEMS = [
   { path: adminNavPath(ROUTE_PATHS.DASHBOARD), label: 'Dashboard' },
   { path: adminNavPath(ROUTE_PATHS.DOCTORS), label: 'Doctors' },
   { path: adminNavPath(ROUTE_PATHS.CONSUMERS), label: 'Consumers' },
+  { path: adminNavPath(ROUTE_PATHS.SCAN), label: 'Scan patient' },
   { path: adminNavPath(ROUTE_PATHS.DISEASES), label: 'Diseases' },
+  { path: adminNavPath(ROUTE_PATHS.VACANCIES), label: '📢 Vacancies' },
   { path: adminNavPath(ROUTE_PATHS.HR), label: '🪪 Doctor HR' },
   { path: adminNavPath(ROUTE_PATHS.HR_USERS), label: '👥 HR Managers' },
   { path: adminNavPath(ROUTE_PATHS.EMPLOYEES), label: '👥 Employees' },
@@ -61,6 +66,7 @@ export const NAV_ITEMS = [
   { path: adminNavPath(ROUTE_PATHS.INVENTORY), label: '📦 Inventory' },
   { path: adminNavPath(ROUTE_PATHS.NOTIFICATIONS), label: '🔔 Notifications' },
   { path: adminNavPath(ROUTE_PATHS.ADMIN_USERS), label: '🔐 Admin Users' },
+  { path: adminNavPath(ROUTE_PATHS.STAFF), label: '🛡️ Staff permissions' },
   { path: adminNavPath(ROUTE_PATHS.ECOSYSTEM_USERS), label: '🌐 Portal Users' },
   { path: adminNavPath(ROUTE_PATHS.CONSULTATIONS), label: '🩺 Consultations' },
   { path: adminNavPath(ROUTE_PATHS.PAYMENTS), label: '💳 Payments' },
@@ -90,12 +96,12 @@ export const NAV_GROUPS: AdminNavGroup[] = [
   {
     id: 'clinical',
     label: 'Clinical',
-    segments: [ROUTE_PATHS.DOCTORS, ROUTE_PATHS.CONSUMERS, ROUTE_PATHS.DISEASES, ROUTE_PATHS.CONSULTATIONS]
+    segments: [ROUTE_PATHS.DOCTORS, ROUTE_PATHS.CONSUMERS, ROUTE_PATHS.SCAN, ROUTE_PATHS.DISEASES, ROUTE_PATHS.CONSULTATIONS]
   },
   {
     id: 'people',
     label: 'People & HR',
-    segments: [ROUTE_PATHS.HR, ROUTE_PATHS.HR_USERS, ROUTE_PATHS.EMPLOYEES, ROUTE_PATHS.LEAVES, ROUTE_PATHS.PAYROLL]
+    segments: [ROUTE_PATHS.VACANCIES, ROUTE_PATHS.HR, ROUTE_PATHS.HR_USERS, ROUTE_PATHS.EMPLOYEES, ROUTE_PATHS.LEAVES, ROUTE_PATHS.PAYROLL]
   },
   {
     id: 'stores',
@@ -119,6 +125,7 @@ export const NAV_GROUPS: AdminNavGroup[] = [
     segments: [
       ROUTE_PATHS.NOTIFICATIONS,
       ROUTE_PATHS.ADMIN_USERS,
+      ROUTE_PATHS.STAFF,
       ROUTE_PATHS.ECOSYSTEM_USERS,
       ROUTE_PATHS.AUDIT,
       ROUTE_PATHS.SECURITY

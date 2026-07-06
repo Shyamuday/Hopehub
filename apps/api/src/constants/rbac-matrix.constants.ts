@@ -177,6 +177,22 @@ export const RBAC_CAPABILITIES: RbacCapability[] = [
     roles: [Role.WAREHOUSE_MANAGER]
   },
   {
+    id: 'patient.scan',
+    label: 'Patient QR scan',
+    description: 'Scan patient card QR or enter patient ID to open the right workflow',
+    roles: [
+      Role.DOCTOR,
+      Role.ADMIN,
+      Role.HR,
+      Role.RECEPTIONIST,
+      Role.CLINIC_MANAGER,
+      Role.CALL_CENTER,
+      Role.PATIENT_COORDINATOR,
+      Role.WAREHOUSE_MANAGER,
+      Role.PATIENT
+    ]
+  },
+  {
     id: 'doctor.consult',
     label: 'Doctor consultations',
     description: 'Conduct consultations and prescribe',

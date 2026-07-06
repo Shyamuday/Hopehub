@@ -1,0 +1,42 @@
+enum VacancyStatus {
+  DRAFT
+  OPEN
+  CLOSED
+}
+
+enum JobType {
+  FULL_TIME
+  PART_TIME
+  CONTRACT
+  INTERNSHIP
+}
+
+enum LocationType {
+  REMOTE
+  ON_SITE
+  HYBRID
+}
+
+model JobVacancy {
+  id               String        @id @default(cuid())
+  title            String
+  department       String
+  jobType          JobType       @default(FULL_TIME)
+  locationType     LocationType  @default(ON_SITE)
+  location         String?
+  description      String        @db.Text
+  requirements     String[]      @default([])
+  responsibilities String[]      @default([])
+  status           VacancyStatus @default(DRAFT)
+  isUrgent         Boolean       @default(false)
+  deadline         DateTime?
+  salaryRange      String?
+  createdById      String?
+  createdBy        User?         @relation("VacancyCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  @@index([status])
+  @@index([department])
+  @@index([createdAt])
+}

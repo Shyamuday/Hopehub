@@ -148,4 +148,48 @@ export class AdminReportsApi extends AdminApiBase {
       }>(`${this.apiBase}${API_PATHS.ADMIN.RBAC_MATRIX}`)
     );
   }
+
+  getPermissionPresets() {
+    return firstValueFrom(
+      this.http.get<{
+        clusters: Record<string, string>;
+        presets: Array<{
+          id: string;
+          label: string;
+          summary: string;
+          cluster: string;
+          permissionCodes: string[];
+        }>;
+        governance: Record<string, string>;
+        permissions: Array<{ code: string; label: string }>;
+      }>(`${this.apiBase}${API_PATHS.ADMIN.PERMISSION_PRESETS}`)
+    );
+  }
+
+  getStaff() {
+    return firstValueFrom(
+      this.http.get<{
+        staff: Array<{
+          id: string;
+          name: string;
+          email?: string | null;
+          role: string;
+          isActive?: boolean;
+          staffProfile: { isSuperAdmin: boolean; permissionCodes: string[] } | null;
+        }>;
+      }>(`${this.apiBase}${API_PATHS.ADMIN.STAFF}`)
+    );
+  }
+
+  updateStaff(
+    userId: string,
+    payload: { isSuperAdmin?: boolean; permissionCodes?: string[] }
+  ) {
+    return firstValueFrom(
+      this.http.put<{ staffProfile: { userId: string; isSuperAdmin: boolean; permissionCodes: string[] } }>(
+        `${this.apiBase}${API_PATHS.ADMIN.STAFF_BY_ID(userId)}`,
+        payload
+      )
+    );
+  }
 }

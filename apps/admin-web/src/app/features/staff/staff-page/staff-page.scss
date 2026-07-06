@@ -1,0 +1,123 @@
+.panel {
+  padding: 1.25rem;
+}
+
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.panel-sub {
+  color: var(--muted, #64748b);
+  margin: 0.35rem 0 0;
+  max-width: 52rem;
+}
+
+.governance-box {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+}
+
+.preset-list {
+  margin: 0.5rem 0 0;
+  padding-left: 1.25rem;
+}
+
+.preset-cluster {
+  display: inline-block;
+  font-size: 0.75rem;
+  background: #e0f2fe;
+  color: #0369a1;
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+  margin-right: 0.35rem;
+}
+
+.staff-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.staff-card.editing {
+  border-color: #3b82f6;
+  background: #f8fbff;
+}
+
+.staff-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: center;
+}
+
+.email,
+.role-badge {
+  display: inline-block;
+  margin-left: 0.5rem;
+  color: #64748b;
+  font-size: 0.875rem;
+}
+
+.role-badge {
+  background: #f1f5f9;
+  padding: 0.1rem 0.45rem;
+  border-radius: 4px;
+}
+
+.codes-display {
+  margin: 0.5rem 0 0;
+  font-size: 0.875rem;
+  color: #334155;
+  word-break: break-word;
+}
+
+.perm-group {
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  margin: 0.75rem 0;
+  padding: 0.75rem;
+}
+
+.perm-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 0.5rem;
+}
+
+.perm-chip {
+  display: flex;
+  gap: 0.4rem;
+  align-items: flex-start;
+  font-size: 0.875rem;
+}
+
+.field {
+  display: block;
+  margin: 0.5rem 0;
+}
+
+.edit-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.error {
+  color: #b91c1c;
+}
+
+.btn-edit,
+.btn-save,
+.btn-cancel,
+.btn-secondary,
+.retry-btn {
+  cursor: pointer;
+}

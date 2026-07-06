@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { WHATSAPP_CONTACT_URL } from './core/constants/branding.constants';
 import { AppFooterComponent } from './app-footer.component';
 import { AppHeaderComponent } from './app-header.component';
+import { HomeAppDownloadSectionComponent } from './home-app-download-section.component';
 import { HomeFinalCtaSectionComponent } from './home-final-cta-section.component';
 import { HomeHeroSectionComponent } from './home-hero-section.component';
 import { HomeHowItWorksSectionComponent } from './home-how-it-works-section.component';
@@ -17,6 +18,7 @@ import { HomeTreatmentsSectionComponent } from './home-treatments-section.compon
     HomeTreatmentsSectionComponent,
     HomeHowItWorksSectionComponent,
     HomeSafetyFaqSectionComponent,
+    HomeAppDownloadSectionComponent,
     HomeFinalCtaSectionComponent,
   ]
 ,

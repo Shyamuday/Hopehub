@@ -1,0 +1,15 @@
+<div class="scan-launcher-page">
+  <vitalis-patient-scan-panel
+    [loading]="loading()"
+    (codeSubmit)="openCode($event)"
+    (scanError)="error.set($event)"
+  />
+
+  @if (error()) {
+    <p class="page-error">{{ error() }}</p>
+  }
+
+  @if (lastPatient(); as patient) {
+    <p class="found">Found: <strong>{{ patient.name }}</strong> ({{ patient.patientCode }})</p>
+  }
+</div>

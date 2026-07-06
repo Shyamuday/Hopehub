@@ -10,13 +10,15 @@ export const ROUTE_PATHS = {
   LEAVES: 'leaves',
   SLOTS: 'slots',
   EARNINGS: 'earnings',
-  PATIENT_SCAN: 'scan/patient'
+  PATIENT_SCAN: 'scan/patient',
+  SCAN: 'scan'
 } as const;
 
 export const DEFAULT_AUTHED_ROUTE = ROUTE_PATHS.WORKLIST;
 
 export const NAV_ITEMS = [
   { path: `/${ROUTE_PATHS.WORKLIST}`, label: 'Worklist' },
+  { path: `/${ROUTE_PATHS.SCAN}`, label: 'Scan' },
   { path: `/${ROUTE_PATHS.DASHBOARD}`, label: 'Dashboard' },
   { path: `/${ROUTE_PATHS.APPOINTMENTS}`, label: 'Appointments' },
   { path: `/${ROUTE_PATHS.PATIENTS}`, label: 'Patients' },

@@ -36,10 +36,12 @@ function emptyProfileForm() {
   };
 }
 
+import { AppDownloadQrComponent } from './shared/app-download-qr/app-download-qr.component';
+
 @Component({
   selector: 'app-patient-profile',
   standalone: true,
-  imports: [CommonModule, FormField],
+  imports: [CommonModule, FormField, AppDownloadQrComponent],
   styleUrl: './patient-profile.component.scss',
   templateUrl: './patient-profile.component.html',
 })

@@ -29,6 +29,12 @@ export const ADMIN_CHILD_ROUTES: Routes = [
       )
   },
   {
+    path: 'scan',
+    canActivate: guard,
+    loadComponent: () =>
+      import('../pages/patient-scan/patient-scan-launcher-page').then((m) => m.PatientScanLauncherPage)
+  },
+  {
     path: ROUTE_PATHS.DISEASES,
     canActivate: guard,
     loadComponent: () =>
@@ -179,5 +185,11 @@ export const ADMIN_CHILD_ROUTES: Routes = [
     canActivate: guard,
     loadComponent: () =>
       import('@vitalis/admin-console/features/payroll/payroll-page/payroll-page').then((m) => m.PayrollPage)
+  },
+  {
+    path: ROUTE_PATHS.STAFF,
+    canActivate: guard,
+    loadComponent: () =>
+      import('@vitalis/admin-console/features/staff/staff-page/staff-page').then((m) => m.StaffPage)
   }
 ];

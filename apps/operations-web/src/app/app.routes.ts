@@ -77,6 +77,12 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/queue/queue.component').then((m) => m.QueueComponent)
       },
       {
+        path: ROUTE_PATHS.SCAN,
+        canActivate: [capabilityGuard],
+        loadComponent: () =>
+          import('./pages/patient-scan/patient-scan-launcher-page').then((m) => m.PatientScanLauncherPage)
+      },
+      {
         path: ROUTE_PATHS.CLINIC_DASHBOARD,
         canActivate: [capabilityGuard],
         loadComponent: () =>

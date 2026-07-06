@@ -27,7 +27,8 @@ export const ROUTE_PATHS = {
   ACCOUNTS: 'accounts',
   CLAIMS: 'claims',
   STORE: 'store',
-  STORE_MANAGER: 'store-manager'
+  STORE_MANAGER: 'store-manager',
+  SCAN: 'scan'
 } as const;
 
 export const STORE_COUNTER_PATHS = {
@@ -95,7 +96,8 @@ export const ROUTE_CAPABILITIES: Record<string, string> = {
   [ROUTE_PATHS.DELIVERY_ORDERS]: 'delivery.ops',
   [ROUTE_PATHS.LAB_REFERRALS]: 'diagnostic.portal',
   [ROUTE_PATHS.ACCOUNTS]: 'corporate_wellness.portal',
-  [ROUTE_PATHS.CLAIMS]: 'insurance.portal'
+  [ROUTE_PATHS.CLAIMS]: 'insurance.portal',
+  [ROUTE_PATHS.SCAN]: 'patient.scan'
 };
 
 /** Capability guard for nested store routes (path relative to store/ or store-manager/). */

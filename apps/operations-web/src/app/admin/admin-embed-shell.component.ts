@@ -5,6 +5,7 @@ import { environment } from '../../environments/environment';
 import { AUTH_TOKEN_KEY } from '../core/constants/auth.constants';
 import { NAV_ITEMS } from '@vitalis/admin-console/core/constants/app-routes.constants';
 import { AdminNavTabsComponent } from '@vitalis/admin-console/layout/admin-nav-tabs/admin-nav-tabs.component';
+import { AdminAuth } from '@vitalis/admin-console/core/services/admin-auth';
 import { PlatformAuthService } from '../services/platform-auth.service';
 import { ADMIN_ROUTE_CAPABILITIES } from './admin.guards';
 
@@ -17,6 +18,7 @@ import { ADMIN_ROUTE_CAPABILITIES } from './admin.guards';
 })
 export class AdminEmbedShellComponent implements OnInit {
   private auth = inject(PlatformAuthService);
+  private adminAuth = inject(AdminAuth);
   private router = inject(Router);
 
   readonly bellConfig = computed(() => ({
@@ -27,6 +29,7 @@ export class AdminEmbedShellComponent implements OnInit {
 
   ngOnInit(): void {
     (globalThis as { __ADMIN_ROUTE_BASE__?: string }).__ADMIN_ROUTE_BASE__ = 'admin';
+    void this.adminAuth.refreshSession();
   }
 
   readonly filteredNavItems = computed(() => {

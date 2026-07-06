@@ -50,6 +50,7 @@ import { createCorporateWellnessRouter } from './routes/corporate-wellness/route
 import { createInsuranceRouter } from './routes/insurance/router.js';
 import { labReferralsRouter } from './routes/lab-referrals.js';
 import { notificationsRouter } from './routes/notifications.js';
+import { vacanciesRouter } from './routes/vacancies.js';
 import { devRouter } from './routes/dev.js';
 import { createRepertoryRouter } from './routes/repertory/index.js';
 import { roleGuidesRouter } from './routes/role-guides.js';
@@ -221,6 +222,7 @@ app.use(createCorporateWellnessRouter());
 app.use(createInsuranceRouter());
 app.use(labReferralsRouter);
 app.use(notificationsRouter);
+app.use(vacanciesRouter);
 
 // ── Global error handler ───────────────────────────────────────────────────────
 

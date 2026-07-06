@@ -348,10 +348,31 @@ export class AdminApi {
   getRbacMatrix(...args: Parameters<AdminReportsApi['getRbacMatrix']>) {
     return this.reports.getRbacMatrix(...(args as Parameters<AdminReportsApi['getRbacMatrix']>));
   }
+  getPermissionPresets(...args: Parameters<AdminReportsApi['getPermissionPresets']>) {
+    return this.reports.getPermissionPresets(...(args as Parameters<AdminReportsApi['getPermissionPresets']>));
+  }
+  getStaff(...args: Parameters<AdminReportsApi['getStaff']>) {
+    return this.reports.getStaff(...(args as Parameters<AdminReportsApi['getStaff']>));
+  }
+  updateStaff(...args: Parameters<AdminReportsApi['updateStaff']>) {
+    return this.reports.updateStaff(...(args as Parameters<AdminReportsApi['updateStaff']>));
+  }
   getAdminStore(...args: Parameters<AdminHrApi['getAdminStore']>) {
     return this.hr.getAdminStore(...(args as Parameters<AdminHrApi['getAdminStore']>));
   }
   updateAdminStore(...args: Parameters<AdminHrApi['updateAdminStore']>) {
     return this.hr.updateAdminStore(...(args as Parameters<AdminHrApi['updateAdminStore']>));
+  }
+  listVacancies(...args: Parameters<AdminOpsApi['listVacancies']>) {
+    return this.ops.listVacancies(...(args as Parameters<AdminOpsApi['listVacancies']>));
+  }
+  createVacancy(...args: Parameters<AdminOpsApi['createVacancy']>) {
+    return this.ops.createVacancy(...(args as Parameters<AdminOpsApi['createVacancy']>));
+  }
+  updateVacancy(...args: Parameters<AdminOpsApi['updateVacancy']>) {
+    return this.ops.updateVacancy(...(args as Parameters<AdminOpsApi['updateVacancy']>));
+  }
+  closeVacancy(...args: Parameters<AdminOpsApi['closeVacancy']>) {
+    return this.ops.closeVacancy(...(args as Parameters<AdminOpsApi['closeVacancy']>));
   }
 }

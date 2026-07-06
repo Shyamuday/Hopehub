@@ -13,6 +13,7 @@ import { MyLeaves } from './features/leaves/my-leaves/my-leaves';
 import { SlotsPage } from './features/slots/slots-page/slots-page';
 import { EarningsPage } from './features/earnings/earnings-page/earnings-page';
 import { PatientScanPage } from './features/scan/patient-scan-page/patient-scan-page';
+import { DoctorPatientScanLauncherPage } from './features/scan/patient-scan-launcher-page/patient-scan-launcher-page';
 
 export const routes: Routes = [
   { path: ROUTE_PATHS.LOGIN, component: Login },
@@ -39,6 +40,7 @@ export const routes: Routes = [
       { path: ROUTE_PATHS.LEAVES, component: MyLeaves },
       { path: ROUTE_PATHS.SLOTS, component: SlotsPage },
       { path: ROUTE_PATHS.EARNINGS, component: EarningsPage },
+      { path: ROUTE_PATHS.SCAN, component: DoctorPatientScanLauncherPage },
       { path: `${ROUTE_PATHS.PATIENT_SCAN}/:patientCode`, component: PatientScanPage }
     ]
   },

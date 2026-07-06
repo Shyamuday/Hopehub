@@ -69,6 +69,7 @@ export function navItemsForDoctorType(type?: HomeopathicDoctorType | null) {
   const capabilities = capabilitiesForDoctorType(type);
   const items = [
     { path: `/${ROUTE_PATHS.WORKLIST}`, label: 'Worklist', enabled: true },
+    { path: `/${ROUTE_PATHS.SCAN}`, label: 'Scan', enabled: true },
     { path: `/${ROUTE_PATHS.DASHBOARD}`, label: 'Dashboard', enabled: true },
     { path: `/${ROUTE_PATHS.REPERTORY}`, label: 'Repertory', enabled: capabilities.caseAnalysis },
     { path: `/${ROUTE_PATHS.APPOINTMENTS}`, label: 'Appointments', enabled: capabilities.prescribe },
