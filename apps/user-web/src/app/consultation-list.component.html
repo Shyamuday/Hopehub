@@ -8,8 +8,7 @@
               <strong>{{ consultation.disease.name }}</strong>
               <span>{{ consultation.patient.name }}</span>
               <small>{{ consultation.status }}</small>
-              <small>Plan: {{ consultation.billingPlanCode || consultation.payment?.billingPlanCode || 'ONE_TIME' }}</small>
-              <small>Amount: {{ (consultation.payment?.amountInPaise || 0) / 100 | currency: 'INR' }}</small>
+              <vitalis-detail-rows inlineTag="small" [inlineHostless]="true" [rows]="billingRows(consultation)" />
             </button>
             @if (userRole === 'PATIENT' && consultation.status === 'PAYMENT_PENDING') {
               <button

@@ -1,4 +1,5 @@
 import { Component, signal } from '@angular/core';
+import { DetailRowsComponent, type DetailRow } from '@vitalis/platform-ui';
 import { AppFooterComponent } from './app-footer.component';
 import { AppHeaderComponent } from './app-header.component';
 import { WHATSAPP_CONTACT_URL } from './core/constants/branding.constants';
@@ -18,7 +19,7 @@ interface PublicDoctor {
 
 @Component({
   selector: 'app-our-doctors',
-  imports: [AppHeaderComponent, AppFooterComponent],
+  imports: [AppHeaderComponent, AppFooterComponent, DetailRowsComponent],
   templateUrl: './our-doctors.component.html',
 })
 export class OurDoctorsComponent {
@@ -73,5 +74,9 @@ export class OurDoctorsComponent {
       .slice(0, 2)
       .map((w) => w[0].toUpperCase())
       .join('');
+  }
+
+  processStepRows(step: { title: string; detail: string }): DetailRow[] {
+    return [{ label: step.title, value: step.detail }];
   }
 }

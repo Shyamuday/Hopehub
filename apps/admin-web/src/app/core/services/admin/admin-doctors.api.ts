@@ -156,4 +156,30 @@ export class AdminDoctorsApi extends AdminApiBase {
   deleteBlogPost(id: string) {
     return firstValueFrom(this.http.delete(`${this.apiBase}${API_PATHS.ADMIN.BLOG_BY_ID(id)}`));
   }
+
+  // ── Chat Inbox ────────────────────────────────────────────────────────────
+  listChatSessions(status?: string, page = 1) {
+    const params = new URLSearchParams({ page: String(page), pageSize: '30' });
+    if (status) params.set('status', status);
+    return firstValueFrom(
+      this.http.get<{ sessions: any[]; pagination: { total: number; totalPages: number } }>(
+        `${this.apiBase}${API_PATHS.ADMIN.CHAT_SESSIONS}?${params}`
+      )
+    );
+  }
+  getChatSession(id: string) {
+    return firstValueFrom(
+      this.http.get<{ session: any }>(`${this.apiBase}${API_PATHS.ADMIN.CHAT_SESSION_BY_ID(id)}`)
+    );
+  }
+  resolveChatSession(id: string, note?: string) {
+    return firstValueFrom(
+      this.http.patch(`${this.apiBase}${API_PATHS.ADMIN.CHAT_SESSION_RESOLVE(id)}`, { note })
+    );
+  }
+  sendChatOperatorMessage(id: string, content: string) {
+    return firstValueFrom(
+      this.http.post<{ message: any }>(`${this.apiBase}${API_PATHS.ADMIN.CHAT_SESSION_MESSAGE(id)}`, { content })
+    );
+  }
 }

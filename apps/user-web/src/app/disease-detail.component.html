@@ -188,12 +188,7 @@
           @if (d.faq?.length) {
             <section class="faq-list">
               <h2>FAQ</h2>
-              @for (item of d.faq; track item.question) {
-                <article class="panel">
-                  <h3>{{ item.question }}</h3>
-                  <p>{{ item.answer }}</p>
-                </article>
-              }
+              <vitalis-detail-rows variant="panel" panelHeading="h3" [rows]="faqRows(d.faq)" />
             </section>
           }
 

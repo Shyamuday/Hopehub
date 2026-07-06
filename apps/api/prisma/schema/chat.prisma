@@ -1,0 +1,40 @@
+enum ChatSessionStatus {
+  ACTIVE
+  NEEDS_OPERATOR
+  RESOLVED
+}
+
+model ChatSession {
+  id             String            @id @default(cuid())
+  visitorName    String?
+  visitorPhone   String?
+  visitorEmail   String?
+  userId         String?
+  user           User?             @relation("UserChatSessions", fields: [userId], references: [id], onDelete: SetNull)
+  status         ChatSessionStatus @default(ACTIVE)
+  /// Tracks which stage of the bot script the conversation is at
+  botStage       Int               @default(0)
+  /// Short summary of the visitor's concern (captured from first user message)
+  concern        String?
+  operatorNote   String?
+  resolvedAt     DateTime?
+  messages       ChatMessage[]
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  @@index([status])
+  @@index([createdAt])
+  @@index([userId])
+}
+
+model ChatMessage {
+  id        String      @id @default(cuid())
+  sessionId String
+  session   ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  /// 'bot' | 'user' | 'operator'
+  role      String
+  content   String      @db.Text
+  createdAt DateTime    @default(now())
+
+  @@index([sessionId, createdAt])
+}

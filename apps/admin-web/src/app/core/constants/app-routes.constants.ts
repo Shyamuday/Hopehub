@@ -30,7 +30,8 @@ export const ROUTE_PATHS = {
   TESTIMONIALS: 'testimonials',
   FAQ: 'faq',
   BLOG: 'blog',
-  SITE_CONFIG: 'site-config'
+  SITE_CONFIG: 'site-config',
+  CHAT_INBOX: 'chat-inbox'
 } as const;
 
 /** When embedded in operations-web, set `globalThis.__ADMIN_ROUTE_BASE__ = 'admin'`. */
@@ -63,6 +64,7 @@ export const NAV_ITEMS = [
   { path: adminNavPath(ROUTE_PATHS.FAQ), label: '❓ FAQ' },
   { path: adminNavPath(ROUTE_PATHS.BLOG), label: '📝 Blog' },
   { path: adminNavPath(ROUTE_PATHS.SITE_CONFIG), label: '⚙️ Site Settings' },
+  { path: adminNavPath(ROUTE_PATHS.CHAT_INBOX), label: '💬 Chat Inbox' },
   { path: adminNavPath(ROUTE_PATHS.HR), label: '🪪 Doctor HR' },
   { path: adminNavPath(ROUTE_PATHS.HR_USERS), label: '👥 HR Managers' },
   { path: adminNavPath(ROUTE_PATHS.EMPLOYEES), label: '👥 Employees' },
@@ -114,7 +116,7 @@ export const NAV_GROUPS: AdminNavGroup[] = [
   {
     id: 'content',
     label: 'Website Content',
-    segments: [ROUTE_PATHS.TESTIMONIALS, ROUTE_PATHS.FAQ, ROUTE_PATHS.BLOG, ROUTE_PATHS.SITE_CONFIG]
+    segments: [ROUTE_PATHS.TESTIMONIALS, ROUTE_PATHS.FAQ, ROUTE_PATHS.BLOG, ROUTE_PATHS.SITE_CONFIG, ROUTE_PATHS.CHAT_INBOX]
   },
   {
     id: 'stores',

@@ -83,10 +83,7 @@
             @for (step of process; track step.step) {
               <div class="doctor-step-card">
                 <span class="doctor-step-num">{{ step.step }}</span>
-                <div>
-                  <strong>{{ step.title }}</strong>
-                  <p>{{ step.detail }}</p>
-                </div>
+                <vitalis-detail-rows variant="blocks" [rows]="processStepRows(step)" />
               </div>
             }
           </div>

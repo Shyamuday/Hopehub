@@ -1,6 +1,7 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
 import { form, FormField } from '@angular/forms/signals';
 import { DatePipe, NgTemplateOutlet } from '@angular/common';
+import { buildDetailRows, DetailRowsComponent, HR_LETTER_META_FIELDS } from '@vitalis/platform-ui';
 import { StoreApiService } from '../../../services/store-api.service';
 import { StaffHrProfile, JoiningLetterDoc } from '../../../models/store';
 import { WorkShift, EmployeeStatus } from '../../../models';
@@ -70,7 +71,7 @@ function profileFromStaff(s: StaffHrProfile): ProfileFormFields {
 
 @Component({
   selector: 'app-staff-hr',
-  imports: [FormField, DatePipe, NgTemplateOutlet],
+  imports: [FormField, DatePipe, NgTemplateOutlet, DetailRowsComponent],
   templateUrl: './staff-hr.component.html',
   styleUrl: './staff-hr.component.scss'
 })
@@ -176,5 +177,17 @@ export class StaffHrComponent implements OnInit {
 
   setWorkShift(value: WorkShift): void {
     this.profileFormModel.update((form) => ({ ...form, workShift: value }));
+  }
+
+  letterMetaRows(content: Record<string, unknown>, dateFormat = 'dd MMMM yyyy') {
+    const datePipe = new DatePipe('en-IN');
+    return buildDetailRows(
+      {
+        referenceLabel: 'Letter No',
+        referenceNumber: String(content['letterNumber'] ?? ''),
+        issuedDate: datePipe.transform(content['issuedDate'], dateFormat) ?? ''
+      },
+      HR_LETTER_META_FIELDS
+    );
   }
 }

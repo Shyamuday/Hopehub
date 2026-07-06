@@ -102,8 +102,7 @@
       <strong>{{ detail.consumer.name }}</strong>
       <p class="patient-code-badge">{{ detail.consumer.patientCode || detail.consumer.id }}</p>
       <p>{{ detail.consumer.email || 'No email' }} | {{ detail.consumer.mobile || 'No mobile' }}</p>
-      <small>Adherence: {{ detail.adherence.percent }}% (Taken {{ detail.adherence.taken }} / {{ detail.adherence.total }})</small>
-      <small>Skipped: {{ detail.adherence.skipped }} | Missed: {{ detail.adherence.missed }}</small>
+      <vitalis-detail-rows inlineTag="small" [inlineHostless]="true" [rows]="adherenceRows(detail.adherence)" />
     </article>
 
     <section class="health-profile-panel">
@@ -217,8 +216,7 @@
           <article class="support-card">
             <h4>Reminder channels</h4>
             @if (ctx.reminderPreferences; as prefs) {
-              <p>In-app {{ prefs.inApp ? 'on' : 'off' }} · SMS {{ prefs.sms ? 'on' : 'off' }} · WhatsApp {{ prefs.whatsapp ? 'on' : 'off' }}</p>
-              <p class="muted">Quiet hours {{ prefs.quietHoursStart }} – {{ prefs.quietHoursEnd }}</p>
+              <vitalis-detail-rows [rows]="reminderPreferenceRows(prefs)" />
             } @else {
               <p class="muted">No preferences saved.</p>
             }

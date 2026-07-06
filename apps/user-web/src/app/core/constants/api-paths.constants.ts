@@ -27,6 +27,11 @@ export const API_PATHS = {
   ANALYTICS: {
     EVENTS: '/analytics/events'
   },
+  CHAT: {
+    START: '/chat/start',
+    SESSION: (id: string) => `/chat/${id}`,
+    MESSAGE: (id: string) => `/chat/${id}/message`
+  },
   VACANCIES: '/vacancies',
   DOCTORS: '/doctors',
   TESTIMONIALS: '/testimonials',

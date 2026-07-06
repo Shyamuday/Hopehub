@@ -1,6 +1,7 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { form, FormField } from '@angular/forms/signals';
 import { DatePipe } from '@angular/common';
+import { buildDetailRows, DetailRowsComponent, HR_LETTER_META_FIELDS } from '@vitalis/platform-ui';
 import { AdminApi } from '../../../core/services/admin-api';
 import { PAISE_PER_RUPEE } from '../../../shared/constants/currency.constants';
 import {
@@ -46,7 +47,7 @@ function emptyDoctorProfileForm() {
 
 @Component({
   selector: 'app-doctor-hr',
-  imports: [FormField, DatePipe],
+  imports: [FormField, DatePipe, DetailRowsComponent],
   templateUrl: './doctor-hr.html',
   styleUrl: './doctor-hr.scss'
 })
@@ -179,5 +180,17 @@ export class DoctorHrComponent implements OnInit {
       ...profile,
       weeklyOffDays: c.includes(d) ? c.filter((x: string) => x !== d) : [...c, d]
     });
+  }
+
+  letterMetaRows(content: Record<string, unknown>, dateFormat = 'dd MMMM yyyy') {
+    const datePipe = new DatePipe('en-IN');
+    return buildDetailRows(
+      {
+        referenceLabel: 'Letter No',
+        referenceNumber: String(content['letterNumber'] ?? ''),
+        issuedDate: datePipe.transform(content['issuedDate'], dateFormat) ?? ''
+      },
+      HR_LETTER_META_FIELDS
+    );
   }
 }

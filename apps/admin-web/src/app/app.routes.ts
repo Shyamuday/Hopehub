@@ -34,6 +34,7 @@ import { TestimonialsPage } from './features/content/testimonials-page/testimoni
 import { FaqPage } from './features/content/faq-page/faq-page';
 import { BlogPage } from './features/content/blog-page/blog-page';
 import { SiteConfigPage } from './features/content/site-config-page/site-config-page';
+import { ChatInboxPage } from './features/content/chat-inbox-page/chat-inbox-page';
 
 export const routes: Routes = [
   { path: ROUTE_PATHS.LOGIN, component: AdminLogin },
@@ -73,7 +74,8 @@ export const routes: Routes = [
       { path: ROUTE_PATHS.TESTIMONIALS, component: TestimonialsPage },
       { path: ROUTE_PATHS.FAQ, component: FaqPage },
       { path: ROUTE_PATHS.BLOG, component: BlogPage },
-      { path: ROUTE_PATHS.SITE_CONFIG, component: SiteConfigPage }
+      { path: ROUTE_PATHS.SITE_CONFIG, component: SiteConfigPage },
+      { path: ROUTE_PATHS.CHAT_INBOX, component: ChatInboxPage }
     ]
   },
   { path: '**', redirectTo: '' }

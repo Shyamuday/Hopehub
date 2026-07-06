@@ -21,3 +21,4 @@ export {
   patientClinicalProfileHasData,
   type PatientClinicalProfile
 } from './detail-rows/patient-clinical-profile.fields';
+export { HR_LETTER_META_FIELDS, hrLetterMetaRows, type HrLetterMeta } from './detail-rows/hr-letter-meta.fields';

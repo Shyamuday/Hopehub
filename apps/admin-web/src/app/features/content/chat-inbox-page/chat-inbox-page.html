@@ -1,0 +1,136 @@
+<div class="page-header">
+  <div>
+    <h1>💬 Chat Inbox</h1>
+    <p class="subtitle">Review visitor conversations escalated by Dr. Priya when they need human follow-up.</p>
+  </div>
+  @if (pendingCount() > 0) {
+    <span class="pending-pill">{{ pendingCount() }} awaiting follow-up</span>
+  }
+</div>
+
+@if (error()) { <p class="error-msg">{{ error() }}</p> }
+@if (message()) { <p class="success-msg">{{ message() }}</p> }
+
+<!-- Status filter pills -->
+<div class="filter-pills">
+  @for (f of [
+    { key: 'NEEDS_OPERATOR', label: 'Needs follow-up' },
+    { key: 'ACTIVE', label: 'Active' },
+    { key: 'RESOLVED', label: 'Resolved' },
+    { key: 'ALL', label: 'All' }
+  ]; track f.key) {
+    <button
+      class="pill"
+      [class.active]="statusFilter() === f.key"
+      (click)="setFilter($any(f.key))"
+    >{{ f.label }}</button>
+  }
+</div>
+
+<div class="inbox-layout">
+  <!-- Session list -->
+  <div class="session-list panel">
+    @if (loading()) {
+      <p class="loading-text">Loading…</p>
+    } @else if (sessions().length === 0) {
+      <p class="empty-text">No sessions in this category.</p>
+    } @else {
+      @for (s of sessions(); track s.id) {
+        <button
+          class="session-item"
+          [class.selected]="selected()?.id === s.id"
+          (click)="selectSession(s.id)"
+        >
+          <div class="session-item-top">
+            <span class="session-concern">{{ sessionPreview(s) }}</span>
+            <span class="badge" [class]="statusClass(s.status)">{{ statusLabel(s.status) }}</span>
+          </div>
+          <div class="session-item-meta">
+            @if (s.visitorPhone) {
+              <span>📞 {{ s.visitorPhone }}</span>
+            }
+            @if (s.visitorName) {
+              <span>👤 {{ s.visitorName }}</span>
+            }
+            <span>{{ formatTime(s.createdAt) }}</span>
+            @if (s._count) {
+              <span>{{ s._count.messages }} msgs</span>
+            }
+          </div>
+        </button>
+      }
+    }
+  </div>
+
+  <!-- Detail panel -->
+  <div class="session-detail panel">
+    @if (!selected()) {
+      <div class="detail-empty">
+        <p>Select a conversation to review.</p>
+      </div>
+    } @else if (detailLoading()) {
+      <p class="loading-text">Loading conversation…</p>
+    } @else {
+      @let s = selected()!;
+
+      <div class="detail-header">
+        <div>
+          <h2>{{ s.concern ?? 'Visitor conversation' }}</h2>
+          <div class="detail-meta">
+            @if (s.visitorName) { <span>👤 {{ s.visitorName }}</span> }
+            @if (s.visitorPhone) { <span>📞 {{ s.visitorPhone }}</span> }
+            @if (s.visitorEmail) { <span>✉️ {{ s.visitorEmail }}</span> }
+            <span class="badge" [class]="statusClass(s.status)">{{ statusLabel(s.status) }}</span>
+          </div>
+        </div>
+        <span class="detail-time">Started {{ formatTime(s.createdAt) }}</span>
+      </div>
+
+      <!-- Messages thread -->
+      <div class="messages-thread">
+        @for (msg of s.messages; track msg.id) {
+          <div class="thread-msg" [class]="'role-' + msg.role">
+            <div class="thread-role">
+              @if (msg.role === 'bot') { Dr. Priya }
+              @else if (msg.role === 'operator') { Operator }
+              @else { Visitor }
+              · {{ formatTime(msg.createdAt) }}
+            </div>
+            <div class="thread-bubble">{{ msg.content }}</div>
+          </div>
+        }
+      </div>
+
+      <!-- Operator reply -->
+      @if (s.status !== 'RESOLVED') {
+        <div class="reply-row">
+          <textarea
+            class="reply-input"
+            placeholder="Send a message to the visitor…"
+            [(ngModel)]="replyText"
+            rows="2"
+          ></textarea>
+          <button class="btn-primary" (click)="sendReply()" [disabled]="mutating() || !replyText.trim()">
+            Send
+          </button>
+        </div>
+
+        <div class="resolve-row">
+          <input
+            class="resolve-note"
+            placeholder="Resolution note (optional)…"
+            [(ngModel)]="resolveNote"
+          />
+          <button class="btn-resolve" (click)="resolve()" [disabled]="mutating()">
+            ✓ Mark resolved
+          </button>
+        </div>
+      } @else {
+        <div class="resolved-banner">
+          ✓ Resolved {{ s.resolvedAt ? formatTime(s.resolvedAt) : '' }}
+          @if (s.operatorNote) { — {{ s.operatorNote }} }
+        </div>
+      }
+    }
+  </div>
+</div>

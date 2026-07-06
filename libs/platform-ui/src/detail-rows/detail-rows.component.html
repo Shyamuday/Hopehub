@@ -10,7 +10,11 @@
 } @else if (variant() === 'panel') {
   @for (row of rows(); track row.label) {
     <article class="panel">
-      <h2>{{ row.label }}</h2>
+      @if (panelHeading() === 'h3') {
+        <h3>{{ row.label }}</h3>
+      } @else {
+        <h2>{{ row.label }}</h2>
+      }
       <p>{{ row.value }}</p>
     </article>
   }
@@ -31,15 +35,71 @@
     </div>
   }
 } @else {
-  <div class="detail-inline">
+  @if (inlineHostless()) {
     @for (row of rows(); track row.label || row.value) {
-      <p>
-        @if (row.label) {
-          {{ row.label }}: {{ row.value }}
-        } @else {
-          {{ row.value }}
+      @switch (inlineTag()) {
+        @case ('small') {
+          <small>
+            @if (row.label) {
+              {{ row.label }}: {{ row.value }}
+            } @else {
+              {{ row.value }}
+            }
+          </small>
         }
-      </p>
+        @case ('span') {
+          <span>
+            @if (row.label) {
+              {{ row.label }}: {{ row.value }}
+            } @else {
+              {{ row.value }}
+            }
+          </span>
+        }
+        @default {
+          <p>
+            @if (row.label) {
+              {{ row.label }}: {{ row.value }}
+            } @else {
+              {{ row.value }}
+            }
+          </p>
+        }
+      }
     }
-  </div>
+  } @else {
+    <div class="detail-inline">
+      @for (row of rows(); track row.label || row.value) {
+        @switch (inlineTag()) {
+          @case ('small') {
+            <small>
+              @if (row.label) {
+                {{ row.label }}: {{ row.value }}
+              } @else {
+                {{ row.value }}
+              }
+            </small>
+          }
+          @case ('span') {
+            <span>
+              @if (row.label) {
+                {{ row.label }}: {{ row.value }}
+              } @else {
+                {{ row.value }}
+              }
+            </span>
+          }
+          @default {
+            <p>
+              @if (row.label) {
+                {{ row.label }}: {{ row.value }}
+              } @else {
+                {{ row.value }}
+              }
+            </p>
+          }
+        }
+      }
+    </div>
+  }
 }

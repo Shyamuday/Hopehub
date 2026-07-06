@@ -1,0 +1,124 @@
+<!-- Floating button -->
+<div class="chat-fab-wrapper">
+  <button
+    class="chat-fab"
+    [class.is-open]="chat.isOpen()"
+    (click)="toggleChat()"
+    aria-label="Chat with Dr. Priya"
+  >
+    @if (chat.isOpen()) {
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="22" height="22">
+        <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+      </svg>
+    } @else {
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" width="24" height="24">
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    }
+  </button>
+
+  @if (showBadge() && !chat.isOpen()) {
+    <span class="chat-badge" (click)="openChat()">
+      Chat with {{ chat.botName() }}
+    </span>
+  }
+</div>
+
+<!-- Chat panel -->
+@if (chat.isOpen()) {
+  <div class="chat-panel" role="dialog" aria-labelledby="chat-panel-title">
+    <!-- Header -->
+    <div class="chat-header">
+      <div class="chat-avatar">
+        <span>P</span>
+      </div>
+      <div class="chat-header-info">
+        <div class="chat-header-name" id="chat-panel-title">{{ chat.botName() }}</div>
+        <div class="chat-header-status">
+          <span class="status-dot"></span> Care Advisor · Vitalis
+        </div>
+      </div>
+      <button class="chat-close-btn" (click)="chat.close()" aria-label="Close chat">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" width="18" height="18">
+          <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Messages -->
+    <div class="chat-messages">
+      @if (chat.messages().length === 0 && chat.isLoading()) {
+        <div class="chat-loading">
+          <span class="typing-dot"></span>
+          <span class="typing-dot"></span>
+          <span class="typing-dot"></span>
+        </div>
+      }
+
+      @for (msg of chat.messages(); track msg.id) {
+        <div class="chat-msg" [class.is-bot]="msg.role === 'bot'" [class.is-operator]="msg.role === 'operator'" [class.is-user]="msg.role === 'user'">
+          @if (msg.role !== 'user') {
+            <div class="msg-avatar">
+              @if (msg.role === 'operator') { <span>Op</span> } @else { <span>P</span> }
+            </div>
+          }
+          <div class="msg-bubble">
+            <p [innerHTML]="formatMessage(msg.content)"></p>
+
+            @if (msg.showBookButton) {
+              <a href="/" class="msg-cta-btn" (click)="chat.close()">
+                Book Consultation →
+              </a>
+            }
+            @if (msg.showWhatsAppButton) {
+              <a [href]="whatsappUrl()" target="_blank" rel="noopener" class="msg-cta-btn msg-cta-wa">
+                WhatsApp Us →
+              </a>
+            }
+          </div>
+        </div>
+      }
+
+      @if (chat.isLoading() && chat.messages().length > 0) {
+        <div class="chat-msg is-bot">
+          <div class="msg-avatar"><span>P</span></div>
+          <div class="msg-bubble typing-indicator">
+            <span class="typing-dot"></span>
+            <span class="typing-dot"></span>
+            <span class="typing-dot"></span>
+          </div>
+        </div>
+      }
+
+      <div #messagesEnd></div>
+    </div>
+
+    <!-- Input -->
+    <div class="chat-input-row">
+      <textarea
+        class="chat-input"
+        placeholder="Type your message…"
+        [(ngModel)]="inputText"
+        (keydown)="onEnter($event)"
+        rows="1"
+        [disabled]="chat.isLoading()"
+        aria-label="Your message"
+      ></textarea>
+      <button
+        class="chat-send-btn"
+        (click)="send()"
+        [disabled]="!inputText.trim() || chat.isLoading()"
+        aria-label="Send message"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="18" height="18">
+          <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
+        </svg>
+      </button>
+    </div>
+
+    <div class="chat-footer-note">
+      Your conversation is private and confidential.
+    </div>
+  </div>
+}

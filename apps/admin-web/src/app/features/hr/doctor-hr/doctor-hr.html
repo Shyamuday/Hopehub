@@ -213,8 +213,7 @@
                       <div class="org-addr">{{ letter()!.content['organizationAddress'] }}</div>
                     </div>
                     <div class="lmeta">
-                      <span><strong>Letter No:</strong> {{ letter()!.content['letterNumber'] }}</span>
-                      <span><strong>Date:</strong> {{ letter()!.content['issuedDate'] | date:'dd MMMM yyyy' }}</span>
+                      <vitalis-detail-rows inlineTag="span" [inlineHostless]="true" [rows]="letterMetaRows(letter()!.content)" />
                     </div>
                     <div class="lsubject"><strong>{{ letter()!.content['letterSubject'] || 'APPOINTMENT / JOINING LETTER' }}</strong></div>
                     <p class="lsalut">Dear Dr. {{ letter()!.content['employeeName'] }},</p>

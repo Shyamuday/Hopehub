@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import { buildDetailRows, DetailRowsComponent } from '@vitalis/platform-ui';
+import { buildDetailRows, DetailRowsComponent, type DetailRow } from '@vitalis/platform-ui';
 import { AppFooterComponent } from './app-footer.component';
 import { AppHeaderComponent } from './app-header.component';
 import { AuthFormOverlayComponent } from './auth/auth-form-overlay.component';
@@ -64,5 +64,9 @@ export class DiseaseDetailComponent implements OnInit {
     return disease.treatmentOptions
       ? buildDetailRows(disease.treatmentOptions, DISEASE_TREATMENT_OPTION_FIELDS)
       : [];
+  }
+
+  faqRows(items: NonNullable<DiseaseInfo['faq']>) {
+    return items.map((item) => ({ label: item.question, value: item.answer }));
   }
 }

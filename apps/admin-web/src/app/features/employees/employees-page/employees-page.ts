@@ -1,6 +1,7 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { form, FormField } from '@angular/forms/signals';
 import { DatePipe } from '@angular/common';
+import { buildDetailRows, DetailRowsComponent, HR_LETTER_META_FIELDS } from '@vitalis/platform-ui';
 import { AdminApi } from '../../../core/services/admin-api';
 import { SEARCH_DEBOUNCE_MS, TOAST_DURATION_MS } from '../../../core/constants/timing.constants';
 import { PAISE_PER_RUPEE } from '../../../shared/constants/currency.constants';
@@ -43,7 +44,7 @@ function emptyProfileForm() {
 
 @Component({
   selector: 'app-employees-page',
-  imports: [FormField, DatePipe],
+  imports: [FormField, DatePipe, DetailRowsComponent],
   templateUrl: './employees-page.html',
   styleUrl: './employees-page.scss'
 })
@@ -215,5 +216,17 @@ export class EmployeesPage implements OnInit {
   private showToast(msg: string): void {
     this.toast.set(msg);
     setTimeout(() => this.toast.set(''), TOAST_DURATION_MS);
+  }
+
+  letterMetaRows(content: Record<string, unknown>, dateFormat = 'dd MMM yyyy') {
+    const datePipe = new DatePipe('en-IN');
+    return buildDetailRows(
+      {
+        referenceLabel: 'Ref',
+        referenceNumber: String(content['letterNumber'] ?? ''),
+        issuedDate: datePipe.transform(content['issuedDate'], dateFormat) ?? ''
+      },
+      HR_LETTER_META_FIELDS
+    );
   }
 }

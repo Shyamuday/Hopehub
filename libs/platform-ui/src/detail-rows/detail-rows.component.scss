@@ -10,6 +10,10 @@
   display: contents;
 }
 
+:host.detail-rows-inline-hostless {
+  display: contents;
+}
+
 .detail-grid {
   display: grid;
   gap: 0.75rem;

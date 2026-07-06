@@ -222,8 +222,7 @@
           @if (c['storePhone']) { <div class="org-phone">📞 {{ c['storePhone'] }}</div> }
         </div>
         <div class="letter-meta-row">
-          <span><strong>Letter No:</strong> {{ c['letterNumber'] }}</span>
-          <span><strong>Date:</strong> {{ c['issuedDate'] | date:'dd MMMM yyyy' }}</span>
+          <vitalis-detail-rows inlineTag="span" [inlineHostless]="true" [rows]="letterMetaRows(c)" />
         </div>
         <div class="letter-subject">
           <strong>APPOINTMENT / JOINING LETTER</strong>

@@ -26,6 +26,7 @@ import { registerAdminSiteConfigRoutes } from './site-config.js';
 import { registerAdminTestimonialRoutes } from './testimonials.js';
 import { registerAdminFaqRoutes } from './faq.js';
 import { registerAdminBlogRoutes } from './blog.js';
+import { registerAdminChatRoutes } from './chat.js';
 import { adminPermissionMiddleware } from '../../admin-route-permissions.js';
 
 export function createAdminRouter(io: SocketIoServer) {
@@ -59,6 +60,7 @@ export function createAdminRouter(io: SocketIoServer) {
   registerAdminTestimonialRoutes(router);
   registerAdminFaqRoutes(router);
   registerAdminBlogRoutes(router);
+  registerAdminChatRoutes(router);
 
   return router;
 }

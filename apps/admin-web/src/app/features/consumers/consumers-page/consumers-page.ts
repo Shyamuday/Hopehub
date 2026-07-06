@@ -23,6 +23,10 @@ import {
   type SupportNoteCategory
 } from '../constants/support-note.constants';
 import { SUPPORT_ACCOUNT_FIELDS } from '../constants/support-detail.fields';
+import {
+  CONSUMER_ADHERENCE_FIELDS,
+  REMINDER_PREFERENCE_FIELDS
+} from '../constants/consumer-support-detail.fields';
 
 type Consumer = {
   id: string;
@@ -454,5 +458,13 @@ export class ConsumersPage {
       },
       SUPPORT_ACCOUNT_FIELDS
     );
+  }
+
+  adherenceRows(adherence: ConsumerDetail['adherence']) {
+    return buildDetailRows(adherence, CONSUMER_ADHERENCE_FIELDS);
+  }
+
+  reminderPreferenceRows(prefs: NonNullable<SupportContext['reminderPreferences']>) {
+    return buildDetailRows(prefs, REMINDER_PREFERENCE_FIELDS);
   }
 }
