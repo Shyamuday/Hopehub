@@ -18,6 +18,13 @@ import {
   salaryFormToPayload,
   type SalaryFormModel
 } from '../constants/salary-structure.constants';
+import {
+  compensationApiToForm,
+  compensationFormToPayload,
+  COMPENSATION_MODEL_OPTIONS,
+  EMPTY_DOCTOR_COMPENSATION_FORM,
+  type DoctorCompensationFormModel
+} from '../constants/doctor-compensation.constants';
 
 interface PayrollRow {
   id: string;
@@ -29,6 +36,12 @@ interface PayrollRow {
   leaveDays: number;
   netPaise: number;
   employeeStatus: string;
+  compensationModel?: string;
+  consultationSharePercent?: number;
+  consultationEarningsPaise?: number;
+  consultationGrossPaise?: number;
+  paidConsultations?: number;
+  totalEstimatedPayPaise?: number;
 }
 
 type SalaryEmployeeRow = {
@@ -59,7 +72,14 @@ export class PayrollPage implements OnInit {
 
   rows = signal<PayrollRow[]>([]);
   loading = signal(true);
-  summary = signal({ totalGross: 0, totalNet: 0, totalLeave: 0, headcount: 0 });
+  summary = signal({
+    totalGross: 0,
+    totalNet: 0,
+    totalConsultEarnings: 0,
+    totalEstimatedPay: 0,
+    totalLeave: 0,
+    headcount: 0
+  });
   typeFilter = signal<string>('ALL');
   toast = signal('');
 
@@ -80,6 +100,9 @@ export class PayrollPage implements OnInit {
   readonly salarySearchForm = form(this.salarySearchModel);
   readonly salaryFormModel = signal<SalaryFormModel>({ ...EMPTY_SALARY_FORM });
   readonly salaryForm = form(this.salaryFormModel);
+  readonly compensationFormModel = signal<DoctorCompensationFormModel>({ ...EMPTY_DOCTOR_COMPENSATION_FORM });
+  readonly compensationForm = form(this.compensationFormModel);
+  readonly compensationModelOptions = COMPENSATION_MODEL_OPTIONS;
 
   readonly earningFields = SALARY_EARNING_FIELDS;
   readonly deductionFields = SALARY_DEDUCTION_FIELDS;
@@ -125,8 +148,15 @@ export class PayrollPage implements OnInit {
   filteredNet(): number {
     return this.filtered().reduce((a, r) => a + r.netPaise, 0);
   }
-  filteredLeave(): number {
-    return this.filtered().reduce((a, r) => a + r.leaveDays, 0);
+  filteredConsultEarnings(): number {
+    return this.filtered().reduce((a, r) => a + (r.consultationEarningsPaise ?? 0), 0);
+  }
+  filteredTotalPay(): number {
+    return this.filtered().reduce((a, r) => a + (r.totalEstimatedPayPaise ?? r.netPaise), 0);
+  }
+
+  isConsultOnlyDoctor(): boolean {
+    return this.compensationFormModel().compensationModel === 'CONSULT_ONLY';
   }
 
   fmt(paise: number): string {
@@ -143,14 +173,24 @@ export class PayrollPage implements OnInit {
     return EMPLOYEE_STATUS_COLORS[s] ?? '#94a3b8';
   }
 
+  filteredLeave(): number {
+    return this.filtered().reduce((a, r) => a + r.leaveDays, 0);
+  }
+
   exportCSV(): void {
     const rows = this.filtered();
-    const header = 'Name,Type,Designation,Department,Gross (Rs),Leave Days,Deduction (Rs),Net (Rs)';
-    const lines = rows.map(
-      (r) =>
+    const header =
+      'Name,Type,Designation,Department,Compensation Model,Gross (Rs),Leave Days,Deduction (Rs),Net Salary (Rs),Consult Share %,Consult Earnings (Rs),Total Est. Pay (Rs)';
+    const lines = rows.map((r) => {
+      const deduction = (r.grossPaise - r.netPaise) / 100;
+      const consult = (r.consultationEarningsPaise ?? 0) / 100;
+      const total = (r.totalEstimatedPayPaise ?? r.netPaise) / 100;
+      return (
         `"${r.name}","${r.empType}","${r.designation ?? ''}","${r.department ?? ''}",` +
-        `${r.grossPaise / 100},${r.leaveDays},${(r.grossPaise - r.netPaise) / 100},${r.netPaise / 100}`
-    );
+        `"${r.compensationModel ?? ''}",${r.grossPaise / 100},${r.leaveDays},${deduction},${r.netPaise / 100},` +
+        `${r.consultationSharePercent ?? ''},${consult},${total}`
+      );
+    });
     const csv = [header, ...lines].join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
@@ -182,6 +222,7 @@ export class PayrollPage implements OnInit {
       const res = await this.api.getEmployeeSalary(employee.empType, employee.id);
       this.salaryCanEdit.set(res.canEdit);
       this.salaryFormModel.set(salaryApiToForm(res.salary));
+      this.compensationFormModel.set(compensationApiToForm(res.compensation));
     } finally {
       this.salaryLoading.set(false);
     }
@@ -192,7 +233,10 @@ export class PayrollPage implements OnInit {
     if (!employee || !this.salaryCanEdit()) return;
     this.salarySaving.set(true);
     try {
-      await this.api.saveEmployeeSalary(employee.empType, employee.id, salaryFormToPayload(this.salaryFormModel()));
+      await this.api.saveEmployeeSalary(employee.empType, employee.id, {
+        ...salaryFormToPayload(this.salaryFormModel()),
+        ...(employee.empType === 'DOCTOR' ? compensationFormToPayload(this.compensationFormModel()) : {})
+      });
       this.showToast('Salary structure saved ✓');
       await this.loadSalaryEmployees();
       const preview = this.salaryPreview();

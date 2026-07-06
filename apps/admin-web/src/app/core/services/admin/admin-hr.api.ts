@@ -184,7 +184,7 @@ export class AdminHrApi extends AdminApiBase {
 
   getEmployeeSalary(empType: string, id: string) {
     return firstValueFrom(
-      this.http.get<{ employee: any; salary: any; canEdit: boolean }>(
+      this.http.get<{ employee: any; salary: any; compensation: any; canEdit: boolean }>(
         `${this.apiBase}${API_PATHS.ADMIN.SALARY_BY_EMPLOYEE(empType, id)}`
       )
     );

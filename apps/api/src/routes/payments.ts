@@ -9,6 +9,7 @@ import { asyncRoute, routeParam } from '../utils/helpers.js';
 import { getRazorpayClient, verifyRazorpaySignature, razorpayKeyId, razorpayWebhookSecret } from '../services/razorpay.js';
 import { enabledNotificationChannels, notificationService } from '../services/notification-service.js';
 import { buildDoctorPayslip, buildPayslipHistory } from '../services/payroll.js';
+import { doctorReceivesConsultationShare, resolveDoctorSharePercent } from '../services/doctor-compensation.js';
 import { PRODUCT_EVENTS, trackProductEvent } from '../services/product-analytics.js';
 
 export function createPaymentsRouter(io: SocketIoServer) {
@@ -226,7 +227,15 @@ export function createPaymentsRouter(io: SocketIoServer) {
     authRequired,
     allowRoles(Role.DOCTOR),
     asyncRoute(async (req, res) => {
-      const doctorSharePercent = 60;
+      const doctor = await prisma.doctor.findUnique({
+        where: { userId: req.user!.id },
+        select: { compensationModel: true, consultationSharePercent: true }
+      });
+      if (!doctor) return res.status(404).json({ message: 'Doctor profile not found.' });
+
+      const doctorSharePercent = doctorReceivesConsultationShare(doctor)
+        ? resolveDoctorSharePercent(doctor)
+        : 0;
       const payments = await prisma.payment.findMany({
         where: { status: PaymentStatus.PAID, consultation: { assignedDoctorId: req.user!.id } },
         include: {

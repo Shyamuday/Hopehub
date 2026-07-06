@@ -52,6 +52,12 @@ enum HomeopathicSpecialtyFocus {
   CHRONIC_DISEASES
 }
 
+enum DoctorCompensationModel {
+  SALARIED
+  CONSULT_ONLY
+  HYBRID
+}
+
 model Doctor {
   id               String         @id @default(cuid())
   userId           String         @unique
@@ -72,6 +78,10 @@ model Doctor {
   probationEndDate DateTime?
   salaryPerMonth   Int?
   consultationFee  Int?
+  /// How this doctor is paid: fixed salary, per-consultation only, or both.
+  compensationModel DoctorCompensationModel @default(HYBRID)
+  /// Share of paid consultation revenue (percent). Defaults to 60 when unset in logic.
+  consultationSharePercent Int @default(60)
   workShift        WorkShift      @default(FULL_DAY)
   shiftStart       String?
   shiftEnd         String?

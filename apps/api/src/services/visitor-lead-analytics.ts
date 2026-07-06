@@ -65,6 +65,45 @@ export async function buildLeadFunnelReport(days: number) {
     };
   });
 
+  const notInterestedLeads = await prisma.websiteLead.findMany({
+    where: {
+      createdAt: { gte: start, lte: end },
+      followUpStatus: 'NOT_INTERESTED',
+      notInterestedReason: { not: null }
+    },
+    select: { notInterestedReason: true }
+  });
+
+  const reasonCounts = new Map<string, number>();
+  for (const row of notInterestedLeads) {
+    const reason = row.notInterestedReason ?? 'Unknown';
+    const key = reason.split(' — ')[0]?.split(': ')[0] ?? reason;
+    reasonCounts.set(key, (reasonCounts.get(key) ?? 0) + 1);
+  }
+  const notInterestedByReason = [...reasonCounts.entries()]
+    .map(([reason, count]) => ({ reason, count }))
+    .sort((a, b) => b.count - a.count);
+
+  const issueLeads = await prisma.websiteLead.findMany({
+    where: {
+      createdAt: { gte: start, lte: end },
+      visitorIssue: { not: null }
+    },
+    select: { visitorIssue: true },
+    take: 500
+  });
+  const issueCounts = new Map<string, number>();
+  for (const row of issueLeads) {
+    const issue = row.visitorIssue?.trim();
+    if (!issue) continue;
+    const key = issue.length > 80 ? `${issue.slice(0, 77)}…` : issue;
+    issueCounts.set(key, (issueCounts.get(key) ?? 0) + 1);
+  }
+  const topVisitorIssues = [...issueCounts.entries()]
+    .map(([issue, count]) => ({ issue, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 10);
+
   return {
     windowDays,
     summary: {
@@ -72,9 +111,12 @@ export async function buildLeadFunnelReport(days: number) {
       needsCallback: leads.filter((l) => l.followUpStatus === 'NEEDS_CALLBACK').length,
       called: leads.filter((l) => l.calledAt || l.followUpStatus === 'CALLED').length,
       registered: leads.filter((l) => l.registeredAt || l.followUpStatus === 'REGISTERED').length,
-      booked: leads.filter((l) => l.bookedAt || l.followUpStatus === 'BOOKED').length
+      booked: leads.filter((l) => l.bookedAt || l.followUpStatus === 'BOOKED').length,
+      notInterested: leads.filter((l) => l.followUpStatus === 'NOT_INTERESTED').length
     },
     funnel,
-    bySource
+    bySource,
+    notInterestedByReason,
+    topVisitorIssues
   };
 }

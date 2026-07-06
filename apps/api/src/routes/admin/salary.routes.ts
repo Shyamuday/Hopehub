@@ -1,10 +1,11 @@
 import type { Request, Response, Router } from 'express';
-import { EmployeeType, Role } from '@prisma/client';
+import { DoctorCompensationModel, EmployeeType, Role } from '@prisma/client';
 import { z } from 'zod';
 import { authRequired, allowRoles } from '../../auth.js';
 import { prisma } from '../../db.js';
 import { asyncRoute } from '../../utils/helpers.js';
 import { staffHasAllPermissions, PERMISSIONS } from '../../staff-permissions.js';
+import { serializeDoctorCompensation } from '../../services/doctor-compensation.js';
 import {
   computeSalaryTotals,
   parseSalaryInput,
@@ -46,7 +47,8 @@ async function loadEmployee(empType: EmployeeType, id: string) {
       department: doctor.department,
       employeeStatus: doctor.employeeStatus,
       salaryPerMonth: doctor.salaryPerMonth,
-      salaryStructure: doctor.salaryStructure
+      salaryStructure: doctor.salaryStructure,
+      compensation: serializeDoctorCompensation(doctor)
     };
   }
 
@@ -210,6 +212,7 @@ export function registerAdminSalaryRoutes(router: Router) {
           employeeStatus: employee.employeeStatus,
           legacyGrossPaise: employee.salaryPerMonth ?? 0
         },
+        compensation: 'compensation' in employee ? employee.compensation : null,
         salary: structure
           ? serializeSalaryRecord({ ...structure, ...totals })
           : {
@@ -254,7 +257,10 @@ export function registerAdminSalaryRoutes(router: Router) {
       const id = z.string().min(1).parse(req.params.id);
       const body = z
         .object({
-          notes: z.string().max(500).optional().nullable()
+          notes: z.string().max(500).optional().nullable(),
+          compensationModel: z.nativeEnum(DoctorCompensationModel).optional(),
+          consultationSharePercent: z.number().int().min(0).max(100).optional(),
+          consultationFee: z.number().min(0).optional()
         })
         .passthrough()
         .parse(req.body);
@@ -262,7 +268,54 @@ export function registerAdminSalaryRoutes(router: Router) {
       const employee = await loadEmployee(empType, id);
       if (!employee) return res.status(404).json({ message: 'Employee not found.' });
 
+      if (empType === EmployeeType.DOCTOR) {
+        const compUpdate: {
+          compensationModel?: DoctorCompensationModel;
+          consultationSharePercent?: number;
+          consultationFee?: number | null;
+          salaryPerMonth?: number | null;
+        } = {};
+        if (body.compensationModel !== undefined) compUpdate.compensationModel = body.compensationModel;
+        if (body.consultationSharePercent !== undefined) {
+          compUpdate.consultationSharePercent = body.consultationSharePercent;
+        }
+        if (body.consultationFee !== undefined) {
+          compUpdate.consultationFee = Math.round(body.consultationFee * 100);
+        }
+        if (compUpdate.compensationModel === DoctorCompensationModel.CONSULT_ONLY) {
+          compUpdate.salaryPerMonth = 0;
+          await prisma.employeeSalary.deleteMany({ where: { doctorId: id } });
+        }
+        if (Object.keys(compUpdate).length) {
+          await prisma.doctor.update({ where: { id }, data: compUpdate });
+        }
+      }
+
       const components = parseSalaryInput(body as Record<string, unknown>);
+      const isConsultOnlyDoctor =
+        empType === EmployeeType.DOCTOR &&
+        (body.compensationModel === DoctorCompensationModel.CONSULT_ONLY ||
+          ('compensation' in employee && employee.compensation?.compensationModel === 'CONSULT_ONLY'));
+
+      if (isConsultOnlyDoctor) {
+        return res.json({
+          message: 'Doctor compensation settings saved. Consult-only doctors do not receive a salary structure.',
+          compensation:
+            empType === EmployeeType.DOCTOR
+              ? serializeDoctorCompensation(
+                  await prisma.doctor.findUniqueOrThrow({
+                    where: { id },
+                    select: {
+                      compensationModel: true,
+                      consultationSharePercent: true,
+                      consultationFee: true
+                    }
+                  })
+                )
+              : null
+        });
+      }
+
       const payload = buildSalaryPayload(components, body.notes, req.user!.id);
       const totals = computeSalaryTotals(components);
 

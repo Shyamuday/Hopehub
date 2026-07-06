@@ -37,7 +37,15 @@
             </div>
             <div class="scard net">
               <div class="sc-val">₹{{ paise2k(summary().totalNet) }}</div>
-              <div class="sc-lbl">Total Net Payout</div>
+              <div class="sc-lbl">Net Salary Payout</div>
+            </div>
+            <div class="scard consult">
+              <div class="sc-val">₹{{ paise2k(summary().totalConsultEarnings) }}</div>
+              <div class="sc-lbl">Consult Earnings</div>
+            </div>
+            <div class="scard total-pay">
+              <div class="sc-val">₹{{ paise2k(summary().totalEstimatedPay) }}</div>
+              <div class="sc-lbl">Total Est. Pay</div>
             </div>
             <div class="scard leave">
               <div class="sc-val">{{ summary().totalLeave }}</div>
@@ -63,7 +71,9 @@
                   <th class="num">Gross (₹)</th>
                   <th class="num">Leave Days</th>
                   <th class="num">Deduction (₹)</th>
-                  <th class="num net-col">Net Payout (₹)</th>
+                  <th class="num net-col">Net Salary (₹)</th>
+                  <th class="num">Consult (₹)</th>
+                  <th class="num total-col">Total Est. (₹)</th>
                 </tr>
               </thead>
               <tbody>
@@ -84,6 +94,17 @@
                     <td class="num" [style.color]="r.leaveDays > 0 ? '#fb923c' : 'inherit'">{{ r.leaveDays }}</td>
                     <td class="num deduction">{{ fmt(r.grossPaise - r.netPaise) }}</td>
                     <td class="num net-col"><strong>{{ fmt(r.netPaise) }}</strong></td>
+                    <td class="num consult-col">
+                      @if (r.empType === 'DOCTOR') {
+                        <strong>{{ fmt(r.consultationEarningsPaise ?? 0) }}</strong>
+                        @if ((r.paidConsultations ?? 0) > 0) {
+                          <small class="consult-meta">{{ r.paidConsultations }} consults · {{ r.consultationSharePercent }}%</small>
+                        }
+                      } @else {
+                        —
+                      }
+                    </td>
+                    <td class="num total-col"><strong>{{ fmt(r.totalEstimatedPayPaise ?? r.netPaise) }}</strong></td>
                   </tr>
                 }
               </tbody>
@@ -94,6 +115,8 @@
                   <td class="num"><strong>{{ filteredLeave() }}</strong></td>
                   <td class="num deduction"><strong>{{ fmt(filteredGross() - filteredNet()) }}</strong></td>
                   <td class="num net-col"><strong>{{ fmt(filteredNet()) }}</strong></td>
+                  <td class="num consult-col"><strong>{{ fmt(filteredConsultEarnings()) }}</strong></td>
+                  <td class="num total-col"><strong>{{ fmt(filteredTotalPay()) }}</strong></td>
                 </tr>
               </tfoot>
             </table>
@@ -166,13 +189,40 @@
                     {{ selectedSalaryEmployee()!.designation ?? '—' }} · {{ selectedSalaryEmployee()!.department ?? '—' }}
                   </p>
                 </div>
-                <div class="salary-totals">
-                  <div><span>Gross</span><strong>₹{{ fmtRupees(salaryPreview().gross) }}</strong></div>
-                  <div><span>Net</span><strong>₹{{ fmtRupees(salaryPreview().net) }}</strong></div>
-                  <div><span>CTC</span><strong>₹{{ fmtRupees(salaryPreview().ctc) }}</strong></div>
-                </div>
+                @if (!isConsultOnlyDoctor()) {
+                  <div class="salary-totals">
+                    <div><span>Gross</span><strong>₹{{ fmtRupees(salaryPreview().gross) }}</strong></div>
+                    <div><span>Net</span><strong>₹{{ fmtRupees(salaryPreview().net) }}</strong></div>
+                    <div><span>CTC</span><strong>₹{{ fmtRupees(salaryPreview().ctc) }}</strong></div>
+                  </div>
+                }
               </div>
 
+              @if (selectedSalaryEmployee()!.empType === 'DOCTOR') {
+                <div class="salary-section doctor-compensation-section">
+                  <h4>Doctor compensation</h4>
+                  <div class="salary-grid compensation-grid">
+                    <label>Employment type
+                      <select [formField]="compensationForm.compensationModel" [disabled]="!salaryCanEdit()">
+                        @for (opt of compensationModelOptions; track opt.value) {
+                          <option [value]="opt.value">{{ opt.label }}</option>
+                        }
+                      </select>
+                    </label>
+                    <label>Consultation share (%)
+                      <input type="number" min="0" max="100" step="1" [formField]="compensationForm.consultationSharePercent" [readonly]="!salaryCanEdit()" />
+                    </label>
+                    <label>Listed consultation fee (₹)
+                      <input type="number" min="0" step="1" [formField]="compensationForm.consultationFee" [readonly]="!salaryCanEdit()" />
+                    </label>
+                  </div>
+                  @if (isConsultOnlyDoctor()) {
+                    <p class="muted-note">Consult-only doctors are paid from online consultations only. Salary fields are hidden.</p>
+                  }
+                </div>
+              }
+
+              @if (!isConsultOnlyDoctor()) {
               <div class="salary-sections">
                 <div class="salary-section">
                   <h4>Earnings (monthly)</h4>
@@ -209,10 +259,11 @@
                   <textarea rows="2" [formField]="salaryForm.notes" [readonly]="!salaryCanEdit()"></textarea>
                 </label>
               </div>
+              }
 
               @if (salaryCanEdit()) {
                 <button class="btn-save-salary" [disabled]="salarySaving()" (click)="saveSalaryStructure()">
-                  {{ salarySaving() ? 'Saving…' : 'Save salary structure' }}
+                  {{ salarySaving() ? 'Saving…' : (selectedSalaryEmployee()!.empType === 'DOCTOR' ? 'Save compensation & salary' : 'Save salary structure') }}
                 </button>
               }
             }
