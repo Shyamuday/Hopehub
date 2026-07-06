@@ -13,7 +13,7 @@ import {
 import { enabledNotificationChannels, notificationService } from '../../services/notification-service.js';
 import { emitConsultationAssigned } from '../../services/consultation-realtime.js';
 import { createPatientRecord, searchPatients } from '../../services/patient-identity.js';
-import { PRODUCT_EVENTS, trackProductEvent } from '../../services/product-analytics.js';
+import { resolveDiseaseConsultationFee } from '../../services/consultation-pricing.js';
 import {
   consultationInclude,
   getReceptionStoreFromRequest,
@@ -259,6 +259,8 @@ export function registerReceptionRoutes(router: import('express').Router, io: So
         throw error;
       }
 
+      const consultFeePaise = await resolveDiseaseConsultationFee(disease.id, storeId);
+
       const consultation = await prisma.consultation.create({
         data: {
           patientId: patient.id,
@@ -268,17 +270,19 @@ export function registerReceptionRoutes(router: import('express').Router, io: So
           billingPlanCode: billingPlan.code,
           pricingSnapshot: {
             source: 'reception_walk_in',
-            diseaseFeeInPaise: disease.feeInPaise,
+            diseaseFeeInPaise: consultFeePaise,
             notes: body.notes ?? null
           },
           payment: {
             create: {
-              amountInPaise: disease.feeInPaise,
+              amountInPaise: consultFeePaise,
               billingPlanCode: billingPlan.code,
               lineItems: {
                 source: 'reception_walk_in',
                 diseaseName: disease.name,
-                diseaseFeeInPaise: disease.feeInPaise
+                consultationFeeInPaise: consultFeePaise,
+                diseaseFeeInPaise: consultFeePaise,
+                medicineFeeInPaise: 0
               },
               status: body.collectCash ? PaymentStatus.PAID : PaymentStatus.CREATED
             }
@@ -296,7 +300,7 @@ export function registerReceptionRoutes(router: import('express').Router, io: So
           targetType: 'consultation',
           targetId: consultation.id,
           summary: `Cash payment recorded for ${patient.name}.`,
-          metadata: { patientId: patient.id, amountInPaise: disease.feeInPaise }
+          metadata: { patientId: patient.id, amountInPaise: consultFeePaise }
         });
         void trackProductEvent({
           name: PRODUCT_EVENTS.PAYMENT_COMPLETED,
@@ -348,6 +352,8 @@ export function registerReceptionRoutes(router: import('express').Router, io: So
         return res.status(400).json({ error: 'Billing plan is not configured.' });
       }
 
+      const consultFeePaise = await resolveDiseaseConsultationFee(disease.id, storeId);
+
       const consultation = await prisma.consultation.create({
         data: {
           patientId: patient.id,
@@ -355,12 +361,18 @@ export function registerReceptionRoutes(router: import('express').Router, io: So
           clinicStoreId: storeId,
           intakeAnswers: body.intakeAnswers,
           billingPlanCode: billingPlan.code,
-          pricingSnapshot: { source: 'reception_booking', diseaseFeeInPaise: disease.feeInPaise },
+          pricingSnapshot: { source: 'reception_booking', diseaseFeeInPaise: consultFeePaise },
           payment: {
             create: {
-              amountInPaise: disease.feeInPaise,
+              amountInPaise: consultFeePaise,
               billingPlanCode: billingPlan.code,
-              lineItems: { source: 'reception_booking', diseaseName: disease.name },
+              lineItems: {
+                source: 'reception_booking',
+                diseaseName: disease.name,
+                consultationFeeInPaise: consultFeePaise,
+                diseaseFeeInPaise: consultFeePaise,
+                medicineFeeInPaise: 0
+              },
               status: body.collectCash ? PaymentStatus.PAID : PaymentStatus.CREATED
             }
           },

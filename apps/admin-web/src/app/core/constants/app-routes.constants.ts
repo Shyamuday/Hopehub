@@ -11,6 +11,7 @@ export const ROUTE_PATHS = {
   STORES: 'stores',
   CONSULTATIONS: 'consultations',
   PAYROLL: 'payroll',
+  RATES: 'rates',
   PAYMENTS: 'payments',
   FINANCE: 'finance',
   AUDIT: 'audit',
@@ -59,6 +60,7 @@ export const NAV_ITEMS = [
   { path: adminNavPath(ROUTE_PATHS.CONSUMERS), label: 'Consumers' },
   { path: adminNavPath(ROUTE_PATHS.SCAN), label: 'Scan patient' },
   { path: adminNavPath(ROUTE_PATHS.DISEASES), label: 'Diseases' },
+  { path: adminNavPath(ROUTE_PATHS.RATES), label: '💲 Rates & Pay' },
   { path: adminNavPath(ROUTE_PATHS.VACANCIES), label: '📢 Vacancies' },
   { path: adminNavPath(ROUTE_PATHS.TESTIMONIALS), label: '⭐ Testimonials' },
   { path: adminNavPath(ROUTE_PATHS.FAQ), label: '❓ FAQ' },
@@ -106,7 +108,7 @@ export const NAV_GROUPS: AdminNavGroup[] = [
   {
     id: 'clinical',
     label: 'Clinical',
-    segments: [ROUTE_PATHS.DOCTORS, ROUTE_PATHS.CONSUMERS, ROUTE_PATHS.SCAN, ROUTE_PATHS.DISEASES, ROUTE_PATHS.CONSULTATIONS]
+    segments: [ROUTE_PATHS.DOCTORS, ROUTE_PATHS.CONSUMERS, ROUTE_PATHS.SCAN, ROUTE_PATHS.DISEASES, ROUTE_PATHS.RATES, ROUTE_PATHS.CONSULTATIONS]
   },
   {
     id: 'people',

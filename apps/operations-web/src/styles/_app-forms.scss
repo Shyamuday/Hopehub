@@ -1,16 +1,14 @@
-// Operations portal: light cards/modals on dark shell
+// Operations portal: white form cards on dark shell — reset inherited light text
 @import '../../../../libs/platform-ui/src/styles/form-fields';
 
-.modal,
-.form,
 .form-surface,
-.follow-up-form,
-.book-block,
-.chat-reply,
 .walk-in-page .form,
-.visitor-leads-page .detail.panel,
 .queue-page .modal,
-.drawer .form-body,
+.visitor-leads-page .detail.panel,
+.visitor-leads-page .follow-up-form,
+.visitor-leads-page .not-interested-block,
+.visitor-leads-page .book-block,
+.visitor-leads-page .chat-reply,
 .panel.form-panel {
   @include vitalis-form-surface-light();
 }

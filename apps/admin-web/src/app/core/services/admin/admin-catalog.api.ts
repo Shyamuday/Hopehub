@@ -98,4 +98,30 @@ export class AdminCatalogApi extends AdminApiBase {
   updateDisease(id: string, payload: { name: string; description: string; feeInPaise: number; isActive: boolean; intakeQuestions: string[] }) {
     return firstValueFrom(this.http.put(`${this.apiBase}${API_PATHS.ADMIN.DISEASES}/${id}`, payload));
   }
+
+  getLocationFees(diseaseId?: string) {
+    return firstValueFrom(
+      this.http.get<{ fees: Array<any>; onlineKey: string }>(`${this.apiBase}${API_PATHS.ADMIN.LOCATION_FEES}`, {
+        params: diseaseId ? { diseaseId } : {}
+      })
+    );
+  }
+
+  saveLocationFee(payload: { diseaseId: string; locationKey: string; feeInPaise: number }) {
+    return firstValueFrom(this.http.put(`${this.apiBase}${API_PATHS.ADMIN.LOCATION_FEES}`, payload));
+  }
+
+  deleteLocationFee(diseaseId: string, locationKey: string) {
+    return firstValueFrom(
+      this.http.delete(`${this.apiBase}${API_PATHS.ADMIN.LOCATION_FEES}/${diseaseId}/${locationKey}`)
+    );
+  }
+
+  getBillingPlansAdmin() {
+    return firstValueFrom(this.http.get<{ plans: Array<any> }>(`${this.apiBase}${API_PATHS.ADMIN.BILLING_PLANS}`));
+  }
+
+  updateBillingPlan(id: string, payload: Record<string, unknown>) {
+    return firstValueFrom(this.http.put(`${this.apiBase}${API_PATHS.ADMIN.BILLING_PLANS}/${id}`, payload));
+  }
 }

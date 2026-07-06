@@ -14,6 +14,7 @@ import { LeavesPage } from './features/leaves/leaves-page/leaves-page';
 import { StoresPage } from './features/stores/stores-page/stores-page';
 import { ConsultationsPage } from './features/consultations/consultations-page/consultations-page';
 import { PayrollPage } from './features/payroll/payroll-page/payroll-page';
+import { RatesPage } from './features/rates/rates-page/rates-page';
 import { PaymentsPage } from './features/payments/payments-page/payments-page';
 import { FinancePage } from './features/finance/finance-page/finance-page';
 import { AuditPage } from './features/audit/audit-page/audit-page';
@@ -49,6 +50,7 @@ export const routes: Routes = [
       { path: ROUTE_PATHS.CONSUMERS, component: ConsumersPage },
       { path: ROUTE_PATHS.SCAN, component: AdminPatientScanLauncherPage },
       { path: ROUTE_PATHS.DISEASES, component: DiseasesPage },
+      { path: ROUTE_PATHS.RATES, component: RatesPage },
       { path: ROUTE_PATHS.VACANCIES, component: VacanciesPage },
       { path: ROUTE_PATHS.HR, component: DoctorHrComponent },
       { path: ROUTE_PATHS.HR_USERS, component: HrUsersComponent },

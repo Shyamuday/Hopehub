@@ -22,7 +22,42 @@
     &.active { background: #0f766e; color: #fff; border-color: #0f766e; }
   }
 }
-.form { display: grid; gap: 0.85rem; background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.25rem; }
+.form {
+  display: grid;
+  gap: 0.85rem;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1.25rem;
+  color: #0f172a;
+
+  .field-label {
+    color: #334155;
+  }
+
+  .field-hint {
+    color: #64748b;
+  }
+
+  input,
+  select,
+  textarea {
+    color: #0f172a;
+    background: #fff;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 0.5rem 0.65rem;
+
+    &::placeholder {
+      color: #94a3b8;
+      opacity: 1;
+    }
+  }
+
+  label.check {
+    color: #334155;
+  }
+}
 .lookup-row { display: grid; grid-template-columns: 1fr auto; gap: 0.5rem; }
 .hits { display: grid; gap: 0.5rem; }
 .hit {

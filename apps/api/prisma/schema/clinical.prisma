@@ -30,10 +30,25 @@ model Disease {
   publicCategory     String?
   publicDescription  String?        @db.Text
   consultations      Consultation[]
+  locationFees       DiseaseLocationFee[]
   createdAt          DateTime       @default(now())
   updatedAt          DateTime       @updatedAt
 
   @@index([publicCategory])
+}
+
+/// Per-clinic or online consultation fee override. `locationKey` is `ONLINE` or a store id.
+model DiseaseLocationFee {
+  id          String   @id @default(cuid())
+  diseaseId   String
+  locationKey String
+  feeInPaise  Int
+  disease     Disease  @relation(fields: [diseaseId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([diseaseId, locationKey])
+  @@index([locationKey])
 }
 
 model Consultation {

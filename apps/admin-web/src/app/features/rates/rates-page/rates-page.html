@@ -1,0 +1,183 @@
+<div class="rates-page">
+  <div class="rates-hdr">
+    <div>
+      <h2>💲 Rates &amp; Pay</h2>
+      <p>Consultation fees by clinic or online, billing plans, and staff/doctor pay</p>
+    </div>
+  </div>
+
+  <div class="page-tabs">
+    <button class="page-tab" [class.active]="tab() === 'fees'" (click)="setTab('fees')">Consultation fees</button>
+    <button class="page-tab" [class.active]="tab() === 'plans'" (click)="setTab('plans')">Billing plans</button>
+    <button class="page-tab" [class.active]="tab() === 'pay'" (click)="setTab('pay')">Salary &amp; compensation</button>
+  </div>
+
+  @if (toast()) {
+    <div class="toast">{{ toast() }}</div>
+  }
+
+  @if (loading()) {
+    <p class="loading-text">Loading rates…</p>
+  } @else {
+    @switch (tab()) {
+      @case ('fees') {
+        <div class="note-box">
+          Default fee per disease is set on
+          <a [routerLink]="diseasesLink">Diseases</a>.
+          Overrides here apply per clinic branch or online booking.
+        </div>
+
+        <div class="fees-layout">
+          <div class="panel list-panel">
+            <h3>Diseases</h3>
+            @for (d of diseases(); track d.id) {
+              <button
+                type="button"
+                class="disease-btn"
+                [class.active]="selectedDiseaseId() === d.id"
+                (click)="selectedDiseaseId.set(d.id)"
+              >
+                <strong>{{ d.name }}</strong>
+                <small>Default {{ formatPaise(d.feeInPaise) }}</small>
+              </button>
+            } @empty {
+              <p class="muted">No diseases yet.</p>
+            }
+          </div>
+
+          <div class="panel detail-panel">
+            @if (selectedDisease(); as disease) {
+              <h3>{{ disease.name }} — location fees</h3>
+              <p class="muted">Default: {{ formatPaise(disease.feeInPaise ?? 0) }} when no override exists.</p>
+
+              <div class="fee-form">
+                <label>
+                  Location
+                  <select [formField]="feeForm.locationKey">
+                    <option [value]="onlineKey()">Online / unassigned clinic</option>
+                    @for (s of stores(); track s.id) {
+                      <option [value]="s.id">{{ s.name }}</option>
+                    }
+                  </select>
+                </label>
+                <label>
+                  Fee (₹)
+                  <input type="number" step="1" [formField]="feeForm.feeRupees" placeholder="e.g. 500" />
+                </label>
+                <button type="button" class="btn-primary" [disabled]="saving()" (click)="saveLocationFee()">
+                  {{ saving() ? 'Saving…' : 'Save override' }}
+                </button>
+              </div>
+
+              <table class="fee-table">
+                <thead>
+                  <tr>
+                    <th>Location</th>
+                    <th class="num">Fee</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (f of feesForDisease(disease.id); track f.locationKey) {
+                    <tr>
+                      <td>{{ locationLabel(f.locationKey) }}</td>
+                      <td class="num">{{ formatPaise(f.feeInPaise) }}</td>
+                      <td class="actions">
+                        <button type="button" class="btn-link danger" (click)="removeLocationFee(disease.id, f.locationKey)">Remove</button>
+                      </td>
+                    </tr>
+                  } @empty {
+                    <tr>
+                      <td colspan="3" class="muted center">No overrides — default fee applies everywhere.</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            } @else {
+              <p class="muted">Select a disease to manage location fees.</p>
+            }
+          </div>
+        </div>
+      }
+
+      @case ('plans') {
+        <div class="note-box">
+          Subscription and package plans shown to patients. Price changes apply to new purchases.
+        </div>
+        <div class="panel">
+          <table class="plans-table">
+            <thead>
+              <tr>
+                <th>Plan</th>
+                <th>Type</th>
+                <th>Price (₹)</th>
+                <th>Consult limit</th>
+                <th>Active</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (p of plans(); track p.id) {
+                @let edit = planEdits()[p.id];
+                <tr>
+                  <td>
+                    <strong>{{ p.name }}</strong>
+                    @if (p.description) {
+                      <small class="plan-desc">{{ p.description }}</small>
+                    }
+                  </td>
+                  <td><span class="type-badge">{{ p.planType }}</span></td>
+                  <td>
+                    <input
+                      type="number"
+                      min="1"
+                      class="inp-sm"
+                      [value]="edit?.priceRupees ?? 0"
+                      (input)="updatePlanField(p.id, 'priceRupees', +($any($event.target).value))"
+                    />
+                  </td>
+                  <td>{{ p.consultationsLimit ?? '—' }}</td>
+                  <td>
+                    <input
+                      type="checkbox"
+                      [checked]="edit?.isActive ?? false"
+                      (change)="updatePlanField(p.id, 'isActive', $any($event.target).checked)"
+                    />
+                  </td>
+                  <td>
+                    <button type="button" class="btn-primary sm" [disabled]="saving()" (click)="savePlan(p)">Save</button>
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="6" class="muted center">No billing plans configured.</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+
+      @case ('pay') {
+        <div class="pay-cards">
+          <a class="pay-card" [routerLink]="payrollLink">
+            <span class="pay-icon">💰</span>
+            <h3>Payroll &amp; salary structure</h3>
+            <p>Set monthly salary breakdown for staff and doctors. Configure doctor consult share %, employment type, and listed consultation fee.</p>
+            <span class="pay-cta">Open Payroll →</span>
+          </a>
+          <a class="pay-card secondary" [routerLink]="diseasesLink">
+            <span class="pay-icon">🩺</span>
+            <h3>Default consultation fees</h3>
+            <p>Base fee per disease (before clinic/online overrides on the Consultation fees tab).</p>
+            <span class="pay-cta">Open Diseases →</span>
+          </a>
+        </div>
+        <div class="note-box">
+          Medicine selling prices are set per batch at stock-in (Inventory / store ops), not here.
+          Finance reports are under <a [routerLink]="financeLink">Finance</a>.
+        </div>
+      }
+    }
+  }
+</div>

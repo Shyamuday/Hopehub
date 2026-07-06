@@ -63,7 +63,10 @@ button {
 input, select, textarea {
   font-family: inherit;
   font-size: inherit;
-  color: inherit;
+  color: var(--text-primary);
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
 }
 
 ::-webkit-scrollbar { width: 6px; height: 6px; }

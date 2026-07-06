@@ -8,6 +8,7 @@ import { asyncRoute, routeParam, publicUserSelect, includeConsultationRelations 
 import { enabledNotificationChannels, notificationService } from '../services/notification-service.js';
 import { emitConsultationAssigned } from '../services/consultation-realtime.js';
 import { ensureBillingPlans } from './catalog.js';
+import { resolveDiseaseConsultationFee } from '../services/consultation-pricing.js';
 import { PRODUCT_EVENTS, trackProductEvent } from '../services/product-analytics.js';
 
 export function createConsultationsRouter(io: SocketIoServer) {
@@ -39,11 +40,12 @@ export function createConsultationsRouter(io: SocketIoServer) {
         return res.status(400).json({ message: 'Selected billing plan is not available.' });
       }
 
-      const amountInPaise = body.purchaseType === 'ONE_TIME' ? disease.feeInPaise : selectedPlan.priceInPaise;
       const patient = await prisma.user.findUniqueOrThrow({
         where: { id: req.user!.id },
         select: { homeClinicStoreId: true }
       });
+      const consultFeePaise = await resolveDiseaseConsultationFee(disease.id, patient.homeClinicStoreId);
+      const amountInPaise = body.purchaseType === 'ONE_TIME' ? consultFeePaise : selectedPlan.priceInPaise;
       const consultation = await prisma.consultation.create({
         data: {
           patientId: req.user!.id,
@@ -53,7 +55,7 @@ export function createConsultationsRouter(io: SocketIoServer) {
           billingPlanCode: selectedPlan.code,
           pricingSnapshot: {
             purchaseType: body.purchaseType,
-            diseaseFeeInPaise: disease.feeInPaise,
+            diseaseFeeInPaise: consultFeePaise,
             selectedPlanCode: selectedPlan.code,
             selectedPlanName: selectedPlan.name,
             selectedPlanPriceInPaise: selectedPlan.priceInPaise
@@ -66,7 +68,7 @@ export function createConsultationsRouter(io: SocketIoServer) {
                 purchaseType: body.purchaseType,
                 diseaseName: disease.name,
                 consultationFeeInPaise: amountInPaise,
-                diseaseFeeInPaise: disease.feeInPaise,
+                diseaseFeeInPaise: consultFeePaise,
                 medicineFeeInPaise: 0,
                 planCode: selectedPlan.code,
                 planName: selectedPlan.name,

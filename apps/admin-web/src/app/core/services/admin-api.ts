@@ -126,6 +126,21 @@ export class AdminApi {
   updateDisease(...args: Parameters<AdminCatalogApi['updateDisease']>) {
     return this.catalog.updateDisease(...(args as Parameters<AdminCatalogApi['updateDisease']>));
   }
+  getLocationFees(...args: Parameters<AdminCatalogApi['getLocationFees']>) {
+    return this.catalog.getLocationFees(...(args as Parameters<AdminCatalogApi['getLocationFees']>));
+  }
+  saveLocationFee(...args: Parameters<AdminCatalogApi['saveLocationFee']>) {
+    return this.catalog.saveLocationFee(...(args as Parameters<AdminCatalogApi['saveLocationFee']>));
+  }
+  deleteLocationFee(...args: Parameters<AdminCatalogApi['deleteLocationFee']>) {
+    return this.catalog.deleteLocationFee(...(args as Parameters<AdminCatalogApi['deleteLocationFee']>));
+  }
+  getBillingPlansAdmin(...args: Parameters<AdminCatalogApi['getBillingPlansAdmin']>) {
+    return this.catalog.getBillingPlansAdmin(...(args as Parameters<AdminCatalogApi['getBillingPlansAdmin']>));
+  }
+  updateBillingPlan(...args: Parameters<AdminCatalogApi['updateBillingPlan']>) {
+    return this.catalog.updateBillingPlan(...(args as Parameters<AdminCatalogApi['updateBillingPlan']>));
+  }
   getHrDoctors(...args: Parameters<AdminHrApi['getHrDoctors']>) {
     return this.hr.getHrDoctors(...(args as Parameters<AdminHrApi['getHrDoctors']>));
   }

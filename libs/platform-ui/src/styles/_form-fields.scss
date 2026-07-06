@@ -35,9 +35,10 @@
     color: var(--form-label-color, #334155);
   }
 
-  // Sibling label above input (admin .fg pattern)
+  // Sibling label above input (.fg, .form-group)
   .fg > label:only-child,
-  .fg > label:first-child:not(:has(input)) {
+  .fg > label:first-child:not(:has(input)),
+  .form-group > label {
     display: block;
     font-size: 0.8rem;
     font-weight: 600;
@@ -78,7 +79,22 @@
   --form-hint-color: #64748b;
   --form-placeholder-color: #94a3b8;
 
-  input,
+  // Dark global themes set light text; force readable labels on white panels
+  .field-label,
+  label.field-label,
+  .form-group > label,
+  .fg > label:first-child:not(:has(input)),
+  label:has(> input:not([type='checkbox']):not([type='radio'])),
+  label:has(> select),
+  label:has(> textarea) {
+    color: #334155;
+  }
+
+  .field-hint {
+    color: #64748b;
+  }
+
+  input:not([type='checkbox']):not([type='radio']),
   select,
   textarea {
     color: #0f172a;
@@ -87,6 +103,11 @@
     border-radius: 8px;
     padding: 0.5rem 0.65rem;
     font: inherit;
+
+    &::placeholder {
+      color: #94a3b8;
+      opacity: 1;
+    }
 
     &:focus {
       outline: none;

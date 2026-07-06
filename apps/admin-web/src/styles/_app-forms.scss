@@ -1,11 +1,16 @@
 @import '../../../../libs/platform-ui/src/styles/form-fields';
 
+// White panels — keep labels/inputs dark even when a parent sets color: white
+.panel,
 .modal,
-.drawer .form-body.form-surface-dark {
+.form-grid,
+.create-doctor-form,
+.edit-doctor-form,
+.advanced-filters.form-surface {
   @include vitalis-form-surface-light();
 }
 
-.drawer .form-body {
+.drawer .form-body.form-surface-dark {
   @include vitalis-form-surface-dark();
 }
 
