@@ -29,14 +29,14 @@ export class AdminEmbedShellComponent implements OnInit {
     (globalThis as { __ADMIN_ROUTE_BASE__?: string }).__ADMIN_ROUTE_BASE__ = 'admin';
   }
 
-  navItems() {
+  readonly filteredNavItems = computed(() => {
     const caps = new Set(this.auth.capabilities());
     return NAV_ITEMS.filter((item: { path: string; label: string }) => {
       const segment = item.path.split('/').filter(Boolean).pop() ?? '';
       const required = ADMIN_ROUTE_CAPABILITIES[segment];
       return !required || caps.has(required);
     });
-  }
+  });
 
   logout() {
     this.auth.logout();

@@ -70,6 +70,7 @@ export function navItemsForDoctorType(type?: HomeopathicDoctorType | null) {
   const items = [
     { path: `/${ROUTE_PATHS.WORKLIST}`, label: 'Worklist', enabled: true },
     { path: `/${ROUTE_PATHS.DASHBOARD}`, label: 'Dashboard', enabled: true },
+    { path: `/${ROUTE_PATHS.REPERTORY}`, label: 'Repertory', enabled: capabilities.caseAnalysis },
     { path: `/${ROUTE_PATHS.APPOINTMENTS}`, label: 'Appointments', enabled: capabilities.prescribe },
     { path: `/${ROUTE_PATHS.PATIENTS}`, label: 'Patients', enabled: true },
     { path: `/${ROUTE_PATHS.SLOTS}`, label: 'Slots', enabled: capabilities.slots },

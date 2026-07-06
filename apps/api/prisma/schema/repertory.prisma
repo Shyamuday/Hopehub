@@ -102,13 +102,13 @@ model RepertoryRubricRemedy {
 
 model CaseAnalysis {
   id               String               @id @default(cuid())
-  consultationId   String
+  consultationId   String?
   doctorId         String
   sourceId         String?
   status           CaseAnalysisStatus   @default(DRAFT)
   notes            String?
   selectedRemedyId String?
-  consultation     Consultation         @relation(fields: [consultationId], references: [id], onDelete: Cascade)
+  consultation     Consultation?        @relation(fields: [consultationId], references: [id], onDelete: Cascade)
   doctor           User                 @relation("DoctorCaseAnalyses", fields: [doctorId], references: [id], onDelete: Restrict)
   source           RepertorySource?     @relation(fields: [sourceId], references: [id], onDelete: SetNull)
   selectedRemedy   HomeopathicRemedy?   @relation("SelectedRemedy", fields: [selectedRemedyId], references: [id], onDelete: SetNull)

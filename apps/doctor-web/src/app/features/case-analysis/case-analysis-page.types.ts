@@ -43,7 +43,7 @@ export type AnalysisResult = {
 
 export type CaseAnalysis = {
   id: string;
-  consultationId: string;
+  consultationId?: string | null;
   status: 'DRAFT' | 'FINALIZED';
   notes?: string | null;
   source?: RepertorySource | null;

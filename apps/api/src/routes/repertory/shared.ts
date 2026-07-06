@@ -1,7 +1,18 @@
 import type { Request, Response } from 'express';
-import { Role } from '@prisma/client';
+import { CaseAnalysisStatus, Role } from '@prisma/client';
 import { prisma } from '../../db.js';
 import { routeParam } from '../../utils/helpers.js';
+
+export async function resolveDefaultRepertorySource(sourceId?: string) {
+  if (sourceId) {
+    return prisma.repertorySource.findUnique({ where: { id: sourceId } });
+  }
+  return (
+    (await prisma.repertorySource.findFirst({ where: { isActive: true, code: 'OOREP_PUBLICUM' } })) ||
+    (await prisma.repertorySource.findFirst({ where: { isActive: true, code: 'REPERTORIUM_PUBLICUM' } })) ||
+    (await prisma.repertorySource.findFirst({ where: { isActive: true }, orderBy: { name: 'asc' } }))
+  );
+}
 
 export async function assertDoctorConsultationAccess(req: Request, res: Response, consultationId: string) {
   const consultation = await prisma.consultation.findUnique({
@@ -68,9 +79,16 @@ export async function loadCaseAnalysisForDoctor(req: Request, res: Response, ana
     return null;
   }
 
-  if (req.user!.role === Role.DOCTOR && analysis.consultation.assignedDoctorId !== req.user!.id) {
-    res.status(403).json({ message: 'Access denied' });
-    return null;
+  if (req.user!.role === Role.DOCTOR) {
+    if (analysis.consultation) {
+      if (analysis.consultation.assignedDoctorId !== req.user!.id) {
+        res.status(403).json({ message: 'Access denied' });
+        return null;
+      }
+    } else if (analysis.doctorId !== req.user!.id) {
+      res.status(403).json({ message: 'Access denied' });
+      return null;
+    }
   }
 
   return analysis;

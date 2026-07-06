@@ -34,6 +34,18 @@ export class CaseAnalysisApiService {
     ).then((response) => response.rubrics);
   }
 
+  loadOrCreatePracticeSession() {
+    return firstValueFrom(
+      this.http.get<{ analysis: CaseAnalysis }>(`${this.apiBase}${API_PATHS.DOCTOR.REPERTORY_PRACTICE_SESSION}`)
+    ).then((response) => response.analysis);
+  }
+
+  createPracticeSession(payload?: { notes?: string; sourceId?: string }) {
+    return firstValueFrom(
+      this.http.post<{ analysis: CaseAnalysis }>(`${this.apiBase}${API_PATHS.DOCTOR.REPERTORY_PRACTICE_SESSION}`, payload ?? {})
+    ).then((response) => response.analysis);
+  }
+
   loadConsultationAnalyses(consultationId: string) {
     return firstValueFrom(
       this.http.get<{ consultation: ConsultationSummary; analyses: CaseAnalysis[] }>(

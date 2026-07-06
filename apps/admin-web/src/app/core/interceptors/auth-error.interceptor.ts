@@ -12,8 +12,15 @@ export const authErrorInterceptor: HttpInterceptorFn = (req, next) => {
   return next(req).pipe(
     catchError((error) => {
       if (error.status === 401) {
-        auth.logout();
-        void router.navigateByUrl(`/${ROUTE_PATHS.LOGIN}`);
+        const isBackgroundPoll = req.url.includes('/notifications/unread-count');
+        const onLogin = router.url.includes(`/${ROUTE_PATHS.LOGIN}`);
+
+        if (!isBackgroundPoll) {
+          auth.logout();
+          if (!onLogin) {
+            void router.navigateByUrl(`/${ROUTE_PATHS.LOGIN}`);
+          }
+        }
       }
       return throwError(() => error);
     })

@@ -28,9 +28,11 @@ export class CaseAnalysisPage {
 
   readonly appointmentsPath = ROUTE_PATHS.APPOINTMENTS;
   readonly worklistPath = ROUTE_PATHS.WORKLIST;
+  readonly repertoryPath = ROUTE_PATHS.REPERTORY;
   readonly weightOptions = [1, 2, 3, 4] as const;
 
-  readonly consultationId = this.route.snapshot.paramMap.get('consultationId') || '';
+  readonly standalone = this.route.snapshot.data['standalone'] === true;
+  readonly consultationId = this.standalone ? '' : this.route.snapshot.paramMap.get('consultationId') || '';
   readonly consultation = signal<ConsultationSummary | null>(null);
   readonly analysis = signal<CaseAnalysis | null>(null);
   readonly sources = signal<RepertorySource[]>([]);
@@ -61,8 +63,56 @@ export class CaseAnalysisPage {
 
   constructor() {
     void this.loadSources();
-    if (this.consultationId) {
+    if (this.standalone) {
+      void this.loadPracticeSession();
+    } else if (this.consultationId) {
       void this.load();
+    }
+  }
+
+  async loadPracticeSession() {
+    this.loading.set(true);
+    this.error.set('');
+    this.message.set('');
+    try {
+      const nextAnalysis = await this.api.loadOrCreatePracticeSession();
+      this.consultation.set(null);
+      this.analysis.set(nextAnalysis);
+      this.searchModel.update((model) => ({
+        ...model,
+        selectedSourceId: nextAnalysis.source?.id || model.selectedSourceId
+      }));
+      this.hydrateFromAnalysis(nextAnalysis);
+    } catch {
+      this.error.set('Could not open repertory. Check that OOREP / repertory data is seeded.');
+      this.analysis.set(null);
+    } finally {
+      this.loading.set(false);
+    }
+  }
+
+  async startNewPracticeSession() {
+    this.loading.set(true);
+    this.error.set('');
+    this.message.set('');
+    try {
+      const nextAnalysis = await this.api.createPracticeSession({
+        sourceId: this.searchModel().selectedSourceId || undefined
+      });
+      this.consultation.set(null);
+      this.analysis.set(nextAnalysis);
+      this.searchModel.update((model) => ({
+        ...model,
+        selectedSourceId: nextAnalysis.source?.id || model.selectedSourceId
+      }));
+      this.hydrateFromAnalysis(nextAnalysis);
+      this.searchResults.set([]);
+      this.searchedOnce.set(false);
+      this.message.set('New practice case started.');
+    } catch {
+      this.error.set('Could not start a new practice case.');
+    } finally {
+      this.loading.set(false);
     }
   }
 

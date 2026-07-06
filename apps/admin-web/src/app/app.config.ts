@@ -1,10 +1,6 @@
 import { ApplicationConfig, provideBrowserGlobalErrorListeners, provideZonelessChangeDetection } from '@angular/core';
 import { provideHttpClient, withInterceptors, withXhr } from '@angular/common/http';
-import {
-  provideRouter,
-  withExperimentalAutoCleanupInjectors,
-  withExperimentalPlatformNavigation
-} from '@angular/router';
+import { provideRouter, withExperimentalAutoCleanupInjectors } from '@angular/router';
 import { DEV_DEMO_PORT } from '@vitalis/platform-ui';
 
 import { routes } from './app.routes';
@@ -17,11 +13,7 @@ export const appConfig: ApplicationConfig = {
     provideBrowserGlobalErrorListeners(),
     provideZonelessChangeDetection(),
     provideHttpClient(withXhr(), withInterceptors([authTokenInterceptor, authErrorInterceptor])),
-    provideRouter(
-      routes,
-      withExperimentalPlatformNavigation(),
-      withExperimentalAutoCleanupInjectors()
-    ),
+    provideRouter(routes, withExperimentalAutoCleanupInjectors()),
     { provide: DEV_DEMO_PORT, useExisting: DevDemoService }
   ]
 };

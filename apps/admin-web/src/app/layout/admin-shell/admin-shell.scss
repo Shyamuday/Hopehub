@@ -11,6 +11,7 @@
   color: #fff;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow: 0 4px 20px rgba(15, 23, 42, 0.18);
+  overflow: visible;
 }
 
 .topbar {
@@ -19,6 +20,7 @@
   gap: 0.85rem;
   padding: 0.65rem 1.25rem;
   min-height: 3.25rem;
+  overflow: visible;
 }
 
 .topbar-brand {

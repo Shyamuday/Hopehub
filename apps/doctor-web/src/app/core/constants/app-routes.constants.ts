@@ -3,6 +3,7 @@ export const ROUTE_PATHS = {
   WORKLIST: 'worklist',
   DASHBOARD: 'dashboard',
   APPOINTMENTS: 'appointments',
+  REPERTORY: 'repertory',
   CASE_ANALYSIS: 'consultations',
   PATIENTS: 'patients',
   PROFILE: 'profile',

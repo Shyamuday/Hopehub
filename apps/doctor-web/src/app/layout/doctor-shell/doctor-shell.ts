@@ -17,6 +17,7 @@ const NAV_ICONS: Record<string, { icon: string; shortLabel: string }> = {
   Worklist: { icon: '📋', shortLabel: 'Work' },
   Dashboard: { icon: '📊', shortLabel: 'Home' },
   Appointments: { icon: '🩺', shortLabel: 'Appts' },
+  Repertory: { icon: '📖', shortLabel: 'Rep' },
   Patients: { icon: '👥', shortLabel: 'Patients' },
   Slots: { icon: '📅', shortLabel: 'Slots' },
   Earnings: { icon: '💰', shortLabel: 'Pay' },

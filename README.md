@@ -61,6 +61,8 @@ npm run prisma:migrate --prefix apps/api
 npm run seed --prefix apps/api
 ```
 
+For a full local setup guide (fresh Postgres, `prisma db push`, demo logins, OOREP import, troubleshooting), see **[docs/data-seeding.md](docs/data-seeding.md)**.
+
 ## Local Development
 
 ```powershell

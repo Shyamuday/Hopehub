@@ -6,7 +6,7 @@
         <h1>Admin Console</h1>
       </div>
 
-      <app-admin-nav-tabs [items]="navItems()" />
+      <app-admin-nav-tabs [items]="filteredNavItems()" />
 
       <div class="topbar-actions">
         <app-notification-bell-host [config]="bellConfig()" />

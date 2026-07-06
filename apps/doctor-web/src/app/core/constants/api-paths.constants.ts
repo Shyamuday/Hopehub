@@ -14,6 +14,7 @@ export const API_PATHS = {
     APPOINTMENT_PRESCRIPTIONS: (consultationId: string) => `/doctor/appointments/${consultationId}/prescriptions`,
     REPERTORY_SOURCES: '/doctor/repertory/sources',
     REPERTORY_RUBRICS_SEARCH: '/doctor/repertory/rubrics/search',
+    REPERTORY_PRACTICE_SESSION: '/doctor/repertory/practice-session',
     CONSULTATION_CASE_ANALYSES: (consultationId: string) => `/doctor/consultations/${consultationId}/case-analyses`,
     CASE_ANALYSIS: (analysisId: string) => `/doctor/case-analyses/${analysisId}`,
     CASE_ANALYSIS_REPERTORIZE: (analysisId: string) => `/doctor/case-analyses/${analysisId}/repertorize`,

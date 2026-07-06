@@ -3,6 +3,7 @@
   flex: 1;
   min-width: 0;
   align-items: center;
+  overflow: visible;
 }
 
 .admin-nav {
@@ -11,6 +12,7 @@
   gap: 0.65rem;
   min-width: 0;
   flex: 1;
+  overflow: visible;
 }
 
 .current-page {
@@ -31,14 +33,9 @@
   gap: 0.3rem;
   min-width: 0;
   flex: 1;
-  overflow-x: auto;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
+  flex-wrap: wrap;
+  overflow: visible;
   padding: 0.15rem 0;
-}
-
-.admin-nav-groups::-webkit-scrollbar {
-  display: none;
 }
 
 .nav-group {
@@ -90,18 +87,28 @@
 
 .submenu {
   position: absolute;
-  top: calc(100% + 0.35rem);
+  top: 100%;
   left: 0;
   min-width: 13.5rem;
   max-width: min(18rem, 88vw);
   max-height: min(18rem, 60vh);
   overflow: auto;
+  margin-top: 0.2rem;
   padding: 0.35rem;
   border-radius: 10px;
   background: #1e293b;
   border: 1px solid rgba(255, 255, 255, 0.12);
   box-shadow: 0 14px 36px rgba(0, 0, 0, 0.35);
-  z-index: 80;
+  z-index: 200;
+}
+
+.submenu::before {
+  content: '';
+  position: absolute;
+  top: -0.45rem;
+  left: 0;
+  right: 0;
+  height: 0.45rem;
 }
 
 .submenu-link {

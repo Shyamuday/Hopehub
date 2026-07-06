@@ -10,7 +10,8 @@ import {
   assertDoctorConsultationAccess,
   caseAnalysisInclude,
   consultationIdFromReq,
-  loadCaseAnalysisForDoctor
+  loadCaseAnalysisForDoctor,
+  resolveDefaultRepertorySource
 } from './shared.js';
 
 const rubricSelectionSchema = z.object({
@@ -26,6 +27,70 @@ const updateAnalysisSchema = z.object({
 });
 
 export function registerCaseAnalysisRoutes(router: Router) {
+  router.get(
+    '/doctor/repertory/practice-session',
+    authRequired,
+    allowRoles(Role.DOCTOR, Role.ADMIN),
+    asyncRoute(async (req, res) => {
+      const doctorId = req.user!.id;
+      let analysis = await prisma.caseAnalysis.findFirst({
+        where: { doctorId, consultationId: null, status: CaseAnalysisStatus.DRAFT },
+        include: caseAnalysisInclude,
+        orderBy: { updatedAt: 'desc' }
+      });
+
+      if (!analysis) {
+        const defaultSource = await resolveDefaultRepertorySource();
+        if (!defaultSource) {
+          return res.status(400).json({ message: 'No active repertory source configured.' });
+        }
+        analysis = await prisma.caseAnalysis.create({
+          data: {
+            doctorId,
+            sourceId: defaultSource.id,
+            status: CaseAnalysisStatus.DRAFT
+          },
+          include: caseAnalysisInclude
+        });
+      }
+
+      res.json({ analysis });
+    })
+  );
+
+  router.post(
+    '/doctor/repertory/practice-session',
+    authRequired,
+    allowRoles(Role.DOCTOR, Role.ADMIN),
+    asyncRoute(async (req, res) => {
+      const body = updateAnalysisSchema.parse(req.body);
+      const defaultSource = await resolveDefaultRepertorySource(body.sourceId);
+      if (!defaultSource) {
+        return res.status(400).json({ message: 'No active repertory source configured.' });
+      }
+
+      const analysis = await prisma.caseAnalysis.create({
+        data: {
+          doctorId: req.user!.id,
+          sourceId: defaultSource.id,
+          notes: body.notes || null,
+          status: CaseAnalysisStatus.DRAFT,
+          rubrics: body.rubrics?.length
+            ? {
+                create: body.rubrics.map((item) => ({
+                  rubricId: item.rubricId,
+                  weight: item.weight
+                }))
+              }
+            : undefined
+        },
+        include: caseAnalysisInclude
+      });
+
+      res.status(201).json({ analysis });
+    })
+  );
+
   router.get(
     '/doctor/consultations/:consultationId/case-analyses',
     authRequired,
@@ -55,12 +120,7 @@ export function registerCaseAnalysisRoutes(router: Router) {
       if (!consultation) return;
 
       const body = updateAnalysisSchema.parse(req.body);
-      const defaultSource = body.sourceId
-        ? await prisma.repertorySource.findUnique({ where: { id: body.sourceId } })
-        : (await prisma.repertorySource.findFirst({ where: { isActive: true, code: 'OOREP_PUBLICUM' } })) ||
-          (await prisma.repertorySource.findFirst({ where: { isActive: true, code: 'REPERTORIUM_PUBLICUM' } })) ||
-          (await prisma.repertorySource.findFirst({ where: { isActive: true }, orderBy: { name: 'asc' } }));
-
+      const defaultSource = await resolveDefaultRepertorySource(body.sourceId);
       if (!defaultSource) {
         return res.status(400).json({ message: 'No active repertory source configured.' });
       }

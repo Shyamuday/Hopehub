@@ -1,17 +1,26 @@
 <section class="page">
   <header class="hero">
     <div>
-      <a class="back-link" [routerLink]="['/', worklistPath]">← Worklist</a>
-      <h2>Case Analysis</h2>
-      <p class="muted">Search symptoms, repertorize, and select a remedy for this consultation.</p>
+      @if (standalone) {
+        <h2>Repertory</h2>
+        <p class="muted">Practice case taking — search rubrics, repertorize, and explore remedies (OOREP).</p>
+      } @else {
+        <a class="back-link" [routerLink]="['/', worklistPath]">← Worklist</a>
+        <h2>Case Analysis</h2>
+        <p class="muted">Search symptoms, repertorize, and select a remedy for this consultation.</p>
+      }
     </div>
-    @if (consultationId) {
-      <div class="hero-actions">
+    <div class="hero-actions">
+      @if (standalone) {
+        <button type="button" class="btn-secondary" (click)="startNewPracticeSession()" [disabled]="loading()">
+          New case
+        </button>
+      } @else if (consultationId) {
         <a class="btn-secondary" [routerLink]="['/', appointmentsPath]" [queryParams]="{ consultationId }">
           Prescription
         </a>
-      </div>
-    }
+      }
+    </div>
   </header>
 
   @if (error()) {
@@ -21,11 +30,11 @@
     <div class="alert alert-success">{{ message() }}</div>
   }
 
-  @if (!consultationId) {
+  @if (!standalone && !consultationId) {
     <section class="panel empty-panel">
       <h3>Open a consultation first</h3>
-      <p class="muted">Go to your worklist and choose <strong>Case analysis</strong> on a case.</p>
-      <a class="btn-primary" [routerLink]="['/', worklistPath]">Go to worklist</a>
+      <p class="muted">Go to your worklist and choose <strong>Case analysis</strong> on a case, or use <strong>Repertory</strong> in the menu for practice.</p>
+      <a class="btn-primary" [routerLink]="['/', repertoryPath]">Open Repertory</a>
     </section>
   } @else if (loading()) {
     <section class="panel loading-panel">
@@ -40,6 +49,18 @@
         </div>
         <div class="banner-meta">
           <span class="badge">{{ consultation.status }}</span>
+          @if (analysis.source?.name) {
+            <span class="badge badge-soft">{{ analysis.source?.name }}</span>
+          }
+        </div>
+      </section>
+    } @else if (standalone) {
+      <section class="patient-banner">
+        <div>
+          <strong>Practice case</strong>
+          <span class="muted">No patient linked — use for study or quick repertory work</span>
+        </div>
+        <div class="banner-meta">
           @if (analysis.source?.name) {
             <span class="badge badge-soft">{{ analysis.source?.name }}</span>
           }

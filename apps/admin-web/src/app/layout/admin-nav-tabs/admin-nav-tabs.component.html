@@ -1,42 +1,45 @@
-<nav class="admin-nav" aria-label="Admin navigation">
-  @if (currentPageLabel()) {
-    <span class="current-page" aria-current="page">{{ currentPageLabel() }}</span>
-  }
-
-  <div class="admin-nav-groups">
-    @for (group of visibleGroups(); track group.id) {
-      <div
-        class="nav-group"
-        [class.is-open]="openGroupId() === group.id"
-        [class.has-active]="isGroupActive(group.id)"
-      >
-        <button
-          type="button"
-          class="group-btn"
-          [attr.aria-expanded]="openGroupId() === group.id"
-          [attr.aria-haspopup]="true"
-          (click)="toggleGroup(group.id)"
-        >
-          <span>{{ group.label }}</span>
-          <span class="caret" aria-hidden="true">▾</span>
-        </button>
-
-        @if (openGroupId() === group.id) {
-          <div class="submenu" role="menu" [attr.aria-label]="group.label">
-            @for (item of group.items; track item.path) {
-              <a
-                [routerLink]="item.path"
-                role="menuitem"
-                class="submenu-link"
-                [class.active]="isItemActive(item.path)"
-                (click)="closeSubmenu()"
-              >
-                {{ item.label }}
-              </a>
-            }
-          </div>
-        }
-      </div>
-    }
-  </div>
-</nav>
+<nav class="admin-nav" aria-label="Admin navigation">
+  @if (currentPageLabel()) {
+    <span class="current-page" aria-current="page">{{ currentPageLabel() }}</span>
+  }
+
+  <div class="admin-nav-groups">
+    @for (group of visibleGroups(); track group.id) {
+      <div
+        class="nav-group"
+        [class.is-open]="openGroupId() === group.id"
+        [class.has-active]="isGroupActive(group.id)"
+        (mouseenter)="onGroupEnter(group.id)"
+        (mouseleave)="onGroupLeave()"
+      >
+        <button
+          type="button"
+          class="group-btn"
+          [attr.aria-expanded]="openGroupId() === group.id"
+          [attr.aria-haspopup]="true"
+          (click)="toggleGroup(group.id, $event)"
+        >
+          <span>{{ group.label }}</span>
+          <span class="caret" aria-hidden="true">▾</span>
+        </button>
+
+        @if (openGroupId() === group.id) {
+          <div class="submenu" role="menu" [attr.aria-label]="group.label">
+            @for (item of group.items; track item.path) {
+              <a
+                [routerLink]="item.path"
+                role="menuitem"
+                class="submenu-link"
+                [class.active]="isItemActive(item.path)"
+                (click)="closeSubmenu()"
+              >
+                {{ item.label }}
+              </a>
+            }
+          </div>
+        }
+      </div>
+    }
+  </div>
+</nav>
+
