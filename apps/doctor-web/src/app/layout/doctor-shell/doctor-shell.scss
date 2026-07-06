@@ -23,6 +23,15 @@
   box-shadow: var(--shadow-sm);
 }
 
+.assignment-notice {
+  padding: 0.45rem 1rem;
+  background: #ecfdf5;
+  color: #065f46;
+  font-size: 0.88rem;
+  font-weight: 600;
+  border-bottom: 1px solid #a7f3d0;
+}
+
 .topbar-start {
   display: flex;
   align-items: center;

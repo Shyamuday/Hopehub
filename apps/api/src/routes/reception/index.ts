@@ -11,6 +11,7 @@ import {
   writeAuditLog
 } from '../../utils/helpers.js';
 import { enabledNotificationChannels, notificationService } from '../../services/notification-service.js';
+import { emitConsultationAssigned } from '../../services/consultation-realtime.js';
 import { createPatientRecord, searchPatients } from '../../services/patient-identity.js';
 import { PRODUCT_EVENTS, trackProductEvent } from '../../services/product-analytics.js';
 import {
@@ -174,7 +175,7 @@ export function registerReceptionRoutes(router: import('express').Router, io: So
       const ctx = await resolveReceptionContext(req.user!.id, req.user!.role);
       const storeId = await getReceptionStoreFromRequest(req, ctx);
       const query = queryText(req, 'q');
-      const result = await searchPatients({ query, clinicStoreId: storeId, scope: 'clinic' });
+      const result = await searchPatients({ query, clinicStoreId: storeId, scope: 'auto' });
       res.json(result);
     })
   );
@@ -443,6 +444,14 @@ export function registerReceptionRoutes(router: import('express').Router, io: So
           status: consultation.status
         });
       }
+
+      emitConsultationAssigned(io, doctor.id, {
+        consultationId: consultation.id,
+        patientCode: patient?.patientCode ?? null,
+        patientName: patient?.name ?? null,
+        diseaseName: consultation.disease?.name ?? null,
+        status: consultation.status
+      });
 
       await writeAuditLog({
         actorId: req.user!.id,

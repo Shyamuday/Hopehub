@@ -1,43 +1,121 @@
 <div class="walk-in-page">
   <div class="hdr">
     <h2>Walk-in registration</h2>
-    <p>Register a patient at the desk and add them to the queue</p>
+    <p>Register a new patient or add an existing patient (app signup / QR) to the queue</p>
   </div>
 
-  <form class="form" (ngSubmit)="submit()">
-    <label>Name
-      <input [formField]="walkInForm.name" />
-    </label>
-    <label>Mobile
-      <input [formField]="walkInForm.mobile" />
-    </label>
-    <label>Email (optional)
-      <input [formField]="walkInForm.email" type="email" />
-    </label>
-    <label>Concern / disease
-      <select [formField]="walkInForm.diseaseId">
-        <option value="">Select…</option>
-        @for (d of diseases(); track d.id) {
-          <option [value]="d.id">{{ d.name }} — ₹{{ formatPaise(d.feeInPaise) }}</option>
-        }
-      </select>
-    </label>
-    <label>Notes (optional)
-      <textarea [formField]="walkInForm.notes" rows="2"></textarea>
-    </label>
-    <label class="check">
-      <input type="checkbox" [formField]="walkInForm.collectCash" />
-      Cash collected at desk
-    </label>
-
-    @if (error()) {
-      <p class="error">{{ error() }}</p>
-    }
-
-    <button type="submit" class="btn-primary" [disabled]="loading() || walkInForm().invalid()">
-      {{ loading() ? 'Saving…' : 'Register & add to queue' }}
+  <div class="mode-tabs" role="tablist">
+    <button type="button" role="tab" [class.active]="mode() === 'new'" (click)="setMode('new')">
+      New patient
     </button>
-  </form>
+    <button type="button" role="tab" [class.active]="mode() === 'existing'" (click)="setMode('existing')">
+      Existing patient (ID / QR)
+    </button>
+  </div>
+
+  @if (mode() === 'new') {
+    <form class="form" (ngSubmit)="submitNew()">
+      <label>Name
+        <input [formField]="walkInForm.name" />
+      </label>
+      <label>Mobile
+        <input [formField]="walkInForm.mobile" />
+      </label>
+      <label>Email (optional)
+        <input [formField]="walkInForm.email" type="email" />
+      </label>
+      <label>Concern / disease
+        <select [formField]="walkInForm.diseaseId">
+          <option value="">Select…</option>
+          @for (d of diseases(); track d.id) {
+            <option [value]="d.id">{{ d.name }} — ₹{{ formatPaise(d.feeInPaise) }}</option>
+          }
+        </select>
+      </label>
+      <label>Notes (optional)
+        <textarea [formField]="walkInForm.notes" rows="2"></textarea>
+      </label>
+      <label class="check">
+        <input type="checkbox" [formField]="walkInForm.collectCash" />
+        Cash collected at desk
+      </label>
+
+      @if (error()) {
+        <p class="error">{{ error() }}</p>
+      }
+
+      <button type="submit" class="btn-primary" [disabled]="loading() || walkInForm().invalid()">
+        {{ loading() ? 'Saving…' : 'Register & add to queue' }}
+      </button>
+    </form>
+  } @else {
+    <div class="form">
+      <label>Patient ID, mobile, name, or QR
+        <div class="lookup-row">
+          <input
+            [formField]="existingForm.lookup"
+            placeholder="e.g. RNC-000001 or scan QR"
+            (keydown.enter)="$event.preventDefault(); lookupPatient()"
+          />
+          <button type="button" class="btn-secondary" [disabled]="searchLoading()" (click)="lookupPatient()">
+            {{ searchLoading() ? 'Searching…' : 'Find' }}
+          </button>
+        </div>
+      </label>
+      <p class="hint">Scan the patient card QR or paste the code from the link (…/go/p/RNC-000001).</p>
+
+      @if (patientHits().length > 1) {
+        <div class="hits">
+          <p class="hits-label">Select patient</p>
+          @for (p of patientHits(); track p.id) {
+            <button
+              type="button"
+              class="hit"
+              [class.selected]="selectedPatient()?.id === p.id"
+              (click)="selectPatient(p)"
+            >
+              <strong>{{ p.name }}</strong>
+              <span>{{ p.patientCode || 'No ID' }} · {{ p.mobile || '—' }}</span>
+            </button>
+          }
+        </div>
+      }
+
+      @if (selectedPatient(); as patient) {
+        <div class="selected-patient">
+          <span class="label">Selected</span>
+          <strong>{{ patient.name }}</strong>
+          <span class="code">{{ patient.patientCode }}</span>
+        </div>
+      }
+
+      <label>Concern / disease
+        <select [formField]="existingForm.diseaseId">
+          <option value="">Select…</option>
+          @for (d of diseases(); track d.id) {
+            <option [value]="d.id">{{ d.name }} — ₹{{ formatPaise(d.feeInPaise) }}</option>
+          }
+        </select>
+      </label>
+      <label class="check">
+        <input type="checkbox" [formField]="existingForm.collectCash" />
+        Cash collected at desk
+      </label>
+
+      @if (error()) {
+        <p class="error">{{ error() }}</p>
+      }
+
+      <button
+        type="button"
+        class="btn-primary"
+        [disabled]="loading() || !selectedPatient() || existingForm().invalid()"
+        (click)="submitExisting()"
+      >
+        {{ loading() ? 'Saving…' : 'Add to queue' }}
+      </button>
+    </div>
+  }
 </div>
 
 @if (toast()) { <div class="toast">{{ toast() }}</div> }

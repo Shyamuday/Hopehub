@@ -43,6 +43,7 @@ export class PatientScanPage implements OnInit {
   private readonly http = inject(HttpClient);
 
   readonly loading = signal(true);
+  readonly redirecting = signal(false);
   readonly error = signal('');
   readonly scanResult = signal<ScanResponse | null>(null);
   readonly patientCode = signal('');
@@ -54,6 +55,12 @@ export class PatientScanPage implements OnInit {
   }
 
   private async load(patientCode: string): Promise<void> {
+    if (!patientCode.trim()) {
+      this.error.set('Missing patient code in scan link.');
+      this.loading.set(false);
+      return;
+    }
+
     this.loading.set(true);
     this.error.set('');
     try {
@@ -61,6 +68,11 @@ export class PatientScanPage implements OnInit {
         this.http.get<ScanResponse>(`${environment.apiUrl}/scan/patient/${encodeURIComponent(patientCode)}`)
       );
       this.scanResult.set(result);
+      if (result.primaryConsultationId) {
+        this.redirecting.set(true);
+        this.openConsultationRoute(result.primaryConsultationId, result);
+        return;
+      }
     } catch (err: unknown) {
       const message =
         (err as { error?: { message?: string } })?.error?.message || 'Could not load patient from scan.';
@@ -71,12 +83,24 @@ export class PatientScanPage implements OnInit {
     }
   }
 
+  openConsultation(consultationId: string): void {
+    this.openConsultationRoute(consultationId, this.scanResult());
+  }
+
+  private openConsultationRoute(consultationId: string, result?: ScanResponse | null): void {
+    const scan = result ?? this.scanResult();
+    const status = scan?.consultations.find((c) => c.id === consultationId)?.status;
+    if (status === 'ASSIGNED' || status === 'IN_PROGRESS') {
+      void this.router.navigate(['/', ROUTE_PATHS.CASE_ANALYSIS, consultationId, 'case-analysis']);
+      return;
+    }
+    void this.router.navigate(['/', ROUTE_PATHS.APPOINTMENTS], { queryParams: { consultationId } });
+  }
+
   openPrescribe(): void {
     const result = this.scanResult();
     if (result?.primaryConsultationId) {
-      void this.router.navigate(['/', ROUTE_PATHS.APPOINTMENTS], {
-        queryParams: { consultationId: result.primaryConsultationId }
-      });
+      this.openConsultationRoute(result.primaryConsultationId, result);
       return;
     }
     void this.router.navigate(['/', ROUTE_PATHS.PATIENTS]);
@@ -86,7 +110,7 @@ export class PatientScanPage implements OnInit {
     void this.router.navigate(['/', ROUTE_PATHS.PATIENTS]);
   }
 
-  openConsultation(consultationId: string): void {
-    void this.router.navigate(['/', ROUTE_PATHS.APPOINTMENTS], { queryParams: { consultationId } });
+  openWorklist(): void {
+    void this.router.navigate(['/', ROUTE_PATHS.WORKLIST]);
   }
 }

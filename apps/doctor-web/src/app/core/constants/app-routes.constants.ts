@@ -9,7 +9,8 @@ export const ROUTE_PATHS = {
   PROFILE: 'profile',
   LEAVES: 'leaves',
   SLOTS: 'slots',
-  EARNINGS: 'earnings'
+  EARNINGS: 'earnings',
+  PATIENT_SCAN: 'scan/patient'
 } as const;
 
 export const DEFAULT_AUTHED_ROUTE = ROUTE_PATHS.WORKLIST;

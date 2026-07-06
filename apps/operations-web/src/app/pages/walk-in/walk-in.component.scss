@@ -1,10 +1,54 @@
 .walk-in-page { padding: 1.25rem; max-width: 520px; }
 .hdr h2 { margin: 0 0 0.25rem; }
 .hdr p { margin: 0 0 1rem; color: #64748b; }
+.mode-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  button {
+    flex: 1;
+    padding: 0.55rem 0.75rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    background: #fff;
+    cursor: pointer;
+    font-size: 0.9rem;
+    &.active { background: #0f766e; color: #fff; border-color: #0f766e; }
+  }
+}
 .form { display: grid; gap: 0.85rem; background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.25rem; }
 label { display: grid; gap: 0.35rem; font-size: 0.9rem; }
 input, select, textarea { padding: 0.55rem 0.7rem; border: 1px solid #cbd5e1; border-radius: 8px; }
+.lookup-row { display: grid; grid-template-columns: 1fr auto; gap: 0.5rem; }
+.hint { margin: -0.35rem 0 0; font-size: 0.8rem; color: #64748b; }
+.hits { display: grid; gap: 0.5rem; }
+.hits-label { margin: 0; font-size: 0.85rem; color: #475569; }
+.hit {
+  display: grid;
+  gap: 0.15rem;
+  text-align: left;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #f8fafc;
+  cursor: pointer;
+  span { font-size: 0.85rem; color: #64748b; }
+  &.selected { border-color: #0f766e; background: #ecfdf5; }
+}
+.selected-patient {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.65rem;
+  padding: 0.65rem 0.75rem;
+  border-radius: 8px;
+  background: #ecfdf5;
+  border: 1px solid #99f6e4;
+  .label { font-size: 0.75rem; text-transform: uppercase; color: #0f766e; width: 100%; }
+  .code { font-family: monospace; color: #4338ca; font-weight: 700; }
+}
 .check { display: flex; align-items: center; gap: 0.5rem; }
 .error { color: #b91c1c; margin: 0; }
 .btn-primary { background: #0f766e; color: #fff; border: none; border-radius: 8px; padding: 0.65rem 1rem; cursor: pointer; }
+.btn-secondary { background: #fff; color: #0f172a; border: 1px solid #cbd5e1; border-radius: 8px; padding: 0.55rem 0.85rem; cursor: pointer; white-space: nowrap; }
 .toast { position: fixed; bottom: 1rem; right: 1rem; background: #0f172a; color: #fff; padding: 0.75rem 1rem; border-radius: 8px; }

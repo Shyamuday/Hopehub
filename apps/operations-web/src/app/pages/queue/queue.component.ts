@@ -100,7 +100,12 @@ export class QueueComponent {
     if (!target || !doctorId) return;
     try {
       await this.api.assignDoctor(target.id, doctorId);
-      this.showToast('Doctor assigned');
+      const code = target.patient?.patientCode;
+      this.showToast(
+        code
+          ? `Assigned — Patient ID: ${code}`
+          : 'Doctor assigned'
+      );
       this.closeAssign();
       this.reload();
     } catch {

@@ -39,7 +39,7 @@ export const routes: Routes = [
       { path: ROUTE_PATHS.LEAVES, component: MyLeaves },
       { path: ROUTE_PATHS.SLOTS, component: SlotsPage },
       { path: ROUTE_PATHS.EARNINGS, component: EarningsPage },
-      { path: 'scan/:patientId', component: PatientScanPage }
+      { path: `${ROUTE_PATHS.PATIENT_SCAN}/:patientCode`, component: PatientScanPage }
     ]
   },
   { path: '**', redirectTo: '' }

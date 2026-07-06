@@ -31,6 +31,7 @@ scanRouter.get('/go/p/:patientCode', asyncRoute(async (req, res) => {
   const { DOCTOR, OPERATIONS, WEB } = SERVER_CONFIG.ORIGINS;
   const doctorUrl = `${DOCTOR}/scan/patient/${code}`;
   const storeUrl = `${OPERATIONS}/store/scan/patient/${code}`;
+  const receptionUrl = `${OPERATIONS}/walk-in?patientCode=${code}`;
   const managerUrl = `${OPERATIONS}/store-manager/patients`;
   const patientUrl = `${WEB}/dashboard`;
 
@@ -51,6 +52,7 @@ scanRouter.get('/go/p/:patientCode', asyncRoute(async (req, res) => {
     a.btn { display: block; text-align: center; padding: 14px; border-radius: 12px; text-decoration: none; font-weight: 700; }
     .doctor { background: #4338ca; color: #fff; }
     .store { background: #0f766e; color: #fff; }
+    .reception { background: #b45309; color: #fff; }
     .patient { background: #fff; color: #334155; border: 1px solid #cbd5e1; }
   </style>
 </head>
@@ -63,6 +65,7 @@ scanRouter.get('/go/p/:patientCode', asyncRoute(async (req, res) => {
       <div class="actions">
         <a class="btn doctor" href="${doctorUrl}">Doctor — prescribe / consult</a>
         <a class="btn store" href="${storeUrl}">Store staff — medicines to give</a>
+        <a class="btn reception" href="${receptionUrl}">Reception — add to queue</a>
         <a class="btn patient" href="${managerUrl}">Store manager — patients</a>
         <a class="btn patient" href="${patientUrl}">Patient app</a>
       </div>
@@ -117,6 +120,16 @@ scanRouter.get(
       consultations.find((c) => c.status === ConsultationStatus.IN_PROGRESS || c.status === ConsultationStatus.ASSIGNED) ||
       consultations[0] ||
       null;
+
+    if (req.user!.role === Role.DOCTOR && primaryConsultation?.status === ConsultationStatus.ASSIGNED) {
+      await prisma.consultation.update({
+        where: { id: primaryConsultation.id },
+        data: { status: ConsultationStatus.IN_PROGRESS }
+      });
+      primaryConsultation.status = ConsultationStatus.IN_PROGRESS;
+      const listed = consultations.find((c) => c.id === primaryConsultation.id);
+      if (listed) listed.status = ConsultationStatus.IN_PROGRESS;
+    }
 
     res.json({
       patient,

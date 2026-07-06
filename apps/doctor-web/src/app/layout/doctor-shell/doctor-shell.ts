@@ -1,9 +1,11 @@
-import { Component, OnInit, signal } from '@angular/core';
-import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
+import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { RoleTaskGuideComponent, NotificationBellHostComponent } from '@vitalis/platform-ui';
 import { environment } from '../../../environments/environment';
 import { AUTH_TOKEN_KEY } from '../../core/constants/auth.constants';
+import { ROUTE_PATHS } from '../../core/constants/app-routes.constants';
 import { Auth } from '../../core/services/auth';
+import { DoctorRealtimeService } from '../../core/services/doctor-realtime.service';
 import { DoctorSessionService } from '../../core/services/doctor-session';
 
 export type DoctorNavItem = {
@@ -31,7 +33,7 @@ const NAV_ICONS: Record<string, { icon: string; shortLabel: string }> = {
   templateUrl: './doctor-shell.html',
   styleUrl: './doctor-shell.scss',
 })
-export class DoctorShell implements OnInit {
+export class DoctorShell implements OnInit, OnDestroy {
   navItems: DoctorNavItem[] = [];
   doctorName = '';
   doctorTypeLabel = '';
@@ -39,6 +41,10 @@ export class DoctorShell implements OnInit {
   doctorTypeKey: string | null = null;
   loadingSession = true;
   menuOpen = signal(false);
+  assignmentNotice = signal('');
+
+  private readonly realtime = inject(DoctorRealtimeService);
+  private readonly router = inject(Router);
 
   readonly bellConfig = {
     apiBase: environment.apiUrl,
@@ -64,6 +70,19 @@ export class DoctorShell implements OnInit {
     } finally {
       this.loadingSession = false;
     }
+
+    this.realtime.connect((payload) => {
+      const label = payload.patientCode
+        ? `${payload.patientName ?? 'Patient'} (${payload.patientCode})`
+        : payload.patientName ?? 'New patient';
+      this.assignmentNotice.set(`New case: ${label}`);
+      void this.router.navigate(['/', ROUTE_PATHS.CASE_ANALYSIS, payload.consultationId, 'case-analysis']);
+      window.setTimeout(() => this.assignmentNotice.set(''), 5000);
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.realtime.disconnect();
   }
 
   logout() {

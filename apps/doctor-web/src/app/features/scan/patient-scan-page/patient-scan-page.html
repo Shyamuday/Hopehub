@@ -5,8 +5,8 @@
     <p class="code">{{ patientCode() }}</p>
   </header>
 
-  @if (loading()) {
-    <p class="status">Loading patient…</p>
+  @if (loading() || redirecting()) {
+    <p class="status">{{ redirecting() ? 'Opening consultation…' : 'Loading patient…' }}</p>
   } @else if (error()) {
     <div class="error-panel">
       <p>{{ error() }}</p>
@@ -28,7 +28,9 @@
         @if (result.primaryConsultationId) {
           <button type="button" class="btn primary" (click)="openPrescribe()">Open consultation & prescribe</button>
         } @else {
-          <button type="button" class="btn primary" (click)="openPatients()">Find or register patient</button>
+          <p class="hint">No active consultation assigned to you for this patient.</p>
+          <button type="button" class="btn" (click)="openWorklist()">Go to worklist</button>
+          <button type="button" class="btn ghost" (click)="openPatients()">Find patient</button>
         }
       </div>
 

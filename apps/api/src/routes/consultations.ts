@@ -6,6 +6,7 @@ import { authRequired, allowRoles } from '../auth.js';
 import { prisma } from '../db.js';
 import { asyncRoute, routeParam, publicUserSelect, includeConsultationRelations } from '../utils/helpers.js';
 import { enabledNotificationChannels, notificationService } from '../services/notification-service.js';
+import { emitConsultationAssigned } from '../services/consultation-realtime.js';
 import { ensureBillingPlans } from './catalog.js';
 import { PRODUCT_EVENTS, trackProductEvent } from '../services/product-analytics.js';
 
@@ -155,7 +156,7 @@ export function createConsultationsRouter(io: SocketIoServer) {
           status: ConsultationStatus.ASSIGNED,
           clinicStoreId: doctor.doctorProfile?.clinicStoreId ?? undefined
         },
-        include: { ...includeConsultationRelations(), patient: { select: { id: true, name: true, mobile: true, email: true } } }
+        include: { ...includeConsultationRelations(), patient: { select: { id: true, name: true, mobile: true, email: true, patientCode: true } } }
       });
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -175,6 +176,14 @@ export function createConsultationsRouter(io: SocketIoServer) {
         );
         io.to(`user:${patient.id}`).emit('consultation:updated', { consultationId: consultation.id, status: consultation.status });
       }
+
+      emitConsultationAssigned(io, doctor.id, {
+        consultationId: consultation.id,
+        patientCode: patient?.patientCode ?? null,
+        patientName: patient?.name ?? null,
+        diseaseName: (consultation as { disease?: { name?: string } }).disease?.name ?? null,
+        status: consultation.status
+      });
 
       res.json({ consultation });
     })

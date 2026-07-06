@@ -78,6 +78,6 @@ export class WorklistPage {
     if (!patientCode) {
       return;
     }
-    void this.router.navigate(['/', 'scan', 'patient', patientCode]);
+    void this.router.navigate(['/', ROUTE_PATHS.PATIENT_SCAN, patientCode]);
   }
 }

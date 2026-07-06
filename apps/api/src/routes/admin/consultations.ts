@@ -13,6 +13,7 @@ import {
   includeConsultationRelations
 } from '../../utils/helpers.js';
 import { enabledNotificationChannels, notificationService } from '../../services/notification-service.js';
+import { emitConsultationAssigned } from '../../services/consultation-realtime.js';
 import { PRODUCT_EVENTS, trackProductEvent } from '../../services/product-analytics.js';
 
 export function registerAdminConsultationRoutes(router: Router, io: SocketIoServer) {
@@ -80,7 +81,7 @@ export function registerAdminConsultationRoutes(router: Router, io: SocketIoServ
           clinicStoreId: doctor.doctorProfile?.clinicStoreId ?? undefined
         },
         include: {
-          patient: { select: { id: true, name: true, mobile: true, email: true } },
+          patient: { select: { id: true, name: true, mobile: true, email: true, patientCode: true } },
           disease: { select: { name: true } }
         }
       });
@@ -101,6 +102,14 @@ export function registerAdminConsultationRoutes(router: Router, io: SocketIoServ
         );
         io.to(`user:${patient.id}`).emit('consultation:updated', { consultationId: consultation.id, status: consultation.status });
       }
+
+      emitConsultationAssigned(io, doctor.id, {
+        consultationId: consultation.id,
+        patientCode: patient?.patientCode ?? null,
+        patientName: patient?.name ?? null,
+        diseaseName: consultation.disease?.name ?? null,
+        status: consultation.status
+      });
 
       await writeAuditLog({
         actorId: req.user!.id,

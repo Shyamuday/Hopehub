@@ -18,6 +18,10 @@
     </div>
   </header>
 
+  @if (assignmentNotice()) {
+    <div class="assignment-notice" role="status">{{ assignmentNotice() }}</div>
+  }
+
   <nav class="tabs desktop-nav" aria-label="Main navigation">
     @for (item of navItems; track item.path) {
       <a [routerLink]="item.path" routerLinkActive="active">
