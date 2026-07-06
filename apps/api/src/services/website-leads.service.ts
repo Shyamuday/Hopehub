@@ -6,6 +6,8 @@ import {
 } from '@prisma/client';
 import { prisma } from '../db.js';
 import { normalizeMobile } from './patient-identity.js';
+import { notifyStaffOnVisitorLead } from './visitor-lead-notifications.js';
+import { resolveNotInterestedReason } from '../constants/visitor-lead-follow-up.constants.js';
 
 export const FOLLOW_UP_STATUSES = [
   'NEW',
@@ -27,6 +29,7 @@ type LeadCaptureInput = {
   concern?: string | null;
   entryPage?: string | null;
   visitorKey?: string | null;
+  preferredCallbackTime?: string | null;
   chatSessionId?: string | null;
   userId?: string | null;
 };
@@ -78,6 +81,7 @@ export async function upsertWebsiteLead(input: LeadCaptureInput) {
     concern: input.concern ?? undefined,
     entryPage: input.entryPage ?? undefined,
     visitorKey: input.visitorKey ?? undefined,
+    preferredCallbackTime: input.preferredCallbackTime ?? undefined,
     user: input.userId ? { connect: { id: input.userId } } : undefined
   };
 
@@ -91,13 +95,14 @@ export async function upsertWebsiteLead(input: LeadCaptureInput) {
   }
 
   if (existing) {
-    return prisma.websiteLead.update({
+    const updated = await prisma.websiteLead.update({
       where: { id: existing.id },
       data
     });
+    return updated;
   }
 
-  return prisma.websiteLead.create({
+  const created = await prisma.websiteLead.create({
     data: {
       source: input.source,
       visitorName: input.visitorName ?? null,
@@ -106,26 +111,40 @@ export async function upsertWebsiteLead(input: LeadCaptureInput) {
       concern: input.concern ?? null,
       entryPage: input.entryPage ?? null,
       visitorKey: input.visitorKey ?? null,
+      preferredCallbackTime: input.preferredCallbackTime ?? null,
       chatSessionId: input.chatSessionId ?? null,
       userId: input.userId ?? null,
       registeredAt: input.userId ? new Date() : null,
-      followUpStatus: input.userId ? 'REGISTERED' : 'NEW'
+      followUpStatus: input.userId ? 'REGISTERED' : input.source === 'CHAT_BOT' ? 'NEW' : 'NEEDS_CALLBACK'
     }
   });
+
+  void notifyStaffOnVisitorLead(created);
+  return created;
 }
 
 export async function syncLeadFromChatSession(session: Pick<
   ChatSession,
-  'id' | 'visitorName' | 'visitorPhone' | 'visitorEmail' | 'concern' | 'entryPage' | 'visitorKey' | 'userId' | 'status'
+  | 'id'
+  | 'visitorName'
+  | 'visitorPhone'
+  | 'visitorEmail'
+  | 'concern'
+  | 'entryPage'
+  | 'visitorKey'
+  | 'userId'
+  | 'status'
+  | 'preferredCallbackTime'
 >) {
-  const followUpStatus: WebsiteLeadFollowUp =
+  const existing = await prisma.websiteLead.findUnique({ where: { chatSessionId: session.id } });
+  const nextStatus: WebsiteLeadFollowUp =
     session.userId ? 'REGISTERED'
     : session.status === 'NEEDS_OPERATOR' ? 'NEEDS_CALLBACK'
     : 'NEW';
 
-  const existing = await prisma.websiteLead.findUnique({ where: { chatSessionId: session.id } });
   if (existing) {
-    return prisma.websiteLead.update({
+    const wasActionable = ['NEW', 'NEEDS_CALLBACK'].includes(existing.followUpStatus);
+    const updated = await prisma.websiteLead.update({
       where: { id: existing.id },
       data: {
         visitorName: session.visitorName,
@@ -134,18 +153,24 @@ export async function syncLeadFromChatSession(session: Pick<
         concern: session.concern,
         entryPage: session.entryPage,
         visitorKey: session.visitorKey,
+        preferredCallbackTime: session.preferredCallbackTime,
         userId: session.userId,
         registeredAt: session.userId && !existing.registeredAt ? new Date() : existing.registeredAt,
         followUpStatus:
           session.userId ? 'REGISTERED'
           : existing.followUpStatus === 'REGISTERED' ? 'REGISTERED'
-          : session.status === 'NEEDS_OPERATOR' && existing.followUpStatus === 'NEW' ? 'NEEDS_CALLBACK'
+          : existing.followUpStatus === 'BOOKED' ? 'BOOKED'
+          : session.status === 'NEEDS_OPERATOR' ? 'NEEDS_CALLBACK'
           : existing.followUpStatus
       }
     });
+    if (!wasActionable && updated.followUpStatus === 'NEEDS_CALLBACK') {
+      void notifyStaffOnVisitorLead(updated);
+    }
+    return updated;
   }
 
-  return prisma.websiteLead.create({
+  const created = await prisma.websiteLead.create({
     data: {
       source: 'CHAT_BOT',
       chatSessionId: session.id,
@@ -155,11 +180,14 @@ export async function syncLeadFromChatSession(session: Pick<
       concern: session.concern,
       entryPage: session.entryPage,
       visitorKey: session.visitorKey,
+      preferredCallbackTime: session.preferredCallbackTime,
       userId: session.userId,
       registeredAt: session.userId ? new Date() : null,
-      followUpStatus
+      followUpStatus: nextStatus
     }
   });
+  void notifyStaffOnVisitorLead(created);
+  return created;
 }
 
 export async function captureLeadFromOtpIntent(input: {
@@ -200,11 +228,31 @@ export async function updateLeadFollowUp(input: {
   followUpStatus: WebsiteLeadFollowUp;
   operatorId: string;
   operatorNote?: string;
+  visitorIssue?: string;
+  notInterestedReasonPreset?: string;
+  notInterestedReasonDetail?: string;
   markCalled?: boolean;
 }) {
+  if (input.followUpStatus === 'NOT_INTERESTED') {
+    const reason = resolveNotInterestedReason(
+      input.notInterestedReasonPreset ?? '',
+      input.notInterestedReasonDetail
+    );
+    if (!reason) {
+      throw new Error('NOT_INTERESTED_REASON_REQUIRED');
+    }
+  }
+
+  const notInterestedReason =
+    input.followUpStatus === 'NOT_INTERESTED'
+      ? resolveNotInterestedReason(input.notInterestedReasonPreset ?? '', input.notInterestedReasonDetail)
+      : undefined;
+
   const data: Prisma.WebsiteLeadUpdateInput = {
     followUpStatus: input.followUpStatus,
-    operatorNote: input.operatorNote ?? undefined
+    operatorNote: input.operatorNote ?? undefined,
+    visitorIssue: input.visitorIssue?.trim() ? input.visitorIssue.trim() : undefined,
+    notInterestedReason: notInterestedReason ?? undefined
   };
 
   if (input.markCalled || input.followUpStatus === 'CALLED') {
@@ -215,24 +263,21 @@ export async function updateLeadFollowUp(input: {
   return prisma.websiteLead.update({
     where: { id: input.leadId },
     data,
-    include: {
-      user: { select: { id: true, name: true, mobile: true, email: true } },
-      calledBy: { select: { id: true, name: true } },
-      chatSession: {
-        select: {
-          id: true,
-          status: true,
-          concern: true,
-          messages: { orderBy: { createdAt: 'asc' } }
-        }
-      }
-    }
+    include: leadInclude
   });
 }
 
 export const leadInclude = {
-  user: { select: { id: true, name: true, mobile: true, email: true } },
+  user: { select: { id: true, name: true, mobile: true, email: true, patientCode: true } },
   calledBy: { select: { id: true, name: true } },
+  consultation: {
+    select: {
+      id: true,
+      status: true,
+      patient: { select: { id: true, name: true, patientCode: true } },
+      disease: { select: { id: true, name: true } }
+    }
+  },
   chatSession: {
     select: {
       id: true,

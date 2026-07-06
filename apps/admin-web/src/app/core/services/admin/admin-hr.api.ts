@@ -173,4 +173,29 @@ export class AdminHrApi extends AdminApiBase {
       })
     );
   }
+
+  getSalaryEmployees(params: { q?: string; type?: string }) {
+    return firstValueFrom(
+      this.http.get<{ employees: Array<any> }>(`${this.apiBase}${API_PATHS.ADMIN.SALARY_EMPLOYEES}`, {
+        params: { q: params.q ?? '', type: params.type ?? 'ALL' }
+      })
+    );
+  }
+
+  getEmployeeSalary(empType: string, id: string) {
+    return firstValueFrom(
+      this.http.get<{ employee: any; salary: any; canEdit: boolean }>(
+        `${this.apiBase}${API_PATHS.ADMIN.SALARY_BY_EMPLOYEE(empType, id)}`
+      )
+    );
+  }
+
+  saveEmployeeSalary(empType: string, id: string, payload: Record<string, unknown>) {
+    return firstValueFrom(
+      this.http.put<{ salary: any; message: string }>(
+        `${this.apiBase}${API_PATHS.ADMIN.SALARY_BY_EMPLOYEE(empType, id)}`,
+        payload
+      )
+    );
+  }
 }

@@ -11,6 +11,7 @@ export type BotReply = {
   capturedName?: string;
   capturedPhone?: string;
   capturedIntent?: string;
+  capturedCallbackTime?: string;
   showBookButton?: boolean;
   showWhatsAppButton?: boolean;
   allowFreeText?: boolean;
@@ -457,6 +458,7 @@ export function getBotReply(stage: number, userMessage: string): BotReply {
       nextStage: 23,
       needsOperator: true,
       options: [...CLOSING_OPTIONS],
+      capturedCallbackTime: msg.slice(0, 120),
       allowFreeText: true
     };
   }

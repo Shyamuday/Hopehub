@@ -113,6 +113,18 @@
         <dl class="follow-up-dl">
           <dt>Status</dt>
           <dd>{{ followUpLabel(lead.followUpStatus) }}</dd>
+          @if (lead.preferredCallbackTime) {
+            <dt>Callback time</dt>
+            <dd>{{ lead.preferredCallbackTime }}</dd>
+          }
+          @if (lead.visitorIssue) {
+            <dt>Issue they shared</dt>
+            <dd>{{ lead.visitorIssue }}</dd>
+          }
+          @if (lead.notInterestedReason) {
+            <dt>Not interested reason</dt>
+            <dd>{{ lead.notInterestedReason }}</dd>
+          }
           @if (lead.calledAt) {
             <dt>Called</dt>
             <dd>{{ formatTime(lead.calledAt) }}@if (lead.calledBy) { by {{ lead.calledBy.name }} }</dd>
@@ -127,6 +139,10 @@
           @if (lead.operatorNote) {
             <dt>Note</dt>
             <dd>{{ lead.operatorNote }}</dd>
+          }
+          @if (lead.consultation) {
+            <dt>Consultation</dt>
+            <dd>{{ lead.consultation.disease?.name }} — {{ lead.consultation.status }}</dd>
           }
         </dl>
         <p class="view-only-hint">Updates are done by reception in Operations → Visitor Leads.</p>

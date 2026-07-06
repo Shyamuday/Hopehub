@@ -139,7 +139,6 @@ router.put('/doctors/:id', hrAuthMiddleware, asyncRoute(async (req, res) => {
       address: address as string | undefined,
       joiningDate: parsedJoiningDate,
       probationEndDate: parsedProbation,
-      salaryPerMonth: salaryPerMonth as number | undefined,
       consultationFee: consultationFee as number | undefined,
       workShift: workShift as WorkShift | undefined,
       shiftStart: shiftStart as string | undefined,

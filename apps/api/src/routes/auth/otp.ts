@@ -28,7 +28,7 @@ router.post(
       return res.status(400).json({ message: 'Invalid mobile number.' });
     }
     const otp = isProduction ? generateOtp() : devOtp;
-    storeOtp(mobile, otp);
+    await storeOtp(mobile, otp);
     if (isProduction) {
       await sendOtpSms(mobile, otp);
     } else {
@@ -65,7 +65,7 @@ router.post(
       return res.status(400).json({ message: 'Invalid mobile number.' });
     }
 
-    if (!verifyOtp(mobile, body.otp)) {
+    if (!(await verifyOtp(mobile, body.otp))) {
       return res.status(401).json({ message: 'Invalid or expired OTP.' });
     }
 
@@ -128,7 +128,7 @@ router.post(
       return res.status(400).json({ message: 'Invalid mobile number.' });
     }
 
-    if (!verifyOtp(mobile, body.otp)) {
+    if (!(await verifyOtp(mobile, body.otp))) {
       return res.status(401).json({ message: 'Invalid or expired OTP.' });
     }
 

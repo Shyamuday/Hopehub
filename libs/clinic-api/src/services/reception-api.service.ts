@@ -86,10 +86,35 @@ export class ReceptionApiService {
 
   updateVisitorLeadFollowUp(
     id: string,
-    payload: { followUpStatus: string; operatorNote?: string; markCalled?: boolean }
+    payload: {
+      followUpStatus: string;
+      operatorNote?: string;
+      visitorIssue?: string;
+      notInterestedReasonPreset?: string;
+      notInterestedReasonDetail?: string;
+      markCalled?: boolean;
+    }
   ) {
     return firstValueFrom(
       this.http.patch<{ lead: any }>(`${this.base}${API_PATHS.RECEPTION.VISITOR_LEAD_FOLLOW_UP(id)}`, payload)
+    );
+  }
+
+  getVisitorLeadMeta() {
+    return firstValueFrom(
+      this.http.get<{ notInterestedReasons: string[] }>(`${this.base}${API_PATHS.RECEPTION.VISITOR_LEAD_META}`)
+    );
+  }
+
+  bookVisitorLeadConsultation(
+    id: string,
+    payload: { diseaseId: string; storeId?: string; collectCash?: boolean; notes?: string }
+  ) {
+    return firstValueFrom(
+      this.http.post<{ lead: any; consultation: any }>(
+        `${this.base}${API_PATHS.RECEPTION.VISITOR_LEAD_BOOK(id)}`,
+        payload
+      )
     );
   }
 }

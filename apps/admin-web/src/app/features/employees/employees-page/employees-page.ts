@@ -74,8 +74,6 @@ export class EmployeesPage implements OnInit {
 
   readonly profileModel = signal(emptyProfileForm());
   readonly profileForm = form(this.profileModel);
-  readonly salaryModel = signal({ value: 0 });
-  readonly salaryForm = form(this.salaryModel);
   readonly assignModel = signal({ storeId: '' });
   readonly assignForm = form(this.assignModel);
 
@@ -131,7 +129,6 @@ export class EmployeesPage implements OnInit {
       emergencyPhone: e.emergencyPhone,
       employeeStatus: e.employeeStatus ?? DEFAULT_EMPLOYEE_STATUS
     });
-    this.salaryModel.set({ value: e.salaryPerMonth ? e.salaryPerMonth / PAISE_PER_RUPEE : 0 });
     this.assignOnline.set(e.isOnline !== false);
     this.assignModel.set({ storeId: e.clinicStore?.id ?? '' });
     this.drawerOpen.set(true);
@@ -143,8 +140,7 @@ export class EmployeesPage implements OnInit {
     if (!this.selected()) return;
     this.saving.set(true);
     const payload = {
-      ...this.profileModel(),
-      salaryPerMonth: Math.round(this.salaryModel().value * PAISE_PER_RUPEE)
+      ...this.profileModel()
     };
     try {
       if (this.selected().empType === 'DOCTOR') {

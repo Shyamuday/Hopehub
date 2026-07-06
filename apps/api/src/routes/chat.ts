@@ -198,6 +198,7 @@ chatRouter.post(
         concern: concern ?? session.concern,
         visitorName: reply.capturedName ?? session.visitorName,
         visitorPhone: reply.capturedPhone ?? session.visitorPhone,
+        preferredCallbackTime: reply.capturedCallbackTime ?? session.preferredCallbackTime,
         ...(!session.userId && req.user ? userLinkData(req.user) : {})
       }
     });

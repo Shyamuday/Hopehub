@@ -47,7 +47,6 @@ router.put('/store/staff/:id', hrAuthMiddleware, asyncRoute(async (req, res) => 
       address: address as string | undefined,
       joiningDate: joiningDate ? new Date(joiningDate as string) : undefined,
       probationEndDate: probationEndDate ? new Date(probationEndDate as string) : undefined,
-      salaryPerMonth: salaryPerMonth as number | undefined,
       workShift: workShift as WorkShift | undefined,
       shiftStart: shiftStart as string | undefined,
       shiftEnd: shiftEnd as string | undefined,

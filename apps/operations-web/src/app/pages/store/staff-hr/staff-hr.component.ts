@@ -15,7 +15,6 @@ type ProfileFormFields = {
   department: string;
   joiningDate: string;
   probationEndDate: string;
-  salaryDisplay: number;
   workShift: WorkShift;
   shiftStart: string;
   shiftEnd: string;
@@ -35,7 +34,6 @@ function emptyProfileForm(): ProfileFormFields {
     department: '',
     joiningDate: '',
     probationEndDate: '',
-    salaryDisplay: 0,
     workShift: 'MORNING',
     shiftStart: '',
     shiftEnd: '',
@@ -56,7 +54,6 @@ function profileFromStaff(s: StaffHrProfile): ProfileFormFields {
     department: s.department ?? '',
     joiningDate: s.joiningDate ?? '',
     probationEndDate: s.probationEndDate ?? '',
-    salaryDisplay: s.salaryPerMonth ? s.salaryPerMonth / 100 : 0,
     workShift: s.workShift,
     shiftStart: s.shiftStart ?? '',
     shiftEnd: s.shiftEnd ?? '',
@@ -130,8 +127,7 @@ export class StaffHrComponent implements OnInit {
     if (!this.selected()) return;
     this.saving.set(true);
     const form = this.profileFormModel();
-    const { salaryDisplay, ...rest } = form;
-    const payload = { ...rest, salaryPerMonth: salaryDisplay * 100 };
+    const payload = { ...form };
     this.api.updateHrStaff(this.selected()!.id, payload).subscribe({
       next: (r) => {
         this.staff.update(list => list.map(s => s.id === r.staff.id ? { ...s, ...r.staff } : s));

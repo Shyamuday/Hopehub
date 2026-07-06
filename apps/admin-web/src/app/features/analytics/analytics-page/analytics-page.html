@@ -109,5 +109,65 @@
     } @else {
       <p class="empty-state">No funnel events recorded in this window yet.</p>
     }
+
+    @if (leadReport(); as leads) {
+      <div class="funnel-block">
+        <h3>Visitor lead funnel</h3>
+        <div class="summary-cards compact">
+          <div class="card"><div class="val">{{ leads.summary.totalLeads }}</div><div class="lbl">Total leads</div></div>
+          <div class="card"><div class="val">{{ leads.summary.needsCallback }}</div><div class="lbl">Needs callback</div></div>
+          <div class="card"><div class="val">{{ leads.summary.called }}</div><div class="lbl">Called</div></div>
+          <div class="card"><div class="val">{{ leads.summary.registered }}</div><div class="lbl">Registered</div></div>
+          <div class="card ok"><div class="val">{{ leads.summary.booked }}</div><div class="lbl">Booked</div></div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Step</th>
+                <th class="num">Leads</th>
+                <th class="num">From start</th>
+                <th class="num">From previous</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (step of leads.funnel; track step.key) {
+                <tr>
+                  <td>{{ step.label }}</td>
+                  <td class="num">{{ step.total }}</td>
+                  <td class="num">{{ step.conversionFromStart }}%</td>
+                  <td class="num">{{ step.conversionFromPrevious }}%</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        @if (leads.bySource.length) {
+          <h4>By source</h4>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Source</th>
+                  <th class="num">Leads</th>
+                  <th class="num">Booked</th>
+                  <th class="num">Conversion</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (row of leads.bySource; track row.source) {
+                  <tr>
+                    <td>{{ leadSourceLabel(row.source) }}</td>
+                    <td class="num">{{ row.total }}</td>
+                    <td class="num">{{ row.booked }}</td>
+                    <td class="num">{{ row.conversionRate }}%</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </div>
+    }
   }
 </section>

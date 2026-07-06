@@ -1,7 +1,7 @@
 <div class="visitor-leads-page">
   <div class="hdr">
     <h2>Visitor leads</h2>
-    <p>Follow up on website chat, home booking, and promo sign-ups. Mark calls and update status here.</p>
+    <p>Follow up on website chat, home booking, and promo sign-ups. Mark calls and book consultations here.</p>
   </div>
 
   @if (error()) { <p class="error">{{ error() }}</p> }
@@ -13,6 +13,7 @@
       <span>Needs callback {{ st.needsCallback }}</span>
       <span>Called {{ st.called }}</span>
       <span>Registered {{ st.registered }}</span>
+      @if (st.booked != null) { <span>Booked {{ st.booked }}</span> }
     </div>
   }
 
@@ -22,6 +23,7 @@
       { key: 'NEW', label: 'New' },
       { key: 'CALLED', label: 'Called' },
       { key: 'REGISTERED', label: 'Registered' },
+      { key: 'NOT_INTERESTED', label: 'Not interested' },
       { key: 'ALL', label: 'All' }
     ]; track f.key) {
       <button
@@ -75,11 +77,23 @@
           · {{ sourceLabel(lead.source) }}
           · {{ formatTime(lead.createdAt) }}
         </p>
-        @if (lead.concern) {
-          <p class="concern">{{ lead.concern }}</p>
+        @if (lead.preferredCallbackTime) {
+          <p class="callback-time">⏰ Preferred callback: {{ lead.preferredCallbackTime }}</p>
+        }
+        @if (lead.concern && lead.concern !== lead.visitorIssue) {
+          <p class="concern muted-concern">From chat/website: {{ lead.concern }}</p>
+        }
+        @if (lead.visitorIssue) {
+          <p class="concern"><strong>Issue they shared:</strong> {{ lead.visitorIssue }}</p>
+        }
+        @if (lead.notInterestedReason) {
+          <p class="not-interested-banner">Not interested: {{ lead.notInterestedReason }}</p>
         }
         @if (lead.user) {
           <p class="reg-banner">✓ Registered patient: {{ lead.user.name }} ({{ lead.user.mobile }})</p>
+        }
+        @if (lead.consultation) {
+          <p class="reg-banner">✓ Booked: {{ lead.consultation.disease?.name }} — {{ lead.consultation.status }}</p>
         }
         @if (lead.calledAt) {
           <p class="called-info">
@@ -88,7 +102,22 @@
           </p>
         }
 
+        <div class="quick-row">
+          @for (q of quickOutcomes; track q.status) {
+            <button type="button" class="btn-secondary" [disabled]="mutating()" (click)="quickOutcome(q)">
+              {{ q.label }}
+            </button>
+          }
+        </div>
+
         <div class="follow-up-form">
+          <label>Issue they are facing
+            <textarea
+              [(ngModel)]="visitorIssue"
+              rows="3"
+              placeholder="What health problem or concern did they mention on the call? e.g. chronic skin rash, child fever…"
+            ></textarea>
+          </label>
           <label>Follow-up status
             <select [(ngModel)]="selectedStatus">
               @for (opt of followUpOptions; track opt.value) {
@@ -96,8 +125,36 @@
               }
             </select>
           </label>
-          <label>Note
-            <textarea [(ngModel)]="operatorNote" rows="2" placeholder="Call outcome, callback time…"></textarea>
+
+          @if (showNotInterestedForm()) {
+            <div class="not-interested-block">
+              <label>Why not interested? <span class="req">*</span>
+                <select [(ngModel)]="notInterestedPreset">
+                  <option value="">Select reason…</option>
+                  @for (reason of notInterestedReasons(); track reason) {
+                    <option [value]="reason">{{ reason }}</option>
+                  }
+                </select>
+              </label>
+              <label>
+                @if (notInterestedPreset === 'Other') {
+                  Please describe <span class="req">*</span>
+                } @else {
+                  Additional detail (optional)
+                }
+                <textarea
+                  [(ngModel)]="notInterestedDetail"
+                  rows="2"
+                  [placeholder]="notInterestedPreset === 'Other'
+                    ? 'Enter the reason they gave…'
+                    : 'Any extra context they shared…'"
+                ></textarea>
+              </label>
+            </div>
+          }
+
+          <label>Internal note
+            <textarea [(ngModel)]="operatorNote" rows="2" placeholder="Call outcome, callback time, staff notes…"></textarea>
           </label>
           <div class="actions">
             <button type="button" class="btn-secondary" [disabled]="mutating()" (click)="markCalled()">
@@ -108,6 +165,26 @@
             </button>
           </div>
         </div>
+
+        @if (!lead.consultationId && lead.visitorPhone && diseases().length) {
+          <div class="book-block">
+            <h4>Book consultation</h4>
+            <label>Concern / disease
+              <select [(ngModel)]="bookDiseaseId">
+                @for (d of diseases(); track d.id) {
+                  <option [value]="d.id">{{ d.name }} — ₹{{ formatPaise(d.feeInPaise) }}</option>
+                }
+              </select>
+            </label>
+            <label class="check">
+              <input type="checkbox" [(ngModel)]="collectCash" />
+              Cash collected at desk
+            </label>
+            <button type="button" class="btn-primary" [disabled]="mutating() || !bookDiseaseId" (click)="bookConsultation()">
+              Book from lead
+            </button>
+          </div>
+        }
 
         @if (lead.chatSession?.messages?.length) {
           <h4>Chat</h4>

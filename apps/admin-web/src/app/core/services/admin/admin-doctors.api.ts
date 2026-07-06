@@ -225,10 +225,52 @@ export class AdminDoctorsApi extends AdminApiBase {
 
   updateVisitorLeadFollowUp(
     id: string,
-    payload: { followUpStatus: string; operatorNote?: string; markCalled?: boolean }
+    payload: {
+      followUpStatus: string;
+      operatorNote?: string;
+      visitorIssue?: string;
+      notInterestedReasonPreset?: string;
+      notInterestedReasonDetail?: string;
+      markCalled?: boolean;
+    }
   ) {
     return firstValueFrom(
       this.http.patch<{ lead: any }>(`${this.apiBase}${API_PATHS.ADMIN.VISITOR_LEAD_FOLLOW_UP(id)}`, payload)
+    );
+  }
+
+  bookVisitorLeadConsultation(
+    id: string,
+    payload: { diseaseId: string; storeId?: string; collectCash?: boolean; notes?: string }
+  ) {
+    return firstValueFrom(
+      this.http.post<{ lead: any; consultation: any }>(
+        `${this.apiBase}${API_PATHS.ADMIN.VISITOR_LEAD_BOOK(id)}`,
+        payload
+      )
+    );
+  }
+
+  getLeadFunnelReport(days = 30) {
+    return firstValueFrom(
+      this.http.get<{
+        windowDays: number;
+        summary: {
+          totalLeads: number;
+          needsCallback: number;
+          called: number;
+          registered: number;
+          booked: number;
+        };
+        funnel: Array<{
+          key: string;
+          label: string;
+          total: number;
+          conversionFromStart: number;
+          conversionFromPrevious: number;
+        }>;
+        bySource: Array<{ source: string; total: number; booked: number; conversionRate: number }>;
+      }>(`${this.apiBase}${API_PATHS.ADMIN.LEAD_FUNNEL}?days=${days}`)
     );
   }
 }

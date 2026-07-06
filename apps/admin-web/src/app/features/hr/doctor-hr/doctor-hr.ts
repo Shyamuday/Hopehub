@@ -68,8 +68,6 @@ export class DoctorHrComponent implements OnInit {
 
   readonly profileModel = signal(emptyDoctorProfileForm());
   readonly profileForm = form(this.profileModel);
-  readonly salaryModel = signal({ value: 0 });
-  readonly salaryForm = form(this.salaryModel);
   readonly feeModel = signal({ value: 0 });
   readonly feeForm = form(this.feeModel);
 
@@ -113,9 +111,6 @@ export class DoctorHrComponent implements OnInit {
       emergencyContact: d.emergencyContact ?? '',
       emergencyPhone: d.emergencyPhone ?? ''
     });
-    this.salaryModel.set({
-      value: d.salary != null ? d.salary / PAISE_PER_RUPEE : (d.salaryPerMonth ? d.salaryPerMonth / PAISE_PER_RUPEE : 0)
-    });
     this.feeModel.set({
       value: d.consultationFee != null ? d.consultationFee / PAISE_PER_RUPEE : 0
     });
@@ -137,7 +132,6 @@ export class DoctorHrComponent implements OnInit {
         ...form,
         doctorType: form.doctorType as HomeopathicDoctorType,
         specialtyFocus: this.isSpecialistType() ? (form.specialtyFocus as HomeopathicSpecialtyFocus) || null : null,
-        salaryPerMonth: Math.round(this.salaryModel().value * PAISE_PER_RUPEE),
         consultationFee: Math.round(this.feeModel().value * PAISE_PER_RUPEE)
       });
       this.doctors.update(list => list.map(d => d.id === r.doctor.id ? { ...d, ...r.doctor } : d));

@@ -24,23 +24,32 @@ model WebsiteLead {
   visitorPhone   String?
   visitorEmail   String?
   concern        String?
+  /// Health issue or problem shared during reception follow-up call
+  visitorIssue   String?             @db.Text
+  /// Preset or free-text reason when marked not interested
+  notInterestedReason String?
   entryPage      String?
   visitorKey     String?
   userId         String?
   user           User?               @relation("UserWebsiteLeads", fields: [userId], references: [id], onDelete: SetNull)
   chatSessionId  String?             @unique
   chatSession    ChatSession?        @relation(fields: [chatSessionId], references: [id], onDelete: SetNull)
-  operatorNote   String?
-  calledAt       DateTime?
-  calledById     String?
-  calledBy       User?               @relation("LeadCalledBy", fields: [calledById], references: [id], onDelete: SetNull)
-  registeredAt   DateTime?
-  createdAt      DateTime            @default(now())
-  updatedAt      DateTime            @updatedAt
+  operatorNote          String?
+  preferredCallbackTime String?
+  calledAt              DateTime?
+  calledById            String?
+  calledBy              User?               @relation("LeadCalledBy", fields: [calledById], references: [id], onDelete: SetNull)
+  registeredAt          DateTime?
+  bookedAt              DateTime?
+  consultationId        String?             @unique
+  consultation          Consultation?       @relation(fields: [consultationId], references: [id], onDelete: SetNull)
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
 
   @@index([followUpStatus])
   @@index([source])
   @@index([visitorPhone])
   @@index([userId])
+  @@index([consultationId])
   @@index([createdAt])
 }

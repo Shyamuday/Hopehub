@@ -1,4 +1,4 @@
-import { Injectable, computed, signal } from '@angular/core';
+import { Injectable, computed, signal, OnDestroy } from '@angular/core';
 import { ClinicApiClient } from '../../clinic-api/clinic-api.client';
 import { API_PATHS } from '../constants/api-paths.constants';
 
@@ -17,8 +17,9 @@ const SESSION_KEY = 'vitalis_chat_session_id';
 const VISITOR_KEY = 'vitalis_chat_visitor_key';
 
 @Injectable({ providedIn: 'root' })
-export class ChatbotService {
+export class ChatbotService implements OnDestroy {
   private api = new ClinicApiClient();
+  private pollTimer: ReturnType<typeof setInterval> | null = null;
 
   readonly messages = signal<ChatMsg[]>([]);
   readonly isOpen = signal(false);
@@ -36,16 +37,29 @@ export class ChatbotService {
 
   toggle() {
     this.isOpen.update((v) => !v);
-    if (this.isOpen() && !this.sessionId()) void this.startSession();
+    if (this.isOpen()) {
+      if (!this.sessionId()) void this.startSession();
+      else void this.refreshMessages();
+      this.startPolling();
+    } else {
+      this.stopPolling();
+    }
   }
 
   open() {
     this.isOpen.set(true);
     if (!this.sessionId()) void this.startSession();
+    else void this.refreshMessages();
+    this.startPolling();
   }
 
   close() {
     this.isOpen.set(false);
+    this.stopPolling();
+  }
+
+  ngOnDestroy() {
+    this.stopPolling();
   }
 
   /** Link anonymous chat to logged-in account (called after login). */
@@ -153,10 +167,49 @@ export class ChatbotService {
   }
 
   resetSession() {
+    this.stopPolling();
     localStorage.removeItem(SESSION_KEY);
     this.sessionId.set(null);
     this.messages.set([]);
     this.activeOptions.set([]);
     void this.startSession();
+  }
+
+  async refreshMessages() {
+    const sid = this.sessionId();
+    if (!sid) return;
+    try {
+      const res = await this.api.apiFetch<{
+        messages: ChatMsg[];
+        activeOptions?: string[];
+        session?: { status: string };
+      }>(API_PATHS.CHAT.SESSION(sid));
+      const prevCount = this.messages().length;
+      this.messages.set(res.messages);
+      if (res.messages.length > prevCount) {
+        const lastBot = [...res.messages].reverse().find((m) => m.role === 'bot');
+        if (lastBot?.options?.length) {
+          this.activeOptions.set(lastBot.options);
+        }
+      }
+    } catch {
+      // ignore transient poll errors
+    }
+  }
+
+  private startPolling() {
+    this.stopPolling();
+    this.pollTimer = setInterval(() => {
+      if (this.isOpen() && this.sessionId() && !this.isLoading()) {
+        void this.refreshMessages();
+      }
+    }, 4000);
+  }
+
+  private stopPolling() {
+    if (this.pollTimer) {
+      clearInterval(this.pollTimer);
+      this.pollTimer = null;
+    }
   }
 }

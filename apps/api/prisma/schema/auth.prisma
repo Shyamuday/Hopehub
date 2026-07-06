@@ -77,6 +77,7 @@ model User {
   chatSessions         ChatSession[]          @relation("UserChatSessions")
   websiteLeads         WebsiteLead[]          @relation("UserWebsiteLeads")
   leadsCalled          WebsiteLead[]          @relation("LeadCalledBy")
+  salaryUpdates        EmployeeSalary[]         @relation("SalaryUpdatedBy")
   createdAt           DateTime       @default(now())
   updatedAt           DateTime       @updatedAt
 

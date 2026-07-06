@@ -19,8 +19,10 @@ export const API_PATHS = {
     ASSIGN: (id: string) => `/reception/consultations/${id}/assign`,
     VISITOR_LEADS: '/admin/visitor-leads',
     VISITOR_LEAD_STATS: '/admin/visitor-leads/stats',
+    VISITOR_LEAD_META: '/admin/visitor-leads/meta',
     VISITOR_LEAD_BY_ID: (id: string) => `/admin/visitor-leads/${id}`,
-    VISITOR_LEAD_FOLLOW_UP: (id: string) => `/admin/visitor-leads/${id}/follow-up`
+    VISITOR_LEAD_FOLLOW_UP: (id: string) => `/admin/visitor-leads/${id}/follow-up`,
+    VISITOR_LEAD_BOOK: (id: string) => `/admin/visitor-leads/${id}/book-consultation`
   },
   CLINIC_MANAGER: {
     ME: '/clinic-manager/me',

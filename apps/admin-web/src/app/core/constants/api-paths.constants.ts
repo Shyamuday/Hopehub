@@ -61,8 +61,13 @@ export const API_PATHS = {
     CHAT_SESSION_MESSAGE: (id: string) => `/admin/chat-sessions/${id}/message`,
     VISITOR_LEADS: '/admin/visitor-leads',
     VISITOR_LEAD_STATS: '/admin/visitor-leads/stats',
+    VISITOR_LEAD_META: '/admin/visitor-leads/meta',
     VISITOR_LEAD_BY_ID: (id: string) => `/admin/visitor-leads/${id}`,
     VISITOR_LEAD_FOLLOW_UP: (id: string) => `/admin/visitor-leads/${id}/follow-up`,
+    VISITOR_LEAD_BOOK: (id: string) => `/admin/visitor-leads/${id}/book-consultation`,
+    LEAD_FUNNEL: '/admin/analytics/lead-funnel',
+    SALARY_EMPLOYEES: '/admin/salary/employees',
+    SALARY_BY_EMPLOYEE: (empType: string, id: string) => `/admin/salary/${empType}/${id}`,
     FINANCE: {
       SUMMARY: '/admin/finance/summary',
       REVENUE_TREND: '/admin/finance/revenue/trend',

@@ -2,97 +2,222 @@
     <div class="pp">
       <div class="pp-hdr">
         <div>
-          <h2 class="pp-title">💰 Payroll Summary</h2>
-          <p class="pp-sub">Monthly salary overview with leave deductions</p>
+          <h2 class="pp-title">💰 Payroll</h2>
+          <p class="pp-sub">Monthly payroll summary and admin salary structure setup</p>
         </div>
-        <div class="hdr-actions">
-          <input type="month" [formField]="monthForm.selectedMonth" (change)="load()" class="month-inp" />
-          <button class="btn-export" (click)="exportCSV()">⬇ Export CSV</button>
-        </div>
+        @if (pageTab() === 'summary') {
+          <div class="hdr-actions">
+            <input type="month" [formField]="monthForm.selectedMonth" (change)="load()" class="month-inp" />
+            <button class="btn-export" (click)="exportCSV()">⬇ Export CSV</button>
+          </div>
+        }
       </div>
 
-      @if (loading()) {
-        <div class="loading"><div class="spinner"></div></div>
-      } @else {
-        <!-- Summary Cards -->
-        <div class="summary-cards">
-          <div class="scard">
-            <div class="sc-val">{{ rows().length }}</div>
-            <div class="sc-lbl">Employees</div>
-          </div>
-          <div class="scard gross">
-            <div class="sc-val">₹{{ paise2k(summary().totalGross) }}</div>
-            <div class="sc-lbl">Total Gross</div>
-          </div>
-          <div class="scard net">
-            <div class="sc-val">₹{{ paise2k(summary().totalNet) }}</div>
-            <div class="sc-lbl">Total Net Payout</div>
-          </div>
-          <div class="scard leave">
-            <div class="sc-val">{{ summary().totalLeave }}</div>
-            <div class="sc-lbl">Total Leave Days</div>
-          </div>
-        </div>
+      <div class="page-tabs">
+        <button class="page-tab" [class.active]="pageTab() === 'summary'" (click)="setPageTab('summary')">
+          Monthly summary
+        </button>
+        <button class="page-tab" [class.active]="pageTab() === 'salary'" (click)="setPageTab('salary')">
+          Salary structure
+        </button>
+      </div>
 
-        <!-- Filters -->
-        <div class="ftabs">
-          @for (f of typeFilters; track f.value) {
-            <button class="ftab" [class.active]="typeFilter() === f.value" (click)="typeFilter.set(f.value)">{{ f.label }}</button>
-          }
-          <input class="search-sm" [formField]="searchForm.q" attr.placeholder="🔍 Search…" />
-        </div>
+      @if (pageTab() === 'summary') {
+        @if (loading()) {
+          <div class="loading"><div class="spinner"></div></div>
+        } @else {
+          <div class="summary-cards">
+            <div class="scard">
+              <div class="sc-val">{{ rows().length }}</div>
+              <div class="sc-lbl">Employees</div>
+            </div>
+            <div class="scard gross">
+              <div class="sc-val">₹{{ paise2k(summary().totalGross) }}</div>
+              <div class="sc-lbl">Total Gross</div>
+            </div>
+            <div class="scard net">
+              <div class="sc-val">₹{{ paise2k(summary().totalNet) }}</div>
+              <div class="sc-lbl">Total Net Payout</div>
+            </div>
+            <div class="scard leave">
+              <div class="sc-val">{{ summary().totalLeave }}</div>
+              <div class="sc-lbl">Total Leave Days</div>
+            </div>
+          </div>
 
-        <!-- Table -->
-        <div class="table-wrap">
-          <table class="pt">
-            <thead>
-              <tr>
-                <th>Employee</th>
-                <th>Type</th>
-                <th>Designation</th>
-                <th>Dept / Store</th>
-                <th class="num">Gross (₹)</th>
-                <th class="num">Leave Days</th>
-                <th class="num">Deduction (₹)</th>
-                <th class="num net-col">Net Payout (₹)</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (r of filtered(); track r.id) {
+          <div class="ftabs">
+            @for (f of typeFilters; track f.value) {
+              <button class="ftab" [class.active]="typeFilter() === f.value" (click)="typeFilter.set(f.value)">{{ f.label }}</button>
+            }
+            <input class="search-sm" [formField]="searchForm.q" attr.placeholder="🔍 Search…" />
+          </div>
+
+          <div class="table-wrap">
+            <table class="pt">
+              <thead>
                 <tr>
-                  <td>
-                    <div class="emp-name">{{ r.name }}</div>
-                    <span class="status-dot" [style.color]="statusColor(r.employeeStatus)">● {{ r.employeeStatus }}</span>
-                  </td>
-                  <td>
-                    <span class="type-badge" [class.doc]="r.empType === 'DOCTOR'">
-                      {{ r.empType === 'DOCTOR' ? '🩺' : '🏪' }} {{ r.empType === 'DOCTOR' ? 'Doctor' : 'Staff' }}
-                    </span>
-                  </td>
-                  <td>{{ r.designation ?? '—' }}</td>
-                  <td>{{ r.department ?? '—' }}</td>
-                  <td class="num">{{ fmt(r.grossPaise) }}</td>
-                  <td class="num" [style.color]="r.leaveDays > 0 ? '#fb923c' : 'inherit'">{{ r.leaveDays }}</td>
-                  <td class="num deduction">{{ fmt(r.grossPaise - r.netPaise) }}</td>
-                  <td class="num net-col"><strong>{{ fmt(r.netPaise) }}</strong></td>
+                  <th>Employee</th>
+                  <th>Type</th>
+                  <th>Designation</th>
+                  <th>Dept / Store</th>
+                  <th class="num">Gross (₹)</th>
+                  <th class="num">Leave Days</th>
+                  <th class="num">Deduction (₹)</th>
+                  <th class="num net-col">Net Payout (₹)</th>
                 </tr>
-              }
-            </tbody>
-            <tfoot>
-              <tr class="total-row">
-                <td colspan="4"><strong>Total ({{ filtered().length }} employees)</strong></td>
-                <td class="num"><strong>{{ fmt(filteredGross()) }}</strong></td>
-                <td class="num"><strong>{{ filteredLeave() }}</strong></td>
-                <td class="num deduction"><strong>{{ fmt(filteredGross() - filteredNet()) }}</strong></td>
-                <td class="num net-col"><strong>{{ fmt(filteredNet()) }}</strong></td>
-              </tr>
-            </tfoot>
-          </table>
-        </div>
-        @if (filtered().length === 0) {
-          <div class="empty"><div>💰</div><p>No payroll data found</p></div>
+              </thead>
+              <tbody>
+                @for (r of filtered(); track r.id) {
+                  <tr>
+                    <td>
+                      <div class="emp-name">{{ r.name }}</div>
+                      <span class="status-dot" [style.color]="statusColor(r.employeeStatus)">● {{ r.employeeStatus }}</span>
+                    </td>
+                    <td>
+                      <span class="type-badge" [class.doc]="r.empType === 'DOCTOR'">
+                        {{ r.empType === 'DOCTOR' ? '🩺' : '🏪' }} {{ r.empType === 'DOCTOR' ? 'Doctor' : 'Staff' }}
+                      </span>
+                    </td>
+                    <td>{{ r.designation ?? '—' }}</td>
+                    <td>{{ r.department ?? '—' }}</td>
+                    <td class="num">{{ fmt(r.grossPaise) }}</td>
+                    <td class="num" [style.color]="r.leaveDays > 0 ? '#fb923c' : 'inherit'">{{ r.leaveDays }}</td>
+                    <td class="num deduction">{{ fmt(r.grossPaise - r.netPaise) }}</td>
+                    <td class="num net-col"><strong>{{ fmt(r.netPaise) }}</strong></td>
+                  </tr>
+                }
+              </tbody>
+              <tfoot>
+                <tr class="total-row">
+                  <td colspan="4"><strong>Total ({{ filtered().length }} employees)</strong></td>
+                  <td class="num"><strong>{{ fmt(filteredGross()) }}</strong></td>
+                  <td class="num"><strong>{{ filteredLeave() }}</strong></td>
+                  <td class="num deduction"><strong>{{ fmt(filteredGross() - filteredNet()) }}</strong></td>
+                  <td class="num net-col"><strong>{{ fmt(filteredNet()) }}</strong></td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+          @if (filtered().length === 0) {
+            <div class="empty"><div>💰</div><p>No payroll data found</p></div>
+          }
         }
+      } @else {
+        @if (!isAdmin()) {
+          <div class="salary-readonly-note">
+            Salary structures can only be edited by platform admins. You can review assigned values below.
+          </div>
+        }
+
+        <div class="salary-layout">
+          <aside class="salary-list-panel">
+            <div class="ftabs" style="margin-bottom: 10px">
+              @for (f of typeFilters; track f.value) {
+                <button
+                  class="ftab"
+                  [class.active]="salaryTypeFilter() === f.value"
+                  (click)="salaryTypeFilter.set(f.value); loadSalaryEmployees()"
+                >
+                  {{ f.label }}
+                </button>
+              }
+            </div>
+            <input
+              class="search-sm"
+              style="width: 100%; margin: 0 0 10px"
+              [formField]="salarySearchForm.q"
+              attr.placeholder="🔍 Search employee…"
+              (keyup.enter)="loadSalaryEmployees()"
+            />
+            <button class="btn-export" style="width: 100%; margin-bottom: 12px" (click)="loadSalaryEmployees()">Refresh list</button>
+
+            @if (salaryLoading() && !salaryEmployees().length) {
+              <div class="loading"><div class="spinner"></div></div>
+            } @else {
+              @for (e of salaryEmployees(); track e.id) {
+                <button
+                  type="button"
+                  class="salary-emp-btn"
+                  [class.active]="selectedSalaryEmployee()?.id === e.id"
+                  (click)="selectSalaryEmployee(e)"
+                >
+                  <strong>{{ e.name }}</strong>
+                  <small>{{ e.empType === 'DOCTOR' ? 'Doctor' : 'Staff' }} · Gross ₹{{ fmt(e.grossPaise) }}</small>
+                  @if (!e.hasStructure) {
+                    <span class="salary-missing-tag">Not configured</span>
+                  }
+                </button>
+              } @empty {
+                <p class="muted-note">No employees found.</p>
+              }
+            }
+          </aside>
+
+          <section class="salary-form-panel">
+            @if (!selectedSalaryEmployee()) {
+              <div class="empty"><div>🧾</div><p>Select an employee to view or edit salary structure</p></div>
+            } @else if (salaryLoading()) {
+              <div class="loading"><div class="spinner"></div></div>
+            } @else {
+              <div class="salary-form-hdr">
+                <div>
+                  <h3>{{ selectedSalaryEmployee()!.name }}</h3>
+                  <p class="pp-sub">
+                    {{ selectedSalaryEmployee()!.designation ?? '—' }} · {{ selectedSalaryEmployee()!.department ?? '—' }}
+                  </p>
+                </div>
+                <div class="salary-totals">
+                  <div><span>Gross</span><strong>₹{{ fmtRupees(salaryPreview().gross) }}</strong></div>
+                  <div><span>Net</span><strong>₹{{ fmtRupees(salaryPreview().net) }}</strong></div>
+                  <div><span>CTC</span><strong>₹{{ fmtRupees(salaryPreview().ctc) }}</strong></div>
+                </div>
+              </div>
+
+              <div class="salary-sections">
+                <div class="salary-section">
+                  <h4>Earnings (monthly)</h4>
+                  <div class="salary-grid">
+                    <label>Basic (₹)<input type="number" min="0" step="1" [formField]="salaryForm.basic" [readonly]="!salaryCanEdit()" /></label>
+                    <label>HRA (₹)<input type="number" min="0" step="1" [formField]="salaryForm.hra" [readonly]="!salaryCanEdit()" /></label>
+                    <label>Conveyance (₹)<input type="number" min="0" step="1" [formField]="salaryForm.conveyance" [readonly]="!salaryCanEdit()" /></label>
+                    <label>Medical allowance (₹)<input type="number" min="0" step="1" [formField]="salaryForm.medicalAllowance" [readonly]="!salaryCanEdit()" /></label>
+                    <label>Special allowance (₹)<input type="number" min="0" step="1" [formField]="salaryForm.specialAllowance" [readonly]="!salaryCanEdit()" /></label>
+                    <label>Other allowances (₹)<input type="number" min="0" step="1" [formField]="salaryForm.otherAllowance" [readonly]="!salaryCanEdit()" /></label>
+                  </div>
+                </div>
+
+                <div class="salary-section">
+                  <h4>Employee deductions</h4>
+                  <div class="salary-grid">
+                    <label>Employee PF (₹)<input type="number" min="0" step="1" [formField]="salaryForm.employeePf" [readonly]="!salaryCanEdit()" /></label>
+                    <label>Employee ESIC (₹)<input type="number" min="0" step="1" [formField]="salaryForm.employeeEsi" [readonly]="!salaryCanEdit()" /></label>
+                    <label>Professional tax (₹)<input type="number" min="0" step="1" [formField]="salaryForm.professionalTax" [readonly]="!salaryCanEdit()" /></label>
+                    <label>TDS (₹)<input type="number" min="0" step="1" [formField]="salaryForm.tds" [readonly]="!salaryCanEdit()" /></label>
+                    <label>Other deductions (₹)<input type="number" min="0" step="1" [formField]="salaryForm.otherDeduction" [readonly]="!salaryCanEdit()" /></label>
+                  </div>
+                </div>
+
+                <div class="salary-section">
+                  <h4>Employer contributions</h4>
+                  <div class="salary-grid">
+                    <label>Employer PF (₹)<input type="number" min="0" step="1" [formField]="salaryForm.employerPf" [readonly]="!salaryCanEdit()" /></label>
+                    <label>Employer ESIC (₹)<input type="number" min="0" step="1" [formField]="salaryForm.employerEsi" [readonly]="!salaryCanEdit()" /></label>
+                  </div>
+                </div>
+
+                <label class="salary-notes">Notes
+                  <textarea rows="2" [formField]="salaryForm.notes" [readonly]="!salaryCanEdit()"></textarea>
+                </label>
+              </div>
+
+              @if (salaryCanEdit()) {
+                <button class="btn-save-salary" [disabled]="salarySaving()" (click)="saveSalaryStructure()">
+                  {{ salarySaving() ? 'Saving…' : 'Save salary structure' }}
+                </button>
+              }
+            }
+          </section>
+        </div>
       }
     </div>
     @if (toast()) { <div class="toast">{{ toast() }}</div> }
-  

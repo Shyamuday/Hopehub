@@ -36,7 +36,7 @@ const ADMIN_ROUTE_RULES: Array<{ pattern: RegExp; rules: RouteRule[] }> = [
     ]
   },
   {
-    pattern: /^\/admin\/payments|^\/admin\/finance/,
+    pattern: /^\/admin\/(payments|finance|salary)/,
     rules: [
       { method: 'GET', permissions: [PERMISSIONS.PAYMENTS_READ, PERMISSIONS.REPORTS_VIEW] },
       { permissions: [PERMISSIONS.PAYMENTS_READ] }

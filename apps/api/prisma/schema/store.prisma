@@ -97,6 +97,7 @@ model StoreStaff {
   leaveRequests    LeaveRequest[]
   goodsReceipts    GoodsReceiptNote[]
   inAppNotifications InAppNotification[] @relation("StoreStaffInAppNotifications")
+  salaryStructure  EmployeeSalary?
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
 }

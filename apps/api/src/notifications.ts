@@ -8,7 +8,8 @@ export type NotificationEventType =
   | 'BOOKING_CONFIRMED'
   | 'DOCTOR_ASSIGNED'
   | 'PRESCRIPTION_READY'
-  | 'PLATFORM_BROADCAST';
+  | 'PLATFORM_BROADCAST'
+  | 'VISITOR_LEAD_NEW';
 
 export type NotificationMessage = {
   eventType: NotificationEventType;

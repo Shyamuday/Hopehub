@@ -93,6 +93,8 @@ export class AdminApi {
   listVisitorLeads(...args: Parameters<AdminDoctorsApi['listVisitorLeads']>) { return this.doctors.listVisitorLeads(...args); }
   getVisitorLead(...args: Parameters<AdminDoctorsApi['getVisitorLead']>) { return this.doctors.getVisitorLead(...args); }
   updateVisitorLeadFollowUp(...args: Parameters<AdminDoctorsApi['updateVisitorLeadFollowUp']>) { return this.doctors.updateVisitorLeadFollowUp(...args); }
+  bookVisitorLeadConsultation(...args: Parameters<AdminDoctorsApi['bookVisitorLeadConsultation']>) { return this.doctors.bookVisitorLeadConsultation(...args); }
+  getLeadFunnelReport(...args: Parameters<AdminDoctorsApi['getLeadFunnelReport']>) { return this.doctors.getLeadFunnelReport(...args); }
   getConsultations(...args: Parameters<AdminCatalogApi['getConsultations']>) {
     return this.catalog.getConsultations(...(args as Parameters<AdminCatalogApi['getConsultations']>));
   }
@@ -206,6 +208,15 @@ export class AdminApi {
   }
   getPayroll(...args: Parameters<AdminHrApi['getPayroll']>) {
     return this.hr.getPayroll(...(args as Parameters<AdminHrApi['getPayroll']>));
+  }
+  getSalaryEmployees(...args: Parameters<AdminHrApi['getSalaryEmployees']>) {
+    return this.hr.getSalaryEmployees(...(args as Parameters<AdminHrApi['getSalaryEmployees']>));
+  }
+  getEmployeeSalary(...args: Parameters<AdminHrApi['getEmployeeSalary']>) {
+    return this.hr.getEmployeeSalary(...(args as Parameters<AdminHrApi['getEmployeeSalary']>));
+  }
+  saveEmployeeSalary(...args: Parameters<AdminHrApi['saveEmployeeSalary']>) {
+    return this.hr.saveEmployeeSalary(...(args as Parameters<AdminHrApi['saveEmployeeSalary']>));
   }
   getFinanceSummary(...args: Parameters<AdminFinanceApi['getFinanceSummary']>) {
     return this.finance.getFinanceSummary(...(args as Parameters<AdminFinanceApi['getFinanceSummary']>));

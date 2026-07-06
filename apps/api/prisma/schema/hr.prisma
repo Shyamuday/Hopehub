@@ -92,6 +92,7 @@ model Doctor {
   joiningLetter    JoiningLetter?
   leaveRequests    LeaveRequest[]
   slots            DoctorSlot[]
+  salaryStructure  EmployeeSalary?
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
 }
@@ -239,4 +240,43 @@ model DoctorSlot {
   @@unique([doctorId, date, startTime])
   @@index([doctorId, date])
   @@index([date, isBooked])
+}
+
+/// Admin-managed monthly salary breakdown (Basic, HRA, PF, ESIC, etc.)
+model EmployeeSalary {
+  id                    String       @id @default(cuid())
+  employeeType          EmployeeType
+  doctorId              String?      @unique
+  storeStaffId          String?      @unique
+  doctor                Doctor?      @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  storeStaff            StoreStaff?  @relation(fields: [storeStaffId], references: [id], onDelete: Cascade)
+
+  basicPaise            Int          @default(0)
+  hraPaise              Int          @default(0)
+  conveyancePaise       Int          @default(0)
+  medicalAllowancePaise Int          @default(0)
+  specialAllowancePaise Int          @default(0)
+  otherAllowancePaise   Int          @default(0)
+
+  employerPfPaise       Int          @default(0)
+  employeePfPaise       Int          @default(0)
+  employerEsiPaise      Int          @default(0)
+  employeeEsiPaise      Int          @default(0)
+  professionalTaxPaise  Int          @default(0)
+  tdsPaise              Int          @default(0)
+  otherDeductionPaise   Int          @default(0)
+
+  grossPaise            Int          @default(0)
+  netPaise              Int          @default(0)
+  ctcPaise              Int          @default(0)
+
+  effectiveFrom         DateTime     @default(now())
+  notes                 String?
+  updatedById           String?
+  updatedBy             User?        @relation("SalaryUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+
+  createdAt             DateTime     @default(now())
+  updatedAt             DateTime     @updatedAt
+
+  @@index([employeeType])
 }

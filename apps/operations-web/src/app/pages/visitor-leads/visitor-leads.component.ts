@@ -1,151 +1,273 @@
-import { CommonModule } from '@angular/common';
-import { Component, inject, signal } from '@angular/core';
-import { FormsModule } from '@angular/forms';
-import { ReceptionApiService } from '../../services/reception-api.service';
-
-const FOLLOW_UP_OPTIONS = [
-  { value: 'NEW', label: 'New' },
-  { value: 'NEEDS_CALLBACK', label: 'Needs callback' },
-  { value: 'CALLED', label: 'Called' },
-  { value: 'NO_ANSWER', label: 'No answer' },
-  { value: 'WHATSAPP_SENT', label: 'WhatsApp sent' },
-  { value: 'REGISTERED', label: 'Registered' },
-  { value: 'BOOKED', label: 'Booked consultation' },
-  { value: 'NOT_INTERESTED', label: 'Not interested' },
-  { value: 'CLOSED', label: 'Closed' }
-] as const;
-
-type FollowUpFilter = 'ALL' | 'NEEDS_CALLBACK' | 'NEW' | 'CALLED' | 'REGISTERED';
-
-@Component({
-  selector: 'app-visitor-leads',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
-  templateUrl: './visitor-leads.component.html',
-  styleUrl: './visitor-leads.component.scss'
-})
-export class VisitorLeadsComponent {
-  private readonly api = inject(ReceptionApiService);
-
-  readonly leads = signal<any[]>([]);
-  readonly selected = signal<any | null>(null);
-  readonly loading = signal(false);
-  readonly detailLoading = signal(false);
-  readonly mutating = signal(false);
-  readonly error = signal('');
-  readonly message = signal('');
-  readonly followUpFilter = signal<FollowUpFilter>('NEEDS_CALLBACK');
-  readonly stats = signal<any | null>(null);
-
-  readonly followUpOptions = FOLLOW_UP_OPTIONS;
-
-  selectedStatus = 'NEEDS_CALLBACK';
-  operatorNote = '';
-
-  constructor() {
-    void this.load();
-  }
-
-  async load() {
-    this.loading.set(true);
-    this.error.set('');
-    try {
-      const filter = this.followUpFilter();
-      const [res, statsRes] = await Promise.all([
-        this.api.listVisitorLeads(filter === 'ALL' ? undefined : filter),
-        this.api.getVisitorLeadStats()
-      ]);
-      this.leads.set(res.leads);
-      this.stats.set(statsRes.stats);
-    } catch {
-      this.error.set('Could not load visitor leads.');
-    } finally {
-      this.loading.set(false);
-    }
-  }
-
-  async setFilter(status: FollowUpFilter) {
-    this.followUpFilter.set(status);
-    this.selected.set(null);
-    await this.load();
-  }
-
-  async selectLead(id: string) {
-    this.detailLoading.set(true);
-    this.message.set('');
-    try {
-      const res = await this.api.getVisitorLead(id);
-      this.selected.set(res.lead);
-      this.selectedStatus = res.lead.followUpStatus;
-      this.operatorNote = res.lead.operatorNote ?? '';
-    } catch {
-      this.error.set('Could not load lead.');
-    } finally {
-      this.detailLoading.set(false);
-    }
-  }
-
-  async markCalled() {
-    const lead = this.selected();
-    if (!lead) return;
-    this.mutating.set(true);
-    try {
-      const res = await this.api.updateVisitorLeadFollowUp(lead.id, {
-        followUpStatus: 'CALLED',
-        operatorNote: this.operatorNote || undefined,
-        markCalled: true
-      });
-      this.selected.set(res.lead);
-      this.selectedStatus = 'CALLED';
-      this.message.set('Marked as called.');
-      await this.load();
-    } catch {
-      this.error.set('Could not update follow-up.');
-    } finally {
-      this.mutating.set(false);
-    }
-  }
-
-  async saveFollowUp() {
-    const lead = this.selected();
-    if (!lead) return;
-    this.mutating.set(true);
-    try {
-      const res = await this.api.updateVisitorLeadFollowUp(lead.id, {
-        followUpStatus: this.selectedStatus,
-        operatorNote: this.operatorNote || undefined,
-        markCalled: this.selectedStatus === 'CALLED'
-      });
-      this.selected.set(res.lead);
-      this.message.set('Follow-up saved.');
-      await this.load();
-    } catch {
-      this.error.set('Could not save follow-up.');
-    } finally {
-      this.mutating.set(false);
-    }
-  }
-
-  followUpLabel(status: string): string {
-    return this.followUpOptions.find((o) => o.value === status)?.label ?? status;
-  }
-
-  sourceLabel(source: string): string {
-    switch (source) {
-      case 'CHAT_BOT': return 'Chat';
-      case 'HOME_BOOKING': return 'Home booking';
-      case 'PROMO_POPUP': return 'Promo popup';
-      default: return source;
-    }
-  }
-
-  formatTime(iso: string): string {
-    return new Date(iso).toLocaleString('en-IN', {
-      day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'
-    });
-  }
-
-  leadPreview(lead: any): string {
-    return lead.concern ?? lead.visitorName ?? lead.visitorPhone ?? 'Website inquiry';
-  }
-}
+import { CommonModule } from '@angular/common';
+import { Component, computed, inject, signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { ReceptionApiService } from '../../services/reception-api.service';
+import { environment } from '../../../environments/environment';
+import { API_PATHS } from '../../core/constants/api-paths.constants';
+import { HttpClient } from '@angular/common/http';
+import { firstValueFrom } from 'rxjs';
+
+const FOLLOW_UP_OPTIONS = [
+  { value: 'NEW', label: 'New' },
+  { value: 'NEEDS_CALLBACK', label: 'Needs callback' },
+  { value: 'CALLED', label: 'Called' },
+  { value: 'NO_ANSWER', label: 'No answer' },
+  { value: 'WHATSAPP_SENT', label: 'WhatsApp sent' },
+  { value: 'REGISTERED', label: 'Registered' },
+  { value: 'BOOKED', label: 'Booked consultation' },
+  { value: 'NOT_INTERESTED', label: 'Not interested' },
+  { value: 'CLOSED', label: 'Closed' }
+] as const;
+
+const QUICK_OUTCOMES = [
+  { status: 'CALLED', label: 'Called', markCalled: true },
+  { status: 'NO_ANSWER', label: 'No answer', markCalled: false },
+  { status: 'WHATSAPP_SENT', label: 'WhatsApp sent', markCalled: false },
+  { status: 'NOT_INTERESTED', label: 'Not interested', markCalled: false, needsReason: true }
+] as const;
+
+type FollowUpFilter = 'ALL' | 'NEEDS_CALLBACK' | 'NEW' | 'CALLED' | 'REGISTERED' | 'NOT_INTERESTED';
+
+function parseStoredNotInterestedReason(stored: string | null | undefined, presets: string[]) {
+  if (!stored?.trim()) return { preset: '', detail: '' };
+  for (const preset of presets) {
+    if (stored === preset) return { preset, detail: '' };
+    if (stored.startsWith(`${preset} — `)) {
+      return { preset, detail: stored.slice(preset.length + 3) };
+    }
+    if (preset === 'Other' && stored.startsWith('Other: ')) {
+      return { preset: 'Other', detail: stored.slice(7) };
+    }
+  }
+  return { preset: 'Other', detail: stored };
+}
+
+@Component({
+  selector: 'app-visitor-leads',
+  standalone: true,
+  imports: [CommonModule, FormsModule],
+  templateUrl: './visitor-leads.component.html',
+  styleUrl: './visitor-leads.component.scss'
+})
+export class VisitorLeadsComponent {
+  private readonly api = inject(ReceptionApiService);
+  private readonly http = inject(HttpClient);
+
+  readonly leads = signal<any[]>([]);
+  readonly selected = signal<any | null>(null);
+  readonly diseases = signal<Array<{ id: string; name: string; feeInPaise: number }>>([]);
+  readonly notInterestedReasons = signal<string[]>([]);
+  readonly loading = signal(false);
+  readonly detailLoading = signal(false);
+  readonly mutating = signal(false);
+  readonly error = signal('');
+  readonly message = signal('');
+  readonly followUpFilter = signal<FollowUpFilter>('NEEDS_CALLBACK');
+  readonly stats = signal<any | null>(null);
+
+  readonly followUpOptions = FOLLOW_UP_OPTIONS;
+  readonly quickOutcomes = QUICK_OUTCOMES;
+  readonly showNotInterestedForm = computed(() => this.selectedStatus === 'NOT_INTERESTED');
+
+  selectedStatus = 'NEEDS_CALLBACK';
+  operatorNote = '';
+  visitorIssue = '';
+  notInterestedPreset = '';
+  notInterestedDetail = '';
+  bookDiseaseId = '';
+  collectCash = false;
+
+  constructor() {
+    void this.load();
+    void this.loadDiseases();
+    void this.loadMeta();
+  }
+
+  async loadMeta() {
+    try {
+      const res = await this.api.getVisitorLeadMeta();
+      this.notInterestedReasons.set(res.notInterestedReasons);
+    } catch {
+      this.notInterestedReasons.set([
+        'Already under care elsewhere',
+        'Too expensive / fee concern',
+        'Not ready — will decide later',
+        'Wrong number / not the right person',
+        'Location / prefers in-person nearby',
+        'Does not want online consultation',
+        'No longer has the issue',
+        'Other'
+      ]);
+    }
+  }
+
+  async loadDiseases() {
+    try {
+      const res = await firstValueFrom(
+        this.http.get<{ diseases: Array<{ id: string; name: string; feeInPaise: number }> }>(
+          `${environment.apiUrl}${API_PATHS.DISEASES}`
+        )
+      );
+      this.diseases.set(res.diseases.filter((d) => d.id));
+      if (res.diseases[0]) this.bookDiseaseId = res.diseases[0].id;
+    } catch {
+      // diseases optional for list view
+    }
+  }
+
+  async load() {
+    this.loading.set(true);
+    this.error.set('');
+    try {
+      const filter = this.followUpFilter();
+      const [res, statsRes] = await Promise.all([
+        this.api.listVisitorLeads(filter === 'ALL' ? undefined : filter),
+        this.api.getVisitorLeadStats()
+      ]);
+      this.leads.set(res.leads);
+      this.stats.set(statsRes.stats);
+    } catch {
+      this.error.set('Could not load visitor leads.');
+    } finally {
+      this.loading.set(false);
+    }
+  }
+
+  async setFilter(status: FollowUpFilter) {
+    this.followUpFilter.set(status);
+    this.selected.set(null);
+    await this.load();
+  }
+
+  async selectLead(id: string) {
+    this.detailLoading.set(true);
+    this.message.set('');
+    this.error.set('');
+    try {
+      const res = await this.api.getVisitorLead(id);
+      this.selected.set(res.lead);
+      this.selectedStatus = res.lead.followUpStatus;
+      this.operatorNote = res.lead.operatorNote ?? '';
+      this.visitorIssue = res.lead.visitorIssue ?? res.lead.concern ?? '';
+      const parsed = parseStoredNotInterestedReason(
+        res.lead.notInterestedReason,
+        this.notInterestedReasons()
+      );
+      this.notInterestedPreset = parsed.preset;
+      this.notInterestedDetail = parsed.detail;
+    } catch {
+      this.error.set('Could not load lead.');
+    } finally {
+      this.detailLoading.set(false);
+    }
+  }
+
+  async markCalled() {
+    await this.applyFollowUp('CALLED', true);
+  }
+
+  async quickOutcome(outcome: (typeof QUICK_OUTCOMES)[number]) {
+    this.selectedStatus = outcome.status;
+    if ('needsReason' in outcome && outcome.needsReason) {
+      this.message.set('Select a not-interested reason below, then save.');
+      return;
+    }
+    await this.applyFollowUp(outcome.status, outcome.markCalled);
+  }
+
+  async saveFollowUp() {
+    await this.applyFollowUp(this.selectedStatus, this.selectedStatus === 'CALLED');
+  }
+
+  private buildFollowUpPayload(status: string, markCalled: boolean) {
+    return {
+      followUpStatus: status,
+      operatorNote: this.operatorNote.trim() || undefined,
+      visitorIssue: this.visitorIssue.trim() || undefined,
+      notInterestedReasonPreset:
+        status === 'NOT_INTERESTED' ? this.notInterestedPreset || undefined : undefined,
+      notInterestedReasonDetail:
+        status === 'NOT_INTERESTED' ? this.notInterestedDetail.trim() || undefined : undefined,
+      markCalled
+    };
+  }
+
+  private async applyFollowUp(status: string, markCalled: boolean) {
+    const lead = this.selected();
+    if (!lead) return;
+
+    if (status === 'NOT_INTERESTED' && !this.notInterestedPreset) {
+      this.error.set('Please select why they are not interested.');
+      return;
+    }
+    if (status === 'NOT_INTERESTED' && this.notInterestedPreset === 'Other' && !this.notInterestedDetail.trim()) {
+      this.error.set('Please describe the reason under “Other”.');
+      return;
+    }
+
+    this.mutating.set(true);
+    this.error.set('');
+    try {
+      const res = await this.api.updateVisitorLeadFollowUp(lead.id, this.buildFollowUpPayload(status, markCalled));
+      this.selected.set(res.lead);
+      this.selectedStatus = status;
+      this.message.set('Follow-up saved.');
+      await this.load();
+    } catch (err: unknown) {
+      const msg = (err as { error?: { message?: string } })?.error?.message;
+      this.error.set(msg || 'Could not update follow-up.');
+    } finally {
+      this.mutating.set(false);
+    }
+  }
+
+  async bookConsultation() {
+    const lead = this.selected();
+    if (!lead || !this.bookDiseaseId) return;
+    this.mutating.set(true);
+    this.error.set('');
+    try {
+      const res = await this.api.bookVisitorLeadConsultation(lead.id, {
+        diseaseId: this.bookDiseaseId,
+        collectCash: this.collectCash,
+        notes: this.operatorNote || undefined
+      });
+      this.selected.set(res.lead);
+      this.message.set('Consultation booked and lead marked as booked.');
+      await this.load();
+    } catch (err: unknown) {
+      const msg = (err as { error?: { message?: string } })?.error?.message;
+      this.error.set(msg || 'Could not book consultation.');
+    } finally {
+      this.mutating.set(false);
+    }
+  }
+
+  followUpLabel(status: string): string {
+    return this.followUpOptions.find((o) => o.value === status)?.label ?? status;
+  }
+
+  sourceLabel(source: string): string {
+    switch (source) {
+      case 'CHAT_BOT': return 'Chat';
+      case 'HOME_BOOKING': return 'Home booking';
+      case 'PROMO_POPUP': return 'Promo popup';
+      default: return source;
+    }
+  }
+
+  formatTime(iso: string): string {
+    return new Date(iso).toLocaleString('en-IN', {
+      day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'
+    });
+  }
+
+  formatPaise(paise: number): string {
+    return (paise / 100).toLocaleString('en-IN', { maximumFractionDigits: 0 });
+  }
+
+  leadPreview(lead: any): string {
+    return lead.visitorIssue ?? lead.concern ?? lead.visitorName ?? lead.visitorPhone ?? 'Website inquiry';
+  }
+}
+
