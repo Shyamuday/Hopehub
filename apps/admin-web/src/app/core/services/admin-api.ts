@@ -91,6 +91,7 @@ export class AdminApi {
   sendChatOperatorMessage(...args: Parameters<AdminDoctorsApi['sendChatOperatorMessage']>) { return this.doctors.sendChatOperatorMessage(...args); }
   getVisitorLeadStats(...args: Parameters<AdminDoctorsApi['getVisitorLeadStats']>) { return this.doctors.getVisitorLeadStats(...args); }
   listVisitorLeads(...args: Parameters<AdminDoctorsApi['listVisitorLeads']>) { return this.doctors.listVisitorLeads(...args); }
+  exportVisitorLeadsCsv(...args: Parameters<AdminDoctorsApi['exportVisitorLeadsCsv']>) { return this.doctors.exportVisitorLeadsCsv(...args); }
   getVisitorLead(...args: Parameters<AdminDoctorsApi['getVisitorLead']>) { return this.doctors.getVisitorLead(...args); }
   updateVisitorLeadFollowUp(...args: Parameters<AdminDoctorsApi['updateVisitorLeadFollowUp']>) { return this.doctors.updateVisitorLeadFollowUp(...args); }
   bookVisitorLeadConsultation(...args: Parameters<AdminDoctorsApi['bookVisitorLeadConsultation']>) { return this.doctors.bookVisitorLeadConsultation(...args); }

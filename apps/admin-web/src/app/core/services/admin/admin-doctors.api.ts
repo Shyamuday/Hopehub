@@ -206,14 +206,49 @@ export class AdminDoctorsApi extends AdminApiBase {
     );
   }
 
-  listVisitorLeads(followUpStatus?: string, source?: string, page = 1) {
+  listVisitorLeads(
+    filters: {
+      followUpStatus?: string;
+      source?: string;
+      dateFrom?: string;
+      dateTo?: string;
+      notInterestedOnly?: boolean;
+    } = {},
+    page = 1
+  ) {
     const params = new URLSearchParams({ page: String(page), pageSize: '30' });
-    if (followUpStatus) params.set('followUpStatus', followUpStatus);
-    if (source) params.set('source', source);
+    if (filters.followUpStatus) params.set('followUpStatus', filters.followUpStatus);
+    if (filters.source) params.set('source', filters.source);
+    if (filters.dateFrom) params.set('dateFrom', filters.dateFrom);
+    if (filters.dateTo) params.set('dateTo', filters.dateTo);
+    if (filters.notInterestedOnly) params.set('notInterestedOnly', 'true');
     return firstValueFrom(
       this.http.get<{ leads: any[]; pagination: { total: number; totalPages: number } }>(
         `${this.apiBase}${API_PATHS.ADMIN.VISITOR_LEADS}?${params}`
       )
+    );
+  }
+
+  exportVisitorLeadsCsv(
+    filters: {
+      followUpStatus?: string;
+      source?: string;
+      dateFrom?: string;
+      dateTo?: string;
+      notInterestedOnly?: boolean;
+    } = {}
+  ) {
+    const params = new URLSearchParams();
+    if (filters.followUpStatus) params.set('followUpStatus', filters.followUpStatus);
+    if (filters.source) params.set('source', filters.source);
+    if (filters.dateFrom) params.set('dateFrom', filters.dateFrom);
+    if (filters.dateTo) params.set('dateTo', filters.dateTo);
+    if (filters.notInterestedOnly) params.set('notInterestedOnly', 'true');
+    const suffix = params.toString() ? `?${params}` : '';
+    return firstValueFrom(
+      this.http.get(`${this.apiBase}${API_PATHS.ADMIN.VISITOR_LEAD_EXPORT}${suffix}`, {
+        responseType: 'text'
+      })
     );
   }
 
@@ -261,6 +296,7 @@ export class AdminDoctorsApi extends AdminApiBase {
           called: number;
           registered: number;
           booked: number;
+          notInterested?: number;
         };
         funnel: Array<{
           key: string;
@@ -270,6 +306,8 @@ export class AdminDoctorsApi extends AdminApiBase {
           conversionFromPrevious: number;
         }>;
         bySource: Array<{ source: string; total: number; booked: number; conversionRate: number }>;
+        notInterestedByReason?: Array<{ reason: string; count: number }>;
+        topVisitorIssues?: Array<{ issue: string; count: number }>;
       }>(`${this.apiBase}${API_PATHS.ADMIN.LEAD_FUNNEL}?days=${days}`)
     );
   }

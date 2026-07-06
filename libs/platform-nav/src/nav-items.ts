@@ -20,6 +20,7 @@ export const OPERATIONS_NAV_ITEMS: PlatformNavItem[] = [
   { path: '/walk-in', label: 'Walk-in', icon: '🚶', capability: 'receptionist.portal' },
   { path: '/queue', label: 'Queue', icon: '📟', capability: 'receptionist.portal' },
   { path: '/visitor-leads', label: 'Visitor leads', icon: '📋', capability: 'receptionist.portal' },
+  { path: '/visitor-leads', label: 'Website leads', icon: '📋', capability: 'coordinator.portal' },
   { path: '/scan', label: 'Scan patient', icon: '📷', capability: 'patient.scan' },
   { path: '/clinic-dashboard', label: 'Clinic hub', icon: '🏥', capability: 'clinic_manager.portal' },
   { path: '/roster', label: 'Roster', icon: '📅', capability: 'clinic_manager.portal' },

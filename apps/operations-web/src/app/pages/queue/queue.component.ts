@@ -1,9 +1,11 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, OnInit, signal } from '@angular/core';
 import { form, FormField } from '@angular/forms/signals';
 import { DatePipe } from '@angular/common';
+import { RouterLink } from '@angular/router';
 import { httpResource } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 import { API_PATHS } from '../../core/constants/api-paths.constants';
+import { ROUTE_PATHS } from '../../core/constants/app-routes.constants';
 import { ReceptionApiService } from '../../services/reception-api.service';
 import type { QueueConsultation, QueueData } from '../../models';
 
@@ -20,12 +22,15 @@ const EMPTY_SUMMARY = { total: 0, awaitingPayment: 0, awaitingDoctor: 0, inProgr
 @Component({
   selector: 'app-queue',
   standalone: true,
-  imports: [FormField, DatePipe],
+  imports: [FormField, DatePipe, RouterLink],
   templateUrl: './queue.component.html',
   styleUrl: './queue.component.scss'
 })
-export class QueueComponent {
+export class QueueComponent implements OnInit {
   private api = inject(ReceptionApiService);
+
+  readonly visitorLeadsPath = `/${ROUTE_PATHS.VISITOR_LEADS}`;
+  readonly leadStats = signal<{ needsCallback: number; newLeads: number } | null>(null);
 
   readonly statusFilter = signal('');
   readonly query = signal('');
@@ -61,6 +66,22 @@ export class QueueComponent {
   consultations = () => this.data()?.consultations ?? [];
   summary = () => this.data()?.summary ?? EMPTY_SUMMARY;
   doctors = () => this.doctorsResource.value()?.doctors ?? [];
+
+  ngOnInit(): void {
+    void this.loadLeadStats();
+  }
+
+  async loadLeadStats(): Promise<void> {
+    try {
+      const res = await this.api.getVisitorLeadStats();
+      this.leadStats.set({
+        needsCallback: res.stats.needsCallback,
+        newLeads: res.stats.newLeads
+      });
+    } catch {
+      this.leadStats.set(null);
+    }
+  }
 
   applySearch(): void {
     this.query.set(this.searchModel().q.trim());

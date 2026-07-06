@@ -68,6 +68,7 @@ export class CaseAnalysisApiService {
     payload: {
       notes?: string;
       sourceId?: string;
+      methodOptionId?: string | null;
       rubrics?: Array<{ rubricId: string; weight: number }>;
     }
   ) {
@@ -99,5 +100,14 @@ export class CaseAnalysisApiService {
         }
       })
     );
+  }
+
+  loadMethodOptions() {
+    return firstValueFrom(
+      this.http.get<{ options: Array<{ id: string; label: string }> }>(
+        `${this.apiBase}${API_PATHS.DOCTOR.PRESCRIPTION_OPTIONS}`,
+        { params: { type: 'METHOD' } }
+      )
+    ).then((response) => response.options);
   }
 }

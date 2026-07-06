@@ -46,6 +46,8 @@ export type CaseAnalysis = {
   consultationId?: string | null;
   status: 'DRAFT' | 'FINALIZED';
   notes?: string | null;
+  methodOptionId?: string | null;
+  methodOption?: { id: string; label: string } | null;
   source?: RepertorySource | null;
   selectedRemedy?: RepertoryRemedyRef | null;
   rubrics: Array<{ rubricId: string; weight: number; rubric: SelectedRubric['rubric'] }>;

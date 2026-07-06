@@ -49,7 +49,9 @@ export const doctorProfileSelect = {
   showOnWebsite: true,
   websiteOrder: true,
   yearsOfExperience: true,
-  focusAreas: true
+  focusAreas: true,
+  defaultMethodOptionId: true,
+  defaultMethodOption: { select: { id: true, label: true } }
 } as const;
 
 export function specialtyFocusLabel(focus: HomeopathicSpecialtyFocus | null | undefined) {

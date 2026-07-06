@@ -107,7 +107,9 @@ model CaseAnalysis {
   sourceId         String?
   status           CaseAnalysisStatus   @default(DRAFT)
   notes            String?
+  methodOptionId   String?
   selectedRemedyId String?
+  methodOption     PrescriptionOption?  @relation("CaseAnalysisMethod", fields: [methodOptionId], references: [id], onDelete: SetNull)
   consultation     Consultation?        @relation(fields: [consultationId], references: [id], onDelete: Cascade)
   doctor           User                 @relation("DoctorCaseAnalyses", fields: [doctorId], references: [id], onDelete: Restrict)
   source           RepertorySource?     @relation(fields: [sourceId], references: [id], onDelete: SetNull)

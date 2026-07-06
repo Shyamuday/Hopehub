@@ -1,5 +1,6 @@
 export const API_PATHS = {
   DISEASES: '/diseases',
+  PUBLIC_CONFIG: '/public-config',
   HR: {
     DASHBOARD: '/hr/dashboard',
     EMPLOYEES: '/hr/employees',
@@ -22,7 +23,8 @@ export const API_PATHS = {
     VISITOR_LEAD_META: '/admin/visitor-leads/meta',
     VISITOR_LEAD_BY_ID: (id: string) => `/admin/visitor-leads/${id}`,
     VISITOR_LEAD_FOLLOW_UP: (id: string) => `/admin/visitor-leads/${id}/follow-up`,
-    VISITOR_LEAD_BOOK: (id: string) => `/admin/visitor-leads/${id}/book-consultation`
+    VISITOR_LEAD_BOOK: (id: string) => `/admin/visitor-leads/${id}/book-consultation`,
+    VISITOR_LEAD_OPERATOR_MESSAGE: (id: string) => `/admin/visitor-leads/${id}/operator-message`
   },
   CLINIC_MANAGER: {
     ME: '/clinic-manager/me',

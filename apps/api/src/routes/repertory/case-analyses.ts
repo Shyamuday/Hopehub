@@ -6,6 +6,10 @@ import { prisma } from '../../db.js';
 import { asyncRoute } from '../../utils/helpers.js';
 import { computeRepertorization } from '../../services/repertorization.js';
 import {
+  assertMethodOptionId,
+  resolveDoctorDefaultMethodOptionId
+} from '../../services/doctor-prescribing-preferences.js';
+import {
   analysisIdFromReq,
   assertDoctorConsultationAccess,
   caseAnalysisInclude,
@@ -23,8 +27,19 @@ const updateAnalysisSchema = z.object({
   notes: z.string().max(5000).optional(),
   status: z.nativeEnum(CaseAnalysisStatus).optional(),
   sourceId: z.string().optional(),
+  methodOptionId: z.string().min(1).nullable().optional(),
   rubrics: z.array(rubricSelectionSchema).max(40).optional()
 });
+
+async function resolveCaseMethodOptionId(doctorId: string, methodOptionId?: string | null) {
+  if (methodOptionId === null) return null;
+  if (methodOptionId) {
+    const option = await assertMethodOptionId(methodOptionId);
+    if (!option) throw new Error('INVALID_METHOD');
+    return option.id;
+  }
+  return resolveDoctorDefaultMethodOptionId(doctorId);
+}
 
 export function registerCaseAnalysisRoutes(router: Router) {
   router.get(
@@ -44,10 +59,12 @@ export function registerCaseAnalysisRoutes(router: Router) {
         if (!defaultSource) {
           return res.status(400).json({ message: 'No active repertory source configured.' });
         }
+        const methodOptionId = await resolveDoctorDefaultMethodOptionId(doctorId);
         analysis = await prisma.caseAnalysis.create({
           data: {
             doctorId,
             sourceId: defaultSource.id,
+            methodOptionId,
             status: CaseAnalysisStatus.DRAFT
           },
           include: caseAnalysisInclude
@@ -69,10 +86,18 @@ export function registerCaseAnalysisRoutes(router: Router) {
         return res.status(400).json({ message: 'No active repertory source configured.' });
       }
 
+      let methodOptionId: string | null;
+      try {
+        methodOptionId = await resolveCaseMethodOptionId(req.user!.id, body.methodOptionId);
+      } catch {
+        return res.status(400).json({ message: 'Invalid prescribing approach.' });
+      }
+
       const analysis = await prisma.caseAnalysis.create({
         data: {
           doctorId: req.user!.id,
           sourceId: defaultSource.id,
+          methodOptionId,
           notes: body.notes || null,
           status: CaseAnalysisStatus.DRAFT,
           rubrics: body.rubrics?.length
@@ -125,11 +150,19 @@ export function registerCaseAnalysisRoutes(router: Router) {
         return res.status(400).json({ message: 'No active repertory source configured.' });
       }
 
+      let methodOptionId: string | null;
+      try {
+        methodOptionId = await resolveCaseMethodOptionId(req.user!.id, body.methodOptionId);
+      } catch {
+        return res.status(400).json({ message: 'Invalid prescribing approach.' });
+      }
+
       const analysis = await prisma.caseAnalysis.create({
         data: {
           consultationId,
           doctorId: req.user!.id,
           sourceId: defaultSource.id,
+          methodOptionId,
           notes: body.notes || null,
           status: body.status || CaseAnalysisStatus.DRAFT,
           rubrics: body.rubrics?.length
@@ -178,6 +211,13 @@ export function registerCaseAnalysisRoutes(router: Router) {
         }
       }
 
+      if (body.methodOptionId) {
+        const method = await assertMethodOptionId(body.methodOptionId);
+        if (!method) {
+          return res.status(400).json({ message: 'Invalid prescribing approach.' });
+        }
+      }
+
       const analysis = await prisma.$transaction(async (tx) => {
         if (body.rubrics) {
           await tx.caseAnalysisRubric.deleteMany({ where: { analysisId } });
@@ -198,7 +238,8 @@ export function registerCaseAnalysisRoutes(router: Router) {
           data: {
             notes: body.notes === undefined ? undefined : body.notes || null,
             status: body.status,
-            sourceId: body.sourceId
+            sourceId: body.sourceId,
+            methodOptionId: body.methodOptionId === undefined ? undefined : body.methodOptionId
           },
           include: caseAnalysisInclude
         });

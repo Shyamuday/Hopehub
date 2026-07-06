@@ -64,10 +64,22 @@ export class WalkInComponent implements OnInit {
       .catch(() => this.error.set('Could not load diseases.'));
 
     const code = this.route.snapshot.queryParamMap.get('patientCode');
+    const name = this.route.snapshot.queryParamMap.get('name');
+    const mobile = this.route.snapshot.queryParamMap.get('mobile');
+    const notes = this.route.snapshot.queryParamMap.get('notes');
+
     if (code) {
       this.setMode('existing');
       this.existingModel.update(m => ({ ...m, lookup: code }));
       void this.lookupPatient();
+    } else if (name || mobile || notes) {
+      this.setMode('new');
+      this.walkInModel.update(m => ({
+        ...m,
+        name: name ?? m.name,
+        mobile: mobile ?? m.mobile,
+        notes: notes ?? m.notes
+      }));
     }
   }
 

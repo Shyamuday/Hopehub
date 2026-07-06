@@ -46,6 +46,9 @@ export class CaseAnalysisPage {
   readonly searchedOnce = signal(false);
   readonly maxResultScore = signal(0);
 
+  readonly methods = signal<Array<{ id: string; label: string }>>([]);
+  readonly selectedMethodOptionId = signal('');
+
   readonly loading = signal(false);
   readonly searching = signal(false);
   readonly saving = signal(false);
@@ -63,6 +66,7 @@ export class CaseAnalysisPage {
 
   constructor() {
     void this.loadSources();
+    void this.loadMethodOptions();
     if (this.standalone) {
       void this.loadPracticeSession();
     } else if (this.consultationId) {
@@ -116,6 +120,14 @@ export class CaseAnalysisPage {
     }
   }
 
+  async loadMethodOptions() {
+    try {
+      this.methods.set(await this.api.loadMethodOptions());
+    } catch {
+      this.methods.set([]);
+    }
+  }
+
   async loadSources() {
     try {
       const nextSources = await this.api.loadSources();
@@ -159,6 +171,7 @@ export class CaseAnalysisPage {
 
   private hydrateFromAnalysis(nextAnalysis: CaseAnalysis) {
     this.notesModel.set({ notes: nextAnalysis.notes || '' });
+    this.selectedMethodOptionId.set(nextAnalysis.methodOptionId || nextAnalysis.methodOption?.id || '');
     this.selectedRubrics.set(
       nextAnalysis.rubrics.map((item) => ({
         rubricId: item.rubricId,
@@ -261,6 +274,26 @@ export class CaseAnalysisPage {
     }));
   }
 
+  async saveApproach(methodOptionId: string) {
+    const currentAnalysis = this.analysis();
+    if (!currentAnalysis) return;
+    this.selectedMethodOptionId.set(methodOptionId);
+    this.saving.set(true);
+    this.error.set('');
+    try {
+      const updated = await this.api.updateAnalysis(currentAnalysis.id, {
+        methodOptionId: methodOptionId || null
+      });
+      this.analysis.set(updated);
+      this.hydrateFromAnalysis(updated);
+      this.message.set('Prescribing approach updated.');
+    } catch {
+      this.error.set('Could not save approach.');
+    } finally {
+      this.saving.set(false);
+    }
+  }
+
   async saveRubrics() {
     const currentAnalysis = this.analysis();
     if (!currentAnalysis) return;
@@ -339,7 +372,8 @@ export class CaseAnalysisPage {
     void this.router.navigate(['/', ROUTE_PATHS.APPOINTMENTS], {
       queryParams: {
         consultationId: this.consultationId,
-        remedy: currentAnalysis.selectedRemedy.name
+        remedy: currentAnalysis.selectedRemedy.name,
+        ...(this.selectedMethodOptionId() ? { methodOptionId: this.selectedMethodOptionId() } : {})
       }
     });
   }

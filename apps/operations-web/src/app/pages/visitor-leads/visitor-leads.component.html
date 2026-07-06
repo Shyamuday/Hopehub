@@ -92,6 +92,24 @@
         @if (lead.user) {
           <p class="reg-banner">✓ Registered patient: {{ lead.user.name }} ({{ lead.user.mobile }})</p>
         }
+
+        <div class="action-links">
+          @if (lead.visitorPhone && whatsappUrl(lead); as wa) {
+            <a class="btn-secondary link-btn" [href]="wa" target="_blank" rel="noopener noreferrer">WhatsApp</a>
+          }
+          <a
+            class="btn-secondary link-btn"
+            [routerLink]="walkInPath"
+            [queryParams]="walkInQueryParams(lead)"
+          >Walk-in register</a>
+          @if (lead.user?.mobile) {
+            <a
+              class="btn-secondary link-btn"
+              [routerLink]="walkInPath"
+              [queryParams]="{ patientCode: lead.user.mobile }"
+            >Find patient</a>
+          }
+        </div>
         @if (lead.consultation) {
           <p class="reg-banner">✓ Booked: {{ lead.consultation.disease?.name }} — {{ lead.consultation.status }}</p>
         }
@@ -200,6 +218,23 @@
               </div>
             }
           </div>
+          @if (lead.chatSessionId) {
+            <div class="chat-reply">
+              <label>Reply in chat
+                <textarea
+                  [(ngModel)]="chatReply"
+                  rows="2"
+                  placeholder="Type a message the visitor will see in the chat widget…"
+                ></textarea>
+              </label>
+              <button
+                type="button"
+                class="btn-primary"
+                [disabled]="mutating() || !chatReply.trim()"
+                (click)="sendChatReply()"
+              >Send reply</button>
+            </div>
+          }
         }
       }
     </div>

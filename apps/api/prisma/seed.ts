@@ -975,6 +975,16 @@ async function main() {
     });
   }
 
+  const classicalMethod = await prisma.prescriptionOption.findFirst({
+    where: { type: PrescriptionOptionType.METHOD, normalizedLabel: 'classical homeopathy' }
+  });
+  if (classicalMethod) {
+    await prisma.doctor.update({
+      where: { userId: doctorUser.id },
+      data: { defaultMethodOptionId: classicalMethod.id }
+    });
+  }
+
   for (const label of defaultDiagnoses) {
     await prisma.prescriptionOption.upsert({
       where: {

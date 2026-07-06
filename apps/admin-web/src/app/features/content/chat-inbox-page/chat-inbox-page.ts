@@ -18,6 +18,9 @@ type WebsiteLead = {
   visitorPhone?: string | null;
   visitorEmail?: string | null;
   concern?: string | null;
+  visitorIssue?: string | null;
+  notInterestedReason?: string | null;
+  preferredCallbackTime?: string | null;
   entryPage?: string | null;
   operatorNote?: string | null;
   calledAt?: string | null;
@@ -25,6 +28,7 @@ type WebsiteLead = {
   createdAt: string;
   user?: { id: string; name: string; mobile?: string | null; email?: string | null } | null;
   calledBy?: { id: string; name: string } | null;
+  consultation?: { id: string; status: string; disease?: { name: string } | null } | null;
   chatSession?: {
     id: string;
     status: string;
@@ -58,6 +62,12 @@ export class ChatInboxPage {
   readonly detailLoading = signal(false);
   readonly error = signal('');
   readonly followUpFilter = signal<FollowUpFilter>('NEEDS_CALLBACK');
+  readonly sourceFilter = signal<'ALL' | 'CHAT_BOT' | 'HOME_BOOKING' | 'PROMO_POPUP'>('ALL');
+  readonly dateFrom = signal('');
+  readonly dateTo = signal('');
+  readonly notInterestedOnly = signal(false);
+  readonly csvExporting = signal(false);
+  readonly csvError = signal('');
   readonly stats = signal<{
     total: number;
     newLeads: number;

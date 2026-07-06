@@ -71,7 +71,7 @@ export const STORE_MANAGER_PATHS = {
 export const DEFAULT_AUTHED_ROUTE = ROUTE_PATHS.DASHBOARD;
 
 /** Maps child route segments to required RBAC capability ids. */
-export const ROUTE_CAPABILITIES: Record<string, string> = {
+export const ROUTE_CAPABILITIES: Record<string, string | string[]> = {
   [ROUTE_PATHS.DASHBOARD]: 'hr.portal',
   [ROUTE_PATHS.EMPLOYEES]: 'hr.portal',
   [ROUTE_PATHS.DOCTORS]: 'hr.portal',
@@ -81,7 +81,7 @@ export const ROUTE_CAPABILITIES: Record<string, string> = {
   [ROUTE_PATHS.PAYROLL]: 'hr.portal',
   [ROUTE_PATHS.WALK_IN]: 'receptionist.portal',
   [ROUTE_PATHS.QUEUE]: 'receptionist.portal',
-  [ROUTE_PATHS.VISITOR_LEADS]: 'receptionist.portal',
+  [ROUTE_PATHS.VISITOR_LEADS]: ['receptionist.portal', 'coordinator.portal'],
   [ROUTE_PATHS.CLINIC_DASHBOARD]: 'clinic_manager.portal',
   [ROUTE_PATHS.ROSTER]: 'clinic_manager.portal',
   [ROUTE_PATHS.SCHEDULES]: 'clinic_manager.portal',

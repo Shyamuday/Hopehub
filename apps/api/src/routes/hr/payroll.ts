@@ -11,7 +11,7 @@ export function registerHrPayrollRoutes(router: Router) {
 router.get(HR_API_ROUTES.PAYROLL, hrAuthMiddleware, asyncRoute(async (req, res) => {
   const { storeIds } = getAccess(req);
   const monthStr = (req.query['month'] as string) ?? new Date().toISOString().slice(0, 7);
-  const result = await buildAdminPayrollMonth(monthStr, storeIds);
+  const result = await buildAdminPayrollMonth(monthStr, storeIds ?? undefined);
   res.json(result);
 }));
 }

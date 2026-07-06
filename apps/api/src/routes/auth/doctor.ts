@@ -11,6 +11,7 @@ import {
   specialtyFocusLabel,
   toDoctorProfilePayload
 } from '../../constants/homeopathic-doctor-types.js';
+import { assertMethodOptionId } from '../../services/doctor-prescribing-preferences.js';
 import { asyncRoute, publicUserSelect, toAuthResponse, logAuthEvent } from '../../utils/helpers.js';
 
 export function registerAuthDoctorRoutes(router: Router) {
@@ -98,9 +99,17 @@ router.put(
         isAvailable: z.boolean().optional().default(true),
         bio: z.string().max(1200).optional().nullable(),
         yearsOfExperience: z.number().int().min(0).max(60).optional().nullable(),
-        focusAreas: z.array(z.string().min(1)).optional()
+        focusAreas: z.array(z.string().min(1)).optional(),
+        defaultMethodOptionId: z.string().min(1).nullable().optional()
       })
       .parse(req.body);
+
+    if (body.defaultMethodOptionId) {
+      const method = await assertMethodOptionId(body.defaultMethodOptionId);
+      if (!method) {
+        return res.status(400).json({ message: 'Invalid prescribing approach.' });
+      }
+    }
 
     const existing = await prisma.doctor.findUnique({
       where: { userId: req.user!.id },
@@ -128,11 +137,14 @@ router.put(
         mobile: body.mobile || null,
         doctorProfile: {
           upsert: {
-            create: { ...profilePayload, ...publicFields },
+            create: { ...profilePayload, ...publicFields, defaultMethodOptionId: body.defaultMethodOptionId ?? null },
             update: {
               specialty: profilePayload.specialty,
               registrationNo: profilePayload.registrationNo,
               isAvailable: profilePayload.isAvailable,
+              ...(body.defaultMethodOptionId !== undefined
+                ? { defaultMethodOptionId: body.defaultMethodOptionId }
+                : {}),
               ...publicFields
             }
           }

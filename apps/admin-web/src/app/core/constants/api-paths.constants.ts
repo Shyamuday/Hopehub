@@ -65,6 +65,7 @@ export const API_PATHS = {
     VISITOR_LEAD_BY_ID: (id: string) => `/admin/visitor-leads/${id}`,
     VISITOR_LEAD_FOLLOW_UP: (id: string) => `/admin/visitor-leads/${id}/follow-up`,
     VISITOR_LEAD_BOOK: (id: string) => `/admin/visitor-leads/${id}/book-consultation`,
+    VISITOR_LEAD_EXPORT: '/admin/visitor-leads/export',
     LEAD_FUNNEL: '/admin/analytics/lead-funnel',
     SALARY_EMPLOYEES: '/admin/salary/employees',
     SALARY_BY_EMPLOYEE: (empType: string, id: string) => `/admin/salary/${empType}/${id}`,

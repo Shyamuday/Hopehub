@@ -46,6 +46,8 @@ export type DoctorProfileSummary = {
   yearsOfExperience?: number | null;
   focusAreas?: string[];
   showOnWebsite?: boolean;
+  defaultMethodOptionId?: string | null;
+  defaultMethodOption?: { id: string; label: string } | null;
 };
 
 export type DoctorCapabilities = {

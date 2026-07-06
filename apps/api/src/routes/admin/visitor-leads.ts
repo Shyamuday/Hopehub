@@ -6,17 +6,20 @@ import { prisma } from '../../db.js';
 import {
   asyncRoute,
   routeParam,
-  queryText,
   queryPositiveInt,
   writeAuditLog
 } from '../../utils/helpers.js';
 import {
-  FOLLOW_UP_STATUSES,
   leadInclude,
   updateLeadFollowUp
 } from '../../services/website-leads.service.js';
 import { bookConsultationFromLead } from '../../services/visitor-lead-booking.js';
 import { buildLeadFunnelReport } from '../../services/visitor-lead-analytics.js';
+import {
+  buildVisitorLeadWhere,
+  leadsToCsv,
+  parseVisitorLeadListFilters
+} from '../../utils/visitor-leads-query.js';
 import {
   requireStoreId,
   resolveReceptionContext,
@@ -33,13 +36,15 @@ export function registerAdminVisitorLeadRoutes(router: Router) {
     authRequired,
     allowRoles(...VIEW_ROLES),
     asyncRoute(async (_req, res) => {
-      const [total, newLeads, needsCallback, called, registered, booked, bySource] = await Promise.all([
+      const [total, newLeads, needsCallback, called, registered, booked, notInterested, bySource] =
+        await Promise.all([
         prisma.websiteLead.count(),
         prisma.websiteLead.count({ where: { followUpStatus: 'NEW' } }),
         prisma.websiteLead.count({ where: { followUpStatus: 'NEEDS_CALLBACK' } }),
         prisma.websiteLead.count({ where: { followUpStatus: 'CALLED' } }),
         prisma.websiteLead.count({ where: { followUpStatus: 'REGISTERED' } }),
         prisma.websiteLead.count({ where: { followUpStatus: 'BOOKED' } }),
+        prisma.websiteLead.count({ where: { followUpStatus: 'NOT_INTERESTED' } }),
         prisma.websiteLead.groupBy({ by: ['source'], _count: { _all: true } })
       ]);
 
@@ -51,6 +56,7 @@ export function registerAdminVisitorLeadRoutes(router: Router) {
           called,
           registered,
           booked,
+          notInterested,
           bySource: Object.fromEntries(bySource.map((r) => [r.source, r._count._all]))
         }
       });
@@ -62,22 +68,10 @@ export function registerAdminVisitorLeadRoutes(router: Router) {
     authRequired,
     allowRoles(...VIEW_ROLES),
     asyncRoute(async (req, res) => {
-      const status = queryText(req, 'followUpStatus').toUpperCase();
-      const source = queryText(req, 'source').toUpperCase();
+      const filters = parseVisitorLeadListFilters(req);
       const page = queryPositiveInt(req, 'page', 1);
       const pageSize = queryPositiveInt(req, 'pageSize', 30);
-
-      const where: {
-        followUpStatus?: WebsiteLeadFollowUp;
-        source?: 'CHAT_BOT' | 'HOME_BOOKING' | 'PROMO_POPUP';
-      } = {};
-
-      if (status && status !== 'ALL' && FOLLOW_UP_STATUSES.includes(status as WebsiteLeadFollowUp)) {
-        where.followUpStatus = status as WebsiteLeadFollowUp;
-      }
-      if (source && source !== 'ALL' && ['CHAT_BOT', 'HOME_BOOKING', 'PROMO_POPUP'].includes(source)) {
-        where.source = source as 'CHAT_BOT' | 'HOME_BOOKING' | 'PROMO_POPUP';
-      }
+      const where = buildVisitorLeadWhere(filters);
 
       const total = await prisma.websiteLead.count({ where });
       const leads = await prisma.websiteLead.findMany({
@@ -92,6 +86,35 @@ export function registerAdminVisitorLeadRoutes(router: Router) {
         leads,
         pagination: { page, pageSize, total, totalPages: Math.max(1, Math.ceil(total / pageSize)) }
       });
+    })
+  );
+
+  router.get(
+    '/admin/visitor-leads/meta',
+    authRequired,
+    allowRoles(...VIEW_ROLES),
+    asyncRoute(async (_req, res) => {
+      const { NOT_INTERESTED_REASONS } = await import('../../constants/visitor-lead-follow-up.constants.js');
+      res.json({ notInterestedReasons: NOT_INTERESTED_REASONS });
+    })
+  );
+
+  router.get(
+    '/admin/visitor-leads/export',
+    authRequired,
+    allowRoles(Role.ADMIN),
+    asyncRoute(async (req, res) => {
+      const filters = parseVisitorLeadListFilters(req);
+      const where = buildVisitorLeadWhere(filters);
+      const leads = await prisma.websiteLead.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        take: 5000
+      });
+      const csv = leadsToCsv(leads);
+      res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+      res.setHeader('Content-Disposition', 'attachment; filename="visitor-leads.csv"');
+      res.send(csv);
     })
   );
 
@@ -118,13 +141,45 @@ export function registerAdminVisitorLeadRoutes(router: Router) {
     })
   );
 
-  router.get(
-    '/admin/visitor-leads/meta',
+  router.post(
+    '/admin/visitor-leads/:id/operator-message',
     authRequired,
-    allowRoles(...VIEW_ROLES),
-    asyncRoute(async (_req, res) => {
-      const { NOT_INTERESTED_REASONS } = await import('../../constants/visitor-lead-follow-up.constants.js');
-      res.json({ notInterestedReasons: NOT_INTERESTED_REASONS });
+    allowRoles(...FOLLOW_UP_ROLES),
+    asyncRoute(async (req, res) => {
+      const id = routeParam(req, 'id');
+      const { content } = z.object({ content: z.string().min(1).max(2000) }).parse(req.body);
+
+      const lead = await prisma.websiteLead.findUnique({
+        where: { id },
+        select: { chatSessionId: true }
+      });
+      if (!lead) return res.status(404).json({ message: 'Lead not found.' });
+      if (!lead.chatSessionId) {
+        return res.status(400).json({ message: 'This lead has no chat session.' });
+      }
+
+      await prisma.chatMessage.create({
+        data: { sessionId: lead.chatSessionId, role: 'operator', content }
+      });
+      await prisma.chatSession.update({
+        where: { id: lead.chatSessionId },
+        data: { status: 'ACTIVE' }
+      });
+
+      const updated = await prisma.websiteLead.findUnique({
+        where: { id },
+        include: {
+          ...leadInclude,
+          chatSession: {
+            include: {
+              messages: { orderBy: { createdAt: 'asc' } },
+              user: { select: { id: true, name: true, mobile: true, email: true } }
+            }
+          }
+        }
+      });
+
+      res.status(201).json({ lead: updated, message: 'Reply sent.' });
     })
   );
 

@@ -12,6 +12,13 @@
     <div class="pill warn">Payment due {{ summary().awaitingPayment }}</div>
     <div class="pill info">Doctor pending {{ summary().awaitingDoctor }}</div>
     <div class="pill ok">In progress {{ summary().inProgress }}</div>
+    @if (leadStats(); as leads) {
+      @if (leads.needsCallback + leads.newLeads > 0) {
+        <a class="pill lead-pill" [routerLink]="visitorLeadsPath">
+          Website leads {{ leads.needsCallback + leads.newLeads }}
+        </a>
+      }
+    }
   </div>
 
   <div class="filters">

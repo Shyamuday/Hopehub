@@ -42,6 +42,7 @@ export async function assertDoctorConsultationAccess(req: Request, res: Response
 
 export const caseAnalysisInclude = {
   source: { select: { id: true, code: true, name: true } },
+  methodOption: { select: { id: true, label: true } },
   selectedRemedy: { select: { id: true, name: true, abbreviation: true } },
   rubrics: {
     orderBy: { weight: 'desc' as const },

@@ -64,15 +64,36 @@ export class ReceptionApiService {
           needsCallback: number;
           called: number;
           registered: number;
+          booked?: number;
+          notInterested?: number;
           bySource: Record<string, number>;
         };
       }>(`${this.base}${API_PATHS.RECEPTION.VISITOR_LEAD_STATS}`)
     );
   }
 
-  listVisitorLeads(followUpStatus?: string, page = 1) {
+  getPublicConfig() {
+    return firstValueFrom(
+      this.http.get<{ whatsappPhone?: string; clinicName?: string }>(`${this.base}${API_PATHS.PUBLIC_CONFIG}`)
+    );
+  }
+
+  listVisitorLeads(
+    filters: {
+      followUpStatus?: string;
+      source?: string;
+      dateFrom?: string;
+      dateTo?: string;
+      notInterestedOnly?: boolean;
+    } = {},
+    page = 1
+  ) {
     const params = new URLSearchParams({ page: String(page), pageSize: '30' });
-    if (followUpStatus) params.set('followUpStatus', followUpStatus);
+    if (filters.followUpStatus) params.set('followUpStatus', filters.followUpStatus);
+    if (filters.source) params.set('source', filters.source);
+    if (filters.dateFrom) params.set('dateFrom', filters.dateFrom);
+    if (filters.dateTo) params.set('dateTo', filters.dateTo);
+    if (filters.notInterestedOnly) params.set('notInterestedOnly', 'true');
     return firstValueFrom(
       this.http.get<{ leads: any[]; pagination: { total: number } }>(
         `${this.base}${API_PATHS.RECEPTION.VISITOR_LEADS}?${params}`
@@ -114,6 +135,15 @@ export class ReceptionApiService {
       this.http.post<{ lead: any; consultation: any }>(
         `${this.base}${API_PATHS.RECEPTION.VISITOR_LEAD_BOOK(id)}`,
         payload
+      )
+    );
+  }
+
+  sendVisitorLeadOperatorMessage(id: string, content: string) {
+    return firstValueFrom(
+      this.http.post<{ lead: any; message: string }>(
+        `${this.base}${API_PATHS.RECEPTION.VISITOR_LEAD_OPERATOR_MESSAGE(id)}`,
+        { content }
       )
     );
   }

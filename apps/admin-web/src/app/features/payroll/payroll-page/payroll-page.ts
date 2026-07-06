@@ -237,16 +237,26 @@ export class PayrollPage implements OnInit {
         ...salaryFormToPayload(this.salaryFormModel()),
         ...(employee.empType === 'DOCTOR' ? compensationFormToPayload(this.compensationFormModel()) : {})
       });
-      this.showToast('Salary structure saved ✓');
+      this.showToast('Compensation saved ✓');
       await this.loadSalaryEmployees();
-      const preview = this.salaryPreview();
-      this.selectedSalaryEmployee.set({
-        ...employee,
-        grossPaise: Math.round(preview.gross * 100),
-        netPaise: Math.round(preview.net * 100),
-        ctcPaise: Math.round(preview.ctc * 100),
-        hasStructure: true
-      });
+      if (!this.isConsultOnlyDoctor()) {
+        const preview = this.salaryPreview();
+        this.selectedSalaryEmployee.set({
+          ...employee,
+          grossPaise: Math.round(preview.gross * 100),
+          netPaise: Math.round(preview.net * 100),
+          ctcPaise: Math.round(preview.ctc * 100),
+          hasStructure: true
+        });
+      } else {
+        this.selectedSalaryEmployee.set({
+          ...employee,
+          grossPaise: 0,
+          netPaise: 0,
+          ctcPaise: 0,
+          hasStructure: false
+        });
+      }
     } catch {
       this.showToast('Could not save salary structure');
     } finally {

@@ -99,6 +99,10 @@ model Doctor {
   yearsOfExperience Int?
   focusAreas       String[]       @default([])
 
+  /// Default homeopathic approach / method pre-selected in case taking and prescriptions.
+  defaultMethodOptionId String?
+  defaultMethodOption   PrescriptionOption? @relation("DoctorDefaultMethod", fields: [defaultMethodOptionId], references: [id], onDelete: SetNull)
+
   joiningLetter    JoiningLetter?
   leaveRequests    LeaveRequest[]
   slots            DoctorSlot[]

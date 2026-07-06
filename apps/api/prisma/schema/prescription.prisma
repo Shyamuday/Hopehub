@@ -56,6 +56,8 @@ model PrescriptionOption {
   createdBy       User?                 @relation("PrescriptionOptionCreator", fields: [createdById], references: [id])
   methodPrescriptions Prescription[]    @relation("PrescriptionMethod")
   diagnosedDiseasePrescriptions Prescription[] @relation("PrescriptionDiagnosedDisease")
+  doctorsWithDefault Doctor[]           @relation("DoctorDefaultMethod")
+  caseAnalyses       CaseAnalysis[]     @relation("CaseAnalysisMethod")
   createdAt       DateTime              @default(now())
   updatedAt       DateTime              @updatedAt
 
