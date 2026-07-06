@@ -1,5 +1,16 @@
 import { CommonModule, DatePipe } from '@angular/common';
-import { Component, effect, Input, OnDestroy, OnInit, signal, viewChild } from '@angular/core';
+import {
+  Component,
+  effect,
+  ElementRef,
+  HostListener,
+  inject,
+  Input,
+  OnDestroy,
+  OnInit,
+  signal,
+  viewChild
+} from '@angular/core';
 import { Menu, MenuItem, MenuTrigger } from '@angular/aria/menu';
 import { io, type Socket } from 'socket.io-client';
 import type { InAppNotificationItem, NotificationBellConfig } from './types';
@@ -14,6 +25,7 @@ import type { InAppNotificationItem, NotificationBellConfig } from './types';
 export class NotificationBellComponent implements OnInit, OnDestroy {
   @Input({ required: true }) config!: NotificationBellConfig;
 
+  private readonly host = inject(ElementRef<HTMLElement>);
   private readonly notificationMenu = viewChild<Menu<unknown>>('notificationMenu');
 
   loading = signal(false);
@@ -43,6 +55,28 @@ export class NotificationBellComponent implements OnInit, OnDestroy {
     if (this.pollTimer) clearInterval(this.pollTimer);
     this.socket?.disconnect();
     this.socket = null;
+  }
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent): void {
+    const menu = this.notificationMenu();
+    if (!menu?.visible()) return;
+    const target = event.target;
+    if (target instanceof Node && this.host.nativeElement.contains(target)) return;
+    menu.close();
+  }
+
+  @HostListener('document:keydown', ['$event'])
+  onKeydown(event: KeyboardEvent): void {
+    if (event.key !== 'Escape') return;
+    const menu = this.notificationMenu();
+    if (!menu?.visible()) return;
+    menu.close();
+    event.stopPropagation();
+  }
+
+  closePanel(): void {
+    this.notificationMenu()?.close();
   }
 
   private token(): string | null {

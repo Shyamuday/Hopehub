@@ -4,8 +4,15 @@ CREATE TYPE "ExpenseLevel" AS ENUM ('CLINIC', 'STORE');
 -- CreateEnum
 CREATE TYPE "ExpenseCategory" AS ENUM ('RENT', 'ELECTRICITY', 'WATER', 'INTERNET', 'TELEPHONE', 'EQUIPMENT', 'SOFTWARE', 'FURNITURE', 'VEHICLE', 'STATIONERY', 'OFFICE_SUPPLIES', 'PACKAGING', 'CLEANING_SUPPLIES', 'MEDICAL_SUPPLIES', 'SALARY', 'TRAINING', 'INSURANCE', 'LEGAL', 'SECURITY', 'MARKETING', 'MAINTENANCE', 'LOGISTICS', 'BANK_CHARGES', 'MISC');
 
--- AlterTable
-ALTER TABLE "StockMovement" ADD COLUMN "amountInPaise" INTEGER;
+-- AlterTable (StockMovement may not exist on fresh DB until baseline schema is applied)
+DO $$ BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.tables
+    WHERE table_schema = 'public' AND table_name = 'StockMovement'
+  ) THEN
+    ALTER TABLE "StockMovement" ADD COLUMN IF NOT EXISTS "amountInPaise" INTEGER;
+  END IF;
+END $$;
 
 -- CreateTable
 CREATE TABLE "BusinessExpense" (

@@ -6,10 +6,18 @@
     }
   </button>
 
-  <div class="panel" ngMenu #notificationMenu="ngMenu">
+  <div
+    class="panel"
+    ngMenu
+    #notificationMenu="ngMenu"
+    [attr.data-visible]="notificationMenu.visible() ? 'true' : 'false'"
+  >
     <div class="panel-head">
       <strong>Notifications</strong>
-      <button type="button" class="link" ngMenuItem [value]="'mark-all'" (click)="markAllRead()">Mark all read</button>
+      <div class="panel-head-actions">
+        <button type="button" class="link" ngMenuItem [value]="'mark-all'" (click)="markAllRead()">Mark all read</button>
+        <button type="button" class="close-btn" aria-label="Close notifications" (click)="closePanel()">✕</button>
+      </div>
     </div>
 
     @if (loading()) {
