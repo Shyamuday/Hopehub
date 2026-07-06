@@ -1,15 +1,31 @@
 <section class="panel">
   <h2>New Blog Post</h2>
   <fieldset class="form-grid" [disabled]="mutating()">
-    <input attr.placeholder="Title *" [formField]="createForm.title" (blur)="autoSlug()" />
-    <div class="slug-row">
-      <input attr.placeholder="slug (auto-generated, must be unique)" [formField]="createForm.slug" />
+    <div class="field">
+      <label class="field-label" for="blog-create-title">Title *</label>
+      <input id="blog-create-title" [formField]="createForm.title" (blur)="autoSlug()" placeholder="Post title" />
+    </div>
+    <div class="field slug-row">
+      <label class="field-label" for="blog-create-slug">URL slug *</label>
+      <input id="blog-create-slug" placeholder="auto-generated from title" [formField]="createForm.slug" />
       <span class="slug-preview">/blog/{{ createModel().slug || '…' }}</span>
     </div>
-    <input attr.placeholder="Category (e.g. Chronic Care)" [formField]="createForm.category" />
-    <input attr.placeholder="Read time (e.g. 5 min read)" [formField]="createForm.readTime" />
-    <textarea attr.placeholder="Excerpt (shown in blog list) *" rows="3" [formField]="createForm.excerpt"></textarea>
-    <textarea attr.placeholder="Full content (optional — for future blog detail page)" rows="8" [formField]="createForm.content"></textarea>
+    <div class="field">
+      <label class="field-label" for="blog-create-category">Category *</label>
+      <input id="blog-create-category" placeholder="e.g. Chronic Care" [formField]="createForm.category" />
+    </div>
+    <div class="field">
+      <label class="field-label" for="blog-create-read-time">Read time</label>
+      <input id="blog-create-read-time" placeholder="e.g. 5 min read" [formField]="createForm.readTime" />
+    </div>
+    <div class="field">
+      <label class="field-label" for="blog-create-excerpt">Excerpt *</label>
+      <textarea id="blog-create-excerpt" rows="3" placeholder="Shown in blog list" [formField]="createForm.excerpt"></textarea>
+    </div>
+    <div class="field">
+      <label class="field-label" for="blog-create-content">Full content</label>
+      <textarea id="blog-create-content" rows="8" placeholder="Optional — for blog detail page" [formField]="createForm.content"></textarea>
+    </div>
     <label class="checkbox-label"><input type="checkbox" [formField]="createForm.isPublished" /> Publish immediately</label>
     <button type="button" (click)="create()" [disabled]="mutating() || !createModel().title || !createModel().slug || !createModel().excerpt || !createModel().category">
       {{ mutating() ? 'Saving…' : 'Create Post' }}
@@ -44,12 +60,30 @@
 
       @if (editingId() === p.id) {
         <fieldset class="form-grid edit-form" [disabled]="mutating()">
-          <input attr.placeholder="Title" [formField]="editForm.title" />
-          <input attr.placeholder="Slug" [formField]="editForm.slug" />
-          <input attr.placeholder="Category" [formField]="editForm.category" />
-          <input attr.placeholder="Read time" [formField]="editForm.readTime" />
-          <textarea attr.placeholder="Excerpt" rows="3" [formField]="editForm.excerpt"></textarea>
-          <textarea attr.placeholder="Content" rows="8" [formField]="editForm.content"></textarea>
+          <div class="field">
+            <label class="field-label" [attr.for]="'blog-title-' + p.id">Title</label>
+            <input [id]="'blog-title-' + p.id" [formField]="editForm.title" />
+          </div>
+          <div class="field">
+            <label class="field-label" [attr.for]="'blog-slug-' + p.id">Slug</label>
+            <input [id]="'blog-slug-' + p.id" [formField]="editForm.slug" />
+          </div>
+          <div class="field">
+            <label class="field-label" [attr.for]="'blog-cat-' + p.id">Category</label>
+            <input [id]="'blog-cat-' + p.id" [formField]="editForm.category" />
+          </div>
+          <div class="field">
+            <label class="field-label" [attr.for]="'blog-rt-' + p.id">Read time</label>
+            <input [id]="'blog-rt-' + p.id" [formField]="editForm.readTime" />
+          </div>
+          <div class="field">
+            <label class="field-label" [attr.for]="'blog-ex-' + p.id">Excerpt</label>
+            <textarea [id]="'blog-ex-' + p.id" rows="3" [formField]="editForm.excerpt"></textarea>
+          </div>
+          <div class="field">
+            <label class="field-label" [attr.for]="'blog-content-' + p.id">Content</label>
+            <textarea [id]="'blog-content-' + p.id" rows="8" [formField]="editForm.content"></textarea>
+          </div>
           <label class="checkbox-label"><input type="checkbox" [formField]="editForm.isPublished" /> Published</label>
           <div class="actions">
             <button type="button" (click)="saveEdit()" [disabled]="mutating()">Save</button>

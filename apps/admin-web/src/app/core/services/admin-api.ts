@@ -258,6 +258,9 @@ export class AdminApi {
   getBranchPnl(...args: Parameters<AdminFinanceApi['getBranchPnl']>) {
     return this.finance.getBranchPnl(...(args as Parameters<AdminFinanceApi['getBranchPnl']>));
   }
+  getPeriodReport(...args: Parameters<AdminFinanceApi['getPeriodReport']>) {
+    return this.finance.getPeriodReport(...(args as Parameters<AdminFinanceApi['getPeriodReport']>));
+  }
   exportAccountantBundle(...args: Parameters<AdminFinanceApi['exportAccountantBundle']>) {
     return this.finance.exportAccountantBundle(...(args as Parameters<AdminFinanceApi['exportAccountantBundle']>));
   }

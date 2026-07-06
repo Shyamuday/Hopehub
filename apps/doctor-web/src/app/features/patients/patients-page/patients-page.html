@@ -7,17 +7,24 @@
 <section class="panel">
   <h2>Find Patient</h2>
   <p class="muted">Search your clinic branch first (e.g. Ranchi). One mobile can have multiple family members — pick the right profile.</p>
-  <div class="toolbar">
-    <input
-      placeholder="Mobile, email, patient code (RNC-000001), name, or ID"
-      [formField]="searchForm.patientSearchQuery"
-      (keyup.enter)="searchPatients()"
-    />
-    <select [formField]="searchForm.patientSearchScope">
-      <option value="auto">Clinic first, then global</option>
-      <option value="clinic">My clinic only</option>
-      <option value="global">All branches</option>
-    </select>
+  <div class="toolbar column form-grid">
+    <div class="field">
+      <label class="field-label" for="pat-search">Search</label>
+      <input
+        id="pat-search"
+        placeholder="Mobile, email, patient code (RNC-000001), name, or ID"
+        [formField]="searchForm.patientSearchQuery"
+        (keyup.enter)="searchPatients()"
+      />
+    </div>
+    <div class="field">
+      <label class="field-label" for="pat-search-scope">Search scope</label>
+      <select id="pat-search-scope" [formField]="searchForm.patientSearchScope">
+        <option value="auto">Clinic first, then global</option>
+        <option value="clinic">My clinic only</option>
+        <option value="global">All branches</option>
+      </select>
+    </div>
     <button type="button" (click)="searchPatients()" [disabled]="patientSearchLoading()">
       {{ patientSearchLoading() ? 'Searching...' : 'Search' }}
     </button>
@@ -56,10 +63,19 @@
 <section class="panel">
   <h3>Register walk-in patient</h3>
   <p class="muted">Email and mobile are optional. A unique patient code is assigned automatically.</p>
-  <div class="toolbar column">
-    <input placeholder="Full name *" [formField]="createPatientForm.name" />
-    <input placeholder="Mobile (optional, can be shared by family)" [formField]="createPatientForm.mobile" />
-    <input placeholder="Email (optional)" [formField]="createPatientForm.email" />
+  <div class="toolbar column form-grid">
+    <div class="field">
+      <label class="field-label" for="pat-create-name">Full name *</label>
+      <input id="pat-create-name" placeholder="Patient full name" [formField]="createPatientForm.name" />
+    </div>
+    <div class="field">
+      <label class="field-label" for="pat-create-mobile">Mobile</label>
+      <input id="pat-create-mobile" placeholder="Optional — can be shared by family" [formField]="createPatientForm.mobile" />
+    </div>
+    <div class="field">
+      <label class="field-label" for="pat-create-email">Email</label>
+      <input id="pat-create-email" placeholder="Optional" [formField]="createPatientForm.email" />
+    </div>
     <button type="button" (click)="createPatient()" [disabled]="createPatientSaving()">
       {{ createPatientSaving() ? 'Saving...' : 'Create patient' }}
     </button>

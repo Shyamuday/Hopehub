@@ -71,7 +71,7 @@ input, select, textarea {
 ::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
 
-@import './styles/form-fields';
+@import './styles/app-forms';
 
 /* Print styles */
 @media print {

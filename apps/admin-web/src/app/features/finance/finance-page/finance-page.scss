@@ -1,4 +1,8 @@
-.fin-page { padding: 1.5rem; }
+.preset-row { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 0.75rem; }
+.preset-btn { border: 1px solid #cbd5e1; background: #f8fafc; border-radius: 8px; padding: 0.35rem 0.7rem; cursor: pointer; font-size: 0.85rem; }
+.preset-btn.active { background: #0f766e; color: #fff; border-color: #0f766e; }
+.period-filters label { display: flex; flex-direction: column; gap: 0.2rem; font-size: 0.85rem; color: #64748b; }
+.period-filters input, .period-filters select { padding: 0.45rem; border: 1px solid #cbd5e1; border-radius: 8px; }
 .fin-hdr { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem; gap: 1rem; flex-wrap: wrap; }
 .fin-actions { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
 .branch-filter { padding: 0.45rem 0.6rem; border: 1px solid #cbd5e1; border-radius: 8px; background: #fff; max-width: 220px; }

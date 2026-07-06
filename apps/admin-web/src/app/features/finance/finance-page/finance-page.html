@@ -25,15 +25,135 @@
     }
   </div>
 
-  @if (loading()) {
+  @if (tab() !== 'period' && loading()) {
     <p class="loading-text">Loading finance data…</p>
-  } @else if (error()) {
+  } @else if (tab() !== 'period' && error()) {
     <div class="error-row">
       <p class="error">{{ error() }}</p>
       <button type="button" class="retry-btn" (click)="loadAll()">Retry</button>
     </div>
   } @else {
   @switch (tab()) {
+    @case ('period') {
+      <div class="period-filters panel">
+        <div class="preset-row">
+          @for (p of periodPresets; track p.id) {
+            <button
+              type="button"
+              class="preset-btn"
+              [class.active]="periodFilterModel().preset === p.id"
+              (click)="periodFilterModel.set({ ...periodFilterModel(), preset: p.id }); loadPeriodReport()"
+            >
+              {{ p.label }}
+            </button>
+          }
+        </div>
+        <div class="filters">
+          @if (periodFilterModel().preset === 'custom') {
+            <label>From <input type="date" [formField]="periodFilterForm.from" /></label>
+            <label>To <input type="date" [formField]="periodFilterForm.to" /></label>
+          }
+          <label>Granularity
+            <select [formField]="periodFilterForm.granularity">
+              <option value="">Auto</option>
+              @for (g of granularityOptions; track g.id) {
+                <option [value]="g.id">{{ g.label }}</option>
+              }
+            </select>
+          </label>
+          <label>Scope
+            <select [formField]="periodFilterForm.storeScope">
+              <option value="ALL">All stores + online</option>
+              <option value="ONLINE">Online / clinic only</option>
+              @for (s of stores(); track s.id) {
+                <option [value]="s.id">{{ s.name }}</option>
+              }
+            </select>
+          </label>
+          <button type="button" class="btn-primary" (click)="loadPeriodReport()">Apply</button>
+          <button type="button" class="btn-export" [disabled]="!periodReport()" (click)="exportPeriodCsv()">Export CSV</button>
+        </div>
+        @if (periodReport(); as report) {
+          <p class="branch-note">{{ report.from }} → {{ report.to }} · {{ report.granularity }} buckets</p>
+        }
+      </div>
+
+      @if (periodLoading()) {
+        <p class="loading-text">Loading period report…</p>
+      } @else if (periodReport(); as report) {
+        <div class="cards">
+          <div class="card"><div class="val">₹{{ paiseToK(report.totals.consultationRevenueInPaise) }}</div><div class="lbl">Consult Revenue</div></div>
+          <div class="card"><div class="val">₹{{ paiseToK(report.totals.medicineRevenueInPaise) }}</div><div class="lbl">Medicine Revenue</div></div>
+          <div class="card"><div class="val">₹{{ paiseToK(report.totals.pendingConsultationRevenueInPaise) }}</div><div class="lbl">Pending Consult</div></div>
+          <div class="card"><div class="val">₹{{ paiseToK(report.totals.payrollCostInPaise) }}</div><div class="lbl">Payroll</div></div>
+          <div class="card"><div class="val">₹{{ paiseToK(report.totals.storeExpensesInPaise + report.totals.clinicExpensesInPaise) }}</div><div class="lbl">Expenses</div></div>
+          <div class="card net"><div class="val">₹{{ paiseToK(report.totals.netEstimateInPaise) }}</div><div class="lbl">Net Estimate</div></div>
+        </div>
+
+        <div class="panel" style="margin-bottom: 1rem">
+          <h3>Time buckets</h3>
+          <table class="branch-table">
+            <thead>
+              <tr>
+                <th>Period</th>
+                <th class="num">Consult</th>
+                <th class="num">Medicine</th>
+                <th class="num">Pending</th>
+                <th class="num">Payroll</th>
+                <th class="num">Expenses</th>
+                <th class="num">Net</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (b of report.buckets; track b.key) {
+                <tr>
+                  <td>{{ b.label }}</td>
+                  <td class="num">{{ formatPaise(b.consultationRevenueInPaise) }}</td>
+                  <td class="num">{{ formatPaise(b.medicineRevenueInPaise) }}</td>
+                  <td class="num">{{ formatPaise(b.pendingConsultationRevenueInPaise) }}</td>
+                  <td class="num">{{ formatPaise(b.payrollCostInPaise) }}</td>
+                  <td class="num">{{ formatPaise(b.storeExpensesInPaise + b.clinicExpensesInPaise) }}</td>
+                  <td class="num" [class.positive]="b.netEstimateInPaise >= 0" [class.negative]="b.netEstimateInPaise < 0">{{ formatPaise(b.netEstimateInPaise) }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        @if (report.byStore.length) {
+          <div class="panel">
+            <h3>By store / online</h3>
+            <table class="branch-table">
+              <thead>
+                <tr>
+                  <th>Location</th>
+                  <th class="num">Consult</th>
+                  <th class="num">Medicine</th>
+                  <th class="num">Payroll</th>
+                  <th class="num">Expenses</th>
+                  <th class="num">Net</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (row of report.byStore; track row.storeId) {
+                  <tr>
+                    <td>
+                      <div class="branch-name">{{ row.storeName }}</div>
+                      <div class="branch-code">{{ row.storeCode }}</div>
+                    </td>
+                    <td class="num">{{ formatPaise(row.consultationRevenueInPaise) }}</td>
+                    <td class="num">{{ formatPaise(row.medicineRevenueInPaise) }}</td>
+                    <td class="num">{{ formatPaise(row.payrollCostInPaise) }}</td>
+                    <td class="num">{{ formatPaise(row.storeExpensesInPaise + row.clinicExpensesInPaise) }}</td>
+                    <td class="num" [class.positive]="row.netEstimateInPaise >= 0" [class.negative]="row.netEstimateInPaise < 0">{{ formatPaise(row.netEstimateInPaise) }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      }
+    }
     @case ('overview') {
       <div class="cards">
         <div class="card"><div class="val">₹{{ paiseToK(summary()?.consultationRevenueInPaise ?? 0) }}</div><div class="lbl">Consultation Revenue</div></div>

@@ -1,0 +1,16 @@
+// Operations portal: light cards/modals on dark shell
+@import '../../../../libs/platform-ui/src/styles/form-fields';
+
+.modal,
+.form,
+.form-surface,
+.follow-up-form,
+.book-block,
+.chat-reply,
+.walk-in-page .form,
+.visitor-leads-page .detail.panel,
+.queue-page .modal,
+.drawer .form-body,
+.panel.form-panel {
+  @include vitalis-form-surface-light();
+}

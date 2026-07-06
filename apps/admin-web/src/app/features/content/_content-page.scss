@@ -46,6 +46,10 @@
   flex-wrap: wrap;
   align-items: flex-end;
 
+  .field {
+    min-width: 8rem;
+  }
+
   label {
     display: flex;
     flex-direction: column;

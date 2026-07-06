@@ -92,7 +92,7 @@
 
           <!-- Profile Tab -->
           @if (tab() === 'profile') {
-            <div class="form-body">
+            <div class="form-body form-surface-dark">
               <div class="fsect">
                 <div class="ftitle">Employment</div>
                 <div class="frow">
@@ -137,7 +137,7 @@
 
           <!-- Shift Tab -->
           @if (tab() === 'shift') {
-            <div class="form-body">
+            <div class="form-body form-surface-dark">
               <div class="fsect">
                 <div class="ftitle">Work Shift</div>
                 <div class="shift-grid">
@@ -166,7 +166,7 @@
 
           <!-- Assignment Tab (Doctor only) -->
           @if (tab() === 'assign' && selected()!.empType === 'DOCTOR') {
-            <div class="form-body">
+            <div class="form-body form-surface-dark">
               <div class="fsect">
                 <div class="ftitle">Doctor Assignment</div>
                 <div class="assign-toggle">
@@ -203,7 +203,7 @@
 
           <!-- Letter Tab -->
           @if (tab() === 'letter') {
-            <div class="form-body">
+            <div class="form-body form-surface-dark">
               @if (letterLoading()) {
                 <div class="loading"><div class="spinner"></div></div>
               } @else if (letter()) {

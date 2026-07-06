@@ -1,18 +1,35 @@
 <section class="panel">
   <h2>Add Testimonial</h2>
   <fieldset class="form-grid" [disabled]="mutating()">
-    <input attr.placeholder="Patient name *" [formField]="createForm.patientName" />
-    <input attr.placeholder="Location (e.g. Mumbai)" [formField]="createForm.location" />
-    <input attr.placeholder="Condition (e.g. Hair fall)" [formField]="createForm.condition" />
-    <input attr.placeholder="Duration (e.g. 4 months of care)" [formField]="createForm.duration" />
-    <textarea attr.placeholder="Patient quote *" rows="4" [formField]="createForm.quote"></textarea>
+    <div class="field">
+      <label class="field-label" for="test-create-name">Patient name *</label>
+      <input id="test-create-name" [formField]="createForm.patientName" placeholder="Patient name" />
+    </div>
+    <div class="field">
+      <label class="field-label" for="test-create-location">Location</label>
+      <input id="test-create-location" placeholder="e.g. Mumbai" [formField]="createForm.location" />
+    </div>
+    <div class="field">
+      <label class="field-label" for="test-create-condition">Condition</label>
+      <input id="test-create-condition" placeholder="e.g. Hair fall" [formField]="createForm.condition" />
+    </div>
+    <div class="field">
+      <label class="field-label" for="test-create-duration">Duration</label>
+      <input id="test-create-duration" placeholder="e.g. 4 months of care" [formField]="createForm.duration" />
+    </div>
+    <div class="field">
+      <label class="field-label" for="test-create-quote">Patient quote *</label>
+      <textarea id="test-create-quote" rows="4" placeholder="What the patient said…" [formField]="createForm.quote"></textarea>
+    </div>
     <div class="row-fields">
-      <label>Stars
-        <input type="number" min="1" max="5" [formField]="createForm.stars" />
-      </label>
-      <label>Sort order
-        <input type="number" min="1" max="999" attr.placeholder="blank = auto" [formField]="createForm.sortOrder" />
-      </label>
+      <div class="field">
+        <label class="field-label" for="test-create-stars">Stars</label>
+        <input id="test-create-stars" type="number" min="1" max="5" [formField]="createForm.stars" />
+      </div>
+      <div class="field">
+        <label class="field-label" for="test-create-sort">Sort order</label>
+        <input id="test-create-sort" type="number" min="1" max="999" placeholder="blank = auto" [formField]="createForm.sortOrder" />
+      </div>
       <label class="checkbox-label">
         <input type="checkbox" [formField]="createForm.isPublished" />
         Publish immediately
@@ -48,14 +65,35 @@
 
       @if (editingId() === t.id) {
         <fieldset class="form-grid edit-form" [disabled]="mutating()">
-          <input attr.placeholder="Patient name" [formField]="editForm.patientName" />
-          <input attr.placeholder="Location" [formField]="editForm.location" />
-          <input attr.placeholder="Condition" [formField]="editForm.condition" />
-          <input attr.placeholder="Duration" [formField]="editForm.duration" />
-          <textarea attr.placeholder="Quote" rows="4" [formField]="editForm.quote"></textarea>
+          <div class="field">
+            <label class="field-label" [attr.for]="'test-name-' + t.id">Patient name</label>
+            <input [id]="'test-name-' + t.id" [formField]="editForm.patientName" />
+          </div>
+          <div class="field">
+            <label class="field-label" [attr.for]="'test-loc-' + t.id">Location</label>
+            <input [id]="'test-loc-' + t.id" [formField]="editForm.location" />
+          </div>
+          <div class="field">
+            <label class="field-label" [attr.for]="'test-cond-' + t.id">Condition</label>
+            <input [id]="'test-cond-' + t.id" [formField]="editForm.condition" />
+          </div>
+          <div class="field">
+            <label class="field-label" [attr.for]="'test-dur-' + t.id">Duration</label>
+            <input [id]="'test-dur-' + t.id" [formField]="editForm.duration" />
+          </div>
+          <div class="field">
+            <label class="field-label" [attr.for]="'test-quote-' + t.id">Quote</label>
+            <textarea [id]="'test-quote-' + t.id" rows="4" [formField]="editForm.quote"></textarea>
+          </div>
           <div class="row-fields">
-            <label>Stars <input type="number" min="1" max="5" [formField]="editForm.stars" /></label>
-            <label>Sort order <input type="number" min="1" max="999" [formField]="editForm.sortOrder" /></label>
+            <div class="field">
+              <label class="field-label" [attr.for]="'test-stars-' + t.id">Stars</label>
+              <input [id]="'test-stars-' + t.id" type="number" min="1" max="5" [formField]="editForm.stars" />
+            </div>
+            <div class="field">
+              <label class="field-label" [attr.for]="'test-sort-' + t.id">Sort order</label>
+              <input [id]="'test-sort-' + t.id" type="number" min="1" max="999" [formField]="editForm.sortOrder" />
+            </div>
             <label class="checkbox-label">
               <input type="checkbox" [formField]="editForm.isPublished" /> Published
             </label>

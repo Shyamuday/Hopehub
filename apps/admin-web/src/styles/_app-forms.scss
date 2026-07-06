@@ -1,0 +1,14 @@
+@import '../../../../libs/platform-ui/src/styles/form-fields';
+
+.modal,
+.drawer .form-body.form-surface-dark {
+  @include vitalis-form-surface-light();
+}
+
+.drawer .form-body {
+  @include vitalis-form-surface-dark();
+}
+
+.create-doctor-form {
+  max-width: 520px;
+}

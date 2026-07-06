@@ -6,9 +6,13 @@ import {
   EMPTY_EXPENSE_FORM,
   EXPENSE_CATEGORIES,
   EXPENSE_CATEGORY_LABELS,
+  FINANCE_GRANULARITY_OPTIONS,
+  FINANCE_PERIOD_PRESETS,
   FINANCE_TABS,
   formatPaise,
   paiseToK,
+  type FinanceGranularityId,
+  type FinancePeriodPresetId,
   type FinanceTabId
 } from '../constants/finance.constants';
 
@@ -21,7 +25,9 @@ import {
 export class FinancePage implements OnInit {
   private api = inject(AdminApi);
 
-  tab = signal<FinanceTabId>('overview');
+  tab = signal<FinanceTabId>('period');
+  periodLoading = signal(false);
+  periodReport = signal<any>(null);
   loading = signal(true);
   error = signal('');
   exporting = signal(false);
@@ -57,15 +63,28 @@ export class FinancePage implements OnInit {
   readonly expenseModel = signal({ ...EMPTY_EXPENSE_FORM });
   readonly expenseForm = form(this.expenseModel);
 
-  readonly tabs = FINANCE_TABS;
+  readonly periodFilterModel = signal({
+    preset: 'this_month' as FinancePeriodPresetId,
+    from: '',
+    to: '',
+    granularity: '' as FinanceGranularityId | '',
+    storeScope: 'ALL'
+  });
+  readonly periodFilterForm = form(this.periodFilterModel);
+
+  readonly periodPresets = FINANCE_PERIOD_PRESETS;
+  readonly granularityOptions = FINANCE_GRANULARITY_OPTIONS;
   readonly categories = EXPENSE_CATEGORIES;
   readonly categoryLabels = EXPENSE_CATEGORY_LABELS;
   readonly formatPaise = formatPaise;
   readonly paiseToK = paiseToK;
 
+  readonly tabs = FINANCE_TABS;
+
   ngOnInit(): void {
     this.loadStores();
     this.loadAll();
+    void this.loadPeriodReport();
   }
 
   loadStores(): void {
@@ -74,7 +93,54 @@ export class FinancePage implements OnInit {
 
   setTab(id: FinanceTabId): void {
     this.tab.set(id);
-    this.loadTab();
+    if (id === 'period') {
+      void this.loadPeriodReport();
+    } else {
+      this.loadTab();
+    }
+  }
+
+  async loadPeriodReport(): Promise<void> {
+    this.periodLoading.set(true);
+    this.error.set('');
+    const f = this.periodFilterModel();
+    try {
+      const report = await this.api.getPeriodReport({
+        preset: f.preset === 'custom' ? 'custom' : f.preset,
+        from: f.preset === 'custom' ? f.from : undefined,
+        to: f.preset === 'custom' ? f.to : undefined,
+        granularity: f.granularity || undefined,
+        storeScope: f.storeScope || 'ALL'
+      });
+      this.periodReport.set(report);
+    } catch {
+      this.error.set('Could not load period report.');
+    } finally {
+      this.periodLoading.set(false);
+    }
+  }
+
+  exportPeriodCsv(): void {
+    const report = this.periodReport();
+    if (!report) return;
+    const header =
+      'Period,Consult Revenue,Medicine Revenue,Total Revenue,Pending Consult,Payroll,Store Expenses,Clinic Expenses,Net';
+    const lines = (report.buckets as any[]).map(
+      (b) =>
+        `"${b.label}",${b.consultationRevenueInPaise / 100},${b.medicineRevenueInPaise / 100},` +
+        `${b.totalRevenueInPaise / 100},${b.pendingConsultationRevenueInPaise / 100},${b.payrollCostInPaise / 100},` +
+        `${b.storeExpensesInPaise / 100},${b.clinicExpensesInPaise / 100},${b.netEstimateInPaise / 100}`
+    );
+    const csv = [header, ...lines].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `finance-period-${report.from}-${report.to}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    this.toast.set('Period report exported');
+    setTimeout(() => this.toast.set(''), 2500);
   }
 
   loadAll(): void {

@@ -80,7 +80,8 @@ export const API_PATHS = {
       EXPENSES: '/admin/finance/expenses',
       EXPENSES_SUMMARY: '/admin/finance/expenses/summary',
       BRANCHES: '/admin/finance/branches',
-      EXPORT_BUNDLE: '/admin/finance/export-bundle'
+      EXPORT_BUNDLE: '/admin/finance/export-bundle',
+      PERIOD_REPORT: '/admin/finance/period-report'
     }
   },
   CONSULTATIONS: '/consultations',

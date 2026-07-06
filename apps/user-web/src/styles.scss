@@ -10,3 +10,5 @@
 @use 'styles/ux-states';
 @use 'styles/animations';
 @use 'styles/responsive';
+
+@import '../../../libs/platform-ui/src/styles/form-fields';

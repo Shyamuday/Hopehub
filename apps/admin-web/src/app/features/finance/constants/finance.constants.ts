@@ -1,4 +1,5 @@
 export const FINANCE_TABS = [
+  { id: 'period', label: 'Period reports' },
   { id: 'overview', label: 'Overview' },
   { id: 'outstanding', label: 'Outstanding' },
   { id: 'branches', label: 'Branch P&L' },
@@ -58,6 +59,27 @@ export function paiseToK(paise: number): string {
   if (val >= 1000) return `${(val / 1000).toFixed(1)}K`;
   return String(Math.round(val));
 }
+
+export const FINANCE_PERIOD_PRESETS = [
+  { id: 'today', label: 'Today' },
+  { id: 'this_week', label: 'This week' },
+  { id: 'this_month', label: 'This month' },
+  { id: 'this_quarter', label: 'This quarter' },
+  { id: 'this_year', label: 'This year' },
+  { id: 'last_2_years', label: 'Last 2 years' },
+  { id: 'last_3_years', label: 'Last 3 years' },
+  { id: 'custom', label: 'Custom range' }
+] as const;
+
+export const FINANCE_GRANULARITY_OPTIONS = [
+  { id: 'daily', label: 'Daily' },
+  { id: 'weekly', label: 'Weekly' },
+  { id: 'monthly', label: 'Monthly' },
+  { id: 'yearly', label: 'Yearly' }
+] as const;
+
+export type FinancePeriodPresetId = (typeof FINANCE_PERIOD_PRESETS)[number]['id'];
+export type FinanceGranularityId = (typeof FINANCE_GRANULARITY_OPTIONS)[number]['id'];
 
 export const EMPTY_EXPENSE_FORM = {
   level: 'CLINIC' as 'CLINIC' | 'STORE',

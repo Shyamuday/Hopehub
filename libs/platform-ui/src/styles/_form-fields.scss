@@ -1,0 +1,146 @@
+// Shared form field layout — import from each app global styles.scss
+// Ensures labels appear above inputs and stay readable on light or dark surfaces.
+
+@mixin vitalis-form-field-layout() {
+  .field {
+    display: grid;
+    gap: 0.35rem;
+  }
+
+  .field-label,
+  label.field-label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--form-label-color, #334155);
+    line-height: 1.3;
+  }
+
+  .field-hint {
+    margin: 0;
+    font-size: 0.8rem;
+    color: var(--form-hint-color, #64748b);
+  }
+
+  // Wrapping labels: text above control
+  label:has(> input:not([type='checkbox']):not([type='radio'])),
+  label:has(> select),
+  label:has(> textarea),
+  label:has(> .lookup-row),
+  label:has(> .input-wrap) {
+    display: grid;
+    gap: 0.35rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--form-label-color, #334155);
+  }
+
+  // Sibling label above input (admin .fg pattern)
+  .fg > label:only-child,
+  .fg > label:first-child:not(:has(input)) {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--form-label-color, #334155);
+    margin-bottom: 0.1rem;
+  }
+
+  .fg {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+
+  // Checkbox / radio rows
+  label.check,
+  label.checkbox-label,
+  label.check-row,
+  label.fg.check-row,
+  label:has(> input[type='checkbox']),
+  label:has(> input[type='radio']) {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 500;
+    color: var(--form-label-color, #334155);
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    color: var(--form-placeholder-color, #94a3b8);
+    opacity: 1;
+  }
+}
+
+@mixin vitalis-form-surface-light() {
+  color: #0f172a;
+  --form-label-color: #334155;
+  --form-hint-color: #64748b;
+  --form-placeholder-color: #94a3b8;
+
+  input,
+  select,
+  textarea {
+    color: #0f172a;
+    background: #fff;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 0.5rem 0.65rem;
+    font: inherit;
+
+    &:focus {
+      outline: none;
+      border-color: #0891b2;
+      box-shadow: 0 0 0 2px rgba(8, 145, 178, 0.15);
+    }
+  }
+
+  textarea {
+    resize: vertical;
+    min-height: 4rem;
+  }
+}
+
+@mixin vitalis-form-surface-dark() {
+  --form-label-color: #94a3b8;
+  --form-hint-color: #64748b;
+  --form-placeholder-color: #64748b;
+
+  input,
+  select,
+  textarea {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #f8fafc;
+    border-radius: 8px;
+    padding: 0.5rem 0.65rem;
+
+    &:focus {
+      outline: none;
+      border-color: rgba(99, 102, 241, 0.5);
+    }
+
+    option {
+      background: #1e293b;
+      color: #f8fafc;
+    }
+  }
+}
+
+@include vitalis-form-field-layout();
+
+.form-surface {
+  @include vitalis-form-surface-light();
+}
+
+.form-surface-dark {
+  @include vitalis-form-surface-dark();
+}
+
+// form-grid: stack labelled fields (admin content, etc.)
+.form-grid {
+  .field + .field,
+  .field {
+    margin-bottom: 0;
+  }
+}

@@ -26,28 +26,52 @@
 
 <section class="panel">
   <h2>Create Doctor</h2>
-  <fieldset class="toolbar" [disabled]="mutating()">
-    <input attr.placeholder="Name" [formField]="createForm.name" />
-    <input attr.placeholder="Email" [formField]="createForm.email" />
-    <input attr.placeholder="Mobile" [formField]="createForm.mobile" />
-    <input attr.placeholder="Password" type="password" [formField]="createForm.password" />
-    <select [formField]="createForm.doctorType">
-      @for (option of doctorTypeOptions; track option.value) {
-        <option [value]="option.value">{{ option.label }}</option>
-      }
-    </select>
-    @if (isSpecialistType(createModel().doctorType)) {
-      <select [formField]="createForm.specialtyFocus">
-        <option value="">Select specialty focus</option>
-        @for (option of specialtyFocusOptions; track option.value) {
+  <fieldset class="create-doctor-form form-grid" [disabled]="mutating()">
+    <div class="field">
+      <label class="field-label" for="doc-create-name">Name</label>
+      <input id="doc-create-name" [formField]="createForm.name" placeholder="Doctor full name" />
+    </div>
+    <div class="field">
+      <label class="field-label" for="doc-create-email">Email</label>
+      <input id="doc-create-email" [formField]="createForm.email" placeholder="doctor@clinic.com" />
+    </div>
+    <div class="field">
+      <label class="field-label" for="doc-create-mobile">Mobile</label>
+      <input id="doc-create-mobile" [formField]="createForm.mobile" placeholder="10-digit mobile" />
+    </div>
+    <div class="field">
+      <label class="field-label" for="doc-create-password">Password</label>
+      <input id="doc-create-password" type="password" [formField]="createForm.password" placeholder="Initial password" />
+    </div>
+    <div class="field">
+      <label class="field-label" for="doc-create-type">Doctor type</label>
+      <select id="doc-create-type" [formField]="createForm.doctorType">
+        @for (option of doctorTypeOptions; track option.value) {
           <option [value]="option.value">{{ option.label }}</option>
         }
       </select>
+    </div>
+    @if (isSpecialistType(createModel().doctorType)) {
+      <div class="field">
+        <label class="field-label" for="doc-create-focus">Specialty focus</label>
+        <select id="doc-create-focus" [formField]="createForm.specialtyFocus">
+          <option value="">Select specialty focus</option>
+          @for (option of specialtyFocusOptions; track option.value) {
+            <option [value]="option.value">{{ option.label }}</option>
+          }
+        </select>
+      </div>
     }
-    <input attr.placeholder="Specialty (optional override)" [formField]="createForm.specialty" />
-    <input attr.placeholder="Registration No" [formField]="createForm.registrationNo" />
+    <div class="field">
+      <label class="field-label" for="doc-create-specialty">Specialty (optional override)</label>
+      <input id="doc-create-specialty" [formField]="createForm.specialty" placeholder="Display specialty" />
+    </div>
+    <div class="field">
+      <label class="field-label" for="doc-create-reg">Registration No</label>
+      <input id="doc-create-reg" [formField]="createForm.registrationNo" placeholder="Medical council registration" />
+    </div>
     <button type="button" (click)="createDoctor()" [disabled]="mutating() || loading()">
-      {{ mutating() ? 'Creating...' : 'Create' }}
+      {{ mutating() ? 'Creating...' : 'Create doctor' }}
     </button>
   </fieldset>
 </section>
@@ -174,50 +198,85 @@
     </article>
     <article class="card">
       <h3>Edit Doctor</h3>
-      <fieldset class="toolbar" [disabled]="mutating()">
-        <input attr.placeholder="Name" [formField]="editForm.name" />
-        <input attr.placeholder="Email" [formField]="editForm.email" />
-        <input attr.placeholder="Mobile" [formField]="editForm.mobile" />
-        <select [formField]="editForm.doctorType">
-          @for (option of doctorTypeOptions; track option.value) {
-            <option [value]="option.value">{{ option.label }}</option>
-          }
-        </select>
-        @if (isSpecialistType(editModel().doctorType)) {
-          <select [formField]="editForm.specialtyFocus">
-            <option value="">Select specialty focus</option>
-            @for (option of specialtyFocusOptions; track option.value) {
+      <fieldset class="edit-doctor-form form-grid" [disabled]="mutating()">
+        <div class="field">
+          <label class="field-label" for="doc-edit-name">Name</label>
+          <input id="doc-edit-name" [formField]="editForm.name" placeholder="Doctor full name" />
+        </div>
+        <div class="field">
+          <label class="field-label" for="doc-edit-email">Email</label>
+          <input id="doc-edit-email" [formField]="editForm.email" placeholder="doctor@clinic.com" />
+        </div>
+        <div class="field">
+          <label class="field-label" for="doc-edit-mobile">Mobile</label>
+          <input id="doc-edit-mobile" [formField]="editForm.mobile" placeholder="10-digit mobile" />
+        </div>
+        <div class="field">
+          <label class="field-label" for="doc-edit-type">Doctor type</label>
+          <select id="doc-edit-type" [formField]="editForm.doctorType">
+            @for (option of doctorTypeOptions; track option.value) {
               <option [value]="option.value">{{ option.label }}</option>
             }
           </select>
+        </div>
+        @if (isSpecialistType(editModel().doctorType)) {
+          <div class="field">
+            <label class="field-label" for="doc-edit-focus">Specialty focus</label>
+            <select id="doc-edit-focus" [formField]="editForm.specialtyFocus">
+              <option value="">Select specialty focus</option>
+              @for (option of specialtyFocusOptions; track option.value) {
+                <option [value]="option.value">{{ option.label }}</option>
+              }
+            </select>
+          </div>
         }
-        <input attr.placeholder="Specialty (optional override)" [formField]="editForm.specialty" />
-        <input attr.placeholder="Registration No" [formField]="editForm.registrationNo" />
-        <label>
+        <div class="field">
+          <label class="field-label" for="doc-edit-specialty">Specialty (optional override)</label>
+          <input id="doc-edit-specialty" [formField]="editForm.specialty" placeholder="Display specialty" />
+        </div>
+        <div class="field">
+          <label class="field-label" for="doc-edit-reg">Registration No</label>
+          <input id="doc-edit-reg" [formField]="editForm.registrationNo" placeholder="Medical council registration" />
+        </div>
+        <label class="website-toggle">
           <input type="checkbox" [formField]="editForm.isAvailable" />
-          Available
+          Available for consultations
         </label>
-        <hr />
-        <p class="form-section-label">Public Website Profile</p>
+
+        <p class="form-section-label">Public website profile</p>
         <label class="website-toggle">
           <input type="checkbox" [formField]="editForm.showOnWebsite" />
           Show on website (Our Doctors page)
         </label>
-        <input type="number" attr.placeholder="Display order (1 = first, blank = auto)" min="1" max="999" [formField]="editForm.websiteOrder" />
-        <input type="number" attr.placeholder="Years of experience" min="0" max="60" [formField]="editForm.yearsOfExperience" />
-        <textarea
-          attr.placeholder="Short bio shown on the website (max 1200 chars)"
-          rows="4"
-          maxlength="1200"
-          [formField]="editForm.bio"
-        ></textarea>
-        <textarea
-          attr.placeholder="Focus areas — one per line (e.g. Skin Care, Paediatrics)"
-          rows="3"
-          [formField]="editForm.focusAreasText"
-        ></textarea>
+        <div class="field">
+          <label class="field-label" for="doc-edit-order">Display order</label>
+          <input id="doc-edit-order" type="number" min="1" max="999" [formField]="editForm.websiteOrder" placeholder="1 = first, blank = auto" />
+        </div>
+        <div class="field">
+          <label class="field-label" for="doc-edit-exp">Years of experience</label>
+          <input id="doc-edit-exp" type="number" min="0" max="60" [formField]="editForm.yearsOfExperience" placeholder="e.g. 12" />
+        </div>
+        <div class="field">
+          <label class="field-label" for="doc-edit-bio">Short bio</label>
+          <textarea
+            id="doc-edit-bio"
+            rows="4"
+            maxlength="1200"
+            placeholder="Shown on the public Our Doctors page (max 1200 chars)"
+            [formField]="editForm.bio"
+          ></textarea>
+        </div>
+        <div class="field">
+          <label class="field-label" for="doc-edit-focus-areas">Focus areas</label>
+          <textarea
+            id="doc-edit-focus-areas"
+            rows="3"
+            placeholder="One per line — e.g. Skin Care, Paediatrics"
+            [formField]="editForm.focusAreasText"
+          ></textarea>
+        </div>
         <button type="button" (click)="saveDoctorEdits()" [disabled]="mutating()">
-          {{ mutating() ? 'Saving...' : 'Save' }}
+          {{ mutating() ? 'Saving...' : 'Save changes' }}
         </button>
       </fieldset>
     </article>

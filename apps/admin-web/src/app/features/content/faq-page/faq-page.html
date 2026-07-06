@@ -1,11 +1,23 @@
 <section class="panel">
   <h2>Add FAQ Entry</h2>
   <fieldset class="form-grid" [disabled]="mutating()">
-    <input attr.placeholder="Question *" [formField]="createForm.question" />
-    <textarea attr.placeholder="Answer *" rows="3" [formField]="createForm.answer"></textarea>
+    <div class="field">
+      <label class="field-label" for="faq-create-question">Question *</label>
+      <input id="faq-create-question" [formField]="createForm.question" placeholder="e.g. How do I book a consultation?" />
+    </div>
+    <div class="field">
+      <label class="field-label" for="faq-create-answer">Answer *</label>
+      <textarea id="faq-create-answer" rows="3" [formField]="createForm.answer" placeholder="Clear answer for patients…"></textarea>
+    </div>
     <div class="row-fields">
-      <label>Category <input attr.placeholder="e.g. Booking" [formField]="createForm.category" /></label>
-      <label>Sort order <input type="number" min="1" max="999" [formField]="createForm.sortOrder" /></label>
+      <div class="field">
+        <label class="field-label" for="faq-create-category">Category</label>
+        <input id="faq-create-category" placeholder="e.g. Booking" [formField]="createForm.category" />
+      </div>
+      <div class="field">
+        <label class="field-label" for="faq-create-sort">Sort order</label>
+        <input id="faq-create-sort" type="number" min="1" max="999" [formField]="createForm.sortOrder" placeholder="Optional" />
+      </div>
       <label class="checkbox-label"><input type="checkbox" [formField]="createForm.isPublished" /> Published</label>
     </div>
     <button type="button" (click)="create()" [disabled]="mutating() || !createModel().question || !createModel().answer">
@@ -38,11 +50,23 @@
 
       @if (editingId() === e.id) {
         <fieldset class="form-grid edit-form" [disabled]="mutating()">
-          <input attr.placeholder="Question" [formField]="editForm.question" />
-          <textarea attr.placeholder="Answer" rows="3" [formField]="editForm.answer"></textarea>
+          <div class="field">
+            <label class="field-label" [attr.for]="'faq-edit-q-' + e.id">Question</label>
+            <input [id]="'faq-edit-q-' + e.id" [formField]="editForm.question" />
+          </div>
+          <div class="field">
+            <label class="field-label" [attr.for]="'faq-edit-a-' + e.id">Answer</label>
+            <textarea [id]="'faq-edit-a-' + e.id" rows="3" [formField]="editForm.answer"></textarea>
+          </div>
           <div class="row-fields">
-            <label>Category <input [formField]="editForm.category" /></label>
-            <label>Sort order <input type="number" [formField]="editForm.sortOrder" /></label>
+            <div class="field">
+              <label class="field-label" [attr.for]="'faq-edit-c-' + e.id">Category</label>
+              <input [id]="'faq-edit-c-' + e.id" [formField]="editForm.category" />
+            </div>
+            <div class="field">
+              <label class="field-label" [attr.for]="'faq-edit-s-' + e.id">Sort order</label>
+              <input [id]="'faq-edit-s-' + e.id" type="number" [formField]="editForm.sortOrder" />
+            </div>
             <label class="checkbox-label"><input type="checkbox" [formField]="editForm.isPublished" /> Published</label>
           </div>
           <div class="actions">

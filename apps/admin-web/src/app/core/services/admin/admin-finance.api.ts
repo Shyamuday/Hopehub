@@ -103,6 +103,26 @@ export class AdminFinanceApi extends AdminApiBase {
     );
   }
 
+  getPeriodReport(params: {
+    preset?: string;
+    from?: string;
+    to?: string;
+    granularity?: string;
+    storeScope?: string;
+  }) {
+    return firstValueFrom(
+      this.http.get<any>(`${this.apiBase}${API_PATHS.ADMIN.FINANCE.PERIOD_REPORT}`, {
+        params: {
+          preset: params.preset ?? '',
+          from: params.from ?? '',
+          to: params.to ?? '',
+          granularity: params.granularity ?? '',
+          storeScope: params.storeScope ?? 'ALL'
+        }
+      })
+    );
+  }
+
   async exportAccountantBundle(params: { month: string; storeId?: string }) {
     const query = new URLSearchParams({ month: params.month });
     if (params.storeId) query.set('storeId', params.storeId);

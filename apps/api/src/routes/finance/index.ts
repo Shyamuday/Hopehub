@@ -3,6 +3,7 @@ import { registerFinanceBranchRoutes } from './branches.js';
 import { registerFinanceExpenseRoutes } from './expenses.js';
 import { registerFinanceOutstandingRoutes } from './outstanding.js';
 import { registerFinancePayslipRoutes } from './payslip.js';
+import { registerFinancePeriodReportRoutes } from './period-report.js';
 import { registerFinanceRevenueRoutes } from './revenue.js';
 import { registerFinanceSummaryRoutes } from './summary.js';
 
@@ -14,3 +15,4 @@ registerFinanceRevenueRoutes(financeRouter);
 registerFinanceOutstandingRoutes(financeRouter);
 registerFinancePayslipRoutes(financeRouter);
 registerFinanceExpenseRoutes(financeRouter);
+registerFinancePeriodReportRoutes(financeRouter);

@@ -27,7 +27,10 @@
         {{ f.label }}
       </button>
     }
-    <input class="search" [formField]="searchForm.q" (keyup.enter)="applySearch()" attr.placeholder="Search patient, mobile, ID…" />
+    <div class="field search-field">
+      <label class="field-label" for="queue-search">Search</label>
+      <input id="queue-search" class="search" [formField]="searchForm.q" (keyup.enter)="applySearch()" placeholder="Patient, mobile, ID…" />
+    </div>
     <button type="button" class="btn-apply" (click)="applySearch()">Search</button>
   </div>
 
