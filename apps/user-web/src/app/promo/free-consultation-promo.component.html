@@ -1,0 +1,85 @@
+<div class="promo-card">
+  <button type="button" class="promo-close" (click)="close()" aria-label="Close">×</button>
+
+  <p class="promo-eyebrow">Limited offer</p>
+  <h2>Get a FREE consultation</h2>
+  <p class="promo-lead">
+  Register with your mobile number and book your first online consultation at no cost.
+  </p>
+
+  @if (patientSelection(); as patients) {
+    <p class="promo-muted">Multiple profiles use this number. Choose yours:</p>
+    <div class="patient-pick-list">
+      @for (patient of patients; track patient.id) {
+        <button type="button" class="patient-pick" (click)="selectPatient(patient.id)" [disabled]="busy()">
+          <strong>{{ patient.name }}</strong>
+          @if (patient.patientCode) {
+            <span>{{ patient.patientCode }}</span>
+          }
+        </button>
+      }
+    </div>
+    <button type="button" class="link-btn" (click)="backToMobile()">← Change mobile number</button>
+  } @else if (step() === 'register') {
+    <form (ngSubmit)="sendOtp()">
+      <label>
+        Full name
+        <input [formField]="form.name" placeholder="Your full name" autocomplete="name" />
+      </label>
+      <label>
+        Mobile number
+        <input
+          [formField]="form.mobile"
+          type="tel"
+          inputmode="numeric"
+          placeholder="10-digit mobile number"
+          autocomplete="tel"
+        />
+      </label>
+      @if (error()) {
+        <p class="error-text">{{ error() }}</p>
+      }
+      <button class="promo-cta" type="submit" [disabled]="busy()">
+        {{ busy() ? 'Sending OTP…' : 'Get OTP & register' }}
+      </button>
+    </form>
+  } @else if (step() === 'otp') {
+    <form (ngSubmit)="verifyAndRegister()">
+      <p class="promo-muted">
+        OTP sent to <strong>{{ formModel().mobile }}</strong>
+        <button type="button" class="link-btn inline" (click)="backToMobile()">Edit</button>
+      </p>
+      <label>
+        Enter OTP
+        <input
+          [formField]="form.otp"
+          type="text"
+          inputmode="numeric"
+          placeholder="6-digit OTP"
+          autocomplete="one-time-code"
+        />
+      </label>
+      @if (error()) {
+        <p class="error-text">{{ error() }}</p>
+      }
+      <button class="promo-cta" type="submit" [disabled]="busy()">
+        {{ busy() ? 'Verifying…' : 'Claim free consultation' }}
+      </button>
+      <button type="button" class="link-btn" (click)="sendOtp()" [disabled]="busy()">Resend OTP</button>
+    </form>
+  } @else if (step() === 'loading') {
+    <div class="promo-loading">
+      <span class="promo-spinner"></span>
+      <p>Setting up your account…</p>
+    </div>
+  } @else {
+    <div class="promo-success">
+      <p>You're registered! Taking you to your dashboard…</p>
+    </div>
+  }
+
+  <p class="promo-footer">
+    Already have an account?
+    <a href="/login" (click)="openFullLogin($event)">Login here</a>
+  </p>
+</div>
