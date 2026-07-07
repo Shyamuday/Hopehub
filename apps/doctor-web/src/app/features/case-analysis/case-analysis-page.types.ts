@@ -66,6 +66,34 @@ export type ConsultationSummary = {
   disease?: { id: string; name: string; intakeQuestions?: string[] };
 };
 
+export type PatientCaseHistory = {
+  lastPrescriptionMethod: { id: string; label: string } | null;
+  entries: PatientCaseHistoryEntry[];
+};
+
+export type PatientCaseHistoryEntry = {
+  consultationId: string;
+  consultationDate: string;
+  diseaseName: string;
+  status: string;
+  analyses: Array<{
+    id: string;
+    methodLabel: string | null;
+    selectedRemedyName: string | null;
+    status: string;
+    createdAt: string;
+    rubricCount: number;
+  }>;
+  prescription: {
+    id: string;
+    methodLabel: string | null;
+    diagnosis: string;
+    status: string;
+    createdAt: string;
+    caseAnalysisId: string | null;
+  } | null;
+};
+
 export type MateriaMedicaSection = {
   id: string;
   depth: number;

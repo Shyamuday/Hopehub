@@ -1,15 +1,16 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { CaseAnalysisStatus, Role } from '@prisma/client';
+import { CaseAnalysisStatus, Role, Prisma } from '@prisma/client';
 import { authRequired, allowRoles } from '../../auth.js';
 import { prisma } from '../../db.js';
-import { asyncRoute } from '../../utils/helpers.js';
+import { asyncRoute, routeParam } from '../../utils/helpers.js';
 import { computeRepertorization } from '../../services/repertorization.js';
 import { applyApproachRubricWeights } from '../../services/approach-repertory-weights.js';
 import {
   assertMethodOptionId,
   resolveDoctorDefaultMethodOptionId
 } from '../../services/doctor-prescribing-preferences.js';
+import { resolvePatientLastPrescriptionMethodOptionId, loadPatientCaseHistory } from '../../services/patient-case-history.js';
 import {
   analysisIdFromReq,
   assertDoctorConsultationAccess,
@@ -34,12 +35,20 @@ const updateAnalysisSchema = z.object({
   rubrics: z.array(rubricSelectionSchema).max(40).optional()
 });
 
-async function resolveCaseMethodOptionId(doctorId: string, methodOptionId?: string | null) {
+async function resolveCaseMethodOptionId(
+  doctorId: string,
+  methodOptionId?: string | null,
+  patientId?: string | null
+) {
   if (methodOptionId === null) return null;
   if (methodOptionId) {
     const option = await assertMethodOptionId(methodOptionId);
     if (!option) throw new Error('INVALID_METHOD');
     return option.id;
+  }
+  if (patientId) {
+    const lastMethod = await resolvePatientLastPrescriptionMethodOptionId(patientId);
+    if (lastMethod) return lastMethod.id;
   }
   return resolveDoctorDefaultMethodOptionId(doctorId);
 }
@@ -138,6 +147,28 @@ export function registerCaseAnalysisRoutes(router: Router) {
     })
   );
 
+  router.get(
+    '/doctor/patients/:patientId/case-history',
+    authRequired,
+    allowRoles(Role.DOCTOR, Role.ADMIN),
+    asyncRoute(async (req, res) => {
+      const patientId = routeParam(req, 'patientId');
+      if (req.user!.role === Role.DOCTOR) {
+        const hasAccess = await prisma.consultation.findFirst({
+          where: { patientId, assignedDoctorId: req.user!.id },
+          select: { id: true }
+        });
+        if (!hasAccess) {
+          return res.status(403).json({ message: 'Access denied' });
+        }
+      }
+
+      const doctorId = req.user!.role === Role.DOCTOR ? req.user!.id : null;
+      const history = await loadPatientCaseHistory(patientId, doctorId);
+      res.json(history);
+    })
+  );
+
   router.post(
     '/doctor/consultations/:consultationId/case-analyses',
     authRequired,
@@ -155,7 +186,7 @@ export function registerCaseAnalysisRoutes(router: Router) {
 
       let methodOptionId: string | null;
       try {
-        methodOptionId = await resolveCaseMethodOptionId(req.user!.id, body.methodOptionId);
+        methodOptionId = await resolveCaseMethodOptionId(req.user!.id, body.methodOptionId, consultation.patientId);
       } catch {
         return res.status(400).json({ message: 'Invalid prescribing approach.' });
       }
@@ -241,7 +272,10 @@ export function registerCaseAnalysisRoutes(router: Router) {
           data: {
             notes: body.notes === undefined ? undefined : body.notes || null,
             caseSheet: body.caseSheet === undefined ? undefined : body.caseSheet,
-            approachData: body.approachData === undefined ? undefined : body.approachData,
+            approachData:
+              body.approachData === undefined
+                ? undefined
+                : (body.approachData as Prisma.InputJsonValue),
             status: body.status,
             sourceId: body.sourceId,
             methodOptionId: body.methodOptionId === undefined ? undefined : body.methodOptionId

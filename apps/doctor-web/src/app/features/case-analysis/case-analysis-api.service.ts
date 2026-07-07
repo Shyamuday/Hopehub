@@ -7,6 +7,7 @@ import type {
   CaseAnalysis,
   ConsultationSummary,
   MateriaMedicaResponse,
+  PatientCaseHistory,
   RepertorySource,
   RubricSearchResult
 } from './case-analysis-page.types';
@@ -111,5 +112,13 @@ export class CaseAnalysisApiService {
         { params: { type: 'METHOD' } }
       )
     ).then((response) => response.options);
+  }
+
+  loadPatientCaseHistory(patientId: string) {
+    return firstValueFrom(
+      this.http.get<PatientCaseHistory>(
+        `${this.apiBase}${API_PATHS.DOCTOR.PATIENT_CASE_HISTORY(patientId)}`
+      )
+    );
   }
 }

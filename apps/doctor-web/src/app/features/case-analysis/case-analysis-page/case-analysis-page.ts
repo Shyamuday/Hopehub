@@ -1,5 +1,5 @@
 import { DecimalPipe } from '@angular/common';
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, OnDestroy, signal } from '@angular/core';
 import { form, FormField } from '@angular/forms/signals';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import {
@@ -28,6 +28,7 @@ import { ConsultationChatPanelComponent } from '../../../shared/consultation-cha
 import { ConsultationContextHeaderComponent } from '../../../shared/consultation-context-header/consultation-context-header';
 import { ConsultationIntakePanelComponent } from '../../../shared/consultation-intake-panel/consultation-intake-panel';
 import { CaseAnalysisApiService } from '../case-analysis-api.service';
+import { createDebouncedSaver } from '../case-analysis-autosave.util';
 import { primaryIntakeSearchPhrase } from '../intake-rubric.util';
 import { ApproachCaseSheetPanelComponent } from '../panels/approach-case-sheet-panel/approach-case-sheet-panel';
 import { ApproachOverviewPanelComponent } from '../panels/approach-overview-panel/approach-overview-panel';
@@ -42,10 +43,12 @@ import { KeynoteStrikingPanelComponent } from '../panels/keynote-striking-panel/
 import { ScholtenMapperPanelComponent } from '../panels/scholten-mapper-panel/scholten-mapper-panel';
 import { SehgalEmotionPanelComponent } from '../panels/sehgal-emotion-panel/sehgal-emotion-panel';
 import { IntegrativeFollowUpPanelComponent } from '../panels/integrative-follow-up-panel/integrative-follow-up-panel';
+import { PatientCaseTimelinePanelComponent } from '../panels/patient-case-timeline-panel/patient-case-timeline-panel';
 import type {
   CaseAnalysis,
   ConsultationSummary,
   MateriaMedicaResponse,
+  PatientCaseHistory,
   RepertoryRemedyRef,
   RepertorySource,
   RubricSearchResult,
@@ -75,14 +78,22 @@ import { formatRubricPath, rubricPathSegments } from '../rubric-path.util';
     KeynoteStrikingPanelComponent,
     ScholtenMapperPanelComponent,
     SehgalEmotionPanelComponent,
-    IntegrativeFollowUpPanelComponent
+    IntegrativeFollowUpPanelComponent,
+    PatientCaseTimelinePanelComponent
   ],
   templateUrl: './case-analysis-page.html'
 })
-export class CaseAnalysisPage {
+export class CaseAnalysisPage implements OnDestroy {
   private readonly api = inject(CaseAnalysisApiService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+
+  private readonly caseSheetAutoSave = createDebouncedSaver(1200);
+  private readonly notesAutoSave = createDebouncedSaver(1200);
+  private readonly rubricsAutoSave = createDebouncedSaver(900);
+  private lastPersistedCaseSheet = '';
+  private lastPersistedNotes = '';
+  private lastPersistedRubrics = '';
 
   readonly appointmentsPath = ROUTE_PATHS.APPOINTMENTS;
   readonly worklistPath = ROUTE_PATHS.WORKLIST;
@@ -127,6 +138,10 @@ export class CaseAnalysisPage {
   readonly materiaMedicaError = signal('');
   readonly error = signal('');
   readonly message = signal('');
+  readonly hydrating = signal(false);
+  readonly autoSaveStatus = signal<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  readonly patientCaseHistory = signal<PatientCaseHistory | null>(null);
+  readonly loadingPatientHistory = signal(false);
 
   readonly formatRubricPath = formatRubricPath;
   readonly rubricPathSegments = rubricPathSegments;
@@ -163,6 +178,25 @@ export class CaseAnalysisPage {
     } else if (this.consultationId) {
       void this.load();
     }
+
+    effect(() => {
+      this.caseSheetModel();
+      this.scheduleAutoSaveCaseSheet();
+    });
+    effect(() => {
+      this.notesModel();
+      this.scheduleAutoSaveNotes();
+    });
+    effect(() => {
+      this.selectedRubrics();
+      this.scheduleAutoSaveRubrics();
+    });
+  }
+
+  ngOnDestroy() {
+    this.caseSheetAutoSave.cancel();
+    this.notesAutoSave.cancel();
+    this.rubricsAutoSave.cancel();
   }
 
   showPanel(component: ApproachStepComponent) {
@@ -266,11 +300,12 @@ export class CaseAnalysisPage {
       const preferred = preferredAnalysisId
         ? response.analyses.find((item) => item.id === preferredAnalysisId)
         : undefined;
+      const createdFirstAnalysis = !response.analyses.length;
       const nextAnalysis =
         preferred ||
         response.analyses[0] ||
         (await this.api.createAnalysis(id, { sourceId: this.searchModel().selectedSourceId || undefined }));
-      if (!response.analyses.length) {
+      if (createdFirstAnalysis) {
         this.analyses.set([nextAnalysis]);
       }
       this.analysis.set(nextAnalysis);
@@ -279,6 +314,10 @@ export class CaseAnalysisPage {
         selectedSourceId: nextAnalysis.source?.id || model.selectedSourceId
       }));
       this.hydrateFromAnalysis(nextAnalysis);
+      void this.loadPatientCaseHistory(response.consultation.patient?.id);
+      if (createdFirstAnalysis && nextAnalysis.methodOption?.label) {
+        this.message.set(`Case analysis started with ${nextAnalysis.methodOption.label}.`);
+      }
     } catch {
       this.error.set('Could not load case analysis for this consultation.');
       this.consultation.set(null);
@@ -289,6 +328,11 @@ export class CaseAnalysisPage {
   }
 
   private hydrateFromAnalysis(nextAnalysis: CaseAnalysis) {
+    this.hydrating.set(true);
+    this.caseSheetAutoSave.cancel();
+    this.notesAutoSave.cancel();
+    this.rubricsAutoSave.cancel();
+
     const approach = resolveApproachByMethodLabel(nextAnalysis.methodOption?.label);
     this.notesModel.set({ notes: nextAnalysis.notes || '' });
     this.caseSheetModel.set(hydrateCaseSheetForSchema(approach.caseSheetSchemaId, nextAnalysis.caseSheet));
@@ -313,6 +357,11 @@ export class CaseAnalysisPage {
     if (nextAnalysis.selectedRemedy && this.focusedRemedy()?.id !== nextAnalysis.selectedRemedy.id) {
       void this.focusRemedy(nextAnalysis.selectedRemedy);
     }
+
+    this.lastPersistedCaseSheet = JSON.stringify(this.buildCaseSheetPayload());
+    this.lastPersistedNotes = nextAnalysis.notes || '';
+    this.lastPersistedRubrics = JSON.stringify(this.rubricPayload());
+    this.hydrating.set(false);
   }
 
   private syncAnalysisInList(updated: CaseAnalysis) {
@@ -398,10 +447,19 @@ export class CaseAnalysisPage {
       }
     ]);
     this.message.set('Symptom added to case.');
+    this.scheduleAutoSaveRubrics();
   }
 
   removeRubric(rubricId: string) {
     this.selectedRubrics.set(this.selectedRubrics().filter((item) => item.rubricId !== rubricId));
+    this.scheduleAutoSaveRubrics();
+  }
+
+  setRubricWeight(rubricId: string, weight: number) {
+    this.selectedRubrics.set(
+      this.selectedRubrics().map((item) => (item.rubricId === rubricId ? { ...item, weight } : item))
+    );
+    this.scheduleAutoSaveRubrics();
   }
 
   private rubricPayload() {
@@ -419,19 +477,21 @@ export class CaseAnalysisPage {
     const nextMethod = this.methods().find((item) => item.id === methodOptionId);
     const nextApproach = resolveApproachByMethodLabel(nextMethod?.label);
 
-    if (previousMethodId && previousMethodId !== methodOptionId && this.hasCaseSheetContent()) {
+    if (previousMethodId && previousMethodId !== methodOptionId && (this.hasCaseSheetContent() || this.hasApproachDataContent())) {
       const confirmed = confirm(
-        `Switch to ${nextApproach.title}? The case sheet will use the new approach structure. Existing case sheet values may be reorganized.`
+        `Switch to ${nextApproach.title}? The case sheet will use the new approach structure and approach-specific panel data will be cleared.`
       );
       if (!confirmed) return;
     }
 
+    const clearedApproachData: ApproachDataPayload = {};
     this.selectedMethodOptionId.set(methodOptionId);
+    this.approachData.set(clearedApproachData);
     this.caseSheetModel.set(hydrateCaseSheetForSchema(nextApproach.caseSheetSchemaId, this.caseSheetModel()));
     this.activeStepId.set(firstIncompleteStepId(nextApproach.steps, {
       methodOptionId,
       caseSheet: this.caseSheetModel(),
-      approachData: this.approachData() as Record<string, unknown>
+      approachData: clearedApproachData as Record<string, unknown>
     }));
 
     this.saving.set(true);
@@ -439,7 +499,8 @@ export class CaseAnalysisPage {
     try {
       const updated = await this.api.updateAnalysis(currentAnalysis.id, {
         methodOptionId: methodOptionId || null,
-        caseSheet: this.caseSheetModel()
+        caseSheet: this.buildCaseSheetPayload(),
+        approachData: clearedApproachData as Record<string, unknown>
       });
       this.syncAnalysisInList(updated);
       this.hydrateFromAnalysis(updated);
@@ -455,76 +516,191 @@ export class CaseAnalysisPage {
     return Object.entries(this.caseSheetModel()).some(([key, value]) => !key.startsWith('_') && !!value?.trim());
   }
 
-  async saveApproachData(partial: ApproachDataPayload) {
+  private hasApproachDataContent() {
+    return Object.keys(this.approachData()).length > 0;
+  }
+
+  private buildCaseSheetPayload() {
+    return { ...this.caseSheetModel(), _schema: this.activeApproach().caseSheetSchemaId, _version: '1' };
+  }
+
+  async loadPatientCaseHistory(patientId?: string) {
+    if (!patientId) {
+      this.patientCaseHistory.set(null);
+      return;
+    }
+    this.loadingPatientHistory.set(true);
+    try {
+      this.patientCaseHistory.set(await this.api.loadPatientCaseHistory(patientId));
+    } catch {
+      this.patientCaseHistory.set(null);
+    } finally {
+      this.loadingPatientHistory.set(false);
+    }
+  }
+
+  private scheduleAutoSaveCaseSheet() {
+    if (this.hydrating() || !this.analysis()?.id) return;
+    const snapshot = JSON.stringify(this.buildCaseSheetPayload());
+    if (snapshot === this.lastPersistedCaseSheet) return;
+    this.caseSheetAutoSave.schedule(() => this.persistCaseSheet(true));
+  }
+
+  private scheduleAutoSaveNotes() {
+    if (this.hydrating() || !this.analysis()?.id) return;
+    const notes = this.notesModel().notes;
+    if (notes === this.lastPersistedNotes) return;
+    this.notesAutoSave.schedule(() => this.persistNotes(true));
+  }
+
+  private scheduleAutoSaveRubrics() {
+    if (this.hydrating() || !this.analysis()?.id) return;
+    const snapshot = JSON.stringify(this.rubricPayload());
+    if (snapshot === this.lastPersistedRubrics) return;
+    this.rubricsAutoSave.schedule(() => this.persistRubrics(true));
+  }
+
+  private async persistCaseSheet(silent = false) {
+    const currentAnalysis = this.analysis();
+    if (!currentAnalysis) return;
+    const sheet = this.buildCaseSheetPayload();
+    const snapshot = JSON.stringify(sheet);
+    if (snapshot === this.lastPersistedCaseSheet) return;
+
+    if (!silent) this.savingCaseSheet.set(true);
+    else this.autoSaveStatus.set('saving');
+    this.error.set('');
+    try {
+      const updated = await this.api.updateAnalysis(currentAnalysis.id, { caseSheet: sheet });
+      this.syncAnalysisInList(updated);
+      this.lastPersistedCaseSheet = snapshot;
+      if (silent) this.autoSaveStatus.set('saved');
+      else this.message.set('Case sheet saved.');
+    } catch {
+      if (silent) this.autoSaveStatus.set('error');
+      else this.error.set('Could not save case sheet.');
+    } finally {
+      if (!silent) this.savingCaseSheet.set(false);
+    }
+  }
+
+  private async persistNotes(silent = false) {
+    const currentAnalysis = this.analysis();
+    if (!currentAnalysis) return;
+    const notes = this.notesModel().notes;
+    if (notes === this.lastPersistedNotes) return;
+
+    if (!silent) this.saving.set(true);
+    else this.autoSaveStatus.set('saving');
+    this.error.set('');
+    try {
+      const updated = await this.api.updateAnalysis(currentAnalysis.id, { notes });
+      this.syncAnalysisInList(updated);
+      this.lastPersistedNotes = notes;
+      if (silent) this.autoSaveStatus.set('saved');
+      else this.message.set('Notes saved.');
+    } catch {
+      if (silent) this.autoSaveStatus.set('error');
+      else this.error.set('Could not save notes.');
+    } finally {
+      if (!silent) this.saving.set(false);
+    }
+  }
+
+  private async persistRubrics(silent = false) {
+    const currentAnalysis = this.analysis();
+    if (!currentAnalysis) return;
+    const payload = this.rubricPayload();
+    const snapshot = JSON.stringify(payload);
+    if (snapshot === this.lastPersistedRubrics) return;
+
+    if (!silent) this.saving.set(true);
+    else this.autoSaveStatus.set('saving');
+    this.error.set('');
+    try {
+      const updated = await this.api.updateAnalysis(currentAnalysis.id, { rubrics: payload });
+      this.syncAnalysisInList(updated);
+      this.lastPersistedRubrics = snapshot;
+      if (silent) this.autoSaveStatus.set('saved');
+      else this.message.set('Case rubrics saved.');
+    } catch {
+      if (silent) this.autoSaveStatus.set('error');
+      else this.error.set('Could not save rubrics.');
+    } finally {
+      if (!silent) this.saving.set(false);
+    }
+  }
+
+  async saveApproachData(partial: ApproachDataPayload, silent = false) {
     const currentAnalysis = this.analysis();
     if (!currentAnalysis) return;
     const merged = { ...this.approachData(), ...partial };
     this.approachData.set(merged);
-    this.savingApproachData.set(true);
+    if (silent) {
+      this.autoSaveStatus.set('saving');
+    } else {
+      this.savingApproachData.set(true);
+    }
     this.error.set('');
     try {
       const updated = await this.api.updateAnalysis(currentAnalysis.id, { approachData: merged as Record<string, unknown> });
       this.syncAnalysisInList(updated);
-      this.message.set('Approach-specific case data saved.');
+      if (silent) {
+        this.autoSaveStatus.set('saved');
+      } else {
+        this.message.set('Approach-specific case data saved.');
+      }
     } catch {
-      this.error.set('Could not save approach data.');
+      if (silent) {
+        this.autoSaveStatus.set('error');
+      } else {
+        this.error.set('Could not save approach data.');
+      }
     } finally {
-      this.savingApproachData.set(false);
+      if (!silent) {
+        this.savingApproachData.set(false);
+      }
     }
   }
 
-  saveKentHierarchy(data: KentHierarchyData) {
-    void this.saveApproachData({ kentHierarchy: data });
+  saveKentHierarchy(data: KentHierarchyData, silent = false) {
+    void this.saveApproachData({ kentHierarchy: data }, silent);
   }
 
-  saveSensation(data: SensationApproachData) {
-    void this.saveApproachData({ sensation: data });
+  saveSensation(data: SensationApproachData, silent = false) {
+    void this.saveApproachData({ sensation: data }, silent);
   }
 
-  saveMiasm(data: MiasmaticApproachData) {
-    void this.saveApproachData({ miasmatic: data });
+  saveMiasm(data: MiasmaticApproachData, silent = false) {
+    void this.saveApproachData({ miasmatic: data }, silent);
   }
 
-  saveProtocol(data: ProtocolApproachData) {
-    void this.saveApproachData({ protocol: data });
+  saveProtocol(data: ProtocolApproachData, silent = false) {
+    void this.saveApproachData({ protocol: data }, silent);
   }
 
-  saveOrganonLm(data: OrganonLmApproachData) {
-    void this.saveApproachData({ organonLm: data });
+  saveOrganonLm(data: OrganonLmApproachData, silent = false) {
+    void this.saveApproachData({ organonLm: data }, silent);
   }
 
-  saveKeynote(data: KeynoteApproachData) {
-    void this.saveApproachData({ keynote: data });
+  saveKeynote(data: KeynoteApproachData, silent = false) {
+    void this.saveApproachData({ keynote: data }, silent);
   }
 
-  saveScholten(data: ScholtenApproachData) {
-    void this.saveApproachData({ scholten: data });
+  saveScholten(data: ScholtenApproachData, silent = false) {
+    void this.saveApproachData({ scholten: data }, silent);
   }
 
-  saveSehgal(data: SehgalApproachData) {
-    void this.saveApproachData({ sehgal: data });
+  saveSehgal(data: SehgalApproachData, silent = false) {
+    void this.saveApproachData({ sehgal: data }, silent);
   }
 
-  saveIntegrativeFollowUp(data: IntegrativeFollowUpApproachData) {
-    void this.saveApproachData({ integrativeFollowUp: data });
+  saveIntegrativeFollowUp(data: IntegrativeFollowUpApproachData, silent = false) {
+    void this.saveApproachData({ integrativeFollowUp: data }, silent);
   }
 
   async saveRubrics() {
-    const currentAnalysis = this.analysis();
-    if (!currentAnalysis) return;
-    this.saving.set(true);
-    this.error.set('');
-    this.message.set('');
-    try {
-      const updated = await this.api.updateAnalysis(currentAnalysis.id, { rubrics: this.rubricPayload() });
-      this.syncAnalysisInList(updated);
-      this.hydrateFromAnalysis(updated);
-      this.message.set('Case rubrics saved.');
-    } catch {
-      this.error.set('Could not save rubrics.');
-    } finally {
-      this.saving.set(false);
-    }
+    await this.persistRubrics(false);
   }
 
   analysisLabel(analysis: CaseAnalysis) {
@@ -552,15 +728,19 @@ export class CaseAnalysisPage {
     this.error.set('');
     try {
       const created = await this.api.createAnalysis(this.consultationId, {
-        sourceId: this.searchModel().selectedSourceId || this.analysis()?.source?.id || undefined,
-        methodOptionId: this.selectedMethodOptionId() || undefined
+        sourceId: this.searchModel().selectedSourceId || this.analysis()?.source?.id || undefined
       });
       this.analyses.set([created, ...this.analyses()]);
       this.analysis.set(created);
       this.hydrateFromAnalysis(created);
       this.searchResults.set([]);
       this.searchedOnce.set(false);
-      this.message.set('New case analysis started.');
+      const lastMethod = this.patientCaseHistory()?.lastPrescriptionMethod;
+      this.message.set(
+        lastMethod
+          ? `New case analysis started using last prescribed method (${lastMethod.label}).`
+          : 'New case analysis started.'
+      );
     } catch {
       this.error.set('Could not start a new case analysis.');
     } finally {
@@ -579,37 +759,11 @@ export class CaseAnalysisPage {
   }
 
   async saveCaseSheet() {
-    const currentAnalysis = this.analysis();
-    if (!currentAnalysis) return;
-    this.savingCaseSheet.set(true);
-    this.error.set('');
-    try {
-      const sheet = { ...this.caseSheetModel(), _schema: this.activeApproach().caseSheetSchemaId, _version: '1' };
-      const updated = await this.api.updateAnalysis(currentAnalysis.id, { caseSheet: sheet });
-      this.syncAnalysisInList(updated);
-      this.message.set('Case sheet saved.');
-    } catch {
-      this.error.set('Could not save case sheet.');
-    } finally {
-      this.savingCaseSheet.set(false);
-    }
+    await this.persistCaseSheet(false);
   }
 
   async saveNotes() {
-    const currentAnalysis = this.analysis();
-    if (!currentAnalysis) return;
-    this.saving.set(true);
-    this.error.set('');
-    this.message.set('');
-    try {
-      const updated = await this.api.updateAnalysis(currentAnalysis.id, { notes: this.notesModel().notes });
-      this.syncAnalysisInList(updated);
-      this.message.set('Notes saved.');
-    } catch {
-      this.error.set('Could not save notes.');
-    } finally {
-      this.saving.set(false);
-    }
+    await this.persistNotes(false);
   }
 
   async runRepertorization() {

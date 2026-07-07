@@ -1,0 +1,33 @@
+.timeline-panel {
+  margin-bottom: 0.75rem;
+}
+
+.timeline-list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.timeline-entry {
+  padding: 0.75rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  background: #fafafa;
+}
+
+.timeline-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.35rem;
+}
+
+.timeline-line {
+  margin: 0.25rem 0;
+}
+
+.timeline-analyses {
+  margin: 0.35rem 0 0;
+  padding-left: 1.1rem;
+  color: #374151;
+}

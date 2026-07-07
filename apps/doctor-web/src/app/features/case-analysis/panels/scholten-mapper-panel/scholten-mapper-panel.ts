@@ -1,6 +1,7 @@
 import { Component, Input, OnChanges, output, signal } from '@angular/core';
 import { form, FormField } from '@angular/forms/signals';
 import type { ScholtenApproachData } from '@vitalis/homeopathy-approaches';
+import { installApproachPanelAutoSave } from '../../approach-panel-autosave';
 
 const SCHOLTEN_SERIES = [
   'Hydrogen',
@@ -33,6 +34,13 @@ function emptyScholten(): ScholtenApproachData {
   styleUrl: './scholten-mapper-panel.scss'
 })
 export class ScholtenMapperPanelComponent implements OnChanges {
+  private readonly hydrating = signal(true);
+  private readonly autoSave = installApproachPanelAutoSave(
+    () => this.model(),
+    (value) => this.autoSaveRequested.emit(value),
+    () => this.hydrating()
+  );
+
   readonly seriesOptions = SCHOLTEN_SERIES;
   readonly stageOptions = STAGES;
 
@@ -40,15 +48,21 @@ export class ScholtenMapperPanelComponent implements OnChanges {
   @Input() saving = false;
 
   readonly saveRequested = output<ScholtenApproachData>();
+  readonly autoSaveRequested = output<ScholtenApproachData>();
 
   readonly model = signal(emptyScholten());
   readonly form = form(this.model);
 
   ngOnChanges() {
-    this.model.set({ ...emptyScholten(), ...(this.initial || {}) });
+    this.hydrating.set(true);
+    const next = { ...emptyScholten(), ...(this.initial || {}) };
+    this.model.set(next);
+    this.autoSave.resetSnapshot(next);
+    this.hydrating.set(false);
   }
 
   save() {
+    this.autoSave.resetSnapshot(this.model());
     this.saveRequested.emit(this.model());
   }
 }

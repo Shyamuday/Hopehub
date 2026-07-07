@@ -19,7 +19,8 @@ export const API_PATHS = {
     CASE_ANALYSIS: (analysisId: string) => `/doctor/case-analyses/${analysisId}`,
     CASE_ANALYSIS_REPERTORIZE: (analysisId: string) => `/doctor/case-analyses/${analysisId}/repertorize`,
     CASE_ANALYSIS_SELECT_REMEDY: (analysisId: string) => `/doctor/case-analyses/${analysisId}/select-remedy`,
-    REPERTORY_REMEDY_MATERIA_MEDICA: (remedyId: string) => `/doctor/repertory/remedies/${remedyId}/materia-medica`
+    REPERTORY_REMEDY_MATERIA_MEDICA: (remedyId: string) => `/doctor/repertory/remedies/${remedyId}/materia-medica`,
+    PATIENT_CASE_HISTORY: (patientId: string) => `/doctor/patients/${patientId}/case-history`
   },
   HR: {
     SELF_DOCTOR_LEAVES: '/hr/self/doctor-leaves',

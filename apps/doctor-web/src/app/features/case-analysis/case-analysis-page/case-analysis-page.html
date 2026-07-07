@@ -57,6 +57,20 @@
         <app-consultation-chat-panel [consultationId]="consultationId" />
       </div>
 
+      <app-patient-case-timeline-panel
+        [history]="patientCaseHistory()"
+        [currentConsultationId]="consultationId"
+        [loading]="loadingPatientHistory()"
+      />
+
+      @if (autoSaveStatus() === 'saving') {
+        <p class="autosave-hint muted">Saving draft…</p>
+      } @else if (autoSaveStatus() === 'saved') {
+        <p class="autosave-hint muted">Draft saved automatically.</p>
+      } @else if (autoSaveStatus() === 'error') {
+        <p class="autosave-hint autosave-error">Auto-save failed — use Save buttons to retry.</p>
+      }
+
       @if (analyses().length > 1) {
         <section class="panel analysis-switcher">
           <div class="panel-title-row">
@@ -122,6 +136,7 @@
           [initial]="kentData()"
           [saving]="savingApproachData()"
           (saveRequested)="saveKentHierarchy($event)"
+          (autoSaveRequested)="saveKentHierarchy($event, true)"
         />
       }
 
@@ -130,6 +145,7 @@
           [initial]="sensationData()"
           [saving]="savingApproachData()"
           (saveRequested)="saveSensation($event)"
+          (autoSaveRequested)="saveSensation($event, true)"
         />
       }
 
@@ -138,6 +154,7 @@
           [initial]="miasmData()"
           [saving]="savingApproachData()"
           (saveRequested)="saveMiasm($event)"
+          (autoSaveRequested)="saveMiasm($event, true)"
         />
       }
 
@@ -146,6 +163,7 @@
           [initial]="keynoteData()"
           [saving]="savingApproachData()"
           (saveRequested)="saveKeynote($event)"
+          (autoSaveRequested)="saveKeynote($event, true)"
         />
       }
 
@@ -154,6 +172,7 @@
           [initial]="scholtenData()"
           [saving]="savingApproachData()"
           (saveRequested)="saveScholten($event)"
+          (autoSaveRequested)="saveScholten($event, true)"
         />
       }
 
@@ -162,6 +181,7 @@
           [initial]="sehgalData()"
           [saving]="savingApproachData()"
           (saveRequested)="saveSehgal($event)"
+          (autoSaveRequested)="saveSehgal($event, true)"
         />
       }
 
@@ -170,6 +190,7 @@
           [initial]="integrativeFollowUpData()"
           [saving]="savingApproachData()"
           (saveRequested)="saveIntegrativeFollowUp($event)"
+          (autoSaveRequested)="saveIntegrativeFollowUp($event, true)"
         />
       }
 
@@ -179,6 +200,7 @@
           [initial]="protocolData()"
           [saving]="savingApproachData()"
           (saveRequested)="saveProtocol($event)"
+          (autoSaveRequested)="saveProtocol($event, true)"
           (useInPrescription)="saveProtocol($event); openPrescriptionWithRemedy()"
         />
       }
@@ -200,6 +222,7 @@
           [selectedRemedyName]="analysis.selectedRemedy?.name || ''"
           [saving]="savingApproachData()"
           (saveRequested)="saveOrganonLm($event)"
+          (autoSaveRequested)="saveOrganonLm($event, true)"
         />
       }
 
@@ -334,7 +357,7 @@
                           type="button"
                           class="weight-btn"
                           [class.active]="item.weight === w"
-                          (click)="item.weight = w"
+                          (click)="setRubricWeight(item.rubricId, w)"
                         >
                           {{ w }}
                         </button>

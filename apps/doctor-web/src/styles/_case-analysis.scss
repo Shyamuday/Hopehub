@@ -16,6 +16,15 @@
     }
   }
 
+  .autosave-hint {
+    margin: 0 0 0.75rem;
+    font-size: var(--text-sm);
+
+    &.autosave-error {
+      color: #b45309;
+    }
+  }
+
   .back-link {
     color: var(--color-text-muted);
     text-decoration: none;
