@@ -78,7 +78,6 @@ export function buildBoenninghausenWorkflow(): ApproachStep[] {
       'boenninghausen-lsm',
       'Capture location, sensation, modality, and concomitants.'
     ),
-    { id: 'case-sheet', label: 'Case sheet', shortLabel: 'Case', component: 'case-sheet' },
     ...REPERTORY_WORKFLOW_TAIL,
     ANALYSIS_NOTES_STEP,
     HERING_TRACKING_STEP
@@ -95,7 +94,6 @@ export function buildBogerWorkflow(): ApproachStep[] {
       'boger-totality',
       'Map Boger pathological generals and time patterns.'
     ),
-    { id: 'case-sheet', label: 'Case sheet', shortLabel: 'Case', component: 'case-sheet' },
     ...REPERTORY_WORKFLOW_TAIL,
     ANALYSIS_NOTES_STEP,
     HERING_TRACKING_STEP
@@ -112,7 +110,6 @@ export function buildConstitutionalWorkflow(): ApproachStep[] {
       'constitutional-profile',
       'Temperament, thermal state, and generals before particulars.'
     ),
-    { id: 'case-sheet', label: 'Case sheet', shortLabel: 'Case', component: 'case-sheet' },
     ...REPERTORY_WORKFLOW_TAIL,
     ANALYSIS_NOTES_STEP
   ];
@@ -128,7 +125,6 @@ export function buildClinicalAcuteWorkflow(): ApproachStep[] {
       'clinical-acute',
       'Fast clinical capture for high-volume OPD.'
     ),
-    { id: 'case-sheet', label: 'Case notes', shortLabel: 'Case', component: 'case-sheet' },
     ...REPERTORY_WORKFLOW_TAIL,
     ANALYSIS_NOTES_STEP
   ];
@@ -144,7 +140,6 @@ export function buildPredictiveWorkflow(): ApproachStep[] {
       'predictive-pathology',
       'Pathology stage with response forecast.'
     ),
-    { id: 'case-sheet', label: 'Case sheet', shortLabel: 'Case', component: 'case-sheet' },
     ...REPERTORY_WORKFLOW_TAIL,
     ANALYSIS_NOTES_STEP,
     HERING_TRACKING_STEP
@@ -180,7 +175,6 @@ export function buildTautopathyWorkflow(): ApproachStep[] {
       'tautopathy-isopathy',
       'Causal substance, potency, and clearing plan.'
     ),
-    { id: 'case-sheet', label: 'Case context', shortLabel: 'Case', component: 'case-sheet' },
     REPERTORY_WORKFLOW_TAIL[3],
     ANALYSIS_NOTES_STEP
   ];
@@ -196,7 +190,6 @@ export function buildEizayagaWorkflow(): ApproachStep[] {
       'eizayaga-layers',
       'Lesion, functional, constitutional, and fundamental layers.'
     ),
-    { id: 'case-sheet', label: 'Case sheet', shortLabel: 'Case', component: 'case-sheet' },
     ...REPERTORY_WORKFLOW_TAIL,
     ANALYSIS_NOTES_STEP
   ];
@@ -212,7 +205,6 @@ export function buildVithoulkasWorkflow(): ApproachStep[] {
       'vithoulkas-essences',
       'Essence theme and level of health.'
     ),
-    { id: 'case-sheet', label: 'Case sheet', shortLabel: 'Case', component: 'case-sheet' },
     ...REPERTORY_WORKFLOW_TAIL,
     ANALYSIS_NOTES_STEP
   ];
@@ -228,7 +220,6 @@ export function buildDrainageWorkflow(): ApproachStep[] {
       'drainage-support',
       'Drainage and organ support alongside simillimum.'
     ),
-    { id: 'case-sheet', label: 'Case sheet', shortLabel: 'Case', component: 'case-sheet' },
     ...REPERTORY_WORKFLOW_TAIL,
     ANALYSIS_NOTES_STEP
   ];
@@ -282,7 +273,6 @@ export function buildCombinationWorkflow(): ApproachStep[] {
       'combination-remedy',
       'Complex remedy composition and indication match.'
     ),
-    { id: 'case-sheet', label: 'Protocol notes', shortLabel: 'Notes', component: 'case-sheet' },
     { id: 'prescribe', label: 'Prescription', shortLabel: 'Prescribe', component: 'prescription-handoff' }
   ];
 }
@@ -463,13 +453,6 @@ export function buildEightBoxWorkflow(): ApproachStep[] {
       'eight-box-guided',
       'Complete each clinical box before repertorization.'
     ),
-    {
-      id: 'case-sheet',
-      label: '8-Box case structure',
-      shortLabel: '8 Boxes',
-      component: 'case-sheet',
-      description: 'Structured 8-box case documentation.'
-    },
     ...REPERTORY_WORKFLOW_TAIL,
     ANALYSIS_NOTES_STEP
   ];
@@ -616,7 +599,6 @@ export function buildPathologicalWorkflow(): ApproachStep[] {
       'pathological-anchor',
       'Anchor prescribing on pathology stage and investigations.'
     ),
-    { id: 'case-sheet', label: 'Case sheet', shortLabel: 'Case', component: 'case-sheet' },
     ...REPERTORY_WORKFLOW_TAIL,
     ANALYSIS_NOTES_STEP,
     HERING_TRACKING_STEP

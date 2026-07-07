@@ -1,6 +1,10 @@
 import { Component, Input, OnChanges, output, signal } from '@angular/core';
 import { form, FormField } from '@angular/forms/signals';
-import type { ApproachStructuredPanelDef } from '@vitalis/homeopathy-approaches';
+import {
+  COMBINATION_REMEDY_CATALOG,
+  type ApproachStructuredPanelDef,
+  type CombinationRemedy
+} from '@vitalis/homeopathy-approaches';
 import { installApproachPanelAutoSave } from '../../approach-panel-autosave';
 
 @Component({
@@ -17,12 +21,15 @@ export class ApproachStructuredPanelComponent implements OnChanges {
     () => this.hydrating()
   );
 
+  readonly combinationCatalog = COMBINATION_REMEDY_CATALOG;
+
   @Input({ required: true }) config!: ApproachStructuredPanelDef;
   @Input() initial: Record<string, string> | null = null;
   @Input() saving = false;
 
   readonly saveRequested = output<Record<string, string>>();
   readonly autoSaveRequested = output<Record<string, string>>();
+  readonly rubricPhraseSelected = output<string>();
 
   readonly model = signal<Record<string, string>>({});
   readonly form = form(this.model);
@@ -41,5 +48,22 @@ export class ApproachStructuredPanelComponent implements OnChanges {
   save() {
     this.autoSave.resetSnapshot(this.model());
     this.saveRequested.emit(this.model());
+  }
+
+  searchRubricsFromField(fieldKey: string) {
+    const phrase = this.model()[fieldKey]?.trim();
+    if (!phrase) return;
+    this.rubricPhraseSelected.emit(phrase);
+  }
+
+  selectCombination(combination: CombinationRemedy) {
+    this.model.update((current) => ({
+      ...current,
+      combinationName: combination.name,
+      componentRemedies: combination.componentRemedies,
+      indicationMatch: combination.indications,
+      personalizationNotes: combination.notes
+    }));
+    this.autoSave.resetSnapshot(this.model());
   }
 }

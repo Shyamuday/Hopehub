@@ -220,6 +220,7 @@
           [saving]="savingApproachData()"
           (saveRequested)="saveStructuredPanel(panel.dataKey, $event)"
           (autoSaveRequested)="saveStructuredPanel(panel.dataKey, $event, true)"
+          (rubricPhraseSelected)="applyRubricSearchPhrase($event)"
         />
       }
 
@@ -258,10 +259,11 @@
       @if (showPanel('prescription-handoff')) {
         <app-prescription-handoff-panel
           [approach]="activeApproach()"
-          [selectedRemedyName]="analysis.selectedRemedy?.name || ''"
+          [selectedRemedyName]="analysis.selectedRemedy?.name || prescriptionHandoffPreview()?.remedy || ''"
           [protocolPrimaryRemedy]="protocolData()?.primaryRemedy || ''"
-          [protocolCompanionRemedy]="protocolData()?.companionRemedy || ''"
-          [disabled]="!analysis.selectedRemedy && !protocolData()?.primaryRemedy"
+          [protocolCompanionRemedy]="protocolData()?.companionRemedy || prescriptionHandoffPreview()?.companionRemedy || ''"
+          [handoffAdvice]="prescriptionHandoffPreview()?.advice || ''"
+          [disabled]="!prescriptionHandoffPreview()"
           (handoff)="openPrescriptionWithRemedy()"
         />
       }

@@ -9,6 +9,7 @@ import {
   hydrateCaseSheetForSchema,
   resolveApproachByMethodLabel,
   structuredPanelForComponent,
+  buildPrescriptionHandoff,
   type ApproachDataPayload,
   type ApproachDefinition,
   type ApproachStepComponent,
@@ -176,6 +177,16 @@ export class CaseAnalysisPage implements OnDestroy, OnInit {
   });
 
   readonly activeStructuredPanel = computed(() => structuredPanelForComponent(this.activeStepComponent()));
+
+  readonly prescriptionHandoffPreview = computed(() => {
+    const analysis = this.analysis();
+    const protocol = this.approachData().protocol;
+    return buildPrescriptionHandoff(this.approachData(), {
+      selectedRemedyName: analysis?.selectedRemedy?.name,
+      protocolPrimaryRemedy: protocol?.primaryRemedy,
+      protocolCompanionRemedy: protocol?.companionRemedy
+    });
+  });
 
   readonly repertoryEnabled = computed(() => this.activeApproach().repertory.enabled);
 
@@ -458,7 +469,11 @@ export class CaseAnalysisPage implements OnDestroy, OnInit {
     const trimmed = phrase.trim();
     if (!trimmed) return;
     this.searchModel.update((model) => ({ ...model, rubricQuery: trimmed }));
+    if (this.repertoryEnabled()) {
+      this.setActiveStep('rubric-search');
+    }
     void this.searchRubrics();
+    this.message.set(`Search prefilled: "${trimmed}".`);
   }
 
   hasRubric(rubricId: string) {
@@ -872,29 +887,21 @@ export class CaseAnalysisPage implements OnDestroy, OnInit {
     if (!this.consultationId()) return;
 
     const protocol = this.approachData().protocol;
-    const organonLm = this.approachData().organonLm;
-    const remedy = currentAnalysis?.selectedRemedy?.name || protocol?.primaryRemedy;
-    if (!remedy) return;
-
-    const lmAdvice = organonLm
-      ? [
-          organonLm.selectedLmPotency ? `LM potency: ${organonLm.selectedLmPotency}` : '',
-          organonLm.dilutionGlass ? `Dilution glass: ${organonLm.dilutionGlass}` : '',
-          organonLm.repetitionSchedule ? `Schedule: ${organonLm.repetitionSchedule}` : '',
-          organonLm.responseMonitoring ? `Monitor: ${organonLm.responseMonitoring}` : ''
-        ]
-          .filter(Boolean)
-          .join('. ')
-      : '';
+    const handoff = buildPrescriptionHandoff(this.approachData(), {
+      selectedRemedyName: currentAnalysis?.selectedRemedy?.name,
+      protocolPrimaryRemedy: protocol?.primaryRemedy,
+      protocolCompanionRemedy: protocol?.companionRemedy
+    });
+    if (!handoff) return;
 
     void this.router.navigate(['/', ROUTE_PATHS.APPOINTMENTS], {
       queryParams: {
         consultationId: this.consultationId(),
         caseAnalysisId: currentAnalysis?.id,
-        remedy,
-        diagnosis: remedy,
-        ...(lmAdvice ? { advice: lmAdvice } : {}),
-        ...(protocol?.companionRemedy ? { companionRemedy: protocol.companionRemedy } : {}),
+        remedy: handoff.remedy,
+        diagnosis: handoff.remedy,
+        ...(handoff.advice ? { advice: handoff.advice } : {}),
+        ...(handoff.companionRemedy ? { companionRemedy: handoff.companionRemedy } : {}),
         ...(this.selectedMethodOptionId() ? { methodOptionId: this.selectedMethodOptionId() } : {})
       }
     });
@@ -906,13 +913,34 @@ export class CaseAnalysisPage implements OnDestroy, OnInit {
 
   caseSheetTitle() {
     const schema = this.activeApproach().caseSheetSchemaId;
-    if (schema === 'eight-box') return '8-Box case structure';
-    if (schema === 'organon-lm') return 'Baseline case (Organon LM)';
-    if (schema === 'keynote') return 'Totality review';
-    if (schema === 'scholten') return 'Scholten case sheet';
-    if (schema === 'sehgal') return 'Sehgal case sheet';
-    if (schema === 'pathological') return 'Pathology case sheet';
-    if (schema === 'integrative-follow-up') return 'Integrative care plan';
+    const titles: Record<string, string> = {
+      'eight-box': '8-Box case structure',
+      'organon-lm': 'Baseline case (Organon LM)',
+      keynote: 'Totality review',
+      scholten: 'Scholten case sheet',
+      sehgal: 'Sehgal case sheet',
+      pathological: 'Pathology case sheet',
+      'integrative-follow-up': 'Integrative care plan',
+      fibonacci: 'Fibonacci baseline case',
+      tautopathy: 'Tautopathy case context',
+      eizayaga: 'Eizayaga layer case sheet',
+      vithoulkas: 'Vithoulkas essence case sheet',
+      drainage: 'Drainage case sheet',
+      hering: 'Follow-up baseline',
+      'acute-fast': 'Acute case notes',
+      combination: 'Combination notes',
+      boenninghausen: 'Boenninghausen case sheet',
+      boger: 'Boger case sheet',
+      constitutional: 'Constitutional case sheet',
+      clinical: 'Clinical case notes',
+      kentian: 'Kentian case sheet',
+      miasmatic: 'Miasmatic case sheet',
+      sensation: 'Sensation case sheet',
+      hybrid: 'Integration plan',
+      protocol: 'Protocol notes',
+      classical: 'Structured case sheet'
+    };
+    if (titles[schema]) return titles[schema];
     if (this.activeApproach().workflowKind === 'PROTOCOL_DRIVEN') return 'Protocol notes';
     return 'Structured case sheet';
   }

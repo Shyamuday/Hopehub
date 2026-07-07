@@ -7,12 +7,15 @@ export type StructuredPanelFieldDef = {
   wide?: boolean;
   placeholder?: string;
   multiline?: boolean;
+  rubricSearchable?: boolean;
 };
 
 export type ApproachStructuredPanelDef = {
   title: string;
   hint: string;
   fields: StructuredPanelFieldDef[];
+  requiredKeys?: string[];
+  combinationCatalog?: boolean;
 };
 
 export type StructuredPanelBinding = {
@@ -47,12 +50,13 @@ export const STRUCTURED_APPROACH_PANELS: Record<ApproachStepComponent, Structure
       title: 'Boenninghausen symptom set',
       hint: 'Capture location, sensation, modality, and concomitant relationships before repertorization.',
       fields: fields(
-        { key: 'location', label: 'Location', rows: 2, wide: true, placeholder: 'Site, side, radiation…' },
-        { key: 'sensation', label: 'Sensation', rows: 2, wide: true, placeholder: 'Burning, stitching, numbness…' },
-        { key: 'modalities', label: 'Modalities (better / worse)', rows: 3, wide: true },
-        { key: 'concomitants', label: 'Concomitants', rows: 2, wide: true },
+        { key: 'location', label: 'Location', rows: 2, wide: true, placeholder: 'Site, side, radiation…', rubricSearchable: true },
+        { key: 'sensation', label: 'Sensation', rows: 2, wide: true, placeholder: 'Burning, stitching, numbness…', rubricSearchable: true },
+        { key: 'modalities', label: 'Modalities (better / worse)', rows: 3, wide: true, rubricSearchable: true },
+        { key: 'concomitants', label: 'Concomitants', rows: 2, wide: true, rubricSearchable: true },
         { key: 'timeAggravation', label: 'Time aggravation', rows: 2 }
-      )
+      ),
+      requiredKeys: ['location', 'sensation']
     }
   },
   'boger-totality': {
@@ -88,12 +92,13 @@ export const STRUCTURED_APPROACH_PANELS: Record<ApproachStepComponent, Structure
       title: 'Acute clinical snapshot',
       hint: 'Fast OPD capture: diagnosis context, key symptoms, and organ affinity.',
       fields: fields(
-        { key: 'acutePresentation', label: 'Acute presentation', rows: 2, wide: true },
+        { key: 'acutePresentation', label: 'Acute presentation', rows: 2, wide: true, rubricSearchable: true },
         { key: 'clinicalDiagnosis', label: 'Working clinical diagnosis', rows: 2 },
-        { key: 'keyPrescribingSymptoms', label: 'Key prescribing symptoms', rows: 3, wide: true },
-        { key: 'organAffinity', label: 'Organ affinity', rows: 2 },
+        { key: 'keyPrescribingSymptoms', label: 'Key prescribing symptoms', rows: 3, wide: true, rubricSearchable: true },
+        { key: 'organAffinity', label: 'Organ affinity', rows: 2, rubricSearchable: true },
         { key: 'urgencyNotes', label: 'Urgency / red flags', rows: 2, wide: true }
-      )
+      ),
+      requiredKeys: ['acutePresentation', 'keyPrescribingSymptoms']
     }
   },
   'predictive-pathology': {
@@ -230,12 +235,13 @@ export const STRUCTURED_APPROACH_PANELS: Record<ApproachStepComponent, Structure
       title: 'Acute fast-track',
       hint: 'Minimal acute workflow: complaint → key rubrics → remedy → potency.',
       fields: fields(
-        { key: 'acuteComplaint', label: 'Acute complaint', rows: 2, wide: true },
+        { key: 'acuteComplaint', label: 'Acute complaint', rows: 2, wide: true, rubricSearchable: true },
         { key: 'onsetIntensity', label: 'Onset & intensity', rows: 2 },
-        { key: 'keyRubricSummary', label: 'Key rubric summary', rows: 3, wide: true },
+        { key: 'keyRubricSummary', label: 'Key rubric summary', rows: 3, wide: true, rubricSearchable: true },
         { key: 'selectedRemedy', label: 'Selected remedy', rows: 1 },
         { key: 'potencyPlan', label: 'Potency & repetition plan', rows: 2, wide: true }
-      )
+      ),
+      requiredKeys: ['acuteComplaint', 'selectedRemedy']
     }
   },
   'combination-remedy': {
@@ -249,7 +255,9 @@ export const STRUCTURED_APPROACH_PANELS: Record<ApproachStepComponent, Structure
         { key: 'indicationMatch', label: 'Indication match', rows: 3, wide: true },
         { key: 'personalizationNotes', label: 'Personalization notes', rows: 2, wide: true },
         { key: 'durationPlan', label: 'Duration & review plan', rows: 2, wide: true }
-      )
+      ),
+      requiredKeys: ['combinationName', 'indicationMatch'],
+      combinationCatalog: true
     }
   }
 };
@@ -271,7 +279,33 @@ export function hasStructuredPanelContent(
   dataKey: keyof ApproachDataPayload,
   approachData?: Record<string, unknown> | null
 ) {
+  const binding = Object.values(STRUCTURED_APPROACH_PANELS).find((item) => item?.dataKey === dataKey);
   const block = approachData?.[dataKey] as Record<string, string> | undefined;
   if (!block) return false;
-  return Object.values(block).some((value) => !!value?.trim());
+  const requiredKeys = binding?.def.requiredKeys?.length
+    ? binding.def.requiredKeys
+    : binding?.def.fields.map((field) => field.key) || [];
+  if (!requiredKeys.length) {
+    return Object.values(block).some((value) => !!value?.trim());
+  }
+  return requiredKeys.every((key) => !!block[key]?.trim());
+}
+
+export function structuredPanelFieldLabels(): Map<string, string> {
+  const labels = new Map<string, string>();
+  for (const binding of Object.values(STRUCTURED_APPROACH_PANELS)) {
+    if (!binding) continue;
+    const prefix = humanizeDataKey(String(binding.dataKey));
+    for (const field of binding.def.fields) {
+      labels.set(`${binding.dataKey}.${field.key}`, `${prefix} · ${field.label}`);
+      labels.set(field.key, field.label);
+    }
+  }
+  return labels;
+}
+
+function humanizeDataKey(key: string) {
+  return key
+    .replace(/([a-z])([A-Z])/g, '$1 $2')
+    .replace(/^\w/, (char) => char.toUpperCase());
 }

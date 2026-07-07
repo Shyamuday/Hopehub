@@ -11,6 +11,7 @@ export class PrescriptionHandoffPanelComponent {
   @Input() selectedRemedyName = '';
   @Input() protocolPrimaryRemedy = '';
   @Input() protocolCompanionRemedy = '';
+  @Input() handoffAdvice = '';
   @Input() disabled = false;
 
   readonly handoff = output<void>();

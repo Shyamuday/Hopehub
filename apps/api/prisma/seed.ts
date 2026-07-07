@@ -14,6 +14,7 @@ import {
   DEV_PATIENT_MOBILE,
   DEV_SEED_IDS
 } from '../src/dev/demo-manifest.js';
+import { syncSystemMethodOptions } from '../src/services/sync-system-method-options.js';
 
 const adapter = new PrismaPg({
   connectionString: process.env.DATABASE_URL
@@ -931,35 +932,7 @@ async function main() {
     });
   }
 
-  const defaultMethods = [
-    'Classical Homeopathy',
-    '8-Box Case Structure',
-    'Organon LM Method',
-    'Clinical Homeopathy',
-    'Constitutional Approach',
-    'Miasmatic Approach',
-    'Kentian Method',
-    'Boenninghausen Method',
-    'Boger Method',
-    'Sensation Method',
-    'Scholten Method',
-    'Banerji Protocols',
-    'Predictive Homeopathy',
-    'Protocol-Based Prescribing',
-    'Integrated Hybrid Approach',
-    'Keynote + Totality Approach',
-    'Pathology-Based Prescribing',
-    'Sehgal Method',
-    'Integrative Follow-up Approach',
-    'Fibonacci Potency Method',
-    'Tautopathy / Isopathy',
-    'Eizayaga Layers of Health',
-    'Vithoulkas Essences',
-    'Drainage & Organ Support',
-    "Hering's Law Tracker",
-    'Acute Fast-Track Prescribing',
-    'Combination Remedy Mode'
-  ];
+  await syncSystemMethodOptions(prisma);
 
   const defaultDiagnoses = [
     'Hair Fall',
@@ -975,19 +948,6 @@ async function main() {
     'Piles',
     'Chronic Gastritis'
   ];
-
-  for (const label of defaultMethods) {
-    await prisma.prescriptionOption.upsert({
-      where: { type_normalizedLabel: { type: PrescriptionOptionType.METHOD, normalizedLabel: label.toLowerCase() } },
-      update: {},
-      create: {
-        type: PrescriptionOptionType.METHOD,
-        label,
-        normalizedLabel: label.toLowerCase(),
-        isSystem: true
-      }
-    });
-  }
 
   const classicalMethod = await prisma.prescriptionOption.findFirst({
     where: { type: PrescriptionOptionType.METHOD, normalizedLabel: 'classical homeopathy' }

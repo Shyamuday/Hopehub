@@ -16,18 +16,28 @@
     aria-label="Search prescribing approaches"
   />
 
-  <div class="approach-row">
-    <select class="approach-select" [value]="selectedMethodOptionId" (change)="onSelect($event)" [disabled]="saving">
-      <option value="">Select approach</option>
+  <div class="approach-picker" role="listbox" aria-label="Prescribing approaches">
+    @if (!filteredMethods().length) {
+      <p class="hint empty-hint">No approaches match your search.</p>
+    } @else {
       @for (method of filteredMethods(); track method.id) {
-        <option [value]="method.id">{{ method.label }}</option>
+        <button
+          type="button"
+          class="approach-option"
+          role="option"
+          [class.selected]="method.id === selectedMethodOptionId"
+          [attr.aria-selected]="method.id === selectedMethodOptionId"
+          [disabled]="saving"
+          (click)="selectMethod(method.id)"
+        >
+          <span class="approach-option-label">{{ method.label }}</span>
+          @if (method.id === selectedMethodOptionId) {
+            <span class="approach-option-check" aria-hidden="true">✓</span>
+          }
+        </button>
       }
-    </select>
+    }
   </div>
-
-  @if (searchModel().query.trim() && !filteredMethods().length) {
-    <p class="hint">No approaches match your search.</p>
-  }
 
   @if (approach; as def) {
     <div class="approach-detail">

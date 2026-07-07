@@ -31,8 +31,8 @@ export class ApproachOverviewPanelComponent implements OnChanges {
     }
   }
 
-  onSelect(event: Event) {
-    const value = (event.target as HTMLSelectElement).value;
-    this.approachChanged.emit(value);
+  selectMethod(methodOptionId: string) {
+    if (this.saving || methodOptionId === this.selectedMethodOptionId) return;
+    this.approachChanged.emit(methodOptionId);
   }
 }

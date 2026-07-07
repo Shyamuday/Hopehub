@@ -1,7 +1,10 @@
 import { caseSheetFieldsForSchema, hydrateCaseSheetForSchema } from './case-sheet-schemas';
+import { structuredPanelFieldLabels } from './approach-structured-panels';
 import { resolveApproachByMethodLabel } from './registry';
 
 export type ClinicalSummaryRow = { label: string; value: string };
+
+const STRUCTURED_LABELS = structuredPanelFieldLabels();
 
 function humanizeKey(key: string) {
   return key
@@ -20,6 +23,11 @@ function formatValue(value: unknown): string {
   return JSON.stringify(value);
 }
 
+function labelForApproachKey(prefix: string, key: string) {
+  const composite = `${prefix}.${key}`;
+  return STRUCTURED_LABELS.get(composite) || STRUCTURED_LABELS.get(key) || `${humanizeKey(prefix)} · ${humanizeKey(key)}`;
+}
+
 function flattenApproachData(data: unknown, prefix = '', depth = 0): ClinicalSummaryRow[] {
   if (data === null || data === undefined || depth > 2) return [];
   if (typeof data !== 'object' || Array.isArray(data)) {
@@ -29,13 +37,25 @@ function flattenApproachData(data: unknown, prefix = '', depth = 0): ClinicalSum
 
   const rows: ClinicalSummaryRow[] = [];
   for (const [key, value] of Object.entries(data as Record<string, unknown>)) {
-    const label = prefix ? `${prefix} · ${humanizeKey(key)}` : humanizeKey(key);
     if (value && typeof value === 'object' && !Array.isArray(value) && depth < 2) {
-      rows.push(...flattenApproachData(value, label, depth + 1));
+      const nestedPrefix = prefix || humanizeKey(key);
+      for (const [nestedKey, nestedValue] of Object.entries(value as Record<string, unknown>)) {
+        const text = formatValue(nestedValue);
+        if (!text) continue;
+        rows.push({
+          label: labelForApproachKey(prefix ? `${prefix}.${key}` : key, nestedKey),
+          value: text
+        });
+      }
       continue;
     }
     const text = formatValue(value);
-    if (text) rows.push({ label, value: text });
+    if (text) {
+      rows.push({
+        label: prefix ? labelForApproachKey(prefix, key) : humanizeKey(key),
+        value: text
+      });
+    }
   }
   return rows;
 }
@@ -57,7 +77,7 @@ export function buildAdminClinicalSummary(input: {
     .map((field) => ({ label: field.label, value: String(sheet[field.key] ?? '').trim() }))
     .filter((row) => row.value.length > 0);
 
-  const approachRows = flattenApproachData(input.approachData).slice(0, 30);
+  const approachRows = flattenApproachData(input.approachData).slice(0, 40);
 
   return {
     approachTitle: approach.title,

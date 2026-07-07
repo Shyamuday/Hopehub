@@ -7,10 +7,43 @@
     </div>
   </div>
   <p class="hint">{{ config.hint }}</p>
+
+  @if (config.combinationCatalog) {
+    <div class="combination-catalog">
+      <h4>Combination catalog</h4>
+      <div class="combination-list">
+        @for (item of combinationCatalog; track item.id) {
+          <article class="combination-card" [class.selected]="model()['combinationName'] === item.name">
+            <div>
+              <strong>{{ item.name }}</strong>
+              <p class="muted">{{ item.componentRemedies }}</p>
+              <small>{{ item.indications }}</small>
+            </div>
+            <button type="button" (click)="selectCombination(item)">
+              {{ model()['combinationName'] === item.name ? 'Selected' : 'Use' }}
+            </button>
+          </article>
+        }
+      </div>
+    </div>
+  }
+
   <div class="approach-grid">
     @for (field of config.fields; track field.key) {
       <label [class.wide]="field.wide">
-        <span>{{ field.label }}</span>
+        <span class="field-label-row">
+          <span>{{ field.label }}</span>
+          @if (field.rubricSearchable) {
+            <button
+              type="button"
+              class="btn-rubric-search"
+              (click)="searchRubricsFromField(field.key)"
+              [disabled]="!model()[field.key]?.trim()"
+            >
+              Search rubrics
+            </button>
+          }
+        </span>
         @if (field.multiline === false) {
           <input [formField]="form[field.key]" [placeholder]="field.placeholder || ''" />
         } @else {

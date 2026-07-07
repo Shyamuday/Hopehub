@@ -4,6 +4,7 @@ import { PrescriptionOptionType, Role } from '@prisma/client';
 import { authRequired, allowRoles } from '../../auth.js';
 import { prisma } from '../../db.js';
 import { asyncRoute, normalizeOptionLabel, queryText } from '../../utils/helpers.js';
+import { syncSystemMethodOptions } from '../../services/sync-system-method-options.js';
 
 export function registerPrescriptionOptionRoutes(router: Router) {
   // ─── Prescription options ──────────────────────────────────────────────────────
@@ -34,6 +35,9 @@ export function registerPrescriptionOptionRoutes(router: Router) {
     allowRoles(Role.DOCTOR, Role.ADMIN),
     asyncRoute(async (req, res) => {
       const query = z.object({ type: z.nativeEnum(PrescriptionOptionType) }).parse(req.query);
+      if (query.type === PrescriptionOptionType.METHOD) {
+        await syncSystemMethodOptions(prisma);
+      }
       const search = queryText(req, 'q').trim();
       const options = await prisma.prescriptionOption.findMany({
         where: {

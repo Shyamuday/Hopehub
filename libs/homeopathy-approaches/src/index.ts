@@ -10,3 +10,4 @@ export * from './marketing-export';
 export * from './admin-clinical-summary';
 export * from './clinical-media-ontology';
 export * from './approach-structured-panels';
+export * from './prescription-handoff';

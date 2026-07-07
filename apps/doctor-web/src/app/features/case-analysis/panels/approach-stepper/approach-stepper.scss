@@ -1,8 +1,11 @@
 .approach-stepper {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 0.45rem;
   margin-bottom: 0.85rem;
+  overflow-x: auto;
+  padding-bottom: 0.25rem;
+  overscroll-behavior-x: contain;
 }
 
 .step-chip {

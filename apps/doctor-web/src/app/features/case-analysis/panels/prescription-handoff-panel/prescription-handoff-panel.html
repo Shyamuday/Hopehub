@@ -1,19 +1,21 @@
 <section class="panel handoff-panel">
   <h3>Prescription handoff</h3>
   @if (approach?.prescription?.skipRepertory) {
-    <p class="hint">This approach is protocol-led. Open the prescription editor with the selected protocol remedies.</p>
-    @if (protocolPrimaryRemedy) {
-      <p>
-        <strong>Primary:</strong> {{ protocolPrimaryRemedy }}
-        @if (protocolCompanionRemedy) {
-          · <strong>Companion:</strong> {{ protocolCompanionRemedy }}
-        }
-      </p>
-    }
+    <p class="hint">This approach is protocol-led. Open the prescription editor with the selected protocol or complex remedy.</p>
   } @else if (selectedRemedyName) {
     <p class="hint">Case remedy <strong>{{ selectedRemedyName }}</strong> will be linked to the prescription.</p>
   } @else {
     <p class="hint">Select a remedy or protocol before opening the prescription editor.</p>
+  }
+
+  @if (protocolPrimaryRemedy && protocolPrimaryRemedy !== selectedRemedyName) {
+    <p><strong>Primary:</strong> {{ protocolPrimaryRemedy }}</p>
+  }
+  @if (protocolCompanionRemedy) {
+    <p><strong>Companion / support:</strong> {{ protocolCompanionRemedy }}</p>
+  }
+  @if (handoffAdvice) {
+    <p class="guidance">{{ handoffAdvice }}</p>
   }
 
   @if (approach?.prescription?.potencyGuidance; as guidance) {
