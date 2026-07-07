@@ -1,8 +1,10 @@
 import { CommonModule } from '@angular/common';
 import { Component, signal } from '@angular/core';
 import { form, FormField } from '@angular/forms/signals';
+import { RouterLink } from '@angular/router';
 import { buildDetailRows, DetailRowsComponent } from '@vitalis/platform-ui';
 import { AdminApi } from '../../../core/services/admin-api';
+import { adminRouteLink, ROUTE_PATHS } from '../../../core/constants/app-routes.constants';
 import {
   DOCTORS_LIST_DEFAULTS,
   DOCTORS_PAGE_SIZE,
@@ -76,13 +78,14 @@ function emptyEditModel() {
 
 @Component({
   selector: 'app-doctors-page',
-  imports: [CommonModule, FormField, DetailRowsComponent],
+  imports: [CommonModule, FormField, DetailRowsComponent, RouterLink],
   templateUrl: './doctors-page.html',
   styleUrl: './doctors-page.scss'
 })
 export class DoctorsPage {
   readonly doctorTypeOptions = DOCTOR_TYPE_OPTIONS;
   readonly specialtyFocusOptions = SPECIALTY_FOCUS_OPTIONS;
+  readonly clinicalRecordsRoute = adminRouteLink(ROUTE_PATHS.CLINICAL_RECORDS);
 
   readonly doctors = signal<Doctor[]>([]);
   readonly pendingDoctors = signal<Doctor[]>([]);
@@ -475,6 +478,10 @@ export class DoctorsPage {
 
   specialtyFocusLabel(focus?: HomeopathicSpecialtyFocus | null) {
     return focus ? SPECIALTY_FOCUS_LABELS[focus] : '';
+  }
+
+  clinicalRecordsQuery(tab: 'prescriptions' | 'analyses' = 'prescriptions') {
+    return { tab, doctorId: this.selectedDoctorId };
   }
 }
 

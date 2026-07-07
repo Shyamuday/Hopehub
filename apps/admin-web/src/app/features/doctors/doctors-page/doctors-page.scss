@@ -135,6 +135,29 @@ button {
   padding: 0;
 }
 
+.detail-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.35rem;
+}
+
+.clinical-records-link {
+  display: inline-flex;
+  align-items: center;
+  color: #0f766e;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
 .website-settings-panel {
   border-color: #bfdbfe;
   background: #eff6ff;

@@ -76,6 +76,11 @@ export const API_PATHS = {
     REWARD_REFERRALS: '/admin/rewards/referrals',
     REWARD_WALLET: (patientId: string) => `/admin/rewards/wallet/${patientId}`,
     REWARD_WALLET_ADJUST: (patientId: string) => `/admin/rewards/wallet/${patientId}/adjust`,
+    CLINICAL_METHOD_OPTIONS: '/admin/clinical-records/method-options',
+    PRESCRIPTIONS: '/admin/prescriptions',
+    PRESCRIPTION_BY_ID: (id: string) => `/admin/prescriptions/${id}`,
+    CASE_ANALYSES: '/admin/case-analyses',
+    CASE_ANALYSIS_BY_ID: (id: string) => `/admin/case-analyses/${id}`,
     FINANCE: {
       SUMMARY: '/admin/finance/summary',
       REVENUE_TREND: '/admin/finance/revenue/trend',

@@ -1,7 +1,8 @@
 import { CommonModule } from '@angular/common';
 import { Component, signal } from '@angular/core';
 import { form, FormField } from '@angular/forms/signals';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
+import { adminRouteLink, ROUTE_PATHS } from '../../../core/constants/app-routes.constants';
 import {
   buildDetailRows,
   DetailRowsComponent,
@@ -121,9 +122,30 @@ type SupportContext = {
   safeActions: string[];
 };
 
+type ClinicalSummary = {
+  prescriptions: Array<{
+    id: string;
+    diagnosis: string | null;
+    status: string;
+    createdAt: string;
+    methodOption?: { label: string } | null;
+    doctor?: { name: string } | null;
+  }>;
+  analyses: Array<{
+    id: string;
+    status: string;
+    createdAt: string;
+    methodOption?: { label: string } | null;
+    selectedRemedy?: { name: string } | null;
+    doctor?: { name: string } | null;
+  }>;
+  prescriptionTotal: number;
+  analysisTotal: number;
+};
+
 @Component({
   selector: 'app-consumers-page',
-  imports: [CommonModule, FormField, PatientIdCardComponent, DetailRowsComponent],
+  imports: [CommonModule, FormField, PatientIdCardComponent, DetailRowsComponent, RouterLink],
   templateUrl: './consumers-page.html',
   styleUrl: './consumers-page.scss'
 })
@@ -180,6 +202,10 @@ export class ConsumersPage {
 
   readonly supportCategories = SUPPORT_NOTE_CATEGORIES;
   readonly categoryStyles = SUPPORT_NOTE_CATEGORY_STYLES;
+  readonly clinicalRecordsRoute = adminRouteLink(ROUTE_PATHS.CLINICAL_RECORDS);
+
+  clinicalSummary: ClinicalSummary | null = null;
+  clinicalSummaryLoading = false;
 
   constructor(
     private readonly api: AdminApi,
@@ -365,13 +391,45 @@ export class ConsumersPage {
     this.detailLoading = true;
     this.detailError = '';
     try {
-      this.consumerDetail = (await this.api.getConsumerDetail(consumerId)) as ConsumerDetail;
+      const detail = (await this.api.getConsumerDetail(consumerId)) as ConsumerDetail;
+      this.consumerDetail = detail;
+      await this.loadClinicalSummary(consumerId);
     } catch {
       this.detailError = 'Could not load consumer details.';
       this.consumerDetail = null;
+      this.clinicalSummary = null;
     } finally {
       this.detailLoading = false;
     }
+  }
+
+  private async loadClinicalSummary(patientId: string) {
+    this.clinicalSummaryLoading = true;
+    try {
+      const [rxRes, analysisRes] = await Promise.all([
+        this.api.listAdminPrescriptions({ patientId, pageSize: 5 }),
+        this.api.listAdminCaseAnalyses({ patientId, pageSize: 5 })
+      ]);
+      this.clinicalSummary = {
+        prescriptions: (rxRes.prescriptions || []) as ClinicalSummary['prescriptions'],
+        analyses: (analysisRes.analyses || []) as ClinicalSummary['analyses'],
+        prescriptionTotal: rxRes.pagination?.total ?? 0,
+        analysisTotal: analysisRes.pagination?.total ?? 0
+      };
+    } catch {
+      this.clinicalSummary = null;
+    } finally {
+      this.clinicalSummaryLoading = false;
+    }
+  }
+
+  clinicalRecordsQuery(tab: 'prescriptions' | 'analyses' = 'prescriptions', consultationId?: string) {
+    const query: Record<string, string> = {
+      tab,
+      patientId: this.selectedConsumerId
+    };
+    if (consultationId) query['consultationId'] = consultationId;
+    return query;
   }
 
   patientIdCard(): PatientIdCardData | null {

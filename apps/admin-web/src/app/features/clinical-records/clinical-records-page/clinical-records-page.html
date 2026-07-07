@@ -1,0 +1,244 @@
+<section class="clinical-page panel">
+  <div class="toolbar spaced">
+    <div>
+      <h2>Clinical Records</h2>
+      <p class="subtitle">Browse prescriptions and case analyses by doctor, patient, and homeopathy approach.</p>
+    </div>
+  </div>
+
+  <div class="tab-row">
+    <button type="button" class="tab-btn" [class.active]="tab() === 'prescriptions'" (click)="setTab('prescriptions')">
+      Prescriptions
+    </button>
+    <button type="button" class="tab-btn" [class.active]="tab() === 'analyses'" (click)="setTab('analyses')">
+      Case analyses
+    </button>
+  </div>
+
+  <div class="filters toolbar">
+    <input placeholder="Search diagnosis, notes, names…" [formField]="filterForm.q" (input)="onSearchInput()" />
+    <select [formField]="filterForm.doctorId" (change)="onFilterChange()">
+      <option value="">All doctors</option>
+      @for (doc of doctors(); track doc.id) {
+        <option [value]="doc.id">{{ doc.name }}</option>
+      }
+    </select>
+    <select [formField]="filterForm.methodOptionId" (change)="onFilterChange()">
+      <option value="">All approaches</option>
+      @for (opt of methodOptions(); track opt.id) {
+        <option [value]="opt.id">{{ opt.label }}</option>
+      }
+    </select>
+    @if (tab() === 'prescriptions') {
+      <select [formField]="filterForm.status" (change)="onFilterChange()">
+        @for (s of prescriptionStatuses; track s) {
+          <option [value]="s">{{ s || 'All statuses' }}</option>
+        }
+      </select>
+    } @else {
+      <select [formField]="filterForm.status" (change)="onFilterChange()">
+        @for (s of analysisStatuses; track s) {
+          <option [value]="s">{{ s || 'All statuses' }}</option>
+        }
+      </select>
+    }
+  </div>
+
+  @if (filterModel().consultationId) {
+    <span class="patient-chip">
+      Consultation filter active
+      <button type="button" (click)="clearConsultationFilter()">×</button>
+    </span>
+  }
+
+  <div class="patient-filter">
+    @if (filterModel().patientId) {
+      <span class="patient-chip">
+        Patient: {{ selectedPatientLabel() }}
+        <button type="button" (click)="clearPatientFilter()">×</button>
+      </span>
+    } @else {
+      <input placeholder="Filter by patient (name, mobile, code)…" [formField]="filterForm.patientSearch" (keyup.enter)="searchPatients()" />
+      <button type="button" (click)="searchPatients()" [disabled]="patientSearchLoading()">Find patient</button>
+    }
+  </div>
+  @if (patientHits().length) {
+    <div class="patient-hits">
+      @for (p of patientHits(); track p.id) {
+        <button type="button" class="patient-hit" (click)="selectPatient(p)">
+          <strong>{{ p.name }}</strong>
+          <small>{{ p.patientCode || p.id }} · {{ p.mobile || 'no mobile' }}</small>
+        </button>
+      }
+    </div>
+  }
+
+  @if (error()) {
+    <p class="error">{{ error() }}</p>
+  }
+
+  <div class="split-layout">
+    <div class="list-pane">
+      @if (loading()) {
+        <p class="loading-text">Loading…</p>
+      } @else if (tab() === 'prescriptions') {
+        @if (!prescriptions().length) {
+          <p class="muted">No prescriptions match these filters.</p>
+        } @else {
+          @for (rx of prescriptions(); track rx.id) {
+            <button type="button" class="list-card" [class.selected]="selectedPrescription()?.id === rx.id" (click)="openPrescription(rx.id)">
+              <div class="card-top">
+                <strong>{{ rx.patient?.name || 'Patient' }}</strong>
+                <span class="badge">{{ rx.status }}</span>
+              </div>
+              <div class="card-meta">
+                <span>{{ rx.methodOption?.label || 'No method' }}</span>
+                <span>{{ rx.createdAt | date:'dd MMM yyyy' }}</span>
+              </div>
+              <div class="card-sub">
+                Dr. {{ rx.doctor?.name || '—' }}
+                @if (rx.diagnosis) { · {{ rx.diagnosis }} }
+              </div>
+              @if (rx.caseAnalysisId) {
+                <small class="link-hint">Linked case analysis</small>
+              }
+            </button>
+          }
+        }
+      } @else {
+        @if (!analyses().length) {
+          <p class="muted">No case analyses match these filters.</p>
+        } @else {
+          @for (a of analyses(); track a.id) {
+            <button type="button" class="list-card" [class.selected]="selectedAnalysis()?.id === a.id" (click)="openAnalysis(a.id)">
+              <div class="card-top">
+                <strong>{{ a.consultation?.patient?.name || 'Patient' }}</strong>
+                <span class="badge">{{ a.status }}</span>
+              </div>
+              <div class="card-meta">
+                <span>{{ a.methodOption?.label || 'No method' }}</span>
+                <span>{{ a.createdAt | date:'dd MMM yyyy' }}</span>
+              </div>
+              <div class="card-sub">
+                Dr. {{ a.doctor?.name || '—' }}
+                @if (a.selectedRemedy) { · {{ a.selectedRemedy.name }} }
+              </div>
+              <small class="link-hint">{{ a.rubricCount }} rubrics · {{ a.resultCount }} results · {{ a.prescriptionCount }} Rx</small>
+            </button>
+          }
+        }
+      }
+
+      @if (pagination().totalPages > 1) {
+        <div class="pager">
+          <button type="button" [disabled]="pagination().page <= 1" (click)="setPage(pagination().page - 1)">Prev</button>
+          <span>Page {{ pagination().page }} / {{ pagination().totalPages }} ({{ pagination().total }} total)</span>
+          <button type="button" [disabled]="pagination().page >= pagination().totalPages" (click)="setPage(pagination().page + 1)">Next</button>
+        </div>
+      }
+    </div>
+
+    <div class="detail-pane">
+      @if (detailLoading()) {
+        <p class="loading-text">Loading detail…</p>
+      } @else if (selectedPrescription(); as rx) {
+        <h3>Prescription detail</h3>
+        <vitalis-detail-rows variant="grid" [rows]="prescriptionDetailRows()" />
+
+        @if (rx.caseAnalysisId) {
+          <button type="button" class="link-btn" (click)="openLinkedAnalysis()">View linked case analysis →</button>
+        }
+
+        @if (rx.items?.length) {
+          <h4>Medicines</h4>
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Medicine</th>
+                <th>Strength</th>
+                <th>Dose</th>
+                <th>Frequency</th>
+                <th>Duration</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (item of rx.items; track $index) {
+                <tr>
+                  <td>{{ item.medicineName }}</td>
+                  <td>{{ item.strength || '—' }}</td>
+                  <td>{{ item.dose || '—' }}</td>
+                  <td>{{ item.frequency || '—' }}</td>
+                  <td>{{ item.duration || '—' }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
+      } @else if (selectedAnalysis(); as analysis) {
+        <h3>Case analysis detail</h3>
+        <vitalis-detail-rows variant="grid" [rows]="analysisDetailRows()" />
+
+        @if (analysis.prescriptions?.length) {
+          <h4>Linked prescriptions</h4>
+          <div class="linked-list">
+            @for (rx of analysis.prescriptions; track rx.id) {
+              <button type="button" class="linked-item" (click)="openLinkedPrescription(rx.id)">
+                {{ rx.diagnosis || 'Prescription' }} · {{ rx.methodOption?.label || '—' }} · {{ rx.status }}
+              </button>
+            }
+          </div>
+        }
+
+        @if (analysis.rubrics?.length) {
+          <h4>Repertory rubrics ({{ analysis.rubrics.length }})</h4>
+          <table class="data-table compact">
+            <thead>
+              <tr><th>Weight</th><th>Chapter</th><th>Rubric</th></tr>
+            </thead>
+            <tbody>
+              @for (row of analysis.rubrics; track $index) {
+                <tr>
+                  <td>{{ row.weight }}</td>
+                  <td>{{ row.rubric.chapter || '—' }}</td>
+                  <td>{{ row.rubric.text }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
+
+        @if (analysis.results?.length) {
+          <h4>Repertory results ({{ analysis.results.length }})</h4>
+          <table class="data-table compact">
+            <thead>
+              <tr><th>Rank</th><th>Score</th><th>Remedy</th></tr>
+            </thead>
+            <tbody>
+              @for (row of analysis.results; track $index) {
+                <tr>
+                  <td>{{ row.rank }}</td>
+                  <td>{{ row.score }}</td>
+                  <td>{{ row.remedy.name }}{{ row.remedy.abbreviation ? ' (' + row.remedy.abbreviation + ')' : '' }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
+
+        @if (analysisCaseSheetJson()) {
+          <h4>Case sheet</h4>
+          <pre class="json-block">{{ analysisCaseSheetJson() }}</pre>
+        }
+
+        @if (analysisApproachJson()) {
+          <h4>Approach-specific data</h4>
+          <pre class="json-block">{{ analysisApproachJson() }}</pre>
+        }
+      } @else {
+        <div class="empty-detail">
+          <p>Select a {{ tab() === 'prescriptions' ? 'prescription' : 'case analysis' }} to view full clinical data.</p>
+        </div>
+      }
+    </div>
+  </div>
+</section>

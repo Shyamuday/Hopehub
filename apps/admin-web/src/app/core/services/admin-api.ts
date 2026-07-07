@@ -6,6 +6,7 @@ import { AdminHrApi } from './admin/admin-hr.api';
 import { AdminFinanceApi } from './admin/admin-finance.api';
 import { AdminOpsApi } from './admin/admin-ops.api';
 import { AdminRewardsApi } from './admin/admin-rewards.api';
+import { AdminClinicalApi } from './admin/admin-clinical.api';
 
 @Service()
 export class AdminApi {
@@ -16,6 +17,7 @@ export class AdminApi {
   private readonly finance = inject(AdminFinanceApi);
   private readonly ops = inject(AdminOpsApi);
   private readonly rewards = inject(AdminRewardsApi);
+  private readonly clinical = inject(AdminClinicalApi);
 
   getReports(...args: Parameters<AdminReportsApi['getReports']>) {
     return this.reports.getReports(...(args as Parameters<AdminReportsApi['getReports']>));
@@ -452,5 +454,21 @@ export class AdminApi {
   }
   listReferrals(limit = 50) {
     return this.rewards.listReferrals(limit);
+  }
+
+  listClinicalMethodOptions() {
+    return this.clinical.listMethodOptions();
+  }
+  listAdminPrescriptions(...args: Parameters<AdminClinicalApi['listPrescriptions']>) {
+    return this.clinical.listPrescriptions(...args);
+  }
+  getAdminPrescription(...args: Parameters<AdminClinicalApi['getPrescription']>) {
+    return this.clinical.getPrescription(...args);
+  }
+  listAdminCaseAnalyses(...args: Parameters<AdminClinicalApi['listCaseAnalyses']>) {
+    return this.clinical.listCaseAnalyses(...args);
+  }
+  getAdminCaseAnalysis(...args: Parameters<AdminClinicalApi['getCaseAnalysis']>) {
+    return this.clinical.getCaseAnalysis(...args);
   }
 }

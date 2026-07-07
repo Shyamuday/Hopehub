@@ -1,0 +1,230 @@
+@use '../../consumers/consumers-page/consumers-page.scss';
+
+.clinical-page {
+  .subtitle {
+    margin: 0.25rem 0 0;
+    color: #64748b;
+    font-size: 0.9rem;
+  }
+
+  .tab-row {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .tab-btn {
+    border: 1px solid #cbd5e1;
+    background: #fff;
+    border-radius: 999px;
+    padding: 0.35rem 0.9rem;
+    cursor: pointer;
+
+    &.active {
+      background: #0f766e;
+      border-color: #0f766e;
+      color: #fff;
+    }
+  }
+
+  .patient-filter {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.5rem;
+  }
+
+  .patient-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    background: #ecfeff;
+    border: 1px solid #a5f3fc;
+    border-radius: 999px;
+    padding: 0.25rem 0.65rem;
+    font-size: 0.85rem;
+
+    button {
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      font-size: 1rem;
+      line-height: 1;
+    }
+  }
+
+  .patient-hits {
+    display: grid;
+    gap: 0.35rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .patient-hit {
+    text-align: left;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 0.5rem 0.65rem;
+    background: #fff;
+    cursor: pointer;
+
+    small {
+      display: block;
+      color: #64748b;
+    }
+  }
+
+  .split-layout {
+    display: grid;
+    grid-template-columns: minmax(280px, 360px) 1fr;
+    gap: 1rem;
+    align-items: start;
+  }
+
+  .list-pane,
+  .detail-pane {
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 0.75rem;
+    background: #fff;
+    min-height: 420px;
+  }
+
+  .list-card {
+    display: block;
+    width: 100%;
+    text-align: left;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 0.65rem 0.75rem;
+    margin-bottom: 0.5rem;
+    background: #f8fafc;
+    cursor: pointer;
+
+    &.selected {
+      border-color: #0f766e;
+      background: #ecfeff;
+    }
+  }
+
+  .card-top {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.5rem;
+    align-items: center;
+  }
+
+  .badge {
+    font-size: 0.7rem;
+    padding: 0.15rem 0.45rem;
+    border-radius: 999px;
+    background: #e2e8f0;
+  }
+
+  .card-meta,
+  .card-sub {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.5rem;
+    font-size: 0.82rem;
+    color: #475569;
+    margin-top: 0.25rem;
+  }
+
+  .link-hint {
+    display: block;
+    margin-top: 0.25rem;
+    color: #0f766e;
+  }
+
+  .pager {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+    font-size: 0.85rem;
+  }
+
+  .detail-pane h3,
+  .detail-pane h4 {
+    margin: 0.75rem 0 0.5rem;
+  }
+
+  .detail-pane h3:first-child {
+    margin-top: 0;
+  }
+
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+
+    th,
+    td {
+      border: 1px solid #e2e8f0;
+      padding: 0.35rem 0.45rem;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      background: #f1f5f9;
+    }
+
+    &.compact td:first-child,
+    &.compact th:first-child {
+      width: 4rem;
+    }
+  }
+
+  .json-block {
+    background: #0f172a;
+    color: #e2e8f0;
+    border-radius: 8px;
+    padding: 0.75rem;
+    overflow: auto;
+    max-height: 320px;
+    font-size: 0.78rem;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  .linked-list {
+    display: grid;
+    gap: 0.35rem;
+  }
+
+  .linked-item,
+  .link-btn {
+    border: 1px solid #cbd5e1;
+    background: #fff;
+    border-radius: 8px;
+    padding: 0.45rem 0.6rem;
+    text-align: left;
+    cursor: pointer;
+    color: #0f766e;
+  }
+
+  .empty-detail {
+    display: grid;
+    place-items: center;
+    min-height: 280px;
+    color: #64748b;
+    text-align: center;
+  }
+
+  .muted,
+  .loading-text {
+    color: #64748b;
+  }
+
+  .error {
+    color: #b91c1c;
+  }
+
+  @media (max-width: 960px) {
+    .split-layout {
+      grid-template-columns: 1fr;
+    }
+  }
+}

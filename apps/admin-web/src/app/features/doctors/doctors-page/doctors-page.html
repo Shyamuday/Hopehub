@@ -182,7 +182,14 @@
   <h2>Doctor Profile Details</h2>
   @if (selectedDoctorDetails(); as selectedDoctor) {
     <article class="card">
-      <strong>{{ selectedDoctor.name }}</strong>
+      <div class="detail-header-row">
+        <div>
+          <strong>{{ selectedDoctor.name }}</strong>
+        </div>
+        <a class="clinical-records-link" [routerLink]="clinicalRecordsRoute" [queryParams]="clinicalRecordsQuery('prescriptions')">
+          View clinical records →
+        </a>
+      </div>
       <vitalis-detail-rows [rows]="selectedDoctorDetailRows()" />
       <div class="actions">
         @if (selectedDoctor.isActive) {
