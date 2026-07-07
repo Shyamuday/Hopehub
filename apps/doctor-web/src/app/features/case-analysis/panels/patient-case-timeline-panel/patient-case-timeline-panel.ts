@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, output } from '@angular/core';
 import type { PatientCaseHistory, PatientCaseHistoryEntry } from '../../case-analysis-page.types';
 
 @Component({
@@ -10,6 +10,9 @@ export class PatientCaseTimelinePanelComponent {
   @Input() history: PatientCaseHistory | null = null;
   @Input() currentConsultationId = '';
   @Input() loading = false;
+  @Input() compact = false;
+
+  readonly openAnalysis = output<{ consultationId: string; analysisId: string }>();
 
   otherEntries(): PatientCaseHistoryEntry[] {
     if (!this.history) return [];
@@ -18,5 +21,13 @@ export class PatientCaseTimelinePanelComponent {
 
   formatDate(iso: string) {
     return new Date(iso).toLocaleString();
+  }
+
+  openCaseAnalysis(consultationId: string, analysisId: string) {
+    this.openAnalysis.emit({ consultationId, analysisId });
+  }
+
+  primaryAnalysis(entry: PatientCaseHistoryEntry) {
+    return entry.analyses[0] || null;
   }
 }

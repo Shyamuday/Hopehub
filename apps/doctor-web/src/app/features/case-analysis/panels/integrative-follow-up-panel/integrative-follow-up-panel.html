@@ -1,7 +1,10 @@
 <section class="panel approach-panel">
   <div class="panel-title-row">
     <h3>Integrative follow-up &amp; safety</h3>
-    <button type="button" (click)="save()" [disabled]="saving">{{ saving ? 'Saving…' : 'Save follow-up plan' }}</button>
+    <div class="panel-save-actions">
+      <span class="autosave-note muted">Auto-saves as you type</span>
+      <button type="button" class="btn-save-now" (click)="save()" [disabled]="saving">{{ saving ? 'Saving…' : 'Save now' }}</button>
+    </div>
   </div>
   <p class="hint">Track baseline metrics, safety red flags, and referral logic for chronic integrative care.</p>
   <div class="approach-grid">

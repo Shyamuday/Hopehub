@@ -12,6 +12,15 @@
   border: 1px solid #e5e7eb;
   border-radius: 10px;
   background: #fafafa;
+
+  &:hover {
+    border-color: #c7d2fe;
+  }
+}
+
+.timeline-entry .timeline-link:disabled {
+  cursor: default;
+  opacity: 0.85;
 }
 
 .timeline-head {

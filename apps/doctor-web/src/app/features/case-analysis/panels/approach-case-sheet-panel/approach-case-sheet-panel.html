@@ -1,9 +1,12 @@
 <section class="panel case-sheet-panel">
   <div class="panel-title-row">
     <h3>{{ title }}</h3>
-    <button type="button" (click)="saveRequested.emit()" [disabled]="saving">
-      {{ saving ? 'Saving…' : 'Save case sheet' }}
-    </button>
+    <div class="panel-save-actions">
+      <span class="autosave-note muted">Auto-saves as you type</span>
+      <button type="button" class="btn-save-now" (click)="saveRequested.emit()" [disabled]="saving">
+        {{ saving ? 'Saving…' : 'Save now' }}
+      </button>
+    </div>
   </div>
   <p class="hint">{{ description }}</p>
   <div class="case-sheet-grid">

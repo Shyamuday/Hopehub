@@ -1,7 +1,10 @@
 <section class="panel approach-panel">
   <div class="panel-title-row">
     <h3>Sehgal emotional core</h3>
-    <button type="button" (click)="save()" [disabled]="saving">{{ saving ? 'Saving…' : 'Save emotional map' }}</button>
+    <div class="panel-save-actions">
+      <span class="autosave-note muted">Auto-saves as you type</span>
+      <button type="button" class="btn-save-now" (click)="save()" [disabled]="saving">{{ saving ? 'Saving…' : 'Save now' }}</button>
+    </div>
   </div>
   <p class="hint">Identify the dominant emotional disturbance and its mind–body linkage before remedy selection.</p>
   <div class="approach-grid">

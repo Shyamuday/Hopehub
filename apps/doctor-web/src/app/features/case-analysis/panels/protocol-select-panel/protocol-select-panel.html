@@ -1,7 +1,10 @@
 <section class="panel protocol-panel">
   <div class="panel-title-row">
     <h3>Protocol selection</h3>
-    <button type="button" (click)="save()" [disabled]="saving">{{ saving ? 'Saving…' : 'Save protocol' }}</button>
+    <div class="panel-save-actions">
+      <span class="autosave-note muted">Auto-saves as you type</span>
+      <button type="button" class="btn-save-now" (click)="save()" [disabled]="saving">{{ saving ? 'Saving…' : 'Save now' }}</button>
+    </div>
   </div>
   <p class="hint">
     @if (diseaseName) {

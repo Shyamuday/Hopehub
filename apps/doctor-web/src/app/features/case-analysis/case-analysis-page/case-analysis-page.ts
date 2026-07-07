@@ -1,5 +1,5 @@
 import { DecimalPipe } from '@angular/common';
-import { Component, computed, effect, inject, OnDestroy, signal } from '@angular/core';
+import { Component, computed, effect, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { form, FormField } from '@angular/forms/signals';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import {
@@ -27,6 +27,7 @@ import { ROUTE_PATHS } from '../../../core/constants/app-routes.constants';
 import { ConsultationChatPanelComponent } from '../../../shared/consultation-chat-panel/consultation-chat-panel';
 import { ConsultationContextHeaderComponent } from '../../../shared/consultation-context-header/consultation-context-header';
 import { ConsultationIntakePanelComponent } from '../../../shared/consultation-intake-panel/consultation-intake-panel';
+import { CollapsibleSectionComponent } from '../../../shared/collapsible-section/collapsible-section';
 import { CaseAnalysisApiService } from '../case-analysis-api.service';
 import { createDebouncedSaver } from '../case-analysis-autosave.util';
 import { primaryIntakeSearchPhrase } from '../intake-rubric.util';
@@ -65,6 +66,7 @@ import { formatRubricPath, rubricPathSegments } from '../rubric-path.util';
     DecimalPipe,
     ConsultationContextHeaderComponent,
     ConsultationIntakePanelComponent,
+    CollapsibleSectionComponent,
     ConsultationChatPanelComponent,
     ApproachStepperComponent,
     ApproachOverviewPanelComponent,
@@ -83,7 +85,7 @@ import { formatRubricPath, rubricPathSegments } from '../rubric-path.util';
   ],
   templateUrl: './case-analysis-page.html'
 })
-export class CaseAnalysisPage implements OnDestroy {
+export class CaseAnalysisPage implements OnDestroy, OnInit {
   private readonly api = inject(CaseAnalysisApiService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
@@ -101,7 +103,7 @@ export class CaseAnalysisPage implements OnDestroy {
   readonly weightOptions = [1, 2, 3, 4] as const;
 
   readonly standalone = this.route.snapshot.data['standalone'] === true;
-  readonly consultationId = this.standalone ? '' : this.route.snapshot.paramMap.get('consultationId') || '';
+  readonly consultationId = signal(this.standalone ? '' : this.route.snapshot.paramMap.get('consultationId') || '');
   readonly consultation = signal<ConsultationSummary | null>(null);
   readonly analyses = signal<CaseAnalysis[]>([]);
   readonly analysis = signal<CaseAnalysis | null>(null);
@@ -173,11 +175,6 @@ export class CaseAnalysisPage implements OnDestroy {
   constructor() {
     void this.loadSources();
     void this.loadMethodOptions();
-    if (this.standalone) {
-      void this.loadPracticeSession();
-    } else if (this.consultationId) {
-      void this.load();
-    }
 
     effect(() => {
       this.caseSheetModel();
@@ -190,6 +187,32 @@ export class CaseAnalysisPage implements OnDestroy {
     effect(() => {
       this.selectedRubrics();
       this.scheduleAutoSaveRubrics();
+    });
+  }
+
+  ngOnInit() {
+    if (this.standalone) {
+      void this.loadPracticeSession();
+      return;
+    }
+
+    this.route.paramMap.subscribe((params) => {
+      const id = params.get('consultationId') || '';
+      if (!id) return;
+      const changed = id !== this.consultationId();
+      this.consultationId.set(id);
+      if (changed || !this.analysis()) {
+        void this.load();
+      }
+    });
+
+    this.route.queryParamMap.subscribe((params) => {
+      const caseAnalysisId = params.get('caseAnalysisId');
+      if (!caseAnalysisId) return;
+      const selected = this.analyses().find((item) => item.id === caseAnalysisId);
+      if (selected && selected.id !== this.analysis()?.id) {
+        void this.switchAnalysis(caseAnalysisId);
+      }
     });
   }
 
@@ -286,7 +309,7 @@ export class CaseAnalysisPage implements OnDestroy {
   }
 
   async load() {
-    const id = this.consultationId.trim();
+    const id = this.consultationId().trim();
     if (!id) return;
 
     this.loading.set(true);
@@ -723,11 +746,11 @@ export class CaseAnalysisPage implements OnDestroy {
   }
 
   async createNewAnalysis() {
-    if (!this.consultationId) return;
+    if (!this.consultationId()) return;
     this.creatingAnalysis.set(true);
     this.error.set('');
     try {
-      const created = await this.api.createAnalysis(this.consultationId, {
+      const created = await this.api.createAnalysis(this.consultationId(), {
         sourceId: this.searchModel().selectedSourceId || this.analysis()?.source?.id || undefined
       });
       this.analyses.set([created, ...this.analyses()]);
@@ -806,9 +829,24 @@ export class CaseAnalysisPage implements OnDestroy {
     }
   }
 
+  openHistoricalCaseAnalysis(consultationId: string, analysisId: string) {
+    if (consultationId === this.consultationId()) {
+      void this.switchAnalysis(analysisId);
+      return;
+    }
+
+    void this.router.navigate(['/', ROUTE_PATHS.CASE_ANALYSIS, consultationId, 'case-analysis'], {
+      queryParams: { caseAnalysisId: analysisId }
+    });
+  }
+
+  historyBadge() {
+    return this.patientCaseHistory()?.lastPrescriptionMethod?.label || '';
+  }
+
   openPrescriptionWithRemedy() {
     const currentAnalysis = this.analysis();
-    if (!this.consultationId) return;
+    if (!this.consultationId()) return;
 
     const protocol = this.approachData().protocol;
     const organonLm = this.approachData().organonLm;
@@ -828,7 +866,7 @@ export class CaseAnalysisPage implements OnDestroy {
 
     void this.router.navigate(['/', ROUTE_PATHS.APPOINTMENTS], {
       queryParams: {
-        consultationId: this.consultationId,
+        consultationId: this.consultationId(),
         caseAnalysisId: currentAnalysis?.id,
         remedy,
         diagnosis: remedy,

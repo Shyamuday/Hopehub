@@ -8,14 +8,26 @@
 
   <p class="hint">The approach controls case sheet fields, workflow steps, and repertory weighting for this analysis.</p>
 
+  <input
+    class="approach-search"
+    type="search"
+    [formField]="searchForm.query"
+    placeholder="Search approaches…"
+    aria-label="Search prescribing approaches"
+  />
+
   <div class="approach-row">
     <select class="approach-select" [value]="selectedMethodOptionId" (change)="onSelect($event)" [disabled]="saving">
       <option value="">Select approach</option>
-      @for (method of methods; track method.id) {
+      @for (method of filteredMethods(); track method.id) {
         <option [value]="method.id">{{ method.label }}</option>
       }
     </select>
   </div>
+
+  @if (searchModel().query.trim() && !filteredMethods().length) {
+    <p class="hint">No approaches match your search.</p>
+  }
 
   @if (approach; as def) {
     <div class="approach-detail">

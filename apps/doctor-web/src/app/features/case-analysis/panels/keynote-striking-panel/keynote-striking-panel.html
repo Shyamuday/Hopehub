@@ -1,7 +1,10 @@
 <section class="panel approach-panel">
   <div class="panel-title-row">
     <h3>Keynote symptoms</h3>
-    <button type="button" (click)="save()" [disabled]="saving">{{ saving ? 'Saving…' : 'Save keynotes' }}</button>
+    <div class="panel-save-actions">
+      <span class="autosave-note muted">Auto-saves as you type</span>
+      <button type="button" class="btn-save-now" (click)="save()" [disabled]="saving">{{ saving ? 'Saving…' : 'Save now' }}</button>
+    </div>
   </div>
   <p class="hint">Capture striking, rare, and peculiar symptoms before cross-checking against the full totality.</p>
   <div class="approach-grid">

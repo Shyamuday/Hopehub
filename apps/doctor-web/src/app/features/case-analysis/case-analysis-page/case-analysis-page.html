@@ -15,11 +15,11 @@
         <button type="button" class="btn-secondary" (click)="startNewPracticeSession()" [disabled]="loading()">
           New case
         </button>
-      } @else if (consultationId) {
+      } @else if (consultationId()) {
         <a
           class="btn-secondary"
           [routerLink]="['/', appointmentsPath]"
-          [queryParams]="analysis() ? { consultationId, caseAnalysisId: analysis()!.id } : { consultationId }"
+          [queryParams]="analysis() ? { consultationId: consultationId(), caseAnalysisId: analysis()!.id } : { consultationId: consultationId() }"
         >
           Prescription
         </a>
@@ -34,7 +34,7 @@
     <div class="alert alert-success">{{ message() }}</div>
   }
 
-  @if (!standalone && !consultationId) {
+  @if (!standalone && !consultationId()) {
     <section class="panel empty-panel">
       <h3>Open a consultation first</h3>
       <p class="muted">Go to your worklist and choose <strong>Case analysis</strong> on a case, or use <strong>Repertory</strong> in the menu for practice.</p>
@@ -48,20 +48,37 @@
     @if (consultation(); as consultation) {
       <app-consultation-context-header
         [consultation]="consultation"
-        [consultationId]="consultationId"
+        [consultationId]="consultationId()"
         [analysisLabel]="analysis.source?.name || ''"
         activeView="case-analysis"
       />
-      <div class="context-grid">
-        <app-consultation-intake-panel [consultation]="consultation" />
-        <app-consultation-chat-panel [consultationId]="consultationId" />
-      </div>
 
-      <app-patient-case-timeline-panel
-        [history]="patientCaseHistory()"
-        [currentConsultationId]="consultationId"
-        [loading]="loadingPatientHistory()"
-      />
+      <app-collapsible-section
+        title="Patient intake"
+        subtitle="Answers submitted when the patient booked this consultation."
+        [startCollapsed]="false"
+      >
+        <app-consultation-intake-panel [consultation]="consultation" />
+      </app-collapsible-section>
+
+      <app-collapsible-section title="Patient chat" subtitle="Message the patient during case taking." [startCollapsed]="true">
+        <app-consultation-chat-panel [consultationId]="consultationId()" />
+      </app-collapsible-section>
+
+      <app-collapsible-section
+        title="Patient case history"
+        subtitle="Prior consultations, prescriptions, and analyses."
+        [startCollapsed]="true"
+        [badge]="historyBadge()"
+      >
+        <app-patient-case-timeline-panel
+          [history]="patientCaseHistory()"
+          [currentConsultationId]="consultationId()"
+          [loading]="loadingPatientHistory()"
+          [compact]="true"
+          (openAnalysis)="openHistoricalCaseAnalysis($event.consultationId, $event.analysisId)"
+        />
+      </app-collapsible-section>
 
       @if (autoSaveStatus() === 'saving') {
         <p class="autosave-hint muted">Saving draft…</p>
@@ -114,12 +131,14 @@
     }
 
     <div class="steps-workflow">
-      <app-approach-stepper
-        [steps]="workflowSteps()"
-        [activeStepId]="activeStepId()"
-        [completion]="stepCompletion()"
-        (stepSelected)="setActiveStep($event)"
-      />
+      <div class="stepper-sticky">
+        <app-approach-stepper
+          [steps]="workflowSteps()"
+          [activeStepId]="activeStepId()"
+          [completion]="stepCompletion()"
+          (stepSelected)="setActiveStep($event)"
+        />
+      </div>
 
       @if (showPanel('approach-overview')) {
         <app-approach-overview-panel
@@ -239,13 +258,20 @@
 
       @if (showPanel('analysis-notes')) {
         <section class="panel notes-panel">
-          <h3>Analysis notes</h3>
+          <div class="panel-title-row">
+            <h3>Analysis notes</h3>
+            <div class="panel-save-actions">
+              <span class="autosave-note muted">Auto-saves as you type</span>
+              <button type="button" class="btn-save-now btn-sm" (click)="saveNotes()" [disabled]="saving()">
+                {{ saving() ? 'Saving…' : 'Save now' }}
+              </button>
+            </div>
+          </div>
           <textarea
             [formField]="notesForm.notes"
             rows="4"
             placeholder="Key observations, modalities, mentals, or follow-up thoughts…"
           ></textarea>
-          <button type="button" class="btn-secondary btn-sm" (click)="saveNotes()" [disabled]="saving()">Save notes</button>
         </section>
       }
 
@@ -328,9 +354,12 @@
         <section class="panel">
           <div class="panel-title-row">
             <h3>Case rubrics <span class="count-pill">{{ selectedRubrics().length }}</span></h3>
-            <button type="button" class="btn-secondary btn-sm" (click)="saveRubrics()" [disabled]="saving() || !selectedRubrics().length">
-              Save
-            </button>
+            <div class="panel-save-actions">
+              <span class="autosave-note muted">Auto-saves as you type</span>
+              <button type="button" class="btn-save-now btn-sm" (click)="saveRubrics()" [disabled]="saving() || !selectedRubrics().length">
+                {{ saving() ? 'Saving…' : 'Save now' }}
+              </button>
+            </div>
           </div>
 
           @if (selectedRubrics().length) {

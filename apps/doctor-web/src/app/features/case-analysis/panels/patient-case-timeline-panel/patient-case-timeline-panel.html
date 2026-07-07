@@ -1,10 +1,12 @@
-<section class="panel timeline-panel">
-  <div class="panel-title-row">
-    <h3>Patient case history</h3>
-    @if (history?.lastPrescriptionMethod; as lastMethod) {
-      <span class="badge badge-soft">Last prescribed: {{ lastMethod.label }}</span>
-    }
-  </div>
+<section class="panel timeline-panel" [class.compact]="compact">
+  @if (!compact) {
+    <div class="panel-title-row">
+      <h3>Patient case history</h3>
+      @if (history?.lastPrescriptionMethod; as lastMethod) {
+        <span class="badge badge-soft">Last prescribed: {{ lastMethod.label }}</span>
+      }
+    </div>
+  }
 
   @if (loading) {
     <p class="hint">Loading prior cases…</p>
@@ -14,28 +16,37 @@
     <div class="timeline-list">
       @for (entry of otherEntries(); track entry.consultationId) {
         <article class="timeline-entry">
-          <div class="timeline-head">
-            <strong>{{ entry.diseaseName }}</strong>
-            <span class="muted">{{ formatDate(entry.consultationDate) }}</span>
-          </div>
+          <button
+            type="button"
+            class="timeline-link"
+            (click)="primaryAnalysis(entry) && openCaseAnalysis(entry.consultationId, primaryAnalysis(entry)!.id)"
+            [disabled]="!primaryAnalysis(entry)"
+          >
+            <div class="timeline-head">
+              <strong>{{ entry.diseaseName }}</strong>
+              <span class="muted">{{ formatDate(entry.consultationDate) }}</span>
+            </div>
 
-          @if (entry.prescription) {
-            <p class="timeline-line">
-              Prescription: <strong>{{ entry.prescription.diagnosis }}</strong>
-              @if (entry.prescription.methodLabel) {
-                <span class="muted"> · {{ entry.prescription.methodLabel }}</span>
-              }
-            </p>
-          }
+            @if (entry.prescription) {
+              <p class="timeline-line">
+                Prescription: <strong>{{ entry.prescription.diagnosis }}</strong>
+                @if (entry.prescription.methodLabel) {
+                  <span class="muted"> · {{ entry.prescription.methodLabel }}</span>
+                }
+              </p>
+            }
+          </button>
 
           @if (entry.analyses.length) {
             <ul class="timeline-analyses">
               @for (analysis of entry.analyses; track analysis.id) {
                 <li>
-                  {{ analysis.methodLabel || 'Case analysis' }}
-                  @if (analysis.selectedRemedyName) {
-                    <span class="muted"> · {{ analysis.selectedRemedyName }}</span>
-                  }
+                  <button type="button" class="timeline-analysis-link" (click)="openCaseAnalysis(entry.consultationId, analysis.id)">
+                    {{ analysis.methodLabel || 'Case analysis' }}
+                    @if (analysis.selectedRemedyName) {
+                      <span class="muted"> · {{ analysis.selectedRemedyName }}</span>
+                    }
+                  </button>
                   <span class="muted"> · {{ analysis.rubricCount }} rubric{{ analysis.rubricCount === 1 ? '' : 's' }}</span>
                 </li>
               }

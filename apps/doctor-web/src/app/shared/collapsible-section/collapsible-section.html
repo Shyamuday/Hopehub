@@ -1,0 +1,22 @@
+<section class="collapsible-section" [class.is-collapsed]="collapsed()">
+  <button type="button" class="collapsible-toggle" (click)="toggle()" [attr.aria-expanded]="!collapsed()">
+    <span class="collapsible-title">
+      <strong>{{ title }}</strong>
+      @if (badge) {
+        <span class="badge badge-soft">{{ badge }}</span>
+      }
+    </span>
+    <span class="collapsible-action">{{ collapsed() ? 'Show' : 'Hide' }}</span>
+  </button>
+  @if (subtitle && collapsed()) {
+    <p class="collapsible-subtitle muted">{{ subtitle }}</p>
+  }
+  @if (!collapsed()) {
+    <div class="collapsible-body">
+      @if (subtitle) {
+        <p class="collapsible-subtitle muted">{{ subtitle }}</p>
+      }
+      <ng-content />
+    </div>
+  }
+</section>

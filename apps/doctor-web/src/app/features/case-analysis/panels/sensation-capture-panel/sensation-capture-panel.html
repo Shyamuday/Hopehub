@@ -1,7 +1,10 @@
 <section class="panel sensation-panel">
   <div class="panel-title-row">
     <h3>Sensation mapping</h3>
-    <button type="button" (click)="save()" [disabled]="saving">{{ saving ? 'Saving…' : 'Save sensation map' }}</button>
+    <div class="panel-save-actions">
+      <span class="autosave-note muted">Auto-saves as you type</span>
+      <button type="button" class="btn-save-now" (click)="save()" [disabled]="saving">{{ saving ? 'Saving…' : 'Save now' }}</button>
+    </div>
   </div>
   <p class="hint">Capture the patient’s exact language and the core sensation theme before remedy family selection.</p>
   <div class="sensation-grid">
