@@ -5,6 +5,7 @@ import {
   capabilitiesFromStaffProfile,
   type StaffProfileSummary
 } from '../permission-capabilities.js';
+import { enrichWithProfileImageUrl, storeStaffProfileImagePath } from '../utils/profile-image-url.js';
 
 export type PortalId = 'patient' | 'clinical' | 'operations';
 
@@ -109,19 +110,33 @@ export function sessionPayloadForStoreStaff(staff: {
   staffCode: string;
   storeId: string;
   storeName: string;
+  profileImageKey?: string | null;
 }) {
   const isManager = staff.role === STORE_ROLES.MANAGER;
   const capabilities = isManager ? [...STORE_MANAGER_CAPABILITIES] : [...STORE_COUNTER_CAPABILITIES];
+  const storeStaff = enrichWithProfileImageUrl(
+    {
+      id: staff.id,
+      name: staff.name,
+      role: staff.role,
+      staffCode: staff.staffCode,
+      storeId: staff.storeId,
+      storeName: staff.storeName,
+      profileImageKey: staff.profileImageKey
+    },
+    storeStaffProfileImagePath
+  );
   return {
     user: {
       id: staff.id,
       name: staff.name,
       email: staff.email ?? '',
-      role: isManager ? 'STORE_MANAGER' : 'STORE_STAFF'
+      role: isManager ? 'STORE_MANAGER' : 'STORE_STAFF',
+      profileImageUrl: storeStaff.profileImageUrl
     },
     capabilities,
     portal: 'operations' as const,
     defaultRoute: isManager ? 'store-manager/dashboard' : 'store/dashboard',
-    storeStaff: staff
+    storeStaff
   };
 }

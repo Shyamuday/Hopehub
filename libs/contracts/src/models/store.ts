@@ -9,6 +9,7 @@ export interface StorePortalStaff {
   email?: string | null;
   storeId: string;
   storeName?: string;
+  profileImageUrl?: string | null;
 }
 
 export interface StorePortalAuthResponse {

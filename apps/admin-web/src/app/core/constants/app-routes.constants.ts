@@ -34,7 +34,8 @@ export const ROUTE_PATHS = {
   SITE_CONFIG: 'site-config',
   CHAT_INBOX: 'chat-inbox',
   REWARDS: 'rewards',
-  CLINICAL_RECORDS: 'clinical-records'
+  CLINICAL_RECORDS: 'clinical-records',
+  ACCOUNT: 'account'
 } as const;
 
 /** When embedded in operations-web, set `globalThis.__ADMIN_ROUTE_BASE__ = 'admin'`. */

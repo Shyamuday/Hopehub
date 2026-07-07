@@ -1,0 +1,31 @@
+<div class="avatar-upload" [class.avatar-upload-md]="size === 'md'" [class.avatar-upload-lg]="size === 'lg'">
+  <div class="avatar-frame">
+    @if (previewUrl()) {
+      <img [src]="previewUrl()!" [alt]="displayName + ' profile photo'" class="avatar-image" />
+    } @else {
+      <span class="avatar-initial">{{ initial() }}</span>
+    }
+    @if (uploading()) {
+      <div class="avatar-overlay">Uploading…</div>
+    }
+  </div>
+
+  @if (editable) {
+    <div class="avatar-actions">
+      <label class="avatar-btn">
+        {{ profileImageUrl ? 'Change photo' : 'Add photo' }}
+        <input type="file" accept="image/jpeg,image/png,image/webp" (change)="onFileSelected($event)" [disabled]="uploading() || removing()" />
+      </label>
+      @if (profileImageUrl) {
+        <button type="button" class="avatar-btn ghost" (click)="removePhoto()" [disabled]="uploading() || removing()">
+          {{ removing() ? 'Removing…' : 'Remove' }}
+        </button>
+      }
+    </div>
+    <p class="avatar-hint">JPEG, PNG, or WebP up to 2 MB.</p>
+  }
+
+  @if (error()) {
+    <p class="avatar-error">{{ error() }}</p>
+  }
+</div>

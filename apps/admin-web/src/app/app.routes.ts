@@ -38,6 +38,7 @@ import { SiteConfigPage } from './features/content/site-config-page/site-config-
 import { ChatInboxPage } from './features/content/chat-inbox-page/chat-inbox-page';
 import { RewardsPage } from './features/rewards/rewards-page/rewards-page';
 import { ClinicalRecordsPage } from './features/clinical-records/clinical-records-page/clinical-records-page';
+import { AccountPage } from './features/account/account-page/account-page';
 
 export const routes: Routes = [
   { path: ROUTE_PATHS.LOGIN, component: AdminLogin },
@@ -81,7 +82,8 @@ export const routes: Routes = [
       { path: ROUTE_PATHS.FAQ, component: FaqPage },
       { path: ROUTE_PATHS.BLOG, component: BlogPage },
       { path: ROUTE_PATHS.SITE_CONFIG, component: SiteConfigPage },
-      { path: ROUTE_PATHS.CHAT_INBOX, component: ChatInboxPage }
+      { path: ROUTE_PATHS.CHAT_INBOX, component: ChatInboxPage },
+      { path: ROUTE_PATHS.ACCOUNT, component: AccountPage }
     ]
   },
   { path: '**', redirectTo: '' }

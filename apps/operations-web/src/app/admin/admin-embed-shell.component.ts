@@ -1,9 +1,9 @@
 import { Component, computed, inject, OnInit } from '@angular/core';
-import { Router, RouterOutlet } from '@angular/router';
+import { Router, RouterLink, RouterOutlet } from '@angular/router';
 import { RoleTaskGuideComponent, NotificationBellHostComponent } from '@vitalis/platform-ui';
 import { environment } from '../../environments/environment';
 import { AUTH_TOKEN_KEY } from '../core/constants/auth.constants';
-import { NAV_ITEMS } from '@vitalis/admin-console/core/constants/app-routes.constants';
+import { NAV_ITEMS, ROUTE_PATHS, adminNavPath } from '@vitalis/admin-console/core/constants/app-routes.constants';
 import { AdminNavTabsComponent } from '@vitalis/admin-console/layout/admin-nav-tabs/admin-nav-tabs.component';
 import { AdminAuth } from '@vitalis/admin-console/core/services/admin-auth';
 import { PlatformAuthService } from '../services/platform-auth.service';
@@ -12,7 +12,7 @@ import { ADMIN_ROUTE_CAPABILITIES } from './admin.guards';
 @Component({
   selector: 'app-admin-embed-shell',
   standalone: true,
-  imports: [RouterOutlet, RoleTaskGuideComponent, NotificationBellHostComponent, AdminNavTabsComponent],
+  imports: [RouterOutlet, RouterLink, RoleTaskGuideComponent, NotificationBellHostComponent, AdminNavTabsComponent],
   templateUrl: './admin-embed-shell.component.html',
   styleUrl: './admin-embed-shell.component.scss'
 })
@@ -26,6 +26,8 @@ export class AdminEmbedShellComponent implements OnInit {
     tokenKey: AUTH_TOKEN_KEY,
     apiPath: '/notifications'
   }));
+
+  readonly accountPath = adminNavPath(ROUTE_PATHS.ACCOUNT);
 
   ngOnInit(): void {
     (globalThis as { __ADMIN_ROUTE_BASE__?: string }).__ADMIN_ROUTE_BASE__ = 'admin';

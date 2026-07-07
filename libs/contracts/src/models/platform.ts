@@ -9,6 +9,7 @@ export interface HrUser {
   name: string;
   email: string;
   role: string;
+  profileImageUrl?: string | null;
   staffProfile?: {
     isSuperAdmin: boolean;
     permissionCodes: string[];

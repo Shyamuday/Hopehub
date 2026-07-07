@@ -22,11 +22,13 @@ import { environment } from '../environments/environment';
 import { AuthService } from './auth/auth.service';
 import { PatientIdCardComponent } from './shared/patient-id-card/patient-id-card.component';
 import { PatientAddressBookComponent } from './shared/patient-address-book/patient-address-book.component';
+import { ProfileAvatarUploadComponent } from '@vitalis/platform-ui';
+import { AUTH_TOKEN_KEY } from './core/constants/auth.constants';
 
 @Component({
   selector: 'app-patient-profile',
   standalone: true,
-  imports: [CommonModule, FormField, PatientIdCardComponent, PatientAddressBookComponent],
+  imports: [CommonModule, FormField, PatientIdCardComponent, PatientAddressBookComponent, ProfileAvatarUploadComponent],
   styleUrl: './patient-profile.component.scss',
   templateUrl: './patient-profile.component.html',
 })
@@ -60,6 +62,10 @@ export class PatientProfileComponent implements OnInit {
   readonly lifestyleOptions = LIFESTYLE_OPTIONS;
   readonly languageSuggestions = LANGUAGE_SUGGESTIONS;
   readonly relationOptions = EMERGENCY_RELATION_OPTIONS;
+
+  readonly apiUrl = environment.apiUrl;
+  readonly authTokenKey = AUTH_TOKEN_KEY;
+  readonly profileImageUploadPath = API_PATHS.PATIENT.PROFILE_IMAGE;
 
   ngOnInit() {
     void this.load();
@@ -100,6 +106,10 @@ export class PatientProfileComponent implements OnInit {
     } finally {
       this.loading.set(false);
     }
+  }
+
+  onProfileImageChange(profileImageUrl: string | null) {
+    this.profile.update((current) => (current ? { ...current, profileImageUrl } : current));
   }
 
   updateReminderField<K extends keyof ReminderPreferences>(field: K, value: ReminderPreferences[K]) {

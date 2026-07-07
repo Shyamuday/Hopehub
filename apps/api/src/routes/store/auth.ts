@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import { z } from 'zod';
 import { STORE_API_ROUTES, STORE_ROLES } from '../../constants/store-api-routes.constants.js';
 import { sessionPayloadForStoreStaff } from '../../constants/rbac-helpers.js';
+import { enrichWithProfileImageUrl, storeStaffProfileImagePath } from '../../utils/profile-image-url.js';
 import { prisma } from '../../db.js';
 import { asyncRoute } from '../../utils/helpers.js';
 import { signStoreToken } from './shared.js';
@@ -36,19 +37,24 @@ async function loginStoreStaffByEmail(email: string, password: string) {
     role: staff.role,
     staffCode: staff.staffCode,
     storeId: staff.storeId,
-    storeName: staff.store.name
+    storeName: staff.store.name,
+    profileImageKey: staff.profileImageKey
   });
 
   return {
     token,
-    staff: {
-      id: staff.id,
-      name: staff.name,
-      role: staff.role,
-      staffCode: staff.staffCode,
-      storeId: staff.storeId,
-      storeName: staff.store.name
-    },
+    staff: enrichWithProfileImageUrl(
+      {
+        id: staff.id,
+        name: staff.name,
+        role: staff.role,
+        staffCode: staff.staffCode,
+        storeId: staff.storeId,
+        storeName: staff.store.name,
+        profileImageKey: staff.profileImageKey
+      },
+      storeStaffProfileImagePath
+    ),
     ...session
   };
 }

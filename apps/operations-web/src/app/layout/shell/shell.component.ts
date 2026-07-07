@@ -1,8 +1,9 @@
 import { Component, computed, inject, signal, OnInit } from '@angular/core';
-import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
+import { RouterLink, RouterOutlet, RouterLinkActive } from '@angular/router';
 import { RoleTaskGuideComponent, NotificationBellHostComponent } from '@vitalis/platform-ui';
 import { environment } from '../../../environments/environment';
 import { AUTH_TOKEN_KEY } from '../../core/constants/auth.constants';
+import { ROUTE_PATHS } from '../../core/constants/app-routes.constants';
 import { PlatformAuthService } from '../../services/platform-auth.service';
 
 @Component({
@@ -15,6 +16,7 @@ import { PlatformAuthService } from '../../services/platform-auth.service';
 export class ShellComponent implements OnInit {
   auth = inject(PlatformAuthService);
   sidebarOpen = signal(false);
+  readonly accountPath = `/${ROUTE_PATHS.ACCOUNT}`;
 
   readonly bellConfig = computed(() => ({
     apiBase: environment.apiUrl,

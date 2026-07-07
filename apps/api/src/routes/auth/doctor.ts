@@ -13,6 +13,7 @@ import {
 } from '../../constants/homeopathic-doctor-types.js';
 import { assertMethodOptionId } from '../../services/doctor-prescribing-preferences.js';
 import { asyncRoute, publicUserSelect, toAuthResponse, logAuthEvent } from '../../utils/helpers.js';
+import { enrichWithProfileImageUrl, userProfileImagePath } from '../../utils/profile-image-url.js';
 
 export function registerAuthDoctorRoutes(router: Router) {
 router.post(
@@ -66,6 +67,7 @@ router.get(
       where: { id: req.user!.id },
       select: {
         ...publicUserSelect,
+        profileImageKey: true,
         isActive: true,
         doctorProfile: { select: doctorProfileSelect }
       }
@@ -81,7 +83,12 @@ router.get(
         }
       : null;
 
-    res.json({ profile: { ...profile, doctorProfile } });
+    res.json({
+      profile: enrichWithProfileImageUrl(
+        { ...profile, doctorProfile },
+        userProfileImagePath
+      )
+    });
   })
 );
 
@@ -152,6 +159,7 @@ router.put(
       },
       select: {
         ...publicUserSelect,
+        profileImageKey: true,
         isActive: true,
         doctorProfile: { select: doctorProfileSelect }
       }
@@ -165,7 +173,12 @@ router.put(
         }
       : null;
 
-    res.json({ profile: { ...updated, doctorProfile } });
+    res.json({
+      profile: enrichWithProfileImageUrl(
+        { ...updated, doctorProfile },
+        userProfileImagePath
+      )
+    });
   })
 );
 

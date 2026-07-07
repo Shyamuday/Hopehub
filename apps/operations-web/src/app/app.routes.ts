@@ -32,6 +32,10 @@ export const routes: Routes = [
           import('./pages/home-redirect/home-redirect.component').then((m) => m.HomeRedirectComponent)
       },
       {
+        path: ROUTE_PATHS.ACCOUNT,
+        loadComponent: () => import('./pages/account/account.component').then((m) => m.AccountComponent)
+      },
+      {
         path: ROUTE_PATHS.DASHBOARD,
         canActivate: [capabilityGuard],
         loadComponent: () => import('./pages/dashboard/dashboard.component').then((m) => m.DashboardComponent)

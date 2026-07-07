@@ -154,6 +154,12 @@
   margin-bottom: 1rem;
 }
 
+.profile-hdr-main {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
 .profile-hdr h2,
 .side-panel h3 {
   font-size: 1.1rem;

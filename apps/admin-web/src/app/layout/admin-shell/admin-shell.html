@@ -9,9 +9,9 @@
 
       <div class="topbar-actions">
         <app-notification-bell-host [config]="bellConfig" />
+        <a class="account-link" [routerLink]="accountPath">Account</a>
         <button type="button" class="logout-btn" (click)="logout()">Logout</button>
-      </div>
-    </div>
+      </div>    </div>
   </header>
 
   <section class="content">

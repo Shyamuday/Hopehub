@@ -68,6 +68,7 @@ model Store {
 model StoreStaff {
   id               String         @id @default(cuid())
   name             String
+  profileImageKey  String?
   staffCode        String         @unique
   employeeId       String?        @unique
   pinHash          String

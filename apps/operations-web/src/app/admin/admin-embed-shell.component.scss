@@ -60,6 +60,7 @@
   margin-left: auto;
 }
 
+.account-link,
 .logout-btn {
   border: 0;
   border-radius: 8px;
@@ -69,8 +70,10 @@
   color: #fff;
   font-weight: 600;
   font-size: 0.86rem;
+  text-decoration: none;
 }
 
+.account-link:hover,
 .logout-btn:hover {
   background: rgba(255, 255, 255, 0.16);
 }

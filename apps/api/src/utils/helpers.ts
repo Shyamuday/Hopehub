@@ -119,7 +119,8 @@ export const patientProfileSelect = {
   constitutionalNotes: true,
   skinHairNailNotes: true,
   weatherSensitivity: true,
-  passwordHash: true
+  passwordHash: true,
+  profileImageKey: true
 } as const;
 
 export function logAuthEvent(

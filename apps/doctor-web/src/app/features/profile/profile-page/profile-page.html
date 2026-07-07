@@ -1,9 +1,20 @@
 <section class="profile-card">
-  <h2>Doctor Profile</h2>
-
-  @if (isLoading) {
-    <p class="loading-text">Loading profile...</p>
-  }
+  <div class="profile-top">
+    <vitalis-profile-avatar-upload
+      [apiBase]="apiBase"
+      [tokenKey]="authTokenKey"
+      [displayName]="profileModel().name || 'Doctor'"
+      [profileImageUrl]="profileImageUrl"
+      [uploadPath]="profileImageUploadPath"
+      (profileImageChange)="onProfileImageChange($event)"
+    />
+    <div>
+      <h2>Doctor Profile</h2>
+      @if (isLoading) {
+        <p class="loading-text">Loading profile...</p>
+      }
+    </div>
+  </div>
 
   @if (doctorTypeLabel) {
     <div class="role-banner">

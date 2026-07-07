@@ -29,7 +29,8 @@ export const ROUTE_PATHS = {
   CLAIMS: 'claims',
   STORE: 'store',
   STORE_MANAGER: 'store-manager',
-  SCAN: 'scan'
+  SCAN: 'scan',
+  ACCOUNT: 'account'
 } as const;
 
 export const STORE_COUNTER_PATHS = {

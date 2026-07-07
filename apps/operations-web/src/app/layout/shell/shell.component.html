@@ -24,13 +24,13 @@
         </nav>
 
         <div class="sidebar-footer">
-          <div class="user-info">
+          <a class="user-info" [routerLink]="accountPath" (click)="sidebarOpen.set(false)">
             <div class="user-avatar">{{ userInitial() }}</div>
             <div class="user-details">
               <div class="user-name">{{ auth.currentUser()?.name }}</div>
               <div class="user-role">{{ roleLabel() }}</div>
             </div>
-          </div>
+          </a>
           <button class="logout-btn" (click)="auth.logout()" title="Logout">⬡</button>
         </div>
       </aside>
@@ -45,10 +45,10 @@
           <div class="topbar-title">{{ pageTitle() }}</div>
           <div class="topbar-right">
             <app-notification-bell-host [config]="bellConfig()" />
-            <div class="topbar-user">
+            <a class="topbar-user" [routerLink]="accountPath">
               <div class="topbar-avatar">{{ userInitial() }}</div>
               <span class="topbar-name">{{ auth.currentUser()?.name }}</span>
-            </div>
+            </a>
             <button class="topbar-logout" (click)="auth.logout()" title="Logout">
               <span>⏻</span>
             </button>

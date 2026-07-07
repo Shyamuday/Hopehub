@@ -21,15 +21,20 @@ import {
   sessionPayloadForUser
 } from '../../constants/rbac-helpers.js';
 import { attachStaffProfile } from '../../staff-profile.js';
+import { enrichWithProfileImageUrl, userProfileImagePath } from '../../utils/profile-image-url.js';
 
 function serializePatientProfile(user: {
   passwordHash?: string | null;
   dateOfBirth?: Date | null;
+  profileImageKey?: string | null;
   [key: string]: unknown;
 }) {
-  const { passwordHash, dateOfBirth, ...rest } = user;
+  const { passwordHash, dateOfBirth, profileImageKey, ...rest } = user;
   return {
-    ...rest,
+    ...enrichWithProfileImageUrl(
+      { ...rest, id: String(rest.id), profileImageKey },
+      userProfileImagePath
+    ),
     dateOfBirth: formatDateOfBirth(dateOfBirth ?? null),
     hasPassword: Boolean(passwordHash)
   };
@@ -37,8 +42,22 @@ function serializePatientProfile(user: {
 
 export function registerAuthProfileRoutes(router: Router) {
   router.get('/me', authRequired, asyncRoute(async (req, res) => {
-    const withProfile = await attachStaffProfile(req.user!);
-    res.json(sessionPayloadForUser(withProfile));
+    const userRow = await prisma.user.findUniqueOrThrow({
+      where: { id: req.user!.id },
+      select: {
+        id: true,
+        name: true,
+        role: true,
+        email: true,
+        mobile: true,
+        patientCode: true,
+        profileImageKey: true
+      }
+    });
+    const withProfile = await attachStaffProfile(userRow);
+    const payload = sessionPayloadForUser(withProfile);
+    payload.user = enrichWithProfileImageUrl(withProfile, userProfileImagePath);
+    res.json(payload);
   }));
 
   router.get('/capabilities', authRequired, asyncRoute(async (req, res) => {

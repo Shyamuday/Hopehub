@@ -1,0 +1,42 @@
+<section class="account-page">
+  <h1>My account</h1>
+  <p class="sub">Update your profile photo and review your sign-in details.</p>
+
+  @if (loading()) {
+    <p class="loading-text">Loading account…</p>
+  } @else {
+    <div class="account-card">
+      <vitalis-profile-avatar-upload
+        [apiBase]="apiBase"
+        [tokenKey]="authTokenKey"
+        [displayName]="displayName()"
+        [profileImageUrl]="profileImageUrl()"
+        [uploadPath]="uploadPath"
+        (profileImageChange)="onProfileImageChange($event)"
+      />
+
+      <dl class="account-meta">
+        <div>
+          <dt>Name</dt>
+          <dd>{{ displayName() }}</dd>
+        </div>
+        @if (email()) {
+          <div>
+            <dt>Email</dt>
+            <dd>{{ email() }}</dd>
+          </div>
+        }
+        <div>
+          <dt>Role</dt>
+          <dd>{{ roleLabel() }}</dd>
+        </div>
+        @if (isStoreSession() && storeName()) {
+          <div>
+            <dt>Store</dt>
+            <dd>{{ storeName() }}</dd>
+          </div>
+        }
+      </dl>
+    </div>
+  }
+</section>

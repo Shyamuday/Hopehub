@@ -5,6 +5,7 @@ export const API_PATHS = {
   DOCTOR: {
     WORKLIST: CROSS_APP_API_PATHS.DOCTOR.WORKLIST,
     PROFILE: '/doctor/profile',
+    PROFILE_IMAGE: '/me/profile-image',
     PAYMENTS_SUMMARY: '/doctor/payments/summary',
     MY_PAYSLIP: '/doctor/my-payslip',
     SLOTS: '/doctor/slots',

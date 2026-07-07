@@ -11,6 +11,7 @@ export type StaffUser = {
   email?: string | null;
   mobile?: string | null;
   role: string;
+  profileImageUrl?: string | null;
   staffProfile?: StaffProfileSummary | null;
 };
 

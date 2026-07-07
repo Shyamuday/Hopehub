@@ -65,6 +65,7 @@ model User {
   role                Role
   isActive            Boolean        @default(true)
   patientCode         String?        @unique
+  profileImageKey     String?
   homeClinicStoreId   String?
   homeClinicStore     Store?         @relation("PatientHomeClinic", fields: [homeClinicStoreId], references: [id])
   allergies           String?

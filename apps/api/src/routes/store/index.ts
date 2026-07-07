@@ -15,6 +15,7 @@ import { registerStoreStockTransferRoutes } from './stock-transfers.js';
 import { registerStoreDeliveryRoutes } from './deliveries.js';
 import { registerStoreStockRoutes } from './stock.js';
 import { registerStoreNotificationRoutes } from './notifications.js';
+import { registerStoreProfileImageRoutes } from '../auth/profile-image.js';
 
 export const storeRouter = Router();
 
@@ -34,3 +35,4 @@ registerStorePatientRoutes(storeRouter);
 registerStoreScanRoutes(storeRouter);
 registerStoreHrRoutes(storeRouter);
 registerStoreNotificationRoutes(storeRouter);
+registerStoreProfileImageRoutes(storeRouter);

@@ -1,0 +1,47 @@
+.account-page {
+  max-width: 40rem;
+}
+
+.account-page h1 {
+  margin: 0 0 0.35rem;
+}
+
+.sub,
+.loading-text {
+  margin: 0 0 1rem;
+  color: #64748b;
+}
+
+.account-card {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.account-meta {
+  margin: 0;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.account-meta div {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.account-meta dt {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #64748b;
+}
+
+.account-meta dd {
+  margin: 0;
+  font-weight: 600;
+  color: #0f172a;
+}

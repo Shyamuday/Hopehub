@@ -251,5 +251,10 @@ export const ADMIN_CHILD_ROUTES: Routes = [
     canActivate: guard,
     loadComponent: () =>
       import('@vitalis/admin-console/features/content/chat-inbox-page/chat-inbox-page').then((m) => m.ChatInboxPage)
+  },
+  {
+    path: ROUTE_PATHS.ACCOUNT,
+    loadComponent: () =>
+      import('@vitalis/admin-console/features/account/account-page/account-page').then((m) => m.AccountPage)
   }
 ];

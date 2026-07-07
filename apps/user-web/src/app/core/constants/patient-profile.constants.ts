@@ -98,6 +98,7 @@ export type PatientProfile = {
   mobile?: string | null;
   alternateMobile?: string | null;
   patientCode?: string | null;
+  profileImageUrl?: string | null;
   hasPassword?: boolean;
   homeClinicStore?: { id: string; name: string; code: string; address?: string | null } | null;
   dateOfBirth?: string | null;

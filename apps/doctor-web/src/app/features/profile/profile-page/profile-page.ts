@@ -2,8 +2,10 @@ import { HttpClient } from '@angular/common/http';
 import { Component, inject, signal } from '@angular/core';
 import { form, FormField } from '@angular/forms/signals';
 import { firstValueFrom } from 'rxjs';
+import { ProfileAvatarUploadComponent } from '@vitalis/platform-ui';
 import { environment } from '../../../../environments/environment';
 import { API_PATHS } from '../../../core/constants/api-paths.constants';
+import { AUTH_TOKEN_KEY } from '../../../core/constants/auth.constants';
 import type { DoctorProfileSummary } from '../../../core/constants/doctor-types.constants';
 import { DoctorSessionService } from '../../../core/services/doctor-session';
 
@@ -24,14 +26,17 @@ function emptyProfileModel() {
 
 @Component({
   selector: 'app-profile-page',
-  imports: [FormField],
+  imports: [FormField, ProfileAvatarUploadComponent],
   templateUrl: './profile-page.html',
   styleUrl: './profile-page.scss'
 })
 export class ProfilePage {
   private readonly http = inject(HttpClient);
   private readonly session = inject(DoctorSessionService);
-  private readonly apiBase = environment.apiUrl;
+  readonly apiBase = environment.apiUrl;
+  readonly authTokenKey = AUTH_TOKEN_KEY;
+  readonly profileImageUploadPath = API_PATHS.DOCTOR.PROFILE_IMAGE;
+  profileImageUrl: string | null = null;
 
   readonly profileModel = signal(emptyProfileModel());
   readonly profileForm = form(this.profileModel);
@@ -89,11 +94,16 @@ export class ProfilePage {
       this.doctorTypeLabel = profile.doctorProfile?.doctorTypeLabel || 'Doctor';
       this.specialtyFocusLabel = profile.doctorProfile?.specialtyFocusLabel || '';
       this.showOnWebsite = profile.doctorProfile?.showOnWebsite ?? false;
+      this.profileImageUrl = (profile as { profileImageUrl?: string | null }).profileImageUrl ?? null;
     } catch {
       this.error = 'Could not load profile.';
     } finally {
       this.isLoading = false;
     }
+  }
+
+  onProfileImageChange(profileImageUrl: string | null) {
+    this.profileImageUrl = profileImageUrl;
   }
 
   async saveProfile() {
