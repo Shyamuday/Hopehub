@@ -22,3 +22,10 @@ export {
   type PatientClinicalProfile
 } from './detail-rows/patient-clinical-profile.fields';
 export { HR_LETTER_META_FIELDS, hrLetterMetaRows, type HrLetterMeta } from './detail-rows/hr-letter-meta.fields';
+export {
+  clinicalRecordsQuery,
+  doctorAppointmentUrl,
+  doctorCaseAnalysisUrl,
+  type ClinicalRecordsQuery,
+  type CrossAppOrigins
+} from './cross-app-links/cross-app-links';

@@ -5,3 +5,25 @@
 @use './styles/buttons' as *;
 @use './styles/modal' as *;
 @use './styles/toast' as *;
+
+.cross-links {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-top: 0.35rem;
+}
+
+.cross-link {
+  font-size: 0.72rem;
+  color: #5eead4;
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+
+  &.external::after {
+    content: ' ↗';
+    font-size: 0.65rem;
+  }
+}

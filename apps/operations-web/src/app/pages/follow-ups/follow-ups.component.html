@@ -47,6 +47,13 @@
               <div class="card-title">{{ alert.patientName }} · {{ alert.patientCode ?? '—' }}</div>
               <div class="card-msg">{{ alert.message }}</div>
               <div class="card-meta">{{ alert.adherencePercent }}% adherence</div>
+              <div class="card-actions">
+                <a class="cross-link" [routerLink]="consumersPath" [queryParams]="consumerQuery(alert.patientId)">Consumer</a>
+                <a class="cross-link" [routerLink]="clinicalRecordsPath" [queryParams]="clinicalQuery(alert.patientId)">Clinical records</a>
+                @if (alert.patientCode) {
+                  <a class="cross-link" [routerLink]="scanPath" [queryParams]="scanQuery(alert.patientCode)">Scan patient</a>
+                }
+              </div>
             </div>
           }
         </div>
@@ -64,6 +71,7 @@
                 <th>Mobile</th>
                 <th class="num">Adherence</th>
                 <th class="num">Trend</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -78,6 +86,13 @@
                       {{ row.trendDelta > 0 ? '+' : '' }}{{ row.trendDelta }}%
                     } @else {
                       —
+                    }
+                  </td>
+                  <td class="actions-cell">
+                    <a class="cross-link" [routerLink]="consumersPath" [queryParams]="consumerQuery(row.patientId)">Consumer</a>
+                    <a class="cross-link" [routerLink]="clinicalRecordsPath" [queryParams]="clinicalQuery(row.patientId)">Clinical</a>
+                    @if (row.patientCode) {
+                      <a class="cross-link" [routerLink]="scanPath" [queryParams]="scanQuery(row.patientCode)">Scan</a>
                     }
                   </td>
                 </tr>

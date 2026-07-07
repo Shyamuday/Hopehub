@@ -191,5 +191,65 @@ export const ADMIN_CHILD_ROUTES: Routes = [
     canActivate: guard,
     loadComponent: () =>
       import('@vitalis/admin-console/features/staff/staff-page/staff-page').then((m) => m.StaffPage)
+  },
+  {
+    path: ROUTE_PATHS.RATES,
+    canActivate: guard,
+    loadComponent: () =>
+      import('@vitalis/admin-console/features/rates/rates-page/rates-page').then((m) => m.RatesPage)
+  },
+  {
+    path: ROUTE_PATHS.REWARDS,
+    canActivate: guard,
+    loadComponent: () =>
+      import('@vitalis/admin-console/features/rewards/rewards-page/rewards-page').then((m) => m.RewardsPage)
+  },
+  {
+    path: ROUTE_PATHS.CLINICAL_RECORDS,
+    canActivate: guard,
+    loadComponent: () =>
+      import('@vitalis/admin-console/features/clinical-records/clinical-records-page/clinical-records-page').then(
+        (m) => m.ClinicalRecordsPage
+      )
+  },
+  {
+    path: ROUTE_PATHS.VACANCIES,
+    canActivate: guard,
+    loadComponent: () =>
+      import('@vitalis/admin-console/features/vacancies/vacancies-page/vacancies-page').then((m) => m.VacanciesPage)
+  },
+  {
+    path: ROUTE_PATHS.TESTIMONIALS,
+    canActivate: guard,
+    loadComponent: () =>
+      import('@vitalis/admin-console/features/content/testimonials-page/testimonials-page').then(
+        (m) => m.TestimonialsPage
+      )
+  },
+  {
+    path: ROUTE_PATHS.FAQ,
+    canActivate: guard,
+    loadComponent: () =>
+      import('@vitalis/admin-console/features/content/faq-page/faq-page').then((m) => m.FaqPage)
+  },
+  {
+    path: ROUTE_PATHS.BLOG,
+    canActivate: guard,
+    loadComponent: () =>
+      import('@vitalis/admin-console/features/content/blog-page/blog-page').then((m) => m.BlogPage)
+  },
+  {
+    path: ROUTE_PATHS.SITE_CONFIG,
+    canActivate: guard,
+    loadComponent: () =>
+      import('@vitalis/admin-console/features/content/site-config-page/site-config-page').then(
+        (m) => m.SiteConfigPage
+      )
+  },
+  {
+    path: ROUTE_PATHS.CHAT_INBOX,
+    canActivate: guard,
+    loadComponent: () =>
+      import('@vitalis/admin-console/features/content/chat-inbox-page/chat-inbox-page').then((m) => m.ChatInboxPage)
   }
 ];

@@ -77,6 +77,15 @@
                       <button class="btn-reassign" (click)="openAssign(c)">Reassign</button>
                     }
                     <button class="btn-reassign" (click)="openStatus(c)">Status</button>
+                    @if (c.patient?.id) {
+                      <div class="cross-links">
+                        <a class="cross-link" [routerLink]="clinicalRecordsRoute" [queryParams]="clinicalQuery(c)">Clinical records</a>
+                        @if (showDoctorLinks(c.status)) {
+                          <a class="cross-link external" [href]="doctorAppointmentLink(c.id)" target="_blank" rel="noopener">Doctor app</a>
+                          <a class="cross-link external" [href]="doctorCaseAnalysisLink(c.id)" target="_blank" rel="noopener">Case analysis</a>
+                        }
+                      </div>
+                    }
                   </td>
                 </tr>
               }

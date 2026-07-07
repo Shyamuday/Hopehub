@@ -18,6 +18,10 @@
 .card-title { font-weight: 600; }
 .card-msg { color: #475569; margin-top: 0.25rem; font-size: 0.9rem; }
 .card-meta { color: #64748b; font-size: 0.8rem; margin-top: 0.35rem; }
+.card-actions { display: flex; flex-wrap: wrap; gap: 0.65rem; margin-top: 0.5rem; }
+.actions-cell { white-space: nowrap; }
+.cross-link { font-size: 0.8rem; color: #0f766e; text-decoration: none; margin-right: 0.65rem; }
+.cross-link:hover { text-decoration: underline; }
 .empty { color: #64748b; }
 .btn-refresh, .retry-btn { border-radius: 8px; padding: 0.5rem 0.85rem; cursor: pointer; border: 1px solid #cbd5e1; background: #fff; }
 .error-row { display: flex; align-items: center; gap: 0.75rem; }

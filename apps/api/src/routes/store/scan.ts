@@ -45,6 +45,8 @@ export function registerStoreScanRoutes(router: Router) {
           where: { patientId: patient.id, status: PrescriptionStatus.PUBLISHED },
           orderBy: { createdAt: 'desc' },
           include: {
+            uploadedBy: { select: { id: true, name: true } },
+            methodOption: { select: { id: true, label: true } },
             items: {
               orderBy: { sortOrder: 'asc' },
               select: {
@@ -89,6 +91,8 @@ export function registerStoreScanRoutes(router: Router) {
           ? {
               id: latestPrescription.id,
               diagnosis: latestPrescription.diagnosis,
+              doctor: latestPrescription.uploadedBy,
+              methodOption: latestPrescription.methodOption,
               items: latestPrescription.items
             }
           : null

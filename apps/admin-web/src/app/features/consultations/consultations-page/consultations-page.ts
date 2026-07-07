@@ -1,7 +1,15 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
 import { form, FormField } from '@angular/forms/signals';
 import { DatePipe } from '@angular/common';
+import { RouterLink } from '@angular/router';
+import {
+  clinicalRecordsQuery,
+  doctorAppointmentUrl,
+  doctorCaseAnalysisUrl
+} from '@vitalis/platform-ui';
 import { AdminApi } from '../../../core/services/admin-api';
+import { adminRouteLink, ROUTE_PATHS } from '../../../core/constants/app-routes.constants';
+import { environment } from '../../../../environments/environment';
 import {
   CONSULTATION_PAYMENT_STYLES,
   CONSULTATION_STATUS_FALLBACK_STYLE,
@@ -10,12 +18,15 @@ import {
 
 @Component({
   selector: 'app-consultations-page',
-  imports: [FormField, DatePipe],
+  imports: [FormField, DatePipe, RouterLink],
   templateUrl: './consultations-page.html',
   styleUrl: './consultations-page.scss'
 })
 export class ConsultationsPage implements OnInit {
   private api = inject(AdminApi);
+
+  readonly clinicalRecordsRoute = adminRouteLink(ROUTE_PATHS.CLINICAL_RECORDS);
+  readonly doctorOrigins = { doctor: environment.doctorAppUrl };
 
   consultations = signal<any[]>([]);
   loading = signal(true);
@@ -193,5 +204,25 @@ export class ConsultationsPage implements OnInit {
   private showToast(msg: string): void {
     this.toast.set(msg);
     setTimeout(() => this.toast.set(''), 2500);
+  }
+
+  clinicalQuery(consultation: { id: string; patient?: { id?: string } | null }, tab: 'prescriptions' | 'analyses' = 'prescriptions') {
+    return clinicalRecordsQuery({
+      tab,
+      patientId: consultation.patient?.id,
+      consultationId: consultation.id
+    });
+  }
+
+  doctorAppointmentLink(consultationId: string) {
+    return doctorAppointmentUrl(this.doctorOrigins, consultationId);
+  }
+
+  doctorCaseAnalysisLink(consultationId: string) {
+    return doctorCaseAnalysisUrl(this.doctorOrigins, consultationId);
+  }
+
+  showDoctorLinks(status: string) {
+    return ['ASSIGNED', 'IN_PROGRESS', 'PRESCRIPTION_UPLOADED', 'COMPLETED'].includes(status);
   }
 }

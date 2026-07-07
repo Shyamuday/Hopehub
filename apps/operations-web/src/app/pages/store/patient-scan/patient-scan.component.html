@@ -57,6 +57,16 @@
       <section class="rx-list">
         <h3>Current prescription</h3>
         <p class="diagnosis">{{ result.prescription!.diagnosis }}</p>
+        @if (result.prescription!.doctor?.name || result.prescription!.methodOption?.label) {
+          <p class="rx-meta">
+            @if (result.prescription!.doctor?.name) {
+              Prescribed by <strong>{{ result.prescription!.doctor!.name }}</strong>
+            }
+            @if (result.prescription!.methodOption?.label) {
+              · Approach: {{ result.prescription!.methodOption!.label }}
+            }
+          </p>
+        }
         @for (item of result.prescription!.items; track item.medicineName) {
           <div class="rx-item">
             <strong>{{ item.medicineName }}</strong>

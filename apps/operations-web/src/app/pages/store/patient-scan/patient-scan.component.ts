@@ -27,6 +27,8 @@ type ScanResponse = {
   prescription?: {
     id: string;
     diagnosis: string;
+    doctor?: { id: string; name: string } | null;
+    methodOption?: { id: string; label: string } | null;
     items: Array<{
       medicineName: string;
       strength?: string | null;

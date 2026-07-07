@@ -27,7 +27,16 @@ export const ADMIN_ROUTE_CAPABILITIES: Record<string, string> = {
   analytics: 'admin.dashboard',
   finance: 'admin.finance',
   staff: 'admin.users',
-  payroll: 'admin.finance'
+  payroll: 'admin.finance',
+  rates: 'admin.finance',
+  rewards: 'admin.consumers',
+  'clinical-records': 'admin.consumers',
+  vacancies: 'admin.dashboard',
+  testimonials: 'admin.dashboard',
+  faq: 'admin.dashboard',
+  blog: 'admin.dashboard',
+  'site-config': 'admin.dashboard',
+  'chat-inbox': 'admin.dashboard'
 };
 
 export const adminSectionGuard: CanActivateFn = () => {

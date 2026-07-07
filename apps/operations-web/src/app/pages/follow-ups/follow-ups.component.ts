@@ -1,16 +1,22 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
 import { form, FormField } from '@angular/forms/signals';
+import { RouterLink } from '@angular/router';
+import { clinicalRecordsQuery } from '@vitalis/platform-ui';
 import { CoordinatorApiService } from '../../services/coordinator-api.service';
 
 @Component({
   selector: 'app-follow-ups',
   standalone: true,
-  imports: [FormField],
+  imports: [FormField, RouterLink],
   templateUrl: './follow-ups.component.html',
   styleUrl: './follow-ups.component.scss'
 })
 export class FollowUpsComponent implements OnInit {
   private api = inject(CoordinatorApiService);
+
+  readonly clinicalRecordsPath = '/admin/clinical-records';
+  readonly consumersPath = '/admin/consumers';
+  readonly scanPath = '/admin/scan';
 
   loading = signal(true);
   error = signal('');
@@ -46,5 +52,17 @@ export class FollowUpsComponent implements OnInit {
     const tab = this.activeTab();
     if (tab === 'ALERTS') return [];
     return this.cohort(tab);
+  }
+
+  consumerQuery(patientId: string) {
+    return { consumerId: patientId };
+  }
+
+  clinicalQuery(patientId: string) {
+    return clinicalRecordsQuery({ tab: 'prescriptions', patientId });
+  }
+
+  scanQuery(patientCode?: string | null) {
+    return patientCode ? { patientCode } : {};
   }
 }

@@ -3,6 +3,11 @@ import { form, FormField } from '@angular/forms/signals';
 import { DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { httpResource } from '@angular/common/http';
+import {
+  clinicalRecordsQuery,
+  doctorAppointmentUrl,
+  doctorCaseAnalysisUrl
+} from '@vitalis/platform-ui';
 import { environment } from '../../../environments/environment';
 import { API_PATHS } from '../../core/constants/api-paths.constants';
 import { ROUTE_PATHS } from '../../core/constants/app-routes.constants';
@@ -30,6 +35,9 @@ export class QueueComponent implements OnInit {
   private api = inject(ReceptionApiService);
 
   readonly visitorLeadsPath = `/${ROUTE_PATHS.VISITOR_LEADS}`;
+  readonly clinicalRecordsPath = '/admin/clinical-records';
+  readonly consumersPath = '/admin/consumers';
+  readonly doctorOrigins = { doctor: environment.doctorAppUrl };
   readonly leadStats = signal<{ needsCallback: number; newLeads: number } | null>(null);
 
   readonly statusFilter = signal('');
@@ -137,5 +145,29 @@ export class QueueComponent implements OnInit {
   private showToast(msg: string): void {
     this.toast.set(msg);
     setTimeout(() => this.toast.set(''), 2500);
+  }
+
+  clinicalQuery(item: QueueConsultation, tab: 'prescriptions' | 'analyses' = 'prescriptions') {
+    return clinicalRecordsQuery({
+      tab,
+      patientId: item.patient?.id,
+      consultationId: item.id
+    });
+  }
+
+  consumerQuery(patientId: string) {
+    return { consumerId: patientId };
+  }
+
+  doctorAppointmentLink(consultationId: string) {
+    return doctorAppointmentUrl(this.doctorOrigins, consultationId);
+  }
+
+  doctorCaseAnalysisLink(consultationId: string) {
+    return doctorCaseAnalysisUrl(this.doctorOrigins, consultationId);
+  }
+
+  showDoctorLinks(status: string) {
+    return ['ASSIGNED', 'IN_PROGRESS', 'PRESCRIPTION_UPLOADED', 'COMPLETED'].includes(status);
   }
 }

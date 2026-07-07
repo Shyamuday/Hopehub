@@ -71,6 +71,16 @@
                 {{ c.assignedDoctor ? 'Reassign' : 'Assign doctor' }}
               </button>
             }
+            @if (c.patient?.id) {
+              <div class="cross-links">
+                <a class="cross-link" [routerLink]="consumersPath" [queryParams]="consumerQuery(c.patient.id)">Consumer profile</a>
+                <a class="cross-link" [routerLink]="clinicalRecordsPath" [queryParams]="clinicalQuery(c)">Clinical records</a>
+                @if (showDoctorLinks(c.status)) {
+                  <a class="cross-link external" [href]="doctorAppointmentLink(c.id)" target="_blank" rel="noopener">Doctor app</a>
+                  <a class="cross-link external" [href]="doctorCaseAnalysisLink(c.id)" target="_blank" rel="noopener">Case analysis</a>
+                }
+              </div>
+            }
           </div>
         </div>
       }

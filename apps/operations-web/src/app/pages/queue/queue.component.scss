@@ -36,7 +36,11 @@
 .name { font-weight: 700; }
 .meta, .detail.subtle { color: #64748b; font-size: 0.85rem; }
 .status { font-size: 0.75rem; font-weight: 700; color: #0f766e; }
-.actions { display: flex; gap: 0.5rem; margin-top: 0.75rem; }
+.actions { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.75rem; align-items: flex-start; }
+.cross-links { display: flex; flex-direction: column; gap: 0.2rem; width: 100%; margin-top: 0.25rem; }
+.cross-link { font-size: 0.78rem; color: #0f766e; text-decoration: none; }
+.cross-link:hover { text-decoration: underline; }
+.cross-link.external::after { content: ' ↗'; font-size: 0.7rem; }
 .modal-backdrop { position: fixed; inset: 0; background: rgba(15,23,42,0.45); display: grid; place-items: center; z-index: 50; }
 .modal {
   background: #fff;
