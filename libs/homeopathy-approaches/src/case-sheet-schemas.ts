@@ -103,6 +103,14 @@ const HYBRID_FIELDS: CaseSheetFieldDef[] = [
   { key: 'chiefComplaint', label: 'Chief complaint summary', rows: 2 }
 ];
 
+const ORGANON_LM_FIELDS: CaseSheetFieldDef[] = [
+  { key: 'baselineTotality', label: 'Baseline totality summary', rows: 4, wide: true },
+  { key: 'vitalitySensitivity', label: 'Vitality & sensitivity profile', rows: 3, wide: true, hint: 'Assess if patient is hypersensitive, depleted, or robust before LM dosing.' },
+  { key: 'previousPotencyResponse', label: 'Previous potency / remedy response', rows: 3 },
+  { key: 'aggravationHistory', label: 'Aggravation / proving history', rows: 2 },
+  { key: 'followUpObservations', label: 'Follow-up observations to monitor', rows: 3 }
+];
+
 export const CASE_SHEET_SCHEMAS: Record<CaseSheetSchemaId, CaseSheetFieldDef[]> = {
   classical: CLASSICAL_FIELDS,
   'eight-box': EIGHT_BOX_FIELDS,
@@ -114,7 +122,8 @@ export const CASE_SHEET_SCHEMAS: Record<CaseSheetSchemaId, CaseSheetFieldDef[]> 
   miasmatic: MIASMATIC_FIELDS,
   protocol: PROTOCOL_FIELDS,
   clinical: CLINICAL_FIELDS,
-  hybrid: HYBRID_FIELDS
+  hybrid: HYBRID_FIELDS,
+  'organon-lm': ORGANON_LM_FIELDS
 };
 
 export function caseSheetFieldsForSchema(schemaId: CaseSheetSchemaId): CaseSheetFieldDef[] {

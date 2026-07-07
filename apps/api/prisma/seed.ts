@@ -933,6 +933,8 @@ async function main() {
 
   const defaultMethods = [
     'Classical Homeopathy',
+    '8-Box Case Structure',
+    'Organon LM Method',
     'Clinical Homeopathy',
     'Constitutional Approach',
     'Miasmatic Approach',

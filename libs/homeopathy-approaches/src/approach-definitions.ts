@@ -1,8 +1,10 @@
 import type { ApproachDefinition } from './types';
 import {
+  buildEightBoxWorkflow,
   buildHybridWorkflow,
   buildKentianWorkflow,
   buildMiasmaticWorkflow,
+  buildOrganonLmWorkflow,
   buildProtocolWorkflow,
   buildRepertoryWorkflow,
   buildSensationWorkflow
@@ -37,6 +39,70 @@ export const APPROACH_DEFINITIONS: ApproachDefinition[] = [
       defaultRubricWeight: 2
     },
     prescription: { potencyGuidance: 'Start with moderate potency unless acute intensity demands otherwise.' }
+  },
+  {
+    slug: 'eight-box-case-structure',
+    methodNormalizedLabel: '8-box case structure',
+    title: '8-Box Case Structure',
+    shortDescription:
+      'Structured case-taking across eight clinical boxes before repertorization and prescription.',
+    focus: 'Case documentation and symptom structuring before remedy selection.',
+    bestFor: ['Chronic complex cases', 'Constitutional prescribing', 'Doctor dashboard workflows'],
+    processSteps: [
+      'Capture patient identity and constitution profile',
+      'Record chief complaints with duration and modalities',
+      'Map present illness progression and triggers',
+      'Review past and family history',
+      'Document mental/emotional state and physical generals',
+      'Integrate particulars with investigation and diagnosis',
+      'Convert symptoms to rubrics and repertorize',
+      'Match materia medica and finalize remedy with potency'
+    ],
+    strengths: [
+      'Prevents random prescribing',
+      'Balances mental, physical, and pathology layers',
+      'Maps cleanly to digital case forms'
+    ],
+    limits: ['Not a universal standard in all schools', 'Does not alone define full treatment doctrine'],
+    workflowKind: 'STRUCTURED_CASE',
+    steps: buildEightBoxWorkflow(),
+    caseSheetSchemaId: 'eight-box',
+    repertory: {
+      enabled: true,
+      searchPlaceholder: 'Convert 8-box particulars into rubric search terms…',
+      defaultRubricWeight: 2
+    },
+    prescription: { potencyGuidance: 'Select potency after full 8-box documentation and repertory confirmation.' }
+  },
+  {
+    slug: 'organon-lm',
+    methodNormalizedLabel: 'organon lm method',
+    title: 'Organon LM Method',
+    developedBy: 'Samuel Hahnemann',
+    shortDescription: 'LM (Q) potency method from the 6th edition Organon with gentle, repeatable dosing.',
+    focus: 'Controlled LM repetition with careful response monitoring.',
+    bestFor: ['Sensitive patients', 'Long chronic follow-up', 'Fine dose control'],
+    processSteps: [
+      'Establish baseline totality and vitality',
+      'Select simillimum via repertory',
+      'Plan LM potency and dilution glass',
+      'Use gentle repetition protocol',
+      'Review response and adjust incrementally'
+    ],
+    strengths: ['Gentle action profile', 'Flexible long-term dose management'],
+    limits: ['Needs disciplined follow-up', 'Incorrect repetition can confuse case response'],
+    workflowKind: 'REPERTORY_TOTALITY',
+    steps: buildOrganonLmWorkflow(),
+    caseSheetSchemaId: 'organon-lm',
+    repertory: {
+      enabled: true,
+      searchPlaceholder: 'Search rubrics for baseline totality before LM dosing…',
+      defaultRubricWeight: 2
+    },
+    prescription: {
+      potencyGuidance: 'Use LM (Q) potencies with documented dilution glass, repetition schedule, and aggravation watch.',
+      adviceTemplate: 'LM remedy with gentle repetition per Organon 6th edition protocol. Monitor response before escalating.'
+    }
   },
   {
     slug: 'clinical-homeopathy',

@@ -23,6 +23,8 @@ export function isStepComplete(step: ApproachStep, context: StepCompletionContex
       return hasMiasmaticData(context.approachData);
     case 'protocol-pick':
       return hasProtocolData(context.approachData);
+    case 'lm-dosing':
+      return hasOrganonLmData(context.approachData);
     case 'rubric-search':
       return (context.rubricCount || 0) > 0;
     case 'repertorize':
@@ -65,6 +67,12 @@ function hasProtocolData(approachData?: Record<string, unknown> | null) {
   const protocol = approachData?.['protocol'] as Record<string, string> | undefined;
   if (!protocol) return false;
   return !!protocol['protocolId']?.trim();
+}
+
+function hasOrganonLmData(approachData?: Record<string, unknown> | null) {
+  const organon = approachData?.['organonLm'] as Record<string, string> | undefined;
+  if (!organon) return false;
+  return !!(organon['selectedLmPotency']?.trim() || organon['repetitionSchedule']?.trim());
 }
 
 export function firstIncompleteStepId(

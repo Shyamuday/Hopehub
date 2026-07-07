@@ -14,6 +14,7 @@ import {
   type ApproachStepId,
   type KentHierarchyData,
   type MiasmaticApproachData,
+  type OrganonLmApproachData,
   type ProtocolApproachData,
   type SensationApproachData,
   type StepCompletionContext
@@ -31,6 +32,7 @@ import { KentHierarchyPanelComponent } from '../panels/kent-hierarchy-panel/kent
 import { MiasmLayerPanelComponent } from '../panels/miasm-layer-panel/miasm-layer-panel';
 import { PrescriptionHandoffPanelComponent } from '../panels/prescription-handoff-panel/prescription-handoff-panel';
 import { ProtocolSelectPanelComponent } from '../panels/protocol-select-panel/protocol-select-panel';
+import { OrganonLmDosingPanelComponent } from '../panels/organon-lm-dosing-panel/organon-lm-dosing-panel';
 import { SensationCapturePanelComponent } from '../panels/sensation-capture-panel/sensation-capture-panel';
 import type {
   CaseAnalysis,
@@ -60,7 +62,8 @@ import { formatRubricPath, rubricPathSegments } from '../rubric-path.util';
     SensationCapturePanelComponent,
     MiasmLayerPanelComponent,
     ProtocolSelectPanelComponent,
-    PrescriptionHandoffPanelComponent
+    PrescriptionHandoffPanelComponent,
+    OrganonLmDosingPanelComponent
   ],
   templateUrl: './case-analysis-page.html'
 })
@@ -158,7 +161,10 @@ export class CaseAnalysisPage {
     const component = this.activeStepComponent();
     return (
       this.repertoryEnabled() &&
-      (component === 'repertory-workspace' || component === 'remedy-results' || component === 'analysis-notes')
+      (component === 'repertory-workspace' ||
+        component === 'remedy-results' ||
+        component === 'organon-lm-dosing' ||
+        component === 'analysis-notes')
     );
   }
 
@@ -471,6 +477,10 @@ export class CaseAnalysisPage {
     void this.saveApproachData({ protocol: data });
   }
 
+  saveOrganonLm(data: OrganonLmApproachData) {
+    void this.saveApproachData({ organonLm: data });
+  }
+
   async saveRubrics() {
     const currentAnalysis = this.analysis();
     if (!currentAnalysis) return;
@@ -604,7 +614,8 @@ export class CaseAnalysisPage {
       const updated = await this.api.selectRemedy(currentAnalysis.id, remedy.id);
       this.syncAnalysisInList(updated);
       await this.focusRemedy(remedy);
-      this.setActiveStep('prescribe');
+      const nextStep = this.activeApproach().slug === 'organon-lm' ? 'lm-dosing' : 'prescribe';
+      this.setActiveStep(nextStep);
       this.message.set(`${remedy.name} selected as the case remedy.`);
     } catch {
       this.error.set('Could not select remedy.');
@@ -618,8 +629,20 @@ export class CaseAnalysisPage {
     if (!this.consultationId) return;
 
     const protocol = this.approachData().protocol;
+    const organonLm = this.approachData().organonLm;
     const remedy = currentAnalysis?.selectedRemedy?.name || protocol?.primaryRemedy;
     if (!remedy) return;
+
+    const lmAdvice = organonLm
+      ? [
+          organonLm.selectedLmPotency ? `LM potency: ${organonLm.selectedLmPotency}` : '',
+          organonLm.dilutionGlass ? `Dilution glass: ${organonLm.dilutionGlass}` : '',
+          organonLm.repetitionSchedule ? `Schedule: ${organonLm.repetitionSchedule}` : '',
+          organonLm.responseMonitoring ? `Monitor: ${organonLm.responseMonitoring}` : ''
+        ]
+          .filter(Boolean)
+          .join('. ')
+      : '';
 
     void this.router.navigate(['/', ROUTE_PATHS.APPOINTMENTS], {
       queryParams: {
@@ -627,10 +650,23 @@ export class CaseAnalysisPage {
         caseAnalysisId: currentAnalysis?.id,
         remedy,
         diagnosis: remedy,
+        ...(lmAdvice ? { advice: lmAdvice } : {}),
         ...(protocol?.companionRemedy ? { companionRemedy: protocol.companionRemedy } : {}),
         ...(this.selectedMethodOptionId() ? { methodOptionId: this.selectedMethodOptionId() } : {})
       }
     });
+  }
+
+  organonLmData() {
+    return this.approachData().organonLm || null;
+  }
+
+  caseSheetTitle() {
+    const schema = this.activeApproach().caseSheetSchemaId;
+    if (schema === 'eight-box') return '8-Box case structure';
+    if (schema === 'organon-lm') return 'Baseline case (Organon LM)';
+    if (this.activeApproach().workflowKind === 'PROTOCOL_DRIVEN') return 'Protocol notes';
+    return 'Structured case sheet';
   }
 
   protocolData() {

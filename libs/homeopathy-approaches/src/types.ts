@@ -19,7 +19,8 @@ export type ApproachStepId =
   | 'repertorize'
   | 'remedy-select'
   | 'prescribe'
-  | 'analysis-notes';
+  | 'analysis-notes'
+  | 'lm-dosing';
 
 export type ApproachStepComponent =
   | 'approach-overview'
@@ -32,7 +33,8 @@ export type ApproachStepComponent =
   | 'repertory-workspace'
   | 'remedy-results'
   | 'prescription-handoff'
-  | 'analysis-notes';
+  | 'analysis-notes'
+  | 'organon-lm-dosing';
 
 export type ApproachStep = {
   id: ApproachStepId;
@@ -54,7 +56,8 @@ export type CaseSheetSchemaId =
   | 'miasmatic'
   | 'protocol'
   | 'clinical'
-  | 'hybrid';
+  | 'hybrid'
+  | 'organon-lm';
 
 export type CaseSheetFieldDef = {
   key: string;
@@ -145,12 +148,23 @@ export type HybridApproachData = {
   secondaryNotes: string;
 };
 
+export type OrganonLmApproachData = {
+  baselineVitality: string;
+  sensitivityProfile: string;
+  selectedLmPotency: string;
+  dilutionGlass: string;
+  repetitionSchedule: string;
+  responseMonitoring: string;
+  adjustmentNotes: string;
+};
+
 export type ApproachDataPayload = {
   kentHierarchy?: KentHierarchyData;
   sensation?: SensationApproachData;
   miasmatic?: MiasmaticApproachData;
   protocol?: ProtocolApproachData;
   hybrid?: HybridApproachData;
+  organonLm?: OrganonLmApproachData;
 };
 
 export type BanerjiProtocol = {

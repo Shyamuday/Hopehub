@@ -154,11 +154,20 @@
       @if (showPanel('case-sheet') && !standalone) {
         <app-approach-case-sheet-panel
           [fields]="caseSheetFields()"
-          [title]="activeApproach().workflowKind === 'PROTOCOL_DRIVEN' ? 'Protocol notes' : 'Structured case sheet'"
+          [title]="caseSheetTitle()"
           [description]="'Schema: ' + activeApproach().caseSheetSchemaId + ' — ' + activeApproach().focus"
           [saving]="savingCaseSheet()"
           [caseSheetForm]="caseSheetForm"
           (saveRequested)="saveCaseSheet()"
+        />
+      }
+
+      @if (showPanel('organon-lm-dosing')) {
+        <app-organon-lm-dosing-panel
+          [initial]="organonLmData()"
+          [selectedRemedyName]="analysis.selectedRemedy?.name || ''"
+          [saving]="savingApproachData()"
+          (saveRequested)="saveOrganonLm($event)"
         />
       }
 

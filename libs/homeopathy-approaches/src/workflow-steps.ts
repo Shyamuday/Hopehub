@@ -197,6 +197,93 @@ export function buildProtocolWorkflow(): ApproachStep[] {
   ];
 }
 
+export function buildEightBoxWorkflow(): ApproachStep[] {
+  return [
+    {
+      id: 'approach-select',
+      label: 'Approach',
+      shortLabel: 'Approach',
+      component: 'approach-overview',
+      description: '8-Box structured case taking before repertorization.'
+    },
+    {
+      id: 'case-sheet',
+      label: '8-Box case structure',
+      shortLabel: '8 Boxes',
+      component: 'case-sheet',
+      description: 'Complete all eight clinical boxes: identity, complaints, history, mentals, generals, and particulars.'
+    },
+    ...REPERTORY_WORKFLOW_TAIL,
+    {
+      id: 'analysis-notes',
+      label: 'Notes',
+      shortLabel: 'Notes',
+      component: 'analysis-notes',
+      optional: true
+    }
+  ];
+}
+
+export function buildOrganonLmWorkflow(): ApproachStep[] {
+  return [
+    {
+      id: 'approach-select',
+      label: 'Approach',
+      shortLabel: 'Approach',
+      component: 'approach-overview',
+      description: 'Organon 6th edition / LM (Q) potency method with gentle repetition.'
+    },
+    {
+      id: 'case-sheet',
+      label: 'Baseline case',
+      shortLabel: 'Baseline',
+      component: 'case-sheet',
+      description: 'Establish totality, vitality, and sensitivity before LM remedy selection.'
+    },
+    {
+      id: 'rubric-search',
+      label: 'Symptom rubrics',
+      shortLabel: 'Rubrics',
+      component: 'repertory-workspace',
+      description: 'Build the symptom rubric set for remedy selection.'
+    },
+    {
+      id: 'repertorize',
+      label: 'Repertorize',
+      shortLabel: 'Repertorize',
+      component: 'repertory-workspace'
+    },
+    {
+      id: 'remedy-select',
+      label: 'Select remedy',
+      shortLabel: 'Remedy',
+      component: 'remedy-results',
+      description: 'Confirm the simillimum before planning LM potency.'
+    },
+    {
+      id: 'lm-dosing',
+      label: 'LM dosing plan',
+      shortLabel: 'LM dose',
+      component: 'organon-lm-dosing',
+      description: 'Plan LM potency, dilution glass, repetition, and response monitoring.'
+    },
+    {
+      id: 'prescribe',
+      label: 'Prescription',
+      shortLabel: 'Prescribe',
+      component: 'prescription-handoff',
+      description: 'Hand off to prescription with LM dosing notes.'
+    },
+    {
+      id: 'analysis-notes',
+      label: 'Notes',
+      shortLabel: 'Notes',
+      component: 'analysis-notes',
+      optional: true
+    }
+  ];
+}
+
 export function buildHybridWorkflow(): ApproachStep[] {
   return [
     {

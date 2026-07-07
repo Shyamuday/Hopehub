@@ -1,0 +1,47 @@
+<section class="panel organon-lm-panel">
+  <div class="panel-title-row">
+    <h3>LM dosing plan (Organon 6th ed.)</h3>
+    <button type="button" (click)="save()" [disabled]="saving">{{ saving ? 'Saving…' : 'Save LM plan' }}</button>
+  </div>
+
+  @if (selectedRemedyName) {
+    <p class="hint">Planning LM repetition for <strong>{{ selectedRemedyName }}</strong>. Document dilution glass and schedule before prescribing.</p>
+  } @else {
+    <p class="hint">Select a remedy first, then plan LM potency, dilution glass, and repetition schedule.</p>
+  }
+
+  <div class="organon-grid">
+    <label>
+      <span>Baseline vitality</span>
+      <textarea rows="2" [formField]="form.baselineVitality" placeholder="Energy, resilience, recovery pattern…"></textarea>
+    </label>
+    <label>
+      <span>Sensitivity profile</span>
+      <textarea rows="2" [formField]="form.sensitivityProfile" placeholder="Hypersensitive, proving tendency, previous aggravations…"></textarea>
+    </label>
+    <label>
+      <span>Selected LM potency</span>
+      <input [formField]="form.selectedLmPotency" placeholder="e.g. LM1, LM2…" />
+    </label>
+    <label>
+      <span>Dilution glass #</span>
+      <select [formField]="form.dilutionGlass">
+        @for (glass of dilutionOptions; track glass) {
+          <option [value]="glass">{{ glass }}</option>
+        }
+      </select>
+    </label>
+    <label class="wide">
+      <span>Repetition schedule</span>
+      <textarea rows="3" [formField]="form.repetitionSchedule" placeholder="e.g. daily succussion, every 3 days, stop on aggravation…"></textarea>
+    </label>
+    <label class="wide">
+      <span>Response monitoring</span>
+      <textarea rows="2" [formField]="form.responseMonitoring" placeholder="What to watch between doses: sleep, energy, symptom shift…"></textarea>
+    </label>
+    <label class="wide">
+      <span>Adjustment notes</span>
+      <textarea rows="2" [formField]="form.adjustmentNotes" placeholder="When to raise potency, pause, or antidote…"></textarea>
+    </label>
+  </div>
+</section>

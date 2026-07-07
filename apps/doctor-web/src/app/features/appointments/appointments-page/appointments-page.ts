@@ -138,6 +138,7 @@ export class AppointmentsPage {
     const caseAnalysisId = this.route.snapshot.queryParamMap.get('caseAnalysisId') || '';
     const remedySuggestion = this.route.snapshot.queryParamMap.get('remedy') || '';
     const companionRemedy = this.route.snapshot.queryParamMap.get('companionRemedy') || '';
+    const adviceFromCase = this.route.snapshot.queryParamMap.get('advice') || '';
     const diagnosisSuggestion = this.route.snapshot.queryParamMap.get('diagnosis') || '';
     const methodFromCase = this.route.snapshot.queryParamMap.get('methodOptionId') || '';
     const medicineRows = [newMedicineRow()];
@@ -153,6 +154,7 @@ export class AppointmentsPage {
       caseAnalysisId,
       methodOptionId: methodFromCase,
       diagnosis: diagnosisSuggestion || remedySuggestion,
+      advice: adviceFromCase,
       medicineRows
     };
   }
