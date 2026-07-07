@@ -7,7 +7,7 @@ import {
   observationHintsForMediaType,
   suggestRubricSearchPhrases,
   type ClinicalMediaType as OntologyMediaType
-} from '@vitalis/homeopathy-approaches';
+} from '../../lib/homeopathy-approaches.js';
 import { authRequired, allowRoles } from '../../auth.js';
 import { prisma } from '../../db.js';
 import { asyncRoute, routeParam } from '../../utils/helpers.js';

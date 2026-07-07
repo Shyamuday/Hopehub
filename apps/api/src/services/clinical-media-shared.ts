@@ -3,7 +3,7 @@ import { ClinicalMediaType, Role } from '@prisma/client';
 import {
   CLINICAL_MEDIA_TYPE_LABELS,
   type ClinicalMediaType as OntologyMediaType
-} from '@vitalis/homeopathy-approaches';
+} from '../lib/homeopathy-approaches.js';
 import { prisma } from '../db.js';
 
 export const clinicalMediaFilePath = (mediaId: string) => `/clinical-media/${mediaId}/file`;

@@ -1,4 +1,4 @@
-import { resolveApproachByMethodLabel, weightMultiplierForChapter } from '../../../../libs/homeopathy-approaches/src/index.js';
+import { resolveApproachByMethodLabel, weightMultiplierForChapter } from '../lib/homeopathy-approaches.js';
 
 export type WeightedRubricInput = {
   rubricId: string;
