@@ -1,6 +1,7 @@
 import { CommonModule, DOCUMENT } from '@angular/common';
 import { Component, effect, EventEmitter, HostListener, inject, Input, OnDestroy, Output, signal } from '@angular/core';
 import { NotificationBellHostComponent } from '@vitalis/platform-ui';
+import { PUBLIC_SITE_BRAND } from './core/constants/public-site-content.constants';
 import { environment } from '../environments/environment';
 import { AUTH_TOKEN_KEY } from './core/constants/auth.constants';
 import { AuthFormOverlayComponent } from './auth/auth-form-overlay.component';
@@ -17,6 +18,8 @@ export class AppHeaderComponent implements OnDestroy {
   @Input() user: User | null | undefined;
   @Input() whatsappLink = '';
   @Output() logout = new EventEmitter<void>();
+
+  readonly brand = PUBLIC_SITE_BRAND;
 
   readonly menuOpen = signal(false);
   readonly bellConfig = {

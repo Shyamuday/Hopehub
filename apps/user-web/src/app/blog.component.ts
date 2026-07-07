@@ -2,6 +2,7 @@ import { Component, signal } from '@angular/core';
 import { AppFooterComponent } from './app-footer.component';
 import { AppHeaderComponent } from './app-header.component';
 import { WHATSAPP_CONTACT_URL } from './core/constants/branding.constants';
+import { BLOG_PAGE_CONTENT } from './core/constants/public-site-content.constants';
 import { API_PATHS } from './core/constants/api-paths.constants';
 import { ClinicApiClient } from './clinic-api/clinic-api.client';
 
@@ -23,6 +24,7 @@ interface BlogPost {
 })
 export class BlogComponent {
   readonly whatsappLink = WHATSAPP_CONTACT_URL;
+  readonly copy = BLOG_PAGE_CONTENT;
   readonly allPosts = signal<BlogPost[]>([]);
   readonly categories = signal<string[]>(['All']);
   readonly loading = signal(true);

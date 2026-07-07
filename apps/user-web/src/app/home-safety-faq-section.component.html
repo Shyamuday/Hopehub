@@ -1,17 +1,13 @@
 
     <section class="content-grid two">
       <article class="panel warning-panel">
-        <h2>Safety first</h2>
-        <p>
-          This platform is not for emergencies. Severe pain, breathing trouble, heavy bleeding, or sudden worsening
-          symptoms require immediate offline medical care.
-        </p>
-        <a href="/safety">Read full safety guidance</a>
+        <h2>{{ copy.safetyFaq.safety.title }}</h2>
+        <p>{{ copy.safetyFaq.safety.body }}</p>
+        <a [href]="copy.safetyFaq.safety.linkHref">{{ copy.safetyFaq.safety.linkLabel }}</a>
       </article>
       <article class="panel">
-        <h2>Common questions</h2>
-        <p>Learn about doctor assignment, consultation flow, and prescriptions before booking.</p>
-        <a href="/faq">View FAQ</a>
+        <h2>{{ copy.safetyFaq.faq.title }}</h2>
+        <p>{{ copy.safetyFaq.faq.body }}</p>
+        <a [href]="copy.safetyFaq.faq.linkHref">{{ copy.safetyFaq.faq.linkLabel }}</a>
       </article>
     </section>
-  

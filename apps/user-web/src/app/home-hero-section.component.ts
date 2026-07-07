@@ -4,6 +4,7 @@ import { form, FormField } from '@angular/forms/signals';
 import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { POST_LOGIN_REDIRECT_DELAY_MS } from './core/constants/timing.constants';
+import { HOME_CONTENT } from './core/constants/public-site-content.constants';
 import { AuthService } from './auth/auth.service';
 
 type BookStep = 'form' | 'otp' | 'loading' | 'done';
@@ -16,6 +17,8 @@ type BookStep = 'form' | 'otp' | 'loading' | 'done';
 })
 export class HomeHeroSectionComponent {
   @Input() whatsappLink = '';
+
+  readonly copy = HOME_CONTENT;
 
   readonly bookingFormModel = signal({ mobile: '', otp: '' });
   readonly bookingForm = form(this.bookingFormModel);

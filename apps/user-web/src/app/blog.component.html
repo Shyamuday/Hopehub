@@ -1,16 +1,13 @@
 
     <section class="public-shell">
-      <app-header subtitle="Health blog" [whatsappLink]="whatsappLink" />
+      <app-header [subtitle]="copy.headerSubtitle" [whatsappLink]="whatsappLink" />
 
       <main class="content-page">
 
         <section class="page-hero panel">
-          <p class="eyebrow">Health &amp; care insights</p>
-          <h1>Evidence-informed articles on chronic care, homeopathy, and healthy living.</h1>
-          <p>
-            Our clinical team shares practical, plain-language insights to help patients understand their conditions,
-            make informed decisions, and support their care between consultations.
-          </p>
+          <p class="eyebrow">{{ copy.eyebrow }}</p>
+          <h1>{{ copy.title }}</h1>
+          <p>{{ copy.body }}</p>
         </section>
 
         <div class="category-pills">

@@ -3,6 +3,7 @@ import { inject, Service } from '@angular/core';
 import { Meta, Title } from '@angular/platform-browser';
 import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
 import { filter } from 'rxjs';
+import { PUBLIC_SITE_BRAND } from './core/constants/public-site-content.constants';
 import { SEO_DEFAULTS } from './core/constants/branding.constants';
 import { diseaseInfos } from './disease/disease-info.constants';
 import { homeopathyApproaches } from './treatment-approach/homeopathy-approaches.constants';
@@ -16,9 +17,8 @@ export class SeoService {
   private readonly document = inject(DOCUMENT);
 
   private readonly siteUrl = SEO_DEFAULTS.SITE_URL;
-  private readonly defaultTitle = 'Vitalis Care and Research Centre | Doctor-Led Digital Care';
-  private readonly defaultDescription =
-    'Vitalis Care and Research Centre provides doctor-led online consultations with structured intake, follow-up, and secure digital care.';
+  private readonly defaultTitle = PUBLIC_SITE_BRAND.seo.defaultTitle;
+  private readonly defaultDescription = PUBLIC_SITE_BRAND.seo.defaultDescription;
   private readonly defaultImage = `${this.siteUrl}/favicon.ico`;
 
   init() {

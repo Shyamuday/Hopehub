@@ -1,20 +1,26 @@
 
     <section class="panel hero-panel">
       <div class="home-hero home-hero--booking">
+        <div class="hero-intro">
+          <p class="hero-eyebrow">{{ copy.hero.eyebrow }}</p>
+          <h1 class="hero-headline">{{ copy.hero.headline }}</h1>
+          <p class="hero-lead">{{ copy.hero.lead }}</p>
+        </div>
+
         <div class="booking-card">
           @switch (step()) {
             @case ('form') {
-              <h1 class="booking-title">Book consultation</h1>
-              <p class="bc-sub">Enter your mobile number and we will send an OTP.</p>
+              <h1 class="booking-title">{{ copy.booking.formTitle }}</h1>
+              <p class="bc-sub">{{ copy.booking.formSubtitle }}</p>
 
               <div class="bc-fields">
                 <label class="bc-field">
-                  <span class="bc-label">Mobile number</span>
+                  <span class="bc-label">{{ copy.booking.mobileLabel }}</span>
                   <div class="bc-input-wrap">
                     <span class="bc-prefix">+91</span>
                     <input
                       [formField]="bookingForm.mobile"
-                      placeholder="10-digit mobile number"
+                      [placeholder]="copy.booking.mobilePlaceholder"
                       inputmode="tel"
                       autocomplete="tel"
                     />
@@ -22,27 +28,27 @@
                 </label>
 
                 <button class="bc-btn" type="button" [disabled]="busy()" (click)="sendOtp()">
-                  {{ busy() ? 'Sending OTP…' : 'Book consultation' }}
+                  {{ busy() ? copy.booking.submittingLabel : copy.booking.submitLabel }}
                 </button>
               </div>
 
               @if (error()) {
                 <p class="bc-error">{{ error() }}</p>
               }
-              <p class="bc-hint">Secure OTP login. No password needed.</p>
+              <p class="bc-hint">{{ copy.booking.hint }}</p>
             }
 
             @case ('otp') {
-              <h2 class="booking-title">Verify mobile</h2>
+              <h2 class="booking-title">{{ copy.booking.otpTitle }}</h2>
               <p class="bc-otp-who">
                 OTP sent to <strong>+91 {{ bookingFormModel().mobile }}</strong>
               </p>
               <div class="bc-fields">
                 <label class="bc-field">
-                  <span class="bc-label">Enter OTP</span>
+                  <span class="bc-label">{{ copy.booking.otpLabel }}</span>
                   <input
                     [formField]="bookingForm.otp"
-                    placeholder="6-digit OTP"
+                    [placeholder]="copy.booking.otpPlaceholder"
                     inputmode="numeric"
                     autocomplete="one-time-code"
                   />
@@ -53,41 +59,35 @@
                   [disabled]="busy() || bookingFormModel().otp.length < 4"
                   (click)="verifyOtp()"
                 >
-                  {{ busy() ? 'Verifying…' : 'Continue' }}
+                  {{ busy() ? copy.booking.verifyingLabel : copy.booking.verifyLabel }}
                 </button>
               </div>
               @if (error()) {
                 <p class="bc-error">{{ error() }}</p>
               }
-              <button class="bc-back" type="button" (click)="goBack()">← Change mobile number</button>
+              <button class="bc-back" type="button" (click)="goBack()">{{ copy.booking.backLabel }}</button>
             }
 
             @case ('loading') {
               <div class="bc-loading">
                 <div class="bc-spinner"></div>
-                <span>Setting up your account…</span>
+                <span>{{ copy.booking.loadingLabel }}</span>
               </div>
             }
 
             @case ('done') {
-              <div class="bc-done">Verified. Taking you to your dashboard…</div>
+              <div class="bc-done">{{ copy.booking.doneLabel }}</div>
             }
           }
         </div>
 
         <div class="hero-trust-row">
-          <div class="trust-item">
-            <span class="trust-icon">✓</span>
-            <span>Licensed doctors</span>
-          </div>
-          <div class="trust-item">
-            <span class="trust-icon">✓</span>
-            <span>Secure &amp; private</span>
-          </div>
-          <div class="trust-item">
-            <span class="trust-icon">✓</span>
-            <span>Follow-up included</span>
-          </div>
+          @for (item of copy.trustItems; track item) {
+            <div class="trust-item">
+              <span class="trust-icon">✓</span>
+              <span>{{ item }}</span>
+            </div>
+          }
         </div>
       </div>
     </section>

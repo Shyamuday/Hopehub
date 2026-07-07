@@ -4,6 +4,7 @@ import { AppFooterComponent } from './app-footer.component';
 import { AppHeaderComponent } from './app-header.component';
 import { AuthFormOverlayComponent } from './auth/auth-form-overlay.component';
 import { WHATSAPP_CONTACT_URL } from './core/constants/branding.constants';
+import { TREATMENTS_PAGE_CONTENT } from './core/constants/public-site-content.constants';
 import { diseaseCategoryList } from './disease/disease-category-list.constants';
 import { AppOverlayService } from './overlay.service';
 
@@ -15,6 +16,7 @@ import { AppOverlayService } from './overlay.service';
 })
 export class TreatmentsComponent {
   readonly whatsappLink = WHATSAPP_CONTACT_URL;
+  readonly copy = TREATMENTS_PAGE_CONTENT;
   readonly categories = diseaseCategoryList;
   readonly selectedCategoryId = signal(this.categories[0]?.id || '');
   readonly selectedSubSectionId = signal(this.categories[0]?.subSections[0]?.id || '');

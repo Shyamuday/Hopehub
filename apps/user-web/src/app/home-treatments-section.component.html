@@ -1,5 +1,4 @@
 
-    <!-- Stats Section -->
     <section class="stats-section">
       @for (stat of stats(); track stat.label) {
         <div class="stat-card">
@@ -9,30 +8,19 @@
       }
     </section>
 
-    <!-- Treatment Cards -->
     <section class="content-grid two">
-      <article class="panel treatment-card featured-card">
-        <div class="card-badge">Primary focus</div>
-        <div class="card-icon">🩺</div>
-        <h2>Chronic & recurring care</h2>
-        <p>Dedicated support for long-running symptoms with deeper case history, continuity, and guided follow-up plans.</p>
-        <ul class="feature-list">
-          <li>Structured intake forms</li>
-          <li>Pattern tracking over time</li>
-          <li>Regular follow-up check-ins</li>
-        </ul>
-        <a href="/chronic-care" class="card-link">Explore chronic care →</a>
-      </article>
-      <article class="panel treatment-card">
-        <div class="card-badge secondary-badge">Also available</div>
-        <div class="card-icon">💊</div>
-        <h2>Condition-specific care</h2>
-        <p>Broader care programs for skin, hair, lifestyle-linked, and other condition-specific concerns.</p>
-        <ul class="feature-list">
-          <li>Dermatology & skin care</li>
-          <li>Hair fall treatment</li>
-          <li>Lifestyle conditions</li>
-        </ul>
-        <a href="/treatments" class="card-link">View all treatments →</a>
-      </article>
+      @for (card of copy.treatmentCards; track card.title) {
+        <article class="panel treatment-card" [class.featured-card]="card.badgeVariant === 'primary'">
+          <div class="card-badge" [class.secondary-badge]="card.badgeVariant === 'secondary'">{{ card.badge }}</div>
+          <div class="card-icon">{{ card.icon }}</div>
+          <h2>{{ card.title }}</h2>
+          <p>{{ card.body }}</p>
+          <ul class="feature-list">
+            @for (feature of card.features; track feature) {
+              <li>{{ feature }}</li>
+            }
+          </ul>
+          <a [href]="card.linkHref" class="card-link">{{ card.linkLabel }}</a>
+        </article>
+      }
     </section>

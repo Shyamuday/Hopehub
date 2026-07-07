@@ -1,46 +1,31 @@
 
-    <!-- Why Choose Us Section -->
     <section class="why-choose-section">
       <div class="section-header">
-        <p class="eyebrow">Why Vitalis Care and Research Centre</p>
-        <h2 class="section-title">Built for chronic conditions, not quick fixes</h2>
+        <p class="eyebrow">{{ copy.whyChoose.eyebrow }}</p>
+        <h2 class="section-title">{{ copy.whyChoose.title }}</h2>
       </div>
-      
+
       <div class="benefits-grid">
-        <div class="benefit-card">
-          <div class="benefit-icon">🔒</div>
-          <h4>Private & secure</h4>
-          <p>End-to-end encrypted consultations with strict data privacy.</p>
-        </div>
-        <div class="benefit-card">
-          <div class="benefit-icon">📊</div>
-          <h4>Pattern tracking</h4>
-          <p>We track symptom patterns over time, not just single episodes.</p>
-        </div>
-        <div class="benefit-card">
-          <div class="benefit-icon">🩺</div>
-          <h4>Doctor continuity</h4>
-          <p>Same doctor follows your case through the entire care journey.</p>
-        </div>
-        <div class="benefit-card">
-          <div class="benefit-icon">📱</div>
-          <h4>Easy follow-ups</h4>
-          <p>Secure chat and scheduled check-ins without rebooking fees.</p>
-        </div>
+        @for (benefit of copy.whyChoose.benefits; track benefit.title) {
+          <div class="benefit-card">
+            <div class="benefit-icon">{{ benefit.icon }}</div>
+            <h4>{{ benefit.title }}</h4>
+            <p>{{ benefit.body }}</p>
+          </div>
+        }
       </div>
     </section>
 
-    <!-- Final CTA -->
     <section class="final-cta-section panel">
       <div class="cta-content">
-        <p class="eyebrow">Ready to start?</p>
-        <h2>Begin your chronic care journey today.</h2>
-        <p>Book a consultation now, or chat with us on WhatsApp to see if your condition fits our chronic-care pathway.</p>
+        <p class="eyebrow">{{ copy.cta.eyebrow }}</p>
+        <h2>{{ copy.cta.title }}</h2>
+        <p>{{ copy.cta.body }}</p>
       </div>
       <div class="cta-actions">
         <a class="primary home-action" href="/login" (click)="openAuthOverlay($event)">
           <span class="btn-icon">→</span>
-          Book consultation
+          {{ copy.cta.primaryLabel }}
         </a>
         <a class="whatsapp-action" [href]="whatsappLink" target="_blank" rel="noopener" aria-label="Chat on WhatsApp">
           <svg class="wa-icon" viewBox="0 0 24 24" aria-hidden="true">
@@ -49,4 +34,3 @@
         </a>
       </div>
     </section>
-  

@@ -1,16 +1,13 @@
 
     <section class="public-shell">
-      <app-header subtitle="Patient stories" [whatsappLink]="whatsappLink()" />
+      <app-header [subtitle]="copy.headerSubtitle" [whatsappLink]="whatsappLink()" />
 
       <main class="content-page">
 
         <section class="page-hero panel">
-          <p class="eyebrow">Patient stories</p>
-          <h1>Real results from patients who chose a different path.</h1>
-          <p>
-            These are real experiences from patients who came to Vitalis Care and Research Centre with long-standing
-            chronic conditions and found lasting relief through structured, doctor-led homeopathic care.
-          </p>
+          <p class="eyebrow">{{ copy.eyebrow }}</p>
+          <h1>{{ copy.title }}</h1>
+          <p>{{ copy.body }}</p>
         </section>
 
         <section class="testimonials-stats content-grid two">

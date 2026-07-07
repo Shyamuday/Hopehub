@@ -1,21 +1,21 @@
 
     <section class="public-shell">
-      <app-header subtitle="Chronic care" [whatsappLink]="whatsappLink" />
+      <app-header [subtitle]="copy.headerSubtitle" [whatsappLink]="whatsappLink" />
       <main class="content-page">
         <section class="page-hero panel">
-          <p class="eyebrow">Chronic and Rare Care</p>
-          <h1>For long-running symptoms that need patience, pattern tracking, and follow-up.</h1>
-          <p>
-            Chronic and rare concerns often cannot be understood in one line. We focus on detailed history, symptom
-            patterns, triggers, and continuity of care.
-          </p>
+          <p class="eyebrow">{{ copy.eyebrow }}</p>
+          <h1>{{ copy.title }}</h1>
+          <p>{{ copy.body }}</p>
+          <a class="primary home-action" [href]="copy.ctaHref">{{ copy.ctaLabel }}</a>
         </section>
         <section class="content-grid three">
-          <div class="panel"><h2>Listen deeply</h2><p>We collect the story behind recurring symptoms.</p></div>
-          <div class="panel"><h2>Track patterns</h2><p>We look for triggers, timing, recurrence, and response.</p></div>
-          <div class="panel"><h2>Guide follow-up</h2><p>We support long-term care instead of one-time advice.</p></div>
+          @for (pillar of copy.pillars; track pillar.title) {
+            <div class="panel">
+              <h2>{{ pillar.title }}</h2>
+              <p>{{ pillar.body }}</p>
+            </div>
+          }
         </section>
       </main>
       <app-footer [whatsappLink]="whatsappLink" />
     </section>
-  

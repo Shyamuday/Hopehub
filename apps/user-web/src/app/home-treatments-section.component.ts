@@ -1,4 +1,5 @@
 import { Component, signal } from '@angular/core';
+import { HOME_CONTENT, HOME_STATS_FALLBACK, type PublicStat } from './core/constants/public-site-content.constants';
 import { PublicConfigService } from './core/services/public-config.service';
 
 @Component({
@@ -6,12 +7,8 @@ import { PublicConfigService } from './core/services/public-config.service';
   templateUrl: './home-treatments-section.component.html',
 })
 export class HomeTreatmentsSectionComponent {
-  readonly stats = signal([
-    { value: '5,000+', label: 'Consultations completed' },
-    { value: '12+', label: 'Experienced doctors' },
-    { value: '4.8★', label: 'Patient rating' },
-    { value: '92%', label: 'Follow-up compliance' }
-  ]);
+  readonly copy = HOME_CONTENT;
+  readonly stats = signal<PublicStat[]>([...HOME_STATS_FALLBACK]);
 
   constructor(private readonly configSvc: PublicConfigService) {
     void this.loadStats();

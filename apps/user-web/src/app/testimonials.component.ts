@@ -2,6 +2,7 @@ import { Component, signal } from '@angular/core';
 import { AppFooterComponent } from './app-footer.component';
 import { AppHeaderComponent } from './app-header.component';
 import { WHATSAPP_CONTACT_URL } from './core/constants/branding.constants';
+import { TESTIMONIALS_PAGE_CONTENT } from './core/constants/public-site-content.constants';
 import { API_PATHS } from './core/constants/api-paths.constants';
 import { ClinicApiClient } from './clinic-api/clinic-api.client';
 import { PublicConfigService } from './core/services/public-config.service';
@@ -23,6 +24,7 @@ interface Testimonial {
 })
 export class TestimonialsComponent {
   readonly whatsappLink = signal(WHATSAPP_CONTACT_URL);
+  readonly copy = TESTIMONIALS_PAGE_CONTENT;
   readonly testimonials = signal<Testimonial[]>([]);
   readonly loading = signal(true);
   readonly starRange = [1, 2, 3, 4, 5];
