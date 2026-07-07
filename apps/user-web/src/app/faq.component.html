@@ -1,35 +1,28 @@
 
     <section class="public-shell">
       <app-header subtitle="FAQ" [whatsappLink]="whatsappLink" />
-      <main class="content-page">
+      <main class="content-page faq-page">
         <section class="page-hero panel">
           <p class="eyebrow">FAQ</p>
           <h1>Common questions before booking.</h1>
+          <p class="hero-lead">Tap a question to expand the answer. Still need help? Chat with us on WhatsApp.</p>
         </section>
 
         @if (loading()) {
-          <section class="faq-list">
-            @for (_ of [1,2,3,4]; track $index) {
-              <article class="panel doctors-skeleton" style="height:4rem"></article>
+          <section class="faq-skeleton-list" aria-busy="true" aria-label="Loading FAQ">
+            @for (_ of [1, 2, 3, 4, 5]; track $index) {
+              <article class="faq-skeleton panel"></article>
             }
           </section>
-        } @else if (entries().length) {
+        } @else {
           @for (cat of categories(); track cat) {
-            @if (categories().length > 1) {
-              <h2 class="faq-category-heading">{{ cat }}</h2>
-            }
-            <section class="faq-list">
-              @for (e of entriesForCategory(cat); track e.id) {
-                <vitalis-detail-rows variant="panel" [rows]="faqRows(e)" />
+            <section class="faq-category-block">
+              @if (categories().length > 1) {
+                <h2 class="faq-category-heading">{{ cat }}</h2>
               }
+              <app-faq-accordion [items]="entriesForCategory(cat)" />
             </section>
           }
-        } @else {
-          <section class="faq-list">
-            @for (e of fallbackEntries; track e.question) {
-              <vitalis-detail-rows variant="panel" [rows]="faqRows(e)" />
-            }
-          </section>
         }
       </main>
       <app-footer [whatsappLink]="whatsappLink" />

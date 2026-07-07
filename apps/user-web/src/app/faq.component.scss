@@ -1,0 +1,39 @@
+.faq-page .hero-lead {
+  margin: 0.75rem 0 0;
+  color: #526070;
+  line-height: 1.6;
+  max-width: 42rem;
+}
+
+.faq-category-block {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.faq-category-heading {
+  margin: 0;
+  font-size: 1.1rem;
+  color: #102033;
+  letter-spacing: -0.02em;
+}
+
+.faq-skeleton-list {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.faq-skeleton {
+  height: 3.6rem;
+  border-radius: 14px;
+  animation: faq-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes faq-pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
+}

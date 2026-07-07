@@ -1,0 +1,13 @@
+<div class="faq-accordion" role="list">
+  @for (item of items; track trackItem($index, item)) {
+    <details class="faq-item" role="listitem">
+      <summary class="faq-question">
+        <span class="faq-question-text">{{ item.question }}</span>
+        <span class="faq-icon" aria-hidden="true"></span>
+      </summary>
+      <div class="faq-answer">
+        <p>{{ item.answer }}</p>
+      </div>
+    </details>
+  }
+</div>

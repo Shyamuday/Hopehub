@@ -1,0 +1,20 @@
+
+<section class="public-shell">
+  <app-header [subtitle]="copy.headerSubtitle" [whatsappLink]="whatsappLink" />
+  <main class="content-page legal-hub">
+    <section class="page-hero panel">
+      <p class="eyebrow">{{ copy.eyebrow }}</p>
+      <h1>{{ copy.title }}</h1>
+      <p>{{ copy.intro }}</p>
+    </section>
+    <section class="legal-hub-links">
+      @for (link of copy.links; track link.href) {
+        <a class="panel legal-hub-card" [href]="link.href">
+          <span>{{ link.label }}</span>
+          <span class="legal-hub-arrow" aria-hidden="true">→</span>
+        </a>
+      }
+    </section>
+  </main>
+  <app-footer [whatsappLink]="whatsappLink" />
+</section>

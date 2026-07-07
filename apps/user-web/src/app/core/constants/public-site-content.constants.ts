@@ -63,7 +63,7 @@ export const FOOTER_NAV_LINKS: readonly PublicNavLink[] = [
   { label: 'Get the app', href: '/get-app' },
   { label: 'Contact', href: '/contact' },
   { label: 'Careers', href: '/careers' },
-  { label: 'Privacy / Terms', href: '/privacy-terms' },
+  { label: 'Legal & policies', href: '/legal' },
   { label: 'Safety', href: '/safety' }
 ] as const;
 
@@ -392,6 +392,36 @@ export const ROUTE_SEO_CONTENT = {
     seoTitle: 'Privacy and Terms | Vitalis Care',
     seoDescription:
       'Read the Vitalis Care privacy policy and terms for consultations, data use, and platform usage.'
+  },
+  legal: {
+    seoTitle: 'Legal & Policies | Vitalis Care',
+    seoDescription:
+      'Privacy policy, terms and conditions, return and exchange, shipping, and payment policies for Vitalis Care.'
+  },
+  'privacy-policy': {
+    seoTitle: 'Privacy Policy | Vitalis Care',
+    seoDescription:
+      'Learn how Vitalis Care collects, uses, and protects your personal and health information.'
+  },
+  'terms-and-conditions': {
+    seoTitle: 'Terms & Conditions | Vitalis Care',
+    seoDescription:
+      'Terms for using Vitalis Care online consultations, prescriptions, and medicine orders.'
+  },
+  'return-and-exchange-policy': {
+    seoTitle: 'Return & Exchange Policy | Vitalis Care',
+    seoDescription:
+      'Return, replacement, and refund rules for medicine orders placed through Vitalis Care.'
+  },
+  'shipping-policy': {
+    seoTitle: 'Shipping Policy | Vitalis Care',
+    seoDescription:
+      'Medicine delivery timelines, serviceable areas, and shipping charges at Vitalis Care.'
+  },
+  'payment-policy': {
+    seoTitle: 'Payment Policy | Vitalis Care',
+    seoDescription:
+      'Consultation fees, payment methods, refunds, and billing information for Vitalis Care.'
   },
   safety: {
     seoTitle: 'Safety and Trust | Vitalis Care',

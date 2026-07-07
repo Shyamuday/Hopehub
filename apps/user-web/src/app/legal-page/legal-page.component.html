@@ -1,0 +1,43 @@
+
+@if (content) {
+<section class="public-shell">
+  <app-header [subtitle]="content.headerSubtitle" [whatsappLink]="whatsappLink" />
+  <main class="content-page legal-page">
+    <section class="page-hero panel">
+      <p class="eyebrow">{{ content.eyebrow }}</p>
+      <h1>{{ content.title }}</h1>
+      <p>{{ content.intro }}</p>
+      <p class="legal-updated">Last updated: {{ content.lastUpdated }}</p>
+    </section>
+
+    @for (section of content.sections; track section.title) {
+      <section class="panel legal-section">
+        <h2>{{ section.title }}</h2>
+        @for (paragraph of section.paragraphs ?? []; track paragraph) {
+          <p>{{ paragraph }}</p>
+        }
+        @if (section.bullets?.length) {
+          <ul>
+            @for (item of section.bullets; track item) {
+              <li>{{ item }}</li>
+            }
+          </ul>
+        }
+      </section>
+    }
+
+    <section class="panel legal-related">
+      <p class="eyebrow">Related policies</p>
+      <div class="legal-related-links">
+        <a href="/legal">All policies</a>
+        <a href="/privacy-policy">Privacy Policy</a>
+        <a href="/terms-and-conditions">Terms &amp; Conditions</a>
+        <a href="/return-and-exchange-policy">Return &amp; Exchange</a>
+        <a href="/shipping-policy">Shipping</a>
+        <a href="/payment-policy">Payment</a>
+      </div>
+    </section>
+  </main>
+  <app-footer [whatsappLink]="whatsappLink" />
+</section>
+}

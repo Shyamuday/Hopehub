@@ -36,7 +36,32 @@
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://vitalisclinic.com/privacy-terms</loc>
+    <loc>https://vitalisclinic.com/legal</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.4</priority>
+  </url>
+  <url>
+    <loc>https://vitalisclinic.com/privacy-policy</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.4</priority>
+  </url>
+  <url>
+    <loc>https://vitalisclinic.com/terms-and-conditions</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.4</priority>
+  </url>
+  <url>
+    <loc>https://vitalisclinic.com/return-and-exchange-policy</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.4</priority>
+  </url>
+  <url>
+    <loc>https://vitalisclinic.com/shipping-policy</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.4</priority>
+  </url>
+  <url>
+    <loc>https://vitalisclinic.com/payment-policy</loc>
     <changefreq>yearly</changefreq>
     <priority>0.4</priority>
   </url>

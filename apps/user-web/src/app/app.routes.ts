@@ -9,7 +9,8 @@ import { ContactComponent } from './contact.component';
 import { DiseaseDetailComponent } from './disease-detail.component';
 import { FaqComponent } from './faq.component';
 import { OurDoctorsComponent } from './our-doctors.component';
-import { PrivacyTermsComponent } from './privacy-terms.component';
+import { LegalHubComponent } from './legal-hub/legal-hub.component';
+import { LegalPageComponent } from './legal-page/legal-page.component';
 import { SafetyComponent } from './safety.component';
 import { TestimonialsComponent } from './testimonials.component';
 import { TreatmentsComponent } from './treatments.component';
@@ -77,10 +78,36 @@ export const routes: Routes = [
     data: ROUTE_SEO_CONTENT.contact
   },
   {
-    path: 'privacy-terms',
-    component: PrivacyTermsComponent,
-    data: ROUTE_SEO_CONTENT['privacy-terms']
+    path: 'legal',
+    component: LegalHubComponent,
+    data: ROUTE_SEO_CONTENT.legal
   },
+  {
+    path: 'privacy-policy',
+    component: LegalPageComponent,
+    data: { legalKey: 'privacy', ...ROUTE_SEO_CONTENT['privacy-policy'] }
+  },
+  {
+    path: 'terms-and-conditions',
+    component: LegalPageComponent,
+    data: { legalKey: 'terms', ...ROUTE_SEO_CONTENT['terms-and-conditions'] }
+  },
+  {
+    path: 'return-and-exchange-policy',
+    component: LegalPageComponent,
+    data: { legalKey: 'returnExchange', ...ROUTE_SEO_CONTENT['return-and-exchange-policy'] }
+  },
+  {
+    path: 'shipping-policy',
+    component: LegalPageComponent,
+    data: { legalKey: 'shipping', ...ROUTE_SEO_CONTENT['shipping-policy'] }
+  },
+  {
+    path: 'payment-policy',
+    component: LegalPageComponent,
+    data: { legalKey: 'payment', ...ROUTE_SEO_CONTENT['payment-policy'] }
+  },
+  { path: 'privacy-terms', redirectTo: 'legal', pathMatch: 'full' },
   {
     path: 'safety',
     component: SafetyComponent,
