@@ -1,10 +1,10 @@
 
-    <div class="panel">
+    <div class="panel book-panel">
       <h2>Book Consultation</h2>
 
       <label>
         Purchase type
-        <select [formField]="bookingForm.purchaseType">
+        <select [formField]="bookingForm.purchaseType" (change)="onBookingOptionChange()">
           <option [value]="PURCHASE_TYPES.ONE_TIME">One-time appointment</option>
           <option [value]="PURCHASE_TYPES.PLAN">Plan purchase</option>
         </select>
@@ -13,7 +13,7 @@
       @if (bookingFormModel().purchaseType === PURCHASE_TYPES.PLAN) {
         <label>
           Select plan
-          <select [formField]="bookingForm.selectedPlanCode">
+          <select [formField]="bookingForm.selectedPlanCode" (change)="onBookingOptionChange()">
             @for (plan of plans; track plan.code) {
               @if (plan.code !== BILLING_PLAN_CODES.ONE_TIME) {
                 <option [value]="plan.code">
@@ -50,12 +50,61 @@
         </label>
       }
 
-      <button class="primary" [disabled]="disabled || !bookingFormModel().selectedDiseaseId" (click)="submit()">
+      @if (checkoutQuote(); as quote) {
+        <div class="price-breakdown">
+          <div class="price-row">
+            <span>Consultation fee</span>
+            <span>{{ quote.grossAmountInPaise / 100 | currency: CURRENCY_CODE }}</span>
+          </div>
+          @if (quote.discountInPaise > 0) {
+            @for (rule of quote.appliedRules; track rule.name) {
+              <div class="price-row savings">
+                <span>{{ rule.name }}</span>
+                <span>−{{ rule.amountInPaise / 100 | currency: CURRENCY_CODE }}</span>
+              </div>
+            }
+          }
+          @if (canUseWallet()) {
+            <label class="wallet-check">
+              <input
+                type="checkbox"
+                [checked]="useWallet()"
+                (change)="toggleWallet($any($event.target).checked)"
+              />
+              <span>
+                Use wallet balance
+                <strong>{{ walletBalance() / 100 | currency: CURRENCY_CODE }}</strong>
+                @if (useWallet() && quote.walletRedeemedInPaise > 0) {
+                  <small>Applying {{ quote.walletRedeemedInPaise / 100 | currency: CURRENCY_CODE }} now</small>
+                }
+              </span>
+            </label>
+          }
+          @if (useWallet() && quote.walletRedeemedInPaise > 0) {
+            <div class="price-row savings">
+              <span>Wallet applied</span>
+              <span>−{{ quote.walletRedeemedInPaise / 100 | currency: CURRENCY_CODE }}</span>
+            </div>
+          }
+          @if (totalSavings() > 0) {
+            <p class="savings-banner">You save {{ totalSavings() / 100 | currency: CURRENCY_CODE }} on this booking</p>
+          }
+        </div>
+      }
+
+      <button class="primary" [disabled]="disabled || !bookingFormModel().selectedDiseaseId || quoteLoading()" (click)="submit()">
         Create consultation
       </button>
-      <p class="muted">
-        Payable now:
-        <strong>{{ estimatedAmount() / 100 | currency: CURRENCY_CODE }}</strong>.
-        After payment, consultation moves to doctor assignment.
+      <p class="muted payable-line">
+        @if (quoteLoading()) {
+          Calculating best price…
+        } @else {
+          Payable now:
+          <strong>{{ payableAmount() / 100 | currency: CURRENCY_CODE }}</strong>.
+          @if (estimatedGrossAmount() > payableAmount()) {
+            <s class="was-price">{{ estimatedGrossAmount() / 100 | currency: CURRENCY_CODE }}</s>
+          }
+          After payment, consultation moves to doctor assignment.
+        }
       </p>
     </div>

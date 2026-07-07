@@ -35,6 +35,8 @@ export class ClinicApiService {
     intakeAnswers: Record<string, string>;
     purchaseType?: 'ONE_TIME' | 'PLAN';
     planCode?: string;
+    walletRedeemInPaise?: number;
+    promoCode?: string;
   }) {
     return from(this.client.apiFetch(API_PATHS.CONSULTATIONS, {
       method: 'POST',
