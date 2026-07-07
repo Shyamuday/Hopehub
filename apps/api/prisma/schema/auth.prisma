@@ -18,6 +18,29 @@ enum Role {
   INSURANCE_PARTNER
 }
 
+enum PatientGender {
+  MALE
+  FEMALE
+  OTHER
+  PREFER_NOT_TO_SAY
+}
+
+enum MaritalStatus {
+  SINGLE
+  MARRIED
+  DIVORCED
+  WIDOWED
+  PREFER_NOT_TO_SAY
+}
+
+enum LifestyleStatus {
+  NEVER
+  FORMER
+  OCCASIONAL
+  REGULAR
+  PREFER_NOT_TO_SAY
+}
+
 model User {
   id                  String         @id @default(cuid())
   name                String
@@ -32,6 +55,29 @@ model User {
   allergies           String?
   currentMedications  String?
   chronicConditions   String?
+  dateOfBirth         DateTime?
+  gender              PatientGender?
+  bloodGroup          String?
+  alternateMobile     String?
+  addressLine1        String?
+  addressLine2        String?
+  city                String?
+  state               String?
+  pincode             String?
+  country             String?        @default("India")
+  emergencyContactName     String?
+  emergencyContactPhone    String?
+  emergencyContactRelation String?
+  occupation          String?
+  maritalStatus       MaritalStatus?
+  heightCm            Int?
+  weightKg            Float?
+  pastSurgeries       String?        @db.Text
+  familyMedicalHistory String?       @db.Text
+  smokingStatus       LifestyleStatus?
+  alcoholUse          LifestyleStatus?
+  preferredLanguage   String?
+  patientNotes        String?        @db.Text
   doctorProfile       Doctor?
   patientConsults     Consultation[] @relation("PatientConsultations")
   doctorConsults      Consultation[] @relation("DoctorConsultations")

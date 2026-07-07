@@ -44,7 +44,6 @@ export class AuthFormOverlayComponent {
   readonly patientCredentialsForm = form(this.patientCredentialsModel);
 
   readonly patientOtpModel = signal({
-    name: DEV_DEMO_ACCOUNTS.patientRahul.name as string,
     mobile: DEV_DEMO_ACCOUNTS.patientMobile as string,
     otp: DEV_DEMO_ACCOUNTS.otp as string,
   });
@@ -95,9 +94,6 @@ export class AuthFormOverlayComponent {
     }
     if (credentials.password) {
       this.patientCredentialsModel.update((m) => ({ ...m, password: credentials.password! }));
-    }
-    if (credentials.name) {
-      this.patientOtpModel.update((m) => ({ ...m, name: credentials.name! }));
     }
     if (credentials.mobile) {
       this.patientOtpModel.update((m) => ({ ...m, mobile: credentials.mobile! }));

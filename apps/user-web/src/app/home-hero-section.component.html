@@ -5,18 +5,9 @@
           @switch (step()) {
             @case ('form') {
               <h1 class="booking-title">Book consultation</h1>
-              <p class="bc-sub">Enter your details and we will send an OTP to your mobile.</p>
+              <p class="bc-sub">Enter your mobile number and we will send an OTP.</p>
 
               <div class="bc-fields">
-                <label class="bc-field">
-                  <span class="bc-label">Full name</span>
-                  <input
-                    [formField]="bookingForm.name"
-                    placeholder="e.g. Rahul Sharma"
-                    autocomplete="name"
-                  />
-                </label>
-
                 <label class="bc-field">
                   <span class="bc-label">Mobile number</span>
                   <div class="bc-input-wrap">

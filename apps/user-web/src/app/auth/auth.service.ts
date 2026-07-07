@@ -72,7 +72,7 @@ export class AuthService {
     });
   }
 
-  patientLogin(payload: { name: string; mobile: string; otp: string }) {
+  patientLogin(payload: { mobile: string; otp: string; name?: string }) {
     return this.http
       .post<AuthResponse | PatientSelectionResponse>(`${this.apiBase}${AUTH_PATHS.PATIENT_LOGIN}`, payload)
       .pipe(tap((response) => this.persistIfAuthenticated(response)));

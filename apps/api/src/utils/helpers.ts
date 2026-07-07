@@ -66,7 +66,31 @@ export const patientProfileSelect = {
   homeClinicStore: { select: { id: true, name: true, code: true, address: true } },
   allergies: true,
   currentMedications: true,
-  chronicConditions: true
+  chronicConditions: true,
+  dateOfBirth: true,
+  gender: true,
+  bloodGroup: true,
+  alternateMobile: true,
+  addressLine1: true,
+  addressLine2: true,
+  city: true,
+  state: true,
+  pincode: true,
+  country: true,
+  emergencyContactName: true,
+  emergencyContactPhone: true,
+  emergencyContactRelation: true,
+  occupation: true,
+  maritalStatus: true,
+  heightCm: true,
+  weightKg: true,
+  pastSurgeries: true,
+  familyMedicalHistory: true,
+  smokingStatus: true,
+  alcoholUse: true,
+  preferredLanguage: true,
+  patientNotes: true,
+  passwordHash: true
 } as const;
 
 export function logAuthEvent(

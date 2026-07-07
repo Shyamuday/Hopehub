@@ -23,10 +23,6 @@
   } @else if (step() === 'register') {
     <form (ngSubmit)="sendOtp()">
       <label>
-        Full name
-        <input [formField]="form.name" placeholder="Your full name" autocomplete="name" />
-      </label>
-      <label>
         Mobile number
         <input
           [formField]="form.mobile"

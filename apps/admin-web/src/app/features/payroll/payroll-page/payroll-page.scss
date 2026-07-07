@@ -48,8 +48,9 @@
     .salary-missing-tag { display: inline-block; margin-top: 4px; font-size: 10px; padding: 2px 6px; border-radius: 6px; background: rgba(251,146,60,0.15); color: #fdba74; }
     .muted-note { color: #64748b; font-size: 13px; }
     .salary-form-hdr { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; h3 { margin: 0 0 4px; } }
-    .salary-totals { display: flex; gap: 12px; div { min-width: 90px; padding: 8px 10px; border-radius: 10px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); span { display: block; font-size: 11px; color: #94a3b8; margin-bottom: 2px; } strong { font-size: 15px; } }
+    .salary-totals { display: flex; gap: 12px; div { min-width: 90px; padding: 8px 10px; border-radius: 10px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); span { display: block; font-size: 11px; color: #94a3b8; margin-bottom: 2px; } strong { font-size: 15px; } } }
     .salary-section { margin-bottom: 14px; h4 { margin: 0 0 8px; font-size: 13px; color: #c7d2fe; } }
+    .salary-fields { border: none; margin: 0; padding: 0; min-width: 0; }
     .salary-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: #94a3b8; input, select { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 8px 10px; color: white; font-size: 13px; } } }
     .doctor-compensation-section { padding-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.06); margin-bottom: 16px; }
     .salary-notes { display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #94a3b8; textarea { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 8px 10px; color: white; font-size: 13px; resize: vertical; } }

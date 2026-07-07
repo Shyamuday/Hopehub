@@ -16,7 +16,7 @@
       </div>
       <div class="field">
         <label class="field-label" for="faq-create-sort">Sort order</label>
-        <input id="faq-create-sort" type="number" min="1" max="999" [formField]="createForm.sortOrder" placeholder="Optional" />
+        <input id="faq-create-sort" type="number" attr.min="1" attr.max="999" [formField]="createForm.sortOrder" placeholder="Optional" />
       </div>
       <label class="checkbox-label"><input type="checkbox" [formField]="createForm.isPublished" /> Published</label>
     </div>

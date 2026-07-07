@@ -198,22 +198,23 @@
                 }
               </div>
 
+              <fieldset class="salary-fields" [disabled]="!salaryCanEdit()">
               @if (selectedSalaryEmployee()!.empType === 'DOCTOR') {
                 <div class="salary-section doctor-compensation-section">
                   <h4>Doctor compensation</h4>
                   <div class="salary-grid compensation-grid">
                     <label>Employment type
-                      <select [formField]="compensationForm.compensationModel" [disabled]="!salaryCanEdit()">
+                      <select [formField]="compensationForm.compensationModel">
                         @for (opt of compensationModelOptions; track opt.value) {
                           <option [value]="opt.value">{{ opt.label }}</option>
                         }
                       </select>
                     </label>
                     <label>Consultation share (%)
-                      <input type="number" min="0" max="100" step="1" [formField]="compensationForm.consultationSharePercent" [readonly]="!salaryCanEdit()" />
+                      <input type="number" attr.min="0" attr.max="100" attr.step="1" [formField]="compensationForm.consultationSharePercent" />
                     </label>
                     <label>Listed consultation fee (₹)
-                      <input type="number" min="0" step="1" [formField]="compensationForm.consultationFee" [readonly]="!salaryCanEdit()" />
+                      <input type="number" attr.min="0" attr.step="1" [formField]="compensationForm.consultationFee" />
                     </label>
                   </div>
                   @if (isConsultOnlyDoctor()) {
@@ -227,39 +228,40 @@
                 <div class="salary-section">
                   <h4>Earnings (monthly)</h4>
                   <div class="salary-grid">
-                    <label>Basic (₹)<input type="number" min="0" step="1" [formField]="salaryForm.basic" [readonly]="!salaryCanEdit()" /></label>
-                    <label>HRA (₹)<input type="number" min="0" step="1" [formField]="salaryForm.hra" [readonly]="!salaryCanEdit()" /></label>
-                    <label>Conveyance (₹)<input type="number" min="0" step="1" [formField]="salaryForm.conveyance" [readonly]="!salaryCanEdit()" /></label>
-                    <label>Medical allowance (₹)<input type="number" min="0" step="1" [formField]="salaryForm.medicalAllowance" [readonly]="!salaryCanEdit()" /></label>
-                    <label>Special allowance (₹)<input type="number" min="0" step="1" [formField]="salaryForm.specialAllowance" [readonly]="!salaryCanEdit()" /></label>
-                    <label>Other allowances (₹)<input type="number" min="0" step="1" [formField]="salaryForm.otherAllowance" [readonly]="!salaryCanEdit()" /></label>
+                    <label>Basic (₹)<input type="number" attr.min="0" attr.step="1" [formField]="salaryForm.basic" /></label>
+                    <label>HRA (₹)<input type="number" attr.min="0" attr.step="1" [formField]="salaryForm.hra" /></label>
+                    <label>Conveyance (₹)<input type="number" attr.min="0" attr.step="1" [formField]="salaryForm.conveyance" /></label>
+                    <label>Medical allowance (₹)<input type="number" attr.min="0" attr.step="1" [formField]="salaryForm.medicalAllowance" /></label>
+                    <label>Special allowance (₹)<input type="number" attr.min="0" attr.step="1" [formField]="salaryForm.specialAllowance" /></label>
+                    <label>Other allowances (₹)<input type="number" attr.min="0" attr.step="1" [formField]="salaryForm.otherAllowance" /></label>
                   </div>
                 </div>
 
                 <div class="salary-section">
                   <h4>Employee deductions</h4>
                   <div class="salary-grid">
-                    <label>Employee PF (₹)<input type="number" min="0" step="1" [formField]="salaryForm.employeePf" [readonly]="!salaryCanEdit()" /></label>
-                    <label>Employee ESIC (₹)<input type="number" min="0" step="1" [formField]="salaryForm.employeeEsi" [readonly]="!salaryCanEdit()" /></label>
-                    <label>Professional tax (₹)<input type="number" min="0" step="1" [formField]="salaryForm.professionalTax" [readonly]="!salaryCanEdit()" /></label>
-                    <label>TDS (₹)<input type="number" min="0" step="1" [formField]="salaryForm.tds" [readonly]="!salaryCanEdit()" /></label>
-                    <label>Other deductions (₹)<input type="number" min="0" step="1" [formField]="salaryForm.otherDeduction" [readonly]="!salaryCanEdit()" /></label>
+                    <label>Employee PF (₹)<input type="number" attr.min="0" attr.step="1" [formField]="salaryForm.employeePf" /></label>
+                    <label>Employee ESIC (₹)<input type="number" attr.min="0" attr.step="1" [formField]="salaryForm.employeeEsi" /></label>
+                    <label>Professional tax (₹)<input type="number" attr.min="0" attr.step="1" [formField]="salaryForm.professionalTax" /></label>
+                    <label>TDS (₹)<input type="number" attr.min="0" attr.step="1" [formField]="salaryForm.tds" /></label>
+                    <label>Other deductions (₹)<input type="number" attr.min="0" attr.step="1" [formField]="salaryForm.otherDeduction" /></label>
                   </div>
                 </div>
 
                 <div class="salary-section">
                   <h4>Employer contributions</h4>
                   <div class="salary-grid">
-                    <label>Employer PF (₹)<input type="number" min="0" step="1" [formField]="salaryForm.employerPf" [readonly]="!salaryCanEdit()" /></label>
-                    <label>Employer ESIC (₹)<input type="number" min="0" step="1" [formField]="salaryForm.employerEsi" [readonly]="!salaryCanEdit()" /></label>
+                    <label>Employer PF (₹)<input type="number" attr.min="0" attr.step="1" [formField]="salaryForm.employerPf" /></label>
+                    <label>Employer ESIC (₹)<input type="number" attr.min="0" attr.step="1" [formField]="salaryForm.employerEsi" /></label>
                   </div>
                 </div>
 
                 <label class="salary-notes">Notes
-                  <textarea rows="2" [formField]="salaryForm.notes" [readonly]="!salaryCanEdit()"></textarea>
+                  <textarea rows="2" [formField]="salaryForm.notes"></textarea>
                 </label>
               </div>
               }
+              </fieldset>
 
               @if (salaryCanEdit()) {
                 <button class="btn-save-salary" [disabled]="salarySaving()" (click)="saveSalaryStructure()">

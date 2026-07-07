@@ -13,6 +13,12 @@ export const patientListSelect = {
   allergies: true,
   currentMedications: true,
   chronicConditions: true,
+  dateOfBirth: true,
+  gender: true,
+  bloodGroup: true,
+  alternateMobile: true,
+  emergencyContactName: true,
+  emergencyContactPhone: true,
   createdAt: true
 } as const;
 

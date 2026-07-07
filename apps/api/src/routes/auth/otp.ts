@@ -96,7 +96,7 @@ router.post(
     }
 
     const user = await createPatientRecord({
-      name: body.name?.trim() || mobile,
+      name: body.name?.trim() || 'Patient',
       mobile
     });
 

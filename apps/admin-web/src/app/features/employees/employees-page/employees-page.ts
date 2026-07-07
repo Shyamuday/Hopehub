@@ -220,7 +220,7 @@ export class EmployeesPage implements OnInit {
       {
         referenceLabel: 'Ref',
         referenceNumber: String(content['letterNumber'] ?? ''),
-        issuedDate: datePipe.transform(content['issuedDate'], dateFormat) ?? ''
+        issuedDate: datePipe.transform(content['issuedDate'] as string | Date | null | undefined, dateFormat) ?? ''
       },
       HR_LETTER_META_FIELDS
     );

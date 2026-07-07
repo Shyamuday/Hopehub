@@ -77,6 +77,11 @@ export class AdminDoctorsApi extends AdminApiBase {
       isAvailable: boolean;
       doctorType?: string;
       specialtyFocus?: string | null;
+      bio?: string | null;
+      showOnWebsite?: boolean;
+      websiteOrder?: number | null;
+      yearsOfExperience?: number | null;
+      focusAreas?: string[];
     }
   ) {
     return firstValueFrom(this.http.put(`${this.apiBase}${API_PATHS.ADMIN.DOCTORS}/${doctorId}`, payload));

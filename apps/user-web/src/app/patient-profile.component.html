@@ -1,101 +1,341 @@
-    @if (patientCard(); as card) {
-      <section class="id-card-panel">
-        <h2>My clinic card</h2>
-        <p class="card-hint">Bring this ID to every visit. Staff can find your record quickly with this number.</p>
-        <div class="id-card" id="patient-id-card-print">
-          <header class="id-card-header">
-            <p class="brand">Vitalis Care</p>
-            @if (card.clinic) {
-              <p class="clinic">{{ card.clinic.name }} ({{ card.clinic.code }})</p>
-            }
-          </header>
-          <div class="id-card-body">
-            <div class="id-card-main">
-              <p class="label">Patient ID</p>
-              <p class="patient-code">{{ card.patientCode }}</p>
-              <p class="patient-name">{{ card.name }}</p>
-              @if (card.mobile) { <p class="contact">{{ card.mobile }}</p> }
-            </div>
-            <div class="id-card-qr">
-              <img [src]="qrImageUrl(card)" width="120" height="120" alt="Scan for quick access" />
-              <p class="qr-hint">Scan at clinic</p>
-            </div>
-          </div>
-          <footer class="id-card-footer">
-            <p>Keep this card safe for future consultations.</p>
-          </footer>
-        </div>
-        <button type="button" class="btn-print" (click)="printCard()">Print my card</button>
-      </section>
-    } @else {
-      <section class="id-card-panel">
-        <app-download-qr
-          [compact]="true"
-          title="Share the app with family"
-          subtitle="Anyone can scan to install — no patient ID needed yet."
-        />
-      </section>
-    }
-
-    <div class="profile-panel">
-      <h2>My Profile</h2>
-
-      @if (loading()) {
-        <p class="loading-text">Loading profile…</p>
-      } @else if (errorMsg()) {
-        <div class="error-row">
-          <p class="error">{{ errorMsg() }}</p>
-          <button type="button" class="retry-btn" (click)="load()">Retry</button>
-        </div>
-      } @else {
-        @if (profile()?.patientCode) {
-          <div class="field">
-            <label>Patient ID</label>
-            <p class="readonly-val patient-code-inline">{{ profile()?.patientCode }}</p>
-            <span class="hint">This is your permanent clinic reference number.</span>
-          </div>
+@if (patientCard(); as card) {
+  <section class="id-card-panel">
+    <h2>My clinic card</h2>
+    <p class="card-hint">Bring this ID to every visit. Staff can find your record quickly with this number.</p>
+    <div class="id-card" id="patient-id-card-print">
+      <header class="id-card-header">
+        <p class="brand">Vitalis Care</p>
+        @if (card.clinic) {
+          <p class="clinic">{{ card.clinic.name }} ({{ card.clinic.code }})</p>
         }
-
-        <div class="field">
-          <label>Full name</label>
-          <input [formField]="profileForm.name" attr.placeholder="Your full name" />
+      </header>
+      <div class="id-card-body">
+        <div class="id-card-main">
+          <p class="label">Patient ID</p>
+          <p class="patient-code">{{ card.patientCode }}</p>
+          <p class="patient-name">{{ card.name }}</p>
+          @if (card.mobile) { <p class="contact">{{ card.mobile }}</p> }
         </div>
-
-        <div class="field">
-          <label>Mobile</label>
-          <p class="readonly-val">{{ profile()?.mobile || '—' }}</p>
-          <span class="hint">Mobile cannot be changed after registration.</span>
+        <div class="id-card-qr">
+          <img [src]="qrImageUrl(card)" width="120" height="120" alt="Scan for quick access" />
+          <p class="qr-hint">Scan at clinic</p>
         </div>
+      </div>
+      <footer class="id-card-footer">
+        <p>Keep this card safe for future consultations.</p>
+      </footer>
+    </div>
+    <button type="button" class="btn-print" (click)="printCard()">Print my card</button>
+  </section>
+} @else {
+  <section class="id-card-panel">
+    <app-download-qr
+      [compact]="true"
+      title="Share the app with family"
+      subtitle="Anyone can scan to install — no patient ID needed yet."
+    />
+  </section>
+}
 
-        <div class="field">
-          <label>Email</label>
-          <p class="readonly-val">{{ profile()?.email || '—' }}</p>
-        </div>
-
-        <div class="field">
-          <label>Known allergies</label>
-          <textarea [formField]="profileForm.allergies"
-            attr.placeholder="e.g. Penicillin, dust, pollen (leave blank if none)"></textarea>
-        </div>
-
-        <div class="field">
-          <label>Current medications</label>
-          <textarea [formField]="profileForm.currentMedications"
-            attr.placeholder="List any medicines you take regularly"></textarea>
-        </div>
-
-        <div class="field">
-          <label>Chronic conditions</label>
-          <textarea [formField]="profileForm.chronicConditions"
-            attr.placeholder="e.g. Diabetes, hypertension, thyroid (leave blank if none)"></textarea>
-        </div>
-
-        <div class="save-row">
-          <button class="btn-save" type="button" (click)="save()" [disabled]="saving()">
-            {{ saving() ? 'Saving…' : 'Save Profile' }}
-          </button>
-          @if (successMsg()) { <span class="msg-ok">✓ {{ successMsg() }}</span> }
-          @if (errorMsg()) { <span class="msg-err">{{ errorMsg() }}</span> }
-        </div>
+<div class="profile-wrap">
+  <div class="profile-panel">
+    <div class="profile-hdr">
+      <div>
+        <h2>My profile</h2>
+        <p class="profile-sub">Complete your details anytime. All fields are optional except your name.</p>
+      </div>
+      @if (profile()?.name === 'Patient') {
+        <p class="profile-nudge">Please add your full name below.</p>
       }
     </div>
+
+    @if (loading()) {
+      <p class="loading-text">Loading profile…</p>
+    } @else if (errorMsg() && !profile()) {
+      <div class="error-row">
+        <p class="error">{{ errorMsg() }}</p>
+        <button type="button" class="retry-btn" (click)="load()">Retry</button>
+      </div>
+    } @else {
+      @if (profile()?.patientCode) {
+        <section class="profile-section">
+          <h3>Clinic reference</h3>
+          <div class="field readonly-block">
+            <label>Patient ID</label>
+            <p class="readonly-val patient-code-inline">{{ profile()?.patientCode }}</p>
+            <span class="hint">Permanent clinic reference number.</span>
+          </div>
+          @if (profile()?.homeClinicStore; as clinic) {
+            <div class="field readonly-block">
+              <label>Home clinic</label>
+              <p class="readonly-val">{{ clinic.name }} ({{ clinic.code }})</p>
+            </div>
+          }
+        </section>
+      }
+
+      <section class="profile-section">
+        <h3>Personal details</h3>
+        <div class="field-grid">
+          <div class="field span-2">
+            <label>Full name *</label>
+            <input [formField]="profileForm.name" placeholder="Your full name" autocomplete="name" />
+          </div>
+          <div class="field">
+            <label>Date of birth</label>
+            <input type="date" [formField]="profileForm.dateOfBirth" />
+          </div>
+          <div class="field">
+            <label>Gender</label>
+            <select [formField]="profileForm.gender">
+              @for (g of genderOptions; track g.value) {
+                <option [value]="g.value">{{ g.label }}</option>
+              }
+            </select>
+          </div>
+          <div class="field">
+            <label>Blood group</label>
+            <select [formField]="profileForm.bloodGroup">
+              <option value="">Not specified</option>
+              @for (bg of bloodGroups; track bg) {
+                @if (bg) { <option [value]="bg">{{ bg }}</option> }
+              }
+            </select>
+          </div>
+          <div class="field">
+            <label>Marital status</label>
+            <select [formField]="profileForm.maritalStatus">
+              @for (m of maritalOptions; track m.value) {
+                <option [value]="m.value">{{ m.label }}</option>
+              }
+            </select>
+          </div>
+          <div class="field">
+            <label>Occupation</label>
+            <input [formField]="profileForm.occupation" placeholder="e.g. Teacher, Engineer" />
+          </div>
+          <div class="field">
+            <label>Preferred language</label>
+            <input [formField]="profileForm.preferredLanguage" placeholder="e.g. Hindi" [attr.list]="'lang-list'" />
+            <datalist id="lang-list">
+              @for (lang of languageSuggestions; track lang) {
+                <option [value]="lang"></option>
+              }
+            </datalist>
+          </div>
+          <div class="field">
+            <label>Height (cm)</label>
+            <input type="number" [formField]="profileForm.heightCm" placeholder="e.g. 170" />
+          </div>
+          <div class="field">
+            <label>Weight (kg)</label>
+            <input type="number" step="0.1" [formField]="profileForm.weightKg" placeholder="e.g. 65" />
+          </div>
+        </div>
+      </section>
+
+      <section class="profile-section">
+        <h3>Contact &amp; address</h3>
+        <div class="field-grid">
+          <div class="field">
+            <label>Mobile (login)</label>
+            <p class="readonly-val">{{ profile()?.mobile || '—' }}</p>
+            <span class="hint">Used for OTP login. Contact clinic to change.</span>
+          </div>
+          <div class="field">
+            <label>Alternate mobile</label>
+            <input [formField]="profileForm.alternateMobile" placeholder="Optional second number" inputmode="tel" />
+          </div>
+          <div class="field span-2">
+            <label>Email</label>
+            <input [formField]="profileForm.email" type="email" placeholder="your@email.com" autocomplete="email" />
+            <span class="hint">Add email to enable password login and receipts.</span>
+          </div>
+          <div class="field span-2">
+            <label>Address line 1</label>
+            <input [formField]="profileForm.addressLine1" placeholder="House / flat, street" autocomplete="address-line1" />
+          </div>
+          <div class="field span-2">
+            <label>Address line 2</label>
+            <input [formField]="profileForm.addressLine2" placeholder="Landmark, area (optional)" autocomplete="address-line2" />
+          </div>
+          <div class="field">
+            <label>City</label>
+            <input [formField]="profileForm.city" placeholder="City" autocomplete="address-level2" />
+          </div>
+          <div class="field">
+            <label>State</label>
+            <input [formField]="profileForm.state" placeholder="State" autocomplete="address-level1" />
+          </div>
+          <div class="field">
+            <label>PIN code</label>
+            <input [formField]="profileForm.pincode" placeholder="PIN" inputmode="numeric" />
+          </div>
+          <div class="field">
+            <label>Country</label>
+            <input [formField]="profileForm.country" placeholder="Country" />
+          </div>
+        </div>
+      </section>
+
+      <section class="profile-section">
+        <h3>Emergency contact</h3>
+        <div class="field-grid">
+          <div class="field">
+            <label>Contact name</label>
+            <input [formField]="profileForm.emergencyContactName" placeholder="Full name" />
+          </div>
+          <div class="field">
+            <label>Contact phone</label>
+            <input [formField]="profileForm.emergencyContactPhone" placeholder="Mobile number" inputmode="tel" />
+          </div>
+          <div class="field">
+            <label>Relationship</label>
+            <select [formField]="profileForm.emergencyContactRelation">
+              <option value="">Not specified</option>
+              @for (rel of relationOptions; track rel) {
+                @if (rel) { <option [value]="rel">{{ rel }}</option> }
+              }
+            </select>
+          </div>
+        </div>
+      </section>
+
+      <section class="profile-section">
+        <h3>Medical history</h3>
+        <p class="section-note">Helps doctors during consultations. Update whenever something changes.</p>
+        <div class="field-grid single-col">
+          <div class="field">
+            <label>Known allergies</label>
+            <textarea [formField]="profileForm.allergies" placeholder="e.g. Penicillin, dust, peanuts (leave blank if none)"></textarea>
+          </div>
+          <div class="field">
+            <label>Current medications</label>
+            <textarea [formField]="profileForm.currentMedications" placeholder="Medicines you take regularly, with dose if known"></textarea>
+          </div>
+          <div class="field">
+            <label>Chronic conditions</label>
+            <textarea [formField]="profileForm.chronicConditions" placeholder="e.g. Diabetes, hypertension, thyroid"></textarea>
+          </div>
+          <div class="field">
+            <label>Past surgeries / hospitalizations</label>
+            <textarea [formField]="profileForm.pastSurgeries" placeholder="Major procedures or admissions"></textarea>
+          </div>
+          <div class="field">
+            <label>Family medical history</label>
+            <textarea [formField]="profileForm.familyMedicalHistory" placeholder="Conditions that run in your family"></textarea>
+          </div>
+        </div>
+      </section>
+
+      <section class="profile-section">
+        <h3>Lifestyle</h3>
+        <div class="field-grid">
+          <div class="field">
+            <label>Smoking</label>
+            <select [formField]="profileForm.smokingStatus">
+              @for (opt of lifestyleOptions; track opt.value) {
+                <option [value]="opt.value">{{ opt.label }}</option>
+              }
+            </select>
+          </div>
+          <div class="field">
+            <label>Alcohol use</label>
+            <select [formField]="profileForm.alcoholUse">
+              @for (opt of lifestyleOptions; track opt.value) {
+                <option [value]="opt.value">{{ opt.label }}</option>
+              }
+            </select>
+          </div>
+        </div>
+      </section>
+
+      <section class="profile-section">
+        <h3>Notes for your care team</h3>
+        <div class="field">
+          <label>Anything else we should know</label>
+          <textarea [formField]="profileForm.patientNotes" placeholder="Preferences, accessibility needs, other health notes"></textarea>
+        </div>
+      </section>
+
+      <div class="save-row">
+        <button class="btn-save" type="button" (click)="save()" [disabled]="saving()">
+          {{ saving() ? 'Saving…' : 'Save profile' }}
+        </button>
+        @if (successMsg()) { <span class="msg-ok">✓ {{ successMsg() }}</span> }
+        @if (errorMsg()) { <span class="msg-err">{{ errorMsg() }}</span> }
+      </div>
+    }
+  </div>
+
+  @if (!loading() && profile()) {
+    <aside class="side-panels">
+      <section class="side-panel">
+        <h3>Notification preferences</h3>
+        <p class="section-note">Medicine reminders and appointment alerts.</p>
+        <div class="check-grid">
+          <label class="check-row">
+            <input type="checkbox" [checked]="reminderFormModel().inApp" (change)="updateReminderField('inApp', $any($event.target).checked)" />
+            In-app notifications
+          </label>
+          <label class="check-row">
+            <input type="checkbox" [checked]="reminderFormModel().sms" (change)="updateReminderField('sms', $any($event.target).checked)" />
+            SMS
+          </label>
+          <label class="check-row">
+            <input type="checkbox" [checked]="reminderFormModel().whatsapp" (change)="updateReminderField('whatsapp', $any($event.target).checked)" />
+            WhatsApp
+          </label>
+          <label class="check-row">
+            <input type="checkbox" [checked]="reminderFormModel().push" (change)="updateReminderField('push', $any($event.target).checked)" />
+            Push notifications
+          </label>
+        </div>
+        <div class="field-grid">
+          <div class="field">
+            <label>Quiet hours from</label>
+            <input type="time" [formField]="reminderForm.quietHoursStart" />
+          </div>
+          <div class="field">
+            <label>Quiet hours until</label>
+            <input type="time" [formField]="reminderForm.quietHoursEnd" />
+          </div>
+        </div>
+        <button class="btn-secondary" type="button" (click)="saveReminderPreferences()" [disabled]="savingPrefs()">
+          {{ savingPrefs() ? 'Saving…' : 'Save notifications' }}
+        </button>
+      </section>
+
+      <section class="side-panel">
+        <h3>Account password</h3>
+        <p class="section-note">
+          @if (hasPassword()) {
+            Change your password for email/mobile login.
+          } @else {
+            Set a password to log in without OTP (optional).
+          }
+        </p>
+        @if (hasPassword()) {
+          <div class="field">
+            <label>Current password</label>
+            <input type="password" [formField]="passwordForm.currentPassword" placeholder="Current password" autocomplete="current-password" />
+          </div>
+        }
+        <div class="field">
+          <label>{{ hasPassword() ? 'New password' : 'Password' }}</label>
+          <input type="password" [formField]="passwordForm.newPassword" placeholder="Min 8 characters" autocomplete="new-password" />
+        </div>
+        <div class="field">
+          <label>Confirm password</label>
+          <input type="password" [formField]="passwordForm.confirmPassword" placeholder="Confirm password" autocomplete="new-password" />
+        </div>
+        @if (passwordFormModel().newPassword && passwordFormModel().confirmPassword && passwordFormModel().newPassword !== passwordFormModel().confirmPassword) {
+          <p class="inline-error">Passwords do not match.</p>
+        }
+        <button class="btn-secondary" type="button" (click)="savePassword()" [disabled]="savingPassword() || !canSavePassword()">
+          {{ savingPassword() ? 'Saving…' : (hasPassword() ? 'Update password' : 'Set password') }}
+        </button>
+      </section>
+    </aside>
+  }
+</div>

@@ -250,18 +250,18 @@
         </label>
         <div class="field">
           <label class="field-label" for="doc-edit-order">Display order</label>
-          <input id="doc-edit-order" type="number" min="1" max="999" [formField]="editForm.websiteOrder" placeholder="1 = first, blank = auto" />
+          <input id="doc-edit-order" type="number" attr.min="1" attr.max="999" [formField]="editForm.websiteOrder" placeholder="1 = first, blank = auto" />
         </div>
         <div class="field">
           <label class="field-label" for="doc-edit-exp">Years of experience</label>
-          <input id="doc-edit-exp" type="number" min="0" max="60" [formField]="editForm.yearsOfExperience" placeholder="e.g. 12" />
+          <input id="doc-edit-exp" type="number" attr.min="0" attr.max="60" [formField]="editForm.yearsOfExperience" placeholder="e.g. 12" />
         </div>
         <div class="field">
           <label class="field-label" for="doc-edit-bio">Short bio</label>
           <textarea
             id="doc-edit-bio"
             rows="4"
-            maxlength="1200"
+            attr.maxlength="1200"
             placeholder="Shown on the public Our Doctors page (max 1200 chars)"
             [formField]="editForm.bio"
           ></textarea>

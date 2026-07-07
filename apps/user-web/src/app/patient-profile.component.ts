@@ -2,20 +2,23 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { form, FormField } from '@angular/forms/signals';
 import { API_PATHS } from './core/constants/api-paths.constants';
+import {
+  BLOOD_GROUP_OPTIONS,
+  EMERGENCY_RELATION_OPTIONS,
+  GENDER_OPTIONS,
+  LANGUAGE_SUGGESTIONS,
+  LIFESTYLE_OPTIONS,
+  MARITAL_STATUS_OPTIONS,
+  emptyProfileForm,
+  emptyReminderForm,
+  formToProfilePayload,
+  profileToForm,
+  type PatientProfile,
+  type ReminderPreferences
+} from './core/constants/patient-profile.constants';
 import { environment } from '../environments/environment';
 import { AuthService } from './auth/auth.service';
-
-type Profile = {
-  id: string;
-  name: string;
-  email?: string | null;
-  mobile?: string | null;
-  patientCode?: string | null;
-  homeClinicStore?: { id: string; name: string; code: string; address?: string | null } | null;
-  allergies?: string | null;
-  currentMedications?: string | null;
-  chronicConditions?: string | null;
-};
+import { AppDownloadQrComponent } from './shared/app-download-qr/app-download-qr.component';
 
 type PatientIdCard = {
   patientCode: string;
@@ -26,17 +29,6 @@ type PatientIdCard = {
   issuedAt?: string;
   scanUrl?: string;
 };
-
-function emptyProfileForm() {
-  return {
-    name: '',
-    allergies: '',
-    currentMedications: '',
-    chronicConditions: '',
-  };
-}
-
-import { AppDownloadQrComponent } from './shared/app-download-qr/app-download-qr.component';
 
 @Component({
   selector: 'app-patient-profile',
@@ -50,13 +42,27 @@ export class PatientProfileComponent implements OnInit {
 
   readonly loading = signal(true);
   readonly saving = signal(false);
+  readonly savingPrefs = signal(false);
+  readonly savingPassword = signal(false);
   readonly successMsg = signal('');
   readonly errorMsg = signal('');
-  readonly profile = signal<Profile | null>(null);
+  readonly profile = signal<PatientProfile | null>(null);
   readonly patientCard = signal<PatientIdCard | null>(null);
+  readonly hasPassword = signal(false);
 
   readonly profileFormModel = signal(emptyProfileForm());
   readonly profileForm = form(this.profileFormModel);
+  readonly reminderFormModel = signal(emptyReminderForm());
+  readonly reminderForm = form(this.reminderFormModel);
+  readonly passwordFormModel = signal({ currentPassword: '', newPassword: '', confirmPassword: '' });
+  readonly passwordForm = form(this.passwordFormModel);
+
+  readonly genderOptions = GENDER_OPTIONS;
+  readonly maritalOptions = MARITAL_STATUS_OPTIONS;
+  readonly bloodGroups = BLOOD_GROUP_OPTIONS;
+  readonly lifestyleOptions = LIFESTYLE_OPTIONS;
+  readonly languageSuggestions = LANGUAGE_SUGGESTIONS;
+  readonly relationOptions = EMERGENCY_RELATION_OPTIONS;
 
   ngOnInit() {
     void this.load();
@@ -75,22 +81,23 @@ export class PatientProfileComponent implements OnInit {
         ...(init?.headers || {}),
       },
     });
-    if (!res.ok) throw new Error((await res.json())?.message || 'Request failed');
-    return res.json() as Promise<T>;
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data?.message || 'Request failed');
+    return data as T;
   }
 
   async load() {
     this.loading.set(true);
     this.errorMsg.set('');
     try {
-      const { profile } = await this.apiFetch<{ profile: Profile }>(API_PATHS.PATIENT.PROFILE);
+      const { profile, reminderPreferences } = await this.apiFetch<{
+        profile: PatientProfile;
+        reminderPreferences: ReminderPreferences;
+      }>(API_PATHS.PATIENT.PROFILE);
       this.profile.set(profile);
-      this.profileFormModel.set({
-        name: profile.name,
-        allergies: profile.allergies || '',
-        currentMedications: profile.currentMedications || '',
-        chronicConditions: profile.chronicConditions || '',
-      });
+      this.hasPassword.set(Boolean(profile.hasPassword));
+      this.profileFormModel.set(profileToForm(profile));
+      this.reminderFormModel.set(reminderPreferences);
 
       try {
         const { card } = await this.apiFetch<{ card: PatientIdCard }>(API_PATHS.PATIENT.CARD);
@@ -128,29 +135,77 @@ export class PatientProfileComponent implements OnInit {
     return `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(this.scanUrl(card))}`;
   }
 
+  updateReminderField<K extends keyof ReminderPreferences>(field: K, value: ReminderPreferences[K]) {
+    this.reminderFormModel.update((m) => ({ ...m, [field]: value }));
+  }
+
+  canSavePassword(): boolean {
+    const p = this.passwordFormModel();
+    if (!p.newPassword || p.newPassword.length < 8) return false;
+    if (p.newPassword !== p.confirmPassword) return false;
+    if (this.hasPassword() && !p.currentPassword) return false;
+    return true;
+  }
+
   async save() {
-    const form = this.profileFormModel();
     this.saving.set(true);
     this.successMsg.set('');
     this.errorMsg.set('');
     try {
-      const { profile } = await this.apiFetch<{ profile: Profile }>(API_PATHS.PATIENT.PROFILE, {
+      const { profile } = await this.apiFetch<{ profile: PatientProfile }>(API_PATHS.PATIENT.PROFILE, {
         method: 'PUT',
-        body: JSON.stringify({
-          name: form.name.trim(),
-          allergies: form.allergies.trim() || undefined,
-          currentMedications: form.currentMedications.trim() || undefined,
-          chronicConditions: form.chronicConditions.trim() || undefined,
-        }),
+        body: JSON.stringify(formToProfilePayload(this.profileFormModel())),
       });
       this.profile.set(profile);
+      this.hasPassword.set(Boolean(profile.hasPassword));
       this.successMsg.set('Profile saved.');
       setTimeout(() => this.successMsg.set(''), 3000);
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Could not save profile.';
-      this.errorMsg.set(message);
+      this.errorMsg.set(err instanceof Error ? err.message : 'Could not save profile.');
     } finally {
       this.saving.set(false);
+    }
+  }
+
+  async saveReminderPreferences() {
+    this.savingPrefs.set(true);
+    this.errorMsg.set('');
+    try {
+      await this.apiFetch(API_PATHS.PATIENT.REMINDER_PREFERENCES, {
+        method: 'PUT',
+        body: JSON.stringify(this.reminderFormModel()),
+      });
+      this.successMsg.set('Notification preferences saved.');
+      setTimeout(() => this.successMsg.set(''), 3000);
+    } catch (err: unknown) {
+      this.errorMsg.set(err instanceof Error ? err.message : 'Could not save preferences.');
+    } finally {
+      this.savingPrefs.set(false);
+    }
+  }
+
+  async savePassword() {
+    if (!this.canSavePassword()) return;
+    this.savingPassword.set(true);
+    this.errorMsg.set('');
+    try {
+      const p = this.passwordFormModel();
+      await this.apiFetch(API_PATHS.PATIENT.PROFILE_PASSWORD, {
+        method: 'PUT',
+        body: JSON.stringify({
+          currentPassword: p.currentPassword || undefined,
+          newPassword: p.newPassword,
+          confirmPassword: p.confirmPassword,
+        }),
+      });
+      this.hasPassword.set(true);
+      this.passwordFormModel.set({ currentPassword: '', newPassword: '', confirmPassword: '' });
+      this.successMsg.set('Password saved. You can now log in with email/mobile + password.');
+      setTimeout(() => this.successMsg.set(''), 4000);
+    } catch (err: unknown) {
+      this.errorMsg.set(err instanceof Error ? err.message : 'Could not save password.');
+    } finally {
+      this.savingPassword.set(false);
     }
   }
 }

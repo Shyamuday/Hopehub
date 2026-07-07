@@ -17,7 +17,7 @@ type BookStep = 'form' | 'otp' | 'loading' | 'done';
 export class HomeHeroSectionComponent {
   @Input() whatsappLink = '';
 
-  readonly bookingFormModel = signal({ name: '', mobile: '', otp: '' });
+  readonly bookingFormModel = signal({ mobile: '', otp: '' });
   readonly bookingForm = form(this.bookingFormModel);
 
   readonly step = signal<BookStep>('form');
@@ -28,13 +28,8 @@ export class HomeHeroSectionComponent {
   private readonly router = inject(Router);
 
   async sendOtp() {
-    const { name, mobile: rawMobile } = this.bookingFormModel();
-    const trimmedName = name.trim();
+    const { mobile: rawMobile } = this.bookingFormModel();
     const mobile = rawMobile.trim().replace(/\s+/g, '');
-    if (!trimmedName) {
-      this.error.set('Please enter your full name.');
-      return;
-    }
     if (!/^\d{10}$/.test(mobile)) {
       this.error.set('Enter a valid 10-digit mobile number.');
       return;
@@ -46,7 +41,6 @@ export class HomeHeroSectionComponent {
       await firstValueFrom(
         this.auth.requestOtp(mobile, {
           source: 'HOME_BOOKING',
-          visitorName: trimmedName,
           entryPage: typeof window !== 'undefined' ? window.location.pathname : undefined
         })
       );
@@ -72,7 +66,6 @@ export class HomeHeroSectionComponent {
       const form = this.bookingFormModel();
       const response = await firstValueFrom(
         this.auth.patientLogin({
-          name: form.name.trim(),
           mobile: form.mobile,
           otp: form.otp.trim(),
         }),

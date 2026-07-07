@@ -30,7 +30,7 @@ export class FreeConsultationPromoComponent {
   readonly error = signal('');
   readonly patientSelection = signal<PatientSelectionCandidate[] | null>(null);
 
-  readonly formModel = signal({ name: '', mobile: '', otp: '' });
+  readonly formModel = signal({ mobile: '', otp: '' });
   readonly form = form(this.formModel);
 
   close() {
@@ -47,14 +47,9 @@ export class FreeConsultationPromoComponent {
   }
 
   async sendOtp() {
-    const { name, mobile: rawMobile } = this.formModel();
-    const trimmedName = name.trim();
+    const { mobile: rawMobile } = this.formModel();
     const mobile = rawMobile.trim().replace(/\s+/g, '');
 
-    if (!trimmedName) {
-      this.error.set('Please enter your full name.');
-      return;
-    }
     if (!/^\d{10}$/.test(mobile)) {
       this.error.set('Enter a valid 10-digit mobile number.');
       return;
@@ -66,7 +61,6 @@ export class FreeConsultationPromoComponent {
       await firstValueFrom(
         this.auth.requestOtp(mobile, {
           source: 'PROMO_POPUP',
-          visitorName: trimmedName,
           entryPage: typeof window !== 'undefined' ? window.location.pathname : undefined
         })
       );
@@ -81,7 +75,7 @@ export class FreeConsultationPromoComponent {
   }
 
   async verifyAndRegister() {
-    const { name, mobile, otp } = this.formModel();
+    const { mobile, otp } = this.formModel();
     if (!otp.trim()) {
       this.error.set('Enter the OTP sent to your mobile.');
       return;
@@ -93,7 +87,6 @@ export class FreeConsultationPromoComponent {
     try {
       const response = await firstValueFrom(
         this.auth.patientLogin({
-          name: name.trim(),
           mobile,
           otp: otp.trim()
         })
