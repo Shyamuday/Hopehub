@@ -1,47 +1,49 @@
-@if (patientCard(); as card) {
-  <section class="id-card-panel">
-    <h2>My clinic card</h2>
-    <p class="card-hint">Bring this ID to every visit. Staff can find your record quickly with this number.</p>
-    <div class="id-card" id="patient-id-card-print">
-      <header class="id-card-header">
-        <p class="brand">Vitalis Care</p>
-        @if (card.clinic) {
-          <p class="clinic">{{ card.clinic.name }} ({{ card.clinic.code }})</p>
-        }
-      </header>
-      <div class="id-card-body">
-        <div class="id-card-main">
-          <p class="label">Patient ID</p>
-          <p class="patient-code">{{ card.patientCode }}</p>
-          <p class="patient-name">{{ card.name }}</p>
-          @if (card.mobile) { <p class="contact">{{ card.mobile }}</p> }
+@if (!accountPage) {
+  @if (patientCard(); as card) {
+    <section class="id-card-panel">
+      <h2>My clinic card</h2>
+      <p class="card-hint">Bring this ID to every visit. Staff can find your record quickly with this number.</p>
+      <div class="id-card" id="patient-id-card-print">
+        <header class="id-card-header">
+          <p class="brand">Vitalis Care</p>
+          @if (card.clinic) {
+            <p class="clinic">{{ card.clinic.name }} ({{ card.clinic.code }})</p>
+          }
+        </header>
+        <div class="id-card-body">
+          <div class="id-card-main">
+            <p class="label">Patient ID</p>
+            <p class="patient-code">{{ card.patientCode }}</p>
+            <p class="patient-name">{{ card.name }}</p>
+            @if (card.mobile) { <p class="contact">{{ card.mobile }}</p> }
+          </div>
+          <div class="id-card-qr">
+            <img [src]="qrImageUrl(card)" width="120" height="120" alt="Scan for quick access" />
+            <p class="qr-hint">Scan at clinic</p>
+          </div>
         </div>
-        <div class="id-card-qr">
-          <img [src]="qrImageUrl(card)" width="120" height="120" alt="Scan for quick access" />
-          <p class="qr-hint">Scan at clinic</p>
-        </div>
+        <footer class="id-card-footer">
+          <p>Keep this card safe for future consultations.</p>
+        </footer>
       </div>
-      <footer class="id-card-footer">
-        <p>Keep this card safe for future consultations.</p>
-      </footer>
-    </div>
-    <button type="button" class="btn-print" (click)="printCard()">Print my card</button>
-  </section>
-} @else {
-  <section class="id-card-panel">
-    <app-download-qr
-      [compact]="true"
-      title="Share the app with family"
-      subtitle="Anyone can scan to install — no patient ID needed yet."
-    />
-  </section>
+      <button type="button" class="btn-print" (click)="printCard()">Print my card</button>
+    </section>
+  } @else {
+    <section class="id-card-panel">
+      <app-download-qr
+        [compact]="true"
+        title="Share the app with family"
+        subtitle="Anyone can scan to install — no patient ID needed yet."
+      />
+    </section>
+  }
 }
 
-<div class="profile-wrap">
+<div class="profile-wrap" [class.account-page]="accountPage">
   <div class="profile-panel">
     <div class="profile-hdr">
       <div>
-        <h2>My profile</h2>
+        <h2>{{ accountPage ? 'Edit account' : 'My profile' }}</h2>
         <p class="profile-sub">Save anytime — fill only what you know now. Homeopathic, food, mind &amp; body details help your doctor. Only your name is required.</p>
       </div>
       @if (profile()?.name === 'Patient') {
@@ -154,12 +156,14 @@
         </div>
       </section>
 
-      <section class="profile-section address-section">
-        <app-patient-address-book
-          [defaultRecipientName]="profile()?.name || ''"
-          [defaultPhone]="profile()?.alternateMobile || profile()?.mobile || ''"
-        />
-      </section>
+      @if (showAddresses) {
+        <section class="profile-section address-section">
+          <app-patient-address-book
+            [defaultRecipientName]="profile()?.name || ''"
+            [defaultPhone]="profile()?.alternateMobile || profile()?.mobile || ''"
+          />
+        </section>
+      }
 
       <section class="profile-section">
         <h3>Emergency contact</h3>

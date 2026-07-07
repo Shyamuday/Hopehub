@@ -1,0 +1,48 @@
+<section class="account-hub panel">
+  <div class="hub-hdr">
+    <div>
+      <p class="eyebrow">My Account</p>
+      <h1>Welcome{{ profile()?.name ? ', ' + profile()?.name : '' }}</h1>
+      <p class="hub-lead">Manage your profile, delivery addresses, and care settings.</p>
+    </div>
+    <a class="btn-secondary" [routerLink]="dashboardLink">Go to care dashboard</a>
+  </div>
+
+  @if (loading()) {
+    <p class="loading-text">Loading account…</p>
+  } @else if (profile(); as p) {
+    <div class="summary-grid">
+      <div class="summary-card">
+        <span class="label">Mobile</span>
+        <strong>{{ p.mobile || '—' }}</strong>
+      </div>
+      <div class="summary-card">
+        <span class="label">Email</span>
+        <strong>{{ p.email || 'Not added' }}</strong>
+      </div>
+      <div class="summary-card">
+        <span class="label">Patient ID</span>
+        <strong>{{ p.patientCode || 'Assigned after first visit' }}</strong>
+      </div>
+    </div>
+  }
+
+  <div class="quick-links">
+    @for (link of quickLinks; track link.id) {
+      @if (link.available) {
+        <a class="quick-card" [routerLink]="link.path">
+          <span class="quick-icon">{{ link.icon }}</span>
+          <strong>{{ link.label }}</strong>
+          <p>{{ link.description }}</p>
+        </a>
+      } @else {
+        <div class="quick-card soon" aria-disabled="true">
+          <span class="quick-icon">{{ link.icon }}</span>
+          <strong>{{ link.label }}</strong>
+          <p>{{ link.description }}</p>
+          <span class="soon-badge">Coming soon</span>
+        </div>
+      }
+    }
+  </div>
+</section>

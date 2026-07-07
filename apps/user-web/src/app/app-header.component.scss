@@ -1,0 +1,61 @@
+.account-menu-wrap {
+  position: relative;
+}
+
+.account-menu-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border: 1px solid #dbe3ee;
+  background: #fff;
+  border-radius: 999px;
+  padding: 0.4rem 0.75rem;
+  font: inherit;
+  font-weight: 600;
+  color: #102033;
+  cursor: pointer;
+}
+
+.account-menu-trigger svg {
+  opacity: 0.65;
+}
+
+.account-menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 0.45rem);
+  min-width: 210px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.12);
+  padding: 0.35rem;
+  z-index: 40;
+}
+
+.account-menu a,
+.account-menu .menu-logout {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 0.55rem 0.7rem;
+  border-radius: 8px;
+  text-decoration: none;
+  color: #102033;
+  font-size: 0.88rem;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.account-menu a:hover,
+.account-menu .menu-logout:hover {
+  background: #f8fafc;
+}
+
+.account-menu .menu-logout {
+  margin-top: 0.2rem;
+  border-top: 1px solid #eef2f7;
+  padding-top: 0.7rem;
+  color: #b91c1c;
+}

@@ -63,7 +63,15 @@
 
         <section class="grid two">
           <app-download-qr [compact]="true" />
-          <app-patient-profile />
+          <section class="panel account-shortcut">
+            <p class="eyebrow">My Account</p>
+            <h2>Profile &amp; addresses</h2>
+            <p>Update your health profile, delivery addresses, and account settings in one place.</p>
+            <div class="account-shortcut-links">
+              <a class="btn-primary" routerLink="/patient/account">Open my account</a>
+              <a class="btn-link" routerLink="/patient/account/profile">Edit profile</a>
+            </div>
+          </section>
         </section>
       }
 

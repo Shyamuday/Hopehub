@@ -18,6 +18,9 @@ export const ROUTE_PATHS = {
   TESTIMONIALS: 'testimonials',
   CAREERS: 'careers',
   PATIENT_DASHBOARD: 'patient/dashboard',
+  PATIENT_ACCOUNT: 'patient/account',
+  PATIENT_ACCOUNT_PROFILE: 'patient/account/profile',
+  PATIENT_ACCOUNT_ADDRESSES: 'patient/account/addresses',
   PATIENT_PROFILE: 'patient/profile',
   AUTH_RESET: 'auth/reset'
 } as const;

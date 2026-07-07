@@ -3,6 +3,16 @@
   gap: 1rem;
 }
 
+:host-context(.account-content) {
+  display: block;
+}
+
+.profile-wrap.account-page .profile-panel {
+  border: 0;
+  box-shadow: none;
+  padding: 0;
+}
+
 .id-card-panel {
   background: #fff;
   border: 1px solid #c7d2fe;

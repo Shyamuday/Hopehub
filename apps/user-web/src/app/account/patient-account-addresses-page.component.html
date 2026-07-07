@@ -1,0 +1,16 @@
+<section class="addresses-page panel">
+  <div class="page-hdr">
+    <p class="eyebrow">My Account</p>
+    <h1>Manage Addresses</h1>
+    <p class="page-lead">Save home, work, or other delivery addresses. Mark one as default for medicine delivery.</p>
+  </div>
+
+  @if (!loading()) {
+    <app-patient-address-book
+      [defaultRecipientName]="recipientName()"
+      [defaultPhone]="recipientPhone()"
+    />
+  } @else {
+    <p class="loading-text">Loading…</p>
+  }
+</section>

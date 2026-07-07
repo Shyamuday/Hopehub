@@ -436,6 +436,18 @@ export const ROUTE_SEO_CONTENT = {
     seoTitle: 'Patient Dashboard | Vitalis Care',
     seoDescription: 'Manage your consultations, messages, and prescriptions in the Vitalis Care patient dashboard.'
   },
+  'patient/account': {
+    seoTitle: 'My Account | Vitalis Care',
+    seoDescription: 'View your account summary, profile, and delivery addresses.'
+  },
+  'patient/account/profile': {
+    seoTitle: 'Edit Account | Vitalis Care',
+    seoDescription: 'Update your profile, health details, notifications, and password.'
+  },
+  'patient/account/addresses': {
+    seoTitle: 'Manage Addresses | Vitalis Care',
+    seoDescription: 'Save and manage delivery addresses for medicine orders.'
+  },
   'doctor/dashboard': {
     seoTitle: 'Doctor Dashboard | Vitalis Care',
     seoDescription: 'Review assigned consultations, patient chats, and prescriptions in the Vitalis Care doctor dashboard.'

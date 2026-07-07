@@ -1,0 +1,95 @@
+.account-shell {
+  display: grid;
+  grid-template-columns: minmax(240px, 280px) minmax(0, 1fr);
+  gap: 1.25rem;
+  padding: 1rem clamp(1rem, 4vw, 3rem) 2.5rem;
+  align-items: start;
+}
+
+.account-nav {
+  padding: 1rem;
+  position: sticky;
+  top: 5.5rem;
+}
+
+.account-nav-title {
+  margin: 0 0 0.75rem;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+.account-nav-link {
+  display: flex;
+  gap: 0.65rem;
+  align-items: flex-start;
+  padding: 0.7rem 0.75rem;
+  border-radius: 12px;
+  text-decoration: none;
+  color: inherit;
+  border: 1px solid transparent;
+  margin-bottom: 0.35rem;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.account-nav-link:hover {
+  background: #f8fafc;
+}
+
+.account-nav-link.active {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+}
+
+.account-nav-link strong {
+  display: block;
+  font-size: 0.9rem;
+  color: #102033;
+}
+
+.account-nav-link small {
+  display: block;
+  margin-top: 0.15rem;
+  font-size: 0.74rem;
+  color: #64748b;
+  line-height: 1.35;
+}
+
+.nav-icon {
+  font-size: 1.1rem;
+  line-height: 1;
+  margin-top: 0.1rem;
+}
+
+.account-content {
+  min-width: 0;
+}
+
+@media (max-width: 900px) {
+  .account-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .account-nav {
+    position: static;
+  }
+
+  .account-nav nav {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.35rem;
+  }
+
+  .account-nav-link {
+    margin-bottom: 0;
+    height: 100%;
+  }
+}
+
+@media (max-width: 560px) {
+  .account-nav nav {
+    grid-template-columns: 1fr;
+  }
+}

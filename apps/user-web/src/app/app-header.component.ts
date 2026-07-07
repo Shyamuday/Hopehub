@@ -1,7 +1,9 @@
 import { CommonModule, DOCUMENT } from '@angular/common';
 import { Component, effect, EventEmitter, HostListener, inject, Input, OnDestroy, Output, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { NotificationBellHostComponent } from '@vitalis/platform-ui';
 import { PUBLIC_SITE_BRAND } from './core/constants/public-site-content.constants';
+import { ROUTE_PATHS } from './core/constants/app-routes.constants';
 import { environment } from '../environments/environment';
 import { AUTH_TOKEN_KEY } from './core/constants/auth.constants';
 import { AuthFormOverlayComponent } from './auth/auth-form-overlay.component';
@@ -10,8 +12,9 @@ import { AppOverlayService } from './overlay.service';
 
 @Component({
   selector: 'app-header',
-  imports: [CommonModule, NotificationBellHostComponent],
+  imports: [CommonModule, RouterLink, NotificationBellHostComponent],
   templateUrl: './app-header.component.html',
+  styleUrl: './app-header.component.scss',
 })
 export class AppHeaderComponent implements OnDestroy {
   @Input() subtitle = 'Digital clinic';
@@ -20,8 +23,15 @@ export class AppHeaderComponent implements OnDestroy {
   @Output() logout = new EventEmitter<void>();
 
   readonly brand = PUBLIC_SITE_BRAND;
+  readonly accountPaths = {
+    hub: `/${ROUTE_PATHS.PATIENT_ACCOUNT}`,
+    profile: `/${ROUTE_PATHS.PATIENT_ACCOUNT_PROFILE}`,
+    addresses: `/${ROUTE_PATHS.PATIENT_ACCOUNT_ADDRESSES}`,
+    dashboard: `/${ROUTE_PATHS.PATIENT_DASHBOARD}`,
+  };
 
   readonly menuOpen = signal(false);
+  readonly accountMenuOpen = signal(false);
   readonly bellConfig = {
     apiBase: environment.apiUrl,
     tokenKey: AUTH_TOKEN_KEY,
@@ -48,14 +58,35 @@ export class AppHeaderComponent implements OnDestroy {
     if (this.menuOpen()) {
       this.closeMenu();
     }
+    if (this.accountMenuOpen()) {
+      this.closeAccountMenu();
+    }
+  }
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent): void {
+    const target = event.target as HTMLElement | null;
+    if (!target?.closest('.account-menu-wrap')) {
+      this.closeAccountMenu();
+    }
   }
 
   toggleMenu(): void {
     this.menuOpen.update((open) => !open);
+    this.closeAccountMenu();
   }
 
   closeMenu(): void {
     this.menuOpen.set(false);
+  }
+
+  toggleAccountMenu(event: Event): void {
+    event.stopPropagation();
+    this.accountMenuOpen.update((open) => !open);
+  }
+
+  closeAccountMenu(): void {
+    this.accountMenuOpen.set(false);
   }
 
   openAuthOverlay(event: Event) {

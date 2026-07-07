@@ -38,6 +38,42 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.account-shortcut h2 {
+  margin: 0.35rem 0 0.5rem;
+}
+
+.account-shortcut p {
+  margin: 0 0 1rem;
+  color: #64748b;
+  line-height: 1.5;
+}
+
+.account-shortcut-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  align-items: center;
+}
+
+.account-shortcut .btn-primary {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.55rem 0.95rem;
+  border-radius: 10px;
+  background: #0f62fe;
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.86rem;
+  text-decoration: none;
+}
+
+.account-shortcut .btn-link {
+  color: #1d4ed8;
+  font-weight: 700;
+  font-size: 0.86rem;
+  text-decoration: none;
+}
+
 .stats {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }

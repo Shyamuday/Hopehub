@@ -1,0 +1,34 @@
+<app-header
+  subtitle="My Account"
+  [user]="auth.user()"
+  [whatsappLink]="whatsappLink"
+  (logout)="logout()"
+/>
+
+<main class="account-shell">
+  <aside class="account-nav panel">
+    <p class="account-nav-title">Account</p>
+    <nav aria-label="Account navigation">
+      @for (item of navItems; track item.id) {
+        <a
+          class="account-nav-link"
+          [routerLink]="item.path"
+          routerLinkActive="active"
+          [routerLinkActiveOptions]="{ exact: item.id === 'overview' }"
+        >
+          <span class="nav-icon" aria-hidden="true">{{ item.icon }}</span>
+          <span>
+            <strong>{{ item.label }}</strong>
+            <small>{{ item.description }}</small>
+          </span>
+        </a>
+      }
+    </nav>
+  </aside>
+
+  <section class="account-content">
+    <router-outlet />
+  </section>
+</main>
+
+<app-footer [whatsappLink]="whatsappLink" />

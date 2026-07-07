@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, Input, OnInit, inject, signal } from '@angular/core';
 import { form, FormField } from '@angular/forms/signals';
 import { API_PATHS } from './core/constants/api-paths.constants';
 import {
@@ -41,6 +41,9 @@ type PatientIdCard = {
   templateUrl: './patient-profile.component.html',
 })
 export class PatientProfileComponent implements OnInit {
+  @Input() showAddresses = true;
+  @Input() accountPage = false;
+
   private readonly auth = inject(AuthService);
 
   readonly loading = signal(true);

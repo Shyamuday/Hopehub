@@ -14,9 +14,35 @@
       @if (user) {
         <div class="user-chip">
           <app-notification-bell-host [config]="bellConfig" />
-          <span>{{ user.name }}</span>
-          <strong>{{ user.role }}</strong>
-          <button class="secondary" type="button" (click)="logout.emit()">Logout</button>
+          @if (user.role === 'PATIENT') {
+            <div class="account-menu-wrap">
+              <button
+                type="button"
+                class="account-menu-trigger"
+                (click)="toggleAccountMenu($event)"
+                [attr.aria-expanded]="accountMenuOpen()"
+                aria-haspopup="menu"
+              >
+                <span>{{ user.name }}</span>
+                <svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true">
+                  <path fill="currentColor" d="M5.5 7.5 10 12l4.5-4.5" />
+                </svg>
+              </button>
+              @if (accountMenuOpen()) {
+                <div class="account-menu" role="menu">
+                  <a role="menuitem" [routerLink]="accountPaths.hub" (click)="closeAccountMenu()">My Account</a>
+                  <a role="menuitem" [routerLink]="accountPaths.profile" (click)="closeAccountMenu()">Edit Account</a>
+                  <a role="menuitem" [routerLink]="accountPaths.addresses" (click)="closeAccountMenu()">Manage Addresses</a>
+                  <a role="menuitem" [routerLink]="accountPaths.dashboard" (click)="closeAccountMenu()">Care Dashboard</a>
+                  <button type="button" role="menuitem" class="menu-logout" (click)="closeAccountMenu(); logout.emit()">Logout</button>
+                </div>
+              }
+            </div>
+          } @else {
+            <span>{{ user.name }}</span>
+            <strong>{{ user.role }}</strong>
+            <button class="secondary" type="button" (click)="logout.emit()">Logout</button>
+          }
         </div>
       } @else {
         <button

@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
 import { form, FormField } from '@angular/forms/signals';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { RoleTaskGuideComponent } from '@vitalis/platform-ui';
 import { AppFooterComponent } from './app-footer.component';
 import { AppHeaderComponent } from './app-header.component';
@@ -21,7 +21,6 @@ import { PrescriptionHistoryComponent } from './prescription-history.component';
 import { LabResultsComponent } from './lab-results.component';
 import { ReminderPreferencesComponent, ReminderPrefs } from './reminder-preferences.component';
 import { TodayMedicinesComponent } from './today-medicines.component';
-import { PatientProfileComponent } from './patient-profile.component';
 import { AppDownloadQrComponent } from './shared/app-download-qr/app-download-qr.component';
 import { ClinicApiService } from './clinic-api.service';
 import { DashboardDataService, DashboardPaymentService } from './dashboard-data.service';
@@ -60,8 +59,8 @@ import {
     LabResultsComponent,
     ReminderPreferencesComponent,
     TodayMedicinesComponent,
-    PatientProfileComponent,
     AppDownloadQrComponent,
+    RouterLink,
     RoleTaskGuideComponent,
   ]
 ,

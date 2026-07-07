@@ -18,6 +18,10 @@ import { WhySuccessfulComponent } from './why-successful.component';
 import { roleGuard } from './role.guard';
 import { HomeComponent } from './home.component';
 import { AuthResetCallbackComponent } from './auth/auth-reset-callback.component';
+import { PatientAccountShellComponent } from './account/patient-account-shell.component';
+import { PatientAccountHubComponent } from './account/patient-account-hub.component';
+import { PatientAccountProfilePage } from './account/patient-account-profile-page.component';
+import { PatientAccountAddressesPageComponent } from './account/patient-account-addresses-page.component';
 
 export const routes: Routes = [
   {
@@ -138,6 +142,28 @@ export const routes: Routes = [
       roles: ['PATIENT'],
       ...ROUTE_SEO_CONTENT['patient/dashboard']
     }
+  },
+  {
+    path: 'patient/account',
+    component: PatientAccountShellComponent,
+    canActivate: [roleGuard],
+    data: {
+      roles: ['PATIENT'],
+      ...ROUTE_SEO_CONTENT['patient/account']
+    },
+    children: [
+      { path: '', component: PatientAccountHubComponent },
+      {
+        path: 'profile',
+        component: PatientAccountProfilePage,
+        data: ROUTE_SEO_CONTENT['patient/account/profile']
+      },
+      {
+        path: 'addresses',
+        component: PatientAccountAddressesPageComponent,
+        data: ROUTE_SEO_CONTENT['patient/account/addresses']
+      }
+    ]
   },
   {
     path: 'doctor/dashboard',

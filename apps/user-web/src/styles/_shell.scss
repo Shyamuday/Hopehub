@@ -11,8 +11,7 @@
   min-height: 100vh;
 }
 
-.app-header,
-.app-footer {
+.app-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -190,12 +189,6 @@ body.header-menu-no-scroll {
 }
 
 .app-footer {
-  align-items: flex-start;
-  border-top: 1px solid #e3e9f2;
-  color: #64748b;
-  margin-top: 2rem;
-}
-
-.app-footer p {
-  margin-bottom: 0;
+  display: block;
+  padding: 0;
 }
