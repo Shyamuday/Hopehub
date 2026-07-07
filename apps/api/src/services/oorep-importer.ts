@@ -46,6 +46,8 @@ async function importRemedies(prisma: PrismaClient, sqlPath: string) {
   let batch: Prisma.HomeopathicRemedyCreateManyInput[] = [];
   let count = 0;
   const seen = new Set<number>();
+  // Track all remedies from dump for post-pass linking
+  const allParsed: Array<{ id: number; name: string; abbreviation: string; normalizedName: string }> = [];
 
   const flush = async () => {
     if (!batch.length) return;
@@ -61,11 +63,13 @@ async function importRemedies(prisma: PrismaClient, sqlPath: string) {
     const parsed = parseRemedyRow(fields);
     if (!parsed || seen.has(parsed.id)) continue;
     seen.add(parsed.id);
+    const normalizedName = remedyKey(parsed.name);
+    allParsed.push({ id: parsed.id, name: parsed.name, abbreviation: parsed.abbreviation, normalizedName });
     batch.push({
       oorepRemedyId: parsed.id,
       name: parsed.name,
       abbreviation: parsed.abbreviation,
-      normalizedName: remedyKey(parsed.name)
+      normalizedName
     });
     if (batch.length >= 500) {
       await flush();
@@ -73,6 +77,20 @@ async function importRemedies(prisma: PrismaClient, sqlPath: string) {
   }
 
   await flush();
+
+  // Post-pass: link any existing remedies (e.g. from seed) that were skipped by
+  // skipDuplicates but still have oorepRemedyId = null
+  let linked = 0;
+  for (const remedy of allParsed) {
+    const updated = await prisma.homeopathicRemedy.updateMany({
+      where: { normalizedName: remedy.normalizedName, oorepRemedyId: null },
+      data: { oorepRemedyId: remedy.id, abbreviation: remedy.abbreviation }
+    });
+    if (updated.count > 0) linked++;
+  }
+  if (linked > 0) {
+    console.log(`[oorep-import] linked oorepRemedyId for ${linked} pre-existing remedies`);
+  }
   console.log(`[oorep-import] remedies imported: ${count}`);
 }
 
