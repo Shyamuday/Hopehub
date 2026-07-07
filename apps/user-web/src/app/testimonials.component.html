@@ -65,12 +65,9 @@
 
         <section class="panel about-cta">
           <div>
-            <p class="eyebrow">Your story could be next</p>
-            <h2>Start your care journey today.</h2>
-            <p>
-              Book a consultation and let our clinical team guide you toward lasting relief from chronic symptoms
-              through a structured, patient-first approach.
-            </p>
+            <p class="eyebrow">{{ copy.cta.eyebrow }}</p>
+            <h2>{{ copy.cta.title }}</h2>
+            <p>{{ copy.cta.body }}</p>
           </div>
           <a class="whatsapp-action" [href]="whatsappLink()" target="_blank" rel="noopener" aria-label="Chat on WhatsApp">
             <svg class="wa-icon" viewBox="0 0 24 24" aria-hidden="true">

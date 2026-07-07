@@ -281,7 +281,52 @@ export const TESTIMONIALS_PAGE_CONTENT = {
   eyebrow: 'Patient stories',
   title: 'Real results from patients who chose a different path.',
   body:
-    'These are real experiences from patients who consulted Vitalis Care and Research Centre for a wide range of health concerns and found relief through structured, doctor-led homeopathic care.'
+    'These are real experiences from patients who consulted Vitalis Care and Research Centre for a wide range of health concerns and found relief through structured, doctor-led homeopathic care.',
+  cta: {
+    eyebrow: 'Your story could be next',
+    title: 'Start your care journey today.',
+    body:
+      'Book a consultation for any health concern and let our clinical team guide you with individualized homeopathic care and follow-up.'
+  }
+} as const;
+
+export const OUR_DOCTORS_PAGE_CONTENT = {
+  headerSubtitle: 'Our doctors',
+  eyebrow: 'Our clinical team',
+  title: 'Experienced doctors. Dedicated to patient care.',
+  body:
+    'Vitalis Care and Research Centre maintains an internal panel of qualified homeopathic doctors with expertise across acute illnesses, chronic diseases, skin and hair concerns, metabolic health, pediatrics, and more. Patients are matched to doctors based on their condition — not random browsing.',
+  matching: {
+    eyebrow: 'How it works',
+    title: 'You do not choose a doctor — we match you to the right one.',
+    body:
+      'At Vitalis, doctor assignment is internal. This ensures patients with specific conditions receive care from the most qualified and available doctor on our panel, rather than being left to navigate listings alone.'
+  },
+  cta: {
+    eyebrow: 'Ready to start?',
+    title: 'Book a consultation today.',
+    body:
+      'Describe your concern, complete a short intake, and our team will assign the right doctor and guide you through the consultation process.'
+  }
+} as const;
+
+export const CAREERS_PAGE_CONTENT = {
+  headerSubtitle: 'Careers',
+  eyebrow: 'Join our team',
+  title: 'Build your career at a clinic that puts patient care first.',
+  body:
+    'Vitalis Care and Research Centre is a doctor-led homeopathic clinic serving patients with acute, chronic, and preventive health needs. We are growing our clinical, care, pharmacy, and operations teams. If you want to do meaningful work in healthcare, we would like to hear from you.',
+  applyLabel: 'Apply on WhatsApp',
+  perksEyebrow: 'Why work with us',
+  perksTitle: 'What makes Vitalis a good place to grow.',
+  perks: [
+    { label: 'Purpose-driven work', detail: 'Help patients across all health concerns find lasting relief through homeopathy.' },
+    { label: 'Remote-first culture', detail: 'Most roles offer remote or hybrid working arrangements.' },
+    { label: 'Structured growth', detail: 'Clear career tracks in clinical, care, and operations roles.' },
+    { label: 'Learning environment', detail: 'Internal training, case reviews, and mentorship programs.' },
+    { label: 'Ethical care', detail: 'We prioritise gentle, individualized treatment and long-term patient wellbeing.' },
+    { label: 'Stable platform', detail: 'Modern digital tools with a dependable, growing patient base.' }
+  ] as const
 } as const;
 
 /** Route-level SEO — keys match `app.routes.ts` path segments. */

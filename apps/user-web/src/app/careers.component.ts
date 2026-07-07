@@ -4,6 +4,7 @@ import { AppHeaderComponent } from './app-header.component';
 import { ClinicApiClient } from './clinic-api/clinic-api.client';
 import { API_PATHS } from './core/constants/api-paths.constants';
 import { WHATSAPP_CONTACT_URL } from './core/constants/branding.constants';
+import { CAREERS_PAGE_CONTENT } from './core/constants/public-site-content.constants';
 
 export interface JobVacancy {
   id: string;
@@ -28,6 +29,7 @@ export interface JobVacancy {
 })
 export class CareersComponent implements OnInit {
   readonly whatsappLink = WHATSAPP_CONTACT_URL;
+  readonly copy = CAREERS_PAGE_CONTENT;
 
   readonly applyLink =
     'https://wa.me/919876543210?text=Hi%20Vitalis%20Care%2C%20I%20would%20like%20to%20apply%20for%20a%20position.';
@@ -40,15 +42,6 @@ export class CareersComponent implements OnInit {
   readonly expandedId = signal<string | null>(null);
 
   private readonly client = new ClinicApiClient();
-
-  readonly perks = [
-    { label: 'Purpose-driven work', detail: 'Help patients with chronic conditions find lasting relief.' },
-    { label: 'Remote-first culture', detail: 'Most roles offer remote or hybrid working arrangements.' },
-    { label: 'Structured growth', detail: 'Clear career tracks in clinical, care, and operations roles.' },
-    { label: 'Learning environment', detail: 'Internal training, case reviews, and mentorship programs.' },
-    { label: 'Ethical care', detail: 'We prioritise minimal medicine and long-term patient wellbeing.' },
-    { label: 'Stable platform', detail: 'Modern digital tools with a dependable, growing patient base.' },
-  ];
 
   async ngOnInit() {
     this.loading.set(true);

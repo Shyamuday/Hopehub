@@ -1,17 +1,13 @@
 
     <section class="public-shell">
-      <app-header subtitle="Our doctors" [whatsappLink]="whatsappLink" />
+      <app-header [subtitle]="copy.headerSubtitle" [whatsappLink]="whatsappLink" />
 
       <main class="content-page">
 
         <section class="page-hero panel">
-          <p class="eyebrow">Our clinical team</p>
-          <h1>Experienced doctors. Dedicated to long-term patient care.</h1>
-          <p>
-            Vitalis Care and Research Centre maintains an internal panel of qualified homeopathic doctors with expertise
-            across chronic conditions, skin and hair concerns, metabolic health, and more. Patients are matched to
-            doctors based on their condition — not random browsing.
-          </p>
+          <p class="eyebrow">{{ copy.eyebrow }}</p>
+          <h1>{{ copy.title }}</h1>
+          <p>{{ copy.body }}</p>
         </section>
 
         @if (loading()) {
@@ -73,11 +69,10 @@
         }
 
         <section class="panel">
-          <p class="eyebrow">How it works</p>
-          <h2>You do not choose a doctor — we match you to the right one.</h2>
+          <p class="eyebrow">{{ copy.matching.eyebrow }}</p>
+          <h2>{{ copy.matching.title }}</h2>
           <p style="color:#526070; line-height:1.7; max-width:640px; margin-top:0.5rem">
-            At Vitalis, doctor assignment is internal. This ensures patients with specific conditions receive care from
-            the most qualified and available doctor on our panel, rather than being left to navigate listings alone.
+            {{ copy.matching.body }}
           </p>
           <div class="content-grid two" style="margin-top:1.25rem">
             @for (step of process; track step.step) {
@@ -91,12 +86,9 @@
 
         <section class="panel about-cta">
           <div>
-            <p class="eyebrow">Ready to start?</p>
-            <h2>Book a consultation today.</h2>
-            <p>
-              Describe your concern, complete a short intake, and our team will assign the right doctor and
-              guide you through the consultation process.
-            </p>
+            <p class="eyebrow">{{ copy.cta.eyebrow }}</p>
+            <h2>{{ copy.cta.title }}</h2>
+            <p>{{ copy.cta.body }}</p>
           </div>
           <a class="whatsapp-action" [href]="whatsappLink" target="_blank" rel="noopener" aria-label="Chat on WhatsApp">
             <svg class="wa-icon" viewBox="0 0 24 24" aria-hidden="true">

@@ -3,6 +3,7 @@ import { DetailRowsComponent, type DetailRow } from '@vitalis/platform-ui';
 import { AppFooterComponent } from './app-footer.component';
 import { AppHeaderComponent } from './app-header.component';
 import { WHATSAPP_CONTACT_URL } from './core/constants/branding.constants';
+import { OUR_DOCTORS_PAGE_CONTENT } from './core/constants/public-site-content.constants';
 import { API_PATHS } from './core/constants/api-paths.constants';
 import { ClinicApiClient } from './clinic-api/clinic-api.client';
 
@@ -24,6 +25,7 @@ interface PublicDoctor {
 })
 export class OurDoctorsComponent {
   readonly whatsappLink = WHATSAPP_CONTACT_URL;
+  readonly copy = OUR_DOCTORS_PAGE_CONTENT;
   private readonly client = new ClinicApiClient();
 
   readonly doctors = signal<PublicDoctor[]>([]);
