@@ -41,6 +41,21 @@ enum LifestyleStatus {
   PREFER_NOT_TO_SAY
 }
 
+enum DietType {
+  VEGETARIAN
+  NON_VEGETARIAN
+  VEGAN
+  EGGETARIAN
+  MIXED
+}
+
+enum ThermalPreference {
+  HOT_NATURED
+  COLD_NATURED
+  MIXED
+  NEUTRAL
+}
+
 model User {
   id                  String         @id @default(cuid())
   name                String
@@ -78,6 +93,35 @@ model User {
   alcoholUse          LifestyleStatus?
   preferredLanguage   String?
   patientNotes        String?        @db.Text
+  dietType            DietType?
+  foodHabits          String?        @db.Text
+  foodCravings        String?        @db.Text
+  foodAversions       String?        @db.Text
+  appetiteNotes       String?        @db.Text
+  thirstNotes         String?        @db.Text
+  sleepPattern        String?        @db.Text
+  dreamNotes          String?        @db.Text
+  thermalPreference   ThermalPreference?
+  perspirationNotes   String?        @db.Text
+  bowelHabits         String?        @db.Text
+  urineHabits         String?        @db.Text
+  menstrualHistory    String?        @db.Text
+  mentalTemperament   String?        @db.Text
+  fearsPhobias        String?        @db.Text
+  angerGriefPatterns  String?        @db.Text
+  concentrationMemory String?        @db.Text
+  socialBehaviour     String?        @db.Text
+  stressTriggers      String?        @db.Text
+  childhoodIllnesses  String?        @db.Text
+  vaccinationHistory  String?        @db.Text
+  previousHomeopathicTreatment String? @db.Text
+  aggravatingFactors  String?        @db.Text
+  relievingFactors    String?        @db.Text
+  exerciseHabits      String?        @db.Text
+  stimulantHabits     String?        @db.Text
+  constitutionalNotes String?        @db.Text
+  skinHairNailNotes   String?        @db.Text
+  weatherSensitivity  String?        @db.Text
   doctorProfile       Doctor?
   patientConsults     Consultation[] @relation("PatientConsultations")
   doctorConsults      Consultation[] @relation("DoctorConsultations")

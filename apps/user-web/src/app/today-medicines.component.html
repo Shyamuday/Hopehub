@@ -22,7 +22,7 @@
                   <button type="button" class="chip" [disabled]="disabled" (click)="setExplainReason(reason)">{{ reason }}</button>
                 }
               </div>
-              <textarea rows="2" attr.placeholder="Why was this dose missed or skipped?" [formField]="explainNoteForm.note"></textarea>
+              <textarea rows="2" placeholder="Why was this dose missed or skipped?" [formField]="explainNoteForm.note"></textarea>
               <div class="actions">
                 <button type="button" class="primary" [disabled]="disabled || explainNoteModel().note.trim().length < 2" (click)="confirmExplain(dose.id)">
                   Save reason
@@ -79,7 +79,7 @@
                     <button type="button" class="chip" [disabled]="disabled" (click)="setSkipReason(reason)">{{ reason }}</button>
                   }
                 </div>
-                <textarea rows="2" attr.placeholder="Why are you skipping this dose?" [formField]="skipNoteForm.note"></textarea>
+                <textarea rows="2" placeholder="Why are you skipping this dose?" [formField]="skipNoteForm.note"></textarea>
                 <div class="actions">
                   <button type="button" class="primary" [disabled]="disabled || skipNoteModel().note.trim().length < 2" (click)="confirmSkip(dose.id)">
                     Confirm skip

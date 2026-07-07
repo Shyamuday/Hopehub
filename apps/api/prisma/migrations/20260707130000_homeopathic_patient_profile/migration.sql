@@ -1,0 +1,33 @@
+-- Homeopathic & behavioural patient profile fields
+CREATE TYPE "DietType" AS ENUM ('VEGETARIAN', 'NON_VEGETARIAN', 'VEGAN', 'EGGETARIAN', 'MIXED');
+CREATE TYPE "ThermalPreference" AS ENUM ('HOT_NATURED', 'COLD_NATURED', 'MIXED', 'NEUTRAL');
+
+ALTER TABLE "User" ADD COLUMN "dietType" "DietType";
+ALTER TABLE "User" ADD COLUMN "foodHabits" TEXT;
+ALTER TABLE "User" ADD COLUMN "foodCravings" TEXT;
+ALTER TABLE "User" ADD COLUMN "foodAversions" TEXT;
+ALTER TABLE "User" ADD COLUMN "appetiteNotes" TEXT;
+ALTER TABLE "User" ADD COLUMN "thirstNotes" TEXT;
+ALTER TABLE "User" ADD COLUMN "sleepPattern" TEXT;
+ALTER TABLE "User" ADD COLUMN "dreamNotes" TEXT;
+ALTER TABLE "User" ADD COLUMN "thermalPreference" "ThermalPreference";
+ALTER TABLE "User" ADD COLUMN "perspirationNotes" TEXT;
+ALTER TABLE "User" ADD COLUMN "bowelHabits" TEXT;
+ALTER TABLE "User" ADD COLUMN "urineHabits" TEXT;
+ALTER TABLE "User" ADD COLUMN "menstrualHistory" TEXT;
+ALTER TABLE "User" ADD COLUMN "mentalTemperament" TEXT;
+ALTER TABLE "User" ADD COLUMN "fearsPhobias" TEXT;
+ALTER TABLE "User" ADD COLUMN "angerGriefPatterns" TEXT;
+ALTER TABLE "User" ADD COLUMN "concentrationMemory" TEXT;
+ALTER TABLE "User" ADD COLUMN "socialBehaviour" TEXT;
+ALTER TABLE "User" ADD COLUMN "stressTriggers" TEXT;
+ALTER TABLE "User" ADD COLUMN "childhoodIllnesses" TEXT;
+ALTER TABLE "User" ADD COLUMN "vaccinationHistory" TEXT;
+ALTER TABLE "User" ADD COLUMN "previousHomeopathicTreatment" TEXT;
+ALTER TABLE "User" ADD COLUMN "aggravatingFactors" TEXT;
+ALTER TABLE "User" ADD COLUMN "relievingFactors" TEXT;
+ALTER TABLE "User" ADD COLUMN "exerciseHabits" TEXT;
+ALTER TABLE "User" ADD COLUMN "stimulantHabits" TEXT;
+ALTER TABLE "User" ADD COLUMN "constitutionalNotes" TEXT;
+ALTER TABLE "User" ADD COLUMN "skinHairNailNotes" TEXT;
+ALTER TABLE "User" ADD COLUMN "weatherSensitivity" TEXT;

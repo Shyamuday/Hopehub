@@ -12,7 +12,7 @@
 
       <!-- Filters -->
       <div class="filters">
-        <input class="search" [formField]="searchForm.q" (input)="onSearch()" attr.placeholder="🔍 Search by patient or disease…" />
+        <input class="search" [formField]="searchForm.q" (input)="onSearch()" placeholder="🔍 Search by patient or disease…" />
         <div class="ftabs">
           @for (f of statusFilters; track f.value) {
             <button class="ftab" [class.active]="statusFilter() === f.value" (click)="setStatus(f.value)">{{ f.label }}</button>
@@ -111,7 +111,7 @@
             @if (doctorsLoading()) {
               <div class="loading"><div class="spinner"></div></div>
             } @else {
-              <input class="search" [formField]="doctorSearchForm.q" (input)="filterDoctors()" attr.placeholder="🔍 Filter doctors…" style="margin-bottom:10px" />
+              <input class="search" [formField]="doctorSearchForm.q" (input)="filterDoctors()" placeholder="🔍 Filter doctors…" style="margin-bottom:10px" />
               <div class="doc-list">
                 @for (d of filteredDoctors(); track d.id) {
                   <div class="doc-item" [class.selected]="selectedDoctorId() === d.id" (click)="selectedDoctorId.set(d.id)">

@@ -55,7 +55,7 @@
 
     <div class="purge-box">
       <label>Delete logs older than (days)
-        <input type="number" [formField]="purgeForm.days" attr.min="30" />
+        <input type="number" [formField]="purgeForm.days" />
       </label>
       <div class="actions">
         <button type="button" [disabled]="saving()" (click)="dryRunPurge()">Dry run</button>

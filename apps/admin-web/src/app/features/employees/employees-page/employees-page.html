@@ -9,7 +9,7 @@
 
       <!-- Search + Filters -->
       <div class="filters">
-        <input class="search" [formField]="searchForm.q" (input)="onSearch()" attr.placeholder="🔍 Search by name…" />
+        <input class="search" [formField]="searchForm.q" (input)="onSearch()" placeholder="🔍 Search by name…" />
         <div class="filter-tabs">
           @for (f of filters; track f.value) {
             <button class="ftab" [class.active]="activeFilter() === f.value" (click)="setFilter(f.value)">{{ f.label }}</button>
@@ -96,7 +96,7 @@
               <div class="fsect">
                 <div class="ftitle">Employment</div>
                 <div class="frow">
-                  <div class="fg"><label>Employee ID</label><input [formField]="profileForm.employeeId" attr.placeholder="EMP-001" /></div>
+                  <div class="fg"><label>Employee ID</label><input [formField]="profileForm.employeeId" placeholder="EMP-001" /></div>
                   <div class="fg">
                     <label>Status</label>
                     <select [formField]="profileForm.employeeStatus">

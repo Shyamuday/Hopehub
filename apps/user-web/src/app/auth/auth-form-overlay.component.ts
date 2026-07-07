@@ -19,6 +19,7 @@ type AuthFormOverlayData = {
 };
 
 type ForgotStep = 'none' | 'reset';
+type LoginMode = 'password' | 'otp';
 
 @Component({
   selector: 'app-auth-form-overlay',
@@ -27,6 +28,7 @@ type ForgotStep = 'none' | 'reset';
 })
 export class AuthFormOverlayComponent {
   private readonly overlayData = (inject(APP_OVERLAY_DATA) as AuthFormOverlayData | null) || {};
+  readonly loginMode = signal<LoginMode>('password');
   readonly isProcessing = signal(false);
   readonly forgotStep = signal<ForgotStep>(this.overlayData.initialForgotStep || 'none');
   readonly resetToken = signal<string>(this.overlayData.resetToken || '');
@@ -69,6 +71,10 @@ export class AuthFormOverlayComponent {
       forgot.password === forgot.confirmPassword &&
       forgot.password.length >= 8
     );
+  }
+
+  setLoginMode(mode: LoginMode) {
+    this.loginMode.set(mode);
   }
 
   requestOtp() {

@@ -78,11 +78,11 @@
                 </select>
               </label>
             </div>
-            <label>Notes <input [formField]="poForm.notes" attr.placeholder="Optional" /></label>
+            <label>Notes <input [formField]="poForm.notes" placeholder="Optional" /></label>
             <label class="check"><input type="checkbox" [formField]="poForm.send" /> Send to supplier immediately</label>
 
             <div class="med-search">
-              <input [formField]="medicineSearchForm.q" attr.placeholder="Search medicines (min 2 chars)" (keyup.enter)="searchMedicines()" />
+              <input [formField]="medicineSearchForm.q" placeholder="Search medicines (min 2 chars)" (keyup.enter)="searchMedicines()" />
               <button type="button" class="btn-sec" (click)="searchMedicines()" [disabled]="medicineSearching()">
                 {{ medicineSearching() ? '…' : 'Search' }}
               </button>

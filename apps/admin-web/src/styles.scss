@@ -10,7 +10,6 @@ body {
   color: #0f172a;
 }
 
-@import '../../../libs/platform-ui/src/styles/form-fields';
-
-@import 'styles/app-forms';
-@import 'styles/ux-states';
+@use '../../../libs/platform-ui/src/styles/form-fields';
+@use 'styles/app-forms';
+@use 'styles/ux-states';

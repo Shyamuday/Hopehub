@@ -12,17 +12,17 @@
       <div class="field-row">
         <label class="field">
           Name
-          <input [formField]="newDiseaseForm.name" attr.placeholder="e.g. Psoriasis" />
+          <input [formField]="newDiseaseForm.name" placeholder="e.g. Psoriasis" />
         </label>
         <label class="field">
           Fee (₹)
-          <input type="number" [formField]="newDiseaseForm.feeInPaise" attr.placeholder="e.g. 50000 = ₹500" />
+          <input type="number" [formField]="newDiseaseForm.feeInPaise" placeholder="e.g. 50000 = ₹500" />
           <span class="field-hint">Enter in paise (₹1 = 100 paise)</span>
         </label>
       </div>
       <label class="field">
         Description
-        <textarea [formField]="newDiseaseForm.description" rows="2" attr.placeholder="Brief description shown to patients"></textarea>
+        <textarea [formField]="newDiseaseForm.description" rows="2" placeholder="Brief description shown to patients"></textarea>
       </label>
 
       <div class="questions-editor">
@@ -36,7 +36,7 @@
           <p class="qs-empty">No questions yet.</p>
         }
         <div class="add-question-row">
-          <input [formField]="newQuestionForm.value" attr.placeholder="Type question and press Add" (keyup.enter)="addNewQuestion()" />
+          <input [formField]="newQuestionForm.value" placeholder="Type question and press Add" (keyup.enter)="addNewQuestion()" />
           <button type="button" class="btn-add-q" (click)="addNewQuestion()">Add</button>
         </div>
       </div>
@@ -112,7 +112,7 @@
               <p class="qs-empty">No questions. Add at least one.</p>
             }
             <div class="add-question-row">
-              <input [formField]="draftQuestionForm.value" attr.placeholder="New question…" (keyup.enter)="addDraftQuestion()" />
+              <input [formField]="draftQuestionForm.value" placeholder="New question…" (keyup.enter)="addDraftQuestion()" />
               <button type="button" class="btn-add-q" (click)="addDraftQuestion()">Add</button>
             </div>
           </div>

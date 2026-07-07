@@ -73,7 +73,7 @@
         <label>Expected result date</label>
         <input type="date" [formField]="acceptForm.expectedResultDate" />
         <label>Notes to clinic</label>
-        <textarea [formField]="acceptForm.partnerNotes" rows="3" attr.placeholder="Sample collection window, prep instructions…"></textarea>
+        <textarea [formField]="acceptForm.partnerNotes" rows="3" placeholder="Sample collection window, prep instructions…"></textarea>
         <div class="modal-actions">
           <button type="button" (click)="closeAccept()">Cancel</button>
           <button type="button" class="btn-primary" (click)="submitAccept(id)">Accept</button>
@@ -90,9 +90,9 @@
           <div class="result-line">
             <div class="result-title">{{ line.testName }}</div>
             <label>Summary</label>
-            <textarea [formField]="resultsForm.lines[i].resultSummary" rows="2" attr.placeholder="e.g. TSH 2.1 mIU/L (normal)"></textarea>
+            <textarea [formField]="resultsForm.lines[i].resultSummary" rows="2" placeholder="e.g. TSH 2.1 mIU/L (normal)"></textarea>
             <label>Report URL (optional)</label>
-            <input [formField]="resultsForm.lines[i].resultFileUrl" attr.placeholder="https://…" />
+            <input [formField]="resultsForm.lines[i].resultFileUrl" placeholder="https://…" />
           </div>
         }
         <div class="modal-actions">

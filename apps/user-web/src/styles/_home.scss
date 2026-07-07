@@ -145,6 +145,41 @@
   text-decoration: underline;
 }
 
+.mode-switch-wrap {
+  margin: 0;
+  text-align: center;
+}
+
+.mode-switch {
+  border: 0;
+  background: transparent;
+  color: #64748b;
+  padding: 0.25rem 0;
+  font-size: 0.78rem;
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.mode-switch:hover {
+  color: #0f62fe;
+}
+
+.otp-row {
+  align-items: flex-end;
+}
+
+.otp-row .otp-field {
+  flex: 1;
+  min-width: 0;
+}
+
+.otp-row .otp-send {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
 .success-notice {
   display: flex;
   align-items: center;

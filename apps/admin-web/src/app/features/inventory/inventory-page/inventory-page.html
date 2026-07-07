@@ -40,7 +40,7 @@
       <div class="detail">
         <h3>{{ selectedStore()!.name }} stock</h3>
         <div class="toolbar">
-          <input [formField]="filterForm.q" attr.placeholder="Search medicine…" (keyup.enter)="loadStock()" />
+          <input [formField]="filterForm.q" placeholder="Search medicine…" (keyup.enter)="loadStock()" />
           <select [formField]="filterForm.statusFilter" (change)="loadStock()">
             <option value="">All statuses</option>
             <option value="ACTIVE">Active</option>

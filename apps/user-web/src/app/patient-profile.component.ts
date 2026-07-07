@@ -5,6 +5,8 @@ import { API_PATHS } from './core/constants/api-paths.constants';
 import {
   BLOOD_GROUP_OPTIONS,
   EMERGENCY_RELATION_OPTIONS,
+  DIET_TYPE_OPTIONS,
+  THERMAL_OPTIONS,
   GENDER_OPTIONS,
   LANGUAGE_SUGGESTIONS,
   LIFESTYLE_OPTIONS,
@@ -58,6 +60,8 @@ export class PatientProfileComponent implements OnInit {
   readonly passwordForm = form(this.passwordFormModel);
 
   readonly genderOptions = GENDER_OPTIONS;
+  readonly dietOptions = DIET_TYPE_OPTIONS;
+  readonly thermalOptions = THERMAL_OPTIONS;
   readonly maritalOptions = MARITAL_STATUS_OPTIONS;
   readonly bloodGroups = BLOOD_GROUP_OPTIONS;
   readonly lifestyleOptions = LIFESTYLE_OPTIONS;

@@ -15,18 +15,24 @@ export const MARITAL_STATUS_OPTIONS = [
   { value: 'PREFER_NOT_TO_SAY', label: 'Prefer not to say' }
 ] as const;
 
-export const BLOOD_GROUP_OPTIONS = [
-  '',
-  'A+',
-  'A-',
-  'B+',
-  'B-',
-  'AB+',
-  'AB-',
-  'O+',
-  'O-',
-  'Unknown'
+export const DIET_TYPE_OPTIONS = [
+  { value: '', label: 'Not specified' },
+  { value: 'VEGETARIAN', label: 'Vegetarian' },
+  { value: 'NON_VEGETARIAN', label: 'Non-vegetarian' },
+  { value: 'VEGAN', label: 'Vegan' },
+  { value: 'EGGETARIAN', label: 'Eggetarian' },
+  { value: 'MIXED', label: 'Mixed' }
 ] as const;
+
+export const THERMAL_OPTIONS = [
+  { value: '', label: 'Not specified' },
+  { value: 'HOT_NATURED', label: 'Usually feel hot / prefer cold' },
+  { value: 'COLD_NATURED', label: 'Usually feel cold / prefer warmth' },
+  { value: 'MIXED', label: 'Mixed' },
+  { value: 'NEUTRAL', label: 'Neutral' }
+] as const;
+
+export const BLOOD_GROUP_OPTIONS = ['', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-', 'Unknown'] as const;
 
 export const LIFESTYLE_OPTIONS = [
   { value: '', label: 'Not specified' },
@@ -38,29 +44,43 @@ export const LIFESTYLE_OPTIONS = [
 ] as const;
 
 export const LANGUAGE_SUGGESTIONS = [
-  'English',
-  'Hindi',
-  'Bengali',
-  'Tamil',
-  'Telugu',
-  'Marathi',
-  'Gujarati',
-  'Kannada',
-  'Malayalam',
-  'Punjabi',
-  'Odia',
-  'Urdu'
+  'English', 'Hindi', 'Bengali', 'Tamil', 'Telugu', 'Marathi', 'Gujarati',
+  'Kannada', 'Malayalam', 'Punjabi', 'Odia', 'Urdu'
 ] as const;
 
-export const EMERGENCY_RELATION_OPTIONS = [
-  '',
-  'Spouse',
-  'Parent',
-  'Child',
-  'Sibling',
-  'Friend',
-  'Other'
+export const EMERGENCY_RELATION_OPTIONS = ['', 'Spouse', 'Parent', 'Child', 'Sibling', 'Friend', 'Other'] as const;
+
+export const HOMEOPATHIC_TEXT_FIELDS = [
+  'foodHabits',
+  'foodCravings',
+  'foodAversions',
+  'appetiteNotes',
+  'thirstNotes',
+  'sleepPattern',
+  'dreamNotes',
+  'perspirationNotes',
+  'bowelHabits',
+  'urineHabits',
+  'menstrualHistory',
+  'mentalTemperament',
+  'fearsPhobias',
+  'angerGriefPatterns',
+  'concentrationMemory',
+  'socialBehaviour',
+  'stressTriggers',
+  'childhoodIllnesses',
+  'vaccinationHistory',
+  'previousHomeopathicTreatment',
+  'aggravatingFactors',
+  'relievingFactors',
+  'exerciseHabits',
+  'stimulantHabits',
+  'constitutionalNotes',
+  'skinHairNailNotes',
+  'weatherSensitivity'
 ] as const;
+
+export type HomeopathicTextField = (typeof HOMEOPATHIC_TEXT_FIELDS)[number];
 
 export type ReminderPreferences = {
   inApp: boolean;
@@ -105,7 +125,13 @@ export type PatientProfile = {
   alcoholUse?: string | null;
   preferredLanguage?: string | null;
   patientNotes?: string | null;
-};
+  dietType?: string | null;
+  thermalPreference?: string | null;
+} & Partial<Record<HomeopathicTextField, string | null>>;
+
+function emptyHomeopathicFields(): Record<HomeopathicTextField, string> {
+  return Object.fromEntries(HOMEOPATHIC_TEXT_FIELDS.map((k) => [k, ''])) as Record<HomeopathicTextField, string>;
+}
 
 export function emptyProfileForm() {
   return {
@@ -136,7 +162,10 @@ export function emptyProfileForm() {
     smokingStatus: '',
     alcoholUse: '',
     preferredLanguage: '',
-    patientNotes: ''
+    patientNotes: '',
+    dietType: '',
+    thermalPreference: '',
+    ...emptyHomeopathicFields()
   };
 }
 
@@ -152,6 +181,10 @@ export function emptyReminderForm(): ReminderPreferences {
 }
 
 export function profileToForm(profile: PatientProfile) {
+  const homeo = Object.fromEntries(
+    HOMEOPATHIC_TEXT_FIELDS.map((k) => [k, profile[k] || ''])
+  ) as Record<HomeopathicTextField, string>;
+
   return {
     name: profile.name || '',
     email: profile.email || '',
@@ -180,7 +213,10 @@ export function profileToForm(profile: PatientProfile) {
     smokingStatus: profile.smokingStatus || '',
     alcoholUse: profile.alcoholUse || '',
     preferredLanguage: profile.preferredLanguage || '',
-    patientNotes: profile.patientNotes || ''
+    patientNotes: profile.patientNotes || '',
+    dietType: profile.dietType || '',
+    thermalPreference: profile.thermalPreference || '',
+    ...homeo
   };
 }
 
@@ -191,8 +227,12 @@ export function formToProfilePayload(form: ReturnType<typeof emptyProfileForm>) 
     const n = Number(trimmed);
     return Number.isFinite(n) ? n : null;
   };
-
   const enumOrNull = (value: string) => (value.trim() ? value.trim() : null);
+  const textOrNull = (value: string) => value.trim() || null;
+
+  const homeo = Object.fromEntries(
+    HOMEOPATHIC_TEXT_FIELDS.map((k) => [k, textOrNull(form[k])])
+  );
 
   return {
     name: form.name.trim(),
@@ -214,14 +254,17 @@ export function formToProfilePayload(form: ReturnType<typeof emptyProfileForm>) 
     maritalStatus: enumOrNull(form.maritalStatus),
     heightCm: numOrNull(form.heightCm),
     weightKg: numOrNull(form.weightKg),
-    allergies: form.allergies.trim() || null,
-    currentMedications: form.currentMedications.trim() || null,
-    chronicConditions: form.chronicConditions.trim() || null,
-    pastSurgeries: form.pastSurgeries.trim() || null,
-    familyMedicalHistory: form.familyMedicalHistory.trim() || null,
+    allergies: textOrNull(form.allergies),
+    currentMedications: textOrNull(form.currentMedications),
+    chronicConditions: textOrNull(form.chronicConditions),
+    pastSurgeries: textOrNull(form.pastSurgeries),
+    familyMedicalHistory: textOrNull(form.familyMedicalHistory),
     smokingStatus: enumOrNull(form.smokingStatus),
     alcoholUse: enumOrNull(form.alcoholUse),
     preferredLanguage: form.preferredLanguage.trim() || null,
-    patientNotes: form.patientNotes.trim() || null
+    patientNotes: textOrNull(form.patientNotes),
+    dietType: enumOrNull(form.dietType),
+    thermalPreference: enumOrNull(form.thermalPreference),
+    ...homeo
   };
 }

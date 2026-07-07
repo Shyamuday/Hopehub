@@ -1,6 +1,6 @@
 // Auto-apply readable form colors inside containers that have fields.
 // Use .form-surface-dark on dark modals/drawers to opt out.
-@import 'form-fields';
+@use 'form-fields' as forms;
 
 @mixin vitalis-auto-light-form-surfaces() {
   :is(
@@ -31,11 +31,11 @@
   ):not(.form-surface-dark):has(
       :is(input:not([type='hidden']), select, textarea)
     ) {
-    @include vitalis-form-surface-light();
+    @include forms.vitalis-form-surface-light();
   }
 
   .drawer .form-body.form-surface-dark,
   .form-surface-dark {
-    @include vitalis-form-surface-dark();
+    @include forms.vitalis-form-surface-dark();
   }
 }

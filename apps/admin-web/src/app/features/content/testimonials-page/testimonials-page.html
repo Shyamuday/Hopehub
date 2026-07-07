@@ -24,11 +24,11 @@
     <div class="row-fields">
       <div class="field">
         <label class="field-label" for="test-create-stars">Stars</label>
-        <input id="test-create-stars" type="number" attr.min="1" attr.max="5" [formField]="createForm.stars" />
+        <input id="test-create-stars" type="number" [formField]="createForm.stars" />
       </div>
       <div class="field">
         <label class="field-label" for="test-create-sort">Sort order</label>
-        <input id="test-create-sort" type="number" attr.min="1" attr.max="999" placeholder="blank = auto" [formField]="createForm.sortOrder" />
+        <input id="test-create-sort" type="number" placeholder="blank = auto" [formField]="createForm.sortOrder" />
       </div>
       <label class="checkbox-label">
         <input type="checkbox" [formField]="createForm.isPublished" />
@@ -88,11 +88,11 @@
           <div class="row-fields">
             <div class="field">
               <label class="field-label" [attr.for]="'test-stars-' + t.id">Stars</label>
-              <input [id]="'test-stars-' + t.id" type="number" attr.min="1" attr.max="5" [formField]="editForm.stars" />
+              <input [id]="'test-stars-' + t.id" type="number" [formField]="editForm.stars" />
             </div>
             <div class="field">
               <label class="field-label" [attr.for]="'test-sort-' + t.id">Sort order</label>
-              <input [id]="'test-sort-' + t.id" type="number" attr.min="1" attr.max="999" [formField]="editForm.sortOrder" />
+              <input [id]="'test-sort-' + t.id" type="number" [formField]="editForm.sortOrder" />
             </div>
             <label class="checkbox-label">
               <input type="checkbox" [formField]="editForm.isPublished" /> Published

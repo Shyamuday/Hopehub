@@ -10,9 +10,9 @@
     <div class="register-box">
       <h3>Register new patient</h3>
       <div class="register-grid">
-        <input attr.placeholder="Full name *" [formField]="registerForm.name" />
-        <input attr.placeholder="Mobile (optional)" [formField]="registerForm.mobile" />
-        <input attr.placeholder="Email (optional)" [formField]="registerForm.email" />
+        <input placeholder="Full name *" [formField]="registerForm.name" />
+        <input placeholder="Mobile (optional)" [formField]="registerForm.mobile" />
+        <input placeholder="Email (optional)" [formField]="registerForm.email" />
         <select [formField]="registerForm.homeClinicStoreId">
           <option value="">No home clinic</option>
           @for (store of stores; track store.id) {
@@ -29,7 +29,7 @@
   }
 
   <div class="toolbar">
-    <input attr.placeholder="Global patient search (mobile, code, name)…" [formField]="patientSearchForm.q" (keyup.enter)="searchPatientsGlobal()" />
+    <input placeholder="Global patient search (mobile, code, name)…" [formField]="patientSearchForm.q" (keyup.enter)="searchPatientsGlobal()" />
     <button type="button" (click)="searchPatientsGlobal()" [disabled]="patientSearchLoading">Search all</button>
   </div>
   @if (patientSearchResults.length) {
@@ -44,7 +44,7 @@
   }
 
   <div class="toolbar">
-    <input attr.placeholder="Search consumers..." [formField]="listFilterForm.searchTerm" (change)="setPage(1)" />
+    <input placeholder="Search consumers..." [formField]="listFilterForm.searchTerm" (change)="setPage(1)" />
     <select [formField]="listFilterForm.sortBy" (change)="setPage(1)">
       <option value="consultations">Sort by consultations</option>
       <option value="name">Sort by name</option>
@@ -300,7 +300,7 @@
                 }
               </select>
             </div>
-            <textarea rows="3" [formField]="noteForm.body" attr.placeholder="What did you check? What should the next agent do?"></textarea>
+            <textarea rows="3" [formField]="noteForm.body" placeholder="What did you check? What should the next agent do?"></textarea>
             @if (noteError) {
               <p class="error">{{ noteError }}</p>
             }

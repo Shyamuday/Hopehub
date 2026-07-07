@@ -9,7 +9,7 @@ import { buildPatientIdCard } from '../../services/patient-identity.js';
 import { normalizeMobile } from '../../services/patient-identity.js';
 import {
   formatDateOfBirth,
-  parseDateOfBirth,
+  mapProfileUpdateToUserData,
   patientPasswordSchema,
   patientProfileUpdateSchema,
   reminderPreferencesSchema
@@ -121,36 +121,7 @@ export function registerAuthProfileRoutes(router: Router) {
 
       const updated = await prisma.user.update({
         where: { id: req.user!.id },
-        data: {
-          name: body.name,
-          email: body.email,
-          alternateMobile,
-          dateOfBirth: parseDateOfBirth(body.dateOfBirth),
-          gender: body.gender,
-          bloodGroup: body.bloodGroup,
-          addressLine1: body.addressLine1,
-          addressLine2: body.addressLine2,
-          city: body.city,
-          state: body.state,
-          pincode: body.pincode,
-          country: body.country ?? 'India',
-          emergencyContactName: body.emergencyContactName,
-          emergencyContactPhone: body.emergencyContactPhone,
-          emergencyContactRelation: body.emergencyContactRelation,
-          occupation: body.occupation,
-          maritalStatus: body.maritalStatus,
-          heightCm: body.heightCm,
-          weightKg: body.weightKg,
-          allergies: body.allergies,
-          currentMedications: body.currentMedications,
-          chronicConditions: body.chronicConditions,
-          pastSurgeries: body.pastSurgeries,
-          familyMedicalHistory: body.familyMedicalHistory,
-          smokingStatus: body.smokingStatus,
-          alcoholUse: body.alcoholUse,
-          preferredLanguage: body.preferredLanguage,
-          patientNotes: body.patientNotes
-        },
+        data: mapProfileUpdateToUserData(body, alternateMobile),
         select: patientProfileSelect
       });
 

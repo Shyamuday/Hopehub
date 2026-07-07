@@ -23,27 +23,27 @@
         <form (ngSubmit)="resetPassword()">
           <label>
             New password
-            <input [formField]="forgotForm.password" type="password" attr.placeholder="Min 8 characters" />
+            <input [formField]="forgotForm.password" type="password" placeholder="Min 8 characters" />
           </label>
           <label>
             Confirm password
-            <input [formField]="forgotForm.confirmPassword" type="password" attr.placeholder="Confirm new password" />
+            <input [formField]="forgotForm.confirmPassword" type="password" placeholder="Confirm new password" />
           </label>
           @if (forgotModel().password && forgotModel().confirmPassword && forgotModel().password !== forgotModel().confirmPassword) {
             <p class="error-text">Passwords do not match</p>
           }
           <button class="primary" type="submit" [disabled]="isProcessing() || !canResetPassword()">Reset password & login</button>
         </form>
-      } @else {
+      } @else if (loginMode() === 'password') {
         <h2>Login to continue</h2>
-        <p class="muted">Use email/mobile with password, or sign in with mobile OTP only.</p>
+        <p class="muted">Sign in with your email or mobile and password.</p>
 
         <form (ngSubmit)="loginPatientWithPassword()">
           <label>
             Email or mobile number
             <input
               [formField]="patientCredentialsForm.identifier"
-              attr.placeholder="Enter Gmail or mobile number"
+              placeholder="Enter Gmail or mobile number"
             />
           </label>
           <label>
@@ -51,33 +51,45 @@
             <input
               [formField]="patientCredentialsForm.password"
               type="password"
-              attr.placeholder="Enter your password"
+              placeholder="Enter your password"
             />
           </label>
           <button class="primary" type="submit" [disabled]="isProcessing()">Login</button>
         </form>
 
-        <div class="divider-text">or continue with Gmail</div>
+        <div class="divider-text">or</div>
         <form (ngSubmit)="loginWithGoogle()">
           <button class="secondary" type="submit" [disabled]="isProcessing()">Continue with Gmail</button>
-          <p class="muted">Sign in with your Google account.</p>
         </form>
 
-        <div class="divider-text">or login with mobile OTP</div>
+        <p class="mode-switch-wrap">
+          <button type="button" class="mode-switch" (click)="setLoginMode('otp')">Login with mobile OTP</button>
+        </p>
+
+        <app-dev-login-panel (loggedIn)="onDevLoggedIn()" (fillAccount)="applyDevFill($event)" />
+      } @else {
+        <button type="button" class="back-btn" (click)="setLoginMode('password')">← Back</button>
+        <h2>Login with OTP</h2>
+        <p class="muted">We will send a one-time code to your mobile. No password needed.</p>
+
         <form (ngSubmit)="loginPatientWithOtp()">
           <label>
             Mobile number
-            <input [formField]="patientOtpForm.mobile" attr.placeholder="Enter 10-digit mobile number" />
+            <input [formField]="patientOtpForm.mobile" placeholder="Enter 10-digit mobile number" inputmode="tel" />
           </label>
           <div class="otp-row">
-            <label>
+            <label class="otp-field">
               OTP
-              <input [formField]="patientOtpForm.otp" attr.placeholder="Enter 6-digit OTP" />
+              <input [formField]="patientOtpForm.otp" placeholder="6-digit OTP" inputmode="numeric" autocomplete="one-time-code" />
             </label>
-            <button type="button" class="secondary" [disabled]="isProcessing()" (click)="requestOtp()">Send OTP</button>
+            <button type="button" class="secondary otp-send" [disabled]="isProcessing()" (click)="requestOtp()">Send OTP</button>
           </div>
-          <button class="secondary" type="submit" [disabled]="isProcessing()">Continue with OTP</button>
+          <button class="primary" type="submit" [disabled]="isProcessing()">Continue</button>
         </form>
+
+        <p class="mode-switch-wrap">
+          <button type="button" class="mode-switch" (click)="setLoginMode('password')">Login with password or Gmail</button>
+        </p>
 
         <app-dev-login-panel (loggedIn)="onDevLoggedIn()" (fillAccount)="applyDevFill($event)" />
       }

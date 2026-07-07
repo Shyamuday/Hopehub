@@ -57,7 +57,7 @@
             @for (f of typeFilters; track f.value) {
               <button class="ftab" [class.active]="typeFilter() === f.value" (click)="typeFilter.set(f.value)">{{ f.label }}</button>
             }
-            <input class="search-sm" [formField]="searchForm.q" attr.placeholder="🔍 Search…" />
+            <input class="search-sm" [formField]="searchForm.q" placeholder="🔍 Search…" />
           </div>
 
           <div class="table-wrap">
@@ -149,7 +149,7 @@
               class="search-sm"
               style="width: 100%; margin: 0 0 10px"
               [formField]="salarySearchForm.q"
-              attr.placeholder="🔍 Search employee…"
+              placeholder="🔍 Search employee…"
               (keyup.enter)="loadSalaryEmployees()"
             />
             <button class="btn-export" style="width: 100%; margin-bottom: 12px" (click)="loadSalaryEmployees()">Refresh list</button>
@@ -211,10 +211,10 @@
                       </select>
                     </label>
                     <label>Consultation share (%)
-                      <input type="number" attr.min="0" attr.max="100" attr.step="1" [formField]="compensationForm.consultationSharePercent" />
+                      <input type="number" [formField]="compensationForm.consultationSharePercent" />
                     </label>
                     <label>Listed consultation fee (₹)
-                      <input type="number" attr.min="0" attr.step="1" [formField]="compensationForm.consultationFee" />
+                      <input type="number" [formField]="compensationForm.consultationFee" />
                     </label>
                   </div>
                   @if (isConsultOnlyDoctor()) {
@@ -228,31 +228,31 @@
                 <div class="salary-section">
                   <h4>Earnings (monthly)</h4>
                   <div class="salary-grid">
-                    <label>Basic (₹)<input type="number" attr.min="0" attr.step="1" [formField]="salaryForm.basic" /></label>
-                    <label>HRA (₹)<input type="number" attr.min="0" attr.step="1" [formField]="salaryForm.hra" /></label>
-                    <label>Conveyance (₹)<input type="number" attr.min="0" attr.step="1" [formField]="salaryForm.conveyance" /></label>
-                    <label>Medical allowance (₹)<input type="number" attr.min="0" attr.step="1" [formField]="salaryForm.medicalAllowance" /></label>
-                    <label>Special allowance (₹)<input type="number" attr.min="0" attr.step="1" [formField]="salaryForm.specialAllowance" /></label>
-                    <label>Other allowances (₹)<input type="number" attr.min="0" attr.step="1" [formField]="salaryForm.otherAllowance" /></label>
+                    <label>Basic (₹)<input type="number" [formField]="salaryForm.basic" /></label>
+                    <label>HRA (₹)<input type="number" [formField]="salaryForm.hra" /></label>
+                    <label>Conveyance (₹)<input type="number" [formField]="salaryForm.conveyance" /></label>
+                    <label>Medical allowance (₹)<input type="number" [formField]="salaryForm.medicalAllowance" /></label>
+                    <label>Special allowance (₹)<input type="number" [formField]="salaryForm.specialAllowance" /></label>
+                    <label>Other allowances (₹)<input type="number" [formField]="salaryForm.otherAllowance" /></label>
                   </div>
                 </div>
 
                 <div class="salary-section">
                   <h4>Employee deductions</h4>
                   <div class="salary-grid">
-                    <label>Employee PF (₹)<input type="number" attr.min="0" attr.step="1" [formField]="salaryForm.employeePf" /></label>
-                    <label>Employee ESIC (₹)<input type="number" attr.min="0" attr.step="1" [formField]="salaryForm.employeeEsi" /></label>
-                    <label>Professional tax (₹)<input type="number" attr.min="0" attr.step="1" [formField]="salaryForm.professionalTax" /></label>
-                    <label>TDS (₹)<input type="number" attr.min="0" attr.step="1" [formField]="salaryForm.tds" /></label>
-                    <label>Other deductions (₹)<input type="number" attr.min="0" attr.step="1" [formField]="salaryForm.otherDeduction" /></label>
+                    <label>Employee PF (₹)<input type="number" [formField]="salaryForm.employeePf" /></label>
+                    <label>Employee ESIC (₹)<input type="number" [formField]="salaryForm.employeeEsi" /></label>
+                    <label>Professional tax (₹)<input type="number" [formField]="salaryForm.professionalTax" /></label>
+                    <label>TDS (₹)<input type="number" [formField]="salaryForm.tds" /></label>
+                    <label>Other deductions (₹)<input type="number" [formField]="salaryForm.otherDeduction" /></label>
                   </div>
                 </div>
 
                 <div class="salary-section">
                   <h4>Employer contributions</h4>
                   <div class="salary-grid">
-                    <label>Employer PF (₹)<input type="number" attr.min="0" attr.step="1" [formField]="salaryForm.employerPf" /></label>
-                    <label>Employer ESIC (₹)<input type="number" attr.min="0" attr.step="1" [formField]="salaryForm.employerEsi" /></label>
+                    <label>Employer PF (₹)<input type="number" [formField]="salaryForm.employerPf" /></label>
+                    <label>Employer ESIC (₹)<input type="number" [formField]="salaryForm.employerEsi" /></label>
                   </div>
                 </div>
 

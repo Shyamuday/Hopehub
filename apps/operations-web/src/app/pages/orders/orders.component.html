@@ -57,7 +57,7 @@
         <label>Expected delivery</label>
         <input type="date" [formField]="confirmForm.expectedDeliveryDate" />
         <label>Notes to clinic</label>
-        <textarea [formField]="confirmForm.supplierNotes" rows="3" attr.placeholder="Dispatch details, courier, etc."></textarea>
+        <textarea [formField]="confirmForm.supplierNotes" rows="3" placeholder="Dispatch details, courier, etc."></textarea>
         <div class="modal-actions">
           <button type="button" (click)="closeConfirm()">Cancel</button>
           <button type="button" class="btn-primary" (click)="submitConfirm(id)">Confirm</button>

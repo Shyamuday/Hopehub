@@ -62,7 +62,7 @@
           }
         </select>
         <label>Notes</label>
-        <input [formField]="createForm.notes" attr.placeholder="Optional transfer note" />
+        <input [formField]="createForm.notes" placeholder="Optional transfer note" />
         <div class="line-actions">
           <strong>Lines</strong>
           <button type="button" (click)="addCreateLine()">+ Add line</button>
@@ -74,7 +74,7 @@
                 <option [value]="row.medicineId">{{ row.name }} {{ row.potency }} ({{ row.currentQty }} avail)</option>
               }
             </select>
-            <label>Qty <input type="number" [formField]="createForm.lines[i].qtyRequested" attr.min="1" /></label>
+            <label>Qty <input type="number" [formField]="createForm.lines[i].qtyRequested" /></label>
           </div>
         }
         <div class="modal-actions">
@@ -93,7 +93,7 @@
           <div class="recv-line">
             <div class="recv-title">{{ line.label }} (max {{ line.qtyRequested }})</div>
             <div class="recv-grid">
-              <label>Qty <input type="number" [formField]="dispatchForm.lines[i].qtyDispatched" attr.min="1" /></label>
+              <label>Qty <input type="number" [formField]="dispatchForm.lines[i].qtyDispatched" /></label>
               <label>Source batch
                 <select [formField]="dispatchForm.lines[i].sourceBatchId">
                   @for (batch of line.batchOptions; track batch.id) {

@@ -120,10 +120,10 @@
         <div class="modal form-surface-dark" (click)="$event.stopPropagation()">
           <div class="mhdr"><h3>🏪 New Store</h3><button class="close-btn" (click)="closeModal()">✕</button></div>
           <div class="mbody">
-            <div class="fg"><label>Store Name *</label><input [formField]="storeForm.name" attr.placeholder="e.g. Main Branch" /></div>
-            <div class="fg"><label>Store Code * (unique)</label><input [formField]="storeForm.code" attr.placeholder="MAIN01" style="text-transform:uppercase" /></div>
-            <div class="fg"><label>Address</label><textarea [formField]="storeForm.address" rows="2" attr.placeholder="Full address…"></textarea></div>
-            <div class="fg"><label>Phone</label><input [formField]="storeForm.phone" attr.placeholder="+91 99999 00000" /></div>
+            <div class="fg"><label>Store Name *</label><input [formField]="storeForm.name" placeholder="e.g. Main Branch" /></div>
+            <div class="fg"><label>Store Code * (unique)</label><input [formField]="storeForm.code" placeholder="MAIN01" style="text-transform:uppercase" /></div>
+            <div class="fg"><label>Address</label><textarea [formField]="storeForm.address" rows="2" placeholder="Full address…"></textarea></div>
+            <div class="fg"><label>Phone</label><input [formField]="storeForm.phone" placeholder="+91 99999 00000" /></div>
           </div>
           <div class="mfooter">
             <button class="btn-ghost" (click)="closeModal()">Cancel</button>
@@ -141,10 +141,10 @@
           <div class="mhdr"><h3>👔 Add Manager — {{ selectedStore()?.name }}</h3><button class="close-btn" (click)="closeModal()">✕</button></div>
           <div class="mbody">
             <div class="info-box">Managers log in with <strong>email + password</strong> on the Store App (port {{ storeAppPort }})</div>
-            <div class="fg"><label>Full Name *</label><input [formField]="mgrForm.name" attr.placeholder="Manager Name" /></div>
-            <div class="fg"><label>Email *</label><input type="email" [formField]="mgrForm.email" attr.placeholder="manager@store.com" /></div>
+            <div class="fg"><label>Full Name *</label><input [formField]="mgrForm.name" placeholder="Manager Name" /></div>
+            <div class="fg"><label>Email *</label><input type="email" [formField]="mgrForm.email" placeholder="manager@store.com" /></div>
             <div class="fg"><label>Password * (min 6 chars)</label><input type="password" [formField]="mgrForm.password" /></div>
-            <div class="fg"><label>Designation</label><input [formField]="mgrForm.designation" attr.placeholder="Store Manager" /></div>
+            <div class="fg"><label>Designation</label><input [formField]="mgrForm.designation" placeholder="Store Manager" /></div>
             <div class="fg"><label>Joining Date</label><input type="date" [formField]="mgrForm.joiningDate" /></div>
           </div>
           <div class="mfooter">
@@ -163,11 +163,11 @@
           <div class="mhdr"><h3>🧑‍💼 Add Staff — {{ selectedStore()?.name }}</h3><button class="close-btn" (click)="closeModal()">✕</button></div>
           <div class="mbody">
             <div class="info-box">Staff log in at the <strong>Operations portal</strong> (port 5800) with email and password</div>
-            <div class="fg"><label>Full Name *</label><input [formField]="staffForm.name" attr.placeholder="Staff Name" /></div>
-            <div class="fg"><label>Staff Code * (unique ID)</label><input [formField]="staffForm.staffCode" attr.placeholder="S001" style="text-transform:uppercase" /></div>
-            <div class="fg"><label>Email *</label><input type="email" [formField]="staffForm.email" attr.placeholder="staff@store.vitalis.local" /></div>
-            <div class="fg"><label>Password * (min 8 characters)</label><input type="password" [formField]="staffForm.password" attr.placeholder="Initial password" /></div>
-            <div class="fg"><label>Designation</label><input [formField]="staffForm.designation" attr.placeholder="Store Assistant" /></div>
+            <div class="fg"><label>Full Name *</label><input [formField]="staffForm.name" placeholder="Staff Name" /></div>
+            <div class="fg"><label>Staff Code * (unique ID)</label><input [formField]="staffForm.staffCode" placeholder="S001" style="text-transform:uppercase" /></div>
+            <div class="fg"><label>Email *</label><input type="email" [formField]="staffForm.email" placeholder="staff@store.vitalis.local" /></div>
+            <div class="fg"><label>Password * (min 8 characters)</label><input type="password" [formField]="staffForm.password" placeholder="Initial password" /></div>
+            <div class="fg"><label>Designation</label><input [formField]="staffForm.designation" placeholder="Store Assistant" /></div>
             <div class="fg"><label>Phone</label><input type="tel" [formField]="staffForm.phone" /></div>
             <div class="fg"><label>Joining Date</label><input type="date" [formField]="staffForm.joiningDate" /></div>
           </div>
