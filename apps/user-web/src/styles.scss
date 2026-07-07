@@ -1,5 +1,14 @@
 @use '@angular/cdk/overlay-prebuilt.css';
 
 @use '../../../libs/platform-ui/src/styles/form-fields';
-@use 'styles';
-@use 'styles/app-forms';
+@use './styles/base';
+@use './styles/shell';
+@use './styles/public-pages';
+@use './styles/home';
+@use './styles/home-sections';
+@use './styles/sections';
+@use './styles/dashboard';
+@use './styles/ux-states';
+@use './styles/animations';
+@use './styles/responsive';
+@use './styles/app-forms';

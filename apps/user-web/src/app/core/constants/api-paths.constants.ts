@@ -17,6 +17,9 @@ export const API_PATHS = {
     DOSE_EXPLAIN: (id: string) => `/patient/dose-events/${id}/explain`,
     REMINDER_PREFERENCES: '/patient/reminder-preferences',
     PROFILE: '/patient/profile',
+    ADDRESSES: '/patient/addresses',
+    ADDRESS: (id: string) => `/patient/addresses/${id}`,
+    ADDRESS_DEFAULT: (id: string) => `/patient/addresses/${id}/default`,
     PROFILE_PASSWORD: '/patient/profile/password',
     CARD: '/patient/card',
     LAB_RESULTS: '/patient/lab-results'

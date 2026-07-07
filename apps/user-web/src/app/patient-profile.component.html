@@ -135,7 +135,7 @@
       </section>
 
       <section class="profile-section">
-        <h3>Contact &amp; address</h3>
+        <h3>Contact</h3>
         <div class="field-grid">
           <div class="field">
             <label>Mobile (login)</label>
@@ -151,31 +151,14 @@
             <input [formField]="profileForm.email" type="email" placeholder="your@email.com" autocomplete="email" />
             <span class="hint">Add email to enable password login and receipts.</span>
           </div>
-          <div class="field span-2">
-            <label>Address line 1</label>
-            <input [formField]="profileForm.addressLine1" placeholder="House / flat, street" autocomplete="address-line1" />
-          </div>
-          <div class="field span-2">
-            <label>Address line 2</label>
-            <input [formField]="profileForm.addressLine2" placeholder="Landmark, area (optional)" autocomplete="address-line2" />
-          </div>
-          <div class="field">
-            <label>City</label>
-            <input [formField]="profileForm.city" placeholder="City" autocomplete="address-level2" />
-          </div>
-          <div class="field">
-            <label>State</label>
-            <input [formField]="profileForm.state" placeholder="State" autocomplete="address-level1" />
-          </div>
-          <div class="field">
-            <label>PIN code</label>
-            <input [formField]="profileForm.pincode" placeholder="PIN" inputmode="numeric" />
-          </div>
-          <div class="field">
-            <label>Country</label>
-            <input [formField]="profileForm.country" placeholder="Country" />
-          </div>
         </div>
+      </section>
+
+      <section class="profile-section address-section">
+        <app-patient-address-book
+          [defaultRecipientName]="profile()?.name || ''"
+          [defaultPhone]="profile()?.alternateMobile || profile()?.mobile || ''"
+        />
       </section>
 
       <section class="profile-section">

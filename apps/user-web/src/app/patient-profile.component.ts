@@ -21,6 +21,7 @@ import {
 import { environment } from '../environments/environment';
 import { AuthService } from './auth/auth.service';
 import { AppDownloadQrComponent } from './shared/app-download-qr/app-download-qr.component';
+import { PatientAddressBookComponent } from './shared/patient-address-book/patient-address-book.component';
 
 type PatientIdCard = {
   patientCode: string;
@@ -35,7 +36,7 @@ type PatientIdCard = {
 @Component({
   selector: 'app-patient-profile',
   standalone: true,
-  imports: [CommonModule, FormField, AppDownloadQrComponent],
+  imports: [CommonModule, FormField, AppDownloadQrComponent, PatientAddressBookComponent],
   styleUrl: './patient-profile.component.scss',
   templateUrl: './patient-profile.component.html',
 })

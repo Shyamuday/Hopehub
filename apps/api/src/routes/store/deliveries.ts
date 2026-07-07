@@ -48,8 +48,9 @@ export function registerStoreDeliveryRoutes(router: Router) {
         .object({
           patientId: z.string().min(1),
           prescriptionId: z.string().optional(),
-          deliveryAddress: z.string().min(3),
-          deliveryPhone: z.string().min(8),
+          patientAddressId: z.string().optional(),
+          deliveryAddress: z.string().min(3).optional(),
+          deliveryPhone: z.string().min(8).optional(),
           notes: z.string().optional(),
           otp: z.string().optional(),
           lines: z
@@ -62,6 +63,9 @@ export function registerStoreDeliveryRoutes(router: Router) {
             )
             .min(1)
         })
+        .refine((data) => data.patientAddressId || (data.deliveryAddress && data.deliveryPhone), {
+          message: 'Provide a saved address or delivery address with phone.'
+        })
         .parse(req.body);
 
       try {
@@ -69,6 +73,7 @@ export function registerStoreDeliveryRoutes(router: Router) {
           storeId,
           patientId: body.patientId,
           prescriptionId: body.prescriptionId,
+          patientAddressId: body.patientAddressId,
           deliveryAddress: body.deliveryAddress,
           deliveryPhone: body.deliveryPhone,
           notes: body.notes,

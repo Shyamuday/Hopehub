@@ -1,6 +1,7 @@
 import { MedicineDeliveryStatus, type Prisma } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import { prisma } from '../db.js';
+import { resolveDeliveryAddressInput } from './patient-addresses.js';
 
 export class MedicineDeliveryError extends Error {
   constructor(message: string) {
@@ -73,8 +74,9 @@ export async function createMedicineDelivery(input: {
   storeId: string;
   patientId: string;
   prescriptionId?: string;
-  deliveryAddress: string;
-  deliveryPhone: string;
+  patientAddressId?: string;
+  deliveryAddress?: string;
+  deliveryPhone?: string;
   notes?: string;
   lines: Array<{ medicineId?: string; label: string; qty: number }>;
   otp?: string;
@@ -82,6 +84,13 @@ export async function createMedicineDelivery(input: {
   if (!input.lines.length) {
     throw new MedicineDeliveryError('At least one line item is required.');
   }
+
+  const resolved = await resolveDeliveryAddressInput({
+    patientId: input.patientId,
+    patientAddressId: input.patientAddressId,
+    deliveryAddress: input.deliveryAddress,
+    deliveryPhone: input.deliveryPhone
+  });
 
   const store = await prisma.store.findUniqueOrThrow({ where: { id: input.storeId } });
   await prisma.user.findFirstOrThrow({
@@ -97,8 +106,9 @@ export async function createMedicineDelivery(input: {
       storeId: input.storeId,
       patientId: input.patientId,
       prescriptionId: input.prescriptionId,
-      deliveryAddress: input.deliveryAddress,
-      deliveryPhone: input.deliveryPhone,
+      patientAddressId: resolved.patientAddressId,
+      deliveryAddress: resolved.deliveryAddress,
+      deliveryPhone: resolved.deliveryPhone,
       notes: input.notes,
       otpHash,
       lines: {

@@ -1,0 +1,127 @@
+<section class="address-book">
+  <div class="address-book-hdr">
+    <div>
+      <h3>Saved addresses</h3>
+      <p class="section-note">Add multiple delivery addresses. Mark one as default for medicine delivery.</p>
+    </div>
+    @if (!showForm()) {
+      <button type="button" class="btn-add" (click)="openAddForm()">+ Add address</button>
+    }
+  </div>
+
+  @if (successMsg()) {
+    <p class="msg-ok">✓ {{ successMsg() }}</p>
+  }
+  @if (errorMsg()) {
+    <p class="msg-err">{{ errorMsg() }}</p>
+  }
+
+  @if (loading()) {
+    <p class="loading-text">Loading addresses…</p>
+  } @else if (showForm()) {
+    <div class="address-form-panel">
+      <h4>{{ editingId() ? 'Edit address' : 'New address' }}</h4>
+      <div class="field-grid">
+        <div class="field">
+          <label>Address label *</label>
+          <input [formField]="addressForm.label" placeholder="e.g. Home, Office, Parents house" />
+        </div>
+        <div class="field">
+          <label>Type</label>
+          <select [formField]="addressForm.addressType">
+            @for (t of addressTypeOptions; track t.value) {
+              <option [value]="t.value">{{ t.label }}</option>
+            }
+          </select>
+        </div>
+        <div class="field">
+          <label>Recipient name *</label>
+          <input [formField]="addressForm.recipientName" placeholder="Full name for delivery" autocomplete="name" />
+        </div>
+        <div class="field">
+          <label>Mobile for delivery *</label>
+          <input [formField]="addressForm.phone" placeholder="10-digit mobile" inputmode="tel" autocomplete="tel" />
+        </div>
+        <div class="field span-2">
+          <label>House / flat / building *</label>
+          <input [formField]="addressForm.addressLine1" placeholder="Flat no., building, street" autocomplete="address-line1" />
+        </div>
+        <div class="field span-2">
+          <label>Area / locality</label>
+          <input [formField]="addressForm.addressLine2" placeholder="Colony, sector, area" autocomplete="address-line2" />
+        </div>
+        <div class="field span-2">
+          <label>Landmark</label>
+          <input [formField]="addressForm.landmark" placeholder="Near hospital, school, etc." />
+        </div>
+        <div class="field">
+          <label>City *</label>
+          <input [formField]="addressForm.city" placeholder="City" autocomplete="address-level2" />
+        </div>
+        <div class="field">
+          <label>State *</label>
+          <input [formField]="addressForm.state" placeholder="State" autocomplete="address-level1" />
+        </div>
+        <div class="field">
+          <label>PIN code *</label>
+          <input [formField]="addressForm.pincode" placeholder="6-digit PIN" inputmode="numeric" maxlength="6" />
+        </div>
+        <div class="field">
+          <label>Country</label>
+          <input [formField]="addressForm.country" placeholder="Country" />
+        </div>
+        <div class="field span-2">
+          <label>Delivery instructions</label>
+          <textarea [formField]="addressForm.deliveryInstructions" placeholder="Ring bell, leave with security, call on arrival…"></textarea>
+        </div>
+        <div class="field span-2">
+          <label class="check-row">
+            <input type="checkbox" [checked]="formModel().isDefault" (change)="toggleDefault($any($event.target).checked)" />
+            Set as default delivery address
+          </label>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button type="button" class="btn-primary" [disabled]="saving()" (click)="saveAddress()">
+          {{ saving() ? 'Saving…' : (editingId() ? 'Update address' : 'Save address') }}
+        </button>
+        <button type="button" class="btn-ghost" (click)="cancelForm()">Cancel</button>
+      </div>
+    </div>
+  }
+
+  @if (!loading() && !addresses().length && !showForm()) {
+    <div class="empty-addresses">
+      <p>No saved addresses yet.</p>
+      <button type="button" class="btn-primary" (click)="openAddForm()">Add your first address</button>
+    </div>
+  } @else if (!showForm()) {
+    <div class="address-list">
+      @for (addr of addresses(); track addr.id) {
+        <article class="address-card" [class.is-default]="addr.isDefault">
+          <div class="address-card-top">
+            <div class="address-tags">
+              <span class="type-tag">{{ addressTypeLabel(addr.addressType) }}</span>
+              @if (addr.isDefault) {
+                <span class="default-tag">Default</span>
+              }
+            </div>
+            <strong class="address-label">{{ addr.label }}</strong>
+          </div>
+          <p class="recipient">{{ addr.recipientName }} · {{ addr.phone }}</p>
+          <p class="address-lines">{{ addr.formatted || addr.addressLine1 }}</p>
+          @if (addr.deliveryInstructions) {
+            <p class="instructions">📝 {{ addr.deliveryInstructions }}</p>
+          }
+          <div class="address-actions">
+            @if (!addr.isDefault) {
+              <button type="button" class="link-action" (click)="setDefault(addr.id)">Make default</button>
+            }
+            <button type="button" class="link-action" (click)="openEditForm(addr)">Edit</button>
+            <button type="button" class="link-action danger" (click)="deleteAddress(addr.id)">Remove</button>
+          </div>
+        </article>
+      }
+    </div>
+  }
+</section>

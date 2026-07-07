@@ -7,6 +7,38 @@ enum MedicineDeliveryStatus {
   CANCELLED
 }
 
+enum PatientAddressType {
+  HOME
+  WORK
+  OTHER
+}
+
+model PatientAddress {
+  id                   String             @id @default(cuid())
+  patientId            String
+  patient              User               @relation("PatientAddresses", fields: [patientId], references: [id], onDelete: Cascade)
+  label                String
+  addressType          PatientAddressType @default(HOME)
+  recipientName        String
+  phone                String
+  addressLine1         String
+  addressLine2         String?
+  landmark             String?
+  city                 String
+  state                String
+  pincode              String
+  country              String             @default("India")
+  deliveryInstructions String?
+  isDefault            Boolean            @default(false)
+  isActive             Boolean            @default(true)
+  deliveries           MedicineDelivery[]
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+
+  @@index([patientId, isActive])
+  @@index([patientId, isDefault])
+}
+
 model MedicineDelivery {
   id                   String                 @id @default(cuid())
   deliveryNumber       String                 @unique
@@ -14,6 +46,7 @@ model MedicineDelivery {
   patientId            String
   prescriptionId       String?
   assignedExecutiveId  String?
+  patientAddressId     String?
   status               MedicineDeliveryStatus @default(PENDING)
   deliveryAddress      String
   deliveryPhone        String
@@ -29,6 +62,7 @@ model MedicineDelivery {
   patient              User                   @relation("PatientDeliveries", fields: [patientId], references: [id])
   prescription         Prescription?          @relation(fields: [prescriptionId], references: [id])
   assignedExecutive    User?                  @relation("AssignedDeliveries", fields: [assignedExecutiveId], references: [id])
+  patientAddress       PatientAddress?        @relation(fields: [patientAddressId], references: [id], onDelete: SetNull)
   lines                MedicineDeliveryLine[]
   createdAt            DateTime               @default(now())
   updatedAt            DateTime               @updatedAt

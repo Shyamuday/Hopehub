@@ -1,0 +1,238 @@
+.address-book {
+  padding: 0;
+}
+
+.address-book-hdr {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.address-book h3 {
+  margin: 0 0 0.25rem;
+  font-size: 0.95rem;
+}
+
+.section-note {
+  margin: 0;
+  color: #64748b;
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+
+.btn-add,
+.btn-primary,
+.btn-ghost {
+  border-radius: 9px;
+  padding: 0.5rem 0.9rem;
+  font-size: 0.84rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.btn-add,
+.btn-primary {
+  border: none;
+  background: #2563eb;
+  color: #fff;
+}
+
+.btn-ghost {
+  border: 1px solid #d1d5db;
+  background: #fff;
+  color: #475569;
+}
+
+.btn-primary:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.address-form-panel {
+  border: 1px solid #dbeafe;
+  border-radius: 12px;
+  padding: 1rem;
+  background: #f8fbff;
+  margin-bottom: 0.75rem;
+}
+
+.address-form-panel h4 {
+  margin: 0 0 0.75rem;
+  font-size: 0.9rem;
+}
+
+.field-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65rem 0.85rem;
+}
+
+.field-grid .span-2 {
+  grid-column: span 2;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.field label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #374151;
+}
+
+.field input,
+.field textarea,
+.field select {
+  border: 1.5px solid #d1d5db;
+  border-radius: 8px;
+  padding: 0.5rem 0.65rem;
+  font-size: 0.88rem;
+}
+
+.field textarea {
+  min-height: 70px;
+  resize: vertical;
+}
+
+.check-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.84rem;
+  color: #334155;
+}
+
+.form-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.85rem;
+  flex-wrap: wrap;
+}
+
+.address-list {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.address-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 0.85rem 1rem;
+  background: #fff;
+}
+
+.address-card.is-default {
+  border-color: #93c5fd;
+  background: #f0f9ff;
+}
+
+.address-card-top {
+  margin-bottom: 0.35rem;
+}
+
+.address-tags {
+  display: flex;
+  gap: 0.35rem;
+  margin-bottom: 0.25rem;
+}
+
+.type-tag,
+.default-tag {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0.12rem 0.4rem;
+  border-radius: 5px;
+}
+
+.type-tag {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.default-tag {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.address-label {
+  font-size: 0.95rem;
+}
+
+.recipient,
+.address-lines,
+.instructions {
+  margin: 0.15rem 0;
+  font-size: 0.84rem;
+  color: #475569;
+  line-height: 1.45;
+}
+
+.instructions {
+  color: #64748b;
+  font-style: italic;
+}
+
+.address-actions {
+  display: flex;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+  margin-top: 0.55rem;
+}
+
+.link-action {
+  border: 0;
+  background: transparent;
+  color: #2563eb;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+}
+
+.link-action.danger {
+  color: #dc2626;
+}
+
+.empty-addresses {
+  text-align: center;
+  padding: 1.25rem 0.5rem;
+  color: #64748b;
+}
+
+.empty-addresses p {
+  margin: 0 0 0.75rem;
+}
+
+.loading-text {
+  color: #64748b;
+  font-size: 0.84rem;
+}
+
+.msg-ok {
+  color: #16a34a;
+  font-size: 0.82rem;
+  font-weight: 600;
+  margin: 0 0 0.5rem;
+}
+
+.msg-err {
+  color: #dc2626;
+  font-size: 0.82rem;
+  margin: 0 0 0.5rem;
+}
+
+@media (max-width: 640px) {
+  .field-grid,
+  .field-grid .span-2 {
+    grid-template-columns: 1fr;
+    grid-column: span 1;
+  }
+}
