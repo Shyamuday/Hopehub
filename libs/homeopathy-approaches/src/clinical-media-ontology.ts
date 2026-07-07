@@ -1,4 +1,19 @@
-export type ClinicalMediaType = 'SKIN' | 'TONGUE' | 'NAIL' | 'HAIR' | 'SWELLING' | 'OTHER';
+export type ClinicalMediaType =
+  | 'SKIN'
+  | 'TONGUE'
+  | 'NAIL'
+  | 'HAIR'
+  | 'SWELLING'
+  | 'EYE'
+  | 'EAR'
+  | 'WOUND'
+  | 'JOINT'
+  | 'POSTURE'
+  | 'DENTAL'
+  | 'ABDOMEN'
+  | 'CHEST'
+  | 'LIMBS'
+  | 'OTHER';
 
 export const CLINICAL_MEDIA_TYPE_LABELS: Record<ClinicalMediaType, string> = {
   SKIN: 'Skin / rash',
@@ -6,15 +21,34 @@ export const CLINICAL_MEDIA_TYPE_LABELS: Record<ClinicalMediaType, string> = {
   NAIL: 'Nails',
   HAIR: 'Hair / scalp',
   SWELLING: 'Swelling / oedema',
+  EYE: 'Eyes',
+  EAR: 'Ears',
+  WOUND: 'Wound / ulcer',
+  JOINT: 'Joints / stiffness',
+  POSTURE: 'Posture / gait',
+  DENTAL: 'Teeth / gums',
+  ABDOMEN: 'Abdomen',
+  CHEST: 'Chest / breathing',
+  LIMBS: 'Arms / legs',
   OTHER: 'Other'
 };
 
 export const CLINICAL_MEDIA_BODY_REGIONS: Partial<Record<ClinicalMediaType, string[]>> = {
-  SKIN: ['Face', 'Extensor surfaces', 'Flexor surfaces', 'Trunk', 'Hands', 'Feet', 'Scalp'],
-  TONGUE: ['Dorsum', 'Sides', 'Tip', 'Root'],
-  NAIL: ['Fingers', 'Toes'],
-  HAIR: ['Scalp', 'Beard', 'Body'],
-  SWELLING: ['Face', 'Ankles', 'Hands', 'Abdomen', 'Generalized']
+  SKIN: ['Face', 'Neck', 'Chest', 'Back', 'Abdomen', 'Arms', 'Hands', 'Legs', 'Feet', 'Scalp', 'Genital area'],
+  TONGUE: ['Dorsum', 'Sides', 'Tip', 'Root', 'Coating', 'Margins'],
+  NAIL: ['Fingers', 'Toes', 'Thumb', 'Cuticle'],
+  HAIR: ['Scalp', 'Hairline', 'Beard', 'Eyebrows', 'Body hair'],
+  SWELLING: ['Face', 'Eyelids', 'Hands', 'Ankles', 'Feet', 'Abdomen', 'Generalized'],
+  EYE: ['Left eye', 'Right eye', 'Both eyes', 'Eyelids', 'Conjunctiva'],
+  EAR: ['Left ear', 'Right ear', 'Ear canal', 'Behind ear'],
+  WOUND: ['Skin ulcer', 'Surgical site', 'Pressure area', 'Diabetic foot', 'Other wound'],
+  JOINT: ['Knee', 'Ankle', 'Wrist', 'Fingers', 'Shoulder', 'Hip', 'Spine', 'Small joints'],
+  POSTURE: ['Standing', 'Walking', 'Sitting', 'Spine curvature', 'Shoulder level'],
+  DENTAL: ['Upper teeth', 'Lower teeth', 'Gums', 'Tongue side', 'Palate'],
+  ABDOMEN: ['Upper abdomen', 'Lower abdomen', 'Right side', 'Left side', 'Umbilicus'],
+  CHEST: ['Anterior chest', 'Back', 'Breathing pattern', 'Ribs'],
+  LIMBS: ['Upper arm', 'Forearm', 'Thigh', 'Calf', 'Hand', 'Foot'],
+  OTHER: ['General', 'Localized', 'Before treatment', 'After treatment']
 };
 
 type OntologyEntry = {
@@ -56,6 +90,52 @@ const OBSERVATION_ONTOLOGY: Record<ClinicalMediaType, OntologyEntry[]> = {
     { label: 'Pitting oedema', phrases: ['extremities oedema', 'ankles swelling'] },
     { label: 'Facial puffiness', phrases: ['face swelling', 'eyes swelling'] },
     { label: 'General dropsy', phrases: ['body swelling', 'dropsy'] }
+  ],
+  EYE: [
+    { label: 'Redness', phrases: ['eyes red', 'conjunctiva inflamed'] },
+    { label: 'Discharge', phrases: ['eyes discharge', 'eyes watering'] },
+    { label: 'Swollen lids', phrases: ['eyelids swollen', 'eyes swelling'] },
+    { label: 'Itching eyes', phrases: ['eyes itching', 'eyes burning'] }
+  ],
+  EAR: [
+    { label: 'Ear discharge', phrases: ['ears discharge', 'ears suppuration'] },
+    { label: 'Ear pain', phrases: ['ears pain', 'ears aching'] },
+    { label: 'Blocked ear', phrases: ['ears stopped', 'hearing diminished'] }
+  ],
+  WOUND: [
+    { label: 'Ulcer base', phrases: ['ulcers', 'skin ulcerated'] },
+    { label: 'Inflamed margin', phrases: ['wounds inflamed', 'skin inflammation'] },
+    { label: 'Discharge', phrases: ['wounds discharge', 'ulcers discharge'] }
+  ],
+  JOINT: [
+    { label: 'Joint swelling', phrases: ['joints swelling', 'joints inflamed'] },
+    { label: 'Stiffness', phrases: ['joints stiff', 'limbs stiff'] },
+    { label: 'Deformity', phrases: ['joints deformed', 'hands deformed'] }
+  ],
+  POSTURE: [
+    { label: 'Stooped posture', phrases: ['back bent', 'spine curved'] },
+    { label: 'Limping gait', phrases: ['walking lame', 'limping'] },
+    { label: 'Asymmetry', phrases: ['shoulders unequal', 'body asymmetry'] }
+  ],
+  DENTAL: [
+    { label: 'Gum inflammation', phrases: ['gums inflamed', 'gums bleeding'] },
+    { label: 'Tooth decay', phrases: ['teeth decayed', 'teeth pain'] },
+    { label: 'Coated teeth margins', phrases: ['teeth coated', 'mouth offensive'] }
+  ],
+  ABDOMEN: [
+    { label: 'Distension', phrases: ['abdomen distended', 'abdomen bloated'] },
+    { label: 'Visible veins', phrases: ['abdomen veins', 'abdomen enlarged'] },
+    { label: 'Localized swelling', phrases: ['abdomen swelling', 'abdomen hard'] }
+  ],
+  CHEST: [
+    { label: 'Laboured breathing', phrases: ['breathing difficult', 'respiration labored'] },
+    { label: 'Chest retraction', phrases: ['chest oppression', 'chest constriction'] },
+    { label: 'Asymmetrical expansion', phrases: ['chest unequal', 'respiration irregular'] }
+  ],
+  LIMBS: [
+    { label: 'Muscle wasting', phrases: ['limbs emaciated', 'muscles wasted'] },
+    { label: 'Varicose veins', phrases: ['legs veins', 'limbs veins'] },
+    { label: 'Discoloration', phrases: ['limbs blue', 'extremities cold'] }
   ],
   OTHER: [
     { label: 'Inflammation', phrases: ['inflammation', 'pain swelling'] },
@@ -114,4 +194,12 @@ export function suggestRubricSearchPhrases(input: {
   }
 
   return [...phrases].slice(0, 12);
+}
+
+export function clinicalMediaMetaPayload(diseases: Array<{ id: string; name: string; publicCategory: string | null }>) {
+  return {
+    mediaTypes: Object.entries(CLINICAL_MEDIA_TYPE_LABELS).map(([value, label]) => ({ value, label })),
+    bodyRegions: CLINICAL_MEDIA_BODY_REGIONS,
+    diseases
+  };
 }

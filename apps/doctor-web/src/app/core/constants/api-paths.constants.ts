@@ -26,6 +26,11 @@ export const API_PATHS = {
     PATIENT_CASE_HISTORY: CROSS_APP_API_PATHS.DOCTOR.PATIENT_CASE_HISTORY,
     CLINICAL_MEDIA_OBSERVATION_HINTS: '/doctor/clinical-media/observation-hints',
     CLINICAL_MEDIA_SUGGEST_PHRASES: '/doctor/clinical-media/suggest-rubric-phrases',
+    CLINICAL_MEDIA_META: '/clinical-media/meta',
+    CLINICAL_MEDIA_FILE: (id: string) => `/clinical-media/${id}/file`,
+    PATIENT_CLINICAL_MEDIA: (patientId: string) => `/doctor/patients/${patientId}/clinical-media`,
+    PATIENT_CLINICAL_MEDIA_ITEM: (patientId: string, mediaId: string) =>
+      `/doctor/patients/${patientId}/clinical-media/${mediaId}`,
     CASE_ANALYSIS_CLINICAL_MEDIA: (analysisId: string) => `/doctor/case-analyses/${analysisId}/clinical-media`,
     CASE_ANALYSIS_CLINICAL_MEDIA_ITEM: (analysisId: string, mediaId: string) =>
       `/doctor/case-analyses/${analysisId}/clinical-media/${mediaId}`,

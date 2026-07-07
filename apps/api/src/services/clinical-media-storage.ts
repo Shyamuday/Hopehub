@@ -22,7 +22,7 @@ function extensionForMime(mimeType: string) {
 }
 
 export async function saveClinicalMediaFile(input: {
-  analysisId: string;
+  patientId: string;
   mimeType: string;
   fileName?: string | null;
   dataBase64: string;
@@ -35,11 +35,11 @@ export async function saveClinicalMediaFile(input: {
   if (!buffer.length) throw new Error('EMPTY_FILE');
   if (buffer.length > MAX_BYTES) throw new Error('FILE_TOO_LARGE');
 
-  const dir = path.join(UPLOAD_ROOT, input.analysisId);
+  const dir = path.join(UPLOAD_ROOT, input.patientId);
   await mkdir(dir, { recursive: true });
 
   const ext = extensionForMime(input.mimeType) || path.extname(input.fileName || '') || '.bin';
-  const storageKey = `${input.analysisId}/${randomUUID()}${ext}`;
+  const storageKey = `${input.patientId}/${randomUUID()}${ext}`;
   const absolutePath = path.join(UPLOAD_ROOT, storageKey);
   await writeFile(absolutePath, buffer);
 

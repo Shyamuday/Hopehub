@@ -31,6 +31,7 @@ model Disease {
   publicDescription  String?        @db.Text
   consultations      Consultation[]
   locationFees       DiseaseLocationFee[]
+  clinicalMedia      ClinicalMedia[]
   createdAt          DateTime       @default(now())
   updatedAt          DateTime       @updatedAt
 
@@ -71,6 +72,7 @@ model Consultation {
   supportNotes    SupportCaseNote[]
   caseAnalyses    CaseAnalysis[]
   labReferrals    LabReferral[]
+  clinicalMedia   ClinicalMedia[]
   websiteLead     WebsiteLead?
   createdAt       DateTime           @default(now())
   updatedAt       DateTime           @updatedAt

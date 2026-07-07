@@ -104,6 +104,12 @@
 </section>
 }
 
+@if (selectedPatient(); as patient) {
+<section class="panel">
+  <app-doctor-patient-clinical-media-panel [patientId]="patient.id" />
+</section>
+}
+
 @if (trendModel().patientId) {
 <section class="panel">
   <h2>Lab Referrals &amp; Results</h2>

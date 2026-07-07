@@ -1,0 +1,110 @@
+<section class="health-photos-panel">
+  <div class="panel-head">
+    <div>
+      <h3>Health photos</h3>
+      <p class="muted">Upload symptom photos by body area or condition — skin, tongue, swelling, wounds, and more. Your doctor can review these during consultation.</p>
+    </div>
+  </div>
+
+  @if (error()) {
+    <p class="alert alert-error">{{ error() }}</p>
+  }
+  @if (message()) {
+    <p class="alert alert-success">{{ message() }}</p>
+  }
+
+  <div class="upload-grid">
+    <div class="upload-form">
+      <label class="field-label" for="health-photo-file">Photo</label>
+      <input id="health-photo-file" type="file" accept="image/jpeg,image/png,image/webp,image/gif" (change)="onFileSelected($event)" />
+
+      @if (selectedPreviewUrl(); as previewUrl) {
+        <img class="selected-preview" [src]="previewUrl" alt="Selected photo preview" />
+      }
+
+      <label class="field-label" for="health-photo-type">Category</label>
+      <select id="health-photo-type" [formField]="uploadForm.mediaType">
+        @for (entry of mediaTypes; track entry[0]) {
+          <option [value]="entry[0]">{{ entry[1] }}</option>
+        }
+      </select>
+
+      <label class="field-label" for="health-photo-region">Body part / region</label>
+      <select id="health-photo-region" [formField]="uploadForm.bodyRegion">
+        <option value="">Select region…</option>
+        @for (region of bodyRegions(); track region) {
+          <option [value]="region">{{ region }}</option>
+        }
+      </select>
+
+      <label class="field-label" for="health-photo-disease">Related condition (catalog)</label>
+      <select id="health-photo-disease" [formField]="uploadForm.diseaseId">
+        <option value="">Optional — pick from clinic list</option>
+        @for (d of diseases(); track d.id) {
+          <option [value]="d.id">{{ d.name }}</option>
+        }
+      </select>
+
+      <label class="field-label" for="health-photo-condition">Or describe condition</label>
+      <input id="health-photo-condition" type="text" [formField]="uploadForm.conditionLabel" placeholder="e.g. eczema flare, ankle swelling" />
+
+      <label class="field-label" for="health-photo-notes">What you notice</label>
+      <textarea id="health-photo-notes" rows="3" [formField]="uploadForm.observations" placeholder="Colour, size, itching, when it started…"></textarea>
+
+      <button type="button" class="btn-primary" (click)="uploadSelectedFile()" [disabled]="uploading()">
+        {{ uploading() ? 'Uploading…' : 'Save photo' }}
+      </button>
+    </div>
+  </div>
+
+  <div class="media-list">
+    <div class="list-head">
+      <h4>Your uploaded photos</h4>
+      <label class="filter-label">
+        Filter
+        <select [value]="filterType()" (change)="filterType.set($any($event.target).value)">
+          <option value="">All categories</option>
+          @for (entry of mediaTypes; track entry[0]) {
+            <option [value]="entry[0]">{{ entry[1] }}</option>
+          }
+        </select>
+      </label>
+    </div>
+
+    @if (loading()) {
+      <p class="muted">Loading photos…</p>
+    } @else if (filteredMedia().length) {
+      <div class="media-grid">
+        @for (item of filteredMedia(); track item.id) {
+          <article class="media-card">
+            @if (previewUrls()[item.id]; as imageUrl) {
+              <img [src]="imageUrl" [alt]="item.mediaTypeLabel" />
+            }
+            <div class="media-meta">
+              <strong>{{ item.mediaTypeLabel }}</strong>
+              @if (item.bodyRegion) {
+                <p class="muted">{{ item.bodyRegion }}</p>
+              }
+              @if (item.diseaseName || item.conditionLabel) {
+                <p class="condition">{{ item.diseaseName || item.conditionLabel }}</p>
+              }
+              @if (item.observations) {
+                <p class="notes">{{ item.observations }}</p>
+              }
+              @if (item.uploadedByRole === 'DOCTOR') {
+                <p class="badge">Added by doctor</p>
+              }
+              @if (item.uploadedByRole === 'PATIENT') {
+                <button type="button" class="btn-danger btn-sm" (click)="removeMedia(item)" [disabled]="deletingId() === item.id">
+                  {{ deletingId() === item.id ? 'Removing…' : 'Remove' }}
+                </button>
+              }
+            </div>
+          </article>
+        }
+      </div>
+    } @else {
+      <p class="muted">No photos in this category yet.</p>
+    }
+  </div>
+</section>

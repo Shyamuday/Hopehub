@@ -32,10 +32,13 @@ export class ClinicalMediaPanelComponent implements OnChanges, OnDestroy {
   readonly message = signal('');
   readonly previewUrls = signal<Record<string, string>>({});
   readonly suggestedPhrases = signal<string[]>([]);
+  readonly diseases = signal<Array<{ id: string; name: string }>>([]);
 
   readonly uploadModel = signal({
     mediaType: 'SKIN' as ClinicalMediaType,
     bodyRegion: '',
+    diseaseId: '',
+    conditionLabel: '',
     observations: '',
     patientConsent: false
   });
@@ -46,8 +49,18 @@ export class ClinicalMediaPanelComponent implements OnChanges, OnDestroy {
 
   ngOnChanges() {
     if (this.analysisId) {
-      void this.reload();
+      void this.bootstrap();
     }
+  }
+
+  async bootstrap() {
+    try {
+      const meta = await this.api.loadClinicalMediaMeta();
+      this.diseases.set(meta.diseases);
+    } catch {
+      this.diseases.set([]);
+    }
+    await this.reload();
   }
 
   ngOnDestroy() {
@@ -68,7 +81,7 @@ export class ClinicalMediaPanelComponent implements OnChanges, OnDestroy {
       this.revokePreviewUrls();
       const next: Record<string, string> = {};
       for (const item of items) {
-        const blob = await this.api.loadClinicalMediaFile(this.analysisId, item.id);
+        const blob = await this.api.loadClinicalMediaFile(item.fileUrl);
         next[item.id] = URL.createObjectURL(blob);
       }
       this.previewUrls.set(next);
@@ -110,6 +123,8 @@ export class ClinicalMediaPanelComponent implements OnChanges, OnDestroy {
       await this.api.uploadClinicalMedia(this.analysisId, {
         mediaType: form.mediaType,
         bodyRegion: form.bodyRegion.trim() || undefined,
+        diseaseId: form.diseaseId || undefined,
+        conditionLabel: form.conditionLabel.trim() || undefined,
         observations: form.observations.trim() || undefined,
         patientConsent: true,
         mimeType: file.type,
@@ -119,6 +134,8 @@ export class ClinicalMediaPanelComponent implements OnChanges, OnDestroy {
       this.uploadModel.set({
         mediaType: form.mediaType,
         bodyRegion: '',
+        diseaseId: '',
+        conditionLabel: '',
         observations: '',
         patientConsent: false
       });
@@ -172,10 +189,10 @@ export class ClinicalMediaPanelComponent implements OnChanges, OnDestroy {
   async refreshSuggestions(item?: ClinicalMediaItem) {
     const source = item ?? null;
     const draft = this.uploadModel();
-    const mediaType = source?.mediaType ?? draft.mediaType;
+    const mediaType = (source?.mediaType ?? draft.mediaType) as ClinicalMediaType;
     const observations = source?.observations ?? draft.observations;
     const bodyRegion = source?.bodyRegion ?? draft.bodyRegion;
-  const phrases = suggestRubricSearchPhrases({ mediaType, observations, bodyRegion });
+    const phrases = suggestRubricSearchPhrases({ mediaType, observations, bodyRegion });
     this.suggestedPhrases.set(phrases);
   }
 

@@ -15,6 +15,15 @@ enum ClinicalMediaType {
   NAIL
   HAIR
   SWELLING
+  EYE
+  EAR
+  WOUND
+  JOINT
+  POSTURE
+  DENTAL
+  ABDOMEN
+  CHEST
+  LIMBS
   OTHER
 }
 
@@ -162,20 +171,28 @@ model CaseAnalysisResult {
 }
 
 model ClinicalMedia {
-  id             String            @id @default(cuid())
-  caseAnalysisId String
-  uploadedById   String
-  mediaType      ClinicalMediaType
-  bodyRegion     String?
-  storageKey     String
-  mimeType       String
-  fileName       String?
-  observations   String?
-  patientConsent Boolean           @default(false)
-  caseAnalysis   CaseAnalysis      @relation(fields: [caseAnalysisId], references: [id], onDelete: Cascade)
-  uploadedBy     User              @relation("ClinicalMediaUploadedBy", fields: [uploadedById], references: [id], onDelete: Restrict)
-  createdAt      DateTime          @default(now())
-  updatedAt      DateTime          @updatedAt
+  id               String             @id @default(cuid())
+  patientId        String
+  caseAnalysisId   String?
+  consultationId   String?
+  diseaseId        String?
+  conditionLabel   String?
+  uploadedById     String
+  mediaType        ClinicalMediaType
+  bodyRegion       String?
+  storageKey       String
+  mimeType         String
+  fileName         String?
+  observations     String?
+  patientConsent   Boolean            @default(false)
+  patient          User               @relation("PatientClinicalMedia", fields: [patientId], references: [id], onDelete: Cascade)
+  caseAnalysis     CaseAnalysis?      @relation(fields: [caseAnalysisId], references: [id], onDelete: Cascade)
+  consultation     Consultation?      @relation(fields: [consultationId], references: [id], onDelete: SetNull)
+  disease          Disease?           @relation(fields: [diseaseId], references: [id], onDelete: SetNull)
+  uploadedBy       User               @relation("ClinicalMediaUploadedBy", fields: [uploadedById], references: [id], onDelete: Restrict)
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
 
+  @@index([patientId, createdAt])
   @@index([caseAnalysisId, createdAt])
 }

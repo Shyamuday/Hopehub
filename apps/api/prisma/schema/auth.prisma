@@ -163,6 +163,7 @@ model User {
   hrStoreGrants      HrStoreAccess[] @relation("HrAccessGrantor")
   leaveApprovals     LeaveRequest[]  @relation("LeaveApprovals")
   caseAnalyses       CaseAnalysis[]  @relation("DoctorCaseAnalyses")
+  patientClinicalMedia ClinicalMedia[] @relation("PatientClinicalMedia")
   clinicalMediaUploads ClinicalMedia[] @relation("ClinicalMediaUploadedBy")
   notificationBroadcasts NotificationBroadcast[] @relation("NotificationBroadcasts")
   inAppNotifications   InAppNotification[]   @relation("UserInAppNotifications")

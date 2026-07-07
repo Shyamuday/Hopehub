@@ -1,0 +1,70 @@
+<section class="panel health-photos-panel">
+  <h2>Patient health photos</h2>
+  <p class="muted">Upload or review categorized symptom images — body part, disease, and clinical category. Includes photos the patient uploaded from their account.</p>
+
+  @if (error()) {
+    <p class="error">{{ error() }}</p>
+  }
+
+  <div class="upload-form">
+    <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" (change)="onFileSelected($event)" />
+    @if (selectedPreviewUrl(); as url) {
+      <img class="preview" [src]="url" alt="Preview" />
+    }
+
+    <select [formField]="uploadForm.mediaType">
+      @for (entry of mediaTypes; track entry[0]) {
+        <option [value]="entry[0]">{{ entry[1] }}</option>
+      }
+    </select>
+
+    <select [formField]="uploadForm.bodyRegion">
+      <option value="">Body region…</option>
+      @for (region of bodyRegions(); track region) {
+        <option [value]="region">{{ region }}</option>
+      }
+    </select>
+
+    <select [formField]="uploadForm.diseaseId">
+      <option value="">Related disease…</option>
+      @for (d of diseases(); track d.id) {
+        <option [value]="d.id">{{ d.name }}</option>
+      }
+    </select>
+
+    <input type="text" [formField]="uploadForm.conditionLabel" placeholder="Condition label" />
+    <textarea rows="2" [formField]="uploadForm.observations" placeholder="Clinical observations"></textarea>
+
+    <label class="check">
+      <input type="checkbox" [formField]="uploadForm.patientConsent" />
+      Patient consented to attach this image
+    </label>
+
+    <button type="button" (click)="uploadSelectedFile()" [disabled]="uploading()">
+      {{ uploading() ? 'Uploading…' : 'Attach image' }}
+    </button>
+  </div>
+
+  @if (loading()) {
+    <p class="muted">Loading gallery…</p>
+  } @else if (media().length) {
+    <div class="grid">
+      @for (item of media(); track item.id) {
+        <article class="card">
+          @if (previewUrls()[item.id]; as imageUrl) {
+            <img [src]="imageUrl" [alt]="item.mediaTypeLabel" />
+          }
+          <div class="meta">
+            <strong>{{ item.mediaTypeLabel }}</strong>
+            @if (item.bodyRegion) { <p>{{ item.bodyRegion }}</p> }
+            @if (item.diseaseName || item.conditionLabel) { <p>{{ item.diseaseName || item.conditionLabel }}</p> }
+            <small>{{ item.uploadedByRole }} · {{ item.uploadedByName }}</small>
+            <button type="button" (click)="removeMedia(item)" [disabled]="deletingId() === item.id">Remove</button>
+          </div>
+        </article>
+      }
+    </div>
+  } @else {
+    <p class="muted">No health photos yet.</p>
+  }
+</section>

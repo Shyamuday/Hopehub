@@ -138,6 +138,8 @@ export class CaseAnalysisApiService {
       bodyRegion?: string;
       observations?: string;
       patientConsent: boolean;
+      diseaseId?: string;
+      conditionLabel?: string;
       mimeType: string;
       fileName?: string;
       dataBase64: string;
@@ -154,7 +156,13 @@ export class CaseAnalysisApiService {
   updateClinicalMedia(
     analysisId: string,
     mediaId: string,
-    payload: { bodyRegion?: string; observations?: string; patientConsent?: boolean }
+    payload: {
+      bodyRegion?: string;
+      observations?: string;
+      patientConsent?: boolean;
+      diseaseId?: string | null;
+      conditionLabel?: string | null;
+    }
   ) {
     return firstValueFrom(
       this.http.patch<{ media: ClinicalMediaItem }>(
@@ -172,11 +180,57 @@ export class CaseAnalysisApiService {
     );
   }
 
-  loadClinicalMediaFile(analysisId: string, mediaId: string) {
+  loadClinicalMediaFile(fileUrl: string) {
     return firstValueFrom(
-      this.http.get(`${this.apiBase}${API_PATHS.DOCTOR.CASE_ANALYSIS_CLINICAL_MEDIA_FILE(analysisId, mediaId)}`, {
+      this.http.get(`${this.apiBase}${fileUrl}`, {
         responseType: 'blob'
       })
+    );
+  }
+
+  loadClinicalMediaMeta() {
+    return firstValueFrom(
+      this.http.get<{
+        mediaTypes: Array<{ value: string; label: string }>;
+        bodyRegions: Record<string, string[]>;
+        diseases: Array<{ id: string; name: string; publicCategory: string | null }>;
+      }>(`${this.apiBase}${API_PATHS.DOCTOR.CLINICAL_MEDIA_META}`)
+    );
+  }
+
+  listPatientClinicalMedia(patientId: string) {
+    return firstValueFrom(
+      this.http.get<{ media: ClinicalMediaItem[] }>(`${this.apiBase}${API_PATHS.DOCTOR.PATIENT_CLINICAL_MEDIA(patientId)}`)
+    ).then((response) => response.media);
+  }
+
+  uploadPatientClinicalMedia(
+    patientId: string,
+    payload: {
+      mediaType: string;
+      bodyRegion?: string;
+      observations?: string;
+      patientConsent: boolean;
+      diseaseId?: string;
+      conditionLabel?: string;
+      mimeType: string;
+      fileName?: string;
+      dataBase64: string;
+    }
+  ) {
+    return firstValueFrom(
+      this.http.post<{ media: ClinicalMediaItem }>(
+        `${this.apiBase}${API_PATHS.DOCTOR.PATIENT_CLINICAL_MEDIA(patientId)}`,
+        payload
+      )
+    ).then((response) => response.media);
+  }
+
+  deletePatientClinicalMedia(patientId: string, mediaId: string) {
+    return firstValueFrom(
+      this.http.delete<{ ok: boolean }>(
+        `${this.apiBase}${API_PATHS.DOCTOR.PATIENT_CLINICAL_MEDIA_ITEM(patientId, mediaId)}`
+      )
     );
   }
 

@@ -1,15 +1,20 @@
-import type { ClinicalMediaType } from '@vitalis/homeopathy-approaches';
-
 export type ClinicalMediaItem = {
   id: string;
-  caseAnalysisId: string;
-  mediaType: ClinicalMediaType;
+  patientId: string;
+  caseAnalysisId: string | null;
+  consultationId: string | null;
+  diseaseId: string | null;
+  diseaseName: string | null;
+  conditionLabel: string | null;
+  mediaType: string;
   mediaTypeLabel: string;
   bodyRegion: string | null;
   mimeType: string;
   fileName: string | null;
   observations: string | null;
   patientConsent: boolean;
+  uploadedByName: string | null;
+  uploadedByRole: string | null;
   fileUrl: string;
   createdAt: string;
   updatedAt: string;

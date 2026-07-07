@@ -14,6 +14,7 @@ import {
   type PatientClinicalProfile
 } from '../../../shared/patient-health-profile/patient-health-profile';
 import { buildDetailRows, DetailRowsComponent } from '@vitalis/platform-ui';
+import { DoctorPatientClinicalMediaPanelComponent } from '../../../shared/doctor-patient-clinical-media/doctor-patient-clinical-media-panel';
 import {
   ADHERENCE_DAY_FIELDS,
   ADHERENCE_SUMMARY_FIELDS,
@@ -74,7 +75,7 @@ function emptyCreatePatientModel() {
 
 @Component({
   selector: 'app-patients-page',
-  imports: [FormField, CommonModule, DatePipe, PatientIdCardComponent, RouterLink, PatientHealthProfileComponent, DetailRowsComponent],
+  imports: [FormField, CommonModule, DatePipe, PatientIdCardComponent, RouterLink, PatientHealthProfileComponent, DetailRowsComponent, DoctorPatientClinicalMediaPanelComponent],
   templateUrl: './patients-page.html',
   styleUrl: './patients-page.scss'
 })
