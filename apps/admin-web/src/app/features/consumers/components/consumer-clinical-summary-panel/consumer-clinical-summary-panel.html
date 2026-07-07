@@ -1,0 +1,65 @@
+<section class="clinical-summary-panel">
+  <div class="clinical-summary-header">
+    <h3>Prescriptions &amp; case analyses</h3>
+    <div class="clinical-summary-links">
+      <a class="clinical-records-link sm" [routerLink]="clinicalRecordsRoute" [queryParams]="recordsQuery('prescriptions')">
+        All prescriptions ({{ clinicalSummary?.prescriptionTotal ?? 0 }})
+      </a>
+      <a class="clinical-records-link sm" [routerLink]="clinicalRecordsRoute" [queryParams]="recordsQuery('analyses')">
+        All analyses ({{ clinicalSummary?.analysisTotal ?? 0 }})
+      </a>
+    </div>
+  </div>
+
+  @if (clinicalSummaryLoading) {
+    <p class="loading-text">Loading clinical summary…</p>
+  } @else if (clinicalSummary) {
+    <div class="clinical-summary-grid">
+      <article class="summary-card">
+        <h4>Recent prescriptions</h4>
+        @if (clinicalSummary.prescriptions.length) {
+          @for (rx of clinicalSummary.prescriptions; track rx.id) {
+            <div class="summary-item">
+              <strong>{{ rx.methodOption?.label || 'No method' }}</strong>
+              <p>{{ rx.diagnosis || 'No diagnosis' }} · {{ rx.status }}</p>
+              <small>Dr. {{ rx.doctor?.name || '—' }} · {{ rx.createdAt | date: 'mediumDate' }}</small>
+            </div>
+          }
+        } @else {
+          <p class="muted">No prescriptions yet.</p>
+        }
+      </article>
+      <article class="summary-card">
+        <h4>Recent case analyses</h4>
+        @if (clinicalSummary.analyses.length) {
+          @for (analysis of clinicalSummary.analyses; track analysis.id) {
+            <div class="summary-item">
+              <strong>{{ analysis.methodOption?.label || 'No method' }}</strong>
+              <p>{{ analysis.selectedRemedy?.name || 'No remedy selected' }} · {{ analysis.status }}</p>
+              <small>Dr. {{ analysis.doctor?.name || '—' }} · {{ analysis.createdAt | date: 'mediumDate' }}</small>
+
+              @if (analysis.caseSheetRows.length || analysis.approachRows.length) {
+                <div class="summary-clinical-detail">
+                  <p class="summary-approach-title">{{ analysis.approachTitle }} · case sheet</p>
+                  @if (analysis.caseSheetRows.length) {
+                    <vitalis-detail-rows variant="grid" [rows]="analysis.caseSheetRows" />
+                  } @else {
+                    <p class="muted compact">No case sheet fields recorded.</p>
+                  }
+                  @if (analysis.approachRows.length) {
+                    <p class="summary-approach-title">Approach-specific notes</p>
+                    <vitalis-detail-rows variant="grid" [rows]="analysis.approachRows" />
+                  }
+                </div>
+              }
+            </div>
+          }
+        } @else {
+          <p class="muted">No case analyses yet.</p>
+        }
+      </article>
+    </div>
+  } @else {
+    <p class="muted">Clinical summary unavailable.</p>
+  }
+</section>

@@ -1,0 +1,63 @@
+<article class="card">
+  <div class="detail-header-row">
+    <div>
+      <strong>{{ detail.consumer.name }}</strong>
+      <p class="patient-code-badge">{{ detail.consumer.patientCode || detail.consumer.id }}</p>
+    </div>
+    <a class="clinical-records-link" [routerLink]="clinicalRecordsRoute" [queryParams]="recordsQuery()">
+      View clinical records →
+    </a>
+  </div>
+  <p>{{ detail.consumer.email || 'No email' }} | {{ detail.consumer.mobile || 'No mobile' }}</p>
+  <vitalis-detail-rows inlineTag="small" [inlineHostless]="true" [rows]="adherenceRows" />
+</article>
+
+<app-consumer-clinical-summary-panel
+  [clinicalSummary]="clinicalSummary"
+  [clinicalSummaryLoading]="clinicalSummaryLoading"
+  [clinicalRecordsRoute]="clinicalRecordsRoute"
+  [patientId]="patientId"
+/>
+
+<section class="health-profile-panel">
+  <h3>Clinical profile</h3>
+  @if (clinicalProfileHasData) {
+    <vitalis-detail-rows variant="grid" [rows]="clinicalProfileRows" />
+  } @else {
+    <p class="empty-state">No allergies, medications, or chronic conditions recorded yet.</p>
+  }
+</section>
+
+@if (detail.doseNotes?.length) {
+  <h3>Skipped &amp; missed dose notes (7 days)</h3>
+  @for (note of detail.doseNotes; track note.id) {
+    <article class="card dose-note-card">
+      <strong>{{ note.medicineName }}</strong>
+      <p>{{ note.scheduledFor | date: 'medium' }} · {{ note.status }}</p>
+      <small>{{ note.note || 'No patient reason recorded yet' }}</small>
+    </article>
+  }
+}
+
+@if (patientCard) {
+  <div class="card-panel">
+    <h3>Printable patient card</h3>
+    <p class="muted">Give this card to the patient for future visits.</p>
+    <app-patient-id-card [card]="patientCard" />
+  </div>
+}
+
+<app-consumer-consultations-panel
+  [consultations]="detail.consultations"
+  [clinicalRecordsRoute]="clinicalRecordsRoute"
+  [patientId]="patientId"
+  [activeDoctors]="activeDoctors"
+  [assignForm]="assignForm"
+  [assigningConsultationId]="assigningConsultationId"
+  [assigning]="assigning"
+  [assignError]="assignError"
+  [assignDoctorId]="assignDoctorId"
+  (startAssign)="startAssign.emit($event)"
+  (confirmAssign)="confirmAssign.emit()"
+  (cancelAssign)="cancelAssign.emit()"
+/>

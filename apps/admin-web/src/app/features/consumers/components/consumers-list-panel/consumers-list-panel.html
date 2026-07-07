@@ -1,0 +1,82 @@
+<div class="toolbar spaced">
+  <h2>Consumers (Patients)</h2>
+  <button type="button" class="btn-primary" (click)="registerToggle.emit()">
+    {{ showRegister ? 'Close register' : '+ Register patient' }}
+  </button>
+</div>
+
+@if (showRegister) {
+  <div class="register-box">
+    <h3>Register new patient</h3>
+    <div class="register-grid">
+      <input placeholder="Full name *" [formField]="registerForm.name" />
+      <input placeholder="Mobile (optional)" [formField]="registerForm.mobile" />
+      <input placeholder="Email (optional)" [formField]="registerForm.email" />
+      <select [formField]="registerForm.homeClinicStoreId">
+        <option value="">No home clinic</option>
+        @for (store of stores; track store.id) {
+          <option [value]="store.id">{{ store.name }} ({{ store.code }})</option>
+        }
+      </select>
+    </div>
+    <button type="button" (click)="registerPatient.emit()" [disabled]="registerSaving">
+      {{ registerSaving ? 'Saving…' : 'Create patient' }}
+    </button>
+    @if (registerError) { <p class="error">{{ registerError }}</p> }
+    @if (registerMessage) { <p class="success">{{ registerMessage }}</p> }
+  </div>
+}
+
+<div class="toolbar">
+  <input placeholder="Global patient search (mobile, code, name)…" [formField]="patientSearchForm.q" (keyup.enter)="searchPatientsGlobal.emit()" />
+  <button type="button" (click)="searchPatientsGlobal.emit()" [disabled]="patientSearchLoading">Search all</button>
+</div>
+@if (patientSearchResults.length) {
+  <div class="search-results">
+    @for (patient of patientSearchResults; track patient.id) {
+      <button type="button" class="search-hit" (click)="selectSearchedPatient.emit(patient.id)">
+        <strong>{{ patient.name }}</strong>
+        <small>{{ patient.patientCode || patient.id }} · {{ patient.mobile || 'no mobile' }}</small>
+      </button>
+    }
+  </div>
+}
+
+<div class="toolbar">
+  <input placeholder="Search consumers..." [formField]="listFilterForm.searchTerm" (change)="pageChange.emit(1)" />
+  <select [formField]="listFilterForm.sortBy" (change)="pageChange.emit(1)">
+    <option value="consultations">Sort by consultations</option>
+    <option value="name">Sort by name</option>
+  </select>
+  <select [formField]="listFilterForm.sortDirection" (change)="pageChange.emit(1)">
+    <option value="desc">Desc</option>
+    <option value="asc">Asc</option>
+  </select>
+</div>
+
+@if (listLoading) {
+  <p class="loading-text">Loading consumers...</p>
+} @else if (listError) {
+  <div class="error-row">
+    <p class="error">{{ listError }}</p>
+    <button type="button" class="retry-btn" (click)="retryLoad.emit()">Retry</button>
+  </div>
+} @else {
+  @for (consumer of consumers; track consumer.id) {
+    <article class="card">
+      <strong>{{ consumer.name }}</strong>
+      <p class="patient-code-badge">{{ consumer.patientCode || 'No ID yet' }}</p>
+      <button type="button" class="link" (click)="selectConsumer.emit(consumer.id)" [disabled]="detailLoading">View details</button>
+      <p>{{ consumer.email || 'No email' }} | {{ consumer.mobile || 'No mobile' }}</p>
+      <small>Total consultations: {{ consumer.consultations }}</small>
+    </article>
+  } @empty {
+    <p class="empty-state">No consumers found.</p>
+  }
+}
+
+<div class="pagination">
+  @for (p of pages; track p) {
+    <button type="button" [class.active]="page === p" (click)="pageChange.emit(p)">{{ p }}</button>
+  }
+</div>

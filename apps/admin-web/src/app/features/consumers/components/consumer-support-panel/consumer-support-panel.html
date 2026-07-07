@@ -1,0 +1,130 @@
+@if (supportLoading) {
+  <p class="loading-text">Loading support context…</p>
+} @else if (supportError) {
+  <div class="error-row">
+    <p class="error">{{ supportError }}</p>
+    <button type="button" class="retry-btn" (click)="retryLoad.emit()">Retry</button>
+  </div>
+} @else if (supportContext; as ctx) {
+  @if (ctx.flags.length) {
+    <section class="support-flags">
+      <h3>Attention flags</h3>
+      <ul>
+        @for (flag of ctx.flags; track flag) {
+          <li>{{ flag }}</li>
+        }
+      </ul>
+    </section>
+  }
+
+  <section class="support-safe">
+    <h3>Safe troubleshooting checklist</h3>
+    <ul>
+      @for (tip of ctx.safeActions; track tip) {
+        <li>{{ tip }}</li>
+      }
+    </ul>
+  </section>
+
+  <section class="support-grid">
+    <article class="support-card">
+      <h4>Account</h4>
+      <vitalis-detail-rows [rows]="supportAccountRows" />
+    </article>
+    <article class="support-card">
+      <h4>Reminder channels</h4>
+      @if (ctx.reminderPreferences) {
+        <vitalis-detail-rows [rows]="reminderPreferenceRows" />
+      } @else {
+        <p class="muted">No preferences saved.</p>
+      }
+    </article>
+  </section>
+
+  <section class="support-section">
+    <h3>Consultation timeline (read-only)</h3>
+    <div class="support-table-wrap">
+      <table class="support-table">
+        <thead>
+          <tr>
+            <th>Disease</th>
+            <th>Status</th>
+            <th>Payment</th>
+            <th>Doctor</th>
+            <th>Rx / msgs</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (c of ctx.consultations; track c.id) {
+            <tr>
+              <td>{{ c.diseaseName }}</td>
+              <td>{{ c.status }}</td>
+              <td>{{ c.paymentStatus || '—' }}</td>
+              <td>{{ c.doctorName || 'Unassigned' }}</td>
+              <td>{{ c.prescriptionCount }} / {{ c.messageCount }}</td>
+            </tr>
+          } @empty {
+            <tr><td colspan="5">No consultations.</td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  @if (ctx.recentAudit.length) {
+    <section class="support-section">
+      <h3>Recent admin activity</h3>
+      @for (log of ctx.recentAudit; track log.id) {
+        <article class="card compact">
+          <strong>{{ log.action }}</strong>
+          <p>{{ log.summary || '—' }}</p>
+          <small>{{ log.actorName || 'System' }} · {{ log.createdAt | date: 'medium' }}</small>
+        </article>
+      }
+    </section>
+  }
+
+  <section class="support-section">
+    <h3>Case notes</h3>
+    @for (note of supportNotes; track note.id) {
+      <article class="card note-card">
+        <div class="note-head">
+          <span class="note-badge" [style.background]="categoryStyle(note.category).bg" [style.color]="categoryStyle(note.category).color">
+            {{ note.category }}
+          </span>
+          <small>{{ note.author?.name || 'Admin' }} · {{ note.createdAt | date: 'medium' }}</small>
+        </div>
+        <p class="note-body">{{ note.body }}</p>
+        @if (note.consultation) {
+          <small class="muted">Linked: {{ note.consultation.disease?.name || 'Consultation' }} ({{ note.consultation.status }})</small>
+        }
+      </article>
+    } @empty {
+      <p class="empty-state">No support notes yet.</p>
+    }
+
+    <div class="note-form">
+      <h4>Add case note</h4>
+      <div class="note-form-row">
+        <select [formField]="noteForm.category">
+          @for (cat of supportCategories; track cat.value) {
+            <option [value]="cat.value">{{ cat.label }}</option>
+          }
+        </select>
+        <select [formField]="noteForm.consultationId">
+          <option value="">No consultation link</option>
+          @for (c of consultations; track c.id) {
+            <option [value]="c.id">{{ c.disease?.name || 'Consultation' }} — {{ c.status }}</option>
+          }
+        </select>
+      </div>
+      <textarea rows="3" [formField]="noteForm.body" placeholder="What did you check? What should the next agent do?"></textarea>
+      @if (noteError) {
+        <p class="error">{{ noteError }}</p>
+      }
+      <button type="button" class="btn-save-note" (click)="submitNote.emit()" [disabled]="savingNote">
+        {{ savingNote ? 'Saving…' : 'Save note' }}
+      </button>
+    </div>
+  </section>
+}

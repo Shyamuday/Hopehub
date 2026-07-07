@@ -1,11 +1,10 @@
 import { CommonModule } from '@angular/common';
 import { Component, signal } from '@angular/core';
-import { form, FormField } from '@angular/forms/signals';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { form } from '@angular/forms/signals';
+import { ActivatedRoute } from '@angular/router';
 import { adminRouteLink, ROUTE_PATHS } from '../../../core/constants/app-routes.constants';
 import {
   buildDetailRows,
-  DetailRowsComponent,
   PATIENT_CLINICAL_PROFILE_FIELDS,
   patientClinicalProfileHasData
 } from '@vitalis/platform-ui';
@@ -16,136 +15,35 @@ import {
   type ConsumerSortField
 } from '../constants/consumers-list.constants';
 import { type SortDirection } from '../../../shared/constants/filter.constants';
-import { PatientIdCardComponent, type PatientIdCardData } from '../../../shared/patient-id-card/patient-id-card';
+import { type PatientIdCardData } from '../../../shared/patient-id-card/patient-id-card';
 import { environment } from '../../../../environments/environment';
-import {
-  SUPPORT_NOTE_CATEGORIES,
-  SUPPORT_NOTE_CATEGORY_STYLES,
-  type SupportNoteCategory
-} from '../constants/support-note.constants';
+import { buildAdminClinicalSummary, type ClinicalSummaryRow } from '@vitalis/homeopathy-approaches';
+import { type SupportNoteCategory } from '../constants/support-note.constants';
 import { SUPPORT_ACCOUNT_FIELDS } from '../constants/support-detail.fields';
 import {
   CONSUMER_ADHERENCE_FIELDS,
   REMINDER_PREFERENCE_FIELDS
 } from '../constants/consumer-support-detail.fields';
-
-type Consumer = {
-  id: string;
-  name: string;
-  email?: string;
-  mobile?: string;
-  patientCode?: string;
-  consultations: number;
-};
-
-type ConsumerDetail = {
-  consumer: {
-    id: string;
-    name: string;
-    email?: string;
-    mobile?: string;
-    patientCode?: string;
-    allergies?: string | null;
-    currentMedications?: string | null;
-    chronicConditions?: string | null;
-  };
-  consultations: Array<{
-    id: string;
-    status: string;
-    createdAt: string;
-    disease?: { name?: string };
-    assignedDoctor?: { name?: string } | null;
-    prescriptions?: Array<{ id: string; status?: string }>;
-  }>;
-  adherence: {
-    total: number;
-    taken: number;
-    skipped: number;
-    missed: number;
-    percent: number;
-  };
-  doseNotes?: Array<{
-    id: string;
-    status: 'SKIPPED' | 'MISSED';
-    scheduledFor: string;
-    interactedAt: string | null;
-    note: string | null;
-    medicineName: string;
-  }>;
-};
-
-type ActiveDoctor = {
-  id: string;
-  name: string;
-  doctorProfile?: { specialty?: string } | null;
-};
-
-type SupportNote = {
-  id: string;
-  category: SupportNoteCategory;
-  body: string;
-  consultationId?: string | null;
-  createdAt: string;
-  author?: { name?: string; email?: string };
-  consultation?: { id: string; status: string; disease?: { name?: string } } | null;
-};
-
-type SupportContext = {
-  account: { isActive: boolean; patientCode?: string | null; mobile?: string | null; email?: string | null };
-  reminderPreferences?: {
-    inApp: boolean;
-    sms: boolean;
-    whatsapp: boolean;
-    push: boolean;
-    quietHoursStart: string;
-    quietHoursEnd: string;
-  } | null;
-  consultations: Array<{
-    id: string;
-    status: string;
-    diseaseName: string;
-    doctorName?: string | null;
-    paymentStatus?: string | null;
-    prescriptionCount: number;
-    messageCount: number;
-    createdAt: string;
-  }>;
-  adherenceSummary: { total: number; taken: number; skipped: number; missed: number; percent: number | null };
-  flags: string[];
-  recentAudit: Array<{
-    id: string;
-    action: string;
-    summary?: string | null;
-    createdAt: string;
-    actorName?: string | null;
-  }>;
-  safeActions: string[];
-};
-
-type ClinicalSummary = {
-  prescriptions: Array<{
-    id: string;
-    diagnosis: string | null;
-    status: string;
-    createdAt: string;
-    methodOption?: { label: string } | null;
-    doctor?: { name: string } | null;
-  }>;
-  analyses: Array<{
-    id: string;
-    status: string;
-    createdAt: string;
-    methodOption?: { label: string } | null;
-    selectedRemedy?: { name: string } | null;
-    doctor?: { name: string } | null;
-  }>;
-  prescriptionTotal: number;
-  analysisTotal: number;
-};
+import {
+  type ActiveDoctor,
+  type ClinicalSummary,
+  type Consumer,
+  type ConsumerDetail,
+  type SupportContext,
+  type SupportNote
+} from '../models/consumers.models';
+import { ConsumersListPanelComponent } from '../components/consumers-list-panel/consumers-list-panel';
+import { ConsumerOverviewPanelComponent } from '../components/consumer-overview-panel/consumer-overview-panel';
+import { ConsumerSupportPanelComponent } from '../components/consumer-support-panel/consumer-support-panel';
 
 @Component({
   selector: 'app-consumers-page',
-  imports: [CommonModule, FormField, PatientIdCardComponent, DetailRowsComponent, RouterLink],
+  imports: [
+    CommonModule,
+    ConsumersListPanelComponent,
+    ConsumerOverviewPanelComponent,
+    ConsumerSupportPanelComponent
+  ],
   templateUrl: './consumers-page.html',
   styleUrl: './consumers-page.scss'
 })
@@ -197,11 +95,9 @@ export class ConsumersPage {
   readonly patientSearchModel = signal({ q: '' });
   readonly patientSearchForm = form(this.patientSearchModel);
   patientSearchLoading = false;
-  patientSearchResults: Array<any> = [];
+  patientSearchResults: Array<{ id: string; name: string; patientCode?: string; mobile?: string }> = [];
   stores: Array<{ id: string; name: string; code: string }> = [];
 
-  readonly supportCategories = SUPPORT_NOTE_CATEGORIES;
-  readonly categoryStyles = SUPPORT_NOTE_CATEGORY_STYLES;
   readonly clinicalRecordsRoute = adminRouteLink(ROUTE_PATHS.CLINICAL_RECORDS);
 
   clinicalSummary: ClinicalSummary | null = null;
@@ -228,7 +124,7 @@ export class ConsumersPage {
   private async loadStores() {
     try {
       const response = await this.api.getAdminStores();
-      this.stores = (response.stores || []).map((store: any) => ({
+      this.stores = (response.stores || []).map((store: { id: string; name: string; code: string }) => ({
         id: store.id,
         name: store.name,
         code: store.code
@@ -297,8 +193,6 @@ export class ConsumersPage {
       this.totalPagesCount = Math.max(1, Number(response.pagination?.totalPages || 1));
       if (!this.selectedConsumerId) {
         this.selectedConsumerId = this.consumers[0]?.id || '';
-      } else if (!this.consumers.some((c) => c.id === this.selectedConsumerId)) {
-        // Deep-linked consumer may not be on current page of results — still load detail.
       }
       if (this.selectedConsumerId) {
         await Promise.all([
@@ -324,12 +218,8 @@ export class ConsumersPage {
     return this.consumers;
   }
 
-  totalPages() {
-    return this.totalPagesCount;
-  }
-
   pages() {
-    return Array.from({ length: this.totalPages() }, (_, index) => index + 1);
+    return Array.from({ length: this.totalPagesCount }, (_, index) => index + 1);
   }
 
   async selectConsumer(consumerId: string) {
@@ -383,10 +273,6 @@ export class ConsumersPage {
     }
   }
 
-  categoryStyle(category: SupportNoteCategory) {
-    return this.categoryStyles[category] ?? this.categoryStyles.GENERAL;
-  }
-
   private async loadConsumerDetail(consumerId: string) {
     this.detailLoading = true;
     this.detailError = '';
@@ -410,9 +296,57 @@ export class ConsumersPage {
         this.api.listAdminPrescriptions({ patientId, pageSize: 5 }),
         this.api.listAdminCaseAnalyses({ patientId, pageSize: 5 })
       ]);
+
+      const analysisItems = (analysisRes.analyses || []) as Array<{
+        id: string;
+        status: string;
+        createdAt: string;
+        methodOption?: { label: string } | null;
+        selectedRemedy?: { name: string } | null;
+        doctor?: { name: string } | null;
+      }>;
+
+      const analyses = await Promise.all(
+        analysisItems.map(async (item) => {
+          const base = {
+            id: item.id,
+            status: item.status,
+            createdAt: item.createdAt,
+            methodOption: item.methodOption ?? null,
+            selectedRemedy: item.selectedRemedy ?? null,
+            doctor: item.doctor ?? null,
+            approachTitle: item.methodOption?.label || 'Case analysis',
+            caseSheetRows: [] as ClinicalSummaryRow[],
+            approachRows: [] as ClinicalSummaryRow[]
+          };
+
+          try {
+            const { analysis } = await this.api.getAdminCaseAnalysis(item.id);
+            const detail = analysis as {
+              caseSheet?: unknown;
+              approachData?: unknown;
+              methodOption?: { label: string } | null;
+            };
+            const summary = buildAdminClinicalSummary({
+              methodLabel: detail.methodOption?.label ?? item.methodOption?.label,
+              caseSheet: detail.caseSheet,
+              approachData: detail.approachData
+            });
+            return {
+              ...base,
+              approachTitle: summary.approachTitle,
+              caseSheetRows: summary.caseSheetRows,
+              approachRows: summary.approachRows
+            };
+          } catch {
+            return base;
+          }
+        })
+      );
+
       this.clinicalSummary = {
         prescriptions: (rxRes.prescriptions || []) as ClinicalSummary['prescriptions'],
-        analyses: (analysisRes.analyses || []) as ClinicalSummary['analyses'],
+        analyses,
         prescriptionTotal: rxRes.pagination?.total ?? 0,
         analysisTotal: analysisRes.pagination?.total ?? 0
       };
@@ -421,15 +355,6 @@ export class ConsumersPage {
     } finally {
       this.clinicalSummaryLoading = false;
     }
-  }
-
-  clinicalRecordsQuery(tab: 'prescriptions' | 'analyses' = 'prescriptions', consultationId?: string) {
-    const query: Record<string, string> = {
-      tab,
-      patientId: this.selectedConsumerId
-    };
-    if (consultationId) query['consultationId'] = consultationId;
-    return query;
   }
 
   patientIdCard(): PatientIdCardData | null {
@@ -491,8 +416,11 @@ export class ConsumersPage {
       if (response.patient.id) {
         await this.selectConsumer(response.patient.id);
       }
-    } catch (e: any) {
-      this.registerError = e?.error?.message || 'Could not register patient.';
+    } catch (e: unknown) {
+      const message = e && typeof e === 'object' && 'error' in e
+        ? (e as { error?: { message?: string } }).error?.message
+        : undefined;
+      this.registerError = message || 'Could not register patient.';
     } finally {
       this.registerSaving = false;
     }

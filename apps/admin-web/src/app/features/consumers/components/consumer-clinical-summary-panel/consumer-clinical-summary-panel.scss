@@ -1,0 +1,117 @@
+.clinical-summary-panel {
+  margin: 1rem 0;
+  padding: 0.85rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #f8fafc;
+
+  h3, h4 {
+    margin: 0 0 0.5rem;
+  }
+}
+
+.clinical-summary-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.75rem;
+}
+
+.clinical-summary-links {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.clinical-records-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: #0f766e;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+
+  &:hover {
+    text-decoration: underline;
+  }
+
+  &.sm {
+    font-size: 0.8rem;
+    font-weight: 500;
+  }
+}
+
+.clinical-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.75rem;
+}
+
+.summary-card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 0.65rem 0.75rem;
+}
+
+.summary-item {
+  padding: 0.45rem 0;
+  border-top: 1px solid #f1f5f9;
+
+  &:first-of-type {
+    border-top: none;
+    padding-top: 0;
+  }
+
+  p, small {
+    margin: 0.15rem 0 0;
+    color: #64748b;
+    font-size: 0.82rem;
+  }
+}
+
+.summary-clinical-detail {
+  margin-top: 0.55rem;
+  padding: 0.55rem 0.6rem;
+  border-radius: 8px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+
+  vitalis-detail-rows {
+    display: block;
+    margin-bottom: 0.35rem;
+  }
+}
+
+.summary-approach-title {
+  margin: 0.35rem 0 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: #475569;
+
+  &:first-child {
+    margin-top: 0;
+  }
+}
+
+.muted {
+  color: #64748b;
+  font-size: 0.85rem;
+
+  &.compact {
+    margin: 0.15rem 0 0.35rem;
+    font-size: 0.8rem;
+  }
+}
+
+.loading-text {
+  color: #6b7280;
+  font-size: 0.875rem;
+  padding: 0.4rem 0;
+}

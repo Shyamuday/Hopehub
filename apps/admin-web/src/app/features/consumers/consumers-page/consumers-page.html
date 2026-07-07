@@ -1,94 +1,40 @@
 <section class="panel">
-  <div class="toolbar spaced">
-    <h2>Consumers (Patients)</h2>
-    <button type="button" class="btn-primary" (click)="showRegister = !showRegister">
-      {{ showRegister ? 'Close register' : '+ Register patient' }}
-    </button>
-  </div>
-
-  @if (showRegister) {
-    <div class="register-box">
-      <h3>Register new patient</h3>
-      <div class="register-grid">
-        <input placeholder="Full name *" [formField]="registerForm.name" />
-        <input placeholder="Mobile (optional)" [formField]="registerForm.mobile" />
-        <input placeholder="Email (optional)" [formField]="registerForm.email" />
-        <select [formField]="registerForm.homeClinicStoreId">
-          <option value="">No home clinic</option>
-          @for (store of stores; track store.id) {
-            <option [value]="store.id">{{ store.name }} ({{ store.code }})</option>
-          }
-        </select>
-      </div>
-      <button type="button" (click)="registerPatient()" [disabled]="registerSaving">
-        {{ registerSaving ? 'Saving…' : 'Create patient' }}
-      </button>
-      @if (registerError) { <p class="error">{{ registerError }}</p> }
-      @if (registerMessage) { <p class="success">{{ registerMessage }}</p> }
-    </div>
-  }
-
-  <div class="toolbar">
-    <input placeholder="Global patient search (mobile, code, name)…" [formField]="patientSearchForm.q" (keyup.enter)="searchPatientsGlobal()" />
-    <button type="button" (click)="searchPatientsGlobal()" [disabled]="patientSearchLoading">Search all</button>
-  </div>
-  @if (patientSearchResults.length) {
-    <div class="search-results">
-      @for (patient of patientSearchResults; track patient.id) {
-        <button type="button" class="search-hit" (click)="selectSearchedPatient(patient.id)">
-          <strong>{{ patient.name }}</strong>
-          <small>{{ patient.patientCode || patient.id }} · {{ patient.mobile || 'no mobile' }}</small>
-        </button>
-      }
-    </div>
-  }
-
-  <div class="toolbar">
-    <input placeholder="Search consumers..." [formField]="listFilterForm.searchTerm" (change)="setPage(1)" />
-    <select [formField]="listFilterForm.sortBy" (change)="setPage(1)">
-      <option value="consultations">Sort by consultations</option>
-      <option value="name">Sort by name</option>
-    </select>
-    <select [formField]="listFilterForm.sortDirection" (change)="setPage(1)">
-      <option value="desc">Desc</option>
-      <option value="asc">Asc</option>
-    </select>
-  </div>
-  @if (listLoading) {
-    <p class="loading-text">Loading consumers...</p>
-  } @else if (listError) {
-    <div class="error-row">
-      <p class="error">{{ listError }}</p>
-      <button type="button" class="retry-btn" (click)="load()">Retry</button>
-    </div>
-  } @else {
-    @for (consumer of visibleConsumers(); track consumer.id) {
-      <article class="card">
-        <strong>{{ consumer.name }}</strong>
-        <p class="patient-code-badge">{{ consumer.patientCode || 'No ID yet' }}</p>
-        <button type="button" class="link" (click)="selectConsumer(consumer.id)" [disabled]="detailLoading">View details</button>
-        <p>{{ consumer.email || 'No email' }} | {{ consumer.mobile || 'No mobile' }}</p>
-        <small>Total consultations: {{ consumer.consultations }}</small>
-      </article>
-    } @empty {
-      <p class="empty-state">No consumers found.</p>
-    }
-  }
-  <div class="pagination">
-    @for (p of pages(); track p) {
-      <button type="button" [class.active]="page === p" (click)="setPage(p)">{{ p }}</button>
-    }
-  </div>
+  <app-consumers-list-panel
+    [showRegister]="showRegister"
+    [registerForm]="registerForm"
+    [registerSaving]="registerSaving"
+    [registerError]="registerError"
+    [registerMessage]="registerMessage"
+    [stores]="stores"
+    [patientSearchForm]="patientSearchForm"
+    [patientSearchLoading]="patientSearchLoading"
+    [patientSearchResults]="patientSearchResults"
+    [listFilterForm]="listFilterForm"
+    [listLoading]="listLoading"
+    [listError]="listError"
+    [consumers]="visibleConsumers()"
+    [page]="page"
+    [pages]="pages()"
+    [detailLoading]="detailLoading"
+    (registerToggle)="showRegister = !showRegister"
+    (registerPatient)="registerPatient()"
+    (searchPatientsGlobal)="searchPatientsGlobal()"
+    (selectSearchedPatient)="selectSearchedPatient($event)"
+    (pageChange)="setPage($event)"
+    (selectConsumer)="selectConsumer($event)"
+    (retryLoad)="load()"
+  />
 </section>
 
 <section class="panel">
   <h2>Consumer Details</h2>
-  @if (consumerDetail; as detail) {
+  @if (consumerDetail) {
     <div class="detail-tabs">
       <button type="button" class="dtab" [class.active]="detailTab === 'overview'" (click)="setDetailTab('overview')">Overview</button>
       <button type="button" class="dtab" [class.active]="detailTab === 'support'" (click)="setDetailTab('support')">Support &amp; troubleshooting</button>
     </div>
   }
+
   @if (detailLoading) {
     <p class="loading-text">Loading details...</p>
   } @else if (detailError) {
@@ -98,288 +44,43 @@
     </div>
   } @else if (consumerDetail; as detail) {
     @if (detailTab === 'overview') {
-    <article class="card">
-      <div class="detail-header-row">
-        <div>
-          <strong>{{ detail.consumer.name }}</strong>
-          <p class="patient-code-badge">{{ detail.consumer.patientCode || detail.consumer.id }}</p>
-        </div>
-        <a class="clinical-records-link" [routerLink]="clinicalRecordsRoute" [queryParams]="clinicalRecordsQuery('prescriptions')">
-          View clinical records →
-        </a>
-      </div>
-      <p>{{ detail.consumer.email || 'No email' }} | {{ detail.consumer.mobile || 'No mobile' }}</p>
-      <vitalis-detail-rows inlineTag="small" [inlineHostless]="true" [rows]="adherenceRows(detail.adherence)" />
-    </article>
-
-    <section class="clinical-summary-panel">
-      <div class="clinical-summary-header">
-        <h3>Prescriptions &amp; case analyses</h3>
-        <div class="clinical-summary-links">
-          <a class="clinical-records-link sm" [routerLink]="clinicalRecordsRoute" [queryParams]="clinicalRecordsQuery('prescriptions')">
-            All prescriptions ({{ clinicalSummary?.prescriptionTotal ?? 0 }})
-          </a>
-          <a class="clinical-records-link sm" [routerLink]="clinicalRecordsRoute" [queryParams]="clinicalRecordsQuery('analyses')">
-            All analyses ({{ clinicalSummary?.analysisTotal ?? 0 }})
-          </a>
-        </div>
-      </div>
-
-      @if (clinicalSummaryLoading) {
-        <p class="loading-text">Loading clinical summary…</p>
-      } @else if (clinicalSummary) {
-        <div class="clinical-summary-grid">
-          <article class="summary-card">
-            <h4>Recent prescriptions</h4>
-            @if (clinicalSummary.prescriptions.length) {
-              @for (rx of clinicalSummary.prescriptions; track rx.id) {
-                <div class="summary-item">
-                  <strong>{{ rx.methodOption?.label || 'No method' }}</strong>
-                  <p>{{ rx.diagnosis || 'No diagnosis' }} · {{ rx.status }}</p>
-                  <small>Dr. {{ rx.doctor?.name || '—' }} · {{ rx.createdAt | date: 'mediumDate' }}</small>
-                </div>
-              }
-            } @else {
-              <p class="muted">No prescriptions yet.</p>
-            }
-          </article>
-          <article class="summary-card">
-            <h4>Recent case analyses</h4>
-            @if (clinicalSummary.analyses.length) {
-              @for (analysis of clinicalSummary.analyses; track analysis.id) {
-                <div class="summary-item">
-                  <strong>{{ analysis.methodOption?.label || 'No method' }}</strong>
-                  <p>{{ analysis.selectedRemedy?.name || 'No remedy selected' }} · {{ analysis.status }}</p>
-                  <small>Dr. {{ analysis.doctor?.name || '—' }} · {{ analysis.createdAt | date: 'mediumDate' }}</small>
-                </div>
-              }
-            } @else {
-              <p class="muted">No case analyses yet.</p>
-            }
-          </article>
-        </div>
-      } @else {
-        <p class="muted">Clinical summary unavailable.</p>
-      }
-    </section>
-
-    <section class="health-profile-panel">
-      <h3>Clinical profile</h3>
-      @if (clinicalProfileHasData(detail.consumer)) {
-        <vitalis-detail-rows variant="grid" [rows]="clinicalProfileRows(detail.consumer)" />
-      } @else {
-        <p class="empty-state">No allergies, medications, or chronic conditions recorded yet.</p>
-      }
-    </section>
-
-    @if (detail.doseNotes?.length) {
-      <h3>Skipped &amp; missed dose notes (7 days)</h3>
-      @for (note of detail.doseNotes; track note.id) {
-        <article class="card dose-note-card">
-          <strong>{{ note.medicineName }}</strong>
-          <p>{{ note.scheduledFor | date: 'medium' }} · {{ note.status }}</p>
-          <small>{{ note.note || 'No patient reason recorded yet' }}</small>
-        </article>
-      }
-    }
-
-    @if (patientIdCard(); as card) {
-      <div class="card-panel">
-        <h3>Printable patient card</h3>
-        <p class="muted">Give this card to the patient for future visits.</p>
-        <app-patient-id-card [card]="card" />
-      </div>
-    }
-
-    <h3>Recent Consultations</h3>
-    @for (consultation of detail.consultations; track consultation.id) {
-      <article class="card consult-card">
-        <div class="consult-header">
-          <strong>{{ consultation.disease?.name || 'Consultation' }}</strong>
-          <span class="status-pill" [class]="'status-' + consultation.status.toLowerCase()">{{ consultation.status }}</span>
-        </div>
-        <p class="consult-meta">{{ consultation.createdAt | date: 'mediumDate' }}</p>
-        <p class="consult-doctor">
-          Doctor: <strong>{{ consultation.assignedDoctor?.name || '—' }}</strong>
-        </p>
-        <small>Prescriptions: {{ consultation.prescriptions?.length || 0 }}</small>
-        @if ((consultation.prescriptions?.length || 0) > 0) {
-          <a
-            class="clinical-records-link sm"
-            [routerLink]="clinicalRecordsRoute"
-            [queryParams]="clinicalRecordsQuery('prescriptions', consultation.id)"
-          >
-            View consultation prescriptions →
-          </a>
-        }
-
-        @if (consultation.status === 'PAID' && assigningConsultationId !== consultation.id) {
-          <button type="button" class="btn-assign" (click)="startAssign(consultation.id)" [disabled]="assigning">
-            Assign Doctor
-          </button>
-        }
-
-        @if (assigningConsultationId === consultation.id) {
-          <div class="assign-panel">
-            <label class="assign-label">
-              Select doctor
-              <select [formField]="assignForm.doctorId">
-                @for (doctor of activeDoctors; track doctor.id) {
-                  <option [value]="doctor.id">
-                    {{ doctor.name }}@if (doctor.doctorProfile?.specialty) { — {{ doctor.doctorProfile!.specialty }}}
-                  </option>
-                }
-              </select>
-            </label>
-            @if (assignError) {
-              <p class="error">{{ assignError }}</p>
-            }
-            <div class="assign-actions">
-              <button type="button" class="btn-confirm" (click)="confirmAssign()" [disabled]="assigning || !assignModel().doctorId">
-                {{ assigning ? 'Assigning…' : 'Confirm' }}
-              </button>
-              <button type="button" class="btn-cancel" (click)="cancelAssign()" [disabled]="assigning">Cancel</button>
-            </div>
-          </div>
-        }
-      </article>
-    } @empty {
-      <p>No consultations found for this consumer.</p>
-    }
+      <app-consumer-overview-panel
+        [detail]="detail"
+        [assignForm]="assignForm"
+        [clinicalSummary]="clinicalSummary"
+        [clinicalSummaryLoading]="clinicalSummaryLoading"
+        [clinicalRecordsRoute]="clinicalRecordsRoute"
+        [patientId]="selectedConsumerId"
+        [patientCard]="patientIdCard()"
+        [adherenceRows]="adherenceRows(detail.adherence)"
+        [clinicalProfileRows]="clinicalProfileRows(detail.consumer)"
+        [clinicalProfileHasData]="clinicalProfileHasData(detail.consumer)"
+        [activeDoctors]="activeDoctors"
+        [assigningConsultationId]="assigningConsultationId"
+        [assigning]="assigning"
+        [assignError]="assignError"
+        [assignDoctorId]="assignModel().doctorId"
+        (startAssign)="startAssign($event)"
+        (confirmAssign)="confirmAssign()"
+        (cancelAssign)="cancelAssign()"
+      />
     } @else {
-      @if (supportLoading) {
-        <p class="loading-text">Loading support context…</p>
-      } @else if (supportError) {
-        <div class="error-row">
-          <p class="error">{{ supportError }}</p>
-          <button type="button" class="retry-btn" (click)="loadSupport(selectedConsumerId)">Retry</button>
-        </div>
-      } @else if (supportContext; as ctx) {
-        @if (ctx.flags.length) {
-          <section class="support-flags">
-            <h3>Attention flags</h3>
-            <ul>
-              @for (flag of ctx.flags; track flag) {
-                <li>{{ flag }}</li>
-              }
-            </ul>
-          </section>
-        }
-
-        <section class="support-safe">
-          <h3>Safe troubleshooting checklist</h3>
-          <ul>
-            @for (tip of ctx.safeActions; track tip) {
-              <li>{{ tip }}</li>
-            }
-          </ul>
-        </section>
-
-        <section class="support-grid">
-          <article class="support-card">
-            <h4>Account</h4>
-            <vitalis-detail-rows [rows]="supportAccountRows(ctx)" />
-          </article>
-          <article class="support-card">
-            <h4>Reminder channels</h4>
-            @if (ctx.reminderPreferences; as prefs) {
-              <vitalis-detail-rows [rows]="reminderPreferenceRows(prefs)" />
-            } @else {
-              <p class="muted">No preferences saved.</p>
-            }
-          </article>
-        </section>
-
-        <section class="support-section">
-          <h3>Consultation timeline (read-only)</h3>
-          <div class="support-table-wrap">
-            <table class="support-table">
-              <thead>
-                <tr>
-                  <th>Disease</th>
-                  <th>Status</th>
-                  <th>Payment</th>
-                  <th>Doctor</th>
-                  <th>Rx / msgs</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (c of ctx.consultations; track c.id) {
-                  <tr>
-                    <td>{{ c.diseaseName }}</td>
-                    <td>{{ c.status }}</td>
-                    <td>{{ c.paymentStatus || '—' }}</td>
-                    <td>{{ c.doctorName || 'Unassigned' }}</td>
-                    <td>{{ c.prescriptionCount }} / {{ c.messageCount }}</td>
-                  </tr>
-                } @empty {
-                  <tr><td colspan="5">No consultations.</td></tr>
-                }
-              </tbody>
-            </table>
-          </div>
-        </section>
-
-        @if (ctx.recentAudit.length) {
-          <section class="support-section">
-            <h3>Recent admin activity</h3>
-            @for (log of ctx.recentAudit; track log.id) {
-              <article class="card compact">
-                <strong>{{ log.action }}</strong>
-                <p>{{ log.summary || '—' }}</p>
-                <small>{{ log.actorName || 'System' }} · {{ log.createdAt | date: 'medium' }}</small>
-              </article>
-            }
-          </section>
-        }
-
-        <section class="support-section">
-          <h3>Case notes</h3>
-          @for (note of supportNotes; track note.id) {
-            <article class="card note-card">
-              <div class="note-head">
-                <span class="note-badge" [style.background]="categoryStyle(note.category).bg" [style.color]="categoryStyle(note.category).color">
-                  {{ note.category }}
-                </span>
-                <small>{{ note.author?.name || 'Admin' }} · {{ note.createdAt | date: 'medium' }}</small>
-              </div>
-              <p class="note-body">{{ note.body }}</p>
-              @if (note.consultation) {
-                <small class="muted">Linked: {{ note.consultation.disease?.name || 'Consultation' }} ({{ note.consultation.status }})</small>
-              }
-            </article>
-          } @empty {
-            <p class="empty-state">No support notes yet.</p>
-          }
-
-          <div class="note-form">
-            <h4>Add case note</h4>
-            <div class="note-form-row">
-              <select [formField]="noteForm.category">
-                @for (cat of supportCategories; track cat.value) {
-                  <option [value]="cat.value">{{ cat.label }}</option>
-                }
-              </select>
-              <select [formField]="noteForm.consultationId">
-                <option value="">No consultation link</option>
-                @for (c of detail.consultations; track c.id) {
-                  <option [value]="c.id">{{ c.disease?.name || 'Consultation' }} — {{ c.status }}</option>
-                }
-              </select>
-            </div>
-            <textarea rows="3" [formField]="noteForm.body" placeholder="What did you check? What should the next agent do?"></textarea>
-            @if (noteError) {
-              <p class="error">{{ noteError }}</p>
-            }
-            <button type="button" class="btn-save-note" (click)="submitSupportNote()" [disabled]="savingNote">
-              {{ savingNote ? 'Saving…' : 'Save note' }}
-            </button>
-          </div>
-        </section>
-      }
+      <app-consumer-support-panel
+        [noteForm]="noteForm"
+        [supportLoading]="supportLoading"
+        [supportError]="supportError"
+        [supportContext]="supportContext"
+        [supportNotes]="supportNotes"
+        [consultations]="detail.consultations"
+        [savingNote]="savingNote"
+        [noteError]="noteError"
+        [supportAccountRows]="supportContext ? supportAccountRows(supportContext) : []"
+        [reminderPreferenceRows]="supportContext?.reminderPreferences ? reminderPreferenceRows(supportContext.reminderPreferences) : []"
+        (retryLoad)="loadSupport(selectedConsumerId)"
+        (submitNote)="submitSupportNote()"
+      />
     }
   } @else {
     <p>Select a consumer to view details.</p>
   }
 </section>
-
