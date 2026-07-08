@@ -3,7 +3,7 @@ import { CROSS_APP_API_PATHS } from '@vitalis/clinic-api/cross-app-api-paths.con
 export const API_PATHS = {
   AUTH: {
     STAFF_LOGIN: '/auth/staff-login',
-    ME: '/me'
+    ME: '/me',
   },
   ADMIN: {
     REPORTS: '/admin/reports',
@@ -38,7 +38,8 @@ export const API_PATHS = {
     ECOSYSTEM_USERS_META: '/admin/ecosystem-users/meta',
     ECOSYSTEM_USERS_STATUS: (id: string) => `/admin/ecosystem-users/${id}/status`,
     ECOSYSTEM_CORPORATES: '/admin/ecosystem-users/corporates',
-    ECOSYSTEM_ENROLLMENTS: (corporateId: string) => `/admin/ecosystem-users/corporates/${corporateId}/enrollments`,
+    ECOSYSTEM_ENROLLMENTS: (corporateId: string) =>
+      `/admin/ecosystem-users/corporates/${corporateId}/enrollments`,
     ECOSYSTEM_INSURANCE_CLAIMS: '/admin/ecosystem-users/insurance/claims',
     PORTAL_USERS: '/admin/portal-users',
     PORTAL_USERS_META: '/admin/portal-users/meta',
@@ -106,11 +107,12 @@ export const API_PATHS = {
       EXPENSES_SUMMARY: '/admin/finance/expenses/summary',
       BRANCHES: '/admin/finance/branches',
       EXPORT_BUNDLE: '/admin/finance/export-bundle',
-      PERIOD_REPORT: '/admin/finance/period-report'
-    }
+      PERIOD_REPORT: '/admin/finance/period-report',
+    },
   },
   CONSULTATIONS: '/consultations',
   HR: {
+    DASHBOARD: '/hr/dashboard',
     DOCTORS: '/hr/doctors',
     USERS: '/hr/users',
     EMPLOYEES: '/hr/employees',
@@ -118,10 +120,10 @@ export const API_PATHS = {
     STORES: '/hr/stores',
     STORE_STAFF: '/hr/store/staff',
     STORE_STAFF_STATUS: (id: string) => `/hr/store/staff/${id}/status`,
-    PAYROLL: '/hr/payroll'
-  }
+    PAYROLL: '/hr/payroll',
+  },
 } as const;
 
 export const API_EXPORT_FORMAT = {
-  CSV: 'csv'
+  CSV: 'csv',
 } as const;

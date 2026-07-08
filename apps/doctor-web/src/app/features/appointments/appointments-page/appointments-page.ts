@@ -18,15 +18,15 @@ import type {
   MedicineRow,
   OptionType,
   PrescriptionOption,
-  PrescriptionTemplate
+  PrescriptionTemplate,
 } from './appointments-page.types';
 import { analyzePrescriptionSafety, type PrescriptionSafetyReport } from '../prescription-safety';
 import { DiseaseCatalogService } from '../../../core/services/disease-catalog.service';
 import {
   PatientHealthProfileComponent,
-  type PatientClinicalProfile
+  type PatientClinicalProfile,
 } from '../../../shared/patient-health-profile/patient-health-profile';
-import { ViewportService } from '../../../core/services/viewport.service';
+import { ViewportService } from '@vitalis/platform-ui';
 
 export type PrescriptionMobileTab = 'context' | 'setup' | 'remedies' | 'review';
 
@@ -39,7 +39,7 @@ function newMedicineRow(): MedicineRow {
     duration: '',
     durationDays: 7,
     instructions: '',
-    intakeTimesText: '09:00,21:00'
+    intakeTimesText: '09:00,21:00',
   };
 }
 
@@ -54,7 +54,7 @@ function emptyPrescriptionModel() {
     advice: '',
     followUpDate: '',
     editingPrescriptionId: '',
-    medicineRows: [newMedicineRow()] as MedicineRow[]
+    medicineRows: [newMedicineRow()] as MedicineRow[],
   };
 }
 
@@ -67,10 +67,10 @@ function emptyPrescriptionModel() {
     RouterLink,
     ConsultationContextHeaderComponent,
     ConsultationIntakePanelComponent,
-    ConsultationChatPanelComponent
+    ConsultationChatPanelComponent,
   ],
   templateUrl: './appointments-page.html',
-  styleUrl: './appointments-page.scss'
+  styleUrl: './appointments-page.scss',
 })
 export class AppointmentsPage {
   private readonly prescriptions = inject(AppointmentsPrescriptionsService);
@@ -92,7 +92,11 @@ export class AppointmentsPage {
   readonly prescriptionForm = form(this.prescriptionModel);
   readonly templateModel = signal({ templateName: '' });
   readonly templateForm = form(this.templateModel);
-  readonly optionDraftModel = signal({ newMethod: '', newDiagnosedDisease: '', diagnosedDiseaseSearch: '' });
+  readonly optionDraftModel = signal({
+    newMethod: '',
+    newDiagnosedDisease: '',
+    diagnosedDiseaseSearch: '',
+  });
   readonly optionDraftForm = form(this.optionDraftModel);
 
   status: 'DRAFT' | 'PUBLISHED' = 'DRAFT';
@@ -189,7 +193,7 @@ export class AppointmentsPage {
       methodOptionId: methodFromCase,
       diagnosis: diagnosisSuggestion || remedySuggestion,
       advice: adviceFromCase,
-      medicineRows
+      medicineRows,
     };
   }
 
@@ -206,7 +210,7 @@ export class AppointmentsPage {
   private applyDefaultMethodIfEmpty() {
     if (!this.defaultMethodOptionId) return;
     this.prescriptionModel.update((model) =>
-      model.methodOptionId ? model : { ...model, methodOptionId: this.defaultMethodOptionId }
+      model.methodOptionId ? model : { ...model, methodOptionId: this.defaultMethodOptionId },
     );
   }
 
@@ -216,13 +220,13 @@ export class AppointmentsPage {
       const search = this.optionDraftModel().diagnosedDiseaseSearch;
       const [methods, diseaseResponse] = await Promise.all([
         this.prescriptions.loadOptions('METHOD'),
-        this.diseaseCatalog.loadDiseases({ q: search || undefined, grouped: false })
+        this.diseaseCatalog.loadDiseases({ q: search || undefined, grouped: false }),
       ]);
       this.methods = methods;
       this.diagnosedDiseases = (diseaseResponse.diseases || []).map((disease) => ({
         id: disease.id,
         name: disease.name,
-        prescriptionOptionId: disease.prescriptionOptionId ?? null
+        prescriptionOptionId: disease.prescriptionOptionId ?? null,
       }));
       this.applyDefaultMethodIfEmpty();
     } catch {
@@ -234,12 +238,12 @@ export class AppointmentsPage {
     try {
       const diseaseResponse = await this.diseaseCatalog.loadDiseases({
         q: this.optionDraftModel().diagnosedDiseaseSearch || undefined,
-        grouped: false
+        grouped: false,
       });
       this.diagnosedDiseases = (diseaseResponse.diseases || []).map((disease) => ({
         id: disease.id,
         name: disease.name,
-        prescriptionOptionId: disease.prescriptionOptionId ?? null
+        prescriptionOptionId: disease.prescriptionOptionId ?? null,
       }));
     } catch {
       this.error = 'Could not search diagnosed diseases.';
@@ -260,18 +264,26 @@ export class AppointmentsPage {
       if (type === 'METHOD') {
         const response = await this.prescriptions.addOption(type, label);
         this.optionDraftModel.update((model) => ({ ...model, newMethod: '' }));
-        this.methods = [...this.methods, response.option].sort((a, b) => a.label.localeCompare(b.label));
-        this.prescriptionModel.update((model) => ({ ...model, methodOptionId: response.option.id }));
+        this.methods = [...this.methods, response.option].sort((a, b) =>
+          a.label.localeCompare(b.label),
+        );
+        this.prescriptionModel.update((model) => ({
+          ...model,
+          methodOptionId: response.option.id,
+        }));
       } else {
         const disease = await this.diseaseCatalog.createDisease({
           name: label,
           publicCategory: 'miscellaneous',
-          description: `${label} — doctor-added condition`
+          description: `${label} — doctor-added condition`,
         });
         await this.loadOptions();
         const optionId = disease.prescriptionOptionId;
         if (optionId) {
-          this.prescriptionModel.update((model) => ({ ...model, diagnosedDiseaseOptionId: optionId }));
+          this.prescriptionModel.update((model) => ({
+            ...model,
+            diagnosedDiseaseOptionId: optionId,
+          }));
         }
         this.optionDraftModel.update((model) => ({ ...model, newDiagnosedDisease: '' }));
       }
@@ -284,7 +296,7 @@ export class AppointmentsPage {
   addMedicineRow() {
     this.prescriptionModel.update((model) => ({
       ...model,
-      medicineRows: [...model.medicineRows, newMedicineRow()]
+      medicineRows: [...model.medicineRows, newMedicineRow()],
     }));
   }
 
@@ -296,7 +308,7 @@ export class AppointmentsPage {
 
     this.prescriptionModel.update((model) => ({
       ...model,
-      medicineRows: model.medicineRows.filter((_, idx) => idx !== index)
+      medicineRows: model.medicineRows.filter((_, idx) => idx !== index),
     }));
   }
 
@@ -319,7 +331,7 @@ export class AppointmentsPage {
         ? {
             allergies: response.patient.allergies,
             currentMedications: response.patient.currentMedications,
-            chronicConditions: response.patient.chronicConditions
+            chronicConditions: response.patient.chronicConditions,
           }
         : null;
       if (this.loadedPrescriptions.length) {
@@ -355,9 +367,9 @@ export class AppointmentsPage {
             duration: item.duration || '',
             durationDays: item.durationDays || 7,
             instructions: item.instructions || '',
-            intakeTimesText: (item.intakeTimes || ['09:00']).join(',')
+            intakeTimesText: (item.intakeTimes || ['09:00']).join(','),
           }))
-        : [newMedicineRow()]
+        : [newMedicineRow()],
     }));
     this.status = prescription.status === 'PUBLISHED' ? 'PUBLISHED' : 'DRAFT';
   }
@@ -378,7 +390,9 @@ export class AppointmentsPage {
   }
 
   canEditVersion(prescription: LoadedPrescription) {
-    return prescription.id === this.loadedPrescriptions[0]?.id && prescription.status !== 'PUBLISHED';
+    return (
+      prescription.id === this.loadedPrescriptions[0]?.id && prescription.status !== 'PUBLISHED'
+    );
   }
 
   startFollowUpFrom(prescription: LoadedPrescription) {
@@ -400,9 +414,9 @@ export class AppointmentsPage {
             duration: item.duration || '',
             durationDays: item.durationDays || 7,
             instructions: item.instructions || '',
-            intakeTimesText: (item.intakeTimes || ['09:00']).join(',')
+            intakeTimesText: (item.intakeTimes || ['09:00']).join(','),
           }))
-        : [newMedicineRow()]
+        : [newMedicineRow()],
     }));
     this.status = 'DRAFT';
     this.message = `Follow-up draft started from v${prescription.version}.`;
@@ -428,7 +442,7 @@ export class AppointmentsPage {
       advice: '',
       notes: '',
       followUpDate: '',
-      medicineRows: [newMedicineRow()]
+      medicineRows: [newMedicineRow()],
     }));
     this.status = 'DRAFT';
   }
@@ -473,8 +487,8 @@ export class AppointmentsPage {
         intakeTimes: row.intakeTimesText
           .split(',')
           .map((value) => value.trim())
-          .filter((value) => /^\d{2}:\d{2}$/.test(value))
-      }))
+          .filter((value) => /^\d{2}:\d{2}$/.test(value)),
+      })),
     };
   }
 
@@ -484,7 +498,13 @@ export class AppointmentsPage {
     this.pendingSaveStatus = null;
 
     const form = this.prescriptionModel();
-    if (!form.consultationId || !form.methodOptionId || !form.diagnosedDiseaseOptionId || !form.diagnosis || !form.notes) {
+    if (
+      !form.consultationId ||
+      !form.methodOptionId ||
+      !form.diagnosedDiseaseOptionId ||
+      !form.diagnosis ||
+      !form.notes
+    ) {
       this.error = 'Please fill consultation id, method, diagnosed disease, diagnosis and notes.';
       return;
     }
@@ -512,7 +532,7 @@ export class AppointmentsPage {
       await this.prescriptions.savePrescription(
         form.consultationId,
         form.editingPrescriptionId || null,
-        payload
+        payload,
       );
       this.message = form.editingPrescriptionId
         ? targetStatus === 'PUBLISHED'
@@ -530,7 +550,9 @@ export class AppointmentsPage {
         }
         this.error = body.message || 'Review safety warnings and confirm to proceed.';
       } else if (error instanceof HttpErrorResponse) {
-        this.error = (error.error as { message?: string })?.message || 'Could not save prescription. Check consultation assignment and draft state.';
+        this.error =
+          (error.error as { message?: string })?.message ||
+          'Could not save prescription. Check consultation assignment and draft state.';
       } else {
         this.error = 'Could not save prescription. Check consultation assignment and draft state.';
       }
@@ -565,9 +587,9 @@ export class AppointmentsPage {
             duration: item.duration || '',
             durationDays: 0,
             instructions: item.instructions || '',
-            intakeTimesText: ''
+            intakeTimesText: '',
           }))
-        : [newMedicineRow()]
+        : [newMedicineRow()],
     }));
     this.message = `Template "${template.name}" applied. Review and adjust before saving.`;
   }
@@ -575,9 +597,13 @@ export class AppointmentsPage {
   async saveAsTemplate() {
     const name = this.templateModel().templateName.trim();
     const form = this.prescriptionModel();
-    if (!name) { this.savingTemplateError = 'Enter a template name.'; return; }
+    if (!name) {
+      this.savingTemplateError = 'Enter a template name.';
+      return;
+    }
     if (!form.medicineRows.some((r) => r.medicineName.trim())) {
-      this.savingTemplateError = 'Add at least one medicine.'; return;
+      this.savingTemplateError = 'Add at least one medicine.';
+      return;
     }
     this.savingTemplate = true;
     this.savingTemplateError = '';
@@ -596,8 +622,8 @@ export class AppointmentsPage {
             frequency: r.frequency || undefined,
             duration: r.duration || undefined,
             instructions: r.instructions || undefined,
-            sortOrder: i
-          }))
+            sortOrder: i,
+          })),
       });
       this.templateModel.set({ templateName: '' });
       this.showSaveTemplateForm = false;

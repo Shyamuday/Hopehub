@@ -83,8 +83,9 @@ supabase/.env.*
 .vercel/
 .netlify/
 
-# Temporary files
-tmp/
+# Generated JS from role-task-guides (build from TypeScript sources)
+shared/role-task-guides/*.js
+
 temp/
 *.tmp
 *.bak

@@ -35,12 +35,19 @@ type BlogComment = {
 
 @Component({
   selector: 'app-blog-detail',
-  imports: [CommonModule, RouterLink, AppHeaderComponent, AppFooterComponent, SimpleMarkdownPipe, FormField],
+  imports: [
+    CommonModule,
+    RouterLink,
+    AppHeaderComponent,
+    AppFooterComponent,
+    SimpleMarkdownPipe,
+    FormField,
+  ],
   templateUrl: './blog-detail.component.html',
 })
 export class BlogDetailComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
-  private readonly client = new ClinicApiClient();
+  private readonly client = inject(ClinicApiClient);
   private readonly whatsappSvc = inject(WhatsappLinkService);
   private readonly auth = inject(AuthService);
 
@@ -76,7 +83,7 @@ export class BlogDetailComponent implements OnInit {
     try {
       const [postRes, commentsRes] = await Promise.all([
         this.client.get<{ post: BlogPostDetail }>(API_PATHS.BLOG_POST(slug)),
-        this.client.get<{ comments: BlogComment[] }>(API_PATHS.BLOG_COMMENTS(slug))
+        this.client.get<{ comments: BlogComment[] }>(API_PATHS.BLOG_COMMENTS(slug)),
       ]);
       this.post.set(postRes.post);
       this.comments.set(commentsRes.comments ?? []);
@@ -101,7 +108,7 @@ export class BlogDetailComponent implements OnInit {
     try {
       const res = await this.client.apiFetch<{ comment: BlogComment; message: string }>(
         API_PATHS.BLOG_COMMENTS(slug),
-        { method: 'POST', body: JSON.stringify({ body }) }
+        { method: 'POST', body: JSON.stringify({ body }) },
       );
       if (res.comment) {
         this.comments.update((list) => [...list, res.comment]);
@@ -117,7 +124,11 @@ export class BlogDetailComponent implements OnInit {
 
   postDate(post: BlogPostDetail) {
     const raw = post.publishedAt || post.createdAt;
-    return new Date(raw).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+    return new Date(raw).toLocaleDateString('en-IN', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    });
   }
 
   authorLabel(post: BlogPostDetail): string {
@@ -126,6 +137,10 @@ export class BlogDetailComponent implements OnInit {
   }
 
   commentDate(c: BlogComment) {
-    return new Date(c.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+    return new Date(c.createdAt).toLocaleDateString('en-IN', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    });
   }
 }

@@ -37,7 +37,7 @@ export class CareersComponent implements OnInit {
   readonly whatsappPhone = signal('919876543210');
   readonly applyLink = computed(
     () =>
-      `https://wa.me/${this.whatsappPhone()}?text=Hi%20Vitalis%20Care%2C%20I%20would%20like%20to%20apply%20for%20a%20position.`
+      `https://wa.me/${this.whatsappPhone()}?text=Hi%20Vitalis%20Care%2C%20I%20would%20like%20to%20apply%20for%20a%20position.`,
   );
 
   readonly vacancies = signal<JobVacancy[]>([]);
@@ -47,14 +47,14 @@ export class CareersComponent implements OnInit {
   readonly selectedDept = signal('All');
   readonly expandedId = signal<string | null>(null);
 
-  private readonly client = new ClinicApiClient();
+  private readonly client = inject(ClinicApiClient);
 
   async ngOnInit() {
     this.loading.set(true);
     try {
       const [res, cfg] = await Promise.all([
         this.client.apiFetch<{ vacancies: JobVacancy[] }>(API_PATHS.VACANCIES),
-        this.configSvc.get()
+        this.configSvc.get(),
       ]);
       this.whatsappPhone.set(cfg.whatsappPhone);
       const list = res.vacancies ?? [];
@@ -72,7 +72,9 @@ export class CareersComponent implements OnInit {
 
   get filteredVacancies(): JobVacancy[] {
     const dept = this.selectedDept();
-    return dept === 'All' ? this.vacancies() : this.vacancies().filter((v) => v.department === dept);
+    return dept === 'All'
+      ? this.vacancies()
+      : this.vacancies().filter((v) => v.department === dept);
   }
 
   selectDept(dept: string) {
@@ -89,16 +91,25 @@ export class CareersComponent implements OnInit {
 
   jobTypeLabel(t: string): string {
     return (
-      { FULL_TIME: 'Full-time', PART_TIME: 'Part-time', CONTRACT: 'Contract', INTERNSHIP: 'Internship' }[t] ?? t
+      {
+        FULL_TIME: 'Full-time',
+        PART_TIME: 'Part-time',
+        CONTRACT: 'Contract',
+        INTERNSHIP: 'Internship',
+      }[t] ?? t
     );
   }
 
   locationLabel(t: string): string {
-    return ({ REMOTE: 'Remote', ON_SITE: 'On-site', HYBRID: 'Hybrid' }[t] ?? t);
+    return { REMOTE: 'Remote', ON_SITE: 'On-site', HYBRID: 'Hybrid' }[t] ?? t;
   }
 
   deadlineLabel(dl: string | null): string {
     if (!dl) return '';
-    return new Date(dl).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+    return new Date(dl).toLocaleDateString('en-IN', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    });
   }
 }

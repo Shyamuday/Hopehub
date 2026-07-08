@@ -8,9 +8,9 @@ import {
   addressTypeLabel,
   emptyAddressForm,
   formToAddressPayload,
-  type PatientAddress
+  type PatientAddress,
 } from '../../core/constants/patient-address.constants';
-import { environment } from '../../../environments/environment';
+import { ClinicHttpClient } from '@vitalis/clinic-api';
 import { AuthService } from '../../auth/auth.service';
 
 @Component({
@@ -18,13 +18,14 @@ import { AuthService } from '../../auth/auth.service';
   standalone: true,
   imports: [CommonModule, FormField],
   templateUrl: './patient-address-book.component.html',
-  styleUrl: './patient-address-book.component.scss'
+  styleUrl: './patient-address-book.component.scss',
 })
 export class PatientAddressBookComponent implements OnInit {
   @Input() defaultRecipientName = '';
   @Input() defaultPhone = '';
 
   private readonly auth = inject(AuthService);
+  private readonly http = inject(ClinicHttpClient);
 
   readonly loading = signal(true);
   readonly saving = signal(false);
@@ -44,29 +45,13 @@ export class PatientAddressBookComponent implements OnInit {
     void this.load();
   }
 
-  private get token() {
-    return this.auth.token || '';
-  }
-
-  private async apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
-    const res = await fetch(`${environment.apiUrl}${path}`, {
-      ...init,
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${this.token}`,
-        ...(init?.headers || {})
-      }
-    });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(data?.message || 'Request failed');
-    return data as T;
-  }
-
   async load() {
     this.loading.set(true);
     this.errorMsg.set('');
     try {
-      const { addresses } = await this.apiFetch<{ addresses: PatientAddress[] }>(API_PATHS.PATIENT.ADDRESSES);
+      const { addresses } = await this.http.get<{ addresses: PatientAddress[] }>(
+        API_PATHS.PATIENT.ADDRESSES,
+      );
       this.addresses.set(addresses);
     } catch {
       this.errorMsg.set('Could not load saved addresses.');
@@ -79,7 +64,7 @@ export class PatientAddressBookComponent implements OnInit {
     this.editingId.set(null);
     this.formModel.set({
       ...emptyAddressForm(this.defaultRecipientName, this.defaultPhone),
-      isDefault: this.addresses().length === 0
+      isDefault: this.addresses().length === 0,
     });
     this.showForm.set(true);
   }
@@ -115,16 +100,10 @@ export class PatientAddressBookComponent implements OnInit {
 
     try {
       if (editingId) {
-        await this.apiFetch(API_PATHS.PATIENT.ADDRESS(editingId), {
-          method: 'PUT',
-          body: JSON.stringify(payload)
-        });
+        await this.http.put(API_PATHS.PATIENT.ADDRESS(editingId), payload);
         this.successMsg.set('Address updated.');
       } else {
-        await this.apiFetch(API_PATHS.PATIENT.ADDRESSES, {
-          method: 'POST',
-          body: JSON.stringify(payload)
-        });
+        await this.http.post(API_PATHS.PATIENT.ADDRESSES, payload);
         this.successMsg.set('Address saved.');
       }
       this.showForm.set(false);
@@ -140,7 +119,7 @@ export class PatientAddressBookComponent implements OnInit {
 
   async setDefault(id: string) {
     try {
-      await this.apiFetch(API_PATHS.PATIENT.ADDRESS_DEFAULT(id), { method: 'POST' });
+      await this.http.post(API_PATHS.PATIENT.ADDRESS_DEFAULT(id));
       await this.load();
       this.successMsg.set('Default address updated.');
       setTimeout(() => this.successMsg.set(''), 2500);
@@ -152,7 +131,7 @@ export class PatientAddressBookComponent implements OnInit {
   async deleteAddress(id: string) {
     if (!confirm('Remove this address from your saved list?')) return;
     try {
-      await this.apiFetch(API_PATHS.PATIENT.ADDRESS(id), { method: 'DELETE' });
+      await this.http.delete(API_PATHS.PATIENT.ADDRESS(id));
       if (this.editingId() === id) this.cancelForm();
       await this.load();
       this.successMsg.set('Address removed.');

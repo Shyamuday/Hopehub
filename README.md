@@ -4,13 +4,14 @@ Clinic platform — Angular frontend + pure Node.js/Express/TypeScript backend.
 
 ## Apps
 
-| App | Path | Port |
-|-----|------|------|
-| Patient | `apps/user-web` | 4203 |
-| Doctor | `apps/doctor-web` | 4202 |
+| App                                        | Path                  | Port |
+| ------------------------------------------ | --------------------- | ---- |
+| Patient                                    | `apps/user-web`       | 4203 |
+| Doctor                                     | `apps/doctor-web`     | 4202 |
 | Operations (staff, partners, store, admin) | `apps/operations-web` | 5800 |
-| Admin UI source (embedded) | `apps/admin-web` | — |
-| API | `apps/api` | 4000 |
+| Admin (standalone)                         | `apps/admin-web`      | 4201 |
+| Admin UI source (embedded)                 | `apps/admin-web`      | —    |
+| API                                        | `apps/api`            | 4000 |
 
 Mobile (Capacitor): patient, doctor, and operations apps. Admin is embedded in operations — no separate mobile app.
 
@@ -67,24 +68,40 @@ For a full local setup guide (fresh Postgres, `prisma db push`, demo logins, OOR
 
 ## Local Development
 
+Start local Postgres + Redis (optional):
+
+```powershell
+docker compose up -d
+```
+
 ```powershell
 npm install --prefix apps/user-web
 npm install --prefix apps/api
 npm run dev:user     # Patient web on :4203
+npm run dev:doctor   # Doctor web on :4202
+npm run dev:admin    # Admin web on :4201
+npm run dev:operations  # Operations portal on :5800
 npm run dev:api      # API on :4000
+```
+
+Quality checks from repo root (after `npm ci`):
+
+```powershell
+npm run lint      # ESLint + TypeScript check all apps
+npm run test      # API + Angular unit tests
 ```
 
 ## Auth Flows
 
-| Flow | Endpoint |
-|------|---------|
-| Patient OTP login | `POST /auth/request-otp` + `POST /auth/patient-login` |
-| Patient password login | `POST /auth/patient-login-password` |
-| Patient register | `POST /auth/patient-register` |
+| Flow                          | Endpoint                                                                   |
+| ----------------------------- | -------------------------------------------------------------------------- |
+| Patient OTP login             | `POST /auth/request-otp` + `POST /auth/patient-login`                      |
+| Patient password login        | `POST /auth/patient-login-password`                                        |
+| Patient register              | `POST /auth/patient-register`                                              |
 | Patient forgot/reset password | `POST /auth/patient-forgot-password` + `POST /auth/patient-reset-password` |
-| Google login | `POST /auth/google` (requires `GOOGLE_CLIENT_ID`) |
-| Staff (doctor/admin) login | `POST /auth/staff-login` |
-| Staff forgot/reset password | `POST /auth/forgot-password` + `POST /auth/reset-password` |
+| Google login                  | `POST /auth/google` (requires `GOOGLE_CLIENT_ID`)                          |
+| Staff (doctor/admin) login    | `POST /auth/staff-login`                                                   |
+| Staff forgot/reset password   | `POST /auth/forgot-password` + `POST /auth/reset-password`                 |
 
 ## Realtime
 
@@ -110,11 +127,11 @@ npm run prisma:migrate --prefix apps/api
 npm run seed --prefix apps/api
 ```
 
-| App | Port | Quick-login persona |
-|-----|------|---------------------|
-| Patient | 4203 | Rahul / Priya |
+| App        | Port | Quick-login persona                                      |
+| ---------- | ---- | -------------------------------------------------------- |
+| Patient    | 4203 | Rahul / Priya                                            |
 | Operations | 5800 | All staff, partners, store counter, store manager, admin |
-| Doctor | 4202 | Dr. Meera Sharma |
+| Doctor     | 4202 | Dr. Meera Sharma                                         |
 
 **Shared credentials:** `Password@123` (staff/admin/doctor/patients/store) · Store counter: `staff@ranchi.vitalis.local` · Store manager: `manager@ranchi.vitalis.local` · **OTP** `123456` · patient mobile `9876543210`
 

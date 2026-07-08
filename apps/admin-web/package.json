@@ -5,8 +5,8 @@
     "ng": "ng",
     "start": "ng serve",
     "build": "ng build",
-    "lint": "tsc -p tsconfig.app.json --noEmit",
-    "watch": "ng build --watch --configuration development",
+    "lint": "npm run typecheck",
+    "typecheck": "tsc -p tsconfig.app.json --noEmit",
     "test": "ng test"
   },
   "prettier": {

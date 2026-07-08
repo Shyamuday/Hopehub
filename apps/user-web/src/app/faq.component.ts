@@ -4,14 +4,17 @@ import { AppHeaderComponent } from './app-header.component';
 import { WhatsappLinkService } from './core/services/whatsapp-link.service';
 import { API_PATHS } from './core/constants/api-paths.constants';
 import { ClinicApiClient } from './clinic-api/clinic-api.client';
-import { FAQ_FALLBACK_ENTRIES, type FaqAccordionItem } from './faq/constants/faq-fallback.constants';
+import {
+  FAQ_FALLBACK_ENTRIES,
+  type FaqAccordionItem,
+} from './faq/constants/faq-fallback.constants';
 import { FaqAccordionComponent } from './faq/faq-accordion/faq-accordion.component';
 
 @Component({
   selector: 'app-faq',
   imports: [AppHeaderComponent, AppFooterComponent, FaqAccordionComponent],
   templateUrl: './faq.component.html',
-  styleUrl: './faq.component.scss'
+  styleUrl: './faq.component.scss',
 })
 export class FaqComponent {
   private readonly whatsappSvc = inject(WhatsappLinkService);
@@ -19,7 +22,7 @@ export class FaqComponent {
   readonly fallbackEntries = FAQ_FALLBACK_ENTRIES;
   readonly entries = signal<FaqAccordionItem[]>([]);
   readonly loading = signal(true);
-  private readonly client = new ClinicApiClient();
+  private readonly client = inject(ClinicApiClient);
 
   readonly displayEntries = computed(() => {
     const loaded = this.entries();

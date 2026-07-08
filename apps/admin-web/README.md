@@ -1,16 +1,13 @@
 # AdminWeb
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 21.0.4.
-
-## Development server
-
-To start a local development server, run:
+This project uses **Angular 22**. Dev server port: **4201**.
 
 ```bash
-ng serve
+npm start
+# or: ng serve
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+Open `http://localhost:4201/`. The same admin modules are also embedded in `operations-web` at `/admin`.
 
 ## Code scaffolding
 

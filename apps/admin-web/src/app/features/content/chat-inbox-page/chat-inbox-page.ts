@@ -3,7 +3,7 @@ import { Component, computed, inject, OnDestroy, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AdminApi } from '../../../core/services/admin-api';
 import { AdminMobileLayoutService } from '../../../core/services/admin-mobile-layout.service';
-import { ViewportService } from '../../../core/services/viewport.service';
+import { ViewportService } from '@vitalis/platform-ui';
 
 type ChatMessage = {
   id: string;
@@ -56,7 +56,7 @@ type FollowUpFilter =
   selector: 'app-chat-inbox-page',
   imports: [CommonModule, FormsModule],
   templateUrl: './chat-inbox-page.html',
-  styleUrl: './chat-inbox-page.scss'
+  styleUrl: './chat-inbox-page.scss',
 })
 export class ChatInboxPage implements OnDestroy {
   private readonly api = inject(AdminApi);
@@ -120,7 +120,7 @@ export class ChatInboxPage implements OnDestroy {
       source: this.sourceFilter() === 'ALL' ? undefined : this.sourceFilter(),
       dateFrom: this.dateFrom() || undefined,
       dateTo: this.dateTo() || undefined,
-      notInterestedOnly: this.notInterestedOnly() || undefined
+      notInterestedOnly: this.notInterestedOnly() || undefined,
     };
   }
 
@@ -130,7 +130,7 @@ export class ChatInboxPage implements OnDestroy {
     try {
       const [res, statsRes] = await Promise.all([
         this.api.listVisitorLeads(this.listFilters()),
-        this.api.getVisitorLeadStats()
+        this.api.getVisitorLeadStats(),
       ]);
       this.leads.set(res.leads);
       this.stats.set(statsRes.stats);
@@ -186,16 +186,26 @@ export class ChatInboxPage implements OnDestroy {
 
   followUpLabel(status: string): string {
     switch (status) {
-      case 'NEW': return 'New';
-      case 'NEEDS_CALLBACK': return 'Needs callback';
-      case 'CALLED': return 'Called';
-      case 'NO_ANSWER': return 'No answer';
-      case 'WHATSAPP_SENT': return 'WhatsApp sent';
-      case 'REGISTERED': return 'Registered';
-      case 'BOOKED': return 'Booked';
-      case 'NOT_INTERESTED': return 'Not interested';
-      case 'CLOSED': return 'Closed';
-      default: return status;
+      case 'NEW':
+        return 'New';
+      case 'NEEDS_CALLBACK':
+        return 'Needs callback';
+      case 'CALLED':
+        return 'Called';
+      case 'NO_ANSWER':
+        return 'No answer';
+      case 'WHATSAPP_SENT':
+        return 'WhatsApp sent';
+      case 'REGISTERED':
+        return 'Registered';
+      case 'BOOKED':
+        return 'Booked';
+      case 'NOT_INTERESTED':
+        return 'Not interested';
+      case 'CLOSED':
+        return 'Closed';
+      default:
+        return status;
     }
   }
 
@@ -217,21 +227,34 @@ export class ChatInboxPage implements OnDestroy {
 
   sourceLabel(source: string): string {
     switch (source) {
-      case 'CHAT_BOT': return 'Chat';
-      case 'HOME_BOOKING': return 'Home booking';
-      case 'PROMO_POPUP': return 'Promo popup';
-      default: return source;
+      case 'CHAT_BOT':
+        return 'Chat';
+      case 'HOME_BOOKING':
+        return 'Home booking';
+      case 'PROMO_POPUP':
+        return 'Promo popup';
+      default:
+        return source;
     }
   }
 
   formatTime(iso: string): string {
     return new Date(iso).toLocaleString('en-IN', {
-      day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'
+      day: 'numeric',
+      month: 'short',
+      hour: '2-digit',
+      minute: '2-digit',
     });
   }
 
   leadPreview(lead: WebsiteLead): string {
-    return lead.visitorIssue ?? lead.concern ?? lead.visitorName ?? lead.visitorPhone ?? 'Website inquiry';
+    return (
+      lead.visitorIssue ??
+      lead.concern ??
+      lead.visitorName ??
+      lead.visitorPhone ??
+      'Website inquiry'
+    );
   }
 
   visitorLabel(lead: WebsiteLead): string {

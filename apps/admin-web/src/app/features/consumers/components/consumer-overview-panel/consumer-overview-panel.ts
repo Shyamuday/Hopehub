@@ -3,8 +3,13 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { DetailRowsComponent } from '@vitalis/platform-ui';
 import type { DetailRow } from '@vitalis/platform-ui';
-import { PatientIdCardComponent, type PatientIdCardData } from '../../../../shared/patient-id-card/patient-id-card';
-import { clinicalRecordsQuery, type ActiveDoctor, type ClinicalSummary, type ConsumerDetail } from '../../models/consumers.models';
+import { PatientIdCardDisplayComponent, type PatientIdCardData } from '@vitalis/platform-ui';
+import {
+  clinicalRecordsQuery,
+  type ActiveDoctor,
+  type ClinicalSummary,
+  type ConsumerDetail,
+} from '../../models/consumers.models';
 import { ConsumerClinicalSummaryPanelComponent } from '../consumer-clinical-summary-panel/consumer-clinical-summary-panel';
 import { ConsumerConsultationsPanelComponent } from '../consumer-consultations-panel/consumer-consultations-panel';
 import { ConsumerHealthPhotosPanelComponent } from '../consumer-health-photos-panel/consumer-health-photos-panel';
@@ -15,13 +20,13 @@ import { ConsumerHealthPhotosPanelComponent } from '../consumer-health-photos-pa
     CommonModule,
     RouterLink,
     DetailRowsComponent,
-    PatientIdCardComponent,
+    PatientIdCardDisplayComponent,
     ConsumerClinicalSummaryPanelComponent,
     ConsumerConsultationsPanelComponent,
-    ConsumerHealthPhotosPanelComponent
+    ConsumerHealthPhotosPanelComponent,
   ],
   templateUrl: './consumer-overview-panel.html',
-  styleUrl: './consumer-overview-panel.scss'
+  styleUrl: './consumer-overview-panel.scss',
 })
 export class ConsumerOverviewPanelComponent {
   @Input({ required: true }) detail!: ConsumerDetail;

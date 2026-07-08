@@ -35,6 +35,7 @@ patch_file() {
 
 patch_file "$ROOT/apps/user-web/src/environments/environment.prod.ts" "$API_URL"
 patch_file "$ROOT/apps/doctor-web/src/environments/environment.prod.ts" "$API_URL"
+patch_file "$ROOT/apps/admin-web/src/environments/environment.prod.ts" "$API_URL" "$DOCTOR_URL"
 patch_file "$ROOT/apps/operations-web/src/environments/environment.prod.ts" "$API_URL" "$DOCTOR_URL"
 
 # operations-web dev imports environment.ts — keep prod copy aligned for fileReplacements.

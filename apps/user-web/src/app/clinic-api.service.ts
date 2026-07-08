@@ -1,4 +1,4 @@
-import { Service } from '@angular/core';
+import { Service, inject } from '@angular/core';
 import { from } from 'rxjs';
 import { io, Socket } from 'socket.io-client';
 import { API_PATHS } from './core/constants/api-paths.constants';
@@ -13,15 +13,23 @@ import {
   mapConsultationFromApi,
   mapDiseaseFromApi,
   mapDoseEventFromApi,
-  mapPatientPrescriptionFromApi
+  mapPatientPrescriptionFromApi,
 } from './clinic-api/clinic-api.mappers';
-import type { RazorpayCheckoutResponse, RazorpayOrderResponse, RealtimeSubscription } from './clinic-api/clinic-api.types';
+import type {
+  RazorpayCheckoutResponse,
+  RazorpayOrderResponse,
+  RealtimeSubscription,
+} from './clinic-api/clinic-api.types';
 
-export type { RazorpayCheckoutResponse, RazorpayOrderResponse, RealtimeSubscription } from './clinic-api/clinic-api.types';
+export type {
+  RazorpayCheckoutResponse,
+  RazorpayOrderResponse,
+  RealtimeSubscription,
+} from './clinic-api/clinic-api.types';
 
 @Service()
 export class ClinicApiService {
-  private readonly client = new ClinicApiClient();
+  private readonly client = inject(ClinicApiClient);
 
   diseases(params?: { clinicStoreId?: string | null }) {
     return from(this.fetchDiseases(params));
@@ -32,7 +40,11 @@ export class ClinicApiService {
   }
 
   clinics() {
-    return from(this.client.apiFetch<{ clinics: Array<{ id: string; name: string; address?: string | null }> }>(API_PATHS.CLINICS));
+    return from(
+      this.client.apiFetch<{
+        clinics: Array<{ id: string; name: string; address?: string | null }>;
+      }>(API_PATHS.CLINICS),
+    );
   }
 
   diseaseBySlug(slug: string) {
@@ -54,10 +66,12 @@ export class ClinicApiService {
     consultationMode?: 'CLINIC_QUEUE' | 'INSTANT_ONLINE';
     preferredDoctorUserId?: string | null;
   }) {
-    return from(this.client.apiFetch(API_PATHS.CONSULTATIONS, {
-      method: 'POST',
-      body: JSON.stringify(payload)
-    }));
+    return from(
+      this.client.apiFetch(API_PATHS.CONSULTATIONS, {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      }),
+    );
   }
 
   billingPlans() {
@@ -65,41 +79,51 @@ export class ClinicApiService {
   }
 
   createPaymentOrder(consultationId: string) {
-    return from(this.client.apiFetch<RazorpayOrderResponse>(API_PATHS.PAYMENTS.CREATE_ORDER(consultationId), {
-      method: 'POST',
-      body: JSON.stringify({})
-    }));
+    return from(
+      this.client.apiFetch<RazorpayOrderResponse>(API_PATHS.PAYMENTS.CREATE_ORDER(consultationId), {
+        method: 'POST',
+        body: JSON.stringify({}),
+      }),
+    );
   }
 
   verifyPayment(consultationId: string, payment: RazorpayCheckoutResponse) {
-    return from(this.client.apiFetch(API_PATHS.PAYMENTS.VERIFY(consultationId), {
-      method: 'POST',
-      body: JSON.stringify({
-        razorpayOrderId: payment.razorpay_order_id,
-        razorpayPaymentId: payment.razorpay_payment_id,
-        razorpaySignature: payment.razorpay_signature
-      })
-    }));
+    return from(
+      this.client.apiFetch(API_PATHS.PAYMENTS.VERIFY(consultationId), {
+        method: 'POST',
+        body: JSON.stringify({
+          razorpayOrderId: payment.razorpay_order_id,
+          razorpayPaymentId: payment.razorpay_payment_id,
+          razorpaySignature: payment.razorpay_signature,
+        }),
+      }),
+    );
   }
 
   sendMessage(consultationId: string, body: string) {
-    return from(this.client.apiFetch(`/consultations/${consultationId}/messages`, {
-      method: 'POST',
-      body: JSON.stringify({ body })
-    }));
+    return from(
+      this.client.apiFetch(`/consultations/${consultationId}/messages`, {
+        method: 'POST',
+        body: JSON.stringify({ body }),
+      }),
+    );
   }
 
   completeConsultation(consultationId: string) {
-    return from(this.client.apiFetch(`/consultations/${consultationId}/complete`, { method: 'POST' }));
+    return from(
+      this.client.apiFetch(`/consultations/${consultationId}/complete`, { method: 'POST' }),
+    );
   }
 
   uploadPrescription(consultationId: string, payload: { notes: string; fileUrl?: string }) {
-    return from(this.client.apiFetch(`/consultations/${consultationId}/messages`, {
-      method: 'POST',
-      body: JSON.stringify({
-        body: `[Prescription Notes]\n${payload.notes}${payload.fileUrl ? `\nFile: ${payload.fileUrl}` : ''}`
-      })
-    }));
+    return from(
+      this.client.apiFetch(`/consultations/${consultationId}/messages`, {
+        method: 'POST',
+        body: JSON.stringify({
+          body: `[Prescription Notes]\n${payload.notes}${payload.fileUrl ? `\nFile: ${payload.fileUrl}` : ''}`,
+        }),
+      }),
+    );
   }
 
   doctors() {
@@ -114,21 +138,31 @@ export class ClinicApiService {
     specialty: string;
     registrationNo?: string;
   }) {
-    return from(this.client.apiFetch(API_PATHS.ADMIN.DOCTORS, {
-      method: 'POST',
-      body: JSON.stringify(payload)
-    }));
+    return from(
+      this.client.apiFetch(API_PATHS.ADMIN.DOCTORS, {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      }),
+    );
   }
 
   assignDoctor(consultationId: string, doctorId: string) {
-    return from(this.client.apiFetch(`/consultations/${consultationId}/assign`, {
-      method: 'POST',
-      body: JSON.stringify({ doctorId })
-    }));
+    return from(
+      this.client.apiFetch(`/consultations/${consultationId}/assign`, {
+        method: 'POST',
+        body: JSON.stringify({ doctorId }),
+      }),
+    );
   }
 
   reports() {
-    return from(this.client.apiFetch<{ revenueInPaise: number; activeDoctors: number; consultations: unknown[] }>(API_PATHS.ADMIN.REPORTS));
+    return from(
+      this.client.apiFetch<{
+        revenueInPaise: number;
+        activeDoctors: number;
+        consultations: unknown[];
+      }>(API_PATHS.ADMIN.REPORTS),
+    );
   }
 
   patientPrescriptions() {
@@ -140,7 +174,9 @@ export class ClinicApiService {
   }
 
   patientDelivery(id: string) {
-    return from(this.client.apiFetch<{ delivery: Record<string, unknown> }>(API_PATHS.PATIENT.DELIVERY(id)));
+    return from(
+      this.client.apiFetch<{ delivery: Record<string, unknown> }>(API_PATHS.PATIENT.DELIVERY(id)),
+    );
   }
 
   doseHistory(days = 30) {
@@ -156,30 +192,38 @@ export class ClinicApiService {
   }
 
   skipDose(doseEventId: string, note?: string) {
-    return from(this.client.apiFetch(API_PATHS.PATIENT.DOSE_SKIP(doseEventId), {
-      method: 'POST',
-      body: JSON.stringify(note ? { note } : {})
-    }));
+    return from(
+      this.client.apiFetch(API_PATHS.PATIENT.DOSE_SKIP(doseEventId), {
+        method: 'POST',
+        body: JSON.stringify(note ? { note } : {}),
+      }),
+    );
   }
 
   snoozeDose(doseEventId: string, minutes = DEFAULT_SNOOZE_MINUTES) {
-    return from(this.client.apiFetch(API_PATHS.PATIENT.DOSE_SNOOZE(doseEventId), {
-      method: 'POST',
-      body: JSON.stringify({ minutes })
-    }));
+    return from(
+      this.client.apiFetch(API_PATHS.PATIENT.DOSE_SNOOZE(doseEventId), {
+        method: 'POST',
+        body: JSON.stringify({ minutes }),
+      }),
+    );
   }
 
   explainDose(doseEventId: string, note: string) {
-    return from(this.client.apiFetch(API_PATHS.PATIENT.DOSE_EXPLAIN(doseEventId), {
-      method: 'POST',
-      body: JSON.stringify({ note })
-    }));
+    return from(
+      this.client.apiFetch(API_PATHS.PATIENT.DOSE_EXPLAIN(doseEventId), {
+        method: 'POST',
+        body: JSON.stringify({ note }),
+      }),
+    );
   }
 
   patientProfile() {
-    return from(this.client.apiFetch<{
-      profile: PatientProfile;
-    }>(API_PATHS.PATIENT.PROFILE));
+    return from(
+      this.client.apiFetch<{
+        profile: PatientProfile;
+      }>(API_PATHS.PATIENT.PROFILE),
+    );
   }
 
   patientRewards() {
@@ -191,16 +235,18 @@ export class ClinicApiService {
   }
 
   reminderPreferences() {
-    return from(this.client.apiFetch<{
-      preferences: {
-        inApp: boolean;
-        sms: boolean;
-        whatsapp: boolean;
-        push: boolean;
-        quietHoursStart: string;
-        quietHoursEnd: string;
-      };
-    }>(API_PATHS.PATIENT.REMINDER_PREFERENCES));
+    return from(
+      this.client.apiFetch<{
+        preferences: {
+          inApp: boolean;
+          sms: boolean;
+          whatsapp: boolean;
+          push: boolean;
+          quietHoursStart: string;
+          quietHoursEnd: string;
+        };
+      }>(API_PATHS.PATIENT.REMINDER_PREFERENCES),
+    );
   }
 
   saveReminderPreferences(preferences: {
@@ -211,17 +257,19 @@ export class ClinicApiService {
     quietHoursStart: string;
     quietHoursEnd: string;
   }) {
-    return from(this.client.apiFetch(API_PATHS.PATIENT.REMINDER_PREFERENCES, {
-      method: 'PUT',
-      body: JSON.stringify(preferences)
-    }));
+    return from(
+      this.client.apiFetch(API_PATHS.PATIENT.REMINDER_PREFERENCES, {
+        method: 'PUT',
+        body: JSON.stringify(preferences),
+      }),
+    );
   }
 
   watchClinicChanges(onChange: () => void): RealtimeSubscription {
     const token = this.client.backendToken;
     const socket: Socket = io(environment.apiUrl, {
       auth: { token },
-      transports: [...SOCKET_TRANSPORTS]
+      transports: [...SOCKET_TRANSPORTS],
     });
 
     socket.on('consultation:updated', onChange);
@@ -238,9 +286,9 @@ export class ClinicApiService {
 
   fetchIceServers() {
     return from(
-      this.client.apiFetch<{ iceServers: Array<{ urls: string | string[]; username?: string; credential?: string }> }>(
-        API_PATHS.RTC_ICE_SERVERS
-      )
+      this.client.apiFetch<{
+        iceServers: Array<{ urls: string | string[]; username?: string; credential?: string }>;
+      }>(API_PATHS.RTC_ICE_SERVERS),
     );
   }
 
@@ -262,11 +310,11 @@ export class ClinicApiService {
         order_id: order.orderId,
         prefill: {
           name: consultation.patient.name,
-          contact: consultation.patient.mobile || ''
+          contact: consultation.patient.mobile || '',
         },
         theme: { color: RAZORPAY_CHECKOUT.THEME_COLOR },
         handler: (response: RazorpayCheckoutResponse) => resolve(response),
-        modal: { ondismiss: () => reject(new Error('Payment was cancelled.')) }
+        modal: { ondismiss: () => reject(new Error('Payment was cancelled.')) },
       });
 
       checkout.open();
@@ -276,18 +324,24 @@ export class ClinicApiService {
   private async fetchDiseases(params?: { clinicStoreId?: string | null }) {
     const search = new URLSearchParams({ grouped: 'false' });
     if (params?.clinicStoreId) search.set('clinicStoreId', params.clinicStoreId);
-    const response = await this.client.apiFetch<{ diseases: Array<Record<string, unknown>> }>(`/diseases?${search.toString()}`);
+    const response = await this.client.apiFetch<{ diseases: Array<Record<string, unknown>> }>(
+      `/diseases?${search.toString()}`,
+    );
     return { diseases: (response.diseases || []).map((row) => mapDiseaseFromApi(row)) };
   }
 
   private async fetchDiseaseBySlug(slug: string) {
     const response = await this.client.apiFetch<{ disease: Record<string, unknown> }>(
-      `/diseases/by-slug/${encodeURIComponent(slug)}`
+      `/diseases/by-slug/${encodeURIComponent(slug)}`,
     );
     return { disease: mapDiseaseFromApi(response.disease) };
   }
 
-  private async fetchDiseasesGrouped(params?: { q?: string; category?: string; clinicStoreId?: string | null }) {
+  private async fetchDiseasesGrouped(params?: {
+    q?: string;
+    category?: string;
+    clinicStoreId?: string | null;
+  }) {
     const search = new URLSearchParams({ grouped: 'true' });
     if (params?.q?.trim()) search.set('q', params.q.trim());
     if (params?.category?.trim()) search.set('category', params.category.trim());
@@ -303,9 +357,9 @@ export class ClinicApiService {
       diseases: (response.diseases || []).map((row) => mapDiseaseFromApi(row)),
       categories: (response.categories || []).map((group) => ({
         ...group,
-        diseases: group.diseases.map((row) => mapDiseaseFromApi(row as Record<string, unknown>))
+        diseases: group.diseases.map((row) => mapDiseaseFromApi(row as Record<string, unknown>)),
       })),
-      uncategorized: (response.uncategorized || []).map((row) => mapDiseaseFromApi(row))
+      uncategorized: (response.uncategorized || []).map((row) => mapDiseaseFromApi(row)),
     };
   }
 
@@ -314,8 +368,12 @@ export class ClinicApiService {
       throw new Error('Backend session missing. Please login again.');
     }
 
-    const response = await this.client.apiFetch<{ consultations: Array<Record<string, unknown>> }>(API_PATHS.CONSULTATIONS);
-    return { consultations: (response.consultations || []).map((row) => mapConsultationFromApi(row)) };
+    const response = await this.client.apiFetch<{ consultations: Array<Record<string, unknown>> }>(
+      API_PATHS.CONSULTATIONS,
+    );
+    return {
+      consultations: (response.consultations || []).map((row) => mapConsultationFromApi(row)),
+    };
   }
 
   private async fetchPatientPrescriptions() {
@@ -323,8 +381,14 @@ export class ClinicApiService {
       throw new Error('Backend session missing. Please login again.');
     }
 
-    const response = await this.client.apiFetch<{ prescriptions: Array<Record<string, unknown>> }>(API_PATHS.PATIENT.PRESCRIPTIONS);
-    return { prescriptions: (response.prescriptions || []).map((row) => mapPatientPrescriptionFromApi(row)) };
+    const response = await this.client.apiFetch<{ prescriptions: Array<Record<string, unknown>> }>(
+      API_PATHS.PATIENT.PRESCRIPTIONS,
+    );
+    return {
+      prescriptions: (response.prescriptions || []).map((row) =>
+        mapPatientPrescriptionFromApi(row),
+      ),
+    };
   }
 
   private async fetchPatientLabResults() {
@@ -332,7 +396,9 @@ export class ClinicApiService {
       throw new Error('Backend session missing. Please login again.');
     }
 
-    const response = await this.client.apiFetch<{ referrals: LabResult[] }>(API_PATHS.PATIENT.LAB_RESULTS);
+    const response = await this.client.apiFetch<{ referrals: LabResult[] }>(
+      API_PATHS.PATIENT.LAB_RESULTS,
+    );
     return { referrals: response.referrals || [] };
   }
 
@@ -342,7 +408,7 @@ export class ClinicApiService {
     }
 
     const response = await this.client.apiFetch<{ doses: Array<Record<string, unknown>> }>(
-      `${API_PATHS.PATIENT.DOSE_HISTORY}?days=${days}`
+      `${API_PATHS.PATIENT.DOSE_HISTORY}?days=${days}`,
     );
     return { doses: (response.doses || []).map((row) => mapDoseEventFromApi(row)) };
   }
@@ -359,7 +425,7 @@ export class ClinicApiService {
 
     return {
       today: (response.today || []).map((row) => mapDoseEventFromApi(row)),
-      needingReason: (response.needingReason || []).map((row) => mapDoseEventFromApi(row))
+      needingReason: (response.needingReason || []).map((row) => mapDoseEventFromApi(row)),
     };
   }
 }

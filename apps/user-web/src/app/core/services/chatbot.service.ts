@@ -1,4 +1,4 @@
-import { Injectable, computed, signal, OnDestroy } from '@angular/core';
+import { Injectable, computed, signal, OnDestroy, inject } from '@angular/core';
 import { ClinicApiClient } from '../../clinic-api/clinic-api.client';
 import { API_PATHS } from '../constants/api-paths.constants';
 
@@ -18,7 +18,7 @@ const VISITOR_KEY = 'vitalis_chat_visitor_key';
 
 @Injectable({ providedIn: 'root' })
 export class ChatbotService implements OnDestroy {
-  private api = new ClinicApiClient();
+  private api = inject(ClinicApiClient);
   private pollTimer: ReturnType<typeof setInterval> | null = null;
 
   readonly messages = signal<ChatMsg[]>([]);
@@ -85,8 +85,8 @@ export class ChatbotService implements OnDestroy {
         method: 'POST',
         body: JSON.stringify({
           visitorKey: this.getVisitorKey(),
-          entryPage: typeof window !== 'undefined' ? window.location.pathname : undefined
-        })
+          entryPage: typeof window !== 'undefined' ? window.location.pathname : undefined,
+        }),
       });
       this.sessionId.set(res.sessionId);
       this.botName.set(res.botName);
@@ -108,7 +108,7 @@ export class ChatbotService implements OnDestroy {
     const tempId = 'tmp_' + Date.now();
     this.messages.update((msgs) => [
       ...msgs,
-      { id: tempId, role: 'user', content, createdAt: new Date().toISOString() }
+      { id: tempId, role: 'user', content, createdAt: new Date().toISOString() },
     ]);
 
     this.isLoading.set(true);
@@ -119,13 +119,13 @@ export class ChatbotService implements OnDestroy {
         activeOptions?: string[];
       }>(API_PATHS.CHAT.MESSAGE(sid), {
         method: 'POST',
-        body: JSON.stringify({ content })
+        body: JSON.stringify({ content }),
       });
 
       this.messages.update((msgs) => [
         ...msgs.filter((m) => m.id !== tempId),
         res.userMessage,
-        res.botMessage
+        res.botMessage,
       ]);
       this.activeOptions.set(res.activeOptions ?? res.botMessage.options ?? []);
     } catch {

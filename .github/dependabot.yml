@@ -1,0 +1,22 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /apps/api
+    schedule:
+      interval: weekly
+  - package-ecosystem: npm
+    directory: /apps/user-web
+    schedule:
+      interval: weekly
+  - package-ecosystem: npm
+    directory: /apps/doctor-web
+    schedule:
+      interval: weekly
+  - package-ecosystem: npm
+    directory: /apps/admin-web
+    schedule:
+      interval: weekly
+  - package-ecosystem: npm
+    directory: /apps/operations-web
+    schedule:
+      interval: weekly

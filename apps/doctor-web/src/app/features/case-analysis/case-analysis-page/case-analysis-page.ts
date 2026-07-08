@@ -25,7 +25,7 @@ import {
   type SehgalApproachData,
   type IntegrativeFollowUpApproachData,
   type SensationApproachData,
-  type StepCompletionContext
+  type StepCompletionContext,
 } from '@vitalis/homeopathy-approaches';
 import { ROUTE_PATHS } from '../../../core/constants/app-routes.constants';
 import { ConsultationChatPanelComponent } from '../../../shared/consultation-chat-panel/consultation-chat-panel';
@@ -34,7 +34,7 @@ import { ConsultationIntakePanelComponent } from '../../../shared/consultation-i
 import { CollapsibleSectionComponent } from '../../../shared/collapsible-section/collapsible-section';
 import { CaseAnalysisApiService } from '../case-analysis-api.service';
 import { createDebouncedSaver } from '../case-analysis-autosave.util';
-import { ViewportService } from '../../../core/services/viewport.service';
+import { ViewportService } from '@vitalis/platform-ui';
 import { primaryIntakeSearchPhrase } from '../intake-rubric.util';
 import { ApproachCaseSheetPanelComponent } from '../panels/approach-case-sheet-panel/approach-case-sheet-panel';
 import { ApproachOverviewPanelComponent } from '../panels/approach-overview-panel/approach-overview-panel';
@@ -65,7 +65,7 @@ import type {
   RepertorySource,
   RubricSearchResult,
   RubricSuggestion,
-  SelectedRubric
+  SelectedRubric,
 } from '../case-analysis-page.types';
 import { formatRubricPath, rubricPathSegments } from '../rubric-path.util';
 
@@ -98,9 +98,9 @@ export type WorkspaceMobileTab = 'search' | 'rubrics' | 'results';
     ApproachStructuredPanelComponent,
     PatientCaseTimelinePanelComponent,
     ClinicalMediaPanelComponent,
-    ApproachRemedySuggestionPanelComponent
+    ApproachRemedySuggestionPanelComponent,
   ],
-  templateUrl: './case-analysis-page.html'
+  templateUrl: './case-analysis-page.html',
 })
 export class CaseAnalysisPage implements OnDestroy, OnInit {
   private readonly api = inject(CaseAnalysisApiService);
@@ -128,7 +128,9 @@ export class CaseAnalysisPage implements OnDestroy, OnInit {
   readonly weightOptions = [1, 2, 3, 4] as const;
 
   readonly standalone = this.route.snapshot.data['standalone'] === true;
-  readonly consultationId = signal(this.standalone ? '' : this.route.snapshot.paramMap.get('consultationId') || '');
+  readonly consultationId = signal(
+    this.standalone ? '' : this.route.snapshot.paramMap.get('consultationId') || '',
+  );
   readonly consultation = signal<ConsultationSummary | null>(null);
   readonly analyses = signal<CaseAnalysis[]>([]);
   readonly analysis = signal<CaseAnalysis | null>(null);
@@ -199,16 +201,19 @@ export class CaseAnalysisPage implements OnDestroy, OnInit {
 
   readonly workflowSteps = computed(() => this.activeApproach().steps);
 
-  readonly caseSheetFields = computed(() => caseSheetFieldsForSchema(this.activeApproach().caseSheetSchemaId));
+  readonly caseSheetFields = computed(() =>
+    caseSheetFieldsForSchema(this.activeApproach().caseSheetSchemaId),
+  );
 
   readonly stepCompletion = computed<StepCompletionContext>(() => ({
     methodOptionId: this.selectedMethodOptionId() || this.analysis()?.methodOptionId,
-    methodRationale: this.methodRationaleModel().rationale || this.analysis()?.methodRationale || null,
+    methodRationale:
+      this.methodRationaleModel().rationale || this.analysis()?.methodRationale || null,
     caseSheet: this.caseSheetModel(),
     approachData: this.approachData() as Record<string, unknown>,
     rubricCount: this.selectedRubrics().length,
     resultCount: this.analysis()?.results.length || 0,
-    selectedRemedyId: this.analysis()?.selectedRemedy?.id || null
+    selectedRemedyId: this.analysis()?.selectedRemedy?.id || null,
   }));
 
   readonly approachStepComplete = computed(() => {
@@ -220,7 +225,9 @@ export class CaseAnalysisPage implements OnDestroy, OnInit {
     return this.workflowSteps().find((step) => step.id === this.activeStepId())?.component || null;
   });
 
-  readonly activeStructuredPanel = computed(() => structuredPanelForComponent(this.activeStepComponent()));
+  readonly activeStructuredPanel = computed(() =>
+    structuredPanelForComponent(this.activeStepComponent()),
+  );
 
   readonly prescriptionHandoffPreview = computed(() => {
     const analysis = this.analysis();
@@ -228,7 +235,7 @@ export class CaseAnalysisPage implements OnDestroy, OnInit {
     return buildPrescriptionHandoff(this.approachData(), {
       selectedRemedyName: analysis?.selectedRemedy?.name,
       protocolPrimaryRemedy: protocol?.primaryRemedy,
-      protocolCompanionRemedy: protocol?.companionRemedy
+      protocolCompanionRemedy: protocol?.companionRemedy,
     });
   });
 
@@ -244,7 +251,7 @@ export class CaseAnalysisPage implements OnDestroy, OnInit {
       this.isMobile() &&
       this.showRepertoryWorkspace() &&
       this.workspaceTab() === 'rubrics' &&
-      this.selectedRubrics().length > 0
+      this.selectedRubrics().length > 0,
   );
 
   constructor() {
@@ -368,7 +375,7 @@ export class CaseAnalysisPage implements OnDestroy, OnInit {
       this.analysis.set(nextAnalysis);
       this.searchModel.update((model) => ({
         ...model,
-        selectedSourceId: nextAnalysis.source?.id || model.selectedSourceId
+        selectedSourceId: nextAnalysis.source?.id || model.selectedSourceId,
       }));
       this.hydrateFromAnalysis(nextAnalysis);
     } catch {
@@ -385,13 +392,13 @@ export class CaseAnalysisPage implements OnDestroy, OnInit {
     this.message.set('');
     try {
       const nextAnalysis = await this.api.createPracticeSession({
-        sourceId: this.searchModel().selectedSourceId || undefined
+        sourceId: this.searchModel().selectedSourceId || undefined,
       });
       this.consultation.set(null);
       this.analysis.set(nextAnalysis);
       this.searchModel.update((model) => ({
         ...model,
-        selectedSourceId: nextAnalysis.source?.id || model.selectedSourceId
+        selectedSourceId: nextAnalysis.source?.id || model.selectedSourceId,
       }));
       this.hydrateFromAnalysis(nextAnalysis);
       this.searchResults.set([]);
@@ -416,7 +423,7 @@ export class CaseAnalysisPage implements OnDestroy, OnInit {
     try {
       const [nextSources, nextMmSources] = await Promise.all([
         this.api.loadSources(),
-        this.api.loadMateriaMedicaSources()
+        this.api.loadMateriaMedicaSources(),
       ]);
       this.sources.set(nextSources);
       this.mmSources.set(nextMmSources);
@@ -428,7 +435,7 @@ export class CaseAnalysisPage implements OnDestroy, OnInit {
       this.searchModel.update((model) => ({
         ...model,
         selectedSourceId: model.selectedSourceId || defaultRep?.id || '',
-        selectedMmSourceId: model.selectedMmSourceId || defaultMm?.id || ''
+        selectedMmSourceId: model.selectedMmSourceId || defaultMm?.id || '',
       }));
     } catch {
       this.sources.set([]);
@@ -495,7 +502,9 @@ export class CaseAnalysisPage implements OnDestroy, OnInit {
 
   private async loadMmSearch(query: string, sourceId: string) {
     if (!sourceId.startsWith('oorep-mm:')) {
-      this.error.set('Materia medica search uses online OOREP sources. Pick a source like Boericke or Clarke.');
+      this.error.set(
+        'Materia medica search uses online OOREP sources. Pick a source like Boericke or Clarke.',
+      );
       this.mmSearchResults.set([]);
       this.searchedOnce.set(true);
       return;
@@ -535,7 +544,10 @@ export class CaseAnalysisPage implements OnDestroy, OnInit {
     if (this.searchMode() === 'materia-medica') {
       return 'Search materia medica: anxiety, headache, gums swollen…';
     }
-    return this.activeApproach().repertory.searchPlaceholder || 'Search rubrics: cough*, dry*, pain -abdomen…';
+    return (
+      this.activeApproach().repertory.searchPlaceholder ||
+      'Search rubrics: cough*, dry*, pain -abdomen…'
+    );
   }
 
   async load() {
@@ -557,20 +569,22 @@ export class CaseAnalysisPage implements OnDestroy, OnInit {
       const nextAnalysis =
         preferred ||
         response.analyses[0] ||
-        (await this.api.createAnalysis(id, { sourceId: this.searchModel().selectedSourceId || undefined }));
+        (await this.api.createAnalysis(id, {
+          sourceId: this.searchModel().selectedSourceId || undefined,
+        }));
       if (createdFirstAnalysis) {
         this.analyses.set([nextAnalysis]);
       }
       this.analysis.set(nextAnalysis);
       this.searchModel.update((model) => ({
         ...model,
-        selectedSourceId: nextAnalysis.source?.id || model.selectedSourceId
+        selectedSourceId: nextAnalysis.source?.id || model.selectedSourceId,
       }));
       this.hydrateFromAnalysis(nextAnalysis);
       void this.loadPatientCaseHistory(response.consultation.patient?.id);
       if (createdFirstAnalysis && nextAnalysis.methodOption?.label) {
         this.message.set(
-          `Case analysis started with ${nextAnalysis.methodOption.label}. Confirm the approach and explain why you chose it.`
+          `Case analysis started with ${nextAnalysis.methodOption.label}. Confirm the approach and explain why you chose it.`,
         );
       }
     } catch {
@@ -593,33 +607,42 @@ export class CaseAnalysisPage implements OnDestroy, OnInit {
       nextAnalysis.methodOption
         ? {
             label: nextAnalysis.methodOption.label,
-            normalizedLabel: nextAnalysis.methodOption.normalizedLabel
+            normalizedLabel: nextAnalysis.methodOption.normalizedLabel,
           }
-        : this.methods().find((item) => item.id === nextAnalysis.methodOptionId)
+        : this.methods().find((item) => item.id === nextAnalysis.methodOptionId),
     );
     this.notesModel.set({ notes: nextAnalysis.notes || '' });
     this.methodRationaleModel.set({ rationale: nextAnalysis.methodRationale || '' });
-    this.caseSheetModel.set(hydrateCaseSheetForSchema(approach.caseSheetSchemaId, nextAnalysis.caseSheet));
+    this.caseSheetModel.set(
+      hydrateCaseSheetForSchema(approach.caseSheetSchemaId, nextAnalysis.caseSheet),
+    );
     this.approachData.set((nextAnalysis.approachData as ApproachDataPayload) || {});
-    this.selectedMethodOptionId.set(nextAnalysis.methodOptionId || nextAnalysis.methodOption?.id || '');
+    this.selectedMethodOptionId.set(
+      nextAnalysis.methodOptionId || nextAnalysis.methodOption?.id || '',
+    );
     this.selectedRubrics.set(
       nextAnalysis.rubrics.map((item) => ({
         rubricId: item.rubricId,
         weight: item.weight,
-        rubric: item.rubric || undefined
-      }))
+        rubric: item.rubric || undefined,
+      })),
     );
     this.maxResultScore.set(nextAnalysis.results[0]?.totalScore || 0);
-    this.activeStepId.set(firstIncompleteStepId(approach.steps, {
-      methodOptionId: nextAnalysis.methodOptionId,
-      methodRationale: nextAnalysis.methodRationale,
-      caseSheet: nextAnalysis.caseSheet || undefined,
-      approachData: (nextAnalysis.approachData as Record<string, unknown>) || undefined,
-      rubricCount: nextAnalysis.rubrics.length,
-      resultCount: nextAnalysis.results.length,
-      selectedRemedyId: nextAnalysis.selectedRemedy?.id || null
-    }));
-    if (nextAnalysis.selectedRemedy && this.focusedRemedy()?.id !== nextAnalysis.selectedRemedy.id) {
+    this.activeStepId.set(
+      firstIncompleteStepId(approach.steps, {
+        methodOptionId: nextAnalysis.methodOptionId,
+        methodRationale: nextAnalysis.methodRationale,
+        caseSheet: nextAnalysis.caseSheet || undefined,
+        approachData: (nextAnalysis.approachData as Record<string, unknown>) || undefined,
+        rubricCount: nextAnalysis.rubrics.length,
+        resultCount: nextAnalysis.results.length,
+        selectedRemedyId: nextAnalysis.selectedRemedy?.id || null,
+      }),
+    );
+    if (
+      nextAnalysis.selectedRemedy &&
+      this.focusedRemedy()?.id !== nextAnalysis.selectedRemedy.id
+    ) {
       void this.focusRemedy(nextAnalysis.selectedRemedy);
     }
 
@@ -645,8 +668,8 @@ export class CaseAnalysisPage implements OnDestroy, OnInit {
       this.materiaMedica.set(
         await this.api.loadMateriaMedica(remedy.id, {
           analysisId: this.analysis()?.id,
-          repertorySourceId: this.analysis()?.source?.id
-        })
+          repertorySourceId: this.analysis()?.source?.id,
+        }),
       );
     } catch {
       this.materiaMedicaError.set('Could not load materia medica for this remedy.');
@@ -681,7 +704,10 @@ export class CaseAnalysisPage implements OnDestroy, OnInit {
     this.searchedOnce.set(true);
     try {
       this.searchResults.set(
-        await this.api.searchRubrics(q, this.searchModel().selectedSourceId || this.analysis()?.source?.id)
+        await this.api.searchRubrics(
+          q,
+          this.searchModel().selectedSourceId || this.analysis()?.source?.id,
+        ),
       );
     } catch {
       this.error.set('Rubric search failed.');
@@ -747,7 +773,7 @@ export class CaseAnalysisPage implements OnDestroy, OnInit {
       text: suggestion.text,
       parentPath: suggestion.parentPath,
       source: suggestion.source,
-      remedies: []
+      remedies: [],
     });
     this.closeRubricSuggestions();
     this.message.set('Symptom added to case.');
@@ -780,7 +806,7 @@ export class CaseAnalysisPage implements OnDestroy, OnInit {
         suggestEndpoint: payload.field.suggestEndpoint,
         currentValue: payload.currentValue,
         panelComponent: component === 'case-sheet' ? 'case-sheet' : component || undefined,
-        extractFrom: payload.field.extractFrom
+        extractFrom: payload.field.extractFrom,
       });
 
       const suggestion = result.suggestion?.trim();
@@ -809,7 +835,7 @@ export class CaseAnalysisPage implements OnDestroy, OnInit {
   private applyFieldSuggestionValue(
     fieldKey: string,
     suggestion: string,
-    component: ApproachStepComponent | null
+    component: ApproachStepComponent | null,
   ) {
     if (component === 'case-sheet') {
       this.caseSheetModel.update((current) => ({ ...current, [fieldKey]: suggestion }));
@@ -823,8 +849,8 @@ export class CaseAnalysisPage implements OnDestroy, OnInit {
         ...current,
         [key]: {
           ...((current[key] as Record<string, string> | undefined) || {}),
-          [fieldKey]: suggestion
-        }
+          [fieldKey]: suggestion,
+        },
       }));
       void this.saveApproachData({ [key]: this.approachData()[key] } as ApproachDataPayload, true);
       return;
@@ -836,14 +862,19 @@ export class CaseAnalysisPage implements OnDestroy, OnInit {
         ...current,
         [specializedKey]: {
           ...((current[specializedKey] as Record<string, string> | undefined) || {}),
-          [fieldKey]: suggestion
-        }
+          [fieldKey]: suggestion,
+        },
       }));
-      void this.saveApproachData({ [specializedKey]: this.approachData()[specializedKey] } as ApproachDataPayload, true);
+      void this.saveApproachData(
+        { [specializedKey]: this.approachData()[specializedKey] } as ApproachDataPayload,
+        true,
+      );
     }
   }
 
-  private specializedApproachDataKey(component: ApproachStepComponent | null): keyof ApproachDataPayload | null {
+  private specializedApproachDataKey(
+    component: ApproachStepComponent | null,
+  ): keyof ApproachDataPayload | null {
     switch (component) {
       case 'kent-hierarchy':
         return 'kentHierarchy';
@@ -884,9 +915,9 @@ export class CaseAnalysisPage implements OnDestroy, OnInit {
           chapter: rubric.chapter,
           subchapter: rubric.subchapter,
           text: rubric.text,
-          parentPath: rubric.parentPath
-        }
-      }
+          parentPath: rubric.parentPath,
+        },
+      },
     ]);
     this.message.set('Symptom added to case.');
     this.scheduleAutoSaveRubrics();
@@ -902,7 +933,9 @@ export class CaseAnalysisPage implements OnDestroy, OnInit {
 
   setRubricWeight(rubricId: string, weight: number) {
     this.selectedRubrics.set(
-      this.selectedRubrics().map((item) => (item.rubricId === rubricId ? { ...item, weight } : item))
+      this.selectedRubrics().map((item) =>
+        item.rubricId === rubricId ? { ...item, weight } : item,
+      ),
     );
     this.scheduleAutoSaveRubrics();
   }
@@ -910,7 +943,7 @@ export class CaseAnalysisPage implements OnDestroy, OnInit {
   private rubricPayload() {
     return this.selectedRubrics().map((item) => ({
       rubricId: item.rubricId,
-      weight: item.weight
+      weight: item.weight,
     }));
   }
 
@@ -922,9 +955,13 @@ export class CaseAnalysisPage implements OnDestroy, OnInit {
     const nextMethod = this.methods().find((item) => item.id === methodOptionId);
     const nextApproach = resolveApproachByMethodOption(nextMethod);
 
-    if (previousMethodId && previousMethodId !== methodOptionId && (this.hasCaseSheetContent() || this.hasApproachDataContent())) {
+    if (
+      previousMethodId &&
+      previousMethodId !== methodOptionId &&
+      (this.hasCaseSheetContent() || this.hasApproachDataContent())
+    ) {
       const confirmed = confirm(
-        `Switch to ${nextApproach.title}? The case sheet will use the new approach structure and approach-specific panel data will be cleared.`
+        `Switch to ${nextApproach.title}? The case sheet will use the new approach structure and approach-specific panel data will be cleared.`,
       );
       if (!confirmed) return;
     }
@@ -933,7 +970,9 @@ export class CaseAnalysisPage implements OnDestroy, OnInit {
     this.selectedMethodOptionId.set(methodOptionId);
     this.approachData.set(clearedApproachData);
     this.methodRationaleModel.set({ rationale: '' });
-    this.caseSheetModel.set(hydrateCaseSheetForSchema(nextApproach.caseSheetSchemaId, this.caseSheetModel()));
+    this.caseSheetModel.set(
+      hydrateCaseSheetForSchema(nextApproach.caseSheetSchemaId, this.caseSheetModel()),
+    );
     this.activeStepId.set('approach-select');
 
     this.saving.set(true);
@@ -943,7 +982,7 @@ export class CaseAnalysisPage implements OnDestroy, OnInit {
         methodOptionId: methodOptionId || null,
         methodRationale: null,
         caseSheet: this.buildCaseSheetPayload(),
-        approachData: clearedApproachData as Record<string, unknown>
+        approachData: clearedApproachData as Record<string, unknown>,
       });
       this.syncAnalysisInList(updated);
       this.hydrateFromAnalysis(updated);
@@ -956,7 +995,9 @@ export class CaseAnalysisPage implements OnDestroy, OnInit {
   }
 
   private hasCaseSheetContent() {
-    return Object.entries(this.caseSheetModel()).some(([key, value]) => !key.startsWith('_') && !!value?.trim());
+    return Object.entries(this.caseSheetModel()).some(
+      ([key, value]) => !key.startsWith('_') && !!value?.trim(),
+    );
   }
 
   private hasApproachDataContent() {
@@ -964,7 +1005,11 @@ export class CaseAnalysisPage implements OnDestroy, OnInit {
   }
 
   private buildCaseSheetPayload() {
-    return { ...this.caseSheetModel(), _schema: this.activeApproach().caseSheetSchemaId, _version: '1' };
+    return {
+      ...this.caseSheetModel(),
+      _schema: this.activeApproach().caseSheetSchemaId,
+      _version: '1',
+    };
   }
 
   async loadPatientCaseHistory(patientId?: string) {
@@ -1072,7 +1117,7 @@ export class CaseAnalysisPage implements OnDestroy, OnInit {
     this.error.set('');
     try {
       const updated = await this.api.updateAnalysis(currentAnalysis.id, {
-        methodRationale: rationale.trim() || null
+        methodRationale: rationale.trim() || null,
       });
       this.syncAnalysisInList(updated);
       this.lastPersistedMethodRationale = rationale;
@@ -1121,7 +1166,9 @@ export class CaseAnalysisPage implements OnDestroy, OnInit {
     }
     this.error.set('');
     try {
-      const updated = await this.api.updateAnalysis(currentAnalysis.id, { approachData: merged as Record<string, unknown> });
+      const updated = await this.api.updateAnalysis(currentAnalysis.id, {
+        approachData: merged as Record<string, unknown>,
+      });
       this.syncAnalysisInList(updated);
       if (silent) {
         this.autoSaveStatus.set('saved');
@@ -1182,7 +1229,11 @@ export class CaseAnalysisPage implements OnDestroy, OnInit {
     return (block as Record<string, string> | undefined) || null;
   }
 
-  saveStructuredPanel(dataKey: keyof ApproachDataPayload, data: Record<string, string>, silent = false) {
+  saveStructuredPanel(
+    dataKey: keyof ApproachDataPayload,
+    data: Record<string, string>,
+    silent = false,
+  ) {
     void this.saveApproachData({ [dataKey]: data } as ApproachDataPayload, silent);
   }
 
@@ -1215,7 +1266,7 @@ export class CaseAnalysisPage implements OnDestroy, OnInit {
     this.error.set('');
     try {
       const created = await this.api.createAnalysis(this.consultationId(), {
-        sourceId: this.searchModel().selectedSourceId || this.analysis()?.source?.id || undefined
+        sourceId: this.searchModel().selectedSourceId || this.analysis()?.source?.id || undefined,
       });
       this.analyses.set([created, ...this.analyses()]);
       this.analysis.set(created);
@@ -1226,7 +1277,7 @@ export class CaseAnalysisPage implements OnDestroy, OnInit {
       this.message.set(
         lastMethod
           ? `New case analysis started using last prescribed method (${lastMethod.label}).`
-          : 'New case analysis started.'
+          : 'New case analysis started.',
       );
     } catch {
       this.error.set('Could not start a new case analysis.');
@@ -1279,7 +1330,9 @@ export class CaseAnalysisPage implements OnDestroy, OnInit {
   async onImagingInterpretationApplied(updated: CaseAnalysis) {
     this.syncAnalysisInList(updated);
     this.hydrateFromAnalysis(updated);
-    this.message.set('Imaging interpretation applied — rubrics and findings added to case. Review before repertorizing.');
+    this.message.set(
+      'Imaging interpretation applied — rubrics and findings added to case. Review before repertorizing.',
+    );
     if (this.isMobile()) {
       this.workspaceTab.set('rubrics');
     }
@@ -1293,7 +1346,9 @@ export class CaseAnalysisPage implements OnDestroy, OnInit {
     this.error.set('');
     this.remedySuggestionPreview.set(null);
     try {
-      const response = await this.api.suggestRemediesFromApproach(currentAnalysis.id, { apply: false });
+      const response = await this.api.suggestRemediesFromApproach(currentAnalysis.id, {
+        apply: false,
+      });
       this.remedySuggestionPreview.set(response);
       if (response.analysis) {
         this.syncAnalysisInList(response.analysis);
@@ -1305,7 +1360,7 @@ export class CaseAnalysisPage implements OnDestroy, OnInit {
       }
     } catch {
       this.error.set(
-        'Could not preview remedy suggestions. Fill approach fields with symptoms, or add rubrics manually.'
+        'Could not preview remedy suggestions. Fill approach fields with symptoms, or add rubrics manually.',
       );
     } finally {
       this.suggestingRemedies.set(false);
@@ -1323,7 +1378,9 @@ export class CaseAnalysisPage implements OnDestroy, OnInit {
     this.applyingRemedySuggestions.set(true);
     this.error.set('');
     try {
-      const response = await this.api.suggestRemediesFromApproach(currentAnalysis.id, { apply: true });
+      const response = await this.api.suggestRemediesFromApproach(currentAnalysis.id, {
+        apply: true,
+      });
       if (response.analysis) {
         this.syncAnalysisInList(response.analysis);
         this.hydrateFromAnalysis(response.analysis);
@@ -1398,7 +1455,7 @@ export class CaseAnalysisPage implements OnDestroy, OnInit {
       this.message.set(
         differs
           ? `${remedy.name} selected as your final remedy (differs from system suggestion).`
-          : `${remedy.name} selected as the case remedy.`
+          : `${remedy.name} selected as the case remedy.`,
       );
     } catch {
       this.error.set('Could not select remedy.');
@@ -1414,7 +1471,7 @@ export class CaseAnalysisPage implements OnDestroy, OnInit {
     }
 
     void this.router.navigate(['/', ROUTE_PATHS.CASE_ANALYSIS, consultationId, 'case-analysis'], {
-      queryParams: { caseAnalysisId: analysisId }
+      queryParams: { caseAnalysisId: analysisId },
     });
   }
 
@@ -1430,7 +1487,7 @@ export class CaseAnalysisPage implements OnDestroy, OnInit {
     const handoff = buildPrescriptionHandoff(this.approachData(), {
       selectedRemedyName: currentAnalysis?.selectedRemedy?.name,
       protocolPrimaryRemedy: protocol?.primaryRemedy,
-      protocolCompanionRemedy: protocol?.companionRemedy
+      protocolCompanionRemedy: protocol?.companionRemedy,
     });
     if (!handoff) return;
 
@@ -1442,8 +1499,8 @@ export class CaseAnalysisPage implements OnDestroy, OnInit {
         diagnosis: handoff.remedy,
         ...(handoff.advice ? { advice: handoff.advice } : {}),
         ...(handoff.companionRemedy ? { companionRemedy: handoff.companionRemedy } : {}),
-        ...(this.selectedMethodOptionId() ? { methodOptionId: this.selectedMethodOptionId() } : {})
-      }
+        ...(this.selectedMethodOptionId() ? { methodOptionId: this.selectedMethodOptionId() } : {}),
+      },
     });
   }
 
@@ -1478,7 +1535,7 @@ export class CaseAnalysisPage implements OnDestroy, OnInit {
       sensation: 'Sensation case sheet',
       hybrid: 'Integration plan',
       protocol: 'Protocol notes',
-      classical: 'Structured case sheet'
+      classical: 'Structured case sheet',
     };
     if (titles[schema]) return titles[schema];
     if (this.activeApproach().workflowKind === 'PROTOCOL_DRIVEN') return 'Protocol notes';

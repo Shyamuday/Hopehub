@@ -31,13 +31,13 @@ type OnlineDoctor = {
   selector: 'app-talk-to-doctor',
   imports: [AppHeaderComponent, AppFooterComponent, RouterLink, FormField],
   templateUrl: './talk-to-doctor.component.html',
-  styleUrl: './talk-to-doctor.component.scss'
+  styleUrl: './talk-to-doctor.component.scss',
 })
 export class TalkToDoctorComponent implements OnInit, OnDestroy {
   private readonly whatsappSvc = inject(WhatsappLinkService);
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
-  private readonly client = new ClinicApiClient();
+  private readonly client = inject(ClinicApiClient);
 
   readonly whatsappLink = this.whatsappSvc.url;
   readonly user = this.auth.user;
@@ -82,7 +82,7 @@ export class TalkToDoctorComponent implements OnInit, OnDestroy {
     try {
       const [docRes, diseaseRes] = await Promise.all([
         this.client.get<{ doctors: OnlineDoctor[] }>(API_PATHS.ONLINE_DOCTORS),
-        this.client.get<{ diseases: Disease[] }>(`${API_PATHS.DISEASES}?grouped=false`)
+        this.client.get<{ diseases: Disease[] }>(`${API_PATHS.DISEASES}?grouped=false`),
       ]);
       this.doctors.set(docRes.doctors ?? []);
       this.diseases.set(diseaseRes.diseases ?? []);
@@ -117,20 +117,23 @@ export class TalkToDoctorComponent implements OnInit, OnDestroy {
     this.message.set('');
     try {
       const disease = this.diseases().find((d) => d.id === diseaseId);
-      const res = await this.client.apiFetch<{ consultation: { id: string } }>(API_PATHS.CONSULTATIONS, {
-        method: 'POST',
-        body: JSON.stringify({
-          diseaseId,
-          consultationMode: 'INSTANT_ONLINE',
-          clinicStoreId: null,
-          preferredDoctorUserId: this.selectedDoctor()?.userId ?? null,
-          intakeAnswers: {
-            'Main concern': concern.trim(),
-            'Consultation type': 'Instant online doctor'
-          },
-          purchaseType: 'ONE_TIME'
-        })
-      });
+      const res = await this.client.apiFetch<{ consultation: { id: string } }>(
+        API_PATHS.CONSULTATIONS,
+        {
+          method: 'POST',
+          body: JSON.stringify({
+            diseaseId,
+            consultationMode: 'INSTANT_ONLINE',
+            clinicStoreId: null,
+            preferredDoctorUserId: this.selectedDoctor()?.userId ?? null,
+            intakeAnswers: {
+              'Main concern': concern.trim(),
+              'Consultation type': 'Instant online doctor',
+            },
+            purchaseType: 'ONE_TIME',
+          }),
+        },
+      );
       this.message.set('Consultation created. Complete payment to connect.');
       await this.router.navigate([`/patient/instant-consult/${res.consultation.id}`]);
     } catch (err) {

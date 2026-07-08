@@ -27,7 +27,7 @@ export class OurDoctorsComponent {
   private readonly whatsappSvc = inject(WhatsappLinkService);
   readonly whatsappLink = this.whatsappSvc.url;
   readonly copy = OUR_DOCTORS_PAGE_CONTENT;
-  private readonly client = new ClinicApiClient();
+  private readonly client = inject(ClinicApiClient);
 
   readonly doctors = signal<PublicDoctor[]>([]);
   readonly loading = signal(true);

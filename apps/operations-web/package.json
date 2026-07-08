@@ -8,7 +8,9 @@
     "cap:sync": "ng build && npx cap sync && node scripts/patch-capacitor-permissions.mjs",
     "cap:android": "npx cap open android",
     "cap:ios": "npx cap open ios",
-    "lint": "tsc -p tsconfig.app.json --noEmit"
+    "lint": "npm run typecheck",
+    "typecheck": "tsc -p tsconfig.app.json --noEmit",
+    "test": "ng test"
   },
   "dependencies": {
     "@angular/animations": "^22.0.5",

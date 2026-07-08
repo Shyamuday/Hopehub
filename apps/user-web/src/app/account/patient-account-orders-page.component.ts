@@ -1,9 +1,9 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { ClinicHttpClient } from '@vitalis/clinic-api';
 import { API_PATHS } from '../core/constants/api-paths.constants';
 import { AuthService } from '../auth/auth.service';
-import { environment } from '../../environments/environment';
 
 const STATUS_LABELS: Record<string, string> = {
   PENDING: 'Order placed',
@@ -11,7 +11,7 @@ const STATUS_LABELS: Record<string, string> = {
   OUT_FOR_DELIVERY: 'On the way',
   DELIVERED: 'Delivered',
   FAILED: 'Failed',
-  CANCELLED: 'Cancelled'
+  CANCELLED: 'Cancelled',
 };
 
 type DeliveryRow = {
@@ -32,10 +32,11 @@ type DeliveryRow = {
   standalone: true,
   imports: [CommonModule, RouterLink],
   templateUrl: './patient-account-orders-page.component.html',
-  styleUrl: './patient-account-orders-page.component.scss'
+  styleUrl: './patient-account-orders-page.component.scss',
 })
 export class PatientAccountOrdersPageComponent implements OnInit {
   private readonly auth = inject(AuthService);
+  private readonly http = inject(ClinicHttpClient);
 
   readonly loading = signal(true);
   readonly deliveries = signal<DeliveryRow[]>([]);
@@ -46,15 +47,14 @@ export class PatientAccountOrdersPageComponent implements OnInit {
   }
 
   private async load() {
-    const token = this.auth.token;
     try {
-      if (!token) return;
-      const res = await fetch(`${environment.apiUrl}${API_PATHS.PATIENT.DELIVERIES}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (!res.ok) return;
-      const data = await res.json();
+      if (!this.auth.token) return;
+      const data = await this.http.get<{ deliveries?: DeliveryRow[] }>(
+        API_PATHS.PATIENT.DELIVERIES,
+      );
       this.deliveries.set(data.deliveries ?? []);
+    } catch {
+      // no-op
     } finally {
       this.loading.set(false);
     }

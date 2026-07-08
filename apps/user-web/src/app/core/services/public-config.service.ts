@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { ClinicApiClient } from '../../clinic-api/clinic-api.client';
 import { API_PATHS } from '../constants/api-paths.constants';
 import { FOOTER_CONTENT } from '../constants/footer-content.constants';
@@ -57,12 +57,12 @@ const FALLBACK: PublicConfig = {
   statPatientsTreated: '4,800+',
   statConditionsTreated: '15+',
   statImprovement: '92%',
-  statSatisfaction: '4.8 / 5'
+  statSatisfaction: '4.8 / 5',
 };
 
 @Injectable({ providedIn: 'root' })
 export class PublicConfigService {
-  private readonly client = new ClinicApiClient();
+  private readonly client = inject(ClinicApiClient);
   private cached: PublicConfig | null = null;
   private loading: Promise<PublicConfig> | null = null;
 
@@ -90,7 +90,7 @@ export class PublicConfigService {
       config.clinicAddressLine1,
       config.clinicAddressLine2,
       config.clinicAddressLine3,
-      config.clinicAddressLine4
+      config.clinicAddressLine4,
     ].filter((line) => line?.trim());
 
     return {
@@ -100,7 +100,7 @@ export class PublicConfigService {
       phone: config.contactPhone || FALLBACK.contactPhone,
       phoneHref: `tel:${config.contactPhoneTel || FALLBACK.contactPhoneTel}`,
       email: config.contactEmail || FALLBACK.contactEmail,
-      emailHref: `mailto:${config.contactEmail || FALLBACK.contactEmail}`
+      emailHref: `mailto:${config.contactEmail || FALLBACK.contactEmail}`,
     };
   }
 }

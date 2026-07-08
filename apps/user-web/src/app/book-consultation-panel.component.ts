@@ -1,5 +1,14 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, OnChanges, OnInit, Output, inject, signal } from '@angular/core';
+import {
+  Component,
+  EventEmitter,
+  Input,
+  OnChanges,
+  OnInit,
+  Output,
+  inject,
+  signal,
+} from '@angular/core';
 import { form, FormField } from '@angular/forms/signals';
 import { AuthService } from './auth/auth.service';
 import {
@@ -9,7 +18,7 @@ import {
 } from './core/constants/billing.constants';
 import { API_PATHS } from './core/constants/api-paths.constants';
 import { ClinicApiClient } from './clinic-api/clinic-api.client';
-import { environment } from '../environments/environment';
+import { ClinicHttpClient } from '@vitalis/clinic-api';
 import { BillingPlan, Disease } from './models';
 
 export type BookConsultationPayload = {
@@ -69,7 +78,8 @@ export class BookConsultationPanelComponent implements OnChanges, OnInit {
   readonly CURRENCY_CODE = CURRENCY_CODE;
 
   private readonly auth = inject(AuthService);
-  private readonly apiClient = new ClinicApiClient();
+  private readonly apiClient = inject(ClinicApiClient);
+  private readonly http = inject(ClinicHttpClient);
   private quoteTimer: ReturnType<typeof setTimeout> | null = null;
 
   readonly clinics = signal<ClinicOption[]>([]);
@@ -139,7 +149,10 @@ export class BookConsultationPanelComponent implements OnChanges, OnInit {
   private applyInitialClinicStoreId() {
     if (!this.initialClinicStoreId || !this.clinics().length) return;
     if (!this.clinics().some((clinic) => clinic.id === this.initialClinicStoreId)) return;
-    this.bookingFormModel.update((m) => ({ ...m, selectedClinicStoreId: this.initialClinicStoreId }));
+    this.bookingFormModel.update((m) => ({
+      ...m,
+      selectedClinicStoreId: this.initialClinicStoreId,
+    }));
   }
 
   ngOnChanges() {
@@ -147,7 +160,9 @@ export class BookConsultationPanelComponent implements OnChanges, OnInit {
     const updates: Partial<BookingForm> = {};
     const preferredDiseaseId =
       this.initialDiseaseId ||
-      (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('pendingDiseaseId') || '' : '');
+      (typeof sessionStorage !== 'undefined'
+        ? sessionStorage.getItem('pendingDiseaseId') || ''
+        : '');
     if (preferredDiseaseId && this.diseases.some((d) => d.id === preferredDiseaseId)) {
       updates.selectedDiseaseId = preferredDiseaseId;
       if (typeof sessionStorage !== 'undefined') {
@@ -282,28 +297,19 @@ export class BookConsultationPanelComponent implements OnChanges, OnInit {
 
     this.quoteLoading.set(true);
     try {
-      const res = await fetch(`${environment.apiUrl}${API_PATHS.PATIENT.REWARDS_CHECKOUT_QUOTE}`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
+      const { quote } = await this.http.post<{ quote: CheckoutQuote | null }>(
+        API_PATHS.PATIENT.REWARDS_CHECKOUT_QUOTE,
+        {
           diseaseId: form.selectedDiseaseId,
           purchaseType: form.purchaseType,
           ...(form.purchaseType === PURCHASE_TYPES.PLAN ? { planCode: form.selectedPlanCode } : {}),
           walletRedeemInPaise: this.useWallet() ? 99_999_999 : 0,
           ...(this.promoCode().trim() ? { promoCode: this.promoCode().trim() } : {}),
           clinicStoreId: this.selectedClinicStoreId(),
-        }),
-      });
-      if (!res.ok) {
-        this.checkoutQuote.set(null);
-        return;
-      }
-      const { quote } = await res.json();
+        },
+      );
       this.checkoutQuote.set(quote);
-      if (!quote.walletBalanceInPaise || !quote.maxWalletRedeemInPaise) {
+      if (!quote?.walletBalanceInPaise || !quote?.maxWalletRedeemInPaise) {
         this.useWallet.set(false);
       }
     } catch {

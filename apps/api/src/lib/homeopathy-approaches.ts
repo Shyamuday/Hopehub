@@ -1,4 +1,4 @@
-import homeopathyApproaches from '@vitalis/homeopathy-approaches';
+import * as homeopathyApproaches from '@vitalis/homeopathy-approaches';
 
 export type ClinicalMediaType =
   | 'SKIN'
@@ -32,14 +32,19 @@ const lib = homeopathyApproaches as unknown as {
   clinicalMediaMetaPayload: (
     diseases: Array<{ id: string; name: string; publicCategory: string | null }>
   ) => Record<string, unknown>;
-  observationHintsForMediaType: (mediaType: ClinicalMediaType) => Array<{ label: string; phrases: string[] }>;
+  observationHintsForMediaType: (
+    mediaType: ClinicalMediaType
+  ) => Array<{ label: string; phrases: string[] }>;
   suggestRubricSearchPhrases: (input: {
     mediaType: ClinicalMediaType;
     observations?: string | null;
     bodyRegion?: string | null;
   }) => string[];
   resolveApproachByMethodLabel: (label?: string | null) => Record<string, unknown>;
-  weightMultiplierForChapter: (approach: Record<string, unknown>, chapter?: string | null) => number;
+  weightMultiplierForChapter: (
+    approach: Record<string, unknown>,
+    chapter?: string | null
+  ) => number;
 };
 
 export const CLINICAL_MEDIA_TYPE_LABELS = lib.CLINICAL_MEDIA_TYPE_LABELS;

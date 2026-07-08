@@ -26,7 +26,7 @@ export class SeoService {
   private readonly title = inject(Title);
   private readonly meta = inject(Meta);
   private readonly document = inject(DOCUMENT);
-  private readonly apiClient = new ClinicApiClient();
+  private readonly apiClient = inject(ClinicApiClient);
 
   private readonly siteUrl = SEO_DEFAULTS.SITE_URL;
   private readonly defaultTitle = PUBLIC_SITE_BRAND.seo.defaultTitle;
@@ -46,10 +46,15 @@ export class SeoService {
     const diseaseSeo = await this.getDiseaseSeoFromUrl();
     const approachSeo = this.getApproachSeoFromPage();
 
-    const seoTitle = diseaseSeo.metaTitle || approachSeo.metaTitle || routeData['seoTitle'] || this.defaultTitle;
+    const seoTitle =
+      diseaseSeo.metaTitle || approachSeo.metaTitle || routeData['seoTitle'] || this.defaultTitle;
     const seoDescription =
-      diseaseSeo.metaDescription || approachSeo.metaDescription || routeData['seoDescription'] || this.defaultDescription;
-    const seoKeywords = diseaseSeo.keywords || approachSeo.keywords || routeData['seoKeywords'] || [];
+      diseaseSeo.metaDescription ||
+      approachSeo.metaDescription ||
+      routeData['seoDescription'] ||
+      this.defaultDescription;
+    const seoKeywords =
+      diseaseSeo.keywords || approachSeo.keywords || routeData['seoKeywords'] || [];
     const canonicalPath = diseaseSeo.canonicalPath || this.router.url;
     const canonicalUrl = `${this.siteUrl}${canonicalPath === '/' ? '' : canonicalPath}`;
     const ogTitle = diseaseSeo.ogTitle || approachSeo.ogTitle || seoTitle;
@@ -58,7 +63,10 @@ export class SeoService {
 
     this.title.setTitle(seoTitle);
     this.meta.updateTag({ name: 'description', content: seoDescription });
-    this.meta.updateTag({ name: 'keywords', content: Array.isArray(seoKeywords) ? seoKeywords.join(', ') : '' });
+    this.meta.updateTag({
+      name: 'keywords',
+      content: Array.isArray(seoKeywords) ? seoKeywords.join(', ') : '',
+    });
 
     this.meta.updateTag({ property: 'og:type', content: 'website' });
     this.meta.updateTag({ property: 'og:title', content: ogTitle });
@@ -124,7 +132,7 @@ export class SeoService {
         ogTitle: staticSeo.ogTitle || metaTitle,
         ogDescription: staticSeo.ogDescription || metaDescription,
         ogImage: live.publicImageUrl || staticSeo.ogImage,
-        canonicalPath
+        canonicalPath,
       };
     } catch {
       return { ...staticSeo, canonicalPath };
@@ -144,7 +152,7 @@ export class SeoService {
       keywords: Array.from(new Set(allKeywords)).slice(0, 30),
       ogTitle: 'Homeopathy Approaches at Vitalis Care and Research Centre',
       ogDescription:
-        'Compare method-led homeopathy approaches and their digital care mapping at Vitalis Care and Research Centre.'
+        'Compare method-led homeopathy approaches and their digital care mapping at Vitalis Care and Research Centre.',
     };
   }
 }

@@ -1,5 +1,5 @@
 import { PrescriptionOptionType, type PrismaClient } from '@prisma/client';
-import homeopathyApproaches from '@vitalis/homeopathy-approaches';
+import * as homeopathyApproaches from '@vitalis/homeopathy-approaches';
 
 const lib = homeopathyApproaches as {
   allApproachDefinitions: () => Array<{ title: string; methodNormalizedLabel: string }>;

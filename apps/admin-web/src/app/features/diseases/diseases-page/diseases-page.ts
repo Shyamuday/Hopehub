@@ -4,8 +4,12 @@ import { RouterLink } from '@angular/router';
 import { form, FormField } from '@angular/forms/signals';
 import { AdminApi } from '../../../core/services/admin-api';
 import { ROUTE_PATHS, adminRouteLink } from '../../../core/constants/app-routes.constants';
-import { CURRENCY_CODE, CURRENCY_LOCALE, PAISE_PER_RUPEE } from '../../../shared/constants/currency.constants';
-import { ViewportService } from '../../../core/services/viewport.service';
+import {
+  CURRENCY_CODE,
+  CURRENCY_LOCALE,
+  PAISE_PER_RUPEE,
+} from '../../../shared/constants/currency.constants';
+import { ViewportService } from '@vitalis/platform-ui';
 import { DiseasePublicPageFormComponent } from '../disease-public-page-form/disease-public-page-form';
 import { publicPageFormToPayload } from '../disease-public-page-form/disease-public-page-form.model';
 
@@ -57,7 +61,7 @@ function emptyDraft() {
     isActive: true,
     publicCategory: 'miscellaneous',
     intakeQuestions: [] as string[],
-    ...emptyMarketingDraft()
+    ...emptyMarketingDraft(),
   };
 }
 
@@ -69,7 +73,7 @@ function emptyNew() {
     feeRupees: 500,
     publicCategory: 'miscellaneous',
     intakeQuestions: [] as string[],
-    ...emptyMarketingDraft()
+    ...emptyMarketingDraft(),
   };
 }
 
@@ -77,7 +81,7 @@ function emptyNew() {
   selector: 'app-diseases-page',
   imports: [CommonModule, NgTemplateOutlet, FormField, RouterLink, DiseasePublicPageFormComponent],
   templateUrl: './diseases-page.html',
-  styleUrl: './diseases-page.scss'
+  styleUrl: './diseases-page.scss',
 })
 export class DiseasesPage {
   private readonly viewport = inject(ViewportService);
@@ -157,15 +161,15 @@ export class DiseasesPage {
       const res = await this.api.getDiseases({
         q: filters.q,
         category: filters.category || undefined,
-        grouped: true
+        grouped: true,
       });
       this.diseases.set(res.diseases || []);
       this.groupedCategories.set(
         (res.categories || []).map((group) => ({
           key: group.key,
           label: group.label,
-          diseases: group.diseases as Disease[]
-        }))
+          diseases: group.diseases as Disease[],
+        })),
       );
       this.uncategorized.set((res.uncategorized || []) as Disease[]);
     } catch {
@@ -176,7 +180,11 @@ export class DiseasesPage {
   }
 
   async syncCatalog() {
-    if (!confirm('Import the standard disease catalog? Existing diseases are kept; only missing names are added.')) {
+    if (
+      !confirm(
+        'Import the standard disease catalog? Existing diseases are kept; only missing names are added.',
+      )
+    ) {
       return;
     }
     this.syncing.set(true);
@@ -184,7 +192,9 @@ export class DiseasesPage {
     this.error.set('');
     try {
       const result = await this.api.syncDiseaseCatalog(50_000);
-      this.syncMessage.set(`Catalog synced: ${result.created} added, ${result.categorized} categorized, ${result.total} total.`);
+      this.syncMessage.set(
+        `Catalog synced: ${result.created} added, ${result.categorized} categorized, ${result.total} total.`,
+      );
       await this.load();
     } catch {
       this.error.set('Could not sync disease catalog.');
@@ -196,7 +206,7 @@ export class DiseasesPage {
   async importStaticPages() {
     if (
       !confirm(
-        'Import marketing content from the built-in static disease pages into matching DB diseases (by slug/name)?'
+        'Import marketing content from the built-in static disease pages into matching DB diseases (by slug/name)?',
       )
     ) {
       return;
@@ -207,7 +217,7 @@ export class DiseasesPage {
     try {
       const result = await this.api.importStaticDiseasePages();
       this.syncMessage.set(
-        `Static pages imported: ${result.updated} updated, ${result.unmatched.length} unmatched of ${result.total}.`
+        `Static pages imported: ${result.updated} updated, ${result.unmatched.length} unmatched of ${result.total}.`,
       );
       await this.load();
     } catch {
@@ -249,7 +259,7 @@ export class DiseasesPage {
       publicImageUrl: disease.publicImageUrl || '',
       seoTitle: disease.seoTitle || '',
       seoDescription: disease.seoDescription || '',
-      publicFaq: [...(disease.publicFaq || [])]
+      publicFaq: [...(disease.publicFaq || [])],
     });
     this.draftQuestionModel.set({ value: '' });
     this.draftFaqModel.set({ question: '', answer: '' });
@@ -283,7 +293,10 @@ export class DiseasesPage {
     this.savingPublicPage.set(true);
     this.publicPageSaveError = '';
     try {
-      await this.api.updateDiseasePublicPage(this.editingId, publicPageFormToPayload(editor.formModel()));
+      await this.api.updateDiseasePublicPage(
+        this.editingId,
+        publicPageFormToPayload(editor.formModel()),
+      );
       this.syncMessage.set('Public treatment page saved.');
       await this.load();
     } catch {
@@ -322,7 +335,7 @@ export class DiseasesPage {
     const draft = this.draftModel();
     this.draftModel.set({
       ...draft,
-      intakeQuestions: draft.intakeQuestions.filter((_, i) => i !== index)
+      intakeQuestions: draft.intakeQuestions.filter((_, i) => i !== index),
     });
   }
 
@@ -332,7 +345,7 @@ export class DiseasesPage {
     const draft = this.draftModel();
     this.draftModel.set({
       ...draft,
-      publicFaq: [...draft.publicFaq, { question: question.trim(), answer: answer.trim() }]
+      publicFaq: [...draft.publicFaq, { question: question.trim(), answer: answer.trim() }],
     });
     this.draftFaqModel.set({ question: '', answer: '' });
   }
@@ -341,7 +354,7 @@ export class DiseasesPage {
     const draft = this.draftModel();
     this.draftModel.set({
       ...draft,
-      publicFaq: draft.publicFaq.filter((_, i) => i !== index)
+      publicFaq: draft.publicFaq.filter((_, i) => i !== index),
     });
   }
 
@@ -365,7 +378,10 @@ export class DiseasesPage {
     const q = this.newQuestionModel().value.trim();
     if (!q) return;
     const newDisease = this.newDiseaseModel();
-    this.newDiseaseModel.set({ ...newDisease, intakeQuestions: [...newDisease.intakeQuestions, q] });
+    this.newDiseaseModel.set({
+      ...newDisease,
+      intakeQuestions: [...newDisease.intakeQuestions, q],
+    });
     this.newQuestionModel.set({ value: '' });
   }
 
@@ -373,7 +389,7 @@ export class DiseasesPage {
     const newDisease = this.newDiseaseModel();
     this.newDiseaseModel.set({
       ...newDisease,
-      intakeQuestions: newDisease.intakeQuestions.filter((_, i) => i !== index)
+      intakeQuestions: newDisease.intakeQuestions.filter((_, i) => i !== index),
     });
   }
 
@@ -383,7 +399,7 @@ export class DiseasesPage {
     const newDisease = this.newDiseaseModel();
     this.newDiseaseModel.set({
       ...newDisease,
-      publicFaq: [...newDisease.publicFaq, { question: question.trim(), answer: answer.trim() }]
+      publicFaq: [...newDisease.publicFaq, { question: question.trim(), answer: answer.trim() }],
     });
     this.newFaqModel.set({ question: '', answer: '' });
   }
@@ -392,13 +408,18 @@ export class DiseasesPage {
     const newDisease = this.newDiseaseModel();
     this.newDiseaseModel.set({
       ...newDisease,
-      publicFaq: newDisease.publicFaq.filter((_, i) => i !== index)
+      publicFaq: newDisease.publicFaq.filter((_, i) => i !== index),
     });
   }
 
   async createDisease() {
     const newDisease = this.newDiseaseModel();
-    if (!newDisease.name || !newDisease.description || !newDisease.feeRupees || !newDisease.intakeQuestions.length) {
+    if (
+      !newDisease.name ||
+      !newDisease.description ||
+      !newDisease.feeRupees ||
+      !newDisease.intakeQuestions.length
+    ) {
       this.createError = 'Fill all fields and add at least one intake question.';
       return;
     }
@@ -431,7 +452,7 @@ export class DiseasesPage {
       feeInPaise: Math.round(Number(draft.feeRupees) * PAISE_PER_RUPEE),
       isActive: draft.isActive,
       publicCategory: draft.publicCategory,
-      intakeQuestions: draft.intakeQuestions
+      intakeQuestions: draft.intakeQuestions,
     };
   }
 
@@ -447,7 +468,7 @@ export class DiseasesPage {
       publicFaq: draft.publicFaq,
       feeInPaise: Math.round(Number(draft.feeRupees) * PAISE_PER_RUPEE),
       publicCategory: draft.publicCategory,
-      intakeQuestions: draft.intakeQuestions
+      intakeQuestions: draft.intakeQuestions,
     };
   }
 
@@ -455,7 +476,7 @@ export class DiseasesPage {
     return (paise / PAISE_PER_RUPEE).toLocaleString(CURRENCY_LOCALE, {
       style: 'currency',
       currency: CURRENCY_CODE,
-      maximumFractionDigits: 0
+      maximumFractionDigits: 0,
     });
   }
 }

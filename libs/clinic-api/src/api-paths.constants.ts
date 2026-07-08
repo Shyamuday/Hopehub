@@ -1,3 +1,5 @@
+import { CROSS_APP_API_PATHS } from './cross-app-api-paths.constants';
+
 export const API_PATHS = {
   DISEASES: '/diseases',
   PUBLIC_CONFIG: '/public-config',
@@ -5,9 +7,12 @@ export const API_PATHS = {
     DASHBOARD: '/hr/dashboard',
     EMPLOYEES: '/hr/employees',
     DOCTORS: '/hr/doctors',
+    USERS: '/hr/users',
     STORE_STAFF: '/hr/store/staff',
+    STORE_STAFF_STATUS: (id: string) => `/hr/store/staff/${id}/status`,
     LEAVES: '/hr/leaves',
-    STORES: '/hr/stores'
+    STORES: '/hr/stores',
+    PAYROLL: '/hr/payroll'
   },
   RECEPTION: {
     ME: '/reception/me',
@@ -18,9 +23,9 @@ export const API_PATHS = {
     CONSULTATIONS: '/reception/consultations',
     COLLECT_CASH: (id: string) => `/reception/consultations/${id}/collect-cash`,
     ASSIGN: (id: string) => `/reception/consultations/${id}/assign`,
-    PATIENT_REWARDS: (patientId: string) => `/reception/patients/${patientId}/rewards`,
-    PATIENT_CHECKOUT_QUOTE: (patientId: string) => `/reception/patients/${patientId}/checkout-quote`,
-    CHECKOUT_QUOTE: '/reception/checkout-quote',
+    PATIENT_REWARDS: CROSS_APP_API_PATHS.RECEPTION.PATIENT_REWARDS,
+    PATIENT_CHECKOUT_QUOTE: CROSS_APP_API_PATHS.RECEPTION.PATIENT_CHECKOUT_QUOTE,
+    CHECKOUT_QUOTE: CROSS_APP_API_PATHS.RECEPTION.CHECKOUT_QUOTE,
     VISITOR_LEADS: '/admin/visitor-leads',
     VISITOR_LEAD_STATS: '/admin/visitor-leads/stats',
     VISITOR_LEAD_META: '/admin/visitor-leads/meta',
@@ -129,7 +134,8 @@ export const API_PATHS = {
       BY_MOBILE: (mobile: string) => `/store/patients/by-mobile/${encodeURIComponent(mobile)}`
     },
     SCAN_PATIENT: (patientCode: string) => `/store/scan/patient/${encodeURIComponent(patientCode)}`,
-    SCAN_DOSE_GIVE: (doseId: string) => `/store/scan/dose-events/${encodeURIComponent(doseId)}/give`,
+    SCAN_DOSE_GIVE: (doseId: string) =>
+      `/store/scan/dose-events/${encodeURIComponent(doseId)}/give`,
     HR: {
       STAFF: '/store/hr/staff',
       STAFF_DETAIL: (id: string) => `/store/hr/staff/${id}`,

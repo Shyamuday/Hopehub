@@ -1,6 +1,9 @@
+import { HttpClient } from '@angular/common/http';
+import { inject, Injectable } from '@angular/core';
+import { firstValueFrom } from 'rxjs';
+import { CLINIC_API_BASE_URL } from '@vitalis/clinic-api';
 import { AUTH_TOKEN_KEY } from '../core/constants/auth.constants';
 import { RAZORPAY_CHECKOUT } from '../core/constants/branding.constants';
-import { environment } from '../../environments/environment';
 
 declare global {
   interface Window {
@@ -8,32 +11,50 @@ declare global {
   }
 }
 
+@Injectable({ providedIn: 'root' })
 export class ClinicApiClient {
+  private readonly http = inject(HttpClient);
+  private readonly apiBase = inject(CLINIC_API_BASE_URL);
+
   get backendToken() {
     return localStorage.getItem(AUTH_TOKEN_KEY) || '';
   }
 
   async apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
-    const response = await fetch(`${environment.apiUrl}${path}`, {
-      ...init,
-      headers: {
-        'Content-Type': 'application/json',
-        ...(this.backendToken ? { Authorization: `Bearer ${this.backendToken}` } : {}),
-        ...(init?.headers || {})
-      }
-    });
+    const method = (init?.method ?? 'GET').toUpperCase();
+    const url = `${this.apiBase}${path}`;
+    const body = init?.body ? JSON.parse(String(init.body)) : undefined;
 
-    if (!response.ok) {
-      let message = 'Request failed.';
-      try {
-        message = (await response.json())?.message || message;
-      } catch {
-        // no-op
-      }
-      throw new Error(message);
+    let request$;
+    switch (method) {
+      case 'POST':
+        request$ = this.http.post<T>(url, body ?? {});
+        break;
+      case 'PUT':
+        request$ = this.http.put<T>(url, body ?? {});
+        break;
+      case 'PATCH':
+        request$ = this.http.patch<T>(url, body ?? {});
+        break;
+      case 'DELETE':
+        request$ = this.http.delete<T>(url);
+        break;
+      default:
+        request$ = this.http.get<T>(url);
     }
 
-    return (await response.json()) as T;
+    try {
+      return await firstValueFrom(request$);
+    } catch (error: unknown) {
+      const message =
+        typeof error === 'object' &&
+        error !== null &&
+        'error' in error &&
+        typeof (error as { error?: { message?: string } }).error?.message === 'string'
+          ? (error as { error: { message: string } }).error.message
+          : 'Request failed.';
+      throw new Error(message);
+    }
   }
 
   get<T>(path: string): Promise<T> {

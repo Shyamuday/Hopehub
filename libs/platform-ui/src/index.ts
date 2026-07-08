@@ -1,9 +1,17 @@
+export { ViewportService } from './viewport/viewport.service';
+export {
+  PatientIdCardDisplayComponent,
+  type PatientIdCardData
+} from './patient-id-card/patient-id-card-display.component';
 export type { DevFillCredentials, DevPersona, DevAppGuide } from './dev-demo.types';
 export { DEV_DEMO_PORT, type DevDemoPort } from './dev-demo.port';
 export { DevLoginPanelComponent } from './dev-login-panel/dev-login-panel';
 export { RoleTaskGuideComponent } from './role-task-guide/role-task-guide.component';
 export { NotificationBellHostComponent } from './notification-bell-host/notification-bell-host';
-export { extractPatientCodeFromScan, isPatientCodeFormat } from './patient-scan/extract-patient-code';
+export {
+  extractPatientCodeFromScan,
+  isPatientCodeFormat
+} from './patient-scan/extract-patient-code';
 export { PatientScanPanelComponent } from './patient-scan/patient-scan-panel.component';
 export { PatientScanLauncherComponent } from './patient-scan/patient-scan-launcher.component';
 export { buildScanNavigation, storeScanPath } from './patient-scan/navigate';
@@ -23,7 +31,11 @@ export {
   patientClinicalProfileHasData,
   type PatientClinicalProfile
 } from './detail-rows/patient-clinical-profile.fields';
-export { HR_LETTER_META_FIELDS, hrLetterMetaRows, type HrLetterMeta } from './detail-rows/hr-letter-meta.fields';
+export {
+  HR_LETTER_META_FIELDS,
+  hrLetterMetaRows,
+  type HrLetterMeta
+} from './detail-rows/hr-letter-meta.fields';
 export {
   clinicalRecordsQuery,
   doctorAppointmentUrl,

@@ -1,16 +1,13 @@
 # User Web
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 21.2.8.
-
-## Development server
-
-To start a local development server, run:
+This project uses **Angular 22**. Dev server port: **4203**.
 
 ```bash
-ng serve
+npm start
+# or: ng serve
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4203/`. The application will automatically reload whenever you modify any of the source files.
+Open `http://localhost:4203/`.
 
 ## Code scaffolding
 

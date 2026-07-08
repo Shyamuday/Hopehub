@@ -5,7 +5,7 @@ import { firstValueFrom } from 'rxjs';
 import { form, FormField } from '@angular/forms/signals';
 import { environment } from '../../../environments/environment';
 import { API_PATHS } from '../../core/constants/api-paths.constants';
-import { ViewportService } from '../../core/services/viewport.service';
+import { ViewportService } from '@vitalis/platform-ui';
 
 type RepertorySource = {
   id: string;
@@ -51,7 +51,7 @@ type Mode = 'repertory' | 'materia-medica';
   selector: 'app-repertory-browser',
   imports: [FormField, CommonModule],
   templateUrl: './repertory-browser.html',
-  styleUrl: './repertory-browser.scss'
+  styleUrl: './repertory-browser.scss',
 })
 export class RepertoryBrowserPage {
   private readonly http = inject(HttpClient);
@@ -74,7 +74,7 @@ export class RepertoryBrowserPage {
     query: '',
     sourceId: '',
     mmSourceId: '',
-    minWeight: '1'
+    minWeight: '1',
   });
   readonly searchForm = form(this.searchModel);
 
@@ -97,8 +97,16 @@ export class RepertoryBrowserPage {
     this.loadingSources.set(true);
     try {
       const [repData, mmData] = await Promise.all([
-        firstValueFrom(this.http.get<{ sources: RepertorySource[] }>(`${this.apiBase}${API_PATHS.DOCTOR.REPERTORY_SOURCES}`)),
-        firstValueFrom(this.http.get<{ sources: MmSource[] }>(`${this.apiBase}${API_PATHS.DOCTOR.REPERTORY_MM_SOURCES}`))
+        firstValueFrom(
+          this.http.get<{ sources: RepertorySource[] }>(
+            `${this.apiBase}${API_PATHS.DOCTOR.REPERTORY_SOURCES}`,
+          ),
+        ),
+        firstValueFrom(
+          this.http.get<{ sources: MmSource[] }>(
+            `${this.apiBase}${API_PATHS.DOCTOR.REPERTORY_MM_SOURCES}`,
+          ),
+        ),
       ]);
       this.sources.set(repData.sources);
       this.mmSources.set(mmData.sources);
@@ -110,7 +118,9 @@ export class RepertoryBrowserPage {
         const preferred = mmData.sources.find((s) => s.code === 'boericke') ?? mmData.sources[0];
         this.searchModel.update((m) => ({ ...m, mmSourceId: preferred.id }));
       }
-    } catch { /* ignore */ } finally {
+    } catch {
+      /* ignore */
+    } finally {
       this.loadingSources.set(false);
     }
   }
@@ -157,9 +167,9 @@ export class RepertoryBrowserPage {
           limit: '50',
           page: String(page),
           minWeight: this.searchModel().minWeight,
-          ...(this.searchModel().sourceId ? { sourceId: this.searchModel().sourceId } : {})
-        }
-      })
+          ...(this.searchModel().sourceId ? { sourceId: this.searchModel().sourceId } : {}),
+        },
+      }),
     );
     this.rubricResults.set(data.rubrics);
     this.mmResults.set([]);
@@ -176,9 +186,9 @@ export class RepertoryBrowserPage {
       this.http.get<{ results: MmSearchResult[]; totalResults?: number }>(
         `${this.apiBase}${API_PATHS.DOCTOR.REPERTORY_MM_SEARCH}`,
         {
-          params: { q, sourceId, page: String(page), limit: '40' }
-        }
-      )
+          params: { q, sourceId, page: String(page), limit: '40' },
+        },
+      ),
     );
     this.mmResults.set(data.results);
     this.rubricResults.set([]);
@@ -225,7 +235,8 @@ export class RepertoryBrowserPage {
   }
 
   sourceLabel(source: RepertorySource) {
-    const count = source.rubricCount != null ? ` · ${source.rubricCount.toLocaleString()} rubrics` : '';
+    const count =
+      source.rubricCount != null ? ` · ${source.rubricCount.toLocaleString()} rubrics` : '';
     return `${source.name}${count}`;
   }
 

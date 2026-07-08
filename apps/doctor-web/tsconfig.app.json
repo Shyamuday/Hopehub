@@ -1,26 +1,9 @@
 {
-  "extends": "./tsconfig.json",
+  "extends": ["./tsconfig.json", "../../tsconfig.base.json"],
   "compilerOptions": {
-    "baseUrl": ".",
+    "baseUrl": "../..",
+    "rootDir": "../..",
     "ignoreDeprecations": "6.0",
-    "paths": {
-      "tslib": ["../../node_modules/tslib"],
-      "@vitalis/platform-nav": ["../../libs/platform-nav/src/index.ts"],
-      "@vitalis/platform-nav/*": ["../../libs/platform-nav/src/*"],
-      "@vitalis/platform-ui": ["../../libs/platform-ui/src/index.ts"],
-      "@vitalis/platform-ui/*": ["../../libs/platform-ui/src/*"],
-      "@vitalis/app-notifications/*": ["../../libs/platform-ui/src/notification-bell/*"],
-      "@vitalis/app-notifications/notification-bell.component": [
-        "../../shared/app-notifications/notification-bell.component.ts"
-      ],
-      "@vitalis/app-notifications/types": ["../../libs/platform-ui/src/notification-bell/types.ts"],
-      "@vitalis/role-task-guides": ["../../shared/role-task-guides/index.ts"],
-      "@vitalis/role-task-guides/*": ["../../shared/role-task-guides/*"],
-      "@vitalis/clinic-api": ["../../libs/clinic-api/src/index.ts"],
-      "@vitalis/clinic-api/*": ["../../libs/clinic-api/src/*"],
-      "@vitalis/homeopathy-approaches": ["../../libs/homeopathy-approaches/src/index.ts"],
-      "@vitalis/homeopathy-approaches/*": ["../../libs/homeopathy-approaches/src/*"]
-    },
     "outDir": "./out-tsc/app",
     "types": []
   },

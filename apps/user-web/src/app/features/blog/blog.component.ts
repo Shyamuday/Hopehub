@@ -40,23 +40,30 @@ export class BlogComponent {
   readonly loading = signal(true);
   readonly selectedCategory = signal('All');
   readonly sort = signal<BlogSort>('recent');
-  private readonly client = new ClinicApiClient();
+  private readonly client = inject(ClinicApiClient);
 
-  constructor() { void this.load(); }
+  constructor() {
+    void this.load();
+  }
 
   private async load() {
     try {
       const [listRes, popularRes, featuredRes] = await Promise.all([
-        this.client.get<{ posts: BlogPost[]; categories: string[] }>(`${API_PATHS.BLOG}?sort=${this.sort()}`),
+        this.client.get<{ posts: BlogPost[]; categories: string[] }>(
+          `${API_PATHS.BLOG}?sort=${this.sort()}`,
+        ),
         this.client.get<{ posts: BlogPost[] }>(`${API_PATHS.BLOG_MOST_VIEWED}?limit=5`),
-        this.client.get<{ posts: BlogPost[] }>(`${API_PATHS.BLOG}?sort=featured&featured=true`)
+        this.client.get<{ posts: BlogPost[] }>(`${API_PATHS.BLOG}?sort=featured&featured=true`),
       ]);
       this.allPosts.set(listRes.posts ?? []);
       this.categories.set(['All', ...(listRes.categories ?? [])]);
       this.mostViewed.set(popularRes.posts ?? []);
       this.featuredPosts.set(featuredRes.posts ?? []);
-    } catch { /* empty state */ }
-    finally { this.loading.set(false); }
+    } catch {
+      /* empty state */
+    } finally {
+      this.loading.set(false);
+    }
   }
 
   async changeSort(next: BlogSort) {
@@ -66,8 +73,11 @@ export class BlogComponent {
     try {
       const res = await this.client.get<{ posts: BlogPost[] }>(`${API_PATHS.BLOG}?sort=${next}`);
       this.allPosts.set(res.posts ?? []);
-    } catch { /* keep previous */ }
-    finally { this.loading.set(false); }
+    } catch {
+      /* keep previous */
+    } finally {
+      this.loading.set(false);
+    }
   }
 
   filteredPosts(): BlogPost[] {
@@ -75,7 +85,9 @@ export class BlogComponent {
     return cat === 'All' ? this.allPosts() : this.allPosts().filter((p) => p.category === cat);
   }
 
-  selectCategory(cat: string): void { this.selectedCategory.set(cat); }
+  selectCategory(cat: string): void {
+    this.selectedCategory.set(cat);
+  }
 
   postDate(post: BlogPost): string {
     const d = post.publishedAt ?? post.createdAt;

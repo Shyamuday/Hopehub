@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { ReceptionApiService } from '../../services/reception-api.service';
 import { OperationsMobileLayoutService } from '../../services/operations-mobile-layout.service';
-import { ViewportService } from '../../services/viewport.service';
+import { ViewportService } from '@vitalis/platform-ui';
 import { environment } from '../../../environments/environment';
 import { API_PATHS } from '../../core/constants/api-paths.constants';
 import { ROUTE_PATHS } from '../../core/constants/app-routes.constants';
@@ -244,7 +244,11 @@ export class VisitorLeadsComponent implements OnDestroy {
       this.error.set('Please select why they are not interested.');
       return;
     }
-    if (status === 'NOT_INTERESTED' && this.notInterestedPreset === 'Other' && !this.notInterestedDetail.trim()) {
+    if (
+      status === 'NOT_INTERESTED' &&
+      this.notInterestedPreset === 'Other' &&
+      !this.notInterestedDetail.trim()
+    ) {
       this.error.set('Please describe the reason under “Other”.');
       return;
     }
@@ -252,7 +256,10 @@ export class VisitorLeadsComponent implements OnDestroy {
     this.mutating.set(true);
     this.error.set('');
     try {
-      const res = await this.api.updateVisitorLeadFollowUp(lead.id, this.buildFollowUpPayload(status, markCalled));
+      const res = await this.api.updateVisitorLeadFollowUp(
+        lead.id,
+        this.buildFollowUpPayload(status, markCalled)
+      );
       this.selected.set(res.lead);
       this.selectedStatus = status;
       this.message.set('Follow-up saved.');
@@ -293,16 +300,23 @@ export class VisitorLeadsComponent implements OnDestroy {
 
   sourceLabel(source: string): string {
     switch (source) {
-      case 'CHAT_BOT': return 'Chat';
-      case 'HOME_BOOKING': return 'Home booking';
-      case 'PROMO_POPUP': return 'Promo popup';
-      default: return source;
+      case 'CHAT_BOT':
+        return 'Chat';
+      case 'HOME_BOOKING':
+        return 'Home booking';
+      case 'PROMO_POPUP':
+        return 'Promo popup';
+      default:
+        return source;
     }
   }
 
   formatTime(iso: string): string {
     return new Date(iso).toLocaleString('en-IN', {
-      day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'
+      day: 'numeric',
+      month: 'short',
+      hour: '2-digit',
+      minute: '2-digit'
     });
   }
 
@@ -311,7 +325,13 @@ export class VisitorLeadsComponent implements OnDestroy {
   }
 
   leadPreview(lead: any): string {
-    return lead.visitorIssue ?? lead.concern ?? lead.visitorName ?? lead.visitorPhone ?? 'Website inquiry';
+    return (
+      lead.visitorIssue ??
+      lead.concern ??
+      lead.visitorName ??
+      lead.visitorPhone ??
+      'Website inquiry'
+    );
   }
 
   walkInQueryParams(lead: any): Record<string, string> {
@@ -353,4 +373,3 @@ export class VisitorLeadsComponent implements OnDestroy {
     }
   }
 }
-

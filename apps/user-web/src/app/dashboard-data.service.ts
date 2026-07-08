@@ -6,14 +6,22 @@ import { API_PATHS } from './core/constants/api-paths.constants';
 import { ProductAnalyticsService } from './core/services/product-analytics.service';
 import { PRODUCT_ANALYTICS_EVENTS } from './core/constants/analytics.constants';
 import { AuthService } from './auth/auth.service';
-import { BillingPlan, Consultation, Disease, Doctor, DoseEvent, LabResult, Prescription } from './models';
+import {
+  BillingPlan,
+  Consultation,
+  Disease,
+  Doctor,
+  DoseEvent,
+  LabResult,
+  Prescription,
+} from './models';
 import { ReminderPrefs } from './reminder-preferences.component';
 
 @Service()
 export class DashboardDataService {
   private readonly api = inject(ClinicApiService);
   private readonly auth = inject(AuthService);
-  private readonly apiClient = new ClinicApiClient();
+  private readonly apiClient = inject(ClinicApiClient);
 
   loadDiseases(params?: { clinicStoreId?: string | null }): Observable<{ diseases: Disease[] }> {
     return this.api.diseases(params);
@@ -27,7 +35,7 @@ export class DashboardDataService {
       this.apiClient
         .get<{ profile: { homeClinicStore?: { id: string } | null } }>(API_PATHS.PATIENT.PROFILE)
         .then((res) => res.profile?.homeClinicStore?.id ?? null)
-        .catch(() => null)
+        .catch(() => null),
     );
   }
 
@@ -43,7 +51,11 @@ export class DashboardDataService {
     return this.api.doctors();
   }
 
-  loadReports(): Observable<{ revenueInPaise: number; activeDoctors: number; consultations: unknown[] }> {
+  loadReports(): Observable<{
+    revenueInPaise: number;
+    activeDoctors: number;
+    consultations: unknown[];
+  }> {
     return this.api.reports();
   }
 
@@ -80,7 +92,8 @@ export class DashboardDataService {
   }
 }
 
-export type PaymentFlowState = 'IDLE' | 'CREATING_ORDER' | 'OPENING_CHECKOUT' | 'VERIFYING' | 'SUCCESS' | 'ERROR';
+export type PaymentFlowState =
+  'IDLE' | 'CREATING_ORDER' | 'OPENING_CHECKOUT' | 'VERIFYING' | 'SUCCESS' | 'ERROR';
 
 @Service()
 export class DashboardPaymentService {
@@ -95,7 +108,7 @@ export class DashboardPaymentService {
     consultation: Consultation,
     onSuccess: () => void,
     onError: (message: string) => void,
-    onProcessingChange: (processing: boolean) => void
+    onProcessingChange: (processing: boolean) => void,
   ) {
     this.paymentFlowConsultation.set(consultation);
     this.paymentFlowError.set('');
@@ -107,7 +120,7 @@ export class DashboardPaymentService {
         this.paymentFlowState.set('OPENING_CHECKOUT');
         this.analytics.track(PRODUCT_ANALYTICS_EVENTS.PAYMENT_CHECKOUT_OPENED, {
           consultationId: consultation.id,
-          orderId: order.orderId
+          orderId: order.orderId,
         });
         this.api
           .openRazorpayCheckout(consultation, order)
@@ -121,11 +134,12 @@ export class DashboardPaymentService {
               error: (error) => {
                 onProcessingChange(false);
                 this.paymentFlowState.set('ERROR');
-                const message = error.error?.message || error.message || 'Payment verification failed.';
+                const message =
+                  error.error?.message || error.message || 'Payment verification failed.';
                 this.paymentFlowError.set(message);
                 onError(message);
               },
-              complete: () => onProcessingChange(false)
+              complete: () => onProcessingChange(false),
             });
           })
           .catch((error) => {
@@ -142,7 +156,7 @@ export class DashboardPaymentService {
         const message = error.error?.message || error.message || 'Payment failed.';
         this.paymentFlowError.set(message);
         onError(message);
-      }
+      },
     });
   }
 
@@ -162,14 +176,15 @@ export class DashboardPaymentService {
     if (state === 'OPENING_CHECKOUT') return 'Complete payment in the Razorpay popup.';
     if (state === 'VERIFYING') return 'Please wait while we verify with the gateway.';
     if (state === 'SUCCESS') return 'Your consultation is now ready for doctor assignment.';
-    if (state === 'ERROR') return this.paymentFlowError() || 'Something went wrong. Please try again.';
+    if (state === 'ERROR')
+      return this.paymentFlowError() || 'Something went wrong. Please try again.';
     return '';
   }
 
   retryPayment(
     onSuccess: () => void,
     onError: (message: string) => void,
-    onProcessingChange: (processing: boolean) => void
+    onProcessingChange: (processing: boolean) => void,
   ) {
     const consultation = this.paymentFlowConsultation();
     if (!consultation) return;

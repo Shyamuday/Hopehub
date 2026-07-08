@@ -7,11 +7,15 @@ import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { API_PATHS } from '../../../core/constants/api-paths.constants';
 import { ROUTE_PATHS } from '../../../core/constants/app-routes.constants';
-import { PatientsApiService, type PatientIdCardData, type PatientSearchResult } from '../patients-api.service';
-import { PatientIdCardComponent } from '../patient-id-card/patient-id-card';
+import {
+  PatientsApiService,
+  type PatientIdCardData,
+  type PatientSearchResult,
+} from '../patients-api.service';
+import { PatientIdCardDisplayComponent } from '@vitalis/platform-ui';
 import {
   PatientHealthProfileComponent,
-  type PatientClinicalProfile
+  type PatientClinicalProfile,
 } from '../../../shared/patient-health-profile/patient-health-profile';
 import { buildDetailRows, DetailRowsComponent } from '@vitalis/platform-ui';
 import { DoctorPatientClinicalMediaPanelComponent } from '../../../shared/doctor-patient-clinical-media/doctor-patient-clinical-media-panel';
@@ -19,9 +23,9 @@ import {
   ADHERENCE_DAY_FIELDS,
   ADHERENCE_SUMMARY_FIELDS,
   adherenceDayTotalsText,
-  adherenceTotalsText
+  adherenceTotalsText,
 } from '../constants/adherence-detail.fields';
-import { ViewportService } from '../../../core/services/viewport.service';
+import { ViewportService } from '@vitalis/platform-ui';
 
 type DoseEvent = {
   id: string;
@@ -76,9 +80,18 @@ function emptyCreatePatientModel() {
 
 @Component({
   selector: 'app-patients-page',
-  imports: [FormField, CommonModule, DatePipe, PatientIdCardComponent, RouterLink, PatientHealthProfileComponent, DetailRowsComponent, DoctorPatientClinicalMediaPanelComponent],
+  imports: [
+    FormField,
+    CommonModule,
+    DatePipe,
+    PatientIdCardDisplayComponent,
+    RouterLink,
+    PatientHealthProfileComponent,
+    DetailRowsComponent,
+    DoctorPatientClinicalMediaPanelComponent,
+  ],
   templateUrl: './patients-page.html',
-  styleUrl: './patients-page.scss'
+  styleUrl: './patients-page.scss',
 })
 export class PatientsPage {
   private readonly http = inject(HttpClient);
@@ -93,7 +106,10 @@ export class PatientsPage {
 
   readonly worklistPath = `/${ROUTE_PATHS.WORKLIST}`;
 
-  readonly searchModel = signal({ patientSearchQuery: '', patientSearchScope: 'auto' as 'auto' | 'clinic' | 'global' });
+  readonly searchModel = signal({
+    patientSearchQuery: '',
+    patientSearchScope: 'auto' as 'auto' | 'clinic' | 'global',
+  });
   readonly searchForm = form(this.searchModel);
   readonly createPatientModel = signal(emptyCreatePatientModel());
   readonly createPatientForm = form(this.createPatientModel);
@@ -147,7 +163,7 @@ export class PatientsPage {
             ? 'Showing patients from your clinic branch.'
             : response.scopeUsed === 'global'
               ? 'Showing patients from all branches.'
-              : '')
+              : ''),
       );
       if (!response.patients.length && scope !== 'global') {
         this.patientSearchHint.set('No patients at your clinic. Try global search.');
@@ -165,7 +181,7 @@ export class PatientsPage {
     this.patientClinical.set({
       allergies: patient.allergies,
       currentMedications: patient.currentMedications,
-      chronicConditions: patient.chronicConditions
+      chronicConditions: patient.chronicConditions,
     });
     void this.loadPatientCard(patient.id);
     void this.loadTrend();
@@ -190,7 +206,7 @@ export class PatientsPage {
       this.patientClinical.set({
         allergies: patient.allergies,
         currentMedications: patient.currentMedications,
-        chronicConditions: patient.chronicConditions
+        chronicConditions: patient.chronicConditions,
       });
     } catch {
       this.patientClinical.set(null);
@@ -212,7 +228,7 @@ export class PatientsPage {
           mobile: selected.mobile,
           email: selected.email,
           clinic: selected.homeClinicStore ?? null,
-          issuedAt: new Date().toISOString()
+          issuedAt: new Date().toISOString(),
         });
       }
     } finally {
@@ -233,7 +249,7 @@ export class PatientsPage {
       const response = await this.patientsApi.createPatient({
         name: trimmedName,
         email: email.trim() || undefined,
-        mobile: mobile.trim() || undefined
+        mobile: mobile.trim() || undefined,
       });
       this.message.set(`Patient created: ${response.patient.patientCode || response.patient.id}`);
       this.showCreatePatient = false;
@@ -247,7 +263,7 @@ export class PatientsPage {
           mobile: response.patient.mobile,
           email: response.patient.email,
           clinic: response.patient.homeClinicStore ?? null,
-          issuedAt: new Date().toISOString()
+          issuedAt: new Date().toISOString(),
         });
       }
     } catch {
@@ -281,11 +297,17 @@ export class PatientsPage {
 
     const [trendResult, eventsResult] = await Promise.allSettled([
       firstValueFrom(
-        this.http.get<AdherenceSummary>(`${this.apiBase}${API_PATHS.PATIENTS.ADHERENCE_TREND(id)}`, { params })
+        this.http.get<AdherenceSummary>(
+          `${this.apiBase}${API_PATHS.PATIENTS.ADHERENCE_TREND(id)}`,
+          { params },
+        ),
       ),
       firstValueFrom(
-        this.http.get<{ events: DoseEvent[] }>(`${this.apiBase}${API_PATHS.PATIENTS.DOSE_EVENTS(id)}`, { params })
-      )
+        this.http.get<{ events: DoseEvent[] }>(
+          `${this.apiBase}${API_PATHS.PATIENTS.DOSE_EVENTS(id)}`,
+          { params },
+        ),
+      ),
     ]);
 
     this.loading.set(false);
@@ -313,7 +335,9 @@ export class PatientsPage {
     this.labReferrals.set([]);
     try {
       const response = await firstValueFrom(
-        this.http.get<{ referrals: LabReferral[] }>(`${this.apiBase}${API_PATHS.PATIENTS.LAB_REFERRALS(patientId)}`)
+        this.http.get<{ referrals: LabReferral[] }>(
+          `${this.apiBase}${API_PATHS.PATIENTS.LAB_REFERRALS(patientId)}`,
+        ),
       );
       this.labReferrals.set(response.referrals || []);
     } catch {
@@ -326,7 +350,7 @@ export class PatientsPage {
   adherenceSummaryRows(data: AdherenceSummary) {
     return buildDetailRows(
       { days: data.days, adherencePercent: data.adherencePercent },
-      ADHERENCE_SUMMARY_FIELDS
+      ADHERENCE_SUMMARY_FIELDS,
     );
   }
 

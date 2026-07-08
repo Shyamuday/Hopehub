@@ -1,8 +1,8 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject, signal } from '@angular/core';
+import { CLINIC_API_BASE_URL, ClinicHttpClient } from '@vitalis/clinic-api';
 import { API_PATHS } from '../../core/constants/api-paths.constants';
 import { AuthService } from '../../auth/auth.service';
-import { environment } from '../../../environments/environment';
 import { AppDownloadQrComponent } from '../app-download-qr/app-download-qr.component';
 
 export type PatientIdCard = {
@@ -20,10 +20,12 @@ export type PatientIdCard = {
   standalone: true,
   imports: [CommonModule, AppDownloadQrComponent],
   templateUrl: './patient-id-card.component.html',
-  styleUrl: './patient-id-card.component.scss'
+  styleUrl: './patient-id-card.component.scss',
 })
 export class PatientIdCardComponent implements OnInit {
   private readonly auth = inject(AuthService);
+  private readonly http = inject(ClinicHttpClient);
+  private readonly apiBase = inject(CLINIC_API_BASE_URL);
 
   readonly loading = signal(true);
   readonly card = signal<PatientIdCard | null>(null);
@@ -33,52 +35,41 @@ export class PatientIdCardComponent implements OnInit {
   }
 
   private async load() {
-    const token = this.auth.token;
-    if (!token) {
+    if (!this.auth.token) {
       this.loading.set(false);
       return;
     }
     try {
-      const res = await fetch(`${environment.apiUrl}${API_PATHS.PATIENT.CARD}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (res.ok) {
-        const data = await res.json();
+      try {
+        const data = await this.http.get<{ card: PatientIdCard }>(API_PATHS.PATIENT.CARD);
         this.card.set(data.card);
         return;
+      } catch {
+        // fall through to profile lookup
       }
-      const profileRes = await fetch(`${environment.apiUrl}${API_PATHS.PATIENT.PROFILE}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (profileRes.ok) {
-        const { profile } = await profileRes.json();
-        if (profile?.patientCode) {
-          this.card.set({
-            patientCode: profile.patientCode,
-            name: profile.name,
-            mobile: profile.mobile,
-            email: profile.email,
-            clinic: profile.homeClinicStore ?? null,
-            scanUrl: `${environment.apiUrl}/go/p/${encodeURIComponent(profile.patientCode)}`
-          });
-        }
+
+      const { profile } = await this.http.get<{
+        profile?: {
+          patientCode?: string;
+          name: string;
+          mobile?: string;
+          email?: string;
+          homeClinicStore?: PatientIdCard['clinic'];
+        };
+      }>(API_PATHS.PATIENT.PROFILE);
+
+      if (profile?.patientCode) {
+        this.card.set({
+          patientCode: profile.patientCode,
+          name: profile.name,
+          mobile: profile.mobile,
+          email: profile.email,
+          clinic: profile.homeClinicStore ?? null,
+          scanUrl: `${this.apiBase}/go/p/${encodeURIComponent(profile.patientCode)}`,
+        });
       }
     } finally {
       this.loading.set(false);
     }
-  }
-
-  printCard() {
-    document.body.classList.add('printing-patient-card');
-    window.print();
-    window.setTimeout(() => document.body.classList.remove('printing-patient-card'), 500);
-  }
-
-  scanUrl(card: PatientIdCard) {
-    return card.scanUrl ?? `${environment.apiUrl}/go/p/${encodeURIComponent(card.patientCode)}`;
-  }
-
-  qrImageUrl(card: PatientIdCard) {
-    return `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(this.scanUrl(card))}`;
   }
 }

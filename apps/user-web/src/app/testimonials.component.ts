@@ -37,7 +37,7 @@ export class TestimonialsComponent {
     { value: '15+', label: 'Conditions treated' },
   ]);
 
-  private readonly client = new ClinicApiClient();
+  private readonly client = inject(ClinicApiClient);
 
   constructor(private readonly configSvc: PublicConfigService) {
     void this.load();
@@ -47,20 +47,28 @@ export class TestimonialsComponent {
     try {
       const [tsRes, cfg] = await Promise.all([
         this.client.get<{ testimonials: Testimonial[] }>(API_PATHS.TESTIMONIALS),
-        this.configSvc.get()
+        this.configSvc.get(),
       ]);
       this.testimonials.set(tsRes.testimonials ?? []);
       this.stats.set([
         { value: cfg.statPatientsTreated, label: 'Patients treated' },
         { value: cfg.statImprovement, label: 'Report improvement within 3 months' },
         { value: cfg.statSatisfaction, label: 'Average patient satisfaction' },
-        { value: cfg.statConditionsTreated, label: 'Conditions treated' }
+        { value: cfg.statConditionsTreated, label: 'Conditions treated' },
       ]);
-    } catch { /* silently use fallback */ }
-    finally { this.loading.set(false); }
+    } catch {
+      /* silently use fallback */
+    } finally {
+      this.loading.set(false);
+    }
   }
 
   initials(name: string): string {
-    return name.split(' ').filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join('');
+    return name
+      .split(' ')
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((w) => w[0].toUpperCase())
+      .join('');
   }
 }

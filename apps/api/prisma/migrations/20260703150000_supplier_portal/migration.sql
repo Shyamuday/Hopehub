@@ -1,1 +1,0 @@
--- Supplier portal schema captured in 20260703160000_supplier_portal

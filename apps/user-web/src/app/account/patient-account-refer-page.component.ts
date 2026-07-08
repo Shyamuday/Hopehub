@@ -1,16 +1,17 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
+import { ClinicHttpClient } from '@vitalis/clinic-api';
 import { API_PATHS } from '../core/constants/api-paths.constants';
 import { AuthService } from '../auth/auth.service';
-import { environment } from '../../environments/environment';
 
 @Component({
   selector: 'app-patient-account-refer-page',
   standalone: true,
   templateUrl: './patient-account-refer-page.component.html',
-  styleUrl: './patient-account-refer-page.component.scss'
+  styleUrl: './patient-account-refer-page.component.scss',
 })
 export class PatientAccountReferPageComponent implements OnInit {
   private readonly auth = inject(AuthService);
+  private readonly http = inject(ClinicHttpClient);
 
   readonly loading = signal(true);
   readonly code = signal('');
@@ -26,18 +27,20 @@ export class PatientAccountReferPageComponent implements OnInit {
   }
 
   private async load() {
-    const token = this.auth.token;
     try {
-      if (!token) return;
-      const res = await fetch(`${environment.apiUrl}${API_PATHS.PATIENT.REFERRALS_SUMMARY}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (!res.ok) return;
-      const data = await res.json();
+      if (!this.auth.token) return;
+      const data = await this.http.get<{
+        code: string;
+        sharePath: string;
+        stats: { total: number; registered: number; qualified: number; rewarded: number };
+        referrals?: Array<{ status: string; referredUser?: { name: string; createdAt: string } }>;
+      }>(API_PATHS.PATIENT.REFERRALS_SUMMARY);
       this.code.set(data.code);
       this.shareUrl.set(`${window.location.origin}${data.sharePath}`);
       this.stats.set(data.stats);
       this.referrals.set(data.referrals || []);
+    } catch {
+      // no-op
     } finally {
       this.loading.set(false);
     }
@@ -53,7 +56,9 @@ export class PatientAccountReferPageComponent implements OnInit {
 
   whatsappShare() {
     const url = this.shareUrl();
-    const text = encodeURIComponent(`Join me on Vitalis Care for doctor-led homeopathic consultations. Use my code ${this.code()} or link: ${url}`);
+    const text = encodeURIComponent(
+      `Join me on Vitalis Care for doctor-led homeopathic consultations. Use my code ${this.code()} or link: ${url}`,
+    );
     window.open(`https://wa.me/?text=${text}`, '_blank', 'noopener');
   }
 }

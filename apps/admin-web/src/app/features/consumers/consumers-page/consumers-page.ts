@@ -6,25 +6,25 @@ import { adminRouteLink, ROUTE_PATHS } from '../../../core/constants/app-routes.
 import {
   buildDetailRows,
   PATIENT_CLINICAL_PROFILE_FIELDS,
-  patientClinicalProfileHasData
+  patientClinicalProfileHasData,
 } from '@vitalis/platform-ui';
 import { AdminApi } from '../../../core/services/admin-api';
 import { AdminMobileLayoutService } from '../../../core/services/admin-mobile-layout.service';
-import { ViewportService } from '../../../core/services/viewport.service';
+import { ViewportService } from '@vitalis/platform-ui';
 import {
   CONSUMERS_LIST_DEFAULTS,
   CONSUMERS_PAGE_SIZE,
-  type ConsumerSortField
+  type ConsumerSortField,
 } from '../constants/consumers-list.constants';
 import { type SortDirection } from '../../../shared/constants/filter.constants';
-import { type PatientIdCardData } from '../../../shared/patient-id-card/patient-id-card';
+import { type PatientIdCardData } from '@vitalis/platform-ui';
 import { environment } from '../../../../environments/environment';
 import { buildAdminClinicalSummary, type ClinicalSummaryRow } from '@vitalis/homeopathy-approaches';
 import { type SupportNoteCategory } from '../constants/support-note.constants';
 import { SUPPORT_ACCOUNT_FIELDS } from '../constants/support-detail.fields';
 import {
   CONSUMER_ADHERENCE_FIELDS,
-  REMINDER_PREFERENCE_FIELDS
+  REMINDER_PREFERENCE_FIELDS,
 } from '../constants/consumer-support-detail.fields';
 import {
   type ActiveDoctor,
@@ -32,7 +32,7 @@ import {
   type Consumer,
   type ConsumerDetail,
   type SupportContext,
-  type SupportNote
+  type SupportNote,
 } from '../models/consumers.models';
 import { ConsumersListPanelComponent } from '../components/consumers-list-panel/consumers-list-panel';
 import { ConsumerOverviewPanelComponent } from '../components/consumer-overview-panel/consumer-overview-panel';
@@ -44,10 +44,10 @@ import { ConsumerSupportPanelComponent } from '../components/consumer-support-pa
     CommonModule,
     ConsumersListPanelComponent,
     ConsumerOverviewPanelComponent,
-    ConsumerSupportPanelComponent
+    ConsumerSupportPanelComponent,
   ],
   templateUrl: './consumers-page.html',
-  styleUrl: './consumers-page.scss'
+  styleUrl: './consumers-page.scss',
 })
 export class ConsumersPage implements OnDestroy {
   private readonly viewport = inject(ViewportService);
@@ -65,7 +65,7 @@ export class ConsumersPage implements OnDestroy {
   readonly listFilterModel = signal({
     searchTerm: '',
     sortBy: CONSUMERS_LIST_DEFAULTS.SORT_BY as ConsumerSortField,
-    sortDirection: CONSUMERS_LIST_DEFAULTS.SORT_DIRECTION as SortDirection
+    sortDirection: CONSUMERS_LIST_DEFAULTS.SORT_DIRECTION as SortDirection,
   });
   readonly listFilterForm = form(this.listFilterModel);
   pageSize = CONSUMERS_PAGE_SIZE;
@@ -89,7 +89,7 @@ export class ConsumersPage implements OnDestroy {
   readonly noteModel = signal({
     category: 'GENERAL' as SupportNoteCategory,
     body: '',
-    consultationId: ''
+    consultationId: '',
   });
   readonly noteForm = form(this.noteModel);
   savingNote = false;
@@ -104,7 +104,8 @@ export class ConsumersPage implements OnDestroy {
   readonly patientSearchModel = signal({ q: '' });
   readonly patientSearchForm = form(this.patientSearchModel);
   patientSearchLoading = false;
-  patientSearchResults: Array<{ id: string; name: string; patientCode?: string; mobile?: string }> = [];
+  patientSearchResults: Array<{ id: string; name: string; patientCode?: string; mobile?: string }> =
+    [];
   stores: Array<{ id: string; name: string; code: string }> = [];
 
   readonly clinicalRecordsRoute = adminRouteLink(ROUTE_PATHS.CLINICAL_RECORDS);
@@ -114,7 +115,7 @@ export class ConsumersPage implements OnDestroy {
 
   constructor(
     private readonly api: AdminApi,
-    private readonly route: ActivatedRoute
+    private readonly route: ActivatedRoute,
   ) {
     const consumerId = this.route.snapshot.queryParamMap.get('consumerId');
     const patientCode = this.route.snapshot.queryParamMap.get('patientCode');
@@ -133,11 +134,13 @@ export class ConsumersPage implements OnDestroy {
   private async loadStores() {
     try {
       const response = await this.api.getAdminStores();
-      this.stores = (response.stores || []).map((store: { id: string; name: string; code: string }) => ({
-        id: store.id,
-        name: store.name,
-        code: store.code
-      }));
+      this.stores = (response.stores || []).map(
+        (store: { id: string; name: string; code: string }) => ({
+          id: store.id,
+          name: store.name,
+          code: store.code,
+        }),
+      );
     } catch {
       this.stores = [];
     }
@@ -176,7 +179,7 @@ export class ConsumersPage implements OnDestroy {
       if (this.selectedConsumerId) {
         await Promise.all([
           this.loadConsumerDetail(this.selectedConsumerId),
-          this.loadSupport(this.selectedConsumerId)
+          this.loadSupport(this.selectedConsumerId),
         ]);
       }
     } catch {
@@ -196,7 +199,7 @@ export class ConsumersPage implements OnDestroy {
         pageSize: this.pageSize,
         q: filters.searchTerm,
         sortBy: filters.sortBy,
-        sortDirection: filters.sortDirection
+        sortDirection: filters.sortDirection,
       });
       this.consumers = response.consumers || [];
       this.totalPagesCount = Math.max(1, Number(response.pagination?.totalPages || 1));
@@ -206,7 +209,7 @@ export class ConsumersPage implements OnDestroy {
       if (this.selectedConsumerId) {
         await Promise.all([
           this.loadConsumerDetail(this.selectedConsumerId),
-          this.loadSupport(this.selectedConsumerId)
+          this.loadSupport(this.selectedConsumerId),
         ]);
         if (this.isMobile()) {
           this.mobileLayout.setPageFocus(true);
@@ -288,7 +291,7 @@ export class ConsumersPage implements OnDestroy {
       await this.api.addConsumerSupportNote(this.selectedConsumerId, {
         category: note.category,
         body,
-        consultationId: note.consultationId || undefined
+        consultationId: note.consultationId || undefined,
       });
       this.noteModel.set({ category: 'GENERAL', body: '', consultationId: '' });
       await this.loadSupport(this.selectedConsumerId);
@@ -320,7 +323,7 @@ export class ConsumersPage implements OnDestroy {
     try {
       const [rxRes, analysisRes] = await Promise.all([
         this.api.listAdminPrescriptions({ patientId, pageSize: 5 }),
-        this.api.listAdminCaseAnalyses({ patientId, pageSize: 5 })
+        this.api.listAdminCaseAnalyses({ patientId, pageSize: 5 }),
       ]);
 
       const analysisItems = (analysisRes.analyses || []) as Array<{
@@ -343,7 +346,7 @@ export class ConsumersPage implements OnDestroy {
             doctor: item.doctor ?? null,
             approachTitle: item.methodOption?.label || 'Case analysis',
             caseSheetRows: [] as ClinicalSummaryRow[],
-            approachRows: [] as ClinicalSummaryRow[]
+            approachRows: [] as ClinicalSummaryRow[],
           };
 
           try {
@@ -356,25 +359,25 @@ export class ConsumersPage implements OnDestroy {
             const summary = buildAdminClinicalSummary({
               methodLabel: detail.methodOption?.label ?? item.methodOption?.label,
               caseSheet: detail.caseSheet,
-              approachData: detail.approachData
+              approachData: detail.approachData,
             });
             return {
               ...base,
               approachTitle: summary.approachTitle,
               caseSheetRows: summary.caseSheetRows,
-              approachRows: summary.approachRows
+              approachRows: summary.approachRows,
             };
           } catch {
             return base;
           }
-        })
+        }),
       );
 
       this.clinicalSummary = {
         prescriptions: (rxRes.prescriptions || []) as ClinicalSummary['prescriptions'],
         analyses,
         prescriptionTotal: rxRes.pagination?.total ?? 0,
-        analysisTotal: analysisRes.pagination?.total ?? 0
+        analysisTotal: analysisRes.pagination?.total ?? 0,
       };
     } catch {
       this.clinicalSummary = null;
@@ -394,7 +397,7 @@ export class ConsumersPage implements OnDestroy {
       mobile: consumer.mobile ?? null,
       email: consumer.email ?? null,
       issuedAt: new Date().toISOString(),
-      scanUrl: `${environment.apiUrl}/go/p/${encodeURIComponent(consumer.patientCode)}`
+      scanUrl: `${environment.apiUrl}/go/p/${encodeURIComponent(consumer.patientCode)}`,
     };
   }
 
@@ -433,7 +436,7 @@ export class ConsumersPage implements OnDestroy {
         name,
         email: form.email.trim() || undefined,
         mobile: form.mobile.trim() || undefined,
-        homeClinicStoreId: form.homeClinicStoreId || null
+        homeClinicStoreId: form.homeClinicStoreId || null,
       });
       this.registerMessage = `Patient registered: ${response.patient.patientCode || response.patient.id}`;
       this.registerModel.set({ name: '', email: '', mobile: '', homeClinicStoreId: '' });
@@ -443,9 +446,10 @@ export class ConsumersPage implements OnDestroy {
         await this.selectConsumer(response.patient.id);
       }
     } catch (e: unknown) {
-      const message = e && typeof e === 'object' && 'error' in e
-        ? (e as { error?: { message?: string } }).error?.message
-        : undefined;
+      const message =
+        e && typeof e === 'object' && 'error' in e
+          ? (e as { error?: { message?: string } }).error?.message
+          : undefined;
       this.registerError = message || 'Could not register patient.';
     } finally {
       this.registerSaving = false;
@@ -466,9 +470,9 @@ export class ConsumersPage implements OnDestroy {
         isActive: ctx.account.isActive,
         adherencePercent: ctx.adherenceSummary.percent,
         adherenceTaken: ctx.adherenceSummary.taken,
-        adherenceTotal: ctx.adherenceSummary.total
+        adherenceTotal: ctx.adherenceSummary.total,
       },
-      SUPPORT_ACCOUNT_FIELDS
+      SUPPORT_ACCOUNT_FIELDS,
     );
   }
 

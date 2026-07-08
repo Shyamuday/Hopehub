@@ -1,26 +1,35 @@
-import { ApplicationConfig, provideBrowserGlobalErrorListeners, provideZonelessChangeDetection } from '@angular/core';
+import {
+  ApplicationConfig,
+  provideBrowserGlobalErrorListeners,
+  provideZonelessChangeDetection,
+} from '@angular/core';
 import { provideHttpClient, withInterceptors, withXhr } from '@angular/common/http';
 import {
   provideRouter,
   withExperimentalAutoCleanupInjectors,
-  withExperimentalPlatformNavigation
+  withExperimentalPlatformNavigation,
 } from '@angular/router';
 import { DEV_DEMO_PORT } from '@vitalis/platform-ui';
+import { CLINIC_API_BASE_URL, CLINIC_AUTH_TOKEN_KEY } from '@vitalis/clinic-api';
 
 import { routes } from './app.routes';
 import { authInterceptor } from './auth/auth.interceptor';
+import { AUTH_TOKEN_KEY } from './core/constants/auth.constants';
 import { DevDemoService } from './core/services/dev-demo.service';
+import { environment } from '../environments/environment';
 
 export const appConfig: ApplicationConfig = {
   providers: [
+    { provide: CLINIC_API_BASE_URL, useValue: environment.apiUrl },
+    { provide: CLINIC_AUTH_TOKEN_KEY, useValue: AUTH_TOKEN_KEY },
     provideBrowserGlobalErrorListeners(),
     provideZonelessChangeDetection(),
     provideRouter(
       routes,
       withExperimentalPlatformNavigation(),
-      withExperimentalAutoCleanupInjectors()
+      withExperimentalAutoCleanupInjectors(),
     ),
     provideHttpClient(withXhr(), withInterceptors([authInterceptor])),
-    { provide: DEV_DEMO_PORT, useExisting: DevDemoService }
-  ]
+    { provide: DEV_DEMO_PORT, useExisting: DevDemoService },
+  ],
 };

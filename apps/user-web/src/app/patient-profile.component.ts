@@ -19,9 +19,9 @@ import {
   profileToForm,
   computeProfileCompletion,
   type PatientProfile,
-  type ReminderPreferences
+  type ReminderPreferences,
 } from './core/constants/patient-profile.constants';
-import { environment } from '../environments/environment';
+import { ClinicHttpClient, CLINIC_API_BASE_URL } from '@vitalis/clinic-api';
 import { AuthService } from './auth/auth.service';
 import { ClinicApiService } from './clinic-api.service';
 import { PatientIdCardComponent } from './shared/patient-id-card/patient-id-card.component';
@@ -33,7 +33,15 @@ import { AUTH_TOKEN_KEY } from './core/constants/auth.constants';
 @Component({
   selector: 'app-patient-profile',
   standalone: true,
-  imports: [CommonModule, RouterLink, FormField, PatientIdCardComponent, PatientAddressBookComponent, ProfileAvatarUploadComponent, PatientClinicalMediaPanelComponent],
+  imports: [
+    CommonModule,
+    RouterLink,
+    FormField,
+    PatientIdCardComponent,
+    PatientAddressBookComponent,
+    ProfileAvatarUploadComponent,
+    PatientClinicalMediaPanelComponent,
+  ],
   styleUrl: './patient-profile.component.scss',
   templateUrl: './patient-profile.component.html',
 })
@@ -43,6 +51,7 @@ export class PatientProfileComponent implements OnInit {
 
   private readonly auth = inject(AuthService);
   private readonly clinicApi = inject(ClinicApiService);
+  private readonly http = inject(ClinicHttpClient);
 
   readonly loading = signal(true);
   readonly saving = signal(false);
@@ -60,7 +69,11 @@ export class PatientProfileComponent implements OnInit {
   readonly profileForm = form(this.profileFormModel);
   readonly reminderFormModel = signal(emptyReminderForm());
   readonly reminderForm = form(this.reminderFormModel);
-  readonly passwordFormModel = signal({ currentPassword: '', newPassword: '', confirmPassword: '' });
+  readonly passwordFormModel = signal({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
+  });
   readonly passwordForm = form(this.passwordFormModel);
 
   readonly genderOptions = GENDER_OPTIONS;
@@ -72,7 +85,7 @@ export class PatientProfileComponent implements OnInit {
   readonly languageSuggestions = LANGUAGE_SUGGESTIONS;
   readonly relationOptions = EMERGENCY_RELATION_OPTIONS;
 
-  readonly apiUrl = environment.apiUrl;
+  readonly apiBase = inject(CLINIC_API_BASE_URL);
   readonly authTokenKey = AUTH_TOKEN_KEY;
   readonly profileImageUploadPath = API_PATHS.PATIENT.PROFILE_IMAGE;
 
@@ -97,25 +110,11 @@ export class PatientProfileComponent implements OnInit {
     return this.auth.token || '';
   }
 
-  private async apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
-    const res = await fetch(`${environment.apiUrl}${path}`, {
-      ...init,
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${this.token}`,
-        ...(init?.headers || {}),
-      },
-    });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(data?.message || 'Request failed');
-    return data as T;
-  }
-
   async load() {
     this.loading.set(true);
     this.errorMsg.set('');
     try {
-      const { profile, reminderPreferences } = await this.apiFetch<{
+      const { profile, reminderPreferences } = await this.http.get<{
         profile: PatientProfile;
         reminderPreferences: ReminderPreferences;
       }>(API_PATHS.PATIENT.PROFILE);
@@ -134,7 +133,10 @@ export class PatientProfileComponent implements OnInit {
     this.profile.update((current) => (current ? { ...current, profileImageUrl } : current));
   }
 
-  updateReminderField<K extends keyof ReminderPreferences>(field: K, value: ReminderPreferences[K]) {
+  updateReminderField<K extends keyof ReminderPreferences>(
+    field: K,
+    value: ReminderPreferences[K],
+  ) {
     this.reminderFormModel.update((m) => ({ ...m, [field]: value }));
   }
 
@@ -151,10 +153,10 @@ export class PatientProfileComponent implements OnInit {
     this.successMsg.set('');
     this.errorMsg.set('');
     try {
-      const { profile } = await this.apiFetch<{ profile: PatientProfile }>(API_PATHS.PATIENT.PROFILE, {
-        method: 'PUT',
-        body: JSON.stringify(formToProfilePayload(this.profileFormModel())),
-      });
+      const { profile } = await this.http.put<{ profile: PatientProfile }>(
+        API_PATHS.PATIENT.PROFILE,
+        formToProfilePayload(this.profileFormModel()),
+      );
       this.profile.set(profile);
       this.hasPassword.set(Boolean(profile.hasPassword));
       this.successMsg.set('Profile saved.');
@@ -170,10 +172,7 @@ export class PatientProfileComponent implements OnInit {
     this.savingPrefs.set(true);
     this.errorMsg.set('');
     try {
-      await this.apiFetch(API_PATHS.PATIENT.REMINDER_PREFERENCES, {
-        method: 'PUT',
-        body: JSON.stringify(this.reminderFormModel()),
-      });
+      await this.http.put(API_PATHS.PATIENT.REMINDER_PREFERENCES, this.reminderFormModel());
       this.successMsg.set('Notification preferences saved.');
       setTimeout(() => this.successMsg.set(''), 3000);
     } catch (err: unknown) {
@@ -189,13 +188,10 @@ export class PatientProfileComponent implements OnInit {
     this.errorMsg.set('');
     try {
       const p = this.passwordFormModel();
-      await this.apiFetch(API_PATHS.PATIENT.PROFILE_PASSWORD, {
-        method: 'PUT',
-        body: JSON.stringify({
-          currentPassword: p.currentPassword || undefined,
-          newPassword: p.newPassword,
-          confirmPassword: p.confirmPassword,
-        }),
+      await this.http.put(API_PATHS.PATIENT.PROFILE_PASSWORD, {
+        currentPassword: p.currentPassword || undefined,
+        newPassword: p.newPassword,
+        confirmPassword: p.confirmPassword,
       });
       this.hasPassword.set(true);
       this.passwordFormModel.set({ currentPassword: '', newPassword: '', confirmPassword: '' });

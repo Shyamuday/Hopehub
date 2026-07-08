@@ -7,7 +7,7 @@ import { form, FormField } from '@angular/forms/signals';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AdminApi } from '../../../core/services/admin-api';
 import { AdminMobileLayoutService } from '../../../core/services/admin-mobile-layout.service';
-import { ViewportService } from '../../../core/services/viewport.service';
+import { ViewportService } from '@vitalis/platform-ui';
 
 type MethodOption = { id: string; label: string };
 type PublicUser = { id: string; name: string; mobile?: string | null; patientCode?: string | null };
@@ -102,20 +102,32 @@ const PRESCRIPTION_SUMMARY_FIELDS: DetailFieldDef<PrescriptionDetail>[] = [
   { label: 'Prescribing doctor', getValue: (p) => p.doctor?.name },
   { label: 'Assigned doctor', getValue: (p) => p.assignedDoctor?.name, omitWhenEmpty: true },
   { label: 'Approach / method', getValue: (p) => p.methodOption?.label },
-  { label: 'Diagnosed disease', getValue: (p) => p.diagnosedDiseaseOption?.label, omitWhenEmpty: true },
-  { label: 'Consultation disease', getValue: (p) => p.consultation?.disease?.name, omitWhenEmpty: true },
+  {
+    label: 'Diagnosed disease',
+    getValue: (p) => p.diagnosedDiseaseOption?.label,
+    omitWhenEmpty: true,
+  },
+  {
+    label: 'Consultation disease',
+    getValue: (p) => p.consultation?.disease?.name,
+    omitWhenEmpty: true,
+  },
   { label: 'Status', getValue: (p) => p.status },
   { label: 'Diagnosis', getValue: (p) => p.diagnosis, omitWhenEmpty: true },
   { label: 'Advice', getValue: (p) => p.advice, omitWhenEmpty: true },
   { label: 'Notes', getValue: (p) => p.notes, omitWhenEmpty: true },
   { label: 'Follow-up', getValue: (p) => p.followUpDate, omitWhenEmpty: true },
   { label: 'Linked analysis', getValue: (p) => p.caseAnalysisId, omitWhenEmpty: true },
-  { label: 'Consultation', getValue: (p) => p.consultationId, omitWhenEmpty: true }
+  { label: 'Consultation', getValue: (p) => p.consultationId, omitWhenEmpty: true },
 ];
 
 const ANALYSIS_SUMMARY_FIELDS: DetailFieldDef<CaseAnalysisDetail>[] = [
   { label: 'Patient', getValue: (a) => a.consultation?.patient?.name },
-  { label: 'Patient code', getValue: (a) => a.consultation?.patient?.patientCode, omitWhenEmpty: true },
+  {
+    label: 'Patient code',
+    getValue: (a) => a.consultation?.patient?.patientCode,
+    omitWhenEmpty: true,
+  },
   { label: 'Analysis doctor', getValue: (a) => a.doctor?.name },
   { label: 'Assigned doctor', getValue: (a) => a.assignedDoctor?.name, omitWhenEmpty: true },
   { label: 'Approach / method', getValue: (a) => a.methodOption?.label },
@@ -124,24 +136,28 @@ const ANALYSIS_SUMMARY_FIELDS: DetailFieldDef<CaseAnalysisDetail>[] = [
   {
     label: 'System-suggested remedy',
     getValue: (a) => a.remedySuggestionSnapshot?.results?.[0]?.remedy?.name,
-    omitWhenEmpty: true
+    omitWhenEmpty: true,
   },
   { label: 'Doctor’s final remedy', getValue: (a) => a.selectedRemedy?.name, omitWhenEmpty: true },
   { label: 'Override reasoning', getValue: (a) => a.remedyOverrideRationale, omitWhenEmpty: true },
-  { label: 'Consultation disease', getValue: (a) => a.consultation?.disease?.name, omitWhenEmpty: true },
+  {
+    label: 'Consultation disease',
+    getValue: (a) => a.consultation?.disease?.name,
+    omitWhenEmpty: true,
+  },
   { label: 'Status', getValue: (a) => a.status },
   { label: 'Notes', getValue: (a) => a.notes, omitWhenEmpty: true },
   { label: 'Rubrics', getValue: (a) => a.rubrics?.length },
   { label: 'Results', getValue: (a) => a.results?.length },
   { label: 'Linked prescriptions', getValue: (a) => a.prescriptions?.length },
-  { label: 'Consultation', getValue: (a) => a.consultationId, omitWhenEmpty: true }
+  { label: 'Consultation', getValue: (a) => a.consultationId, omitWhenEmpty: true },
 ];
 
 @Component({
   selector: 'app-clinical-records-page',
   imports: [FormField, DatePipe, DetailRowsComponent],
   templateUrl: './clinical-records-page.html',
-  styleUrl: './clinical-records-page.scss'
+  styleUrl: './clinical-records-page.scss',
 })
 export class ClinicalRecordsPage implements OnInit, OnDestroy {
   private readonly api = inject(AdminApi);
@@ -179,7 +195,7 @@ export class ClinicalRecordsPage implements OnInit, OnDestroy {
     methodOptionId: '',
     status: '',
     patientSearch: '',
-    consultationId: ''
+    consultationId: '',
   });
   readonly filterForm = form(this.filterModel);
 
@@ -190,7 +206,8 @@ export class ClinicalRecordsPage implements OnInit, OnDestroy {
     if (hit) return `${hit.name}${hit.patientCode ? ` (${hit.patientCode})` : ''}`;
     const fromRx = this.prescriptions().find((p) => p.patientId === id)?.patient;
     if (fromRx) return fromRx.name;
-    const fromAnalysis = this.analyses().find((a) => a.consultation?.patient?.id === id)?.consultation?.patient;
+    const fromAnalysis = this.analyses().find((a) => a.consultation?.patient?.id === id)
+      ?.consultation?.patient;
     if (fromAnalysis) return fromAnalysis.name;
     return id;
   });
@@ -211,12 +228,16 @@ export class ClinicalRecordsPage implements OnInit, OnDestroy {
     return buildAdminClinicalSummary({
       methodLabel: item.methodOption?.label,
       caseSheet: item.caseSheet,
-      approachData: item.approachData
+      approachData: item.approachData,
     });
   });
 
-  readonly analysisCaseSheetRows = computed(() => this.analysisClinicalSummary()?.caseSheetRows ?? []);
-  readonly analysisApproachRows = computed(() => this.analysisClinicalSummary()?.approachRows ?? []);
+  readonly analysisCaseSheetRows = computed(
+    () => this.analysisClinicalSummary()?.caseSheetRows ?? [],
+  );
+  readonly analysisApproachRows = computed(
+    () => this.analysisClinicalSummary()?.approachRows ?? [],
+  );
 
   readonly prescriptionStatuses = ['', 'DRAFT', 'PUBLISHED', 'CANCELLED'];
   readonly analysisStatuses = ['', 'DRAFT', 'FINALIZED'];
@@ -260,7 +281,7 @@ export class ClinicalRecordsPage implements OnInit, OnDestroy {
     try {
       const [doctors, methods] = await Promise.all([
         this.api.getActiveDoctors(),
-        this.api.listClinicalMethodOptions()
+        this.api.listClinicalMethodOptions(),
       ]);
       this.doctors.set(doctors.doctors ?? []);
       this.methodOptions.set(methods.options);
@@ -276,7 +297,7 @@ export class ClinicalRecordsPage implements OnInit, OnDestroy {
     void this.router.navigate([], {
       relativeTo: this.route,
       queryParams: { tab },
-      queryParamsHandling: 'merge'
+      queryParamsHandling: 'merge',
     });
     void this.loadList(1);
   }
@@ -324,7 +345,7 @@ export class ClinicalRecordsPage implements OnInit, OnDestroy {
     void this.router.navigate([], {
       relativeTo: this.route,
       queryParams: { consultationId: null },
-      queryParamsHandling: 'merge'
+      queryParamsHandling: 'merge',
     });
     void this.loadList(1);
   }
@@ -341,7 +362,7 @@ export class ClinicalRecordsPage implements OnInit, OnDestroy {
       patientId: filters.patientId,
       methodOptionId: filters.methodOptionId,
       status: filters.status,
-      consultationId: filters.consultationId
+      consultationId: filters.consultationId,
     };
 
     try {

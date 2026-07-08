@@ -3,15 +3,9 @@ import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../environments/environment';
 
-export type PatientIdCardData = {
-  patientCode: string;
-  name: string;
-  email?: string | null;
-  mobile?: string | null;
-  clinic?: { id: string; name: string; code: string; address?: string | null } | null;
-  issuedAt?: string;
-  scanUrl?: string;
-};
+import { type PatientIdCardData } from '@vitalis/platform-ui';
+
+export type { PatientIdCardData };
 
 export type PatientSearchResult = {
   id: string;
@@ -46,29 +40,45 @@ export class PatientsApiService {
         params: {
           q,
           scope,
-          ...(clinicStoreId ? { clinicStoreId } : {})
-        }
-      })
+          ...(clinicStoreId ? { clinicStoreId } : {}),
+        },
+      }),
     );
   }
 
   searchByMobile(mobile: string, scope: 'auto' | 'clinic' | 'global' = 'auto') {
     return firstValueFrom(
-      this.http.get<PatientSearchResponse>(`${this.apiBase}/patients/by-mobile/${encodeURIComponent(mobile)}`, {
-        params: { scope }
-      })
+      this.http.get<PatientSearchResponse>(
+        `${this.apiBase}/patients/by-mobile/${encodeURIComponent(mobile)}`,
+        {
+          params: { scope },
+        },
+      ),
     );
   }
 
   getPatient(id: string) {
-    return firstValueFrom(this.http.get<{ patient: PatientSearchResult & { patientConsults?: unknown[] } }>(`${this.apiBase}/patients/${id}`));
+    return firstValueFrom(
+      this.http.get<{ patient: PatientSearchResult & { patientConsults?: unknown[] } }>(
+        `${this.apiBase}/patients/${id}`,
+      ),
+    );
   }
 
-  createPatient(payload: { name: string; email?: string; mobile?: string; homeClinicStoreId?: string }) {
-    return firstValueFrom(this.http.post<{ patient: PatientSearchResult }>(`${this.apiBase}/patients`, payload));
+  createPatient(payload: {
+    name: string;
+    email?: string;
+    mobile?: string;
+    homeClinicStoreId?: string;
+  }) {
+    return firstValueFrom(
+      this.http.post<{ patient: PatientSearchResult }>(`${this.apiBase}/patients`, payload),
+    );
   }
 
   getPatientCard(id: string) {
-    return firstValueFrom(this.http.get<{ card: PatientIdCardData }>(`${this.apiBase}/patients/${id}/card`));
+    return firstValueFrom(
+      this.http.get<{ card: PatientIdCardData }>(`${this.apiBase}/patients/${id}/card`),
+    );
   }
 }
