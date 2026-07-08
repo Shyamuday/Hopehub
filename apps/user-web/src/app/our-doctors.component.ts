@@ -1,8 +1,8 @@
-import { Component, signal } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { DetailRowsComponent, type DetailRow } from '@vitalis/platform-ui';
 import { AppFooterComponent } from './app-footer.component';
 import { AppHeaderComponent } from './app-header.component';
-import { WHATSAPP_CONTACT_URL } from './core/constants/branding.constants';
+import { WhatsappLinkService } from './core/services/whatsapp-link.service';
 import { OUR_DOCTORS_PAGE_CONTENT } from './core/constants/public-site-content.constants';
 import { API_PATHS } from './core/constants/api-paths.constants';
 import { ClinicApiClient } from './clinic-api/clinic-api.client';
@@ -24,7 +24,8 @@ interface PublicDoctor {
   templateUrl: './our-doctors.component.html',
 })
 export class OurDoctorsComponent {
-  readonly whatsappLink = WHATSAPP_CONTACT_URL;
+  private readonly whatsappSvc = inject(WhatsappLinkService);
+  readonly whatsappLink = this.whatsappSvc.url;
   readonly copy = OUR_DOCTORS_PAGE_CONTENT;
   private readonly client = new ClinicApiClient();
 

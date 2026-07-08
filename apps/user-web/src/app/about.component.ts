@@ -1,5 +1,5 @@
-import { Component } from '@angular/core';
-import { WHATSAPP_CONTACT_URL } from './core/constants/branding.constants';
+import { Component, inject } from '@angular/core';
+import { WhatsappLinkService } from './core/services/whatsapp-link.service';
 import { ABOUT_CONTENT } from './core/constants/public-site-content.constants';
 import { AppFooterComponent } from './app-footer.component';
 import { AppHeaderComponent } from './app-header.component';
@@ -10,6 +10,7 @@ import { AppHeaderComponent } from './app-header.component';
   templateUrl: './about.component.html',
 })
 export class AboutComponent {
-  readonly whatsappLink = WHATSAPP_CONTACT_URL;
+  private readonly whatsappSvc = inject(WhatsappLinkService);
+  readonly whatsappLink = this.whatsappSvc.url;
   readonly copy = ABOUT_CONTENT;
 }

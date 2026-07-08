@@ -15,7 +15,8 @@ import { PATIENT_ACCOUNT_NAV } from './constants/patient-account.constants';
 })
 export class PatientAccountShellComponent {
   readonly auth = inject(AuthService);
-  readonly whatsappLink = WHATSAPP_CONTACT_URL;
+  private readonly whatsappSvc = inject(WhatsappLinkService);
+  readonly whatsappLink = this.whatsappSvc.url;
   readonly navItems = PATIENT_ACCOUNT_NAV.filter((item) =>
     ['overview', 'profile', 'addresses', 'consultations', 'orders', 'card', 'refer', 'rewards', 'dashboard'].includes(item.id)
   );

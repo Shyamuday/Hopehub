@@ -1,7 +1,7 @@
 import { Component, computed, signal } from '@angular/core';
 import { AppFooterComponent } from './app-footer.component';
 import { AppHeaderComponent } from './app-header.component';
-import { WHATSAPP_CONTACT_URL } from './core/constants/branding.constants';
+import { WhatsappLinkService } from './core/services/whatsapp-link.service';
 import { API_PATHS } from './core/constants/api-paths.constants';
 import { ClinicApiClient } from './clinic-api/clinic-api.client';
 import { FAQ_FALLBACK_ENTRIES, type FaqAccordionItem } from './faq/constants/faq-fallback.constants';
@@ -14,7 +14,8 @@ import { FaqAccordionComponent } from './faq/faq-accordion/faq-accordion.compone
   styleUrl: './faq.component.scss'
 })
 export class FaqComponent {
-  readonly whatsappLink = WHATSAPP_CONTACT_URL;
+  private readonly whatsappSvc = inject(WhatsappLinkService);
+  readonly whatsappLink = this.whatsappSvc.url;
   readonly fallbackEntries = FAQ_FALLBACK_ENTRIES;
   readonly entries = signal<FaqAccordionItem[]>([]);
   readonly loading = signal(true);

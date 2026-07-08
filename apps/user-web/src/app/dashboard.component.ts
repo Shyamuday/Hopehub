@@ -26,13 +26,13 @@ import { ClinicApiService } from './clinic-api.service';
 import { DashboardDataService, DashboardPaymentService } from './dashboard-data.service';
 import { AuthService } from './auth/auth.service';
 import { ROUTE_PATHS } from './core/constants/app-routes.constants';
-import { WHATSAPP_CONTACT_URL } from './core/constants/branding.constants';
+import { WhatsappLinkService } from './core/services/whatsapp-link.service';
+import { CURRENCY_CODE, PURCHASE_TYPES } from './core/constants/billing.constants';
 import {
   DEFAULT_QUIET_HOURS,
   DEFAULT_SNOOZE_MINUTES,
   NOTICE_DISMISS_MS,
 } from './core/constants/timing.constants';
-import { PURCHASE_TYPES } from './core/constants/billing.constants';
 import {
   BillingPlan,
   Consultation,
@@ -95,7 +95,14 @@ export class DashboardComponent implements OnInit, OnDestroy {
   readonly isLoading = signal(false);
   readonly isProcessing = signal(false);
   readonly title = computed(() => `${this.auth.user()?.role?.toLowerCase()} dashboard`);
-  readonly whatsappLink = WHATSAPP_CONTACT_URL;
+  private readonly whatsappSvc = inject(WhatsappLinkService);
+  readonly whatsappLink = this.whatsappSvc.url;
+  readonly currencyCode = CURRENCY_CODE;
+  readonly heroDisease = computed(() => {
+    const id = this.pendingDiseaseIdValue();
+    if (!id) return null;
+    return this.diseases().find((disease) => disease.id === id) ?? null;
+  });
   private realtimeChannel?: { unsubscribe(): void };
 
   readonly snoozeMinutes = signal(DEFAULT_SNOOZE_MINUTES);
@@ -142,7 +149,11 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   pendingDiseaseIdValue() {
-    return this.pendingDiseaseId || '';
+    if (this.pendingDiseaseId) return this.pendingDiseaseId;
+    if (typeof sessionStorage !== 'undefined') {
+      return sessionStorage.getItem('pendingDiseaseId') || '';
+    }
+    return '';
   }
 
   private applyPendingConsultation() {

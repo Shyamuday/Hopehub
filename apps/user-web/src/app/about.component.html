@@ -1,6 +1,6 @@
 
     <section class="public-shell">
-      <app-header [subtitle]="copy.page.headerSubtitle" [whatsappLink]="whatsappLink" />
+      <app-header [subtitle]="copy.page.headerSubtitle" [whatsappLink]="whatsappLink()" />
 
       <main class="about-page">
         <section class="about-hero panel">
@@ -55,5 +55,5 @@
         </section>
       </main>
 
-      <app-footer [whatsappLink]="whatsappLink" />
+      <app-footer [whatsappLink]="whatsappLink()" />
     </section>

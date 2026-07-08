@@ -1,16 +1,16 @@
 
     <section class="public-shell">
-      <app-header subtitle="Digital clinic" [whatsappLink]="whatsappLink" />
+      <app-header subtitle="Digital clinic" [whatsappLink]="whatsappLink()" />
 
       <main class="content-page">
-        <app-home-hero-section [whatsappLink]="whatsappLink" />
+        <app-home-hero-section [whatsappLink]="whatsappLink()" />
         <app-home-treatments-section />
         <app-home-how-it-works-section />
         <app-home-safety-faq-section />
         <app-home-app-download-section />
-        <app-home-final-cta-section [whatsappLink]="whatsappLink" />
+        <app-home-final-cta-section [whatsappLink]="whatsappLink()" />
       </main>
 
-      <app-footer [whatsappLink]="whatsappLink" />
+      <app-footer [whatsappLink]="whatsappLink()" />
     </section>
   

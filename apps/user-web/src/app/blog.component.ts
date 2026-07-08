@@ -1,7 +1,7 @@
-import { Component, signal } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { AppFooterComponent } from './app-footer.component';
 import { AppHeaderComponent } from './app-header.component';
-import { WHATSAPP_CONTACT_URL } from './core/constants/branding.constants';
+import { WhatsappLinkService } from './core/services/whatsapp-link.service';
 import { BLOG_PAGE_CONTENT } from './core/constants/public-site-content.constants';
 import { API_PATHS } from './core/constants/api-paths.constants';
 import { ClinicApiClient } from './clinic-api/clinic-api.client';
@@ -23,7 +23,8 @@ interface BlogPost {
   templateUrl: './blog.component.html',
 })
 export class BlogComponent {
-  readonly whatsappLink = WHATSAPP_CONTACT_URL;
+  private readonly whatsappSvc = inject(WhatsappLinkService);
+  readonly whatsappLink = this.whatsappSvc.url;
   readonly copy = BLOG_PAGE_CONTENT;
   readonly allPosts = signal<BlogPost[]>([]);
   readonly categories = signal<string[]>(['All']);

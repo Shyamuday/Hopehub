@@ -114,6 +114,7 @@ export class CaseAnalysisPage implements OnDestroy, OnInit {
   readonly appointmentsPath = ROUTE_PATHS.APPOINTMENTS;
   readonly worklistPath = ROUTE_PATHS.WORKLIST;
   readonly repertoryPath = ROUTE_PATHS.REPERTORY;
+  readonly repertoryBrowserPath = ROUTE_PATHS.REPERTORY_BROWSER;
   readonly weightOptions = [1, 2, 3, 4] as const;
 
   readonly standalone = this.route.snapshot.data['standalone'] === true;

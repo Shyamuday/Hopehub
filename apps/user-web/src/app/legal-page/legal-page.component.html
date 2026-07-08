@@ -1,7 +1,7 @@
 
 @if (content) {
 <section class="public-shell">
-  <app-header [subtitle]="content.headerSubtitle" [whatsappLink]="whatsappLink" />
+  <app-header [subtitle]="content.headerSubtitle" [whatsappLink]="whatsappLink()" />
   <main class="content-page legal-page">
     <section class="page-hero panel">
       <p class="eyebrow">{{ content.eyebrow }}</p>
@@ -38,6 +38,6 @@
       </div>
     </section>
   </main>
-  <app-footer [whatsappLink]="whatsappLink" />
+  <app-footer [whatsappLink]="whatsappLink()" />
 </section>
 }

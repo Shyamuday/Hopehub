@@ -1,9 +1,9 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { buildDetailRows, DetailRowsComponent } from '@vitalis/platform-ui';
 import { AppFooterComponent } from './app-footer.component';
 import { AppHeaderComponent } from './app-header.component';
-import { WHATSAPP_CONTACT_URL } from './core/constants/branding.constants';
+import { WhatsappLinkService } from './core/services/whatsapp-link.service';
 import { homeopathyApproaches } from './treatment-approach/homeopathy-approaches.constants';
 import { HOMEOPATHY_APPROACH_SUMMARY_FIELDS } from './treatment-approach/constants/approach-summary.fields';
 import type { HomeopathyApproach } from './models';
@@ -14,7 +14,8 @@ import type { HomeopathyApproach } from './models';
   templateUrl: './why-successful.component.html',
 })
 export class WhySuccessfulComponent {
-  readonly whatsappLink = WHATSAPP_CONTACT_URL;
+  private readonly whatsappSvc = inject(WhatsappLinkService);
+  readonly whatsappLink = this.whatsappSvc.url;
   readonly approaches = homeopathyApproaches;
 
   approachSummaryRows(method: HomeopathyApproach) {

@@ -1,9 +1,10 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { AppFooterComponent } from './app-footer.component';
 import { AppHeaderComponent } from './app-header.component';
 import { ClinicApiClient } from './clinic-api/clinic-api.client';
 import { API_PATHS } from './core/constants/api-paths.constants';
-import { WHATSAPP_CONTACT_URL } from './core/constants/branding.constants';
+import { WhatsappLinkService } from './core/services/whatsapp-link.service';
+import { PublicConfigService } from './core/services/public-config.service';
 import { CAREERS_PAGE_CONTENT } from './core/constants/public-site-content.constants';
 
 export interface JobVacancy {
@@ -28,11 +29,16 @@ export interface JobVacancy {
   templateUrl: './careers.component.html',
 })
 export class CareersComponent implements OnInit {
-  readonly whatsappLink = WHATSAPP_CONTACT_URL;
+  private readonly whatsappSvc = inject(WhatsappLinkService);
+  private readonly configSvc = inject(PublicConfigService);
+  readonly whatsappLink = this.whatsappSvc.url;
   readonly copy = CAREERS_PAGE_CONTENT;
 
-  readonly applyLink =
-    'https://wa.me/919876543210?text=Hi%20Vitalis%20Care%2C%20I%20would%20like%20to%20apply%20for%20a%20position.';
+  readonly whatsappPhone = signal('919876543210');
+  readonly applyLink = computed(
+    () =>
+      `https://wa.me/${this.whatsappPhone()}?text=Hi%20Vitalis%20Care%2C%20I%20would%20like%20to%20apply%20for%20a%20position.`
+  );
 
   readonly vacancies = signal<JobVacancy[]>([]);
   readonly loading = signal(false);
@@ -46,7 +52,11 @@ export class CareersComponent implements OnInit {
   async ngOnInit() {
     this.loading.set(true);
     try {
-      const res = await this.client.apiFetch<{ vacancies: JobVacancy[] }>(API_PATHS.VACANCIES);
+      const [res, cfg] = await Promise.all([
+        this.client.apiFetch<{ vacancies: JobVacancy[] }>(API_PATHS.VACANCIES),
+        this.configSvc.get()
+      ]);
+      this.whatsappPhone.set(cfg.whatsappPhone);
       const list = res.vacancies ?? [];
       this.vacancies.set(list);
       if (list.length) {
@@ -74,7 +84,7 @@ export class CareersComponent implements OnInit {
   }
 
   applyForRole(title: string): string {
-    return `https://wa.me/919876543210?text=Hi%20Vitalis%20Care%2C%20I%20would%20like%20to%20apply%20for%20the%20${encodeURIComponent(title)}%20position.`;
+    return `https://wa.me/${this.whatsappPhone()}?text=Hi%20Vitalis%20Care%2C%20I%20would%20like%20to%20apply%20for%20the%20${encodeURIComponent(title)}%20position.`;
   }
 
   jobTypeLabel(t: string): string {

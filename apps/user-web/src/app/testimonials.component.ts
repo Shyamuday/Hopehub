@@ -1,11 +1,11 @@
-import { Component, signal } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { AppFooterComponent } from './app-footer.component';
 import { AppHeaderComponent } from './app-header.component';
-import { WHATSAPP_CONTACT_URL } from './core/constants/branding.constants';
 import { TESTIMONIALS_PAGE_CONTENT } from './core/constants/public-site-content.constants';
 import { API_PATHS } from './core/constants/api-paths.constants';
 import { ClinicApiClient } from './clinic-api/clinic-api.client';
 import { PublicConfigService } from './core/services/public-config.service';
+import { WhatsappLinkService } from './core/services/whatsapp-link.service';
 
 interface Testimonial {
   id: string;
@@ -23,7 +23,8 @@ interface Testimonial {
   templateUrl: './testimonials.component.html',
 })
 export class TestimonialsComponent {
-  readonly whatsappLink = signal(WHATSAPP_CONTACT_URL);
+  private readonly whatsappSvc = inject(WhatsappLinkService);
+  readonly whatsappLink = this.whatsappSvc.url;
   readonly copy = TESTIMONIALS_PAGE_CONTENT;
   readonly testimonials = signal<Testimonial[]>([]);
   readonly loading = signal(true);
@@ -49,7 +50,6 @@ export class TestimonialsComponent {
         this.configSvc.get()
       ]);
       this.testimonials.set(tsRes.testimonials ?? []);
-      this.whatsappLink.set(this.configSvc.whatsappUrl(cfg));
       this.stats.set([
         { value: cfg.statPatientsTreated, label: 'Patients treated' },
         { value: cfg.statImprovement, label: 'Report improvement within 3 months' },

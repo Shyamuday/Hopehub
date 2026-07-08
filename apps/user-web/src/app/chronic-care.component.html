@@ -1,6 +1,6 @@
 
     <section class="public-shell">
-      <app-header [subtitle]="copy.headerSubtitle" [whatsappLink]="whatsappLink" />
+      <app-header [subtitle]="copy.headerSubtitle" [whatsappLink]="whatsappLink()" />
       <main class="content-page">
         <section class="page-hero panel">
           <p class="eyebrow">{{ copy.eyebrow }}</p>
@@ -17,5 +17,5 @@
           }
         </section>
       </main>
-      <app-footer [whatsappLink]="whatsappLink" />
+      <app-footer [whatsappLink]="whatsappLink()" />
     </section>

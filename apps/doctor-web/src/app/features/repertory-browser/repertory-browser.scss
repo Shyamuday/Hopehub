@@ -202,6 +202,43 @@
   p { margin: 0; font-size: 0.88rem; line-height: 1.55; white-space: pre-wrap; }
 }
 
+@media (max-width: 768px) {
+  .repertory-browser-page {
+    padding: 0;
+  }
+
+  .browser-toolbar {
+    padding: 0.85rem;
+  }
+
+  .mode-row {
+    width: 100%;
+
+    .mode-btn {
+      flex: 1;
+      min-height: var(--touch-min);
+    }
+  }
+
+  .search-row {
+    grid-template-columns: 1fr;
+  }
+
+  .search-row .btn-primary {
+    width: 100%;
+  }
+
+  .filters-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+  }
+
+  .mm-sections {
+    max-height: none;
+  }
+}
+
 .btn-icon {
   border: 1px solid #e2e8f0;
   background: #fff;

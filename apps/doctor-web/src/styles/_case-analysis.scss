@@ -863,4 +863,45 @@
       align-items: center;
     }
   }
+
+  @media (max-width: 768px) {
+    .stepper-sticky {
+      top: calc(var(--shell-topbar-height) + var(--safe-top) - 0.35rem);
+      margin-left: -0.15rem;
+      margin-right: -0.15rem;
+      padding-left: 0.15rem;
+      padding-right: 0.15rem;
+    }
+
+    .panel {
+      padding: 0.85rem;
+    }
+
+    .panel-title-row {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .symptom-search-toolbar {
+      min-width: 0;
+      width: 100%;
+    }
+
+    .search-box {
+      grid-template-columns: 1fr;
+    }
+
+    .mode-row {
+      width: 100%;
+
+      .mode-btn {
+        flex: 1;
+        min-height: var(--touch-min);
+      }
+    }
+
+    .mm-inline-panel .mm-sections {
+      max-height: none;
+    }
+  }
 }

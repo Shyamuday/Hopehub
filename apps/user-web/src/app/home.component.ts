@@ -1,5 +1,5 @@
-import { Component } from '@angular/core';
-import { WHATSAPP_CONTACT_URL } from './core/constants/branding.constants';
+import { Component, computed, inject } from '@angular/core';
+import { WhatsappLinkService } from './core/services/whatsapp-link.service';
 import { AppFooterComponent } from './app-footer.component';
 import { AppHeaderComponent } from './app-header.component';
 import { HomeAppDownloadSectionComponent } from './home-app-download-section.component';
@@ -25,5 +25,6 @@ import { HomeTreatmentsSectionComponent } from './home-treatments-section.compon
   templateUrl: './home.component.html',
 })
 export class HomeComponent {
-  readonly whatsappLink = WHATSAPP_CONTACT_URL;
+  private readonly whatsappSvc = inject(WhatsappLinkService);
+  readonly whatsappLink = this.whatsappSvc.url;
 }

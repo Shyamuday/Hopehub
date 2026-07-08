@@ -25,8 +25,11 @@ const NAV_ICONS: Record<string, { icon: string; shortLabel: string }> = {
   Slots: { icon: '📅', shortLabel: 'Slots' },
   Earnings: { icon: '💰', shortLabel: 'Pay' },
   Leaves: { icon: '🌴', shortLabel: 'Leave' },
-  Profile: { icon: '👤', shortLabel: 'Profile' },
+  Profile: { icon: '👤', shortLabel: 'Profile' }
 };
+
+const MOBILE_BOTTOM_NAV_ORDER = ['Worklist', 'Appointments', 'Scan', 'Repertory'] as const;
+const MOBILE_BOTTOM_NAV_LIMIT = 4;
 
 @Component({
   selector: 'app-doctor-shell',
@@ -36,6 +39,8 @@ const NAV_ICONS: Record<string, { icon: string; shortLabel: string }> = {
 })
 export class DoctorShell implements OnInit, OnDestroy {
   navItems: DoctorNavItem[] = [];
+  bottomNavItems: DoctorNavItem[] = [];
+  private overflowNavCount = 0;
   doctorName = '';
   doctorProfileImageUrl: string | null = null;
   doctorTypeLabel = '';
@@ -103,10 +108,41 @@ export class DoctorShell implements OnInit, OnDestroy {
     this.menuOpen.set(false);
   }
 
+  hasOverflowNav() {
+    return this.overflowNavCount > 0;
+  }
+
   private decorateNav(items: Array<{ path: string; label: string }>): DoctorNavItem[] {
-    return items.map((item) => {
+    const decorated = items.map((item) => {
       const meta = NAV_ICONS[item.label] || { icon: '•', shortLabel: item.label.slice(0, 6) };
       return { ...item, icon: meta.icon, shortLabel: meta.shortLabel };
     });
+    this.applyMobileNavSplit(decorated);
+    return decorated;
+  }
+
+  private applyMobileNavSplit(items: DoctorNavItem[]) {
+    const picked: DoctorNavItem[] = [];
+    const used = new Set<string>();
+
+    for (const label of MOBILE_BOTTOM_NAV_ORDER) {
+      const item = items.find((entry) => entry.label === label);
+      if (item && !used.has(item.path)) {
+        picked.push(item);
+        used.add(item.path);
+      }
+      if (picked.length >= MOBILE_BOTTOM_NAV_LIMIT) break;
+    }
+
+    for (const item of items) {
+      if (picked.length >= MOBILE_BOTTOM_NAV_LIMIT) break;
+      if (!used.has(item.path)) {
+        picked.push(item);
+        used.add(item.path);
+      }
+    }
+
+    this.bottomNavItems = picked;
+    this.overflowNavCount = Math.max(0, items.length - picked.length);
   }
 }

@@ -1,7 +1,7 @@
 <app-header
   subtitle="My Account"
   [user]="auth.user()"
-  [whatsappLink]="whatsappLink"
+  [whatsappLink]="whatsappLink()"
   (logout)="logout()"
 />
 
@@ -31,4 +31,4 @@
   </section>
 </main>
 
-<app-footer [whatsappLink]="whatsappLink" />
+<app-footer [whatsappLink]="whatsappLink()" />

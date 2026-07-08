@@ -18,7 +18,8 @@ import { WHATSAPP_CONTACT_URL } from '../core/constants/branding.constants';
 export class LegalPageComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
 
-  readonly whatsappLink = WHATSAPP_CONTACT_URL;
+  private readonly whatsappSvc = inject(WhatsappLinkService);
+  readonly whatsappLink = this.whatsappSvc.url;
   content!: LegalPageContent;
 
   ngOnInit() {

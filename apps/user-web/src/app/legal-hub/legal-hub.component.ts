@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { LEGAL_HUB_CONTENT } from '../core/constants/legal-pages-content.constants';
 import { AppFooterComponent } from '../app-footer.component';
 import { AppHeaderComponent } from '../app-header.component';
@@ -11,6 +11,7 @@ import { WHATSAPP_CONTACT_URL } from '../core/constants/branding.constants';
   styleUrl: './legal-hub.component.scss'
 })
 export class LegalHubComponent {
-  readonly whatsappLink = WHATSAPP_CONTACT_URL;
+  private readonly whatsappSvc = inject(WhatsappLinkService);
+  readonly whatsappLink = this.whatsappSvc.url;
   readonly copy = LEGAL_HUB_CONTENT;
 }
