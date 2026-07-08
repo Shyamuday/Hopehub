@@ -77,6 +77,7 @@ export type CaseAnalysis = {
   caseSheet?: Record<string, string> | null;
   approachData?: Record<string, unknown> | null;
   methodOptionId?: string | null;
+  methodRationale?: string | null;
   methodOption?: { id: string; label: string; normalizedLabel?: string } | null;
   source?: RepertorySource | null;
   selectedRemedy?: RepertoryRemedyRef | null;

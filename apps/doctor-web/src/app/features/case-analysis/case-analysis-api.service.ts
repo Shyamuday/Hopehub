@@ -85,7 +85,7 @@ export class CaseAnalysisApiService {
     );
   }
 
-  createAnalysis(consultationId: string, payload: { notes?: string; sourceId?: string; methodOptionId?: string; rubrics?: Array<{ rubricId: string; weight: number }> }) {
+  createAnalysis(consultationId: string, payload: { notes?: string; sourceId?: string; methodOptionId?: string; methodRationale?: string | null; rubrics?: Array<{ rubricId: string; weight: number }> }) {
     return firstValueFrom(
       this.http.post<{ analysis: CaseAnalysis }>(
         `${this.apiBase}${API_PATHS.DOCTOR.CONSULTATION_CASE_ANALYSES(consultationId)}`,
@@ -102,6 +102,7 @@ export class CaseAnalysisApiService {
       approachData?: Record<string, unknown>;
       sourceId?: string;
       methodOptionId?: string | null;
+      methodRationale?: string | null;
       rubrics?: Array<{ rubricId: string; weight: number }>;
     }
   ) {

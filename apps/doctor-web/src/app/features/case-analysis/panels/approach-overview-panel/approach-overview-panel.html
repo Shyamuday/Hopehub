@@ -58,6 +58,24 @@
     }
   </div>
 
+  <label class="rationale-field" for="approach-rationale">
+    <span class="rationale-label">Why this approach?</span>
+    <span class="rationale-hint">Explain what led you to choose this method for this patient (required before continuing).</span>
+    <textarea
+      id="approach-rationale"
+      class="rationale-input"
+      rows="4"
+      maxlength="2000"
+      [disabled]="saving || savingRationale"
+      [value]="methodRationale"
+      placeholder="e.g. Patient shows clear mentals with modality patterns — Kentian totality fits best."
+      (input)="onRationaleInput($event)"
+    ></textarea>
+    @if (savingRationale) {
+      <span class="rationale-status muted">Saving…</span>
+    }
+  </label>
+
   @if (approach; as def) {
     <div class="approach-detail">
       <p><strong>{{ def.title }}</strong> — {{ def.shortDescription }}</p>

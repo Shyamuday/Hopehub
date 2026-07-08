@@ -139,6 +139,21 @@
     }
 
     <div class="steps-workflow">
+      <section class="panel approach-banner" [class.approach-banner--pending]="!approachStepComplete()">
+        <div class="approach-banner-copy">
+          <span class="muted">Prescribing approach</span>
+          <strong>{{ activeApproach().title }}</strong>
+          @if (methodRationaleModel().rationale.trim()) {
+            <p class="approach-rationale-preview">{{ methodRationaleModel().rationale }}</p>
+          } @else {
+            <p class="approach-banner-warning">Choose your method and explain why it fits this patient before continuing.</p>
+          }
+        </div>
+        <button type="button" class="btn-secondary" (click)="setActiveStep('approach-select')">
+          {{ approachStepComplete() ? 'Review approach' : 'Set approach' }}
+        </button>
+      </section>
+
       <div class="stepper-sticky">
         <app-approach-stepper
           [steps]="workflowSteps()"
@@ -152,9 +167,12 @@
         <app-approach-overview-panel
           [methods]="methods()"
           [selectedMethodOptionId]="selectedMethodOptionId()"
+          [methodRationale]="methodRationaleModel().rationale"
           [approach]="activeApproach()"
           [saving]="saving()"
+          [savingRationale]="savingMethodRationale()"
           (approachChanged)="saveApproach($event)"
+          (rationaleChanged)="updateMethodRationale($event)"
         />
       }
 

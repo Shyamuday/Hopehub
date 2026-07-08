@@ -3,6 +3,7 @@ import { hasStructuredPanelContent, structuredPanelForComponent } from './approa
 
 export type StepCompletionContext = {
   methodOptionId?: string | null;
+  methodRationale?: string | null;
   caseSheet?: Record<string, string> | null;
   approachData?: Record<string, unknown> | null;
   rubricCount?: number;
@@ -13,7 +14,7 @@ export type StepCompletionContext = {
 export function isStepComplete(step: ApproachStep, context: StepCompletionContext): boolean {
   switch (step.id) {
     case 'approach-select':
-      return !!context.methodOptionId;
+      return !!context.methodOptionId && hasMethodRationale(context.methodRationale);
     case 'case-sheet':
       return hasAnyCaseSheetValue(context.caseSheet);
     case 'symptom-hierarchy':
@@ -52,6 +53,10 @@ export function isStepComplete(step: ApproachStep, context: StepCompletionContex
       return false;
     }
   }
+}
+
+function hasMethodRationale(value?: string | null) {
+  return !!value?.trim();
 }
 
 function hasAnyCaseSheetValue(caseSheet?: Record<string, string> | null) {

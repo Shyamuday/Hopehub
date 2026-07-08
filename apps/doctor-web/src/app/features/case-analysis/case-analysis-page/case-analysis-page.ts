@@ -106,6 +106,7 @@ export class CaseAnalysisPage implements OnDestroy, OnInit {
 
   private readonly caseSheetAutoSave = createDebouncedSaver(1200);
   private readonly notesAutoSave = createDebouncedSaver(1200);
+  private readonly methodRationaleAutoSave = createDebouncedSaver(1200);
   private readonly rubricsAutoSave = createDebouncedSaver(900);
   private readonly rubricSuggestDebouncer = createDebouncedSaver(280);
   private readonly mmSearchDebouncer = createDebouncedSaver(450);
@@ -113,6 +114,7 @@ export class CaseAnalysisPage implements OnDestroy, OnInit {
   private mmSearchRequest = 0;
   private lastPersistedCaseSheet = '';
   private lastPersistedNotes = '';
+  private lastPersistedMethodRationale = '';
   private lastPersistedRubrics = '';
 
   readonly appointmentsPath = ROUTE_PATHS.APPOINTMENTS;
@@ -135,6 +137,7 @@ export class CaseAnalysisPage implements OnDestroy, OnInit {
   readonly searchForm = form(this.searchModel);
   readonly notesModel = signal({ notes: '' });
   readonly notesForm = form(this.notesModel);
+  readonly methodRationaleModel = signal({ rationale: '' });
   readonly caseSheetModel = signal(hydrateCaseSheetForSchema('classical'));
   readonly caseSheetForm = form(this.caseSheetModel);
   readonly approachData = signal<ApproachDataPayload>({});
@@ -155,6 +158,7 @@ export class CaseAnalysisPage implements OnDestroy, OnInit {
   readonly searching = signal(false);
   readonly suggesting = signal(false);
   readonly saving = signal(false);
+  readonly savingMethodRationale = signal(false);
   readonly savingCaseSheet = signal(false);
   readonly savingApproachData = signal(false);
   readonly creatingAnalysis = signal(false);
@@ -189,12 +193,18 @@ export class CaseAnalysisPage implements OnDestroy, OnInit {
 
   readonly stepCompletion = computed<StepCompletionContext>(() => ({
     methodOptionId: this.selectedMethodOptionId() || this.analysis()?.methodOptionId,
+    methodRationale: this.methodRationaleModel().rationale || this.analysis()?.methodRationale || null,
     caseSheet: this.caseSheetModel(),
     approachData: this.approachData() as Record<string, unknown>,
     rubricCount: this.selectedRubrics().length,
     resultCount: this.analysis()?.results.length || 0,
     selectedRemedyId: this.analysis()?.selectedRemedy?.id || null
   }));
+
+  readonly approachStepComplete = computed(() => {
+    const context = this.stepCompletion();
+    return !!context.methodOptionId && !!context.methodRationale?.trim();
+  });
 
   readonly activeStepComponent = computed<ApproachStepComponent | null>(() => {
     return this.workflowSteps().find((step) => step.id === this.activeStepId())?.component || null;
@@ -233,6 +243,10 @@ export class CaseAnalysisPage implements OnDestroy, OnInit {
     effect(() => {
       this.notesModel();
       this.scheduleAutoSaveNotes();
+    });
+    effect(() => {
+      this.methodRationaleModel();
+      this.scheduleAutoSaveMethodRationale();
     });
     effect(() => {
       this.selectedRubrics();
@@ -284,6 +298,7 @@ export class CaseAnalysisPage implements OnDestroy, OnInit {
   ngOnDestroy() {
     this.caseSheetAutoSave.cancel();
     this.notesAutoSave.cancel();
+    this.methodRationaleAutoSave.cancel();
     this.rubricsAutoSave.cancel();
     this.rubricSuggestDebouncer.cancel();
     this.mmSearchDebouncer.cancel();
@@ -539,7 +554,9 @@ export class CaseAnalysisPage implements OnDestroy, OnInit {
       this.hydrateFromAnalysis(nextAnalysis);
       void this.loadPatientCaseHistory(response.consultation.patient?.id);
       if (createdFirstAnalysis && nextAnalysis.methodOption?.label) {
-        this.message.set(`Case analysis started with ${nextAnalysis.methodOption.label}.`);
+        this.message.set(
+          `Case analysis started with ${nextAnalysis.methodOption.label}. Confirm the approach and explain why you chose it.`
+        );
       }
     } catch {
       this.error.set('Could not load case analysis for this consultation.');
@@ -554,6 +571,7 @@ export class CaseAnalysisPage implements OnDestroy, OnInit {
     this.hydrating.set(true);
     this.caseSheetAutoSave.cancel();
     this.notesAutoSave.cancel();
+    this.methodRationaleAutoSave.cancel();
     this.rubricsAutoSave.cancel();
 
     const approach = resolveApproachByMethodOption(
@@ -565,6 +583,7 @@ export class CaseAnalysisPage implements OnDestroy, OnInit {
         : this.methods().find((item) => item.id === nextAnalysis.methodOptionId)
     );
     this.notesModel.set({ notes: nextAnalysis.notes || '' });
+    this.methodRationaleModel.set({ rationale: nextAnalysis.methodRationale || '' });
     this.caseSheetModel.set(hydrateCaseSheetForSchema(approach.caseSheetSchemaId, nextAnalysis.caseSheet));
     this.approachData.set((nextAnalysis.approachData as ApproachDataPayload) || {});
     this.selectedMethodOptionId.set(nextAnalysis.methodOptionId || nextAnalysis.methodOption?.id || '');
@@ -578,6 +597,7 @@ export class CaseAnalysisPage implements OnDestroy, OnInit {
     this.maxResultScore.set(nextAnalysis.results[0]?.totalScore || 0);
     this.activeStepId.set(firstIncompleteStepId(approach.steps, {
       methodOptionId: nextAnalysis.methodOptionId,
+      methodRationale: nextAnalysis.methodRationale,
       caseSheet: nextAnalysis.caseSheet || undefined,
       approachData: (nextAnalysis.approachData as Record<string, unknown>) || undefined,
       rubricCount: nextAnalysis.rubrics.length,
@@ -590,6 +610,7 @@ export class CaseAnalysisPage implements OnDestroy, OnInit {
 
     this.lastPersistedCaseSheet = JSON.stringify(this.buildCaseSheetPayload());
     this.lastPersistedNotes = nextAnalysis.notes || '';
+    this.lastPersistedMethodRationale = nextAnalysis.methodRationale || '';
     this.lastPersistedRubrics = JSON.stringify(this.rubricPayload());
     this.hydrating.set(false);
   }
@@ -794,18 +815,16 @@ export class CaseAnalysisPage implements OnDestroy, OnInit {
     const clearedApproachData: ApproachDataPayload = {};
     this.selectedMethodOptionId.set(methodOptionId);
     this.approachData.set(clearedApproachData);
+    this.methodRationaleModel.set({ rationale: '' });
     this.caseSheetModel.set(hydrateCaseSheetForSchema(nextApproach.caseSheetSchemaId, this.caseSheetModel()));
-    this.activeStepId.set(firstIncompleteStepId(nextApproach.steps, {
-      methodOptionId,
-      caseSheet: this.caseSheetModel(),
-      approachData: clearedApproachData as Record<string, unknown>
-    }));
+    this.activeStepId.set('approach-select');
 
     this.saving.set(true);
     this.error.set('');
     try {
       const updated = await this.api.updateAnalysis(currentAnalysis.id, {
         methodOptionId: methodOptionId || null,
+        methodRationale: null,
         caseSheet: this.buildCaseSheetPayload(),
         approachData: clearedApproachData as Record<string, unknown>
       });
@@ -860,6 +879,13 @@ export class CaseAnalysisPage implements OnDestroy, OnInit {
     this.notesAutoSave.schedule(() => this.persistNotes(true));
   }
 
+  private scheduleAutoSaveMethodRationale() {
+    if (this.hydrating() || !this.analysis()?.id) return;
+    const rationale = this.methodRationaleModel().rationale;
+    if (rationale === this.lastPersistedMethodRationale) return;
+    this.methodRationaleAutoSave.schedule(() => this.persistMethodRationale(true));
+  }
+
   private scheduleAutoSaveRubrics() {
     if (this.hydrating() || !this.analysis()?.id) return;
     const snapshot = JSON.stringify(this.rubricPayload());
@@ -911,6 +937,34 @@ export class CaseAnalysisPage implements OnDestroy, OnInit {
       else this.error.set('Could not save notes.');
     } finally {
       if (!silent) this.saving.set(false);
+    }
+  }
+
+  updateMethodRationale(rationale: string) {
+    this.methodRationaleModel.set({ rationale });
+  }
+
+  private async persistMethodRationale(silent = false) {
+    const currentAnalysis = this.analysis();
+    if (!currentAnalysis) return;
+    const rationale = this.methodRationaleModel().rationale;
+    if (rationale === this.lastPersistedMethodRationale) return;
+
+    if (!silent) this.savingMethodRationale.set(true);
+    else this.autoSaveStatus.set('saving');
+    this.error.set('');
+    try {
+      const updated = await this.api.updateAnalysis(currentAnalysis.id, {
+        methodRationale: rationale.trim() || null
+      });
+      this.syncAnalysisInList(updated);
+      this.lastPersistedMethodRationale = rationale;
+      if (silent) this.autoSaveStatus.set('saved');
+    } catch {
+      if (silent) this.autoSaveStatus.set('error');
+      else this.error.set('Could not save approach rationale.');
+    } finally {
+      if (!silent) this.savingMethodRationale.set(false);
     }
   }
 

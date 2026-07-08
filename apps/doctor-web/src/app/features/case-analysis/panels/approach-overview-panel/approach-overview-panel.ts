@@ -11,10 +11,13 @@ import type { ApproachDefinition } from '@vitalis/homeopathy-approaches';
 export class ApproachOverviewPanelComponent implements OnChanges {
   @Input({ required: true }) methods: Array<{ id: string; label: string; normalizedLabel?: string }> = [];
   @Input({ required: true }) selectedMethodOptionId = '';
+  @Input() methodRationale = '';
   @Input() approach: ApproachDefinition | null = null;
   @Input() saving = false;
+  @Input() savingRationale = false;
 
   readonly approachChanged = output<string>();
+  readonly rationaleChanged = output<string>();
 
   readonly pickerOpen = signal(false);
   readonly searchModel = signal({ query: '' });
@@ -65,5 +68,10 @@ export class ApproachOverviewPanelComponent implements OnChanges {
     this.closePicker();
     if (methodOptionId === this.selectedMethodOptionId) return;
     this.approachChanged.emit(methodOptionId);
+  }
+
+  onRationaleInput(event: Event) {
+    const value = (event.target as HTMLTextAreaElement).value;
+    this.rationaleChanged.emit(value);
   }
 }

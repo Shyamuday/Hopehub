@@ -32,6 +32,7 @@ const updateAnalysisSchema = z.object({
   status: z.nativeEnum(CaseAnalysisStatus).optional(),
   sourceId: z.string().optional(),
   methodOptionId: z.string().min(1).nullable().optional(),
+  methodRationale: z.string().max(2000).nullable().optional(),
   rubrics: z.array(rubricSelectionSchema).max(40).optional()
 });
 
@@ -110,6 +111,7 @@ export function registerCaseAnalysisRoutes(router: Router) {
           doctorId: req.user!.id,
           sourceId: defaultSource.id,
           methodOptionId,
+          methodRationale: body.methodRationale || null,
           notes: body.notes || null,
           status: CaseAnalysisStatus.DRAFT,
           rubrics: body.rubrics?.length
@@ -197,6 +199,7 @@ export function registerCaseAnalysisRoutes(router: Router) {
           doctorId: req.user!.id,
           sourceId: defaultSource.id,
           methodOptionId,
+          methodRationale: body.methodRationale || null,
           notes: body.notes || null,
           status: body.status || CaseAnalysisStatus.DRAFT,
           rubrics: body.rubrics?.length
@@ -278,7 +281,9 @@ export function registerCaseAnalysisRoutes(router: Router) {
                 : (body.approachData as Prisma.InputJsonValue),
             status: body.status,
             sourceId: body.sourceId,
-            methodOptionId: body.methodOptionId === undefined ? undefined : body.methodOptionId
+            methodOptionId: body.methodOptionId === undefined ? undefined : body.methodOptionId,
+            methodRationale:
+              body.methodRationale === undefined ? undefined : body.methodRationale || null
           },
           include: caseAnalysisInclude
         });

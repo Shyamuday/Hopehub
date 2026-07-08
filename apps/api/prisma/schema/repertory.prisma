@@ -128,6 +128,7 @@ model CaseAnalysis {
   caseSheet        Json?
   approachData     Json?
   methodOptionId   String?
+  methodRationale  String?
   selectedRemedyId String?
   methodOption     PrescriptionOption?  @relation("CaseAnalysisMethod", fields: [methodOptionId], references: [id], onDelete: SetNull)
   consultation     Consultation?        @relation(fields: [consultationId], references: [id], onDelete: Cascade)
