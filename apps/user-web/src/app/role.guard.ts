@@ -11,7 +11,10 @@ export const roleGuard: CanActivateFn = async (route) => {
   const roles = route.data['roles'] as Role[] | undefined;
 
   if (!user) {
-    return router.createUrlTree([`/${ROUTE_PATHS.LOGIN}`]);
+    const attemptedUrl = route.url.map((s) => s.path).join('/');
+    return router.createUrlTree([`/${ROUTE_PATHS.LOGIN}`], {
+      queryParams: { returnUrl: `/${attemptedUrl}` }
+    });
   }
 
   if (roles?.length && !roles.includes(user.role)) {

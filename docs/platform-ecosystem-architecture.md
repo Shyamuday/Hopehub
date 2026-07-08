@@ -6,30 +6,17 @@ This document describes the full role and application landscape for a scalable d
 
 ## Current state (this repository)
 
-| App | Path | Port | Primary users | Status |
-|-----|------|------|---------------|--------|
-| **Patient** | `apps/user-web` | 4203 | Patients / families | Built |
-| **Super Admin** | `apps/admin-web` | 4201 | Platform admin, finance, catalog | Built |
-| **Doctor** | `apps/doctor-web` | 4202 | Consulting doctors | Built |
-| **Store Staff** | `apps/store` | 4300 | Counter staff (PIN login) | Built |
-| **Store Manager** | `apps/store-manager-web` | 4301 | Branch pharmacy managers | Built |
-| **HR** | `apps/hr-web` | 4400 | HR / admin HR operations | Built |
-| **Receptionist** | `apps/receptionist-web` | 4500 | Walk-ins, queue, scheduling | Built |
-| **Clinic Manager** | `apps/clinic-manager-web` | 4600 | Branch operations | Built |
-| **Accountant** | `apps/accountant-web` | 4700 | Finance summaries | Built |
-| **Supplier** | `apps/supplier-web` | 4800 | PO fulfillment | Built |
-| **Warehouse** | `apps/warehouse-web` | 4900 | Central stock | Built |
-| **Delivery** | `apps/delivery-web` | 5000 | Medicine delivery | Built |
-| **Diagnostic** | `apps/diagnostic-web` | 5100 | Lab partner referrals | Built |
-| **Branch Owner** | `apps/branch-owner-web` | 5200 | Branch P&L / ops | Built |
-| **Coordinator** | `apps/coordinator-web` | 5300 | Adherence follow-ups | Built |
-| **Call Center** | `apps/callcenter-web` | 5400 | Patient lookup | Built |
-| **Marketing** | `apps/marketing-web` | 5500 | Funnel analytics | Built |
-| **Corporate Wellness** | `apps/corporate-wellness-web` | 5600 | Employer enrollments | Built |
-| **Insurance** | `apps/insurance-web` | 5700 | Claims | Built |
-| **API** | `apps/api` | 4000 | All apps | Built |
+> **Architecture update:** The platform has been consolidated from 19 separate role apps into **3 primary portals**. See [`docs/consolidated-apps.md`](./consolidated-apps.md) for the authoritative app map.
 
-**19 web apps** + API share one PostgreSQL database, Prisma ORM, JWT auth (platform + store tokens), Socket.io (live notification push), Razorpay, and notifications.
+| Portal | App folder | Port | Primary users | Status |
+|--------|------------|------|---------------|--------|
+| **Patient** | `apps/user-web` | 4203 | Patients / families | Built |
+| **Clinical** | `apps/doctor-web` | 4202 | Consulting doctors | Built |
+| **Operations** | `apps/operations-web` | 5800 | All staff, partners, store counter, store manager, embedded admin | Built |
+| **Admin UI source** | `apps/admin-web` | — | Compiled into operations-web at `/admin/*` | Built |
+| **API** | `apps/api` | 4000 | All portals | Built |
+
+All portals share one PostgreSQL database, Prisma ORM, JWT auth, Socket.io (live notification push), Razorpay, and notifications. Legacy per-role apps (`hr-web`, `store`, `receptionist-web`, etc.) have been removed — `dev:*` scripts for those roles now alias to `dev:operations`.
 
 **Already covered in current apps (partial or full):**
 

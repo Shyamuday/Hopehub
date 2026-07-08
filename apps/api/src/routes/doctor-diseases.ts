@@ -12,7 +12,12 @@ import {
   groupDiseasesByCategory,
   listDiseasesForDoctor
 } from '../services/disease-catalog.js';
-import { asyncRoute, queryText } from '../utils/helpers.js';
+import {
+  getDiseasePublicPageEditPayload,
+  updateDiseasePublicPage
+} from '../services/disease-public-page.js';
+import { diseasePublicPageUpdateSchema } from '../types/disease-public-page.js';
+import { asyncRoute, queryText, routeParam } from '../utils/helpers.js';
 
 export const doctorDiseasesRouter = Router();
 
@@ -76,5 +81,34 @@ doctorDiseasesRouter.post(
       }
       throw error;
     }
+  })
+);
+
+doctorDiseasesRouter.get(
+  '/doctor/diseases/:id/public-page',
+  authRequired,
+  allowRoles(Role.DOCTOR, Role.ADMIN),
+  asyncRoute(async (req, res) => {
+    const payload = await getDiseasePublicPageEditPayload(routeParam(req, 'id'));
+    if (!payload) {
+      res.status(404).json({ message: 'Disease not found.' });
+      return;
+    }
+    res.json(payload);
+  })
+);
+
+doctorDiseasesRouter.put(
+  '/doctor/diseases/:id/public-page',
+  authRequired,
+  allowRoles(Role.DOCTOR, Role.ADMIN),
+  asyncRoute(async (req, res) => {
+    const body = diseasePublicPageUpdateSchema.parse(req.body);
+    const result = await updateDiseasePublicPage(routeParam(req, 'id'), body);
+    if (!result) {
+      res.status(404).json({ message: 'Disease not found.' });
+      return;
+    }
+    res.json(result);
   })
 );

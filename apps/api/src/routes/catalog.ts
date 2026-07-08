@@ -20,6 +20,14 @@ import {
   syncDiseaseCatalog
 } from '../services/disease-catalog.js';
 import { resolveDiseaseConsultationFee } from '../services/consultation-pricing.js';
+import {
+  getDiseasePublicPageEditPayload,
+  importStaticDiseasePages,
+  mergeDiseasePublicPage,
+  parsePublicPageContent,
+  updateDiseasePublicPage
+} from '../services/disease-public-page.js';
+import { diseasePublicPageUpdateSchema } from '../types/disease-public-page.js';
 
 export const router = Router();
 
@@ -110,7 +118,14 @@ router.get(
       res.status(404).json({ message: 'Disease not found.' });
       return;
     }
-    res.json({ disease: { ...disease, publicFaq: parsePublicFaq(disease.publicFaq) } });
+    res.json({
+      disease: {
+        ...disease,
+        publicFaq: parsePublicFaq(disease.publicFaq),
+        publicPageContent: parsePublicPageContent(disease.publicPageContent),
+        publicPage: mergeDiseasePublicPage(disease)
+      }
+    });
   })
 );
 
@@ -189,6 +204,47 @@ router.post(
       .parse(req.body ?? {});
 
     const result = await syncDiseaseCatalog(body.defaultFeeInPaise);
+    res.json(result);
+  })
+);
+
+router.post(
+  '/admin/diseases/import-static-pages',
+  authRequired,
+  allowRoles(Role.ADMIN),
+  asyncRoute(async (_req, res) => {
+    const { loadStaticDiseasePageImports } = await import('../services/disease-static-import.js');
+    const entries = await loadStaticDiseasePageImports();
+    const result = await importStaticDiseasePages(entries);
+    res.json(result);
+  })
+);
+
+router.get(
+  '/admin/diseases/:id/public-page',
+  authRequired,
+  allowRoles(Role.ADMIN),
+  asyncRoute(async (req, res) => {
+    const payload = await getDiseasePublicPageEditPayload(routeParam(req, 'id'));
+    if (!payload) {
+      res.status(404).json({ message: 'Disease not found.' });
+      return;
+    }
+    res.json(payload);
+  })
+);
+
+router.put(
+  '/admin/diseases/:id/public-page',
+  authRequired,
+  allowRoles(Role.ADMIN),
+  asyncRoute(async (req, res) => {
+    const body = diseasePublicPageUpdateSchema.parse(req.body);
+    const result = await updateDiseasePublicPage(routeParam(req, 'id'), body);
+    if (!result) {
+      res.status(404).json({ message: 'Disease not found.' });
+      return;
+    }
     res.json(result);
   })
 );

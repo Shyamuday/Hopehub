@@ -12,6 +12,7 @@ export const API_PATHS = {
     PRESCRIPTION_OPTIONS: '/doctor/prescription-options',
     DISEASES: '/doctor/diseases',
     DISEASE_CATEGORIES: '/doctor/diseases/categories',
+    DISEASE_PUBLIC_PAGE: (id: string) => `/doctor/diseases/${id}/public-page`,
     PRESCRIPTION_TEMPLATES: '/doctor/prescription-templates',
     PRESCRIPTIONS: '/doctor/prescriptions',
     PRESCRIPTION_PDF: (id: string) => `/patient/prescriptions/${id}/pdf`,

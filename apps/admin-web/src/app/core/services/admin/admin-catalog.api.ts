@@ -147,6 +147,37 @@ export class AdminCatalogApi extends AdminApiBase {
     );
   }
 
+  importStaticDiseasePages() {
+    return firstValueFrom(
+      this.http.post<{ matched: number; updated: number; unmatched: string[]; total: number }>(
+        `${this.apiBase}${API_PATHS.ADMIN.DISEASES_IMPORT_STATIC_PAGES}`,
+        {}
+      )
+    );
+  }
+
+  getDiseasePublicPage(id: string) {
+    return firstValueFrom(
+      this.http.get<{
+        id: string;
+        name: string;
+        slug: string | null;
+        publicDescription: string | null;
+        publicImageUrl: string | null;
+        seoTitle: string | null;
+        seoDescription: string | null;
+        publicFaq: Array<{ question: string; answer: string }>;
+        publicPageContent: Record<string, unknown> | null;
+      }>(`${this.apiBase}${API_PATHS.ADMIN.DISEASE_PUBLIC_PAGE(id)}`)
+    );
+  }
+
+  updateDiseasePublicPage(id: string, payload: Record<string, unknown>) {
+    return firstValueFrom(
+      this.http.put(`${this.apiBase}${API_PATHS.ADMIN.DISEASE_PUBLIC_PAGE(id)}`, payload)
+    );
+  }
+
   createDisease(payload: {
     name: string;
     description: string;

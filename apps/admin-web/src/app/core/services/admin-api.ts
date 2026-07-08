@@ -133,6 +133,15 @@ export class AdminApi {
   reconcileDiseaseOptions(...args: Parameters<AdminCatalogApi['reconcileDiseaseOptions']>) {
     return this.catalog.reconcileDiseaseOptions(...(args as Parameters<AdminCatalogApi['reconcileDiseaseOptions']>));
   }
+  importStaticDiseasePages(...args: Parameters<AdminCatalogApi['importStaticDiseasePages']>) {
+    return this.catalog.importStaticDiseasePages(...(args as Parameters<AdminCatalogApi['importStaticDiseasePages']>));
+  }
+  getDiseasePublicPage(...args: Parameters<AdminCatalogApi['getDiseasePublicPage']>) {
+    return this.catalog.getDiseasePublicPage(...(args as Parameters<AdminCatalogApi['getDiseasePublicPage']>));
+  }
+  updateDiseasePublicPage(...args: Parameters<AdminCatalogApi['updateDiseasePublicPage']>) {
+    return this.catalog.updateDiseasePublicPage(...(args as Parameters<AdminCatalogApi['updateDiseasePublicPage']>));
+  }
   createDisease(...args: Parameters<AdminCatalogApi['createDisease']>) {
     return this.catalog.createDisease(...(args as Parameters<AdminCatalogApi['createDisease']>));
   }

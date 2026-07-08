@@ -41,24 +41,25 @@ export class DiseaseDetailComponent implements OnInit {
   readonly liveDisease = signal<Disease | null>(null);
   readonly loading = signal(true);
 
-  readonly pageReady = computed(() => !this.loading() && (this.staticInfo() || this.liveDisease()));
-  readonly displayName = computed(() => this.staticInfo()?.name || this.liveDisease()?.name || '');
+  readonly pageInfo = computed(() => this.liveDisease()?.publicPage || this.staticInfo());
+  readonly pageReady = computed(() => !this.loading() && !!(this.pageInfo() || this.liveDisease()));
+  readonly displayName = computed(() => this.pageInfo()?.name || this.liveDisease()?.name || '');
   readonly displaySummary = computed(
     () =>
-      this.staticInfo()?.summary ||
+      this.pageInfo()?.summary ||
       this.liveDisease()?.publicDescription ||
       this.liveDisease()?.description ||
       ''
   );
-  readonly headerSubtitle = computed(() => this.staticInfo()?.shortName || this.displayName());
+  readonly headerSubtitle = computed(() => this.pageInfo()?.shortName || this.displayName());
   readonly heroImageUrl = computed(
-    () => this.liveDisease()?.publicImageUrl || this.staticInfo()?.imageUrl || null
+    () => this.liveDisease()?.publicImageUrl || this.pageInfo()?.imageUrl || null
   );
-  readonly heroImageAlt = computed(() => this.staticInfo()?.imageAlt || this.displayName());
+  readonly heroImageAlt = computed(() => this.pageInfo()?.imageAlt || this.displayName());
   readonly displayFaq = computed(() => {
     const dbFaq = this.liveDisease()?.publicFaq;
     if (dbFaq?.length) return dbFaq;
-    return this.staticInfo()?.faq || [];
+    return this.pageInfo()?.faq || [];
   });
 
   ngOnInit() {
@@ -75,13 +76,15 @@ export class DiseaseDetailComponent implements OnInit {
 
   private async loadPage(slug: string) {
     this.loading.set(true);
-    const staticInfo = diseaseInfos.find((item) => item.slug === slug);
-    this.staticInfo.set(staticInfo);
+    this.staticInfo.set(diseaseInfos.find((item) => item.slug === slug));
     this.liveDisease.set(null);
 
     try {
       const response = await firstValueFrom(this.api.diseaseBySlug(slug));
       this.liveDisease.set(response.disease);
+      if (response.disease.publicPage) {
+        this.staticInfo.set(undefined);
+      }
     } catch {
       // Static marketing page may exist without a matching DB row.
     } finally {

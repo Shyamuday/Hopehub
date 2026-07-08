@@ -128,7 +128,10 @@ export const routes: Routes = [
     component: SafetyComponent,
     data: ROUTE_SEO_CONTENT.safety
   },
-  { path: 'login', redirectTo: '', pathMatch: 'full' },
+  {
+    path: 'login',
+    loadComponent: () => import('./auth/login-page.component').then((m) => m.LoginPageComponent),
+  },
   { path: 'auth/reset', component: AuthResetCallbackComponent },
   {
     path: 'get-app',
@@ -200,24 +203,6 @@ export const routes: Routes = [
         data: ROUTE_SEO_CONTENT['patient/account/card']
       }
     ]
-  },
-  {
-    path: 'doctor/dashboard',
-    component: DashboardComponent,
-    canActivate: [roleGuard],
-    data: {
-      roles: ['DOCTOR'],
-      ...ROUTE_SEO_CONTENT['doctor/dashboard']
-    }
-  },
-  {
-    path: 'admin/dashboard',
-    component: DashboardComponent,
-    canActivate: [roleGuard],
-    data: {
-      roles: ['ADMIN'],
-      ...ROUTE_SEO_CONTENT['admin/dashboard']
-    }
   },
   {
     path: '',

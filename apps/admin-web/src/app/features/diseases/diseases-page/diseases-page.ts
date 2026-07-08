@@ -1,11 +1,13 @@
 import { CommonModule, NgTemplateOutlet } from '@angular/common';
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal, viewChild } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { form, FormField } from '@angular/forms/signals';
 import { AdminApi } from '../../../core/services/admin-api';
 import { ROUTE_PATHS, adminRouteLink } from '../../../core/constants/app-routes.constants';
 import { CURRENCY_CODE, CURRENCY_LOCALE, PAISE_PER_RUPEE } from '../../../shared/constants/currency.constants';
 import { ViewportService } from '../../../core/services/viewport.service';
+import { DiseasePublicPageFormComponent } from '../disease-public-page-form/disease-public-page-form';
+import { publicPageFormToPayload } from '../disease-public-page-form/disease-public-page-form.model';
 
 type DiseaseFaqItem = { question: string; answer: string };
 
@@ -73,12 +75,13 @@ function emptyNew() {
 
 @Component({
   selector: 'app-diseases-page',
-  imports: [CommonModule, NgTemplateOutlet, FormField, RouterLink],
+  imports: [CommonModule, NgTemplateOutlet, FormField, RouterLink, DiseasePublicPageFormComponent],
   templateUrl: './diseases-page.html',
   styleUrl: './diseases-page.scss'
 })
 export class DiseasesPage {
   private readonly viewport = inject(ViewportService);
+  private readonly publicPageForm = viewChild(DiseasePublicPageFormComponent);
 
   readonly isMobile = computed(() => this.viewport.isMobile());
   readonly ratesLink = adminRouteLink(ROUTE_PATHS.RATES);
@@ -89,6 +92,7 @@ export class DiseasesPage {
   readonly categoryOptions = signal<DiseaseCategory[]>([]);
   readonly loading = signal(false);
   readonly syncing = signal(false);
+  readonly importingPages = signal(false);
   readonly reconciling = signal(false);
   readonly error = signal('');
   readonly syncMessage = signal('');
@@ -99,6 +103,10 @@ export class DiseasesPage {
   readonly totalCount = computed(() => this.diseases().length);
 
   editingId = '';
+  readonly editTab = signal<'clinical' | 'public'>('clinical');
+  readonly publicPageLoading = signal(false);
+  readonly savingPublicPage = signal(false);
+  publicPageSaveError = '';
   readonly draftModel = signal(emptyDraft());
   readonly draftForm = form(this.draftModel);
   readonly draftQuestionModel = signal({ value: '' });
@@ -185,6 +193,30 @@ export class DiseasesPage {
     }
   }
 
+  async importStaticPages() {
+    if (
+      !confirm(
+        'Import marketing content from the built-in static disease pages into matching DB diseases (by slug/name)?'
+      )
+    ) {
+      return;
+    }
+    this.importingPages.set(true);
+    this.syncMessage.set('');
+    this.error.set('');
+    try {
+      const result = await this.api.importStaticDiseasePages();
+      this.syncMessage.set(
+        `Static pages imported: ${result.updated} updated, ${result.unmatched.length} unmatched of ${result.total}.`
+      );
+      await this.load();
+    } catch {
+      this.error.set('Could not import static disease pages.');
+    } finally {
+      this.importingPages.set(false);
+    }
+  }
+
   async reconcileOptions() {
     if (!confirm('Sync prescription diagnosis options from the disease catalog?')) {
       return;
@@ -204,6 +236,7 @@ export class DiseasesPage {
 
   startEdit(disease: Disease) {
     this.editingId = disease.id;
+    this.editTab.set('clinical');
     this.draftModel.set({
       name: disease.name,
       description: disease.description,
@@ -221,10 +254,48 @@ export class DiseasesPage {
     this.draftQuestionModel.set({ value: '' });
     this.draftFaqModel.set({ question: '', answer: '' });
     this.saveError = '';
+    void this.loadPublicPageForm(disease.id);
+  }
+
+  setEditTab(tab: 'clinical' | 'public') {
+    this.editTab.set(tab);
+    if (tab === 'public' && this.editingId) {
+      void this.loadPublicPageForm(this.editingId);
+    }
+  }
+
+  private async loadPublicPageForm(diseaseId: string) {
+    this.publicPageLoading.set(true);
+    this.publicPageSaveError = '';
+    try {
+      const payload = await this.api.getDiseasePublicPage(diseaseId);
+      queueMicrotask(() => this.publicPageForm()?.load(payload));
+    } catch {
+      this.publicPageSaveError = 'Could not load public page content.';
+    } finally {
+      this.publicPageLoading.set(false);
+    }
+  }
+
+  async savePublicPage() {
+    const editor = this.publicPageForm();
+    if (!editor || !this.editingId) return;
+    this.savingPublicPage.set(true);
+    this.publicPageSaveError = '';
+    try {
+      await this.api.updateDiseasePublicPage(this.editingId, publicPageFormToPayload(editor.formModel()));
+      this.syncMessage.set('Public treatment page saved.');
+      await this.load();
+    } catch {
+      this.publicPageSaveError = 'Could not save public page.';
+    } finally {
+      this.savingPublicPage.set(false);
+    }
   }
 
   cancelEdit() {
     this.editingId = '';
+    this.editTab.set('clinical');
     this.draftModel.set(emptyDraft());
     this.draftQuestionModel.set({ value: '' });
     this.draftFaqModel.set({ question: '', answer: '' });

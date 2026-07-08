@@ -11,7 +11,9 @@ export const AUTH_PATHS = {
 } as const;
 
 export const ROLE_DASHBOARD_PATHS = {
-  ADMIN: '/admin/dashboard',
-  DOCTOR: '/doctor/dashboard',
+  // Doctors and admins have dedicated portals (doctor-web / operations-web).
+  // If they land on user-web, redirect to home — they shouldn't be here.
+  ADMIN: '/',
+  DOCTOR: '/',
   PATIENT: '/patient/dashboard'
 } as const;

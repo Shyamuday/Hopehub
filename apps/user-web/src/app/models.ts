@@ -38,6 +38,7 @@ export type Disease = {
   seoTitle?: string | null;
   seoDescription?: string | null;
   publicFaq?: DiseaseFaqItem[];
+  publicPage?: DiseaseInfo | null;
   feeInPaise: number;
   intakeQuestions: string[];
   publicCategory?: string | null;

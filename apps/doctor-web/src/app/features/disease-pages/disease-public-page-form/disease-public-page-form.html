@@ -1,0 +1,174 @@
+<div class="public-page-form">
+  <p class="form-lead">
+  Patient-facing treatment page for <strong>{{ diseaseName }}</strong>. Lists use add/remove rows; leave blank if not needed.
+  </p>
+
+  <section class="form-section">
+    <h4>Hero &amp; SEO</h4>
+    <label class="field">
+      Summary (hero text)
+      <textarea [formField]="form.publicDescription" rows="3"></textarea>
+    </label>
+    <div class="field-row">
+      <label class="field">
+        Hero image URL
+        <input [formField]="form.publicImageUrl" placeholder="https://…" />
+      </label>
+      <label class="field">
+        Image alt text
+        <input [formField]="form.imageAlt" />
+      </label>
+    </div>
+    <div class="field-row">
+      <label class="field">
+        Short name
+        <input [formField]="form.shortName" placeholder="e.g. Hair Fall Care" />
+      </label>
+      <label class="field">
+        Category label
+        <input [formField]="form.category" />
+      </label>
+    </div>
+    <div class="field-row">
+      <label class="field">
+        SEO title
+        <input [formField]="form.seoTitle" />
+      </label>
+      <label class="field">
+        SEO description
+        <input [formField]="form.seoDescription" />
+      </label>
+    </div>
+  </section>
+
+  <section class="form-section">
+    <h4>About &amp; approach</h4>
+    <label class="field">
+      About (long)
+      <textarea [formField]="form.about" rows="4"></textarea>
+    </label>
+    <label class="field">
+      Our approach title
+      <input [formField]="form.ourApproachTitle" />
+    </label>
+    <label class="field">
+      Our approach intro
+      <textarea [formField]="form.ourApproachIntro" rows="3"></textarea>
+    </label>
+  </section>
+
+  <section class="form-section">
+    <h4>Clinical copy</h4>
+    <div class="field-row">
+      <label class="field">
+        Disease type
+        <input [formField]="form.diseaseType" />
+      </label>
+      <label class="field">
+        ICD code
+        <input [formField]="form.icdCode" />
+      </label>
+    </div>
+    <label class="field">
+      Diagnosis approach
+      <textarea [formField]="form.diagnosis" rows="3"></textarea>
+    </label>
+    <label class="field">
+      Severity guidance
+      <textarea [formField]="form.severityLevel" rows="2"></textarea>
+    </label>
+    <label class="field">
+      When to see a doctor
+      <textarea [formField]="form.whenToSeeDoctor" rows="2"></textarea>
+    </label>
+    <label class="field">
+      Typical duration
+      <input [formField]="form.duration" />
+    </label>
+    <label class="field">
+      Warning / disclaimer
+      <textarea [formField]="form.warning" rows="2"></textarea>
+    </label>
+    <div class="field-row">
+      <label class="field">
+        Common in — age
+        <input [formField]="form.commonInAgeGroup" />
+      </label>
+      <label class="field">
+        Common in — gender
+        <input [formField]="form.commonInGender" />
+      </label>
+    </div>
+  </section>
+
+  <section class="form-section">
+    <h4>Treatment options</h4>
+    <label class="field">
+      Allopathy
+      <textarea [formField]="form.treatmentAllopathy" rows="2"></textarea>
+    </label>
+    <label class="field">
+      Ayurveda
+      <textarea [formField]="form.treatmentAyurveda" rows="2"></textarea>
+    </label>
+    <label class="field">
+      Homeopathy
+      <textarea [formField]="form.treatmentHomeopathy" rows="2"></textarea>
+    </label>
+    <label class="field">
+      Lifestyle
+      <textarea [formField]="form.treatmentLifestyle" rows="2"></textarea>
+    </label>
+  </section>
+
+  @for (listField of listFields; track listField.key) {
+    <section class="form-section list-editor">
+      <h4>{{ listField.label }}</h4>
+      @for (item of formModel()[listField.key]; track $index) {
+        <div class="list-row">
+          <span>{{ item }}</span>
+          <button type="button" class="btn-remove" (click)="removeListItem(listField.key, $index)">✕</button>
+        </div>
+      } @empty {
+        <p class="muted">No items yet.</p>
+      }
+      <div class="add-row">
+        <input
+          [formField]="listDraftForm.value"
+          [placeholder]="'Add ' + listField.label.toLowerCase()"
+          (keyup.enter)="addListItem(listField.key)"
+        />
+        <button type="button" class="btn-add" (click)="addListItem(listField.key)">Add</button>
+      </div>
+    </section>
+  }
+
+  <section class="form-section">
+    <h4>FAQ</h4>
+    @for (item of formModel().publicFaq; track $index) {
+      <div class="list-row">
+        <span><strong>{{ item.question }}</strong> — {{ item.answer }}</span>
+        <button type="button" class="btn-remove" (click)="removeFaq($index)">✕</button>
+      </div>
+    }
+    <div class="add-row faq-row">
+      <input [formField]="faqDraftForm.question" placeholder="Question" />
+      <input [formField]="faqDraftForm.answer" placeholder="Answer" (keyup.enter)="addFaq()" />
+      <button type="button" class="btn-add" (click)="addFaq()">Add FAQ</button>
+    </div>
+  </section>
+
+  <section class="form-section">
+    <h4>Review metadata</h4>
+    <div class="field-row">
+      <label class="field">
+        Reviewed by
+        <input [formField]="form.reviewedBy" />
+      </label>
+      <label class="field">
+        Last updated
+        <input [formField]="form.lastUpdated" placeholder="YYYY-MM-DD" />
+      </label>
+    </div>
+  </section>
+</div>

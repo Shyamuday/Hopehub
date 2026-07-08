@@ -1,4 +1,45 @@
-import { Consultation, Disease, DiseaseFaqItem, DoseEvent, Payment, Prescription } from '../models';
+import { Consultation, Disease, DiseaseFaqItem, DiseaseInfo, DoseEvent, Payment, Prescription } from '../models';
+
+function mapPublicPageFromApi(row: Record<string, unknown>): DiseaseInfo | null {
+  const page = row['publicPage'] as Record<string, unknown> | null | undefined;
+  if (!page) return null;
+  return {
+    name: (page['name'] as string) || (row['name'] as string),
+    shortName: (page['shortName'] as string) || (page['name'] as string) || (row['name'] as string),
+    slug: (page['slug'] as string) || (row['slug'] as string) || '',
+    imageUrl: (page['imageUrl'] as string) || (row['publicImageUrl'] as string) || '',
+    imageAlt: (page['imageAlt'] as string) || (page['name'] as string) || (row['name'] as string),
+    category: page['category'] as string | undefined,
+    diseaseType: page['diseaseType'] as string | undefined,
+    icdCode: page['icdCode'] as string | undefined,
+    summary: (page['summary'] as string) || (row['publicDescription'] as string) || '',
+    about: (page['about'] as string) || (page['summary'] as string) || '',
+    ourApproach: page['ourApproach'] as DiseaseInfo['ourApproach'],
+    symptoms: (page['symptoms'] as string[]) || [],
+    causes: page['causes'] as string[] | undefined,
+    riskFactors: page['riskFactors'] as string[] | undefined,
+    diagnosis: page['diagnosis'] as string | undefined,
+    tests: page['tests'] as string[] | undefined,
+    treatmentOptions: page['treatmentOptions'] as DiseaseInfo['treatmentOptions'],
+    medications: page['medications'] as string[] | undefined,
+    homeCare: page['homeCare'] as string[] | undefined,
+    prevention: page['prevention'] as string[] | undefined,
+    severityLevel: page['severityLevel'] as string | undefined,
+    whenToSeeDoctor: page['whenToSeeDoctor'] as string | undefined,
+    emergencySigns: page['emergencySigns'] as string[] | undefined,
+    duration: page['duration'] as string | undefined,
+    stages: page['stages'] as string[] | undefined,
+    commonIn: page['commonIn'] as DiseaseInfo['commonIn'],
+    faq: (page['faq'] as DiseaseFaqItem[]) || [],
+    reviewedBy: page['reviewedBy'] as string | undefined,
+    lastUpdated: page['lastUpdated'] as string | undefined,
+    references: page['references'] as string[] | undefined,
+    careApproach: (page['careApproach'] as string[]) || [],
+    details: (page['details'] as string[]) || [],
+    warning: page['warning'] as string | undefined,
+    seo: page['seo'] as DiseaseInfo['seo']
+  };
+}
 
 export function mapDiseaseFromApi(row: Record<string, unknown>): Disease {
     const publicFaq = row['publicFaq'];
@@ -12,6 +53,7 @@ export function mapDiseaseFromApi(row: Record<string, unknown>): Disease {
       seoTitle: (row['seoTitle'] as string | null | undefined) ?? null,
       seoDescription: (row['seoDescription'] as string | null | undefined) ?? null,
       publicFaq: Array.isArray(publicFaq) ? (publicFaq as DiseaseFaqItem[]) : [],
+      publicPage: mapPublicPageFromApi(row),
       feeInPaise: row['feeInPaise'] as number,
       intakeQuestions: (row['intakeQuestions'] as string[]) || [],
       publicCategory: (row['publicCategory'] as string | null | undefined) ?? null

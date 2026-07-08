@@ -1,9 +1,9 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { API_PATHS } from '../core/constants/api-paths.constants';
+import { forkJoin } from 'rxjs';
 import { AuthService } from '../auth/auth.service';
+import { ClinicApiService } from '../clinic-api.service';
 import { ROUTE_PATHS } from '../core/constants/app-routes.constants';
-import { environment } from '../../environments/environment';
 import { PATIENT_ACCOUNT_NAV } from './constants/patient-account.constants';
 
 @Component({
@@ -15,6 +15,7 @@ import { PATIENT_ACCOUNT_NAV } from './constants/patient-account.constants';
 })
 export class PatientAccountHubComponent implements OnInit {
   private readonly auth = inject(AuthService);
+  private readonly api = inject(ClinicApiService);
 
   readonly loading = signal(true);
   readonly profile = signal<{
@@ -39,45 +40,22 @@ export class PatientAccountHubComponent implements OnInit {
   }
 
   ngOnInit() {
-    void this.load();
-  }
-
-  private async load() {
-    const token = this.auth.token;
-    try {
-      if (token) {
-        const [profileRes, rewardsRes, referRes] = await Promise.all([
-          fetch(`${environment.apiUrl}${API_PATHS.PATIENT.PROFILE}`, {
-            headers: { Authorization: `Bearer ${token}` }
-          }),
-          fetch(`${environment.apiUrl}${API_PATHS.PATIENT.REWARDS}`, {
-            headers: { Authorization: `Bearer ${token}` }
-          }),
-          fetch(`${environment.apiUrl}${API_PATHS.PATIENT.REFERRALS_SUMMARY}`, {
-            headers: { Authorization: `Bearer ${token}` }
-          })
-        ]);
-        if (profileRes.ok) {
-          const data = await profileRes.json();
-          this.profile.set(data.profile);
-        }
-        if (rewardsRes.ok) {
-          const rewards = await rewardsRes.json();
-          this.walletBalanceInPaise.set(rewards.balanceInPaise ?? 0);
-        }
-        if (referRes.ok) {
-          const refer = await referRes.json();
-          this.referralCode.set(refer.code ?? '');
-        }
-        if (this.profile()) return;
-      }
-      const user = this.auth.user();
-      if (user) this.profile.set({ name: user.name, mobile: user.mobile, email: user.email });
-    } catch {
-      const user = this.auth.user();
-      if (user) this.profile.set({ name: user.name, mobile: user.mobile, email: user.email });
-    } finally {
-      this.loading.set(false);
-    }
+    forkJoin({
+      profile: this.api.patientProfile(),
+      rewards: this.api.patientRewards(),
+      referral: this.api.patientReferralsSummary(),
+    }).subscribe({
+      next: ({ profile, rewards, referral }) => {
+        this.profile.set(profile.profile);
+        this.walletBalanceInPaise.set(rewards.balanceInPaise ?? 0);
+        this.referralCode.set(referral.code ?? '');
+        this.loading.set(false);
+      },
+      error: () => {
+        const user = this.auth.user();
+        if (user) this.profile.set({ name: user.name, mobile: user.mobile, email: user.email });
+        this.loading.set(false);
+      },
+    });
   }
 }

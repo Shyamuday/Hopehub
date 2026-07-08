@@ -56,4 +56,23 @@ export class DiseaseCatalogService {
       this.http.post<{ disease: DiseaseListItem }>(`${this.apiBase}${API_PATHS.DOCTOR.DISEASES}`, payload)
     ).then((response) => response.disease);
   }
+
+  getPublicPage(id: string) {
+    return firstValueFrom(
+      this.http.get<{
+        publicDescription: string | null;
+        publicImageUrl: string | null;
+        seoTitle: string | null;
+        seoDescription: string | null;
+        publicFaq: Array<{ question: string; answer: string }>;
+        publicPageContent: Record<string, unknown> | null;
+      }>(`${this.apiBase}${API_PATHS.DOCTOR.DISEASE_PUBLIC_PAGE(id)}`)
+    );
+  }
+
+  updatePublicPage(id: string, payload: Record<string, unknown>) {
+    return firstValueFrom(
+      this.http.put(`${this.apiBase}${API_PATHS.DOCTOR.DISEASE_PUBLIC_PAGE(id)}`, payload)
+    );
+  }
 }

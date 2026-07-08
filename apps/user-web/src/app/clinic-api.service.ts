@@ -169,6 +169,20 @@ export class ClinicApiService {
     }));
   }
 
+  patientProfile() {
+    return from(this.client.apiFetch<{
+      profile: { name: string; mobile?: string | null; email?: string | null; patientCode?: string | null };
+    }>(API_PATHS.PATIENT.PROFILE));
+  }
+
+  patientRewards() {
+    return from(this.client.apiFetch<{ balanceInPaise: number }>(API_PATHS.PATIENT.REWARDS));
+  }
+
+  patientReferralsSummary() {
+    return from(this.client.apiFetch<{ code: string }>(API_PATHS.PATIENT.REFERRALS_SUMMARY));
+  }
+
   reminderPreferences() {
     return from(this.client.apiFetch<{
       preferences: {

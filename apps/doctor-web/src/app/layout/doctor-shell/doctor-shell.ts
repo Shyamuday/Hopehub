@@ -23,6 +23,7 @@ const NAV_ICONS: Record<string, { icon: string; shortLabel: string }> = {
   Appointments: { icon: '🩺', shortLabel: 'Appts' },
   Repertory: { icon: '📖', shortLabel: 'Rep' },
   Patients: { icon: '👥', shortLabel: 'Patients' },
+  'Treatment pages': { icon: '📝', shortLabel: 'Pages' },
   Slots: { icon: '📅', shortLabel: 'Slots' },
   Earnings: { icon: '💰', shortLabel: 'Pay' },
   Leaves: { icon: '🌴', shortLabel: 'Leave' },

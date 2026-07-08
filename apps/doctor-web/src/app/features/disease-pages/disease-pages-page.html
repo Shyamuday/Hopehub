@@ -1,0 +1,57 @@
+<section class="panel disease-pages">
+  <div class="page-header">
+    <div>
+      <h2>Treatment pages</h2>
+      <p class="muted">Edit patient-facing disease marketing content shown on the website.</p>
+    </div>
+  </div>
+
+  @if (message()) {
+    <p class="success">{{ message() }}</p>
+  }
+  @if (error()) {
+    <p class="error">{{ error() }}</p>
+  }
+
+  <div class="toolbar">
+    <input type="search" [formField]="filterForm.q" placeholder="Search diseases…" (keyup.enter)="load()" />
+    <button type="button" class="btn-secondary" (click)="load()" [disabled]="loading()">Search</button>
+  </div>
+
+  @if (editingId()) {
+    <section class="editor-panel">
+      <div class="editor-header">
+        <h3>{{ editingName() }}</h3>
+        <button type="button" class="btn-secondary" (click)="cancelEdit()">← Back to list</button>
+      </div>
+      @if (pageLoading()) {
+        <p class="loading-text">Loading…</p>
+      } @else {
+        <app-disease-public-page-form [diseaseName]="editingName()" />
+      }
+      <div class="editor-actions">
+        <button type="button" class="btn-primary" (click)="save()" [disabled]="saving() || pageLoading()">
+          {{ saving() ? 'Saving…' : 'Save treatment page' }}
+        </button>
+      </div>
+    </section>
+  } @else {
+    @if (loading()) {
+      <p class="loading-text">Loading diseases…</p>
+    } @else if (!diseases().length) {
+      <p class="muted">No diseases found.</p>
+    } @else {
+      <div class="disease-list">
+        @for (disease of diseases(); track disease.id) {
+          <article class="disease-row">
+            <div>
+              <strong>{{ disease.name }}</strong>
+              <p class="muted">{{ disease.description }}</p>
+            </div>
+            <button type="button" class="btn-secondary" (click)="startEdit(disease)">Edit page</button>
+          </article>
+        }
+      </div>
+    }
+  }
+</section>

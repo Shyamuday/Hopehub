@@ -34,6 +34,7 @@ model Disease {
   seoTitle           String?
   seoDescription     String?        @db.Text
   publicFaq          Json?
+  publicPageContent  Json?
   consultations      Consultation[]
   locationFees       DiseaseLocationFee[]
   clinicalMedia      ClinicalMedia[]

@@ -63,8 +63,7 @@ import {
     AppDownloadQrComponent,
     RouterLink,
     RoleTaskGuideComponent,
-  ]
-,
+  ],
   templateUrl: './dashboard.component.html',
 })
 export class DashboardComponent implements OnInit, OnDestroy {
