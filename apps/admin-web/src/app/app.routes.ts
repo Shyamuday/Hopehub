@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { adminAuthGuard } from './core/guards/admin-auth-guard';
+import { adminPermissionGuard } from './core/guards/admin-permission.guard';
 import { ROUTE_PATHS } from './core/constants/app-routes.constants';
 import { AdminLogin } from './features/auth/admin-login/admin-login';
 import { AdminDashboard } from './features/dashboard/admin-dashboard/admin-dashboard';
@@ -40,6 +41,9 @@ import { RewardsPage } from './features/rewards/rewards-page/rewards-page';
 import { ClinicalRecordsPage } from './features/clinical-records/clinical-records-page/clinical-records-page';
 import { OnlineDoctorsPage } from './features/online-doctors/online-doctors-page/online-doctors-page';
 import { AccountPage } from './features/account/account-page/account-page';
+import { NotificationsInboxPage } from './features/notifications-inbox/notifications-inbox-page';
+
+const guard = [adminPermissionGuard];
 
 export const routes: Routes = [
   { path: ROUTE_PATHS.LOGIN, component: AdminLogin },
@@ -49,44 +53,49 @@ export const routes: Routes = [
     canActivate: [adminAuthGuard],
     children: [
       { path: '', pathMatch: 'full', redirectTo: ROUTE_PATHS.DASHBOARD },
-      { path: ROUTE_PATHS.DASHBOARD, component: AdminDashboard },
-      { path: ROUTE_PATHS.DOCTORS, component: DoctorsPage },
-      { path: ROUTE_PATHS.CONSUMERS, component: ConsumersPage },
-      { path: ROUTE_PATHS.SCAN, component: AdminPatientScanLauncherPage },
-      { path: ROUTE_PATHS.DISEASES, component: DiseasesPage },
-      { path: ROUTE_PATHS.RATES, component: RatesPage },
-      { path: ROUTE_PATHS.REWARDS, component: RewardsPage },
-      { path: ROUTE_PATHS.CLINICAL_RECORDS, component: ClinicalRecordsPage },
-      { path: ROUTE_PATHS.VACANCIES, component: VacanciesPage },
-      { path: ROUTE_PATHS.HR, component: DoctorHrComponent },
-      { path: ROUTE_PATHS.HR_USERS, component: HrUsersComponent },
-      { path: ROUTE_PATHS.EMPLOYEES, component: EmployeesPage },
-      { path: ROUTE_PATHS.LEAVES, component: LeavesPage },
-      { path: ROUTE_PATHS.STORES, component: StoresPage },
-      { path: ROUTE_PATHS.PURCHASE_ORDERS, component: PurchaseOrdersPage },
-      { path: ROUTE_PATHS.SUPPLIERS, component: SuppliersPage },
-      { path: ROUTE_PATHS.MEDICINES, component: MedicinesPage },
-      { path: ROUTE_PATHS.INVENTORY, component: InventoryPage },
-      { path: ROUTE_PATHS.NOTIFICATIONS, component: NotificationsPage },
-      { path: ROUTE_PATHS.ADMIN_USERS, component: AdminUsersPage },
-      { path: ROUTE_PATHS.STAFF, component: StaffPage },
-      { path: ROUTE_PATHS.ECOSYSTEM_USERS, component: EcosystemUsersPage },
-      { path: ROUTE_PATHS.CONSULTATIONS, component: ConsultationsPage },
-      { path: ROUTE_PATHS.ONLINE_DOCTORS, component: OnlineDoctorsPage },
-      { path: ROUTE_PATHS.PAYMENTS, component: PaymentsPage },
-      { path: ROUTE_PATHS.AUDIT, component: AuditPage },
-      { path: ROUTE_PATHS.SECURITY, component: SecurityPage },
-      { path: ROUTE_PATHS.ADHERENCE, component: AdherencePage },
-      { path: ROUTE_PATHS.ANALYTICS, component: AnalyticsPage },
-      { path: ROUTE_PATHS.FINANCE, component: FinancePage },
-      { path: ROUTE_PATHS.PAYROLL, component: PayrollPage },
-      { path: ROUTE_PATHS.TESTIMONIALS, component: TestimonialsPage },
-      { path: ROUTE_PATHS.FAQ, component: FaqPage },
-      { path: ROUTE_PATHS.BLOG, component: BlogPage },
-      { path: ROUTE_PATHS.SITE_CONFIG, component: SiteConfigPage },
-      { path: ROUTE_PATHS.CHAT_INBOX, component: ChatInboxPage },
-      { path: ROUTE_PATHS.ACCOUNT, component: AccountPage }
-    ]
+      { path: ROUTE_PATHS.DASHBOARD, component: AdminDashboard, canActivate: guard },
+      { path: ROUTE_PATHS.DOCTORS, component: DoctorsPage, canActivate: guard },
+      { path: ROUTE_PATHS.CONSUMERS, component: ConsumersPage, canActivate: guard },
+      { path: ROUTE_PATHS.SCAN, component: AdminPatientScanLauncherPage, canActivate: guard },
+      { path: ROUTE_PATHS.DISEASES, component: DiseasesPage, canActivate: guard },
+      { path: ROUTE_PATHS.RATES, component: RatesPage, canActivate: guard },
+      { path: ROUTE_PATHS.REWARDS, component: RewardsPage, canActivate: guard },
+      { path: ROUTE_PATHS.CLINICAL_RECORDS, component: ClinicalRecordsPage, canActivate: guard },
+      { path: ROUTE_PATHS.VACANCIES, component: VacanciesPage, canActivate: guard },
+      { path: ROUTE_PATHS.HR, component: DoctorHrComponent, canActivate: guard },
+      { path: ROUTE_PATHS.HR_USERS, component: HrUsersComponent, canActivate: guard },
+      { path: ROUTE_PATHS.EMPLOYEES, component: EmployeesPage, canActivate: guard },
+      { path: ROUTE_PATHS.LEAVES, component: LeavesPage, canActivate: guard },
+      { path: ROUTE_PATHS.STORES, component: StoresPage, canActivate: guard },
+      { path: ROUTE_PATHS.PURCHASE_ORDERS, component: PurchaseOrdersPage, canActivate: guard },
+      { path: ROUTE_PATHS.SUPPLIERS, component: SuppliersPage, canActivate: guard },
+      { path: ROUTE_PATHS.MEDICINES, component: MedicinesPage, canActivate: guard },
+      { path: ROUTE_PATHS.INVENTORY, component: InventoryPage, canActivate: guard },
+      { path: ROUTE_PATHS.NOTIFICATIONS, component: NotificationsPage, canActivate: guard },
+      {
+        path: ROUTE_PATHS.NOTIFICATIONS_INBOX,
+        component: NotificationsInboxPage,
+        canActivate: guard,
+      },
+      { path: ROUTE_PATHS.ADMIN_USERS, component: AdminUsersPage, canActivate: guard },
+      { path: ROUTE_PATHS.STAFF, component: StaffPage, canActivate: guard },
+      { path: ROUTE_PATHS.ECOSYSTEM_USERS, component: EcosystemUsersPage, canActivate: guard },
+      { path: ROUTE_PATHS.CONSULTATIONS, component: ConsultationsPage, canActivate: guard },
+      { path: ROUTE_PATHS.ONLINE_DOCTORS, component: OnlineDoctorsPage, canActivate: guard },
+      { path: ROUTE_PATHS.PAYMENTS, component: PaymentsPage, canActivate: guard },
+      { path: ROUTE_PATHS.AUDIT, component: AuditPage, canActivate: guard },
+      { path: ROUTE_PATHS.SECURITY, component: SecurityPage, canActivate: guard },
+      { path: ROUTE_PATHS.ADHERENCE, component: AdherencePage, canActivate: guard },
+      { path: ROUTE_PATHS.ANALYTICS, component: AnalyticsPage, canActivate: guard },
+      { path: ROUTE_PATHS.FINANCE, component: FinancePage, canActivate: guard },
+      { path: ROUTE_PATHS.PAYROLL, component: PayrollPage, canActivate: guard },
+      { path: ROUTE_PATHS.TESTIMONIALS, component: TestimonialsPage, canActivate: guard },
+      { path: ROUTE_PATHS.FAQ, component: FaqPage, canActivate: guard },
+      { path: ROUTE_PATHS.BLOG, component: BlogPage, canActivate: guard },
+      { path: ROUTE_PATHS.SITE_CONFIG, component: SiteConfigPage, canActivate: guard },
+      { path: ROUTE_PATHS.CHAT_INBOX, component: ChatInboxPage, canActivate: guard },
+      { path: ROUTE_PATHS.ACCOUNT, component: AccountPage },
+    ],
   },
-  { path: '**', redirectTo: '' }
+  { path: '**', redirectTo: '' },
 ];

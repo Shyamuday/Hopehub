@@ -1,12 +1,25 @@
 import { CommonModule, DOCUMENT } from '@angular/common';
-import { Component, effect, EventEmitter, HostListener, inject, Input, OnDestroy, Output, signal } from '@angular/core';
+import {
+  Component,
+  computed,
+  effect,
+  EventEmitter,
+  HostListener,
+  inject,
+  Input,
+  OnDestroy,
+  Output,
+  signal,
+} from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { NotificationBellHostComponent } from '@vitalis/platform-ui';
 import { PUBLIC_SITE_BRAND } from './core/constants/public-site-content.constants';
+import { PUBLIC_HEADER_NAV_GROUPS } from './core/constants/public-nav.constants';
 import { ROUTE_PATHS } from './core/constants/app-routes.constants';
 import { environment } from '../environments/environment';
 import { AUTH_TOKEN_KEY } from './core/constants/auth.constants';
 import { AuthFormOverlayComponent } from './auth/auth-form-overlay.component';
+import { AuthService } from './auth/auth.service';
 import { User } from './models';
 import { AppOverlayService } from './overlay.service';
 
@@ -22,7 +35,11 @@ export class AppHeaderComponent implements OnDestroy {
   @Input() whatsappLink = '';
   @Output() logout = new EventEmitter<void>();
 
+  private readonly auth = inject(AuthService);
+  readonly effectiveUser = computed(() => this.user ?? this.auth.user());
+
   readonly brand = PUBLIC_SITE_BRAND;
+  readonly guestNavGroups = PUBLIC_HEADER_NAV_GROUPS;
   readonly accountPaths = {
     hub: `/${ROUTE_PATHS.PATIENT_ACCOUNT}`,
     profile: `/${ROUTE_PATHS.PATIENT_ACCOUNT_PROFILE}`,
@@ -31,6 +48,7 @@ export class AppHeaderComponent implements OnDestroy {
     rewards: `/${ROUTE_PATHS.PATIENT_ACCOUNT_REWARDS}`,
     consultations: `/${ROUTE_PATHS.PATIENT_ACCOUNT_CONSULTATIONS}`,
     orders: `/${ROUTE_PATHS.PATIENT_ACCOUNT_ORDERS}`,
+    labResults: `/${ROUTE_PATHS.PATIENT_ACCOUNT_LAB_RESULTS}`,
     card: `/${ROUTE_PATHS.PATIENT_ACCOUNT_CARD}`,
     permissions: `/${ROUTE_PATHS.PATIENT_ACCOUNT_PERMISSIONS}`,
     dashboard: `/${ROUTE_PATHS.PATIENT_DASHBOARD}`,
@@ -41,7 +59,7 @@ export class AppHeaderComponent implements OnDestroy {
   readonly bellConfig = {
     apiBase: environment.apiUrl,
     tokenKey: AUTH_TOKEN_KEY,
-    apiPath: '/notifications'
+    apiPath: '/notifications',
   };
 
   private readonly document = inject(DOCUMENT);

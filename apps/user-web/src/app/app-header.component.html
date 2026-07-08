@@ -1,7 +1,7 @@
 
     <header
       class="app-header"
-      [class.app-header--guest]="!user"
+      [class.app-header--guest]="!effectiveUser()"
       [class.menu-open]="menuOpen()">
       <a class="brand" href="/" (click)="closeMenu()">
         <span class="brand-mark">B</span>
@@ -11,10 +11,10 @@
         </span>
       </a>
 
-      @if (user) {
+      @if (effectiveUser(); as activeUser) {
         <div class="user-chip">
           <app-notification-bell-host [config]="bellConfig" />
-          @if (user.role === 'PATIENT') {
+          @if (activeUser.role === 'PATIENT') {
             <div class="account-menu-wrap">
               <button
                 type="button"
@@ -23,30 +23,36 @@
                 [attr.aria-expanded]="accountMenuOpen()"
                 aria-haspopup="menu"
               >
-                <span>{{ user.name }}</span>
+                <span>{{ activeUser.name }}</span>
                 <svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true">
                   <path fill="currentColor" d="M5.5 7.5 10 12l4.5-4.5" />
                 </svg>
               </button>
               @if (accountMenuOpen()) {
                 <div class="account-menu" role="menu">
+                  <p class="account-menu-section">Overview</p>
                   <a role="menuitem" [routerLink]="accountPaths.hub" (click)="closeAccountMenu()">My Account</a>
-                  <a role="menuitem" [routerLink]="accountPaths.profile" (click)="closeAccountMenu()">Edit Account</a>
+                  <a role="menuitem" [routerLink]="accountPaths.dashboard" (click)="closeAccountMenu()">Care Dashboard</a>
+                  <p class="account-menu-section">Care history</p>
                   <a role="menuitem" [routerLink]="accountPaths.consultations" (click)="closeAccountMenu()">My Consultations</a>
+                  <a role="menuitem" [routerLink]="accountPaths.labResults" (click)="closeAccountMenu()">Lab results</a>
                   <a role="menuitem" [routerLink]="accountPaths.orders" (click)="closeAccountMenu()">Orders &amp; Deliveries</a>
-                  <a role="menuitem" [routerLink]="accountPaths.card" (click)="closeAccountMenu()">Clinic card</a>
-                  <a role="menuitem" [routerLink]="accountPaths.permissions" (click)="closeAccountMenu()">App permissions</a>
+                  <p class="account-menu-section">Profile</p>
+                  <a role="menuitem" [routerLink]="accountPaths.profile" (click)="closeAccountMenu()">Edit Account</a>
                   <a role="menuitem" [routerLink]="accountPaths.addresses" (click)="closeAccountMenu()">Manage Addresses</a>
+                  <a role="menuitem" [routerLink]="accountPaths.card" (click)="closeAccountMenu()">Clinic card</a>
+                  <p class="account-menu-section">Rewards</p>
                   <a role="menuitem" [routerLink]="accountPaths.refer" (click)="closeAccountMenu()">Refer and Earn</a>
                   <a role="menuitem" [routerLink]="accountPaths.rewards" (click)="closeAccountMenu()">Rewards</a>
-                  <a role="menuitem" [routerLink]="accountPaths.dashboard" (click)="closeAccountMenu()">Care Dashboard</a>
+                  <p class="account-menu-section">Settings</p>
+                  <a role="menuitem" [routerLink]="accountPaths.permissions" (click)="closeAccountMenu()">App permissions</a>
                   <button type="button" role="menuitem" class="menu-logout" (click)="closeAccountMenu(); logout.emit()">Logout</button>
                 </div>
               }
             </div>
           } @else {
-            <span>{{ user.name }}</span>
-            <strong>{{ user.role }}</strong>
+            <span>{{ activeUser.name }}</span>
+            <strong>{{ activeUser.role }}</strong>
             <button class="secondary" type="button" (click)="logout.emit()">Logout</button>
           }
         </div>
@@ -59,14 +65,14 @@
           [attr.aria-hidden]="true"></div>
 
         <nav id="header-primary-nav" class="header-actions header-nav-sheet" aria-label="Primary navigation">
-          <a href="/about" (click)="closeMenu()">About us</a>
-          <a href="/treatments" (click)="closeMenu()">Treatments</a>
-          <a href="/talk-to-doctor" (click)="closeMenu()">Talk to doctor</a>
-          <a href="/our-doctors" (click)="closeMenu()">Our doctors</a>
-          <a href="/blog" (click)="closeMenu()">Blog</a>
-          <a href="/careers" (click)="closeMenu()">Careers</a>
-          <a href="/get-app" (click)="closeMenu()">Get the app</a>
-          <a href="/safety" (click)="closeMenu()">Safety</a>
+          @for (group of guestNavGroups; track group.id) {
+            <section class="header-nav-group">
+              <p class="header-nav-group-title">{{ group.label }}</p>
+              @for (link of group.links; track link.path) {
+                <a [href]="link.path" (click)="closeMenu()">{{ link.label }}</a>
+              }
+            </section>
+          }
         </nav>
 
         <div class="header-guest-bar-end">

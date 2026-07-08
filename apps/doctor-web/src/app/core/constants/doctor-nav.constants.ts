@@ -11,6 +11,7 @@ export type DoctorNavChildLink = {
   path: string;
   queryParams?: Record<string, string>;
   enabled: boolean;
+  showInBottomNav?: boolean;
 };
 
 export type DoctorNavItemDef = {
@@ -65,6 +66,12 @@ export function profileNavItem(): DoctorNavItemDef {
     shortLabel: DOCTOR_NAV_ICONS['Profile'].shortLabel,
     enabled: true,
   };
+}
+
+const MOBILE_BOTTOM_NAV_IDS = ['worklist', 'case-analysis', 'patients'] as const;
+
+export function mobileBottomNavIds() {
+  return MOBILE_BOTTOM_NAV_IDS;
 }
 
 export function mobileBottomNavLabels() {
@@ -127,6 +134,7 @@ function buildDoctorNav(capabilities: DoctorCapabilities): DoctorNavItemDef[] {
           label: 'Case Analysis',
           path: `/${ROUTE_PATHS.CASE_ANALYSIS_STUDIO}`,
           enabled: capabilities.caseAnalysis,
+          showInBottomNav: true,
         },
         {
           id: 'repertory-browser',
@@ -146,6 +154,7 @@ function buildDoctorNav(capabilities: DoctorCapabilities): DoctorNavItemDef[] {
           label: 'Patients',
           path: `/${ROUTE_PATHS.PATIENTS}`,
           enabled: true,
+          showInBottomNav: true,
         },
       ],
     },

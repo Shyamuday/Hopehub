@@ -29,51 +29,69 @@ export const routes: Routes = [
         path: '',
         pathMatch: 'full',
         loadComponent: () =>
-          import('./pages/home-redirect/home-redirect.component').then((m) => m.HomeRedirectComponent)
+          import('./pages/home-redirect/home-redirect.component').then(
+            (m) => m.HomeRedirectComponent
+          )
       },
       {
         path: ROUTE_PATHS.ACCOUNT,
-        loadComponent: () => import('./pages/account/account.component').then((m) => m.AccountComponent)
+        loadComponent: () =>
+          import('./pages/account/account.component').then((m) => m.AccountComponent)
+      },
+      {
+        path: ROUTE_PATHS.NOTIFICATIONS_INBOX,
+        loadComponent: () =>
+          import('./pages/notifications-inbox/notifications-inbox-page').then(
+            (m) => m.NotificationsInboxPage
+          )
       },
       {
         path: ROUTE_PATHS.DASHBOARD,
         canActivate: [capabilityGuard],
-        loadComponent: () => import('./pages/dashboard/dashboard.component').then((m) => m.DashboardComponent)
+        loadComponent: () =>
+          import('./pages/dashboard/dashboard.component').then((m) => m.DashboardComponent)
       },
       {
         path: ROUTE_PATHS.EMPLOYEES,
         canActivate: [capabilityGuard],
-        loadComponent: () => import('./pages/employees/employees.component').then((m) => m.EmployeesComponent)
+        loadComponent: () =>
+          import('./pages/employees/employees.component').then((m) => m.EmployeesComponent)
       },
       {
         path: ROUTE_PATHS.DOCTORS,
         canActivate: [capabilityGuard],
-        loadComponent: () => import('./pages/doctors/doctors.component').then((m) => m.DoctorsComponent)
+        loadComponent: () =>
+          import('./pages/doctors/doctors.component').then((m) => m.DoctorsComponent)
       },
       {
         path: ROUTE_PATHS.STORE_STAFF,
         canActivate: [capabilityGuard],
-        loadComponent: () => import('./pages/store-staff/store-staff.component').then((m) => m.StoreStaffComponent)
+        loadComponent: () =>
+          import('./pages/store-staff/store-staff.component').then((m) => m.StoreStaffComponent)
       },
       {
         path: ROUTE_PATHS.LEAVES,
         canActivate: [capabilityGuard],
-        loadComponent: () => import('./pages/leaves/leaves.component').then((m) => m.LeavesComponent)
+        loadComponent: () =>
+          import('./pages/leaves/leaves.component').then((m) => m.LeavesComponent)
       },
       {
         path: ROUTE_PATHS.STORES,
         canActivate: [capabilityGuard],
-        loadComponent: () => import('./pages/stores/stores.component').then((m) => m.StoresComponent)
+        loadComponent: () =>
+          import('./pages/stores/stores.component').then((m) => m.StoresComponent)
       },
       {
         path: ROUTE_PATHS.PAYROLL,
         canActivate: [capabilityGuard],
-        loadComponent: () => import('./pages/payroll/payroll.component').then((m) => m.PayrollComponent)
+        loadComponent: () =>
+          import('./pages/payroll/payroll.component').then((m) => m.PayrollComponent)
       },
       {
         path: ROUTE_PATHS.WALK_IN,
         canActivate: [capabilityGuard],
-        loadComponent: () => import('./pages/walk-in/walk-in.component').then((m) => m.WalkInComponent)
+        loadComponent: () =>
+          import('./pages/walk-in/walk-in.component').then((m) => m.WalkInComponent)
       },
       {
         path: ROUTE_PATHS.QUEUE,
@@ -84,34 +102,43 @@ export const routes: Routes = [
         path: ROUTE_PATHS.VISITOR_LEADS,
         canActivate: [capabilityGuard],
         loadComponent: () =>
-          import('./pages/visitor-leads/visitor-leads.component').then((m) => m.VisitorLeadsComponent)
+          import('./pages/visitor-leads/visitor-leads.component').then(
+            (m) => m.VisitorLeadsComponent
+          )
       },
       {
         path: ROUTE_PATHS.SCAN,
         canActivate: [capabilityGuard],
         loadComponent: () =>
-          import('./pages/patient-scan/patient-scan-launcher-page').then((m) => m.PatientScanLauncherPage)
+          import('./pages/patient-scan/patient-scan-launcher-page').then(
+            (m) => m.PatientScanLauncherPage
+          )
       },
       {
         path: ROUTE_PATHS.CLINIC_DASHBOARD,
         canActivate: [capabilityGuard],
         loadComponent: () =>
-          import('./pages/clinic-dashboard/hub-dashboard.component').then((m) => m.HubDashboardComponent)
+          import('./pages/clinic-dashboard/hub-dashboard.component').then(
+            (m) => m.HubDashboardComponent
+          )
       },
       {
         path: ROUTE_PATHS.ROSTER,
         canActivate: [capabilityGuard],
-        loadComponent: () => import('./pages/roster/roster.component').then((m) => m.RosterComponent)
+        loadComponent: () =>
+          import('./pages/roster/roster.component').then((m) => m.RosterComponent)
       },
       {
         path: ROUTE_PATHS.SCHEDULES,
         canActivate: [capabilityGuard],
-        loadComponent: () => import('./pages/schedules/schedules.component').then((m) => m.SchedulesComponent)
+        loadComponent: () =>
+          import('./pages/schedules/schedules.component').then((m) => m.SchedulesComponent)
       },
       {
         path: ROUTE_PATHS.FINANCE,
         canActivate: [capabilityGuard],
-        loadComponent: () => import('./pages/finance/reports.component').then((m) => m.ReportsComponent)
+        loadComponent: () =>
+          import('./pages/finance/reports.component').then((m) => m.ReportsComponent)
       },
       {
         path: ROUTE_PATHS.BRANCH_DASHBOARD,
@@ -122,41 +149,52 @@ export const routes: Routes = [
       {
         path: ROUTE_PATHS.FOLLOW_UPS,
         canActivate: [capabilityGuard],
-        loadComponent: () => import('./pages/follow-ups/follow-ups.component').then((m) => m.FollowUpsComponent)
+        loadComponent: () =>
+          import('./pages/follow-ups/follow-ups.component').then((m) => m.FollowUpsComponent)
       },
       {
         path: ROUTE_PATHS.PATIENTS,
         canActivate: [capabilityGuard],
         loadComponent: () =>
-          import('./pages/patient-search/patient-search.component').then((m) => m.PatientSearchComponent)
+          import('./pages/patient-search/patient-search.component').then(
+            (m) => m.PatientSearchComponent
+          )
       },
       {
         path: ROUTE_PATHS.CONSULTATIONS,
         canActivate: [capabilityGuard],
         loadComponent: () =>
-          import('./pages/consultations/consultations.component').then((m) => m.ConsultationsComponent)
+          import('./pages/consultations/consultations.component').then(
+            (m) => m.ConsultationsComponent
+          )
       },
       {
         path: ROUTE_PATHS.FUNNELS,
         canActivate: [capabilityGuard],
-        loadComponent: () => import('./pages/funnels/funnels.component').then((m) => m.FunnelsComponent)
+        loadComponent: () =>
+          import('./pages/funnels/funnels.component').then((m) => m.FunnelsComponent)
       },
       {
         path: ROUTE_PATHS.ORDERS,
         canActivate: [capabilityGuard],
-        loadComponent: () => import('./pages/orders/orders.component').then((m) => m.OrdersComponent)
+        loadComponent: () =>
+          import('./pages/orders/orders.component').then((m) => m.OrdersComponent)
       },
       {
         path: ROUTE_PATHS.WAREHOUSE,
         canActivate: [capabilityGuard],
         loadComponent: () =>
-          import('./pages/warehouse-dashboard/dashboard.component').then((m) => m.DashboardComponent)
+          import('./pages/warehouse-dashboard/dashboard.component').then(
+            (m) => m.DashboardComponent
+          )
       },
       {
         path: ROUTE_PATHS.WAREHOUSE_TRANSFERS,
         canActivate: [capabilityGuard],
         loadComponent: () =>
-          import('./pages/warehouse-transfers/transfers.component').then((m) => m.TransfersComponent)
+          import('./pages/warehouse-transfers/transfers.component').then(
+            (m) => m.TransfersComponent
+          )
       },
       {
         path: ROUTE_PATHS.PARTNER_DELIVERIES,
@@ -179,12 +217,14 @@ export const routes: Routes = [
       {
         path: ROUTE_PATHS.ACCOUNTS,
         canActivate: [capabilityGuard],
-        loadComponent: () => import('./pages/accounts/accounts.component').then((m) => m.AccountsComponent)
+        loadComponent: () =>
+          import('./pages/accounts/accounts.component').then((m) => m.AccountsComponent)
       },
       {
         path: ROUTE_PATHS.CLAIMS,
         canActivate: [capabilityGuard],
-        loadComponent: () => import('./pages/claims/claims.component').then((m) => m.ClaimsComponent)
+        loadComponent: () =>
+          import('./pages/claims/claims.component').then((m) => m.ClaimsComponent)
       },
       {
         path: ROUTE_PATHS.STORE,
@@ -198,7 +238,9 @@ export const routes: Routes = [
           {
             path: STORE_COUNTER_PATHS.DASHBOARD,
             loadComponent: () =>
-              import('./pages/store/dashboard/dashboard.component').then((m) => m.DashboardComponent)
+              import('./pages/store/dashboard/dashboard.component').then(
+                (m) => m.DashboardComponent
+              )
           },
           {
             path: STORE_COUNTER_PATHS.SEARCH,
@@ -247,7 +289,9 @@ export const routes: Routes = [
           {
             path: STORE_COUNTER_PATHS.MOVEMENTS,
             loadComponent: () =>
-              import('./pages/store/movements/movements.component').then((m) => m.MovementsComponent)
+              import('./pages/store/movements/movements.component').then(
+                (m) => m.MovementsComponent
+              )
           },
           {
             path: STORE_COUNTER_PATHS.STAFF_ACTIVITY,
@@ -263,13 +307,14 @@ export const routes: Routes = [
           },
           {
             path: STORE_COUNTER_PATHS.MY_PAY,
-            loadComponent: () =>
-              import('./pages/store/my-pay/my-pay-page').then((m) => m.MyPayPage)
+            loadComponent: () => import('./pages/store/my-pay/my-pay-page').then((m) => m.MyPayPage)
           },
           {
             path: STORE_COUNTER_PATHS.STORE_EXPENSES,
             loadComponent: () =>
-              import('./pages/store/store-expenses/store-expenses-page').then((m) => m.StoreExpensesPage)
+              import('./pages/store/store-expenses/store-expenses-page').then(
+                (m) => m.StoreExpensesPage
+              )
           },
           {
             path: STORE_COUNTER_PATHS.PATIENT_SCAN,
@@ -292,7 +337,9 @@ export const routes: Routes = [
           {
             path: STORE_MANAGER_PATHS.DASHBOARD,
             loadComponent: () =>
-              import('./pages/store/dashboard/dashboard.component').then((m) => m.DashboardComponent)
+              import('./pages/store/dashboard/dashboard.component').then(
+                (m) => m.DashboardComponent
+              )
           },
           {
             path: STORE_MANAGER_PATHS.PATIENTS,
@@ -331,7 +378,9 @@ export const routes: Routes = [
           {
             path: STORE_MANAGER_PATHS.MOVEMENTS,
             loadComponent: () =>
-              import('./pages/store/movements/movements.component').then((m) => m.MovementsComponent)
+              import('./pages/store/movements/movements.component').then(
+                (m) => m.MovementsComponent
+              )
           },
           {
             path: STORE_MANAGER_PATHS.STAFF_ACTIVITY,
@@ -348,7 +397,9 @@ export const routes: Routes = [
           {
             path: STORE_MANAGER_PATHS.STORE_EXPENSES,
             loadComponent: () =>
-              import('./pages/store/store-expenses/store-expenses-page').then((m) => m.StoreExpensesPage)
+              import('./pages/store/store-expenses/store-expenses-page').then(
+                (m) => m.StoreExpensesPage
+              )
           },
           {
             path: STORE_MANAGER_PATHS.PATIENT_SCAN,
@@ -374,7 +425,9 @@ export const routes: Routes = [
           {
             path: STORE_MANAGER_PATHS.DELIVERIES,
             loadComponent: () =>
-              import('./pages/store/manager/deliveries/deliveries-page').then((m) => m.DeliveriesPage)
+              import('./pages/store/manager/deliveries/deliveries-page').then(
+                (m) => m.DeliveriesPage
+              )
           }
         ]
       }
@@ -382,4 +435,3 @@ export const routes: Routes = [
   },
   { path: '**', redirectTo: ROUTE_PATHS.DASHBOARD }
 ];
-

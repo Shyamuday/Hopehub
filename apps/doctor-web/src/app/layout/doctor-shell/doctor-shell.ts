@@ -10,11 +10,12 @@ import { environment } from '../../../environments/environment';
 import { AUTH_TOKEN_KEY } from '../../core/constants/auth.constants';
 import { ROUTE_PATHS } from '../../core/constants/app-routes.constants';
 import {
-  mobileBottomNavLabels,
+  mobileBottomNavIds,
   navItemsForDoctorType,
   profileNavItem,
   type DoctorNavChildLink,
   type DoctorNavItemDef,
+  DOCTOR_NAV_ICONS,
 } from '../../core/constants/doctor-nav.constants';
 import { Auth } from '../../core/services/auth';
 import {
@@ -74,6 +75,7 @@ export class DoctorShell implements OnInit, OnDestroy {
     apiBase: environment.apiUrl,
     tokenKey: AUTH_TOKEN_KEY,
     apiPath: '/notifications',
+    inboxPath: `/${ROUTE_PATHS.NOTIFICATIONS_INBOX}`,
   };
   readonly apiBase = environment.apiUrl;
   readonly authTokenKey = AUTH_TOKEN_KEY;
@@ -241,38 +243,39 @@ export class DoctorShell implements OnInit, OnDestroy {
   }
 
   private applyMobileNavSplit(items: DoctorNavItemDef[]) {
-    const labels = mobileBottomNavLabels();
     const picked: DoctorBottomNavItem[] = [];
     const used = new Set<string>();
 
-    const clinical = items.find((item) => item.id === 'clinical');
-    const caseAnalysisChild = clinical?.children?.find((child) => child.id === 'case-analysis');
-
-    for (const label of labels) {
-      if (label === 'Case Analysis' && caseAnalysisChild?.enabled) {
-        picked.push({
-          id: caseAnalysisChild.id,
-          label: caseAnalysisChild.label,
-          path: caseAnalysisChild.path,
-          queryParams: caseAnalysisChild.queryParams,
-          icon: '🔬',
-          shortLabel: 'Case',
-        });
-        used.add(caseAnalysisChild.path);
+    for (const id of mobileBottomNavIds()) {
+      if (id === 'worklist') {
+        const item = items.find((entry) => entry.id === 'worklist' && entry.enabled && entry.path);
+        if (item?.path && !used.has(item.path)) {
+          picked.push({
+            id: item.id,
+            label: item.label,
+            path: item.path,
+            queryParams: item.queryParams,
+            icon: item.icon,
+            shortLabel: item.shortLabel,
+          });
+          used.add(item.path);
+        }
         continue;
       }
 
-      const item = items.find((entry) => entry.label === label && entry.path);
-      if (item?.path && !used.has(item.path)) {
+      const clinical = items.find((entry) => entry.id === 'clinical');
+      const child = clinical?.children?.find((entry) => entry.id === id && entry.enabled);
+      if (child && !used.has(child.path)) {
+        const icons = DOCTOR_NAV_ICONS[child.label] ?? DOCTOR_NAV_ICONS['Clinical'];
         picked.push({
-          id: item.id,
-          label: item.label,
-          path: item.path,
-          queryParams: item.queryParams,
-          icon: item.icon,
-          shortLabel: item.shortLabel,
+          id: child.id,
+          label: child.label,
+          path: child.path,
+          queryParams: child.queryParams,
+          icon: icons.icon,
+          shortLabel: icons.shortLabel,
         });
-        used.add(item.path);
+        used.add(child.path);
       }
     }
 

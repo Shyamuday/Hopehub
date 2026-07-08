@@ -1,0 +1,45 @@
+<nav class="ops-nav" [class.layout-sidebar]="layout() === 'sidebar'" aria-label="Operations navigation">
+  @if (layout() === 'horizontal' && currentPageLabel()) {
+    <span class="current-page" aria-current="page">{{ currentPageLabel() }}</span>
+  }
+
+  <div class="ops-nav-groups">
+    @for (group of visibleGroups(); track group.id) {
+      <div
+        class="nav-group"
+        [class.is-open]="isGroupExpanded(group.id)"
+        [class.has-active]="isGroupActive(group.id)"
+        (mouseenter)="onGroupEnter(group.id)"
+        (mouseleave)="onGroupLeave()"
+      >
+        <button
+          type="button"
+          class="group-btn"
+          [attr.aria-expanded]="isGroupExpanded(group.id)"
+          [attr.aria-haspopup]="layout() === 'horizontal'"
+          (click)="toggleGroup(group.id, $event)"
+        >
+          <span>{{ group.label }}</span>
+          <span class="caret" aria-hidden="true">▾</span>
+        </button>
+
+        @if (isGroupExpanded(group.id)) {
+          <div class="submenu" role="menu" [attr.aria-label]="group.label">
+            @for (item of group.items; track item.path) {
+              <a
+                [routerLink]="item.path"
+                role="menuitem"
+                class="submenu-link"
+                [class.active]="isItemActive(item.path)"
+                (click)="onNavItemClick()"
+              >
+                <span class="submenu-icon" aria-hidden="true">{{ item.icon }}</span>
+                <span>{{ item.label }}</span>
+              </a>
+            }
+          </div>
+        }
+      </div>
+    }
+  </div>
+</nav>

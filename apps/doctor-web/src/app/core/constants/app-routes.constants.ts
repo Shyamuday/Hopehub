@@ -34,36 +34,8 @@ export const ROUTE_PATHS = {
   BLOG: 'blog',
 
   ONLINE_DOCTOR: 'online-doctor',
+
+  NOTIFICATIONS_INBOX: 'notifications-inbox',
 } as const;
 
 export const DEFAULT_AUTHED_ROUTE = ROUTE_PATHS.WORKLIST;
-
-/** Legacy flat list — prefer doctor-nav.constants.ts for the live shell menu. */
-
-export const NAV_ITEMS = [
-  { path: `/${ROUTE_PATHS.WORKLIST}`, label: 'Worklist' },
-
-  { path: `/${ROUTE_PATHS.CASE_ANALYSIS_STUDIO}`, label: 'Case Analysis' },
-
-  { path: `/${ROUTE_PATHS.REPERTORY_BROWSER}`, label: 'Repertory lookup' },
-
-  { path: `/${ROUTE_PATHS.PATIENTS}`, label: 'Patients' },
-
-  { path: `/${ROUTE_PATHS.ONLINE_DOCTOR}`, label: 'Go live' },
-
-  { path: `/${ROUTE_PATHS.SCAN}`, label: 'Scan' },
-
-  { path: `/${ROUTE_PATHS.DASHBOARD}`, label: 'Dashboard' },
-
-  { path: `/${ROUTE_PATHS.SLOTS}`, label: 'Slots' },
-
-  { path: `/${ROUTE_PATHS.LEAVES}`, label: 'Leaves' },
-
-  { path: `/${ROUTE_PATHS.EARNINGS}`, label: 'Earnings' },
-
-  { path: `/${ROUTE_PATHS.DISEASE_PAGES}`, label: 'Treatment pages' },
-
-  { path: `/${ROUTE_PATHS.BLOG}`, label: 'Blog articles' },
-
-  { path: `/${ROUTE_PATHS.PROFILE}`, label: 'Profile' },
-] as const;

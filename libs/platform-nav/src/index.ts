@@ -4,3 +4,4 @@ export {
   navItemsForCapabilities,
   type PlatformNavItem
 } from './nav-items';
+export { OPERATIONS_NAV_GROUPS, type OperationsNavGroup } from './nav-groups';

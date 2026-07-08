@@ -1,0 +1,33 @@
+<section class="inbox-panel panel">
+  <div class="inbox-toolbar">
+    <span class="badge">{{ unreadCount() }} unread</span>
+    <div class="actions">
+      <button type="button" class="btn-secondary" (click)="loadItems()" [disabled]="loading()">Refresh</button>
+      <button type="button" class="btn-secondary" (click)="markAllRead()" [disabled]="!unreadCount()">Mark all read</button>
+    </div>
+  </div>
+
+  @if (error()) {
+    <p class="error">{{ error() }}</p>
+  } @else if (loading()) {
+    <p class="muted">Loading notifications…</p>
+  } @else if (!items().length) {
+    <p class="muted">No notifications yet.</p>
+  } @else {
+    <ul class="inbox-list">
+      @for (item of items(); track item.id) {
+        <li>
+          <button type="button" class="inbox-item" [class.unread]="!item.readAt" (click)="markRead(item)">
+            <div class="item-head">
+              <strong>{{ item.title }}</strong>
+              <time>{{ item.createdAt | date: 'medium' }}</time>
+            </div>
+            @if (item.body) {
+              <p>{{ item.body }}</p>
+            }
+          </button>
+        </li>
+      }
+    </ul>
+  }
+</section>

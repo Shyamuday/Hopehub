@@ -24,6 +24,7 @@ export const ROUTE_PATHS = {
   MEDICINES: 'medicines',
   INVENTORY: 'inventory',
   NOTIFICATIONS: 'notifications',
+  NOTIFICATIONS_INBOX: 'notifications-inbox',
   SECURITY: 'security',
   ECOSYSTEM_USERS: 'ecosystem-users',
   STAFF: 'staff',
@@ -36,7 +37,7 @@ export const ROUTE_PATHS = {
   CHAT_INBOX: 'chat-inbox',
   REWARDS: 'rewards',
   CLINICAL_RECORDS: 'clinical-records',
-  ACCOUNT: 'account'
+  ACCOUNT: 'account',
 } as const;
 
 /** When embedded in operations-web, set `globalThis.__ADMIN_ROUTE_BASE__ = 'admin'`. */
@@ -83,6 +84,7 @@ export const NAV_ITEMS = [
   { path: adminNavPath(ROUTE_PATHS.MEDICINES), label: '💊 Medicines' },
   { path: adminNavPath(ROUTE_PATHS.INVENTORY), label: '📦 Inventory' },
   { path: adminNavPath(ROUTE_PATHS.NOTIFICATIONS), label: '🔔 Notifications' },
+  { path: adminNavPath(ROUTE_PATHS.NOTIFICATIONS_INBOX), label: '📬 Inbox' },
   { path: adminNavPath(ROUTE_PATHS.ADMIN_USERS), label: '🔐 Admin Users' },
   { path: adminNavPath(ROUTE_PATHS.STAFF), label: '🛡️ Staff permissions' },
   { path: adminNavPath(ROUTE_PATHS.ECOSYSTEM_USERS), label: '🌐 Portal Users' },
@@ -94,7 +96,7 @@ export const NAV_ITEMS = [
   { path: adminNavPath(ROUTE_PATHS.ADHERENCE), label: '📉 Adherence Risk' },
   { path: adminNavPath(ROUTE_PATHS.ANALYTICS), label: '📈 Product Analytics' },
   { path: adminNavPath(ROUTE_PATHS.FINANCE), label: '📊 Finance' },
-  { path: adminNavPath(ROUTE_PATHS.PAYROLL), label: '💰 Payroll' }
+  { path: adminNavPath(ROUTE_PATHS.PAYROLL), label: '💰 Payroll' },
 ] as const;
 
 export type AdminNavItem = { path: string; label: string };
@@ -110,22 +112,47 @@ export const NAV_GROUPS: AdminNavGroup[] = [
   {
     id: 'overview',
     label: 'Overview',
-    segments: [ROUTE_PATHS.DASHBOARD, ROUTE_PATHS.ANALYTICS, ROUTE_PATHS.ADHERENCE]
+    segments: [ROUTE_PATHS.DASHBOARD, ROUTE_PATHS.ANALYTICS, ROUTE_PATHS.ADHERENCE],
   },
   {
-    id: 'clinical',
-    label: 'Clinical',
-    segments: [ROUTE_PATHS.DOCTORS, ROUTE_PATHS.CONSUMERS, ROUTE_PATHS.SCAN, ROUTE_PATHS.DISEASES, ROUTE_PATHS.RATES, ROUTE_PATHS.REWARDS, ROUTE_PATHS.CLINICAL_RECORDS, ROUTE_PATHS.CONSULTATIONS, ROUTE_PATHS.ONLINE_DOCTORS]
+    id: 'care',
+    label: 'Care delivery',
+    segments: [
+      ROUTE_PATHS.CONSULTATIONS,
+      ROUTE_PATHS.ONLINE_DOCTORS,
+      ROUTE_PATHS.DOCTORS,
+      ROUTE_PATHS.CONSUMERS,
+      ROUTE_PATHS.SCAN,
+      ROUTE_PATHS.CLINICAL_RECORDS,
+    ],
+  },
+  {
+    id: 'catalog',
+    label: 'Catalog & pricing',
+    segments: [ROUTE_PATHS.DISEASES, ROUTE_PATHS.RATES, ROUTE_PATHS.REWARDS],
   },
   {
     id: 'people',
     label: 'People & HR',
-    segments: [ROUTE_PATHS.VACANCIES, ROUTE_PATHS.HR, ROUTE_PATHS.HR_USERS, ROUTE_PATHS.EMPLOYEES, ROUTE_PATHS.LEAVES, ROUTE_PATHS.PAYROLL]
+    segments: [
+      ROUTE_PATHS.VACANCIES,
+      ROUTE_PATHS.HR,
+      ROUTE_PATHS.HR_USERS,
+      ROUTE_PATHS.EMPLOYEES,
+      ROUTE_PATHS.LEAVES,
+      ROUTE_PATHS.PAYROLL,
+    ],
   },
   {
     id: 'content',
-    label: 'Website Content',
-    segments: [ROUTE_PATHS.TESTIMONIALS, ROUTE_PATHS.FAQ, ROUTE_PATHS.BLOG, ROUTE_PATHS.SITE_CONFIG, ROUTE_PATHS.CHAT_INBOX]
+    label: 'Website & leads',
+    segments: [
+      ROUTE_PATHS.TESTIMONIALS,
+      ROUTE_PATHS.FAQ,
+      ROUTE_PATHS.BLOG,
+      ROUTE_PATHS.SITE_CONFIG,
+      ROUTE_PATHS.CHAT_INBOX,
+    ],
   },
   {
     id: 'stores',
@@ -135,24 +162,26 @@ export const NAV_GROUPS: AdminNavGroup[] = [
       ROUTE_PATHS.PURCHASE_ORDERS,
       ROUTE_PATHS.SUPPLIERS,
       ROUTE_PATHS.MEDICINES,
-      ROUTE_PATHS.INVENTORY
-    ]
+      ROUTE_PATHS.INVENTORY,
+    ],
   },
   {
     id: 'finance',
     label: 'Finance',
-    segments: [ROUTE_PATHS.PAYMENTS, ROUTE_PATHS.FINANCE]
+    segments: [ROUTE_PATHS.PAYMENTS, ROUTE_PATHS.FINANCE],
   },
   {
     id: 'platform',
     label: 'Platform',
     segments: [
       ROUTE_PATHS.NOTIFICATIONS,
+      ROUTE_PATHS.NOTIFICATIONS_INBOX,
       ROUTE_PATHS.ADMIN_USERS,
       ROUTE_PATHS.STAFF,
       ROUTE_PATHS.ECOSYSTEM_USERS,
       ROUTE_PATHS.AUDIT,
-      ROUTE_PATHS.SECURITY
-    ]
-  }
+      ROUTE_PATHS.SECURITY,
+      ROUTE_PATHS.ACCOUNT,
+    ],
+  },
 ];

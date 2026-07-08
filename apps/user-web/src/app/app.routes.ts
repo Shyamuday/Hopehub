@@ -40,22 +40,25 @@ export const routes: Routes = [
   {
     path: 'about',
     component: AboutComponent,
-    data: ROUTE_SEO_CONTENT.about
+    data: ROUTE_SEO_CONTENT.about,
   },
   {
     path: 'treatments',
     component: TreatmentsComponent,
-    data: ROUTE_SEO_CONTENT.treatments
+    data: ROUTE_SEO_CONTENT.treatments,
   },
   {
     path: 'treatments/:slug',
     component: DiseaseDetailComponent,
-    data: ROUTE_SEO_CONTENT['treatments/:slug']
+    data: ROUTE_SEO_CONTENT['treatments/:slug'],
   },
   {
     path: 'talk-to-doctor',
     component: TalkToDoctorComponent,
-    data: { title: 'Talk to a doctor now', description: 'Instant online consultation with live doctors.' }
+    data: {
+      title: 'Talk to a doctor now',
+      description: 'Instant online consultation with live doctors.',
+    },
   },
   {
     path: 'patient/instant-consult/:id',
@@ -64,91 +67,91 @@ export const routes: Routes = [
     data: {
       roles: ['PATIENT'],
       seoTitle: 'Instant consult room | Vitalis Care',
-      seoDescription: 'Chat and video call with your online doctor.'
-    }
+      seoDescription: 'Chat and video call with your online doctor.',
+    },
   },
   {
     path: 'our-doctors',
     component: OurDoctorsComponent,
-    data: ROUTE_SEO_CONTENT['our-doctors']
+    data: ROUTE_SEO_CONTENT['our-doctors'],
   },
   {
     path: 'blog',
     component: BlogComponent,
-    data: ROUTE_SEO_CONTENT.blog
+    data: ROUTE_SEO_CONTENT.blog,
   },
   {
     path: 'blog/:slug',
     component: BlogDetailComponent,
-    data: ROUTE_SEO_CONTENT.blog
+    data: ROUTE_SEO_CONTENT.blog,
   },
   {
     path: 'testimonials',
     component: TestimonialsComponent,
-    data: ROUTE_SEO_CONTENT.testimonials
+    data: ROUTE_SEO_CONTENT.testimonials,
   },
   {
     path: 'careers',
     component: CareersComponent,
-    data: ROUTE_SEO_CONTENT.careers
+    data: ROUTE_SEO_CONTENT.careers,
   },
   { path: 'hair-fall', redirectTo: 'treatments/hair-fall', pathMatch: 'full' },
   { path: 'skin-care', redirectTo: 'treatments/skin-care', pathMatch: 'full' },
   {
     path: 'chronic-care',
     component: ChronicCareComponent,
-    data: ROUTE_SEO_CONTENT['chronic-care']
+    data: ROUTE_SEO_CONTENT['chronic-care'],
   },
   {
     path: 'faq',
     component: FaqComponent,
-    data: ROUTE_SEO_CONTENT.faq
+    data: ROUTE_SEO_CONTENT.faq,
   },
   {
     path: 'why-successful',
     component: WhySuccessfulComponent,
-    data: ROUTE_SEO_CONTENT['why-successful']
+    data: ROUTE_SEO_CONTENT['why-successful'],
   },
   {
     path: 'contact',
     component: ContactComponent,
-    data: ROUTE_SEO_CONTENT.contact
+    data: ROUTE_SEO_CONTENT.contact,
   },
   {
     path: 'legal',
     component: LegalHubComponent,
-    data: ROUTE_SEO_CONTENT.legal
+    data: ROUTE_SEO_CONTENT.legal,
   },
   {
     path: 'privacy-policy',
     component: LegalPageComponent,
-    data: { legalKey: 'privacy', ...ROUTE_SEO_CONTENT['privacy-policy'] }
+    data: { legalKey: 'privacy', ...ROUTE_SEO_CONTENT['privacy-policy'] },
   },
   {
     path: 'terms-and-conditions',
     component: LegalPageComponent,
-    data: { legalKey: 'terms', ...ROUTE_SEO_CONTENT['terms-and-conditions'] }
+    data: { legalKey: 'terms', ...ROUTE_SEO_CONTENT['terms-and-conditions'] },
   },
   {
     path: 'return-and-exchange-policy',
     component: LegalPageComponent,
-    data: { legalKey: 'returnExchange', ...ROUTE_SEO_CONTENT['return-and-exchange-policy'] }
+    data: { legalKey: 'returnExchange', ...ROUTE_SEO_CONTENT['return-and-exchange-policy'] },
   },
   {
     path: 'shipping-policy',
     component: LegalPageComponent,
-    data: { legalKey: 'shipping', ...ROUTE_SEO_CONTENT['shipping-policy'] }
+    data: { legalKey: 'shipping', ...ROUTE_SEO_CONTENT['shipping-policy'] },
   },
   {
     path: 'payment-policy',
     component: LegalPageComponent,
-    data: { legalKey: 'payment', ...ROUTE_SEO_CONTENT['payment-policy'] }
+    data: { legalKey: 'payment', ...ROUTE_SEO_CONTENT['payment-policy'] },
   },
   { path: 'privacy-terms', redirectTo: 'legal', pathMatch: 'full' },
   {
     path: 'safety',
     component: SafetyComponent,
-    data: ROUTE_SEO_CONTENT.safety
+    data: ROUTE_SEO_CONTENT.safety,
   },
   {
     path: 'login',
@@ -156,9 +159,14 @@ export const routes: Routes = [
   },
   { path: 'auth/reset', component: AuthResetCallbackComponent },
   {
+    path: 'patient/profile',
+    redirectTo: 'patient/account/profile',
+    pathMatch: 'full',
+  },
+  {
     path: 'get-app',
     loadComponent: () => import('./get-app-page.component').then((m) => m.GetAppPageComponent),
-    data: ROUTE_SEO_CONTENT['get-app']
+    data: ROUTE_SEO_CONTENT['get-app'],
   },
   {
     path: 'patient/scan',
@@ -167,8 +175,8 @@ export const routes: Routes = [
     data: {
       roles: ['PATIENT'],
       ...ROUTE_SEO_CONTENT['patient/dashboard'],
-      seoTitle: 'Scan patient ID | Vitalis Care'
-    }
+      seoTitle: 'Scan patient ID | Vitalis Care',
+    },
   },
   {
     path: 'patient/dashboard',
@@ -176,8 +184,8 @@ export const routes: Routes = [
     canActivate: [roleGuard],
     data: {
       roles: ['PATIENT'],
-      ...ROUTE_SEO_CONTENT['patient/dashboard']
-    }
+      ...ROUTE_SEO_CONTENT['patient/dashboard'],
+    },
   },
   {
     path: 'patient/account',
@@ -185,78 +193,82 @@ export const routes: Routes = [
     canActivate: [roleGuard],
     data: {
       roles: ['PATIENT'],
-      ...ROUTE_SEO_CONTENT['patient/account']
+      ...ROUTE_SEO_CONTENT['patient/account'],
     },
     children: [
       { path: '', component: PatientAccountHubComponent },
       {
         path: 'profile',
         component: PatientAccountProfilePage,
-        data: ROUTE_SEO_CONTENT['patient/account/profile']
+        data: ROUTE_SEO_CONTENT['patient/account/profile'],
       },
       {
         path: 'addresses',
         component: PatientAccountAddressesPageComponent,
-        data: ROUTE_SEO_CONTENT['patient/account/addresses']
+        data: ROUTE_SEO_CONTENT['patient/account/addresses'],
       },
       {
         path: 'refer',
         component: PatientAccountReferPageComponent,
-        data: ROUTE_SEO_CONTENT['patient/account/refer']
+        data: ROUTE_SEO_CONTENT['patient/account/refer'],
       },
       {
         path: 'rewards',
         component: PatientAccountRewardsPageComponent,
-        data: ROUTE_SEO_CONTENT['patient/account/rewards']
+        data: ROUTE_SEO_CONTENT['patient/account/rewards'],
       },
       {
         path: 'consultations',
         component: PatientAccountConsultationsPageComponent,
-        data: ROUTE_SEO_CONTENT['patient/account/consultations']
+        data: ROUTE_SEO_CONTENT['patient/account/consultations'],
       },
       {
         path: 'consultations/:id',
         component: PatientAccountConsultationDetailPageComponent,
-        data: ROUTE_SEO_CONTENT['patient/account/consultations']
+        data: ROUTE_SEO_CONTENT['patient/account/consultations'],
       },
       {
         path: 'orders',
         component: PatientAccountOrdersPageComponent,
-        data: ROUTE_SEO_CONTENT['patient/account/orders']
+        data: ROUTE_SEO_CONTENT['patient/account/orders'],
       },
       {
         path: 'orders/:id',
         component: PatientAccountOrderDetailPageComponent,
-        data: ROUTE_SEO_CONTENT['patient/account/orders']
+        data: ROUTE_SEO_CONTENT['patient/account/orders'],
       },
       {
         path: 'lab-results',
         component: PatientAccountLabResultsPageComponent,
-        data: ROUTE_SEO_CONTENT['patient/account/lab-results']
+        data: ROUTE_SEO_CONTENT['patient/account/lab-results'],
       },
       {
         path: 'card',
         component: PatientAccountCardPageComponent,
-        data: ROUTE_SEO_CONTENT['patient/account/card']
+        data: ROUTE_SEO_CONTENT['patient/account/card'],
       },
       {
         path: 'permissions',
         component: PatientAccountPermissionsPageComponent,
         data: {
           seoTitle: 'App permissions | Vitalis Care',
-          seoDescription: 'Learn why Vitalis asks for camera, microphone, and notification access — and how you stay in control.'
-        }
-      }
-    ]
+          seoDescription:
+            'Learn why Vitalis asks for camera, microphone, and notification access — and how you stay in control.',
+        },
+      },
+    ],
   },
   {
     path: '',
     component: HomeComponent,
-    data: ROUTE_SEO_CONTENT.home
+    data: ROUTE_SEO_CONTENT.home,
   },
   {
     path: '**',
     component: NotFoundPageComponent,
-    data: { seoTitle: 'Page not found | Vitalis Care', seoDescription: 'The page you requested could not be found.' }
-  }
+    data: {
+      seoTitle: 'Page not found | Vitalis Care',
+      seoDescription: 'The page you requested could not be found.',
+    },
+  },
 ];

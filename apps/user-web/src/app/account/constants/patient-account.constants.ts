@@ -9,6 +9,20 @@ export type PatientAccountNavItem = {
   available: boolean;
 };
 
+export type PatientAccountNavGroup = {
+  id: string;
+  label: string;
+  itemIds: string[];
+};
+
+export const PATIENT_ACCOUNT_NAV_GROUPS: PatientAccountNavGroup[] = [
+  { id: 'overview', label: 'Overview', itemIds: ['overview', 'dashboard'] },
+  { id: 'history', label: 'Care history', itemIds: ['consultations', 'lab-results', 'orders'] },
+  { id: 'profile', label: 'Profile & delivery', itemIds: ['profile', 'addresses', 'card'] },
+  { id: 'rewards', label: 'Rewards', itemIds: ['refer', 'rewards'] },
+  { id: 'settings', label: 'Settings', itemIds: ['permissions'] },
+];
+
 export const PATIENT_ACCOUNT_NAV: PatientAccountNavItem[] = [
   {
     id: 'overview',
@@ -16,7 +30,7 @@ export const PATIENT_ACCOUNT_NAV: PatientAccountNavItem[] = [
     description: 'Account summary and quick links',
     path: `/${ROUTE_PATHS.PATIENT_ACCOUNT}`,
     icon: '👤',
-    available: true
+    available: true,
   },
   {
     id: 'profile',
@@ -24,7 +38,7 @@ export const PATIENT_ACCOUNT_NAV: PatientAccountNavItem[] = [
     description: 'Profile, health details, password',
     path: `/${ROUTE_PATHS.PATIENT_ACCOUNT_PROFILE}`,
     icon: '✏️',
-    available: true
+    available: true,
   },
   {
     id: 'addresses',
@@ -32,7 +46,7 @@ export const PATIENT_ACCOUNT_NAV: PatientAccountNavItem[] = [
     description: 'Delivery addresses for medicines',
     path: `/${ROUTE_PATHS.PATIENT_ACCOUNT_ADDRESSES}`,
     icon: '📍',
-    available: true
+    available: true,
   },
   {
     id: 'consultations',
@@ -40,7 +54,7 @@ export const PATIENT_ACCOUNT_NAV: PatientAccountNavItem[] = [
     description: 'Past visits, pay pending, prescriptions',
     path: `/${ROUTE_PATHS.PATIENT_ACCOUNT_CONSULTATIONS}`,
     icon: '🩺',
-    available: true
+    available: true,
   },
   {
     id: 'orders',
@@ -48,7 +62,7 @@ export const PATIENT_ACCOUNT_NAV: PatientAccountNavItem[] = [
     description: 'Track medicine deliveries',
     path: `/${ROUTE_PATHS.PATIENT_ACCOUNT_ORDERS}`,
     icon: '📦',
-    available: true
+    available: true,
   },
   {
     id: 'lab-results',
@@ -56,7 +70,7 @@ export const PATIENT_ACCOUNT_NAV: PatientAccountNavItem[] = [
     description: 'Diagnostic referrals and test results',
     path: `/${ROUTE_PATHS.PATIENT_ACCOUNT_LAB_RESULTS}`,
     icon: '🧪',
-    available: true
+    available: true,
   },
   {
     id: 'card',
@@ -64,7 +78,7 @@ export const PATIENT_ACCOUNT_NAV: PatientAccountNavItem[] = [
     description: 'Patient ID and QR for visits',
     path: `/${ROUTE_PATHS.PATIENT_ACCOUNT_CARD}`,
     icon: '🪪',
-    available: true
+    available: true,
   },
   {
     id: 'permissions',
@@ -72,7 +86,7 @@ export const PATIENT_ACCOUNT_NAV: PatientAccountNavItem[] = [
     description: 'Why we ask for camera, mic & alerts',
     path: `/${ROUTE_PATHS.PATIENT_ACCOUNT_PERMISSIONS}`,
     icon: '🔒',
-    available: true
+    available: true,
   },
   {
     id: 'dashboard',
@@ -80,7 +94,7 @@ export const PATIENT_ACCOUNT_NAV: PatientAccountNavItem[] = [
     description: 'Chat, medicines, today’s doses',
     path: `/${ROUTE_PATHS.PATIENT_DASHBOARD}`,
     icon: '💬',
-    available: true
+    available: true,
   },
   {
     id: 'refer',
@@ -88,7 +102,7 @@ export const PATIENT_ACCOUNT_NAV: PatientAccountNavItem[] = [
     description: 'Invite friends and earn rewards',
     path: `/${ROUTE_PATHS.PATIENT_ACCOUNT_REFER}`,
     icon: '🎁',
-    available: true
+    available: true,
   },
   {
     id: 'rewards',
@@ -96,6 +110,16 @@ export const PATIENT_ACCOUNT_NAV: PatientAccountNavItem[] = [
     description: 'Wallet balance and history',
     path: `/${ROUTE_PATHS.PATIENT_ACCOUNT_REWARDS}`,
     icon: '⭐',
-    available: true
-  }
+    available: true,
+  },
 ];
+
+export function patientAccountNavGroups(items: PatientAccountNavItem[] = PATIENT_ACCOUNT_NAV) {
+  const byId = new Map(items.map((item) => [item.id, item]));
+  return PATIENT_ACCOUNT_NAV_GROUPS.map((group) => ({
+    ...group,
+    items: group.itemIds
+      .map((id) => byId.get(id))
+      .filter((item): item is PatientAccountNavItem => !!item && item.available),
+  })).filter((group) => group.items.length > 0);
+}

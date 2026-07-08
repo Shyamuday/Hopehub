@@ -9,19 +9,24 @@
   <aside class="account-nav panel">
     <p class="account-nav-title">Account</p>
     <nav aria-label="Account navigation">
-      @for (item of navItems; track item.id) {
-        <a
-          class="account-nav-link"
-          [routerLink]="item.path"
-          routerLinkActive="active"
-          [routerLinkActiveOptions]="{ exact: item.id === 'overview' }"
-        >
-          <span class="nav-icon" aria-hidden="true">{{ item.icon }}</span>
-          <span>
-            <strong>{{ item.label }}</strong>
-            <small>{{ item.description }}</small>
-          </span>
-        </a>
+      @for (group of navGroups; track group.id) {
+        <section class="account-nav-group">
+          <p class="account-nav-group-title">{{ group.label }}</p>
+          @for (item of group.items; track item.id) {
+            <a
+              class="account-nav-link"
+              [routerLink]="item.path"
+              routerLinkActive="active"
+              [routerLinkActiveOptions]="{ exact: item.id === 'overview' }"
+            >
+              <span class="nav-icon" aria-hidden="true">{{ item.icon }}</span>
+              <span>
+                <strong>{{ item.label }}</strong>
+                <small>{{ item.description }}</small>
+              </span>
+            </a>
+          }
+        </section>
       }
     </nav>
   </aside>

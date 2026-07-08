@@ -2,6 +2,7 @@ import { Component, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { form, FormField, required } from '@angular/forms/signals';
 import { AdminAuth } from '../../../core/services/admin-auth';
+import { pickFirstAllowedRoute } from '../../../core/admin-navigation';
 import { DEFAULT_AUTHED_ROUTE } from '../../../core/constants/app-routes.constants';
 import { DevLoginPanelComponent } from '@vitalis/platform-ui';
 import { DEV_DEMO_ACCOUNTS } from '../../../core/constants/dev-demo.constants';
@@ -11,7 +12,7 @@ import type { DevFillCredentials } from '@vitalis/platform-ui';
   selector: 'app-admin-login',
   imports: [FormField, DevLoginPanelComponent],
   templateUrl: './admin-login.html',
-  styleUrl: './admin-login.scss'
+  styleUrl: './admin-login.scss',
 })
 export class AdminLogin {
   private readonly auth = inject(AdminAuth);
@@ -19,7 +20,7 @@ export class AdminLogin {
 
   readonly loginModel = signal({
     email: DEV_DEMO_ACCOUNTS.admin.email as string,
-    password: DEV_DEMO_ACCOUNTS.password as string
+    password: DEV_DEMO_ACCOUNTS.password as string,
   });
   readonly loginForm = form(this.loginModel, (schema) => {
     required(schema.email, { message: 'Email is required' });
@@ -40,21 +41,25 @@ export class AdminLogin {
         this.error.set(result.message);
         return;
       }
-      void this.router.navigateByUrl(`/${DEFAULT_AUTHED_ROUTE}`);
+      void this.router.navigateByUrl(this.postLoginRoute());
     } finally {
       this.submitting.set(false);
     }
   }
 
   onDevLoggedIn() {
-    void this.router.navigateByUrl(`/${DEFAULT_AUTHED_ROUTE}`);
+    void this.router.navigateByUrl(this.postLoginRoute());
+  }
+
+  private postLoginRoute() {
+    return pickFirstAllowedRoute(this.auth.user()) ?? `/${DEFAULT_AUTHED_ROUTE}`;
   }
 
   applyDevFill(credentials: DevFillCredentials) {
     this.loginModel.update((model) => ({
       ...model,
       ...(credentials.email ? { email: credentials.email } : {}),
-      ...(credentials.password ? { password: credentials.password } : {})
+      ...(credentials.password ? { password: credentials.password } : {}),
     }));
   }
 }

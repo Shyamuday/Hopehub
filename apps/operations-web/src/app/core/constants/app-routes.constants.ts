@@ -30,7 +30,8 @@ export const ROUTE_PATHS = {
   STORE: 'store',
   STORE_MANAGER: 'store-manager',
   SCAN: 'scan',
-  ACCOUNT: 'account'
+  ACCOUNT: 'account',
+  NOTIFICATIONS_INBOX: 'notifications-inbox'
 } as const;
 
 export const STORE_COUNTER_PATHS = {
@@ -139,4 +140,3 @@ export const STORE_MANAGER_CAPABILITIES: Record<string, string> = {
   [STORE_MANAGER_PATHS.STOCK_TRANSFERS]: 'store_manager.portal',
   [STORE_MANAGER_PATHS.DELIVERIES]: 'store_manager.portal'
 };
-

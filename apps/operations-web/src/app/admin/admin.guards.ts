@@ -20,6 +20,8 @@ export const ADMIN_ROUTE_CAPABILITIES: Record<string, string> = {
   'admin-users': 'admin.users',
   'ecosystem-users': 'admin.ecosystem_users',
   consultations: 'admin.consultations',
+  'online-doctors': 'admin.doctors',
+  scan: 'admin.consumers',
   payments: 'admin.finance',
   audit: 'admin.audit',
   security: 'admin.audit',

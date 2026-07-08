@@ -4,7 +4,11 @@ import { filter } from 'rxjs';
 import { RoleTaskGuideComponent, NotificationBellHostComponent } from '@vitalis/platform-ui';
 import { environment } from '../../environments/environment';
 import { AUTH_TOKEN_KEY } from '../core/constants/auth.constants';
-import { NAV_ITEMS, ROUTE_PATHS, adminNavPath } from '@vitalis/admin-console/core/constants/app-routes.constants';
+import {
+  NAV_ITEMS,
+  ROUTE_PATHS,
+  adminNavPath
+} from '@vitalis/admin-console/core/constants/app-routes.constants';
 import { AdminNavTabsComponent } from '@vitalis/admin-console/layout/admin-nav-tabs/admin-nav-tabs.component';
 import { AdminAuth } from '@vitalis/admin-console/core/services/admin-auth';
 import { PlatformAuthService } from '../services/platform-auth.service';
@@ -15,7 +19,13 @@ import { ADMIN_ROUTE_CAPABILITIES } from './admin.guards';
 @Component({
   selector: 'app-admin-embed-shell',
   standalone: true,
-  imports: [RouterOutlet, RouterLink, RoleTaskGuideComponent, NotificationBellHostComponent, AdminNavTabsComponent],
+  imports: [
+    RouterOutlet,
+    RouterLink,
+    RoleTaskGuideComponent,
+    NotificationBellHostComponent,
+    AdminNavTabsComponent
+  ],
   templateUrl: './admin-embed-shell.component.html',
   styleUrl: './admin-embed-shell.component.scss'
 })
@@ -27,14 +37,17 @@ export class AdminEmbedShellComponent implements OnInit, OnDestroy {
   private readonly adminMobileLayout = inject(AdminMobileLayoutService);
 
   readonly menuOpen = signal(false);
-  readonly focusMode = computed(() => this.mobileLayout.pageFocus() || this.adminMobileLayout.pageFocus());
+  readonly focusMode = computed(
+    () => this.mobileLayout.pageFocus() || this.adminMobileLayout.pageFocus()
+  );
 
   private navSubscription?: { unsubscribe: () => void };
 
   readonly bellConfig = computed(() => ({
     apiBase: environment.apiUrl,
     tokenKey: AUTH_TOKEN_KEY,
-    apiPath: '/notifications'
+    apiPath: '/notifications',
+    inboxPath: adminNavPath(ROUTE_PATHS.NOTIFICATIONS_INBOX)
   }));
 
   readonly accountPath = adminNavPath(ROUTE_PATHS.ACCOUNT);

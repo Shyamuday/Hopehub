@@ -14,4 +14,5 @@ export type NotificationBellConfig = {
   apiPath: string;
   pollMs?: number;
   socketEnabled?: boolean;
+  inboxPath?: string;
 };

@@ -1,106 +1,37 @@
 import { CommonModule, DatePipe } from '@angular/common';
-import {
-  Component,
-  effect,
-  ElementRef,
-  HostListener,
-  inject,
-  Input,
-  OnDestroy,
-  OnInit,
-  signal,
-  viewChild
-} from '@angular/core';
-import { Menu, MenuItem, MenuTrigger } from '@angular/aria/menu';
-import { RouterLink } from '@angular/router';
-import { io, type Socket } from 'socket.io-client';
-import type { InAppNotificationItem, NotificationBellConfig } from './types';
+import { Component, Input, OnDestroy, OnInit, signal } from '@angular/core';
+import type { InAppNotificationItem, NotificationBellConfig } from '../notification-bell/types';
 
 @Component({
-  selector: 'app-shared-notification-bell',
+  selector: 'app-notification-inbox',
   standalone: true,
-  imports: [CommonModule, DatePipe, Menu, MenuTrigger, MenuItem, RouterLink],
-  templateUrl: './notification-bell.component.html',
-  styleUrl: './notification-bell.component.scss'
+  imports: [CommonModule, DatePipe],
+  templateUrl: './notification-inbox.component.html',
+  styleUrl: './notification-inbox.component.scss'
 })
-export class NotificationBellComponent implements OnInit, OnDestroy {
+export class NotificationInboxComponent implements OnInit, OnDestroy {
   @Input({ required: true }) config!: NotificationBellConfig;
 
-  private readonly host = inject(ElementRef<HTMLElement>);
-  private readonly notificationMenu = viewChild<Menu<unknown>>('notificationMenu');
-
-  loading = signal(false);
-  unreadCount = signal(0);
-  items = signal<InAppNotificationItem[]>([]);
-  error = signal('');
+  readonly loading = signal(false);
+  readonly error = signal('');
+  readonly items = signal<InAppNotificationItem[]>([]);
+  readonly unreadCount = signal(0);
 
   private pollTimer: ReturnType<typeof setInterval> | null = null;
-  private socket: Socket | null = null;
-
-  constructor() {
-    effect(() => {
-      if (this.notificationMenu()?.visible()) {
-        void this.loadItems();
-      }
-    });
-  }
 
   ngOnInit(): void {
-    void this.refreshUnread();
+    void this.loadItems();
     const pollMs = this.config.pollMs ?? 30000;
     this.pollTimer = setInterval(() => void this.refreshUnread(), pollMs);
-    this.connectSocket();
   }
 
   ngOnDestroy(): void {
     if (this.pollTimer) clearInterval(this.pollTimer);
-    this.socket?.disconnect();
-    this.socket = null;
-  }
-
-  @HostListener('document:click', ['$event'])
-  onDocumentClick(event: MouseEvent): void {
-    const menu = this.notificationMenu();
-    if (!menu?.visible()) return;
-    const target = event.target;
-    if (target instanceof Node && this.host.nativeElement.contains(target)) return;
-    menu.close();
-  }
-
-  @HostListener('document:keydown', ['$event'])
-  onKeydown(event: KeyboardEvent): void {
-    if (event.key !== 'Escape') return;
-    const menu = this.notificationMenu();
-    if (!menu?.visible()) return;
-    menu.close();
-    event.stopPropagation();
-  }
-
-  closePanel(): void {
-    this.notificationMenu()?.close();
   }
 
   private token(): string | null {
     if (typeof localStorage === 'undefined') return null;
     return localStorage.getItem(this.config.tokenKey);
-  }
-
-  private connectSocket(): void {
-    if (this.config.socketEnabled === false) return;
-    const token = this.token();
-    if (!token) return;
-
-    this.socket = io(this.config.apiBase, {
-      auth: { token },
-      transports: ['websocket', 'polling']
-    });
-
-    this.socket.on('notification:new', (payload: InAppNotificationItem) => {
-      this.unreadCount.update((count) => count + 1);
-      if (this.notificationMenu()?.visible()) {
-        this.items.update((list) => [payload, ...list].slice(0, 20));
-      }
-    });
   }
 
   private async apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
@@ -132,7 +63,7 @@ export class NotificationBellComponent implements OnInit, OnDestroy {
     this.error.set('');
     try {
       const result = await this.apiFetch<{ notifications: InAppNotificationItem[] }>(
-        `${this.config.apiPath}?page=1&pageSize=20`
+        `${this.config.apiPath}?page=1&pageSize=50`
       );
       this.items.set(result.notifications);
       await this.refreshUnread();

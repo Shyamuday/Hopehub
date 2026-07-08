@@ -18,6 +18,7 @@ import { RepertoryBrowserPage } from './features/repertory-browser/repertory-bro
 import { DiseasePagesPage } from './features/disease-pages/disease-pages-page';
 import { DoctorBlogPage } from './features/blog/doctor-blog-page';
 import { OnlineDoctorPage } from './features/online-doctor/online-doctor-page';
+import { NotificationsInboxPage } from './features/notifications-inbox/notifications-inbox-page';
 
 export const routes: Routes = [
   { path: ROUTE_PATHS.LOGIN, component: Login },
@@ -63,6 +64,7 @@ export const routes: Routes = [
       { path: ROUTE_PATHS.SLOTS, component: SlotsPage },
       { path: ROUTE_PATHS.EARNINGS, component: EarningsPage },
       { path: ROUTE_PATHS.SCAN, component: DoctorPatientScanLauncherPage },
+      { path: ROUTE_PATHS.NOTIFICATIONS_INBOX, component: NotificationsInboxPage },
       { path: `${ROUTE_PATHS.PATIENT_SCAN}/:patientCode`, component: PatientScanPage },
     ],
   },

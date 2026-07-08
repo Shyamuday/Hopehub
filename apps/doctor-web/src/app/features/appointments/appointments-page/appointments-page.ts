@@ -35,6 +35,7 @@ import {
   PrescriptionApproachWorkflowComponent,
   type PrescriptionHandoffApply,
 } from '../panels/prescription-approach-workflow/prescription-approach-workflow';
+import { PrescriptionConsultationPickerComponent } from '../panels/prescription-consultation-picker/prescription-consultation-picker';
 
 export type PrescriptionMobileTab = 'context' | 'setup' | 'remedies' | 'review';
 
@@ -77,6 +78,7 @@ function emptyPrescriptionModel() {
     ConsultationIntakePanelComponent,
     ConsultationChatPanelComponent,
     PrescriptionApproachWorkflowComponent,
+    PrescriptionConsultationPickerComponent,
   ],
   templateUrl: './appointments-page.html',
   styleUrl: './appointments-page.scss',

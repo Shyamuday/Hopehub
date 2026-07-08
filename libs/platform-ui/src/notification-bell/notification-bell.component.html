@@ -15,6 +15,9 @@
     <div class="panel-head">
       <strong>Notifications</strong>
       <div class="panel-head-actions">
+        @if (config.inboxPath) {
+          <a class="link" [routerLink]="config.inboxPath" (click)="closePanel()">View all</a>
+        }
         <button type="button" class="link" ngMenuItem [value]="'mark-all'" (click)="markAllRead()">Mark all read</button>
         <button type="button" class="close-btn" aria-label="Close notifications" (click)="closePanel()">✕</button>
       </div>

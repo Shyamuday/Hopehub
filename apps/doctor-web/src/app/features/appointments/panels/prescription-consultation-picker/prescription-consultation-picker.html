@@ -1,0 +1,32 @@
+<section class="picker panel">
+  <div class="picker-head">
+    <h3>Pick a consultation</h3>
+    <button type="button" class="btn-secondary" (click)="load()" [disabled]="loading()">Refresh</button>
+  </div>
+
+  @if (loading()) {
+    <p class="muted">Loading active cases…</p>
+  } @else if (error()) {
+    <p class="error">{{ error() }}</p>
+  } @else if (!items().length) {
+    <p class="muted">No active consultations right now. Check your worklist for new cases.</p>
+  } @else {
+    <ul class="picker-list">
+      @for (item of items(); track item.id) {
+        <li class="picker-card">
+          <div>
+            <strong>{{ item.patient?.name || 'Patient' }}</strong>
+            @if (item.patient?.patientCode) {
+              <span class="muted"> · {{ item.patient?.patientCode }}</span>
+            }
+            <p class="muted">{{ item.disease?.name || 'Consultation' }} · {{ sectionLabel(item) }}</p>
+          </div>
+          <div class="picker-actions">
+            <button type="button" (click)="openCase(item)">Case</button>
+            <button type="button" class="btn-primary" (click)="openPrescription(item)">Prescribe</button>
+          </div>
+        </li>
+      }
+    </ul>
+  }
+</section>

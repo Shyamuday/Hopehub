@@ -30,16 +30,10 @@
           </div>
 
           <nav class="sidebar-nav">
-            @for (item of navItemsList(); track item.path) {
-              <a
-                [routerLink]="item.path"
-                routerLinkActive="active"
-                class="nav-item"
-              >
-                <span class="nav-icon">{{ item.icon }}</span>
-                <span class="nav-label">{{ item.label }}</span>
-              </a>
-            }
+            <app-operations-nav-tabs
+              layout="sidebar"
+              [items]="navItemsList()"
+            />
           </nav>
 
           <div class="sidebar-footer">
@@ -97,17 +91,11 @@
             <button type="button" class="drawer-close" aria-label="Close menu" (click)="closeMenu()">×</button>
           </div>
           <nav class="drawer-nav">
-            @for (item of navItemsList(); track item.path) {
-              <a
-                [routerLink]="item.path"
-                routerLinkActive="active"
-                class="drawer-nav-item"
-                (click)="closeMenu()"
-              >
-                <span class="nav-icon">{{ item.icon }}</span>
-                <span class="nav-label">{{ item.label }}</span>
-              </a>
-            }
+            <app-operations-nav-tabs
+              layout="sidebar"
+              [items]="navItemsList()"
+              (navSelected)="closeMenu()"
+            />
           </nav>
           <div class="drawer-footer">
             <a class="drawer-account" [routerLink]="accountPath" (click)="closeMenu()">Account</a>

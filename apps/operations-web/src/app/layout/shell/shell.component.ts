@@ -1,27 +1,18 @@
 import { Component, computed, inject, signal, OnInit, OnDestroy } from '@angular/core';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { filter } from 'rxjs';
-import { RoleTaskGuideComponent, NotificationBellHostComponent, ProfileAvatarDisplayComponent } from '@vitalis/platform-ui';
+import {
+  RoleTaskGuideComponent,
+  NotificationBellHostComponent,
+  ProfileAvatarDisplayComponent
+} from '@vitalis/platform-ui';
 import type { PlatformNavItem } from '@vitalis/platform-nav';
 import { environment } from '../../../environments/environment';
 import { AUTH_TOKEN_KEY } from '../../core/constants/auth.constants';
 import { ROUTE_PATHS } from '../../core/constants/app-routes.constants';
 import { PlatformAuthService } from '../../services/platform-auth.service';
 import { OperationsMobileLayoutService } from '../../services/operations-mobile-layout.service';
-
-const MOBILE_BOTTOM_NAV_ORDER = [
-  'Walk-in',
-  'Queue',
-  'Visitor leads',
-  'Website leads',
-  'Scan patient',
-  'Store counter',
-  'Dispense',
-  'HR dashboard',
-  'Patient search',
-  'Consultations',
-  'Clinic hub'
-] as const;
+import { OperationsNavTabsComponent } from '../operations-nav-tabs/operations-nav-tabs.component';
 
 const MOBILE_BOTTOM_NAV_LIMIT = 4;
 
@@ -38,13 +29,23 @@ const NAV_SHORT_LABELS: Record<string, string> = {
   Consultations: 'Appts',
   'Clinic hub': 'Clinic',
   'Admin console': 'Admin',
-  'Store manager': 'Mgr'
+  'Store manager': 'Mgr',
+  'WH transfers': 'Xfer',
+  'Store transfers': 'Xfer'
 };
 
 @Component({
   selector: 'app-shell',
   standalone: true,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, RoleTaskGuideComponent, NotificationBellHostComponent, ProfileAvatarDisplayComponent],
+  imports: [
+    RouterOutlet,
+    RouterLink,
+    RouterLinkActive,
+    RoleTaskGuideComponent,
+    NotificationBellHostComponent,
+    ProfileAvatarDisplayComponent,
+    OperationsNavTabsComponent
+  ],
   templateUrl: './shell.component.html',
   styleUrl: './shell.component.scss'
 })
@@ -63,7 +64,8 @@ export class ShellComponent implements OnInit, OnDestroy {
   readonly bellConfig = computed(() => ({
     apiBase: environment.apiUrl,
     tokenKey: AUTH_TOKEN_KEY,
-    apiPath: this.auth.isStoreSession() ? '/store/notifications' : '/notifications'
+    apiPath: this.auth.isStoreSession() ? '/store/notifications' : '/notifications',
+    inboxPath: `/${ROUTE_PATHS.NOTIFICATIONS_INBOX}`
   }));
 
   readonly navItemsList = computed(() => this.auth.navItems());
@@ -139,7 +141,13 @@ export class ShellComponent implements OnInit, OnDestroy {
     if (caps.includes('store_counter.portal')) return 'store-counter';
     if (
       caps.some((c) =>
-        ['supplier.portal', 'delivery.ops', 'diagnostic.portal', 'corporate_wellness.portal', 'insurance.portal'].includes(c)
+        [
+          'supplier.portal',
+          'delivery.ops',
+          'diagnostic.portal',
+          'corporate_wellness.portal',
+          'insurance.portal'
+        ].includes(c)
       )
     ) {
       return 'partner';
@@ -160,28 +168,7 @@ export class ShellComponent implements OnInit, OnDestroy {
   }
 
   private splitMobileNav(items: PlatformNavItem[]) {
-    const picked: PlatformNavItem[] = [];
-    const used = new Set<string>();
-
-    for (const label of MOBILE_BOTTOM_NAV_ORDER) {
-      const item = items.find((entry) => entry.label === label);
-      if (item && !used.has(item.path)) {
-        picked.push(item);
-        used.add(item.path);
-      }
-      if (picked.length >= MOBILE_BOTTOM_NAV_LIMIT) {
-        return { bottom: picked, overflow: Math.max(0, items.length - picked.length) };
-      }
-    }
-
-    for (const item of items) {
-      if (picked.length >= MOBILE_BOTTOM_NAV_LIMIT) break;
-      if (!used.has(item.path)) {
-        picked.push(item);
-        used.add(item.path);
-      }
-    }
-
-    return { bottom: picked, overflow: Math.max(0, items.length - picked.length) };
+    const bottom = items.slice(0, MOBILE_BOTTOM_NAV_LIMIT);
+    return { bottom, overflow: Math.max(0, items.length - bottom.length) };
   }
 }

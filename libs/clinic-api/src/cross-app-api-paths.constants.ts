@@ -1,5 +1,7 @@
 /** Shared API paths used across admin-web, doctor-web, user-web, and operations-web. */
 export const CROSS_APP_API_PATHS = {
+  NOTIFICATIONS: '/notifications',
+  STORE_NOTIFICATIONS: '/store/notifications',
   PATIENT: {
     REWARDS: '/patient/rewards',
     REWARDS_CHECKOUT_QUOTE: '/patient/rewards/checkout-quote',
@@ -7,11 +9,15 @@ export const CROSS_APP_API_PATHS = {
   },
   DOCTOR: {
     WORKLIST: '/doctor/worklist',
-    APPOINTMENT_PRESCRIPTIONS: (consultationId: string) => `/doctor/appointments/${consultationId}/prescriptions`,
-    CONSULTATION_CASE_ANALYSES: (consultationId: string) => `/doctor/consultations/${consultationId}/case-analyses`,
+    APPOINTMENT_PRESCRIPTIONS: (consultationId: string) =>
+      `/doctor/appointments/${consultationId}/prescriptions`,
+    CONSULTATION_CASE_ANALYSES: (consultationId: string) =>
+      `/doctor/consultations/${consultationId}/case-analyses`,
     CASE_ANALYSIS: (analysisId: string) => `/doctor/case-analyses/${analysisId}`,
-    CASE_ANALYSIS_FIELD_SUGGESTIONS: (analysisId: string) => `/doctor/case-analyses/${analysisId}/field-suggestions`,
-    CASE_ANALYSIS_SUGGEST_REMEDIES: (analysisId: string) => `/doctor/case-analyses/${analysisId}/suggest-remedies`,
+    CASE_ANALYSIS_FIELD_SUGGESTIONS: (analysisId: string) =>
+      `/doctor/case-analyses/${analysisId}/field-suggestions`,
+    CASE_ANALYSIS_SUGGEST_REMEDIES: (analysisId: string) =>
+      `/doctor/case-analyses/${analysisId}/suggest-remedies`,
     PATIENT_CASE_HISTORY: (patientId: string) => `/doctor/patients/${patientId}/case-history`
   },
   ADMIN: {
@@ -25,7 +31,8 @@ export const CROSS_APP_API_PATHS = {
   },
   RECEPTION: {
     PATIENT_REWARDS: (patientId: string) => `/reception/patients/${patientId}/rewards`,
-    PATIENT_CHECKOUT_QUOTE: (patientId: string) => `/reception/patients/${patientId}/checkout-quote`,
+    PATIENT_CHECKOUT_QUOTE: (patientId: string) =>
+      `/reception/patients/${patientId}/checkout-quote`,
     CHECKOUT_QUOTE: '/reception/checkout-quote'
   }
 } as const;
