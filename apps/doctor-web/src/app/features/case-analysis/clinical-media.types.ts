@@ -19,3 +19,43 @@ export type ClinicalMediaItem = {
   createdAt: string;
   updatedAt: string;
 };
+
+export type ClinicalMediaPhraseSearchLog = {
+  phrase: string;
+  sourceKey: string;
+  sourceLabel: string;
+  priority: number;
+  reasoning: string;
+};
+
+export type ClinicalMediaRubricMatch = {
+  rubricId: string;
+  weight: number;
+  sourceField: string;
+  sourceLabel: string;
+  sourcePhrase: string;
+  reasoning: string;
+  rubric: {
+    id: string;
+    chapter: string;
+    subchapter: string | null;
+    text: string;
+    parentPath: string | null;
+  };
+};
+
+export type ClinicalMediaImageAnalysis = {
+  isSuggestionOnly: true;
+  disclaimer: string;
+  mediaId: string;
+  mediaType: string;
+  mediaTypeLabel: string;
+  visionModel: string;
+  visionAvailable: boolean;
+  extractedSymptoms: string;
+  symptomPhrases: string[];
+  phrasesSearched: ClinicalMediaPhraseSearchLog[];
+  suggestedRubrics: ClinicalMediaRubricMatch[];
+  summary: string;
+  generatedAt: string;
+};

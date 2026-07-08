@@ -25,6 +25,8 @@ import {
   resolvePatientIdForAnalysis,
   serializeClinicalMedia
 } from '../../services/clinical-media-shared.js';
+import { analyzeClinicalMediaImage } from '../../services/clinical-media-rubric-analysis.js';
+import { isOllamaVisionAvailable, ollamaVisionConfig } from '../../services/clinical-media-vision.js';
 import { analysisIdFromReq, loadCaseAnalysisForDoctor } from './shared.js';
 
 const mediaTypeSchema = z.nativeEnum(ClinicalMediaType);
@@ -339,6 +341,66 @@ export function registerClinicalMediaRoutes(router: Router) {
         bodyRegion: body.bodyRegion
       });
       res.json({ phrases });
+    })
+  );
+
+  router.get(
+    '/doctor/clinical-media/vision-status',
+    authRequired,
+    allowRoles(Role.DOCTOR, Role.ADMIN),
+    asyncRoute(async (_req, res) => {
+      const available = await isOllamaVisionAvailable();
+      res.json({ available, ...ollamaVisionConfig() });
+    })
+  );
+
+  router.post(
+    '/doctor/case-analyses/:analysisId/clinical-media/:mediaId/analyze-image',
+    authRequired,
+    allowRoles(Role.DOCTOR, Role.ADMIN),
+    asyncRoute(async (req, res) => {
+      const analysisId = analysisIdFromReq(req);
+      const mediaId = routeParam(req, 'mediaId');
+      const analysis = await loadCaseAnalysisForDoctor(req, res, analysisId);
+      if (!analysis) return;
+
+      const body = z
+        .object({
+          saveObservations: z.boolean().optional().default(false)
+        })
+        .parse(req.body ?? {});
+
+      try {
+        const result = await analyzeClinicalMediaImage({
+          analysisId,
+          mediaId,
+          saveObservations: body.saveObservations
+        });
+        if (!result) {
+          return res.status(404).json({ message: 'Clinical media not found for this case analysis.' });
+        }
+
+        let media = null;
+        if (body.saveObservations) {
+          const updated = await prisma.clinicalMedia.findUnique({
+            where: { id: mediaId },
+            include: clinicalMediaInclude
+          });
+          media = updated ? serializeClinicalMedia(updated) : null;
+        }
+
+        res.json({ analysis: result, media });
+      } catch (error) {
+        if (error instanceof Error && error.message === 'OLLAMA_UNAVAILABLE') {
+          return res.status(503).json({
+            message:
+              'Local vision AI is not available. Start Ollama and pull the vision model (e.g. ollama pull qwen2.5-vl:7b).',
+            ...ollamaVisionConfig(),
+            available: false
+          });
+        }
+        throw error;
+      }
     })
   );
 

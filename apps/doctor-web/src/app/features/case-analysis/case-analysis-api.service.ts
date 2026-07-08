@@ -3,7 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { API_PATHS } from '../../core/constants/api-paths.constants';
-import type { ClinicalMediaItem } from './clinical-media.types';
+import type { ClinicalMediaImageAnalysis, ClinicalMediaItem } from './clinical-media.types';
 import type {
   CaseAnalysis,
   ConsultationSummary,
@@ -270,6 +270,27 @@ export class CaseAnalysisApiService {
     return firstValueFrom(
       this.http.post<{ phrases: string[] }>(`${this.apiBase}${API_PATHS.DOCTOR.CLINICAL_MEDIA_SUGGEST_PHRASES}`, payload)
     ).then((response) => response.phrases);
+  }
+
+  clinicalMediaVisionStatus() {
+    return firstValueFrom(
+      this.http.get<{ available: boolean; baseUrl: string; model: string }>(
+        `${this.apiBase}${API_PATHS.DOCTOR.CLINICAL_MEDIA_VISION_STATUS}`
+      )
+    );
+  }
+
+  analyzeClinicalMediaImage(
+    analysisId: string,
+    mediaId: string,
+    payload?: { saveObservations?: boolean }
+  ) {
+    return firstValueFrom(
+      this.http.post<{ analysis: ClinicalMediaImageAnalysis; media?: ClinicalMediaItem }>(
+        `${this.apiBase}${API_PATHS.DOCTOR.CASE_ANALYSIS_CLINICAL_MEDIA_ANALYZE(analysisId, mediaId)}`,
+        payload ?? {}
+      )
+    );
   }
 
   suggestApproachField(

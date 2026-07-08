@@ -44,6 +44,7 @@ export const API_PATHS = {
     PATIENT_CASE_HISTORY: CROSS_APP_API_PATHS.DOCTOR.PATIENT_CASE_HISTORY,
     CLINICAL_MEDIA_OBSERVATION_HINTS: '/doctor/clinical-media/observation-hints',
     CLINICAL_MEDIA_SUGGEST_PHRASES: '/doctor/clinical-media/suggest-rubric-phrases',
+    CLINICAL_MEDIA_VISION_STATUS: '/doctor/clinical-media/vision-status',
     CLINICAL_MEDIA_META: '/clinical-media/meta',
     CLINICAL_MEDIA_FILE: (id: string) => `/clinical-media/${id}/file`,
     PATIENT_CLINICAL_MEDIA: (patientId: string) => `/doctor/patients/${patientId}/clinical-media`,
@@ -53,7 +54,9 @@ export const API_PATHS = {
     CASE_ANALYSIS_CLINICAL_MEDIA_ITEM: (analysisId: string, mediaId: string) =>
       `/doctor/case-analyses/${analysisId}/clinical-media/${mediaId}`,
     CASE_ANALYSIS_CLINICAL_MEDIA_FILE: (analysisId: string, mediaId: string) =>
-      `/doctor/case-analyses/${analysisId}/clinical-media/${mediaId}/file`
+      `/doctor/case-analyses/${analysisId}/clinical-media/${mediaId}/file`,
+    CASE_ANALYSIS_CLINICAL_MEDIA_ANALYZE: (analysisId: string, mediaId: string) =>
+      `/doctor/case-analyses/${analysisId}/clinical-media/${mediaId}/analyze-image`
   },
   HR: {
     SELF_DOCTOR_LEAVES: '/hr/self/doctor-leaves',

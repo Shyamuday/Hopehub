@@ -1,0 +1,67 @@
+<section class="panel clinical-media-analysis-panel">
+  <div class="panel-title-row">
+    <div>
+      <h4>Image analysis preview</h4>
+      <p class="preview-badge">Suggestion only — doctor confirms</p>
+    </div>
+    <button type="button" class="btn-icon" (click)="dismissRequested.emit()" title="Dismiss">×</button>
+  </div>
+
+  <p class="disclaimer">{{ preview.disclaimer }}</p>
+  <p class="summary">{{ preview.summary }}</p>
+  <p class="hint">
+    Model: <strong>{{ preview.visionModel }}</strong> · Category: <strong>{{ preview.mediaTypeLabel }}</strong>
+  </p>
+
+  <details class="reason-block" open>
+    <summary>Vision extracted symptoms</summary>
+    <p class="extracted-text">{{ preview.extractedSymptoms }}</p>
+    @if (preview.symptomPhrases.length) {
+      <div class="phrase-list">
+        @for (phrase of preview.symptomPhrases; track phrase) {
+          <button type="button" class="phrase-chip" (click)="rubricPhraseSelected.emit(phrase)">{{ phrase }}</button>
+        }
+      </div>
+    }
+  </details>
+
+  <details class="reason-block" open>
+    <summary>Phrases searched ({{ preview.phrasesSearched.length }})</summary>
+    <ul class="reason-list">
+      @for (item of preview.phrasesSearched; track item.sourceKey + item.phrase) {
+        <li>
+          <strong>{{ item.sourceLabel }}</strong>
+          <span class="muted">“{{ item.phrase }}”</span>
+          <small>{{ item.reasoning }}</small>
+        </li>
+      }
+    </ul>
+  </details>
+
+  <details class="reason-block" open>
+    <summary>Matched rubrics ({{ preview.suggestedRubrics.length }})</summary>
+    @if (preview.suggestedRubrics.length) {
+      <ul class="reason-list rubric-list">
+        @for (item of preview.suggestedRubrics; track item.rubricId) {
+          <li>
+            <div class="rubric-head">
+              <button type="button" class="rubric-link" (click)="rubricPhraseSelected.emit(item.sourcePhrase)">
+                <strong>{{ item.rubric.chapter }} · {{ item.rubric.text }}</strong>
+              </button>
+              <span class="weight-pill">w{{ item.weight }}</span>
+            </div>
+            <small class="muted">From {{ item.sourceLabel }}: “{{ item.sourcePhrase }}”</small>
+            <small>{{ item.reasoning }}</small>
+          </li>
+        }
+      </ul>
+    } @else {
+      <p class="muted">No rubric matches found. Try manual observation text or a different search phrase.</p>
+    }
+  </details>
+
+  <div class="preview-actions">
+    <button type="button" class="btn-secondary" (click)="dismissRequested.emit()">Dismiss</button>
+    <button type="button" class="btn-secondary" (click)="useObservationsRequested.emit()">Use vision text in observations</button>
+  </div>
+</section>

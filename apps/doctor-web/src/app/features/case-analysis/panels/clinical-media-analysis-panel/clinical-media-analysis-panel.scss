@@ -1,0 +1,111 @@
+.clinical-media-analysis-panel {
+  display: grid;
+  gap: 0.65rem;
+  margin-top: 0.75rem;
+  border: 1px solid #bfdbfe;
+  background: linear-gradient(180deg, #f8fbff 0%, #fff 100%);
+}
+
+.preview-badge {
+  margin: 0.15rem 0 0;
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #92400e;
+  background: #fffbeb;
+  border: 1px solid #fcd34d;
+  border-radius: 999px;
+  padding: 0.1rem 0.45rem;
+}
+
+.disclaimer,
+.summary,
+.hint {
+  margin: 0;
+  font-size: 0.84rem;
+}
+
+.summary {
+  font-weight: 600;
+  color: #1e3a8a;
+}
+
+.extracted-text {
+  margin: 0.45rem 0 0;
+  white-space: pre-wrap;
+  font-size: 0.84rem;
+}
+
+.reason-block {
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #fff;
+  padding: 0.55rem 0.65rem;
+
+  summary {
+    cursor: pointer;
+    font-weight: 600;
+    color: #334155;
+  }
+}
+
+.reason-list {
+  margin: 0.55rem 0 0;
+  padding-left: 1.1rem;
+  display: grid;
+  gap: 0.5rem;
+
+  li {
+    display: grid;
+    gap: 0.12rem;
+  }
+}
+
+.rubric-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.rubric-link {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  text-align: left;
+  cursor: pointer;
+  color: inherit;
+}
+
+.weight-pill {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #3730a3;
+  background: #eef2ff;
+  border-radius: 999px;
+  padding: 0.05rem 0.45rem;
+}
+
+.phrase-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.45rem;
+}
+
+.phrase-chip {
+  border: 1px solid #99f6e4;
+  background: #ecfdf5;
+  color: #0f766e;
+  border-radius: 999px;
+  padding: 0.3rem 0.65rem;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.preview-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}

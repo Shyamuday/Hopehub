@@ -95,6 +95,11 @@ select {
   margin-top: 1rem;
 }
 
+.vision-hint {
+  margin: 0.35rem 0 0;
+  font-size: 0.82rem;
+}
+
 .media-card {
   display: grid;
   grid-template-columns: 180px minmax(0, 1fr);

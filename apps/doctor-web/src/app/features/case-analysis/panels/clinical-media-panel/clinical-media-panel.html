@@ -2,7 +2,14 @@
   <div class="panel-title-row">
     <div>
       <h3>Visual symptoms</h3>
-      <p class="muted">Attach clinical photos, record observations, and jump to repertory searches. No cloud vision — doctor confirms every rubric.</p>
+      <p class="muted">
+        Attach clinical photos and analyze with local vision AI (Ollama). Rubric matches use your imported OOREP database — doctor confirms every rubric.
+      </p>
+      @if (visionAvailable() === false) {
+        <p class="vision-hint muted">Local vision AI offline. Run Ollama and pull <code>qwen2.5-vl:7b</code> to enable image analysis.</p>
+      } @else if (visionAvailable() && visionModel()) {
+        <p class="vision-hint muted">Vision ready: {{ visionModel() }}</p>
+      }
     </div>
   </div>
 
@@ -112,11 +119,31 @@
               (change)="saveObservations(item, $any($event.target).value)"
             ></textarea>
             <div class="card-actions">
+              @if (visionAvailable()) {
+                <button
+                  type="button"
+                  class="btn-primary btn-sm"
+                  (click)="analyzeImage(item)"
+                  [disabled]="analyzingMediaId() === item.id"
+                >
+                  {{ analyzingMediaId() === item.id ? 'Analyzing…' : 'Analyze image' }}
+                </button>
+              }
               <button type="button" class="btn-secondary btn-sm" (click)="refreshSuggestions(item)">Suggest searches</button>
               <button type="button" class="btn-danger btn-sm" (click)="removeMedia(item)" [disabled]="deletingMediaId() === item.id">
                 {{ deletingMediaId() === item.id ? 'Removing…' : 'Remove' }}
               </button>
             </div>
+            @if (imageAnalysisPreview(); as preview) {
+              @if (preview.mediaId === item.id) {
+                <app-clinical-media-analysis-panel
+                  [preview]="preview"
+                  (rubricPhraseSelected)="applyPhrase($event)"
+                  (useObservationsRequested)="useVisionObservations(item)"
+                  (dismissRequested)="dismissImageAnalysis()"
+                />
+              }
+            }
           </div>
         </article>
       }

@@ -8,12 +8,13 @@ import {
   type ClinicalMediaType
 } from '@vitalis/homeopathy-approaches';
 import { CaseAnalysisApiService } from '../../case-analysis-api.service';
-import type { ClinicalMediaItem } from '../../clinical-media.types';
+import type { ClinicalMediaImageAnalysis, ClinicalMediaItem } from '../../clinical-media.types';
 import { DiseasePickerComponent } from '../../../../shared/disease-picker/disease-picker.component';
+import { ClinicalMediaAnalysisPanelComponent } from '../clinical-media-analysis-panel/clinical-media-analysis-panel';
 
 @Component({
   selector: 'app-clinical-media-panel',
-  imports: [CommonModule, FormField, DiseasePickerComponent],
+  imports: [CommonModule, FormField, DiseasePickerComponent, ClinicalMediaAnalysisPanelComponent],
   templateUrl: './clinical-media-panel.html',
   styleUrl: './clinical-media-panel.scss'
 })
@@ -33,6 +34,10 @@ export class ClinicalMediaPanelComponent implements OnChanges, OnDestroy {
   readonly message = signal('');
   readonly previewUrls = signal<Record<string, string>>({});
   readonly suggestedPhrases = signal<string[]>([]);
+  readonly visionAvailable = signal<boolean | null>(null);
+  readonly visionModel = signal('');
+  readonly analyzingMediaId = signal('');
+  readonly imageAnalysisPreview = signal<ClinicalMediaImageAnalysis | null>(null);
 
   readonly uploadModel = signal({
     mediaType: 'SKIN' as ClinicalMediaType,
@@ -54,7 +59,18 @@ export class ClinicalMediaPanelComponent implements OnChanges, OnDestroy {
   }
 
   async bootstrap() {
-    await this.reload();
+    await Promise.all([this.reload(), this.loadVisionStatus()]);
+  }
+
+  async loadVisionStatus() {
+    try {
+      const status = await this.api.clinicalMediaVisionStatus();
+      this.visionAvailable.set(status.available);
+      this.visionModel.set(status.model);
+    } catch {
+      this.visionAvailable.set(false);
+      this.visionModel.set('');
+    }
   }
 
   ngOnDestroy() {
@@ -192,6 +208,53 @@ export class ClinicalMediaPanelComponent implements OnChanges, OnDestroy {
 
   applyPhrase(phrase: string) {
     this.rubricPhraseSelected.emit(phrase);
+  }
+
+  dismissImageAnalysis() {
+    this.imageAnalysisPreview.set(null);
+  }
+
+  async analyzeImage(item: ClinicalMediaItem, saveObservations = false) {
+    this.analyzingMediaId.set(item.id);
+    this.error.set('');
+    this.message.set('');
+    try {
+      const response = await this.api.analyzeClinicalMediaImage(this.analysisId, item.id, {
+        saveObservations
+      });
+      this.imageAnalysisPreview.set(response.analysis);
+      if (response.media) {
+        this.media.update((rows) => rows.map((row) => (row.id === item.id ? response.media! : row)));
+      }
+      this.message.set(saveObservations ? 'Vision text saved to observations.' : response.analysis.summary);
+    } catch {
+      this.error.set(
+        'Image analysis failed. Ensure Ollama is running locally and the vision model is pulled (ollama pull qwen2.5-vl:7b).'
+      );
+    } finally {
+      this.analyzingMediaId.set('');
+    }
+  }
+
+  async useVisionObservations(item: ClinicalMediaItem) {
+    const preview = this.imageAnalysisPreview();
+    if (!preview || preview.mediaId !== item.id) return;
+
+    this.savingMediaId.set(item.id);
+    this.error.set('');
+    try {
+      const merged = [item.observations?.trim(), preview.extractedSymptoms].filter(Boolean).join('\n\n');
+      const updated = await this.api.updateClinicalMedia(this.analysisId, item.id, {
+        observations: merged
+      });
+      this.media.update((rows) => rows.map((row) => (row.id === item.id ? updated : row)));
+      await this.refreshSuggestions(updated);
+      this.message.set('Vision text added to observations.');
+    } catch {
+      this.error.set('Could not save vision observations.');
+    } finally {
+      this.savingMediaId.set('');
+    }
   }
 
   private async readFileAsBase64(file: File) {
