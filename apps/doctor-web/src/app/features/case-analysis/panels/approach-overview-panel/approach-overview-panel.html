@@ -8,34 +8,53 @@
 
   <p class="hint">The approach controls case sheet fields, workflow steps, and repertory weighting for this analysis.</p>
 
-  <input
-    class="approach-search"
-    type="search"
-    [formField]="searchForm.query"
-    placeholder="Search approaches…"
-    aria-label="Search prescribing approaches"
-  />
+  <div class="approach-picker-root">
+    <button
+      type="button"
+      class="approach-trigger"
+      [class.open]="pickerOpen()"
+      [disabled]="saving"
+      [attr.aria-expanded]="pickerOpen()"
+      aria-haspopup="listbox"
+      (click)="togglePicker()"
+    >
+      <span class="approach-trigger-label">{{ selectedMethodLabel() }}</span>
+      <span class="approach-trigger-chevron" aria-hidden="true">{{ pickerOpen() ? '▴' : '▾' }}</span>
+    </button>
 
-  <div class="approach-picker" role="listbox" aria-label="Prescribing approaches">
-    @if (!filteredMethods().length) {
-      <p class="hint empty-hint">No approaches match your search.</p>
-    } @else {
-      @for (method of filteredMethods(); track method.id) {
-        <button
-          type="button"
-          class="approach-option"
-          role="option"
-          [class.selected]="method.id === selectedMethodOptionId"
-          [attr.aria-selected]="method.id === selectedMethodOptionId"
-          [disabled]="saving"
-          (click)="selectMethod(method.id)"
-        >
-          <span class="approach-option-label">{{ method.label }}</span>
-          @if (method.id === selectedMethodOptionId) {
-            <span class="approach-option-check" aria-hidden="true">✓</span>
+    @if (pickerOpen()) {
+      <div class="approach-picker-panel">
+        <input
+          class="approach-search"
+          type="search"
+          [formField]="searchForm.query"
+          placeholder="Search approaches…"
+          aria-label="Search prescribing approaches"
+        />
+
+        <div class="approach-picker" role="listbox" aria-label="Prescribing approaches">
+          @if (!filteredMethods().length) {
+            <p class="hint empty-hint">No approaches match your search.</p>
+          } @else {
+            @for (method of filteredMethods(); track method.id) {
+              <button
+                type="button"
+                class="approach-option"
+                role="option"
+                [class.selected]="method.id === selectedMethodOptionId"
+                [attr.aria-selected]="method.id === selectedMethodOptionId"
+                [disabled]="saving"
+                (click)="selectMethod(method.id)"
+              >
+                <span class="approach-option-label">{{ method.label }}</span>
+                @if (method.id === selectedMethodOptionId) {
+                  <span class="approach-option-check" aria-hidden="true">✓</span>
+                }
+              </button>
+            }
           }
-        </button>
-      }
+        </div>
+      </div>
     }
   </div>
 

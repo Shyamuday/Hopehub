@@ -8,6 +8,7 @@ import {
   firstIncompleteStepId,
   hydrateCaseSheetForSchema,
   resolveApproachByMethodLabel,
+  resolveApproachByMethodOption,
   structuredPanelForComponent,
   buildPrescriptionHandoff,
   type ApproachDataPayload,
@@ -128,7 +129,7 @@ export class CaseAnalysisPage implements OnDestroy, OnInit {
   readonly searchedOnce = signal(false);
   readonly maxResultScore = signal(0);
 
-  readonly methods = signal<Array<{ id: string; label: string }>>([]);
+  readonly methods = signal<Array<{ id: string; label: string; normalizedLabel: string }>>([]);
   readonly selectedMethodOptionId = signal('');
   readonly activeStepId = signal<ApproachStepId>('approach-select');
 
@@ -156,7 +157,8 @@ export class CaseAnalysisPage implements OnDestroy, OnInit {
 
   readonly activeApproach = computed<ApproachDefinition>(() => {
     const method = this.methods().find((item) => item.id === this.selectedMethodOptionId());
-    return resolveApproachByMethodLabel(method?.label || this.analysis()?.methodOption?.label);
+    if (method) return resolveApproachByMethodOption(method);
+    return resolveApproachByMethodOption(this.analysis()?.methodOption);
   });
 
   readonly workflowSteps = computed(() => this.activeApproach().steps);
@@ -374,7 +376,14 @@ export class CaseAnalysisPage implements OnDestroy, OnInit {
     this.notesAutoSave.cancel();
     this.rubricsAutoSave.cancel();
 
-    const approach = resolveApproachByMethodLabel(nextAnalysis.methodOption?.label);
+    const approach = resolveApproachByMethodOption(
+      nextAnalysis.methodOption
+        ? {
+            label: nextAnalysis.methodOption.label,
+            normalizedLabel: nextAnalysis.methodOption.normalizedLabel
+          }
+        : this.methods().find((item) => item.id === nextAnalysis.methodOptionId)
+    );
     this.notesModel.set({ notes: nextAnalysis.notes || '' });
     this.caseSheetModel.set(hydrateCaseSheetForSchema(approach.caseSheetSchemaId, nextAnalysis.caseSheet));
     this.approachData.set((nextAnalysis.approachData as ApproachDataPayload) || {});
@@ -527,7 +536,7 @@ export class CaseAnalysisPage implements OnDestroy, OnInit {
 
     const previousMethodId = this.selectedMethodOptionId();
     const nextMethod = this.methods().find((item) => item.id === methodOptionId);
-    const nextApproach = resolveApproachByMethodLabel(nextMethod?.label);
+    const nextApproach = resolveApproachByMethodOption(nextMethod);
 
     if (previousMethodId && previousMethodId !== methodOptionId && (this.hasCaseSheetContent() || this.hasApproachDataContent())) {
       const confirmed = confirm(

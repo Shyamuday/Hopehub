@@ -108,7 +108,7 @@ export class CaseAnalysisApiService {
 
   loadMethodOptions() {
     return firstValueFrom(
-      this.http.get<{ options: Array<{ id: string; label: string }> }>(
+      this.http.get<{ options: Array<{ id: string; label: string; normalizedLabel: string }> }>(
         `${this.apiBase}${API_PATHS.DOCTOR.PRESCRIPTION_OPTIONS}`,
         { params: { type: 'METHOD' } }
       )

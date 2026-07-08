@@ -49,7 +49,7 @@ export type CaseAnalysis = {
   caseSheet?: Record<string, string> | null;
   approachData?: Record<string, unknown> | null;
   methodOptionId?: string | null;
-  methodOption?: { id: string; label: string } | null;
+  methodOption?: { id: string; label: string; normalizedLabel?: string } | null;
   source?: RepertorySource | null;
   selectedRemedy?: RepertoryRemedyRef | null;
   rubrics: Array<{ rubricId: string; weight: number; rubric: SelectedRubric['rubric'] }>;
