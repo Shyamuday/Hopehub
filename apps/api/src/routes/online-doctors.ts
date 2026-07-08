@@ -138,6 +138,22 @@ export function createOnlineDoctorsRouter(io: SocketIoServer) {
     })
   );
 
+  router.post(
+    '/doctor/push-token',
+    authRequired,
+    allowRoles(Role.DOCTOR),
+    asyncRoute(async (req, res) => {
+      const body = z
+        .object({
+          token: z.string().min(1),
+          platform: z.enum(['ios', 'android', 'web']).optional()
+        })
+        .parse(req.body);
+      // Stored when PushDevice model is added; accept now so mobile apps can register.
+      res.json({ ok: true, token: body.token.slice(0, 8) + '…' });
+    })
+  );
+
   router.get(
     '/doctor/instant-consultations',
     authRequired,

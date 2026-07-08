@@ -66,9 +66,7 @@ export class PushNotificationService {
     if (!this.auth.user()) return;
 
     if (data['consultationId']) {
-      void this.router.navigate([`/${ROUTE_PATHS.PATIENT_DASHBOARD}`], {
-        queryParams: { consultationId: data['consultationId'] },
-      });
+      void this.router.navigate([`/patient/instant-consult/${data['consultationId']}`]);
       return;
     }
 

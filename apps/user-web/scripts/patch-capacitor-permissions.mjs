@@ -24,7 +24,7 @@ const IOS_ENTRIES = {
   NSCameraUsageDescription:
     'Camera access lets you scan clinic QR codes and upload health photos for your doctor.',
   NSMicrophoneUsageDescription:
-    'Microphone access is required for voice consultations with your doctor.',
+    'Microphone access is required for voice and video consultations with your doctor.',
   NSPhotoLibraryUsageDescription:
     'Photo library access lets you choose images for your health record.',
   NSPhotoLibraryAddUsageDescription:

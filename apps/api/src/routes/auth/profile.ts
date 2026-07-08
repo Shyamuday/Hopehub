@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import bcrypt from 'bcryptjs';
+import { z } from 'zod';
 import { Role } from '@prisma/client';
 import { authRequired, allowRoles } from '../../auth.js';
 import { prisma } from '../../db.js';
@@ -113,6 +114,21 @@ export function registerAuthProfileRoutes(router: Router) {
         return res.status(404).json({ message: 'Patient ID card is not available yet.' });
       }
       res.json({ card });
+    })
+  );
+
+  router.post(
+    '/patient/push-token',
+    authRequired,
+    allowRoles(Role.PATIENT),
+    asyncRoute(async (req, res) => {
+      const body = z
+        .object({
+          token: z.string().min(1),
+          platform: z.enum(['ios', 'android', 'web']).optional()
+        })
+        .parse(req.body);
+      res.json({ ok: true, token: body.token.slice(0, 8) + '…' });
     })
   );
 

@@ -7,6 +7,7 @@ import {
   RouterOutlet
 } from '@angular/router';
 import { filter, take } from 'rxjs';
+import { PushNotificationService } from './core/services/push-notification.service';
 
 @Component({
   selector: 'app-root',
@@ -16,9 +17,11 @@ import { filter, take } from 'rxjs';
 })
 export class App {
   private readonly router = inject(Router);
+  private readonly push = inject(PushNotificationService);
   readonly booting = signal(true);
 
   constructor() {
+    void this.push.init();
     this.router.events
       .pipe(
         filter(
