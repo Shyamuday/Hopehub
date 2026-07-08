@@ -21,11 +21,12 @@
     "repertory:import:oorep": "tsx scripts/import-oorep-sql.ts",
     "verify:doctor-earnings": "tsx scripts/verify-doctor-earnings.ts",
     "verify:finance-period": "tsx scripts/verify-finance-period.ts",
-    "disease-pages:import": "tsx scripts/import-static-disease-pages.ts"
+    "disease-pages:import": "tsx scripts/import-static-disease-pages.ts",
+    "prepare": "husky"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.8.0",
-    "@prisma/client": "^7.2.0",
+    "@prisma/client": "7.8.0",
     "@types/express-rate-limit": "^5.1.3",
     "@types/pdfkit": "^0.17.6",
     "bcryptjs": "^3.0.3",
