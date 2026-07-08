@@ -7,10 +7,11 @@ import {
   type ApproachFieldDef
 } from '@vitalis/homeopathy-approaches';
 import { installApproachPanelAutoSave } from '../../approach-panel-autosave';
+import { ApproachFieldHintComponent } from '../approach-field-hint/approach-field-hint';
 
 @Component({
   selector: 'app-approach-structured-panel',
-  imports: [FormField],
+  imports: [FormField, ApproachFieldHintComponent],
   templateUrl: './approach-structured-panel.html',
   styleUrl: './approach-structured-panel.scss'
 })

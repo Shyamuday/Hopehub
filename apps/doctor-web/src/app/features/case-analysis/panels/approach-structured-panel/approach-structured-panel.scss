@@ -3,6 +3,13 @@
   gap: 0.75rem;
 }
 
+  .field-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    flex-wrap: wrap;
+  }
+
   .field-description {
     display: block;
     color: #475569;

@@ -269,4 +269,23 @@ export class CaseAnalysisApiService {
       this.http.post<{ phrases: string[] }>(`${this.apiBase}${API_PATHS.DOCTOR.CLINICAL_MEDIA_SUGGEST_PHRASES}`, payload)
     ).then((response) => response.phrases);
   }
+
+  suggestApproachField(
+    analysisId: string,
+    payload: {
+      fieldKey: string;
+      promptKey?: string;
+      suggestEndpoint?: string;
+      currentValue?: string;
+      panelComponent?: string;
+      extractFrom?: string[];
+    }
+  ) {
+    return firstValueFrom(
+      this.http.post<{ suggestion: string; source: string; confidence?: number }>(
+        `${this.apiBase}${API_PATHS.DOCTOR.CASE_ANALYSIS_FIELD_SUGGESTIONS(analysisId)}`,
+        payload
+      )
+    );
+  }
 }

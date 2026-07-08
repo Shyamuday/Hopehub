@@ -162,6 +162,7 @@ export class CaseAnalysisPage implements OnDestroy, OnInit {
   readonly savingMethodRationale = signal(false);
   readonly savingCaseSheet = signal(false);
   readonly savingApproachData = signal(false);
+  readonly fieldSuggestingKey = signal<string | null>(null);
   readonly creatingAnalysis = signal(false);
   readonly repertorizing = signal(false);
   readonly selectingRemedyId = signal('');
@@ -750,17 +751,55 @@ export class CaseAnalysisPage implements OnDestroy, OnInit {
     this.message.set(`Search prefilled: "${trimmed}".`);
   }
 
-  applyApproachFieldSuggestion(payload: { field: ApproachFieldDef; currentValue: string }) {
-    const suggestion = this.buildApproachFieldSuggestion(payload.field);
-    if (!suggestion) {
-      this.message.set('AI suggestions for this field are not available yet. Use intake answers or type manually.');
+  async applyApproachFieldSuggestion(payload: { field: ApproachFieldDef; currentValue: string }) {
+    const analysisId = this.analysis()?.id;
+    if (!analysisId) {
+      this.message.set('Save the case analysis first, then try suggestions.');
       return;
     }
 
     const component = this.activeStepComponent();
+    this.fieldSuggestingKey.set(payload.field.key);
+    try {
+      const result = await this.api.suggestApproachField(analysisId, {
+        fieldKey: payload.field.key,
+        promptKey: payload.field.promptKey,
+        suggestEndpoint: payload.field.suggestEndpoint,
+        currentValue: payload.currentValue,
+        panelComponent: component === 'case-sheet' ? 'case-sheet' : component || undefined,
+        extractFrom: payload.field.extractFrom
+      });
+
+      const suggestion = result.suggestion?.trim();
+      if (!suggestion) {
+        this.message.set('No suggestion available for this field yet.');
+        return;
+      }
+
+      this.applyFieldSuggestionValue(payload.field.key, suggestion, component);
+      const sourceLabel =
+        result.source === 'ai-extract-intake' || result.source === 'ai-extract-intake-fallback'
+          ? 'patient intake'
+          : result.source === 'ai-extract-media'
+            ? 'clinical photos'
+            : result.source === 'prior-case'
+              ? 'prior cases'
+              : 'case context';
+      this.message.set(`Filled "${payload.field.label}" from ${sourceLabel}.`);
+    } catch {
+      this.message.set('Could not fetch a suggestion for this field. Try again or enter manually.');
+    } finally {
+      this.fieldSuggestingKey.set(null);
+    }
+  }
+
+  private applyFieldSuggestionValue(
+    fieldKey: string,
+    suggestion: string,
+    component: ApproachStepComponent | null
+  ) {
     if (component === 'case-sheet') {
-      this.caseSheetModel.update((current) => ({ ...current, [payload.field.key]: suggestion }));
-      this.message.set(`Filled "${payload.field.label}" from patient intake.`);
+      this.caseSheetModel.update((current) => ({ ...current, [fieldKey]: suggestion }));
       return;
     }
 
@@ -771,11 +810,10 @@ export class CaseAnalysisPage implements OnDestroy, OnInit {
         ...current,
         [key]: {
           ...((current[key] as Record<string, string> | undefined) || {}),
-          [payload.field.key]: suggestion
+          [fieldKey]: suggestion
         }
       }));
       void this.saveApproachData({ [key]: this.approachData()[key] } as ApproachDataPayload, true);
-      this.message.set(`Filled "${payload.field.label}" from patient intake.`);
       return;
     }
 
@@ -785,29 +823,11 @@ export class CaseAnalysisPage implements OnDestroy, OnInit {
         ...current,
         [specializedKey]: {
           ...((current[specializedKey] as Record<string, string> | undefined) || {}),
-          [payload.field.key]: suggestion
+          [fieldKey]: suggestion
         }
       }));
       void this.saveApproachData({ [specializedKey]: this.approachData()[specializedKey] } as ApproachDataPayload, true);
-      this.message.set(`Filled "${payload.field.label}" from patient intake.`);
     }
-  }
-
-  private buildApproachFieldSuggestion(field: ApproachFieldDef): string | null {
-    if (field.suggestEndpoint === 'ai-extract-intake' || field.extractFrom?.includes('intake')) {
-      const answers = this.consultation()?.intakeAnswers;
-      if (!answers || !Object.keys(answers).length) return null;
-      const lines = Object.entries(answers)
-        .filter(([, value]) => value?.trim())
-        .map(([question, answer]) => `${question}: ${answer.trim()}`);
-      return lines.join('\n').slice(0, 1200);
-    }
-
-    if (field.suggestEndpoint === 'ai-complete') {
-      return primaryIntakeSearchPhrase(this.consultation()?.intakeAnswers) || null;
-    }
-
-    return null;
   }
 
   private specializedApproachDataKey(component: ApproachStepComponent | null): keyof ApproachDataPayload | null {

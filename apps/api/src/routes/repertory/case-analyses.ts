@@ -11,6 +11,7 @@ import {
   resolveDoctorDefaultMethodOptionId
 } from '../../services/doctor-prescribing-preferences.js';
 import { resolvePatientLastPrescriptionMethodOptionId, loadPatientCaseHistory } from '../../services/patient-case-history.js';
+import { suggestApproachField, type FieldSuggestionRequest } from '../../services/approach-field-suggestions.js';
 import {
   analysisIdFromReq,
   assertDoctorConsultationAccess,
@@ -23,6 +24,15 @@ import {
 const rubricSelectionSchema = z.object({
   rubricId: z.string().min(1),
   weight: z.number().int().min(1).max(4).default(1)
+});
+
+const fieldSuggestionSchema = z.object({
+  fieldKey: z.string().min(1),
+  promptKey: z.string().optional(),
+  suggestEndpoint: z.enum(['rubric-search', 'ai-complete', 'ai-extract-intake', 'ai-extract-media']).optional(),
+  currentValue: z.string().max(5000).optional(),
+  panelComponent: z.string().optional(),
+  extractFrom: z.array(z.enum(['intake', 'chat', 'media', 'priorCase'])).optional()
 });
 
 const updateAnalysisSchema = z.object({
@@ -393,6 +403,35 @@ export function registerCaseAnalysisRoutes(router: Router) {
       });
 
       res.json({ analysis });
+    })
+  );
+
+  router.post(
+    '/doctor/case-analyses/:analysisId/field-suggestions',
+    authRequired,
+    allowRoles(Role.DOCTOR, Role.ADMIN),
+    asyncRoute(async (req, res) => {
+      const analysisId = analysisIdFromReq(req);
+      const existing = await loadCaseAnalysisForDoctor(req, res, analysisId);
+      if (!existing) return;
+
+      const body = fieldSuggestionSchema.parse(req.body);
+      const result = await suggestApproachField({
+        analysisId,
+        doctorId: req.user!.id,
+        request: {
+          ...body,
+          panelComponent: body.panelComponent as FieldSuggestionRequest['panelComponent']
+        }
+      });
+
+      if (!result?.suggestion?.trim()) {
+        return res.status(404).json({
+          message: 'No suggestion available for this field yet. Add intake answers, clinical photos, or related case notes first.'
+        });
+      }
+
+      res.json(result);
     })
   );
 }

@@ -2,6 +2,7 @@ import { Component, Input, OnChanges, output, signal } from '@angular/core';
 import { form, FormField } from '@angular/forms/signals';
 import type { ApproachFieldDef } from '@vitalis/homeopathy-approaches';
 import { installApproachPanelAutoSave } from '../../approach-panel-autosave';
+import { ApproachFieldHintComponent } from '../approach-field-hint/approach-field-hint';
 
 export type ApproachCapturePanelConfig = {
   title: string;
@@ -11,7 +12,7 @@ export type ApproachCapturePanelConfig = {
 
 @Component({
   selector: 'app-approach-capture-panel',
-  imports: [FormField],
+  imports: [FormField, ApproachFieldHintComponent],
   templateUrl: './approach-capture-panel.html',
   styleUrl: './approach-capture-panel.scss'
 })

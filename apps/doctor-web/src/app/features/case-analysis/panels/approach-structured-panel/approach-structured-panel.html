@@ -34,6 +34,7 @@
         <span class="field-label-row">
           <span class="field-label">
             {{ field.label }}
+            <app-approach-field-hint [field]="field" />
             @if (field.required || config.requiredKeys?.includes(field.key)) {
               <span class="required-badge">Required</span>
             }
@@ -60,13 +61,6 @@
             }
           </span>
         </span>
-
-        @if (field.description) {
-          <small class="field-description">{{ field.description }}</small>
-        }
-        @if (field.hint) {
-          <small class="field-hint muted">{{ field.hint }}</small>
-        }
 
         @if (field.fieldType === 'select') {
           <select [formField]="form[field.key]">

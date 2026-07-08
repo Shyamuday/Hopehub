@@ -36,6 +36,7 @@ export const API_PATHS = {
     REPERTORY_PRACTICE_SESSION: '/doctor/repertory/practice-session',
     CONSULTATION_CASE_ANALYSES: CROSS_APP_API_PATHS.DOCTOR.CONSULTATION_CASE_ANALYSES,
     CASE_ANALYSIS: CROSS_APP_API_PATHS.DOCTOR.CASE_ANALYSIS,
+    CASE_ANALYSIS_FIELD_SUGGESTIONS: CROSS_APP_API_PATHS.DOCTOR.CASE_ANALYSIS_FIELD_SUGGESTIONS,
     CASE_ANALYSIS_REPERTORIZE: (analysisId: string) => `/doctor/case-analyses/${analysisId}/repertorize`,
     CASE_ANALYSIS_SELECT_REMEDY: (analysisId: string) => `/doctor/case-analyses/${analysisId}/select-remedy`,
     REPERTORY_REMEDY_MATERIA_MEDICA: (remedyId: string) => `/doctor/repertory/remedies/${remedyId}/materia-medica`,

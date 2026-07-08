@@ -1,10 +1,11 @@
 import { Component, Input, output } from '@angular/core';
 import { FormField } from '@angular/forms/signals';
 import type { ApproachFieldDef } from '@vitalis/homeopathy-approaches';
+import { ApproachFieldHintComponent } from '../approach-field-hint/approach-field-hint';
 
 @Component({
   selector: 'app-approach-case-sheet-panel',
-  imports: [FormField],
+  imports: [FormField, ApproachFieldHintComponent],
   templateUrl: './approach-case-sheet-panel.html',
   styleUrl: './approach-case-sheet-panel.scss'
 })

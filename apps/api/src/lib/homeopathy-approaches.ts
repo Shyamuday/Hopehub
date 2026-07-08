@@ -17,7 +17,7 @@ export type ClinicalMediaType =
   | 'LIMBS'
   | 'OTHER';
 
-const lib = homeopathyApproaches as {
+const lib = homeopathyApproaches as unknown as {
   CLINICAL_MEDIA_TYPE_LABELS: Record<ClinicalMediaType, string>;
   CLINICAL_MEDIA_BODY_REGIONS: Partial<Record<ClinicalMediaType, string[]>>;
   clinicalMediaMetaPayload: (
