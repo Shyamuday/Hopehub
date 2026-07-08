@@ -47,7 +47,12 @@
   <section class="settings-panel">
     <h2>Change permissions later</h2>
     <p>{{ settingsHint() }}</p>
-    <a class="btn-secondary" routerLink="/patient/account/profile">Reminder preferences</a>
+    <div class="settings-actions">
+      @if (isNative) {
+        <button type="button" class="btn-primary" (click)="openSettings()">Open device settings</button>
+      }
+      <a class="btn-secondary" routerLink="/patient/account/profile">Reminder preferences</a>
+    </div>
   </section>
 
   <p class="footer-note">

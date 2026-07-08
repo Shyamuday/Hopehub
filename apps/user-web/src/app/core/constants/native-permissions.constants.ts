@@ -2,7 +2,7 @@
 export const NATIVE_PERMISSION_MESSAGES = {
   camera:
     'Camera access lets you scan clinic QR codes and upload skin or health photos to your record.',
-  microphone: 'Microphone access is required for voice consultations with your doctor.',
+  microphone: 'Microphone access is required for voice and video consultations with your doctor.',
   photos: 'Photo library access lets you choose existing images for your health record.',
   notifications: 'Notifications remind you about medicines, consultations, and doctor messages.'
 } as const;

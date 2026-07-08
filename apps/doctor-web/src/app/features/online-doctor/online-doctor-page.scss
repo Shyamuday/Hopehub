@@ -9,3 +9,20 @@
 .success { color: #047857; }
 .error { color: #b91c1c; }
 .danger { background: #b91c1c; color: #fff; }
+.inbox-head { display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; }
+.inbox-list { list-style: none; margin: 0.75rem 0; padding: 0; display: grid; gap: 0.4rem; }
+.inbox-item {
+  width: 100%;
+  text-align: left;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  padding: 0.55rem 0.7rem;
+  background: #fff;
+  cursor: pointer;
+}
+.inbox-item.active { border-color: #2563eb; background: #eff6ff; }
+.inbox-item strong { display: block; }
+.inbox-item span { font-size: 0.82rem; color: #64748b; }
+.inbox-chat { margin-top: 1rem; border-top: 1px solid #e5e7eb; padding-top: 0.75rem; }
+.active-meta { font-size: 0.9rem; color: #475569; margin-bottom: 0.5rem; }
+.muted { color: #64748b; }

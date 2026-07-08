@@ -68,6 +68,20 @@ export class OnlineDoctorService implements OnDestroy {
     return this.socket;
   }
 
+  loadInstantConsultations() {
+    return firstValueFrom(
+      this.http.get<{
+        consultations: Array<{
+          id: string;
+          status: string;
+          patient: { id: string; name: string; patientCode?: string | null };
+          disease: { id: string; name: string };
+          updatedAt: string;
+        }>;
+      }>(`${this.apiBase}${API_PATHS.DOCTOR.INSTANT_CONSULTATIONS}`)
+    );
+  }
+
   ngOnDestroy() {
     this.disconnectRealtime();
   }

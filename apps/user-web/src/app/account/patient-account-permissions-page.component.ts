@@ -63,4 +63,8 @@ export class PatientAccountPermissionsPageComponent implements OnInit {
     }
     return this.platform === 'ios' ? this.copy.settingsIos : this.copy.settingsAndroid;
   }
+
+  async openSettings() {
+    await this.permissions.openAppSettings();
+  }
 }

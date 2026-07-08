@@ -5,6 +5,7 @@ import { AppHeaderComponent } from './app-header.component';
 import { HomeAppDownloadSectionComponent } from './home-app-download-section.component';
 import { HomeFinalCtaSectionComponent } from './home-final-cta-section.component';
 import { HomeHeroSectionComponent } from './home-hero-section.component';
+import { HomeTalkToDoctorSectionComponent } from './home-talk-to-doctor-section.component';
 import { HomeHowItWorksSectionComponent } from './home-how-it-works-section.component';
 import { HomeSafetyFaqSectionComponent } from './home-safety-faq-section.component';
 import { HomeTreatmentsSectionComponent } from './home-treatments-section.component';
@@ -15,6 +16,7 @@ import { HomeTreatmentsSectionComponent } from './home-treatments-section.compon
     AppHeaderComponent,
     AppFooterComponent,
     HomeHeroSectionComponent,
+    HomeTalkToDoctorSectionComponent,
     HomeTreatmentsSectionComponent,
     HomeHowItWorksSectionComponent,
     HomeSafetyFaqSectionComponent,

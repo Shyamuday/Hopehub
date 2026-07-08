@@ -264,7 +264,8 @@ export async function tryAssignInstantConsultation(io: SocketIoServer, consultat
     patientCode: consultation.patient.patientCode,
     patientName: consultation.patient.name,
     diseaseName: consultation.disease?.name ?? null,
-    status: updated.status
+    status: updated.status,
+    consultationMode: ConsultationMode.INSTANT_ONLINE
   });
 
   io.to(`${SOCKET_ROOM_PREFIXES.USER}${consultation.patientId}`).emit(SOCKET_EVENTS.CONSULTATION_UPDATED, {

@@ -245,6 +245,7 @@ export type Consultation = {
   messages: Message[];
   prescription?: Prescription | null;
   prescriptions?: Prescription[];
+  consultationMode?: 'CLINIC_QUEUE' | 'INSTANT_ONLINE';
 };
 
 export type Doctor = User & {

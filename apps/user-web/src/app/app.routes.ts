@@ -33,6 +33,7 @@ import { PatientAccountConsultationDetailPageComponent } from './account/patient
 import { PatientAccountCardPageComponent } from './account/patient-account-card-page.component';
 import { PatientAccountPermissionsPageComponent } from './account/patient-account-permissions-page.component';
 import { TalkToDoctorComponent } from './talk-to-doctor.component';
+import { PatientInstantConsultPageComponent } from './patient-instant-consult-page.component';
 import { NotFoundPageComponent } from './not-found-page.component';
 
 export const routes: Routes = [
@@ -55,6 +56,16 @@ export const routes: Routes = [
     path: 'talk-to-doctor',
     component: TalkToDoctorComponent,
     data: { title: 'Talk to a doctor now', description: 'Instant online consultation with live doctors.' }
+  },
+  {
+    path: 'patient/instant-consult/:id',
+    component: PatientInstantConsultPageComponent,
+    canActivate: [roleGuard],
+    data: {
+      roles: ['PATIENT'],
+      seoTitle: 'Instant consult room | Vitalis Care',
+      seoDescription: 'Chat and video call with your online doctor.'
+    }
   },
   {
     path: 'our-doctors',

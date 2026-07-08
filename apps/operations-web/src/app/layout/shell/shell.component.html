@@ -1,87 +1,89 @@
 
     <div class="shell" [class.focus-mode]="focusMode()">
-      <aside class="sidebar" aria-label="Operations navigation">
-        <div class="sidebar-header">
-          <div class="logo">
-            <span class="logo-icon">🏥</span>
-            <span class="logo-text">Operations</span>
-          </div>
-        </div>
-
-        <nav class="sidebar-nav">
-          @for (item of navItemsList(); track item.path) {
-            <a
-              [routerLink]="item.path"
-              routerLinkActive="active"
-              class="nav-item"
-            >
-              <span class="nav-icon">{{ item.icon }}</span>
-              <span class="nav-label">{{ item.label }}</span>
-            </a>
-          }
-        </nav>
-
-        <div class="sidebar-footer">
-          <a class="user-info" [routerLink]="accountPath">
+      <header class="topbar">
+        <button type="button" class="menu-btn" aria-label="Open menu" (click)="openMenu()">☰</button>
+        <div class="topbar-title">{{ pageTitle() }}</div>
+        <div class="topbar-right">
+          <app-notification-bell-host [config]="bellConfig()" />
+          <a class="topbar-user" [routerLink]="accountPath">
             <vitalis-profile-avatar
               [apiBase]="apiBase"
               [tokenKey]="authTokenKey"
               [displayName]="displayName()"
               [profileImageUrl]="profileImageUrl()"
             />
-            <div class="user-details">
-              <div class="user-name">{{ auth.currentUser()?.name }}</div>
-              <div class="user-role">{{ roleLabel() }}</div>
-            </div>
+            <span class="topbar-name">{{ auth.currentUser()?.name }}</span>
           </a>
-          <button class="logout-btn" (click)="auth.logout()" title="Logout">⬡</button>
+          <button type="button" class="topbar-logout" (click)="auth.logout()" title="Logout">
+            <span>⏻</span>
+          </button>
         </div>
-      </aside>
+      </header>
 
-      <div class="main">
-        <header class="topbar">
-          <button type="button" class="menu-btn" aria-label="Open menu" (click)="openMenu()">☰</button>
-          <div class="topbar-title">{{ pageTitle() }}</div>
-          <div class="topbar-right">
-            <app-notification-bell-host [config]="bellConfig()" />
-            <a class="topbar-user" [routerLink]="accountPath">
+      <div class="shell-body">
+        <aside class="sidebar" aria-label="Operations navigation">
+          <div class="sidebar-header">
+            <div class="logo">
+              <span class="logo-icon">🏥</span>
+              <span class="logo-text">Operations</span>
+            </div>
+          </div>
+
+          <nav class="sidebar-nav">
+            @for (item of navItemsList(); track item.path) {
+              <a
+                [routerLink]="item.path"
+                routerLinkActive="active"
+                class="nav-item"
+              >
+                <span class="nav-icon">{{ item.icon }}</span>
+                <span class="nav-label">{{ item.label }}</span>
+              </a>
+            }
+          </nav>
+
+          <div class="sidebar-footer">
+            <a class="user-info" [routerLink]="accountPath">
               <vitalis-profile-avatar
                 [apiBase]="apiBase"
                 [tokenKey]="authTokenKey"
                 [displayName]="displayName()"
                 [profileImageUrl]="profileImageUrl()"
               />
-              <span class="topbar-name">{{ auth.currentUser()?.name }}</span>
+              <div class="user-details">
+                <div class="user-name">{{ auth.currentUser()?.name }}</div>
+                <div class="user-role">{{ roleLabel() }}</div>
+              </div>
             </a>
-            <button type="button" class="topbar-logout" (click)="auth.logout()" title="Logout">
-              <span>⏻</span>
-            </button>
+            <button class="logout-btn" (click)="auth.logout()" title="Logout">⬡</button>
           </div>
-        </header>
+        </aside>
 
-        <main class="content">
-          <app-role-task-guide appKey="operations-web" [variantKey]="guideVariant()" theme="dark" />
-          <router-outlet />
-        </main>
+        <div class="main">
+          <main class="content">
+            <app-role-task-guide appKey="operations-web" [variantKey]="guideVariant()" theme="dark" />
+            <router-outlet />
+          </main>
 
-        <nav class="bottom-nav" aria-label="Quick navigation" [class.is-hidden]="focusMode()">
-          @for (item of bottomNavItems(); track item.path) {
-            <a
-              [routerLink]="item.path"
-              routerLinkActive="active"
-              class="bottom-nav-item"
-            >
-              <span class="bottom-nav-icon">{{ item.icon }}</span>
-              <span class="bottom-nav-label">{{ navShortLabel(item) }}</span>
-            </a>
-          }
-          @if (hasOverflowNav()) {
-            <button type="button" class="bottom-nav-item bottom-nav-more" [class.active]="menuOpen()" (click)="openMenu()">
-              <span class="bottom-nav-icon">⋯</span>
-              <span class="bottom-nav-label">More</span>
-            </button>
-          }
-        </nav>
+          <nav class="bottom-nav" aria-label="Quick navigation" [class.is-hidden]="focusMode()">
+            @for (item of bottomNavItems(); track item.path) {
+              <a
+                [routerLink]="item.path"
+                routerLinkActive="active"
+                class="bottom-nav-item"
+              >
+                <span class="bottom-nav-icon">{{ item.icon }}</span>
+                <span class="bottom-nav-label">{{ navShortLabel(item) }}</span>
+              </a>
+            }
+            @if (hasOverflowNav()) {
+              <button type="button" class="bottom-nav-item bottom-nav-more" [class.active]="menuOpen()" (click)="openMenu()">
+                <span class="bottom-nav-icon">⋯</span>
+                <span class="bottom-nav-label">More</span>
+              </button>
+            }
+          </nav>
+        </div>
       </div>
 
       @if (menuOpen()) {

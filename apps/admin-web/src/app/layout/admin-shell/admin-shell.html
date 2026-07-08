@@ -1,59 +1,61 @@
 <main class="admin-shell" [class.focus-mode]="focusMode()">
-  <aside class="sidebar" aria-label="Admin navigation">
-    <div class="sidebar-brand">
-      <h1>Admin Console</h1>
-      @if (auth.user()?.name) {
-        <p class="sidebar-user">{{ auth.user()?.name }}</p>
-      }
+  <header class="topbar">
+    <div class="topbar-start">
+      <button type="button" class="menu-btn" aria-label="Open menu" (click)="openMenu()">☰</button>
+      <div class="topbar-brand">
+        <h1>Admin Console</h1>
+        @if (currentPageLabel()) {
+          <p class="current-page">{{ currentPageLabel() }}</p>
+        }
+      </div>
     </div>
-
-    <app-admin-nav-tabs [items]="filteredNavItems()" layout="sidebar" />
-
-    <div class="sidebar-footer">
-      <a class="sidebar-account" [routerLink]="accountPath">
+    <div class="topbar-actions">
+      <app-notification-bell-host [config]="bellConfig" />
+      <a class="account-link" [routerLink]="accountPath">
         <vitalis-profile-avatar
           [apiBase]="apiBase"
           [tokenKey]="authTokenKey"
           [displayName]="auth.user()?.name || 'Admin'"
           [profileImageUrl]="auth.user()?.profileImageUrl ?? null"
-          size="sm"
         />
-        <span>Account</span>
+        <span class="account-label">Account</span>
       </a>
-      <button type="button" class="sidebar-logout" (click)="logout()">Sign out</button>
+      <button type="button" class="logout-btn" (click)="logout()">Logout</button>
     </div>
-  </aside>
+  </header>
 
-  <div class="shell-main">
-    <header class="topbar">
-      <div class="topbar-start">
-        <button type="button" class="menu-btn" aria-label="Open menu" (click)="openMenu()">☰</button>
-        <div class="topbar-brand">
-          <h1>Admin Console</h1>
-          @if (currentPageLabel()) {
-            <p class="current-page">{{ currentPageLabel() }}</p>
-          }
-        </div>
+  <div class="shell-body">
+    <aside class="sidebar" aria-label="Admin navigation">
+      <div class="sidebar-brand">
+        <h1>Admin Console</h1>
+        @if (auth.user()?.name) {
+          <p class="sidebar-user">{{ auth.user()?.name }}</p>
+        }
       </div>
-      <div class="topbar-actions">
-        <app-notification-bell-host [config]="bellConfig" />
-        <a class="account-link" [routerLink]="accountPath">
+
+      <app-admin-nav-tabs [items]="filteredNavItems()" layout="sidebar" />
+
+      <div class="sidebar-footer">
+        <a class="sidebar-account" [routerLink]="accountPath">
           <vitalis-profile-avatar
             [apiBase]="apiBase"
             [tokenKey]="authTokenKey"
             [displayName]="auth.user()?.name || 'Admin'"
             [profileImageUrl]="auth.user()?.profileImageUrl ?? null"
+            size="sm"
           />
-          <span class="account-label">Account</span>
+          <span>Account</span>
         </a>
-        <button type="button" class="logout-btn" (click)="logout()">Logout</button>
+        <button type="button" class="sidebar-logout" (click)="logout()">Sign out</button>
       </div>
-    </header>
+    </aside>
 
-    <section class="content">
-      <app-role-task-guide appKey="admin-web" />
-      <router-outlet />
-    </section>
+    <div class="shell-main">
+      <section class="content">
+        <app-role-task-guide appKey="admin-web" />
+        <router-outlet />
+      </section>
+    </div>
   </div>
 
   @if (menuOpen()) {

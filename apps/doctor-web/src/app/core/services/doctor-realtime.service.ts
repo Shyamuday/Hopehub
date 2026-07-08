@@ -10,6 +10,7 @@ export type ConsultationAssignedPayload = {
   patientName?: string | null;
   diseaseName?: string | null;
   status?: string;
+  consultationMode?: 'CLINIC_QUEUE' | 'INSTANT_ONLINE';
 };
 
 @Injectable({ providedIn: 'root' })

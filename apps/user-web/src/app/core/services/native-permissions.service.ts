@@ -163,6 +163,21 @@ export class NativePermissionsService {
     };
   }
 
+  async openAppSettings(): Promise<void> {
+    if (!this.isNative || typeof window === 'undefined') return;
+
+    const platform = Capacitor.getPlatform();
+    if (platform === 'ios') {
+      window.location.href = 'app-settings:';
+      return;
+    }
+
+    if (platform === 'android') {
+      const appId = 'com.vitalisclinic.patient';
+      window.location.href = `intent:#Intent;action=android.settings.APPLICATION_DETAILS_SETTINGS;data=package:${appId};end`;
+    }
+  }
+
   private async ensureWebCamera(): Promise<NativePermissionResult> {
     if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) {
       return { granted: false, message: NATIVE_PERMISSION_MESSAGES.camera };

@@ -52,7 +52,7 @@
 
   .stepper-sticky {
     position: sticky;
-    top: 0;
+    top: calc(var(--shell-topbar-height) + var(--safe-top));
     z-index: 25;
     background: var(--color-surface, #fff);
     padding: 0.35rem 0 0.65rem;

@@ -122,10 +122,32 @@
   font-size: 0.9rem;
 }
 
+.settings-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.65rem;
+}
+
+.settings-panel .btn-primary {
+  border: none;
+  border-radius: 0.4rem;
+  padding: 0.45rem 0.85rem;
+  background: #2563eb;
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+}
+
 .settings-panel .btn-secondary {
   display: inline-block;
-  margin-top: 0.65rem;
   text-decoration: none;
+  padding: 0.45rem 0.85rem;
+  border-radius: 0.4rem;
+  background: #fff;
+  border: 1px solid #bfdbfe;
+  color: #1d4ed8;
+  font-weight: 600;
 }
 
 .footer-note {

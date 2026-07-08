@@ -118,6 +118,7 @@ export function mapConsultationFromApi(row: Record<string, unknown>): Consultati
       patient: row['patient'] as Consultation['patient'],
       assignedDoctor: (row['assignedDoctor'] as Consultation['assignedDoctor']) || null,
       disease: row['disease'] as Consultation['disease'],
+      consultationMode: (row['consultationMode'] as Consultation['consultationMode']) || 'CLINIC_QUEUE',
       billingPlanCode: (row['billingPlanCode'] as string | null) || null,
       pricingSnapshot: (row['pricingSnapshot'] as Record<string, unknown> | null) || null,
       payment: row['payment']

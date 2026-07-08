@@ -1,68 +1,70 @@
 <main class="doctor-shell" [class.focus-mode]="focusMode()">
-  <aside class="sidebar" aria-label="Main navigation">
-    <div class="sidebar-brand">
-      <p class="app-title">Doctor Console</p>
-      @if (!loadingSession) {
-        <div class="sidebar-identity">
-          <strong>{{ doctorName }}</strong>
-          @if (doctorTypeLabel) {
-            <span class="type-badge sidebar-badge">{{ doctorTypeLabel }}</span>
-          }
-        </div>
-      }
-    </div>
-
-    <nav class="sidebar-nav">
-      @for (item of navItems; track item.path) {
-        <a [routerLink]="item.path" routerLinkActive="active">
-          <span class="nav-icon" aria-hidden="true">{{ item.icon }}</span>
-          <span class="nav-label">{{ item.label }}</span>
-        </a>
-      }
-    </nav>
-
-    <div class="sidebar-footer">
-      <button type="button" class="sidebar-logout" (click)="logout()">Sign out</button>
-    </div>
-  </aside>
-
-  <div class="shell-main">
-    <header class="topbar">
-      <div class="topbar-start">
-        <button type="button" class="menu-btn" aria-label="Open menu" (click)="openMenu()">☰</button>
-        <div class="identity">
-          <p class="app-title">Doctor Console</p>
-          @if (!loadingSession) {
-            <div class="doctor-meta">
-              <strong>{{ doctorName }}</strong>
-              <span class="type-badge">{{ doctorTypeLabel }}</span>
-            </div>
-          }
-        </div>
-      </div>
-      <div class="topbar-end">
-        <app-notification-bell-host [config]="bellConfig" />
+  <header class="topbar">
+    <div class="topbar-start">
+      <button type="button" class="menu-btn" aria-label="Open menu" (click)="openMenu()">☰</button>
+      <div class="identity">
+        <p class="app-title">Doctor Console</p>
         @if (!loadingSession) {
-          <vitalis-profile-avatar
-            [apiBase]="apiBase"
-            [tokenKey]="authTokenKey"
-            [displayName]="doctorName || 'Doctor'"
-            [profileImageUrl]="doctorProfileImageUrl"
-            size="md"
-          />
+          <div class="doctor-meta">
+            <strong>{{ doctorName }}</strong>
+            <span class="type-badge">{{ doctorTypeLabel }}</span>
+          </div>
         }
-        <button type="button" class="logout-btn" (click)="logout()">Logout</button>
       </div>
-    </header>
+    </div>
+    <div class="topbar-end">
+      <app-notification-bell-host [config]="bellConfig" />
+      @if (!loadingSession) {
+        <vitalis-profile-avatar
+          [apiBase]="apiBase"
+          [tokenKey]="authTokenKey"
+          [displayName]="doctorName || 'Doctor'"
+          [profileImageUrl]="doctorProfileImageUrl"
+          size="md"
+        />
+      }
+      <button type="button" class="logout-btn" (click)="logout()">Logout</button>
+    </div>
+  </header>
 
-    @if (assignmentNotice()) {
-      <div class="assignment-notice" role="status">{{ assignmentNotice() }}</div>
-    }
+  <div class="shell-body">
+    <aside class="sidebar" aria-label="Main navigation">
+      <div class="sidebar-brand">
+        <p class="app-title">Doctor Console</p>
+        @if (!loadingSession) {
+          <div class="sidebar-identity">
+            <strong>{{ doctorName }}</strong>
+            @if (doctorTypeLabel) {
+              <span class="type-badge sidebar-badge">{{ doctorTypeLabel }}</span>
+            }
+          </div>
+        }
+      </div>
 
-    <section class="content">
-      <app-role-task-guide appKey="doctor-web" [variantKey]="doctorTypeKey" />
-      <router-outlet />
-    </section>
+      <nav class="sidebar-nav">
+        @for (item of navItems; track item.path) {
+          <a [routerLink]="item.path" routerLinkActive="active">
+            <span class="nav-icon" aria-hidden="true">{{ item.icon }}</span>
+            <span class="nav-label">{{ item.label }}</span>
+          </a>
+        }
+      </nav>
+
+      <div class="sidebar-footer">
+        <button type="button" class="sidebar-logout" (click)="logout()">Sign out</button>
+      </div>
+    </aside>
+
+    <div class="shell-main">
+      @if (assignmentNotice()) {
+        <div class="assignment-notice" role="status">{{ assignmentNotice() }}</div>
+      }
+
+      <section class="content">
+        <app-role-task-guide appKey="doctor-web" [variantKey]="doctorTypeKey" />
+        <router-outlet />
+      </section>
+    </div>
   </div>
 
   @if (menuOpen()) {

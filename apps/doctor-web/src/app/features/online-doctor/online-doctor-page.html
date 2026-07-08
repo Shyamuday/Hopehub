@@ -1,6 +1,6 @@
 <section class="panel">
   <h1>Online doctor — go live</h1>
-  <p class="lead">Show yourself online for instant patient consults (chat + voice). This is separate from your clinic worklist.</p>
+  <p class="lead">Show yourself online for instant patient consults (chat + voice &amp; video). Separate from your clinic worklist.</p>
 </section>
 
 @if (loading()) {
@@ -18,6 +18,45 @@
     </div>
   </section>
 
+  @if (isLive()) {
+    <section class="panel inbox-panel">
+      <div class="inbox-head">
+        <h2>Live consult inbox</h2>
+        <button type="button" class="ghost" (click)="loadInbox()" [disabled]="inboxLoading()">Refresh</button>
+      </div>
+      @if (inboxLoading() && !instantConsults().length) {
+        <p class="muted">Loading active consults…</p>
+      } @else if (!instantConsults().length) {
+        <p class="muted">No active instant consults yet. Patients will appear here when assigned to you.</p>
+      } @else {
+        <ul class="inbox-list">
+          @for (c of instantConsults(); track c.id) {
+            <li>
+              <button
+                type="button"
+                class="inbox-item"
+                [class.active]="selectedConsultId() === c.id"
+                (click)="selectConsult(c.id)"
+              >
+                <strong>{{ c.patient.name }}</strong>
+                <span>{{ c.disease.name }} · {{ c.status }}</span>
+              </button>
+            </li>
+          }
+        </ul>
+      }
+
+      @if (selectedConsultId()) {
+        <div class="inbox-chat">
+          @if (selectedConsult(); as active) {
+            <p class="active-meta">Chatting with <strong>{{ active.patient.name }}</strong> — {{ active.disease.name }}</p>
+          }
+          <app-consultation-chat-panel [consultationId]="selectedConsultId()" />
+        </div>
+      }
+    </section>
+  }
+
   <section class="panel">
     <h2>How patients see you</h2>
     <fieldset class="form-grid" [disabled]="saving()">
@@ -29,7 +68,7 @@
         </select>
       </div>
       <label class="checkbox"><input type="checkbox" [formField]="settingsForm.acceptsChat" /> Accept chat</label>
-      <label class="checkbox"><input type="checkbox" [formField]="settingsForm.acceptsVoiceCall" /> Accept voice calls</label>
+      <label class="checkbox"><input type="checkbox" [formField]="settingsForm.acceptsVoiceCall" /> Accept voice &amp; video calls</label>
       @if (settingsModel().category === 'SPECIALIST') {
         <div class="field full">
           <label>Specialist for diseases</label>

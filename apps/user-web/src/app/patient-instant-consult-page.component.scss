@@ -1,0 +1,18 @@
+.instant-room { max-width: 52rem; margin: 0 auto; padding: 1rem 1.25rem 2rem; }
+.back-link { display: inline-block; margin-bottom: 0.75rem; color: #1d4ed8; text-decoration: none; font-weight: 600; }
+.room-hero { margin-bottom: 1rem; }
+.eyebrow { text-transform: uppercase; letter-spacing: 0.06em; font-size: 0.72rem; color: #64748b; margin: 0 0 0.35rem; }
+.room-hero h1 { margin: 0 0 0.35rem; }
+.phase { color: #1e40af; font-weight: 600; margin: 0 0 0.75rem; }
+.hint, .doctor-line { color: #475569; font-size: 0.92rem; }
+.notice { color: #b45309; background: #fffbeb; border: 1px solid #fde68a; padding: 0.55rem 0.75rem; border-radius: 0.5rem; }
+.loading-text { color: #64748b; }
+.primary {
+  border: none;
+  border-radius: 0.45rem;
+  padding: 0.5rem 1rem;
+  background: #2563eb;
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+}

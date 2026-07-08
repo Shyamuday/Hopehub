@@ -90,7 +90,13 @@ export class DoctorShell implements OnInit, OnDestroy {
         ? `${payload.patientName ?? 'Patient'} (${payload.patientCode})`
         : payload.patientName ?? 'New patient';
       this.assignmentNotice.set(`New case: ${label}`);
-      void this.router.navigate(['/', ROUTE_PATHS.CASE_ANALYSIS, payload.consultationId, 'case-analysis']);
+      if (payload.consultationMode === 'INSTANT_ONLINE') {
+        void this.router.navigate(['/', ROUTE_PATHS.ONLINE_DOCTOR], {
+          queryParams: { consultationId: payload.consultationId }
+        });
+      } else {
+        void this.router.navigate(['/', ROUTE_PATHS.CASE_ANALYSIS, payload.consultationId, 'case-analysis']);
+      }
       window.setTimeout(() => this.assignmentNotice.set(''), 5000);
     });
 

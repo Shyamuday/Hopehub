@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import type { Server as SocketIoServer } from 'socket.io';
-import { LivePresenceStatus, OnlineDoctorCategory, Role } from '@prisma/client';
+import { LivePresenceStatus, OnlineDoctorCategory, Role, ConsultationMode, ConsultationStatus } from '@prisma/client';
 import { authRequired, allowRoles } from '../auth.js';
 import { getPublicIceServers } from '../constants/rtc.constants.js';
 import { prisma } from '../db.js';
@@ -135,6 +135,43 @@ export function createOnlineDoctorsRouter(io: SocketIoServer) {
     asyncRoute(async (req, res) => {
       const profile = await heartbeatDoctor(req.user!.id, io);
       res.json({ profile });
+    })
+  );
+
+  router.get(
+    '/doctor/instant-consultations',
+    authRequired,
+    allowRoles(Role.DOCTOR),
+    asyncRoute(async (req, res) => {
+      const rows = await prisma.consultation.findMany({
+        where: {
+          assignedDoctorId: req.user!.id,
+          consultationMode: ConsultationMode.INSTANT_ONLINE,
+          status: {
+            in: [
+              ConsultationStatus.ASSIGNED,
+              ConsultationStatus.IN_PROGRESS,
+              ConsultationStatus.PRESCRIPTION_UPLOADED
+            ]
+          }
+        },
+        include: {
+          patient: { select: { id: true, name: true, patientCode: true } },
+          disease: { select: { id: true, name: true } }
+        },
+        orderBy: { updatedAt: 'desc' },
+        take: 20
+      });
+
+      res.json({
+        consultations: rows.map((c) => ({
+          id: c.id,
+          status: c.status,
+          patient: c.patient,
+          disease: c.disease,
+          updatedAt: c.updatedAt
+        }))
+      });
     })
   );
 

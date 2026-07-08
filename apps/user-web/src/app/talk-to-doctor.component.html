@@ -6,7 +6,7 @@
         <section class="page-hero panel">
           <p class="eyebrow">Instant consult</p>
           <h1>Online doctors available now</h1>
-          <p>Chat and voice-call with a homeopathic doctor — like AstroTalk. Clinic appointments still work separately.</p>
+          <p>Chat and voice/video-call with a homeopathic doctor — like AstroTalk. Clinic appointments still work separately.</p>
           <p class="trust-link"><a routerLink="/patient/account/permissions">How we use camera &amp; microphone for calls — your privacy explained</a></p>
         </section>
 
@@ -24,7 +24,7 @@
                   @if (doc.bio) { <p class="bio">{{ doc.bio }}</p> }
                   <div class="tags">
                     @if (doc.acceptsChat) { <span>Chat</span> }
-                    @if (doc.acceptsVoiceCall) { <span>Voice call</span> }
+                    @if (doc.acceptsVoiceCall) { <span>Voice &amp; video</span> }
                   </div>
                 </article>
               } @empty {

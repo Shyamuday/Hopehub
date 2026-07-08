@@ -8,7 +8,6 @@ import { AuthService } from './auth/auth.service';
 import { ClinicApiClient } from './clinic-api/clinic-api.client';
 import { API_PATHS } from './core/constants/api-paths.constants';
 import { SOCKET_EVENTS } from './core/constants/socket.constants';
-import { ROUTE_PATHS } from './core/constants/app-routes.constants';
 import { WhatsappLinkService } from './core/services/whatsapp-link.service';
 import { environment } from '../environments/environment';
 import type { Disease } from './models';
@@ -132,10 +131,8 @@ export class TalkToDoctorComponent implements OnInit, OnDestroy {
           purchaseType: 'ONE_TIME'
         })
       });
-      this.message.set('Consultation created. Complete payment on your dashboard.');
-      await this.router.navigate([`/${ROUTE_PATHS.PATIENT_DASHBOARD}`], {
-        queryParams: { consultationId: res.consultation.id }
-      });
+      this.message.set('Consultation created. Complete payment to connect.');
+      await this.router.navigate([`/patient/instant-consult/${res.consultation.id}`]);
     } catch (err) {
       this.error.set(err instanceof Error ? err.message : 'Could not start consultation.');
     } finally {
