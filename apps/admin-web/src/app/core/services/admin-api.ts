@@ -92,6 +92,8 @@ export class AdminApi {
   listBlogComments(...args: Parameters<AdminDoctorsApi['listBlogComments']>) { return this.doctors.listBlogComments(...args); }
   moderateBlogComment(...args: Parameters<AdminDoctorsApi['moderateBlogComment']>) { return this.doctors.moderateBlogComment(...args); }
   deleteBlogComment(...args: Parameters<AdminDoctorsApi['deleteBlogComment']>) { return this.doctors.deleteBlogComment(...args); }
+  getOnlineDoctorStats() { return this.doctors.getOnlineDoctorStats(); }
+  listOnlineDoctors() { return this.doctors.listOnlineDoctors(); }
   listChatSessions(...args: Parameters<AdminDoctorsApi['listChatSessions']>) { return this.doctors.listChatSessions(...args); }
   getChatSessionStats(...args: Parameters<AdminDoctorsApi['getChatSessionStats']>) { return this.doctors.getChatSessionStats(...args); }
   getChatSession(...args: Parameters<AdminDoctorsApi['getChatSession']>) { return this.doctors.getChatSession(...args); }

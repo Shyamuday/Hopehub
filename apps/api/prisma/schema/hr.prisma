@@ -106,6 +106,7 @@ model Doctor {
   joiningLetter    JoiningLetter?
   leaveRequests    LeaveRequest[]
   slots            DoctorSlot[]
+  onlineSession    DoctorOnlineSession?
   salaryStructure  EmployeeSalary?
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt

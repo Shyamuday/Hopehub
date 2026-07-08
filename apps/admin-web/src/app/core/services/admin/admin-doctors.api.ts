@@ -175,6 +175,15 @@ export class AdminDoctorsApi extends AdminApiBase {
     return firstValueFrom(this.http.delete(`${this.apiBase}${API_PATHS.ADMIN.BLOG_COMMENT_BY_ID(id)}`));
   }
 
+  getOnlineDoctorStats() {
+    return firstValueFrom(this.http.get<{ stats: Record<string, number> }>(`${this.apiBase}${API_PATHS.ADMIN.ONLINE_DOCTORS_STATS}`));
+  }
+  listOnlineDoctors() {
+    return firstValueFrom(
+      this.http.get<{ liveDoctors: any[]; sessions: any[]; instantQueue: any[] }>(`${this.apiBase}${API_PATHS.ADMIN.ONLINE_DOCTORS}`)
+    );
+  }
+
   // ── Chat Inbox ────────────────────────────────────────────────────────────
   getChatSessionStats() {
     return firstValueFrom(

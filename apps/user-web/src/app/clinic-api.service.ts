@@ -51,6 +51,8 @@ export class ClinicApiService {
     walletRedeemInPaise?: number;
     promoCode?: string;
     clinicStoreId?: string | null;
+    consultationMode?: 'CLINIC_QUEUE' | 'INSTANT_ONLINE';
+    preferredDoctorUserId?: string | null;
   }) {
     return from(this.client.apiFetch(API_PATHS.CONSULTATIONS, {
       method: 'POST',

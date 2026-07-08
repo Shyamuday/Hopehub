@@ -32,6 +32,7 @@ export class AppHeaderComponent implements OnDestroy {
     consultations: `/${ROUTE_PATHS.PATIENT_ACCOUNT_CONSULTATIONS}`,
     orders: `/${ROUTE_PATHS.PATIENT_ACCOUNT_ORDERS}`,
     card: `/${ROUTE_PATHS.PATIENT_ACCOUNT_CARD}`,
+    permissions: `/${ROUTE_PATHS.PATIENT_ACCOUNT_PERMISSIONS}`,
     dashboard: `/${ROUTE_PATHS.PATIENT_DASHBOARD}`,
   };
 

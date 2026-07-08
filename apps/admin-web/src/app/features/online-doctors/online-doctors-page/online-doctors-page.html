@@ -1,0 +1,45 @@
+<section class="panel">
+  <h1>Online doctors monitor</h1>
+  <p>Live telemedicine pool — separate from clinic queue and store assignments.</p>
+  <button type="button" (click)="load()" [disabled]="loading()">Refresh</button>
+</section>
+
+@if (stats(); as s) {
+  <section class="panel stats">
+    <div><strong>{{ s['liveNow'] }}</strong><span>Live now</span></div>
+    <div><strong>{{ s['enabledDoctors'] }}</strong><span>Enabled</span></div>
+    <div><strong>{{ s['waitingInstant'] }}</strong><span>Waiting (paid)</span></div>
+    <div><strong>{{ s['onCall'] }}</strong><span>On call</span></div>
+    <div><strong>{{ s['generalists'] }}</strong><span>Generalists</span></div>
+    <div><strong>{{ s['specialists'] }}</strong><span>Specialists</span></div>
+  </section>
+}
+
+<section class="panel">
+  <h2>Live doctors</h2>
+  @for (d of liveDoctors(); track d.userId) {
+    <article class="row">
+      <strong>{{ d.name }}</strong>
+      <span>{{ d.specialty }} · {{ d.category }} · {{ d.liveStatus }}</span>
+      @if (d.acceptsChat) { <span class="tag">Chat</span> }
+      @if (d.acceptsVoiceCall) { <span class="tag">Voice</span> }
+    </article>
+  } @empty {
+    <p>No doctors live.</p>
+  }
+</section>
+
+<section class="panel">
+  <h2>Instant consult queue</h2>
+  @for (c of instantQueue(); track c.id) {
+    <article class="row">
+      <strong>{{ c.patient?.name }}</strong>
+      <span>{{ c.disease?.name }} · {{ c.status }}</span>
+      <span>Dr: {{ c.assignedDoctor?.name || 'Unassigned' }}</span>
+    </article>
+  } @empty {
+    <p>No instant consults in queue.</p>
+  }
+</section>
+
+@if (error()) { <p class="error">{{ error() }}</p> }

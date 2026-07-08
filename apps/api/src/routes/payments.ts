@@ -13,6 +13,7 @@ import { doctorReceivesConsultationShare, resolveDoctorSharePercent } from '../s
 import { buildDoctorEarningsReport } from '../services/doctor-earnings.js';
 import { settleConsultationPaymentRewards } from '../services/reward-settlement.js';
 import { PRODUCT_EVENTS, trackProductEvent } from '../services/product-analytics.js';
+import { tryAssignInstantConsultation } from '../services/online-doctor-presence.js';
 
 export function createPaymentsRouter(io: SocketIoServer) {
   const router = Router();
@@ -126,6 +127,12 @@ export function createPaymentsRouter(io: SocketIoServer) {
       }
 
       if (!wasPaid) {
+        void tryAssignInstantConsultation(io, consultationId).catch((err) => {
+          console.error('[instant] Auto-assign failed after payment', err);
+        });
+      }
+
+      if (!wasPaid) {
         void trackProductEvent({
           name: PRODUCT_EVENTS.PAYMENT_COMPLETED,
           actorId: req.user!.id,
@@ -211,6 +218,12 @@ export function createPaymentsRouter(io: SocketIoServer) {
           }))
         );
         io.to(`user:${webhookPatient.id}`).emit('payment:updated', { consultationId: payment.consultationId, status: 'PAID' });
+      }
+
+      if (!wasPaid) {
+        void tryAssignInstantConsultation(io, payment.consultationId).catch((err) => {
+          console.error('[instant] Auto-assign failed after webhook payment', err);
+        });
       }
 
       if (!wasPaid) {

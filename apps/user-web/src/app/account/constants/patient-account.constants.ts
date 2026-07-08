@@ -67,6 +67,14 @@ export const PATIENT_ACCOUNT_NAV: PatientAccountNavItem[] = [
     available: true
   },
   {
+    id: 'permissions',
+    label: 'App permissions',
+    description: 'Why we ask for camera, mic & alerts',
+    path: `/${ROUTE_PATHS.PATIENT_ACCOUNT_PERMISSIONS}`,
+    icon: '🔒',
+    available: true
+  },
+  {
     id: 'dashboard',
     label: 'Care dashboard',
     description: 'Chat, medicines, today’s doses',

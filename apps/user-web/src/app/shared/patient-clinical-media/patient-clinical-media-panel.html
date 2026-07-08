@@ -16,7 +16,14 @@
   <div class="upload-grid">
     <div class="upload-form">
       <label class="field-label" for="health-photo-file">Photo</label>
-      <input id="health-photo-file" type="file" accept="image/jpeg,image/png,image/webp,image/gif" (change)="onFileSelected($event)" />
+      @if (isNative) {
+        <div class="native-photo-actions">
+          <button type="button" class="btn-secondary" (click)="captureFromCamera()">Take photo</button>
+          <button type="button" class="btn-secondary" (click)="pickFromGallery()">Choose from gallery</button>
+        </div>
+      } @else {
+        <input id="health-photo-file" type="file" accept="image/jpeg,image/png,image/webp,image/gif" (change)="onFileSelected($event)" />
+      }
 
       @if (selectedPreviewUrl(); as previewUrl) {
         <img class="selected-preview" [src]="previewUrl" alt="Selected photo preview" />

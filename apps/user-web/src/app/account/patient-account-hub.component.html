@@ -45,6 +45,14 @@
     </div>
   }
 
+  <a class="trust-banner" routerLink="/patient/account/permissions">
+    <span class="trust-icon" aria-hidden="true">🔒</span>
+    <span>
+      <strong>Your privacy matters</strong>
+      <span class="trust-sub">See why we ask for camera, microphone &amp; notifications — you stay in control.</span>
+    </span>
+  </a>
+
   <div class="quick-links">
     @for (link of quickLinks; track link.id) {
       @if (link.available) {

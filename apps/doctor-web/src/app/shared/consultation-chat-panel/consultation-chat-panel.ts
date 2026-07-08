@@ -1,7 +1,8 @@
 import { DatePipe } from '@angular/common';
-import { Component, Input, OnChanges, inject, signal } from '@angular/core';
+import { Component, Input, OnChanges, OnDestroy, inject, signal } from '@angular/core';
 import { form, FormField } from '@angular/forms/signals';
 import { ConsultationApiService } from '../../core/services/consultation-api.service';
+import { DoctorRealtimeService } from '../../core/services/doctor-realtime.service';
 import type { ConsultationMessage } from '../../core/types/consultation.types';
 
 @Component({
@@ -10,8 +11,9 @@ import type { ConsultationMessage } from '../../core/types/consultation.types';
   templateUrl: './consultation-chat-panel.html',
   styleUrl: './consultation-chat-panel.scss'
 })
-export class ConsultationChatPanelComponent implements OnChanges {
+export class ConsultationChatPanelComponent implements OnChanges, OnDestroy {
   private readonly consultationApi = inject(ConsultationApiService);
+  private readonly realtime = inject(DoctorRealtimeService);
 
   @Input({ required: true }) consultationId = '';
 
@@ -24,10 +26,21 @@ export class ConsultationChatPanelComponent implements OnChanges {
 
   ngOnChanges() {
     if (this.consultationId) {
+      this.realtime.subscribeConsultation(this.consultationId);
       void this.load();
     } else {
       this.messages.set([]);
     }
+  }
+
+  ngOnDestroy() {
+    // socket owned by shell — do not disconnect here
+  }
+
+  constructor() {
+    this.realtime.connect(() => undefined, () => {
+      if (this.consultationId) void this.load();
+    });
   }
 
   async load() {

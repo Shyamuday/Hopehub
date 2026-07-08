@@ -1,0 +1,52 @@
+<section class="panel">
+  <h1>Online doctor — go live</h1>
+  <p class="lead">Show yourself online for instant patient consults (chat + voice). This is separate from your clinic worklist.</p>
+</section>
+
+@if (loading()) {
+  <p>Loading…</p>
+} @else {
+  <section class="panel status-panel" [class.is-live]="isLive()">
+    <h2>Live status</h2>
+    <p class="status">{{ profile()?.liveStatus || 'OFFLINE' }}</p>
+    <div class="actions">
+      @if (!isLive()) {
+        <button type="button" (click)="goOnline()" [disabled]="saving()">Go online</button>
+      } @else {
+        <button type="button" class="danger" (click)="goOffline()" [disabled]="saving()">Go offline</button>
+      }
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>How patients see you</h2>
+    <fieldset class="form-grid" [disabled]="saving()">
+      <div class="field">
+        <label>Category</label>
+        <select [formField]="settingsForm.category">
+          <option value="GENERALIST">General physician</option>
+          <option value="SPECIALIST">Disease specialist</option>
+        </select>
+      </div>
+      <label class="checkbox"><input type="checkbox" [formField]="settingsForm.acceptsChat" /> Accept chat</label>
+      <label class="checkbox"><input type="checkbox" [formField]="settingsForm.acceptsVoiceCall" /> Accept voice calls</label>
+      @if (settingsModel().category === 'SPECIALIST') {
+        <div class="field full">
+          <label>Specialist for diseases</label>
+          <div class="disease-picks">
+            @for (d of diseases(); track d.id) {
+              <label class="chip">
+                <input type="checkbox" [checked]="settingsModel().specialtyDiseaseIds.includes(d.id)" (change)="toggleDisease(d.id)" />
+                {{ d.name }}
+              </label>
+            }
+          </div>
+        </div>
+      }
+      <button type="button" class="ghost" (click)="saveSettings()" [disabled]="saving()">Save profile</button>
+    </fieldset>
+  </section>
+}
+
+@if (message()) { <p class="success">{{ message() }}</p> }
+@if (error()) { <p class="error">{{ error() }}</p> }

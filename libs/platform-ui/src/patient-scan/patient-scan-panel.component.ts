@@ -20,6 +20,8 @@ export class PatientScanPanelComponent implements OnDestroy {
   readonly title = input('Scan patient QR');
   readonly hint = input('Point the camera at a patient card or enter / paste patient ID (e.g. RNC-000001).');
   readonly loading = input(false);
+  /** Optional hook — return false to block camera (e.g. native permission denied). */
+  readonly beforeCamera = input<(() => Promise<boolean>) | undefined>(undefined);
 
   readonly codeSubmit = output<string>();
   readonly scanError = output<string>();
@@ -69,6 +71,15 @@ export class PatientScanPanelComponent implements OnDestroy {
 
     this.cameraError.set('');
     try {
+      const guard = this.beforeCamera();
+      if (guard) {
+        const allowed = await guard();
+        if (!allowed) {
+          this.cameraError.set('Camera permission is required to scan QR codes.');
+          return;
+        }
+      }
+
       this.stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: { ideal: 'environment' } },
         audio: false

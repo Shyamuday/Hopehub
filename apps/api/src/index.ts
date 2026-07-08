@@ -49,6 +49,8 @@ import { createCallCenterRouter } from './routes/call-center/router.js';
 import { createMarketingRouter } from './routes/marketing/router.js';
 import { blogRouter } from './routes/blog.js';
 import { registerDoctorBlogRoutes } from './routes/doctor-blog.js';
+import { createOnlineDoctorsRouter } from './routes/online-doctors.js';
+import { registerOnlineDoctorSockets } from './sockets/online-doctor-sockets.js';
 import { createCorporateWellnessRouter } from './routes/corporate-wellness/router.js';
 import { createInsuranceRouter } from './routes/insurance/router.js';
 import { labReferralsRouter } from './routes/lab-referrals.js';
@@ -149,6 +151,8 @@ io.on('connection', (socket) => {
       void socket.join(`${SOCKET_ROOM_PREFIXES.CONSULTATION}${consultationId}`);
     }
   });
+
+  registerOnlineDoctorSockets(io, socket, userId);
 });
 
 // ── Middleware ─────────────────────────────────────────────────────────────────
@@ -197,6 +201,7 @@ app.use('/store/auth/manager-login', authLimiter);
 app.use(authRouter);
 app.use('/role-guides', roleGuidesRouter);
 app.use(blogRouter);
+app.use(createOnlineDoctorsRouter(io));
 app.use(catalogRouter);
 app.use(slotsRouter);
 app.use(dosesRouter);

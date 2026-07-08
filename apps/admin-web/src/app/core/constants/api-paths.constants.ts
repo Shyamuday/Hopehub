@@ -66,6 +66,8 @@ export const API_PATHS = {
     BLOG_BY_ID: (id: string) => `/admin/blog/${id}`,
     BLOG_COMMENTS: '/admin/blog/comments',
     BLOG_COMMENT_BY_ID: (id: string) => `/admin/blog/comments/${id}`,
+    ONLINE_DOCTORS: '/admin/online-doctors',
+    ONLINE_DOCTORS_STATS: '/admin/online-doctors/stats',
     CHAT_SESSIONS: '/admin/chat-sessions',
     CHAT_SESSION_STATS: '/admin/chat-sessions/stats',
     CHAT_SESSION_BY_ID: (id: string) => `/admin/chat-sessions/${id}`,

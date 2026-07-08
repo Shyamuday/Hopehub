@@ -31,6 +31,8 @@ import { PatientAccountOrderDetailPageComponent } from './account/patient-accoun
 import { PatientAccountLabResultsPageComponent } from './account/patient-account-lab-results-page.component';
 import { PatientAccountConsultationDetailPageComponent } from './account/patient-account-consultation-detail-page.component';
 import { PatientAccountCardPageComponent } from './account/patient-account-card-page.component';
+import { PatientAccountPermissionsPageComponent } from './account/patient-account-permissions-page.component';
+import { TalkToDoctorComponent } from './talk-to-doctor.component';
 import { NotFoundPageComponent } from './not-found-page.component';
 
 export const routes: Routes = [
@@ -48,6 +50,11 @@ export const routes: Routes = [
     path: 'treatments/:slug',
     component: DiseaseDetailComponent,
     data: ROUTE_SEO_CONTENT['treatments/:slug']
+  },
+  {
+    path: 'talk-to-doctor',
+    component: TalkToDoctorComponent,
+    data: { title: 'Talk to a doctor now', description: 'Instant online consultation with live doctors.' }
   },
   {
     path: 'our-doctors',
@@ -220,6 +227,14 @@ export const routes: Routes = [
         path: 'card',
         component: PatientAccountCardPageComponent,
         data: ROUTE_SEO_CONTENT['patient/account/card']
+      },
+      {
+        path: 'permissions',
+        component: PatientAccountPermissionsPageComponent,
+        data: {
+          seoTitle: 'App permissions | Vitalis Care',
+          seoDescription: 'Learn why Vitalis asks for camera, microphone, and notification access — and how you stay in control.'
+        }
       }
     ]
   },

@@ -17,6 +17,7 @@ import { DoctorPatientScanLauncherPage } from './features/scan/patient-scan-laun
 import { RepertoryBrowserPage } from './features/repertory-browser/repertory-browser';
 import { DiseasePagesPage } from './features/disease-pages/disease-pages-page';
 import { DoctorBlogPage } from './features/blog/doctor-blog-page';
+import { OnlineDoctorPage } from './features/online-doctor/online-doctor-page';
 
 export const routes: Routes = [
   { path: ROUTE_PATHS.LOGIN, component: Login },
@@ -41,6 +42,7 @@ export const routes: Routes = [
       { path: ROUTE_PATHS.PATIENTS, component: PatientsPage },
       { path: ROUTE_PATHS.DISEASE_PAGES, component: DiseasePagesPage },
       { path: ROUTE_PATHS.BLOG, component: DoctorBlogPage },
+      { path: ROUTE_PATHS.ONLINE_DOCTOR, component: OnlineDoctorPage },
       { path: ROUTE_PATHS.REPERTORY_BROWSER, component: RepertoryBrowserPage },
       { path: ROUTE_PATHS.PROFILE, component: ProfilePage },
       { path: ROUTE_PATHS.LEAVES, component: MyLeaves },

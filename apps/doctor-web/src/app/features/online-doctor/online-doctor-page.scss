@@ -1,0 +1,11 @@
+.lead { color: #4b5563; }
+.status-panel.is-live { border-left: 4px solid #16a34a; }
+.status { font-size: 1.25rem; font-weight: 700; text-transform: capitalize; }
+.actions { margin-top: 0.75rem; }
+.form-grid { display: grid; gap: 0.75rem; }
+.field.full { grid-column: 1 / -1; }
+.disease-picks { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.chip { font-size: 0.82rem; border: 1px solid #e5e7eb; border-radius: 999px; padding: 0.25rem 0.6rem; }
+.success { color: #047857; }
+.error { color: #b91c1c; }
+.danger { background: #b91c1c; color: #fff; }

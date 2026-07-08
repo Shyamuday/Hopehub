@@ -1,0 +1,37 @@
+enum OnlineDoctorCategory {
+  GENERALIST
+  SPECIALIST
+}
+
+enum LivePresenceStatus {
+  OFFLINE
+  ONLINE
+  BUSY
+  ON_CALL
+}
+
+enum ConsultationMode {
+  CLINIC_QUEUE
+  INSTANT_ONLINE
+}
+
+model DoctorOnlineSession {
+  id                  String               @id @default(cuid())
+  doctorId            String               @unique
+  userId              String               @unique
+  enabled             Boolean              @default(false)
+  category            OnlineDoctorCategory @default(GENERALIST)
+  specialtyDiseaseIds String[]             @default([])
+  liveStatus          LivePresenceStatus   @default(OFFLINE)
+  acceptsChat         Boolean              @default(true)
+  acceptsVoiceCall    Boolean              @default(true)
+  lastHeartbeatAt     DateTime?
+  wentLiveAt          DateTime?
+  doctor              Doctor               @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  user                User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+
+  @@index([liveStatus, enabled])
+  @@index([lastHeartbeatAt])
+}

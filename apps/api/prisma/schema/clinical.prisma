@@ -60,12 +60,14 @@ model DiseaseLocationFee {
 }
 
 model Consultation {
-  id              String             @id @default(cuid())
-  patientId       String
-  diseaseId       String
-  assignedDoctorId String?
-  clinicStoreId    String?
-  status          ConsultationStatus @default(PAYMENT_PENDING)
+  id                    String             @id @default(cuid())
+  patientId             String
+  diseaseId             String
+  assignedDoctorId      String?
+  clinicStoreId         String?
+  consultationMode      ConsultationMode   @default(CLINIC_QUEUE)
+  preferredDoctorUserId String?
+  status                ConsultationStatus @default(PAYMENT_PENDING)
   billingPlanCode String?
   pricingSnapshot Json?
   intakeAnswers   Json

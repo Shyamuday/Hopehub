@@ -1,6 +1,7 @@
 <div class="scan-launcher-page">
   <vitalis-patient-scan-panel
     [loading]="loading()"
+    [beforeCamera]="beforeCamera()"
     (codeSubmit)="openCode($event)"
     (scanError)="error.set($event)"
   />

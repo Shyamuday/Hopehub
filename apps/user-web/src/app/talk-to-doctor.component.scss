@@ -1,0 +1,40 @@
+.doctor-live-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+  margin: 1rem 0;
+}
+.doctor-live-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 0.65rem;
+  padding: 0.85rem;
+  cursor: pointer;
+  position: relative;
+}
+.doctor-live-card.selected { border-color: #2563eb; box-shadow: 0 0 0 2px #bfdbfe; }
+.live-badge {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  font-size: 0.7rem;
+  background: #dcfce7;
+  color: #166534;
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+}
+.doctor-live-card h3 { margin: 0.25rem 0; font-size: 1rem; }
+.meta, .bio { font-size: 0.85rem; color: #64748b; }
+.tags { display: flex; gap: 0.35rem; margin-top: 0.5rem; }
+.tags span { font-size: 0.72rem; background: #eff6ff; color: #1d4ed8; padding: 0.15rem 0.45rem; border-radius: 999px; }
+.booking-panel .field { display: grid; gap: 0.25rem; margin-bottom: 0.75rem; }
+.picked { font-size: 0.9rem; color: #475569; }
+.success { color: #047857; }
+.error { color: #b91c1c; }
+.trust-link {
+  margin-top: 0.65rem;
+  font-size: 0.88rem;
+}
+.trust-link a {
+  color: #1d4ed8;
+  font-weight: 600;
+}

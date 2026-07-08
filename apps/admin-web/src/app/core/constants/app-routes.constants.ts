@@ -10,6 +10,7 @@ export const ROUTE_PATHS = {
   LEAVES: 'leaves',
   STORES: 'stores',
   CONSULTATIONS: 'consultations',
+  ONLINE_DOCTORS: 'online-doctors',
   PAYROLL: 'payroll',
   RATES: 'rates',
   PAYMENTS: 'payments',
@@ -86,6 +87,7 @@ export const NAV_ITEMS = [
   { path: adminNavPath(ROUTE_PATHS.STAFF), label: '🛡️ Staff permissions' },
   { path: adminNavPath(ROUTE_PATHS.ECOSYSTEM_USERS), label: '🌐 Portal Users' },
   { path: adminNavPath(ROUTE_PATHS.CONSULTATIONS), label: '🩺 Consultations' },
+  { path: adminNavPath(ROUTE_PATHS.ONLINE_DOCTORS), label: '🟢 Online doctors' },
   { path: adminNavPath(ROUTE_PATHS.PAYMENTS), label: '💳 Payments' },
   { path: adminNavPath(ROUTE_PATHS.AUDIT), label: '📋 Audit Trail' },
   { path: adminNavPath(ROUTE_PATHS.SECURITY), label: '🛡️ Security' },
@@ -113,7 +115,7 @@ export const NAV_GROUPS: AdminNavGroup[] = [
   {
     id: 'clinical',
     label: 'Clinical',
-    segments: [ROUTE_PATHS.DOCTORS, ROUTE_PATHS.CONSUMERS, ROUTE_PATHS.SCAN, ROUTE_PATHS.DISEASES, ROUTE_PATHS.RATES, ROUTE_PATHS.REWARDS, ROUTE_PATHS.CLINICAL_RECORDS, ROUTE_PATHS.CONSULTATIONS]
+    segments: [ROUTE_PATHS.DOCTORS, ROUTE_PATHS.CONSUMERS, ROUTE_PATHS.SCAN, ROUTE_PATHS.DISEASES, ROUTE_PATHS.RATES, ROUTE_PATHS.REWARDS, ROUTE_PATHS.CLINICAL_RECORDS, ROUTE_PATHS.CONSULTATIONS, ROUTE_PATHS.ONLINE_DOCTORS]
   },
   {
     id: 'people',

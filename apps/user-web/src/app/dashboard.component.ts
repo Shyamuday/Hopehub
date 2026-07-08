@@ -107,7 +107,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     if (!id) return null;
     return this.diseases().find((disease) => disease.id === id) ?? null;
   });
-  private realtimeChannel?: { unsubscribe(): void; socket?: import('socket.io-client').Socket };
+  protected realtimeChannel?: { unsubscribe(): void; socket?: import('socket.io-client').Socket };
 
   readonly snoozeMinutes = signal(DEFAULT_SNOOZE_MINUTES);
   readonly walletBalanceInPaise = signal(0);

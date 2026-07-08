@@ -1,0 +1,57 @@
+<section class="permissions-page panel">
+  <p class="eyebrow">Privacy &amp; trust</p>
+  <h1>{{ copy.headline }}</h1>
+  <p class="lead">{{ copy.intro }}</p>
+
+  @if (isNative) {
+    <p class="platform-note">You are using the Vitalis Patient mobile app. Status below reflects your phone settings.</p>
+  } @else {
+    <p class="platform-note">You are on the website. The mobile app may ask for additional permissions when you install it.</p>
+  }
+
+  <div class="permission-cards">
+    @for (item of items; track item.id) {
+      <article class="permission-card">
+        <div class="card-top">
+          <span class="perm-icon" aria-hidden="true">{{ item.icon }}</span>
+          <div>
+            <h2>{{ item.title }}</h2>
+            @if (!loading()) {
+              <span class="status-pill" [class]="statusClass(item.id)">{{ statusLabel(item.id) }}</span>
+            }
+          </div>
+          @if (item.optional) {
+            <span class="optional-tag">Optional</span>
+          }
+        </div>
+        <p class="summary">{{ item.summary }}</p>
+        <details class="perm-details">
+          <summary>Why we need this</summary>
+          <p>{{ item.whyWeNeedIt }}</p>
+          <p><strong>When we ask:</strong> {{ item.whenWeAsk }}</p>
+          <p><strong>Your control:</strong> {{ item.youControl }}</p>
+        </details>
+      </article>
+    }
+  </div>
+
+  <section class="trust-panel">
+    <h2>What we never do</h2>
+    <ul>
+      @for (line of copy.neverDo; track line) {
+        <li>{{ line }}</li>
+      }
+    </ul>
+  </section>
+
+  <section class="settings-panel">
+    <h2>Change permissions later</h2>
+    <p>{{ settingsHint() }}</p>
+    <a class="btn-secondary" routerLink="/patient/account/profile">Reminder preferences</a>
+  </section>
+
+  <p class="footer-note">
+    Questions about your data? See our <a routerLink="/privacy-policy">Privacy policy</a> or
+    <a routerLink="/contact">contact support</a>.
+  </p>
+</section>

@@ -183,6 +183,7 @@ model User {
   rewardRedemptions    RewardRedemption[]     @relation("RewardRedemptionPatient")
   blogPostsAuthored    BlogPost[]             @relation("BlogPostAuthor")
   blogComments         BlogComment[]          @relation("BlogCommentAuthor")
+  doctorOnlineSession  DoctorOnlineSession?
   createdAt           DateTime       @default(now())
   updatedAt           DateTime       @updatedAt
 

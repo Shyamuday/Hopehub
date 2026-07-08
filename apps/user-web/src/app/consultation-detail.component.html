@@ -11,6 +11,12 @@
         <vitalis-detail-rows [rows]="intakeAnswerRows(consultation.intakeAnswers)" />
 
         <h3>Chat</h3>
+        <app-consultation-voice-call
+          [consultationId]="consultation.id"
+          [targetUserId]="callTargetUserId()"
+          [socket]="realtimeSocket"
+          [enabled]="voiceCallEnabled()"
+        />
         <div class="chat-box">
           <vitalis-detail-rows [rows]="messageRows(consultation.messages)" />
           @if (!consultation.messages?.length) {

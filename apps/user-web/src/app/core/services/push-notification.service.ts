@@ -4,6 +4,7 @@ import { Capacitor } from '@capacitor/core';
 import { PushNotifications } from '@capacitor/push-notifications';
 import { AuthService } from '../../auth/auth.service';
 import { ROUTE_PATHS } from '../constants/app-routes.constants';
+import { environment } from '../../../environments/environment';
 
 /**
  * Handles Capacitor push notification registration and routing.
@@ -49,7 +50,7 @@ export class PushNotificationService {
     const authToken = this.auth.token;
     if (!authToken) return;
 
-    const url = '/patient/push-token';
+    const url = `${environment.apiUrl}/patient/push-token`;
     // Fire-and-forget — if this fails the token will be re-sent on the next app open.
     fetch(url, {
       method: 'POST',

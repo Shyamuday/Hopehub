@@ -38,6 +38,7 @@ import { SiteConfigPage } from './features/content/site-config-page/site-config-
 import { ChatInboxPage } from './features/content/chat-inbox-page/chat-inbox-page';
 import { RewardsPage } from './features/rewards/rewards-page/rewards-page';
 import { ClinicalRecordsPage } from './features/clinical-records/clinical-records-page/clinical-records-page';
+import { OnlineDoctorsPage } from './features/online-doctors/online-doctors-page/online-doctors-page';
 import { AccountPage } from './features/account/account-page/account-page';
 
 export const routes: Routes = [
@@ -71,6 +72,7 @@ export const routes: Routes = [
       { path: ROUTE_PATHS.STAFF, component: StaffPage },
       { path: ROUTE_PATHS.ECOSYSTEM_USERS, component: EcosystemUsersPage },
       { path: ROUTE_PATHS.CONSULTATIONS, component: ConsultationsPage },
+      { path: ROUTE_PATHS.ONLINE_DOCTORS, component: OnlineDoctorsPage },
       { path: ROUTE_PATHS.PAYMENTS, component: PaymentsPage },
       { path: ROUTE_PATHS.AUDIT, component: AuditPage },
       { path: ROUTE_PATHS.SECURITY, component: SecurityPage },

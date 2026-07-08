@@ -3,6 +3,8 @@ import { Component, EventEmitter, Input, OnChanges, Output, signal } from '@angu
 import { form, FormField } from '@angular/forms/signals';
 import type { DetailRow } from '@vitalis/platform-ui';
 import { DetailRowsComponent } from '@vitalis/platform-ui';
+import type { Socket } from 'socket.io-client';
+import { ConsultationVoiceCallComponent } from './consultation-voice-call.component';
 import { Consultation, Role } from './models';
 
 export type SendMessagePayload = { consultation: Consultation; body: string };
@@ -19,13 +21,14 @@ function emptyDetailForm() {
 @Component({
   selector: 'app-consultation-detail',
   standalone: true,
-  imports: [CommonModule, FormField, DetailRowsComponent],
+  imports: [CommonModule, FormField, DetailRowsComponent, ConsultationVoiceCallComponent],
   templateUrl: './consultation-detail.component.html',
 })
 export class ConsultationDetailComponent implements OnChanges {
   @Input() consultation: Consultation | null = null;
   @Input() userRole: Role | null = null;
   @Input() disabled = false;
+  @Input() realtimeSocket: Socket | null = null;
 
   @Output() messageSent = new EventEmitter<SendMessagePayload>();
   @Output() uploadPrescription = new EventEmitter<PrescriptionPayload>();
@@ -69,5 +72,17 @@ export class ConsultationDetailComponent implements OnChanges {
       label: message.sender.name,
       value: message.body
     }));
+  }
+
+  callTargetUserId(): string {
+    const c = this.consultation;
+    if (!c) return '';
+    return this.userRole === 'PATIENT' ? c.assignedDoctor?.id ?? '' : c.patient?.id ?? '';
+  }
+
+  voiceCallEnabled(): boolean {
+    const c = this.consultation;
+    if (!c?.assignedDoctor) return false;
+    return ['ASSIGNED', 'IN_PROGRESS', 'PRESCRIPTION_UPLOADED'].includes(c.status);
   }
 }

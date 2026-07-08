@@ -1,7 +1,10 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { form, FormField } from '@angular/forms/signals';
+import { Capacitor } from '@capacitor/core';
+import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 import { CLINICAL_MEDIA_TYPE_LABELS, type ClinicalMediaType } from '@vitalis/homeopathy-approaches';
+import { NativePermissionsService } from '../../core/services/native-permissions.service';
 import {
   PatientClinicalMediaService,
   type ClinicalMediaMeta,
@@ -17,6 +20,9 @@ import {
 })
 export class PatientClinicalMediaPanelComponent implements OnInit, OnDestroy {
   private readonly api = inject(PatientClinicalMediaService);
+  private readonly nativePermissions = inject(NativePermissionsService);
+
+  readonly isNative = Capacitor.isNativePlatform();
 
   readonly mediaTypes = Object.entries(CLINICAL_MEDIA_TYPE_LABELS) as Array<[ClinicalMediaType, string]>;
   readonly meta = signal<ClinicalMediaMeta | null>(null);
@@ -98,6 +104,65 @@ export class PatientClinicalMediaPanelComponent implements OnInit, OnDestroy {
     this.selectedFile = file;
     this.revokeSelectedPreview();
     if (file) this.previewObjectUrl = URL.createObjectURL(file);
+  }
+
+  async captureFromCamera() {
+    this.error.set('');
+    const access = await this.nativePermissions.ensureCameraAndPhotos();
+    if (!access.granted) {
+      this.error.set(access.message ?? 'Camera permission is required.');
+      return;
+    }
+
+    try {
+      const photo = await Camera.getPhoto({
+        quality: 85,
+        allowEditing: false,
+        resultType: CameraResultType.DataUrl,
+        source: CameraSource.Camera
+      });
+      if (!photo.dataUrl) {
+        this.error.set('Could not capture photo.');
+        return;
+      }
+      const blob = await (await fetch(photo.dataUrl)).blob();
+      const ext = photo.format === 'png' ? 'png' : 'jpg';
+      this.selectedFile = new File([blob], `health-photo-${Date.now()}.${ext}`, {
+        type: blob.type || `image/${ext}`
+      });
+      this.revokeSelectedPreview();
+      this.previewObjectUrl = URL.createObjectURL(this.selectedFile);
+    } catch {
+      this.error.set('Camera capture cancelled or failed.');
+    }
+  }
+
+  async pickFromGallery() {
+    this.error.set('');
+    const access = await this.nativePermissions.ensurePhotos();
+    if (!access.granted) {
+      this.error.set(access.message ?? 'Photo library permission is required.');
+      return;
+    }
+
+    try {
+      const photo = await Camera.getPhoto({
+        quality: 85,
+        allowEditing: false,
+        resultType: CameraResultType.DataUrl,
+        source: CameraSource.Photos
+      });
+      if (!photo.dataUrl) return;
+      const blob = await (await fetch(photo.dataUrl)).blob();
+      const ext = photo.format === 'png' ? 'png' : 'jpg';
+      this.selectedFile = new File([blob], `health-photo-${Date.now()}.${ext}`, {
+        type: blob.type || `image/${ext}`
+      });
+      this.revokeSelectedPreview();
+      this.previewObjectUrl = URL.createObjectURL(this.selectedFile);
+    } catch {
+      this.error.set('Could not open photo library.');
+    }
   }
 
   async uploadSelectedFile() {

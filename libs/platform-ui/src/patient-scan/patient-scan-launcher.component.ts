@@ -19,6 +19,7 @@ export class PatientScanLauncherComponent implements OnInit {
   readonly app = input<PatientScanAppKey>('operations');
   readonly adminBasePath = input('admin');
   readonly storeSession = input<{ role: string } | null>(null);
+  readonly beforeCamera = input<(() => Promise<boolean>) | undefined>(undefined);
 
   private readonly http = inject(HttpClient);
   private readonly router = inject(Router);
