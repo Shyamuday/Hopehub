@@ -55,11 +55,13 @@
     "build:api": "npm run build --prefix apps/api",
     "lint": "eslint . && npm run typecheck",
     "typecheck": "npm run typecheck --prefix apps/api && npm run typecheck --prefix apps/user-web && npm run typecheck --prefix apps/doctor-web && npm run typecheck --prefix apps/admin-web && npm run typecheck --prefix apps/operations-web",
-    "test": "npm run test --prefix apps/api && npm run test --prefix apps/doctor-web -- --watch=false && npm run test --prefix apps/admin-web -- --watch=false",
+    "test": "npm run test --prefix apps/api && npm run test --prefix apps/user-web -- --watch=false && npm run test --prefix apps/doctor-web -- --watch=false && npm run test --prefix apps/admin-web -- --watch=false && npm run test --prefix apps/operations-web -- --watch=false",
     "format": "prettier --write .",
     "prepare": "husky",
     "prisma:generate": "npm run prisma:generate --prefix apps/api",
     "prisma:migrate": "npm run prisma:migrate --prefix apps/api",
+    "prisma:deploy": "npm run prisma:deploy --prefix apps/api",
+    "prisma:verify": "npm run prisma:verify --prefix apps/api",
     "seed": "npm run seed --prefix apps/api"
   },
   "devDependencies": {

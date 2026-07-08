@@ -81,8 +81,10 @@ jobs:
       fail-fast: false
       matrix:
         app:
+          - apps/user-web
           - apps/doctor-web
           - apps/admin-web
+          - apps/operations-web
 
     defaults:
       run:

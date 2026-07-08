@@ -18,7 +18,7 @@
             "index": "src/index.html",
             "browser": "src/main.ts",
             "tsConfig": "tsconfig.app.json",
-            "assets": [{"glob": "**/*", "input": "public"}],
+            "assets": [{ "glob": "**/*", "input": "public" }],
             "styles": ["src/styles.scss"],
             "scripts": []
           },
@@ -31,22 +31,25 @@
                 }
               ],
               "budgets": [
-                {"type": "initial", "maximumWarning": "600kB", "maximumError": "1.2MB"},
-                {"type": "anyComponentStyle", "maximumWarning": "16kB", "maximumError": "32kB"}
+                { "type": "initial", "maximumWarning": "600kB", "maximumError": "1.2MB" },
+                { "type": "anyComponentStyle", "maximumWarning": "16kB", "maximumError": "32kB" }
               ],
               "outputHashing": "all"
             },
-            "development": {"optimization": false, "extractLicenses": false, "sourceMap": true}
+            "development": { "optimization": false, "extractLicenses": false, "sourceMap": true }
           },
           "defaultConfiguration": "production"
         },
         "serve": {
           "builder": "@angular/build:dev-server",
           "configurations": {
-            "production": {"buildTarget": "operations-web:build:production"},
-            "development": {"buildTarget": "operations-web:build:development"}
+            "production": { "buildTarget": "operations-web:build:production" },
+            "development": { "buildTarget": "operations-web:build:development" }
           },
           "defaultConfiguration": "development"
+        },
+        "test": {
+          "builder": "@angular/build:unit-test"
         }
       }
     }

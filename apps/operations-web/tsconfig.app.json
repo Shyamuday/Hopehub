@@ -15,6 +15,7 @@
     "../admin-web/src/app/layout/admin-nav-tabs/**/*.ts"
   ],
   "exclude": [
+    "src/**/*.spec.ts",
     "../admin-web/src/app/app.routes.ts",
     "../admin-web/src/app/app.config.ts",
     "../admin-web/src/app/app.ts",
