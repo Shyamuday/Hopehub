@@ -21,6 +21,7 @@
 
     <div class="panel">
       <h3>Last 3 Months</h3>
+      <div class="table-wrap desktop-only">
       <table>
         <thead><tr><th>Month</th><th class="num">Gross (₹)</th><th class="num">Leave</th><th class="num">Net (₹)</th></tr></thead>
         <tbody>
@@ -34,6 +35,16 @@
           }
         </tbody>
       </table>
+      </div>
+      <div class="mobile-row-cards">
+        @for (row of history(); track row.month) {
+          <article class="mobile-row-card">
+            <div class="card-head"><strong>{{ row.month }}</strong><strong>₹{{ formatPaise(row.netPaise) }}</strong></div>
+            <div class="card-row"><span>Gross</span><span>₹{{ formatPaise(row.grossPaise) }}</span></div>
+            <div class="card-row"><span>Leave</span><span>{{ row.leaveDays }} days</span></div>
+          </article>
+        }
+      </div>
     </div>
   }
 </div>

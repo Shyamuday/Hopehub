@@ -96,7 +96,7 @@
         </select>
       </div>
 
-      <div class="data-table-wrap">
+      <div class="data-table-wrap desktop-only">
         <table class="data-table">
           <thead>
             <tr>
@@ -123,9 +123,18 @@
           <p class="table-empty">No enrollments for this account yet.</p>
         }
       </div>
+      <div class="mobile-row-cards">
+        @for (e of enrollments(); track e.id) {
+          <article class="mobile-row-card">
+            <div class="card-head"><strong>{{ e.patient.name }}</strong><span>{{ e.patient.patientCode ?? '—' }}</span></div>
+            <div class="card-row"><span>{{ e.patient.mobile ?? e.patient.email ?? '—' }}</span></div>
+            <button type="button" class="btn-toggle deact" (click)="removeEnrollment(e.patient.id)">Remove</button>
+          </article>
+        }
+      </div>
     }
   } @else {
-    <div class="data-table-wrap">
+    <div class="data-table-wrap desktop-only">
       <table class="data-table">
         <thead>
           <tr>
@@ -150,10 +159,22 @@
           }
         </tbody>
       </table>
-      @if (!claims().length) {
-        <p class="table-empty">No insurance claims yet.</p>
+    </div>
+    <div class="mobile-row-cards">
+      @for (c of claims(); track c.id) {
+        <article class="mobile-row-card">
+          <div class="card-head">
+            <strong>{{ c.claimNumber ?? c.id.slice(0, 8) }}</strong>
+            <span class="status-pill">{{ claimStatusLabel(c.status) }}</span>
+          </div>
+          <div class="card-row"><span>{{ c.patient?.name ?? '—' }}</span><span>{{ c.partner?.companyName ?? '—' }}</span></div>
+          <div class="card-row"><span>₹{{ c.amountInPaise != null ? (c.amountInPaise / 100 | number:'1.0-0') : '—' }}</span><span>{{ c.createdAt | date:'mediumDate' }}</span></div>
+        </article>
       }
     </div>
+    @if (!claims().length) {
+      <p class="table-empty">No insurance claims yet.</p>
+    }
   }
 </div>
 

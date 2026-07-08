@@ -22,38 +22,69 @@
   @if (loading()) {
     <p>Loading…</p>
   } @else if (tab() === 'templates') {
-    <table class="table">
-      <thead><tr><th>Code</th><th>Name</th><th>Channel</th><th>Status</th><th></th></tr></thead>
-      <tbody>
-        @for (t of templates(); track t.id) {
-          <tr>
-            <td>{{ t.code }}</td>
-            <td>{{ t.name }}</td>
-            <td>{{ t.channel }}</td>
-            <td>{{ t.isActive ? 'Active' : 'Inactive' }}</td>
-            <td>
-              <button type="button" (click)="openEditTemplate(t)">Edit</button>
-              <button type="button" (click)="openSendBroadcast(t)">Use</button>
-            </td>
-          </tr>
-        }
-      </tbody>
-    </table>
+    <div class="table-wrap desktop-only">
+      <table class="table">
+        <thead><tr><th>Code</th><th>Name</th><th>Channel</th><th>Status</th><th></th></tr></thead>
+        <tbody>
+          @for (t of templates(); track t.id) {
+            <tr>
+              <td>{{ t.code }}</td>
+              <td>{{ t.name }}</td>
+              <td>{{ t.channel }}</td>
+              <td>{{ t.isActive ? 'Active' : 'Inactive' }}</td>
+              <td>
+                <button type="button" (click)="openEditTemplate(t)">Edit</button>
+                <button type="button" (click)="openSendBroadcast(t)">Use</button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    <div class="mobile-row-cards">
+      @for (t of templates(); track t.id) {
+        <article class="mobile-row-card">
+          <div class="card-head">
+            <strong>{{ t.name }}</strong>
+            <span>{{ t.code }}</span>
+          </div>
+          <div class="card-row"><span>{{ t.channel }}</span><span>{{ t.isActive ? 'Active' : 'Inactive' }}</span></div>
+          <div class="card-actions">
+            <button type="button" (click)="openEditTemplate(t)">Edit</button>
+            <button type="button" (click)="openSendBroadcast(t)">Use</button>
+          </div>
+        </article>
+      }
+    </div>
   } @else {
-    <table class="table">
-      <thead><tr><th>When</th><th>Title</th><th>Audience</th><th>Channel</th><th>Recipients</th></tr></thead>
-      <tbody>
-        @for (b of broadcasts(); track b.id) {
-          <tr>
-            <td>{{ b.createdAt | date:'short' }}</td>
-            <td>{{ b.title }}</td>
-            <td>{{ b.audience }}{{ b.audienceRole ? ' (' + b.audienceRole + ')' : '' }}</td>
-            <td>{{ b.channel }}</td>
-            <td>{{ b.recipientCount }}</td>
-          </tr>
-        }
-      </tbody>
-    </table>
+    <div class="table-wrap desktop-only">
+      <table class="table">
+        <thead><tr><th>When</th><th>Title</th><th>Audience</th><th>Channel</th><th>Recipients</th></tr></thead>
+        <tbody>
+          @for (b of broadcasts(); track b.id) {
+            <tr>
+              <td>{{ b.createdAt | date:'short' }}</td>
+              <td>{{ b.title }}</td>
+              <td>{{ b.audience }}{{ b.audienceRole ? ' (' + b.audienceRole + ')' : '' }}</td>
+              <td>{{ b.channel }}</td>
+              <td>{{ b.recipientCount }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    <div class="mobile-row-cards">
+      @for (b of broadcasts(); track b.id) {
+        <article class="mobile-row-card">
+          <div class="card-head">
+            <strong>{{ b.title }}</strong>
+            <span>{{ b.recipientCount }} sent</span>
+          </div>
+          <div class="card-row"><span>{{ b.createdAt | date:'short' }}</span><span>{{ b.channel }}</span></div>
+          <div class="card-row"><span>{{ b.audience }}{{ b.audienceRole ? ' (' + b.audienceRole + ')' : '' }}</span></div>
+        </article>
+      }
+    </div>
   }
 </div>
 

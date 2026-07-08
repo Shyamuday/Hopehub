@@ -53,30 +53,44 @@
         @if (stockLoading()) {
           <p>Loading stock…</p>
         } @else {
-          <table class="table">
-            <thead>
-              <tr>
-                <th>Medicine</th>
-                <th>Potency</th>
-                <th>Qty</th>
-                <th>Min</th>
-                <th>Status</th>
-                <th>Rack</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (row of stocks(); track row.id) {
+          <div class="table-wrap desktop-only">
+            <table class="table">
+              <thead>
                 <tr>
-                  <td>{{ row.medicine.name }}</td>
-                  <td>{{ row.medicine.potency }}</td>
-                  <td>{{ row.currentQty }}</td>
-                  <td>{{ row.medicine.minStockLevel }}</td>
-                  <td>{{ row.status }}</td>
-                  <td>{{ row.rack?.locationString || '—' }}</td>
+                  <th>Medicine</th>
+                  <th>Potency</th>
+                  <th>Qty</th>
+                  <th>Min</th>
+                  <th>Status</th>
+                  <th>Rack</th>
                 </tr>
-              }
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                @for (row of stocks(); track row.id) {
+                  <tr>
+                    <td>{{ row.medicine.name }}</td>
+                    <td>{{ row.medicine.potency }}</td>
+                    <td>{{ row.currentQty }}</td>
+                    <td>{{ row.medicine.minStockLevel }}</td>
+                    <td>{{ row.status }}</td>
+                    <td>{{ row.rack?.locationString || '—' }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+          <div class="mobile-row-cards">
+            @for (row of stocks(); track row.id) {
+              <article class="mobile-row-card">
+                <div class="card-head">
+                  <strong>{{ row.medicine.name }} {{ row.medicine.potency }}</strong>
+                  <span>{{ row.status }}</span>
+                </div>
+                <div class="card-row"><span>Qty {{ row.currentQty }}</span><span>Min {{ row.medicine.minStockLevel }}</span></div>
+                <div class="card-row"><span>Rack</span><span>{{ row.rack?.locationString || '—' }}</span></div>
+              </article>
+            }
+          </div>
         }
       </div>
     }

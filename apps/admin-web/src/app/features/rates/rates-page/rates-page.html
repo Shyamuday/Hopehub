@@ -69,6 +69,7 @@
                 </button>
               </div>
 
+              <div class="table-wrap desktop-only">
               <table class="fee-table">
                 <thead>
                   <tr>
@@ -93,6 +94,15 @@
                   }
                 </tbody>
               </table>
+              </div>
+              <div class="mobile-row-cards">
+                @for (f of feesForDisease(disease.id); track f.locationKey) {
+                  <article class="mobile-row-card">
+                    <div class="card-head"><strong>{{ locationLabel(f.locationKey) }}</strong><strong>{{ formatPaise(f.feeInPaise) }}</strong></div>
+                    <button type="button" class="btn-link danger" (click)="removeLocationFee(disease.id, f.locationKey)">Remove</button>
+                  </article>
+                }
+              </div>
             } @else {
               <p class="muted">Select a disease to manage location fees.</p>
             }
@@ -105,6 +115,7 @@
           Subscription and package plans shown to patients. Price changes apply to new purchases.
         </div>
         <div class="panel">
+          <div class="table-wrap desktop-only">
           <table class="plans-table">
             <thead>
               <tr>
@@ -155,6 +166,25 @@
               }
             </tbody>
           </table>
+          </div>
+          <div class="mobile-row-cards">
+            @for (p of plans(); track p.id) {
+              @let edit = planEdits()[p.id];
+              <article class="mobile-row-card">
+                <div class="card-head">
+                  <strong>{{ p.name }}</strong>
+                  <span class="type-badge">{{ p.planType }}</span>
+                </div>
+                @if (p.description) { <p class="muted">{{ p.description }}</p> }
+                <label>Price (₹)
+                  <input type="number" min="1" class="inp-sm" [value]="edit?.priceRupees ?? 0" (input)="updatePlanField(p.id, 'priceRupees', +($any($event.target).value))" />
+                </label>
+                <div class="card-row"><span>Consult limit</span><span>{{ p.consultationsLimit ?? '—' }}</span></div>
+                <label class="check"><input type="checkbox" [checked]="edit?.isActive ?? false" (change)="updatePlanField(p.id, 'isActive', $any($event.target).checked)" /> Active</label>
+                <button type="button" class="btn-primary sm" [disabled]="saving()" (click)="savePlan(p)">Save</button>
+              </article>
+            }
+          </div>
         </div>
       }
 

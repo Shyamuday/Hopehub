@@ -16,21 +16,36 @@
       @if (loading()) {
         <p>Loading…</p>
       } @else {
-        <table class="table">
-          <thead><tr><th>Name</th><th>Potency</th><th>Manufacturer</th><th>Min stock</th><th>Status</th><th></th></tr></thead>
-          <tbody>
-            @for (m of medicines(); track m.id) {
-              <tr>
-                <td>{{ m.name }}</td>
-                <td>{{ m.potency }}</td>
-                <td>{{ m.manufacturer || '—' }}</td>
-                <td>{{ m.minStockLevel }}</td>
-                <td>{{ m.isActive ? 'Active' : 'Inactive' }}</td>
-                <td><button type="button" (click)="openEdit(m)">Edit</button></td>
-              </tr>
-            }
-          </tbody>
-        </table>
+        <div class="table-wrap desktop-only">
+          <table class="table">
+            <thead><tr><th>Name</th><th>Potency</th><th>Manufacturer</th><th>Min stock</th><th>Status</th><th></th></tr></thead>
+            <tbody>
+              @for (m of medicines(); track m.id) {
+                <tr>
+                  <td>{{ m.name }}</td>
+                  <td>{{ m.potency }}</td>
+                  <td>{{ m.manufacturer || '—' }}</td>
+                  <td>{{ m.minStockLevel }}</td>
+                  <td>{{ m.isActive ? 'Active' : 'Inactive' }}</td>
+                  <td><button type="button" (click)="openEdit(m)">Edit</button></td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        <div class="mobile-row-cards">
+          @for (m of medicines(); track m.id) {
+            <article class="mobile-row-card">
+              <div class="card-head">
+                <strong>{{ m.name }}</strong>
+                <span>{{ m.isActive ? 'Active' : 'Inactive' }}</span>
+              </div>
+              <div class="card-row"><span>{{ m.potency }}</span><span>Min {{ m.minStockLevel }}</span></div>
+              <div class="card-row"><span>{{ m.manufacturer || '—' }}</span></div>
+              <button type="button" (click)="openEdit(m)">Edit</button>
+            </article>
+          }
+        </div>
       }
     </div>
 

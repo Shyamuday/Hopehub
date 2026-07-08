@@ -11,21 +11,36 @@
       @if (loading()) {
         <p>Loading…</p>
       } @else {
-        <table class="table">
-          <thead><tr><th>Code</th><th>Name</th><th>Email</th><th>Phone</th><th>Status</th><th></th></tr></thead>
-          <tbody>
-            @for (s of suppliers(); track s.id) {
-              <tr>
-                <td>{{ s.code }}</td>
-                <td>{{ s.name }}</td>
-                <td>{{ s.email || '—' }}</td>
-                <td>{{ s.phone || '—' }}</td>
-                <td>{{ s.isActive ? 'Active' : 'Inactive' }}</td>
-                <td><button type="button" (click)="openEdit(s)">Edit</button></td>
-              </tr>
-            }
-          </tbody>
-        </table>
+        <div class="table-wrap desktop-only">
+          <table class="table">
+            <thead><tr><th>Code</th><th>Name</th><th>Email</th><th>Phone</th><th>Status</th><th></th></tr></thead>
+            <tbody>
+              @for (s of suppliers(); track s.id) {
+                <tr>
+                  <td>{{ s.code }}</td>
+                  <td>{{ s.name }}</td>
+                  <td>{{ s.email || '—' }}</td>
+                  <td>{{ s.phone || '—' }}</td>
+                  <td>{{ s.isActive ? 'Active' : 'Inactive' }}</td>
+                  <td><button type="button" (click)="openEdit(s)">Edit</button></td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        <div class="mobile-row-cards">
+          @for (s of suppliers(); track s.id) {
+            <article class="mobile-row-card">
+              <div class="card-head">
+                <strong>{{ s.name }}</strong>
+                <span>{{ s.code }}</span>
+              </div>
+              <div class="card-row"><span>{{ s.isActive ? 'Active' : 'Inactive' }}</span></div>
+              <div class="card-row"><span>{{ s.email || '—' }}</span><span>{{ s.phone || '—' }}</span></div>
+              <button type="button" (click)="openEdit(s)">Edit</button>
+            </article>
+          }
+        </div>
       }
     </div>
 

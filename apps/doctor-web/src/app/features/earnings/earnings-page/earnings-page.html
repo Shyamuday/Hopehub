@@ -42,7 +42,7 @@
 
     <div class="panel">
       <h3>Last 3 Months</h3>
-      <div class="table-scroll">
+      <div class="table-scroll desktop-only">
       <table>
         <thead>
           <tr>
@@ -66,6 +66,16 @@
         </tbody>
       </table>
       </div>
+      <div class="mobile-row-cards">
+        @for (row of history(); track row.month) {
+          <article class="mobile-row-card">
+            <div class="card-head"><strong>{{ row.month }}</strong><strong>₹{{ formatPaise(row.totalEstimatedPayInPaise) }}</strong></div>
+            <div class="card-row"><span>Net</span><span>₹{{ formatPaise(row.netPaise) }}</span></div>
+            <div class="card-row"><span>Gross</span><span>₹{{ formatPaise(row.grossPaise) }}</span></div>
+            <div class="card-row"><span>Leave</span><span>{{ row.leaveDays }} days</span></div>
+          </article>
+        }
+      </div>
     </div>
 
     @if (consultationSummary()?.lineItems?.length) {
@@ -74,7 +84,7 @@
         <p class="sub">
           Paid, pending, failed consultation payments and medicine sales linked to your prescriptions.
         </p>
-        <div class="table-scroll">
+        <div class="table-scroll desktop-only">
         <table>
           <thead>
             <tr>
@@ -105,6 +115,27 @@
             }
           </tbody>
         </table>
+        </div>
+        <div class="mobile-row-cards">
+          @for (row of consultationSummary()!.lineItems; track row.id) {
+            <article class="mobile-row-card" [class.pending-row]="row.status === 'CREATED'" [class.failed-row]="row.status === 'FAILED'">
+              <div class="card-head">
+                <strong>{{ row.patientName ?? row.label }}</strong>
+                <strong>₹{{ formatPaise(row.doctorEarningsInPaise) }}</strong>
+              </div>
+              <div class="card-row">
+                <span>{{ row.kind === 'MEDICINE_SALE' ? 'Medicine' : 'Consultation' }}</span>
+                <span>
+                  @if (row.status === 'PAID' || row.status === 'RECORDED') { Paid }
+                  @else if (row.status === 'CREATED') { Pending }
+                  @else { Failed }
+                </span>
+              </div>
+              <div class="card-row"><span>{{ row.createdAt | date: 'dd MMM yyyy' }}</span></div>
+              <div class="card-row"><span>Consult</span><span>₹{{ formatPaise(row.consultationFeeInPaise) }}</span></div>
+              <div class="card-row"><span>Medicine</span><span>₹{{ formatPaise(row.medicineFeeInPaise) }}</span></div>
+            </article>
+          }
         </div>
       </div>
     }

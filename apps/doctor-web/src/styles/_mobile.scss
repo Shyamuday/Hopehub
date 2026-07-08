@@ -4,6 +4,10 @@
   display: none;
 }
 
+.mobile-row-cards {
+  display: none;
+}
+
 .table-scroll,
 .table-wrap {
   overflow-x: auto;
@@ -35,6 +39,36 @@
 
   .desktop-only {
     display: none !important;
+  }
+
+  .mobile-row-cards {
+    display: grid;
+    gap: 0.65rem;
+  }
+
+  .mobile-row-card {
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 0.85rem;
+    background: #fff;
+    color: #0f172a;
+  }
+
+  .mobile-row-card .card-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 0.5rem;
+    margin-bottom: 0.35rem;
+  }
+
+  .mobile-row-card .card-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.5rem;
+    font-size: 0.88rem;
+    margin-bottom: 0.2rem;
+    flex-wrap: wrap;
   }
 
   .earn-page,

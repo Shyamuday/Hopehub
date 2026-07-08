@@ -52,7 +52,7 @@
 
     <div class="funnel-block">
       <h3>Patient funnel</h3>
-      <div class="table-wrap">
+      <div class="table-wrap desktop-only">
         <table>
           <thead>
             <tr>
@@ -76,12 +76,22 @@
           </tbody>
         </table>
       </div>
+      <div class="mobile-row-cards">
+        @for (step of report.funnel; track step.key) {
+          <article class="mobile-row-card">
+            <div class="card-head"><strong>{{ step.label }}</strong><span>{{ step.total }} events</span></div>
+            <div class="card-row"><span>Unique users</span><span>{{ step.uniqueActors }}</span></div>
+            <div class="card-row"><span>From start</span><span>{{ step.conversionFromStart }}%</span></div>
+            <div class="card-row"><span>From previous</span><span>{{ step.conversionFromPrevious }}%</span></div>
+          </article>
+        }
+      </div>
     </div>
 
     @if (report.dailyTrend.length) {
       <div class="trend-block">
         <h3>Daily trend</h3>
-        <div class="table-wrap">
+        <div class="table-wrap desktop-only">
           <table>
             <thead>
               <tr>
@@ -105,6 +115,16 @@
             </tbody>
           </table>
         </div>
+        <div class="mobile-row-cards">
+          @for (day of report.dailyTrend; track day.date) {
+            <article class="mobile-row-card">
+              <div class="card-head"><strong>{{ day.date }}</strong><span>{{ day.doseTaken }} doses</span></div>
+              <div class="card-row"><span>Booked</span><span>{{ day.consultationBooked }}</span></div>
+              <div class="card-row"><span>Paid</span><span>{{ day.paymentCompleted }}</span></div>
+              <div class="card-row"><span>Rx published</span><span>{{ day.prescriptionPublished }}</span></div>
+            </article>
+          }
+        </div>
       </div>
     } @else {
       <p class="empty-state">No funnel events recorded in this window yet.</p>
@@ -123,7 +143,7 @@
             <div class="card"><div class="val">{{ leads.summary.notInterested }}</div><div class="lbl">Not interested</div></div>
           }
         </div>
-        <div class="table-wrap">
+        <div class="table-wrap desktop-only">
           <table>
             <thead>
               <tr>
@@ -145,9 +165,18 @@
             </tbody>
           </table>
         </div>
+        <div class="mobile-row-cards">
+          @for (step of leads.funnel; track step.key) {
+            <article class="mobile-row-card">
+              <div class="card-head"><strong>{{ step.label }}</strong><span>{{ step.total }} leads</span></div>
+              <div class="card-row"><span>From start</span><span>{{ step.conversionFromStart }}%</span></div>
+              <div class="card-row"><span>From previous</span><span>{{ step.conversionFromPrevious }}%</span></div>
+            </article>
+          }
+        </div>
         @if (leads.bySource.length) {
           <h4>By source</h4>
-          <div class="table-wrap">
+          <div class="table-wrap desktop-only">
             <table>
               <thead>
                 <tr>
@@ -169,10 +198,19 @@
               </tbody>
             </table>
           </div>
+          <div class="mobile-row-cards">
+            @for (row of leads.bySource; track row.source) {
+              <article class="mobile-row-card">
+                <div class="card-head"><strong>{{ leadSourceLabel(row.source) }}</strong><span>{{ row.conversionRate }}%</span></div>
+                <div class="card-row"><span>Leads</span><span>{{ row.total }}</span></div>
+                <div class="card-row"><span>Booked</span><span>{{ row.booked }}</span></div>
+              </article>
+            }
+          </div>
         }
         @if (leads.notInterestedByReason?.length) {
           <h4>Not interested — top reasons</h4>
-          <div class="table-wrap">
+          <div class="table-wrap desktop-only">
             <table>
               <thead>
                 <tr>
@@ -190,10 +228,17 @@
               </tbody>
             </table>
           </div>
+          <div class="mobile-row-cards">
+            @for (row of leads.notInterestedByReason!; track row.reason) {
+              <article class="mobile-row-card">
+                <div class="card-head"><strong>{{ row.reason }}</strong><span>{{ row.count }}</span></div>
+              </article>
+            }
+          </div>
         }
         @if (leads.topVisitorIssues?.length) {
           <h4>Top issues shared on calls</h4>
-          <div class="table-wrap">
+          <div class="table-wrap desktop-only">
             <table>
               <thead>
                 <tr>
@@ -210,6 +255,13 @@
                 }
               </tbody>
             </table>
+          </div>
+          <div class="mobile-row-cards">
+            @for (row of leads.topVisitorIssues!; track row.issue) {
+              <article class="mobile-row-card">
+                <div class="card-head"><strong>{{ row.issue }}</strong><span>{{ row.count }}</span></div>
+              </article>
+            }
           </div>
         }
       </div>

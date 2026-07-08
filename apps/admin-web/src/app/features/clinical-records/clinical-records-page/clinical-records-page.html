@@ -154,6 +154,7 @@
 
         @if (rx.items?.length) {
           <h4>Medicines</h4>
+          <div class="table-wrap desktop-only">
           <table class="data-table">
             <thead>
               <tr>
@@ -176,6 +177,16 @@
               }
             </tbody>
           </table>
+          </div>
+          <div class="mobile-row-cards">
+            @for (item of rx.items; track $index) {
+              <article class="mobile-row-card">
+                <div class="card-head"><strong>{{ item.medicineName }}</strong><span>{{ item.strength || '—' }}</span></div>
+                <div class="card-row"><span>{{ item.dose || '—' }}</span><span>{{ item.frequency || '—' }}</span></div>
+                <div class="card-row"><span>Duration</span><span>{{ item.duration || '—' }}</span></div>
+              </article>
+            }
+          </div>
         }
       } @else if (selectedAnalysis(); as analysis) {
         <h3>Case analysis detail</h3>
@@ -194,6 +205,7 @@
 
         @if (analysis.rubrics?.length) {
           <h4>Repertory rubrics ({{ analysis.rubrics.length }})</h4>
+          <div class="table-wrap desktop-only">
           <table class="data-table compact">
             <thead>
               <tr><th>Weight</th><th>Chapter</th><th>Rubric</th></tr>
@@ -208,10 +220,20 @@
               }
             </tbody>
           </table>
+          </div>
+          <div class="mobile-row-cards">
+            @for (row of analysis.rubrics; track $index) {
+              <article class="mobile-row-card">
+                <div class="card-head"><strong>{{ row.rubric.text }}</strong><span>W{{ row.weight }}</span></div>
+                <div class="card-row"><span>{{ row.rubric.chapter || '—' }}</span></div>
+              </article>
+            }
+          </div>
         }
 
         @if (analysis.results?.length) {
           <h4>Repertory results ({{ analysis.results.length }})</h4>
+          <div class="table-wrap desktop-only">
           <table class="data-table compact">
             <thead>
               <tr><th>Rank</th><th>Score</th><th>Remedy</th></tr>
@@ -226,6 +248,18 @@
               }
             </tbody>
           </table>
+          </div>
+          <div class="mobile-row-cards">
+            @for (row of analysis.results; track $index) {
+              <article class="mobile-row-card">
+                <div class="card-head">
+                  <strong>{{ row.remedy.name }}</strong>
+                  <span>#{{ row.rank }}</span>
+                </div>
+                <div class="card-row"><span>Score {{ row.score }}</span><span>{{ row.remedy.abbreviation || '' }}</span></div>
+              </article>
+            }
+          </div>
         }
 
         @if (analysisClinicalSummary(); as summary) {

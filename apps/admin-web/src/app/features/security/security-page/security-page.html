@@ -17,7 +17,7 @@
   } @else if (error()) {
     <p class="error">{{ error() }}</p>
   } @else if (tab() === 'rbac') {
-    <div class="matrix-wrap">
+    <div class="matrix-wrap desktop-only">
       <table class="matrix">
         <thead>
           <tr>
@@ -41,6 +41,19 @@
           }
         </tbody>
       </table>
+    </div>
+    <div class="mobile-row-cards">
+      @for (cap of capabilities(); track cap.id) {
+        <article class="mobile-row-card">
+          <strong>{{ cap.label }}</strong>
+          <p class="muted">{{ cap.description }}</p>
+          <div class="card-row role-grants">
+            @for (role of roles(); track role) {
+              <span>{{ role }}: {{ hasCapability(role, cap.id) ? '✓' : '—' }}</span>
+            }
+          </div>
+        </article>
+      }
     </div>
   } @else if (retention()) {
     <div class="retention-cards">

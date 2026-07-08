@@ -20,6 +20,7 @@
     <div class="loading">Loading expenses…</div>
   } @else {
     <div class="panel">
+      <div class="table-wrap desktop-only">
       <table>
         <thead>
           <tr>
@@ -42,6 +43,16 @@
           }
         </tbody>
       </table>
+      </div>
+      <div class="mobile-row-cards">
+        @for (e of expenses(); track e.id) {
+          <article class="mobile-row-card">
+            <div class="card-head"><strong>{{ e.description }}</strong><strong>₹{{ formatPaise(e.amountInPaise) }}</strong></div>
+            <div class="card-row"><span>{{ categoryLabels[e.category] ?? e.category }}</span><span>{{ e.expenseDate | date:'mediumDate' }}</span></div>
+            <div class="card-row"><span>{{ e.vendor ?? '—' }}</span></div>
+          </article>
+        }
+      </div>
     </div>
   }
 

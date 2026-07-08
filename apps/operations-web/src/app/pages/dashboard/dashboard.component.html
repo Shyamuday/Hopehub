@@ -51,7 +51,7 @@
               <h2 class="card-title">Recent Joins</h2>
               <span class="card-badge">Last 5</span>
             </div>
-            <div class="table-wrap">
+            <div class="table-wrap desktop-only">
               <table class="table">
                 <thead>
                   <tr>
@@ -83,6 +83,19 @@
                   }
                 </tbody>
               </table>
+            </div>
+            <div class="mobile-row-cards">
+              @for (emp of data()!.recentJoins; track emp.id) {
+                <article class="mobile-row-card">
+                  <div class="card-head">
+                    <strong>{{ emp.name }}</strong>
+                    <span class="badge" [class]="emp.empType === 'DOCTOR' ? 'badge-blue' : 'badge-purple'">
+                      {{ emp.empType === 'DOCTOR' ? '🩺' : '🏪' }}
+                    </span>
+                  </div>
+                  <div class="card-row"><span>{{ emp.designation ?? '—' }}</span><span>{{ emp.joiningDate | date:'dd MMM yyyy' }}</span></div>
+                </article>
+              }
             </div>
           </div>
 

@@ -92,64 +92,98 @@
 
         <div class="panel" style="margin-bottom: 1rem">
           <h3>Time buckets</h3>
-          <table class="branch-table">
-            <thead>
-              <tr>
-                <th>Period</th>
-                <th class="num">Consult</th>
-                <th class="num">Medicine</th>
-                <th class="num">Pending</th>
-                <th class="num">Payroll</th>
-                <th class="num">Expenses</th>
-                <th class="num">Net</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (b of report.buckets; track b.key) {
-                <tr>
-                  <td>{{ b.label }}</td>
-                  <td class="num">{{ formatPaise(b.consultationRevenueInPaise) }}</td>
-                  <td class="num">{{ formatPaise(b.medicineRevenueInPaise) }}</td>
-                  <td class="num">{{ formatPaise(b.pendingConsultationRevenueInPaise) }}</td>
-                  <td class="num">{{ formatPaise(b.payrollCostInPaise) }}</td>
-                  <td class="num">{{ formatPaise(b.storeExpensesInPaise + b.clinicExpensesInPaise) }}</td>
-                  <td class="num" [class.positive]="b.netEstimateInPaise >= 0" [class.negative]="b.netEstimateInPaise < 0">{{ formatPaise(b.netEstimateInPaise) }}</td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        </div>
-
-        @if (report.byStore.length) {
-          <div class="panel">
-            <h3>By store / online</h3>
+          <div class="table-wrap desktop-only">
             <table class="branch-table">
               <thead>
                 <tr>
-                  <th>Location</th>
+                  <th>Period</th>
                   <th class="num">Consult</th>
                   <th class="num">Medicine</th>
+                  <th class="num">Pending</th>
                   <th class="num">Payroll</th>
                   <th class="num">Expenses</th>
                   <th class="num">Net</th>
                 </tr>
               </thead>
               <tbody>
-                @for (row of report.byStore; track row.storeId) {
+                @for (b of report.buckets; track b.key) {
                   <tr>
-                    <td>
-                      <div class="branch-name">{{ row.storeName }}</div>
-                      <div class="branch-code">{{ row.storeCode }}</div>
-                    </td>
-                    <td class="num">{{ formatPaise(row.consultationRevenueInPaise) }}</td>
-                    <td class="num">{{ formatPaise(row.medicineRevenueInPaise) }}</td>
-                    <td class="num">{{ formatPaise(row.payrollCostInPaise) }}</td>
-                    <td class="num">{{ formatPaise(row.storeExpensesInPaise + row.clinicExpensesInPaise) }}</td>
-                    <td class="num" [class.positive]="row.netEstimateInPaise >= 0" [class.negative]="row.netEstimateInPaise < 0">{{ formatPaise(row.netEstimateInPaise) }}</td>
+                    <td>{{ b.label }}</td>
+                    <td class="num">{{ formatPaise(b.consultationRevenueInPaise) }}</td>
+                    <td class="num">{{ formatPaise(b.medicineRevenueInPaise) }}</td>
+                    <td class="num">{{ formatPaise(b.pendingConsultationRevenueInPaise) }}</td>
+                    <td class="num">{{ formatPaise(b.payrollCostInPaise) }}</td>
+                    <td class="num">{{ formatPaise(b.storeExpensesInPaise + b.clinicExpensesInPaise) }}</td>
+                    <td class="num" [class.positive]="b.netEstimateInPaise >= 0" [class.negative]="b.netEstimateInPaise < 0">{{ formatPaise(b.netEstimateInPaise) }}</td>
                   </tr>
                 }
               </tbody>
             </table>
+          </div>
+          <div class="mobile-row-cards">
+            @for (b of report.buckets; track b.key) {
+              <article class="mobile-row-card">
+                <div class="card-head">
+                  <strong>{{ b.label }}</strong>
+                  <span [class.positive]="b.netEstimateInPaise >= 0" [class.negative]="b.netEstimateInPaise < 0">{{ formatPaise(b.netEstimateInPaise) }}</span>
+                </div>
+                <div class="card-row"><span>Consult</span><span>{{ formatPaise(b.consultationRevenueInPaise) }}</span></div>
+                <div class="card-row"><span>Medicine</span><span>{{ formatPaise(b.medicineRevenueInPaise) }}</span></div>
+                <div class="card-row"><span>Pending</span><span>{{ formatPaise(b.pendingConsultationRevenueInPaise) }}</span></div>
+                <div class="card-row"><span>Payroll</span><span>{{ formatPaise(b.payrollCostInPaise) }}</span></div>
+                <div class="card-row"><span>Expenses</span><span>{{ formatPaise(b.storeExpensesInPaise + b.clinicExpensesInPaise) }}</span></div>
+              </article>
+            }
+          </div>
+        </div>
+
+        @if (report.byStore.length) {
+          <div class="panel">
+            <h3>By store / online</h3>
+            <div class="table-wrap desktop-only">
+              <table class="branch-table">
+                <thead>
+                  <tr>
+                    <th>Location</th>
+                    <th class="num">Consult</th>
+                    <th class="num">Medicine</th>
+                    <th class="num">Payroll</th>
+                    <th class="num">Expenses</th>
+                    <th class="num">Net</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (row of report.byStore; track row.storeId) {
+                    <tr>
+                      <td>
+                        <div class="branch-name">{{ row.storeName }}</div>
+                        <div class="branch-code">{{ row.storeCode }}</div>
+                      </td>
+                      <td class="num">{{ formatPaise(row.consultationRevenueInPaise) }}</td>
+                      <td class="num">{{ formatPaise(row.medicineRevenueInPaise) }}</td>
+                      <td class="num">{{ formatPaise(row.payrollCostInPaise) }}</td>
+                      <td class="num">{{ formatPaise(row.storeExpensesInPaise + row.clinicExpensesInPaise) }}</td>
+                      <td class="num" [class.positive]="row.netEstimateInPaise >= 0" [class.negative]="row.netEstimateInPaise < 0">{{ formatPaise(row.netEstimateInPaise) }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+            <div class="mobile-row-cards">
+              @for (row of report.byStore; track row.storeId) {
+                <article class="mobile-row-card">
+                  <div class="card-head">
+                    <strong>{{ row.storeName }}</strong>
+                    <span [class.positive]="row.netEstimateInPaise >= 0" [class.negative]="row.netEstimateInPaise < 0">{{ formatPaise(row.netEstimateInPaise) }}</span>
+                  </div>
+                  <div class="card-row"><span>{{ row.storeCode }}</span></div>
+                  <div class="card-row"><span>Consult</span><span>{{ formatPaise(row.consultationRevenueInPaise) }}</span></div>
+                  <div class="card-row"><span>Medicine</span><span>{{ formatPaise(row.medicineRevenueInPaise) }}</span></div>
+                  <div class="card-row"><span>Payroll</span><span>{{ formatPaise(row.payrollCostInPaise) }}</span></div>
+                  <div class="card-row"><span>Expenses</span><span>{{ formatPaise(row.storeExpensesInPaise + row.clinicExpensesInPaise) }}</span></div>
+                </article>
+              }
+            </div>
           </div>
         }
       }
@@ -165,14 +199,24 @@
       </div>
       <div class="panel">
         <h3>Revenue Trend (6 months)</h3>
-        <table>
-          <thead><tr><th>Month</th><th class="num">Revenue (₹)</th><th class="num">Consultations</th></tr></thead>
-          <tbody>
-            @for (row of trend(); track row.month) {
-              <tr><td>{{ row.month }}</td><td class="num">{{ formatPaise(row.revenueInPaise) }}</td><td class="num">{{ row.paidConsultations }}</td></tr>
-            }
-          </tbody>
-        </table>
+        <div class="table-wrap desktop-only">
+          <table>
+            <thead><tr><th>Month</th><th class="num">Revenue (₹)</th><th class="num">Consultations</th></tr></thead>
+            <tbody>
+              @for (row of trend(); track row.month) {
+                <tr><td>{{ row.month }}</td><td class="num">{{ formatPaise(row.revenueInPaise) }}</td><td class="num">{{ row.paidConsultations }}</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        <div class="mobile-row-cards">
+          @for (row of trend(); track row.month) {
+            <article class="mobile-row-card">
+              <div class="card-head"><strong>{{ row.month }}</strong><span>{{ formatPaise(row.revenueInPaise) }}</span></div>
+              <div class="card-row"><span>Consultations</span><span>{{ row.paidConsultations }}</span></div>
+            </article>
+          }
+        </div>
       </div>
     }
     @case ('outstanding') {
@@ -182,30 +226,46 @@
         @if (!outstanding().length) {
           <p class="empty-state">No outstanding payments.</p>
         } @else {
-          <table>
-            <thead>
-              <tr>
-                <th>Patient</th>
-                <th>Disease</th>
-                <th>Doctor</th>
-                <th>Status</th>
-                <th class="num">Amount</th>
-                <th>Created</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (payment of outstanding(); track payment.id) {
+          <div class="table-wrap desktop-only">
+            <table>
+              <thead>
                 <tr>
-                  <td>{{ payment.consultation?.patient?.name || '—' }}</td>
-                  <td>{{ payment.consultation?.disease?.name || '—' }}</td>
-                  <td>{{ payment.consultation?.assignedDoctor?.name || 'Unassigned' }}</td>
-                  <td>{{ payment.status }}</td>
-                  <td class="num">{{ formatPaise(payment.amountInPaise) }}</td>
-                  <td>{{ payment.createdAt | date: 'mediumDate' }}</td>
+                  <th>Patient</th>
+                  <th>Disease</th>
+                  <th>Doctor</th>
+                  <th>Status</th>
+                  <th class="num">Amount</th>
+                  <th>Created</th>
                 </tr>
-              }
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                @for (payment of outstanding(); track payment.id) {
+                  <tr>
+                    <td>{{ payment.consultation?.patient?.name || '—' }}</td>
+                    <td>{{ payment.consultation?.disease?.name || '—' }}</td>
+                    <td>{{ payment.consultation?.assignedDoctor?.name || 'Unassigned' }}</td>
+                    <td>{{ payment.status }}</td>
+                    <td class="num">{{ formatPaise(payment.amountInPaise) }}</td>
+                    <td>{{ payment.createdAt | date: 'mediumDate' }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+          <div class="mobile-row-cards">
+            @for (payment of outstanding(); track payment.id) {
+              <article class="mobile-row-card">
+                <div class="card-head">
+                  <strong>{{ payment.consultation?.patient?.name || '—' }}</strong>
+                  <span>{{ payment.status }}</span>
+                </div>
+                <div class="card-row"><span>Amount</span><strong>{{ formatPaise(payment.amountInPaise) }}</strong></div>
+                <div class="card-row"><span>Disease</span><span>{{ payment.consultation?.disease?.name || '—' }}</span></div>
+                <div class="card-row"><span>Doctor</span><span>{{ payment.consultation?.assignedDoctor?.name || 'Unassigned' }}</span></div>
+                <div class="card-row"><span>Created</span><span>{{ payment.createdAt | date: 'mediumDate' }}</span></div>
+              </article>
+            }
+          </div>
         }
       </div>
     }
@@ -216,48 +276,66 @@
         @if (!branchPnl().length) {
           <p class="empty-state">No branch data for this month.</p>
         } @else {
-          <table class="branch-table">
-            <thead>
-              <tr>
-                <th>Branch</th>
-                <th class="num">Consultation (₹)</th>
-                <th class="num">Medicine (₹)</th>
-                <th class="num">Payroll (₹)</th>
-                <th class="num">Store Exp. (₹)</th>
-                <th class="num">Clinic Exp. (₹)</th>
-                <th class="num">Net (₹)</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (row of branchPnl(); track row.storeId ?? row.storeCode) {
+          <div class="table-wrap desktop-only">
+            <table class="branch-table">
+              <thead>
                 <tr>
-                  <td>
-                    <div class="branch-name">{{ row.storeName }}</div>
-                    <div class="branch-code">{{ row.storeCode }}</div>
-                  </td>
-                  <td class="num">{{ formatPaise(row.consultationRevenueInPaise) }}</td>
-                  <td class="num">{{ formatPaise(row.medicineRevenueInPaise) }}</td>
-                  <td class="num">{{ formatPaise(row.payrollCostInPaise) }}</td>
-                  <td class="num">{{ formatPaise(row.storeExpensesInPaise) }}</td>
-                  <td class="num">{{ formatPaise(row.clinicExpensesInPaise) }}</td>
-                  <td class="num" [class.positive]="row.netEstimateInPaise >= 0" [class.negative]="row.netEstimateInPaise < 0">
-                    {{ formatPaise(row.netEstimateInPaise) }}
-                  </td>
+                  <th>Branch</th>
+                  <th class="num">Consultation (₹)</th>
+                  <th class="num">Medicine (₹)</th>
+                  <th class="num">Payroll (₹)</th>
+                  <th class="num">Store Exp. (₹)</th>
+                  <th class="num">Clinic Exp. (₹)</th>
+                  <th class="num">Net (₹)</th>
                 </tr>
-              }
-              @if (branchTotals()) {
-                <tr class="totals-row">
-                  <td><strong>Total</strong></td>
-                  <td class="num"><strong>{{ formatPaise(branchTotals().consultationRevenueInPaise) }}</strong></td>
-                  <td class="num"><strong>{{ formatPaise(branchTotals().medicineRevenueInPaise) }}</strong></td>
-                  <td class="num"><strong>{{ formatPaise(branchTotals().payrollCostInPaise) }}</strong></td>
-                  <td class="num"><strong>{{ formatPaise(branchTotals().storeExpensesInPaise) }}</strong></td>
-                  <td class="num"><strong>{{ formatPaise(branchTotals().clinicExpensesInPaise) }}</strong></td>
-                  <td class="num"><strong>{{ formatPaise(branchTotals().netEstimateInPaise) }}</strong></td>
-                </tr>
-              }
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                @for (row of branchPnl(); track row.storeId ?? row.storeCode) {
+                  <tr>
+                    <td>
+                      <div class="branch-name">{{ row.storeName }}</div>
+                      <div class="branch-code">{{ row.storeCode }}</div>
+                    </td>
+                    <td class="num">{{ formatPaise(row.consultationRevenueInPaise) }}</td>
+                    <td class="num">{{ formatPaise(row.medicineRevenueInPaise) }}</td>
+                    <td class="num">{{ formatPaise(row.payrollCostInPaise) }}</td>
+                    <td class="num">{{ formatPaise(row.storeExpensesInPaise) }}</td>
+                    <td class="num">{{ formatPaise(row.clinicExpensesInPaise) }}</td>
+                    <td class="num" [class.positive]="row.netEstimateInPaise >= 0" [class.negative]="row.netEstimateInPaise < 0">
+                      {{ formatPaise(row.netEstimateInPaise) }}
+                    </td>
+                  </tr>
+                }
+                @if (branchTotals()) {
+                  <tr class="totals-row">
+                    <td><strong>Total</strong></td>
+                    <td class="num"><strong>{{ formatPaise(branchTotals().consultationRevenueInPaise) }}</strong></td>
+                    <td class="num"><strong>{{ formatPaise(branchTotals().medicineRevenueInPaise) }}</strong></td>
+                    <td class="num"><strong>{{ formatPaise(branchTotals().payrollCostInPaise) }}</strong></td>
+                    <td class="num"><strong>{{ formatPaise(branchTotals().storeExpensesInPaise) }}</strong></td>
+                    <td class="num"><strong>{{ formatPaise(branchTotals().clinicExpensesInPaise) }}</strong></td>
+                    <td class="num"><strong>{{ formatPaise(branchTotals().netEstimateInPaise) }}</strong></td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+          <div class="mobile-row-cards">
+            @for (row of branchPnl(); track row.storeId ?? row.storeCode) {
+              <article class="mobile-row-card">
+                <div class="card-head">
+                  <strong>{{ row.storeName }}</strong>
+                  <span [class.positive]="row.netEstimateInPaise >= 0" [class.negative]="row.netEstimateInPaise < 0">{{ formatPaise(row.netEstimateInPaise) }}</span>
+                </div>
+                <div class="card-row"><span>{{ row.storeCode }}</span></div>
+                <div class="card-row"><span>Consultation</span><span>{{ formatPaise(row.consultationRevenueInPaise) }}</span></div>
+                <div class="card-row"><span>Medicine</span><span>{{ formatPaise(row.medicineRevenueInPaise) }}</span></div>
+                <div class="card-row"><span>Payroll</span><span>{{ formatPaise(row.payrollCostInPaise) }}</span></div>
+                <div class="card-row"><span>Store Exp.</span><span>{{ formatPaise(row.storeExpensesInPaise) }}</span></div>
+                <div class="card-row"><span>Clinic Exp.</span><span>{{ formatPaise(row.clinicExpensesInPaise) }}</span></div>
+              </article>
+            }
+          </div>
         }
       </div>
     }
@@ -265,25 +343,45 @@
       <div class="grid-2">
         <div class="panel">
           <h3>By Doctor</h3>
-          <table>
-            <thead><tr><th>Doctor</th><th>Specialty</th><th class="num">Revenue (₹)</th></tr></thead>
-            <tbody>
-              @for (row of byDoctor(); track row.doctorId) {
-                <tr><td>{{ row.doctorName }}</td><td>{{ row.specialty }}</td><td class="num">{{ formatPaise(row.revenueInPaise) }}</td></tr>
-              }
-            </tbody>
-          </table>
+          <div class="table-wrap desktop-only">
+            <table>
+              <thead><tr><th>Doctor</th><th>Specialty</th><th class="num">Revenue (₹)</th></tr></thead>
+              <tbody>
+                @for (row of byDoctor(); track row.doctorId) {
+                  <tr><td>{{ row.doctorName }}</td><td>{{ row.specialty }}</td><td class="num">{{ formatPaise(row.revenueInPaise) }}</td></tr>
+                }
+              </tbody>
+            </table>
+          </div>
+          <div class="mobile-row-cards">
+            @for (row of byDoctor(); track row.doctorId) {
+              <article class="mobile-row-card">
+                <div class="card-head"><strong>{{ row.doctorName }}</strong><span>{{ formatPaise(row.revenueInPaise) }}</span></div>
+                <div class="card-row"><span>Specialty</span><span>{{ row.specialty }}</span></div>
+              </article>
+            }
+          </div>
         </div>
         <div class="panel">
           <h3>By Disease</h3>
-          <table>
-            <thead><tr><th>Disease</th><th class="num">Revenue (₹)</th><th class="num">Count</th></tr></thead>
-            <tbody>
-              @for (row of byDisease(); track row.diseaseId) {
-                <tr><td>{{ row.diseaseName }}</td><td class="num">{{ formatPaise(row.revenueInPaise) }}</td><td class="num">{{ row.count }}</td></tr>
-              }
-            </tbody>
-          </table>
+          <div class="table-wrap desktop-only">
+            <table>
+              <thead><tr><th>Disease</th><th class="num">Revenue (₹)</th><th class="num">Count</th></tr></thead>
+              <tbody>
+                @for (row of byDisease(); track row.diseaseId) {
+                  <tr><td>{{ row.diseaseName }}</td><td class="num">{{ formatPaise(row.revenueInPaise) }}</td><td class="num">{{ row.count }}</td></tr>
+                }
+              </tbody>
+            </table>
+          </div>
+          <div class="mobile-row-cards">
+            @for (row of byDisease(); track row.diseaseId) {
+              <article class="mobile-row-card">
+                <div class="card-head"><strong>{{ row.diseaseName }}</strong><span>{{ formatPaise(row.revenueInPaise) }}</span></div>
+                <div class="card-row"><span>Count</span><span>{{ row.count }}</span></div>
+              </article>
+            }
+          </div>
         </div>
       </div>
     }
@@ -300,44 +398,77 @@
         <div class="total-pill">Total: ₹{{ formatPaise(medicine().totalInPaise) }}</div>
       </div>
       <div class="panel">
-        <table>
-          <thead><tr><th>Date</th><th>Store</th><th>Medicine</th><th class="num">Qty</th><th class="num">Amount (₹)</th></tr></thead>
-          <tbody>
-            @for (m of medicine().movements; track m.id) {
-              <tr>
-                <td>{{ m.createdAt | date:'medium' }}</td>
-                <td>{{ m.store?.name }}</td>
-                <td>{{ m.stock?.medicine?.name }} {{ m.stock?.medicine?.potency }}</td>
-                <td class="num">{{ m.qty }}</td>
-                <td class="num">{{ formatPaise(m.amountInPaise ?? 0) }}</td>
-              </tr>
-            }
-          </tbody>
-        </table>
+        <div class="table-wrap desktop-only">
+          <table>
+            <thead><tr><th>Date</th><th>Store</th><th>Medicine</th><th class="num">Qty</th><th class="num">Amount (₹)</th></tr></thead>
+            <tbody>
+              @for (m of medicine().movements; track m.id) {
+                <tr>
+                  <td>{{ m.createdAt | date:'medium' }}</td>
+                  <td>{{ m.store?.name }}</td>
+                  <td>{{ m.stock?.medicine?.name }} {{ m.stock?.medicine?.potency }}</td>
+                  <td class="num">{{ m.qty }}</td>
+                  <td class="num">{{ formatPaise(m.amountInPaise ?? 0) }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        <div class="mobile-row-cards">
+          @for (m of medicine().movements; track m.id) {
+            <article class="mobile-row-card">
+              <div class="card-head">
+                <strong>{{ m.stock?.medicine?.name }} {{ m.stock?.medicine?.potency }}</strong>
+                <span>{{ formatPaise(m.amountInPaise ?? 0) }}</span>
+              </div>
+              <div class="card-row"><span>{{ m.createdAt | date:'medium' }}</span><span>{{ m.store?.name }}</span></div>
+              <div class="card-row"><span>Qty</span><span>{{ m.qty }}</span></div>
+            </article>
+          }
+        </div>
       </div>
     }
     @case ('clinic-expenses') {
       <div class="actions"><button class="btn-primary" (click)="openExpenseModal(undefined, 'CLINIC')">+ Add Clinic Expense</button></div>
       <div class="panel">
-        <table>
-          <thead><tr><th>Date</th><th>Category</th><th>Description</th><th>Vendor</th><th>Bill No</th><th class="num">Amount (₹)</th><th></th></tr></thead>
-          <tbody>
-            @for (e of clinicExpenses(); track e.id) {
-              <tr>
-                <td>{{ e.expenseDate | date:'mediumDate' }}</td>
-                <td>{{ categoryLabels[e.category] ?? e.category }}</td>
-                <td>{{ e.description }}</td>
-                <td>{{ e.vendor ?? '—' }}</td>
-                <td>{{ e.billNo ?? '—' }}</td>
-                <td class="num">{{ formatPaise(e.amountInPaise) }}</td>
-                <td class="actions-cell">
-                  <button (click)="openExpenseModal(e)">Edit</button>
-                  <button class="danger" (click)="deleteExpense(e.id)">Delete</button>
-                </td>
-              </tr>
-            }
-          </tbody>
-        </table>
+        <div class="table-wrap desktop-only">
+          <table>
+            <thead><tr><th>Date</th><th>Category</th><th>Description</th><th>Vendor</th><th>Bill No</th><th class="num">Amount (₹)</th><th></th></tr></thead>
+            <tbody>
+              @for (e of clinicExpenses(); track e.id) {
+                <tr>
+                  <td>{{ e.expenseDate | date:'mediumDate' }}</td>
+                  <td>{{ categoryLabels[e.category] ?? e.category }}</td>
+                  <td>{{ e.description }}</td>
+                  <td>{{ e.vendor ?? '—' }}</td>
+                  <td>{{ e.billNo ?? '—' }}</td>
+                  <td class="num">{{ formatPaise(e.amountInPaise) }}</td>
+                  <td class="actions-cell">
+                    <button (click)="openExpenseModal(e)">Edit</button>
+                    <button class="danger" (click)="deleteExpense(e.id)">Delete</button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        <div class="mobile-row-cards">
+          @for (e of clinicExpenses(); track e.id) {
+            <article class="mobile-row-card">
+              <div class="card-head">
+                <strong>{{ e.description }}</strong>
+                <span>{{ formatPaise(e.amountInPaise) }}</span>
+              </div>
+              <div class="card-row"><span>{{ e.expenseDate | date:'mediumDate' }}</span><span>{{ categoryLabels[e.category] ?? e.category }}</span></div>
+              <div class="card-row"><span>Vendor</span><span>{{ e.vendor ?? '—' }}</span></div>
+              <div class="card-row"><span>Bill No</span><span>{{ e.billNo ?? '—' }}</span></div>
+              <div class="card-actions">
+                <button type="button" (click)="openExpenseModal(e)">Edit</button>
+                <button type="button" class="danger" (click)="deleteExpense(e.id)">Delete</button>
+              </div>
+            </article>
+          }
+        </div>
       </div>
     }
     @case ('store-expenses') {
@@ -351,25 +482,43 @@
         <button class="btn-primary" (click)="openExpenseModal(undefined, 'STORE')">+ Add Store Expense</button>
       </div>
       <div class="panel">
-        <table>
-          <thead><tr><th>Date</th><th>Store</th><th>Category</th><th>Description</th><th>Vendor</th><th class="num">Amount (₹)</th><th></th></tr></thead>
-          <tbody>
-            @for (e of storeExpenses(); track e.id) {
-              <tr>
-                <td>{{ e.expenseDate | date:'mediumDate' }}</td>
-                <td>{{ e.store?.name ?? '—' }}</td>
-                <td>{{ categoryLabels[e.category] ?? e.category }}</td>
-                <td>{{ e.description }}</td>
-                <td>{{ e.vendor ?? '—' }}</td>
-                <td class="num">{{ formatPaise(e.amountInPaise) }}</td>
-                <td class="actions-cell">
-                  <button (click)="openExpenseModal(e)">Edit</button>
-                  <button class="danger" (click)="deleteExpense(e.id)">Delete</button>
-                </td>
-              </tr>
-            }
-          </tbody>
-        </table>
+        <div class="table-wrap desktop-only">
+          <table>
+            <thead><tr><th>Date</th><th>Store</th><th>Category</th><th>Description</th><th>Vendor</th><th class="num">Amount (₹)</th><th></th></tr></thead>
+            <tbody>
+              @for (e of storeExpenses(); track e.id) {
+                <tr>
+                  <td>{{ e.expenseDate | date:'mediumDate' }}</td>
+                  <td>{{ e.store?.name ?? '—' }}</td>
+                  <td>{{ categoryLabels[e.category] ?? e.category }}</td>
+                  <td>{{ e.description }}</td>
+                  <td>{{ e.vendor ?? '—' }}</td>
+                  <td class="num">{{ formatPaise(e.amountInPaise) }}</td>
+                  <td class="actions-cell">
+                    <button (click)="openExpenseModal(e)">Edit</button>
+                    <button class="danger" (click)="deleteExpense(e.id)">Delete</button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        <div class="mobile-row-cards">
+          @for (e of storeExpenses(); track e.id) {
+            <article class="mobile-row-card">
+              <div class="card-head">
+                <strong>{{ e.description }}</strong>
+                <span>{{ formatPaise(e.amountInPaise) }}</span>
+              </div>
+              <div class="card-row"><span>{{ e.expenseDate | date:'mediumDate' }}</span><span>{{ e.store?.name ?? '—' }}</span></div>
+              <div class="card-row"><span>{{ categoryLabels[e.category] ?? e.category }}</span><span>{{ e.vendor ?? '—' }}</span></div>
+              <div class="card-actions">
+                <button type="button" (click)="openExpenseModal(e)">Edit</button>
+                <button type="button" class="danger" (click)="deleteExpense(e.id)">Delete</button>
+              </div>
+            </article>
+          }
+        </div>
       </div>
     }
   }

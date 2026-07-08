@@ -92,11 +92,9 @@
   } @else {
     <section class="panel inner">
       <h2>Recent referrals</h2>
-      <div class="table-wrap">
+      <div class="table-wrap desktop-only">
         <table>
-          <thead>
-            <tr><th>Referrer</th><th>Friend</th><th>Code</th><th>Status</th><th>Date</th></tr>
-          </thead>
+          <thead><tr><th>Referrer</th><th>Friend</th><th>Code</th><th>Status</th><th>Date</th></tr></thead>
           <tbody>
             @for (row of referrals(); track $index) {
               <tr>
@@ -109,6 +107,17 @@
             }
           </tbody>
         </table>
+      </div>
+      <div class="mobile-row-cards">
+        @for (row of referrals(); track $index) {
+          <article class="mobile-row-card">
+            <div class="card-head">
+              <strong>{{ $any(row).referrer?.name }} → {{ $any(row).referredUser?.name }}</strong>
+              <span>{{ $any(row).status }}</span>
+            </div>
+            <div class="card-row"><span>{{ $any(row).referralCode?.code }}</span><span>{{ $any(row).createdAt | date:'mediumDate' }}</span></div>
+          </article>
+        }
       </div>
     </section>
   }

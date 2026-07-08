@@ -43,7 +43,7 @@
 
   <section class="support-section">
     <h3>Consultation timeline (read-only)</h3>
-    <div class="support-table-wrap">
+    <div class="support-table-wrap desktop-only">
       <table class="support-table">
         <thead>
           <tr>
@@ -68,6 +68,18 @@
           }
         </tbody>
       </table>
+    </div>
+    <div class="mobile-row-cards">
+      @for (c of ctx.consultations; track c.id) {
+        <article class="mobile-row-card">
+          <div class="card-head">
+            <strong>{{ c.diseaseName }}</strong>
+            <span>{{ c.status }}</span>
+          </div>
+          <div class="card-row"><span>{{ c.paymentStatus || '—' }}</span><span>Dr. {{ c.doctorName || 'Unassigned' }}</span></div>
+          <div class="card-row"><span>Rx / msgs</span><span>{{ c.prescriptionCount }} / {{ c.messageCount }}</span></div>
+        </article>
+      }
     </div>
   </section>
 
