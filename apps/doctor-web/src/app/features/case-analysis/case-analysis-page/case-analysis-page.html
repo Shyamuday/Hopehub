@@ -589,14 +589,30 @@
             </div>
             <button
               type="button"
+              class="btn-secondary btn-block suggest-remedies-inline"
+              (click)="suggestRemediesFromCase()"
+              [disabled]="suggestingRemedies() || repertorizing()"
+            >
+              {{ suggestingRemedies() ? 'Matching rubrics…' : 'Suggest remedies from case data' }}
+            </button>
+            <button
+              type="button"
               class="btn-primary btn-block repertorize-inline"
               (click)="runRepertorization()"
-              [disabled]="repertorizing()"
+              [disabled]="repertorizing() || !selectedRubrics().length"
             >
               {{ repertorizing() ? 'Repertorizing…' : 'Repertorize case' }}
             </button>
           } @else {
             <p class="hint">Search and add symptoms that match the patient. Assign weight 1–4 by importance.</p>
+            <button
+              type="button"
+              class="btn-secondary btn-block suggest-remedies-inline"
+              (click)="suggestRemediesFromCase()"
+              [disabled]="suggestingRemedies()"
+            >
+              {{ suggestingRemedies() ? 'Matching rubrics…' : 'Suggest remedies from case data' }}
+            </button>
           }
         </section>
         }

@@ -12,6 +12,7 @@ import {
 } from '../../services/doctor-prescribing-preferences.js';
 import { resolvePatientLastPrescriptionMethodOptionId, loadPatientCaseHistory } from '../../services/patient-case-history.js';
 import { suggestApproachField, type FieldSuggestionRequest } from '../../services/approach-field-suggestions.js';
+import { applyApproachRemedySuggestions, suggestRemediesFromApproach } from '../../services/approach-remedy-suggestions.js';
 import {
   analysisIdFromReq,
   assertDoctorConsultationAccess,
@@ -24,6 +25,12 @@ import {
 const rubricSelectionSchema = z.object({
   rubricId: z.string().min(1),
   weight: z.number().int().min(1).max(4).default(1)
+});
+
+const suggestRemediesSchema = z.object({
+  apply: z.boolean().optional().default(true),
+  maxPhrases: z.number().int().min(1).max(24).optional(),
+  maxRubrics: z.number().int().min(1).max(30).optional()
 });
 
 const fieldSuggestionSchema = z.object({
@@ -432,6 +439,51 @@ export function registerCaseAnalysisRoutes(router: Router) {
       }
 
       res.json(result);
+    })
+  );
+
+  router.post(
+    '/doctor/case-analyses/:analysisId/suggest-remedies',
+    authRequired,
+    allowRoles(Role.DOCTOR, Role.ADMIN),
+    asyncRoute(async (req, res) => {
+      const analysisId = analysisIdFromReq(req);
+      const existing = await loadCaseAnalysisForDoctor(req, res, analysisId);
+      if (!existing) return;
+
+      const body = suggestRemediesSchema.parse(req.body ?? {});
+
+      if (body.apply) {
+        const suggestion = await applyApproachRemedySuggestions({
+          analysisId,
+          maxPhrases: body.maxPhrases,
+          maxRubrics: body.maxRubrics
+        });
+        if (!suggestion) {
+          return res.status(404).json({
+            message:
+              'Could not derive rubrics from approach data. Fill case sheet or approach panels with symptom text first.'
+          });
+        }
+        const analysis = await prisma.caseAnalysis.findUnique({
+          where: { id: analysisId },
+          include: caseAnalysisInclude
+        });
+        return res.json({ ...suggestion, analysis });
+      }
+
+      const suggestion = await suggestRemediesFromApproach({
+        analysisId,
+        maxPhrases: body.maxPhrases,
+        maxRubrics: body.maxRubrics
+      });
+      if (!suggestion) {
+        return res.status(404).json({
+          message:
+            'Could not derive rubrics from approach data. Fill case sheet or approach panels with symptom text first.'
+        });
+      }
+      res.json(suggestion);
     })
   );
 }

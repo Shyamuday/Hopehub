@@ -984,8 +984,13 @@
       box-shadow: 0 -6px 20px rgba(15, 23, 42, 0.08);
     }
 
-    .workspace-mobile .repertorize-inline {
+    .workspace-mobile .repertorize-inline,
+    .workspace-mobile .suggest-remedies-inline {
       display: none;
+    }
+
+    .suggest-remedies-inline {
+      margin-bottom: 0.5rem;
     }
 
     .stepper-sticky {

@@ -165,6 +165,7 @@ export class CaseAnalysisPage implements OnDestroy, OnInit {
   readonly fieldSuggestingKey = signal<string | null>(null);
   readonly creatingAnalysis = signal(false);
   readonly repertorizing = signal(false);
+  readonly suggestingRemedies = signal(false);
   readonly selectingRemedyId = signal('');
   readonly focusedRemedy = signal<RepertoryRemedyRef | null>(null);
   readonly materiaMedica = signal<MateriaMedicaResponse | null>(null);
@@ -1257,9 +1258,35 @@ export class CaseAnalysisPage implements OnDestroy, OnInit {
         this.workspaceTab.set('results');
       }
     } catch {
-      this.error.set('Repertorization failed. Add rubrics and try again.');
+      this.error.set('Repertorization failed. Check rubrics and try again.');
     } finally {
       this.repertorizing.set(false);
+    }
+  }
+
+  async suggestRemediesFromCase() {
+    const currentAnalysis = this.analysis();
+    if (!currentAnalysis) return;
+
+    this.suggestingRemedies.set(true);
+    this.error.set('');
+    try {
+      const response = await this.api.suggestRemediesFromApproach(currentAnalysis.id, { apply: true });
+      if (response.analysis) {
+        this.syncAnalysisInList(response.analysis);
+        this.hydrateFromAnalysis(response.analysis);
+      }
+      this.setActiveStep('remedy-select');
+      this.message.set(response.summary);
+      if (this.isMobile()) {
+        this.workspaceTab.set('results');
+      }
+    } catch {
+      this.error.set(
+        'Could not suggest remedies from case data. Fill approach fields with symptoms, or add rubrics manually.'
+      );
+    } finally {
+      this.suggestingRemedies.set(false);
     }
   }
 

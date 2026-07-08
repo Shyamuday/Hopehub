@@ -11,6 +11,7 @@ export const CROSS_APP_API_PATHS = {
     CONSULTATION_CASE_ANALYSES: (consultationId: string) => `/doctor/consultations/${consultationId}/case-analyses`,
     CASE_ANALYSIS: (analysisId: string) => `/doctor/case-analyses/${analysisId}`,
     CASE_ANALYSIS_FIELD_SUGGESTIONS: (analysisId: string) => `/doctor/case-analyses/${analysisId}/field-suggestions`,
+    CASE_ANALYSIS_SUGGEST_REMEDIES: (analysisId: string) => `/doctor/case-analyses/${analysisId}/suggest-remedies`,
     PATIENT_CASE_HISTORY: (patientId: string) => `/doctor/patients/${patientId}/case-history`
   },
   ADMIN: {

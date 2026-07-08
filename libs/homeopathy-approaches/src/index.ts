@@ -15,4 +15,5 @@ export * from './approach-field-helpers';
 export * from './specialized-panel-defs';
 export * from './approach-ai-context';
 export * from './field-guidance';
+export * from './approach-search-phrases';
 export * from './prescription-handoff';
