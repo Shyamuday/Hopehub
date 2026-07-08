@@ -1,4 +1,3 @@
-import { DatePipe } from '@angular/common';
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { ConsultationNavigationService } from '../../../../core/services/consultation-navigation.service';
 import { WorklistApiService, type WorklistItem } from '../../../worklist/worklist-api.service';
@@ -6,7 +5,6 @@ import { WorklistApiService, type WorklistItem } from '../../../worklist/worklis
 @Component({
   selector: 'app-prescription-consultation-picker',
   standalone: true,
-  imports: [DatePipe],
   templateUrl: './prescription-consultation-picker.html',
   styleUrl: './prescription-consultation-picker.scss',
 })

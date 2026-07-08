@@ -1,7 +1,7 @@
 <section class="hero">
   <div>
-    <h2>Worklist</h2>
-    <p class="muted">Your active cases — assigned, in progress, and follow-ups due.</p>
+    <h2>{{ pageTitle() }}</h2>
+    <p class="muted">{{ pageDescription() }}</p>
   </div>
   <button type="button" (click)="load()" [disabled]="loading() || refreshing()">
     {{ loading() ? 'Loading…' : refreshing() ? 'Refreshing…' : 'Refresh' }}
@@ -112,6 +112,9 @@
 @if (showSection('ASSIGNED')) {
 <section class="panel">
   <h3>Assigned</h3>
+  @if (loading() && !assigned().length) {
+    <p class="loading-text">Loading assigned cases…</p>
+  }
   @for (item of assigned(); track item.id) {
     <article class="card">
       <strong>{{ item.patient?.name || 'Patient' }} — {{ item.disease?.name || 'Consultation' }}</strong>
@@ -148,6 +151,9 @@
 @if (showSection('IN_PROGRESS')) {
 <section class="panel">
   <h3>In progress</h3>
+  @if (loading() && !inProgress().length) {
+    <p class="loading-text">Loading in-progress cases…</p>
+  }
   @for (item of inProgress(); track item.id) {
     <article class="card">
       <strong>{{ item.patient?.name || 'Patient' }} — {{ item.disease?.name || 'Consultation' }}</strong>

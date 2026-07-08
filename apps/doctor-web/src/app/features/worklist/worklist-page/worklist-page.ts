@@ -1,4 +1,4 @@
-import { CommonModule, DatePipe } from '@angular/common';
+import { CommonModule, DatePipe, formatDate } from '@angular/common';
 import { Component, inject, signal } from '@angular/core';
 import { form, FormField } from '@angular/forms/signals';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -24,10 +24,9 @@ export class WorklistPage {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly consultationNav = inject(ConsultationNavigationService);
-  private readonly datePipe = inject(DatePipe);
 
   private readonly worklistMetaFieldDefs = worklistItemMetaFields((iso) =>
-    this.datePipe.transform(iso, 'mediumDate'),
+    formatDate(iso, 'mediumDate', 'en-US'),
   );
 
   readonly loading = signal(false);
@@ -44,6 +43,19 @@ export class WorklistPage {
   readonly followUpDue = signal<WorklistItem[]>([]);
   readonly expandedCardId = signal<string | null>(null);
 
+  private syncViewFromRoute(params: { get(name: string): string | null }) {
+    const raw = params.get('view');
+    const view: WorklistView =
+      raw === 'ASSIGNED' || raw === 'IN_PROGRESS' || raw === 'FOLLOW_UP_DUE' || raw === 'ALL'
+        ? raw
+        : 'ALL';
+
+    if (this.filterModel().view !== view) {
+      this.filterModel.update((model) => ({ ...model, view }));
+      void this.load();
+    }
+  }
+
   constructor() {
     const initial = this.filterModel();
     const cached = this.worklistApi.peekSnapshot(initial.view, initial.search);
@@ -52,18 +64,7 @@ export class WorklistPage {
     }
 
     this.route.queryParamMap.subscribe((params) => {
-      const view = params.get('view');
-      if (
-        view === 'ASSIGNED' ||
-        view === 'IN_PROGRESS' ||
-        view === 'FOLLOW_UP_DUE' ||
-        view === 'ALL'
-      ) {
-        if (this.filterModel().view !== view) {
-          this.filterModel.update((model) => ({ ...model, view }));
-          void this.load();
-        }
-      }
+      this.syncViewFromRoute(params);
     });
     void this.load({ preferCache: Boolean(cached) });
   }
@@ -119,6 +120,32 @@ export class WorklistPage {
 
   showSection(section: 'ASSIGNED' | 'IN_PROGRESS' | 'FOLLOW_UP_DUE') {
     return this.filterModel().view === 'ALL' || this.filterModel().view === section;
+  }
+
+  pageTitle() {
+    switch (this.filterModel().view) {
+      case 'ASSIGNED':
+        return 'Assigned cases';
+      case 'IN_PROGRESS':
+        return 'In-progress cases';
+      case 'FOLLOW_UP_DUE':
+        return 'Follow-up due';
+      default:
+        return 'Worklist';
+    }
+  }
+
+  pageDescription() {
+    switch (this.filterModel().view) {
+      case 'ASSIGNED':
+        return 'Newly assigned consultations waiting for you to start.';
+      case 'IN_PROGRESS':
+        return 'Cases you are actively working on right now.';
+      case 'FOLLOW_UP_DUE':
+        return 'Patients due for a follow-up prescription or review.';
+      default:
+        return 'Your active cases — assigned, in progress, and follow-ups due.';
+    }
   }
 
   setView(view: WorklistView) {

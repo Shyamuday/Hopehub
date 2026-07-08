@@ -226,6 +226,14 @@ export class DoctorShell implements OnInit, OnDestroy {
     return (item.children || []).filter((child) => child.enabled);
   }
 
+  onNavChildClick(child: DoctorNavChildLink, event: MouseEvent) {
+    event.preventDefault();
+    void this.router.navigate([child.path], {
+      queryParams: child.queryParams ?? { view: null },
+    });
+    this.closeMenu();
+  }
+
   isGroup(item: DoctorNavItemDef) {
     return !!item.children?.length && !item.path;
   }
@@ -323,11 +331,9 @@ export class DoctorShell implements OnInit, OnDestroy {
 
     if (path === `/${ROUTE_PATHS.WORKLIST}`) {
       if (currentPath !== path) return false;
-      if (!queryParams?.['view']) {
-        const view = tree.queryParams['view'];
-        return !view || view === 'ALL';
-      }
-      return tree.queryParams['view'] === queryParams['view'];
+      const currentView = tree.queryParams['view'] || 'ALL';
+      const targetView = queryParams?.['view'] || 'ALL';
+      return currentView === targetView;
     }
 
     if (path === `/${ROUTE_PATHS.REPERTORY_BROWSER}`) {

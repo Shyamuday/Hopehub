@@ -68,9 +68,9 @@
                 <div class="nav-subitems">
                   @for (child of visibleChildren(item); track child.id) {
                     <a
-                      [routerLink]="child.path"
-                      [queryParams]="child.queryParams || null"
+                      href="#"
                       [class.active]="isChildLinkActive(child)"
+                      (click)="onNavChildClick(child, $event)"
                     >
                       <span class="nav-sub-bullet" aria-hidden="true">•</span>
                       <span class="nav-label">{{ child.label }}</span>
@@ -82,7 +82,7 @@
           } @else if (item.path) {
             <a
               [routerLink]="item.path"
-              [queryParams]="item.queryParams || null"
+              [queryParams]="item.id === 'worklist' ? { view: null } : (item.queryParams || null)"
               [class.active]="isTopLinkActive(item)"
             >
               <span class="nav-icon" aria-hidden="true">{{ item.icon }}</span>
@@ -92,9 +92,9 @@
               <div class="nav-subitems nav-subitems--attached">
                 @for (child of visibleChildren(item); track child.id) {
                   <a
-                    [routerLink]="child.path"
-                    [queryParams]="child.queryParams || null"
+                    href="#"
                     [class.active]="isChildLinkActive(child)"
+                    (click)="onNavChildClick(child, $event)"
                   >
                     <span class="nav-sub-bullet" aria-hidden="true">•</span>
                     <span class="nav-label">{{ child.label }}</span>
@@ -169,10 +169,9 @@
                 <div class="nav-subitems">
                   @for (child of visibleChildren(item); track child.id) {
                     <a
-                      [routerLink]="child.path"
-                      [queryParams]="child.queryParams || null"
+                      href="#"
                       [class.active]="isChildLinkActive(child)"
-                      (click)="closeMenu()"
+                      (click)="onNavChildClick(child, $event)"
                     >
                       <span class="nav-sub-bullet" aria-hidden="true">•</span>
                       <span class="nav-label">{{ child.label }}</span>
@@ -184,7 +183,7 @@
           } @else if (item.path) {
             <a
               [routerLink]="item.path"
-              [queryParams]="item.queryParams || null"
+              [queryParams]="item.id === 'worklist' ? { view: null } : (item.queryParams || null)"
               [class.active]="isTopLinkActive(item)"
               (click)="closeMenu()"
             >
@@ -195,10 +194,9 @@
               <div class="nav-subitems nav-subitems--attached">
                 @for (child of visibleChildren(item); track child.id) {
                   <a
-                    [routerLink]="child.path"
-                    [queryParams]="child.queryParams || null"
+                    href="#"
                     [class.active]="isChildLinkActive(child)"
-                    (click)="closeMenu()"
+                    (click)="onNavChildClick(child, $event)"
                   >
                     <span class="nav-sub-bullet" aria-hidden="true">•</span>
                     <span class="nav-label">{{ child.label }}</span>
