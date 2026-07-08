@@ -304,27 +304,42 @@
         <section class="panel">
           <div class="panel-title-row">
             <h3>Symptom search</h3>
-            @if (sources().length) {
-              <select class="source-select" [formField]="searchForm.selectedSourceId">
-                @for (source of sources(); track source.id) {
-                  <option [value]="source.id">
-                    {{ source.name }}@if (source.rubricCount) { · {{ source.rubricCount | number }} rubrics }
-                  </option>
-                }
-              </select>
-            }
+            <div class="symptom-search-toolbar">
+              <div class="mode-row">
+                <button type="button" class="mode-btn" [class.active]="searchMode() === 'repertory'" (click)="switchSearchMode('repertory')">Repertory</button>
+                <button type="button" class="mode-btn" [class.active]="searchMode() === 'materia-medica'" (click)="switchSearchMode('materia-medica')">Materia Medica</button>
+              </div>
+              @if (searchMode() === 'repertory' && sources().length) {
+                <select class="source-select" [formField]="searchForm.selectedSourceId">
+                  @for (source of sources(); track source.id) {
+                    <option [value]="source.id">
+                      {{ source.name }}@if (source.rubricCount) { · {{ source.rubricCount | number }} rubrics }
+                    </option>
+                  }
+                </select>
+              }
+              @if (searchMode() === 'materia-medica' && mmSources().length) {
+                <select class="source-select" [formField]="searchForm.selectedMmSourceId">
+                  @for (source of mmSources(); track source.id) {
+                    <option [value]="source.id">
+                      {{ source.name }}@if (source.author) { · {{ source.author }} }
+                    </option>
+                  }
+                </select>
+              }
+            </div>
           </div>
 
           <div class="search-box">
             <div class="rubric-search-field">
               <input
                 [formField]="searchForm.rubricQuery"
-                [placeholder]="activeApproach().repertory.searchPlaceholder || 'Search rubrics…'"
+                [placeholder]="symptomSearchPlaceholder()"
                 (focus)="onRubricSearchFocus()"
-                (keyup.enter)="searchRubrics()"
+                (keyup.enter)="runSymptomSearch()"
               />
 
-              @if (rubricSuggestionsOpen()) {
+              @if (searchMode() === 'repertory' && rubricSuggestionsOpen()) {
                 <div class="rubric-suggest-panel" role="listbox" aria-label="Rubric suggestions">
                   @if (suggesting()) {
                     <p class="hint suggest-status">Finding matches…</p>
@@ -355,21 +370,23 @@
                 </div>
               }
             </div>
-            @if (!standalone && consultation()?.intakeAnswers) {
+            @if (!standalone && consultation()?.intakeAnswers && searchMode() === 'repertory') {
               <button type="button" class="btn-secondary" (click)="suggestFromIntake()">From intake</button>
             }
-            <button type="button" class="btn-primary" (click)="searchRubrics()" [disabled]="searching() || searchModel().rubricQuery.trim().length < 2">
+            <button type="button" class="btn-primary" (click)="runSymptomSearch()" [disabled]="searching() || searchModel().rubricQuery.trim().length < 2">
               {{ searching() ? 'Searching…' : 'Search' }}
             </button>
           </div>
 
           @if (searching()) {
-            <p class="hint">Searching repertory…</p>
-          } @else if (searchModel().rubricQuery.trim().length >= 2 && !searchResults().length && searchedOnce()) {
+            <p class="hint">{{ searchMode() === 'materia-medica' ? 'Searching materia medica…' : 'Searching repertory…' }}</p>
+          } @else if (searchMode() === 'repertory' && searchModel().rubricQuery.trim().length >= 2 && !searchResults().length && searchedOnce()) {
             <p class="hint">No rubrics found. Try fewer or different keywords.</p>
+          } @else if (searchMode() === 'materia-medica' && searchModel().rubricQuery.trim().length >= 2 && !mmSearchResults().length && searchedOnce()) {
+            <p class="hint">No materia medica sections found.</p>
           }
 
-          @if (searchResults().length) {
+          @if (searchMode() === 'repertory' && searchResults().length) {
             <div class="result-list">
               @for (rubric of searchResults(); track rubric.id) {
                 <article class="rubric-result" [class.added]="hasRubric(rubric.id)">
@@ -405,6 +422,40 @@
                 </article>
               }
             </div>
+          }
+
+          @if (searchMode() === 'materia-medica' && mmSearchResults().length && !selectedMmSearchResult()) {
+            <div class="mm-result-list">
+              @for (result of mmSearchResults(); track result.remedyId) {
+                <button type="button" class="mm-result-card" (click)="openMmSearchResult(result)">
+                  <strong>{{ result.remedyName }}</strong>
+                  <span class="abbrev">{{ result.remedyAbbreviation }}</span>
+                  <span class="muted">{{ result.sections.length }} matching section{{ result.sections.length === 1 ? '' : 's' }}</span>
+                </button>
+              }
+            </div>
+          }
+
+          @if (searchMode() === 'materia-medica' && selectedMmSearchResult(); as mm) {
+            <section class="mm-panel mm-inline-panel">
+              <div class="panel-title-row">
+                <div>
+                  <h3>{{ mm.remedyName }}</h3>
+                  <span class="abbrev">{{ mm.remedyAbbreviation }}</span>
+                </div>
+                <button type="button" class="btn-icon mm-close" (click)="closeMmSearchResult()" title="Back to results">×</button>
+              </div>
+              <div class="mm-sections">
+                @for (section of mm.sections; track section.id) {
+                  <article class="mm-section">
+                    @if (section.heading) {
+                      <h4>{{ section.heading }}</h4>
+                    }
+                    <p>{{ section.content }}</p>
+                  </article>
+                }
+              </div>
+            </section>
           }
         </section>
 

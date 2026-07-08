@@ -114,6 +114,48 @@
   color: #0f62fe;
 }
 
+.pill-count {
+  display: inline-block;
+  margin-left: 0.35rem;
+  font-size: 0.72rem;
+  opacity: 0.75;
+}
+
+.issue-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 0.75rem;
+}
+
+.issue-card {
+  display: grid;
+  gap: 0.35rem;
+  text-align: left;
+  border: 1px solid #d5ddea;
+  border-radius: 14px;
+  background: #fff;
+  padding: 0.85rem 1rem;
+  cursor: pointer;
+}
+
+.issue-card.active {
+  border-color: #0f62fe;
+  background: #f4f8ff;
+}
+
+.issue-fee,
+.issue-fee-line {
+  color: #166534;
+  font-size: 0.84rem;
+}
+
+.issue-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  margin-top: 0.75rem;
+}
+
 .content-grid.two {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }

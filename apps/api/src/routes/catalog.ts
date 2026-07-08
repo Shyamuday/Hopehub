@@ -4,7 +4,12 @@ import { Role } from '@prisma/client';
 import { authRequired, allowRoles } from '../auth.js';
 import { prisma } from '../db.js';
 import { DEFAULT_BILLING_PLANS } from '../constants/billing.constants.js';
-import { asyncRoute, routeParam } from '../utils/helpers.js';
+import { asyncRoute, routeParam, queryText } from '../utils/helpers.js';
+import {
+  DISEASE_PUBLIC_CATEGORIES,
+  DISEASE_PUBLIC_CATEGORY_KEYS
+} from '../constants/disease-categories.constants.js';
+import { groupDiseasesByCategory, syncDiseaseCatalog } from '../services/disease-catalog.js';
 
 export const router = Router();
 
@@ -31,13 +36,46 @@ export async function ensureBillingPlans() {
 // ─── Public disease list ───────────────────────────────────────────────────────
 
 router.get(
-  '/diseases',
+  '/diseases/categories',
   asyncRoute(async (_req, res) => {
+    res.json({ categories: DISEASE_PUBLIC_CATEGORIES });
+  })
+);
+
+router.get(
+  '/diseases',
+  asyncRoute(async (req, res) => {
+    const q = queryText(req, 'q').trim() || undefined;
+    const category = queryText(req, 'category').trim() || undefined;
+    const grouped = queryText(req, 'grouped') !== 'false';
+
     const diseases = await prisma.disease.findMany({
-      where: { isActive: true },
+      where: {
+        isActive: true,
+        ...(category ? { publicCategory: category } : {}),
+        ...(q ? { name: { contains: q, mode: 'insensitive' } } : {})
+      },
       orderBy: [{ publicCategory: 'asc' }, { name: 'asc' }]
     });
-    res.json({ diseases });
+
+    if (!grouped) {
+      res.json({ diseases });
+      return;
+    }
+
+    const groupedRows = diseases.map((disease) => ({
+      id: disease.id,
+      name: disease.name,
+      description: disease.description,
+      publicCategory: disease.publicCategory,
+      feeInPaise: disease.feeInPaise,
+      isActive: disease.isActive
+    }));
+
+    res.json({
+      diseases,
+      ...groupDiseasesByCategory(groupedRows, { includeEmpty: !q && !category })
+    });
   })
 );
 
@@ -58,12 +96,64 @@ router.get(
 // ─── Admin disease CRUD (kept alongside public routes for cohesion) ────────────
 
 router.get(
-  '/admin/diseases/list',
+  '/admin/diseases/categories',
   authRequired,
   allowRoles(Role.ADMIN),
   asyncRoute(async (_req, res) => {
-    const diseases = await prisma.disease.findMany({ orderBy: { name: 'asc' } });
+    res.json({ categories: DISEASE_PUBLIC_CATEGORIES });
+  })
+);
+
+router.get(
+  '/admin/diseases/list',
+  authRequired,
+  allowRoles(Role.ADMIN),
+  asyncRoute(async (req, res) => {
+    const q = queryText(req, 'q').trim() || undefined;
+    const category = queryText(req, 'category').trim() || undefined;
+    const grouped = queryText(req, 'grouped') !== 'false';
+
+    const diseases = await prisma.disease.findMany({
+      where: {
+        ...(category ? { publicCategory: category } : {}),
+        ...(q ? { name: { contains: q, mode: 'insensitive' } } : {})
+      },
+      orderBy: [{ publicCategory: 'asc' }, { name: 'asc' }]
+    });
+
+    if (grouped) {
+      const groupedDiseases = diseases.map((disease) => ({
+        id: disease.id,
+        name: disease.name,
+        description: disease.description,
+        publicCategory: disease.publicCategory,
+        feeInPaise: disease.feeInPaise,
+        isActive: disease.isActive
+      }));
+      res.json({
+        diseases,
+        ...groupDiseasesByCategory(groupedDiseases, { includeEmpty: !q && !category })
+      });
+      return;
+    }
+
     res.json({ diseases });
+  })
+);
+
+router.post(
+  '/admin/diseases/sync-catalog',
+  authRequired,
+  allowRoles(Role.ADMIN),
+  asyncRoute(async (req, res) => {
+    const body = z
+      .object({
+        defaultFeeInPaise: z.number().int().positive().optional()
+      })
+      .parse(req.body ?? {});
+
+    const result = await syncDiseaseCatalog(body.defaultFeeInPaise);
+    res.json(result);
   })
 );
 
@@ -78,7 +168,7 @@ router.post(
         description: z.string().min(3),
         feeInPaise: z.number().int().positive(),
         intakeQuestions: z.array(z.string().min(3)).min(1),
-        publicCategory: z.string().min(2).max(80).optional()
+        publicCategory: z.enum(DISEASE_PUBLIC_CATEGORY_KEYS as [string, ...string[]]).optional()
       })
       .parse(req.body);
 
@@ -99,7 +189,7 @@ router.put(
         feeInPaise: z.number().int().positive(),
         isActive: z.boolean(),
         intakeQuestions: z.array(z.string().min(1)).min(1),
-        publicCategory: z.string().min(2).max(80).nullable().optional()
+        publicCategory: z.enum(DISEASE_PUBLIC_CATEGORY_KEYS as [string, ...string[]]).nullable().optional()
       })
       .parse(req.body);
 

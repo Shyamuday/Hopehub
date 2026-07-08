@@ -64,6 +64,7 @@ export class BookConsultationPanelComponent implements OnChanges {
   @Input() diseases: Disease[] = [];
   @Input() plans: BillingPlan[] = [];
   @Input() disabled = false;
+  @Input() initialDiseaseId = '';
   @Output() booked = new EventEmitter<BookConsultationPayload>();
 
   readonly bookingFormModel = signal<BookingForm>(emptyBookingForm());
@@ -76,7 +77,15 @@ export class BookConsultationPanelComponent implements OnChanges {
   ngOnChanges() {
     const current = this.bookingFormModel();
     const updates: Partial<BookingForm> = {};
-    if (!current.selectedDiseaseId && this.diseases.length) {
+    const preferredDiseaseId =
+      this.initialDiseaseId ||
+      (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('pendingDiseaseId') || '' : '');
+    if (preferredDiseaseId && this.diseases.some((d) => d.id === preferredDiseaseId)) {
+      updates.selectedDiseaseId = preferredDiseaseId;
+      if (typeof sessionStorage !== 'undefined') {
+        sessionStorage.removeItem('pendingDiseaseId');
+      }
+    } else if (!current.selectedDiseaseId && this.diseases.length) {
       updates.selectedDiseaseId = this.diseases[0].id;
     }
     if (!current.selectedPlanCode) {

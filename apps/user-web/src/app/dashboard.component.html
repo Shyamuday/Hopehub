@@ -26,6 +26,7 @@
           <app-book-consultation-panel
             [diseases]="diseases()"
             [plans]="billingPlans()"
+            [initialDiseaseId]="pendingDiseaseIdValue()"
             [disabled]="isProcessing()"
             (booked)="onBooked($event)"
           />

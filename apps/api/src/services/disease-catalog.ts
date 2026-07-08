@@ -4,6 +4,7 @@ import {
   DEFAULT_DISEASE_INTAKE_QUESTIONS,
   DISEASE_PUBLIC_CATEGORIES
 } from '../constants/disease-categories.constants.js';
+import { DISEASE_CATALOG_TEMPLATE } from '../constants/disease-catalog-template.constants.js';
 import { prisma } from '../db.js';
 import { normalizeOptionLabel } from '../utils/helpers.js';
 
@@ -41,11 +42,20 @@ export async function listDiseasesForDoctor(filters: {
   limit?: number;
   activeOnly?: boolean;
 }) {
+  return listDiseases(filters);
+}
+
+export async function listDiseases(filters: {
+  q?: string;
+  category?: string;
+  limit?: number;
+  activeOnly?: boolean;
+}) {
   const q = filters.q?.trim();
 
   return prisma.disease.findMany({
     where: {
-      ...(filters.activeOnly !== false ? { isActive: true } : {}),
+      ...(filters.activeOnly === false ? {} : { isActive: true }),
       ...(filters.category ? { publicCategory: filters.category } : {}),
       ...(q ? { name: { contains: q, mode: 'insensitive' } } : {})
     },
@@ -152,4 +162,40 @@ export async function createDoctorDisease(input: {
   });
 
   return disease;
+}
+
+export async function syncDiseaseCatalog(defaultFeeInPaise = DEFAULT_DOCTOR_DISEASE_FEE_PAISE) {
+  let created = 0;
+  let categorized = 0;
+
+  for (const group of DISEASE_CATALOG_TEMPLATE) {
+    for (const name of group.names) {
+      const existing = await prisma.disease.findUnique({ where: { name } });
+      if (existing) {
+        if (!existing.publicCategory) {
+          await prisma.disease.update({
+            where: { id: existing.id },
+            data: { publicCategory: group.publicCategory }
+          });
+          categorized += 1;
+        }
+        continue;
+      }
+
+      await prisma.disease.create({
+        data: {
+          name,
+          description: `Consultation for ${name}.`,
+          publicCategory: group.publicCategory,
+          feeInPaise: defaultFeeInPaise,
+          intakeQuestions: DEFAULT_DISEASE_INTAKE_QUESTIONS,
+          isActive: true
+        }
+      });
+      created += 1;
+    }
+  }
+
+  const total = await prisma.disease.count();
+  return { created, categorized, total };
 }

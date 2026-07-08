@@ -6,7 +6,7 @@ import { DEFAULT_SNOOZE_MINUTES } from './core/constants/timing.constants';
 import { RAZORPAY_CHECKOUT } from './core/constants/branding.constants';
 import { SOCKET_EVENTS, SOCKET_TRANSPORTS } from './core/constants/socket.constants';
 import { environment } from '../environments/environment';
-import { BillingPlan, Consultation, Doctor, LabResult } from './models';
+import { BillingPlan, Consultation, Doctor, GroupedDiseaseCategory, LabResult } from './models';
 import { ClinicApiClient } from './clinic-api/clinic-api.client';
 import {
   mapConsultationFromApi,
@@ -24,6 +24,10 @@ export class ClinicApiService {
 
   diseases() {
     return from(this.fetchDiseases());
+  }
+
+  diseasesGrouped(params?: { q?: string; category?: string }) {
+    return from(this.fetchDiseasesGrouped(params));
   }
 
   consultations() {
@@ -232,8 +236,29 @@ export class ClinicApiService {
   }
 
   private async fetchDiseases() {
-    const response = await this.client.apiFetch<{ diseases: Array<Record<string, unknown>> }>('/diseases');
+    const response = await this.client.apiFetch<{ diseases: Array<Record<string, unknown>> }>('/diseases?grouped=false');
     return { diseases: (response.diseases || []).map((row) => mapDiseaseFromApi(row)) };
+  }
+
+  private async fetchDiseasesGrouped(params?: { q?: string; category?: string }) {
+    const search = new URLSearchParams({ grouped: 'true' });
+    if (params?.q?.trim()) search.set('q', params.q.trim());
+    if (params?.category?.trim()) search.set('category', params.category.trim());
+
+    const response = await this.client.apiFetch<{
+      diseases: Array<Record<string, unknown>>;
+      categories?: GroupedDiseaseCategory[];
+      uncategorized?: Array<Record<string, unknown>>;
+    }>(`/diseases?${search.toString()}`);
+
+    return {
+      diseases: (response.diseases || []).map((row) => mapDiseaseFromApi(row)),
+      categories: (response.categories || []).map((group) => ({
+        ...group,
+        diseases: group.diseases.map((row) => mapDiseaseFromApi(row as Record<string, unknown>))
+      })),
+      uncategorized: (response.uncategorized || []).map((row) => mapDiseaseFromApi(row))
+    };
   }
 
   private async fetchConsultations() {

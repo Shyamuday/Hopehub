@@ -8,69 +8,77 @@
           <p>{{ copy.body }}</p>
         </section>
 
-        <section class="panel">
-          <p class="eyebrow">{{ copy.categoryEyebrow }}</p>
-          <div class="category-pills">
-            @for (category of categories; track category.id) {
-              <button
-                type="button"
-                class="category-pill"
-                [class.active]="selectedCategoryId() === category.id"
-                (click)="selectCategory(category.id)">
-                {{ category.label }}
-              </button>
-            }
-          </div>
-        </section>
-
-        @if (selectedCategory; as category) {
+        @if (loading()) {
           <section class="panel">
-            <p class="eyebrow">{{ copy.subSectionEyebrow }}</p>
+            <p class="loading-text">Loading treatments…</p>
+          </section>
+        } @else if (error()) {
+          <section class="panel">
+            <p class="error">{{ error() }}</p>
+            <button type="button" class="primary home-action" (click)="loadCatalog()">Retry</button>
+          </section>
+        } @else if (!visibleCategories().length) {
+          <section class="panel">
+            <h2>{{ copy.emptyTitle }}</h2>
+            <p>{{ copy.emptyBody }}</p>
+          </section>
+        } @else {
+          <section class="panel">
+            <p class="eyebrow">{{ copy.categoryEyebrow }}</p>
             <div class="category-pills">
-              @for (subSection of category.subSections; track subSection.id) {
+              @for (category of visibleCategories(); track category.key) {
                 <button
                   type="button"
                   class="category-pill"
-                  [class.active]="selectedSubSectionId() === subSection.id"
-                  (click)="selectSubSection(subSection.id)">
-                  {{ subSection.label }}
+                  [class.active]="selectedCategoryKey() === category.key"
+                  (click)="selectCategory(category.key)">
+                  {{ category.label }}
+                  <span class="pill-count">{{ category.diseases.length }}</span>
                 </button>
               }
             </div>
           </section>
-        }
 
-        <section class="panel">
-          @if (selectedSubSection; as subSection) {
-            <p class="eyebrow">{{ copy.issueEyebrow }}</p>
-            <h2>Choose your issue in {{ subSection.label }}</h2>
-            <div class="issue-grid">
-              @for (diseaseName of subSection.diseaseNames; track diseaseName) {
-                <button
-                  type="button"
-                  class="issue-card"
-                  [class.active]="selectedIssueName() === diseaseName"
-                  (click)="selectIssue(diseaseName)">
-                  <span>{{ diseaseName }}</span>
-                </button>
-              }
-            </div>
-
-            @if (selectedIssueName()) {
-              <section class="issue-selection panel">
-                <p class="eyebrow">{{ copy.issueSelectionEyebrow }}</p>
-                <h3>{{ selectedIssueName() }}</h3>
-                <p>{{ copy.issueSelectionBody }}</p>
-                <a class="primary home-action" href="/login" (click)="openAuthOverlay($event)">{{ copy.issueSelectionCta }}</a>
-              </section>
-            }
-          } @else {
-            <article class="panel">
-              <h2>{{ copy.emptyTitle }}</h2>
-              <p>{{ copy.emptyBody }}</p>
-            </article>
+          @if (selectedCategory(); as category) {
+            <section class="panel">
+              <p class="eyebrow">{{ copy.issueEyebrow }}</p>
+              <h2>Choose your concern in {{ category.label }}</h2>
+              <div class="issue-grid">
+                @for (disease of category.diseases; track disease.id) {
+                  <button
+                    type="button"
+                    class="issue-card"
+                    [class.active]="selectedDisease()?.id === disease.id"
+                    (click)="selectDisease(disease)">
+                    <strong>{{ disease.name }}</strong>
+                    <span class="issue-fee">{{ disease.feeInPaise / 100 | currency: currencyCode }}</span>
+                  </button>
+                }
+              </div>
+            </section>
           }
-        </section>
+
+          @if (selectedDisease(); as disease) {
+            <section class="issue-selection panel">
+              <p class="eyebrow">{{ copy.issueSelectionEyebrow }}</p>
+              <h3>{{ disease.name }}</h3>
+              <p>{{ disease.description }}</p>
+              <p class="issue-fee-line">
+                Consultation fee:
+                <strong>{{ disease.feeInPaise / 100 | currency: currencyCode }}</strong>
+              </p>
+              <div class="issue-actions">
+                <a
+                  class="primary home-action"
+                  [routerLink]="dashboardPath"
+                  [queryParams]="bookingQuery(disease.id)">
+                  {{ copy.issueSelectionCta }}
+                </a>
+                <a class="secondary home-action" href="/login" (click)="openAuthOverlay($event, disease.id)">Login to book</a>
+              </div>
+            </section>
+          }
+        }
       </main>
       <app-footer [whatsappLink]="whatsappLink" />
     </section>

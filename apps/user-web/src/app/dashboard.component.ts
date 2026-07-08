@@ -75,6 +75,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   readonly auth = inject(AuthService);
 
   private pendingConsultationId: string | null = null;
+  private pendingDiseaseId: string | null = null;
 
   readonly diseases = signal<Disease[]>([]);
   readonly billingPlans = signal<BillingPlan[]>([]);
@@ -130,12 +131,18 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   ngOnInit() {
     this.pendingConsultationId = this.route.snapshot.queryParamMap.get('consultationId');
+    this.pendingDiseaseId = this.route.snapshot.queryParamMap.get('diseaseId');
     this.route.queryParamMap.subscribe((params) => {
       this.pendingConsultationId = params.get('consultationId');
+      this.pendingDiseaseId = params.get('diseaseId');
       this.applyPendingConsultation();
     });
     this.loadBaseData();
     this.realtimeChannel = this.dataService.watchChanges(() => this.loadConsultations());
+  }
+
+  pendingDiseaseIdValue() {
+    return this.pendingDiseaseId || '';
   }
 
   private applyPendingConsultation() {

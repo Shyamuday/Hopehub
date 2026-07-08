@@ -8,6 +8,8 @@ import type {
   CaseAnalysis,
   ConsultationSummary,
   MateriaMedicaResponse,
+  MateriaMedicaSearchResult,
+  MateriaMedicaSource,
   PatientCaseHistory,
   RepertorySource,
   RubricSearchResult,
@@ -24,6 +26,21 @@ export class CaseAnalysisApiService {
     return firstValueFrom(
       this.http.get<{ sources: RepertorySource[] }>(`${this.apiBase}${API_PATHS.DOCTOR.REPERTORY_SOURCES}`)
     ).then((response) => response.sources);
+  }
+
+  loadMateriaMedicaSources() {
+    return firstValueFrom(
+      this.http.get<{ sources: MateriaMedicaSource[] }>(`${this.apiBase}${API_PATHS.DOCTOR.REPERTORY_MM_SOURCES}`)
+    ).then((response) => response.sources);
+  }
+
+  searchMateriaMedica(q: string, sourceId: string, page = 0) {
+    return firstValueFrom(
+      this.http.get<{ results: MateriaMedicaSearchResult[]; totalResults?: number }>(
+        `${this.apiBase}${API_PATHS.DOCTOR.REPERTORY_MM_SEARCH}`,
+        { params: { q, sourceId, page: String(page), limit: '30' } }
+      )
+    );
   }
 
   searchRubrics(q: string, sourceId?: string) {

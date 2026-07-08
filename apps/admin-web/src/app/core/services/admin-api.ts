@@ -124,6 +124,12 @@ export class AdminApi {
   getDiseases(...args: Parameters<AdminCatalogApi['getDiseases']>) {
     return this.catalog.getDiseases(...(args as Parameters<AdminCatalogApi['getDiseases']>));
   }
+  getDiseaseCategories(...args: Parameters<AdminCatalogApi['getDiseaseCategories']>) {
+    return this.catalog.getDiseaseCategories(...(args as Parameters<AdminCatalogApi['getDiseaseCategories']>));
+  }
+  syncDiseaseCatalog(...args: Parameters<AdminCatalogApi['syncDiseaseCatalog']>) {
+    return this.catalog.syncDiseaseCatalog(...(args as Parameters<AdminCatalogApi['syncDiseaseCatalog']>));
+  }
   createDisease(...args: Parameters<AdminCatalogApi['createDisease']>) {
     return this.catalog.createDisease(...(args as Parameters<AdminCatalogApi['createDisease']>));
   }

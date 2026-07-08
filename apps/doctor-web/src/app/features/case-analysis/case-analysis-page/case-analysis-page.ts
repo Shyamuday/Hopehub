@@ -54,6 +54,8 @@ import type {
   CaseAnalysis,
   ConsultationSummary,
   MateriaMedicaResponse,
+  MateriaMedicaSearchResult,
+  MateriaMedicaSource,
   PatientCaseHistory,
   RepertoryRemedyRef,
   RepertorySource,
@@ -118,9 +120,11 @@ export class CaseAnalysisPage implements OnDestroy, OnInit {
   readonly analyses = signal<CaseAnalysis[]>([]);
   readonly analysis = signal<CaseAnalysis | null>(null);
   readonly sources = signal<RepertorySource[]>([]);
+  readonly mmSources = signal<MateriaMedicaSource[]>([]);
+  readonly searchMode = signal<'repertory' | 'materia-medica'>('repertory');
   readonly selectedRubrics = signal<SelectedRubric[]>([]);
 
-  readonly searchModel = signal({ selectedSourceId: '', rubricQuery: '' });
+  readonly searchModel = signal({ selectedSourceId: '', selectedMmSourceId: '', rubricQuery: '' });
   readonly searchForm = form(this.searchModel);
   readonly notesModel = signal({ notes: '' });
   readonly notesForm = form(this.notesModel);
@@ -129,6 +133,8 @@ export class CaseAnalysisPage implements OnDestroy, OnInit {
   readonly approachData = signal<ApproachDataPayload>({});
 
   readonly searchResults = signal<RubricSearchResult[]>([]);
+  readonly mmSearchResults = signal<MateriaMedicaSearchResult[]>([]);
+  readonly selectedMmSearchResult = signal<MateriaMedicaSearchResult | null>(null);
   readonly rubricSuggestions = signal<RubricSuggestion[]>([]);
   readonly rubricSuggestionsOpen = signal(false);
   readonly searchedOnce = signal(false);
@@ -215,6 +221,10 @@ export class CaseAnalysisPage implements OnDestroy, OnInit {
       this.scheduleAutoSaveRubrics();
     });
     effect(() => {
+      if (this.searchMode() !== 'repertory') {
+        this.closeRubricSuggestions();
+        return;
+      }
       const query = this.searchModel().rubricQuery.trim();
       const sourceId = this.searchModel().selectedSourceId || this.analysis()?.source?.id || '';
       this.scheduleRubricSuggest(query, sourceId);
@@ -329,15 +339,98 @@ export class CaseAnalysisPage implements OnDestroy, OnInit {
 
   async loadSources() {
     try {
-      const nextSources = await this.api.loadSources();
+      const [nextSources, nextMmSources] = await Promise.all([
+        this.api.loadSources(),
+        this.api.loadMateriaMedicaSources()
+      ]);
       this.sources.set(nextSources);
+      this.mmSources.set(nextMmSources);
+      const defaultRep = this.pickDefaultRepertorySource(nextSources);
+      const defaultMm =
+        nextMmSources.find((s) => s.id.startsWith('oorep-mm:')) ??
+        nextMmSources.find((s) => s.code === 'boericke') ??
+        nextMmSources[0];
       this.searchModel.update((model) => ({
         ...model,
-        selectedSourceId: model.selectedSourceId || nextSources[0]?.id || ''
+        selectedSourceId: model.selectedSourceId || defaultRep?.id || '',
+        selectedMmSourceId: model.selectedMmSourceId || defaultMm?.id || ''
       }));
     } catch {
       this.sources.set([]);
+      this.mmSources.set([]);
     }
+  }
+
+  private pickDefaultRepertorySource(sources: RepertorySource[]) {
+    return (
+      sources.find((s) => s.code === 'kent') ??
+      sources.find((s) => s.code === 'publicum' && (s.rubricCount ?? 0) > 100) ??
+      sources.find((s) => s.id.startsWith('oorep:') && s.code === 'publicum') ??
+      sources.find((s) => s.id.startsWith('oorep:')) ??
+      sources.find((s) => (s.rubricCount ?? 0) > 100) ??
+      sources.find((s) => !s.name.toLowerCase().includes('mvp')) ??
+      sources[0]
+    );
+  }
+
+  switchSearchMode(mode: 'repertory' | 'materia-medica') {
+    this.searchMode.set(mode);
+    this.searchResults.set([]);
+    this.mmSearchResults.set([]);
+    this.selectedMmSearchResult.set(null);
+    this.searchedOnce.set(false);
+    this.closeRubricSuggestions();
+  }
+
+  async runSymptomSearch() {
+    if (this.searchMode() === 'materia-medica') {
+      await this.searchMateriaMedica();
+    } else {
+      await this.searchRubrics();
+    }
+  }
+
+  async searchMateriaMedica() {
+    const q = this.searchModel().rubricQuery.trim();
+    const sourceId = this.searchModel().selectedMmSourceId;
+    if (q.length < 2 || !sourceId) return;
+    if (!sourceId.startsWith('oorep-mm:')) {
+      this.error.set('Materia medica search uses online OOREP sources. Pick a source like Boericke or Clarke.');
+      this.mmSearchResults.set([]);
+      this.searchedOnce.set(true);
+      return;
+    }
+
+    this.closeRubricSuggestions();
+    this.searching.set(true);
+    this.error.set('');
+    this.searchedOnce.set(true);
+    this.selectedMmSearchResult.set(null);
+    try {
+      const response = await this.api.searchMateriaMedica(q, sourceId);
+      this.mmSearchResults.set(response.results);
+      this.searchResults.set([]);
+    } catch {
+      this.error.set('Materia medica search failed.');
+      this.mmSearchResults.set([]);
+    } finally {
+      this.searching.set(false);
+    }
+  }
+
+  openMmSearchResult(result: MateriaMedicaSearchResult) {
+    this.selectedMmSearchResult.set(result);
+  }
+
+  closeMmSearchResult() {
+    this.selectedMmSearchResult.set(null);
+  }
+
+  symptomSearchPlaceholder() {
+    if (this.searchMode() === 'materia-medica') {
+      return 'Search materia medica: anxiety, headache, gums swollen…';
+    }
+    return this.activeApproach().repertory.searchPlaceholder || 'Search rubrics: cough*, dry*, pain -abdomen…';
   }
 
   async load() {

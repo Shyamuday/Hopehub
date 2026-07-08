@@ -1,9 +1,36 @@
 <section class="panel">
   <div class="panel-header">
-    <h2>Diseases &amp; Intake Questions</h2>
-    <button type="button" class="btn-primary" (click)="showCreateForm = !showCreateForm">
-      {{ showCreateForm ? 'Cancel' : '+ New Disease' }}
-    </button>
+    <div>
+      <h2>Diseases &amp; consultation fees</h2>
+      <p class="page-lead">
+        Base consultation fee per disease. Clinic/online overrides are on
+        <a [routerLink]="ratesLink">Rates &amp; plans</a>.
+        Showing {{ totalCount() }} diseases from the database.
+      </p>
+    </div>
+    <div class="header-actions">
+      <button type="button" class="btn-secondary" (click)="syncCatalog()" [disabled]="syncing()">
+        {{ syncing() ? 'Syncing…' : 'Sync standard catalog' }}
+      </button>
+      <button type="button" class="btn-primary" (click)="showCreateForm = !showCreateForm">
+        {{ showCreateForm ? 'Cancel' : '+ New Disease' }}
+      </button>
+    </div>
+  </div>
+
+  @if (syncMessage()) {
+    <p class="sync-message">{{ syncMessage() }}</p>
+  }
+
+  <div class="toolbar">
+    <input type="search" [formField]="filterForm.q" placeholder="Search diseases…" (keyup.enter)="load()" />
+    <select [formField]="filterForm.category">
+      <option value="">All categories</option>
+      @for (category of categoryOptions(); track category.key) {
+        <option [value]="category.key">{{ category.label }}</option>
+      }
+    </select>
+    <button type="button" class="btn-secondary" (click)="load()" [disabled]="loading()">Apply</button>
   </div>
 
   @if (showCreateForm) {
@@ -15,9 +42,16 @@
           <input [formField]="newDiseaseForm.name" placeholder="e.g. Psoriasis" />
         </label>
         <label class="field">
-          Fee (₹)
-          <input type="number" [formField]="newDiseaseForm.feeInPaise" placeholder="e.g. 50000 = ₹500" />
-          <span class="field-hint">Enter in paise (₹1 = 100 paise)</span>
+          Category
+          <select [formField]="newDiseaseForm.publicCategory">
+            @for (category of categoryOptions(); track category.key) {
+              <option [value]="category.key">{{ category.label }}</option>
+            }
+          </select>
+        </label>
+        <label class="field">
+          Consultation fee (₹)
+          <input type="number" [formField]="newDiseaseForm.feeRupees" placeholder="e.g. 500" />
         </label>
       </div>
       <label class="field">
@@ -57,79 +91,109 @@
       <p class="error">{{ error() }}</p>
       <button type="button" class="retry-btn" (click)="load()">Retry</button>
     </div>
+  } @else if (!totalCount()) {
+    <div class="empty-state-box">
+      <p class="empty-state">No diseases in the database yet.</p>
+      <p class="muted">Click <strong>Sync standard catalog</strong> to import the full clinic disease list, then set fees per disease here.</p>
+    </div>
   } @else {
-    @for (disease of diseases(); track disease.id) {
-      <article class="disease-card" [class.editing]="editingId === disease.id">
-
-        @if (editingId !== disease.id) {
-          <div class="disease-header">
-            <div>
-              <strong>{{ disease.name }}</strong>
-              <span class="fee-badge">{{ feeToCurrency(disease.feeInPaise) }}</span>
-              @if (!disease.isActive) {
-                <span class="inactive-badge">Inactive</span>
-              }
-            </div>
-            <button type="button" class="btn-edit" (click)="startEdit(disease)">Edit</button>
-          </div>
-          <p class="disease-desc">{{ disease.description }}</p>
-          <div class="question-list-read">
-            @for (q of disease.intakeQuestions; track $index) {
-              <span class="q-chip">{{ q }}</span>
-            }
-          </div>
-
-        } @else {
-          <h4>Editing: {{ disease.name }}</h4>
-          <div class="field-row">
-            <label class="field">
-              Name
-              <input [formField]="draftForm.name" />
-            </label>
-            <label class="field">
-              Fee (paise)
-              <input type="number" [formField]="draftForm.feeInPaise" />
-              <span class="field-hint">{{ feeToCurrency(draftModel().feeInPaise) }}</span>
-            </label>
-          </div>
-          <label class="field">
-            Description
-            <textarea [formField]="draftForm.description" rows="2"></textarea>
-          </label>
-          <label class="field checkbox-field">
-            <input type="checkbox" [formField]="draftForm.isActive" />
-            Active (visible to patients)
-          </label>
-
-          <div class="questions-editor">
-            <p class="qs-label">Intake Questions</p>
-            @for (q of draftModel().intakeQuestions; track $index) {
-              <div class="question-row">
-                <span>{{ $index + 1 }}. {{ q }}</span>
-                <button type="button" class="btn-remove" (click)="removeDraftQuestion($index)">✕</button>
-              </div>
-            } @empty {
-              <p class="qs-empty">No questions. Add at least one.</p>
-            }
-            <div class="add-question-row">
-              <input [formField]="draftQuestionForm.value" placeholder="New question…" (keyup.enter)="addDraftQuestion()" />
-              <button type="button" class="btn-add-q" (click)="addDraftQuestion()">Add</button>
-            </div>
-          </div>
-
-          @if (saveError) {
-            <p class="error">{{ saveError }}</p>
+    @for (group of groupedCategories(); track group.key) {
+      @if (group.diseases.length) {
+        <section class="category-block">
+          <h3>{{ group.label }} <span class="count-badge">{{ group.diseases.length }}</span></h3>
+          @for (disease of group.diseases; track disease.id) {
+            <ng-container *ngTemplateOutlet="diseaseCard; context: { $implicit: disease }" />
           }
-          <div class="edit-actions">
-            <button type="button" class="btn-save" (click)="saveEdit()" [disabled]="saving() || !draftModel().name || !draftModel().intakeQuestions.length">
-              {{ saving() ? 'Saving…' : 'Save Changes' }}
-            </button>
-            <button type="button" class="btn-cancel" (click)="cancelEdit()" [disabled]="saving()">Cancel</button>
-          </div>
+        </section>
+      }
+    }
+
+    @if (uncategorized().length) {
+      <section class="category-block">
+        <h3>Other <span class="count-badge">{{ uncategorized().length }}</span></h3>
+        @for (disease of uncategorized(); track disease.id) {
+          <ng-container *ngTemplateOutlet="diseaseCard; context: { $implicit: disease }" />
         }
-      </article>
-    } @empty {
-      <p class="empty-state">No diseases configured yet.</p>
+      </section>
     }
   }
 </section>
+
+<ng-template #diseaseCard let-disease>
+  <article class="disease-card" [class.editing]="editingId === disease.id">
+  @if (editingId !== disease.id) {
+    <div class="disease-header">
+      <div>
+        <strong>{{ disease.name }}</strong>
+        <span class="fee-badge">{{ feeToCurrency(disease.feeInPaise) }}</span>
+        @if (!disease.isActive) {
+          <span class="inactive-badge">Inactive</span>
+        }
+        <span class="category-badge">{{ categoryLabel(disease.publicCategory) }}</span>
+      </div>
+      <button type="button" class="btn-edit" (click)="startEdit(diseaseById(disease.id) || disease)">Edit</button>
+    </div>
+    <p class="disease-desc">{{ disease.description }}</p>
+    <div class="question-list-read">
+      @for (q of (diseaseById(disease.id)?.intakeQuestions || []); track $index) {
+        <span class="q-chip">{{ q }}</span>
+      }
+    </div>
+  } @else {
+    <h4>Editing: {{ disease.name }}</h4>
+    <div class="field-row">
+      <label class="field">
+        Name
+        <input [formField]="draftForm.name" />
+      </label>
+      <label class="field">
+        Category
+        <select [formField]="draftForm.publicCategory">
+          @for (category of categoryOptions(); track category.key) {
+            <option [value]="category.key">{{ category.label }}</option>
+          }
+        </select>
+      </label>
+      <label class="field">
+        Consultation fee (₹)
+        <input type="number" [formField]="draftForm.feeRupees" />
+        <span class="field-hint">{{ feeToCurrency(draftModel().feeRupees * 100) }}</span>
+      </label>
+    </div>
+    <label class="field">
+      Description
+      <textarea [formField]="draftForm.description" rows="2"></textarea>
+    </label>
+    <label class="field checkbox-field">
+      <input type="checkbox" [formField]="draftForm.isActive" />
+      Active (visible to patients for booking)
+    </label>
+
+    <div class="questions-editor">
+      <p class="qs-label">Intake Questions</p>
+      @for (q of draftModel().intakeQuestions; track $index) {
+        <div class="question-row">
+          <span>{{ $index + 1 }}. {{ q }}</span>
+          <button type="button" class="btn-remove" (click)="removeDraftQuestion($index)">✕</button>
+        </div>
+      } @empty {
+        <p class="qs-empty">No questions. Add at least one.</p>
+      }
+      <div class="add-question-row">
+        <input [formField]="draftQuestionForm.value" placeholder="New question…" (keyup.enter)="addDraftQuestion()" />
+        <button type="button" class="btn-add-q" (click)="addDraftQuestion()">Add</button>
+      </div>
+    </div>
+
+    @if (saveError) {
+      <p class="error">{{ saveError }}</p>
+    }
+    <div class="edit-actions">
+      <button type="button" class="btn-save" (click)="saveEdit()" [disabled]="saving() || !draftModel().name || !draftModel().intakeQuestions.length">
+        {{ saving() ? 'Saving…' : 'Save Changes' }}
+      </button>
+      <button type="button" class="btn-cancel" (click)="cancelEdit()" [disabled]="saving()">Cancel</button>
+    </div>
+  }
+  </article>
+</ng-template>

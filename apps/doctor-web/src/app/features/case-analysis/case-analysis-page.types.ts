@@ -3,7 +3,25 @@ export type RepertorySource = {
   code: string;
   name: string;
   description?: string | null;
-  rubricCount?: number;
+  rubricCount?: number | null;
+  provider?: 'local' | 'oorep';
+};
+
+export type MateriaMedicaSource = {
+  id: string;
+  code: string;
+  name: string;
+  author?: string | null;
+  year?: number | null;
+  language?: string | null;
+  provider?: 'local' | 'oorep';
+};
+
+export type MateriaMedicaSearchResult = {
+  remedyId: string;
+  remedyName: string;
+  remedyAbbreviation: string;
+  sections: Array<{ id: string; heading: string | null; content: string; depth: number }>;
 };
 
 export type RepertoryRemedyRef = {

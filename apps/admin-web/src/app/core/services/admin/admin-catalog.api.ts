@@ -83,19 +83,85 @@ export class AdminCatalogApi extends AdminApiBase {
     );
   }
 
-  getDiseases() {
+  getDiseaseCategories() {
     return firstValueFrom(
-      this.http.get<{ diseases: Array<{ id: string; name: string; description: string; feeInPaise: number; isActive: boolean; intakeQuestions: string[] }> }>(
-        `${this.apiBase}${API_PATHS.ADMIN.DISEASES_LIST}`
+      this.http.get<{ categories: Array<{ key: string; label: string }> }>(
+        `${this.apiBase}${API_PATHS.ADMIN.DISEASE_CATEGORIES}`
       )
     );
   }
 
-  createDisease(payload: { name: string; description: string; feeInPaise: number; intakeQuestions: string[] }) {
+  getDiseases(params?: { q?: string; category?: string; grouped?: boolean }) {
+    const query: Record<string, string> = {};
+    if (params?.q?.trim()) query['q'] = params.q.trim();
+    if (params?.category?.trim()) query['category'] = params.category.trim();
+    if (params?.grouped === false) query['grouped'] = 'false';
+
+    return firstValueFrom(
+      this.http.get<{
+        diseases: Array<{
+          id: string;
+          name: string;
+          description: string;
+          feeInPaise: number;
+          isActive: boolean;
+          intakeQuestions: string[];
+          publicCategory: string | null;
+        }>;
+        categories?: Array<{
+          key: string;
+          label: string;
+          diseases: Array<{
+            id: string;
+            name: string;
+            description: string;
+            feeInPaise: number;
+            isActive: boolean;
+            publicCategory: string | null;
+          }>;
+        }>;
+        uncategorized?: Array<{
+          id: string;
+          name: string;
+          description: string;
+          feeInPaise: number;
+          isActive: boolean;
+          publicCategory: string | null;
+        }>;
+      }>(`${this.apiBase}${API_PATHS.ADMIN.DISEASES_LIST}`, { params: query })
+    );
+  }
+
+  syncDiseaseCatalog(defaultFeeInPaise?: number) {
+    return firstValueFrom(
+      this.http.post<{ created: number; categorized: number; total: number }>(
+        `${this.apiBase}${API_PATHS.ADMIN.DISEASES_SYNC_CATALOG}`,
+        defaultFeeInPaise ? { defaultFeeInPaise } : {}
+      )
+    );
+  }
+
+  createDisease(payload: {
+    name: string;
+    description: string;
+    feeInPaise: number;
+    intakeQuestions: string[];
+    publicCategory?: string;
+  }) {
     return firstValueFrom(this.http.post(`${this.apiBase}${API_PATHS.ADMIN.DISEASES}`, payload));
   }
 
-  updateDisease(id: string, payload: { name: string; description: string; feeInPaise: number; isActive: boolean; intakeQuestions: string[] }) {
+  updateDisease(
+    id: string,
+    payload: {
+      name: string;
+      description: string;
+      feeInPaise: number;
+      isActive: boolean;
+      intakeQuestions: string[];
+      publicCategory?: string | null;
+    }
+  ) {
     return firstValueFrom(this.http.put(`${this.apiBase}${API_PATHS.ADMIN.DISEASES}/${id}`, payload));
   }
 

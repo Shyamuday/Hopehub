@@ -47,6 +47,8 @@ export const API_PATHS = {
     CONSUMER_SUPPORT_NOTES: (id: string) => `/admin/consumers/${id}/support-notes`,
     DISEASES: '/admin/diseases',
     DISEASES_LIST: '/admin/diseases/list',
+    DISEASE_CATEGORIES: '/admin/diseases/categories',
+    DISEASES_SYNC_CATALOG: '/admin/diseases/sync-catalog',
     LOCATION_FEES: '/admin/pricing/location-fees',
     BILLING_PLANS: '/admin/billing/plans',
     VACANCIES: '/admin/vacancies',

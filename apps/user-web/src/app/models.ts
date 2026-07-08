@@ -29,6 +29,20 @@ export type Disease = {
   description: string;
   feeInPaise: number;
   intakeQuestions: string[];
+  publicCategory?: string | null;
+};
+
+export type GroupedDiseaseCategory = {
+  key: string;
+  label: string;
+  diseases: Array<{
+    id: string;
+    name: string;
+    description: string;
+    publicCategory: string | null;
+    feeInPaise: number;
+    isActive: boolean;
+  }>;
 };
 
 export type DiseaseInfo = {

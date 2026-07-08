@@ -18,6 +18,8 @@ export const API_PATHS = {
     PRESCRIPTION_SHARE: (id: string) => `/patient/prescriptions/${id}/share`,
     APPOINTMENT_PRESCRIPTIONS: CROSS_APP_API_PATHS.DOCTOR.APPOINTMENT_PRESCRIPTIONS,
     REPERTORY_SOURCES: '/doctor/repertory/sources',
+    REPERTORY_MM_SOURCES: '/doctor/repertory/materia-medica/sources',
+    REPERTORY_MM_SEARCH: '/doctor/repertory/materia-medica/search',
     REPERTORY_CHAPTERS: '/doctor/repertory/chapters',
     REPERTORY_CHAPTER_RUBRICS: '/doctor/repertory/chapter/rubrics',
     REPERTORY_RUBRICS_SEARCH: '/doctor/repertory/rubrics/search',

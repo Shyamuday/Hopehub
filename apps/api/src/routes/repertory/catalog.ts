@@ -6,6 +6,17 @@ import { prisma } from '../../db.js';
 import { asyncRoute, queryPositiveInt, queryText, routeParam } from '../../utils/helpers.js';
 import { searchRepertoryRubrics, toRubricSuggestion } from '../../services/repertory-search.js';
 import { normalizeRepertoryText } from '../../services/repertorization.js';
+import {
+  isOorepMmSourceId,
+  isOorepSourceId,
+  listOorepMateriaMedicas,
+  listOorepRepertories,
+  oorepAbbrevFromSourceId,
+  oorepMmAbbrevFromSourceId,
+  searchOorepMateriaMedica,
+  searchOorepRepertory,
+  searchOorepRemedies
+} from '../../services/oorep-client.js';
 
 export function registerRepertoryCatalogRoutes(router: Router) {
   router.get(
@@ -13,7 +24,7 @@ export function registerRepertoryCatalogRoutes(router: Router) {
     authRequired,
     allowRoles(Role.DOCTOR, Role.ADMIN),
     asyncRoute(async (_req, res) => {
-      const sources = await prisma.repertorySource.findMany({
+      const localSources = await prisma.repertorySource.findMany({
         where: { isActive: true },
         orderBy: { name: 'asc' },
         select: {
@@ -24,12 +35,89 @@ export function registerRepertoryCatalogRoutes(router: Router) {
           _count: { select: { rubrics: true } }
         }
       });
+
+      let oorepSources: Awaited<ReturnType<typeof listOorepRepertories>> = [];
+      try {
+        oorepSources = await listOorepRepertories();
+      } catch {
+        // OOREP unavailable — local sources still work
+      }
+
+      const localCodes = new Set(localSources.map((s) => s.code.toLowerCase()));
+      const mergedOorep = oorepSources.filter((s) => !localCodes.has(s.code.toLowerCase()));
+
       res.json({
-        sources: sources.map(({ _count, ...source }) => ({
-          ...source,
-          rubricCount: _count.rubrics
-        }))
+        sources: [
+          ...localSources.map(({ _count, ...source }) => ({
+            ...source,
+            rubricCount: _count.rubrics,
+            provider: 'local' as const
+          })),
+          ...mergedOorep
+        ]
       });
+    })
+  );
+
+  router.get(
+    '/doctor/repertory/materia-medica/sources',
+    authRequired,
+    allowRoles(Role.DOCTOR, Role.ADMIN),
+    asyncRoute(async (_req, res) => {
+      const localSources = await prisma.materiaMedicaSource.findMany({
+        where: { isActive: true },
+        orderBy: { name: 'asc' },
+        select: { id: true, code: true, name: true, author: true, year: true }
+      });
+
+      let oorepSources: Awaited<ReturnType<typeof listOorepMateriaMedicas>> = [];
+      try {
+        oorepSources = await listOorepMateriaMedicas();
+      } catch {
+        // OOREP unavailable
+      }
+
+      const localCodes = new Set(localSources.map((s) => s.code.toLowerCase()));
+      const mergedOorep = oorepSources.filter((s) => !localCodes.has(s.code.toLowerCase()));
+
+      res.json({
+        sources: [
+          ...localSources.map((s) => ({ ...s, provider: 'local' as const })),
+          ...mergedOorep
+        ]
+      });
+    })
+  );
+
+  router.get(
+    '/doctor/repertory/materia-medica/search',
+    authRequired,
+    allowRoles(Role.DOCTOR, Role.ADMIN),
+    asyncRoute(async (req, res) => {
+      const q = queryText(req, 'q');
+      if (q.length < 2) {
+        return res.status(400).json({ message: 'Search query must be at least 2 characters.' });
+      }
+
+      const sourceId = queryText(req, 'sourceId') || undefined;
+      const remedy = queryText(req, 'remedy') || undefined;
+      const page = queryPositiveInt(req, 'page', 0, 0, 500);
+      const limit = queryPositiveInt(req, 'limit', 30, 1, 100);
+
+      if (!sourceId || !isOorepMmSourceId(sourceId)) {
+        return res.status(400).json({ message: 'Materia medica search requires an OOREP source (oorep-mm:*).' });
+      }
+
+      const mmAbbrev = oorepMmAbbrevFromSourceId(sourceId);
+      const result = await searchOorepMateriaMedica({
+        symptom: q,
+        materiaMedica: mmAbbrev,
+        remedy,
+        page,
+        limit
+      });
+
+      res.json(result);
     })
   );
 
@@ -51,6 +139,27 @@ export function registerRepertoryCatalogRoutes(router: Router) {
         });
 
       const limit = queryPositiveInt(req, 'limit', 12, 1, 20);
+
+      if (query.sourceId && isOorepSourceId(query.sourceId)) {
+        const abbrev = oorepAbbrevFromSourceId(query.sourceId);
+        const result = await searchOorepRepertory({
+          symptom: query.q,
+          repertory: abbrev,
+          limit
+        });
+        return res.json({
+          suggestions: result.rubrics.map((row) => ({
+            id: row.id,
+            chapter: row.chapter,
+            subchapter: row.subchapter,
+            text: row.text,
+            parentPath: row.parentPath,
+            label: [row.chapter, row.subchapter, row.text].filter(Boolean).join(' · '),
+            source: row.source
+          }))
+        });
+      }
+
       const suggestions = await searchRepertoryRubrics(prisma, {
         q: query.q,
         sourceId: query.sourceId,
@@ -81,6 +190,27 @@ export function registerRepertoryCatalogRoutes(router: Router) {
         });
 
       const limit = queryPositiveInt(req, 'limit', 25, 1, 50);
+      const page = queryPositiveInt(req, 'page', 0, 0, 500);
+      const minWeight = queryPositiveInt(req, 'minWeight', 1, 1, 4);
+
+      if (query.sourceId && isOorepSourceId(query.sourceId)) {
+        const abbrev = oorepAbbrevFromSourceId(query.sourceId);
+        const result = await searchOorepRepertory({
+          symptom: query.q,
+          repertory: abbrev,
+          page,
+          minWeight,
+          limit
+        });
+        return res.json({
+          rubrics: result.rubrics,
+          totalResults: result.totalResults,
+          page: result.page,
+          totalPages: result.totalPages,
+          provider: 'oorep'
+        });
+      }
+
       const rubrics = await searchRepertoryRubrics(prisma, {
         q: query.q,
         sourceId: query.sourceId,
@@ -103,6 +233,10 @@ export function registerRepertoryCatalogRoutes(router: Router) {
       const sourceId = queryText(req, 'sourceId') || undefined;
       if (!sourceId) {
         return res.status(400).json({ message: 'sourceId is required.' });
+      }
+
+      if (isOorepSourceId(sourceId)) {
+        return res.json({ chapters: [], message: 'Chapter browse is only available for locally imported repertories.' });
       }
 
       const rows = await prisma.repertoryRubric.groupBy({
@@ -169,9 +303,16 @@ export function registerRepertoryCatalogRoutes(router: Router) {
       }
 
       const limit = queryPositiveInt(req, 'limit', 20, 1, 50);
+      const useOorep = queryText(req, 'provider') === 'oorep' || queryText(req, 'useOorep') === 'true';
+
+      if (useOorep) {
+        const remedies = await searchOorepRemedies(q, limit);
+        return res.json({ remedies, provider: 'oorep' });
+      }
+
       const normalized = normalizeRepertoryText(q);
 
-      const remedies = await prisma.homeopathicRemedy.findMany({
+      const localRemedies = await prisma.homeopathicRemedy.findMany({
         where: {
           OR: [
             { normalizedName: { contains: normalized } },
@@ -183,6 +324,23 @@ export function registerRepertoryCatalogRoutes(router: Router) {
         orderBy: { name: 'asc' },
         select: { id: true, name: true, abbreviation: true }
       });
+
+      let remedies = localRemedies;
+      if (localRemedies.length < limit) {
+        try {
+          const oorepRemedies = await searchOorepRemedies(q, limit);
+          const seen = new Set(localRemedies.map((r) => r.abbreviation.toLowerCase()));
+          for (const rem of oorepRemedies) {
+            if (remedies.length >= limit) break;
+            if (!seen.has(rem.abbreviation.toLowerCase())) {
+              remedies = [...remedies, rem];
+              seen.add(rem.abbreviation.toLowerCase());
+            }
+          }
+        } catch {
+          // keep local only
+        }
+      }
 
       res.json({ remedies });
     })
