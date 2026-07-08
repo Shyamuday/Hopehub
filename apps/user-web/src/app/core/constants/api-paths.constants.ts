@@ -59,6 +59,7 @@ export const API_PATHS = {
   BLOG_POST: (slug: string) => `/blog/${encodeURIComponent(slug)}`,
   BLOG_COMMENTS: (slug: string) => `/blog/${encodeURIComponent(slug)}/comments`,
   ONLINE_DOCTORS: '/online-doctors',
+  RTC_ICE_SERVERS: '/rtc/ice-servers',
   DISEASES: '/diseases',
   CLINICS: '/clinics',
   PUBLIC_CONFIG: '/public-config'

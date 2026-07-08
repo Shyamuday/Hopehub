@@ -103,6 +103,15 @@ export class NativePermissionsService {
     }
   }
 
+  /** Prime camera + mic before a video consult. */
+  async ensureVideoCallPermissions(): Promise<NativePermissionResult> {
+    if (this.isNative) {
+      const cam = await this.ensureCamera();
+      if (!cam.granted) return cam;
+    }
+    return this.ensureMicrophone();
+  }
+
   /** Prime camera + mic before a voice consult on native builds. */
   async ensureVoiceCallPermissions(): Promise<NativePermissionResult> {
     const mic = await this.ensureMicrophone();

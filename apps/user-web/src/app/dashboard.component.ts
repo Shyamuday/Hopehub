@@ -28,6 +28,8 @@ import { DashboardDataService, DashboardPaymentService } from './dashboard-data.
 import { AuthService } from './auth/auth.service';
 import { ROUTE_PATHS } from './core/constants/app-routes.constants';
 import { WhatsappLinkService } from './core/services/whatsapp-link.service';
+import { NativePermissionsService } from './core/services/native-permissions.service';
+import type { CallMode, MediaAccessResult } from '@vitalis/platform-ui';
 import { CURRENCY_CODE, PURCHASE_TYPES } from './core/constants/billing.constants';
 import {
   DEFAULT_QUIET_HOURS,
@@ -100,6 +102,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   readonly isProcessing = signal(false);
   readonly title = computed(() => `${this.auth.user()?.role?.toLowerCase()} dashboard`);
   private readonly whatsappSvc = inject(WhatsappLinkService);
+  private readonly nativePermissions = inject(NativePermissionsService);
   readonly whatsappLink = this.whatsappSvc.url;
   readonly currencyCode = CURRENCY_CODE;
   readonly heroDisease = computed(() => {
@@ -108,6 +111,13 @@ export class DashboardComponent implements OnInit, OnDestroy {
     return this.diseases().find((disease) => disease.id === id) ?? null;
   });
   protected realtimeChannel?: { unsubscribe(): void; socket?: import('socket.io-client').Socket };
+  readonly iceServers = signal<Array<{ urls: string | string[]; username?: string; credential?: string }>>([
+    { urls: 'stun:stun.l.google.com:19302' }
+  ]);
+  readonly ensureMediaAccess = (mode: CallMode): Promise<MediaAccessResult> =>
+    mode === 'video'
+      ? this.nativePermissions.ensureVideoCallPermissions()
+      : this.nativePermissions.ensureVoiceCallPermissions();
 
   readonly snoozeMinutes = signal(DEFAULT_SNOOZE_MINUTES);
   readonly walletBalanceInPaise = signal(0);
@@ -164,6 +174,10 @@ export class DashboardComponent implements OnInit, OnDestroy {
     });
     void this.bootstrap();
     this.realtimeChannel = this.dataService.watchChanges(() => this.loadConsultations());
+    this.api.fetchIceServers().subscribe({
+      next: ({ iceServers }) => this.iceServers.set(iceServers),
+      error: () => undefined
+    });
   }
 
   private async bootstrap() {

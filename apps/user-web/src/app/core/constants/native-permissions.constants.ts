@@ -50,7 +50,7 @@ export const APP_PERMISSIONS_HELP: AppPermissionHelpItem[] = [
     summary: NATIVE_PERMISSION_MESSAGES.microphone,
     whyWeNeedIt:
       'Voice calls with your doctor work like a phone call inside the app — audio is peer-to-peer for the consultation, not recorded for marketing.',
-    whenWeAsk: 'Only when you or your doctor tap Start voice call during an active consultation.',
+    whenWeAsk: 'When you or your doctor start a voice or video call during an active consultation.',
     youControl: 'Text chat always works without microphone access.',
     optional: true
   },

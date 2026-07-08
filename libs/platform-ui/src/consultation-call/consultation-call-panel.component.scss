@@ -1,0 +1,86 @@
+.call-panel {
+  margin: 0.75rem 0;
+  border: 1px solid #dbeafe;
+  border-radius: 0.65rem;
+  background: #eff6ff;
+  overflow: hidden;
+}
+
+.call-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  padding: 0.65rem 0.75rem;
+}
+
+.call-status {
+  font-size: 0.85rem;
+  color: #1e40af;
+  font-weight: 600;
+}
+
+.call-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.call-actions button {
+  border: none;
+  border-radius: 0.35rem;
+  padding: 0.35rem 0.7rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-voice,
+.btn-video,
+.btn-accept {
+  background: #2563eb;
+  color: #fff;
+}
+
+.btn-decline,
+.btn-end {
+  background: #b91c1c;
+  color: #fff;
+}
+
+.btn-mic,
+.btn-cam {
+  background: #fff;
+  color: #1e3a8a;
+  border: 1px solid #bfdbfe !important;
+}
+
+.call-error {
+  color: #b91c1c;
+  font-size: 0.8rem;
+}
+
+.video-stage {
+  position: relative;
+  background: #0f172a;
+  min-height: 12rem;
+}
+
+.remote-video {
+  width: 100%;
+  max-height: 18rem;
+  object-fit: cover;
+  display: block;
+}
+
+.local-video {
+  position: absolute;
+  right: 0.5rem;
+  bottom: 0.5rem;
+  width: 7rem;
+  height: 5rem;
+  object-fit: cover;
+  border-radius: 0.4rem;
+  border: 2px solid #fff;
+  background: #1e293b;
+}

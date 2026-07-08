@@ -3,6 +3,14 @@
     <button type="button" class="ghost" (click)="load()" [disabled]="loading()">Refresh</button>
   </div>
 
+  <vitalis-consultation-call-panel
+    [consultationId]="consultationId"
+    [targetUserId]="patientUserId()"
+    [socket]="consultationSocket()"
+    [iceServers]="iceServers()"
+    [enabled]="callEnabled()"
+  />
+
   @if (error()) {
     <p class="error">{{ error() }}</p>
   }

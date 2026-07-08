@@ -67,6 +67,9 @@
               [consultation]="activeConsultation()"
               [userRole]="auth.user()?.role ?? null"
               [disabled]="isProcessing()"
+              [realtimeSocket]="realtimeChannel?.socket ?? null"
+              [iceServers]="iceServers()"
+              [ensureMediaAccess]="ensureMediaAccess"
               (messageSent)="onMessageSent($event)"
             />
           </section>
@@ -123,6 +126,8 @@
             [userRole]="auth.user()?.role ?? null"
             [disabled]="isProcessing()"
             [realtimeSocket]="realtimeChannel?.socket ?? null"
+            [iceServers]="iceServers()"
+            [ensureMediaAccess]="ensureMediaAccess"
             (messageSent)="onMessageSent($event)"
             (uploadPrescription)="onUploadPrescription($event)"
             (complete)="onComplete()"
@@ -185,6 +190,8 @@
             [userRole]="auth.user()?.role ?? null"
             [disabled]="isProcessing()"
             [realtimeSocket]="realtimeChannel?.socket ?? null"
+            [iceServers]="iceServers()"
+            [ensureMediaAccess]="ensureMediaAccess"
             (messageSent)="onMessageSent($event)"
             (uploadPrescription)="onUploadPrescription($event)"
             (complete)="onComplete()"

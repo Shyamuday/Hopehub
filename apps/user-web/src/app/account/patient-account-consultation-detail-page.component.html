@@ -23,6 +23,9 @@
       [consultation]="active"
       userRole="PATIENT"
       [disabled]="processing()"
+      [realtimeSocket]="consultationSocket"
+      [iceServers]="iceServers()"
+      [ensureMediaAccess]="ensureMediaAccess"
       (messageSent)="onMessageSent($event)"
     />
   } @else {

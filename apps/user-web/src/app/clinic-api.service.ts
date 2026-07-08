@@ -236,6 +236,14 @@ export class ClinicApiService {
     socket.emit(SOCKET_EVENTS.SUBSCRIBE_CONSULTATION, consultationId);
   }
 
+  fetchIceServers() {
+    return from(
+      this.client.apiFetch<{ iceServers: Array<{ urls: string | string[]; username?: string; credential?: string }> }>(
+        API_PATHS.RTC_ICE_SERVERS
+      )
+    );
+  }
+
   async openRazorpayCheckout(consultation: Consultation, order: RazorpayOrderResponse) {
     await this.client.loadRazorpayScript();
 

@@ -1,10 +1,8 @@
-import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, OnChanges, Output, signal } from '@angular/core';
 import { form, FormField } from '@angular/forms/signals';
+import { ConsultationCallPanelComponent, type CallMode, type CallSignalingSocket, type IceServerConfig, type MediaAccessResult } from '@vitalis/platform-ui';
 import type { DetailRow } from '@vitalis/platform-ui';
 import { DetailRowsComponent } from '@vitalis/platform-ui';
-import type { Socket } from 'socket.io-client';
-import { ConsultationVoiceCallComponent } from './consultation-voice-call.component';
 import { Consultation, Role } from './models';
 
 export type SendMessagePayload = { consultation: Consultation; body: string };
@@ -21,14 +19,16 @@ function emptyDetailForm() {
 @Component({
   selector: 'app-consultation-detail',
   standalone: true,
-  imports: [CommonModule, FormField, DetailRowsComponent, ConsultationVoiceCallComponent],
+  imports: [FormField, DetailRowsComponent, ConsultationCallPanelComponent],
   templateUrl: './consultation-detail.component.html',
 })
 export class ConsultationDetailComponent implements OnChanges {
   @Input() consultation: Consultation | null = null;
   @Input() userRole: Role | null = null;
   @Input() disabled = false;
-  @Input() realtimeSocket: Socket | null = null;
+  @Input() realtimeSocket: CallSignalingSocket | null = null;
+  @Input() iceServers: IceServerConfig[] = [{ urls: 'stun:stun.l.google.com:19302' }];
+  @Input() ensureMediaAccess?: (mode: CallMode) => Promise<MediaAccessResult>;
 
   @Output() messageSent = new EventEmitter<SendMessagePayload>();
   @Output() uploadPrescription = new EventEmitter<PrescriptionPayload>();

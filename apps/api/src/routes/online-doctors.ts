@@ -3,7 +3,7 @@ import { z } from 'zod';
 import type { Server as SocketIoServer } from 'socket.io';
 import { LivePresenceStatus, OnlineDoctorCategory, Role } from '@prisma/client';
 import { authRequired, allowRoles } from '../auth.js';
-import { PUBLIC_STUN_SERVERS } from '../constants/online-doctor.constants.js';
+import { getPublicIceServers } from '../constants/rtc.constants.js';
 import { prisma } from '../db.js';
 import {
   ensureDoctorOnlineSession,
@@ -28,7 +28,7 @@ export function createOnlineDoctorsRouter(io: SocketIoServer) {
           : undefined;
 
       const doctors = await listLiveOnlineDoctors({ diseaseId, category });
-      res.json({ doctors, stunServers: PUBLIC_STUN_SERVERS });
+      res.json({ doctors, stunServers: getPublicIceServers() });
     })
   );
 
@@ -64,7 +64,7 @@ export function createOnlineDoctorsRouter(io: SocketIoServer) {
         orderBy: { name: 'asc' }
       });
 
-      res.json({ profile: mapLiveDoctor(full), diseases, stunServers: PUBLIC_STUN_SERVERS });
+      res.json({ profile: mapLiveDoctor(full), diseases, stunServers: getPublicIceServers() });
     })
   );
 

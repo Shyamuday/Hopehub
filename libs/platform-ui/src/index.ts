@@ -31,3 +31,12 @@ export {
   type ClinicalRecordsQuery,
   type CrossAppOrigins
 } from './cross-app-links/cross-app-links';
+export { ConsultationWebrtcCallService } from './consultation-call/consultation-webrtc-call.service';
+export { ConsultationCallPanelComponent } from './consultation-call/consultation-call-panel.component';
+export {
+  CALL_SOCKET_EVENTS,
+  type CallMode,
+  type CallSignalingSocket,
+  type IceServerConfig,
+  type MediaAccessResult
+} from './consultation-call/webrtc-call.types';

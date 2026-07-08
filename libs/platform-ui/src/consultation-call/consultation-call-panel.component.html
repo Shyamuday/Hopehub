@@ -1,0 +1,34 @@
+@if (canCall()) {
+  <div class="call-panel">
+    <div class="call-toolbar">
+      <span class="call-status">{{ statusLabel() }}</span>
+      <div class="call-actions">
+        @if (call.state() === 'idle' || call.state() === 'ended') {
+          <button type="button" class="btn-voice" (click)="start('audio')" [disabled]="busy()">Voice call</button>
+          <button type="button" class="btn-video" (click)="start('video')" [disabled]="busy()">Video call</button>
+        }
+        @if (call.state() === 'ringing' && call.incomingCall()) {
+          <button type="button" class="btn-accept" (click)="accept()">Accept</button>
+          <button type="button" class="btn-decline" (click)="reject()">Decline</button>
+        }
+        @if (call.state() === 'connected' || call.state() === 'connecting') {
+          <button type="button" class="btn-mic" (click)="toggleMic()">{{ micOn() ? 'Mute' : 'Unmute' }}</button>
+          @if (call.callMode() === 'video') {
+            <button type="button" class="btn-cam" (click)="toggleCamera()">{{ cameraOn() ? 'Camera off' : 'Camera on' }}</button>
+          }
+          <button type="button" class="btn-end" (click)="hangUp()">End call</button>
+        }
+      </div>
+      @if (call.error()) {
+        <span class="call-error">{{ call.error() }}</span>
+      }
+    </div>
+
+    @if (isVideoActive()) {
+      <div class="video-stage">
+        <video #remoteVideo class="remote-video" autoplay playsinline></video>
+        <video #localVideo class="local-video" autoplay playsinline muted></video>
+      </div>
+    }
+  </div>
+}

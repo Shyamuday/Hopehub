@@ -11,10 +11,12 @@
         <vitalis-detail-rows [rows]="intakeAnswerRows(consultation.intakeAnswers)" />
 
         <h3>Chat</h3>
-        <app-consultation-voice-call
+        <vitalis-consultation-call-panel
           [consultationId]="consultation.id"
           [targetUserId]="callTargetUserId()"
           [socket]="realtimeSocket"
+          [iceServers]="iceServers"
+          [ensureMediaAccess]="ensureMediaAccess"
           [enabled]="voiceCallEnabled()"
         />
         <div class="chat-box">
