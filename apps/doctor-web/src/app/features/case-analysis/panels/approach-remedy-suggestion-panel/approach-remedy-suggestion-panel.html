@@ -8,6 +8,7 @@
   </div>
 
   <p class="disclaimer">{{ preview.disclaimer }}</p>
+  <p class="hint apply-note">Applying copies suggested rubrics into the case for your review. Your final remedy choice remains yours — explain any difference when selecting.</p>
   <p class="hint">
     Approach: <strong>{{ preview.approachTitle }}</strong> · Repertory: <strong>{{ preview.repertorySourceName }}</strong>
   </p>
@@ -75,7 +76,7 @@
   <div class="preview-actions">
     <button type="button" class="btn-secondary" (click)="dismissRequested.emit()">Dismiss</button>
     <button type="button" class="btn-primary" (click)="applyRequested.emit()" [disabled]="applying">
-      {{ applying ? 'Applying…' : 'Apply suggestions to case' }}
+      {{ applying ? 'Applying…' : 'Apply suggestions to rubrics' }}
     </button>
   </div>
 </section>

@@ -68,6 +68,13 @@ type CaseAnalysisListItem = {
 type CaseAnalysisDetail = CaseAnalysisListItem & {
   caseSheet: unknown;
   approachData: unknown;
+  methodRationale?: string | null;
+  remedySuggestionSnapshot?: {
+    results?: Array<{ remedy?: { name?: string; abbreviation?: string | null } }>;
+    summary?: string;
+    generatedAt?: string;
+  } | null;
+  remedyOverrideRationale?: string | null;
   intakeAnswers?: unknown;
   assignedDoctor?: PublicUser | null;
   source?: { name: string } | null;
@@ -112,8 +119,15 @@ const ANALYSIS_SUMMARY_FIELDS: DetailFieldDef<CaseAnalysisDetail>[] = [
   { label: 'Analysis doctor', getValue: (a) => a.doctor?.name },
   { label: 'Assigned doctor', getValue: (a) => a.assignedDoctor?.name, omitWhenEmpty: true },
   { label: 'Approach / method', getValue: (a) => a.methodOption?.label },
+  { label: 'Approach rationale', getValue: (a) => a.methodRationale, omitWhenEmpty: true },
   { label: 'Repertory source', getValue: (a) => a.source?.name, omitWhenEmpty: true },
-  { label: 'Selected remedy', getValue: (a) => a.selectedRemedy?.name, omitWhenEmpty: true },
+  {
+    label: 'System-suggested remedy',
+    getValue: (a) => a.remedySuggestionSnapshot?.results?.[0]?.remedy?.name,
+    omitWhenEmpty: true
+  },
+  { label: 'Doctor’s final remedy', getValue: (a) => a.selectedRemedy?.name, omitWhenEmpty: true },
+  { label: 'Override reasoning', getValue: (a) => a.remedyOverrideRationale, omitWhenEmpty: true },
   { label: 'Consultation disease', getValue: (a) => a.consultation?.disease?.name, omitWhenEmpty: true },
   { label: 'Status', getValue: (a) => a.status },
   { label: 'Notes', getValue: (a) => a.notes, omitWhenEmpty: true },
