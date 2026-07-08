@@ -152,3 +152,7 @@ table {
 @media (max-width: 900px) {
   .summary-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
+
+@media (max-width: 480px) {
+  .summary-cards { grid-template-columns: 1fr; }
+}

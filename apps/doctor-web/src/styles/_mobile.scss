@@ -1,0 +1,185 @@
+/* Shared mobile/responsive utilities for doctor-web */
+
+.table-scroll,
+.table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  max-width: 100%;
+}
+
+@media (max-width: 768px) {
+  .earn-page,
+  .sp,
+  .ml,
+  .ap-page {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+
+  .repertory-browser-page {
+    padding: 0;
+  }
+
+  .panel {
+    padding: 0.85rem;
+  }
+
+  .page-hero,
+  .hero,
+  .earn-hdr,
+  .ml-hdr,
+  .panel-header,
+  .panel-title-row,
+  .panel-head,
+  .chat-head,
+  .chat-meta,
+  .profile-top,
+  .mm-header,
+  .templates-bar,
+  .timeline-head {
+    flex-direction: column;
+    align-items: stretch !important;
+    gap: 0.65rem;
+  }
+
+  .earn-hdr input,
+  .btn-save-tpl,
+  .panel-save-actions,
+  .panel-save-actions .btn-save-now {
+    width: 100%;
+    margin-left: 0 !important;
+  }
+
+  .panel table,
+  .panel .table-scroll table {
+    min-width: 36rem;
+  }
+
+  .panel:has(table) {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .manual-add,
+  .date-nav,
+  .protocol-card,
+  .combination-card,
+  .leave-card,
+  .field-label-row {
+    flex-direction: column;
+    align-items: stretch !important;
+    gap: 0.55rem;
+  }
+
+  .manual-add input,
+  .manual-add select,
+  .manual-add button,
+  .date-nav .week-dates {
+    width: 100%;
+  }
+
+  .date-nav {
+    flex-wrap: wrap;
+  }
+
+  .approach-grid,
+  .organon-grid,
+  .miasm-grid,
+  .sensation-grid,
+  .case-sheet-grid,
+  .context-grid,
+  .consultation-context-grid,
+  .frow,
+  .count-row,
+  .inline,
+  .mm-result-card,
+  .rubric-suggest-item {
+    grid-template-columns: 1fr !important;
+  }
+
+  .mm-result-card .abbrev {
+    grid-column: 1;
+    justify-self: start;
+  }
+
+  .mode-row {
+    flex-wrap: wrap;
+    width: 100%;
+
+    .mode-btn {
+      flex: 1 1 calc(50% - 0.2rem);
+      min-height: var(--touch-min);
+    }
+  }
+
+  .search-box,
+  .search-row {
+    grid-template-columns: 1fr !important;
+  }
+
+  .search-box .btn-primary,
+  .search-box .btn-secondary,
+  .search-row .btn-primary {
+    width: 100%;
+  }
+
+  .result-card,
+  .rubric-result {
+    grid-template-columns: 1fr !important;
+  }
+
+  .btn-add,
+  .btn-select,
+  .result-focus {
+    width: 100%;
+    grid-column: 1 / -1 !important;
+  }
+
+  .rank-badge {
+    grid-row: auto;
+    grid-column: 1;
+  }
+
+  .chosen-remedy {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .stepper-sticky {
+    top: calc(var(--shell-topbar-height) + var(--safe-top) - 0.35rem);
+  }
+
+  .workspace {
+    grid-template-columns: 1fr !important;
+  }
+
+  .results-panel {
+    position: static;
+  }
+
+  .symptom-search-toolbar,
+  .browser-toolbar {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .filters-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .count-row {
+    grid-template-columns: 1fr !important;
+  }
+
+  .cards {
+    grid-template-columns: 1fr !important;
+  }
+
+  .mode-row .mode-btn {
+    flex: 1 1 100%;
+  }
+}

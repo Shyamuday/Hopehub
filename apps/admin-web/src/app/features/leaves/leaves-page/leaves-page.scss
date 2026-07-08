@@ -62,4 +62,9 @@
     .emp-opt { padding: 9px 12px; font-size: 13px; cursor: pointer; color: #e2e8f0; &:hover { background: rgba(99,102,241,0.1); } }
     .selected-emp { font-size: 13px; color: #4ade80; font-weight: 600; padding: 4px 0; }
     .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: rgba(74,222,128,0.12); border: 1px solid rgba(74,222,128,0.3); color: #4ade80; padding: 10px 20px; border-radius: 12px; font-size: 13px; font-weight: 600; z-index: 600; }
+
+    @media (max-width: 768px) {
+      .frow { grid-template-columns: 1fr; }
+      .toggle-row { flex-direction: column; }
+    }
   

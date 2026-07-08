@@ -17,3 +17,10 @@
 .danger { background: #dc2626; color: #fff; border: none; border-radius: 8px; padding: 0.45rem 0.75rem; }
 .error { color: #b91c1c; }
 .toast { position: fixed; bottom: 1rem; right: 1rem; background: #0f766e; color: #fff; padding: 0.6rem 1rem; border-radius: 8px; }
+
+@media (max-width: 768px) {
+  .tabs { flex-wrap: wrap; }
+  .matrix-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .actions { flex-wrap: wrap; }
+  .purge-box { max-width: none; }
+}

@@ -43,3 +43,10 @@
     border: 1px solid #d1d5db;
   }
 }
+
+@media (max-width: 768px) {
+  .protocol-card {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

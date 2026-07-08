@@ -59,3 +59,15 @@
 .error {
   color: #b91c1c;
 }
+
+@media (max-width: 768px) {
+  .chat-head,
+  .chat-meta {
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+
+  .chat-log {
+    max-height: 40vh;
+  }
+}

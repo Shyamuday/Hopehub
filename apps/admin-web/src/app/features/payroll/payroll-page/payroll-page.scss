@@ -59,4 +59,20 @@
     @media (max-width: 900px) {
       .salary-layout { grid-template-columns: 1fr; }
     }
+
+    @media (max-width: 768px) {
+      .pp { padding: 1rem; }
+      .pp-hdr { flex-direction: column; align-items: stretch; }
+      .hdr-actions { width: 100%; flex-wrap: wrap; }
+      .hdr-actions > * { flex: 1 1 auto; }
+      .page-tabs, .ftabs { flex-wrap: wrap; }
+      .search-sm { width: 100%; margin-left: 0; }
+      .salary-totals { flex-wrap: wrap; }
+      .salary-form-hdr { flex-direction: column; }
+      .summary-cards { grid-template-columns: 1fr 1fr; }
+    }
+
+    @media (max-width: 480px) {
+      .summary-cards { grid-template-columns: 1fr; }
+    }
   

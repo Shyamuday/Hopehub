@@ -43,3 +43,19 @@
     }
 }
 
+@media (max-width: 768px) {
+    .cp {
+        padding: 1rem;
+    }
+
+    .cp-hdr {
+        flex-wrap: wrap;
+        align-items: stretch;
+    }
+
+    .hdr-stats {
+        flex-wrap: wrap;
+        width: 100%;
+    }
+}
+

@@ -94,6 +94,15 @@
     .sline { border-top: 1px solid #94a3b8; margin-bottom: 6px; }
     .slbl { font-size: 12px; font-weight: 700; color: #475569; }
 
+    @media (max-width: 768px) {
+      .dh-tabs { flex-wrap: wrap; }
+      .frow, .shift-grid { grid-template-columns: 1fr; }
+      .fg.full { grid-column: auto; }
+      .letter-actions { flex-direction: column; }
+      .lsign { flex-direction: column; }
+      .lmeta { flex-direction: column; gap: 0.5rem; }
+    }
+
     @media print {
       .overlay { position: static !important; background: transparent !important; }
       .drawer { position: static !important; max-height: none !important; border: none !important; width: 100% !important; }

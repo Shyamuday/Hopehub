@@ -307,3 +307,17 @@
     grid-template-columns: 1fr;
   }
 }
+
+@media (max-width: 768px) {
+  .fee-form label {
+    min-width: 0 !important;
+    flex: 1 1 100%;
+  }
+
+  .fee-table,
+  .plans-table {
+    min-width: 36rem;
+    display: block;
+    overflow-x: auto;
+  }
+}

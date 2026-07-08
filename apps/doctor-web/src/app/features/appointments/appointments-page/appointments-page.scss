@@ -420,4 +420,14 @@ button {
     flex-direction: column;
     gap: 0.35rem;
   }
+
+  .templates-bar {
+    align-items: stretch;
+  }
+
+  .btn-save-tpl {
+    margin-left: 0;
+    width: 100%;
+    min-height: 44px;
+  }
 }

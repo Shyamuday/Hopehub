@@ -23,7 +23,7 @@
   min-height: 100dvh;
   display: flex;
   background: #f4f7fb;
-  overflow-x: hidden;
+  min-width: 0;
 }
 
 .sidebar {

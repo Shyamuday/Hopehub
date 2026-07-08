@@ -29,3 +29,8 @@ th, td { padding: 0.75rem; border-bottom: 1px solid #f1f5f9; text-align: left; }
 .retry-btn { border: 1px solid #cbd5e1; border-radius: 8px; background: #fff; padding: 0.45rem 0.7rem; cursor: pointer; }
 .toast { position: fixed; bottom: 1rem; right: 1rem; background: #0f172a; color: #fff; padding: 0.75rem 1rem; border-radius: 8px; }
 @media (max-width: 900px) { .summary-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 768px) {
+  .pay-hdr { flex-direction: column; align-items: stretch; }
+  .filters { flex-direction: column; align-items: stretch; }
+}
+@media (max-width: 480px) { .summary-cards { grid-template-columns: 1fr; } }

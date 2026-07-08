@@ -1,0 +1,199 @@
+/* Shared mobile/responsive utilities for admin-web */
+
+.table-scroll,
+.table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  max-width: 100%;
+}
+
+@media (max-width: 768px) {
+  .page,
+  .cp,
+  .fin-page,
+  .pay-page,
+  .analytics-page,
+  .adherence-page,
+  .clinical-page {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+
+  .page .table,
+  .page table {
+    min-width: 36rem;
+  }
+
+  .page {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .cp {
+    padding: 1rem !important;
+  }
+
+  .panel {
+    padding: 0.85rem;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .panel table,
+  .table,
+  .data-table,
+  .fee-table,
+  .plans-table,
+  .lines-table,
+  .ld-table {
+    min-width: 36rem;
+  }
+
+  .page-header,
+  .panel-header,
+  .panel-head,
+  .fin-hdr,
+  .pay-hdr,
+  .hdr-actions,
+  .staff-row,
+  .consult-header,
+  .salary-totals,
+  .filter-actions,
+  .question-row,
+  .add-question-row,
+  .edit-actions {
+    flex-direction: column;
+    align-items: stretch !important;
+    gap: 0.65rem;
+  }
+
+  .page-header > *,
+  .panel-header > *,
+  .fin-actions,
+  .hdr-actions,
+  .filter-actions,
+  .edit-actions {
+    width: 100%;
+    margin-left: 0 !important;
+  }
+
+  .toolbar,
+  .filters,
+  .filters.toolbar,
+  .period-filters,
+  .search-row,
+  .preset-row {
+    flex-direction: column;
+    align-items: stretch !important;
+    gap: 0.55rem;
+  }
+
+  .toolbar input,
+  .toolbar select,
+  .toolbar button,
+  .filters input,
+  .filters select,
+  .filters button,
+  .search-sm,
+  .branch-filter,
+  .total-pill {
+    width: 100% !important;
+    margin-left: 0 !important;
+    max-width: none !important;
+  }
+
+  .tabs,
+  .page-tabs,
+  .dh-tabs,
+  .tab-row {
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+
+  .cp-hdr,
+  .hdr-stats {
+    flex-wrap: wrap;
+    align-items: stretch;
+  }
+
+  .hdr-stats {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .summary-cards,
+  .cards,
+  .grid-2,
+  .grid2,
+  .frow,
+  .shift-grid,
+  .support-grid,
+  .user-grid,
+  .salary-layout,
+  .split-layout,
+  .inbox-layout,
+  .fees-layout,
+  .row-fields {
+    grid-template-columns: 1fr !important;
+  }
+
+  .split-layout,
+  .inbox-layout,
+  .fees-layout,
+  .salary-layout {
+    gap: 0.85rem;
+  }
+
+  .detail-pane,
+  .fee-detail,
+  .salary-detail {
+    min-width: 0;
+  }
+
+  .fee-form label {
+    min-width: 0 !important;
+    flex: 1 1 100% !important;
+  }
+
+  .matrix-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .modal,
+  .modal-backdrop .modal {
+    width: min(480px, 94vw);
+    margin: 0.75rem;
+  }
+
+  .modal-actions {
+    flex-wrap: wrap;
+  }
+
+  .modal-actions button {
+    flex: 1 1 auto;
+  }
+
+  .btn-export,
+  .btn-primary,
+  .btn-secondary {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .stat-pill {
+    width: fit-content;
+  }
+}
+
+@media (max-width: 480px) {
+  .summary-cards,
+  .cards {
+    grid-template-columns: 1fr !important;
+  }
+
+  .disease-grid,
+  .question-grid {
+    grid-template-columns: 1fr !important;
+  }
+}

@@ -94,4 +94,9 @@
     .letter-actions { display: flex; flex-direction: column; gap: 8px; }
 
     .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: rgba(74,222,128,0.12); border: 1px solid rgba(74,222,128,0.3); color: #4ade80; padding: 10px 20px; border-radius: 12px; font-size: 13px; font-weight: 600; z-index: 600; }
+
+    @media (max-width: 768px) {
+      .frow, .shift-grid { grid-template-columns: 1fr; }
+      .ld-sign { flex-direction: column; gap: 1rem; }
+    }
   

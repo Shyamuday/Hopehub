@@ -3,7 +3,7 @@
   min-height: 100dvh;
   display: flex;
   background: var(--color-bg);
-  overflow-x: hidden;
+  min-width: 0;
 }
 
 /* ── Desktop sidebar ── */

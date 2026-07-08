@@ -392,3 +392,24 @@ h4 {
   font-size: 0.9rem;
   color: #1e40af;
 }
+
+@media (max-width: 768px) {
+  .panel-header,
+  .disease-header,
+  .question-row,
+  .add-question-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .header-actions,
+  .edit-actions {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .add-question-row input,
+  .btn-add-q {
+    width: 100%;
+  }
+}

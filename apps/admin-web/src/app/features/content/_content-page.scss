@@ -152,3 +152,21 @@ button {
   font-size: 0.8rem;
   padding: 0.3rem 0.65rem;
 }
+
+@media (max-width: 768px) {
+  .row-fields {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .row-fields .field,
+  .row-fields label input {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .card-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

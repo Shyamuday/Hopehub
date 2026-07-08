@@ -26,3 +26,9 @@
     border: 1px solid #d1d5db;
   }
 }
+
+@media (max-width: 759px) {
+  .sensation-grid {
+    grid-template-columns: 1fr;
+  }
+}

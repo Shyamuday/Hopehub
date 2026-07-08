@@ -26,3 +26,9 @@
     border: 1px solid #d1d5db;
   }
 }
+
+@media (max-width: 759px) {
+  .organon-grid {
+    grid-template-columns: 1fr;
+  }
+}

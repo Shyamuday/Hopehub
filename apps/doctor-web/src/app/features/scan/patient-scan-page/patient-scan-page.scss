@@ -108,3 +108,19 @@
 .consult-row small {
   color: #64748b;
 }
+
+@media (max-width: 768px) {
+  .scan-page {
+    max-width: none;
+  }
+
+  .actions {
+    display: grid;
+    gap: 0.5rem;
+  }
+
+  .btn.ghost {
+    margin-left: 0;
+    width: 100%;
+  }
+}

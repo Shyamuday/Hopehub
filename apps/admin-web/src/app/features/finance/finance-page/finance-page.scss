@@ -43,3 +43,11 @@ th, td { padding: 0.65rem; border-bottom: 1px solid #f1f5f9; text-align: left; }
 .loading { padding: 2rem; text-align: center; color: #64748b; }
 .toast { position: fixed; bottom: 1rem; right: 1rem; background: #0f172a; color: #fff; padding: 0.75rem 1rem; border-radius: 8px; }
 @media (max-width: 900px) { .cards, .grid-2 { grid-template-columns: 1fr; } }
+@media (max-width: 768px) {
+  .fin-hdr { flex-direction: column; align-items: stretch; }
+  .fin-actions { width: 100%; }
+  .branch-filter { max-width: none; width: 100%; }
+  .panel table { min-width: 36rem; }
+  .cards { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 480px) { .cards { grid-template-columns: 1fr; } }

@@ -12,3 +12,11 @@
 .toolbar { display: flex; gap: 0.5rem; margin-bottom: 0.75rem; flex-wrap: wrap; }
 .table { width: 100%; border-collapse: collapse; }
 .table th, .table td { border-top: 1px solid #e5e7eb; padding: 0.5rem; text-align: left; font-size: 0.9rem; }
+
+@media (max-width: 768px) {
+  .page-header { flex-direction: column; align-items: stretch; }
+  .overview-grid { grid-template-columns: 1fr; }
+  .toolbar { flex-direction: column; align-items: stretch; }
+  .toolbar > * { width: 100%; }
+  .table { min-width: 36rem; display: block; overflow-x: auto; }
+}

@@ -10,3 +10,9 @@
 .actions { display: flex; justify-content: flex-end; gap: 0.5rem; }
 .btn-primary { background: #4f46e5; color: #fff; border: none; border-radius: 8px; padding: 0.45rem 0.75rem; }
 .toast { position: fixed; bottom: 1rem; right: 1rem; background: #0f766e; color: #fff; padding: 0.6rem 1rem; border-radius: 8px; }
+
+@media (max-width: 768px) {
+  .page-header { flex-direction: column; align-items: stretch; gap: 0.65rem; }
+  .table { min-width: 36rem; display: block; overflow-x: auto; }
+  .actions { flex-wrap: wrap; }
+}

@@ -1,6 +1,7 @@
 @use '../../../libs/platform-ui/src/styles/form-fields';
 @use './styles/ux-states';
 @use './styles/app-forms';
+@use './styles/mobile';
 
 * {
   box-sizing: border-box;
@@ -9,7 +10,7 @@
 html,
 body {
   margin: 0;
-  overflow-x: hidden;
+  min-width: 0;
   font-family: Inter, "Segoe UI", Arial, sans-serif;
   background: #f4f7fb;
   color: #0f172a;

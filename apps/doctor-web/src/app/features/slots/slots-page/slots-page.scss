@@ -35,4 +35,12 @@
     .empty > div:first-child { font-size: 36px; margin-bottom: 10px; }
 
     .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: rgba(74,222,128,0.12); border: 1px solid rgba(74,222,128,0.3); color: #4ade80; padding: 10px 20px; border-radius: 12px; font-size: 13px; font-weight: 600; z-index: 600; }
+
+    @media (max-width: 768px) {
+      .sp { padding: 1rem; }
+      .manual-add { flex-wrap: wrap; align-items: stretch; }
+      .manual-add input, .manual-add select, .manual-add button { width: 100%; }
+      .date-nav { flex-wrap: wrap; }
+      .slot-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+    }
   
