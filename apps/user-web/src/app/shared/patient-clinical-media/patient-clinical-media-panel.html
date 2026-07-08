@@ -98,6 +98,50 @@
               @if (item.observations) {
                 <p class="notes">{{ item.observations }}</p>
               }
+              @if (aiPreviewFor(item); as preview) {
+                <div class="ai-preview-card" [class.ai-preview-processing]="preview.status === 'processing' || preview.status === 'pending'" [class.ai-preview-failed]="preview.status === 'failed'">
+                  <p class="ai-badge">AI preliminary note</p>
+                  <p class="ai-disclaimer">{{ preview.disclaimer }}</p>
+                  @if (preview.status === 'processing' || preview.status === 'pending') {
+                    <p class="ai-summary muted">Reviewing your upload…</p>
+                  } @else if (preview.status === 'failed') {
+                    <p class="ai-summary">{{ preview.summary }}</p>
+                  } @else {
+                    <p class="ai-summary">{{ preview.summary }}</p>
+                    @if (preview.observationsNoticed.length) {
+                      <div class="ai-section">
+                        <strong>What we noticed</strong>
+                        <ul>
+                          @for (line of preview.observationsNoticed; track line) {
+                            <li>{{ line }}</li>
+                          }
+                        </ul>
+                      </div>
+                    }
+                    @if (preview.discussionPoints.length) {
+                      <div class="ai-section">
+                        <strong>Discuss with your doctor</strong>
+                        <ul>
+                          @for (line of preview.discussionPoints; track line) {
+                            <li>{{ line }}</li>
+                          }
+                        </ul>
+                      </div>
+                    }
+                    @if (preview.possibleTopics.length) {
+                      <div class="ai-section">
+                        <strong>Possible topics</strong>
+                        <ul>
+                          @for (line of preview.possibleTopics; track line) {
+                            <li>{{ line }}</li>
+                          }
+                        </ul>
+                      </div>
+                    }
+                  }
+                  <a class="btn-book" routerLink="/treatments">Book consultation</a>
+                </div>
+              }
               @if (item.uploadedByRole === 'DOCTOR') {
                 <p class="badge">Added by doctor</p>
               }

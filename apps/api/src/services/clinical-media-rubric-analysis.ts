@@ -229,17 +229,24 @@ async function persistInterpretation(input: {
 }
 
 export async function analyzeClinicalMediaImage(input: {
-  analysisId: string;
+  analysisId?: string;
   mediaId: string;
   saveObservations?: boolean;
+  forPatientPreview?: boolean;
 }): Promise<ClinicalMediaImageAnalysis | null> {
+  const forPatient = Boolean(input.forPatientPreview);
+
   const [analysis, media] = await Promise.all([
-    prisma.caseAnalysis.findUnique({
-      where: { id: input.analysisId },
-      select: { id: true, sourceId: true, caseSheet: true }
-    }),
+    input.analysisId && !forPatient
+      ? prisma.caseAnalysis.findUnique({
+          where: { id: input.analysisId },
+          select: { id: true, sourceId: true, caseSheet: true }
+        })
+      : Promise.resolve(null),
     prisma.clinicalMedia.findFirst({
-      where: { id: input.mediaId, caseAnalysisId: input.analysisId },
+      where: forPatient
+        ? { id: input.mediaId }
+        : { id: input.mediaId, caseAnalysisId: input.analysisId },
       select: {
         id: true,
         mediaType: true,
@@ -251,9 +258,9 @@ export async function analyzeClinicalMediaImage(input: {
     })
   ]);
 
-  if (!analysis || !media) return null;
+  if ((!forPatient && !analysis) || !media) return null;
 
-  const source = await resolveRepertorySource(analysis.sourceId);
+  const source = await resolveRepertorySource(forPatient ? null : analysis!.sourceId);
   if (!source) return null;
 
   const bytes = await readClinicalMediaFile(media.storageKey);
@@ -402,7 +409,7 @@ export async function analyzeClinicalMediaImage(input: {
     }
   }
 
-  const caseSheet = (analysis.caseSheet || null) as Record<string, string> | null;
+  const caseSheet = (forPatient ? null : (analysis!.caseSheet || null)) as Record<string, string> | null;
   const suggestedCaseSheetField = resolveCaseSheetField(caseSheet);
 
   const extractionLabel =
@@ -438,9 +445,16 @@ export async function analyzeClinicalMediaImage(input: {
     generatedAt: new Date().toISOString()
   };
 
+  if (forPatient) {
+    return {
+      ...snapshotBase,
+      interpretationId: 'patient-preview'
+    };
+  }
+
   const interpretation = await persistInterpretation({
     mediaId: media.id,
-    caseAnalysisId: input.analysisId,
+    caseAnalysisId: input.analysisId!,
     aiProvider: extraction.aiProvider,
     aiModel: extraction.model,
     rawAiOutput: extraction.rawText,

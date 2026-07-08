@@ -10,6 +10,21 @@ export type ClinicalMediaMeta = {
   diseases: Array<{ id: string; name: string; publicCategory: string | null }>;
 };
 
+export type PatientAiPreviewStatus = 'pending' | 'processing' | 'ready' | 'failed' | null;
+
+export type PatientImagingPreview = {
+  isAiGenerated: true;
+  disclaimer: string;
+  status: 'pending' | 'processing' | 'ready' | 'failed';
+  mediaId: string;
+  mediaTypeLabel: string;
+  summary: string;
+  observationsNoticed: string[];
+  discussionPoints: string[];
+  possibleTopics: string[];
+  generatedAt: string | null;
+};
+
 export type PatientClinicalMediaItem = {
   id: string;
   patientId: string;
@@ -26,6 +41,7 @@ export type PatientClinicalMediaItem = {
   uploadedByName: string | null;
   uploadedByRole: string | null;
   createdAt: string;
+  aiPreviewStatus?: PatientAiPreviewStatus;
 };
 
 @Injectable({ providedIn: 'root' })
@@ -77,5 +93,13 @@ export class PatientClinicalMediaService {
 
   loadFile(fileUrl: string) {
     return firstValueFrom(this.http.get(`${this.apiBase}${fileUrl}`, { responseType: 'blob' }));
+  }
+
+  loadAiPreview(mediaId: string) {
+    return firstValueFrom(
+      this.http.get<{ preview: PatientImagingPreview; interpretationId: string | null }>(
+        `${this.apiBase}${API_PATHS.PATIENT.CLINICAL_MEDIA_AI_PREVIEW(mediaId)}`
+      )
+    );
   }
 }

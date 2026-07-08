@@ -23,6 +23,7 @@ export const API_PATHS = {
     PROFILE_IMAGE: '/me/profile-image',
     CLINICAL_MEDIA: '/patient/clinical-media',
     CLINICAL_MEDIA_ITEM: (id: string) => `/patient/clinical-media/${id}`,
+    CLINICAL_MEDIA_AI_PREVIEW: (id: string) => `/patient/clinical-media/${id}/ai-preview`,
     CLINICAL_MEDIA_META: '/clinical-media/meta',
     CLINICAL_MEDIA_FILE: (id: string) => `/clinical-media/${id}/file`,
     ADDRESSES: '/patient/addresses',

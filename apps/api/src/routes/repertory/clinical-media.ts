@@ -26,6 +26,11 @@ import {
   serializeClinicalMedia
 } from '../../services/clinical-media-shared.js';
 import { analyzeClinicalMediaImage, applyImagingInterpretation } from '../../services/clinical-media-rubric-analysis.js';
+import {
+  getPatientMediaAiPreview,
+  latestAiPreviewStatusForMedia,
+  queuePatientMediaAnalysis
+} from '../../services/patient-media-analysis.js';
 import { isOllamaVisionAvailable, ollamaVisionConfig } from '../../services/clinical-media-vision.js';
 import { analysisIdFromReq, loadCaseAnalysisForDoctor } from './shared.js';
 
@@ -180,7 +185,13 @@ export function registerClinicalMediaRoutes(router: Router) {
         include: clinicalMediaInclude,
         orderBy: { createdAt: 'desc' }
       });
-      res.json({ media: media.map(serializeClinicalMedia) });
+      const statusMap = await latestAiPreviewStatusForMedia(media.map((item) => item.id));
+      res.json({
+        media: media.map((item) => ({
+          ...serializeClinicalMedia(item),
+          aiPreviewStatus: statusMap.get(item.id) ?? null
+        }))
+      });
     })
   );
 
@@ -199,7 +210,23 @@ export function registerClinicalMediaRoutes(router: Router) {
       if ('error' in result && result.error) {
         return res.status(result.error.status).json({ message: result.error.message });
       }
-      res.status(201).json({ media: serializeClinicalMedia(result.media!) });
+      const saved = result.media!;
+      queuePatientMediaAnalysis(saved.id);
+      res.status(201).json({
+        media: { ...serializeClinicalMedia(saved), aiPreviewStatus: 'processing' as const }
+      });
+    })
+  );
+
+  router.get(
+    '/patient/clinical-media/:mediaId/ai-preview',
+    authRequired,
+    allowRoles(Role.PATIENT),
+    asyncRoute(async (req, res) => {
+      const mediaId = routeParam(req, 'mediaId');
+      const result = await getPatientMediaAiPreview(req.user!.id, mediaId);
+      if (!result) return res.status(404).json({ message: 'Clinical media not found' });
+      res.json(result);
     })
   );
 

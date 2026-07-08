@@ -36,9 +36,12 @@ enum ClinicalMediaType {
 }
 
 enum ImagingInterpretationStatus {
+  PENDING
   DRAFT
+  READY
   DOCTOR_APPROVED
   REJECTED
+  FAILED
 }
 
 model RepertorySource {
@@ -221,10 +224,14 @@ model ImagingInterpretation {
   mediaId                 String
   caseAnalysisId          String?
   status                  ImagingInterpretationStatus @default(DRAFT)
+  analysisJobStatus       String                      @default("READY")
   aiProvider              String                      @default("ollama")
   aiModel                 String
   rawAiOutput             String?                     @db.Text
   structuredSnapshot      Json
+  patientPreviewSnapshot  Json?
+  visibleToPatient        Boolean                     @default(true)
+  patientViewedAt         DateTime?
   doctorOverrideRationale String?                     @db.Text
   appliedAt               DateTime?
   media                   ClinicalMedia               @relation(fields: [mediaId], references: [id], onDelete: Cascade)

@@ -161,3 +161,78 @@
   color: #6366f1;
   font-weight: 600;
 }
+
+.ai-preview-card {
+  margin-top: 0.35rem;
+  padding: 0.65rem;
+  border-radius: 10px;
+  background: #f0fdfa;
+  border: 1px solid #99f6e4;
+  display: grid;
+  gap: 0.4rem;
+}
+
+.ai-preview-processing {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
+
+.ai-preview-failed {
+  background: #fff7ed;
+  border-color: #fed7aa;
+}
+
+.ai-badge {
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: #0f766e;
+}
+
+.ai-disclaimer {
+  margin: 0;
+  font-size: 0.74rem;
+  color: #475569;
+  line-height: 1.35;
+}
+
+.ai-summary {
+  margin: 0;
+  font-size: 0.82rem;
+  color: #0f172a;
+}
+
+.ai-section {
+  font-size: 0.78rem;
+  color: #334155;
+}
+
+.ai-section strong {
+  display: block;
+  margin-bottom: 0.2rem;
+  font-size: 0.76rem;
+}
+
+.ai-section ul {
+  margin: 0;
+  padding-left: 1rem;
+}
+
+.ai-section li + li {
+  margin-top: 0.15rem;
+}
+
+.btn-book {
+  display: inline-block;
+  margin-top: 0.15rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #0f766e;
+  text-decoration: none;
+}
+
+.btn-book:hover {
+  text-decoration: underline;
+}

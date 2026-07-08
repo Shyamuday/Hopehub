@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { form, FormField } from '@angular/forms/signals';
+import { RouterLink } from '@angular/router';
 import { Capacitor } from '@capacitor/core';
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 import { CLINICAL_MEDIA_TYPE_LABELS, type ClinicalMediaType } from '@vitalis/homeopathy-approaches';
@@ -8,13 +9,14 @@ import { NativePermissionsService } from '../../core/services/native-permissions
 import {
   PatientClinicalMediaService,
   type ClinicalMediaMeta,
-  type PatientClinicalMediaItem
+  type PatientClinicalMediaItem,
+  type PatientImagingPreview
 } from './patient-clinical-media.service';
 
 @Component({
   selector: 'app-patient-clinical-media-panel',
   standalone: true,
-  imports: [CommonModule, FormField],
+  imports: [CommonModule, FormField, RouterLink],
   templateUrl: './patient-clinical-media-panel.html',
   styleUrl: './patient-clinical-media-panel.scss'
 })
@@ -33,6 +35,7 @@ export class PatientClinicalMediaPanelComponent implements OnInit, OnDestroy {
   readonly error = signal('');
   readonly message = signal('');
   readonly previewUrls = signal<Record<string, string>>({});
+  readonly aiPreviews = signal<Record<string, PatientImagingPreview>>({});
   readonly filterType = signal('');
 
   readonly uploadModel = signal({
@@ -46,12 +49,14 @@ export class PatientClinicalMediaPanelComponent implements OnInit, OnDestroy {
 
   private selectedFile: File | null = null;
   private previewObjectUrl: string | null = null;
+  private pollTimer: ReturnType<typeof setInterval> | null = null;
 
   ngOnInit() {
     void this.reload();
   }
 
   ngOnDestroy() {
+    this.stopPolling();
     this.revokePreviewUrls();
     this.revokeSelectedPreview();
   }
@@ -89,6 +94,8 @@ export class PatientClinicalMediaPanelComponent implements OnInit, OnDestroy {
         next[item.id] = URL.createObjectURL(blob);
       }
       this.previewUrls.set(next);
+      await this.refreshAiPreviews(items);
+      this.syncPolling();
     } catch {
       this.error.set('Could not load your health photos.');
       this.media.set([]);
@@ -178,7 +185,7 @@ export class PatientClinicalMediaPanelComponent implements OnInit, OnDestroy {
     this.message.set('');
     try {
       const dataBase64 = await this.readFileAsBase64(file);
-      await this.api.upload({
+      const saved = await this.api.upload({
         mediaType: form.mediaType,
         bodyRegion: form.bodyRegion.trim() || undefined,
         diseaseId: form.diseaseId || undefined,
@@ -190,8 +197,11 @@ export class PatientClinicalMediaPanelComponent implements OnInit, OnDestroy {
       });
       this.selectedFile = null;
       this.revokeSelectedPreview();
-      this.message.set('Photo saved to your health record.');
+      this.message.set('Photo saved — AI preliminary review is starting.');
       await this.reload();
+      if (saved.aiPreviewStatus === 'processing') {
+        this.syncPolling();
+      }
     } catch (err) {
       this.error.set(err instanceof Error ? err.message : 'Could not upload photo.');
     } finally {
@@ -209,6 +219,74 @@ export class PatientClinicalMediaPanelComponent implements OnInit, OnDestroy {
       this.error.set('Could not remove photo.');
     } finally {
       this.deletingId.set('');
+    }
+  }
+
+  aiPreviewFor(item: PatientClinicalMediaItem) {
+    return this.aiPreviews()[item.id] ?? null;
+  }
+
+  private async refreshAiPreviews(items: PatientClinicalMediaItem[]) {
+    const targets = items.filter(
+      (item) =>
+        item.aiPreviewStatus === 'processing' ||
+        item.aiPreviewStatus === 'pending' ||
+        item.aiPreviewStatus === 'ready' ||
+        item.aiPreviewStatus === 'failed'
+    );
+    if (!targets.length) {
+      this.aiPreviews.set({});
+      return;
+    }
+
+    const entries = await Promise.all(
+      targets.map(async (item) => {
+        try {
+          const result = await this.api.loadAiPreview(item.id);
+          return [item.id, result.preview] as const;
+        } catch {
+          return null;
+        }
+      })
+    );
+
+    const next: Record<string, PatientImagingPreview> = {};
+    for (const entry of entries) {
+      if (entry) next[entry[0]] = entry[1];
+    }
+    this.aiPreviews.set(next);
+  }
+
+  private syncPolling() {
+    const needsPoll = this.media().some(
+      (item) => item.aiPreviewStatus === 'processing' || item.aiPreviewStatus === 'pending'
+    );
+    if (!needsPoll) {
+      this.stopPolling();
+      return;
+    }
+    if (this.pollTimer) return;
+    this.pollTimer = setInterval(() => {
+      void this.pollAiPreviews();
+    }, 4000);
+  }
+
+  private stopPolling() {
+    if (!this.pollTimer) return;
+    clearInterval(this.pollTimer);
+    this.pollTimer = null;
+  }
+
+  private async pollAiPreviews() {
+    try {
+      const items = await this.api.list();
+      this.media.set(items);
+      await this.refreshAiPreviews(items);
+      if (!items.some((item) => item.aiPreviewStatus === 'processing' || item.aiPreviewStatus === 'pending')) {
+        this.stopPolling();
+      }
+    } catch {
+      // keep polling on transient errors
     }
   }
 
