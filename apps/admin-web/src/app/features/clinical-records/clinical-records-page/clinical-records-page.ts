@@ -2,10 +2,12 @@ import { buildDetailRows, DetailRowsComponent } from '@vitalis/platform-ui';
 import type { DetailFieldDef } from '@vitalis/platform-ui';
 import { buildAdminClinicalSummary } from '@vitalis/homeopathy-approaches';
 import { DatePipe } from '@angular/common';
-import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { form, FormField } from '@angular/forms/signals';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AdminApi } from '../../../core/services/admin-api';
+import { AdminMobileLayoutService } from '../../../core/services/admin-mobile-layout.service';
+import { ViewportService } from '../../../core/services/viewport.service';
 
 type MethodOption = { id: string; label: string };
 type PublicUser = { id: string; name: string; mobile?: string | null; patientCode?: string | null };
@@ -127,10 +129,12 @@ const ANALYSIS_SUMMARY_FIELDS: DetailFieldDef<CaseAnalysisDetail>[] = [
   templateUrl: './clinical-records-page.html',
   styleUrl: './clinical-records-page.scss'
 })
-export class ClinicalRecordsPage implements OnInit {
+export class ClinicalRecordsPage implements OnInit, OnDestroy {
   private readonly api = inject(AdminApi);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly viewport = inject(ViewportService);
+  private readonly mobileLayout = inject(AdminMobileLayoutService);
 
   readonly tab = signal<'prescriptions' | 'analyses'>('prescriptions');
   readonly loading = signal(false);
@@ -143,6 +147,11 @@ export class ClinicalRecordsPage implements OnInit {
 
   readonly selectedPrescription = signal<PrescriptionDetail | null>(null);
   readonly selectedAnalysis = signal<CaseAnalysisDetail | null>(null);
+
+  readonly isMobile = computed(() => this.viewport.isMobile());
+  readonly hasDetail = computed(() => !!(this.selectedPrescription() || this.selectedAnalysis()));
+  readonly showListPane = computed(() => !this.isMobile() || !this.hasDetail());
+  readonly showDetailPane = computed(() => !this.isMobile() || this.hasDetail());
 
   readonly doctors = signal<PublicUser[]>([]);
   readonly methodOptions = signal<MethodOption[]>([]);
@@ -213,6 +222,24 @@ export class ClinicalRecordsPage implements OnInit {
       }
       void this.loadList(1);
     });
+  }
+
+  ngOnDestroy(): void {
+    this.mobileLayout.clearPageFocus();
+  }
+
+  backToList() {
+    this.selectedPrescription.set(null);
+    this.selectedAnalysis.set(null);
+    this.mobileLayout.clearPageFocus();
+  }
+
+  private syncMobileFocus() {
+    if (this.isMobile() && this.hasDetail()) {
+      this.mobileLayout.setPageFocus(true);
+    } else if (this.isMobile()) {
+      this.mobileLayout.clearPageFocus();
+    }
   }
 
   async loadMeta() {
@@ -326,6 +353,7 @@ export class ClinicalRecordsPage implements OnInit {
     try {
       const res = await this.api.getAdminPrescription(id);
       this.selectedPrescription.set(res.prescription as PrescriptionDetail);
+      this.syncMobileFocus();
     } catch {
       this.error.set('Failed to load prescription detail.');
     } finally {
@@ -339,6 +367,7 @@ export class ClinicalRecordsPage implements OnInit {
     try {
       const res = await this.api.getAdminCaseAnalysis(id);
       this.selectedAnalysis.set(res.analysis as CaseAnalysisDetail);
+      this.syncMobileFocus();
     } catch {
       this.error.set('Failed to load case analysis detail.');
     } finally {

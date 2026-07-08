@@ -30,6 +30,10 @@ model Disease {
   isActive           Boolean        @default(true)
   publicCategory     String?
   publicDescription  String?        @db.Text
+  publicImageUrl     String?
+  seoTitle           String?
+  seoDescription     String?        @db.Text
+  publicFaq          Json?
   consultations      Consultation[]
   locationFees       DiseaseLocationFee[]
   clinicalMedia      ClinicalMedia[]

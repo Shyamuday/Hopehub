@@ -81,7 +81,7 @@
 @if (csvError()) { <p class="error-msg">{{ csvError() }}</p> }
 
 <div class="inbox-layout">
-  <div class="session-list panel">
+  <div class="session-list panel" [class.mobile-pane-hidden]="!showListPane()">
     @if (loading()) {
       <p class="loading-text">Loading…</p>
     } @else if (leads().length === 0) {
@@ -112,7 +112,10 @@
     }
   </div>
 
-  <div class="session-detail panel">
+  <div class="session-detail panel" [class.mobile-pane-hidden]="!showDetailPane()">
+    @if (isMobile() && hasSelection()) {
+      <button type="button" class="mobile-back" (click)="backToList()">← Back to leads</button>
+    }
     @if (!selected()) {
       <div class="detail-empty">
         <p>Select a lead to review follow-up status and conversation.</p>

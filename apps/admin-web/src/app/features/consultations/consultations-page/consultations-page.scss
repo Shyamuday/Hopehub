@@ -13,6 +13,69 @@
   margin-top: 0.35rem;
 }
 
+.mobile-consult-cards {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .desktop-only {
+    display: none !important;
+  }
+
+  .mobile-consult-cards {
+    display: grid;
+    gap: 0.65rem;
+  }
+
+  .consult-card {
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 0.85rem;
+    background: rgba(255, 255, 255, 0.03);
+  }
+
+  .consult-card.unassigned-row {
+    border-color: rgba(251, 146, 60, 0.35);
+  }
+
+  .card-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 0.5rem;
+    margin-bottom: 0.45rem;
+  }
+
+  .card-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.35rem;
+    flex-wrap: wrap;
+  }
+
+  .card-actions-primary {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.45rem;
+    margin-top: 0.5rem;
+  }
+
+  .card-actions-primary .btn-assign,
+  .card-actions-primary .btn-reassign {
+    width: 100%;
+    min-height: 44px;
+    padding: 0.55rem 0.75rem;
+  }
+
+  .card-more-toggle {
+    width: 100%;
+    margin-top: 0.45rem;
+    min-height: 40px;
+  }
+}
+
 .cross-link {
   font-size: 0.72rem;
   color: #5eead4;

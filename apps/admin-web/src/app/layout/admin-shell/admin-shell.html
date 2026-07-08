@@ -1,4 +1,4 @@
-<main class="admin-shell">
+<main class="admin-shell" [class.focus-mode]="focusMode()">
   <aside class="sidebar" aria-label="Admin navigation">
     <div class="sidebar-brand">
       <h1>Admin Console</h1>
@@ -58,7 +58,7 @@
 
   @if (menuOpen()) {
     <button type="button" class="overlay" aria-label="Close menu" (click)="closeMenu()"></button>
-    <aside class="drawer" aria-label="Navigation menu">
+    <aside class="drawer mobile-nav-sheet" aria-label="Navigation menu">
       <div class="drawer-header">
         <div>
           <strong>{{ auth.user()?.name || 'Admin' }}</strong>
@@ -73,7 +73,7 @@
     </aside>
   }
 
-  <nav class="bottom-nav" aria-label="Quick navigation">
+  <nav class="bottom-nav" aria-label="Quick navigation" [class.is-hidden]="focusMode()">
     @for (item of bottomNavItems(); track item.path) {
       <a [routerLink]="item.path" routerLinkActive="active" class="bottom-nav-item">
         <span class="bottom-nav-icon" aria-hidden="true">{{ navIcon(item) }}</span>

@@ -1,4 +1,4 @@
-<section class="panel">
+<section class="panel" [class.mobile-pane-hidden]="!showListPanel()">
   <app-consumers-list-panel
     [showRegister]="showRegister"
     [registerForm]="registerForm"
@@ -26,7 +26,10 @@
   />
 </section>
 
-<section class="panel">
+<section class="panel" [class.mobile-pane-hidden]="!showDetailPanel()">
+  @if (isMobile() && selectedConsumerId) {
+    <button type="button" class="mobile-back" (click)="clearConsumerSelection()">← Back to consumers</button>
+  }
   <h2>Consumer Details</h2>
   @if (consumerDetail) {
     <div class="detail-tabs">

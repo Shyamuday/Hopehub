@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, signal } from '@angular/core';
+import { Component, computed, inject, OnDestroy, signal } from '@angular/core';
 import { form } from '@angular/forms/signals';
 import { ActivatedRoute } from '@angular/router';
 import { adminRouteLink, ROUTE_PATHS } from '../../../core/constants/app-routes.constants';
@@ -9,6 +9,8 @@ import {
   patientClinicalProfileHasData
 } from '@vitalis/platform-ui';
 import { AdminApi } from '../../../core/services/admin-api';
+import { AdminMobileLayoutService } from '../../../core/services/admin-mobile-layout.service';
+import { ViewportService } from '../../../core/services/viewport.service';
 import {
   CONSUMERS_LIST_DEFAULTS,
   CONSUMERS_PAGE_SIZE,
@@ -47,7 +49,14 @@ import { ConsumerSupportPanelComponent } from '../components/consumer-support-pa
   templateUrl: './consumers-page.html',
   styleUrl: './consumers-page.scss'
 })
-export class ConsumersPage {
+export class ConsumersPage implements OnDestroy {
+  private readonly viewport = inject(ViewportService);
+  private readonly mobileLayout = inject(AdminMobileLayoutService);
+
+  readonly isMobile = computed(() => this.viewport.isMobile());
+  readonly showListPanel = computed(() => !this.isMobile() || !this.selectedConsumerId);
+  readonly showDetailPanel = computed(() => !this.isMobile() || !!this.selectedConsumerId);
+
   consumers: Consumer[] = [];
   selectedConsumerId = '';
   consumerDetail: ConsumerDetail | null = null;
@@ -191,7 +200,7 @@ export class ConsumersPage {
       });
       this.consumers = response.consumers || [];
       this.totalPagesCount = Math.max(1, Number(response.pagination?.totalPages || 1));
-      if (!this.selectedConsumerId) {
+      if (!this.selectedConsumerId && !this.isMobile()) {
         this.selectedConsumerId = this.consumers[0]?.id || '';
       }
       if (this.selectedConsumerId) {
@@ -199,6 +208,9 @@ export class ConsumersPage {
           this.loadConsumerDetail(this.selectedConsumerId),
           this.loadSupport(this.selectedConsumerId)
         ]);
+        if (this.isMobile()) {
+          this.mobileLayout.setPageFocus(true);
+        }
       } else {
         this.consumerDetail = null;
       }
@@ -225,7 +237,21 @@ export class ConsumersPage {
   async selectConsumer(consumerId: string) {
     this.selectedConsumerId = consumerId;
     this.detailTab = 'overview';
+    if (this.isMobile()) {
+      this.mobileLayout.setPageFocus(true);
+    }
     await Promise.all([this.loadConsumerDetail(consumerId), this.loadSupport(consumerId)]);
+  }
+
+  clearConsumerSelection() {
+    this.selectedConsumerId = '';
+    this.consumerDetail = null;
+    this.detailError = '';
+    this.mobileLayout.clearPageFocus();
+  }
+
+  ngOnDestroy(): void {
+    this.mobileLayout.clearPageFocus();
   }
 
   setDetailTab(tab: 'overview' | 'support') {

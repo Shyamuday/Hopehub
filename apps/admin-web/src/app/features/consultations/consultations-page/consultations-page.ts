@@ -59,6 +59,7 @@ export class ConsultationsPage implements OnInit {
   saving = signal(false);
   err = signal('');
   toast = signal('');
+  expandedCardId = signal<string | null>(null);
 
   statusFilters = [
     { label: 'All Statuses', value: '' },
@@ -224,5 +225,13 @@ export class ConsultationsPage implements OnInit {
 
   showDoctorLinks(status: string) {
     return ['ASSIGNED', 'IN_PROGRESS', 'PRESCRIPTION_UPLOADED', 'COMPLETED'].includes(status);
+  }
+
+  toggleCardMenu(consultationId: string) {
+    this.expandedCardId.update((current) => (current === consultationId ? null : consultationId));
+  }
+
+  isCardMenuOpen(consultationId: string) {
+    return this.expandedCardId() === consultationId;
   }
 }

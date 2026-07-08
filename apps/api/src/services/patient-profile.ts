@@ -53,6 +53,7 @@ const homeopathicFields = {
 };
 
 export const patientProfileUpdateSchema = z.object({
+  homeClinicStoreId: z.string().min(1).nullable().optional(),
   name: z.string().trim().min(1).max(100),
   email: z
     .string()
@@ -99,6 +100,7 @@ export type PatientProfileUpdateInput = z.infer<typeof patientProfileUpdateSchem
 export function mapProfileUpdateToUserData(body: PatientProfileUpdateInput, alternateMobile: string | null) {
   return {
     name: body.name,
+    homeClinicStoreId: body.homeClinicStoreId,
     email: body.email,
     alternateMobile,
     dateOfBirth: parseDateOfBirth(body.dateOfBirth),

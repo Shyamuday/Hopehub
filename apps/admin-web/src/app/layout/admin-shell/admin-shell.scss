@@ -324,6 +324,14 @@
     padding-bottom: calc(var(--shell-bottom-nav-height) + 0.85rem + var(--safe-bottom));
   }
 
+  .admin-shell.focus-mode .content {
+    padding-bottom: calc(0.85rem + var(--safe-bottom));
+  }
+
+  .bottom-nav.is-hidden {
+    display: none !important;
+  }
+
   .account-label {
     display: none;
   }
@@ -387,6 +395,22 @@
     text-overflow: ellipsis;
     max-width: 100%;
     text-align: center;
+  }
+
+  .drawer.mobile-nav-sheet {
+    top: auto;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    max-height: min(85vh, 32rem);
+    border-radius: 1rem 1rem 0 0;
+    animation: sheetUp 0.24s ease;
+  }
+
+  @keyframes sheetUp {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
   }
 }
 

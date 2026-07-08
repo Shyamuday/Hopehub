@@ -1,7 +1,9 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, OnDestroy, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AdminApi } from '../../../core/services/admin-api';
+import { AdminMobileLayoutService } from '../../../core/services/admin-mobile-layout.service';
+import { ViewportService } from '../../../core/services/viewport.service';
 
 type ChatMessage = {
   id: string;
@@ -56,7 +58,16 @@ type FollowUpFilter =
   templateUrl: './chat-inbox-page.html',
   styleUrl: './chat-inbox-page.scss'
 })
-export class ChatInboxPage {
+export class ChatInboxPage implements OnDestroy {
+  private readonly api = inject(AdminApi);
+  private readonly viewport = inject(ViewportService);
+  private readonly mobileLayout = inject(AdminMobileLayoutService);
+
+  readonly isMobile = computed(() => this.viewport.isMobile());
+  readonly hasSelection = computed(() => !!this.selected());
+  readonly showListPane = computed(() => !this.isMobile() || !this.hasSelection());
+  readonly showDetailPane = computed(() => !this.isMobile() || this.hasSelection());
+
   readonly leads = signal<WebsiteLead[]>([]);
   readonly selected = signal<WebsiteLead | null>(null);
   readonly loading = signal(false);
@@ -81,8 +92,25 @@ export class ChatInboxPage {
   /** Admin console is view-only — receptionists update follow-up in Operations portal. */
   readonly canFollowUp = false;
 
-  constructor(private readonly api: AdminApi) {
+  constructor() {
     void this.load();
+  }
+
+  ngOnDestroy(): void {
+    this.mobileLayout.clearPageFocus();
+  }
+
+  backToList() {
+    this.selected.set(null);
+    this.mobileLayout.clearPageFocus();
+  }
+
+  private syncMobileFocus() {
+    if (this.isMobile() && this.selected()) {
+      this.mobileLayout.setPageFocus(true);
+    } else if (this.isMobile()) {
+      this.mobileLayout.clearPageFocus();
+    }
   }
 
   private listFilters() {
@@ -148,6 +176,7 @@ export class ChatInboxPage {
     try {
       const res = await this.api.getVisitorLead(id);
       this.selected.set(res.lead);
+      this.syncMobileFocus();
     } catch {
       this.error.set('Could not load lead.');
     } finally {

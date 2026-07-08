@@ -28,7 +28,7 @@
       @if (loading()) {
         <div class="loading"><div class="spinner"></div></div>
       } @else {
-        <div class="table-wrap">
+        <div class="table-wrap desktop-only">
           <table class="ct">
             <thead>
               <tr>
@@ -91,6 +91,61 @@
               }
             </tbody>
           </table>
+        </div>
+
+        <div class="mobile-consult-cards">
+          @for (c of consultations(); track c.id) {
+            <article class="consult-card" [class.unassigned-row]="!c.assignedDoctor">
+              <div class="card-head">
+                <div>
+                  <div class="pat-name">{{ c.patient?.name ?? '—' }}</div>
+                  @if (c.patient?.mobile) { <div class="pat-mobile">{{ c.patient.mobile }}</div> }
+                </div>
+                <span class="status-badge" [style.background]="ss(c.status).bg" [style.color]="ss(c.status).color">
+                  {{ c.status }}
+                </span>
+              </div>
+              <div class="card-row">
+                <span class="disease-pill">{{ c.disease?.name ?? '—' }}</span>
+                <span class="date-txt">{{ c.createdAt | date:'dd MMM yy' }}</span>
+              </div>
+              @if (c.payment) {
+                <div class="card-row">
+                  <span class="pay-badge" [style.background]="ps(c.payment.status).bg" [style.color]="ps(c.payment.status).color">
+                    {{ c.payment.status }}
+                  </span>
+                  <span class="pay-amt">₹{{ (c.payment.amountInPaise / 100).toFixed(0) }}</span>
+                </div>
+              }
+              <div class="card-row doctor-row">
+                @if (c.assignedDoctor) {
+                  <span class="doc-assigned">✓ {{ c.assignedDoctor.name }}</span>
+                } @else {
+                  <span class="unassigned-txt">Not assigned</span>
+                }
+              </div>
+              <div class="card-actions-primary">
+                @if (!c.assignedDoctor || c.status === 'PAYMENT_PENDING' || c.status === 'PAID') {
+                  <button class="btn-assign" (click)="openAssign(c)">Assign</button>
+                } @else {
+                  <button class="btn-reassign" (click)="openAssign(c)">Reassign</button>
+                }
+                <button class="btn-reassign" (click)="openStatus(c)">Status</button>
+              </div>
+              <button type="button" class="btn-reassign card-more-toggle" (click)="toggleCardMenu(c.id)">
+                {{ isCardMenuOpen(c.id) ? 'Less' : 'More links' }}
+              </button>
+              @if (isCardMenuOpen(c.id) && c.patient?.id) {
+                <div class="cross-links">
+                  <a class="cross-link" [routerLink]="clinicalRecordsRoute" [queryParams]="clinicalQuery(c)">Clinical records</a>
+                  @if (showDoctorLinks(c.status)) {
+                    <a class="cross-link external" [href]="doctorAppointmentLink(c.id)" target="_blank" rel="noopener">Doctor app</a>
+                    <a class="cross-link external" [href]="doctorCaseAnalysisLink(c.id)" target="_blank" rel="noopener">Case analysis</a>
+                  }
+                </div>
+              }
+            </article>
+          }
         </div>
         @if (consultations().length === 0) {
           <div class="empty"><div>🩺</div><p>No consultations match these filters</p></div>

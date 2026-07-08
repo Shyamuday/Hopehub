@@ -10,16 +10,40 @@ import {
   DISEASE_PUBLIC_CATEGORY_KEYS
 } from '../constants/disease-categories.constants.js';
 import {
-  assignDiseaseSlug,
   getDiseaseBySlug,
   groupDiseasesByCategory,
   listDiseases,
+  parsePublicFaq,
+  reconcileDiagnosedDiseaseOptions,
+  resolveDiseaseSlugInput,
   syncDiagnosedDiseaseOption,
   syncDiseaseCatalog
 } from '../services/disease-catalog.js';
 import { resolveDiseaseConsultationFee } from '../services/consultation-pricing.js';
 
 export const router = Router();
+
+const diseaseFaqSchema = z.array(
+  z.object({
+    question: z.string().min(3),
+    answer: z.string().min(3)
+  })
+);
+
+const diseaseMarketingFields = {
+  slug: z
+    .string()
+    .regex(/^[a-z0-9-]+$/)
+    .min(2)
+    .max(80)
+    .nullable()
+    .optional(),
+  publicDescription: z.string().max(20_000).nullable().optional(),
+  publicImageUrl: z.string().url().max(500).nullable().optional().or(z.literal('').transform(() => null)),
+  seoTitle: z.string().max(200).nullable().optional(),
+  seoDescription: z.string().max(500).nullable().optional(),
+  publicFaq: diseaseFaqSchema.nullable().optional()
+};
 
 export async function ensureBillingPlans() {
   await Promise.all(
@@ -86,7 +110,7 @@ router.get(
       res.status(404).json({ message: 'Disease not found.' });
       return;
     }
-    res.json({ disease });
+    res.json({ disease: { ...disease, publicFaq: parsePublicFaq(disease.publicFaq) } });
   })
 );
 
@@ -170,6 +194,16 @@ router.post(
 );
 
 router.post(
+  '/admin/diseases/reconcile-options',
+  authRequired,
+  allowRoles(Role.ADMIN),
+  asyncRoute(async (_req, res) => {
+    const result = await reconcileDiagnosedDiseaseOptions();
+    res.json(result);
+  })
+);
+
+router.post(
   '/admin/diseases',
   authRequired,
   allowRoles(Role.ADMIN),
@@ -181,7 +215,7 @@ router.post(
         feeInPaise: z.number().int().positive(),
         intakeQuestions: z.array(z.string().min(3)).min(1),
         publicCategory: z.enum(DISEASE_PUBLIC_CATEGORY_KEYS as [string, ...string[]]).optional(),
-        publicDescription: z.string().max(20_000).nullable().optional()
+        ...diseaseMarketingFields
       })
       .parse(req.body);
 
@@ -193,11 +227,15 @@ router.post(
         intakeQuestions: body.intakeQuestions,
         publicCategory: body.publicCategory,
         publicDescription: body.publicDescription ?? null,
-        slug: await assignDiseaseSlug(body.name)
+        publicImageUrl: body.publicImageUrl ?? null,
+        seoTitle: body.seoTitle ?? null,
+        seoDescription: body.seoDescription ?? null,
+        publicFaq: body.publicFaq ?? [],
+        slug: await resolveDiseaseSlugInput(body.name, body.slug)
       }
     });
     await syncDiagnosedDiseaseOption(body.name);
-    res.status(201).json({ disease });
+    res.status(201).json({ disease: { ...disease, publicFaq: parsePublicFaq(disease.publicFaq) } });
   })
 );
 
@@ -214,7 +252,7 @@ router.put(
         isActive: z.boolean(),
         intakeQuestions: z.array(z.string().min(1)).min(1),
         publicCategory: z.enum(DISEASE_PUBLIC_CATEGORY_KEYS as [string, ...string[]]).nullable().optional(),
-        publicDescription: z.string().max(20_000).nullable().optional()
+        ...diseaseMarketingFields
       })
       .parse(req.body);
 
@@ -234,15 +272,15 @@ router.put(
         intakeQuestions: body.intakeQuestions,
         publicCategory: body.publicCategory,
         publicDescription: body.publicDescription,
-        ...(body.name !== existing.name
-          ? { slug: await assignDiseaseSlug(body.name, existing.id) }
-          : existing.slug
-            ? {}
-            : { slug: await assignDiseaseSlug(body.name, existing.id) })
+        publicImageUrl: body.publicImageUrl ?? null,
+        seoTitle: body.seoTitle ?? null,
+        seoDescription: body.seoDescription ?? null,
+        publicFaq: body.publicFaq ?? [],
+        slug: await resolveDiseaseSlugInput(body.name, body.slug, existing.id)
       }
     });
     await syncDiagnosedDiseaseOption(body.name);
-    res.json({ disease });
+    res.json({ disease: { ...disease, publicFaq: parsePublicFaq(disease.publicFaq) } });
   })
 );
 
@@ -355,6 +393,7 @@ router.get(
       'whatsappPhone', 'clinicName',
       'contactPhone', 'contactPhoneTel', 'contactEmail',
       'clinicAddressLine1', 'clinicAddressLine2', 'clinicAddressLine3', 'clinicAddressLine4',
+      'homeHeroEyebrow', 'homeHeroHeadline', 'homeHeroLead',
       'statConsultations', 'statDoctors', 'statRating', 'statFollowUp',
       'statPatientsTreated', 'statConditionsTreated', 'statImprovement', 'statSatisfaction'
     ];
@@ -368,6 +407,10 @@ router.get(
       clinicAddressLine2: 'Near City Centre, Main Road',
       clinicAddressLine3: 'Ranchi, Jharkhand, India',
       clinicAddressLine4: 'Pincode — 834001',
+      homeHeroEyebrow: 'Doctor-led homeopathy',
+      homeHeroHeadline: 'Personalised homeopathic care for every health concern.',
+      homeHeroLead:
+        'Acute illnesses, chronic conditions, skin and hair issues, digestive problems, allergies, mental wellness, and more — consult qualified homeopathic doctors online with prescriptions and follow-up.',
       statConsultations: '5,000+',
       statDoctors: '12+',
       statRating: '4.8★',

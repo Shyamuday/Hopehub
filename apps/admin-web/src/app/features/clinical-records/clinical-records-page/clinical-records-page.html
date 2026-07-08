@@ -78,7 +78,7 @@
   }
 
   <div class="split-layout">
-    <div class="list-pane">
+    <div class="list-pane" [class.mobile-pane-hidden]="!showListPane()">
       @if (loading()) {
         <p class="loading-text">Loading…</p>
       } @else if (tab() === 'prescriptions') {
@@ -138,7 +138,10 @@
       }
     </div>
 
-    <div class="detail-pane">
+    <div class="detail-pane" [class.mobile-pane-hidden]="!showDetailPane()">
+      @if (isMobile() && hasDetail()) {
+        <button type="button" class="mobile-back" (click)="backToList()">← Back to list</button>
+      }
       @if (detailLoading()) {
         <p class="loading-text">Loading detail…</p>
       } @else if (selectedPrescription(); as rx) {

@@ -78,6 +78,18 @@ const CONFIG_META: Record<string, { label: string; description: string }> = {
   clinicAddressLine4: {
     label: 'Address line 4',
     description: 'Fourth address line (pincode/country).'
+  },
+  homeHeroEyebrow: {
+    label: 'Home hero eyebrow',
+    description: 'Small label above the homepage headline.'
+  },
+  homeHeroHeadline: {
+    label: 'Home hero headline',
+    description: 'Main headline on the homepage booking section.'
+  },
+  homeHeroLead: {
+    label: 'Home hero lead text',
+    description: 'Supporting paragraph under the homepage headline.'
   }
 };
 
@@ -156,5 +168,9 @@ const defaults: Record<string, string> = {
   clinicAddressLine1: 'Ranchi Main Clinic',
   clinicAddressLine2: 'Near City Centre, Main Road',
   clinicAddressLine3: 'Ranchi, Jharkhand, India',
-  clinicAddressLine4: 'Pincode — 834001'
+  clinicAddressLine4: 'Pincode — 834001',
+  homeHeroEyebrow: 'Doctor-led homeopathy',
+  homeHeroHeadline: 'Personalised homeopathic care for every health concern.',
+  homeHeroLead:
+    'Acute illnesses, chronic conditions, skin and hair issues, digestive problems, allergies, mental wellness, and more — consult qualified homeopathic doctors online with prescriptions and follow-up.'
 };

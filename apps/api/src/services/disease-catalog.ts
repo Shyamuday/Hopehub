@@ -9,12 +9,18 @@ import { resolveDiseaseSlug } from '../constants/disease-slugs.constants.js';
 import { prisma } from '../db.js';
 import { normalizeOptionLabel } from '../utils/helpers.js';
 
+export type DiseaseFaqItem = { question: string; answer: string };
+
 export type DiseaseListItem = {
   id: string;
   name: string;
   slug: string | null;
   description: string;
   publicDescription: string | null;
+  publicImageUrl: string | null;
+  seoTitle: string | null;
+  seoDescription: string | null;
+  publicFaq: DiseaseFaqItem[];
   publicCategory: string | null;
   feeInPaise: number;
   isActive: boolean;
@@ -69,6 +75,10 @@ export async function listDiseases(filters: {
       slug: true,
       description: true,
       publicDescription: true,
+      publicImageUrl: true,
+      seoTitle: true,
+      seoDescription: true,
+      publicFaq: true,
       publicCategory: true,
       feeInPaise: true,
       isActive: true
@@ -95,8 +105,44 @@ async function attachPrescriptionOptionIds<T extends { name: string }>(diseases:
 
   return diseases.map((disease) => ({
     ...disease,
+    publicFaq: parsePublicFaq(disease.publicFaq),
     prescriptionOptionId: optionByLabel.get(normalizeOptionLabel(disease.name)) ?? null
   }));
+}
+
+export function parsePublicFaq(value: unknown): DiseaseFaqItem[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .filter((item): item is DiseaseFaqItem => {
+      if (!item || typeof item !== 'object') return false;
+      const row = item as Record<string, unknown>;
+      return typeof row.question === 'string' && typeof row.answer === 'string';
+    })
+    .map((item) => ({
+      question: item.question.trim(),
+      answer: item.answer.trim()
+    }))
+    .filter((item) => item.question && item.answer);
+}
+
+export async function resolveDiseaseSlugInput(name: string, slugInput: string | null | undefined, excludeId?: string) {
+  const normalized = slugInput?.trim().toLowerCase();
+  if (normalized) {
+    return ensureUniqueSlug(normalized, excludeId);
+  }
+  if (excludeId) {
+    const existing = await prisma.disease.findUnique({ where: { id: excludeId }, select: { slug: true } });
+    if (existing?.slug) return existing.slug;
+  }
+  return assignDiseaseSlug(name, excludeId);
+}
+
+export async function reconcileDiagnosedDiseaseOptions() {
+  const diseases = await prisma.disease.findMany({ where: { isActive: true }, select: { name: true } });
+  for (const disease of diseases) {
+    await syncDiagnosedDiseaseOption(disease.name);
+  }
+  return { synced: diseases.length };
 }
 
 export function groupDiseasesByCategory(

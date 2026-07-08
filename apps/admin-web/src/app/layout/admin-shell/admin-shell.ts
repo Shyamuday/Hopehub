@@ -6,6 +6,7 @@ import { RoleTaskGuideComponent, NotificationBellHostComponent, ProfileAvatarDis
 import { environment } from '../../../environments/environment';
 import { AUTH_TOKEN_KEY } from '../../core/constants/auth.constants';
 import { AdminAuth } from '../../core/services/admin-auth';
+import { AdminMobileLayoutService } from '../../core/services/admin-mobile-layout.service';
 import { AdminNavTabsComponent } from '../admin-nav-tabs/admin-nav-tabs.component';
 import { NAV_ITEMS, ROUTE_PATHS, adminNavPath, type AdminNavItem } from '../../core/constants/app-routes.constants';
 import { navItemsForUser } from '../../core/admin-navigation';
@@ -32,8 +33,10 @@ const NAV_SHORT_LABELS: Record<string, string> = {
 export class AdminShell {
   readonly auth = inject(AdminAuth);
   private readonly router = inject(Router);
+  private readonly mobileLayout = inject(AdminMobileLayoutService);
 
   readonly menuOpen = signal(false);
+  readonly focusMode = computed(() => this.mobileLayout.pageFocus());
   readonly filteredNavItems = computed(() => navItemsForUser(NAV_ITEMS, this.auth.user()));
   readonly accountPath = adminNavPath(ROUTE_PATHS.ACCOUNT);
   readonly apiBase = environment.apiUrl;
@@ -63,6 +66,15 @@ export class AdminShell {
 
   readonly bottomNavItems = computed(() => this.splitMobileNav(this.filteredNavItems()).bottom);
   readonly hasOverflowNav = computed(() => this.splitMobileNav(this.filteredNavItems()).overflow > 0);
+
+  constructor() {
+    this.router.events
+      .pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd))
+      .subscribe(() => {
+        this.closeMenu();
+        this.mobileLayout.clearPageFocus();
+      });
+  }
 
   logout() {
     this.auth.logout();
