@@ -2,11 +2,14 @@ type OtpEntry = { otp: string; expiresAt: number };
 
 const memoryStore = new Map<string, OtpEntry>();
 
-let redisClient: { setEx: (key: string, ttl: number, value: string) => Promise<unknown>; getDel: (key: string) => Promise<string | null> } | null = null;
+let redisClient: {
+  setEx: (key: string, ttl: number, value: string) => Promise<unknown>;
+  getDel: (key: string) => Promise<string | null>;
+} | null = null;
 let redisInit: Promise<void> | null = null;
 
 const OTP_TTL_SEC = 10 * 60;
-const keyFor = (mobile: string) => `otp:${mobile}`;
+const keyFor = (identifier: string) => `otp:${identifier}`;
 
 async function ensureRedis() {
   if (redisClient || redisInit) {
@@ -35,23 +38,23 @@ async function ensureRedis() {
   return redisClient;
 }
 
-export async function storeOtpEntry(mobile: string, otp: string): Promise<void> {
+export async function storeOtpEntry(identifier: string, otp: string): Promise<void> {
   const expiresAt = Date.now() + OTP_TTL_SEC * 1000;
   const redis = await ensureRedis();
 
   if (redis) {
-    await redis.setEx(keyFor(mobile), OTP_TTL_SEC, JSON.stringify({ otp, expiresAt }));
+    await redis.setEx(keyFor(identifier), OTP_TTL_SEC, JSON.stringify({ otp, expiresAt }));
     return;
   }
 
-  memoryStore.set(mobile, { otp, expiresAt });
+  memoryStore.set(identifier, { otp, expiresAt });
 }
 
-export async function verifyOtpEntry(mobile: string, otp: string): Promise<boolean> {
+export async function verifyOtpEntry(identifier: string, otp: string): Promise<boolean> {
   const redis = await ensureRedis();
 
   if (redis) {
-    const raw = await redis.getDel(keyFor(mobile));
+    const raw = await redis.getDel(keyFor(identifier));
     if (!raw) return false;
     try {
       const entry = JSON.parse(raw) as OtpEntry;
@@ -62,13 +65,13 @@ export async function verifyOtpEntry(mobile: string, otp: string): Promise<boole
     }
   }
 
-  const entry = memoryStore.get(mobile);
+  const entry = memoryStore.get(identifier);
   if (!entry) return false;
   if (Date.now() > entry.expiresAt) {
-    memoryStore.delete(mobile);
+    memoryStore.delete(identifier);
     return false;
   }
   if (entry.otp !== otp) return false;
-  memoryStore.delete(mobile);
+  memoryStore.delete(identifier);
   return true;
 }

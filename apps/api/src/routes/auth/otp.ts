@@ -10,6 +10,7 @@ import {
   devOtp,
   isProduction
 } from '../../services/otp.js';
+import { getMailTransporter } from '../../services/mail.js';
 import { createPatientRecord } from '../../services/patient-identity.js';
 import { attachReferralOnSignup } from '../../services/referral-codes.js';
 import { asyncRoute, publicUserSelect, toAuthResponse, logAuthEvent } from '../../utils/helpers.js';
@@ -31,6 +32,10 @@ export function registerAuthOtpRoutes(router: Router) {
         })
         .parse(req.body);
       const email = body.email.trim().toLowerCase();
+      if (isProduction && !getMailTransporter()) {
+        return res.status(503).json({ message: 'Email delivery is not configured.' });
+      }
+
       const otp = isProduction ? generateOtp() : devOtp;
       await storeOtp(email, otp);
       if (isProduction) {

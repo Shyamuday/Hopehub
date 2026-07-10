@@ -105,7 +105,7 @@ export class AuthService {
     ).pipe(tap((response) => this.persistSession(response)));
   }
 
-  patientRegister(payload: { name: string; email?: string; mobile?: string; password: string }) {
+  patientRegister(payload: { name: string; email: string; password: string }) {
     return from(this.patientAuth.register(payload)).pipe(
       tap((response) => this.persistSession(response)),
     );

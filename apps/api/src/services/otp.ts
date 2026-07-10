@@ -20,6 +20,9 @@ export async function verifyOtp(identifier: string, otp: string): Promise<boolea
 export async function sendOtpEmail(email: string, otp: string): Promise<void> {
   const mailer = getMailTransporter();
   if (!mailer) {
+    if (isProduction) {
+      throw new Error('Email delivery is not configured.');
+    }
     console.info(`[otp] DEV — Email OTP for ${email}: ${otp}`);
     return;
   }
