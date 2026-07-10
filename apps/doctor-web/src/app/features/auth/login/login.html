@@ -1,7 +1,7 @@
 <section class="login-card">
   <div class="switcher">
     <button type="button" [class.active]="mode() === 'signin'" (click)="mode.set('signin')">Sign in</button>
-    <button type="button" [class.active]="mode() === 'enroll'" (click)="mode.set('enroll')">Enroll</button>
+    <button type="button" [class.active]="mode() === 'signup'" (click)="mode.set('signup')">Sign up</button>
   </div>
 
   @if (mode() === 'signin') {
@@ -43,8 +43,8 @@
 
     <app-dev-login-panel (loggedIn)="onDevLoggedIn()" (fillAccount)="applyDevFill($event)" />
   } @else {
-    <h2>Doctor Enrollment</h2>
-    <p>Create doctor account with your specialty profile.</p>
+    <h2>Doctor Signup</h2>
+    <p>Create a doctor account with your specialty profile. Access starts after admin approval.</p>
 
     <form (ngSubmit)="enroll()">
       <label for="name">Full name</label>
@@ -63,7 +63,14 @@
       <input id="registrationNo" [formField]="enrollForm.registrationNo" />
 
       <label for="enrollPassword">Password</label>
-      <input id="enrollPassword" [formField]="signInForm.password" type="password" />
+      <input id="enrollPassword" [formField]="signInForm.password" type="password" autocomplete="new-password" />
+
+      <label for="confirmPassword">Confirm password</label>
+      <input id="confirmPassword" [formField]="enrollForm.confirmPassword" type="password" autocomplete="new-password" />
+
+      @if (signInModel().password && enrollModel().confirmPassword && signInModel().password !== enrollModel().confirmPassword) {
+        <p class="error">Passwords do not match</p>
+      }
 
       @if (error()) {
         <p class="error">{{ error() }}</p>
@@ -72,7 +79,7 @@
         <p class="success">{{ message() }}</p>
       }
 
-      <button type="submit" [disabled]="submitting() || signInForm().invalid() || enrollForm().invalid()">
+      <button type="submit" [disabled]="submitting() || !canSignup()">
         {{ submitting() ? 'Creating account...' : 'Create account' }}
       </button>
     </form>

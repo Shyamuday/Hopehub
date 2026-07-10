@@ -11,18 +11,18 @@ import type { DevFillCredentials } from '@vitalis/platform-ui';
   selector: 'app-login',
   imports: [FormField, DevLoginPanelComponent],
   templateUrl: './login.html',
-  styleUrl: './login.scss'
+  styleUrl: './login.scss',
 })
 export class Login {
   private readonly auth = inject(Auth);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
 
-  mode = signal<'signin' | 'enroll'>('signin');
+  mode = signal<'signin' | 'signup'>('signin');
 
   readonly signInModel = signal({
     email: DEV_DEMO_ACCOUNTS.doctor.email as string,
-    password: DEV_DEMO_ACCOUNTS.password as string
+    password: DEV_DEMO_ACCOUNTS.password as string,
   });
   readonly signInForm = form(this.signInModel, (schema) => {
     required(schema.email, { message: 'Email is required' });
@@ -33,7 +33,8 @@ export class Login {
     name: '',
     mobile: '',
     specialty: '',
-    registrationNo: ''
+    registrationNo: '',
+    confirmPassword: '',
   });
   readonly enrollForm = form(this.enrollModel, (schema) => {
     required(schema.name, { message: 'Name is required' });
@@ -44,9 +45,22 @@ export class Login {
   message = signal('');
   submitting = signal(false);
 
+  canSignup(): boolean {
+    const { password } = this.signInModel();
+    const enroll = this.enrollModel();
+    return !!(
+      !this.signInForm().invalid() &&
+      !this.enrollForm().invalid() &&
+      password.length >= 8 &&
+      password === enroll.confirmPassword
+    );
+  }
+
   private navigateAfterLogin(): void {
     const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl');
-    void this.router.navigateByUrl(returnUrl && returnUrl.startsWith('/') ? returnUrl : `/${DEFAULT_AUTHED_ROUTE}`);
+    void this.router.navigateByUrl(
+      returnUrl && returnUrl.startsWith('/') ? returnUrl : `/${DEFAULT_AUTHED_ROUTE}`,
+    );
   }
 
   async submit() {
@@ -75,12 +89,12 @@ export class Login {
     this.signInModel.update((model) => ({
       ...model,
       ...(credentials.email ? { email: credentials.email } : {}),
-      ...(credentials.password ? { password: credentials.password } : {})
+      ...(credentials.password ? { password: credentials.password } : {}),
     }));
   }
 
   async enroll() {
-    if (this.signInForm().invalid() || this.enrollForm().invalid()) return;
+    if (!this.canSignup()) return;
     const { email, password } = this.signInModel();
     const { name, mobile, specialty, registrationNo } = this.enrollModel();
     this.error.set('');
@@ -93,7 +107,7 @@ export class Login {
         mobile: mobile || undefined,
         password,
         specialty,
-        registrationNo: registrationNo || undefined
+        registrationNo: registrationNo || undefined,
       });
 
       if (!result.ok) {

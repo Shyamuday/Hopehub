@@ -34,6 +34,52 @@
           }
           <button class="primary" type="submit" [disabled]="isProcessing() || !canResetPassword()">Reset password & login</button>
         </form>
+      } @else if (forgotStep() === 'request') {
+        <button type="button" class="back-btn" (click)="cancelForgotPassword()">← Back</button>
+        <h2>Reset password</h2>
+        <p class="muted">Enter your registered email and we will send a password reset link.</p>
+
+        <form (ngSubmit)="forgotPassword()">
+          <label>
+            Email
+            <input [formField]="forgotForm.email" type="email" placeholder="Enter your Gmail" autocomplete="email" />
+          </label>
+          <button class="primary" type="submit" [disabled]="isProcessing() || !canRequestPasswordReset()">Send reset link</button>
+        </form>
+      } @else if (authView() === 'signup') {
+        <h2>Create patient account</h2>
+        <p class="muted">Sign up with your details to manage consultations, prescriptions, and care reminders.</p>
+
+        <form (ngSubmit)="registerPatient()">
+          <label>
+            Full name
+            <input [formField]="signupForm.name" placeholder="Enter patient name" autocomplete="name" />
+          </label>
+          <label>
+            Email
+            <input [formField]="signupForm.email" type="email" placeholder="Enter Gmail" autocomplete="email" />
+          </label>
+          <label>
+            Mobile number
+            <input [formField]="signupForm.mobile" placeholder="Enter mobile number" inputmode="tel" autocomplete="tel" />
+          </label>
+          <label>
+            Password
+            <input [formField]="signupForm.password" type="password" placeholder="Min 8 characters" autocomplete="new-password" />
+          </label>
+          <label>
+            Confirm password
+            <input [formField]="signupForm.confirmPassword" type="password" placeholder="Confirm password" autocomplete="new-password" />
+          </label>
+          @if (signupModel().password && signupModel().confirmPassword && signupModel().password !== signupModel().confirmPassword) {
+            <p class="error-text">Passwords do not match</p>
+          }
+          <button class="primary" type="submit" [disabled]="isProcessing() || !canRegisterPatient()">Create account</button>
+        </form>
+
+        <p class="mode-switch-wrap">
+          <button type="button" class="mode-switch" (click)="setAuthView('login')">Already have an account? Login</button>
+        </p>
       } @else if (loginMode() === 'password') {
         <h2>Login to continue</h2>
         <p class="muted">Sign in with your email or mobile and password.</p>
@@ -65,6 +111,12 @@
         <p class="mode-switch-wrap">
           <button type="button" class="mode-switch" (click)="setLoginMode('otp')">Login with mobile OTP</button>
         </p>
+        <p class="mode-switch-wrap">
+          <button type="button" class="mode-switch" (click)="startForgotPassword()">Forgot password?</button>
+        </p>
+        <p class="mode-switch-wrap">
+          <button type="button" class="mode-switch" (click)="setAuthView('signup')">New patient? Create account</button>
+        </p>
 
         <app-dev-login-panel (loggedIn)="onDevLoggedIn()" (fillAccount)="applyDevFill($event)" />
       } @else {
@@ -89,6 +141,9 @@
 
         <p class="mode-switch-wrap">
           <button type="button" class="mode-switch" (click)="setLoginMode('password')">Login with password or Gmail</button>
+        </p>
+        <p class="mode-switch-wrap">
+          <button type="button" class="mode-switch" (click)="setAuthView('signup')">New patient? Create account</button>
         </p>
 
         <app-dev-login-panel (loggedIn)="onDevLoggedIn()" (fillAccount)="applyDevFill($event)" />

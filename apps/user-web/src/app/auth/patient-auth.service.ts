@@ -18,43 +18,60 @@ export class PatientAuthService {
     this.user.set(user);
   }
 
-  async register(payload: { name: string; email?: string; mobile?: string; password: string }): Promise<AuthResponse> {
+  async register(payload: {
+    name: string;
+    email?: string;
+    mobile?: string;
+    password: string;
+  }): Promise<AuthResponse> {
     return firstValueFrom(
-      this.http.post<AuthResponse>(`${this.apiBase}${AUTH_PATHS.PATIENT_REGISTER}`, payload)
+      this.http.post<AuthResponse>(`${this.apiBase}${AUTH_PATHS.PATIENT_REGISTER}`, payload),
     );
   }
 
   async signInWithPassword(
     identifier: string,
-    password: string
+    password: string,
   ): Promise<AuthResponse | PatientSelectionResponse> {
     return firstValueFrom(
-      this.http.post<AuthResponse | PatientSelectionResponse>(`${this.apiBase}/auth/patient-login-password`, {
-        identifier,
-        password
-      })
+      this.http.post<AuthResponse | PatientSelectionResponse>(
+        `${this.apiBase}${AUTH_PATHS.PATIENT_PASSWORD_LOGIN}`,
+        {
+          identifier,
+          password,
+        },
+      ),
     );
   }
 
-  async signInWithPasswordSelect(identifier: string, password: string, patientId: string): Promise<AuthResponse> {
+  async signInWithPasswordSelect(
+    identifier: string,
+    password: string,
+    patientId: string,
+  ): Promise<AuthResponse> {
     return firstValueFrom(
       this.http.post<AuthResponse>(`${this.apiBase}${AUTH_PATHS.PATIENT_PASSWORD_SELECT}`, {
         identifier,
         password,
-        patientId
-      })
+        patientId,
+      }),
     );
   }
 
   async forgotPassword(email: string): Promise<void> {
     await firstValueFrom(
-      this.http.post<{ message: string }>(`${this.apiBase}/auth/patient-forgot-password`, { email })
+      this.http.post<{ message: string }>(`${this.apiBase}${AUTH_PATHS.PATIENT_FORGOT_PASSWORD}`, {
+        email,
+      }),
     );
   }
 
   async resetPassword(token: string, password: string): Promise<AuthResponse> {
     return firstValueFrom(
-      this.http.post<AuthResponse>(`${this.apiBase}/auth/patient-reset-password`, { token, password })
+      this.http.post<AuthResponse>(`${this.apiBase}${AUTH_PATHS.PATIENT_RESET_PASSWORD}`, {
+        token,
+        password,
+      }),
     );
   }
 

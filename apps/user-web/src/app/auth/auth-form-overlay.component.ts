@@ -18,7 +18,8 @@ type AuthFormOverlayData = {
   resetToken?: string;
 };
 
-type ForgotStep = 'none' | 'reset';
+type AuthView = 'login' | 'signup';
+type ForgotStep = 'none' | 'request' | 'reset';
 type LoginMode = 'password' | 'otp';
 
 @Component({
@@ -33,6 +34,7 @@ export class AuthFormOverlayComponent {
       ? new URLSearchParams(window.location.search).get('ref') || undefined
       : undefined;
   readonly loginMode = signal<LoginMode>('password');
+  readonly authView = signal<AuthView>('login');
   readonly isProcessing = signal(false);
   readonly forgotStep = signal<ForgotStep>(this.overlayData.initialForgotStep || 'none');
   readonly resetToken = signal<string>(this.overlayData.resetToken || '');
@@ -62,6 +64,15 @@ export class AuthFormOverlayComponent {
   });
   readonly forgotForm = form(this.forgotModel);
 
+  readonly signupModel = signal({
+    name: '',
+    email: '',
+    mobile: '',
+    password: '',
+    confirmPassword: '',
+  });
+  readonly signupForm = form(this.signupModel);
+
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
   private readonly overlayService = inject(AppOverlayService);
@@ -77,8 +88,38 @@ export class AuthFormOverlayComponent {
     );
   }
 
+  canRequestPasswordReset(): boolean {
+    return /.+@.+\..+/.test(this.forgotModel().email.trim());
+  }
+
+  canRegisterPatient(): boolean {
+    const signup = this.signupModel();
+    return !!(
+      signup.name.trim().length >= 2 &&
+      (signup.email.trim() || signup.mobile.trim()) &&
+      signup.password.length >= 8 &&
+      signup.password === signup.confirmPassword
+    );
+  }
+
   setLoginMode(mode: LoginMode) {
     this.loginMode.set(mode);
+  }
+
+  setAuthView(view: AuthView) {
+    this.authView.set(view);
+    this.forgotStep.set('none');
+    this.patientSelection.set(null);
+    this.errorCleanup();
+  }
+
+  startForgotPassword() {
+    this.forgotStep.set('request');
+    this.patientSelection.set(null);
+  }
+
+  cancelForgotPassword() {
+    this.forgotStep.set('none');
   }
 
   requestOtp() {
@@ -115,10 +156,13 @@ export class AuthFormOverlayComponent {
 
   loginPatientWithOtp() {
     const otp = this.patientOtpModel();
-    this.process('Logging in patient...', this.auth.patientLogin({
-      ...otp,
-      referralCode: this.referralCodeFromUrl
-    })).subscribe({
+    this.process(
+      'Logging in patient...',
+      this.auth.patientLogin({
+        ...otp,
+        referralCode: this.referralCodeFromUrl,
+      }),
+    ).subscribe({
       next: (response) => {
         if ('requiresPatientSelection' in response) {
           this.patientSelection.set({
@@ -205,6 +249,44 @@ export class AuthFormOverlayComponent {
     });
   }
 
+  registerPatient() {
+    if (!this.canRegisterPatient()) {
+      this.showError('Enter your name, email or mobile, and matching password.');
+      return;
+    }
+
+    const signup = this.signupModel();
+    this.process(
+      'Creating patient account...',
+      this.auth.patientRegister({
+        name: signup.name.trim(),
+        email: signup.email.trim() || undefined,
+        mobile: signup.mobile.trim() || undefined,
+        password: signup.password,
+      }),
+    ).subscribe({
+      next: ({ user }) => {
+        this.closeAllOverlays();
+        this.router.navigateByUrl(this.auth.dashboardFor(user.role));
+      },
+      error: (error) => this.showError(error.error?.message || 'Patient signup failed.'),
+    });
+  }
+
+  forgotPassword() {
+    const email = this.forgotModel().email.trim();
+    if (!email) {
+      this.showError('Enter your registered email to receive a reset link.');
+      return;
+    }
+
+    this.process('Sending reset link...', this.auth.forgotPassword(email)).subscribe({
+      next: () =>
+        this.showSuccess('If the account exists, a reset link has been sent to your email.'),
+      error: (error) => this.showError(error.error?.message || 'Could not send reset link.'),
+    });
+  }
+
   resetPassword() {
     const token = this.resetToken();
     const { password } = this.forgotModel();
@@ -213,10 +295,7 @@ export class AuthFormOverlayComponent {
       return;
     }
 
-    this.process(
-      'Resetting password...',
-      this.auth.resetPassword({ token, password }),
-    ).subscribe({
+    this.process('Resetting password...', this.auth.resetPassword({ token, password })).subscribe({
       next: ({ user }) => {
         this.closeAllOverlays();
         this.router.navigateByUrl(this.auth.dashboardFor(user.role));
@@ -228,8 +307,7 @@ export class AuthFormOverlayComponent {
   loginWithGoogle() {
     const w = window as unknown as Record<string, unknown>;
     const googleAccounts = (w['google'] as Record<string, unknown> | undefined)?.['accounts'] as
-      | { id: { initialize(cfg: Record<string, unknown>): void; prompt(): void } }
-      | undefined;
+      { id: { initialize(cfg: Record<string, unknown>): void; prompt(): void } } | undefined;
 
     if (!googleAccounts?.id) {
       this.showError('Google Sign-In is not available. Ensure GOOGLE_CLIENT_ID is configured.');
@@ -300,5 +378,9 @@ export class AuthFormOverlayComponent {
       disableClose: state === 'loading',
       width: '360px',
     });
+  }
+
+  private errorCleanup() {
+    this.closeActiveOverlay();
   }
 }
