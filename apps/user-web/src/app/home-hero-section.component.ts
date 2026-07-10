@@ -1,28 +1,18 @@
-import { CommonModule, CurrencyPipe } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import { Component, Input, inject, signal } from '@angular/core';
 import { form, FormField } from '@angular/forms/signals';
 import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { POST_LOGIN_REDIRECT_DELAY_MS } from './core/constants/timing.constants';
-import { CURRENCY_CODE } from './core/constants/billing.constants';
-import { ROUTE_PATHS } from './core/constants/app-routes.constants';
 import { HOME_CONTENT } from './core/constants/public-site-content.constants';
 import { AuthService } from './auth/auth.service';
-import { ClinicApiService } from './clinic-api.service';
 import { PublicConfigService } from './core/services/public-config.service';
-import { Disease } from './models';
 
 type BookStep = 'form' | 'otp' | 'loading' | 'done';
 
-type ClinicOption = {
-  id: string;
-  name: string;
-  address?: string | null;
-};
-
 @Component({
   selector: 'app-home-hero-section',
-  imports: [CommonModule, CurrencyPipe, FormField],
+  imports: [CommonModule, FormField],
   styleUrl: './home-hero-section.component.scss',
   templateUrl: './home-hero-section.component.html',
 })
@@ -30,18 +20,12 @@ export class HomeHeroSectionComponent {
   @Input() whatsappLink = '';
 
   readonly copy = HOME_CONTENT;
-  readonly currencyCode = CURRENCY_CODE;
-
   readonly heroEyebrow = signal<string>(HOME_CONTENT.hero.eyebrow);
   readonly heroHeadline = signal<string>(HOME_CONTENT.hero.headline);
   readonly heroLead = signal<string>(HOME_CONTENT.hero.lead);
 
-  readonly bookingFormModel = signal({ diseaseId: '', clinicStoreId: '', email: '', otp: '' });
+  readonly bookingFormModel = signal({ email: '', otp: '' });
   readonly bookingForm = form(this.bookingFormModel);
-  readonly diseases = signal<Disease[]>([]);
-  readonly clinics = signal<ClinicOption[]>([]);
-  readonly diseasesLoading = signal(true);
-  readonly clinicsLoading = signal(true);
 
   readonly step = signal<BookStep>('form');
   readonly busy = signal(false);
@@ -49,26 +33,14 @@ export class HomeHeroSectionComponent {
 
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
-  private readonly api = inject(ClinicApiService);
   private readonly publicConfig = inject(PublicConfigService);
 
   constructor() {
     void this.bootstrap();
   }
 
-  selectedDisease() {
-    const id = this.bookingFormModel().diseaseId;
-    return this.diseases().find((disease) => disease.id === id) ?? null;
-  }
-
-  async onClinicChange(clinicStoreId: string) {
-    this.bookingFormModel.update((m) => ({ ...m, clinicStoreId, diseaseId: '' }));
-    await this.loadDiseases(clinicStoreId || undefined);
-  }
-
   private async bootstrap() {
     void this.loadHeroCopy();
-    void this.loadClinics();
   }
 
   private async loadHeroCopy() {
@@ -82,45 +54,9 @@ export class HomeHeroSectionComponent {
     }
   }
 
-  private async loadClinics() {
-    this.clinicsLoading.set(true);
-    try {
-      const response = await firstValueFrom(this.api.clinics());
-      this.clinics.set(response.clinics || []);
-      const first = response.clinics?.[0];
-      if (first) {
-        this.bookingFormModel.update((m) => ({ ...m, clinicStoreId: first.id }));
-        await this.loadDiseases(first.id);
-      } else {
-        await this.loadDiseases();
-      }
-    } catch {
-      this.clinics.set([]);
-      await this.loadDiseases();
-    } finally {
-      this.clinicsLoading.set(false);
-    }
-  }
-
-  private async loadDiseases(clinicStoreId?: string) {
-    this.diseasesLoading.set(true);
-    try {
-      const response = await firstValueFrom(this.api.diseases({ clinicStoreId }));
-      this.diseases.set(response.diseases);
-    } catch {
-      this.diseases.set([]);
-    } finally {
-      this.diseasesLoading.set(false);
-    }
-  }
-
   async sendOtp() {
-    const { email: rawEmail, diseaseId } = this.bookingFormModel();
+    const { email: rawEmail } = this.bookingFormModel();
     const email = rawEmail.trim().toLowerCase();
-    if (!diseaseId) {
-      this.error.set('Select a health concern to continue.');
-      return;
-    }
     if (!/.+@.+\..+/.test(email)) {
       this.error.set('Enter a valid email address.');
       return;
@@ -163,21 +99,8 @@ export class HomeHeroSectionComponent {
       );
       this.step.set('done');
       if ('user' in response) {
-        const diseaseId = form.diseaseId;
-        if (diseaseId && typeof sessionStorage !== 'undefined') {
-          sessionStorage.setItem('pendingDiseaseId', diseaseId);
-        }
         const dashboard = this.auth.dashboardFor(response.user.role);
-        const params = new URLSearchParams();
-        if (response.user.role === 'PATIENT' && diseaseId) {
-          params.set('diseaseId', diseaseId);
-        }
-        if (form.clinicStoreId) {
-          params.set('clinicStoreId', form.clinicStoreId);
-        }
-        const query = params.toString();
-        const target = query ? `${dashboard}?${query}` : dashboard;
-        setTimeout(() => void this.router.navigateByUrl(target), POST_LOGIN_REDIRECT_DELAY_MS);
+        setTimeout(() => void this.router.navigateByUrl(dashboard), POST_LOGIN_REDIRECT_DELAY_MS);
       }
     } catch (err: any) {
       this.step.set('otp');
@@ -191,9 +114,5 @@ export class HomeHeroSectionComponent {
     this.bookingFormModel.update((m) => ({ ...m, otp: '' }));
     this.error.set('');
     this.step.set('form');
-  }
-
-  browseTreatmentsHref() {
-    return `/${ROUTE_PATHS.TREATMENTS}`;
   }
 }

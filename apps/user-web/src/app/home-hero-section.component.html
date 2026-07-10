@@ -15,38 +15,6 @@
 
               <div class="bc-fields">
                 <label class="bc-field">
-                  <span class="bc-label">Clinic location</span>
-                  @if (clinicsLoading()) {
-                    <p class="bc-hint">Loading clinics…</p>
-                  } @else {
-                    <select
-                      [formField]="bookingForm.clinicStoreId"
-                      (change)="onClinicChange(bookingFormModel().clinicStoreId)">
-                      @for (clinic of clinics(); track clinic.id) {
-                        <option [value]="clinic.id">{{ clinic.name }}</option>
-                      }
-                    </select>
-                  }
-                </label>
-
-                <label class="bc-field">
-                  <span class="bc-label">{{ copy.booking.diseaseLabel }}</span>
-                  @if (diseasesLoading()) {
-                    <p class="bc-hint">{{ copy.booking.diseaseLoadingLabel }}</p>
-                  } @else {
-                    <select [formField]="bookingForm.diseaseId">
-                      <option value="">{{ copy.booking.diseasePlaceholder }}</option>
-                      @for (disease of diseases(); track disease.id) {
-                        <option [value]="disease.id">
-                          {{ disease.name }} — {{ disease.feeInPaise / 100 | currency: currencyCode }}
-                        </option>
-                      }
-                    </select>
-                    <a class="bc-hint bc-hint-link" [href]="browseTreatmentsHref()">{{ copy.booking.diseaseBrowseLabel }}</a>
-                  }
-                </label>
-
-                <label class="bc-field">
                   <span class="bc-label">{{ copy.booking.emailLabel }}</span>
                   <input
                     [formField]="bookingForm.email"

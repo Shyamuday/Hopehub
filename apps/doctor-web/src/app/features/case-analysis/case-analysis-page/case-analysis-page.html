@@ -339,6 +339,39 @@
         </section>
       }
 
+      <nav class="workflow-bottom-nav" aria-label="Case taking step navigation">
+        <button
+          type="button"
+          class="btn-secondary workflow-nav-btn"
+          (click)="goToPreviousWorkflowStep()"
+          [disabled]="!previousWorkflowStep()"
+        >
+          Back
+          @if (previousWorkflowStep(); as previous) {
+            <span>{{ previous.shortLabel }}</span>
+          }
+        </button>
+
+        @if (activeWorkflowStep(); as current) {
+          <div class="workflow-nav-current">
+            <span>Step {{ activeWorkflowStepIndex() + 1 }} of {{ workflowSteps().length }}</span>
+            <strong>{{ current.shortLabel }}</strong>
+          </div>
+        }
+
+        <button
+          type="button"
+          class="btn-primary workflow-nav-btn"
+          (click)="goToNextWorkflowStep()"
+          [disabled]="!nextWorkflowStep()"
+        >
+          Next
+          @if (nextWorkflowStep(); as next) {
+            <span>{{ next.shortLabel }}</span>
+          }
+        </button>
+      </nav>
+
       @if (showRepertoryWorkspace()) {
     <app-collapsible-section
       title="Visual symptoms"

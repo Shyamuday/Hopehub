@@ -144,7 +144,7 @@
 }
 
 .header-menu-toggle {
-  display: none;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   width: 44px;
@@ -182,9 +182,103 @@
   display: none;
 }
 
+.app-header.app-header--guest.menu-open .header-nav-backdrop {
+  display: block;
+  position: fixed;
+  inset: 0;
+  z-index: 8;
+  background: transparent;
+}
+
 .app-header.app-header--guest .header-nav-sheet {
+  display: none;
   margin-left: auto;
   flex-wrap: nowrap;
+}
+
+.app-header.app-header--guest.menu-open .header-nav-sheet {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: clamp(1rem, 4vw, 3rem);
+  z-index: 12;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(12rem, 1fr));
+  gap: 0.9rem 1rem;
+  width: min(34rem, calc(100vw - 2rem));
+  margin: 0;
+  padding: 1rem;
+  border: 1px solid rgba(210, 220, 235, 0.95);
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 24px 56px rgba(15, 23, 42, 0.16);
+}
+
+.app-header.app-header--guest.menu-open .header-nav-group {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.app-header.app-header--guest.menu-open .header-nav-group-title {
+  display: block;
+  margin: 0 0 0.15rem;
+  color: #94a3b8;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.app-header.app-header--guest.menu-open .header-nav-sheet a {
+  display: flex;
+  align-items: center;
+  min-height: 2.35rem;
+  border-radius: 10px;
+  padding: 0.4rem 0.55rem;
+  color: #24344d;
+  font-size: 0.88rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.app-header.app-header--guest.menu-open .header-nav-sheet a:hover {
+  background: #eef4ff;
+  color: #0f62fe;
+}
+
+.header-desktop-nav {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-width: 0;
+  margin-left: auto;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.header-desktop-nav a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  border-radius: 999px;
+  padding: 0.35rem 0.65rem;
+  color: #24344d;
+  font-size: 0.84rem;
+  font-weight: 700;
+  text-decoration: none;
+  transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+}
+
+.header-desktop-nav a:hover {
+  background: #eef4ff;
+  color: #0f62fe;
+  transform: translateY(-1px);
+}
+
+@media (max-width: 1180px) {
+  .header-desktop-nav {
+    display: none;
+  }
 }
 
 .header-guest-bar-end {

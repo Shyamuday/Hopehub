@@ -204,6 +204,23 @@ export class CaseAnalysisPage implements OnDestroy, OnInit {
 
   readonly workflowSteps = computed(() => this.activeApproach().steps);
 
+  readonly activeWorkflowStepIndex = computed(() => {
+    const index = this.workflowSteps().findIndex((step) => step.id === this.activeStepId());
+    return index >= 0 ? index : 0;
+  });
+
+  readonly activeWorkflowStep = computed(
+    () => this.workflowSteps()[this.activeWorkflowStepIndex()] || null,
+  );
+
+  readonly previousWorkflowStep = computed(
+    () => this.workflowSteps()[this.activeWorkflowStepIndex() - 1] || null,
+  );
+
+  readonly nextWorkflowStep = computed(
+    () => this.workflowSteps()[this.activeWorkflowStepIndex() + 1] || null,
+  );
+
   readonly caseSheetFields = computed(() =>
     caseSheetFieldsForSchema(this.activeApproach().caseSheetSchemaId),
   );
@@ -373,6 +390,20 @@ export class CaseAnalysisPage implements OnDestroy, OnInit {
 
   setActiveStep(stepId: ApproachStepId) {
     this.activeStepId.set(stepId);
+  }
+
+  goToPreviousWorkflowStep() {
+    const previous = this.previousWorkflowStep();
+    if (previous) {
+      this.setActiveStep(previous.id);
+    }
+  }
+
+  goToNextWorkflowStep() {
+    const next = this.nextWorkflowStep();
+    if (next) {
+      this.setActiveStep(next.id);
+    }
   }
 
   async loadPracticeSession() {

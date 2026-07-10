@@ -83,6 +83,10 @@
 }
 
 @media (max-width: 860px) {
+  .header-desktop-nav {
+    display: none;
+  }
+
   .header-nav-group {
     display: block;
     margin-bottom: 0.85rem;

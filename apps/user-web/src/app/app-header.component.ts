@@ -40,6 +40,7 @@ export class AppHeaderComponent implements OnDestroy {
 
   readonly brand = PUBLIC_SITE_BRAND;
   readonly guestNavGroups = PUBLIC_HEADER_NAV_GROUPS;
+  readonly desktopNavLinks = PUBLIC_HEADER_NAV_GROUPS.flatMap((group) => group.links).slice(0, 5);
   readonly accountPaths = {
     hub: `/${ROUTE_PATHS.PATIENT_ACCOUNT}`,
     profile: `/${ROUTE_PATHS.PATIENT_ACCOUNT_PROFILE}`,

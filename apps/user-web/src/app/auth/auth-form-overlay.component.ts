@@ -33,6 +33,9 @@ export class AuthFormOverlayComponent {
       ? new URLSearchParams(window.location.search).get('ref') || undefined
       : undefined;
   readonly authView = signal<AuthView>('login');
+  readonly loginOtpSent = signal(false);
+  readonly signupOtpSent = signal(false);
+  readonly otpNotice = signal('');
   readonly isProcessing = signal(false);
   readonly forgotStep = signal<ForgotStep>(this.overlayData.initialForgotStep || 'none');
   readonly resetToken = signal<string>(this.overlayData.resetToken || '');
@@ -93,19 +96,23 @@ export class AuthFormOverlayComponent {
     return !!(
       signup.name.trim().length >= 2 &&
       this.isEmail(signup.email) &&
-      signup.otp.trim().length >= 4
+      this.signupOtpSent() &&
+      this.isSixDigitOtp(signup.otp)
     );
   }
 
   canLoginWithEmailOtp(): boolean {
     const otp = this.patientOtpModel();
-    return this.isEmail(otp.email) && otp.otp.trim().length >= 4;
+    return this.isEmail(otp.email) && this.loginOtpSent() && this.isSixDigitOtp(otp.otp);
   }
 
   setAuthView(view: AuthView) {
     this.authView.set(view);
     this.forgotStep.set('none');
     this.patientSelection.set(null);
+    this.loginOtpSent.set(false);
+    this.signupOtpSent.set(false);
+    this.otpNotice.set('');
     this.errorCleanup();
   }
 
@@ -118,19 +125,59 @@ export class AuthFormOverlayComponent {
     this.forgotStep.set('none');
   }
 
-  requestOtp(email: string) {
+  resetLoginOtp() {
+    this.loginOtpSent.set(false);
+    this.otpNotice.set('');
+    this.patientOtpModel.update((model) => ({ ...model, otp: '' }));
+  }
+
+  resetSignupOtp() {
+    this.signupOtpSent.set(false);
+    this.otpNotice.set('');
+    this.signupModel.update((model) => ({ ...model, otp: '' }));
+  }
+
+  requestLoginOtp() {
+    const email = this.patientOtpModel().email;
+    this.requestOtp(email, () => {
+      this.patientOtpModel.update((model) => ({
+        ...model,
+        email: email.trim().toLowerCase(),
+        otp: '',
+      }));
+      this.loginOtpSent.set(true);
+    });
+  }
+
+  requestSignupOtp() {
+    const email = this.signupModel().email;
+    this.requestOtp(email, () => {
+      this.signupModel.update((model) => ({
+        ...model,
+        email: email.trim().toLowerCase(),
+        otp: '',
+      }));
+      this.signupOtpSent.set(true);
+    });
+  }
+
+  private requestOtp(email: string, onSent: () => void) {
     if (!this.isEmail(email)) {
       this.showError('Enter a valid email address.');
       return;
     }
 
+    this.otpNotice.set('');
     this.process('Sending OTP...', this.auth.requestOtp(email.trim().toLowerCase())).subscribe({
-      next: (response) =>
-        this.showSuccess(
+      next: (response) => {
+        onSent();
+        this.closeActiveOverlay();
+        this.otpNotice.set(
           response.devOtp
             ? `OTP sent successfully. Development OTP: ${response.devOtp}`
             : 'OTP sent successfully. Check your email.',
-        ),
+        );
+      },
       error: () => this.showError('Could not request OTP.'),
     });
   }
@@ -155,6 +202,8 @@ export class AuthFormOverlayComponent {
     if (credentials.otp) {
       this.patientOtpModel.update((m) => ({ ...m, otp: credentials.otp! }));
       this.signupModel.update((m) => ({ ...m, otp: credentials.otp! }));
+      this.loginOtpSent.set(true);
+      this.signupOtpSent.set(true);
     }
   }
 
@@ -405,5 +454,9 @@ export class AuthFormOverlayComponent {
 
   private isEmail(value: string) {
     return /.+@.+\..+/.test(value.trim());
+  }
+
+  private isSixDigitOtp(value: string) {
+    return /^\d{6}$/.test(value.trim());
   }
 }

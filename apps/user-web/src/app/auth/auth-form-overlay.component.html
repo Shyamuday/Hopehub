@@ -57,16 +57,27 @@
           </label>
           <label>
             Email
-            <input [formField]="signupForm.email" type="email" placeholder="Enter Gmail" autocomplete="email" />
+            <input
+              [formField]="signupForm.email"
+              type="email"
+              placeholder="Enter Gmail"
+              autocomplete="email"
+              (input)="resetSignupOtp()"
+            />
           </label>
-          <div class="otp-row">
-            <label class="otp-field">
-              Email OTP
-              <input [formField]="signupForm.otp" placeholder="6-digit OTP" inputmode="numeric" autocomplete="one-time-code" />
+          @if (signupOtpSent()) {
+            @if (otpNotice()) {
+              <p class="muted">{{ otpNotice() }}</p>
+            }
+            <label>
+              6-digit OTP
+              <input [formField]="signupForm.otp" placeholder="Enter OTP" inputmode="numeric" autocomplete="one-time-code" />
             </label>
-            <button type="button" class="secondary otp-send" [disabled]="isProcessing()" (click)="requestOtp(signupModel().email)">Send OTP</button>
-          </div>
-          <button class="primary" type="submit" [disabled]="isProcessing() || !canRegisterPatient()">Create account</button>
+            <button class="primary" type="submit" [disabled]="isProcessing() || !canRegisterPatient()">Verify OTP & create account</button>
+            <button type="button" class="secondary" [disabled]="isProcessing()" (click)="requestSignupOtp()">Resend OTP</button>
+          } @else {
+            <button type="button" class="primary" [disabled]="isProcessing() || !signupModel().name.trim() || !signupModel().email.trim()" (click)="requestSignupOtp()">Send OTP</button>
+          }
         </form>
 
         <p class="mode-switch-wrap">
@@ -84,16 +95,22 @@
               type="email"
               placeholder="Enter Gmail"
               autocomplete="email"
+              (input)="resetLoginOtp()"
             />
           </label>
-          <div class="otp-row">
-            <label class="otp-field">
-              Email OTP
-              <input [formField]="patientOtpForm.otp" placeholder="6-digit OTP" inputmode="numeric" autocomplete="one-time-code" />
+          @if (loginOtpSent()) {
+            @if (otpNotice()) {
+              <p class="muted">{{ otpNotice() }}</p>
+            }
+            <label>
+              6-digit OTP
+              <input [formField]="patientOtpForm.otp" placeholder="Enter OTP" inputmode="numeric" autocomplete="one-time-code" />
             </label>
-            <button type="button" class="secondary otp-send" [disabled]="isProcessing()" (click)="requestOtp(patientOtpModel().email)">Send OTP</button>
-          </div>
-          <button class="primary" type="submit" [disabled]="isProcessing() || !canLoginWithEmailOtp()">Continue</button>
+            <button class="primary" type="submit" [disabled]="isProcessing() || !canLoginWithEmailOtp()">Verify OTP & login</button>
+            <button type="button" class="secondary" [disabled]="isProcessing()" (click)="requestLoginOtp()">Resend OTP</button>
+          } @else {
+            <button type="button" class="primary" [disabled]="isProcessing() || !patientOtpModel().email.trim()" (click)="requestLoginOtp()">Send OTP</button>
+          }
         </form>
 
         <p class="mode-switch-wrap">

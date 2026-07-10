@@ -102,6 +102,71 @@
     }
   }
 
+  .workflow-bottom-nav {
+    display: grid;
+    grid-template-columns: minmax(8rem, 1fr) auto minmax(8rem, 1fr);
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.8rem;
+    border: 1px solid var(--color-border, #e5e7eb);
+    border-radius: var(--radius-md);
+    background: var(--color-surface, #fff);
+  }
+
+  .workflow-nav-btn {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.15rem;
+    min-height: 3rem;
+    text-align: center;
+
+    span {
+      max-width: 14rem;
+      overflow: hidden;
+      color: inherit;
+      font-size: 0.78rem;
+      font-weight: 600;
+      opacity: 0.82;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  }
+
+  .workflow-nav-current {
+    display: grid;
+    gap: 0.15rem;
+    min-width: 8rem;
+    text-align: center;
+
+    span {
+      color: var(--color-text-secondary, #64748b);
+      font-size: 0.78rem;
+    }
+
+    strong {
+      color: var(--color-text, #0f172a);
+      font-size: 0.92rem;
+    }
+  }
+
+  @media (max-width: 720px) {
+    .workflow-bottom-nav {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .workflow-nav-current {
+      grid-column: 1 / -1;
+      grid-row: 1;
+    }
+
+    .workflow-nav-btn {
+      grid-row: 2;
+      min-width: 0;
+    }
+  }
+
   .approach-search {
     width: 100%;
     max-width: 28rem;

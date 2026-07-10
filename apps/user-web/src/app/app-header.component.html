@@ -57,6 +57,12 @@
           }
         </div>
       } @else {
+        <nav class="header-desktop-nav" aria-label="Primary links">
+          @for (link of desktopNavLinks; track link.path) {
+            <a [href]="link.path">{{ link.label }}</a>
+          }
+        </nav>
+
         <div
           class="header-nav-backdrop"
           role="presentation"
@@ -93,7 +99,7 @@
             (click)="toggleMenu()"
             [attr.aria-expanded]="menuOpen()"
             aria-controls="header-primary-nav"
-            aria-label="Open or close menu">
+            [attr.aria-label]="menuOpen() ? 'Close menu' : 'Open menu'">
             @if (menuOpen()) {
               <svg class="header-menu-icon" viewBox="0 0 24 24" aria-hidden="true">
                 <path
