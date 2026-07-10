@@ -15,13 +15,20 @@ export function fieldDoctorGuidanceLines(field: ApproachFieldDef): string[] {
   if (field.required) {
     lines.push('Required — fill this before moving to the next step.');
   }
+  if (field.optionGroups?.length) {
+    lines.push(
+      'Use the option chips below the field to quickly add common clinical clues, then edit the final wording.'
+    );
+  }
 
   switch (field.suggestEndpoint) {
     case 'ai-extract-intake':
       lines.push('Click “From intake” to pull matching answers from the patient questionnaire.');
       break;
     case 'ai-complete':
-      lines.push('Click “Suggest” to draft text from intake and fields already captured in this case.');
+      lines.push(
+        'Click “Suggest” to draft text from intake and fields already captured in this case.'
+      );
       break;
     case 'ai-extract-media':
       lines.push('Click “From photos” to use observations from clinical images on this case.');

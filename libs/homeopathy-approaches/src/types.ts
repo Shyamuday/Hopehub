@@ -111,10 +111,7 @@ export type CaseSheetSchemaId =
   | 'combination';
 
 export type FieldSuggestEndpoint =
-  | 'rubric-search'
-  | 'ai-complete'
-  | 'ai-extract-intake'
-  | 'ai-extract-media';
+  'rubric-search' | 'ai-complete' | 'ai-extract-intake' | 'ai-extract-media';
 
 export type ApproachFieldDef = {
   key: string;
@@ -133,6 +130,11 @@ export type ApproachFieldDef = {
   suggestEndpoint?: FieldSuggestEndpoint;
   suggestContext?: string[];
   extractFrom?: Array<'intake' | 'chat' | 'media' | 'priorCase'>;
+  captureLayer?: 'capture' | 'clarify' | 'extract';
+  optionGroups?: Array<{
+    title: string;
+    options: string[];
+  }>;
 };
 
 export type CaseSheetFieldDef = ApproachFieldDef;

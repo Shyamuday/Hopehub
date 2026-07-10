@@ -2,11 +2,22 @@ import type { ApproachDataPayload, ApproachStepComponent, ApproachFieldDef } fro
 import { approachField } from './approach-field-helpers';
 
 export type StructuredPanelFieldDef = ApproachFieldDef;
+export type StructuredPanelLayer = 'capture' | 'clarify' | 'extract';
+
+export type ApproachStructuredPanelSectionDef = {
+  id: string;
+  title: string;
+  shortLabel: string;
+  description: string;
+  fieldKeys: string[];
+  layerHints?: Partial<Record<StructuredPanelLayer, string>>;
+};
 
 export type ApproachStructuredPanelDef = {
   title: string;
   hint: string;
   fields: StructuredPanelFieldDef[];
+  sections?: ApproachStructuredPanelSectionDef[];
   requiredKeys?: string[];
   combinationCatalog?: boolean;
 };
@@ -20,7 +31,731 @@ function fields(...items: StructuredPanelFieldDef[]): StructuredPanelFieldDef[] 
   return items;
 }
 
-export const STRUCTURED_APPROACH_PANELS: Record<ApproachStepComponent, StructuredPanelBinding | undefined> = {
+const CONSTITUTION_OPTIONS = [
+  {
+    title: 'Build',
+    options: [
+      'lean',
+      'stout',
+      'flabby',
+      'muscular',
+      'emaciated',
+      'obese',
+      'tall thin',
+      'short stocky'
+    ]
+  },
+  {
+    title: 'Vitality',
+    options: [
+      'high vitality',
+      'low vitality',
+      'tires easily',
+      'morning low',
+      'evening low',
+      'post-illness weakness'
+    ]
+  },
+  {
+    title: 'Temperament',
+    options: [
+      'anxious',
+      'hurried',
+      'reserved',
+      'sensitive',
+      'irritable',
+      'yielding',
+      'obstinate',
+      'perfectionist'
+    ]
+  }
+];
+
+const LSMC_OPTIONS = [
+  {
+    title: 'Location',
+    options: [
+      'right-sided',
+      'left-sided',
+      'alternating sides',
+      'radiating',
+      'localized',
+      'shifting',
+      'deep',
+      'superficial'
+    ]
+  },
+  {
+    title: 'Sensation',
+    options: [
+      'burning',
+      'stitching',
+      'throbbing',
+      'pressing',
+      'cramping',
+      'cutting',
+      'numbness',
+      'heaviness'
+    ]
+  },
+  {
+    title: 'Modalities',
+    options: [
+      'worse morning',
+      'worse evening',
+      'worse night',
+      'worse heat',
+      'worse cold',
+      'better rest',
+      'better motion',
+      'better pressure'
+    ]
+  },
+  {
+    title: 'Concomitants',
+    options: ['nausea', 'sweat', 'chill', 'anxiety', 'vertigo', 'weakness', 'thirst', 'urination']
+  }
+];
+
+const CAUSATION_OPTIONS = [
+  {
+    title: 'Causation',
+    options: [
+      'after grief',
+      'after fright',
+      'after anger',
+      'after humiliation',
+      'after injury',
+      'after infection',
+      'after exposure',
+      'after suppression'
+    ]
+  },
+  {
+    title: 'Course',
+    options: [
+      'sudden onset',
+      'gradual onset',
+      'progressive',
+      'periodic',
+      'relapsing',
+      'alternating complaints',
+      'one-sided',
+      'metastatic shift'
+    ]
+  },
+  {
+    title: 'Maintaining',
+    options: [
+      'stress',
+      'poor sleep',
+      'diet trigger',
+      'sedentary',
+      'overwork',
+      'current medication',
+      'hormonal factor',
+      'environmental exposure'
+    ]
+  }
+];
+
+const MIASM_OPTIONS = [
+  {
+    title: 'Miasm',
+    options: [
+      'psoric',
+      'sycotic',
+      'syphilitic',
+      'tubercular',
+      'cancerinic',
+      'mixed miasm',
+      'suppressed eruption',
+      'drug layer'
+    ]
+  },
+  {
+    title: 'Family Load',
+    options: [
+      'diabetes',
+      'hypertension',
+      'asthma',
+      'TB',
+      'cancer',
+      'autoimmune',
+      'mental illness',
+      'skin disease'
+    ]
+  },
+  {
+    title: 'Suppression',
+    options: [
+      'steroids',
+      'antibiotics repeated',
+      'hormonal pills',
+      'surgery',
+      'topical ointments',
+      'vaccination layer',
+      'painkiller overuse'
+    ]
+  }
+];
+
+const MIND_OPTIONS = [
+  {
+    title: 'Fears',
+    options: [
+      'fear of death',
+      'fear of disease',
+      'fear of alone',
+      'fear of dark',
+      'fear of failure',
+      'fear of poverty',
+      'anticipatory anxiety'
+    ]
+  },
+  {
+    title: 'Reactions',
+    options: [
+      'anger suppressed',
+      'anger explosive',
+      'weeps easily',
+      'consolation better',
+      'consolation worse',
+      'jealousy',
+      'guilt',
+      'humiliation'
+    ]
+  },
+  {
+    title: 'State',
+    options: [
+      'hurried',
+      'indecisive',
+      'perfectionist',
+      'responsibility heavy',
+      'suspicious',
+      'sensitive to criticism',
+      'desires company',
+      'aversion company'
+    ]
+  }
+];
+
+const GENERAL_OPTIONS = [
+  {
+    title: 'Thermal',
+    options: [
+      'chilly',
+      'hot patient',
+      'cold hands/feet',
+      'heat in palms/soles',
+      'worse sun',
+      'worse damp',
+      'worse cold wind',
+      'better warmth'
+    ]
+  },
+  {
+    title: 'Food',
+    options: [
+      'thirstless',
+      'large thirst',
+      'desire sweets',
+      'desire salt',
+      'desire sour',
+      'desire spicy',
+      'aversion milk',
+      'aggravation fatty food'
+    ]
+  },
+  {
+    title: 'Sleep/Sweat',
+    options: [
+      'sleepless before midnight',
+      'wakes 3 am',
+      'unrefreshing sleep',
+      'profuse sweat',
+      'night sweat',
+      'offensive sweat',
+      'dreams vivid'
+    ]
+  }
+];
+
+const PARTICULAR_OPTIONS = [
+  {
+    title: 'Systems',
+    options: [
+      'head',
+      'ENT',
+      'respiratory',
+      'cardiac',
+      'gastric',
+      'urinary',
+      'skin',
+      'joints',
+      'neuro',
+      'female'
+    ]
+  },
+  {
+    title: 'Objective',
+    options: [
+      'swelling',
+      'redness',
+      'discharge',
+      'ulceration',
+      'crack',
+      'eruption',
+      'stiffness',
+      'tremor',
+      'fever',
+      'weight change'
+    ]
+  },
+  {
+    title: 'Pattern',
+    options: [
+      'periodic',
+      'seasonal',
+      'right to left',
+      'left to right',
+      'ascending',
+      'descending',
+      'alternating',
+      'recurring same time'
+    ]
+  }
+];
+
+const PLAN_OPTIONS = [
+  {
+    title: 'Safety',
+    options: [
+      'red flag absent',
+      'red flag present',
+      'needs lab',
+      'needs imaging',
+      'refer urgently',
+      'co-management needed',
+      'monitor vitals'
+    ]
+  },
+  {
+    title: 'Strategy',
+    options: [
+      'constitutional remedy',
+      'acute remedy',
+      'intercurrent',
+      'drainage support',
+      'LM potency',
+      'single dose',
+      'watch and wait',
+      'follow-up in 7 days'
+    ]
+  },
+  {
+    title: 'Hierarchy',
+    options: [
+      'mental generals lead',
+      'physical generals lead',
+      'particulars lead',
+      'pathology lead',
+      'miasm lead',
+      'keynote lead',
+      'low vitality caution'
+    ]
+  }
+];
+
+const EIGHT_BOX_GUIDED_FIELDS = fields(
+  approachField('patientConstitution', 'Raw constitution notes', {
+    rows: 4,
+    wide: true,
+    required: true,
+    captureLayer: 'capture',
+    description:
+      'Patient identity, build, baseline vitality, temperament, occupation, daily rhythm, and first impression.',
+    placeholder:
+      'Age/sex, occupation, build, posture, complexion, pace, vitality, thermal tendency, temperament, patient language…',
+    promptKey: 'eightBox.patientConstitution',
+    optionGroups: CONSTITUTION_OPTIONS,
+    extractFrom: ['intake']
+  }),
+  approachField('patientConstitutionClarify', 'Constitution details to clarify', {
+    rows: 4,
+    wide: true,
+    captureLayer: 'clarify',
+    description: 'Complete the constitutional frame before interpreting symptoms.',
+    placeholder:
+      'Build: lean/stout/flabby/muscular. Energy: morning/evening, fatigue pattern. Thermal: chilly/hot/both. Sensitivity: noise/light/touch/weather. Temperament: reserved, hurried, anxious, yielding, obstinate…',
+    promptKey: 'eightBox.patientConstitution.clarify',
+    optionGroups: [...CONSTITUTION_OPTIONS, ...GENERAL_OPTIONS.slice(0, 1)]
+  }),
+  approachField('patientConstitutionExtract', 'Constitution summary & clinical weight', {
+    rows: 4,
+    wide: true,
+    captureLayer: 'extract',
+    description: 'Distil what should influence remedy selection.',
+    placeholder:
+      'Stable constitutional generals, reliability, peculiar observations, vitality level, susceptibility, likely remedy families or kingdoms if evident…',
+    rubricSearchable: true,
+    promptKey: 'eightBox.patientConstitution.extract',
+    optionGroups: [...CONSTITUTION_OPTIONS, ...PLAN_OPTIONS.slice(2)]
+  }),
+
+  approachField('chiefComplaints', 'Chief complaint in patient words', {
+    rows: 4,
+    wide: true,
+    required: true,
+    captureLayer: 'capture',
+    description: 'Capture every main complaint exactly as the patient presents it.',
+    placeholder:
+      'Complaint, onset, duration, patient words, current severity, what worries them most, associated diagnosis if known…',
+    rubricSearchable: true,
+    promptKey: 'eightBox.chiefComplaints',
+    suggestEndpoint: 'ai-extract-intake',
+    optionGroups: LSMC_OPTIONS,
+    extractFrom: ['intake']
+  }),
+  approachField('chiefComplaintsClarify', 'Location, sensation, modality, concomitant', {
+    rows: 5,
+    wide: true,
+    captureLayer: 'clarify',
+    description: 'Boenninghausen-style completion of each main complaint.',
+    placeholder:
+      'For each complaint: location, extension, sensation, onset, causation, duration, periodicity, intensity, better/worse, position, weather, food, rest/motion, time, concomitants, red flags…',
+    rubricSearchable: true,
+    promptKey: 'eightBox.chiefComplaints.clarify',
+    optionGroups: [...LSMC_OPTIONS, ...CAUSATION_OPTIONS.slice(0, 2)]
+  }),
+  approachField('chiefComplaintsExtract', 'Chief complaint rubrics & anchors', {
+    rows: 4,
+    wide: true,
+    captureLayer: 'extract',
+    description: 'Convert the complaint into prescribing anchors.',
+    placeholder:
+      'Top rubrics, characteristic modalities, concomitants, strange/rare/peculiar symptoms, pathology anchors, symptoms to verify in repertory…',
+    rubricSearchable: true,
+    suggestEndpoint: 'ai-complete',
+    promptKey: 'eightBox.chiefComplaints.extract',
+    optionGroups: [...LSMC_OPTIONS, ...PLAN_OPTIONS.slice(2)]
+  }),
+
+  approachField('presentIllness', 'Timeline of present illness', {
+    rows: 4,
+    wide: true,
+    captureLayer: 'capture',
+    description: 'How the present illness began and unfolded.',
+    placeholder:
+      'First onset, exact sequence, acute episodes, relapses, seasonal pattern, current treatment, investigations, diagnosis timeline…',
+    promptKey: 'eightBox.presentIllness',
+    optionGroups: CAUSATION_OPTIONS
+  }),
+  approachField('presentIllnessClarify', 'Causation, progression & maintaining factors', {
+    rows: 5,
+    wide: true,
+    captureLayer: 'clarify',
+    description: 'Identify the maintaining cause and clinical layer.',
+    placeholder:
+      'Causation: grief, fright, anger, injury, infection, exposure, suppression, drugs, hormones, vaccination, lifestyle, sleep, diet, stress. Course: improving/worsening, periodicity, alternations, one-sidedness…',
+    promptKey: 'eightBox.presentIllness.clarify',
+    optionGroups: [...CAUSATION_OPTIONS, ...MIASM_OPTIONS.slice(2)]
+  }),
+  approachField('presentIllnessExtract', 'Illness layer & prescribing implications', {
+    rows: 4,
+    wide: true,
+    captureLayer: 'extract',
+    description: 'Summarize the clinical layer to treat first.',
+    placeholder:
+      'Acute/chronic layer, maintaining cause, obstacle to cure, suppression history, pathological depth, investigation gaps, first target for prescription…',
+    rubricSearchable: true,
+    promptKey: 'eightBox.presentIllness.extract',
+    optionGroups: [...CAUSATION_OPTIONS, ...PLAN_OPTIONS]
+  }),
+
+  approachField('pastFamilyHistory', 'Past, family & treatment history', {
+    rows: 4,
+    wide: true,
+    captureLayer: 'capture',
+    description: 'Collect personal disease history, family tendencies, and treatment exposures.',
+    placeholder:
+      'Childhood illness, recurrent infections, allergies, skin eruptions, surgery, steroids, antibiotics, family TB/diabetes/cancer/autoimmune/mental illness…',
+    promptKey: 'eightBox.pastFamilyHistory',
+    optionGroups: MIASM_OPTIONS,
+    extractFrom: ['intake']
+  }),
+  approachField('pastFamilyHistoryClarify', 'Miasmatic and suppression clues', {
+    rows: 5,
+    wide: true,
+    captureLayer: 'clarify',
+    description: 'Look for inherited tendency and suppressed disease expression.',
+    placeholder:
+      'Psora: itch/allergy/functional. Sycosis: warts, overgrowth, recurrent catarrh, PCOS. Syphilis: ulceration, destruction, degeneration. Tubercular: changeability, recurrent respiratory, restlessness. Cancerinic: control, perfectionism, family malignancy…',
+    promptKey: 'eightBox.pastFamilyHistory.clarify',
+    optionGroups: MIASM_OPTIONS
+  }),
+  approachField('pastFamilyHistoryExtract', 'Miasmatic load & obstacles', {
+    rows: 4,
+    wide: true,
+    captureLayer: 'extract',
+    description: 'Distil inherited and acquired loads relevant to remedy selection.',
+    placeholder:
+      'Dominant miasm, family tendency, suppressed layer, iatrogenic factors, obstacles to cure, need for intercurrent or drainage support…',
+    rubricSearchable: true,
+    promptKey: 'eightBox.pastFamilyHistory.extract',
+    optionGroups: [...MIASM_OPTIONS, ...PLAN_OPTIONS.slice(1)]
+  }),
+
+  approachField('mentalEmotional', 'Mental and emotional story', {
+    rows: 4,
+    wide: true,
+    required: true,
+    captureLayer: 'capture',
+    description:
+      'Record temperament, emotions, fears, stress response, relationships, and patient language.',
+    placeholder:
+      'Mood, fears, anger, grief, anxiety, confidence, work stress, family dynamics, loneliness, consolation, company/aversion…',
+    rubricSearchable: true,
+    promptKey: 'eightBox.mentalEmotional',
+    suggestEndpoint: 'ai-extract-intake',
+    optionGroups: MIND_OPTIONS,
+    extractFrom: ['intake', 'chat']
+  }),
+  approachField('mentalEmotionalClarify', 'Mental generals, dreams & reactivity', {
+    rows: 5,
+    wide: true,
+    captureLayer: 'clarify',
+    description: 'Elicit the individual emotional pattern, not only diagnosis labels.',
+    placeholder:
+      'Fears, delusions, jealousy, guilt, humiliation, anger style, weeping, consolation, company, responsibility, control, hurry, indecision, sensitivity, dreams, sleep emotion, trauma, coping, addictions…',
+    rubricSearchable: true,
+    promptKey: 'eightBox.mentalEmotional.clarify',
+    optionGroups: MIND_OPTIONS
+  }),
+  approachField('mentalEmotionalExtract', 'Mental rubrics & essence', {
+    rows: 4,
+    wide: true,
+    captureLayer: 'extract',
+    description: 'Capture the most prescribing-grade mental symptoms.',
+    placeholder:
+      'Highest-value mental rubrics, essence/theme, compensated/decompensated state, peculiar emotional modalities, confirming questions, remedies to compare…',
+    rubricSearchable: true,
+    suggestEndpoint: 'ai-complete',
+    promptKey: 'eightBox.mentalEmotional.extract',
+    optionGroups: [...MIND_OPTIONS, ...PLAN_OPTIONS.slice(2)]
+  }),
+
+  approachField('physicalGenerals', 'Physical generals', {
+    rows: 4,
+    wide: true,
+    required: true,
+    captureLayer: 'capture',
+    description: 'Capture the patient-wide general symptoms.',
+    placeholder:
+      'Thermal, appetite, thirst, cravings, aversions, sleep, sweat, stool, urine, menses, libido, energy, weather, bathing, clothing…',
+    rubricSearchable: true,
+    promptKey: 'eightBox.physicalGenerals',
+    optionGroups: GENERAL_OPTIONS
+  }),
+  approachField('physicalGeneralsClarify', 'General modalities and systems review', {
+    rows: 5,
+    wide: true,
+    captureLayer: 'clarify',
+    description: 'Clarify general symptoms with modalities and reliability.',
+    placeholder:
+      'Thermal: chilly/hot/local heat/cold. Thirst: quantity/frequency. Food: desire/aversion/aggravation. Sleep: position, dreams, waking. Sweat: part/odor/stain. Stool/urine. Female generals. Weather, season, sea, sun, exertion…',
+    rubricSearchable: true,
+    promptKey: 'eightBox.physicalGenerals.clarify',
+    optionGroups: GENERAL_OPTIONS
+  }),
+  approachField('physicalGeneralsExtract', 'General rubrics & ranking', {
+    rows: 4,
+    wide: true,
+    captureLayer: 'extract',
+    description: 'Rank generals by stability and prescribing value.',
+    placeholder:
+      'Top generals, contradictory generals, high-confidence rubrics, low-confidence rubrics, modalities that confirm or exclude remedies…',
+    rubricSearchable: true,
+    suggestEndpoint: 'ai-complete',
+    promptKey: 'eightBox.physicalGenerals.extract',
+    optionGroups: [...GENERAL_OPTIONS, ...PLAN_OPTIONS.slice(2)]
+  }),
+
+  approachField('particulars', 'Particular/local symptoms', {
+    rows: 4,
+    wide: true,
+    captureLayer: 'capture',
+    description: 'Capture local symptoms by organ/system.',
+    placeholder:
+      'Head, eyes, ENT, chest, abdomen, urinary, skin, joints, neuro, endocrine, female/male, side, extension, objective signs…',
+    rubricSearchable: true,
+    promptKey: 'eightBox.particulars',
+    optionGroups: [...PARTICULAR_OPTIONS, ...LSMC_OPTIONS.slice(0, 2)]
+  }),
+  approachField('particularsClarify', 'Complete each particular symptom', {
+    rows: 5,
+    wide: true,
+    captureLayer: 'clarify',
+    description: 'Turn local complaints into complete symptoms.',
+    placeholder:
+      'For each local symptom: location, side, sensation, onset, duration, periodicity, causation, better/worse, concomitant, discharge/color/odor, objective finding, investigation correlation…',
+    rubricSearchable: true,
+    promptKey: 'eightBox.particulars.clarify',
+    optionGroups: [...PARTICULAR_OPTIONS, ...LSMC_OPTIONS]
+  }),
+  approachField('particularsExtract', 'Characteristic particulars & SRP symptoms', {
+    rows: 4,
+    wide: true,
+    captureLayer: 'extract',
+    description: 'Select the local symptoms that deserve repertory weight.',
+    placeholder:
+      'Peculiar particulars, SRP symptoms, objective signs, pathology-specific rubrics, symptoms not useful for repertory, follow-up markers…',
+    rubricSearchable: true,
+    suggestEndpoint: 'ai-complete',
+    promptKey: 'eightBox.particulars.extract',
+    optionGroups: [...PARTICULAR_OPTIONS, ...PLAN_OPTIONS.slice(2)]
+  }),
+
+  approachField('diagnosisPlan', 'Diagnosis, totality and plan', {
+    rows: 4,
+    wide: true,
+    captureLayer: 'capture',
+    description: 'Record diagnosis, investigations, risk, and provisional direction.',
+    placeholder:
+      'Working diagnosis, differential, investigations, red flags, current medicines, clinical priorities, patient goals…',
+    promptKey: 'eightBox.diagnosisPlan',
+    optionGroups: PLAN_OPTIONS
+  }),
+  approachField('diagnosisPlanClarify', 'Safety, hierarchy and strategy', {
+    rows: 5,
+    wide: true,
+    captureLayer: 'clarify',
+    description: 'Confirm what must be treated, referred, monitored, or excluded.',
+    placeholder:
+      'Red flags, referral needs, lab/imaging needs, remedy hierarchy: mental vs generals vs particulars, acute vs chronic, pathology depth, obstacles, patient sensitivity, potency risk…',
+    promptKey: 'eightBox.diagnosisPlan.clarify',
+    optionGroups: [...PLAN_OPTIONS, ...MIASM_OPTIONS.slice(0, 1)]
+  }),
+  approachField('diagnosisPlanExtract', 'Final totality & prescription handoff', {
+    rows: 5,
+    wide: true,
+    captureLayer: 'extract',
+    description: 'Create the final pre-repertory synthesis.',
+    placeholder:
+      'Final totality, must-have rubrics, remedy shortlist, potency logic, repetition plan, accessory measures, follow-up markers, what would change prescription, next visit questions…',
+    rubricSearchable: true,
+    suggestEndpoint: 'ai-complete',
+    promptKey: 'eightBox.diagnosisPlan.extract',
+    optionGroups: [...PLAN_OPTIONS, ...MIND_OPTIONS.slice(0, 1), ...GENERAL_OPTIONS.slice(0, 1)]
+  })
+);
+
+const EIGHT_BOX_GUIDED_SECTIONS: ApproachStructuredPanelSectionDef[] = [
+  {
+    id: 'constitution',
+    title: 'Patient identity & constitution',
+    shortLabel: 'Constitution',
+    description: 'Establish who the patient is before interpreting disease.',
+    fieldKeys: ['patientConstitution', 'patientConstitutionClarify', 'patientConstitutionExtract'],
+    layerHints: {
+      capture: 'Capture first impression and baseline constitution without forcing interpretation.',
+      clarify: 'Ask the missing constitutional questions that make the case individual.',
+      extract: 'Distil stable constitutional symptoms and their prescribing weight.'
+    }
+  },
+  {
+    id: 'chief-complaints',
+    title: 'Chief complaints',
+    shortLabel: 'Complaint',
+    description: 'Complete the main complaint into usable homeopathic symptoms.',
+    fieldKeys: ['chiefComplaints', 'chiefComplaintsClarify', 'chiefComplaintsExtract'],
+    layerHints: {
+      capture: 'Record the complaint in the patient’s words.',
+      clarify: 'Complete location, sensation, modality, concomitant, causation and time.',
+      extract: 'Select rubrics and anchors that should drive repertorization.'
+    }
+  },
+  {
+    id: 'present-illness',
+    title: 'Present illness',
+    shortLabel: 'Timeline',
+    description: 'Understand causation, progression, and active disease layer.',
+    fieldKeys: ['presentIllness', 'presentIllnessClarify', 'presentIllnessExtract'],
+    layerHints: {
+      capture: 'Build the illness timeline from first onset to today.',
+      clarify: 'Identify maintaining causes, suppressions, and active layer.',
+      extract: 'Define what must be treated first and what may block cure.'
+    }
+  },
+  {
+    id: 'past-family',
+    title: 'Past & family history',
+    shortLabel: 'History',
+    description: 'Expose inherited tendency, suppressions, and obstacles.',
+    fieldKeys: ['pastFamilyHistory', 'pastFamilyHistoryClarify', 'pastFamilyHistoryExtract'],
+    layerHints: {
+      capture: 'Collect personal, family, and treatment history.',
+      clarify: 'Look for miasmatic patterns and iatrogenic/suppression clues.',
+      extract: 'Summarize miasmatic load, inherited tendency, and obstacles.'
+    }
+  },
+  {
+    id: 'mental-emotional',
+    title: 'Mental / emotional',
+    shortLabel: 'Mind',
+    description: 'Find the patient’s individual emotional pattern.',
+    fieldKeys: ['mentalEmotional', 'mentalEmotionalClarify', 'mentalEmotionalExtract'],
+    layerHints: {
+      capture:
+        'Listen for patient language, fears, stress response, relationships and temperament.',
+      clarify: 'Explore mental generals, dreams, compensation, trauma and reactivity.',
+      extract: 'Choose the mental rubrics and core theme worth repertory weight.'
+    }
+  },
+  {
+    id: 'physical-generals',
+    title: 'Physical generals',
+    shortLabel: 'Generals',
+    description: 'Capture symptoms that belong to the whole patient.',
+    fieldKeys: ['physicalGenerals', 'physicalGeneralsClarify', 'physicalGeneralsExtract'],
+    layerHints: {
+      capture:
+        'Record thermal, appetite, thirst, sleep, sweat, stool, urine and general modalities.',
+      clarify: 'Make each general precise and check reliability.',
+      extract: 'Rank stable generals and mark contradictory or low-confidence data.'
+    }
+  },
+  {
+    id: 'particulars',
+    title: 'Particular symptoms',
+    shortLabel: 'Particulars',
+    description: 'Complete local symptoms by organ/system.',
+    fieldKeys: ['particulars', 'particularsClarify', 'particularsExtract'],
+    layerHints: {
+      capture: 'List local symptoms, objective signs, systems, sides and extensions.',
+      clarify: 'Complete each particular with location, sensation, modality and concomitant.',
+      extract: 'Select peculiar particulars, SRP symptoms and pathology anchors.'
+    }
+  },
+  {
+    id: 'diagnosis-plan',
+    title: 'Diagnosis & plan',
+    shortLabel: 'Plan',
+    description: 'Convert the full case into totality, safety plan and prescription direction.',
+    fieldKeys: ['diagnosisPlan', 'diagnosisPlanClarify', 'diagnosisPlanExtract'],
+    layerHints: {
+      capture: 'Record diagnosis, investigations, red flags and current clinical plan.',
+      clarify: 'Check safety, hierarchy, pathology depth and remedy strategy.',
+      extract: 'Create final totality, remedy shortlist, potency logic and follow-up markers.'
+    }
+  }
+];
+
+export const STRUCTURED_APPROACH_PANELS: Record<
+  ApproachStepComponent,
+  StructuredPanelBinding | undefined
+> = {
   'approach-overview': undefined,
   'intake-panel': undefined,
   'case-sheet': undefined,
@@ -326,81 +1061,20 @@ export const STRUCTURED_APPROACH_PANELS: Record<ApproachStepComponent, Structure
   'eight-box-guided': {
     dataKey: 'eightBoxGuided',
     def: {
-      title: '8-box guided capture',
-      hint: 'Walk through each clinical box before moving to repertorization.',
-      fields: fields(
-        approachField('patientConstitution', '1. Patient identity & constitution', {
-          rows: 2,
-          wide: true,
-          required: true,
-          description: 'Age, sex, build, temperament, baseline vitality.',
-          placeholder: 'Lean, chilly, anxious temperament…',
-          promptKey: 'eightBox.patientConstitution',
-          extractFrom: ['intake']
-        }),
-        approachField('chiefComplaints', '2. Chief complaints', {
-          rows: 2,
-          wide: true,
-          required: true,
-          description: 'Primary complaints with onset and modalities.',
-          placeholder: 'Headache 6 months, worse sun…',
-          rubricSearchable: true,
-          promptKey: 'eightBox.chiefComplaints',
-          suggestEndpoint: 'ai-extract-intake',
-          extractFrom: ['intake']
-        }),
-        approachField('presentIllness', '3. Present illness', {
-          rows: 2,
-          wide: true,
-          description: 'Progression and triggers of current illness.',
-          placeholder: 'Started after grief, gradually worsening…',
-          promptKey: 'eightBox.presentIllness'
-        }),
-        approachField('pastFamilyHistory', '4. Past & family history', {
-          rows: 2,
-          wide: true,
-          description: 'Personal and family disease background.',
-          placeholder: 'Malaria, family TB, diabetes…',
-          promptKey: 'eightBox.pastFamilyHistory',
-          extractFrom: ['intake']
-        }),
-        approachField('mentalEmotional', '5. Mental / emotional', {
-          rows: 2,
-          wide: true,
-          required: true,
-          description: 'Mood, fears, coping, emotional reactivity.',
-          placeholder: 'Anxiety, irritability, weeping…',
-          rubricSearchable: true,
-          promptKey: 'eightBox.mentalEmotional',
-          suggestEndpoint: 'ai-extract-intake',
-          extractFrom: ['intake', 'chat']
-        }),
-        approachField('physicalGenerals', '6. Physical generals', {
-          rows: 2,
-          wide: true,
-          required: true,
-          description: 'Thermal state, appetite, thirst, sleep, sweat.',
-          placeholder: 'Chilly, thirstless, profuse night sweat…',
-          rubricSearchable: true,
-          promptKey: 'eightBox.physicalGenerals'
-        }),
-        approachField('particulars', '7. Particular symptoms', {
-          rows: 2,
-          wide: true,
-          description: 'Localized symptoms with sensation and modality.',
-          placeholder: 'Right-sided headache, stitching pain…',
-          rubricSearchable: true,
-          promptKey: 'eightBox.particulars'
-        }),
-        approachField('diagnosisPlan', '8. Diagnosis & plan', {
-          rows: 2,
-          wide: true,
-          description: 'Working diagnosis and next clinical steps.',
-          placeholder: 'Chronic migraine, plan repertorization…',
-          promptKey: 'eightBox.diagnosisPlan'
-        })
-      ),
-      requiredKeys: ['patientConstitution', 'chiefComplaints', 'mentalEmotional', 'physicalGenerals']
+      title: '8-box clinical cockpit',
+      hint: 'Move through each box with Capture, Clarify, and Extract layers. Use the box map for quick switching and the extracted layer for repertory-ready totality.',
+      fields: EIGHT_BOX_GUIDED_FIELDS,
+      sections: EIGHT_BOX_GUIDED_SECTIONS,
+      requiredKeys: [
+        'patientConstitution',
+        'chiefComplaints',
+        'chiefComplaintsClarify',
+        'mentalEmotional',
+        'mentalEmotionalExtract',
+        'physicalGenerals',
+        'physicalGeneralsExtract',
+        'diagnosisPlanExtract'
+      ]
     }
   },
   'fibonacci-potency': {
@@ -807,7 +1481,9 @@ export function hasStructuredPanelContent(
   dataKey: keyof ApproachDataPayload,
   approachData?: Record<string, unknown> | null
 ) {
-  const binding = Object.values(STRUCTURED_APPROACH_PANELS).find((item) => item?.dataKey === dataKey);
+  const binding = Object.values(STRUCTURED_APPROACH_PANELS).find(
+    (item) => item?.dataKey === dataKey
+  );
   const block = approachData?.[dataKey] as Record<string, string> | undefined;
   if (!block) return false;
   const requiredKeys = binding?.def.requiredKeys?.length
@@ -833,7 +1509,5 @@ export function structuredPanelFieldLabels(): Map<string, string> {
 }
 
 function humanizeDataKey(key: string) {
-  return key
-    .replace(/([a-z])([A-Z])/g, '$1 $2')
-    .replace(/^\w/, (char) => char.toUpperCase());
+  return key.replace(/([a-z])([A-Z])/g, '$1 $2').replace(/^\w/, (char) => char.toUpperCase());
 }

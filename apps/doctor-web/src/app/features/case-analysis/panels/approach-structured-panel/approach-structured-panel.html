@@ -28,57 +28,196 @@
     </div>
   }
 
-  <div class="approach-grid">
-    @for (field of config.fields; track field.key) {
-      <label [class.wide]="field.wide">
-        <span class="field-label-row">
-          <span class="field-label">
-            {{ field.label }}
-            <app-approach-field-hint [field]="field" />
-            @if (field.required || config.requiredKeys?.includes(field.key)) {
-              <span class="required-badge">Required</span>
-            }
-          </span>
-          <span class="field-actions">
-            @if (field.rubricSearchable) {
-              <button
-                type="button"
-                class="btn-field-action"
-                (click)="searchRubricsFromField(field)"
-                [disabled]="!model()[field.key]?.trim()"
-              >
-                Search rubrics
-              </button>
-            }
-            @if (field.suggestEndpoint) {
-              <button type="button" class="btn-field-action btn-ai" (click)="suggestField(field)">
-                @switch (field.suggestEndpoint) {
-                  @case ('ai-extract-intake') { From intake }
-                  @case ('ai-extract-media') { From photos }
-                  @default { Suggest }
-                }
-              </button>
-            }
-          </span>
-        </span>
+  @if (hasGuidedSections()) {
+    <div class="guided-progress" aria-hidden="true">
+      <span [style.width.%]="overallCompletion()"></span>
+    </div>
 
-        @if (field.fieldType === 'select') {
-          <select [formField]="form[field.key]">
-            <option value="">Select…</option>
-            @for (option of field.options || []; track option.value) {
-              <option [value]="option.value">{{ option.label }}</option>
-            }
-          </select>
-        } @else if (isMultiline(field)) {
-          <textarea
-            [rows]="field.rows || 2"
-            [formField]="form[field.key]"
-            [attr.placeholder]="field.placeholder || null"
-          ></textarea>
-        } @else {
-          <input [formField]="form[field.key]" [attr.placeholder]="field.placeholder || null" />
+    <div class="guided-shell">
+      <nav class="guided-box-map" aria-label="8-box quick switch">
+        @for (section of sections(); track section.id; let index = $index) {
+          <button
+            type="button"
+            class="guided-box"
+            [class.active]="activeSectionIndex() === index"
+            [class.done]="sectionCompletion(section) === 100"
+            (click)="setSection(index)"
+          >
+            <span>{{ index + 1 }}</span>
+            <strong>{{ section.shortLabel }}</strong>
+            <small>{{ sectionCompletion(section) }}%</small>
+          </button>
         }
-      </label>
-    }
-  </div>
+      </nav>
+
+      @if (currentSection(); as section) {
+        <div class="guided-workspace">
+          <div class="guided-current">
+            <div>
+              <span class="guided-kicker">Box {{ activeSectionIndex() + 1 }} of {{ sections().length }}</span>
+              <h4>{{ section.title }}</h4>
+              <p>{{ layerHint(section) }}</p>
+            </div>
+            <div class="guided-meter">
+              <strong>{{ sectionCompletion(section) }}%</strong>
+              <span>box complete</span>
+            </div>
+          </div>
+
+          <div class="guided-layers" role="tablist" aria-label="Case capture layer">
+            @for (layer of layers; track layer.key) {
+              <button type="button" [class.active]="activeLayer() === layer.key" (click)="setLayer(layer.key)">
+                {{ layer.label }}
+              </button>
+            }
+          </div>
+
+          <div class="approach-grid guided-field-grid">
+            @for (field of currentFields(); track field.key) {
+              <label [class.wide]="field.wide">
+                <span class="field-label-row">
+                  <span class="field-label">
+                    {{ field.label }}
+                    <app-approach-field-hint [field]="field" />
+                    @if (field.required || config.requiredKeys?.includes(field.key)) {
+                      <span class="required-badge">Required</span>
+                    }
+                  </span>
+                  <span class="field-actions">
+                    @if (field.rubricSearchable) {
+                      <button
+                        type="button"
+                        class="btn-field-action"
+                        (click)="searchRubricsFromField(field)"
+                        [disabled]="!model()[field.key]?.trim()"
+                      >
+                        Search rubrics
+                      </button>
+                    }
+                    @if (field.suggestEndpoint) {
+                      <button type="button" class="btn-field-action btn-ai" (click)="suggestField(field)">
+                        @switch (field.suggestEndpoint) {
+                          @case ('ai-extract-intake') { From intake }
+                          @case ('ai-extract-media') { From photos }
+                          @default { Suggest }
+                        }
+                      </button>
+                    }
+                  </span>
+                </span>
+
+                @if (field.fieldType === 'select') {
+                  <select [formField]="form[field.key]">
+                    <option value="">Select…</option>
+                    @for (option of field.options || []; track option.value) {
+                      <option [value]="option.value">{{ option.label }}</option>
+                    }
+                  </select>
+                } @else if (isMultiline(field)) {
+                  <textarea
+                    [rows]="field.rows || 2"
+                    [formField]="form[field.key]"
+                    [attr.placeholder]="field.placeholder || null"
+                  ></textarea>
+                } @else {
+                  <input [formField]="form[field.key]" [attr.placeholder]="field.placeholder || null" />
+                }
+                @if (field.optionGroups?.length) {
+                  <div class="field-option-groups">
+                    @for (group of field.optionGroups; track group.title) {
+                      <div class="field-option-group">
+                        <span>{{ group.title }}</span>
+                        <div>
+                          @for (option of group.options; track option) {
+                            <button type="button" class="field-option-chip" (click)="addFieldOption(field, option)">
+                              {{ option }}
+                            </button>
+                          }
+                        </div>
+                      </div>
+                    }
+                  </div>
+                }
+              </label>
+            }
+          </div>
+
+          <div class="guided-actions">
+            <button type="button" class="btn-guided" (click)="previous()" [disabled]="isFirstGuidedStep()">Back</button>
+            <button type="button" class="btn-guided btn-guided-primary" (click)="next()" [disabled]="isLastGuidedStep()">Next</button>
+          </div>
+        </div>
+      }
+    </div>
+  } @else {
+    <div class="approach-grid">
+      @for (field of config.fields; track field.key) {
+        <label [class.wide]="field.wide">
+          <span class="field-label-row">
+            <span class="field-label">
+              {{ field.label }}
+              <app-approach-field-hint [field]="field" />
+              @if (field.required || config.requiredKeys?.includes(field.key)) {
+                <span class="required-badge">Required</span>
+              }
+            </span>
+            <span class="field-actions">
+              @if (field.rubricSearchable) {
+                <button
+                  type="button"
+                  class="btn-field-action"
+                  (click)="searchRubricsFromField(field)"
+                  [disabled]="!model()[field.key]?.trim()"
+                >
+                  Search rubrics
+                </button>
+              }
+              @if (field.suggestEndpoint) {
+                <button type="button" class="btn-field-action btn-ai" (click)="suggestField(field)">
+                  @switch (field.suggestEndpoint) {
+                    @case ('ai-extract-intake') { From intake }
+                    @case ('ai-extract-media') { From photos }
+                    @default { Suggest }
+                  }
+                </button>
+              }
+            </span>
+          </span>
+
+          @if (field.fieldType === 'select') {
+            <select [formField]="form[field.key]">
+              <option value="">Select…</option>
+              @for (option of field.options || []; track option.value) {
+                <option [value]="option.value">{{ option.label }}</option>
+              }
+            </select>
+          } @else if (isMultiline(field)) {
+            <textarea
+              [rows]="field.rows || 2"
+              [formField]="form[field.key]"
+              [attr.placeholder]="field.placeholder || null"
+            ></textarea>
+          } @else {
+            <input [formField]="form[field.key]" [attr.placeholder]="field.placeholder || null" />
+          }
+          @if (field.optionGroups?.length) {
+            <div class="field-option-groups">
+              @for (group of field.optionGroups; track group.title) {
+                <div class="field-option-group">
+                  <span>{{ group.title }}</span>
+                  <div>
+                    @for (option of group.options; track option) {
+                      <button type="button" class="field-option-chip" (click)="addFieldOption(field, option)">
+                        {{ option }}
+                      </button>
+                    }
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        </label>
+      }
+    </div>
+  }
 </section>

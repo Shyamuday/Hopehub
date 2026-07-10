@@ -833,12 +833,28 @@ export class CaseAnalysisPage implements OnDestroy, OnInit {
   applyRubricSearchPhrase(phrase: string) {
     const trimmed = phrase.trim();
     if (!trimmed) return;
+    this.searchMode.set('repertory');
     this.searchModel.update((model) => ({ ...model, rubricQuery: trimmed }));
     if (this.repertoryEnabled()) {
       this.setActiveStep('rubric-search');
     }
-    void this.searchRubrics();
+    this.scrollToRubricSearch();
+    this.scheduleRubricSuggest(
+      trimmed,
+      this.searchModel().selectedSourceId || this.analysis()?.source?.id || '',
+    );
+    void this.runSymptomSearch();
     this.message.set(`Search prefilled: "${trimmed}".`);
+  }
+
+  private scrollToRubricSearch() {
+    if (typeof document === 'undefined') return;
+    window.setTimeout(() => {
+      document.getElementById('rubric-search-box')?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
+      });
+    }, 0);
   }
 
   async applyApproachFieldSuggestion(payload: { field: ApproachFieldDef; currentValue: string }) {

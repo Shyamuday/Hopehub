@@ -73,6 +73,7 @@ label.wide {
 }
 
 input,
+select,
 textarea {
   width: 100%;
   border: 1px solid #cbd5e1;
@@ -178,12 +179,269 @@ textarea {
   font-size: 0.78rem;
 }
 
+.guided-progress {
+  height: 0.45rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #e2e8f0;
+}
+
+.guided-progress span {
+  display: block;
+  height: 100%;
+  background: #0f766e;
+  transition: width 160ms ease;
+}
+
+.guided-shell {
+  display: grid;
+  grid-template-columns: minmax(12rem, 16rem) minmax(0, 1fr);
+  gap: 0.9rem;
+  align-items: start;
+}
+
+.guided-box-map {
+  display: grid;
+  gap: 0.45rem;
+  position: sticky;
+  top: 5.5rem;
+}
+
+.guided-box {
+  display: grid;
+  grid-template-columns: 1.75rem 1fr auto;
+  align-items: center;
+  gap: 0.45rem;
+  width: 100%;
+  border: 1px solid #dbe3ee;
+  border-radius: 8px;
+  background: #fff;
+  color: #334155;
+  padding: 0.5rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.guided-box span {
+  display: inline-grid;
+  place-items: center;
+  width: 1.55rem;
+  height: 1.55rem;
+  border-radius: 999px;
+  background: #f1f5f9;
+  color: #475569;
+  font-weight: 700;
+  font-size: 0.78rem;
+}
+
+.guided-box strong {
+  min-width: 0;
+  font-size: 0.82rem;
+  line-height: 1.15;
+}
+
+.guided-box small {
+  color: #64748b;
+  font-size: 0.72rem;
+}
+
+.guided-box.active {
+  border-color: #0f766e;
+  background: #f0fdfa;
+}
+
+.guided-box.active span,
+.guided-box.done span {
+  background: #0f766e;
+  color: #fff;
+}
+
+.guided-workspace {
+  display: grid;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.guided-current {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  border: 1px solid #dbe3ee;
+  border-radius: 8px;
+  background: #f8fafc;
+  padding: 0.75rem;
+}
+
+.guided-kicker {
+  display: block;
+  color: #0f766e;
+  font-size: 0.76rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.guided-current h4 {
+  margin: 0.1rem 0;
+  font-size: 1rem;
+}
+
+.guided-current p {
+  margin: 0;
+  color: #475569;
+  font-size: 0.86rem;
+}
+
+.guided-meter {
+  display: grid;
+  align-content: center;
+  justify-items: end;
+  min-width: 5.25rem;
+  color: #475569;
+  font-size: 0.72rem;
+}
+
+.guided-meter strong {
+  color: #0f766e;
+  font-size: 1.15rem;
+}
+
+.guided-layers {
+  display: inline-flex;
+  width: fit-content;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.guided-layers button {
+  border: 0;
+  border-right: 1px solid #cbd5e1;
+  background: transparent;
+  color: #475569;
+  padding: 0.45rem 0.7rem;
+  font: inherit;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+
+.guided-layers button:last-child {
+  border-right: 0;
+}
+
+.guided-layers button.active {
+  background: #0f766e;
+  color: #fff;
+}
+
+.guided-field-grid {
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 0.75rem;
+  background: #fff;
+}
+
+.guided-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.field-option-groups {
+  display: grid;
+  gap: 0.45rem;
+  margin-top: 0.25rem;
+}
+
+.field-option-group {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.field-option-group > span {
+  color: #64748b;
+  font-size: 0.74rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.field-option-group > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+.field-option-chip {
+  border: 1px solid #cbd5e1;
+  border-radius: 999px;
+  background: #f8fafc;
+  color: #334155;
+  padding: 0.22rem 0.5rem;
+  font: inherit;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.field-option-chip:hover {
+  border-color: #0f766e;
+  background: #f0fdfa;
+  color: #0f766e;
+}
+
+.btn-guided {
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #fff;
+  color: #334155;
+  padding: 0.45rem 0.8rem;
+  cursor: pointer;
+}
+
+.btn-guided-primary {
+  border-color: #0f766e;
+  background: #0f766e;
+  color: #fff;
+}
+
+.btn-guided:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
 @media (max-width: 768px) {
   .panel-title-row,
   .field-label-row,
-  .combination-card {
+  .combination-card,
+  .guided-current {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .guided-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .guided-box-map {
+    position: static;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .guided-box {
+    grid-template-columns: 1.55rem 1fr;
+  }
+
+  .guided-box small {
+    grid-column: 2;
+  }
+
+  .guided-layers,
+  .guided-actions {
+    width: 100%;
+  }
+
+  .guided-layers button,
+  .btn-guided {
+    flex: 1;
   }
 
   .panel-save-actions {
