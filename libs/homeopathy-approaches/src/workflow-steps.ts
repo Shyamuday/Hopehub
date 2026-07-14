@@ -64,7 +64,7 @@ const HERING_TRACKING_STEP: ApproachStep = {
   label: "Hering's law tracker",
   shortLabel: 'Hering',
   component: 'hering-tracking',
-  description: "Optional aggravation and direction-of-cure tracking after prescribing.",
+  description: 'Optional aggravation and direction-of-cure tracking after prescribing.',
   optional: true
 };
 
@@ -109,6 +109,109 @@ export function buildConstitutionalWorkflow(): ApproachStep[] {
       'Constitution',
       'constitutional-profile',
       'Temperament, thermal state, and generals before particulars.'
+    ),
+    ...REPERTORY_WORKFLOW_TAIL,
+    ANALYSIS_NOTES_STEP
+  ];
+}
+
+export function buildTemperamentConstitutionalWorkflow(): ApproachStep[] {
+  return [
+    APPROACH_SELECT_STEP,
+    structuredStep(
+      'temperament-constitutional',
+      'Temperament map',
+      'Temperament',
+      'temperament-constitutional',
+      'Identify dominant temperament, secondary temperament, and constitutional evidence.'
+    ),
+    ...REPERTORY_WORKFLOW_TAIL,
+    ANALYSIS_NOTES_STEP,
+    HERING_TRACKING_STEP
+  ];
+}
+
+export function buildBachFlowerEmotionalWorkflow(): ApproachStep[] {
+  return [
+    APPROACH_SELECT_STEP,
+    structuredStep(
+      'bach-flower-emotional',
+      'Emotional state',
+      'Flower',
+      'bach-flower-emotional',
+      'Map emotional state, stress trigger, and supportive flower remedy plan.'
+    ),
+    {
+      id: 'prescribe',
+      label: 'Prescription',
+      shortLabel: 'Prescribe',
+      component: 'prescription-handoff'
+    },
+    ANALYSIS_NOTES_STEP
+  ];
+}
+
+export function buildNosodeSarcodeWorkflow(): ApproachStep[] {
+  return [
+    APPROACH_SELECT_STEP,
+    structuredStep(
+      'nosode-sarcode',
+      'Nosode / sarcode map',
+      'Nosode',
+      'nosode-sarcode',
+      'Document miasmatic, organ, inherited, or recurrent-disease indications.'
+    ),
+    ...REPERTORY_WORKFLOW_TAIL,
+    ANALYSIS_NOTES_STEP,
+    HERING_TRACKING_STEP
+  ];
+}
+
+export function buildMotherTinctureOrganopathicWorkflow(): ApproachStep[] {
+  return [
+    APPROACH_SELECT_STEP,
+    structuredStep(
+      'mother-tincture-organopathic',
+      'Organopathic support',
+      'Organ',
+      'mother-tincture-organopathic',
+      'Select organ affinity, mother tincture, dose, and safety monitoring.'
+    ),
+    {
+      id: 'prescribe',
+      label: 'Prescription',
+      shortLabel: 'Prescribe',
+      component: 'prescription-handoff'
+    },
+    ANALYSIS_NOTES_STEP
+  ];
+}
+
+export function buildIntercurrentRemedyWorkflow(): ApproachStep[] {
+  return [
+    APPROACH_SELECT_STEP,
+    structuredStep(
+      'intercurrent-remedy',
+      'Intercurrent decision',
+      'Intercurrent',
+      'intercurrent-remedy',
+      'Identify block, miasmatic layer, and intercurrent remedy timing.'
+    ),
+    ...REPERTORY_WORKFLOW_TAIL,
+    ANALYSIS_NOTES_STEP,
+    HERING_TRACKING_STEP
+  ];
+}
+
+export function buildPediatricConstitutionalWorkflow(): ApproachStep[] {
+  return [
+    APPROACH_SELECT_STEP,
+    structuredStep(
+      'pediatric-constitutional',
+      'Pediatric constitution',
+      'Pediatric',
+      'pediatric-constitutional',
+      'Capture child temperament, milestones, family history, and guardian observations.'
     ),
     ...REPERTORY_WORKFLOW_TAIL,
     ANALYSIS_NOTES_STEP
@@ -258,8 +361,18 @@ export function buildAcuteFastTrackWorkflow(): ApproachStep[] {
       component: 'repertory-workspace',
       optional: true
     },
-    { id: 'remedy-select', label: 'Select remedy', shortLabel: 'Remedy', component: 'remedy-results' },
-    { id: 'prescribe', label: 'Prescription', shortLabel: 'Prescribe', component: 'prescription-handoff' }
+    {
+      id: 'remedy-select',
+      label: 'Select remedy',
+      shortLabel: 'Remedy',
+      component: 'remedy-results'
+    },
+    {
+      id: 'prescribe',
+      label: 'Prescription',
+      shortLabel: 'Prescribe',
+      component: 'prescription-handoff'
+    }
   ];
 }
 
@@ -273,11 +386,18 @@ export function buildCombinationWorkflow(): ApproachStep[] {
       'combination-remedy',
       'Complex remedy composition and indication match.'
     ),
-    { id: 'prescribe', label: 'Prescription', shortLabel: 'Prescribe', component: 'prescription-handoff' }
+    {
+      id: 'prescribe',
+      label: 'Prescription',
+      shortLabel: 'Prescribe',
+      component: 'prescription-handoff'
+    }
   ];
 }
 
-export function buildRepertoryWorkflow(caseSheetComponent: ApproachStepComponent = 'case-sheet'): ApproachStep[] {
+export function buildRepertoryWorkflow(
+  caseSheetComponent: ApproachStepComponent = 'case-sheet'
+): ApproachStep[] {
   return [
     {
       id: 'approach-select',
@@ -520,7 +640,12 @@ export function buildOrganonLmWorkflow(): ApproachStep[] {
 
 export function buildKeynoteWorkflow(): ApproachStep[] {
   return [
-    { id: 'approach-select', label: 'Approach', shortLabel: 'Approach', component: 'approach-overview' },
+    {
+      id: 'approach-select',
+      label: 'Approach',
+      shortLabel: 'Approach',
+      component: 'approach-overview'
+    },
     {
       id: 'keynote-striking',
       label: 'Keynote symptoms',
@@ -530,13 +655,24 @@ export function buildKeynoteWorkflow(): ApproachStep[] {
     },
     { id: 'case-sheet', label: 'Totality review', shortLabel: 'Totality', component: 'case-sheet' },
     ...REPERTORY_WORKFLOW_TAIL,
-    { id: 'analysis-notes', label: 'Notes', shortLabel: 'Notes', component: 'analysis-notes', optional: true }
+    {
+      id: 'analysis-notes',
+      label: 'Notes',
+      shortLabel: 'Notes',
+      component: 'analysis-notes',
+      optional: true
+    }
   ];
 }
 
 export function buildScholtenWorkflow(): ApproachStep[] {
   return [
-    { id: 'approach-select', label: 'Approach', shortLabel: 'Approach', component: 'approach-overview' },
+    {
+      id: 'approach-select',
+      label: 'Approach',
+      shortLabel: 'Approach',
+      component: 'approach-overview'
+    },
     {
       id: 'scholten-mapping',
       label: 'Periodic table map',
@@ -546,13 +682,24 @@ export function buildScholtenWorkflow(): ApproachStep[] {
     },
     { id: 'case-sheet', label: 'Scholten case sheet', shortLabel: 'Case', component: 'case-sheet' },
     ...REPERTORY_WORKFLOW_TAIL,
-    { id: 'analysis-notes', label: 'Notes', shortLabel: 'Notes', component: 'analysis-notes', optional: true }
+    {
+      id: 'analysis-notes',
+      label: 'Notes',
+      shortLabel: 'Notes',
+      component: 'analysis-notes',
+      optional: true
+    }
   ];
 }
 
 export function buildSehgalWorkflow(): ApproachStep[] {
   return [
-    { id: 'approach-select', label: 'Approach', shortLabel: 'Approach', component: 'approach-overview' },
+    {
+      id: 'approach-select',
+      label: 'Approach',
+      shortLabel: 'Approach',
+      component: 'approach-overview'
+    },
     {
       id: 'sehgal-emotion',
       label: 'Emotional core',
@@ -562,13 +709,24 @@ export function buildSehgalWorkflow(): ApproachStep[] {
     },
     { id: 'case-sheet', label: 'Case sheet', shortLabel: 'Case', component: 'case-sheet' },
     ...REPERTORY_WORKFLOW_TAIL,
-    { id: 'analysis-notes', label: 'Notes', shortLabel: 'Notes', component: 'analysis-notes', optional: true }
+    {
+      id: 'analysis-notes',
+      label: 'Notes',
+      shortLabel: 'Notes',
+      component: 'analysis-notes',
+      optional: true
+    }
   ];
 }
 
 export function buildIntegrativeFollowUpWorkflow(): ApproachStep[] {
   return [
-    { id: 'approach-select', label: 'Approach', shortLabel: 'Approach', component: 'approach-overview' },
+    {
+      id: 'approach-select',
+      label: 'Approach',
+      shortLabel: 'Approach',
+      component: 'approach-overview'
+    },
     {
       id: 'integrative-follow-up',
       label: 'Follow-up & safety',
@@ -584,8 +742,18 @@ export function buildIntegrativeFollowUpWorkflow(): ApproachStep[] {
       component: 'repertory-workspace',
       optional: true
     },
-    { id: 'remedy-select', label: 'Select remedy', shortLabel: 'Remedy', component: 'remedy-results' },
-    { id: 'prescribe', label: 'Prescription', shortLabel: 'Prescribe', component: 'prescription-handoff' }
+    {
+      id: 'remedy-select',
+      label: 'Select remedy',
+      shortLabel: 'Remedy',
+      component: 'remedy-results'
+    },
+    {
+      id: 'prescribe',
+      label: 'Prescription',
+      shortLabel: 'Prescribe',
+      component: 'prescription-handoff'
+    }
   ];
 }
 
@@ -628,8 +796,18 @@ export function buildHybridWorkflow(): ApproachStep[] {
       component: 'protocol-selector',
       optional: true
     },
-    { id: 'remedy-select', label: 'Select remedy', shortLabel: 'Remedy', component: 'remedy-results' },
-    { id: 'prescribe', label: 'Prescription', shortLabel: 'Prescribe', component: 'prescription-handoff' },
+    {
+      id: 'remedy-select',
+      label: 'Select remedy',
+      shortLabel: 'Remedy',
+      component: 'remedy-results'
+    },
+    {
+      id: 'prescribe',
+      label: 'Prescription',
+      shortLabel: 'Prescribe',
+      component: 'prescription-handoff'
+    },
     HERING_TRACKING_STEP
   ];
 }

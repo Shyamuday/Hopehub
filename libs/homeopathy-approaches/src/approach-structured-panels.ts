@@ -916,6 +916,403 @@ export const STRUCTURED_APPROACH_PANELS: Record<
       requiredKeys: ['temperament', 'thermalState', 'mentalPicture']
     }
   },
+  'temperament-constitutional': {
+    dataKey: 'temperamentConstitutional',
+    def: {
+      title: 'Temperament-based constitutional map',
+      hint: 'Use stable temperament evidence to frame constitution, then confirm through generals, rubrics, and materia medica.',
+      fields: fields(
+        approachField('dominantTemperament', 'Dominant temperament', {
+          fieldType: 'select',
+          multiline: false,
+          required: true,
+          description: 'Primary temperament pattern seen across the patient history.',
+          options: [
+            { value: 'choleric', label: 'Choleric' },
+            { value: 'sanguine', label: 'Sanguine' },
+            { value: 'melancholic', label: 'Melancholic' },
+            { value: 'nervous', label: 'Nervous' },
+            { value: 'phlegmatic', label: 'Phlegmatic' },
+            { value: 'mixed', label: 'Mixed / unclear' }
+          ],
+          promptKey: 'temperament.dominant'
+        }),
+        approachField('secondaryTemperament', 'Secondary temperament', {
+          fieldType: 'select',
+          multiline: false,
+          description: 'Secondary pattern that modifies the dominant temperament.',
+          options: [
+            { value: '', label: 'Not set' },
+            { value: 'choleric', label: 'Choleric' },
+            { value: 'sanguine', label: 'Sanguine' },
+            { value: 'melancholic', label: 'Melancholic' },
+            { value: 'nervous', label: 'Nervous' },
+            { value: 'phlegmatic', label: 'Phlegmatic' },
+            { value: 'mixed', label: 'Mixed / unclear' }
+          ],
+          promptKey: 'temperament.secondary'
+        }),
+        approachField('temperamentEvidence', 'Temperament evidence', {
+          rows: 4,
+          wide: true,
+          required: true,
+          description:
+            'Observed behavior, pace, speech, reactions, and patient language supporting the temperament call.',
+          placeholder:
+            'Hurried, controlling, expressive, reserved, anxious, slow to decide, yielding, perfectionist...',
+          rubricSearchable: true,
+          promptKey: 'temperament.evidence',
+          suggestEndpoint: 'ai-extract-intake',
+          extractFrom: ['intake', 'chat']
+        }),
+        approachField('emotionalBaseline', 'Emotional baseline & reactivity', {
+          rows: 3,
+          wide: true,
+          required: true,
+          description: 'Default emotional tone and how the patient reacts under stress.',
+          placeholder:
+            'Anger style, fears, grief, anxiety, sensitivity, consolation, criticism response...',
+          rubricSearchable: true,
+          promptKey: 'temperament.emotionalBaseline',
+          suggestEndpoint: 'ai-complete'
+        }),
+        approachField('physicalGenerals', 'Physical generals confirming temperament', {
+          rows: 3,
+          wide: true,
+          required: true,
+          description:
+            'Thermals, appetite, thirst, sleep, perspiration, cravings, energy, and weather response.',
+          placeholder: 'Chilly/hot, thirst, cravings, sleep position, sweat, energy rhythm...',
+          rubricSearchable: true,
+          promptKey: 'temperament.physicalGenerals'
+        }),
+        approachField('temperamentQuotientNotes', 'Temperament weighting notes', {
+          rows: 2,
+          wide: true,
+          description:
+            'Why this temperament is dominant and how strongly it should influence repertory weighting.',
+          placeholder:
+            'Dominant choleric with strong nervous overlay; mentals reliable, particulars moderate...',
+          promptKey: 'temperament.weighting'
+        }),
+        approachField('remedyDifferentials', 'Remedy differentials', {
+          rows: 3,
+          wide: true,
+          description:
+            'Remedies that fit the temperament picture and what confirms or excludes them.',
+          placeholder: 'Nux-v vs Lyc vs Sulph: compare anger, work drive, thermals, cravings...',
+          rubricSearchable: true,
+          promptKey: 'temperament.remedyDifferentials'
+        })
+      ),
+      requiredKeys: [
+        'dominantTemperament',
+        'temperamentEvidence',
+        'emotionalBaseline',
+        'physicalGenerals'
+      ]
+    }
+  },
+  'bach-flower-emotional': {
+    dataKey: 'bachFlowerEmotional',
+    def: {
+      title: 'Bach flower emotional support',
+      hint: 'Capture the present emotional state, trigger, coping pattern, selected flower remedy, and review plan.',
+      fields: fields(
+        approachField('presentEmotionalState', 'Present emotional state', {
+          rows: 3,
+          wide: true,
+          required: true,
+          description: 'Current emotional state needing support.',
+          placeholder: 'Fear, grief, uncertainty, resentment, overwhelm, exhaustion...',
+          promptKey: 'bach.presentEmotionalState',
+          suggestEndpoint: 'ai-extract-intake',
+          extractFrom: ['intake', 'chat']
+        }),
+        approachField('triggerContext', 'Trigger / context', {
+          rows: 2,
+          wide: true,
+          description: 'Situation or event activating the state.',
+          placeholder: 'Exam stress, bereavement, family conflict, diagnosis shock...',
+          promptKey: 'bach.triggerContext'
+        }),
+        approachField('copingPattern', 'Coping pattern', {
+          rows: 2,
+          wide: true,
+          description: 'How the patient responds behaviorally.',
+          placeholder: 'Withdraws, seeks reassurance, overworks, loses confidence...',
+          promptKey: 'bach.copingPattern'
+        }),
+        approachField('flowerSelection', 'Flower remedy / combination', {
+          rows: 2,
+          wide: true,
+          required: true,
+          description: 'Selected flower remedy or combination.',
+          placeholder: 'Mimulus, Rock Rose, Walnut, Rescue-style combination...',
+          promptKey: 'bach.flowerSelection'
+        }),
+        approachField('supportPlan', 'Support and review plan', {
+          rows: 3,
+          wide: true,
+          required: true,
+          description: 'Duration, emotional markers, and review timing.',
+          placeholder: 'Review in 2 weeks; track sleep, panic frequency, confidence...',
+          promptKey: 'bach.supportPlan'
+        })
+      ),
+      requiredKeys: ['presentEmotionalState', 'flowerSelection', 'supportPlan']
+    }
+  },
+  'nosode-sarcode': {
+    dataKey: 'nosodeSarcode',
+    def: {
+      title: 'Nosode / sarcode map',
+      hint: 'Document inherited tendency, recurrent disease pattern, organ affinity, remedy choice, and follow-up safeguards.',
+      fields: fields(
+        approachField('indicationType', 'Indication type', {
+          fieldType: 'select',
+          multiline: false,
+          required: true,
+          description: 'Primary reason for considering this layer.',
+          options: [
+            { value: 'miasmatic', label: 'Miasmatic / inherited' },
+            { value: 'recurrent', label: 'Recurrent disease pattern' },
+            { value: 'organ', label: 'Organ / tissue affinity' },
+            { value: 'blocked', label: 'Blocked case' },
+            { value: 'mixed', label: 'Mixed / unclear' }
+          ],
+          promptKey: 'nosode.indicationType'
+        }),
+        approachField('miasmaticFamilyLoad', 'Miasmatic / family load', {
+          rows: 3,
+          wide: true,
+          required: true,
+          description: 'Inherited tendencies and family disease patterns.',
+          placeholder: 'TB, cancer, diabetes, asthma, autoimmune, recurrent infections...',
+          rubricSearchable: true,
+          promptKey: 'nosode.miasmaticFamilyLoad',
+          extractFrom: ['intake', 'priorCase']
+        }),
+        approachField('recurrentPattern', 'Recurrent disease pattern', {
+          rows: 3,
+          wide: true,
+          description: 'Repeated illness, relapses, seasonal pattern, or post-infection state.',
+          placeholder: 'Tonsillitis every winter, recurrent UTI, post-viral fatigue...',
+          rubricSearchable: true,
+          promptKey: 'nosode.recurrentPattern'
+        }),
+        approachField('organTissueAffinity', 'Organ / tissue affinity', {
+          rows: 2,
+          wide: true,
+          description: 'Organ, tissue, gland, or system suggesting sarcode support.',
+          placeholder: 'Thyroid, liver, pancreas, lymphatic tissue, respiratory mucosa...',
+          rubricSearchable: true,
+          promptKey: 'nosode.organTissueAffinity'
+        }),
+        approachField('selectedNosodeSarcode', 'Selected nosode / sarcode', {
+          rows: 2,
+          wide: true,
+          required: true,
+          description: 'Chosen remedy and why it fits.',
+          placeholder: 'Tuberculinum, Medorrhinum, Thyroidinum, Pancreatinum...',
+          promptKey: 'nosode.selected'
+        }),
+        approachField('potencyTimingPlan', 'Potency, timing and review', {
+          rows: 3,
+          wide: true,
+          required: true,
+          description: 'Potency, dose interval, timing relative to main remedy, and monitoring.',
+          placeholder: 'Single 200C intercurrent after plateau; review old symptoms and energy...',
+          promptKey: 'nosode.potencyTimingPlan'
+        })
+      ),
+      requiredKeys: [
+        'indicationType',
+        'miasmaticFamilyLoad',
+        'selectedNosodeSarcode',
+        'potencyTimingPlan'
+      ]
+    }
+  },
+  'mother-tincture-organopathic': {
+    dataKey: 'motherTinctureOrganopathic',
+    def: {
+      title: 'Mother tincture / organopathic support',
+      hint: 'Use organ affinity and objective monitoring to document supportive remedy, dose, duration, and safety checks.',
+      fields: fields(
+        approachField('targetOrganSystem', 'Target organ / system', {
+          rows: 2,
+          wide: true,
+          required: true,
+          description: 'Organ or system requiring support.',
+          placeholder: 'Liver, kidney, thyroid, respiratory tract, joints...',
+          promptKey: 'organopathic.targetOrganSystem'
+        }),
+        approachField('clinicalIndication', 'Clinical indication', {
+          rows: 3,
+          wide: true,
+          required: true,
+          description: 'Functional pathology, symptoms, and objective findings.',
+          placeholder: 'Fatty liver with raised enzymes, renal gravel, hypothyroid symptoms...',
+          promptKey: 'organopathic.clinicalIndication',
+          extractFrom: ['intake', 'media']
+        }),
+        approachField('selectedSupportRemedy', 'Mother tincture / support remedy', {
+          rows: 2,
+          wide: true,
+          required: true,
+          description: 'Selected organopathic remedy or mother tincture.',
+          placeholder: 'Chelidonium Q, Berberis vulgaris Q, Crataegus Q...',
+          promptKey: 'organopathic.selectedSupportRemedy'
+        }),
+        approachField('doseDuration', 'Dose and duration', {
+          rows: 2,
+          wide: true,
+          required: true,
+          description: 'Dose, frequency, duration, and stop/review condition.',
+          placeholder: '10 drops BD for 3 weeks; review LFT and symptoms...',
+          promptKey: 'organopathic.doseDuration'
+        }),
+        approachField('safetyMonitoring', 'Safety monitoring', {
+          rows: 3,
+          wide: true,
+          required: true,
+          description: 'Contraindications, current medicines, labs, vitals, or referral triggers.',
+          placeholder: 'Check pregnancy, anticoagulants, BP, LFT/KFT, red flags...',
+          promptKey: 'organopathic.safetyMonitoring'
+        })
+      ),
+      requiredKeys: [
+        'targetOrganSystem',
+        'clinicalIndication',
+        'selectedSupportRemedy',
+        'doseDuration',
+        'safetyMonitoring'
+      ]
+    }
+  },
+  'intercurrent-remedy': {
+    dataKey: 'intercurrentRemedy',
+    def: {
+      title: 'Intercurrent remedy decision',
+      hint: 'Use only when the case is blocked or relapsing despite a reasonable main plan; document timing and response markers.',
+      fields: fields(
+        approachField('blockEvidence', 'Evidence of block / plateau', {
+          rows: 3,
+          wide: true,
+          required: true,
+          description: 'Why the current case needs an intercurrent remedy.',
+          placeholder:
+            'Initial improvement stopped, relapse repeats, no response despite good similimum...',
+          rubricSearchable: true,
+          promptKey: 'intercurrent.blockEvidence'
+        }),
+        approachField('obstacleOrLayer', 'Obstacle / miasmatic layer', {
+          rows: 3,
+          wide: true,
+          required: true,
+          description:
+            'Maintaining cause, suppression, inherited tendency, or active miasmatic layer.',
+          placeholder: 'Suppressed skin, repeated steroids, sycotic layer, grief block...',
+          rubricSearchable: true,
+          promptKey: 'intercurrent.obstacleOrLayer',
+          extractFrom: ['intake', 'priorCase']
+        }),
+        approachField('currentRemedyContext', 'Current remedy context', {
+          rows: 2,
+          wide: true,
+          description: 'Main remedy, potency, response, and last dose.',
+          placeholder: 'Nat-m 200C improved sleep and headaches, plateau after 6 weeks...',
+          promptKey: 'intercurrent.currentRemedyContext'
+        }),
+        approachField('selectedIntercurrent', 'Selected intercurrent remedy', {
+          rows: 2,
+          wide: true,
+          required: true,
+          description: 'Chosen intercurrent and rationale.',
+          placeholder: 'Tuberculinum / Medorrhinum / Sulphur / Psorinum...',
+          promptKey: 'intercurrent.selected'
+        }),
+        approachField('timingObservationPlan', 'Timing and observation plan', {
+          rows: 3,
+          wide: true,
+          required: true,
+          description: 'When to give, what to pause, and what response markers to track.',
+          placeholder:
+            'Give one dose, pause main remedy 2 weeks, observe sleep, energy, old symptoms...',
+          promptKey: 'intercurrent.timingObservationPlan'
+        })
+      ),
+      requiredKeys: [
+        'blockEvidence',
+        'obstacleOrLayer',
+        'selectedIntercurrent',
+        'timingObservationPlan'
+      ]
+    }
+  },
+  'pediatric-constitutional': {
+    dataKey: 'pediatricConstitutional',
+    def: {
+      title: 'Pediatric constitutional map',
+      hint: 'Separate direct child observation from guardian interpretation; capture temperament, milestones, generals, and family load.',
+      fields: fields(
+        approachField('guardianConcern', 'Guardian concern and child words', {
+          rows: 3,
+          wide: true,
+          required: true,
+          description: 'Main concern from guardian plus any direct child expression.',
+          placeholder: 'Frequent colds, poor appetite, fear of dark; child says...',
+          rubricSearchable: true,
+          promptKey: 'pediatric.guardianConcern',
+          suggestEndpoint: 'ai-extract-intake',
+          extractFrom: ['intake', 'chat']
+        }),
+        approachField('childTemperament', 'Child temperament and behavior', {
+          rows: 3,
+          wide: true,
+          required: true,
+          description: 'Play, sociability, anger, fears, attachment, school behavior.',
+          placeholder: 'Clingy, defiant, shy, restless, sensitive to scolding, wants company...',
+          rubricSearchable: true,
+          promptKey: 'pediatric.childTemperament'
+        }),
+        approachField('pregnancyBirthMilestones', 'Pregnancy, birth and milestones', {
+          rows: 3,
+          wide: true,
+          description: 'Pregnancy, delivery, feeding, dentition, speech/walk milestones.',
+          placeholder: 'C-section, delayed speech, difficult dentition, breastfeeding history...',
+          promptKey: 'pediatric.pregnancyBirthMilestones'
+        }),
+        approachField('foodSleepGenerals', 'Food, sleep and physical generals', {
+          rows: 3,
+          wide: true,
+          required: true,
+          description: 'Cravings, aversions, thirst, sleep position, sweat, thermals.',
+          placeholder: 'Desires eggs, thirstless, sweats head, sleeps knee-chest, chilly...',
+          rubricSearchable: true,
+          promptKey: 'pediatric.foodSleepGenerals'
+        }),
+        approachField('familyRecurrentPattern', 'Family and recurrent pattern', {
+          rows: 3,
+          wide: true,
+          description: 'Family diseases, recurrent infections, allergies, skin, tonsils, worms.',
+          placeholder: 'Asthma family history, recurrent tonsillitis, eczema after ointment...',
+          rubricSearchable: true,
+          promptKey: 'pediatric.familyRecurrentPattern'
+        }),
+        approachField('remedyPlan', 'Remedy and potency plan', {
+          rows: 3,
+          wide: true,
+          required: true,
+          description: 'Remedy differentials, selected remedy, potency, and guardian instructions.',
+          placeholder: 'Calc-c vs Sil vs Puls; start 30C single dose, review in 3 weeks...',
+          promptKey: 'pediatric.remedyPlan'
+        })
+      ),
+      requiredKeys: ['guardianConcern', 'childTemperament', 'foodSleepGenerals', 'remedyPlan']
+    }
+  },
   'clinical-acute': {
     dataKey: 'clinicalAcute',
     def: {

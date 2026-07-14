@@ -6,7 +6,10 @@
     }
   </div>
 
-  <p class="hint">The approach controls case sheet fields, workflow steps, and repertory weighting for this analysis.</p>
+  <p class="hint">
+    The approach controls case sheet fields, workflow steps, and repertory weighting for this
+    analysis.
+  </p>
 
   <div class="approach-picker-root">
     <button
@@ -19,7 +22,9 @@
       (click)="togglePicker()"
     >
       <span class="approach-trigger-label">{{ selectedMethodLabel() }}</span>
-      <span class="approach-trigger-chevron" aria-hidden="true">{{ pickerOpen() ? '▴' : '▾' }}</span>
+      <span class="approach-trigger-chevron" aria-hidden="true">{{
+        pickerOpen() ? '▴' : '▾'
+      }}</span>
     </button>
 
     @if (pickerOpen()) {
@@ -36,21 +41,26 @@
           @if (!filteredMethods().length) {
             <p class="hint empty-hint">No approaches match your search.</p>
           } @else {
-            @for (method of filteredMethods(); track method.id) {
-              <button
-                type="button"
-                class="approach-option"
-                role="option"
-                [class.selected]="method.id === selectedMethodOptionId"
-                [attr.aria-selected]="method.id === selectedMethodOptionId"
-                [disabled]="saving"
-                (click)="selectMethod(method.id)"
-              >
-                <span class="approach-option-label">{{ method.label }}</span>
-                @if (method.id === selectedMethodOptionId) {
-                  <span class="approach-option-check" aria-hidden="true">✓</span>
+            @for (group of groupedFilteredMethods(); track group.key) {
+              <div class="approach-group" role="group" [attr.aria-label]="group.label">
+                <div class="approach-group-label">{{ group.label }}</div>
+                @for (method of group.methods; track method.id) {
+                  <button
+                    type="button"
+                    class="approach-option"
+                    role="option"
+                    [class.selected]="method.id === selectedMethodOptionId"
+                    [attr.aria-selected]="method.id === selectedMethodOptionId"
+                    [disabled]="saving"
+                    (click)="selectMethod(method.id)"
+                  >
+                    <span class="approach-option-label">{{ method.label }}</span>
+                    @if (method.id === selectedMethodOptionId) {
+                      <span class="approach-option-check" aria-hidden="true">✓</span>
+                    }
+                  </button>
                 }
-              </button>
+              </div>
             }
           }
         </div>
@@ -60,7 +70,10 @@
 
   <label class="rationale-field" for="approach-rationale">
     <span class="rationale-label">Why this approach?</span>
-    <span class="rationale-hint">Explain what led you to choose this method for this patient (required before continuing).</span>
+    <span class="rationale-hint"
+      >Explain what led you to choose this method for this patient (required before
+      continuing).</span
+    >
     <textarea
       id="approach-rationale"
       class="rationale-input"
@@ -78,7 +91,9 @@
 
   @if (approach; as def) {
     <div class="approach-detail">
-      <p><strong>{{ def.title }}</strong> — {{ def.shortDescription }}</p>
+      <p>
+        <strong>{{ def.title }}</strong> — {{ def.shortDescription }}
+      </p>
       <p class="muted">{{ def.focus }}</p>
 
       <div class="detail-grid">
@@ -101,10 +116,14 @@
       </div>
 
       @if (def.prescription.potencyGuidance) {
-        <p class="guidance"><strong>Potency guidance:</strong> {{ def.prescription.potencyGuidance }}</p>
+        <p class="guidance">
+          <strong>Potency guidance:</strong> {{ def.prescription.potencyGuidance }}
+        </p>
       }
       @if (def.prescription.skipRepertory) {
-        <p class="guidance protocol-note">This approach uses protocol-led prescribing; repertory steps are optional or skipped.</p>
+        <p class="guidance protocol-note">
+          This approach uses protocol-led prescribing; repertory steps are optional or skipped.
+        </p>
       }
     </div>
   }
