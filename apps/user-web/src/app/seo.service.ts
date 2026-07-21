@@ -122,7 +122,7 @@ export class SeoService {
       }>(`/diseases/by-slug/${encodeURIComponent(slug)}`);
 
       const live = response.disease;
-      const metaTitle = live.seoTitle || staticSeo.metaTitle || `${live.name} — Vitalis Care`;
+      const metaTitle = live.seoTitle || staticSeo.metaTitle || `${live.name} — HopeHub Care`;
       const metaDescription = live.seoDescription || staticSeo.metaDescription || '';
 
       return {
@@ -146,13 +146,13 @@ export class SeoService {
 
     const allKeywords = homeopathyApproaches.flatMap((approach) => approach.seo?.keywords || []);
     return {
-      metaTitle: 'Homeopathy Approaches | Vitalis Care and Research Centre',
+      metaTitle: 'Homeopathy Approaches | HopeHub Care and Research Centre',
       metaDescription:
-        'Explore structured homeopathy approaches used at Vitalis Care and Research Centre, including case frameworks, strengths, and limitations.',
+        'Explore structured homeopathy approaches used at HopeHub Care and Research Centre, including case frameworks, strengths, and limitations.',
       keywords: Array.from(new Set(allKeywords)).slice(0, 30),
-      ogTitle: 'Homeopathy Approaches at Vitalis Care and Research Centre',
+      ogTitle: 'Homeopathy Approaches at HopeHub Care and Research Centre',
       ogDescription:
-        'Compare method-led homeopathy approaches and their digital care mapping at Vitalis Care and Research Centre.',
+        'Compare method-led homeopathy approaches and their digital care mapping at HopeHub Care and Research Centre.',
     };
   }
 }

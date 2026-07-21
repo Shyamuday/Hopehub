@@ -1,5 +1,5 @@
 import { Component, Input } from '@angular/core';
-import { DetailRowsComponent, type DetailRow } from '@vitalis/platform-ui';
+import { DetailRowsComponent, type DetailRow } from '@hopehub/platform-ui';
 import type { ConsultationSummary } from '../../features/case-analysis/case-analysis-page.types';
 import type { DoctorConsultation } from '../../core/types/consultation.types';
 

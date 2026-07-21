@@ -43,7 +43,7 @@ export class PrescriptionPdfService {
     const blobUrl = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = blobUrl;
-    link.download = filename || `vitalis-prescription-${prescriptionId.slice(0, 8)}.pdf`;
+    link.download = filename || `hopehub-prescription-${prescriptionId.slice(0, 8)}.pdf`;
     link.click();
     setTimeout(() => URL.revokeObjectURL(blobUrl), BLOB_REVOKE_MS);
   }
@@ -88,8 +88,8 @@ export class PrescriptionPdfService {
   async shareNative(prescriptionId: string, meta?: PrescriptionPdfMeta) {
     const details = meta ?? (await this.fetchShareMeta(prescriptionId));
     const blob = await this.fetchPdfBlob(prescriptionId);
-    const file = new File([blob], `vitalis-prescription-${prescriptionId.slice(0, 8)}.pdf`, { type: 'application/pdf' });
-    const payload = { title: 'Vitalis prescription', text: details.shareText, files: [file] };
+    const file = new File([blob], `hopehub-prescription-${prescriptionId.slice(0, 8)}.pdf`, { type: 'application/pdf' });
+    const payload = { title: 'HopeHub prescription', text: details.shareText, files: [file] };
     if (!this.canNativeShareFiles() || !navigator.canShare(payload)) {
       throw new Error('Sharing is not supported on this device.');
     }

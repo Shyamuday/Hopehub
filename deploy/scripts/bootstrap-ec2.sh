@@ -44,9 +44,9 @@ install_node() {
 }
 
 setup_certbot() {
-  mkdir -p /opt/vitalis/deploy/certbot/www /opt/vitalis/deploy/certbot/conf
+  mkdir -p /opt/hopehub/deploy/certbot/www /opt/hopehub/deploy/certbot/conf
   echo "Request certificates after DNS points to this host:"
-  echo "  certbot certonly --webroot -w /opt/vitalis/deploy/certbot/www -d api.example.com -d patient.example.com -d doctor.example.com -d ops.example.com"
+  echo "  certbot certonly --webroot -w /opt/hopehub/deploy/certbot/www -d api.example.com -d patient.example.com -d doctor.example.com -d ops.example.com"
 }
 
 case "$step" in

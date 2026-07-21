@@ -1,4 +1,4 @@
-# Vitalis Platform — Digital Homeopathic Ecosystem
+# HopeHub Platform — Digital Homeopathic Ecosystem
 
 This document describes the full role and application landscape for a scalable digital homeopathic clinic chain: what exists today in this monorepo, what additional roles are worth building, and the recommended architecture for phasing delivery.
 

@@ -1,8 +1,8 @@
 import { inject, Service } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { PlatformAuthService } from '../services/platform-auth.service';
-import { AdminAuth } from '@vitalis/admin-console/core/services/admin-auth';
-import type { StaffUser } from '@vitalis/admin-console/core/admin-permissions';
+import { AdminAuth } from '@hopehub/admin-console/core/services/admin-auth';
+import type { StaffUser } from '@hopehub/admin-console/core/admin-permissions';
 
 /** Bridges platform staff auth for embedded admin-console pages. */
 @Service()

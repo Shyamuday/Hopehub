@@ -8,7 +8,7 @@ import {
   type ApproachDefinition,
   type ApproachFieldDef,
   type ApproachStepComponent
-} from '@vitalis/homeopathy-approaches';
+} from '@hopehub/homeopathy-approaches';
 
 export type FieldSuggestionRequest = {
   fieldKey: string;

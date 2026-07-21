@@ -1,5 +1,5 @@
 import { Component, Input, output } from '@angular/core';
-import { specializedPanelDef, type OrganonLmApproachData } from '@vitalis/homeopathy-approaches';
+import { specializedPanelDef, type OrganonLmApproachData } from '@hopehub/homeopathy-approaches';
 import { ApproachCapturePanelComponent } from '../approach-capture-panel/approach-capture-panel';
 
 @Component({
@@ -28,7 +28,7 @@ export class OrganonLmDosingPanelComponent {
 
   readonly saveRequested = output<OrganonLmApproachData>();
   readonly autoSaveRequested = output<OrganonLmApproachData>();
-  readonly fieldSuggestRequested = output<{ field: import('@vitalis/homeopathy-approaches').ApproachFieldDef; currentValue: string }>();
+  readonly fieldSuggestRequested = output<{ field: import('@hopehub/homeopathy-approaches').ApproachFieldDef; currentValue: string }>();
 
   get initialRecord() {
     return (this.initial || null) as Record<string, string> | null;

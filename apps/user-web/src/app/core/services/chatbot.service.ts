@@ -13,8 +13,8 @@ export interface ChatMsg {
   allowFreeText?: boolean;
 }
 
-const SESSION_KEY = 'vitalis_chat_session_id';
-const VISITOR_KEY = 'vitalis_chat_visitor_key';
+const SESSION_KEY = 'hopehub_chat_session_id';
+const VISITOR_KEY = 'hopehub_chat_visitor_key';
 
 @Injectable({ providedIn: 'root' })
 export class ChatbotService implements OnDestroy {

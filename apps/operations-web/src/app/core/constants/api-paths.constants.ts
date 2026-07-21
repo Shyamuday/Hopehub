@@ -1,1 +1,1 @@
-export { API_PATHS } from '@vitalis/clinic-api';
+export { API_PATHS } from '@hopehub/clinic-api';

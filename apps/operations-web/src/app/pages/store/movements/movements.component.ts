@@ -3,7 +3,7 @@ import { StoreApiService } from '../../../services/store-api.service';
 import { StockMovement } from '../../../models/store';
 import { DatePipe } from '@angular/common';
 import { PAGE_SIZES } from '../../../core/constants/store/pagination.constants';
-import { STOCK_MOVEMENT_DISPLAY, OUTBOUND_MOVEMENT_TYPES } from '@vitalis/store-ui';
+import { STOCK_MOVEMENT_DISPLAY, OUTBOUND_MOVEMENT_TYPES } from '@hopehub/store-ui';
 
 type MovementDisplayKey = keyof typeof STOCK_MOVEMENT_DISPLAY.ICONS;
 

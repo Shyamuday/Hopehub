@@ -37,7 +37,7 @@ export class CareersComponent implements OnInit {
   readonly whatsappPhone = signal('919876543210');
   readonly applyLink = computed(
     () =>
-      `https://wa.me/${this.whatsappPhone()}?text=Hi%20Vitalis%20Care%2C%20I%20would%20like%20to%20apply%20for%20a%20position.`,
+      `https://wa.me/${this.whatsappPhone()}?text=Hi%20HopeHub%20Care%2C%20I%20would%20like%20to%20apply%20for%20a%20position.`,
   );
 
   readonly vacancies = signal<JobVacancy[]>([]);
@@ -86,7 +86,7 @@ export class CareersComponent implements OnInit {
   }
 
   applyForRole(title: string): string {
-    return `https://wa.me/${this.whatsappPhone()}?text=Hi%20Vitalis%20Care%2C%20I%20would%20like%20to%20apply%20for%20the%20${encodeURIComponent(title)}%20position.`;
+    return `https://wa.me/${this.whatsappPhone()}?text=Hi%20HopeHub%20Care%2C%20I%20would%20like%20to%20apply%20for%20the%20${encodeURIComponent(title)}%20position.`;
   }
 
   jobTypeLabel(t: string): string {

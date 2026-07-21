@@ -171,7 +171,7 @@ router.post(HR_API_ROUTES.DOCTOR_LETTER, hrAuthMiddleware, asyncRoute(async (req
   const content = buildDoctorJoiningLetterContent({
     letterNumber,
     issuedDate,
-    organizationName: clinicName ?? 'Vitalis Homeopathic Clinic',
+    organizationName: clinicName ?? 'HopeHub Homeopathic Clinic',
     organizationAddress: clinicAddress ?? '',
     employeeName: doctor.user.name,
     employeeEmail: doctor.user.email ?? '',

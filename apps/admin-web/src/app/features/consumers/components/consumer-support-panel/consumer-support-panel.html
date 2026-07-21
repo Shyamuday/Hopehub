@@ -29,12 +29,12 @@
   <section class="support-grid">
     <article class="support-card">
       <h4>Account</h4>
-      <vitalis-detail-rows [rows]="supportAccountRows" />
+      <hopehub-detail-rows [rows]="supportAccountRows" />
     </article>
     <article class="support-card">
       <h4>Reminder channels</h4>
       @if (ctx.reminderPreferences) {
-        <vitalis-detail-rows [rows]="reminderPreferenceRows" />
+        <hopehub-detail-rows [rows]="reminderPreferenceRows" />
       } @else {
         <p class="muted">No preferences saved.</p>
       }

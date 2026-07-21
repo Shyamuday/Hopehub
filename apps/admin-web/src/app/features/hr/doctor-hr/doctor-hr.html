@@ -210,7 +210,7 @@
                       <div class="org-addr">{{ letter()!.content['organizationAddress'] }}</div>
                     </div>
                     <div class="lmeta">
-                      <vitalis-detail-rows inlineTag="span" [inlineHostless]="true" [rows]="letterMetaRows(letter()!.content)" />
+                      <hopehub-detail-rows inlineTag="span" [inlineHostless]="true" [rows]="letterMetaRows(letter()!.content)" />
                     </div>
                     <div class="lsubject"><strong>{{ letter()!.content['letterSubject'] || 'APPOINTMENT / JOINING LETTER' }}</strong></div>
                     <p class="lsalut">Dear Dr. {{ letter()!.content['employeeName'] }},</p>

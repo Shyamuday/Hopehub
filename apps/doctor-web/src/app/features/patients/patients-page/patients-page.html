@@ -100,7 +100,7 @@
 <section class="panel card-panel">
   <h2>Patient reference card</h2>
   <p class="muted">Print and give this card to the patient. They should bring it to every visit.</p>
-  <vitalis-patient-id-card-display [card]="card" />
+  <hopehub-patient-id-card-display [card]="card" />
 </section>
 }
 
@@ -194,7 +194,7 @@
   @if (summary(); as data) {
     <article class="card">
       <strong>Patient: {{ data.patientId }}</strong>
-      <vitalis-detail-rows [rows]="adherenceSummaryRows(data)" />
+      <hopehub-detail-rows [rows]="adherenceSummaryRows(data)" />
       <small>{{ adherenceTotalsText(data.totals) }}</small>
     </article>
   } @else {
@@ -208,7 +208,7 @@
     @for (day of summary()!.trend; track day.date) {
       <article class="card">
         <strong>{{ day.date }}</strong>
-        <vitalis-detail-rows [rows]="adherenceDayRows(day)" />
+        <hopehub-detail-rows [rows]="adherenceDayRows(day)" />
         <small>{{ adherenceDayTotalsText(day) }}</small>
       </article>
     }

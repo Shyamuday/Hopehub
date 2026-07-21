@@ -7,7 +7,7 @@ import { buildScanNavigation, storeScanPath } from './navigate';
 import type { PatientScanAppKey, ScanContextResponse } from './types';
 
 @Component({
-  selector: 'vitalis-patient-scan-launcher',
+  selector: 'hopehub-patient-scan-launcher',
   standalone: true,
   imports: [PatientScanPanelComponent],
   templateUrl: './patient-scan-launcher.component.html',

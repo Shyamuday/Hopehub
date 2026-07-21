@@ -100,7 +100,7 @@ async function bootstrapSession() {
     method: 'GET',
     headers: {
       Accept: 'application/json',
-      'User-Agent': 'vitalis-homeopathy/1.0',
+      'User-Agent': 'hopehub-homeopathy/1.0',
       'X-Requested-With': 'XMLHttpRequest'
     }
   }, OOREP_TIMEOUT_MS);
@@ -121,7 +121,7 @@ async function oorepRequest<T>(endpoint: string, params: Record<string, string |
 
   const headers: Record<string, string> = {
     Accept: 'application/json',
-    'User-Agent': 'vitalis-homeopathy/1.0',
+    'User-Agent': 'hopehub-homeopathy/1.0',
     'X-Requested-With': 'XMLHttpRequest'
   };
   const cookie = cookieJar.header();

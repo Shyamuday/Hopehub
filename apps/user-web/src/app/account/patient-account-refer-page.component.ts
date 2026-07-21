@@ -1,5 +1,5 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
-import { ClinicHttpClient } from '@vitalis/clinic-api';
+import { ClinicHttpClient } from '@hopehub/clinic-api';
 import { API_PATHS } from '../core/constants/api-paths.constants';
 import { AuthService } from '../auth/auth.service';
 
@@ -57,7 +57,7 @@ export class PatientAccountReferPageComponent implements OnInit {
   whatsappShare() {
     const url = this.shareUrl();
     const text = encodeURIComponent(
-      `Join me on Vitalis Care for doctor-led homeopathic consultations. Use my code ${this.code()} or link: ${url}`,
+      `Join me on HopeHub Care for doctor-led homeopathic consultations. Use my code ${this.code()} or link: ${url}`,
     );
     window.open(`https://wa.me/?text=${text}`, '_blank', 'noopener');
   }

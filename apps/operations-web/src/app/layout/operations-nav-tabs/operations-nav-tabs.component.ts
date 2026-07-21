@@ -14,7 +14,7 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink } from '@angular/router';
 import { filter } from 'rxjs';
-import { OPERATIONS_NAV_GROUPS, type PlatformNavItem } from '@vitalis/platform-nav';
+import { OPERATIONS_NAV_GROUPS, type PlatformNavItem } from '@hopehub/platform-nav';
 
 @Component({
   selector: 'app-operations-nav-tabs',

@@ -1,4 +1,4 @@
-import type { DetailFieldDef } from '@vitalis/platform-ui';
+import type { DetailFieldDef } from '@hopehub/platform-ui';
 
 export type SupportAccountDetail = {
   isActive: boolean;

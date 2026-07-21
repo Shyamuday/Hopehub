@@ -4,7 +4,7 @@ import { StoreApiService } from '../../../services/store-api.service';
 import { StaffActivity, StaffDetailResponse } from '../../../models/store';
 import { ACTIVITY_PERIODS } from '../../../core/constants/store/pagination.constants';
 import { STORE_STAFF_ROLES } from '../../../core/constants/store/auth.constants';
-import { STAFF_ACTIVITY_DISPLAY, OUTBOUND_MOVEMENT_TYPES } from '@vitalis/store-ui';
+import { STAFF_ACTIVITY_DISPLAY, OUTBOUND_MOVEMENT_TYPES } from '@hopehub/store-ui';
 
 type ActivityDisplayKey = keyof typeof STAFF_ACTIVITY_DISPLAY.ICONS;
 

@@ -79,7 +79,7 @@ async function markCashPaid(
         recipientName: patient.name,
         recipientMobile: patient.mobile,
         recipientEmail: patient.email,
-        title: 'Booking confirmed — Vitalis Care',
+        title: 'Booking confirmed — HopeHub Care',
         body: `Your consultation for ${consultation.disease?.name || 'your concern'} has been booked and payment received at the clinic desk.`
       }))
     );
@@ -585,7 +585,7 @@ export function registerReceptionRoutes(router: import('express').Router, io: So
             recipientName: patient.name,
             recipientMobile: patient.mobile,
             recipientEmail: patient.email,
-            title: 'Doctor assigned — Vitalis Care',
+            title: 'Doctor assigned — HopeHub Care',
             body: `Dr. ${doctor.name} has been assigned to your consultation.`
           }))
         );

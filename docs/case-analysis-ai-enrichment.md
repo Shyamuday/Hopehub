@@ -1,6 +1,6 @@
 # Case Analysis — AI Enrichment Plan
 
-This document describes how to extend Vitalis **Case Analysis** (homeopathic repertorization in `doctor-web`) with image upload, camera capture, and AI-assisted symptom detection. It is a product and engineering plan — not a commitment to auto-prescribe or auto-diagnose.
+This document describes how to extend HopeHub **Case Analysis** (homeopathic repertorization in `doctor-web`) with image upload, camera capture, and AI-assisted symptom detection. It is a product and engineering plan — not a commitment to auto-prescribe or auto-diagnose.
 
 **Related code today:**
 

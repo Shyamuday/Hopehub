@@ -129,7 +129,7 @@
             <button type="button" class="close-btn" (click)="closeModal()">✕</button>
           </div>
           <div class="mbody">
-            <vitalis-detail-rows [rows]="purchaseOrderDetailRows(order)" />
+            <hopehub-detail-rows [rows]="purchaseOrderDetailRows(order)" />
             <ul>
               @for (line of order.lines || []; track line.id) {
                 <li>{{ line.medicine?.name }} {{ line.medicine?.potency }} — qty {{ line.qtyOrdered }}</li>

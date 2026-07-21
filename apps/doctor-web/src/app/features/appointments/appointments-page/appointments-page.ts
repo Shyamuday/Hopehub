@@ -30,7 +30,7 @@ import {
   PatientHealthProfileComponent,
   type PatientClinicalProfile,
 } from '../../../shared/patient-health-profile/patient-health-profile';
-import { ViewportService } from '@vitalis/platform-ui';
+import { ViewportService } from '@hopehub/platform-ui';
 import {
   PrescriptionApproachWorkflowComponent,
   type PrescriptionHandoffApply,

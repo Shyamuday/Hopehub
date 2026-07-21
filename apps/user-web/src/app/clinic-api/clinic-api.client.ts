@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
-import { CLINIC_API_BASE_URL } from '@vitalis/clinic-api';
+import { CLINIC_API_BASE_URL } from '@hopehub/clinic-api';
 import { AUTH_TOKEN_KEY } from '../core/constants/auth.constants';
 import { RAZORPAY_CHECKOUT } from '../core/constants/branding.constants';
 

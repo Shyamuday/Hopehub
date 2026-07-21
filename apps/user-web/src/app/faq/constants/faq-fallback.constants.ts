@@ -16,7 +16,7 @@ export const FAQ_FALLBACK_ENTRIES: FaqAccordionItem[] = [
     category: 'Booking',
     question: 'Can I choose my doctor?',
     answer:
-      'No. Vitalis Care assigns from the internal doctor panel based on your concern, medical history, and availability.',
+      'No. HopeHub Care assigns from the internal doctor panel based on your concern, medical history, and availability.',
   },
   {
     category: 'Consultation',

@@ -71,7 +71,7 @@ export const ROLE_TASK_GUIDES = [
   {
     appKey: 'admin-web',
     roleTitle: 'Platform Administrator',
-    tagline: 'You own clinic configuration, oversight, and compliance across Vitalis.',
+    tagline: 'You own clinic configuration, oversight, and compliance across HopeHub.',
     responsibilities: [
       'Maintain doctor accounts, types, specialties, and HR records.',
       'Monitor consultations, payments, adherence risk, and audit logs.',
@@ -434,7 +434,7 @@ export const ROLE_TASK_GUIDES = [
     responsibilities: [
       'View corporate account and enrolled employees.',
       'Verify enrollment status for HR wellness programs.',
-      'Coordinate with Vitalis admin for new corporate accounts.'
+      'Coordinate with HopeHub admin for new corporate accounts.'
     ],
     dailyTasks: [
       { title: 'Accounts list', detail: 'Open your corporate account and review enrollment count.', when: 'Weekly' },
@@ -533,7 +533,7 @@ export const ROLE_TASK_GUIDES = [
     boundaries: [
       'Do not access other partners\' data.',
       'Do not share patient-identifiable information outside approved channels.',
-      'Account or contract changes require Vitalis platform admin.'
+      'Account or contract changes require HopeHub platform admin.'
     ]
   },
 
@@ -554,7 +554,7 @@ export const ROLE_TASK_GUIDES = [
     boundaries: [
       'Do not access other partners\' data.',
       'Do not share patient-identifiable information outside approved channels.',
-      'Account or contract changes require Vitalis platform admin.'
+      'Account or contract changes require HopeHub platform admin.'
     ]
   },
 
@@ -569,7 +569,7 @@ export const ROLE_TASK_GUIDES = [
     ],
     dailyTasks: [
       { title: 'Claims inbox', detail: 'Check new and pending claims at start of day.', when: 'Daily' },
-      { title: 'Submit claim', detail: 'Use patient ID from Vitalis records and accurate amount in rupees.', when: 'Per claim' },
+      { title: 'Submit claim', detail: 'Use patient ID from HopeHub records and accurate amount in rupees.', when: 'Per claim' },
       { title: 'Status follow-up', detail: 'Track SUBMITTED and UNDER_REVIEW claims.', when: 'Weekly' }
     ],
     boundaries: [

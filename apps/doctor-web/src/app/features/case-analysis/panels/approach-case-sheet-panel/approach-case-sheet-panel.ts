@@ -1,6 +1,6 @@
 import { Component, Input, output } from '@angular/core';
 import { FormField } from '@angular/forms/signals';
-import { fieldOptionGroupsForField, type ApproachFieldDef } from '@vitalis/homeopathy-approaches';
+import { fieldOptionGroupsForField, type ApproachFieldDef } from '@hopehub/homeopathy-approaches';
 import { ApproachFieldHintComponent } from '../approach-field-hint/approach-field-hint';
 
 @Component({

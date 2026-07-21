@@ -1,7 +1,7 @@
 import { Component, Input, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { getRoleTaskGuide } from '@vitalis/role-task-guides';
-import type { RoleTaskGuide } from '@vitalis/role-task-guides/types';
+import { getRoleTaskGuide } from '@hopehub/role-task-guides';
+import type { RoleTaskGuide } from '@hopehub/role-task-guides/types';
 
 @Component({
   selector: 'app-role-task-guide',
@@ -50,7 +50,7 @@ export class RoleTaskGuideComponent implements OnInit {
 
   private storageKey() {
     const variant = this.variantKey || 'default';
-    return `vitalis-role-guide:${this.appKey}:${variant}`;
+    return `hopehub-role-guide:${this.appKey}:${variant}`;
   }
 
   private persist(state: 'collapsed' | 'hidden', active: boolean) {

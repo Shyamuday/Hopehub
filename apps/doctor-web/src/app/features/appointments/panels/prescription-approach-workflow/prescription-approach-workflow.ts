@@ -29,7 +29,7 @@ import {
   type ScholtenApproachData,
   type SehgalApproachData,
   type SensationApproachData,
-} from '@vitalis/homeopathy-approaches';
+} from '@hopehub/homeopathy-approaches';
 import { RouterLink } from '@angular/router';
 import { ROUTE_PATHS } from '../../../../core/constants/app-routes.constants';
 import { CaseAnalysisApiService } from '../../../case-analysis/case-analysis-api.service';

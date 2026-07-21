@@ -1,4 +1,4 @@
-import { CROSS_APP_API_PATHS } from '@vitalis/clinic-api/cross-app-api-paths.constants';
+import { CROSS_APP_API_PATHS } from '@hopehub/clinic-api/cross-app-api-paths.constants';
 
 export const API_PATHS = {
   CONSULTATIONS: '/consultations',

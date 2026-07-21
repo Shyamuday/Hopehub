@@ -21,13 +21,13 @@ import {
   type PatientProfile,
   type ReminderPreferences,
 } from './core/constants/patient-profile.constants';
-import { ClinicHttpClient, CLINIC_API_BASE_URL } from '@vitalis/clinic-api';
+import { ClinicHttpClient, CLINIC_API_BASE_URL } from '@hopehub/clinic-api';
 import { AuthService } from './auth/auth.service';
 import { ClinicApiService } from './clinic-api.service';
 import { PatientIdCardComponent } from './shared/patient-id-card/patient-id-card.component';
 import { PatientAddressBookComponent } from './shared/patient-address-book/patient-address-book.component';
 import { PatientClinicalMediaPanelComponent } from './shared/patient-clinical-media/patient-clinical-media-panel';
-import { ProfileAvatarUploadComponent } from '@vitalis/platform-ui';
+import { ProfileAvatarUploadComponent } from '@hopehub/platform-ui';
 import { AUTH_TOKEN_KEY } from './core/constants/auth.constants';
 
 @Component({

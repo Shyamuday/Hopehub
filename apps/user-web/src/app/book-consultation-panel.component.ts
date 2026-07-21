@@ -18,7 +18,7 @@ import {
 } from './core/constants/billing.constants';
 import { API_PATHS } from './core/constants/api-paths.constants';
 import { ClinicApiClient } from './clinic-api/clinic-api.client';
-import { ClinicHttpClient } from '@vitalis/clinic-api';
+import { ClinicHttpClient } from '@hopehub/clinic-api';
 import { BillingPlan, Disease } from './models';
 
 export type BookConsultationPayload = {

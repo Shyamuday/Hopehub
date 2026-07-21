@@ -119,7 +119,7 @@ export function createPaymentsRouter(io: SocketIoServer) {
             recipientName: patient.name,
             recipientMobile: patient.mobile,
             recipientEmail: patient.email,
-            title: 'Booking confirmed — Vitalis Care',
+            title: 'Booking confirmed — HopeHub Care',
             body: `Your consultation for ${consultation.disease?.name || 'your concern'} has been booked and payment received. A doctor will be assigned shortly.`
           }))
         );
@@ -213,7 +213,7 @@ export function createPaymentsRouter(io: SocketIoServer) {
             recipientName: webhookPatient.name,
             recipientMobile: webhookPatient.mobile,
             recipientEmail: webhookPatient.email,
-            title: 'Booking confirmed — Vitalis Care',
+            title: 'Booking confirmed — HopeHub Care',
             body: `Your consultation for ${consultationForNotif?.disease?.name || 'your concern'} has been booked and payment received. A doctor will be assigned shortly.`
           }))
         );

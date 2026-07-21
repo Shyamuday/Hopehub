@@ -7,9 +7,9 @@ import { APP_OVERLAY_DATA, APP_OVERLAY_REF } from '../overlay.tokens';
 import { AppOverlayRef, AppOverlayService } from '../overlay.service';
 import { AuthStatusOverlayComponent } from './auth-status-overlay.component';
 import { AuthService } from './auth.service';
-import { DevLoginPanelComponent } from '@vitalis/platform-ui';
+import { DevLoginPanelComponent } from '@hopehub/platform-ui';
 import { DEV_DEMO_ACCOUNTS } from '../core/constants/dev-demo.constants';
-import type { DevFillCredentials } from '@vitalis/platform-ui';
+import type { DevFillCredentials } from '@hopehub/platform-ui';
 
 import { PatientSelectionCandidate } from '../models';
 

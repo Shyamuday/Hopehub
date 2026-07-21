@@ -28,6 +28,12 @@ export type ApproachStepId =
   | 'boenninghausen-lsm'
   | 'boger-totality'
   | 'constitutional-profile'
+  | 'temperament-constitutional'
+  | 'bach-flower-emotional'
+  | 'nosode-sarcode'
+  | 'mother-tincture-organopathic'
+  | 'intercurrent-remedy'
+  | 'pediatric-constitutional'
   | 'clinical-acute'
   | 'predictive-pathology'
   | 'pathological-anchor'
@@ -61,6 +67,12 @@ export type ApproachStepComponent =
   | 'boenninghausen-lsm'
   | 'boger-totality'
   | 'constitutional-profile'
+  | 'temperament-constitutional'
+  | 'bach-flower-emotional'
+  | 'nosode-sarcode'
+  | 'mother-tincture-organopathic'
+  | 'intercurrent-remedy'
+  | 'pediatric-constitutional'
   | 'clinical-acute'
   | 'predictive-pathology'
   | 'pathological-anchor'
@@ -278,6 +290,12 @@ export type ApproachDataPayload = {
   boenninghausenLsm?: StringMapApproachData;
   bogerTotality?: StringMapApproachData;
   constitutionalProfile?: StringMapApproachData;
+  temperamentConstitutional?: StringMapApproachData;
+  bachFlowerEmotional?: StringMapApproachData;
+  nosodeSarcode?: StringMapApproachData;
+  motherTinctureOrganopathic?: StringMapApproachData;
+  intercurrentRemedy?: StringMapApproachData;
+  pediatricConstitutional?: StringMapApproachData;
   clinicalAcute?: StringMapApproachData;
   predictivePathology?: StringMapApproachData;
   pathologicalAnchor?: StringMapApproachData;

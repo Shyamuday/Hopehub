@@ -1,1 +1,1 @@
-export { CorporateWellnessApiService } from '@vitalis/clinic-api';
+export { CorporateWellnessApiService } from '@hopehub/clinic-api';

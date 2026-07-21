@@ -9,4 +9,4 @@ export {
   specialtyFocusLabel,
   type HomeopathicDoctorType,
   type HomeopathicSpecialtyFocus
-} from '@vitalis/hr-ui';
+} from '@hopehub/hr-ui';

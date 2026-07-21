@@ -1,1 +1,1 @@
-export { StoreApiService } from '@vitalis/clinic-api';
+export { StoreApiService } from '@hopehub/clinic-api';

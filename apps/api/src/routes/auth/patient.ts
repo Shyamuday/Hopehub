@@ -158,7 +158,7 @@ export function registerAuthPatientRoutes(router: Router) {
         await mailer.sendMail({
           from: smtpFrom,
           to: email,
-          subject: 'Reset your Vitalis Care password',
+          subject: 'Reset your HopeHub Care password',
           html: `<p>Click the link below to reset your password. It expires in 30 minutes.</p>
                <p><a href="${resetUrl}">${resetUrl}</a></p>`
         });

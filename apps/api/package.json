@@ -43,7 +43,7 @@
     "razorpay": "^2.9.6",
     "redis": "^4.7.1",
     "socket.io": "^4.8.1",
-    "vitalis-clinic-platform": "file:../..",
+    "hopehub": "file:../..",
     "zod": "^4.2.1"
   },
   "devDependencies": {

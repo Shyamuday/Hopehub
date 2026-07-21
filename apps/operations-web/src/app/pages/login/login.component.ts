@@ -3,8 +3,8 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { form, FormField, required } from '@angular/forms/signals';
 import { PlatformAuthService } from '../../services/platform-auth.service';
-import { DevLoginPanelComponent } from '@vitalis/platform-ui';
-import type { DevFillCredentials } from '@vitalis/platform-ui';
+import { DevLoginPanelComponent } from '@hopehub/platform-ui';
+import type { DevFillCredentials } from '@hopehub/platform-ui';
 
 @Component({
   selector: 'app-login',

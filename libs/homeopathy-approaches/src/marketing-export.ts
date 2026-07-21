@@ -23,7 +23,7 @@ export type MarketingApproachContent = {
 function buildSeo(def: ApproachDefinition): MarketingApproachContent['seo'] {
   const publicSlug = def.marketingSlug || def.slug;
   return {
-    metaTitle: `${def.title} | Vitalis Care and Research Centre`,
+    metaTitle: `${def.title} | HopeHub Care and Research Centre`,
     metaDescription: def.shortDescription,
     keywords: Array.from(
       new Set([
@@ -31,12 +31,12 @@ function buildSeo(def: ApproachDefinition): MarketingApproachContent['seo'] {
         `${publicSlug} homeopathy`,
         'homeopathy method',
         'clinical homeopathy',
-        'Vitalis Care and Research Centre',
+        'HopeHub Care and Research Centre',
         'doctor-led care',
         ...def.bestFor.slice(0, 4)
       ])
     ),
-    ogTitle: `${def.title} Approach | Vitalis Care and Research Centre`,
+    ogTitle: `${def.title} Approach | HopeHub Care and Research Centre`,
     ogDescription: def.shortDescription
   };
 }

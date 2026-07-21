@@ -27,7 +27,7 @@ export async function ensurePatientReferralCode(patientId: string) {
   });
   const fromCode = patient?.patientCode ? normalizeReferralCode(patient.patientCode) : '';
   const fromName = patient?.name ? normalizeReferralCode(patient.name.replace(/\s+/g, '')) : '';
-  const base = fromCode || fromName || 'VITALIS';
+  const base = fromCode || fromName || 'HOPEHUB';
   const code = await uniqueCode(base);
 
   return prisma.patientReferralCode.create({

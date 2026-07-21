@@ -12,7 +12,7 @@ import {
   signal,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { NotificationBellHostComponent } from '@vitalis/platform-ui';
+import { NotificationBellHostComponent } from '@hopehub/platform-ui';
 import { PUBLIC_SITE_BRAND } from './core/constants/public-site-content.constants';
 import { PUBLIC_HEADER_NAV_GROUPS } from './core/constants/public-nav.constants';
 import { ROUTE_PATHS } from './core/constants/app-routes.constants';

@@ -1,4 +1,4 @@
-# Vitalis 2-Week Implementation Plan
+# HopeHub 2-Week Implementation Plan
 
 This plan converts the current state into a production-ready API-first baseline, focused on auth safety, prescription workflows, adherence tracking, and admin operations.
 

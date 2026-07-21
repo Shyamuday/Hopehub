@@ -23,7 +23,7 @@ export const LEGAL_HUB_CONTENT = {
   eyebrow: 'Policies',
   title: 'Privacy, terms, and clinic policies.',
   intro:
-    'Read how Vitalis Care and Research Centre handles your data, consultations, payments, medicine orders, delivery, and returns.',
+    'Read how HopeHub Care and Research Centre handles your data, consultations, payments, medicine orders, delivery, and returns.',
   links: [
     { label: 'Privacy Policy', href: '/privacy-policy' },
     { label: 'Terms & Conditions', href: '/terms-and-conditions' },
@@ -33,8 +33,8 @@ export const LEGAL_HUB_CONTENT = {
   ] satisfies readonly PublicNavLink[]
 } as const;
 
-const CLINIC_NAME = 'Vitalis Care and Research Centre';
-const CONTACT_EMAIL = 'support@vitaliscare.in';
+const CLINIC_NAME = 'HopeHub Care and Research Centre';
+const CONTACT_EMAIL = 'support@hopehubcare.in';
 const GOVERNING_LAW = 'Jharkhand, India';
 
 export const LEGAL_PAGES = {
@@ -109,7 +109,7 @@ export const LEGAL_PAGES = {
     slug: 'terms-and-conditions',
     headerSubtitle: 'Terms & Conditions',
     eyebrow: 'Terms & Conditions',
-    title: 'Rules for using Vitalis Care online services.',
+    title: 'Rules for using HopeHub Care online services.',
     intro:
       `By accessing ${CLINIC_NAME}, creating an account, booking a consultation, or placing a medicine order, you agree to these Terms & Conditions.`,
     lastUpdated: 'July 2026',
@@ -236,7 +236,7 @@ export const LEGAL_PAGES = {
     eyebrow: 'Shipping Policy',
     title: 'Medicine delivery timelines, coverage, and charges.',
     intro:
-      'This policy explains how prescribed medicines are packed, shipped, and delivered after you place an order on Vitalis Care.',
+      'This policy explains how prescribed medicines are packed, shipped, and delivered after you place an order on HopeHub Care.',
     lastUpdated: 'July 2026',
     sections: [
       {
@@ -293,7 +293,7 @@ export const LEGAL_PAGES = {
     eyebrow: 'Payment Policy',
     title: 'Consultation fees, medicine payments, refunds, and receipts.',
     intro:
-      'All online payments on Vitalis Care are processed securely. This policy explains accepted methods, billing, and refunds.',
+      'All online payments on HopeHub Care are processed securely. This policy explains accepted methods, billing, and refunds.',
     lastUpdated: 'July 2026',
     sections: [
       {
@@ -323,7 +323,7 @@ export const LEGAL_PAGES = {
       {
         title: 'Payment security',
         paragraphs: [
-          'Card and UPI details are entered on Razorpay’s secure checkout. Vitalis does not store full payment credentials on its own servers.',
+          'Card and UPI details are entered on Razorpay’s secure checkout. HopeHub does not store full payment credentials on its own servers.',
           'You are responsible for verifying the amount before authorising payment.'
         ]
       },

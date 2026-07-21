@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
-import { NotificationInboxComponent } from '@vitalis/platform-ui';
-import { CROSS_APP_API_PATHS } from '@vitalis/clinic-api/cross-app-api-paths.constants';
+import { NotificationInboxComponent } from '@hopehub/platform-ui';
+import { CROSS_APP_API_PATHS } from '@hopehub/clinic-api/cross-app-api-paths.constants';
 import { environment } from '../../../environments/environment';
 import { AUTH_TOKEN_KEY } from '../../core/constants/auth.constants';
 

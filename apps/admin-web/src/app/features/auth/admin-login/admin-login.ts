@@ -4,9 +4,9 @@ import { form, FormField, required } from '@angular/forms/signals';
 import { AdminAuth } from '../../../core/services/admin-auth';
 import { pickFirstAllowedRoute } from '../../../core/admin-navigation';
 import { DEFAULT_AUTHED_ROUTE } from '../../../core/constants/app-routes.constants';
-import { DevLoginPanelComponent } from '@vitalis/platform-ui';
+import { DevLoginPanelComponent } from '@hopehub/platform-ui';
 import { DEV_DEMO_ACCOUNTS } from '../../../core/constants/dev-demo.constants';
-import type { DevFillCredentials } from '@vitalis/platform-ui';
+import type { DevFillCredentials } from '@hopehub/platform-ui';
 
 @Component({
   selector: 'app-admin-login',

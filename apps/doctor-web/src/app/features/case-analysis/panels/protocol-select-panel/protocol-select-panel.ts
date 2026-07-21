@@ -1,6 +1,6 @@
 import { Component, Input, OnChanges, output, signal } from '@angular/core';
 import { form, FormField } from '@angular/forms/signals';
-import { findProtocolById, protocolsForDisease, type BanerjiProtocol, type ProtocolApproachData } from '@vitalis/homeopathy-approaches';
+import { findProtocolById, protocolsForDisease, type BanerjiProtocol, type ProtocolApproachData } from '@hopehub/homeopathy-approaches';
 import { installApproachPanelAutoSave } from '../../approach-panel-autosave';
 
 function emptyProtocol(): ProtocolApproachData {

@@ -1,6 +1,6 @@
 // Readable text on light panels/cards inside dark-themed apps.
 
-@mixin vitalis-light-content-surfaces() {
+@mixin hopehub-light-content-surfaces() {
   :is(
     .panel,
     .card,
@@ -67,7 +67,7 @@
   }
 }
 
-@mixin vitalis-dark-readable-text() {
+@mixin hopehub-dark-readable-text() {
   :is(.cp, .ml, .sp, .visitor-leads-page) {
     :is(.cp-sub, .ml-sub, .sp-sub) {
       color: #94a3b8;

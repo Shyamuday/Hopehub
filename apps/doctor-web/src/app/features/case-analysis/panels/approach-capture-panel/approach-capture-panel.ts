@@ -1,6 +1,6 @@
 import { Component, Input, OnChanges, output, signal } from '@angular/core';
 import { form, FormField } from '@angular/forms/signals';
-import { fieldOptionGroupsForField, type ApproachFieldDef } from '@vitalis/homeopathy-approaches';
+import { fieldOptionGroupsForField, type ApproachFieldDef } from '@hopehub/homeopathy-approaches';
 import { installApproachPanelAutoSave } from '../../approach-panel-autosave';
 import { ApproachFieldHintComponent } from '../approach-field-hint/approach-field-hint';
 

@@ -194,14 +194,14 @@ Minimum acceptance:
 
 ### 4) Front Desk / Receptionist (Platform Phase 2)
 
-**Status: Done** — `RECEPTIONIST` role + `ReceptionistProfile`; reception API (`/reception/queue`, walk-in registration, cash collection, doctor assignment); `receptionist-web` app on port 4500 with queue board and walk-in form; demo persona `reception@vitalisclinic.local`.
+**Status: Done** — `RECEPTIONIST` role + `ReceptionistProfile`; reception API (`/reception/queue`, walk-in registration, cash collection, doctor assignment); `receptionist-web` app on port 4500 with queue board and walk-in form; demo persona `reception@hopehubclinic.local`.
 
 - Dedicated receptionist role and app
 - Walk-in patient registration and queue management
 
 ### 5) Clinic Manager Hub (Platform Phase 2)
 
-**Status: Done** — `CLINIC_MANAGER` role + `ClinicManagerProfile`; clinic-manager API (`/clinic-manager/dashboard`, `/roster`, `/schedules`); `clinic-manager-web` on port 4600 with branch KPIs, staff attendance roster, and doctor slot visibility; demo persona `clinic@vitalisclinic.local`.
+**Status: Done** — `CLINIC_MANAGER` role + `ClinicManagerProfile`; clinic-manager API (`/clinic-manager/dashboard`, `/roster`, `/schedules`); `clinic-manager-web` on port 4600 with branch KPIs, staff attendance roster, and doctor slot visibility; demo persona `clinic@hopehubclinic.local`.
 
 - Day-to-day branch operations console
 - Staff attendance and schedule visibility
@@ -210,21 +210,21 @@ Minimum acceptance:
 
 ### 1) Accountant Web App (Platform Phase 3)
 
-**Status: Done** — `ACCOUNTANT` role + `AccountantProfile`; accountant API (`/accountant/summary`, `/branches`, `/export-bundle`); `accountant-web` on port 4700 with month summary, branch P&L table, and CSV export; demo persona `accountant@vitalisclinic.local`.
+**Status: Done** — `ACCOUNTANT` role + `AccountantProfile`; accountant API (`/accountant/summary`, `/branches`, `/export-bundle`); `accountant-web` on port 4700 with month summary, branch P&L table, and CSV export; demo persona `accountant@hopehubclinic.local`.
 
 - Dedicated finance/compliance console for accountants
 - GST-ready export bundles without full admin access
 
 ### 2) Supplier Portal (Platform Phase 3)
 
-**Status: Done** — `SUPPLIER` role + `SupplierProfile`; `Supplier`, `PurchaseOrder`, `GoodsReceiptNote` models; supplier API (`/supplier/purchase-orders`, confirm dispatch); store manager GRN (`POST /store/purchase-orders/:id/grn`) updates stock via `PURCHASE_IN`; `supplier-web` on port 4800; demo PO seeded for Ranchi; demo persona `supplier@vitalisclinic.local`.
+**Status: Done** — `SUPPLIER` role + `SupplierProfile`; `Supplier`, `PurchaseOrder`, `GoodsReceiptNote` models; supplier API (`/supplier/purchase-orders`, confirm dispatch); store manager GRN (`POST /store/purchase-orders/:id/grn`) updates stock via `PURCHASE_IN`; `supplier-web` on port 4800; demo PO seeded for Ranchi; demo persona `supplier@hopehubclinic.local`.
 
 - Supplier-facing PO and delivery confirmation
 - GRN updates store stock on receipt
 
 ### 3) Warehouse / Central Inventory (Platform Phase 3)
 
-**Status: Done** — `WAREHOUSE_MANAGER` role + `WarehouseManagerProfile`; `StoreKind` (`BRANCH`/`WAREHOUSE`); `StockTransfer` models; warehouse API (`/warehouse/dashboard`, `/transfers`, dispatch); store manager receive (`POST /store/stock-transfers/:id/receive`) updates stock via `TRANSFER_IN`; `warehouse-web` on port 4900; demo warehouse in Kolkata with pending transfer to Ranchi; demo persona `warehouse@vitalisclinic.local`.
+**Status: Done** — `WAREHOUSE_MANAGER` role + `WarehouseManagerProfile`; `StoreKind` (`BRANCH`/`WAREHOUSE`); `StockTransfer` models; warehouse API (`/warehouse/dashboard`, `/transfers`, dispatch); store manager receive (`POST /store/stock-transfers/:id/receive`) updates stock via `TRANSFER_IN`; `warehouse-web` on port 4900; demo warehouse in Kolkata with pending transfer to Ranchi; demo persona `warehouse@hopehubclinic.local`.
 
 - Central warehouse stock hub and branch transfer workflow
 - Dispatch deducts warehouse batches; branch receive posts `TRANSFER_IN`
@@ -233,14 +233,14 @@ Minimum acceptance:
 
 ### 1) Delivery Executive App (Platform Phase 4)
 
-**Status: Done** — `DELIVERY_EXECUTIVE` role + `DeliveryExecutiveProfile`; `MedicineDelivery` models with OTP proof; delivery API (`/delivery/orders`, accept/pickup/complete/fail); store manager create (`POST /store/deliveries`); `delivery-web` on port 5000; demo pending delivery for Rahul (OTP `123456`); demo persona `delivery@vitalisclinic.local`.
+**Status: Done** — `DELIVERY_EXECUTIVE` role + `DeliveryExecutiveProfile`; `MedicineDelivery` models with OTP proof; delivery API (`/delivery/orders`, accept/pickup/complete/fail); store manager create (`POST /store/deliveries`); `delivery-web` on port 5000; demo pending delivery for Rahul (OTP `123456`); demo persona `delivery@hopehubclinic.local`.
 
 - Last-mile home medicine delivery for patients
 - OTP proof on handover; store manager schedules deliveries
 
 ### 2) Diagnostic Center Portal (Platform Phase 4)
 
-**Status: Done** — `DIAGNOSTIC_PARTNER` role + `DiagnosticCenterProfile`; `LabReferral` models; diagnostic API (`/diagnostic/referrals`, accept/advance/results); admin create (`POST /admin/lab-referrals`); `diagnostic-web` on port 5100; demo referral for Rahul; demo persona `lab@vitalisclinic.local`.
+**Status: Done** — `DIAGNOSTIC_PARTNER` role + `DiagnosticCenterProfile`; `LabReferral` models; diagnostic API (`/diagnostic/referrals`, accept/advance/results); admin create (`POST /admin/lab-referrals`); `diagnostic-web` on port 5100; demo referral for Rahul; demo persona `lab@hopehubclinic.local`.
 
 - External lab partner portal for test referrals and result publishing
 - Clinic admin sends referrals; lab accepts and posts structured results

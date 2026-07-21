@@ -66,7 +66,7 @@ export const routes: Routes = [
     canActivate: [roleGuard],
     data: {
       roles: ['PATIENT'],
-      seoTitle: 'Instant consult room | Vitalis Care',
+      seoTitle: 'Instant consult room | HopeHub Care',
       seoDescription: 'Chat and video call with your online doctor.',
     },
   },
@@ -175,7 +175,7 @@ export const routes: Routes = [
     data: {
       roles: ['PATIENT'],
       ...ROUTE_SEO_CONTENT['patient/dashboard'],
-      seoTitle: 'Scan patient ID | Vitalis Care',
+      seoTitle: 'Scan patient ID | HopeHub Care',
     },
   },
   {
@@ -251,9 +251,9 @@ export const routes: Routes = [
         path: 'permissions',
         component: PatientAccountPermissionsPageComponent,
         data: {
-          seoTitle: 'App permissions | Vitalis Care',
+          seoTitle: 'App permissions | HopeHub Care',
           seoDescription:
-            'Learn why Vitalis asks for camera, microphone, and notification access — and how you stay in control.',
+            'Learn why HopeHub asks for camera, microphone, and notification access — and how you stay in control.',
         },
       },
     ],
@@ -267,7 +267,7 @@ export const routes: Routes = [
     path: '**',
     component: NotFoundPageComponent,
     data: {
-      seoTitle: 'Page not found | Vitalis Care',
+      seoTitle: 'Page not found | HopeHub Care',
       seoDescription: 'The page you requested could not be found.',
     },
   },

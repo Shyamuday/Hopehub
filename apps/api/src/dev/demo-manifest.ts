@@ -6,11 +6,11 @@ export const DEV_PATIENT_MOBILE = '9876543210';
 
 export const DEV_DEMO_ACCOUNTS = {
   admin: {
-    email: 'admin@vitalisclinic.local',
+    email: 'admin@hopehubclinic.local',
     name: 'Clinic Admin'
   },
   doctor: {
-    email: 'doctor@vitalisclinic.local',
+    email: 'doctor@hopehubclinic.local',
     name: 'Dr. Meera Sharma',
     mobile: '9000000001',
     specialty: 'Homeopathy',
@@ -18,108 +18,108 @@ export const DEV_DEMO_ACCOUNTS = {
     doctorType: 'CHIEF_CONSULTANT'
   },
   hr: {
-    email: 'hr@vitalisclinic.local',
+    email: 'hr@hopehubclinic.local',
     name: 'HR Manager Demo',
     employeeId: 'HR-001'
   },
   receptionist: {
-    email: 'reception@vitalisclinic.local',
+    email: 'reception@hopehubclinic.local',
     name: 'Front Desk Demo',
     employeeId: 'REC-001'
   },
   clinicManager: {
-    email: 'clinic@vitalisclinic.local',
+    email: 'clinic@hopehubclinic.local',
     name: 'Branch Manager Demo',
     employeeId: 'CM-001'
   },
   accountant: {
-    email: 'accountant@vitalisclinic.local',
+    email: 'accountant@hopehubclinic.local',
     name: 'Finance Accountant Demo',
     employeeId: 'ACC-001'
   },
   supplier: {
-    email: 'supplier@vitalisclinic.local',
-    name: 'Vitalis Pharma Supplies',
+    email: 'supplier@hopehubclinic.local',
+    name: 'HopeHub Pharma Supplies',
     code: 'VPS',
     employeeId: 'SUP-001'
   },
   warehouse: {
-    email: 'warehouse@vitalisclinic.local',
+    email: 'warehouse@hopehubclinic.local',
     name: 'Central Warehouse Manager',
     code: 'WH',
     employeeId: 'WH-001'
   },
   delivery: {
-    email: 'delivery@vitalisclinic.local',
+    email: 'delivery@hopehubclinic.local',
     name: 'Ranchi Delivery Executive',
     employeeId: 'DEL-001'
   },
   diagnostic: {
-    email: 'lab@vitalisclinic.local',
-    name: 'Vitalis Diagnostics Lab',
+    email: 'lab@hopehubclinic.local',
+    name: 'HopeHub Diagnostics Lab',
     code: 'VDL',
     employeeId: 'LAB-001'
   },
   branchOwner: {
-    email: 'owner@vitalisclinic.local',
+    email: 'owner@hopehubclinic.local',
     name: 'Ranchi Branch Owner',
     employeeId: 'OWN-001'
   },
   coordinator: {
-    email: 'coordinator@vitalisclinic.local',
+    email: 'coordinator@hopehubclinic.local',
     name: 'Patient Coordinator Demo',
     employeeId: 'PCO-001'
   },
   callCenter: {
-    email: 'callcenter@vitalisclinic.local',
+    email: 'callcenter@hopehubclinic.local',
     name: 'Call Center Agent Demo',
     employeeId: 'CC-001'
   },
   marketing: {
-    email: 'marketing@vitalisclinic.local',
+    email: 'marketing@hopehubclinic.local',
     name: 'Marketing Manager Demo',
     employeeId: 'MKT-001'
   },
   corporate: {
-    email: 'corporate@vitalisclinic.local',
+    email: 'corporate@hopehubclinic.local',
     name: 'Acme Corp Wellness',
     code: 'ACME'
   },
   insurance: {
-    email: 'insurance@vitalisclinic.local',
-    name: 'Vitalis Insurance Desk',
-    companyName: 'Vitalis Health Insurance',
+    email: 'insurance@hopehubclinic.local',
+    name: 'HopeHub Insurance Desk',
+    companyName: 'HopeHub Health Insurance',
     companyCode: 'VHI'
   },
   patientRahul: {
-    email: 'patient1@vitalisclinic.local',
+    email: 'patient1@hopehubclinic.local',
     name: 'Rahul Verma',
     patientCode: 'RNC-000001'
   },
   patientPriya: {
-    email: 'patient2@vitalisclinic.local',
+    email: 'patient2@hopehubclinic.local',
     name: 'Priya Verma',
     patientCode: 'RNC-000002'
   },
   store: {
     code: 'RNC',
-    name: 'Vitalis Care — Ranchi',
+    name: 'HopeHub Care — Ranchi',
     address: 'Ranchi, Jharkhand'
   },
   warehouseStore: {
     code: 'WH',
-    name: 'Vitalis Central Warehouse — Kolkata',
+    name: 'HopeHub Central Warehouse — Kolkata',
     address: 'Kolkata, West Bengal'
   },
   storeManager: {
-    email: 'manager@ranchi.vitalis.local',
+    email: 'manager@ranchi.hopehub.local',
     name: 'Ranchi Store Manager',
     staffCode: 'RNC-MGR'
   },
   storeStaff: {
     name: 'Counter Staff Demo',
     staffCode: 'RNC-STF1',
-    email: 'staff@ranchi.vitalis.local'
+    email: 'staff@ranchi.hopehub.local'
   }
 } as const;
 
@@ -215,7 +215,7 @@ export const DEV_DEMO_PERSONAS: DevDemoPersona[] = [
   },
   {
     id: 'supplier',
-    label: 'Vitalis Pharma Supplies',
+    label: 'HopeHub Pharma Supplies',
     app: 'supplier-web',
     authKind: 'platform',
     description: 'View purchase orders and confirm dispatch to clinic stores.',
@@ -239,7 +239,7 @@ export const DEV_DEMO_PERSONAS: DevDemoPersona[] = [
   },
   {
     id: 'diagnostic',
-    label: 'Vitalis Diagnostics Lab',
+    label: 'HopeHub Diagnostics Lab',
     app: 'diagnostic-web',
     authKind: 'platform',
     description: 'External lab partner — accept referrals and publish test results.',
@@ -287,7 +287,7 @@ export const DEV_DEMO_PERSONAS: DevDemoPersona[] = [
   },
   {
     id: 'insurance',
-    label: 'Vitalis Health Insurance',
+    label: 'HopeHub Health Insurance',
     app: 'insurance-web',
     authKind: 'platform',
     description: 'Insurance partner claims desk — list and submit claims.',

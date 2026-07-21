@@ -12,7 +12,7 @@
     <div class="topbar-actions">
       <app-notification-bell-host [config]="bellConfig" />
       <a class="account-link" [routerLink]="accountPath">
-        <vitalis-profile-avatar
+        <hopehub-profile-avatar
           [apiBase]="apiBase"
           [tokenKey]="authTokenKey"
           [displayName]="auth.user()?.name || 'Admin'"
@@ -37,7 +37,7 @@
 
       <div class="sidebar-footer">
         <a class="sidebar-account" [routerLink]="accountPath">
-          <vitalis-profile-avatar
+          <hopehub-profile-avatar
             [apiBase]="apiBase"
             [tokenKey]="authTokenKey"
             [displayName]="auth.user()?.name || 'Admin'"

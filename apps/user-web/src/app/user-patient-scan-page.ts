@@ -1,5 +1,5 @@
 import { Component, inject } from '@angular/core';
-import { PatientScanLauncherComponent } from '@vitalis/platform-ui';
+import { PatientScanLauncherComponent } from '@hopehub/platform-ui';
 import { environment } from '../environments/environment';
 import { AUTH_TOKEN_KEY } from './core/constants/auth.constants';
 import { NativePermissionsService } from './core/services/native-permissions.service';
@@ -8,7 +8,7 @@ import { NativePermissionsService } from './core/services/native-permissions.ser
   selector: 'app-user-patient-scan-page',
   imports: [PatientScanLauncherComponent],
   template: `
-    <vitalis-patient-scan-launcher
+    <hopehub-patient-scan-launcher
       [apiBase]="apiBase"
       [tokenKey]="tokenKey"
       [beforeCamera]="requestCameraAccess"

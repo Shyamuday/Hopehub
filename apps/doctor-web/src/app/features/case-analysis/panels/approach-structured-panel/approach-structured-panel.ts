@@ -8,7 +8,7 @@ import {
   type ApproachFieldDef,
   type ApproachStructuredPanelSectionDef,
   type StructuredPanelLayer,
-} from '@vitalis/homeopathy-approaches';
+} from '@hopehub/homeopathy-approaches';
 import { installApproachPanelAutoSave } from '../../approach-panel-autosave';
 import { ApproachFieldHintComponent } from '../approach-field-hint/approach-field-hint';
 

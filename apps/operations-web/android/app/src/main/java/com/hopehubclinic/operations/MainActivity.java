@@ -1,4 +1,4 @@
-package com.vitalisclinic.doctor;
+package com.hopehubclinic.operations;
 
 import com.getcapacitor.BridgeActivity;
 

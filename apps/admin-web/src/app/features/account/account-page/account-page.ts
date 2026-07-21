@@ -1,5 +1,5 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
-import { ProfileAvatarUploadComponent } from '@vitalis/platform-ui';
+import { ProfileAvatarUploadComponent } from '@hopehub/platform-ui';
 import { environment } from '../../../../environments/environment';
 import { AUTH_TOKEN_KEY } from '../../../core/constants/auth.constants';
 import { AdminAuth } from '../../../core/services/admin-auth';

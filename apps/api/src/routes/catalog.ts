@@ -425,10 +425,10 @@ router.get(
     ];
     const DEFAULTS: Record<string, string> = {
       whatsappPhone: '919876543210',
-      clinicName: 'Vitalis Care and Research Centre',
+      clinicName: 'HopeHub Care and Research Centre',
       contactPhone: '+91-98765-43210',
       contactPhoneTel: '+919876543210',
-      contactEmail: 'support@vitaliscare.in',
+      contactEmail: 'support@hopehubcare.in',
       clinicAddressLine1: 'Ranchi Main Clinic',
       clinicAddressLine2: 'Near City Centre, Main Road',
       clinicAddressLine3: 'Ranchi, Jharkhand, India',

@@ -7,19 +7,19 @@ import {
   buildDetailRows,
   PATIENT_CLINICAL_PROFILE_FIELDS,
   patientClinicalProfileHasData,
-} from '@vitalis/platform-ui';
+} from '@hopehub/platform-ui';
 import { AdminApi } from '../../../core/services/admin-api';
 import { AdminMobileLayoutService } from '../../../core/services/admin-mobile-layout.service';
-import { ViewportService } from '@vitalis/platform-ui';
+import { ViewportService } from '@hopehub/platform-ui';
 import {
   CONSUMERS_LIST_DEFAULTS,
   CONSUMERS_PAGE_SIZE,
   type ConsumerSortField,
 } from '../constants/consumers-list.constants';
 import { type SortDirection } from '../../../shared/constants/filter.constants';
-import { type PatientIdCardData } from '@vitalis/platform-ui';
+import { type PatientIdCardData } from '@hopehub/platform-ui';
 import { environment } from '../../../../environments/environment';
-import { buildAdminClinicalSummary, type ClinicalSummaryRow } from '@vitalis/homeopathy-approaches';
+import { buildAdminClinicalSummary, type ClinicalSummaryRow } from '@hopehub/homeopathy-approaches';
 import { type SupportNoteCategory } from '../constants/support-note.constants';
 import { SUPPORT_ACCOUNT_FIELDS } from '../constants/support-detail.fields';
 import {

@@ -190,7 +190,7 @@
           View clinical records →
         </a>
       </div>
-      <vitalis-detail-rows [rows]="selectedDoctorDetailRows()" />
+      <hopehub-detail-rows [rows]="selectedDoctorDetailRows()" />
       <div class="actions">
         @if (selectedDoctor.isActive) {
           <button type="button" (click)="toggleDoctorStatus(selectedDoctor.id, false)" [disabled]="mutating()">

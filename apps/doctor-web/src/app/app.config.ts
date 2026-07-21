@@ -10,8 +10,8 @@ import {
   withExperimentalPlatformNavigation,
   withInMemoryScrolling,
 } from '@angular/router';
-import { DEV_DEMO_PORT } from '@vitalis/platform-ui';
-import { CLINIC_API_BASE_URL, CLINIC_AUTH_TOKEN_KEY } from '@vitalis/clinic-api';
+import { DEV_DEMO_PORT } from '@hopehub/platform-ui';
+import { CLINIC_API_BASE_URL, CLINIC_AUTH_TOKEN_KEY } from '@hopehub/clinic-api';
 
 import { routes } from './app.routes';
 import { AUTH_TOKEN_KEY } from './core/constants/auth.constants';

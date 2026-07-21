@@ -1,12 +1,12 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
 import { form, FormField } from '@angular/forms/signals';
 import { DatePipe, NgTemplateOutlet } from '@angular/common';
-import { buildDetailRows, DetailRowsComponent, HR_LETTER_META_FIELDS } from '@vitalis/platform-ui';
+import { buildDetailRows, DetailRowsComponent, HR_LETTER_META_FIELDS } from '@hopehub/platform-ui';
 import { StoreApiService } from '../../../services/store-api.service';
 import { StaffHrProfile, JoiningLetterDoc } from '../../../models/store';
 import { WorkShift, EmployeeStatus } from '../../../models';
 import { STORE_STAFF_ROLES } from '../../../core/constants/store/auth.constants';
-import { EMPLOYEE_STATUS_STYLES, SHIFT_LABELS, WEEK_DAYS } from '@vitalis/hr-ui';
+import { EMPLOYEE_STATUS_STYLES, SHIFT_LABELS, WEEK_DAYS } from '@hopehub/hr-ui';
 
 type ProfileFormFields = {
   employeeId: string;

@@ -3,7 +3,7 @@ import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular
 import { form, FormField } from '@angular/forms/signals';
 import { Router, RouterLink, ActivatedRoute } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-import { RoleTaskGuideComponent } from '@vitalis/platform-ui';
+import { RoleTaskGuideComponent } from '@hopehub/platform-ui';
 import { AppFooterComponent } from './app-footer.component';
 import { AppHeaderComponent } from './app-header.component';
 import { AdminStatsComponent } from './admin-stats.component';
@@ -29,7 +29,7 @@ import { AuthService } from './auth/auth.service';
 import { ROUTE_PATHS } from './core/constants/app-routes.constants';
 import { WhatsappLinkService } from './core/services/whatsapp-link.service';
 import { NativePermissionsService } from './core/services/native-permissions.service';
-import type { CallMode, MediaAccessResult } from '@vitalis/platform-ui';
+import type { CallMode, MediaAccessResult } from '@hopehub/platform-ui';
 import { CURRENCY_CODE, PURCHASE_TYPES } from './core/constants/billing.constants';
 import {
   DEFAULT_QUIET_HOURS,
@@ -125,7 +125,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   readonly doctorFormModel = signal({
     name: 'Dr. New Doctor',
-    email: 'newdoctor@vitalisclinic.local',
+    email: 'newdoctor@hopehubclinic.local',
     mobile: '',
     password: 'Password@123',
     specialty: 'Dermatology',

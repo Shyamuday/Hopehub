@@ -1,5 +1,5 @@
 import { Component, Input } from '@angular/core';
-import { fieldDoctorGuidanceLines, type ApproachFieldDef } from '@vitalis/homeopathy-approaches';
+import { fieldDoctorGuidanceLines, type ApproachFieldDef } from '@hopehub/homeopathy-approaches';
 
 @Component({
   selector: 'app-approach-field-hint',

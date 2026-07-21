@@ -1,15 +1,15 @@
 {
   "project_info": {
     "project_number": "123456789012",
-    "project_id": "vitalis-clinic-prod",
-    "storage_bucket": "vitalis-clinic-prod.appspot.com"
+    "project_id": "hopehub-clinic-prod",
+    "storage_bucket": "hopehub-clinic-prod.appspot.com"
   },
   "client": [
     {
       "client_info": {
         "mobilesdk_app_id": "1:123456789012:android:abcdef123456",
         "android_client_info": {
-          "package_name": "com.vitalisclinic.patient"
+          "package_name": "com.hopehubclinic.patient"
         }
       },
       "oauth_client": [],

@@ -3,7 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../environments/environment';
 
-import { type PatientIdCardData } from '@vitalis/platform-ui';
+import { type PatientIdCardData } from '@hopehub/platform-ui';
 
 export type { PatientIdCardData };
 

@@ -2,7 +2,7 @@
 // Use .form-surface-dark on dark modals/drawers to opt out.
 @use 'form-fields' as forms;
 
-@mixin vitalis-auto-light-form-surfaces() {
+@mixin hopehub-auto-light-form-surfaces() {
   :is(
     .form-surface,
     .register-box,
@@ -35,11 +35,11 @@
       :is(input:not([type='hidden']), select, textarea)
     ),
   :is(.panel, .card, .consult-card, .patient-card, .table):not(.form-surface-dark):not(.dark-surface):not(.stat-card) {
-    @include forms.vitalis-form-surface-light();
+    @include forms.hopehub-form-surface-light();
   }
 
   .drawer .form-body.form-surface-dark,
   .form-surface-dark {
-    @include forms.vitalis-form-surface-dark();
+    @include forms.hopehub-form-surface-dark();
   }
 }

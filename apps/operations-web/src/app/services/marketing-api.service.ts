@@ -1,1 +1,1 @@
-export { MarketingApiService } from '@vitalis/clinic-api';
+export { MarketingApiService } from '@hopehub/clinic-api';

@@ -16,7 +16,7 @@ export type FooterColumn = {
 export const FOOTER_CONTENT = {
   address: {
     title: 'Address',
-    clinicName: 'Vitalis Care and Research Centre',
+    clinicName: 'HopeHub Care and Research Centre',
     lines: [
       'Ranchi Main Clinic',
       'Near City Centre, Main Road',
@@ -26,8 +26,8 @@ export const FOOTER_CONTENT = {
     phoneLabel: 'Contact',
     phone: '+91-98765-43210',
     phoneHref: 'tel:+919876543210',
-    email: 'support@vitaliscare.in',
-    emailHref: 'mailto:support@vitaliscare.in'
+    email: 'support@hopehubcare.in',
+    emailHref: 'mailto:support@hopehubcare.in'
   },
   columns: [
     {
@@ -37,7 +37,7 @@ export const FOOTER_CONTENT = {
         { label: 'We Are Hiring', href: '/careers' },
         { label: 'Partial Payment Refund Policy', href: '/payment-policy' },
         { label: 'Contact Us', href: '/contact' },
-        { label: 'About Vitalis Care', href: '/about' },
+        { label: 'About HopeHub Care', href: '/about' },
         { label: 'Our Doctors', href: '/our-doctors' },
         { label: 'Blogs', href: '/blog' },
         { label: 'Patient Stories', href: '/testimonials' },
@@ -73,10 +73,10 @@ export const FOOTER_CONTENT = {
         { label: 'Hair Fall Care', href: '/treatments/hair-fall' },
         { label: 'Skin Care', href: '/treatments/skin-care' },
         { label: 'Chronic & Long-term Care', href: '/chronic-care' },
-        { label: 'Why Vitalis Works', href: '/why-successful' },
+        { label: 'Why HopeHub Works', href: '/why-successful' },
         { label: 'Homeopathy Approaches', href: '/why-successful' }
       ]
     }
   ] satisfies readonly FooterColumn[],
-  copyright: `© Copyright ${new Date().getFullYear()} Vitalis Care and Research Centre. All Rights Reserved.`
+  copyright: `© Copyright ${new Date().getFullYear()} HopeHub Care and Research Centre. All Rights Reserved.`
 } as const;

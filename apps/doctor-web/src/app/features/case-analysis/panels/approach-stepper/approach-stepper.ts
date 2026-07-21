@@ -1,6 +1,6 @@
 import { Component, Input, output } from '@angular/core';
-import { isStepComplete, type StepCompletionContext } from '@vitalis/homeopathy-approaches';
-import type { ApproachStep, ApproachStepId } from '@vitalis/homeopathy-approaches';
+import { isStepComplete, type StepCompletionContext } from '@hopehub/homeopathy-approaches';
+import type { ApproachStep, ApproachStepId } from '@hopehub/homeopathy-approaches';
 
 @Component({
   selector: 'app-approach-stepper',

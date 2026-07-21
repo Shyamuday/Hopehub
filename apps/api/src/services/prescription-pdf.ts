@@ -19,7 +19,7 @@ export function prescriptionPdfFilename(prescription: Prescription, patientName?
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-|-$/g, '');
   const date = new Date(prescription.createdAt).toISOString().slice(0, 10);
-  return `vitalis-${slug}-v${prescription.version}-${date}.pdf`;
+  return `hopehub-${slug}-v${prescription.version}-${date}.pdf`;
 }
 
 export function buildPrescriptionShareText(input: {
@@ -34,7 +34,7 @@ export function buildPrescriptionShareText(input: {
     year: 'numeric'
   });
   const label = input.diagnosis || 'your consultation';
-  return `Vitalis Care prescription for ${input.patientName || 'patient'} — ${label} (v${input.version ?? 1}, ${date}). Please keep this for your records and pharmacy visits.`;
+  return `HopeHub Care prescription for ${input.patientName || 'patient'} — ${label} (v${input.version ?? 1}, ${date}). Please keep this for your records and pharmacy visits.`;
 }
 
 export function streamPrescriptionPdf(res: Response, input: PrescriptionPdfInput) {
@@ -66,8 +66,8 @@ export function streamPrescriptionPdf(res: Response, input: PrescriptionPdfInput
   const GRAY = '#6b7280';
   const W = doc.page.width - 100;
 
-  doc.fontSize(18).fillColor(PRIMARY).font('Helvetica-Bold').text('Vitalis Care and Research Centre', 50, 50);
-  doc.fontSize(10).fillColor(GRAY).font('Helvetica').text('Doctor-led homeopathic consultations  |  vitaliscare.in', 50, 72);
+  doc.fontSize(18).fillColor(PRIMARY).font('Helvetica-Bold').text('HopeHub Care and Research Centre', 50, 50);
+  doc.fontSize(10).fillColor(GRAY).font('Helvetica').text('Doctor-led homeopathic consultations  |  hopehubcare.in', 50, 72);
   doc.fontSize(36).fillColor(PRIMARY).font('Helvetica-Oblique').text('Rx', doc.page.width - 90, 45, { width: 60, align: 'right' });
   doc.moveTo(50, 98).lineTo(doc.page.width - 50, 98).strokeColor(PRIMARY).lineWidth(1.5).stroke();
 
@@ -167,7 +167,7 @@ export function streamPrescriptionPdf(res: Response, input: PrescriptionPdfInput
     .fillColor(GRAY)
     .font('Helvetica')
     .text(prescription.uploadedBy?.name || 'Doctor', doc.page.width - 200, sigY + 5, { width: 150, align: 'center' });
-  doc.fontSize(9).text('Vitalis Care and Research Centre', doc.page.width - 200, sigY + 17, { width: 150, align: 'center' });
+  doc.fontSize(9).text('HopeHub Care and Research Centre', doc.page.width - 200, sigY + 17, { width: 150, align: 'center' });
 
   doc.end();
 }

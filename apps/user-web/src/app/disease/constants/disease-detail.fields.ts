@@ -1,4 +1,4 @@
-import type { DetailFieldDef } from '@vitalis/platform-ui';
+import type { DetailFieldDef } from '@hopehub/platform-ui';
 import type { DiseaseInfo } from '../../models';
 
 export const DISEASE_QUICK_FACT_FIELDS: DetailFieldDef<DiseaseInfo>[] = [

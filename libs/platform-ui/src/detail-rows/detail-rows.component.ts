@@ -2,7 +2,7 @@ import { Component, input } from '@angular/core';
 import type { DetailRow } from './detail-rows.types';
 
 @Component({
-  selector: 'vitalis-detail-rows',
+  selector: 'hopehub-detail-rows',
   standalone: true,
   templateUrl: './detail-rows.component.html',
   styleUrl: './detail-rows.component.scss',

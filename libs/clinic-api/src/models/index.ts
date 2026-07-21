@@ -1,2 +1,2 @@
-export * from '@vitalis/contracts/models/platform';
-export * from '@vitalis/contracts/models/store';
+export * from '@hopehub/contracts/models/platform';
+export * from '@hopehub/contracts/models/store';

@@ -1,8 +1,8 @@
 import { Component, inject, signal, Input, Output, EventEmitter, OnChanges, SimpleChanges } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { form, FormField } from '@angular/forms/signals';
-import { HrApiService } from '@vitalis/clinic-api';
-import { Doctor, Employee, Letter, WorkShift, EmployeeStatus } from '@vitalis/clinic-api/models';
+import { HrApiService } from '@hopehub/clinic-api';
+import { Doctor, Employee, Letter, WorkShift, EmployeeStatus } from '@hopehub/clinic-api/models';
 import { employeeStatusBadgeClass } from '../constants/employee-status.constants';
 import {
   DOCTOR_TYPE_OPTIONS,

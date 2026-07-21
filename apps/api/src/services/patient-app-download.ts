@@ -20,7 +20,7 @@ export function getPatientAppDownloadInfo(): PatientAppDownloadInfo {
     webAppUrl: `${WEB}/get-app`,
     androidUrl: process.env.PATIENT_APP_ANDROID_URL?.trim() || null,
     iosUrl: process.env.PATIENT_APP_IOS_URL?.trim() || null,
-    appName: process.env.PATIENT_APP_NAME?.trim() || 'Vitalis Patient',
-    packageId: process.env.PATIENT_APP_PACKAGE_ID?.trim() || 'com.vitalisclinic.patient'
+    appName: process.env.PATIENT_APP_NAME?.trim() || 'HopeHub Patient',
+    packageId: process.env.PATIENT_APP_PACKAGE_ID?.trim() || 'com.hopehubclinic.patient'
   };
 }

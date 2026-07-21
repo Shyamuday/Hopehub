@@ -85,7 +85,7 @@ export const skinCareDiseaseInfo: DiseaseInfo = {
         'Eczema (atopic dermatitis) is an inflammatory condition causing itchy, dry, and inflamed skin, often linked to allergy tendency and triggered by irritants or stress. Psoriasis is an autoimmune condition causing thick, scaly, silvery plaques, most commonly on elbows, knees, and scalp. Both are chronic and recurring but have different triggers, appearances, and treatment approaches.'
     }
   ],
-  reviewedBy: 'Vitalis Care and Research Centre care team',
+  reviewedBy: 'HopeHub Care and Research Centre care team',
   lastUpdated: '2026-04-27',
   references: ['Clinical review by consultation doctor'],
   careApproach: [

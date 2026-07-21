@@ -26,7 +26,7 @@ import {
   type IntegrativeFollowUpApproachData,
   type SensationApproachData,
   type StepCompletionContext,
-} from '@vitalis/homeopathy-approaches';
+} from '@hopehub/homeopathy-approaches';
 import { ROUTE_PATHS } from '../../../core/constants/app-routes.constants';
 import { ConsultationNavigationService } from '../../../core/services/consultation-navigation.service';
 import { ConsultationChatPanelComponent } from '../../../shared/consultation-chat-panel/consultation-chat-panel';
@@ -35,7 +35,7 @@ import { ConsultationIntakePanelComponent } from '../../../shared/consultation-i
 import { CollapsibleSectionComponent } from '../../../shared/collapsible-section/collapsible-section';
 import { CaseAnalysisApiService } from '../case-analysis-api.service';
 import { createDebouncedSaver } from '../case-analysis-autosave.util';
-import { ViewportService } from '@vitalis/platform-ui';
+import { ViewportService } from '@hopehub/platform-ui';
 import { primaryIntakeSearchPhrase } from '../intake-rubric.util';
 import { ApproachCaseSheetPanelComponent } from '../panels/approach-case-sheet-panel/approach-case-sheet-panel';
 import { ApproachOverviewPanelComponent } from '../panels/approach-overview-panel/approach-overview-panel';

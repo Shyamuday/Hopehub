@@ -2,7 +2,7 @@ import { Component, inject, signal, OnInit } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { HrApiService } from '../../services/hr-api.service';
 import { Doctor } from '../../models';
-import { EmployeeDrawerComponent, employeeStatusBadgeClass } from '@vitalis/hr-ui';
+import { EmployeeDrawerComponent, employeeStatusBadgeClass } from '@hopehub/hr-ui';
 
 @Component({
   selector: 'app-doctors',

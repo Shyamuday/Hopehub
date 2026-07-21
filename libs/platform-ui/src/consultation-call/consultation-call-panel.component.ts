@@ -14,7 +14,7 @@ import { ConsultationWebrtcCallService } from './consultation-webrtc-call.servic
 import type { CallMode, CallSignalingSocket, IceServerConfig, MediaAccessResult } from './webrtc-call.types';
 
 @Component({
-  selector: 'vitalis-consultation-call-panel',
+  selector: 'hopehub-consultation-call-panel',
   standalone: true,
   templateUrl: './consultation-call-panel.component.html',
   styleUrl: './consultation-call-panel.component.scss'

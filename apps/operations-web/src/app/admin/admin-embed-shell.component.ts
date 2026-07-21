@@ -1,19 +1,19 @@
 import { Component, computed, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { NavigationEnd, Router, RouterLink, RouterOutlet } from '@angular/router';
 import { filter } from 'rxjs';
-import { RoleTaskGuideComponent, NotificationBellHostComponent } from '@vitalis/platform-ui';
+import { RoleTaskGuideComponent, NotificationBellHostComponent } from '@hopehub/platform-ui';
 import { environment } from '../../environments/environment';
 import { AUTH_TOKEN_KEY } from '../core/constants/auth.constants';
 import {
   NAV_ITEMS,
   ROUTE_PATHS,
   adminNavPath
-} from '@vitalis/admin-console/core/constants/app-routes.constants';
-import { AdminNavTabsComponent } from '@vitalis/admin-console/layout/admin-nav-tabs/admin-nav-tabs.component';
-import { AdminAuth } from '@vitalis/admin-console/core/services/admin-auth';
+} from '@hopehub/admin-console/core/constants/app-routes.constants';
+import { AdminNavTabsComponent } from '@hopehub/admin-console/layout/admin-nav-tabs/admin-nav-tabs.component';
+import { AdminAuth } from '@hopehub/admin-console/core/services/admin-auth';
 import { PlatformAuthService } from '../services/platform-auth.service';
 import { OperationsMobileLayoutService } from '../services/operations-mobile-layout.service';
-import { AdminMobileLayoutService } from '@vitalis/admin-console/core/services/admin-mobile-layout.service';
+import { AdminMobileLayoutService } from '@hopehub/admin-console/core/services/admin-mobile-layout.service';
 import { ADMIN_ROUTE_CAPABILITIES } from './admin.guards';
 
 @Component({

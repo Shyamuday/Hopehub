@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">Vitalis Operations</string>
-    <string name="title_activity_main">Vitalis Operations</string>
-    <string name="package_name">com.vitalisclinic.operations</string>
-    <string name="custom_url_scheme">com.vitalisclinic.operations</string>
+    <string name="app_name">HopeHub Operations</string>
+    <string name="title_activity_main">HopeHub Operations</string>
+    <string name="package_name">com.hopehubclinic.operations</string>
+    <string name="custom_url_scheme">com.hopehubclinic.operations</string>
 </resources>
