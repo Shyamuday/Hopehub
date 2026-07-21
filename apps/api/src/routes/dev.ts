@@ -24,6 +24,9 @@ import { sessionPayloadForStoreStaff, sessionPayloadForUser } from '../constants
 import { signStoreToken } from './store/shared.js';
 
 function devOnly(_req: Request, res: Response, next: NextFunction) {
+  if (!_req.path.startsWith('/dev')) {
+    return next();
+  }
   if (!isDevDemoEnabled()) {
     return res.status(404).json({ message: 'Not found' });
   }
