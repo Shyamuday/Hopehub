@@ -61,6 +61,14 @@ They contain:
 
 Do not commit these values to GitHub.
 
+GitHub Actions also needs this repository secret to deploy the backend automatically:
+
+```text
+LIGHTSAIL_SSH_PRIVATE_KEY
+```
+
+Its value should be the full private key content from the Lightsail `.pem` file.
+
 ## Database
 
 | Item      | Value            |

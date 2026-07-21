@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       apps:
-        description: 'Apps to deploy: auto, all, patient, admin, doctor, operations, or comma-separated list'
+        description: 'Apps to deploy: auto, all, patient, admin, doctor, operations, api, or comma-separated list'
         required: false
         default: auto
   push:
@@ -45,6 +45,9 @@ jobs:
             echo "ADMIN_BUCKET=${ADMIN_BUCKET}"
             echo "DOCTOR_BUCKET=${DOCTOR_BUCKET}"
             echo "OPERATIONS_BUCKET=${OPERATIONS_BUCKET}"
+            echo "LIGHTSAIL_HOST=${LIGHTSAIL_HOST}"
+            echo "LIGHTSAIL_USER=${LIGHTSAIL_USER}"
+            echo "LIGHTSAIL_APP_DIR=${LIGHTSAIL_APP_DIR}"
             echo "HOPEHUB_API_PUBLIC_URL=${HOPEHUB_API_PUBLIC_URL}"
             echo "HOPEHUB_WEB_ORIGIN=${HOPEHUB_WEB_ORIGIN}"
             echo "HOPEHUB_ADMIN_ORIGIN=${HOPEHUB_ADMIN_ORIGIN}"
@@ -69,12 +72,14 @@ jobs:
           admin=false
           doctor=false
           operations=false
+          api=false
 
           select_all() {
             patient=true
             admin=true
             doctor=true
             operations=true
+            api=true
           }
 
           select_from_list() {
@@ -85,6 +90,7 @@ jobs:
                 admin|admin-web) admin=true ;;
                 doctor|doctor-web) doctor=true ;;
                 ops|operations|operations-web) operations=true ;;
+                api|backend|node|node-api) api=true ;;
                 all) select_all ;;
                 auto|'') ;;
                 *) echo "Unknown app '$app'"; exit 1 ;;
@@ -112,6 +118,7 @@ jobs:
               if echo "$changed" | grep -Eq '^apps/admin-web/'; then admin=true; fi
               if echo "$changed" | grep -Eq '^apps/doctor-web/'; then doctor=true; fi
               if echo "$changed" | grep -Eq '^apps/operations-web/'; then operations=true; fi
+              if echo "$changed" | grep -Eq '^apps/api/'; then api=true; fi
 
               if echo "$changed" | grep -Eq '^(libs|shared|deploy/config|deploy/scripts|package\.json|package-lock\.json|\.github/workflows/deploy-cloud\.yml)'; then
                 select_all
@@ -124,6 +131,11 @@ jobs:
           [ "$admin" = true ] && selected+=("admin")
           [ "$doctor" = true ] && selected+=("doctor")
           [ "$operations" = true ] && selected+=("operations")
+          [ "$api" = true ] && selected+=("api")
+          frontend_selected=false
+          if [ "$patient" = true ] || [ "$admin" = true ] || [ "$doctor" = true ] || [ "$operations" = true ]; then
+            frontend_selected=true
+          fi
           if [ "${#selected[@]}" -eq 0 ]; then
             echo "No frontend app changes detected."
             selected_csv=""
@@ -136,13 +148,15 @@ jobs:
             echo "admin=$admin"
             echo "doctor=$doctor"
             echo "operations=$operations"
+            echo "api=$api"
+            echo "frontend_selected=$frontend_selected"
             echo "selected=$selected_csv"
           } >> "$GITHUB_OUTPUT"
           echo "HOPEHUB_STATIC_APPS=$selected_csv" >> "$GITHUB_ENV"
           echo "Selected apps: ${selected_csv:-none}"
 
       - name: Setup Node
-        if: steps.select-apps.outputs.selected != ''
+        if: steps.select-apps.outputs.frontend_selected == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: '24'
@@ -150,11 +164,11 @@ jobs:
           cache-dependency-path: package-lock.json
 
       - name: Install root dependencies
-        if: steps.select-apps.outputs.selected != ''
+        if: steps.select-apps.outputs.frontend_selected == 'true'
         run: npm ci
 
       - name: Configure production URLs
-        if: steps.select-apps.outputs.selected != ''
+        if: steps.select-apps.outputs.frontend_selected == 'true'
         env:
           API_PUBLIC_URL: ${{ secrets.API_PUBLIC_URL }}
           WEB_ORIGIN: ${{ secrets.WEB_ORIGIN }}
@@ -164,11 +178,11 @@ jobs:
         run: bash deploy/scripts/configure-production-urls.sh
 
       - name: Build static frontends
-        if: steps.select-apps.outputs.selected != ''
+        if: steps.select-apps.outputs.frontend_selected == 'true'
         run: bash deploy/scripts/build-static.sh
 
       - name: Configure AWS credentials
-        if: steps.select-apps.outputs.selected != ''
+        if: steps.select-apps.outputs.patient == 'true' || steps.select-apps.outputs.admin == 'true' || steps.select-apps.outputs.doctor == 'true' || steps.select-apps.outputs.operations == 'true'
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -176,7 +190,7 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Configure S3 website hosting
-        if: steps.select-apps.outputs.selected != ''
+        if: steps.select-apps.outputs.patient == 'true' || steps.select-apps.outputs.admin == 'true' || steps.select-apps.outputs.doctor == 'true' || steps.select-apps.outputs.operations == 'true'
         run: |
           if [ "${{ steps.select-apps.outputs.patient }}" = "true" ]; then aws s3 website "s3://${PATIENT_BUCKET}" --index-document index.html --error-document index.html; fi
           if [ "${{ steps.select-apps.outputs.admin }}" = "true" ]; then aws s3 website "s3://${ADMIN_BUCKET}" --index-document index.html --error-document index.html; fi
@@ -206,3 +220,71 @@ jobs:
         run: |
           aws s3 sync deploy/static/operations "s3://${OPERATIONS_BUCKET}" --delete --exclude "index.html" --cache-control "public,max-age=31536000,immutable"
           aws s3 cp deploy/static/operations/index.html "s3://${OPERATIONS_BUCKET}/index.html" --cache-control "no-cache,no-store,must-revalidate"
+
+      - name: Deploy API to Lightsail
+        if: steps.select-apps.outputs.api == 'true'
+        env:
+          LIGHTSAIL_SSH_PRIVATE_KEY: ${{ secrets.LIGHTSAIL_SSH_PRIVATE_KEY }}
+        run: |
+          set -euo pipefail
+          if [ -z "${LIGHTSAIL_SSH_PRIVATE_KEY}" ]; then
+            echo "Missing GitHub secret LIGHTSAIL_SSH_PRIVATE_KEY"
+            exit 1
+          fi
+
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$LIGHTSAIL_SSH_PRIVATE_KEY" > ~/.ssh/hopehub-lightsail.pem
+          chmod 600 ~/.ssh/hopehub-lightsail.pem
+          ssh-keyscan -H "$LIGHTSAIL_HOST" >> ~/.ssh/known_hosts
+
+          ssh -i ~/.ssh/hopehub-lightsail.pem "${LIGHTSAIL_USER}@${LIGHTSAIL_HOST}" \
+            "LIGHTSAIL_APP_DIR='${LIGHTSAIL_APP_DIR}' bash -s" <<'REMOTE'
+          set -euo pipefail
+
+          cd "$LIGHTSAIL_APP_DIR"
+          git remote set-url origin https://github.com/Shyamuday/Hopehub.git
+          git fetch origin main
+          git checkout main
+          git reset --hard origin/main
+          git update-index --skip-worktree apps/api/.env || true
+
+          cd apps/api
+          if [ ! -f /etc/hopehub-db-pass ] || [ ! -f /etc/hopehub-jwt-secret ]; then
+            echo "Missing /etc/hopehub-db-pass or /etc/hopehub-jwt-secret on server"
+            exit 1
+          fi
+
+          DB_PASS="$(sudo cat /etc/hopehub-db-pass)"
+          JWT_SECRET="$(sudo cat /etc/hopehub-jwt-secret)"
+          cat > .env <<ENV
+          DATABASE_URL="postgresql://hopehub_app:${DB_PASS}@localhost:5432/hopehub_clinic?schema=public"
+          JWT_SECRET="${JWT_SECRET}"
+          NODE_ENV="production"
+          PORT=4000
+          API_PUBLIC_URL="https://api.hopehub.in"
+          API_URL="https://api.hopehub.in"
+          WEB_ORIGIN="https://hopehub.in"
+          ADMIN_ORIGIN="https://admin.hopehub.in"
+          DOCTOR_ORIGIN="https://doctor.hopehub.in"
+          OPERATIONS_ORIGIN="https://ops.hopehub.in"
+          DEV_OTP=""
+          DISABLE_DEV_DEMO="true"
+          SMTP_FROM="noreply@hopehub.in"
+          DOSE_OVERDUE_SWEEP_ENABLED="true"
+          DOSE_OVERDUE_SWEEP_INTERVAL_MS="300000"
+          DOSE_REMINDER_SWEEP_ENABLED="true"
+          DOSE_REMINDER_WINDOW_MINUTES="30"
+          NOTIFICATION_CHANNELS="IN_APP,EMAIL"
+          OOREP_BASE_URL="https://www.oorep.com"
+          OOREP_TIMEOUT_MS="15000"
+          ENV
+          chmod 600 .env
+
+          npm install --no-audit --no-fund
+          npm run prisma:generate
+          npm run prisma:deploy
+          NODE_OPTIONS=--max-old-space-size=1536 npm run build
+          pm2 restart hopehub-api --update-env
+          pm2 save
+          curl -fsS http://127.0.0.1:4000/health
+          REMOTE
