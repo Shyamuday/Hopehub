@@ -4,13 +4,10 @@ import { form, FormField, required } from '@angular/forms/signals';
 import { AdminAuth } from '../../../core/services/admin-auth';
 import { pickFirstAllowedRoute } from '../../../core/admin-navigation';
 import { DEFAULT_AUTHED_ROUTE } from '../../../core/constants/app-routes.constants';
-import { DevLoginPanelComponent } from '@hopehub/platform-ui';
-import { DEV_DEMO_ACCOUNTS } from '../../../core/constants/dev-demo.constants';
-import type { DevFillCredentials } from '@hopehub/platform-ui';
 
 @Component({
   selector: 'app-admin-login',
-  imports: [FormField, DevLoginPanelComponent],
+  imports: [FormField],
   templateUrl: './admin-login.html',
   styleUrl: './admin-login.scss',
 })
@@ -19,8 +16,8 @@ export class AdminLogin {
   private readonly router = inject(Router);
 
   readonly loginModel = signal({
-    email: DEV_DEMO_ACCOUNTS.admin.email as string,
-    password: DEV_DEMO_ACCOUNTS.password as string,
+    email: '',
+    password: '',
   });
   readonly loginForm = form(this.loginModel, (schema) => {
     required(schema.email, { message: 'Email is required' });
@@ -47,19 +44,7 @@ export class AdminLogin {
     }
   }
 
-  onDevLoggedIn() {
-    void this.router.navigateByUrl(this.postLoginRoute());
-  }
-
   private postLoginRoute() {
     return pickFirstAllowedRoute(this.auth.user()) ?? `/${DEFAULT_AUTHED_ROUTE}`;
-  }
-
-  applyDevFill(credentials: DevFillCredentials) {
-    this.loginModel.update((model) => ({
-      ...model,
-      ...(credentials.email ? { email: credentials.email } : {}),
-      ...(credentials.password ? { password: credentials.password } : {}),
-    }));
   }
 }

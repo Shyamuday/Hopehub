@@ -3,13 +3,10 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { form, FormField, required } from '@angular/forms/signals';
 import { DEFAULT_AUTHED_ROUTE } from '../../../core/constants/app-routes.constants';
 import { Auth } from '../../../core/services/auth';
-import { DevLoginPanelComponent } from '@hopehub/platform-ui';
-import { DEV_DEMO_ACCOUNTS } from '../../../core/constants/dev-demo.constants';
-import type { DevFillCredentials } from '@hopehub/platform-ui';
 
 @Component({
   selector: 'app-login',
-  imports: [FormField, DevLoginPanelComponent],
+  imports: [FormField],
   templateUrl: './login.html',
   styleUrl: './login.scss',
 })
@@ -21,8 +18,8 @@ export class Login {
   mode = signal<'signin' | 'signup'>('signin');
 
   readonly signInModel = signal({
-    email: DEV_DEMO_ACCOUNTS.doctor.email as string,
-    password: DEV_DEMO_ACCOUNTS.password as string,
+    email: '',
+    password: '',
   });
   readonly signInForm = form(this.signInModel, (schema) => {
     required(schema.email, { message: 'Email is required' });
@@ -79,18 +76,6 @@ export class Login {
     } finally {
       this.submitting.set(false);
     }
-  }
-
-  onDevLoggedIn() {
-    void this.navigateAfterLogin();
-  }
-
-  applyDevFill(credentials: DevFillCredentials) {
-    this.signInModel.update((model) => ({
-      ...model,
-      ...(credentials.email ? { email: credentials.email } : {}),
-      ...(credentials.password ? { password: credentials.password } : {}),
-    }));
   }
 
   async enroll() {

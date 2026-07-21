@@ -3,13 +3,11 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { form, FormField, required } from '@angular/forms/signals';
 import { PlatformAuthService } from '../../services/platform-auth.service';
-import { DevLoginPanelComponent } from '@hopehub/platform-ui';
-import type { DevFillCredentials } from '@hopehub/platform-ui';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [FormField, DevLoginPanelComponent],
+  imports: [FormField],
   templateUrl: './login.component.html',
   styleUrl: './login.component.scss'
 })
@@ -70,17 +68,5 @@ export class LoginComponent {
         this.error.set(err?.error?.message ?? 'Failed to load session.');
       }
     });
-  }
-
-  onDevLoggedIn() {
-    this.finishLogin();
-  }
-
-  applyDevFill(credentials: DevFillCredentials) {
-    this.loginModel.update((model) => ({
-      ...model,
-      ...(credentials.email ? { email: credentials.email } : {}),
-      ...(credentials.password ? { password: credentials.password } : {})
-    }));
   }
 }

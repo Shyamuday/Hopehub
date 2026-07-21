@@ -1,5 +1,18 @@
 import 'dotenv/config';
-import { PrismaClient, PrescriptionOptionType, Role, ConsultationStatus, PrescriptionStatus, DoseEventStatus, SupportNoteCategory, ProductEventCategory, PaymentStatus, StoreKind, StockStatus, HomeopathicDoctorType } from '@prisma/client';
+import {
+  PrismaClient,
+  PrescriptionOptionType,
+  Role,
+  ConsultationStatus,
+  PrescriptionStatus,
+  DoseEventStatus,
+  SupportNoteCategory,
+  ProductEventCategory,
+  PaymentStatus,
+  StoreKind,
+  StockStatus,
+  HomeopathicDoctorType
+} from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import bcrypt from 'bcryptjs';
 import { seedRepertory } from './seeds/repertory-seed.js';
@@ -68,7 +81,11 @@ async function seedStoreStock(
   const newQty = stock.currentQty + qty;
   const minLevel = medicine?.minStockLevel ?? 10;
   const status =
-    newQty <= 0 ? StockStatus.OUT_OF_STOCK : newQty <= minLevel ? StockStatus.LOW_STOCK : StockStatus.ACTIVE;
+    newQty <= 0
+      ? StockStatus.OUT_OF_STOCK
+      : newQty <= minLevel
+        ? StockStatus.LOW_STOCK
+        : StockStatus.ACTIVE;
 
   await prisma.medicineStock.update({
     where: { id: stock.id },
@@ -306,7 +323,11 @@ async function main() {
 
   const supplierEntity = await prisma.supplier.upsert({
     where: { code: DEV_DEMO_ACCOUNTS.supplier.code },
-    update: { name: DEV_DEMO_ACCOUNTS.supplier.name, email: DEV_DEMO_ACCOUNTS.supplier.email, isActive: true },
+    update: {
+      name: DEV_DEMO_ACCOUNTS.supplier.name,
+      email: DEV_DEMO_ACCOUNTS.supplier.email,
+      isActive: true
+    },
     create: {
       code: DEV_DEMO_ACCOUNTS.supplier.code,
       name: DEV_DEMO_ACCOUNTS.supplier.name,
@@ -603,7 +624,14 @@ async function main() {
   }
 
   await seedStoreStock(warehouseStore.id, demoMedicineArnica.id, 'WH-ARN-30-001', 500, 4200, 5500);
-  await seedStoreStock(warehouseStore.id, demoMedicineSulphur.id, 'WH-SUL-200-001', 300, 4800, 6200);
+  await seedStoreStock(
+    warehouseStore.id,
+    demoMedicineSulphur.id,
+    'WH-SUL-200-001',
+    300,
+    4800,
+    6200
+  );
 
   const existingDemoTransfer = await prisma.stockTransfer.findFirst({
     where: { fromStoreId: warehouseStore.id, toStoreId: ranchiStore.id }
@@ -706,13 +734,17 @@ async function main() {
   });
 
   await prisma.corporateEnrollment.upsert({
-    where: { corporateId_patientId: { corporateId: corporateAccount.id, patientId: patientOne.id } },
+    where: {
+      corporateId_patientId: { corporateId: corporateAccount.id, patientId: patientOne.id }
+    },
     update: {},
     create: { corporateId: corporateAccount.id, patientId: patientOne.id }
   });
 
   await prisma.corporateEnrollment.upsert({
-    where: { corporateId_patientId: { corporateId: corporateAccount.id, patientId: patientTwo.id } },
+    where: {
+      corporateId_patientId: { corporateId: corporateAccount.id, patientId: patientTwo.id }
+    },
     update: {},
     create: { corporateId: corporateAccount.id, patientId: patientTwo.id }
   });
@@ -735,7 +767,8 @@ async function main() {
     update: {},
     create: {
       name: 'Hair Fall Treatment',
-      description: 'First MVP niche focused on hair fall diagnosis, prescription, and follow-up guidance.',
+      description:
+        'First MVP niche focused on hair fall diagnosis, prescription, and follow-up guidance.',
       feeInPaise: 49900,
       intakeQuestions: [
         'How long have you had hair fall?',
@@ -857,7 +890,14 @@ async function main() {
         skipDuplicates: true
       });
 
-      const yesterdayMorning = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 1, 9, 0, 0);
+      const yesterdayMorning = new Date(
+        today.getFullYear(),
+        today.getMonth(),
+        today.getDate() - 1,
+        9,
+        0,
+        0
+      );
       await prisma.medicineDoseEvent.upsert({
         where: {
           prescriptionItemId_scheduledFor: {
@@ -878,7 +918,10 @@ async function main() {
       for (let dayOffset = 2; dayOffset <= 8; dayOffset++) {
         const base = new Date(today.getFullYear(), today.getMonth(), today.getDate() - dayOffset);
         const slots: Array<{ hour: number; status: DoseEventStatus; note?: string }> = [
-          { hour: 9, status: dayOffset % 2 === 0 ? DoseEventStatus.MISSED : DoseEventStatus.SKIPPED },
+          {
+            hour: 9,
+            status: dayOffset % 2 === 0 ? DoseEventStatus.MISSED : DoseEventStatus.SKIPPED
+          },
           { hour: 21, status: DoseEventStatus.MISSED }
         ];
         if (dayOffset === 7) {
@@ -886,7 +929,14 @@ async function main() {
           slots[1] = { hour: 21, status: DoseEventStatus.TAKEN };
         }
         for (const slot of slots) {
-          const scheduledFor = new Date(base.getFullYear(), base.getMonth(), base.getDate(), slot.hour, 0, 0);
+          const scheduledFor = new Date(
+            base.getFullYear(),
+            base.getMonth(),
+            base.getDate(),
+            slot.hour,
+            0,
+            0
+          );
           await prisma.medicineDoseEvent.upsert({
             where: {
               prescriptionItemId_scheduledFor: {
@@ -962,7 +1012,10 @@ async function main() {
   for (const label of defaultDiagnoses) {
     await prisma.prescriptionOption.upsert({
       where: {
-        type_normalizedLabel: { type: PrescriptionOptionType.DIAGNOSED_DISEASE, normalizedLabel: label.toLowerCase() }
+        type_normalizedLabel: {
+          type: PrescriptionOptionType.DIAGNOSED_DISEASE,
+          normalizedLabel: label.toLowerCase()
+        }
       },
       update: {},
       create: {
@@ -1021,14 +1074,70 @@ async function main() {
   };
 
   const demoFunnelEvents = [
-    { id: 'seed-event-login', name: 'patient.login', actorId: patientOne.id, actorRole: Role.PATIENT, createdAt: daysAgo(6) },
-    { id: 'seed-event-booked', name: 'consultation.booked', actorId: patientOne.id, actorRole: Role.PATIENT, createdAt: daysAgo(6), properties: { consultationId: DEV_SEED_IDS.consultationRahul } },
-    { id: 'seed-event-pay-init', name: 'payment.initiated', actorId: patientOne.id, actorRole: Role.PATIENT, createdAt: daysAgo(6), properties: { consultationId: DEV_SEED_IDS.consultationRahul } },
-    { id: 'seed-event-pay-done', name: 'payment.completed', actorId: patientOne.id, actorRole: Role.PATIENT, createdAt: daysAgo(5), properties: { consultationId: DEV_SEED_IDS.consultationRahul } },
-    { id: 'seed-event-assigned', name: 'consultation.assigned', actorId: admin.id, actorRole: Role.ADMIN, createdAt: daysAgo(5), properties: { consultationId: DEV_SEED_IDS.consultationRahul, doctorId: doctorUser.id } },
-    { id: 'seed-event-rx', name: 'prescription.published', actorId: doctorUser.id, actorRole: Role.DOCTOR, createdAt: daysAgo(4), properties: { consultationId: DEV_SEED_IDS.consultationRahul } },
-    { id: 'seed-event-dose', name: 'dose.taken', actorId: patientOne.id, actorRole: Role.PATIENT, createdAt: daysAgo(3), properties: { consultationId: DEV_SEED_IDS.consultationRahul } },
-    { id: 'seed-event-worklist', name: 'doctor.worklist_viewed', actorId: doctorUser.id, actorRole: Role.DOCTOR, category: ProductEventCategory.ENGAGEMENT, createdAt: daysAgo(2), properties: { view: 'ALL' } }
+    {
+      id: 'seed-event-login',
+      name: 'patient.login',
+      actorId: patientOne.id,
+      actorRole: Role.PATIENT,
+      createdAt: daysAgo(6)
+    },
+    {
+      id: 'seed-event-booked',
+      name: 'consultation.booked',
+      actorId: patientOne.id,
+      actorRole: Role.PATIENT,
+      createdAt: daysAgo(6),
+      properties: { consultationId: DEV_SEED_IDS.consultationRahul }
+    },
+    {
+      id: 'seed-event-pay-init',
+      name: 'payment.initiated',
+      actorId: patientOne.id,
+      actorRole: Role.PATIENT,
+      createdAt: daysAgo(6),
+      properties: { consultationId: DEV_SEED_IDS.consultationRahul }
+    },
+    {
+      id: 'seed-event-pay-done',
+      name: 'payment.completed',
+      actorId: patientOne.id,
+      actorRole: Role.PATIENT,
+      createdAt: daysAgo(5),
+      properties: { consultationId: DEV_SEED_IDS.consultationRahul }
+    },
+    {
+      id: 'seed-event-assigned',
+      name: 'consultation.assigned',
+      actorId: admin.id,
+      actorRole: Role.ADMIN,
+      createdAt: daysAgo(5),
+      properties: { consultationId: DEV_SEED_IDS.consultationRahul, doctorId: doctorUser.id }
+    },
+    {
+      id: 'seed-event-rx',
+      name: 'prescription.published',
+      actorId: doctorUser.id,
+      actorRole: Role.DOCTOR,
+      createdAt: daysAgo(4),
+      properties: { consultationId: DEV_SEED_IDS.consultationRahul }
+    },
+    {
+      id: 'seed-event-dose',
+      name: 'dose.taken',
+      actorId: patientOne.id,
+      actorRole: Role.PATIENT,
+      createdAt: daysAgo(3),
+      properties: { consultationId: DEV_SEED_IDS.consultationRahul }
+    },
+    {
+      id: 'seed-event-worklist',
+      name: 'doctor.worklist_viewed',
+      actorId: doctorUser.id,
+      actorRole: Role.DOCTOR,
+      category: ProductEventCategory.ENGAGEMENT,
+      createdAt: daysAgo(2),
+      properties: { view: 'ALL' }
+    }
   ];
 
   for (const event of demoFunnelEvents) {
@@ -1068,7 +1177,11 @@ async function main() {
   }
 
   const existingDemoLabReferral = await prisma.labReferral.findFirst({
-    where: { storeId: ranchiStore.id, patientId: patientOne.id, diagnosticCenterId: diagnosticEntity.id }
+    where: {
+      storeId: ranchiStore.id,
+      patientId: patientOne.id,
+      diagnosticCenterId: diagnosticEntity.id
+    }
   });
   let demoLabReferralId = existingDemoLabReferral?.id;
   if (!demoLabReferralId) {
@@ -1091,14 +1204,17 @@ async function main() {
 
   console.log('── Dev demo seed complete ──');
   console.log(`Shared password/PIN: ${DEV_DEMO_PASSWORD}`);
-  console.log(`Patient OTP (dev): ${process.env.DEV_OTP || '123456'} · mobile ${DEV_PATIENT_MOBILE}`);
+  console.log(
+    `Patient OTP (dev): ${process.env.DEV_OTP || '123456'} · mobile ${DEV_PATIENT_MOBILE}`
+  );
   console.log(`Admin: ${DEV_DEMO_ACCOUNTS.admin.email}`);
   console.log(`Doctor: ${DEV_DEMO_ACCOUNTS.doctor.email}`);
   console.log(`HR: ${DEV_DEMO_ACCOUNTS.hr.email}`);
-  console.log(`Patients: ${DEV_DEMO_ACCOUNTS.patientRahul.patientCode} (Rahul), ${DEV_DEMO_ACCOUNTS.patientPriya.patientCode} (Priya)`);
+  console.log(
+    `Patients: ${DEV_DEMO_ACCOUNTS.patientRahul.patientCode} (Rahul), ${DEV_DEMO_ACCOUNTS.patientPriya.patientCode} (Priya)`
+  );
   console.log(`Store manager: ${DEV_DEMO_ACCOUNTS.storeManager.email}`);
   console.log(`Store staff: ${DEV_DEMO_ACCOUNTS.storeStaff.email} / ${DEV_DEMO_PASSWORD}`);
-  console.log(`Demo guide: http://localhost:4000/dev/demo-guide`);
   console.log(`Scan QR: http://localhost:4000/go/p/${DEV_DEMO_ACCOUNTS.patientRahul.patientCode}`);
 }
 

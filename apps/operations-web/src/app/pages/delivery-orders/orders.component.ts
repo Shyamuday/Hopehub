@@ -1,10 +1,9 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
 import { form, FormField } from '@angular/forms/signals';
 import { DeliveryApiService } from '../../services/delivery-api.service';
-import { DEV_DEMO_ACCOUNTS } from '../../core/constants/dev-demo.constants';
 
 function emptyCompleteForm() {
-  return { otp: DEV_DEMO_ACCOUNTS.deliveryOtp as string, proofNote: '' };
+  return { otp: '', proofNote: '' };
 }
 
 function emptyFailForm() {
@@ -41,7 +40,8 @@ export class OrdersComponent implements OnInit {
   load(): void {
     this.loading.set(true);
     this.error.set('');
-    this.api.getOrders()
+    this.api
+      .getOrders()
       .then((res) => {
         this.orders.set(res.deliveries ?? []);
         this.loading.set(false);

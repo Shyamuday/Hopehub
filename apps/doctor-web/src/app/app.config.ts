@@ -10,14 +10,12 @@ import {
   withExperimentalPlatformNavigation,
   withInMemoryScrolling,
 } from '@angular/router';
-import { DEV_DEMO_PORT } from '@hopehub/platform-ui';
 import { CLINIC_API_BASE_URL, CLINIC_AUTH_TOKEN_KEY } from '@hopehub/clinic-api';
 
 import { routes } from './app.routes';
 import { AUTH_TOKEN_KEY } from './core/constants/auth.constants';
 import { authTokenInterceptor } from './core/interceptors/auth-token.interceptor';
 import { authErrorInterceptor } from './core/interceptors/auth-error.interceptor';
-import { DevDemoService } from './core/services/dev-demo.service';
 import { environment } from '../environments/environment';
 
 export const appConfig: ApplicationConfig = {
@@ -33,6 +31,5 @@ export const appConfig: ApplicationConfig = {
       withExperimentalPlatformNavigation(),
       withExperimentalAutoCleanupInjectors(),
     ),
-    { provide: DEV_DEMO_PORT, useExisting: DevDemoService },
   ],
 };

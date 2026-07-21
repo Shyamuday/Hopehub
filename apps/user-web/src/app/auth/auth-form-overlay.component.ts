@@ -7,9 +7,6 @@ import { APP_OVERLAY_DATA, APP_OVERLAY_REF } from '../overlay.tokens';
 import { AppOverlayRef, AppOverlayService } from '../overlay.service';
 import { AuthStatusOverlayComponent } from './auth-status-overlay.component';
 import { AuthService } from './auth.service';
-import { DevLoginPanelComponent } from '@hopehub/platform-ui';
-import { DEV_DEMO_ACCOUNTS } from '../core/constants/dev-demo.constants';
-import type { DevFillCredentials } from '@hopehub/platform-ui';
 
 import { PatientSelectionCandidate } from '../models';
 
@@ -23,7 +20,7 @@ type ForgotStep = 'none' | 'request' | 'reset';
 
 @Component({
   selector: 'app-auth-form-overlay',
-  imports: [CommonModule, FormField, DevLoginPanelComponent],
+  imports: [CommonModule, FormField],
   templateUrl: './auth-form-overlay.component.html',
 })
 export class AuthFormOverlayComponent {
@@ -47,14 +44,14 @@ export class AuthFormOverlayComponent {
   private activeOverlayRef?: AppOverlayRef;
 
   readonly patientCredentialsModel = signal({
-    identifier: DEV_DEMO_ACCOUNTS.patientRahul.email as string,
-    password: DEV_DEMO_ACCOUNTS.password as string,
+    identifier: '',
+    password: '',
   });
   readonly patientCredentialsForm = form(this.patientCredentialsModel);
 
   readonly patientOtpModel = signal({
-    email: DEV_DEMO_ACCOUNTS.patientRahul.email as string,
-    otp: DEV_DEMO_ACCOUNTS.otp as string,
+    email: '',
+    otp: '',
   });
   readonly patientOtpForm = form(this.patientOtpModel);
 
@@ -180,31 +177,6 @@ export class AuthFormOverlayComponent {
       },
       error: () => this.showError('Could not request OTP.'),
     });
-  }
-
-  onDevLoggedIn() {
-    const user = this.auth.user();
-    if (!user) return;
-    this.closeAllOverlays();
-    void this.router.navigateByUrl(this.auth.dashboardFor(user.role));
-  }
-
-  applyDevFill(credentials: DevFillCredentials) {
-    const identifier = credentials.identifier ?? credentials.email;
-    if (identifier) {
-      this.patientCredentialsModel.update((m) => ({ ...m, identifier }));
-      this.patientOtpModel.update((m) => ({ ...m, email: identifier }));
-      this.signupModel.update((m) => ({ ...m, email: identifier }));
-    }
-    if (credentials.password) {
-      this.patientCredentialsModel.update((m) => ({ ...m, password: credentials.password! }));
-    }
-    if (credentials.otp) {
-      this.patientOtpModel.update((m) => ({ ...m, otp: credentials.otp! }));
-      this.signupModel.update((m) => ({ ...m, otp: credentials.otp! }));
-      this.loginOtpSent.set(true);
-      this.signupOtpSent.set(true);
-    }
   }
 
   loginPatientWithOtp() {

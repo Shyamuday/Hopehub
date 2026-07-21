@@ -58,7 +58,6 @@ import { notificationsRouter } from './routes/notifications.js';
 import { vacanciesRouter } from './routes/vacancies.js';
 import { chatRouter } from './routes/chat.js';
 import { rtcRouter } from './routes/rtc.js';
-import { devRouter } from './routes/dev.js';
 import { createRepertoryRouter } from './routes/repertory/index.js';
 import { roleGuidesRouter } from './routes/role-guides.js';
 import { ReceptionScopeError } from './routes/reception/shared.js';
@@ -121,12 +120,12 @@ io.use((socket, next) => {
     };
     const userId = decoded.id ?? decoded.userId;
     if (userId) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+       
       (socket as any).userId = userId;
       return next();
     }
     if (decoded.staffId) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+       
       (socket as any).storeStaffId = decoded.staffId;
       return next();
     }
@@ -137,9 +136,9 @@ io.use((socket, next) => {
 });
 
 io.on('connection', (socket) => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   const userId = (socket as any).userId as string | undefined;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   const storeStaffId = (socket as any).storeStaffId as string | undefined;
   if (userId) {
     void socket.join(`${SOCKET_ROOM_PREFIXES.USER}${userId}`);
@@ -164,8 +163,6 @@ app.use(cors({
 }));
 app.use('/payments/razorpay-webhook', express.raw({ type: 'application/json' }));
 app.use(express.json({ limit: '8mb' }));
-
-app.use(devRouter);
 
 // Rate limiting
 const otpLimiter = rateLimit({
