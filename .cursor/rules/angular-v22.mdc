@@ -1,5 +1,5 @@
 ---
-description: Angular v22 patterns for Vitalis clinic platform apps
+description: Angular v22 patterns for HopeHub clinic platform apps
 globs: apps/**/*.{ts,html,scss}
 alwaysApply: false
 ---

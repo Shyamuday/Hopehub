@@ -1,5 +1,5 @@
 import { Component, inject, signal } from '@angular/core';
-import { DetailRowsComponent, type DetailRow } from '@vitalis/platform-ui';
+import { DetailRowsComponent, type DetailRow } from '@hopehub/platform-ui';
 import { AppFooterComponent } from './app-footer.component';
 import { AppHeaderComponent } from './app-header.component';
 import { WhatsappLinkService } from './core/services/whatsapp-link.service';

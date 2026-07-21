@@ -1,1 +1,1 @@
-export { WEEK_DAYS, WORK_SHIFT_OPTIONS } from '@vitalis/hr-ui';
+export { WEEK_DAYS, WORK_SHIFT_OPTIONS } from '@hopehub/hr-ui';

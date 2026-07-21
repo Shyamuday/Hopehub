@@ -2,4 +2,4 @@ export {
   STOCK_MOVEMENT_DISPLAY,
   STAFF_ACTIVITY_DISPLAY,
   OUTBOUND_MOVEMENT_TYPES
-} from '@vitalis/store-ui';
+} from '@hopehub/store-ui';

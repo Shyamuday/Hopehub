@@ -1,6 +1,6 @@
 # Homeopathic Doctor Types
 
-Vitalis classifies every doctor account with a **homeopathic doctor type** and optional **specialty focus**. This drives labels in the doctor app, admin onboarding, and HR joining letters.
+HopeHub classifies every doctor account with a **homeopathic doctor type** and optional **specialty focus**. This drives labels in the doctor app, admin onboarding, and HR joining letters.
 
 ---
 
@@ -98,7 +98,7 @@ Self-enrollment (`POST /doctor/enroll`) defaults new applicants to **Junior Home
 
 | Field | Value |
 |-------|-------|
-| Email | `doctor@vitalisclinic.local` |
+| Email | `doctor@hopehubclinic.local` |
 | Type | Chief Consultant |
 | Specialty | Homeopathy |
 

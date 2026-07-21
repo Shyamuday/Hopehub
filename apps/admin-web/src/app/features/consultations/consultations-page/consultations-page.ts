@@ -6,7 +6,7 @@ import {
   clinicalRecordsQuery,
   doctorAppointmentUrl,
   doctorCaseAnalysisUrl
-} from '@vitalis/platform-ui';
+} from '@hopehub/platform-ui';
 import { AdminApi } from '../../../core/services/admin-api';
 import { adminRouteLink, ROUTE_PATHS } from '../../../core/constants/app-routes.constants';
 import { environment } from '../../../../environments/environment';

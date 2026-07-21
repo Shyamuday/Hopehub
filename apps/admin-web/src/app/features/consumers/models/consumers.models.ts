@@ -1,4 +1,4 @@
-import type { ClinicalSummaryRow } from '@vitalis/homeopathy-approaches';
+import type { ClinicalSummaryRow } from '@hopehub/homeopathy-approaches';
 import type { SupportNoteCategory } from '../constants/support-note.constants';
 
 export type Consumer = {

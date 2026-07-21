@@ -1,1 +1,1 @@
-export * from '@vitalis/clinic-api/models';
+export * from '@hopehub/clinic-api/models';

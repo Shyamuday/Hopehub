@@ -2,7 +2,7 @@ import { CommonModule, DatePipe, formatDate } from '@angular/common';
 import { Component, inject, signal } from '@angular/core';
 import { form, FormField } from '@angular/forms/signals';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { buildDetailRows, DetailRowsComponent } from '@vitalis/platform-ui';
+import { buildDetailRows, DetailRowsComponent } from '@hopehub/platform-ui';
 import { ROUTE_PATHS } from '../../../core/constants/app-routes.constants';
 import { ConsultationNavigationService } from '../../../core/services/consultation-navigation.service';
 import {

@@ -1,4 +1,4 @@
-# Vitalis Care and Research Centre Platform
+# HopeHub
 
 Clinic platform — Angular frontend + pure Node.js/Express/TypeScript backend.
 
@@ -54,7 +54,7 @@ SMTP_HOST=""
 SMTP_PORT="587"
 SMTP_USER=""
 SMTP_PASS=""
-SMTP_FROM="noreply@vitaliscare.in"
+SMTP_FROM="noreply@hopehubcare.in"
 ```
 
 Run Prisma migrations and seed:
@@ -133,7 +133,7 @@ npm run seed --prefix apps/api
 | Operations | 5800 | All staff, partners, store counter, store manager, admin |
 | Doctor     | 4202 | Dr. Meera Sharma                                         |
 
-**Shared credentials:** `Password@123` (staff/admin/doctor/patients/store) · Store counter: `staff@ranchi.vitalis.local` · Store manager: `manager@ranchi.vitalis.local` · **OTP** `123456` · patient mobile `9876543210`
+**Shared credentials:** `Password@123` (staff/admin/doctor/patients/store) · Store counter: `staff@ranchi.hopehub.local` · Store manager: `manager@ranchi.hopehub.local` · **OTP** `123456` · patient mobile `9876543210`
 
 On each login screen in dev: demo **emails show automatically**, the first account **fills the form on load**, click **Fill** to switch demo users, then use normal **Sign in** (any other email works too), or **Instant** for one-click JWT login.
 

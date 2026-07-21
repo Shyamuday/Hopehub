@@ -45,7 +45,7 @@
       <button type="button" class="retry-btn" (click)="loadSummary()">Retry</button>
     </div>
   } @else if (summary(); as data) {
-    <vitalis-detail-rows variant="stat" [rows]="paymentStatRows(data)" />
+    <hopehub-detail-rows variant="stat" [rows]="paymentStatRows(data)" />
   } @else {
     <p class="empty-state">No payment data available yet.</p>
   }

@@ -8,7 +8,7 @@ import {
   CUSTOM_POTENCY_VALUE,
   MEDICINE_CATEGORIES,
   MEDICINE_POTENCIES
-} from '@vitalis/store-ui';
+} from '@hopehub/store-ui';
 
 function emptyMedicineForm() {
   return {

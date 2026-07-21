@@ -1,6 +1,6 @@
 # Role & Task Guides
 
-Every Vitalis app shows a **Your role & tasks** panel when users log in. It explains responsibilities, daily steps, and clear boundaries — so there is no doubt about what each role should do.
+Every HopeHub app shows a **Your role & tasks** panel when users log in. It explains responsibilities, daily steps, and clear boundaries — so there is no doubt about what each role should do.
 
 ## Where it appears
 

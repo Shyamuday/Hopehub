@@ -7,7 +7,7 @@ import { form, FormField } from '@angular/forms/signals';
 import { environment } from '../../../environments/environment';
 import { API_PATHS } from '../../core/constants/api-paths.constants';
 import { ConsultationNavigationService } from '../../core/services/consultation-navigation.service';
-import { ViewportService } from '@vitalis/platform-ui';
+import { ViewportService } from '@hopehub/platform-ui';
 
 type RepertorySource = {
   id: string;

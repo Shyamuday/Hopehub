@@ -9,8 +9,8 @@
     "skipLibCheck": true,
     "outDir": "dist",
     "paths": {
-      "@vitalis/homeopathy-approaches": ["../../libs/homeopathy-approaches/src/index.ts"],
-      "@vitalis/homeopathy-approaches/*": ["../../libs/homeopathy-approaches/src/*"]
+      "@hopehub/homeopathy-approaches": ["../../libs/homeopathy-approaches/src/index.ts"],
+      "@hopehub/homeopathy-approaches/*": ["../../libs/homeopathy-approaches/src/*"]
     }
   },
   "include": ["src/**/*.ts", "prisma/**/*.ts"]

@@ -71,7 +71,7 @@
           <span class="badge due-today">Due today</span>
         }
       </div>
-      <vitalis-detail-rows [rows]="worklistMetaRows(item)" />
+      <hopehub-detail-rows [rows]="worklistMetaRows(item)" />
       <small class="muted">
         Patient {{ item.patient?.patientCode || item.patient?.id }}
         @if (item.followUpDate) {
@@ -118,7 +118,7 @@
   @for (item of assigned(); track item.id) {
     <article class="card">
       <strong>{{ item.patient?.name || 'Patient' }} — {{ item.disease?.name || 'Consultation' }}</strong>
-      <vitalis-detail-rows [rows]="worklistMetaRows(item)" />
+      <hopehub-detail-rows [rows]="worklistMetaRows(item)" />
       <small class="muted">Patient {{ item.patient?.patientCode || item.patient?.id }}</small>
       <div class="actions actions-mobile">
         <div class="actions-primary">
@@ -157,7 +157,7 @@
   @for (item of inProgress(); track item.id) {
     <article class="card">
       <strong>{{ item.patient?.name || 'Patient' }} — {{ item.disease?.name || 'Consultation' }}</strong>
-      <vitalis-detail-rows [rows]="worklistMetaRows(item)" />
+      <hopehub-detail-rows [rows]="worklistMetaRows(item)" />
       <small class="muted">Patient {{ item.patient?.patientCode || item.patient?.id }}</small>
       <div class="actions actions-mobile">
         <div class="actions-primary">

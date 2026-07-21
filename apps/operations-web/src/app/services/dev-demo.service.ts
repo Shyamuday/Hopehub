@@ -4,7 +4,7 @@ import { firstValueFrom } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { PlatformAuthService } from './platform-auth.service';
 import type { AuthResponse } from '../models';
-import type { DevAppGuide, DevDemoPort, DevFillCredentials, DevPersona } from '@vitalis/platform-ui';
+import type { DevAppGuide, DevDemoPort, DevFillCredentials, DevPersona } from '@hopehub/platform-ui';
 import type { StaffLoginResponse } from './platform-auth.service';
 
 export type { DevFillCredentials, DevPersona, DevAppGuide };

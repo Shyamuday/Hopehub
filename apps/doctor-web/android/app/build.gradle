@@ -1,10 +1,10 @@
 apply plugin: 'com.android.application'
 
 android {
-    namespace "com.vitalisclinic.doctor"
+    namespace "com.hopehubclinic.doctor"
     compileSdk rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "com.vitalisclinic.doctor"
+        applicationId "com.hopehubclinic.doctor"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1

@@ -251,7 +251,7 @@ export const kidneyStoneDiseaseInfo: DiseaseInfo = {
     warning:
         'Kidney stone with fever is a urological emergency. An infected obstructed kidney (pyonephrosis) can progress to sepsis rapidly. If you have flank pain with fever, chills, or very low urine output, go to an emergency department immediately.',
 
-    reviewedBy: 'Vitalis Care and Research Centre care team',
+    reviewedBy: 'HopeHub Care and Research Centre care team',
     lastUpdated: '2026-05-02',
     references: [
         'European Association of Urology (EAU) Guidelines on Urolithiasis',
@@ -259,13 +259,13 @@ export const kidneyStoneDiseaseInfo: DiseaseInfo = {
         'National Institute of Diabetes and Digestive and Kidney Diseases (NIDDK)',
         'Boericke W. — Pocket Manual of Homoeopathic Materia Medica',
         'Clarke J.H. — A Dictionary of Practical Materia Medica',
-        'Clinical review by Vitalis Care and Research Centre consultation doctors'
+        'Clinical review by HopeHub Care and Research Centre consultation doctors'
     ],
 
     seo: {
-        metaTitle: 'Kidney Stone Treatment | Vitalis Care and Research Centre',
+        metaTitle: 'Kidney Stone Treatment | HopeHub Care and Research Centre',
         metaDescription:
-            'Doctor-led kidney stone care at Vitalis Care and Research Centre. Homeopathy for renal colic, stone passage support, and recurrence prevention. Online consultation available.',
+            'Doctor-led kidney stone care at HopeHub Care and Research Centre. Homeopathy for renal colic, stone passage support, and recurrence prevention. Online consultation available.',
         keywords: [
             'kidney stone treatment',
             'renal calculi homeopathy',
@@ -278,12 +278,12 @@ export const kidneyStoneDiseaseInfo: DiseaseInfo = {
             'stone passage support',
             'calcium oxalate stone',
             'uric acid kidney stone',
-            'Vitalis Care and Research Centre',
+            'HopeHub Care and Research Centre',
             'homeopathy for kidney stone',
             'kidney stone pain relief',
             'urological care online'
         ],
-        ogTitle: 'Kidney Stone Care | Vitalis Care and Research Centre',
+        ogTitle: 'Kidney Stone Care | HopeHub Care and Research Centre',
         ogDescription:
             'Structured homeopathy-led care for kidney stones — acute pain relief, stone passage support, and long-term recurrence prevention. Consult online.',
         canonicalPath: '/treatments/kidney-stone'

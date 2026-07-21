@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import type { CallMode, IceServerConfig, MediaAccessResult } from '@vitalis/platform-ui';
+import type { CallMode, IceServerConfig, MediaAccessResult } from '@hopehub/platform-ui';
 import { AppFooterComponent } from './app-footer.component';
 import { AppHeaderComponent } from './app-header.component';
 import { ConsultationDetailComponent, SendMessagePayload } from './consultation-detail.component';

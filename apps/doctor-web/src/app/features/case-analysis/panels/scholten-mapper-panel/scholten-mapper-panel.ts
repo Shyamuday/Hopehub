@@ -1,5 +1,5 @@
 import { Component, Input, output } from '@angular/core';
-import { specializedPanelDef, type ScholtenApproachData } from '@vitalis/homeopathy-approaches';
+import { specializedPanelDef, type ScholtenApproachData } from '@hopehub/homeopathy-approaches';
 import { ApproachCapturePanelComponent } from '../approach-capture-panel/approach-capture-panel';
 
 @Component({
@@ -28,7 +28,7 @@ export class ScholtenMapperPanelComponent {
   readonly saveRequested = output<ScholtenApproachData>();
   readonly autoSaveRequested = output<ScholtenApproachData>();
   readonly rubricPhraseSelected = output<string>();
-  readonly fieldSuggestRequested = output<{ field: import('@vitalis/homeopathy-approaches').ApproachFieldDef; currentValue: string }>();
+  readonly fieldSuggestRequested = output<{ field: import('@hopehub/homeopathy-approaches').ApproachFieldDef; currentValue: string }>();
 
   get initialRecord() {
     return (this.initial || null) as Record<string, string> | null;

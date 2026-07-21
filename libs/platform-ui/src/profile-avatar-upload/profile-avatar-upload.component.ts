@@ -11,7 +11,7 @@ import {
 } from '@angular/core';
 
 @Component({
-  selector: 'vitalis-profile-avatar-upload',
+  selector: 'hopehub-profile-avatar-upload',
   standalone: true,
   imports: [CommonModule],
   templateUrl: './profile-avatar-upload.component.html',

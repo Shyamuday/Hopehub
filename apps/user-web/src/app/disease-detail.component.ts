@@ -2,7 +2,7 @@ import { CommonModule, CurrencyPipe } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-import { buildDetailRows, DetailRowsComponent } from '@vitalis/platform-ui';
+import { buildDetailRows, DetailRowsComponent } from '@hopehub/platform-ui';
 import { AppFooterComponent } from './app-footer.component';
 import { AppHeaderComponent } from './app-header.component';
 import { AuthFormOverlayComponent } from './auth/auth-form-overlay.component';

@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { buildDetailRows, DetailRowsComponent } from '@vitalis/platform-ui';
+import { buildDetailRows, DetailRowsComponent } from '@hopehub/platform-ui';
 import { CONSULTATION_BILLING_FIELDS } from './consultation/constants/consultation-billing.fields';
 import { Consultation, Role } from './models';
 import { ROUTE_PATHS } from './core/constants/app-routes.constants';

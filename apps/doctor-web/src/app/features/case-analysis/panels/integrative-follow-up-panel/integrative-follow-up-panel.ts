@@ -1,5 +1,5 @@
 import { Component, Input, output } from '@angular/core';
-import { specializedPanelDef, type IntegrativeFollowUpApproachData } from '@vitalis/homeopathy-approaches';
+import { specializedPanelDef, type IntegrativeFollowUpApproachData } from '@hopehub/homeopathy-approaches';
 import { ApproachCapturePanelComponent } from '../approach-capture-panel/approach-capture-panel';
 
 @Component({
@@ -26,7 +26,7 @@ export class IntegrativeFollowUpPanelComponent {
 
   readonly saveRequested = output<IntegrativeFollowUpApproachData>();
   readonly autoSaveRequested = output<IntegrativeFollowUpApproachData>();
-  readonly fieldSuggestRequested = output<{ field: import('@vitalis/homeopathy-approaches').ApproachFieldDef; currentValue: string }>();
+  readonly fieldSuggestRequested = output<{ field: import('@hopehub/homeopathy-approaches').ApproachFieldDef; currentValue: string }>();
 
   get initialRecord() {
     return (this.initial || null) as Record<string, string> | null;

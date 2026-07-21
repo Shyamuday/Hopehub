@@ -1,8 +1,8 @@
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { FormField } from '@angular/forms/signals';
-import { DetailRowsComponent } from '@vitalis/platform-ui';
-import type { DetailRow } from '@vitalis/platform-ui';
+import { DetailRowsComponent } from '@hopehub/platform-ui';
+import type { DetailRow } from '@hopehub/platform-ui';
 import { SUPPORT_NOTE_CATEGORIES, SUPPORT_NOTE_CATEGORY_STYLES, type SupportNoteCategory } from '../../constants/support-note.constants';
 import type { ConsumerDetail, SupportContext, SupportNote } from '../../models/consumers.models';
 

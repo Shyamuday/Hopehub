@@ -1,4 +1,4 @@
-import * as homeopathyApproaches from '@vitalis/homeopathy-approaches';
+import * as homeopathyApproaches from '@hopehub/homeopathy-approaches';
 
 export type ClinicalMediaType =
   | 'SKIN'

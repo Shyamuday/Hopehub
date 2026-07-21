@@ -70,9 +70,9 @@ export const APP_PERMISSIONS_HELP: AppPermissionHelpItem[] = [
 export const PERMISSIONS_TRUST_COPY = {
   headline: 'Your privacy, explained clearly',
   intro:
-    'Vitalis only requests phone permissions when a feature truly needs them. We never sell your health data. You stay in control and can change access anytime in your device settings.',
-  settingsAndroid: 'Settings → Apps → Vitalis Patient → Permissions',
-  settingsIos: 'Settings → Vitalis Patient',
+    'HopeHub only requests phone permissions when a feature truly needs them. We never sell your health data. You stay in control and can change access anytime in your device settings.',
+  settingsAndroid: 'Settings → Apps → HopeHub Patient → Permissions',
+  settingsIos: 'Settings → HopeHub Patient',
   neverDo: [
     'Sell or share your health photos with advertisers',
     'Turn on camera or microphone in the background without your action',

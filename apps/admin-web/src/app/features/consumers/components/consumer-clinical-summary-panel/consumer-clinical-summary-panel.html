@@ -42,13 +42,13 @@
                 <div class="summary-clinical-detail">
                   <p class="summary-approach-title">{{ analysis.approachTitle }} · case sheet</p>
                   @if (analysis.caseSheetRows.length) {
-                    <vitalis-detail-rows variant="grid" [rows]="analysis.caseSheetRows" />
+                    <hopehub-detail-rows variant="grid" [rows]="analysis.caseSheetRows" />
                   } @else {
                     <p class="muted compact">No case sheet fields recorded.</p>
                   }
                   @if (analysis.approachRows.length) {
                     <p class="summary-approach-title">Approach-specific notes</p>
-                    <vitalis-detail-rows variant="grid" [rows]="analysis.approachRows" />
+                    <hopehub-detail-rows variant="grid" [rows]="analysis.approachRows" />
                   }
                 </div>
               }

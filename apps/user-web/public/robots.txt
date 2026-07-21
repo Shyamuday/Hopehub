@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://vitalisclinic.com/sitemap.xml
+Sitemap: https://hopehubclinic.com/sitemap.xml

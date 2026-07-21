@@ -6,7 +6,7 @@ import {
   CLINICAL_MEDIA_TYPE_LABELS,
   suggestRubricSearchPhrases,
   type ClinicalMediaType
-} from '@vitalis/homeopathy-approaches';
+} from '@hopehub/homeopathy-approaches';
 import { CaseAnalysisApiService } from '../../case-analysis-api.service';
 import type { ClinicalMediaImageAnalysis, ClinicalMediaItem } from '../../clinical-media.types';
 import type { CaseAnalysis } from '../../case-analysis-page.types';

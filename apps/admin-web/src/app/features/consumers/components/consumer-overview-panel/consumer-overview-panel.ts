@@ -1,9 +1,9 @@
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { DetailRowsComponent } from '@vitalis/platform-ui';
-import type { DetailRow } from '@vitalis/platform-ui';
-import { PatientIdCardDisplayComponent, type PatientIdCardData } from '@vitalis/platform-ui';
+import { DetailRowsComponent } from '@hopehub/platform-ui';
+import type { DetailRow } from '@hopehub/platform-ui';
+import { PatientIdCardDisplayComponent, type PatientIdCardData } from '@hopehub/platform-ui';
 import {
   clinicalRecordsQuery,
   type ActiveDoctor,

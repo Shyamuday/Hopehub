@@ -35,30 +35,30 @@ Patient, Admin, Doctor, Store Staff, Store Manager, HR, Receptionist, Clinic Man
 ### D1 Branch Owner
 - Branch P&L dashboard (revenue, payroll, expenses, net)
 - Store summary KPIs
-- Demo: `owner@vitalisclinic.local`
+- Demo: `owner@hopehubclinic.local`
 
 ### D2 Patient Coordinator
 - Adherence / follow-up queue for assigned branch
 - High-risk patient list
-- Demo: `coordinator@vitalisclinic.local`
+- Demo: `coordinator@hopehubclinic.local`
 
 ### D3 Call Center
 - Patient search
 - Recent consultations list
-- Demo: `callcenter@vitalisclinic.local`
+- Demo: `callcenter@hopehubclinic.local`
 
 ### D4 Marketing
 - Product analytics funnels (read-only)
-- Demo: `marketing@vitalisclinic.local`
+- Demo: `marketing@hopehubclinic.local`
 
 ### E1 Corporate Wellness
 - Corporate accounts list
 - Enrolled employees per account
-- Demo: `corporate@vitalisclinic.local`
+- Demo: `corporate@hopehubclinic.local`
 
 ### E2 Insurance Partner
 - Insurance claims list + create claim
-- Demo: `insurance@vitalisclinic.local`
+- Demo: `insurance@hopehubclinic.local`
 
 ---
 

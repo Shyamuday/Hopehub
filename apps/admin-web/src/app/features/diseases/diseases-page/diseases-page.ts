@@ -9,7 +9,7 @@ import {
   CURRENCY_LOCALE,
   PAISE_PER_RUPEE,
 } from '../../../shared/constants/currency.constants';
-import { ViewportService } from '@vitalis/platform-ui';
+import { ViewportService } from '@hopehub/platform-ui';
 import { DiseasePublicPageFormComponent } from '../disease-public-page-form/disease-public-page-form';
 import { publicPageFormToPayload } from '../disease-public-page-form/disease-public-page-form.model';
 

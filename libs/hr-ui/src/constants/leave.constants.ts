@@ -1,4 +1,4 @@
-import type { LeaveType } from '@vitalis/clinic-api/models';
+import type { LeaveType } from '@hopehub/clinic-api/models';
 
 export const LEAVE_TYPE_ICONS: Record<LeaveType, string> = {
   CASUAL: '📅',

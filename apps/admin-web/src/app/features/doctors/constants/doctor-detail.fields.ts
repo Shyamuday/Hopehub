@@ -1,4 +1,4 @@
-import type { DetailFieldDef } from '@vitalis/platform-ui';
+import type { DetailFieldDef } from '@hopehub/platform-ui';
 import {
   DOCTOR_TYPE_LABELS,
   SPECIALTY_FOCUS_LABELS,

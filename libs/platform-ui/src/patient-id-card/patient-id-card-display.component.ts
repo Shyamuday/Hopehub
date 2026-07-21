@@ -1,6 +1,6 @@
 import { Component, Input, inject } from '@angular/core';
 import { DatePipe } from '@angular/common';
-import { CLINIC_API_BASE_URL } from '@vitalis/clinic-api';
+import { CLINIC_API_BASE_URL } from '@hopehub/clinic-api';
 
 export type PatientIdCardData = {
   patientCode: string;
@@ -13,7 +13,7 @@ export type PatientIdCardData = {
 };
 
 @Component({
-  selector: 'vitalis-patient-id-card-display',
+  selector: 'hopehub-patient-id-card-display',
   imports: [DatePipe],
   templateUrl: './patient-id-card-display.component.html',
   styleUrl: './patient-id-card-display.component.scss'

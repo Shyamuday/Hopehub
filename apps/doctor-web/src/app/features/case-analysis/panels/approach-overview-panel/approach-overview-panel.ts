@@ -3,7 +3,7 @@ import { form, FormField } from '@angular/forms/signals';
 import {
   resolveApproachByMethodOption,
   type ApproachDefinition,
-} from '@vitalis/homeopathy-approaches';
+} from '@hopehub/homeopathy-approaches';
 
 type MethodOption = { id: string; label: string; normalizedLabel?: string };
 

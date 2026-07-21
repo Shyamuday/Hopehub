@@ -8,7 +8,7 @@ export type PatientAppDownloadLinks = {
   appName: string;
 };
 
-const DEFAULT_APP_NAME = 'Vitalis Patient';
+const DEFAULT_APP_NAME = 'HopeHub Patient';
 
 /** QR target — stable API URL works for print, posters, and clinic desks. */
 export function patientAppLandingUrl(): string {

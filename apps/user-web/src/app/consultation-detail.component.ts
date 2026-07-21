@@ -1,8 +1,8 @@
 import { Component, EventEmitter, Input, OnChanges, Output, signal } from '@angular/core';
 import { form, FormField } from '@angular/forms/signals';
-import { ConsultationCallPanelComponent, type CallMode, type CallSignalingSocket, type IceServerConfig, type MediaAccessResult } from '@vitalis/platform-ui';
-import type { DetailRow } from '@vitalis/platform-ui';
-import { DetailRowsComponent } from '@vitalis/platform-ui';
+import { ConsultationCallPanelComponent, type CallMode, type CallSignalingSocket, type IceServerConfig, type MediaAccessResult } from '@hopehub/platform-ui';
+import type { DetailRow } from '@hopehub/platform-ui';
+import { DetailRowsComponent } from '@hopehub/platform-ui';
 import { Consultation, Role } from './models';
 
 export type SendMessagePayload = { consultation: Consultation; body: string };

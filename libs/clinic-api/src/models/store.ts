@@ -1,1 +1,1 @@
-export * from '@vitalis/contracts/models/store';
+export * from '@hopehub/contracts/models/store';

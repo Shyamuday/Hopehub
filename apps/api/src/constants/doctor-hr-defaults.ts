@@ -163,7 +163,7 @@ export function applyDoctorHrProfileFields(input: {
 function letterTerms(doctorType: HomeopathicDoctorType): string[] {
   const common = [
     'You shall maintain professional ethics, patient confidentiality, and comply with clinic SOPs.',
-    'Clinical documentation, case records, and prescriptions must be entered in the Vitalis system.'
+    'Clinical documentation, case records, and prescriptions must be entered in the HopeHub system.'
   ];
 
   switch (doctorType) {

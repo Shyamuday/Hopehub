@@ -1,4 +1,4 @@
-import type { DetailFieldDef } from '@vitalis/platform-ui';
+import type { DetailFieldDef } from '@hopehub/platform-ui';
 import type { WorklistItem } from '../worklist-api.service';
 
 export function worklistItemMetaFields(

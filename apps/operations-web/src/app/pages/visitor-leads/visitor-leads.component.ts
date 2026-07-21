@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { ReceptionApiService } from '../../services/reception-api.service';
 import { OperationsMobileLayoutService } from '../../services/operations-mobile-layout.service';
-import { ViewportService } from '@vitalis/platform-ui';
+import { ViewportService } from '@hopehub/platform-ui';
 import { environment } from '../../../environments/environment';
 import { API_PATHS } from '../../core/constants/api-paths.constants';
 import { ROUTE_PATHS } from '../../core/constants/app-routes.constants';

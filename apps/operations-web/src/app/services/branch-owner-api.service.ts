@@ -1,1 +1,1 @@
-export { BranchOwnerApiService } from '@vitalis/clinic-api';
+export { BranchOwnerApiService } from '@hopehub/clinic-api';

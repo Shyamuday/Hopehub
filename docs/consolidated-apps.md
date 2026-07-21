@@ -51,8 +51,8 @@ npm run build:all          # user + doctor + operations web bundles
 
 ## Store staff
 
-- Counter: `staff@ranchi.vitalis.local` → `/store/dashboard`
-- Manager: `manager@ranchi.vitalis.local` → `/store-manager/dashboard`
+- Counter: `staff@ranchi.hopehub.local` → `/store/dashboard`
+- Manager: `manager@ranchi.hopehub.local` → `/store-manager/dashboard`
 - No PIN login — email + password only
 
 ## Migration status

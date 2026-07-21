@@ -80,7 +80,7 @@ export const chronicCareDiseaseInfo: DiseaseInfo = {
         'Homeopathy takes a different approach — it looks at the whole person, not just the diagnosis. Cases that have not responded to standard treatment sometimes do well with individualized homeopathic prescribing, particularly when the constitutional and mental-emotional picture is clear. Results depend on case quality, chronicity, and consistency of follow-up.'
     }
   ],
-  reviewedBy: 'Vitalis Care and Research Centre care team',
+  reviewedBy: 'HopeHub Care and Research Centre care team',
   lastUpdated: '2026-04-27',
   references: ['Patient history', 'Previous medical records when shared', 'Doctor consultation review'],
   careApproach: [

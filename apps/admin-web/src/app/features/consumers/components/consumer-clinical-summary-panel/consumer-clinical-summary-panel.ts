@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, Input } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { DetailRowsComponent } from '@vitalis/platform-ui';
+import { DetailRowsComponent } from '@hopehub/platform-ui';
 import { clinicalRecordsQuery, type ClinicalSummary } from '../../models/consumers.models';
 
 @Component({

@@ -1,4 +1,4 @@
-import type { EmployeeStatus, WorkShift } from '@vitalis/clinic-api/models';
+import type { EmployeeStatus, WorkShift } from '@hopehub/clinic-api/models';
 
 export const SHIFT_LABELS: Record<WorkShift, string> = {
   MORNING: '🌅 Morning',

@@ -44,7 +44,7 @@ scanRouter.get('/go/p/:patientCode', asyncRoute(async (req, res) => {
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>${escapeHtml(patient.patientCode)} — Vitalis Care</title>
+  <title>${escapeHtml(patient.patientCode)} — HopeHub Care</title>
   <style>
     body { font-family: system-ui, sans-serif; margin: 0; background: #f8fafc; color: #0f172a; }
     main { max-width: 420px; margin: 0 auto; padding: 24px 16px; }
@@ -105,7 +105,7 @@ scanRouter.get('/go/app', asyncRoute(async (_req, res) => {
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>${escapeHtml(info.appName)} — Vitalis Care</title>
+  <title>${escapeHtml(info.appName)} — HopeHub Care</title>
   <style>
     body { font-family: system-ui, sans-serif; margin: 0; background: #f0fdf4; color: #0f172a; }
     main { max-width: 420px; margin: 0 auto; padding: 24px 16px; }

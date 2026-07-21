@@ -96,7 +96,7 @@ export function registerAdminConsultationRoutes(router: Router, io: SocketIoServ
             recipientName: patient.name,
             recipientMobile: patient.mobile,
             recipientEmail: patient.email,
-            title: 'Doctor assigned — Vitalis Care',
+            title: 'Doctor assigned — HopeHub Care',
             body: `Dr. ${doctor.name} has been assigned to your consultation. You can now chat with your doctor in the app.`
           }))
         );

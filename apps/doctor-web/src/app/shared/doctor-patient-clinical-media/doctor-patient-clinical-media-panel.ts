@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, Input, OnChanges, OnDestroy, inject, signal } from '@angular/core';
 import { form, FormField } from '@angular/forms/signals';
-import { CLINICAL_MEDIA_TYPE_LABELS, type ClinicalMediaType } from '@vitalis/homeopathy-approaches';
+import { CLINICAL_MEDIA_TYPE_LABELS, type ClinicalMediaType } from '@hopehub/homeopathy-approaches';
 import { CaseAnalysisApiService } from '../../features/case-analysis/case-analysis-api.service';
 import type { ClinicalMediaItem } from '../../features/case-analysis/clinical-media.types';
 import { DiseasePickerComponent } from '../disease-picker/disease-picker.component';

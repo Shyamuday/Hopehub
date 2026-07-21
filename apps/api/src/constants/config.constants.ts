@@ -9,7 +9,7 @@ export const SERVER_CONFIG = {
   API_PUBLIC_URL: process.env.API_PUBLIC_URL || process.env.API_URL || 'http://localhost:4000',
   SMTP: {
     DEFAULT_PORT: 587,
-    DEFAULT_FROM: 'noreply@vitaliscare.in'
+    DEFAULT_FROM: 'noreply@hopehubcare.in'
   },
   DEV_OTP: process.env.DEV_OTP || '123456'
 } as const;

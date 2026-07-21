@@ -8,7 +8,7 @@
               <strong>{{ consultation.disease.name }}</strong>
               <span>{{ consultation.patient.name }}</span>
               <small>{{ consultation.status }}</small>
-              <vitalis-detail-rows inlineTag="small" [inlineHostless]="true" [rows]="billingRows(consultation)" />
+              <hopehub-detail-rows inlineTag="small" [inlineHostless]="true" [rows]="billingRows(consultation)" />
             </button>
             @if (userRole === 'PATIENT' && consultation.status === 'PAYMENT_PENDING') {
               <button

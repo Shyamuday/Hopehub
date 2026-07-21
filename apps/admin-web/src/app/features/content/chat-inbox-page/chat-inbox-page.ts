@@ -3,7 +3,7 @@ import { Component, computed, inject, OnDestroy, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AdminApi } from '../../../core/services/admin-api';
 import { AdminMobileLayoutService } from '../../../core/services/admin-mobile-layout.service';
-import { ViewportService } from '@vitalis/platform-ui';
+import { ViewportService } from '@hopehub/platform-ui';
 
 type ChatMessage = {
   id: string;

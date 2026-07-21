@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject, signal } from '@angular/core';
-import { ClinicHttpClient } from '@vitalis/clinic-api';
+import { ClinicHttpClient } from '@hopehub/clinic-api';
 import { API_PATHS } from '../core/constants/api-paths.constants';
 import { AuthService } from '../auth/auth.service';
 

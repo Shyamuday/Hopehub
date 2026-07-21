@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { ROUTE_PATHS } from '@vitalis/admin-console/core/constants/app-routes.constants';
+import { ROUTE_PATHS } from '@hopehub/admin-console/core/constants/app-routes.constants';
 import { adminCapabilityGuard } from './admin.guards';
 
 const guard = [adminCapabilityGuard];
@@ -10,7 +10,7 @@ export const ADMIN_CHILD_ROUTES: Routes = [
     path: ROUTE_PATHS.DASHBOARD,
     canActivate: guard,
     loadComponent: () =>
-      import('@vitalis/admin-console/features/dashboard/admin-dashboard/admin-dashboard').then(
+      import('@hopehub/admin-console/features/dashboard/admin-dashboard/admin-dashboard').then(
         (m) => m.AdminDashboard
       )
   },
@@ -18,7 +18,7 @@ export const ADMIN_CHILD_ROUTES: Routes = [
     path: ROUTE_PATHS.DOCTORS,
     canActivate: guard,
     loadComponent: () =>
-      import('@vitalis/admin-console/features/doctors/doctors-page/doctors-page').then(
+      import('@hopehub/admin-console/features/doctors/doctors-page/doctors-page').then(
         (m) => m.DoctorsPage
       )
   },
@@ -26,7 +26,7 @@ export const ADMIN_CHILD_ROUTES: Routes = [
     path: ROUTE_PATHS.CONSUMERS,
     canActivate: guard,
     loadComponent: () =>
-      import('@vitalis/admin-console/features/consumers/consumers-page/consumers-page').then(
+      import('@hopehub/admin-console/features/consumers/consumers-page/consumers-page').then(
         (m) => m.ConsumersPage
       )
   },
@@ -42,7 +42,7 @@ export const ADMIN_CHILD_ROUTES: Routes = [
     path: ROUTE_PATHS.DISEASES,
     canActivate: guard,
     loadComponent: () =>
-      import('@vitalis/admin-console/features/diseases/diseases-page/diseases-page').then(
+      import('@hopehub/admin-console/features/diseases/diseases-page/diseases-page').then(
         (m) => m.DiseasesPage
       )
   },
@@ -50,7 +50,7 @@ export const ADMIN_CHILD_ROUTES: Routes = [
     path: ROUTE_PATHS.HR,
     canActivate: guard,
     loadComponent: () =>
-      import('@vitalis/admin-console/features/hr/doctor-hr/doctor-hr').then(
+      import('@hopehub/admin-console/features/hr/doctor-hr/doctor-hr').then(
         (m) => m.DoctorHrComponent
       )
   },
@@ -58,13 +58,13 @@ export const ADMIN_CHILD_ROUTES: Routes = [
     path: ROUTE_PATHS.HR_USERS,
     canActivate: guard,
     loadComponent: () =>
-      import('@vitalis/admin-console/features/hr/hr-users/hr-users').then((m) => m.HrUsersComponent)
+      import('@hopehub/admin-console/features/hr/hr-users/hr-users').then((m) => m.HrUsersComponent)
   },
   {
     path: ROUTE_PATHS.EMPLOYEES,
     canActivate: guard,
     loadComponent: () =>
-      import('@vitalis/admin-console/features/employees/employees-page/employees-page').then(
+      import('@hopehub/admin-console/features/employees/employees-page/employees-page').then(
         (m) => m.EmployeesPage
       )
   },
@@ -72,7 +72,7 @@ export const ADMIN_CHILD_ROUTES: Routes = [
     path: ROUTE_PATHS.LEAVES,
     canActivate: guard,
     loadComponent: () =>
-      import('@vitalis/admin-console/features/leaves/leaves-page/leaves-page').then(
+      import('@hopehub/admin-console/features/leaves/leaves-page/leaves-page').then(
         (m) => m.LeavesPage
       )
   },
@@ -80,7 +80,7 @@ export const ADMIN_CHILD_ROUTES: Routes = [
     path: ROUTE_PATHS.STORES,
     canActivate: guard,
     loadComponent: () =>
-      import('@vitalis/admin-console/features/stores/stores-page/stores-page').then(
+      import('@hopehub/admin-console/features/stores/stores-page/stores-page').then(
         (m) => m.StoresPage
       )
   },
@@ -88,7 +88,7 @@ export const ADMIN_CHILD_ROUTES: Routes = [
     path: ROUTE_PATHS.PURCHASE_ORDERS,
     canActivate: guard,
     loadComponent: () =>
-      import('@vitalis/admin-console/features/purchase-orders/purchase-orders-page/purchase-orders-page').then(
+      import('@hopehub/admin-console/features/purchase-orders/purchase-orders-page/purchase-orders-page').then(
         (m) => m.PurchaseOrdersPage
       )
   },
@@ -96,7 +96,7 @@ export const ADMIN_CHILD_ROUTES: Routes = [
     path: ROUTE_PATHS.SUPPLIERS,
     canActivate: guard,
     loadComponent: () =>
-      import('@vitalis/admin-console/features/suppliers/suppliers-page/suppliers-page').then(
+      import('@hopehub/admin-console/features/suppliers/suppliers-page/suppliers-page').then(
         (m) => m.SuppliersPage
       )
   },
@@ -104,7 +104,7 @@ export const ADMIN_CHILD_ROUTES: Routes = [
     path: ROUTE_PATHS.MEDICINES,
     canActivate: guard,
     loadComponent: () =>
-      import('@vitalis/admin-console/features/medicines/medicines-page/medicines-page').then(
+      import('@hopehub/admin-console/features/medicines/medicines-page/medicines-page').then(
         (m) => m.MedicinesPage
       )
   },
@@ -112,7 +112,7 @@ export const ADMIN_CHILD_ROUTES: Routes = [
     path: ROUTE_PATHS.INVENTORY,
     canActivate: guard,
     loadComponent: () =>
-      import('@vitalis/admin-console/features/inventory/inventory-page/inventory-page').then(
+      import('@hopehub/admin-console/features/inventory/inventory-page/inventory-page').then(
         (m) => m.InventoryPage
       )
   },
@@ -120,14 +120,14 @@ export const ADMIN_CHILD_ROUTES: Routes = [
     path: ROUTE_PATHS.NOTIFICATIONS,
     canActivate: guard,
     loadComponent: () =>
-      import('@vitalis/admin-console/features/notifications/notifications-page/notifications-page').then(
+      import('@hopehub/admin-console/features/notifications/notifications-page/notifications-page').then(
         (m) => m.NotificationsPage
       )
   },
   {
     path: ROUTE_PATHS.NOTIFICATIONS_INBOX,
     loadComponent: () =>
-      import('@vitalis/admin-console/features/notifications-inbox/notifications-inbox-page').then(
+      import('@hopehub/admin-console/features/notifications-inbox/notifications-inbox-page').then(
         (m) => m.NotificationsInboxPage
       )
   },
@@ -135,7 +135,7 @@ export const ADMIN_CHILD_ROUTES: Routes = [
     path: ROUTE_PATHS.ADMIN_USERS,
     canActivate: guard,
     loadComponent: () =>
-      import('@vitalis/admin-console/features/admin-users/admin-users-page/admin-users-page').then(
+      import('@hopehub/admin-console/features/admin-users/admin-users-page/admin-users-page').then(
         (m) => m.AdminUsersPage
       )
   },
@@ -143,7 +143,7 @@ export const ADMIN_CHILD_ROUTES: Routes = [
     path: ROUTE_PATHS.ECOSYSTEM_USERS,
     canActivate: guard,
     loadComponent: () =>
-      import('@vitalis/admin-console/features/ecosystem-users/ecosystem-users-page/ecosystem-users-page').then(
+      import('@hopehub/admin-console/features/ecosystem-users/ecosystem-users-page/ecosystem-users-page').then(
         (m) => m.EcosystemUsersPage
       )
   },
@@ -151,7 +151,7 @@ export const ADMIN_CHILD_ROUTES: Routes = [
     path: ROUTE_PATHS.CONSULTATIONS,
     canActivate: guard,
     loadComponent: () =>
-      import('@vitalis/admin-console/features/consultations/consultations-page/consultations-page').then(
+      import('@hopehub/admin-console/features/consultations/consultations-page/consultations-page').then(
         (m) => m.ConsultationsPage
       )
   },
@@ -159,7 +159,7 @@ export const ADMIN_CHILD_ROUTES: Routes = [
     path: ROUTE_PATHS.ONLINE_DOCTORS,
     canActivate: guard,
     loadComponent: () =>
-      import('@vitalis/admin-console/features/online-doctors/online-doctors-page/online-doctors-page').then(
+      import('@hopehub/admin-console/features/online-doctors/online-doctors-page/online-doctors-page').then(
         (m) => m.OnlineDoctorsPage
       )
   },
@@ -167,7 +167,7 @@ export const ADMIN_CHILD_ROUTES: Routes = [
     path: ROUTE_PATHS.PAYMENTS,
     canActivate: guard,
     loadComponent: () =>
-      import('@vitalis/admin-console/features/payments/payments-page/payments-page').then(
+      import('@hopehub/admin-console/features/payments/payments-page/payments-page').then(
         (m) => m.PaymentsPage
       )
   },
@@ -175,13 +175,13 @@ export const ADMIN_CHILD_ROUTES: Routes = [
     path: ROUTE_PATHS.AUDIT,
     canActivate: guard,
     loadComponent: () =>
-      import('@vitalis/admin-console/features/audit/audit-page/audit-page').then((m) => m.AuditPage)
+      import('@hopehub/admin-console/features/audit/audit-page/audit-page').then((m) => m.AuditPage)
   },
   {
     path: ROUTE_PATHS.SECURITY,
     canActivate: guard,
     loadComponent: () =>
-      import('@vitalis/admin-console/features/security/security-page/security-page').then(
+      import('@hopehub/admin-console/features/security/security-page/security-page').then(
         (m) => m.SecurityPage
       )
   },
@@ -189,7 +189,7 @@ export const ADMIN_CHILD_ROUTES: Routes = [
     path: ROUTE_PATHS.ADHERENCE,
     canActivate: guard,
     loadComponent: () =>
-      import('@vitalis/admin-console/features/adherence/adherence-page/adherence-page').then(
+      import('@hopehub/admin-console/features/adherence/adherence-page/adherence-page').then(
         (m) => m.AdherencePage
       )
   },
@@ -197,7 +197,7 @@ export const ADMIN_CHILD_ROUTES: Routes = [
     path: ROUTE_PATHS.ANALYTICS,
     canActivate: guard,
     loadComponent: () =>
-      import('@vitalis/admin-console/features/analytics/analytics-page/analytics-page').then(
+      import('@hopehub/admin-console/features/analytics/analytics-page/analytics-page').then(
         (m) => m.AnalyticsPage
       )
   },
@@ -205,7 +205,7 @@ export const ADMIN_CHILD_ROUTES: Routes = [
     path: ROUTE_PATHS.FINANCE,
     canActivate: guard,
     loadComponent: () =>
-      import('@vitalis/admin-console/features/finance/finance-page/finance-page').then(
+      import('@hopehub/admin-console/features/finance/finance-page/finance-page').then(
         (m) => m.FinancePage
       )
   },
@@ -213,7 +213,7 @@ export const ADMIN_CHILD_ROUTES: Routes = [
     path: ROUTE_PATHS.PAYROLL,
     canActivate: guard,
     loadComponent: () =>
-      import('@vitalis/admin-console/features/payroll/payroll-page/payroll-page').then(
+      import('@hopehub/admin-console/features/payroll/payroll-page/payroll-page').then(
         (m) => m.PayrollPage
       )
   },
@@ -221,19 +221,19 @@ export const ADMIN_CHILD_ROUTES: Routes = [
     path: ROUTE_PATHS.STAFF,
     canActivate: guard,
     loadComponent: () =>
-      import('@vitalis/admin-console/features/staff/staff-page/staff-page').then((m) => m.StaffPage)
+      import('@hopehub/admin-console/features/staff/staff-page/staff-page').then((m) => m.StaffPage)
   },
   {
     path: ROUTE_PATHS.RATES,
     canActivate: guard,
     loadComponent: () =>
-      import('@vitalis/admin-console/features/rates/rates-page/rates-page').then((m) => m.RatesPage)
+      import('@hopehub/admin-console/features/rates/rates-page/rates-page').then((m) => m.RatesPage)
   },
   {
     path: ROUTE_PATHS.REWARDS,
     canActivate: guard,
     loadComponent: () =>
-      import('@vitalis/admin-console/features/rewards/rewards-page/rewards-page').then(
+      import('@hopehub/admin-console/features/rewards/rewards-page/rewards-page').then(
         (m) => m.RewardsPage
       )
   },
@@ -241,7 +241,7 @@ export const ADMIN_CHILD_ROUTES: Routes = [
     path: ROUTE_PATHS.CLINICAL_RECORDS,
     canActivate: guard,
     loadComponent: () =>
-      import('@vitalis/admin-console/features/clinical-records/clinical-records-page/clinical-records-page').then(
+      import('@hopehub/admin-console/features/clinical-records/clinical-records-page/clinical-records-page').then(
         (m) => m.ClinicalRecordsPage
       )
   },
@@ -249,7 +249,7 @@ export const ADMIN_CHILD_ROUTES: Routes = [
     path: ROUTE_PATHS.VACANCIES,
     canActivate: guard,
     loadComponent: () =>
-      import('@vitalis/admin-console/features/vacancies/vacancies-page/vacancies-page').then(
+      import('@hopehub/admin-console/features/vacancies/vacancies-page/vacancies-page').then(
         (m) => m.VacanciesPage
       )
   },
@@ -257,7 +257,7 @@ export const ADMIN_CHILD_ROUTES: Routes = [
     path: ROUTE_PATHS.TESTIMONIALS,
     canActivate: guard,
     loadComponent: () =>
-      import('@vitalis/admin-console/features/content/testimonials-page/testimonials-page').then(
+      import('@hopehub/admin-console/features/content/testimonials-page/testimonials-page').then(
         (m) => m.TestimonialsPage
       )
   },
@@ -265,19 +265,19 @@ export const ADMIN_CHILD_ROUTES: Routes = [
     path: ROUTE_PATHS.FAQ,
     canActivate: guard,
     loadComponent: () =>
-      import('@vitalis/admin-console/features/content/faq-page/faq-page').then((m) => m.FaqPage)
+      import('@hopehub/admin-console/features/content/faq-page/faq-page').then((m) => m.FaqPage)
   },
   {
     path: ROUTE_PATHS.BLOG,
     canActivate: guard,
     loadComponent: () =>
-      import('@vitalis/admin-console/features/content/blog-page/blog-page').then((m) => m.BlogPage)
+      import('@hopehub/admin-console/features/content/blog-page/blog-page').then((m) => m.BlogPage)
   },
   {
     path: ROUTE_PATHS.SITE_CONFIG,
     canActivate: guard,
     loadComponent: () =>
-      import('@vitalis/admin-console/features/content/site-config-page/site-config-page').then(
+      import('@hopehub/admin-console/features/content/site-config-page/site-config-page').then(
         (m) => m.SiteConfigPage
       )
   },
@@ -285,14 +285,14 @@ export const ADMIN_CHILD_ROUTES: Routes = [
     path: ROUTE_PATHS.CHAT_INBOX,
     canActivate: guard,
     loadComponent: () =>
-      import('@vitalis/admin-console/features/content/chat-inbox-page/chat-inbox-page').then(
+      import('@hopehub/admin-console/features/content/chat-inbox-page/chat-inbox-page').then(
         (m) => m.ChatInboxPage
       )
   },
   {
     path: ROUTE_PATHS.ACCOUNT,
     loadComponent: () =>
-      import('@vitalis/admin-console/features/account/account-page/account-page').then(
+      import('@hopehub/admin-console/features/account/account-page/account-page').then(
         (m) => m.AccountPage
       )
   }

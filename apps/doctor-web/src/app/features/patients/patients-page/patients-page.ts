@@ -15,12 +15,12 @@ import {
   type PatientIdCardData,
   type PatientSearchResult,
 } from '../patients-api.service';
-import { PatientIdCardDisplayComponent } from '@vitalis/platform-ui';
+import { PatientIdCardDisplayComponent } from '@hopehub/platform-ui';
 import {
   PatientHealthProfileComponent,
   type PatientClinicalProfile,
 } from '../../../shared/patient-health-profile/patient-health-profile';
-import { buildDetailRows, DetailRowsComponent } from '@vitalis/platform-ui';
+import { buildDetailRows, DetailRowsComponent } from '@hopehub/platform-ui';
 import { DoctorPatientClinicalMediaPanelComponent } from '../../../shared/doctor-patient-clinical-media/doctor-patient-clinical-media-panel';
 import {
   ADHERENCE_DAY_FIELDS,
@@ -28,7 +28,7 @@ import {
   adherenceDayTotalsText,
   adherenceTotalsText,
 } from '../constants/adherence-detail.fields';
-import { ViewportService } from '@vitalis/platform-ui';
+import { ViewportService } from '@hopehub/platform-ui';
 
 type DoseEvent = {
   id: string;

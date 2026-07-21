@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject, signal } from '@angular/core';
-import { CLINIC_API_BASE_URL, ClinicHttpClient } from '@vitalis/clinic-api';
+import { CLINIC_API_BASE_URL, ClinicHttpClient } from '@hopehub/clinic-api';
 import { API_PATHS } from '../../core/constants/api-paths.constants';
 import { AuthService } from '../../auth/auth.service';
 import { AppDownloadQrComponent } from '../app-download-qr/app-download-qr.component';

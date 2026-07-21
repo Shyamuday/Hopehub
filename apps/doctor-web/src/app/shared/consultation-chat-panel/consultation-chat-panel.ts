@@ -3,7 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Component, Input, OnChanges, OnDestroy, inject, signal } from '@angular/core';
 import { form, FormField } from '@angular/forms/signals';
 import { firstValueFrom } from 'rxjs';
-import { ConsultationCallPanelComponent, type IceServerConfig } from '@vitalis/platform-ui';
+import { ConsultationCallPanelComponent, type IceServerConfig } from '@hopehub/platform-ui';
 import { environment } from '../../../environments/environment';
 import { API_PATHS } from '../../core/constants/api-paths.constants';
 import { ConsultationApiService } from '../../core/services/consultation-api.service';

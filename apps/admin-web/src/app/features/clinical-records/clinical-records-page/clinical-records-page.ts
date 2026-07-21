@@ -1,13 +1,13 @@
-import { buildDetailRows, DetailRowsComponent } from '@vitalis/platform-ui';
-import type { DetailFieldDef } from '@vitalis/platform-ui';
-import { buildAdminClinicalSummary } from '@vitalis/homeopathy-approaches';
+import { buildDetailRows, DetailRowsComponent } from '@hopehub/platform-ui';
+import type { DetailFieldDef } from '@hopehub/platform-ui';
+import { buildAdminClinicalSummary } from '@hopehub/homeopathy-approaches';
 import { DatePipe } from '@angular/common';
 import { Component, computed, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { form, FormField } from '@angular/forms/signals';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AdminApi } from '../../../core/services/admin-api';
 import { AdminMobileLayoutService } from '../../../core/services/admin-mobile-layout.service';
-import { ViewportService } from '@vitalis/platform-ui';
+import { ViewportService } from '@hopehub/platform-ui';
 
 type MethodOption = { id: string; label: string };
 type PublicUser = { id: string; name: string; mobile?: string | null; patientCode?: string | null };

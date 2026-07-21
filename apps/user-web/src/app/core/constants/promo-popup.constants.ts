@@ -1,4 +1,4 @@
-export const PROMO_POPUP_STORAGE_KEY = 'vitalis_free_consult_promo_at';
+export const PROMO_POPUP_STORAGE_KEY = 'hopehub_free_consult_promo_at';
 
 /** Show at most once per 24 hours. */
 export const PROMO_POPUP_COOLDOWN_MS = 24 * 60 * 60 * 1000;

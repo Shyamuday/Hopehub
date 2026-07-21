@@ -9,7 +9,7 @@ import {
 } from '@angular/core';
 
 @Component({
-  selector: 'vitalis-profile-avatar',
+  selector: 'hopehub-profile-avatar',
   standalone: true,
   imports: [CommonModule],
   templateUrl: './profile-avatar-display.component.html',

@@ -1,6 +1,6 @@
 # OOREP repertory data (GPL)
 
-This folder holds the official OOREP PostgreSQL dump used for a one-time import into Vitalis.
+This folder holds the official OOREP PostgreSQL dump used for a one-time import into HopeHub.
 
 ## Download
 

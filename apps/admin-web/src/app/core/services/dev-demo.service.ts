@@ -3,7 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { AdminAuth } from './admin-auth';
-import type { DevAppGuide, DevDemoPort, DevFillCredentials, DevPersona } from '@vitalis/platform-ui';
+import type { DevAppGuide, DevDemoPort, DevFillCredentials, DevPersona } from '@hopehub/platform-ui';
 
 export type { DevFillCredentials, DevPersona, DevAppGuide };
 

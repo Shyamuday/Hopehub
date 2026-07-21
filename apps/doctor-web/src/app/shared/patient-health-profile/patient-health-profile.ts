@@ -5,7 +5,7 @@ import {
   PATIENT_CLINICAL_PROFILE_FIELDS,
   patientClinicalProfileHasData,
   type PatientClinicalProfile
-} from '@vitalis/platform-ui';
+} from '@hopehub/platform-ui';
 
 export type { PatientClinicalProfile };
 

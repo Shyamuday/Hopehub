@@ -14,7 +14,7 @@ import {
   AUTH_STORE_STAFF_KEY,
   AUTH_PATHS
 } from '../core/constants/auth.constants';
-import { OPERATIONS_NAV_ITEMS, navItemsForCapabilities } from '@vitalis/platform-nav';
+import { OPERATIONS_NAV_ITEMS, navItemsForCapabilities } from '@hopehub/platform-nav';
 
 export type StaffLoginResponse = AuthResponse & Partial<SessionResponse> & { storeStaff?: StorePortalStaff };
 

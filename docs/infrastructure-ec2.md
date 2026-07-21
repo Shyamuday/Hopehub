@@ -1,4 +1,4 @@
-# AWS EC2 Infrastructure — Vitalis Clinic Platform
+# AWS EC2 Infrastructure — HopeHub Clinic Platform
 
 Sizing and deployment guide for **100–500 patients per day** (single clinic or small multi-branch).
 
@@ -145,11 +145,11 @@ Set these in `deploy/.env` (from `deploy/.env.production.example`):
 
 | Env var | Example |
 |---------|---------|
-| `API_PUBLIC_URL` | `https://api.vitaliscare.in` |
-| `WEB_ORIGIN` | `https://patient.vitaliscare.in` |
-| `DOCTOR_ORIGIN` | `https://doctor.vitaliscare.in` |
-| `OPERATIONS_ORIGIN` | `https://ops.vitaliscare.in` |
-| `ADMIN_ORIGIN` | `https://ops.vitaliscare.in` |
+| `API_PUBLIC_URL` | `https://api.hopehubcare.in` |
+| `WEB_ORIGIN` | `https://patient.hopehubcare.in` |
+| `DOCTOR_ORIGIN` | `https://doctor.hopehubcare.in` |
+| `OPERATIONS_ORIGIN` | `https://ops.hopehubcare.in` |
+| `ADMIN_ORIGIN` | `https://ops.hopehubcare.in` |
 
 Update `apiUrl` in each app's `environment.prod.ts` before building static assets.
 
@@ -169,8 +169,8 @@ nginx server names are in `deploy/nginx/default.conf`.
 ### 2. Bootstrap the host
 
 ```bash
-git clone <repo-url> /opt/vitalis
-cd /opt/vitalis
+git clone <repo-url> /opt/hopehub
+cd /opt/hopehub
 sudo bash deploy/scripts/bootstrap-ec2.sh all
 # Log out and back in so docker group applies
 ```
@@ -196,11 +196,11 @@ After DNS propagates:
 
 ```bash
 sudo certbot certonly --webroot \
-  -w /opt/vitalis/deploy/certbot/www \
-  -d api.vitaliscare.in \
-  -d patient.vitaliscare.in \
-  -d doctor.vitaliscare.in \
-  -d ops.vitaliscare.in
+  -w /opt/hopehub/deploy/certbot/www \
+  -d api.hopehubcare.in \
+  -d patient.hopehubcare.in \
+  -d doctor.hopehubcare.in \
+  -d ops.hopehubcare.in
 ```
 
 Add SSL server blocks to `deploy/nginx/default.conf` and reload nginx.

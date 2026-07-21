@@ -7,7 +7,7 @@ import {
   clinicalRecordsQuery,
   doctorAppointmentUrl,
   doctorCaseAnalysisUrl
-} from '@vitalis/platform-ui';
+} from '@hopehub/platform-ui';
 import { environment } from '../../../environments/environment';
 import { API_PATHS } from '../../core/constants/api-paths.constants';
 import { ROUTE_PATHS } from '../../core/constants/app-routes.constants';

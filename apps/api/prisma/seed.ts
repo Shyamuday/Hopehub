@@ -568,7 +568,7 @@ async function main() {
       id: 'seed-store-med-arnica-30',
       name: 'Arnica Montana',
       potency: '30C',
-      manufacturer: 'Vitalis Pharma',
+      manufacturer: 'HopeHub Pharma',
       minStockLevel: 20
     }
   });
@@ -580,7 +580,7 @@ async function main() {
       id: 'seed-store-med-sulphur-200',
       name: 'Sulphur',
       potency: '200C',
-      manufacturer: 'Vitalis Pharma',
+      manufacturer: 'HopeHub Pharma',
       minStockLevel: 15
     }
   });

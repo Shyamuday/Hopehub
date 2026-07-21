@@ -1,5 +1,5 @@
 import { Component, Input, output } from '@angular/core';
-import type { ApproachDefinition } from '@vitalis/homeopathy-approaches';
+import type { ApproachDefinition } from '@hopehub/homeopathy-approaches';
 
 @Component({
   selector: 'app-prescription-handoff-panel',

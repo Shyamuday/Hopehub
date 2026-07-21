@@ -1,4 +1,4 @@
-import { allMarketingApproaches } from '@vitalis/homeopathy-approaches';
+import { allMarketingApproaches } from '@hopehub/homeopathy-approaches';
 import type { HomeopathyApproach } from '../models';
 
 /** Marketing pages — sourced from shared homeopathy-approaches registry. */

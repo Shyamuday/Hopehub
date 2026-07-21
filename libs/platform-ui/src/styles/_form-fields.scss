@@ -1,7 +1,7 @@
 // Shared form field layout — import from each app global styles.scss
 // Ensures labels appear above inputs and stay readable on light or dark surfaces.
 
-@mixin vitalis-form-field-layout() {
+@mixin hopehub-form-field-layout() {
   .field {
     display: grid;
     gap: 0.35rem;
@@ -82,7 +82,7 @@
   }
 }
 
-@mixin vitalis-form-surface-light() {
+@mixin hopehub-form-surface-light() {
   color: #0f172a;
   --form-label-color: #334155;
   --form-hint-color: #64748b;
@@ -132,7 +132,7 @@
   }
 }
 
-@mixin vitalis-form-surface-dark() {
+@mixin hopehub-form-surface-dark() {
   color: #e2e8f0;
   --form-label-color: #94a3b8;
   --form-hint-color: #64748b;
@@ -187,14 +187,14 @@
   }
 }
 
-@include vitalis-form-field-layout();
+@include hopehub-form-field-layout();
 
 .form-surface {
-  @include vitalis-form-surface-light();
+  @include hopehub-form-surface-light();
 }
 
 .form-surface-dark {
-  @include vitalis-form-surface-dark();
+  @include hopehub-form-surface-dark();
 }
 
 // form-grid: stack labelled fields (admin content, etc.)

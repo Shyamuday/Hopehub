@@ -159,12 +159,12 @@
   visibility: hidden;
 }
 
-:global(body.printing-patient-card) vitalis-patient-id-card-display,
-:global(body.printing-patient-card) vitalis-patient-id-card-display * {
+:global(body.printing-patient-card) hopehub-patient-id-card-display,
+:global(body.printing-patient-card) hopehub-patient-id-card-display * {
   visibility: visible;
 }
 
-:global(body.printing-patient-card) vitalis-patient-id-card-display {
+:global(body.printing-patient-card) hopehub-patient-id-card-display {
   position: fixed;
   inset: 0;
   display: grid;

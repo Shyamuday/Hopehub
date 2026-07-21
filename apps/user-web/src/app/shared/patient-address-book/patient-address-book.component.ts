@@ -10,7 +10,7 @@ import {
   formToAddressPayload,
   type PatientAddress,
 } from '../../core/constants/patient-address.constants';
-import { ClinicHttpClient } from '@vitalis/clinic-api';
+import { ClinicHttpClient } from '@hopehub/clinic-api';
 import { AuthService } from '../../auth/auth.service';
 
 @Component({

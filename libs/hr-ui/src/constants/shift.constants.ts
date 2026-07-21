@@ -1,4 +1,4 @@
-import type { WorkShift } from '@vitalis/clinic-api/models';
+import type { WorkShift } from '@hopehub/clinic-api/models';
 
 export const WEEK_DAYS = [
   'Monday',

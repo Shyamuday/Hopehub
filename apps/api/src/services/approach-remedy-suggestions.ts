@@ -14,7 +14,7 @@ import {
   resolveApproachByMethodOption,
   type ApproachDefinition,
   type ApproachSearchPhrase
-} from '@vitalis/homeopathy-approaches';
+} from '@hopehub/homeopathy-approaches';
 
 export type PhraseSearchLog = {
   phrase: string;

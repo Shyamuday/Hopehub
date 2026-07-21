@@ -4,7 +4,7 @@ import { form, FormField } from '@angular/forms/signals';
 import { RouterLink } from '@angular/router';
 import { Capacitor } from '@capacitor/core';
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
-import { CLINICAL_MEDIA_TYPE_LABELS, type ClinicalMediaType } from '@vitalis/homeopathy-approaches';
+import { CLINICAL_MEDIA_TYPE_LABELS, type ClinicalMediaType } from '@hopehub/homeopathy-approaches';
 import { NativePermissionsService } from '../../core/services/native-permissions.service';
 import {
   PatientClinicalMediaService,

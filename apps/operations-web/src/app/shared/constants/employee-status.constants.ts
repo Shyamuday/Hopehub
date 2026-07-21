@@ -4,4 +4,4 @@ export {
   EMPLOYEE_STATUS_BADGE_FALLBACK,
   EMPLOYEE_STATUS_FILTER_OPTIONS,
   employeeStatusBadgeClass
-} from '@vitalis/hr-ui';
+} from '@hopehub/hr-ui';

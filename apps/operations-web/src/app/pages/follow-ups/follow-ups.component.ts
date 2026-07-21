@@ -1,7 +1,7 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
 import { form, FormField } from '@angular/forms/signals';
 import { RouterLink } from '@angular/router';
-import { clinicalRecordsQuery } from '@vitalis/platform-ui';
+import { clinicalRecordsQuery } from '@hopehub/platform-ui';
 import { CoordinatorApiService } from '../../services/coordinator-api.service';
 
 @Component({

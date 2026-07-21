@@ -6,7 +6,7 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: vitalis_clinic
+      POSTGRES_DB: hopehub_clinic
     volumes:
       - postgres_data:/var/lib/postgresql/data
 

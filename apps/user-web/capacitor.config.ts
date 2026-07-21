@@ -1,8 +1,8 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.vitalisclinic.patient',
-  appName: 'Vitalis Patient',
+  appId: 'com.hopehubclinic.patient',
+  appName: 'HopeHub Patient',
   webDir: 'dist/user-web/browser',
   server: {
     androidScheme: 'https'

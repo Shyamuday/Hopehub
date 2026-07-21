@@ -162,7 +162,7 @@ export function registerDoctorPrescriptionRoutes(router: Router, io: SocketIoSer
               recipientName: rxPatient.name,
               recipientMobile: rxPatient.mobile,
               recipientEmail: rxPatient.email,
-              title: 'Your prescription is ready — Vitalis Care',
+              title: 'Your prescription is ready — HopeHub Care',
               body: `Your doctor has published a new prescription. Open the app to view your medicines and dosage schedule.`
             }))
           );
@@ -276,7 +276,7 @@ export function registerDoctorPrescriptionRoutes(router: Router, io: SocketIoSer
               recipientName: updatedPatient.name,
               recipientMobile: updatedPatient.mobile,
               recipientEmail: updatedPatient.email,
-              title: 'Your prescription is ready — Vitalis Care',
+              title: 'Your prescription is ready — HopeHub Care',
               body: `Your doctor has published a new prescription. Open the app to view your medicines and dosage schedule.`
             }))
           );

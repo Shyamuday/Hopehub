@@ -74,7 +74,7 @@ export class NativePermissionsService {
     }
 
     if (platform === 'android') {
-      const appId = 'com.vitalisclinic.doctor';
+      const appId = 'com.hopehubclinic.doctor';
       window.location.href = `intent:#Intent;action=android.settings.APPLICATION_DETAILS_SETTINGS;data=package:${appId};end`;
     }
   }

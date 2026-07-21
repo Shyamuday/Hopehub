@@ -28,7 +28,7 @@ export const PUBLIC_HEADER_NAV_GROUPS: PublicNavGroup[] = [
     links: [
       { label: 'Blog', path: `/${ROUTE_PATHS.BLOG}` },
       { label: 'Patient stories', path: `/${ROUTE_PATHS.TESTIMONIALS}` },
-      { label: 'Why Vitalis works', path: `/${ROUTE_PATHS.WHY_SUCCESSFUL}` },
+      { label: 'Why HopeHub works', path: `/${ROUTE_PATHS.WHY_SUCCESSFUL}` },
       { label: 'Safety', path: `/${ROUTE_PATHS.SAFETY}` },
     ],
   },

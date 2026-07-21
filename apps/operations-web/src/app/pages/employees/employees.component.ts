@@ -3,7 +3,7 @@ import { form, FormField } from '@angular/forms/signals';
 import { DatePipe } from '@angular/common';
 import { HrApiService } from '../../services/hr-api.service';
 import { Employee } from '../../models';
-import { EmployeeDrawerComponent, EMPLOYEE_STATUS_FILTER_OPTIONS, employeeStatusBadgeClass, EMPLOYEE_TYPE_FILTER_OPTIONS } from '@vitalis/hr-ui';
+import { EmployeeDrawerComponent, EMPLOYEE_STATUS_FILTER_OPTIONS, employeeStatusBadgeClass, EMPLOYEE_TYPE_FILTER_OPTIONS } from '@hopehub/hr-ui';
 import { SEARCH_DEBOUNCE_MS } from '../../core/constants/timing.constants';
 
 type FilterType = 'ALL' | 'DOCTOR' | 'STORE_STAFF';

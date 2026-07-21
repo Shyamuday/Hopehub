@@ -12,7 +12,7 @@ All seeding runs from **`apps/api`**. Demo accounts and IDs are defined in `apps
 2. **`apps/api/.env`** — copy from `.env.example` and set at minimum:
 
 ```env
-DATABASE_URL="postgresql://postgres:YOUR_PASSWORD@localhost:5432/vitalis_clinic?schema=public"
+DATABASE_URL="postgresql://postgres:YOUR_PASSWORD@localhost:5432/hopehub_clinic?schema=public"
 JWT_SECRET="change-this-before-production"
 DEV_OTP="123456"
 ```
@@ -35,7 +35,7 @@ Use `db push` to sync the full Prisma schema. This works well on a new empty dat
 cd apps/api
 
 # Create DB once in psql if needed:
-# CREATE DATABASE vitalis_clinic;
+# CREATE DATABASE hopehub_clinic;
 
 npm run prisma:push
 npm run seed
@@ -109,12 +109,12 @@ The script:
 
 | Role | Email | App |
 |------|-------|-----|
-| Admin | `admin@vitalisclinic.local` | Admin (embedded in operations `:5800`) |
-| Doctor | `doctor@vitalisclinic.local` | Doctor `:4202` |
-| HR | `hr@vitalisclinic.local` | Operations `:5800` |
-| Patient (Rahul) | `patient1@vitalisclinic.local` or mobile OTP | Patient `:4203` |
-| Store manager | `manager@ranchi.vitalis.local` | Operations `:5800` |
-| Store staff | `staff@ranchi.vitalis.local` | Operations `:5800` |
+| Admin | `admin@hopehubclinic.local` | Admin (embedded in operations `:5800`) |
+| Doctor | `doctor@hopehubclinic.local` | Doctor `:4202` |
+| HR | `hr@hopehubclinic.local` | Operations `:5800` |
+| Patient (Rahul) | `patient1@hopehubclinic.local` or mobile OTP | Patient `:4203` |
+| Store manager | `manager@ranchi.hopehub.local` | Operations `:5800` |
+| Store staff | `staff@ranchi.hopehub.local` | Operations `:5800` |
 
 Full persona list: `GET http://localhost:4000/dev/demo-guide` (API must be running, dev mode only).
 
@@ -179,8 +179,8 @@ npm run dev
 
 ```powershell
 # In psql:
-# DROP DATABASE vitalis_clinic;
-# CREATE DATABASE vitalis_clinic;
+# DROP DATABASE hopehub_clinic;
+# CREATE DATABASE hopehub_clinic;
 
 cd apps\api
 npm run prisma:push
@@ -207,7 +207,7 @@ npm run repertory:import:oorep --prefix apps/api
 | Error | Cause | Fix |
 |-------|--------|-----|
 | `ECONNREFUSED` | PostgreSQL not running or wrong host/port | Start Postgres; verify `DATABASE_URL` |
-| `database "vitalis_clinic" does not exist` | DB not created | `CREATE DATABASE vitalis_clinic;` in psql |
+| `database "hopehub_clinic" does not exist` | DB not created | `CREATE DATABASE hopehub_clinic;` in psql |
 | `client password must be a string` | `DATABASE_URL` missing when seed runs | Ensure `import 'dotenv/config'` is at top of `seed.ts` and `.env` exists |
 | `SASL: SCRAM...` with empty password | Same as above | Check `.env` path and `DATABASE_URL` format |
 | Repertory search returns nothing | Mini seed skipped and OOREP not imported | Run OOREP import or check `repertoryRubric` row count |
@@ -218,7 +218,7 @@ npm run repertory:import:oorep --prefix apps/api
 
 ```powershell
 $env:PGPASSWORD='YOUR_PASSWORD'
-& "C:\Program Files\PostgreSQL\18\bin\psql.exe" -U postgres -h localhost -d vitalis_clinic -c "SELECT 1;"
+& "C:\Program Files\PostgreSQL\18\bin\psql.exe" -U postgres -h localhost -d hopehub_clinic -c "SELECT 1;"
 ```
 
 ### Verify seed worked
@@ -228,7 +228,7 @@ npm run seed --prefix apps/api
 # Expect: "── Dev demo seed complete ──"
 ```
 
-Then log in as `admin@vitalisclinic.local` / `Password@123` or use the dev quick-login panel on any app login screen.
+Then log in as `admin@hopehubclinic.local` / `Password@123` or use the dev quick-login panel on any app login screen.
 
 ---
 

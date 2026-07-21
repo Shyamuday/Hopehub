@@ -5,7 +5,7 @@ import {
   RoleTaskGuideComponent,
   NotificationBellHostComponent,
   ProfileAvatarDisplayComponent,
-} from '@vitalis/platform-ui';
+} from '@hopehub/platform-ui';
 import { environment } from '../../../environments/environment';
 import { AUTH_TOKEN_KEY } from '../../core/constants/auth.constants';
 import { ROUTE_PATHS } from '../../core/constants/app-routes.constants';

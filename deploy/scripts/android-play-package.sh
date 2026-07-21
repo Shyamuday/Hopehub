@@ -4,9 +4,9 @@ set -euo pipefail
 
 APP="${1:-}"
 case "$APP" in
-  user-web) echo "com.vitalisclinic.patient" ;;
-  doctor-web) echo "com.vitalisclinic.doctor" ;;
-  operations-web) echo "com.vitalisclinic.operations" ;;
+  user-web) echo "com.hopehubclinic.patient" ;;
+  doctor-web) echo "com.hopehubclinic.doctor" ;;
+  operations-web) echo "com.hopehubclinic.operations" ;;
   *)
     echo "Unknown app: $APP" >&2
     exit 1

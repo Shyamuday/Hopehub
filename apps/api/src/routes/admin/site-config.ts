@@ -153,7 +153,7 @@ export function registerAdminSiteConfigRoutes(router: Router) {
 const defaults: Record<string, string> = {
   doctorListLimit: '12',
   whatsappPhone: '919876543210',
-  clinicName: 'Vitalis Care and Research Centre',
+  clinicName: 'HopeHub Care and Research Centre',
   statConsultations: '5,000+',
   statDoctors: '12+',
   statRating: '4.8★',
@@ -164,7 +164,7 @@ const defaults: Record<string, string> = {
   statSatisfaction: '4.8 / 5',
   contactPhone: '+91-98765-43210',
   contactPhoneTel: '+919876543210',
-  contactEmail: 'support@vitaliscare.in',
+  contactEmail: 'support@hopehubcare.in',
   clinicAddressLine1: 'Ranchi Main Clinic',
   clinicAddressLine2: 'Near City Centre, Main Road',
   clinicAddressLine3: 'Ranchi, Jharkhand, India',

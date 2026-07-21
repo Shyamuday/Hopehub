@@ -112,7 +112,7 @@ const OTHER_FOLLOWUP_OPTIONS = [
 
 const CLOSING_OPTIONS = ['Start a new question', 'Close chat'] as const;
 
-const GREETING = `Hi there! 👋 I'm ${BOT_NAME}, your care advisor at Vitalis.\n\nHow may I help you today?`;
+const GREETING = `Hi there! 👋 I'm ${BOT_NAME}, your care advisor at HopeHub.\n\nHow may I help you today?`;
 
 const YES_RE =
   /\byes\b|\bsure\b|\bokay\b|\byes please\b|\byep\b|\byeah\b|\bbook\b|\bwant to\b|\bwilling\b|want to book|book consultation|book now/i;
@@ -172,7 +172,7 @@ function infoAnswer(topic: string): string {
   if (matchesAny(topic, ['Prescriptions & follow-up'])) {
     return (
       `After your consultation, the doctor may share a prescription and follow-up plan if appropriate.\n\n` +
-      `You can track medicines, adherence, and follow-up visits through your Vitalis account.`
+      `You can track medicines, adherence, and follow-up visits through your HopeHub account.`
     );
   }
   if (matchesAny(topic, ['Fees & payment'])) {
@@ -182,7 +182,7 @@ function infoAnswer(topic: string): string {
     );
   }
   return (
-    `Vitalis offers doctor-led homeopathic care online — intake, consultation, prescription, and follow-up in one place.\n\n` +
+    `HopeHub offers doctor-led homeopathic care online — intake, consultation, prescription, and follow-up in one place.\n\n` +
     `Tap a topic below if you would like more detail.`
   );
 }
@@ -198,7 +198,7 @@ function closingReply(restart = false): BotReply {
     };
   }
   return {
-    message: `Thank you for visiting Vitalis. We are here whenever you need us. 💚`,
+    message: `Thank you for visiting HopeHub. We are here whenever you need us. 💚`,
     nextStage: 91,
     needsOperator: false,
     options: ['Start a new question'],

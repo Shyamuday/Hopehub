@@ -11,7 +11,7 @@ import {
 import { extractPatientCodeFromScan, isPatientCodeFormat } from './extract-patient-code';
 
 @Component({
-  selector: 'vitalis-patient-scan-panel',
+  selector: 'hopehub-patient-scan-panel',
   standalone: true,
   templateUrl: './patient-scan-panel.component.html',
   styleUrl: './patient-scan-panel.component.scss'

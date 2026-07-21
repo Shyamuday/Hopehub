@@ -1,7 +1,7 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { form, FormField } from '@angular/forms/signals';
 import { DatePipe } from '@angular/common';
-import { buildDetailRows, DetailRowsComponent, HR_LETTER_META_FIELDS } from '@vitalis/platform-ui';
+import { buildDetailRows, DetailRowsComponent, HR_LETTER_META_FIELDS } from '@hopehub/platform-ui';
 import { AdminApi } from '../../../core/services/admin-api';
 import { SEARCH_DEBOUNCE_MS, TOAST_DURATION_MS } from '../../../core/constants/timing.constants';
 import { PAISE_PER_RUPEE } from '../../../shared/constants/currency.constants';

@@ -7,4 +7,4 @@ export {
   LEAVE_TYPES,
   leaveStatusBadgeClass,
   leaveTypeIcon
-} from '@vitalis/hr-ui';
+} from '@hopehub/hr-ui';

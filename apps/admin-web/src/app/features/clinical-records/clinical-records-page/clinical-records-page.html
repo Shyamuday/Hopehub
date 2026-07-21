@@ -146,7 +146,7 @@
         <p class="loading-text">Loading detail…</p>
       } @else if (selectedPrescription(); as rx) {
         <h3>Prescription detail</h3>
-        <vitalis-detail-rows variant="grid" [rows]="prescriptionDetailRows()" />
+        <hopehub-detail-rows variant="grid" [rows]="prescriptionDetailRows()" />
 
         @if (rx.caseAnalysisId) {
           <button type="button" class="link-btn" (click)="openLinkedAnalysis()">View linked case analysis →</button>
@@ -190,7 +190,7 @@
         }
       } @else if (selectedAnalysis(); as analysis) {
         <h3>Case analysis detail</h3>
-        <vitalis-detail-rows variant="grid" [rows]="analysisDetailRows()" />
+        <hopehub-detail-rows variant="grid" [rows]="analysisDetailRows()" />
 
         @if (analysis.prescriptions?.length) {
           <h4>Linked prescriptions</h4>
@@ -265,14 +265,14 @@
         @if (analysisClinicalSummary(); as summary) {
           <h4>{{ summary.approachTitle }} · case sheet</h4>
           @if (analysisCaseSheetRows().length) {
-            <vitalis-detail-rows variant="grid" [rows]="analysisCaseSheetRows()" />
+            <hopehub-detail-rows variant="grid" [rows]="analysisCaseSheetRows()" />
           } @else {
             <p class="muted">No case sheet fields recorded yet.</p>
           }
 
           @if (analysisApproachRows().length) {
             <h4>Approach-specific notes</h4>
-            <vitalis-detail-rows variant="grid" [rows]="analysisApproachRows()" />
+            <hopehub-detail-rows variant="grid" [rows]="analysisApproachRows()" />
           }
         }
       } @else {

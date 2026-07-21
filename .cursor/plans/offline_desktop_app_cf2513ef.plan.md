@@ -38,7 +38,7 @@ isProject: false
 | Desktop shell | **Electron 33+**                               | Reuses existing Angular components; mature ecosystem for Win+Mac; native file dialogs for export |
 | Frontend      | **Angular 19** (same as doctor-web)            | Direct code reuse of all panels, approach workflows, and UI                                      |
 | Embedded DB   | **better-sqlite3** (via Electron main process) | Synchronous, fast, handles 1.36M rows easily; no server needed                                   |
-| Shared logic  | `@vitalis/homeopathy-approaches`               | Pure TS library — all 27 approaches, case sheets, protocol catalogs, prescription handoff        |
+| Shared logic  | `@hopehub/homeopathy-approaches`               | Pure TS library — all 27 approaches, case sheets, protocol catalogs, prescription handoff        |
 | Data bundle   | **Pre-built SQLite .db file** (~80-120MB)      | Converted once from OOREP PostgreSQL dump; ships with installer                                  |
 | Packaging     | **electron-builder**                           | Produces `.exe` (NSIS) for Windows, `.dmg` for macOS                                             |
 | IPC           | Electron contextBridge + preload               | Secure bridge between renderer (Angular) and main (SQLite)                                       |

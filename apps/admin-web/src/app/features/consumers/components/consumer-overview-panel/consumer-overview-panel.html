@@ -9,7 +9,7 @@
     </a>
   </div>
   <p>{{ detail.consumer.email || 'No email' }} | {{ detail.consumer.mobile || 'No mobile' }}</p>
-  <vitalis-detail-rows inlineTag="small" [inlineHostless]="true" [rows]="adherenceRows" />
+  <hopehub-detail-rows inlineTag="small" [inlineHostless]="true" [rows]="adherenceRows" />
 </article>
 
 <app-consumer-clinical-summary-panel
@@ -22,7 +22,7 @@
 <section class="health-profile-panel">
   <h3>Clinical profile</h3>
   @if (clinicalProfileHasData) {
-    <vitalis-detail-rows variant="grid" [rows]="clinicalProfileRows" />
+    <hopehub-detail-rows variant="grid" [rows]="clinicalProfileRows" />
   } @else {
     <p class="empty-state">No allergies, medications, or chronic conditions recorded yet.</p>
   }
@@ -45,7 +45,7 @@
   <div class="card-panel">
     <h3>Printable patient card</h3>
     <p class="muted">Give this card to the patient for future visits.</p>
-    <vitalis-patient-id-card-display [card]="patientCard" />
+    <hopehub-patient-id-card-display [card]="patientCard" />
   </div>
 }
 

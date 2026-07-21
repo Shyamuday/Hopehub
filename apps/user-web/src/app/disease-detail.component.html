@@ -124,7 +124,7 @@
               <section class="panel">
                 <h2>Treatment options</h2>
                 <div class="treatment-options">
-                  <vitalis-detail-rows variant="blocks" [rows]="treatmentOptionRows(d)" />
+                  <hopehub-detail-rows variant="blocks" [rows]="treatmentOptionRows(d)" />
                 </div>
               </section>
             }
@@ -179,7 +179,7 @@
 
             @if (quickFactRows(d).length) {
               <section class="content-grid three">
-                <vitalis-detail-rows variant="panel" [rows]="quickFactRows(d)" />
+                <hopehub-detail-rows variant="panel" [rows]="quickFactRows(d)" />
               </section>
             }
 
@@ -198,7 +198,7 @@
               @if (d.commonIn) {
                 <article class="panel">
                   <h2>Common in</h2>
-                  <vitalis-detail-rows [rows]="commonInRows(d)" />
+                  <hopehub-detail-rows [rows]="commonInRows(d)" />
                 </article>
               }
             </section>
@@ -206,13 +206,13 @@
             @if (displayFaq().length) {
               <section class="faq-list">
                 <h2>FAQ</h2>
-                <vitalis-detail-rows variant="panel" panelHeading="h3" [rows]="faqRows(displayFaq())" />
+                <hopehub-detail-rows variant="panel" panelHeading="h3" [rows]="faqRows(displayFaq())" />
               </section>
             }
 
             @if (reviewRows(d).length) {
               <section class="panel review-panel">
-                <vitalis-detail-rows [rows]="reviewRows(d)" />
+                <hopehub-detail-rows [rows]="reviewRows(d)" />
               </section>
             }
 
@@ -252,7 +252,7 @@
             @if (displayFaq().length) {
               <section class="faq-list">
                 <h2>FAQ</h2>
-                <vitalis-detail-rows variant="panel" panelHeading="h3" [rows]="faqRows(displayFaq())" />
+                <hopehub-detail-rows variant="panel" panelHeading="h3" [rows]="faqRows(displayFaq())" />
               </section>
             }
 

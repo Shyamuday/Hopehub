@@ -30,8 +30,8 @@ export async function sendOtpEmail(email: string, otp: string): Promise<void> {
   await mailer.sendMail({
     from: smtpFrom,
     to: email,
-    subject: 'Your Vitalis Care login OTP',
-    html: `<p>Your Vitalis Care OTP is <strong>${otp}</strong>.</p>
+    subject: 'Your HopeHub Care login OTP',
+    html: `<p>Your HopeHub Care OTP is <strong>${otp}</strong>.</p>
            <p>It is valid for 10 minutes. Do not share it with anyone.</p>`
   });
 }

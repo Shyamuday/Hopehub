@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, signal } from '@angular/core';
 import { form, FormField } from '@angular/forms/signals';
 import { RouterLink } from '@angular/router';
-import { buildDetailRows, DetailRowsComponent } from '@vitalis/platform-ui';
+import { buildDetailRows, DetailRowsComponent } from '@hopehub/platform-ui';
 import { AdminApi } from '../../../core/services/admin-api';
 import { adminNavPath, ROUTE_PATHS } from '../../../core/constants/app-routes.constants';
 import { formatAuditAction } from '../../audit/constants/audit.constants';
