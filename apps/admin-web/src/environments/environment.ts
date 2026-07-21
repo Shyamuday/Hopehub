@@ -1,6 +1,6 @@
 export const environment = {
   production: false,
-  apiUrl: 'http://localhost:4000',
+  apiUrl: 'https://api.hopehub.in',
   doctorAppUrl: 'http://localhost:4202',
-  devAppId: 'admin-web'
+  devAppId: 'admin-web',
 };

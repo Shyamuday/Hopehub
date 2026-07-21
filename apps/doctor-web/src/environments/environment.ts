@@ -1,5 +1,5 @@
 export const environment = {
   production: false,
-  apiUrl: 'http://localhost:4000',
-  devAppId: 'doctor-web'
+  apiUrl: 'https://api.hopehub.in',
+  devAppId: 'doctor-web',
 };
