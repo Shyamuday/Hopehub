@@ -1,5 +1,7 @@
+import { DOCTOR_WEB_PRODUCTION_URLS } from './production-url.constants';
+
 export const environment = {
   production: true,
-  apiUrl: 'https://YOUR_API_DOMAIN',
-  devAppId: ''
+  apiUrl: DOCTOR_WEB_PRODUCTION_URLS.API,
+  devAppId: '',
 };

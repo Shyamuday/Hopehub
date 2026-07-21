@@ -21,16 +21,27 @@ jobs:
     runs-on: ubuntu-latest
     environment: production
 
-    env:
-      AWS_REGION: us-east-1
-      PATIENT_BUCKET: hopehub
-      ADMIN_BUCKET: hopehub-admin
-      DOCTOR_BUCKET: hopehub-doctors
-      OPERATIONS_BUCKET: hopehub-operations
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Load deployment constants
+        run: |
+          set -a
+          source deploy/config/production.env
+          set +a
+          {
+            echo "AWS_REGION=${AWS_REGION}"
+            echo "PATIENT_BUCKET=${PATIENT_BUCKET}"
+            echo "ADMIN_BUCKET=${ADMIN_BUCKET}"
+            echo "DOCTOR_BUCKET=${DOCTOR_BUCKET}"
+            echo "OPERATIONS_BUCKET=${OPERATIONS_BUCKET}"
+            echo "HOPEHUB_API_PUBLIC_URL=${HOPEHUB_API_PUBLIC_URL}"
+            echo "HOPEHUB_WEB_ORIGIN=${HOPEHUB_WEB_ORIGIN}"
+            echo "HOPEHUB_ADMIN_ORIGIN=${HOPEHUB_ADMIN_ORIGIN}"
+            echo "HOPEHUB_DOCTOR_ORIGIN=${HOPEHUB_DOCTOR_ORIGIN}"
+            echo "HOPEHUB_OPERATIONS_ORIGIN=${HOPEHUB_OPERATIONS_ORIGIN}"
+          } >> "$GITHUB_ENV"
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -46,6 +57,7 @@ jobs:
         env:
           API_PUBLIC_URL: ${{ secrets.API_PUBLIC_URL }}
           WEB_ORIGIN: ${{ secrets.WEB_ORIGIN }}
+          ADMIN_ORIGIN: ${{ secrets.ADMIN_ORIGIN }}
           DOCTOR_ORIGIN: ${{ secrets.DOCTOR_ORIGIN }}
           OPERATIONS_ORIGIN: ${{ secrets.OPERATIONS_ORIGIN }}
         run: bash deploy/scripts/configure-production-urls.sh

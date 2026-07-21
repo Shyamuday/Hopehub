@@ -144,13 +144,13 @@ Security group: allow **5432** only from the API EC2 security group.
 
 Set these in `deploy/.env` (from `deploy/.env.production.example`):
 
-| Env var             | Example                          |
-| ------------------- | -------------------------------- |
-| `API_PUBLIC_URL`    | `https://api.hopehubcare.in`     |
-| `WEB_ORIGIN`        | `https://patient.hopehubcare.in` |
-| `DOCTOR_ORIGIN`     | `https://doctor.hopehubcare.in`  |
-| `OPERATIONS_ORIGIN` | `https://ops.hopehubcare.in`     |
-| `ADMIN_ORIGIN`      | `https://ops.hopehubcare.in`     |
+| Env var             | Example                     |
+| ------------------- | --------------------------- |
+| `API_PUBLIC_URL`    | `https://api.hopehub.in`    |
+| `WEB_ORIGIN`        | `https://hopehub.in`        |
+| `DOCTOR_ORIGIN`     | `https://doctor.hopehub.in` |
+| `OPERATIONS_ORIGIN` | `https://ops.hopehub.in`    |
+| `ADMIN_ORIGIN`      | `https://admin.hopehub.in`  |
 
 Update `apiUrl` in each app's `environment.prod.ts` before building static assets.
 
@@ -165,7 +165,7 @@ nginx server names are in `deploy/nginx/default.conf`.
 1. Launch **EC2** `t3.small` (Amazon Linux 2023 or Ubuntu 22.04), 30 GB gp3.
 2. Create **RDS** `db.t3.small` PostgreSQL 16 in the same VPC.
 3. Attach Elastic IP to EC2.
-4. Point DNS A records: `api`, `patient`, `doctor`, `ops` → Elastic IP.
+4. Point DNS A records: root, `api`, `admin`, `doctor`, `ops` → Elastic IP or CloudFront as appropriate.
 
 ### 2. Bootstrap the host
 
@@ -198,10 +198,11 @@ After DNS propagates:
 ```bash
 sudo certbot certonly --webroot \
   -w /opt/hopehub/deploy/certbot/www \
-  -d api.hopehubcare.in \
-  -d patient.hopehubcare.in \
-  -d doctor.hopehubcare.in \
-  -d ops.hopehubcare.in
+  -d api.hopehub.in \
+  -d hopehub.in \
+  -d admin.hopehub.in \
+  -d doctor.hopehub.in \
+  -d ops.hopehub.in
 ```
 
 Add SSL server blocks to `deploy/nginx/default.conf` and reload nginx.
