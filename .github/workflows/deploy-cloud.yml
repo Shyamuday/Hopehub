@@ -2,17 +2,8 @@ name: Deploy Cloud
 
 on:
   workflow_dispatch:
-    inputs:
-      target:
-        description: Deployment target
-        required: true
-        default: production
-        type: choice
-        options:
-          - production
-          - staging
   push:
-    branches: [main, staging]
+    branches: [main]
     paths:
       - 'apps/**'
       - 'deploy/**'
@@ -21,28 +12,30 @@ on:
       - '.github/workflows/deploy-cloud.yml'
 
 concurrency:
-  group: deploy-${{ github.event_name == 'workflow_dispatch' && inputs.target || (github.ref == 'refs/heads/staging' && 'staging' || 'production') }}
+  group: deploy-s3-production
   cancel-in-progress: false
 
 jobs:
   deploy:
-    name: Deploy to ${{ github.event_name == 'workflow_dispatch' && inputs.target || (github.ref == 'refs/heads/staging' && 'staging' || 'production') }}
+    name: Deploy frontends to S3
     runs-on: ubuntu-latest
-    environment: ${{ github.event_name == 'workflow_dispatch' && inputs.target || (github.ref == 'refs/heads/staging' && 'staging' || 'production') }}
+    environment: production
 
     env:
-      DEPLOY_BRANCH: ${{ github.event_name == 'workflow_dispatch' && (inputs.target == 'staging' && 'staging' || 'main') || (github.ref == 'refs/heads/staging' && 'staging' || 'main') }}
+      AWS_REGION: us-east-1
+      PATIENT_BUCKET: hopehub
+      ADMIN_BUCKET: hopehub-admin
+      DOCTOR_BUCKET: hopehub-doctors
+      OPERATIONS_BUCKET: hopehub-operations
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          ref: ${{ env.DEPLOY_BRANCH }}
 
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
           cache: 'npm'
           cache-dependency-path: package-lock.json
 
@@ -60,39 +53,35 @@ jobs:
       - name: Build static frontends
         run: bash deploy/scripts/build-static.sh
 
-      - name: Package release bundle
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Configure S3 website hosting
         run: |
-          tar -czf release-static.tar.gz -C deploy static
-          tar -czf release-deploy.tar.gz deploy/docker-compose.prod.yml deploy/nginx
+          for bucket in "${PATIENT_BUCKET}" "${ADMIN_BUCKET}" "${DOCTOR_BUCKET}" "${OPERATIONS_BUCKET}"; do
+            aws s3 website "s3://${bucket}" --index-document index.html --error-document index.html
+          done
 
-      - name: Upload static assets to EC2
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_SSH_KEY }}
-          source: 'release-static.tar.gz,release-deploy.tar.gz'
-          target: '/opt/hopehub/incoming'
+      - name: Deploy patient web to S3
+        run: |
+          aws s3 sync deploy/static/patient "s3://${PATIENT_BUCKET}" --delete --exclude "index.html" --cache-control "public,max-age=31536000,immutable"
+          aws s3 cp deploy/static/patient/index.html "s3://${PATIENT_BUCKET}/index.html" --cache-control "no-cache,no-store,must-revalidate"
 
-      - name: Deploy on EC2
-        uses: appleboy/ssh-action@v1.2.0
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_SSH_KEY }}
-          script_stop: true
-          envs: DEPLOY_BRANCH
-          script: |
-            set -euo pipefail
-            cd /opt/hopehub
-            git fetch origin "${DEPLOY_BRANCH}"
-            git checkout "${DEPLOY_BRANCH}"
-            git pull --ff-only origin "${DEPLOY_BRANCH}"
-            mkdir -p incoming deploy/static
-            tar -xzf incoming/release-static.tar.gz -C .
-            tar -xzf incoming/release-deploy.tar.gz
-            rm -f incoming/release-static.tar.gz incoming/release-deploy.tar.gz
-            docker compose -f deploy/docker-compose.prod.yml --env-file deploy/.env build api
-            docker compose -f deploy/docker-compose.prod.yml --env-file deploy/.env run --rm api npx prisma migrate deploy
-            docker compose -f deploy/docker-compose.prod.yml --env-file deploy/.env up -d
-            docker compose -f deploy/docker-compose.prod.yml --env-file deploy/.env exec -T api node -e "fetch('http://127.0.0.1:4000/health').then((r)=>r.json()).then(console.log)"
+      - name: Deploy admin web to S3
+        run: |
+          aws s3 sync deploy/static/admin "s3://${ADMIN_BUCKET}" --delete --exclude "index.html" --cache-control "public,max-age=31536000,immutable"
+          aws s3 cp deploy/static/admin/index.html "s3://${ADMIN_BUCKET}/index.html" --cache-control "no-cache,no-store,must-revalidate"
+
+      - name: Deploy doctor web to S3
+        run: |
+          aws s3 sync deploy/static/doctor "s3://${DOCTOR_BUCKET}" --delete --exclude "index.html" --cache-control "public,max-age=31536000,immutable"
+          aws s3 cp deploy/static/doctor/index.html "s3://${DOCTOR_BUCKET}/index.html" --cache-control "no-cache,no-store,must-revalidate"
+
+      - name: Deploy operations web to S3
+        run: |
+          aws s3 sync deploy/static/operations "s3://${OPERATIONS_BUCKET}" --delete --exclude "index.html" --cache-control "public,max-age=31536000,immutable"
+          aws s3 cp deploy/static/operations/index.html "s3://${OPERATIONS_BUCKET}/index.html" --cache-control "no-cache,no-store,must-revalidate"
