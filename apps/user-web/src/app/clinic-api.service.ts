@@ -67,10 +67,12 @@ export class ClinicApiService {
     preferredDoctorUserId?: string | null;
   }) {
     return from(
-      this.client.apiFetch(API_PATHS.CONSULTATIONS, {
-        method: 'POST',
-        body: JSON.stringify(payload),
-      }),
+      this.client
+        .apiFetch<{ consultation: Record<string, unknown> }>(API_PATHS.CONSULTATIONS, {
+          method: 'POST',
+          body: JSON.stringify(payload),
+        })
+        .then((response) => ({ consultation: mapConsultationFromApi(response.consultation) })),
     );
   }
 
@@ -307,7 +309,7 @@ export class ClinicApiService {
         currency: order.currency,
         name: RAZORPAY_CHECKOUT.NAME,
         description: consultation.disease.name,
-        order_id: order.orderId,
+        order_id: order.orderId || '',
         prefill: {
           name: consultation.patient.name,
           contact: consultation.patient.mobile || '',

@@ -117,6 +117,12 @@ export class DashboardPaymentService {
 
     this.api.createPaymentOrder(consultation.id).subscribe({
       next: (order) => {
+        if (order.amountInPaise <= 0 || order.paidWithoutGateway) {
+          this.paymentFlowState.set('SUCCESS');
+          onSuccess();
+          onProcessingChange(false);
+          return;
+        }
         this.paymentFlowState.set('OPENING_CHECKOUT');
         this.analytics.track(PRODUCT_ANALYTICS_EVENTS.PAYMENT_CHECKOUT_OPENED, {
           consultationId: consultation.id,

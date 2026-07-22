@@ -1,8 +1,9 @@
 export type RazorpayOrderResponse = {
-  orderId: string;
+  orderId: string | null;
   amountInPaise: number;
   currency: string;
   razorpayKeyId: string;
+  paidWithoutGateway?: boolean;
 };
 
 export type RazorpayCheckoutResponse = {

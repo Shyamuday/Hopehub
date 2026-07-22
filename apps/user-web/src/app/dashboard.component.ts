@@ -241,6 +241,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   onBooked(payload: BookConsultationPayload) {
     this.isProcessing.set(true);
+    let paymentStarted = false;
     this.api
       .createConsultation({
         diseaseId: payload.diseaseId,
@@ -255,9 +256,15 @@ export class DashboardComponent implements OnInit, OnDestroy {
         // ...(payload.clinicStoreId !== undefined ? { clinicStoreId: payload.clinicStoreId } : {}),
       })
       .subscribe({
-        next: () => {
-          this.showNotice('Consultation created. Complete payment to continue.');
+        next: ({ consultation }) => {
+          this.activeConsultation.set(consultation);
+          this.pendingConsultationId = consultation.id;
+          this.showNotice('Consultation created. Opening secure payment.');
           this.loadConsultations();
+          if (consultation.status === 'PAYMENT_PENDING') {
+            paymentStarted = true;
+            this.pay(consultation);
+          }
         },
         error: (error) => {
           this.isProcessing.set(false);
@@ -265,7 +272,11 @@ export class DashboardComponent implements OnInit, OnDestroy {
             error.error?.message || error.message || 'Could not create consultation.',
           );
         },
-        complete: () => this.isProcessing.set(false),
+        complete: () => {
+          if (!paymentStarted) {
+            this.isProcessing.set(false);
+          }
+        },
       });
   }
 
