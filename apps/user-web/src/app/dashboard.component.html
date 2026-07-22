@@ -24,9 +24,9 @@
               <h2>{{ disease.name }}</h2>
               <p>Book an online consultation for assessment, prescription where appropriate, and follow-up guidance.</p>
             } @else {
-              <p class="eyebrow">Book care</p>
-              <h2>Book a consultation</h2>
-              <p>Choose a health concern below and complete a short intake to get started.</p>
+              <p class="eyebrow">Online care</p>
+              <h2>Book online consultation</h2>
+              <p>Choose a consultation service and complete a short intake to get started.</p>
             }
           </div>
           @if (heroDisease(); as disease) {
@@ -67,6 +67,23 @@
             (selected)="setActive($event)"
             (pay)="pay($event)"
           />
+        </section>
+
+        <section class="panel online-care-launches">
+          <div class="online-care-launches-head">
+            <p class="eyebrow">More online care</p>
+            <h2>Webinars, programs, and courses</h2>
+          </div>
+          <div class="online-care-launch-grid">
+            @for (item of onlineCareLaunches; track item.title) {
+              <article class="online-care-launch-card">
+                <p class="eyebrow">{{ item.eyebrow }}</p>
+                <h3>{{ item.title }}</h3>
+                <p>{{ item.body }}</p>
+                <a [routerLink]="item.href">{{ item.actionLabel }}</a>
+              </article>
+            }
+          </div>
         </section>
 
         @if (activeConsultation()) {

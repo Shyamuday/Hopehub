@@ -3,7 +3,7 @@
       <div class="book-panel-head">
         <div>
           <p class="eyebrow">Online consultation</p>
-          <h2>Book Consultation</h2>
+          <h2>Book online consultation</h2>
           @if (selectedService(); as service) {
             <p class="muted">Selected service: <strong>{{ service.title }}</strong></p>
             @if (selectedServiceExpertLabel()) {
@@ -12,7 +12,7 @@
           } @else if (initialServiceTitle) {
             <p class="muted">Selected service: <strong>{{ initialServiceTitle }}</strong></p>
           } @else {
-            <p class="muted">Choose a service, share your health issue, and continue to secure payment.</p>
+            <p class="muted">Choose the consultation service, share your health issue, and continue to secure payment.</p>
           }
         </div>
         <div class="book-price-card">

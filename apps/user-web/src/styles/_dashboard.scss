@@ -61,6 +61,52 @@
   grid-template-columns: minmax(0, 1fr);
 }
 
+.online-care-launches {
+  display: grid;
+  gap: 1rem;
+}
+
+.online-care-launches-head h2 {
+  margin: 0.25rem 0 0;
+  color: #102033;
+}
+
+.online-care-launch-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.9rem;
+}
+
+.online-care-launch-card {
+  display: grid;
+  align-content: start;
+  gap: 0.55rem;
+  min-height: 12rem;
+  border: 1px solid #dbe3ee;
+  border-radius: 8px;
+  padding: 1rem;
+  background: #fbfdff;
+}
+
+.online-care-launch-card h3 {
+  margin: 0;
+  color: #102033;
+  font-size: 1rem;
+}
+
+.online-care-launch-card p:not(.eyebrow) {
+  margin: 0;
+  color: #526070;
+  line-height: 1.5;
+}
+
+.online-care-launch-card a {
+  align-self: end;
+  color: #1d4ed8;
+  font-weight: 700;
+  text-decoration: none;
+}
+
 .account-shortcut h2 {
   margin: 0.35rem 0 0.5rem;
 }
@@ -264,4 +310,10 @@
   font-family: ui-monospace, monospace;
   color: #4338ca;
   font-size: 0.85rem;
+}
+
+@media (max-width: 860px) {
+  .online-care-launch-grid {
+    grid-template-columns: 1fr;
+  }
 }

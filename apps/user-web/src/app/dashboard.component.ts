@@ -128,6 +128,29 @@ export class DashboardComponent implements OnInit, OnDestroy {
   readonly snoozeMinutes = signal(DEFAULT_SNOOZE_MINUTES);
   readonly walletBalanceInPaise = signal(0);
   private activeConsultationSocketId: string | null = null;
+  readonly onlineCareLaunches = [
+    {
+      eyebrow: 'Live sessions',
+      title: 'Upcoming webinars',
+      body: 'Join expert-led health sessions on prevention, chronic care, mental wellness, nutrition, and everyday health decisions.',
+      actionLabel: 'View webinars',
+      href: '/services',
+    },
+    {
+      eyebrow: 'Guided care',
+      title: 'Care programs',
+      body: 'Structured multi-week support for concerns that need repeated guidance, habit tracking, and expert follow-up.',
+      actionLabel: 'Explore programs',
+      href: '/services',
+    },
+    {
+      eyebrow: 'Learning',
+      title: 'Courses',
+      body: 'Practical health education modules for patients and families, launching alongside online expert care.',
+      actionLabel: 'Browse courses',
+      href: '/blog',
+    },
+  ];
 
   readonly doctorFormModel = signal({
     name: 'Dr. New Doctor',
