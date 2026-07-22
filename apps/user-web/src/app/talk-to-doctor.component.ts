@@ -12,11 +12,15 @@ import { WhatsappLinkService } from './core/services/whatsapp-link.service';
 import { environment } from '../environments/environment';
 import type { Disease } from './models';
 
-type OnlineDoctor = {
+type OnlineProvider = {
   userId: string;
   name: string;
   profileImageUrl?: string | null;
   specialty: string;
+  specialization?: string | null;
+  providerType?: string;
+  providerTypeLabel?: string;
+  providerCategory?: string;
   doctorTypeLabel: string;
   category: 'GENERALIST' | 'SPECIALIST';
   specialtyDiseaseIds: string[];
@@ -41,13 +45,15 @@ export class TalkToDoctorComponent implements OnInit, OnDestroy {
 
   readonly whatsappLink = this.whatsappSvc.url;
   readonly user = this.auth.user;
-  readonly doctors = signal<OnlineDoctor[]>([]);
+  readonly providers = signal<OnlineProvider[]>([]);
+  readonly doctors = this.providers;
   readonly diseases = signal<Disease[]>([]);
   readonly loading = signal(true);
   readonly booking = signal(false);
   readonly message = signal('');
   readonly error = signal('');
-  readonly selectedDoctor = signal<OnlineDoctor | null>(null);
+  readonly selectedProvider = signal<OnlineProvider | null>(null);
+  readonly selectedDoctor = this.selectedProvider;
 
   readonly formModel = signal({ diseaseId: '', concern: '' });
   readonly form = form(this.formModel);
@@ -58,19 +64,19 @@ export class TalkToDoctorComponent implements OnInit, OnDestroy {
     void this.load();
     this.socket = io(environment.apiUrl, { transports: ['websocket', 'polling'] });
     this.socket.emit(SOCKET_EVENTS.SUBSCRIBE_ONLINE_DOCTORS);
-    this.socket.on(SOCKET_EVENTS.DOCTOR_PRESENCE, (doctor: OnlineDoctor) => {
-      this.doctors.update((list) => {
-        const idx = list.findIndex((d) => d.userId === doctor.userId);
+    this.socket.on(SOCKET_EVENTS.DOCTOR_PRESENCE, (provider: OnlineProvider) => {
+      this.providers.update((list) => {
+        const idx = list.findIndex((d) => d.userId === provider.userId);
         if (idx >= 0) {
           const next = [...list];
-          next[idx] = doctor;
+          next[idx] = provider;
           return next;
         }
-        return [...list, doctor];
+        return [...list, provider];
       });
     });
     this.socket.on(SOCKET_EVENTS.DOCTOR_OFFLINE, (payload: { userId: string }) => {
-      this.doctors.update((list) => list.filter((d) => d.userId !== payload.userId));
+      this.providers.update((list) => list.filter((d) => d.userId !== payload.userId));
     });
   }
 
@@ -81,29 +87,41 @@ export class TalkToDoctorComponent implements OnInit, OnDestroy {
   private async load() {
     try {
       const [docRes, diseaseRes] = await Promise.all([
-        this.client.get<{ doctors: OnlineDoctor[] }>(API_PATHS.ONLINE_DOCTORS),
+        this.client.get<{ doctors?: OnlineProvider[]; providers?: OnlineProvider[] }>(
+          API_PATHS.ONLINE_PROVIDERS,
+        ),
         this.client.get<{ diseases: Disease[] }>(`${API_PATHS.DISEASES}?grouped=false`),
       ]);
-      this.doctors.set(docRes.doctors ?? []);
+      this.providers.set(docRes.providers ?? docRes.doctors ?? []);
       this.diseases.set(diseaseRes.diseases ?? []);
     } catch {
-      this.error.set('Could not load online doctors.');
+      this.error.set('Could not load online providers.');
     } finally {
       this.loading.set(false);
     }
   }
 
-  selectDoctor(doctor: OnlineDoctor | null) {
-    this.selectedDoctor.set(doctor);
+  selectProvider(provider: OnlineProvider | null) {
+    this.selectedProvider.set(provider);
   }
 
-  categoryLabel(doctor: OnlineDoctor) {
-    return doctor.category === 'SPECIALIST' ? 'Specialist' : 'General physician';
+  selectDoctor(provider: OnlineProvider | null) {
+    this.selectProvider(provider);
+  }
+
+  providerSpecialty(provider: OnlineProvider) {
+    return (
+      provider.specialization || provider.specialty || provider.providerTypeLabel || 'Provider'
+    );
+  }
+
+  categoryLabel(provider: OnlineProvider) {
+    return provider.category === 'SPECIALIST' ? 'Specialist' : 'General provider';
   }
 
   async startConsult() {
     if (!this.auth.isLoggedIn()) {
-      this.router.navigate(['/login'], { queryParams: { returnUrl: '/talk-to-doctor' } });
+      this.router.navigate(['/login'], { queryParams: { returnUrl: '/talk-to-provider' } });
       return;
     }
     const { diseaseId, concern } = this.formModel();
@@ -125,10 +143,10 @@ export class TalkToDoctorComponent implements OnInit, OnDestroy {
             diseaseId,
             consultationMode: 'INSTANT_ONLINE',
             clinicStoreId: null,
-            preferredDoctorUserId: this.selectedDoctor()?.userId ?? null,
+            preferredDoctorUserId: this.selectedProvider()?.userId ?? null,
             intakeAnswers: {
               'Main concern': concern.trim(),
-              'Consultation type': 'Instant online doctor',
+              'Consultation type': 'Instant online provider',
             },
             purchaseType: 'ONE_TIME',
           }),

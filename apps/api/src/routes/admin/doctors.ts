@@ -12,7 +12,10 @@ import {
   publicUserSelect,
   writeAuditLog
 } from '../../utils/helpers.js';
-import { enabledNotificationChannels, notificationService } from '../../services/notification-service.js';
+import {
+  enabledNotificationChannels,
+  notificationService
+} from '../../services/notification-service.js';
 import {
   doctorProfileSchema,
   doctorProfileSelect,
@@ -20,7 +23,10 @@ import {
   specialtyFocusLabel,
   toDoctorProfilePayload
 } from '../../constants/homeopathic-doctor-types.js';
-import { applyDoctorHrProfileFields, suggestedProbationEndDate } from '../../constants/doctor-hr-defaults.js';
+import {
+  applyDoctorHrProfileFields,
+  suggestedProbationEndDate
+} from '../../constants/doctor-hr-defaults.js';
 
 export function registerAdminDoctorRoutes(router: Router) {
   // ─── Doctors ──────────────────────────────────────────────────────────────────
@@ -35,7 +41,8 @@ export function registerAdminDoctorRoutes(router: Router) {
       const query = queryText(req, 'q').trim();
       const status = queryText(req, 'status').toUpperCase();
       const sortBy = queryText(req, 'sortBy');
-      const sortDirection = queryText(req, 'sortDirection').toLowerCase() === 'asc' ? 'asc' : 'desc';
+      const sortDirection =
+        queryText(req, 'sortDirection').toLowerCase() === 'asc' ? 'asc' : 'desc';
 
       const where = {
         role: Role.DOCTOR,
@@ -69,7 +76,10 @@ export function registerAdminDoctorRoutes(router: Router) {
         take: pageSize
       });
 
-      res.json({ doctors, pagination: { page, pageSize, total, totalPages: Math.max(1, Math.ceil(total / pageSize)) } });
+      res.json({
+        doctors,
+        pagination: { page, pageSize, total, totalPages: Math.max(1, Math.ceil(total / pageSize)) }
+      });
     })
   );
 
@@ -106,7 +116,10 @@ export function registerAdminDoctorRoutes(router: Router) {
         take: pageSize
       });
 
-      res.json({ pendingDoctors, pagination: { page, pageSize, total, totalPages: Math.max(1, Math.ceil(total / pageSize)) } });
+      res.json({
+        pendingDoctors,
+        pagination: { page, pageSize, total, totalPages: Math.max(1, Math.ceil(total / pageSize)) }
+      });
     })
   );
 
@@ -177,7 +190,12 @@ export function registerAdminDoctorRoutes(router: Router) {
         summary: body.isActive ? 'Doctor activated by admin.' : 'Doctor deactivated by admin.',
         metadata: { isActive: body.isActive }
       });
-      res.json({ doctor, message: body.isActive ? 'Doctor activated successfully.' : 'Doctor deactivated successfully.' });
+      res.json({
+        doctor,
+        message: body.isActive
+          ? 'Doctor activated successfully.'
+          : 'Doctor deactivated successfully.'
+      });
     })
   );
 
@@ -229,7 +247,11 @@ export function registerAdminDoctorRoutes(router: Router) {
         targetType: 'doctor',
         targetId: doctor.id,
         summary: 'Doctor account created by admin.',
-        metadata: { specialty: profilePayload.specialty, doctorType: profilePayload.doctorType }
+        metadata: {
+          specialty: profilePayload.specialty,
+          doctorType: profilePayload.doctorType,
+          providerType: profilePayload.providerType
+        }
       });
       res.status(201).json({ doctor });
     })
@@ -249,7 +271,20 @@ export function registerAdminDoctorRoutes(router: Router) {
           email: true,
           mobile: true,
           isActive: true,
-          doctorProfile: { select: { specialty: true, registrationNo: true, isAvailable: true, doctorType: true, specialtyFocus: true, designation: true, department: true } }
+          doctorProfile: {
+            select: {
+              specialty: true,
+              specialization: true,
+              registrationNo: true,
+              isAvailable: true,
+              providerType: true,
+              providerCategory: true,
+              doctorType: true,
+              specialtyFocus: true,
+              designation: true,
+              department: true
+            }
+          }
         }
       });
       if (!existing) return res.status(404).json({ message: 'Doctor not found' });
@@ -313,7 +348,11 @@ export function registerAdminDoctorRoutes(router: Router) {
             }
           }
         },
-        select: { ...publicUserSelect, isActive: true, doctorProfile: { select: doctorProfileSelect } }
+        select: {
+          ...publicUserSelect,
+          isActive: true,
+          doctorProfile: { select: doctorProfileSelect }
+        }
       });
       await writeAuditLog({
         actorId: req.user!.id,
@@ -329,6 +368,8 @@ export function registerAdminDoctorRoutes(router: Router) {
             mobile: existing.mobile,
             isActive: existing.isActive,
             specialty: existing.doctorProfile?.specialty ?? null,
+            specialization: existing.doctorProfile?.specialization ?? null,
+            providerType: existing.doctorProfile?.providerType ?? null,
             registrationNo: existing.doctorProfile?.registrationNo ?? null,
             isAvailable: existing.doctorProfile?.isAvailable ?? null,
             doctorType: existing.doctorProfile?.doctorType ?? null,
@@ -339,6 +380,8 @@ export function registerAdminDoctorRoutes(router: Router) {
             email: body.email,
             mobile: body.mobile || null,
             specialty: profilePayload.specialty,
+            specialization: profilePayload.specialization,
+            providerType: profilePayload.providerType,
             registrationNo: profilePayload.registrationNo,
             isAvailable: profilePayload.isAvailable,
             doctorType: profilePayload.doctorType,
@@ -372,9 +415,10 @@ export function registerAdminDoctorRoutes(router: Router) {
         action: 'doctor.website_order',
         targetType: 'doctor',
         targetId: doctorId,
-        summary: websiteOrder != null
-          ? `Doctor website order set to ${websiteOrder}.`
-          : 'Doctor website order cleared.'
+        summary:
+          websiteOrder != null
+            ? `Doctor website order set to ${websiteOrder}.`
+            : 'Doctor website order cleared.'
       });
 
       res.json({ message: 'Website order updated.' });

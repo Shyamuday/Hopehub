@@ -1,26 +1,26 @@
 
     <section class="public-shell">
-      <app-header [subtitle]="'Talk to a doctor now'" [whatsappLink]="whatsappLink()" [user]="user()" />
+      <app-header [subtitle]="'Talk to a provider now'" [whatsappLink]="whatsappLink()" [user]="user()" />
 
       <main class="content-page">
         <section class="page-hero panel">
           <p class="eyebrow">Instant consult</p>
-          <h1>Online doctors available now</h1>
-          <p>Chat and voice/video-call with a homeopathic doctor — like AstroTalk. Clinic appointments still work separately.</p>
+          <h1>Online providers available now</h1>
+          <p>Chat and voice/video-call with an available healthcare provider. Clinic appointments still work separately.</p>
           <p class="trust-link"><a routerLink="/patient/account/permissions">How we use camera &amp; microphone for calls — your privacy explained</a></p>
         </section>
 
         @if (loading()) {
-          <p class="loading-text">Loading online doctors…</p>
+          <p class="loading-text">Loading online providers...</p>
         } @else {
           <section class="panel">
-            <h2>Doctors online ({{ doctors().length }})</h2>
+            <h2>Providers online ({{ providers().length }})</h2>
             <div class="doctor-live-grid">
-              @for (doc of doctors(); track doc.userId) {
-                <article class="doctor-live-card" [class.selected]="selectedDoctor()?.userId === doc.userId" (click)="selectDoctor(doc)">
+              @for (doc of providers(); track doc.userId) {
+                <article class="doctor-live-card" [class.selected]="selectedProvider()?.userId === doc.userId" (click)="selectProvider(doc)">
                   <div class="live-badge">{{ doc.liveStatus === 'ON_CALL' ? 'On call' : 'Online' }}</div>
                   <h3>{{ doc.name }}</h3>
-                  <p class="meta">{{ doc.specialty }} · {{ categoryLabel(doc) }}</p>
+                  <p class="meta">{{ providerSpecialty(doc) }} · {{ categoryLabel(doc) }}</p>
                   @if (doc.bio) { <p class="bio">{{ doc.bio }}</p> }
                   <div class="tags">
                     @if (doc.acceptsChat) { <span>Chat</span> }
@@ -28,10 +28,10 @@
                   </div>
                 </article>
               } @empty {
-                <p>No doctors are live right now. Try again shortly or <a routerLink="/dashboard">book a clinic consultation</a>.</p>
+                <p>No providers are live right now. Try again shortly or <a routerLink="/dashboard">book a clinic consultation</a>.</p>
               }
             </div>
-            <button type="button" class="ghost" (click)="selectDoctor(null)">Match me with any available doctor</button>
+            <button type="button" class="ghost" (click)="selectProvider(null)">Match me with any available provider</button>
           </section>
 
           <section class="panel booking-panel">
@@ -49,10 +49,10 @@
               <label for="instant-concern">Describe briefly</label>
               <textarea id="instant-concern" rows="4" placeholder="Symptoms, duration, what you need help with…" [formField]="form.concern"></textarea>
             </div>
-            @if (selectedDoctor()) {
-              <p class="picked">Selected: <strong>{{ selectedDoctor()!.name }}</strong></p>
+            @if (selectedProvider()) {
+              <p class="picked">Selected: <strong>{{ selectedProvider()!.name }}</strong></p>
             } @else {
-              <p class="picked">We'll match you with the best available online doctor.</p>
+              <p class="picked">We'll match you with the best available online provider.</p>
             }
             <button type="button" class="primary" (click)="startConsult()" [disabled]="booking()">
               {{ booking() ? 'Starting…' : 'Consult now & pay' }}

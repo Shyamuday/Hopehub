@@ -7,7 +7,7 @@ import { environment } from '../../../../environments/environment';
 import { API_PATHS } from '../../../core/constants/api-paths.constants';
 import { AUTH_TOKEN_KEY } from '../../../core/constants/auth.constants';
 import type { DoctorProfileSummary } from '../../../core/constants/doctor-types.constants';
-import { DoctorSessionService } from '../../../core/services/doctor-session';
+import { ProviderSessionService } from '../../../core/services/provider-session';
 
 function emptyProfileModel() {
   return {
@@ -15,12 +15,13 @@ function emptyProfileModel() {
     email: '',
     mobile: '',
     specialty: '',
+    specialization: '',
     registrationNo: '',
     isAvailable: true,
     bio: '',
     yearsOfExperience: '' as number | '',
     focusAreasText: '',
-    defaultMethodOptionId: ''
+    defaultMethodOptionId: '',
   };
 }
 
@@ -28,14 +29,14 @@ function emptyProfileModel() {
   selector: 'app-profile-page',
   imports: [FormField, ProfileAvatarUploadComponent],
   templateUrl: './profile-page.html',
-  styleUrl: './profile-page.scss'
+  styleUrl: './profile-page.scss',
 })
 export class ProfilePage {
   private readonly http = inject(HttpClient);
-  private readonly session = inject(DoctorSessionService);
+  private readonly session = inject(ProviderSessionService);
   readonly apiBase = environment.apiUrl;
   readonly authTokenKey = AUTH_TOKEN_KEY;
-  readonly profileImageUploadPath = API_PATHS.DOCTOR.PROFILE_IMAGE;
+  readonly profileImageUploadPath = API_PATHS.PROVIDER.PROFILE_IMAGE;
   profileImageUrl: string | null = null;
 
   readonly profileModel = signal(emptyProfileModel());
@@ -67,14 +68,14 @@ export class ProfilePage {
               mobile?: string | null;
               doctorProfile?: DoctorProfileSummary | null;
             };
-          }>(`${this.apiBase}${API_PATHS.DOCTOR.PROFILE}`)
+          }>(`${this.apiBase}${API_PATHS.PROVIDER.PROFILE}`),
         ),
         firstValueFrom(
           this.http.get<{ options: Array<{ id: string; label: string }> }>(
-            `${this.apiBase}${API_PATHS.DOCTOR.PRESCRIPTION_OPTIONS}`,
-            { params: { type: 'METHOD' } }
-          )
-        )
+            `${this.apiBase}${API_PATHS.PROVIDER.PRESCRIPTION_OPTIONS}`,
+            { params: { type: 'METHOD' } },
+          ),
+        ),
       ]);
 
       this.methodOptions = methodsRes.options;
@@ -84,17 +85,22 @@ export class ProfilePage {
         email: profile.email || '',
         mobile: profile.mobile || '',
         specialty: profile.doctorProfile?.specialty || '',
+        specialization: profile.doctorProfile?.specialization || '',
         registrationNo: profile.doctorProfile?.registrationNo || '',
         isAvailable: profile.doctorProfile?.isAvailable ?? true,
         bio: profile.doctorProfile?.bio || '',
         yearsOfExperience: profile.doctorProfile?.yearsOfExperience ?? '',
         focusAreasText: (profile.doctorProfile?.focusAreas ?? []).join('\n'),
-        defaultMethodOptionId: profile.doctorProfile?.defaultMethodOptionId || ''
+        defaultMethodOptionId: profile.doctorProfile?.defaultMethodOptionId || '',
       });
-      this.doctorTypeLabel = profile.doctorProfile?.doctorTypeLabel || 'Doctor';
+      this.doctorTypeLabel =
+        profile.doctorProfile?.providerTypeLabel ||
+        profile.doctorProfile?.doctorTypeLabel ||
+        'Doctor';
       this.specialtyFocusLabel = profile.doctorProfile?.specialtyFocusLabel || '';
       this.showOnWebsite = profile.doctorProfile?.showOnWebsite ?? false;
-      this.profileImageUrl = (profile as { profileImageUrl?: string | null }).profileImageUrl ?? null;
+      this.profileImageUrl =
+        (profile as { profileImageUrl?: string | null }).profileImageUrl ?? null;
     } catch {
       this.error = 'Could not load profile.';
     } finally {
@@ -113,10 +119,11 @@ export class ProfilePage {
     this.saving = true;
     try {
       await firstValueFrom(
-        this.http.put(`${this.apiBase}${API_PATHS.DOCTOR.PROFILE}`, {
+        this.http.put(`${this.apiBase}${API_PATHS.PROVIDER.PROFILE}`, {
           name: form.name,
           mobile: form.mobile,
           specialty: form.specialty,
+          specialization: form.specialization,
           registrationNo: form.registrationNo,
           isAvailable: form.isAvailable,
           bio: form.bio.trim() || null,
@@ -125,8 +132,8 @@ export class ProfilePage {
             .split('\n')
             .map((s) => s.trim())
             .filter(Boolean),
-          defaultMethodOptionId: form.defaultMethodOptionId || null
-        })
+          defaultMethodOptionId: form.defaultMethodOptionId || null,
+        }),
       );
       await this.session.load(true);
       this.message = 'Profile updated successfully.';

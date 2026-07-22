@@ -130,12 +130,12 @@ export class RepertoryBrowserPage implements OnInit {
       const [repData, mmData] = await Promise.all([
         firstValueFrom(
           this.http.get<{ sources: RepertorySource[] }>(
-            `${this.apiBase}${API_PATHS.DOCTOR.REPERTORY_SOURCES}`,
+            `${this.apiBase}${API_PATHS.PROVIDER.REPERTORY_SOURCES}`,
           ),
         ),
         firstValueFrom(
           this.http.get<{ sources: MmSource[] }>(
-            `${this.apiBase}${API_PATHS.DOCTOR.REPERTORY_MM_SOURCES}`,
+            `${this.apiBase}${API_PATHS.PROVIDER.REPERTORY_MM_SOURCES}`,
           ),
         ),
       ]);
@@ -192,7 +192,7 @@ export class RepertoryBrowserPage implements OnInit {
         totalResults?: number;
         page?: number;
         totalPages?: number;
-      }>(`${this.apiBase}${API_PATHS.DOCTOR.REPERTORY_RUBRICS_SEARCH}`, {
+      }>(`${this.apiBase}${API_PATHS.PROVIDER.REPERTORY_RUBRICS_SEARCH}`, {
         params: {
           q,
           limit: '50',
@@ -215,7 +215,7 @@ export class RepertoryBrowserPage implements OnInit {
 
     const data = await firstValueFrom(
       this.http.get<{ results: MmSearchResult[]; totalResults?: number }>(
-        `${this.apiBase}${API_PATHS.DOCTOR.REPERTORY_MM_SEARCH}`,
+        `${this.apiBase}${API_PATHS.PROVIDER.REPERTORY_MM_SEARCH}`,
         {
           params: { q, sourceId, page: String(page), limit: '40' },
         },

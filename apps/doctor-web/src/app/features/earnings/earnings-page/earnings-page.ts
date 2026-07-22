@@ -11,7 +11,7 @@ import { formatPaise, paiseToK } from '../constants/earnings.constants';
   selector: 'app-earnings-page',
   imports: [FormField, DatePipe],
   templateUrl: './earnings-page.html',
-  styleUrl: './earnings-page.scss'
+  styleUrl: './earnings-page.scss',
 })
 export class EarningsPage implements OnInit {
   private http = inject(HttpClient);
@@ -38,10 +38,16 @@ export class EarningsPage implements OnInit {
     this.error.set('');
     try {
       const [payslipRes, summary] = await Promise.all([
-        firstValueFrom(this.http.get<any>(`${this.apiBase}${API_PATHS.DOCTOR.MY_PAYSLIP}`, { params: { month: this.monthModel().selectedMonth } })),
-        firstValueFrom(this.http.get<any>(`${this.apiBase}${API_PATHS.DOCTOR.PAYMENTS_SUMMARY}`, {
-          params: { month: this.monthModel().selectedMonth }
-        }))
+        firstValueFrom(
+          this.http.get<any>(`${this.apiBase}${API_PATHS.PROVIDER.MY_PAYSLIP}`, {
+            params: { month: this.monthModel().selectedMonth },
+          }),
+        ),
+        firstValueFrom(
+          this.http.get<any>(`${this.apiBase}${API_PATHS.PROVIDER.PAYMENTS_SUMMARY}`, {
+            params: { month: this.monthModel().selectedMonth },
+          }),
+        ),
       ]);
       this.payslip.set(payslipRes.payslip);
       this.history.set(payslipRes.history ?? []);

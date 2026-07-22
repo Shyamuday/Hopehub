@@ -2,20 +2,20 @@
     <div class="page">
       <div class="page-header">
         <div>
-          <h1 class="page-title">🩺 Doctors</h1>
-          <p class="page-sub">{{ doctors().length }} doctors in the system</p>
+          <h1 class="page-title">🩺 Providers</h1>
+          <p class="page-sub">{{ doctors().length }} providers in the system</p>
         </div>
       </div>
 
       @if (loading()) {
         <div class="loading-state">
           <div class="spinner-lg"></div>
-          <p>Loading doctors...</p>
+          <p>Loading providers...</p>
         </div>
       } @else if (doctors().length === 0) {
         <div class="empty-state">
           <div class="empty-icon">🩺</div>
-          <p>No doctors found</p>
+          <p>No providers found</p>
         </div>
       } @else {
         <div class="card-grid">
@@ -27,8 +27,8 @@
               </div>
 
               <div class="doc-name">{{ doc.name }}</div>
-              @if (doc.doctorTypeLabel) {
-                <div class="doc-type">{{ doc.doctorTypeLabel }}</div>
+              @if (doc.providerTypeLabel || doc.doctorTypeLabel) {
+                <div class="doc-type">{{ doc.providerTypeLabel || doc.doctorTypeLabel }}</div>
               }
               @if (doc.specialty) {
                 <div class="doc-specialty">🔬 {{ doc.specialty }}</div>
@@ -70,4 +70,4 @@
       (closed)="drawerOpen.set(false)"
       (saved)="onSaved($event)"
     />
-  
+

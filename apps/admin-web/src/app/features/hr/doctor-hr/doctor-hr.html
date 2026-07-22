@@ -1,8 +1,8 @@
 
     <div class="hr-page">
       <div class="hr-header">
-        <h1>🩺 Doctor HR Records</h1>
-        <p>Manage joining dates, shift schedules & employment letters for all doctors</p>
+        <h1>🩺 Provider HR Records</h1>
+        <p>Manage joining dates, shift schedules & employment letters for all providers</p>
       </div>
 
       @if (loading()) {
@@ -15,15 +15,15 @@
               <div class="doc-body">
                 <div class="doc-name">{{ doctorName(d) }}</div>
                 <div class="doc-meta">
-                  @if (d.doctorTypeLabel) {
-                    <span class="type-chip">{{ d.doctorTypeLabel }}</span>
+                  @if (d.providerTypeLabel || d.doctorTypeLabel) {
+                    <span class="type-chip">{{ d.providerTypeLabel || d.doctorTypeLabel }}</span>
                   }
                   <span class="specialty">{{ d.specialty }}</span>
                   <span class="status-dot" [style.color]="statusColor(d.employeeStatus)">●</span>
                   <span class="status-lbl">{{ d.employeeStatus }}</span>
                 </div>
                 <div class="doc-info-row">
-                  <span>{{ d.designation ?? 'Doctor' }}</span>
+                  <span>{{ d.designation ?? 'Provider' }}</span>
                   @if (d.workShift) { <span class="sep">|</span><span class="shift">{{ shiftLabel(d.workShift) }}</span> }
                 </div>
                 @if (d.joiningDate) {
@@ -37,7 +37,7 @@
 
         @if (doctors().length === 0) {
           <div class="empty">
-            <div>🩺</div><h3>No doctors found</h3><p>Add doctors first from the Doctors page.</p>
+            <div>🩺</div><h3>No providers found</h3><p>Add providers first from the Providers page.</p>
           </div>
         }
       }
@@ -51,7 +51,7 @@
             <div class="dh-avatar">{{ doctorName(selected()).charAt(0).toUpperCase() }}</div>
             <div class="dh-info">
               <div class="dh-name">{{ doctorName(selected()) }}</div>
-              <div class="dh-sub">{{ selected()?.doctorTypeLabel || selected()?.specialty }}</div>
+              <div class="dh-sub">{{ selected()?.providerTypeLabel || selected()?.doctorTypeLabel || selected()?.specialty }}</div>
             </div>
             <div class="dh-tabs">
               <button [class.active]="tab() === 'profile'" (click)="tab.set('profile')">Profile</button>
@@ -67,7 +67,7 @@
                 <div class="ftitle">Employment</div>
                 <div class="frow">
                   <div class="fg full">
-                    <label>Doctor type</label>
+                    <label>Homeopathy role</label>
                     <select [formField]="profileForm.doctorType">
                       @for (option of doctorTypeOptions; track option.value) {
                         <option [value]="option.value">{{ option.label }}</option>
@@ -273,4 +273,4 @@
         </div>
       </div>
     }
-  
+

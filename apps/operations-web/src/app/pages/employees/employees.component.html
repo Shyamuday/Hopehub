@@ -64,8 +64,8 @@
                 </div>
               </div>
               <div class="emp-name">{{ emp.name }}</div>
-              @if (emp.doctorTypeLabel) {
-                <div class="emp-type">{{ emp.doctorTypeLabel }}</div>
+              @if (emp.providerTypeLabel || emp.doctorTypeLabel) {
+                <div class="emp-type">{{ emp.providerTypeLabel || emp.doctorTypeLabel }}</div>
               }
               <div class="emp-role">{{ emp.designation ?? '—' }}</div>
               <div class="emp-dept text-muted">{{ emp.department ?? emp.storeName ?? '—' }}</div>
@@ -96,7 +96,7 @@
 
               <div class="emp-type-chip">
                 <span class="badge" [class]="emp.empType === 'DOCTOR' ? 'badge-blue' : 'badge-purple'">
-                  {{ emp.empType === 'DOCTOR' ? '🩺 Doctor' : '🏪 Staff' }}
+                  {{ emp.empType === 'DOCTOR' ? '🩺 Provider' : '🏪 Staff' }}
                 </span>
               </div>
             </div>
@@ -112,4 +112,4 @@
       (closed)="drawerOpen.set(false)"
       (saved)="onSaved($event)"
     />
-  
+

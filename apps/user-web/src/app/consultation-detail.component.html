@@ -4,7 +4,7 @@
         <h2>{{ consultation.disease.name }}</h2>
         <p class="muted">
           Patient: {{ consultation.patient.name }} |
-          Doctor: {{ consultation.assignedDoctor?.name || 'Not assigned' }}
+          Provider: {{ consultation.assignedDoctor?.name || 'Not assigned' }}
         </p>
 
         <h3>Intake answers</h3>

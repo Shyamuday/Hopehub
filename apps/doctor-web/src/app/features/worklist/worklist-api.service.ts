@@ -48,7 +48,7 @@ export class WorklistApiService {
     }
 
     return firstValueFrom(
-      this.http.get<WorklistResponse>(`${this.apiBase}${API_PATHS.DOCTOR.WORKLIST}`, { params }),
+      this.http.get<WorklistResponse>(`${this.apiBase}${API_PATHS.PROVIDER.WORKLIST}`, { params }),
     ).then((response) => {
       this.lastSnapshot = response;
       this.lastQueryKey = this.queryKey(view, q);

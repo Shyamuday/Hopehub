@@ -9,7 +9,11 @@ import {
 import { ONLINE_HEARTBEAT_TTL_MS } from '../constants/online-doctor.constants.js';
 import { SOCKET_EVENTS, SOCKET_ROOM_PREFIXES } from '../constants/socket.constants.js';
 import { prisma } from '../db.js';
-import { doctorTypeLabel, specialtyFocusLabel } from '../constants/homeopathic-doctor-types.js';
+import {
+  doctorTypeLabel,
+  providerTypeLabel,
+  specialtyFocusLabel
+} from '../constants/homeopathic-doctor-types.js';
 import { enrichWithProfileImageUrl, userProfileImagePath } from '../utils/profile-image-url.js';
 
 export function isHeartbeatFresh(lastHeartbeatAt: Date | null | undefined) {
@@ -43,6 +47,9 @@ const liveDoctorInclude = {
   doctor: {
     select: {
       specialty: true,
+      specialization: true,
+      providerType: true,
+      providerCategory: true,
       doctorType: true,
       specialtyFocus: true,
       bio: true,
@@ -66,6 +73,9 @@ export function mapLiveDoctor(session: {
   user: { id: string; name: string; profileImageKey: string | null; isActive: boolean };
   doctor: {
     specialty: string;
+    specialization: string | null;
+    providerType: import('@prisma/client').ProviderType;
+    providerCategory: import('@prisma/client').ProviderCategory;
     doctorType: import('@prisma/client').HomeopathicDoctorType;
     specialtyFocus: import('@prisma/client').HomeopathicSpecialtyFocus | null;
     bio: string | null;
@@ -84,6 +94,10 @@ export function mapLiveDoctor(session: {
     name: session.user.name,
     profileImageUrl,
     specialty: session.doctor.specialty,
+    specialization: session.doctor.specialization,
+    providerType: session.doctor.providerType,
+    providerCategory: session.doctor.providerCategory,
+    providerTypeLabel: providerTypeLabel(session.doctor.providerType),
     doctorTypeLabel: doctorTypeLabel(session.doctor.doctorType),
     specialtyFocusLabel: specialtyFocusLabel(session.doctor.specialtyFocus),
     category: session.category,
@@ -148,9 +162,11 @@ export async function setDoctorLiveStatus(
       liveStatus: payload.liveStatus,
       acceptsChat: payload.acceptsChat ?? session.acceptsChat,
       acceptsVoiceCall: payload.acceptsVoiceCall ?? session.acceptsVoiceCall,
-      lastHeartbeatAt: payload.liveStatus === LivePresenceStatus.OFFLINE ? session.lastHeartbeatAt : now,
+      lastHeartbeatAt:
+        payload.liveStatus === LivePresenceStatus.OFFLINE ? session.lastHeartbeatAt : now,
       wentLiveAt:
-        payload.liveStatus === LivePresenceStatus.ONLINE && session.liveStatus === LivePresenceStatus.OFFLINE
+        payload.liveStatus === LivePresenceStatus.ONLINE &&
+        session.liveStatus === LivePresenceStatus.OFFLINE
           ? now
           : payload.liveStatus === LivePresenceStatus.OFFLINE
             ? null
@@ -184,8 +200,13 @@ export function broadcastPresence(
 ) {
   const doctor = mapLiveDoctor(session);
   io.to(SOCKET_ROOM_PREFIXES.ONLINE_DOCTORS_WATCHERS).emit(SOCKET_EVENTS.DOCTOR_PRESENCE, doctor);
-  if (session.liveStatus === LivePresenceStatus.OFFLINE || !isHeartbeatFresh(session.lastHeartbeatAt)) {
-    io.to(SOCKET_ROOM_PREFIXES.ONLINE_DOCTORS_WATCHERS).emit(SOCKET_EVENTS.DOCTOR_OFFLINE, { userId: session.userId });
+  if (
+    session.liveStatus === LivePresenceStatus.OFFLINE ||
+    !isHeartbeatFresh(session.lastHeartbeatAt)
+  ) {
+    io.to(SOCKET_ROOM_PREFIXES.ONLINE_DOCTORS_WATCHERS).emit(SOCKET_EVENTS.DOCTOR_OFFLINE, {
+      userId: session.userId
+    });
   }
 }
 
@@ -208,7 +229,10 @@ export async function isDoctorLiveForInstant(userId: string, diseaseId: string) 
       lastHeartbeatAt: { gte: cutoff },
       user: { isActive: true },
       doctor: { isAvailable: true, employeeStatus: 'ACTIVE' },
-      OR: [{ category: OnlineDoctorCategory.GENERALIST }, { specialtyDiseaseIds: { has: diseaseId } }]
+      OR: [
+        { category: OnlineDoctorCategory.GENERALIST },
+        { specialtyDiseaseIds: { has: diseaseId } }
+      ]
     }
   });
   return Boolean(session);
@@ -216,9 +240,15 @@ export async function isDoctorLiveForInstant(userId: string, diseaseId: string) 
 
 export async function findBestLiveDoctor(diseaseId: string) {
   const doctors = await listLiveOnlineDoctors({ diseaseId });
-  const specialist = doctors.find((d) => d.category === OnlineDoctorCategory.SPECIALIST && d.liveStatus === LivePresenceStatus.ONLINE);
+  const specialist = doctors.find(
+    (d) =>
+      d.category === OnlineDoctorCategory.SPECIALIST && d.liveStatus === LivePresenceStatus.ONLINE
+  );
   if (specialist) return specialist.userId;
-  const generalist = doctors.find((d) => d.category === OnlineDoctorCategory.GENERALIST && d.liveStatus === LivePresenceStatus.ONLINE);
+  const generalist = doctors.find(
+    (d) =>
+      d.category === OnlineDoctorCategory.GENERALIST && d.liveStatus === LivePresenceStatus.ONLINE
+  );
   return generalist?.userId ?? null;
 }
 
@@ -230,7 +260,8 @@ export async function tryAssignInstantConsultation(io: SocketIoServer, consultat
       patient: { select: { id: true, name: true, mobile: true, email: true, patientCode: true } }
     }
   });
-  if (!consultation || consultation.consultationMode !== ConsultationMode.INSTANT_ONLINE) return null;
+  if (!consultation || consultation.consultationMode !== ConsultationMode.INSTANT_ONLINE)
+    return null;
   if (consultation.status !== ConsultationStatus.PAID || consultation.assignedDoctorId) return null;
 
   let doctorUserId = consultation.preferredDoctorUserId;
@@ -268,12 +299,15 @@ export async function tryAssignInstantConsultation(io: SocketIoServer, consultat
     consultationMode: ConsultationMode.INSTANT_ONLINE
   });
 
-  io.to(`${SOCKET_ROOM_PREFIXES.USER}${consultation.patientId}`).emit(SOCKET_EVENTS.CONSULTATION_UPDATED, {
-    consultationId: updated.id,
-    status: updated.status,
-    assignedDoctorId: doctor.id,
-    consultationMode: ConsultationMode.INSTANT_ONLINE
-  });
+  io.to(`${SOCKET_ROOM_PREFIXES.USER}${consultation.patientId}`).emit(
+    SOCKET_EVENTS.CONSULTATION_UPDATED,
+    {
+      consultationId: updated.id,
+      status: updated.status,
+      assignedDoctorId: doctor.id,
+      consultationMode: ConsultationMode.INSTANT_ONLINE
+    }
+  );
 
   return updated;
 }

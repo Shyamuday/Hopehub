@@ -12,7 +12,7 @@ import { AUTH_TOKEN_KEY } from '../../core/constants/auth.constants';
     <section class="page">
       <header class="hero">
         <h2>Notification inbox</h2>
-        <p class="muted">Alerts and updates for your doctor account.</p>
+        <p class="muted">Alerts and updates for your provider account.</p>
       </header>
       <app-notification-inbox [config]="inboxConfig" />
     </section>

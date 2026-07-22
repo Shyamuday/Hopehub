@@ -5,9 +5,14 @@ import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../environments/environment';
 
 interface PayrollRow {
-  id: string; empType: string; name: string;
-  designation: string | null; department: string | null;
-  grossPaise: number; leaveDays: number; netPaise: number;
+  id: string;
+  empType: string;
+  name: string;
+  designation: string | null;
+  department: string | null;
+  grossPaise: number;
+  leaveDays: number;
+  netPaise: number;
   employeeStatus: string;
 }
 
@@ -36,11 +41,13 @@ export class PayrollComponent implements OnInit {
 
   typeFilters = [
     { label: 'All', value: 'ALL' },
-    { label: '🩺 Doctors', value: 'DOCTOR' },
+    { label: '🩺 Providers', value: 'DOCTOR' },
     { label: '🏪 Staff', value: 'STORE_STAFF' }
   ];
 
-  ngOnInit(): void { this.load(); }
+  ngOnInit(): void {
+    this.load();
+  }
 
   load(): void {
     this.loading.set(true);
@@ -48,34 +55,57 @@ export class PayrollComponent implements OnInit {
       this.http.get<{ rows: PayrollRow[]; summary: any }>(`${this.base}/hr/payroll`, {
         params: { month: this.filterModel().month }
       })
-    ).then(r => { this.rows.set(r.rows); this.summary.set(r.summary); this.loading.set(false); })
-     .catch(() => this.loading.set(false));
+    )
+      .then((r) => {
+        this.rows.set(r.rows);
+        this.summary.set(r.summary);
+        this.loading.set(false);
+      })
+      .catch(() => this.loading.set(false));
   }
 
   filtered(): PayrollRow[] {
     const q = this.filterModel().q;
-    return this.rows().filter(r => {
+    return this.rows().filter((r) => {
       if (this.typeFilter() !== 'ALL' && r.empType !== this.typeFilter()) return false;
       if (q && !r.name.toLowerCase().includes(q.toLowerCase())) return false;
       return true;
     });
   }
 
-  fGross(): number { return this.filtered().reduce((a, r) => a + r.grossPaise, 0); }
-  fNet():   number { return this.filtered().reduce((a, r) => a + r.netPaise, 0); }
-  fLeave(): number { return this.filtered().reduce((a, r) => a + r.leaveDays, 0); }
+  fGross(): number {
+    return this.filtered().reduce((a, r) => a + r.grossPaise, 0);
+  }
+  fNet(): number {
+    return this.filtered().reduce((a, r) => a + r.netPaise, 0);
+  }
+  fLeave(): number {
+    return this.filtered().reduce((a, r) => a + r.leaveDays, 0);
+  }
 
   fmt(p: number): string {
-    return (p / 100).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+    return (p / 100).toLocaleString('en-IN', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    });
   }
 
   paise2k(p: number): string {
     const v = p / 100;
-    return v >= 100000 ? `${(v / 100000).toFixed(1)}L` : v >= 1000 ? `${(v / 1000).toFixed(1)}K` : String(Math.round(v));
+    return v >= 100000
+      ? `${(v / 100000).toFixed(1)}L`
+      : v >= 1000
+        ? `${(v / 1000).toFixed(1)}K`
+        : String(Math.round(v));
   }
 
   sc(s: string): string {
-    const m: Record<string,string> = { ACTIVE:'#4ade80', ON_LEAVE:'#fb923c', RESIGNED:'#94a3b8', TERMINATED:'#f87171' };
+    const m: Record<string, string> = {
+      ACTIVE: '#4ade80',
+      ON_LEAVE: '#fb923c',
+      RESIGNED: '#94a3b8',
+      TERMINATED: '#f87171'
+    };
     return m[s] ?? '#94a3b8';
   }
 
@@ -83,7 +113,9 @@ export class PayrollComponent implements OnInit {
     const month = this.filterModel().month;
     const lines = ['Name,Type,Designation,Department,Gross,Leave Days,Deduction,Net'];
     for (const r of this.filtered()) {
-      lines.push(`"${r.name}","${r.empType}","${r.designation??''}","${r.department??''}",${r.grossPaise/100},${r.leaveDays},${(r.grossPaise-r.netPaise)/100},${r.netPaise/100}`);
+      lines.push(
+        `"${r.name}","${r.empType}","${r.designation ?? ''}","${r.department ?? ''}",${r.grossPaise / 100},${r.leaveDays},${(r.grossPaise - r.netPaise) / 100},${r.netPaise / 100}`
+      );
     }
     const blob = new Blob([lines.join('\n')], { type: 'text/csv' });
     const a = document.createElement('a');

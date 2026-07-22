@@ -8,7 +8,14 @@ import { TOAST_DURATION_MS } from '../../../core/constants/timing.constants';
 import { Auth } from '../../../core/services/auth';
 import { SLOT_TEMPLATES, WEEKDAY_SHORT_LABELS } from '../constants/slot-templates.constants';
 
-interface Slot { id: string; date: string; startTime: string; endTime: string; isBooked: boolean; isBlocked: boolean; }
+interface Slot {
+  id: string;
+  date: string;
+  startTime: string;
+  endTime: string;
+  isBooked: boolean;
+  isBlocked: boolean;
+}
 
 function addMinutes(time: string, mins: number): string {
   const [h, m] = time.split(':').map(Number);
@@ -16,7 +23,11 @@ function addMinutes(time: string, mins: number): string {
   return `${String(Math.floor(total / 60)).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`;
 }
 
-function generateSlots(start: string, end: string, stepMins: number): { startTime: string; endTime: string }[] {
+function generateSlots(
+  start: string,
+  end: string,
+  stepMins: number,
+): { startTime: string; endTime: string }[] {
   const result: { startTime: string; endTime: string }[] = [];
   let cur = start;
   while (cur < end) {
@@ -32,7 +43,7 @@ function generateSlots(start: string, end: string, stepMins: number): { startTim
   selector: 'app-slots-page',
   imports: [FormField],
   templateUrl: './slots-page.html',
-  styleUrl: './slots-page.scss'
+  styleUrl: './slots-page.scss',
 })
 export class SlotsPage implements OnInit {
   private http = inject(HttpClient);
@@ -50,9 +61,13 @@ export class SlotsPage implements OnInit {
   readonly slotDraftForm = form(this.slotDraftModel);
   templates = SLOT_TEMPLATES;
 
-  ngOnInit(): void { this.load(); }
+  ngOnInit(): void {
+    this.load();
+  }
 
-  today(): string { return new Date().toISOString().slice(0, 10); }
+  today(): string {
+    return new Date().toISOString().slice(0, 10);
+  }
 
   mondayOf(d: Date): Date {
     const day = d.getDay();
@@ -67,7 +82,7 @@ export class SlotsPage implements OnInit {
       return {
         iso: d.toISOString().slice(0, 10),
         day: WEEKDAY_SHORT_LABELS[i],
-        num: String(d.getDate())
+        num: String(d.getDate()),
       };
     });
   }
@@ -86,31 +101,45 @@ export class SlotsPage implements OnInit {
     this.weekDates.set(this.buildWeek(d));
   }
 
-  selectDate(iso: string): void { this.selectedDate.set(iso); this.load(); }
+  selectDate(iso: string): void {
+    this.selectedDate.set(iso);
+    this.load();
+  }
 
   load(): void {
     this.loading.set(true);
     const token = this.auth.token();
     firstValueFrom(
-      this.http.get<{ slots: Slot[] }>(`${this.base}${API_PATHS.DOCTOR.SLOTS}`, {
+      this.http.get<{ slots: Slot[] }>(`${this.base}${API_PATHS.PROVIDER.SLOTS}`, {
         params: { date: this.selectedDate() },
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
+      }),
+    )
+      .then((r) => {
+        this.slots.set(r.slots);
+        this.loading.set(false);
       })
-    ).then(r => { this.slots.set(r.slots); this.loading.set(false); })
-     .catch(() => this.loading.set(false));
+      .catch(() => this.loading.set(false));
   }
 
   async addSlot(): Promise<void> {
     const { newStart, newEnd } = this.slotDraftModel();
     if (!newStart || !newEnd || newEnd <= newStart) {
-      this.showToast('Invalid time range'); return;
+      this.showToast('Invalid time range');
+      return;
     }
     const token = this.auth.token();
     try {
       await firstValueFrom(
-        this.http.post<{ slot: Slot }>(`${this.base}${API_PATHS.DOCTOR.SLOTS}`, {
-          date: this.selectedDate(), startTime: newStart, endTime: newEnd
-        }, { headers: { Authorization: `Bearer ${token}` } })
+        this.http.post<{ slot: Slot }>(
+          `${this.base}${API_PATHS.PROVIDER.SLOTS}`,
+          {
+            date: this.selectedDate(),
+            startTime: newStart,
+            endTime: newEnd,
+          },
+          { headers: { Authorization: `Bearer ${token}` } },
+        ),
       );
       this.load();
     } catch (e: any) {
@@ -125,23 +154,33 @@ export class SlotsPage implements OnInit {
     for (const s of slotsToCreate) {
       try {
         await firstValueFrom(
-          this.http.post(`${this.base}${API_PATHS.DOCTOR.SLOTS}`, {
-            date: this.selectedDate(), startTime: s.startTime, endTime: s.endTime
-          }, { headers: { Authorization: `Bearer ${token}` } })
+          this.http.post(
+            `${this.base}${API_PATHS.PROVIDER.SLOTS}`,
+            {
+              date: this.selectedDate(),
+              startTime: s.startTime,
+              endTime: s.endTime,
+            },
+            { headers: { Authorization: `Bearer ${token}` } },
+          ),
         );
         added++;
-      } catch { /* skip existing */ }
+      } catch {
+        /* skip existing */
+      }
     }
     this.showToast(`Added ${added} slot${added !== 1 ? 's' : ''} ✓`);
     this.load();
   }
 
   async clearDay(): Promise<void> {
-    const openSlots = this.slots().filter(s => !s.isBooked);
+    const openSlots = this.slots().filter((s) => !s.isBooked);
     const token = this.auth.token();
     for (const s of openSlots) {
       await firstValueFrom(
-        this.http.delete(`${this.base}${API_PATHS.DOCTOR.SLOTS}/${s.id}`, { headers: { Authorization: `Bearer ${token}` } })
+        this.http.delete(`${this.base}${API_PATHS.PROVIDER.SLOTS}/${s.id}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
       ).catch(() => {});
     }
     this.showToast('Day cleared');
@@ -151,7 +190,11 @@ export class SlotsPage implements OnInit {
   async toggleBlock(s: Slot): Promise<void> {
     const token = this.auth.token();
     await firstValueFrom(
-      this.http.patch(`${this.base}${API_PATHS.DOCTOR.SLOTS}/${s.id}`, { isBlocked: !s.isBlocked }, { headers: { Authorization: `Bearer ${token}` } })
+      this.http.patch(
+        `${this.base}${API_PATHS.PROVIDER.SLOTS}/${s.id}`,
+        { isBlocked: !s.isBlocked },
+        { headers: { Authorization: `Bearer ${token}` } },
+      ),
     );
     this.load();
   }
@@ -159,9 +202,11 @@ export class SlotsPage implements OnInit {
   async deleteSlot(id: string): Promise<void> {
     const token = this.auth.token();
     await firstValueFrom(
-      this.http.delete(`${this.base}${API_PATHS.DOCTOR.SLOTS}/${id}`, { headers: { Authorization: `Bearer ${token}` } })
+      this.http.delete(`${this.base}${API_PATHS.PROVIDER.SLOTS}/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      }),
     );
-    this.slots.update(list => list.filter(s => s.id !== id));
+    this.slots.update((list) => list.filter((s) => s.id !== id));
   }
 
   private showToast(msg: string): void {

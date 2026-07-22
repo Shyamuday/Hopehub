@@ -30,7 +30,7 @@ const baseDiseases: DiseaseInfo[] = [
   liverCirrhosisDiseaseInfo,
   pilesDiseaseInfo,
   sexualHealthDiseaseInfo,
-  mentalHealthDiseaseInfo
+  mentalHealthDiseaseInfo,
 ];
 
 function buildDiseaseSeo(disease: DiseaseInfo): DiseaseInfo['seo'] {
@@ -39,22 +39,25 @@ function buildDiseaseSeo(disease: DiseaseInfo): DiseaseInfo['seo'] {
     `${disease.shortName} treatment`,
     `${disease.shortName} consultation`,
     'HopeHub Care and Research Centre',
-    'online doctor consultation',
+    'online provider consultation',
     'digital clinic',
     'chronic care',
-    'homeopathy-led care'
+    'provider-led care',
   ];
 
   return {
     metaTitle: `${disease.name} Treatment | HopeHub Care and Research Centre`,
     metaDescription:
-      disease.summary || disease.about || `Learn about ${disease.name} treatment and care approach at HopeHub Care and Research Centre.`,
+      disease.summary ||
+      disease.about ||
+      `Learn about ${disease.name} treatment and care approach at HopeHub Care and Research Centre.`,
     keywords: Array.from(new Set(defaultKeywords)),
     ogTitle: `${disease.name} Care | HopeHub Care and Research Centre`,
     ogDescription:
-      disease.summary || `Doctor-led consultation and care approach for ${disease.name} at HopeHub Care and Research Centre.`,
+      disease.summary ||
+      `Provider-led consultation and care approach for ${disease.name} at HopeHub Care and Research Centre.`,
     ogImage: disease.imageUrl,
-    canonicalPath: `/treatments/${disease.slug}`
+    canonicalPath: `/treatments/${disease.slug}`,
   };
 }
 
@@ -62,6 +65,6 @@ export const diseaseInfos: DiseaseInfo[] = baseDiseases.map((disease) => ({
   ...disease,
   seo: {
     ...buildDiseaseSeo(disease),
-    ...(disease.seo || {})
-  }
+    ...(disease.seo || {}),
+  },
 }));

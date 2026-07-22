@@ -554,6 +554,70 @@
   margin: 0;
 }
 
+.provider-filter-panel {
+  display: grid;
+  gap: 1rem;
+}
+
+.provider-filter-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+
+  h2 {
+    margin: 0.15rem 0 0;
+    color: #102033;
+    font-size: 1.15rem;
+  }
+}
+
+.provider-result-count {
+  margin: 0;
+  color: #526070;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.provider-filter-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.85rem;
+
+  label {
+    display: grid;
+    gap: 0.35rem;
+    color: #334155;
+    font-size: 0.82rem;
+    font-weight: 700;
+  }
+
+  input,
+  select {
+    width: 100%;
+    min-height: 44px;
+    border: 1px solid #d7e0ea;
+    border-radius: 8px;
+    background: #fff;
+    color: #102033;
+    padding: 0.65rem 0.75rem;
+    font: inherit;
+  }
+}
+
+.provider-filter-reset {
+  width: fit-content;
+  min-height: 40px;
+  border: 1px solid #c9d7e5;
+  border-radius: 8px;
+  background: #fff;
+  color: #174ea6;
+  padding: 0.55rem 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
 .doctor-step-card {
   display: flex;
   gap: 1rem;
@@ -904,6 +968,10 @@
   .doctor-card {
     flex-direction: column;
     gap: 0.85rem;
+  }
+
+  .provider-filter-grid {
+    grid-template-columns: 1fr;
   }
 
   .testimonials-stats {

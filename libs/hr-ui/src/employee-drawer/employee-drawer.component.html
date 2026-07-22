@@ -15,10 +15,10 @@
                 {{ employee!.employeeStatus }}
               </span>
               <span class="badge" [class]="employee!.empType === 'DOCTOR' ? 'badge-blue' : 'badge-purple'">
-                {{ employee!.empType === 'DOCTOR' ? '🩺 Doctor' : '🏪 Staff' }}
+                {{ employee!.empType === 'DOCTOR' ? '🩺 Provider' : '🏪 Staff' }}
               </span>
-              @if (isDoctor() && employee!.doctorTypeLabel) {
-                <span class="badge badge-type">{{ employee!.doctorTypeLabel }}</span>
+              @if (isDoctor() && (employee!.providerTypeLabel || employee!.doctorTypeLabel)) {
+                <span class="badge badge-type">{{ employee!.providerTypeLabel || employee!.doctorTypeLabel }}</span>
               }
             </div>
           </div>
@@ -44,11 +44,11 @@
                 </div>
                 <div class="form-group">
                   <label class="form-label">Designation</label>
-                  <input class="form-input" [formField]="employeeForm.designation" placeholder="Senior Doctor" />
+                  <input class="form-input" [formField]="employeeForm.designation" placeholder="Senior Provider" />
                 </div>
                 @if (isDoctor()) {
                   <div class="form-group full-width">
-                    <label class="form-label">Doctor type</label>
+                    <label class="form-label">Homeopathy role</label>
                     <select class="form-input" [formField]="employeeForm.doctorType">
                       @for (option of doctorTypeOptions; track option.value) {
                         <option [value]="option.value">{{ option.label }}</option>
@@ -295,4 +295,4 @@
         }
       </div>
     }
-  
+

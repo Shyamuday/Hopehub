@@ -67,7 +67,7 @@ export class DashboardHome {
     try {
       this.summary.set(
         await firstValueFrom(
-          this.http.get<PaymentSummary>(`${this.apiBase}${API_PATHS.DOCTOR.PAYMENTS_SUMMARY}`),
+          this.http.get<PaymentSummary>(`${this.apiBase}${API_PATHS.PROVIDER.PAYMENTS_SUMMARY}`),
         ),
       );
     } catch {

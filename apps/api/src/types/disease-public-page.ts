@@ -1,5 +1,19 @@
 import { z } from 'zod';
 
+export const publicPageStatusSchema = z.enum(['DRAFT', 'PUBLISHED', 'ARCHIVED']);
+
+export const diseasePublicSeoSchema = z
+  .object({
+    metaTitle: z.string().max(200).optional(),
+    metaDescription: z.string().max(500).optional(),
+    keywords: z.array(z.string().min(1).max(120)).optional(),
+    ogTitle: z.string().max(200).optional(),
+    ogDescription: z.string().max(500).optional(),
+    ogImage: z.string().url().max(500).optional(),
+    canonicalPath: z.string().max(200).optional()
+  })
+  .optional();
+
 export const diseaseStringListSchema = z.array(z.string().min(1)).optional();
 
 export const diseasePublicPageContentSchema = z.object({
@@ -48,7 +62,8 @@ export const diseasePublicPageContentSchema = z.object({
   references: diseaseStringListSchema,
   careApproach: diseaseStringListSchema,
   details: diseaseStringListSchema,
-  warning: z.string().max(2_000).optional()
+  warning: z.string().max(2_000).optional(),
+  seo: diseasePublicSeoSchema
 });
 
 export type DiseasePublicPageContent = z.infer<typeof diseasePublicPageContentSchema>;
@@ -110,9 +125,18 @@ export type StaticDiseasePageImport = {
 
 export const diseasePublicPageUpdateSchema = z.object({
   publicDescription: z.string().max(20_000).nullable().optional(),
-  publicImageUrl: z.string().url().max(500).nullable().optional().or(z.literal('').transform(() => null)),
+  publicImageUrl: z
+    .string()
+    .url()
+    .max(500)
+    .nullable()
+    .optional()
+    .or(z.literal('').transform(() => null)),
   seoTitle: z.string().max(200).nullable().optional(),
   seoDescription: z.string().max(500).nullable().optional(),
+  publicPageStatus: publicPageStatusSchema.optional(),
+  publicPagePublishedAt: z.coerce.date().nullable().optional(),
+  publicPageReviewedAt: z.coerce.date().nullable().optional(),
   publicFaq: z
     .array(z.object({ question: z.string().min(3), answer: z.string().min(3) }))
     .nullable()

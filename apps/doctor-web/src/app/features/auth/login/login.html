@@ -5,8 +5,8 @@
   </div>
 
   @if (mode() === 'signin') {
-    <h2>Doctor Login</h2>
-    <p>Use your doctor account to access dashboard and patient workflows.</p>
+    <h2>Provider Login</h2>
+    <p>Use your provider account to access dashboard and patient workflows.</p>
 
     <form (ngSubmit)="submit()">
       <label for="email">Email</label>
@@ -42,8 +42,8 @@
     </form>
 
   } @else {
-    <h2>Doctor Signup</h2>
-    <p>Create a doctor account with your specialty profile. Access starts after admin approval.</p>
+    <h2>Provider Signup</h2>
+    <p>Create a provider account with your specialty profile. Access starts after admin approval.</p>
 
     <form (ngSubmit)="enroll()">
       <label for="name">Full name</label>
@@ -55,10 +55,20 @@
       <label for="mobile">Mobile</label>
       <input id="mobile" [formField]="enrollForm.mobile" />
 
-      <label for="specialty">Specialty</label>
+      <label for="providerType">Provider type</label>
+      <select id="providerType" [formField]="enrollForm.providerType">
+        @for (option of providerTypeOptions; track option.value) {
+          <option [value]="option.value">{{ option.label }}</option>
+        }
+      </select>
+
+      <label for="specialization">Specialization</label>
+      <input id="specialization" [formField]="enrollForm.specialization" placeholder="e.g. Clinical Psychologist" />
+
+      <label for="specialty">Display specialty</label>
       <input id="specialty" [formField]="enrollForm.specialty" />
 
-      <label for="registrationNo">Registration number</label>
+      <label for="registrationNo">Registration/license number</label>
       <input id="registrationNo" [formField]="enrollForm.registrationNo" />
 
       <label for="enrollPassword">Password</label>

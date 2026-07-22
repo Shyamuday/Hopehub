@@ -61,7 +61,7 @@ export const DEFAULT_AUTHED_ROUTE = ROUTE_PATHS.DASHBOARD;
 
 export const NAV_ITEMS = [
   { path: adminNavPath(ROUTE_PATHS.DASHBOARD), label: 'Dashboard' },
-  { path: adminNavPath(ROUTE_PATHS.DOCTORS), label: 'Doctors' },
+  { path: adminNavPath(ROUTE_PATHS.DOCTORS), label: 'Providers' },
   { path: adminNavPath(ROUTE_PATHS.CONSUMERS), label: 'Consumers' },
   { path: adminNavPath(ROUTE_PATHS.SCAN), label: 'Scan patient' },
   { path: adminNavPath(ROUTE_PATHS.DISEASES), label: 'Diseases' },
@@ -74,7 +74,7 @@ export const NAV_ITEMS = [
   { path: adminNavPath(ROUTE_PATHS.BLOG), label: '📝 Blog' },
   { path: adminNavPath(ROUTE_PATHS.SITE_CONFIG), label: '⚙️ Site Settings' },
   { path: adminNavPath(ROUTE_PATHS.CHAT_INBOX), label: '💬 Visitor Leads' },
-  { path: adminNavPath(ROUTE_PATHS.HR), label: '🪪 Doctor HR' },
+  { path: adminNavPath(ROUTE_PATHS.HR), label: '🪪 Provider HR' },
   { path: adminNavPath(ROUTE_PATHS.HR_USERS), label: '👥 HR Managers' },
   { path: adminNavPath(ROUTE_PATHS.EMPLOYEES), label: '👥 Employees' },
   { path: adminNavPath(ROUTE_PATHS.LEAVES), label: '📋 Leaves' },
@@ -89,7 +89,7 @@ export const NAV_ITEMS = [
   { path: adminNavPath(ROUTE_PATHS.STAFF), label: '🛡️ Staff permissions' },
   { path: adminNavPath(ROUTE_PATHS.ECOSYSTEM_USERS), label: '🌐 Portal Users' },
   { path: adminNavPath(ROUTE_PATHS.CONSULTATIONS), label: '🩺 Consultations' },
-  { path: adminNavPath(ROUTE_PATHS.ONLINE_DOCTORS), label: '🟢 Online doctors' },
+  { path: adminNavPath(ROUTE_PATHS.ONLINE_DOCTORS), label: '🟢 Online providers' },
   { path: adminNavPath(ROUTE_PATHS.PAYMENTS), label: '💳 Payments' },
   { path: adminNavPath(ROUTE_PATHS.AUDIT), label: '📋 Audit Trail' },
   { path: adminNavPath(ROUTE_PATHS.SECURITY), label: '🛡️ Security' },

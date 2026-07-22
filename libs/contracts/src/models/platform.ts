@@ -97,6 +97,10 @@ export interface Employee {
   designation?: string;
   department?: string;
   specialty?: string;
+  specialization?: string | null;
+  providerType?: string;
+  providerTypeLabel?: string;
+  providerCategory?: string;
   doctorType?: string;
   doctorTypeLabel?: string;
   specialtyFocus?: string | null;
@@ -118,6 +122,10 @@ export interface Employee {
 export interface Doctor extends Employee {
   empType: 'DOCTOR';
   specialty?: string;
+  specialization?: string | null;
+  providerType?: string;
+  providerTypeLabel?: string;
+  providerCategory?: string;
   doctorType?: string;
   doctorTypeLabel?: string;
   specialtyFocus?: string | null;
@@ -192,5 +200,11 @@ export interface StoreInfo {
   phone?: string;
   isActive: boolean;
   _count?: { staff: number };
-  staff?: Array<{ id: string; name: string; email?: string; isActive: boolean; employeeStatus: EmployeeStatus }>;
+  staff?: Array<{
+    id: string;
+    name: string;
+    email?: string;
+    isActive: boolean;
+    employeeStatus: EmployeeStatus;
+  }>;
 }

@@ -14,6 +14,10 @@ export type OnlineDoctorProfile = {
   liveStatus: 'OFFLINE' | 'ONLINE' | 'BUSY' | 'ON_CALL';
   acceptsChat: boolean;
   acceptsVoiceCall: boolean;
+  providerType?: string;
+  providerTypeLabel?: string;
+  providerCategory?: string;
+  specialization?: string | null;
   specialty: string;
 };
 
@@ -28,21 +32,34 @@ export class OnlineDoctorService implements OnDestroy {
 
   loadProfile() {
     return firstValueFrom(
-      this.http.get<{ profile: OnlineDoctorProfile; diseases: Array<{ id: string; name: string }> }>(
-        `${this.apiBase}${API_PATHS.DOCTOR.ONLINE_PROFILE}`
-      )
+      this.http.get<{
+        profile: OnlineDoctorProfile;
+        diseases: Array<{ id: string; name: string }>;
+      }>(`${this.apiBase}${API_PATHS.PROVIDER.ONLINE_PROFILE}`),
     );
   }
 
-  saveProfile(payload: Partial<OnlineDoctorProfile> & { enabled?: boolean; specialtyDiseaseIds?: string[] }) {
+  saveProfile(
+    payload: Partial<OnlineDoctorProfile> & { enabled?: boolean; specialtyDiseaseIds?: string[] },
+  ) {
     return firstValueFrom(
-      this.http.put<{ profile: OnlineDoctorProfile }>(`${this.apiBase}${API_PATHS.DOCTOR.ONLINE_PROFILE}`, payload)
+      this.http.put<{ profile: OnlineDoctorProfile }>(
+        `${this.apiBase}${API_PATHS.PROVIDER.ONLINE_PROFILE}`,
+        payload,
+      ),
     );
   }
 
-  setLiveStatus(payload: { liveStatus: OnlineDoctorProfile['liveStatus']; acceptsChat?: boolean; acceptsVoiceCall?: boolean }) {
+  setLiveStatus(payload: {
+    liveStatus: OnlineDoctorProfile['liveStatus'];
+    acceptsChat?: boolean;
+    acceptsVoiceCall?: boolean;
+  }) {
     return firstValueFrom(
-      this.http.put<{ profile: OnlineDoctorProfile }>(`${this.apiBase}${API_PATHS.DOCTOR.ONLINE_STATUS}`, payload)
+      this.http.put<{ profile: OnlineDoctorProfile }>(
+        `${this.apiBase}${API_PATHS.PROVIDER.ONLINE_STATUS}`,
+        payload,
+      ),
     );
   }
 
@@ -53,7 +70,9 @@ export class OnlineDoctorService implements OnDestroy {
     this.socket = io(this.apiBase, { auth: { token }, transports: ['websocket', 'polling'] });
     this.heartbeatTimer = setInterval(() => {
       this.socket?.emit('doctor:heartbeat');
-      void firstValueFrom(this.http.post(`${this.apiBase}${API_PATHS.DOCTOR.ONLINE_HEARTBEAT}`, {})).catch(() => undefined);
+      void firstValueFrom(
+        this.http.post(`${this.apiBase}${API_PATHS.PROVIDER.ONLINE_HEARTBEAT}`, {}),
+      ).catch(() => undefined);
     }, 30_000);
   }
 
@@ -78,7 +97,7 @@ export class OnlineDoctorService implements OnDestroy {
           disease: { id: string; name: string };
           updatedAt: string;
         }>;
-      }>(`${this.apiBase}${API_PATHS.DOCTOR.INSTANT_CONSULTATIONS}`)
+      }>(`${this.apiBase}${API_PATHS.PROVIDER.INSTANT_CONSULTATIONS}`),
     );
   }
 

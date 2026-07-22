@@ -2,17 +2,17 @@ import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
   appId: 'com.hopehubclinic.doctor',
-  appName: 'HopeHub Doctor',
+  appName: 'HopeHub Provider',
   webDir: 'dist/doctor-web/browser',
   server: {
-    androidScheme: 'https'
+    androidScheme: 'https',
   },
   plugins: {
     PushNotifications: {
-      presentationOptions: ['badge', 'sound', 'alert']
+      presentationOptions: ['badge', 'sound', 'alert'],
     },
-    Camera: {}
-  }
+    Camera: {},
+  },
 };
 
 export default config;

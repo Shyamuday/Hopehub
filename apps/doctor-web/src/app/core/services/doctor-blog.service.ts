@@ -25,19 +25,33 @@ export class DoctorBlogService {
 
   listPosts() {
     return firstValueFrom(
-      this.http.get<{ posts: DoctorBlogPost[]; categories: string[] }>(`${this.apiBase}${API_PATHS.DOCTOR.BLOG}`)
+      this.http.get<{ posts: DoctorBlogPost[]; categories: string[] }>(
+        `${this.apiBase}${API_PATHS.PROVIDER.BLOG}`,
+      ),
     );
   }
 
   createPost(payload: Record<string, unknown>) {
-    return firstValueFrom(this.http.post<{ post: DoctorBlogPost; message: string }>(`${this.apiBase}${API_PATHS.DOCTOR.BLOG}`, payload));
+    return firstValueFrom(
+      this.http.post<{ post: DoctorBlogPost; message: string }>(
+        `${this.apiBase}${API_PATHS.PROVIDER.BLOG}`,
+        payload,
+      ),
+    );
   }
 
   updatePost(id: string, payload: Record<string, unknown>) {
-    return firstValueFrom(this.http.patch<{ post: DoctorBlogPost; message: string }>(`${this.apiBase}${API_PATHS.DOCTOR.BLOG_BY_ID(id)}`, payload));
+    return firstValueFrom(
+      this.http.patch<{ post: DoctorBlogPost; message: string }>(
+        `${this.apiBase}${API_PATHS.PROVIDER.BLOG_BY_ID(id)}`,
+        payload,
+      ),
+    );
   }
 
   deletePost(id: string) {
-    return firstValueFrom(this.http.delete<{ message: string }>(`${this.apiBase}${API_PATHS.DOCTOR.BLOG_BY_ID(id)}`));
+    return firstValueFrom(
+      this.http.delete<{ message: string }>(`${this.apiBase}${API_PATHS.PROVIDER.BLOG_BY_ID(id)}`),
+    );
   }
 }

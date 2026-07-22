@@ -251,6 +251,10 @@ export type Consultation = {
 export type Doctor = User & {
   isActive: boolean;
   doctorProfile?: {
+    providerType?: string;
+    providerTypeLabel?: string;
+    providerCategory?: string;
+    specialization?: string | null;
     specialty: string;
     registrationNo?: string | null;
     isAvailable: boolean;

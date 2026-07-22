@@ -2,7 +2,7 @@
   <app-header subtitle="Instant consult" [whatsappLink]="whatsappLink()" [user]="user()" />
 
   <main class="content-page instant-room">
-    <a class="back-link" routerLink="/talk-to-doctor">← Talk to doctor</a>
+    <a class="back-link" routerLink="/talk-to-provider">Back to providers</a>
 
     @if (loading()) {
       <p class="loading-text">Loading your consult room…</p>
@@ -17,10 +17,10 @@
           </button>
         }
         @if (roomPhase() === 'waiting') {
-          <p class="hint">A doctor will join shortly. Keep this page open.</p>
+          <p class="hint">A provider will join shortly. Keep this page open.</p>
         }
         @if (active.assignedDoctor; as doctor) {
-          <p class="doctor-line">Doctor: <strong>{{ doctor.name }}</strong></p>
+          <p class="doctor-line">Provider: <strong>{{ doctor.name }}</strong></p>
         }
       </section>
 
@@ -48,7 +48,7 @@
     } @else {
       <section class="panel empty">
         <h1>Consultation not found</h1>
-        <a routerLink="/talk-to-doctor">Start a new consult</a>
+        <a routerLink="/talk-to-provider">Start a new consult</a>
       </section>
     }
   </main>

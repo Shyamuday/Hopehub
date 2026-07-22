@@ -1,7 +1,13 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import type { Server as SocketIoServer } from 'socket.io';
-import { LivePresenceStatus, OnlineDoctorCategory, Role, ConsultationMode, ConsultationStatus } from '@prisma/client';
+import {
+  LivePresenceStatus,
+  OnlineDoctorCategory,
+  Role,
+  ConsultationMode,
+  ConsultationStatus
+} from '@prisma/client';
 import { authRequired, allowRoles } from '../auth.js';
 import { getPublicIceServers } from '../constants/rtc.constants.js';
 import { prisma } from '../db.js';
@@ -20,10 +26,13 @@ export function createOnlineDoctorsRouter(io: SocketIoServer) {
   router.get(
     '/online-doctors',
     asyncRoute(async (req, res) => {
-      const diseaseId = typeof req.query['diseaseId'] === 'string' ? req.query['diseaseId'] : undefined;
-      const categoryRaw = typeof req.query['category'] === 'string' ? req.query['category'] : undefined;
+      const diseaseId =
+        typeof req.query['diseaseId'] === 'string' ? req.query['diseaseId'] : undefined;
+      const categoryRaw =
+        typeof req.query['category'] === 'string' ? req.query['category'] : undefined;
       const category =
-        categoryRaw === OnlineDoctorCategory.GENERALIST || categoryRaw === OnlineDoctorCategory.SPECIALIST
+        categoryRaw === OnlineDoctorCategory.GENERALIST ||
+        categoryRaw === OnlineDoctorCategory.SPECIALIST
           ? categoryRaw
           : undefined;
 
@@ -47,6 +56,9 @@ export function createOnlineDoctorsRouter(io: SocketIoServer) {
           doctor: {
             select: {
               specialty: true,
+              specialization: true,
+              providerType: true,
+              providerCategory: true,
               doctorType: true,
               specialtyFocus: true,
               bio: true,
@@ -94,6 +106,9 @@ export function createOnlineDoctorsRouter(io: SocketIoServer) {
           doctor: {
             select: {
               specialty: true,
+              specialization: true,
+              providerType: true,
+              providerCategory: true,
               doctorType: true,
               specialtyFocus: true,
               bio: true,
@@ -231,6 +246,9 @@ export function createOnlineDoctorsRouter(io: SocketIoServer) {
             doctor: {
               select: {
                 specialty: true,
+                specialization: true,
+                providerType: true,
+                providerCategory: true,
                 doctorType: true,
                 specialtyFocus: true,
                 bio: true,
@@ -243,7 +261,10 @@ export function createOnlineDoctorsRouter(io: SocketIoServer) {
           orderBy: [{ enabled: 'desc' }, { updatedAt: 'desc' }]
         }),
         prisma.consultation.findMany({
-          where: { consultationMode: 'INSTANT_ONLINE', status: { in: ['PAID', 'ASSIGNED', 'IN_PROGRESS'] } },
+          where: {
+            consultationMode: 'INSTANT_ONLINE',
+            status: { in: ['PAID', 'ASSIGNED', 'IN_PROGRESS'] }
+          },
           include: {
             patient: { select: { id: true, name: true, patientCode: true } },
             disease: { select: { name: true } },

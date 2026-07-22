@@ -24,7 +24,10 @@ export class Auth {
 
     try {
       const response = await firstValueFrom(
-        this.http.post<{ token: string }>(`${this.apiBase}${AUTH_PATHS.STAFF_LOGIN}`, { email, password })
+        this.http.post<{ token: string }>(`${this.apiBase}${AUTH_PATHS.STAFF_LOGIN}`, {
+          email,
+          password,
+        }),
       );
 
       localStorage.setItem(this.tokenKey, response.token);
@@ -34,29 +37,38 @@ export class Auth {
     }
   }
 
-  async enrollDoctor(payload: {
+  async enrollProvider(payload: {
     name: string;
     email: string;
     mobile?: string;
     password: string;
-    specialty: string;
+    providerType?: string;
+    specialization?: string;
+    specialty?: string;
     registrationNo?: string;
   }) {
-    if (!payload.name || !payload.email || !payload.password || !payload.specialty) {
+    if (!payload.name || !payload.email || !payload.password) {
       return { ok: false as const, message: AUTH_MESSAGES.ENROLL_REQUIRED_FIELDS };
     }
 
     try {
       const response = await firstValueFrom(
-        this.http.post<{ message?: string }>(`${this.apiBase}${AUTH_PATHS.DOCTOR_ENROLL}`, payload)
+        this.http.post<{ message?: string }>(
+          `${this.apiBase}${AUTH_PATHS.PROVIDER_ENROLL}`,
+          payload,
+        ),
       );
       return {
         ok: true as const,
-        message: response.message || AUTH_MESSAGES.ENROLL_DEFAULT_SUCCESS
+        message: response.message || AUTH_MESSAGES.ENROLL_DEFAULT_SUCCESS,
       };
     } catch (error: any) {
       return { ok: false as const, message: error?.error?.message || AUTH_MESSAGES.ENROLL_FAILED };
     }
+  }
+
+  enrollDoctor(payload: Parameters<Auth['enrollProvider']>[0]) {
+    return this.enrollProvider(payload);
   }
 
   applyDevLogin(token: string) {

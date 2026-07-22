@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { doctorAuthGuard } from './core/guards/doctor-auth-guard';
+import { providerAuthGuard } from './core/guards/provider-auth-guard';
 import { ROUTE_PATHS } from './core/constants/app-routes.constants';
 import { Login } from './features/auth/login/login';
 import { DoctorShell } from './layout/doctor-shell/doctor-shell';
@@ -25,7 +25,7 @@ export const routes: Routes = [
   {
     path: '',
     component: DoctorShell,
-    canActivate: [doctorAuthGuard],
+    canActivate: [providerAuthGuard],
     children: [
       { path: '', pathMatch: 'full', redirectTo: ROUTE_PATHS.WORKLIST },
       { path: ROUTE_PATHS.WORKLIST, component: WorklistPage },

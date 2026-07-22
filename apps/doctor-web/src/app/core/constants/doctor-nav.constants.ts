@@ -3,6 +3,7 @@ import {
   capabilitiesForDoctorType,
   type DoctorCapabilities,
   type HomeopathicDoctorType,
+  type ProviderType,
 } from './doctor-types.constants';
 
 export type DoctorNavChildLink = {
@@ -52,8 +53,11 @@ export const DOCTOR_NAV_ICONS: Record<string, { icon: string; shortLabel: string
 
 const MOBILE_BOTTOM_NAV_LABELS = ['Worklist', 'Case Analysis', 'Patients'] as const;
 
-export function navItemsForDoctorType(type?: HomeopathicDoctorType | null): DoctorNavItemDef[] {
-  const capabilities = capabilitiesForDoctorType(type);
+export function navItemsForDoctorType(
+  type?: HomeopathicDoctorType | null,
+  providerType?: ProviderType | null,
+): DoctorNavItemDef[] {
+  const capabilities = capabilitiesForDoctorType(type, providerType);
   return buildDoctorNav(capabilities);
 }
 
@@ -126,28 +130,28 @@ function buildDoctorNav(capabilities: DoctorCapabilities): DoctorNavItemDef[] {
       label: 'Clinical',
       icon: DOCTOR_NAV_ICONS['Clinical'].icon,
       shortLabel: DOCTOR_NAV_ICONS['Clinical'].shortLabel,
-      enabled: capabilities.caseAnalysis,
+      enabled: capabilities.caseAnalysis || capabilities.sessionNotes,
       defaultExpanded: true,
       children: [
         {
           id: 'case-analysis',
-          label: 'Case Analysis',
+          label: capabilities.caseAnalysis ? 'Case Analysis' : 'Session Notes',
           path: `/${ROUTE_PATHS.CASE_ANALYSIS_STUDIO}`,
-          enabled: capabilities.caseAnalysis,
+          enabled: capabilities.caseAnalysis || capabilities.sessionNotes,
           showInBottomNav: true,
         },
         {
           id: 'repertory-browser',
           label: 'Repertory lookup',
           path: `/${ROUTE_PATHS.REPERTORY_BROWSER}`,
-          enabled: capabilities.caseAnalysis,
+          enabled: capabilities.repertory,
         },
         {
           id: 'materia-medica',
           label: 'Materia Medica',
           path: `/${ROUTE_PATHS.REPERTORY_BROWSER}`,
           queryParams: { mode: 'materia-medica' },
-          enabled: capabilities.caseAnalysis,
+          enabled: capabilities.repertory,
         },
         {
           id: 'patients',
@@ -164,7 +168,7 @@ function buildDoctorNav(capabilities: DoctorCapabilities): DoctorNavItemDef[] {
       path: `/${ROUTE_PATHS.ONLINE_DOCTOR}`,
       icon: DOCTOR_NAV_ICONS['Go live'].icon,
       shortLabel: DOCTOR_NAV_ICONS['Go live'].shortLabel,
-      enabled: capabilities.prescribe,
+      enabled: capabilities.onlineConsult,
     },
     {
       id: 'scan',

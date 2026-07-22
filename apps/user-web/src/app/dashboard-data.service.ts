@@ -175,7 +175,7 @@ export class DashboardPaymentService {
     if (state === 'CREATING_ORDER') return 'Preparing your order details.';
     if (state === 'OPENING_CHECKOUT') return 'Complete payment in the Razorpay popup.';
     if (state === 'VERIFYING') return 'Please wait while we verify with the gateway.';
-    if (state === 'SUCCESS') return 'Your consultation is now ready for doctor assignment.';
+    if (state === 'SUCCESS') return 'Your consultation is now ready for provider assignment.';
     if (state === 'ERROR')
       return this.paymentFlowError() || 'Something went wrong. Please try again.';
     return '';

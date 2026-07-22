@@ -2,9 +2,9 @@
 export const NATIVE_PERMISSION_MESSAGES = {
   camera:
     'Camera access lets you scan clinic QR codes and upload skin or health photos to your record.',
-  microphone: 'Microphone access is required for voice and video consultations with your doctor.',
+  microphone: 'Microphone access is required for voice and video consultations with your provider.',
   photos: 'Photo library access lets you choose existing images for your health record.',
-  notifications: 'Notifications remind you about medicines, consultations, and doctor messages.'
+  notifications: 'Notifications remind you about medicines, consultations, and provider messages.',
 } as const;
 
 export type PermissionStatusLabel = 'granted' | 'denied' | 'not-asked' | 'limited' | 'web';
@@ -27,10 +27,11 @@ export const APP_PERMISSIONS_HELP: AppPermissionHelpItem[] = [
     title: 'Camera',
     summary: NATIVE_PERMISSION_MESSAGES.camera,
     whyWeNeedIt:
-      'Your doctor may need clear photos of symptoms (skin, tongue, swelling, wounds). The camera also powers QR scanning for your clinic patient card.',
+      'Your provider may need clear photos of symptoms (skin, tongue, swelling, wounds). The camera also powers QR scanning for your clinic patient card.',
     whenWeAsk: 'When you tap Take photo, scan a QR code, or start a feature that needs the camera.',
-    youControl: 'You can deny camera access and still use chat consults. Upload photos from files on web instead.',
-    optional: false
+    youControl:
+      'You can deny camera access and still use chat consults. Upload photos from files on web instead.',
+    optional: false,
   },
   {
     id: 'photos',
@@ -41,7 +42,7 @@ export const APP_PERMISSIONS_HELP: AppPermissionHelpItem[] = [
       'Lets you pick an existing picture from your gallery to attach to your health record instead of taking a new photo.',
     whenWeAsk: 'When you choose Choose from gallery on the health photos screen.',
     youControl: 'Optional — you can use Take photo or skip uploads entirely.',
-    optional: true
+    optional: true,
   },
   {
     id: 'microphone',
@@ -49,10 +50,11 @@ export const APP_PERMISSIONS_HELP: AppPermissionHelpItem[] = [
     title: 'Microphone',
     summary: NATIVE_PERMISSION_MESSAGES.microphone,
     whyWeNeedIt:
-      'Voice calls with your doctor work like a phone call inside the app — audio is peer-to-peer for the consultation, not recorded for marketing.',
-    whenWeAsk: 'When you or your doctor start a voice or video call during an active consultation.',
+      'Voice calls with your provider work like a phone call inside the app - audio is peer-to-peer for the consultation, not recorded for marketing.',
+    whenWeAsk:
+      'When you or your provider start a voice or video call during an active consultation.',
     youControl: 'Text chat always works without microphone access.',
-    optional: true
+    optional: true,
   },
   {
     id: 'notifications',
@@ -60,11 +62,11 @@ export const APP_PERMISSIONS_HELP: AppPermissionHelpItem[] = [
     title: 'Notifications',
     summary: NATIVE_PERMISSION_MESSAGES.notifications,
     whyWeNeedIt:
-      'Timely alerts for medicine reminders, doctor replies, consultation updates, and delivery status — so you do not miss care that matters.',
+      'Timely alerts for medicine reminders, provider replies, consultation updates, and delivery status - so you do not miss care that matters.',
     whenWeAsk: 'After you sign in on the mobile app (not on the website).',
     youControl: 'Turn off anytime in phone Settings or in reminder preferences inside the app.',
-    optional: true
-  }
+    optional: true,
+  },
 ];
 
 export const PERMISSIONS_TRUST_COPY = {
@@ -76,6 +78,6 @@ export const PERMISSIONS_TRUST_COPY = {
   neverDo: [
     'Sell or share your health photos with advertisers',
     'Turn on camera or microphone in the background without your action',
-    'Request contacts, location, or SMS access'
-  ]
+    'Request contacts, location, or SMS access',
+  ],
 } as const;

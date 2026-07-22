@@ -2,6 +2,10 @@ import { Component, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { form, FormField, required } from '@angular/forms/signals';
 import { DEFAULT_AUTHED_ROUTE } from '../../../core/constants/app-routes.constants';
+import {
+  PROVIDER_TYPE_OPTIONS,
+  type ProviderType,
+} from '../../../core/constants/doctor-types.constants';
 import { Auth } from '../../../core/services/auth';
 
 @Component({
@@ -29,14 +33,17 @@ export class Login {
   readonly enrollModel = signal({
     name: '',
     mobile: '',
+    providerType: 'HOMEOPATH' as ProviderType,
+    specialization: '',
     specialty: '',
     registrationNo: '',
     confirmPassword: '',
   });
   readonly enrollForm = form(this.enrollModel, (schema) => {
     required(schema.name, { message: 'Name is required' });
-    required(schema.specialty, { message: 'Specialty is required' });
   });
+
+  readonly providerTypeOptions = PROVIDER_TYPE_OPTIONS;
 
   error = signal('');
   message = signal('');
@@ -81,17 +88,20 @@ export class Login {
   async enroll() {
     if (!this.canSignup()) return;
     const { email, password } = this.signInModel();
-    const { name, mobile, specialty, registrationNo } = this.enrollModel();
+    const { name, mobile, providerType, specialization, specialty, registrationNo } =
+      this.enrollModel();
     this.error.set('');
     this.message.set('');
     this.submitting.set(true);
     try {
-      const result = await this.auth.enrollDoctor({
+      const result = await this.auth.enrollProvider({
         name,
         email,
         mobile: mobile || undefined,
         password,
-        specialty,
+        providerType,
+        specialization: specialization || undefined,
+        specialty: specialty || undefined,
         registrationNo: registrationNo || undefined,
       });
 

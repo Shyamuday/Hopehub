@@ -52,6 +52,61 @@ enum HomeopathicSpecialtyFocus {
   CHRONIC_DISEASES
 }
 
+enum ProviderCategory {
+  MEDICAL
+  AYUSH
+  MENTAL_HEALTH
+  REHAB
+  DENTAL
+  NURSING
+  PHARMACY
+  NUTRITION
+  DIAGNOSTICS
+  IMAGING
+  WELLNESS
+  HOME_CARE
+  PUBLIC_HEALTH
+  OTHER
+}
+
+enum ProviderType {
+  DOCTOR
+  HOMEOPATH
+  AYURVEDA_DOCTOR
+  COUNSELLOR
+  PSYCHOLOGIST
+  PSYCHIATRIST
+  PSYCHOTHERAPIST
+  THERAPIST
+  PHYSIOTHERAPIST
+  OCCUPATIONAL_THERAPIST
+  SPEECH_THERAPIST
+  DIETITIAN
+  NUTRITIONIST
+  YOGA_INSTRUCTOR
+  FITNESS_TRAINER
+  HEALTH_COACH
+  PHARMACIST
+  NURSE
+  MIDWIFE
+  LAB_TECHNICIAN
+  PHLEBOTOMIST
+  RADIOLOGIST
+  PATHOLOGIST
+  DENTIST
+  SURGEON
+  SPECIALIST
+  MEDICAL_SOCIAL_WORKER
+  GENETIC_COUNSELLOR
+  DIABETES_EDUCATOR
+  WELLNESS_COACH
+  CAREGIVER
+  HOME_CARE_PROVIDER
+  LIFE_COACH
+  REHABILITATION_SPECIALIST
+  OTHER
+}
+
 enum DoctorCompensationModel {
   SALARIED
   CONSULT_ONLY
@@ -61,9 +116,12 @@ enum DoctorCompensationModel {
 model Doctor {
   id               String         @id @default(cuid())
   userId           String         @unique
+  providerCategory ProviderCategory @default(AYUSH)
+  providerType     ProviderType     @default(HOMEOPATH)
   doctorType       HomeopathicDoctorType @default(JUNIOR_DOCTOR)
   specialtyFocus     HomeopathicSpecialtyFocus?
   specialty        String
+  specialization   String?
   registrationNo   String?
   isAvailable      Boolean        @default(true)
   isOnline         Boolean        @default(true)

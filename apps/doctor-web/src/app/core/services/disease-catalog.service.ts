@@ -36,7 +36,9 @@ export class DiseaseCatalogService {
 
   loadCategories() {
     return firstValueFrom(
-      this.http.get<{ categories: DiseaseCategory[] }>(`${this.apiBase}${API_PATHS.DOCTOR.DISEASE_CATEGORIES}`)
+      this.http.get<{ categories: DiseaseCategory[] }>(
+        `${this.apiBase}${API_PATHS.PROVIDER.DISEASE_CATEGORIES}`,
+      ),
     ).then((response) => response.categories);
   }
 
@@ -47,13 +49,18 @@ export class DiseaseCatalogService {
     if (params?.grouped === false) query['grouped'] = 'false';
 
     return firstValueFrom(
-      this.http.get<DiseaseCatalogResponse>(`${this.apiBase}${API_PATHS.DOCTOR.DISEASES}`, { params: query })
+      this.http.get<DiseaseCatalogResponse>(`${this.apiBase}${API_PATHS.PROVIDER.DISEASES}`, {
+        params: query,
+      }),
     );
   }
 
   createDisease(payload: { name: string; publicCategory: string; description?: string }) {
     return firstValueFrom(
-      this.http.post<{ disease: DiseaseListItem }>(`${this.apiBase}${API_PATHS.DOCTOR.DISEASES}`, payload)
+      this.http.post<{ disease: DiseaseListItem }>(
+        `${this.apiBase}${API_PATHS.PROVIDER.DISEASES}`,
+        payload,
+      ),
     ).then((response) => response.disease);
   }
 
@@ -66,13 +73,13 @@ export class DiseaseCatalogService {
         seoDescription: string | null;
         publicFaq: Array<{ question: string; answer: string }>;
         publicPageContent: Record<string, unknown> | null;
-      }>(`${this.apiBase}${API_PATHS.DOCTOR.DISEASE_PUBLIC_PAGE(id)}`)
+      }>(`${this.apiBase}${API_PATHS.PROVIDER.DISEASE_PUBLIC_PAGE(id)}`),
     );
   }
 
   updatePublicPage(id: string, payload: Record<string, unknown>) {
     return firstValueFrom(
-      this.http.put(`${this.apiBase}${API_PATHS.DOCTOR.DISEASE_PUBLIC_PAGE(id)}`, payload)
+      this.http.put(`${this.apiBase}${API_PATHS.PROVIDER.DISEASE_PUBLIC_PAGE(id)}`, payload),
     );
   }
 }

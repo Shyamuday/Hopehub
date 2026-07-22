@@ -5,7 +5,7 @@ async function main() {
   const entries = await loadStaticDiseasePageImports();
   const result = await importStaticDiseasePages(entries);
   console.log(
-    `Imported static disease pages: ${result.updated} updated, ${result.unmatched.length} unmatched of ${result.total}.`
+    `Imported static disease pages: ${result.updated} updated, ${result.created} created, ${result.unmatched.length} unmatched of ${result.total}.`
   );
   if (result.unmatched.length) {
     console.log('Unmatched (no DB disease row by name/slug):', result.unmatched.join(', '));

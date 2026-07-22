@@ -14,7 +14,7 @@
   @if (needingReason.length) {
     <section class="attention-block">
       <h3>Needs your explanation</h3>
-      <p class="muted">These missed or skipped doses are visible to your doctor once you add a reason.</p>
+      <p class="muted">These missed or skipped doses are visible to your provider once you add a reason.</p>
       @for (dose of needingReason; track dose.id) {
         <article class="consult-card attention">
           <strong>{{ dose.prescriptionItem.medicineName }}</strong>

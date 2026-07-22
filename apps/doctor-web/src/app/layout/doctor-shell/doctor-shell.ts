@@ -23,7 +23,7 @@ import {
   type LastConsultationWorkspace,
 } from '../../core/services/consultation-navigation.service';
 import { DoctorRealtimeService } from '../../core/services/doctor-realtime.service';
-import { DoctorSessionService } from '../../core/services/doctor-session';
+import { ProviderSessionService } from '../../core/services/provider-session';
 
 export type DoctorBottomNavItem = {
   id: string;
@@ -82,7 +82,7 @@ export class DoctorShell implements OnInit, OnDestroy {
 
   constructor(
     private readonly auth: Auth,
-    private readonly session: DoctorSessionService,
+    private readonly session: ProviderSessionService,
   ) {
     this.navItems = this.buildNav(navItemsForDoctorType(null));
   }
@@ -92,9 +92,15 @@ export class DoctorShell implements OnInit, OnDestroy {
       const profile = await this.session.load();
       this.doctorName = profile.name;
       this.doctorProfileImageUrl = profile.profileImageUrl ?? null;
-      this.doctorTypeLabel = profile.doctorProfile?.doctorTypeLabel || 'Doctor';
+      this.doctorTypeLabel =
+        profile.doctorProfile?.providerTypeLabel ||
+        profile.doctorProfile?.doctorTypeLabel ||
+        'Doctor';
       this.specialtyLabel = profile.doctorProfile?.specialty || '';
-      this.doctorTypeKey = profile.doctorProfile?.doctorType ?? null;
+      this.doctorTypeKey =
+        profile.doctorProfile?.providerType === 'HOMEOPATH'
+          ? (profile.doctorProfile?.doctorType ?? null)
+          : (profile.doctorProfile?.providerType ?? null);
       this.navItems = this.buildNav(this.session.navItems());
     } catch {
       this.navItems = this.buildNav(this.session.navItems());

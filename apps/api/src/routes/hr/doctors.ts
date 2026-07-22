@@ -21,13 +21,16 @@ import {
   doctorHrDefaults,
   suggestedProbationEndDate
 } from '../../constants/doctor-hr-defaults.js';
-import { doctorTypeLabel } from '../../constants/homeopathic-doctor-types.js';
+import { doctorTypeLabel, providerTypeLabel } from '../../constants/homeopathic-doctor-types.js';
 
 function mapDoctorForHr(d: {
   id: string;
   user: { id: string; name: string; email: string | null; mobile: string | null };
   clinicStore?: { id: string; name: string; address: string | null } | null;
   joiningLetter?: { id: string } | null;
+  providerType: import('@prisma/client').ProviderType;
+  providerCategory: import('@prisma/client').ProviderCategory;
+  specialization: string | null;
   doctorType: HomeopathicDoctorType;
   specialtyFocus: HomeopathicSpecialtyFocus | null;
   specialty: string;
@@ -52,12 +55,16 @@ function mapDoctorForHr(d: {
     name: d.user.name,
     email: d.user.email,
     phone: d.phone ?? d.user.mobile,
+    providerType: d.providerType,
+    providerTypeLabel: providerTypeLabel(d.providerType),
+    providerCategory: d.providerCategory,
     doctorType: d.doctorType,
     doctorTypeLabel: doctorTypeLabel(d.doctorType),
     specialtyFocus: d.specialtyFocus,
-    designation: d.designation ?? doctorTypeLabel(d.doctorType),
-    department: d.department ?? d.specialty,
+    designation: d.designation ?? providerTypeLabel(d.providerType),
+    department: d.department ?? d.specialization ?? d.specialty,
     specialty: d.specialty,
+    specialization: d.specialization,
     joiningDate: d.joiningDate,
     probationEndDate: d.probationEndDate,
     employeeStatus: d.employeeStatus,
@@ -138,7 +145,10 @@ export function registerHrDoctorRoutes(router: Router) {
         employeeId,
         doctorType,
         specialtyFocus,
-        specialty
+        specialty,
+        providerType,
+        providerCategory,
+        specialization
       } = req.body as Record<string, unknown>;
 
       const nextDoctorType =
@@ -172,6 +182,10 @@ export function registerHrDoctorRoutes(router: Router) {
       const updated = await prisma.doctor.update({
         where: { id },
         data: {
+          providerType: providerType as import('@prisma/client').ProviderType | undefined,
+          providerCategory: providerCategory as
+            import('@prisma/client').ProviderCategory | undefined,
+          specialization: specialization as string | undefined,
           ...hrFields,
           phone: phone as string | undefined,
           address: address as string | undefined,

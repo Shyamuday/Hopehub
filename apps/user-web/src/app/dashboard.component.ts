@@ -111,9 +111,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
     return this.diseases().find((disease) => disease.id === id) ?? null;
   });
   protected realtimeChannel?: { unsubscribe(): void; socket?: import('socket.io-client').Socket };
-  readonly iceServers = signal<Array<{ urls: string | string[]; username?: string; credential?: string }>>([
-    { urls: 'stun:stun.l.google.com:19302' }
-  ]);
+  readonly iceServers = signal<
+    Array<{ urls: string | string[]; username?: string; credential?: string }>
+  >([{ urls: 'stun:stun.l.google.com:19302' }]);
   readonly ensureMediaAccess = (mode: CallMode): Promise<MediaAccessResult> =>
     mode === 'video'
       ? this.nativePermissions.ensureVideoCallPermissions()
@@ -176,7 +176,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.realtimeChannel = this.dataService.watchChanges(() => this.loadConsultations());
     this.api.fetchIceServers().subscribe({
       next: ({ iceServers }) => this.iceServers.set(iceServers),
-      error: () => undefined
+      error: () => undefined,
     });
   }
 
@@ -243,7 +243,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
         intakeAnswers: payload.intakeAnswers,
         purchaseType: payload.purchaseType,
         ...(payload.purchaseType === PURCHASE_TYPES.PLAN ? { planCode: payload.planCode } : {}),
-        ...(payload.walletRedeemInPaise ? { walletRedeemInPaise: payload.walletRedeemInPaise } : {}),
+        ...(payload.walletRedeemInPaise
+          ? { walletRedeemInPaise: payload.walletRedeemInPaise }
+          : {}),
         ...(payload.promoCode ? { promoCode: payload.promoCode } : {}),
         ...(payload.clinicStoreId !== undefined ? { clinicStoreId: payload.clinicStoreId } : {}),
       })
@@ -266,7 +268,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.paymentService.pay(
       consultation,
       () => {
-        this.showNotice('Payment verified. Admin can assign doctor now.');
+        this.showNotice('Payment verified. Admin can Assign provider now.');
         this.loadConsultations();
       },
       (message) => this.showNotice(message),
@@ -285,7 +287,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   retryPayment() {
     this.paymentService.retryPayment(
       () => {
-        this.showNotice('Payment verified. Admin can assign doctor now.');
+        this.showNotice('Payment verified. Admin can Assign provider now.');
         this.loadConsultations();
       },
       (message) => this.showNotice(message),
@@ -316,7 +318,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
   private loadWalletBalance() {
     this.api.patientRewards().subscribe({
       next: ({ balanceInPaise }) => this.walletBalanceInPaise.set(balanceInPaise ?? 0),
-      error: () => { /* wallet optional */ },
+      error: () => {
+        /* wallet optional */
+      },
     });
   }
 
@@ -417,7 +421,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.isProcessing.set(true);
     this.api.explainDose(payload.id, payload.note).subscribe({
       next: () => {
-        this.showNotice('Reason saved for your doctor.');
+        this.showNotice('Reason saved for your provider.');
         this.loadPatientMedicationData();
       },
       error: (error) => {
@@ -446,12 +450,12 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.isProcessing.set(true);
     this.api.createDoctor(this.doctorFormModel()).subscribe({
       next: () => {
-        this.showNotice('Doctor created.');
+        this.showNotice('Provider created.');
         this.loadAdminData();
       },
       error: (error) => {
         this.isProcessing.set(false);
-        this.showNotice(error.error?.message || error.message || 'Could not create doctor.');
+        this.showNotice(error.error?.message || error.message || 'Could not Create provider.');
       },
       complete: () => this.isProcessing.set(false),
     });
@@ -460,18 +464,18 @@ export class DashboardComponent implements OnInit, OnDestroy {
   assignDoctor() {
     const assignment = this.assignmentModel();
     if (!assignment.consultationId || !assignment.doctorId) {
-      return this.showNotice('Select consultation and doctor.');
+      return this.showNotice('Select consultation and provider.');
     }
 
     this.isProcessing.set(true);
     this.api.assignDoctor(assignment.consultationId, assignment.doctorId).subscribe({
       next: () => {
-        this.showNotice('Doctor assigned.');
+        this.showNotice('Provider assigned.');
         this.loadConsultations();
       },
       error: (error) => {
         this.isProcessing.set(false);
-        this.showNotice(error.error?.message || error.message || 'Could not assign doctor.');
+        this.showNotice(error.error?.message || error.message || 'Could not Assign provider.');
       },
       complete: () => this.isProcessing.set(false),
     });
@@ -548,7 +552,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
         });
       },
       error: (error) =>
-        this.showNotice(error.error?.message || error.message || 'Could not load doctors.'),
+        this.showNotice(error.error?.message || error.message || 'Could not load providers.'),
     });
     this.dataService.loadReports().subscribe({
       next: (report) => this.report.set(report),
@@ -590,7 +594,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.historyDosesLoading.set(true);
     this.dataService.loadDoseHistory(30).subscribe({
       next: ({ doses }) => this.historyDoseEvents.set(doses),
-      error: () => { /* history optional */ },
+      error: () => {
+        /* history optional */
+      },
       complete: () => this.historyDosesLoading.set(false),
     });
   }

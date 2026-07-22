@@ -16,9 +16,15 @@ import type { RealtimeSubscription } from './clinic-api/clinic-api.types';
 @Component({
   selector: 'app-patient-instant-consult-page',
   standalone: true,
-  imports: [CommonModule, RouterLink, AppHeaderComponent, AppFooterComponent, ConsultationDetailComponent],
+  imports: [
+    CommonModule,
+    RouterLink,
+    AppHeaderComponent,
+    AppFooterComponent,
+    ConsultationDetailComponent,
+  ],
   templateUrl: './patient-instant-consult-page.component.html',
-  styleUrl: './patient-instant-consult-page.component.scss'
+  styleUrl: './patient-instant-consult-page.component.scss',
 })
 export class PatientInstantConsultPageComponent implements OnInit, OnDestroy {
   private readonly api = inject(ClinicApiService);
@@ -81,11 +87,11 @@ export class PatientInstantConsultPageComponent implements OnInit, OnDestroy {
 
   phaseLabel() {
     const map: Record<string, string> = {
-      payment: 'Complete payment to connect with a doctor',
-      waiting: 'Finding an online doctor for you…',
-      active: 'You are connected — chat or start a call below',
+      payment: 'Complete payment to connect with a provider',
+      waiting: 'Finding an online provider for you...',
+      active: 'You are connected - chat or start a call below',
       done: 'This consultation has ended',
-      unknown: 'Loading…'
+      unknown: 'Loading…',
     };
     return map[this.roomPhase()] ?? '';
   }
@@ -97,11 +103,11 @@ export class PatientInstantConsultPageComponent implements OnInit, OnDestroy {
     this.paymentService.pay(
       c,
       () => {
-        this.notice.set('Payment successful. Matching you with a doctor…');
+        this.notice.set('Payment successful. Matching you with a provider...');
         this.load(c.id);
       },
       (message) => this.notice.set(message),
-      (busy) => this.processing.set(busy)
+      (busy) => this.processing.set(busy),
     );
   }
 
@@ -113,7 +119,7 @@ export class PatientInstantConsultPageComponent implements OnInit, OnDestroy {
         this.processing.set(false);
         this.notice.set(error.error?.message || error.message || 'Could not send message.');
       },
-      complete: () => this.processing.set(false)
+      complete: () => this.processing.set(false),
     });
   }
 
@@ -131,14 +137,14 @@ export class PatientInstantConsultPageComponent implements OnInit, OnDestroy {
       error: () => {
         this.notice.set('Could not load consultation.');
         this.loading.set(false);
-      }
+      },
     });
   }
 
   private loadIceServers() {
     this.api.fetchIceServers().subscribe({
       next: ({ iceServers }) => this.iceServers.set(iceServers),
-      error: () => undefined
+      error: () => undefined,
     });
   }
 }

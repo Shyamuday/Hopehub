@@ -9,7 +9,7 @@ import type {
   PrescriptionOption,
   PrescriptionPayload,
   PrescriptionTemplate,
-  SaveTemplatePayload
+  SaveTemplatePayload,
 } from './appointments-page.types';
 
 @Service()
@@ -23,18 +23,24 @@ export class AppointmentsPrescriptionsService {
     if (q?.trim()) params['q'] = q.trim();
 
     return firstValueFrom(
-      this.http.get<{ options: PrescriptionOption[] }>(`${this.apiBase}${API_PATHS.DOCTOR.PRESCRIPTION_OPTIONS}`, {
-        params
-      })
+      this.http.get<{ options: PrescriptionOption[] }>(
+        `${this.apiBase}${API_PATHS.PROVIDER.PRESCRIPTION_OPTIONS}`,
+        {
+          params,
+        },
+      ),
     ).then((response) => response.options);
   }
 
   addOption(type: OptionType, label: string) {
     return firstValueFrom(
-      this.http.post<{ option: PrescriptionOption }>(`${this.apiBase}${API_PATHS.DOCTOR.PRESCRIPTION_OPTIONS}`, {
-        type,
-        label
-      })
+      this.http.post<{ option: PrescriptionOption }>(
+        `${this.apiBase}${API_PATHS.PROVIDER.PRESCRIPTION_OPTIONS}`,
+        {
+          type,
+          label,
+        },
+      ),
     );
   }
 
@@ -50,41 +56,55 @@ export class AppointmentsPrescriptionsService {
           currentMedications?: string | null;
           chronicConditions?: string | null;
         };
-      }>(`${this.apiBase}${API_PATHS.DOCTOR.APPOINTMENT_PRESCRIPTIONS(consultationId)}`)
+      }>(`${this.apiBase}${API_PATHS.PROVIDER.APPOINTMENT_PRESCRIPTIONS(consultationId)}`),
     );
   }
 
-  savePrescription(consultationId: string, prescriptionId: string | null, payload: PrescriptionPayload) {
+  savePrescription(
+    consultationId: string,
+    prescriptionId: string | null,
+    payload: PrescriptionPayload,
+  ) {
     if (prescriptionId) {
       return firstValueFrom(
-        this.http.put(`${this.apiBase}${API_PATHS.DOCTOR.PRESCRIPTIONS}/${prescriptionId}`, payload)
+        this.http.put(
+          `${this.apiBase}${API_PATHS.PROVIDER.PRESCRIPTIONS}/${prescriptionId}`,
+          payload,
+        ),
       );
     }
 
     return firstValueFrom(
-      this.http.post(`${this.apiBase}${API_PATHS.DOCTOR.APPOINTMENT_PRESCRIPTIONS(consultationId)}`, payload)
+      this.http.post(
+        `${this.apiBase}${API_PATHS.PROVIDER.APPOINTMENT_PRESCRIPTIONS(consultationId)}`,
+        payload,
+      ),
     );
   }
 
   loadTemplates() {
     return firstValueFrom(
-      this.http.get<{ templates: PrescriptionTemplate[] }>(`${this.apiBase}${API_PATHS.DOCTOR.PRESCRIPTION_TEMPLATES}`)
+      this.http.get<{ templates: PrescriptionTemplate[] }>(
+        `${this.apiBase}${API_PATHS.PROVIDER.PRESCRIPTION_TEMPLATES}`,
+      ),
     ).then((response) => response.templates || []);
   }
 
   saveTemplate(payload: SaveTemplatePayload) {
     return firstValueFrom(
-      this.http.post(`${this.apiBase}${API_PATHS.DOCTOR.PRESCRIPTION_TEMPLATES}`, payload)
+      this.http.post(`${this.apiBase}${API_PATHS.PROVIDER.PRESCRIPTION_TEMPLATES}`, payload),
     );
   }
 
   deleteTemplate(id: string) {
-    return firstValueFrom(this.http.delete(`${this.apiBase}${API_PATHS.DOCTOR.PRESCRIPTION_TEMPLATES}/${id}`));
+    return firstValueFrom(
+      this.http.delete(`${this.apiBase}${API_PATHS.PROVIDER.PRESCRIPTION_TEMPLATES}/${id}`),
+    );
   }
 
   closeConsultation(consultationId: string) {
     return firstValueFrom(
-      this.http.post(`${this.apiBase}${API_PATHS.CONSULTATIONS}/${consultationId}/complete`, {})
+      this.http.post(`${this.apiBase}${API_PATHS.CONSULTATIONS}/${consultationId}/complete`, {}),
     );
   }
 }

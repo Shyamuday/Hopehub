@@ -3,13 +3,13 @@
     <hopehub-profile-avatar-upload
       [apiBase]="apiBase"
       [tokenKey]="authTokenKey"
-      [displayName]="profileModel().name || 'Doctor'"
+      [displayName]="profileModel().name || 'Provider'"
       [profileImageUrl]="profileImageUrl"
       [uploadPath]="profileImageUploadPath"
       (profileImageChange)="onProfileImageChange($event)"
     />
     <div>
-      <h2>Doctor Profile</h2>
+      <h2>Provider Profile</h2>
       @if (isLoading) {
         <p class="loading-text">Loading profile...</p>
       }
@@ -39,7 +39,10 @@
     <label for="specialty">Specialty</label>
     <input id="specialty" [formField]="profileForm.specialty" />
 
-    <label for="registrationNo">Registration Number</label>
+    <label for="specialization">Specialization</label>
+    <input id="specialization" [formField]="profileForm.specialization" />
+
+    <label for="registrationNo">Registration/License Number</label>
     <input id="registrationNo" [formField]="profileForm.registrationNo" />
   </div>
 
@@ -62,7 +65,7 @@
   <div class="public-profile-section">
     <h3>Public Profile</h3>
     <p class="section-hint">
-      This information may appear on our website under <em>Our Doctors</em>.
+      This information may appear on our website provider list.
       @if (showOnWebsite) {
         <span class="visibility-badge visible">Currently visible on website</span>
       } @else {

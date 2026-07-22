@@ -13,12 +13,12 @@ export class PrescriptionPdfService {
 
   pdfUrl(prescriptionId: string, inline = false) {
     const query = inline ? '?disposition=inline' : '';
-    return `${this.apiBase}${API_PATHS.DOCTOR.PRESCRIPTION_PDF(prescriptionId)}${query}`;
+    return `${this.apiBase}${API_PATHS.PROVIDER.PRESCRIPTION_PDF(prescriptionId)}${query}`;
   }
 
   async fetchBlob(prescriptionId: string, inline = false) {
     const response = await fetch(this.pdfUrl(prescriptionId, inline), {
-      headers: await this.authHeaders()
+      headers: await this.authHeaders(),
     });
     if (!response.ok) throw new Error('Could not load prescription PDF.');
     return response.blob();
@@ -26,7 +26,9 @@ export class PrescriptionPdfService {
 
   async fetchShareMeta(prescriptionId: string) {
     return firstValueFrom(
-      this.http.get<{ shareText: string }>(`${this.apiBase}${API_PATHS.DOCTOR.PRESCRIPTION_SHARE(prescriptionId)}`)
+      this.http.get<{ shareText: string }>(
+        `${this.apiBase}${API_PATHS.PROVIDER.PRESCRIPTION_SHARE(prescriptionId)}`,
+      ),
     );
   }
 
