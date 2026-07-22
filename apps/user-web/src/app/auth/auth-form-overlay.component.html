@@ -48,7 +48,7 @@
         </form>
       } @else if (authView() === 'signup') {
         <h2>Create patient account</h2>
-        <p class="muted">Sign up with your email OTP. You can add your mobile number later from profile.</p>
+        <p class="muted">Sign up with your email and password. You can add your mobile number later from profile.</p>
 
         <form (ngSubmit)="registerPatient()">
           <label>
@@ -62,22 +62,20 @@
               type="email"
               placeholder="Enter Gmail"
               autocomplete="email"
-              (input)="resetSignupOtp()"
             />
           </label>
-          @if (signupOtpSent()) {
-            @if (otpNotice()) {
-              <p class="muted">{{ otpNotice() }}</p>
-            }
-            <label>
-              6-digit OTP
-              <input [formField]="signupForm.otp" placeholder="Enter OTP" inputmode="numeric" autocomplete="one-time-code" />
-            </label>
-            <button class="primary" type="submit" [disabled]="isProcessing() || !canRegisterPatient()">Verify OTP & create account</button>
-            <button type="button" class="secondary" [disabled]="isProcessing()" (click)="requestSignupOtp()">Resend OTP</button>
-          } @else {
-            <button type="button" class="primary" [disabled]="isProcessing() || !signupModel().name.trim() || !signupModel().email.trim()" (click)="requestSignupOtp()">Send OTP</button>
+          <label>
+            Password
+            <input [formField]="signupForm.password" type="password" placeholder="Min 8 characters" autocomplete="new-password" />
+          </label>
+          <label>
+            Confirm password
+            <input [formField]="signupForm.confirmPassword" type="password" placeholder="Confirm password" autocomplete="new-password" />
+          </label>
+          @if (signupModel().password && signupModel().confirmPassword && signupModel().password !== signupModel().confirmPassword) {
+            <p class="error-text">Passwords do not match</p>
           }
+          <button class="primary" type="submit" [disabled]="isProcessing() || !canRegisterPatient()">Create account</button>
         </form>
 
         <p class="mode-switch-wrap">
@@ -85,32 +83,23 @@
         </p>
       } @else {
         <h2>Login to continue</h2>
-        <p class="muted">Sign in securely with an OTP sent to your email.</p>
+        <p class="muted">Sign in with your registered email and password.</p>
 
-        <form (ngSubmit)="loginPatientWithOtp()">
+        <form (ngSubmit)="loginPatientWithPassword()">
           <label>
             Email
             <input
-              [formField]="patientOtpForm.email"
+              [formField]="patientCredentialsForm.identifier"
               type="email"
               placeholder="Enter Gmail"
               autocomplete="email"
-              (input)="resetLoginOtp()"
             />
           </label>
-          @if (loginOtpSent()) {
-            @if (otpNotice()) {
-              <p class="muted">{{ otpNotice() }}</p>
-            }
-            <label>
-              6-digit OTP
-              <input [formField]="patientOtpForm.otp" placeholder="Enter OTP" inputmode="numeric" autocomplete="one-time-code" />
-            </label>
-            <button class="primary" type="submit" [disabled]="isProcessing() || !canLoginWithEmailOtp()">Verify OTP & login</button>
-            <button type="button" class="secondary" [disabled]="isProcessing()" (click)="requestLoginOtp()">Resend OTP</button>
-          } @else {
-            <button type="button" class="primary" [disabled]="isProcessing() || !patientOtpModel().email.trim()" (click)="requestLoginOtp()">Send OTP</button>
-          }
+          <label>
+            Password
+            <input [formField]="patientCredentialsForm.password" type="password" placeholder="Enter password" autocomplete="current-password" />
+          </label>
+          <button class="primary" type="submit" [disabled]="isProcessing() || !patientCredentialsModel().identifier.trim() || !patientCredentialsModel().password">Login</button>
         </form>
 
         <p class="mode-switch-wrap">

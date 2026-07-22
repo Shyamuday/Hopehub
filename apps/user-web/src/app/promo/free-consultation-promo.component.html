@@ -4,7 +4,7 @@
   <p class="promo-eyebrow">Limited offer</p>
   <h2>Get a FREE consultation</h2>
   <p class="promo-lead">
-  Register with your email and book your first online consultation at no cost.
+  Create your account or log in to book your first online consultation.
   </p>
 
   @if (patientSelection(); as patients) {
@@ -20,57 +20,15 @@
       }
     </div>
     <button type="button" class="link-btn" (click)="backToEmail()">← Change email</button>
-  } @else if (step() === 'register') {
-    <form (ngSubmit)="sendOtp()">
-      <label>
-        Email
-        <input
-          [formField]="form.email"
-          type="email"
-          placeholder="Enter your Gmail"
-          autocomplete="email"
-        />
-      </label>
-      @if (error()) {
-        <p class="error-text">{{ error() }}</p>
-      }
-      <button class="promo-cta" type="submit" [disabled]="busy()">
-        {{ busy() ? 'Sending OTP…' : 'Get OTP & register' }}
-      </button>
-    </form>
-  } @else if (step() === 'otp') {
-    <form (ngSubmit)="verifyAndRegister()">
-      <p class="promo-muted">
-        OTP sent to <strong>{{ formModel().email }}</strong>
-        <button type="button" class="link-btn inline" (click)="backToEmail()">Edit</button>
-      </p>
-      <label>
-        Enter OTP
-        <input
-          [formField]="form.otp"
-          type="text"
-          inputmode="numeric"
-          placeholder="6-digit OTP"
-          autocomplete="one-time-code"
-        />
-      </label>
-      @if (error()) {
-        <p class="error-text">{{ error() }}</p>
-      }
-      <button class="promo-cta" type="submit" [disabled]="busy()">
-        {{ busy() ? 'Verifying…' : 'Claim free consultation' }}
-      </button>
-      <button type="button" class="link-btn" (click)="sendOtp()" [disabled]="busy()">Resend OTP</button>
-    </form>
-  } @else if (step() === 'loading') {
-    <div class="promo-loading">
-      <span class="promo-spinner"></span>
-      <p>Setting up your account…</p>
-    </div>
   } @else {
-    <div class="promo-success">
-      <p>You're registered! Taking you to your dashboard…</p>
-    </div>
+    <form (ngSubmit)="openFullLogin($event)">
+      @if (error()) {
+        <p class="error-text">{{ error() }}</p>
+      }
+      <button class="promo-cta" type="submit" [disabled]="busy()">
+        Continue with password
+      </button>
+    </form>
   }
 
   <p class="promo-footer">

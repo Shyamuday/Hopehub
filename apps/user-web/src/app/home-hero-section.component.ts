@@ -6,7 +6,9 @@ import { firstValueFrom } from 'rxjs';
 import { POST_LOGIN_REDIRECT_DELAY_MS } from './core/constants/timing.constants';
 import { HOME_CONTENT } from './core/constants/public-site-content.constants';
 import { AuthService } from './auth/auth.service';
+import { AuthFormOverlayComponent } from './auth/auth-form-overlay.component';
 import { PublicConfigService } from './core/services/public-config.service';
+import { AppOverlayService } from './overlay.service';
 
 type BookStep = 'form' | 'otp' | 'loading' | 'done';
 
@@ -34,6 +36,7 @@ export class HomeHeroSectionComponent {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
   private readonly publicConfig = inject(PublicConfigService);
+  private readonly overlayService = inject(AppOverlayService);
 
   constructor() {
     void this.bootstrap();
@@ -55,29 +58,11 @@ export class HomeHeroSectionComponent {
   }
 
   async sendOtp() {
-    const { email: rawEmail } = this.bookingFormModel();
-    const email = rawEmail.trim().toLowerCase();
-    if (!/.+@.+\..+/.test(email)) {
-      this.error.set('Enter a valid email address.');
-      return;
-    }
-
     this.error.set('');
-    this.busy.set(true);
-    try {
-      await firstValueFrom(
-        this.auth.requestOtp(email, {
-          source: 'HOME_BOOKING',
-          entryPage: typeof window !== 'undefined' ? window.location.pathname : undefined,
-        }),
-      );
-      this.bookingFormModel.update((m) => ({ ...m, email }));
-      this.step.set('otp');
-    } catch (err: any) {
-      this.error.set(err?.error?.message || 'Could not send OTP. Please try again.');
-    } finally {
-      this.busy.set(false);
-    }
+    this.overlayService.open(AuthFormOverlayComponent, {
+      width: '480px',
+      panelClass: 'app-overlay-panel',
+    });
   }
 
   async verifyOtp() {

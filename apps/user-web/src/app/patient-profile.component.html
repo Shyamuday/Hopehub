@@ -140,7 +140,7 @@
           <div class="field">
             <label>Mobile (login)</label>
             <p class="readonly-val">{{ profile()?.mobile || '—' }}</p>
-            <span class="hint">Used for OTP login. Contact clinic to change.</span>
+            <span class="hint">Used for account login and receipts. Contact clinic to change.</span>
           </div>
           <div class="field">
             <label>Alternate mobile</label>
@@ -423,7 +423,7 @@
           @if (hasPassword()) {
             Change your password for email/mobile login.
           } @else {
-            Set a password to log in without OTP (optional).
+            Set a password to log in to your account.
           }
         </p>
         @if (hasPassword()) {

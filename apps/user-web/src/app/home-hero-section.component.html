@@ -8,74 +8,29 @@
         </div>
 
         <div class="booking-card">
-          @switch (step()) {
-            @case ('form') {
-              <h1 class="booking-title">{{ copy.booking.formTitle }}</h1>
-              <p class="bc-sub">{{ copy.booking.formSubtitle }}</p>
+          <h1 class="booking-title">{{ copy.booking.formTitle }}</h1>
+          <p class="bc-sub">{{ copy.booking.formSubtitle }}</p>
 
-              <div class="bc-fields">
-                <label class="bc-field">
-                  <span class="bc-label">{{ copy.booking.emailLabel }}</span>
-                  <input
-                    [formField]="bookingForm.email"
-                    [placeholder]="copy.booking.emailPlaceholder"
-                    type="email"
-                    autocomplete="email"
-                  />
-                </label>
+          <div class="bc-fields">
+            <label class="bc-field">
+              <span class="bc-label">{{ copy.booking.emailLabel }}</span>
+              <input
+                [formField]="bookingForm.email"
+                [placeholder]="copy.booking.emailPlaceholder"
+                type="email"
+                autocomplete="email"
+              />
+            </label>
 
-                <button class="bc-btn" type="button" [disabled]="busy()" (click)="sendOtp()">
-                  {{ busy() ? copy.booking.submittingLabel : copy.booking.submitLabel }}
-                </button>
-              </div>
+            <button class="bc-btn" type="button" [disabled]="busy()" (click)="sendOtp()">
+              {{ copy.booking.submitLabel }}
+            </button>
+          </div>
 
-              @if (error()) {
-                <p class="bc-error">{{ error() }}</p>
-              }
-              <p class="bc-hint">{{ copy.booking.hint }}</p>
-            }
-
-            @case ('otp') {
-              <h2 class="booking-title">{{ copy.booking.otpTitle }}</h2>
-              <p class="bc-otp-who">
-                OTP sent to <strong>{{ bookingFormModel().email }}</strong>
-              </p>
-              <div class="bc-fields">
-                <label class="bc-field">
-                  <span class="bc-label">{{ copy.booking.otpLabel }}</span>
-                  <input
-                    [formField]="bookingForm.otp"
-                    [placeholder]="copy.booking.otpPlaceholder"
-                    inputmode="numeric"
-                    autocomplete="one-time-code"
-                  />
-                </label>
-                <button
-                  class="bc-btn"
-                  type="button"
-                  [disabled]="busy() || bookingFormModel().otp.length < 4"
-                  (click)="verifyOtp()"
-                >
-                  {{ busy() ? copy.booking.verifyingLabel : copy.booking.verifyLabel }}
-                </button>
-              </div>
-              @if (error()) {
-                <p class="bc-error">{{ error() }}</p>
-              }
-              <button class="bc-back" type="button" (click)="goBack()">{{ copy.booking.backLabel }}</button>
-            }
-
-            @case ('loading') {
-              <div class="bc-loading">
-                <div class="bc-spinner"></div>
-                <span>{{ copy.booking.loadingLabel }}</span>
-              </div>
-            }
-
-            @case ('done') {
-              <div class="bc-done">{{ copy.booking.doneLabel }}</div>
-            }
+          @if (error()) {
+            <p class="bc-error">{{ error() }}</p>
           }
+          <p class="bc-hint">{{ copy.booking.hint }}</p>
         </div>
 
         <div class="hero-trust-row">

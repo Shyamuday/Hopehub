@@ -1,6 +1,5 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject, signal } from '@angular/core';
-import { form, FormField } from '@angular/forms/signals';
 import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { AuthService } from '../auth/auth.service';
@@ -15,7 +14,7 @@ type Step = 'register' | 'otp' | 'loading' | 'done';
 @Component({
   selector: 'app-free-consultation-promo',
   standalone: true,
-  imports: [CommonModule, FormField],
+  imports: [CommonModule],
   templateUrl: './free-consultation-promo.component.html',
   styleUrl: './free-consultation-promo.component.scss',
 })
@@ -31,7 +30,6 @@ export class FreeConsultationPromoComponent {
   readonly patientSelection = signal<PatientSelectionCandidate[] | null>(null);
 
   readonly formModel = signal({ email: '', otp: '' });
-  readonly form = form(this.formModel);
 
   close() {
     this.hostRef.close();

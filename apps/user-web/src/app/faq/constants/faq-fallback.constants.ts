@@ -10,7 +10,7 @@ export const FAQ_FALLBACK_ENTRIES: FaqAccordionItem[] = [
     category: 'Booking',
     question: 'How do I book a consultation?',
     answer:
-      'Tap Book consultation on the home page, sign in with your email OTP, and complete the short intake. Our team assigns a provider from the internal panel based on your concern and availability.',
+      'Tap Book consultation on the home page, sign in with your email and password, and complete the short intake. Our team assigns a provider from the internal panel based on your concern and availability.',
   },
   {
     category: 'Booking',
@@ -45,7 +45,7 @@ export const FAQ_FALLBACK_ENTRIES: FaqAccordionItem[] = [
   {
     category: 'Account',
     question: 'How do I log in?',
-    answer: 'Use your email and OTP. You can add your mobile number later from your profile.',
+    answer: 'Use your email and password. You can add your mobile number later from your profile.',
   },
   {
     category: 'Account',

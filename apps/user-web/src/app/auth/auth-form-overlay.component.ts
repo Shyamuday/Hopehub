@@ -66,6 +66,8 @@ export class AuthFormOverlayComponent {
     name: '',
     email: '',
     otp: '',
+    password: '',
+    confirmPassword: '',
   });
   readonly signupForm = form(this.signupModel);
 
@@ -93,8 +95,8 @@ export class AuthFormOverlayComponent {
     return !!(
       signup.name.trim().length >= 2 &&
       this.isEmail(signup.email) &&
-      this.signupOtpSent() &&
-      this.isSixDigitOtp(signup.otp)
+      signup.password.length >= 8 &&
+      signup.password === signup.confirmPassword
     );
   }
 
@@ -277,35 +279,20 @@ export class AuthFormOverlayComponent {
 
   registerPatient() {
     if (!this.canRegisterPatient()) {
-      this.showError('Enter your name, email, and OTP.');
+      this.showError('Enter your name, email, and matching password.');
       return;
     }
 
     const signup = this.signupModel();
     this.process(
       'Creating patient account...',
-      this.auth.patientLogin({
+      this.auth.patientRegister({
         name: signup.name.trim(),
         email: signup.email.trim().toLowerCase(),
-        otp: signup.otp.trim(),
-        referralCode: this.referralCodeFromUrl,
+        password: signup.password,
       }),
     ).subscribe({
       next: (response) => {
-        if ('requiresPatientSelection' in response) {
-          this.patientOtpModel.update((model) => ({
-            ...model,
-            email: signup.email,
-            otp: signup.otp,
-          }));
-          this.patientSelection.set({
-            mode: 'otp',
-            email: response.email || signup.email,
-            patients: response.patients,
-          });
-          this.closeActiveOverlay();
-          return;
-        }
         this.closeAllOverlays();
         this.router.navigateByUrl(this.auth.dashboardFor(response.user.role));
       },
