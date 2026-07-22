@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { HomeopathicDoctorType, ProviderType, Role } from '@prisma/client';
+import { HomeopathicDoctorType, Prisma, ProviderType, Role } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import { authRequired, allowRoles } from '../../auth.js';
 import { prisma } from '../../db.js';
@@ -16,6 +16,16 @@ import {
 import { assertMethodOptionId } from '../../services/doctor-prescribing-preferences.js';
 import { asyncRoute, publicUserSelect, toAuthResponse, logAuthEvent } from '../../utils/helpers.js';
 import { enrichWithProfileImageUrl, userProfileImagePath } from '../../utils/profile-image-url.js';
+
+function toProfessionProfilePayload(input: Record<string, string> | undefined) {
+  if (!input) return undefined;
+
+  return Object.fromEntries(
+    Object.entries(input)
+      .map(([key, value]) => [key, value.trim()])
+      .filter(([key, value]) => key && value)
+  ) as Prisma.InputJsonObject;
+}
 
 export function registerAuthDoctorRoutes(router: Router) {
   router.post(
@@ -113,6 +123,7 @@ export function registerAuthDoctorRoutes(router: Router) {
           bio: z.string().max(1200).optional().nullable(),
           yearsOfExperience: z.number().int().min(0).max(60).optional().nullable(),
           focusAreas: z.array(z.string().min(1)).optional(),
+          professionProfile: z.record(z.string(), z.string().max(2000)).optional(),
           defaultMethodOptionId: z.string().min(1).nullable().optional()
         })
         .parse(req.body);
@@ -151,6 +162,7 @@ export function registerAuthDoctorRoutes(router: Router) {
         yearsOfExperience: body.yearsOfExperience ?? null,
         focusAreas: (body.focusAreas ?? []).map((f) => f.trim()).filter(Boolean)
       };
+      const professionProfile = toProfessionProfilePayload(body.professionProfile);
 
       const updated = await prisma.user.update({
         where: { id: req.user!.id },
@@ -162,6 +174,7 @@ export function registerAuthDoctorRoutes(router: Router) {
               create: {
                 ...profilePayload,
                 ...publicFields,
+                ...(professionProfile !== undefined ? { professionProfile } : {}),
                 defaultMethodOptionId: body.defaultMethodOptionId ?? null
               },
               update: {
@@ -172,6 +185,7 @@ export function registerAuthDoctorRoutes(router: Router) {
                 ...(body.defaultMethodOptionId !== undefined
                   ? { defaultMethodOptionId: body.defaultMethodOptionId }
                   : {}),
+                ...(professionProfile !== undefined ? { professionProfile } : {}),
                 ...publicFields
               }
             }

@@ -102,6 +102,40 @@ Hypertension"
     ></textarea>
   </div>
 
+  @if (professionFields().length) {
+    <hr class="profile-divider" />
+
+    <div class="profession-profile-section">
+      <h3>{{ doctorTypeLabel || 'Provider' }} Details</h3>
+      <p class="section-hint">
+        These details help the care team match patients with the right online expert.
+      </p>
+
+      @for (field of professionFields(); track field.key) {
+        <label [for]="'profession-' + field.key">{{ field.label }}</label>
+        @if (field.kind === 'textarea') {
+          <textarea
+            [id]="'profession-' + field.key"
+            rows="3"
+            [placeholder]="field.placeholder"
+            [value]="professionProfileValue(field.key)"
+            (input)="updateProfessionField(field.key, $event)"
+          ></textarea>
+        } @else {
+          <input
+            [id]="'profession-' + field.key"
+            [placeholder]="field.placeholder"
+            [value]="professionProfileValue(field.key)"
+            (input)="updateProfessionField(field.key, $event)"
+          />
+        }
+        @if (field.hint) {
+          <p class="field-hint">{{ field.hint }}</p>
+        }
+      }
+    </div>
+  }
+
   <div class="actions">
     <button type="button" (click)="loadProfile()" [disabled]="isLoading || saving">
       {{ isLoading ? 'Loading...' : 'Reload' }}

@@ -156,6 +156,7 @@ model Doctor {
   websiteOrder     Int?
   yearsOfExperience Int?
   focusAreas       String[]       @default([])
+  professionProfile Json?
 
   /// Default homeopathic approach / method pre-selected in case taking and prescriptions.
   defaultMethodOptionId String?

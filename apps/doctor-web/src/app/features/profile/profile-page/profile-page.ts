@@ -6,8 +6,15 @@ import { ProfileAvatarUploadComponent } from '@hopehub/platform-ui';
 import { environment } from '../../../../environments/environment';
 import { API_PATHS } from '../../../core/constants/api-paths.constants';
 import { AUTH_TOKEN_KEY } from '../../../core/constants/auth.constants';
-import type { DoctorProfileSummary } from '../../../core/constants/doctor-types.constants';
+import type {
+  DoctorProfileSummary,
+  ProviderType,
+} from '../../../core/constants/doctor-types.constants';
 import { ProviderSessionService } from '../../../core/services/provider-session';
+import {
+  professionFieldsForProvider,
+  type ProfessionProfileField,
+} from './profession-profile-fields';
 
 function emptyProfileModel() {
   return {
@@ -21,6 +28,7 @@ function emptyProfileModel() {
     bio: '',
     yearsOfExperience: '' as number | '',
     focusAreasText: '',
+    professionProfile: {} as Record<string, string>,
     defaultMethodOptionId: '',
   };
 }
@@ -41,6 +49,7 @@ export class ProfilePage {
 
   readonly profileModel = signal(emptyProfileModel());
   readonly profileForm = form(this.profileModel);
+  readonly professionFields = signal<ProfessionProfileField[]>([]);
 
   methodOptions: Array<{ id: string; label: string }> = [];
   doctorTypeLabel = '';
@@ -80,6 +89,8 @@ export class ProfilePage {
 
       this.methodOptions = methodsRes.options;
       const profile = response.profile;
+      const providerType = profile.doctorProfile?.providerType ?? null;
+      this.professionFields.set(professionFieldsForProvider(providerType));
       this.profileModel.set({
         name: profile.name || '',
         email: profile.email || '',
@@ -91,6 +102,10 @@ export class ProfilePage {
         bio: profile.doctorProfile?.bio || '',
         yearsOfExperience: profile.doctorProfile?.yearsOfExperience ?? '',
         focusAreasText: (profile.doctorProfile?.focusAreas ?? []).join('\n'),
+        professionProfile: this.normaliseProfessionProfile(
+          profile.doctorProfile?.professionProfile,
+          providerType,
+        ),
         defaultMethodOptionId: profile.doctorProfile?.defaultMethodOptionId || '',
       });
       this.doctorTypeLabel =
@@ -110,6 +125,21 @@ export class ProfilePage {
 
   onProfileImageChange(profileImageUrl: string | null) {
     this.profileImageUrl = profileImageUrl;
+  }
+
+  professionProfileValue(key: string) {
+    return this.profileModel().professionProfile[key] ?? '';
+  }
+
+  updateProfessionField(key: string, event: Event) {
+    const value = (event.target as HTMLInputElement | HTMLTextAreaElement).value;
+    this.profileModel.update((model) => ({
+      ...model,
+      professionProfile: {
+        ...model.professionProfile,
+        [key]: value,
+      },
+    }));
   }
 
   async saveProfile() {
@@ -132,6 +162,7 @@ export class ProfilePage {
             .split('\n')
             .map((s) => s.trim())
             .filter(Boolean),
+          professionProfile: form.professionProfile,
           defaultMethodOptionId: form.defaultMethodOptionId || null,
         }),
       );
@@ -142,5 +173,14 @@ export class ProfilePage {
     } finally {
       this.saving = false;
     }
+  }
+
+  private normaliseProfessionProfile(
+    professionProfile: Record<string, string> | null | undefined,
+    providerType: ProviderType | null,
+  ) {
+    const fields = professionFieldsForProvider(providerType);
+    const current = professionProfile ?? {};
+    return Object.fromEntries(fields.map((field) => [field.key, current[field.key] ?? '']));
   }
 }

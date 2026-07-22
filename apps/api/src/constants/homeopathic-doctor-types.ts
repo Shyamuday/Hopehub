@@ -298,6 +298,7 @@ export const doctorProfileSelect = {
   websiteOrder: true,
   yearsOfExperience: true,
   focusAreas: true,
+  professionProfile: true,
   defaultMethodOptionId: true,
   defaultMethodOption: { select: { id: true, label: true } }
 } as const;

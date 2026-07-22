@@ -135,6 +135,7 @@ export type DoctorProfileSummary = {
   bio?: string | null;
   yearsOfExperience?: number | null;
   focusAreas?: string[];
+  professionProfile?: Record<string, string> | null;
   showOnWebsite?: boolean;
   defaultMethodOptionId?: string | null;
   defaultMethodOption?: { id: string; label: string } | null;
