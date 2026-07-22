@@ -1,4 +1,7 @@
 User-agent: *
 Allow: /
+Disallow: /auth/
+Disallow: /login
+Disallow: /patient/
 
-Sitemap: https://hopehubclinic.com/sitemap.xml
+Sitemap: https://hopehub.in/sitemap.xml

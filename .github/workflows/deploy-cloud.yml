@@ -296,6 +296,27 @@ jobs:
           aws s3 sync deploy/static/operations "s3://${OPERATIONS_BUCKET}" --delete --exclude "index.html" --cache-control "public,max-age=31536000,immutable"
           aws s3 cp deploy/static/operations/index.html "s3://${OPERATIONS_BUCKET}/index.html" --cache-control "no-cache,no-store,must-revalidate"
 
+      - name: Configure CloudFront SPA fallbacks
+        if: steps.select-apps.outputs.frontend_selected == 'true'
+        env:
+          PATIENT_CLOUDFRONT_DISTRIBUTION_ID: ${{ secrets.PATIENT_CLOUDFRONT_DISTRIBUTION_ID }}
+          ADMIN_CLOUDFRONT_DISTRIBUTION_ID: ${{ secrets.ADMIN_CLOUDFRONT_DISTRIBUTION_ID }}
+          DOCTOR_CLOUDFRONT_DISTRIBUTION_ID: ${{ secrets.DOCTOR_CLOUDFRONT_DISTRIBUTION_ID }}
+          OPERATIONS_CLOUDFRONT_DISTRIBUTION_ID: ${{ secrets.OPERATIONS_CLOUDFRONT_DISTRIBUTION_ID }}
+        run: |
+          if [ "${{ steps.select-apps.outputs.patient }}" = "true" ] && [ -n "$PATIENT_CLOUDFRONT_DISTRIBUTION_ID" ]; then
+            bash deploy/scripts/configure-cloudfront-spa.sh "$PATIENT_CLOUDFRONT_DISTRIBUTION_ID"
+          fi
+          if [ "${{ steps.select-apps.outputs.admin }}" = "true" ] && [ -n "$ADMIN_CLOUDFRONT_DISTRIBUTION_ID" ]; then
+            bash deploy/scripts/configure-cloudfront-spa.sh "$ADMIN_CLOUDFRONT_DISTRIBUTION_ID"
+          fi
+          if [ "${{ steps.select-apps.outputs.doctor }}" = "true" ] && [ -n "$DOCTOR_CLOUDFRONT_DISTRIBUTION_ID" ]; then
+            bash deploy/scripts/configure-cloudfront-spa.sh "$DOCTOR_CLOUDFRONT_DISTRIBUTION_ID"
+          fi
+          if [ "${{ steps.select-apps.outputs.operations }}" = "true" ] && [ -n "$OPERATIONS_CLOUDFRONT_DISTRIBUTION_ID" ]; then
+            bash deploy/scripts/configure-cloudfront-spa.sh "$OPERATIONS_CLOUDFRONT_DISTRIBUTION_ID"
+          fi
+
   deploy-api:
     name: Deploy API on Lightsail
     runs-on: [self-hosted, hopehub-backend]
