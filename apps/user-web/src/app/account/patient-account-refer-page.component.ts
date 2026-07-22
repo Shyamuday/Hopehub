@@ -57,7 +57,7 @@ export class PatientAccountReferPageComponent implements OnInit {
   whatsappShare() {
     const url = this.shareUrl();
     const text = encodeURIComponent(
-      `Join me on HopeHub Care for provider-led homeopathic consultations. Use my code ${this.code()} or link: ${url}`,
+      `Join me on HopeHub Care for provider-led online healthcare consultations. Use my code ${this.code()} or link: ${url}`,
     );
     window.open(`https://wa.me/?text=${text}`, '_blank', 'noopener');
   }

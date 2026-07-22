@@ -19,7 +19,7 @@ export const skinCareDiseaseInfo: DiseaseInfo = {
       'We study recurring triggers such as products, stress, hormones, weather, digestion, allergy tendency, and previous cream use. The goal is to reduce repeated flare-ups with gentle, individualized care.',
     points: [
       'Identify triggers and habits that keep the skin condition active',
-      'Use homeopathy-led support where suitable for recurring skin tendency',
+      'Use individualized support where suitable for recurring skin tendency',
       'Avoid unnecessary steroid or harsh product dependency',
       'Guide simple routine correction and follow-up tracking',
     ],
@@ -94,7 +94,7 @@ export const skinCareDiseaseInfo: DiseaseInfo = {
     {
       question: 'Can I send skin photos during consultation?',
       answer:
-        'Yes. Clear photos in good natural lighting help the doctor understand the pattern, distribution, and severity of your skin condition much better. Take photos of the affected area from multiple angles. Avoid heavy filters or editing. The provider may request additional photos during the chat consultation.',
+        'Yes. Clear photos in good natural lighting help the provider understand the pattern, distribution, and severity of your skin condition much better. Take photos of the affected area from multiple angles. Avoid heavy filters or editing. The provider may request additional photos during the chat consultation.',
     },
     {
       question: 'Does homeopathy help with skin conditions?',
@@ -109,7 +109,7 @@ export const skinCareDiseaseInfo: DiseaseInfo = {
     {
       question: 'Are steroid creams safe for long-term use?',
       answer:
-        "No. Long-term unsupervised use of topical steroid creams causes skin thinning, increased sensitivity, rebound flares when stopped, and in some cases systemic effects. They have a role in short-term management of specific conditions under medical supervision, but should not be used continuously without a doctor's guidance.",
+        'No. Long-term unsupervised use of topical steroid creams causes skin thinning, increased sensitivity, rebound flares when stopped, and in some cases systemic effects. They have a role in short-term management of specific conditions under medical supervision, but should not be used continuously without provider guidance.',
     },
     {
       question: 'Can I consult online for skin conditions?',
@@ -133,7 +133,7 @@ export const skinCareDiseaseInfo: DiseaseInfo = {
   ],
   details: [
     'Skin problems can be linked to routine, sensitivity, hormones, stress, diet, and weather.',
-    'Clear photos and timeline help the doctor understand the case better.',
+    'Clear photos and timeline help the provider understand the case better.',
     'The goal is long-term control, not only short-term suppression.',
   ],
   warning:

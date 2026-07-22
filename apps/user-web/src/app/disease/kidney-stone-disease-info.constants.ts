@@ -15,18 +15,18 @@ export const kidneyStoneDiseaseInfo: DiseaseInfo = {
     'Kidney stones are hard mineral and salt deposits that form inside the kidneys. They cause severe pain during passage and have a high recurrence rate without proper dietary and lifestyle correction.',
 
   about:
-    'Kidney stones (renal calculi) form when urine becomes concentrated and minerals crystallize. They range from sand-like particles to stones several centimetres in size. Most stones pass on their own with hydration and pain management, but larger stones or recurrent cases need structured medical care. Homeopathy has a well-documented role in supporting stone passage, reducing pain, and preventing recurrence through constitutional and acute prescribing.',
+    'Kidney stones (renal calculi) form when urine becomes concentrated and minerals crystallize. They range from sand-like particles to stones several centimetres in size. Most stones pass on their own with hydration and pain management, but larger stones or recurrent cases need structured medical care. HopeHub focuses on symptom review, imaging interpretation, diet and hydration guidance, recurrence prevention, and supportive treatment options where suitable.',
 
   ourApproach: {
     title:
-      'Homeopathy-led kidney stone care — passage support, pain relief, and recurrence prevention',
+      'Provider-led kidney stone care - passage support, pain relief, and recurrence prevention',
     intro:
-      'Our approach combines acute symptom management with long-term constitutional care. We do not just treat the pain episode — we work on the underlying tendency to form stones, which is where homeopathy offers its strongest value.',
+      'Our approach combines acute symptom management with long-term recurrence prevention. We do not just treat the pain episode - we work on hydration, diet, stone type, metabolic risk, and the underlying tendency to form stones.',
     points: [
       'Assess stone size, location, type, and symptom severity before recommending a care path',
-      'Use acute homeopathic remedies to support stone passage and reduce renal colic pain',
-      'Identify the stone type (calcium oxalate, uric acid, struvite, cystine) to guide dietary and constitutional treatment',
-      'Prescribe constitutional remedies to reduce the recurrence tendency over time',
+      'Use supportive treatment options where suitable to help with stone-passage symptoms and renal colic pain',
+      'Identify the stone type (calcium oxalate, uric acid, struvite, cystine) to guide dietary and preventive care',
+      'Create a prevention plan to reduce the recurrence tendency over time',
       'Coordinate with urology when stone size or obstruction requires intervention',
       'Provide detailed dietary and hydration guidance specific to the stone type',
       'Track follow-up through urine analysis, ultrasound reports, and symptom review',
@@ -115,7 +115,7 @@ export const kidneyStoneDiseaseInfo: DiseaseInfo = {
     'Uric acid stones: Allopurinol, potassium citrate to alkalinize urine',
     'Struvite stones: Antibiotics to treat underlying infection',
     'Homeopathic acute: Berberis vulgaris, Lycopodium, Cantharis, Sarsaparilla, Ocimum canum',
-    'Homeopathic constitutional: Based on individual case assessment by doctor',
+    'Individualized care plan: Based on provider assessment',
   ],
 
   homeCare: [
@@ -142,7 +142,7 @@ export const kidneyStoneDiseaseInfo: DiseaseInfo = {
     'Treat gout and hyperuricemia proactively',
     'Treat recurrent UTIs promptly to prevent struvite stones',
     'Follow up with 24-hour urine testing after first stone to identify metabolic risk',
-    'Constitutional homeopathic treatment to reduce recurrence tendency',
+    'Individualized preventive care to reduce recurrence tendency',
     'Annual renal ultrasound for those with recurrent stone history',
   ],
 
@@ -162,14 +162,14 @@ export const kidneyStoneDiseaseInfo: DiseaseInfo = {
   ],
 
   duration:
-    'Small stones (under 4 mm) typically pass within 1–2 weeks with hydration. Stones 4–6 mm may take 2–4 weeks. Larger stones often require intervention. Constitutional homeopathic treatment for recurrence prevention is tracked over 3–6 months.',
+    'Small stones (under 4 mm) typically pass within 1-2 weeks with hydration. Stones 4-6 mm may take 2-4 weeks. Larger stones often require intervention. Recurrence-prevention care is tracked over 3-6 months.',
 
   stages: [
     'Acute episode — pain management, hydration, stone passage support',
     'Stone analysis — identify type to guide prevention',
     'Metabolic workup — 24-hour urine, blood tests to find root cause',
     'Dietary correction — specific to stone type',
-    'Constitutional homeopathic treatment — reduce recurrence tendency',
+    'Preventive care plan - reduce recurrence tendency',
     'Follow-up imaging — confirm stone clearance and monitor for new formation',
   ],
 
@@ -202,7 +202,7 @@ export const kidneyStoneDiseaseInfo: DiseaseInfo = {
     {
       question: 'Why do kidney stones keep coming back?',
       answer:
-        'Recurrence is common — about 50% of people have a second stone within 5–10 years without preventive measures. Recurrence is driven by metabolic factors (high uric acid, hyperparathyroidism, low citrate), dietary habits, dehydration, and genetic tendency. A 24-hour urine test after the first stone identifies your specific risk factors. Constitutional homeopathic treatment alongside dietary correction significantly reduces recurrence.',
+        'Recurrence is common - about 50% of people have a second stone within 5-10 years without preventive measures. Recurrence is driven by metabolic factors (high uric acid, hyperparathyroidism, low citrate), dietary habits, dehydration, and genetic tendency. A 24-hour urine test after the first stone identifies your specific risk factors. A personalized prevention plan with dietary correction can significantly reduce recurrence.',
     },
     {
       question: 'When does a kidney stone need surgery?',
@@ -217,26 +217,26 @@ export const kidneyStoneDiseaseInfo: DiseaseInfo = {
     {
       question: 'Can I consult online for kidney stone treatment?',
       answer:
-        'Yes. Online consultation is appropriate for acute stone episodes where imaging is already available, for follow-up after a stone episode, for dietary and lifestyle guidance, and for constitutional homeopathic treatment to prevent recurrence. If you have fever, very severe uncontrolled pain, or no urine output, seek emergency care immediately.',
+        'Yes. Online consultation is appropriate for acute stone episodes where imaging is already available, follow-up after a stone episode, dietary and lifestyle guidance, and prevention planning. If you have fever, very severe uncontrolled pain, or no urine output, seek emergency care immediately.',
     },
     {
-      question: 'Why should I choose homeopathy for kidney stones?',
+      question: 'How can provider-led care help with kidney stones?',
       answer:
-        'Most conventional treatments address the stone itself — breaking it, removing it, or managing the pain. They do not address why your body keeps forming stones in the first place. Homeopathy works at a deeper level by correcting the metabolic and constitutional tendency that drives stone formation. Remedies like Berberis vulgaris, Lycopodium, Sarsaparilla, and Cantharis are not just pain relievers — they support the kidneys, improve urine flow, reduce crystal deposition tendency, and work on the underlying pattern that makes your body prone to forming stones. For acute episodes, homeopathy can significantly reduce renal colic pain and support stone passage without the side effects of strong painkillers. For long-term care, constitutional prescribing addresses the root — whether it is a uric acid tendency, oxalate metabolism issue, or a deeper constitutional predisposition. This is why homeopathy is not just an alternative for kidney stones — it is often the most complete approach available.',
+        'Most procedures address the stone itself by breaking it, removing it, or managing the pain. Long-term care also needs to ask why stones keep forming. Provider-led care reviews stone type, imaging, hydration, diet, metabolic risk, recurrence history, and suitable supportive treatment options so the prevention plan fits your specific risk pattern.',
     },
     {
       question: 'I already had surgery or lithotripsy for my stone. Do I still need treatment?',
       answer:
-        'Yes — and this is one of the most important points most patients miss. Surgery, laser fragmentation, or shock wave lithotripsy removes the stone. It does not remove the reason your body formed it. Without addressing the root cause, the recurrence rate is about 50% within 5 years and up to 80% within 10 years. The stone will come back — often multiple times — unless the underlying tendency is corrected. This is exactly where homeopathy delivers its strongest value. After your stone has been cleared, constitutional homeopathic treatment works on the metabolic and physiological pattern that caused the stone to form — whether that is a uric acid tendency, calcium oxalate crystallization, low urinary citrate, or a deeper constitutional predisposition. Combined with dietary correction specific to your stone type, this approach can dramatically reduce or completely stop recurrence. If you have already been through the pain of a stone episode or a procedure, the most important next step is not waiting for the next stone — it is treating the core so there is no next stone.',
+        'Yes. Surgery, laser fragmentation, or shock wave lithotripsy removes the stone, but it does not always remove the reason your body formed it. Without addressing the root cause, recurrence risk remains high. After your stone has been cleared, prevention care reviews stone type, hydration, diet, urinary citrate, uric acid tendency, calcium oxalate risk, and other metabolic factors. If you have already been through a stone episode or procedure, the next step is prevention - not waiting for the next stone.',
     },
   ],
 
   careApproach: [
     'Review imaging reports, urine analysis, and symptom history before consultation',
-    'Prescribe acute homeopathic remedies for pain and stone passage support',
+    'Recommend suitable supportive care for pain and stone passage symptoms',
     'Identify stone type and guide specific dietary correction',
     'Recommend metabolic workup (24-hour urine, blood tests) to find root cause',
-    'Prescribe constitutional homeopathic treatment to reduce recurrence tendency',
+    'Create an individualized prevention plan to reduce recurrence tendency',
     'Coordinate urology referral when stone size or obstruction warrants intervention',
     'Follow up on stone clearance through repeat imaging and symptom review',
   ],
@@ -244,7 +244,7 @@ export const kidneyStoneDiseaseInfo: DiseaseInfo = {
   details: [
     'Kidney stones are one of the most painful and recurrent urological conditions, affecting 1 in 10 people at some point in their life.',
     'The most common type is calcium oxalate (about 80% of cases), followed by uric acid stones (10–15%), struvite stones (5–10%), and cystine stones (rare).',
-    'Homeopathy has a well-established acute and constitutional role in kidney stone management, with Berberis vulgaris being the most widely used remedy for renal colic.',
+    'Supportive treatments may be considered alongside hydration, pain control, dietary correction, and recurrence-prevention planning.',
     'Stone recurrence is preventable — identifying your stone type and metabolic risk through proper testing is the most important step after the first episode.',
     'Dietary changes specific to your stone type, combined with adequate hydration, can reduce recurrence risk by over 50%.',
   ],
@@ -266,7 +266,7 @@ export const kidneyStoneDiseaseInfo: DiseaseInfo = {
   seo: {
     metaTitle: 'Kidney Stone Treatment | HopeHub Care and Research Centre',
     metaDescription:
-      'Provider-led kidney stone care at HopeHub Care and Research Centre. Homeopathy for renal colic, stone passage support, and recurrence prevention. Online consultation available.',
+      'Provider-led kidney stone care at HopeHub Care and Research Centre. Stone passage support, diet guidance, recurrence prevention, and online consultation.',
     keywords: [
       'kidney stone treatment',
       'renal calculi homeopathy',
@@ -286,7 +286,7 @@ export const kidneyStoneDiseaseInfo: DiseaseInfo = {
     ],
     ogTitle: 'Kidney Stone Care | HopeHub Care and Research Centre',
     ogDescription:
-      'Structured homeopathy-led care for kidney stones — acute pain relief, stone passage support, and long-term recurrence prevention. Consult online.',
+      'Structured provider-led care for kidney stones - acute pain relief guidance, stone passage support, and long-term recurrence prevention. Consult online.',
     canonicalPath: '/treatments/kidney-stone',
   },
 };

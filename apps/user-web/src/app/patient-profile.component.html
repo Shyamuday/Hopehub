@@ -19,7 +19,7 @@
         />
         <div>
           <h2>{{ accountPage ? 'Edit account' : 'My profile' }}</h2>
-          <p class="profile-sub">Save anytime — fill only what you know now. Homeopathic, food, mind &amp; body details help your provider. Only your name is required.</p>
+          <p class="profile-sub">Save anytime - fill only what you know now. Food, mind, body, and treatment-history details help your provider personalize care. Only your name is required.</p>
         </div>
       </div>
       @if (profile()?.name === 'Patient') {
@@ -214,8 +214,8 @@
       </section>
 
       <section class="profile-section homeo-section">
-        <h3>Food &amp; appetite <span class="section-tag">Homeopathy</span></h3>
-        <p class="section-note">Helps your homeopathic doctor understand your constitution. Fill gradually — save anytime.</p>
+        <h3>Food &amp; appetite <span class="section-tag">Care profile</span></h3>
+        <p class="section-note">Helps your provider understand your routine, sensitivities, and care needs. Fill gradually - save anytime.</p>
         <div class="field-grid">
           <div class="field">
             <label>Diet type</label>
@@ -302,7 +302,7 @@
 
       <section class="profile-section homeo-section">
         <h3>Mind &amp; behaviour</h3>
-        <p class="section-note">Emotional patterns are important in homeopathic case analysis.</p>
+        <p class="section-note">Emotional patterns can be important for mental wellness, stress-related concerns, and whole-person care.</p>
         <div class="field-grid single-col">
           <div class="field">
             <label>Temperament &amp; mood</label>
@@ -332,7 +332,7 @@
       </section>
 
       <section class="profile-section homeo-section">
-        <h3>Homeopathic history &amp; modalities</h3>
+        <h3>Treatment history &amp; symptom patterns</h3>
         <div class="field-grid single-col">
           <div class="field">
             <label>Childhood illnesses</label>
@@ -343,8 +343,8 @@
             <textarea [formField]="profileForm.vaccinationHistory" placeholder="Recent vaccines, reactions if any"></textarea>
           </div>
           <div class="field">
-            <label>Previous homeopathic treatment</label>
-            <textarea [formField]="profileForm.previousHomeopathicTreatment" placeholder="Remedies taken before, response, doctor name if known"></textarea>
+            <label>Previous homeopathy or supportive treatment</label>
+            <textarea [formField]="profileForm.previousHomeopathicTreatment" placeholder="Remedies or supportive care taken before, response, provider name if known"></textarea>
           </div>
           <div class="field">
             <label>What makes symptoms worse</label>

@@ -14,12 +14,12 @@ export const hairFallDiseaseInfo: DiseaseInfo = {
   summary:
     'We look at duration, scalp condition, family history, stress, illness, diet, and medication history before suggesting a treatment path.',
   ourApproach: {
-    title: 'Root-cause, homeopathy-led hair fall care',
+    title: 'Root-cause, provider-led hair fall care',
     intro:
       'We do not look at hair fall as only a cosmetic problem. Our providers review scalp health, stress, nutrition, illness history, family tendency, sleep, and lifestyle so treatment can target the likely root pattern.',
     points: [
       'Understand the trigger behind shedding instead of only changing shampoo or products',
-      'Use individualized homeopathy where suitable to support chronic tendency and recurrence',
+      'Use individualized treatment support where suitable for chronic tendency and recurrence',
       'Keep medicine load minimal and avoid unnecessary aggressive treatment',
       'Track response through follow-up rather than judging from one consultation',
     ],
@@ -48,14 +48,14 @@ export const hairFallDiseaseInfo: DiseaseInfo = {
   tests: [
     'CBC or iron studies if clinically needed',
     'Thyroid profile if symptoms suggest',
-    'Vitamin D/B12 if doctor advises',
+    'Vitamin D/B12 if provider advises',
   ],
   treatmentOptions: {
     allopathy:
       'May include topical or oral medicines when medically necessary after provider assessment.',
     ayurveda: 'May include supportive routine, diet, and scalp care practices where suitable.',
     homeopathy:
-      'Individualized homeopathy-led care may be used based on pattern, triggers, and constitution.',
+      'Individualized homeopathy may be used as one care option based on pattern, triggers, and constitution.',
     lifestyle:
       'Sleep, protein intake, stress management, and gentle hair care are commonly reviewed.',
   },
@@ -116,7 +116,7 @@ export const hairFallDiseaseInfo: DiseaseInfo = {
   careApproach: [
     'Short symptom intake before consultation',
     'Provider-led chat consultation',
-    'Homeopathy-led, low-medicine care where suitable',
+    'Low-medicine care where suitable',
     'Prescription and follow-up guidance',
   ],
   details: [
