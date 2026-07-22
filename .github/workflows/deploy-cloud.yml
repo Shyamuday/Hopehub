@@ -222,6 +222,61 @@ jobs:
         run: |
           aws s3 sync deploy/static/patient "s3://${PATIENT_BUCKET}" --delete --exclude "index.html" --cache-control "public,max-age=31536000,immutable"
           aws s3 cp deploy/static/patient/index.html "s3://${PATIENT_BUCKET}/index.html" --cache-control "no-cache,no-store,must-revalidate"
+          while read -r route; do
+            [ -z "$route" ] && continue
+            aws s3 cp deploy/static/patient/index.html "s3://${PATIENT_BUCKET}${route}" \
+              --content-type "text/html" \
+              --cache-control "no-cache,no-store,must-revalidate"
+          done <<'EOF'
+          /about
+          /treatments
+          /talk-to-doctor
+          /our-doctors
+          /blog
+          /testimonials
+          /careers
+          /chronic-care
+          /faq
+          /why-successful
+          /contact
+          /legal
+          /privacy-policy
+          /terms-and-conditions
+          /return-and-exchange-policy
+          /shipping-policy
+          /payment-policy
+          /safety
+          /get-app
+          /login
+          /auth/reset
+          /patient/scan
+          /patient/dashboard
+          /patient/account
+          /patient/account/profile
+          /patient/account/addresses
+          /patient/account/refer
+          /patient/account/rewards
+          /patient/account/consultations
+          /patient/account/orders
+          /patient/account/lab-results
+          /patient/account/card
+          /patient/account/permissions
+          /treatments/hair-fall
+          /treatments/skin-care
+          /treatments/chronic-care
+          /treatments/diabetes-mellitus
+          /treatments/hypertension
+          /treatments/chronic-kidney-disease
+          /treatments/gallstone
+          /treatments/liver-cirrhosis
+          /treatments/piles
+          /treatments/kidney-stone
+          /treatments/mental-health
+          /treatments/sexual-health
+          /treatments/respiratory-disease
+          /treatments/musculoskeletal-disease
+          /treatments/cardiovascular-disease
+          EOF
 
       - name: Deploy admin web to S3
         if: steps.select-apps.outputs.admin == 'true'
