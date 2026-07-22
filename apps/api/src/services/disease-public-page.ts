@@ -1,4 +1,9 @@
 import { prisma } from '../db.js';
+import { PublicPageStatus } from '@prisma/client';
+import {
+  DEFAULT_DISEASE_INTAKE_QUESTIONS,
+  DEFAULT_DOCTOR_DISEASE_FEE_PAISE
+} from '../constants/disease-categories.constants.js';
 import {
   diseasePublicPageContentSchema,
   type DiseasePublicPageContent,
@@ -16,6 +21,9 @@ type DiseaseRow = {
   seoDescription: string | null;
   publicFaq: unknown;
   publicPageContent: unknown;
+  publicPageStatus?: PublicPageStatus;
+  publicPagePublishedAt?: Date | null;
+  publicPageReviewedAt?: Date | null;
 };
 
 export function parsePublicPageContent(value: unknown): DiseasePublicPageContent | null {
@@ -39,6 +47,7 @@ export function mergeDiseasePublicPage(disease: DiseaseRow): MergedDiseasePublic
   const summary = disease.publicDescription?.trim() || content?.about?.trim() || '';
   const imageUrl = disease.publicImageUrl?.trim() || '';
   const imageAlt = content?.imageAlt?.trim() || disease.name;
+  const contentSeo = content?.seo || {};
 
   return {
     ...(content || {}),
@@ -49,12 +58,19 @@ export function mergeDiseasePublicPage(disease: DiseaseRow): MergedDiseasePublic
     imageAlt,
     faq,
     seo: {
-      metaTitle: disease.seoTitle || undefined,
-      metaDescription: disease.seoDescription || undefined,
-      ogImage: imageUrl || undefined,
-      canonicalPath: slug ? `/treatments/${slug}` : undefined
+      ...contentSeo,
+      metaTitle: disease.seoTitle || contentSeo.metaTitle,
+      metaDescription: disease.seoDescription || contentSeo.metaDescription,
+      ogImage: contentSeo.ogImage || imageUrl || undefined,
+      canonicalPath: contentSeo.canonicalPath || (slug ? `/treatments/${slug}` : undefined)
     }
   };
+}
+
+function parseReviewedDate(value: string | undefined): Date | null {
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
 }
 
 export function staticImportToDbFields(info: StaticDiseasePageImport) {
@@ -66,7 +82,6 @@ export function staticImportToDbFields(info: StaticDiseasePageImport) {
     summary,
     about,
     faq,
-    seo,
     shortName,
     category,
     diseaseType,
@@ -92,7 +107,8 @@ export function staticImportToDbFields(info: StaticDiseasePageImport) {
     references,
     careApproach,
     details,
-    warning
+    warning,
+    seo
   } = info;
 
   const publicPageContent: DiseasePublicPageContent = {
@@ -123,7 +139,8 @@ export function staticImportToDbFields(info: StaticDiseasePageImport) {
     ...(references?.length ? { references } : {}),
     ...(careApproach?.length ? { careApproach } : {}),
     ...(details?.length ? { details } : {}),
-    ...(warning ? { warning } : {})
+    ...(warning ? { warning } : {}),
+    ...(seo ? { seo } : {})
   };
 
   return {
@@ -133,7 +150,10 @@ export function staticImportToDbFields(info: StaticDiseasePageImport) {
     publicFaq: faq ?? [],
     seoTitle: seo?.metaTitle?.trim() || null,
     seoDescription: seo?.metaDescription?.trim() || null,
-    publicPageContent
+    publicPageContent,
+    publicPageStatus: PublicPageStatus.PUBLISHED,
+    publicPagePublishedAt: parseReviewedDate(lastUpdated) ?? new Date(),
+    publicPageReviewedAt: parseReviewedDate(lastUpdated)
   };
 }
 
@@ -149,6 +169,9 @@ export async function getDiseasePublicPageEditPayload(diseaseId: string) {
     publicImageUrl: disease.publicImageUrl,
     seoTitle: disease.seoTitle,
     seoDescription: disease.seoDescription,
+    publicPageStatus: disease.publicPageStatus,
+    publicPagePublishedAt: disease.publicPagePublishedAt,
+    publicPageReviewedAt: disease.publicPageReviewedAt,
     publicFaq: parsePublicFaq(disease.publicFaq),
     publicPageContent: parsePublicPageContent(disease.publicPageContent),
     publicPage: mergeDiseasePublicPage(disease)
@@ -162,6 +185,9 @@ export async function updateDiseasePublicPage(
     publicImageUrl?: string | null;
     seoTitle?: string | null;
     seoDescription?: string | null;
+    publicPageStatus?: PublicPageStatus;
+    publicPagePublishedAt?: Date | null;
+    publicPageReviewedAt?: Date | null;
     publicFaq?: Array<{ question: string; answer: string }> | null;
     publicPageContent?: DiseasePublicPageContent | null;
   }
@@ -176,6 +202,9 @@ export async function updateDiseasePublicPage(
       publicImageUrl: body.publicImageUrl ?? null,
       seoTitle: body.seoTitle ?? null,
       seoDescription: body.seoDescription ?? null,
+      publicPageStatus: body.publicPageStatus,
+      publicPagePublishedAt: body.publicPagePublishedAt,
+      publicPageReviewedAt: body.publicPageReviewedAt,
       publicFaq: body.publicFaq ?? [],
       publicPageContent: body.publicPageContent ?? undefined
     }
@@ -194,7 +223,7 @@ export async function updateDiseasePublicPage(
 export async function importStaticDiseasePages(entries: StaticDiseasePageImport[]) {
   let matched = 0;
   let updated = 0;
-  const created = 0;
+  let created = 0;
   const unmatched: string[] = [];
 
   for (const entry of entries) {
@@ -217,7 +246,10 @@ export async function importStaticDiseasePages(entries: StaticDiseasePageImport[
           publicFaq: fields.publicFaq,
           seoTitle: fields.seoTitle,
           seoDescription: fields.seoDescription,
-          publicPageContent: fields.publicPageContent
+          publicPageContent: fields.publicPageContent,
+          publicPageStatus: fields.publicPageStatus,
+          publicPagePublishedAt: fields.publicPagePublishedAt,
+          publicPageReviewedAt: fields.publicPageReviewedAt
         }
       });
       matched += 1;
@@ -225,7 +257,26 @@ export async function importStaticDiseasePages(entries: StaticDiseasePageImport[
       continue;
     }
 
-    unmatched.push(entry.name);
+    await prisma.disease.create({
+      data: {
+        name: entry.name,
+        slug,
+        description: entry.summary || entry.about || `${entry.name} care at HopeHub Care.`,
+        publicCategory: entry.category ?? null,
+        feeInPaise: DEFAULT_DOCTOR_DISEASE_FEE_PAISE,
+        intakeQuestions: DEFAULT_DISEASE_INTAKE_QUESTIONS,
+        publicDescription: fields.publicDescription,
+        publicImageUrl: fields.publicImageUrl,
+        publicFaq: fields.publicFaq,
+        seoTitle: fields.seoTitle,
+        seoDescription: fields.seoDescription,
+        publicPageContent: fields.publicPageContent,
+        publicPageStatus: fields.publicPageStatus,
+        publicPagePublishedAt: fields.publicPagePublishedAt,
+        publicPageReviewedAt: fields.publicPageReviewedAt
+      }
+    });
+    created += 1;
   }
 
   return { matched, updated, created, unmatched, total: entries.length };

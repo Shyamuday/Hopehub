@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { Prisma, ProviderCategory, ProviderType, Role } from '@prisma/client';
+import { Prisma, ProviderCategory, ProviderType, PublicPageStatus, Role } from '@prisma/client';
 import { authRequired, allowRoles } from '../auth.js';
 import { prisma } from '../db.js';
 import { DEFAULT_BILLING_PLANS } from '../constants/billing.constants.js';
@@ -130,7 +130,10 @@ router.get(
         ...disease,
         publicFaq: parsePublicFaq(disease.publicFaq),
         publicPageContent: parsePublicPageContent(disease.publicPageContent),
-        publicPage: mergeDiseasePublicPage(disease)
+        publicPage:
+          disease.publicPageStatus === PublicPageStatus.PUBLISHED
+            ? mergeDiseasePublicPage(disease)
+            : null
       }
     });
   })
@@ -189,6 +192,9 @@ router.get(
         seoTitle: disease.seoTitle,
         seoDescription: disease.seoDescription,
         publicFaq: parsePublicFaq(disease.publicFaq),
+        publicPageStatus: disease.publicPageStatus,
+        publicPagePublishedAt: disease.publicPagePublishedAt,
+        publicPageReviewedAt: disease.publicPageReviewedAt,
         publicCategory: disease.publicCategory,
         feeInPaise: disease.feeInPaise,
         isActive: disease.isActive
@@ -548,10 +554,10 @@ router.get(
       clinicAddressLine2: 'Near City Centre, Main Road',
       clinicAddressLine3: 'Ranchi, Jharkhand, India',
       clinicAddressLine4: 'Pincode — 834001',
-      homeHeroEyebrow: 'Doctor-led homeopathy',
-      homeHeroHeadline: 'Personalised homeopathic care for every health concern.',
+      homeHeroEyebrow: 'Provider-led healthcare',
+      homeHeroHeadline: 'Personalised care for every health concern.',
       homeHeroLead:
-        'Acute illnesses, chronic conditions, skin and hair issues, digestive problems, allergies, mental wellness, and more — consult qualified homeopathic doctors online with prescriptions and follow-up.',
+        'Acute illnesses, chronic conditions, skin and hair issues, digestive problems, allergies, mental wellness, nutrition, rehabilitation, and more - consult qualified healthcare providers online with guidance, prescriptions where appropriate, and follow-up.',
       statConsultations: '5,000+',
       statDoctors: '12+',
       statRating: '4.8★',

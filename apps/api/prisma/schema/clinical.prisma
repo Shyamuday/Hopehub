@@ -20,6 +20,12 @@ enum BillingPlanType {
   CONTINUITY_QUARTERLY
 }
 
+enum PublicPageStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
 model Disease {
   id                 String         @id @default(cuid())
   name               String         @unique
@@ -35,6 +41,9 @@ model Disease {
   seoDescription     String?        @db.Text
   publicFaq          Json?
   publicPageContent  Json?
+  publicPageStatus   PublicPageStatus @default(PUBLISHED)
+  publicPagePublishedAt DateTime?
+  publicPageReviewedAt  DateTime?
   consultations      Consultation[]
   locationFees       DiseaseLocationFee[]
   clinicalMedia      ClinicalMedia[]
@@ -43,6 +52,7 @@ model Disease {
 
   @@index([publicCategory])
   @@index([slug])
+  @@index([publicPageStatus])
 }
 
 /// Per-clinic or online consultation fee override. `locationKey` is `ONLINE` or a store id.
