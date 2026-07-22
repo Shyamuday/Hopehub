@@ -1,0 +1,360 @@
+<section class="bg-slate-50 min-h-screen py-12">
+  <div class="max-w-7xl mx-auto px-6">
+
+    <!-- Header -->
+    <div class="text-center mb-12">
+      <h1 class="text-4xl font-bold text-slate-800 mb-4">Mental Health Articles & Resources</h1>
+      <p class="text-slate-600 max-w-3xl mx-auto text-lg">
+        Evidence-based articles to help you understand and improve your mental health.
+      </p>
+    </div>
+
+    <!-- Recommended Articles (if coming from assessment) -->
+    @if (recommendedArticles().length > 0) {
+    <div class="mb-12">
+      <div class="bg-blue-50 border border-blue-200 rounded-xl p-6 mb-8">
+        <div class="flex items-center space-x-3 mb-4">
+          <svg class="w-6 h-6 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+            <path
+              d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z" />
+          </svg>
+          <h2 class="text-2xl font-bold text-blue-800">Recommended Reading</h2>
+        </div>
+        @if (assessmentInfo()) {
+        <p class="text-blue-700 mb-4">
+          Based on your <strong>{{ assessmentInfo()!.type }}</strong> assessment results
+          (Score: {{ assessmentInfo()!.score }}, Level: {{ assessmentInfo()!.level }})
+        </p>
+        }
+        <p class="text-blue-700">These articles are specifically recommended for your current situation:</p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+        @for (article of recommendedArticles(); track article.id) {
+        <div
+          class="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow border-l-4 border-blue-500 cursor-pointer"
+          (click)="selectArticle(article)">
+
+          <!-- Article Header -->
+          <div class="p-6">
+            <div class="flex items-center justify-between mb-4">
+              <span class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-semibold">
+                Recommended
+              </span>
+              <span class="text-slate-500 text-sm">{{ article.readingTime }}</span>
+            </div>
+
+            <h3 class="text-xl font-bold text-slate-800 mb-2">{{ article.title }}</h3>
+            @if (article.subtitle) {
+            <p class="text-slate-600 text-sm mb-3">{{ article.subtitle }}</p>
+            }
+            <p class="text-slate-600 mb-4 line-clamp-3">{{ article.description }}</p>
+
+            <!-- Meta Info -->
+            <div class="flex items-center justify-between text-sm text-slate-500">
+              <span>{{ article.type }}</span>
+              <span>{{ article.difficulty }}</span>
+            </div>
+          </div>
+        </div>
+        }
+      </div>
+    </div>
+    }
+
+    <!-- Featured Articles -->
+    @if (!selectedArticle() && featuredArticles().length > 0) {
+    <div class="mb-12">
+      <h2 class="text-3xl font-bold text-slate-800 mb-6">Featured Articles</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        @for (article of featuredArticles(); track article.id) {
+        <div class="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow cursor-pointer"
+          (click)="selectArticle(article)">
+
+          <div class="p-6">
+            <div class="flex items-center justify-between mb-4">
+              <span class="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-sm font-semibold">
+                Featured
+              </span>
+              <span class="text-slate-500 text-sm">{{ article.readingTime }}</span>
+            </div>
+
+            <h3 class="text-2xl font-bold text-slate-800 mb-2">{{ article.title }}</h3>
+            @if (article.subtitle) {
+            <p class="text-slate-600 mb-3">{{ article.subtitle }}</p>
+            }
+            <p class="text-slate-600 mb-4">{{ article.description }}</p>
+
+            <div class="flex items-center justify-between text-sm">
+              <span class="text-slate-500">{{ article.author }}</span>
+              <span class="text-slate-500">{{ article.publishedDate | date:'mediumDate' }}</span>
+            </div>
+          </div>
+        </div>
+        }
+      </div>
+    </div>
+    }
+
+    <!-- Filters and Search -->
+    @if (!selectedArticle()) {
+    <div class="mb-8">
+
+      <!-- Search Bar -->
+      <div class="mb-6">
+        <div class="relative max-w-md mx-auto">
+          <input type="text" [(ngModel)]="searchQuery" (input)="onSearch()" placeholder="Search articles..."
+            class="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-transparent">
+          <svg class="absolute left-3 top-3.5 w-5 h-5 text-slate-400" fill="none" stroke="currentColor"
+            viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+        </div>
+      </div>
+
+      <!-- Filter Tabs -->
+      <div class="flex flex-wrap justify-center gap-2 mb-6">
+        <button (click)="setFilter('all')" [class.bg-slate-800]="currentFilter() === 'all'"
+          [class.text-white]="currentFilter() === 'all'" [class.bg-white]="currentFilter() !== 'all'"
+          [class.text-slate-700]="currentFilter() !== 'all'"
+          class="px-4 py-2 rounded-lg border border-slate-200 hover:bg-slate-100 transition-colors text-sm">
+          All Articles ({{ allArticles().length }})
+        </button>
+
+        <!-- Category Filters -->
+        @for (category of categories(); track category) {
+        <button (click)="setFilter('category', category)"
+          [class.bg-slate-800]="currentFilter() === 'category:' + category"
+          [class.text-white]="currentFilter() === 'category:' + category"
+          [class.bg-white]="currentFilter() !== 'category:' + category"
+          [class.text-slate-700]="currentFilter() !== 'category:' + category"
+          class="px-4 py-2 rounded-lg border border-slate-200 hover:bg-slate-100 transition-colors text-sm">
+          {{ category }} ({{ getCategoryCount(category) }})
+        </button>
+        }
+      </div>
+    </div>
+    }
+
+    <!-- Articles Grid -->
+    @if (!selectedArticle()) {
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      @for (article of filteredArticles(); track article.id) {
+      <div class="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow cursor-pointer"
+        (click)="selectArticle(article)">
+
+        <div class="p-6">
+          <!-- Type and Reading Time -->
+          <div class="flex items-center justify-between mb-4">
+            <span class="bg-slate-100 text-slate-700 px-3 py-1 rounded-full text-sm font-semibold">
+              {{ article.type }}
+            </span>
+            <span class="text-slate-500 text-sm">{{ article.readingTime }}</span>
+          </div>
+
+          <!-- Title and Description -->
+          <h3 class="text-xl font-bold text-slate-800 mb-2">{{ article.title }}</h3>
+          <p class="text-slate-600 mb-4 line-clamp-3">{{ article.description }}</p>
+
+          <!-- Author and Date -->
+          <div class="flex items-center justify-between text-sm text-slate-500 mb-4">
+            <span>{{ article.author.split(',')[0] }}</span>
+            <span>{{ article.publishedDate | date:'mediumDate' }}</span>
+          </div>
+
+          <!-- Categories -->
+          <div class="flex flex-wrap gap-1">
+            @for (category of article.category; track category) {
+            <span class="bg-slate-50 text-slate-600 px-2 py-1 rounded text-xs">
+              {{ category }}
+            </span>
+            }
+          </div>
+        </div>
+      </div>
+      }
+    </div>
+    }
+
+    <!-- Selected Article Details -->
+    @if (selectedArticle()) {
+    <div class="bg-white rounded-xl shadow-lg p-8 max-w-4xl mx-auto">
+
+      <!-- Back Button -->
+      <button (click)="goBack()" class="mb-6 text-slate-600 hover:text-slate-800 flex items-center">
+        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+        </svg>
+        Back to Articles
+      </button>
+
+      <!-- Article Header -->
+      <div class="mb-8">
+        <div class="flex flex-wrap items-center gap-4 mb-4">
+          <span class="bg-slate-100 text-slate-700 px-4 py-2 rounded-full font-semibold">
+            {{ selectedArticle()!.type }}
+          </span>
+          <span class="bg-blue-100 text-blue-700 px-4 py-2 rounded-full font-semibold">
+            {{ selectedArticle()!.difficulty }}
+          </span>
+          <span class="text-slate-500">{{ selectedArticle()!.readingTime }}</span>
+        </div>
+
+        <h1 class="text-4xl font-bold text-slate-800 mb-3">{{ selectedArticle()!.title }}</h1>
+        @if (selectedArticle()!.subtitle) {
+        <p class="text-xl text-slate-600 mb-4">{{ selectedArticle()!.subtitle }}</p>
+        }
+
+        <div class="flex items-center justify-between text-slate-600 mb-6">
+          <span>By {{ selectedArticle()!.author }}</span>
+          <span>{{ selectedArticle()!.publishedDate | date:'mediumDate' }}</span>
+        </div>
+
+        <div class="flex flex-wrap gap-2 mb-6">
+          @for (category of selectedArticle()!.category; track category) {
+          <span class="bg-slate-100 text-slate-700 px-3 py-1 rounded-full text-sm">
+            {{ category }}
+          </span>
+          }
+        </div>
+      </div>
+
+      <!-- Introduction -->
+      <div class="mb-8">
+        <p class="text-lg text-slate-700 leading-relaxed">{{ selectedArticle()!.introduction }}</p>
+      </div>
+
+      <!-- Article Sections -->
+      <div class="mb-8 space-y-6">
+        @for (section of selectedArticle()!.sections; track section.heading) {
+        <div>
+          <h2 class="text-2xl font-semibold text-slate-800 mb-3">{{ section.heading }}</h2>
+
+          @if (section.type === 'text' || !section.type) {
+          <div class="text-slate-700 leading-relaxed">
+            {{ section.content }}
+          </div>
+          }
+
+          @if (section.type === 'list') {
+          <div class="space-y-2">
+            <p class="text-slate-700 mb-3">{{ section.content }}</p>
+            <ul class="list-disc list-inside space-y-2 text-slate-700">
+              @for (item of section.items; track item) {
+              <li>{{ item }}</li>
+              }
+            </ul>
+          </div>
+          }
+
+          @if (section.type === 'quote') {
+          <div class="border-l-4 border-blue-500 bg-blue-50 p-4 italic text-slate-700">
+            {{ section.content }}
+          </div>
+          }
+
+          @if (section.type === 'tip') {
+          <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+            <div class="flex items-start space-x-3">
+              <svg class="w-6 h-6 text-green-600 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd"
+                  d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                  clip-rule="evenodd" />
+              </svg>
+              <p class="text-green-800">{{ section.content }}</p>
+            </div>
+          </div>
+          }
+
+          @if (section.type === 'warning') {
+          <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+            <div class="flex items-start space-x-3">
+              <svg class="w-6 h-6 text-yellow-600 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd"
+                  d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                  clip-rule="evenodd" />
+              </svg>
+              <p class="text-yellow-800">{{ section.content }}</p>
+            </div>
+          </div>
+          }
+        </div>
+        }
+      </div>
+
+      <!-- Key Takeaways -->
+      <div class="mb-8 bg-blue-50 rounded-lg p-6">
+        <h3 class="text-2xl font-semibold text-slate-800 mb-4">Key Takeaways</h3>
+        <ul class="space-y-3">
+          @for (takeaway of selectedArticle()!.keyTakeaways; track takeaway) {
+          <li class="flex items-start space-x-3">
+            <svg class="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd"
+                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                clip-rule="evenodd" />
+            </svg>
+            <span class="text-slate-700">{{ takeaway }}</span>
+          </li>
+          }
+        </ul>
+      </div>
+
+      <!-- Conclusion -->
+      <div class="mb-8">
+        <h3 class="text-2xl font-semibold text-slate-800 mb-4">Conclusion</h3>
+        <p class="text-slate-700 leading-relaxed">{{ selectedArticle()!.conclusion }}</p>
+      </div>
+
+      <!-- Sources -->
+      @if (selectedArticle()?.sources && selectedArticle()!.sources!.length > 0) {
+      <div class="mb-8 bg-slate-50 rounded-lg p-6">
+        <h3 class="text-xl font-semibold text-slate-800 mb-4">Sources</h3>
+        <ul class="space-y-2 text-sm text-slate-600">
+          @for (source of selectedArticle()!.sources!; track source) {
+          <li>{{ source }}</li>
+          }
+        </ul>
+      </div>
+      }
+
+      <!-- Related Articles -->
+      @if (relatedArticles().length > 0) {
+      <div class="mb-8">
+        <h3 class="text-2xl font-semibold text-slate-800 mb-6">Related Articles</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          @for (relatedArticle of relatedArticles(); track relatedArticle.id) {
+          <div class="bg-slate-50 rounded-lg p-4 hover:bg-slate-100 cursor-pointer transition-colors"
+            (click)="selectArticle(relatedArticle)">
+            <h4 class="font-semibold text-slate-800 mb-2">{{ relatedArticle.title }}</h4>
+            <p class="text-slate-600 text-sm line-clamp-2">{{ relatedArticle.description }}</p>
+            <div class="flex items-center justify-between mt-3 text-xs text-slate-500">
+              <span>{{ relatedArticle.type }}</span>
+              <span>{{ relatedArticle.readingTime }}</span>
+            </div>
+          </div>
+          }
+        </div>
+      </div>
+      }
+
+      <!-- Action Buttons -->
+      <div class="flex flex-col sm:flex-row gap-4 justify-center">
+        <button (click)="goBack()"
+          class="bg-slate-200 text-slate-700 px-6 py-3 rounded-lg hover:bg-slate-300 transition-colors">
+          Browse More Articles
+        </button>
+        <button routerLink="/exercises"
+          class="bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition-colors">
+          View Exercises
+        </button>
+        <button routerLink="/lifestyle-tips"
+          class="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors">
+          View Lifestyle Tips
+        </button>
+      </div>
+    </div>
+    }
+
+  </div>
+</section>

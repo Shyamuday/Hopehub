@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       apps:
-        description: 'Apps to deploy: auto, all, patient, admin, doctor, operations, api, or comma-separated list'
+        description: 'Apps to deploy: auto, all, patient, admin, doctor, operations, healing, api, or comma-separated list'
         required: false
         default: auto
   push:
@@ -45,6 +45,7 @@ jobs:
             echo "ADMIN_BUCKET=${ADMIN_BUCKET}"
             echo "DOCTOR_BUCKET=${DOCTOR_BUCKET}"
             echo "OPERATIONS_BUCKET=${OPERATIONS_BUCKET}"
+            echo "HEALING_BUCKET=${HEALING_BUCKET}"
             echo "LIGHTSAIL_HOST=${LIGHTSAIL_HOST}"
             echo "LIGHTSAIL_USER=${LIGHTSAIL_USER}"
             echo "LIGHTSAIL_APP_DIR=${LIGHTSAIL_APP_DIR}"
@@ -53,6 +54,7 @@ jobs:
             echo "HOPEHUB_ADMIN_ORIGIN=${HOPEHUB_ADMIN_ORIGIN}"
             echo "HOPEHUB_DOCTOR_ORIGIN=${HOPEHUB_DOCTOR_ORIGIN}"
             echo "HOPEHUB_OPERATIONS_ORIGIN=${HOPEHUB_OPERATIONS_ORIGIN}"
+            echo "HOPEHUB_HEALING_ORIGIN=${HOPEHUB_HEALING_ORIGIN}"
           } >> "$GITHUB_ENV"
 
       - name: Select apps to deploy
@@ -72,6 +74,7 @@ jobs:
           admin=false
           doctor=false
           operations=false
+          healing=false
           api=false
 
           select_all() {
@@ -79,6 +82,7 @@ jobs:
             admin=true
             doctor=true
             operations=true
+            healing=true
             api=true
           }
 
@@ -90,6 +94,7 @@ jobs:
                 admin|admin-web) admin=true ;;
                 doctor|doctor-web) doctor=true ;;
                 ops|operations|operations-web) operations=true ;;
+                healing|healing-web) healing=true ;;
                 api|backend|node|node-api) api=true ;;
                 all) select_all ;;
                 auto|'') ;;
@@ -118,6 +123,7 @@ jobs:
               if echo "$changed" | grep -Eq '^apps/admin-web/'; then admin=true; fi
               if echo "$changed" | grep -Eq '^apps/doctor-web/'; then doctor=true; fi
               if echo "$changed" | grep -Eq '^apps/operations-web/'; then operations=true; fi
+              if echo "$changed" | grep -Eq '^apps/healing-web/'; then healing=true; fi
               if echo "$changed" | grep -Eq '^apps/api/'; then api=true; fi
 
               if echo "$changed" | grep -Eq '^(libs|shared|deploy/config|deploy/scripts|package\.json|package-lock\.json|\.github/workflows/deploy-cloud\.yml)'; then
@@ -131,9 +137,10 @@ jobs:
           [ "$admin" = true ] && selected+=("admin")
           [ "$doctor" = true ] && selected+=("doctor")
           [ "$operations" = true ] && selected+=("operations")
+          [ "$healing" = true ] && selected+=("healing")
           [ "$api" = true ] && selected+=("api")
           frontend_selected=false
-          if [ "$patient" = true ] || [ "$admin" = true ] || [ "$doctor" = true ] || [ "$operations" = true ]; then
+          if [ "$patient" = true ] || [ "$admin" = true ] || [ "$doctor" = true ] || [ "$operations" = true ] || [ "$healing" = true ]; then
             frontend_selected=true
           fi
           if [ "${#selected[@]}" -eq 0 ]; then
@@ -148,6 +155,7 @@ jobs:
             echo "admin=$admin"
             echo "doctor=$doctor"
             echo "operations=$operations"
+            echo "healing=$healing"
             echo "api=$api"
             echo "frontend_selected=$frontend_selected"
             echo "selected=$selected_csv"
@@ -182,7 +190,7 @@ jobs:
         run: bash deploy/scripts/build-static.sh
 
       - name: Verify AWS deploy secrets
-        if: steps.select-apps.outputs.patient == 'true' || steps.select-apps.outputs.admin == 'true' || steps.select-apps.outputs.doctor == 'true' || steps.select-apps.outputs.operations == 'true'
+        if: steps.select-apps.outputs.patient == 'true' || steps.select-apps.outputs.admin == 'true' || steps.select-apps.outputs.doctor == 'true' || steps.select-apps.outputs.operations == 'true' || steps.select-apps.outputs.healing == 'true'
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -202,7 +210,7 @@ jobs:
           fi
 
       - name: Configure AWS credentials
-        if: steps.select-apps.outputs.patient == 'true' || steps.select-apps.outputs.admin == 'true' || steps.select-apps.outputs.doctor == 'true' || steps.select-apps.outputs.operations == 'true'
+        if: steps.select-apps.outputs.patient == 'true' || steps.select-apps.outputs.admin == 'true' || steps.select-apps.outputs.doctor == 'true' || steps.select-apps.outputs.operations == 'true' || steps.select-apps.outputs.healing == 'true'
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -210,12 +218,13 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Configure S3 website hosting
-        if: steps.select-apps.outputs.patient == 'true' || steps.select-apps.outputs.admin == 'true' || steps.select-apps.outputs.doctor == 'true' || steps.select-apps.outputs.operations == 'true'
+        if: steps.select-apps.outputs.patient == 'true' || steps.select-apps.outputs.admin == 'true' || steps.select-apps.outputs.doctor == 'true' || steps.select-apps.outputs.operations == 'true' || steps.select-apps.outputs.healing == 'true'
         run: |
           if [ "${{ steps.select-apps.outputs.patient }}" = "true" ]; then aws s3 website "s3://${PATIENT_BUCKET}" --index-document index.html --error-document index.html; fi
           if [ "${{ steps.select-apps.outputs.admin }}" = "true" ]; then aws s3 website "s3://${ADMIN_BUCKET}" --index-document index.html --error-document index.html; fi
           if [ "${{ steps.select-apps.outputs.doctor }}" = "true" ]; then aws s3 website "s3://${DOCTOR_BUCKET}" --index-document index.html --error-document index.html; fi
           if [ "${{ steps.select-apps.outputs.operations }}" = "true" ]; then aws s3 website "s3://${OPERATIONS_BUCKET}" --index-document index.html --error-document index.html; fi
+          if [ "${{ steps.select-apps.outputs.healing }}" = "true" ]; then aws s3 website "s3://${HEALING_BUCKET}" --index-document index.html --error-document index.html; fi
 
       - name: Deploy patient web to S3
         if: steps.select-apps.outputs.patient == 'true'
@@ -295,6 +304,12 @@ jobs:
         run: |
           aws s3 sync deploy/static/operations "s3://${OPERATIONS_BUCKET}" --delete --exclude "index.html" --cache-control "public,max-age=31536000,immutable"
           aws s3 cp deploy/static/operations/index.html "s3://${OPERATIONS_BUCKET}/index.html" --cache-control "no-cache,no-store,must-revalidate"
+
+      - name: Deploy healing web to S3
+        if: steps.select-apps.outputs.healing == 'true'
+        run: |
+          aws s3 sync deploy/static/healing "s3://${HEALING_BUCKET}" --delete --exclude "index.html" --cache-control "public,max-age=31536000,immutable"
+          aws s3 cp deploy/static/healing/index.html "s3://${HEALING_BUCKET}/index.html" --cache-control "no-cache,no-store,must-revalidate"
 
   deploy-api:
     name: Deploy API on Lightsail

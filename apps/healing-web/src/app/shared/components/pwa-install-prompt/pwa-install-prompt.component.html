@@ -1,0 +1,65 @@
+@if (installPrompt() && showPrompt()) {
+  <div class="fixed bottom-4 left-4 right-4 md:left-auto md:right-4 md:max-w-sm bg-white rounded-lg shadow-xl border border-slate-200 p-4 z-50 animate-slide-up">
+    
+    <!-- Header -->
+    <div class="flex items-start justify-between mb-3">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+          <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+          </svg>
+        </div>
+        <div>
+          <h3 class="font-semibold text-slate-800">Install Healing Hub</h3>
+          <p class="text-sm text-slate-600">Get quick access to your mental health tools</p>
+        </div>
+      </div>
+      <button 
+        (click)="dismiss()"
+        class="text-slate-400 hover:text-slate-600 transition-colors">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Benefits -->
+    <div class="mb-4">
+      <ul class="text-sm text-slate-600 space-y-1">
+        <li class="flex items-center">
+          <svg class="w-4 h-4 text-green-500 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+          </svg>
+          Works offline for privacy
+        </li>
+        <li class="flex items-center">
+          <svg class="w-4 h-4 text-green-500 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+          </svg>
+          Quick access from home screen
+        </li>
+        <li class="flex items-center">
+          <svg class="w-4 h-4 text-green-500 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+          </svg>
+          Daily reminder notifications
+        </li>
+      </ul>
+    </div>
+
+    <!-- Actions -->
+    <div class="flex space-x-3">
+      <button 
+        (click)="install()"
+        class="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700 transition-colors">
+        Install App
+      </button>
+      <button 
+        (click)="dismiss()"
+        class="px-4 py-2 text-slate-600 hover:text-slate-800 transition-colors">
+        Not Now
+      </button>
+    </div>
+  </div>
+}
+

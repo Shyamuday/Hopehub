@@ -1,0 +1,241 @@
+@if (userProgress()) {
+  <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
+    
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-6">
+      <h2 class="text-2xl font-bold text-slate-800">Your Progress Dashboard</h2>
+      <div class="flex items-center space-x-4">
+        <div class="text-center">
+          <div class="text-2xl font-bold text-blue-600">{{ userProgress()!.streaks.currentStreak }}</div>
+          <div class="text-sm text-slate-600">Day Streak</div>
+        </div>
+        <div class="text-center">
+          <div class="text-2xl font-bold text-green-600">{{ userProgress()!.stats.totalExerciseSessions }}</div>
+          <div class="text-sm text-slate-600">Exercises</div>
+        </div>
+        <div class="text-center">
+          <div class="text-2xl font-bold text-purple-600">{{ userProgress()!.achievements.length }}</div>
+          <div class="text-sm text-slate-600">Achievements</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Daily Suggestions -->
+    @if (dailySuggestions().length > 0) {
+      <div class="mb-8">
+        <h3 class="text-lg font-semibold text-slate-800 mb-4">Today's Suggestions</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          @for (suggestion of dailySuggestions(); track suggestion.title) {
+            <div class="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-4 border border-blue-100 hover:shadow-md transition-shadow cursor-pointer"
+                 [routerLink]="getSuggestionRoute(suggestion)">
+              <div class="flex items-start justify-between mb-2">
+                <h4 class="font-semibold text-slate-800">{{ suggestion.title }}</h4>
+                <span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">{{ suggestion.estimatedTime }}</span>
+              </div>
+              <p class="text-sm text-slate-600 mb-2">{{ suggestion.description }}</p>
+              <p class="text-xs text-blue-600">{{ suggestion.reason }}</p>
+            </div>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- Progress Overview -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      
+      <!-- Assessments -->
+      <div class="bg-blue-50 rounded-lg p-4">
+        <div class="flex items-center justify-between mb-2">
+          <h4 class="font-semibold text-blue-800">Assessments</h4>
+          <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+          </svg>
+        </div>
+        <div class="text-2xl font-bold text-blue-600 mb-1">{{ userProgress()!.stats.totalAssessments }}</div>
+        <div class="text-sm text-blue-700">
+          @if (userProgress()!.stats.assessmentImprovementRate > 0) {
+            <span>
+              {{ userProgress()!.stats.assessmentImprovementRate | number:'1.0-0' }}% improvement rate
+            </span>
+          } @else {
+            <span>
+              Take more to track progress
+            </span>
+          }
+        </div>
+      </div>
+
+      <!-- Exercise Stats -->
+      <div class="bg-purple-50 rounded-lg p-4">
+        <div class="flex items-center justify-between mb-2">
+          <h4 class="font-semibold text-purple-800">Exercise Time</h4>
+          <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+          </svg>
+        </div>
+        <div class="text-2xl font-bold text-purple-600 mb-1">{{ userProgress()!.stats.totalExerciseTime }}</div>
+        <div class="text-sm text-purple-700">
+          minutes practiced
+          @if (userProgress()!.stats.favoriteExerciseType) {
+            <span>
+              • {{ userProgress()!.stats.favoriteExerciseType }}
+            </span>
+          }
+        </div>
+      </div>
+
+      <!-- Lifestyle Tips -->
+      <div class="bg-green-50 rounded-lg p-4">
+        <div class="flex items-center justify-between mb-2">
+          <h4 class="font-semibold text-green-800">Lifestyle Tips</h4>
+          <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+          </svg>
+        </div>
+        <div class="text-2xl font-bold text-green-600 mb-1">{{ userProgress()!.stats.totalTipsCompleted }}</div>
+        <div class="text-sm text-green-700">
+          of {{ userProgress()!.stats.totalTipsStarted }} started
+          @if (userProgress()!.stats.tipCompletionRate > 0) {
+            <span>
+              ({{ userProgress()!.stats.tipCompletionRate | number:'1.0-0' }}%)
+            </span>
+          }
+        </div>
+      </div>
+
+      <!-- Reading -->
+      <div class="bg-indigo-50 rounded-lg p-4">
+        <div class="flex items-center justify-between mb-2">
+          <h4 class="font-semibold text-indigo-800">Articles Read</h4>
+          <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+          </svg>
+        </div>
+        <div class="text-2xl font-bold text-indigo-600 mb-1">{{ userProgress()!.stats.totalArticlesRead }}</div>
+        <div class="text-sm text-indigo-700">
+          {{ userProgress()!.stats.totalReadingTime }} minutes reading
+        </div>
+      </div>
+    </div>
+
+    <!-- Active Goals -->
+    @if (activeGoals().length > 0) {
+      <div class="mb-8">
+        <h3 class="text-lg font-semibold text-slate-800 mb-4">Active Goals</h3>
+        <div class="space-y-3">
+          @for (goal of activeGoals(); track goal.goalId) {
+            <div class="bg-slate-50 rounded-lg p-4">
+              <div class="flex items-center justify-between mb-2">
+                <h4 class="font-semibold text-slate-800">{{ goal.title }}</h4>
+                <span class="text-sm text-slate-600">{{ goal.currentValue }}/{{ goal.targetValue }} {{ goal.unit }}</span>
+              </div>
+              <div class="w-full bg-slate-200 rounded-full h-2 mb-2">
+                <div class="bg-blue-600 h-2 rounded-full transition-all duration-300" 
+                     [style.width.%]="(goal.currentValue / goal.targetValue) * 100"></div>
+              </div>
+              <p class="text-sm text-slate-600">{{ goal.description }}</p>
+              <div class="flex items-center justify-between mt-2">
+                <span class="text-xs text-slate-500">{{ goal.category | titlecase }}</span>
+                @if (goal.deadline) {
+                  <span class="text-xs text-slate-500">
+                    Due: {{ goal.deadline | date:'shortDate' }}
+                  </span>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- Recent Activity -->
+    @if (recentActivity().length > 0) {
+      <div class="mb-8">
+        <h3 class="text-lg font-semibold text-slate-800 mb-4">Recent Activity</h3>
+        <div class="space-y-3">
+          @for (activity of recentActivity().slice(0, 5); track activity.activityId) {
+            <div class="flex items-center space-x-3 p-3 bg-slate-50 rounded-lg">
+              <div class="w-8 h-8 rounded-full flex items-center justify-center text-sm"
+                   [class]="'bg-' + activity.color + '-100 text-' + activity.color + '-600'">
+                {{ activity.icon }}
+              </div>
+              <div class="flex-1">
+                <div class="font-medium text-slate-800">{{ activity.title }}</div>
+                <div class="text-sm text-slate-600">{{ activity.description }}</div>
+              </div>
+              <div class="text-xs text-slate-500">
+                {{ activity.completedAt | date:'short' }}
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- Recent Achievements -->
+    @if (recentAchievements().length > 0) {
+      <div>
+        <h3 class="text-lg font-semibold text-slate-800 mb-4">Recent Achievements</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          @for (achievement of recentAchievements(); track achievement.achievementId) {
+            <div class="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-lg p-4 border border-yellow-200">
+              <div class="flex items-center space-x-3 mb-2">
+                <span class="text-2xl">{{ achievement.icon }}</span>
+                <div>
+                  <h4 class="font-semibold text-slate-800">{{ achievement.title }}</h4>
+                  <p class="text-sm text-slate-600">{{ achievement.description }}</p>
+                </div>
+              </div>
+              <div class="flex items-center justify-between">
+                <span class="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full">
+                  {{ achievement.category | titlecase }}
+                </span>
+                <span class="text-xs text-slate-500">
+                  {{ achievement.unlockedAt | date:'shortDate' }}
+                </span>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- Action Buttons -->
+    <div class="flex flex-wrap gap-3 mt-8 pt-6 border-t border-slate-200">
+      <button routerLink="/assessments" 
+              class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+        Take Assessment
+      </button>
+      <button routerLink="/exercises" 
+              class="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors">
+        Practice Exercise
+      </button>
+      <button routerLink="/lifestyle-tips" 
+              class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors">
+        Explore Tips
+      </button>
+      <button routerLink="/articles" 
+              class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors">
+        Read Articles
+      </button>
+    </div>
+  </div>
+}
+
+<!-- Empty State -->
+@if (!userProgress()) {
+  <div class="bg-white rounded-xl shadow-lg p-8 text-center">
+    <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+      <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+      </svg>
+    </div>
+    <h3 class="text-xl font-semibold text-slate-800 mb-2">Start Your Mental Health Journey</h3>
+    <p class="text-slate-600 mb-6">Take your first assessment to begin tracking your progress and get personalized recommendations.</p>
+    <button routerLink="/assessments" 
+            class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors">
+      Take Your First Assessment
+    </button>
+  </div>
+}
+

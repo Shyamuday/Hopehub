@@ -22,6 +22,7 @@ PATIENT_URL="${WEB_ORIGIN:-${HOPEHUB_WEB_ORIGIN:-https://hopehub.in}}"
 ADMIN_URL="${ADMIN_ORIGIN:-${HOPEHUB_ADMIN_ORIGIN:-https://admin.hopehub.in}}"
 DOCTOR_URL="${DOCTOR_ORIGIN:-${HOPEHUB_DOCTOR_ORIGIN:-https://doctor.hopehub.in}}"
 OPS_URL="${OPERATIONS_ORIGIN:-${HOPEHUB_OPERATIONS_ORIGIN:-https://ops.hopehub.in}}"
+HEALING_URL="${HEALING_ORIGIN:-${HOPEHUB_HEALING_ORIGIN:-https://healing.hopehub.in}}"
 
 patch_app_constants() {
   local file="$1"
@@ -49,6 +50,7 @@ patch_app_constants "$ROOT/apps/user-web/src/environments/production-url.constan
 patch_app_constants "$ROOT/apps/doctor-web/src/environments/production-url.constants.ts" "$API_URL" "$DOCTOR_URL"
 patch_app_constants "$ROOT/apps/admin-web/src/environments/production-url.constants.ts" "$API_URL" "$ADMIN_URL" "$DOCTOR_URL"
 patch_app_constants "$ROOT/apps/operations-web/src/environments/production-url.constants.ts" "$API_URL" "$OPS_URL" "$DOCTOR_URL"
+patch_app_constants "$ROOT/apps/healing-web/src/environments/production-url.constants.ts" "$API_URL" "$HEALING_URL"
 
 echo "Production URLs configured:"
 echo "  API:        $API_URL"
@@ -56,3 +58,4 @@ echo "  Patient:    $PATIENT_URL"
 echo "  Admin:      $ADMIN_URL"
 echo "  Doctor:     $DOCTOR_URL"
 echo "  Operations: $OPS_URL"
+echo "  Healing:    $HEALING_URL"

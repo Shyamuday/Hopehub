@@ -48,6 +48,7 @@ jobs:
           - apps/doctor-web
           - apps/admin-web
           - apps/operations-web
+          - apps/healing-web
 
     defaults:
       run:
@@ -65,7 +66,7 @@ jobs:
           cache-dependency-path: ${{ matrix.app }}/package-lock.json
 
       - name: Install
-        run: npm ci
+        run: npm ci ${{ matrix.app == 'apps/healing-web' && '--legacy-peer-deps' || '' }}
 
       - name: Prisma generate
         if: matrix.app == 'apps/api'
@@ -73,6 +74,8 @@ jobs:
 
       - name: Build
         run: npm run build
+        env:
+          npm_config_legacy_peer_deps: ${{ matrix.app == 'apps/healing-web' && 'true' || '' }}
 
   test-angular:
     runs-on: ubuntu-latest

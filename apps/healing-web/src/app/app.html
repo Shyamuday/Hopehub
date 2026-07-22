@@ -1,0 +1,19 @@
+<div class="min-h-screen flex flex-col bg-gray-50">
+  <app-header class="sticky top-0 z-50"></app-header>
+  <app-breadcrumb class="bg-white border-b border-gray-200"></app-breadcrumb>
+
+  <main class="flex-1 w-full">
+    <router-outlet></router-outlet>
+  </main>
+
+  <app-footer class="mt-auto"></app-footer>
+
+  <!-- Global loading overlay -->
+  <app-global-loading></app-global-loading>
+
+  <!-- Quick access floating action button -->
+  <app-quick-access></app-quick-access>
+
+  <!-- Auth Modal Overlay -->
+  <app-auth-modal></app-auth-modal>
+</div>

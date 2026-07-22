@@ -1,0 +1,109 @@
+{
+  "name": "Healing Hub - Mental Health Platform",
+  "short_name": "Healing Hub",
+  "description": "Your comprehensive mental health companion with assessments, exercises, lifestyle tips, and educational resources.",
+  "display": "standalone",
+  "scope": "./",
+  "start_url": "./",
+  "theme_color": "#1e293b",
+  "background_color": "#f8fafc",
+  "orientation": "portrait-primary",
+  "categories": [
+    "health",
+    "medical",
+    "wellness",
+    "lifestyle"
+  ],
+  "lang": "en-US",
+  "icons": [
+    {
+      "src": "icons/icon-72x72.png",
+      "sizes": "72x72",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "icons/icon-96x96.png",
+      "sizes": "96x96",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "icons/icon-128x128.png",
+      "sizes": "128x128",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "icons/icon-144x144.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "icons/icon-152x152.png",
+      "sizes": "152x152",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "icons/icon-384x384.png",
+      "sizes": "384x384",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Take Assessment",
+      "short_name": "Assessment",
+      "description": "Take a mental health assessment",
+      "url": "/assessments",
+      "icons": [
+        {
+          "src": "icons/icon-192x192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Practice Exercises",
+      "short_name": "Exercises",
+      "description": "Practice wellness exercises",
+      "url": "/exercises",
+      "icons": [
+        {
+          "src": "icons/icon-192x192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Crisis Support",
+      "short_name": "Crisis Help",
+      "description": "Access emergency mental health resources",
+      "url": "/?crisis=true",
+      "icons": [
+        {
+          "src": "icons/icon-192x192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    }
+  ]
+}

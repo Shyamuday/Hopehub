@@ -1,0 +1,28 @@
+# Robots.txt for Healing Hub
+# https://healinghub.com/robots.txt
+
+User-agent: *
+Allow: /
+Disallow: /dashboard
+Disallow: /auth/
+Disallow: /api/
+
+# Sitemap location
+Sitemap: https://healinghub.com/sitemap.xml
+
+# Crawl-delay (optional, adjust based on server capacity)
+Crawl-delay: 1
+
+# Specific bot rules
+User-agent: Googlebot
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+# Block bad bots (optional)
+User-agent: AhrefsBot
+Disallow: /
+
+User-agent: SemrushBot
+Disallow: /

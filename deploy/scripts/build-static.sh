@@ -5,7 +5,7 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 STATIC="$ROOT/deploy/static"
-APPS="${HOPEHUB_STATIC_APPS:-patient,admin,doctor,operations}"
+APPS="${HOPEHUB_STATIC_APPS:-patient,admin,doctor,operations,healing}"
 
 should_build() {
   case ",$APPS," in
@@ -27,6 +27,12 @@ if should_build doctor; then
 fi
 if should_build operations; then
   npm run build:operations
+fi
+if should_build healing; then
+  cd "$ROOT/apps/healing-web"
+  npm install --legacy-peer-deps --no-audit --no-fund
+  cd "$ROOT"
+  npm run build:healing
 fi
 
 echo "==> Staging static assets..."
@@ -58,6 +64,12 @@ if should_build operations; then
   else
     cp -r "$ROOT/apps/operations-web/dist/operations-web/"* "$STATIC/operations/"
   fi
+fi
+
+if should_build healing; then
+  rm -rf "$STATIC/healing"
+  mkdir -p "$STATIC/healing"
+  cp -r "$ROOT/apps/healing-web/dist/healing-hub-website/browser/"* "$STATIC/healing/"
 fi
 
 echo "==> Static files ready in deploy/static/"

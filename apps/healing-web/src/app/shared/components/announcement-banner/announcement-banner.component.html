@@ -1,0 +1,18 @@
+@if (!dismissed()) {
+  <div class="bg-primary-600 text-white py-2 sm:py-3 px-4 relative">
+    <div class="container mx-auto flex items-center justify-between">
+      <div class="flex-1 text-center pr-4">
+        <p class="text-xs sm:text-sm md:text-base">{{ message() }}</p>
+      </div>
+      <button 
+        (click)="dismiss()"
+        class="flex-shrink-0 text-white hover:text-gray-200 transition-colors duration-200 p-1 min-w-[44px] min-h-[44px] sm:min-w-[32px] sm:min-h-[32px] flex items-center justify-center"
+        aria-label="Dismiss announcement">
+        <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+        </svg>
+      </button>
+    </div>
+  </div>
+}
+

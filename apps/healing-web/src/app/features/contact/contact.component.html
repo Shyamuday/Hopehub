@@ -1,0 +1,361 @@
+<div class="container mx-auto px-4 py-8 max-w-4xl">
+  <h1 class="text-4xl font-bold text-center text-gray-900 mb-8">
+    Contact Us
+  </h1>
+  <p class="text-lg text-center text-gray-600 max-w-2xl mx-auto mb-12">
+    Get in touch with our team for support and inquiries. We're here to help you on your healing journey.
+  </p>
+
+  <div class="grid lg:grid-cols-3 gap-8">
+    <!-- Contact Form -->
+    <div class="lg:col-span-2 bg-white rounded-lg shadow-lg p-8">
+      <h2 class="text-2xl font-semibold text-gray-900 mb-6">
+        Send us a message
+        @if (prefilledData().serviceName) {
+        <span
+          class="ml-2 inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+          <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd"
+              d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+              clip-rule="evenodd"></path>
+          </svg>
+          Pre-filled from {{ prefilledData().serviceName }}
+        </span>
+        }
+        @if (currentUser()) {
+        <span
+          class="ml-2 inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+          <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd">
+            </path>
+          </svg>
+          Logged in as {{ currentUser()?.name || currentUser()?.email }}
+        </span>
+        }
+      </h2>
+
+      <!-- Pre-filled Service Info Banner -->
+      @if (prefilledData().serviceName) {
+      <div class="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+        <div class="flex items-start">
+          <svg class="w-5 h-5 text-blue-600 mt-0.5 mr-3" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd"
+              d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+              clip-rule="evenodd"></path>
+          </svg>
+          <div>
+            <h3 class="text-sm font-medium text-blue-900">Service Information Pre-filled</h3>
+            <div class="mt-1 text-sm text-blue-700">
+              <p><strong>Service:</strong> {{ prefilledData().serviceName }}</p>
+              @if (prefilledData().consultant) {
+              <p><strong>Consultant:</strong> {{ prefilledData().consultant }}</p>
+              }
+              @if (prefilledData().duration) {
+              <p><strong>Duration:</strong> {{ prefilledData().duration }}</p>
+              }
+              @if (prefilledData().consultantPhone) {
+              <p><strong>Contact:</strong> {{ prefilledData().consultantPhone }}</p>
+              }
+            </div>
+            <p class="mt-2 text-xs text-blue-600">You can modify these details in the form below if needed.</p>
+          </div>
+        </div>
+      </div>
+      }
+
+      <!-- User Info Banner -->
+      @if (currentUser()) {
+      <div class="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+        <div class="flex items-start">
+          <svg class="w-5 h-5 text-green-600 mt-0.5 mr-3" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd">
+            </path>
+          </svg>
+          <div>
+            <h3 class="text-sm font-medium text-green-900">Your Account Information</h3>
+            <div class="mt-1 text-sm text-green-700">
+              <p><strong>Name:</strong> {{ currentUser()?.name || (currentUser()?.profile?.firstName &&
+                currentUser()?.profile?.lastName ? (currentUser()?.profile?.firstName + ' ' +
+                currentUser()?.profile?.lastName) : 'Not set') }}</p>
+              <p><strong>Email:</strong> {{ currentUser()?.email }}</p>
+            </div>
+            <p class="mt-2 text-xs text-green-600">Your contact information has been pre-filled. You can modify it if
+              needed.</p>
+          </div>
+        </div>
+      </div>
+      }
+
+      <form [formGroup]="contactForm" (ngSubmit)="onSubmit()" class="space-y-6">
+        <!-- Name Field -->
+        <div>
+          <label for="name" class="block text-sm font-medium text-gray-700 mb-2">
+            Full Name *
+          </label>
+          <input type="text" id="name" formControlName="name"
+            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            [class.border-red-500]="contactForm.get('name')?.invalid && contactForm.get('name')?.touched"
+            placeholder="Enter your full name">
+          @if (contactForm.get('name')?.invalid && contactForm.get('name')?.touched) {
+          <div class="mt-1 text-sm text-red-600">
+            @if (contactForm.get('name')?.errors?.['required']) {
+            <span>Name is required</span>
+            }
+          </div>
+          }
+        </div>
+
+        <!-- Email Field -->
+        <div>
+          <label for="email" class="block text-sm font-medium text-gray-700 mb-2">
+            Email Address *
+          </label>
+          <input type="email" id="email" formControlName="email"
+            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            [class.border-red-500]="contactForm.get('email')?.invalid && contactForm.get('email')?.touched"
+            placeholder="Enter your email address">
+          @if (contactForm.get('email')?.invalid && contactForm.get('email')?.touched) {
+          <div class="mt-1 text-sm text-red-600">
+            @if (contactForm.get('email')?.errors?.['required']) {
+            <span>Email is required</span>
+            }
+            @if (contactForm.get('email')?.errors?.['email']) {
+            <span>Please enter a valid email address</span>
+            }
+          </div>
+          }
+        </div>
+
+        <!-- Phone Field -->
+        <div>
+          <label for="phone" class="block text-sm font-medium text-gray-700 mb-2">
+            Phone Number
+          </label>
+          <input type="tel" id="phone" formControlName="phone"
+            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            placeholder="Enter your phone number (optional)">
+        </div>
+
+        <!-- Service Interest -->
+        <div>
+          <label for="serviceInterest" class="block text-sm font-medium text-gray-700 mb-2">
+            Service of Interest
+            @if (prefilledData().serviceName) {
+            <span class="text-blue-600 text-sm font-normal">(Pre-selected)</span>
+            }
+          </label>
+          <select id="serviceInterest" formControlName="serviceInterest"
+            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            [class.border-blue-500]="prefilledData().serviceName" [class.bg-blue-50]="prefilledData().serviceName">
+            <option value="">Select a service (optional)</option>
+            <option value="Breakup Counseling">Breakup Counseling</option>
+            <option value="Anxiety Therapy">Anxiety Therapy</option>
+            <option value="Career Counseling">Career Counseling</option>
+            <option value="Depression Support">Depression Support</option>
+            <option value="Relationship Counseling">Relationship Counseling</option>
+            <option value="Stress Management">Stress Management</option>
+            <option value="Grief Counseling">Grief Counseling</option>
+            <option value="Family Therapy">Family Therapy</option>
+            <option value="Addiction Support">Addiction Support</option>
+            <option value="Self-Esteem Coaching">Self-Esteem Coaching</option>
+          </select>
+        </div>
+
+        <!-- Preferred Contact Method -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            Preferred Contact Method *
+          </label>
+          <div class="space-y-2">
+            <label class="flex items-center">
+              <input type="radio" formControlName="preferredContact" value="email" class="mr-2 text-blue-600">
+              Email
+            </label>
+            <label class="flex items-center">
+              <input type="radio" formControlName="preferredContact" value="phone" class="mr-2 text-blue-600">
+              Phone
+            </label>
+            <label class="flex items-center">
+              <input type="radio" formControlName="preferredContact" value="telegram" class="mr-2 text-blue-600">
+              Telegram
+            </label>
+          </div>
+          @if (contactForm.get('preferredContact')?.invalid && contactForm.get('preferredContact')?.touched) {
+          <div class="mt-1 text-sm text-red-600">
+            @if (contactForm.get('preferredContact')?.errors?.['required']) {
+            <span>Please select a preferred contact method</span>
+            }
+          </div>
+          }
+        </div>
+
+        <!-- Message Field -->
+        <div>
+          <label for="message" class="block text-sm font-medium text-gray-700 mb-2">
+            Message *
+          </label>
+          <textarea id="message" formControlName="message" rows="5"
+            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-vertical"
+            [class.border-red-500]="contactForm.get('message')?.invalid && contactForm.get('message')?.touched"
+            placeholder="Tell us how we can help you..."></textarea>
+          @if (contactForm.get('message')?.invalid && contactForm.get('message')?.touched) {
+          <div class="mt-1 text-sm text-red-600">
+            @if (contactForm.get('message')?.errors?.['required']) {
+            <span>Message is required</span>
+            }
+            @if (contactForm.get('message')?.errors?.['minlength']) {
+            <span>Message must be at least 10 characters long</span>
+            }
+          </div>
+          }
+        </div>
+
+        <!-- Appointment Booking Section -->
+        @if (contactForm.get('serviceInterest')?.value) {
+        <div class="border-t pt-6">
+          <h3 class="text-lg font-semibold text-gray-900 mb-4">📅 Book an Appointment (Optional)</h3>
+          <p class="text-sm text-gray-600 mb-4">
+            Select a preferred date and time for your consultation. This helps us schedule your session more
+            efficiently.
+          </p>
+
+          <!-- Appointment Calendar -->
+          <app-appointment-calendar [selectedService]="contactForm.get('serviceInterest')?.value"
+            (appointmentSelected)="onAppointmentSelected($event)">
+          </app-appointment-calendar>
+        </div>
+        }
+
+        <!-- Submit Button -->
+        <button type="submit" [disabled]="contactForm.invalid || isSubmitting()"
+          class="w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+          @if (!isSubmitting()) {
+          <span>Send Message</span>
+          } @else {
+          <span>Sending...</span>
+          }
+        </button>
+      </form>
+
+      <!-- Success Message -->
+      @if (showSuccessMessage()) {
+      <div class="mt-6 p-4 bg-green-100 border border-green-400 text-green-700 rounded-lg">
+        <div class="flex items-center">
+          <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd"
+              d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+              clip-rule="evenodd"></path>
+          </svg>
+          <span class="font-medium">Message sent successfully!</span>
+        </div>
+        <p class="mt-1 text-sm">We'll get back to you within 24 hours using your preferred contact method.</p>
+      </div>
+      }
+
+      <!-- Error Message -->
+      @if (showErrorMessage()) {
+      <div class="mt-6 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg">
+        <div class="flex items-center">
+          <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd"
+              d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+              clip-rule="evenodd"></path>
+          </svg>
+          <span class="font-medium">Error sending message</span>
+        </div>
+        <p class="mt-1 text-sm">{{ errorMessage() || 'Please try again or contact us directly using the information
+          below.' }}</p>
+      </div>
+      }
+    </div>
+
+    <!-- Contact Information -->
+    <div class="space-y-8">
+      <div class="bg-white rounded-lg shadow-lg p-8">
+        <h2 class="text-2xl font-semibold text-gray-900 mb-6">Get in touch</h2>
+
+        <div class="space-y-6">
+          <!-- Email -->
+          <div class="flex items-start">
+            <div class="flex-shrink-0">
+              <svg class="w-6 h-6 text-blue-600 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z">
+                </path>
+              </svg>
+            </div>
+            <div class="ml-4">
+              <h3 class="text-lg font-medium text-gray-900">Email</h3>
+              <p class="text-gray-600">contact@healinghub.com</p>
+              <p class="text-sm text-gray-500 mt-1">We typically respond within 24 hours</p>
+            </div>
+          </div>
+
+          <!-- Phone -->
+          <div class="flex items-start">
+            <div class="flex-shrink-0">
+              <svg class="w-6 h-6 text-blue-600 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z">
+                </path>
+              </svg>
+            </div>
+            <div class="ml-4">
+              <h3 class="text-lg font-medium text-gray-900">Phone</h3>
+              <p class="text-gray-600">+1 (555) 123-4567</p>
+              <p class="text-sm text-gray-500 mt-1">Available Monday-Friday, 9 AM - 6 PM EST</p>
+            </div>
+          </div>
+
+          <!-- Telegram -->
+          <div class="flex items-start">
+            <div class="flex-shrink-0">
+              <svg class="w-6 h-6 text-blue-600 mt-1" fill="currentColor" viewBox="0 0 24 24">
+                <path
+                  d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z" />
+              </svg>
+            </div>
+            <div class="ml-4">
+              <h3 class="text-lg font-medium text-gray-900">Telegram</h3>
+              <p class="text-gray-600">@HealingHubSupport</p>
+              <p class="text-sm text-gray-500 mt-1">Join our community for support and updates</p>
+              <a [href]="APP_CONSTANTS.TELEGRAM.GROUP_URL" target="_blank" rel="noopener noreferrer"
+                class="inline-block mt-2 text-blue-600 hover:text-blue-800 text-sm font-medium">
+                Join Telegram Group →
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Office Hours -->
+      <div class="bg-blue-50 rounded-lg p-6">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">Office Hours</h3>
+        <div class="space-y-2 text-sm text-gray-600">
+          <div class="flex justify-between">
+            <span>Monday - Friday</span>
+            <span>9:00 AM - 6:00 PM EST</span>
+          </div>
+          <div class="flex justify-between">
+            <span>Saturday</span>
+            <span>10:00 AM - 4:00 PM EST</span>
+          </div>
+          <div class="flex justify-between">
+            <span>Sunday</span>
+            <span>Closed</span>
+          </div>
+        </div>
+        <p class="text-xs text-gray-500 mt-4">
+          Emergency support available 24/7 through our crisis hotline: 988
+        </p>
+      </div>
+    </div>
+
+    <!-- Appointment Calendar Section -->
+    <div class="space-y-6">
+      <app-appointment-calendar [selectedService]="contactForm.get('serviceInterest')?.value"
+        (appointmentSelected)="onAppointmentSelected($event)">
+      </app-appointment-calendar>
+    </div>
+  </div>
+</div>

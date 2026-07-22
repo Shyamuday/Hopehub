@@ -1,0 +1,29 @@
+/* Custom radio button styling */
+input[type="radio"] {
+  accent-color: #1e293b;
+}
+
+/* Line clamp for descriptions */
+.line-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Smooth transitions */
+.transition-all {
+  transition: all 0.3s ease;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 640px) {
+  .grid-cols-1 {
+    grid-template-columns: 1fr;
+  }
+  
+  .flex-col {
+    flex-direction: column;
+  }
+}
+

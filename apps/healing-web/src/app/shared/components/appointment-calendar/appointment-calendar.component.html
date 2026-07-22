@@ -1,0 +1,172 @@
+<div class="bg-white rounded-lg shadow-lg p-6">
+  <h3 class="text-xl font-bold text-gray-900 mb-4">📅 Select Appointment Date & Time</h3>
+  
+  <!-- Calendar Navigation -->
+  <div class="flex items-center justify-between mb-4">
+    <button 
+      (click)="previousMonth()"
+      class="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+      <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+      </svg>
+    </button>
+    
+    <h4 class="text-lg font-semibold text-gray-900">
+      {{ currentMonth().toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) }}
+    </h4>
+    
+    <button 
+      (click)="nextMonth()"
+      class="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+      <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+      </svg>
+    </button>
+  </div>
+
+  <!-- Calendar Grid -->
+  <div class="grid grid-cols-7 gap-1 mb-4">
+    <!-- Day Headers -->
+    @for (day of dayHeaders; track day) {
+      <div class="text-center text-sm font-medium text-gray-500 py-2">
+        {{ day }}
+      </div>
+    }
+    
+    <!-- Calendar Days -->
+    @for (day of calendarDays(); track day.date) {
+      <button
+        (click)="selectDate(day.date)"
+        [disabled]="!day.available"
+        class="aspect-square flex items-center justify-center text-sm rounded-lg transition-all duration-200"
+        [class.bg-blue-600]="isSelectedDate(day.date)"
+        [class.text-white]="isSelectedDate(day.date)"
+        [class.hover:bg-blue-100]="day.available && !isSelectedDate(day.date)"
+        [class.text-gray-900]="day.available && !isSelectedDate(day.date)"
+        [class.text-gray-300]="!day.available"
+        [class.cursor-not-allowed]="!day.available"
+        [class.bg-gray-50]="!day.available"
+        [class.font-semibold]="day.isToday">
+        {{ day.day }}
+      </button>
+    }
+  </div>
+
+  <!-- Selected Date Display -->
+  @if (selectedDate()) {
+    <div class="mb-4 p-3 bg-blue-50 rounded-lg">
+      <p class="text-sm text-blue-800">
+        <span class="font-semibold">Selected Date:</span> 
+        {{ selectedDate()!.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) }}
+      </p>
+    </div>
+  }
+
+  <!-- Time Slots -->
+  @if (selectedDate()) {
+    <div class="space-y-4">
+      <h4 class="text-lg font-semibold text-gray-900">⏰ Available Time Slots</h4>
+      
+      <!-- Morning Slots -->
+      <div>
+        <h5 class="text-sm font-medium text-gray-700 mb-2">🌅 Morning (9:00 AM - 12:00 PM)</h5>
+        <div class="grid grid-cols-3 gap-2">
+          @for (slot of morningSlots(); track slot.time) {
+            <button
+              (click)="selectTimeSlot(slot)"
+              [disabled]="!slot.available"
+              class="py-2 px-3 text-sm rounded-lg border transition-all duration-200"
+              [class.bg-green-600]="isSelectedTime(slot.time)"
+              [class.text-white]="isSelectedTime(slot.time)"
+              [class.border-green-600]="isSelectedTime(slot.time)"
+              [class.hover:bg-green-100]="slot.available && !isSelectedTime(slot.time)"
+              [class.border-green-300]="slot.available && !isSelectedTime(slot.time)"
+              [class.text-green-700]="slot.available && !isSelectedTime(slot.time)"
+              [class.bg-gray-100]="!slot.available"
+              [class.text-gray-400]="!slot.available"
+              [class.border-gray-200]="!slot.available"
+              [class.cursor-not-allowed]="!slot.available">
+              {{ slot.time }}
+              @if (slot.booked) {
+                <span class="block text-xs">Booked</span>
+              }
+            </button>
+          }
+        </div>
+      </div>
+
+      <!-- Afternoon Slots -->
+      <div>
+        <h5 class="text-sm font-medium text-gray-700 mb-2">☀️ Afternoon (1:00 PM - 5:00 PM)</h5>
+        <div class="grid grid-cols-3 gap-2">
+          @for (slot of afternoonSlots(); track slot.time) {
+            <button
+              (click)="selectTimeSlot(slot)"
+              [disabled]="!slot.available"
+              class="py-2 px-3 text-sm rounded-lg border transition-all duration-200"
+              [class.bg-green-600]="isSelectedTime(slot.time)"
+              [class.text-white]="isSelectedTime(slot.time)"
+              [class.border-green-600]="isSelectedTime(slot.time)"
+              [class.hover:bg-green-100]="slot.available && !isSelectedTime(slot.time)"
+              [class.border-green-300]="slot.available && !isSelectedTime(slot.time)"
+              [class.text-green-700]="slot.available && !isSelectedTime(slot.time)"
+              [class.bg-gray-100]="!slot.available"
+              [class.text-gray-400]="!slot.available"
+              [class.border-gray-200]="!slot.available"
+              [class.cursor-not-allowed]="!slot.available">
+              {{ slot.time }}
+              @if (slot.booked) {
+                <span class="block text-xs">Booked</span>
+              }
+            </button>
+          }
+        </div>
+      </div>
+
+      <!-- Evening Slots -->
+      <div>
+        <h5 class="text-sm font-medium text-gray-700 mb-2">🌆 Evening (6:00 PM - 8:00 PM)</h5>
+        <div class="grid grid-cols-3 gap-2">
+          @for (slot of eveningSlots(); track slot.time) {
+            <button
+              (click)="selectTimeSlot(slot)"
+              [disabled]="!slot.available"
+              class="py-2 px-3 text-sm rounded-lg border transition-all duration-200"
+              [class.bg-green-600]="isSelectedTime(slot.time)"
+              [class.text-white]="isSelectedTime(slot.time)"
+              [class.border-green-600]="isSelectedTime(slot.time)"
+              [class.hover:bg-green-100]="slot.available && !isSelectedTime(slot.time)"
+              [class.border-green-300]="slot.available && !isSelectedTime(slot.time)"
+              [class.text-green-700]="slot.available && !isSelectedTime(slot.time)"
+              [class.bg-gray-100]="!slot.available"
+              [class.text-gray-400]="!slot.available"
+              [class.border-gray-200]="!slot.available"
+              [class.cursor-not-allowed]="!slot.available">
+              {{ slot.time }}
+              @if (slot.booked) {
+                <span class="block text-xs">Booked</span>
+              }
+            </button>
+          }
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Selected Appointment Summary -->
+  @if (selectedDate() && selectedTime()) {
+    <div class="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+      <h4 class="text-lg font-semibold text-green-800 mb-2">✅ Appointment Selected</h4>
+      <p class="text-green-700">
+        <span class="font-semibold">Date:</span> {{ selectedDate()!.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }) }}
+      </p>
+      <p class="text-green-700">
+        <span class="font-semibold">Time:</span> {{ selectedTime() }}
+      </p>
+      <p class="text-green-600 text-sm mt-2">
+        💡 Your appointment slot has been selected. Complete the form to confirm your booking.
+      </p>
+    </div>
+  }
+</div>
+

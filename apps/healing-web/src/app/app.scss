@@ -1,0 +1,14 @@
+/* App-specific responsive styles using Tailwind utilities */
+
+/* Ensure proper layout flow */
+:host {
+  display: block;
+  width: 100%;
+  min-height: 100vh;
+}
+
+/* Mobile viewport handling */
+.min-h-screen {
+  min-height: 100vh;
+  min-height: -webkit-fill-available;
+}

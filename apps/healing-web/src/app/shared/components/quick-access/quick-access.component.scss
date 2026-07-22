@@ -1,0 +1,11 @@
+.rotate-45 {
+  transform: rotate(45deg);
+}
+
+@media (max-width: 640px) {
+  .fixed {
+    bottom: 1rem;
+    right: 1rem;
+  }
+}
+

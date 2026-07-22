@@ -1,0 +1,188 @@
+<section class="bg-slate-50 py-12">
+  <div class="max-w-4xl mx-auto px-6">
+    
+    <!-- Header -->
+    <div class="text-center mb-8">
+      <h2 class="text-3xl font-bold text-slate-800 mb-4">Mental Health Self-Assessment</h2>
+      <p class="text-slate-600 max-w-2xl mx-auto">
+        Take a moment to reflect on your emotional well-being. This assessment helps you understand your current state.
+      </p>
+    </div>
+
+    <!-- Disclaimer -->
+    @if (!assessmentStarted() && !showResults()) {
+      <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-6 mb-8">
+        <div class="flex items-start space-x-3">
+          <svg class="w-6 h-6 text-yellow-600 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+          </svg>
+          <div>
+            <h3 class="font-semibold text-yellow-800 mb-2">Important Disclaimer</h3>
+            <p class="text-yellow-700 text-sm leading-relaxed">
+              This self-assessment is for educational and self-reflection purposes only. It does not provide a medical diagnosis. 
+              If you feel distressed or unsafe, please consult a qualified mental health professional immediately.
+            </p>
+            <div class="mt-3 text-sm text-yellow-700">
+              <strong>Emergency Helplines:</strong><br>
+              AASRA: 91-9820466726 | Sneha: 044-24640050
+            </div>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- Start Assessment -->
+    @if (!assessmentStarted() && !showResults()) {
+      <div class="text-center">
+        <button 
+          (click)="startAssessment()"
+          class="bg-slate-800 text-white px-8 py-3 rounded-lg font-semibold hover:bg-slate-700 transition-colors duration-300">
+          Start Assessment
+        </button>
+      </div>
+    }
+
+    <!-- Assessment Questions -->
+    @if (assessmentStarted() && !showResults()) {
+      <div class="bg-white rounded-xl shadow-lg p-8">
+        
+        <!-- Progress Bar -->
+        <div class="mb-8">
+          <div class="flex justify-between text-sm text-slate-600 mb-2">
+            <span>Question {{ currentQuestion() + 1 }} of {{ questions().length }}</span>
+            <span>{{ Math.round(((currentQuestion() + 1) / questions().length) * 100) }}%</span>
+          </div>
+          <div class="w-full bg-slate-200 rounded-full h-2">
+            <div 
+              class="bg-slate-800 h-2 rounded-full transition-all duration-300"
+              [style.width.%]="((currentQuestion() + 1) / questions().length) * 100">
+            </div>
+          </div>
+        </div>
+
+        <!-- Current Question -->
+        <div class="mb-8">
+          <h3 class="text-xl font-semibold text-slate-800 mb-6">
+            {{ questions()[currentQuestion()].text }}
+          </h3>
+          
+          <div class="space-y-3">
+            @for (option of responseOptions(); track option; let i = $index) {
+              <label class="flex items-center p-4 border border-slate-200 rounded-lg hover:bg-slate-50 cursor-pointer transition-colors"
+                     [class.bg-blue-50]="answers()[currentQuestion()] === i"
+                     [class.border-blue-500]="answers()[currentQuestion()] === i">
+                <input 
+                  type="radio" 
+                  [value]="i" 
+                  [checked]="answers()[currentQuestion()] === i"
+                  (change)="selectAnswer(i)"
+                  [name]="'question_' + currentQuestion()"
+                  class="mr-3 text-slate-800">
+                <span class="text-slate-700">{{ option }}</span>
+              </label>
+            }
+          </div>
+        </div>
+
+        <!-- Navigation -->
+        <div class="flex justify-between">
+          @if (currentQuestion() > 0) {
+            <button 
+              (click)="previousQuestion()"
+              class="bg-slate-200 text-slate-700 px-6 py-2 rounded-lg hover:bg-slate-300 transition-colors">
+              Previous
+            </button>
+          } @else {
+            <div></div>
+          }
+          @if (currentQuestion() < questions().length - 1) {
+            <button 
+              (click)="nextQuestion()"
+              [disabled]="answers()[currentQuestion()] === undefined"
+              class="bg-slate-800 text-white px-6 py-2 rounded-lg hover:bg-slate-700 disabled:bg-slate-400 disabled:cursor-not-allowed transition-colors">
+              Next
+            </button>
+          } @else {
+            <button 
+              (click)="calculateResults()"
+              [disabled]="answers()[currentQuestion()] === undefined"
+              class="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 disabled:bg-slate-400 disabled:cursor-not-allowed transition-colors">
+              Get Results
+            </button>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- Results -->
+    @if (showResults()) {
+      <div class="bg-white rounded-xl shadow-lg p-8">
+        
+        <!-- Safety Alert -->
+        @if (result().safetyFlag) {
+          <div class="bg-red-50 border border-red-200 rounded-lg p-6 mb-8">
+            <div class="flex items-start space-x-3">
+              <svg class="w-6 h-6 text-red-600 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+              </svg>
+              <div>
+                <h3 class="font-semibold text-red-800 mb-2">You are not alone. Help is available.</h3>
+                <p class="text-red-700 text-sm mb-3">
+                  If you are feeling unsafe or having thoughts of self-harm, please reach out for support immediately.
+                </p>
+                <div class="space-y-1 text-sm text-red-700">
+                  <div><strong>AASRA:</strong> 91-9820466726</div>
+                  <div><strong>Sneha:</strong> 044-24640050</div>
+                  <div><strong>Emergency:</strong> 112</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        }
+
+        <!-- Score Display -->
+        <div class="text-center mb-8">
+          <div class="inline-flex items-center justify-center w-24 h-24 rounded-full mb-4" [class]="'bg-' + result().color + '-100'">
+            <span class="text-2xl font-bold" [class]="'text-' + result().color + '-800'">{{ result().total }}</span>
+          </div>
+          <h3 class="text-2xl font-bold text-slate-800 mb-2">{{ result().level }}</h3>
+          <p class="text-slate-600">Your emotional well-being assessment score</p>
+        </div>
+
+        <!-- Suggestions -->
+        <div class="mb-8">
+          <h4 class="text-lg font-semibold text-slate-800 mb-4">Personalized Suggestions</h4>
+          <div class="grid gap-3">
+            @for (suggestion of result().suggestions; track suggestion) {
+              <div class="flex items-start space-x-3 p-4 bg-slate-50 rounded-lg">
+                <svg class="w-5 h-5 text-green-600 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                </svg>
+                <span class="text-slate-700">{{ suggestion }}</span>
+              </div>
+            }
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex flex-col sm:flex-row gap-4 justify-center">
+          <button 
+            (click)="retakeAssessment()"
+            class="bg-slate-200 text-slate-700 px-6 py-3 rounded-lg hover:bg-slate-300 transition-colors">
+            Retake Assessment
+          </button>
+          <button 
+            class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors">
+            Find Professional Help
+          </button>
+          <button 
+            class="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors">
+            Book Consultation
+          </button>
+        </div>
+      </div>
+    }
+
+  </div>
+</section>
+

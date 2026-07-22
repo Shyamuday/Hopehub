@@ -1,0 +1,156 @@
+@if (service()) {
+  <div class="container mx-auto px-4 py-8">
+    <!-- Back Navigation -->
+    <button 
+      (click)="goBack()" 
+      class="mb-6 flex items-center text-primary-600 hover:text-primary-700 transition-colors duration-200">
+      <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+      </svg>
+      Back to Services
+    </button>
+
+    <!-- Service Header -->
+    <div class="bg-white rounded-lg shadow-lg overflow-hidden mb-8">
+      <div class="md:flex">
+        @if (service()!.imageUrl) {
+          <div class="md:w-1/2">
+            <img [src]="service()!.imageUrl" [alt]="service()!.name" class="w-full h-64 md:h-full object-cover">
+          </div>
+        }
+        <div class="p-8" [class.md:w-1/2]="service()!.imageUrl" [class.w-full]="!service()!.imageUrl">
+          <div class="mb-4">
+            <span class="inline-block bg-primary-100 text-primary-800 text-sm px-3 py-1 rounded-full capitalize">
+              {{ service()!.category }}
+            </span>
+            @if (service()!.featured) {
+              <span class="ml-2 inline-block bg-yellow-100 text-yellow-800 text-sm px-3 py-1 rounded-full">
+                Featured
+              </span>
+            }
+          </div>
+          <h1 class="text-3xl font-bold text-gray-900 mb-4">{{ service()!.name }}</h1>
+          <p class="text-lg text-gray-600 mb-6">{{ service()!.description }}</p>
+          
+          <!-- Pricing Information -->
+          @if (service()!.pricing) {
+            <div class="mb-6">
+              <h3 class="text-lg font-semibold text-gray-900 mb-3">Pricing</h3>
+              <div class="space-y-2">
+                @if (service()!.pricing!.individual) {
+                  <div class="flex justify-between items-center">
+                    <span class="text-gray-600">Individual Session:</span>
+                    <span class="font-semibold">${{ service()!.pricing!.individual }} {{ service()!.pricing!.currency }}</span>
+                  </div>
+                }
+                @if (service()!.pricing!.couples) {
+                  <div class="flex justify-between items-center">
+                    <span class="text-gray-600">Couples Session:</span>
+                    <span class="font-semibold">${{ service()!.pricing!.couples }} {{ service()!.pricing!.currency }}</span>
+                  </div>
+                }
+                @if (service()!.pricing!.group) {
+                  <div class="flex justify-between items-center">
+                    <span class="text-gray-600">Group Session:</span>
+                    <span class="font-semibold">${{ service()!.pricing!.group }} {{ service()!.pricing!.currency }}</span>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+
+          <!-- Booking CTA -->
+          <div class="space-y-3">
+            <button 
+              (click)="bookService()" 
+              class="w-full bg-primary-600 text-white px-6 py-3 rounded-md hover:bg-primary-700 transition-colors duration-200 font-semibold">
+              Book This Service
+            </button>
+            <button 
+              (click)="contactForInfo()" 
+              class="w-full border border-primary-600 text-primary-600 px-6 py-3 rounded-md hover:bg-primary-50 transition-colors duration-200 font-semibold">
+              Contact for More Info
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Detailed Information -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <!-- Detailed Description -->
+      <div class="bg-white rounded-lg shadow-md p-6">
+        <h2 class="text-2xl font-semibold text-gray-900 mb-4">About This Service</h2>
+        <p class="text-gray-600 leading-relaxed">{{ service()!.detailedDescription }}</p>
+      </div>
+
+      <!-- Benefits -->
+      <div class="bg-white rounded-lg shadow-md p-6">
+        <h2 class="text-2xl font-semibold text-gray-900 mb-4">Benefits</h2>
+        <ul class="space-y-3">
+          @for (benefit of service()!.benefits; track benefit) {
+            <li class="flex items-start">
+              <svg class="w-5 h-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+              </svg>
+              <span class="text-gray-600">{{ benefit }}</span>
+            </li>
+          }
+        </ul>
+      </div>
+
+      <!-- Service Inquiry Form -->
+      <div class="lg:row-span-2">
+        <app-service-inquiry [serviceName]="service()!.name"></app-service-inquiry>
+      </div>
+
+      <!-- Approach -->
+      <div class="bg-white rounded-lg shadow-md p-6 lg:col-span-2">
+        <h2 class="text-2xl font-semibold text-gray-900 mb-4">Our Approach</h2>
+        <p class="text-gray-600 leading-relaxed">{{ service()!.approach }}</p>
+      </div>
+    </div>
+
+    <!-- Call to Action Section -->
+    <div class="mt-12 bg-primary-50 rounded-lg p-8 text-center">
+      <h2 class="text-2xl font-semibold text-gray-900 mb-4">Ready to Get Started?</h2>
+      <p class="text-gray-600 mb-6 max-w-2xl mx-auto">
+        Take the first step towards better mental health. Our experienced professionals are here to support you on your journey.
+      </p>
+      <div class="space-x-4">
+        <button 
+          (click)="bookService()" 
+          class="bg-primary-600 text-white px-8 py-3 rounded-md hover:bg-primary-700 transition-colors duration-200 font-semibold">
+          Book Now
+        </button>
+        <button 
+          (click)="contactForInfo()" 
+          class="border border-primary-600 text-primary-600 px-8 py-3 rounded-md hover:bg-primary-50 transition-colors duration-200 font-semibold">
+          Learn More
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Service Not Found -->
+@if (!service() && !loading()) {
+  <div class="container mx-auto px-4 py-8 text-center">
+    <h1 class="text-3xl font-bold text-gray-900 mb-4">Service Not Found</h1>
+    <p class="text-gray-600 mb-6">The service you're looking for doesn't exist or has been removed.</p>
+    <button 
+      (click)="goBack()" 
+      class="bg-primary-600 text-white px-6 py-3 rounded-md hover:bg-primary-700 transition-colors duration-200">
+      Back to Services
+    </button>
+  </div>
+}
+
+<!-- Loading State -->
+@if (loading()) {
+  <div class="container mx-auto px-4 py-8 text-center">
+    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
+    <p class="text-gray-600 mt-4">Loading service details...</p>
+  </div>
+}
+

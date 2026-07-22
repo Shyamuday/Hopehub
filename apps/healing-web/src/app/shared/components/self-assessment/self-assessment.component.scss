@@ -1,0 +1,21 @@
+/* Custom radio button styling */
+input[type="radio"] {
+  accent-color: #1e293b;
+}
+
+/* Smooth transitions */
+.transition-all {
+  transition: all 0.3s ease;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 640px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .flex-col {
+    flex-direction: column;
+  }
+}
+
