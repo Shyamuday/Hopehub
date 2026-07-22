@@ -19,7 +19,7 @@ describe('App', () => {
     await fixture.whenStable();
     const compiled = fixture.nativeElement as HTMLElement;
     expect(compiled.querySelector('[role="status"]')?.textContent).toContain(
-      'Loading Doctor Console',
+      'Loading Provider Console',
     );
   });
 });
