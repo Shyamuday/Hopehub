@@ -4,6 +4,7 @@ model HealthService {
   title                 String
   shortTitle            String?
   category              String
+  subCategory           String?
   expertTypes           ProviderType[]      @default([])
   summary               String              @db.Text
   description           String?             @db.Text
@@ -28,5 +29,6 @@ model HealthService {
   updatedAt             DateTime            @updatedAt
 
   @@index([category])
+  @@index([subCategory])
   @@index([isPublished, sortOrder])
 }

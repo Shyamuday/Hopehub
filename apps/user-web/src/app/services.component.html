@@ -25,9 +25,18 @@
         </label>
         <label>
           Category
-          <select [value]="category()" (change)="category.set($any($event.target).value); load(1)">
+          <select [value]="category()" (change)="onCategoryChange($any($event.target).value)">
             <option value="">All categories</option>
             @for (option of categories(); track option) {
+              <option [value]="option">{{ option }}</option>
+            }
+          </select>
+        </label>
+        <label>
+          Subsection
+          <select [value]="subCategory()" (change)="subCategory.set($any($event.target).value); load(1)">
+            <option value="">All subsections</option>
+            @for (option of visibleSubCategories(); track option) {
               <option [value]="option">{{ option }}</option>
             }
           </select>
@@ -86,7 +95,7 @@
         @for (service of services(); track service.id) {
           <article class="service-card panel">
             <div class="service-card-head">
-              <p class="eyebrow">{{ service.category }}</p>
+              <p class="eyebrow">{{ service.subCategory || service.category }}</p>
               @if (service.isFeatured) { <span class="service-badge">Featured</span> }
             </div>
             <h2>{{ service.title }}</h2>

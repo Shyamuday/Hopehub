@@ -11,7 +11,7 @@
     } @else if (service(); as item) {
       <section class="service-detail-hero panel">
         <div>
-          <p class="eyebrow">{{ item.category }}</p>
+          <p class="eyebrow">{{ item.subCategory || item.category }}</p>
           <h1>{{ item.title }}</h1>
           <p>{{ item.description || item.summary }}</p>
           <div class="service-meta-row">

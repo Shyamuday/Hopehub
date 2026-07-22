@@ -27,6 +27,10 @@
           <input [value]="createDraft().category" (input)="updateCreate('category', $any($event.target).value)" />
         </label>
         <label class="field">
+          <span class="field-label">Subsection</span>
+          <input [value]="createDraft().subCategory" (input)="updateCreate('subCategory', $any($event.target).value)" placeholder="Clinical Psychology" />
+        </label>
+        <label class="field">
           <span class="field-label">Sort order</span>
           <input type="number" [value]="createDraft().sortOrder" (input)="updateCreate('sortOrder', $any($event.target).valueAsNumber || 0)" />
         </label>
@@ -77,7 +81,7 @@
       <div class="card-header">
         <div>
           <strong>{{ service.title }}</strong>
-          <p class="meta">/{{ service.slug }} · {{ service.category }} · {{ service.priceInPaise / 100 | currency:'INR' }}</p>
+          <p class="meta">/{{ service.slug }} · {{ service.category }} @if (service.subCategory) { · {{ service.subCategory }} } · {{ service.priceInPaise / 100 | currency:'INR' }}</p>
           <p class="meta">{{ service.expertTypeLabels.join(', ') }}</p>
         </div>
         <div class="badge-row">
@@ -102,6 +106,10 @@
             <label class="field">
               <span class="field-label">Category</span>
               <input [value]="editDraft().category" (input)="updateEdit('category', $any($event.target).value)" />
+            </label>
+            <label class="field">
+              <span class="field-label">Subsection</span>
+              <input [value]="editDraft().subCategory" (input)="updateEdit('subCategory', $any($event.target).value)" />
             </label>
             <label class="field">
               <span class="field-label">Sort order</span>

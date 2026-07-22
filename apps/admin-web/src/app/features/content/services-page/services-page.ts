@@ -10,6 +10,7 @@ type HealthService = {
   title: string;
   shortTitle?: string | null;
   category: string;
+  subCategory?: string | null;
   expertTypes: string[];
   expertTypeLabels: string[];
   summary: string;
@@ -37,6 +38,7 @@ type ServiceDraft = {
   title: string;
   shortTitle: string;
   category: string;
+  subCategory: string;
   expertTypesCsv: string;
   summary: string;
   description: string;
@@ -63,6 +65,7 @@ const EMPTY_DRAFT: ServiceDraft = {
   title: '',
   shortTitle: '',
   category: 'Medical Care',
+  subCategory: '',
   expertTypesCsv: 'DOCTOR',
   summary: '',
   description: '',
@@ -104,6 +107,7 @@ function fromService(service: HealthService): ServiceDraft {
     title: service.title,
     shortTitle: service.shortTitle || '',
     category: service.category,
+    subCategory: service.subCategory || '',
     expertTypesCsv: service.expertTypes.join(', '),
     summary: service.summary,
     description: service.description || '',
@@ -236,6 +240,7 @@ export class ServicesPage {
         title: draft.title.trim(),
         shortTitle: draft.shortTitle.trim() || null,
         category: draft.category.trim(),
+        subCategory: draft.subCategory.trim() || null,
         expertTypes: splitCsv(draft.expertTypesCsv),
         summary: draft.summary.trim(),
         description: draft.description.trim() || null,

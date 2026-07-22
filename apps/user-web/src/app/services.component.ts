@@ -16,6 +16,7 @@ type HealthService = {
   title: string;
   shortTitle?: string | null;
   category: string;
+  subCategory?: string | null;
   expertTypes: string[];
   expertTypeLabels: string[];
   summary: string;
@@ -30,6 +31,8 @@ type ServiceResponse = {
   services: HealthService[];
   filterOptions: {
     categories: string[];
+    subCategories: string[];
+    subCategoriesByCategory: Record<string, string[]>;
     expertTypes: FilterOption[];
     tags: string[];
   };
@@ -57,6 +60,8 @@ export class ServicesComponent implements OnInit {
   readonly error = signal('');
   readonly services = signal<HealthService[]>([]);
   readonly categories = signal<string[]>([]);
+  readonly subCategories = signal<string[]>([]);
+  readonly subCategoriesByCategory = signal<Record<string, string[]>>({});
   readonly expertTypes = signal<FilterOption[]>([]);
   readonly tags = signal<string[]>([]);
   readonly page = signal(1);
@@ -64,12 +69,18 @@ export class ServicesComponent implements OnInit {
   readonly total = signal(0);
   readonly q = signal('');
   readonly category = signal('');
+  readonly subCategory = signal('');
   readonly expertType = signal('');
   readonly tag = signal('');
   readonly sort = signal('featured');
   readonly hasFilters = computed(() =>
-    Boolean(this.q() || this.category() || this.expertType() || this.tag()),
+    Boolean(this.q() || this.category() || this.subCategory() || this.expertType() || this.tag()),
   );
+  readonly visibleSubCategories = computed(() => {
+    const category = this.category();
+    if (!category) return this.subCategories();
+    return this.subCategoriesByCategory()[category] || [];
+  });
 
   ngOnInit() {
     void this.load();
@@ -87,11 +98,14 @@ export class ServicesComponent implements OnInit {
       });
       if (this.q().trim()) params.set('q', this.q().trim());
       if (this.category()) params.set('category', this.category());
+      if (this.subCategory()) params.set('subCategory', this.subCategory());
       if (this.expertType()) params.set('expertType', this.expertType());
       if (this.tag()) params.set('tag', this.tag());
       const res = await this.api.get<ServiceResponse>(`/services?${params}`);
       this.services.set(res.services || []);
       this.categories.set(res.filterOptions?.categories || []);
+      this.subCategories.set(res.filterOptions?.subCategories || []);
+      this.subCategoriesByCategory.set(res.filterOptions?.subCategoriesByCategory || {});
       this.expertTypes.set(res.filterOptions?.expertTypes || []);
       this.tags.set(res.filterOptions?.tags || []);
       this.total.set(res.pagination?.total || 0);
@@ -107,9 +121,16 @@ export class ServicesComponent implements OnInit {
   reset() {
     this.q.set('');
     this.category.set('');
+    this.subCategory.set('');
     this.expertType.set('');
     this.tag.set('');
     this.sort.set('featured');
+    void this.load(1);
+  }
+
+  onCategoryChange(value: string) {
+    this.category.set(value);
+    this.subCategory.set('');
     void this.load(1);
   }
 

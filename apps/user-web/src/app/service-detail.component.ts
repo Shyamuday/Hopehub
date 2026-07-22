@@ -13,6 +13,7 @@ type HealthService = {
   slug: string;
   title: string;
   category: string;
+  subCategory?: string | null;
   expertTypes: string[];
   expertTypeLabels: string[];
   summary: string;

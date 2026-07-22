@@ -22,6 +22,7 @@ const servicePayloadSchema = z.object({
   title: z.string().min(3).max(160),
   shortTitle: z.string().max(80).nullable().optional(),
   category: z.string().min(2).max(80),
+  subCategory: z.string().max(100).nullable().optional(),
   expertTypes: z.array(z.nativeEnum(ProviderType)).default([]),
   summary: z.string().min(10).max(1000),
   description: z.string().max(10_000).nullable().optional(),
@@ -52,6 +53,7 @@ const servicePayloadSchema = z.object({
 const publicServiceQuerySchema = z.object({
   q: z.string().trim().max(100).optional().default(''),
   category: z.string().trim().max(80).optional().default(''),
+  subCategory: z.string().trim().max(100).optional().default(''),
   expertType: z.nativeEnum(ProviderType).optional(),
   tag: z.string().trim().max(60).optional().default(''),
   page: z.coerce.number().int().min(1).default(1),
@@ -106,6 +108,7 @@ function serviceData(body: z.infer<typeof servicePayloadSchema>) {
     title: body.title,
     shortTitle: body.shortTitle ?? null,
     category: body.category,
+    subCategory: body.subCategory ?? null,
     expertTypes: body.expertTypes,
     summary: body.summary,
     description: body.description ?? null,
@@ -140,12 +143,16 @@ function publicWhere(
         { summary: { contains: filters.q, mode: 'insensitive' } },
         { description: { contains: filters.q, mode: 'insensitive' } },
         { category: { contains: filters.q, mode: 'insensitive' } },
+        { subCategory: { contains: filters.q, mode: 'insensitive' } },
         { tags: { has: filters.q } }
       ]
     });
   }
   if (filters.category) {
     andFilters.push({ category: { equals: filters.category, mode: 'insensitive' } });
+  }
+  if (filters.subCategory) {
+    andFilters.push({ subCategory: { equals: filters.subCategory, mode: 'insensitive' } });
   }
   if (filters.expertType) {
     andFilters.push({ expertTypes: { has: filters.expertType } });
@@ -170,10 +177,26 @@ function serviceOrderBy(sort: string): Prisma.HealthServiceOrderByWithRelationIn
 async function serviceFilterOptions() {
   const allVisible = await prisma.healthService.findMany({
     where: { isPublished: true },
-    select: { category: true, expertTypes: true, tags: true }
+    select: { category: true, subCategory: true, expertTypes: true, tags: true }
   });
   return {
     categories: [...new Set(allVisible.map((service) => service.category))].sort(),
+    subCategories: [
+      ...new Set(
+        allVisible
+          .map((service) => service.subCategory)
+          .filter((value): value is string => Boolean(value))
+      )
+    ].sort(),
+    subCategoriesByCategory: allVisible.reduce<Record<string, string[]>>((acc, service) => {
+      if (!service.subCategory) return acc;
+      acc[service.category] = acc[service.category] || [];
+      if (!acc[service.category].includes(service.subCategory)) {
+        acc[service.category].push(service.subCategory);
+        acc[service.category].sort();
+      }
+      return acc;
+    }, {}),
     expertTypes: [...new Set(allVisible.flatMap((service) => service.expertTypes))]
       .sort((a, b) => providerTypeLabel(a).localeCompare(providerTypeLabel(b)))
       .map((value) => ({ value, label: providerTypeLabel(value) })),
@@ -248,6 +271,7 @@ export function registerAdminServiceRoutes(router: Router) {
             OR: [
               { title: { contains: q, mode: 'insensitive' } },
               { category: { contains: q, mode: 'insensitive' } },
+              { subCategory: { contains: q, mode: 'insensitive' } },
               { summary: { contains: q, mode: 'insensitive' } }
             ]
           }
@@ -316,6 +340,7 @@ export function registerAdminServiceRoutes(router: Router) {
           ...(body.slug ? { slug: body.slug } : {}),
           ...(body.title ? { title: body.title } : {}),
           ...(body.category ? { category: body.category } : {}),
+          ...(body.subCategory !== undefined ? { subCategory: body.subCategory ?? null } : {}),
           ...(body.summary ? { summary: body.summary } : {}),
           ...(body.shortTitle !== undefined ? { shortTitle: body.shortTitle ?? null } : {}),
           ...(body.expertTypes !== undefined ? { expertTypes: body.expertTypes } : {}),
