@@ -1,5 +1,7 @@
 .home-hero--booking {
   display: grid;
+  width: 100%;
+  max-width: none;
   gap: 1.25rem;
   justify-items: start;
 }

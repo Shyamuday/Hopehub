@@ -1,46 +1,65 @@
 
     <div class="panel book-panel">
-      <h2>Book Consultation</h2>
-      @if (initialServiceTitle) {
-        <p class="muted">Selected service: <strong>{{ initialServiceTitle }}</strong></p>
-      }
-
-      <label>
-        Purchase type
-        <select [formField]="bookingForm.purchaseType" (change)="onBookingOptionChange()">
-          <option [value]="PURCHASE_TYPES.ONE_TIME">One-time appointment</option>
-          <option [value]="PURCHASE_TYPES.PLAN">Plan purchase</option>
-        </select>
-      </label>
-
-      @if (bookingFormModel().purchaseType === PURCHASE_TYPES.PLAN) {
-        <label>
-          Select plan
-          <select [formField]="bookingForm.selectedPlanCode" (change)="onBookingOptionChange()">
-            @for (plan of plans; track plan.code) {
-              @if (plan.code !== BILLING_PLAN_CODES.ONE_TIME) {
-                <option [value]="plan.code">
-                  {{ plan.name }} — {{ plan.priceInPaise / 100 | currency: CURRENCY_CODE }}
-                </option>
-              }
-            }
-          </select>
-        </label>
-        @if (selectedPlanDescription()) {
-          <p class="muted">{{ selectedPlanDescription() }}</p>
-        }
-      }
-
-      <label>
-        Select problem
-        <select [formField]="bookingForm.selectedDiseaseId" (change)="onDiseaseChange()">
-          @for (disease of diseases; track disease.id) {
-            <option [value]="disease.id">
-              {{ disease.name }} — {{ disease.feeInPaise / 100 | currency: CURRENCY_CODE }}
-            </option>
+      <div class="book-panel-head">
+        <div>
+          <p class="eyebrow">Online consultation</p>
+          <h2>Book Consultation</h2>
+          @if (initialServiceTitle) {
+            <p class="muted">Selected service: <strong>{{ initialServiceTitle }}</strong></p>
+          } @else {
+            <p class="muted">Choose your concern, share a short intake, and continue to secure payment.</p>
           }
-        </select>
-      </label>
+        </div>
+        <div class="book-price-card">
+          <span>Payable now</span>
+          @if (quoteLoading()) {
+            <strong>Calculating…</strong>
+          } @else {
+            <strong>{{ payableAmount() / 100 | currency: CURRENCY_CODE }}</strong>
+          }
+        </div>
+      </div>
+
+      <div class="book-panel-grid">
+        <div class="book-form-area">
+          <div class="field-row">
+            <label>
+              Purchase type
+              <select [formField]="bookingForm.purchaseType" (change)="onBookingOptionChange()">
+                <option [value]="PURCHASE_TYPES.ONE_TIME">One-time appointment</option>
+                <option [value]="PURCHASE_TYPES.PLAN">Plan purchase</option>
+              </select>
+            </label>
+
+            <label>
+              Select problem
+              <select [formField]="bookingForm.selectedDiseaseId" (change)="onDiseaseChange()">
+                @for (disease of diseases; track disease.id) {
+                  <option [value]="disease.id">
+                    {{ disease.name }} — {{ disease.feeInPaise / 100 | currency: CURRENCY_CODE }}
+                  </option>
+                }
+              </select>
+            </label>
+          </div>
+
+          @if (bookingFormModel().purchaseType === PURCHASE_TYPES.PLAN) {
+            <label>
+              Select plan
+              <select [formField]="bookingForm.selectedPlanCode" (change)="onBookingOptionChange()">
+                @for (plan of plans; track plan.code) {
+                  @if (plan.code !== BILLING_PLAN_CODES.ONE_TIME) {
+                    <option [value]="plan.code">
+                      {{ plan.name }} — {{ plan.priceInPaise / 100 | currency: CURRENCY_CODE }}
+                    </option>
+                  }
+                }
+              </select>
+            </label>
+            @if (selectedPlanDescription()) {
+              <p class="muted">{{ selectedPlanDescription() }}</p>
+            }
+          }
 
       <!-- Offline clinic/location selection hidden for now. Platform is online-only.
       <label>
@@ -57,85 +76,93 @@
       </label>
       -->
 
-      @for (question of intakeQuestions(); track question) {
-        <label>
-          {{ question }}
-          <input
-            [value]="intakeAnswer(question)"
-            (input)="patchIntakeAnswer(question, $event)"
-            placeholder="Type your answer"
-          />
-        </label>
-      }
-
-      @if (checkoutQuote(); as quote) {
-        <div class="price-breakdown">
-          <label class="promo-field">
-            Promo code
-            <div class="promo-row">
-              <input
-                type="text"
-                [value]="promoCode()"
-                (input)="onPromoChange($event)"
-                placeholder="e.g. SUMMER25"
-                autocomplete="off"
-              />
-              <button type="button" class="promo-btn" (click)="applyPromo()">Apply</button>
+          @if (intakeQuestions().length) {
+            <div class="intake-grid">
+              @for (question of intakeQuestions(); track question) {
+                <label>
+                  {{ question }}
+                  <input
+                    [value]="intakeAnswer(question)"
+                    (input)="patchIntakeAnswer(question, $event)"
+                    placeholder="Type your answer"
+                  />
+                </label>
+              }
             </div>
-          </label>
-          <div class="price-row">
-            <span>Consultation fee</span>
-            <span>{{ quote.grossAmountInPaise / 100 | currency: CURRENCY_CODE }}</span>
-          </div>
-          @if (quote.discountInPaise > 0) {
-            @for (rule of quote.appliedRules; track rule.name) {
-              <div class="price-row savings">
-                <span>{{ rule.name }}</span>
-                <span>−{{ rule.amountInPaise / 100 | currency: CURRENCY_CODE }}</span>
-              </div>
-            }
-          }
-          @if (canUseWallet()) {
-            <label class="wallet-check">
-              <input
-                type="checkbox"
-                [checked]="useWallet()"
-                (change)="toggleWallet($any($event.target).checked)"
-              />
-              <span>
-                Use wallet balance
-                <strong>{{ walletBalance() / 100 | currency: CURRENCY_CODE }}</strong>
-                @if (useWallet() && quote.walletRedeemedInPaise > 0) {
-                  <small>Applying {{ quote.walletRedeemedInPaise / 100 | currency: CURRENCY_CODE }} now</small>
-                }
-              </span>
-            </label>
-          }
-          @if (useWallet() && quote.walletRedeemedInPaise > 0) {
-            <div class="price-row savings">
-              <span>Wallet applied</span>
-              <span>−{{ quote.walletRedeemedInPaise / 100 | currency: CURRENCY_CODE }}</span>
-            </div>
-          }
-          @if (totalSavings() > 0) {
-            <p class="savings-banner">You save {{ totalSavings() / 100 | currency: CURRENCY_CODE }} on this booking</p>
           }
         </div>
-      }
 
-      <button class="primary" [disabled]="disabled || !bookingFormModel().selectedDiseaseId || quoteLoading()" (click)="submit()">
-        Continue to payment
-      </button>
-      <p class="muted payable-line">
-        @if (quoteLoading()) {
-          Calculating best price…
-        } @else {
-          Payable now:
-          <strong>{{ payableAmount() / 100 | currency: CURRENCY_CODE }}</strong>.
-          @if (estimatedGrossAmount() > payableAmount()) {
-            <s class="was-price">{{ estimatedGrossAmount() / 100 | currency: CURRENCY_CODE }}</s>
+        <aside class="checkout-area">
+          @if (checkoutQuote(); as quote) {
+            <div class="price-breakdown">
+              <label class="promo-field">
+                Promo code
+                <div class="promo-row">
+                  <input
+                    type="text"
+                    [value]="promoCode()"
+                    (input)="onPromoChange($event)"
+                    placeholder="e.g. SUMMER25"
+                    autocomplete="off"
+                  />
+                  <button type="button" class="promo-btn" (click)="applyPromo()">Apply</button>
+                </div>
+              </label>
+              <div class="price-row">
+                <span>Consultation fee</span>
+                <span>{{ quote.grossAmountInPaise / 100 | currency: CURRENCY_CODE }}</span>
+              </div>
+              @if (quote.discountInPaise > 0) {
+                @for (rule of quote.appliedRules; track rule.name) {
+                  <div class="price-row savings">
+                    <span>{{ rule.name }}</span>
+                    <span>−{{ rule.amountInPaise / 100 | currency: CURRENCY_CODE }}</span>
+                  </div>
+                }
+              }
+              @if (canUseWallet()) {
+                <label class="wallet-check">
+                  <input
+                    type="checkbox"
+                    [checked]="useWallet()"
+                    (change)="toggleWallet($any($event.target).checked)"
+                  />
+                  <span>
+                    Use wallet balance
+                    <strong>{{ walletBalance() / 100 | currency: CURRENCY_CODE }}</strong>
+                    @if (useWallet() && quote.walletRedeemedInPaise > 0) {
+                      <small>Applying {{ quote.walletRedeemedInPaise / 100 | currency: CURRENCY_CODE }} now</small>
+                    }
+                  </span>
+                </label>
+              }
+              @if (useWallet() && quote.walletRedeemedInPaise > 0) {
+                <div class="price-row savings">
+                  <span>Wallet applied</span>
+                  <span>−{{ quote.walletRedeemedInPaise / 100 | currency: CURRENCY_CODE }}</span>
+                </div>
+              }
+              @if (totalSavings() > 0) {
+                <p class="savings-banner">You save {{ totalSavings() / 100 | currency: CURRENCY_CODE }} on this booking</p>
+              }
+            </div>
           }
-          After payment, consultation moves to expert assignment.
-        }
-      </p>
+
+          <button class="primary" [disabled]="disabled || !bookingFormModel().selectedDiseaseId || quoteLoading()" (click)="submit()">
+            Continue to payment
+          </button>
+          <p class="muted payable-line">
+            @if (quoteLoading()) {
+              Calculating best price…
+            } @else {
+              Payable now:
+              <strong>{{ payableAmount() / 100 | currency: CURRENCY_CODE }}</strong>.
+              @if (estimatedGrossAmount() > payableAmount()) {
+                <s class="was-price">{{ estimatedGrossAmount() / 100 | currency: CURRENCY_CODE }}</s>
+              }
+              After payment, consultation moves to expert assignment.
+            }
+          </p>
+        </aside>
+      </div>
     </div>

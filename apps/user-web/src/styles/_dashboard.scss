@@ -57,6 +57,10 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.booking-workspace {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 .account-shortcut h2 {
   margin: 0.35rem 0 0.5rem;
 }

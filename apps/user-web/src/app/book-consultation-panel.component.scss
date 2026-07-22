@@ -1,7 +1,101 @@
+.book-panel {
+  width: 100%;
+  box-sizing: border-box;
+  display: grid;
+  gap: 1.25rem;
+  padding: clamp(1rem, 2.5vw, 1.5rem);
+}
+
+.book-panel-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.book-panel-head h2 {
+  margin: 0.15rem 0 0.35rem;
+  color: #102033;
+  font-size: clamp(1.35rem, 2.5vw, 1.8rem);
+}
+
+.book-price-card {
+  display: grid;
+  gap: 0.2rem;
+  min-width: 12rem;
+  padding: 0.8rem 0.95rem;
+  border-radius: 14px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  text-align: right;
+}
+
+.book-price-card span {
+  color: #526070;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.book-price-card strong {
+  color: #0f62fe;
+  font-size: 1.35rem;
+}
+
+.book-panel-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(18rem, 24rem);
+  gap: 1.25rem;
+  align-items: start;
+}
+
+.book-form-area,
+.checkout-area {
+  min-width: 0;
+}
+
+.field-row,
+.intake-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.9rem;
+}
+
+.checkout-area {
+  position: sticky;
+  top: 1rem;
+  padding: 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  background: #fbfdff;
+}
+
 .book-panel label {
   display: grid;
   gap: 0.35rem;
   margin-bottom: 0.85rem;
+}
+
+.book-panel select,
+.book-panel input {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 44px;
+  border: 1px solid #dbe3ee;
+  border-radius: 10px;
+  padding: 0.65rem 0.75rem;
+  color: #102033;
+  background: #fff;
+  font: inherit;
+}
+
+.book-panel select:focus,
+.book-panel input:focus {
+  border-color: #0f62fe;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(15, 98, 254, 0.1);
 }
 
 .promo-field {
@@ -41,7 +135,7 @@
   border: 1px solid #e5e7eb;
   border-radius: 12px;
   padding: 0.85rem 1rem;
-  margin: 0.5rem 0 1rem;
+  margin: 0 0 1rem;
   background: #fafbfc;
 }
 
@@ -107,4 +201,33 @@
   margin-left: 0.35rem;
   color: #94a3b8;
   font-size: 0.9rem;
+}
+
+.checkout-area .primary {
+  width: 100%;
+  min-height: 48px;
+}
+
+@media (max-width: 900px) {
+  .book-panel-grid,
+  .field-row,
+  .intake-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .checkout-area {
+    position: static;
+  }
+}
+
+@media (max-width: 640px) {
+  .book-panel-head {
+    flex-direction: column;
+  }
+
+  .book-price-card {
+    width: 100%;
+    box-sizing: border-box;
+    text-align: left;
+  }
 }
