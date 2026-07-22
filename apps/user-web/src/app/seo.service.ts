@@ -104,10 +104,7 @@ export class SeoService {
     }
 
     const slug = decodeURIComponent(match[1]);
-    const { diseaseInfos } = await import('./disease/disease-info.constants');
-    const staticInfo = diseaseInfos.find((item) => item.slug === slug);
-    const staticSeo = staticInfo?.seo || {};
-    const canonicalPath = staticSeo.canonicalPath || `/treatments/${slug}`;
+    const canonicalPath = `/treatments/${slug}`;
 
     try {
       const response = await this.apiClient.get<{
@@ -120,20 +117,19 @@ export class SeoService {
       }>(`/diseases/by-slug/${encodeURIComponent(slug)}`);
 
       const live = response.disease;
-      const metaTitle = live.seoTitle || staticSeo.metaTitle || `${live.name} — HopeHub Care`;
-      const metaDescription = live.seoDescription || staticSeo.metaDescription || '';
+      const metaTitle = live.seoTitle || `${live.name} | HopeHub Care`;
+      const metaDescription = live.seoDescription || '';
 
       return {
         metaTitle,
         metaDescription,
-        keywords: staticSeo.keywords,
-        ogTitle: staticSeo.ogTitle || metaTitle,
-        ogDescription: staticSeo.ogDescription || metaDescription,
-        ogImage: live.publicImageUrl || staticSeo.ogImage,
+        ogTitle: metaTitle,
+        ogDescription: metaDescription,
+        ogImage: live.publicImageUrl || undefined,
         canonicalPath,
       };
     } catch {
-      return { ...staticSeo, canonicalPath };
+      return { canonicalPath };
     }
   }
 

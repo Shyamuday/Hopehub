@@ -14,15 +14,21 @@ import {
   DISEASE_COMMON_IN_FIELDS,
   DISEASE_QUICK_FACT_FIELDS,
   DISEASE_REVIEW_FIELDS,
-  DISEASE_TREATMENT_OPTION_FIELDS
+  DISEASE_TREATMENT_OPTION_FIELDS,
 } from './disease/constants/disease-detail.fields';
-import { diseaseInfos } from './disease/disease-info.constants';
 import { Disease, DiseaseFaqItem, DiseaseInfo } from './models';
 import { AppOverlayService } from './overlay.service';
 
 @Component({
   selector: 'app-disease-detail',
-  imports: [CommonModule, CurrencyPipe, RouterLink, AppHeaderComponent, AppFooterComponent, DetailRowsComponent],
+  imports: [
+    CommonModule,
+    CurrencyPipe,
+    RouterLink,
+    AppHeaderComponent,
+    AppFooterComponent,
+    DetailRowsComponent,
+  ],
   templateUrl: './disease-detail.component.html',
 })
 export class DiseaseDetailComponent implements OnInit {
@@ -37,11 +43,10 @@ export class DiseaseDetailComponent implements OnInit {
   readonly currencyCode = CURRENCY_CODE;
   readonly dashboardPath = `/${ROUTE_PATHS.PATIENT_DASHBOARD}`;
 
-  readonly staticInfo = signal<DiseaseInfo | undefined>(undefined);
   readonly liveDisease = signal<Disease | null>(null);
   readonly loading = signal(true);
 
-  readonly pageInfo = computed(() => this.liveDisease()?.publicPage || this.staticInfo());
+  readonly pageInfo = computed(() => this.liveDisease()?.publicPage || undefined);
   readonly pageReady = computed(() => !this.loading() && !!(this.pageInfo() || this.liveDisease()));
   readonly displayName = computed(() => this.pageInfo()?.name || this.liveDisease()?.name || '');
   readonly displaySummary = computed(
@@ -49,11 +54,11 @@ export class DiseaseDetailComponent implements OnInit {
       this.pageInfo()?.summary ||
       this.liveDisease()?.publicDescription ||
       this.liveDisease()?.description ||
-      ''
+      '',
   );
   readonly headerSubtitle = computed(() => this.pageInfo()?.shortName || this.displayName());
   readonly heroImageUrl = computed(
-    () => this.liveDisease()?.publicImageUrl || this.pageInfo()?.imageUrl || null
+    () => this.liveDisease()?.publicImageUrl || this.pageInfo()?.imageUrl || null,
   );
   readonly heroImageAlt = computed(() => this.pageInfo()?.imageAlt || this.displayName());
   readonly displayFaq = computed(() => {
@@ -76,17 +81,13 @@ export class DiseaseDetailComponent implements OnInit {
 
   private async loadPage(slug: string) {
     this.loading.set(true);
-    this.staticInfo.set(diseaseInfos.find((item) => item.slug === slug));
     this.liveDisease.set(null);
 
     try {
       const response = await firstValueFrom(this.api.diseaseBySlug(slug));
       this.liveDisease.set(response.disease);
-      if (response.disease.publicPage) {
-        this.staticInfo.set(undefined);
-      }
     } catch {
-      // Static marketing page may exist without a matching DB row.
+      this.liveDisease.set(null);
     } finally {
       this.loading.set(false);
     }

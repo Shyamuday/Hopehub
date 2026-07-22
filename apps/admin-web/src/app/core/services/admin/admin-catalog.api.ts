@@ -13,7 +13,9 @@ import { AdminApiBase } from './admin-api-base';
 @Service()
 export class AdminCatalogApi extends AdminApiBase {
   getConsultations() {
-    return firstValueFrom(this.http.get<{ consultations: Array<any> }>(`${this.apiBase}${API_PATHS.CONSULTATIONS}`));
+    return firstValueFrom(
+      this.http.get<{ consultations: Array<any> }>(`${this.apiBase}${API_PATHS.CONSULTATIONS}`),
+    );
   }
 
   getConsumersPaged(params: {
@@ -24,70 +26,79 @@ export class AdminCatalogApi extends AdminApiBase {
     sortDirection?: SortDirection;
   }) {
     return firstValueFrom(
-      this.http.get<{ consumers: Array<any>; pagination: any }>(`${this.apiBase}${API_PATHS.ADMIN.CONSUMERS}`, {
-        params: {
-          page: String(params.page ?? 1),
-          pageSize: String(params.pageSize ?? PAGE_SIZES.CONSUMERS),
-          q: params.q ?? '',
-          sortBy: params.sortBy ?? 'consultations',
-          sortDirection: params.sortDirection ?? SORT_DIRECTIONS.DESC
-        }
-      })
+      this.http.get<{ consumers: Array<any>; pagination: any }>(
+        `${this.apiBase}${API_PATHS.ADMIN.CONSUMERS}`,
+        {
+          params: {
+            page: String(params.page ?? 1),
+            pageSize: String(params.pageSize ?? PAGE_SIZES.CONSUMERS),
+            q: params.q ?? '',
+            sortBy: params.sortBy ?? 'consultations',
+            sortDirection: params.sortDirection ?? SORT_DIRECTIONS.DESC,
+          },
+        },
+      ),
     );
   }
 
   getConsumerDetail(consumerId: string) {
     return firstValueFrom(
       this.http.get<{ consumer: any; consultations: Array<any>; adherence: any }>(
-        `${this.apiBase}${API_PATHS.ADMIN.CONSUMERS}/${consumerId}`
-      )
+        `${this.apiBase}${API_PATHS.ADMIN.CONSUMERS}/${consumerId}`,
+      ),
     );
   }
 
   getConsumerSupport(consumerId: string) {
     return firstValueFrom(
-      this.http.get<{ notes: Array<any>; context: any }>(`${this.apiBase}${API_PATHS.ADMIN.CONSUMER_SUPPORT(consumerId)}`)
+      this.http.get<{ notes: Array<any>; context: any }>(
+        `${this.apiBase}${API_PATHS.ADMIN.CONSUMER_SUPPORT(consumerId)}`,
+      ),
     );
   }
 
   addConsumerSupportNote(
     consumerId: string,
-    payload: { category: string; body: string; consultationId?: string }
+    payload: { category: string; body: string; consultationId?: string },
   ) {
     return firstValueFrom(
-      this.http.post<{ note: any }>(`${this.apiBase}${API_PATHS.ADMIN.CONSUMER_SUPPORT_NOTES(consumerId)}`, payload)
+      this.http.post<{ note: any }>(
+        `${this.apiBase}${API_PATHS.ADMIN.CONSUMER_SUPPORT_NOTES(consumerId)}`,
+        payload,
+      ),
     );
   }
 
   assignDoctor(consultationId: string, doctorId: string) {
     return firstValueFrom(
-      this.http.post(`${this.apiBase}${API_PATHS.CONSULTATIONS}/${consultationId}/assign`, { doctorId })
+      this.http.post(`${this.apiBase}${API_PATHS.CONSULTATIONS}/${consultationId}/assign`, {
+        doctorId,
+      }),
     );
   }
 
   getActiveDoctors() {
     return firstValueFrom(
-      this.http.get<{ doctors: Array<{ id: string; name: string; doctorProfile?: { specialty?: string } | null }> }>(
-        `${this.apiBase}${API_PATHS.ADMIN.DOCTORS}`,
-        {
-          params: {
-            status: 'ACTIVE',
-            pageSize: String(PAGE_SIZES.ACTIVE_DOCTORS),
-            page: '1',
-            q: '',
-            sortBy: 'name',
-            sortDirection: SORT_DIRECTIONS.ASC
-          }
-        }
-      )
+      this.http.get<{
+        doctors: Array<{ id: string; name: string; doctorProfile?: { specialty?: string } | null }>;
+      }>(`${this.apiBase}${API_PATHS.ADMIN.DOCTORS}`, {
+        params: {
+          status: 'ACTIVE',
+          pageSize: String(PAGE_SIZES.ACTIVE_DOCTORS),
+          page: '1',
+          q: '',
+          sortBy: 'name',
+          sortDirection: SORT_DIRECTIONS.ASC,
+        },
+      }),
     );
   }
 
   getDiseaseCategories() {
     return firstValueFrom(
       this.http.get<{ categories: Array<{ key: string; label: string }> }>(
-        `${this.apiBase}${API_PATHS.ADMIN.DISEASE_CATEGORIES}`
-      )
+        `${this.apiBase}${API_PATHS.ADMIN.DISEASE_CATEGORIES}`,
+      ),
     );
   }
 
@@ -128,7 +139,7 @@ export class AdminCatalogApi extends AdminApiBase {
           isActive: boolean;
           publicCategory: string | null;
         }>;
-      }>(`${this.apiBase}${API_PATHS.ADMIN.DISEASES_LIST}`, { params: query })
+      }>(`${this.apiBase}${API_PATHS.ADMIN.DISEASES_LIST}`, { params: query }),
     );
   }
 
@@ -136,23 +147,17 @@ export class AdminCatalogApi extends AdminApiBase {
     return firstValueFrom(
       this.http.post<{ created: number; categorized: number; total: number }>(
         `${this.apiBase}${API_PATHS.ADMIN.DISEASES_SYNC_CATALOG}`,
-        defaultFeeInPaise ? { defaultFeeInPaise } : {}
-      )
+        defaultFeeInPaise ? { defaultFeeInPaise } : {},
+      ),
     );
   }
 
   reconcileDiseaseOptions() {
     return firstValueFrom(
-      this.http.post<{ synced: number }>(`${this.apiBase}${API_PATHS.ADMIN.DISEASES_RECONCILE_OPTIONS}`, {})
-    );
-  }
-
-  importStaticDiseasePages() {
-    return firstValueFrom(
-      this.http.post<{ matched: number; updated: number; unmatched: string[]; total: number }>(
-        `${this.apiBase}${API_PATHS.ADMIN.DISEASES_IMPORT_STATIC_PAGES}`,
-        {}
-      )
+      this.http.post<{ synced: number }>(
+        `${this.apiBase}${API_PATHS.ADMIN.DISEASES_RECONCILE_OPTIONS}`,
+        {},
+      ),
     );
   }
 
@@ -168,13 +173,13 @@ export class AdminCatalogApi extends AdminApiBase {
         seoDescription: string | null;
         publicFaq: Array<{ question: string; answer: string }>;
         publicPageContent: Record<string, unknown> | null;
-      }>(`${this.apiBase}${API_PATHS.ADMIN.DISEASE_PUBLIC_PAGE(id)}`)
+      }>(`${this.apiBase}${API_PATHS.ADMIN.DISEASE_PUBLIC_PAGE(id)}`),
     );
   }
 
   updateDiseasePublicPage(id: string, payload: Record<string, unknown>) {
     return firstValueFrom(
-      this.http.put(`${this.apiBase}${API_PATHS.ADMIN.DISEASE_PUBLIC_PAGE(id)}`, payload)
+      this.http.put(`${this.apiBase}${API_PATHS.ADMIN.DISEASE_PUBLIC_PAGE(id)}`, payload),
     );
   }
 
@@ -209,34 +214,47 @@ export class AdminCatalogApi extends AdminApiBase {
       isActive: boolean;
       intakeQuestions: string[];
       publicCategory?: string | null;
-    }
+    },
   ) {
-    return firstValueFrom(this.http.put(`${this.apiBase}${API_PATHS.ADMIN.DISEASES}/${id}`, payload));
+    return firstValueFrom(
+      this.http.put(`${this.apiBase}${API_PATHS.ADMIN.DISEASES}/${id}`, payload),
+    );
   }
 
   getLocationFees(diseaseId?: string) {
     return firstValueFrom(
-      this.http.get<{ fees: Array<any>; onlineKey: string }>(`${this.apiBase}${API_PATHS.ADMIN.LOCATION_FEES}`, {
-        params: diseaseId ? { diseaseId } : {}
-      })
+      this.http.get<{ fees: Array<any>; onlineKey: string }>(
+        `${this.apiBase}${API_PATHS.ADMIN.LOCATION_FEES}`,
+        {
+          params: diseaseId ? { diseaseId } : {},
+        },
+      ),
     );
   }
 
   saveLocationFee(payload: { diseaseId: string; locationKey: string; feeInPaise: number }) {
-    return firstValueFrom(this.http.put(`${this.apiBase}${API_PATHS.ADMIN.LOCATION_FEES}`, payload));
+    return firstValueFrom(
+      this.http.put(`${this.apiBase}${API_PATHS.ADMIN.LOCATION_FEES}`, payload),
+    );
   }
 
   deleteLocationFee(diseaseId: string, locationKey: string) {
     return firstValueFrom(
-      this.http.delete(`${this.apiBase}${API_PATHS.ADMIN.LOCATION_FEES}/${diseaseId}/${locationKey}`)
+      this.http.delete(
+        `${this.apiBase}${API_PATHS.ADMIN.LOCATION_FEES}/${diseaseId}/${locationKey}`,
+      ),
     );
   }
 
   getBillingPlansAdmin() {
-    return firstValueFrom(this.http.get<{ plans: Array<any> }>(`${this.apiBase}${API_PATHS.ADMIN.BILLING_PLANS}`));
+    return firstValueFrom(
+      this.http.get<{ plans: Array<any> }>(`${this.apiBase}${API_PATHS.ADMIN.BILLING_PLANS}`),
+    );
   }
 
   updateBillingPlan(id: string, payload: Record<string, unknown>) {
-    return firstValueFrom(this.http.put(`${this.apiBase}${API_PATHS.ADMIN.BILLING_PLANS}/${id}`, payload));
+    return firstValueFrom(
+      this.http.put(`${this.apiBase}${API_PATHS.ADMIN.BILLING_PLANS}/${id}`, payload),
+    );
   }
 }

@@ -19,8 +19,7 @@
     "repertory:download:oorep": "tsx scripts/download-oorep-sql.ts",
     "repertory:import:oorep": "tsx scripts/import-oorep-sql.ts",
     "verify:doctor-earnings": "tsx scripts/verify-doctor-earnings.ts",
-    "verify:finance-period": "tsx scripts/verify-finance-period.ts",
-    "disease-pages:import": "tsx scripts/import-static-disease-pages.ts"
+    "verify:finance-period": "tsx scripts/verify-finance-period.ts"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.8.0",

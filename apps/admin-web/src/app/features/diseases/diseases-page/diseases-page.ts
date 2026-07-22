@@ -96,7 +96,6 @@ export class DiseasesPage {
   readonly categoryOptions = signal<DiseaseCategory[]>([]);
   readonly loading = signal(false);
   readonly syncing = signal(false);
-  readonly importingPages = signal(false);
   readonly reconciling = signal(false);
   readonly error = signal('');
   readonly syncMessage = signal('');
@@ -200,30 +199,6 @@ export class DiseasesPage {
       this.error.set('Could not sync disease catalog.');
     } finally {
       this.syncing.set(false);
-    }
-  }
-
-  async importStaticPages() {
-    if (
-      !confirm(
-        'Import marketing content from the built-in static disease pages into matching DB diseases (by slug/name)?',
-      )
-    ) {
-      return;
-    }
-    this.importingPages.set(true);
-    this.syncMessage.set('');
-    this.error.set('');
-    try {
-      const result = await this.api.importStaticDiseasePages();
-      this.syncMessage.set(
-        `Static pages imported: ${result.updated} updated, ${result.unmatched.length} unmatched of ${result.total}.`,
-      );
-      await this.load();
-    } catch {
-      this.error.set('Could not import static disease pages.');
-    } finally {
-      this.importingPages.set(false);
     }
   }
 

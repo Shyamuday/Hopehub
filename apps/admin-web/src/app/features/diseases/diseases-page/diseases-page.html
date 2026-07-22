@@ -9,9 +9,6 @@
       </p>
     </div>
     <div class="header-actions">
-      <button type="button" class="btn-secondary" (click)="importStaticPages()" [disabled]="importingPages()">
-        {{ importingPages() ? 'Importing…' : 'Import static pages' }}
-      </button>
       <button type="button" class="btn-secondary" (click)="reconcileOptions()" [disabled]="reconciling()">
         {{ reconciling() ? 'Reconciling…' : 'Reconcile diagnosis options' }}
       </button>

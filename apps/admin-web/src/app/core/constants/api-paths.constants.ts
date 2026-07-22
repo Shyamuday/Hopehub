@@ -51,7 +51,6 @@ export const API_PATHS = {
     DISEASE_CATEGORIES: '/admin/diseases/categories',
     DISEASES_SYNC_CATALOG: '/admin/diseases/sync-catalog',
     DISEASES_RECONCILE_OPTIONS: '/admin/diseases/reconcile-options',
-    DISEASES_IMPORT_STATIC_PAGES: '/admin/diseases/import-static-pages',
     DISEASE_PUBLIC_PAGE: (id: string) => `/admin/diseases/${id}/public-page`,
     LOCATION_FEES: '/admin/pricing/location-fees',
     BILLING_PLANS: '/admin/billing/plans',
