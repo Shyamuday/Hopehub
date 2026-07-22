@@ -113,6 +113,16 @@
                       }
                     </div>
                   }
+                  @if ((provider.publicProfileDetails ?? []).length) {
+                    <dl class="provider-profile-details">
+                      @for (detail of provider.publicProfileDetails ?? []; track detail.key) {
+                        <div>
+                          <dt>{{ detail.label }}</dt>
+                          <dd>{{ detail.value }}</dd>
+                        </div>
+                      }
+                    </dl>
+                  }
                 </div>
               </article>
             }

@@ -670,6 +670,33 @@
   margin: 0;
 }
 
+.provider-profile-details {
+  display: grid;
+  gap: 0.65rem;
+  margin: 0.9rem 0 0;
+  padding-top: 0.85rem;
+  border-top: 1px solid #e2e8f0;
+}
+
+.provider-profile-details div {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.provider-profile-details dt {
+  color: #102033;
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
+.provider-profile-details dd {
+  color: #526070;
+  font-size: 0.86rem;
+  line-height: 1.55;
+  margin: 0;
+  white-space: pre-line;
+}
+
 .provider-filter-panel {
   display: grid;
   gap: 1rem;

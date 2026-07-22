@@ -18,6 +18,7 @@ interface PublicDoctor {
   bio?: string | null;
   yearsOfExperience?: number | null;
   focusAreas?: string[];
+  publicProfileDetails?: Array<{ key: string; label: string; value: string }>;
   designation?: string | null;
   user: { id: string; name: string };
 }

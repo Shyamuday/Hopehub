@@ -36,6 +36,69 @@ import { providerCategoryLabel, providerTypeLabel } from '../constants/homeopath
 
 export const router = Router();
 
+const PUBLIC_PROFESSION_PROFILE_LABELS: Record<string, string> = {
+  clinicalInterests: 'Clinical interests',
+  treatmentApproach: 'Consultation approach',
+  languages: 'Languages',
+  consultationLimitations: 'Online care scope',
+  counsellingApproaches: 'Counselling approaches',
+  ageGroups: 'Age groups',
+  sessionLanguages: 'Session languages',
+  crisisEscalationPlan: 'Care safety process',
+  assessmentAreas: 'Assessment areas',
+  therapyApproaches: 'Therapy approaches',
+  supervisionOrLicense: 'License or supervision',
+  medicalRegistrationAuthority: 'Registration authority',
+  psychiatrySpecialInterests: 'Psychiatry focus areas',
+  controlledMedicationPolicy: 'Medication policy',
+  clientGroups: 'Client groups',
+  sessionStructure: 'Session structure',
+  therapySpecialties: 'Therapy specialties',
+  coachingFocus: 'Coaching focus',
+  coachingMethod: 'Coaching method',
+  nutritionSpecialties: 'Nutrition specialties',
+  dietPlanStyle: 'Diet plan style',
+  followUpCadence: 'Follow-up cadence',
+  diabetesSupportScope: 'Diabetes support',
+  educationTools: 'Education tools',
+  assessmentTools: 'Assessment tools',
+  exercisePrescriptionScope: 'Exercise plan scope',
+  speechLanguageAreas: 'Speech-language areas',
+  rehabPrograms: 'Rehabilitation programs',
+  careCoordination: 'Care coordination',
+  yogaStyles: 'Yoga styles',
+  safetyLimitations: 'Safety notes',
+  trainingFocus: 'Training focus',
+  certifications: 'Certifications',
+  wellnessFocus: 'Wellness focus',
+  sessionFormat: 'Session format',
+  sampleCollectionScope: 'Sample collection',
+  turnaroundTime: 'Turnaround time',
+  serviceArea: 'Service area',
+  modalities: 'Modalities',
+  reportingScope: 'Reporting scope',
+  labSpecialties: 'Lab specialties',
+  dentalSpecialties: 'Dental specialties',
+  proceduresOffered: 'Procedures offered',
+  careServices: 'Care services',
+  patientHandlingTraining: 'Patient handling training',
+  homeCareServices: 'Home care services'
+};
+
+function publicProfessionProfileDetails(profile: Prisma.JsonValue | null | undefined) {
+  if (!profile || typeof profile !== 'object' || Array.isArray(profile)) return [];
+
+  return Object.entries(profile)
+    .flatMap(([key, value]) => {
+      const label = PUBLIC_PROFESSION_PROFILE_LABELS[key];
+      if (!label || typeof value !== 'string') return [];
+      const trimmed = value.trim();
+      if (!trimmed) return [];
+      return [{ key, label, value: trimmed.slice(0, 500) }];
+    })
+    .slice(0, 6);
+}
+
 const diseaseFaqSchema = z.array(
   z.object({
     question: z.string().min(3),
@@ -429,6 +492,7 @@ router.get(
         bio: true,
         yearsOfExperience: true,
         focusAreas: true,
+        professionProfile: true,
         designation: true,
         websiteOrder: true,
         user: { select: { id: true, name: true } }
@@ -473,6 +537,8 @@ router.get(
 
     const providers = doctors.map((provider) => ({
       ...provider,
+      publicProfileDetails: publicProfessionProfileDetails(provider.professionProfile),
+      professionProfile: undefined,
       providerTypeLabel: providerTypeLabel(provider.providerType),
       providerCategoryLabel: providerCategoryLabel(provider.providerCategory)
     }));
