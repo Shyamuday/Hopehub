@@ -10,6 +10,10 @@ import { ClinicApiClient } from './clinic-api/clinic-api.client';
 interface PublicDoctor {
   id: string;
   specialty?: string;
+  specialization?: string | null;
+  providerType?: string;
+  providerTypeLabel?: string;
+  providerCategory?: string;
   doctorType?: string;
   bio?: string | null;
   yearsOfExperience?: number | null;
@@ -29,7 +33,8 @@ export class OurDoctorsComponent {
   readonly copy = OUR_DOCTORS_PAGE_CONTENT;
   private readonly client = inject(ClinicApiClient);
 
-  readonly doctors = signal<PublicDoctor[]>([]);
+  readonly providers = signal<PublicDoctor[]>([]);
+  readonly doctors = this.providers;
   readonly loading = signal(true);
 
   readonly process = [
@@ -40,13 +45,13 @@ export class OurDoctorsComponent {
     },
     {
       step: '02',
-      title: 'We assign the right doctor',
-      detail: 'Our team matches you to the doctor best suited for your condition.',
+      title: 'We assign the right provider',
+      detail: 'Our team matches you to the provider best suited for your condition.',
     },
     {
       step: '03',
       title: 'Consultation begins',
-      detail: 'Your assigned doctor reviews your case and begins a private chat consultation.',
+      detail: 'Your assigned provider reviews your case and begins a private chat consultation.',
     },
     {
       step: '04',
@@ -56,13 +61,15 @@ export class OurDoctorsComponent {
   ];
 
   constructor() {
-    void this.loadDoctors();
+    void this.loadProviders();
   }
 
-  private async loadDoctors() {
+  private async loadProviders() {
     try {
-      const res = await this.client.get<{ doctors: PublicDoctor[] }>(API_PATHS.DOCTORS);
-      this.doctors.set(res.doctors ?? []);
+      const res = await this.client.get<{ doctors?: PublicDoctor[]; providers?: PublicDoctor[] }>(
+        API_PATHS.PROVIDERS,
+      );
+      this.providers.set(res.providers ?? res.doctors ?? []);
     } catch {
       // show empty state silently
     } finally {
@@ -81,5 +88,22 @@ export class OurDoctorsComponent {
 
   processStepRows(step: { title: string; detail: string }): DetailRow[] {
     return [{ label: step.title, value: step.detail }];
+  }
+
+  providerTitle(provider: PublicDoctor): string {
+    return (
+      provider.designation ||
+      provider.specialization ||
+      provider.specialty ||
+      provider.providerTypeLabel ||
+      'Healthcare Provider'
+    );
+  }
+
+  providerQualification(provider: PublicDoctor): string {
+    const specialty = provider.specialization || provider.specialty || provider.providerTypeLabel;
+    return provider.yearsOfExperience && specialty
+      ? `${specialty} - ${provider.yearsOfExperience} yrs experience`
+      : specialty || '';
   }
 }

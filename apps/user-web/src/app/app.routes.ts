@@ -20,10 +20,15 @@ export const routes: Routes = [
   },
   {
     path: 'talk-to-doctor',
+    redirectTo: 'talk-to-provider',
+    pathMatch: 'full',
+  },
+  {
+    path: 'talk-to-provider',
     loadComponent: () => import('./talk-to-doctor.component').then((m) => m.TalkToDoctorComponent),
     data: {
-      title: 'Talk to a doctor now',
-      description: 'Instant online consultation with live doctors.',
+      title: 'Talk to a provider now',
+      description: 'Instant online consultation with live providers.',
     },
   },
   {
@@ -36,11 +41,16 @@ export const routes: Routes = [
     data: {
       roles: ['PATIENT'],
       seoTitle: 'Instant consult room | HopeHub Care',
-      seoDescription: 'Chat and video call with your online doctor.',
+      seoDescription: 'Chat and video call with your online provider.',
     },
   },
   {
     path: 'our-doctors',
+    redirectTo: 'our-providers',
+    pathMatch: 'full',
+  },
+  {
+    path: 'our-providers',
     loadComponent: () => import('./our-doctors.component').then((m) => m.OurDoctorsComponent),
     data: ROUTE_SEO_CONTENT['our-doctors'],
   },

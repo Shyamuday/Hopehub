@@ -24,25 +24,23 @@
               </article>
             }
           </section>
-        } @else if (doctors().length) {
+        } @else if (providers().length) {
           <section class="doctors-grid">
-            @for (doctor of doctors(); track doctor.id) {
+            @for (provider of providers(); track provider.id) {
               <article class="panel doctor-card">
-                <div class="doctor-avatar">{{ initials(doctor.user.name) }}</div>
+                <div class="doctor-avatar">{{ initials(provider.user.name) }}</div>
                 <div class="doctor-info">
-                  <p class="eyebrow">{{ doctor.designation || doctor.specialty || 'Homeopathic Doctor' }}</p>
-                  <h2>{{ doctor.user.name }}</h2>
-                  @if (doctor.yearsOfExperience) {
-                    <p class="doctor-qual">{{ doctor.specialty }} &mdash; {{ doctor.yearsOfExperience }} yrs experience</p>
-                  } @else if (doctor.specialty) {
-                    <p class="doctor-qual">{{ doctor.specialty }}</p>
+                  <p class="eyebrow">{{ providerTitle(provider) }}</p>
+                  <h2>{{ provider.user.name }}</h2>
+                  @if (providerQualification(provider)) {
+                    <p class="doctor-qual">{{ providerQualification(provider) }}</p>
                   }
-                  @if (doctor.bio) {
-                    <p class="doctor-bio">{{ doctor.bio }}</p>
+                  @if (provider.bio) {
+                    <p class="doctor-bio">{{ provider.bio }}</p>
                   }
-                  @if ((doctor.focusAreas ?? []).length) {
+                  @if ((provider.focusAreas ?? []).length) {
                     <div class="values-list" style="margin-top:0.85rem">
-                      @for (tag of doctor.focusAreas ?? []; track tag) {
+                      @for (tag of provider.focusAreas ?? []; track tag) {
                         <span>{{ tag }}</span>
                       }
                     </div>
@@ -53,11 +51,11 @@
           </section>
         } @else {
           <section class="panel doctors-empty-panel">
-            <p class="eyebrow">Doctor profiles</p>
+            <p class="eyebrow">Provider profiles</p>
             <h2>Our team details are being updated.</h2>
             <p>
-              We are curating our doctor listing for the website. You can still book a consultation — our clinical
-              team will match you to the right doctor based on your condition.
+              We are curating our provider listing for the website. You can still book a consultation - our care
+              team will match you to the right provider based on your condition.
             </p>
             <a class="whatsapp-action" [href]="whatsappLink()" target="_blank" rel="noopener" aria-label="Chat on WhatsApp">
               <svg class="wa-icon" viewBox="0 0 24 24" aria-hidden="true">

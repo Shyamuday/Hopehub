@@ -21,13 +21,13 @@ export const FOOTER_CONTENT = {
       'Ranchi Main Clinic',
       'Near City Centre, Main Road',
       'Ranchi, Jharkhand, India',
-      'Pincode — 834001'
+      'Pincode — 834001',
     ],
     phoneLabel: 'Contact',
     phone: '+91-98765-43210',
     phoneHref: 'tel:+919876543210',
     email: 'support@hopehubcare.in',
-    emailHref: 'mailto:support@hopehubcare.in'
+    emailHref: 'mailto:support@hopehubcare.in',
   },
   columns: [
     {
@@ -38,11 +38,11 @@ export const FOOTER_CONTENT = {
         { label: 'Partial Payment Refund Policy', href: '/payment-policy' },
         { label: 'Contact Us', href: '/contact' },
         { label: 'About HopeHub Care', href: '/about' },
-        { label: 'Our Doctors', href: '/our-doctors' },
+        { label: 'Our Providers', href: '/our-providers' },
         { label: 'Blogs', href: '/blog' },
         { label: 'Patient Stories', href: '/testimonials' },
-        { label: 'Safety & Trust', href: '/safety' }
-      ]
+        { label: 'Safety & Trust', href: '/safety' },
+      ],
     },
     {
       title: 'Account',
@@ -52,8 +52,8 @@ export const FOOTER_CONTENT = {
         { label: 'My Dashboard', href: '/patient/dashboard' },
         { label: "FAQ's", href: '/faq' },
         { label: 'Get the Patient App', href: '/get-app' },
-        { label: 'Raise a Service Request', href: '/contact' }
-      ]
+        { label: 'Raise a Service Request', href: '/contact' },
+      ],
     },
     {
       title: 'Policies',
@@ -63,8 +63,8 @@ export const FOOTER_CONTENT = {
         { label: 'Shipping Policy', href: '/shipping-policy' },
         { label: 'Terms And Conditions', href: '/terms-and-conditions' },
         { label: 'Return And Exchange Policy', href: '/return-and-exchange-policy' },
-        { label: 'All Legal Policies', href: '/legal' }
-      ]
+        { label: 'All Legal Policies', href: '/legal' },
+      ],
     },
     {
       title: 'Care Programs',
@@ -74,9 +74,9 @@ export const FOOTER_CONTENT = {
         { label: 'Skin Care', href: '/treatments/skin-care' },
         { label: 'Chronic & Long-term Care', href: '/chronic-care' },
         { label: 'Why HopeHub Works', href: '/why-successful' },
-        { label: 'Homeopathy Approaches', href: '/why-successful' }
-      ]
-    }
+        { label: 'Homeopathy Approaches', href: '/why-successful' },
+      ],
+    },
   ] satisfies readonly FooterColumn[],
-  copyright: `© Copyright ${new Date().getFullYear()} HopeHub Care and Research Centre. All Rights Reserved.`
+  copyright: `© Copyright ${new Date().getFullYear()} HopeHub Care and Research Centre. All Rights Reserved.`,
 } as const;

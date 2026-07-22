@@ -161,6 +161,10 @@ app.use(express.json({ limit: '8mb' }));
 app.use((req, _res, next) => {
   if (req.url === '/provider' || req.url.startsWith('/provider/')) {
     req.url = req.url.replace(/^\/provider(?=\/|$)/, '/doctor');
+  } else if (req.url === '/providers' || req.url.startsWith('/providers?')) {
+    req.url = req.url.replace(/^\/providers(?=\?|$)/, '/doctors');
+  } else if (req.url === '/online-providers' || req.url.startsWith('/online-providers?')) {
+    req.url = req.url.replace(/^\/online-providers(?=\?|$)/, '/online-doctors');
   }
   next();
 });

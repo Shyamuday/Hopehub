@@ -144,13 +144,13 @@
 
         <section class="grid two">
           <div class="panel">
-            <h2>Add Doctor</h2>
+            <h2>Add Provider</h2>
             <label>Name <input [formField]="doctorForm.name" /></label>
             <label>Email <input [formField]="doctorForm.email" /></label>
             <label>Mobile <input [formField]="doctorForm.mobile" /></label>
             <label>Specialty <input [formField]="doctorForm.specialty" /></label>
             <label>Password <input type="password" [formField]="doctorForm.password" /></label>
-            <button class="primary" (click)="createDoctor()">Create doctor</button>
+            <button class="primary" (click)="createDoctor()">Create provider</button>
           </div>
 
           <div class="panel">
@@ -166,14 +166,14 @@
               </select>
             </label>
             <label>
-              Doctor
+              Provider
               <select [formField]="assignmentForm.doctorId">
                 @for (doctor of doctors(); track doctor.id) {
-                  <option [value]="doctor.id">{{ doctor.name }} - {{ doctor.doctorProfile?.specialty }}</option>
+                  <option [value]="doctor.id">{{ doctor.name }} - {{ doctor.doctorProfile?.specialization || doctor.doctorProfile?.specialty || doctor.doctorProfile?.providerTypeLabel }}</option>
                 }
               </select>
             </label>
-            <button class="primary" (click)="assignDoctor()">Assign doctor</button>
+            <button class="primary" (click)="assignDoctor()">Assign provider</button>
           </div>
         </section>
 
@@ -214,4 +214,4 @@
     }
 
     <app-footer [whatsappLink]="whatsappLink()" />
-  
+

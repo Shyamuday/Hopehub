@@ -19,7 +19,7 @@
         />
         <div>
           <h2>{{ accountPage ? 'Edit account' : 'My profile' }}</h2>
-          <p class="profile-sub">Save anytime — fill only what you know now. Homeopathic, food, mind &amp; body details help your doctor. Only your name is required.</p>
+          <p class="profile-sub">Save anytime — fill only what you know now. Homeopathic, food, mind &amp; body details help your provider. Only your name is required.</p>
         </div>
       </div>
       @if (profile()?.name === 'Patient') {
@@ -31,7 +31,7 @@
       <div class="profile-meter">
         <div class="profile-meter-head">
           <strong>Profile {{ profileCompletion() }}% complete</strong>
-          <span>More details help your doctor personalize care.</span>
+          <span>More details help your provider personalize care.</span>
         </div>
         <div class="profile-meter-bar" role="progressbar" [attr.aria-valuenow]="profileCompletion()" aria-valuemin="0" aria-valuemax="100">
           <span [style.width.%]="profileCompletion()"></span>
@@ -188,7 +188,7 @@
 
       <section class="profile-section">
         <h3>Medical history</h3>
-        <p class="section-note">Helps doctors during consultations. Update whenever something changes.</p>
+        <p class="section-note">Helps providers during consultations. Update whenever something changes.</p>
         <div class="field-grid single-col">
           <div class="field">
             <label>Known allergies</label>

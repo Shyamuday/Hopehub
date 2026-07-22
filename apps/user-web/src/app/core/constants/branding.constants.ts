@@ -9,7 +9,7 @@ export const RAZORPAY_CHECKOUT = {
 
 export const SEO_DEFAULTS = {
   SITE_URL: 'https://hopehubclinic.com',
-  DEFAULT_TITLE: 'HopeHub Care | Doctor-Led Homeopathy for All Conditions',
+  DEFAULT_TITLE: 'HopeHub Care | Provider-Led Homeopathy for All Conditions',
   DEFAULT_DESCRIPTION:
-    'HopeHub Care offers doctor-led online homeopathic consultations for acute and chronic conditions - prescriptions, follow-up, and secure digital care.',
+    'HopeHub Care offers Provider-Led online homeopathic consultations for acute and chronic conditions - prescriptions, follow-up, and secure digital care.',
 } as const;

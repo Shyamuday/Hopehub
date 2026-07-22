@@ -1,14 +1,14 @@
 /** Route-level SEO - keys match `app.routes.ts` path segments. */
 export const ROUTE_SEO_CONTENT = {
   home: {
-    seoTitle: 'HopeHub Care | Doctor-Led Homeopathy for All Conditions',
+    seoTitle: 'HopeHub Care | Provider-Led Homeopathy for All Conditions',
     seoDescription:
-      'Book online homeopathic consultations for any health concern. Licensed doctors, prescriptions, follow-up, and secure patient support.',
+      'Book online homeopathic consultations for any health concern. Licensed providers, prescriptions, follow-up, and secure patient support.',
   },
   about: {
-    seoTitle: 'About HopeHub Care and Research Centre | Doctor-Led Homeopathy',
+    seoTitle: 'About HopeHub Care and Research Centre | Provider-Led Homeopathy',
     seoDescription:
-      'Learn about HopeHub Care - a doctor-led homeopathic clinic offering online consultations for acute, chronic, and preventive care across all conditions.',
+      'Learn about HopeHub Care - a Provider-Led homeopathic clinic offering online consultations for acute, chronic, and preventive care across all conditions.',
   },
   treatments: {
     seoTitle: 'Treatments | HopeHub Care and Research Centre',
@@ -21,9 +21,9 @@ export const ROUTE_SEO_CONTENT = {
       'Read treatment details, common symptoms, care approach, and safety guidance at HopeHub Care.',
   },
   'our-doctors': {
-    seoTitle: 'Our Doctors | HopeHub Care and Research Centre',
+    seoTitle: 'Our Providers | HopeHub Care and Research Centre',
     seoDescription:
-      'Meet qualified homeopathic doctors at HopeHub Care. Our internal clinical team is matched to patients based on their condition for personalised care.',
+      'Meet qualified homeopathic providers at HopeHub Care. Our internal provider team is matched to patients based on their condition for personalised care.',
   },
   blog: {
     seoTitle: 'Health Blog | HopeHub Care and Research Centre',
@@ -33,12 +33,12 @@ export const ROUTE_SEO_CONTENT = {
   testimonials: {
     seoTitle: 'Patient Stories | HopeHub Care and Research Centre',
     seoDescription:
-      'Read real patient experiences from HopeHub Care - doctor-led homeopathic care for a wide range of health concerns.',
+      'Read real patient experiences from HopeHub Care - Provider-Led homeopathic care for a wide range of health concerns.',
   },
   careers: {
     seoTitle: 'Careers | HopeHub Care and Research Centre',
     seoDescription:
-      'Join the HopeHub Care team. We are hiring homeopathic doctors, care coordinators, pharmacists, and operations staff who are passionate about patient-first healthcare.',
+      'Join the HopeHub Care team. We are hiring homeopathic providers, care coordinators, pharmacists, and operations staff who are passionate about patient-first healthcare.',
   },
   'chronic-care': {
     seoTitle: 'Homeopathic Treatment | HopeHub Care',
@@ -146,13 +146,13 @@ export const ROUTE_SEO_CONTENT = {
     seoDescription: 'Your patient ID card and QR code for clinic visits.',
   },
   'doctor/dashboard': {
-    seoTitle: 'Doctor Dashboard | HopeHub Care',
+    seoTitle: 'provider dashboard | HopeHub Care',
     seoDescription:
-      'Review assigned consultations, patient chats, and prescriptions in the HopeHub Care doctor dashboard.',
+      'Review assigned consultations, patient chats, and prescriptions in the HopeHub Care provider dashboard.',
   },
   'admin/dashboard': {
     seoTitle: 'Admin Dashboard | HopeHub Care',
     seoDescription:
-      'Manage clinic operations, doctor assignment, and reporting in the HopeHub Care admin dashboard.',
+      'Manage clinic operations, provider assignment, and reporting in the HopeHub Care admin dashboard.',
   },
 } as const;

@@ -10,13 +10,13 @@ export const FAQ_FALLBACK_ENTRIES: FaqAccordionItem[] = [
     category: 'Booking',
     question: 'How do I book a consultation?',
     answer:
-      'Tap Book consultation on the home page, sign in with your email OTP, and complete the short intake. Our team assigns a doctor from the internal panel based on your concern and availability.',
+      'Tap Book consultation on the home page, sign in with your email OTP, and complete the short intake. Our team assigns a provider from the internal panel based on your concern and availability.',
   },
   {
     category: 'Booking',
-    question: 'Can I choose my doctor?',
+    question: 'Can I choose my provider?',
     answer:
-      'No. HopeHub Care assigns from the internal doctor panel based on your concern, medical history, and availability.',
+      'No. HopeHub Care assigns from the internal provider panel based on your concern, medical history, and availability.',
   },
   {
     category: 'Consultation',
@@ -28,13 +28,13 @@ export const FAQ_FALLBACK_ENTRIES: FaqAccordionItem[] = [
     category: 'Consultation',
     question: 'Will I get a prescription?',
     answer:
-      'Yes, after consultation if the doctor finds it appropriate. Prescriptions and follow-up guidance appear in your patient dashboard.',
+      'Yes, after consultation if the provider finds it appropriate. Prescriptions and follow-up guidance appear in your patient dashboard.',
   },
   {
     category: 'Treatment',
     question: 'Do you use homeopathy?',
     answer:
-      'Our approach is homeopathy-led and low-medicine where suitable, guided by doctor assessment and your health profile.',
+      'Our approach is homeopathy-led and low-medicine where suitable, guided by provider assessment and your health profile.',
   },
   {
     category: 'Treatment',

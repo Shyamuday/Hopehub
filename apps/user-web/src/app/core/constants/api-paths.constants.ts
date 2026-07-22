@@ -5,7 +5,7 @@ export const API_PATHS = {
   BILLING_PLANS: '/billing/plans',
   PAYMENTS: {
     CREATE_ORDER: (consultationId: string) => `/payments/${consultationId}/create-order`,
-    VERIFY: (consultationId: string) => `/payments/${consultationId}/verify`
+    VERIFY: (consultationId: string) => `/payments/${consultationId}/verify`,
   },
   PATIENT: {
     PRESCRIPTIONS: '/patient/prescriptions',
@@ -36,32 +36,34 @@ export const API_PATHS = {
     REWARDS: CROSS_APP_API_PATHS.PATIENT.REWARDS,
     REWARDS_CHECKOUT_QUOTE: CROSS_APP_API_PATHS.PATIENT.REWARDS_CHECKOUT_QUOTE,
     DELIVERIES: '/patient/deliveries',
-    DELIVERY: (id: string) => `/patient/deliveries/${id}`
+    DELIVERY: (id: string) => `/patient/deliveries/${id}`,
   },
   ADMIN: {
     DOCTORS: '/admin/doctors',
-    REPORTS: '/admin/reports'
+    REPORTS: '/admin/reports',
   },
   ANALYTICS: {
-    EVENTS: '/analytics/events'
+    EVENTS: '/analytics/events',
   },
   CHAT: {
     START: '/chat/start',
     SESSION: (id: string) => `/chat/${id}`,
     MESSAGE: (id: string) => `/chat/${id}/message`,
-    LINK: (id: string) => `/chat/${id}/link`
+    LINK: (id: string) => `/chat/${id}/link`,
   },
   VACANCIES: '/vacancies',
-  DOCTORS: '/doctors',
+  PROVIDERS: '/providers',
+  DOCTORS: '/providers',
   TESTIMONIALS: '/testimonials',
   FAQ: '/faq',
   BLOG: '/blog',
   BLOG_MOST_VIEWED: '/blog/most-viewed',
   BLOG_POST: (slug: string) => `/blog/${encodeURIComponent(slug)}`,
   BLOG_COMMENTS: (slug: string) => `/blog/${encodeURIComponent(slug)}/comments`,
-  ONLINE_DOCTORS: '/online-doctors',
+  ONLINE_PROVIDERS: '/online-providers',
+  ONLINE_DOCTORS: '/online-providers',
   RTC_ICE_SERVERS: '/rtc/ice-servers',
   DISEASES: '/diseases',
   CLINICS: '/clinics',
-  PUBLIC_CONFIG: '/public-config'
+  PUBLIC_CONFIG: '/public-config',
 } as const;

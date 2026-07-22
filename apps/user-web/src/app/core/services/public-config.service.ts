@@ -46,10 +46,10 @@ const FALLBACK: PublicConfig = {
   clinicAddressLine2: FOOTER_CONTENT.address.lines[1] ?? '',
   clinicAddressLine3: FOOTER_CONTENT.address.lines[2] ?? '',
   clinicAddressLine4: FOOTER_CONTENT.address.lines[3] ?? '',
-  homeHeroEyebrow: 'Doctor-led homeopathy',
+  homeHeroEyebrow: 'provider-led homeopathy',
   homeHeroHeadline: 'Personalised homeopathic care for every health concern.',
   homeHeroLead:
-    'Acute illnesses, chronic conditions, skin and hair issues, digestive problems, allergies, mental wellness, and more — consult qualified homeopathic doctors online with prescriptions and follow-up.',
+    'Acute illnesses, chronic conditions, skin and hair issues, digestive problems, allergies, mental wellness, and more — consult qualified homeopathic providers online with prescriptions and follow-up.',
   statConsultations: '5,000+',
   statDoctors: '12+',
   statRating: '4.8★',

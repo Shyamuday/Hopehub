@@ -44,17 +44,17 @@ export type PublicContentPanel = {
 export const PUBLIC_SITE_BRAND = {
   name: 'HopeHub Care and Research Centre',
   shortName: 'HopeHub Care',
-  footerTagline: 'Doctor-led homeopathic consultations for acute, chronic, and preventive care.',
+  footerTagline: 'Provider-Led homeopathic consultations for acute, chronic, and preventive care.',
   seo: {
-    defaultTitle: 'HopeHub Care | Doctor-Led Homeopathy for All Conditions',
+    defaultTitle: 'HopeHub Care | Provider-Led Homeopathy for All Conditions',
     defaultDescription:
-      'HopeHub Care offers doctor-led online homeopathic consultations for acute and chronic conditions — prescriptions, follow-up, and secure digital care.',
+      'HopeHub Care offers Provider-Led online homeopathic consultations for acute and chronic conditions — prescriptions, follow-up, and secure digital care.',
   },
 } as const;
 
 export const FOOTER_NAV_LINKS: readonly PublicNavLink[] = [
   { label: 'About us', href: '/about' },
-  { label: 'Our doctors', href: '/our-doctors' },
+  { label: 'Our Providers', href: '/our-providers' },
   { label: 'All treatments', href: '/treatments' },
   { label: 'Why HopeHub', href: '/why-successful' },
   { label: 'Patient stories', href: '/testimonials' },
@@ -71,16 +71,16 @@ export type PublicStat = { value: string; label: string };
 
 export const HOME_STATS_FALLBACK: readonly PublicStat[] = [
   { value: '5,000+', label: 'Consultations completed' },
-  { value: '12+', label: 'Experienced doctors' },
+  { value: '12+', label: 'Experienced providers' },
   { value: '4.8★', label: 'Patient rating' },
   { value: '92%', label: 'Follow-up compliance' },
 ];
 
 export const HOME_CONTENT = {
   hero: {
-    eyebrow: 'Doctor-led homeopathy',
+    eyebrow: 'Provider-Led homeopathy',
     headline: 'Personalised homeopathic care for every health concern.',
-    lead: 'Acute illnesses, chronic conditions, skin and hair issues, digestive problems, allergies, mental wellness, and more — consult qualified homeopathic doctors online with prescriptions and follow-up.',
+    lead: 'Acute illnesses, chronic conditions, skin and hair issues, digestive problems, allergies, mental wellness, and more — consult qualified homeopathic providers online with prescriptions and follow-up.',
   },
   booking: {
     formTitle: 'Book consultation',
@@ -103,14 +103,14 @@ export const HOME_CONTENT = {
     loadingLabel: 'Setting up your account…',
     doneLabel: 'Verified. Taking you to your dashboard…',
   },
-  trustItems: ['Licensed doctors', 'Secure & private', 'Follow-up included'] as const,
+  trustItems: ['Licensed providers', 'Secure & private', 'Follow-up included'] as const,
   treatmentCards: [
     {
       badge: 'Complete care',
       badgeVariant: 'primary',
       icon: '🩺',
       title: 'Homeopathy for all conditions',
-      body: 'From fever, cough, and infections to diabetes, arthritis, skin disorders, and mental health — our doctors treat the full range of acute and chronic illnesses with individualized homeopathic prescribing.',
+      body: 'From fever, cough, and infections to diabetes, arthritis, skin disorders, and mental health — Our Providers treat the full range of acute and chronic illnesses with individualized homeopathic prescribing.',
       features: ['Acute & chronic complaints', 'All age groups', 'Prescription & follow-up'],
       linkLabel: 'Browse all conditions →',
       linkHref: '/treatments',
@@ -196,7 +196,7 @@ export const HOME_CONTENT = {
     },
     faq: {
       title: 'Common questions',
-      body: 'Learn about doctor assignment, consultation flow, and prescriptions before booking.',
+      body: 'Learn about provider assignment, consultation flow, and prescriptions before booking.',
       linkLabel: 'View FAQ',
       linkHref: '/faq',
     },
@@ -207,8 +207,8 @@ export const ABOUT_CONTENT = {
   page: {
     headerSubtitle: 'About our care',
     eyebrow: 'Who we are',
-    title: 'We are a doctor-led homeopathic clinic for patients of all ages and conditions.',
-    body: 'HopeHub Care and Research Centre brings structured online homeopathic care under one trusted clinic brand. Patients choose their health concern, share symptoms, and our internal doctor panel guides the full treatment journey — from first consultation to prescription and follow-up.',
+    title: 'We are a Provider-Led homeopathic clinic for patients of all ages and conditions.',
+    body: 'HopeHub Care and Research Centre brings structured online homeopathic care under one trusted clinic brand. Patients choose their health concern, share symptoms, and our internal provider panel guides the full treatment journey - from first consultation to prescription and follow-up.',
   },
   pillars: [
     {
@@ -229,7 +229,7 @@ export const ABOUT_CONTENT = {
   ] satisfies readonly PublicContentPanel[],
   mission: {
     title: 'Mission',
-    body: 'To make trusted, affordable, doctor-led care accessible for patients who need thoughtful treatment, follow-up, and long-term support.',
+    body: 'To make trusted, affordable, Provider-Led care accessible for patients who need thoughtful treatment, follow-up, and long-term support.',
   },
   vision: {
     title: 'Vision',
@@ -238,7 +238,7 @@ export const ABOUT_CONTENT = {
   valuesEyebrow: 'What patients can expect',
   values: [
     'Short symptom intake',
-    'Internal doctor assignment',
+    'Internal provider assignment',
     'Private chat consultation',
     'Prescription and follow-up guidance',
     'Case history & follow-up',
@@ -255,13 +255,13 @@ export const TREATMENTS_PAGE_CONTENT = {
   headerSubtitle: 'Treatments',
   eyebrow: 'Treatments',
   title: 'Homeopathic treatment for acute, chronic, and everyday health concerns.',
-  body: 'HopeHub Care and Research Centre offers doctor-led online consultations across all disease categories. Choose your concern, share your symptoms, and receive individualized homeopathic care with follow-up support.',
+  body: 'HopeHub Care and Research Centre offers Provider-Led online consultations across all disease categories. Choose your concern, share your symptoms, and receive individualized homeopathic care with follow-up support.',
   categoryEyebrow: 'Select by body part',
   subSectionEyebrow: 'Sub section',
   issueEyebrow: 'Select issue',
   issueSelectionEyebrow: 'Selected issue',
   issueSelectionBody:
-    'Continue to consultation and share symptoms for this issue with our doctor panel.',
+    'Continue to consultation and share symptoms for this issue with our provider panel.',
   issueSelectionCta: 'Start consultation',
   emptyTitle: 'No diseases listed yet',
   emptyBody: 'We will add conditions for this body-part category soon.',
@@ -271,7 +271,7 @@ export const CHRONIC_CARE_PAGE_CONTENT = {
   headerSubtitle: 'All treatments',
   eyebrow: 'Comprehensive homeopathy',
   title: 'Acute, chronic, and preventive care across every disease category.',
-  body: 'Homeopathy treats the person as a whole. Whether your concern is recent or long-standing, our doctors take detailed history, match the right remedy, and support you through follow-up until you recover.',
+  body: 'Homeopathy treats the person as a whole. Whether your concern is recent or long-standing, Our Providers take detailed history, match the right remedy, and support you through follow-up until you recover.',
   ctaLabel: 'Browse all conditions',
   ctaHref: '/treatments',
   pillars: [
@@ -294,30 +294,30 @@ export const BLOG_PAGE_CONTENT = {
   headerSubtitle: 'Health blog',
   eyebrow: 'Health & care insights',
   title: 'Evidence-informed articles on homeopathy, common diseases, and healthy living.',
-  body: 'Our clinical team shares practical, plain-language insights to help patients understand their conditions, make informed decisions, and support their care between consultations.',
+  body: 'Our provider team shares practical, plain-language insights to help patients understand their conditions, make informed decisions, and support their care between consultations.',
 } as const;
 
 export const TESTIMONIALS_PAGE_CONTENT = {
   headerSubtitle: 'Patient stories',
   eyebrow: 'Patient stories',
   title: 'Real results from patients who chose a different path.',
-  body: 'These are real experiences from patients who consulted HopeHub Care and Research Centre for a wide range of health concerns and found relief through structured, doctor-led homeopathic care.',
+  body: 'These are real experiences from patients who consulted HopeHub Care and Research Centre for a wide range of health concerns and found relief through structured, Provider-Led homeopathic care.',
   cta: {
     eyebrow: 'Your story could be next',
     title: 'Start your care journey today.',
-    body: 'Book a consultation for any health concern and let our clinical team guide you with individualized homeopathic care and follow-up.',
+    body: 'Book a consultation for any health concern and let Our provider team guide you with individualized homeopathic care and follow-up.',
   },
 } as const;
 
 export const OUR_DOCTORS_PAGE_CONTENT = {
-  headerSubtitle: 'Our doctors',
-  eyebrow: 'Our clinical team',
-  title: 'Experienced doctors. Dedicated to patient care.',
-  body: 'HopeHub Care and Research Centre maintains an internal panel of qualified homeopathic doctors with expertise across acute illnesses, chronic diseases, skin and hair concerns, metabolic health, pediatrics, and more. Patients are matched to doctors based on their condition — not random browsing.',
+  headerSubtitle: 'Our Providers',
+  eyebrow: 'Our provider team',
+  title: 'Experienced providers. Dedicated to patient care.',
+  body: 'HopeHub Care and Research Centre maintains an internal panel of qualified homeopathic providers with expertise across acute illnesses, chronic diseases, skin and hair concerns, metabolic health, pediatrics, and more. Patients are matched to doctors based on their condition — not random browsing.',
   matching: {
     eyebrow: 'How it works',
     title: 'You do not choose a doctor — we match you to the right one.',
-    body: 'At HopeHub, doctor assignment is internal. This ensures patients with specific conditions receive care from the most qualified and available doctor on our panel, rather than being left to navigate listings alone.',
+    body: 'At HopeHub, provider assignment is internal. This ensures patients with specific conditions receive care from the most qualified and available doctor on our panel, rather than being left to navigate listings alone.',
   },
   cta: {
     eyebrow: 'Ready to start?',
@@ -330,7 +330,7 @@ export const CAREERS_PAGE_CONTENT = {
   headerSubtitle: 'Careers',
   eyebrow: 'Join our team',
   title: 'Build your career at a clinic that puts patient care first.',
-  body: 'HopeHub Care and Research Centre is a doctor-led homeopathic clinic serving patients with acute, chronic, and preventive health needs. We are growing our clinical, care, pharmacy, and operations teams. If you want to do meaningful work in healthcare, we would like to hear from you.',
+  body: 'HopeHub Care and Research Centre is a Provider-Led homeopathic clinic serving patients with acute, chronic, and preventive health needs. We are growing our clinical, care, pharmacy, and operations teams. If you want to do meaningful work in healthcare, we would like to hear from you.',
   applyLabel: 'Apply on WhatsApp',
   perksEyebrow: 'Why work with us',
   perksTitle: 'What makes HopeHub a good place to grow.',
@@ -365,14 +365,14 @@ export const CAREERS_PAGE_CONTENT = {
 /** Route-level SEO — keys match `app.routes.ts` path segments. */
 export const ROUTE_SEO_CONTENT = {
   home: {
-    seoTitle: 'HopeHub Care | Doctor-Led Homeopathy for All Conditions',
+    seoTitle: 'HopeHub Care | Provider-Led Homeopathy for All Conditions',
     seoDescription:
-      'Book online homeopathic consultations for any health concern. Licensed doctors, prescriptions, follow-up, and secure patient support.',
+      'Book online homeopathic consultations for any health concern. Licensed providers, prescriptions, follow-up, and secure patient support.',
   },
   about: {
-    seoTitle: 'About HopeHub Care and Research Centre | Doctor-Led Homeopathy',
+    seoTitle: 'About HopeHub Care and Research Centre | Provider-Led Homeopathy',
     seoDescription:
-      'Learn about HopeHub Care — a doctor-led homeopathic clinic offering online consultations for acute, chronic, and preventive care across all conditions.',
+      'Learn about HopeHub Care — a Provider-Led homeopathic clinic offering online consultations for acute, chronic, and preventive care across all conditions.',
   },
   treatments: {
     seoTitle: 'Treatments | HopeHub Care and Research Centre',
@@ -385,9 +385,9 @@ export const ROUTE_SEO_CONTENT = {
       'Read treatment details, common symptoms, care approach, and safety guidance at HopeHub Care.',
   },
   'our-doctors': {
-    seoTitle: 'Our Doctors | HopeHub Care and Research Centre',
+    seoTitle: 'Our Providers | HopeHub Care and Research Centre',
     seoDescription:
-      'Meet qualified homeopathic doctors at HopeHub Care. Our internal clinical team is matched to patients based on their condition for personalised care.',
+      'Meet qualified homeopathic providers at HopeHub Care. Our internal provider team is matched to patients based on their condition for personalised care.',
   },
   blog: {
     seoTitle: 'Health Blog | HopeHub Care and Research Centre',
@@ -397,12 +397,12 @@ export const ROUTE_SEO_CONTENT = {
   testimonials: {
     seoTitle: 'Patient Stories | HopeHub Care and Research Centre',
     seoDescription:
-      'Read real patient experiences from HopeHub Care — doctor-led homeopathic care for a wide range of health concerns.',
+      'Read real patient experiences from HopeHub Care — Provider-Led homeopathic care for a wide range of health concerns.',
   },
   careers: {
     seoTitle: 'Careers | HopeHub Care and Research Centre',
     seoDescription:
-      'Join the HopeHub Care team. We are hiring homeopathic doctors, care coordinators, pharmacists, and operations staff who are passionate about patient-first healthcare.',
+      'Join the HopeHub Care team. We are hiring homeopathic providers, care coordinators, pharmacists, and operations staff who are passionate about patient-first healthcare.',
   },
   'chronic-care': {
     seoTitle: 'Homeopathic Treatment | HopeHub Care',
@@ -510,13 +510,13 @@ export const ROUTE_SEO_CONTENT = {
     seoDescription: 'Your patient ID card and QR code for clinic visits.',
   },
   'doctor/dashboard': {
-    seoTitle: 'Doctor Dashboard | HopeHub Care',
+    seoTitle: 'provider dashboard | HopeHub Care',
     seoDescription:
-      'Review assigned consultations, patient chats, and prescriptions in the HopeHub Care doctor dashboard.',
+      'Review assigned consultations, patient chats, and prescriptions in the HopeHub Care provider dashboard.',
   },
   'admin/dashboard': {
     seoTitle: 'Admin Dashboard | HopeHub Care',
     seoDescription:
-      'Manage clinic operations, doctor assignment, and reporting in the HopeHub Care admin dashboard.',
+      'Manage clinic operations, provider assignment, and reporting in the HopeHub Care admin dashboard.',
   },
 } as const;
