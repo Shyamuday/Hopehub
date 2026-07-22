@@ -27,6 +27,6 @@ export const DISEASE_TREATMENT_OPTION_FIELDS: DetailFieldDef<
 >[] = [
   { label: 'Allopathy', getValue: (o) => o.allopathy, omitWhenEmpty: true },
   { label: 'Ayurveda', getValue: (o) => o.ayurveda, omitWhenEmpty: true },
-  { label: 'Homeopathy', getValue: (o) => o.homeopathy, omitWhenEmpty: true },
+  { label: 'Supportive care', getValue: (o) => o.homeopathy, omitWhenEmpty: true },
   { label: 'Lifestyle', getValue: (o) => o.lifestyle, omitWhenEmpty: true },
 ];

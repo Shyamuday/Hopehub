@@ -13,7 +13,11 @@ type PrescriptionPdfInput = {
   disposition?: 'inline' | 'attachment';
 };
 
-export function prescriptionPdfFilename(prescription: Prescription, patientName?: string | null, patientCode?: string | null) {
+export function prescriptionPdfFilename(
+  prescription: Prescription,
+  patientName?: string | null,
+  patientCode?: string | null
+) {
   const slug = (patientCode || patientName || 'patient')
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
@@ -41,7 +45,11 @@ export function streamPrescriptionPdf(res: Response, input: PrescriptionPdfInput
   const { prescription } = input;
   const rxPatient = prescription.patient;
   const items = prescription.items || [];
-  const filename = prescriptionPdfFilename(prescription, rxPatient?.name, rxPatient?.patientCode ?? null);
+  const filename = prescriptionPdfFilename(
+    prescription,
+    rxPatient?.name,
+    rxPatient?.patientCode ?? null
+  );
   const date = new Date(prescription.createdAt).toLocaleDateString('en-IN', {
     day: '2-digit',
     month: 'short',
@@ -66,15 +74,36 @@ export function streamPrescriptionPdf(res: Response, input: PrescriptionPdfInput
   const GRAY = '#6b7280';
   const W = doc.page.width - 100;
 
-  doc.fontSize(18).fillColor(PRIMARY).font('Helvetica-Bold').text('HopeHub Care and Research Centre', 50, 50);
-  doc.fontSize(10).fillColor(GRAY).font('Helvetica').text('Doctor-led homeopathic consultations  |  hopehubcare.in', 50, 72);
-  doc.fontSize(36).fillColor(PRIMARY).font('Helvetica-Oblique').text('Rx', doc.page.width - 90, 45, { width: 60, align: 'right' });
-  doc.moveTo(50, 98).lineTo(doc.page.width - 50, 98).strokeColor(PRIMARY).lineWidth(1.5).stroke();
+  doc
+    .fontSize(18)
+    .fillColor(PRIMARY)
+    .font('Helvetica-Bold')
+    .text('HopeHub Care and Research Centre', 50, 50);
+  doc
+    .fontSize(10)
+    .fillColor(GRAY)
+    .font('Helvetica')
+    .text('Expert-led online healthcare  |  hopehubcare.in', 50, 72);
+  doc
+    .fontSize(36)
+    .fillColor(PRIMARY)
+    .font('Helvetica-Oblique')
+    .text('Rx', doc.page.width - 90, 45, { width: 60, align: 'right' });
+  doc
+    .moveTo(50, 98)
+    .lineTo(doc.page.width - 50, 98)
+    .strokeColor(PRIMARY)
+    .lineWidth(1.5)
+    .stroke();
 
   let y = 110;
   const metaCol = (label: string, value: string, x: number, cy: number) => {
     doc.fontSize(8).fillColor(GRAY).font('Helvetica').text(label.toUpperCase(), x, cy);
-    doc.fontSize(11).fillColor('#111').font('Helvetica-Bold').text(value || '—', x, cy + 11, { width: W / 2 - 10 });
+    doc
+      .fontSize(11)
+      .fillColor('#111')
+      .font('Helvetica-Bold')
+      .text(value || '—', x, cy + 11, { width: W / 2 - 10 });
   };
 
   metaCol('Patient', rxPatient?.name || 'Patient', 50, y);
@@ -97,7 +126,12 @@ export function streamPrescriptionPdf(res: Response, input: PrescriptionPdfInput
     y += 28;
   }
   y += 5;
-  doc.moveTo(50, y).lineTo(doc.page.width - 50, y).strokeColor('#e5e7eb').lineWidth(0.5).stroke();
+  doc
+    .moveTo(50, y)
+    .lineTo(doc.page.width - 50, y)
+    .strokeColor('#e5e7eb')
+    .lineWidth(0.5)
+    .stroke();
   y += 10;
 
   doc.fontSize(9).fillColor(GRAY).font('Helvetica').text('MEDICINES', 50, y);
@@ -111,13 +145,21 @@ export function streamPrescriptionPdf(res: Response, input: PrescriptionPdfInput
 
   doc.rect(50, y, W, 18).fillColor(PRIMARY).fill();
   headers.forEach((h, i) => {
-    doc.fontSize(9).fillColor('white').font('Helvetica-Bold').text(h, colX[i] + 3, y + 4, { width: colWidths[i] - 6, ellipsis: true });
+    doc
+      .fontSize(9)
+      .fillColor('white')
+      .font('Helvetica-Bold')
+      .text(h, colX[i] + 3, y + 4, { width: colWidths[i] - 6, ellipsis: true });
   });
   y += 18;
 
   if (items.length === 0) {
     doc.rect(50, y, W, 20).fillColor('#f0fdfa').fill();
-    doc.fontSize(10).fillColor(GRAY).font('Helvetica').text('No items', 50, y + 5, { width: W, align: 'center' });
+    doc
+      .fontSize(10)
+      .fillColor(GRAY)
+      .font('Helvetica')
+      .text('No items', 50, y + 5, { width: W, align: 'center' });
     y += 20;
   } else {
     items.forEach((item, i) => {
@@ -132,13 +174,22 @@ export function streamPrescriptionPdf(res: Response, input: PrescriptionPdfInput
         item.instructions || '—'
       ];
       rowData.forEach((val, ci) => {
-        doc.fontSize(9).fillColor('#111').font('Helvetica').text(val, colX[ci] + 3, y + 5, { width: colWidths[ci] - 6, ellipsis: true });
+        doc
+          .fontSize(9)
+          .fillColor('#111')
+          .font('Helvetica')
+          .text(val, colX[ci] + 3, y + 5, { width: colWidths[ci] - 6, ellipsis: true });
       });
       y += 20;
     });
   }
 
-  doc.moveTo(50, y).lineTo(doc.page.width - 50, y).strokeColor('#e5e7eb').lineWidth(0.5).stroke();
+  doc
+    .moveTo(50, y)
+    .lineTo(doc.page.width - 50, y)
+    .strokeColor('#e5e7eb')
+    .lineWidth(0.5)
+    .stroke();
   y += 14;
 
   const infoBox = (title: string, text: string) => {
@@ -147,8 +198,16 @@ export function streamPrescriptionPdf(res: Response, input: PrescriptionPdfInput
     y += 12;
     doc.fontSize(10);
     const textH = doc.heightOfString(text, { width: W - 16 });
-    doc.rect(50, y, W, textH + 14).strokeColor('#e5e7eb').lineWidth(0.5).stroke();
-    doc.fontSize(10).fillColor('#374151').font('Helvetica').text(text, 58, y + 7, { width: W - 16 });
+    doc
+      .rect(50, y, W, textH + 14)
+      .strokeColor('#e5e7eb')
+      .lineWidth(0.5)
+      .stroke();
+    doc
+      .fontSize(10)
+      .fillColor('#374151')
+      .font('Helvetica')
+      .text(text, 58, y + 7, { width: W - 16 });
     y += textH + 20;
   };
   if (prescription.notes) infoBox('CLINICAL NOTES', prescription.notes);
@@ -156,18 +215,35 @@ export function streamPrescriptionPdf(res: Response, input: PrescriptionPdfInput
 
   if (followUp) {
     doc.rect(50, y, W, 22).fillColor('#ccfbf1').fill();
-    doc.fontSize(10).fillColor('#0f766e').font('Helvetica-Bold').text(`Follow-up due: ${followUp}`, 58, y + 6);
+    doc
+      .fontSize(10)
+      .fillColor('#0f766e')
+      .font('Helvetica-Bold')
+      .text(`Follow-up due: ${followUp}`, 58, y + 6);
     y += 30;
   }
 
   const sigY = doc.page.height - 80;
-  doc.moveTo(doc.page.width - 200, sigY).lineTo(doc.page.width - 50, sigY).strokeColor('#374151').lineWidth(0.5).stroke();
+  doc
+    .moveTo(doc.page.width - 200, sigY)
+    .lineTo(doc.page.width - 50, sigY)
+    .strokeColor('#374151')
+    .lineWidth(0.5)
+    .stroke();
   doc
     .fontSize(10)
     .fillColor(GRAY)
     .font('Helvetica')
-    .text(prescription.uploadedBy?.name || 'Doctor', doc.page.width - 200, sigY + 5, { width: 150, align: 'center' });
-  doc.fontSize(9).text('HopeHub Care and Research Centre', doc.page.width - 200, sigY + 17, { width: 150, align: 'center' });
+    .text(prescription.uploadedBy?.name || 'Doctor', doc.page.width - 200, sigY + 5, {
+      width: 150,
+      align: 'center'
+    });
+  doc
+    .fontSize(9)
+    .text('HopeHub Care and Research Centre', doc.page.width - 200, sigY + 17, {
+      width: 150,
+      align: 'center'
+    });
 
   doc.end();
 }

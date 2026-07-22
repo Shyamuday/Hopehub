@@ -190,7 +190,7 @@ export const LEGAL_PAGES = {
       {
         title: 'General principle',
         paragraphs: [
-          'For patient safety and regulatory compliance, opened, used, or temperature-sensitive homeopathic medicines generally cannot be returned or exchanged once dispatched, except where required by law or where we made a fulfilment error.',
+          'For patient safety and regulatory compliance, opened, used, or temperature-sensitive medicines generally cannot be returned or exchanged once dispatched, except where required by law or where we made a fulfilment error.',
         ],
       },
       {

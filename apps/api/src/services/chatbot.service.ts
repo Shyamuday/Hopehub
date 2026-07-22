@@ -45,7 +45,7 @@ const DURATION_OPTIONS = ['A few days', '1–2 weeks', '1–3 months', 'More tha
 
 const TREATMENT_OPTIONS = [
   'First time seeking help',
-  'Tried homeopathy before',
+  'Tried treatment before',
   'Tried other treatments',
   'Not sure / mixed'
 ] as const;
@@ -153,8 +153,8 @@ function matchesIntent(text: string, intent: string): boolean {
 function infoAnswer(topic: string): string {
   if (matchesAny(topic, ['How online consultation works', 'How consultations work'])) {
     return (
-      `Our consultations are fully online — private chat with a qualified homeopathic doctor, from your phone or laptop.\n\n` +
-      `You share your concern through a short intake, we assign the right doctor from our panel, and you receive guidance on medicine and follow-up.`
+      `Our consultations are fully online — private chat with a qualified healthcare expert, from your phone or laptop.\n\n` +
+      `You share your concern through a short intake, we assign the right expert from our panel, and you receive guidance, prescriptions where appropriate, and follow-up.`
     );
   }
   if (matchesAny(topic, ['How doctors are assigned'])) {
@@ -176,7 +176,7 @@ function infoAnswer(topic: string): string {
     );
   }
   return (
-    `HopeHub offers doctor-led homeopathic care online — intake, consultation, prescription, and follow-up in one place.\n\n` +
+    `HopeHub offers expert-led online healthcare — intake, consultation, prescriptions where appropriate, and follow-up in one place.\n\n` +
     `Tap a topic below if you would like more detail.`
   );
 }

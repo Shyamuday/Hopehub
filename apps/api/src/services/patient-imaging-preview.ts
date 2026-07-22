@@ -1,7 +1,7 @@
 import type { ClinicalMediaImageAnalysis } from './clinical-media-rubric-analysis.js';
 
 export const PATIENT_AI_DISCLAIMER =
-  'This is an AI-generated preliminary note — not a medical diagnosis. Meet your homeopathic doctor for a final review and treatment plan.';
+  'This is an AI-generated preliminary note — not a medical diagnosis. Meet your healthcare expert for a final review and care plan.';
 
 export type PatientImagingPreview = {
   isAiGenerated: true;

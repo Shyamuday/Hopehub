@@ -32,9 +32,9 @@ export const FAQ_FALLBACK_ENTRIES: FaqAccordionItem[] = [
   },
   {
     category: 'Treatment',
-    question: 'Do you use homeopathy?',
+    question: 'What type of care do you provide?',
     answer:
-      'Yes, homeopathy is one supported care approach where suitable. Your expert will guide the right plan based on your concern, history, safety needs, and goals.',
+      'HopeHub supports online expert-led care across medical consultation, mental wellness, nutrition, rehabilitation, preventive care, and supportive treatment where suitable. Your expert will guide the right plan based on your concern, history, safety needs, and goals.',
   },
   {
     category: 'Treatment',
