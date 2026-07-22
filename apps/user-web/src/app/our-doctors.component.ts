@@ -22,6 +22,14 @@ interface PublicDoctor {
   user: { id: string; name: string };
 }
 
+type FilterOption = { value: string; label: string };
+type ProviderFilters = {
+  q: string;
+  providerType: string;
+  providerCategory: string;
+  focus: string;
+};
+
 @Component({
   selector: 'app-our-doctors',
   imports: [AppHeaderComponent, AppFooterComponent, DetailRowsComponent],
@@ -36,6 +44,22 @@ export class OurDoctorsComponent {
   readonly providers = signal<PublicDoctor[]>([]);
   readonly doctors = this.providers;
   readonly loading = signal(true);
+  readonly filterLoading = signal(false);
+  readonly filters = signal({
+    q: '',
+    providerType: '',
+    providerCategory: '',
+    focus: '',
+  });
+  readonly filterOptions = signal<{
+    providerTypes: FilterOption[];
+    providerCategories: FilterOption[];
+    focusAreas: string[];
+  }>({
+    providerTypes: [],
+    providerCategories: [],
+    focusAreas: [],
+  });
 
   readonly process = [
     {
@@ -66,15 +90,41 @@ export class OurDoctorsComponent {
 
   private async loadProviders() {
     try {
-      const res = await this.client.get<{ doctors?: PublicDoctor[]; providers?: PublicDoctor[] }>(
-        API_PATHS.PROVIDERS,
-      );
+      this.filterLoading.set(true);
+      const res = await this.client.get<{
+        doctors?: PublicDoctor[];
+        providers?: PublicDoctor[];
+        filterOptions?: {
+          providerTypes: FilterOption[];
+          providerCategories: FilterOption[];
+          focusAreas: string[];
+        };
+      }>(this.providerListPath());
       this.providers.set(res.providers ?? res.doctors ?? []);
+      if (res.filterOptions) {
+        this.filterOptions.set(res.filterOptions);
+      }
     } catch {
       // show empty state silently
     } finally {
       this.loading.set(false);
+      this.filterLoading.set(false);
     }
+  }
+
+  updateFilter(key: keyof ProviderFilters, value: string) {
+    this.filters.update((current) => ({ ...current, [key]: value }));
+    void this.loadProviders();
+  }
+
+  resetFilters() {
+    this.filters.set({ q: '', providerType: '', providerCategory: '', focus: '' });
+    void this.loadProviders();
+  }
+
+  hasActiveFilters() {
+    const filters = this.filters();
+    return Boolean(filters.q || filters.providerType || filters.providerCategory || filters.focus);
   }
 
   initials(name: string): string {
@@ -105,5 +155,16 @@ export class OurDoctorsComponent {
     return provider.yearsOfExperience && specialty
       ? `${specialty} - ${provider.yearsOfExperience} yrs experience`
       : specialty || '';
+  }
+
+  private providerListPath() {
+    const filters = this.filters();
+    const params = new URLSearchParams();
+    if (filters.q.trim()) params.set('q', filters.q.trim());
+    if (filters.providerType) params.set('providerType', filters.providerType);
+    if (filters.providerCategory) params.set('providerCategory', filters.providerCategory);
+    if (filters.focus) params.set('focus', filters.focus);
+    const qs = params.toString();
+    return qs ? `${API_PATHS.PROVIDERS}?${qs}` : API_PATHS.PROVIDERS;
   }
 }

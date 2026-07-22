@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { Role } from '@prisma/client';
+import { Prisma, ProviderCategory, ProviderType, Role } from '@prisma/client';
 import { authRequired, allowRoles } from '../auth.js';
 import { prisma } from '../db.js';
 import { DEFAULT_BILLING_PLANS } from '../constants/billing.constants.js';
@@ -28,6 +28,7 @@ import {
   updateDiseasePublicPage
 } from '../services/disease-public-page.js';
 import { diseasePublicPageUpdateSchema } from '../types/disease-public-page.js';
+import { providerCategoryLabel, providerTypeLabel } from '../constants/homeopathic-doctor-types.js';
 
 export const router = Router();
 
@@ -354,17 +355,59 @@ router.put(
   })
 );
 
-/** Public endpoint — returns doctors marked for website display. No auth required. */
+const publicProviderQuerySchema = z.object({
+  q: z.string().trim().max(80).optional().default(''),
+  providerType: z.nativeEnum(ProviderType).optional(),
+  providerCategory: z.nativeEnum(ProviderCategory).optional(),
+  focus: z.string().trim().max(80).optional().default('')
+});
+
+/** Public endpoint — returns providers marked for website display. No auth required. */
 router.get(
   '/doctors',
-  asyncRoute(async (_req, res) => {
+  asyncRoute(async (req, res) => {
+    const filters = publicProviderQuerySchema.parse(req.query);
     const limitConfig = await prisma.siteConfig.findUnique({ where: { key: 'doctorListLimit' } });
     const limit = limitConfig
       ? Math.max(1, Math.min(50, parseInt(limitConfig.value, 10) || 12))
       : 12;
+    const search = filters.q;
+    const focus = filters.focus;
+    const andFilters: Prisma.DoctorWhereInput[] = [];
+
+    if (search) {
+      andFilters.push({
+        OR: [
+          { specialty: { contains: search, mode: 'insensitive' } },
+          { specialization: { contains: search, mode: 'insensitive' } },
+          { designation: { contains: search, mode: 'insensitive' } },
+          { bio: { contains: search, mode: 'insensitive' } },
+          { focusAreas: { has: search } },
+          { user: { name: { contains: search, mode: 'insensitive' } } }
+        ]
+      });
+    }
+
+    if (focus) {
+      andFilters.push({
+        OR: [
+          { specialization: { contains: focus, mode: 'insensitive' } },
+          { specialty: { contains: focus, mode: 'insensitive' } },
+          { focusAreas: { has: focus } }
+        ]
+      });
+    }
+
+    const where: Prisma.DoctorWhereInput = {
+      showOnWebsite: true,
+      user: { isActive: true },
+      ...(filters.providerType ? { providerType: filters.providerType } : {}),
+      ...(filters.providerCategory ? { providerCategory: filters.providerCategory } : {}),
+      ...(andFilters.length ? { AND: andFilters } : {})
+    };
 
     const doctors = await prisma.doctor.findMany({
-      where: { showOnWebsite: true, user: { isActive: true } },
+      where,
       select: {
         id: true,
         specialty: true,
@@ -384,7 +427,47 @@ router.get(
       take: limit
     });
 
-    res.json({ doctors, limit });
+    const allVisible = await prisma.doctor.findMany({
+      where: { showOnWebsite: true, user: { isActive: true } },
+      select: {
+        providerType: true,
+        providerCategory: true,
+        specialty: true,
+        specialization: true,
+        focusAreas: true
+      }
+    });
+
+    const focusValues = [
+      ...new Set(
+        allVisible
+          .flatMap((provider) => [
+            provider.specialization,
+            provider.specialty,
+            ...(provider.focusAreas ?? [])
+          ])
+          .map((value) => value?.trim())
+          .filter((value): value is string => Boolean(value))
+      )
+    ].sort((a, b) => a.localeCompare(b));
+
+    const filterOptions = {
+      providerTypes: [...new Set(allVisible.map((provider) => provider.providerType))].map(
+        (value) => ({ value, label: providerTypeLabel(value) })
+      ),
+      providerCategories: [...new Set(allVisible.map((provider) => provider.providerCategory))].map(
+        (value) => ({ value, label: providerCategoryLabel(value) })
+      ),
+      focusAreas: focusValues
+    };
+
+    const providers = doctors.map((provider) => ({
+      ...provider,
+      providerTypeLabel: providerTypeLabel(provider.providerType),
+      providerCategoryLabel: providerCategoryLabel(provider.providerCategory)
+    }));
+
+    res.json({ providers, doctors: providers, limit, filters, filterOptions });
   })
 );
 
