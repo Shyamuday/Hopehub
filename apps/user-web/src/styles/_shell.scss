@@ -258,7 +258,8 @@
   position: relative;
 }
 
-.desktop-nav-trigger {
+.desktop-nav-trigger,
+.desktop-nav-link {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -272,9 +273,11 @@
   font-size: 0.84rem;
   font-weight: 700;
   cursor: pointer;
+  text-decoration: none;
   transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
 }
 
+.desktop-nav-link:hover,
 .desktop-nav-trigger:hover,
 .desktop-nav-group:focus-within .desktop-nav-trigger,
 .desktop-nav-group:hover .desktop-nav-trigger,

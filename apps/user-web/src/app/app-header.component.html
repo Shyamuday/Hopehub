@@ -62,25 +62,28 @@
         </div>
       } @else {
         <nav class="header-desktop-nav" aria-label="Primary links">
-          @for (group of guestNavGroups; track group.id) {
+          @for (link of desktopPrimaryNavLinks; track link.path) {
+            <a class="desktop-nav-link" [routerLink]="link.path" (click)="closeDesktopMenu()">{{ link.label }}</a>
+          }
+          @if (desktopMoreNavLinks.length) {
             <div
               class="desktop-nav-group"
-              [class.open]="desktopMenuOpen() === group.id"
-              (mouseenter)="openDesktopMenu(group.id)"
+              [class.open]="desktopMenuOpen() === 'more'"
+              (mouseenter)="openDesktopMenu('more')"
               (mouseleave)="closeDesktopMenu()">
               <button
                 type="button"
                 class="desktop-nav-trigger"
-                (click)="toggleDesktopMenu(group.id, $event)"
-                [attr.aria-expanded]="desktopMenuOpen() === group.id"
+                (click)="toggleDesktopMenu('more', $event)"
+                [attr.aria-expanded]="desktopMenuOpen() === 'more'"
                 aria-haspopup="menu">
-                {{ group.label }}
+                More
                 <svg viewBox="0 0 20 20" width="14" height="14" aria-hidden="true">
                   <path fill="currentColor" d="M5.5 7.5 10 12l4.5-4.5" />
                 </svg>
               </button>
               <div class="desktop-submenu" role="menu">
-                @for (link of group.links; track link.path) {
+                @for (link of desktopMoreNavLinks; track link.path) {
                   <a role="menuitem" [routerLink]="link.path" (click)="closeDesktopMenu()">{{ link.label }}</a>
                 }
               </div>

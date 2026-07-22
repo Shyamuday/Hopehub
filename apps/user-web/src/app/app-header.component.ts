@@ -14,7 +14,10 @@ import {
 import { RouterLink } from '@angular/router';
 import { NotificationBellHostComponent } from '@hopehub/platform-ui';
 import { PUBLIC_SITE_BRAND } from './core/constants/public-site-content.constants';
-import { PUBLIC_HEADER_NAV_GROUPS } from './core/constants/public-nav.constants';
+import {
+  PUBLIC_HEADER_NAV_GROUPS,
+  PUBLIC_HEADER_QUICK_LINKS,
+} from './core/constants/public-nav.constants';
 import { ROUTE_PATHS } from './core/constants/app-routes.constants';
 import { environment } from '../environments/environment';
 import { AUTH_TOKEN_KEY } from './core/constants/auth.constants';
@@ -40,6 +43,20 @@ export class AppHeaderComponent implements OnDestroy {
 
   readonly brand = PUBLIC_SITE_BRAND;
   readonly guestNavGroups = PUBLIC_HEADER_NAV_GROUPS;
+  readonly desktopPrimaryNavLinks = PUBLIC_HEADER_QUICK_LINKS.filter((link) =>
+    [
+      'Services',
+      'Treatments',
+      'Talk to our expert now',
+      'Our Experts',
+      'Blog',
+      'About us',
+      'Contact',
+    ].includes(link.label),
+  );
+  readonly desktopMoreNavLinks = PUBLIC_HEADER_QUICK_LINKS.filter(
+    (link) => !this.desktopPrimaryNavLinks.some((primary) => primary.path === link.path),
+  );
   readonly accountPaths = {
     hub: `/${ROUTE_PATHS.PATIENT_ACCOUNT}`,
     profile: `/${ROUTE_PATHS.PATIENT_ACCOUNT_PROFILE}`,
