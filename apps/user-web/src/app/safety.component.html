@@ -1,15 +1,11 @@
 
     <section class="public-shell">
-      <app-header subtitle="Safety and trust" [whatsappLink]="whatsappLink()" />
+      <app-header [subtitle]="copy.headerSubtitle" [whatsappLink]="whatsappLink()" />
       <main class="content-page">
         <section class="page-hero panel warning-panel">
-          <p class="eyebrow">Safety / Trust</p>
-          <h1>Not for emergency care.</h1>
-          <p>
-            HopeHub Care and Research Centre is for planned online consultation and follow-up. If you have severe symptoms, sudden
-            worsening, breathing difficulty, chest pain, fainting, heavy bleeding, severe allergic reaction, high fever,
-            or any emergency, seek immediate offline medical care.
-          </p>
+          <p class="eyebrow">{{ copy.eyebrow }}</p>
+          <h1>{{ copy.title }}</h1>
+          <p>{{ copy.body }}</p>
         </section>
         <section class="content-grid two">
           <div class="panel">

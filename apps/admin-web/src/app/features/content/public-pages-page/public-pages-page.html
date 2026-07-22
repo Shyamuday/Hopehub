@@ -1,0 +1,126 @@
+<section class="panel">
+  <div class="page-head">
+    <div>
+      <h2>Public Pages</h2>
+      <p class="page-hint">Edit public route copy, SEO, and flexible page content from the database.</p>
+    </div>
+    <button type="button" class="ghost" (click)="seed()" [disabled]="saving()">Seed defaults</button>
+  </div>
+
+  <form class="form-grid" (submit)="$event.preventDefault(); create()">
+    <h3>Create page</h3>
+    <div class="grid-2">
+      <label class="field">
+        <span class="field-label">Slug</span>
+        <input [formField]="createForm.slug" placeholder="about" />
+      </label>
+      <label class="field">
+        <span class="field-label">Status</span>
+        <select [formField]="createForm.status">
+          <option value="DRAFT">Draft</option>
+          <option value="PUBLISHED">Published</option>
+          <option value="ARCHIVED">Archived</option>
+        </select>
+      </label>
+    </div>
+    <label class="field">
+      <span class="field-label">Title</span>
+      <input [formField]="createForm.title" />
+    </label>
+    <label class="field">
+      <span class="field-label">Summary</span>
+      <textarea rows="2" [formField]="createForm.summary"></textarea>
+    </label>
+    <button type="submit" [disabled]="saving()">Create</button>
+  </form>
+</section>
+
+@if (message()) { <p class="success">{{ message() }}</p> }
+@if (error()) { <p class="error">{{ error() }}</p> }
+@if (loading()) { <p class="loading-text">Loading...</p> }
+
+<section class="panel">
+  <h2>All Public Pages ({{ pages().length }})</h2>
+  @for (page of pages(); track page.id) {
+    <article class="card" [class.is-published]="page.status === 'PUBLISHED'">
+      <div class="card-header">
+        <div>
+          <strong>{{ page.title }}</strong>
+          <p class="meta">/{{ page.slug }} · order {{ page.sortOrder }}</p>
+        </div>
+        <div class="badge-row">
+          <span class="badge" [class.published]="page.status === 'PUBLISHED'" [class.draft]="page.status !== 'PUBLISHED'">
+            {{ page.status }}
+          </span>
+          <button type="button" class="ghost" (click)="startEdit(page)">Edit</button>
+          <button type="button" class="danger" (click)="delete(page)">Delete</button>
+        </div>
+      </div>
+      <p>{{ page.summary }}</p>
+
+      @if (editingId() === page.id) {
+        <form class="form-grid edit-form" (submit)="$event.preventDefault(); update(page.id)">
+          <div class="grid-3">
+            <label class="field">
+              <span class="field-label">Slug</span>
+              <input [formField]="editForm.slug" />
+            </label>
+            <label class="field">
+              <span class="field-label">Status</span>
+              <select [formField]="editForm.status">
+                <option value="DRAFT">Draft</option>
+                <option value="PUBLISHED">Published</option>
+                <option value="ARCHIVED">Archived</option>
+              </select>
+            </label>
+            <label class="field">
+              <span class="field-label">Sort order</span>
+              <input type="number" [formField]="editForm.sortOrder" />
+            </label>
+          </div>
+          <label class="field">
+            <span class="field-label">Title</span>
+            <input [formField]="editForm.title" />
+          </label>
+          <label class="field">
+            <span class="field-label">Subtitle</span>
+            <input [formField]="editForm.subtitle" />
+          </label>
+          <label class="field">
+            <span class="field-label">Summary</span>
+            <textarea rows="3" [formField]="editForm.summary"></textarea>
+          </label>
+          <div class="grid-2">
+            <label class="field">
+              <span class="field-label">SEO title</span>
+              <input [formField]="editForm.seoTitle" />
+            </label>
+            <label class="field">
+              <span class="field-label">Canonical path</span>
+              <input [formField]="editForm.canonicalPath" placeholder="/about" />
+            </label>
+          </div>
+          <label class="field">
+            <span class="field-label">SEO description</span>
+            <textarea rows="2" [formField]="editForm.seoDescription"></textarea>
+          </label>
+          <label class="field">
+            <span class="field-label">OpenGraph image URL</span>
+            <input [formField]="editForm.ogImage" />
+          </label>
+          <label class="field">
+            <span class="field-label">Content JSON</span>
+            <textarea rows="10" class="mono" [formField]="editForm.contentJson"></textarea>
+          </label>
+          <div class="actions">
+            <button type="submit" [disabled]="saving()">Save</button>
+            <button type="button" class="ghost" (click)="cancelEdit()">Cancel</button>
+          </div>
+        </form>
+      }
+    </article>
+  }
+  @if (!loading() && pages().length === 0) {
+    <p class="empty-state">No public pages yet. Seed defaults to start.</p>
+  }
+</section>

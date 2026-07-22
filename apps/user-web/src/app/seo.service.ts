@@ -5,6 +5,7 @@ import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
 import { filter } from 'rxjs';
 import { ClinicApiClient } from './clinic-api/clinic-api.client';
 import { SEO_DEFAULTS } from './core/constants/branding.constants';
+import { PublicPagesService } from './core/services/public-pages.service';
 
 type DiseaseSeo = {
   metaTitle?: string;
@@ -24,6 +25,7 @@ export class SeoService {
   private readonly meta = inject(Meta);
   private readonly document = inject(DOCUMENT);
   private readonly apiClient = inject(ClinicApiClient);
+  private readonly publicPages = inject(PublicPagesService);
 
   private readonly siteUrl = SEO_DEFAULTS.SITE_URL;
   private readonly defaultTitle = SEO_DEFAULTS.DEFAULT_TITLE;
@@ -42,21 +44,36 @@ export class SeoService {
     const routeData = this.getLeafRoute(this.activatedRoute).snapshot.data;
     const diseaseSeo = await this.getDiseaseSeoFromUrl();
     const approachSeo = await this.getApproachSeoFromPage();
+    const publicPageSeo = await this.getPublicPageSeoFromUrl();
 
     const seoTitle =
-      diseaseSeo.metaTitle || approachSeo.metaTitle || routeData['seoTitle'] || this.defaultTitle;
+      diseaseSeo.metaTitle ||
+      approachSeo.metaTitle ||
+      publicPageSeo.metaTitle ||
+      routeData['seoTitle'] ||
+      this.defaultTitle;
     const seoDescription =
       diseaseSeo.metaDescription ||
       approachSeo.metaDescription ||
+      publicPageSeo.metaDescription ||
       routeData['seoDescription'] ||
       this.defaultDescription;
     const seoKeywords =
-      diseaseSeo.keywords || approachSeo.keywords || routeData['seoKeywords'] || [];
-    const canonicalPath = diseaseSeo.canonicalPath || this.router.url;
+      diseaseSeo.keywords ||
+      approachSeo.keywords ||
+      publicPageSeo.keywords ||
+      routeData['seoKeywords'] ||
+      [];
+    const canonicalPath =
+      diseaseSeo.canonicalPath || publicPageSeo.canonicalPath || this.router.url;
     const canonicalUrl = `${this.siteUrl}${canonicalPath === '/' ? '' : canonicalPath}`;
-    const ogTitle = diseaseSeo.ogTitle || approachSeo.ogTitle || seoTitle;
-    const ogDescription = diseaseSeo.ogDescription || approachSeo.ogDescription || seoDescription;
-    const ogImage = diseaseSeo.ogImage || this.defaultImage;
+    const ogTitle = diseaseSeo.ogTitle || approachSeo.ogTitle || publicPageSeo.ogTitle || seoTitle;
+    const ogDescription =
+      diseaseSeo.ogDescription ||
+      approachSeo.ogDescription ||
+      publicPageSeo.ogDescription ||
+      seoDescription;
+    const ogImage = diseaseSeo.ogImage || publicPageSeo.ogImage || this.defaultImage;
 
     this.title.setTitle(seoTitle);
     this.meta.updateTag({ name: 'description', content: seoDescription });
@@ -153,6 +170,29 @@ export class SeoService {
       ogTitle: 'Homeopathy Approaches at HopeHub Care and Research Centre',
       ogDescription:
         'Compare method-led homeopathy approaches and their digital care mapping at HopeHub Care and Research Centre.',
+    };
+  }
+
+  private async getPublicPageSeoFromUrl(): Promise<DiseaseSeo> {
+    const path = this.router.url.split('?')[0].replace(/^\/+/, '') || 'home';
+    if (path.startsWith('treatments/')) return {};
+    const slugAliases: Record<string, string> = {
+      '': 'home',
+      'our-doctors': 'our-providers',
+      'talk-to-doctor': 'talk-to-provider',
+    };
+    const slug = slugAliases[path] || path;
+    const page = await this.publicPages.bySlug(slug);
+    const seo = page?.seo;
+    if (!seo) return {};
+    return {
+      metaTitle: seo.seoTitle,
+      metaDescription: seo.seoDescription,
+      keywords: seo.seoKeywords,
+      ogTitle: seo.ogTitle,
+      ogDescription: seo.ogDescription,
+      ogImage: seo.ogImage,
+      canonicalPath: seo.canonicalPath,
     };
   }
 }

@@ -13,7 +13,8 @@ const CONFIG_META: Record<string, { label: string; description: string }> = {
   },
   whatsappPhone: {
     label: 'WhatsApp phone number',
-    description: 'Phone number (with country code, no +) used for all WhatsApp CTAs site-wide. E.g. 919876543210.'
+    description:
+      'Phone number (with country code, no +) used for all WhatsApp CTAs site-wide. E.g. 919876543210.'
   },
   clinicName: {
     label: 'Clinic name',
@@ -25,7 +26,7 @@ const CONFIG_META: Record<string, { label: string; description: string }> = {
   },
   statDoctors: {
     label: 'Stat: number of doctors',
-    description: 'Public headline stat for doctor count. E.g. "12+".'
+    description: 'Public headline stat for provider count. E.g. "12+".'
   },
   statRating: {
     label: 'Stat: patient rating',
@@ -169,8 +170,8 @@ const defaults: Record<string, string> = {
   clinicAddressLine2: 'Near City Centre, Main Road',
   clinicAddressLine3: 'Ranchi, Jharkhand, India',
   clinicAddressLine4: 'Pincode — 834001',
-  homeHeroEyebrow: 'Doctor-led homeopathy',
-  homeHeroHeadline: 'Personalised homeopathic care for every health concern.',
+  homeHeroEyebrow: 'Provider-led healthcare',
+  homeHeroHeadline: 'Personalised care for every health concern.',
   homeHeroLead:
-    'Acute illnesses, chronic conditions, skin and hair issues, digestive problems, allergies, mental wellness, and more — consult qualified homeopathic doctors online with prescriptions and follow-up.'
+    'Acute illnesses, chronic conditions, skin and hair issues, digestive problems, allergies, mental wellness, nutrition, rehabilitation, and more - consult qualified healthcare providers online with guidance, prescriptions where appropriate, and follow-up.'
 };

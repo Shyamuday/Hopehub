@@ -142,6 +142,42 @@ export class AdminDoctorsApi extends AdminApiBase {
     );
   }
 
+  listPublicPages() {
+    return firstValueFrom(
+      this.http.get<{ pages: any[] }>(`${this.apiBase}${API_PATHS.ADMIN.PUBLIC_PAGES}`),
+    );
+  }
+
+  seedPublicPages() {
+    return firstValueFrom(
+      this.http.post<{ created: number; updated: number; total: number }>(
+        `${this.apiBase}${API_PATHS.ADMIN.PUBLIC_PAGES_SEED}`,
+        {},
+      ),
+    );
+  }
+
+  createPublicPage(payload: any) {
+    return firstValueFrom(
+      this.http.post<{ page: any }>(`${this.apiBase}${API_PATHS.ADMIN.PUBLIC_PAGES}`, payload),
+    );
+  }
+
+  updatePublicPage(id: string, payload: any) {
+    return firstValueFrom(
+      this.http.patch<{ page: any }>(
+        `${this.apiBase}${API_PATHS.ADMIN.PUBLIC_PAGE_BY_ID(id)}`,
+        payload,
+      ),
+    );
+  }
+
+  deletePublicPage(id: string) {
+    return firstValueFrom(
+      this.http.delete(`${this.apiBase}${API_PATHS.ADMIN.PUBLIC_PAGE_BY_ID(id)}`),
+    );
+  }
+
   // ── Testimonials ──────────────────────────────────────────────────────────
   listTestimonials() {
     return firstValueFrom(

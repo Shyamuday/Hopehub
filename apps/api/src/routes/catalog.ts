@@ -573,3 +573,26 @@ router.get(
     res.json({ config });
   })
 );
+
+router.get(
+  '/public-pages',
+  asyncRoute(async (_req, res) => {
+    const pages = await prisma.publicPage.findMany({
+      where: { status: 'PUBLISHED' },
+      orderBy: [{ sortOrder: 'asc' }, { slug: 'asc' }]
+    });
+    res.json({ pages });
+  })
+);
+
+router.get(
+  '/public-pages/:slug',
+  asyncRoute(async (req, res) => {
+    const page = await prisma.publicPage.findUnique({ where: { slug: routeParam(req, 'slug') } });
+    if (!page || page.status !== 'PUBLISHED') {
+      res.status(404).json({ message: 'Public page not found.' });
+      return;
+    }
+    res.json({ page });
+  })
+);

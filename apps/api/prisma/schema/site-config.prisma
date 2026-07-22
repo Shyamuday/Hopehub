@@ -8,3 +8,27 @@ model SiteConfig {
 
   @@index([key])
 }
+
+enum PublicContentStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+model PublicPage {
+  id          String              @id @default(cuid())
+  slug        String              @unique
+  title       String
+  subtitle    String?
+  summary     String?             @db.Text
+  content     Json?
+  seo         Json?
+  status      PublicContentStatus @default(PUBLISHED)
+  sortOrder   Int                 @default(0)
+  publishedAt DateTime?
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  @@index([status])
+  @@index([sortOrder])
+}

@@ -41,6 +41,16 @@ export type PublicContentPanel = {
   body: string;
 };
 
+export type RuntimePublicCopy<T> = {
+  -readonly [K in keyof T]: T[K] extends string
+    ? string
+    : T[K] extends readonly unknown[]
+      ? T[K]
+      : T[K] extends object
+        ? RuntimePublicCopy<T[K]>
+        : T[K];
+};
+
 export const PUBLIC_SITE_BRAND = {
   name: 'HopeHub Care and Research Centre',
   shortName: 'HopeHub Care',

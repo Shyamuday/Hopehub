@@ -32,6 +32,7 @@ import { registerAdminSalaryRoutes } from './salary.routes.js';
 import { registerAdminPricingRoutes } from './pricing.routes.js';
 import { registerAdminRewardsRoutes } from './rewards.js';
 import { registerAdminClinicalRecordsRoutes } from './clinical-records.js';
+import { registerAdminPublicPageRoutes } from './public-pages.js';
 import { adminPermissionMiddleware } from '../../admin-route-permissions.js';
 
 export function createAdminRouter(io: SocketIoServer) {
@@ -71,6 +72,7 @@ export function createAdminRouter(io: SocketIoServer) {
   registerAdminPricingRoutes(router);
   registerAdminRewardsRoutes(router);
   registerAdminClinicalRecordsRoutes(router);
+  registerAdminPublicPageRoutes(router);
 
   return router;
 }

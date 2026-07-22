@@ -66,4 +66,6 @@ export const API_PATHS = {
   DISEASES: '/diseases',
   CLINICS: '/clinics',
   PUBLIC_CONFIG: '/public-config',
+  PUBLIC_PAGES: '/public-pages',
+  PUBLIC_PAGE: (slug: string) => `/public-pages/${encodeURIComponent(slug)}`,
 } as const;
