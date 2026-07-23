@@ -1,6 +1,7 @@
 import { Component, OnInit, computed, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { NOTE_CONTENT } from '@hopehub/contracts';
 import { Service, ServiceCategory } from '../../core/models';
 import { getAllServices } from '../../core/data/services-data';
 import { ServiceCardComponent } from '../../shared/components';
@@ -13,6 +14,7 @@ import { ServiceCardComponent } from '../../shared/components';
   styleUrl: './services.component.scss',
 })
 export class ServicesComponent implements OnInit {
+  readonly notes = NOTE_CONTENT.healing;
   services = signal<Service[]>([]);
   searchTerm = signal('');
   selectedFilter = signal('all');

@@ -1,6 +1,7 @@
 import { Component, OnInit, signal, inject } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { NOTE_CONTENT } from '@hopehub/contracts';
 import { Service } from '../../core/models';
 import { ServiceInquiryComponent } from '../../shared/components';
 import { SEOService } from '../../core/services';
@@ -14,6 +15,7 @@ import { getServiceById } from '../../core/data/services-data';
   styleUrl: './service-detail.component.scss',
 })
 export class ServiceDetailComponent implements OnInit {
+  readonly notes = NOTE_CONTENT.healing;
   service = signal<Service | null>(null);
   loading = signal(true);
 
@@ -161,8 +163,7 @@ export class ServiceDetailComponent implements OnInit {
       },
       {
         question: 'What if I need urgent help?',
-        answer:
-          'Hope Hub is not emergency care. If you are in immediate danger or may harm yourself, contact local emergency services. In India, Tele MANAS is available at 14416.',
+        answer: NOTE_CONTENT.healing.serviceSafety.text,
       },
     ];
   }

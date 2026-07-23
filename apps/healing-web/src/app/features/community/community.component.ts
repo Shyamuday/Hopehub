@@ -1,6 +1,7 @@
 import { Component, Inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { RouterModule } from '@angular/router';
+import { NOTE_CONTENT } from '@hopehub/contracts';
 import { Meetup } from '../../core/models/meetup.model';
 import { APP_CONSTANTS } from '../../core';
 
@@ -58,13 +59,12 @@ import { APP_CONSTANTS } from '../../core';
                 type="button"
                 class="rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-bold text-amber-900"
               >
-                Safety note
+                {{ notes.communitySafety.label }}
               </button>
               <div
                 class="invisible absolute left-0 top-full z-20 mt-2 w-80 max-w-[calc(100vw-2rem)] rounded-lg border border-amber-200 bg-white p-3 text-sm leading-6 text-amber-900 opacity-0 shadow-xl transition group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100"
               >
-                These spaces are for peer support and routing. They are not emergency care or a
-                replacement for clinical treatment.
+                {{ notes.communitySafety.text }}
               </div>
             </div>
           </div>
@@ -272,6 +272,7 @@ import { APP_CONSTANTS } from '../../core';
   styles: [],
 })
 export class CommunityComponent {
+  readonly notes = NOTE_CONTENT.healing;
   APP_CONSTANTS = APP_CONSTANTS;
 
   nextMeetup: Meetup = {

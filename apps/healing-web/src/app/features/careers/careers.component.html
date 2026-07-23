@@ -39,12 +39,10 @@
 
         <div class="group relative inline-flex">
           <button type="button" class="rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-bold text-amber-900">
-            Application note
+            {{ notes.application.label }}
           </button>
           <div class="invisible absolute left-0 top-full z-20 mt-2 w-80 max-w-[calc(100vw-2rem)] rounded-lg border border-amber-200 bg-white p-3 text-sm leading-6 text-amber-900 opacity-0 shadow-xl transition group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100">
-            Hope Hub may request proof of qualification, identity, registration, references, or a
-            screening discussion before assigning any client-facing work. Submitting this form does
-            not guarantee onboarding or client assignment.
+            {{ notes.application.text }}
           </div>
         </div>
       </aside>

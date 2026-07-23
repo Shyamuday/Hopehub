@@ -1,6 +1,7 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterModule } from '@angular/router';
+import { NOTE_CONTENT } from '@hopehub/contracts';
 import { ContactMethod } from '../../core/models/contact.model';
 import { LeadService, LoadingService } from '../../core/services';
 
@@ -12,6 +13,7 @@ import { LeadService, LoadingService } from '../../core/services';
   styleUrl: './careers.component.scss',
 })
 export class CareersComponent {
+  readonly notes = NOTE_CONTENT.healing;
   private readonly formBuilder = inject(FormBuilder);
   private readonly leadService = inject(LeadService);
   private readonly loadingService = inject(LoadingService);

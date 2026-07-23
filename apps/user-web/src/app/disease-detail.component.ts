@@ -3,6 +3,7 @@ import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { buildDetailRows, DetailRowsComponent } from '@hopehub/platform-ui';
+import { NOTE_CONTENT } from '@hopehub/contracts';
 import { AppFooterComponent } from './app-footer.component';
 import { AppHeaderComponent } from './app-header.component';
 import { AuthFormOverlayComponent } from './auth/auth-form-overlay.component';
@@ -38,8 +39,8 @@ export class DiseaseDetailComponent implements OnInit {
   private readonly whatsappSvc = inject(WhatsappLinkService);
 
   readonly whatsappLink = this.whatsappSvc.url;
-  readonly defaultWarning =
-    'This service is not for emergency care. For severe, sudden, or rapidly worsening symptoms, seek immediate offline medical help.';
+  readonly notes = NOTE_CONTENT.userWeb;
+  readonly defaultWarning = NOTE_CONTENT.userWeb.diseaseSafety.defaultText;
   readonly currencyCode = CURRENCY_CODE;
   readonly dashboardPath = `/${ROUTE_PATHS.PATIENT_DASHBOARD}`;
 

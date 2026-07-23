@@ -164,7 +164,7 @@
               </article>
 
               <article class="note-popover">
-                <button type="button" class="note-popover__trigger">Safety note</button>
+                <button type="button" class="note-popover__trigger">{{ notes.diseaseSafety.label }}</button>
                 <div class="note-popover__content">
                   <p>{{ d.warning || defaultWarning }}</p>
                   @if (d.emergencySigns?.length) {

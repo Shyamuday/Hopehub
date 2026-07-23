@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject } from '@angular/core';
 import { buildDetailRows, DetailRowsComponent } from '@hopehub/platform-ui';
+import { NOTE_CONTENT } from '@hopehub/contracts';
 import { AppFooterComponent } from './app-footer.component';
 import { AppHeaderComponent } from './app-header.component';
 import { WhatsappLinkService } from './core/services/whatsapp-link.service';
@@ -16,6 +17,7 @@ import type { HomeopathyApproach } from './models';
 export class WhySuccessfulComponent {
   private readonly whatsappSvc = inject(WhatsappLinkService);
   readonly whatsappLink = this.whatsappSvc.url;
+  readonly notes = NOTE_CONTENT.userWeb;
   readonly approaches = homeopathyApproaches;
 
   approachSummaryRows(method: HomeopathyApproach) {
