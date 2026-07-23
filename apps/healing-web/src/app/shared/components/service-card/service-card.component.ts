@@ -10,6 +10,7 @@ import { Service } from '../../../core/models';
 })
 export class ServiceCardComponent {
   service = input.required<Service>();
+  hidePricing = input(false);
   learnMore = output<string>();
 
   categoryLabel(): string {

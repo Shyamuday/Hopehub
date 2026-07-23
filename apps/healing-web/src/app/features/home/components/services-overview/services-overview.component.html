@@ -14,6 +14,7 @@
       @for (service of services; track service.id) {
         <app-service-card
           [service]="service"
+          [hidePricing]="true"
           class="transform hover:scale-105 transition-transform duration-200"
         />
       }

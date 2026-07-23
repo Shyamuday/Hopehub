@@ -25,8 +25,8 @@ export class HowItWorksComponent {
       description: 'A suitable provider or care team member is assigned based on your concern.',
     },
     {
-      title: 'Pay ₹300',
-      description: 'Complete payment for a 30-minute introductory support session.',
+      title: 'Confirm next step',
+      description: 'Review the suggested support path and continue when you feel ready.',
     },
     {
       title: 'Get support',
