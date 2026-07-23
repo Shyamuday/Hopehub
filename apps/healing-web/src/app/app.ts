@@ -8,6 +8,7 @@ import {
   QuickAccessComponent,
   AuthModalComponent,
   AnnouncementBannerComponent,
+  ScrollToTopComponent,
 } from './shared/components';
 import { NavigationService, SEOService } from './core/services';
 import { FontLoader } from './core/utils/font-loader.util';
@@ -23,6 +24,7 @@ import { FontLoader } from './core/utils/font-loader.util';
     QuickAccessComponent,
     AuthModalComponent,
     AnnouncementBannerComponent,
+    ScrollToTopComponent,
   ],
   templateUrl: './app.html',
   styleUrl: './app.scss',
