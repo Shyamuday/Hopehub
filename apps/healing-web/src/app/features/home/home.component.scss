@@ -1,4 +1,31 @@
-﻿/* Mobile-first responsive grid adjustments */
+.home-hero {
+  min-height: clamp(34rem, 72vh, 44rem);
+  display: flex;
+  align-items: center;
+}
+
+.home-hero__trust {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.65rem;
+  margin: 1.5rem auto 0;
+  max-width: 48rem;
+}
+
+.home-hero__trust span {
+  border: 1px solid rgba(13, 148, 136, 0.22);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.82);
+  color: #115e59;
+  font-size: 0.85rem;
+  font-weight: 700;
+  padding: 0.45rem 0.8rem;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+  backdrop-filter: blur(8px);
+}
+
+/* Mobile-first responsive grid adjustments */
 .service-grid {
   display: grid;
   grid-template-columns: 1fr;
@@ -25,10 +52,22 @@
 
 /* Ensure proper mobile touch targets */
 @media (max-width: 639px) {
+  .home-hero {
+    min-height: auto;
+  }
+
+  .home-hero__trust {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .home-hero__trust span {
+    width: 100%;
+  }
+
   .cta-button {
     min-height: 48px;
     padding: 0.875rem 2rem;
     font-size: 1rem;
   }
 }
-
