@@ -16,109 +16,8 @@ import type { CallMode, CallSignalingSocket, IceServerConfig } from './webrtc-ca
 @Component({
   selector: 'app-consultation-call-panel',
   standalone: true,
-  template: `
-    @if (canCall()) {
-      <div class="rounded-lg border border-blue-200 bg-blue-50 p-3">
-        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p class="text-sm font-semibold text-blue-950">{{ statusLabel() }}</p>
-            @if (call.error()) {
-              <p class="mt-1 text-sm text-red-700">{{ call.error() }}</p>
-            }
-          </div>
-
-          <div class="flex flex-wrap gap-2">
-            @if (call.state() === 'idle' || call.state() === 'ended') {
-              <button
-                type="button"
-                class="call-btn bg-blue-600 hover:bg-blue-700"
-                (click)="start('audio')"
-                [disabled]="busy()"
-              >
-                Voice call
-              </button>
-              <button
-                type="button"
-                class="call-btn bg-green-600 hover:bg-green-700"
-                (click)="start('video')"
-                [disabled]="busy()"
-              >
-                Video call
-              </button>
-            }
-            @if (call.state() === 'ringing' && call.incomingCall()) {
-              <button
-                type="button"
-                class="call-btn bg-green-600 hover:bg-green-700"
-                (click)="accept()"
-              >
-                Accept
-              </button>
-              <button type="button" class="call-btn bg-red-600 hover:bg-red-700" (click)="reject()">
-                Decline
-              </button>
-            }
-            @if (call.state() === 'connected' || call.state() === 'connecting') {
-              <button
-                type="button"
-                class="call-btn bg-gray-700 hover:bg-gray-800"
-                (click)="toggleMic()"
-              >
-                {{ micOn() ? 'Mute' : 'Unmute' }}
-              </button>
-              @if (call.callMode() === 'video') {
-                <button
-                  type="button"
-                  class="call-btn bg-gray-700 hover:bg-gray-800"
-                  (click)="toggleCamera()"
-                >
-                  {{ cameraOn() ? 'Camera off' : 'Camera on' }}
-                </button>
-              }
-              <button type="button" class="call-btn bg-red-600 hover:bg-red-700" (click)="hangUp()">
-                End call
-              </button>
-            }
-          </div>
-        </div>
-
-        @if (call.state() === 'connected' || call.state() === 'connecting') {
-          <audio #remoteAudio autoplay></audio>
-        }
-
-        @if (isVideoActive()) {
-          <div class="relative mt-3 aspect-video overflow-hidden rounded-lg bg-gray-950">
-            <video #remoteVideo class="h-full w-full object-cover" autoplay playsinline></video>
-            <video
-              #localVideo
-              class="absolute bottom-3 right-3 h-24 w-32 rounded-md border border-white/70 object-cover shadow-lg"
-              autoplay
-              playsinline
-              muted
-            ></video>
-          </div>
-        }
-      </div>
-    }
-  `,
-  styles: [
-    `
-      .call-btn {
-        border-radius: 0.375rem;
-        color: #fff;
-        font-size: 0.875rem;
-        font-weight: 700;
-        min-height: 2.5rem;
-        padding: 0.5rem 0.75rem;
-        transition: background-color 150ms ease;
-      }
-
-      .call-btn:disabled {
-        background-color: #9ca3af;
-        cursor: not-allowed;
-      }
-    `,
-  ],
+  templateUrl: './consultation-call-panel.component.html',
+  styleUrl: './consultation-call-panel.component.scss',
 })
 export class ConsultationCallPanelComponent implements OnChanges, OnDestroy {
   readonly call = inject(ConsultationWebrtcCallService);
@@ -136,6 +35,11 @@ export class ConsultationCallPanelComponent implements OnChanges, OnDestroy {
   readonly busy = signal(false);
   readonly micOn = signal(true);
   readonly cameraOn = signal(true);
+  readonly callSeconds = signal(0);
+
+  private callTimer: ReturnType<typeof setInterval> | null = null;
+  private ringTimer: ReturnType<typeof setInterval> | null = null;
+  private audioContext: AudioContext | null = null;
 
   constructor() {
     effect(() => {
@@ -153,6 +57,22 @@ export class ConsultationCallPanelComponent implements OnChanges, OnDestroy {
       const el = this.remoteAudioRef?.nativeElement;
       if (el) el.srcObject = remote;
     });
+    effect(() => {
+      const state = this.call.state();
+      const incoming = this.call.incomingCall();
+
+      if (state === 'connected') {
+        this.startCallTimer();
+      } else {
+        this.stopCallTimer(state === 'ended' ? this.callSeconds() : 0);
+      }
+
+      if (state === 'ringing' && incoming) {
+        this.startRingtone();
+      } else {
+        this.stopRingtone();
+      }
+    });
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -162,6 +82,8 @@ export class ConsultationCallPanelComponent implements OnChanges, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.stopRingtone();
+    this.stopCallTimer(0);
     this.call.cleanup();
   }
 
@@ -188,6 +110,15 @@ export class ConsultationCallPanelComponent implements OnChanges, OnDestroy {
     return map[this.call.state()] ?? '';
   }
 
+  callDuration(): string {
+    const total = this.callSeconds();
+    const minutes = Math.floor(total / 60)
+      .toString()
+      .padStart(2, '0');
+    const seconds = (total % 60).toString().padStart(2, '0');
+    return `${minutes}:${seconds}`;
+  }
+
   async start(mode: CallMode): Promise<void> {
     if (!this.socket || !this.consultationId || !this.targetUserId) return;
     this.busy.set(true);
@@ -207,16 +138,19 @@ export class ConsultationCallPanelComponent implements OnChanges, OnDestroy {
   }
 
   accept(): void {
+    this.stopRingtone();
     void this.call.acceptIncoming(this.iceServers);
   }
 
   reject(): void {
+    this.stopRingtone();
     const targetUserId = this.call.pendingOffer()?.fromUserId ?? this.targetUserId;
     if (!this.consultationId || !targetUserId) return;
     this.call.rejectCall({ consultationId: this.consultationId, targetUserId });
   }
 
   hangUp(): void {
+    this.stopRingtone();
     if (!this.consultationId || !this.targetUserId) return;
     this.call.endCall({ consultationId: this.consultationId, targetUserId: this.targetUserId });
   }
@@ -231,5 +165,60 @@ export class ConsultationCallPanelComponent implements OnChanges, OnDestroy {
     const next = !this.cameraOn();
     this.cameraOn.set(next);
     this.call.setCameraEnabled(next);
+  }
+
+  private startCallTimer(): void {
+    if (this.callTimer) return;
+    this.callTimer = setInterval(() => {
+      this.callSeconds.update((seconds) => seconds + 1);
+    }, 1000);
+  }
+
+  private stopCallTimer(nextValue: number): void {
+    if (this.callTimer) {
+      clearInterval(this.callTimer);
+      this.callTimer = null;
+    }
+    this.callSeconds.set(nextValue);
+  }
+
+  private startRingtone(): void {
+    if (this.ringTimer || typeof window === 'undefined') return;
+    this.playRingTone();
+    this.ringTimer = setInterval(() => this.playRingTone(), 2200);
+  }
+
+  private stopRingtone(): void {
+    if (this.ringTimer) {
+      clearInterval(this.ringTimer);
+      this.ringTimer = null;
+    }
+  }
+
+  private playRingTone(): void {
+    try {
+      const AudioContextCtor =
+        window.AudioContext ||
+        (window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+      if (!AudioContextCtor) return;
+      this.audioContext ??= new AudioContextCtor();
+
+      const ctx = this.audioContext;
+      const oscillator = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      oscillator.type = 'sine';
+      oscillator.frequency.setValueAtTime(740, ctx.currentTime);
+      gain.gain.setValueAtTime(0.001, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.12, ctx.currentTime + 0.03);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.45);
+
+      oscillator.connect(gain);
+      gain.connect(ctx.destination);
+      oscillator.start();
+      oscillator.stop(ctx.currentTime + 0.5);
+    } catch {
+      // Some browsers block audio before user interaction; visual incoming UI still works.
+    }
   }
 }
