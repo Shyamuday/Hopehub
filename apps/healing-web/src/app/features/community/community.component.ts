@@ -1,7 +1,7 @@
 import { Component, Inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { RouterModule } from '@angular/router';
-import { NOTE_CONTENT } from '@hopehub/contracts';
+import { NOTE_CONTENT } from '../../core/constants/note-content.constants';
 import { Meetup } from '../../core/models/meetup.model';
 import { APP_CONSTANTS } from '../../core';
 
@@ -272,7 +272,7 @@ import { APP_CONSTANTS } from '../../core';
   styles: [],
 })
 export class CommunityComponent {
-  readonly notes = NOTE_CONTENT.healing;
+  readonly notes = NOTE_CONTENT;
   APP_CONSTANTS = APP_CONSTANTS;
 
   nextMeetup: Meetup = {

@@ -2,7 +2,7 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { NOTE_CONTENT } from '@hopehub/contracts';
+import { NOTE_CONTENT } from '../../core/constants/note-content.constants';
 import { ContactForm } from '../../core/models/contact.model';
 import {
   LeadService,
@@ -25,7 +25,7 @@ import { User } from '../../core/models/auth.model';
 })
 export class ContactComponent implements OnInit {
   APP_CONSTANTS = APP_CONSTANTS;
-  readonly notes = NOTE_CONTENT.healing;
+  readonly notes = NOTE_CONTENT;
 
   private formBuilder = inject(FormBuilder);
   private leadService = inject(LeadService);

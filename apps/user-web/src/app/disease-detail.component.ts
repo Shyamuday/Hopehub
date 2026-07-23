@@ -3,13 +3,13 @@ import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { buildDetailRows, DetailRowsComponent } from '@hopehub/platform-ui';
-import { NOTE_CONTENT } from '@hopehub/contracts';
 import { AppFooterComponent } from './app-footer.component';
 import { AppHeaderComponent } from './app-header.component';
 import { AuthFormOverlayComponent } from './auth/auth-form-overlay.component';
 import { ClinicApiService } from './clinic-api.service';
 import { ROUTE_PATHS } from './core/constants/app-routes.constants';
 import { CURRENCY_CODE } from './core/constants/billing.constants';
+import { NOTE_CONTENT } from './core/constants/note-content.constants';
 import { WhatsappLinkService } from './core/services/whatsapp-link.service';
 import {
   DISEASE_COMMON_IN_FIELDS,
@@ -39,8 +39,8 @@ export class DiseaseDetailComponent implements OnInit {
   private readonly whatsappSvc = inject(WhatsappLinkService);
 
   readonly whatsappLink = this.whatsappSvc.url;
-  readonly notes = NOTE_CONTENT.userWeb;
-  readonly defaultWarning = NOTE_CONTENT.userWeb.diseaseSafety.defaultText;
+  readonly notes = NOTE_CONTENT;
+  readonly defaultWarning = NOTE_CONTENT.diseaseSafety.defaultText;
   readonly currencyCode = CURRENCY_CODE;
   readonly dashboardPath = `/${ROUTE_PATHS.PATIENT_DASHBOARD}`;
 

@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { RouterModule } from '@angular/router';
-import { NOTE_CONTENT } from '@hopehub/contracts';
+import { NOTE_CONTENT } from '../../../../core/constants/note-content.constants';
 
 interface HowItWorksStep {
   title: string;
@@ -14,7 +14,7 @@ interface HowItWorksStep {
   templateUrl: './how-it-works.component.html',
 })
 export class HowItWorksComponent {
-  readonly notes = NOTE_CONTENT.healing;
+  readonly notes = NOTE_CONTENT;
   readonly steps: HowItWorksStep[] = [
     {
       title: 'Submit request',

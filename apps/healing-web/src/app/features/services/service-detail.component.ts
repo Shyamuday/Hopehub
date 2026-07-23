@@ -1,7 +1,7 @@
 import { Component, OnInit, signal, inject } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { NOTE_CONTENT } from '@hopehub/contracts';
+import { NOTE_CONTENT } from '../../core/constants/note-content.constants';
 import { Service } from '../../core/models';
 import { ServiceInquiryComponent } from '../../shared/components';
 import { SEOService } from '../../core/services';
@@ -15,7 +15,7 @@ import { getServiceById } from '../../core/data/services-data';
   styleUrl: './service-detail.component.scss',
 })
 export class ServiceDetailComponent implements OnInit {
-  readonly notes = NOTE_CONTENT.healing;
+  readonly notes = NOTE_CONTENT;
   service = signal<Service | null>(null);
   loading = signal(true);
 
@@ -163,7 +163,7 @@ export class ServiceDetailComponent implements OnInit {
       },
       {
         question: 'What if I need urgent help?',
-        answer: NOTE_CONTENT.healing.serviceSafety.text,
+        answer: NOTE_CONTENT.serviceSafety.text,
       },
     ];
   }
