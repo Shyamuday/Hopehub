@@ -204,6 +204,163 @@ export const HOPE_HUB_SERVICES: Service[] = [
     featured: false,
     imageUrl: '/assets/images/grief-counseling.jpg',
   },
+  {
+    id: 'depression-mood-support',
+    name: 'Depression & Low Mood Support',
+    description:
+      'Support for sadness, low motivation, emotional heaviness, hopelessness, and daily functioning.',
+    detailedDescription:
+      'A gentle session for people feeling emotionally low, disconnected, tired, or unable to enjoy normal activities. We focus on understanding the pattern and taking small recovery steps.',
+    benefits: [
+      'Name low mood patterns',
+      'Create a small activation plan',
+      'Reduce isolation',
+      'Build steadier daily structure',
+    ],
+    approach:
+      'We use supportive counselling, behavioral activation, thought reframing, and routine planning.',
+    pricing: { individual: HOPE_HUB_SESSION_PRICE, currency: HOPE_HUB_SESSION_CURRENCY },
+    category: ServiceCategory.MENTAL_HEALTH,
+    featured: false,
+    imageUrl: '/assets/images/depression-support.jpg',
+  },
+  {
+    id: 'anger-emotional-control',
+    name: 'Anger & Emotional Control',
+    description:
+      'Help with anger bursts, irritation, emotional reactions, regret after conflict, and self-control.',
+    detailedDescription:
+      'A practical support session for people who feel their reactions become too strong too quickly. We help identify triggers and build calmer response patterns.',
+    benefits: [
+      'Understand anger triggers',
+      'Pause before reacting',
+      'Repair communication',
+      'Build emotional control tools',
+    ],
+    approach: 'We use trigger mapping, grounding, communication scripts, and response planning.',
+    pricing: { individual: HOPE_HUB_SESSION_PRICE, currency: HOPE_HUB_SESSION_CURRENCY },
+    category: ServiceCategory.MENTAL_HEALTH,
+    featured: false,
+    imageUrl: '/assets/images/stress-management.jpg',
+  },
+  {
+    id: 'social-anxiety-confidence',
+    name: 'Social Anxiety & Confidence',
+    description:
+      'Support for fear of judgment, hesitation in groups, awkwardness, and social avoidance.',
+    detailedDescription:
+      'A session for people who feel anxious while speaking, meeting people, attending events, or being seen. We focus on reducing fear and building tiny confidence steps.',
+    benefits: [
+      'Understand social fear loops',
+      'Reduce avoidance',
+      'Practice confidence steps',
+      'Prepare for real situations',
+    ],
+    approach:
+      'We use CBT-informed reframing, exposure planning, grounding, and social confidence practice.',
+    pricing: { individual: HOPE_HUB_SESSION_PRICE, currency: HOPE_HUB_SESSION_CURRENCY },
+    category: ServiceCategory.MENTAL_HEALTH,
+    featured: false,
+    imageUrl: '/assets/images/anxiety-therapy.jpg',
+  },
+  {
+    id: 'exam-performance-stress',
+    name: 'Exam & Performance Stress',
+    description:
+      'Support for exam pressure, performance anxiety, procrastination, comparison, and fear of failure.',
+    detailedDescription:
+      'A focused session for students and professionals facing pressure before exams, interviews, presentations, or performance moments.',
+    benefits: [
+      'Reduce pressure and panic',
+      'Create a study or prep plan',
+      'Handle fear of failure',
+      'Improve focus and routine',
+    ],
+    approach: 'We use pressure mapping, planning, grounding, and simple performance routines.',
+    pricing: { individual: HOPE_HUB_SESSION_PRICE, currency: HOPE_HUB_SESSION_CURRENCY },
+    category: ServiceCategory.CAREER,
+    featured: false,
+    imageUrl: '/assets/images/career-counseling.jpg',
+  },
+  {
+    id: 'addiction-habit-support',
+    name: 'Addiction & Habit Support',
+    description:
+      'Support for difficult habits, urges, relapse worry, phone overuse, substances, or compulsive patterns.',
+    detailedDescription:
+      'A non-judgmental support session for people wanting to understand an addictive or compulsive habit and create safer next steps.',
+    benefits: [
+      'Understand urge cycles',
+      'Identify triggers',
+      'Create a safer response plan',
+      'Build accountability steps',
+    ],
+    approach:
+      'We use motivational interviewing, trigger planning, habit replacement, and relapse-prevention basics.',
+    pricing: { individual: HOPE_HUB_SESSION_PRICE, currency: HOPE_HUB_SESSION_CURRENCY },
+    category: ServiceCategory.ADDICTION,
+    featured: false,
+    imageUrl: '/assets/images/addiction-support.jpg',
+  },
+  {
+    id: 'trauma-emotional-shock',
+    name: 'Trauma & Emotional Shock Support',
+    description:
+      'Gentle support after emotionally shocking events, betrayal, fear, or experiences that still feel stuck.',
+    detailedDescription:
+      'A careful first support session for people feeling shaken, unsafe, numb, or repeatedly triggered after a difficult experience. We keep the pace gentle and grounding-focused.',
+    benefits: [
+      'Stabilize immediate distress',
+      'Learn grounding tools',
+      'Understand trigger responses',
+      'Plan next support steps',
+    ],
+    approach: 'We use trauma-informed listening, grounding, emotional pacing, and safety planning.',
+    pricing: { individual: HOPE_HUB_SESSION_PRICE, currency: HOPE_HUB_SESSION_CURRENCY },
+    category: ServiceCategory.MENTAL_HEALTH,
+    featured: false,
+    imageUrl: '/assets/images/grief-counseling.jpg',
+  },
+  {
+    id: 'parenting-child-behavior',
+    name: 'Parenting & Child Behavior Support',
+    description:
+      'Guidance for parent stress, child behavior concerns, communication, routines, and emotional regulation.',
+    detailedDescription:
+      'A support session for parents who feel overwhelmed or unsure how to respond to behavior, study stress, screen time, anger, or emotional needs at home.',
+    benefits: [
+      'Understand behavior patterns',
+      'Create calmer routines',
+      'Improve parent-child communication',
+      'Reduce parent burnout',
+    ],
+    approach:
+      'We use parent coaching, routine planning, communication tools, and emotional regulation strategies.',
+    pricing: { individual: HOPE_HUB_SESSION_PRICE, currency: HOPE_HUB_SESSION_CURRENCY },
+    category: ServiceCategory.FAMILY,
+    featured: false,
+    imageUrl: '/assets/images/family-therapy.jpg',
+  },
+  {
+    id: 'couples-pre-marriage-guidance',
+    name: 'Couples & Pre-Marriage Guidance',
+    description:
+      'Support for couples dealing with expectations, communication, trust, family pressure, or marriage decisions.',
+    detailedDescription:
+      'A guided conversation for couples or individuals preparing for important relationship decisions, marriage expectations, or recurring communication gaps.',
+    benefits: [
+      'Clarify expectations',
+      'Improve communication',
+      'Discuss family pressure',
+      'Plan healthier decisions',
+    ],
+    approach:
+      'We use structured conversation, expectation mapping, conflict prevention, and boundary planning.',
+    pricing: { individual: HOPE_HUB_SESSION_PRICE, currency: HOPE_HUB_SESSION_CURRENCY },
+    category: ServiceCategory.RELATIONSHIP,
+    featured: false,
+    imageUrl: '/assets/images/relationship-counseling.jpg',
+  },
 ];
 
 export type FeaturedService = {
