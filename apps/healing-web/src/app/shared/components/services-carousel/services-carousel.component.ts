@@ -3,6 +3,7 @@ import { RouterModule, Router } from '@angular/router';
 import { interval } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { getFeaturedServices } from '../../../core/data/services-data';
+import { APP_CONSTANTS } from '../../../core/constants/app.constants';
 
 export interface CarouselService {
   id: string;
@@ -33,7 +34,7 @@ export class ServicesCarouselComponent implements OnInit {
 
   currentSlide = signal(0);
   isAutoPlaying = signal(true);
-  private readonly autoSlideInterval = 5000;
+  private readonly autoSlideInterval = 9000;
 
   featuredServices = signal<CarouselService[]>(getFeaturedServices());
 
@@ -72,6 +73,26 @@ export class ServicesCarouselComponent implements OnInit {
 
   resumeAutoPlay() {
     this.isAutoPlaying.set(true);
+  }
+
+  formatPrice(price: number, currency: string): string {
+    if (currency === 'INR') {
+      return new Intl.NumberFormat('en-IN', {
+        style: 'currency',
+        currency: 'INR',
+        maximumFractionDigits: 0,
+      }).format(price);
+    }
+
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency,
+      maximumFractionDigits: 0,
+    }).format(price);
+  }
+
+  whatsappHref(_service: CarouselService): string {
+    return APP_CONSTANTS.WHATSAPP.GROUP_URL;
   }
 
   bookService(service: CarouselService) {

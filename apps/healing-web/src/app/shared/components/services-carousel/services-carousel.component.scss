@@ -1,64 +1,19 @@
-/* Smooth transitions */
-.transition-transform {
-    transition-property: transform;
-    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-    transition-duration: 700ms;
+.service-card {
+    min-height: 320px;
 }
 
-/* Animated blob background */
-@keyframes blob {
-    0% {
-        transform: translate(0px, 0px) scale(1);
-    }
-
-    33% {
-        transform: translate(30px, -50px) scale(1.1);
-    }
-
-    66% {
-        transform: translate(-20px, 20px) scale(0.9);
-    }
-
-    100% {
-        transform: translate(0px, 0px) scale(1);
-    }
+.service-card:hover {
+    border-color: #10b981;
+    box-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
 }
 
-.animate-blob {
-    animation: blob 7s infinite;
-}
-
-.animation-delay-2000 {
-    animation-delay: 2s;
-}
-
-.animation-delay-4000 {
-    animation-delay: 4s;
-}
-
-/* Card hover effects */
-.transform {
-    transition: transform 0.3s ease-in-out;
-}
-
-.hover\:scale-\[1\.02\]:hover {
-    transform: scale(1.02);
+.service-card__bar {
+    height: 4px;
+    background: linear-gradient(90deg, #059669 0%, #0284c7 100%);
 }
 
 /* Mobile responsiveness */
 @media (max-width: 768px) {
-    .text-4xl {
-        font-size: 2rem;
-    }
-
-    .text-5xl {
-        font-size: 2.5rem;
-    }
-
-    .text-3xl {
-        font-size: 1.75rem;
-    }
-
     .px-4 {
         padding-left: 0.5rem;
         padding-right: 0.5rem;
@@ -67,55 +22,10 @@
     .p-8 {
         padding: 1.5rem;
     }
-
-    .h-48 {
-        height: 10rem;
-    }
 }
 
 @media (max-width: 640px) {
-    .text-4xl {
-        font-size: 1.75rem;
-    }
-
-    .text-5xl {
-        font-size: 2rem;
-    }
-
-    .text-3xl {
-        font-size: 1.5rem;
-    }
-
     .p-8 {
         padding: 1rem;
     }
-
-    .h-48 {
-        height: 8rem;
-    }
-
-    .grid-cols-2 {
-        grid-template-columns: 1fr;
-        gap: 0.75rem;
-    }
-}
-
-/* Smooth gradient transitions */
-.bg-gradient-to-r {
-    background-image: linear-gradient(to right, var(--tw-gradient-stops));
-}
-
-.bg-gradient-to-br {
-    background-image: linear-gradient(to bottom right, var(--tw-gradient-stops));
-}
-
-/* Enhanced shadow effects */
-.shadow-2xl {
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-}
-
-/* Backdrop blur support */
-.backdrop-blur-sm {
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
 }
