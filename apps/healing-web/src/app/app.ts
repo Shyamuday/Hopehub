@@ -1,6 +1,7 @@
-import { Component, signal, OnInit, PLATFORM_ID, Inject, inject } from '@angular/core';
+import { Component, signal, OnInit, PLATFORM_ID, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { isPlatformBrowser } from '@angular/common';
+import { filter, take } from 'rxjs';
 import { HeaderComponent, FooterComponent } from './layout';
 import {
   BreadcrumbComponent,
@@ -11,6 +12,8 @@ import {
   ScrollToTopComponent,
 } from './shared/components';
 import { NavigationService, SEOService } from './core/services';
+import { AuthModalService } from './core/services/auth-modal.service';
+import { AuthService } from './core/services/auth.service';
 import { FontLoader } from './core/utils/font-loader.util';
 
 @Component({
@@ -39,6 +42,8 @@ export class App implements OnInit {
 
   private seoService = inject(SEOService);
   private platformId = inject(PLATFORM_ID);
+  private authService = inject(AuthService);
+  private authModalService = inject(AuthModalService);
 
   constructor(private navigationService: NavigationService) {}
 
@@ -51,6 +56,27 @@ export class App implements OnInit {
 
       // Add organization structured data for SEO
       this.seoService.addOrganizationStructuredData();
+
+      this.openAuthModalWhenSessionMissing();
     }
+  }
+
+  private openAuthModalWhenSessionMissing(): void {
+    this.authService.authState$
+      .pipe(
+        filter((state) => !state.isLoading),
+        take(1),
+      )
+      .subscribe((state) => {
+        if (state.isAuthenticated || this.authService.getToken()) {
+          return;
+        }
+
+        window.setTimeout(() => {
+          if (!this.authService.getToken() && !this.authModalService.getCurrentModal()) {
+            this.authModalService.openLogin();
+          }
+        }, 20000);
+      });
   }
 }

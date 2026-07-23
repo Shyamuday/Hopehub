@@ -13,6 +13,14 @@
     animation: fade-in 0.3s ease-out;
 }
 
+.auth-field-error {
+    min-height: 1.25rem;
+    margin-top: 0.25rem;
+    color: #dc2626;
+    font-size: 0.8rem;
+    line-height: 1.25rem;
+}
+
 // Form input focus states
 input:focus {
     outline: none;
