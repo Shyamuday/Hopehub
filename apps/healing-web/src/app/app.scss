@@ -12,3 +12,20 @@
   min-height: 100vh;
   min-height: -webkit-fill-available;
 }
+
+.app-main {
+  display: block;
+  min-height: calc(100svh - 14rem);
+}
+
+@supports not (height: 100svh) {
+  .app-main {
+    min-height: calc(100vh - 14rem);
+  }
+}
+
+@media (max-width: 640px) {
+  .app-main {
+    min-height: calc(100svh - 12rem);
+  }
+}

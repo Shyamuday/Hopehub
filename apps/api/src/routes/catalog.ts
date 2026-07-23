@@ -377,10 +377,65 @@ router.get(
   '/testimonials',
   asyncRoute(async (_req, res) => {
     const testimonials = await prisma.testimonial.findMany({
-      where: { isPublished: true },
+      where: { isPublished: true, consentToPublish: true },
+      select: {
+        id: true,
+        patientName: true,
+        location: true,
+        condition: true,
+        duration: true,
+        quote: true,
+        stars: true,
+        isAnonymous: true,
+        createdAt: true
+      },
       orderBy: [{ sortOrder: { sort: 'asc', nulls: 'last' } }, { createdAt: 'desc' }]
     });
     res.json({ testimonials });
+  })
+);
+
+const publicTestimonialSchema = z.object({
+  displayName: z.string().trim().max(100).optional().or(z.literal('')),
+  email: z.string().trim().email().max(254).optional().or(z.literal('')),
+  location: z.string().trim().max(80).optional().or(z.literal('')),
+  supportArea: z.string().trim().max(120).optional().or(z.literal('')),
+  quote: z.string().trim().min(20).max(1200),
+  stars: z.number().int().min(1).max(5).default(5),
+  isAnonymous: z.boolean().default(true),
+  consentToPublish: z.boolean().refine((value) => value, 'Consent is required.'),
+  entryPage: z.string().trim().max(500).optional().or(z.literal(''))
+});
+
+/** Public endpoint — anonymous-friendly testimonial submission. Admin approval required before publishing. */
+router.post(
+  '/testimonials',
+  asyncRoute(async (req, res) => {
+    const body = publicTestimonialSchema.parse(req.body);
+    const testimonial = await prisma.testimonial.create({
+      data: {
+        patientName:
+          body.isAnonymous || !body.displayName?.trim()
+            ? 'Anonymous Hope Hub member'
+            : body.displayName.trim(),
+        location: body.location || null,
+        condition: body.supportArea || null,
+        quote: body.quote,
+        stars: body.stars,
+        isAnonymous: body.isAnonymous,
+        consentToPublish: body.consentToPublish,
+        submitterEmail: body.email || null,
+        source: 'public-feedback',
+        entryPage: body.entryPage || req.get('referer') || null,
+        isPublished: false
+      }
+    });
+
+    res.status(201).json({
+      testimonialId: testimonial.id,
+      success: true,
+      message: 'Feedback submitted for review.'
+    });
   })
 );
 

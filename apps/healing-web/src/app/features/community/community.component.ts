@@ -1,20 +1,22 @@
 import { Component, Inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
+import { RouterModule } from '@angular/router';
+import { NOTE_CONTENT } from '../../core/constants/note-content.constants';
 import { Meetup } from '../../core/models/meetup.model';
 import { APP_CONSTANTS } from '../../core';
 
 @Component({
   selector: 'app-community',
   standalone: true,
-  imports: [],
+  imports: [RouterModule],
   template: `
     <div class="container mx-auto px-4 py-8">
       <!-- Hero Section -->
       <div class="text-center mb-12">
         <h1 class="text-4xl font-bold text-gray-900 mb-4">Join Our Healing Community</h1>
         <p class="text-lg text-gray-600 max-w-3xl mx-auto">
-          Connect with others on their healing journey, share experiences, and find support in our
-          welcoming community.
+          Join low-pressure support spaces for mental wellness, emotional healing, and practical
+          coping. Share only what feels safe, and choose Telegram when identity privacy matters.
         </p>
       </div>
 
@@ -24,45 +26,90 @@ import { APP_CONSTANTS } from '../../core';
           Why Join Our Community?
         </h2>
         <div class="grid md:grid-cols-3 gap-8">
-          <div class="text-center p-6 bg-blue-50 rounded-lg">
-            <div class="text-blue-600 text-4xl mb-4">🤝</div>
-            <h3 class="text-xl font-semibold mb-2">Peer Support</h3>
+          <div class="hope-motion-card text-center p-6 bg-blue-50 rounded-lg">
+            <div class="hope-motion-icon text-blue-600 text-4xl mb-4">ID</div>
+            <h3 class="text-xl font-semibold mb-2">Low-Identity Support</h3>
             <p class="text-gray-600">
-              Connect with others who understand your journey and share similar experiences.
+              Use a display name or username and talk only as much as you feel comfortable sharing.
             </p>
           </div>
-          <div class="text-center p-6 bg-green-50 rounded-lg">
-            <div class="text-green-600 text-4xl mb-4">📚</div>
+          <div class="hope-motion-card text-center p-6 bg-green-50 rounded-lg">
+            <div class="hope-motion-icon text-green-600 text-4xl mb-4">01</div>
             <h3 class="text-xl font-semibold mb-2">Resources & Tips</h3>
             <p class="text-gray-600">
-              Access helpful resources, coping strategies, and wellness tips shared by our
-              community.
+              Get coping prompts, self-care ideas, and service guidance without pressure to book.
             </p>
           </div>
-          <div class="text-center p-6 bg-purple-50 rounded-lg">
-            <div class="text-purple-600 text-4xl mb-4">🌱</div>
+          <div class="hope-motion-card text-center p-6 bg-purple-50 rounded-lg">
+            <div class="hope-motion-icon text-purple-600 text-4xl mb-4">30</div>
             <h3 class="text-xl font-semibold mb-2">Growth Together</h3>
             <p class="text-gray-600">
-              Participate in group activities and workshops designed to support your healing
-              process.
+              Move from chat to a 30-minute paid support session when you want focused help.
             </p>
           </div>
+        </div>
+      </div>
+
+      <div class="mb-12 rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+        <div class="grid gap-6 md:grid-cols-3">
+          <div>
+            <h2 class="text-2xl font-semibold text-gray-900">Community Safety Rules</h2>
+            <div class="group relative mt-3 inline-flex">
+              <button
+                type="button"
+                class="rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-bold text-amber-900"
+              >
+                {{ notes.communitySafety.label }}
+              </button>
+              <div
+                class="invisible absolute left-0 top-full z-20 mt-2 w-80 max-w-[calc(100vw-2rem)] rounded-lg border border-amber-200 bg-white p-3 text-sm leading-6 text-amber-900 opacity-0 shadow-xl transition group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100"
+              >
+                {{ notes.communitySafety.text }}
+              </div>
+            </div>
+          </div>
+          <ul class="space-y-3 text-sm leading-6 text-gray-700 md:col-span-2">
+            <li class="rounded-md bg-slate-50 p-3">
+              Do not share full address, private documents, payment screenshots, or passwords in any
+              group.
+            </li>
+            <li class="rounded-md bg-slate-50 p-3">
+              Telegram is preferred for low-identity discussion; your privacy still depends on your
+              Telegram settings.
+            </li>
+            <li class="rounded-md bg-slate-50 p-3">
+              For paid help, use the request form so the team can confirm payment, concern type, and
+              contact preference properly.
+            </li>
+          </ul>
         </div>
       </div>
 
       <!-- Community Channels Section -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
         <!-- Telegram Card -->
-        <div class="bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg p-8">
+        <div
+          class="hope-motion-card rounded-lg border border-blue-100 bg-white p-8 text-slate-800 shadow-sm"
+        >
           <div class="text-center">
-            <h2 class="text-2xl font-bold mb-3">Join Our Telegram</h2>
-            <p class="mb-6 opacity-90">
-              Stay connected 24/7. Share thoughts, ask questions, and receive support from our
-              community.
-            </p>
+            <h2 class="text-2xl font-bold mb-3 text-slate-950">Anonymous-Friendly Telegram</h2>
+            <ul class="mb-6 space-y-3 text-left text-sm leading-6 text-slate-700">
+              <li class="rounded-lg bg-blue-50 p-3">
+                Daily 9 PM voice chat with Hope Hub experts.
+              </li>
+              <li class="rounded-lg bg-blue-50 p-3">
+                24/7 chat support for low-pressure conversation and guidance.
+              </li>
+              <li class="rounded-lg bg-blue-50 p-3">
+                Join with a username or display name if identity privacy matters.
+              </li>
+              <li class="rounded-lg bg-blue-50 p-3">
+                Review Telegram privacy settings and avoid sharing personal details publicly.
+              </li>
+            </ul>
             <button
               (click)="joinTelegramGroup()"
-              class="bg-white text-blue-600 font-semibold py-3 px-8 rounded-lg hover:bg-gray-100 transition-colors duration-200 inline-flex items-center"
+              class="bg-blue-600 text-white font-semibold py-3 px-8 rounded-lg hover:bg-blue-700 transition-colors duration-200 inline-flex items-center"
             >
               <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
                 <path
@@ -75,12 +122,25 @@ import { APP_CONSTANTS } from '../../core';
         </div>
 
         <!-- WhatsApp Card -->
-        <div class="bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg p-8">
+        <div
+          class="hope-motion-card rounded-lg border border-green-100 bg-white p-8 text-slate-800 shadow-sm"
+        >
           <div class="text-center">
-            <h2 class="text-2xl font-bold mb-3">Join Our WhatsApp Group</h2>
-            <p class="mb-4 opacity-90">
-              Connect instantly on WhatsApp. Scan the QR code or click the button to join.
-            </p>
+            <h2 class="text-2xl font-bold mb-3 text-slate-950">Join Our WhatsApp Group</h2>
+            <ul class="mb-4 space-y-3 text-left text-sm leading-6 text-slate-700">
+              <li class="rounded-lg bg-green-50 p-3">
+                Good for quick updates, reminders, and follow-up messages.
+              </li>
+              <li class="rounded-lg bg-green-50 p-3">
+                Use it when you are comfortable with WhatsApp group identity visibility.
+              </li>
+              <li class="rounded-lg bg-green-50 p-3">
+                Your phone number may be visible according to WhatsApp group settings.
+              </li>
+              <li class="rounded-lg bg-green-50 p-3">
+                For sensitive concerns, Telegram is better for low-identity discussion.
+              </li>
+            </ul>
             <div class="flex justify-center mb-4">
               <img
                 [src]="APP_CONSTANTS.WHATSAPP.QR_CODE"
@@ -92,7 +152,7 @@ import { APP_CONSTANTS } from '../../core';
               [href]="APP_CONSTANTS.WHATSAPP.GROUP_URL"
               target="_blank"
               rel="noopener noreferrer"
-              class="bg-white text-green-600 font-semibold py-3 px-8 rounded-lg hover:bg-gray-100 transition-colors duration-200 inline-flex items-center"
+              class="bg-green-600 text-white font-semibold py-3 px-8 rounded-lg hover:bg-green-700 transition-colors duration-200 inline-flex items-center"
             >
               <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
                 <path
@@ -110,12 +170,12 @@ import { APP_CONSTANTS } from '../../core';
         <div class="text-center mb-8">
           <h2 class="text-3xl font-bold text-gray-900 mb-4">Monthly Healing Meetups</h2>
           <p class="text-lg text-gray-600">
-            Join us every first Sunday of the month for our community healing meetup.
+            A virtual-first support circle planned around India time.
           </p>
         </div>
 
         <div class="max-w-2xl mx-auto">
-          <div class="bg-white rounded-lg shadow-md p-6">
+          <div class="hope-motion-card bg-white rounded-lg shadow-md p-6">
             <div class="flex items-center justify-between mb-4">
               <h3 class="text-xl font-semibold text-gray-900">{{ nextMeetup.title }}</h3>
               <span class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
@@ -181,33 +241,30 @@ import { APP_CONSTANTS } from '../../core';
                     d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
                   ></path>
                 </svg>
-                <span class="text-gray-700">
-                  {{ nextMeetup.isVirtual ? 'Virtual Meeting' : nextMeetup.location }}
-                </span>
+                <span class="text-gray-700">Virtual Meeting</span>
               </div>
             }
 
             <div class="flex items-center justify-between">
               @if (nextMeetup.maxAttendees) {
                 <div class="text-sm text-gray-500">
-                  Limited to {{ nextMeetup.maxAttendees }} attendees
+                  Limited to {{ nextMeetup.maxAttendees }} seats
                 </div>
               }
               <button
                 (click)="handleMeetupAction()"
                 class="bg-blue-600 text-white font-semibold py-2 px-6 rounded-lg hover:bg-blue-700 transition-colors duration-200"
               >
-                {{ nextMeetup.isVirtual ? 'Get Meeting Link' : 'RSVP Now' }}
+                Ask in Telegram
               </button>
             </div>
           </div>
         </div>
 
         <div class="text-center mt-8">
-          <p class="text-gray-600">
-            Can't make it this month? Don't worry! We host these meetups every first Sunday of the
-            month.
-          </p>
+          <a routerLink="/contact" class="text-blue-700 font-semibold hover:text-blue-800">
+            Need private support instead? Send a request
+          </a>
         </div>
       </div>
     </div>
@@ -215,18 +272,18 @@ import { APP_CONSTANTS } from '../../core';
   styles: [],
 })
 export class CommunityComponent {
+  readonly notes = NOTE_CONTENT;
   APP_CONSTANTS = APP_CONSTANTS;
 
   nextMeetup: Meetup = {
     id: 'monthly-meetup-' + new Date().getFullYear() + '-' + (new Date().getMonth() + 1),
     title: 'Monthly Healing Circle',
     description:
-      'Join us for a supportive group session where we share experiences, practice mindfulness, and build connections with fellow community members.',
+      'Join a guided virtual support circle for sharing, grounding practice, and gentle next-step planning.',
     date: this.getNextFirstSunday(),
-    time: '2:00 PM - 4:00 PM EST',
-    location: 'Community Center - 123 Wellness Ave, Healing City',
-    virtualLink: 'https://meet.healinghub.com/monthly-meetup',
-    isVirtual: false,
+    time: '2:00 PM - 4:00 PM IST',
+    location: 'Virtual Meeting',
+    isVirtual: true,
     maxAttendees: 25,
   };
 
@@ -264,7 +321,7 @@ export class CommunityComponent {
   }
 
   formatDate(date: Date): string {
-    return date.toLocaleDateString('en-US', {
+    return date.toLocaleDateString('en-IN', {
       weekday: 'long',
       year: 'numeric',
       month: 'long',
@@ -282,14 +339,6 @@ export class CommunityComponent {
   handleMeetupAction(): void {
     if (!this.isBrowser) return;
 
-    if (this.nextMeetup.isVirtual && this.nextMeetup.virtualLink) {
-      window.open(this.nextMeetup.virtualLink, '_blank', 'noopener,noreferrer');
-    } else {
-      // For in-person meetups, could redirect to RSVP form or contact page
-      // For now, we'll show an alert with contact information
-      alert(
-        'To RSVP for this meetup, please contact us through our contact form or join our Telegram group for more details.',
-      );
-    }
+    window.open(APP_CONSTANTS.TELEGRAM.GROUP_URL, '_blank', 'noopener,noreferrer');
   }
 }

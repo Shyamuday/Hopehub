@@ -1,18 +1,40 @@
 @if (!dismissed()) {
-  <div class="bg-primary-600 text-white py-2 sm:py-3 px-4 relative">
-    <div class="container mx-auto flex items-center justify-between">
-      <div class="flex-1 text-center pr-4">
-        <p class="text-xs sm:text-sm md:text-base">{{ message() }}</p>
+  @if (variant() === 'marquee') {
+    <div class="announcement announcement--marquee" [class.announcement--blue]="tone() === 'blue'" [class.announcement--emerald]="tone() === 'emerald'" role="region" aria-label="Hope Hub announcement">
+      <div class="announcement__track">
+        @for (item of bannerItems(); track $index) {
+          <span>{{ item }}</span>
+        }
       </div>
-      <button 
-        (click)="dismiss()"
-        class="flex-shrink-0 text-white hover:text-gray-200 transition-colors duration-200 p-1 min-w-[44px] min-h-[44px] sm:min-w-[32px] sm:min-h-[32px] flex items-center justify-center"
-        aria-label="Dismiss announcement">
-        <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-        </svg>
-      </button>
     </div>
-  </div>
+  } @else {
+    <div class="announcement announcement--highlight" [class.announcement--blue]="tone() === 'blue'" [class.announcement--emerald]="tone() === 'emerald'">
+      <div class="announcement__inner">
+        <div class="announcement__icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="M12 3v18M5 8h14M7 16h10" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+          </svg>
+        </div>
+        <div class="announcement__copy">
+          <p>{{ message() }}</p>
+          @if (actionLabel() && actionHref()) {
+            <a
+              [href]="actionHref()"
+              [attr.target]="isExternalAction() ? '_blank' : null"
+              [attr.rel]="isExternalAction() ? 'noopener noreferrer' : null"
+              >{{ actionLabel() }}</a
+            >
+          }
+        </div>
+        @if (dismissible()) {
+          <button (click)="dismiss()" class="announcement__close" aria-label="Dismiss announcement">
+            <svg viewBox="0 0 24 24" fill="none">
+              <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+          </button>
+        }
+      </div>
+    </div>
+  }
 }
 

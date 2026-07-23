@@ -9,6 +9,7 @@ import { AuthFormOverlayComponent } from './auth/auth-form-overlay.component';
 import { ClinicApiService } from './clinic-api.service';
 import { ROUTE_PATHS } from './core/constants/app-routes.constants';
 import { CURRENCY_CODE } from './core/constants/billing.constants';
+import { NOTE_CONTENT } from './core/constants/note-content.constants';
 import { WhatsappLinkService } from './core/services/whatsapp-link.service';
 import {
   DISEASE_COMMON_IN_FIELDS,
@@ -38,8 +39,8 @@ export class DiseaseDetailComponent implements OnInit {
   private readonly whatsappSvc = inject(WhatsappLinkService);
 
   readonly whatsappLink = this.whatsappSvc.url;
-  readonly defaultWarning =
-    'This service is not for emergency care. For severe, sudden, or rapidly worsening symptoms, seek immediate offline medical help.';
+  readonly notes = NOTE_CONTENT;
+  readonly defaultWarning = NOTE_CONTENT.diseaseSafety.defaultText;
   readonly currencyCode = CURRENCY_CODE;
   readonly dashboardPath = `/${ROUTE_PATHS.PATIENT_DASHBOARD}`;
 
@@ -99,7 +100,7 @@ export class DiseaseDetailComponent implements OnInit {
       sessionStorage.setItem('pendingDiseaseId', diseaseId);
     }
     this.overlayService.open(AuthFormOverlayComponent, {
-      width: '480px',
+      width: '440px',
       panelClass: 'app-overlay-panel',
     });
   }

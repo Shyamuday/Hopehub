@@ -1,0 +1,87 @@
+<section class="counsellor-apps">
+  <div class="page-head">
+    <div>
+      <h1>Counsellor applications</h1>
+      <p>Review Hope Hub counsellor applications and update onboarding status.</p>
+    </div>
+  </div>
+
+  <div class="summary">
+    <button (click)="setFilter('ALL')" [class.active]="statusFilter() === 'ALL'">All</button>
+    <button (click)="setFilter('NEW')" [class.active]="statusFilter() === 'NEW'">New {{ summary().NEW }}</button>
+    <button (click)="setFilter('REVIEWING')" [class.active]="statusFilter() === 'REVIEWING'">Reviewing {{ summary().REVIEWING }}</button>
+    <button (click)="setFilter('SHORTLISTED')" [class.active]="statusFilter() === 'SHORTLISTED'">Shortlisted {{ summary().SHORTLISTED }}</button>
+    <button (click)="setFilter('ONBOARDED')" [class.active]="statusFilter() === 'ONBOARDED'">Onboarded {{ summary().ONBOARDED }}</button>
+    <button (click)="setFilter('REJECTED')" [class.active]="statusFilter() === 'REJECTED'">Rejected {{ summary().REJECTED }}</button>
+  </div>
+
+  @if (error()) {
+    <div class="error">{{ error() }}</div>
+  }
+
+  @if (loading()) {
+    <div class="panel muted">Loading applications...</div>
+  } @else if (!applications().length) {
+    <div class="panel muted">No counsellor applications found.</div>
+  } @else {
+    <div class="list">
+      @for (application of applications(); track application.id) {
+        <article class="panel application-card">
+          <div class="card-main">
+            <div>
+              <div class="title-row">
+                <h2>{{ application.fullName }}</h2>
+                <span [class]="statusClass(application.status)">{{ application.status }}</span>
+              </div>
+              <p class="muted">
+                {{ application.specialization }} • {{ application.experienceYears }} • {{ application.city }}
+              </p>
+              <p class="muted">{{ application.email }} • {{ application.phone }}</p>
+            </div>
+            <button class="link-btn" (click)="toggle(application.id)">
+              {{ expandedId() === application.id ? 'Hide details' : 'View details' }}
+            </button>
+          </div>
+
+          @if (expandedId() === application.id) {
+            <div class="detail">
+              <div class="grid">
+                <p><strong>Qualification:</strong> {{ application.qualification }}</p>
+                <p><strong>Languages:</strong> {{ application.languages }}</p>
+                <p><strong>Availability:</strong> {{ application.availability }}</p>
+                <p><strong>Preferred contact:</strong> {{ application.preferredChannel }}</p>
+                <p><strong>Registration:</strong> {{ application.registrationDetails || 'Not provided' }}</p>
+                <p><strong>Applied:</strong> {{ application.createdAt | date: 'medium' }}</p>
+              </div>
+
+              <p class="why"><strong>Why join:</strong> {{ application.whyJoin }}</p>
+
+              <div class="links">
+                <a [href]="application.resumeLink" target="_blank" rel="noopener">Open resume/profile</a>
+                @if (application.portfolioLink) {
+                  <a [href]="application.portfolioLink" target="_blank" rel="noopener">Open portfolio</a>
+                }
+              </div>
+
+              <label>
+                Admin note
+                <textarea
+                  rows="3"
+                  [ngModel]="notes()[application.id] || ''"
+                  (ngModelChange)="setNote(application.id, $event)"
+                ></textarea>
+              </label>
+
+              <div class="actions">
+                <button (click)="updateStatus(application, 'REVIEWING')" [disabled]="savingId() === application.id">Reviewing</button>
+                <button (click)="updateStatus(application, 'SHORTLISTED')" [disabled]="savingId() === application.id">Shortlist</button>
+                <button (click)="updateStatus(application, 'ONBOARDED')" [disabled]="savingId() === application.id">Onboard</button>
+                <button class="danger" (click)="updateStatus(application, 'REJECTED')" [disabled]="savingId() === application.id">Reject</button>
+              </div>
+            </div>
+          }
+        </article>
+      }
+    </div>
+  }
+</section>

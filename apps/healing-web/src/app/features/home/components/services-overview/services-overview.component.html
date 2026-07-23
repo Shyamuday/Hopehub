@@ -1,0 +1,33 @@
+<section class="py-12 sm:py-16 bg-white">
+  <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="text-center mb-8 sm:mb-12">
+      <h2 class="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-3 sm:mb-4">
+        Our Mental Health Services
+      </h2>
+      <p class="text-base sm:text-lg text-gray-600 max-w-2xl mx-auto">
+        Comprehensive support for your mental health journey with professional, compassionate
+        care tailored to your unique needs.
+      </p>
+    </div>
+
+    <div class="service-grid">
+      @for (service of services; track service.id) {
+        <app-service-card
+          [service]="service"
+          [hidePricing]="true"
+          (learnMore)="navigateToService($event)"
+          class="transform hover:scale-105 transition-transform duration-200"
+        />
+      }
+    </div>
+
+    <div class="text-center mt-8 sm:mt-12">
+      <button
+        class="cta-button bg-primary-600 text-white px-6 sm:px-8 py-3 rounded-lg text-base sm:text-lg font-semibold hover:bg-primary-700 transition-colors duration-200"
+        routerLink="/services"
+      >
+        View All Services
+      </button>
+    </div>
+  </div>
+</section>

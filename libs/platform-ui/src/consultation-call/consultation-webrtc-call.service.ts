@@ -95,7 +95,7 @@ export class ConsultationWebrtcCallService {
     });
   }
 
-  async acceptIncoming() {
+  async acceptIncoming(iceServers: IceServerConfig[] = DEFAULT_STUN) {
     const offer = this.pendingOffer();
     if (!offer || !this.socket) return;
 
@@ -108,7 +108,7 @@ export class ConsultationWebrtcCallService {
     this.incomingCall.set(false);
 
     try {
-      await this.ensurePeer(offer.mode);
+      await this.ensurePeer(offer.mode, iceServers);
       await this.pc!.setRemoteDescription(new RTCSessionDescription(offer.sdp));
       const answer = await this.pc!.createAnswer();
       await this.pc!.setLocalDescription(answer);
@@ -139,19 +139,25 @@ export class ConsultationWebrtcCallService {
   }
 
   setMicEnabled(enabled: boolean) {
-    this.localStream()?.getAudioTracks().forEach((track) => {
-      track.enabled = enabled;
-    });
+    this.localStream()
+      ?.getAudioTracks()
+      .forEach((track) => {
+        track.enabled = enabled;
+      });
   }
 
   setCameraEnabled(enabled: boolean) {
-    this.localStream()?.getVideoTracks().forEach((track) => {
-      track.enabled = enabled;
-    });
+    this.localStream()
+      ?.getVideoTracks()
+      .forEach((track) => {
+        track.enabled = enabled;
+      });
   }
 
   cleanup(state: CallState = 'idle') {
-    this.localStream()?.getTracks().forEach((track) => track.stop());
+    this.localStream()
+      ?.getTracks()
+      .forEach((track) => track.stop());
     this.localStream.set(null);
     this.remoteStream.set(null);
     this.pc?.close();

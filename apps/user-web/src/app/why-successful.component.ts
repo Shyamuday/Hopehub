@@ -3,6 +3,7 @@ import { Component, inject } from '@angular/core';
 import { buildDetailRows, DetailRowsComponent } from '@hopehub/platform-ui';
 import { AppFooterComponent } from './app-footer.component';
 import { AppHeaderComponent } from './app-header.component';
+import { NOTE_CONTENT } from './core/constants/note-content.constants';
 import { WhatsappLinkService } from './core/services/whatsapp-link.service';
 import { homeopathyApproaches } from './treatment-approach/homeopathy-approaches.constants';
 import { HOMEOPATHY_APPROACH_SUMMARY_FIELDS } from './treatment-approach/constants/approach-summary.fields';
@@ -16,6 +17,7 @@ import type { HomeopathyApproach } from './models';
 export class WhySuccessfulComponent {
   private readonly whatsappSvc = inject(WhatsappLinkService);
   readonly whatsappLink = this.whatsappSvc.url;
+  readonly notes = NOTE_CONTENT;
   readonly approaches = homeopathyApproaches;
 
   approachSummaryRows(method: HomeopathyApproach) {

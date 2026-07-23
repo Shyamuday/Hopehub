@@ -21,19 +21,21 @@ export interface SEOData {
 }
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class SEOService {
-  private readonly defaultTitle = 'Healing Hub - Professional Mental Health Services';
-  private readonly defaultDescription = 'Professional mental health services including breakup counseling, career counseling, anxiety therapy, depression support, and more. Join our supportive community.';
-  private readonly defaultKeywords = 'mental health, counseling, therapy, healing hub, breakup counseling, career counseling, anxiety therapy, depression support, stress management';
-  private readonly defaultImage = '/assets/images/og-image.jpg';
-  private readonly siteUrl = APP_CONSTANTS.SITE_URL || 'https://healinghub.com';
+  private readonly defaultTitle = 'Hope Hub - Professional Mental Health Services';
+  private readonly defaultDescription =
+    'Professional mental health services including breakup counseling, career counseling, anxiety therapy, depression support, and more. Join our supportive community.';
+  private readonly defaultKeywords =
+    'mental health, counseling, therapy, hope hub, breakup counseling, career counseling, anxiety therapy, depression support, stress management';
+  private readonly defaultImage = '/image/hopehub-hero-meditation.png';
+  private readonly siteUrl = APP_CONSTANTS.SITE_URL || 'https://mind.hopehub.in';
 
   constructor(
     private titleService: Title,
     private metaService: Meta,
-    @Inject(PLATFORM_ID) private platformId: Object
+    @Inject(PLATFORM_ID) private platformId: object,
   ) {}
 
   /**
@@ -42,11 +44,12 @@ export class SEOService {
   updateSEO(data: SEOData): void {
     const title = data.title || this.defaultTitle;
     const description = data.description || this.defaultDescription;
-    const keywords = Array.isArray(data.keywords) 
-      ? data.keywords.join(', ') 
-      : (data.keywords || this.defaultKeywords);
+    const keywords = Array.isArray(data.keywords)
+      ? data.keywords.join(', ')
+      : data.keywords || this.defaultKeywords;
     const image = data.image || this.defaultImage;
-    const url = data.url || (isPlatformBrowser(this.platformId) ? window.location.href : this.siteUrl);
+    const url =
+      data.url || (isPlatformBrowser(this.platformId) ? window.location.href : this.siteUrl);
     const type = data.type || 'website';
 
     // Update title
@@ -55,7 +58,7 @@ export class SEOService {
     // Basic meta tags
     this.updateOrCreateTag('name', 'description', description);
     this.updateOrCreateTag('name', 'keywords', keywords);
-    this.updateOrCreateTag('name', 'author', data.author || 'Healing Hub');
+    this.updateOrCreateTag('name', 'author', data.author || 'Hope Hub');
     this.updateOrCreateTag('name', 'robots', this.getRobotsMeta(data.noindex, data.nofollow));
 
     // Open Graph tags
@@ -64,7 +67,7 @@ export class SEOService {
     this.updateOrCreateTag('property', 'og:type', type);
     this.updateOrCreateTag('property', 'og:image', this.getAbsoluteUrl(image));
     this.updateOrCreateTag('property', 'og:url', url);
-    this.updateOrCreateTag('property', 'og:site_name', 'Healing Hub');
+    this.updateOrCreateTag('property', 'og:site_name', 'Hope Hub');
     this.updateOrCreateTag('property', 'og:locale', 'en_US');
 
     // Twitter Card tags
@@ -126,24 +129,21 @@ export class SEOService {
     const organizationData = {
       '@context': 'https://schema.org',
       '@type': 'Organization',
-      name: 'Healing Hub',
+      name: 'Hope Hub',
       url: this.siteUrl,
-      logo: this.getAbsoluteUrl('/assets/images/logo.png'),
+      logo: this.getAbsoluteUrl('/image/hopehub-hero-meditation.png'),
       description: this.defaultDescription,
       contactPoint: {
         '@type': 'ContactPoint',
-        telephone: '+1-234-567-8900',
         contactType: 'Customer Service',
-        email: 'info@healinghub.com',
-        availableLanguage: ['English']
+        email: APP_CONSTANTS.CONTACT.EMAIL,
+        availableLanguage: ['English'],
       },
-      sameAs: [
-        APP_CONSTANTS.TELEGRAM?.GROUP_URL || ''
-      ].filter(Boolean),
+      sameAs: [APP_CONSTANTS.TELEGRAM?.GROUP_URL || ''].filter(Boolean),
       address: {
         '@type': 'PostalAddress',
-        addressCountry: 'US'
-      }
+        addressCountry: 'IN',
+      },
     };
 
     this.addStructuredData(organizationData);
@@ -166,12 +166,12 @@ export class SEOService {
       description: service.description,
       provider: {
         '@type': 'Organization',
-        name: service.provider || 'Healing Hub',
-        url: this.siteUrl
+        name: service.provider || 'Hope Hub',
+        url: this.siteUrl,
       },
       areaServed: service.areaServed || 'Worldwide',
       serviceType: service.serviceType || 'Mental Health Counseling',
-      url: `${this.siteUrl}/services/${service.name.toLowerCase().replace(/\s+/g, '-')}`
+      url: `${this.siteUrl}/services/${service.name.toLowerCase().replace(/\s+/g, '-')}`,
     };
 
     this.addStructuredData(serviceData);
@@ -197,23 +197,23 @@ export class SEOService {
       image: article.image ? this.getAbsoluteUrl(article.image) : this.defaultImage,
       author: {
         '@type': 'Person',
-        name: article.author
+        name: article.author,
       },
       publisher: {
         '@type': 'Organization',
-        name: 'Healing Hub',
+        name: 'Hope Hub',
         logo: {
           '@type': 'ImageObject',
-          url: this.getAbsoluteUrl('/assets/images/logo.png')
-        }
+          url: this.getAbsoluteUrl('/image/hopehub-hero-meditation.png'),
+        },
       },
       datePublished: article.datePublished,
       dateModified: article.dateModified || article.datePublished,
       articleSection: article.articleSection || 'Mental Health',
       mainEntityOfPage: {
         '@type': 'WebPage',
-        '@id': isPlatformBrowser(this.platformId) ? window.location.href : this.siteUrl
-      }
+        '@id': isPlatformBrowser(this.platformId) ? window.location.href : this.siteUrl,
+      },
     };
 
     this.addStructuredData(articleData);
@@ -230,8 +230,8 @@ export class SEOService {
         '@type': 'ListItem',
         position: index + 1,
         name: crumb.name,
-        item: this.getAbsoluteUrl(crumb.url)
-      }))
+        item: this.getAbsoluteUrl(crumb.url),
+      })),
     };
 
     this.addStructuredData(breadcrumbData);
@@ -244,14 +244,14 @@ export class SEOService {
     const faqData = {
       '@context': 'https://schema.org',
       '@type': 'FAQPage',
-      mainEntity: faqs.map(faq => ({
+      mainEntity: faqs.map((faq) => ({
         '@type': 'Question',
         name: faq.question,
         acceptedAnswer: {
           '@type': 'Answer',
-          text: faq.answer
-        }
-      }))
+          text: faq.answer,
+        },
+      })),
     };
 
     this.addStructuredData(faqData);
@@ -320,6 +320,6 @@ export class SEOService {
   clearStructuredData(): void {
     if (!isPlatformBrowser(this.platformId)) return;
     const scripts = document.querySelectorAll('script[type="application/ld+json"]');
-    scripts.forEach(script => script.remove());
+    scripts.forEach((script) => script.remove());
   }
 }

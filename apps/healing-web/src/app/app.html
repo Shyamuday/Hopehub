@@ -1,8 +1,14 @@
 <div class="min-h-screen flex flex-col bg-gray-50">
   <app-header class="sticky top-0 z-50"></app-header>
+  <app-announcement-banner
+    variant="marquee"
+    tone="teal"
+    [items]="announcementItems"
+    [dismissible]="false"
+  ></app-announcement-banner>
   <app-breadcrumb class="bg-white border-b border-gray-200"></app-breadcrumb>
 
-  <main class="flex-1 w-full">
+  <main class="app-main flex-1 w-full">
     <router-outlet></router-outlet>
   </main>
 
@@ -13,6 +19,9 @@
 
   <!-- Quick access floating action button -->
   <app-quick-access></app-quick-access>
+
+  <!-- Move to top floating button -->
+  <app-scroll-to-top></app-scroll-to-top>
 
   <!-- Auth Modal Overlay -->
   <app-auth-modal></app-auth-modal>

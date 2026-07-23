@@ -1,13 +1,13 @@
 @if (isOpen()) {
     <div 
-        class="modal-backdrop fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 overflow-y-auto"
+        class="modal-backdrop fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto"
         (click)="onBackdropClick($event)"
         role="dialog"
         aria-modal="true"
         [attr.aria-label]="currentModal() === 'login' ? 'Login' : currentModal() === 'register' ? 'Register' : 'Forgot Password'">
         
-        <div 
-            class="modal-content bg-white rounded-2xl shadow-2xl w-full max-w-md transform transition-all duration-300 scale-100"
+        <div
+            class="modal-content auth-card-shell bg-white w-full transform transition-all duration-300 scale-100"
             (click)="$event.stopPropagation()">
             
             <!-- Close Button -->

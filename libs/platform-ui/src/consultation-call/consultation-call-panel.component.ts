@@ -11,7 +11,12 @@ import {
   signal
 } from '@angular/core';
 import { ConsultationWebrtcCallService } from './consultation-webrtc-call.service';
-import type { CallMode, CallSignalingSocket, IceServerConfig, MediaAccessResult } from './webrtc-call.types';
+import type {
+  CallMode,
+  CallSignalingSocket,
+  IceServerConfig,
+  MediaAccessResult
+} from './webrtc-call.types';
 
 @Component({
   selector: 'hopehub-consultation-call-panel',
@@ -31,6 +36,7 @@ export class ConsultationCallPanelComponent implements OnChanges, OnDestroy {
 
   @ViewChild('localVideo') localVideoRef?: ElementRef<HTMLVideoElement>;
   @ViewChild('remoteVideo') remoteVideoRef?: ElementRef<HTMLVideoElement>;
+  @ViewChild('remoteAudio') remoteAudioRef?: ElementRef<HTMLAudioElement>;
 
   readonly busy = signal(false);
   readonly micOn = signal(true);
@@ -45,6 +51,11 @@ export class ConsultationCallPanelComponent implements OnChanges, OnDestroy {
     effect(() => {
       const remote = this.call.remoteStream();
       const el = this.remoteVideoRef?.nativeElement;
+      if (el) el.srcObject = remote;
+    });
+    effect(() => {
+      const remote = this.call.remoteStream();
+      const el = this.remoteAudioRef?.nativeElement;
       if (el) el.srcObject = remote;
     });
   }
@@ -67,7 +78,10 @@ export class ConsultationCallPanelComponent implements OnChanges, OnDestroy {
   }
 
   isVideoActive() {
-    return this.call.callMode() === 'video' && (this.call.state() === 'connected' || this.call.state() === 'connecting');
+    return (
+      this.call.callMode() === 'video' &&
+      (this.call.state() === 'connected' || this.call.state() === 'connecting')
+    );
   }
 
   statusLabel() {
@@ -101,7 +115,7 @@ export class ConsultationCallPanelComponent implements OnChanges, OnDestroy {
   }
 
   accept() {
-    void this.call.acceptIncoming();
+    void this.call.acceptIncoming(this.iceServers);
   }
 
   reject() {

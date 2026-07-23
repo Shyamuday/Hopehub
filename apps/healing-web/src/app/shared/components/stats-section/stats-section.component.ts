@@ -1,11 +1,11 @@
 import { Component } from '@angular/core';
+import { RouterModule } from '@angular/router';
 
 @Component({
   selector: 'app-stats-section',
   standalone: true,
-  imports: [],
+  imports: [RouterModule],
   templateUrl: './stats-section.component.html',
-  styleUrl: './stats-section.component.scss'
+  styleUrl: './stats-section.component.scss',
 })
-export class StatsSectionComponent {
-}
+export class StatsSectionComponent {}

@@ -18,7 +18,7 @@ import { APP_CONSTANTS } from '../../core';
               >
                 <span class="text-white font-bold text-xs sm:text-sm">HH</span>
               </div>
-              <span class="text-lg sm:text-xl font-bold">Healing Hub</span>
+              <span class="text-lg sm:text-xl font-bold">Hope Hub</span>
             </div>
             <p class="text-gray-300 mb-3 sm:mb-4 max-w-md text-sm sm:text-base">
               Professional mental health services providing support, guidance, and healing for
@@ -88,6 +88,13 @@ import { APP_CONSTANTS } from '../../core';
               </li>
               <li>
                 <a
+                  routerLink="/careers"
+                  class="text-gray-300 hover:text-white transition-colors duration-200 text-sm sm:text-base py-1 block"
+                  >Careers</a
+                >
+              </li>
+              <li>
+                <a
                   routerLink="/donate"
                   class="text-green-400 hover:text-green-300 transition-colors duration-200 text-sm sm:text-base py-1 block font-medium inline-flex items-center gap-1"
                 >
@@ -104,17 +111,15 @@ import { APP_CONSTANTS } from '../../core';
               <li>
                 <span class="block font-medium">Email:</span>
                 <a
-                  href="mailto:info@healinghub.com"
+                  href="mailto:{{ APP_CONSTANTS.CONTACT.EMAIL }}"
                   class="hover:text-white transition-colors duration-200 break-all"
                 >
-                  info@healinghub.com
+                  {{ APP_CONSTANTS.CONTACT.EMAIL }}
                 </a>
               </li>
               <li>
-                <span class="block font-medium">Phone:</span>
-                <a href="tel:+1234567890" class="hover:text-white transition-colors duration-200">
-                  (123) 456-7890
-                </a>
+                <span class="block font-medium">Contact:</span>
+                <span>{{ APP_CONSTANTS.CONTACT.PHONE }}</span>
               </li>
               <li>
                 <span class="block font-medium">Telegram:</span>
@@ -124,7 +129,7 @@ import { APP_CONSTANTS } from '../../core';
                   rel="noopener noreferrer"
                   class="hover:text-white transition-colors duration-200"
                 >
-                  {{ APP_CONSTANTS.TELEGRAM.SUPPORT_HANDLE }}
+                  Anonymous-friendly group
                 </a>
               </li>
               <li>
@@ -147,16 +152,16 @@ import { APP_CONSTANTS } from '../../core';
           class="border-t border-gray-800 mt-6 sm:mt-8 pt-6 sm:pt-8 flex flex-col md:flex-row justify-between items-center gap-4"
         >
           <p class="text-gray-300 text-xs sm:text-sm text-center md:text-left">
-            © {{ currentYear }} Healing Hub. All rights reserved.
+            © {{ currentYear }} Hope Hub. All rights reserved.
           </p>
           <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-6">
             <a
-              href="#"
+              routerLink="/privacy"
               class="text-gray-300 hover:text-white text-xs sm:text-sm transition-colors duration-200 text-center"
               >Privacy Policy</a
             >
             <a
-              href="#"
+              routerLink="/terms"
               class="text-gray-300 hover:text-white text-xs sm:text-sm transition-colors duration-200 text-center"
               >Terms of Service</a
             >

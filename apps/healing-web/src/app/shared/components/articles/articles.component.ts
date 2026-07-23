@@ -9,7 +9,7 @@ import {
   Article,
   ArticleType,
   ArticleCategory,
-  ArticleDifficulty
+  ArticleDifficulty,
 } from '../../../core/models/article.model';
 import {
   ALL_ARTICLES,
@@ -20,7 +20,7 @@ import {
   searchArticles,
   getRelatedArticles,
   getFeaturedArticles,
-  getPopularArticles
+  getPopularArticles,
 } from '../../../core/data/article-configs';
 import { getArticleRecommendations } from '../../../core/data/article-recommendations';
 
@@ -29,7 +29,7 @@ import { getArticleRecommendations } from '../../../core/data/article-recommenda
   standalone: true,
   imports: [FormsModule, RouterModule, DatePipe],
   templateUrl: './articles.component.html',
-  styleUrl: './articles.component.scss'
+  styleUrl: './articles.component.scss',
 })
 export class ArticlesComponent implements OnInit {
   private route = inject(ActivatedRoute);
@@ -70,7 +70,7 @@ export class ArticlesComponent implements OnInit {
             this.assessmentInfo.set({
               type: params['assessment'],
               score: parseInt(params['score']),
-              level: params['level']
+              level: params['level'],
             });
           }
         }
@@ -85,7 +85,7 @@ export class ArticlesComponent implements OnInit {
 
         // Check for specific article
         if (params['article']) {
-          const article = this.allArticles().find(a => a.id === params['article']);
+          const article = this.allArticles().find((a) => a.id === params['article']);
           if (article) {
             this.selectArticle(article);
           }
@@ -107,7 +107,7 @@ export class ArticlesComponent implements OnInit {
       this.filteredArticles.set(getArticlesByCategory(value as ArticleCategory));
     } else if (type === 'type' && value) {
       this.currentFilter.set(`type:${value}`);
-      this.filteredArticles.set(this.allArticles().filter(article => article.type === value));
+      this.filteredArticles.set(this.allArticles().filter((article) => article.type === value));
     }
 
     // Apply search if active
@@ -128,7 +128,7 @@ export class ArticlesComponent implements OnInit {
         this.filteredArticles.set(getArticlesByCategory(category));
       } else if (filter.startsWith('type:')) {
         const type = filter.split(':')[1];
-        this.filteredArticles.set(this.allArticles().filter(article => article.type === type));
+        this.filteredArticles.set(this.allArticles().filter((article) => article.type === type));
       }
     } else {
       // Search within current filter
@@ -139,10 +139,12 @@ export class ArticlesComponent implements OnInit {
         this.filteredArticles.set(searchResults);
       } else if (filter.startsWith('category:')) {
         const category = filter.split(':')[1] as ArticleCategory;
-        this.filteredArticles.set(searchResults.filter(article => article.category.includes(category)));
+        this.filteredArticles.set(
+          searchResults.filter((article) => article.category.includes(category)),
+        );
       } else if (filter.startsWith('type:')) {
         const type = filter.split(':')[1];
-        this.filteredArticles.set(searchResults.filter(article => article.type === type));
+        this.filteredArticles.set(searchResults.filter((article) => article.type === type));
       }
     }
   }
@@ -153,7 +155,7 @@ export class ArticlesComponent implements OnInit {
 
     // Update SEO for article page
     this.seoService.updateSEO({
-      title: `${article.title} - Healing Hub`,
+      title: `${article.title} - Hope Hub`,
       description: article.description || article.introduction,
       keywords: article.keywords || article.tags,
       type: 'article',
@@ -161,7 +163,7 @@ export class ArticlesComponent implements OnInit {
       publishedTime: article.publishedDate.toISOString(),
       modifiedTime: article.publishedDate.toISOString(),
       section: article.category[0],
-      tags: article.tags
+      tags: article.tags,
     });
 
     // Add article structured data
@@ -172,7 +174,7 @@ export class ArticlesComponent implements OnInit {
       author: article.author,
       datePublished: article.publishedDate.toISOString(),
       dateModified: article.publishedDate.toISOString(),
-      articleSection: article.category[0]
+      articleSection: article.category[0],
     });
 
     // Scroll to top

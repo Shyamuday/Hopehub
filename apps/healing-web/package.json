@@ -1,9 +1,9 @@
 {
-  "name": "healing-hub-website",
+  "name": "hope-hub-website",
   "version": "0.0.0",
   "scripts": {
     "ng": "ng",
-    "start": "ng serve",
+    "start": "ng serve --port 4204",
     "build": "ng build",
     "build:prod": "ng build --configuration production",
     "build:s3": "ng build --configuration s3",
@@ -41,7 +41,9 @@
     "@angular/ssr": "^22.0.0",
     "@tailwindcss/postcss": "^4.1.18",
     "express": "^5.1.0",
+    "hopehub": "file:../..",
     "rxjs": "~7.8.0",
+    "socket.io-client": "^4.8.1",
     "tslib": "^2.3.0"
   },
   "devDependencies": {

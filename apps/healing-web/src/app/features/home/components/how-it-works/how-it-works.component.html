@@ -1,0 +1,61 @@
+<section class="relative overflow-hidden py-12 sm:py-16 bg-white">
+  <img
+    src="/image/hopehub-abstract-flow.png"
+    alt=""
+    class="pointer-events-none absolute right-0 top-0 hidden h-full w-1/2 object-cover opacity-10 lg:block"
+  />
+  <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="text-center mb-8 sm:mb-12">
+      <h2 class="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-3 sm:mb-4">
+        How Hope Hub Works
+      </h2>
+      <p class="text-base sm:text-lg text-gray-600 max-w-2xl mx-auto">
+        A simple, low-pressure path from request to support.
+      </p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+      @for (step of steps; track step.title; let i = $index) {
+        <div
+          class="hope-motion-card hope-animate-fade-up rounded-lg border border-slate-200 bg-white p-5 shadow-sm"
+          [class.hope-delay-1]="i === 1"
+          [class.hope-delay-2]="i === 2"
+          [class.hope-delay-3]="i === 3"
+          [class.hope-delay-4]="i === 4"
+        >
+          <div
+            class="hope-motion-icon mb-4 flex h-9 w-9 items-center justify-center rounded-full bg-blue-700 text-sm font-bold text-white"
+          >
+            {{ i + 1 }}
+          </div>
+          <h3 class="text-base font-semibold text-gray-900 mb-2">{{ step.title }}</h3>
+          <p class="text-sm leading-6 text-gray-600">{{ step.description }}</p>
+        </div>
+      }
+    </div>
+
+    <div class="group relative mt-6 inline-flex">
+      <button type="button" class="rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-bold text-amber-900">
+        {{ notes.homeCare.label }}
+      </button>
+      <div class="invisible absolute left-0 top-full z-20 mt-2 w-80 max-w-[calc(100vw-2rem)] rounded-lg border border-amber-200 bg-white p-3 text-sm leading-6 text-amber-900 opacity-0 shadow-xl transition group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100">
+        {{ notes.homeCare.text }}
+      </div>
+    </div>
+
+    <div class="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+      <a
+        routerLink="/contact"
+        class="inline-flex min-h-[48px] items-center justify-center rounded-lg bg-teal-700 px-6 py-3 text-sm font-bold text-white transition-colors hover:bg-teal-800"
+      >
+        Send support request
+      </a>
+      <a
+        routerLink="/community"
+        class="inline-flex min-h-[48px] items-center justify-center rounded-lg border border-slate-300 px-6 py-3 text-sm font-bold text-slate-800 transition-colors hover:border-teal-600 hover:text-teal-700"
+      >
+        See community support
+      </a>
+    </div>
+  </div>
+</section>

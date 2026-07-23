@@ -17,6 +17,14 @@ enum LocationType {
   HYBRID
 }
 
+enum CounsellorApplicationStatus {
+  NEW
+  REVIEWING
+  SHORTLISTED
+  REJECTED
+  ONBOARDED
+}
+
 model JobVacancy {
   id               String        @id @default(cuid())
   title            String
@@ -38,5 +46,38 @@ model JobVacancy {
 
   @@index([status])
   @@index([department])
+  @@index([createdAt])
+}
+
+model CounsellorApplication {
+  id                  String                       @id @default(cuid())
+  status              CounsellorApplicationStatus  @default(NEW)
+  fullName            String
+  email               String
+  phone               String
+  city                String
+  qualification       String
+  specialization      String
+  experienceYears     String
+  registrationDetails String?
+  languages           String
+  availability        String
+  preferredChannel    String
+  resumeLink          String
+  portfolioLink       String?
+  whyJoin             String                       @db.Text
+  source              String                       @default("healing-web")
+  entryPage           String?
+  adminNote           String?                      @db.Text
+  reviewedById        String?
+  reviewedBy          User?                        @relation("CounsellorApplicationReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+  reviewedAt          DateTime?
+  createdAt           DateTime                     @default(now())
+  updatedAt           DateTime                     @updatedAt
+
+  @@index([status])
+  @@index([email])
+  @@index([phone])
+  @@index([specialization])
   @@index([createdAt])
 }

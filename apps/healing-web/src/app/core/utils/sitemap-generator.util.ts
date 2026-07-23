@@ -2,6 +2,7 @@
  * Sitemap Generator Utility
  * Generates sitemap.xml for SEO
  */
+import { getServiceIds } from '../data/services-data';
 
 export interface SitemapUrl {
   loc: string;
@@ -11,15 +12,15 @@ export interface SitemapUrl {
 }
 
 export class SitemapGenerator {
-  private static readonly baseUrl = 'https://healinghub.com';
+  private static readonly baseUrl = 'https://mind.hopehub.in';
   private static readonly currentDate = new Date().toISOString().split('T')[0];
 
   /**
    * Generate sitemap XML
    */
   static generateSitemap(urls: SitemapUrl[]): string {
-    const urlEntries = urls.map(url => this.generateUrlEntry(url)).join('\n');
-    
+    const urlEntries = urls.map((url) => this.generateUrlEntry(url)).join('\n');
+
     return `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -30,7 +31,7 @@ ${urlEntries}
   }
 
   /**
-   * Generate default sitemap for Healing Hub
+   * Generate default sitemap for Hope Hub
    */
   static generateDefaultSitemap(): string {
     const urls: SitemapUrl[] = [
@@ -39,113 +40,58 @@ ${urlEntries}
         loc: '/',
         lastmod: this.currentDate,
         changefreq: 'daily',
-        priority: 1.0
+        priority: 1.0,
       },
       // Main pages
       {
         loc: '/services',
         lastmod: this.currentDate,
         changefreq: 'weekly',
-        priority: 0.9
+        priority: 0.9,
       },
       {
         loc: '/community',
         lastmod: this.currentDate,
         changefreq: 'weekly',
-        priority: 0.8
+        priority: 0.8,
       },
       {
         loc: '/contact',
         lastmod: this.currentDate,
         changefreq: 'monthly',
-        priority: 0.8
+        priority: 0.8,
       },
       // Content pages
       {
         loc: '/assessments',
         lastmod: this.currentDate,
         changefreq: 'weekly',
-        priority: 0.9
+        priority: 0.9,
       },
       {
         loc: '/exercises',
         lastmod: this.currentDate,
         changefreq: 'weekly',
-        priority: 0.9
+        priority: 0.9,
       },
       {
         loc: '/lifestyle-tips',
         lastmod: this.currentDate,
         changefreq: 'weekly',
-        priority: 0.9
+        priority: 0.9,
       },
       {
         loc: '/articles',
         lastmod: this.currentDate,
         changefreq: 'daily',
-        priority: 0.9
+        priority: 0.9,
       },
-      // Service detail pages (add your actual service IDs)
-      {
-        loc: '/services/breakup-counseling',
+      ...getServiceIds().map((serviceId) => ({
+        loc: `/services/${serviceId}`,
         lastmod: this.currentDate,
-        changefreq: 'monthly',
-        priority: 0.8
-      },
-      {
-        loc: '/services/career-counseling',
-        lastmod: this.currentDate,
-        changefreq: 'monthly',
-        priority: 0.8
-      },
-      {
-        loc: '/services/anxiety-therapy',
-        lastmod: this.currentDate,
-        changefreq: 'monthly',
-        priority: 0.8
-      },
-      {
-        loc: '/services/depression-support',
-        lastmod: this.currentDate,
-        changefreq: 'monthly',
-        priority: 0.8
-      },
-      {
-        loc: '/services/relationship-counseling',
-        lastmod: this.currentDate,
-        changefreq: 'monthly',
-        priority: 0.8
-      },
-      {
-        loc: '/services/stress-management',
-        lastmod: this.currentDate,
-        changefreq: 'monthly',
-        priority: 0.8
-      },
-      {
-        loc: '/services/grief-counseling',
-        lastmod: this.currentDate,
-        changefreq: 'monthly',
-        priority: 0.8
-      },
-      {
-        loc: '/services/family-therapy',
-        lastmod: this.currentDate,
-        changefreq: 'monthly',
-        priority: 0.8
-      },
-      {
-        loc: '/services/addiction-support',
-        lastmod: this.currentDate,
-        changefreq: 'monthly',
-        priority: 0.8
-      },
-      {
-        loc: '/services/self-esteem-coaching',
-        lastmod: this.currentDate,
-        changefreq: 'monthly',
-        priority: 0.8
-      }
+        changefreq: 'monthly' as const,
+        priority: 0.8,
+      })),
     ];
 
     return this.generateSitemap(urls);
@@ -180,4 +126,3 @@ ${urlEntries}
       .replace(/'/g, '&apos;');
   }
 }
-

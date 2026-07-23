@@ -104,12 +104,11 @@
           }
         </section>
 
-        <section class="panel warning-panel">
-          <h2>Clinical safety note</h2>
-          <p>
-            Homeopathy frameworks support structure and decision quality, but final remedy choice still depends on
-            doctor skill, case quality, and follow-up response. Emergencies require immediate offline care.
-          </p>
+        <section class="note-popover">
+          <button type="button" class="note-popover__trigger">{{ notes.clinicalSafety.label }}</button>
+          <div class="note-popover__content">
+            <p>{{ notes.clinicalSafety.text }}</p>
+          </div>
         </section>
       </main>
       <app-footer [whatsappLink]="whatsappLink()" />

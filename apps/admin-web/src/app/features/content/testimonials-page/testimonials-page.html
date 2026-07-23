@@ -34,6 +34,14 @@
         <input type="checkbox" [formField]="createForm.isPublished" />
         Publish immediately
       </label>
+      <label class="checkbox-label">
+        <input type="checkbox" [formField]="createForm.isAnonymous" />
+        Show as anonymous
+      </label>
+      <label class="checkbox-label">
+        <input type="checkbox" [formField]="createForm.consentToPublish" />
+        Consent to publish
+      </label>
     </div>
     <button type="button" (click)="create()" [disabled]="mutating() || !createModel().patientName || !createModel().quote">
       {{ mutating() ? 'Saving…' : 'Add Testimonial' }}
@@ -56,12 +64,15 @@
         </div>
         <div class="badge-row">
           <span class="badge" [class.published]="t.isPublished" [class.draft]="!t.isPublished">
-            {{ t.isPublished ? 'Published' : 'Draft' }}
+            {{ statusLabel(t) }}
           </span>
+          @if (t.source === 'public-feedback') { <span class="badge review">Public feedback</span> }
+          @if (t.isAnonymous) { <span class="badge private">Anonymous</span> }
           @if (t.sortOrder) { <span class="badge order">#{{ t.sortOrder }}</span> }
         </div>
       </div>
       <p class="quote">"{{ t.quote }}"</p>
+      @if (t.submitterEmail) { <p class="submitter">Follow-up email: {{ t.submitterEmail }}</p> }
 
       @if (editingId() === t.id) {
         <fieldset class="form-grid edit-form" [disabled]="mutating()">
@@ -97,6 +108,12 @@
             <label class="checkbox-label">
               <input type="checkbox" [formField]="editForm.isPublished" /> Published
             </label>
+            <label class="checkbox-label">
+              <input type="checkbox" [formField]="editForm.isAnonymous" /> Anonymous
+            </label>
+            <label class="checkbox-label">
+              <input type="checkbox" [formField]="editForm.consentToPublish" /> Consent
+            </label>
           </div>
           <div class="actions">
             <button type="button" (click)="saveEdit()" [disabled]="mutating()">Save</button>
@@ -107,7 +124,7 @@
         <div class="actions">
           <button type="button" (click)="startEdit(t)" [disabled]="mutating()">Edit</button>
           <button type="button" class="ghost" (click)="togglePublish(t)" [disabled]="mutating()">
-            {{ t.isPublished ? 'Unpublish' : 'Publish' }}
+            {{ t.isPublished ? 'Unpublish' : 'Approve & publish' }}
           </button>
           <button type="button" class="danger" (click)="remove(t.id)" [disabled]="mutating()">Delete</button>
         </div>

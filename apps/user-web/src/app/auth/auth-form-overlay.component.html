@@ -66,14 +66,29 @@
             <label>
               Full name
               <input [formField]="signupForm.name" placeholder="Enter patient name" autocomplete="name" />
+              <span class="auth-field-error">
+                @if (signupModel().name && signupModel().name.trim().length < 2) {
+                  Enter at least 2 characters
+                }
+              </span>
             </label>
             <label>
               Email
               <input [formField]="signupForm.email" type="email" placeholder="Enter Gmail" autocomplete="email" />
+              <span class="auth-field-error">
+                @if (signupModel().email && !isEmail(signupModel().email)) {
+                  Please enter a valid email
+                }
+              </span>
             </label>
             <label>
               Password
               <input [formField]="signupForm.password" type="password" placeholder="Min 8 characters" autocomplete="new-password" />
+              <span class="auth-field-error">
+                @if (signupModel().password && signupModel().password.length < 8) {
+                  Password must be at least 8 characters
+                }
+              </span>
             </label>
             <button class="primary" type="submit" [disabled]="isProcessing() || !canRegisterPatientWithPassword()">Create account</button>
           </form>
@@ -82,6 +97,11 @@
             <label>
               Full name
               <input [formField]="signupForm.name" placeholder="Enter patient name" autocomplete="name" />
+              <span class="auth-field-error">
+                @if (signupModel().name && signupModel().name.trim().length < 2) {
+                  Enter at least 2 characters
+                }
+              </span>
             </label>
             <label>
               Email
@@ -92,6 +112,11 @@
                 autocomplete="email"
                 (input)="resetSignupOtp()"
               />
+              <span class="auth-field-error">
+                @if (signupModel().email && !isEmail(signupModel().email)) {
+                  Please enter a valid email
+                }
+              </span>
             </label>
             @if (signupOtpSent()) {
               @if (otpNotice()) {
@@ -132,10 +157,16 @@
             <label>
               Email
               <input [formField]="patientCredentialsForm.identifier" type="email" placeholder="Enter Gmail" autocomplete="email" />
+              <span class="auth-field-error">
+                @if (patientCredentialsModel().identifier && !isEmail(patientCredentialsModel().identifier)) {
+                  Please enter a valid email
+                }
+              </span>
             </label>
             <label>
               Password
               <input [formField]="patientCredentialsForm.password" type="password" placeholder="Enter password" autocomplete="current-password" />
+              <span class="auth-field-error"></span>
             </label>
             <button class="primary" type="submit" [disabled]="isProcessing() || !canLoginWithPassword()">Login with password</button>
           </form>
@@ -150,6 +181,11 @@
                 autocomplete="email"
                 (input)="resetLoginOtp()"
               />
+              <span class="auth-field-error">
+                @if (patientOtpModel().email && !isEmail(patientOtpModel().email)) {
+                  Please enter a valid email
+                }
+              </span>
             </label>
             @if (loginOtpSent()) {
               @if (otpNotice()) {

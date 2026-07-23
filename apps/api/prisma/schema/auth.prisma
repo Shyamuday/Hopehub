@@ -168,6 +168,7 @@ model User {
   notificationBroadcasts NotificationBroadcast[] @relation("NotificationBroadcasts")
   inAppNotifications   InAppNotification[]   @relation("UserInAppNotifications")
   createdVacancies     JobVacancy[]           @relation("VacancyCreator")
+  reviewedCounsellorApplications CounsellorApplication[] @relation("CounsellorApplicationReviewer")
   chatSessions         ChatSession[]          @relation("UserChatSessions")
   websiteLeads         WebsiteLead[]          @relation("UserWebsiteLeads")
   leadsCalled          WebsiteLead[]          @relation("LeadCalledBy")

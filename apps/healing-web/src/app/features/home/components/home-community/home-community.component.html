@@ -1,0 +1,183 @@
+<section class="py-12 sm:py-16 bg-slate-50">
+  <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="text-center mb-8 sm:mb-12">
+      <h2 class="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-3 sm:mb-4">
+        Join Our Healing Community
+      </h2>
+      <p class="text-base sm:text-lg text-gray-600 max-w-2xl mx-auto">
+        Connect with others on their healing journey and stay informed about our community
+        events.
+      </p>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 max-w-4xl mx-auto">
+      <div
+        class="hope-motion-card bg-white rounded-lg border border-slate-200 shadow-sm p-6 sm:p-8 text-center"
+      >
+        <div class="mb-4 sm:mb-6">
+          <div
+            class="hope-motion-icon hope-soft-pulse w-12 h-12 sm:w-16 sm:h-16 bg-blue-500 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4"
+          >
+            <svg
+              class="w-6 h-6 sm:w-8 sm:h-8 text-white"
+              fill="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.568 8.16l-1.61 7.59c-.12.54-.44.67-.89.42l-2.46-1.81-1.19 1.14c-.13.13-.24.24-.49.24l.17-2.43 4.47-4.03c.19-.17-.04-.27-.3-.1L9.28 13.47l-2.38-.75c-.52-.16-.53-.52.11-.77l9.28-3.58c.43-.16.81.1.67.73z"
+              />
+            </svg>
+          </div>
+          <h3 class="text-xl sm:text-2xl font-bold text-gray-900 mb-2">Telegram Community</h3>
+          <ul class="mx-auto mb-4 max-w-sm space-y-2 text-left text-sm text-gray-600 sm:text-base">
+            <li class="flex gap-2">
+              <span class="font-bold text-blue-600">•</span>
+              <span>Daily 9 PM voice chat with Hope Hub experts.</span>
+            </li>
+            <li class="flex gap-2">
+              <span class="font-bold text-blue-600">•</span>
+              <span>24/7 chat support when you need a calm place to talk.</span>
+            </li>
+            <li class="flex gap-2">
+              <span class="font-bold text-blue-600">•</span>
+              <span>Use a display name or username and talk at your comfort level.</span>
+            </li>
+            <li class="flex gap-2 text-xs text-gray-500 sm:text-sm">
+              <span class="font-bold text-blue-500">•</span>
+              <span>Privacy depends on your Telegram settings, so avoid sharing personal details.</span>
+            </li>
+          </ul>
+        </div>
+        <a
+          [href]="APP_CONSTANTS.TELEGRAM.GROUP_URL"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="inline-block w-full sm:w-auto bg-blue-500 text-white px-4 sm:px-6 py-3 rounded-lg font-semibold hover:bg-blue-600 transition-colors duration-200 min-h-[48px] flex items-center justify-center"
+        >
+          Join Telegram Group
+        </a>
+      </div>
+
+      <div
+        class="hope-motion-card bg-white rounded-lg border border-slate-200 shadow-sm p-6 sm:p-8 text-center"
+      >
+        <div class="mb-4 sm:mb-6">
+          <div
+            class="hope-motion-icon w-12 h-12 sm:w-16 sm:h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4"
+          >
+            <svg
+              class="w-6 h-6 sm:w-8 sm:h-8 text-white"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+              />
+            </svg>
+          </div>
+          <h3 class="text-xl sm:text-2xl font-bold text-gray-900 mb-2">Monthly Meetup</h3>
+          <p class="text-sm sm:text-base text-gray-600 mb-3 sm:mb-4">
+            Join us for our monthly healing circle held on the first Sunday of every month.
+          </p>
+          <div class="bg-gray-50 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6">
+            <p class="text-xs sm:text-sm text-gray-600 mb-2">Next Meetup:</p>
+            <p class="font-semibold text-gray-900 text-sm sm:text-base">
+              {{ nextMeetup.title }}
+            </p>
+            <p class="text-gray-700 text-sm">{{ formatMeetupDate(nextMeetup.date) }}</p>
+            <p class="text-gray-700 text-sm">{{ nextMeetup.time }}</p>
+            @if (nextMeetup.location) {
+              <p class="text-gray-700 text-sm">{{ nextMeetup.location }}</p>
+            }
+            @if (nextMeetup.isVirtual) {
+              <p class="text-blue-600 text-sm">Virtual Meeting</p>
+            }
+          </div>
+        </div>
+        <button
+          class="w-full sm:w-auto bg-green-500 text-white px-4 sm:px-6 py-3 rounded-lg font-semibold hover:bg-green-600 transition-colors duration-200 min-h-[48px]"
+          routerLink="/community"
+        >
+          Learn More
+        </button>
+      </div>
+    </div>
+
+    <div class="mt-8 sm:mt-12 text-center">
+      <h3 class="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">
+        Why Join Our Community?
+      </h3>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 max-w-4xl mx-auto">
+        <a
+          routerLink="/community"
+          class="block rounded-lg p-4 transition-colors hover:bg-white hover:shadow-sm sm:p-6"
+        >
+          <div
+            class="w-10 h-10 sm:w-12 sm:h-12 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4"
+          >
+            <svg class="w-5 h-5 sm:w-6 sm:h-6 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+              />
+            </svg>
+          </div>
+          <h4 class="text-base sm:text-lg font-semibold text-gray-900 mb-2">Peer Support</h4>
+          <p class="text-sm sm:text-base text-gray-600">
+            Connect with others who understand your journey and share similar experiences.
+          </p>
+        </a>
+        <a
+          routerLink="/articles"
+          class="block rounded-lg p-4 transition-colors hover:bg-white hover:shadow-sm sm:p-6"
+        >
+          <div
+            class="w-10 h-10 sm:w-12 sm:h-12 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4"
+          >
+            <svg class="w-5 h-5 sm:w-6 sm:h-6 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
+              />
+            </svg>
+          </div>
+          <h4 class="text-base sm:text-lg font-semibold text-gray-900 mb-2">
+            Educational Resources
+          </h4>
+          <p class="text-sm sm:text-base text-gray-600">
+            Access valuable mental health resources, tips, and educational content.
+          </p>
+        </a>
+        <a
+          routerLink="/contact"
+          class="block rounded-lg p-4 transition-colors hover:bg-white hover:shadow-sm sm:p-6"
+        >
+          <div
+            class="w-10 h-10 sm:w-12 sm:h-12 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4"
+          >
+            <svg class="w-5 h-5 sm:w-6 sm:h-6 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+              />
+            </svg>
+          </div>
+          <h4 class="text-base sm:text-lg font-semibold text-gray-900 mb-2">Safe Space</h4>
+          <p class="text-sm sm:text-base text-gray-600">
+            A judgment-free environment where you can share, learn, and grow at your own pace.
+          </p>
+        </a>
+      </div>
+    </div>
+  </div>
+</section>

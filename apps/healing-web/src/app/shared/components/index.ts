@@ -10,3 +10,5 @@ export * from './stats-section/stats-section.component';
 export * from './quick-access/quick-access.component';
 export * from './progress-dashboard/progress-dashboard.component';
 export * from './auth-modal/auth-modal.component';
+export * from './feedback-section/feedback-section.component';
+export * from './scroll-to-top/scroll-to-top.component';

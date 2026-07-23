@@ -56,6 +56,8 @@ export const API_PATHS = {
     BILLING_PLANS: '/admin/billing/plans',
     VACANCIES: '/admin/vacancies',
     VACANCY_BY_ID: (id: string) => `/admin/vacancies/${id}`,
+    COUNSELLOR_APPLICATIONS: '/admin/counsellor-applications',
+    COUNSELLOR_APPLICATION_STATUS: (id: string) => `/admin/counsellor-applications/${id}/status`,
     SITE_CONFIG: '/admin/site-config',
     TESTIMONIALS: '/admin/testimonials',
     TESTIMONIAL_BY_ID: (id: string) => `/admin/testimonials/${id}`,

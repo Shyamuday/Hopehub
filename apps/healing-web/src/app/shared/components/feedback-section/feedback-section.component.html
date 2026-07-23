@@ -1,0 +1,128 @@
+<section class="feedback-section">
+  <div class="feedback-section__media" aria-hidden="true">
+    <img src="/image/hopehub-calm-nature.png" alt="" />
+    <div></div>
+  </div>
+
+  <div class="feedback-section__inner">
+    <div class="feedback-section__intro">
+      <p class="feedback-section__eyebrow">Feedback & stories</p>
+      <h2>Help Hope Hub become safer, kinder, and more useful.</h2>
+      <p>
+        Mental health feedback should feel private and respectful. Share what helped, what felt
+        difficult, or what you want us to improve. Public stories appear only after your consent
+        and admin approval.
+      </p>
+      <a routerLink="/community" class="feedback-section__secondary">Anonymous-friendly community</a>
+    </div>
+
+    <div class="feedback-section__cards">
+      @for (item of feedbackTypes; track item.title) {
+        <article class="feedback-card hope-motion-card">
+          <div class="feedback-card__metric">{{ item.metric }}</div>
+          <div>
+            <span>{{ item.label }}</span>
+            <h3>{{ item.title }}</h3>
+            <p>{{ item.description }}</p>
+          </div>
+        </article>
+      }
+    </div>
+  </div>
+
+  <div class="feedback-section__panel">
+    <form class="feedback-form" [formGroup]="feedbackForm" (ngSubmit)="submitFeedback()">
+      <div>
+        <p class="feedback-section__eyebrow">Anonymous feedback</p>
+        <h3>Share a story or review</h3>
+        <p>Your name/email stay internal unless you choose otherwise. Admin approval is required before anything appears here.</p>
+      </div>
+
+      <div class="feedback-form__grid">
+        <label>
+          Display name
+          <input formControlName="displayName" placeholder="Anonymous is okay" />
+        </label>
+        <label>
+          Email for follow-up
+          <input formControlName="email" type="email" placeholder="Optional" />
+        </label>
+        <label>
+          City
+          <input formControlName="location" placeholder="Optional" />
+        </label>
+        <label>
+          Support area
+          <input formControlName="supportArea" placeholder="Anxiety, breakup, stress..." />
+        </label>
+      </div>
+
+      <label>
+        Rating
+        <select formControlName="stars">
+          <option [ngValue]="5">5 - Very helpful</option>
+          <option [ngValue]="4">4 - Helpful</option>
+          <option [ngValue]="3">3 - Okay</option>
+          <option [ngValue]="2">2 - Needs improvement</option>
+          <option [ngValue]="1">1 - Not helpful</option>
+        </select>
+      </label>
+
+      <label>
+        Feedback
+        <textarea formControlName="quote" rows="4" placeholder="Write what helped, what felt safe, or what we should improve."></textarea>
+        @if (hasError('quote')) {
+          <span class="feedback-form__error">Please write at least 20 characters.</span>
+        }
+      </label>
+
+      <label class="feedback-form__check">
+        <input type="checkbox" formControlName="isAnonymous" />
+        Show publicly as anonymous if approved
+      </label>
+
+      <label class="feedback-form__check">
+        <input type="checkbox" formControlName="consentToPublish" />
+        I consent that Hope Hub may show this feedback publicly after review.
+      </label>
+      @if (hasError('consentToPublish')) {
+        <span class="feedback-form__error">Consent is required to submit a public review.</span>
+      }
+
+      <button type="submit" class="feedback-section__primary" [disabled]="isSubmitting()">
+        {{ isSubmitting() ? 'Submitting...' : 'Submit for review' }}
+      </button>
+
+      @if (successMessage()) {
+        <p class="feedback-form__success">{{ successMessage() }}</p>
+      }
+      @if (errorMessage()) {
+        <p class="feedback-form__error">{{ errorMessage() }}</p>
+      }
+    </form>
+
+    <div class="approved-stories">
+      <div>
+        <p class="feedback-section__eyebrow">Approved stories</p>
+        <h3>What people share after review</h3>
+      </div>
+
+      @for (testimonial of testimonials(); track testimonial.id) {
+        <article class="story-card">
+          <div class="story-card__stars">
+            @for (star of stars(testimonial.stars); track star) { <span>★</span> }
+          </div>
+          <p>"{{ testimonial.quote }}"</p>
+          <strong>{{ testimonial.isAnonymous ? 'Anonymous Hope Hub member' : testimonial.patientName }}</strong>
+          @if (testimonial.condition || testimonial.location) {
+            <span>{{ testimonial.condition }}{{ testimonial.condition && testimonial.location ? ' • ' : '' }}{{ testimonial.location }}</span>
+          }
+        </article>
+      } @empty {
+        <article class="story-card story-card--empty">
+          <p>Approved anonymous stories will appear here after admin review.</p>
+        </article>
+      }
+    </div>
+  </div>
+</section>

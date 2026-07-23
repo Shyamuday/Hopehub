@@ -5,10 +5,49 @@
   <p class="text-base sm:text-lg text-center text-gray-600 max-w-2xl mx-auto mb-8 sm:mb-12">
     Comprehensive mental health services tailored to your needs.
   </p>
-  
+
+  <div class="group relative mb-4 inline-flex">
+    <button type="button" class="rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-bold text-amber-900">
+      {{ notes.care.label }}
+    </button>
+    <div class="invisible absolute left-0 top-full z-20 mt-2 w-80 max-w-[calc(100vw-2rem)] rounded-lg border border-amber-200 bg-white p-3 text-sm leading-6 text-amber-900 opacity-0 shadow-xl transition group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100">
+      {{ notes.care.text }}
+    </div>
+  </div>
+
+  <div class="mb-8 rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+    <label for="serviceSearch" class="sr-only">Search services</label>
+    <input
+      id="serviceSearch"
+      type="search"
+      [ngModel]="searchTerm()"
+      (ngModelChange)="updateSearch($event)"
+      class="w-full rounded-lg border border-gray-300 px-4 py-3 text-gray-900 placeholder-gray-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
+      placeholder="Search breakup, anxiety, sleep, study pressure..."
+    />
+
+    <div class="mt-4 flex flex-wrap gap-2">
+      @for (filter of filters; track filter.id) {
+        <button
+          type="button"
+          (click)="setFilter(filter.id)"
+          class="rounded-full border px-4 py-2 text-sm font-semibold transition"
+          [class.border-blue-700]="selectedFilter() === filter.id"
+          [class.bg-blue-700]="selectedFilter() === filter.id"
+          [class.text-white]="selectedFilter() === filter.id"
+          [class.border-gray-300]="selectedFilter() !== filter.id"
+          [class.bg-white]="selectedFilter() !== filter.id"
+          [class.text-gray-700]="selectedFilter() !== filter.id"
+        >
+          {{ filter.label }}
+        </button>
+      }
+    </div>
+  </div>
+
   <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-    @for (service of services(); track service.id) {
-      <div class="cursor-pointer transform hover:scale-105 transition-transform duration-200"
+    @for (service of filteredServices(); track service.id) {
+      <div class="cursor-pointer hope-animate-fade-up"
            (click)="navigateToService(service.id)">
         <app-service-card 
           [service]="service"
@@ -17,5 +56,11 @@
       </div>
     }
   </div>
+
+  @if (!filteredServices().length) {
+    <div class="rounded-lg border border-gray-200 bg-white p-8 text-center text-gray-600">
+      No services matched your search. Try anxiety, relationship, sleep, family, or career.
+    </div>
+  }
 </div>
 

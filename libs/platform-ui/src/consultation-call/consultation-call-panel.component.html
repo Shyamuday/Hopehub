@@ -24,6 +24,10 @@
       }
     </div>
 
+    @if (call.state() === 'connected' || call.state() === 'connecting') {
+      <audio #remoteAudio autoplay></audio>
+    }
+
     @if (isVideoActive()) {
       <div class="video-stage">
         <video #remoteVideo class="remote-video" autoplay playsinline></video>

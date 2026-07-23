@@ -20,7 +20,7 @@ export class AuthResetCallbackComponent implements OnInit {
     if (token) {
       this.overlayService.open(AuthFormOverlayComponent, {
         data: { initialForgotStep: 'reset', resetToken: token },
-        width: '480px',
+        width: '440px',
         panelClass: 'app-overlay-panel',
       });
     }

@@ -30,6 +30,7 @@ export const ROUTE_PATHS = {
   STAFF: 'staff',
   SCAN: 'scan',
   VACANCIES: 'vacancies',
+  COUNSELLOR_APPLICATIONS: 'counsellor-applications',
   TESTIMONIALS: 'testimonials',
   FAQ: 'faq',
   BLOG: 'blog',
@@ -69,6 +70,7 @@ export const NAV_ITEMS = [
   { path: adminNavPath(ROUTE_PATHS.REWARDS), label: '🎁 Rewards & Referrals' },
   { path: adminNavPath(ROUTE_PATHS.CLINICAL_RECORDS), label: '📋 Clinical Records' },
   { path: adminNavPath(ROUTE_PATHS.VACANCIES), label: '📢 Vacancies' },
+  { path: adminNavPath(ROUTE_PATHS.COUNSELLOR_APPLICATIONS), label: '🧠 Counsellor Apps' },
   { path: adminNavPath(ROUTE_PATHS.TESTIMONIALS), label: '⭐ Testimonials' },
   { path: adminNavPath(ROUTE_PATHS.FAQ), label: '❓ FAQ' },
   { path: adminNavPath(ROUTE_PATHS.BLOG), label: '📝 Blog' },
@@ -136,6 +138,7 @@ export const NAV_GROUPS: AdminNavGroup[] = [
     label: 'People & HR',
     segments: [
       ROUTE_PATHS.VACANCIES,
+      ROUTE_PATHS.COUNSELLOR_APPLICATIONS,
       ROUTE_PATHS.HR,
       ROUTE_PATHS.HR_USERS,
       ROUTE_PATHS.EMPLOYEES,

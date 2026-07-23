@@ -1,5 +1,5 @@
-# Robots.txt for Healing Hub
-# https://healinghub.com/robots.txt
+# Robots.txt for Hope Hub
+# https://mind.hopehub.in/robots.txt
 
 User-agent: *
 Allow: /
@@ -8,7 +8,7 @@ Disallow: /auth/
 Disallow: /api/
 
 # Sitemap location
-Sitemap: https://healinghub.com/sitemap.xml
+Sitemap: https://mind.hopehub.in/sitemap.xml
 
 # Crawl-delay (optional, adjust based on server capacity)
 Crawl-delay: 1

@@ -10,6 +10,7 @@ Clinic platform — Angular frontend + pure Node.js/Express/TypeScript backend.
 | Doctor                                     | `apps/doctor-web`     | 4202 |
 | Operations (staff, partners, store, admin) | `apps/operations-web` | 5800 |
 | Admin (standalone)                         | `apps/admin-web`      | 4201 |
+| Mind / Hope Hub                            | `apps/healing-web`    | 4204 |
 | Admin UI source (embedded)                 | `apps/admin-web`      | —    |
 | API                                        | `apps/api`            | 4000 |
 
@@ -45,6 +46,7 @@ DATABASE_URL="postgresql://user:pass@host:5432/db?sslmode=require"
 JWT_SECRET="change-before-production"
 PORT=4000
 WEB_ORIGIN="http://localhost:4203"
+CORS_ORIGINS="http://localhost:4203,http://localhost:4204,http://localhost:4200"
 DEV_OTP="123456"
 RAZORPAY_KEY_ID=""
 RAZORPAY_KEY_SECRET=""

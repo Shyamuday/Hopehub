@@ -18,6 +18,6 @@ describe('App', () => {
   it('should have correct title', () => {
     const fixture = TestBed.createComponent(App);
     const app = fixture.componentInstance;
-    expect((app as any).title()).toEqual('healing-hub-website');
+    expect((app as any).title()).toEqual('hope-hub-website');
   });
 });

@@ -8,12 +8,12 @@
                 </svg>
             </div>
             <h2 class="mt-4 text-center text-2xl font-extrabold text-gray-900">
-                Create your account
+                Create patient account
             </h2>
             <p class="mt-2 text-center text-sm text-gray-600">
                 Or
                 <button type="button" (click)="openLogin()" class="font-medium text-blue-600 hover:text-blue-500 transition-colors">
-                    sign in to your existing account
+                    login to your existing account
                 </button>
             </p>
         </div>
@@ -55,7 +55,7 @@
         }
 
         <!-- Register Form -->
-        <form class="mt-8 space-y-6" [formGroup]="registerForm" (ngSubmit)="onSubmit()">
+        <form class="mt-6 space-y-5" [formGroup]="registerForm" (ngSubmit)="onSubmit()">
             <div class="space-y-4">
                 <!-- Name Fields -->
                 <div class="grid grid-cols-2 gap-4">
@@ -70,13 +70,13 @@
                             [class.border-red-300]="registerForm.get('firstName')?.invalid && registerForm.get('firstName')?.touched"
                             placeholder="First name"
                         />
-                        @if (registerForm.get('firstName')?.invalid && registerForm.get('firstName')?.touched) {
-                            <div class="mt-1 text-sm text-red-600">
+                        <div class="auth-field-error">
+                            @if (registerForm.get('firstName')?.invalid && registerForm.get('firstName')?.touched) {
                                 @if (registerForm.get('firstName')?.errors?.['required']) {
                                     <span>First name is required</span>
                                 }
-                            </div>
-                        }
+                            }
+                        </div>
                     </div>
                     <div>
                         <label for="lastName" class="block text-sm font-medium text-gray-700">Last Name</label>
@@ -89,13 +89,13 @@
                             [class.border-red-300]="registerForm.get('lastName')?.invalid && registerForm.get('lastName')?.touched"
                             placeholder="Last name"
                         />
-                        @if (registerForm.get('lastName')?.invalid && registerForm.get('lastName')?.touched) {
-                            <div class="mt-1 text-sm text-red-600">
+                        <div class="auth-field-error">
+                            @if (registerForm.get('lastName')?.invalid && registerForm.get('lastName')?.touched) {
                                 @if (registerForm.get('lastName')?.errors?.['required']) {
                                     <span>Last name is required</span>
                                 }
-                            </div>
-                        }
+                            }
+                        </div>
                     </div>
                 </div>
 
@@ -112,16 +112,16 @@
                         [class.border-red-300]="registerForm.get('email')?.invalid && registerForm.get('email')?.touched"
                         placeholder="Email address"
                     />
-                    @if (registerForm.get('email')?.invalid && registerForm.get('email')?.touched) {
-                        <div class="mt-1 text-sm text-red-600">
+                    <div class="auth-field-error">
+                        @if (registerForm.get('email')?.invalid && registerForm.get('email')?.touched) {
                             @if (registerForm.get('email')?.errors?.['required']) {
                                 <span>Email is required</span>
                             }
                             @if (registerForm.get('email')?.errors?.['email']) {
                                 <span>Please enter a valid email</span>
                             }
-                        </div>
-                    }
+                        }
+                    </div>
                 </div>
 
                 <!-- Password -->
@@ -137,16 +137,16 @@
                         [class.border-red-300]="registerForm.get('password')?.invalid && registerForm.get('password')?.touched"
                         placeholder="Password"
                     />
-                    @if (registerForm.get('password')?.invalid && registerForm.get('password')?.touched) {
-                        <div class="mt-1 text-sm text-red-600">
+                    <div class="auth-field-error">
+                        @if (registerForm.get('password')?.invalid && registerForm.get('password')?.touched) {
                             @if (registerForm.get('password')?.errors?.['required']) {
                                 <span>Password is required</span>
                             }
                             @if (registerForm.get('password')?.errors?.['minlength']) {
                                 <span>Password must be at least 6 characters</span>
                             }
-                        </div>
-                    }
+                        }
+                    </div>
                 </div>
 
                 <!-- Confirm Password -->
@@ -162,16 +162,16 @@
                         [class.border-red-300]="registerForm.get('confirmPassword')?.invalid && registerForm.get('confirmPassword')?.touched"
                         placeholder="Confirm password"
                     />
-                    @if (registerForm.get('confirmPassword')?.invalid && registerForm.get('confirmPassword')?.touched) {
-                        <div class="mt-1 text-sm text-red-600">
+                    <div class="auth-field-error">
+                        @if (registerForm.get('confirmPassword')?.invalid && registerForm.get('confirmPassword')?.touched) {
                             @if (registerForm.get('confirmPassword')?.errors?.['required']) {
                                 <span>Please confirm your password</span>
                             }
                             @if (registerForm.get('confirmPassword')?.errors?.['passwordMismatch']) {
                                 <span>Passwords do not match</span>
                             }
-                        </div>
-                    }
+                        }
+                    </div>
                 </div>
             </div>
 

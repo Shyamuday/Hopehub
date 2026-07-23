@@ -163,17 +163,19 @@
                 </ul>
               </article>
 
-              <article class="panel warning-panel">
-                <h2>Safety note</h2>
-                <p>{{ d.warning || defaultWarning }}</p>
-                @if (d.emergencySigns?.length) {
-                  <h3>Emergency signs</h3>
-                  <ul>
-                    @for (sign of d.emergencySigns; track sign) {
-                      <li>{{ sign }}</li>
-                    }
-                  </ul>
-                }
+              <article class="note-popover">
+                <button type="button" class="note-popover__trigger">{{ notes.diseaseSafety.label }}</button>
+                <div class="note-popover__content">
+                  <p>{{ d.warning || defaultWarning }}</p>
+                  @if (d.emergencySigns?.length) {
+                    <h3>Emergency signs</h3>
+                    <ul>
+                      @for (sign of d.emergencySigns; track sign) {
+                        <li>{{ sign }}</li>
+                      }
+                    </ul>
+                  }
+                </div>
               </article>
             </section>
 

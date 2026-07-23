@@ -1,5 +1,6 @@
-import { Component, signal } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { PaymentService } from '../../core/services';
 
 @Component({
   selector: 'app-donate',
@@ -15,7 +16,7 @@ import { CommonModule } from '@angular/common';
           >
             <span class="text-4xl">💚</span>
           </div>
-          <h1 class="text-4xl sm:text-5xl font-bold text-gray-900 mb-4">Support Healing Hub</h1>
+          <h1 class="text-4xl sm:text-5xl font-bold text-gray-900 mb-4">Support Hope Hub</h1>
           <p class="text-lg sm:text-xl text-gray-600 leading-relaxed">
             Your contribution helps us keep mental health support accessible to everyone. Every
             rupee goes directly toward maintaining free resources, community programs, and helping
@@ -134,6 +135,34 @@ import { CommonModule } from '@angular/common';
               </div>
             </div>
 
+            <div class="px-8 pb-6">
+              <button
+                type="button"
+                (click)="paySelectedAmount()"
+                [disabled]="!selectedAmount() || isPaying()"
+                class="w-full rounded-xl bg-green-600 px-4 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-green-700 disabled:cursor-not-allowed disabled:bg-gray-300"
+              >
+                @if (isPaying()) {
+                  Opening secure payment...
+                } @else if (selectedAmount()) {
+                  Donate ₹{{ selectedAmount() }} Securely
+                } @else {
+                  Select an amount to donate
+                }
+              </button>
+
+              @if (paymentMessage()) {
+                <p
+                  class="mt-3 rounded-lg px-3 py-2 text-center text-sm"
+                  [class]="
+                    paymentSuccess() ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
+                  "
+                >
+                  {{ paymentMessage() }}
+                </p>
+              }
+            </div>
+
             <!-- Note -->
             <div class="px-8 pb-8">
               <div class="bg-green-50 border border-green-100 rounded-xl p-4 text-center">
@@ -162,7 +191,7 @@ import { CommonModule } from '@angular/common';
 
           <!-- Transparency note -->
           <p class="text-center text-gray-400 text-xs mt-6">
-            Healing Hub is a community-driven initiative. All donations are used solely for platform
+            Hope Hub is a community-driven initiative. All donations are used solely for platform
             maintenance and community programs.
           </p>
         </div>
@@ -171,9 +200,14 @@ import { CommonModule } from '@angular/common';
   `,
 })
 export class DonateComponent {
+  private paymentService = inject(PaymentService);
+
   readonly amounts = [51, 101, 251, 501, 1001, 2101, 5001, 11000, 21000, 51000];
   selectedAmount = signal<number | null>(null);
   copied = signal(false);
+  isPaying = signal(false);
+  paymentMessage = signal('');
+  paymentSuccess = signal(false);
 
   selectAmount(amount: number): void {
     this.selectedAmount.set(amount);
@@ -184,5 +218,27 @@ export class DonateComponent {
       this.copied.set(true);
       setTimeout(() => this.copied.set(false), 2000);
     });
+  }
+
+  async paySelectedAmount(): Promise<void> {
+    const amount = this.selectedAmount();
+    if (!amount || this.isPaying()) return;
+
+    this.isPaying.set(true);
+    this.paymentMessage.set('');
+    this.paymentSuccess.set(false);
+
+    try {
+      await this.paymentService.donate({ amount });
+      this.paymentSuccess.set(true);
+      this.paymentMessage.set('Thank you. Your donation payment was verified successfully.');
+    } catch (error) {
+      this.paymentSuccess.set(false);
+      this.paymentMessage.set(
+        error instanceof Error ? error.message : 'Payment could not be completed.',
+      );
+    } finally {
+      this.isPaying.set(false);
+    }
   }
 }

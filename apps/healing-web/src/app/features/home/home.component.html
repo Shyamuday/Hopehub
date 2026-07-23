@@ -1,0 +1,27 @@
+<app-announcement-banner
+  [message]="announcementMessage"
+  actionLabel="Join community"
+  [actionHref]="APP_CONSTANTS.TELEGRAM.GROUP_URL"
+  tone="emerald"
+  (onDismiss)="onAnnouncementDismiss()"
+/>
+
+<app-home-hero />
+<app-services-carousel />
+<app-how-it-works />
+<app-home-tools />
+
+<!-- Progress Dashboard -->
+<!-- <section class="py-12 bg-slate-50">
+  <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+    <app-progress-dashboard></app-progress-dashboard>
+  </div>
+</section> -->
+
+<!-- Multi Assessment Section -->
+<!-- <app-multi-assessment></app-multi-assessment> -->
+
+<app-stats-section />
+<app-services-overview />
+<app-feedback-section />
+<app-home-community />

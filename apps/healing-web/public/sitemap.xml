@@ -4,110 +4,158 @@
         xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9
         http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd">
   <url>
-    <loc>https://healinghub.com/</loc>
-    <lastmod>2024-12-20</lastmod>
+    <loc>https://mind.hopehub.in/</loc>
+    <lastmod>2026-07-23</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://healinghub.com/services</loc>
-    <lastmod>2024-12-20</lastmod>
+    <loc>https://mind.hopehub.in/services</loc>
+    <lastmod>2026-07-23</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://healinghub.com/services/breakup-counseling</loc>
-    <lastmod>2024-12-20</lastmod>
+    <loc>https://mind.hopehub.in/services/breakup-counseling</loc>
+    <lastmod>2026-07-23</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://healinghub.com/services/career-counseling</loc>
-    <lastmod>2024-12-20</lastmod>
+    <loc>https://mind.hopehub.in/services/anxiety-therapy</loc>
+    <lastmod>2026-07-23</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://healinghub.com/services/anxiety-therapy</loc>
-    <lastmod>2024-12-20</lastmod>
+    <loc>https://mind.hopehub.in/services/stress-burnout-support</loc>
+    <lastmod>2026-07-23</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://healinghub.com/services/depression-support</loc>
-    <lastmod>2024-12-20</lastmod>
+    <loc>https://mind.hopehub.in/services/career-study-pressure</loc>
+    <lastmod>2026-07-23</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://healinghub.com/services/relationship-counseling</loc>
-    <lastmod>2024-12-20</lastmod>
+    <loc>https://mind.hopehub.in/services/relationship-guidance</loc>
+    <lastmod>2026-07-23</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://healinghub.com/services/stress-management</loc>
-    <lastmod>2024-12-20</lastmod>
+    <loc>https://mind.hopehub.in/services/self-esteem-confidence</loc>
+    <lastmod>2026-07-23</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://healinghub.com/services/grief-counseling</loc>
-    <lastmod>2024-12-20</lastmod>
+    <loc>https://mind.hopehub.in/services/loneliness-emotional-support</loc>
+    <lastmod>2026-07-23</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://healinghub.com/services/family-therapy</loc>
-    <lastmod>2024-12-20</lastmod>
+    <loc>https://mind.hopehub.in/services/sleep-overthinking-support</loc>
+    <lastmod>2026-07-23</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://healinghub.com/services/addiction-support</loc>
-    <lastmod>2024-12-20</lastmod>
+    <loc>https://mind.hopehub.in/services/family-conflict-support</loc>
+    <lastmod>2026-07-23</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://healinghub.com/services/self-esteem-coaching</loc>
-    <lastmod>2024-12-20</lastmod>
+    <loc>https://mind.hopehub.in/services/grief-loss-support</loc>
+    <lastmod>2026-07-23</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://healinghub.com/community</loc>
-    <lastmod>2024-12-20</lastmod>
+    <loc>https://mind.hopehub.in/services/depression-mood-support</loc>
+    <lastmod>2026-07-23</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://mind.hopehub.in/services/anger-emotional-control</loc>
+    <lastmod>2026-07-23</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://mind.hopehub.in/services/social-anxiety-confidence</loc>
+    <lastmod>2026-07-23</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://mind.hopehub.in/services/exam-performance-stress</loc>
+    <lastmod>2026-07-23</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://mind.hopehub.in/services/addiction-habit-support</loc>
+    <lastmod>2026-07-23</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://mind.hopehub.in/services/trauma-emotional-shock</loc>
+    <lastmod>2026-07-23</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://mind.hopehub.in/services/parenting-child-behavior</loc>
+    <lastmod>2026-07-23</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://mind.hopehub.in/services/couples-pre-marriage-guidance</loc>
+    <lastmod>2026-07-23</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://mind.hopehub.in/community</loc>
+    <lastmod>2026-07-23</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://healinghub.com/contact</loc>
-    <lastmod>2024-12-20</lastmod>
+    <loc>https://mind.hopehub.in/contact</loc>
+    <lastmod>2026-07-23</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://healinghub.com/assessments</loc>
-    <lastmod>2024-12-20</lastmod>
+    <loc>https://mind.hopehub.in/assessments</loc>
+    <lastmod>2026-07-23</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://healinghub.com/exercises</loc>
-    <lastmod>2024-12-20</lastmod>
+    <loc>https://mind.hopehub.in/exercises</loc>
+    <lastmod>2026-07-23</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://healinghub.com/lifestyle-tips</loc>
-    <lastmod>2024-12-20</lastmod>
+    <loc>https://mind.hopehub.in/lifestyle-tips</loc>
+    <lastmod>2026-07-23</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://healinghub.com/articles</loc>
-    <lastmod>2024-12-20</lastmod>
+    <loc>https://mind.hopehub.in/articles</loc>
+    <lastmod>2026-07-23</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>

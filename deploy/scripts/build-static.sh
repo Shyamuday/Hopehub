@@ -69,7 +69,7 @@ fi
 if should_build healing; then
   rm -rf "$STATIC/healing"
   mkdir -p "$STATIC/healing"
-  cp -r "$ROOT/apps/healing-web/dist/healing-hub-website/browser/"* "$STATIC/healing/"
+  cp -r "$ROOT/apps/healing-web/dist/hope-hub-website/browser/"* "$STATIC/healing/"
 fi
 
 echo "==> Static files ready in deploy/static/"

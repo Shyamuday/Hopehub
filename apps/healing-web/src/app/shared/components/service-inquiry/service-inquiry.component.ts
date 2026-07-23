@@ -1,19 +1,19 @@
 import { Component, input, inject, signal, OnInit } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { TelegramService, LoadingService } from '../../../core/services';
+import { LeadService, LoadingService } from '../../../core/services';
 
 @Component({
   selector: 'app-service-inquiry',
   standalone: true,
   imports: [ReactiveFormsModule],
   templateUrl: './service-inquiry.component.html',
-  styleUrl: './service-inquiry.component.scss'
+  styleUrl: './service-inquiry.component.scss',
 })
 export class ServiceInquiryComponent {
   serviceName = input<string>('');
 
   private formBuilder = inject(FormBuilder);
-  private telegramService = inject(TelegramService);
+  private leadService = inject(LeadService);
   private loadingService = inject(LoadingService);
 
   inquiryForm!: FormGroup;
@@ -30,7 +30,7 @@ export class ServiceInquiryComponent {
     this.inquiryForm = this.formBuilder.group({
       name: ['', [Validators.required]],
       email: ['', [Validators.required, Validators.email]],
-      message: ['']
+      message: [''],
     });
   }
 
@@ -44,8 +44,7 @@ export class ServiceInquiryComponent {
 
       const formData = this.inquiryForm.value;
 
-      // Send service inquiry to Telegram
-      this.telegramService.sendServiceInquiry(this.serviceName(), formData).subscribe({
+      this.leadService.sendServiceInquiry(this.serviceName(), formData).subscribe({
         next: (success: boolean) => {
           this.isSubmitting.set(false);
           this.loadingService.hide();
@@ -75,11 +74,11 @@ export class ServiceInquiryComponent {
             this.showErrorMessage.set(false);
             this.errorMessage.set('');
           }, 8000);
-        }
+        },
       });
     } else {
       // Mark all fields as touched to show validation errors
-      Object.keys(this.inquiryForm.controls).forEach(key => {
+      Object.keys(this.inquiryForm.controls).forEach((key) => {
         this.inquiryForm.get(key)?.markAsTouched();
       });
     }
