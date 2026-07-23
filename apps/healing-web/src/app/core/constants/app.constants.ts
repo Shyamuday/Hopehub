@@ -5,6 +5,10 @@ export const APP_CONSTANTS = {
     GROUP_URL: 'https://t.me/mindhopehub',
     SUPPORT_HANDLE: '@mindhopehub',
   },
+  WHATSAPP: {
+    GROUP_URL: 'https://chat.whatsapp.com/CbbNoo5kXw3FWWKTGO82kz',
+    QR_CODE: '/image/whatsapp-qr.png',
+  },
   CONTACT: {
     EMAIL: 'contact@healinghub.com',
     PHONE: '+1 (555) 123-4567',
