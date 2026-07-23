@@ -12,3 +12,60 @@
   min-height: 100vh;
   min-height: -webkit-fill-available;
 }
+
+.announcement-banner {
+  overflow: hidden;
+  border-bottom: 1px solid #bae6fd;
+  background: #ecfeff;
+  color: #0f172a;
+  white-space: nowrap;
+}
+
+.announcement-banner__track {
+  display: inline-flex;
+  min-width: max-content;
+  gap: 2rem;
+  padding: 0.55rem 0;
+  font-size: 0.875rem;
+  font-weight: 700;
+  animation: announcement-scroll 34s linear infinite;
+}
+
+.announcement-banner__track span {
+  position: relative;
+  padding-left: 1.25rem;
+}
+
+.announcement-banner__track span::before {
+  position: absolute;
+  left: 0;
+  color: #0891b2;
+  content: "•";
+}
+
+.announcement-banner:hover .announcement-banner__track {
+  animation-play-state: paused;
+}
+
+@keyframes announcement-scroll {
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .announcement-banner {
+    white-space: normal;
+  }
+
+  .announcement-banner__track {
+    animation: none;
+    flex-wrap: wrap;
+    gap: 0.5rem 1rem;
+    padding: 0.5rem 1rem;
+  }
+}

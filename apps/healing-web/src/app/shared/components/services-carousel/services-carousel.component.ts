@@ -91,6 +91,10 @@ export class ServicesCarouselComponent implements OnInit {
     }).format(price);
   }
 
+  formatPerMinute(currency: string): string {
+    return currency === 'INR' ? '₹10/min' : '$10/min';
+  }
+
   whatsappHref(_service: CarouselService): string {
     return APP_CONSTANTS.WHATSAPP.GROUP_URL;
   }

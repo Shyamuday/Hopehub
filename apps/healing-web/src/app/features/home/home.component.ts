@@ -45,7 +45,7 @@ import { APP_CONSTANTS } from '../../core';
           class="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-center max-w-md sm:max-w-none mx-auto"
         >
           <button
-            class="cta-button w-full sm:w-auto bg-primary-600 text-white px-6 sm:px-8 py-3 rounded-lg text-base sm:text-lg font-semibold hover:bg-primary-700 transition-colors duration-200"
+            class="cta-button w-full sm:w-auto bg-slate-950 text-white px-6 sm:px-8 py-3 rounded-lg text-base sm:text-lg font-semibold shadow-sm hover:bg-slate-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-950 transition-colors duration-200"
             routerLink="/services"
           >
             Explore Services
