@@ -104,17 +104,15 @@ import { APP_CONSTANTS } from '../../core';
               <li>
                 <span class="block font-medium">Email:</span>
                 <a
-                  href="mailto:info@mind.hopehub.in"
+                  href="mailto:{{ APP_CONSTANTS.CONTACT.EMAIL }}"
                   class="hover:text-white transition-colors duration-200 break-all"
                 >
-                  info@mind.hopehub.in
+                  {{ APP_CONSTANTS.CONTACT.EMAIL }}
                 </a>
               </li>
               <li>
-                <span class="block font-medium">Phone:</span>
-                <a href="tel:+1234567890" class="hover:text-white transition-colors duration-200">
-                  (123) 456-7890
-                </a>
+                <span class="block font-medium">Contact:</span>
+                <span>{{ APP_CONSTANTS.CONTACT.PHONE }}</span>
               </li>
               <li>
                 <span class="block font-medium">Telegram:</span>
@@ -124,7 +122,7 @@ import { APP_CONSTANTS } from '../../core';
                   rel="noopener noreferrer"
                   class="hover:text-white transition-colors duration-200"
                 >
-                  {{ APP_CONSTANTS.TELEGRAM.SUPPORT_HANDLE }}
+                  Anonymous-friendly group
                 </a>
               </li>
               <li>

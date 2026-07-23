@@ -391,9 +391,13 @@ import { getAllServices } from '../../core/data/services-data';
                 </svg>
               </div>
               <h3 class="text-xl sm:text-2xl font-bold text-gray-900 mb-2">Telegram Community</h3>
-              <p class="text-sm sm:text-base text-gray-600 mb-4 sm:mb-6">
-                Join our supportive Telegram group to connect with others, share experiences, and
-                receive daily encouragement on your healing journey.
+              <p class="text-sm sm:text-base text-gray-600 mb-3">
+                Join with a display name or username, talk at your own comfort level, and receive
+                support without exposing your full identity publicly.
+              </p>
+              <p class="text-xs sm:text-sm text-gray-500 mb-4 sm:mb-6">
+                Privacy depends on your Telegram settings, so avoid sharing personal details in the
+                group.
               </p>
             </div>
             <a

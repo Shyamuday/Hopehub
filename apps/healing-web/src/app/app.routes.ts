@@ -43,8 +43,9 @@ export const routes: Routes = [
     title: 'Community - Hope Hub',
     data: {
       breadcrumb: 'Community',
-      description: 'Join our supportive community and monthly meetups',
-      keywords: 'community, support group, meetups, telegram, mental health community',
+      description: 'Join our anonymous-friendly Telegram community and monthly meetups',
+      keywords:
+        'anonymous mental health community, support group, meetups, telegram, mental health community',
     },
   },
   {

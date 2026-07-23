@@ -26,9 +26,9 @@ import { APP_CONSTANTS } from '../../core';
         <div class="grid md:grid-cols-3 gap-8">
           <div class="text-center p-6 bg-blue-50 rounded-lg">
             <div class="text-blue-600 text-4xl mb-4">🤝</div>
-            <h3 class="text-xl font-semibold mb-2">Peer Support</h3>
+            <h3 class="text-xl font-semibold mb-2">Low-Identity Support</h3>
             <p class="text-gray-600">
-              Connect with others who understand your journey and share similar experiences.
+              Use a display name or username and talk only as much as you feel comfortable sharing.
             </p>
           </div>
           <div class="text-center p-6 bg-green-50 rounded-lg">
@@ -55,10 +55,14 @@ import { APP_CONSTANTS } from '../../core';
         <!-- Telegram Card -->
         <div class="bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg p-8">
           <div class="text-center">
-            <h2 class="text-2xl font-bold mb-3">Join Our Telegram</h2>
-            <p class="mb-6 opacity-90">
-              Stay connected 24/7. Share thoughts, ask questions, and receive support from our
-              community.
+            <h2 class="text-2xl font-bold mb-3">Anonymous-Friendly Telegram</h2>
+            <p class="mb-3 opacity-90">
+              Many people hesitate to ask for mental health support because they fear identity
+              exposure. Telegram lets you participate with a username or display name.
+            </p>
+            <p class="mb-6 text-sm opacity-80">
+              Please review your Telegram privacy settings and avoid posting personal details in the
+              group.
             </p>
             <button
               (click)="joinTelegramGroup()"
