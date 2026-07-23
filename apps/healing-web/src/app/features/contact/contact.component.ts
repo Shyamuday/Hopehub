@@ -3,7 +3,7 @@ import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angula
 import { ActivatedRoute } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ContactForm } from '../../core/models/contact.model';
-import { TelegramService, LoadingService, AuthService } from '../../core/services';
+import { LeadService, LoadingService, AuthService } from '../../core/services';
 import { APP_CONSTANTS } from '../../core';
 import { AppointmentCalendarComponent, AppointmentSlot } from '../../shared/components';
 import { User } from '../../core/models/auth.model';
@@ -13,13 +13,13 @@ import { User } from '../../core/models/auth.model';
   standalone: true,
   imports: [ReactiveFormsModule, AppointmentCalendarComponent],
   templateUrl: './contact.component.html',
-  styleUrl: './contact.component.scss'
+  styleUrl: './contact.component.scss',
 })
 export class ContactComponent implements OnInit {
   APP_CONSTANTS = APP_CONSTANTS;
 
   private formBuilder = inject(FormBuilder);
-  private telegramService = inject(TelegramService);
+  private leadService = inject(LeadService);
   private loadingService = inject(LoadingService);
   private route = inject(ActivatedRoute);
   private authService = inject(AuthService);
@@ -46,35 +46,32 @@ export class ContactComponent implements OnInit {
 
   private loadUserData(): void {
     // Subscribe to auth state to get logged-in user
-    this.authService.user$
-      .pipe(takeUntilDestroyed())
-      .subscribe((user: User | null) => {
-        this.currentUser.set(user);
-        // If form is already initialized, update it with user data
-        if (this.contactForm) {
-          this.updateFormWithUserData(user);
-        }
-      });
+    this.authService.user$.pipe(takeUntilDestroyed()).subscribe((user: User | null) => {
+      this.currentUser.set(user);
+      // If form is already initialized, update it with user data
+      if (this.contactForm) {
+        this.updateFormWithUserData(user);
+      }
+    });
   }
 
   private readQueryParameters(): void {
-    this.route.queryParams
-      .pipe(takeUntilDestroyed())
-      .subscribe((params: any) => {
-        this.prefilledData.set({
-          service: params['service'] || '',
-          serviceName: params['serviceName'] || '',
-          consultant: params['consultant'] || '',
-          consultantPhone: params['consultantPhone'] || '',
-          duration: params['duration'] || '',
-          source: params['source'] || ''
-        });
+    this.route.queryParams.pipe(takeUntilDestroyed()).subscribe((params: any) => {
+      this.prefilledData.set({
+        service: params['service'] || '',
+        serviceName: params['serviceName'] || '',
+        consultant: params['consultant'] || '',
+        consultantPhone: params['consultantPhone'] || '',
+        duration: params['duration'] || '',
+        source: params['source'] || '',
       });
+    });
   }
 
   private initializeForm(): void {
     // Determine initial service value and message
-    const initialServiceValue = this.prefilledData().serviceName || this.prefilledData().service || '';
+    const initialServiceValue =
+      this.prefilledData().serviceName || this.prefilledData().service || '';
     const initialMessage = this.generateInitialMessage();
 
     // Get user data if logged in
@@ -89,7 +86,7 @@ export class ContactComponent implements OnInit {
       phone: [userPhone],
       serviceInterest: [initialServiceValue],
       message: [initialMessage, [Validators.required, Validators.minLength(10)]],
-      preferredContact: [user ? 'email' : '', [Validators.required]]
+      preferredContact: [user ? 'email' : '', [Validators.required]],
     });
   }
 
@@ -184,7 +181,7 @@ export class ContactComponent implements OnInit {
         (formData as any).appointmentTime = appointment.time;
       }
 
-      // Add pre-filled service information for Telegram message
+      // Add pre-filled service information for the lead record
       const data = this.prefilledData();
       if (data.serviceName || data.consultant) {
         (formData as any).selectedService = data.serviceName;
@@ -194,8 +191,7 @@ export class ContactComponent implements OnInit {
         (formData as any).bookingSource = data.source;
       }
 
-      // Send form data to Telegram
-      this.telegramService.sendContactForm(formData).subscribe({
+      this.leadService.sendContactForm(formData).subscribe({
         next: (success: boolean) => {
           this.isSubmitting.set(false);
           this.loadingService.hide();
@@ -214,7 +210,7 @@ export class ContactComponent implements OnInit {
               phone: userPhone,
               serviceInterest: '',
               message: '',
-              preferredContact: user ? 'email' : ''
+              preferredContact: user ? 'email' : '',
             });
 
             // Hide success message after 5 seconds
@@ -237,11 +233,11 @@ export class ContactComponent implements OnInit {
             this.showErrorMessage.set(false);
             this.errorMessage.set('');
           }, 8000);
-        }
+        },
       });
     } else {
       // Mark all fields as touched to show validation errors
-      Object.keys(this.contactForm.controls).forEach(key => {
+      Object.keys(this.contactForm.controls).forEach((key) => {
         this.contactForm.get(key)?.markAsTouched();
       });
     }

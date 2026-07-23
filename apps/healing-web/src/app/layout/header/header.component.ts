@@ -24,12 +24,12 @@ import { User } from '../../core/models/auth.model';
               routerLink="/"
               class="flex items-center space-x-2"
               (click)="closeMobileMenu()"
-              aria-label="Healing Hub - Go to homepage"
+              aria-label="Hope Hub - Go to homepage"
             >
               <div class="w-8 h-8 bg-primary-600 rounded-full flex items-center justify-center">
                 <span class="text-white font-bold text-sm">HH</span>
               </div>
-              <span class="text-xl font-bold text-gray-900">Healing Hub</span>
+              <span class="text-xl font-bold text-gray-900">Hope Hub</span>
             </a>
           </div>
 

@@ -5,18 +5,18 @@ export const routes: Routes = [
   {
     path: '',
     loadComponent: () => import('./features/home/home.component').then((m) => m.HomeComponent),
-    title: 'Home - Healing Hub',
+    title: 'Home - Hope Hub',
     data: {
       breadcrumb: 'Home',
       description: 'Professional mental health services and community support',
-      keywords: 'mental health, counseling, therapy, healing hub',
+      keywords: 'mental health, counseling, therapy, hope hub',
     },
   },
   {
     path: 'services',
     loadComponent: () =>
       import('./features/services/services.component').then((m) => m.ServicesComponent),
-    title: 'Services - Healing Hub',
+    title: 'Services - Hope Hub',
     data: {
       breadcrumb: 'Services',
       description: 'Comprehensive mental health services including counseling and therapy',
@@ -28,7 +28,7 @@ export const routes: Routes = [
     path: 'services/:id',
     loadComponent: () =>
       import('./features/services/service-detail.component').then((m) => m.ServiceDetailComponent),
-    title: 'Service Details - Healing Hub',
+    title: 'Service Details - Hope Hub',
     canActivate: [NavigationGuard],
     data: {
       breadcrumb: 'Service Details',
@@ -40,7 +40,7 @@ export const routes: Routes = [
     path: 'community',
     loadComponent: () =>
       import('./features/community/community.component').then((m) => m.CommunityComponent),
-    title: 'Community - Healing Hub',
+    title: 'Community - Hope Hub',
     data: {
       breadcrumb: 'Community',
       description: 'Join our supportive community and monthly meetups',
@@ -51,7 +51,7 @@ export const routes: Routes = [
     path: 'contact',
     loadComponent: () =>
       import('./features/contact/contact.component').then((m) => m.ContactComponent),
-    title: 'Contact - Healing Hub',
+    title: 'Contact - Hope Hub',
     data: {
       breadcrumb: 'Contact',
       description: 'Get in touch with our mental health professionals',
@@ -62,7 +62,7 @@ export const routes: Routes = [
     path: 'exercises',
     loadComponent: () =>
       import('./shared/components/exercises/exercises.component').then((m) => m.ExercisesComponent),
-    title: 'Mental Health Exercises - Healing Hub',
+    title: 'Mental Health Exercises - Hope Hub',
     data: {
       breadcrumb: 'Exercises',
       description:
@@ -77,7 +77,7 @@ export const routes: Routes = [
       import('./shared/components/multi-assessment/multi-assessment.component').then(
         (m) => m.MultiAssessmentComponent,
       ),
-    title: 'Mental Health Assessments - Healing Hub',
+    title: 'Mental Health Assessments - Hope Hub',
     data: {
       breadcrumb: 'Assessments',
       description:
@@ -91,7 +91,7 @@ export const routes: Routes = [
       import('./shared/components/lifestyle-tips/lifestyle-tips.component').then(
         (m) => m.LifestyleTipsComponent,
       ),
-    title: 'Lifestyle Tips for Mental Wellness - Healing Hub',
+    title: 'Lifestyle Tips for Mental Wellness - Hope Hub',
     data: {
       breadcrumb: 'Lifestyle Tips',
       description:
@@ -104,7 +104,7 @@ export const routes: Routes = [
     path: 'articles',
     loadComponent: () =>
       import('./shared/components/articles/articles.component').then((m) => m.ArticlesComponent),
-    title: 'Mental Health Articles & Resources - Healing Hub',
+    title: 'Mental Health Articles & Resources - Hope Hub',
     data: {
       breadcrumb: 'Articles',
       description:
@@ -117,18 +117,18 @@ export const routes: Routes = [
     path: 'donate',
     loadComponent: () =>
       import('./features/donate/donate.component').then((m) => m.DonateComponent),
-    title: 'Support Us - Healing Hub',
+    title: 'Support Us - Hope Hub',
     data: {
       breadcrumb: 'Donate',
-      description: 'Support Healing Hub and help keep mental health resources free for everyone',
-      keywords: 'donate, support, UPI, mental health, healing hub',
+      description: 'Support Hope Hub and help keep mental health resources free for everyone',
+      keywords: 'donate, support, UPI, mental health, hope hub',
     },
   },
   {
     path: '404',
     loadComponent: () =>
       import('./features/not-found/not-found.component').then((m) => m.NotFoundComponent),
-    title: 'Page Not Found - Healing Hub',
+    title: 'Page Not Found - Hope Hub',
     data: {
       breadcrumb: 'Not Found',
       description: 'The page you are looking for could not be found',

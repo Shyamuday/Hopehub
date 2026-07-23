@@ -1,6 +1,6 @@
 export const APP_CONSTANTS = {
   SITE_URL: 'https://healinghub.com',
-  SITE_NAME: 'Healing Hub',
+  SITE_NAME: 'Hope Hub',
   TELEGRAM: {
     GROUP_URL: 'https://t.me/mindhopehub',
     SUPPORT_HANDLE: '@mindhopehub',

@@ -18,7 +18,7 @@ import { APP_CONSTANTS } from '../../core';
               >
                 <span class="text-white font-bold text-xs sm:text-sm">HH</span>
               </div>
-              <span class="text-lg sm:text-xl font-bold">Healing Hub</span>
+              <span class="text-lg sm:text-xl font-bold">Hope Hub</span>
             </div>
             <p class="text-gray-300 mb-3 sm:mb-4 max-w-md text-sm sm:text-base">
               Professional mental health services providing support, guidance, and healing for
@@ -147,7 +147,7 @@ import { APP_CONSTANTS } from '../../core';
           class="border-t border-gray-800 mt-6 sm:mt-8 pt-6 sm:pt-8 flex flex-col md:flex-row justify-between items-center gap-4"
         >
           <p class="text-gray-300 text-xs sm:text-sm text-center md:text-left">
-            © {{ currentYear }} Healing Hub. All rights reserved.
+            © {{ currentYear }} Hope Hub. All rights reserved.
           </p>
           <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-6">
             <a

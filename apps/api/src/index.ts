@@ -57,6 +57,8 @@ import { labReferralsRouter } from './routes/lab-referrals.js';
 import { notificationsRouter } from './routes/notifications.js';
 import { vacanciesRouter } from './routes/vacancies.js';
 import { chatRouter } from './routes/chat.js';
+import { websiteLeadsRouter } from './routes/website-leads.js';
+import { publicPaymentsRouter } from './routes/public-payments.js';
 import { rtcRouter } from './routes/rtc.js';
 import { createRepertoryRouter } from './routes/repertory/index.js';
 import { roleGuidesRouter } from './routes/role-guides.js';
@@ -230,6 +232,8 @@ app.use(labReferralsRouter);
 app.use(notificationsRouter);
 app.use(vacanciesRouter);
 app.use(chatRouter);
+app.use(websiteLeadsRouter);
+app.use(publicPaymentsRouter);
 
 // ── Global error handler ───────────────────────────────────────────────────────
 

@@ -1,5 +1,5 @@
 [build]
-  publish = "dist/healing-hub-website/browser"
+  publish = "dist/hope-hub-website/browser"
   command = "npm run build:netlify"
 
 [build.environment]
@@ -19,7 +19,7 @@
     X-XSS-Protection = "1; mode=block"
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "strict-origin-when-cross-origin"
-    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' https://api.telegram.org; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://api.telegram.org;"
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' https://checkout.razorpay.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://api.hopehub.in http://localhost:4000 https://checkout.razorpay.com; frame-src https://api.razorpay.com https://checkout.razorpay.com;"
 
 # Cache static assets
 [[headers]]

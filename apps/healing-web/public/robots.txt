@@ -1,4 +1,4 @@
-# Robots.txt for Healing Hub
+# Robots.txt for Hope Hub
 # https://healinghub.com/robots.txt
 
 User-agent: *
