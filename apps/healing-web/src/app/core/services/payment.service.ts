@@ -56,6 +56,28 @@ export class PaymentService {
     );
   }
 
+  async payConsultation(consultation: any): Promise<void> {
+    await this.loadRazorpayScript();
+    const order = await firstValueFrom(
+      this.http.post<DonationOrder>(`${this.apiUrl}/payments/${consultation.id}/create-order`, {}),
+    );
+
+    const payment = await this.openCheckout(order, {
+      amount: Math.round(order.amountInPaise / 100),
+      donorName: consultation.patient?.name || '',
+      donorEmail: consultation.patient?.email || '',
+      donorPhone: consultation.patient?.mobile || '',
+    });
+
+    await firstValueFrom(
+      this.http.post(`${this.apiUrl}/payments/${consultation.id}/verify`, {
+        razorpayOrderId: payment.razorpay_order_id,
+        razorpayPaymentId: payment.razorpay_payment_id,
+        razorpaySignature: payment.razorpay_signature,
+      }),
+    );
+  }
+
   private loadRazorpayScript(): Promise<void> {
     if (typeof window === 'undefined') return Promise.resolve();
     if (window.Razorpay) return Promise.resolve();

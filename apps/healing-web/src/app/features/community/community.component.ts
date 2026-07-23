@@ -225,7 +225,7 @@ export class CommunityComponent {
     date: this.getNextFirstSunday(),
     time: '2:00 PM - 4:00 PM EST',
     location: 'Community Center - 123 Wellness Ave, Healing City',
-    virtualLink: 'https://meet.healinghub.com/monthly-meetup',
+    virtualLink: 'https://meet.mind.hopehub.in/monthly-meetup',
     isVirtual: false,
     maxAttendees: 25,
   };

@@ -3,8 +3,15 @@ import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angula
 import { ActivatedRoute } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ContactForm } from '../../core/models/contact.model';
-import { LeadService, LoadingService, AuthService } from '../../core/services';
+import {
+  LeadService,
+  LoadingService,
+  AuthService,
+  BookingService,
+  PaymentService,
+} from '../../core/services';
 import { APP_CONSTANTS } from '../../core';
+import { FEATURED_SERVICES } from '../../core/data/services-data';
 import { AppointmentCalendarComponent, AppointmentSlot } from '../../shared/components';
 import { User } from '../../core/models/auth.model';
 
@@ -23,6 +30,8 @@ export class ContactComponent implements OnInit {
   private loadingService = inject(LoadingService);
   private route = inject(ActivatedRoute);
   private authService = inject(AuthService);
+  private bookingService = inject(BookingService);
+  private paymentService = inject(PaymentService);
 
   contactForm!: FormGroup;
 
@@ -63,6 +72,7 @@ export class ContactComponent implements OnInit {
         consultant: params['consultant'] || '',
         consultantPhone: params['consultantPhone'] || '',
         duration: params['duration'] || '',
+        price: params['price'] || '',
         source: params['source'] || '',
       });
     });
@@ -127,11 +137,7 @@ export class ContactComponent implements OnInit {
   }
 
   private getUserPhone(user: User | null): string {
-    if (!user) return '';
-
-    // Check if phone is stored in profile (you may need to add this field to your User model)
-    // For now, return empty string as phone is not in the User model
-    return '';
+    return user?.mobile || '';
   }
 
   private generateInitialMessage(): string {
@@ -164,7 +170,7 @@ export class ContactComponent implements OnInit {
     console.log('Appointment selected:', appointment);
   }
 
-  onSubmit(): void {
+  async onSubmit(): Promise<void> {
     if (this.contactForm.valid) {
       this.isSubmitting.set(true);
       this.loadingService.show();
@@ -191,55 +197,112 @@ export class ContactComponent implements OnInit {
         (formData as any).bookingSource = data.source;
       }
 
-      this.leadService.sendContactForm(formData).subscribe({
-        next: (success: boolean) => {
-          this.isSubmitting.set(false);
-          this.loadingService.hide();
-
-          if (success) {
-            this.showSuccessMessage.set(true);
-            // Reset form but preserve user data
-            const user = this.currentUser();
-            const userName = this.getUserName(user);
-            const userEmail = user?.email || '';
-            const userPhone = this.getUserPhone(user);
-
-            this.contactForm.reset({
-              name: userName,
-              email: userEmail,
-              phone: userPhone,
-              serviceInterest: '',
-              message: '',
-              preferredContact: user ? 'email' : '',
-            });
-
-            // Hide success message after 5 seconds
-            setTimeout(() => {
-              this.showSuccessMessage.set(false);
-            }, 5000);
-          } else {
-            this.showErrorMessage.set(true);
-            this.errorMessage.set('Failed to send message. Please try again.');
-          }
-        },
-        error: (error: any) => {
-          this.isSubmitting.set(false);
-          this.loadingService.hide();
-          this.showErrorMessage.set(true);
-          this.errorMessage.set(error.message || 'An unexpected error occurred. Please try again.');
-
-          // Hide error message after 8 seconds
-          setTimeout(() => {
-            this.showErrorMessage.set(false);
-            this.errorMessage.set('');
-          }, 8000);
-        },
-      });
+      try {
+        if (appointment) {
+          await this.submitBooking(formData, appointment);
+        } else {
+          await this.submitLead(formData);
+        }
+      } catch (error: any) {
+        this.showErrorMessage.set(true);
+        this.errorMessage.set(error.message || 'An unexpected error occurred. Please try again.');
+        setTimeout(() => {
+          this.showErrorMessage.set(false);
+          this.errorMessage.set('');
+        }, 8000);
+      } finally {
+        this.isSubmitting.set(false);
+        this.loadingService.hide();
+      }
     } else {
       // Mark all fields as touched to show validation errors
       Object.keys(this.contactForm.controls).forEach((key) => {
         this.contactForm.get(key)?.markAsTouched();
       });
     }
+  }
+
+  private async submitBooking(formData: ContactForm, appointment: AppointmentSlot): Promise<void> {
+    const user = this.currentUser();
+    if (!user) {
+      throw new Error('Please log in or create a patient account before booking an appointment.');
+    }
+
+    const data = this.prefilledData();
+    const serviceName =
+      formData.serviceInterest || data.serviceName || data.service || 'Hope Hub Consultation';
+    const response = await new Promise<{ consultation: any }>((resolve, reject) => {
+      this.bookingService
+        .createBooking({
+          serviceName,
+          servicePriceInPaise: this.resolveServicePriceInPaise(serviceName),
+          message: formData.message,
+          appointmentDate: this.formatLocalDate(appointment.date),
+          appointmentTime: appointment.time,
+          consultantName: data.consultant || appointment.consultant || '',
+          consultantPhone: data.consultantPhone || '',
+          sessionDuration: data.duration || '',
+          visitorName: formData.name,
+          visitorEmail: formData.email,
+          visitorPhone: formData.phone || '',
+          entryPage: typeof window === 'undefined' ? undefined : window.location.href,
+        })
+        .subscribe({ next: resolve, error: reject });
+    });
+
+    await this.paymentService.payConsultation(response.consultation);
+    this.showSuccessAndReset('Appointment booked and payment verified successfully.');
+  }
+
+  private async submitLead(formData: ContactForm): Promise<void> {
+    const success = await new Promise<boolean>((resolve, reject) => {
+      this.leadService.sendContactForm(formData).subscribe({ next: resolve, error: reject });
+    });
+    if (!success) {
+      throw new Error('Failed to send message. Please try again.');
+    }
+    this.showSuccessAndReset('Message sent successfully.');
+  }
+
+  private showSuccessAndReset(message: string): void {
+    this.showSuccessMessage.set(true);
+    this.errorMessage.set(message);
+
+    const user = this.currentUser();
+    const userName = this.getUserName(user);
+    const userEmail = user?.email || '';
+    const userPhone = this.getUserPhone(user);
+
+    this.contactForm.reset({
+      name: userName,
+      email: userEmail,
+      phone: userPhone,
+      serviceInterest: '',
+      message: '',
+      preferredContact: user ? 'email' : '',
+    });
+    this.selectedAppointment.set(null);
+
+    setTimeout(() => {
+      this.showSuccessMessage.set(false);
+      this.errorMessage.set('');
+    }, 5000);
+  }
+
+  private resolveServicePriceInPaise(serviceName: string): number {
+    const queryPrice = Number(this.prefilledData().price);
+    if (Number.isFinite(queryPrice) && queryPrice > 0) {
+      return Math.round(queryPrice * 100);
+    }
+
+    const featured = FEATURED_SERVICES.find((service) => service.name === serviceName);
+    return Math.round((featured?.price ?? 999) * 100);
+  }
+
+  private formatLocalDate(date: Date): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   }
 }

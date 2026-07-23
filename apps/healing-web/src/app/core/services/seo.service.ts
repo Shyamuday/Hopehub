@@ -30,7 +30,7 @@ export class SEOService {
   private readonly defaultKeywords =
     'mental health, counseling, therapy, hope hub, breakup counseling, career counseling, anxiety therapy, depression support, stress management';
   private readonly defaultImage = '/assets/images/og-image.jpg';
-  private readonly siteUrl = APP_CONSTANTS.SITE_URL || 'https://healinghub.com';
+  private readonly siteUrl = APP_CONSTANTS.SITE_URL || 'https://mind.hopehub.in';
 
   constructor(
     private titleService: Title,
@@ -137,7 +137,7 @@ export class SEOService {
         '@type': 'ContactPoint',
         telephone: '+1-234-567-8900',
         contactType: 'Customer Service',
-        email: 'info@healinghub.com',
+        email: 'info@mind.hopehub.in',
         availableLanguage: ['English'],
       },
       sameAs: [APP_CONSTANTS.TELEGRAM?.GROUP_URL || ''].filter(Boolean),

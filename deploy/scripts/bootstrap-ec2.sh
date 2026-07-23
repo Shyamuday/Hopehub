@@ -46,7 +46,7 @@ install_node() {
 setup_certbot() {
   mkdir -p /opt/hopehub/deploy/certbot/www /opt/hopehub/deploy/certbot/conf
   echo "Request certificates after DNS points to this host:"
-  echo "  certbot certonly --webroot -w /opt/hopehub/deploy/certbot/www -d api.hopehub.in -d hopehub.in -d admin.hopehub.in -d doctor.hopehub.in -d ops.hopehub.in"
+  echo "  certbot certonly --webroot -w /opt/hopehub/deploy/certbot/www -d api.hopehub.in -d hopehub.in -d mind.hopehub.in -d admin.hopehub.in -d doctor.hopehub.in -d ops.hopehub.in"
 }
 
 case "$step" in

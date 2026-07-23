@@ -1,163 +1,179 @@
-import { Component, OnInit, output, input, signal } from '@angular/core';
+import { Component, OnInit, output, input, signal, inject } from '@angular/core';
+import { BookingService } from '../../../core/services';
 
 export interface TimeSlot {
-    time: string;
-    available: boolean;
-    booked?: boolean;
+  time: string;
+  available: boolean;
+  booked?: boolean;
 }
 
 export interface AppointmentSlot {
-    date: Date;
-    time: string;
-    consultant?: string;
+  date: Date;
+  time: string;
+  consultant?: string;
 }
 
 @Component({
-    selector: 'app-appointment-calendar',
-    standalone: true,
-    imports: [],
-    templateUrl: './appointment-calendar.component.html',
-    styleUrl: './appointment-calendar.component.scss'
+  selector: 'app-appointment-calendar',
+  standalone: true,
+  imports: [],
+  templateUrl: './appointment-calendar.component.html',
+  styleUrl: './appointment-calendar.component.scss',
 })
 export class AppointmentCalendarComponent implements OnInit {
-    appointmentSelected = output<AppointmentSlot>();
-    selectedService = input<string | undefined>(undefined);
+  private bookingService = inject(BookingService);
 
-    currentMonth = signal(new Date());
-    selectedDate = signal<Date | null>(null);
-    selectedTime = signal<string | null>(null);
+  appointmentSelected = output<AppointmentSlot>();
+  selectedService = input<string | undefined>(undefined);
 
-    dayHeaders = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    calendarDays = signal<any[]>([]);
+  currentMonth = signal(new Date());
+  selectedDate = signal<Date | null>(null);
+  selectedTime = signal<string | null>(null);
 
-    morningSlots = signal<TimeSlot[]>([
-        { time: '9:00 AM', available: true },
-        { time: '9:30 AM', available: true },
-        { time: '10:00 AM', available: true },
-        { time: '10:30 AM', available: false, booked: true },
-        { time: '11:00 AM', available: true },
-        { time: '11:30 AM', available: true }
-    ]);
+  dayHeaders = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  calendarDays = signal<any[]>([]);
 
-    afternoonSlots = signal<TimeSlot[]>([
-        { time: '1:00 PM', available: true },
-        { time: '1:30 PM', available: true },
-        { time: '2:00 PM', available: false, booked: true },
-        { time: '2:30 PM', available: true },
-        { time: '3:00 PM', available: true },
-        { time: '3:30 PM', available: true },
-        { time: '4:00 PM', available: true },
-        { time: '4:30 PM', available: false, booked: true }
-    ]);
+  morningSlots = signal<TimeSlot[]>([
+    { time: '9:00 AM', available: true },
+    { time: '9:30 AM', available: true },
+    { time: '10:00 AM', available: true },
+    { time: '10:30 AM', available: false, booked: true },
+    { time: '11:00 AM', available: true },
+    { time: '11:30 AM', available: true },
+  ]);
 
-    eveningSlots = signal<TimeSlot[]>([
-        { time: '6:00 PM', available: true },
-        { time: '6:30 PM', available: true },
-        { time: '7:00 PM', available: true },
-        { time: '7:30 PM', available: false, booked: true }
-    ]);
+  afternoonSlots = signal<TimeSlot[]>([
+    { time: '1:00 PM', available: true },
+    { time: '1:30 PM', available: true },
+    { time: '2:00 PM', available: false, booked: true },
+    { time: '2:30 PM', available: true },
+    { time: '3:00 PM', available: true },
+    { time: '3:30 PM', available: true },
+    { time: '4:00 PM', available: true },
+    { time: '4:30 PM', available: false, booked: true },
+  ]);
 
-    ngOnInit() {
-        this.generateCalendar();
+  eveningSlots = signal<TimeSlot[]>([
+    { time: '6:00 PM', available: true },
+    { time: '6:30 PM', available: true },
+    { time: '7:00 PM', available: true },
+    { time: '7:30 PM', available: false, booked: true },
+  ]);
+
+  ngOnInit() {
+    this.generateCalendar();
+  }
+
+  generateCalendar() {
+    const year = this.currentMonth().getFullYear();
+    const month = this.currentMonth().getMonth();
+
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const startDate = new Date(firstDay);
+    startDate.setDate(startDate.getDate() - firstDay.getDay());
+
+    const days: any[] = [];
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    for (let i = 0; i < 42; i++) {
+      const date = new Date(startDate);
+      date.setDate(startDate.getDate() + i);
+
+      const isCurrentMonth = date.getMonth() === month;
+      const isToday = date.getTime() === today.getTime();
+      const isPast = date < today;
+      const isWeekend = date.getDay() === 0 || date.getDay() === 6;
+
+      days.push({
+        date: new Date(date),
+        day: date.getDate(),
+        isCurrentMonth,
+        isToday,
+        available: isCurrentMonth && !isPast && !isWeekend,
+      });
     }
+    this.calendarDays.set(days);
+  }
 
-    generateCalendar() {
-        const year = this.currentMonth().getFullYear();
-        const month = this.currentMonth().getMonth();
+  previousMonth() {
+    this.currentMonth.update((month) => {
+      const newMonth = new Date(month);
+      newMonth.setMonth(newMonth.getMonth() - 1);
+      return newMonth;
+    });
+    this.generateCalendar();
+    this.selectedDate.set(null);
+    this.selectedTime.set(null);
+  }
 
-        const firstDay = new Date(year, month, 1);
-        const lastDay = new Date(year, month + 1, 0);
-        const startDate = new Date(firstDay);
-        startDate.setDate(startDate.getDate() - firstDay.getDay());
+  nextMonth() {
+    this.currentMonth.update((month) => {
+      const newMonth = new Date(month);
+      newMonth.setMonth(newMonth.getMonth() + 1);
+      return newMonth;
+    });
+    this.generateCalendar();
+    this.selectedDate.set(null);
+    this.selectedTime.set(null);
+  }
 
-        const days: any[] = [];
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
+  selectDate(date: Date) {
+    this.selectedDate.set(new Date(date));
+    this.selectedTime.set(null);
+    this.generateTimeSlots();
+  }
 
-        for (let i = 0; i < 42; i++) {
-            const date = new Date(startDate);
-            date.setDate(startDate.getDate() + i);
+  selectTimeSlot(slot: TimeSlot) {
+    if (!slot.available) return;
 
-            const isCurrentMonth = date.getMonth() === month;
-            const isToday = date.getTime() === today.getTime();
-            const isPast = date < today;
-            const isWeekend = date.getDay() === 0 || date.getDay() === 6;
+    this.selectedTime.set(slot.time);
 
-            days.push({
-                date: new Date(date),
-                day: date.getDate(),
-                isCurrentMonth,
-                isToday,
-                available: isCurrentMonth && !isPast && !isWeekend
-            });
-        }
-        this.calendarDays.set(days);
+    if (this.selectedDate() && this.selectedTime()) {
+      this.appointmentSelected.emit({
+        date: this.selectedDate()!,
+        time: this.selectedTime()!,
+        consultant: this.selectedService(),
+      });
     }
+  }
 
-    previousMonth() {
-        this.currentMonth.update(month => {
-            const newMonth = new Date(month);
-            newMonth.setMonth(newMonth.getMonth() - 1);
-            return newMonth;
-        });
-        this.generateCalendar();
-        this.selectedDate.set(null);
-        this.selectedTime.set(null);
-    }
+  isSelectedDate(date: Date): boolean {
+    return this.selectedDate()?.toDateString() === date.toDateString();
+  }
 
-    nextMonth() {
-        this.currentMonth.update(month => {
-            const newMonth = new Date(month);
-            newMonth.setMonth(newMonth.getMonth() + 1);
-            return newMonth;
-        });
-        this.generateCalendar();
-        this.selectedDate.set(null);
-        this.selectedTime.set(null);
-    }
+  isSelectedTime(time: string): boolean {
+    return this.selectedTime() === time;
+  }
 
-    selectDate(date: Date) {
-        this.selectedDate.set(new Date(date));
-        this.selectedTime.set(null);
-        this.generateTimeSlots();
-    }
+  private generateTimeSlots() {
+    const selectedDate = this.selectedDate();
+    if (!selectedDate) return;
 
-    selectTimeSlot(slot: TimeSlot) {
-        if (!slot.available) return;
+    const date = this.formatLocalDate(selectedDate);
+    this.bookingService.slots(date).subscribe({
+      next: ({ slots }) => {
+        const toTimeSlots = (period: 'morning' | 'afternoon' | 'evening') =>
+          slots
+            .filter((slot) => slot.period === period)
+            .map((slot) => ({
+              time: slot.time,
+              available: slot.available,
+              booked: slot.booked,
+            }));
 
-        this.selectedTime.set(slot.time);
+        this.morningSlots.set(toTimeSlots('morning'));
+        this.afternoonSlots.set(toTimeSlots('afternoon'));
+        this.eveningSlots.set(toTimeSlots('evening'));
+      },
+    });
+  }
 
-        if (this.selectedDate() && this.selectedTime()) {
-            this.appointmentSelected.emit({
-                date: this.selectedDate()!,
-                time: this.selectedTime()!,
-                consultant: this.selectedService()
-            });
-        }
-    }
-
-    isSelectedDate(date: Date): boolean {
-        return this.selectedDate()?.toDateString() === date.toDateString();
-    }
-
-    isSelectedTime(time: string): boolean {
-        return this.selectedTime() === time;
-    }
-
-    private generateTimeSlots() {
-        // Simulate dynamic slot availability based on selected date
-        const dayOfWeek = this.selectedDate()?.getDay();
-
-        // Weekend slots are limited
-        if (dayOfWeek === 0 || dayOfWeek === 6) {
-            this.morningSlots.update(slots => slots.map(slot => ({ ...slot, available: Math.random() > 0.5 })));
-            this.afternoonSlots.update(slots => slots.map(slot => ({ ...slot, available: Math.random() > 0.3 })));
-            this.eveningSlots.update(slots => slots.map(slot => ({ ...slot, available: false })));
-        } else {
-            // Weekday slots
-            this.morningSlots.update(slots => slots.map(slot => ({ ...slot, available: Math.random() > 0.2 })));
-            this.afternoonSlots.update(slots => slots.map(slot => ({ ...slot, available: Math.random() > 0.2 })));
-            this.eveningSlots.update(slots => slots.map(slot => ({ ...slot, available: Math.random() > 0.4 })));
-        }
-    }
+  private formatLocalDate(date: Date): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
 }

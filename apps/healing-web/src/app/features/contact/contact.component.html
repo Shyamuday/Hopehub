@@ -230,9 +230,9 @@
         <button type="submit" [disabled]="contactForm.invalid || isSubmitting()"
           class="w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
           @if (!isSubmitting()) {
-          <span>Send Message</span>
+          <span>{{ selectedAppointment() ? 'Book & Pay' : 'Send Message' }}</span>
           } @else {
-          <span>Sending...</span>
+          <span>{{ selectedAppointment() ? 'Creating booking...' : 'Sending...' }}</span>
           }
         </button>
       </form>
@@ -246,7 +246,7 @@
               d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
               clip-rule="evenodd"></path>
           </svg>
-          <span class="font-medium">Message sent successfully!</span>
+          <span class="font-medium">{{ errorMessage() || 'Message sent successfully!' }}</span>
         </div>
         <p class="mt-1 text-sm">We'll get back to you within 24 hours using your preferred contact method.</p>
       </div>
@@ -286,7 +286,7 @@
             </div>
             <div class="ml-4">
               <h3 class="text-lg font-medium text-gray-900">Email</h3>
-              <p class="text-gray-600">contact@healinghub.com</p>
+              <p class="text-gray-600">contact@mind.hopehub.in</p>
               <p class="text-sm text-gray-500 mt-1">We typically respond within 24 hours</p>
             </div>
           </div>
@@ -349,13 +349,6 @@
           Emergency support available 24/7 through our crisis hotline: 988
         </p>
       </div>
-    </div>
-
-    <!-- Appointment Calendar Section -->
-    <div class="space-y-6">
-      <app-appointment-calendar [selectedService]="contactForm.get('serviceInterest')?.value"
-        (appointmentSelected)="onAppointmentSelected($event)">
-      </app-appointment-calendar>
     </div>
   </div>
 </div>

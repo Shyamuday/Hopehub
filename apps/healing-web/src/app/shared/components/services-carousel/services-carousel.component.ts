@@ -26,7 +26,7 @@ export interface CarouselService {
   standalone: true,
   imports: [RouterModule],
   templateUrl: './services-carousel.component.html',
-  styleUrl: './services-carousel.component.scss'
+  styleUrl: './services-carousel.component.scss',
 })
 export class ServicesCarouselComponent implements OnInit {
   private router = inject(Router);
@@ -58,7 +58,7 @@ export class ServicesCarouselComponent implements OnInit {
 
   previousSlide() {
     this.currentSlide.update((current: number) =>
-      current === 0 ? this.featuredServices().length - 1 : current - 1
+      current === 0 ? this.featuredServices().length - 1 : current - 1,
     );
   }
 
@@ -82,8 +82,9 @@ export class ServicesCarouselComponent implements OnInit {
         consultant: service.consultantName,
         consultantPhone: service.consultantPhone,
         duration: service.duration,
-        source: 'carousel'
-      }
+        price: service.price,
+        source: 'carousel',
+      },
     });
   }
 }

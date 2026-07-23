@@ -1,5 +1,5 @@
 export const APP_CONSTANTS = {
-  SITE_URL: 'https://healinghub.com',
+  SITE_URL: 'https://mind.hopehub.in',
   SITE_NAME: 'Hope Hub',
   TELEGRAM: {
     GROUP_URL: 'https://t.me/mindhopehub',
@@ -10,7 +10,7 @@ export const APP_CONSTANTS = {
     QR_CODE: '/image/whatsapp-qr.png',
   },
   CONTACT: {
-    EMAIL: 'contact@healinghub.com',
+    EMAIL: 'contact@mind.hopehub.in',
     PHONE: '+1 (555) 123-4567',
     CRISIS_HOTLINE: '988',
   },

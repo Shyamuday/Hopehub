@@ -35,6 +35,7 @@ PORT=4000
 API_PUBLIC_URL="https://api.hopehub.in"
 API_URL="https://api.hopehub.in"
 WEB_ORIGIN="https://hopehub.in,http://localhost:4203,http://127.0.0.1:4203"
+CORS_ORIGINS="https://hopehub.in,https://mind.hopehub.in,https://admin.hopehub.in,https://doctor.hopehub.in,https://ops.hopehub.in,http://localhost:4203,http://127.0.0.1:4203,http://localhost:4200,http://127.0.0.1:4200"
 ADMIN_ORIGIN="https://admin.hopehub.in"
 DOCTOR_ORIGIN="https://doctor.hopehub.in"
 OPERATIONS_ORIGIN="https://ops.hopehub.in"

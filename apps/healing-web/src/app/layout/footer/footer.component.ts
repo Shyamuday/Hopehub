@@ -104,10 +104,10 @@ import { APP_CONSTANTS } from '../../core';
               <li>
                 <span class="block font-medium">Email:</span>
                 <a
-                  href="mailto:info@healinghub.com"
+                  href="mailto:info@mind.hopehub.in"
                   class="hover:text-white transition-colors duration-200 break-all"
                 >
-                  info@healinghub.com
+                  info@mind.hopehub.in
                 </a>
               </li>
               <li>
