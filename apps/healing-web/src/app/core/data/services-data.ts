@@ -4,6 +4,13 @@ export const HOPE_HUB_SESSION_PRICE = 300;
 export const HOPE_HUB_SESSION_CURRENCY = 'INR';
 export const HOPE_HUB_SESSION_DURATION = '30 minutes';
 
+const SERVICE_IMAGES = {
+  sunrise: '/image/hopehub-healing-sunrise.png',
+  meditation: '/image/hopehub-hero-meditation.png',
+  nature: '/image/hopehub-calm-nature.png',
+  flow: '/image/hopehub-abstract-flow.png',
+} as const;
+
 export const HOPE_HUB_SERVICES: Service[] = [
   {
     id: 'breakup-counseling',
@@ -23,7 +30,7 @@ export const HOPE_HUB_SERVICES: Service[] = [
     pricing: { individual: HOPE_HUB_SESSION_PRICE, currency: HOPE_HUB_SESSION_CURRENCY },
     category: ServiceCategory.RELATIONSHIP,
     featured: true,
-    imageUrl: '/assets/images/breakup-counseling.jpg',
+    imageUrl: SERVICE_IMAGES.sunrise,
   },
   {
     id: 'anxiety-therapy',
@@ -43,7 +50,7 @@ export const HOPE_HUB_SERVICES: Service[] = [
     pricing: { individual: HOPE_HUB_SESSION_PRICE, currency: HOPE_HUB_SESSION_CURRENCY },
     category: ServiceCategory.MENTAL_HEALTH,
     featured: true,
-    imageUrl: '/assets/images/anxiety-therapy.jpg',
+    imageUrl: SERVICE_IMAGES.meditation,
   },
   {
     id: 'stress-burnout-support',
@@ -63,7 +70,7 @@ export const HOPE_HUB_SERVICES: Service[] = [
     pricing: { individual: HOPE_HUB_SESSION_PRICE, currency: HOPE_HUB_SESSION_CURRENCY },
     category: ServiceCategory.MENTAL_HEALTH,
     featured: true,
-    imageUrl: '/assets/images/stress-management.jpg',
+    imageUrl: SERVICE_IMAGES.flow,
   },
   {
     id: 'career-study-pressure',
@@ -83,7 +90,7 @@ export const HOPE_HUB_SERVICES: Service[] = [
     pricing: { individual: HOPE_HUB_SESSION_PRICE, currency: HOPE_HUB_SESSION_CURRENCY },
     category: ServiceCategory.CAREER,
     featured: true,
-    imageUrl: '/assets/images/career-counseling.jpg',
+    imageUrl: SERVICE_IMAGES.nature,
   },
   {
     id: 'relationship-guidance',
@@ -103,7 +110,7 @@ export const HOPE_HUB_SERVICES: Service[] = [
     pricing: { individual: HOPE_HUB_SESSION_PRICE, currency: HOPE_HUB_SESSION_CURRENCY },
     category: ServiceCategory.RELATIONSHIP,
     featured: true,
-    imageUrl: '/assets/images/relationship-counseling.jpg',
+    imageUrl: SERVICE_IMAGES.sunrise,
   },
   {
     id: 'self-esteem-confidence',
@@ -123,7 +130,7 @@ export const HOPE_HUB_SERVICES: Service[] = [
     pricing: { individual: HOPE_HUB_SESSION_PRICE, currency: HOPE_HUB_SESSION_CURRENCY },
     category: ServiceCategory.MENTAL_HEALTH,
     featured: false,
-    imageUrl: '/assets/images/self-esteem-coaching.jpg',
+    imageUrl: SERVICE_IMAGES.meditation,
   },
   {
     id: 'loneliness-emotional-support',
@@ -143,7 +150,7 @@ export const HOPE_HUB_SERVICES: Service[] = [
     pricing: { individual: HOPE_HUB_SESSION_PRICE, currency: HOPE_HUB_SESSION_CURRENCY },
     category: ServiceCategory.MENTAL_HEALTH,
     featured: false,
-    imageUrl: '/assets/images/depression-support.jpg',
+    imageUrl: SERVICE_IMAGES.nature,
   },
   {
     id: 'sleep-overthinking-support',
@@ -162,7 +169,7 @@ export const HOPE_HUB_SERVICES: Service[] = [
     pricing: { individual: HOPE_HUB_SESSION_PRICE, currency: HOPE_HUB_SESSION_CURRENCY },
     category: ServiceCategory.MENTAL_HEALTH,
     featured: false,
-    imageUrl: '/assets/images/stress-management.jpg',
+    imageUrl: SERVICE_IMAGES.flow,
   },
   {
     id: 'family-conflict-support',
@@ -182,7 +189,7 @@ export const HOPE_HUB_SERVICES: Service[] = [
     pricing: { individual: HOPE_HUB_SESSION_PRICE, currency: HOPE_HUB_SESSION_CURRENCY },
     category: ServiceCategory.FAMILY,
     featured: false,
-    imageUrl: '/assets/images/family-therapy.jpg',
+    imageUrl: SERVICE_IMAGES.nature,
   },
   {
     id: 'grief-loss-support',
@@ -202,7 +209,7 @@ export const HOPE_HUB_SERVICES: Service[] = [
     pricing: { individual: HOPE_HUB_SESSION_PRICE, currency: HOPE_HUB_SESSION_CURRENCY },
     category: ServiceCategory.MENTAL_HEALTH,
     featured: false,
-    imageUrl: '/assets/images/grief-counseling.jpg',
+    imageUrl: SERVICE_IMAGES.sunrise,
   },
   {
     id: 'depression-mood-support',
@@ -222,7 +229,7 @@ export const HOPE_HUB_SERVICES: Service[] = [
     pricing: { individual: HOPE_HUB_SESSION_PRICE, currency: HOPE_HUB_SESSION_CURRENCY },
     category: ServiceCategory.MENTAL_HEALTH,
     featured: false,
-    imageUrl: '/assets/images/depression-support.jpg',
+    imageUrl: SERVICE_IMAGES.nature,
   },
   {
     id: 'anger-emotional-control',
@@ -241,7 +248,7 @@ export const HOPE_HUB_SERVICES: Service[] = [
     pricing: { individual: HOPE_HUB_SESSION_PRICE, currency: HOPE_HUB_SESSION_CURRENCY },
     category: ServiceCategory.MENTAL_HEALTH,
     featured: false,
-    imageUrl: '/assets/images/stress-management.jpg',
+    imageUrl: SERVICE_IMAGES.flow,
   },
   {
     id: 'social-anxiety-confidence',
@@ -261,7 +268,7 @@ export const HOPE_HUB_SERVICES: Service[] = [
     pricing: { individual: HOPE_HUB_SESSION_PRICE, currency: HOPE_HUB_SESSION_CURRENCY },
     category: ServiceCategory.MENTAL_HEALTH,
     featured: false,
-    imageUrl: '/assets/images/anxiety-therapy.jpg',
+    imageUrl: SERVICE_IMAGES.meditation,
   },
   {
     id: 'exam-performance-stress',
@@ -280,7 +287,7 @@ export const HOPE_HUB_SERVICES: Service[] = [
     pricing: { individual: HOPE_HUB_SESSION_PRICE, currency: HOPE_HUB_SESSION_CURRENCY },
     category: ServiceCategory.CAREER,
     featured: false,
-    imageUrl: '/assets/images/career-counseling.jpg',
+    imageUrl: SERVICE_IMAGES.nature,
   },
   {
     id: 'addiction-habit-support',
@@ -300,7 +307,7 @@ export const HOPE_HUB_SERVICES: Service[] = [
     pricing: { individual: HOPE_HUB_SESSION_PRICE, currency: HOPE_HUB_SESSION_CURRENCY },
     category: ServiceCategory.ADDICTION,
     featured: false,
-    imageUrl: '/assets/images/addiction-support.jpg',
+    imageUrl: SERVICE_IMAGES.flow,
   },
   {
     id: 'trauma-emotional-shock',
@@ -319,7 +326,7 @@ export const HOPE_HUB_SERVICES: Service[] = [
     pricing: { individual: HOPE_HUB_SESSION_PRICE, currency: HOPE_HUB_SESSION_CURRENCY },
     category: ServiceCategory.MENTAL_HEALTH,
     featured: false,
-    imageUrl: '/assets/images/grief-counseling.jpg',
+    imageUrl: SERVICE_IMAGES.sunrise,
   },
   {
     id: 'parenting-child-behavior',
@@ -339,7 +346,7 @@ export const HOPE_HUB_SERVICES: Service[] = [
     pricing: { individual: HOPE_HUB_SESSION_PRICE, currency: HOPE_HUB_SESSION_CURRENCY },
     category: ServiceCategory.FAMILY,
     featured: false,
-    imageUrl: '/assets/images/family-therapy.jpg',
+    imageUrl: SERVICE_IMAGES.nature,
   },
   {
     id: 'couples-pre-marriage-guidance',
@@ -359,7 +366,7 @@ export const HOPE_HUB_SERVICES: Service[] = [
     pricing: { individual: HOPE_HUB_SESSION_PRICE, currency: HOPE_HUB_SESSION_CURRENCY },
     category: ServiceCategory.RELATIONSHIP,
     featured: false,
-    imageUrl: '/assets/images/relationship-counseling.jpg',
+    imageUrl: SERVICE_IMAGES.sunrise,
   },
 ];
 

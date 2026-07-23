@@ -7,7 +7,7 @@ export const APP_CONSTANTS = {
   },
   WHATSAPP: {
     GROUP_URL: 'https://chat.whatsapp.com/CbbNoo5kXw3FWWKTGO82kz',
-    QR_CODE: '/image/whatsapp-qr.png',
+    QR_CODE: '/image/qrmindhopehub.jpg',
   },
   CONTACT: {
     EMAIL: 'contact@mind.hopehub.in',

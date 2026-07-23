@@ -251,6 +251,7 @@ type BookingTimelineStep = {
                           [class.border-green-200]="step.done"
                           [class.bg-green-50]="step.done"
                           [class.text-green-800]="step.done"
+                          [class.hope-progress-done]="step.done"
                           [class.border-gray-200]="!step.done"
                           [class.bg-gray-50]="!step.done"
                           [class.text-gray-500]="!step.done"

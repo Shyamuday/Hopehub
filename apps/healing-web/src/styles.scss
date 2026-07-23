@@ -127,6 +127,22 @@ select {
   font-size: 16px;
   color: var(--text-primary);
   background-color: #ffffff;
+  transition:
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    transform 180ms ease,
+    background-color 180ms ease;
+}
+
+input[type="text"]:focus,
+input[type="email"]:focus,
+input[type="tel"]:focus,
+input[type="password"]:focus,
+input[type="number"]:focus,
+textarea:focus,
+select:focus {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 24px rgba(2, 132, 199, 0.12);
 }
 
 ::placeholder {
@@ -137,6 +153,99 @@ select {
 /* Smooth scrolling for better mobile experience */
 html {
   scroll-behavior: smooth;
+}
+
+/* Calm motion utilities for Hope Hub */
+@keyframes hopeFadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes hopeSoftPulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(2, 132, 199, 0.22);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(2, 132, 199, 0);
+  }
+}
+
+@keyframes hopeProgressFill {
+  from {
+    transform: scaleX(0.45);
+    opacity: 0.7;
+  }
+  to {
+    transform: scaleX(1);
+    opacity: 1;
+  }
+}
+
+.hope-animate-fade-up {
+  animation: hopeFadeUp 0.65s ease both;
+}
+
+.hope-delay-1 {
+  animation-delay: 90ms;
+}
+
+.hope-delay-2 {
+  animation-delay: 180ms;
+}
+
+.hope-delay-3 {
+  animation-delay: 270ms;
+}
+
+.hope-delay-4 {
+  animation-delay: 360ms;
+}
+
+.hope-motion-card {
+  transform: translateY(0);
+  transition:
+    transform 220ms ease,
+    box-shadow 220ms ease,
+    border-color 220ms ease,
+    background-color 220ms ease;
+}
+
+.hope-motion-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 14px 32px rgba(15, 23, 42, 0.12);
+}
+
+.hope-motion-card:hover img {
+  transform: scale(1.035);
+}
+
+.hope-motion-card img {
+  transition: transform 320ms ease;
+}
+
+.hope-motion-icon {
+  transition: transform 220ms ease;
+}
+
+.hope-motion-card:hover .hope-motion-icon,
+.hope-motion-icon:hover {
+  transform: translateY(-2px) scale(1.04);
+}
+
+.hope-progress-done {
+  animation: hopeProgressFill 420ms ease both;
+  transform-origin: left center;
+}
+
+.hope-soft-pulse {
+  animation: hopeSoftPulse 2.8s ease-in-out infinite;
 }
 
 /* Enhanced focus styles for accessibility and branding */
@@ -182,6 +291,16 @@ a:focus {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+
+  html {
+    scroll-behavior: auto;
+  }
+
+  .hope-motion-card,
+  .hope-motion-card:hover,
+  .hope-motion-card:hover img {
+    transform: none !important;
   }
 }
 

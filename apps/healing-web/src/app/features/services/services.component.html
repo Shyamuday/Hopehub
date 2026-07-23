@@ -38,7 +38,7 @@
 
   <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
     @for (service of filteredServices(); track service.id) {
-      <div class="cursor-pointer transform hover:scale-105 transition-transform duration-200"
+      <div class="cursor-pointer hope-animate-fade-up"
            (click)="navigateToService(service.id)">
         <app-service-card 
           [service]="service"

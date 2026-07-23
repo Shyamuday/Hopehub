@@ -29,7 +29,7 @@ export class SEOService {
     'Professional mental health services including breakup counseling, career counseling, anxiety therapy, depression support, and more. Join our supportive community.';
   private readonly defaultKeywords =
     'mental health, counseling, therapy, hope hub, breakup counseling, career counseling, anxiety therapy, depression support, stress management';
-  private readonly defaultImage = '/assets/images/og-image.jpg';
+  private readonly defaultImage = '/image/hopehub-hero-meditation.png';
   private readonly siteUrl = APP_CONSTANTS.SITE_URL || 'https://mind.hopehub.in';
 
   constructor(
@@ -131,7 +131,7 @@ export class SEOService {
       '@type': 'Organization',
       name: 'Hope Hub',
       url: this.siteUrl,
-      logo: this.getAbsoluteUrl('/assets/images/logo.png'),
+      logo: this.getAbsoluteUrl('/image/hopehub-hero-meditation.png'),
       description: this.defaultDescription,
       contactPoint: {
         '@type': 'ContactPoint',
@@ -204,7 +204,7 @@ export class SEOService {
         name: 'Hope Hub',
         logo: {
           '@type': 'ImageObject',
-          url: this.getAbsoluteUrl('/assets/images/logo.png'),
+          url: this.getAbsoluteUrl('/image/hopehub-hero-meditation.png'),
         },
       },
       datePublished: article.datePublished,

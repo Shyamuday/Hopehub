@@ -28,22 +28,35 @@ import { getAllServices } from '../../core/data/services-data';
     </app-announcement-banner>
 
     <!-- Hero Section -->
-    <section class="bg-gradient-to-br from-blue-50 to-indigo-100 py-12 sm:py-16 md:py-20 lg:py-24">
-      <div class="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
+    <section class="relative overflow-hidden bg-slate-900 py-12 sm:py-16 md:py-20 lg:py-24">
+      <img
+        src="/image/hopehub-hero-meditation.png"
+        alt=""
+        class="absolute inset-0 h-full w-full object-cover"
+      />
+      <div class="absolute inset-0 bg-white/72"></div>
+      <div
+        class="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-white to-transparent"
+      ></div>
+      <div class="relative z-10 container mx-auto px-4 sm:px-6 lg:px-8 text-center">
         <h1
-          class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-4 sm:mb-6"
+          class="hope-animate-fade-up text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-4 sm:mb-6"
         >
           Welcome to <span class="text-primary-600">Hope Hub</span>
         </h1>
-        <p class="text-lg sm:text-xl md:text-2xl text-gray-700 mb-3 sm:mb-4 max-w-3xl mx-auto">
+        <p
+          class="hope-animate-fade-up hope-delay-1 text-lg sm:text-xl md:text-2xl text-gray-700 mb-3 sm:mb-4 max-w-3xl mx-auto"
+        >
           Your Journey to Mental Wellness Starts Here
         </p>
-        <p class="text-base sm:text-lg text-gray-600 mb-6 sm:mb-8 max-w-2xl mx-auto">
+        <p
+          class="hope-animate-fade-up hope-delay-2 text-base sm:text-lg text-gray-600 mb-6 sm:mb-8 max-w-2xl mx-auto"
+        >
           Professional mental health services providing support, guidance, and healing for
           individuals seeking to improve their emotional well-being and life satisfaction.
         </p>
         <div
-          class="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-center max-w-md sm:max-w-none mx-auto"
+          class="hope-animate-fade-up hope-delay-3 flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-center max-w-md sm:max-w-none mx-auto"
         >
           <button
             class="cta-button w-full sm:w-auto bg-sky-700 text-white px-6 sm:px-8 py-3 rounded-lg text-base sm:text-lg font-semibold shadow-sm hover:bg-sky-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-700 transition-colors duration-200"
@@ -65,7 +78,12 @@ import { getAllServices } from '../../core/data/services-data';
     <app-services-carousel></app-services-carousel>
 
     <!-- How Hope Hub Works -->
-    <section class="py-12 sm:py-16 bg-white">
+    <section class="relative overflow-hidden py-12 sm:py-16 bg-white">
+      <img
+        src="/image/hopehub-abstract-flow.png"
+        alt=""
+        class="pointer-events-none absolute right-0 top-0 hidden h-full w-1/2 object-cover opacity-10 lg:block"
+      />
       <div class="container mx-auto px-4 sm:px-6 lg:px-8">
         <div class="text-center mb-8 sm:mb-12">
           <h2 class="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-3 sm:mb-4">
@@ -78,9 +96,15 @@ import { getAllServices } from '../../core/data/services-data';
 
         <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
           @for (step of howItWorksSteps; track step.title; let i = $index) {
-            <div class="rounded-lg border border-blue-100 bg-blue-50 p-5">
+            <div
+              class="hope-motion-card hope-animate-fade-up rounded-lg border border-blue-100 bg-blue-50 p-5"
+              [class.hope-delay-1]="i === 1"
+              [class.hope-delay-2]="i === 2"
+              [class.hope-delay-3]="i === 3"
+              [class.hope-delay-4]="i === 4"
+            >
               <div
-                class="mb-4 flex h-9 w-9 items-center justify-center rounded-full bg-blue-700 text-sm font-bold text-white"
+                class="hope-motion-icon mb-4 flex h-9 w-9 items-center justify-center rounded-full bg-blue-700 text-sm font-bold text-white"
               >
                 {{ i + 1 }}
               </div>
@@ -113,7 +137,7 @@ import { getAllServices } from '../../core/data/services-data';
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
           <!-- Mental Health Assessments -->
           <div
-            class="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow cursor-pointer group"
+            class="hope-motion-card bg-white rounded-xl shadow-lg p-6 cursor-pointer group"
             routerLink="/assessments"
           >
             <div
@@ -158,7 +182,7 @@ import { getAllServices } from '../../core/data/services-data';
 
           <!-- Wellness Exercises -->
           <div
-            class="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow cursor-pointer group"
+            class="hope-motion-card bg-white rounded-xl shadow-lg p-6 cursor-pointer group"
             routerLink="/exercises"
           >
             <div
@@ -203,7 +227,7 @@ import { getAllServices } from '../../core/data/services-data';
 
           <!-- Lifestyle Tips -->
           <div
-            class="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow cursor-pointer group"
+            class="hope-motion-card bg-white rounded-xl shadow-lg p-6 cursor-pointer group"
             routerLink="/lifestyle-tips"
           >
             <div
@@ -248,7 +272,7 @@ import { getAllServices } from '../../core/data/services-data';
 
           <!-- Educational Articles -->
           <div
-            class="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow cursor-pointer group"
+            class="hope-motion-card bg-white rounded-xl shadow-lg p-6 cursor-pointer group"
             routerLink="/articles"
           >
             <div
@@ -375,10 +399,10 @@ import { getAllServices } from '../../core/data/services-data';
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 max-w-4xl mx-auto">
           <!-- Telegram Community -->
-          <div class="bg-white rounded-lg shadow-md p-6 sm:p-8 text-center">
+          <div class="hope-motion-card bg-white rounded-lg shadow-md p-6 sm:p-8 text-center">
             <div class="mb-4 sm:mb-6">
               <div
-                class="w-12 h-12 sm:w-16 sm:h-16 bg-blue-500 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4"
+                class="hope-motion-icon hope-soft-pulse w-12 h-12 sm:w-16 sm:h-16 bg-blue-500 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4"
               >
                 <svg
                   class="w-6 h-6 sm:w-8 sm:h-8 text-white"
@@ -411,10 +435,10 @@ import { getAllServices } from '../../core/data/services-data';
           </div>
 
           <!-- Monthly Meetup -->
-          <div class="bg-white rounded-lg shadow-md p-6 sm:p-8 text-center">
+          <div class="hope-motion-card bg-white rounded-lg shadow-md p-6 sm:p-8 text-center">
             <div class="mb-4 sm:mb-6">
               <div
-                class="w-12 h-12 sm:w-16 sm:h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4"
+                class="hope-motion-icon w-12 h-12 sm:w-16 sm:h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4"
               >
                 <svg
                   class="w-6 h-6 sm:w-8 sm:h-8 text-white"
@@ -615,8 +639,8 @@ export class HomeComponent implements OnInit {
     description: 'A supportive group session focused on sharing experiences and healing together.',
     date: this.getNextFirstSunday(),
     time: '2:00 PM - 4:00 PM',
-    location: 'Community Center - Room 101',
-    isVirtual: false,
+    location: 'Virtual Meeting',
+    isVirtual: true,
     maxAttendees: 20,
   };
 

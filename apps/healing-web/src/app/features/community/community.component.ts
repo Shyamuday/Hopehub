@@ -25,22 +25,22 @@ import { APP_CONSTANTS } from '../../core';
           Why Join Our Community?
         </h2>
         <div class="grid md:grid-cols-3 gap-8">
-          <div class="text-center p-6 bg-blue-50 rounded-lg">
-            <div class="text-blue-600 text-4xl mb-4">ID</div>
+          <div class="hope-motion-card text-center p-6 bg-blue-50 rounded-lg">
+            <div class="hope-motion-icon text-blue-600 text-4xl mb-4">ID</div>
             <h3 class="text-xl font-semibold mb-2">Low-Identity Support</h3>
             <p class="text-gray-600">
               Use a display name or username and talk only as much as you feel comfortable sharing.
             </p>
           </div>
-          <div class="text-center p-6 bg-green-50 rounded-lg">
-            <div class="text-green-600 text-4xl mb-4">01</div>
+          <div class="hope-motion-card text-center p-6 bg-green-50 rounded-lg">
+            <div class="hope-motion-icon text-green-600 text-4xl mb-4">01</div>
             <h3 class="text-xl font-semibold mb-2">Resources & Tips</h3>
             <p class="text-gray-600">
               Get coping prompts, self-care ideas, and service guidance without pressure to book.
             </p>
           </div>
-          <div class="text-center p-6 bg-purple-50 rounded-lg">
-            <div class="text-purple-600 text-4xl mb-4">30</div>
+          <div class="hope-motion-card text-center p-6 bg-purple-50 rounded-lg">
+            <div class="hope-motion-icon text-purple-600 text-4xl mb-4">30</div>
             <h3 class="text-xl font-semibold mb-2">Growth Together</h3>
             <p class="text-gray-600">
               Move from chat to a 30-minute paid support session when you want focused help.
@@ -78,7 +78,9 @@ import { APP_CONSTANTS } from '../../core';
       <!-- Community Channels Section -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
         <!-- Telegram Card -->
-        <div class="bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg p-8">
+        <div
+          class="hope-motion-card bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg p-8"
+        >
           <div class="text-center">
             <h2 class="text-2xl font-bold mb-3">Anonymous-Friendly Telegram</h2>
             <p class="mb-3 opacity-90">
@@ -104,7 +106,9 @@ import { APP_CONSTANTS } from '../../core';
         </div>
 
         <!-- WhatsApp Card -->
-        <div class="bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg p-8">
+        <div
+          class="hope-motion-card bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg p-8"
+        >
           <div class="text-center">
             <h2 class="text-2xl font-bold mb-3">Join Our WhatsApp Group</h2>
             <p class="mb-4 opacity-90">
@@ -145,7 +149,7 @@ import { APP_CONSTANTS } from '../../core';
         </div>
 
         <div class="max-w-2xl mx-auto">
-          <div class="bg-white rounded-lg shadow-md p-6">
+          <div class="hope-motion-card bg-white rounded-lg shadow-md p-6">
             <div class="flex items-center justify-between mb-4">
               <h3 class="text-xl font-semibold text-gray-900">{{ nextMeetup.title }}</h3>
               <span class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">

@@ -1,6 +1,6 @@
-<div class="bg-white rounded-lg shadow-md p-4 sm:p-6 hover:shadow-lg transition-shadow duration-300 h-full flex flex-col">
+<div class="hope-motion-card bg-white rounded-lg border border-gray-100 shadow-md p-4 sm:p-6 hover:border-blue-200 h-full flex flex-col">
   @if (service().imageUrl) {
-    <div class="mb-3 sm:mb-4">
+    <div class="mb-3 sm:mb-4 overflow-hidden rounded-md">
       <img [src]="service().imageUrl" [alt]="service().name" class="w-full h-40 sm:h-48 object-cover rounded-md">
     </div>
   }
