@@ -83,14 +83,20 @@ import { APP_CONSTANTS } from '../../core';
         >
           <div class="text-center">
             <h2 class="text-2xl font-bold mb-3">Anonymous-Friendly Telegram</h2>
-            <p class="mb-3 opacity-90">
-              Many people hesitate to ask for mental health support because they fear identity
-              exposure. Telegram lets you participate with a username or display name.
-            </p>
-            <p class="mb-6 text-sm opacity-80">
-              Please review your Telegram privacy settings and avoid posting personal details in the
-              group.
-            </p>
+            <ul class="mb-6 space-y-3 text-left text-sm leading-6 opacity-90">
+              <li class="rounded-lg bg-white/10 p-3">
+                Daily 9 PM voice chat with Hope Hub experts.
+              </li>
+              <li class="rounded-lg bg-white/10 p-3">
+                24/7 chat support for low-pressure conversation and guidance.
+              </li>
+              <li class="rounded-lg bg-white/10 p-3">
+                Join with a username or display name if identity privacy matters.
+              </li>
+              <li class="rounded-lg bg-white/10 p-3">
+                Review Telegram privacy settings and avoid sharing personal details publicly.
+              </li>
+            </ul>
             <button
               (click)="joinTelegramGroup()"
               class="bg-white text-blue-600 font-semibold py-3 px-8 rounded-lg hover:bg-gray-100 transition-colors duration-200 inline-flex items-center"
@@ -111,10 +117,20 @@ import { APP_CONSTANTS } from '../../core';
         >
           <div class="text-center">
             <h2 class="text-2xl font-bold mb-3">Join Our WhatsApp Group</h2>
-            <p class="mb-4 opacity-90">
-              Use WhatsApp when you are comfortable with your phone-number identity being visible
-              according to WhatsApp group settings.
-            </p>
+            <ul class="mb-4 space-y-3 text-left text-sm leading-6 opacity-90">
+              <li class="rounded-lg bg-white/10 p-3">
+                Good for quick updates, reminders, and follow-up messages.
+              </li>
+              <li class="rounded-lg bg-white/10 p-3">
+                Use it when you are comfortable with WhatsApp group identity visibility.
+              </li>
+              <li class="rounded-lg bg-white/10 p-3">
+                Your phone number may be visible according to WhatsApp group settings.
+              </li>
+              <li class="rounded-lg bg-white/10 p-3">
+                For sensitive concerns, Telegram is better for low-identity discussion.
+              </li>
+            </ul>
             <div class="flex justify-center mb-4">
               <img
                 [src]="APP_CONSTANTS.WHATSAPP.QR_CODE"
