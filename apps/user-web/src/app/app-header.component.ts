@@ -118,7 +118,7 @@ export class AppHeaderComponent implements OnDestroy {
     event.preventDefault();
     this.closeMenu();
     this.overlayService.open(AuthFormOverlayComponent, {
-      width: '480px',
+      width: '440px',
       panelClass: 'app-overlay-panel',
     });
   }

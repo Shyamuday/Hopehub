@@ -1,14 +1,17 @@
 import { Component, Input, OnInit, inject, signal } from '@angular/core';
 import { FOOTER_CONTENT } from './core/constants/footer-content.constants';
 import { PUBLIC_SITE_BRAND } from './core/constants/public-site-content.constants';
-import { PublicConfigService, type PublicFooterContact } from './core/services/public-config.service';
+import {
+  PublicConfigService,
+  type PublicFooterContact,
+} from './core/services/public-config.service';
 import { AuthFormOverlayComponent } from './auth/auth-form-overlay.component';
 import { AppOverlayService } from './overlay.service';
 
 @Component({
   selector: 'app-footer',
   templateUrl: './app-footer.component.html',
-  styleUrl: './app-footer.component.scss'
+  styleUrl: './app-footer.component.scss',
 })
 export class AppFooterComponent implements OnInit {
   @Input() whatsappLink = '';
@@ -27,8 +30,8 @@ export class AppFooterComponent implements OnInit {
   openAuthOverlay(event: Event) {
     event.preventDefault();
     this.overlayService.open(AuthFormOverlayComponent, {
-      width: '480px',
-      panelClass: 'app-overlay-panel'
+      width: '440px',
+      panelClass: 'app-overlay-panel',
     });
   }
 }
