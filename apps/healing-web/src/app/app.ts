@@ -32,7 +32,7 @@ import { FontLoader } from './core/utils/font-loader.util';
 export class App implements OnInit {
   protected readonly title = signal('hope-hub-website');
   protected readonly announcementItems = [
-    'Hope Hub introductory consultation: ₹10/min, 30-minute session',
+    'Daily 9 PM Telegram voice circle with Hope Hub experts',
     'Request support for breakup, anxiety, career stress, mood, and relationships',
     'Provider is matched after your request is reviewed',
   ];

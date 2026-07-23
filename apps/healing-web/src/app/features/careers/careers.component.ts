@@ -50,36 +50,24 @@ export class CareersComponent {
     this.loadingService.show();
 
     const value = this.applicationForm.getRawValue();
-    const message = [
-      'Counsellor application for Hope Hub',
-      '',
-      `Full name: ${value.fullName}`,
-      `Phone: ${value.phone}`,
-      `City: ${value.city}`,
-      `Qualification: ${value.qualification}`,
-      `Specialization: ${value.specialization}`,
-      `Experience: ${value.experienceYears}`,
-      `Registration/license: ${value.registrationDetails || 'Not provided'}`,
-      `Languages: ${value.languages}`,
-      `Availability: ${value.availability}`,
-      `Preferred contact: ${value.preferredChannel}`,
-      `Resume/profile link: ${value.resumeLink}`,
-      `Portfolio/LinkedIn: ${value.portfolioLink || 'Not provided'}`,
-      '',
-      `Why join Hope Hub: ${value.whyJoin}`,
-    ].join('\n');
 
     await new Promise<void>((resolve) => {
       this.leadService
-        .sendContactForm({
-          name: value.fullName || '',
+        .sendCounsellorApplication({
+          fullName: value.fullName || '',
           email: value.email || '',
           phone: value.phone || '',
-          serviceInterest: 'Counsellor Application',
-          urgencyLevel: 'normal',
-          preferredTime: value.availability || '',
-          message,
-          preferredContact: value.preferredChannel as ContactMethod,
+          city: value.city || '',
+          qualification: value.qualification || '',
+          specialization: value.specialization || '',
+          experienceYears: value.experienceYears || '',
+          registrationDetails: value.registrationDetails || '',
+          languages: value.languages || '',
+          availability: value.availability || '',
+          preferredChannel: value.preferredChannel as ContactMethod,
+          resumeLink: value.resumeLink || '',
+          portfolioLink: value.portfolioLink || '',
+          whyJoin: value.whyJoin || '',
         })
         .subscribe({
           next: (success) => {

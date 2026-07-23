@@ -79,27 +79,27 @@ import { APP_CONSTANTS } from '../../core';
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
         <!-- Telegram Card -->
         <div
-          class="hope-motion-card bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg p-8"
+          class="hope-motion-card rounded-lg border border-blue-100 bg-white p-8 text-slate-800 shadow-sm"
         >
           <div class="text-center">
-            <h2 class="text-2xl font-bold mb-3">Anonymous-Friendly Telegram</h2>
-            <ul class="mb-6 space-y-3 text-left text-sm leading-6 opacity-90">
-              <li class="rounded-lg bg-white/10 p-3">
+            <h2 class="text-2xl font-bold mb-3 text-slate-950">Anonymous-Friendly Telegram</h2>
+            <ul class="mb-6 space-y-3 text-left text-sm leading-6 text-slate-700">
+              <li class="rounded-lg bg-blue-50 p-3">
                 Daily 9 PM voice chat with Hope Hub experts.
               </li>
-              <li class="rounded-lg bg-white/10 p-3">
+              <li class="rounded-lg bg-blue-50 p-3">
                 24/7 chat support for low-pressure conversation and guidance.
               </li>
-              <li class="rounded-lg bg-white/10 p-3">
+              <li class="rounded-lg bg-blue-50 p-3">
                 Join with a username or display name if identity privacy matters.
               </li>
-              <li class="rounded-lg bg-white/10 p-3">
+              <li class="rounded-lg bg-blue-50 p-3">
                 Review Telegram privacy settings and avoid sharing personal details publicly.
               </li>
             </ul>
             <button
               (click)="joinTelegramGroup()"
-              class="bg-white text-blue-600 font-semibold py-3 px-8 rounded-lg hover:bg-gray-100 transition-colors duration-200 inline-flex items-center"
+              class="bg-blue-600 text-white font-semibold py-3 px-8 rounded-lg hover:bg-blue-700 transition-colors duration-200 inline-flex items-center"
             >
               <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
                 <path
@@ -113,21 +113,21 @@ import { APP_CONSTANTS } from '../../core';
 
         <!-- WhatsApp Card -->
         <div
-          class="hope-motion-card bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg p-8"
+          class="hope-motion-card rounded-lg border border-green-100 bg-white p-8 text-slate-800 shadow-sm"
         >
           <div class="text-center">
-            <h2 class="text-2xl font-bold mb-3">Join Our WhatsApp Group</h2>
-            <ul class="mb-4 space-y-3 text-left text-sm leading-6 opacity-90">
-              <li class="rounded-lg bg-white/10 p-3">
+            <h2 class="text-2xl font-bold mb-3 text-slate-950">Join Our WhatsApp Group</h2>
+            <ul class="mb-4 space-y-3 text-left text-sm leading-6 text-slate-700">
+              <li class="rounded-lg bg-green-50 p-3">
                 Good for quick updates, reminders, and follow-up messages.
               </li>
-              <li class="rounded-lg bg-white/10 p-3">
+              <li class="rounded-lg bg-green-50 p-3">
                 Use it when you are comfortable with WhatsApp group identity visibility.
               </li>
-              <li class="rounded-lg bg-white/10 p-3">
+              <li class="rounded-lg bg-green-50 p-3">
                 Your phone number may be visible according to WhatsApp group settings.
               </li>
-              <li class="rounded-lg bg-white/10 p-3">
+              <li class="rounded-lg bg-green-50 p-3">
                 For sensitive concerns, Telegram is better for low-identity discussion.
               </li>
             </ul>
@@ -142,7 +142,7 @@ import { APP_CONSTANTS } from '../../core';
               [href]="APP_CONSTANTS.WHATSAPP.GROUP_URL"
               target="_blank"
               rel="noopener noreferrer"
-              class="bg-white text-green-600 font-semibold py-3 px-8 rounded-lg hover:bg-gray-100 transition-colors duration-200 inline-flex items-center"
+              class="bg-green-600 text-white font-semibold py-3 px-8 rounded-lg hover:bg-green-700 transition-colors duration-200 inline-flex items-center"
             >
               <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
                 <path

@@ -62,6 +62,14 @@ export const routes: Routes = [
       { path: ROUTE_PATHS.REWARDS, component: RewardsPage, canActivate: guard },
       { path: ROUTE_PATHS.CLINICAL_RECORDS, component: ClinicalRecordsPage, canActivate: guard },
       { path: ROUTE_PATHS.VACANCIES, component: VacanciesPage, canActivate: guard },
+      {
+        path: ROUTE_PATHS.COUNSELLOR_APPLICATIONS,
+        loadComponent: () =>
+          import('./features/counsellor-applications/counsellor-applications-page').then(
+            (m) => m.CounsellorApplicationsPage,
+          ),
+        canActivate: guard,
+      },
       { path: ROUTE_PATHS.HR, component: DoctorHrComponent, canActivate: guard },
       { path: ROUTE_PATHS.HR_USERS, component: HrUsersComponent, canActivate: guard },
       { path: ROUTE_PATHS.EMPLOYEES, component: EmployeesPage, canActivate: guard },

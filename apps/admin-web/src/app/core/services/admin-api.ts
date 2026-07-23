@@ -640,6 +640,18 @@ export class AdminApi {
   closeVacancy(...args: Parameters<AdminOpsApi['closeVacancy']>) {
     return this.ops.closeVacancy(...(args as Parameters<AdminOpsApi['closeVacancy']>));
   }
+  listCounsellorApplications(...args: Parameters<AdminOpsApi['listCounsellorApplications']>) {
+    return this.ops.listCounsellorApplications(
+      ...(args as Parameters<AdminOpsApi['listCounsellorApplications']>),
+    );
+  }
+  updateCounsellorApplicationStatus(
+    ...args: Parameters<AdminOpsApi['updateCounsellorApplicationStatus']>
+  ) {
+    return this.ops.updateCounsellorApplicationStatus(
+      ...(args as Parameters<AdminOpsApi['updateCounsellorApplicationStatus']>),
+    );
+  }
 
   listRewardRules() {
     return this.rewards.listRewardRules();

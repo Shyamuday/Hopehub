@@ -9,6 +9,23 @@ type LeadResponse = {
   success: boolean;
 };
 
+export type CounsellorApplicationPayload = {
+  fullName: string;
+  email: string;
+  phone: string;
+  city: string;
+  qualification: string;
+  specialization: string;
+  experienceYears: string;
+  registrationDetails?: string;
+  languages: string;
+  availability: string;
+  preferredChannel: ContactMethod;
+  resumeLink: string;
+  portfolioLink?: string;
+  whyJoin: string;
+};
+
 @Injectable({
   providedIn: 'root',
 })
@@ -33,13 +50,22 @@ export class LeadService {
     });
   }
 
+  sendCounsellorApplication(payload: CounsellorApplicationPayload): Observable<boolean> {
+    return this.http
+      .post<{ applicationId: string; success: boolean }>(
+        `${environment.apiUrl}/counsellor-applications`,
+        this.withBrowserContext(payload),
+      )
+      .pipe(map((response) => response.success));
+  }
+
   private createLead(payload: ContactForm): Observable<boolean> {
     return this.http
       .post<LeadResponse>(this.endpoint, this.withBrowserContext(payload))
       .pipe(map((response) => response.success));
   }
 
-  private withBrowserContext(payload: ContactForm) {
+  private withBrowserContext<T extends object>(payload: T) {
     return {
       ...payload,
       entryPage: typeof window === 'undefined' ? undefined : window.location.href,
