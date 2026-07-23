@@ -24,7 +24,13 @@ import { getAllServices } from '../../core/data/services-data';
   ],
   template: `
     <!-- Announcement Banner -->
-    <app-announcement-banner [message]="announcementMessage" (onDismiss)="onAnnouncementDismiss()">
+    <app-announcement-banner
+      [message]="announcementMessage"
+      actionLabel="View support options"
+      actionHref="/services"
+      tone="emerald"
+      (onDismiss)="onAnnouncementDismiss()"
+    >
     </app-announcement-banner>
 
     <!-- Hero Section -->

@@ -1,3 +1,166 @@
-// Announcement banner component styles
-// Most styles are handled by Tailwind classes
+.announcement {
+  --announcement-bg: #ecfeff;
+  --announcement-border: #99f6e4;
+  --announcement-text: #0f172a;
+  --announcement-accent: #0f766e;
+  color: var(--announcement-text);
+}
+
+.announcement--blue {
+  --announcement-bg: #eff6ff;
+  --announcement-border: #bfdbfe;
+  --announcement-accent: #1d4ed8;
+}
+
+.announcement--emerald {
+  --announcement-bg: #ecfdf5;
+  --announcement-border: #a7f3d0;
+  --announcement-accent: #047857;
+}
+
+.announcement--highlight {
+  padding: 0.75rem 1rem;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.76), rgba(255, 255, 255, 0.38)),
+    var(--announcement-bg);
+  border-bottom: 1px solid var(--announcement-border);
+}
+
+.announcement__inner {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.75rem;
+  width: min(100%, 72rem);
+  margin: 0 auto;
+}
+
+.announcement__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 999px;
+  background: #ffffff;
+  color: var(--announcement-accent);
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+}
+
+.announcement__icon svg,
+.announcement__close svg {
+  width: 1.1rem;
+  height: 1.1rem;
+}
+
+.announcement__copy {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.85rem;
+  min-width: 0;
+}
+
+.announcement__copy p {
+  margin: 0;
+  color: var(--announcement-text);
+  font-size: clamp(0.82rem, 2vw, 0.98rem);
+  font-weight: 700;
+}
+
+.announcement__copy a {
+  color: var(--announcement-accent);
+  font-size: 0.85rem;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.announcement__copy a:hover {
+  text-decoration: underline;
+}
+
+.announcement__close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.5rem;
+  min-height: 2.5rem;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: #475569;
+  cursor: pointer;
+}
+
+.announcement__close:hover {
+  background: rgba(255, 255, 255, 0.72);
+  color: #0f172a;
+}
+
+.announcement--marquee {
+  overflow: hidden;
+  border-bottom: 1px solid var(--announcement-border);
+  background: var(--announcement-bg);
+  white-space: nowrap;
+}
+
+.announcement__track {
+  display: inline-flex;
+  min-width: max-content;
+  gap: 2rem;
+  padding: 0.55rem 0;
+  font-size: 0.875rem;
+  font-weight: 800;
+  animation: announcement-scroll 34s linear infinite;
+}
+
+.announcement__track span {
+  position: relative;
+  padding-left: 1.25rem;
+}
+
+.announcement__track span::before {
+  position: absolute;
+  left: 0;
+  color: var(--announcement-accent);
+  content: "•";
+}
+
+.announcement--marquee:hover .announcement__track {
+  animation-play-state: paused;
+}
+
+@keyframes announcement-scroll {
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@media (max-width: 640px) {
+  .announcement__inner {
+    align-items: start;
+  }
+
+  .announcement__copy {
+    display: grid;
+    gap: 0.2rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .announcement--marquee {
+    white-space: normal;
+  }
+
+  .announcement__track {
+    animation: none;
+    flex-wrap: wrap;
+    gap: 0.5rem 1rem;
+    padding: 0.5rem 1rem;
+  }
+}
 

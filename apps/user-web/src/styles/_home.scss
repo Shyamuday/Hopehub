@@ -85,6 +85,9 @@
   width: min(100%, 480px);
   gap: 1.25rem;
   padding: 2rem;
+  border-radius: 0.75rem;
+  background: #ffffff;
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.18);
 }
 
 .auth-card form,

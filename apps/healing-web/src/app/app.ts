@@ -7,6 +7,7 @@ import {
   GlobalLoadingComponent,
   QuickAccessComponent,
   AuthModalComponent,
+  AnnouncementBannerComponent,
 } from './shared/components';
 import { NavigationService, SEOService } from './core/services';
 import { FontLoader } from './core/utils/font-loader.util';
@@ -21,12 +22,18 @@ import { FontLoader } from './core/utils/font-loader.util';
     GlobalLoadingComponent,
     QuickAccessComponent,
     AuthModalComponent,
+    AnnouncementBannerComponent,
   ],
   templateUrl: './app.html',
   styleUrl: './app.scss',
 })
 export class App implements OnInit {
   protected readonly title = signal('hope-hub-website');
+  protected readonly announcementItems = [
+    'Hope Hub introductory consultation: ₹10/min, 30-minute session',
+    'Request support for breakup, anxiety, career stress, mood, and relationships',
+    'Provider is matched after your request is reviewed',
+  ];
 
   private seoService = inject(SEOService);
   private platformId = inject(PLATFORM_ID);
