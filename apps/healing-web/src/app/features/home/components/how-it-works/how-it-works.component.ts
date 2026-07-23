@@ -1,4 +1,5 @@
 import { Component } from '@angular/core';
+import { RouterModule } from '@angular/router';
 
 interface HowItWorksStep {
   title: string;
@@ -8,6 +9,7 @@ interface HowItWorksStep {
 @Component({
   selector: 'app-how-it-works',
   standalone: true,
+  imports: [RouterModule],
   templateUrl: './how-it-works.component.html',
 })
 export class HowItWorksComponent {

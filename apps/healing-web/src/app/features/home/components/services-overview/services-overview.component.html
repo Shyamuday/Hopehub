@@ -15,6 +15,7 @@
         <app-service-card
           [service]="service"
           [hidePricing]="true"
+          (learnMore)="navigateToService($event)"
           class="transform hover:scale-105 transition-transform duration-200"
         />
       }

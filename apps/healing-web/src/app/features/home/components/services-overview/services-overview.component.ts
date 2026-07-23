@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { RouterModule } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { ServiceCardComponent } from '../../../../shared/components';
 import { Service } from '../../../../core/models';
 import { getAllServices } from '../../../../core/data/services-data';
@@ -13,4 +13,10 @@ import { getAllServices } from '../../../../core/data/services-data';
 })
 export class ServicesOverviewComponent {
   readonly services: Service[] = getAllServices();
+
+  constructor(private readonly router: Router) {}
+
+  navigateToService(serviceId: string): void {
+    this.router.navigate(['/services', serviceId]);
+  }
 }
