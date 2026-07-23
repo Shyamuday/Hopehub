@@ -59,7 +59,7 @@ import { getAllServices } from '../../core/data/services-data';
           class="hope-animate-fade-up hope-delay-3 flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-center max-w-md sm:max-w-none mx-auto"
         >
           <button
-            class="cta-button w-full sm:w-auto bg-sky-700 text-white px-6 sm:px-8 py-3 rounded-lg text-base sm:text-lg font-semibold shadow-sm hover:bg-sky-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-700 transition-colors duration-200"
+            class="cta-button w-full sm:w-auto bg-teal-700 text-white px-6 sm:px-8 py-3 rounded-lg text-base sm:text-lg font-semibold shadow-sm hover:bg-teal-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700 transition-colors duration-200"
             routerLink="/services"
           >
             Explore Services
