@@ -2,7 +2,7 @@
 <app-announcement-banner
   [message]="announcementMessage"
   actionLabel="Join community"
-  actionHref="/community"
+  [actionHref]="APP_CONSTANTS.TELEGRAM.GROUP_URL"
   tone="emerald"
   (onDismiss)="onAnnouncementDismiss()"
 >

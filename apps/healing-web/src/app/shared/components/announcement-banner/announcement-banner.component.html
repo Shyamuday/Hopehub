@@ -18,7 +18,12 @@
         <div class="announcement__copy">
           <p>{{ message() }}</p>
           @if (actionLabel() && actionHref()) {
-            <a [href]="actionHref()">{{ actionLabel() }}</a>
+            <a
+              [href]="actionHref()"
+              [attr.target]="isExternalAction() ? '_blank' : null"
+              [attr.rel]="isExternalAction() ? 'noopener noreferrer' : null"
+              >{{ actionLabel() }}</a
+            >
           }
         </div>
         @if (dismissible()) {

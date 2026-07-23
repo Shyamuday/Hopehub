@@ -31,6 +31,10 @@ export class AnnouncementBannerComponent {
     return this.message() ? [this.message(), this.message()] : [];
   }
 
+  isExternalAction(): boolean {
+    return /^https?:\/\//.test(this.actionHref());
+  }
+
   dismiss() {
     this.dismissed.set(true);
     this.onDismiss.emit();
