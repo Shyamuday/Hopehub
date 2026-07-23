@@ -1,20 +1,21 @@
 import { Component, Inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
+import { RouterModule } from '@angular/router';
 import { Meetup } from '../../core/models/meetup.model';
 import { APP_CONSTANTS } from '../../core';
 
 @Component({
   selector: 'app-community',
   standalone: true,
-  imports: [],
+  imports: [RouterModule],
   template: `
     <div class="container mx-auto px-4 py-8">
       <!-- Hero Section -->
       <div class="text-center mb-12">
         <h1 class="text-4xl font-bold text-gray-900 mb-4">Join Our Healing Community</h1>
         <p class="text-lg text-gray-600 max-w-3xl mx-auto">
-          Connect with others on their healing journey, share experiences, and find support in our
-          welcoming community.
+          Join low-pressure support spaces for mental wellness, emotional healing, and practical
+          coping. Share only what feels safe, and choose Telegram when identity privacy matters.
         </p>
       </div>
 
@@ -25,28 +26,52 @@ import { APP_CONSTANTS } from '../../core';
         </h2>
         <div class="grid md:grid-cols-3 gap-8">
           <div class="text-center p-6 bg-blue-50 rounded-lg">
-            <div class="text-blue-600 text-4xl mb-4">🤝</div>
+            <div class="text-blue-600 text-4xl mb-4">ID</div>
             <h3 class="text-xl font-semibold mb-2">Low-Identity Support</h3>
             <p class="text-gray-600">
               Use a display name or username and talk only as much as you feel comfortable sharing.
             </p>
           </div>
           <div class="text-center p-6 bg-green-50 rounded-lg">
-            <div class="text-green-600 text-4xl mb-4">📚</div>
+            <div class="text-green-600 text-4xl mb-4">01</div>
             <h3 class="text-xl font-semibold mb-2">Resources & Tips</h3>
             <p class="text-gray-600">
-              Access helpful resources, coping strategies, and wellness tips shared by our
-              community.
+              Get coping prompts, self-care ideas, and service guidance without pressure to book.
             </p>
           </div>
           <div class="text-center p-6 bg-purple-50 rounded-lg">
-            <div class="text-purple-600 text-4xl mb-4">🌱</div>
+            <div class="text-purple-600 text-4xl mb-4">30</div>
             <h3 class="text-xl font-semibold mb-2">Growth Together</h3>
             <p class="text-gray-600">
-              Participate in group activities and workshops designed to support your healing
-              process.
+              Move from chat to a 30-minute paid support session when you want focused help.
             </p>
           </div>
+        </div>
+      </div>
+
+      <div class="mb-12 rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+        <div class="grid gap-6 md:grid-cols-3">
+          <div>
+            <h2 class="text-2xl font-semibold text-gray-900">Community Safety Rules</h2>
+            <p class="mt-2 text-sm leading-6 text-gray-600">
+              These spaces are for peer support and routing. They are not emergency care or a
+              replacement for clinical treatment.
+            </p>
+          </div>
+          <ul class="space-y-3 text-sm leading-6 text-gray-700 md:col-span-2">
+            <li class="rounded-md bg-slate-50 p-3">
+              Do not share full address, private documents, payment screenshots, or passwords in any
+              group.
+            </li>
+            <li class="rounded-md bg-slate-50 p-3">
+              Telegram is preferred for low-identity discussion; your privacy still depends on your
+              Telegram settings.
+            </li>
+            <li class="rounded-md bg-slate-50 p-3">
+              For paid help, use the request form so the team can confirm payment, concern type, and
+              contact preference properly.
+            </li>
+          </ul>
         </div>
       </div>
 
@@ -83,7 +108,8 @@ import { APP_CONSTANTS } from '../../core';
           <div class="text-center">
             <h2 class="text-2xl font-bold mb-3">Join Our WhatsApp Group</h2>
             <p class="mb-4 opacity-90">
-              Connect instantly on WhatsApp. Scan the QR code or click the button to join.
+              Use WhatsApp when you are comfortable with your phone-number identity being visible
+              according to WhatsApp group settings.
             </p>
             <div class="flex justify-center mb-4">
               <img
@@ -114,7 +140,7 @@ import { APP_CONSTANTS } from '../../core';
         <div class="text-center mb-8">
           <h2 class="text-3xl font-bold text-gray-900 mb-4">Monthly Healing Meetups</h2>
           <p class="text-lg text-gray-600">
-            Join us every first Sunday of the month for our community healing meetup.
+            A virtual-first support circle planned around India time.
           </p>
         </div>
 
@@ -185,33 +211,30 @@ import { APP_CONSTANTS } from '../../core';
                     d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
                   ></path>
                 </svg>
-                <span class="text-gray-700">
-                  {{ nextMeetup.isVirtual ? 'Virtual Meeting' : nextMeetup.location }}
-                </span>
+                <span class="text-gray-700">Virtual Meeting</span>
               </div>
             }
 
             <div class="flex items-center justify-between">
               @if (nextMeetup.maxAttendees) {
                 <div class="text-sm text-gray-500">
-                  Limited to {{ nextMeetup.maxAttendees }} attendees
+                  Limited to {{ nextMeetup.maxAttendees }} seats
                 </div>
               }
               <button
                 (click)="handleMeetupAction()"
                 class="bg-blue-600 text-white font-semibold py-2 px-6 rounded-lg hover:bg-blue-700 transition-colors duration-200"
               >
-                {{ nextMeetup.isVirtual ? 'Get Meeting Link' : 'RSVP Now' }}
+                Ask in Telegram
               </button>
             </div>
           </div>
         </div>
 
         <div class="text-center mt-8">
-          <p class="text-gray-600">
-            Can't make it this month? Don't worry! We host these meetups every first Sunday of the
-            month.
-          </p>
+          <a routerLink="/contact" class="text-blue-700 font-semibold hover:text-blue-800">
+            Need private support instead? Send a request
+          </a>
         </div>
       </div>
     </div>
@@ -225,12 +248,11 @@ export class CommunityComponent {
     id: 'monthly-meetup-' + new Date().getFullYear() + '-' + (new Date().getMonth() + 1),
     title: 'Monthly Healing Circle',
     description:
-      'Join us for a supportive group session where we share experiences, practice mindfulness, and build connections with fellow community members.',
+      'Join a guided virtual support circle for sharing, grounding practice, and gentle next-step planning.',
     date: this.getNextFirstSunday(),
-    time: '2:00 PM - 4:00 PM EST',
-    location: 'Community Center - 123 Wellness Ave, Healing City',
-    virtualLink: 'https://meet.mind.hopehub.in/monthly-meetup',
-    isVirtual: false,
+    time: '2:00 PM - 4:00 PM IST',
+    location: 'Virtual Meeting',
+    isVirtual: true,
     maxAttendees: 25,
   };
 
@@ -268,7 +290,7 @@ export class CommunityComponent {
   }
 
   formatDate(date: Date): string {
-    return date.toLocaleDateString('en-US', {
+    return date.toLocaleDateString('en-IN', {
       weekday: 'long',
       year: 'numeric',
       month: 'long',
@@ -286,14 +308,6 @@ export class CommunityComponent {
   handleMeetupAction(): void {
     if (!this.isBrowser) return;
 
-    if (this.nextMeetup.isVirtual && this.nextMeetup.virtualLink) {
-      window.open(this.nextMeetup.virtualLink, '_blank', 'noopener,noreferrer');
-    } else {
-      // For in-person meetups, could redirect to RSVP form or contact page
-      // For now, we'll show an alert with contact information
-      alert(
-        'To RSVP for this meetup, please contact us through our contact form or join our Telegram group for more details.',
-      );
-    }
+    window.open(APP_CONSTANTS.TELEGRAM.GROUP_URL, '_blank', 'noopener,noreferrer');
   }
 }
