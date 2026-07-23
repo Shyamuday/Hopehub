@@ -125,6 +125,17 @@ export const routes: Routes = [
     },
   },
   {
+    path: 'dashboard',
+    loadComponent: () =>
+      import('./features/dashboard/dashboard.component').then((m) => m.DashboardComponent),
+    title: 'My Consultations - Hope Hub',
+    data: {
+      breadcrumb: 'My Consultations',
+      description: 'View Hope Hub bookings and join voice or video consultation calls',
+      keywords: 'hope hub dashboard, consultation call, video call, voice call',
+    },
+  },
+  {
     path: '404',
     loadComponent: () =>
       import('./features/not-found/not-found.component').then((m) => m.NotFoundComponent),

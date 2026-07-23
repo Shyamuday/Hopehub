@@ -1,6 +1,6 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, RouterModule } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ContactForm } from '../../core/models/contact.model';
 import {
@@ -18,7 +18,7 @@ import { User } from '../../core/models/auth.model';
 @Component({
   selector: 'app-contact',
   standalone: true,
-  imports: [ReactiveFormsModule, AppointmentCalendarComponent],
+  imports: [ReactiveFormsModule, RouterModule, AppointmentCalendarComponent],
   templateUrl: './contact.component.html',
   styleUrl: './contact.component.scss',
 })

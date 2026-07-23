@@ -157,7 +157,7 @@ import { User } from '../../core/models/auth.model';
                         routerLink="/dashboard"
                         class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-primary-600"
                       >
-                        Dashboard
+                        My Consultations
                       </a>
                       <a
                         routerLink="/profile"
@@ -337,6 +337,42 @@ import { User } from '../../core/models/auth.model';
               >
                 💚 Support Us
               </a>
+
+              @if (user()) {
+                <div class="border-t border-gray-200 mt-2 pt-2"></div>
+                <a
+                  routerLink="/dashboard"
+                  (click)="navigateAndClose('/dashboard')"
+                  routerLinkActive="text-primary-600 bg-primary-50"
+                  class="text-gray-700 hover:text-primary-600 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-semibold transition-colors duration-200"
+                  role="menuitem"
+                >
+                  My Consultations
+                </a>
+                <button
+                  (click)="logout()"
+                  class="text-left text-gray-700 hover:text-primary-600 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium transition-colors duration-200"
+                  role="menuitem"
+                >
+                  Sign Out
+                </button>
+              } @else {
+                <div class="border-t border-gray-200 mt-2 pt-2"></div>
+                <button
+                  (click)="openLogin()"
+                  class="text-left text-gray-700 hover:text-primary-600 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium transition-colors duration-200"
+                  role="menuitem"
+                >
+                  Sign In
+                </button>
+                <button
+                  (click)="openRegister()"
+                  class="bg-primary-600 hover:bg-primary-700 text-white px-3 py-2 rounded-md text-base font-semibold transition-colors duration-200"
+                  role="menuitem"
+                >
+                  Get Started
+                </button>
+              }
             </div>
 
             <!-- Mobile Navigation Loading Indicator -->
