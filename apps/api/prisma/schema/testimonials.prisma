@@ -1,16 +1,24 @@
 model Testimonial {
-  id          String   @id @default(cuid())
-  patientName String
-  location    String?
-  condition   String?
-  duration    String?
-  quote       String   @db.Text
-  stars       Int      @default(5)
-  isPublished Boolean  @default(false)
-  sortOrder   Int?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id               String   @id @default(cuid())
+  patientName      String
+  location         String?
+  condition        String?
+  duration         String?
+  quote            String   @db.Text
+  stars            Int      @default(5)
+  isPublished      Boolean  @default(false)
+  sortOrder        Int?
+  isAnonymous      Boolean  @default(false)
+  consentToPublish Boolean  @default(false)
+  submitterEmail   String?
+  source           String   @default("admin")
+  entryPage        String?
+  reviewedAt       DateTime?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
   @@index([isPublished])
+  @@index([consentToPublish])
+  @@index([source])
   @@index([sortOrder])
 }

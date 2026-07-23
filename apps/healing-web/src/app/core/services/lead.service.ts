@@ -26,6 +26,29 @@ export type CounsellorApplicationPayload = {
   whyJoin: string;
 };
 
+export type PublicTestimonial = {
+  id: string;
+  patientName: string;
+  location?: string | null;
+  condition?: string | null;
+  duration?: string | null;
+  quote: string;
+  stars: number;
+  isAnonymous: boolean;
+  createdAt: string;
+};
+
+export type TestimonialFeedbackPayload = {
+  displayName?: string;
+  email?: string;
+  location?: string;
+  supportArea?: string;
+  quote: string;
+  stars: number;
+  isAnonymous: boolean;
+  consentToPublish: boolean;
+};
+
 @Injectable({
   providedIn: 'root',
 })
@@ -54,6 +77,21 @@ export class LeadService {
     return this.http
       .post<{ applicationId: string; success: boolean }>(
         `${environment.apiUrl}/counsellor-applications`,
+        this.withBrowserContext(payload),
+      )
+      .pipe(map((response) => response.success));
+  }
+
+  listTestimonials(): Observable<PublicTestimonial[]> {
+    return this.http
+      .get<{ testimonials: PublicTestimonial[] }>(`${environment.apiUrl}/testimonials`)
+      .pipe(map((response) => response.testimonials));
+  }
+
+  sendTestimonialFeedback(payload: TestimonialFeedbackPayload): Observable<boolean> {
+    return this.http
+      .post<{ success: boolean }>(
+        `${environment.apiUrl}/testimonials`,
         this.withBrowserContext(payload),
       )
       .pipe(map((response) => response.success));

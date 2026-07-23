@@ -1,3 +1,6 @@
 @use '../content-page';
 .stars-row { color: #f59e0b; margin-left: 0.4rem; letter-spacing: 0.05em; font-size: 0.85rem; }
 .quote { font-style: italic; color: #374151; line-height: 1.7; margin: 0.5rem 0 0; font-size: 0.9rem; }
+.submitter { margin: 0.4rem 0 0; color: #64748b; font-size: 0.82rem; }
+.badge.review { background: #fef3c7; color: #92400e; }
+.badge.private { background: #e0f2fe; color: #075985; }

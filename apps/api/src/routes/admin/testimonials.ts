@@ -13,6 +13,10 @@ const schema = z.object({
   quote: z.string().min(10).max(1200),
   stars: z.number().int().min(1).max(5).default(5),
   isPublished: z.boolean().default(false),
+  isAnonymous: z.boolean().default(false),
+  consentToPublish: z.boolean().default(true),
+  submitterEmail: z.string().email().max(254).optional().nullable(),
+  source: z.string().max(80).optional(),
   sortOrder: z.number().int().min(1).max(999).optional().nullable()
 });
 
@@ -35,8 +39,21 @@ export function registerAdminTestimonialRoutes(router: Router) {
     allowRoles(Role.ADMIN, Role.MARKETING),
     asyncRoute(async (req, res) => {
       const body = schema.parse(req.body);
-      const testimonial = await prisma.testimonial.create({ data: body });
-      await writeAuditLog({ actorId: req.user!.id, actorRole: req.user!.role, action: 'testimonial.create', targetType: 'testimonial', targetId: testimonial.id, summary: `Testimonial created for "${body.patientName}".` });
+      const testimonial = await prisma.testimonial.create({
+        data: {
+          ...body,
+          source: body.source || 'admin',
+          reviewedAt: body.isPublished ? new Date() : null
+        }
+      });
+      await writeAuditLog({
+        actorId: req.user!.id,
+        actorRole: req.user!.role,
+        action: 'testimonial.create',
+        targetType: 'testimonial',
+        targetId: testimonial.id,
+        summary: `Testimonial created for "${body.patientName}".`
+      });
       res.status(201).json({ testimonial });
     })
   );
@@ -48,8 +65,21 @@ export function registerAdminTestimonialRoutes(router: Router) {
     asyncRoute(async (req, res) => {
       const id = routeParam(req, 'id');
       const body = schema.partial().parse(req.body);
-      const testimonial = await prisma.testimonial.update({ where: { id }, data: body });
-      await writeAuditLog({ actorId: req.user!.id, actorRole: req.user!.role, action: 'testimonial.update', targetType: 'testimonial', targetId: id, summary: 'Testimonial updated.' });
+      const testimonial = await prisma.testimonial.update({
+        where: { id },
+        data: {
+          ...body,
+          ...(body.isPublished === true ? { reviewedAt: new Date() } : {})
+        }
+      });
+      await writeAuditLog({
+        actorId: req.user!.id,
+        actorRole: req.user!.role,
+        action: 'testimonial.update',
+        targetType: 'testimonial',
+        targetId: id,
+        summary: 'Testimonial updated.'
+      });
       res.json({ testimonial });
     })
   );
@@ -61,7 +91,14 @@ export function registerAdminTestimonialRoutes(router: Router) {
     asyncRoute(async (req, res) => {
       const id = routeParam(req, 'id');
       await prisma.testimonial.delete({ where: { id } });
-      await writeAuditLog({ actorId: req.user!.id, actorRole: req.user!.role, action: 'testimonial.delete', targetType: 'testimonial', targetId: id, summary: 'Testimonial deleted.' });
+      await writeAuditLog({
+        actorId: req.user!.id,
+        actorRole: req.user!.role,
+        action: 'testimonial.delete',
+        targetType: 'testimonial',
+        targetId: id,
+        summary: 'Testimonial deleted.'
+      });
       res.json({ message: 'Testimonial deleted.' });
     })
   );
