@@ -12,6 +12,25 @@ import { User } from '../../core/models/auth.model';
   imports: [RouterModule],
   template: `
     <header class="bg-white shadow-sm border-b border-gray-200">
+      <!-- Announcement bar — single line -->
+      <div class="bg-primary-600 text-white">
+        <div
+          class="container mx-auto px-4 sm:px-6 lg:px-8 py-1.5 flex items-center justify-center gap-3 flex-nowrap overflow-hidden"
+        >
+          <span class="truncate whitespace-nowrap text-xs sm:text-sm font-medium">
+            📣 Join our daily 9 PM Telegram voice circle with Hope Hub experts — anonymous-friendly
+            support, guidance &amp; calm conversation.
+          </span>
+          <a
+            href="https://t.me/mindhopehub"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="shrink-0 whitespace-nowrap bg-white text-primary-600 font-semibold text-xs px-3 py-1 rounded-full hover:bg-primary-50 transition-colors"
+          >
+            Join community →
+          </a>
+        </div>
+      </div>
       <nav
         class="container mx-auto px-4 sm:px-6 lg:px-8"
         role="navigation"

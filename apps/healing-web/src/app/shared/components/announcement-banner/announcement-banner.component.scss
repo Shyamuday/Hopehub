@@ -142,12 +142,21 @@
 
 @media (max-width: 640px) {
   .announcement__inner {
-    align-items: start;
+    align-items: center;
   }
 
   .announcement__copy {
-    display: grid;
-    gap: 0.2rem;
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 0.35rem 0.85rem;
+    overflow: hidden;
+  }
+
+  .announcement__copy p {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 }
 
