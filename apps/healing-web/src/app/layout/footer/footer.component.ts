@@ -88,6 +88,13 @@ import { APP_CONSTANTS } from '../../core';
               </li>
               <li>
                 <a
+                  routerLink="/careers"
+                  class="text-gray-300 hover:text-white transition-colors duration-200 text-sm sm:text-base py-1 block"
+                  >Careers</a
+                >
+              </li>
+              <li>
+                <a
                   routerLink="/donate"
                   class="text-green-400 hover:text-green-300 transition-colors duration-200 text-sm sm:text-base py-1 block font-medium inline-flex items-center gap-1"
                 >

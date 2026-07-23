@@ -109,6 +109,14 @@ import { User } from '../../core/models/auth.model';
               Community
             </a>
             <a
+              routerLink="/careers"
+              routerLinkActive="text-primary-600 border-b-2 border-primary-600"
+              class="text-gray-700 hover:text-primary-600 px-3 py-2 text-sm font-medium transition-colors duration-200"
+              [attr.aria-current]="isCurrentRoute('/careers') ? 'page' : null"
+            >
+              Careers
+            </a>
+            <a
               routerLink="/contact"
               routerLinkActive="text-primary-600 border-b-2 border-primary-600"
               class="text-gray-700 hover:text-primary-600 px-3 py-2 text-sm font-medium transition-colors duration-200"
@@ -351,6 +359,16 @@ import { User } from '../../core/models/auth.model';
                 role="menuitem"
               >
                 Community
+              </a>
+              <a
+                routerLink="/careers"
+                (click)="navigateAndClose('/careers')"
+                routerLinkActive="text-primary-600 bg-primary-50"
+                class="text-gray-700 hover:text-primary-600 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium transition-colors duration-200"
+                [attr.aria-current]="isCurrentRoute('/careers') ? 'page' : null"
+                role="menuitem"
+              >
+                Careers
               </a>
               <a
                 routerLink="/contact"

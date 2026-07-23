@@ -61,6 +61,17 @@ export const routes: Routes = [
     },
   },
   {
+    path: 'careers',
+    loadComponent: () =>
+      import('./features/careers/careers.component').then((m) => m.CareersComponent),
+    title: 'Careers - Hope Hub',
+    data: {
+      breadcrumb: 'Careers',
+      description: 'Apply to become a Hope Hub counsellor or mental wellness support provider',
+      keywords: 'hope hub careers, counsellor application, counselor jobs, mental health careers',
+    },
+  },
+  {
     path: 'exercises',
     loadComponent: () =>
       import('./shared/components/exercises/exercises.component').then((m) => m.ExercisesComponent),
