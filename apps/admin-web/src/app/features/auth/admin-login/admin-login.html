@@ -4,8 +4,8 @@
 
   <form (ngSubmit)="submit()">
     <div class="switcher">
-      <button type="button" [class.active]="loginMode() === 'otp'" (click)="loginMode.set('otp')">OTP</button>
-      <button type="button" [class.active]="loginMode() === 'password'" (click)="loginMode.set('password')">Password</button>
+      <button type="button" [class.active]="loginMode() === 'otp'" (click)="setLoginMode('otp')">Email OTP</button>
+      <button type="button" [class.active]="loginMode() === 'password'" (click)="setLoginMode('password')">Password</button>
     </div>
 
     <label for="email">Email</label>
@@ -29,18 +29,23 @@
         </p>
       }
     } @else {
-      <label for="otp">OTP</label>
-      <input id="otp" [value]="otp()" (input)="otp.set($any($event.target).value)" inputmode="numeric" autocomplete="one-time-code" />
       <button type="button" (click)="sendOtp()" [disabled]="submitting() || loginForm.email().invalid()">
         {{ otpSent() ? 'Resend OTP' : 'Send OTP' }}
       </button>
+      @if (otpSent()) {
+        <label for="otp">OTP</label>
+        <input id="otp" [value]="otp()" (input)="otp.set($any($event.target).value)" inputmode="numeric" autocomplete="one-time-code" />
+      }
     }
 
     @if (error()) {
       <p class="error">{{ error() }}</p>
     }
+    @if (message()) {
+      <p class="success">{{ message() }}</p>
+    }
 
-    <button type="submit" [disabled]="submitting() || (loginMode() === 'password' ? loginForm().invalid() : loginForm.email().invalid() || otp().length < 4)">
+    <button type="submit" [disabled]="submitting() || (loginMode() === 'password' ? loginForm().invalid() : loginForm.email().invalid() || !otpSent() || otp().length < 4)">
       {{ submitting() ? 'Signing in...' : (loginMode() === 'otp' ? 'Verify OTP & sign in' : 'Sign in') }}
     </button>
   </form>

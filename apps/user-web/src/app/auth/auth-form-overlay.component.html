@@ -58,7 +58,7 @@
 
         <div class="auth-mode-tabs" role="tablist" aria-label="Signup method">
           <button type="button" [class.active]="signupMode() === 'password'" (click)="setSignupMode('password')">Password</button>
-          <button type="button" [class.active]="signupMode() === 'otp'" (click)="setSignupMode('otp')">OTP</button>
+          <button type="button" [class.active]="signupMode() === 'otp'" (click)="setSignupMode('otp')">Email OTP</button>
         </div>
 
         @if (signupMode() === 'password') {
@@ -148,7 +148,7 @@
         </p>
 
         <div class="auth-mode-tabs" role="tablist" aria-label="Login method">
-          <button type="button" [class.active]="loginMode() === 'otp'" (click)="setLoginMode('otp')">OTP</button>
+          <button type="button" [class.active]="loginMode() === 'otp'" (click)="setLoginMode('otp')">Email OTP</button>
           <button type="button" [class.active]="loginMode() === 'password'" (click)="setLoginMode('password')">Password</button>
         </div>
 

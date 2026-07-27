@@ -181,10 +181,12 @@ const authLimiter = rateLimit({
 });
 
 app.use('/auth/request-otp', otpLimiter);
+app.use('/auth/request-staff-otp', otpLimiter);
 app.use('/auth/patient-login', authLimiter);
 app.use('/auth/patient-login/select', authLimiter);
 app.use('/auth/patient-login/password-select', authLimiter);
 app.use('/auth/staff-login', authLimiter);
+app.use('/auth/staff-login-otp', authLimiter);
 app.use('/hr/auth/login', authLimiter);
 app.use('/store/auth/manager-login', authLimiter);
 

@@ -19,6 +19,7 @@ export class LoginComponent {
   readonly loginMode = signal<'otp' | 'password'>('otp');
   readonly otp = signal('');
   readonly otpSent = signal(false);
+  readonly otpSentTo = signal('');
   readonly loginForm = form(this.loginModel, (schema) => {
     required(schema.email, { message: 'Email is required' });
     required(schema.password, { message: 'Password is required' });
@@ -27,6 +28,16 @@ export class LoginComponent {
   loading = signal(false);
   error = signal('');
   showPass = signal(false);
+
+  setLoginMode(mode: 'otp' | 'password') {
+    this.loginMode.set(mode);
+    this.error.set('');
+    if (mode === 'password') {
+      this.otp.set('');
+      this.otpSent.set(false);
+      this.otpSentTo.set('');
+    }
+  }
 
   onSubmit() {
     if (this.loginMode() === 'otp') {
@@ -57,17 +68,20 @@ export class LoginComponent {
 
   sendOtp() {
     const { email } = this.loginModel();
-    if (!email) {
+    const normalizedEmail = email.trim().toLowerCase();
+    if (!normalizedEmail) {
       this.error.set('Enter a valid email.');
       return;
     }
 
     this.loading.set(true);
     this.error.set('');
-    this.auth.requestOtp(email).subscribe({
+    this.auth.requestOtp(normalizedEmail).subscribe({
       next: () => {
         this.loading.set(false);
+        this.otp.set('');
         this.otpSent.set(true);
+        this.otpSentTo.set(normalizedEmail);
       },
       error: (err: HttpErrorResponse) => {
         this.loading.set(false);
@@ -78,15 +92,24 @@ export class LoginComponent {
 
   private submitOtp() {
     const { email } = this.loginModel();
+    const normalizedEmail = email.trim().toLowerCase();
     const otp = this.otp().trim();
-    if (!email || otp.length < 4) {
-      this.error.set('Email and OTP are required.');
+    if (!normalizedEmail) {
+      this.error.set('Enter a valid email.');
+      return;
+    }
+    if (!this.otpSent() || this.otpSentTo() !== normalizedEmail) {
+      this.error.set('Send OTP to this email first.');
+      return;
+    }
+    if (otp.length < 4) {
+      this.error.set('Enter the OTP sent to your email.');
       return;
     }
     this.loading.set(true);
     this.error.set('');
 
-    this.auth.loginWithOtp(email, otp).subscribe({
+    this.auth.loginWithOtp(normalizedEmail, otp).subscribe({
       next: () => this.finishLogin(),
       error: (err: HttpErrorResponse) => {
         this.loading.set(false);

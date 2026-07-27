@@ -22,8 +22,10 @@ export class LoginComponent implements OnInit {
   loginForm: FormGroup;
   loginMode = signal<'otp' | 'password'>('otp');
   otpSent = signal(false);
+  otpSentTo = signal('');
   isLoading = signal(false);
   errorMessage = signal<string | null>(null);
+  statusMessage = signal<string | null>(null);
 
   constructor() {
     this.loginForm = this.fb.group({
@@ -37,6 +39,15 @@ export class LoginComponent implements OnInit {
     this.loginForm.valueChanges.pipe(takeUntilDestroyed()).subscribe(() => {
       if (this.errorMessage()) {
         this.errorMessage.set(null);
+      }
+      const email = String(this.loginForm.get('email')?.value || '')
+        .trim()
+        .toLowerCase();
+      if (this.otpSentTo() && email !== this.otpSentTo()) {
+        this.otpSent.set(false);
+        this.otpSentTo.set('');
+        this.loginForm.patchValue({ otp: '' }, { emitEvent: false });
+        this.statusMessage.set(null);
       }
     });
 
@@ -88,18 +99,30 @@ export class LoginComponent implements OnInit {
   setLoginMode(mode: 'otp' | 'password'): void {
     this.loginMode.set(mode);
     this.errorMessage.set(null);
+    this.statusMessage.set(null);
+    if (mode === 'password') {
+      this.otpSent.set(false);
+      this.otpSentTo.set('');
+      this.loginForm.patchValue({ otp: '' }, { emitEvent: false });
+    }
   }
 
   async sendOtp(): Promise<void> {
     const emailControl = this.loginForm.get('email');
     emailControl?.markAsTouched();
     if (!emailControl?.valid || this.isLoading()) return;
+    const email = String(emailControl.value || '')
+      .trim()
+      .toLowerCase();
 
     try {
       this.isLoading.set(true);
-      await this.authService.requestOtp(emailControl.value);
+      await this.authService.requestOtp(email);
+      this.loginForm.patchValue({ otp: '' }, { emitEvent: false });
       this.otpSent.set(true);
+      this.otpSentTo.set(email);
       this.errorMessage.set(null);
+      this.statusMessage.set('OTP sent. Check your email and enter the code below.');
     } catch (error) {
       console.error('OTP request error:', error);
     } finally {
@@ -112,11 +135,21 @@ export class LoginComponent implements OnInit {
     const otp = this.loginForm.get('otp');
     email?.markAsTouched();
     otp?.markAsTouched();
-    if (!email?.valid || !otp?.value || String(otp.value).trim().length < 4 || this.isLoading())
+    const normalizedEmail = String(email?.value || '')
+      .trim()
+      .toLowerCase();
+    if (!email?.valid || this.isLoading()) return;
+    if (!this.otpSent() || this.otpSentTo() !== normalizedEmail) {
+      this.errorMessage.set('Send OTP to this email first.');
       return;
+    }
+    if (!otp?.value || String(otp.value).trim().length < 4) {
+      this.errorMessage.set('Enter the OTP sent to your email.');
+      return;
+    }
 
     try {
-      await this.authService.loginWithOtp(email.value, String(otp.value).trim());
+      await this.authService.loginWithOtp(normalizedEmail, String(otp.value).trim());
       this.authModalService.close();
       if (this.router.url === '/' || this.router.url.startsWith('/auth')) {
         this.router.navigate(['/dashboard']);

@@ -19,6 +19,7 @@ export class Login {
   loginMode = signal<'otp' | 'password'>('otp');
   otp = signal('');
   otpSent = signal(false);
+  otpSentTo = signal('');
 
   readonly signInModel = signal({
     email: '',
@@ -44,6 +45,17 @@ export class Login {
   error = signal('');
   message = signal('');
   submitting = signal(false);
+
+  setLoginMode(mode: 'otp' | 'password'): void {
+    this.loginMode.set(mode);
+    this.error.set('');
+    this.message.set('');
+    if (mode === 'password') {
+      this.otp.set('');
+      this.otpSent.set(false);
+      this.otpSentTo.set('');
+    }
+  }
 
   canSignup(): boolean {
     const { password } = this.signInModel();
@@ -88,7 +100,8 @@ export class Login {
 
   async sendOtp() {
     const { email } = this.signInModel();
-    if (!email) {
+    const normalizedEmail = email.trim().toLowerCase();
+    if (!normalizedEmail) {
       this.error.set('Email is required');
       return;
     }
@@ -96,12 +109,14 @@ export class Login {
     this.message.set('');
     this.submitting.set(true);
     try {
-      const result = await this.auth.requestOtp(email);
+      const result = await this.auth.requestOtp(normalizedEmail);
       if (!result.ok) {
         this.error.set(result.message);
         return;
       }
+      this.otp.set('');
       this.otpSent.set(true);
+      this.otpSentTo.set(normalizedEmail);
       this.message.set('OTP sent to your email.');
     } finally {
       this.submitting.set(false);
@@ -110,16 +125,25 @@ export class Login {
 
   private async submitOtp() {
     const { email } = this.signInModel();
+    const normalizedEmail = email.trim().toLowerCase();
     const otp = this.otp().trim();
-    if (!email || otp.length < 4) {
-      this.error.set('Email and OTP are required');
+    if (!normalizedEmail) {
+      this.error.set('Email is required');
+      return;
+    }
+    if (!this.otpSent() || this.otpSentTo() !== normalizedEmail) {
+      this.error.set('Send OTP to this email first.');
+      return;
+    }
+    if (otp.length < 4) {
+      this.error.set('Enter the OTP sent to your email.');
       return;
     }
     this.error.set('');
     this.message.set('');
     this.submitting.set(true);
     try {
-      const result = await this.auth.loginWithOtp(email, otp);
+      const result = await this.auth.loginWithOtp(normalizedEmail, otp);
       if (!result.ok) {
         this.error.set(result.message);
         return;
