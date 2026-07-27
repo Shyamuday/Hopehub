@@ -38,6 +38,27 @@
 
         <!-- Login Form -->
         <form class="mt-6 space-y-5" [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+            <div class="grid grid-cols-2 gap-2 rounded-md bg-gray-100 p-1">
+                <button
+                    type="button"
+                    class="rounded-md px-3 py-2 text-sm font-semibold transition"
+                    [class.bg-white]="loginMode() === 'otp'"
+                    [class.text-primary-700]="loginMode() === 'otp'"
+                    (click)="setLoginMode('otp')"
+                >
+                    OTP
+                </button>
+                <button
+                    type="button"
+                    class="rounded-md px-3 py-2 text-sm font-semibold transition"
+                    [class.bg-white]="loginMode() === 'password'"
+                    [class.text-primary-700]="loginMode() === 'password'"
+                    (click)="setLoginMode('password')"
+                >
+                    Password
+                </button>
+            </div>
+
             <div class="space-y-3">
                 <div>
                     <label for="email" class="sr-only">Email address</label>
@@ -63,6 +84,7 @@
                         }
                     </div>
                 </div>
+                @if (loginMode() === 'password') {
                 <div>
                     <label for="password" class="sr-only">Password</label>
                     <input
@@ -87,8 +109,32 @@
                         }
                     </div>
                 </div>
+                } @else {
+                <div>
+                    <label for="otp" class="sr-only">OTP</label>
+                    <input
+                        id="otp"
+                        name="otp"
+                        type="text"
+                        inputmode="numeric"
+                        autocomplete="one-time-code"
+                        formControlName="otp"
+                        class="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-primary-600 focus:border-primary-600 focus:z-10 sm:text-sm transition-colors"
+                        placeholder="Enter OTP"
+                    />
+                    <div class="auth-field-error">
+                        @if (loginForm.get('otp')?.touched && !loginForm.get('otp')?.value) {
+                            <span>OTP is required after you request it</span>
+                        }
+                    </div>
+                    <button type="button" class="btn-outline btn-block btn-sm mt-2" (click)="sendOtp()" [disabled]="isLoading() || !loginForm.get('email')?.valid">
+                        {{ otpSent() ? 'Resend OTP' : 'Send OTP' }}
+                    </button>
+                </div>
+                }
             </div>
 
+            @if (loginMode() === 'password') {
             <div class="flex items-center justify-between">
                 <div class="flex items-center">
                     <input
@@ -109,11 +155,12 @@
                     </button>
                 </div>
             </div>
+            }
 
             <div>
                 <button
                     type="submit"
-                    [disabled]="loginForm.invalid || isLoading()"
+                    [disabled]="isLoading() || (loginMode() === 'password' ? loginForm.invalid : (!loginForm.get('email')?.valid || !loginForm.get('otp')?.value))"
                     class="btn-primary btn-block btn-sm group relative"
                 >
                     <span class="absolute left-0 inset-y-0 flex items-center pl-3">
@@ -129,10 +176,11 @@
                             </svg>
                         }
                     </span>
-                    {{ isLoading() ? 'Signing in...' : 'Sign in' }}
+                    {{ isLoading() ? 'Signing in...' : (loginMode() === 'otp' ? 'Verify OTP & sign in' : 'Sign in') }}
                 </button>
             </div>
 
+            @if (loginMode() === 'password') {
             <!-- Divider -->
             <div class="mt-6">
                 <div class="relative">
@@ -161,6 +209,7 @@
                     </button>
                 </div>
             </div>
+            }
         </form>
     </div>
 </div>

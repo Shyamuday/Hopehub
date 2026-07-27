@@ -20,6 +20,8 @@ export class LoginComponent implements OnInit {
   private authModalService = inject(AuthModalService);
 
   loginForm: FormGroup;
+  loginMode = signal<'otp' | 'password'>('otp');
+  otpSent = signal(false);
   isLoading = signal(false);
   errorMessage = signal<string | null>(null);
 
@@ -27,6 +29,7 @@ export class LoginComponent implements OnInit {
     this.loginForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
       password: ['', [Validators.required, Validators.minLength(6)]],
+      otp: [''],
       rememberMe: [false],
     });
 
@@ -51,6 +54,11 @@ export class LoginComponent implements OnInit {
   }
 
   async onSubmit(): Promise<void> {
+    if (this.loginMode() === 'otp') {
+      await this.verifyOtp();
+      return;
+    }
+
     if (this.loginForm.valid && !this.isLoading()) {
       try {
         const credentials: LoginCredentials = {
@@ -74,6 +82,47 @@ export class LoginComponent implements OnInit {
       Object.keys(this.loginForm.controls).forEach((key) => {
         this.loginForm.get(key)?.markAsTouched();
       });
+    }
+  }
+
+  setLoginMode(mode: 'otp' | 'password'): void {
+    this.loginMode.set(mode);
+    this.errorMessage.set(null);
+  }
+
+  async sendOtp(): Promise<void> {
+    const emailControl = this.loginForm.get('email');
+    emailControl?.markAsTouched();
+    if (!emailControl?.valid || this.isLoading()) return;
+
+    try {
+      this.isLoading.set(true);
+      await this.authService.requestOtp(emailControl.value);
+      this.otpSent.set(true);
+      this.errorMessage.set(null);
+    } catch (error) {
+      console.error('OTP request error:', error);
+    } finally {
+      this.isLoading.set(false);
+    }
+  }
+
+  private async verifyOtp(): Promise<void> {
+    const email = this.loginForm.get('email');
+    const otp = this.loginForm.get('otp');
+    email?.markAsTouched();
+    otp?.markAsTouched();
+    if (!email?.valid || !otp?.value || String(otp.value).trim().length < 4 || this.isLoading())
+      return;
+
+    try {
+      await this.authService.loginWithOtp(email.value, String(otp.value).trim());
+      this.authModalService.close();
+      if (this.router.url === '/' || this.router.url.startsWith('/auth')) {
+        this.router.navigate(['/dashboard']);
+      }
+    } catch (error) {
+      console.error('OTP login error:', error);
     }
   }
 

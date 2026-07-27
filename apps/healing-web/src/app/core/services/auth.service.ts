@@ -164,6 +164,43 @@ export class AuthService {
     }
   }
 
+  async requestOtp(email: string): Promise<void> {
+    try {
+      await firstValueFrom(
+        this.http.post<{ message: string }>(`${this.apiUrl}/auth/request-otp`, { email }),
+      );
+    } catch (err) {
+      throw this.handleError(err);
+    }
+  }
+
+  async loginWithOtp(email: string, otp: string): Promise<User> {
+    this.updateState({ isLoading: true, error: null });
+    try {
+      const resp = await firstValueFrom(
+        this.http.post<ApiAuthResponse | PatientSelectionResponse>(
+          `${this.apiUrl}/auth/patient-login`,
+          {
+            email,
+            otp,
+          },
+        ),
+      );
+
+      if ('requiresPatientSelection' in resp) {
+        this.updateState({ isLoading: false });
+        throw this.makeError(
+          'MULTIPLE_PATIENTS',
+          'Multiple accounts found. Please contact support to merge your accounts.',
+        );
+      }
+
+      return this.applyAuthResponse(resp);
+    } catch (err) {
+      throw this.handleError(err);
+    }
+  }
+
   async register(credentials: RegisterCredentials): Promise<User> {
     this.updateState({ isLoading: true, error: null });
     try {

@@ -16,7 +16,8 @@ import {
 } from '../core/constants/auth.constants';
 import { OPERATIONS_NAV_ITEMS, navItemsForCapabilities } from '@hopehub/platform-nav';
 
-export type StaffLoginResponse = AuthResponse & Partial<SessionResponse> & { storeStaff?: StorePortalStaff };
+export type StaffLoginResponse = AuthResponse &
+  Partial<SessionResponse> & { storeStaff?: StorePortalStaff };
 
 @Service()
 export class PlatformAuthService {
@@ -116,6 +117,18 @@ export class PlatformAuthService {
       .pipe(tap((res) => this.applyLoginResponse(res)));
   }
 
+  requestOtp(email: string) {
+    return this.http.post<{ message: string }>(`${environment.apiUrl}/auth/request-staff-otp`, {
+      email
+    });
+  }
+
+  loginWithOtp(email: string, otp: string) {
+    return this.http
+      .post<StaffLoginResponse>(`${environment.apiUrl}/auth/staff-login-otp`, { email, otp })
+      .pipe(tap((res) => this.applyLoginResponse(res)));
+  }
+
   applyDevAuth(response: AuthResponse) {
     localStorage.setItem(AUTH_TOKEN_KEY, response.token);
     localStorage.setItem(AUTH_USER_KEY, JSON.stringify(response.user));
@@ -136,9 +149,9 @@ export class PlatformAuthService {
   }
 
   fetchMe() {
-    return this.http.get<SessionResponse>(`${environment.apiUrl}${AUTH_PATHS.ME}`).pipe(
-      tap((session) => this.persistSession(session))
-    );
+    return this.http
+      .get<SessionResponse>(`${environment.apiUrl}${AUTH_PATHS.ME}`)
+      .pipe(tap((session) => this.persistSession(session)));
   }
 }
 

@@ -24,7 +24,42 @@ export class Auth {
 
     try {
       const response = await firstValueFrom(
-        this.http.post<{ token: string }>(`${this.apiBase}${AUTH_PATHS.STAFF_LOGIN}`, { email, password })
+        this.http.post<{ token: string }>(`${this.apiBase}${AUTH_PATHS.STAFF_LOGIN}`, {
+          email,
+          password,
+        }),
+      );
+
+      localStorage.setItem(this.tokenKey, response.token);
+      return { ok: true as const };
+    } catch (error: any) {
+      return { ok: false as const, message: error?.error?.message || AUTH_MESSAGES.INVALID_LOGIN };
+    }
+  }
+
+  async requestOtp(email: string) {
+    if (!email) {
+      return { ok: false as const, message: 'Email is required.' };
+    }
+
+    try {
+      await firstValueFrom(
+        this.http.post<{ message: string }>(`${this.apiBase}/auth/request-staff-otp`, { email }),
+      );
+      return { ok: true as const };
+    } catch (error: any) {
+      return { ok: false as const, message: error?.error?.message || 'Could not send OTP.' };
+    }
+  }
+
+  async loginWithOtp(email: string, otp: string) {
+    if (!email || !otp) {
+      return { ok: false as const, message: 'Email and OTP are required.' };
+    }
+
+    try {
+      const response = await firstValueFrom(
+        this.http.post<{ token: string }>(`${this.apiBase}/auth/staff-login-otp`, { email, otp }),
       );
 
       localStorage.setItem(this.tokenKey, response.token);
@@ -48,11 +83,11 @@ export class Auth {
 
     try {
       const response = await firstValueFrom(
-        this.http.post<{ message?: string }>(`${this.apiBase}${AUTH_PATHS.DOCTOR_ENROLL}`, payload)
+        this.http.post<{ message?: string }>(`${this.apiBase}${AUTH_PATHS.DOCTOR_ENROLL}`, payload),
       );
       return {
         ok: true as const,
-        message: response.message || AUTH_MESSAGES.ENROLL_DEFAULT_SUCCESS
+        message: response.message || AUTH_MESSAGES.ENROLL_DEFAULT_SUCCESS,
       };
     } catch (error: any) {
       return { ok: false as const, message: error?.error?.message || AUTH_MESSAGES.ENROLL_FAILED };

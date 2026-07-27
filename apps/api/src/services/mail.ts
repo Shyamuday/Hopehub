@@ -1,12 +1,14 @@
 import nodemailer from 'nodemailer';
 import { SERVER_CONFIG } from '../constants/config.constants.js';
 
-const smtpHost = process.env.AWS_SES_SMTP_HOST || '';
-const smtpPort = Number(process.env.AWS_SES_SMTP_PORT || SERVER_CONFIG.SMTP.DEFAULT_PORT);
-const smtpUser = process.env.AWS_SES_SMTP_USERNAME || '';
-const smtpPass = process.env.AWS_SES_SMTP_PASSWORD || '';
+const cleanEnv = (value: string | undefined) => (value || '').replace(/^\uFEFF/, '').trim();
 
-export const smtpFrom = process.env.SMTP_FROM || SERVER_CONFIG.SMTP.DEFAULT_FROM;
+const smtpHost = cleanEnv(process.env.AWS_SES_SMTP_HOST);
+const smtpPort = Number(cleanEnv(process.env.AWS_SES_SMTP_PORT) || SERVER_CONFIG.SMTP.DEFAULT_PORT);
+const smtpUser = cleanEnv(process.env.AWS_SES_SMTP_USERNAME);
+const smtpPass = cleanEnv(process.env.AWS_SES_SMTP_PASSWORD);
+
+export const smtpFrom = cleanEnv(process.env.SMTP_FROM) || SERVER_CONFIG.SMTP.DEFAULT_FROM;
 
 export type SendEmailInput = {
   to: string | string[];

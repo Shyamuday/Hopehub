@@ -14,6 +14,11 @@
         }
 
         <form class="login-form" novalidate (ngSubmit)="onSubmit()">
+          <div class="mode-tabs">
+            <button type="button" [class.active]="loginMode() === 'otp'" (click)="loginMode.set('otp')">OTP</button>
+            <button type="button" [class.active]="loginMode() === 'password'" (click)="loginMode.set('password')">Password</button>
+          </div>
+
           <div class="form-group">
             <label class="form-label" for="login-email">Email Address</label>
             <input
@@ -33,6 +38,7 @@
             }
           </div>
 
+          @if (loginMode() === 'password') {
           <div class="form-group">
             <label class="form-label" for="login-password">Password</label>
             <div class="input-wrap">
@@ -58,16 +64,33 @@
               </p>
             }
           </div>
+          } @else {
+          <div class="form-group">
+            <label class="form-label" for="login-otp">OTP</label>
+            <input
+              id="login-otp"
+              class="form-input"
+              [value]="otp()"
+              (input)="otp.set($any($event.target).value)"
+              placeholder="Enter OTP"
+              inputmode="numeric"
+              autocomplete="one-time-code"
+            />
+            <button type="button" class="login-btn secondary" (click)="sendOtp()" [disabled]="loading() || loginForm.email().invalid()">
+              {{ otpSent() ? 'Resend OTP' : 'Send OTP' }}
+            </button>
+          </div>
+          }
 
           <button
             type="submit"
             class="login-btn"
-            [disabled]="loading() || loginForm().invalid()"
+            [disabled]="loading() || (loginMode() === 'password' ? loginForm().invalid() : loginForm.email().invalid() || otp().length < 4)"
           >
             @if (loading()) {
               <span class="spinner"></span> Signing in...
             } @else {
-              Sign In
+              {{ loginMode() === 'otp' ? 'Verify OTP & sign in' : 'Sign In' }}
             }
           </button>
         </form>

@@ -26,8 +26,8 @@ export const FOOTER_CONTENT = {
     phoneLabel: 'Contact',
     phone: '+91-98765-43210',
     phoneHref: 'tel:+919876543210',
-    email: 'support@hopehubcare.in',
-    emailHref: 'mailto:support@hopehubcare.in',
+    email: 'support@hopehub.in',
+    emailHref: 'mailto:support@hopehub.in',
   },
   columns: [
     {

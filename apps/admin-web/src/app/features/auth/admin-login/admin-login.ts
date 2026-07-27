@@ -19,6 +19,9 @@ export class AdminLogin {
     email: '',
     password: '',
   });
+  readonly otp = signal('');
+  readonly loginMode = signal<'otp' | 'password'>('otp');
+  readonly otpSent = signal(false);
   readonly loginForm = form(this.loginModel, (schema) => {
     required(schema.email, { message: 'Email is required' });
     required(schema.password, { message: 'Password is required' });
@@ -28,12 +31,58 @@ export class AdminLogin {
   submitting = signal(false);
 
   async submit() {
+    if (this.loginMode() === 'otp') {
+      await this.submitOtp();
+      return;
+    }
+
     if (this.loginForm().invalid()) return;
     const { email, password } = this.loginModel();
     this.error.set('');
     this.submitting.set(true);
     try {
       const result = await this.auth.login(email, password);
+      if (!result.ok) {
+        this.error.set(result.message);
+        return;
+      }
+      void this.router.navigateByUrl(this.postLoginRoute());
+    } finally {
+      this.submitting.set(false);
+    }
+  }
+
+  async sendOtp() {
+    const { email } = this.loginModel();
+    if (!email) {
+      this.error.set('Email is required');
+      return;
+    }
+    this.error.set('');
+    this.submitting.set(true);
+    try {
+      const result = await this.auth.requestOtp(email);
+      if (!result.ok) {
+        this.error.set(result.message);
+        return;
+      }
+      this.otpSent.set(true);
+    } finally {
+      this.submitting.set(false);
+    }
+  }
+
+  private async submitOtp() {
+    const { email } = this.loginModel();
+    const otp = this.otp().trim();
+    if (!email || otp.length < 4) {
+      this.error.set('Email and OTP are required');
+      return;
+    }
+    this.error.set('');
+    this.submitting.set(true);
+    try {
+      const result = await this.auth.loginWithOtp(email, otp);
       if (!result.ok) {
         this.error.set(result.message);
         return;

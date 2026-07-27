@@ -2,7 +2,12 @@ import { inject, Service, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { AUTH_MESSAGES, AUTH_TOKEN_KEY, AUTH_USER_KEY, STAFF_ROLES } from '../constants/auth.constants';
+import {
+  AUTH_MESSAGES,
+  AUTH_TOKEN_KEY,
+  AUTH_USER_KEY,
+  STAFF_ROLES,
+} from '../constants/auth.constants';
 import { API_PATHS } from '../constants/api-paths.constants';
 import type { StaffUser } from '../admin-permissions';
 
@@ -43,7 +48,7 @@ export class AdminAuth {
 
   async refreshSession(): Promise<StaffUser | null> {
     const session = await firstValueFrom(
-      this.http.get<{ user: StaffUser }>(`${this.apiBase}${API_PATHS.AUTH.ME}`)
+      this.http.get<{ user: StaffUser }>(`${this.apiBase}${API_PATHS.AUTH.ME}`),
     );
     this.setUser(session.user);
     return session.user;
@@ -54,8 +59,48 @@ export class AdminAuth {
       const response = await firstValueFrom(
         this.http.post<{ token: string; user: StaffUser }>(
           `${this.apiBase}${API_PATHS.AUTH.STAFF_LOGIN}`,
-          { email, password }
-        )
+          { email, password },
+        ),
+      );
+
+      if (response.user.role !== STAFF_ROLES.ADMIN && response.user.role !== STAFF_ROLES.HR) {
+        return { ok: false as const, message: AUTH_MESSAGES.ADMIN_ONLY };
+      }
+
+      localStorage.setItem(this.tokenKey, response.token);
+      this.setUser(response.user);
+      return { ok: true as const };
+    } catch (error: unknown) {
+      const message =
+        typeof error === 'object' && error !== null && 'error' in error
+          ? (error as { error?: { message?: string } }).error?.message
+          : undefined;
+      return { ok: false as const, message: message || AUTH_MESSAGES.INVALID_LOGIN };
+    }
+  }
+
+  async requestOtp(email: string) {
+    try {
+      await firstValueFrom(
+        this.http.post<{ message: string }>(`${this.apiBase}/auth/request-staff-otp`, { email }),
+      );
+      return { ok: true as const };
+    } catch (error: unknown) {
+      const message =
+        typeof error === 'object' && error !== null && 'error' in error
+          ? (error as { error?: { message?: string } }).error?.message
+          : undefined;
+      return { ok: false as const, message: message || 'Could not send OTP.' };
+    }
+  }
+
+  async loginWithOtp(email: string, otp: string) {
+    try {
+      const response = await firstValueFrom(
+        this.http.post<{ token: string; user: StaffUser }>(`${this.apiBase}/auth/staff-login-otp`, {
+          email,
+          otp,
+        }),
       );
 
       if (response.user.role !== STAFF_ROLES.ADMIN && response.user.role !== STAFF_ROLES.HR) {

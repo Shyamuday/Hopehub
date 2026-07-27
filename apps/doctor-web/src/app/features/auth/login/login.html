@@ -9,6 +9,11 @@
     <p>Use your doctor account to access dashboard and patient workflows.</p>
 
     <form (ngSubmit)="submit()">
+      <div class="switcher">
+        <button type="button" [class.active]="loginMode() === 'otp'" (click)="loginMode.set('otp')">OTP</button>
+        <button type="button" [class.active]="loginMode() === 'password'" (click)="loginMode.set('password')">Password</button>
+      </div>
+
       <label for="email">Email</label>
       <input id="email" [formField]="signInForm.email" type="email" />
       @if (signInForm.email().invalid() && signInForm.email().touched()) {
@@ -19,14 +24,22 @@
         </p>
       }
 
-      <label for="password">Password</label>
-      <input id="password" [formField]="signInForm.password" type="password" />
-      @if (signInForm.password().invalid() && signInForm.password().touched()) {
-        <p class="error">
-          @for (fieldError of signInForm.password().errors(); track fieldError.kind) {
-            <span>{{ fieldError.message }}</span>
-          }
-        </p>
+      @if (loginMode() === 'password') {
+        <label for="password">Password</label>
+        <input id="password" [formField]="signInForm.password" type="password" />
+        @if (signInForm.password().invalid() && signInForm.password().touched()) {
+          <p class="error">
+            @for (fieldError of signInForm.password().errors(); track fieldError.kind) {
+              <span>{{ fieldError.message }}</span>
+            }
+          </p>
+        }
+      } @else {
+        <label for="otp">OTP</label>
+        <input id="otp" [value]="otp()" (input)="otp.set($any($event.target).value)" inputmode="numeric" autocomplete="one-time-code" />
+        <button type="button" (click)="sendOtp()" [disabled]="submitting() || signInForm.email().invalid()">
+          {{ otpSent() ? 'Resend OTP' : 'Send OTP' }}
+        </button>
       }
 
       @if (error()) {
@@ -36,8 +49,8 @@
         <p class="success">{{ message() }}</p>
       }
 
-      <button type="submit" [disabled]="submitting() || signInForm().invalid()">
-        {{ submitting() ? 'Signing in...' : 'Sign in' }}
+      <button type="submit" [disabled]="submitting() || (loginMode() === 'password' ? signInForm().invalid() : signInForm.email().invalid() || otp().length < 4)">
+        {{ submitting() ? 'Signing in...' : (loginMode() === 'otp' ? 'Verify OTP & sign in' : 'Sign in') }}
       </button>
     </form>
 

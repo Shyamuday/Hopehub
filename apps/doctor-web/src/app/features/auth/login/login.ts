@@ -16,6 +16,9 @@ export class Login {
   private readonly route = inject(ActivatedRoute);
 
   mode = signal<'signin' | 'signup'>('signin');
+  loginMode = signal<'otp' | 'password'>('otp');
+  otp = signal('');
+  otpSent = signal(false);
 
   readonly signInModel = signal({
     email: '',
@@ -61,6 +64,11 @@ export class Login {
   }
 
   async submit() {
+    if (this.loginMode() === 'otp') {
+      await this.submitOtp();
+      return;
+    }
+
     if (this.signInForm().invalid()) return;
     const { email, password } = this.signInModel();
     this.error.set('');
@@ -68,6 +76,50 @@ export class Login {
     this.submitting.set(true);
     try {
       const result = await this.auth.login(email, password);
+      if (!result.ok) {
+        this.error.set(result.message);
+        return;
+      }
+      void this.navigateAfterLogin();
+    } finally {
+      this.submitting.set(false);
+    }
+  }
+
+  async sendOtp() {
+    const { email } = this.signInModel();
+    if (!email) {
+      this.error.set('Email is required');
+      return;
+    }
+    this.error.set('');
+    this.message.set('');
+    this.submitting.set(true);
+    try {
+      const result = await this.auth.requestOtp(email);
+      if (!result.ok) {
+        this.error.set(result.message);
+        return;
+      }
+      this.otpSent.set(true);
+      this.message.set('OTP sent to your email.');
+    } finally {
+      this.submitting.set(false);
+    }
+  }
+
+  private async submitOtp() {
+    const { email } = this.signInModel();
+    const otp = this.otp().trim();
+    if (!email || otp.length < 4) {
+      this.error.set('Email and OTP are required');
+      return;
+    }
+    this.error.set('');
+    this.message.set('');
+    this.submitting.set(true);
+    try {
+      const result = await this.auth.loginWithOtp(email, otp);
       if (!result.ok) {
         this.error.set(result.message);
         return;

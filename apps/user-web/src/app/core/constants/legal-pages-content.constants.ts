@@ -35,7 +35,7 @@ export const LEGAL_HUB_CONTENT = {
 } as const;
 
 const CLINIC_NAME = 'HopeHub Care and Research Centre';
-const CONTACT_EMAIL = 'support@hopehubcare.in';
+const CONTACT_EMAIL = 'support@hopehub.in';
 const GOVERNING_LAW = 'Jharkhand, India';
 
 export const LEGAL_PAGES = {
