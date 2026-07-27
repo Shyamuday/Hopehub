@@ -22,16 +22,16 @@ import { User } from '../../core/models/auth.model';
           <div class="flex items-center">
             <a
               routerLink="/"
-              class="flex items-center space-x-2"
+              class="flex items-center"
               (click)="closeMobileMenu()"
               aria-label="Hope Hub - Go to homepage"
             >
               <img
-                src="/image/hopehublogo.png"
-                alt=""
-                class="h-11 w-11 object-contain"
-                width="44"
-                height="44"
+                src="/image/logo.svg"
+                alt="Hope Hub"
+                class="h-11 w-[190px] object-contain sm:h-12 sm:w-[220px]"
+                width="220"
+                height="48"
               />
             </a>
           </div>

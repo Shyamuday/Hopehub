@@ -3,17 +3,13 @@
   "short_name": "HopeHub",
   "icons": [
     {
-      "src": "/favicon-192x192.png",
-      "sizes": "192x192",
-      "type": "image/png"
-    },
-    {
-      "src": "/favicon-512x512.png",
-      "sizes": "512x512",
-      "type": "image/png"
+      "src": "/hopehub.png",
+      "sizes": "482x164",
+      "type": "image/png",
+      "purpose": "any"
     }
   ],
-  "theme_color": "#0f62fe",
-  "background_color": "#ffffff",
+  "theme_color": "#4A6FA5",
+  "background_color": "#F4F7F9",
   "display": "standalone"
 }
