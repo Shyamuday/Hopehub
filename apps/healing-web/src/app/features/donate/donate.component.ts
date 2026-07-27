@@ -7,17 +7,17 @@ import { PaymentService } from '../../core/services';
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="min-h-screen bg-gradient-to-br from-green-50 via-white to-blue-50">
+    <div class="min-h-screen bg-[var(--brand-surface)]">
       <!-- Hero -->
-      <section class="py-16 px-4 text-center">
-        <div class="max-w-3xl mx-auto">
-          <div
-            class="inline-flex items-center justify-center w-20 h-20 bg-green-100 rounded-full mb-6"
+      <section class="px-4 py-12 text-center sm:py-16">
+        <div class="mx-auto max-w-3xl">
+          <p
+            class="hope-eyebrow mx-auto mb-4 inline-flex rounded-md border border-gray-200 bg-white px-4 py-2 shadow-sm"
           >
-            <span class="text-4xl">💚</span>
-          </div>
-          <h1 class="text-4xl sm:text-5xl font-bold text-gray-900 mb-4">Support Hope Hub</h1>
-          <p class="text-lg sm:text-xl text-gray-600 leading-relaxed">
+            Community supported mental wellness
+          </p>
+          <h1 class="mb-4 text-3xl font-semibold text-gray-950 sm:text-4xl">Support Hope Hub</h1>
+          <p class="text-base leading-7 text-gray-700 sm:text-lg">
             Your contribution helps us keep mental health support accessible to everyone. Every
             rupee goes directly toward maintaining free resources, community programs, and helping
             people who can't afford professional care.
@@ -26,24 +26,23 @@ import { PaymentService } from '../../core/services';
       </section>
 
       <!-- Why Donate -->
-      <section class="py-8 px-4">
-        <div class="max-w-4xl mx-auto grid grid-cols-1 sm:grid-cols-3 gap-6 mb-16">
-          <div class="bg-white rounded-2xl p-6 shadow-sm text-center border border-gray-100">
-            <div class="text-3xl mb-3">🧘</div>
-            <h3 class="font-semibold text-gray-900 mb-2">Free Resources</h3>
-            <p class="text-sm text-gray-500">
+      <section class="px-4 py-6">
+        <div class="mx-auto mb-12 grid max-w-4xl grid-cols-1 gap-5 sm:grid-cols-3">
+          <div class="rounded-lg border border-gray-200 bg-white p-5 text-center shadow-sm">
+            <h3 class="mb-2 font-semibold text-gray-950">Free Resources</h3>
+            <p class="text-sm leading-6 text-gray-700">
               Keep exercises, assessments, and articles free for everyone
             </p>
           </div>
-          <div class="bg-white rounded-2xl p-6 shadow-sm text-center border border-gray-100">
-            <div class="text-3xl mb-3">👥</div>
-            <h3 class="font-semibold text-gray-900 mb-2">Community Programs</h3>
-            <p class="text-sm text-gray-500">Fund monthly meetups and group support sessions</p>
+          <div class="rounded-lg border border-gray-200 bg-white p-5 text-center shadow-sm">
+            <h3 class="mb-2 font-semibold text-gray-950">Community Programs</h3>
+            <p class="text-sm leading-6 text-gray-700">
+              Fund group support and guided community sessions
+            </p>
           </div>
-          <div class="bg-white rounded-2xl p-6 shadow-sm text-center border border-gray-100">
-            <div class="text-3xl mb-3">🌱</div>
-            <h3 class="font-semibold text-gray-900 mb-2">Platform Growth</h3>
-            <p class="text-sm text-gray-500">
+          <div class="rounded-lg border border-gray-200 bg-white p-5 text-center shadow-sm">
+            <h3 class="mb-2 font-semibold text-gray-950">Platform Growth</h3>
+            <p class="text-sm leading-6 text-gray-700">
               Help us build more tools and reach more people in need
             </p>
           </div>
@@ -51,24 +50,24 @@ import { PaymentService } from '../../core/services';
       </section>
 
       <!-- Donate Section -->
-      <section class="py-8 px-4 pb-20">
-        <div class="max-w-2xl mx-auto">
+      <section class="px-4 pb-20 pt-6">
+        <div class="mx-auto max-w-2xl">
           <!-- UPI Card -->
-          <div class="bg-white rounded-3xl shadow-lg overflow-hidden border border-gray-100">
+          <div class="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
             <!-- Card Header -->
-            <div
-              class="bg-gradient-to-r from-green-500 to-emerald-600 px-8 py-6 text-white text-center"
-            >
-              <h2 class="text-2xl font-bold mb-1">Donate via UPI</h2>
-              <p class="opacity-90 text-sm">Instant · Secure · Zero fees</p>
+            <div class="border-b border-gray-200 px-6 py-5 text-center sm:px-8">
+              <h2 class="mb-1 text-2xl font-semibold text-gray-950">Donate Securely</h2>
+              <p class="text-sm text-gray-600">
+                Pay with UPI or Razorpay-supported payment methods
+              </p>
             </div>
 
             <!-- QR Code -->
-            <div class="px-8 pt-8 pb-4 flex flex-col items-center">
-              <p class="text-gray-500 text-sm mb-4">
+            <div class="flex flex-col items-center px-6 pb-4 pt-8 sm:px-8">
+              <p class="mb-4 text-center text-sm text-gray-600">
                 Scan with BHIM, GPay, PhonePe, Paytm or any UPI app
               </p>
-              <div class="border-4 border-green-500 rounded-2xl p-2 bg-white shadow-md">
+              <div class="rounded-lg border border-gray-200 bg-white p-2 shadow-sm">
                 <img
                   src="/image/upiqr.jpg"
                   alt="BHIM UPI QR Code"
@@ -78,15 +77,15 @@ import { PaymentService } from '../../core/services';
             </div>
 
             <!-- UPI ID -->
-            <div class="px-8 py-6">
-              <p class="text-center text-gray-500 text-sm mb-3">Or pay directly using UPI ID</p>
+            <div class="px-6 py-6 sm:px-8">
+              <p class="mb-3 text-center text-sm text-gray-600">Or pay directly using UPI ID</p>
               <div
-                class="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-xl px-4 py-3"
+                class="flex flex-col gap-3 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
               >
-                <span class="font-mono text-gray-800 font-semibold text-lg"
+                <span class="break-all font-mono text-base font-semibold text-gray-800 sm:text-lg"
                   >9304471227&#64;upi</span
                 >
-                <button (click)="copyUpiId()" class="btn-primary btn-sm ml-3">
+                <button (click)="copyUpiId()" class="btn-outline btn-sm">
                   @if (copied()) {
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path
@@ -113,9 +112,9 @@ import { PaymentService } from '../../core/services';
             </div>
 
             <!-- Suggested Amounts -->
-            <div class="px-8 pb-6">
-              <p class="text-gray-500 text-sm mb-3 text-center">Suggested amounts</p>
-              <div class="grid grid-cols-5 gap-2">
+            <div class="px-6 pb-6 sm:px-8">
+              <p class="mb-3 text-center text-sm text-gray-600">Suggested amounts</p>
+              <div class="grid grid-cols-2 gap-2 sm:grid-cols-5">
                 @for (amount of amounts; track amount) {
                   <button
                     (click)="selectAmount(amount)"
@@ -124,7 +123,7 @@ import { PaymentService } from '../../core/services';
                         ? 'bg-primary-600 text-white border-primary-600'
                         : 'bg-white text-gray-700 border-gray-200 hover:border-primary-500 hover:text-primary-700'
                     "
-                    class="border rounded-xl py-2 text-sm font-semibold transition-colors"
+                    class="rounded-md border py-2 text-sm font-semibold transition-colors"
                   >
                     ₹{{ amount }}
                   </button>
@@ -132,7 +131,7 @@ import { PaymentService } from '../../core/services';
               </div>
             </div>
 
-            <div class="px-8 pb-6">
+            <div class="px-6 pb-6 sm:px-8">
               <button
                 type="button"
                 (click)="paySelectedAmount()"
@@ -161,9 +160,9 @@ import { PaymentService } from '../../core/services';
             </div>
 
             <!-- Note -->
-            <div class="px-8 pb-8">
-              <div class="bg-green-50 border border-green-100 rounded-xl p-4 text-center">
-                <p class="text-green-700 text-sm leading-relaxed">
+            <div class="px-6 pb-8 sm:px-8">
+              <div class="rounded-lg border border-gray-200 bg-gray-50 p-4 text-center">
+                <p class="text-sm leading-6 text-gray-700">
                   After payment, you can message us on
                   <a
                     href="https://t.me/mindhopehub"
@@ -180,17 +179,34 @@ import { PaymentService } from '../../core/services';
                     class="font-semibold underline"
                     >WhatsApp</a
                   >
-                  with your transaction ID. Thank you for your generosity! 🙏
+                  with your transaction ID. Thank you for your support.
                 </p>
               </div>
             </div>
           </div>
 
           <!-- Transparency note -->
-          <p class="text-center text-gray-400 text-xs mt-6">
+          <div
+            class="mt-6 rounded-lg border border-gray-200 bg-white p-4 text-center text-xs leading-6 text-gray-600"
+          >
             Hope Hub is a community-driven initiative. All donations are used solely for platform
             maintenance and community programs.
-          </p>
+            <div class="mt-2 flex flex-wrap justify-center gap-3">
+              <a
+                class="font-semibold text-primary-700 hover:text-primary-800"
+                href="/payment-policy"
+                >Payment Policy</a
+              >
+              <a
+                class="font-semibold text-primary-700 hover:text-primary-800"
+                href="/cancellation-refund-policy"
+                >Refund Policy</a
+              >
+              <a class="font-semibold text-primary-700 hover:text-primary-800" href="/contact"
+                >Contact Support</a
+              >
+            </div>
+          </div>
         </div>
       </section>
     </div>

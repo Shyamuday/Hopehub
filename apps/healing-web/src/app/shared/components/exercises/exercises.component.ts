@@ -3,89 +3,101 @@ import { isPlatformBrowser } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { RouterModule, ActivatedRoute } from '@angular/router';
-import { Exercise, ExerciseCategory, ExerciseType, ExerciseDifficulty } from '../../../core/models/exercise.model';
-import { ALL_EXERCISES, getExerciseById, getExercisesByCategory, getExercisesByType, searchExercises } from '../../../core/data/exercise-configs';
+import {
+  Exercise,
+  ExerciseCategory,
+  ExerciseType,
+  ExerciseDifficulty,
+} from '../../../core/models/exercise.model';
+import {
+  ALL_EXERCISES,
+  getExerciseById,
+  getExercisesByCategory,
+  getExercisesByType,
+  searchExercises,
+} from '../../../core/data/exercise-configs';
 import { ProgressService } from '../../../core/services/progress.service';
 import { MoodRating } from '../../../core/models/progress.model';
+import {
+  FormDropdownComponent,
+  FormDropdownOption,
+} from '../form-dropdown/form-dropdown.component';
 
 @Component({
   selector: 'app-exercises',
   standalone: true,
-  imports: [FormsModule, RouterModule],
+  imports: [FormsModule, RouterModule, FormDropdownComponent],
   template: `
-    <section class="bg-slate-50 py-12">
-      <div class="max-w-6xl mx-auto px-6">
-        
+    <section class="min-h-screen bg-[var(--brand-surface)] py-10 sm:py-12">
+      <div class="container mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
         <!-- Header -->
-        <div class="text-center mb-12">
-          <h2 class="text-4xl font-bold text-slate-800 mb-4">Mental Health Exercises</h2>
-          <p class="text-slate-600 max-w-3xl mx-auto text-lg">
-            Discover evidence-based exercises to improve your mental well-being. Practice regularly for best results.
+        <div class="mx-auto mb-10 max-w-3xl text-center">
+          <h2 class="mb-4 text-3xl font-semibold text-gray-950 sm:text-4xl">
+            Mental Health Exercises
+          </h2>
+          <p class="mx-auto max-w-2xl text-base leading-7 text-gray-700 sm:text-lg">
+            Discover evidence-based exercises to improve your mental well-being. Practice regularly
+            for best results.
           </p>
         </div>
 
         <!-- Filters and Search -->
-        <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
+        <div class="mb-8 rounded-lg border border-gray-200 bg-white p-5 shadow-sm sm:p-6">
           <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-            
             <!-- Search -->
             <div class="md:col-span-2">
-              <label class="block text-sm font-medium text-slate-700 mb-2">Search Exercises</label>
-              <input 
-                type="text" 
+              <label class="block text-sm font-semibold text-gray-700 mb-2">Search Exercises</label>
+              <input
+                type="text"
                 [(ngModel)]="searchTerm"
                 (input)="filterExercises()"
                 placeholder="Search by name, benefits, or tags..."
-                class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-slate-500">
+                class="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 placeholder:text-gray-500 focus:border-primary-600 focus:outline-none focus:ring-2 focus:ring-primary-100"
+              />
             </div>
 
             <!-- Category Filter -->
             <div>
-              <label class="block text-sm font-medium text-slate-700 mb-2">Category</label>
-              <select 
+              <label class="block text-sm font-semibold text-gray-700 mb-2">Category</label>
+              <app-form-dropdown
                 [(ngModel)]="selectedCategory"
-                (change)="filterExercises()"
-                class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-slate-500">
-                <option value="">All Categories</option>
-                @for (category of categories; track category) {
-                  <option [value]="category">{{ category }}</option>
-                }
-              </select>
+                (ngModelChange)="filterExercises()"
+                placeholder="All Categories"
+                [options]="categoryOptions"
+              >
+              </app-form-dropdown>
             </div>
 
             <!-- Type Filter -->
             <div>
-              <label class="block text-sm font-medium text-slate-700 mb-2">Type</label>
-              <select 
+              <label class="block text-sm font-semibold text-gray-700 mb-2">Type</label>
+              <app-form-dropdown
                 [(ngModel)]="selectedType"
-                (change)="filterExercises()"
-                class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-slate-500">
-                <option value="">All Types</option>
-                @for (type of types; track type) {
-                  <option [value]="type">{{ type }}</option>
-                }
-              </select>
+                (ngModelChange)="filterExercises()"
+                placeholder="All Types"
+                [options]="typeOptions"
+              >
+              </app-form-dropdown>
             </div>
           </div>
 
           <!-- Quick Category Buttons -->
           <div class="flex flex-wrap gap-2 mt-4">
             @for (category of quickCategories; track category) {
-              <button 
+              <button
                 (click)="selectQuickCategory(category)"
-                [class.bg-slate-800]="selectedCategory === category"
+                [class.bg-primary-600]="selectedCategory === category"
                 [class.text-white]="selectedCategory === category"
-                [class.bg-slate-200]="selectedCategory !== category"
-                [class.text-slate-700]="selectedCategory !== category"
-                class="px-4 py-2 rounded-lg text-sm font-medium hover:bg-slate-300 transition-colors">
+                [class.bg-white]="selectedCategory !== category"
+                [class.text-gray-700]="selectedCategory !== category"
+                [class.border-primary-600]="selectedCategory === category"
+                [class.border-gray-300]="selectedCategory !== category"
+                class="rounded-md border px-3 py-2 text-sm font-semibold transition-colors hover:border-primary-600 hover:text-primary-700"
+              >
                 {{ category }}
               </button>
             }
-            <button 
-              (click)="clearFilters()"
-              class="px-4 py-2 rounded-lg text-sm font-medium bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors">
-              Clear All
-            </button>
+            <button (click)="clearFilters()" class="btn-outline btn-sm">Clear All</button>
           </div>
         </div>
 
@@ -93,61 +105,38 @@ import { MoodRating } from '../../../core/models/progress.model';
         @if (!selectedExercise()) {
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             @for (exercise of filteredExercises(); track exercise.id) {
-              <div class="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow cursor-pointer overflow-hidden"
-                   (click)="selectExercise(exercise)">
-                
+              <div
+                class="flex h-full cursor-pointer flex-col rounded-lg border border-gray-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md sm:p-6"
+                (click)="selectExercise(exercise)"
+              >
                 <!-- Exercise Header -->
-                <div class="p-6 pb-4">
+                <div class="flex flex-1 flex-col">
                   <div class="flex items-center justify-between mb-3">
-                    <span class="bg-slate-100 text-slate-700 px-3 py-1 rounded-full text-sm font-semibold">
+                    <span
+                      class="rounded-md bg-primary-50 px-3 py-1 text-sm font-semibold text-primary-700"
+                    >
                       {{ exercise.type }}
                     </span>
-                    <span class="text-slate-500 text-sm">{{ exercise.duration }}</span>
+                    <span class="text-sm text-gray-500">{{ exercise.duration }}</span>
                   </div>
 
-                  <h3 class="text-xl font-bold text-slate-800 mb-3">{{ exercise.title }}</h3>
-                  <p class="text-slate-600 mb-4 line-clamp-3">{{ exercise.description }}</p>
-
-                  <!-- Categories -->
-                  <div class="flex flex-wrap gap-1 mb-4">
-                    @for (category of exercise.category; track category) {
-                      <span class="bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs">
-                        {{ category }}
-                      </span>
-                    }
-                  </div>
+                  <h3 class="mb-3 text-lg font-semibold text-gray-950">{{ exercise.title }}</h3>
+                  <p class="mb-4 line-clamp-3 text-sm leading-6 text-gray-700">
+                    {{ exercise.description }}
+                  </p>
 
                   <!-- Difficulty -->
-                  <div class="flex items-center justify-between">
+                  <div
+                    class="mb-5 mt-auto flex items-center justify-between gap-3 border-t border-gray-100 pt-4"
+                  >
                     <div class="flex items-center">
-                      <span class="text-sm text-slate-500 mr-2">Difficulty:</span>
-                      <span [class]="getDifficultyColor(exercise.difficulty)" 
-                            class="px-2 py-1 rounded text-xs font-medium">
-                        {{ exercise.difficulty }}
-                      </span>
+                      <span class="text-sm text-gray-500">{{ exercise.difficulty }}</span>
                     </div>
-                    <span class="text-sm font-semibold text-slate-700">{{ exercise.steps.length }} steps</span>
+                    <span class="text-sm font-semibold text-gray-700"
+                      >{{ exercise.steps.length }} steps</span
+                    >
                   </div>
-                </div>
-
-                <!-- Benefits Preview -->
-                <div class="px-6 pb-6">
-                  <div class="border-t pt-4">
-                    <h4 class="text-sm font-semibold text-slate-700 mb-2">Key Benefits:</h4>
-                    <ul class="text-sm text-slate-600 space-y-1">
-                      @for (benefit of exercise.benefits.slice(0, 3); track benefit) {
-                        <li class="flex items-start">
-                          <svg class="w-4 h-4 text-green-500 mt-0.5 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
-                          </svg>
-                          {{ benefit }}
-                        </li>
-                      }
-                    </ul>
-                    <button class="mt-3 w-full bg-slate-800 text-white py-2 rounded-lg font-semibold hover:bg-slate-700 transition-colors">
-                      Start Exercise
-                    </button>
-                  </div>
+                  <button class="btn-primary btn-block btn-sm">Start Exercise</button>
                 </div>
               </div>
             }
@@ -156,26 +145,41 @@ import { MoodRating } from '../../../core/models/progress.model';
 
         <!-- No Results -->
         @if (filteredExercises().length === 0 && !selectedExercise()) {
-          <div class="text-center py-12">
-            <svg class="w-16 h-16 text-slate-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 12h6m-6-4h6m2 5.291A7.962 7.962 0 0112 15c-2.34 0-4.47.881-6.08 2.33l-.147.083A7.994 7.994 0 0112 21.001z"/>
+          <div class="rounded-lg border border-gray-200 bg-white p-8 text-center shadow-sm">
+            <svg
+              class="w-16 h-16 text-slate-400 mx-auto mb-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9.172 16.172a4 4 0 015.656 0M9 12h6m-6-4h6m2 5.291A7.962 7.962 0 0112 15c-2.34 0-4.47.881-6.08 2.33l-.147.083A7.994 7.994 0 0112 21.001z"
+              />
             </svg>
-            <h3 class="text-xl font-semibold text-slate-700 mb-2">No exercises found</h3>
-            <p class="text-slate-500 mb-4">Try adjusting your filters or search terms.</p>
-            <button (click)="clearFilters()" class="bg-slate-800 text-white px-6 py-2 rounded-lg hover:bg-slate-700 transition-colors">
-              Clear Filters
-            </button>
+            <h3 class="text-xl font-semibold text-gray-950 mb-2">No exercises found</h3>
+            <p class="text-gray-700 mb-4">Try adjusting your filters or search terms.</p>
+            <button (click)="clearFilters()" class="btn-outline btn-sm">Clear Filters</button>
           </div>
         }
 
         <!-- Selected Exercise Detail -->
         @if (selectedExercise()) {
-          <div class="bg-white rounded-xl shadow-lg p-8">
-            
+          <div class="rounded-lg border border-gray-200 bg-white p-5 shadow-sm sm:p-8">
             <!-- Back Button -->
-            <button (click)="goBack()" class="mb-6 text-slate-600 hover:text-slate-800 flex items-center">
+            <button
+              (click)="goBack()"
+              class="mb-6 inline-flex items-center text-sm font-semibold text-primary-700 hover:text-primary-800"
+            >
               <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M15 19l-7-7 7-7"
+                />
               </svg>
               Back to Exercises
             </button>
@@ -187,19 +191,25 @@ import { MoodRating } from '../../../core/models/progress.model';
                   {{ selectedExercise()!.type }}
                 </span>
                 <span class="text-slate-500">{{ selectedExercise()!.duration }}</span>
-                <span [class]="getDifficultyColor(selectedExercise()!.difficulty)" 
-                      class="px-3 py-1 rounded-full text-sm font-medium">
+                <span
+                  [class]="getDifficultyColor(selectedExercise()!.difficulty)"
+                  class="px-3 py-1 rounded-full text-sm font-medium"
+                >
                   {{ selectedExercise()!.difficulty }}
                 </span>
               </div>
-              
-              <h2 class="text-3xl font-bold text-slate-800 mb-4">{{ selectedExercise()!.title }}</h2>
-              <p class="text-slate-600 text-lg mb-6">{{ selectedExercise()!.description }}</p>
-              
+
+              <h2 class="mb-4 text-2xl font-semibold text-gray-950 sm:text-3xl">
+                {{ selectedExercise()!.title }}
+              </h2>
+              <p class="mb-6 text-base leading-7 text-gray-700 sm:text-lg">
+                {{ selectedExercise()!.description }}
+              </p>
+
               <!-- Categories -->
               <div class="flex flex-wrap gap-2 mb-6">
                 @for (category of selectedExercise()!.category; track category) {
-                  <span class="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm">
+                  <span class="rounded-md bg-gray-50 px-3 py-1 text-sm text-gray-700">
                     {{ category }}
                   </span>
                 }
@@ -212,8 +222,16 @@ import { MoodRating } from '../../../core/models/progress.model';
               <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                 @for (benefit of selectedExercise()!.benefits; track benefit) {
                   <div class="flex items-start space-x-3 p-3 bg-green-50 rounded-lg">
-                    <svg class="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                      <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                    <svg
+                      class="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path
+                        fill-rule="evenodd"
+                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                        clip-rule="evenodd"
+                      />
                     </svg>
                     <span class="text-green-800 text-sm">{{ benefit }}</span>
                   </div>
@@ -227,7 +245,9 @@ import { MoodRating } from '../../../core/models/progress.model';
               <div class="space-y-4">
                 @for (step of selectedExercise()!.steps; track step.stepNumber) {
                   <div class="flex items-start space-x-4 p-4 bg-slate-50 rounded-lg">
-                    <div class="w-8 h-8 bg-slate-800 text-white rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0">
+                    <div
+                      class="w-8 h-8 bg-primary-600 text-white rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0"
+                    >
                       {{ step.stepNumber }}
                     </div>
                     <div class="flex-1">
@@ -238,9 +258,7 @@ import { MoodRating } from '../../../core/models/progress.model';
                         </p>
                       }
                       @if (step.tip) {
-                        <p class="text-blue-700 text-sm">
-                          <strong>Tip:</strong> {{ step.tip }}
-                        </p>
+                        <p class="text-blue-700 text-sm"><strong>Tip:</strong> {{ step.tip }}</p>
                       }
                     </div>
                   </div>
@@ -256,8 +274,16 @@ import { MoodRating } from '../../../core/models/progress.model';
                   <ul class="space-y-2">
                     @for (tip of selectedExercise()!.tips; track tip) {
                       <li class="flex items-start space-x-3">
-                        <svg class="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                          <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+                        <svg
+                          class="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <path
+                            fill-rule="evenodd"
+                            d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                            clip-rule="evenodd"
+                          />
                         </svg>
                         <span class="text-blue-800">{{ tip }}</span>
                       </li>
@@ -274,8 +300,16 @@ import { MoodRating } from '../../../core/models/progress.model';
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                   @for (usage of selectedExercise()!.whenToUse; track usage) {
                     <div class="flex items-start space-x-3 p-3 bg-purple-50 rounded-lg">
-                      <svg class="w-5 h-5 text-purple-600 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/>
+                      <svg
+                        class="w-5 h-5 text-purple-600 mt-0.5 flex-shrink-0"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
+                        <path
+                          fill-rule="evenodd"
+                          d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z"
+                          clip-rule="evenodd"
+                        />
                       </svg>
                       <span class="text-purple-800 text-sm">{{ usage }}</span>
                     </div>
@@ -285,15 +319,30 @@ import { MoodRating } from '../../../core/models/progress.model';
             }
 
             <!-- Contraindications -->
-            @if (selectedExercise() && selectedExercise()!.contraindications && selectedExercise()!.contraindications!.length > 0) {
+            @if (
+              selectedExercise() &&
+              selectedExercise()!.contraindications &&
+              selectedExercise()!.contraindications!.length > 0
+            ) {
               <div class="mb-8">
                 <h3 class="text-xl font-semibold text-slate-800 mb-4">Important Considerations</h3>
                 <div class="bg-red-50 border border-red-200 rounded-lg p-6">
                   <ul class="space-y-2">
-                    @for (contraindication of selectedExercise()!.contraindications!; track contraindication) {
+                    @for (
+                      contraindication of selectedExercise()!.contraindications!;
+                      track contraindication
+                    ) {
                       <li class="flex items-start space-x-3">
-                        <svg class="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                          <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                        <svg
+                          class="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <path
+                            fill-rule="evenodd"
+                            d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                            clip-rule="evenodd"
+                          />
                         </svg>
                         <span class="text-red-800">{{ contraindication }}</span>
                       </li>
@@ -305,55 +354,51 @@ import { MoodRating } from '../../../core/models/progress.model';
 
             <!-- Action Buttons -->
             <div class="flex flex-col sm:flex-row gap-4 justify-center">
-              <button 
-                (click)="startExercise()"
-                class="bg-slate-800 text-white px-8 py-3 rounded-lg font-semibold hover:bg-slate-700 transition-colors">
+              <button (click)="startExercise()" class="btn-primary btn-sm">
                 Start This Exercise
               </button>
               @if (selectedExercise()) {
-                <button 
+                <button
                   (click)="showCompletionDialog(selectedExercise()!)"
-                  class="bg-green-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-green-700 transition-colors">
+                  class="btn-primary btn-sm"
+                >
                   Mark as Completed
                 </button>
               }
-              <button 
-                (click)="goBack()"
-                class="bg-slate-200 text-slate-700 px-8 py-3 rounded-lg font-semibold hover:bg-slate-300 transition-colors">
-                Browse More Exercises
-              </button>
+              <button (click)="goBack()" class="btn-outline btn-sm">Browse More Exercises</button>
             </div>
           </div>
         }
-
       </div>
     </section>
   `,
-  styles: [`
-    /* Line clamp for descriptions */
-    .line-clamp-3 {
-      display: -webkit-box;
-      -webkit-line-clamp: 3;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-    }
-
-    /* Smooth transitions */
-    .transition-all {
-      transition: all 0.3s ease;
-    }
-
-    /* Mobile responsiveness */
-    @media (max-width: 640px) {
-      .grid-cols-1 {
-        grid-template-columns: 1fr;
+  styles: [
+    `
+      /* Line clamp for descriptions */
+      .line-clamp-3 {
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
       }
-      
-      .flex-col {
-        flex-direction: column;
+
+      /* Smooth transitions */
+      .transition-all {
+        transition: all 0.3s ease;
       }
-    }
-  `]
+
+      /* Mobile responsiveness */
+      @media (max-width: 640px) {
+        .grid-cols-1 {
+          grid-template-columns: 1fr;
+        }
+
+        .flex-col {
+          flex-direction: column;
+        }
+      }
+    `,
+  ],
 })
 export class ExercisesComponent implements OnInit {
   recommendedExerciseIds = input<string[]>([]);
@@ -364,11 +409,19 @@ export class ExercisesComponent implements OnInit {
 
   categories: ExerciseCategory[] = Object.values(ExerciseCategory);
   types: ExerciseType[] = Object.values(ExerciseType);
+  categoryOptions: FormDropdownOption[] = [
+    { value: '', label: 'All Categories' },
+    ...Object.values(ExerciseCategory).map((category) => ({ value: category, label: category })),
+  ];
+  typeOptions: FormDropdownOption[] = [
+    { value: '', label: 'All Types' },
+    ...Object.values(ExerciseType).map((type) => ({ value: type, label: type })),
+  ];
   quickCategories: ExerciseCategory[] = [
     ExerciseCategory.ANXIETY,
     ExerciseCategory.DEPRESSION,
     ExerciseCategory.STRESS,
-    ExerciseCategory.SLEEP
+    ExerciseCategory.SLEEP,
   ];
 
   searchTerm = '';
@@ -379,21 +432,19 @@ export class ExercisesComponent implements OnInit {
   constructor(
     private route: ActivatedRoute,
     private progressService: ProgressService,
-    @Inject(PLATFORM_ID) platformId: Object
+    @Inject(PLATFORM_ID) platformId: object,
   ) {
     this.isBrowser = isPlatformBrowser(platformId);
   }
 
   ngOnInit() {
     // Check for recommended exercises from route params
-    this.route.queryParams
-      .pipe(takeUntilDestroyed())
-      .subscribe((params: any) => {
-        if (params['recommended']) {
-          const recommendedIds = params['recommended'].split(',');
-          this.showRecommendedExercises(recommendedIds);
-        }
-      });
+    this.route.queryParams.pipe(takeUntilDestroyed()).subscribe((params: any) => {
+      if (params['recommended']) {
+        const recommendedIds = params['recommended'].split(',');
+        this.showRecommendedExercises(recommendedIds);
+      }
+    });
 
     // If recommended exercises provided as input, show them
     if (this.recommendedExerciseIds().length > 0) {
@@ -404,7 +455,9 @@ export class ExercisesComponent implements OnInit {
   }
 
   showRecommendedExercises(exerciseIds: string[]) {
-    const recommended = exerciseIds.map(id => getExerciseById(id)).filter(ex => ex !== undefined) as Exercise[];
+    const recommended = exerciseIds
+      .map((id) => getExerciseById(id))
+      .filter((ex) => ex !== undefined) as Exercise[];
     if (recommended.length > 0) {
       this.filteredExercises.set(recommended);
     }
@@ -420,12 +473,14 @@ export class ExercisesComponent implements OnInit {
 
     // Apply category filter
     if (this.selectedCategory) {
-      filtered = filtered.filter(ex => ex.category.includes(this.selectedCategory as ExerciseCategory));
+      filtered = filtered.filter((ex) =>
+        ex.category.includes(this.selectedCategory as ExerciseCategory),
+      );
     }
 
     // Apply type filter
     if (this.selectedType) {
-      filtered = filtered.filter(ex => ex.type === this.selectedType);
+      filtered = filtered.filter((ex) => ex.type === this.selectedType);
     }
 
     this.filteredExercises.set(filtered);
@@ -457,7 +512,13 @@ export class ExercisesComponent implements OnInit {
     alert('Exercise started! Follow the step-by-step instructions above.');
   }
 
-  completeExercise(exercise: Exercise, duration: number = 10, rating: number = 4, mood: MoodRating = MoodRating.GOOD, notes?: string) {
+  completeExercise(
+    exercise: Exercise,
+    duration: number = 10,
+    rating: number = 4,
+    mood: MoodRating = MoodRating.GOOD,
+    notes?: string,
+  ) {
     // Record exercise completion in progress service
     this.progressService.recordExerciseSession(
       exercise.id,
@@ -466,7 +527,7 @@ export class ExercisesComponent implements OnInit {
       duration,
       rating,
       mood,
-      notes
+      notes,
     );
 
     // Show completion message
@@ -488,7 +549,7 @@ export class ExercisesComponent implements OnInit {
         parseInt(duration) || 10,
         parseInt(rating) || 4,
         MoodRating.GOOD,
-        notes || undefined
+        notes || undefined,
       );
     }
   }

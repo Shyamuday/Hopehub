@@ -1,4 +1,4 @@
-import { Component, OnInit, Inject, PLATFORM_ID, inject, signal } from '@angular/core';
+import { Component, OnInit, Inject, PLATFORM_ID, computed, inject, signal } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterModule } from '@angular/router';
@@ -23,11 +23,15 @@ import {
   getPopularArticles,
 } from '../../../core/data/article-configs';
 import { getArticleRecommendations } from '../../../core/data/article-recommendations';
+import {
+  FormDropdownComponent,
+  FormDropdownOption,
+} from '../form-dropdown/form-dropdown.component';
 
 @Component({
   selector: 'app-articles',
   standalone: true,
-  imports: [FormsModule, RouterModule, DatePipe],
+  imports: [FormsModule, RouterModule, DatePipe, FormDropdownComponent],
   templateUrl: './articles.component.html',
   styleUrl: './articles.component.scss',
 })
@@ -50,6 +54,13 @@ export class ArticlesComponent implements OnInit {
   selectedArticle = signal<Article | null>(null);
   currentFilter = signal<string>('all');
   searchQuery = signal<string>('');
+  readonly filterOptions = computed<FormDropdownOption[]>(() => [
+    { value: 'all', label: `All articles (${this.allArticles().length})` },
+    ...this.categories().map((category) => ({
+      value: `category:${category}`,
+      label: `${category} (${this.getCategoryCount(category)})`,
+    })),
+  ]);
 
   assessmentInfo = signal<{
     type: string;
@@ -113,6 +124,18 @@ export class ArticlesComponent implements OnInit {
     // Apply search if active
     if (this.searchQuery()) {
       this.onSearch();
+    }
+  }
+
+  applyFilterValue(value: string) {
+    if (value === 'all') {
+      this.setFilter('all');
+      return;
+    }
+
+    const [type, filterValue] = value.split(':');
+    if (type === 'category' && filterValue) {
+      this.setFilter(type, filterValue);
     }
   }
 

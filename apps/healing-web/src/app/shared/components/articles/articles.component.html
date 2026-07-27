@@ -1,10 +1,10 @@
-<section class="bg-slate-50 min-h-screen py-12">
-  <div class="max-w-7xl mx-auto px-6">
+<section class="min-h-screen bg-[var(--brand-surface)] py-10 sm:py-12">
+  <div class="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
 
     <!-- Header -->
-    <div class="text-center mb-12">
-      <h1 class="text-4xl font-bold text-slate-800 mb-4">Mental Health Articles & Resources</h1>
-      <p class="text-slate-600 max-w-3xl mx-auto text-lg">
+    <div class="mx-auto mb-10 max-w-3xl text-center">
+      <h1 class="mb-4 text-3xl font-semibold text-gray-950 sm:text-4xl">Mental Health Articles & Resources</h1>
+      <p class="mx-auto max-w-2xl text-base leading-7 text-gray-700 sm:text-lg">
         Evidence-based articles to help you understand and improve your mental health.
       </p>
     </div>
@@ -12,43 +12,43 @@
     <!-- Recommended Articles (if coming from assessment) -->
     @if (recommendedArticles().length > 0) {
     <div class="mb-12">
-      <div class="bg-blue-50 border border-blue-200 rounded-xl p-6 mb-8">
+      <div class="mb-8 rounded-lg border border-primary-100 bg-white p-5 shadow-sm sm:p-6">
         <div class="flex items-center space-x-3 mb-4">
-          <svg class="w-6 h-6 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+          <svg class="w-6 h-6 text-primary-700" fill="currentColor" viewBox="0 0 20 20">
             <path
               d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z" />
           </svg>
-          <h2 class="text-2xl font-bold text-blue-800">Recommended Reading</h2>
+          <h2 class="text-xl font-semibold text-gray-950 sm:text-2xl">Recommended Reading</h2>
         </div>
         @if (assessmentInfo()) {
-        <p class="text-blue-700 mb-4">
+        <p class="mb-4 text-gray-700">
           Based on your <strong>{{ assessmentInfo()!.type }}</strong> assessment results
           (Score: {{ assessmentInfo()!.score }}, Level: {{ assessmentInfo()!.level }})
         </p>
         }
-        <p class="text-blue-700">These articles are specifically recommended for your current situation:</p>
+        <p class="text-gray-700">These articles are specifically recommended for your current situation:</p>
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
         @for (article of recommendedArticles(); track article.id) {
         <div
-          class="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow border-l-4 border-blue-500 cursor-pointer"
+          class="cursor-pointer rounded-lg border border-gray-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md sm:p-6"
           (click)="selectArticle(article)">
 
           <!-- Article Header -->
-          <div class="p-6">
+          <div>
             <div class="flex items-center justify-between mb-4">
-              <span class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-semibold whitespace-nowrap">
+              <span class="rounded-md bg-primary-50 px-3 py-1 text-sm font-semibold text-primary-700 whitespace-nowrap">
                 Recommended
               </span>
               <span class="text-slate-500 text-sm whitespace-nowrap">{{ article.readingTime }}</span>
             </div>
 
-            <h3 class="text-xl font-bold text-slate-800 mb-2">{{ article.title }}</h3>
+            <h3 class="mb-2 text-lg font-semibold text-gray-950">{{ article.title }}</h3>
             @if (article.subtitle) {
             <p class="text-slate-600 text-sm mb-3">{{ article.subtitle }}</p>
             }
-            <p class="text-slate-600 mb-4 line-clamp-3">{{ article.description }}</p>
+            <p class="mb-4 line-clamp-3 text-sm leading-6 text-gray-700">{{ article.description }}</p>
 
             <!-- Meta Info -->
             <div class="flex items-center justify-between text-sm text-slate-500">
@@ -65,25 +65,25 @@
     <!-- Featured Articles -->
     @if (!selectedArticle() && featuredArticles().length > 0) {
     <div class="mb-12">
-      <h2 class="text-3xl font-bold text-slate-800 mb-6">Featured Articles</h2>
+      <h2 class="mb-6 text-2xl font-semibold text-gray-950">Featured Articles</h2>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         @for (article of featuredArticles(); track article.id) {
-        <div class="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow cursor-pointer"
+        <div class="cursor-pointer rounded-lg border border-gray-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md sm:p-6"
           (click)="selectArticle(article)">
 
-          <div class="p-6">
+          <div>
             <div class="flex items-center justify-between mb-4">
-              <span class="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-sm font-semibold whitespace-nowrap">
+              <span class="rounded-md bg-primary-50 px-3 py-1 text-sm font-semibold text-primary-700 whitespace-nowrap">
                 Featured
               </span>
               <span class="text-slate-500 text-sm whitespace-nowrap">{{ article.readingTime }}</span>
             </div>
 
-            <h3 class="text-2xl font-bold text-slate-800 mb-2">{{ article.title }}</h3>
+            <h3 class="mb-2 text-xl font-semibold text-gray-950">{{ article.title }}</h3>
             @if (article.subtitle) {
             <p class="text-slate-600 mb-3">{{ article.subtitle }}</p>
             }
-            <p class="text-slate-600 mb-4">{{ article.description }}</p>
+            <p class="mb-4 text-sm leading-6 text-gray-700">{{ article.description }}</p>
 
             <div class="flex items-center justify-between text-sm">
               <span class="text-slate-500">{{ article.author }}</span>
@@ -100,39 +100,22 @@
     @if (!selectedArticle()) {
     <div class="mb-8">
 
-      <!-- Search Bar -->
-      <div class="mb-6">
-        <div class="relative max-w-md mx-auto">
+      <div class="mx-auto grid max-w-3xl gap-4 md:grid-cols-[1fr_18rem]">
+        <div class="relative">
           <input type="text" [(ngModel)]="searchQuery" (input)="onSearch()" placeholder="Search articles..."
-            class="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-transparent">
+            class="w-full rounded-lg border border-gray-300 bg-white py-3 pl-10 pr-4 text-gray-900 placeholder:text-gray-500 focus:border-primary-600 focus:outline-none focus:ring-2 focus:ring-primary-100">
           <svg class="absolute left-3 top-3.5 w-5 h-5 text-slate-400" fill="none" stroke="currentColor"
             viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
               d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
         </div>
-      </div>
-
-      <!-- Filter Tabs -->
-      <div class="flex flex-wrap justify-center gap-2 mb-6">
-        <button (click)="setFilter('all')" [class.bg-slate-800]="currentFilter() === 'all'"
-          [class.text-white]="currentFilter() === 'all'" [class.bg-white]="currentFilter() !== 'all'"
-          [class.text-slate-700]="currentFilter() !== 'all'"
-          class="px-4 py-2 rounded-lg border border-slate-200 hover:bg-slate-100 transition-colors text-sm whitespace-nowrap">
-          All Articles ({{ allArticles().length }})
-        </button>
-
-        <!-- Category Filters -->
-        @for (category of categories(); track category) {
-        <button (click)="setFilter('category', category)"
-          [class.bg-slate-800]="currentFilter() === 'category:' + category"
-          [class.text-white]="currentFilter() === 'category:' + category"
-          [class.bg-white]="currentFilter() !== 'category:' + category"
-          [class.text-slate-700]="currentFilter() !== 'category:' + category"
-          class="px-4 py-2 rounded-lg border border-slate-200 hover:bg-slate-100 transition-colors text-sm whitespace-nowrap">
-          {{ category }} ({{ getCategoryCount(category) }})
-        </button>
-        }
+        <app-form-dropdown
+          placeholder="Filter articles"
+          [options]="filterOptions()"
+          [ngModel]="currentFilter()"
+          (ngModelChange)="applyFilterValue($event)"
+        ></app-form-dropdown>
       </div>
     </div>
     }
@@ -141,48 +124,52 @@
     @if (!selectedArticle()) {
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       @for (article of filteredArticles(); track article.id) {
-      <div class="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow cursor-pointer"
+      <div class="flex h-full cursor-pointer flex-col rounded-lg border border-gray-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md sm:p-6"
         (click)="selectArticle(article)">
 
-        <div class="p-6">
+        <div class="flex flex-1 flex-col">
           <!-- Type and Reading Time -->
           <div class="flex items-center justify-between mb-4">
-            <span class="bg-slate-100 text-slate-700 px-3 py-1 rounded-full text-sm font-semibold whitespace-nowrap">
+            <span class="rounded-md bg-primary-50 px-3 py-1 text-sm font-semibold text-primary-700 whitespace-nowrap">
               {{ article.type }}
             </span>
             <span class="text-slate-500 text-sm whitespace-nowrap">{{ article.readingTime }}</span>
           </div>
 
           <!-- Title and Description -->
-          <h3 class="text-xl font-bold text-slate-800 mb-2">{{ article.title }}</h3>
-          <p class="text-slate-600 mb-4 line-clamp-3">{{ article.description }}</p>
+          <h3 class="mb-2 text-lg font-semibold text-gray-950">{{ article.title }}</h3>
+          <p class="mb-4 line-clamp-3 text-sm leading-6 text-gray-700">{{ article.description }}</p>
 
           <!-- Author and Date -->
-          <div class="flex items-center justify-between text-sm text-slate-500 mb-4">
+          <div class="mb-4 mt-auto flex items-center justify-between border-t border-gray-100 pt-4 text-sm text-gray-500">
             <span>{{ article.author.split(',')[0] }}</span>
             <span>{{ article.publishedDate | date:'mediumDate' }}</span>
           </div>
 
-          <!-- Categories -->
-          <div class="flex flex-wrap gap-1">
-            @for (category of article.category; track category) {
-            <span class="bg-slate-50 text-slate-600 px-2 py-1 rounded text-xs whitespace-nowrap">
-              {{ category }}
-            </span>
-            }
-          </div>
+          <button type="button" class="btn-primary btn-block btn-sm">Read article</button>
         </div>
       </div>
       }
     </div>
+    @if (filteredArticles().length === 0) {
+      <div class="rounded-lg border border-gray-200 bg-white p-8 text-center shadow-sm">
+        <h2 class="text-xl font-semibold text-gray-950">No articles found</h2>
+        <p class="mx-auto mt-2 max-w-md text-sm leading-6 text-gray-700">
+          Try another keyword or switch the filter back to all articles.
+        </p>
+        <button type="button" class="btn-outline btn-sm mt-5" (click)="searchQuery.set(''); setFilter('all')">
+          Reset search
+        </button>
+      </div>
+    }
     }
 
     <!-- Selected Article Details -->
     @if (selectedArticle()) {
-    <div class="bg-white rounded-xl shadow-lg p-8 max-w-4xl mx-auto">
+    <div class="mx-auto max-w-4xl rounded-lg border border-gray-200 bg-white p-5 shadow-sm sm:p-8">
 
       <!-- Back Button -->
-      <button (click)="goBack()" class="mb-6 text-slate-600 hover:text-slate-800 flex items-center whitespace-nowrap">
+      <button (click)="goBack()" class="mb-6 inline-flex items-center text-sm font-semibold text-primary-700 hover:text-primary-800 whitespace-nowrap">
         <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
         </svg>
@@ -201,7 +188,7 @@
           <span class="text-slate-500 whitespace-nowrap">{{ selectedArticle()!.readingTime }}</span>
         </div>
 
-        <h1 class="text-4xl font-bold text-slate-800 mb-3">{{ selectedArticle()!.title }}</h1>
+        <h1 class="mb-3 text-3xl font-semibold text-gray-950 sm:text-4xl">{{ selectedArticle()!.title }}</h1>
         @if (selectedArticle()!.subtitle) {
         <p class="text-xl text-slate-600 mb-4">{{ selectedArticle()!.subtitle }}</p>
         }
@@ -222,7 +209,7 @@
 
       <!-- Introduction -->
       <div class="mb-8">
-        <p class="text-lg text-slate-700 leading-relaxed">{{ selectedArticle()!.introduction }}</p>
+        <p class="text-base leading-7 text-gray-700 sm:text-lg">{{ selectedArticle()!.introduction }}</p>
       </div>
 
       <!-- Article Sections -->
@@ -341,15 +328,15 @@
       <!-- Action Buttons -->
       <div class="flex flex-col sm:flex-row gap-4 justify-center">
         <button (click)="goBack()"
-          class="bg-slate-200 text-slate-700 px-6 py-3 rounded-lg hover:bg-slate-300 transition-colors whitespace-nowrap">
+          class="btn-outline btn-sm whitespace-nowrap">
           Browse More Articles
         </button>
         <button routerLink="/exercises"
-          class="btn-primary">
+          class="btn-primary btn-sm">
           View Exercises
         </button>
         <button routerLink="/lifestyle-tips"
-          class="btn-primary">
+          class="btn-primary btn-sm">
           View Lifestyle Tips
         </button>
       </div>

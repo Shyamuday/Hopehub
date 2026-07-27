@@ -62,7 +62,7 @@
   align-items: center;
   justify-content: center;
   border-radius: 0.5rem;
-  background: #0f766e;
+  background: var(--brand-primary);
   color: #ffffff;
   font-weight: 800;
   padding: 0.9rem 1.25rem;
@@ -70,7 +70,7 @@
 }
 
 .submit-button:hover {
-  background: #115e59;
+  background: var(--brand-primary-dark);
 }
 
 .submit-button:disabled {

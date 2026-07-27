@@ -1,9 +1,9 @@
 @if (service()) {
-  <div class="container mx-auto px-4 py-8">
+  <div class="container mx-auto px-4 py-8 sm:px-6 lg:px-8">
     <!-- Back Navigation -->
     <button 
       (click)="goBack()" 
-      class="mb-6 flex items-center text-primary-600 hover:text-primary-700 transition-colors duration-200">
+      class="mb-6 inline-flex items-center text-sm font-semibold text-primary-700 hover:text-primary-800 transition-colors duration-200">
       <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
       </svg>
@@ -11,32 +11,32 @@
     </button>
 
     <!-- Service Header -->
-    <div class="bg-white rounded-lg shadow-lg overflow-hidden mb-8">
+    <div class="mb-8 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
       <div class="md:flex">
         @if (service()!.imageUrl) {
           <div class="md:w-1/2">
             <img [src]="service()!.imageUrl" [alt]="service()!.name" class="w-full h-64 md:h-full object-cover">
           </div>
         }
-        <div class="p-8" [class.md:w-1/2]="service()!.imageUrl" [class.w-full]="!service()!.imageUrl">
+        <div class="p-5 sm:p-8" [class.md:w-1/2]="service()!.imageUrl" [class.w-full]="!service()!.imageUrl">
           <div class="mb-4">
-            <span class="inline-block bg-primary-100 text-primary-800 text-sm px-3 py-1 rounded-full capitalize">
+            <span class="inline-block rounded-md bg-primary-50 px-3 py-1 text-sm font-semibold capitalize text-primary-700">
               {{ service()!.category }}
             </span>
             @if (service()!.featured) {
-              <span class="ml-2 inline-block bg-yellow-100 text-yellow-800 text-sm px-3 py-1 rounded-full">
+              <span class="ml-2 inline-block rounded-md bg-gray-100 px-3 py-1 text-sm font-semibold text-gray-700">
                 Featured
               </span>
             }
           </div>
-          <h1 class="text-3xl font-bold text-gray-900 mb-4">{{ service()!.name }}</h1>
-          <p class="text-lg text-gray-600 mb-6">{{ service()!.description }}</p>
+          <h1 class="mb-4 text-2xl font-semibold text-gray-950 sm:text-3xl">{{ service()!.name }}</h1>
+          <p class="mb-6 text-base leading-7 text-gray-700 sm:text-lg">{{ service()!.description }}</p>
           
           <!-- Pricing Information -->
           @if (service()!.pricing) {
             <div class="mb-6">
               <h3 class="text-lg font-semibold text-gray-900 mb-3">Introductory Session</h3>
-              <div class="space-y-2 rounded-lg border border-blue-100 bg-blue-50 p-4">
+              <div class="space-y-2 rounded-lg border border-primary-100 bg-primary-50 p-4">
                 @if (service()!.pricing!.individual) {
                   <div class="flex justify-between items-center">
                     <span class="text-gray-700">30-minute support session</span>
@@ -68,7 +68,7 @@
             </button>
             <button 
               (click)="contactForInfo()" 
-              class="btn-secondary btn-block">
+              class="btn-outline btn-block">
               Contact for More Info
             </button>
           </div>
@@ -78,12 +78,12 @@
 
     <!-- Detailed Information -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-      <div class="bg-white rounded-lg shadow-md p-6">
+      <div class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
         <h2 class="text-2xl font-semibold text-gray-900 mb-4">Who This Is For</h2>
         <ul class="space-y-3">
           @for (item of whoThisIsFor(service()!); track item) {
             <li class="flex items-start">
-              <span class="mt-1 mr-3 h-2 w-2 rounded-full bg-blue-600 flex-shrink-0"></span>
+              <span class="mt-1 mr-3 h-2 w-2 rounded-full bg-primary-600 flex-shrink-0"></span>
               <span class="text-gray-600">{{ item }}</span>
             </li>
           }
@@ -91,13 +91,13 @@
       </div>
 
       <!-- Detailed Description -->
-      <div class="bg-white rounded-lg shadow-md p-6">
+      <div class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
         <h2 class="text-2xl font-semibold text-gray-900 mb-4">About This Service</h2>
         <p class="text-gray-600 leading-relaxed">{{ service()!.detailedDescription }}</p>
       </div>
 
       <!-- Benefits -->
-      <div class="bg-white rounded-lg shadow-md p-6">
+      <div class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
         <h2 class="text-2xl font-semibold text-gray-900 mb-4">Benefits</h2>
         <ul class="space-y-3">
           @for (benefit of service()!.benefits; track benefit) {
@@ -117,24 +117,24 @@
       </div>
 
       <!-- Approach -->
-      <div class="bg-white rounded-lg shadow-md p-6 lg:col-span-2">
+      <div class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm lg:col-span-2">
         <h2 class="text-2xl font-semibold text-gray-900 mb-4">Our Approach</h2>
         <p class="text-gray-600 leading-relaxed">{{ service()!.approach }}</p>
       </div>
 
-      <div class="bg-white rounded-lg shadow-md p-6">
+      <div class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
         <h2 class="text-2xl font-semibold text-gray-900 mb-4">What Happens in 30 Minutes</h2>
         <ol class="space-y-3">
           @for (step of sessionFlow(); track step; let i = $index) {
             <li class="flex items-start">
-              <span class="mr-3 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-blue-100 text-sm font-semibold text-blue-700">{{ i + 1 }}</span>
+              <span class="mr-3 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-primary-50 text-sm font-semibold text-primary-700">{{ i + 1 }}</span>
               <span class="text-gray-600">{{ step }}</span>
             </li>
           }
         </ol>
       </div>
 
-      <div class="bg-white rounded-lg shadow-md p-6">
+      <div class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
         <h2 class="text-2xl font-semibold text-gray-900 mb-4">You Leave With</h2>
         <ul class="space-y-3">
           @for (item of sessionOutcome(); track item) {
@@ -157,7 +157,7 @@
         </div>
       </div>
 
-      <div class="bg-white rounded-lg shadow-md p-6 lg:col-span-2">
+      <div class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm lg:col-span-2">
         <h2 class="text-2xl font-semibold text-gray-900 mb-4">Common Questions</h2>
         <div class="space-y-4">
           @for (faq of faqs(service()!); track faq.question) {
@@ -171,12 +171,12 @@
     </div>
 
     <!-- Call to Action Section -->
-    <div class="mt-12 bg-primary-50 rounded-lg p-8 text-center">
+    <div class="mt-12 rounded-lg border border-primary-100 bg-primary-50 p-6 text-center sm:p-8">
       <h2 class="text-2xl font-semibold text-gray-900 mb-4">Ready to Get Started?</h2>
       <p class="text-gray-600 mb-6 max-w-2xl mx-auto">
         Submit your request and we will review your concern, confirm the right support path, and guide you to the next step.
       </p>
-      <div class="space-x-4">
+      <div class="flex flex-col justify-center gap-3 sm:flex-row">
         <button 
           (click)="bookService()" 
           class="btn-primary">
@@ -184,7 +184,7 @@
         </button>
         <button 
           (click)="contactForInfo()" 
-          class="btn-secondary">
+          class="btn-outline">
           Learn More
         </button>
       </div>
