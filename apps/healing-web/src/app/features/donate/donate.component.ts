@@ -114,7 +114,7 @@ import { PaymentService } from '../../core/services';
             <!-- Suggested Amounts -->
             <div class="px-6 pb-6 sm:px-8">
               <p class="mb-3 text-center text-sm text-gray-600">Suggested amounts</p>
-              <div class="grid grid-cols-2 gap-2 sm:grid-cols-5">
+              <div class="grid grid-cols-1 gap-2 sm:grid-cols-5">
                 @for (amount of amounts; track amount) {
                   <button
                     (click)="selectAmount(amount)"
