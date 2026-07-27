@@ -4,7 +4,6 @@ import { isPlatformBrowser } from '@angular/common';
 import { filter, take } from 'rxjs';
 import { HeaderComponent, FooterComponent } from './layout';
 import {
-  BreadcrumbComponent,
   GlobalLoadingComponent,
   QuickAccessComponent,
   AuthModalComponent,
@@ -21,7 +20,6 @@ import { FontLoader } from './core/utils/font-loader.util';
     RouterOutlet,
     HeaderComponent,
     FooterComponent,
-    BreadcrumbComponent,
     GlobalLoadingComponent,
     QuickAccessComponent,
     AuthModalComponent,
