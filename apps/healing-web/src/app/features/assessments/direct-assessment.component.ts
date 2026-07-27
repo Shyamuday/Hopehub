@@ -16,11 +16,9 @@ import { AssessmentAttemptsService } from '../../core/services/assessment-attemp
   standalone: true,
   imports: [RouterModule],
   template: `
-    <main class="direct-test min-h-[calc(100svh-4rem)] bg-[var(--brand-surface)]">
+    <main class="direct-test bg-[var(--brand-surface)]">
       @if (assessment()) {
-        <section
-          class="mx-auto flex min-h-[calc(100svh-4rem)] w-full max-w-4xl flex-col px-4 py-4 sm:px-6 sm:py-6 lg:px-8"
-        >
+        <section class="mx-auto w-full max-w-3xl px-4 py-4 sm:px-6 sm:py-6 lg:px-8">
           <div class="mb-3 flex items-center justify-between gap-3">
             <a
               routerLink="/assessments"
@@ -36,17 +34,15 @@ import { AssessmentAttemptsService } from '../../core/services/assessment-attemp
           </div>
 
           @if (!showResults()) {
-            <div
-              class="flex flex-1 flex-col rounded-lg border border-gray-200 bg-white p-4 shadow-sm sm:p-6"
-            >
-              <div class="mb-4">
+            <div class="rounded-lg border border-gray-200 bg-white p-4 shadow-sm sm:p-5">
+              <div class="mb-3">
                 <p class="text-sm font-semibold text-primary-700">{{ assessment()!.type }}</p>
-                <h1 class="mt-1 text-2xl font-semibold text-gray-950 sm:text-3xl">
+                <h1 class="mt-1 text-xl font-semibold text-gray-950 sm:text-2xl">
                   {{ publicTitle() }}
                 </h1>
               </div>
 
-              <div class="mb-5">
+              <div class="mb-4">
                 <div class="mb-2 flex justify-between text-sm text-gray-600">
                   <span
                     >Question {{ currentQuestion() + 1 }} of
@@ -62,12 +58,12 @@ import { AssessmentAttemptsService } from '../../core/services/assessment-attemp
                 </div>
               </div>
 
-              <div class="flex flex-1 flex-col">
-                <h2 class="mb-4 text-xl font-semibold leading-snug text-gray-950 sm:text-2xl">
+              <div>
+                <h2 class="mb-3 text-base font-semibold leading-snug text-gray-950 sm:text-lg">
                   {{ currentQuestionText() }}
                 </h2>
 
-                <div class="grid gap-2 sm:grid-cols-2">
+                <div class="grid gap-2">
                   @for (option of assessment()!.responseOptions; track option.value) {
                     <button
                       type="button"
@@ -82,7 +78,7 @@ import { AssessmentAttemptsService } from '../../core/services/assessment-attemp
                   }
                 </div>
 
-                <div class="mt-auto flex items-center justify-between gap-3 pt-5">
+                <div class="flex items-center justify-between gap-3 pt-4">
                   <button
                     type="button"
                     class="btn-outline btn-sm"
@@ -231,12 +227,12 @@ import { AssessmentAttemptsService } from '../../core/services/assessment-attemp
   styles: [
     `
       .direct-test__option {
-        min-height: 3.25rem;
+        min-height: 2.55rem;
         border: 1px solid #d1d5db;
         border-radius: 0.5rem;
         background: #fff;
         color: #1c2d37;
-        padding: 0.8rem 0.95rem;
+        padding: 0.58rem 0.75rem;
         text-align: left;
         font-weight: 600;
         line-height: 1.35;
@@ -262,8 +258,8 @@ import { AssessmentAttemptsService } from '../../core/services/assessment-attemp
 
       @media (max-width: 639px) {
         .direct-test__option {
-          min-height: 3rem;
-          padding: 0.65rem 0.75rem;
+          min-height: 2.45rem;
+          padding: 0.52rem 0.7rem;
           font-size: 0.9rem;
         }
       }
