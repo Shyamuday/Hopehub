@@ -8,7 +8,6 @@ import {
   GlobalLoadingComponent,
   QuickAccessComponent,
   AuthModalComponent,
-  AnnouncementBannerComponent,
   ScrollToTopComponent,
 } from './shared/components';
 import { NavigationService, SEOService } from './core/services';
@@ -26,7 +25,6 @@ import { FontLoader } from './core/utils/font-loader.util';
     GlobalLoadingComponent,
     QuickAccessComponent,
     AuthModalComponent,
-    AnnouncementBannerComponent,
     ScrollToTopComponent,
   ],
   templateUrl: './app.html',
@@ -34,11 +32,6 @@ import { FontLoader } from './core/utils/font-loader.util';
 })
 export class App implements OnInit {
   protected readonly title = signal('hope-hub-website');
-  protected readonly announcementItems = [
-    'Daily 9 PM Telegram voice circle with Hope Hub experts',
-    'Request expert support for breakup, anxiety, career stress, mood, and relationships',
-    'An expert is matched after your support request is reviewed',
-  ];
 
   private seoService = inject(SEOService);
   private platformId = inject(PLATFORM_ID);

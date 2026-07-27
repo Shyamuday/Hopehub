@@ -12,25 +12,6 @@ import { User } from '../../core/models/auth.model';
   imports: [RouterModule],
   template: `
     <header class="bg-white shadow-sm border-b border-gray-200">
-      <!-- Announcement bar — single line -->
-      <div class="bg-primary-600 text-white">
-        <div
-          class="container mx-auto px-4 sm:px-6 lg:px-8 py-1.5 flex items-center justify-center gap-3 flex-nowrap overflow-hidden"
-        >
-          <span class="truncate whitespace-nowrap text-xs sm:text-sm font-medium">
-            📣 Join our daily 9 PM Telegram voice circle with Hope Hub experts — anonymous-friendly
-            support, guidance &amp; calm conversation.
-          </span>
-          <a
-            href="https://t.me/mindhopehub"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="shrink-0 whitespace-nowrap bg-white text-primary-600 font-semibold text-xs px-3 py-1 rounded-full hover:bg-primary-50 transition-colors"
-          >
-            Join community →
-          </a>
-        </div>
-      </div>
       <nav
         class="container mx-auto px-4 sm:px-6 lg:px-8"
         role="navigation"
@@ -83,7 +64,6 @@ import { User } from '../../core/models/auth.model';
               Psychologists
             </a>
 
-            <!-- Tools Dropdown removed — flat nav links -->
             <a
               routerLink="/assessments"
               routerLinkActive="text-primary-600 border-b-2 border-primary-600"
@@ -93,31 +73,6 @@ import { User } from '../../core/models/auth.model';
               Assessments
             </a>
             <a
-              routerLink="/exercises"
-              routerLinkActive="text-primary-600 border-b-2 border-primary-600"
-              class="text-gray-700 hover:text-primary-600 px-2 py-2 text-sm font-medium transition-colors duration-200 whitespace-nowrap"
-              [attr.aria-current]="isCurrentRoute('/exercises') ? 'page' : null"
-            >
-              Exercises
-            </a>
-            <a
-              routerLink="/lifestyle-tips"
-              routerLinkActive="text-primary-600 border-b-2 border-primary-600"
-              class="text-gray-700 hover:text-primary-600 px-2 py-2 text-sm font-medium transition-colors duration-200 whitespace-nowrap"
-              [attr.aria-current]="isCurrentRoute('/lifestyle-tips') ? 'page' : null"
-            >
-              Lifestyle
-            </a>
-            <a
-              routerLink="/articles"
-              routerLinkActive="text-primary-600 border-b-2 border-primary-600"
-              class="text-gray-700 hover:text-primary-600 px-2 py-2 text-sm font-medium transition-colors duration-200 whitespace-nowrap"
-              [attr.aria-current]="isCurrentRoute('/articles') ? 'page' : null"
-            >
-              Articles
-            </a>
-
-            <a
               routerLink="/community"
               routerLinkActive="text-primary-600 border-b-2 border-primary-600"
               class="text-gray-700 hover:text-primary-600 px-2 py-2 text-sm font-medium transition-colors duration-200 whitespace-nowrap"
@@ -125,25 +80,91 @@ import { User } from '../../core/models/auth.model';
             >
               Community
             </a>
-            <a
-              routerLink="/careers"
-              routerLinkActive="text-primary-600 border-b-2 border-primary-600"
-              class="text-gray-700 hover:text-primary-600 px-2 py-2 text-sm font-medium transition-colors duration-200 whitespace-nowrap"
-              [attr.aria-current]="isCurrentRoute('/careers') ? 'page' : null"
-            >
-              Careers
-            </a>
-            <a
-              routerLink="/contact"
-              routerLinkActive="text-primary-600 border-b-2 border-primary-600"
-              class="text-gray-700 hover:text-primary-600 px-2 py-2 text-sm font-medium transition-colors duration-200"
-              [attr.aria-current]="isCurrentRoute('/contact') ? 'page' : null"
-            >
-              Contact
-            </a>
             <div class="relative group">
               <button
-                class="text-gray-700 hover:text-primary-600 px-2 py-2 text-sm font-medium transition-colors duration-200 flex items-center whitespace-nowrap"
+                type="button"
+                class="flex items-center px-2 py-2 text-sm font-medium text-gray-700 transition-colors duration-200 hover:text-primary-600 whitespace-nowrap"
+                aria-haspopup="menu"
+              >
+                Resources
+                <svg class="ml-1 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </button>
+              <div
+                class="invisible absolute left-0 z-50 mt-2 w-48 rounded-md border border-gray-200 bg-white py-1 opacity-0 shadow-lg transition-all duration-200 group-hover:visible group-hover:opacity-100"
+                role="menu"
+              >
+                <a
+                  routerLink="/exercises"
+                  class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-primary-600"
+                  role="menuitem"
+                  >Exercises</a
+                >
+                <a
+                  routerLink="/lifestyle-tips"
+                  class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-primary-600"
+                  role="menuitem"
+                  >Lifestyle tips</a
+                >
+                <a
+                  routerLink="/articles"
+                  class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-primary-600"
+                  role="menuitem"
+                  >Articles</a
+                >
+              </div>
+            </div>
+            <div class="relative group">
+              <button
+                type="button"
+                class="flex items-center px-2 py-2 text-sm font-medium text-gray-700 transition-colors duration-200 hover:text-primary-600 whitespace-nowrap"
+                aria-haspopup="menu"
+              >
+                More
+                <svg class="ml-1 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </button>
+              <div
+                class="invisible absolute left-0 z-50 mt-2 w-48 rounded-md border border-gray-200 bg-white py-1 opacity-0 shadow-lg transition-all duration-200 group-hover:visible group-hover:opacity-100"
+                role="menu"
+              >
+                <a
+                  routerLink="/contact"
+                  class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-primary-600"
+                  role="menuitem"
+                  >Contact</a
+                >
+                <a
+                  routerLink="/careers"
+                  class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-primary-600"
+                  role="menuitem"
+                  >Careers</a
+                >
+                <a
+                  routerLink="/donate"
+                  class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-primary-600"
+                  role="menuitem"
+                  >Support us</a
+                >
+              </div>
+            </div>
+            <div class="relative group">
+              <button
+                type="button"
+                class="flex items-center px-2 py-2 text-sm font-medium text-gray-700 transition-colors duration-200 hover:text-primary-600 whitespace-nowrap"
+                aria-haspopup="menu"
               >
                 Legal
                 <svg class="ml-1 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -156,45 +177,41 @@ import { User } from '../../core/models/auth.model';
                 </svg>
               </button>
               <div
-                class="absolute left-0 mt-2 w-56 bg-white rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50"
+                class="invisible absolute right-0 z-50 mt-2 w-56 rounded-md border border-gray-200 bg-white py-1 opacity-0 shadow-lg transition-all duration-200 group-hover:visible group-hover:opacity-100"
+                role="menu"
               >
-                <div class="py-1">
-                  <a
-                    routerLink="/privacy"
-                    class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-primary-600"
-                  >
-                    Privacy Policy
-                  </a>
-                  <a
-                    routerLink="/terms"
-                    class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-primary-600"
-                  >
-                    Terms of Service
-                  </a>
-                  <a
-                    routerLink="/refund-policy"
-                    class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-primary-600"
-                  >
-                    Cancellation & Refunds
-                  </a>
-                  <a
-                    routerLink="/payment-policy"
-                    class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-primary-600"
-                  >
-                    Payment Policy
-                  </a>
-                  <a
-                    routerLink="/shipping-policy"
-                    class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-primary-600"
-                  >
-                    Service Delivery
-                  </a>
-                </div>
+                <a
+                  routerLink="/privacy"
+                  class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-primary-600"
+                  role="menuitem"
+                  >Privacy Policy</a
+                >
+                <a
+                  routerLink="/terms"
+                  class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-primary-600"
+                  role="menuitem"
+                  >Terms of Service</a
+                >
+                <a
+                  routerLink="/refund-policy"
+                  class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-primary-600"
+                  role="menuitem"
+                  >Cancellation & Refunds</a
+                >
+                <a
+                  routerLink="/payment-policy"
+                  class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-primary-600"
+                  role="menuitem"
+                  >Payment Policy</a
+                >
+                <a
+                  routerLink="/shipping-policy"
+                  class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-primary-600"
+                  role="menuitem"
+                  >Service Delivery</a
+                >
               </div>
             </div>
-            <a routerLink="/donate" routerLinkActive="bg-primary-700" class="btn-primary btn-sm">
-              💚 Support Us
-            </a>
 
             <!-- Authentication Section -->
             <div class="flex items-center space-x-2">
@@ -258,7 +275,7 @@ import { User } from '../../core/models/auth.model';
                   >
                     Sign In
                   </button>
-                  <button (click)="openRegister()" class="btn-primary btn-sm">Get Started</button>
+                  <button (click)="openRegister()" class="btn-primary btn-sm">Sign up</button>
                 </div>
               }
             </div>
@@ -343,7 +360,6 @@ import { User } from '../../core/models/auth.model';
                 Psychologists
               </a>
 
-              <!-- Tools — flat links, no section label -->
               <a
                 routerLink="/assessments"
                 (click)="navigateAndClose('/assessments')"
@@ -354,34 +370,6 @@ import { User } from '../../core/models/auth.model';
                 Assessments
               </a>
               <a
-                routerLink="/exercises"
-                (click)="navigateAndClose('/exercises')"
-                routerLinkActive="text-primary-600 bg-primary-50"
-                class="text-gray-700 hover:text-primary-600 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium transition-colors duration-200"
-                role="menuitem"
-              >
-                Exercises
-              </a>
-              <a
-                routerLink="/lifestyle-tips"
-                (click)="navigateAndClose('/lifestyle-tips')"
-                routerLinkActive="text-primary-600 bg-primary-50"
-                class="text-gray-700 hover:text-primary-600 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium transition-colors duration-200"
-                role="menuitem"
-              >
-                Lifestyle
-              </a>
-              <a
-                routerLink="/articles"
-                (click)="navigateAndClose('/articles')"
-                routerLinkActive="text-primary-600 bg-primary-50"
-                class="text-gray-700 hover:text-primary-600 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium transition-colors duration-200"
-                role="menuitem"
-              >
-                Articles
-              </a>
-
-              <a
                 routerLink="/community"
                 (click)="navigateAndClose('/community')"
                 routerLinkActive="text-primary-600 bg-primary-50"
@@ -391,82 +379,122 @@ import { User } from '../../core/models/auth.model';
               >
                 Community
               </a>
-              <a
-                routerLink="/careers"
-                (click)="navigateAndClose('/careers')"
-                routerLinkActive="text-primary-600 bg-primary-50"
-                class="text-gray-700 hover:text-primary-600 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium transition-colors duration-200"
-                [attr.aria-current]="isCurrentRoute('/careers') ? 'page' : null"
-                role="menuitem"
-              >
-                Careers
-              </a>
-              <a
-                routerLink="/contact"
-                (click)="navigateAndClose('/contact')"
-                routerLinkActive="text-primary-600 bg-primary-50"
-                class="text-gray-700 hover:text-primary-600 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium transition-colors duration-200"
-                [attr.aria-current]="isCurrentRoute('/contact') ? 'page' : null"
-                role="menuitem"
-              >
-                Contact
-              </a>
-              <div class="px-3 py-2">
-                <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Legal</div>
+              <div class="border-t border-gray-200 pt-3 mt-2">
+                <div class="px-3 pb-1 text-xs font-semibold uppercase tracking-wide text-gray-500">
+                  Resources
+                </div>
+                <a
+                  routerLink="/exercises"
+                  (click)="navigateAndClose('/exercises')"
+                  routerLinkActive="text-primary-600 bg-primary-50"
+                  class="block rounded-md px-3 py-2 text-base font-medium text-gray-700 transition-colors duration-200 hover:bg-gray-50 hover:text-primary-600"
+                  role="menuitem"
+                >
+                  Exercises
+                </a>
+                <a
+                  routerLink="/lifestyle-tips"
+                  (click)="navigateAndClose('/lifestyle-tips')"
+                  routerLinkActive="text-primary-600 bg-primary-50"
+                  class="block rounded-md px-3 py-2 text-base font-medium text-gray-700 transition-colors duration-200 hover:bg-gray-50 hover:text-primary-600"
+                  role="menuitem"
+                >
+                  Lifestyle tips
+                </a>
+                <a
+                  routerLink="/articles"
+                  (click)="navigateAndClose('/articles')"
+                  routerLinkActive="text-primary-600 bg-primary-50"
+                  class="block rounded-md px-3 py-2 text-base font-medium text-gray-700 transition-colors duration-200 hover:bg-gray-50 hover:text-primary-600"
+                  role="menuitem"
+                >
+                  Articles
+                </a>
               </div>
-              <a
-                routerLink="/privacy"
-                (click)="navigateAndClose('/privacy')"
-                routerLinkActive="text-primary-600 bg-primary-50"
-                class="text-gray-700 hover:text-primary-600 hover:bg-gray-50 px-6 py-2 rounded-md text-base font-medium transition-colors duration-200"
-                role="menuitem"
-              >
-                Privacy Policy
-              </a>
-              <a
-                routerLink="/terms"
-                (click)="navigateAndClose('/terms')"
-                routerLinkActive="text-primary-600 bg-primary-50"
-                class="text-gray-700 hover:text-primary-600 hover:bg-gray-50 px-6 py-2 rounded-md text-base font-medium transition-colors duration-200"
-                role="menuitem"
-              >
-                Terms of Service
-              </a>
-              <a
-                routerLink="/refund-policy"
-                (click)="navigateAndClose('/refund-policy')"
-                routerLinkActive="text-primary-600 bg-primary-50"
-                class="text-gray-700 hover:text-primary-600 hover:bg-gray-50 px-6 py-2 rounded-md text-base font-medium transition-colors duration-200"
-                role="menuitem"
-              >
-                Cancellation & Refunds
-              </a>
-              <a
-                routerLink="/payment-policy"
-                (click)="navigateAndClose('/payment-policy')"
-                routerLinkActive="text-primary-600 bg-primary-50"
-                class="text-gray-700 hover:text-primary-600 hover:bg-gray-50 px-6 py-2 rounded-md text-base font-medium transition-colors duration-200"
-                role="menuitem"
-              >
-                Payment Policy
-              </a>
-              <a
-                routerLink="/shipping-policy"
-                (click)="navigateAndClose('/shipping-policy')"
-                routerLinkActive="text-primary-600 bg-primary-50"
-                class="text-gray-700 hover:text-primary-600 hover:bg-gray-50 px-6 py-2 rounded-md text-base font-medium transition-colors duration-200"
-                role="menuitem"
-              >
-                Service Delivery
-              </a>
-              <a
-                routerLink="/donate"
-                (click)="navigateAndClose('/donate')"
-                class="btn-primary btn-sm mt-1"
-                role="menuitem"
-              >
-                💚 Support Us
-              </a>
+
+              <div class="border-t border-gray-200 pt-3 mt-2">
+                <div class="px-3 pb-1 text-xs font-semibold uppercase tracking-wide text-gray-500">
+                  More
+                </div>
+                <a
+                  routerLink="/contact"
+                  (click)="navigateAndClose('/contact')"
+                  routerLinkActive="text-primary-600 bg-primary-50"
+                  class="block rounded-md px-3 py-2 text-base font-medium text-gray-700 transition-colors duration-200 hover:bg-gray-50 hover:text-primary-600"
+                  role="menuitem"
+                >
+                  Contact
+                </a>
+                <a
+                  routerLink="/careers"
+                  (click)="navigateAndClose('/careers')"
+                  routerLinkActive="text-primary-600 bg-primary-50"
+                  class="block rounded-md px-3 py-2 text-base font-medium text-gray-700 transition-colors duration-200 hover:bg-gray-50 hover:text-primary-600"
+                  role="menuitem"
+                >
+                  Careers
+                </a>
+                <a
+                  routerLink="/donate"
+                  (click)="navigateAndClose('/donate')"
+                  routerLinkActive="text-primary-600 bg-primary-50"
+                  class="block rounded-md px-3 py-2 text-base font-medium text-gray-700 transition-colors duration-200 hover:bg-gray-50 hover:text-primary-600"
+                  role="menuitem"
+                >
+                  Support us
+                </a>
+              </div>
+
+              <div class="border-t border-gray-200 pt-3 mt-2">
+                <div class="px-3 pb-1 text-xs font-semibold uppercase tracking-wide text-gray-500">
+                  Legal
+                </div>
+                <a
+                  routerLink="/privacy"
+                  (click)="navigateAndClose('/privacy')"
+                  routerLinkActive="text-primary-600 bg-primary-50"
+                  class="block rounded-md px-3 py-2 text-base font-medium text-gray-700 transition-colors duration-200 hover:bg-gray-50 hover:text-primary-600"
+                  role="menuitem"
+                >
+                  Privacy Policy
+                </a>
+                <a
+                  routerLink="/terms"
+                  (click)="navigateAndClose('/terms')"
+                  routerLinkActive="text-primary-600 bg-primary-50"
+                  class="block rounded-md px-3 py-2 text-base font-medium text-gray-700 transition-colors duration-200 hover:bg-gray-50 hover:text-primary-600"
+                  role="menuitem"
+                >
+                  Terms of Service
+                </a>
+                <a
+                  routerLink="/refund-policy"
+                  (click)="navigateAndClose('/refund-policy')"
+                  routerLinkActive="text-primary-600 bg-primary-50"
+                  class="block rounded-md px-3 py-2 text-base font-medium text-gray-700 transition-colors duration-200 hover:bg-gray-50 hover:text-primary-600"
+                  role="menuitem"
+                >
+                  Cancellation & Refunds
+                </a>
+                <a
+                  routerLink="/payment-policy"
+                  (click)="navigateAndClose('/payment-policy')"
+                  routerLinkActive="text-primary-600 bg-primary-50"
+                  class="block rounded-md px-3 py-2 text-base font-medium text-gray-700 transition-colors duration-200 hover:bg-gray-50 hover:text-primary-600"
+                  role="menuitem"
+                >
+                  Payment Policy
+                </a>
+                <a
+                  routerLink="/shipping-policy"
+                  (click)="navigateAndClose('/shipping-policy')"
+                  routerLinkActive="text-primary-600 bg-primary-50"
+                  class="block rounded-md px-3 py-2 text-base font-medium text-gray-700 transition-colors duration-200 hover:bg-gray-50 hover:text-primary-600"
+                  role="menuitem"
+                >
+                  Service Delivery
+                </a>
+              </div>
 
               @if (user()) {
                 <div class="border-t border-gray-200 mt-2 pt-2"></div>
@@ -500,7 +528,7 @@ import { User } from '../../core/models/auth.model';
                   class="btn-primary btn-sm justify-start text-base"
                   role="menuitem"
                 >
-                  Get Started
+                  Sign up
                 </button>
               }
             </div>
