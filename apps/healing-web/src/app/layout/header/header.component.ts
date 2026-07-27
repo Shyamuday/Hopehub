@@ -192,11 +192,7 @@ import { User } from '../../core/models/auth.model';
                 </div>
               </div>
             </div>
-            <a
-              routerLink="/donate"
-              routerLinkActive="bg-primary-700"
-              class="bg-primary-600 hover:bg-primary-700 text-white px-3 py-2 rounded-lg text-sm font-semibold transition-colors duration-200 inline-flex items-center gap-1 whitespace-nowrap"
-            >
+            <a routerLink="/donate" routerLinkActive="bg-primary-700" class="btn-primary btn-sm">
               💚 Support Us
             </a>
 
@@ -262,12 +258,7 @@ import { User } from '../../core/models/auth.model';
                   >
                     Sign In
                   </button>
-                  <button
-                    (click)="openRegister()"
-                    class="bg-primary-600 hover:bg-primary-700 text-white px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200"
-                  >
-                    Get Started
-                  </button>
+                  <button (click)="openRegister()" class="btn-primary btn-sm">Get Started</button>
                 </div>
               }
             </div>
@@ -471,7 +462,7 @@ import { User } from '../../core/models/auth.model';
               <a
                 routerLink="/donate"
                 (click)="navigateAndClose('/donate')"
-                class="bg-primary-600 hover:bg-primary-700 text-white px-3 py-2 rounded-md text-base font-semibold transition-colors duration-200 inline-flex items-center gap-1 mt-1"
+                class="btn-primary btn-sm mt-1"
                 role="menuitem"
               >
                 💚 Support Us
@@ -506,7 +497,7 @@ import { User } from '../../core/models/auth.model';
                 </button>
                 <button
                   (click)="openRegister()"
-                  class="bg-primary-600 hover:bg-primary-700 text-white px-3 py-2 rounded-md text-base font-semibold transition-colors duration-200"
+                  class="btn-primary btn-sm justify-start text-base"
                   role="menuitem"
                 >
                   Get Started

@@ -36,7 +36,7 @@
       <div class="text-center">
         <button 
           (click)="startAssessment()"
-          class="bg-primary-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-primary-700 transition-colors duration-300">
+          class="btn-primary">
           Start Assessment
         </button>
       </div>
@@ -99,14 +99,14 @@
             <button 
               (click)="nextQuestion()"
               [disabled]="answers()[currentQuestion()] === undefined"
-              class="bg-primary-600 text-white px-6 py-2 rounded-lg hover:bg-primary-700 disabled:bg-slate-400 disabled:cursor-not-allowed transition-colors">
+              class="btn-primary btn-sm">
               Next
             </button>
           } @else {
             <button 
               (click)="calculateResults()"
               [disabled]="answers()[currentQuestion()] === undefined"
-              class="bg-primary-600 text-white px-6 py-2 rounded-lg hover:bg-primary-700 disabled:bg-slate-400 disabled:cursor-not-allowed transition-colors">
+              class="btn-primary btn-sm">
               Get Results
             </button>
           }
@@ -172,11 +172,11 @@
             Retake Assessment
           </button>
           <button 
-            class="bg-primary-600 text-white px-6 py-3 rounded-lg hover:bg-primary-700 transition-colors">
+            class="btn-primary">
             Find Professional Help
           </button>
           <button 
-            class="bg-primary-600 text-white px-6 py-3 rounded-lg hover:bg-primary-700 transition-colors">
+            class="btn-primary">
             Book Consultation
           </button>
         </div>

@@ -348,31 +348,35 @@ a:focus {
 
 /* Brand-consistent utility classes */
 .btn-primary {
-  @apply bg-primary-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-primary-700 focus:ring-2 focus:ring-primary-600 focus:ring-offset-2 transition-colors disabled:cursor-not-allowed disabled:opacity-50;
+  @apply inline-flex min-h-[44px] items-center justify-center gap-2 rounded-lg bg-primary-600 px-6 py-3 font-semibold text-white shadow-sm transition-colors hover:bg-primary-700 focus:ring-2 focus:ring-primary-600 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 whitespace-nowrap;
 }
 
 .btn-secondary {
-  @apply border border-primary-600 bg-white text-primary-700 px-6 py-3 rounded-lg font-medium hover:bg-primary-50 focus:ring-2 focus:ring-primary-600 focus:ring-offset-2 transition-colors disabled:cursor-not-allowed disabled:opacity-50;
+  @apply inline-flex min-h-[44px] items-center justify-center gap-2 rounded-lg border border-primary-600 bg-white px-6 py-3 font-semibold text-primary-700 shadow-sm transition-colors hover:bg-primary-50 focus:ring-2 focus:ring-primary-600 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 whitespace-nowrap;
 }
 
 .btn-outline {
-  @apply border-2 border-primary-600 text-primary-700 px-6 py-3 rounded-lg font-medium hover:bg-primary-50 focus:ring-2 focus:ring-primary-600 focus:ring-offset-2 transition-colors disabled:cursor-not-allowed disabled:opacity-50;
+  @apply inline-flex min-h-[44px] items-center justify-center gap-2 rounded-lg border-2 border-primary-600 px-6 py-3 font-semibold text-primary-700 transition-colors hover:bg-primary-50 focus:ring-2 focus:ring-primary-600 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 whitespace-nowrap;
 }
 
 .btn-ghost {
-  @apply text-primary-700 px-4 py-2 rounded-lg font-medium hover:bg-primary-50 focus:ring-2 focus:ring-primary-600 focus:ring-offset-2 transition-colors disabled:cursor-not-allowed disabled:opacity-50;
+  @apply inline-flex min-h-[40px] items-center justify-center gap-2 rounded-lg px-4 py-2 font-semibold text-primary-700 transition-colors hover:bg-primary-50 focus:ring-2 focus:ring-primary-600 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 whitespace-nowrap;
 }
 
 .btn-danger {
-  @apply bg-red-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-red-700 focus:ring-2 focus:ring-red-600 focus:ring-offset-2 transition-colors disabled:cursor-not-allowed disabled:opacity-50;
+  @apply inline-flex min-h-[44px] items-center justify-center gap-2 rounded-lg bg-red-600 px-6 py-3 font-semibold text-white shadow-sm transition-colors hover:bg-red-700 focus:ring-2 focus:ring-red-600 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 whitespace-nowrap;
 }
 
 .btn-sm {
-  @apply px-4 py-2 text-sm;
+  @apply min-h-[40px] px-4 py-2 text-sm;
 }
 
 .btn-lg {
-  @apply px-8 py-4 text-lg;
+  @apply min-h-[48px] px-8 py-4 text-lg;
+}
+
+.btn-block {
+  @apply w-full;
 }
 
 /* Form styling consistency */

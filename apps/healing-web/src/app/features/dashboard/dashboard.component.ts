@@ -260,7 +260,7 @@ type BookingTimelineStep = {
                     @if (canRetryPayment(consultation)) {
                       <button
                         type="button"
-                        class="mt-3 inline-flex items-center rounded-md bg-primary-600 px-3 py-2 text-sm font-semibold text-white hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-60 whitespace-nowrap"
+                        class="btn-primary btn-sm mt-3"
                         [disabled]="isPaying()"
                         (click)="retryPayment(consultation)"
                       >

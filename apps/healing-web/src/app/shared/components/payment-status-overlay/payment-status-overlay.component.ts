@@ -44,17 +44,13 @@ export type PaymentFlowState =
           @if (state === 'SUCCESS' || state === 'ERROR') {
             <div class="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
               @if (state === 'ERROR' && canRetry) {
-                <button
-                  type="button"
-                  class="rounded-lg bg-primary-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-primary-700"
-                  (click)="retry.emit()"
-                >
+                <button type="button" class="btn-primary btn-sm" (click)="retry.emit()">
                   Retry payment
                 </button>
               }
               <button
                 type="button"
-                class="rounded-lg border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-800 transition hover:border-primary-500 hover:text-primary-700"
+                class="btn-secondary btn-sm border-slate-300 text-slate-800 hover:border-primary-500"
                 (click)="close.emit()"
               >
                 Close

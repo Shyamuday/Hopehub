@@ -107,10 +107,7 @@ import { APP_CONSTANTS } from '../../core';
                 Review Telegram privacy settings and avoid sharing personal details publicly.
               </li>
             </ul>
-            <button
-              (click)="joinTelegramGroup()"
-              class="bg-primary-600 text-white font-semibold py-3 px-8 rounded-lg hover:bg-primary-700 transition-colors duration-200 inline-flex items-center"
-            >
+            <button (click)="joinTelegramGroup()" class="btn-primary">
               <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
                 <path
                   d="M12 0C5.374 0 0 5.373 0 12s5.374 12 12 12 12-5.373 12-12S18.626 0 12 0zm5.568 8.16l-1.61 7.59c-.12.54-.44.67-.89.42l-2.46-1.81-1.19 1.14c-.13.13-.24.24-.49.24l.17-2.43 4.47-4.03c.19-.17-.04-.27-.3-.1L9.28 13.47l-2.38-.75c-.52-.16-.53-.52.11-.77l9.28-3.58c.43-.16.81.11.67.77z"
@@ -152,7 +149,7 @@ import { APP_CONSTANTS } from '../../core';
               [href]="APP_CONSTANTS.WHATSAPP.GROUP_URL"
               target="_blank"
               rel="noopener noreferrer"
-              class="bg-primary-600 text-white font-semibold py-3 px-8 rounded-lg hover:bg-primary-700 transition-colors duration-200 inline-flex items-center"
+              class="btn-primary"
             >
               <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
                 <path
@@ -251,10 +248,7 @@ import { APP_CONSTANTS } from '../../core';
                   Limited to {{ nextMeetup.maxAttendees }} seats
                 </div>
               }
-              <button
-                (click)="handleMeetupAction()"
-                class="bg-primary-600 text-white font-semibold py-2 px-6 rounded-lg hover:bg-primary-700 transition-colors duration-200"
-              >
+              <button (click)="handleMeetupAction()" class="btn-primary btn-sm">
                 Ask in Telegram
               </button>
             </div>

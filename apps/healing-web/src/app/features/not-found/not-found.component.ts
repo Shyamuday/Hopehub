@@ -2,10 +2,10 @@ import { Component } from '@angular/core';
 import { RouterModule } from '@angular/router';
 
 @Component({
-    selector: 'app-not-found',
-    standalone: true,
-    imports: [RouterModule],
-    template: `
+  selector: 'app-not-found',
+  standalone: true,
+  imports: [RouterModule],
+  template: `
     <div class="min-h-screen flex items-center justify-center bg-gray-50 px-4">
       <div class="max-w-md w-full text-center">
         <div class="mb-8">
@@ -15,29 +15,24 @@ import { RouterModule } from '@angular/router';
             The page you're looking for doesn't exist or has been moved.
           </p>
         </div>
-        
+
         <div class="space-y-4">
-          <a 
-            routerLink="/" 
-            class="inline-block w-full bg-primary-600 text-white px-6 py-3 rounded-lg hover:bg-primary-700 transition-colors duration-200 font-medium">
-            Go to Home
-          </a>
-          
-          <a 
-            routerLink="/services" 
-            class="inline-block w-full bg-white text-primary-600 px-6 py-3 rounded-lg border-2 border-primary-600 hover:bg-primary-50 transition-colors duration-200 font-medium">
-            Browse Services
-          </a>
+          <a routerLink="/" class="btn-primary btn-block"> Go to Home </a>
+
+          <a routerLink="/services" class="btn-outline btn-block"> Browse Services </a>
         </div>
-        
+
         <div class="mt-8">
           <p class="text-sm text-gray-500">
-            Need help? <a routerLink="/contact" class="text-primary-600 hover:text-primary-700 font-medium">Contact us</a>
+            Need help?
+            <a routerLink="/contact" class="text-primary-600 hover:text-primary-700 font-medium"
+              >Contact us</a
+            >
           </p>
         </div>
       </div>
     </div>
   `,
-    styles: []
+  styles: [],
 })
-export class NotFoundComponent { }
+export class NotFoundComponent {}

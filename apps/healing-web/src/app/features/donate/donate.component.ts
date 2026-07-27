@@ -86,10 +86,7 @@ import { PaymentService } from '../../core/services';
                 <span class="font-mono text-gray-800 font-semibold text-lg"
                   >9304471227&#64;upi</span
                 >
-                <button
-                  (click)="copyUpiId()"
-                  class="ml-3 flex items-center gap-1.5 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium px-3 py-1.5 rounded-lg transition-colors"
-                >
+                <button (click)="copyUpiId()" class="btn-primary btn-sm ml-3">
                   @if (copied()) {
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path
@@ -140,7 +137,7 @@ import { PaymentService } from '../../core/services';
                 type="button"
                 (click)="paySelectedAmount()"
                 [disabled]="!selectedAmount() || isPaying()"
-                class="w-full rounded-xl bg-primary-600 px-4 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-primary-700 disabled:cursor-not-allowed disabled:bg-gray-300"
+                class="btn-primary btn-block btn-sm"
               >
                 @if (isPaying()) {
                   Opening secure payment...
