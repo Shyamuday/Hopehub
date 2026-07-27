@@ -224,17 +224,17 @@
 
 <!-- Empty State -->
 @if (!userProgress()) {
-  <div class="bg-white rounded-xl shadow-lg p-8 text-center">
-    <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+  <div class="professional-empty">
+    <div class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-primary-50">
       <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
       </svg>
     </div>
-    <h3 class="text-xl font-semibold text-slate-800 mb-2">Start Your Mental Health Journey</h3>
-    <p class="text-slate-600 mb-6">Take your first assessment to begin tracking your progress and get personalized recommendations.</p>
+    <h3 class="mb-2 text-xl font-semibold text-gray-950">Start with a test</h3>
+    <p class="mb-6 text-sm leading-6 text-gray-700">Take your first assessment to begin tracking your progress and get personalized recommendations.</p>
     <button routerLink="/assessments" 
-            class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors">
-      Take Your First Assessment
+            class="btn-primary btn-sm">
+      Start test
     </button>
   </div>
 }

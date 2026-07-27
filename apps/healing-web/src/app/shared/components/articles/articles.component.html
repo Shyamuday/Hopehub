@@ -1,17 +1,17 @@
-<section class="min-h-screen bg-[var(--brand-surface)] py-10 sm:py-12">
+<section class="professional-page">
   <div class="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
 
     <!-- Header -->
-    <div class="mx-auto mb-10 max-w-3xl text-center">
-      <h1 class="mb-4 text-3xl font-semibold text-gray-950 sm:text-4xl">Mental Health Articles & Resources</h1>
-      <p class="mx-auto max-w-2xl text-base leading-7 text-gray-700 sm:text-lg">
+    <div class="professional-header">
+      <h1 class="professional-title">Mental health articles</h1>
+      <p class="professional-copy">
         Evidence-based articles to help you understand and improve your mental health.
       </p>
     </div>
 
     <!-- Recommended Articles (if coming from assessment) -->
     @if (recommendedArticles().length > 0) {
-    <div class="mb-12">
+    <div class="mb-8">
       <div class="mb-8 rounded-lg border border-primary-100 bg-white p-5 shadow-sm sm:p-6">
         <div class="flex items-center space-x-3 mb-4">
           <svg class="w-6 h-6 text-primary-700" fill="currentColor" viewBox="0 0 20 20">
@@ -29,7 +29,7 @@
         <p class="text-gray-700">These articles are specifically recommended for your current situation:</p>
       </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+      <div class="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
         @for (article of recommendedArticles(); track article.id) {
         <div
           class="cursor-pointer rounded-lg border border-gray-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md sm:p-6"
@@ -64,9 +64,9 @@
 
     <!-- Featured Articles -->
     @if (!selectedArticle() && featuredArticles().length > 0) {
-    <div class="mb-12">
-      <h2 class="mb-6 text-2xl font-semibold text-gray-950">Featured Articles</h2>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div class="mb-8">
+      <h2 class="mb-5 text-xl font-semibold text-gray-950">Featured articles</h2>
+      <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
         @for (article of featuredArticles(); track article.id) {
         <div class="cursor-pointer rounded-lg border border-gray-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md sm:p-6"
           (click)="selectArticle(article)">
@@ -98,7 +98,7 @@
 
     <!-- Filters and Search -->
     @if (!selectedArticle()) {
-    <div class="mb-8">
+    <div class="mb-6">
 
       <div class="mx-auto grid max-w-3xl gap-4 md:grid-cols-[1fr_18rem]">
         <div class="relative">
@@ -122,7 +122,7 @@
 
     <!-- Articles Grid -->
     @if (!selectedArticle()) {
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div class="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
       @for (article of filteredArticles(); track article.id) {
       <div class="flex h-full cursor-pointer flex-col rounded-lg border border-gray-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md sm:p-6"
         (click)="selectArticle(article)">
@@ -146,13 +146,13 @@
             <span>{{ article.publishedDate | date:'mediumDate' }}</span>
           </div>
 
-          <button type="button" class="btn-primary btn-block btn-sm">Read article</button>
+          <button type="button" class="btn-primary btn-block btn-sm">Read</button>
         </div>
       </div>
       }
     </div>
     @if (filteredArticles().length === 0) {
-      <div class="rounded-lg border border-gray-200 bg-white p-8 text-center shadow-sm">
+      <div class="professional-empty">
         <h2 class="text-xl font-semibold text-gray-950">No articles found</h2>
         <p class="mx-auto mt-2 max-w-md text-sm leading-6 text-gray-700">
           Try another keyword or switch the filter back to all articles.
@@ -166,7 +166,7 @@
 
     <!-- Selected Article Details -->
     @if (selectedArticle()) {
-    <div class="mx-auto max-w-4xl rounded-lg border border-gray-200 bg-white p-5 shadow-sm sm:p-8">
+    <div class="mx-auto max-w-4xl rounded-lg border border-gray-200 bg-white p-5 shadow-sm sm:p-6">
 
       <!-- Back Button -->
       <button (click)="goBack()" class="mb-6 inline-flex items-center text-sm font-semibold text-primary-700 hover:text-primary-800 whitespace-nowrap">
@@ -188,9 +188,9 @@
           <span class="text-slate-500 whitespace-nowrap">{{ selectedArticle()!.readingTime }}</span>
         </div>
 
-        <h1 class="mb-3 text-3xl font-semibold text-gray-950 sm:text-4xl">{{ selectedArticle()!.title }}</h1>
+        <h1 class="mb-3 text-2xl font-semibold text-gray-950 sm:text-3xl">{{ selectedArticle()!.title }}</h1>
         @if (selectedArticle()!.subtitle) {
-        <p class="text-xl text-slate-600 mb-4">{{ selectedArticle()!.subtitle }}</p>
+        <p class="mb-4 text-base leading-7 text-gray-700 sm:text-lg">{{ selectedArticle()!.subtitle }}</p>
         }
 
         <div class="flex items-center justify-between text-slate-600 mb-6">

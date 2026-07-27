@@ -28,25 +28,23 @@ import {
   standalone: true,
   imports: [FormsModule, RouterModule, FormDropdownComponent],
   template: `
-    <section class="min-h-screen bg-[var(--brand-surface)] py-10 sm:py-12">
+    <section class="professional-page">
       <div class="container mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
         <!-- Header -->
-        <div class="mx-auto mb-10 max-w-3xl text-center">
-          <h2 class="mb-4 text-3xl font-semibold text-gray-950 sm:text-4xl">
-            Mental Health Exercises
-          </h2>
-          <p class="mx-auto max-w-2xl text-base leading-7 text-gray-700 sm:text-lg">
+        <div class="professional-header">
+          <h2 class="professional-title">Mental health exercises</h2>
+          <p class="professional-copy">
             Discover evidence-based exercises to improve your mental well-being. Practice regularly
             for best results.
           </p>
         </div>
 
         <!-- Filters and Search -->
-        <div class="mb-8 rounded-lg border border-gray-200 bg-white p-5 shadow-sm sm:p-6">
+        <div class="mb-6 rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
           <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
             <!-- Search -->
             <div class="md:col-span-2">
-              <label class="block text-sm font-semibold text-gray-700 mb-2">Search Exercises</label>
+              <label class="block text-sm font-semibold text-gray-700 mb-2">Search exercises</label>
               <input
                 type="text"
                 [(ngModel)]="searchTerm"
@@ -103,7 +101,7 @@ import {
 
         <!-- Exercise Grid -->
         @if (!selectedExercise()) {
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div class="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
             @for (exercise of filteredExercises(); track exercise.id) {
               <div
                 class="flex h-full cursor-pointer flex-col rounded-lg border border-gray-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md sm:p-6"
@@ -136,7 +134,7 @@ import {
                       >{{ exercise.steps.length }} steps</span
                     >
                   </div>
-                  <button class="btn-primary btn-block btn-sm">Start Exercise</button>
+                  <button class="btn-primary btn-block btn-sm">Start exercise</button>
                 </div>
               </div>
             }
@@ -145,7 +143,7 @@ import {
 
         <!-- No Results -->
         @if (filteredExercises().length === 0 && !selectedExercise()) {
-          <div class="rounded-lg border border-gray-200 bg-white p-8 text-center shadow-sm">
+          <div class="professional-empty">
             <svg
               class="w-16 h-16 text-slate-400 mx-auto mb-4"
               fill="none"
@@ -167,7 +165,7 @@ import {
 
         <!-- Selected Exercise Detail -->
         @if (selectedExercise()) {
-          <div class="rounded-lg border border-gray-200 bg-white p-5 shadow-sm sm:p-8">
+          <div class="rounded-lg border border-gray-200 bg-white p-5 shadow-sm sm:p-6">
             <!-- Back Button -->
             <button
               (click)="goBack()"
@@ -181,7 +179,7 @@ import {
                   d="M15 19l-7-7 7-7"
                 />
               </svg>
-              Back to Exercises
+              Back to exercises
             </button>
 
             <!-- Exercise Header -->
@@ -241,7 +239,7 @@ import {
 
             <!-- Steps -->
             <div class="mb-8">
-              <h3 class="text-xl font-semibold text-slate-800 mb-4">Step-by-Step Instructions</h3>
+              <h3 class="mb-4 text-xl font-semibold text-gray-950">Steps</h3>
               <div class="space-y-4">
                 @for (step of selectedExercise()!.steps; track step.stepNumber) {
                   <div class="flex items-start space-x-4 p-4 bg-slate-50 rounded-lg">
@@ -269,7 +267,7 @@ import {
             <!-- Tips -->
             @if (selectedExercise()!.tips.length > 0) {
               <div class="mb-8">
-                <h3 class="text-xl font-semibold text-slate-800 mb-4">Helpful Tips</h3>
+                <h3 class="mb-4 text-xl font-semibold text-gray-950">Helpful tips</h3>
                 <div class="bg-blue-50 rounded-lg p-6">
                   <ul class="space-y-2">
                     @for (tip of selectedExercise()!.tips; track tip) {
@@ -296,7 +294,7 @@ import {
             <!-- When to Use -->
             @if (selectedExercise()!.whenToUse.length > 0) {
               <div class="mb-8">
-                <h3 class="text-xl font-semibold text-slate-800 mb-4">When to Use This Exercise</h3>
+                <h3 class="mb-4 text-xl font-semibold text-gray-950">When to use this exercise</h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                   @for (usage of selectedExercise()!.whenToUse; track usage) {
                     <div class="flex items-start space-x-3 p-3 bg-purple-50 rounded-lg">
@@ -325,7 +323,7 @@ import {
               selectedExercise()!.contraindications!.length > 0
             ) {
               <div class="mb-8">
-                <h3 class="text-xl font-semibold text-slate-800 mb-4">Important Considerations</h3>
+                <h3 class="mb-4 text-xl font-semibold text-gray-950">Important considerations</h3>
                 <div class="bg-red-50 border border-red-200 rounded-lg p-6">
                   <ul class="space-y-2">
                     @for (
@@ -354,18 +352,16 @@ import {
 
             <!-- Action Buttons -->
             <div class="flex flex-col sm:flex-row gap-4 justify-center">
-              <button (click)="startExercise()" class="btn-primary btn-sm">
-                Start This Exercise
-              </button>
+              <button (click)="startExercise()" class="btn-primary btn-sm">Start exercise</button>
               @if (selectedExercise()) {
                 <button
                   (click)="showCompletionDialog(selectedExercise()!)"
                   class="btn-primary btn-sm"
                 >
-                  Mark as Completed
+                  Mark completed
                 </button>
               }
-              <button (click)="goBack()" class="btn-outline btn-sm">Browse More Exercises</button>
+              <button (click)="goBack()" class="btn-outline btn-sm">Browse more exercises</button>
             </div>
           </div>
         }

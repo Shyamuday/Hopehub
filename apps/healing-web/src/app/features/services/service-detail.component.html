@@ -7,7 +7,7 @@
       <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
       </svg>
-      Back to Services
+      Back to services
     </button>
 
     <!-- Service Header -->
@@ -35,7 +35,7 @@
           <!-- Pricing Information -->
           @if (service()!.pricing) {
             <div class="mb-6">
-              <h3 class="text-lg font-semibold text-gray-900 mb-3">Introductory Session</h3>
+              <h3 class="text-lg font-semibold text-gray-900 mb-3">Session fee</h3>
               <div class="space-y-2 rounded-lg border border-primary-100 bg-primary-50 p-4">
                 @if (service()!.pricing!.individual) {
                   <div class="flex justify-between items-center">
@@ -69,7 +69,7 @@
             <button 
               (click)="contactForInfo()" 
               class="btn-outline btn-block">
-              Contact for More Info
+              Ask a question
             </button>
           </div>
         </div>
@@ -79,7 +79,7 @@
     <!-- Detailed Information -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
       <div class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-        <h2 class="text-2xl font-semibold text-gray-900 mb-4">Who This Is For</h2>
+        <h2 class="mb-4 text-xl font-semibold text-gray-900">Who this is for</h2>
         <ul class="space-y-3">
           @for (item of whoThisIsFor(service()!); track item) {
             <li class="flex items-start">
@@ -92,13 +92,13 @@
 
       <!-- Detailed Description -->
       <div class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-        <h2 class="text-2xl font-semibold text-gray-900 mb-4">About This Service</h2>
+        <h2 class="mb-4 text-xl font-semibold text-gray-900">About this service</h2>
         <p class="text-gray-600 leading-relaxed">{{ service()!.detailedDescription }}</p>
       </div>
 
       <!-- Benefits -->
       <div class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-        <h2 class="text-2xl font-semibold text-gray-900 mb-4">Benefits</h2>
+        <h2 class="mb-4 text-xl font-semibold text-gray-900">Benefits</h2>
         <ul class="space-y-3">
           @for (benefit of service()!.benefits; track benefit) {
             <li class="flex items-start">
@@ -118,12 +118,12 @@
 
       <!-- Approach -->
       <div class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm lg:col-span-2">
-        <h2 class="text-2xl font-semibold text-gray-900 mb-4">Our Approach</h2>
+        <h2 class="mb-4 text-xl font-semibold text-gray-900">Our approach</h2>
         <p class="text-gray-600 leading-relaxed">{{ service()!.approach }}</p>
       </div>
 
       <div class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-        <h2 class="text-2xl font-semibold text-gray-900 mb-4">What Happens in 30 Minutes</h2>
+        <h2 class="mb-4 text-xl font-semibold text-gray-900">What happens in 30 minutes</h2>
         <ol class="space-y-3">
           @for (step of sessionFlow(); track step; let i = $index) {
             <li class="flex items-start">
@@ -135,7 +135,7 @@
       </div>
 
       <div class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-        <h2 class="text-2xl font-semibold text-gray-900 mb-4">You Leave With</h2>
+        <h2 class="mb-4 text-xl font-semibold text-gray-900">You leave with</h2>
         <ul class="space-y-3">
           @for (item of sessionOutcome(); track item) {
             <li class="flex items-start">
@@ -158,7 +158,7 @@
       </div>
 
       <div class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm lg:col-span-2">
-        <h2 class="text-2xl font-semibold text-gray-900 mb-4">Common Questions</h2>
+        <h2 class="mb-4 text-xl font-semibold text-gray-900">Common questions</h2>
         <div class="space-y-4">
           @for (faq of faqs(service()!); track faq.question) {
             <div class="rounded-lg border border-gray-200 p-4">
@@ -171,8 +171,8 @@
     </div>
 
     <!-- Call to Action Section -->
-    <div class="mt-12 rounded-lg border border-primary-100 bg-primary-50 p-6 text-center sm:p-8">
-      <h2 class="text-2xl font-semibold text-gray-900 mb-4">Ready to Get Started?</h2>
+    <div class="mt-10 rounded-lg border border-primary-100 bg-primary-50 p-6 text-center">
+      <h2 class="mb-4 text-xl font-semibold text-gray-900">Request support</h2>
       <p class="text-gray-600 mb-6 max-w-2xl mx-auto">
         Submit your request and we will review your concern, confirm the right support path, and guide you to the next step.
       </p>
@@ -180,27 +180,27 @@
         <button 
           (click)="bookService()" 
           class="btn-primary">
-          Request Session
+          Request session
         </button>
         <button 
           (click)="contactForInfo()" 
           class="btn-outline">
-          Learn More
+          Ask a question
         </button>
       </div>
     </div>
   </div>
 }
 
-<!-- Service Not Found -->
+<!-- Service not found -->
 @if (!service() && !loading()) {
   <div class="container mx-auto px-4 py-8 text-center">
-    <h1 class="text-3xl font-bold text-gray-900 mb-4">Service Not Found</h1>
+    <h1 class="mb-4 text-2xl font-semibold text-gray-900">Service not found</h1>
     <p class="text-gray-600 mb-6">The service you're looking for doesn't exist or has been removed.</p>
     <button 
       (click)="goBack()" 
       class="btn-primary">
-      Back to Services
+      Back to services
     </button>
   </div>
 }
@@ -212,4 +212,5 @@
     <p class="text-gray-600 mt-4">Loading service details...</p>
   </div>
 }
+
 

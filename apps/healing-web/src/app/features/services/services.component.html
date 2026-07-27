@@ -1,9 +1,9 @@
-<div class="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-  <h1 class="text-3xl sm:text-4xl font-bold text-center text-gray-900 mb-6 sm:mb-8">
-    Our Services
+<div class="container mx-auto px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
+  <h1 class="mb-3 text-center text-2xl font-semibold text-gray-950 sm:text-3xl">
+    Services
   </h1>
-  <p class="text-base sm:text-lg text-center text-gray-600 max-w-2xl mx-auto mb-8 sm:mb-12">
-    Comprehensive mental health services tailored to your needs.
+  <p class="mx-auto mb-8 max-w-2xl text-center text-sm leading-6 text-gray-700 sm:text-base">
+    Private mental wellness support for anxiety, stress, relationships, sleep, and daily concerns.
   </p>
 
   <div class="group relative mb-4 inline-flex">
@@ -22,7 +22,7 @@
       type="search"
       [ngModel]="searchTerm()"
       (ngModelChange)="updateSearch($event)"
-      class="w-full rounded-lg border border-gray-300 px-4 py-3 text-gray-900 placeholder-gray-500 focus:border-primary-600 focus:ring-2 focus:ring-primary-600"
+      class="form-input"
       placeholder="Search breakup, anxiety, sleep, study pressure..."
     />
 
@@ -45,7 +45,7 @@
     </div>
   </div>
 
-  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+  <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
     @for (service of filteredServices(); track service.id) {
       <div class="cursor-pointer hope-animate-fade-up"
            (click)="navigateToService(service.id)">
@@ -58,7 +58,7 @@
   </div>
 
   @if (!filteredServices().length) {
-    <div class="rounded-lg border border-gray-200 bg-white p-8 text-center text-gray-600">
+    <div class="professional-empty text-gray-700">
       No services matched your search. Try anxiety, relationship, sleep, family, or career.
     </div>
   }

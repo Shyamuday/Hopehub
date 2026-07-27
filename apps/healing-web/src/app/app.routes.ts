@@ -255,7 +255,7 @@ export const routes: Routes = [
       import('./shared/components/lifestyle-tips/lifestyle-tips.component').then(
         (m) => m.LifestyleTipsComponent,
       ),
-    title: 'Lifestyle Tips for Mental Wellness - Hope Hub',
+    title: 'Lifestyle Tips - Hope Hub',
     data: {
       breadcrumb: 'Lifestyle Tips',
       description:
@@ -268,7 +268,7 @@ export const routes: Routes = [
     path: 'articles',
     loadComponent: () =>
       import('./shared/components/articles/articles.component').then((m) => m.ArticlesComponent),
-    title: 'Mental Health Articles & Resources - Hope Hub',
+    title: 'Mental Health Articles - Hope Hub',
     data: {
       breadcrumb: 'Articles',
       description:

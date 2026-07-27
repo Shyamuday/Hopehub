@@ -1,17 +1,17 @@
-<section class="min-h-screen bg-[var(--brand-surface)] py-10 sm:py-12">
+<section class="professional-page">
   <div class="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
     
     <!-- Header -->
-    <div class="mx-auto mb-10 max-w-3xl text-center">
-      <h1 class="mb-4 text-3xl font-semibold text-gray-950 sm:text-4xl">Lifestyle Tips for Mental Wellness</h1>
-      <p class="mx-auto max-w-2xl text-base leading-7 text-gray-700 sm:text-lg">
+    <div class="professional-header">
+      <h1 class="professional-title">Lifestyle tips</h1>
+      <p class="professional-copy">
         Evidence-based lifestyle changes to support your mental health and well-being.
       </p>
     </div>
 
     <!-- Recommended Tips (if coming from assessment) -->
     @if (recommendedTips().length > 0) {
-      <div class="mb-12">
+      <div class="mb-8">
         <div class="mb-8 rounded-lg border border-primary-100 bg-white p-5 shadow-sm sm:p-6">
           <div class="flex items-center space-x-3 mb-4">
             <svg class="w-6 h-6 text-primary-700" fill="currentColor" viewBox="0 0 20 20">
@@ -28,7 +28,7 @@
           <p class="text-gray-700">These lifestyle tips are specifically recommended for your current situation:</p>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+        <div class="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
           @for (tip of recommendedTips(); track tip.id) {
             <div class="flex h-full flex-col rounded-lg border border-gray-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md sm:p-6">
               
@@ -64,7 +64,7 @@
                 type="button"
                 (click)="selectTip(tip)"
                 class="btn-primary btn-block btn-sm mt-auto">
-                View Details
+                View details
               </button>
             </div>
           }
@@ -74,7 +74,7 @@
 
     <!-- Filters and Search -->
     @if (!selectedTip()) {
-      <div class="mb-8">
+      <div class="mb-6">
         
         <div class="mx-auto grid max-w-3xl gap-4 md:grid-cols-[1fr_18rem]">
           <!-- Search Bar -->
@@ -102,7 +102,7 @@
 
     <!-- Tips Grid -->
     @if (!selectedTip()) {
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div class="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
         @for (tip of filteredTips(); track tip.id) {
           <div class="flex h-full cursor-pointer flex-col rounded-lg border border-gray-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md sm:p-6"
                (click)="selectTip(tip)">
@@ -128,14 +128,14 @@
             </div>
 
             <button type="button" class="btn-primary btn-block btn-sm">
-              View Details
+              View details
             </button>
           </div>
         }
       </div>
 
       @if (filteredTips().length === 0) {
-        <div class="rounded-lg border border-gray-200 bg-white p-8 text-center shadow-sm">
+        <div class="professional-empty">
           <h2 class="text-xl font-semibold text-gray-950">No tips found</h2>
           <p class="mx-auto mt-2 max-w-md text-sm leading-6 text-gray-700">
             Try another keyword or switch the filter back to all tips.
@@ -149,7 +149,7 @@
 
     <!-- Selected Tip Details -->
     @if (selectedTip()) {
-      <div class="rounded-lg border border-gray-200 bg-white p-5 shadow-sm sm:p-8">
+      <div class="rounded-lg border border-gray-200 bg-white p-5 shadow-sm sm:p-6">
         
         <!-- Back Button -->
         <button type="button" (click)="goBack()" class="mb-6 inline-flex items-center text-sm font-semibold text-primary-700 hover:text-primary-800">
@@ -197,7 +197,7 @@
 
         <!-- Step-by-Step Guide -->
         <div class="mb-8">
-          <h3 class="text-xl font-semibold text-gray-950 mb-6">Step-by-Step Implementation</h3>
+          <h3 class="mb-5 text-xl font-semibold text-gray-950">Steps</h3>
           <div class="space-y-4">
             @for (step of selectedTip()!.steps; track step.stepNumber) {
               <div class="flex items-start space-x-4 p-4 bg-slate-50 rounded-lg">
@@ -304,17 +304,17 @@
             type="button"
             (click)="goBack()"
             class="btn-outline btn-sm">
-            Browse More Tips
+            Browse more tips
           </button>
           <button 
             routerLink="/exercises"
             class="btn-primary btn-sm">
-            View Exercises
+            View exercises
           </button>
           <button 
             routerLink="/assessments"
             class="btn-primary btn-sm">
-            Take Assessment
+            Start test
           </button>
         </div>
       </div>
