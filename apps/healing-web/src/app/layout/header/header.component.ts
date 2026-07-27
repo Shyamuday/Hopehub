@@ -39,15 +39,6 @@ import { User } from '../../core/models/auth.model';
           <!-- Desktop Navigation -->
           <div class="hidden md:flex items-center space-x-3 lg:space-x-4">
             <a
-              routerLink="/"
-              routerLinkActive="text-primary-600 border-b-2 border-primary-600"
-              [routerLinkActiveOptions]="{ exact: true }"
-              class="text-gray-700 hover:text-primary-600 px-2 py-2 text-sm font-medium transition-colors duration-200 whitespace-nowrap"
-              [attr.aria-current]="isCurrentRoute('/') ? 'page' : null"
-            >
-              Home
-            </a>
-            <a
               routerLink="/services"
               routerLinkActive="text-primary-600 border-b-2 border-primary-600"
               class="text-gray-700 hover:text-primary-600 px-2 py-2 text-sm font-medium transition-colors duration-200 whitespace-nowrap"
@@ -269,13 +260,7 @@ import { User } from '../../core/models/auth.model';
               <!-- Unauthenticated User -->
               @if (!user()) {
                 <div class="flex items-center space-x-2">
-                  <button
-                    (click)="openLogin()"
-                    class="text-gray-700 hover:text-primary-600 px-2 py-2 text-sm font-medium transition-colors duration-200"
-                  >
-                    Sign In
-                  </button>
-                  <button (click)="openRegister()" class="btn-primary btn-sm">Sign up</button>
+                  <button (click)="openLogin()" class="btn-primary btn-sm">Sign in</button>
                 </div>
               }
             </div>
@@ -328,17 +313,6 @@ import { User } from '../../core/models/auth.model';
             aria-label="Mobile navigation menu"
           >
             <div class="flex flex-col space-y-2">
-              <a
-                routerLink="/"
-                (click)="navigateAndClose('/')"
-                routerLinkActive="text-primary-600 bg-primary-50"
-                [routerLinkActiveOptions]="{ exact: true }"
-                class="text-gray-700 hover:text-primary-600 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium transition-colors duration-200"
-                [attr.aria-current]="isCurrentRoute('/') ? 'page' : null"
-                role="menuitem"
-              >
-                Home
-              </a>
               <a
                 routerLink="/services"
                 (click)="navigateAndClose('/services')"
@@ -518,17 +492,10 @@ import { User } from '../../core/models/auth.model';
                 <div class="border-t border-gray-200 mt-2 pt-2"></div>
                 <button
                   (click)="openLogin()"
-                  class="text-left text-gray-700 hover:text-primary-600 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium transition-colors duration-200"
-                  role="menuitem"
-                >
-                  Sign In
-                </button>
-                <button
-                  (click)="openRegister()"
                   class="btn-primary btn-sm justify-start text-base"
                   role="menuitem"
                 >
-                  Sign up
+                  Sign in
                 </button>
               }
             </div>

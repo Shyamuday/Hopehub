@@ -1,10 +1,10 @@
-<section class="home-hero relative overflow-hidden bg-white py-14 sm:py-16 md:py-20 lg:py-24">
+<section class="home-hero relative overflow-hidden bg-[var(--brand-surface)] py-14 sm:py-16 md:py-20 lg:py-24">
   <img
     src="/image/hopehub-hero-meditation.png"
     alt=""
     class="absolute inset-0 h-full w-full object-cover opacity-[0.08]"
   />
-  <div class="absolute inset-0 bg-white/88"></div>
+  <div class="absolute inset-0 bg-[rgba(244,247,249,0.9)]"></div>
   <div class="absolute inset-x-0 bottom-0 border-b border-gray-200"></div>
 
   <div class="relative z-10 container mx-auto px-4 sm:px-6 lg:px-8 text-center">
@@ -31,16 +31,10 @@
     <div
       class="hope-animate-fade-up hope-delay-4 flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-center max-w-md sm:max-w-none mx-auto"
     >
-      <button
-        class="btn-primary btn-lg cta-button btn-block text-base sm:w-auto"
-        routerLink="/contact"
-      >
+      <button class="btn-primary btn-sm" routerLink="/contact">
         Request support
       </button>
-      <button
-        class="btn-outline btn-lg cta-button btn-block text-base sm:w-auto"
-        routerLink="/assessments"
-      >
+      <button class="btn-outline btn-sm" routerLink="/assessments">
         Start test
       </button>
     </div>

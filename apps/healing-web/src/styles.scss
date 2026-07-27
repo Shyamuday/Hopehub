@@ -3,27 +3,27 @@
 
 /* Tailwind v4 brand theme. */
 @theme {
-  --color-primary-50: #f0f9ff;
-  --color-primary-100: #e0f2fe;
-  --color-primary-200: #bae6fd;
-  --color-primary-300: #7dd3fc;
-  --color-primary-400: #38bdf8;
-  --color-primary-500: #0ea5e9;
-  --color-primary-600: #0284c7;
-  --color-primary-700: #0369a1;
-  --color-primary-800: #075985;
-  --color-primary-900: #0c4a6e;
+  --color-primary-50: #f1f5f8;
+  --color-primary-100: #e3ebf2;
+  --color-primary-200: #c9d6e4;
+  --color-primary-300: #a9bdd3;
+  --color-primary-400: #7f9cbd;
+  --color-primary-500: #5b7c99;
+  --color-primary-600: #4a6fa5;
+  --color-primary-700: #3d5b88;
+  --color-primary-800: #31496e;
+  --color-primary-900: #263954;
 
-  --color-secondary-50: #fdf4ff;
-  --color-secondary-100: #fae8ff;
-  --color-secondary-200: #f5d0fe;
-  --color-secondary-300: #f0abfc;
-  --color-secondary-400: #e879f9;
-  --color-secondary-500: #d946ef;
-  --color-secondary-600: #c026d3;
-  --color-secondary-700: #a21caf;
-  --color-secondary-800: #86198f;
-  --color-secondary-900: #701a75;
+  --color-secondary-50: #f3f8fa;
+  --color-secondary-100: #e6f0f4;
+  --color-secondary-200: #d1e3eb;
+  --color-secondary-300: #b6d2de;
+  --color-secondary-400: #9bc0cf;
+  --color-secondary-500: #7ea8be;
+  --color-secondary-600: #668ea2;
+  --color-secondary-700: #526f80;
+  --color-secondary-800: #405765;
+  --color-secondary-900: #30414b;
 
   --color-neutral-50: #fafafa;
   --color-neutral-100: #f5f5f5;
@@ -44,17 +44,19 @@
 
 /* Hope Hub Brand Variables */
 :root {
-  --brand-primary: #0284c7;
-  --brand-primary-light: #e0f2fe;
-  --brand-secondary: #c026d3;
-  --brand-neutral: #1f2937;
-  --brand-success: #047857;
+  --brand-primary: #4a6fa5;
+  --brand-primary-light: #e3ebf2;
+  --brand-secondary: #7ea8be;
+  --brand-accent: #829b78;
+  --brand-surface: #f4f7f9;
+  --brand-neutral: #1c2d37;
+  --brand-success: #829b78;
   --brand-warning: #b45309;
   --brand-error: #b91c1c;
-  --text-primary: #111827;
-  --text-secondary: #374151;
-  --text-muted: #4b5563;
-  --surface-blue-text: #172554;
+  --text-primary: #1c2d37;
+  --text-secondary: #334854;
+  --text-muted: #5d6c74;
+  --surface-blue-text: #1c2d37;
   --surface-green-text: #064e3b;
   --surface-yellow-text: #713f12;
   --surface-purple-text: #3b0764;
@@ -86,7 +88,7 @@ body {
   font-weight: var(--font-weight-normal);
   line-height: 1.5;
   color: var(--text-primary);
-  background-color: #ffffff;
+  background-color: var(--brand-surface);
 }
 
 /* Font Loading Optimization - Prevent FOIT (Flash of Invisible Text) */
@@ -137,7 +139,7 @@ h1, h2, h3, h4, h5, h6 {
   font-weight: var(--font-weight-semibold);
   line-height: 1.18;
   letter-spacing: 0;
-  color: #111827;
+  color: var(--text-primary);
 }
 
 h1 {
@@ -185,7 +187,7 @@ input[type="number"]:focus,
 textarea:focus,
 select:focus {
   transform: translateY(-1px);
-  box-shadow: 0 10px 24px rgba(2, 132, 199, 0.12);
+  box-shadow: 0 10px 24px rgba(74, 111, 165, 0.14);
 }
 
 ::placeholder {
@@ -213,10 +215,10 @@ html {
 @keyframes hopeSoftPulse {
   0%,
   100% {
-    box-shadow: 0 0 0 0 rgba(2, 132, 199, 0.22);
+    box-shadow: 0 0 0 0 rgba(74, 111, 165, 0.22);
   }
   50% {
-    box-shadow: 0 0 0 8px rgba(2, 132, 199, 0);
+    box-shadow: 0 0 0 8px rgba(74, 111, 165, 0);
   }
 }
 
@@ -381,7 +383,8 @@ a:focus {
 }
 
 .hope-section {
-  @apply bg-white py-12 sm:py-16;
+  background-color: var(--brand-surface);
+  @apply py-12 sm:py-16;
 }
 
 .hope-section-inner {
@@ -492,8 +495,8 @@ a:focus {
   color: var(--surface-red-text);
 }
 
-/* Professional white-surface normalization.
-   Keep semantic warning/error surfaces, but remove decorative color washes that made pages feel random. */
+/* Soft-surface normalization.
+   Keep semantic warning/error surfaces, but remove decorative saturated color washes. */
 .bg-slate-50,
 .bg-gray-50,
 .bg-blue-50,
@@ -501,7 +504,7 @@ a:focus {
 .bg-teal-50,
 .bg-purple-50,
 .bg-indigo-50 {
-  background-color: #ffffff !important;
+  background-color: var(--brand-surface) !important;
 }
 
 .text-blue-600,

@@ -142,7 +142,7 @@ export class PaymentService {
           email: donor.donorEmail || '',
           contact: donor.donorPhone || '',
         },
-        theme: { color: '#0284c7' },
+        theme: { color: '#4a6fa5' },
         handler: (response: RazorpayCheckoutResponse) => {
           if (settled) return;
           settled = true;
