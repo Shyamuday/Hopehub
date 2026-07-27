@@ -13,7 +13,7 @@
   max-width: 48rem;
 }
 
-.home-hero__trust span {
+.home-hero__trust a {
   border: 1px solid #e5e7eb;
   border-radius: 0.375rem;
   background: #ffffff;
@@ -21,6 +21,19 @@
   font-size: 0.85rem;
   font-weight: 600;
   padding: 0.45rem 0.8rem;
+  text-decoration: none;
+  transition:
+    border-color 160ms ease,
+    color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.home-hero__trust a:hover,
+.home-hero__trust a:focus-visible {
+  border-color: var(--brand-primary);
+  color: var(--brand-primary);
+  box-shadow: 0 0 0 3px rgba(74, 111, 165, 0.12);
+  outline: none;
 }
 
 .home-hero__lead,
@@ -54,7 +67,7 @@
     flex-direction: column;
   }
 
-  .home-hero__trust span {
+  .home-hero__trust a {
     width: 100%;
   }
 
