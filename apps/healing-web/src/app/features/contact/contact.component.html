@@ -153,14 +153,12 @@
             <span class="text-blue-600 text-sm font-normal">(Pre-selected)</span>
             }
           </label>
-          <select id="serviceInterest" formControlName="serviceInterest"
-            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            [class.border-blue-500]="prefilledData().serviceName" [class.bg-blue-50]="prefilledData().serviceName">
-            <option value="">Select a service (optional)</option>
-            @for (service of services; track service.id) {
-            <option [value]="service.name">{{ service.name }}</option>
-            }
-          </select>
+          <app-form-dropdown
+            formControlName="serviceInterest"
+            placeholder="Select a service (optional)"
+            [options]="serviceOptions"
+            [panelMaxHeight]="'18rem'"
+          ></app-form-dropdown>
         </div>
 
         <div class="grid gap-4 sm:grid-cols-2">
@@ -168,12 +166,11 @@
             <label for="urgencyLevel" class="block text-sm font-medium text-gray-700 mb-2">
               Urgency Level *
             </label>
-            <select id="urgencyLevel" formControlName="urgencyLevel"
-              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-              <option value="low">Low - I can wait a few days</option>
-              <option value="normal">Normal - Please respond within 24 hours</option>
-              <option value="high">High - I need support soon</option>
-            </select>
+            <app-form-dropdown
+              formControlName="urgencyLevel"
+              placeholder="Select urgency"
+              [options]="urgencyOptions"
+            ></app-form-dropdown>
           </div>
 
           <div>
@@ -317,13 +314,13 @@
     </div>
 
     <!-- Contact Information -->
-    <div class="space-y-8">
-      <div class="bg-white rounded-lg shadow-lg p-8">
-        <h2 class="text-2xl font-semibold text-gray-900 mb-6">Get in touch</h2>
+    <div class="space-y-8 min-w-0">
+      <div class="bg-white rounded-lg shadow-lg p-5 sm:p-6 lg:p-6 min-w-0 overflow-hidden">
+        <h2 class="text-xl sm:text-2xl font-semibold leading-tight text-gray-900 mb-6 break-words">Get in touch</h2>
 
         <div class="space-y-6">
           <!-- Email -->
-          <div class="flex items-start">
+          <div class="flex items-start min-w-0">
             <div class="flex-shrink-0">
               <svg class="w-6 h-6 text-blue-600 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -331,15 +328,15 @@
                 </path>
               </svg>
             </div>
-            <div class="ml-4">
+            <div class="ml-4 min-w-0">
               <h3 class="text-lg font-medium text-gray-900">Email</h3>
-              <p class="text-gray-600">{{ APP_CONSTANTS.CONTACT.EMAIL }}</p>
+              <p class="text-gray-600 break-words">{{ APP_CONSTANTS.CONTACT.EMAIL }}</p>
               <p class="text-sm text-gray-500 mt-1">We typically respond within 24 hours</p>
             </div>
           </div>
 
           <!-- Phone -->
-          <div class="flex items-start">
+          <div class="flex items-start min-w-0">
             <div class="flex-shrink-0">
               <svg class="w-6 h-6 text-blue-600 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -347,22 +344,22 @@
                 </path>
               </svg>
             </div>
-            <div class="ml-4">
+            <div class="ml-4 min-w-0">
               <h3 class="text-lg font-medium text-gray-900">Phone</h3>
-              <p class="text-gray-600">{{ APP_CONSTANTS.CONTACT.PHONE }}</p>
+              <p class="text-gray-600 break-words">{{ APP_CONSTANTS.CONTACT.PHONE }}</p>
               <p class="text-sm text-gray-500 mt-1">Use the request form first so we can route you correctly</p>
             </div>
           </div>
 
           <!-- WhatsApp -->
-          <div class="flex items-start">
+          <div class="flex items-start min-w-0">
             <div class="flex-shrink-0">
               <svg class="w-6 h-6 text-blue-600 mt-1" fill="currentColor" viewBox="0 0 24 24">
                 <path
                   d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z" />
               </svg>
             </div>
-            <div class="ml-4">
+            <div class="ml-4 min-w-0">
               <h3 class="text-lg font-medium text-gray-900">WhatsApp</h3>
               <p class="text-gray-600">Community support channel</p>
               <p class="text-sm text-gray-500 mt-1">Use WhatsApp for quick follow-up after submitting your request</p>
@@ -374,16 +371,16 @@
           </div>
 
           <!-- Telegram -->
-          <div class="flex items-start">
+          <div class="flex items-start min-w-0">
             <div class="flex-shrink-0">
               <svg class="w-6 h-6 text-blue-600 mt-1" fill="currentColor" viewBox="0 0 24 24">
                 <path
                   d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z" />
               </svg>
             </div>
-            <div class="ml-4">
+            <div class="ml-4 min-w-0">
               <h3 class="text-lg font-medium text-gray-900">Telegram</h3>
-              <p class="text-gray-600">{{ APP_CONSTANTS.TELEGRAM.SUPPORT_HANDLE }}</p>
+              <p class="text-gray-600 break-words">{{ APP_CONSTANTS.TELEGRAM.SUPPORT_HANDLE }}</p>
               <p class="text-sm text-gray-500 mt-1">
                 Anonymous-friendly community option. Use a display name or username, and avoid sharing personal details.
               </p>

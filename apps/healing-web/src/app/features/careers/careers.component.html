@@ -112,16 +112,11 @@
 
             <label>
               <span>Specialization *</span>
-              <select formControlName="specialization">
-                <option value="">Select specialization</option>
-                <option value="Anxiety and stress">Anxiety and stress</option>
-                <option value="Relationship counselling">Relationship counselling</option>
-                <option value="Breakup support">Breakup support</option>
-                <option value="Career and study pressure">Career and study pressure</option>
-                <option value="Family counselling">Family counselling</option>
-                <option value="General emotional support">General emotional support</option>
-                <option value="Other">Other</option>
-              </select>
+              <app-form-dropdown
+                formControlName="specialization"
+                placeholder="Select specialization"
+                [options]="specializationOptions"
+              ></app-form-dropdown>
               @if (hasError('specialization')) {
                 <small>Specialization is required.</small>
               }
@@ -129,13 +124,11 @@
 
             <label>
               <span>Experience *</span>
-              <select formControlName="experienceYears">
-                <option value="">Select experience</option>
-                <option value="0-1 years">0-1 years</option>
-                <option value="1-3 years">1-3 years</option>
-                <option value="3-5 years">3-5 years</option>
-                <option value="5+ years">5+ years</option>
-              </select>
+              <app-form-dropdown
+                formControlName="experienceYears"
+                placeholder="Select experience"
+                [options]="experienceOptions"
+              ></app-form-dropdown>
               @if (hasError('experienceYears')) {
                 <small>Experience is required.</small>
               }
@@ -166,12 +159,11 @@
 
             <label>
               <span>Preferred contact *</span>
-              <select formControlName="preferredChannel">
-                <option value="whatsapp">WhatsApp</option>
-                <option value="telegram">Telegram</option>
-                <option value="email">Email</option>
-                <option value="phone">Phone</option>
-              </select>
+              <app-form-dropdown
+                formControlName="preferredChannel"
+                placeholder="Select contact method"
+                [options]="preferredChannelOptions"
+              ></app-form-dropdown>
             </label>
 
             <label>

@@ -14,13 +14,18 @@ import {
 } from '../../core/services';
 import { APP_CONSTANTS } from '../../core';
 import { FEATURED_SERVICES, getAllServices } from '../../core/data/services-data';
-import { AppointmentCalendarComponent, AppointmentSlot } from '../../shared/components';
+import {
+  AppointmentCalendarComponent,
+  AppointmentSlot,
+  FormDropdownComponent,
+  FormDropdownOption,
+} from '../../shared/components';
 import { User } from '../../core/models/auth.model';
 
 @Component({
   selector: 'app-contact',
   standalone: true,
-  imports: [ReactiveFormsModule, RouterModule, AppointmentCalendarComponent],
+  imports: [ReactiveFormsModule, RouterModule, AppointmentCalendarComponent, FormDropdownComponent],
   templateUrl: './contact.component.html',
   styleUrl: './contact.component.scss',
 })
@@ -50,6 +55,15 @@ export class ContactComponent implements OnInit {
   prefilledData = signal<any>({});
   currentUser = signal<User | null>(null);
   services = getAllServices();
+  serviceOptions: FormDropdownOption[] = [
+    { value: '', label: 'Select a service (optional)' },
+    ...this.services.map((service) => ({ value: service.name, label: service.name })),
+  ];
+  urgencyOptions: FormDropdownOption[] = [
+    { value: 'low', label: 'Low - I can wait a few days' },
+    { value: 'normal', label: 'Normal - Please respond within 24 hours' },
+    { value: 'high', label: 'High - I need support soon' },
+  ];
 
   constructor() {
     this.readQueryParameters();

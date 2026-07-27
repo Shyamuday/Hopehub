@@ -4,11 +4,12 @@ import { RouterModule } from '@angular/router';
 import { NOTE_CONTENT } from '../../core/constants/note-content.constants';
 import { ContactMethod } from '../../core/models/contact.model';
 import { LeadService, LoadingService } from '../../core/services';
+import { FormDropdownComponent, FormDropdownOption } from '../../shared/components';
 
 @Component({
   selector: 'app-careers',
   standalone: true,
-  imports: [ReactiveFormsModule, RouterModule],
+  imports: [ReactiveFormsModule, RouterModule, FormDropdownComponent],
   templateUrl: './careers.component.html',
   styleUrl: './careers.component.scss',
 })
@@ -21,6 +22,29 @@ export class CareersComponent {
   readonly isSubmitting = signal(false);
   readonly successMessage = signal('');
   readonly errorMessage = signal('');
+  readonly specializationOptions: FormDropdownOption[] = [
+    { value: '', label: 'Select specialization' },
+    { value: 'Anxiety and stress', label: 'Anxiety and stress' },
+    { value: 'Relationship counselling', label: 'Relationship counselling' },
+    { value: 'Breakup support', label: 'Breakup support' },
+    { value: 'Career and study pressure', label: 'Career and study pressure' },
+    { value: 'Family counselling', label: 'Family counselling' },
+    { value: 'General emotional support', label: 'General emotional support' },
+    { value: 'Other', label: 'Other' },
+  ];
+  readonly experienceOptions: FormDropdownOption[] = [
+    { value: '', label: 'Select experience' },
+    { value: '0-1 years', label: '0-1 years' },
+    { value: '1-3 years', label: '1-3 years' },
+    { value: '3-5 years', label: '3-5 years' },
+    { value: '5+ years', label: '5+ years' },
+  ];
+  readonly preferredChannelOptions: FormDropdownOption[] = [
+    { value: ContactMethod.WHATSAPP, label: 'WhatsApp' },
+    { value: ContactMethod.TELEGRAM, label: 'Telegram' },
+    { value: ContactMethod.EMAIL, label: 'Email' },
+    { value: ContactMethod.PHONE, label: 'Phone' },
+  ];
 
   readonly applicationForm = this.formBuilder.group({
     fullName: ['', [Validators.required, Validators.minLength(2)]],
