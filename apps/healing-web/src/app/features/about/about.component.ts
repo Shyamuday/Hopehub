@@ -1,0 +1,108 @@
+import { Component } from '@angular/core';
+import { RouterModule } from '@angular/router';
+
+@Component({
+  selector: 'app-about',
+  standalone: true,
+  imports: [RouterModule],
+  template: `
+    <main class="min-h-screen bg-[var(--brand-surface)]">
+      <section class="border-b border-gray-200">
+        <div class="container mx-auto px-4 py-12 sm:px-6 lg:px-8 lg:py-16">
+          <div class="mx-auto max-w-3xl text-center">
+            <p
+              class="hope-eyebrow mx-auto mb-4 inline-flex rounded-md border border-gray-200 bg-white px-4 py-2 shadow-sm"
+            >
+              About Hope Hub
+            </p>
+            <h1 class="text-3xl font-semibold text-gray-950 sm:text-5xl">
+              Calm support for people who need a safe first step
+            </h1>
+            <p class="mx-auto mt-5 max-w-2xl text-base leading-7 text-gray-700 sm:text-lg">
+              Hope Hub is a mental wellness support platform focused on accessible, privacy-aware,
+              and practical guidance for everyday emotional challenges.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section class="container mx-auto px-4 py-10 sm:px-6 lg:px-8">
+        <div class="grid gap-6 lg:grid-cols-3">
+          <article class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm lg:col-span-2">
+            <h2 class="text-2xl font-semibold text-gray-950">Who We Are</h2>
+            <p class="mt-4 text-sm leading-7 text-gray-700 sm:text-base">
+              We are building Hope Hub as a supportive bridge between self-help resources, community
+              care, and professional mental wellness support. Our focus is not to make people feel
+              like they must immediately book a session. Our first goal is to help someone feel less
+              alone, understand what they are experiencing, and choose the next step that feels
+              right.
+            </p>
+            <p class="mt-4 text-sm leading-7 text-gray-700 sm:text-base">
+              Hope Hub currently offers mental health assessments, guided exercises, lifestyle
+              resources, articles, anonymous-friendly community support, and request-based 30-minute
+              expert support sessions.
+            </p>
+          </article>
+
+          <aside class="rounded-lg border border-primary-100 bg-primary-50 p-6 shadow-sm">
+            <h2 class="text-xl font-semibold text-gray-950">Our Vision</h2>
+            <p class="mt-4 text-sm leading-7 text-gray-800">
+              To make emotional support easier to access, less intimidating to start, and more
+              respectful of privacy, especially for people who hesitate because they fear judgment
+              or identity exposure.
+            </p>
+          </aside>
+        </div>
+
+        <div class="mt-6 grid gap-6 md:grid-cols-3">
+          <div class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+            <h3 class="text-lg font-semibold text-gray-950">What We Do</h3>
+            <ul class="mt-4 space-y-3 text-sm leading-6 text-gray-700">
+              <li>Offer self-assessments for reflection and early awareness.</li>
+              <li>Share practical exercises, articles, and lifestyle guidance.</li>
+              <li>Run anonymous-friendly community spaces through Telegram.</li>
+              <li>Route support requests to suitable Hope Hub experts.</li>
+            </ul>
+          </div>
+
+          <div class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+            <h3 class="text-lg font-semibold text-gray-950">What We Believe</h3>
+            <ul class="mt-4 space-y-3 text-sm leading-6 text-gray-700">
+              <li>Support should feel calm, not clinical-first or frightening.</li>
+              <li>Privacy matters, especially in mental health conversations.</li>
+              <li>Small steps can still be meaningful steps.</li>
+              <li>People deserve clarity before they pay for support.</li>
+            </ul>
+          </div>
+
+          <div class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+            <h3 class="text-lg font-semibold text-gray-950">How We Help</h3>
+            <ul class="mt-4 space-y-3 text-sm leading-6 text-gray-700">
+              <li>Start with resources or a quick mental wellness test.</li>
+              <li>Join the daily 9 PM Telegram voice circle.</li>
+              <li>Request a 30-minute expert support session when needed.</li>
+              <li>Track private requests and next steps in your account.</li>
+            </ul>
+          </div>
+        </div>
+
+        <div
+          class="mt-8 rounded-lg border border-gray-200 bg-white p-6 text-center shadow-sm sm:p-8"
+        >
+          <h2 class="text-2xl font-semibold text-gray-950">Need support now?</h2>
+          <p class="mx-auto mt-3 max-w-2xl text-sm leading-7 text-gray-700 sm:text-base">
+            You can start with a self-assessment, join the community, or send a private support
+            request. Hope Hub is not an emergency service; if you are in immediate danger, contact
+            local emergency services.
+          </p>
+          <div class="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
+            <a routerLink="/assessments" class="btn-outline btn-sm">Start test</a>
+            <a routerLink="/community" class="btn-outline btn-sm">Join community</a>
+            <a routerLink="/contact" class="btn-primary btn-sm">Request support</a>
+          </div>
+        </div>
+      </section>
+    </main>
+  `,
+})
+export class AboutComponent {}

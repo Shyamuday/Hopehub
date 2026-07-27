@@ -81,6 +81,13 @@ import { APP_CONSTANTS } from '../../core';
               </li>
               <li>
                 <a
+                  routerLink="/about"
+                  class="text-gray-300 hover:text-white transition-colors duration-200 text-sm sm:text-base py-1 block"
+                  >About</a
+                >
+              </li>
+              <li>
+                <a
                   routerLink="/contact"
                   class="text-gray-300 hover:text-white transition-colors duration-200 text-sm sm:text-base py-1 block"
                   >Contact</a
@@ -96,9 +103,9 @@ import { APP_CONSTANTS } from '../../core';
               <li>
                 <a
                   routerLink="/donate"
-                  class="text-green-400 hover:text-green-300 transition-colors duration-200 text-sm sm:text-base py-1 block font-medium inline-flex items-center gap-1"
+                  class="text-green-400 hover:text-green-300 transition-colors duration-200 text-sm sm:text-base py-1 block font-medium"
                 >
-                  💚 Support Us
+                  Support Us
                 </a>
               </li>
             </ul>

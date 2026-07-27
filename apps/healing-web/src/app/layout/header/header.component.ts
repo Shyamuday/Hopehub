@@ -71,6 +71,14 @@ import { User } from '../../core/models/auth.model';
             >
               Community
             </a>
+            <a
+              routerLink="/about"
+              routerLinkActive="text-primary-600 border-b-2 border-primary-600"
+              class="text-gray-700 hover:text-primary-600 px-2 py-2 text-sm font-medium transition-colors duration-200 whitespace-nowrap"
+              [attr.aria-current]="isCurrentRoute('/about') ? 'page' : null"
+            >
+              About
+            </a>
             <div class="relative group">
               <button
                 type="button"
@@ -259,6 +267,16 @@ import { User } from '../../core/models/auth.model';
                 role="menuitem"
               >
                 Community
+              </a>
+              <a
+                routerLink="/about"
+                (click)="navigateAndClose('/about')"
+                routerLinkActive="text-primary-600 bg-primary-50"
+                class="text-gray-700 hover:text-primary-600 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium transition-colors duration-200"
+                [attr.aria-current]="isCurrentRoute('/about') ? 'page' : null"
+                role="menuitem"
+              >
+                About
               </a>
               <div class="border-t border-gray-200 pt-3 mt-2">
                 <div class="px-3 pb-1 text-xs font-semibold uppercase tracking-wide text-gray-500">

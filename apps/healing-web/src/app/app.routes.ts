@@ -63,6 +63,18 @@ export const routes: Routes = [
     },
   },
   {
+    path: 'about',
+    loadComponent: () => import('./features/about/about.component').then((m) => m.AboutComponent),
+    title: 'About Us - Hope Hub',
+    data: {
+      breadcrumb: 'About Us',
+      description:
+        'Learn who Hope Hub is, what we do, our vision, and our mental wellness support approach',
+      keywords:
+        'about hope hub, mental wellness vision, mental health support India, hope hub mission',
+    },
+  },
+  {
     path: 'contact',
     loadComponent: () =>
       import('./features/contact/contact.component').then((m) => m.ContactComponent),
