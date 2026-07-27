@@ -4,10 +4,14 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
+  FormDropdownComponent,
+  FormDropdownOption,
+} from '../form-dropdown/form-dropdown.component';
+import {
   LifestyleTip,
   LifestyleTipType,
   LifestyleTipCategory,
-  LifestyleTipDifficulty
+  LifestyleTipDifficulty,
 } from '../../../core/models/lifestyle-tip.model';
 import {
   ALL_LIFESTYLE_TIPS,
@@ -16,16 +20,16 @@ import {
   getLifestyleTipsByIds,
   getLifestyleTipsByCategory,
   searchLifestyleTips,
-  getRelatedLifestyleTips
+  getRelatedLifestyleTips,
 } from '../../../core/data/lifestyle-tip-configs';
 import { getLifestyleTipRecommendations } from '../../../core/data/lifestyle-tip-recommendations';
 
 @Component({
   selector: 'app-lifestyle-tips',
   standalone: true,
-  imports: [FormsModule, RouterModule],
+  imports: [FormsModule, RouterModule, FormDropdownComponent],
   templateUrl: './lifestyle-tips.component.html',
-  styleUrl: './lifestyle-tips.component.scss'
+  styleUrl: './lifestyle-tips.component.scss',
 })
 export class LifestyleTipsComponent implements OnInit {
   private route = inject(ActivatedRoute);
@@ -44,6 +48,17 @@ export class LifestyleTipsComponent implements OnInit {
   selectedTip = signal<LifestyleTip | null>(null);
   currentFilter = signal<string>('all');
   searchQuery = signal<string>('');
+  readonly filterOptions = computed<FormDropdownOption[]>(() => [
+    { value: 'all', label: `All tips (${this.allTips().length})` },
+    ...this.categories().map((category) => ({
+      value: `category:${category}`,
+      label: `${category} (${this.getCategoryCount(category)})`,
+    })),
+    ...this.types().map((type) => ({
+      value: `type:${type}`,
+      label: `${type} (${this.getTypeCount(type)})`,
+    })),
+  ]);
 
   assessmentInfo = signal<{
     type: string;
@@ -64,7 +79,7 @@ export class LifestyleTipsComponent implements OnInit {
             this.assessmentInfo.set({
               type: params['assessment'],
               score: parseInt(params['score']),
-              level: params['level']
+              level: params['level'],
             });
           }
         }
@@ -79,7 +94,7 @@ export class LifestyleTipsComponent implements OnInit {
 
         // Check for specific tip
         if (params['tip']) {
-          const tip = this.allTips().find(t => t.id === params['tip']);
+          const tip = this.allTips().find((t) => t.id === params['tip']);
           if (tip) {
             this.selectTip(tip);
           }
@@ -100,12 +115,24 @@ export class LifestyleTipsComponent implements OnInit {
       this.filteredTips.set(getLifestyleTipsByCategory(value as LifestyleTipCategory));
     } else if (type === 'type' && value) {
       this.currentFilter.set(`type:${value}`);
-      this.filteredTips.set(this.allTips().filter(tip => tip.type === value));
+      this.filteredTips.set(this.allTips().filter((tip) => tip.type === value));
     }
 
     // Apply search if active
     if (this.searchQuery()) {
       this.onSearch();
+    }
+  }
+
+  applyFilterValue(value: string) {
+    if (value === 'all') {
+      this.setFilter('all');
+      return;
+    }
+
+    const [type, filterValue] = value.split(':');
+    if ((type === 'category' || type === 'type') && filterValue) {
+      this.setFilter(type, filterValue);
     }
   }
 
@@ -121,7 +148,7 @@ export class LifestyleTipsComponent implements OnInit {
         this.filteredTips.set(getLifestyleTipsByCategory(category));
       } else if (filter.startsWith('type:')) {
         const type = filter.split(':')[1];
-        this.filteredTips.set(this.allTips().filter(tip => tip.type === type));
+        this.filteredTips.set(this.allTips().filter((tip) => tip.type === type));
       }
     } else {
       // Search within current filter
@@ -132,10 +159,10 @@ export class LifestyleTipsComponent implements OnInit {
         this.filteredTips.set(searchResults);
       } else if (filter.startsWith('category:')) {
         const category = filter.split(':')[1] as LifestyleTipCategory;
-        this.filteredTips.set(searchResults.filter(tip => tip.category.includes(category)));
+        this.filteredTips.set(searchResults.filter((tip) => tip.category.includes(category)));
       } else if (filter.startsWith('type:')) {
         const type = filter.split(':')[1];
-        this.filteredTips.set(searchResults.filter(tip => tip.type === type));
+        this.filteredTips.set(searchResults.filter((tip) => tip.type === type));
       }
     }
   }

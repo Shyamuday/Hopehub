@@ -1,10 +1,10 @@
-<section class="bg-slate-50 min-h-screen py-12">
-  <div class="max-w-7xl mx-auto px-6">
+<section class="min-h-screen bg-[var(--brand-surface)] py-10 sm:py-12">
+  <div class="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
     
     <!-- Header -->
-    <div class="text-center mb-12">
-      <h1 class="text-4xl font-bold text-slate-800 mb-4">Lifestyle Tips for Mental Wellness</h1>
-      <p class="text-slate-600 max-w-3xl mx-auto text-lg">
+    <div class="mx-auto mb-10 max-w-3xl text-center">
+      <h1 class="mb-4 text-3xl font-semibold text-gray-950 sm:text-4xl">Lifestyle Tips for Mental Wellness</h1>
+      <p class="mx-auto max-w-2xl text-base leading-7 text-gray-700 sm:text-lg">
         Evidence-based lifestyle changes to support your mental health and well-being.
       </p>
     </div>
@@ -12,42 +12,42 @@
     <!-- Recommended Tips (if coming from assessment) -->
     @if (recommendedTips().length > 0) {
       <div class="mb-12">
-        <div class="bg-blue-50 border border-blue-200 rounded-xl p-6 mb-8">
+        <div class="mb-8 rounded-lg border border-primary-100 bg-white p-5 shadow-sm sm:p-6">
           <div class="flex items-center space-x-3 mb-4">
-            <svg class="w-6 h-6 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+            <svg class="w-6 h-6 text-primary-700" fill="currentColor" viewBox="0 0 20 20">
               <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clip-rule="evenodd"/>
             </svg>
-            <h2 class="text-2xl font-bold text-blue-800">Personalized Recommendations</h2>
+            <h2 class="text-xl font-semibold text-gray-950 sm:text-2xl">Personalized Recommendations</h2>
           </div>
           @if (assessmentInfo()) {
-            <p class="text-blue-700 mb-4">
+            <p class="mb-4 text-gray-700">
               Based on your <strong>{{ assessmentInfo()!.type }}</strong> assessment results 
               (Score: {{ assessmentInfo()!.score }}, Level: {{ assessmentInfo()!.level }})
             </p>
           }
-          <p class="text-blue-700">These lifestyle tips are specifically recommended for your current situation:</p>
+          <p class="text-gray-700">These lifestyle tips are specifically recommended for your current situation:</p>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
           @for (tip of recommendedTips(); track tip.id) {
-            <div class="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow border-l-4 border-blue-500">
+            <div class="flex h-full flex-col rounded-lg border border-gray-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md sm:p-6">
               
               <!-- Recommended Badge -->
               <div class="flex items-center justify-between mb-4">
-                <span class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-semibold">
+                <span class="rounded-md bg-primary-50 px-3 py-1 text-sm font-semibold text-primary-700">
                   Recommended
                 </span>
-                <span class="text-slate-500 text-sm">{{ tip.difficulty }}</span>
+                <span class="text-sm text-gray-500">{{ tip.difficulty }}</span>
               </div>
 
               <!-- Tip Content -->
-              <h3 class="text-xl font-bold text-slate-800 mb-3">{{ tip.title }}</h3>
-              <p class="text-slate-600 mb-4 line-clamp-3">{{ tip.description }}</p>
+              <h3 class="mb-3 text-lg font-semibold text-gray-950">{{ tip.title }}</h3>
+              <p class="mb-4 line-clamp-3 text-sm leading-6 text-gray-700">{{ tip.description }}</p>
               
               <!-- Benefits Preview -->
               <div class="mb-4">
-                <div class="text-sm font-semibold text-slate-700 mb-2">Key Benefits:</div>
-                <ul class="text-sm text-slate-600 space-y-1">
+                <div class="text-sm font-semibold text-gray-800 mb-2">Key Benefits:</div>
+                <ul class="space-y-1 text-sm text-gray-700">
                   @for (benefit of tip.benefits.slice(0, 2); track benefit) {
                     <li class="flex items-start">
                       <svg class="w-4 h-4 text-green-500 mt-0.5 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
@@ -60,9 +60,10 @@
               </div>
 
               <!-- View Details Button -->
-              <button 
+              <button
+                type="button"
                 (click)="selectTip(tip)"
-                class="w-full bg-blue-600 text-white py-2 rounded-lg font-semibold hover:bg-blue-700 transition-colors">
+                class="btn-primary btn-block btn-sm mt-auto">
                 View Details
               </button>
             </div>
@@ -75,58 +76,26 @@
     @if (!selectedTip()) {
       <div class="mb-8">
         
-        <!-- Search Bar -->
-        <div class="mb-6">
-          <div class="relative max-w-md mx-auto">
+        <div class="mx-auto grid max-w-3xl gap-4 md:grid-cols-[1fr_18rem]">
+          <!-- Search Bar -->
+          <div class="relative">
             <input 
               type="text" 
               [(ngModel)]="searchQuery"
               (input)="onSearch()"
               placeholder="Search lifestyle tips..."
-              class="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-transparent">
+              class="w-full rounded-lg border border-gray-300 bg-white py-3 pl-10 pr-4 text-gray-900 placeholder:text-gray-500 focus:border-primary-600 focus:outline-none focus:ring-2 focus:ring-primary-100">
             <svg class="absolute left-3 top-3.5 w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
             </svg>
           </div>
-        </div>
 
-        <!-- Filter Tabs -->
-        <div class="flex flex-wrap justify-center gap-2 mb-6">
-          <button 
-            (click)="setFilter('all')"
-            [class.bg-slate-800]="currentFilter() === 'all'"
-            [class.text-white]="currentFilter() === 'all'"
-            [class.bg-white]="currentFilter() !== 'all'"
-            [class.text-slate-700]="currentFilter() !== 'all'"
-            class="px-4 py-2 rounded-lg border border-slate-200 hover:bg-slate-100 transition-colors text-sm">
-            All Tips ({{ allTips().length }})
-          </button>
-          
-          <!-- Category Filters -->
-          @for (category of categories(); track category) {
-            <button 
-              (click)="setFilter('category', category)"
-              [class.bg-slate-800]="currentFilter() === 'category:' + category"
-              [class.text-white]="currentFilter() === 'category:' + category"
-              [class.bg-white]="currentFilter() !== 'category:' + category"
-              [class.text-slate-700]="currentFilter() !== 'category:' + category"
-              class="px-4 py-2 rounded-lg border border-slate-200 hover:bg-slate-100 transition-colors text-sm">
-              {{ category }} ({{ getCategoryCount(category) }})
-            </button>
-          }
-          
-          <!-- Type Filters -->
-          @for (type of types(); track type) {
-            <button 
-              (click)="setFilter('type', type)"
-              [class.bg-slate-800]="currentFilter() === 'type:' + type"
-              [class.text-white]="currentFilter() === 'type:' + type"
-              [class.bg-white]="currentFilter() !== 'type:' + type"
-              [class.text-slate-700]="currentFilter() !== 'type:' + type"
-              class="px-4 py-2 rounded-lg border border-slate-200 hover:bg-slate-100 transition-colors text-sm">
-              {{ type }} ({{ getTypeCount(type) }})
-            </button>
-          }
+          <app-form-dropdown
+            placeholder="Filter tips"
+            [options]="filterOptions()"
+            [ngModel]="currentFilter()"
+            (ngModelChange)="applyFilterValue($event)"
+          ></app-form-dropdown>
         </div>
       </div>
     }
@@ -135,56 +104,55 @@
     @if (!selectedTip()) {
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         @for (tip of filteredTips(); track tip.id) {
-          <div class="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow cursor-pointer"
+          <div class="flex h-full cursor-pointer flex-col rounded-lg border border-gray-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md sm:p-6"
                (click)="selectTip(tip)">
             
-            <!-- Type and Difficulty -->
-            <div class="flex items-center justify-between mb-4">
-              <span class="bg-slate-100 text-slate-700 px-3 py-1 rounded-full text-sm font-semibold">
+            <div class="mb-4 flex items-center justify-between gap-3">
+              <span class="rounded-md bg-primary-50 px-3 py-1 text-sm font-semibold text-primary-700">
                 {{ tip.type }}
               </span>
-              <span class="text-slate-500 text-sm">{{ tip.difficulty }}</span>
+              <span class="text-sm text-gray-500">{{ tip.difficulty }}</span>
             </div>
 
-            <!-- Title and Description -->
-            <h3 class="text-xl font-bold text-slate-800 mb-3">{{ tip.title }}</h3>
-            <p class="text-slate-600 mb-4 line-clamp-3">{{ tip.description }}</p>
+            <h3 class="mb-3 text-lg font-semibold text-gray-950">{{ tip.title }}</h3>
+            <p class="mb-4 line-clamp-3 text-sm leading-6 text-gray-700">{{ tip.description }}</p>
 
-            <!-- Implementation Time -->
-            <div class="flex items-center justify-between mb-4">
-              <span class="text-sm text-slate-500">
+            <div class="mb-5 mt-auto flex items-center justify-between gap-3 border-t border-gray-100 pt-4">
+              <span class="text-sm text-gray-500">
                 <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
                 </svg>
                 {{ tip.timeToImplement }}
               </span>
-              <span class="text-sm font-semibold text-slate-700">{{ tip.steps.length }} steps</span>
+              <span class="text-sm font-semibold text-gray-700">{{ tip.steps.length }} steps</span>
             </div>
 
-            <!-- Categories -->
-            <div class="flex flex-wrap gap-1 mb-4">
-              @for (category of tip.category; track category) {
-                <span class="bg-slate-50 text-slate-600 px-2 py-1 rounded text-xs">
-                  {{ category }}
-                </span>
-              }
-            </div>
-
-            <!-- View Button -->
-            <button class="w-full bg-slate-800 text-white py-2 rounded-lg font-semibold hover:bg-slate-700 transition-colors">
+            <button type="button" class="btn-primary btn-block btn-sm">
               View Details
             </button>
           </div>
         }
       </div>
+
+      @if (filteredTips().length === 0) {
+        <div class="rounded-lg border border-gray-200 bg-white p-8 text-center shadow-sm">
+          <h2 class="text-xl font-semibold text-gray-950">No tips found</h2>
+          <p class="mx-auto mt-2 max-w-md text-sm leading-6 text-gray-700">
+            Try another keyword or switch the filter back to all tips.
+          </p>
+          <button type="button" class="btn-outline btn-sm mt-5" (click)="searchQuery.set(''); setFilter('all')">
+            Reset search
+          </button>
+        </div>
+      }
     }
 
     <!-- Selected Tip Details -->
     @if (selectedTip()) {
-      <div class="bg-white rounded-xl shadow-lg p-8">
+      <div class="rounded-lg border border-gray-200 bg-white p-5 shadow-sm sm:p-8">
         
         <!-- Back Button -->
-        <button (click)="goBack()" class="mb-6 text-slate-600 hover:text-slate-800 flex items-center">
+        <button type="button" (click)="goBack()" class="mb-6 inline-flex items-center text-sm font-semibold text-primary-700 hover:text-primary-800">
           <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
           </svg>
@@ -194,10 +162,10 @@
         <!-- Tip Header -->
         <div class="mb-8">
           <div class="flex flex-wrap items-center gap-4 mb-4">
-            <span class="bg-slate-100 text-slate-700 px-4 py-2 rounded-full font-semibold">
+            <span class="rounded-md bg-primary-50 px-4 py-2 font-semibold text-primary-700">
               {{ selectedTip()!.type }}
             </span>
-            <span class="bg-blue-100 text-blue-700 px-4 py-2 rounded-full font-semibold">
+            <span class="rounded-md bg-gray-100 px-4 py-2 font-semibold text-gray-700">
               {{ selectedTip()!.difficulty }}
             </span>
             <span class="text-slate-500">
@@ -208,13 +176,13 @@
             </span>
           </div>
           
-          <h1 class="text-3xl font-bold text-slate-800 mb-4">{{ selectedTip()!.title }}</h1>
-          <p class="text-slate-600 text-lg">{{ selectedTip()!.description }}</p>
+          <h1 class="mb-4 text-2xl font-semibold text-gray-950 sm:text-3xl">{{ selectedTip()!.title }}</h1>
+          <p class="text-base leading-7 text-gray-700 sm:text-lg">{{ selectedTip()!.description }}</p>
         </div>
 
         <!-- Benefits -->
         <div class="mb-8">
-          <h3 class="text-2xl font-semibold text-slate-800 mb-4">Benefits</h3>
+          <h3 class="text-xl font-semibold text-gray-950 mb-4">Benefits</h3>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
             @for (benefit of selectedTip()!.benefits; track benefit) {
               <div class="flex items-start space-x-3 p-3 bg-green-50 rounded-lg">
@@ -229,11 +197,11 @@
 
         <!-- Step-by-Step Guide -->
         <div class="mb-8">
-          <h3 class="text-2xl font-semibold text-slate-800 mb-6">Step-by-Step Implementation</h3>
+          <h3 class="text-xl font-semibold text-gray-950 mb-6">Step-by-Step Implementation</h3>
           <div class="space-y-4">
             @for (step of selectedTip()!.steps; track step.stepNumber) {
               <div class="flex items-start space-x-4 p-4 bg-slate-50 rounded-lg">
-                <div class="flex-shrink-0 w-8 h-8 bg-slate-800 text-white rounded-full flex items-center justify-center font-semibold">
+                <div class="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-primary-600 font-semibold text-white">
                   {{ step.stepNumber }}
                 </div>
                 <div class="flex-1">
@@ -256,7 +224,7 @@
 
         <!-- Additional Tips -->
         <div class="mb-8">
-          <h3 class="text-2xl font-semibold text-slate-800 mb-4">Additional Tips</h3>
+          <h3 class="text-xl font-semibold text-gray-950 mb-4">Additional Tips</h3>
           <div class="grid gap-3">
             @for (tip of selectedTip()!.tips; track tip) {
               <div class="flex items-start space-x-3 p-3 bg-blue-50 rounded-lg">
@@ -272,9 +240,9 @@
         <!-- Scientific Basis -->
         @if (selectedTip()!.scientificBasis) {
           <div class="mb-8">
-            <h3 class="text-2xl font-semibold text-slate-800 mb-4">Scientific Basis</h3>
-            <div class="bg-purple-50 border border-purple-200 rounded-lg p-6">
-              <p class="text-purple-800">{{ selectedTip()!.scientificBasis }}</p>
+            <h3 class="text-xl font-semibold text-gray-950 mb-4">Scientific Basis</h3>
+            <div class="rounded-lg border border-primary-100 bg-primary-50 p-6">
+              <p class="text-primary-900">{{ selectedTip()!.scientificBasis }}</p>
             </div>
           </div>
         }
@@ -282,7 +250,7 @@
         <!-- Common Mistakes -->
         @if (selectedTip()!.commonMistakes && selectedTip()!.commonMistakes!.length > 0) {
           <div class="mb-8">
-            <h3 class="text-2xl font-semibold text-slate-800 mb-4">Common Mistakes to Avoid</h3>
+            <h3 class="text-xl font-semibold text-gray-950 mb-4">Common Mistakes to Avoid</h3>
             <div class="space-y-3">
               @for (mistake of selectedTip()!.commonMistakes; track mistake) {
                 <div class="flex items-start space-x-3 p-3 bg-red-50 rounded-lg">
@@ -299,7 +267,7 @@
         <!-- Progress Tracking -->
         @if (selectedTip()!.progressTracking && selectedTip()!.progressTracking!.length > 0) {
           <div class="mb-8">
-            <h3 class="text-2xl font-semibold text-slate-800 mb-4">Track Your Progress</h3>
+            <h3 class="text-xl font-semibold text-gray-950 mb-4">Track Your Progress</h3>
             <div class="space-y-3">
               @for (tracking of selectedTip()!.progressTracking; track tracking) {
                 <div class="flex items-start space-x-3 p-3 bg-yellow-50 rounded-lg">
@@ -316,7 +284,7 @@
         <!-- Related Tips -->
         @if (relatedTips().length > 0) {
           <div class="mb-8">
-            <h3 class="text-2xl font-semibold text-slate-800 mb-6">Related Tips</h3>
+            <h3 class="text-xl font-semibold text-gray-950 mb-6">Related Tips</h3>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               @for (relatedTip of relatedTips(); track relatedTip.id) {
                 <div class="bg-slate-50 rounded-lg p-4 hover:bg-slate-100 cursor-pointer transition-colors"
@@ -331,20 +299,21 @@
         }
 
         <!-- Action Buttons -->
-        <div class="flex flex-col sm:flex-row gap-4 justify-center">
+        <div class="flex flex-col justify-center gap-3 sm:flex-row">
           <button 
+            type="button"
             (click)="goBack()"
-            class="bg-slate-200 text-slate-700 px-6 py-3 rounded-lg hover:bg-slate-300 transition-colors">
+            class="btn-outline btn-sm">
             Browse More Tips
           </button>
           <button 
             routerLink="/exercises"
-            class="bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition-colors">
+            class="btn-primary btn-sm">
             View Exercises
           </button>
           <button 
             routerLink="/assessments"
-            class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors">
+            class="btn-primary btn-sm">
             Take Assessment
           </button>
         </div>
