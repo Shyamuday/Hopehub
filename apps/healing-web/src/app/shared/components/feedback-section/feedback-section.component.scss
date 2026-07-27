@@ -1,28 +1,14 @@
 .feedback-section {
   position: relative;
   overflow: hidden;
-  background: #0f172a;
-  color: #ffffff;
+  background: #ffffff;
+  color: #111827;
   padding: clamp(3rem, 7vw, 5rem) 1rem;
+  border-bottom: 1px solid #f3f4f6;
 }
 
-.feedback-section__media,
-.feedback-section__media img,
-.feedback-section__media div {
-  position: absolute;
-  inset: 0;
-}
-
-.feedback-section__media img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.feedback-section__media div {
-  background:
-    linear-gradient(90deg, rgba(15, 23, 42, 0.92), rgba(15, 23, 42, 0.72)),
-    linear-gradient(0deg, rgba(15, 23, 42, 0.7), transparent);
+.feedback-section__media {
+  display: none;
 }
 
 .feedback-section__inner {
@@ -52,24 +38,25 @@
 
 .feedback-section__eyebrow {
   margin: 0 0 0.75rem;
-  color: #99f6e4;
+  color: #0369a1;
   font-size: 0.8rem;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
 .feedback-section h2 {
   margin: 0;
-  color: #ffffff;
-  font-size: clamp(2rem, 5vw, 3.75rem);
-  line-height: 1.02;
+  color: #111827;
+  font-size: clamp(1.75rem, 4vw, 2.75rem);
+  font-weight: 600;
+  line-height: 1.12;
 }
 
 .feedback-section__intro > p:not(.feedback-section__eyebrow) {
   margin: 1rem 0 0;
-  color: #dbeafe;
-  font-size: clamp(1rem, 2vw, 1.15rem);
+  color: #4b5563;
+  font-size: 1rem;
   line-height: 1.7;
 }
 
@@ -86,39 +73,40 @@
   align-items: center;
   justify-content: center;
   min-height: 46px;
-  border-radius: 0.75rem;
+  border-radius: 0.375rem;
   padding: 0.75rem 1rem;
-  font-weight: 800;
+  font-weight: 700;
   text-decoration: none;
 }
 
 .feedback-section__primary {
-  background: #0f766e;
+  background: #0284c7;
   color: #ffffff;
-  box-shadow: 0 16px 34px rgba(15, 118, 110, 0.3);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
 }
 
 .feedback-section__primary:hover {
-  background: #115e59;
+  background: #0369a1;
 }
 
 .feedback-section__secondary {
-  border: 1px solid rgba(255, 255, 255, 0.28);
-  color: #ffffff;
+  border: 1px solid #0284c7;
+  color: #0369a1;
+  background: #ffffff;
 }
 
 .feedback-section__secondary:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: #f0f9ff;
 }
 
 .feedback-form,
 .approved-stories {
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  border-radius: 1rem;
-  background: rgba(255, 255, 255, 0.94);
-  color: #0f172a;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  background: #ffffff;
+  color: #111827;
   padding: 1rem;
-  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.24);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
 }
 
 .feedback-form h3,
@@ -130,7 +118,7 @@
 
 .feedback-form .feedback-section__eyebrow,
 .approved-stories .feedback-section__eyebrow {
-  color: #0f766e;
+  color: #0369a1;
 }
 
 .feedback-form p,
@@ -163,8 +151,8 @@
 .feedback-form select,
 .feedback-form textarea {
   width: 100%;
-  border: 1px solid #cbd5e1;
-  border-radius: 0.65rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.375rem;
   background: #ffffff;
   color: #0f172a;
   padding: 0.72rem 0.78rem;
@@ -179,8 +167,8 @@
 .feedback-form input:focus,
 .feedback-form select:focus,
 .feedback-form textarea:focus {
-  border-color: #0f766e;
-  box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.14);
+  border-color: #0284c7;
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.14);
   outline: none;
 }
 
@@ -230,9 +218,9 @@
 }
 
 .story-card {
-  border: 1px solid #dbeafe;
-  border-radius: 0.85rem;
-  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  background: #ffffff;
   padding: 0.9rem;
 }
 
@@ -274,11 +262,10 @@
   grid-template-columns: auto minmax(0, 1fr);
   gap: 1rem;
   align-items: start;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  border-radius: 1rem;
-  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  background: #ffffff;
   padding: 1rem;
-  backdrop-filter: blur(10px);
 }
 
 .feedback-card__metric {
@@ -287,29 +274,29 @@
   justify-content: center;
   width: 3rem;
   height: 3rem;
-  border-radius: 999px;
-  background: #ccfbf1;
-  color: #0f766e;
-  font-weight: 900;
+  border-radius: 0.375rem;
+  background: #f0f9ff;
+  color: #0369a1;
+  font-weight: 700;
 }
 
 .feedback-card span {
-  color: #99f6e4;
+  color: #0369a1;
   font-size: 0.72rem;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
 .feedback-card h3 {
   margin: 0.2rem 0 0;
-  color: #ffffff;
+  color: #111827;
   font-size: 1.15rem;
 }
 
 .feedback-card p {
   margin: 0.4rem 0 0;
-  color: #dbeafe;
+  color: #4b5563;
   font-size: 0.92rem;
   line-height: 1.55;
 }

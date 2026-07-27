@@ -1,5 +1,5 @@
 .home-hero {
-  min-height: clamp(34rem, 72vh, 44rem);
+  min-height: clamp(30rem, 64vh, 40rem);
   display: flex;
   align-items: center;
 }
@@ -14,15 +14,13 @@
 }
 
 .home-hero__trust span {
-  border: 1px solid rgba(13, 148, 136, 0.22);
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.82);
-  color: #115e59;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.375rem;
+  background: #ffffff;
+  color: #374151;
   font-size: 0.85rem;
-  font-weight: 700;
+  font-weight: 600;
   padding: 0.45rem 0.8rem;
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
-  backdrop-filter: blur(8px);
 }
 
 .home-hero__lead,

@@ -3,13 +3,13 @@
 <app-how-it-works />
 <app-home-tools />
 
-<section class="bg-white py-12 sm:py-16">
-  <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+<section class="hope-section border-b border-gray-100">
+  <div class="hope-section-inner">
     <div class="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
       <div>
-        <p class="text-sm font-semibold uppercase tracking-wide text-primary-700">Our psychologists</p>
-        <h2 class="mt-2 text-3xl font-bold text-gray-900">Talk with a Hope Hub psychologist</h2>
-        <p class="mt-3 max-w-2xl text-base text-gray-700">
+        <p class="hope-eyebrow">Our psychologists</p>
+        <h2 class="hope-section-title">Talk with a Hope Hub psychologist</h2>
+        <p class="hope-section-copy max-w-2xl">
           Browse published mental wellness providers for private support, anxiety care, relationship stress,
           and calm conversation at your comfort level.
         </p>
@@ -31,7 +31,7 @@
     } @else if (psychologists().length) {
       <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
         @for (provider of psychologists(); track provider.id) {
-          <article class="hope-motion-card rounded-xl border border-sky-100 bg-sky-50/60 p-5 shadow-sm">
+          <article class="hope-card hope-motion-card">
             <div class="flex items-center gap-3">
               @if (providerImageUrl(provider); as imageUrl) {
                 <img
@@ -45,17 +45,17 @@
                 </div>
               }
               <div>
-                <h3 class="text-base font-bold text-gray-900">{{ provider.name }}</h3>
-                <p class="text-sm text-primary-800">{{ provider.designation || provider.specialty || 'Psychologist' }}</p>
+                <h3 class="hope-card-title text-base">{{ provider.name }}</h3>
+                <p class="mt-1 text-sm font-medium text-gray-600">{{ provider.designation || provider.specialty || 'Psychologist' }}</p>
               </div>
             </div>
-            <p class="mt-4 line-clamp-3 text-sm leading-6 text-gray-700">
+            <p class="hope-card-copy line-clamp-3">
               {{ provider.bio || 'Available for mental wellness support and guided conversation.' }}
             </p>
             @if (provider.focusAreas.length) {
               <div class="mt-4 flex flex-wrap gap-2">
                 @for (focus of provider.focusAreas.slice(0, 2); track focus) {
-                  <span class="rounded-full bg-white px-3 py-1 text-xs font-semibold text-sky-800">{{ focus }}</span>
+                  <span class="rounded-md border border-gray-200 bg-white px-3 py-1 text-xs font-semibold text-gray-700">{{ focus }}</span>
                 }
               </div>
             }
@@ -63,7 +63,7 @@
         }
       </div>
     } @else {
-      <div class="rounded-xl border border-dashed border-sky-200 bg-sky-50 p-6 text-center text-gray-700">
+      <div class="rounded-lg border border-dashed border-gray-300 bg-white p-6 text-center text-gray-600">
         Psychologist profiles will appear here after admin publishes them for the website.
       </div>
     }

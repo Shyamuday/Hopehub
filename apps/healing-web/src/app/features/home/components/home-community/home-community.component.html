@@ -1,10 +1,9 @@
-<section class="py-12 sm:py-16 bg-slate-50">
-  <div class="container mx-auto px-4 sm:px-6 lg:px-8">
-    <div class="text-center mb-8 sm:mb-12">
-      <h2 class="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-3 sm:mb-4">
-        Join Our Healing Community
-      </h2>
-      <p class="text-base sm:text-lg text-gray-600 max-w-2xl mx-auto">
+<section class="hope-section">
+  <div class="hope-section-inner">
+    <div class="hope-section-header">
+      <p class="hope-eyebrow">Community support</p>
+      <h2 class="hope-section-title">Join our healing community</h2>
+      <p class="hope-section-copy">
         Connect with others on their healing journey and stay informed about our community
         events.
       </p>
@@ -12,14 +11,14 @@
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 max-w-4xl mx-auto">
       <div
-        class="hope-motion-card bg-white rounded-lg border border-slate-200 shadow-sm p-6 sm:p-8 text-center"
+        class="hope-card hope-motion-card p-6 text-center sm:p-8"
       >
         <div class="mb-4 sm:mb-6">
           <div
-            class="hope-motion-icon hope-soft-pulse w-12 h-12 sm:w-16 sm:h-16 bg-blue-500 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4"
+            class="hope-icon-box hope-motion-icon mx-auto mb-3 sm:mb-4"
           >
             <svg
-              class="w-6 h-6 sm:w-8 sm:h-8 text-white"
+              class="h-5 w-5"
               fill="currentColor"
               viewBox="0 0 24 24"
             >
@@ -28,22 +27,22 @@
               />
             </svg>
           </div>
-          <h3 class="text-xl sm:text-2xl font-bold text-gray-900 mb-2">Telegram Community</h3>
-          <ul class="mx-auto mb-4 max-w-sm space-y-2 text-left text-sm text-gray-600 sm:text-base">
+          <h3 class="hope-card-title">Telegram community</h3>
+          <ul class="mx-auto mb-4 mt-4 max-w-sm space-y-2 text-left text-sm leading-6 text-gray-600">
             <li class="flex gap-2">
-              <span class="font-bold text-blue-600">•</span>
+              <span class="font-bold text-primary-700">•</span>
               <span>Daily 9 PM voice chat with Hope Hub experts.</span>
             </li>
             <li class="flex gap-2">
-              <span class="font-bold text-blue-600">•</span>
+              <span class="font-bold text-primary-700">•</span>
               <span>24/7 chat support when you need a calm place to talk.</span>
             </li>
             <li class="flex gap-2">
-              <span class="font-bold text-blue-600">•</span>
+              <span class="font-bold text-primary-700">•</span>
               <span>Use a display name or username and talk at your comfort level.</span>
             </li>
-            <li class="flex gap-2 text-xs text-gray-500 sm:text-sm">
-              <span class="font-bold text-blue-500">•</span>
+            <li class="flex gap-2 text-sm text-gray-600">
+              <span class="font-bold text-primary-700">•</span>
               <span>Privacy depends on your Telegram settings, so avoid sharing personal details.</span>
             </li>
           </ul>
@@ -59,14 +58,14 @@
       </div>
 
       <div
-        class="hope-motion-card bg-white rounded-lg border border-slate-200 shadow-sm p-6 sm:p-8 text-center"
+        class="hope-card hope-motion-card p-6 text-center sm:p-8"
       >
         <div class="mb-4 sm:mb-6">
           <div
-            class="hope-motion-icon w-12 h-12 sm:w-16 sm:h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4"
+            class="hope-icon-box hope-motion-icon mx-auto mb-3 sm:mb-4"
           >
             <svg
-              class="w-6 h-6 sm:w-8 sm:h-8 text-white"
+              class="h-5 w-5"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -79,13 +78,13 @@
               />
             </svg>
           </div>
-          <h3 class="text-xl sm:text-2xl font-bold text-gray-900 mb-2">Monthly Meetup</h3>
-          <p class="text-sm sm:text-base text-gray-600 mb-3 sm:mb-4">
+          <h3 class="hope-card-title">Monthly meetup</h3>
+          <p class="hope-card-copy mb-4">
             Join us for our monthly healing circle held on the first Sunday of every month.
           </p>
-          <div class="bg-gray-50 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6">
-            <p class="text-xs sm:text-sm text-gray-600 mb-2">Next Meetup:</p>
-            <p class="font-semibold text-gray-900 text-sm sm:text-base">
+          <div class="mb-4 rounded-lg border border-gray-200 bg-white p-3 sm:mb-6 sm:p-4">
+            <p class="mb-2 text-xs font-semibold uppercase text-gray-500">Next meetup</p>
+            <p class="text-sm font-semibold text-gray-900 sm:text-base">
               {{ nextMeetup.title }}
             </p>
             <p class="text-gray-700 text-sm">{{ formatMeetupDate(nextMeetup.date) }}</p>
@@ -94,7 +93,7 @@
               <p class="text-gray-700 text-sm">{{ nextMeetup.location }}</p>
             }
             @if (nextMeetup.isVirtual) {
-              <p class="text-blue-600 text-sm">Virtual Meeting</p>
+              <p class="text-primary-700 text-sm">Virtual meeting</p>
             }
           </div>
         </div>
@@ -108,16 +107,16 @@
     </div>
 
     <div class="mt-8 sm:mt-12 text-center">
-      <h3 class="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">
-        Why Join Our Community?
+      <h3 class="text-xl font-semibold text-gray-950 mb-4 sm:mb-6">
+        Why join our community?
       </h3>
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 max-w-4xl mx-auto">
         <a
           routerLink="/community"
-          class="block rounded-lg p-4 transition-colors hover:bg-white hover:shadow-sm sm:p-6"
+          class="hope-card block transition-colors hover:border-primary-200 sm:p-6"
         >
           <div
-            class="w-10 h-10 sm:w-12 sm:h-12 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4"
+            class="hope-icon-box mx-auto mb-3 sm:mb-4"
           >
             <svg class="w-5 h-5 sm:w-6 sm:h-6 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
@@ -128,17 +127,17 @@
               />
             </svg>
           </div>
-          <h4 class="text-base sm:text-lg font-semibold text-gray-900 mb-2">Peer Support</h4>
-          <p class="text-sm sm:text-base text-gray-600">
+          <h4 class="hope-card-title text-base">Peer support</h4>
+          <p class="hope-card-copy">
             Connect with others who understand your journey and share similar experiences.
           </p>
         </a>
         <a
           routerLink="/articles"
-          class="block rounded-lg p-4 transition-colors hover:bg-white hover:shadow-sm sm:p-6"
+          class="hope-card block transition-colors hover:border-primary-200 sm:p-6"
         >
           <div
-            class="w-10 h-10 sm:w-12 sm:h-12 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4"
+            class="hope-icon-box mx-auto mb-3 sm:mb-4"
           >
             <svg class="w-5 h-5 sm:w-6 sm:h-6 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
@@ -149,19 +148,19 @@
               />
             </svg>
           </div>
-          <h4 class="text-base sm:text-lg font-semibold text-gray-900 mb-2">
-            Educational Resources
+          <h4 class="hope-card-title text-base">
+            Educational resources
           </h4>
-          <p class="text-sm sm:text-base text-gray-600">
+          <p class="hope-card-copy">
             Access valuable mental health resources, tips, and educational content.
           </p>
         </a>
         <a
           routerLink="/contact"
-          class="block rounded-lg p-4 transition-colors hover:bg-white hover:shadow-sm sm:p-6"
+          class="hope-card block transition-colors hover:border-primary-200 sm:p-6"
         >
           <div
-            class="w-10 h-10 sm:w-12 sm:h-12 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4"
+            class="hope-icon-box mx-auto mb-3 sm:mb-4"
           >
             <svg class="w-5 h-5 sm:w-6 sm:h-6 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
@@ -172,8 +171,8 @@
               />
             </svg>
           </div>
-          <h4 class="text-base sm:text-lg font-semibold text-gray-900 mb-2">Safe Space</h4>
-          <p class="text-sm sm:text-base text-gray-600">
+          <h4 class="hope-card-title text-base">Safe space</h4>
+          <p class="hope-card-copy">
             A judgment-free environment where you can share, learn, and grow at your own pace.
           </p>
         </a>
