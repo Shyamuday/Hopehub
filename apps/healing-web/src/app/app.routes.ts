@@ -124,6 +124,132 @@ export const routes: Routes = [
     },
   },
   {
+    path: 'anxiety-test',
+    loadComponent: () =>
+      import('./features/assessments/direct-assessment.component').then(
+        (m) => m.DirectAssessmentComponent,
+      ),
+    title: 'Anxiety Test - Hope Hub',
+    data: {
+      assessmentId: 'gad7',
+      breadcrumb: 'Anxiety Test',
+      description: 'Take a quick anxiety test and get private recommendations after sign in',
+      keywords: 'anxiety test, GAD-7, anxiety screening, worry test',
+    },
+  },
+  {
+    path: 'depression-test',
+    loadComponent: () =>
+      import('./features/assessments/direct-assessment.component').then(
+        (m) => m.DirectAssessmentComponent,
+      ),
+    title: 'Depression Test - Hope Hub',
+    data: {
+      assessmentId: 'phq9',
+      breadcrumb: 'Depression Test',
+      description: 'Take a private depression screening test and save your result securely',
+      keywords: 'depression test, PHQ-9, depression screening, mood test',
+    },
+  },
+  {
+    path: 'stress-test',
+    loadComponent: () =>
+      import('./features/assessments/direct-assessment.component').then(
+        (m) => m.DirectAssessmentComponent,
+      ),
+    title: 'Stress Test - Hope Hub',
+    data: {
+      assessmentId: 'pss10',
+      breadcrumb: 'Stress Test',
+      description: 'Take a stress test and get practical mental wellness recommendations',
+      keywords: 'stress test, PSS-10, stress screening, mental stress',
+    },
+  },
+  {
+    path: 'breakup-test',
+    loadComponent: () =>
+      import('./features/assessments/direct-assessment.component').then(
+        (m) => m.DirectAssessmentComponent,
+      ),
+    title: 'Breakup Recovery Test - Hope Hub',
+    data: {
+      assessmentId: 'breakup-recovery',
+      breadcrumb: 'Breakup Test',
+      description: 'Take a breakup recovery test and find the right support path',
+      keywords: 'breakup test, breakup recovery, relationship ending support',
+    },
+  },
+  {
+    path: 'sleep-test',
+    loadComponent: () =>
+      import('./features/assessments/direct-assessment.component').then(
+        (m) => m.DirectAssessmentComponent,
+      ),
+    title: 'Sleep Quality Test - Hope Hub',
+    data: {
+      assessmentId: 'sleep',
+      breadcrumb: 'Sleep Test',
+      description: 'Take a sleep quality test and get mental wellness recommendations',
+      keywords: 'sleep test, sleep quality, insomnia screening, sleep wellness',
+    },
+  },
+  {
+    path: 'relationship-test',
+    loadComponent: () =>
+      import('./features/assessments/direct-assessment.component').then(
+        (m) => m.DirectAssessmentComponent,
+      ),
+    title: 'Relationship Health Test - Hope Hub',
+    data: {
+      assessmentId: 'relationship',
+      breadcrumb: 'Relationship Test',
+      description: 'Take a relationship health test and understand your support needs',
+      keywords: 'relationship test, relationship health, couples support',
+    },
+  },
+  {
+    path: 'burnout-test',
+    loadComponent: () =>
+      import('./features/assessments/direct-assessment.component').then(
+        (m) => m.DirectAssessmentComponent,
+      ),
+    title: 'Burnout Test - Hope Hub',
+    data: {
+      assessmentId: 'burnout',
+      breadcrumb: 'Burnout Test',
+      description: 'Take a professional burnout test and get support recommendations',
+      keywords: 'burnout test, work stress, professional burnout',
+    },
+  },
+  {
+    path: 'wellbeing-test',
+    loadComponent: () =>
+      import('./features/assessments/direct-assessment.component').then(
+        (m) => m.DirectAssessmentComponent,
+      ),
+    title: 'Wellbeing Test - Hope Hub',
+    data: {
+      assessmentId: 'who5',
+      breadcrumb: 'Wellbeing Test',
+      description: 'Take a quick wellbeing test and understand your emotional wellness',
+      keywords: 'wellbeing test, WHO-5, emotional wellness test',
+    },
+  },
+  {
+    path: 'mental-health-test',
+    loadComponent: () =>
+      import('./features/assessments/direct-assessment.component').then(
+        (m) => m.DirectAssessmentComponent,
+      ),
+    title: 'Mental Health Test - Hope Hub',
+    data: {
+      assessmentId: 'dass21',
+      breadcrumb: 'Mental Health Test',
+      description: 'Take a combined depression, anxiety, and stress test',
+      keywords: 'mental health test, DASS-21, depression anxiety stress test',
+    },
+  },
+  {
     path: 'lifestyle-tips',
     loadComponent: () =>
       import('./shared/components/lifestyle-tips/lifestyle-tips.component').then(

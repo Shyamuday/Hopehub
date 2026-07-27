@@ -56,6 +56,12 @@ ${urlEntries}
         priority: 0.8,
       },
       {
+        loc: '/about',
+        lastmod: this.currentDate,
+        changefreq: 'monthly',
+        priority: 0.7,
+      },
+      {
         loc: '/contact',
         lastmod: this.currentDate,
         changefreq: 'monthly',
@@ -98,6 +104,22 @@ ${urlEntries}
         changefreq: 'weekly',
         priority: 0.9,
       },
+      ...[
+        '/anxiety-test',
+        '/depression-test',
+        '/stress-test',
+        '/breakup-test',
+        '/sleep-test',
+        '/relationship-test',
+        '/burnout-test',
+        '/wellbeing-test',
+        '/mental-health-test',
+      ].map((loc) => ({
+        loc,
+        lastmod: this.currentDate,
+        changefreq: 'weekly' as const,
+        priority: 0.95,
+      })),
       {
         loc: '/exercises',
         lastmod: this.currentDate,
