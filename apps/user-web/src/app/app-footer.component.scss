@@ -4,8 +4,8 @@
 
 .site-footer {
   margin-top: 2.5rem;
-  border-top: 1px solid #e2e8f0;
-  background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+  border-top: 1px solid #e5e7eb;
+  background: #ffffff;
   color: #475569;
 }
 
@@ -23,16 +23,16 @@
 
 .site-footer h3 {
   margin: 0 0 1rem;
-  color: #0f172a;
+  color: #1c2d37;
   font-size: 0.95rem;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: 0.02em;
   text-transform: uppercase;
 }
 
 .site-footer__clinic {
   margin: 0 0 0.35rem;
-  color: #102033;
+  color: #1c2d37;
   font-weight: 700;
   line-height: 1.5;
 }
@@ -58,7 +58,7 @@
 
 .site-footer__contact a:hover,
 .site-footer__column a:hover {
-  color: #0f62fe;
+  color: #4a6fa5;
 }
 
 .site-footer__whatsapp {
@@ -67,9 +67,10 @@
   gap: 0.5rem;
   margin-top: 1rem;
   padding: 0.55rem 0.9rem;
-  border-radius: 999px;
-  background: #ecfdf5;
-  color: #047857 !important;
+  border: 1px solid #d8e2ec;
+  border-radius: 8px;
+  background: #f4f7f9;
+  color: #4a6fa5 !important;
   font-size: 0.88rem;
   font-weight: 700;
 }
@@ -102,7 +103,7 @@
   gap: 0.75rem 1.5rem;
   margin-top: 2rem;
   padding-top: 1.25rem;
-  border-top: 1px solid #dbe4f0;
+  border-top: 1px solid #e5e7eb;
 }
 
 .site-footer__bottom p {
