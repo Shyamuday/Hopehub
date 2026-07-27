@@ -44,9 +44,6 @@ import { AssessmentAttemptsService } from '../../core/services/assessment-attemp
                 <h1 class="mt-1 text-2xl font-semibold text-gray-950 sm:text-3xl">
                   {{ publicTitle() }}
                 </h1>
-                <p class="mt-2 line-clamp-2 text-sm leading-6 text-gray-700">
-                  {{ assessment()!.description }}
-                </p>
               </div>
 
               <div class="mb-5">
@@ -125,8 +122,8 @@ import { AssessmentAttemptsService } from '../../core/services/assessment-attemp
             >
               <h2 class="text-xl font-semibold text-gray-950">Your answers are ready</h2>
               <p class="mx-auto mt-2 max-w-xl text-sm leading-6 text-gray-700">
-                Sign up or sign in to view and save your result. We kept your answers on this
-                device, so you will not need to retake the test.
+                Sign in or create an account to view and save your result privately. We kept your
+                answers on this device, so you will not need to retake the test.
               </p>
               <div class="mt-4 flex flex-col justify-center gap-3 sm:flex-row">
                 <button type="button" class="btn-outline btn-sm" (click)="openLogin()">
@@ -234,12 +231,12 @@ import { AssessmentAttemptsService } from '../../core/services/assessment-attemp
   styles: [
     `
       .direct-test__option {
-        min-height: 3rem;
+        min-height: 3.25rem;
         border: 1px solid #d1d5db;
         border-radius: 0.5rem;
         background: #fff;
         color: #1c2d37;
-        padding: 0.75rem 0.9rem;
+        padding: 0.8rem 0.95rem;
         text-align: left;
         font-weight: 600;
         line-height: 1.35;
@@ -258,13 +255,14 @@ import { AssessmentAttemptsService } from '../../core/services/assessment-attemp
 
       .direct-test__option--selected {
         border-color: var(--brand-primary);
-        background: rgba(74, 111, 165, 0.1);
+        background: rgba(74, 111, 165, 0.11);
         color: var(--brand-primary);
+        box-shadow: inset 0 0 0 1px var(--brand-primary);
       }
 
       @media (max-width: 639px) {
         .direct-test__option {
-          min-height: 2.75rem;
+          min-height: 3rem;
           padding: 0.65rem 0.75rem;
           font-size: 0.9rem;
         }
@@ -278,6 +276,7 @@ export class DirectAssessmentComponent implements OnInit {
   private readonly authModalService = inject(AuthModalService);
   private readonly assessmentAttemptsService = inject(AssessmentAttemptsService);
   private readonly pendingStorageKey = 'hope_hub_direct_pending_assessment_result';
+  private autoNextTimer: ReturnType<typeof setTimeout> | null = null;
 
   assessment = signal<AssessmentConfig | null>(null);
   currentQuestion = signal(0);
@@ -331,9 +330,18 @@ export class DirectAssessmentComponent implements OnInit {
     const next = [...this.answers()];
     next[this.currentQuestion()] = value;
     this.answers.set(next);
+
+    this.clearAutoNextTimer();
+    const assessment = this.assessment();
+    if (!assessment || this.currentQuestion() >= assessment.questions.length - 1) return;
+
+    this.autoNextTimer = setTimeout(() => {
+      this.nextQuestion();
+    }, 220);
   }
 
   nextQuestion(): void {
+    this.clearAutoNextTimer();
     const assessment = this.assessment();
     if (!assessment || !this.hasCurrentAnswer()) return;
     if (this.currentQuestion() < assessment.questions.length - 1) {
@@ -342,6 +350,7 @@ export class DirectAssessmentComponent implements OnInit {
   }
 
   previousQuestion(): void {
+    this.clearAutoNextTimer();
     if (this.currentQuestion() > 0) {
       this.currentQuestion.update((question) => question - 1);
     }
@@ -465,6 +474,12 @@ export class DirectAssessmentComponent implements OnInit {
     this.resultLocked.set(false);
     this.savedAttempt.set(null);
     this.clearPendingResult();
+  }
+
+  private clearAutoNextTimer(): void {
+    if (!this.autoNextTimer) return;
+    clearTimeout(this.autoNextTimer);
+    this.autoNextTimer = null;
   }
 
   private savePendingResultLocally(assessment: AssessmentConfig, result: AssessmentResult): void {

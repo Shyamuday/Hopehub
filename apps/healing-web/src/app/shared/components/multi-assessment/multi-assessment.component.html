@@ -1,63 +1,67 @@
-<section class="bg-slate-50 py-12">
-  <div class="max-w-6xl mx-auto px-6">
+<section class="min-h-screen bg-[var(--brand-surface)] py-6 sm:py-8">
+  <div class="container mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
 
     <!-- Header -->
-    <div class="text-center mb-12">
-      <h2 class="text-4xl font-bold text-slate-800 mb-4">Mental Health Assessments</h2>
-      <p class="text-slate-600 max-w-3xl mx-auto text-lg">
-        Choose from clinically validated assessment tools to better understand your mental health and well-being.
+    <div class="mx-auto mb-6 max-w-3xl text-center sm:mb-8">
+      <h1 class="text-3xl font-semibold text-gray-950 sm:text-4xl">Mental Health Assessments</h1>
+      <p class="mx-auto mt-3 max-w-2xl text-sm leading-6 text-gray-700 sm:text-base">
+        Pick a test and start. You only need to sign in after completing it to view and save the result.
       </p>
     </div>
 
     <!-- Assessment Selection -->
     @if (!selectedAssessment() && !showResults()) {
-    <div class="space-y-8">
+    <div class="space-y-6">
 
       <!-- Categories -->
-      <div class="flex flex-wrap justify-center gap-4 mb-8">
+      <div class="flex flex-wrap justify-center gap-2">
+        <button (click)="showAllAssessments()" [class.bg-primary-600]="!selectedCategory()"
+          [class.text-white]="!selectedCategory()" [class.bg-white]="selectedCategory()"
+          [class.text-gray-700]="selectedCategory()"
+          [class.border-primary-600]="!selectedCategory()"
+          [class.border-gray-300]="selectedCategory()"
+          class="rounded-md border px-3 py-2 text-sm font-semibold transition-colors hover:border-primary-600 hover:text-primary-700 whitespace-nowrap">
+          All
+        </button>
         @for (category of categories(); track category) {
         <button (click)="filterByCategory(category)" [class.bg-primary-600]="selectedCategory() === category"
           [class.text-white]="selectedCategory() === category" [class.bg-white]="selectedCategory() !== category"
-          [class.text-slate-700]="selectedCategory() !== category"
-          class="px-6 py-2 rounded-lg border border-slate-200 hover:bg-slate-100 transition-colors whitespace-nowrap">
+          [class.text-gray-700]="selectedCategory() !== category"
+          [class.border-primary-600]="selectedCategory() === category"
+          [class.border-gray-300]="selectedCategory() !== category"
+          class="rounded-md border px-3 py-2 text-sm font-semibold transition-colors hover:border-primary-600 hover:text-primary-700 whitespace-nowrap">
           {{ category }}
         </button>
         }
-        <button (click)="showAllAssessments()" [class.bg-primary-600]="!selectedCategory()"
-          [class.text-white]="!selectedCategory()" [class.bg-white]="selectedCategory()"
-          [class.text-slate-700]="selectedCategory()"
-          class="px-6 py-2 rounded-lg border border-slate-200 hover:bg-slate-100 transition-colors whitespace-nowrap">
-          All Assessments
-        </button>
       </div>
 
       <!-- Assessment Cards -->
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         @for (assessment of filteredAssessments(); track assessment.id) {
-        <div class="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow">
+        <div class="flex h-full flex-col rounded-lg border border-gray-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md">
 
           <!-- Assessment Type Badge -->
           <div class="flex items-center justify-between mb-4">
-            <span class="bg-slate-100 text-slate-700 px-3 py-1 rounded-full text-sm font-semibold whitespace-nowrap">
+            <span class="rounded-md bg-primary-50 px-3 py-1 text-sm font-semibold text-primary-700 whitespace-nowrap">
               {{ assessment.type }}
             </span>
-            <span class="text-slate-500 text-sm whitespace-nowrap">{{ assessment.duration }}</span>
+            <span class="text-gray-500 text-sm whitespace-nowrap">{{ assessment.duration }}</span>
           </div>
 
           <!-- Title and Description -->
-          <h3 class="text-xl font-bold text-slate-800 mb-3">{{ assessment.title }}</h3>
-          <p class="text-slate-600 mb-4 line-clamp-3">{{ assessment.description }}</p>
+          <h3 class="mb-3 text-lg font-semibold text-gray-950">{{ assessment.title }}</h3>
+          <p class="mb-4 line-clamp-2 text-sm leading-6 text-gray-700">{{ assessment.description }}</p>
 
           <!-- Category -->
-          <div class="flex items-center justify-between">
-            <span class="text-sm text-slate-500">{{ assessment.category }}</span>
-            <span class="text-sm font-semibold text-slate-700 whitespace-nowrap">{{ assessment.questions.length }} questions</span>
+          <div class="mt-auto flex items-center justify-between border-t border-gray-100 pt-4">
+            <span class="text-sm text-gray-500">{{ assessment.category }}</span>
+            <span class="text-sm font-semibold text-gray-700 whitespace-nowrap">{{ assessment.questions.length }} questions</span>
           </div>
 
           <!-- Start Button -->
           <button (click)="selectAssessment(assessment)"
-            class="btn-primary btn-block mt-4">
-            Start Assessment
+            class="btn-primary btn-block btn-sm mt-4">
+            Start test
           </button>
         </div>
         }
@@ -67,10 +71,10 @@
 
     <!-- Selected Assessment Details -->
     @if (selectedAssessment() && !assessmentStarted() && !showResults()) {
-    <div class="bg-white rounded-xl shadow-lg p-8">
+    <div class="rounded-lg border border-gray-200 bg-white p-5 shadow-sm sm:p-8">
 
       <!-- Back Button -->
-      <button (click)="goBack()" class="mb-6 text-slate-600 hover:text-slate-800 flex items-center whitespace-nowrap">
+      <button (click)="goBack()" class="mb-6 inline-flex items-center text-sm font-semibold text-primary-700 hover:text-primary-800 whitespace-nowrap">
         <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
         </svg>
@@ -80,18 +84,18 @@
       <!-- Assessment Info -->
       <div class="mb-8">
         <div class="flex items-center gap-4 mb-4">
-          <span class="bg-slate-100 text-slate-700 px-4 py-2 rounded-full font-semibold whitespace-nowrap">
+          <span class="rounded-md bg-primary-50 px-4 py-2 font-semibold text-primary-700 whitespace-nowrap">
             {{ selectedAssessment()!.type }}
           </span>
           <span class="text-slate-500 whitespace-nowrap">{{ selectedAssessment()!.duration }}</span>
         </div>
 
-        <h2 class="text-3xl font-bold text-slate-800 mb-4">{{ selectedAssessment()!.title }}</h2>
-        <p class="text-slate-600 text-lg mb-6">{{ selectedAssessment()!.description }}</p>
+        <h2 class="mb-4 text-2xl font-semibold text-gray-950 sm:text-3xl">{{ selectedAssessment()!.title }}</h2>
+        <p class="mb-6 text-base leading-7 text-gray-700 sm:text-lg">{{ selectedAssessment()!.description }}</p>
 
-        <div class="bg-slate-50 rounded-lg p-6 mb-6">
-          <h3 class="font-semibold text-slate-800 mb-2">Instructions:</h3>
-          <p class="text-slate-700">{{ selectedAssessment()!.instructions }}</p>
+        <div class="mb-6 rounded-lg border border-gray-200 bg-gray-50 p-5">
+          <h3 class="font-semibold text-gray-950 mb-2">Instructions</h3>
+          <p class="text-sm leading-6 text-gray-700">{{ selectedAssessment()!.instructions }}</p>
           @if (selectedAssessment()!.timeframe) {
           <p class="text-slate-600 text-sm mt-2">
             <strong>Timeframe:</strong> {{ selectedAssessment()!.timeframe }}
@@ -101,7 +105,7 @@
       </div>
 
       <!-- Disclaimer -->
-      <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-6 mb-8">
+      <div class="bg-amber-50 border border-amber-200 rounded-lg p-5 mb-8">
         <div class="flex items-start space-x-3">
           <svg class="w-6 h-6 text-yellow-600 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
             <path fill-rule="evenodd"
@@ -109,10 +113,10 @@
               clip-rule="evenodd" />
           </svg>
           <div>
-            <h3 class="font-semibold text-yellow-800 mb-2">Important Disclaimer</h3>
-            <p class="text-yellow-700 text-sm">{{ selectedAssessment()!.disclaimer }}</p>
+            <h3 class="font-semibold text-amber-900 mb-2">Important note</h3>
+            <p class="text-amber-900 text-sm leading-6">{{ selectedAssessment()!.disclaimer }}</p>
             @if (selectedAssessment()!.emergencyHelplines.length > 0) {
-            <div class="mt-3 text-sm text-yellow-700">
+            <div class="mt-3 text-sm text-amber-900">
               <strong>Emergency Helplines:</strong><br>
               @for (helpline of selectedAssessment()!.emergencyHelplines; track helpline.name; let last = $last) {
               <span>
@@ -128,8 +132,8 @@
       <!-- Start Button -->
       <div class="text-center">
         <button (click)="startAssessment()"
-          class="btn-primary btn-lg">
-          Begin {{ selectedAssessment()!.type }} Assessment
+          class="btn-primary btn-sm">
+          Begin test
         </button>
       </div>
     </div>
@@ -137,47 +141,45 @@
 
     <!-- Assessment Questions -->
     @if (assessmentStarted() && !showResults()) {
-    <div class="bg-white rounded-xl shadow-lg p-8">
+    <div class="mx-auto flex min-h-[calc(100svh-8rem)] max-w-4xl flex-col rounded-lg border border-gray-200 bg-white p-4 shadow-sm sm:p-6">
 
       <!-- Progress Bar -->
-      <div class="mb-8">
-        <div class="flex justify-between text-sm text-slate-600 mb-2">
+      <div class="mb-5">
+        <div class="flex justify-between text-sm text-gray-600 mb-2">
           <span>Question {{ currentQuestion() + 1 }} of {{ selectedAssessment()!.questions.length }}</span>
           <span>{{ Math.round(((currentQuestion() + 1) / selectedAssessment()!.questions.length) * 100) }}%</span>
         </div>
-        <div class="w-full bg-slate-200 rounded-full h-3">
-          <div class="bg-primary-600 h-3 rounded-full transition-all duration-300"
+        <div class="w-full bg-gray-100 rounded-full h-2">
+          <div class="bg-primary-600 h-2 rounded-full transition-all duration-300"
             [style.width.%]="((currentQuestion() + 1) / selectedAssessment()!.questions.length) * 100">
           </div>
         </div>
       </div>
 
       <!-- Current Question -->
-      <div class="mb-8">
-        <h3 class="text-2xl font-semibold text-slate-800 mb-6">
+      <div class="mb-6 flex flex-1 flex-col">
+        <h3 class="mb-5 text-xl font-semibold leading-snug text-gray-950 sm:text-2xl">
           {{ selectedAssessment()!.questions[currentQuestion()].text }}
         </h3>
 
-        <div class="space-y-3">
+        <div class="grid gap-2 sm:grid-cols-2">
           @for (option of selectedAssessment()!.responseOptions; track option.value) {
-          <label
-            class="flex items-center p-4 border border-slate-200 rounded-lg hover:bg-slate-50 cursor-pointer transition-colors"
-            [class.bg-primary-50]="answers()[currentQuestion()] === option.value"
-            [class.border-primary-500]="answers()[currentQuestion()] === option.value">
-            <input type="radio" [value]="option.value" [checked]="answers()[currentQuestion()] === option.value"
-              (change)="selectAnswer(option.value)" [name]="'question_' + currentQuestion()"
-              class="mr-4 text-primary-600 scale-125">
-            <span class="text-slate-700 text-lg">{{ option.label }}</span>
-          </label>
+          <button
+            type="button"
+            class="assessment-option"
+            [class.assessment-option--selected]="answers()[currentQuestion()] === option.value"
+            (click)="selectAnswer(option.value)">
+            {{ option.label }}
+          </button>
           }
         </div>
       </div>
 
       <!-- Navigation -->
-      <div class="flex justify-between">
+      <div class="mt-auto flex justify-between gap-3">
         @if (currentQuestion() > 0) {
         <button (click)="previousQuestion()"
-          class="bg-slate-200 text-slate-700 px-6 py-3 rounded-lg hover:bg-slate-300 transition-colors whitespace-nowrap">
+          class="btn-outline btn-sm whitespace-nowrap">
           Previous
         </button>
         } @else {
@@ -185,12 +187,12 @@
         }
         @if (currentQuestion() < selectedAssessment()!.questions.length - 1) { <button (click)="nextQuestion()"
           [disabled]="answers()[currentQuestion()] === undefined"
-          class="btn-primary">
+          class="btn-primary btn-sm">
           Next
           </button>
           } @else {
           <button (click)="calculateResults()" [disabled]="answers()[currentQuestion()] === undefined"
-            class="btn-primary">
+            class="btn-primary btn-sm">
             Get Results
           </button>
           }
@@ -200,7 +202,7 @@
 
     <!-- Result Login Gate -->
     @if (resultLocked() && result()) {
-    <div class="bg-white rounded-xl shadow-lg p-8">
+    <div class="rounded-lg border border-gray-200 bg-white p-5 shadow-sm sm:p-8">
       @if (result()!.safetyFlag) {
       <div class="bg-red-50 border border-red-200 rounded-lg p-6 mb-8">
         <div class="flex items-start space-x-3">
@@ -265,7 +267,7 @@
 
     <!-- Results -->
     @if (showResults() && result()) {
-    <div class="bg-white rounded-xl shadow-lg p-8">
+    <div class="rounded-lg border border-gray-200 bg-white p-5 shadow-sm sm:p-8">
 
       <!-- Safety Alert -->
       @if (result()!.safetyFlag) {
@@ -307,12 +309,12 @@
             </div>
           </div>
         </div>
-        <h3 class="text-3xl font-bold text-slate-800 mb-3">{{ result()!.level }}</h3>
-        <p class="text-slate-600 text-lg max-w-2xl mx-auto">{{ result()!.description }}</p>
+        <h3 class="text-2xl font-semibold text-gray-950 mb-3 sm:text-3xl">{{ result()!.level }}</h3>
+        <p class="text-gray-700 text-base leading-7 max-w-2xl mx-auto sm:text-lg">{{ result()!.description }}</p>
       </div>
 
       <!-- Assessment Info -->
-      <div class="bg-slate-50 rounded-lg p-6 mb-8">
+      <div class="bg-gray-50 rounded-lg p-5 mb-8">
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4 text-center">
           <div>
             <div class="text-2xl font-bold text-slate-800">{{ result()!.assessmentType }}</div>
@@ -364,27 +366,27 @@
       <!-- Action Buttons -->
       <div class="flex flex-col sm:flex-row gap-4 justify-center">
         <button (click)="retakeAssessment()"
-          class="bg-slate-200 text-slate-700 px-6 py-3 rounded-lg hover:bg-slate-300 transition-colors whitespace-nowrap">
+          class="btn-outline btn-sm whitespace-nowrap">
           Retake Assessment
         </button>
         <button (click)="takeAnotherAssessment()"
-          class="btn-primary">
+          class="btn-primary btn-sm">
           Take Another Assessment
         </button>
         <button (click)="viewExercises()"
-          class="btn-primary">
+          class="btn-primary btn-sm">
           View Recommended Exercises
         </button>
         <button (click)="viewLifestyleTips()"
-          class="btn-primary">
+          class="btn-primary btn-sm">
           View Lifestyle Tips
         </button>
         <button (click)="viewArticles()"
-          class="btn-primary">
+          class="btn-primary btn-sm">
           Read Articles
         </button>
         <button routerLink="/contact"
-          class="btn-primary">
+          class="btn-primary btn-sm">
           Book Professional Consultation
         </button>
       </div>
