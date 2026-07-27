@@ -5,6 +5,7 @@ import { authRequired, allowRoles } from '../../auth.js';
 import { prisma } from '../../db.js';
 import { asyncRoute, routeParam, writeAuditLog } from '../../utils/helpers.js';
 import { notificationService } from '../../services/notification-service.js';
+import { getEmailConfigStatus, sendEmail, verifyEmailTransport } from '../../services/mail.js';
 import type { NotificationChannel } from '../../notifications.js';
 
 const templateSchema = z.object({
@@ -25,6 +26,11 @@ const broadcastSchema = z.object({
   templateId: z.string().optional()
 });
 
+const emailTestSchema = z.object({
+  to: z.string().email(),
+  subject: z.string().min(1).max(160).optional()
+});
+
 function audienceWhere(audience: string, audienceRole?: Role) {
   if (audience === 'ALL_PATIENTS') return { role: Role.PATIENT, isActive: true };
   if (audience === 'ALL_DOCTORS') return { role: Role.DOCTOR, isActive: true };
@@ -33,6 +39,56 @@ function audienceWhere(audience: string, audienceRole?: Role) {
 }
 
 export function registerAdminNotificationRoutes(router: Router) {
+  router.get(
+    '/admin/notifications/email-status',
+    authRequired,
+    allowRoles(Role.ADMIN),
+    asyncRoute(async (_req, res) => {
+      const status = getEmailConfigStatus();
+      let transportVerified = false;
+      if (status.configured) {
+        try {
+          transportVerified = await verifyEmailTransport();
+        } catch {
+          transportVerified = false;
+        }
+      }
+
+      res.json({
+        ...status,
+        transportVerified
+      });
+    })
+  );
+
+  router.post(
+    '/admin/notifications/email-test',
+    authRequired,
+    allowRoles(Role.ADMIN),
+    asyncRoute(async (req, res) => {
+      const body = emailTestSchema.parse(req.body);
+      const subject = body.subject?.trim() || 'Hope Hub email test';
+
+      await sendEmail({
+        to: body.to,
+        subject,
+        text: 'This is a test email from Hope Hub API using the configured email provider. If you received this, SES SMTP is working.',
+        html: '<p>This is a test email from Hope Hub API using the configured email provider.</p><p>If you received this, SES SMTP is working.</p>'
+      });
+
+      await writeAuditLog({
+        actorId: req.user?.id,
+        actorRole: req.user?.role,
+        action: 'EMAIL_TEST_SENT',
+        targetType: 'Email',
+        targetId: body.to,
+        summary: `Sent email provider test to ${body.to}`
+      });
+
+      res.json({ message: 'Test email sent.' });
+    })
+  );
+
   router.get(
     '/admin/notifications/templates',
     authRequired,

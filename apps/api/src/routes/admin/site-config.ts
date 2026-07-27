@@ -13,7 +13,8 @@ const CONFIG_META: Record<string, { label: string; description: string }> = {
   },
   whatsappPhone: {
     label: 'WhatsApp phone number',
-    description: 'Phone number (with country code, no +) used for all WhatsApp CTAs site-wide. E.g. 919876543210.'
+    description:
+      'Phone number (with country code, no +) used for all WhatsApp CTAs site-wide. E.g. 919876543210.'
   },
   clinicName: {
     label: 'Clinic name',
@@ -164,7 +165,7 @@ const defaults: Record<string, string> = {
   statSatisfaction: '4.8 / 5',
   contactPhone: '+91-98765-43210',
   contactPhoneTel: '+919876543210',
-  contactEmail: 'support@hopehubcare.in',
+  contactEmail: 'support@hopehub.in',
   clinicAddressLine1: 'Ranchi Main Clinic',
   clinicAddressLine2: 'Near City Centre, Main Road',
   clinicAddressLine3: 'Ranchi, Jharkhand, India',

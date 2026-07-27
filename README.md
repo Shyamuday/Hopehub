@@ -52,11 +52,11 @@ RAZORPAY_KEY_ID=""
 RAZORPAY_KEY_SECRET=""
 RAZORPAY_WEBHOOK_SECRET=""
 GOOGLE_CLIENT_ID=""
-SMTP_HOST=""
-SMTP_PORT="587"
-SMTP_USER=""
-SMTP_PASS=""
-SMTP_FROM="noreply@hopehubcare.in"
+SMTP_FROM="noreply@hopehub.in"
+AWS_SES_SMTP_HOST="email-smtp.ap-south-1.amazonaws.com"
+AWS_SES_SMTP_PORT="587"
+AWS_SES_SMTP_USERNAME=""
+AWS_SES_SMTP_PASSWORD=""
 ```
 
 Run Prisma migrations and seed:

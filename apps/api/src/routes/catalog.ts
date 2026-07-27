@@ -499,7 +499,7 @@ router.get(
       clinicName: 'HopeHub Care and Research Centre',
       contactPhone: '+91-98765-43210',
       contactPhoneTel: '+919876543210',
-      contactEmail: 'support@hopehubcare.in',
+      contactEmail: 'support@hopehub.in',
       clinicAddressLine1: 'Ranchi Main Clinic',
       clinicAddressLine2: 'Near City Centre, Main Road',
       clinicAddressLine3: 'Ranchi, Jharkhand, India',

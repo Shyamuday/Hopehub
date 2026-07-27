@@ -1,5 +1,5 @@
 import { SERVER_CONFIG } from '../constants/config.constants.js';
-import { getMailTransporter, smtpFrom } from './mail.js';
+import { getMailTransporter, sendEmail } from './mail.js';
 import { storeOtpEntry, verifyOtpEntry } from './otp-store.js';
 
 export const devOtp = SERVER_CONFIG.DEV_OTP;
@@ -27,8 +27,7 @@ export async function sendOtpEmail(email: string, otp: string): Promise<void> {
     return;
   }
 
-  await mailer.sendMail({
-    from: smtpFrom,
+  await sendEmail({
     to: email,
     subject: 'Your HopeHub Care login OTP',
     html: `<p>Your HopeHub Care OTP is <strong>${otp}</strong>.</p>

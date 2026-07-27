@@ -1,4 +1,5 @@
 import { PrismaInAppNotificationProvider } from './services/in-app-notifications.js';
+import { sendEmail } from './services/mail.js';
 
 export type NotificationChannel = 'IN_APP' | 'SMS' | 'WHATSAPP' | 'EMAIL' | 'PUSH';
 export type NotificationEventType =
@@ -38,6 +39,42 @@ export class ConsoleNotificationProvider implements NotificationProvider {
   }
 }
 
+function escapeHtml(value: string) {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+function bodyToHtml(body: string) {
+  return escapeHtml(body)
+    .split(/\r?\n/)
+    .filter(Boolean)
+    .map((line) => `<p>${line}</p>`)
+    .join('');
+}
+
+export class EmailNotificationProvider implements NotificationProvider {
+  async send(message: NotificationMessage) {
+    if (!message.recipientEmail) {
+      console.warn('[notification-email] skipped: recipient email missing', {
+        eventType: message.eventType,
+        recipientId: message.recipientId
+      });
+      return;
+    }
+
+    await sendEmail({
+      to: message.recipientEmail,
+      subject: message.title,
+      text: message.body,
+      html: bodyToHtml(message.body)
+    });
+  }
+}
+
 export class ChannelRouterNotificationProvider implements NotificationProvider {
   constructor(
     private readonly providers: Partial<Record<NotificationChannel, NotificationProvider>>,
@@ -68,7 +105,7 @@ export function createNotificationService(enabledChannels: NotificationChannel[]
     IN_APP: new PrismaInAppNotificationProvider(),
     SMS: new ConsoleNotificationProvider('notification-sms'),
     WHATSAPP: new ConsoleNotificationProvider('notification-whatsapp'),
-    EMAIL: new ConsoleNotificationProvider('notification-email'),
+    EMAIL: new EmailNotificationProvider(),
     PUSH: new ConsoleNotificationProvider('notification-push')
   };
 
