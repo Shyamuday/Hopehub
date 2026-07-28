@@ -21,7 +21,7 @@
     </div>
     <button type="button" class="link-btn" (click)="backToEmail()">← Change email</button>
   } @else if (step() === 'register') {
-    <form (ngSubmit)="sendOtp()">
+    <form (submit)="$event.preventDefault(); sendOtp()">
       <label>
         Email
         <input
@@ -34,12 +34,12 @@
       @if (error()) {
         <p class="error-text">{{ error() }}</p>
       }
-      <button class="promo-cta" type="submit" [disabled]="busy()">
+      <app-button type="submit" [disabled]="busy()" [loading]="busy()" block>
         {{ busy() ? 'Sending OTP…' : 'Get OTP & register' }}
-      </button>
+      </app-button>
     </form>
   } @else if (step() === 'otp') {
-    <form (ngSubmit)="verifyAndRegister()">
+    <form (submit)="$event.preventDefault(); verifyAndRegister()">
       <p class="promo-muted">
         OTP sent to <strong>{{ formModel().email }}</strong>
         <button type="button" class="link-btn inline" (click)="backToEmail()">Edit</button>
@@ -57,10 +57,10 @@
       @if (error()) {
         <p class="error-text">{{ error() }}</p>
       }
-      <button class="promo-cta" type="submit" [disabled]="busy()">
+      <app-button type="submit" [disabled]="busy()" [loading]="busy()" block>
         {{ busy() ? 'Verifying…' : 'Claim free consultation' }}
-      </button>
-      <button type="button" class="link-btn" (click)="sendOtp()" [disabled]="busy()">Resend OTP</button>
+      </app-button>
+      <app-button type="button" variant="ghost" (click)="sendOtp()" [disabled]="busy()">Resend OTP</app-button>
     </form>
   } @else if (step() === 'loading') {
     <div class="promo-loading">

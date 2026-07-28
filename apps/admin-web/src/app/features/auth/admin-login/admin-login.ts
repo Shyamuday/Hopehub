@@ -4,10 +4,11 @@ import { form, FormField, required } from '@angular/forms/signals';
 import { AdminAuth } from '../../../core/services/admin-auth';
 import { pickFirstAllowedRoute } from '../../../core/admin-navigation';
 import { DEFAULT_AUTHED_ROUTE } from '../../../core/constants/app-routes.constants';
+import { AppButtonComponent } from '../../../shared/ui/app-button.component';
 
 @Component({
   selector: 'app-admin-login',
-  imports: [FormField],
+  imports: [FormField, AppButtonComponent],
   templateUrl: './admin-login.html',
   styleUrl: './admin-login.scss',
 })

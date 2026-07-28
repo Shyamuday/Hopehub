@@ -3,10 +3,11 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { form, FormField, required } from '@angular/forms/signals';
 import { DEFAULT_AUTHED_ROUTE } from '../../../core/constants/app-routes.constants';
 import { Auth } from '../../../core/services/auth';
+import { AppButtonComponent } from '../../../shared/ui/app-button.component';
 
 @Component({
   selector: 'app-login',
-  imports: [FormField],
+  imports: [FormField, AppButtonComponent],
   templateUrl: './login.html',
   styleUrl: './login.scss',
 })

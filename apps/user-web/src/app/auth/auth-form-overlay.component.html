@@ -32,7 +32,7 @@
           @if (forgotModel().password && forgotModel().confirmPassword && forgotModel().password !== forgotModel().confirmPassword) {
             <p class="error-text">Passwords do not match</p>
           }
-          <button class="primary" type="submit" [disabled]="isProcessing() || !canResetPassword()">Reset password & login</button>
+          <app-button type="submit" [disabled]="isProcessing() || !canResetPassword()" [loading]="isProcessing()" block>Reset password & login</app-button>
         </form>
       } @else if (forgotStep() === 'request') {
         <button type="button" class="back-btn" (click)="cancelForgotPassword()">← Back</button>
@@ -44,7 +44,7 @@
             Email
             <input [formField]="forgotForm.email" type="email" placeholder="Enter your Gmail" autocomplete="email" />
           </label>
-          <button class="primary" type="submit" [disabled]="isProcessing() || !canRequestPasswordReset()">Send reset link</button>
+          <app-button type="submit" [disabled]="isProcessing() || !canRequestPasswordReset()" [loading]="isProcessing()" block>Send reset link</app-button>
         </form>
       } @else if (authView() === 'signup') {
         <h2>Sign up</h2>
@@ -90,7 +90,7 @@
                 }
               </span>
             </label>
-            <button class="primary" type="submit" [disabled]="isProcessing() || !canRegisterPatientWithPassword()">Create account</button>
+            <app-button type="submit" [disabled]="isProcessing() || !canRegisterPatientWithPassword()" [loading]="isProcessing()" block>Create account</app-button>
           </form>
         } @else {
           <form (submit)="$event.preventDefault(); registerPatient()">
@@ -126,10 +126,10 @@
                 6-digit OTP
                 <input [formField]="signupForm.otp" placeholder="Enter OTP" inputmode="numeric" autocomplete="one-time-code" />
               </label>
-              <button class="primary" type="submit" [disabled]="isProcessing() || !canRegisterPatient()">Verify OTP & create account</button>
-              <button type="button" class="secondary" [disabled]="isProcessing()" (click)="requestSignupOtp()">Resend OTP</button>
+              <app-button type="submit" [disabled]="isProcessing() || !canRegisterPatient()" [loading]="isProcessing()" block>Verify OTP & create account</app-button>
+              <app-button type="button" variant="secondary" [disabled]="isProcessing()" (click)="requestSignupOtp()" block>Resend OTP</app-button>
             } @else {
-              <button type="button" class="primary" [disabled]="isProcessing() || !signupModel().name.trim() || !signupModel().email.trim()" (click)="requestSignupOtp()">Send OTP</button>
+              <app-button type="button" [disabled]="isProcessing() || !signupModel().name.trim() || !signupModel().email.trim()" [loading]="isProcessing()" (click)="requestSignupOtp()" block>Send OTP</app-button>
             }
           </form>
         }
@@ -168,7 +168,7 @@
               <input [formField]="patientCredentialsForm.password" type="password" placeholder="Enter password" autocomplete="current-password" />
               <span class="auth-field-error"></span>
             </label>
-            <button class="primary" type="submit" [disabled]="isProcessing() || !canLoginWithPassword()">Login with password</button>
+            <app-button type="submit" [disabled]="isProcessing() || !canLoginWithPassword()" [loading]="isProcessing()" block>Login with password</app-button>
           </form>
         } @else {
           <form (submit)="$event.preventDefault(); loginPatientWithOtp()">
@@ -195,10 +195,10 @@
                 6-digit OTP
                 <input [formField]="patientOtpForm.otp" placeholder="Enter OTP" inputmode="numeric" autocomplete="one-time-code" />
               </label>
-              <button class="primary" type="submit" [disabled]="isProcessing() || !canLoginWithEmailOtp()">Verify OTP & login</button>
-              <button type="button" class="secondary" [disabled]="isProcessing()" (click)="requestLoginOtp()">Resend OTP</button>
+              <app-button type="submit" [disabled]="isProcessing() || !canLoginWithEmailOtp()" [loading]="isProcessing()" block>Verify OTP & login</app-button>
+              <app-button type="button" variant="secondary" [disabled]="isProcessing()" (click)="requestLoginOtp()" block>Resend OTP</app-button>
             } @else {
-              <button type="button" class="primary" [disabled]="isProcessing() || !patientOtpModel().email.trim()" (click)="requestLoginOtp()">Send OTP</button>
+              <app-button type="button" [disabled]="isProcessing() || !patientOtpModel().email.trim()" [loading]="isProcessing()" (click)="requestLoginOtp()" block>Send OTP</app-button>
             }
           </form>
         }

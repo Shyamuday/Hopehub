@@ -95,7 +95,7 @@
       </div>
       }
 
-      <form [formGroup]="contactForm" (ngSubmit)="onSubmit()" class="space-y-6">
+      <form [formGroup]="contactForm" (submit)="$event.preventDefault(); onSubmit()" class="space-y-6">
         <!-- Name Field -->
         <div>
           <label for="name" class="form-label">

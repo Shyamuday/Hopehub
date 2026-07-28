@@ -14,7 +14,7 @@
   </div>
 
   @if (mode() === 'new') {
-    <form class="form form-surface" (ngSubmit)="submitNew()">
+    <form class="form form-surface" (submit)="$event.preventDefault(); submitNew()">
       <div class="field">
         <label class="field-label" for="walkin-name">Full name</label>
         <input id="walkin-name" [formField]="walkInForm.name" placeholder="e.g. Priya Sharma" />

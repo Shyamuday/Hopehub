@@ -13,7 +13,7 @@
           </div>
         }
 
-        <form class="login-form" novalidate (ngSubmit)="onSubmit()">
+        <form class="login-form" novalidate (submit)="$event.preventDefault(); onSubmit()">
           <div class="mode-tabs">
             <button type="button" [class.active]="loginMode() === 'otp'" (click)="setLoginMode('otp')">Email OTP</button>
             <button type="button" [class.active]="loginMode() === 'password'" (click)="setLoginMode('password')">Password</button>
@@ -66,9 +66,9 @@
           </div>
           } @else {
           <div class="form-group">
-            <button type="button" class="login-btn secondary" (click)="sendOtp()" [disabled]="loading() || loginForm.email().invalid()">
+            <app-button type="button" variant="secondary" (click)="sendOtp()" [disabled]="loading() || loginForm.email().invalid()" [loading]="loading()" block>
               {{ otpSent() ? 'Resend OTP' : 'Send OTP' }}
-            </button>
+            </app-button>
             @if (otpSent()) {
               <label class="form-label" for="login-otp">OTP</label>
               <input
@@ -84,17 +84,14 @@
           </div>
           }
 
-          <button
+          <app-button
             type="submit"
-            class="login-btn"
             [disabled]="loading() || (loginMode() === 'password' ? loginForm().invalid() : loginForm.email().invalid() || !otpSent() || otp().length < 4)"
+            [loading]="loading()"
+            block
           >
-            @if (loading()) {
-              <span class="spinner"></span> Signing in...
-            } @else {
-              {{ loginMode() === 'otp' ? 'Verify OTP & sign in' : 'Sign In' }}
-            }
-          </button>
+            {{ loading() ? 'Signing in...' : (loginMode() === 'otp' ? 'Verify OTP & sign in' : 'Sign In') }}
+          </app-button>
         </form>
 
       </div>

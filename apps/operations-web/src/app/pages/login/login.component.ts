@@ -3,11 +3,12 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { form, FormField, required } from '@angular/forms/signals';
 import { PlatformAuthService } from '../../services/platform-auth.service';
+import { AppButtonComponent } from '../../shared/ui/app-button.component';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [FormField],
+  imports: [FormField, AppButtonComponent],
   templateUrl: './login.component.html',
   styleUrl: './login.component.scss'
 })

@@ -5,11 +5,12 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AuthService } from '../../../core/services/auth.service';
 import { AuthModalService } from '../../../core/services/auth-modal.service';
 import { LoginCredentials } from '../../../core/models/auth.model';
+import { AppButtonComponent } from '../../../shared/components/app-button/app-button.component';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [ReactiveFormsModule, RouterModule],
+  imports: [ReactiveFormsModule, RouterModule, AppButtonComponent],
   templateUrl: './login.component.html',
   styleUrl: './login.component.scss',
 })

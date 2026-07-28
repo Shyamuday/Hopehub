@@ -2,7 +2,7 @@
   <h2>Admin Login</h2>
   <p>Manage doctors and consumers from one console.</p>
 
-  <form (ngSubmit)="submit()">
+  <form (submit)="$event.preventDefault(); submit()">
     <div class="switcher">
       <button type="button" [class.active]="loginMode() === 'otp'" (click)="setLoginMode('otp')">Email OTP</button>
       <button type="button" [class.active]="loginMode() === 'password'" (click)="setLoginMode('password')">Password</button>
@@ -29,9 +29,9 @@
         </p>
       }
     } @else {
-      <button type="button" (click)="sendOtp()" [disabled]="submitting() || loginForm.email().invalid()">
+      <app-button type="button" variant="secondary" (click)="sendOtp()" [disabled]="submitting() || loginForm.email().invalid()" [loading]="submitting()" block>
         {{ otpSent() ? 'Resend OTP' : 'Send OTP' }}
-      </button>
+      </app-button>
       @if (otpSent()) {
         <label for="otp">OTP</label>
         <input id="otp" [value]="otp()" (input)="otp.set($any($event.target).value)" inputmode="numeric" autocomplete="one-time-code" />
@@ -45,9 +45,9 @@
       <p class="success">{{ message() }}</p>
     }
 
-    <button type="submit" [disabled]="submitting() || (loginMode() === 'password' ? loginForm().invalid() : loginForm.email().invalid() || !otpSent() || otp().length < 4)">
+    <app-button type="submit" [disabled]="submitting() || (loginMode() === 'password' ? loginForm().invalid() : loginForm.email().invalid() || !otpSent() || otp().length < 4)" [loading]="submitting()" block>
       {{ submitting() ? 'Signing in...' : (loginMode() === 'otp' ? 'Verify OTP & sign in' : 'Sign in') }}
-    </button>
+    </app-button>
   </form>
 
 </section>

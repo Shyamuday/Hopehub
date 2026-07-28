@@ -8,6 +8,7 @@ import { AuthFormOverlayComponent } from '../auth/auth-form-overlay.component';
 import { APP_OVERLAY_REF } from '../overlay.tokens';
 import { AppOverlayRef, AppOverlayService } from '../overlay.service';
 import { POST_LOGIN_REDIRECT_DELAY_MS } from '../core/constants/timing.constants';
+import { AppButtonComponent } from '../shared/ui/app-button.component';
 import type { PatientSelectionCandidate } from '../models';
 
 type Step = 'register' | 'otp' | 'loading' | 'done';
@@ -15,7 +16,7 @@ type Step = 'register' | 'otp' | 'loading' | 'done';
 @Component({
   selector: 'app-free-consultation-promo',
   standalone: true,
-  imports: [CommonModule, FormField],
+  imports: [CommonModule, FormField, AppButtonComponent],
   templateUrl: './free-consultation-promo.component.html',
   styleUrl: './free-consultation-promo.component.scss',
 })

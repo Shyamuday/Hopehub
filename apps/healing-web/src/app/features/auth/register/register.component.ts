@@ -12,11 +12,12 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AuthService } from '../../../core/services/auth.service';
 import { AuthModalService } from '../../../core/services/auth-modal.service';
 import { RegisterCredentials } from '../../../core/models/auth.model';
+import { AppButtonComponent } from '../../../shared/components/app-button/app-button.component';
 
 @Component({
   selector: 'app-register',
   standalone: true,
-  imports: [ReactiveFormsModule, RouterModule],
+  imports: [ReactiveFormsModule, RouterModule, AppButtonComponent],
   templateUrl: './register.component.html',
   styleUrl: './register.component.scss',
 })

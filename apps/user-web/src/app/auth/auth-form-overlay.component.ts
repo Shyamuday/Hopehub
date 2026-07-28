@@ -5,6 +5,7 @@ import { Router } from '@angular/router';
 import { Observable } from 'rxjs';
 import { APP_OVERLAY_DATA, APP_OVERLAY_REF } from '../overlay.tokens';
 import { AppOverlayRef, AppOverlayService } from '../overlay.service';
+import { AppButtonComponent } from '../shared/ui/app-button.component';
 import { AuthStatusOverlayComponent } from './auth-status-overlay.component';
 import { AuthService } from './auth.service';
 
@@ -22,7 +23,7 @@ type ForgotStep = 'none' | 'request' | 'reset';
 
 @Component({
   selector: 'app-auth-form-overlay',
-  imports: [CommonModule, FormField],
+  imports: [CommonModule, FormField, AppButtonComponent],
   templateUrl: './auth-form-overlay.component.html',
 })
 export class AuthFormOverlayComponent {

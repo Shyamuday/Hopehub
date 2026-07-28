@@ -6,7 +6,7 @@
     Fill out this quick form and we'll get back to you within 24 hours.
   </p>
 
-  <form [formGroup]="inquiryForm" (ngSubmit)="onSubmit()" class="space-y-4">
+  <form [formGroup]="inquiryForm" (submit)="$event.preventDefault(); onSubmit()" class="space-y-4">
     <!-- Name Field -->
     <div>
       <label for="inquiry-name" class="form-label">
