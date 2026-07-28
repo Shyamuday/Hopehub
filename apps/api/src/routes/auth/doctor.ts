@@ -16,6 +16,12 @@ import { PSYCHOLOGIST_CONSULTATION_SHARE_PERCENT } from '../../services/doctor-c
 import { asyncRoute, publicUserSelect, toAuthResponse, logAuthEvent } from '../../utils/helpers.js';
 import { enrichWithProfileImageUrl, userProfileImagePath } from '../../utils/profile-image-url.js';
 
+function inferDoctorTypeFromSpecialty(specialty: string) {
+  return /psycholog|counsell|counsel|therapist|mental/i.test(specialty)
+    ? HomeopathicDoctorType.PSYCHOLOGIST
+    : HomeopathicDoctorType.JUNIOR_DOCTOR;
+}
+
 export function registerAuthDoctorRoutes(router: Router) {
   router.post(
     '/doctor/enroll',
@@ -32,6 +38,7 @@ export function registerAuthDoctorRoutes(router: Router) {
         .parse(req.body);
 
       const passwordHash = await bcrypt.hash(body.password, 10);
+      const inferredDoctorType = inferDoctorTypeFromSpecialty(body.specialty);
       const doctor = await prisma.user.create({
         data: {
           name: body.name,
@@ -42,7 +49,7 @@ export function registerAuthDoctorRoutes(router: Router) {
           isActive: false,
           doctorProfile: {
             create: toDoctorProfilePayload({
-              doctorType: HomeopathicDoctorType.JUNIOR_DOCTOR,
+              doctorType: inferredDoctorType,
               specialty: body.specialty,
               registrationNo: body.registrationNo
             })

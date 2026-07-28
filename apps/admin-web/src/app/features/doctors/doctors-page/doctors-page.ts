@@ -9,7 +9,7 @@ import {
   DOCTORS_LIST_DEFAULTS,
   DOCTORS_PAGE_SIZE,
   type DoctorSortField,
-  type DoctorStatusFilter
+  type DoctorStatusFilter,
 } from '../constants/doctors-list.constants';
 import { DOCTOR_DETAIL_FIELDS } from '../constants/doctor-detail.fields';
 import {
@@ -18,7 +18,7 @@ import {
   DOCTOR_TYPE_LABELS,
   SPECIALTY_FOCUS_LABELS,
   type HomeopathicDoctorType,
-  type HomeopathicSpecialtyFocus
+  type HomeopathicSpecialtyFocus,
 } from '../constants/doctor-types.constants';
 import type { SortDirection } from '../../../shared/constants/filter.constants';
 
@@ -35,6 +35,8 @@ type Doctor = {
     isAvailable?: boolean;
     doctorType?: HomeopathicDoctorType;
     specialtyFocus?: HomeopathicSpecialtyFocus | null;
+    designation?: string | null;
+    department?: string | null;
     bio?: string | null;
     showOnWebsite?: boolean;
     websiteOrder?: number | null;
@@ -53,8 +55,10 @@ function emptyCreateModel() {
     password: '',
     specialty: '',
     registrationNo: '',
+    designation: '',
+    department: '',
     doctorType: 'JUNIOR_DOCTOR' as HomeopathicDoctorType,
-    specialtyFocus: '' as HomeopathicSpecialtyFocus | ''
+    specialtyFocus: '' as HomeopathicSpecialtyFocus | '',
   };
 }
 
@@ -65,6 +69,8 @@ function emptyEditModel() {
     mobile: '',
     specialty: '',
     registrationNo: '',
+    designation: '',
+    department: '',
     isAvailable: true,
     doctorType: 'JUNIOR_DOCTOR' as HomeopathicDoctorType,
     specialtyFocus: '' as HomeopathicSpecialtyFocus | '',
@@ -72,7 +78,7 @@ function emptyEditModel() {
     showOnWebsite: false,
     websiteOrder: '' as number | '',
     yearsOfExperience: '' as number | '',
-    focusAreasText: ''
+    focusAreasText: '',
   };
 }
 
@@ -80,7 +86,7 @@ function emptyEditModel() {
   selector: 'app-doctors-page',
   imports: [CommonModule, FormField, DetailRowsComponent, RouterLink],
   templateUrl: './doctors-page.html',
-  styleUrl: './doctors-page.scss'
+  styleUrl: './doctors-page.scss',
 })
 export class DoctorsPage {
   readonly doctorTypeOptions = DOCTOR_TYPE_OPTIONS;
@@ -96,7 +102,7 @@ export class DoctorsPage {
     searchTerm: '',
     sortBy: DOCTORS_LIST_DEFAULTS.SORT_BY as DoctorSortField,
     sortDirection: DOCTORS_LIST_DEFAULTS.SORT_DIRECTION as SortDirection,
-    statusFilter: DOCTORS_LIST_DEFAULTS.STATUS_FILTER as DoctorStatusFilter
+    statusFilter: DOCTORS_LIST_DEFAULTS.STATUS_FILTER as DoctorStatusFilter,
   });
   readonly listFilterForm = form(this.listFilterModel);
 
@@ -142,13 +148,13 @@ export class DoctorsPage {
           q: filters.searchTerm,
           status: filters.statusFilter,
           sortBy: filters.sortBy,
-          sortDirection: filters.sortDirection
+          sortDirection: filters.sortDirection,
         }),
         this.api.getPendingDoctorsPaged({
           page: this.pendingPage,
           pageSize: this.pageSize,
-          q: pendingFilters.searchTerm
-        })
+          q: pendingFilters.searchTerm,
+        }),
       ]);
       this.doctors.set(allDoctors.doctors || []);
       this.pendingDoctors.set(pending.pendingDoctors || []);
@@ -236,9 +242,12 @@ export class DoctorsPage {
         mobile: edit.mobile.trim(),
         specialty: edit.specialty.trim(),
         registrationNo: edit.registrationNo.trim(),
+        designation: edit.designation.trim(),
+        department: edit.department.trim(),
         isAvailable: edit.isAvailable,
         doctorType: edit.doctorType,
-        specialtyFocus: edit.doctorType === 'SPECIALIST_CONSULTANT' ? edit.specialtyFocus || null : null,
+        specialtyFocus:
+          edit.doctorType === 'SPECIALIST_CONSULTANT' ? edit.specialtyFocus || null : null,
         bio: edit.bio.trim() || null,
         showOnWebsite: edit.showOnWebsite,
         websiteOrder: edit.websiteOrder !== '' ? Number(edit.websiteOrder) : null,
@@ -246,7 +255,7 @@ export class DoctorsPage {
         focusAreas: edit.focusAreasText
           .split('\n')
           .map((s) => s.trim())
-          .filter(Boolean)
+          .filter(Boolean),
       });
       this.message.set('Doctor profile updated.');
       await this.load();
@@ -272,8 +281,11 @@ export class DoctorsPage {
         password: create.password,
         specialty: create.specialty.trim(),
         registrationNo: create.registrationNo.trim(),
+        designation: create.designation.trim(),
+        department: create.department.trim(),
         doctorType: create.doctorType,
-        specialtyFocus: create.doctorType === 'SPECIALIST_CONSULTANT' ? create.specialtyFocus || null : null
+        specialtyFocus:
+          create.doctorType === 'SPECIALIST_CONSULTANT' ? create.specialtyFocus || null : null,
       });
       this.message.set('Doctor created successfully.');
       this.createModel.set(emptyCreateModel());
@@ -303,11 +315,15 @@ export class DoctorsPage {
   toggleSelectAllVisiblePending(checked: boolean) {
     const visiblePendingIds = this.visiblePendingDoctors().map((doctor) => doctor.id);
     if (checked) {
-      this.selectedPendingDoctorIds = Array.from(new Set([...this.selectedPendingDoctorIds, ...visiblePendingIds]));
+      this.selectedPendingDoctorIds = Array.from(
+        new Set([...this.selectedPendingDoctorIds, ...visiblePendingIds]),
+      );
       return;
     }
 
-    this.selectedPendingDoctorIds = this.selectedPendingDoctorIds.filter((id) => !visiblePendingIds.includes(id));
+    this.selectedPendingDoctorIds = this.selectedPendingDoctorIds.filter(
+      (id) => !visiblePendingIds.includes(id),
+    );
   }
 
   allVisiblePendingSelected() {
@@ -403,6 +419,29 @@ export class DoctorsPage {
   setSelectedDoctor(doctorId: string) {
     this.selectedDoctorId = doctorId;
     this.syncEditFormFromSelectedDoctor();
+    this.message.set('Doctor details loaded.');
+    if (typeof document !== 'undefined') {
+      setTimeout(() => {
+        document.getElementById('doctor-profile-details')?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'start',
+        });
+      });
+    }
+  }
+
+  async approveSelectedDoctorWithProfile() {
+    const doctorId = this.selectedDoctorId;
+    if (!doctorId) {
+      return;
+    }
+
+    await this.saveDoctorEdits();
+    if (!this.error()) {
+      await this.approveDoctor(doctorId);
+      this.selectedDoctorId = doctorId;
+      this.syncEditFormFromSelectedDoctor();
+    }
   }
 
   private syncEditFormFromSelectedDoctor() {
@@ -417,6 +456,8 @@ export class DoctorsPage {
       mobile: selected.mobile || '',
       specialty: selected.doctorProfile?.specialty || '',
       registrationNo: selected.doctorProfile?.registrationNo || '',
+      designation: selected.doctorProfile?.designation || '',
+      department: selected.doctorProfile?.department || '',
       isAvailable: selected.doctorProfile?.isAvailable ?? true,
       doctorType: selected.doctorProfile?.doctorType || 'JUNIOR_DOCTOR',
       specialtyFocus: selected.doctorProfile?.specialtyFocus || '',
@@ -424,7 +465,7 @@ export class DoctorsPage {
       showOnWebsite: selected.doctorProfile?.showOnWebsite ?? false,
       websiteOrder: selected.doctorProfile?.websiteOrder ?? '',
       yearsOfExperience: selected.doctorProfile?.yearsOfExperience ?? '',
-      focusAreasText: (selected.doctorProfile?.focusAreas ?? []).join('\n')
+      focusAreasText: (selected.doctorProfile?.focusAreas ?? []).join('\n'),
     });
   }
 
@@ -434,7 +475,9 @@ export class DoctorsPage {
       this.siteConfig.set(res.config);
       const limitEntry = res.config.find((c) => c.key === 'doctorListLimit');
       if (limitEntry) this.doctorListLimitValue.set(limitEntry.value);
-    } catch { /* silently ignore */ }
+    } catch {
+      /* silently ignore */
+    }
   }
 
   async saveDoctorListLimit() {
@@ -484,4 +527,3 @@ export class DoctorsPage {
     return { tab, doctorId: this.selectedDoctorId };
   }
 }
-

@@ -70,6 +70,14 @@
       <label class="field-label" for="doc-create-reg">Registration No</label>
       <input id="doc-create-reg" [formField]="createForm.registrationNo" placeholder="Medical council registration" />
     </div>
+    <div class="field">
+      <label class="field-label" for="doc-create-designation">Designation</label>
+      <input id="doc-create-designation" [formField]="createForm.designation" placeholder="e.g. Clinical Psychologist" />
+    </div>
+    <div class="field">
+      <label class="field-label" for="doc-create-department">Department</label>
+      <input id="doc-create-department" [formField]="createForm.department" placeholder="e.g. Mental Wellness" />
+    </div>
     <button type="button" (click)="createDoctor()" [disabled]="mutating() || loading()">
       {{ mutating() ? 'Creating...' : 'Create doctor' }}
     </button>
@@ -108,7 +116,7 @@
 
   @if (!loading()) {
     @for (doctor of visiblePendingDoctors(); track doctor.id) {
-      <article class="card">
+      <article class="card" [class.card--selected]="selectedDoctorId === doctor.id">
         <label class="select-doctor">
           <input
             type="checkbox"
@@ -122,6 +130,7 @@
         <p>{{ doctor.email }} | {{ doctor.mobile || 'No mobile' }}</p>
         <small>{{ doctorTypeLabel(doctor.doctorProfile?.doctorType) }} | {{ doctor.doctorProfile?.specialty || 'Specialty not set' }} | {{ doctor.doctorProfile?.registrationNo || 'No registration no.' }}</small>
         <div class="actions">
+          <button type="button" class="link-action" (click)="setSelectedDoctor(doctor.id)" [disabled]="mutating()">View details</button>
           <button type="button" (click)="approveDoctor(doctor.id)" [disabled]="mutating()">
             {{ mutating() ? '...' : 'Approve' }}
           </button>
@@ -161,9 +170,11 @@
 
   @if (!loading()) {
     @for (doctor of visibleDoctors(); track doctor.id) {
-      <article class="card">
-        <strong>{{ doctor.name }}</strong>
-        <button type="button" class="link" (click)="setSelectedDoctor(doctor.id)" [disabled]="mutating()">View details</button>
+      <article class="card" [class.card--selected]="selectedDoctorId === doctor.id">
+        <div class="doctor-card-header">
+          <strong>{{ doctor.name }}</strong>
+          <button type="button" class="link-action" (click)="setSelectedDoctor(doctor.id)" [disabled]="mutating()">View details</button>
+        </div>
         <p>{{ doctor.email }} | {{ doctor.mobile || 'No mobile' }}</p>
         <small>{{ doctorTypeLabel(doctor.doctorProfile?.doctorType) }} | {{ doctor.doctorProfile?.specialty || 'Specialty not set' }} | {{ doctor.isActive ? 'Active' : 'Inactive' }}</small>
       </article>
@@ -178,7 +189,7 @@
   </div>
 </section>
 
-<section class="panel">
+<section id="doctor-profile-details" class="panel details-panel">
   <h2>Doctor Profile Details</h2>
   @if (selectedDoctorDetails(); as selectedDoctor) {
     <article class="card">
@@ -197,6 +208,9 @@
             {{ mutating() ? '...' : 'Deactivate' }}
           </button>
         } @else {
+          <button type="button" (click)="approveSelectedDoctorWithProfile()" [disabled]="mutating()">
+            {{ mutating() ? '...' : 'Save profile & approve' }}
+          </button>
           <button type="button" (click)="toggleDoctorStatus(selectedDoctor.id, true)" [disabled]="mutating()">
             {{ mutating() ? '...' : 'Activate' }}
           </button>
@@ -244,6 +258,14 @@
         <div class="field">
           <label class="field-label" for="doc-edit-reg">Registration No</label>
           <input id="doc-edit-reg" [formField]="editForm.registrationNo" placeholder="Medical council registration" />
+        </div>
+        <div class="field">
+          <label class="field-label" for="doc-edit-designation">Designation</label>
+          <input id="doc-edit-designation" [formField]="editForm.designation" placeholder="e.g. Clinical Psychologist" />
+        </div>
+        <div class="field">
+          <label class="field-label" for="doc-edit-department">Department</label>
+          <input id="doc-edit-department" [formField]="editForm.department" placeholder="e.g. Mental Wellness" />
         </div>
         <label class="website-toggle">
           <input type="checkbox" [formField]="editForm.isAvailable" />

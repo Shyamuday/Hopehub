@@ -47,6 +47,7 @@ export const doctorProfileSelect = {
   doctorType: true,
   specialtyFocus: true,
   designation: true,
+  department: true,
   bio: true,
   showOnWebsite: true,
   websiteOrder: true,

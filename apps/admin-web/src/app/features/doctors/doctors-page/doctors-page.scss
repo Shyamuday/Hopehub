@@ -96,6 +96,24 @@
   margin-bottom: 0.5rem;
 }
 
+.card--selected {
+  border-color: #2563eb;
+  background: #eff6ff;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.12);
+}
+
+.doctor-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.35rem;
+}
+
+.doctor-card-header strong {
+  min-width: 0;
+}
+
 .actions {
   display: flex;
   gap: 0.5rem;
@@ -129,10 +147,21 @@ button {
   gap: 0.35rem;
 }
 
-.link {
+.link,
+.link-action {
   background: transparent;
   color: #2563eb;
   padding: 0;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.link-action:hover:not(:disabled) {
+  text-decoration: underline;
+}
+
+.details-panel {
+  scroll-margin-top: 1rem;
 }
 
 .detail-header-row {

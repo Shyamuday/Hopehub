@@ -212,7 +212,9 @@ export function registerAdminDoctorRoutes(router: Router) {
           mobile: z.string().min(8).optional(),
           password: z.string().min(8),
           specialty: z.string().min(2).optional(),
-          registrationNo: z.string().optional()
+          registrationNo: z.string().optional(),
+          designation: z.string().optional().or(z.literal('')),
+          department: z.string().optional().or(z.literal(''))
         })
         .merge(doctorProfileSchema())
         .parse(req.body);
@@ -222,7 +224,9 @@ export function registerAdminDoctorRoutes(router: Router) {
       const hrFields = applyDoctorHrProfileFields({
         doctorType: profilePayload.doctorType,
         specialtyFocus: profilePayload.specialtyFocus,
-        specialty: profilePayload.specialty
+        specialty: profilePayload.specialty,
+        designation: body.designation,
+        department: body.department
       });
       const compensationFields =
         profilePayload.doctorType === HomeopathicDoctorType.PSYCHOLOGIST
@@ -295,6 +299,8 @@ export function registerAdminDoctorRoutes(router: Router) {
           mobile: z.string().min(8).optional().or(z.literal('')),
           specialty: z.string().min(2).optional(),
           registrationNo: z.string().optional().or(z.literal('')),
+          designation: z.string().optional().or(z.literal('')),
+          department: z.string().optional().or(z.literal('')),
           isAvailable: z.boolean().optional().default(true),
           bio: z.string().max(1200).optional().nullable(),
           showOnWebsite: z.boolean().optional(),
@@ -310,8 +316,8 @@ export function registerAdminDoctorRoutes(router: Router) {
         doctorType: profilePayload.doctorType,
         specialtyFocus: profilePayload.specialtyFocus,
         specialty: profilePayload.specialty,
-        designation: existing.doctorProfile?.designation,
-        department: existing.doctorProfile?.department
+        designation: body.designation ?? existing.doctorProfile?.designation,
+        department: body.department ?? existing.doctorProfile?.department
       });
 
       const publicProfileFields = {
@@ -376,7 +382,9 @@ export function registerAdminDoctorRoutes(router: Router) {
             registrationNo: existing.doctorProfile?.registrationNo ?? null,
             isAvailable: existing.doctorProfile?.isAvailable ?? null,
             doctorType: existing.doctorProfile?.doctorType ?? null,
-            specialtyFocus: existing.doctorProfile?.specialtyFocus ?? null
+            specialtyFocus: existing.doctorProfile?.specialtyFocus ?? null,
+            designation: existing.doctorProfile?.designation ?? null,
+            department: existing.doctorProfile?.department ?? null
           },
           after: {
             name: body.name,
@@ -386,7 +394,9 @@ export function registerAdminDoctorRoutes(router: Router) {
             registrationNo: profilePayload.registrationNo,
             isAvailable: profilePayload.isAvailable,
             doctorType: profilePayload.doctorType,
-            specialtyFocus: profilePayload.specialtyFocus
+            specialtyFocus: profilePayload.specialtyFocus,
+            designation: hrFields.designation,
+            department: hrFields.department
           }
         }
       });

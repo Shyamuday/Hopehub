@@ -3,7 +3,7 @@ import {
   DOCTOR_TYPE_LABELS,
   SPECIALTY_FOCUS_LABELS,
   type HomeopathicDoctorType,
-  type HomeopathicSpecialtyFocus
+  type HomeopathicSpecialtyFocus,
 } from './doctor-types.constants';
 
 export type DoctorDetailSource = {
@@ -16,6 +16,8 @@ export type DoctorDetailSource = {
     isAvailable?: boolean;
     doctorType?: HomeopathicDoctorType;
     specialtyFocus?: HomeopathicSpecialtyFocus | null;
+    designation?: string | null;
+    department?: string | null;
     bio?: string | null;
     showOnWebsite?: boolean;
     websiteOrder?: number | null;
@@ -29,23 +31,33 @@ export const DOCTOR_DETAIL_FIELDS: DetailFieldDef<DoctorDetailSource>[] = [
   {
     label: 'Doctor type',
     getValue: (d) =>
-      d.doctorProfile?.doctorType ? DOCTOR_TYPE_LABELS[d.doctorProfile.doctorType] : 'Not set'
+      d.doctorProfile?.doctorType ? DOCTOR_TYPE_LABELS[d.doctorProfile.doctorType] : 'Not set',
   },
   {
     label: 'Specialty focus',
     getValue: (d) =>
       d.doctorProfile?.specialtyFocus ? SPECIALTY_FOCUS_LABELS[d.doctorProfile.specialtyFocus] : '',
-    omitWhenEmpty: true
+    omitWhenEmpty: true,
   },
   { label: 'Specialty', getValue: (d) => d.doctorProfile?.specialty, emptyText: 'N/A' },
+  {
+    label: 'Designation',
+    getValue: (d) => d.doctorProfile?.designation ?? '',
+    omitWhenEmpty: true,
+  },
+  {
+    label: 'Department',
+    getValue: (d) => d.doctorProfile?.department ?? '',
+    omitWhenEmpty: true,
+  },
   { label: 'Registration No', getValue: (d) => d.doctorProfile?.registrationNo, emptyText: 'N/A' },
   {
     label: 'Status',
-    getValue: (d) => (d.isActive ? 'Active' : 'Inactive')
+    getValue: (d) => (d.isActive ? 'Active' : 'Inactive'),
   },
   {
     label: 'Available',
-    getValue: (d) => (d.doctorProfile?.isAvailable ? 'Yes' : 'No')
+    getValue: (d) => (d.doctorProfile?.isAvailable ? 'Yes' : 'No'),
   },
   {
     label: 'On website',
@@ -55,16 +67,16 @@ export const DOCTOR_DETAIL_FIELDS: DetailFieldDef<DoctorDetailSource>[] = [
       }
       const order = d.doctorProfile.websiteOrder;
       return order ? `Yes — Position #${order}` : 'Yes';
-    }
+    },
   },
   {
     label: 'Bio',
     getValue: (d) => d.doctorProfile?.bio ?? '',
-    omitWhenEmpty: true
+    omitWhenEmpty: true,
   },
   {
     label: 'Focus areas',
     getValue: (d) => (d.doctorProfile?.focusAreas ?? []).join(', '),
-    omitWhenEmpty: true
-  }
+    omitWhenEmpty: true,
+  },
 ];
