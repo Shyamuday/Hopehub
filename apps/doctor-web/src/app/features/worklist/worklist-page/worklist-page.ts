@@ -5,6 +5,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { buildDetailRows, DetailRowsComponent } from '@hopehub/platform-ui';
 import { ROUTE_PATHS } from '../../../core/constants/app-routes.constants';
 import { ConsultationNavigationService } from '../../../core/services/consultation-navigation.service';
+import { DoctorSessionService } from '../../../core/services/doctor-session';
 import {
   WorklistApiService,
   type WorklistItem,
@@ -24,6 +25,7 @@ export class WorklistPage {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly consultationNav = inject(ConsultationNavigationService);
+  private readonly session = inject(DoctorSessionService);
 
   private readonly worklistMetaFieldDefs = worklistItemMetaFields((iso) =>
     formatDate(iso, 'mediumDate', 'en-US'),
@@ -42,6 +44,8 @@ export class WorklistPage {
   readonly inProgress = signal<WorklistItem[]>([]);
   readonly followUpDue = signal<WorklistItem[]>([]);
   readonly expandedCardId = signal<string | null>(null);
+  readonly canPrescribe = signal(true);
+  readonly canCaseAnalysis = signal(true);
 
   private syncViewFromRoute(params: { get(name: string): string | null }) {
     const raw = params.get('view');
@@ -66,7 +70,20 @@ export class WorklistPage {
     this.route.queryParamMap.subscribe((params) => {
       this.syncViewFromRoute(params);
     });
+    void this.loadRole();
     void this.load({ preferCache: Boolean(cached) });
+  }
+
+  private async loadRole() {
+    try {
+      await this.session.load();
+      const capabilities = this.session.capabilities();
+      this.canPrescribe.set(capabilities.prescribe);
+      this.canCaseAnalysis.set(capabilities.caseAnalysis);
+    } catch {
+      this.canPrescribe.set(true);
+      this.canCaseAnalysis.set(true);
+    }
   }
 
   private initialView(): WorklistView {
@@ -123,6 +140,18 @@ export class WorklistPage {
   }
 
   pageTitle() {
+    if (!this.canPrescribe() && !this.canCaseAnalysis()) {
+      switch (this.filterModel().view) {
+        case 'ASSIGNED':
+          return 'Assigned sessions';
+        case 'IN_PROGRESS':
+          return 'In-progress sessions';
+        case 'FOLLOW_UP_DUE':
+          return 'Follow-up reviews';
+        default:
+          return 'Session worklist';
+      }
+    }
     switch (this.filterModel().view) {
       case 'ASSIGNED':
         return 'Assigned cases';
@@ -136,6 +165,18 @@ export class WorklistPage {
   }
 
   pageDescription() {
+    if (!this.canPrescribe() && !this.canCaseAnalysis()) {
+      switch (this.filterModel().view) {
+        case 'ASSIGNED':
+          return 'Newly assigned sessions waiting for review.';
+        case 'IN_PROGRESS':
+          return 'Sessions and conversations you are actively handling.';
+        case 'FOLLOW_UP_DUE':
+          return 'Patients due for follow-up support or review.';
+        default:
+          return 'Your active sessions, assigned conversations, and follow-ups due.';
+      }
+    }
     switch (this.filterModel().view) {
       case 'ASSIGNED':
         return 'Newly assigned consultations waiting for you to start.';
@@ -164,6 +205,10 @@ export class WorklistPage {
 
   openConsultationContext(consultationId: string) {
     void this.consultationNav.openPrescriptionContext(consultationId);
+  }
+
+  openOnlineSession(consultationId: string) {
+    void this.consultationNav.openOnlineSession(consultationId);
   }
 
   openPrescription(consultationId: string, patientName?: string | null) {

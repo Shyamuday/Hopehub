@@ -175,7 +175,12 @@ export class DoctorShell implements OnInit, OnDestroy {
     const last = this.lastWorkspace();
     if (!last) return 'Resume case';
     const who = last.patientName ? ` — ${last.patientName}` : '';
-    const where = last.view === 'prescription' ? 'Prescription' : 'Case analysis';
+    const where =
+      last.view === 'prescription'
+        ? 'Prescription'
+        : last.view === 'online-session'
+          ? 'Online session'
+          : 'Case analysis';
     return `Resume ${where}${who}`;
   }
 

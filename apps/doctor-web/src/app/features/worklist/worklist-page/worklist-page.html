@@ -80,12 +80,22 @@
       </small>
       <div class="actions actions-mobile">
         <div class="actions-primary">
-          @if (primaryAction('FOLLOW_UP_DUE') === 'prescribe') {
-            <button type="button" class="btn-primary" (click)="openPrescription(item.id, item.patient?.name)">Prescribe</button>
-            <button type="button" (click)="openCaseAnalysis(item.id, item.patient?.name)">Case</button>
+          @if (!canPrescribe() && !canCaseAnalysis()) {
+            <button type="button" class="btn-primary" (click)="openOnlineSession(item.id)">Review session</button>
+          } @else if (primaryAction('FOLLOW_UP_DUE') === 'prescribe') {
+            @if (canPrescribe()) {
+              <button type="button" class="btn-primary" (click)="openPrescription(item.id, item.patient?.name)">Prescribe</button>
+            }
+            @if (canCaseAnalysis()) {
+              <button type="button" (click)="openCaseAnalysis(item.id, item.patient?.name)">Case</button>
+            }
           } @else {
-            <button type="button" class="btn-primary" (click)="openCaseAnalysis(item.id, item.patient?.name)">Case</button>
-            <button type="button" (click)="openPrescription(item.id, item.patient?.name)">Prescribe</button>
+            @if (canCaseAnalysis()) {
+              <button type="button" class="btn-primary" (click)="openCaseAnalysis(item.id, item.patient?.name)">Case</button>
+            }
+            @if (canPrescribe()) {
+              <button type="button" (click)="openPrescription(item.id, item.patient?.name)">Prescribe</button>
+            }
           }
         </div>
         <button type="button" class="ghost actions-more" (click)="toggleCardMenu(item.id)">
@@ -93,7 +103,11 @@
         </button>
         @if (isCardMenuOpen(item.id)) {
           <div class="actions-secondary">
-            <button type="button" class="ghost" (click)="openConsultationContext(item.id)">Intake &amp; chat</button>
+            @if (!canPrescribe() && !canCaseAnalysis()) {
+              <button type="button" class="ghost" (click)="openOnlineSession(item.id)">Open session</button>
+            } @else {
+              <button type="button" class="ghost" (click)="openConsultationContext(item.id)">Intake &amp; chat</button>
+            }
             @if (item.patient?.patientCode) {
               <button type="button" class="ghost" (click)="scanPatient(item.patient?.patientCode)">Scan patient</button>
             }
@@ -122,12 +136,22 @@
       <small class="muted">Patient {{ item.patient?.patientCode || item.patient?.id }}</small>
       <div class="actions actions-mobile">
         <div class="actions-primary">
-          @if (primaryAction('ASSIGNED') === 'prescribe') {
-            <button type="button" class="btn-primary" (click)="openPrescription(item.id, item.patient?.name)">Prescribe</button>
-            <button type="button" (click)="openCaseAnalysis(item.id, item.patient?.name)">Case</button>
+          @if (!canPrescribe() && !canCaseAnalysis()) {
+            <button type="button" class="btn-primary" (click)="openOnlineSession(item.id)">Start session</button>
+          } @else if (primaryAction('ASSIGNED') === 'prescribe') {
+            @if (canPrescribe()) {
+              <button type="button" class="btn-primary" (click)="openPrescription(item.id, item.patient?.name)">Prescribe</button>
+            }
+            @if (canCaseAnalysis()) {
+              <button type="button" (click)="openCaseAnalysis(item.id, item.patient?.name)">Case</button>
+            }
           } @else {
-            <button type="button" class="btn-primary" (click)="openCaseAnalysis(item.id, item.patient?.name)">Case</button>
-            <button type="button" (click)="openPrescription(item.id, item.patient?.name)">Prescribe</button>
+            @if (canCaseAnalysis()) {
+              <button type="button" class="btn-primary" (click)="openCaseAnalysis(item.id, item.patient?.name)">Case</button>
+            }
+            @if (canPrescribe()) {
+              <button type="button" (click)="openPrescription(item.id, item.patient?.name)">Prescribe</button>
+            }
           }
         </div>
         <button type="button" class="ghost actions-more" (click)="toggleCardMenu(item.id)">
@@ -135,7 +159,11 @@
         </button>
         @if (isCardMenuOpen(item.id)) {
           <div class="actions-secondary">
-            <button type="button" class="ghost" (click)="openConsultationContext(item.id)">Intake &amp; chat</button>
+            @if (!canPrescribe() && !canCaseAnalysis()) {
+              <button type="button" class="ghost" (click)="openOnlineSession(item.id)">Open session</button>
+            } @else {
+              <button type="button" class="ghost" (click)="openConsultationContext(item.id)">Intake &amp; chat</button>
+            }
           </div>
         }
       </div>
@@ -161,12 +189,22 @@
       <small class="muted">Patient {{ item.patient?.patientCode || item.patient?.id }}</small>
       <div class="actions actions-mobile">
         <div class="actions-primary">
-          @if (primaryAction('IN_PROGRESS') === 'prescribe') {
-            <button type="button" class="btn-primary" (click)="openPrescription(item.id, item.patient?.name)">Prescribe</button>
-            <button type="button" (click)="openCaseAnalysis(item.id, item.patient?.name)">Case</button>
+          @if (!canPrescribe() && !canCaseAnalysis()) {
+            <button type="button" class="btn-primary" (click)="openOnlineSession(item.id)">Continue session</button>
+          } @else if (primaryAction('IN_PROGRESS') === 'prescribe') {
+            @if (canPrescribe()) {
+              <button type="button" class="btn-primary" (click)="openPrescription(item.id, item.patient?.name)">Prescribe</button>
+            }
+            @if (canCaseAnalysis()) {
+              <button type="button" (click)="openCaseAnalysis(item.id, item.patient?.name)">Case</button>
+            }
           } @else {
-            <button type="button" class="btn-primary" (click)="openCaseAnalysis(item.id, item.patient?.name)">Case</button>
-            <button type="button" (click)="openPrescription(item.id, item.patient?.name)">Prescribe</button>
+            @if (canCaseAnalysis()) {
+              <button type="button" class="btn-primary" (click)="openCaseAnalysis(item.id, item.patient?.name)">Case</button>
+            }
+            @if (canPrescribe()) {
+              <button type="button" (click)="openPrescription(item.id, item.patient?.name)">Prescribe</button>
+            }
           }
         </div>
         <button type="button" class="ghost actions-more" (click)="toggleCardMenu(item.id)">
@@ -174,7 +212,11 @@
         </button>
         @if (isCardMenuOpen(item.id)) {
           <div class="actions-secondary">
-            <button type="button" class="ghost" (click)="openConsultationContext(item.id)">Intake &amp; chat</button>
+            @if (!canPrescribe() && !canCaseAnalysis()) {
+              <button type="button" class="ghost" (click)="openOnlineSession(item.id)">Open session</button>
+            } @else {
+              <button type="button" class="ghost" (click)="openConsultationContext(item.id)">Intake &amp; chat</button>
+            }
             @if (item.patient?.patientCode) {
               <button type="button" class="ghost" (click)="scanPatient(item.patient?.patientCode)">Scan patient</button>
             }

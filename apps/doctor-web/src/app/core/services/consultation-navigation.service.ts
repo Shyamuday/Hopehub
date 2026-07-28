@@ -20,7 +20,7 @@ export type ConsultationHandoffParams = {
 
 export type LastConsultationWorkspace = {
   consultationId: string;
-  view: 'case-analysis' | 'prescription';
+  view: 'case-analysis' | 'prescription' | 'online-session';
   patientName?: string;
 };
 
@@ -78,6 +78,13 @@ export class ConsultationNavigationService {
     await this.openPrescription(consultationId, { caseAnalysisId, tab: 'context' });
   }
 
+  async openOnlineSession(consultationId: string) {
+    this.rememberWorkspace(consultationId, 'online-session');
+    await this.router.navigate(['/', ROUTE_PATHS.ONLINE_DOCTOR], {
+      queryParams: { consultationId },
+    });
+  }
+
   async openRepertoryBrowser(consultationId?: string | null, caseAnalysisId?: string | null) {
     await this.router.navigate(['/', ROUTE_PATHS.REPERTORY_BROWSER], {
       queryParams: {
@@ -97,6 +104,7 @@ export class ConsultationNavigationService {
     return (
       (path.includes(`/${ROUTE_PATHS.CASE_ANALYSIS}/`) && path.endsWith('/case-analysis')) ||
       (path.includes(`/${ROUTE_PATHS.CASE_ANALYSIS}/`) && path.endsWith('/prescription')) ||
+      (path.endsWith(`/${ROUTE_PATHS.ONLINE_DOCTOR}`) && /[?&]consultationId=/.test(url)) ||
       (path.endsWith(`/${ROUTE_PATHS.APPOINTMENTS}`) && /[?&]consultationId=/.test(url))
     );
   }
@@ -124,7 +132,15 @@ export class ConsultationNavigationService {
     const match = path.match(
       new RegExp(`/${ROUTE_PATHS.CASE_ANALYSIS}/([^/]+)/(case-analysis|prescription)$`),
     );
-    if (!match) return;
+    if (!match) {
+      if (path.endsWith(`/${ROUTE_PATHS.ONLINE_DOCTOR}`)) {
+        const consultationId = new URLSearchParams(url.split('?')[1] ?? '').get('consultationId');
+        if (consultationId) {
+          this.rememberWorkspace(consultationId, 'online-session', patientName);
+        }
+      }
+      return;
+    }
     this.rememberWorkspace(match[1], match[2] as LastConsultationWorkspace['view'], patientName);
   }
 
@@ -145,6 +161,8 @@ export class ConsultationNavigationService {
     if (!last) return false;
     if (last.view === 'prescription') {
       await this.openPrescription(last.consultationId);
+    } else if (last.view === 'online-session') {
+      await this.openOnlineSession(last.consultationId);
     } else {
       await this.openCaseAnalysis(last.consultationId);
     }

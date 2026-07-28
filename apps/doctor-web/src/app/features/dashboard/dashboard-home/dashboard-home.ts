@@ -10,6 +10,7 @@ import { ROUTE_PATHS } from '../../../core/constants/app-routes.constants';
 import { ConsultationNavigationService } from '../../../core/services/consultation-navigation.service';
 import { PAYMENT_SUMMARY_STAT_FIELDS } from '../constants/dashboard-stat.fields';
 import { WorklistApiService } from '../../worklist/worklist-api.service';
+import { DoctorSessionService } from '../../../core/services/doctor-session';
 
 type PaymentSummary = {
   doctorSharePercent: number;
@@ -39,13 +40,25 @@ export class DashboardHome {
   readonly worklistError = signal('');
   readonly worklistCounts = signal({ assigned: 0, inProgress: 0, followUpDue: 0 });
   readonly summary = signal<PaymentSummary | null>(null);
+  readonly canPrescribe = signal(true);
 
   constructor(
     private readonly http: HttpClient,
     private readonly worklistApi: WorklistApiService,
+    private readonly session: DoctorSessionService,
   ) {
+    void this.loadRole();
     void this.loadSummary();
     void this.loadWorklistCounts();
+  }
+
+  private async loadRole() {
+    try {
+      await this.session.load();
+      this.canPrescribe.set(this.session.capabilities().prescribe);
+    } catch {
+      this.canPrescribe.set(true);
+    }
   }
 
   async loadWorklistCounts() {
@@ -94,5 +107,10 @@ export class DashboardHome {
   openPaidConsultation(consultationId?: string | null) {
     if (!consultationId) return;
     void this.consultationNav.openPrescription(consultationId);
+  }
+
+  openSession(consultationId?: string | null) {
+    if (!consultationId) return;
+    void this.consultationNav.openOnlineSession(consultationId);
   }
 }
