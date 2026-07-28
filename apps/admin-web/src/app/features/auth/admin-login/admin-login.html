@@ -1,53 +1,72 @@
-<section class="login-card">
-  <h2>Admin Login</h2>
-  <p>Manage doctors and consumers from one console.</p>
-
-  <form (submit)="$event.preventDefault(); submit()">
-    <div class="switcher">
-      <button type="button" [class.active]="loginMode() === 'otp'" (click)="setLoginMode('otp')">Email OTP</button>
-      <button type="button" [class.active]="loginMode() === 'password'" (click)="setLoginMode('password')">Password</button>
+<main class="admin-login-page">
+  <section class="login-card" aria-labelledby="admin-login-title">
+    <div class="login-header">
+      <span class="login-mark" aria-hidden="true">H</span>
+      <div>
+        <p class="eyebrow">HopeHub Admin</p>
+        <h1 id="admin-login-title">Sign in to admin</h1>
+      </div>
     </div>
 
-    <label for="email">Email</label>
-    <input id="email" [formField]="loginForm.email" type="email" />
-    @if (loginForm.email().invalid() && loginForm.email().touched()) {
-      <p class="error">
-        @for (fieldError of loginForm.email().errors(); track fieldError.kind) {
-          <span>{{ fieldError.message }}</span>
+    <p class="login-copy">Manage doctors, patients, content, payments, and operations from one secure console.</p>
+
+    <form class="login-form" (submit)="$event.preventDefault(); submit()">
+      <div class="mode-tabs" role="tablist" aria-label="Login method">
+        <button type="button" role="tab" [attr.aria-selected]="loginMode() === 'otp'" [class.active]="loginMode() === 'otp'" (click)="setLoginMode('otp')">
+          Email OTP
+        </button>
+        <button type="button" role="tab" [attr.aria-selected]="loginMode() === 'password'" [class.active]="loginMode() === 'password'" (click)="setLoginMode('password')">
+          Password
+        </button>
+      </div>
+
+      <div class="field">
+        <label for="email">Email</label>
+        <input id="email" [formField]="loginForm.email" type="email" autocomplete="email" placeholder="admin@hopehub.in" />
+        @if (loginForm.email().invalid() && loginForm.email().touched()) {
+          <p class="error">
+            @for (fieldError of loginForm.email().errors(); track fieldError.kind) {
+              <span>{{ fieldError.message }}</span>
+            }
+          </p>
         }
-      </p>
-    }
+      </div>
 
-    @if (loginMode() === 'password') {
-      <label for="password">Password</label>
-      <input id="password" [formField]="loginForm.password" type="password" />
-      @if (loginForm.password().invalid() && loginForm.password().touched()) {
-        <p class="error">
-          @for (fieldError of loginForm.password().errors(); track fieldError.kind) {
-            <span>{{ fieldError.message }}</span>
+      @if (loginMode() === 'password') {
+        <div class="field">
+          <label for="password">Password</label>
+          <input id="password" [formField]="loginForm.password" type="password" autocomplete="current-password" placeholder="Enter password" />
+          @if (loginForm.password().invalid() && loginForm.password().touched()) {
+            <p class="error">
+              @for (fieldError of loginForm.password().errors(); track fieldError.kind) {
+                <span>{{ fieldError.message }}</span>
+              }
+            </p>
           }
-        </p>
+        </div>
+      } @else {
+        <app-button type="button" variant="secondary" (click)="sendOtp()" [disabled]="submitting() || loginForm.email().invalid()" [loading]="submitting()" block>
+          {{ otpSent() ? 'Resend OTP' : 'Send OTP' }}
+        </app-button>
+
+        @if (otpSent()) {
+          <div class="field">
+            <label for="otp">OTP</label>
+            <input id="otp" [value]="otp()" (input)="otp.set($any($event.target).value)" inputmode="numeric" autocomplete="one-time-code" placeholder="Enter email OTP" />
+          </div>
+        }
       }
-    } @else {
-      <app-button type="button" variant="secondary" (click)="sendOtp()" [disabled]="submitting() || loginForm.email().invalid()" [loading]="submitting()" block>
-        {{ otpSent() ? 'Resend OTP' : 'Send OTP' }}
+
+      @if (error()) {
+        <p class="alert alert--error">{{ error() }}</p>
+      }
+      @if (message()) {
+        <p class="alert alert--success">{{ message() }}</p>
+      }
+
+      <app-button type="submit" [disabled]="submitting() || (loginMode() === 'password' ? loginForm().invalid() : loginForm.email().invalid() || !otpSent() || otp().length < 4)" [loading]="submitting()" block>
+        {{ submitting() ? 'Signing in...' : (loginMode() === 'otp' ? 'Verify OTP & sign in' : 'Sign in') }}
       </app-button>
-      @if (otpSent()) {
-        <label for="otp">OTP</label>
-        <input id="otp" [value]="otp()" (input)="otp.set($any($event.target).value)" inputmode="numeric" autocomplete="one-time-code" />
-      }
-    }
-
-    @if (error()) {
-      <p class="error">{{ error() }}</p>
-    }
-    @if (message()) {
-      <p class="success">{{ message() }}</p>
-    }
-
-    <app-button type="submit" [disabled]="submitting() || (loginMode() === 'password' ? loginForm().invalid() : loginForm.email().invalid() || !otpSent() || otp().length < 4)" [loading]="submitting()" block>
-      {{ submitting() ? 'Signing in...' : (loginMode() === 'otp' ? 'Verify OTP & sign in' : 'Sign in') }}
-    </app-button>
-  </form>
-
-</section>
+    </form>
+  </section>
+</main>
