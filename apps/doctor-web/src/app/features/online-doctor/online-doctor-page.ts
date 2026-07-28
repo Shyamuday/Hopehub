@@ -62,6 +62,14 @@ export class OnlineDoctorPage implements OnInit, OnDestroy {
 
   ngOnInit() {
     void this.load();
+    this.route.paramMap.subscribe((params) => {
+      const id = params.get('consultationId');
+      if (id) {
+        this.selectedConsultId.set(id);
+        void this.loadDirectConsultation(id);
+        if (this.isLive()) void this.loadInbox();
+      }
+    });
     this.route.queryParamMap.subscribe((params) => {
       const id = params.get('consultationId');
       if (id) {
@@ -289,6 +297,26 @@ export class OnlineDoctorPage implements OnInit, OnDestroy {
       this.message.set('Session note saved.');
     } catch {
       this.error.set('Could not save session note.');
+    } finally {
+      this.sessionNoteSaving.set(false);
+    }
+  }
+
+  async flagSafetyRisk() {
+    const consultationId = this.selectedConsultId();
+    if (!consultationId) return;
+
+    this.sessionNoteSaving.set(true);
+    this.error.set('');
+    try {
+      const saved = await this.consultationApi.addSessionNote(
+        consultationId,
+        '[SAFETY] Safety risk flagged by expert. Admin/care team should review and follow escalation protocol.',
+      );
+      this.sessionNotes.update((notes) => [saved, ...notes]);
+      this.message.set('Safety risk flagged for team review.');
+    } catch {
+      this.error.set('Could not flag safety risk.');
     } finally {
       this.sessionNoteSaving.set(false);
     }

@@ -16,8 +16,16 @@ type HopeHubConsultation = {
   id: string;
   status: string;
   createdAt: string;
+  assignedProviderId?: string | null;
   assignedDoctor?: { id: string; name?: string | null } | null;
   disease?: { name?: string | null } | null;
+  intakeAnswers?: {
+    appointmentDate?: string;
+    appointmentTime?: string;
+    sessionMode?: string;
+    concernCategory?: string;
+    preferredLanguage?: string;
+  } | null;
   payment?: {
     status?: string | null;
     amountInPaise?: number | null;
@@ -253,6 +261,30 @@ type BookingTimelineStep = {
                         }
                       </p>
                     }
+                    @if (
+                      consultation.intakeAnswers?.appointmentDate ||
+                      consultation.intakeAnswers?.appointmentTime
+                    ) {
+                      <p class="mt-2 text-sm text-gray-600">
+                        Requested slot:
+                        {{ consultation.intakeAnswers?.appointmentDate || 'Date pending' }}
+                        {{ consultation.intakeAnswers?.appointmentTime || '' }}
+                      </p>
+                    }
+                    @if (
+                      consultation.intakeAnswers?.concernCategory ||
+                      consultation.intakeAnswers?.sessionMode
+                    ) {
+                      <p class="mt-1 text-sm text-gray-600">
+                        {{ consultation.intakeAnswers?.concernCategory || 'Concern to review' }}
+                        @if (consultation.intakeAnswers?.sessionMode) {
+                          · {{ consultation.intakeAnswers?.sessionMode }}
+                        }
+                        @if (consultation.intakeAnswers?.preferredLanguage) {
+                          · {{ consultation.intakeAnswers?.preferredLanguage }}
+                        }
+                      </p>
+                    }
                     <div class="mt-3 rounded-md bg-blue-50 p-3 text-sm text-blue-900">
                       <p class="font-semibold">Next step</p>
                       <p class="mt-1">{{ nextStepFor(consultation) }}</p>
@@ -291,6 +323,15 @@ type BookingTimelineStep = {
                     @if (consultation.assignedDoctor) {
                       <p class="mt-2 text-sm text-gray-600">
                         Expert: {{ consultation.assignedDoctor.name || 'Assigned expert' }}
+                        @if (consultation.assignedProviderId) {
+                          ·
+                          <a
+                            [routerLink]="['/psychologists', consultation.assignedProviderId]"
+                            class="font-semibold text-blue-600 hover:text-blue-700"
+                          >
+                            View profile
+                          </a>
+                        }
                       </p>
                       <!--
                         Live call UI is intentionally hidden for Hope Hub for now.

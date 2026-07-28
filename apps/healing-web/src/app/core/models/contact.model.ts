@@ -5,6 +5,13 @@ export interface ContactForm {
   serviceInterest?: string;
   urgencyLevel?: 'low' | 'normal' | 'high';
   preferredTime?: string;
+  concernCategory?: string;
+  preferredExpertType?: string;
+  sessionMode?: string;
+  preferredLanguage?: string;
+  safetyRisk?: string;
+  previousTherapyOrMedication?: string;
+  emergencyConsent?: boolean;
   preferAnonymousTelegram?: boolean;
   message: string;
   preferredContact: ContactMethod;

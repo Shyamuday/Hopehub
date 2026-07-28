@@ -80,9 +80,7 @@ export class ConsultationNavigationService {
 
   async openOnlineSession(consultationId: string) {
     this.rememberWorkspace(consultationId, 'online-session');
-    await this.router.navigate(['/', ROUTE_PATHS.ONLINE_DOCTOR], {
-      queryParams: { consultationId },
-    });
+    await this.router.navigate(['/', ROUTE_PATHS.SESSIONS, consultationId]);
   }
 
   async openRepertoryBrowser(consultationId?: string | null, caseAnalysisId?: string | null) {
@@ -104,6 +102,7 @@ export class ConsultationNavigationService {
     return (
       (path.includes(`/${ROUTE_PATHS.CASE_ANALYSIS}/`) && path.endsWith('/case-analysis')) ||
       (path.includes(`/${ROUTE_PATHS.CASE_ANALYSIS}/`) && path.endsWith('/prescription')) ||
+      path.includes(`/${ROUTE_PATHS.SESSIONS}/`) ||
       (path.endsWith(`/${ROUTE_PATHS.ONLINE_DOCTOR}`) && /[?&]consultationId=/.test(url)) ||
       (path.endsWith(`/${ROUTE_PATHS.APPOINTMENTS}`) && /[?&]consultationId=/.test(url))
     );
@@ -133,6 +132,11 @@ export class ConsultationNavigationService {
       new RegExp(`/${ROUTE_PATHS.CASE_ANALYSIS}/([^/]+)/(case-analysis|prescription)$`),
     );
     if (!match) {
+      const sessionMatch = path.match(new RegExp(`/${ROUTE_PATHS.SESSIONS}/([^/]+)$`));
+      if (sessionMatch) {
+        this.rememberWorkspace(sessionMatch[1], 'online-session', patientName);
+        return;
+      }
       if (path.endsWith(`/${ROUTE_PATHS.ONLINE_DOCTOR}`)) {
         const consultationId = new URLSearchParams(url.split('?')[1] ?? '').get('consultationId');
         if (consultationId) {
@@ -188,8 +192,7 @@ export class ConsultationNavigationService {
     const kind = (data['kind'] || data['type'] || data['consultationMode'] || '').toUpperCase();
     if (kind.includes('INSTANT') || kind.includes('ONLINE')) {
       return {
-        commands: ['/', ROUTE_PATHS.ONLINE_DOCTOR] as const,
-        queryParams: { consultationId },
+        commands: ['/', ROUTE_PATHS.SESSIONS, consultationId] as const,
       };
     }
     if (kind.includes('FOLLOW') || kind.includes('PRESCRIBE') || data['action'] === 'prescribe') {

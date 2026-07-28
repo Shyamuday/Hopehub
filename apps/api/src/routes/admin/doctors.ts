@@ -29,6 +29,45 @@ import {
 } from '../../constants/doctor-hr-defaults.js';
 import { PSYCHOLOGIST_CONSULTATION_SHARE_PERCENT } from '../../services/doctor-compensation.js';
 
+const textArraySchema = z.array(z.string().trim().min(1).max(160)).max(40).optional();
+const mentalHealthProfileSchema = z
+  .object({
+    qualifications: textArraySchema,
+    licenseNumber: z.string().trim().max(120).optional().nullable().or(z.literal('')),
+    licenseCouncil: z.string().trim().max(160).optional().nullable().or(z.literal('')),
+    languages: textArraySchema,
+    modalities: textArraySchema,
+    sessionTypes: textArraySchema,
+    ageGroups: textArraySchema,
+    concernsHandled: textArraySchema,
+    introSessionTitle: z.string().trim().max(180).optional().nullable().or(z.literal('')),
+    counsellingApproach: z.string().trim().max(4000).optional().nullable().or(z.literal('')),
+    safetyEscalationNote: z.string().trim().max(2000).optional().nullable().or(z.literal('')),
+    acceptsHighRiskCases: z.boolean().optional()
+  })
+  .optional();
+
+function compactTextArray(items?: string[]) {
+  return (items ?? []).map((item) => item.trim()).filter(Boolean);
+}
+
+function toMentalHealthProfilePayload(body: z.infer<typeof mentalHealthProfileSchema>) {
+  return {
+    qualifications: compactTextArray(body?.qualifications),
+    licenseNumber: body?.licenseNumber || null,
+    licenseCouncil: body?.licenseCouncil || null,
+    languages: compactTextArray(body?.languages),
+    modalities: compactTextArray(body?.modalities),
+    sessionTypes: compactTextArray(body?.sessionTypes),
+    ageGroups: compactTextArray(body?.ageGroups),
+    concernsHandled: compactTextArray(body?.concernsHandled),
+    introSessionTitle: body?.introSessionTitle || null,
+    counsellingApproach: body?.counsellingApproach || null,
+    safetyEscalationNote: body?.safetyEscalationNote || null,
+    acceptsHighRiskCases: body?.acceptsHighRiskCases ?? false
+  };
+}
+
 export function registerAdminDoctorRoutes(router: Router) {
   // ─── Doctors ──────────────────────────────────────────────────────────────────
 
@@ -71,7 +110,12 @@ export function registerAdminDoctorRoutes(router: Router) {
       const total = await prisma.user.count({ where });
       const doctors = await prisma.user.findMany({
         where,
-        select: { ...publicUserSelect, isActive: true, createdAt: true, doctorProfile: true },
+        select: {
+          ...publicUserSelect,
+          isActive: true,
+          createdAt: true,
+          doctorProfile: { select: doctorProfileSelect }
+        },
         orderBy,
         skip: (page - 1) * pageSize,
         take: pageSize
@@ -111,7 +155,12 @@ export function registerAdminDoctorRoutes(router: Router) {
       const total = await prisma.user.count({ where });
       const pendingDoctors = await prisma.user.findMany({
         where,
-        select: { ...publicUserSelect, isActive: true, createdAt: true, doctorProfile: true },
+        select: {
+          ...publicUserSelect,
+          isActive: true,
+          createdAt: true,
+          doctorProfile: { select: doctorProfileSelect }
+        },
         orderBy: { createdAt: 'asc' },
         skip: (page - 1) * pageSize,
         take: pageSize
@@ -214,7 +263,8 @@ export function registerAdminDoctorRoutes(router: Router) {
           specialty: z.string().min(2).optional(),
           registrationNo: z.string().optional(),
           designation: z.string().optional().or(z.literal('')),
-          department: z.string().optional().or(z.literal(''))
+          department: z.string().optional().or(z.literal('')),
+          mentalHealthProfile: mentalHealthProfileSchema
         })
         .merge(doctorProfileSchema())
         .parse(req.body);
@@ -232,6 +282,7 @@ export function registerAdminDoctorRoutes(router: Router) {
         profilePayload.doctorType === HomeopathicDoctorType.PSYCHOLOGIST
           ? { consultationSharePercent: PSYCHOLOGIST_CONSULTATION_SHARE_PERCENT }
           : {};
+      const mentalProfilePayload = toMentalHealthProfilePayload(body.mentalHealthProfile);
       const doctor = await prisma.user.create({
         data: {
           name: body.name,
@@ -244,7 +295,10 @@ export function registerAdminDoctorRoutes(router: Router) {
               ...profilePayload,
               designation: hrFields.designation,
               department: hrFields.department,
-              ...compensationFields
+              ...compensationFields,
+              ...(profilePayload.doctorType === HomeopathicDoctorType.PSYCHOLOGIST
+                ? { mentalHealthProfile: { create: mentalProfilePayload } }
+                : {})
             }
           }
         },
@@ -285,7 +339,8 @@ export function registerAdminDoctorRoutes(router: Router) {
               doctorType: true,
               specialtyFocus: true,
               designation: true,
-              department: true
+              department: true,
+              mentalHealthProfile: true
             }
           }
         }
@@ -306,7 +361,8 @@ export function registerAdminDoctorRoutes(router: Router) {
           showOnWebsite: z.boolean().optional(),
           websiteOrder: z.number().int().min(1).max(999).optional().nullable(),
           yearsOfExperience: z.number().int().min(0).max(60).optional().nullable(),
-          focusAreas: z.array(z.string().min(1)).optional()
+          focusAreas: z.array(z.string().min(1)).optional(),
+          mentalHealthProfile: mentalHealthProfileSchema
         })
         .merge(doctorProfileSchema())
         .parse(req.body);
@@ -331,6 +387,22 @@ export function registerAdminDoctorRoutes(router: Router) {
         profilePayload.doctorType === HomeopathicDoctorType.PSYCHOLOGIST
           ? { consultationSharePercent: PSYCHOLOGIST_CONSULTATION_SHARE_PERCENT }
           : {};
+      const mentalProfilePayload = toMentalHealthProfilePayload(body.mentalHealthProfile);
+      const mentalHealthProfileCreate =
+        profilePayload.doctorType === HomeopathicDoctorType.PSYCHOLOGIST
+          ? { mentalHealthProfile: { create: mentalProfilePayload } }
+          : {};
+      const mentalHealthProfileUpdate =
+        profilePayload.doctorType === HomeopathicDoctorType.PSYCHOLOGIST
+          ? {
+              mentalHealthProfile: {
+                upsert: {
+                  create: mentalProfilePayload,
+                  update: mentalProfilePayload
+                }
+              }
+            }
+          : {};
 
       const doctor = await prisma.user.update({
         where: { id: doctorId },
@@ -346,7 +418,8 @@ export function registerAdminDoctorRoutes(router: Router) {
                 department: hrFields.department,
                 isAvailable: profilePayload.isAvailable,
                 ...compensationFields,
-                ...publicProfileFields
+                ...publicProfileFields,
+                ...mentalHealthProfileCreate
               },
               update: {
                 ...profilePayload,
@@ -354,7 +427,8 @@ export function registerAdminDoctorRoutes(router: Router) {
                 department: hrFields.department,
                 isAvailable: profilePayload.isAvailable,
                 ...compensationFields,
-                ...publicProfileFields
+                ...publicProfileFields,
+                ...mentalHealthProfileUpdate
               }
             }
           }

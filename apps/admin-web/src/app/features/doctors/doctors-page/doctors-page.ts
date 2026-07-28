@@ -42,6 +42,20 @@ type Doctor = {
     websiteOrder?: number | null;
     yearsOfExperience?: number | null;
     focusAreas?: string[];
+    mentalHealthProfile?: {
+      qualifications?: string[];
+      licenseNumber?: string | null;
+      licenseCouncil?: string | null;
+      languages?: string[];
+      modalities?: string[];
+      sessionTypes?: string[];
+      ageGroups?: string[];
+      concernsHandled?: string[];
+      introSessionTitle?: string | null;
+      counsellingApproach?: string | null;
+      safetyEscalationNote?: string | null;
+      acceptsHighRiskCases?: boolean;
+    } | null;
   };
 };
 
@@ -59,6 +73,12 @@ function emptyCreateModel() {
     department: '',
     doctorType: 'JUNIOR_DOCTOR' as HomeopathicDoctorType,
     specialtyFocus: '' as HomeopathicSpecialtyFocus | '',
+    qualificationsText: '',
+    languagesText: '',
+    modalitiesText: '',
+    sessionTypesText: '',
+    ageGroupsText: '',
+    concernsHandledText: '',
   };
 }
 
@@ -79,6 +99,18 @@ function emptyEditModel() {
     websiteOrder: '' as number | '',
     yearsOfExperience: '' as number | '',
     focusAreasText: '',
+    qualificationsText: '',
+    licenseNumber: '',
+    licenseCouncil: '',
+    languagesText: '',
+    modalitiesText: '',
+    sessionTypesText: '',
+    ageGroupsText: '',
+    concernsHandledText: '',
+    introSessionTitle: '',
+    counsellingApproach: '',
+    safetyEscalationNote: '',
+    acceptsHighRiskCases: false,
   };
 }
 
@@ -256,6 +288,22 @@ export class DoctorsPage {
           .split('\n')
           .map((s) => s.trim())
           .filter(Boolean),
+        mentalHealthProfile: this.isPsychologistType(edit.doctorType)
+          ? {
+              qualifications: this.lines(edit.qualificationsText),
+              licenseNumber: edit.licenseNumber.trim() || null,
+              licenseCouncil: edit.licenseCouncil.trim() || null,
+              languages: this.lines(edit.languagesText),
+              modalities: this.lines(edit.modalitiesText),
+              sessionTypes: this.lines(edit.sessionTypesText),
+              ageGroups: this.lines(edit.ageGroupsText),
+              concernsHandled: this.lines(edit.concernsHandledText),
+              introSessionTitle: edit.introSessionTitle.trim() || null,
+              counsellingApproach: edit.counsellingApproach.trim() || null,
+              safetyEscalationNote: edit.safetyEscalationNote.trim() || null,
+              acceptsHighRiskCases: edit.acceptsHighRiskCases,
+            }
+          : undefined,
       });
       this.message.set('Doctor profile updated.');
       await this.load();
@@ -286,6 +334,16 @@ export class DoctorsPage {
         doctorType: create.doctorType,
         specialtyFocus:
           create.doctorType === 'SPECIALIST_CONSULTANT' ? create.specialtyFocus || null : null,
+        mentalHealthProfile: this.isPsychologistType(create.doctorType)
+          ? {
+              qualifications: this.lines(create.qualificationsText),
+              languages: this.lines(create.languagesText),
+              modalities: this.lines(create.modalitiesText),
+              sessionTypes: this.lines(create.sessionTypesText),
+              ageGroups: this.lines(create.ageGroupsText),
+              concernsHandled: this.lines(create.concernsHandledText),
+            }
+          : undefined,
       });
       this.message.set('Doctor created successfully.');
       this.createModel.set(emptyCreateModel());
@@ -466,6 +524,25 @@ export class DoctorsPage {
       websiteOrder: selected.doctorProfile?.websiteOrder ?? '',
       yearsOfExperience: selected.doctorProfile?.yearsOfExperience ?? '',
       focusAreasText: (selected.doctorProfile?.focusAreas ?? []).join('\n'),
+      qualificationsText: (selected.doctorProfile?.mentalHealthProfile?.qualifications ?? []).join(
+        '\n',
+      ),
+      licenseNumber: selected.doctorProfile?.mentalHealthProfile?.licenseNumber || '',
+      licenseCouncil: selected.doctorProfile?.mentalHealthProfile?.licenseCouncil || '',
+      languagesText: (selected.doctorProfile?.mentalHealthProfile?.languages ?? []).join('\n'),
+      modalitiesText: (selected.doctorProfile?.mentalHealthProfile?.modalities ?? []).join('\n'),
+      sessionTypesText: (selected.doctorProfile?.mentalHealthProfile?.sessionTypes ?? []).join(
+        '\n',
+      ),
+      ageGroupsText: (selected.doctorProfile?.mentalHealthProfile?.ageGroups ?? []).join('\n'),
+      concernsHandledText: (
+        selected.doctorProfile?.mentalHealthProfile?.concernsHandled ?? []
+      ).join('\n'),
+      introSessionTitle: selected.doctorProfile?.mentalHealthProfile?.introSessionTitle || '',
+      counsellingApproach: selected.doctorProfile?.mentalHealthProfile?.counsellingApproach || '',
+      safetyEscalationNote: selected.doctorProfile?.mentalHealthProfile?.safetyEscalationNote || '',
+      acceptsHighRiskCases:
+        selected.doctorProfile?.mentalHealthProfile?.acceptsHighRiskCases ?? false,
     });
   }
 
@@ -513,6 +590,17 @@ export class DoctorsPage {
 
   isSpecialistType(type: HomeopathicDoctorType) {
     return type === 'SPECIALIST_CONSULTANT';
+  }
+
+  isPsychologistType(type: HomeopathicDoctorType) {
+    return type === 'PSYCHOLOGIST';
+  }
+
+  private lines(value: string) {
+    return value
+      .split('\n')
+      .map((item) => item.trim())
+      .filter(Boolean);
   }
 
   doctorTypeLabel(type?: HomeopathicDoctorType) {

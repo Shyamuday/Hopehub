@@ -64,6 +64,41 @@ export class ContactComponent implements OnInit {
     { value: 'normal', label: 'Normal - Please respond within 24 hours' },
     { value: 'high', label: 'High - I need support soon' },
   ];
+  concernCategoryOptions: FormDropdownOption[] = [
+    { value: '', label: 'Select concern category' },
+    { value: 'Anxiety', label: 'Anxiety' },
+    { value: 'Stress', label: 'Stress' },
+    { value: 'Relationship concerns', label: 'Relationship concerns' },
+    { value: 'Family concerns', label: 'Family concerns' },
+    { value: 'Child or teen support', label: 'Child or teen support' },
+    { value: 'Career or life guidance', label: 'Career or life guidance' },
+    { value: 'Other', label: 'Other' },
+  ];
+  expertTypeOptions: FormDropdownOption[] = [
+    { value: '', label: 'No preference' },
+    { value: 'Psychologist', label: 'Psychologist' },
+    { value: 'Counsellor', label: 'Counsellor' },
+    { value: 'Psychotherapist', label: 'Psychotherapist' },
+    { value: 'Mental wellness expert', label: 'Mental wellness expert' },
+  ];
+  sessionModeOptions: FormDropdownOption[] = [
+    { value: 'online_video', label: 'Online video' },
+    { value: 'online_audio', label: 'Online audio' },
+    { value: 'chat_followup', label: 'Chat follow-up' },
+  ];
+  languageOptions: FormDropdownOption[] = [
+    { value: '', label: 'No preference' },
+    { value: 'English', label: 'English' },
+    { value: 'Hindi', label: 'Hindi' },
+    { value: 'Bengali', label: 'Bengali' },
+    { value: 'Tamil', label: 'Tamil' },
+    { value: 'Telugu', label: 'Telugu' },
+  ];
+  safetyRiskOptions: FormDropdownOption[] = [
+    { value: 'none', label: 'No immediate safety risk' },
+    { value: 'unsure', label: 'Not sure / prefer to discuss' },
+    { value: 'urgent', label: 'Urgent safety concern' },
+  ];
 
   constructor() {
     this.readQueryParameters();
@@ -124,6 +159,13 @@ export class ContactComponent implements OnInit {
       serviceInterest: [initialServiceValue],
       urgencyLevel: ['normal', [Validators.required]],
       preferredTime: [''],
+      concernCategory: [''],
+      preferredExpertType: [''],
+      sessionMode: ['online_video'],
+      preferredLanguage: [''],
+      safetyRisk: ['none'],
+      previousTherapyOrMedication: [''],
+      emergencyConsent: [true],
       preferAnonymousTelegram: [false],
       message: [initialMessage, [Validators.required, Validators.minLength(10)]],
       preferredContact: [user ? 'email' : 'whatsapp', [Validators.required]],
@@ -282,6 +324,13 @@ export class ContactComponent implements OnInit {
           preferredContact: formData.preferredContact,
           urgencyLevel: formData.urgencyLevel,
           preferredTime: formData.preferredTime || '',
+          concernCategory: (formData as any).concernCategory || '',
+          preferredExpertType: (formData as any).preferredExpertType || '',
+          sessionMode: (formData as any).sessionMode || '',
+          preferredLanguage: (formData as any).preferredLanguage || '',
+          safetyRisk: (formData as any).safetyRisk || '',
+          previousTherapyOrMedication: (formData as any).previousTherapyOrMedication || '',
+          emergencyConsent: Boolean((formData as any).emergencyConsent),
           preferAnonymousTelegram: Boolean(formData.preferAnonymousTelegram),
           entryPage: typeof window === 'undefined' ? undefined : window.location.href,
         })
@@ -320,6 +369,13 @@ export class ContactComponent implements OnInit {
       message: '',
       urgencyLevel: 'normal',
       preferredTime: '',
+      concernCategory: '',
+      preferredExpertType: '',
+      sessionMode: 'online_video',
+      preferredLanguage: '',
+      safetyRisk: 'none',
+      previousTherapyOrMedication: '',
+      emergencyConsent: true,
       preferAnonymousTelegram: false,
       preferredContact: user ? 'email' : 'whatsapp',
     });

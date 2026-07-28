@@ -1,9 +1,11 @@
 <section class="panel">
   <h1>{{ isPsychologist() ? 'Online session workspace' : 'Online doctor — go live' }}</h1>
   <p class="lead">
-    {{ isPsychologist()
-      ? 'Review assigned sessions, support patients by chat or call, record notes, and follow up safely.'
-      : 'Show yourself online for instant patient consults (chat + voice & video). Separate from your clinic worklist.' }}
+    {{
+      isPsychologist()
+        ? 'Review assigned sessions, support patients by chat or call, record notes, and follow up safely.'
+        : 'Show yourself online for instant patient consults (chat + voice & video). Separate from your clinic worklist.'
+    }}
   </p>
 </section>
 
@@ -17,7 +19,9 @@
       @if (!isLive()) {
         <button type="button" (click)="goOnline()" [disabled]="saving()">Go online</button>
       } @else {
-        <button type="button" class="danger" (click)="goOffline()" [disabled]="saving()">Go offline</button>
+        <button type="button" class="danger" (click)="goOffline()" [disabled]="saving()">
+          Go offline
+        </button>
       }
     </div>
   </section>
@@ -27,14 +31,18 @@
       <div class="inbox-head">
         <h2>{{ isPsychologist() ? 'Session workspace' : 'Live consult inbox' }}</h2>
         @if (isLive()) {
-          <button type="button" class="ghost" (click)="loadInbox()" [disabled]="inboxLoading()">Refresh</button>
+          <button type="button" class="ghost" (click)="loadInbox()" [disabled]="inboxLoading()">
+            Refresh
+          </button>
         }
       </div>
       @if (isLive()) {
         @if (inboxLoading() && !instantConsults().length) {
           <p class="muted">Loading active consults…</p>
         } @else if (!instantConsults().length && !selectedConsultId()) {
-          <p class="muted">No active instant consults yet. Patients will appear here when assigned to you.</p>
+          <p class="muted">
+            No active instant consults yet. Patients will appear here when assigned to you.
+          </p>
         } @else {
           <ul class="inbox-list">
             @for (c of instantConsults(); track c.id) {
@@ -67,7 +75,19 @@
                 <button type="button" (click)="openCaseAnalysis(active.id)">Case analysis</button>
               }
               @if (capabilities().prescribe) {
-                <button type="button" class="btn-primary" (click)="openPrescription(active.id)">Prescribe</button>
+                <button type="button" class="btn-primary" (click)="openPrescription(active.id)">
+                  Prescribe
+                </button>
+              }
+              @if (isPsychologist()) {
+                <button
+                  type="button"
+                  class="danger"
+                  (click)="flagSafetyRisk()"
+                  [disabled]="sessionNoteSaving()"
+                >
+                  Flag safety risk
+                </button>
               }
             </div>
           }
@@ -96,7 +116,8 @@
             } @else {
               @if ((assessmentSummary()?.safetyFlaggedCount || 0) > 0) {
                 <div class="assessment-risk-alert">
-                  Safety flag appeared in {{ assessmentSummary()?.safetyFlaggedCount }} saved result(s). Review gently and assess current risk.
+                  Safety flag appeared in {{ assessmentSummary()?.safetyFlaggedCount }} saved
+                  result(s). Review gently and assess current risk.
                 </div>
               }
 
@@ -107,12 +128,11 @@
                       <strong>{{ attempt.assessmentType }}</strong>
                       <span>{{ attempt.title }}</span>
                     </div>
-                    <div class="score-pill">
-                      {{ attempt.totalScore }}/{{ attempt.maxScore }}
-                    </div>
+                    <div class="score-pill">{{ attempt.totalScore }}/{{ attempt.maxScore }}</div>
                     <p>{{ attempt.level }}</p>
                     <small>
-                      Attempt #{{ attempt.retakeNumber }} · {{ attempt.completedAt | date: 'mediumDate' }}
+                      Attempt #{{ attempt.retakeNumber }} ·
+                      {{ attempt.completedAt | date: 'mediumDate' }}
                     </small>
                   </article>
                 }
@@ -139,12 +159,19 @@
               <div>
                 <h3>{{ isPsychologist() ? 'Psychologist session notes' : 'Session notes' }}</h3>
                 <p class="muted">
-                  {{ isPsychologist()
-                    ? 'Record what was discussed, support given, user response, risk level, and next step.'
-                    : 'Record what happened during this consultation and the next step.' }}
+                  {{
+                    isPsychologist()
+                      ? 'Record what was discussed, support given, user response, risk level, and next step.'
+                      : 'Record what happened during this consultation and the next step.'
+                  }}
                 </p>
               </div>
-              <button type="button" class="ghost" (click)="loadSessionNotes()" [disabled]="sessionNotesLoading()">
+              <button
+                type="button"
+                class="ghost"
+                (click)="loadSessionNotes()"
+                [disabled]="sessionNotesLoading()"
+              >
                 Refresh notes
               </button>
             </div>
@@ -153,9 +180,11 @@
               rows="5"
               [value]="sessionNoteText()"
               (input)="sessionNoteText.set($any($event.target).value)"
-              [placeholder]="isPsychologist()
-                ? 'Example: Patient shared anxiety triggers. Provided grounding exercise and supportive counselling. No immediate safety risk shared. Next: follow up in 7 days.'
-                : 'Write a private consultation note and next step...'"
+              [placeholder]="
+                isPsychologist()
+                  ? 'Example: Patient shared anxiety triggers. Provided grounding exercise and supportive counselling. No immediate safety risk shared. Next: follow up in 7 days.'
+                  : 'Write a private consultation note and next step...'
+              "
             ></textarea>
 
             <div class="session-note-actions">
@@ -167,7 +196,9 @@
               >
                 {{ sessionNoteSaving() ? 'Saving...' : 'Save note' }}
               </button>
-              <span class="muted">Private to care/admin team. Not shown to patient by default.</span>
+              <span class="muted"
+                >Private to care/admin team. Not shown to patient by default.</span
+              >
             </div>
 
             @if (sessionNotesLoading() && !sessionNotes().length) {
@@ -200,25 +231,40 @@
           <option value="SPECIALIST">Disease specialist</option>
         </select>
       </div>
-      <label class="checkbox"><input type="checkbox" [formField]="settingsForm.acceptsChat" /> Accept chat</label>
-      <label class="checkbox"><input type="checkbox" [formField]="settingsForm.acceptsVoiceCall" /> Accept voice &amp; video calls</label>
+      <label class="checkbox"
+        ><input type="checkbox" [formField]="settingsForm.acceptsChat" /> Accept chat</label
+      >
+      <label class="checkbox"
+        ><input type="checkbox" [formField]="settingsForm.acceptsVoiceCall" /> Accept voice &amp;
+        video calls</label
+      >
       @if (settingsModel().category === 'SPECIALIST') {
         <div class="field full">
           <label>Specialist for diseases</label>
           <div class="disease-picks">
             @for (d of diseases(); track d.id) {
               <label class="chip">
-                <input type="checkbox" [checked]="settingsModel().specialtyDiseaseIds.includes(d.id)" (change)="toggleDisease(d.id)" />
+                <input
+                  type="checkbox"
+                  [checked]="settingsModel().specialtyDiseaseIds.includes(d.id)"
+                  (change)="toggleDisease(d.id)"
+                />
                 {{ d.name }}
               </label>
             }
           </div>
         </div>
       }
-      <button type="button" class="ghost" (click)="saveSettings()" [disabled]="saving()">Save profile</button>
+      <button type="button" class="ghost" (click)="saveSettings()" [disabled]="saving()">
+        Save profile
+      </button>
     </fieldset>
   </section>
 }
 
-@if (message()) { <p class="success">{{ message() }}</p> }
-@if (error()) { <p class="error">{{ error() }}</p> }
+@if (message()) {
+  <p class="success">{{ message() }}</p>
+}
+@if (error()) {
+  <p class="error">{{ error() }}</p>
+}

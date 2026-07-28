@@ -2,19 +2,16 @@
   <div class="container mx-auto px-4 sm:px-6 lg:px-8">
     <div class="mb-8 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
       <div>
-        <p class="text-sm font-semibold uppercase tracking-wide text-primary-700">Hope Hub providers</p>
+        <p class="text-sm font-semibold uppercase tracking-wide text-primary-700">
+          Hope Hub experts
+        </p>
         <h1 class="mt-2 text-2xl font-semibold text-gray-950 sm:text-3xl">Psychologists</h1>
         <p class="mt-3 max-w-3xl text-sm leading-6 text-gray-700 sm:text-base">
           Find published Hope Hub psychologists for mental wellness support, relationship stress,
           anxiety, overthinking, family concerns, and private guidance.
         </p>
       </div>
-      <a
-        routerLink="/contact"
-        class="btn-primary btn-sm"
-      >
-        Request support
-      </a>
+      <a routerLink="/contact" class="btn-primary btn-sm"> Request support </a>
     </div>
 
     <div class="mb-6 rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
@@ -27,6 +24,60 @@
         class="form-input"
         placeholder="Search by name, anxiety, stress, relationship, family..."
       />
+      <div class="mt-4 grid gap-3 md:grid-cols-5">
+        <select
+          class="form-input"
+          [ngModel]="concern()"
+          (ngModelChange)="setFilter('concern', $event)"
+        >
+          @for (option of concernOptions; track option) {
+            <option [value]="option">{{ option || 'All concerns' }}</option>
+          }
+        </select>
+        <select
+          class="form-input"
+          [ngModel]="language()"
+          (ngModelChange)="setFilter('language', $event)"
+        >
+          @for (option of languageOptions; track option) {
+            <option [value]="option">{{ option || 'Any language' }}</option>
+          }
+        </select>
+        <select
+          class="form-input"
+          [ngModel]="modality()"
+          (ngModelChange)="setFilter('modality', $event)"
+        >
+          @for (option of modalityOptions; track option) {
+            <option [value]="option">{{ option || 'Any method' }}</option>
+          }
+        </select>
+        <select
+          class="form-input"
+          [ngModel]="sessionType()"
+          (ngModelChange)="setFilter('sessionType', $event)"
+        >
+          @for (option of sessionTypeOptions; track option) {
+            <option [value]="option">{{ option || 'Any session' }}</option>
+          }
+        </select>
+        <select
+          class="form-input"
+          [ngModel]="ageGroup()"
+          (ngModelChange)="setFilter('ageGroup', $event)"
+        >
+          @for (option of ageGroupOptions; track option) {
+            <option [value]="option">{{ option || 'Any age group' }}</option>
+          }
+        </select>
+      </div>
+      <button
+        type="button"
+        class="mt-3 text-sm font-semibold text-primary-700 hover:text-primary-800"
+        (click)="clearFilters()"
+      >
+        Clear filters
+      </button>
     </div>
 
     @if (loading()) {
@@ -38,7 +89,9 @@
     } @else if (providers().length) {
       <div class="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-4">
         @for (provider of providers(); track provider.id) {
-          <article class="hope-motion-card flex h-full flex-col rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
+          <article
+            class="hope-motion-card flex h-full flex-col rounded-lg border border-gray-200 bg-white p-5 shadow-sm"
+          >
             <div class="flex items-start gap-4">
               @if (providerImageUrl(provider); as imageUrl) {
                 <img
@@ -47,7 +100,9 @@
                   class="h-16 w-16 rounded-full object-cover"
                 />
               } @else {
-                <div class="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-primary-600 text-xl font-bold text-white">
+                <div
+                  class="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-primary-600 text-xl font-bold text-white"
+                >
                   {{ provider.name.charAt(0) }}
                 </div>
               }
@@ -57,22 +112,33 @@
                   {{ provider.designation || provider.specialty || 'Psychologist' }}
                 </p>
                 @if (provider.yearsOfExperience) {
-                  <p class="mt-1 text-xs font-medium text-gray-500 whitespace-nowrap">{{ provider.yearsOfExperience }}+ years experience</p>
+                  <p class="mt-1 text-xs font-medium text-gray-500 whitespace-nowrap">
+                    {{ provider.yearsOfExperience }}+ years experience
+                  </p>
                 }
               </div>
             </div>
             <p class="mt-4 flex-1 text-sm leading-6 text-gray-700">
-              {{ provider.bio || 'Available for private Hope Hub support and guided mental wellness conversation.' }}
+              {{
+                provider.bio ||
+                  'Available for private Hope Hub support and guided mental wellness conversation.'
+              }}
             </p>
             @if (provider.focusAreas.length) {
               <div class="mt-4 flex flex-wrap gap-2">
                 @for (focus of provider.focusAreas.slice(0, 4); track focus) {
-                  <span class="rounded-md bg-primary-50 px-3 py-1 text-xs font-semibold text-primary-700 whitespace-nowrap">{{ focus }}</span>
+                  <span
+                    class="rounded-md bg-primary-50 px-3 py-1 text-xs font-semibold text-primary-700 whitespace-nowrap"
+                    >{{ focus }}</span
+                  >
                 }
               </div>
             }
             <div class="mt-5 flex flex-col gap-2">
-              <a [routerLink]="['/psychologists', provider.id]" class="btn-secondary btn-sm">
+              <a
+                [routerLink]="['/psychologists', provider.slug || provider.id]"
+                class="btn-secondary btn-sm"
+              >
                 View profile
               </a>
               <a
@@ -84,7 +150,7 @@
                   providerId: provider.id,
                   duration: '30 minutes',
                   price: 500,
-                  source: 'psychologists-list'
+                  source: 'psychologists-list',
                 }"
                 class="btn-outline btn-sm"
               >
@@ -102,7 +168,7 @@
           [disabled]="page() <= 1"
           (click)="setPage(page() - 1)"
         >
-        Previous
+          Previous
         </button>
         @for (p of pages(); track p) {
           <button
@@ -138,7 +204,9 @@
     }
 
     @if (error()) {
-      <div class="mt-6 rounded-lg border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-700">
+      <div
+        class="mt-6 rounded-lg border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-700"
+      >
         {{ error() }}
       </div>
     }

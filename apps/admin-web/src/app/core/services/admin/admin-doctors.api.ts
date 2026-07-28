@@ -96,6 +96,20 @@ export class AdminDoctorsApi extends AdminApiBase {
       websiteOrder?: number | null;
       yearsOfExperience?: number | null;
       focusAreas?: string[];
+      mentalHealthProfile?: {
+        qualifications?: string[];
+        licenseNumber?: string | null;
+        licenseCouncil?: string | null;
+        languages?: string[];
+        modalities?: string[];
+        sessionTypes?: string[];
+        ageGroups?: string[];
+        concernsHandled?: string[];
+        introSessionTitle?: string | null;
+        counsellingApproach?: string | null;
+        safetyEscalationNote?: string | null;
+        acceptsHighRiskCases?: boolean;
+      };
     },
   ) {
     return firstValueFrom(
@@ -114,6 +128,20 @@ export class AdminDoctorsApi extends AdminApiBase {
     department?: string;
     doctorType?: string;
     specialtyFocus?: string | null;
+    mentalHealthProfile?: {
+      qualifications?: string[];
+      licenseNumber?: string | null;
+      licenseCouncil?: string | null;
+      languages?: string[];
+      modalities?: string[];
+      sessionTypes?: string[];
+      ageGroups?: string[];
+      concernsHandled?: string[];
+      introSessionTitle?: string | null;
+      counsellingApproach?: string | null;
+      safetyEscalationNote?: string | null;
+      acceptsHighRiskCases?: boolean;
+    };
   }) {
     return firstValueFrom(this.http.post(`${this.apiBase}${API_PATHS.ADMIN.DOCTORS}`, payload));
   }

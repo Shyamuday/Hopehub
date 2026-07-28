@@ -35,6 +35,8 @@ export const ROUTE_PATHS = {
 
   ONLINE_DOCTOR: 'online-doctor',
 
+  SESSIONS: 'sessions',
+
   NOTIFICATIONS_INBOX: 'notifications-inbox',
 } as const;
 

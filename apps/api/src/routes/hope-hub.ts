@@ -60,6 +60,13 @@ const hopeHubBookingSchema = z.object({
   preferredTime: z.string().trim().max(120).optional().or(z.literal('')),
   preferAnonymousTelegram: z.boolean().optional(),
   providerId: z.string().trim().min(1).max(120).optional().or(z.literal('')),
+  concernCategory: z.string().trim().max(160).optional().or(z.literal('')),
+  preferredExpertType: z.string().trim().max(160).optional().or(z.literal('')),
+  sessionMode: z.string().trim().max(80).optional().or(z.literal('')),
+  preferredLanguage: z.string().trim().max(80).optional().or(z.literal('')),
+  safetyRisk: z.string().trim().max(80).optional().or(z.literal('')),
+  previousTherapyOrMedication: z.string().trim().max(1000).optional().or(z.literal('')),
+  emergencyConsent: z.boolean().optional(),
   entryPage: z.string().trim().max(500).optional().or(z.literal(''))
 });
 
@@ -165,6 +172,7 @@ function providerPublicPayload(provider: {
   const mental = provider.mentalHealthProfile;
   return {
     id: provider.id,
+    slug: `${slugify(user.name || provider.designation || provider.specialty || 'expert')}-${provider.id}`,
     userId: user.id,
     name: user.name,
     profileImageUrl: user.profileImageUrl,
@@ -250,10 +258,28 @@ hopeHubRouter.get(
     const page = queryPositiveInt(req, 'page', 1);
     const pageSize = Math.max(1, Math.min(50, queryPositiveInt(req, 'pageSize', 20)));
     const q = queryText(req, 'q').trim();
+    const concern = queryText(req, 'concern').trim();
+    const language = queryText(req, 'language').trim();
+    const modality = queryText(req, 'modality').trim();
+    const sessionType = queryText(req, 'sessionType').trim();
+    const ageGroup = queryText(req, 'ageGroup').trim();
 
     const psychologyWhere = {
       showOnWebsite: true,
       user: { isActive: true },
+      ...(concern || language || modality || sessionType || ageGroup
+        ? {
+            mentalHealthProfile: {
+              is: {
+                ...(concern ? { concernsHandled: { has: concern } } : {}),
+                ...(language ? { languages: { has: language } } : {}),
+                ...(modality ? { modalities: { has: modality } } : {}),
+                ...(sessionType ? { sessionTypes: { has: sessionType } } : {}),
+                ...(ageGroup ? { ageGroups: { has: ageGroup } } : {})
+              }
+            }
+          }
+        : {}),
       OR: [
         { doctorType: HomeopathicDoctorType.PSYCHOLOGIST },
         { specialty: { contains: 'psycholog', mode: 'insensitive' as const } },
@@ -275,7 +301,9 @@ hopeHubRouter.get(
                   { specialty: { contains: q, mode: 'insensitive' as const } },
                   { designation: { contains: q, mode: 'insensitive' as const } },
                   { department: { contains: q, mode: 'insensitive' as const } },
-                  { bio: { contains: q, mode: 'insensitive' as const } }
+                  { bio: { contains: q, mode: 'insensitive' as const } },
+                  { mentalHealthProfile: { is: { concernsHandled: { has: q } } } },
+                  { mentalHealthProfile: { is: { modalities: { has: q } } } }
                 ]
               }
             ]
@@ -335,7 +363,8 @@ hopeHubRouter.get(
 hopeHubRouter.get(
   '/hope-hub/providers/:id',
   asyncRoute(async (req, res) => {
-    const providerId = routeParam(req, 'id');
+    const idOrSlug = routeParam(req, 'id');
+    const providerId = idOrSlug.includes('-') ? idOrSlug.split('-').at(-1)! : idOrSlug;
     const provider = await prisma.doctor.findFirst({
       where: {
         id: providerId,
@@ -591,6 +620,13 @@ hopeHubRouter.post(
           consultantPhone: body.consultantPhone || '',
           providerId: requestedProvider?.id || body.providerId || '',
           requestedProviderName: requestedProvider?.user.name || '',
+          concernCategory: body.concernCategory || '',
+          preferredExpertType: body.preferredExpertType || '',
+          sessionMode: body.sessionMode || '',
+          preferredLanguage: body.preferredLanguage || '',
+          safetyRisk: body.safetyRisk || '',
+          previousTherapyOrMedication: body.previousTherapyOrMedication || '',
+          emergencyConsent: Boolean(body.emergencyConsent),
           sessionDuration: `${HOPE_HUB_SESSION_DURATION_MINUTES} minutes`,
           requestedSessionDuration: body.sessionDuration || '',
           preferredContact: body.preferredContact || '',
@@ -653,6 +689,10 @@ hopeHubRouter.post(
           `Appointment: ${body.appointmentDate} ${body.appointmentTime}`,
           body.preferredContact ? `Preferred contact: ${body.preferredContact}` : '',
           body.urgencyLevel ? `Urgency: ${body.urgencyLevel}` : '',
+          body.concernCategory ? `Concern category: ${body.concernCategory}` : '',
+          body.preferredExpertType ? `Preferred expert: ${body.preferredExpertType}` : '',
+          body.preferredLanguage ? `Preferred language: ${body.preferredLanguage}` : '',
+          body.safetyRisk ? `Safety risk: ${body.safetyRisk}` : '',
           body.preferredTime ? `Preferred callback time: ${body.preferredTime}` : '',
           requestedProvider ? `Requested expert: ${requestedProvider.user.name}` : '',
           body.preferAnonymousTelegram ? 'Low-identity Telegram follow-up requested' : '',
@@ -696,6 +736,18 @@ hopeHubRouter.get(
       orderBy: { createdAt: 'desc' },
       take: 10
     });
+    const assignedUserIds = Array.from(
+      new Set(consultations.map((c) => c.assignedDoctorId).filter(Boolean) as string[])
+    );
+    const assignedProfiles = assignedUserIds.length
+      ? await prisma.doctor.findMany({
+          where: { userId: { in: assignedUserIds } },
+          select: { id: true, userId: true }
+        })
+      : [];
+    const providerIdByUserId = new Map(
+      assignedProfiles.map((profile) => [profile.userId, profile.id] as const)
+    );
 
     const leads = await prisma.websiteLead.findMany({
       where: { userId: req.user!.id },
@@ -703,6 +755,14 @@ hopeHubRouter.get(
       take: 10
     });
 
-    res.json({ consultations, leads });
+    res.json({
+      consultations: consultations.map((consultation) => ({
+        ...consultation,
+        assignedProviderId: consultation.assignedDoctorId
+          ? providerIdByUserId.get(consultation.assignedDoctorId) || null
+          : null
+      })),
+      leads
+    });
   })
 );

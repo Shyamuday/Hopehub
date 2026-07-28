@@ -1,8 +1,8 @@
 <section class="panel website-settings-panel">
   <h2>Website — Doctor List Settings</h2>
   <p class="panel-hint">
-    Control how many doctors appear on the public <em>Our Doctors</em> page.
-    Use the <em>Display order</em> field per doctor below to set the listing sequence.
+    Control how many doctors appear on the public <em>Our Doctors</em> page. Use the
+    <em>Display order</em> field per doctor below to set the listing sequence.
   </p>
   <div class="config-row">
     <label for="doctorListLimit">Max doctors shown on website (1–50)</label>
@@ -41,7 +41,12 @@
     </div>
     <div class="field">
       <label class="field-label" for="doc-create-password">Password</label>
-      <input id="doc-create-password" type="password" [formField]="createForm.password" placeholder="Initial password" />
+      <input
+        id="doc-create-password"
+        type="password"
+        [formField]="createForm.password"
+        placeholder="Initial password"
+      />
     </div>
     <div class="field">
       <label class="field-label" for="doc-create-type">Doctor type</label>
@@ -64,20 +69,74 @@
     }
     <div class="field">
       <label class="field-label" for="doc-create-specialty">Specialty (optional override)</label>
-      <input id="doc-create-specialty" [formField]="createForm.specialty" placeholder="Display specialty" />
+      <input
+        id="doc-create-specialty"
+        [formField]="createForm.specialty"
+        placeholder="Display specialty"
+      />
     </div>
     <div class="field">
       <label class="field-label" for="doc-create-reg">Registration No</label>
-      <input id="doc-create-reg" [formField]="createForm.registrationNo" placeholder="Medical council registration" />
+      <input
+        id="doc-create-reg"
+        [formField]="createForm.registrationNo"
+        placeholder="Medical council registration"
+      />
     </div>
     <div class="field">
       <label class="field-label" for="doc-create-designation">Designation</label>
-      <input id="doc-create-designation" [formField]="createForm.designation" placeholder="e.g. Clinical Psychologist" />
+      <input
+        id="doc-create-designation"
+        [formField]="createForm.designation"
+        placeholder="e.g. Clinical Psychologist"
+      />
     </div>
     <div class="field">
       <label class="field-label" for="doc-create-department">Department</label>
-      <input id="doc-create-department" [formField]="createForm.department" placeholder="e.g. Mental Wellness" />
+      <input
+        id="doc-create-department"
+        [formField]="createForm.department"
+        placeholder="e.g. Mental Wellness"
+      />
     </div>
+    @if (isPsychologistType(createModel().doctorType)) {
+      <div class="field">
+        <label class="field-label" for="doc-create-qualifications">Qualifications</label>
+        <textarea
+          id="doc-create-qualifications"
+          rows="3"
+          [formField]="createForm.qualificationsText"
+          placeholder="One per line"
+        ></textarea>
+      </div>
+      <div class="field">
+        <label class="field-label" for="doc-create-languages">Languages</label>
+        <textarea
+          id="doc-create-languages"
+          rows="3"
+          [formField]="createForm.languagesText"
+          placeholder="English&#10;Hindi"
+        ></textarea>
+      </div>
+      <div class="field">
+        <label class="field-label" for="doc-create-modalities">Modalities</label>
+        <textarea
+          id="doc-create-modalities"
+          rows="3"
+          [formField]="createForm.modalitiesText"
+          placeholder="CBT&#10;Supportive counselling"
+        ></textarea>
+      </div>
+      <div class="field">
+        <label class="field-label" for="doc-create-concerns">Concerns handled</label>
+        <textarea
+          id="doc-create-concerns"
+          rows="3"
+          [formField]="createForm.concernsHandledText"
+          placeholder="Anxiety&#10;Stress&#10;Relationship concerns"
+        ></textarea>
+      </div>
+    }
     <button type="button" (click)="createDoctor()" [disabled]="mutating() || loading()">
       {{ mutating() ? 'Creating...' : 'Create doctor' }}
     </button>
@@ -106,10 +165,18 @@
       />
       Select visible
     </label>
-    <button type="button" (click)="bulkApproveSelected()" [disabled]="loading() || mutating() || !selectedPendingDoctorIds.length">
+    <button
+      type="button"
+      (click)="bulkApproveSelected()"
+      [disabled]="loading() || mutating() || !selectedPendingDoctorIds.length"
+    >
       {{ mutating() ? 'Working...' : 'Bulk Approve' }}
     </button>
-    <button type="button" (click)="bulkRejectSelected()" [disabled]="loading() || mutating() || !selectedPendingDoctorIds.length">
+    <button
+      type="button"
+      (click)="bulkRejectSelected()"
+      [disabled]="loading() || mutating() || !selectedPendingDoctorIds.length"
+    >
       Bulk Keep Pending
     </button>
   </fieldset>
@@ -128,13 +195,26 @@
         </label>
         <strong>{{ doctor.name }}</strong>
         <p>{{ doctor.email }} | {{ doctor.mobile || 'No mobile' }}</p>
-        <small>{{ doctorTypeLabel(doctor.doctorProfile?.doctorType) }} | {{ doctor.doctorProfile?.specialty || 'Specialty not set' }} | {{ doctor.doctorProfile?.registrationNo || 'No registration no.' }}</small>
+        <small
+          >{{ doctorTypeLabel(doctor.doctorProfile?.doctorType) }} |
+          {{ doctor.doctorProfile?.specialty || 'Specialty not set' }} |
+          {{ doctor.doctorProfile?.registrationNo || 'No registration no.' }}</small
+        >
         <div class="actions">
-          <button type="button" class="link-action" (click)="setSelectedDoctor(doctor.id)" [disabled]="mutating()">View details</button>
+          <button
+            type="button"
+            class="link-action"
+            (click)="setSelectedDoctor(doctor.id)"
+            [disabled]="mutating()"
+          >
+            View details
+          </button>
           <button type="button" (click)="approveDoctor(doctor.id)" [disabled]="mutating()">
             {{ mutating() ? '...' : 'Approve' }}
           </button>
-          <button type="button" (click)="rejectDoctor(doctor.id)" [disabled]="mutating()">Keep Pending</button>
+          <button type="button" (click)="rejectDoctor(doctor.id)" [disabled]="mutating()">
+            Keep Pending
+          </button>
         </div>
       </article>
     } @empty {
@@ -143,7 +223,9 @@
   }
   <div class="pagination">
     @for (page of pendingPages(); track page) {
-      <button type="button" [class.active]="pendingPage === page" (click)="setPendingPage(page)">{{ page }}</button>
+      <button type="button" [class.active]="pendingPage === page" (click)="setPendingPage(page)">
+        {{ page }}
+      </button>
     }
   </div>
 </section>
@@ -151,7 +233,11 @@
 <section class="panel">
   <h2>All Doctors</h2>
   <div class="toolbar">
-    <input placeholder="Search doctors..." [formField]="listFilterForm.searchTerm" (change)="onListFilterChange()" />
+    <input
+      placeholder="Search doctors..."
+      [formField]="listFilterForm.searchTerm"
+      (change)="onListFilterChange()"
+    />
     <select [formField]="listFilterForm.statusFilter" (change)="onListFilterChange()">
       <option value="ALL">All status</option>
       <option value="ACTIVE">Active only</option>
@@ -173,10 +259,21 @@
       <article class="card" [class.card--selected]="selectedDoctorId === doctor.id">
         <div class="doctor-card-header">
           <strong>{{ doctor.name }}</strong>
-          <button type="button" class="link-action" (click)="setSelectedDoctor(doctor.id)" [disabled]="mutating()">View details</button>
+          <button
+            type="button"
+            class="link-action"
+            (click)="setSelectedDoctor(doctor.id)"
+            [disabled]="mutating()"
+          >
+            View details
+          </button>
         </div>
         <p>{{ doctor.email }} | {{ doctor.mobile || 'No mobile' }}</p>
-        <small>{{ doctorTypeLabel(doctor.doctorProfile?.doctorType) }} | {{ doctor.doctorProfile?.specialty || 'Specialty not set' }} | {{ doctor.isActive ? 'Active' : 'Inactive' }}</small>
+        <small
+          >{{ doctorTypeLabel(doctor.doctorProfile?.doctorType) }} |
+          {{ doctor.doctorProfile?.specialty || 'Specialty not set' }} |
+          {{ doctor.isActive ? 'Active' : 'Inactive' }}</small
+        >
       </article>
     } @empty {
       <p class="empty-state">No doctors found.</p>
@@ -184,7 +281,9 @@
   }
   <div class="pagination">
     @for (page of doctorsPages(); track page) {
-      <button type="button" [class.active]="doctorsPage === page" (click)="setDoctorsPage(page)">{{ page }}</button>
+      <button type="button" [class.active]="doctorsPage === page" (click)="setDoctorsPage(page)">
+        {{ page }}
+      </button>
     }
   </div>
 </section>
@@ -197,21 +296,37 @@
         <div>
           <strong>{{ selectedDoctor.name }}</strong>
         </div>
-        <a class="clinical-records-link" [routerLink]="clinicalRecordsRoute" [queryParams]="clinicalRecordsQuery('prescriptions')">
+        <a
+          class="clinical-records-link"
+          [routerLink]="clinicalRecordsRoute"
+          [queryParams]="clinicalRecordsQuery('prescriptions')"
+        >
           View clinical records →
         </a>
       </div>
       <hopehub-detail-rows [rows]="selectedDoctorDetailRows()" />
       <div class="actions">
         @if (selectedDoctor.isActive) {
-          <button type="button" (click)="toggleDoctorStatus(selectedDoctor.id, false)" [disabled]="mutating()">
+          <button
+            type="button"
+            (click)="toggleDoctorStatus(selectedDoctor.id, false)"
+            [disabled]="mutating()"
+          >
             {{ mutating() ? '...' : 'Deactivate' }}
           </button>
         } @else {
-          <button type="button" (click)="approveSelectedDoctorWithProfile()" [disabled]="mutating()">
+          <button
+            type="button"
+            (click)="approveSelectedDoctorWithProfile()"
+            [disabled]="mutating()"
+          >
             {{ mutating() ? '...' : 'Save profile & approve' }}
           </button>
-          <button type="button" (click)="toggleDoctorStatus(selectedDoctor.id, true)" [disabled]="mutating()">
+          <button
+            type="button"
+            (click)="toggleDoctorStatus(selectedDoctor.id, true)"
+            [disabled]="mutating()"
+          >
             {{ mutating() ? '...' : 'Activate' }}
           </button>
         }
@@ -253,19 +368,35 @@
         }
         <div class="field">
           <label class="field-label" for="doc-edit-specialty">Specialty (optional override)</label>
-          <input id="doc-edit-specialty" [formField]="editForm.specialty" placeholder="Display specialty" />
+          <input
+            id="doc-edit-specialty"
+            [formField]="editForm.specialty"
+            placeholder="Display specialty"
+          />
         </div>
         <div class="field">
           <label class="field-label" for="doc-edit-reg">Registration No</label>
-          <input id="doc-edit-reg" [formField]="editForm.registrationNo" placeholder="Medical council registration" />
+          <input
+            id="doc-edit-reg"
+            [formField]="editForm.registrationNo"
+            placeholder="Medical council registration"
+          />
         </div>
         <div class="field">
           <label class="field-label" for="doc-edit-designation">Designation</label>
-          <input id="doc-edit-designation" [formField]="editForm.designation" placeholder="e.g. Clinical Psychologist" />
+          <input
+            id="doc-edit-designation"
+            [formField]="editForm.designation"
+            placeholder="e.g. Clinical Psychologist"
+          />
         </div>
         <div class="field">
           <label class="field-label" for="doc-edit-department">Department</label>
-          <input id="doc-edit-department" [formField]="editForm.department" placeholder="e.g. Mental Wellness" />
+          <input
+            id="doc-edit-department"
+            [formField]="editForm.department"
+            placeholder="e.g. Mental Wellness"
+          />
         </div>
         <label class="website-toggle">
           <input type="checkbox" [formField]="editForm.isAvailable" />
@@ -279,11 +410,21 @@
         </label>
         <div class="field">
           <label class="field-label" for="doc-edit-order">Display order</label>
-          <input id="doc-edit-order" type="number" [formField]="editForm.websiteOrder" placeholder="1 = first, blank = auto" />
+          <input
+            id="doc-edit-order"
+            type="number"
+            [formField]="editForm.websiteOrder"
+            placeholder="1 = first, blank = auto"
+          />
         </div>
         <div class="field">
           <label class="field-label" for="doc-edit-exp">Years of experience</label>
-          <input id="doc-edit-exp" type="number" [formField]="editForm.yearsOfExperience" placeholder="e.g. 12" />
+          <input
+            id="doc-edit-exp"
+            type="number"
+            [formField]="editForm.yearsOfExperience"
+            placeholder="e.g. 12"
+          />
         </div>
         <div class="field">
           <label class="field-label" for="doc-edit-bio">Short bio</label>
@@ -303,6 +444,107 @@
             [formField]="editForm.focusAreasText"
           ></textarea>
         </div>
+        @if (isPsychologistType(editModel().doctorType)) {
+          <p class="form-section-label">Psychologist public profile</p>
+          <div class="field">
+            <label class="field-label" for="doc-edit-qualifications">Qualifications</label>
+            <textarea
+              id="doc-edit-qualifications"
+              rows="3"
+              placeholder="One per line"
+              [formField]="editForm.qualificationsText"
+            ></textarea>
+          </div>
+          <div class="field">
+            <label class="field-label" for="doc-edit-license-number">License number</label>
+            <input
+              id="doc-edit-license-number"
+              [formField]="editForm.licenseNumber"
+              placeholder="Registration or license number"
+            />
+          </div>
+          <div class="field">
+            <label class="field-label" for="doc-edit-license-council">License council</label>
+            <input
+              id="doc-edit-license-council"
+              [formField]="editForm.licenseCouncil"
+              placeholder="Council / authority"
+            />
+          </div>
+          <div class="field">
+            <label class="field-label" for="doc-edit-languages">Languages</label>
+            <textarea
+              id="doc-edit-languages"
+              rows="3"
+              placeholder="One per line"
+              [formField]="editForm.languagesText"
+            ></textarea>
+          </div>
+          <div class="field">
+            <label class="field-label" for="doc-edit-modalities">Modalities</label>
+            <textarea
+              id="doc-edit-modalities"
+              rows="3"
+              placeholder="CBT&#10;Supportive counselling"
+              [formField]="editForm.modalitiesText"
+            ></textarea>
+          </div>
+          <div class="field">
+            <label class="field-label" for="doc-edit-session-types">Session types</label>
+            <textarea
+              id="doc-edit-session-types"
+              rows="3"
+              placeholder="Individual session&#10;Relationship support"
+              [formField]="editForm.sessionTypesText"
+            ></textarea>
+          </div>
+          <div class="field">
+            <label class="field-label" for="doc-edit-age-groups">Age groups</label>
+            <textarea
+              id="doc-edit-age-groups"
+              rows="3"
+              placeholder="Adults&#10;Teens"
+              [formField]="editForm.ageGroupsText"
+            ></textarea>
+          </div>
+          <div class="field">
+            <label class="field-label" for="doc-edit-concerns">Concerns handled</label>
+            <textarea
+              id="doc-edit-concerns"
+              rows="3"
+              placeholder="One per line"
+              [formField]="editForm.concernsHandledText"
+            ></textarea>
+          </div>
+          <div class="field">
+            <label class="field-label" for="doc-edit-intro-title">Intro title</label>
+            <input
+              id="doc-edit-intro-title"
+              [formField]="editForm.introSessionTitle"
+              placeholder="Counselling approach"
+            />
+          </div>
+          <div class="field">
+            <label class="field-label" for="doc-edit-approach">Counselling approach</label>
+            <textarea
+              id="doc-edit-approach"
+              rows="4"
+              [formField]="editForm.counsellingApproach"
+            ></textarea>
+          </div>
+          <div class="field">
+            <label class="field-label" for="doc-edit-safety">Safety note</label>
+            <textarea
+              id="doc-edit-safety"
+              rows="3"
+              [formField]="editForm.safetyEscalationNote"
+            ></textarea>
+          </div>
+          <label class="website-toggle">
+            <input type="checkbox" [formField]="editForm.acceptsHighRiskCases" />
+            Accept high-risk cases after team review
+          </label>
+        }
         <button type="button" (click)="saveDoctorEdits()" [disabled]="mutating()">
           {{ mutating() ? 'Saving...' : 'Save changes' }}
         </button>
@@ -319,6 +561,8 @@
 @if (error()) {
   <div class="error-row">
     <p class="error">{{ error() }}</p>
-    <button type="button" class="retry-btn" (click)="load()" [disabled]="loading() || mutating()">Retry</button>
+    <button type="button" class="retry-btn" (click)="load()" [disabled]="loading() || mutating()">
+      Retry
+    </button>
   </div>
 }

@@ -17,10 +17,31 @@ export class PsychologistsComponent implements OnInit {
   readonly loading = signal(false);
   readonly error = signal('');
   readonly q = signal('');
+  readonly concern = signal('');
+  readonly language = signal('');
+  readonly modality = signal('');
+  readonly sessionType = signal('');
+  readonly ageGroup = signal('');
   readonly page = signal(1);
   readonly pageSize = 20;
   readonly total = signal(0);
   readonly totalPages = signal(1);
+  readonly concernOptions = ['', 'Anxiety', 'Stress', 'Relationship concerns', 'Family concerns'];
+  readonly languageOptions = ['', 'English', 'Hindi', 'Bengali', 'Tamil', 'Telugu'];
+  readonly modalityOptions = [
+    '',
+    'CBT',
+    'Supportive counselling',
+    'Mindfulness',
+    'Family counselling',
+  ];
+  readonly sessionTypeOptions = [
+    '',
+    'Individual session',
+    'Relationship support',
+    'Family support',
+  ];
+  readonly ageGroupOptions = ['', 'Adults', 'Teens', 'Children', 'Older adults'];
 
   ngOnInit(): void {
     this.load();
@@ -30,7 +51,16 @@ export class PsychologistsComponent implements OnInit {
     this.loading.set(true);
     this.error.set('');
     this.bookingService
-      .providers({ page: this.page(), pageSize: this.pageSize, q: this.q() })
+      .providers({
+        page: this.page(),
+        pageSize: this.pageSize,
+        q: this.q(),
+        concern: this.concern(),
+        language: this.language(),
+        modality: this.modality(),
+        sessionType: this.sessionType(),
+        ageGroup: this.ageGroup(),
+      })
       .subscribe({
         next: (res) => {
           this.providers.set(res.providers);
@@ -47,6 +77,26 @@ export class PsychologistsComponent implements OnInit {
 
   search(value: string): void {
     this.q.set(value);
+    this.page.set(1);
+    this.load();
+  }
+
+  setFilter(
+    key: 'concern' | 'language' | 'modality' | 'sessionType' | 'ageGroup',
+    value: string,
+  ): void {
+    this[key].set(value);
+    this.page.set(1);
+    this.load();
+  }
+
+  clearFilters(): void {
+    this.q.set('');
+    this.concern.set('');
+    this.language.set('');
+    this.modality.set('');
+    this.sessionType.set('');
+    this.ageGroup.set('');
     this.page.set(1);
     this.load();
   }
