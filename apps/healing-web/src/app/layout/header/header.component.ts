@@ -322,6 +322,15 @@ import { User } from '../../core/models/auth.model';
                 >
                   My Consultations
                 </a>
+                <a
+                  routerLink="/profile"
+                  (click)="navigateAndClose('/profile')"
+                  routerLinkActive="text-primary-600 bg-primary-50"
+                  class="text-gray-700 hover:text-primary-600 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-semibold transition-colors duration-200"
+                  role="menuitem"
+                >
+                  Profile Settings
+                </a>
                 <button
                   (click)="logout()"
                   class="text-left text-gray-700 hover:text-primary-600 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium transition-colors duration-200"

@@ -20,6 +20,7 @@ export type HopeHubBookingPayload = {
   urgencyLevel?: string;
   preferredTime?: string;
   preferAnonymousTelegram?: boolean;
+  providerId?: string;
   entryPage?: string;
 };
 
@@ -34,6 +35,20 @@ export type HopeHubProvider = {
   bio?: string | null;
   yearsOfExperience?: number | null;
   focusAreas: string[];
+  qualifications?: string[];
+  licenseNumber?: string | null;
+  licenseCouncil?: string | null;
+  languages?: string[];
+  modalities?: string[];
+  sessionTypes?: string[];
+  ageGroups?: string[];
+  concernsHandled?: string[];
+  introSessionTitle?: string | null;
+  counsellingApproach?: string | null;
+  safetyEscalationNote?: string | null;
+  acceptsHighRiskCases?: boolean;
+  sessionFeeInPaise?: number;
+  sessionDurationMinutes?: number;
 };
 
 export type HopeHubProviderResponse = {
@@ -73,6 +88,12 @@ export class BookingService {
     });
     return this.http.get<HopeHubProviderResponse>(
       `${this.apiUrl}/hope-hub/providers?${searchParams.toString()}`,
+    );
+  }
+
+  provider(id: string): Observable<{ provider: HopeHubProvider }> {
+    return this.http.get<{ provider: HopeHubProvider }>(
+      `${this.apiUrl}/hope-hub/providers/${encodeURIComponent(id)}`,
     );
   }
 

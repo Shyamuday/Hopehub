@@ -108,6 +108,7 @@ model Doctor {
   leaveRequests    LeaveRequest[]
   slots            DoctorSlot[]
   onlineSession    DoctorOnlineSession?
+  mentalHealthProfile MentalHealthProviderProfile?
   salaryStructure  EmployeeSalary?
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt

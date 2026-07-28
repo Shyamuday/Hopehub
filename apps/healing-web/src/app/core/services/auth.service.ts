@@ -12,6 +12,8 @@ import {
   RegisterCredentials,
   ResetPasswordRequest,
   UpdateProfileRequest,
+  PatientProfileResponse,
+  PatientProfileUpdateRequest,
   AuthError,
   UserPreferences,
   ApiAuthResponse,
@@ -281,6 +283,29 @@ export class AuthService {
     this.saveSession(this.getToken()!, updated);
     this.updateState({ user: updated });
     return updated;
+  }
+
+  loadPatientProfile() {
+    return this.http.get<PatientProfileResponse>(`${this.apiUrl}/patient/profile`);
+  }
+
+  async savePatientProfile(request: PatientProfileUpdateRequest): Promise<PatientProfileResponse> {
+    const response = await firstValueFrom(
+      this.http.put<PatientProfileResponse>(`${this.apiUrl}/patient/profile`, request),
+    );
+    const current = this.authStateSubject.value.user;
+    if (current) {
+      const updated = {
+        ...current,
+        name: response.profile.name,
+        email: response.profile.email,
+        mobile: response.profile.mobile,
+        patientCode: response.profile.patientCode,
+      };
+      this.saveSession(this.getToken()!, updated);
+      this.updateState({ user: updated });
+    }
+    return response;
   }
 
   /** Email verification is handled server-side via the reset email flow — no-op here. */

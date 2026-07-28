@@ -99,6 +99,53 @@ Diabetes management
 Hypertension"
       [formField]="profileForm.focusAreasText"
     ></textarea>
+
+    @if (isPsychologist) {
+      <section class="mental-profile-section">
+        <h3>Mental Health Provider Details</h3>
+        <p class="section-hint">Shown on Hope Hub psychologist profile pages and used for session matching.</p>
+
+        <div class="grid two-column">
+          <label for="qualifications">Qualifications <span class="hint">(one per line)</span></label>
+          <textarea id="qualifications" rows="3" [formField]="profileForm.qualificationsText"></textarea>
+
+          <label for="licenseCouncil">License / council</label>
+          <input id="licenseCouncil" [formField]="profileForm.licenseCouncil" placeholder="e.g. RCI, state council" />
+
+          <label for="licenseNumber">License / registration number</label>
+          <input id="licenseNumber" [formField]="profileForm.licenseNumber" />
+
+          <label for="languages">Languages <span class="hint">(one per line)</span></label>
+          <textarea id="languages" rows="3" [formField]="profileForm.languagesText"></textarea>
+
+          <label for="modalities">Modalities <span class="hint">(CBT, DBT, ACT, etc.)</span></label>
+          <textarea id="modalities" rows="3" [formField]="profileForm.modalitiesText"></textarea>
+
+          <label for="sessionTypes">Session types <span class="hint">(one per line)</span></label>
+          <textarea id="sessionTypes" rows="3" [formField]="profileForm.sessionTypesText"></textarea>
+
+          <label for="ageGroups">Age groups served</label>
+          <textarea id="ageGroups" rows="3" [formField]="profileForm.ageGroupsText"></textarea>
+
+          <label for="concernsHandled">Concerns handled</label>
+          <textarea id="concernsHandled" rows="4" [formField]="profileForm.concernsHandledText"></textarea>
+        </div>
+
+        <label for="introSessionTitle">Intro session title</label>
+        <input id="introSessionTitle" [formField]="profileForm.introSessionTitle" placeholder="e.g. Calm first conversation" />
+
+        <label for="counsellingApproach">Counselling approach</label>
+        <textarea id="counsellingApproach" rows="5" [formField]="profileForm.counsellingApproach"></textarea>
+
+        <label for="safetyEscalationNote">Safety escalation note</label>
+        <textarea id="safetyEscalationNote" rows="4" [formField]="profileForm.safetyEscalationNote"></textarea>
+
+        <label class="checkbox">
+          <input type="checkbox" [formField]="profileForm.acceptsHighRiskCases" />
+          Accepts high-risk cases with escalation support
+        </label>
+      </section>
+    }
   </div>
 
   <div class="actions">

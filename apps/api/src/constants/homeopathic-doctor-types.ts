@@ -111,6 +111,22 @@ export const doctorProfileSelect = {
   websiteOrder: true,
   yearsOfExperience: true,
   focusAreas: true,
+  mentalHealthProfile: {
+    select: {
+      qualifications: true,
+      licenseNumber: true,
+      licenseCouncil: true,
+      languages: true,
+      modalities: true,
+      sessionTypes: true,
+      ageGroups: true,
+      concernsHandled: true,
+      introSessionTitle: true,
+      counsellingApproach: true,
+      safetyEscalationNote: true,
+      acceptsHighRiskCases: true
+    }
+  },
   defaultMethodOptionId: true,
   defaultMethodOption: { select: { id: true, label: true } }
 } as const;

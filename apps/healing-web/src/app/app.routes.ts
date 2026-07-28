@@ -51,6 +51,30 @@ export const routes: Routes = [
     },
   },
   {
+    path: 'psychologists/:id',
+    loadComponent: () =>
+      import('./features/psychologists/psychologist-detail.component').then(
+        (m) => m.PsychologistDetailComponent,
+      ),
+    title: 'Psychologist Profile - Hope Hub',
+    data: {
+      breadcrumb: 'Psychologist Profile',
+      description: 'View psychologist profile, focus areas, session details, and request support',
+      keywords: 'psychologist profile, counsellor profile, mental wellness expert',
+    },
+  },
+  {
+    path: 'profile',
+    loadComponent: () =>
+      import('./features/profile/profile.component').then((m) => m.ProfileComponent),
+    title: 'My Profile - Hope Hub',
+    data: {
+      breadcrumb: 'My Profile',
+      description: 'Manage your Hope Hub profile and mental wellness context',
+      keywords: 'hope hub profile, patient profile, mental wellness profile',
+    },
+  },
+  {
     path: 'community',
     loadComponent: () =>
       import('./features/community/community.component').then((m) => m.CommunityComponent),

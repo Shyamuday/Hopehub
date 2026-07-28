@@ -71,12 +71,26 @@
                 }
               </div>
             }
-            <a
-              routerLink="/contact"
-              class="btn-secondary btn-sm mt-5"
-            >
-              Request support
-            </a>
+            <div class="mt-5 flex flex-col gap-2">
+              <a [routerLink]="['/psychologists', provider.id]" class="btn-secondary btn-sm">
+                View profile
+              </a>
+              <a
+                routerLink="/contact"
+                [queryParams]="{
+                  service: 'Mental wellness session',
+                  serviceName: 'Mental wellness session',
+                  consultant: provider.name,
+                  providerId: provider.id,
+                  duration: '30 minutes',
+                  price: 500,
+                  source: 'psychologists-list'
+                }"
+                class="btn-outline btn-sm"
+              >
+                Request session
+              </a>
+            </div>
           </article>
         }
       </div>

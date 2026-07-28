@@ -7,7 +7,8 @@ import {
   asyncRoute,
   includeConsultationRelations,
   queryPositiveInt,
-  queryText
+  queryText,
+  routeParam
 } from '../utils/helpers.js';
 import { ensureBillingPlans } from './catalog.js';
 import { resolveConsultationCheckout } from '../services/checkout-pricing.js';
@@ -58,6 +59,7 @@ const hopeHubBookingSchema = z.object({
   urgencyLevel: z.enum(['low', 'normal', 'high']).optional(),
   preferredTime: z.string().trim().max(120).optional().or(z.literal('')),
   preferAnonymousTelegram: z.boolean().optional(),
+  providerId: z.string().trim().min(1).max(120).optional().or(z.literal('')),
   entryPage: z.string().trim().max(500).optional().or(z.literal(''))
 });
 
@@ -131,6 +133,75 @@ function hopeHubRevenueSplit(amountInPaise: number) {
     platformSharePercent: HOPE_HUB_PLATFORM_SHARE_PERCENT,
     psychologistShareInPaise,
     platformShareInPaise: amountInPaise - psychologistShareInPaise
+  };
+}
+
+function providerPublicPayload(provider: {
+  id: string;
+  specialty: string;
+  designation: string | null;
+  department: string | null;
+  bio: string | null;
+  yearsOfExperience: number | null;
+  focusAreas: string[];
+  mentalHealthProfile?: {
+    qualifications: string[];
+    licenseNumber: string | null;
+    licenseCouncil: string | null;
+    languages: string[];
+    modalities: string[];
+    sessionTypes: string[];
+    ageGroups: string[];
+    concernsHandled: string[];
+    introSessionTitle: string | null;
+    counsellingApproach: string | null;
+    safetyEscalationNote: string | null;
+    acceptsHighRiskCases: boolean;
+  } | null;
+  user: { id: string; name: string; profileImageKey: string | null };
+}) {
+  const user = enrichWithProfileImageUrl(provider.user, userProfileImagePath);
+  const focusAreas = provider.focusAreas || [];
+  const mental = provider.mentalHealthProfile;
+  return {
+    id: provider.id,
+    userId: user.id,
+    name: user.name,
+    profileImageUrl: user.profileImageUrl,
+    specialty: provider.specialty,
+    designation: provider.designation,
+    department: provider.department,
+    bio: provider.bio,
+    yearsOfExperience: provider.yearsOfExperience,
+    focusAreas,
+    qualifications: mental?.qualifications ?? [],
+    licenseNumber: mental?.licenseNumber ?? null,
+    licenseCouncil: mental?.licenseCouncil ?? null,
+    languages: mental?.languages?.length
+      ? mental.languages
+      : focusAreas
+          .filter((item) => /^language:/i.test(item))
+          .map((item) => item.replace(/^language:\s*/i, '')),
+    modalities: mental?.modalities?.length
+      ? mental.modalities
+      : focusAreas
+          .filter((item) => /^modality:/i.test(item))
+          .map((item) => item.replace(/^modality:\s*/i, '')),
+    sessionTypes: mental?.sessionTypes?.length
+      ? mental.sessionTypes
+      : focusAreas
+          .filter((item) => /^session:/i.test(item))
+          .map((item) => item.replace(/^session:\s*/i, '')),
+    ageGroups: mental?.ageGroups ?? [],
+    concernsHandled: mental?.concernsHandled?.length
+      ? mental.concernsHandled
+      : focusAreas.filter((item) => !/^(language|modality|session):/i.test(item)),
+    introSessionTitle: mental?.introSessionTitle ?? null,
+    counsellingApproach: mental?.counsellingApproach ?? null,
+    safetyEscalationNote: mental?.safetyEscalationNote ?? null,
+    acceptsHighRiskCases: mental?.acceptsHighRiskCases ?? false,
+    sessionFeeInPaise: HOPE_HUB_SESSION_FEE_IN_PAISE,
+    sessionDurationMinutes: HOPE_HUB_SESSION_DURATION_MINUTES
   };
 }
 
@@ -224,6 +295,22 @@ hopeHubRouter.get(
           yearsOfExperience: true,
           focusAreas: true,
           websiteOrder: true,
+          mentalHealthProfile: {
+            select: {
+              qualifications: true,
+              licenseNumber: true,
+              licenseCouncil: true,
+              languages: true,
+              modalities: true,
+              sessionTypes: true,
+              ageGroups: true,
+              concernsHandled: true,
+              introSessionTitle: true,
+              counsellingApproach: true,
+              safetyEscalationNote: true,
+              acceptsHighRiskCases: true
+            }
+          },
           user: { select: { id: true, name: true, profileImageKey: true } }
         },
         orderBy: [{ websiteOrder: { sort: 'asc', nulls: 'last' } }, { user: { name: 'asc' } }],
@@ -234,21 +321,7 @@ hopeHubRouter.get(
     ]);
 
     res.json({
-      providers: providers.map((provider) => {
-        const user = enrichWithProfileImageUrl(provider.user, userProfileImagePath);
-        return {
-          id: provider.id,
-          userId: user.id,
-          name: user.name,
-          profileImageUrl: user.profileImageUrl,
-          specialty: provider.specialty,
-          designation: provider.designation,
-          department: provider.department,
-          bio: provider.bio,
-          yearsOfExperience: provider.yearsOfExperience,
-          focusAreas: provider.focusAreas
-        };
-      }),
+      providers: providers.map(providerPublicPayload),
       pagination: {
         page,
         pageSize,
@@ -256,6 +329,58 @@ hopeHubRouter.get(
         totalPages: Math.max(1, Math.ceil(total / pageSize))
       }
     });
+  })
+);
+
+hopeHubRouter.get(
+  '/hope-hub/providers/:id',
+  asyncRoute(async (req, res) => {
+    const providerId = routeParam(req, 'id');
+    const provider = await prisma.doctor.findFirst({
+      where: {
+        id: providerId,
+        showOnWebsite: true,
+        user: { isActive: true },
+        OR: [
+          { doctorType: HomeopathicDoctorType.PSYCHOLOGIST },
+          { specialty: { contains: 'psycholog', mode: 'insensitive' } },
+          { designation: { contains: 'psycholog', mode: 'insensitive' } },
+          { department: { contains: 'mental', mode: 'insensitive' } },
+          { department: { contains: 'wellness', mode: 'insensitive' } }
+        ]
+      },
+      select: {
+        id: true,
+        specialty: true,
+        designation: true,
+        department: true,
+        bio: true,
+        yearsOfExperience: true,
+        focusAreas: true,
+        mentalHealthProfile: {
+          select: {
+            qualifications: true,
+            licenseNumber: true,
+            licenseCouncil: true,
+            languages: true,
+            modalities: true,
+            sessionTypes: true,
+            ageGroups: true,
+            concernsHandled: true,
+            introSessionTitle: true,
+            counsellingApproach: true,
+            safetyEscalationNote: true,
+            acceptsHighRiskCases: true
+          }
+        },
+        user: { select: { id: true, name: true, profileImageKey: true } }
+      }
+    });
+
+    if (!provider) {
+      return res.status(404).json({ message: 'Provider not found.' });
+    }
+    res.json({ provider: providerPublicPayload(provider) });
   })
 );
 
@@ -396,6 +521,23 @@ hopeHubRouter.post(
     const body = hopeHubBookingSchema.parse(req.body);
     const amountInPaise = HOPE_HUB_SESSION_FEE_IN_PAISE;
     const slug = slugify(body.serviceName);
+    const requestedProvider = body.providerId
+      ? await prisma.doctor.findFirst({
+          where: {
+            id: body.providerId,
+            showOnWebsite: true,
+            user: { isActive: true },
+            OR: [
+              { doctorType: HomeopathicDoctorType.PSYCHOLOGIST },
+              { specialty: { contains: 'psycholog', mode: 'insensitive' } },
+              { designation: { contains: 'psycholog', mode: 'insensitive' } },
+              { department: { contains: 'mental', mode: 'insensitive' } },
+              { department: { contains: 'wellness', mode: 'insensitive' } }
+            ]
+          },
+          select: { id: true, userId: true, user: { select: { name: true } } }
+        })
+      : null;
 
     await ensureBillingPlans();
     const disease = await prisma.disease.upsert({
@@ -437,6 +579,7 @@ hopeHubRouter.post(
         patientId: req.user!.id,
         diseaseId: disease.id,
         clinicStoreId: null,
+        assignedDoctorId: requestedProvider?.userId ?? null,
         consultationMode: 'INSTANT_ONLINE',
         intakeAnswers: {
           source: 'hope-hub',
@@ -446,6 +589,8 @@ hopeHubRouter.post(
           appointmentTime: body.appointmentTime,
           consultantName: body.consultantName || '',
           consultantPhone: body.consultantPhone || '',
+          providerId: requestedProvider?.id || body.providerId || '',
+          requestedProviderName: requestedProvider?.user.name || '',
           sessionDuration: `${HOPE_HUB_SESSION_DURATION_MINUTES} minutes`,
           requestedSessionDuration: body.sessionDuration || '',
           preferredContact: body.preferredContact || '',
@@ -476,6 +621,8 @@ hopeHubRouter.post(
             lineItems: {
               source: 'hope-hub',
               serviceName: body.serviceName,
+              providerId: requestedProvider?.id || body.providerId || '',
+              requestedProviderName: requestedProvider?.user.name || '',
               sessionDurationMinutes: HOPE_HUB_SESSION_DURATION_MINUTES,
               consultationFeeInPaise: checkout.grossAmountInPaise,
               discountInPaise: checkout.discountInPaise,
@@ -507,6 +654,7 @@ hopeHubRouter.post(
           body.preferredContact ? `Preferred contact: ${body.preferredContact}` : '',
           body.urgencyLevel ? `Urgency: ${body.urgencyLevel}` : '',
           body.preferredTime ? `Preferred callback time: ${body.preferredTime}` : '',
+          requestedProvider ? `Requested expert: ${requestedProvider.user.name}` : '',
           body.preferAnonymousTelegram ? 'Low-identity Telegram follow-up requested' : '',
           body.message ? `Message: ${body.message}` : ''
         ]
@@ -528,7 +676,8 @@ hopeHubRouter.post(
         source: 'hope-hub',
         consultationId: consultation.id,
         diseaseId: disease.id,
-        serviceName: body.serviceName
+        serviceName: body.serviceName,
+        providerId: requestedProvider?.id ?? body.providerId ?? ''
       }
     });
 

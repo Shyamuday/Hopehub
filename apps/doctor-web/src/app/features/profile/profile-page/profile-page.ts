@@ -23,6 +23,18 @@ function emptyProfileModel() {
     bio: '',
     yearsOfExperience: '' as number | '',
     focusAreasText: '',
+    qualificationsText: '',
+    licenseNumber: '',
+    licenseCouncil: '',
+    languagesText: '',
+    modalitiesText: '',
+    sessionTypesText: '',
+    ageGroupsText: '',
+    concernsHandledText: '',
+    introSessionTitle: '',
+    counsellingApproach: '',
+    safetyEscalationNote: '',
+    acceptsHighRiskCases: false,
     defaultMethodOptionId: '',
   };
 }
@@ -49,6 +61,7 @@ export class ProfilePage {
   specialtyFocusLabel = '';
   showOnWebsite = false;
   canPrescribe = false;
+  isPsychologist = false;
   message = '';
   error = '';
   isLoading = false;
@@ -75,6 +88,8 @@ export class ProfilePage {
 
       const profile = response.profile;
       this.canPrescribe = capabilitiesForDoctorType(profile.doctorProfile?.doctorType).prescribe;
+      this.isPsychologist = profile.doctorProfile?.doctorType === 'PSYCHOLOGIST';
+      const mental = profile.doctorProfile?.mentalHealthProfile;
       this.methodOptions = this.canPrescribe
         ? (
             await firstValueFrom(
@@ -96,6 +111,18 @@ export class ProfilePage {
         bio: profile.doctorProfile?.bio || '',
         yearsOfExperience: profile.doctorProfile?.yearsOfExperience ?? '',
         focusAreasText: (profile.doctorProfile?.focusAreas ?? []).join('\n'),
+        qualificationsText: (mental?.qualifications ?? []).join('\n'),
+        licenseNumber: mental?.licenseNumber || '',
+        licenseCouncil: mental?.licenseCouncil || '',
+        languagesText: (mental?.languages ?? []).join('\n'),
+        modalitiesText: (mental?.modalities ?? []).join('\n'),
+        sessionTypesText: (mental?.sessionTypes ?? []).join('\n'),
+        ageGroupsText: (mental?.ageGroups ?? []).join('\n'),
+        concernsHandledText: (mental?.concernsHandled ?? []).join('\n'),
+        introSessionTitle: mental?.introSessionTitle || '',
+        counsellingApproach: mental?.counsellingApproach || '',
+        safetyEscalationNote: mental?.safetyEscalationNote || '',
+        acceptsHighRiskCases: mental?.acceptsHighRiskCases ?? false,
         defaultMethodOptionId: profile.doctorProfile?.defaultMethodOptionId || '',
       });
       this.doctorTypeLabel = profile.doctorProfile?.doctorTypeLabel || 'Doctor';
@@ -133,6 +160,22 @@ export class ProfilePage {
             .split('\n')
             .map((s) => s.trim())
             .filter(Boolean),
+          mentalHealthProfile: this.isPsychologist
+            ? {
+                qualifications: this.lines(form.qualificationsText),
+                licenseNumber: form.licenseNumber || null,
+                licenseCouncil: form.licenseCouncil || null,
+                languages: this.lines(form.languagesText),
+                modalities: this.lines(form.modalitiesText),
+                sessionTypes: this.lines(form.sessionTypesText),
+                ageGroups: this.lines(form.ageGroupsText),
+                concernsHandled: this.lines(form.concernsHandledText),
+                introSessionTitle: form.introSessionTitle || null,
+                counsellingApproach: form.counsellingApproach || null,
+                safetyEscalationNote: form.safetyEscalationNote || null,
+                acceptsHighRiskCases: form.acceptsHighRiskCases,
+              }
+            : undefined,
           defaultMethodOptionId: this.canPrescribe ? form.defaultMethodOptionId || null : undefined,
         }),
       );
@@ -143,5 +186,12 @@ export class ProfilePage {
     } finally {
       this.saving = false;
     }
+  }
+
+  private lines(value: string) {
+    return value
+      .split('\n')
+      .map((item) => item.trim())
+      .filter(Boolean);
   }
 }

@@ -31,3 +31,26 @@ model HopeHubAssessmentAttempt {
   @@index([assessmentId])
   @@index([safetyFlag])
 }
+
+model MentalHealthProviderProfile {
+  id                    String   @id @default(cuid())
+  doctorId              String   @unique
+  qualifications         String[] @default([])
+  licenseNumber          String?
+  licenseCouncil         String?
+  languages              String[] @default([])
+  modalities             String[] @default([])
+  sessionTypes           String[] @default([])
+  ageGroups              String[] @default([])
+  concernsHandled        String[] @default([])
+  introSessionTitle      String?
+  counsellingApproach    String?  @db.Text
+  safetyEscalationNote   String?  @db.Text
+  acceptsHighRiskCases   Boolean  @default(false)
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  doctor                Doctor   @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+
+  @@index([doctorId])
+}

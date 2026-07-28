@@ -92,6 +92,25 @@
   }
 }
 
+.mental-profile-section {
+  display: grid;
+  gap: 0.45rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--color-border);
+
+  h3 {
+    margin: 0;
+    font-size: var(--text-base);
+    font-weight: 700;
+    color: var(--color-text);
+  }
+}
+
+.two-column {
+  gap: 0.45rem 0.75rem;
+}
+
 .section-hint {
   font-size: var(--text-sm);
   color: var(--color-text-muted);
@@ -171,6 +190,16 @@ button {
 
   .actions button {
     flex: 1 1 8rem;
+  }
+}
+
+@media (min-width: 720px) {
+  .profile-card {
+    max-width: 56rem;
+  }
+
+  .two-column {
+    grid-template-columns: minmax(12rem, 0.35fr) minmax(0, 0.65fr);
   }
 }
 

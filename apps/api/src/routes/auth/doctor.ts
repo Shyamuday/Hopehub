@@ -22,6 +22,31 @@ function inferDoctorTypeFromSpecialty(specialty: string) {
     : HomeopathicDoctorType.JUNIOR_DOCTOR;
 }
 
+const mentalHealthProviderProfileSchema = z
+  .object({
+    qualifications: z.array(z.string().trim().min(1).max(160)).max(20).optional(),
+    licenseNumber: z.string().trim().max(120).optional().nullable().or(z.literal('')),
+    licenseCouncil: z.string().trim().max(160).optional().nullable().or(z.literal('')),
+    languages: z.array(z.string().trim().min(1).max(80)).max(20).optional(),
+    modalities: z.array(z.string().trim().min(1).max(120)).max(30).optional(),
+    sessionTypes: z.array(z.string().trim().min(1).max(120)).max(30).optional(),
+    ageGroups: z.array(z.string().trim().min(1).max(80)).max(20).optional(),
+    concernsHandled: z.array(z.string().trim().min(1).max(120)).max(40).optional(),
+    introSessionTitle: z.string().trim().max(180).optional().nullable().or(z.literal('')),
+    counsellingApproach: z.string().trim().max(3000).optional().nullable().or(z.literal('')),
+    safetyEscalationNote: z.string().trim().max(2000).optional().nullable().or(z.literal('')),
+    acceptsHighRiskCases: z.boolean().optional()
+  })
+  .optional();
+
+function cleanList(items: string[] | undefined) {
+  return (items ?? []).map((item) => item.trim()).filter(Boolean);
+}
+
+function cleanNullableText(value: string | null | undefined) {
+  return value?.trim() || null;
+}
+
 export function registerAuthDoctorRoutes(router: Router) {
   router.post(
     '/doctor/enroll',
@@ -112,6 +137,7 @@ export function registerAuthDoctorRoutes(router: Router) {
           bio: z.string().max(1200).optional().nullable(),
           yearsOfExperience: z.number().int().min(0).max(60).optional().nullable(),
           focusAreas: z.array(z.string().min(1)).optional(),
+          mentalHealthProfile: mentalHealthProviderProfileSchema,
           defaultMethodOptionId: z.string().min(1).nullable().optional()
         })
         .parse(req.body);
@@ -141,6 +167,25 @@ export function registerAuthDoctorRoutes(router: Router) {
         yearsOfExperience: body.yearsOfExperience ?? null,
         focusAreas: (body.focusAreas ?? []).map((f) => f.trim()).filter(Boolean)
       };
+      const mentalHealthProfile =
+        profilePayload.doctorType === HomeopathicDoctorType.PSYCHOLOGIST && body.mentalHealthProfile
+          ? {
+              qualifications: cleanList(body.mentalHealthProfile.qualifications),
+              licenseNumber: cleanNullableText(body.mentalHealthProfile.licenseNumber),
+              licenseCouncil: cleanNullableText(body.mentalHealthProfile.licenseCouncil),
+              languages: cleanList(body.mentalHealthProfile.languages),
+              modalities: cleanList(body.mentalHealthProfile.modalities),
+              sessionTypes: cleanList(body.mentalHealthProfile.sessionTypes),
+              ageGroups: cleanList(body.mentalHealthProfile.ageGroups),
+              concernsHandled: cleanList(body.mentalHealthProfile.concernsHandled),
+              introSessionTitle: cleanNullableText(body.mentalHealthProfile.introSessionTitle),
+              counsellingApproach: cleanNullableText(body.mentalHealthProfile.counsellingApproach),
+              safetyEscalationNote: cleanNullableText(
+                body.mentalHealthProfile.safetyEscalationNote
+              ),
+              acceptsHighRiskCases: body.mentalHealthProfile.acceptsHighRiskCases ?? false
+            }
+          : null;
       const compensationFields =
         profilePayload.doctorType === HomeopathicDoctorType.PSYCHOLOGIST
           ? { consultationSharePercent: PSYCHOLOGIST_CONSULTATION_SHARE_PERCENT }
@@ -157,6 +202,9 @@ export function registerAuthDoctorRoutes(router: Router) {
                 ...profilePayload,
                 ...compensationFields,
                 ...publicFields,
+                ...(mentalHealthProfile
+                  ? { mentalHealthProfile: { create: mentalHealthProfile } }
+                  : {}),
                 defaultMethodOptionId: body.defaultMethodOptionId ?? null
               },
               update: {
@@ -167,7 +215,17 @@ export function registerAuthDoctorRoutes(router: Router) {
                 ...(body.defaultMethodOptionId !== undefined
                   ? { defaultMethodOptionId: body.defaultMethodOptionId }
                   : {}),
-                ...publicFields
+                ...publicFields,
+                ...(mentalHealthProfile
+                  ? {
+                      mentalHealthProfile: {
+                        upsert: {
+                          create: mentalHealthProfile,
+                          update: mentalHealthProfile
+                        }
+                      }
+                    }
+                  : {})
               }
             }
           }

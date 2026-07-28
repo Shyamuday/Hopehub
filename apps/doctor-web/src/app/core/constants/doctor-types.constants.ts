@@ -50,6 +50,20 @@ export type DoctorProfileSummary = {
   bio?: string | null;
   yearsOfExperience?: number | null;
   focusAreas?: string[];
+  mentalHealthProfile?: {
+    qualifications: string[];
+    licenseNumber?: string | null;
+    licenseCouncil?: string | null;
+    languages: string[];
+    modalities: string[];
+    sessionTypes: string[];
+    ageGroups: string[];
+    concernsHandled: string[];
+    introSessionTitle?: string | null;
+    counsellingApproach?: string | null;
+    safetyEscalationNote?: string | null;
+    acceptsHighRiskCases: boolean;
+  } | null;
   showOnWebsite?: boolean;
   defaultMethodOptionId?: string | null;
   defaultMethodOption?: { id: string; label: string } | null;
