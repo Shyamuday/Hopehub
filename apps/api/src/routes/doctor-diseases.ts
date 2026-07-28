@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { Role } from '@prisma/client';
 import { authRequired, allowRoles } from '../auth.js';
+import { requireDoctorCapability } from '../doctor-capabilities.js';
 import {
   DISEASE_PUBLIC_CATEGORIES,
   DISEASE_PUBLIC_CATEGORY_KEYS
@@ -34,6 +35,10 @@ doctorDiseasesRouter.get(
   '/doctor/diseases',
   authRequired,
   allowRoles(Role.DOCTOR, Role.ADMIN),
+  requireDoctorCapability(
+    'treatmentPages',
+    'Treatment page management is available only for homeopathic doctors.'
+  ),
   asyncRoute(async (req, res) => {
     const q = queryText(req, 'q').trim() || undefined;
     const category = queryText(req, 'category').trim() || undefined;
@@ -88,6 +93,10 @@ doctorDiseasesRouter.get(
   '/doctor/diseases/:id/public-page',
   authRequired,
   allowRoles(Role.DOCTOR, Role.ADMIN),
+  requireDoctorCapability(
+    'treatmentPages',
+    'Treatment page editing is available only for homeopathic doctors.'
+  ),
   asyncRoute(async (req, res) => {
     const payload = await getDiseasePublicPageEditPayload(routeParam(req, 'id'));
     if (!payload) {
@@ -102,6 +111,10 @@ doctorDiseasesRouter.put(
   '/doctor/diseases/:id/public-page',
   authRequired,
   allowRoles(Role.DOCTOR, Role.ADMIN),
+  requireDoctorCapability(
+    'treatmentPages',
+    'Treatment page editing is available only for homeopathic doctors.'
+  ),
   asyncRoute(async (req, res) => {
     const body = diseasePublicPageUpdateSchema.parse(req.body);
     const result = await updateDiseasePublicPage(routeParam(req, 'id'), body);

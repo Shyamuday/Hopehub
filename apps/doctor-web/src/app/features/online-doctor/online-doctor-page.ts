@@ -9,6 +9,7 @@ import { OnlineDoctorService } from '../../core/services/online-doctor.service';
 import { capabilitiesForDoctorType } from '../../core/constants/doctor-types.constants';
 import type {
   ConsultationAssessmentSummary,
+  DoctorConsultation,
   ConsultationSessionNote,
 } from '../../core/types/consultation.types';
 
@@ -39,6 +40,7 @@ export class OnlineDoctorPage implements OnInit, OnDestroy {
   readonly diseases = signal<Array<{ id: string; name: string }>>([]);
   readonly profile = this.online.profile;
   readonly instantConsults = signal<InstantConsult[]>([]);
+  readonly directConsultation = signal<DoctorConsultation | null>(null);
   readonly selectedConsultId = signal('');
   readonly inboxLoading = signal(false);
   readonly sessionNotes = signal<ConsultationSessionNote[]>([]);
@@ -64,6 +66,7 @@ export class OnlineDoctorPage implements OnInit, OnDestroy {
       const id = params.get('consultationId');
       if (id) {
         this.selectedConsultId.set(id);
+        void this.loadDirectConsultation(id);
         if (this.isLive()) void this.loadInbox();
       }
     });
@@ -127,7 +130,7 @@ export class OnlineDoctorPage implements OnInit, OnDestroy {
 
   selectedConsult() {
     const id = this.selectedConsultId();
-    return this.instantConsults().find((c) => c.id === id) ?? null;
+    return this.instantConsults().find((c) => c.id === id) ?? this.directConsultation();
   }
 
   isLive() {
@@ -193,6 +196,17 @@ export class OnlineDoctorPage implements OnInit, OnDestroy {
       this.error.set('Could not go online.');
     } finally {
       this.saving.set(false);
+    }
+  }
+
+  async loadDirectConsultation(consultationId = this.selectedConsultId()) {
+    if (!consultationId) return;
+    try {
+      this.directConsultation.set(await this.consultationApi.loadConsultation(consultationId));
+      this.loadConsultationContext(consultationId);
+    } catch {
+      this.directConsultation.set(null);
+      this.error.set('Could not load this session.');
     }
   }
 

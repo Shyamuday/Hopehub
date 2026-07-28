@@ -62,27 +62,30 @@ export class ProfilePage {
     this.isLoading = true;
     this.error = '';
     try {
-      const [response, methodsRes] = await Promise.all([
-        firstValueFrom(
-          this.http.get<{
-            profile: {
-              name: string;
-              email?: string | null;
-              mobile?: string | null;
-              doctorProfile?: DoctorProfileSummary | null;
-            };
-          }>(`${this.apiBase}${API_PATHS.DOCTOR.PROFILE}`),
-        ),
-        firstValueFrom(
-          this.http.get<{ options: Array<{ id: string; label: string }> }>(
-            `${this.apiBase}${API_PATHS.DOCTOR.PRESCRIPTION_OPTIONS}`,
-            { params: { type: 'METHOD' } },
-          ),
-        ),
-      ]);
+      const response = await firstValueFrom(
+        this.http.get<{
+          profile: {
+            name: string;
+            email?: string | null;
+            mobile?: string | null;
+            doctorProfile?: DoctorProfileSummary | null;
+          };
+        }>(`${this.apiBase}${API_PATHS.DOCTOR.PROFILE}`),
+      );
 
-      this.methodOptions = methodsRes.options;
       const profile = response.profile;
+      this.canPrescribe = capabilitiesForDoctorType(profile.doctorProfile?.doctorType).prescribe;
+      this.methodOptions = this.canPrescribe
+        ? (
+            await firstValueFrom(
+              this.http.get<{ options: Array<{ id: string; label: string }> }>(
+                `${this.apiBase}${API_PATHS.DOCTOR.PRESCRIPTION_OPTIONS}`,
+                { params: { type: 'METHOD' } },
+              ),
+            )
+          ).options
+        : [];
+
       this.profileModel.set({
         name: profile.name || '',
         email: profile.email || '',
@@ -98,7 +101,6 @@ export class ProfilePage {
       this.doctorTypeLabel = profile.doctorProfile?.doctorTypeLabel || 'Doctor';
       this.specialtyFocusLabel = profile.doctorProfile?.specialtyFocusLabel || '';
       this.showOnWebsite = profile.doctorProfile?.showOnWebsite ?? false;
-      this.canPrescribe = capabilitiesForDoctorType(profile.doctorProfile?.doctorType).prescribe;
       this.profileImageUrl =
         (profile as { profileImageUrl?: string | null }).profileImageUrl ?? null;
     } catch {

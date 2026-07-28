@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { PrescriptionOptionType, Role } from '@prisma/client';
 import { authRequired, allowRoles } from '../../auth.js';
+import { requireDoctorCapability } from '../../doctor-capabilities.js';
 import { prisma } from '../../db.js';
 import { asyncRoute, normalizeOptionLabel, queryText } from '../../utils/helpers.js';
 import { syncDiagnosedDiseaseOption } from '../../services/disease-catalog.js';
@@ -14,6 +15,10 @@ export function registerPrescriptionOptionRoutes(router: Router) {
     '/doctor/prescription-options',
     authRequired,
     allowRoles(Role.DOCTOR, Role.ADMIN),
+    requireDoctorCapability(
+      'prescribe',
+      'Prescription options are not available for your doctor role.'
+    ),
     asyncRoute(async (req, res) => {
       const body = z
         .object({ type: z.nativeEnum(PrescriptionOptionType), label: z.string().min(2) })
@@ -23,7 +28,13 @@ export function registerPrescriptionOptionRoutes(router: Router) {
       const option = await prisma.prescriptionOption.upsert({
         where: { type_normalizedLabel: { type: body.type, normalizedLabel: normalized } },
         update: { label: body.label.trim() },
-        create: { type: body.type, label: body.label.trim(), normalizedLabel: normalized, isSystem: false, createdById: req.user!.id }
+        create: {
+          type: body.type,
+          label: body.label.trim(),
+          normalizedLabel: normalized,
+          isSystem: false,
+          createdById: req.user!.id
+        }
       });
 
       if (body.type === PrescriptionOptionType.DIAGNOSED_DISEASE) {
@@ -38,6 +49,10 @@ export function registerPrescriptionOptionRoutes(router: Router) {
     '/doctor/prescription-options',
     authRequired,
     allowRoles(Role.DOCTOR, Role.ADMIN),
+    requireDoctorCapability(
+      'prescribe',
+      'Prescription options are not available for your doctor role.'
+    ),
     asyncRoute(async (req, res) => {
       const query = z.object({ type: z.nativeEnum(PrescriptionOptionType) }).parse(req.query);
       if (query.type === PrescriptionOptionType.METHOD) {
@@ -55,5 +70,4 @@ export function registerPrescriptionOptionRoutes(router: Router) {
       res.json({ options });
     })
   );
-
 }

@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { Role } from '@prisma/client';
 import { authRequired, allowRoles } from '../../auth.js';
+import { requireDoctorCapability } from '../../doctor-capabilities.js';
 import { prisma } from '../../db.js';
 import { asyncRoute, routeParam } from '../../utils/helpers.js';
 import { templateInputSchema } from './shared.js';
@@ -12,6 +13,10 @@ export function registerPrescriptionTemplateRoutes(router: Router) {
     '/doctor/prescription-templates',
     authRequired,
     allowRoles(Role.DOCTOR, Role.ADMIN),
+    requireDoctorCapability(
+      'prescribe',
+      'Prescription templates are not available for your doctor role.'
+    ),
     asyncRoute(async (req, res) => {
       const templates = await prisma.prescriptionTemplate.findMany({
         where: { doctorId: req.user!.id },
@@ -26,6 +31,10 @@ export function registerPrescriptionTemplateRoutes(router: Router) {
     '/doctor/prescription-templates',
     authRequired,
     allowRoles(Role.DOCTOR, Role.ADMIN),
+    requireDoctorCapability(
+      'prescribe',
+      'Prescription templates are not available for your doctor role.'
+    ),
     asyncRoute(async (req, res) => {
       const body = templateInputSchema.parse(req.body);
       const template = await prisma.prescriptionTemplate.create({
@@ -35,7 +44,9 @@ export function registerPrescriptionTemplateRoutes(router: Router) {
           diagnosis: body.diagnosis,
           advice: body.advice,
           notes: body.notes,
-          items: { create: body.items.map((item, i) => ({ ...item, sortOrder: item.sortOrder ?? i })) }
+          items: {
+            create: body.items.map((item, i) => ({ ...item, sortOrder: item.sortOrder ?? i }))
+          }
         },
         include: { items: { orderBy: { sortOrder: 'asc' } } }
       });
@@ -47,9 +58,15 @@ export function registerPrescriptionTemplateRoutes(router: Router) {
     '/doctor/prescription-templates/:id',
     authRequired,
     allowRoles(Role.DOCTOR, Role.ADMIN),
+    requireDoctorCapability(
+      'prescribe',
+      'Prescription templates are not available for your doctor role.'
+    ),
     asyncRoute(async (req, res) => {
       const body = templateInputSchema.parse(req.body);
-      const existing = await prisma.prescriptionTemplate.findUnique({ where: { id: routeParam(req, 'id') } });
+      const existing = await prisma.prescriptionTemplate.findUnique({
+        where: { id: routeParam(req, 'id') }
+      });
       if (!existing || existing.doctorId !== req.user!.id) {
         return res.status(404).json({ message: 'Template not found' });
       }
@@ -62,7 +79,9 @@ export function registerPrescriptionTemplateRoutes(router: Router) {
           diagnosis: body.diagnosis,
           advice: body.advice,
           notes: body.notes,
-          items: { create: body.items.map((item, i) => ({ ...item, sortOrder: item.sortOrder ?? i })) }
+          items: {
+            create: body.items.map((item, i) => ({ ...item, sortOrder: item.sortOrder ?? i }))
+          }
         },
         include: { items: { orderBy: { sortOrder: 'asc' } } }
       });
@@ -74,8 +93,14 @@ export function registerPrescriptionTemplateRoutes(router: Router) {
     '/doctor/prescription-templates/:id',
     authRequired,
     allowRoles(Role.DOCTOR, Role.ADMIN),
+    requireDoctorCapability(
+      'prescribe',
+      'Prescription templates are not available for your doctor role.'
+    ),
     asyncRoute(async (req, res) => {
-      const existing = await prisma.prescriptionTemplate.findUnique({ where: { id: routeParam(req, 'id') } });
+      const existing = await prisma.prescriptionTemplate.findUnique({
+        where: { id: routeParam(req, 'id') }
+      });
       if (!existing || existing.doctorId !== req.user!.id) {
         return res.status(404).json({ message: 'Template not found' });
       }
@@ -83,5 +108,4 @@ export function registerPrescriptionTemplateRoutes(router: Router) {
       res.json({ ok: true });
     })
   );
-
 }

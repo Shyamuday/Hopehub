@@ -1,6 +1,10 @@
 <section class="panel">
-  <h1>Online doctor — go live</h1>
-  <p class="lead">Show yourself online for instant patient consults (chat + voice &amp; video). Separate from your clinic worklist.</p>
+  <h1>{{ isPsychologist() ? 'Online session workspace' : 'Online doctor — go live' }}</h1>
+  <p class="lead">
+    {{ isPsychologist()
+      ? 'Review assigned sessions, support patients by chat or call, record notes, and follow up safely.'
+      : 'Show yourself online for instant patient consults (chat + voice & video). Separate from your clinic worklist.' }}
+  </p>
 </section>
 
 @if (loading()) {
@@ -18,38 +22,46 @@
     </div>
   </section>
 
-  @if (isLive()) {
+  @if (isLive() || selectedConsultId()) {
     <section class="panel inbox-panel">
       <div class="inbox-head">
-        <h2>Live consult inbox</h2>
-        <button type="button" class="ghost" (click)="loadInbox()" [disabled]="inboxLoading()">Refresh</button>
+        <h2>{{ isPsychologist() ? 'Session workspace' : 'Live consult inbox' }}</h2>
+        @if (isLive()) {
+          <button type="button" class="ghost" (click)="loadInbox()" [disabled]="inboxLoading()">Refresh</button>
+        }
       </div>
-      @if (inboxLoading() && !instantConsults().length) {
-        <p class="muted">Loading active consults…</p>
-      } @else if (!instantConsults().length) {
-        <p class="muted">No active instant consults yet. Patients will appear here when assigned to you.</p>
-      } @else {
-        <ul class="inbox-list">
-          @for (c of instantConsults(); track c.id) {
-            <li>
-              <button
-                type="button"
-                class="inbox-item"
-                [class.active]="selectedConsultId() === c.id"
-                (click)="selectConsult(c.id)"
-              >
-                <strong>{{ c.patient.name }}</strong>
-                <span>{{ c.disease.name }} · {{ c.status }}</span>
-              </button>
-            </li>
-          }
-        </ul>
+      @if (isLive()) {
+        @if (inboxLoading() && !instantConsults().length) {
+          <p class="muted">Loading active consults…</p>
+        } @else if (!instantConsults().length && !selectedConsultId()) {
+          <p class="muted">No active instant consults yet. Patients will appear here when assigned to you.</p>
+        } @else {
+          <ul class="inbox-list">
+            @for (c of instantConsults(); track c.id) {
+              <li>
+                <button
+                  type="button"
+                  class="inbox-item"
+                  [class.active]="selectedConsultId() === c.id"
+                  (click)="selectConsult(c.id)"
+                >
+                  <strong>{{ c.patient.name }}</strong>
+                  <span>{{ c.disease.name }} · {{ c.status }}</span>
+                </button>
+              </li>
+            }
+          </ul>
+        }
       }
 
       @if (selectedConsultId()) {
         <div class="inbox-chat">
           @if (selectedConsult(); as active) {
-            <p class="active-meta">Chatting with <strong>{{ active.patient.name }}</strong> — {{ active.disease.name }}</p>
+            <p class="active-meta">
+              {{ isPsychologist() ? 'Session with' : 'Chatting with' }}
+              <strong>{{ active.patient?.name || 'Patient' }}</strong>
+              — {{ active.disease?.name || 'Consultation' }}
+            </p>
             <div class="inbox-actions">
               @if (capabilities().caseAnalysis) {
                 <button type="button" (click)="openCaseAnalysis(active.id)">Case analysis</button>
