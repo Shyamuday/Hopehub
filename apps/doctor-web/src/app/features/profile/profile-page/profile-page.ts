@@ -6,7 +6,10 @@ import { ProfileAvatarUploadComponent } from '@hopehub/platform-ui';
 import { environment } from '../../../../environments/environment';
 import { API_PATHS } from '../../../core/constants/api-paths.constants';
 import { AUTH_TOKEN_KEY } from '../../../core/constants/auth.constants';
-import type { DoctorProfileSummary } from '../../../core/constants/doctor-types.constants';
+import {
+  capabilitiesForDoctorType,
+  type DoctorProfileSummary,
+} from '../../../core/constants/doctor-types.constants';
 import { DoctorSessionService } from '../../../core/services/doctor-session';
 
 function emptyProfileModel() {
@@ -20,7 +23,7 @@ function emptyProfileModel() {
     bio: '',
     yearsOfExperience: '' as number | '',
     focusAreasText: '',
-    defaultMethodOptionId: ''
+    defaultMethodOptionId: '',
   };
 }
 
@@ -28,7 +31,7 @@ function emptyProfileModel() {
   selector: 'app-profile-page',
   imports: [FormField, ProfileAvatarUploadComponent],
   templateUrl: './profile-page.html',
-  styleUrl: './profile-page.scss'
+  styleUrl: './profile-page.scss',
 })
 export class ProfilePage {
   private readonly http = inject(HttpClient);
@@ -45,6 +48,7 @@ export class ProfilePage {
   doctorTypeLabel = '';
   specialtyFocusLabel = '';
   showOnWebsite = false;
+  canPrescribe = false;
   message = '';
   error = '';
   isLoading = false;
@@ -67,14 +71,14 @@ export class ProfilePage {
               mobile?: string | null;
               doctorProfile?: DoctorProfileSummary | null;
             };
-          }>(`${this.apiBase}${API_PATHS.DOCTOR.PROFILE}`)
+          }>(`${this.apiBase}${API_PATHS.DOCTOR.PROFILE}`),
         ),
         firstValueFrom(
           this.http.get<{ options: Array<{ id: string; label: string }> }>(
             `${this.apiBase}${API_PATHS.DOCTOR.PRESCRIPTION_OPTIONS}`,
-            { params: { type: 'METHOD' } }
-          )
-        )
+            { params: { type: 'METHOD' } },
+          ),
+        ),
       ]);
 
       this.methodOptions = methodsRes.options;
@@ -89,12 +93,14 @@ export class ProfilePage {
         bio: profile.doctorProfile?.bio || '',
         yearsOfExperience: profile.doctorProfile?.yearsOfExperience ?? '',
         focusAreasText: (profile.doctorProfile?.focusAreas ?? []).join('\n'),
-        defaultMethodOptionId: profile.doctorProfile?.defaultMethodOptionId || ''
+        defaultMethodOptionId: profile.doctorProfile?.defaultMethodOptionId || '',
       });
       this.doctorTypeLabel = profile.doctorProfile?.doctorTypeLabel || 'Doctor';
       this.specialtyFocusLabel = profile.doctorProfile?.specialtyFocusLabel || '';
       this.showOnWebsite = profile.doctorProfile?.showOnWebsite ?? false;
-      this.profileImageUrl = (profile as { profileImageUrl?: string | null }).profileImageUrl ?? null;
+      this.canPrescribe = capabilitiesForDoctorType(profile.doctorProfile?.doctorType).prescribe;
+      this.profileImageUrl =
+        (profile as { profileImageUrl?: string | null }).profileImageUrl ?? null;
     } catch {
       this.error = 'Could not load profile.';
     } finally {
@@ -125,8 +131,8 @@ export class ProfilePage {
             .split('\n')
             .map((s) => s.trim())
             .filter(Boolean),
-          defaultMethodOptionId: form.defaultMethodOptionId || null
-        })
+          defaultMethodOptionId: this.canPrescribe ? form.defaultMethodOptionId || null : undefined,
+        }),
       );
       await this.session.load(true);
       this.message = 'Profile updated successfully.';

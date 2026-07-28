@@ -58,19 +58,77 @@ export type DoctorProfileSummary = {
 export type DoctorCapabilities = {
   slots: boolean;
   earnings: boolean;
+  onlineConsult: boolean;
+  treatmentPages: boolean;
   prescribe: boolean;
   caseAnalysis: boolean;
 };
 
 export const DOCTOR_TYPE_CAPABILITIES: Record<HomeopathicDoctorType, DoctorCapabilities> = {
-  CHIEF_CONSULTANT: { slots: true, earnings: true, prescribe: true, caseAnalysis: true },
-  JUNIOR_DOCTOR: { slots: true, earnings: true, prescribe: true, caseAnalysis: true },
-  SPECIALIST_CONSULTANT: { slots: true, earnings: true, prescribe: true, caseAnalysis: true },
-  VISITING_DOCTOR: { slots: false, earnings: false, prescribe: true, caseAnalysis: true },
-  TELEMEDICINE_DOCTOR: { slots: true, earnings: true, prescribe: true, caseAnalysis: true },
-  MEDICAL_INTERN: { slots: false, earnings: false, prescribe: false, caseAnalysis: true },
-  RESIDENT_MEDICAL_OFFICER: { slots: true, earnings: true, prescribe: true, caseAnalysis: true },
-  PSYCHOLOGIST: { slots: true, earnings: true, prescribe: false, caseAnalysis: false },
+  CHIEF_CONSULTANT: {
+    slots: true,
+    earnings: true,
+    onlineConsult: true,
+    treatmentPages: true,
+    prescribe: true,
+    caseAnalysis: true,
+  },
+  JUNIOR_DOCTOR: {
+    slots: true,
+    earnings: true,
+    onlineConsult: true,
+    treatmentPages: true,
+    prescribe: true,
+    caseAnalysis: true,
+  },
+  SPECIALIST_CONSULTANT: {
+    slots: true,
+    earnings: true,
+    onlineConsult: true,
+    treatmentPages: true,
+    prescribe: true,
+    caseAnalysis: true,
+  },
+  VISITING_DOCTOR: {
+    slots: false,
+    earnings: false,
+    onlineConsult: true,
+    treatmentPages: true,
+    prescribe: true,
+    caseAnalysis: true,
+  },
+  TELEMEDICINE_DOCTOR: {
+    slots: true,
+    earnings: true,
+    onlineConsult: true,
+    treatmentPages: true,
+    prescribe: true,
+    caseAnalysis: true,
+  },
+  MEDICAL_INTERN: {
+    slots: false,
+    earnings: false,
+    onlineConsult: false,
+    treatmentPages: false,
+    prescribe: false,
+    caseAnalysis: true,
+  },
+  RESIDENT_MEDICAL_OFFICER: {
+    slots: true,
+    earnings: true,
+    onlineConsult: true,
+    treatmentPages: true,
+    prescribe: true,
+    caseAnalysis: true,
+  },
+  PSYCHOLOGIST: {
+    slots: true,
+    earnings: true,
+    onlineConsult: true,
+    treatmentPages: false,
+    prescribe: false,
+    caseAnalysis: false,
+  },
 };
 
 export function capabilitiesForDoctorType(type?: HomeopathicDoctorType | null): DoctorCapabilities {

@@ -1,4 +1,4 @@
-import { Component, Input, OnInit, signal } from '@angular/core';
+import { Component, Input, OnChanges, OnInit, SimpleChanges, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { getRoleTaskGuide } from '@hopehub/role-task-guides';
 import type { RoleTaskGuide } from '@hopehub/role-task-guides/types';
@@ -10,7 +10,7 @@ import type { RoleTaskGuide } from '@hopehub/role-task-guides/types';
   templateUrl: './role-task-guide.component.html',
   styleUrl: './role-task-guide.component.scss'
 })
-export class RoleTaskGuideComponent implements OnInit {
+export class RoleTaskGuideComponent implements OnInit, OnChanges {
   @Input({ required: true }) appKey!: string;
   @Input() variantKey: string | null = null;
   @Input() theme: 'light' | 'dark' = 'light';
@@ -20,13 +20,12 @@ export class RoleTaskGuideComponent implements OnInit {
   hidden = signal(false);
 
   ngOnInit() {
-    this.guide.set(getRoleTaskGuide(this.appKey, this.variantKey));
-    const storageKey = this.storageKey();
-    if (typeof localStorage !== 'undefined' && localStorage.getItem(storageKey) === 'collapsed') {
-      this.expanded.set(false);
-    }
-    if (typeof localStorage !== 'undefined' && localStorage.getItem(storageKey) === 'hidden') {
-      this.hidden.set(true);
+    this.loadGuideState();
+  }
+
+  ngOnChanges(changes: SimpleChanges) {
+    if (changes['appKey'] || changes['variantKey']) {
+      this.loadGuideState();
     }
   }
 
@@ -51,6 +50,20 @@ export class RoleTaskGuideComponent implements OnInit {
   private storageKey() {
     const variant = this.variantKey || 'default';
     return `hopehub-role-guide:${this.appKey}:${variant}`;
+  }
+
+  private loadGuideState() {
+    if (!this.appKey) return;
+    this.guide.set(getRoleTaskGuide(this.appKey, this.variantKey));
+    this.expanded.set(true);
+    this.hidden.set(false);
+    const storageKey = this.storageKey();
+    if (typeof localStorage !== 'undefined' && localStorage.getItem(storageKey) === 'collapsed') {
+      this.expanded.set(false);
+    }
+    if (typeof localStorage !== 'undefined' && localStorage.getItem(storageKey) === 'hidden') {
+      this.hidden.set(true);
+    }
   }
 
   private persist(state: 'collapsed' | 'hidden', active: boolean) {

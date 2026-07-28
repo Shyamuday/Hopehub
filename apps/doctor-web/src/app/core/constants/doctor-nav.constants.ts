@@ -164,7 +164,7 @@ function buildDoctorNav(capabilities: DoctorCapabilities): DoctorNavItemDef[] {
       path: `/${ROUTE_PATHS.ONLINE_DOCTOR}`,
       icon: DOCTOR_NAV_ICONS['Go live'].icon,
       shortLabel: DOCTOR_NAV_ICONS['Go live'].shortLabel,
-      enabled: capabilities.prescribe,
+      enabled: capabilities.onlineConsult,
     },
     {
       id: 'scan',
@@ -222,7 +222,7 @@ function buildDoctorNav(capabilities: DoctorCapabilities): DoctorNavItemDef[] {
           id: 'treatment-pages',
           label: 'Treatment pages',
           path: `/${ROUTE_PATHS.DISEASE_PAGES}`,
-          enabled: true,
+          enabled: capabilities.treatmentPages,
         },
         {
           id: 'blog',

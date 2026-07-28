@@ -3,8 +3,9 @@ import { Component, inject, signal, viewChild } from '@angular/core';
 import { form, FormField } from '@angular/forms/signals';
 import {
   DiseaseCatalogService,
-  type DiseaseListItem
+  type DiseaseListItem,
 } from '../../core/services/disease-catalog.service';
+import { DoctorSessionService } from '../../core/services/doctor-session';
 import { DiseasePublicPageFormComponent } from './disease-public-page-form/disease-public-page-form';
 import { publicPageFormToPayload } from './disease-public-page-form/disease-public-page-form.model';
 
@@ -12,10 +13,11 @@ import { publicPageFormToPayload } from './disease-public-page-form/disease-publ
   selector: 'app-disease-pages-page',
   imports: [CommonModule, FormField, DiseasePublicPageFormComponent],
   templateUrl: './disease-pages-page.html',
-  styleUrl: './disease-pages-page.scss'
+  styleUrl: './disease-pages-page.scss',
 })
 export class DiseasePagesPage {
   private readonly catalog = inject(DiseaseCatalogService);
+  private readonly session = inject(DoctorSessionService);
   private readonly publicPageForm = viewChild(DiseasePublicPageFormComponent);
 
   readonly diseases = signal<DiseaseListItem[]>([]);
@@ -24,6 +26,7 @@ export class DiseasePagesPage {
   readonly pageLoading = signal(false);
   readonly error = signal('');
   readonly message = signal('');
+  readonly canManageTreatmentPages = signal(false);
 
   readonly filterModel = signal({ q: '' });
   readonly filterForm = form(this.filterModel);
@@ -32,10 +35,30 @@ export class DiseasePagesPage {
   readonly editingName = signal('');
 
   constructor() {
-    void this.load();
+    void this.init();
+  }
+
+  private async init() {
+    this.loading.set(true);
+    this.error.set('');
+    try {
+      await this.session.load();
+      if (!this.session.capabilities().treatmentPages) {
+        this.canManageTreatmentPages.set(false);
+        this.error.set('Treatment page editing is available only for homeopathic doctors.');
+        return;
+      }
+      this.canManageTreatmentPages.set(true);
+      await this.load();
+    } catch {
+      this.error.set('Could not load doctor access.');
+    } finally {
+      this.loading.set(false);
+    }
   }
 
   async load() {
+    if (!this.canManageTreatmentPages()) return;
     this.loading.set(true);
     this.error.set('');
     try {
@@ -50,6 +73,7 @@ export class DiseasePagesPage {
   }
 
   async startEdit(disease: DiseaseListItem) {
+    if (!this.canManageTreatmentPages()) return;
     this.editingId.set(disease.id);
     this.editingName.set(disease.name);
     this.pageLoading.set(true);
@@ -70,6 +94,7 @@ export class DiseasePagesPage {
   }
 
   async save() {
+    if (!this.canManageTreatmentPages()) return;
     const editor = this.publicPageForm();
     const id = this.editingId();
     if (!editor || !id) return;

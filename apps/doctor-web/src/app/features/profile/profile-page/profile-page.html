@@ -48,14 +48,16 @@
     Available for consultations
   </label>
 
-  <label for="defaultApproach">Default prescribing approach</label>
-  <select id="defaultApproach" [formField]="profileForm.defaultMethodOptionId">
-    <option value="">No default — choose per case</option>
-    @for (method of methodOptions; track method.id) {
-      <option [value]="method.id">{{ method.label }}</option>
-    }
-  </select>
-  <p class="section-hint">Pre-selected when you open case analysis or start a new prescription.</p>
+  @if (canPrescribe) {
+    <label for="defaultApproach">Default prescribing approach</label>
+    <select id="defaultApproach" [formField]="profileForm.defaultMethodOptionId">
+      <option value="">No default — choose per case</option>
+      @for (method of methodOptions; track method.id) {
+        <option [value]="method.id">{{ method.label }}</option>
+      }
+    </select>
+    <p class="section-hint">Pre-selected when you open case analysis or start a new prescription.</p>
+  }
 
   <hr class="profile-divider" />
 
