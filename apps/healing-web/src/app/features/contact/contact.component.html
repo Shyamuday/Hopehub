@@ -408,6 +408,7 @@
             <!-- Appointment Calendar -->
             <app-appointment-calendar
               [selectedService]="contactForm.get('serviceInterest')?.value"
+              [providerId]="prefilledData().providerId || undefined"
               (appointmentSelected)="onAppointmentSelected($event)"
             >
             </app-appointment-calendar>

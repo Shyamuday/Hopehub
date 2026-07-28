@@ -97,6 +97,33 @@ function slugify(value: string) {
     .replace(/(^-|-$)/g, '');
 }
 
+function displayTimeFrom24Hour(value: string) {
+  const [rawHour, rawMinute = '00'] = value.split(':');
+  const hour = Number(rawHour);
+  if (!Number.isFinite(hour)) return value;
+  const suffix = hour >= 12 ? 'PM' : 'AM';
+  const normalizedHour = hour % 12 || 12;
+  return `${normalizedHour}:${rawMinute.padStart(2, '0')} ${suffix}`;
+}
+
+function time24HourFromDisplay(value: string) {
+  const match = value.trim().match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+  if (!match) return value;
+  let hour = Number(match[1]);
+  const minute = match[2];
+  const suffix = match[3].toUpperCase();
+  if (suffix === 'PM' && hour !== 12) hour += 12;
+  if (suffix === 'AM' && hour === 12) hour = 0;
+  return `${String(hour).padStart(2, '0')}:${minute}`;
+}
+
+function periodForTime(value: string): 'morning' | 'afternoon' | 'evening' {
+  const hour = Number(time24HourFromDisplay(value).split(':')[0]);
+  if (hour < 12) return 'morning';
+  if (hour < 17) return 'afternoon';
+  return 'evening';
+}
+
 function serializeAssessmentAttempt(attempt: {
   id: string;
   assessmentId: string;
@@ -213,12 +240,131 @@ function providerPublicPayload(provider: {
   };
 }
 
+function servicePublicPayload(service: {
+  id: string;
+  name: string;
+  slug: string | null;
+  description: string;
+  publicDescription: string | null;
+  publicImageUrl: string | null;
+  feeInPaise: number;
+  intakeQuestions: unknown;
+  publicFaq: unknown;
+  publicPageContent: unknown;
+  seoTitle: string | null;
+  seoDescription: string | null;
+}) {
+  const content = (service.publicPageContent ?? {}) as {
+    benefits?: string[];
+    approach?: string;
+    category?: string;
+    featured?: boolean;
+    duration?: string;
+  };
+  return {
+    id: service.slug || service.id,
+    diseaseId: service.id,
+    name: service.name,
+    slug: service.slug,
+    description: service.description,
+    detailedDescription: service.publicDescription || service.description,
+    benefits: Array.isArray(content.benefits) ? content.benefits : [],
+    approach: content.approach || '',
+    category: content.category || 'mental-health',
+    featured: content.featured ?? true,
+    imageUrl: service.publicImageUrl || '',
+    pricing: { individual: Math.round(service.feeInPaise / 100), currency: 'INR' },
+    feeInPaise: service.feeInPaise,
+    duration: content.duration || `${HOPE_HUB_SESSION_DURATION_MINUTES} minutes`,
+    intakeQuestions: service.intakeQuestions,
+    publicFaq: service.publicFaq,
+    seoTitle: service.seoTitle,
+    seoDescription: service.seoDescription
+  };
+}
+
+const hopeHubServiceSelect = {
+  id: true,
+  name: true,
+  slug: true,
+  description: true,
+  publicDescription: true,
+  publicImageUrl: true,
+  feeInPaise: true,
+  intakeQuestions: true,
+  publicFaq: true,
+  publicPageContent: true,
+  seoTitle: true,
+  seoDescription: true
+} as const;
+
+hopeHubRouter.get(
+  '/hope-hub/services',
+  asyncRoute(async (_req, res) => {
+    const services = await prisma.disease.findMany({
+      where: { isActive: true, publicCategory: 'Hope Hub' },
+      select: hopeHubServiceSelect,
+      orderBy: [{ name: 'asc' }]
+    });
+    res.json({ services: services.map(servicePublicPayload) });
+  })
+);
+
+hopeHubRouter.get(
+  '/hope-hub/services/:id',
+  asyncRoute(async (req, res) => {
+    const id = routeParam(req, 'id');
+    const service = await prisma.disease.findFirst({
+      where: {
+        isActive: true,
+        publicCategory: 'Hope Hub',
+        OR: [{ id }, { slug: id }]
+      },
+      select: hopeHubServiceSelect
+    });
+    if (!service) {
+      return res.status(404).json({ message: 'Service not found.' });
+    }
+    res.json({ service: servicePublicPayload(service) });
+  })
+);
+
 hopeHubRouter.get(
   '/hope-hub/slots',
   asyncRoute(async (req, res) => {
     const date = queryText(req, 'date');
+    const providerId = queryText(req, 'providerId').trim();
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
       return res.status(400).json({ message: 'date must be in YYYY-MM-DD format.' });
+    }
+
+    if (providerId) {
+      const provider = await prisma.doctor.findFirst({
+        where: { id: providerId, showOnWebsite: true, user: { isActive: true } },
+        select: { id: true }
+      });
+      if (!provider) {
+        return res.status(404).json({ message: 'Expert not found.' });
+      }
+
+      const slots = await prisma.doctorSlot.findMany({
+        where: { doctorId: provider.id, date: new Date(date), isBlocked: false },
+        orderBy: { startTime: 'asc' }
+      });
+
+      return res.json({
+        date,
+        providerId,
+        slots: slots.map((slot) => {
+          const time = displayTimeFrom24Hour(slot.startTime);
+          return {
+            time,
+            period: periodForTime(time),
+            available: !slot.isBooked,
+            booked: slot.isBooked
+          };
+        })
+      });
     }
 
     const consultations = await prisma.consultation.findMany({
@@ -548,8 +694,17 @@ hopeHubRouter.post(
   allowRoles(Role.PATIENT),
   asyncRoute(async (req, res) => {
     const body = hopeHubBookingSchema.parse(req.body);
-    const amountInPaise = HOPE_HUB_SESSION_FEE_IN_PAISE;
     const slug = slugify(body.serviceName);
+    const existingService = await prisma.disease.findFirst({
+      where: {
+        isActive: true,
+        publicCategory: 'Hope Hub',
+        OR: [{ name: body.serviceName }, { slug }]
+      },
+      select: { id: true, feeInPaise: true }
+    });
+    const amountInPaise =
+      body.servicePriceInPaise || existingService?.feeInPaise || HOPE_HUB_SESSION_FEE_IN_PAISE;
     const requestedProvider = body.providerId
       ? await prisma.doctor.findFirst({
           where: {
@@ -567,27 +722,48 @@ hopeHubRouter.post(
           select: { id: true, userId: true, user: { select: { name: true } } }
         })
       : null;
+    const requestedSlot =
+      requestedProvider && body.appointmentDate && body.appointmentTime
+        ? await prisma.doctorSlot.findFirst({
+            where: {
+              doctorId: requestedProvider.id,
+              date: new Date(body.appointmentDate),
+              startTime: time24HourFromDisplay(body.appointmentTime),
+              isBooked: false,
+              isBlocked: false
+            },
+            select: { id: true }
+          })
+        : null;
+    if (requestedProvider && !requestedSlot) {
+      return res.status(409).json({ message: 'Selected expert slot is no longer available.' });
+    }
 
     await ensureBillingPlans();
-    const disease = await prisma.disease.upsert({
-      where: { name: body.serviceName },
-      create: {
-        name: body.serviceName,
-        slug,
-        description: defaultDescription(body.serviceName),
-        publicDescription: defaultDescription(body.serviceName),
-        publicCategory: 'Hope Hub',
-        feeInPaise: amountInPaise,
-        intakeQuestions: [
-          { id: 'concern', label: 'What would you like support with?' },
-          { id: 'appointment', label: 'Preferred appointment slot' }
-        ]
-      },
-      update: {
-        publicCategory: 'Hope Hub',
-        feeInPaise: amountInPaise
-      }
-    });
+    const disease = existingService
+      ? await prisma.disease.update({
+          where: { id: existingService.id },
+          data: { feeInPaise: amountInPaise }
+        })
+      : await prisma.disease.upsert({
+          where: { name: body.serviceName },
+          create: {
+            name: body.serviceName,
+            slug,
+            description: defaultDescription(body.serviceName),
+            publicDescription: defaultDescription(body.serviceName),
+            publicCategory: 'Hope Hub',
+            feeInPaise: amountInPaise,
+            intakeQuestions: [
+              { id: 'concern', label: 'What would you like support with?' },
+              { id: 'appointment', label: 'Preferred appointment slot' }
+            ]
+          },
+          update: {
+            publicCategory: 'Hope Hub',
+            feeInPaise: amountInPaise
+          }
+        });
 
     const selectedPlan = await prisma.billingPlan.findFirst({
       where: { code: 'ONE_TIME', isActive: true }
@@ -676,6 +852,13 @@ hopeHubRouter.post(
       },
       include: includeConsultationRelations()
     });
+
+    if (requestedSlot) {
+      await prisma.doctorSlot.update({
+        where: { id: requestedSlot.id },
+        data: { isBooked: true }
+      });
+    }
 
     await prisma.websiteLead.create({
       data: {

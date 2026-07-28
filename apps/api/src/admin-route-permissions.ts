@@ -1,6 +1,10 @@
 import type { NextFunction, Request, Response } from 'express';
 import { Role } from '@prisma/client';
-import { PERMISSIONS, PERMISSION_MANAGEMENT_ROLES, staffHasAllPermissions } from './staff-permissions.js';
+import {
+  PERMISSIONS,
+  PERMISSION_MANAGEMENT_ROLES,
+  staffHasAllPermissions
+} from './staff-permissions.js';
 
 type RouteRule = { method?: string; permissions: string[] };
 
@@ -33,7 +37,7 @@ const ADMIN_ROUTE_RULES: Array<{ pattern: RegExp; rules: RouteRule[] }> = [
     rules: [{ permissions: [PERMISSIONS.CONSUMERS_READ] }]
   },
   {
-    pattern: /^\/admin\/consultations/,
+    pattern: /^\/admin\/(consultations|safety-flags)/,
     rules: [
       { method: 'GET', permissions: [PERMISSIONS.CONSULTATIONS_READ] },
       { permissions: [PERMISSIONS.ASSIGNMENTS_WRITE, PERMISSIONS.CONSULTATIONS_READ] }
@@ -87,7 +91,8 @@ function resolveRequiredPermissions(method: string, path: string): string[] | nu
   for (const entry of ADMIN_ROUTE_RULES) {
     if (!entry.pattern.test(path)) continue;
     const match =
-      entry.rules.find((r) => !r.method || r.method === method) ?? entry.rules[entry.rules.length - 1];
+      entry.rules.find((r) => !r.method || r.method === method) ??
+      entry.rules[entry.rules.length - 1];
     return match.permissions;
   }
   return null;

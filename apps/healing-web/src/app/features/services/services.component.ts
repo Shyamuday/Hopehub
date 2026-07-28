@@ -5,6 +5,7 @@ import { NOTE_CONTENT } from '../../core/constants/note-content.constants';
 import { Service, ServiceCategory } from '../../core/models';
 import { getAllServices } from '../../core/data/services-data';
 import { ServiceCardComponent } from '../../shared/components';
+import { BookingService, HopeHubService } from '../../core/services/booking.service';
 
 @Component({
   selector: 'app-services',
@@ -45,7 +46,10 @@ export class ServicesComponent implements OnInit {
     });
   });
 
-  constructor(private router: Router) {}
+  constructor(
+    private router: Router,
+    private bookingService: BookingService,
+  ) {}
 
   ngOnInit() {
     this.loadServices();
@@ -64,7 +68,35 @@ export class ServicesComponent implements OnInit {
   }
 
   private loadServices() {
-    this.services.set(getAllServices());
+    this.bookingService.services().subscribe({
+      next: ({ services }) => {
+        this.services.set(
+          services.length ? services.map((service) => this.toService(service)) : getAllServices(),
+        );
+      },
+      error: () => this.services.set(getAllServices()),
+    });
+  }
+
+  private toService(service: HopeHubService): Service {
+    return {
+      id: service.id,
+      name: service.name,
+      description: service.description,
+      detailedDescription: service.detailedDescription,
+      benefits: service.benefits || [],
+      approach: service.approach || '',
+      pricing: service.pricing || { individual: 500, currency: 'INR' },
+      category: this.toServiceCategory(service.category),
+      featured: service.featured,
+      imageUrl: service.imageUrl || undefined,
+    };
+  }
+
+  private toServiceCategory(category: string): ServiceCategory {
+    return Object.values(ServiceCategory).includes(category as ServiceCategory)
+      ? (category as ServiceCategory)
+      : ServiceCategory.MENTAL_HEALTH;
   }
 
   private matchesFilter(service: Service, filter: string): boolean {

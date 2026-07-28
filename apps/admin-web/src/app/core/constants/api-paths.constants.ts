@@ -11,6 +11,8 @@ export const API_PATHS = {
     ADMINS: '/admin/admins',
     ADMIN_STATUS: (id: string) => `/admin/admins/${id}/status`,
     CONSULTATION_STATUS: (id: string) => `/admin/consultations/${id}/status`,
+    SAFETY_FLAGS: '/admin/safety-flags',
+    SAFETY_FLAG_NOTE: (consultationId: string) => `/admin/safety-flags/${consultationId}/notes`,
     ADHERENCE_RISK: '/admin/adherence/risk-cohorts',
     ANALYTICS_FUNNELS: '/admin/analytics/funnels',
     PAYMENTS: '/admin/payments',

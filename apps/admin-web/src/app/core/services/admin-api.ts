@@ -38,6 +38,14 @@ export class AdminApi {
   getPayments(...args: Parameters<AdminReportsApi['getPayments']>) {
     return this.reports.getPayments(...(args as Parameters<AdminReportsApi['getPayments']>));
   }
+  getSafetyFlags(...args: Parameters<AdminReportsApi['getSafetyFlags']>) {
+    return this.reports.getSafetyFlags(...(args as Parameters<AdminReportsApi['getSafetyFlags']>));
+  }
+  addSafetyFollowUp(...args: Parameters<AdminReportsApi['addSafetyFollowUp']>) {
+    return this.reports.addSafetyFollowUp(
+      ...(args as Parameters<AdminReportsApi['addSafetyFollowUp']>),
+    );
+  }
   getPaymentEvents(...args: Parameters<AdminReportsApi['getPaymentEvents']>) {
     return this.reports.getPaymentEvents(
       ...(args as Parameters<AdminReportsApi['getPaymentEvents']>),

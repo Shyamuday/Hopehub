@@ -25,6 +25,7 @@ export class AppointmentCalendarComponent implements OnInit {
 
   appointmentSelected = output<AppointmentSlot>();
   selectedService = input<string | undefined>(undefined);
+  providerId = input<string | undefined>(undefined);
 
   currentMonth = signal(new Date());
   selectedDate = signal<Date | null>(null);
@@ -152,7 +153,7 @@ export class AppointmentCalendarComponent implements OnInit {
     if (!selectedDate) return;
 
     const date = this.formatLocalDate(selectedDate);
-    this.bookingService.slots(date).subscribe({
+    this.bookingService.slots(date, this.providerId()).subscribe({
       next: ({ slots }) => {
         const toTimeSlots = (period: 'morning' | 'afternoon' | 'evening') =>
           slots

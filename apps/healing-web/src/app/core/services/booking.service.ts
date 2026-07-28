@@ -69,6 +69,27 @@ export type HopeHubProviderResponse = {
   };
 };
 
+export type HopeHubService = {
+  id: string;
+  diseaseId: string;
+  name: string;
+  slug?: string | null;
+  description: string;
+  detailedDescription: string;
+  benefits: string[];
+  approach: string;
+  category: string;
+  featured: boolean;
+  imageUrl?: string | null;
+  pricing?: { individual?: number; currency: string };
+  feeInPaise?: number;
+  duration?: string;
+  intakeQuestions?: unknown;
+  publicFaq?: unknown;
+  seoTitle?: string | null;
+  seoDescription?: string | null;
+};
+
 @Injectable({
   providedIn: 'root',
 })
@@ -119,12 +140,26 @@ export class BookingService {
     );
   }
 
+  services(): Observable<{ services: HopeHubService[] }> {
+    return this.http.get<{ services: HopeHubService[] }>(`${this.apiUrl}/hope-hub/services`);
+  }
+
+  service(id: string): Observable<{ service: HopeHubService }> {
+    return this.http.get<{ service: HopeHubService }>(
+      `${this.apiUrl}/hope-hub/services/${encodeURIComponent(id)}`,
+    );
+  }
+
   iceServers(): Observable<{ iceServers: IceServerConfig[] }> {
     return this.http.get<{ iceServers: IceServerConfig[] }>(`${this.apiUrl}/rtc/ice-servers`);
   }
 
-  slots(date: string): Observable<{
+  slots(
+    date: string,
+    providerId?: string,
+  ): Observable<{
     date: string;
+    providerId?: string;
     slots: Array<{
       time: string;
       period: 'morning' | 'afternoon' | 'evening';
@@ -140,6 +175,10 @@ export class BookingService {
         available: boolean;
         booked: boolean;
       }>;
-    }>(`${this.apiUrl}/hope-hub/slots?date=${encodeURIComponent(date)}`);
+    }>(
+      `${this.apiUrl}/hope-hub/slots?date=${encodeURIComponent(date)}${
+        providerId ? `&providerId=${encodeURIComponent(providerId)}` : ''
+      }`,
+    );
   }
 }

@@ -119,6 +119,28 @@ export class AdminReportsApi extends AdminApiBase {
     );
   }
 
+  getSafetyFlags(page = 1, pageSize = 20) {
+    return firstValueFrom(
+      this.http.get<{
+        flags: any[];
+        pagination: { page: number; pageSize: number; total: number; totalPages: number };
+      }>(`${this.apiBase}${API_PATHS.ADMIN.SAFETY_FLAGS}`, {
+        params: { page, pageSize },
+      }),
+    );
+  }
+
+  addSafetyFollowUp(consultationId: string, note: string) {
+    return firstValueFrom(
+      this.http.post<{ note: any }>(
+        `${this.apiBase}${API_PATHS.ADMIN.SAFETY_FLAG_NOTE(consultationId)}`,
+        {
+          note,
+        },
+      ),
+    );
+  }
+
   getPaymentEvents(paymentId: string) {
     return firstValueFrom(
       this.http.get<{ events: AdminPaymentEvent[]; refunds: AdminPaymentRefund[] }>(

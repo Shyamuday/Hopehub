@@ -2,10 +2,11 @@ import { Component, OnInit, signal, inject } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NOTE_CONTENT } from '../../core/constants/note-content.constants';
-import { Service } from '../../core/models';
+import { Service, ServiceCategory } from '../../core/models';
 import { ServiceInquiryComponent } from '../../shared/components';
-import { SEOService } from '../../core/services';
+import { BookingService, SEOService } from '../../core/services';
 import { getServiceById } from '../../core/data/services-data';
+import { HopeHubService } from '../../core/services/booking.service';
 
 @Component({
   selector: 'app-service-detail',
@@ -22,6 +23,7 @@ export class ServiceDetailComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private seoService = inject(SEOService);
+  private bookingService = inject(BookingService);
 
   constructor() {
     this.route.params.pipe(takeUntilDestroyed()).subscribe((params: any) => {
@@ -41,7 +43,13 @@ export class ServiceDetailComponent implements OnInit {
   bookService() {
     // Navigate to contact form with service pre-selected
     this.router.navigate(['/contact'], {
-      queryParams: { service: this.service()?.name },
+      queryParams: {
+        service: this.service()?.id,
+        serviceName: this.service()?.name,
+        price: this.service()?.pricing?.individual,
+        duration: '30 minutes',
+        source: 'service-detail',
+      },
     });
   }
 
@@ -171,36 +179,65 @@ export class ServiceDetailComponent implements OnInit {
   private loadService(serviceId: string) {
     this.loading.set(true);
 
-    setTimeout(() => {
-      const foundService = getServiceById(serviceId) || null;
-      this.service.set(foundService);
-      this.loading.set(false);
+    this.bookingService.service(serviceId).subscribe({
+      next: ({ service }) => {
+        this.setLoadedService(this.toService(service));
+      },
+      error: () => {
+        this.setLoadedService(getServiceById(serviceId) || null);
+      },
+    });
+  }
 
-      // Update SEO for service page
-      if (foundService) {
-        this.seoService.updateSEO({
-          title: `${foundService.name} - Hope Hub`,
-          description: foundService.detailedDescription || foundService.description,
-          keywords: [
-            foundService.name,
-            foundService.category,
-            'mental health',
-            'counseling',
-            'therapy',
-          ],
-          type: 'website',
-          image: foundService.imageUrl,
-        });
+  private setLoadedService(foundService: Service | null) {
+    this.service.set(foundService);
+    this.loading.set(false);
 
-        // Add service structured data
-        this.seoService.addServiceStructuredData({
-          name: foundService.name,
-          description: foundService.detailedDescription || foundService.description,
-          provider: 'Hope Hub',
-          areaServed: 'Worldwide',
-          serviceType: 'Mental Health Counseling',
-        });
-      }
-    }, 500);
+    // Update SEO for service page
+    if (foundService) {
+      this.seoService.updateSEO({
+        title: `${foundService.name} - Hope Hub`,
+        description: foundService.detailedDescription || foundService.description,
+        keywords: [
+          foundService.name,
+          foundService.category,
+          'mental health',
+          'counseling',
+          'therapy',
+        ],
+        type: 'website',
+        image: foundService.imageUrl,
+      });
+
+      // Add service structured data
+      this.seoService.addServiceStructuredData({
+        name: foundService.name,
+        description: foundService.detailedDescription || foundService.description,
+        provider: 'Hope Hub',
+        areaServed: 'Worldwide',
+        serviceType: 'Mental Health Counseling',
+      });
+    }
+  }
+
+  private toService(service: HopeHubService): Service {
+    return {
+      id: service.id,
+      name: service.name,
+      description: service.description,
+      detailedDescription: service.detailedDescription,
+      benefits: service.benefits || [],
+      approach: service.approach || '',
+      pricing: service.pricing || { individual: 500, currency: 'INR' },
+      category: this.toServiceCategory(service.category),
+      featured: service.featured,
+      imageUrl: service.imageUrl || undefined,
+    };
+  }
+
+  private toServiceCategory(category: string): ServiceCategory {
+    return Object.values(ServiceCategory).includes(category as ServiceCategory)
+      ? (category as ServiceCategory)
+      : ServiceCategory.MENTAL_HEALTH;
   }
 }

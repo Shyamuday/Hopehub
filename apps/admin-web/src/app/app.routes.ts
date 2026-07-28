@@ -42,6 +42,7 @@ import { ClinicalRecordsPage } from './features/clinical-records/clinical-record
 import { OnlineDoctorsPage } from './features/online-doctors/online-doctors-page/online-doctors-page';
 import { AccountPage } from './features/account/account-page/account-page';
 import { NotificationsInboxPage } from './features/notifications-inbox/notifications-inbox-page';
+import { SafetyFlagsPage } from './features/safety-flags/safety-flags-page';
 
 const guard = [adminPermissionGuard];
 
@@ -89,6 +90,7 @@ export const routes: Routes = [
       { path: ROUTE_PATHS.STAFF, component: StaffPage, canActivate: guard },
       { path: ROUTE_PATHS.ECOSYSTEM_USERS, component: EcosystemUsersPage, canActivate: guard },
       { path: ROUTE_PATHS.CONSULTATIONS, component: ConsultationsPage, canActivate: guard },
+      { path: ROUTE_PATHS.SAFETY_FLAGS, component: SafetyFlagsPage, canActivate: guard },
       { path: ROUTE_PATHS.ONLINE_DOCTORS, component: OnlineDoctorsPage, canActivate: guard },
       { path: ROUTE_PATHS.PAYMENTS, component: PaymentsPage, canActivate: guard },
       { path: ROUTE_PATHS.AUDIT, component: AuditPage, canActivate: guard },

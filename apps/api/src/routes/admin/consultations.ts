@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { Role, ConsultationStatus } from '@prisma/client';
+import { Role, ConsultationStatus, SupportNoteCategory } from '@prisma/client';
 import type { Server as SocketIoServer } from 'socket.io';
 import { authRequired, allowRoles } from '../../auth.js';
 import { prisma } from '../../db.js';
@@ -12,12 +12,100 @@ import {
   writeAuditLog,
   includeConsultationRelations
 } from '../../utils/helpers.js';
-import { enabledNotificationChannels, notificationService } from '../../services/notification-service.js';
+import {
+  enabledNotificationChannels,
+  notificationService
+} from '../../services/notification-service.js';
 import { emitConsultationAssigned } from '../../services/consultation-realtime.js';
 import { PRODUCT_EVENTS, trackProductEvent } from '../../services/product-analytics.js';
 
 export function registerAdminConsultationRoutes(router: Router, io: SocketIoServer) {
   // ─── Admin consultations ───────────────────────────────────────────────────────
+
+  router.get(
+    '/admin/safety-flags',
+    authRequired,
+    allowRoles(Role.ADMIN),
+    asyncRoute(async (req, res) => {
+      const page = queryPositiveInt(req, 'page', 1);
+      const pageSize = Math.max(1, Math.min(50, queryPositiveInt(req, 'pageSize', 20)));
+
+      const where = {
+        OR: [
+          { category: SupportNoteCategory.ESCALATION },
+          { body: { startsWith: '[SAFETY]', mode: 'insensitive' as const } }
+        ]
+      };
+
+      const [notes, total] = await Promise.all([
+        prisma.supportCaseNote.findMany({
+          where,
+          include: {
+            author: { select: { id: true, name: true, role: true } },
+            patient: {
+              select: { id: true, name: true, email: true, mobile: true, patientCode: true }
+            },
+            consultation: {
+              include: {
+                assignedDoctor: { select: { id: true, name: true, email: true, mobile: true } },
+                disease: { select: { id: true, name: true } },
+                payment: { select: { status: true, amountInPaise: true } }
+              }
+            }
+          },
+          orderBy: { createdAt: 'desc' },
+          skip: (page - 1) * pageSize,
+          take: pageSize
+        }),
+        prisma.supportCaseNote.count({ where })
+      ]);
+
+      res.json({
+        flags: notes,
+        pagination: {
+          page,
+          pageSize,
+          total,
+          totalPages: Math.max(1, Math.ceil(total / pageSize))
+        }
+      });
+    })
+  );
+
+  router.post(
+    '/admin/safety-flags/:consultationId/notes',
+    authRequired,
+    allowRoles(Role.ADMIN),
+    asyncRoute(async (req, res) => {
+      const body = z.object({ note: z.string().trim().min(3).max(5000) }).parse(req.body);
+      const consultation = await prisma.consultation.findUniqueOrThrow({
+        where: { id: routeParam(req, 'consultationId') },
+        select: { id: true, patientId: true }
+      });
+
+      const note = await prisma.supportCaseNote.create({
+        data: {
+          patientId: consultation.patientId,
+          consultationId: consultation.id,
+          authorId: req.user!.id,
+          category: SupportNoteCategory.ESCALATION,
+          body: `[SAFETY FOLLOW-UP] ${body.note}`
+        },
+        include: { author: { select: { id: true, name: true, role: true } } }
+      });
+
+      await writeAuditLog({
+        actorId: req.user!.id,
+        actorRole: req.user!.role,
+        action: 'safety_flag.follow_up',
+        targetType: 'consultation',
+        targetId: consultation.id,
+        summary: 'Admin added a safety follow-up note.'
+      });
+
+      res.status(201).json({ note });
+    })
+  );
 
   router.get(
     '/admin/consultations',
@@ -53,7 +141,9 @@ export function registerAdminConsultationRoutes(router: Router, io: SocketIoServ
 
       const filtered = q
         ? consultations.filter((c) => {
-            const text = [c.patient?.name, c.patient?.mobile, c.disease?.name].join(' ').toLowerCase();
+            const text = [c.patient?.name, c.patient?.mobile, c.disease?.name]
+              .join(' ')
+              .toLowerCase();
             return text.includes(q);
           })
         : consultations;
@@ -81,7 +171,9 @@ export function registerAdminConsultationRoutes(router: Router, io: SocketIoServ
           clinicStoreId: doctor.doctorProfile?.clinicStoreId ?? undefined
         },
         include: {
-          patient: { select: { id: true, name: true, mobile: true, email: true, patientCode: true } },
+          patient: {
+            select: { id: true, name: true, mobile: true, email: true, patientCode: true }
+          },
           disease: { select: { name: true } }
         }
       });
@@ -100,7 +192,10 @@ export function registerAdminConsultationRoutes(router: Router, io: SocketIoServ
             body: `Dr. ${doctor.name} has been assigned to your consultation. You can now chat with your doctor in the app.`
           }))
         );
-        io.to(`user:${patient.id}`).emit('consultation:updated', { consultationId: consultation.id, status: consultation.status });
+        io.to(`user:${patient.id}`).emit('consultation:updated', {
+          consultationId: consultation.id,
+          status: consultation.status
+        });
       }
 
       emitConsultationAssigned(io, doctor.id, {
