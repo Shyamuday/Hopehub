@@ -28,8 +28,6 @@ if [ ! -d "$ANDROID_DIR" ]; then
   exit 1
 fi
 
-bash "$ROOT/deploy/scripts/install-google-services.sh"
-
 if [ -n "${ANDROID_VERSION_CODE:-}" ]; then
   sed -i.bak "s/versionCode [0-9]*/versionCode ${ANDROID_VERSION_CODE}/" "$GRADLE_FILE"
   rm -f "${GRADLE_FILE}.bak"

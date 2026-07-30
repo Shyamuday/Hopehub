@@ -220,36 +220,33 @@ Add SSL server blocks to `deploy/nginx/default.conf` and reload nginx.
 
 ## Repository deployment files
 
-| File                                           | Purpose                                          |
-| ---------------------------------------------- | ------------------------------------------------ |
-| `apps/api/Dockerfile`                          | Production API image                             |
-| `deploy/docker-compose.prod.yml`               | API + nginx stack                                |
-| `deploy/nginx/default.conf`                    | Static SPAs + API/WebSocket proxy                |
-| `deploy/.env.production.example`               | Environment template                             |
-| `deploy/scripts/bootstrap-ec2.sh`              | First-time host setup                            |
-| `deploy/scripts/build-static.sh`               | Build and stage Angular dist                     |
-| `deploy/scripts/deploy.sh`                     | Full deploy (build, migrate, up)                 |
-| `deploy/scripts/configure-production-urls.sh`  | Inject API URLs before build                     |
-| `deploy/scripts/build-android-release.sh`      | Capacitor + signed AAB build                     |
-| `deploy/scripts/install-google-services.sh`    | Firebase config for Android CI                   |
-| `deploy/.env.staging.example`                  | Staging environment template                     |
-| `deploy/firebase/google-services.json.example` | Firebase file shape reference                    |
-| `.github/workflows/deploy-cloud.yml`           | Build and auto-deploy frontend buckets on `main` |
-| `.github/workflows/android-release.yml`        | Android AAB build + optional Play Store upload   |
+| File                                          | Purpose                                          |
+| --------------------------------------------- | ------------------------------------------------ |
+| `apps/api/Dockerfile`                         | Production API image                             |
+| `deploy/docker-compose.prod.yml`              | API + nginx stack                                |
+| `deploy/nginx/default.conf`                   | Static SPAs + API/WebSocket proxy                |
+| `deploy/.env.production.example`              | Environment template                             |
+| `deploy/scripts/bootstrap-ec2.sh`             | First-time host setup                            |
+| `deploy/scripts/build-static.sh`              | Build and stage Angular dist                     |
+| `deploy/scripts/deploy.sh`                    | Full deploy (build, migrate, up)                 |
+| `deploy/scripts/configure-production-urls.sh` | Inject API URLs before build                     |
+| `deploy/scripts/build-android-release.sh`     | Capacitor + signed AAB build                     |
+| `deploy/.env.staging.example`                 | Staging environment template                     |
+| `.github/workflows/deploy-cloud.yml`          | Build and auto-deploy frontend buckets on `main` |
+| `.github/workflows/android-release.yml`       | Android AAB build + optional Play Store upload   |
 
 ### GitHub Actions setup
 
 1. Create the **production** environment in the repo.
 2. Add these GitHub environment secrets:
 
-| Secret                                                                                                    | Purpose                                                                                      |
-| --------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`                                                              | IAM credentials allowed to sync objects and update website hosting on the HopeHub S3 buckets |
-| `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, `RAZORPAY_WEBHOOK_SECRET`                                       | Razorpay checkout and payment verification for API deploys                                   |
-| `API_PUBLIC_URL`, `WEB_ORIGIN`, `DOCTOR_ORIGIN`, `OPERATIONS_ORIGIN`                                      | Frontend build URLs                                                                          |
-| `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`       | Android signing                                                                              |
-| `GOOGLE_SERVICES_JSON_USER_WEB`, `GOOGLE_SERVICES_JSON_DOCTOR_WEB`, `GOOGLE_SERVICES_JSON_OPERATIONS_WEB` | Firebase (base64 `google-services.json` per app)                                             |
-| `PLAY_STORE_JSON`                                                                                         | Google Play service account for auto-upload                                                  |
+| Secret                                                                                              | Purpose                                                                                      |
+| --------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`                                                        | IAM credentials allowed to sync objects and update website hosting on the HopeHub S3 buckets |
+| `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, `RAZORPAY_WEBHOOK_SECRET`                                 | Razorpay checkout and payment verification for API deploys                                   |
+| `API_PUBLIC_URL`, `WEB_ORIGIN`, `DOCTOR_ORIGIN`, `OPERATIONS_ORIGIN`                                | Frontend build URLs                                                                          |
+| `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD` | Android signing                                                                              |
+| `PLAY_STORE_JSON`                                                                                   | Google Play service account for auto-upload                                                  |
 
 3. **Cloud deploy**: push or merge to `main` → build all frontend apps → deploy to S3 buckets in `us-east-1`.
 4. **Android**: Actions → Android Release → enable **Publish to Play** when ready (starts on `internal` track).
@@ -270,15 +267,6 @@ sudo install -m 600 /dev/null /etc/hopehub-razorpay-key-id
 sudo install -m 600 /dev/null /etc/hopehub-razorpay-key-secret
 sudo install -m 600 /dev/null /etc/hopehub-razorpay-webhook-secret
 ```
-
-Firebase: create one Android app per package in [Firebase Console](https://console.firebase.google.com), download each `google-services.json`, then:
-
-```bash
-base64 -w0 google-services.json   # Linux
-[Convert]::ToBase64String([IO.File]::ReadAllBytes("google-services.json"))  # PowerShell
-```
-
-Store each output as the matching GitHub secret.
 
 ---
 

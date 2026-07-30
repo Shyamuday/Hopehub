@@ -363,33 +363,34 @@
         </div>
       </div>
 
-      <!-- Action Buttons -->
-      <div class="flex flex-col sm:flex-row gap-4 justify-center">
-        <button (click)="retakeAssessment()"
-          class="btn-outline btn-sm whitespace-nowrap">
-          Retake Assessment
-        </button>
-        <button (click)="takeAnotherAssessment()"
-          class="btn-primary btn-sm">
-          Take Another Assessment
-        </button>
-        <button (click)="viewExercises()"
-          class="btn-primary btn-sm">
-          View Recommended Exercises
-        </button>
-        <button (click)="viewLifestyleTips()"
-          class="btn-primary btn-sm">
-          View Lifestyle Tips
-        </button>
-        <button (click)="viewArticles()"
-          class="btn-primary btn-sm">
-          Read Articles
-        </button>
-        <button routerLink="/contact"
-          class="btn-primary btn-sm">
-          Book Professional Consultation
-        </button>
-      </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="assessment-result-actions">
+      <button (click)="retakeAssessment()"
+        class="btn-outline btn-sm whitespace-nowrap">
+        Retake Assessment
+      </button>
+      <button (click)="takeAnotherAssessment()"
+        class="btn-primary btn-sm">
+        Take Another Assessment
+      </button>
+      <button (click)="viewExercises()"
+        class="btn-primary btn-sm">
+        View Recommended Exercises
+      </button>
+      <button (click)="viewLifestyleTips()"
+        class="btn-primary btn-sm">
+        View Lifestyle Tips
+      </button>
+      <button (click)="viewArticles()"
+        class="btn-primary btn-sm">
+        Read Articles
+      </button>
+      <button routerLink="/contact"
+        class="btn-primary btn-sm">
+        Book session
+      </button>
     </div>
     }
 

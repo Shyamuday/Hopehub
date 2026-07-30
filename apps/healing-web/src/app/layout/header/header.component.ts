@@ -117,6 +117,13 @@ import { User } from '../../core/models/auth.model';
                   role="menuitem"
                   >Articles</a
                 >
+                <a
+                  routerLink="/feedback"
+                  routerLinkActive="text-primary-600 bg-primary-50"
+                  class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-primary-600"
+                  role="menuitem"
+                  >Share feedback</a
+                >
               </div>
             </div>
             <!-- Authentication Section -->
@@ -230,7 +237,7 @@ import { User } from '../../core/models/auth.model';
             <div class="flex flex-col space-y-2">
               <a
                 routerLink="/services"
-                (click)="navigateAndClose('/services')"
+                (click)="closeMobileMenu()"
                 routerLinkActive="text-primary-600 bg-primary-50"
                 class="text-gray-700 hover:text-primary-600 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium transition-colors duration-200"
                 [attr.aria-current]="isCurrentRoute('/services') ? 'page' : null"
@@ -240,7 +247,7 @@ import { User } from '../../core/models/auth.model';
               </a>
               <a
                 routerLink="/psychologists"
-                (click)="navigateAndClose('/psychologists')"
+                (click)="closeMobileMenu()"
                 routerLinkActive="text-primary-600 bg-primary-50"
                 class="text-gray-700 hover:text-primary-600 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium transition-colors duration-200"
                 [attr.aria-current]="isCurrentRoute('/psychologists') ? 'page' : null"
@@ -251,7 +258,7 @@ import { User } from '../../core/models/auth.model';
 
               <a
                 routerLink="/assessments"
-                (click)="navigateAndClose('/assessments')"
+                (click)="closeMobileMenu()"
                 routerLinkActive="text-primary-600 bg-primary-50"
                 class="text-gray-700 hover:text-primary-600 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium transition-colors duration-200"
                 role="menuitem"
@@ -260,7 +267,7 @@ import { User } from '../../core/models/auth.model';
               </a>
               <a
                 routerLink="/community"
-                (click)="navigateAndClose('/community')"
+                (click)="closeMobileMenu()"
                 routerLinkActive="text-primary-600 bg-primary-50"
                 class="text-gray-700 hover:text-primary-600 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium transition-colors duration-200"
                 [attr.aria-current]="isCurrentRoute('/community') ? 'page' : null"
@@ -270,7 +277,7 @@ import { User } from '../../core/models/auth.model';
               </a>
               <a
                 routerLink="/about"
-                (click)="navigateAndClose('/about')"
+                (click)="closeMobileMenu()"
                 routerLinkActive="text-primary-600 bg-primary-50"
                 class="text-gray-700 hover:text-primary-600 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium transition-colors duration-200"
                 [attr.aria-current]="isCurrentRoute('/about') ? 'page' : null"
@@ -284,7 +291,7 @@ import { User } from '../../core/models/auth.model';
                 </div>
                 <a
                   routerLink="/exercises"
-                  (click)="navigateAndClose('/exercises')"
+                  (click)="closeMobileMenu()"
                   routerLinkActive="text-primary-600 bg-primary-50"
                   class="block rounded-md px-3 py-2 text-base font-medium text-gray-700 transition-colors duration-200 hover:bg-gray-50 hover:text-primary-600"
                   role="menuitem"
@@ -293,7 +300,7 @@ import { User } from '../../core/models/auth.model';
                 </a>
                 <a
                   routerLink="/lifestyle-tips"
-                  (click)="navigateAndClose('/lifestyle-tips')"
+                  (click)="closeMobileMenu()"
                   routerLinkActive="text-primary-600 bg-primary-50"
                   class="block rounded-md px-3 py-2 text-base font-medium text-gray-700 transition-colors duration-200 hover:bg-gray-50 hover:text-primary-600"
                   role="menuitem"
@@ -302,12 +309,21 @@ import { User } from '../../core/models/auth.model';
                 </a>
                 <a
                   routerLink="/articles"
-                  (click)="navigateAndClose('/articles')"
+                  (click)="closeMobileMenu()"
                   routerLinkActive="text-primary-600 bg-primary-50"
                   class="block rounded-md px-3 py-2 text-base font-medium text-gray-700 transition-colors duration-200 hover:bg-gray-50 hover:text-primary-600"
                   role="menuitem"
                 >
                   Articles
+                </a>
+                <a
+                  routerLink="/feedback"
+                  (click)="closeMobileMenu()"
+                  routerLinkActive="text-primary-600 bg-primary-50"
+                  class="block rounded-md px-3 py-2 text-base font-medium text-gray-700 transition-colors duration-200 hover:bg-gray-50 hover:text-primary-600"
+                  role="menuitem"
+                >
+                  Share feedback
                 </a>
               </div>
 
@@ -315,7 +331,7 @@ import { User } from '../../core/models/auth.model';
                 <div class="border-t border-gray-200 mt-2 pt-2"></div>
                 <a
                   routerLink="/dashboard"
-                  (click)="navigateAndClose('/dashboard')"
+                  (click)="closeMobileMenu()"
                   routerLinkActive="text-primary-600 bg-primary-50"
                   class="text-gray-700 hover:text-primary-600 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-semibold transition-colors duration-200"
                   role="menuitem"
@@ -324,7 +340,7 @@ import { User } from '../../core/models/auth.model';
                 </a>
                 <a
                   routerLink="/profile"
-                  (click)="navigateAndClose('/profile')"
+                  (click)="closeMobileMenu()"
                   routerLinkActive="text-primary-600 bg-primary-50"
                   class="text-gray-700 hover:text-primary-600 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-semibold transition-colors duration-200"
                   role="menuitem"
@@ -437,11 +453,6 @@ export class HeaderComponent implements OnInit {
 
   closeMobileMenu(): void {
     this.mobileMenuOpen.set(false);
-  }
-
-  navigateAndClose(route: string): void {
-    this.navigationService.navigateTo(route);
-    this.closeMobileMenu();
   }
 
   isCurrentRoute(route: string): boolean {

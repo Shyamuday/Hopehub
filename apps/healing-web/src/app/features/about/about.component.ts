@@ -39,7 +39,7 @@ import { RouterModule } from '@angular/router';
             </p>
             <p class="mt-4 text-sm leading-7 text-gray-700 sm:text-base">
               Hope Hub currently offers mental health assessments, guided exercises, lifestyle
-              resources, articles, anonymous-friendly community support, and request-based 30-minute
+              resources, articles, anonymous-friendly community support, and bookable 30-minute
               expert support sessions.
             </p>
           </article>
@@ -61,7 +61,7 @@ import { RouterModule } from '@angular/router';
               <li>Offer self-assessments for reflection and early awareness.</li>
               <li>Share practical exercises, articles, and lifestyle guidance.</li>
               <li>Run anonymous-friendly community spaces through Telegram.</li>
-              <li>Route support requests to suitable Hope Hub experts.</li>
+              <li>Route session bookings to suitable Hope Hub experts.</li>
             </ul>
           </div>
 
@@ -80,8 +80,8 @@ import { RouterModule } from '@angular/router';
             <ul class="mt-4 space-y-3 text-sm leading-6 text-gray-700">
               <li>Start with resources or a quick mental wellness test.</li>
               <li>Join the daily 9 PM Telegram voice circle.</li>
-              <li>Request a 30-minute expert support session when needed.</li>
-              <li>Track private requests and next steps in your account.</li>
+              <li>Book a 30-minute expert support session when needed.</li>
+              <li>Track private bookings and next steps in your account.</li>
             </ul>
           </div>
         </div>
@@ -91,14 +91,14 @@ import { RouterModule } from '@angular/router';
         >
           <h2 class="text-2xl font-semibold text-gray-950">Need support now?</h2>
           <p class="mx-auto mt-3 max-w-2xl text-sm leading-7 text-gray-700 sm:text-base">
-            You can start with a self-assessment, join the community, or send a private support
-            request. Hope Hub is not an emergency service; if you are in immediate danger, contact
+            You can start with a self-assessment, join the community, or book a private support
+            session. Hope Hub is not an emergency service; if you are in immediate danger, contact
             local emergency services.
           </p>
           <div class="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
             <a routerLink="/assessments" class="btn-outline btn-sm">Start test</a>
             <a routerLink="/community" class="btn-outline btn-sm">Join community</a>
-            <a routerLink="/contact" class="btn-primary btn-sm">Request support</a>
+            <a routerLink="/contact" class="btn-primary btn-sm">Book session</a>
           </div>
         </div>
       </section>

@@ -1,0 +1,92 @@
+<main class="feedback-page">
+  <section class="feedback-page__header">
+    <div>
+      <p class="feedback-page__eyebrow">Feedback</p>
+      <h1>Share your Hope Hub experience</h1>
+      <p>
+        Tell us what helped and what we can improve. Public reviews appear only after consent and
+        admin approval.
+      </p>
+    </div>
+  </section>
+
+  <section class="feedback-page__body" aria-label="Feedback form">
+    <form class="feedback-form" [formGroup]="feedbackForm" (ngSubmit)="submitFeedback()">
+      <div class="feedback-form__grid">
+        <label>
+          Name
+          <input type="text" formControlName="displayName" placeholder="Optional" />
+        </label>
+
+        <label>
+          Email
+          <input type="email" formControlName="email" placeholder="Optional" />
+        </label>
+
+        <label>
+          City
+          <input type="text" formControlName="location" placeholder="Optional" />
+        </label>
+
+        <label>
+          Rating
+          <select formControlName="stars">
+            <option value="5">5 stars</option>
+            <option value="4">4 stars</option>
+            <option value="3">3 stars</option>
+            <option value="2">2 stars</option>
+            <option value="1">1 star</option>
+          </select>
+        </label>
+      </div>
+
+      <label>
+        Support area
+        <input type="text" formControlName="supportArea" placeholder="Optional" />
+      </label>
+
+      <label>
+        Review
+        <textarea
+          rows="6"
+          formControlName="quote"
+          placeholder="Share what helped or what we can improve."
+        ></textarea>
+        @if (hasError('quote')) {
+          <span class="feedback-form__error">Please write at least 20 characters.</span>
+        }
+      </label>
+
+      <div class="feedback-form__options">
+        <label class="feedback-form__check">
+          <input type="checkbox" formControlName="isAnonymous" />
+          <span>Show my review anonymously if published.</span>
+        </label>
+
+        <label class="feedback-form__check">
+          <input type="checkbox" formControlName="consentToPublish" />
+          <span>I allow Hope Hub to publish this review after approval.</span>
+        </label>
+      </div>
+
+      @if (hasError('consentToPublish')) {
+        <span class="feedback-form__error">Consent is required to submit a public review.</span>
+      }
+
+      @if (successMessage()) {
+        <p class="feedback-form__success">{{ successMessage() }}</p>
+      }
+
+      @if (errorMessage()) {
+        <p class="feedback-form__error">{{ errorMessage() }}</p>
+      }
+
+      <div class="feedback-form__actions">
+        <button type="submit" [disabled]="isSubmitting()">
+          {{ isSubmitting() ? 'Submitting...' : 'Submit review' }}
+        </button>
+        <a routerLink="/">Back to home</a>
+      </div>
+    </form>
+  </section>
+</main>

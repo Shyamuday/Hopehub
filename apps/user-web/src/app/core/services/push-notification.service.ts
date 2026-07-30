@@ -3,7 +3,6 @@ import { Router } from '@angular/router';
 import { Capacitor } from '@capacitor/core';
 import { PushNotifications } from '@capacitor/push-notifications';
 import { AuthService } from '../../auth/auth.service';
-import { ROUTE_PATHS } from '../constants/app-routes.constants';
 import { environment } from '../../../environments/environment';
 
 /**
@@ -46,7 +45,7 @@ export class PushNotificationService {
   }
 
   private sendTokenToServer(token: string): void {
-    // Forward the FCM/APNs token to the API so the backend can send targeted pushes.
+    // Forward the native push token to the API so the backend can send targeted pushes.
     const authToken = this.auth.token;
     if (!authToken) return;
 
@@ -59,7 +58,9 @@ export class PushNotificationService {
         Authorization: `Bearer ${authToken}`,
       },
       body: JSON.stringify({ token, platform: Capacitor.getPlatform() }),
-    }).catch(() => { /* silently ignore */ });
+    }).catch(() => {
+      /* silently ignore */
+    });
   }
 
   private handleNotificationTap(data: Record<string, string>): void {

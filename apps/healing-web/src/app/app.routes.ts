@@ -59,7 +59,7 @@ export const routes: Routes = [
     title: 'Psychologist Profile - Hope Hub',
     data: {
       breadcrumb: 'Psychologist Profile',
-      description: 'View psychologist profile, focus areas, session details, and request support',
+      description: 'View psychologist profile, focus areas, session details, and book support',
       keywords: 'psychologist profile, counsellor profile, mental wellness expert',
     },
   },
@@ -107,6 +107,17 @@ export const routes: Routes = [
       breadcrumb: 'Contact',
       description: 'Get in touch with our mental health professionals',
       keywords: 'contact, mental health, counseling, therapy, consultation',
+    },
+  },
+  {
+    path: 'feedback',
+    loadComponent: () =>
+      import('./features/feedback/feedback.component').then((m) => m.FeedbackComponent),
+    title: 'Feedback - Hope Hub',
+    data: {
+      breadcrumb: 'Feedback',
+      description: 'Share private Hope Hub feedback for admin review',
+      keywords: 'hope hub feedback, mental wellness review, counselling feedback',
     },
   },
   {

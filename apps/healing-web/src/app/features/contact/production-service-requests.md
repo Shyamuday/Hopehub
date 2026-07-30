@@ -53,7 +53,7 @@ This note tracks third-party services and approvals needed for Hope Hub producti
 
 ## Medium Priority
 
-### Web Push / Firebase Cloud Messaging
+### Web Push Notifications
 
 - Useful for doctor assigned, session reminder, payment status, and follow-up notifications.
 - Requires browser push permission flow and unsubscribe support.

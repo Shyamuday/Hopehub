@@ -200,7 +200,7 @@ import { AssessmentAttemptsService } from '../../core/services/assessment-attemp
                   class="btn-outline btn-sm"
                   >Articles</a
                 >
-                <a routerLink="/contact" class="btn-primary btn-sm">Request support</a>
+                <a routerLink="/contact" class="btn-primary btn-sm">Book session</a>
               </div>
 
               <div class="mt-4 text-center">

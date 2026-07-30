@@ -25,7 +25,7 @@ import { APP_CONSTANTS } from '../../core';
               community guidance, and expert-led counselling sessions.
             </p>
             <div class="mt-5 flex flex-col gap-3 sm:flex-row">
-              <a routerLink="/contact" class="btn-primary btn-sm">Request support</a>
+              <a routerLink="/contact" class="btn-primary btn-sm">Book session</a>
               <a routerLink="/mental-health-test" class="btn-outline btn-sm">Start test</a>
             </div>
             <div class="mt-5 flex gap-3">
@@ -64,7 +64,7 @@ import { APP_CONSTANTS } from '../../core';
               <ul class="mt-3 space-y-2 text-sm">
                 <li><a routerLink="/services" class="footer-link">Services</a></li>
                 <li><a routerLink="/psychologists" class="footer-link">Psychologists</a></li>
-                <li><a routerLink="/contact" class="footer-link">Request support</a></li>
+                <li><a routerLink="/contact" class="footer-link">Book session</a></li>
                 <li><a routerLink="/community" class="footer-link">Community</a></li>
                 <li><a routerLink="/donate" class="footer-link">Support us</a></li>
               </ul>

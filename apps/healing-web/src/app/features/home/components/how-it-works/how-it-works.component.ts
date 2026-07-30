@@ -17,23 +17,23 @@ export class HowItWorksComponent {
   readonly notes = NOTE_CONTENT;
   readonly steps: HowItWorksStep[] = [
     {
-      title: 'Submit request',
-      description: 'Tell us the concern, preferred contact method, and a time that works for you.',
+      title: 'Book session',
+      description: 'Choose the concern, preferred mode, and a time that works for you.',
     },
     {
-      title: 'We review',
-      description: 'The Hope Hub team checks your request and routes it to the right support path.',
+      title: 'We confirm',
+      description: 'The Hope Hub team checks the booking and confirms the right support path.',
     },
     {
       title: 'Expert matched',
       description: 'A suitable psychologist or Hope Hub expert is assigned based on your concern.',
     },
     {
-      title: 'Confirm next step',
+      title: 'Confirm slot',
       description: 'Review the suggested support path and continue when you feel ready.',
     },
     {
-      title: 'Get support',
+      title: 'Join session',
       description: 'Join the confirmed session or receive next steps through your chosen channel.',
     },
   ];

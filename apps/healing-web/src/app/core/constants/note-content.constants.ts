@@ -1,11 +1,11 @@
 export const NOTE_CONTENT = {
   care: {
     label: 'Care note',
-    text: 'Hope Hub provides supportive counselling and guidance. It is not emergency care or a replacement for medical diagnosis. Expert details and next steps are confirmed after support request review.',
+    text: 'Hope Hub provides supportive counselling and guidance. It is not emergency care or a replacement for medical diagnosis. Expert details and next steps are confirmed after booking review.',
   },
   contactSafety: {
     label: 'Safety note',
-    text: 'Hope Hub is not an emergency service. If you are in immediate danger or may harm yourself, call local emergency services or a crisis helpline now. Our support request flow is for counselling guidance and routing, not medical diagnosis.',
+    text: 'Hope Hub is not an emergency service. If you are in immediate danger or may harm yourself, call local emergency services or a crisis helpline now. Our booking flow is for counselling guidance and routing, not medical diagnosis.',
   },
   application: {
     label: 'Application note',

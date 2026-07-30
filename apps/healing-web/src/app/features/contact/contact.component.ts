@@ -94,8 +94,8 @@ export class ContactComponent implements OnInit {
     { value: 'Mental wellness expert', label: 'Mental wellness expert' },
   ];
   sessionModeOptions: FormDropdownOption[] = [
-    { value: 'online_video', label: 'Online video' },
     { value: 'online_audio', label: 'Online audio' },
+    { value: 'online_video', label: 'Online video' },
     { value: 'chat_followup', label: 'Chat follow-up' },
   ];
   languageOptions: FormDropdownOption[] = [
@@ -173,14 +173,14 @@ export class ContactComponent implements OnInit {
       preferredTime: [''],
       concernCategory: [''],
       preferredExpertType: [''],
-      sessionMode: ['online_video'],
+      sessionMode: ['online_audio'],
       preferredLanguage: [''],
       safetyRisk: ['none'],
       previousTherapyOrMedication: [''],
       emergencyConsent: [true],
       preferAnonymousTelegram: [false],
       message: [initialMessage],
-      preferredContact: [user ? 'email' : 'whatsapp', [Validators.required]],
+      preferredContact: ['telegram', [Validators.required]],
     });
   }
 
@@ -267,6 +267,7 @@ export class ContactComponent implements OnInit {
       this.errorMessage.set('');
 
       const formData: ContactForm = this.contactForm.value;
+      const serviceSelected = Boolean(formData.serviceInterest || this.prefilledData().serviceName);
 
       // Add appointment information if selected
       if (appointment) {
@@ -285,6 +286,13 @@ export class ContactComponent implements OnInit {
       }
 
       try {
+        if (serviceSelected && !appointment) {
+          this.showErrorMessage.set(true);
+          this.errorTitle.set('Choose a slot to continue');
+          this.errorMessage.set('Select an appointment slot before payment.');
+          return;
+        }
+
         if (appointment) {
           await this.submitBooking(formData, appointment);
         } else {
@@ -475,13 +483,13 @@ export class ContactComponent implements OnInit {
       preferredTime: '',
       concernCategory: '',
       preferredExpertType: '',
-      sessionMode: 'online_video',
+      sessionMode: 'online_audio',
       preferredLanguage: '',
       safetyRisk: 'none',
       previousTherapyOrMedication: '',
       emergencyConsent: true,
       preferAnonymousTelegram: false,
-      preferredContact: user ? 'email' : 'whatsapp',
+      preferredContact: 'telegram',
     });
     this.selectedAppointment.set(null);
 

@@ -49,7 +49,7 @@
             }
 
             <div class="mt-6 flex flex-col gap-3 sm:flex-row">
-              <button type="button" class="btn-primary" (click)="book(p)">Request session</button>
+              <button type="button" class="btn-primary" (click)="book(p)">Book session</button>
               <a routerLink="/contact" [queryParams]="{ consultant: p.name, providerId: p.id, type: 'inquiry' }" class="btn-outline">
                 Ask a question
               </a>

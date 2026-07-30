@@ -1,35 +1,10 @@
 <div class="request-page">
   <section class="request-hero">
-    <p class="eyebrow">Hope Hub private care</p>
-    <h1>Request a session</h1>
-    <p>Share the essentials. We will confirm the right next step with you.</p>
-
-    <div class="request-chips" aria-label="Request context">
-      @if (prefilledData().serviceName) {
-        <span>{{ prefilledData().serviceName }}</span>
-      }
-      @if (prefilledData().consultant) {
-        <span>{{ prefilledData().consultant }}</span>
-      }
-      @if (currentUser()) {
-        <span>Signed in</span>
-      }
-      <span>{{ notes.contactSafety.label }}</span>
-    </div>
+    <h1>Book a session</h1>
   </section>
 
   <div class="request-layout">
-    <section class="request-card" aria-labelledby="request-form-title">
-      <div class="request-card-header">
-        <div>
-          <h2 id="request-form-title">Session details</h2>
-          <p>Only name and email are required.</p>
-        </div>
-        @if (prefilledData().duration) {
-          <span>{{ prefilledData().duration }}</span>
-        }
-      </div>
-
+    <section class="request-card" aria-label="Session booking form">
       <form [formGroup]="contactForm" (submit)="$event.preventDefault(); onSubmit()">
         <div class="form-grid two">
           <div>
@@ -93,21 +68,60 @@
           <div>
             <label class="form-label">Contact by *</label>
             <div class="contact-methods">
-              <label>
-                <input type="radio" formControlName="preferredContact" value="whatsapp" />
-                WhatsApp
+              <label title="Telegram">
+                <input
+                  type="radio"
+                  formControlName="preferredContact"
+                  value="telegram"
+                  aria-label="Telegram"
+                />
+                <span class="contact-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24">
+                    <path d="M21 4 3.7 10.9c-.8.3-.8 1.4.1 1.6l4.3 1.2 1.7 5.1c.2.7 1.1.9 1.6.3l2.4-2.8 4.5 3.3c.6.4 1.4.1 1.5-.7L22 5.1c.1-.8-.3-1.3-1-1.1Z" />
+                    <path d="m8.4 13.5 8.7-5.4-6.9 7.4" />
+                  </svg>
+                </span>
               </label>
-              <label>
-                <input type="radio" formControlName="preferredContact" value="email" />
-                Email
+              <label title="WhatsApp">
+                <input
+                  type="radio"
+                  formControlName="preferredContact"
+                  value="whatsapp"
+                  aria-label="WhatsApp"
+                />
+                <span class="contact-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24">
+                    <path d="M6.2 19.2 4 20l.8-2.2a8 8 0 1 1 1.4 1.4Z" />
+                    <path d="M9.2 8.4c.3-.3.7-.2.9.1l.7 1.1c.2.3.2.7-.1 1l-.4.4a5.6 5.6 0 0 0 2.7 2.7l.4-.4c.3-.3.7-.3 1-.1l1.1.7c.3.2.4.7.1.9-.5.7-1.2 1-2 1-2.7 0-5.4-2.7-5.4-5.4 0-.8.3-1.5 1-2Z" />
+                  </svg>
+                </span>
               </label>
-              <label>
-                <input type="radio" formControlName="preferredContact" value="phone" />
-                Phone
+              <label title="Email">
+                <input
+                  type="radio"
+                  formControlName="preferredContact"
+                  value="email"
+                  aria-label="Email"
+                />
+                <span class="contact-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24">
+                    <path d="M4 6h16v12H4z" />
+                    <path d="m4 7 8 6 8-6" />
+                  </svg>
+                </span>
               </label>
-              <label>
-                <input type="radio" formControlName="preferredContact" value="telegram" />
-                Telegram
+              <label title="Phone">
+                <input
+                  type="radio"
+                  formControlName="preferredContact"
+                  value="phone"
+                  aria-label="Phone"
+                />
+                <span class="contact-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24">
+                    <path d="M8.2 5.4 6.7 6.9c-.4.4-.5 1-.2 1.5a19.5 19.5 0 0 0 9.1 9.1c.5.3 1.1.2 1.5-.2l1.5-1.5c.4-.4.4-1 0-1.4l-2-2c-.4-.4-1-.4-1.4 0l-.8.8a11.9 11.9 0 0 1-3.6-3.6l.8-.8c.4-.4.4-1 0-1.4l-2-2c-.4-.4-1-.4-1.4 0Z" />
+                  </svg>
+                </span>
               </label>
             </div>
           </div>
@@ -188,17 +202,8 @@
           ></textarea>
         </div>
 
-        <label class="safety-check">
-          <input type="checkbox" formControlName="emergencyConsent" />
-          <span>I understand this is not emergency care.</span>
-        </label>
-
         @if (contactForm.get('serviceInterest')?.value) {
           <div class="slot-panel">
-            <div>
-              <h3>Choose a slot</h3>
-              <p>Optional. You can also submit now and we will follow up.</p>
-            </div>
             <app-appointment-calendar
               [selectedService]="contactForm.get('serviceInterest')?.value"
               [providerId]="prefilledData().providerId || undefined"
@@ -207,9 +212,22 @@
           </div>
         }
 
+        <label class="safety-check">
+          <input type="checkbox" formControlName="emergencyConsent" />
+          <span>I understand this is not emergency care.</span>
+        </label>
+
         <button type="submit" [disabled]="contactForm.invalid || isSubmitting()" class="btn-primary btn-block">
           @if (!isSubmitting()) {
-            <span>{{ selectedAppointment() ? 'Book and pay' : 'Submit request' }}</span>
+            <span>
+              {{
+                selectedAppointment()
+                  ? 'Book and pay'
+                  : contactForm.get('serviceInterest')?.value
+                    ? 'Choose slot to pay'
+                    : 'Book a session'
+              }}
+            </span>
           } @else {
             <span>{{ selectedAppointment() ? 'Creating booking...' : 'Submitting...' }}</span>
           }
@@ -218,7 +236,7 @@
 
       @if (showSuccessMessage()) {
         <div class="feedback success">
-          <strong>{{ errorMessage() || 'Request sent.' }}</strong>
+          <strong>{{ errorMessage() || 'Booking sent.' }}</strong>
           <span>We will contact you through your selected channel.</span>
           <a routerLink="/dashboard">View dashboard</a>
         </div>
@@ -239,7 +257,7 @@
           <li>
             <span>1</span>
             <div>
-              <strong>We review your request</strong>
+              <strong>We review your booking</strong>
               <p>Service, preferred mode, and contact method.</p>
             </div>
           </li>

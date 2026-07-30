@@ -1,4 +1,5 @@
 import { Component, OnInit, output, input, signal, inject } from '@angular/core';
+import { catchError, forkJoin, of } from 'rxjs';
 import { BookingService } from '../../../core/services';
 
 export interface TimeSlot {
@@ -11,6 +12,15 @@ export interface AppointmentSlot {
   date: Date;
   time: string;
   consultant?: string;
+}
+
+interface AppointmentDay {
+  date: Date;
+  dateKey: string;
+  label: string;
+  shortLabel: string;
+  slots: TimeSlot[];
+  loading: boolean;
 }
 
 @Component({
@@ -27,103 +37,26 @@ export class AppointmentCalendarComponent implements OnInit {
   selectedService = input<string | undefined>(undefined);
   providerId = input<string | undefined>(undefined);
 
-  currentMonth = signal(new Date());
   selectedDate = signal<Date | null>(null);
   selectedTime = signal<string | null>(null);
-
-  dayHeaders = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-  calendarDays = signal<any[]>([]);
-
-  morningSlots = signal<TimeSlot[]>([
-    { time: '9:00 AM', available: true },
-    { time: '9:30 AM', available: true },
-    { time: '10:00 AM', available: true },
-    { time: '10:30 AM', available: false, booked: true },
-    { time: '11:00 AM', available: true },
-    { time: '11:30 AM', available: true },
-  ]);
-
-  afternoonSlots = signal<TimeSlot[]>([
-    { time: '1:00 PM', available: true },
-    { time: '1:30 PM', available: true },
-    { time: '2:00 PM', available: false, booked: true },
-    { time: '2:30 PM', available: true },
-    { time: '3:00 PM', available: true },
-    { time: '3:30 PM', available: true },
-    { time: '4:00 PM', available: true },
-    { time: '4:30 PM', available: false, booked: true },
-  ]);
-
-  eveningSlots = signal<TimeSlot[]>([
-    { time: '6:00 PM', available: true },
-    { time: '6:30 PM', available: true },
-    { time: '7:00 PM', available: true },
-    { time: '7:30 PM', available: false, booked: true },
-  ]);
+  appointmentDays = signal<AppointmentDay[]>([]);
+  isLoadingSlots = signal(false);
 
   ngOnInit() {
-    this.generateCalendar();
-  }
-
-  generateCalendar() {
-    const year = this.currentMonth().getFullYear();
-    const month = this.currentMonth().getMonth();
-
-    const firstDay = new Date(year, month, 1);
-    const lastDay = new Date(year, month + 1, 0);
-    const startDate = new Date(firstDay);
-    startDate.setDate(startDate.getDate() - firstDay.getDay());
-
-    const days: any[] = [];
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    for (let i = 0; i < 42; i++) {
-      const date = new Date(startDate);
-      date.setDate(startDate.getDate() + i);
-
-      const isCurrentMonth = date.getMonth() === month;
-      const isToday = date.getTime() === today.getTime();
-      const isPast = date < today;
-      const isWeekend = date.getDay() === 0 || date.getDay() === 6;
-
-      days.push({
-        date: new Date(date),
-        day: date.getDate(),
-        isCurrentMonth,
-        isToday,
-        available: isCurrentMonth && !isPast && !isWeekend,
-      });
-    }
-    this.calendarDays.set(days);
-  }
-
-  previousMonth() {
-    this.currentMonth.update((month) => {
-      const newMonth = new Date(month);
-      newMonth.setMonth(newMonth.getMonth() - 1);
-      return newMonth;
-    });
-    this.generateCalendar();
-    this.selectedDate.set(null);
-    this.selectedTime.set(null);
-  }
-
-  nextMonth() {
-    this.currentMonth.update((month) => {
-      const newMonth = new Date(month);
-      newMonth.setMonth(newMonth.getMonth() + 1);
-      return newMonth;
-    });
-    this.generateCalendar();
-    this.selectedDate.set(null);
-    this.selectedTime.set(null);
+    this.loadNextThreeDays();
   }
 
   selectDate(date: Date) {
     this.selectedDate.set(new Date(date));
     this.selectedTime.set(null);
-    this.generateTimeSlots();
+
+    const day = this.appointmentDays().find(
+      (item) => item.date.toDateString() === date.toDateString(),
+    );
+    const firstAvailableSlot = day?.slots.find((slot) => slot.available);
+    if (firstAvailableSlot) {
+      this.selectTimeSlot(firstAvailableSlot);
+    }
   }
 
   selectTimeSlot(slot: TimeSlot) {
@@ -148,27 +81,86 @@ export class AppointmentCalendarComponent implements OnInit {
     return this.selectedTime() === time;
   }
 
-  private generateTimeSlots() {
-    const selectedDate = this.selectedDate();
-    if (!selectedDate) return;
+  selectedDaySlots(): TimeSlot[] {
+    const selected = this.selectedDate();
+    if (!selected) return [];
 
-    const date = this.formatLocalDate(selectedDate);
-    this.bookingService.slots(date, this.providerId()).subscribe({
-      next: ({ slots }) => {
-        const toTimeSlots = (period: 'morning' | 'afternoon' | 'evening') =>
-          slots
-            .filter((slot) => slot.period === period)
-            .map((slot) => ({
-              time: slot.time,
-              available: slot.available,
-              booked: slot.booked,
-            }));
+    return (
+      this.appointmentDays().find((day) => day.date.toDateString() === selected.toDateString())
+        ?.slots || []
+    );
+  }
 
-        this.morningSlots.set(toTimeSlots('morning'));
-        this.afternoonSlots.set(toTimeSlots('afternoon'));
-        this.eveningSlots.set(toTimeSlots('evening'));
+  availableCount(day: AppointmentDay): number {
+    return day.slots.filter((slot) => slot.available).length;
+  }
+
+  private loadNextThreeDays(): void {
+    const days = Array.from({ length: 3 }, (_, index) => {
+      const date = new Date();
+      date.setHours(0, 0, 0, 0);
+      date.setDate(date.getDate() + index);
+
+      return {
+        date,
+        dateKey: this.formatLocalDate(date),
+        label:
+          index === 0
+            ? 'Today'
+            : index === 1
+              ? 'Tomorrow'
+              : date.toLocaleDateString('en-US', { weekday: 'short' }),
+        shortLabel: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        slots: [],
+        loading: true,
+      };
+    });
+
+    this.isLoadingSlots.set(true);
+    this.appointmentDays.set(days);
+
+    forkJoin(
+      days.map((day) =>
+        this.bookingService.slots(day.dateKey, this.providerId()).pipe(
+          catchError(() =>
+            of({
+              date: day.dateKey,
+              slots: [],
+            }),
+          ),
+        ),
+      ),
+    ).subscribe({
+      next: (responses) => {
+        const updatedDays = days.map((day, index) => ({
+          ...day,
+          slots: responses[index].slots.map((slot) => ({
+            time: slot.time,
+            available: slot.available,
+            booked: slot.booked,
+          })),
+          loading: false,
+        }));
+
+        this.appointmentDays.set(updatedDays);
+        this.isLoadingSlots.set(false);
+        this.autoSelectFirstAvailableSlot(updatedDays);
+      },
+      error: () => {
+        this.appointmentDays.set(days.map((day) => ({ ...day, loading: false })));
+        this.isLoadingSlots.set(false);
       },
     });
+  }
+
+  private autoSelectFirstAvailableSlot(days: AppointmentDay[]): void {
+    const firstAvailableDay = days.find((day) => day.slots.some((slot) => slot.available));
+    const firstAvailableSlot = firstAvailableDay?.slots.find((slot) => slot.available);
+
+    if (!firstAvailableDay || !firstAvailableSlot) return;
+
+    this.selectedDate.set(new Date(firstAvailableDay.date));
+    this.selectTimeSlot(firstAvailableSlot);
   }
 
   private formatLocalDate(date: Date): string {

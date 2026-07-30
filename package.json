@@ -24,7 +24,6 @@
     "deploy:configure-urls": "bash deploy/scripts/configure-production-urls.sh",
     "deploy:static": "bash deploy/scripts/build-static.sh",
     "deploy:android": "bash deploy/scripts/build-android-release.sh",
-    "deploy:firebase": "bash deploy/scripts/install-google-services.sh",
     "dev:doctor": "npm start --prefix apps/doctor-web",
     "dev:admin": "npm start --prefix apps/admin-web",
     "dev:operations": "npm start --prefix apps/operations-web",

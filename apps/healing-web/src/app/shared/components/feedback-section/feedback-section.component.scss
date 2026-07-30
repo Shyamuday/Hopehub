@@ -49,6 +49,13 @@
   grid-template-columns: minmax(0, 0.8fr) minmax(320px, 1fr);
 }
 
+.feedback-section__review-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(280px, 0.8fr);
+  gap: 1rem;
+  align-items: start;
+}
+
 .feedback-section h2 {
   margin: 0;
   color: var(--text-primary);
@@ -311,7 +318,8 @@
 
 @media (max-width: 900px) {
   .feedback-section__inner,
-  .feedback-section__panel {
+  .feedback-section__panel,
+  .feedback-section__review-grid {
     grid-template-columns: 1fr;
   }
 

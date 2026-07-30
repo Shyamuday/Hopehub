@@ -43,6 +43,14 @@
   box-shadow: inset 0 0 0 1px var(--brand-primary);
 }
 
+.assessment-result-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
 /* Smooth transitions */
 .transition-all {
   transition: all 0.3s ease;
@@ -62,6 +70,11 @@
     min-height: 2.45rem;
     padding: 0.52rem 0.7rem;
     font-size: 0.9rem;
+  }
+
+  .assessment-result-actions {
+    align-items: stretch;
+    flex-direction: column;
   }
 }
 
