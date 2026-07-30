@@ -245,6 +245,7 @@ Add SSL server blocks to `deploy/nginx/default.conf` and reload nginx.
 | Secret                                                                                                    | Purpose                                                                                      |
 | --------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
 | `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`                                                              | IAM credentials allowed to sync objects and update website hosting on the HopeHub S3 buckets |
+| `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, `RAZORPAY_WEBHOOK_SECRET`                                       | Razorpay checkout and payment verification for API deploys                                   |
 | `API_PUBLIC_URL`, `WEB_ORIGIN`, `DOCTOR_ORIGIN`, `OPERATIONS_ORIGIN`                                      | Frontend build URLs                                                                          |
 | `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`       | Android signing                                                                              |
 | `GOOGLE_SERVICES_JSON_USER_WEB`, `GOOGLE_SERVICES_JSON_DOCTOR_WEB`, `GOOGLE_SERVICES_JSON_OPERATIONS_WEB` | Firebase (base64 `google-services.json` per app)                                             |
@@ -261,6 +262,14 @@ sudo install -m 600 /dev/null /etc/hopehub-aws-secret-access-key
 ```
 
 The API deploy script reads those values and enables S3 storage with `ASSET_BUCKET=hopehub-assets`.
+
+For payments, either use the production GitHub Razorpay secrets above, or store them on the Lightsail server:
+
+```bash
+sudo install -m 600 /dev/null /etc/hopehub-razorpay-key-id
+sudo install -m 600 /dev/null /etc/hopehub-razorpay-key-secret
+sudo install -m 600 /dev/null /etc/hopehub-razorpay-webhook-secret
+```
 
 Firebase: create one Android app per package in [Firebase Console](https://console.firebase.google.com), download each `google-services.json`, then:
 

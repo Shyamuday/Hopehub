@@ -1,7 +1,7 @@
 <div class="container mx-auto max-w-4xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
-  <h1 class="mb-3 text-center text-2xl font-semibold text-gray-950 sm:text-3xl">Contact us</h1>
+  <h1 class="mb-3 text-center text-2xl font-semibold text-gray-950 sm:text-3xl">Request a session</h1>
   <p class="mx-auto mb-8 max-w-2xl text-center text-sm leading-6 text-gray-700 sm:text-base">
-    Request support, ask a question, or choose a private follow-up channel.
+    Share the basics. We will take care of the next steps.
   </p>
 
   <div class="group relative mb-4 inline-flex">
@@ -22,7 +22,7 @@
     <!-- Contact Form -->
     <div class="professional-card sm:p-6 lg:col-span-2">
       <h2 class="mb-5 text-xl font-semibold text-gray-950">
-        Send us a message
+        Your details
         @if (prefilledData().serviceName) {
           <span
             class="ml-2 inline-flex items-center rounded-md bg-primary-50 px-3 py-1 text-sm font-medium text-primary-700 whitespace-nowrap"
@@ -34,7 +34,7 @@
                 clip-rule="evenodd"
               ></path>
             </svg>
-            Pre-filled from {{ prefilledData().serviceName }}
+            {{ prefilledData().serviceName }}
           </span>
         }
         @if (currentUser()) {
@@ -48,12 +48,11 @@
                 clip-rule="evenodd"
               ></path>
             </svg>
-            Logged in as {{ currentUser()?.name || currentUser()?.email }}
+            Signed in
           </span>
         }
       </h2>
 
-      <!-- Pre-filled Service Info Banner -->
       @if (prefilledData().serviceName) {
         <div class="mb-6 rounded-lg border border-primary-100 bg-primary-50 p-4">
           <div class="flex items-start">
@@ -65,7 +64,7 @@
               ></path>
             </svg>
             <div>
-              <h3 class="text-sm font-semibold text-primary-900">Service Information Pre-filled</h3>
+              <h3 class="text-sm font-semibold text-primary-900">Selected service</h3>
               <div class="mt-1 text-sm text-primary-900">
                 <p><strong>Service:</strong> {{ prefilledData().serviceName }}</p>
                 @if (prefilledData().consultant) {
@@ -78,15 +77,11 @@
                   <p><strong>Contact:</strong> {{ prefilledData().consultantPhone }}</p>
                 }
               </div>
-              <p class="mt-2 text-xs text-primary-800">
-                You can modify these details in the form below if needed.
-              </p>
             </div>
           </div>
         </div>
       }
 
-      <!-- User Info Banner -->
       @if (currentUser()) {
         <div class="mb-6 rounded-lg border border-primary-100 bg-primary-50 p-4">
           <div class="flex items-start">
@@ -98,7 +93,7 @@
               ></path>
             </svg>
             <div>
-              <h3 class="text-sm font-semibold text-primary-900">Your Account Information</h3>
+              <h3 class="text-sm font-semibold text-primary-900">Account details added</h3>
               <div class="mt-1 text-sm text-primary-900">
                 <p>
                   <strong>Name:</strong>
@@ -111,9 +106,6 @@
                 </p>
                 <p><strong>Email:</strong> {{ currentUser()?.email }}</p>
               </div>
-              <p class="mt-2 text-xs text-primary-800">
-                Your contact information has been pre-filled. You can modify it if needed.
-              </p>
             </div>
           </div>
         </div>
@@ -124,71 +116,70 @@
         (submit)="$event.preventDefault(); onSubmit()"
         class="space-y-6"
       >
-        <!-- Name Field -->
-        <div>
-          <label for="name" class="form-label"> Full Name * </label>
-          <input
-            type="text"
-            id="name"
-            formControlName="name"
-            class="form-input"
-            [class.border-red-500]="
-              contactForm.get('name')?.invalid && contactForm.get('name')?.touched
-            "
-            placeholder="Enter your full name"
-          />
-          @if (contactForm.get('name')?.invalid && contactForm.get('name')?.touched) {
-            <div class="form-error">
-              @if (contactForm.get('name')?.errors?.['required']) {
-                <span>Name is required</span>
-              }
-            </div>
-          }
+        <div class="grid gap-4 sm:grid-cols-2">
+          <div>
+            <label for="name" class="form-label">Name *</label>
+            <input
+              type="text"
+              id="name"
+              formControlName="name"
+              class="form-input"
+              [class.border-red-500]="
+                contactForm.get('name')?.invalid && contactForm.get('name')?.touched
+              "
+              placeholder="Full name"
+            />
+            @if (contactForm.get('name')?.invalid && contactForm.get('name')?.touched) {
+              <div class="form-error">
+                @if (contactForm.get('name')?.errors?.['required']) {
+                  <span>Enter your name.</span>
+                }
+              </div>
+            }
+          </div>
+
+          <div>
+            <label for="email" class="form-label">Email *</label>
+            <input
+              type="email"
+              id="email"
+              formControlName="email"
+              class="form-input"
+              [class.border-red-500]="
+                contactForm.get('email')?.invalid && contactForm.get('email')?.touched
+              "
+              placeholder="Email address"
+            />
+            @if (contactForm.get('email')?.invalid && contactForm.get('email')?.touched) {
+              <div class="form-error">
+                @if (contactForm.get('email')?.errors?.['required']) {
+                  <span>Enter your email.</span>
+                }
+                @if (contactForm.get('email')?.errors?.['email']) {
+                  <span>Enter a valid email.</span>
+                }
+              </div>
+            }
+          </div>
         </div>
 
-        <!-- Email Field -->
         <div>
-          <label for="email" class="form-label"> Email Address * </label>
-          <input
-            type="email"
-            id="email"
-            formControlName="email"
-            class="form-input"
-            [class.border-red-500]="
-              contactForm.get('email')?.invalid && contactForm.get('email')?.touched
-            "
-            placeholder="Enter your email address"
-          />
-          @if (contactForm.get('email')?.invalid && contactForm.get('email')?.touched) {
-            <div class="form-error">
-              @if (contactForm.get('email')?.errors?.['required']) {
-                <span>Email is required</span>
-              }
-              @if (contactForm.get('email')?.errors?.['email']) {
-                <span>Please enter a valid email address</span>
-              }
-            </div>
-          }
-        </div>
-
-        <!-- Phone Field -->
-        <div>
-          <label for="phone" class="form-label"> Phone Number </label>
+          <label for="phone" class="form-label">Phone</label>
           <input
             type="tel"
             id="phone"
             formControlName="phone"
             class="form-input"
-            placeholder="Enter your phone number (optional)"
+            placeholder="Phone number"
           />
         </div>
 
         <!-- Service Interest -->
         <div>
           <label for="serviceInterest" class="form-label">
-            Service of Interest
+            Service
             @if (prefilledData().serviceName) {
-              <span class="text-blue-600 text-sm font-normal">(Pre-selected)</span>
+              <span class="text-blue-600 text-sm font-normal">Selected</span>
             }
           </label>
           <app-form-dropdown
@@ -199,9 +190,20 @@
           ></app-form-dropdown>
         </div>
 
-        <div class="grid gap-4">
+        <div>
+          <label for="sessionMode" class="form-label">Session mode</label>
+          <app-form-dropdown
+            formControlName="sessionMode"
+            placeholder="Select session mode"
+            [options]="sessionModeOptions"
+          ></app-form-dropdown>
+        </div>
+
+        <details class="rounded-lg border border-gray-200 bg-gray-50 p-4">
+          <summary class="cursor-pointer text-sm font-semibold text-gray-900">Optional preferences</summary>
+          <div class="mt-4 grid gap-4">
           <div>
-            <label for="concernCategory" class="form-label"> Main concern </label>
+            <label for="concernCategory" class="form-label">Main concern</label>
             <app-form-dropdown
               formControlName="concernCategory"
               placeholder="Select concern"
@@ -210,7 +212,7 @@
           </div>
 
           <div>
-            <label for="preferredExpertType" class="form-label"> Preferred expert type </label>
+            <label for="preferredExpertType" class="form-label">Expert type</label>
             <app-form-dropdown
               formControlName="preferredExpertType"
               placeholder="Select expert type"
@@ -219,16 +221,7 @@
           </div>
 
           <div>
-            <label for="sessionMode" class="form-label"> Session mode </label>
-            <app-form-dropdown
-              formControlName="sessionMode"
-              placeholder="Select session mode"
-              [options]="sessionModeOptions"
-            ></app-form-dropdown>
-          </div>
-
-          <div>
-            <label for="preferredLanguage" class="form-label"> Preferred language </label>
+            <label for="preferredLanguage" class="form-label">Language</label>
             <app-form-dropdown
               formControlName="preferredLanguage"
               placeholder="Select language"
@@ -237,7 +230,7 @@
           </div>
 
           <div>
-            <label for="urgencyLevel" class="form-label"> Urgency Level * </label>
+            <label for="urgencyLevel" class="form-label">Urgency</label>
             <app-form-dropdown
               formControlName="urgencyLevel"
               placeholder="Select urgency"
@@ -246,40 +239,30 @@
           </div>
 
           <div>
-            <label for="preferredTime" class="form-label"> Preferred Time </label>
+            <label for="preferredTime" class="form-label">Preferred time</label>
             <input
               type="text"
               id="preferredTime"
               formControlName="preferredTime"
               class="form-input"
-              placeholder="Example: Today evening, tomorrow 11 AM"
+              placeholder="Today evening, tomorrow 11 AM"
             />
-          </div>
-        </div>
-
-        <div class="grid gap-4">
-          <div>
-            <label for="safetyRisk" class="form-label"> Safety status </label>
-            <app-form-dropdown
-              formControlName="safetyRisk"
-              placeholder="Select safety status"
-              [options]="safetyRiskOptions"
-            ></app-form-dropdown>
           </div>
 
           <div>
             <label for="previousTherapyOrMedication" class="form-label">
-              Previous counselling, therapy, or medication
+              Previous support
             </label>
             <textarea
               id="previousTherapyOrMedication"
               formControlName="previousTherapyOrMedication"
               rows="3"
               class="form-textarea"
-              placeholder="Optional. Share only what you are comfortable sharing."
+              placeholder="Optional"
             ></textarea>
           </div>
-        </div>
+          </div>
+        </details>
 
         <label class="flex items-start rounded-lg border border-amber-200 bg-amber-50 p-4">
           <input
@@ -288,14 +271,13 @@
             class="mt-1 mr-3 text-primary-600"
           />
           <span class="text-sm leading-6 text-amber-950">
-            I understand online consultation is not emergency care. If there is immediate danger, I
-            should contact local emergency services or a crisis helpline.
+            I understand this is not emergency care.
           </span>
         </label>
 
         <!-- Preferred Contact Method -->
         <div>
-          <label class="form-label"> Preferred Contact Method * </label>
+          <label class="form-label">Contact by *</label>
           <div class="space-y-2">
             <label
               class="flex cursor-pointer items-center rounded-lg border border-gray-200 bg-white px-3 py-2.5 transition-colors hover:border-primary-500 hover:bg-primary-50"
@@ -348,61 +330,29 @@
           ) {
             <div class="form-error">
               @if (contactForm.get('preferredContact')?.errors?.['required']) {
-                <span>Please select a preferred contact method</span>
+                <span>Select a contact method.</span>
               }
             </div>
           }
         </div>
 
-        <label class="flex items-start rounded-lg border border-primary-100 bg-primary-50 p-4">
-          <input
-            type="checkbox"
-            formControlName="preferAnonymousTelegram"
-            class="mt-1 mr-3 text-primary-600"
-          />
-          <span>
-            <span class="block text-sm font-semibold text-primary-900">
-              I prefer low-identity follow-up through Telegram
-            </span>
-            <span class="mt-1 block text-sm text-primary-900">
-              Use this if you are worried about identity reveal. We will guide you to use a display
-              name or username and avoid sharing personal details publicly.
-            </span>
-          </span>
-        </label>
-
-        <!-- Message Field -->
         <div>
-          <label for="message" class="form-label"> Message * </label>
+          <label for="message" class="form-label">Note</label>
           <textarea
             id="message"
             formControlName="message"
             rows="5"
             class="form-textarea"
-            [class.border-red-500]="
-              contactForm.get('message')?.invalid && contactForm.get('message')?.touched
-            "
-            placeholder="Tell us how we can help you..."
+            placeholder="Optional"
           ></textarea>
-          @if (contactForm.get('message')?.invalid && contactForm.get('message')?.touched) {
-            <div class="form-error">
-              @if (contactForm.get('message')?.errors?.['required']) {
-                <span>Message is required</span>
-              }
-              @if (contactForm.get('message')?.errors?.['minlength']) {
-                <span>Message must be at least 10 characters long</span>
-              }
-            </div>
-          }
         </div>
 
         <!-- Appointment Booking Section -->
         @if (contactForm.get('serviceInterest')?.value) {
           <div class="border-t pt-6">
-            <h3 class="text-lg font-semibold text-gray-900 mb-4">Book an appointment (optional)</h3>
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">Choose a slot</h3>
             <p class="text-sm text-gray-600 mb-4">
-              Select a preferred date and time for your consultation. This helps us schedule your
-              session more efficiently.
+              Optional. You can also submit the request and we will follow up.
             </p>
 
             <!-- Appointment Calendar -->
@@ -422,9 +372,9 @@
           class="btn-primary btn-block"
         >
           @if (!isSubmitting()) {
-            <span>{{ selectedAppointment() ? 'Book and pay' : 'Send message' }}</span>
+            <span>{{ selectedAppointment() ? 'Book and pay' : 'Submit request' }}</span>
           } @else {
-            <span>{{ selectedAppointment() ? 'Creating booking...' : 'Sending...' }}</span>
+            <span>{{ selectedAppointment() ? 'Creating booking...' : 'Submitting...' }}</span>
           }
         </button>
       </form>
@@ -442,9 +392,7 @@
             </svg>
             <span class="font-medium">{{ errorMessage() || 'Message sent successfully!' }}</span>
           </div>
-          <p class="mt-1 text-sm">
-            We'll get back to you within 24 hours using your preferred contact method.
-          </p>
+          <p class="mt-1 text-sm">We will contact you through your selected channel.</p>
           <a routerLink="/dashboard" class="btn-primary btn-sm mt-3">
             View my consultations and calls
           </a>
@@ -462,7 +410,7 @@
                 clip-rule="evenodd"
               ></path>
             </svg>
-            <span class="font-medium">Error sending message</span>
+            <span class="font-medium">{{ errorTitle() }}</span>
           </div>
           <p class="mt-1 text-sm">
             {{

@@ -49,6 +49,7 @@ export class ContactComponent implements OnInit {
   isSubmitting = signal(false);
   showSuccessMessage = signal(false);
   showErrorMessage = signal(false);
+  errorTitle = signal('Message could not be sent');
   errorMessage = signal('');
   selectedAppointment = signal<AppointmentSlot | null>(null);
   waitingForAuthToBook = signal(false);
@@ -167,7 +168,7 @@ export class ContactComponent implements OnInit {
       previousTherapyOrMedication: [''],
       emergencyConsent: [true],
       preferAnonymousTelegram: [false],
-      message: [initialMessage, [Validators.required, Validators.minLength(10)]],
+      message: [initialMessage],
       preferredContact: [user ? 'email' : 'whatsapp', [Validators.required]],
     });
   }
@@ -215,7 +216,7 @@ export class ContactComponent implements OnInit {
   private generateInitialMessage(): string {
     const data = this.prefilledData();
     if (data.serviceName && data.consultant) {
-      let message = `Hi, I'm interested in booking a consultation for ${data.serviceName}`;
+      let message = `Interested in ${data.serviceName}`;
 
       if (data.consultant) {
         message += ` with ${data.consultant}`;
@@ -225,7 +226,7 @@ export class ContactComponent implements OnInit {
         message += ` (${data.duration} session)`;
       }
 
-      message += '. Please let me know the available time slots and next steps for booking.';
+      message += '.';
 
       if (data.consultantPhone) {
         message += ` I noticed the consultant's contact is ${data.consultantPhone}.`;
@@ -244,16 +245,19 @@ export class ContactComponent implements OnInit {
 
   async onSubmit(): Promise<void> {
     if (this.contactForm.valid) {
+      const appointment = this.selectedAppointment();
       this.isSubmitting.set(true);
       this.loadingService.show();
       this.showSuccessMessage.set(false);
       this.showErrorMessage.set(false);
+      this.errorTitle.set(
+        appointment ? 'Appointment could not be completed' : 'Message could not be sent',
+      );
       this.errorMessage.set('');
 
       const formData: ContactForm = this.contactForm.value;
 
       // Add appointment information if selected
-      const appointment = this.selectedAppointment();
       if (appointment) {
         (formData as any).appointmentDate = appointment.date.toLocaleDateString();
         (formData as any).appointmentTime = appointment.time;
@@ -277,7 +281,7 @@ export class ContactComponent implements OnInit {
         }
       } catch (error: any) {
         this.showErrorMessage.set(true);
-        this.errorMessage.set(error.message || 'An unexpected error occurred. Please try again.');
+        this.errorMessage.set(this.readErrorMessage(error));
         setTimeout(() => {
           this.showErrorMessage.set(false);
           this.errorMessage.set('');
@@ -294,6 +298,12 @@ export class ContactComponent implements OnInit {
     }
   }
 
+  private readErrorMessage(error: any): string {
+    return (
+      error?.error?.message || error?.message || 'An unexpected error occurred. Please try again.'
+    );
+  }
+
   private async submitBooking(formData: ContactForm, appointment: AppointmentSlot): Promise<void> {
     const user = this.currentUser();
     if (!user) {
@@ -306,12 +316,18 @@ export class ContactComponent implements OnInit {
     const data = this.prefilledData();
     const serviceName =
       formData.serviceInterest || data.serviceName || data.service || 'Hope Hub Consultation';
+    const bookingMessage =
+      formData.message?.trim() ||
+      [serviceName, (formData as any).concernCategory, (formData as any).preferredLanguage]
+        .filter(Boolean)
+        .join(' | ') ||
+      'Consultation request';
     const response = await new Promise<{ consultation: any }>((resolve, reject) => {
       this.bookingService
         .createBooking({
           serviceName,
           servicePriceInPaise: this.resolveServicePriceInPaise(serviceName),
-          message: formData.message,
+          message: bookingMessage,
           appointmentDate: this.formatLocalDate(appointment.date),
           appointmentTime: appointment.time,
           consultantName: data.consultant || appointment.consultant || '',
@@ -343,13 +359,25 @@ export class ContactComponent implements OnInit {
   }
 
   private async submitLead(formData: ContactForm): Promise<void> {
+    const leadData: ContactForm = {
+      ...formData,
+      message:
+        formData.message?.trim() ||
+        [
+          formData.serviceInterest || 'General enquiry',
+          (formData as any).concernCategory,
+          formData.preferredContact ? `Contact by ${formData.preferredContact}` : '',
+        ]
+          .filter(Boolean)
+          .join(' | '),
+    };
     const success = await new Promise<boolean>((resolve, reject) => {
-      this.leadService.sendContactForm(formData).subscribe({ next: resolve, error: reject });
+      this.leadService.sendContactForm(leadData).subscribe({ next: resolve, error: reject });
     });
     if (!success) {
       throw new Error('Failed to send message. Please try again.');
     }
-    this.showSuccessAndReset('Message sent successfully.');
+    this.showSuccessAndReset('Request sent successfully.');
   }
 
   private showSuccessAndReset(message: string): void {

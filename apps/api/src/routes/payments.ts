@@ -8,6 +8,7 @@ import { prisma } from '../db.js';
 import { asyncRoute, routeParam } from '../utils/helpers.js';
 import {
   getRazorpayClient,
+  isRazorpayConfigured,
   verifyRazorpaySignature,
   razorpayKeyId,
   razorpayWebhookSecret
@@ -251,6 +252,10 @@ export function createPaymentsRouter(io: SocketIoServer) {
         return res.status(400).json({ message: 'Payment is already completed.' });
       }
 
+      if (!isRazorpayConfigured()) {
+        return res.status(503).json({ message: 'Payment gateway is not configured.' });
+      }
+
       const razorpay = getRazorpayClient();
       const order = await razorpay.orders.create({
         amount: payment.amountInPaise,
@@ -314,6 +319,9 @@ export function createPaymentsRouter(io: SocketIoServer) {
       const payment = consultation.payment;
       if (!payment || payment.providerOrderId !== body.razorpayOrderId) {
         return res.status(400).json({ message: 'Payment order does not match consultation.' });
+      }
+      if (!isRazorpayConfigured()) {
+        return res.status(503).json({ message: 'Payment gateway is not configured.' });
       }
       if (!verifyRazorpaySignature(body)) {
         return res.status(400).json({ message: 'Invalid Razorpay signature.' });

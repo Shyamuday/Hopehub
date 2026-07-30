@@ -5,8 +5,12 @@ export const razorpayKeyId = process.env.RAZORPAY_KEY_ID || '';
 export const razorpayWebhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET || '';
 const razorpayKeySecret = process.env.RAZORPAY_KEY_SECRET || '';
 
+export function isRazorpayConfigured() {
+  return Boolean(razorpayKeyId && razorpayKeySecret);
+}
+
 export function getRazorpayClient() {
-  if (!razorpayKeyId || !razorpayKeySecret) {
+  if (!isRazorpayConfigured()) {
     throw new Error('Razorpay is not configured. Set RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET.');
   }
   return new Razorpay({ key_id: razorpayKeyId, key_secret: razorpayKeySecret });
