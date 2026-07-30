@@ -2,6 +2,8 @@
 
 Hope Hub sends email only from the backend API. Do not put SES credentials in any frontend app.
 
+Automated system mail is sent from `noreply@hopehub.in`. Public replies and website contact mail should go to `contact@hopehub.in`.
+
 ## Required SES Setup
 
 1. Verify the sender domain in SES, preferably `hopehub.in`.
@@ -17,11 +19,11 @@ Hope Hub sends email only from the backend API. Do not put SES credentials in an
 Create these files on the API server:
 
 ```bash
-sudo sh -c 'printf "%s" "email-smtp.ap-south-1.amazonaws.com" > /etc/hopehub-ses-smtp-host'
+sudo sh -c 'printf "%s" "email-smtp.us-east-1.amazonaws.com" > /etc/hopehub-ses-smtp-host'
 sudo sh -c 'printf "%s" "587" > /etc/hopehub-ses-smtp-port'
 sudo sh -c 'printf "%s" "SES_SMTP_USERNAME" > /etc/hopehub-ses-smtp-username'
 sudo sh -c 'printf "%s" "SES_SMTP_PASSWORD" > /etc/hopehub-ses-smtp-password'
-sudo sh -c 'printf "%s" "Hope Hub <noreply@hopehub.in>" > /etc/hopehub-ses-from'
+sudo sh -c 'printf "%s" "noreply@hopehub.in" > /etc/hopehub-ses-from'
 sudo chmod 600 /etc/hopehub-ses-smtp-* /etc/hopehub-ses-from
 ```
 
@@ -44,6 +46,22 @@ Check email configuration:
 ```bash
 curl https://api.hopehub.in/health/email
 ```
+
+## Inbound Contact Email
+
+`contact@hopehub.in` receives through SES inbound in `us-east-1`.
+
+Current setup:
+
+```text
+Route 53 MX: hopehub.in -> 10 inbound-smtp.us-east-1.amazonaws.com.
+SES receipt rule set: hopehub-contact-inbound
+SES receipt rule: contact-hopehub-in
+S3 inbox bucket: hopehub-contact-inbox
+S3 prefix: contact/
+```
+
+SES inbound stores raw email objects in S3. This is not a mailbox UI. To read mail like a normal inbox, connect the S3/SNS workflow to a helpdesk/mailbox provider or move domain MX to a mailbox service such as Google Workspace, Zoho, or AWS WorkMail.
 
 Admin test email endpoint:
 

@@ -1,0 +1,15 @@
+{
+  "Name": "contact-hopehub-in",
+  "Enabled": true,
+  "TlsPolicy": "Optional",
+  "Recipients": ["contact@hopehub.in"],
+  "Actions": [
+    {
+      "S3Action": {
+        "BucketName": "hopehub-contact-inbox",
+        "ObjectKeyPrefix": "contact/"
+      }
+    }
+  ],
+  "ScanEnabled": true
+}

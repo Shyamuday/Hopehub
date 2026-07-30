@@ -1,0 +1,19 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "AllowSesInboundMailDelivery",
+      "Effect": "Allow",
+      "Principal": {
+        "Service": "ses.amazonaws.com"
+      },
+      "Action": "s3:PutObject",
+      "Resource": "arn:aws:s3:::hopehub-contact-inbox/contact/*",
+      "Condition": {
+        "StringEquals": {
+          "aws:SourceAccount": "924479393196"
+        }
+      }
+    }
+  ]
+}
