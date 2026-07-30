@@ -1,12 +1,12 @@
 # Production Service Requests Checklist
 
-This note tracks third-party services and approvals needed for Hope Hub production launch across `hopehub.in`, `mind.hopehub.in`, and `api.hopehub.in`.
+This note tracks third-party services and approvals needed for Hope Hub production launch across `hopehub.in` and `api.hopehub.in`.
 
 ## Already In Progress
 
 ### Razorpay Payment Gateway
 
-- Submit both `https://hopehub.in` and `https://mind.hopehub.in` if both accept paid bookings.
+- Submit `https://hopehub.in` for paid bookings.
 - Keep privacy policy, terms, refund policy, payment policy, service delivery policy, contact details, and pricing visible.
 - Configure webhook on backend:
   - `https://api.hopehub.in/payments/razorpay-webhook`
@@ -62,7 +62,7 @@ This note tracks third-party services and approvals needed for Hope Hub producti
 
 - Add and verify:
   - `https://hopehub.in`
-  - `https://mind.hopehub.in`
+  - `https://hopehub.in`
 - Submit both sitemaps.
 - Monitor indexing, mobile usability, structured data, and no-JS content checks.
 
@@ -99,7 +99,7 @@ This note tracks third-party services and approvals needed for Hope Hub producti
 
 - Current target mapping:
   - `hopehub.in` -> user-web
-  - `mind.hopehub.in` -> healing-web
+  - `hopehub.in` -> healing-web
   - `api.hopehub.in` -> backend API
 - ACM certificate for CloudFront must be in `us-east-1`.
 - Invalidate CloudFront after each production deploy.

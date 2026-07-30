@@ -10,7 +10,7 @@ export const APP_CONSTANTS = {
     QR_CODE: '/image/qrmindhopehub.jpg',
   },
   CONTACT: {
-    EMAIL: 'contact@mind.hopehub.in',
+    EMAIL: 'contact@hopehub.in',
     PHONE: 'Use the request form for routing',
     CRISIS_HOTLINE: '14416',
   },

@@ -73,8 +73,8 @@ The application is configured as a static Angular build for S3 and CloudFront:
 
 1. **Build**: Run `npm run build:s3`
 2. **Upload**: Sync `dist/hope-hub-website/browser` to the Healing Hub S3 bucket
-3. **CloudFront**: Serve the bucket through the `mind.hopehub.in` distribution
-4. **DNS**: Route 53 `mind.hopehub.in` should point to the Healing Hub CloudFront distribution
+3. **CloudFront**: Serve the bucket through the `hopehub.in` distribution
+4. **DNS**: Route 53 `hopehub.in` should point to the Healing Hub CloudFront distribution
 5. **Invalidate**: Create a CloudFront invalidation for `/*` after deployment
 
 ### Features:
