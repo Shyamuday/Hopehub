@@ -54,6 +54,6 @@
     "@types/nodemailer": "^6.4.17",
     "prisma": "^7.2.0",
     "tsx": "^4.21.0",
-    "typescript": "^5.9.3"
+    "typescript": "^7.0.2"
   }
 }
