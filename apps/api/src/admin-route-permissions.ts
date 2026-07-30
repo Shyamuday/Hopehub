@@ -74,6 +74,10 @@ const ADMIN_ROUTE_RULES: Array<{ pattern: RegExp; rules: RouteRule[] }> = [
     rules: [{ permissions: [PERMISSIONS.NOTIFICATIONS_WRITE] }]
   },
   {
+    pattern: /^\/admin\/contact-mail/,
+    rules: [{ permissions: [PERMISSIONS.NOTIFICATIONS_WRITE] }]
+  },
+  {
     pattern: /^\/admin\/ecosystem-users/,
     rules: [{ permissions: [PERMISSIONS.ECOSYSTEM_USERS_WRITE] }]
   },

@@ -87,7 +87,7 @@ export const NAV_ITEMS = [
   { path: adminNavPath(ROUTE_PATHS.MEDICINES), label: '💊 Medicines' },
   { path: adminNavPath(ROUTE_PATHS.INVENTORY), label: '📦 Inventory' },
   { path: adminNavPath(ROUTE_PATHS.NOTIFICATIONS), label: '🔔 Notifications' },
-  { path: adminNavPath(ROUTE_PATHS.NOTIFICATIONS_INBOX), label: '📬 Inbox' },
+  { path: adminNavPath(ROUTE_PATHS.NOTIFICATIONS_INBOX), label: '📬 Inbox & Email' },
   { path: adminNavPath(ROUTE_PATHS.ADMIN_USERS), label: '🔐 Admin Users' },
   { path: adminNavPath(ROUTE_PATHS.STAFF), label: '🛡️ Staff permissions' },
   { path: adminNavPath(ROUTE_PATHS.ECOSYSTEM_USERS), label: '🌐 Portal Users' },

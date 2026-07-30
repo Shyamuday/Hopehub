@@ -12,6 +12,23 @@
       "Effect": "Allow",
       "Action": ["s3:ListBucket"],
       "Resource": "arn:aws:s3:::hopehub-assets"
+    },
+    {
+      "Sid": "HopeHubContactInboxRead",
+      "Effect": "Allow",
+      "Action": ["s3:GetObject"],
+      "Resource": "arn:aws:s3:::hopehub-contact-inbox/contact/*"
+    },
+    {
+      "Sid": "HopeHubContactInboxList",
+      "Effect": "Allow",
+      "Action": ["s3:ListBucket"],
+      "Resource": "arn:aws:s3:::hopehub-contact-inbox",
+      "Condition": {
+        "StringLike": {
+          "s3:prefix": "contact/*"
+        }
+      }
     }
   ]
 }

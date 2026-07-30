@@ -16,6 +16,7 @@ export type SendEmailInput = {
   text?: string;
   html?: string;
   replyTo?: string;
+  from?: string;
 };
 
 export function getMailTransporter() {
@@ -57,7 +58,7 @@ export async function sendEmail(input: SendEmailInput): Promise<void> {
   }
 
   await mailer.sendMail({
-    from: smtpFrom,
+    from: input.from || smtpFrom,
     to: input.to,
     subject: input.subject,
     text: input.text,

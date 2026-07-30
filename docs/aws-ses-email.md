@@ -61,7 +61,7 @@ S3 inbox bucket: hopehub-contact-inbox
 S3 prefix: contact/
 ```
 
-SES inbound stores raw email objects in S3. This is not a mailbox UI. To read mail like a normal inbox, connect the S3/SNS workflow to a helpdesk/mailbox provider or move domain MX to a mailbox service such as Google Workspace, Zoho, or AWS WorkMail.
+SES inbound stores raw email objects in S3. The admin app reads those messages in **Inbox & Email** and can reply using SES SMTP from `contact@hopehub.in`. Automated OTP/system email remains `noreply@hopehub.in`.
 
 Admin test email endpoint:
 

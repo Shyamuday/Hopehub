@@ -1,0 +1,100 @@
+<section class="page">
+  <header class="hero">
+    <div>
+      <h2>Inbox</h2>
+      <p class="muted">Admin alerts and contact email in one place.</p>
+    </div>
+    <div class="tabs" role="tablist" aria-label="Inbox type">
+      <button type="button" [class.active]="tab() === 'notifications'" (click)="tab.set('notifications')">
+        Notifications
+      </button>
+      <button type="button" [class.active]="tab() === 'email'" (click)="tab.set('email')">
+        Contact email
+      </button>
+    </div>
+  </header>
+
+  @if (tab() === 'notifications') {
+    <app-notification-inbox [config]="inboxConfig" />
+  } @else {
+    <div class="mail-toolbar">
+      <div>
+        <strong>contact@hopehub.in</strong>
+        <span class="muted">Replies send from {{ replyFrom() || 'contact@hopehub.in' }}</span>
+      </div>
+      <button type="button" class="btn" (click)="loadMail()" [disabled]="loading()">
+        {{ loading() ? 'Refreshing...' : 'Refresh' }}
+      </button>
+    </div>
+
+    @if (error()) {
+      <div class="error-row">
+        <span>{{ error() }}</span>
+        <button type="button" class="link-btn" (click)="loadMail()">Retry</button>
+      </div>
+    }
+
+    <div class="mail-grid">
+      <aside class="mail-list" aria-label="Contact messages">
+        @if (loading()) {
+          <p class="empty">Loading email...</p>
+        } @else if (!messages().length) {
+          <p class="empty">No contact emails yet.</p>
+        } @else {
+          @for (message of messages(); track message.id) {
+            <button
+              type="button"
+              class="mail-item"
+              [class.active]="selectedId() === message.id"
+              (click)="openMail(message)"
+            >
+              <span class="subject">{{ message.subject || '(no subject)' }}</span>
+              <span class="sender">{{ message.from || message.fromEmail || 'Unknown sender' }}</span>
+              <span class="preview">{{ message.preview || 'No preview available.' }}</span>
+              <span class="date">{{ message.date | date: 'medium' }}</span>
+            </button>
+          }
+        }
+      </aside>
+
+      <section class="mail-detail" aria-label="Selected email">
+        @if (detailLoading()) {
+          <p class="empty">Opening message...</p>
+        } @else if (selected(); as mail) {
+          <div class="detail-head">
+            <div>
+              <h3>{{ mail.subject || '(no subject)' }}</h3>
+              <p class="muted">From {{ mail.from || mail.fromEmail }} to {{ mail.to || 'contact@hopehub.in' }}</p>
+              <p class="muted">{{ mail.date | date: 'full' }}</p>
+            </div>
+          </div>
+
+          <pre class="mail-body">{{ mail.text || plainHtmlFallback() || 'No readable message body.' }}</pre>
+
+          <div class="reply-box">
+            <label for="contactReply">Reply</label>
+            <textarea
+              id="contactReply"
+              rows="8"
+              [value]="replyBody()"
+              (input)="replyBody.set(inputValue($event))"
+              placeholder="Write a clear reply..."
+            ></textarea>
+            <div class="reply-actions">
+              <span class="muted">To {{ mail.fromEmail }}</span>
+              <button type="button" class="btn primary" (click)="sendReply()" [disabled]="replyDisabled()">
+                {{ sendingReply() ? 'Sending...' : 'Send reply' }}
+              </button>
+            </div>
+          </div>
+        } @else {
+          <p class="empty">Select an email to read and reply.</p>
+        }
+      </section>
+    </div>
+
+    @if (toast()) {
+      <div class="toast">{{ toast() }}</div>
+    }
+  }
+</section>

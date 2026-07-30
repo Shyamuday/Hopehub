@@ -24,6 +24,7 @@ export const PERMISSIONS = {
   CATALOG_READ: 'admin.catalog.read',
   CATALOG_WRITE: 'admin.catalog.write',
   NOTIFICATIONS_WRITE: 'admin.notifications.write',
+  CONTACT_MAIL_WRITE: 'admin.contact_mail.write',
   ECOSYSTEM_USERS_WRITE: 'admin.ecosystem_users.write',
   PORTAL_USERS_WRITE: 'admin.portal_users.write',
   /** Ops portal sections (assign beyond default role) */
@@ -63,6 +64,7 @@ export const PERMISSION_LABELS: Record<PermissionCode, string> = {
   [PERMISSIONS.CATALOG_READ]: 'View medicines & suppliers',
   [PERMISSIONS.CATALOG_WRITE]: 'Manage medicines & suppliers',
   [PERMISSIONS.NOTIFICATIONS_WRITE]: 'Send notifications',
+  [PERMISSIONS.CONTACT_MAIL_WRITE]: 'Read and reply to contact email',
   [PERMISSIONS.ECOSYSTEM_USERS_WRITE]: 'Manage ecosystem users',
   [PERMISSIONS.PORTAL_USERS_WRITE]: 'Manage portal users',
   [PERMISSIONS.OPS_HR]: 'HR ops portal',

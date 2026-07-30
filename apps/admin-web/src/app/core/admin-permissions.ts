@@ -36,6 +36,7 @@ export const ADMIN_PERMISSIONS = {
   CATALOG_READ: 'admin.catalog.read',
   CATALOG_WRITE: 'admin.catalog.write',
   NOTIFICATIONS_WRITE: 'admin.notifications.write',
+  CONTACT_MAIL_WRITE: 'admin.contact_mail.write',
   HR_WRITE: 'admin.hr.write',
   ECOSYSTEM_USERS_WRITE: 'admin.ecosystem_users.write',
   PORTAL_USERS_WRITE: 'admin.portal_users.write',
@@ -47,7 +48,7 @@ export const ADMIN_PERMISSIONS = {
   OPS_MARKETING: 'ops.marketing.portal',
   OPS_WAREHOUSE: 'ops.warehouse.portal',
   OPS_STORE_COUNTER: 'ops.store_counter.portal',
-  OPS_STORE_MANAGER: 'ops.store_manager.portal'
+  OPS_STORE_MANAGER: 'ops.store_manager.portal',
 } as const;
 
 export const PERMISSION_GROUPS: Array<{ label: string; codes: string[] }> = [
@@ -69,12 +70,13 @@ export const PERMISSION_GROUPS: Array<{ label: string; codes: string[] }> = [
       ADMIN_PERMISSIONS.CATALOG_READ,
       ADMIN_PERMISSIONS.CATALOG_WRITE,
       ADMIN_PERMISSIONS.NOTIFICATIONS_WRITE,
+      ADMIN_PERMISSIONS.CONTACT_MAIL_WRITE,
       ADMIN_PERMISSIONS.HR_WRITE,
       ADMIN_PERMISSIONS.ECOSYSTEM_USERS_WRITE,
       ADMIN_PERMISSIONS.PORTAL_USERS_WRITE,
       ADMIN_PERMISSIONS.STAFF_READ,
-      ADMIN_PERMISSIONS.STAFF_WRITE
-    ]
+      ADMIN_PERMISSIONS.STAFF_WRITE,
+    ],
   },
   {
     label: 'Operations portal',
@@ -87,12 +89,15 @@ export const PERMISSION_GROUPS: Array<{ label: string; codes: string[] }> = [
       ADMIN_PERMISSIONS.OPS_MARKETING,
       ADMIN_PERMISSIONS.OPS_WAREHOUSE,
       ADMIN_PERMISSIONS.OPS_STORE_COUNTER,
-      ADMIN_PERMISSIONS.OPS_STORE_MANAGER
-    ]
-  }
+      ADMIN_PERMISSIONS.OPS_STORE_MANAGER,
+    ],
+  },
 ];
 
-export function staffHasAllPermissions(user: StaffUser | null | undefined, ...required: string[]): boolean {
+export function staffHasAllPermissions(
+  user: StaffUser | null | undefined,
+  ...required: string[]
+): boolean {
   if (!user || (user.role !== 'ADMIN' && user.role !== 'HR')) {
     return false;
   }
@@ -108,6 +113,9 @@ export function staffHasAllPermissions(user: StaffUser | null | undefined, ...re
   return required.every((p) => sp.permissionCodes.includes(p));
 }
 
-export function staffHasAnyPermission(user: StaffUser | null | undefined, ...candidates: string[]): boolean {
+export function staffHasAnyPermission(
+  user: StaffUser | null | undefined,
+  ...candidates: string[]
+): boolean {
   return candidates.some((c) => staffHasAllPermissions(user, c));
 }
