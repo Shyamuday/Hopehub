@@ -61,6 +61,13 @@ type Doctor = {
 
 type SiteConfigEntry = { key: string; value: string; label: string; description: string };
 
+const STALE_PSYCHOLOGIST_PROFILE_TEXT = /homeopathic|doctor|clinical operations/i;
+
+function psychologistProfileValue(value: string, fallback = 'Psychologist') {
+  const trimmed = value.trim();
+  return !trimmed || STALE_PSYCHOLOGIST_PROFILE_TEXT.test(trimmed) ? fallback : trimmed;
+}
+
 function emptyCreateModel() {
   return {
     name: '',
@@ -266,16 +273,25 @@ export class DoctorsPage {
     }
 
     const edit = this.editModel();
+    const editSpecialty = this.isPsychologistType(edit.doctorType)
+      ? psychologistProfileValue(edit.specialty)
+      : edit.specialty.trim();
+    const editDesignation = this.isPsychologistType(edit.doctorType)
+      ? psychologistProfileValue(edit.designation)
+      : edit.designation.trim();
+    const editDepartment = this.isPsychologistType(edit.doctorType)
+      ? psychologistProfileValue(edit.department)
+      : edit.department.trim();
     this.mutating.set(true);
     try {
       await this.api.updateDoctor(doctorId, {
         name: edit.name.trim(),
         email: edit.email.trim(),
         mobile: edit.mobile.trim(),
-        specialty: edit.specialty.trim(),
+        specialty: editSpecialty,
         registrationNo: edit.registrationNo.trim(),
-        designation: edit.designation.trim(),
-        department: edit.department.trim(),
+        designation: editDesignation,
+        department: editDepartment,
         isAvailable: edit.isAvailable,
         doctorType: edit.doctorType,
         specialtyFocus:
@@ -320,6 +336,15 @@ export class DoctorsPage {
     this.message.set('');
     this.error.set('');
     const create = this.createModel();
+    const createSpecialty = this.isPsychologistType(create.doctorType)
+      ? psychologistProfileValue(create.specialty)
+      : create.specialty.trim();
+    const createDesignation = this.isPsychologistType(create.doctorType)
+      ? psychologistProfileValue(create.designation)
+      : create.designation.trim();
+    const createDepartment = this.isPsychologistType(create.doctorType)
+      ? psychologistProfileValue(create.department)
+      : create.department.trim();
     this.mutating.set(true);
     try {
       await this.api.createDoctor({
@@ -327,10 +352,10 @@ export class DoctorsPage {
         email: create.email.trim(),
         mobile: create.mobile.trim(),
         password: create.password,
-        specialty: create.specialty.trim(),
+        specialty: createSpecialty,
         registrationNo: create.registrationNo.trim(),
-        designation: create.designation.trim(),
-        department: create.department.trim(),
+        designation: createDesignation,
+        department: createDepartment,
         doctorType: create.doctorType,
         specialtyFocus:
           create.doctorType === 'SPECIALIST_CONSULTANT' ? create.specialtyFocus || null : null,
@@ -486,6 +511,30 @@ export class DoctorsPage {
         });
       });
     }
+  }
+
+  onCreateDoctorTypeChange() {
+    const current = this.createModel();
+    if (!this.isPsychologistType(current.doctorType)) return;
+    this.createModel.set({
+      ...current,
+      specialty: psychologistProfileValue(current.specialty),
+      designation: psychologistProfileValue(current.designation),
+      department: psychologistProfileValue(current.department),
+      specialtyFocus: '',
+    });
+  }
+
+  onEditDoctorTypeChange() {
+    const current = this.editModel();
+    if (!this.isPsychologistType(current.doctorType)) return;
+    this.editModel.set({
+      ...current,
+      specialty: psychologistProfileValue(current.specialty),
+      designation: psychologistProfileValue(current.designation),
+      department: psychologistProfileValue(current.department),
+      specialtyFocus: '',
+    });
   }
 
   async approveSelectedDoctorWithProfile() {

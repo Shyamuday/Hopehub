@@ -50,7 +50,7 @@
     </div>
     <div class="field">
       <label class="field-label" for="doc-create-type">Doctor type</label>
-      <select id="doc-create-type" [formField]="createForm.doctorType">
+      <select id="doc-create-type" [formField]="createForm.doctorType" (change)="onCreateDoctorTypeChange()">
         @for (option of doctorTypeOptions; track option.value) {
           <option [value]="option.value">{{ option.label }}</option>
         }
@@ -349,7 +349,7 @@
         </div>
         <div class="field">
           <label class="field-label" for="doc-edit-type">Doctor type</label>
-          <select id="doc-edit-type" [formField]="editForm.doctorType">
+          <select id="doc-edit-type" [formField]="editForm.doctorType" (change)="onEditDoctorTypeChange()">
             @for (option of doctorTypeOptions; track option.value) {
               <option [value]="option.value">{{ option.label }}</option>
             }

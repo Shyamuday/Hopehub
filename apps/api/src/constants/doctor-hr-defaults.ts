@@ -146,17 +146,30 @@ export function applyDoctorHrProfileFields(input: {
   department?: string | null;
 }) {
   const defaults = doctorHrDefaults(input.doctorType, input.specialtyFocus);
+  const designation = input.designation?.trim();
+  const department = input.department?.trim();
+  const shouldUseDefaultDesignation =
+    !designation ||
+    (input.doctorType === HomeopathicDoctorType.PSYCHOLOGIST &&
+      /homeopathic|doctor/i.test(designation));
+  const shouldUseDefaultDepartment =
+    !department ||
+    (input.doctorType === HomeopathicDoctorType.PSYCHOLOGIST &&
+      /homeopathic|clinical operations/i.test(department));
+
   return {
     doctorType: input.doctorType,
     specialtyFocus:
-      input.doctorType === HomeopathicDoctorType.SPECIALIST_CONSULTANT ? input.specialtyFocus ?? null : null,
+      input.doctorType === HomeopathicDoctorType.SPECIALIST_CONSULTANT
+        ? (input.specialtyFocus ?? null)
+        : null,
     specialty: resolveDoctorSpecialty({
       doctorType: input.doctorType,
       specialtyFocus: input.specialtyFocus,
       specialty: input.specialty ?? defaults.specialty
     }),
-    designation: input.designation?.trim() || defaults.designation,
-    department: input.department?.trim() || defaults.department
+    designation: shouldUseDefaultDesignation ? defaults.designation : designation,
+    department: shouldUseDefaultDepartment ? defaults.department : department
   };
 }
 
