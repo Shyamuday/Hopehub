@@ -14,7 +14,7 @@ import { APP_CONSTANTS } from '../../core';
           <h1 class="mt-3 text-3xl font-bold text-slate-950 sm:text-4xl">Privacy Policy</h1>
           <p class="mt-4 max-w-3xl text-base leading-7 text-slate-700">
             This policy explains how Hope Hub collects, uses, and protects information shared
-            through mind.hopehub.in and related support channels.
+            through hopehub.in and related support channels.
           </p>
           <p class="mt-3 text-sm text-slate-600">Effective date: July 23, 2026</p>
         </div>

@@ -30,7 +30,7 @@ export class SEOService {
   private readonly defaultKeywords =
     'mental health, counseling, therapy, hope hub, breakup counseling, career counseling, anxiety therapy, depression support, stress management';
   private readonly defaultImage = '/image/hopehublogo.png';
-  private readonly siteUrl = APP_CONSTANTS.SITE_URL || 'https://mind.hopehub.in';
+  private readonly siteUrl = APP_CONSTANTS.SITE_URL || 'https://hopehub.in';
 
   constructor(
     private titleService: Title,

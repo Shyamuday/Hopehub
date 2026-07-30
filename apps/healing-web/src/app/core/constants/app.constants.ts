@@ -1,5 +1,5 @@
 export const APP_CONSTANTS = {
-  SITE_URL: 'https://mind.hopehub.in',
+  SITE_URL: 'https://hopehub.in',
   SITE_NAME: 'Hope Hub',
   TELEGRAM: {
     GROUP_URL: 'https://t.me/mindhopehub',

@@ -19,11 +19,11 @@ if [ -f "$CONFIG" ]; then
 fi
 
 API_URL="${API_PUBLIC_URL:-${HOPEHUB_API_PUBLIC_URL:-https://api.hopehub.in}}"
-PATIENT_URL="${WEB_ORIGIN:-${HOPEHUB_WEB_ORIGIN:-https://hopehub.in}}"
+PATIENT_URL="${WEB_ORIGIN:-${HOPEHUB_WEB_ORIGIN:-https://mind.hopehub.in}}"
 ADMIN_URL="${ADMIN_ORIGIN:-${HOPEHUB_ADMIN_ORIGIN:-https://admin.hopehub.in}}"
 DOCTOR_URL="${DOCTOR_ORIGIN:-${HOPEHUB_DOCTOR_ORIGIN:-https://doctor.hopehub.in}}"
 OPS_URL="${OPERATIONS_ORIGIN:-${HOPEHUB_OPERATIONS_ORIGIN:-https://ops.hopehub.in}}"
-HEALING_URL="${HEALING_ORIGIN:-${HOPEHUB_HEALING_ORIGIN:-https://mind.hopehub.in}}"
+HEALING_URL="${HEALING_ORIGIN:-${HOPEHUB_HEALING_ORIGIN:-https://hopehub.in}}"
 CORS_URLS="${CORS_ORIGINS:-${HOPEHUB_CORS_ORIGINS:-$PATIENT_URL,$HEALING_URL,$ADMIN_URL,$DOCTOR_URL,$OPS_URL}}"
 
 patch_app_constants() {

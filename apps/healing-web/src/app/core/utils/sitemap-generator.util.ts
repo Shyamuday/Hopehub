@@ -12,7 +12,7 @@ export interface SitemapUrl {
 }
 
 export class SitemapGenerator {
-  private static readonly baseUrl = 'https://mind.hopehub.in';
+  private static readonly baseUrl = 'https://hopehub.in';
   private static readonly currentDate = new Date().toISOString().split('T')[0];
 
   /**

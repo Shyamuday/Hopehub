@@ -319,7 +319,7 @@ export const routes: Routes = [
     title: 'Privacy Policy - Hope Hub',
     data: {
       breadcrumb: 'Privacy Policy',
-      description: 'Read the Hope Hub privacy policy for mind.hopehub.in',
+      description: 'Read the Hope Hub privacy policy for hopehub.in',
       keywords: 'privacy policy, hope hub, mental health privacy',
     },
   },
@@ -330,7 +330,7 @@ export const routes: Routes = [
     title: 'Terms of Service - Hope Hub',
     data: {
       breadcrumb: 'Terms of Service',
-      description: 'Read the Hope Hub terms of service for mind.hopehub.in',
+      description: 'Read the Hope Hub terms of service for hopehub.in',
       keywords: 'terms of service, hope hub, mental health services terms',
     },
   },

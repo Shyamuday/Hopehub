@@ -16,7 +16,7 @@ import { APP_CONSTANTS } from '../../core';
           </h1>
           <p class="mt-4 max-w-3xl text-base leading-7 text-slate-700">
             This policy explains cancellations, rescheduling, and refunds for Hope Hub support
-            sessions booked through mind.hopehub.in.
+            sessions booked through hopehub.in.
           </p>
           <p class="mt-3 text-sm text-slate-600">Effective date: July 24, 2026</p>
         </div>
