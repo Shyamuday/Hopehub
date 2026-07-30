@@ -112,115 +112,20 @@
   background: var(--brand-primary-light);
 }
 
-.feedback-form {
-  border: 1px solid #e5e7eb;
-  border-radius: 0.5rem;
-  background: #ffffff;
-  color: var(--text-primary);
-  padding: 1rem;
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
-}
-
-.feedback-form h3,
 .approved-stories h3 {
   margin: 0;
   color: var(--text-primary);
   font-size: 1.35rem;
 }
 
-.feedback-form .feedback-section__eyebrow,
 .approved-stories .feedback-section__eyebrow {
   color: var(--brand-primary);
 }
 
-.feedback-form p,
 .approved-stories p {
   margin: 0.4rem 0 0;
   color: #475569;
   line-height: 1.55;
-}
-
-.feedback-form {
-  display: grid;
-  gap: 0.85rem;
-}
-
-.feedback-form__grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.75rem;
-}
-
-.feedback-form label {
-  display: grid;
-  gap: 0.35rem;
-  color: #334155;
-  font-size: 0.82rem;
-  font-weight: 800;
-}
-
-.feedback-form input,
-.feedback-form select,
-.feedback-form textarea {
-  width: 100%;
-  border: 1px solid #d1d5db;
-  border-radius: 0.375rem;
-  background: #ffffff;
-  color: #0f172a;
-  padding: 0.72rem 0.78rem;
-  font: inherit;
-  font-weight: 500;
-}
-
-.feedback-form textarea {
-  resize: vertical;
-}
-
-.feedback-form input:focus,
-.feedback-form select:focus,
-.feedback-form textarea:focus {
-  border-color: var(--brand-primary);
-  box-shadow: 0 0 0 3px rgba(74, 111, 165, 0.16);
-  outline: none;
-}
-
-.feedback-form__check {
-  display: flex !important;
-  grid-template-columns: auto minmax(0, 1fr);
-  align-items: flex-start;
-  gap: 0.55rem !important;
-  font-size: 0.88rem !important;
-  font-weight: 700 !important;
-  line-height: 1.45;
-}
-
-.feedback-form__check input {
-  width: auto;
-  margin-top: 0.18rem;
-}
-
-.feedback-form__error,
-.feedback-form__success {
-  font-size: 0.85rem;
-  font-weight: 800;
-}
-
-.feedback-form__error {
-  color: #b91c1c;
-}
-
-.feedback-form__success {
-  color: #047857 !important;
-}
-
-.feedback-form .feedback-section__primary {
-  border: 0;
-  cursor: pointer;
-}
-
-.feedback-form .feedback-section__primary:disabled {
-  cursor: wait;
-  opacity: 0.7;
 }
 
 .review-summary {
@@ -408,10 +313,6 @@
 
   .story-card {
     min-height: auto;
-  }
-
-  .feedback-form__grid {
-    grid-template-columns: 1fr;
   }
 }
 
