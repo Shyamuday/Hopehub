@@ -1,6 +1,6 @@
 import { createHash, randomUUID } from 'node:crypto';
-import { mkdir, readFile, unlink, writeFile } from 'node:fs/promises';
 import path from 'node:path';
+import { deleteAssetObject, readAssetObject, writeAssetObject } from './asset-storage.js';
 
 const UPLOAD_ROOT = path.resolve(process.cwd(), 'uploads', 'profile-images');
 const MAX_BYTES = 2 * 1024 * 1024;
@@ -17,15 +17,6 @@ function extensionForMime(mimeType: string) {
     default:
       return '';
   }
-}
-
-function assertSafeKey(storageKey: string, root: string) {
-  const normalized = path.normalize(storageKey).replace(/^(\.\.(\/|\\|$))+/, '');
-  const absolutePath = path.join(root, normalized);
-  if (!absolutePath.startsWith(root)) {
-    throw new Error('INVALID_STORAGE_KEY');
-  }
-  return { normalized, absolutePath };
 }
 
 export async function saveUserProfileImage(input: {
@@ -59,14 +50,9 @@ async function saveProfileImage(
   if (!buffer.length) throw new Error('EMPTY_FILE');
   if (buffer.length > MAX_BYTES) throw new Error('FILE_TOO_LARGE');
 
-  const scopeRoot = path.join(UPLOAD_ROOT, scope);
-  const dir = path.join(scopeRoot, ownerId);
-  await mkdir(dir, { recursive: true });
-
   const ext = extensionForMime(input.mimeType) || path.extname(input.fileName || '') || '.bin';
-  const storageKey = `${scope}/${ownerId}/${randomUUID()}${ext}`;
-  const { absolutePath } = assertSafeKey(storageKey, UPLOAD_ROOT);
-  await writeFile(absolutePath, buffer);
+  const storageKey = `profile-images/${scope}/${ownerId}/${randomUUID()}${ext}`;
+  await writeAssetObject({ storageKey, body: buffer, contentType: input.mimeType });
 
   return {
     storageKey,
@@ -77,13 +63,17 @@ async function saveProfileImage(
 }
 
 export async function readProfileImageFile(storageKey: string) {
-  const { absolutePath } = assertSafeKey(storageKey, UPLOAD_ROOT);
-  return readFile(absolutePath);
+  return readAssetObject(
+    storageKey,
+    storageKey.startsWith('profile-images/') ? undefined : UPLOAD_ROOT
+  );
 }
 
 export async function deleteProfileImageFile(storageKey: string) {
-  const { absolutePath } = assertSafeKey(storageKey, UPLOAD_ROOT);
-  await unlink(absolutePath).catch(() => undefined);
+  await deleteAssetObject(
+    storageKey,
+    storageKey.startsWith('profile-images/') ? undefined : UPLOAD_ROOT
+  );
 }
 
 export function profileImageMimeType(storageKey: string) {

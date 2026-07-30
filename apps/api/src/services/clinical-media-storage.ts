@@ -1,10 +1,16 @@
 import { createHash, randomUUID } from 'node:crypto';
-import { mkdir, readFile, unlink, writeFile } from 'node:fs/promises';
 import path from 'node:path';
+import { deleteAssetObject, readAssetObject, writeAssetObject } from './asset-storage.js';
 
 const UPLOAD_ROOT = path.resolve(process.cwd(), 'uploads', 'clinical-media');
 const MAX_BYTES = 15 * 1024 * 1024;
-const ALLOWED_MIME = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'application/pdf']);
+const ALLOWED_MIME = new Set([
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'image/gif',
+  'application/pdf'
+]);
 
 function extensionForMime(mimeType: string) {
   switch (mimeType) {
@@ -37,13 +43,9 @@ export async function saveClinicalMediaFile(input: {
   if (!buffer.length) throw new Error('EMPTY_FILE');
   if (buffer.length > MAX_BYTES) throw new Error('FILE_TOO_LARGE');
 
-  const dir = path.join(UPLOAD_ROOT, input.patientId);
-  await mkdir(dir, { recursive: true });
-
   const ext = extensionForMime(input.mimeType) || path.extname(input.fileName || '') || '.bin';
-  const storageKey = `${input.patientId}/${randomUUID()}${ext}`;
-  const absolutePath = path.join(UPLOAD_ROOT, storageKey);
-  await writeFile(absolutePath, buffer);
+  const storageKey = `clinical-media/${input.patientId}/${randomUUID()}${ext}`;
+  await writeAssetObject({ storageKey, body: buffer, contentType: input.mimeType });
 
   return {
     storageKey,
@@ -53,19 +55,15 @@ export async function saveClinicalMediaFile(input: {
 }
 
 export async function readClinicalMediaFile(storageKey: string) {
-  const normalized = path.normalize(storageKey).replace(/^(\.\.(\/|\\|$))+/, '');
-  const absolutePath = path.join(UPLOAD_ROOT, normalized);
-  if (!absolutePath.startsWith(UPLOAD_ROOT)) {
-    throw new Error('INVALID_STORAGE_KEY');
-  }
-  return readFile(absolutePath);
+  return readAssetObject(
+    storageKey,
+    storageKey.startsWith('clinical-media/') ? undefined : UPLOAD_ROOT
+  );
 }
 
 export async function deleteClinicalMediaFile(storageKey: string) {
-  const normalized = path.normalize(storageKey).replace(/^(\.\.(\/|\\|$))+/, '');
-  const absolutePath = path.join(UPLOAD_ROOT, normalized);
-  if (!absolutePath.startsWith(UPLOAD_ROOT)) {
-    throw new Error('INVALID_STORAGE_KEY');
-  }
-  await unlink(absolutePath).catch(() => undefined);
+  await deleteAssetObject(
+    storageKey,
+    storageKey.startsWith('clinical-media/') ? undefined : UPLOAD_ROOT
+  );
 }
