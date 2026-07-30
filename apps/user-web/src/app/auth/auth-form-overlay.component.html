@@ -3,8 +3,8 @@
       <p class="eyebrow">HopeHub Care and Research Centre</p>
 
       @if (patientSelection(); as selection) {
-        <h2>Who is logging in?</h2>
-        <p class="muted">Multiple patient profiles use this email. Choose yours to continue.</p>
+        <h2>Select profile</h2>
+        <p class="muted">Choose a patient profile.</p>
         <div class="patient-pick-list">
           @for (patient of selection.patients; track patient.id) {
             <button type="button" class="patient-pick" (click)="selectPatient(patient.id)">
@@ -15,10 +15,10 @@
             </button>
           }
         </div>
-        <button type="button" class="link-btn" (click)="cancelPatientSelection()">← Back to login</button>
+        <button type="button" class="link-btn" (click)="cancelPatientSelection()">Back</button>
       } @else if (forgotStep() === 'reset' && resetToken()) {
         <h2>Set new password</h2>
-        <p class="muted">Enter your new password below.</p>
+        <p class="muted">Choose a new password.</p>
 
         <form (submit)="$event.preventDefault(); resetPassword()">
           <label>
@@ -32,40 +32,40 @@
           @if (forgotModel().password && forgotModel().confirmPassword && forgotModel().password !== forgotModel().confirmPassword) {
             <p class="error-text">Passwords do not match</p>
           }
-          <app-button type="submit" [disabled]="isProcessing() || !canResetPassword()" [loading]="isProcessing()" block>Reset password & login</app-button>
+          <app-button type="submit" [disabled]="isProcessing() || !canResetPassword()" [loading]="isProcessing()" block>Reset password</app-button>
         </form>
       } @else if (forgotStep() === 'request') {
-        <button type="button" class="back-btn" (click)="cancelForgotPassword()">← Back</button>
+        <button type="button" class="back-btn" (click)="cancelForgotPassword()">Back</button>
         <h2>Reset password</h2>
-        <p class="muted">Enter your registered email and we will send a password reset link.</p>
+        <p class="muted">We will email a reset link.</p>
 
         <form (submit)="$event.preventDefault(); forgotPassword()">
           <label>
             Email
-            <input [formField]="forgotForm.email" type="email" placeholder="Enter your Gmail" autocomplete="email" />
+            <input [formField]="forgotForm.email" type="email" placeholder="Email address" autocomplete="email" />
           </label>
           <app-button type="submit" [disabled]="isProcessing() || !canRequestPasswordReset()" [loading]="isProcessing()" block>Send reset link</app-button>
         </form>
       } @else if (authView() === 'signup') {
-        <h2>Sign up</h2>
+        <h2>Create account</h2>
         <p class="muted">
           @if (signupMode() === 'password') {
-            Create your account with email and password.
+            Use email and password.
           } @else {
-            Sign up with your email OTP. You can add your mobile number later from profile.
+            Use a one-time code.
           }
         </p>
 
         <div class="auth-mode-tabs" role="tablist" aria-label="Signup method">
           <button type="button" [class.active]="signupMode() === 'password'" (click)="setSignupMode('password')">Password</button>
-          <button type="button" [class.active]="signupMode() === 'otp'" (click)="setSignupMode('otp')">Email OTP</button>
+          <button type="button" [class.active]="signupMode() === 'otp'" (click)="setSignupMode('otp')">Email code</button>
         </div>
 
         @if (signupMode() === 'password') {
           <form (submit)="$event.preventDefault(); registerPatientWithPassword()">
             <label>
               Full name
-              <input [formField]="signupForm.name" placeholder="Enter patient name" autocomplete="name" />
+              <input [formField]="signupForm.name" placeholder="Patient name" autocomplete="name" />
               <span class="auth-field-error">
                 @if (signupModel().name && signupModel().name.trim().length < 2) {
                   Enter at least 2 characters
@@ -74,7 +74,7 @@
             </label>
             <label>
               Email
-              <input [formField]="signupForm.email" type="email" placeholder="Enter Gmail" autocomplete="email" />
+              <input [formField]="signupForm.email" type="email" placeholder="Email address" autocomplete="email" />
               <span class="auth-field-error">
                 @if (signupModel().email && !isEmail(signupModel().email)) {
                   Please enter a valid email
@@ -108,7 +108,7 @@
               <input
                 [formField]="signupForm.email"
                 type="email"
-                placeholder="Enter Gmail"
+                placeholder="Email address"
                 autocomplete="email"
                 (input)="resetSignupOtp()"
               />
@@ -123,32 +123,32 @@
                 <p class="muted">{{ otpNotice() }}</p>
               }
               <label>
-                6-digit OTP
-                <input [formField]="signupForm.otp" placeholder="Enter OTP" inputmode="numeric" autocomplete="one-time-code" />
+                Code
+                <input [formField]="signupForm.otp" placeholder="6-digit code" inputmode="numeric" autocomplete="one-time-code" />
               </label>
-              <app-button type="submit" [disabled]="isProcessing() || !canRegisterPatient()" [loading]="isProcessing()" block>Verify OTP & create account</app-button>
-              <app-button type="button" variant="secondary" [disabled]="isProcessing()" (click)="requestSignupOtp()" block>Resend OTP</app-button>
+              <app-button type="submit" [disabled]="isProcessing() || !canRegisterPatient()" [loading]="isProcessing()" block>Create account</app-button>
+              <app-button type="button" variant="secondary" [disabled]="isProcessing()" (click)="requestSignupOtp()" block>Resend code</app-button>
             } @else {
-              <app-button type="button" [disabled]="isProcessing() || !signupModel().name.trim() || !signupModel().email.trim()" [loading]="isProcessing()" (click)="requestSignupOtp()" block>Send OTP</app-button>
+              <app-button type="button" [disabled]="isProcessing() || !signupModel().name.trim() || !signupModel().email.trim()" [loading]="isProcessing()" (click)="requestSignupOtp()" block>Send code</app-button>
             }
           </form>
         }
 
         <p class="mode-switch-wrap">
-          <button type="button" class="mode-switch" (click)="setAuthView('login')">Already have an account? Login</button>
+          <button type="button" class="mode-switch" (click)="setAuthView('login')">Already registered? Sign in</button>
         </p>
       } @else {
-        <h2>Login to continue</h2>
+        <h2>Sign in</h2>
         <p class="muted">
           @if (loginMode() === 'otp') {
-            Continue securely with an OTP sent to your email. New emails create an account automatically.
+            Use a one-time code.
           } @else {
-            Sign in with your email and password.
+            Use your password.
           }
         </p>
 
         <div class="auth-mode-tabs" role="tablist" aria-label="Login method">
-          <button type="button" [class.active]="loginMode() === 'otp'" (click)="setLoginMode('otp')">Email OTP</button>
+          <button type="button" [class.active]="loginMode() === 'otp'" (click)="setLoginMode('otp')">Email code</button>
           <button type="button" [class.active]="loginMode() === 'password'" (click)="setLoginMode('password')">Password</button>
         </div>
 
@@ -156,7 +156,7 @@
           <form (submit)="$event.preventDefault(); loginPatientWithPassword()">
             <label>
               Email
-              <input [formField]="patientCredentialsForm.identifier" type="email" placeholder="Enter Gmail" autocomplete="email" />
+              <input [formField]="patientCredentialsForm.identifier" type="email" placeholder="Email address" autocomplete="email" />
               <span class="auth-field-error">
                 @if (patientCredentialsModel().identifier && !isEmail(patientCredentialsModel().identifier)) {
                   Please enter a valid email
@@ -168,7 +168,7 @@
               <input [formField]="patientCredentialsForm.password" type="password" placeholder="Enter password" autocomplete="current-password" />
               <span class="auth-field-error"></span>
             </label>
-            <app-button type="submit" [disabled]="isProcessing() || !canLoginWithPassword()" [loading]="isProcessing()" block>Login with password</app-button>
+            <app-button type="submit" [disabled]="isProcessing() || !canLoginWithPassword()" [loading]="isProcessing()" block>Sign in</app-button>
           </form>
         } @else {
           <form (submit)="$event.preventDefault(); loginPatientWithOtp()">
@@ -177,7 +177,7 @@
               <input
                 [formField]="patientOtpForm.email"
                 type="email"
-                placeholder="Enter Gmail"
+                placeholder="Email address"
                 autocomplete="email"
                 (input)="resetLoginOtp()"
               />
@@ -192,13 +192,13 @@
                 <p class="muted">{{ otpNotice() }}</p>
               }
               <label>
-                6-digit OTP
-                <input [formField]="patientOtpForm.otp" placeholder="Enter OTP" inputmode="numeric" autocomplete="one-time-code" />
+                Code
+                <input [formField]="patientOtpForm.otp" placeholder="6-digit code" inputmode="numeric" autocomplete="one-time-code" />
               </label>
-              <app-button type="submit" [disabled]="isProcessing() || !canLoginWithEmailOtp()" [loading]="isProcessing()" block>Verify OTP & continue</app-button>
-              <app-button type="button" variant="secondary" [disabled]="isProcessing()" (click)="requestLoginOtp()" block>Resend OTP</app-button>
+              <app-button type="submit" [disabled]="isProcessing() || !canLoginWithEmailOtp()" [loading]="isProcessing()" block>Continue</app-button>
+              <app-button type="button" variant="secondary" [disabled]="isProcessing()" (click)="requestLoginOtp()" block>Resend code</app-button>
             } @else {
-              <app-button type="button" [disabled]="isProcessing() || !patientOtpModel().email.trim()" [loading]="isProcessing()" (click)="requestLoginOtp()" block>Send OTP</app-button>
+              <app-button type="button" [disabled]="isProcessing() || !patientOtpModel().email.trim()" [loading]="isProcessing()" (click)="requestLoginOtp()" block>Send code</app-button>
             }
           </form>
         }
@@ -207,7 +207,7 @@
           <button type="button" class="mode-switch" (click)="startForgotPassword()">Forgot password?</button>
         </p>
         <p class="mode-switch-wrap">
-          <button type="button" class="mode-switch" (click)="setAuthView('signup')">New here? Sign up</button>
+          <button type="button" class="mode-switch" (click)="setAuthView('signup')">New patient? Create account</button>
         </p>
       }
     </div>

@@ -192,29 +192,29 @@ export class AuthFormOverlayComponent {
 
   private requestOtp(email: string, onSent: () => void) {
     if (!this.isEmail(email)) {
-      this.showError('Enter a valid email address.');
+      this.showError('Enter a valid email.');
       return;
     }
 
     this.otpNotice.set('');
-    this.process('Sending OTP...', this.auth.requestOtp(email.trim().toLowerCase())).subscribe({
+    this.process('Sending code...', this.auth.requestOtp(email.trim().toLowerCase())).subscribe({
       next: (response) => {
         onSent();
         this.closeActiveOverlay();
         this.otpNotice.set(
           response.devOtp
-            ? `OTP sent successfully. Development OTP: ${response.devOtp}`
-            : 'OTP sent successfully. Check your email.',
+            ? `Code sent. Dev code: ${response.devOtp}`
+            : 'Code sent. Check your email.',
         );
       },
-      error: () => this.showError('Could not request OTP.'),
+      error: () => this.showError('Could not send code.'),
     });
   }
 
   loginPatientWithOtp() {
     const otp = this.patientOtpModel();
     this.process(
-      'Logging in patient...',
+      'Signing in...',
       this.auth.patientLogin({
         ...otp,
         email: otp.email.trim().toLowerCase(),
@@ -237,8 +237,8 @@ export class AuthFormOverlayComponent {
       error: (error) =>
         this.showError(
           error.status === 401
-            ? 'Invalid or expired OTP. Request a fresh OTP for this email and try again.'
-            : error.error?.message || 'Could not continue with OTP.',
+            ? 'Invalid or expired code. Send a new code and try again.'
+            : error.error?.message || 'Could not continue.',
         ),
     });
   }
@@ -285,8 +285,8 @@ export class AuthFormOverlayComponent {
       error: (error) =>
         this.showError(
           error.status === 401
-            ? 'Invalid or expired OTP. Request a fresh OTP for this email and try again.'
-            : error.error?.message || 'Could not sign in to selected profile.',
+            ? 'Invalid or expired code. Send a new code and try again.'
+            : error.error?.message || 'Could not sign in.',
         ),
     });
   }
@@ -297,7 +297,7 @@ export class AuthFormOverlayComponent {
 
   loginPatientWithPassword() {
     this.process(
-      'Logging in patient...',
+      'Signing in...',
       this.auth.patientPasswordLogin(this.patientCredentialsModel()),
     ).subscribe({
       next: (response) => {
@@ -312,19 +312,19 @@ export class AuthFormOverlayComponent {
         this.closeAllOverlays();
         this.router.navigateByUrl(this.auth.dashboardFor(response.user.role));
       },
-      error: (error) => this.showError(error.error?.message || 'Patient login failed.'),
+      error: (error) => this.showError(error.error?.message || 'Could not sign in.'),
     });
   }
 
   registerPatient() {
     if (!this.canRegisterPatient()) {
-      this.showError('Enter your name, email, and OTP.');
+      this.showError('Enter your name, email, and code.');
       return;
     }
 
     const signup = this.signupModel();
     this.process(
-      'Signing up...',
+      'Creating account...',
       this.auth.patientLogin({
         name: signup.name.trim(),
         email: signup.email.trim().toLowerCase(),
@@ -357,12 +357,12 @@ export class AuthFormOverlayComponent {
   registerPatientWithPassword() {
     const signup = this.signupModel();
     if (!this.canRegisterPatientWithPassword()) {
-      this.showError('Enter your name, email, and a password with at least 8 characters.');
+      this.showError('Use your name, email, and an 8+ character password.');
       return;
     }
 
     this.process(
-      'Signing up...',
+      'Creating account...',
       this.auth.patientRegister({
         name: signup.name.trim(),
         email: signup.email.trim().toLowerCase(),
@@ -380,13 +380,12 @@ export class AuthFormOverlayComponent {
   forgotPassword() {
     const email = this.forgotModel().email.trim();
     if (!email) {
-      this.showError('Enter your registered email to receive a reset link.');
+      this.showError('Enter your email.');
       return;
     }
 
     this.process('Sending reset link...', this.auth.forgotPassword(email)).subscribe({
-      next: () =>
-        this.showSuccess('If the account exists, a reset link has been sent to your email.'),
+      next: () => this.showSuccess('Reset link sent if the account exists.'),
       error: (error) => this.showError(error.error?.message || 'Could not send reset link.'),
     });
   }
@@ -395,7 +394,7 @@ export class AuthFormOverlayComponent {
     const token = this.resetToken();
     const { password } = this.forgotModel();
     if (!token) {
-      this.showError('Reset token is missing. Please request a new password reset link.');
+      this.showError('Reset link expired. Request a new one.');
       return;
     }
 

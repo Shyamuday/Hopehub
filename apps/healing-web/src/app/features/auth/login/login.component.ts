@@ -123,7 +123,7 @@ export class LoginComponent implements OnInit {
       this.otpSent.set(true);
       this.otpSentTo.set(email);
       this.errorMessage.set(null);
-      this.statusMessage.set('OTP sent. Check your email and enter the code below.');
+      this.statusMessage.set('Code sent. Check your email.');
     } catch (error) {
       console.error('OTP request error:', error);
     } finally {
@@ -141,11 +141,11 @@ export class LoginComponent implements OnInit {
       .toLowerCase();
     if (!email?.valid || this.isLoading()) return;
     if (!this.otpSent() || this.otpSentTo() !== normalizedEmail) {
-      this.errorMessage.set('Send OTP to this email first.');
+      this.errorMessage.set('Send a code first.');
       return;
     }
     if (!otp?.value || String(otp.value).trim().length < 4) {
-      this.errorMessage.set('Enter the OTP sent to your email.');
+      this.errorMessage.set('Enter the code.');
       return;
     }
 
@@ -156,9 +156,7 @@ export class LoginComponent implements OnInit {
         this.router.navigate(['/dashboard']);
       }
     } catch (error) {
-      this.errorMessage.set(
-        'Invalid or expired OTP. Request a fresh OTP for this email and try again.',
-      );
+      this.errorMessage.set('Invalid or expired code. Send a new code and try again.');
       console.error('OTP login error:', error);
     }
   }
