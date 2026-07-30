@@ -253,6 +253,15 @@ Add SSL server blocks to `deploy/nginx/default.conf` and reload nginx.
 3. **Cloud deploy**: push or merge to `main` → build all frontend apps → deploy to S3 buckets in `us-east-1`.
 4. **Android**: Actions → Android Release → enable **Publish to Play** when ready (starts on `internal` track).
 
+For API uploads, either use the production GitHub secrets `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`, or store least-privilege asset bucket credentials on the Lightsail server:
+
+```bash
+sudo install -m 600 /dev/null /etc/hopehub-aws-access-key-id
+sudo install -m 600 /dev/null /etc/hopehub-aws-secret-access-key
+```
+
+The API deploy script reads those values and enables S3 storage with `ASSET_BUCKET=hopehub-assets`.
+
 Firebase: create one Android app per package in [Firebase Console](https://console.firebase.google.com), download each `google-services.json`, then:
 
 ```bash

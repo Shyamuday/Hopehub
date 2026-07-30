@@ -32,8 +32,8 @@ TURN_URL="$(sudo cat /etc/hopehub-turn-url 2>/dev/null || true)"
 TURN_USERNAME="$(sudo cat /etc/hopehub-turn-username 2>/dev/null || true)"
 TURN_CREDENTIAL="$(sudo cat /etc/hopehub-turn-credential 2>/dev/null || true)"
 GOOGLE_CLIENT_ID="$(sudo cat /etc/hopehub-google-client-id 2>/dev/null || true)"
-AWS_ACCESS_KEY_ID_VALUE="$(sudo cat /etc/hopehub-aws-access-key-id 2>/dev/null || true)"
-AWS_SECRET_ACCESS_KEY_VALUE="$(sudo cat /etc/hopehub-aws-secret-access-key 2>/dev/null || true)"
+AWS_ACCESS_KEY_ID_VALUE="$(sudo cat /etc/hopehub-aws-access-key-id 2>/dev/null || echo "${AWS_ACCESS_KEY_ID:-}")"
+AWS_SECRET_ACCESS_KEY_VALUE="$(sudo cat /etc/hopehub-aws-secret-access-key 2>/dev/null || echo "${AWS_SECRET_ACCESS_KEY:-}")"
 
 cat > .env <<ENV
 DATABASE_URL="postgresql://hopehub_app:${DB_PASS}@localhost:5432/hopehub_clinic?schema=public"

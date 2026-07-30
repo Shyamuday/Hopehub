@@ -48,14 +48,28 @@ Current routes keep their existing URLs:
 
 ## Production API Credentials
 
-The Lightsail deploy script reads S3 credentials from these server-side files and writes them into `apps/api/.env`:
+The Lightsail deploy script writes S3 credentials into `apps/api/.env`. It first checks these server-side files:
 
 ```text
 /etc/hopehub-aws-access-key-id
 /etc/hopehub-aws-secret-access-key
 ```
 
-Use a least-privilege IAM user or role for the API. It only needs access to the asset bucket:
+If those files are absent, the GitHub Actions API deploy job passes `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` from the production environment secrets.
+
+Use a least-privilege IAM user or role for the API. The reusable policy is checked in at:
+
+```text
+deploy/aws/hopehub-assets-api-policy.json
+```
+
+It has also been created in AWS:
+
+```text
+arn:aws:iam::924479393196:policy/HopeHubAssetsApiS3Access
+```
+
+The policy only allows access to the asset bucket:
 
 ```json
 {
