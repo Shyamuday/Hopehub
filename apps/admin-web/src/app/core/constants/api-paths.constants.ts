@@ -8,6 +8,7 @@ export const API_PATHS = {
   ADMIN: {
     REPORTS: '/admin/reports',
     AUDIT_LOGS: '/admin/audit-logs',
+    AUTH_PROCESS_LOGS: '/admin/auth-process-logs',
     USERS: '/admin/users',
     ADMINS: '/admin/admins',
     ADMIN_STATUS: (id: string) => `/admin/admins/${id}/status`,

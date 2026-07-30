@@ -9,17 +9,34 @@
 .matrix th, .matrix td { border: 1px solid #e5e7eb; padding: 0.45rem; text-align: left; font-size: 0.8rem; vertical-align: top; }
 .matrix th { background: #f8fafc; white-space: nowrap; }
 .center { text-align: center; }
+.auth-log-panel { display: grid; gap: 0.75rem; }
+.auth-filters { display: grid; grid-template-columns: minmax(220px, 1.5fr) minmax(140px, 0.7fr) minmax(180px, 1fr) auto; gap: 0.65rem; align-items: end; }
+.auth-filters label { display: grid; gap: 0.25rem; color: #475569; font-size: 0.8rem; font-weight: 700; }
+.auth-filters input, .auth-filters select { width: 100%; border: 1px solid #cbd5e1; border-radius: 6px; padding: 0.5rem 0.6rem; background: #fff; }
+.auth-log-head, .auth-pager { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.auth-table-wrap { overflow-x: auto; border: 1px solid #e5e7eb; border-radius: 8px; }
+.auth-table { border-collapse: collapse; min-width: 900px; width: 100%; }
+.auth-table th, .auth-table td { border-bottom: 1px solid #e5e7eb; padding: 0.55rem 0.65rem; text-align: left; font-size: 0.8rem; vertical-align: top; }
+.auth-table th { background: #f8fafc; color: #475569; text-transform: uppercase; font-size: 0.72rem; }
+.auth-table td span { display: block; color: #64748b; font-size: 0.75rem; margin-top: 0.15rem; }
+.status { display: inline-block; color: #166534; font-weight: 800; text-transform: capitalize; }
+.status.failure { color: #b91c1c; }
+.status.blocked { color: #9a3412; }
 .retention-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 0.75rem; margin-bottom: 1rem; }
-.card { border: 1px solid #e5e7eb; border-radius: 10px; padding: 0.75rem; display: grid; gap: 0.25rem; }
-.purge-box { border: 1px solid #fecaca; background: #fff7ed; border-radius: 10px; padding: 1rem; display: grid; gap: 0.75rem; max-width: 420px; }
+.card { border: 1px solid #e5e7eb; border-radius: 8px; padding: 0.75rem; display: grid; gap: 0.25rem; }
+.purge-box { border: 1px solid #fecaca; background: #fff7ed; border-radius: 8px; padding: 1rem; display: grid; gap: 0.75rem; max-width: 420px; }
 .purge-box label { display: grid; gap: 0.25rem; }
 .actions { display: flex; gap: 0.5rem; }
-.danger { background: #dc2626; color: #fff; border: none; border-radius: 8px; padding: 0.45rem 0.75rem; }
+button { border-radius: 6px; padding: 0.45rem 0.75rem; cursor: pointer; }
+button:disabled { cursor: not-allowed; opacity: 0.45; }
+.danger { background: #dc2626; color: #fff; border: none; }
 .error { color: #b91c1c; }
 .toast { position: fixed; bottom: 1rem; right: 1rem; background: #0f766e; color: #fff; padding: 0.6rem 1rem; border-radius: 8px; }
 
 @media (max-width: 768px) {
   .tabs { flex-wrap: wrap; }
+  .auth-filters { grid-template-columns: 1fr; }
+  .auth-log-head, .auth-pager { align-items: flex-start; flex-direction: column; }
   .matrix-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
   .actions { flex-wrap: wrap; }
   .purge-box { max-width: none; }

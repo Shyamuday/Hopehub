@@ -76,6 +76,31 @@ export class AdminReportsApi extends AdminApiBase {
     );
   }
 
+  getAuthProcessLogs(
+    params: {
+      page?: number;
+      pageSize?: number;
+      q?: string;
+      status?: string;
+      reason?: string;
+    } = {},
+  ) {
+    return firstValueFrom(
+      this.http.get<{ logs: Array<any>; page: number; pageSize: number; total: number }>(
+        `${this.apiBase}${API_PATHS.ADMIN.AUTH_PROCESS_LOGS}`,
+        {
+          params: {
+            page: String(params.page ?? 1),
+            pageSize: String(params.pageSize ?? PAGE_SIZES.AUDIT_LOGS_API_DEFAULT),
+            ...(params.q?.trim() ? { q: params.q.trim() } : {}),
+            ...(params.status?.trim() ? { status: params.status.trim() } : {}),
+            ...(params.reason?.trim() ? { reason: params.reason.trim() } : {}),
+          },
+        },
+      ),
+    );
+  }
+
   getAdherenceRisk(params: { days?: number; minDoses?: number } = {}) {
     return firstValueFrom(
       this.http.get<any>(`${this.apiBase}${API_PATHS.ADMIN.ADHERENCE_RISK}`, {

@@ -624,6 +624,11 @@ export class AdminApi {
       ...(args as Parameters<AdminReportsApi['getAuditRetentionStats']>),
     );
   }
+  getAuthProcessLogs(...args: Parameters<AdminReportsApi['getAuthProcessLogs']>) {
+    return this.reports.getAuthProcessLogs(
+      ...(args as Parameters<AdminReportsApi['getAuthProcessLogs']>),
+    );
+  }
   purgeAuditLogs(...args: Parameters<AdminReportsApi['purgeAuditLogs']>) {
     return this.reports.purgeAuditLogs(...(args as Parameters<AdminReportsApi['purgeAuditLogs']>));
   }

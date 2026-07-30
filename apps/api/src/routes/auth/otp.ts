@@ -154,6 +154,26 @@ export function registerAuthOtpRoutes(router: Router) {
         return res.json(toAuthResponse(patients[0]));
       }
 
+      const existingUser = await prisma.user.findUnique({
+        where: { email },
+        select: { id: true, role: true, isActive: true }
+      });
+
+      if (existingUser && existingUser.role !== Role.PATIENT) {
+        await recordAuthProcess({
+          processType: 'patient_email_otp',
+          step: 'signup',
+          status: 'blocked',
+          identifier: email,
+          reason: 'email_registered_with_different_role',
+          req,
+          metadata: { existingUserId: existingUser.id, existingRole: existingUser.role }
+        });
+        return res.status(409).json({
+          message: `This email is already registered as ${existingUser.role}. Use a different email for patient signup.`
+        });
+      }
+
       const user = await createPatientRecord({
         name: body.name?.trim() || 'Patient',
         email

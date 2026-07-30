@@ -10,11 +10,12 @@
   <div class="tabs">
     <button type="button" [class.active]="tab() === 'rbac'" (click)="tab.set('rbac')">RBAC matrix</button>
     <button type="button" [class.active]="tab() === 'retention'" (click)="tab.set('retention')">Audit retention</button>
+    <button type="button" [class.active]="tab() === 'auth'" (click)="openAuthLogs()">Auth logs</button>
   </div>
 
-  @if (loading()) {
+  @if (loading() && tab() !== 'auth') {
     <p>Loading…</p>
-  } @else if (error()) {
+  } @else if (error() && tab() !== 'auth') {
     <p class="error">{{ error() }}</p>
   } @else if (tab() === 'rbac') {
     <div class="matrix-wrap desktop-only">
@@ -55,7 +56,7 @@
         </article>
       }
     </div>
-  } @else if (retention()) {
+  } @else if (tab() === 'retention' && retention()) {
     <div class="retention-cards">
       <div class="card"><span>Total logs</span><strong>{{ retention()!.total }}</strong></div>
       <div class="card"><span>Older than 30 days</span><strong>{{ retention()!.olderThan30Days }}</strong></div>
@@ -75,6 +76,95 @@
         <button type="button" class="danger" [disabled]="saving()" (click)="purge(false)">Purge now</button>
       </div>
       <p class="muted">Minimum retention window is 30 days. Purge actions are themselves audited.</p>
+    </div>
+  } @else if (tab() === 'auth') {
+    <div class="auth-log-panel">
+      <div class="auth-filters">
+        <label>
+          Search
+          <input
+            type="search"
+            [ngModel]="authSearch()"
+            (ngModelChange)="authSearch.set($event)"
+            (keyup.enter)="applyAuthFilters()"
+            placeholder="Email, route, process, reason"
+          />
+        </label>
+        <label>
+          Status
+          <select [ngModel]="authStatus()" (ngModelChange)="authStatus.set($event); applyAuthFilters()">
+            <option value="">Any</option>
+            <option value="success">Success</option>
+            <option value="failure">Failure</option>
+            <option value="blocked">Blocked</option>
+          </select>
+        </label>
+        <label>
+          Reason
+          <select [ngModel]="authReason()" (ngModelChange)="authReason.set($event); applyAuthFilters()">
+            <option value="">Any</option>
+            <option value="missing">Missing</option>
+            <option value="expired">Expired</option>
+            <option value="mismatch">Mismatch</option>
+            <option value="malformed">Malformed</option>
+            <option value="email_registered_with_different_role">Different role</option>
+            <option value="email_delivery_failed">Email delivery failed</option>
+            <option value="email_delivery_not_configured">Email not configured</option>
+          </select>
+        </label>
+        <div class="actions">
+          <button type="button" (click)="applyAuthFilters()">Apply</button>
+          <button type="button" (click)="resetAuthFilters()">Reset</button>
+        </div>
+      </div>
+
+      <div class="auth-log-head">
+        <strong>{{ authLogTotal() }} records</strong>
+        <span>Page {{ authLogPage() }} of {{ authTotalPages() }}</span>
+      </div>
+
+      @if (authLoading()) {
+        <p>Loading auth logs…</p>
+      } @else if (authError()) {
+        <p class="error">{{ authError() }}</p>
+      } @else if (!authLogs().length) {
+        <p class="muted">No auth process logs found.</p>
+      } @else {
+        <div class="auth-table-wrap">
+          <table class="auth-table">
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>Email / id</th>
+                <th>Step</th>
+                <th>Status</th>
+                <th>Reason</th>
+                <th>Route</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (log of authLogs(); track log.id) {
+                <tr>
+                  <td>{{ log.createdAt | date:'short' }}</td>
+                  <td>
+                    <strong>{{ log.identifier }}</strong>
+                    <span>{{ log.processType }}</span>
+                  </td>
+                  <td>{{ log.step }}</td>
+                  <td><span class="status" [class.failure]="log.status === 'failure'" [class.blocked]="log.status === 'blocked'">{{ log.status }}</span></td>
+                  <td>{{ log.reason || '-' }}</td>
+                  <td>{{ log.route || '-' }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+
+      <div class="auth-pager">
+        <button type="button" [disabled]="authLogPage() <= 1" (click)="goAuthLogPage(-1)">Previous</button>
+        <button type="button" [disabled]="authLogPage() >= authTotalPages()" (click)="goAuthLogPage(1)">Next</button>
+      </div>
     </div>
   }
 </div>

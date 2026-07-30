@@ -1,26 +1,31 @@
 import { DatePipe } from '@angular/common';
 import { Component, inject, OnInit, signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { form, FormField } from '@angular/forms/signals';
 import { AdminApi } from '../../../core/services/admin-api';
 import { TOAST_DURATION_MS } from '../../../core/constants/timing.constants';
 
 @Component({
   selector: 'app-security-page',
-  imports: [FormField, DatePipe],
+  imports: [FormField, DatePipe, FormsModule],
   templateUrl: './security-page.html',
-  styleUrl: './security-page.scss'
+  styleUrl: './security-page.scss',
 })
 export class SecurityPage implements OnInit {
   private api = inject(AdminApi);
 
-  tab = signal<'rbac' | 'retention'>('rbac');
+  tab = signal<'rbac' | 'retention' | 'auth'>('rbac');
   loading = signal(true);
+  authLoading = signal(false);
   saving = signal(false);
   error = signal('');
+  authError = signal('');
   toast = signal('');
 
   roles = signal<string[]>([]);
-  capabilities = signal<Array<{ id: string; label: string; description: string; roles: string[] }>>([]);
+  capabilities = signal<Array<{ id: string; label: string; description: string; roles: string[] }>>(
+    [],
+  );
   matrix = signal<Array<{ role: string; capabilities: string[] }>>([]);
 
   retention = signal<{
@@ -33,6 +38,13 @@ export class SecurityPage implements OnInit {
 
   readonly purgeModel = signal({ days: 90 });
   readonly purgeForm = form(this.purgeModel);
+  authLogs = signal<Array<any>>([]);
+  authLogPage = signal(1);
+  authLogTotal = signal(0);
+  authLogPageSize = signal(20);
+  authSearch = signal('');
+  authStatus = signal('');
+  authReason = signal('');
 
   ngOnInit(): void {
     void this.load();
@@ -44,7 +56,7 @@ export class SecurityPage implements OnInit {
     try {
       const [rbac, stats] = await Promise.all([
         this.api.getRbacMatrix(),
-        this.api.getAuditRetentionStats()
+        this.api.getAuditRetentionStats(),
       ]);
       this.roles.set(rbac.roles);
       this.capabilities.set(rbac.capabilities);
@@ -57,8 +69,61 @@ export class SecurityPage implements OnInit {
     }
   }
 
+  async loadAuthLogs(page = this.authLogPage()) {
+    this.authLoading.set(true);
+    this.authError.set('');
+    try {
+      const response = await this.api.getAuthProcessLogs({
+        page,
+        pageSize: this.authLogPageSize(),
+        q: this.authSearch(),
+        status: this.authStatus(),
+        reason: this.authReason(),
+      });
+      this.authLogs.set(response.logs);
+      this.authLogPage.set(response.page);
+      this.authLogPageSize.set(response.pageSize);
+      this.authLogTotal.set(response.total);
+    } catch {
+      this.authError.set('Could not load auth process logs.');
+    } finally {
+      this.authLoading.set(false);
+    }
+  }
+
+  openAuthLogs() {
+    this.tab.set('auth');
+    if (!this.authLogs().length) void this.loadAuthLogs(1);
+  }
+
+  applyAuthFilters() {
+    void this.loadAuthLogs(1);
+  }
+
+  resetAuthFilters() {
+    this.authSearch.set('');
+    this.authStatus.set('');
+    this.authReason.set('');
+    void this.loadAuthLogs(1);
+  }
+
+  goAuthLogPage(direction: -1 | 1) {
+    const next = this.authLogPage() + direction;
+    const totalPages = this.authTotalPages();
+    if (next < 1 || next > totalPages) return;
+    void this.loadAuthLogs(next);
+  }
+
+  authTotalPages() {
+    return Math.max(1, Math.ceil(this.authLogTotal() / this.authLogPageSize()));
+  }
+
   hasCapability(role: string, capabilityId: string) {
-    return this.matrix().find((row) => row.role === role)?.capabilities.includes(capabilityId) ?? false;
+    return (
+      this.matrix()
+        .find((row) => row.role === role)
+        ?.capabilities.includes(capabilityId) ?? false
+    );
   }
 
   async dryRunPurge() {
@@ -71,7 +136,7 @@ export class SecurityPage implements OnInit {
     try {
       const result = await this.api.purgeAuditLogs({
         olderThanDays: this.purgeModel().days,
-        dryRun
+        dryRun,
       });
       const msg = dryRun
         ? `Dry run: ${result.deletedCount} logs would be deleted.`
