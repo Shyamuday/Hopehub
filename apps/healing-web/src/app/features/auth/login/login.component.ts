@@ -87,7 +87,14 @@ export class LoginComponent implements OnInit {
           this.router.navigate(['/dashboard']);
         }
       } catch (error) {
-        // Error is handled by the auth service and displayed via the subscription
+        if (
+          typeof error === 'object' &&
+          error !== null &&
+          'code' in error &&
+          error.code === 'PATIENT_PASSWORD_NOT_SET'
+        ) {
+          this.setLoginMode('otp');
+        }
         console.error('Login error:', error);
       }
     } else {

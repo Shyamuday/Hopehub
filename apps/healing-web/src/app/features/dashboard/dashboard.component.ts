@@ -261,29 +261,25 @@ type BookingTimelineStep = {
                         }
                       </p>
                     }
-                    @if (
-                      consultation.intakeAnswers?.appointmentDate ||
-                      consultation.intakeAnswers?.appointmentTime
-                    ) {
-                      <p class="mt-2 text-sm text-gray-600">
-                        Requested slot:
-                        {{ consultation.intakeAnswers?.appointmentDate || 'Date pending' }}
-                        {{ consultation.intakeAnswers?.appointmentTime || '' }}
-                      </p>
-                    }
-                    @if (
-                      consultation.intakeAnswers?.concernCategory ||
-                      consultation.intakeAnswers?.sessionMode
-                    ) {
-                      <p class="mt-1 text-sm text-gray-600">
-                        {{ consultation.intakeAnswers?.concernCategory || 'Concern to review' }}
-                        @if (consultation.intakeAnswers?.sessionMode) {
-                          · {{ consultation.intakeAnswers?.sessionMode }}
-                        }
-                        @if (consultation.intakeAnswers?.preferredLanguage) {
-                          · {{ consultation.intakeAnswers?.preferredLanguage }}
-                        }
-                      </p>
+                    @if (consultation.intakeAnswers; as intake) {
+                      @if (intake.appointmentDate || intake.appointmentTime) {
+                        <p class="mt-2 text-sm text-gray-600">
+                          Requested slot:
+                          {{ intake.appointmentDate || 'Date pending' }}
+                          {{ intake.appointmentTime || '' }}
+                        </p>
+                      }
+                      @if (intake.concernCategory || intake.sessionMode) {
+                        <p class="mt-1 text-sm text-gray-600">
+                          {{ intake.concernCategory || 'Concern to review' }}
+                          @if (intake.sessionMode) {
+                            · {{ intake.sessionMode }}
+                          }
+                          @if (intake.preferredLanguage) {
+                            · {{ intake.preferredLanguage }}
+                          }
+                        </p>
+                      }
                     }
                     <div class="mt-3 rounded-md bg-blue-50 p-3 text-sm text-blue-900">
                       <p class="font-semibold">Next step</p>

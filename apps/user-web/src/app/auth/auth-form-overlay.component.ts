@@ -316,7 +316,16 @@ export class AuthFormOverlayComponent {
         this.closeAllOverlays();
         this.router.navigateByUrl(this.auth.dashboardFor(response.user.role));
       },
-      error: (error) => this.showError(error.error?.message || 'Could not sign in.'),
+      error: (error) => {
+        if (error.error?.code === 'PATIENT_PASSWORD_NOT_SET') {
+          this.patientOtpModel.update((model) => ({
+            ...model,
+            email: this.patientCredentialsModel().identifier,
+          }));
+          this.setLoginMode('otp');
+        }
+        this.showError(error.error?.message || 'Could not sign in.');
+      },
     });
   }
 

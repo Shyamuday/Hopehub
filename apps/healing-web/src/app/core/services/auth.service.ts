@@ -386,7 +386,7 @@ export class AuthService {
   private handleError(err: unknown): AuthError {
     if (err instanceof HttpErrorResponse) {
       const msg: string = err.error?.message ?? err.message ?? 'Request failed';
-      const authErr = this.makeError(String(err.status), msg);
+      const authErr = this.makeError(err.error?.code ?? String(err.status), msg);
       this.updateState({ isLoading: false, error: authErr.message });
       return authErr;
     }

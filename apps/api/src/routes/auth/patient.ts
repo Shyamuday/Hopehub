@@ -68,6 +68,14 @@ export function registerAuthPatientRoutes(router: Router) {
         select: { ...publicUserSelect, passwordHash: true, isActive: true, role: true }
       });
 
+      const activePatients = candidates.filter((user) => user.isActive);
+      if (activePatients.length && activePatients.every((user) => !user.passwordHash)) {
+        return res.status(409).json({
+          code: 'PATIENT_PASSWORD_NOT_SET',
+          message: 'Password is not set for this account. Use email code or reset password.'
+        });
+      }
+
       const matches = [];
       for (const user of candidates) {
         if (!user.passwordHash || !user.isActive) continue;
@@ -112,6 +120,13 @@ export function registerAuthPatientRoutes(router: Router) {
         },
         select: { ...publicUserSelect, passwordHash: true, isActive: true }
       });
+
+      if (user?.isActive && !user.passwordHash) {
+        return res.status(409).json({
+          code: 'PATIENT_PASSWORD_NOT_SET',
+          message: 'Password is not set for this account. Use email code or reset password.'
+        });
+      }
 
       if (!user?.passwordHash || !user.isActive) {
         return res.status(401).json({ message: 'Invalid credentials.' });
