@@ -19,13 +19,21 @@ import {
   AppointmentSlot,
   FormDropdownComponent,
   FormDropdownOption,
+  PaymentFlowState,
+  PaymentStatusOverlayComponent,
 } from '../../shared/components';
 import { User } from '../../core/models/auth.model';
 
 @Component({
   selector: 'app-contact',
   standalone: true,
-  imports: [ReactiveFormsModule, RouterModule, AppointmentCalendarComponent, FormDropdownComponent],
+  imports: [
+    ReactiveFormsModule,
+    RouterModule,
+    AppointmentCalendarComponent,
+    FormDropdownComponent,
+    PaymentStatusOverlayComponent,
+  ],
   templateUrl: './contact.component.html',
   styleUrl: './contact.component.scss',
 })
@@ -53,6 +61,9 @@ export class ContactComponent implements OnInit {
   errorMessage = signal('');
   selectedAppointment = signal<AppointmentSlot | null>(null);
   waitingForAuthToBook = signal(false);
+  paymentFlowState = signal<PaymentFlowState>('IDLE');
+  paymentFlowError = signal('');
+  paymentFlowConsultation = signal<any | null>(null);
   prefilledData = signal<any>({});
   currentUser = signal<User | null>(null);
   services = getAllServices();
@@ -353,9 +364,74 @@ export class ContactComponent implements OnInit {
         .subscribe({ next: resolve, error: reject });
     });
 
-    await this.paymentService.payConsultation(response.consultation);
+    this.paymentFlowConsultation.set(response.consultation);
+    this.paymentFlowError.set('');
+    this.paymentFlowState.set('CREATING_ORDER');
+    await this.paymentService.payConsultation(response.consultation, {
+      onOrderCreated: () => this.paymentFlowState.set('OPENING_CHECKOUT'),
+      onCheckoutOpened: () => this.paymentFlowState.set('OPENING_CHECKOUT'),
+      onVerifying: () => this.paymentFlowState.set('VERIFYING'),
+    });
+    this.paymentFlowState.set('SUCCESS');
     this.clearPendingBooking();
     this.showSuccessAndReset('Appointment booked and payment verified successfully.');
+  }
+
+  retrySelectedPayment(): void {
+    const consultation = this.paymentFlowConsultation();
+    if (!consultation || this.isSubmitting()) return;
+    this.isSubmitting.set(true);
+    this.paymentFlowError.set('');
+    this.paymentFlowState.set('CREATING_ORDER');
+    void this.paymentService
+      .payConsultation(consultation, {
+        onOrderCreated: () => this.paymentFlowState.set('OPENING_CHECKOUT'),
+        onCheckoutOpened: () => this.paymentFlowState.set('OPENING_CHECKOUT'),
+        onVerifying: () => this.paymentFlowState.set('VERIFYING'),
+      })
+      .then(() => {
+        this.paymentFlowState.set('SUCCESS');
+        this.showSuccessAndReset('Appointment booked and payment verified successfully.');
+      })
+      .catch((error) => {
+        this.paymentFlowError.set(this.readErrorMessage(error));
+        this.paymentFlowState.set('ERROR');
+      })
+      .finally(() => this.isSubmitting.set(false));
+  }
+
+  closePaymentOverlay(): void {
+    const state = this.paymentFlowState();
+    if (state === 'SUCCESS' || state === 'ERROR') {
+      this.paymentFlowState.set('IDLE');
+      this.paymentFlowError.set('');
+      if (state === 'SUCCESS') {
+        this.paymentFlowConsultation.set(null);
+      }
+    }
+  }
+
+  paymentFlowTitle(): string {
+    const state = this.paymentFlowState();
+    if (state === 'CREATING_ORDER') return 'Preparing payment';
+    if (state === 'OPENING_CHECKOUT') return 'Secure checkout';
+    if (state === 'VERIFYING') return 'Confirming payment';
+    if (state === 'SUCCESS') return 'Payment confirmed';
+    if (state === 'ERROR') return 'Payment needs attention';
+    return '';
+  }
+
+  paymentFlowMessage(): string {
+    const state = this.paymentFlowState();
+    if (state === 'CREATING_ORDER') return 'Setting up a secure payment for your session.';
+    if (state === 'OPENING_CHECKOUT') return 'Complete payment in the secure checkout window.';
+    if (state === 'VERIFYING') return 'Confirming your payment. Please keep this page open.';
+    if (state === 'SUCCESS')
+      return 'Your request is confirmed. We will share the next details soon.';
+    if (state === 'ERROR') {
+      return this.paymentFlowError() || 'Payment could not be completed. You can retry safely.';
+    }
+    return '';
   }
 
   private async submitLead(formData: ContactForm): Promise<void> {

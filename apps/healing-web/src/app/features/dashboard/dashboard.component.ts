@@ -465,8 +465,11 @@ export class DashboardComponent implements OnInit {
     this.isPaying.set(true);
     this.notice.set('');
     try {
-      this.paymentFlowState.set('OPENING_CHECKOUT');
-      await this.paymentService.payConsultation(consultation);
+      await this.paymentService.payConsultation(consultation, {
+        onOrderCreated: () => this.paymentFlowState.set('OPENING_CHECKOUT'),
+        onCheckoutOpened: () => this.paymentFlowState.set('OPENING_CHECKOUT'),
+        onVerifying: () => this.paymentFlowState.set('VERIFYING'),
+      });
       this.paymentFlowState.set('SUCCESS');
       this.notice.set(
         'Payment verified successfully. Your booking is now ready for expert confirmation.',
@@ -511,9 +514,9 @@ export class DashboardComponent implements OnInit {
 
   paymentFlowMessage(): string {
     const state = this.paymentFlowState();
-    if (state === 'CREATING_ORDER') return 'Creating a secure Razorpay order for your session.';
-    if (state === 'OPENING_CHECKOUT') return 'Complete the payment in the Razorpay popup.';
-    if (state === 'VERIFYING') return 'Please wait while we verify your payment securely.';
+    if (state === 'CREATING_ORDER') return 'Preparing a secure payment for your session.';
+    if (state === 'OPENING_CHECKOUT') return 'Complete payment in the secure checkout window.';
+    if (state === 'VERIFYING') return 'Confirming your payment. This usually takes a few seconds.';
     if (state === 'SUCCESS') {
       return 'Your payment was verified. The Hope Hub team can now confirm your provider and session instructions.';
     }

@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../environments/environment';
 
@@ -30,6 +30,12 @@ type RazorpayPaymentFailedResponse = {
   };
 };
 
+type PaymentLifecycle = {
+  onOrderCreated?: () => void;
+  onCheckoutOpened?: () => void;
+  onVerifying?: () => void;
+};
+
 declare global {
   interface Window {
     Razorpay?: new (options: Record<string, unknown>) => {
@@ -47,13 +53,15 @@ export class PaymentService {
   private readonly apiUrl = environment.apiUrl;
   private readonly razorpayScriptUrl = 'https://checkout.razorpay.com/v1/checkout.js';
 
-  async donate(input: {
-    amount: number;
-    donorName?: string | null;
-    donorEmail?: string | null;
-    donorPhone?: string | null;
-  }): Promise<void> {
-    await this.loadRazorpayScript();
+  async donate(
+    input: {
+      amount: number;
+      donorName?: string | null;
+      donorEmail?: string | null;
+      donorPhone?: string | null;
+    },
+    lifecycle?: PaymentLifecycle,
+  ): Promise<void> {
     const order = await firstValueFrom(
       this.http.post<DonationOrder>(`${this.apiUrl}/public-payments/donations/create-order`, {
         amountInPaise: input.amount * 100,
@@ -61,24 +69,38 @@ export class PaymentService {
         donorEmail: input.donorEmail || '',
         donorPhone: input.donorPhone || '',
       }),
-    );
+    ).catch((error) => {
+      throw this.friendlyPaymentError(error);
+    });
+    this.assertOrderReady(order);
+    lifecycle?.onOrderCreated?.();
 
+    await this.loadRazorpayScript();
+    lifecycle?.onCheckoutOpened?.();
     const payment = await this.openCheckout(order, input);
+    lifecycle?.onVerifying?.();
     await firstValueFrom(
       this.http.post(`${this.apiUrl}/public-payments/donations/verify`, {
         razorpayOrderId: payment.razorpay_order_id,
         razorpayPaymentId: payment.razorpay_payment_id,
         razorpaySignature: payment.razorpay_signature,
       }),
-    );
+    ).catch((error) => {
+      throw this.friendlyPaymentError(error);
+    });
   }
 
-  async payConsultation(consultation: any): Promise<void> {
-    await this.loadRazorpayScript();
+  async payConsultation(consultation: any, lifecycle?: PaymentLifecycle): Promise<void> {
     const order = await firstValueFrom(
       this.http.post<DonationOrder>(`${this.apiUrl}/payments/${consultation.id}/create-order`, {}),
-    );
+    ).catch((error) => {
+      throw this.friendlyPaymentError(error);
+    });
+    this.assertOrderReady(order);
+    lifecycle?.onOrderCreated?.();
 
+    await this.loadRazorpayScript();
+    lifecycle?.onCheckoutOpened?.();
     const payment = await this.openCheckout(order, {
       amount: Math.round(order.amountInPaise / 100),
       donorName: consultation.patient?.name || '',
@@ -86,13 +108,16 @@ export class PaymentService {
       donorPhone: consultation.patient?.mobile || '',
     });
 
+    lifecycle?.onVerifying?.();
     await firstValueFrom(
       this.http.post(`${this.apiUrl}/payments/${consultation.id}/verify`, {
         razorpayOrderId: payment.razorpay_order_id,
         razorpayPaymentId: payment.razorpay_payment_id,
         razorpaySignature: payment.razorpay_signature,
       }),
-    );
+    ).catch((error) => {
+      throw this.friendlyPaymentError(error);
+    });
   }
 
   private loadRazorpayScript(): Promise<void> {
@@ -103,9 +128,33 @@ export class PaymentService {
       const script = document.createElement('script');
       script.src = this.razorpayScriptUrl;
       script.onload = () => resolve();
-      script.onerror = () => reject(new Error('Unable to load Razorpay Checkout.'));
+      script.onerror = () =>
+        reject(new Error('Could not open secure checkout. Check your connection and try again.'));
       document.body.appendChild(script);
     });
+  }
+
+  private assertOrderReady(order: DonationOrder): void {
+    if (!order?.orderId || !order.razorpayKeyId) {
+      throw new Error('Payment setup is not ready. Please try again later.');
+    }
+  }
+
+  private friendlyPaymentError(error: unknown): Error {
+    if (error instanceof HttpErrorResponse) {
+      const message = error.error?.message;
+      if (error.status === 503) {
+        return new Error('Payment setup is not ready. Please try again later.');
+      }
+      if (typeof message === 'string' && message.trim()) {
+        return new Error(message.trim());
+      }
+      if (error.status >= 500) {
+        return new Error('Payment could not be prepared. Please try again shortly.');
+      }
+    }
+    if (error instanceof Error) return error;
+    return new Error('Payment could not be completed. Please try again.');
   }
 
   private openCheckout(
@@ -135,7 +184,7 @@ export class PaymentService {
         amount: order.amountInPaise,
         currency: order.currency,
         name: 'Hope Hub',
-        description: donor.donorName || donor.donorEmail ? 'Hope Hub payment' : 'Hope Hub support',
+        description: 'Secure session payment',
         order_id: order.orderId,
         prefill: {
           name: donor.donorName || '',
@@ -148,7 +197,7 @@ export class PaymentService {
           settled = true;
           resolve(response);
         },
-        modal: { ondismiss: () => fail('Payment was cancelled.') },
+        modal: { ondismiss: () => fail('Payment was closed before completion.') },
       });
 
       checkout.on?.('payment.failed', (response: unknown) => {

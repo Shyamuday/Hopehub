@@ -423,6 +423,15 @@
       }
     </div>
 
+    <app-payment-status-overlay
+      [state]="paymentFlowState()"
+      [title]="paymentFlowTitle()"
+      [message]="paymentFlowMessage()"
+      [canRetry]="!!paymentFlowConsultation()"
+      (retry)="retrySelectedPayment()"
+      (close)="closePaymentOverlay()"
+    ></app-payment-status-overlay>
+
     <!-- Contact Information -->
     <div class="space-y-8 min-w-0">
       <div
