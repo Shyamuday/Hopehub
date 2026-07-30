@@ -137,6 +137,35 @@ export class AdminOpsApi extends AdminApiBase {
     );
   }
 
+  getUsers(params?: {
+    q?: string;
+    role?: string;
+    status?: string;
+    page?: number;
+    pageSize?: number;
+    sortBy?: string;
+    sortDirection?: string;
+  }) {
+    return firstValueFrom(
+      this.http.get<{
+        users: Array<any>;
+        filters: { roles: string[]; statuses: string[] };
+        summary: { total: number; roleCounts: Array<{ role: string; count: number }> };
+        pagination: { page: number; pageSize: number; total: number; totalPages: number };
+      }>(`${this.apiBase}${API_PATHS.ADMIN.USERS}`, {
+        params: {
+          page: String(params?.page ?? 1),
+          pageSize: String(params?.pageSize ?? 20),
+          sortBy: params?.sortBy ?? 'createdAt',
+          sortDirection: params?.sortDirection ?? 'desc',
+          ...(params?.q ? { q: params.q } : {}),
+          ...(params?.role ? { role: params.role } : {}),
+          ...(params?.status ? { status: params.status } : {}),
+        },
+      }),
+    );
+  }
+
   createAdmin(payload: { name: string; email: string; password: string; mobile?: string }) {
     return firstValueFrom(
       this.http.post<{ admin: any }>(`${this.apiBase}${API_PATHS.ADMIN.ADMINS}`, payload),

@@ -502,6 +502,9 @@ export class AdminApi {
   getAdmins(...args: Parameters<AdminOpsApi['getAdmins']>) {
     return this.ops.getAdmins(...(args as Parameters<AdminOpsApi['getAdmins']>));
   }
+  getUsers(...args: Parameters<AdminOpsApi['getUsers']>) {
+    return this.ops.getUsers(...(args as Parameters<AdminOpsApi['getUsers']>));
+  }
   createAdmin(...args: Parameters<AdminOpsApi['createAdmin']>) {
     return this.ops.createAdmin(...(args as Parameters<AdminOpsApi['createAdmin']>));
   }

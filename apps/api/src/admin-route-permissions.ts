@@ -15,6 +15,10 @@ const ADMIN_ROUTE_RULES: Array<{ pattern: RegExp; rules: RouteRule[] }> = [
     rules: [{ permissions: [PERMISSIONS.STAFF_READ] }]
   },
   {
+    pattern: /^\/admin\/users/,
+    rules: [{ permissions: [PERMISSIONS.STAFF_READ] }]
+  },
+  {
     pattern: /^\/admin\/doctors/,
     rules: [
       { method: 'GET', permissions: [PERMISSIONS.DOCTORS_READ] },

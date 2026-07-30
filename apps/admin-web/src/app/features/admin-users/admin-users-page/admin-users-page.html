@@ -1,33 +1,142 @@
 
-    <div class="page">
-      <div class="page-header">
-        <div>
-          <h2>Platform admins</h2>
-          <p class="muted">Create and manage super-admin accounts for admin-web</p>
-        </div>
-        <button type="button" class="btn-primary" (click)="openCreate()">+ Add admin</button>
-      </div>
-
-      @if (loading()) {
-        <p class="loading-text">Loading admins…</p>
-      } @else if (error() && !admins().length) {
-        <p class="error">{{ error() }}</p>
-      } @else {
-        <div class="grid">
-          @for (admin of admins(); track admin.id) {
-            <article class="card">
-              <strong>{{ admin.name }}</strong>
-              <p>{{ admin.email }}</p>
-              @if (admin.mobile) { <small>{{ admin.mobile }}</small> }
-              <span class="badge" [class.off]="!admin.isActive">{{ admin.isActive ? 'Active' : 'Inactive' }}</span>
-              <button type="button" class="btn-sec" (click)="toggleStatus(admin)">
-                {{ admin.isActive ? 'Deactivate' : 'Activate' }}
-              </button>
-            </article>
-          }
-        </div>
-      }
+<div class="page">
+  <div class="page-header">
+    <div>
+      <h2>Users</h2>
+      <p class="muted">Search and filter every account across all roles</p>
     </div>
+    <button type="button" class="btn-primary" (click)="openCreate()">+ Add admin</button>
+  </div>
+
+  <section class="directory">
+    <div class="filters">
+      <label>
+        Search
+        <input
+          type="search"
+          [ngModel]="search()"
+          (ngModelChange)="search.set($event)"
+          (keyup.enter)="applyFilters()"
+          placeholder="Name, email, mobile, code, id"
+        />
+      </label>
+      <label>
+        Role
+        <select [ngModel]="selectedRole()" (ngModelChange)="selectedRole.set($event); applyFilters()">
+          <option value="">All roles</option>
+          @for (role of roles(); track role) {
+            <option [value]="role">{{ role }} ({{ roleCount(role) }})</option>
+          }
+        </select>
+      </label>
+      <label>
+        Status
+        <select [ngModel]="selectedStatus()" (ngModelChange)="selectedStatus.set($event); applyFilters()">
+          <option value="">Any</option>
+          <option value="active">Active</option>
+          <option value="inactive">Inactive</option>
+        </select>
+      </label>
+      <label>
+        Sort
+        <select [ngModel]="sortBy()" (ngModelChange)="sortBy.set($event); applyFilters()">
+          <option value="createdAt">Created</option>
+          <option value="updatedAt">Updated</option>
+          <option value="name">Name</option>
+          <option value="role">Role</option>
+        </select>
+      </label>
+      <label>
+        Direction
+        <select [ngModel]="sortDirection()" (ngModelChange)="sortDirection.set($event); applyFilters()">
+          <option value="desc">Desc</option>
+          <option value="asc">Asc</option>
+        </select>
+      </label>
+      <div class="filter-actions">
+        <button type="button" class="btn-sec" (click)="applyFilters()">Apply</button>
+        <button type="button" class="btn-ghost" (click)="resetFilters()">Reset</button>
+      </div>
+    </div>
+
+    <div class="table-head">
+      <strong>{{ totalUsers() }} users</strong>
+      <span>Page {{ pagination().page }} of {{ pagination().totalPages }}</span>
+    </div>
+
+    @if (usersLoading()) {
+      <p class="loading-text">Loading users...</p>
+    } @else if (usersError()) {
+      <p class="error">{{ usersError() }}</p>
+    } @else if (!users().length) {
+      <p class="empty">No users found.</p>
+    } @else {
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Role</th>
+              <th>Email</th>
+              <th>Mobile</th>
+              <th>Status</th>
+              <th>Created</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (user of users(); track user.id) {
+              <tr>
+                <td>
+                  <strong>{{ user.name }}</strong>
+                  <span>{{ user.patientCode || user.doctorProfile?.specialty || user.homeClinicStore?.name || user.id }}</span>
+                </td>
+                <td><span class="role-pill">{{ user.role }}</span></td>
+                <td>{{ user.email || '-' }}</td>
+                <td>{{ user.mobile || '-' }}</td>
+                <td><span class="badge" [class.off]="!user.isActive">{{ user.isActive ? 'Active' : 'Inactive' }}</span></td>
+                <td>{{ user.createdAt | date:'mediumDate' }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+
+    <div class="pager">
+      <button type="button" class="btn-sec" [disabled]="pagination().page <= 1" (click)="goToPage(-1)">Previous</button>
+      <button type="button" class="btn-sec" [disabled]="pagination().page >= pagination().totalPages" (click)="goToPage(1)">Next</button>
+    </div>
+  </section>
+
+  <section class="admin-section">
+    <div class="section-header">
+      <div>
+        <h3>Platform admins</h3>
+        <p class="muted">Create and manage super-admin accounts for admin-web</p>
+      </div>
+    </div>
+
+    @if (loading()) {
+      <p class="loading-text">Loading admins...</p>
+    } @else if (error() && !admins().length) {
+      <p class="error">{{ error() }}</p>
+    } @else {
+      <div class="grid">
+        @for (admin of admins(); track admin.id) {
+          <article class="card">
+            <strong>{{ admin.name }}</strong>
+            <p>{{ admin.email }}</p>
+            @if (admin.mobile) { <small>{{ admin.mobile }}</small> }
+            <span class="badge" [class.off]="!admin.isActive">{{ admin.isActive ? 'Active' : 'Inactive' }}</span>
+            <button type="button" class="btn-sec" (click)="toggleStatus(admin)">
+              {{ admin.isActive ? 'Deactivate' : 'Activate' }}
+            </button>
+          </article>
+        }
+      </div>
+    }
+  </section>
+</div>
 
     @if (modal()) {
       <div class="overlay" (click)="closeModal()">
