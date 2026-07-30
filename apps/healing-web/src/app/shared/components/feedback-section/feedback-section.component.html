@@ -2,27 +2,50 @@
   <div class="feedback-section__inner feedback-section__inner--simple">
     <div class="feedback-section__intro">
       <p class="feedback-section__eyebrow">Reviews</p>
-      <h2>Anonymous feedback after review</h2>
-      <p>
-        Public stories appear only after consent and admin approval. We keep this section small so
-        the focus stays on trust, not noise.
-      </p>
+      <h2>What people say after a session</h2>
+      <p>Short, consent-approved notes from people who used Hope Hub support.</p>
       <div class="feedback-section__actions">
         <a routerLink="/feedback" class="feedback-section__primary">Share feedback</a>
       </div>
     </div>
 
-    <div class="approved-stories approved-stories--inline">
+    <div class="review-summary" aria-label="Review summary">
+      <div>
+        <strong>5.0</strong>
+        <span>Average rating</span>
+      </div>
+      <div>
+        <strong>{{ testimonials().length || 5 }}</strong>
+        <span>Recent reviews</span>
+      </div>
+      <div>
+        <strong>Private</strong>
+        <span>Published with consent</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="approved-stories approved-stories--inline">
+    <div class="stories-grid">
       @for (testimonial of testimonials(); track testimonial.id) {
         <article class="story-card">
-          <div class="story-card__stars">
-            @for (star of stars(testimonial.stars); track star) { <span>★</span> }
+          <div class="story-card__top">
+            <div class="story-card__stars" aria-label="{{ testimonial.stars }} star review">
+              @for (star of stars(testimonial.stars); track star) { <span>★</span> }
+            </div>
+            @if (testimonial.condition) {
+              <span class="story-card__tag">{{ testimonial.condition }}</span>
+            }
           </div>
-          <p>"{{ testimonial.quote }}"</p>
-          <strong>{{ testimonial.isAnonymous ? 'Anonymous Hope Hub member' : testimonial.patientName }}</strong>
-          @if (testimonial.condition || testimonial.location) {
-            <span>{{ testimonial.condition }}{{ testimonial.condition && testimonial.location ? ' • ' : '' }}{{ testimonial.location }}</span>
-          }
+          <p>{{ testimonial.quote }}</p>
+          <div class="story-card__person">
+            <strong>{{
+              testimonial.isAnonymous ? 'Anonymous Hope Hub member' : testimonial.patientName
+            }}</strong>
+            @if (testimonial.location || testimonial.duration) {
+              <span>{{ testimonial.location }}{{ testimonial.location && testimonial.duration ? ' • ' : '' }}{{ testimonial.duration }}</span>
+            }
+          </div>
         </article>
       } @empty {
         <article class="story-card story-card--empty">
