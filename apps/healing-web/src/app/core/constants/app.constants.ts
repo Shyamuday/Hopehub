@@ -4,6 +4,7 @@ export const APP_CONSTANTS = {
   TELEGRAM: {
     GROUP_URL: 'https://t.me/mindhopehub',
     SUPPORT_HANDLE: '@mindhopehub',
+    QR_CODE: '/image/qrmindhopehub.jpg',
   },
   WHATSAPP: {
     GROUP_URL: 'https://chat.whatsapp.com/CbbNoo5kXw3FWWKTGO82kz',
