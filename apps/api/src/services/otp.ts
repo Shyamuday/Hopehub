@@ -1,6 +1,7 @@
 import { SERVER_CONFIG } from '../constants/config.constants.js';
 import { getMailTransporter, sendEmail } from './mail.js';
-import { storeOtpEntry, verifyOtpEntry } from './otp-store.js';
+import { storeOtpEntry, verifyOtpEntry, verifyOtpEntryDetailed } from './otp-store.js';
+import type { OtpVerifyResult } from './otp-store.js';
 
 export const devOtp = SERVER_CONFIG.DEV_OTP;
 export const isProduction = process.env.NODE_ENV === 'production';
@@ -15,6 +16,10 @@ export async function storeOtp(identifier: string, otp: string): Promise<void> {
 
 export async function verifyOtp(identifier: string, otp: string): Promise<boolean> {
   return verifyOtpEntry(identifier, otp);
+}
+
+export async function verifyOtpDetailed(identifier: string, otp: string): Promise<OtpVerifyResult> {
+  return verifyOtpEntryDetailed(identifier, otp);
 }
 
 export async function sendOtpEmail(email: string, otp: string): Promise<void> {

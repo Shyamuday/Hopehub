@@ -1,10 +1,13 @@
 type OtpEntry = { otp: string; expiresAt: number };
+export type OtpVerifyResult =
+  { ok: true } | { ok: false; reason: 'missing' | 'expired' | 'mismatch' | 'malformed' };
 
 const memoryStore = new Map<string, OtpEntry>();
 
 let redisClient: {
   setEx: (key: string, ttl: number, value: string) => Promise<unknown>;
-  getDel: (key: string) => Promise<string | null>;
+  get: (key: string) => Promise<string | null>;
+  del: (key: string) => Promise<unknown>;
 } | null = null;
 let redisInit: Promise<void> | null = null;
 
@@ -51,27 +54,42 @@ export async function storeOtpEntry(identifier: string, otp: string): Promise<vo
 }
 
 export async function verifyOtpEntry(identifier: string, otp: string): Promise<boolean> {
+  return (await verifyOtpEntryDetailed(identifier, otp)).ok;
+}
+
+export async function verifyOtpEntryDetailed(
+  identifier: string,
+  otp: string
+): Promise<OtpVerifyResult> {
+  const submittedOtp = otp.trim();
   const redis = await ensureRedis();
 
   if (redis) {
-    const raw = await redis.getDel(keyFor(identifier));
-    if (!raw) return false;
+    const key = keyFor(identifier);
+    const raw = await redis.get(key);
+    if (!raw) return { ok: false, reason: 'missing' };
     try {
       const entry = JSON.parse(raw) as OtpEntry;
-      if (Date.now() > entry.expiresAt) return false;
-      return entry.otp === otp;
+      if (Date.now() > entry.expiresAt) {
+        await redis.del(key);
+        return { ok: false, reason: 'expired' };
+      }
+      if (entry.otp !== submittedOtp) return { ok: false, reason: 'mismatch' };
+      await redis.del(key);
+      return { ok: true };
     } catch {
-      return false;
+      await redis.del(key);
+      return { ok: false, reason: 'malformed' };
     }
   }
 
   const entry = memoryStore.get(identifier);
-  if (!entry) return false;
+  if (!entry) return { ok: false, reason: 'missing' };
   if (Date.now() > entry.expiresAt) {
     memoryStore.delete(identifier);
-    return false;
+    return { ok: false, reason: 'expired' };
   }
-  if (entry.otp !== otp) return false;
+  if (entry.otp !== submittedOtp) return { ok: false, reason: 'mismatch' };
   memoryStore.delete(identifier);
-  return true;
+  return { ok: true };
 }

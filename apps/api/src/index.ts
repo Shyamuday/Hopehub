@@ -70,6 +70,7 @@ import { PurchaseOrderError } from './services/purchase-orders.js';
 import { StockTransferError } from './services/stock-transfers.js';
 import { MedicineDeliveryError } from './services/medicine-deliveries.js';
 import { LabReferralError } from './services/lab-referrals.js';
+import { scheduleAuthProcessLogRetention } from './services/auth-process-log.js';
 
 // ── Schedulers ─────────────────────────────────────────────────────────────────
 import {
@@ -106,6 +107,7 @@ const io = new SocketIoServer(httpServer, {
 });
 
 setNotificationSocket(io);
+scheduleAuthProcessLogRetention();
 
 io.use((socket, next) => {
   const token = socket.handshake.auth['token'] as string | undefined;

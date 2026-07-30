@@ -141,7 +141,7 @@
         <h2>Login to continue</h2>
         <p class="muted">
           @if (loginMode() === 'otp') {
-            Sign in securely with an OTP sent to your email.
+            Continue securely with an OTP sent to your email. New emails create an account automatically.
           } @else {
             Sign in with your email and password.
           }
@@ -195,7 +195,7 @@
                 6-digit OTP
                 <input [formField]="patientOtpForm.otp" placeholder="Enter OTP" inputmode="numeric" autocomplete="one-time-code" />
               </label>
-              <app-button type="submit" [disabled]="isProcessing() || !canLoginWithEmailOtp()" [loading]="isProcessing()" block>Verify OTP & login</app-button>
+              <app-button type="submit" [disabled]="isProcessing() || !canLoginWithEmailOtp()" [loading]="isProcessing()" block>Verify OTP & continue</app-button>
               <app-button type="button" variant="secondary" [disabled]="isProcessing()" (click)="requestLoginOtp()" block>Resend OTP</app-button>
             } @else {
               <app-button type="button" [disabled]="isProcessing() || !patientOtpModel().email.trim()" [loading]="isProcessing()" (click)="requestLoginOtp()" block>Send OTP</app-button>

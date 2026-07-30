@@ -234,7 +234,12 @@ export class AuthFormOverlayComponent {
         this.closeAllOverlays();
         this.router.navigateByUrl(this.auth.dashboardFor(response.user.role));
       },
-      error: (error) => this.showError(error.error?.message || 'Patient login failed.'),
+      error: (error) =>
+        this.showError(
+          error.status === 401
+            ? 'Invalid or expired OTP. Request a fresh OTP for this email and try again.'
+            : error.error?.message || 'Could not continue with OTP.',
+        ),
     });
   }
 
@@ -278,7 +283,11 @@ export class AuthFormOverlayComponent {
         this.router.navigateByUrl(this.auth.dashboardFor(user.role));
       },
       error: (error) =>
-        this.showError(error.error?.message || 'Could not sign in to selected profile.'),
+        this.showError(
+          error.status === 401
+            ? 'Invalid or expired OTP. Request a fresh OTP for this email and try again.'
+            : error.error?.message || 'Could not sign in to selected profile.',
+        ),
     });
   }
 

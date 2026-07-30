@@ -98,7 +98,7 @@ export const HOME_CONTENT = {
     otpTitle: 'Verify email',
     otpLabel: 'Enter OTP',
     otpPlaceholder: '6-digit OTP',
-    verifyLabel: 'Continue',
+    verifyLabel: 'Verify OTP & continue',
     verifyingLabel: 'Verifying…',
     backLabel: '← Change email',
     loadingLabel: 'Setting up your account…',

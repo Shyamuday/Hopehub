@@ -156,6 +156,9 @@ export class LoginComponent implements OnInit {
         this.router.navigate(['/dashboard']);
       }
     } catch (error) {
+      this.errorMessage.set(
+        'Invalid or expired OTP. Request a fresh OTP for this email and try again.',
+      );
       console.error('OTP login error:', error);
     }
   }

@@ -209,6 +209,25 @@ model AuditLog {
   @@index([createdAt])
 }
 
+model AuthProcessLog {
+  id          String   @id @default(cuid())
+  processType String
+  step        String
+  status      String
+  identifier  String
+  reason      String?
+  route       String?
+  ipAddress   String?
+  userAgent   String?
+  metadata    Json?
+  createdAt   DateTime @default(now())
+  purgeAfter  DateTime
+
+  @@index([identifier, createdAt])
+  @@index([processType, step, status])
+  @@index([purgeAfter])
+}
+
 model ReminderPreference {
   id              String   @id @default(cuid())
   userId          String   @unique

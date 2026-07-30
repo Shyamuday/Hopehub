@@ -35,7 +35,10 @@ export function registerAdminAuditRoutes(router: Router) {
     authRequired,
     allowRoles(Role.ADMIN),
     asyncRoute(async (req, res) => {
-      const olderThanDays = Math.max(30, Number((req.body as { olderThanDays?: number }).olderThanDays) || 90);
+      const olderThanDays = Math.max(
+        30,
+        Number((req.body as { olderThanDays?: number }).olderThanDays) || 90
+      );
       const dryRun = Boolean((req.body as { dryRun?: boolean }).dryRun);
       const cutoff = new Date(Date.now() - olderThanDays * 24 * 60 * 60 * 1000);
 
@@ -126,7 +129,8 @@ export function registerAdminAuditRoutes(router: Router) {
       }));
 
       if (exportType === 'csv') {
-        const header = 'createdAt,action,actorName,actorEmail,actorRole,targetType,targetId,summary';
+        const header =
+          'createdAt,action,actorName,actorEmail,actorRole,targetType,targetId,summary';
         const rows = formatted.map((log) => {
           const cells = [
             log.createdAt.toISOString(),
@@ -148,6 +152,52 @@ export function registerAdminAuditRoutes(router: Router) {
       res.json({
         logs: formatted,
         pagination: { page, pageSize, total, totalPages: Math.max(1, Math.ceil(total / pageSize)) }
+      });
+    })
+  );
+
+  router.get(
+    '/admin/auth-process-logs',
+    authRequired,
+    allowRoles(Role.ADMIN),
+    asyncRoute(async (req, res) => {
+      const page = queryPositiveInt(req, 'page', 1);
+      const pageSize = queryPositiveInt(req, 'pageSize', 20, 1, 100);
+      const q = queryText(req, 'q').trim().toLowerCase();
+      const status = queryText(req, 'status').trim();
+      const reason = queryText(req, 'reason').trim();
+
+      const where: Prisma.AuthProcessLogWhereInput = {
+        ...(status ? { status } : {}),
+        ...(reason ? { reason } : {}),
+        ...(q
+          ? {
+              OR: [
+                { identifier: { contains: q, mode: 'insensitive' } },
+                { processType: { contains: q, mode: 'insensitive' } },
+                { step: { contains: q, mode: 'insensitive' } },
+                { reason: { contains: q, mode: 'insensitive' } },
+                { route: { contains: q, mode: 'insensitive' } }
+              ]
+            }
+          : {})
+      };
+
+      const [total, logs] = await Promise.all([
+        prisma.authProcessLog.count({ where }),
+        prisma.authProcessLog.findMany({
+          where,
+          orderBy: { createdAt: 'desc' },
+          skip: (page - 1) * pageSize,
+          take: pageSize
+        })
+      ]);
+
+      res.json({
+        page,
+        pageSize,
+        total,
+        logs
       });
     })
   );
