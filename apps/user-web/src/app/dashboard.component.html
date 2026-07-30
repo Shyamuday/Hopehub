@@ -149,7 +149,14 @@
             <label>Email <input [formField]="doctorForm.email" /></label>
             <label>Mobile <input [formField]="doctorForm.mobile" /></label>
             <label>Specialty <input [formField]="doctorForm.specialty" /></label>
-            <label>Password <input type="password" [formField]="doctorForm.password" /></label>
+            <label>Password
+              <span class="password-input-wrap">
+                <input #doctorPassword type="password" [formField]="doctorForm.password" />
+                <button type="button" class="password-toggle" (click)="doctorPassword.type = doctorPassword.type === 'password' ? 'text' : 'password'">
+                  {{ doctorPassword.type === 'password' ? 'Show' : 'Hide' }}
+                </button>
+              </span>
+            </label>
             <button class="primary" (click)="createDoctor()">Create doctor</button>
           </div>
 

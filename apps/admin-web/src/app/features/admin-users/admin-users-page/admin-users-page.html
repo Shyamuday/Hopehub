@@ -144,7 +144,14 @@
           <h3>New admin user</h3>
           <label>Name <input [formField]="draftForm.name" /></label>
           <label>Email <input type="email" [formField]="draftForm.email" /></label>
-          <label>Password <input type="password" [formField]="draftForm.password" /></label>
+          <label>Password
+            <span class="password-input-wrap">
+              <input #adminPassword type="password" [formField]="draftForm.password" />
+              <button type="button" class="password-toggle" (click)="adminPassword.type = adminPassword.type === 'password' ? 'text' : 'password'">
+                {{ adminPassword.type === 'password' ? 'Show' : 'Hide' }}
+              </button>
+            </span>
+          </label>
           <label>Mobile <input [formField]="draftForm.mobile" /></label>
           @if (error()) { <p class="error">{{ error() }}</p> }
           <div class="actions">

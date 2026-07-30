@@ -25,6 +25,7 @@ export class LoginComponent implements OnInit {
   otpSent = signal(false);
   otpSentTo = signal('');
   isLoading = signal(false);
+  showPassword = signal(false);
   errorMessage = signal<string | null>(null);
   statusMessage = signal<string | null>(null);
 

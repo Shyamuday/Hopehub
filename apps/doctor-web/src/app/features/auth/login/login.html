@@ -26,7 +26,12 @@
 
       @if (loginMode() === 'password') {
         <label for="password">Password</label>
-        <input id="password" [formField]="signInForm.password" type="password" />
+        <div class="password-input-wrap">
+          <input id="password" [formField]="signInForm.password" [type]="showPassword() ? 'text' : 'password'" autocomplete="current-password" />
+          <button type="button" class="password-toggle" (click)="showPassword.set(!showPassword())">
+            {{ showPassword() ? 'Hide' : 'Show' }}
+          </button>
+        </div>
         @if (signInForm.password().invalid() && signInForm.password().touched()) {
           <p class="error">
             @for (fieldError of signInForm.password().errors(); track fieldError.kind) {
@@ -77,10 +82,20 @@
       <input id="registrationNo" [formField]="enrollForm.registrationNo" />
 
       <label for="enrollPassword">Password</label>
-      <input id="enrollPassword" [formField]="signInForm.password" type="password" autocomplete="new-password" />
+      <div class="password-input-wrap">
+        <input id="enrollPassword" [formField]="signInForm.password" [type]="showEnrollPassword() ? 'text' : 'password'" autocomplete="new-password" />
+        <button type="button" class="password-toggle" (click)="showEnrollPassword.set(!showEnrollPassword())">
+          {{ showEnrollPassword() ? 'Hide' : 'Show' }}
+        </button>
+      </div>
 
       <label for="confirmPassword">Confirm password</label>
-      <input id="confirmPassword" [formField]="enrollForm.confirmPassword" type="password" autocomplete="new-password" />
+      <div class="password-input-wrap">
+        <input id="confirmPassword" [formField]="enrollForm.confirmPassword" [type]="showConfirmPassword() ? 'text' : 'password'" autocomplete="new-password" />
+        <button type="button" class="password-toggle" (click)="showConfirmPassword.set(!showConfirmPassword())">
+          {{ showConfirmPassword() ? 'Hide' : 'Show' }}
+        </button>
+      </div>
 
       @if (signInModel().password && enrollModel().confirmPassword && signInModel().password !== enrollModel().confirmPassword) {
         <p class="error">Passwords do not match</p>

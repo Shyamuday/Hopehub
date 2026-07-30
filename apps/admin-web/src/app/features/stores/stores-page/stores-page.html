@@ -143,7 +143,15 @@
             <div class="info-box">Managers log in with <strong>email + password</strong> on the Store App (port {{ storeAppPort }})</div>
             <div class="fg"><label>Full Name *</label><input [formField]="mgrForm.name" placeholder="Manager Name" /></div>
             <div class="fg"><label>Email *</label><input type="email" [formField]="mgrForm.email" placeholder="manager@store.com" /></div>
-            <div class="fg"><label>Password * (min 6 chars)</label><input type="password" [formField]="mgrForm.password" /></div>
+            <div class="fg">
+              <label>Password * (min 6 chars)</label>
+              <span class="password-input-wrap">
+                <input #managerPassword type="password" [formField]="mgrForm.password" />
+                <button type="button" class="password-toggle" (click)="managerPassword.type = managerPassword.type === 'password' ? 'text' : 'password'">
+                  {{ managerPassword.type === 'password' ? 'Show' : 'Hide' }}
+                </button>
+              </span>
+            </div>
             <div class="fg"><label>Designation</label><input [formField]="mgrForm.designation" placeholder="Store Manager" /></div>
             <div class="fg"><label>Joining Date</label><input type="date" [formField]="mgrForm.joiningDate" /></div>
           </div>
@@ -166,7 +174,15 @@
             <div class="fg"><label>Full Name *</label><input [formField]="staffForm.name" placeholder="Staff Name" /></div>
             <div class="fg"><label>Staff Code * (unique ID)</label><input [formField]="staffForm.staffCode" placeholder="S001" style="text-transform:uppercase" /></div>
             <div class="fg"><label>Email *</label><input type="email" [formField]="staffForm.email" placeholder="staff@store.hopehub.local" /></div>
-            <div class="fg"><label>Password * (min 8 characters)</label><input type="password" [formField]="staffForm.password" placeholder="Initial password" /></div>
+            <div class="fg">
+              <label>Password * (min 8 characters)</label>
+              <span class="password-input-wrap">
+                <input #staffPassword type="password" [formField]="staffForm.password" placeholder="Initial password" />
+                <button type="button" class="password-toggle" (click)="staffPassword.type = staffPassword.type === 'password' ? 'text' : 'password'">
+                  {{ staffPassword.type === 'password' ? 'Show' : 'Hide' }}
+                </button>
+              </span>
+            </div>
             <div class="fg"><label>Designation</label><input [formField]="staffForm.designation" placeholder="Store Assistant" /></div>
             <div class="fg"><label>Phone</label><input type="tel" [formField]="staffForm.phone" /></div>
             <div class="fg"><label>Joining Date</label><input type="date" [formField]="staffForm.joiningDate" /></div>

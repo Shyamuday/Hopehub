@@ -24,6 +24,7 @@ export class AdminLogin {
   readonly loginMode = signal<'otp' | 'password'>('otp');
   readonly otpSent = signal(false);
   readonly otpSentTo = signal('');
+  readonly showPassword = signal(false);
   readonly loginForm = form(this.loginModel, (schema) => {
     required(schema.email, { message: 'Email is required' });
     required(schema.password, { message: 'Password is required' });

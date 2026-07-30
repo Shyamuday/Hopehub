@@ -57,6 +57,9 @@ export class PatientProfileComponent implements OnInit {
   readonly saving = signal(false);
   readonly savingPrefs = signal(false);
   readonly savingPassword = signal(false);
+  readonly showCurrentPassword = signal(false);
+  readonly showNewPassword = signal(false);
+  readonly showConfirmPassword = signal(false);
   readonly successMsg = signal('');
   readonly errorMsg = signal('');
   readonly profile = signal<PatientProfile | null>(null);

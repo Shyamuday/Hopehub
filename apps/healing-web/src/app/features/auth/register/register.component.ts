@@ -29,6 +29,8 @@ export class RegisterComponent implements OnInit {
 
   registerForm: FormGroup;
   isLoading = signal(false);
+  showPassword = signal(false);
+  showConfirmPassword = signal(false);
   errorMessage = signal<string | null>(null);
   successMessage = signal<string | null>(null);
 

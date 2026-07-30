@@ -429,16 +429,31 @@
         @if (hasPassword()) {
           <div class="field">
             <label>Current password</label>
-            <input type="password" [formField]="passwordForm.currentPassword" placeholder="Current password" autocomplete="current-password" />
+            <span class="password-input-wrap">
+              <input [type]="showCurrentPassword() ? 'text' : 'password'" [formField]="passwordForm.currentPassword" placeholder="Current password" autocomplete="current-password" />
+              <button type="button" class="password-toggle" (click)="showCurrentPassword.set(!showCurrentPassword())">
+                {{ showCurrentPassword() ? 'Hide' : 'Show' }}
+              </button>
+            </span>
           </div>
         }
         <div class="field">
           <label>{{ hasPassword() ? 'New password' : 'Password' }}</label>
-          <input type="password" [formField]="passwordForm.newPassword" placeholder="Min 8 characters" autocomplete="new-password" />
+          <span class="password-input-wrap">
+            <input [type]="showNewPassword() ? 'text' : 'password'" [formField]="passwordForm.newPassword" placeholder="Min 8 characters" autocomplete="new-password" />
+            <button type="button" class="password-toggle" (click)="showNewPassword.set(!showNewPassword())">
+              {{ showNewPassword() ? 'Hide' : 'Show' }}
+            </button>
+          </span>
         </div>
         <div class="field">
           <label>Confirm password</label>
-          <input type="password" [formField]="passwordForm.confirmPassword" placeholder="Confirm password" autocomplete="new-password" />
+          <span class="password-input-wrap">
+            <input [type]="showConfirmPassword() ? 'text' : 'password'" [formField]="passwordForm.confirmPassword" placeholder="Confirm password" autocomplete="new-password" />
+            <button type="button" class="password-toggle" (click)="showConfirmPassword.set(!showConfirmPassword())">
+              {{ showConfirmPassword() ? 'Hide' : 'Show' }}
+            </button>
+          </span>
         </div>
         @if (passwordFormModel().newPassword && passwordFormModel().confirmPassword && passwordFormModel().newPassword !== passwordFormModel().confirmPassword) {
           <p class="inline-error">Passwords do not match.</p>

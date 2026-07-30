@@ -35,7 +35,12 @@
       @if (loginMode() === 'password') {
         <div class="field">
           <label for="password">Password</label>
-          <input id="password" [formField]="loginForm.password" type="password" autocomplete="current-password" placeholder="Enter password" />
+          <div class="password-input-wrap">
+            <input id="password" [formField]="loginForm.password" [type]="showPassword() ? 'text' : 'password'" autocomplete="current-password" placeholder="Enter password" />
+            <button type="button" class="password-toggle" (click)="showPassword.set(!showPassword())">
+              {{ showPassword() ? 'Hide' : 'Show' }}
+            </button>
+          </div>
           @if (loginForm.password().invalid() && loginForm.password().touched()) {
             <p class="error">
               @for (fieldError of loginForm.password().errors(); track fieldError.kind) {

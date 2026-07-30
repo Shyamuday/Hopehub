@@ -196,7 +196,15 @@
         </div>
         <div class="fg"><label>Full name *</label><input [formField]="createForm.name" /></div>
         <div class="fg"><label>Email *</label><input type="email" [formField]="createForm.email" /></div>
-        <div class="fg"><label>Password *</label><input type="password" [formField]="createForm.password" /></div>
+        <div class="fg">
+          <label>Password *</label>
+          <span class="password-input-wrap">
+            <input #ecosystemPassword type="password" [formField]="createForm.password" />
+            <button type="button" class="password-toggle" (click)="ecosystemPassword.type = ecosystemPassword.type === 'password' ? 'text' : 'password'">
+              {{ ecosystemPassword.type === 'password' ? 'Show' : 'Hide' }}
+            </button>
+          </span>
+        </div>
         @if (needsStore(createModel().role)) {
           <div class="fg">
             <label>Branch store *</label>

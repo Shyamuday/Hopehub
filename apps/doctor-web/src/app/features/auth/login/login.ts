@@ -21,6 +21,9 @@ export class Login {
   otp = signal('');
   otpSent = signal(false);
   otpSentTo = signal('');
+  showPassword = signal(false);
+  showEnrollPassword = signal(false);
+  showConfirmPassword = signal(false);
 
   readonly signInModel = signal({
     email: '',

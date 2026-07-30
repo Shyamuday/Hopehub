@@ -148,6 +148,34 @@
   text-decoration: underline;
 }
 
+.password-input-wrap {
+  position: relative;
+  display: block;
+}
+
+.password-input-wrap input {
+  width: 100%;
+  padding-right: 4.2rem;
+}
+
+.password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 0.65rem;
+  transform: translateY(-50%);
+  border: 0;
+  background: transparent;
+  color: #0f62fe;
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 0.2rem;
+}
+
+.password-toggle:hover {
+  text-decoration: underline;
+}
+
 .mode-switch-wrap {
   margin: 0;
   text-align: center;

@@ -140,7 +140,12 @@
             </div>
             <div class="fg">
               <label>Password * (min 6 characters)</label>
-              <input type="password" [formField]="managerForm.password" placeholder="Set a strong password" />
+              <span class="password-input-wrap">
+                <input #managerPassword type="password" [formField]="managerForm.password" placeholder="Set a strong password" />
+                <button type="button" class="password-toggle" (click)="managerPassword.type = managerPassword.type === 'password' ? 'text' : 'password'">
+                  {{ managerPassword.type === 'password' ? 'Show' : 'Hide' }}
+                </button>
+              </span>
             </div>
             <div class="fg">
               <label>Designation</label>
@@ -188,7 +193,12 @@
             </div>
             <div class="fg">
               <label>Password * (min 8 characters)</label>
-              <input type="password" [formField]="staffForm.password" placeholder="Initial password" />
+              <span class="password-input-wrap">
+                <input #staffPassword type="password" [formField]="staffForm.password" placeholder="Initial password" />
+                <button type="button" class="password-toggle" (click)="staffPassword.type = staffPassword.type === 'password' ? 'text' : 'password'">
+                  {{ staffPassword.type === 'password' ? 'Show' : 'Hide' }}
+                </button>
+              </span>
             </div>
             <div class="fg">
               <label>Designation</label>

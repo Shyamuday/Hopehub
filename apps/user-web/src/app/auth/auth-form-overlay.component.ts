@@ -39,6 +39,10 @@ export class AuthFormOverlayComponent {
   readonly signupOtpSent = signal(false);
   readonly otpNotice = signal('');
   readonly isProcessing = signal(false);
+  readonly showLoginPassword = signal(false);
+  readonly showSignupPassword = signal(false);
+  readonly showResetPassword = signal(false);
+  readonly showResetConfirmPassword = signal(false);
   readonly forgotStep = signal<ForgotStep>(this.overlayData.initialForgotStep || 'none');
   readonly resetToken = signal<string>(this.overlayData.resetToken || '');
   readonly patientSelection = signal<{

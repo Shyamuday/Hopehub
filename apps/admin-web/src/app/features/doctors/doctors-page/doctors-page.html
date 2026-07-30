@@ -41,12 +41,18 @@
     </div>
     <div class="field">
       <label class="field-label" for="doc-create-password">Password</label>
-      <input
-        id="doc-create-password"
-        type="password"
-        [formField]="createForm.password"
-        placeholder="Initial password"
-      />
+      <span class="password-input-wrap">
+        <input
+          #doctorPassword
+          id="doc-create-password"
+          type="password"
+          [formField]="createForm.password"
+          placeholder="Initial password"
+        />
+        <button type="button" class="password-toggle" (click)="doctorPassword.type = doctorPassword.type === 'password' ? 'text' : 'password'">
+          {{ doctorPassword.type === 'password' ? 'Show' : 'Hide' }}
+        </button>
+      </span>
     </div>
     <div class="field">
       <label class="field-label" for="doc-create-type">Doctor type</label>

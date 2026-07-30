@@ -21,6 +21,24 @@
     line-height: 1.25rem;
 }
 
+.password-input-wrap {
+    position: relative;
+}
+
+.password-toggle {
+    position: absolute;
+    top: 50%;
+    right: 0.7rem;
+    transform: translateY(-50%);
+    border: 0;
+    background: transparent;
+    color: #2563eb;
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-weight: 700;
+    padding: 0.2rem;
+}
+
 // Form input focus states
 input:focus {
     outline: none;

@@ -66,6 +66,28 @@ button[type='submit'] {
   font-size: var(--text-base);
 }
 
+.password-input-wrap {
+  position: relative;
+}
+
+.password-input-wrap input {
+  padding-right: 4.2rem;
+}
+
+.password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 0.65rem;
+  transform: translateY(-50%);
+  border: 0;
+  background: transparent;
+  color: var(--color-brand);
+  cursor: pointer;
+  font-size: var(--text-sm);
+  font-weight: 700;
+  padding: 0.2rem;
+}
+
 .error {
   color: var(--color-error);
   margin: 0.3rem 0;

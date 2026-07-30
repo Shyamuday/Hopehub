@@ -23,11 +23,21 @@
         <form (submit)="$event.preventDefault(); resetPassword()">
           <label>
             New password
-            <input [formField]="forgotForm.password" type="password" placeholder="Min 8 characters" />
+            <span class="password-input-wrap">
+              <input [formField]="forgotForm.password" [type]="showResetPassword() ? 'text' : 'password'" placeholder="Min 8 characters" autocomplete="new-password" />
+              <button type="button" class="password-toggle" (click)="showResetPassword.set(!showResetPassword())">
+                {{ showResetPassword() ? 'Hide' : 'Show' }}
+              </button>
+            </span>
           </label>
           <label>
             Confirm password
-            <input [formField]="forgotForm.confirmPassword" type="password" placeholder="Confirm new password" />
+            <span class="password-input-wrap">
+              <input [formField]="forgotForm.confirmPassword" [type]="showResetConfirmPassword() ? 'text' : 'password'" placeholder="Confirm new password" autocomplete="new-password" />
+              <button type="button" class="password-toggle" (click)="showResetConfirmPassword.set(!showResetConfirmPassword())">
+                {{ showResetConfirmPassword() ? 'Hide' : 'Show' }}
+              </button>
+            </span>
           </label>
           @if (forgotModel().password && forgotModel().confirmPassword && forgotModel().password !== forgotModel().confirmPassword) {
             <p class="error-text">Passwords do not match</p>
@@ -83,7 +93,12 @@
             </label>
             <label>
               Password
-              <input [formField]="signupForm.password" type="password" placeholder="Min 8 characters" autocomplete="new-password" />
+              <span class="password-input-wrap">
+                <input [formField]="signupForm.password" [type]="showSignupPassword() ? 'text' : 'password'" placeholder="Min 8 characters" autocomplete="new-password" />
+                <button type="button" class="password-toggle" (click)="showSignupPassword.set(!showSignupPassword())">
+                  {{ showSignupPassword() ? 'Hide' : 'Show' }}
+                </button>
+              </span>
               <span class="auth-field-error">
                 @if (signupModel().password && signupModel().password.length < 8) {
                   Password must be at least 8 characters
@@ -165,7 +180,12 @@
             </label>
             <label>
               Password
-              <input [formField]="patientCredentialsForm.password" type="password" placeholder="Enter password" autocomplete="current-password" />
+              <span class="password-input-wrap">
+                <input [formField]="patientCredentialsForm.password" [type]="showLoginPassword() ? 'text' : 'password'" placeholder="Enter password" autocomplete="current-password" />
+                <button type="button" class="password-toggle" (click)="showLoginPassword.set(!showLoginPassword())">
+                  {{ showLoginPassword() ? 'Hide' : 'Show' }}
+                </button>
+              </span>
               <span class="auth-field-error"></span>
             </label>
             <app-button type="submit" [disabled]="isProcessing() || !canLoginWithPassword()" [loading]="isProcessing()" block>Sign in</app-button>
