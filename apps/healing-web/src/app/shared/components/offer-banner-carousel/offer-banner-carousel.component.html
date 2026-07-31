@@ -1,0 +1,31 @@
+@if (!loading() && activeBanner(); as banner) {
+  <section class="offer-banner" [style.background]="banner.backgroundColor || '#eef6ff'">
+    <div class="offer-banner__inner" [style.color]="banner.textColor || '#0f172a'">
+      <div class="offer-banner__copy">
+        @if (banner.eyebrow) {
+          <p>{{ banner.eyebrow }}</p>
+        }
+        <h2>{{ banner.title }}</h2>
+        @if (banner.subtitle) {
+          <span>{{ banner.subtitle }}</span>
+        }
+      </div>
+
+      <div class="offer-banner__actions">
+        <button type="button" (click)="open(banner)">{{ banner.ctaLabel }}</button>
+        @if (banners().length > 1) {
+          <div class="offer-banner__dots" aria-label="Offer banners">
+            @for (item of banners(); track item.id; let i = $index) {
+              <button
+                type="button"
+                [class.active]="current() === i"
+                (click)="go(i)"
+                [attr.aria-label]="'Show ' + item.title"
+              ></button>
+            }
+          </div>
+        }
+      </div>
+    </div>
+  </section>
+}

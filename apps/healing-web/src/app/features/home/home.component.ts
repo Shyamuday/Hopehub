@@ -1,6 +1,6 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { FeedbackSectionComponent } from '../../shared/components';
+import { FeedbackSectionComponent, OfferBannerCarouselComponent } from '../../shared/components';
 import { APP_CONSTANTS } from '../../core';
 import { environment } from '../../../environments/environment';
 import { BookingService, HopeHubProvider } from '../../core/services/booking.service';
@@ -9,7 +9,7 @@ import { HomeHeroComponent } from './components/home-hero/home-hero.component';
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [FeedbackSectionComponent, HomeHeroComponent, RouterLink],
+  imports: [FeedbackSectionComponent, HomeHeroComponent, OfferBannerCarouselComponent, RouterLink],
   templateUrl: './home.component.html',
   styleUrl: './home.component.scss',
 })

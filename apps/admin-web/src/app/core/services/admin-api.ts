@@ -290,6 +290,50 @@ export class AdminApi {
       ...(args as Parameters<AdminCatalogApi['updateBillingPlan']>),
     );
   }
+  getHopeHubOfferingsAdmin(...args: Parameters<AdminCatalogApi['getHopeHubOfferingsAdmin']>) {
+    return this.catalog.getHopeHubOfferingsAdmin(
+      ...(args as Parameters<AdminCatalogApi['getHopeHubOfferingsAdmin']>),
+    );
+  }
+  createHopeHubOffering(...args: Parameters<AdminCatalogApi['createHopeHubOffering']>) {
+    return this.catalog.createHopeHubOffering(
+      ...(args as Parameters<AdminCatalogApi['createHopeHubOffering']>),
+    );
+  }
+  updateHopeHubOffering(...args: Parameters<AdminCatalogApi['updateHopeHubOffering']>) {
+    return this.catalog.updateHopeHubOffering(
+      ...(args as Parameters<AdminCatalogApi['updateHopeHubOffering']>),
+    );
+  }
+  getHopeHubBannersAdmin(...args: Parameters<AdminCatalogApi['getHopeHubBannersAdmin']>) {
+    return this.catalog.getHopeHubBannersAdmin(
+      ...(args as Parameters<AdminCatalogApi['getHopeHubBannersAdmin']>),
+    );
+  }
+  createHopeHubBanner(...args: Parameters<AdminCatalogApi['createHopeHubBanner']>) {
+    return this.catalog.createHopeHubBanner(
+      ...(args as Parameters<AdminCatalogApi['createHopeHubBanner']>),
+    );
+  }
+  updateHopeHubBanner(...args: Parameters<AdminCatalogApi['updateHopeHubBanner']>) {
+    return this.catalog.updateHopeHubBanner(
+      ...(args as Parameters<AdminCatalogApi['updateHopeHubBanner']>),
+    );
+  }
+  getHopeHubOrganizationLeadsAdmin(
+    ...args: Parameters<AdminCatalogApi['getHopeHubOrganizationLeadsAdmin']>
+  ) {
+    return this.catalog.getHopeHubOrganizationLeadsAdmin(
+      ...(args as Parameters<AdminCatalogApi['getHopeHubOrganizationLeadsAdmin']>),
+    );
+  }
+  updateHopeHubOrganizationLead(
+    ...args: Parameters<AdminCatalogApi['updateHopeHubOrganizationLead']>
+  ) {
+    return this.catalog.updateHopeHubOrganizationLead(
+      ...(args as Parameters<AdminCatalogApi['updateHopeHubOrganizationLead']>),
+    );
+  }
   getHrDoctors(...args: Parameters<AdminHrApi['getHrDoctors']>) {
     return this.hr.getHrDoctors(...(args as Parameters<AdminHrApi['getHrDoctors']>));
   }

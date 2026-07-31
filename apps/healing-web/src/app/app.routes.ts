@@ -64,6 +64,64 @@ export const routes: Routes = [
     },
   },
   {
+    path: 'packages',
+    loadComponent: () =>
+      import('./features/offers/offers-page.component').then((m) => m.OffersPageComponent),
+    title: 'Care Packages - Hope Hub',
+    data: {
+      mode: 'packages',
+      breadcrumb: 'Packages',
+      description: 'Hope Hub care packages, single sessions, and longer support plans',
+      keywords: 'mental health packages, counselling package, hope hub plans',
+    },
+  },
+  {
+    path: 'packages/:slug',
+    loadComponent: () =>
+      import('./features/offers/offer-detail.component').then((m) => m.OfferDetailComponent),
+    title: 'Package Details - Hope Hub',
+    data: {
+      breadcrumb: 'Package Details',
+      description: 'View Hope Hub package details and book support',
+      keywords: 'hope hub package, counselling plan, mental wellness support',
+    },
+  },
+  {
+    path: 'events',
+    loadComponent: () =>
+      import('./features/offers/offers-page.component').then((m) => m.OffersPageComponent),
+    title: 'Events - Hope Hub',
+    data: {
+      mode: 'events',
+      breadcrumb: 'Events',
+      description: 'Hope Hub workshops, meetups, webinars, and group sessions',
+      keywords: 'mental health workshop, meetup, webinar, group session',
+    },
+  },
+  {
+    path: 'events/:slug',
+    loadComponent: () =>
+      import('./features/offers/offer-detail.component').then((m) => m.OfferDetailComponent),
+    title: 'Event Details - Hope Hub',
+    data: {
+      breadcrumb: 'Event Details',
+      description: 'View Hope Hub event details and register',
+      keywords: 'hope hub event, mental health workshop, meetup',
+    },
+  },
+  {
+    path: 'organization',
+    loadComponent: () =>
+      import('./features/organization/organization.component').then((m) => m.OrganizationComponent),
+    title: 'Organisation Programs - Hope Hub',
+    data: {
+      breadcrumb: 'Organisation Programs',
+      description:
+        'Request Hope Hub mental wellness programs for schools, colleges, and corporates',
+      keywords: 'school counselling program, corporate wellness, college mental health',
+    },
+  },
+  {
     path: 'profile',
     loadComponent: () =>
       import('./features/profile/profile.component').then((m) => m.ProfileComponent),

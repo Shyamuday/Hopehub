@@ -1,0 +1,75 @@
+<main class="offer-detail">
+  @if (loading()) {
+    <section class="detail-shell loading"></section>
+  } @else if (offer(); as offer) {
+    <section class="detail-shell">
+      <div class="detail-copy">
+        <p>{{ offer.type.replace('_', ' ') }}</p>
+        <h1>{{ offer.title }}</h1>
+        @if (offer.subtitle) { <span>{{ offer.subtitle }}</span> }
+        <p class="description">{{ offer.description }}</p>
+
+        <div class="meta-grid">
+          @if (offer.sessionCount) { <div><strong>{{ offer.sessionCount }}</strong><span>Sessions</span></div> }
+          @if (offer.sessionDurationMinutes) { <div><strong>{{ offer.sessionDurationMinutes }}m</strong><span>Each session</span></div> }
+          @if (offer.validityDays) { <div><strong>{{ offer.validityDays }}</strong><span>Days validity</span></div> }
+          @if (offer.seatLimit) { <div><strong>{{ offer.seatLimit }}</strong><span>Seats</span></div> }
+        </div>
+
+        @if (offer.eventStartsAt) {
+          <div class="event-note">
+            <strong>{{ offer.eventStartsAt | date: 'medium' }}</strong>
+            @if (offer.venue) { <span>{{ offer.venue }}</span> }
+          </div>
+        }
+      </div>
+
+      <aside class="checkout-card">
+        <span>Starting at</span>
+        <strong>{{ formatPrice(offer) }}</strong>
+        @if (offer.compareAtPriceInPaise) {
+          <del>{{ formatPrice({ ...offer, priceInPaise: offer.compareAtPriceInPaise }) }}</del>
+        }
+
+        @if (offer.requiresLeadForm || offer.type === 'ORGANISATION_PROGRAM') {
+          <a routerLink="/organization" [queryParams]="{ offering: offer.slug, offeringId: offer.id }">
+            {{ offer.ctaLabel || 'Request a call' }}
+          </a>
+        } @else {
+          <a routerLink="/contact" [queryParams]="bookingQuery(offer)">
+            {{ offer.ctaLabel || 'Book now' }}
+          </a>
+        }
+      </aside>
+    </section>
+
+    @if (offer.benefits.length || offer.audience.length) {
+      <section class="detail-lists">
+        @if (offer.benefits.length) {
+          <div>
+            <h2>Included</h2>
+            <ul>
+              @for (benefit of offer.benefits; track benefit) { <li>{{ benefit }}</li> }
+            </ul>
+          </div>
+        }
+        @if (offer.audience.length) {
+          <div>
+            <h2>Best for</h2>
+            <ul>
+              @for (item of offer.audience; track item) { <li>{{ item }}</li> }
+            </ul>
+          </div>
+        }
+      </section>
+    }
+  } @else {
+    <section class="detail-shell">
+      <div class="detail-copy">
+        <h1>Offer not available</h1>
+        <p class="description">This offer may be inactive or removed.</p>
+        <a routerLink="/packages" class="back-link">View packages</a>
+      </div>
+    </section>
+  }
+</main>

@@ -7,6 +7,8 @@ import type { IceServerConfig } from '../../shared/components/consultation-call/
 export type HopeHubBookingPayload = {
   serviceName: string;
   servicePriceInPaise?: number;
+  offeringId?: string;
+  offeringSlug?: string;
   message?: string;
   appointmentDate: string;
   appointmentTime: string;
@@ -28,6 +30,64 @@ export type HopeHubBookingPayload = {
   safetyRisk?: string;
   previousTherapyOrMedication?: string;
   emergencyConsent?: boolean;
+  entryPage?: string;
+};
+
+export type HopeHubOffering = {
+  id: string;
+  code: string;
+  slug: string;
+  title: string;
+  subtitle?: string | null;
+  description: string;
+  type: string;
+  priceInPaise?: number | null;
+  compareAtPriceInPaise?: number | null;
+  currency: string;
+  validityDays?: number | null;
+  sessionCount?: number | null;
+  sessionDurationMinutes?: number | null;
+  deliveryMode: string;
+  eventStartsAt?: string | null;
+  eventEndsAt?: string | null;
+  seatLimit?: number | null;
+  venue?: string | null;
+  imageUrl?: string | null;
+  ctaLabel: string;
+  routePath: string;
+  benefits: string[];
+  audience: string[];
+  isFeatured: boolean;
+  requiresLeadForm: boolean;
+  sortOrder: number;
+};
+
+export type HopeHubBanner = {
+  id: string;
+  title: string;
+  subtitle?: string | null;
+  eyebrow?: string | null;
+  imageUrl?: string | null;
+  ctaLabel: string;
+  routePath: string;
+  offeringId?: string | null;
+  backgroundColor?: string | null;
+  textColor?: string | null;
+};
+
+export type HopeHubOrganizationLeadPayload = {
+  organizationName: string;
+  organizationType: string;
+  contactName: string;
+  contactEmail?: string;
+  contactPhone?: string;
+  city?: string;
+  audienceSize?: number | null;
+  needType?: string;
+  preferredDate?: string;
+  notes?: string;
+  offeringId?: string;
+  offeringSlug?: string;
   entryPage?: string;
 };
 
@@ -147,6 +207,37 @@ export class BookingService {
   service(id: string): Observable<{ service: HopeHubService }> {
     return this.http.get<{ service: HopeHubService }>(
       `${this.apiUrl}/hope-hub/services/${encodeURIComponent(id)}`,
+    );
+  }
+
+  offerings(
+    params: { type?: string; featured?: boolean } = {},
+  ): Observable<{ offerings: HopeHubOffering[] }> {
+    const searchParams = new URLSearchParams();
+    if (params.type) searchParams.set('type', params.type);
+    if (params.featured) searchParams.set('featured', 'true');
+    const query = searchParams.toString();
+    return this.http.get<{ offerings: HopeHubOffering[] }>(
+      `${this.apiUrl}/hope-hub/offerings${query ? `?${query}` : ''}`,
+    );
+  }
+
+  offering(slug: string): Observable<{ offering: HopeHubOffering }> {
+    return this.http.get<{ offering: HopeHubOffering }>(
+      `${this.apiUrl}/hope-hub/offerings/${encodeURIComponent(slug)}`,
+    );
+  }
+
+  banners(): Observable<{ banners: HopeHubBanner[] }> {
+    return this.http.get<{ banners: HopeHubBanner[] }>(`${this.apiUrl}/hope-hub/banners`);
+  }
+
+  createOrganizationLead(
+    payload: HopeHubOrganizationLeadPayload,
+  ): Observable<{ leadId: string; success: boolean }> {
+    return this.http.post<{ leadId: string; success: boolean }>(
+      `${this.apiUrl}/hope-hub/organization-leads`,
+      payload,
     );
   }
 

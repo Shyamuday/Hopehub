@@ -1,0 +1,173 @@
+<div class="offers-page">
+  <header class="page-head">
+    <div>
+      <p>Healing Hub</p>
+      <h2>Offers, Banners & Organisation Leads</h2>
+    </div>
+  </header>
+
+  <nav class="tabs" aria-label="Healing Hub offer sections">
+    <button type="button" [class.active]="tab() === 'offers'" (click)="setTab('offers')">Offers</button>
+    <button type="button" [class.active]="tab() === 'banners'" (click)="setTab('banners')">Home banners</button>
+    <button type="button" [class.active]="tab() === 'leads'" (click)="setTab('leads')">Organisation leads</button>
+  </nav>
+
+  @if (toast()) {
+    <div class="toast">{{ toast() }}</div>
+  }
+
+  @if (loading()) {
+    <p class="loading">Loading...</p>
+  } @else {
+    @switch (tab()) {
+      @case ('offers') {
+        <section class="grid-layout">
+          <form class="panel edit-form" (ngSubmit)="saveOffer()">
+            <h3>{{ offerForm().id ? 'Edit offer' : 'New offer' }}</h3>
+            <div class="two">
+              <label>Code <input name="code" [(ngModel)]="offerForm().code" required /></label>
+              <label>Slug <input name="slug" [(ngModel)]="offerForm().slug" /></label>
+              <label>Title <input name="title" [(ngModel)]="offerForm().title" required /></label>
+              <label>Subtitle <input name="subtitle" [(ngModel)]="offerForm().subtitle" /></label>
+              <label>Type
+                <select name="type" [(ngModel)]="offerForm().type">
+                  @for (type of offerTypes; track type) { <option [value]="type">{{ type }}</option> }
+                </select>
+              </label>
+              <label>Delivery
+                <select name="deliveryMode" [(ngModel)]="offerForm().deliveryMode">
+                  @for (mode of deliveryModes; track mode) { <option [value]="mode">{{ mode }}</option> }
+                </select>
+              </label>
+              <label>Price (₹) <input type="number" name="price" [(ngModel)]="offerForm().priceRupees" /></label>
+              <label>Original price (₹) <input type="number" name="compare" [(ngModel)]="offerForm().compareAtRupees" /></label>
+              <label>Validity days <input type="number" name="validity" [(ngModel)]="offerForm().validityDays" /></label>
+              <label>Sessions <input type="number" name="sessions" [(ngModel)]="offerForm().sessionCount" /></label>
+              <label>Session minutes <input type="number" name="minutes" [(ngModel)]="offerForm().sessionDurationMinutes" /></label>
+              <label>Seats <input type="number" name="seats" [(ngModel)]="offerForm().seatLimit" /></label>
+              <label>Event starts <input type="datetime-local" name="starts" [(ngModel)]="offerForm().eventStartsAt" /></label>
+              <label>Event ends <input type="datetime-local" name="ends" [(ngModel)]="offerForm().eventEndsAt" /></label>
+              <label>CTA <input name="cta" [(ngModel)]="offerForm().ctaLabel" /></label>
+              <label>Route <input name="route" [(ngModel)]="offerForm().routePath" placeholder="/packages/monthly-care" /></label>
+              <label>Venue <input name="venue" [(ngModel)]="offerForm().venue" /></label>
+              <label>Image URL <input name="image" [(ngModel)]="offerForm().imageUrl" /></label>
+            </div>
+            <label>Description <textarea rows="4" name="description" [(ngModel)]="offerForm().description" required></textarea></label>
+            <div class="two">
+              <label>Benefits <textarea rows="4" name="benefits" [(ngModel)]="offerForm().benefitsText"></textarea></label>
+              <label>Audience <textarea rows="4" name="audience" [(ngModel)]="offerForm().audienceText"></textarea></label>
+            </div>
+            <div class="checks">
+              <label><input type="checkbox" name="active" [(ngModel)]="offerForm().isActive" /> Active</label>
+              <label><input type="checkbox" name="featured" [(ngModel)]="offerForm().isFeatured" /> Featured</label>
+              <label><input type="checkbox" name="lead" [(ngModel)]="offerForm().requiresLeadForm" /> Lead form only</label>
+              <label>Sort <input type="number" name="sort" [(ngModel)]="offerForm().sortOrder" /></label>
+            </div>
+            <div class="actions">
+              <button type="submit" class="primary" [disabled]="saving()">{{ saving() ? 'Saving...' : 'Save offer' }}</button>
+              <button type="button" (click)="resetOffer()">Clear</button>
+            </div>
+          </form>
+
+          <section class="panel">
+            <h3>Configured offers</h3>
+            <div class="rows">
+              @for (offer of offerings(); track offer.id) {
+                <article class="row-card">
+                  <div>
+                    <strong>{{ offer.title }}</strong>
+                    <span>{{ offer.type }} / {{ formatPaise(offer.priceInPaise) }}</span>
+                  </div>
+                  <div class="row-actions">
+                    @if (offer.isActive) { <span class="badge">Active</span> } @else { <span class="badge off">Off</span> }
+                    @if (offer.isFeatured) { <span class="badge feature">Featured</span> }
+                    <button type="button" (click)="editOffer(offer)">Edit</button>
+                  </div>
+                </article>
+              }
+            </div>
+          </section>
+        </section>
+      }
+
+      @case ('banners') {
+        <section class="grid-layout">
+          <form class="panel edit-form" (ngSubmit)="saveBanner()">
+            <h3>{{ bannerForm().id ? 'Edit banner' : 'New banner' }}</h3>
+            <div class="two">
+              <label>Title <input name="bannerTitle" [(ngModel)]="bannerForm().title" required /></label>
+              <label>Eyebrow <input name="bannerEyebrow" [(ngModel)]="bannerForm().eyebrow" /></label>
+              <label>CTA <input name="bannerCta" [(ngModel)]="bannerForm().ctaLabel" /></label>
+              <label>Route <input name="bannerRoute" [(ngModel)]="bannerForm().routePath" required /></label>
+              <label>Offer
+                <select name="bannerOffer" [(ngModel)]="bannerForm().offeringId">
+                  <option value="">No linked offer</option>
+                  @for (offer of offerings(); track offer.id) { <option [value]="offer.id">{{ offer.title }}</option> }
+                </select>
+              </label>
+              <label>Image URL <input name="bannerImage" [(ngModel)]="bannerForm().imageUrl" /></label>
+              <label>Starts <input type="datetime-local" name="bannerStarts" [(ngModel)]="bannerForm().startsAt" /></label>
+              <label>Ends <input type="datetime-local" name="bannerEnds" [(ngModel)]="bannerForm().endsAt" /></label>
+              <label>Background <input name="bannerBg" [(ngModel)]="bannerForm().backgroundColor" /></label>
+              <label>Text color <input name="bannerText" [(ngModel)]="bannerForm().textColor" /></label>
+            </div>
+            <label>Subtitle <textarea rows="3" name="bannerSubtitle" [(ngModel)]="bannerForm().subtitle"></textarea></label>
+            <div class="checks">
+              <label><input type="checkbox" name="bannerActive" [(ngModel)]="bannerForm().isActive" /> Active</label>
+              <label>Sort <input type="number" name="bannerSort" [(ngModel)]="bannerForm().sortOrder" /></label>
+            </div>
+            <div class="actions">
+              <button type="submit" class="primary" [disabled]="saving()">Save banner</button>
+              <button type="button" (click)="resetBanner()">Clear</button>
+            </div>
+          </form>
+
+          <section class="panel">
+            <h3>Homepage banners</h3>
+            <div class="rows">
+              @for (banner of banners(); track banner.id) {
+                <article class="row-card">
+                  <div>
+                    <strong>{{ banner.title }}</strong>
+                    <span>{{ banner.routePath }}</span>
+                  </div>
+                  <div class="row-actions">
+                    @if (banner.isActive) { <span class="badge">Active</span> } @else { <span class="badge off">Off</span> }
+                    <button type="button" (click)="editBanner(banner)">Edit</button>
+                  </div>
+                </article>
+              }
+            </div>
+          </section>
+        </section>
+      }
+
+      @case ('leads') {
+        <section class="panel">
+          <h3>Organisation requests</h3>
+          <div class="rows">
+            @for (lead of leads(); track lead.id) {
+              <article class="lead-card">
+                <div>
+                  <strong>{{ lead.organizationName }}</strong>
+                  <span>{{ lead.organizationType }} / {{ lead.city || 'City not shared' }}</span>
+                  <p>{{ lead.contactName }} / {{ lead.contactEmail || lead.contactPhone }}</p>
+                  @if (lead.notes) { <p>{{ lead.notes }}</p> }
+                </div>
+                <div class="lead-actions">
+                  <select [(ngModel)]="lead.status" [name]="'lead-status-' + lead.id">
+                    @for (status of leadStatuses; track status) { <option [value]="status">{{ status }}</option> }
+                  </select>
+                  <textarea rows="2" [(ngModel)]="lead.followUpNotes" [name]="'lead-notes-' + lead.id" placeholder="Follow-up notes"></textarea>
+                  <button type="button" class="primary" (click)="saveLead(lead)">Save</button>
+                </div>
+              </article>
+            } @empty {
+              <p class="muted">No organisation leads yet.</p>
+            }
+          </div>
+        </section>
+      }
+    }
+  }
+</div>

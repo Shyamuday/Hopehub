@@ -1,0 +1,53 @@
+<main class="offers-page">
+  <section class="offers-hero">
+    <p>{{ mode() === 'events' ? 'Events' : 'Packages' }}</p>
+    <h1>{{ title() }}</h1>
+    <span>{{ subtitle() }}</span>
+  </section>
+
+  @if (loading()) {
+    <section class="offers-grid">
+      @for (item of [1, 2, 3]; track item) {
+        <div class="offer-card loading"></div>
+      }
+    </section>
+  } @else {
+    <section class="offers-grid">
+      @for (offer of offerings(); track offer.id) {
+        <article class="offer-card">
+          <div>
+            <span class="offer-card__type">{{ offer.type.replace('_', ' ') }}</span>
+            <h2>{{ offer.title }}</h2>
+            @if (offer.subtitle) {
+              <p>{{ offer.subtitle }}</p>
+            }
+          </div>
+
+          <div class="offer-card__price">
+            <strong>{{ formatPrice(offer) }}</strong>
+            @if (offer.compareAtPriceInPaise) {
+              <del>{{ formatPrice({ ...offer, priceInPaise: offer.compareAtPriceInPaise }) }}</del>
+            }
+          </div>
+
+          <div class="offer-card__meta">
+            @if (offer.sessionCount) { <span>{{ offer.sessionCount }} sessions</span> }
+            @if (offer.sessionDurationMinutes) { <span>{{ offer.sessionDurationMinutes }} min</span> }
+            @if (offer.validityDays) { <span>{{ offer.validityDays }} days</span> }
+            @if (offer.eventStartsAt) { <span>{{ offer.eventStartsAt | date: 'mediumDate' }}</span> }
+          </div>
+
+          <ul>
+            @for (benefit of offer.benefits.slice(0, 3); track benefit) {
+              <li>{{ benefit }}</li>
+            }
+          </ul>
+
+          <a [routerLink]="offerLink(offer)" class="offer-card__cta">{{ offer.ctaLabel }}</a>
+        </article>
+      } @empty {
+        <div class="empty">Offers will appear here after admin publishes them.</div>
+      }
+    </section>
+  }
+</main>

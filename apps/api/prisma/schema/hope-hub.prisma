@@ -54,3 +54,121 @@ model MentalHealthProviderProfile {
 
   @@index([doctorId])
 }
+
+enum HopeHubOfferingType {
+  INDIVIDUAL_SESSION
+  CARE_PACKAGE
+  WORKSHOP
+  MEETUP
+  WEBINAR
+  GROUP_SESSION
+  ORGANISATION_PROGRAM
+  CUSTOM
+}
+
+enum HopeHubDeliveryMode {
+  ONLINE_AUDIO
+  ONLINE_VIDEO
+  CHAT
+  GROUP_ONLINE
+  OFFLINE
+  HYBRID
+  CUSTOM
+}
+
+enum HopeHubOrganizationLeadStatus {
+  NEW
+  CONTACTED
+  PROPOSAL_SENT
+  WON
+  LOST
+}
+
+model HopeHubOffering {
+  id                     String              @id @default(cuid())
+  code                   String              @unique
+  slug                   String              @unique
+  title                  String
+  subtitle               String?
+  description            String              @db.Text
+  type                   HopeHubOfferingType
+  priceInPaise           Int?
+  compareAtPriceInPaise  Int?
+  currency               String              @default("INR")
+  validityDays           Int?
+  sessionCount           Int?
+  sessionDurationMinutes Int?
+  deliveryMode           HopeHubDeliveryMode @default(ONLINE_AUDIO)
+  eventStartsAt          DateTime?
+  eventEndsAt            DateTime?
+  seatLimit              Int?
+  venue                  String?
+  imageUrl               String?
+  ctaLabel               String              @default("Book now")
+  routePath              String?
+  benefits               String[]            @default([])
+  audience               String[]            @default([])
+  metadata               Json?
+  isActive               Boolean             @default(true)
+  isFeatured             Boolean             @default(false)
+  requiresLeadForm       Boolean             @default(false)
+  sortOrder              Int                 @default(0)
+  createdAt              DateTime            @default(now())
+  updatedAt              DateTime            @updatedAt
+
+  banners                HopeHubBanner[]
+  organizationLeads      HopeHubOrganizationLead[]
+
+  @@index([type, isActive])
+  @@index([isFeatured, sortOrder])
+  @@index([eventStartsAt])
+}
+
+model HopeHubBanner {
+  id              String           @id @default(cuid())
+  title           String
+  subtitle        String?
+  eyebrow         String?
+  imageUrl        String?
+  ctaLabel        String           @default("Explore")
+  routePath       String
+  offeringId      String?
+  startsAt        DateTime?
+  endsAt          DateTime?
+  isActive        Boolean          @default(true)
+  sortOrder       Int              @default(0)
+  backgroundColor String?
+  textColor       String?
+  metadata        Json?
+  offering        HopeHubOffering? @relation(fields: [offeringId], references: [id], onDelete: SetNull)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  @@index([isActive, sortOrder])
+  @@index([offeringId])
+}
+
+model HopeHubOrganizationLead {
+  id               String                        @id @default(cuid())
+  organizationName String
+  organizationType String
+  contactName      String
+  contactEmail     String?
+  contactPhone     String?
+  city             String?
+  audienceSize     Int?
+  needType         String?
+  preferredDate    String?
+  notes            String?                       @db.Text
+  offeringId       String?
+  status           HopeHubOrganizationLeadStatus @default(NEW)
+  entryPage        String?
+  followUpNotes    String?                       @db.Text
+  offering         HopeHubOffering?              @relation(fields: [offeringId], references: [id], onDelete: SetNull)
+  createdAt        DateTime                      @default(now())
+  updatedAt        DateTime                      @updatedAt
+
+  @@index([status, createdAt])
+  @@index([organizationType])
+  @@index([offeringId])
+}

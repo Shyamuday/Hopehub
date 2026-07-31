@@ -257,4 +257,71 @@ export class AdminCatalogApi extends AdminApiBase {
       this.http.put(`${this.apiBase}${API_PATHS.ADMIN.BILLING_PLANS}/${id}`, payload),
     );
   }
+
+  getHopeHubOfferingsAdmin() {
+    return firstValueFrom(
+      this.http.get<{ offerings: Array<any> }>(
+        `${this.apiBase}${API_PATHS.ADMIN.HOPE_HUB_OFFERINGS}`,
+      ),
+    );
+  }
+
+  createHopeHubOffering(payload: Record<string, unknown>) {
+    return firstValueFrom(
+      this.http.post<{ offering: any }>(
+        `${this.apiBase}${API_PATHS.ADMIN.HOPE_HUB_OFFERINGS}`,
+        payload,
+      ),
+    );
+  }
+
+  updateHopeHubOffering(id: string, payload: Record<string, unknown>) {
+    return firstValueFrom(
+      this.http.put<{ offering: any }>(
+        `${this.apiBase}${API_PATHS.ADMIN.HOPE_HUB_OFFERING_BY_ID(id)}`,
+        payload,
+      ),
+    );
+  }
+
+  getHopeHubBannersAdmin() {
+    return firstValueFrom(
+      this.http.get<{ banners: Array<any> }>(`${this.apiBase}${API_PATHS.ADMIN.HOPE_HUB_BANNERS}`),
+    );
+  }
+
+  createHopeHubBanner(payload: Record<string, unknown>) {
+    return firstValueFrom(
+      this.http.post<{ banner: any }>(
+        `${this.apiBase}${API_PATHS.ADMIN.HOPE_HUB_BANNERS}`,
+        payload,
+      ),
+    );
+  }
+
+  updateHopeHubBanner(id: string, payload: Record<string, unknown>) {
+    return firstValueFrom(
+      this.http.put<{ banner: any }>(
+        `${this.apiBase}${API_PATHS.ADMIN.HOPE_HUB_BANNER_BY_ID(id)}`,
+        payload,
+      ),
+    );
+  }
+
+  getHopeHubOrganizationLeadsAdmin() {
+    return firstValueFrom(
+      this.http.get<{ leads: Array<any> }>(
+        `${this.apiBase}${API_PATHS.ADMIN.HOPE_HUB_ORGANIZATION_LEADS}`,
+      ),
+    );
+  }
+
+  updateHopeHubOrganizationLead(id: string, payload: Record<string, unknown>) {
+    return firstValueFrom(
+      this.http.put<{ lead: any }>(
+        `${this.apiBase}${API_PATHS.ADMIN.HOPE_HUB_ORGANIZATION_LEAD_BY_ID(id)}`,
+        payload,
+      ),
+    );
+  }
 }

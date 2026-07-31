@@ -118,6 +118,27 @@ import { User } from '../../core/models/auth.model';
                   >Articles</a
                 >
                 <a
+                  routerLink="/packages"
+                  routerLinkActive="text-primary-600 bg-primary-50"
+                  class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-primary-600"
+                  role="menuitem"
+                  >Packages</a
+                >
+                <a
+                  routerLink="/events"
+                  routerLinkActive="text-primary-600 bg-primary-50"
+                  class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-primary-600"
+                  role="menuitem"
+                  >Events</a
+                >
+                <a
+                  routerLink="/organization"
+                  routerLinkActive="text-primary-600 bg-primary-50"
+                  class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-primary-600"
+                  role="menuitem"
+                  >Organisation</a
+                >
+                <a
                   routerLink="/feedback"
                   routerLinkActive="text-primary-600 bg-primary-50"
                   class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-primary-600"
@@ -315,6 +336,33 @@ import { User } from '../../core/models/auth.model';
                   role="menuitem"
                 >
                   Articles
+                </a>
+                <a
+                  routerLink="/packages"
+                  (click)="closeMobileMenu()"
+                  routerLinkActive="text-primary-600 bg-primary-50"
+                  class="block rounded-md px-3 py-2 text-base font-medium text-gray-700 transition-colors duration-200 hover:bg-gray-50 hover:text-primary-600"
+                  role="menuitem"
+                >
+                  Packages
+                </a>
+                <a
+                  routerLink="/events"
+                  (click)="closeMobileMenu()"
+                  routerLinkActive="text-primary-600 bg-primary-50"
+                  class="block rounded-md px-3 py-2 text-base font-medium text-gray-700 transition-colors duration-200 hover:bg-gray-50 hover:text-primary-600"
+                  role="menuitem"
+                >
+                  Events
+                </a>
+                <a
+                  routerLink="/organization"
+                  (click)="closeMobileMenu()"
+                  routerLinkActive="text-primary-600 bg-primary-50"
+                  class="block rounded-md px-3 py-2 text-base font-medium text-gray-700 transition-colors duration-200 hover:bg-gray-50 hover:text-primary-600"
+                  role="menuitem"
+                >
+                  Organisation
                 </a>
                 <a
                   routerLink="/feedback"

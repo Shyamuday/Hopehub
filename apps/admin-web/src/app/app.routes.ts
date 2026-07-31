@@ -16,6 +16,7 @@ import { StoresPage } from './features/stores/stores-page/stores-page';
 import { ConsultationsPage } from './features/consultations/consultations-page/consultations-page';
 import { PayrollPage } from './features/payroll/payroll-page/payroll-page';
 import { RatesPage } from './features/rates/rates-page/rates-page';
+import { HopeHubOffersPage } from './features/hope-hub-offers/hope-hub-offers-page';
 import { PaymentsPage } from './features/payments/payments-page/payments-page';
 import { FinancePage } from './features/finance/finance-page/finance-page';
 import { AuditPage } from './features/audit/audit-page/audit-page';
@@ -60,6 +61,7 @@ export const routes: Routes = [
       { path: ROUTE_PATHS.SCAN, component: AdminPatientScanLauncherPage, canActivate: guard },
       { path: ROUTE_PATHS.DISEASES, component: DiseasesPage, canActivate: guard },
       { path: ROUTE_PATHS.RATES, component: RatesPage, canActivate: guard },
+      { path: ROUTE_PATHS.HOPE_HUB_OFFERS, component: HopeHubOffersPage, canActivate: guard },
       { path: ROUTE_PATHS.REWARDS, component: RewardsPage, canActivate: guard },
       { path: ROUTE_PATHS.CLINICAL_RECORDS, component: ClinicalRecordsPage, canActivate: guard },
       { path: ROUTE_PATHS.VACANCIES, component: VacanciesPage, canActivate: guard },

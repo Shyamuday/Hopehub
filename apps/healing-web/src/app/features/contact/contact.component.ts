@@ -147,6 +147,8 @@ export class ContactComponent implements OnInit {
         consultantPhone: params['consultantPhone'] || '',
         duration: params['duration'] || '',
         price: params['price'] || '',
+        offering: params['offering'] || '',
+        offeringId: params['offeringId'] || '',
         source: params['source'] || '',
       });
     });
@@ -346,6 +348,8 @@ export class ContactComponent implements OnInit {
         .createBooking({
           serviceName,
           servicePriceInPaise: this.resolveServicePriceInPaise(serviceName),
+          offeringId: data.offeringId || '',
+          offeringSlug: data.offering || '',
           message: bookingMessage,
           appointmentDate: this.formatLocalDate(appointment.date),
           appointmentTime: appointment.time,

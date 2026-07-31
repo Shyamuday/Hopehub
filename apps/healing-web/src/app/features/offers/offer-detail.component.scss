@@ -1,0 +1,146 @@
+.offer-detail {
+  min-height: 100vh;
+  background: #f8fafc;
+  color: #0f172a;
+  padding: clamp(2rem, 5vw, 4rem) 1rem;
+}
+
+.detail-shell,
+.detail-lists {
+  width: min(100%, 72rem);
+  margin: 0 auto;
+}
+
+.detail-shell {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 0.36fr);
+  gap: 1.25rem;
+  align-items: start;
+}
+
+.detail-shell.loading {
+  min-height: 24rem;
+  border-radius: 0.5rem;
+  background: linear-gradient(90deg, #ffffff, #eff6ff, #ffffff);
+}
+
+.detail-copy,
+.checkout-card,
+.detail-lists > div {
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  background: #ffffff;
+  padding: clamp(1rem, 3vw, 1.5rem);
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.06);
+}
+
+.detail-copy > p:first-child {
+  margin: 0 0 0.6rem;
+  color: #2563eb;
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+h1,
+h2,
+.checkout-card strong {
+  margin: 0;
+}
+
+h1 {
+  font-size: clamp(2rem, 5vw, 3.4rem);
+  font-weight: 850;
+  line-height: 1.08;
+}
+
+.detail-copy > span,
+.description {
+  display: block;
+  margin-top: 0.8rem;
+  color: #475569;
+  line-height: 1.7;
+}
+
+.meta-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.7rem;
+  margin-top: 1.25rem;
+}
+
+.meta-grid div,
+.event-note {
+  border-radius: 0.5rem;
+  background: #eff6ff;
+  padding: 0.8rem;
+}
+
+.meta-grid strong,
+.event-note strong {
+  display: block;
+  color: #1d4ed8;
+  font-weight: 900;
+}
+
+.meta-grid span,
+.event-note span,
+.checkout-card span {
+  display: block;
+  color: #64748b;
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.event-note {
+  margin-top: 1rem;
+}
+
+.checkout-card {
+  display: grid;
+  gap: 0.8rem;
+  position: sticky;
+  top: 1rem;
+}
+
+.checkout-card strong {
+  font-size: 2rem;
+}
+
+.checkout-card a,
+.back-link {
+  display: inline-flex;
+  justify-content: center;
+  border-radius: 0.5rem;
+  background: #2563eb;
+  color: #ffffff;
+  padding: 0.8rem 1rem;
+  font-weight: 850;
+  text-decoration: none;
+}
+
+.detail-lists {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.detail-lists ul {
+  margin: 0.8rem 0 0;
+  padding-left: 1.2rem;
+  color: #334155;
+  line-height: 1.7;
+}
+
+@media (max-width: 900px) {
+  .detail-shell,
+  .detail-lists,
+  .meta-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .checkout-card {
+    position: static;
+  }
+}
