@@ -38,6 +38,7 @@
             @if (offer.sessionDurationMinutes) { <span>{{ offer.sessionDurationMinutes }} min</span> }
             @if (offer.validityDays) { <span>{{ offer.validityDays }} days</span> }
             @if (offer.eventStartsAt) { <span>{{ offer.eventStartsAt | date: 'mediumDate' }}</span> }
+            @if (offer.seatsRemaining != null) { <span>{{ offer.seatsRemaining }} left</span> }
             @if (offer.partialPaymentEnabled) { <span>{{ offer.partialPaymentLabel || 'Partial payment' }}</span> }
           </div>
 
@@ -47,7 +48,11 @@
             }
           </ul>
 
-          <a [routerLink]="offerLink(offer)" class="offer-card__cta">{{ offer.ctaLabel }}</a>
+          @if (offer.isFull) {
+            <span class="offer-card__cta disabled">Full</span>
+          } @else {
+            <a [routerLink]="offerLink(offer)" class="offer-card__cta">{{ offer.ctaLabel }}</a>
+          }
         </article>
       } @empty {
         <div class="empty">Offers will appear here after admin publishes them.</div>

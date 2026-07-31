@@ -91,6 +91,8 @@ export class HopeHubOffersPage implements OnInit {
       discountMaxRupees: offer.discountMaxInPaise == null ? null : offer.discountMaxInPaise / 100,
       partialPaymentFlatRupees:
         offer.partialPaymentFlatInPaise == null ? null : offer.partialPaymentFlatInPaise / 100,
+      discountStartsAt: this.inputDateTime(offer.discountStartsAt),
+      discountEndsAt: this.inputDateTime(offer.discountEndsAt),
       benefitsText: (offer.benefits || []).join('\n'),
       audienceText: (offer.audience || []).join('\n'),
       eventStartsAt: this.inputDateTime(offer.eventStartsAt),
@@ -135,6 +137,8 @@ export class HopeHubOffersPage implements OnInit {
             : Math.round(Number(form.discountFlatRupees) * 100),
         discountMaxInPaise:
           form.discountMaxRupees == null ? null : Math.round(Number(form.discountMaxRupees) * 100),
+        discountStartsAt: form.discountStartsAt || null,
+        discountEndsAt: form.discountEndsAt || null,
         partialPaymentEnabled: Boolean(form.partialPaymentEnabled),
         partialPaymentType: form.partialPaymentEnabled ? form.partialPaymentType || 'NONE' : 'NONE',
         partialPaymentLabel: form.partialPaymentLabel || null,
@@ -262,7 +266,13 @@ export class HopeHubOffersPage implements OnInit {
   previewDiscountRupees(): number {
     const form = this.offerForm();
     const price = this.previewPriceRupees();
-    if (!form.discountEnabled || form.discountType === 'NONE' || price <= 0) return 0;
+    if (
+      !form.discountEnabled ||
+      form.discountType === 'NONE' ||
+      price <= 0 ||
+      !this.isPreviewDiscountActive()
+    )
+      return 0;
 
     let discount = 0;
     if (['PERCENT', 'REFERRAL', 'CUSTOM'].includes(form.discountType) && form.discountPercent) {
@@ -303,6 +313,14 @@ export class HopeHubOffersPage implements OnInit {
     return Math.max(0, this.previewFinalRupees() - this.previewPayTodayRupees());
   }
 
+  isPreviewDiscountActive(): boolean {
+    const form = this.offerForm();
+    const now = Date.now();
+    if (form.discountStartsAt && new Date(form.discountStartsAt).getTime() > now) return false;
+    if (form.discountEndsAt && new Date(form.discountEndsAt).getTime() < now) return false;
+    return true;
+  }
+
   formatRupees(value: number): string {
     return new Intl.NumberFormat('en-IN', {
       style: 'currency',
@@ -330,6 +348,8 @@ export class HopeHubOffersPage implements OnInit {
       discountPercent: null as number | null,
       discountFlatRupees: null as number | null,
       discountMaxRupees: null as number | null,
+      discountStartsAt: '',
+      discountEndsAt: '',
       partialPaymentEnabled: false,
       partialPaymentType: 'NONE',
       partialPaymentLabel: '',

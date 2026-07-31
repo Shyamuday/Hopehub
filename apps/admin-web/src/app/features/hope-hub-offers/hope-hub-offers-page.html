@@ -76,6 +76,8 @@
                     </label>
                     <label>Discount label <input name="discountLabel" [(ngModel)]="offerForm().discountLabel" placeholder="Referral, launch offer" /></label>
                     <label>Discount code <input name="discountCode" [(ngModel)]="offerForm().discountCode" /></label>
+                    <label>Discount starts <input type="datetime-local" name="discountStarts" [(ngModel)]="offerForm().discountStartsAt" /></label>
+                    <label>Discount ends <input type="datetime-local" name="discountEnds" [(ngModel)]="offerForm().discountEndsAt" /></label>
                     @if (showDiscountPercent()) {
                       <label>Discount % <input type="number" name="discountPercent" [(ngModel)]="offerForm().discountPercent" /></label>
                     }
@@ -115,6 +117,9 @@
                 <div class="preview-total"><span>Pay today</span><strong>{{ formatRupees(previewPayTodayRupees()) }}</strong></div>
                 <div><span>Balance</span><strong>{{ formatRupees(previewBalanceRupees()) }}</strong></div>
               </div>
+              @if (offerForm().discountEnabled && !isPreviewDiscountActive()) {
+                <p class="schedule-note">Discount is scheduled but not active right now.</p>
+              }
             </section>
 
             <section class="form-section">

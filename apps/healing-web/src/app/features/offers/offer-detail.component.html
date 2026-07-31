@@ -14,6 +14,7 @@
           @if (offer.sessionDurationMinutes) { <div><strong>{{ offer.sessionDurationMinutes }}m</strong><span>Each session</span></div> }
           @if (offer.validityDays) { <div><strong>{{ offer.validityDays }}</strong><span>Days validity</span></div> }
           @if (offer.seatLimit) { <div><strong>{{ offer.seatLimit }}</strong><span>Seats</span></div> }
+          @if (offer.seatsRemaining != null) { <div><strong>{{ offer.seatsRemaining }}</strong><span>Seats left</span></div> }
         </div>
 
         @if (offer.eventStartsAt) {
@@ -38,6 +39,8 @@
           <a routerLink="/organization" [queryParams]="{ offering: offer.slug, offeringId: offer.id }">
             {{ offer.ctaLabel || 'Request a call' }}
           </a>
+        } @else if (offer.isFull) {
+          <span class="sold-out">Full</span>
         } @else {
           @if (partialAmountInPaise(offer)) {
             <a routerLink="/contact" [queryParams]="bookingQuery(offer, 'PARTIAL')">

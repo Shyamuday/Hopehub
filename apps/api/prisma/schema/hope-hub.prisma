@@ -116,6 +116,8 @@ model HopeHubOffering {
   discountPercent        Int?
   discountFlatInPaise    Int?
   discountMaxInPaise     Int?
+  discountStartsAt       DateTime?
+  discountEndsAt         DateTime?
   partialPaymentEnabled  Boolean             @default(false)
   partialPaymentType     HopeHubPartialPaymentType @default(NONE)
   partialPaymentLabel    String?

@@ -26,9 +26,29 @@ type HopeHubConsultation = {
     concernCategory?: string;
     preferredLanguage?: string;
   } | null;
+  pricingSnapshot?: {
+    balanceDueInPaise?: number;
+    paymentMode?: string;
+    packageUsage?: {
+      totalSessions?: number;
+      usedSessions?: number;
+      remainingSessions?: number;
+      validUntil?: string | null;
+    } | null;
+  } | null;
   payment?: {
     status?: string | null;
     amountInPaise?: number | null;
+    lineItems?: {
+      balanceDueInPaise?: number;
+      paymentMode?: string;
+      packageUsage?: {
+        totalSessions?: number;
+        usedSessions?: number;
+        remainingSessions?: number;
+        validUntil?: string | null;
+      } | null;
+    } | null;
   } | null;
 };
 
@@ -260,6 +280,30 @@ type BookingTimelineStep = {
                           · ₹{{ consultation.payment.amountInPaise! / 100 | number: '1.0-0' }}
                         }
                       </p>
+                    }
+                    @if (balanceDueInPaise(consultation) > 0 || packageUsage(consultation)) {
+                      <div
+                        class="mt-3 rounded-md border border-blue-100 bg-white p-3 text-sm text-gray-700"
+                      >
+                        @if (packageUsage(consultation); as usage) {
+                          <p class="font-semibold text-gray-900">
+                            Package: {{ usage.remainingSessions || 0 }}/{{
+                              usage.totalSessions || 0
+                            }}
+                            sessions left
+                          </p>
+                          @if (usage.validUntil) {
+                            <p class="mt-1">
+                              Valid till {{ usage.validUntil | date: 'mediumDate' }}
+                            </p>
+                          }
+                        }
+                        @if (balanceDueInPaise(consultation) > 0) {
+                          <p class="mt-1 font-semibold text-blue-700">
+                            Balance later: {{ formatPaise(balanceDueInPaise(consultation)) }}
+                          </p>
+                        }
+                      </div>
                     }
                     @if (consultation.intakeAnswers; as intake) {
                       @if (intake.appointmentDate || intake.appointmentTime) {
@@ -535,6 +579,30 @@ export class DashboardComponent implements OnInit {
       { label: 'Expert matched', done: Boolean(consultation.assignedDoctor) },
       { label: 'Session instructions', done: Boolean(consultation.assignedDoctor) },
     ];
+  }
+
+  packageUsage(consultation: HopeHubConsultation) {
+    return (
+      consultation.pricingSnapshot?.packageUsage ||
+      consultation.payment?.lineItems?.packageUsage ||
+      null
+    );
+  }
+
+  balanceDueInPaise(consultation: HopeHubConsultation): number {
+    return Number(
+      consultation.pricingSnapshot?.balanceDueInPaise ??
+        consultation.payment?.lineItems?.balanceDueInPaise ??
+        0,
+    );
+  }
+
+  formatPaise(value: number): string {
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      maximumFractionDigits: 0,
+    }).format((value || 0) / 100);
   }
 
   async logout(): Promise<void> {

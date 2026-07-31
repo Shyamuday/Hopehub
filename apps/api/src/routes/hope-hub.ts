@@ -204,10 +204,19 @@ function hopeHubDiscountSnapshot(
     discountPercent: number | null;
     discountFlatInPaise: number | null;
     discountMaxInPaise: number | null;
+    discountStartsAt: Date | null;
+    discountEndsAt: Date | null;
   } | null,
   grossInPaise: number
 ) {
   if (!offering?.discountEnabled || offering.discountType === 'NONE' || grossInPaise <= 0) {
+    return { discountInPaise: 0, rule: null };
+  }
+  const now = new Date();
+  if (offering.discountStartsAt && offering.discountStartsAt > now) {
+    return { discountInPaise: 0, rule: null };
+  }
+  if (offering.discountEndsAt && offering.discountEndsAt < now) {
     return { discountInPaise: 0, rule: null };
   }
 
@@ -246,9 +255,24 @@ function hopeHubDiscountSnapshot(
       percent: offering.discountPercent,
       flatInPaise: offering.discountFlatInPaise,
       maxInPaise: offering.discountMaxInPaise,
+      startsAt: offering.discountStartsAt?.toISOString() ?? null,
+      endsAt: offering.discountEndsAt?.toISOString() ?? null,
       amountInPaise: discountInPaise
     }
   };
+}
+
+function isOfferingDiscountActive(offering: {
+  discountEnabled: boolean;
+  discountType: string;
+  discountStartsAt: Date | null;
+  discountEndsAt: Date | null;
+}) {
+  if (!offering.discountEnabled || offering.discountType === 'NONE') return false;
+  const now = new Date();
+  if (offering.discountStartsAt && offering.discountStartsAt > now) return false;
+  if (offering.discountEndsAt && offering.discountEndsAt < now) return false;
+  return true;
 }
 
 function hopeHubPartialPaymentSnapshot(
@@ -416,50 +440,63 @@ function servicePublicPayload(service: {
   };
 }
 
-function offeringPublicPayload(offering: {
-  id: string;
-  code: string;
-  slug: string;
-  title: string;
-  subtitle: string | null;
-  description: string;
-  type: string;
-  priceInPaise: number | null;
-  compareAtPriceInPaise: number | null;
-  currency: string;
-  discountEnabled: boolean;
-  discountType: string;
-  discountLabel: string | null;
-  discountCode: string | null;
-  discountPercent: number | null;
-  discountFlatInPaise: number | null;
-  discountMaxInPaise: number | null;
-  partialPaymentEnabled: boolean;
-  partialPaymentType: string;
-  partialPaymentLabel: string | null;
-  partialPaymentPercent: number | null;
-  partialPaymentFlatInPaise: number | null;
-  validityDays: number | null;
-  sessionCount: number | null;
-  sessionDurationMinutes: number | null;
-  deliveryMode: string;
-  eventStartsAt: Date | null;
-  eventEndsAt: Date | null;
-  seatLimit: number | null;
-  venue: string | null;
-  imageUrl: string | null;
-  ctaLabel: string;
-  routePath: string | null;
-  benefits: string[];
-  audience: string[];
-  isFeatured: boolean;
-  requiresLeadForm: boolean;
-  sortOrder: number;
-}) {
+function offeringPublicPayload(
+  offering: {
+    id: string;
+    code: string;
+    slug: string;
+    title: string;
+    subtitle: string | null;
+    description: string;
+    type: string;
+    priceInPaise: number | null;
+    compareAtPriceInPaise: number | null;
+    currency: string;
+    discountEnabled: boolean;
+    discountType: string;
+    discountLabel: string | null;
+    discountCode: string | null;
+    discountPercent: number | null;
+    discountFlatInPaise: number | null;
+    discountMaxInPaise: number | null;
+    discountStartsAt: Date | null;
+    discountEndsAt: Date | null;
+    partialPaymentEnabled: boolean;
+    partialPaymentType: string;
+    partialPaymentLabel: string | null;
+    partialPaymentPercent: number | null;
+    partialPaymentFlatInPaise: number | null;
+    validityDays: number | null;
+    sessionCount: number | null;
+    sessionDurationMinutes: number | null;
+    deliveryMode: string;
+    eventStartsAt: Date | null;
+    eventEndsAt: Date | null;
+    seatLimit: number | null;
+    venue: string | null;
+    imageUrl: string | null;
+    ctaLabel: string;
+    routePath: string | null;
+    benefits: string[];
+    audience: string[];
+    isFeatured: boolean;
+    requiresLeadForm: boolean;
+    sortOrder: number;
+  },
+  seatsBooked = 0
+) {
+  const seatsRemaining =
+    offering.seatLimit == null ? null : Math.max(0, offering.seatLimit - seatsBooked);
   return {
     ...offering,
     eventStartsAt: offering.eventStartsAt?.toISOString() ?? null,
     eventEndsAt: offering.eventEndsAt?.toISOString() ?? null,
+    discountStartsAt: offering.discountStartsAt?.toISOString() ?? null,
+    discountEndsAt: offering.discountEndsAt?.toISOString() ?? null,
+    isDiscountActive: isOfferingDiscountActive(offering),
+    seatsBooked,
+    seatsRemaining,
+    isFull: seatsRemaining === 0,
     routePath:
       offering.routePath ||
       (offering.type === 'WORKSHOP' ||
@@ -521,6 +558,8 @@ const hopeHubOfferingSelect = {
   discountPercent: true,
   discountFlatInPaise: true,
   discountMaxInPaise: true,
+  discountStartsAt: true,
+  discountEndsAt: true,
   partialPaymentEnabled: true,
   partialPaymentType: true,
   partialPaymentLabel: true,
@@ -544,6 +583,23 @@ const hopeHubOfferingSelect = {
   sortOrder: true
 } as const;
 
+async function bookedSeatsByOfferingCode(codes: string[]) {
+  if (!codes.length) return new Map<string, number>();
+  const recentReservationCutoff = new Date(Date.now() - 30 * 60 * 1000);
+  const rows = await prisma.payment.groupBy({
+    by: ['billingPlanCode'],
+    where: {
+      billingPlanCode: { in: codes },
+      OR: [
+        { status: PaymentStatus.PAID },
+        { status: PaymentStatus.CREATED, createdAt: { gte: recentReservationCutoff } }
+      ]
+    },
+    _count: { _all: true }
+  });
+  return new Map(rows.map((row) => [row.billingPlanCode || '', row._count._all]));
+}
+
 hopeHubRouter.get(
   '/hope-hub/offerings',
   asyncRoute(async (req, res) => {
@@ -562,7 +618,12 @@ hopeHubRouter.get(
       select: hopeHubOfferingSelect,
       orderBy: [{ sortOrder: 'asc' }, { createdAt: 'desc' }]
     });
-    res.json({ offerings: offerings.map(offeringPublicPayload) });
+    const seatCounts = await bookedSeatsByOfferingCode(offerings.map((offering) => offering.code));
+    res.json({
+      offerings: offerings.map((offering) =>
+        offeringPublicPayload(offering, seatCounts.get(offering.code) ?? 0)
+      )
+    });
   })
 );
 
@@ -575,7 +636,8 @@ hopeHubRouter.get(
       select: hopeHubOfferingSelect
     });
     if (!offering) return res.status(404).json({ message: 'Offering not found.' });
-    res.json({ offering: offeringPublicPayload(offering) });
+    const seatCounts = await bookedSeatsByOfferingCode([offering.code]);
+    res.json({ offering: offeringPublicPayload(offering, seatCounts.get(offering.code) ?? 0) });
   })
 );
 
@@ -1067,6 +1129,12 @@ hopeHubRouter.post(
         .status(400)
         .json({ message: 'This offer needs a request call form, not checkout.' });
     }
+    if (selectedOffering?.seatLimit) {
+      const seatCounts = await bookedSeatsByOfferingCode([selectedOffering.code]);
+      if ((seatCounts.get(selectedOffering.code) ?? 0) >= selectedOffering.seatLimit) {
+        return res.status(409).json({ message: 'This event is full.' });
+      }
+    }
     const existingService = await prisma.disease.findFirst({
       where: {
         isActive: true,
@@ -1150,6 +1218,19 @@ hopeHubRouter.post(
 
     const selectedPlanCode = selectedOffering?.code || 'ONE_TIME';
     const selectedPlanName = selectedOffering?.title || 'One-Time Appointment';
+    const packageValidUntil =
+      selectedOffering?.validityDays && selectedOffering.validityDays > 0
+        ? new Date(Date.now() + selectedOffering.validityDays * 24 * 60 * 60 * 1000)
+        : null;
+    const packageUsage =
+      selectedOffering && (selectedOffering.sessionCount || 0) > 1
+        ? {
+            totalSessions: selectedOffering.sessionCount || 1,
+            usedSessions: 0,
+            remainingSessions: selectedOffering.sessionCount || 1,
+            validUntil: packageValidUntil?.toISOString() ?? null
+          }
+        : null;
 
     const checkout = await resolveConsultationCheckout({
       patientId: req.user!.id,
@@ -1210,6 +1291,7 @@ hopeHubRouter.post(
           netAfterOfferDiscountInPaise,
           paymentMode: partialPayment.paymentMode,
           balanceDueInPaise: partialPayment.balanceDueInPaise,
+          packageUsage,
           sessionDurationMinutes:
             selectedOffering?.sessionDurationMinutes || HOPE_HUB_SESSION_DURATION_MINUTES,
           sessionCount: selectedOffering?.sessionCount || 1,
@@ -1262,6 +1344,7 @@ hopeHubRouter.post(
               paymentMode: partialPayment.paymentMode,
               payableTodayInPaise: finalPayableInPaise,
               balanceDueInPaise: partialPayment.balanceDueInPaise,
+              packageUsage,
               payableInPaise: finalPayableInPaise,
               grossRevenueSplit,
               payableRevenueSplit,

@@ -126,6 +126,11 @@
   text-decoration: none;
 }
 
+.offer-card__cta.disabled {
+  background: #e2e8f0;
+  color: #64748b;
+}
+
 @media (max-width: 900px) {
   .offers-grid {
     grid-template-columns: 1fr;

@@ -35,7 +35,7 @@ export class OfferDetailComponent implements OnInit {
   }
 
   discountInPaise(offer: HopeHubOffering): number {
-    if (!offer.discountEnabled || offer.discountType === 'NONE' || !offer.priceInPaise) return 0;
+    if (!offer.isDiscountActive || offer.discountType === 'NONE' || !offer.priceInPaise) return 0;
     let amount = 0;
     if (['PERCENT', 'REFERRAL', 'CUSTOM'].includes(offer.discountType) && offer.discountPercent) {
       amount = Math.round((offer.priceInPaise * offer.discountPercent) / 100);

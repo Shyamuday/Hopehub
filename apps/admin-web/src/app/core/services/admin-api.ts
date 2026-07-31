@@ -427,6 +427,11 @@ export class AdminApi {
       ...(args as Parameters<AdminHrApi['assignConsultationDoctor']>),
     );
   }
+  updateHopeHubPackageUsage(...args: Parameters<AdminHrApi['updateHopeHubPackageUsage']>) {
+    return this.hr.updateHopeHubPackageUsage(
+      ...(args as Parameters<AdminHrApi['updateHopeHubPackageUsage']>),
+    );
+  }
   getPayroll(...args: Parameters<AdminHrApi['getPayroll']>) {
     return this.hr.getPayroll(...(args as Parameters<AdminHrApi['getPayroll']>));
   }

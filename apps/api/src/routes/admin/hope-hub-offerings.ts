@@ -54,6 +54,8 @@ const offeringSchema = z.object({
   discountPercent: z.number().int().min(1).max(100).nullable().optional(),
   discountFlatInPaise: z.number().int().min(0).nullable().optional(),
   discountMaxInPaise: z.number().int().min(0).nullable().optional(),
+  discountStartsAt: dateTimeOrNull,
+  discountEndsAt: dateTimeOrNull,
   partialPaymentEnabled: z.boolean().default(false),
   partialPaymentType: z
     .nativeEnum(HopeHubPartialPaymentType)

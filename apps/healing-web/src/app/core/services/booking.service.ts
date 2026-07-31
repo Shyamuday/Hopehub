@@ -52,6 +52,9 @@ export type HopeHubOffering = {
   discountPercent?: number | null;
   discountFlatInPaise?: number | null;
   discountMaxInPaise?: number | null;
+  discountStartsAt?: string | null;
+  discountEndsAt?: string | null;
+  isDiscountActive?: boolean;
   partialPaymentEnabled: boolean;
   partialPaymentType: string;
   partialPaymentLabel?: string | null;
@@ -72,6 +75,9 @@ export type HopeHubOffering = {
   audience: string[];
   isFeatured: boolean;
   requiresLeadForm: boolean;
+  seatsBooked?: number;
+  seatsRemaining?: number | null;
+  isFull?: boolean;
   sortOrder: number;
 };
 
