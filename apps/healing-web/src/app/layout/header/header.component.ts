@@ -153,10 +153,26 @@ import { User } from '../../core/models/auth.model';
                   role="menuitem"
                   >Share feedback</a
                 >
+                <a
+                  routerLink="/donate"
+                  routerLinkActive="text-primary-600 bg-primary-50"
+                  class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-primary-600"
+                  role="menuitem"
+                  >Support us</a
+                >
+                <a
+                  routerLink="/careers"
+                  routerLinkActive="text-primary-600 bg-primary-50"
+                  class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-primary-600"
+                  role="menuitem"
+                  >Careers</a
+                >
               </div>
             </div>
             <!-- Authentication Section -->
             <div class="flex items-center space-x-2">
+              <a routerLink="/contact" class="btn-outline btn-sm whitespace-nowrap">Book session</a>
+
               <!-- Authenticated User -->
               @if (user()) {
                 <div class="relative group">
@@ -390,7 +406,35 @@ import { User } from '../../core/models/auth.model';
                 >
                   Share feedback
                 </a>
+                <a
+                  routerLink="/donate"
+                  (click)="closeMobileMenu()"
+                  routerLinkActive="text-primary-600 bg-primary-50"
+                  class="block rounded-md px-3 py-2 text-base font-medium text-gray-700 transition-colors duration-200 hover:bg-gray-50 hover:text-primary-600"
+                  role="menuitem"
+                >
+                  Support us
+                </a>
+                <a
+                  routerLink="/careers"
+                  (click)="closeMobileMenu()"
+                  routerLinkActive="text-primary-600 bg-primary-50"
+                  class="block rounded-md px-3 py-2 text-base font-medium text-gray-700 transition-colors duration-200 hover:bg-gray-50 hover:text-primary-600"
+                  role="menuitem"
+                >
+                  Careers
+                </a>
               </div>
+
+              <a
+                routerLink="/contact"
+                (click)="closeMobileMenu()"
+                routerLinkActive="text-primary-600 bg-primary-50"
+                class="btn-outline btn-sm justify-start text-base"
+                role="menuitem"
+              >
+                Book session
+              </a>
 
               @if (user()) {
                 <div class="border-t border-gray-200 mt-2 pt-2"></div>
