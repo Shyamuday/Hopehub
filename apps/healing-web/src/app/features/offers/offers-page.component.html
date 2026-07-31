@@ -24,9 +24,12 @@
           </div>
 
           <div class="offer-card__price">
-            <strong>{{ formatPrice(offer) }}</strong>
-            @if (offer.compareAtPriceInPaise) {
-              <del>{{ formatPrice({ ...offer, priceInPaise: offer.compareAtPriceInPaise }) }}</del>
+            <strong>{{ formatEffectivePrice(offer) }}</strong>
+            @if (discountInPaise(offer) > 0) {
+              <span>{{ offer.discountLabel || 'Offer applied' }}</span>
+            }
+            @if (offer.compareAtPriceInPaise || discountInPaise(offer) > 0) {
+              <del>{{ formatPrice({ ...offer, priceInPaise: offer.compareAtPriceInPaise || offer.priceInPaise }) }}</del>
             }
           </div>
 
@@ -35,6 +38,7 @@
             @if (offer.sessionDurationMinutes) { <span>{{ offer.sessionDurationMinutes }} min</span> }
             @if (offer.validityDays) { <span>{{ offer.validityDays }} days</span> }
             @if (offer.eventStartsAt) { <span>{{ offer.eventStartsAt | date: 'mediumDate' }}</span> }
+            @if (offer.partialPaymentEnabled) { <span>{{ offer.partialPaymentLabel || 'Partial payment' }}</span> }
           </div>
 
           <ul>

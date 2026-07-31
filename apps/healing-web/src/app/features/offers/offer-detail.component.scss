@@ -107,6 +107,12 @@ h1 {
   font-size: 2rem;
 }
 
+.checkout-card small {
+  color: #64748b;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
 .checkout-card a,
 .back-link {
   display: inline-flex;
@@ -117,6 +123,12 @@ h1 {
   padding: 0.8rem 1rem;
   font-weight: 850;
   text-decoration: none;
+}
+
+.checkout-card a.secondary {
+  border: 1px solid #bfdbfe;
+  background: #eff6ff;
+  color: #1d4ed8;
 }
 
 .detail-lists {

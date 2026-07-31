@@ -9,6 +9,7 @@ export type HopeHubBookingPayload = {
   servicePriceInPaise?: number;
   offeringId?: string;
   offeringSlug?: string;
+  paymentMode?: 'FULL' | 'PARTIAL';
   message?: string;
   appointmentDate: string;
   appointmentTime: string;
@@ -44,6 +45,18 @@ export type HopeHubOffering = {
   priceInPaise?: number | null;
   compareAtPriceInPaise?: number | null;
   currency: string;
+  discountEnabled: boolean;
+  discountType: string;
+  discountLabel?: string | null;
+  discountCode?: string | null;
+  discountPercent?: number | null;
+  discountFlatInPaise?: number | null;
+  discountMaxInPaise?: number | null;
+  partialPaymentEnabled: boolean;
+  partialPaymentType: string;
+  partialPaymentLabel?: string | null;
+  partialPaymentPercent?: number | null;
+  partialPaymentFlatInPaise?: number | null;
   validityDays?: number | null;
   sessionCount?: number | null;
   sessionDurationMinutes?: number | null;

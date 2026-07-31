@@ -84,6 +84,20 @@ enum HopeHubOrganizationLeadStatus {
   LOST
 }
 
+enum HopeHubDiscountType {
+  NONE
+  PERCENT
+  FLAT
+  REFERRAL
+  CUSTOM
+}
+
+enum HopeHubPartialPaymentType {
+  NONE
+  PERCENT
+  FLAT
+}
+
 model HopeHubOffering {
   id                     String              @id @default(cuid())
   code                   String              @unique
@@ -95,6 +109,18 @@ model HopeHubOffering {
   priceInPaise           Int?
   compareAtPriceInPaise  Int?
   currency               String              @default("INR")
+  discountEnabled        Boolean             @default(false)
+  discountType           HopeHubDiscountType  @default(NONE)
+  discountLabel          String?
+  discountCode           String?
+  discountPercent        Int?
+  discountFlatInPaise    Int?
+  discountMaxInPaise     Int?
+  partialPaymentEnabled  Boolean             @default(false)
+  partialPaymentType     HopeHubPartialPaymentType @default(NONE)
+  partialPaymentLabel    String?
+  partialPaymentPercent  Int?
+  partialPaymentFlatInPaise Int?
   validityDays           Int?
   sessionCount           Int?
   sessionDurationMinutes Int?

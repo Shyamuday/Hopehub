@@ -41,6 +41,24 @@
               </label>
               <label>Price (₹) <input type="number" name="price" [(ngModel)]="offerForm().priceRupees" /></label>
               <label>Original price (₹) <input type="number" name="compare" [(ngModel)]="offerForm().compareAtRupees" /></label>
+              <label>Discount type
+                <select name="discountType" [(ngModel)]="offerForm().discountType">
+                  @for (type of discountTypes; track type) { <option [value]="type">{{ type }}</option> }
+                </select>
+              </label>
+              <label>Discount label <input name="discountLabel" [(ngModel)]="offerForm().discountLabel" placeholder="Referral, launch offer" /></label>
+              <label>Discount code <input name="discountCode" [(ngModel)]="offerForm().discountCode" /></label>
+              <label>Discount % <input type="number" name="discountPercent" [(ngModel)]="offerForm().discountPercent" /></label>
+              <label>Flat discount (₹) <input type="number" name="discountFlat" [(ngModel)]="offerForm().discountFlatRupees" /></label>
+              <label>Max discount (₹) <input type="number" name="discountMax" [(ngModel)]="offerForm().discountMaxRupees" /></label>
+              <label>Partial type
+                <select name="partialType" [(ngModel)]="offerForm().partialPaymentType">
+                  @for (type of partialPaymentTypes; track type) { <option [value]="type">{{ type }}</option> }
+                </select>
+              </label>
+              <label>Partial label <input name="partialLabel" [(ngModel)]="offerForm().partialPaymentLabel" placeholder="Pay 40% today" /></label>
+              <label>Partial % <input type="number" name="partialPercent" [(ngModel)]="offerForm().partialPaymentPercent" /></label>
+              <label>Partial flat (₹) <input type="number" name="partialFlat" [(ngModel)]="offerForm().partialPaymentFlatRupees" /></label>
               <label>Validity days <input type="number" name="validity" [(ngModel)]="offerForm().validityDays" /></label>
               <label>Sessions <input type="number" name="sessions" [(ngModel)]="offerForm().sessionCount" /></label>
               <label>Session minutes <input type="number" name="minutes" [(ngModel)]="offerForm().sessionDurationMinutes" /></label>
@@ -61,6 +79,8 @@
               <label><input type="checkbox" name="active" [(ngModel)]="offerForm().isActive" /> Active</label>
               <label><input type="checkbox" name="featured" [(ngModel)]="offerForm().isFeatured" /> Featured</label>
               <label><input type="checkbox" name="lead" [(ngModel)]="offerForm().requiresLeadForm" /> Lead form only</label>
+              <label><input type="checkbox" name="discountEnabled" [(ngModel)]="offerForm().discountEnabled" /> Discount on</label>
+              <label><input type="checkbox" name="partialEnabled" [(ngModel)]="offerForm().partialPaymentEnabled" /> Partial payment on</label>
               <label>Sort <input type="number" name="sort" [(ngModel)]="offerForm().sortOrder" /></label>
             </div>
             <div class="actions">
@@ -77,6 +97,8 @@
                   <div>
                     <strong>{{ offer.title }}</strong>
                     <span>{{ offer.type }} / {{ formatPaise(offer.priceInPaise) }}</span>
+                    @if (offer.discountEnabled) { <span>Discount: {{ offer.discountLabel || offer.discountType }}</span> }
+                    @if (offer.partialPaymentEnabled) { <span>Partial: {{ offer.partialPaymentLabel || offer.partialPaymentType }}</span> }
                   </div>
                   <div class="row-actions">
                     @if (offer.isActive) { <span class="badge">Active</span> } @else { <span class="badge off">Off</span> }

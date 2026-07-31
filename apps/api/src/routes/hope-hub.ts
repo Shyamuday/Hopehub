@@ -62,6 +62,7 @@ const hopeHubBookingSchema = z.object({
   providerId: z.string().trim().min(1).max(120).optional().or(z.literal('')),
   offeringId: z.string().trim().min(1).max(120).optional().or(z.literal('')),
   offeringSlug: z.string().trim().min(1).max(160).optional().or(z.literal('')),
+  paymentMode: z.enum(['FULL', 'PARTIAL']).optional(),
   concernCategory: z.string().trim().max(160).optional().or(z.literal('')),
   preferredExpertType: z.string().trim().max(160).optional().or(z.literal('')),
   sessionMode: z.string().trim().max(80).optional().or(z.literal('')),
@@ -185,6 +186,120 @@ function hopeHubRevenueSplit(amountInPaise: number) {
     platformSharePercent: HOPE_HUB_PLATFORM_SHARE_PERCENT,
     psychologistShareInPaise,
     platformShareInPaise: amountInPaise - psychologistShareInPaise
+  };
+}
+
+function clampPaise(value: number, min: number, max: number) {
+  return Math.max(min, Math.min(max, Math.round(value)));
+}
+
+function hopeHubDiscountSnapshot(
+  offering: {
+    id: string;
+    code: string;
+    discountEnabled: boolean;
+    discountType: string;
+    discountLabel: string | null;
+    discountCode: string | null;
+    discountPercent: number | null;
+    discountFlatInPaise: number | null;
+    discountMaxInPaise: number | null;
+  } | null,
+  grossInPaise: number
+) {
+  if (!offering?.discountEnabled || offering.discountType === 'NONE' || grossInPaise <= 0) {
+    return { discountInPaise: 0, rule: null };
+  }
+
+  let discountInPaise = 0;
+  if (
+    (offering.discountType === 'PERCENT' ||
+      offering.discountType === 'REFERRAL' ||
+      offering.discountType === 'CUSTOM') &&
+    offering.discountPercent
+  ) {
+    discountInPaise = Math.round((grossInPaise * offering.discountPercent) / 100);
+  }
+  if (
+    (offering.discountType === 'FLAT' ||
+      offering.discountType === 'REFERRAL' ||
+      offering.discountType === 'CUSTOM') &&
+    offering.discountFlatInPaise
+  ) {
+    discountInPaise = Math.max(discountInPaise, offering.discountFlatInPaise);
+  }
+  if (offering.discountMaxInPaise) {
+    discountInPaise = Math.min(discountInPaise, offering.discountMaxInPaise);
+  }
+  discountInPaise = clampPaise(discountInPaise, 0, Math.max(0, grossInPaise - 100));
+  if (discountInPaise <= 0) return { discountInPaise: 0, rule: null };
+
+  return {
+    discountInPaise,
+    rule: {
+      source: 'hope-hub-offering',
+      offeringId: offering.id,
+      offeringCode: offering.code,
+      type: offering.discountType,
+      label: offering.discountLabel || 'Offer discount',
+      code: offering.discountCode || null,
+      percent: offering.discountPercent,
+      flatInPaise: offering.discountFlatInPaise,
+      maxInPaise: offering.discountMaxInPaise,
+      amountInPaise: discountInPaise
+    }
+  };
+}
+
+function hopeHubPartialPaymentSnapshot(
+  offering: {
+    partialPaymentEnabled: boolean;
+    partialPaymentType: string;
+    partialPaymentLabel: string | null;
+    partialPaymentPercent: number | null;
+    partialPaymentFlatInPaise: number | null;
+  } | null,
+  netInPaise: number,
+  requestedMode?: 'FULL' | 'PARTIAL'
+) {
+  if (
+    requestedMode !== 'PARTIAL' ||
+    !offering?.partialPaymentEnabled ||
+    offering.partialPaymentType === 'NONE' ||
+    netInPaise <= 0
+  ) {
+    return {
+      paymentMode: 'FULL' as const,
+      payableInPaise: netInPaise,
+      balanceDueInPaise: 0,
+      partialRule: null
+    };
+  }
+
+  let payableInPaise = netInPaise;
+  if (offering.partialPaymentType === 'PERCENT' && offering.partialPaymentPercent) {
+    payableInPaise = Math.round((netInPaise * offering.partialPaymentPercent) / 100);
+  }
+  if (offering.partialPaymentType === 'FLAT' && offering.partialPaymentFlatInPaise) {
+    payableInPaise = offering.partialPaymentFlatInPaise;
+  }
+  payableInPaise = clampPaise(payableInPaise, 100, netInPaise);
+  return {
+    paymentMode: payableInPaise < netInPaise ? ('PARTIAL' as const) : ('FULL' as const),
+    payableInPaise,
+    balanceDueInPaise: Math.max(0, netInPaise - payableInPaise),
+    partialRule:
+      payableInPaise < netInPaise
+        ? {
+            source: 'hope-hub-offering',
+            type: offering.partialPaymentType,
+            label: offering.partialPaymentLabel || 'Partial payment',
+            percent: offering.partialPaymentPercent,
+            flatInPaise: offering.partialPaymentFlatInPaise,
+            payableInPaise,
+            balanceDueInPaise: netInPaise - payableInPaise
+          }
+        : null
   };
 }
 
@@ -312,6 +427,18 @@ function offeringPublicPayload(offering: {
   priceInPaise: number | null;
   compareAtPriceInPaise: number | null;
   currency: string;
+  discountEnabled: boolean;
+  discountType: string;
+  discountLabel: string | null;
+  discountCode: string | null;
+  discountPercent: number | null;
+  discountFlatInPaise: number | null;
+  discountMaxInPaise: number | null;
+  partialPaymentEnabled: boolean;
+  partialPaymentType: string;
+  partialPaymentLabel: string | null;
+  partialPaymentPercent: number | null;
+  partialPaymentFlatInPaise: number | null;
   validityDays: number | null;
   sessionCount: number | null;
   sessionDurationMinutes: number | null;
@@ -387,6 +514,18 @@ const hopeHubOfferingSelect = {
   priceInPaise: true,
   compareAtPriceInPaise: true,
   currency: true,
+  discountEnabled: true,
+  discountType: true,
+  discountLabel: true,
+  discountCode: true,
+  discountPercent: true,
+  discountFlatInPaise: true,
+  discountMaxInPaise: true,
+  partialPaymentEnabled: true,
+  partialPaymentType: true,
+  partialPaymentLabel: true,
+  partialPaymentPercent: true,
+  partialPaymentFlatInPaise: true,
   validityDays: true,
   sessionCount: true,
   sessionDurationMinutes: true,
@@ -942,6 +1081,13 @@ hopeHubRouter.post(
     if (!amountInPaise || amountInPaise <= 0) {
       return res.status(400).json({ message: 'Selected offer cannot be paid online.' });
     }
+    const offerDiscount = hopeHubDiscountSnapshot(selectedOffering, amountInPaise);
+    const netAfterOfferDiscountInPaise = amountInPaise - offerDiscount.discountInPaise;
+    const partialPayment = hopeHubPartialPaymentSnapshot(
+      selectedOffering,
+      netAfterOfferDiscountInPaise,
+      body.paymentMode
+    );
     const requestedProvider = body.providerId
       ? await prisma.doctor.findFirst({
           where: {
@@ -1007,9 +1153,12 @@ hopeHubRouter.post(
 
     const checkout = await resolveConsultationCheckout({
       patientId: req.user!.id,
-      grossInPaise: amountInPaise
+      grossInPaise: partialPayment.payableInPaise
     });
-    const grossRevenueSplit = hopeHubRevenueSplit(checkout.grossAmountInPaise);
+    const chargeGrossInPaise = checkout.grossAmountInPaise;
+    const finalPayableInPaise = checkout.payableInPaise;
+    const totalDiscountInPaise = offerDiscount.discountInPaise + checkout.discountInPaise;
+    const grossRevenueSplit = hopeHubRevenueSplit(amountInPaise);
     const payableRevenueSplit = hopeHubRevenueSplit(checkout.payableInPaise);
 
     const consultation = await prisma.consultation.create({
@@ -1058,20 +1207,35 @@ hopeHubRouter.post(
           offeringTitle: selectedOffering?.title || null,
           serviceName: body.serviceName,
           sessionFeeInPaise: amountInPaise,
+          netAfterOfferDiscountInPaise,
+          paymentMode: partialPayment.paymentMode,
+          balanceDueInPaise: partialPayment.balanceDueInPaise,
           sessionDurationMinutes:
             selectedOffering?.sessionDurationMinutes || HOPE_HUB_SESSION_DURATION_MINUTES,
           sessionCount: selectedOffering?.sessionCount || 1,
           validityDays: selectedOffering?.validityDays || null,
           grossRevenueSplit,
           payableRevenueSplit,
-          checkout
+          checkout: {
+            ...checkout,
+            packageGrossInPaise: amountInPaise,
+            chargeGrossInPaise,
+            offerDiscountInPaise: offerDiscount.discountInPaise,
+            checkoutDiscountInPaise: checkout.discountInPaise,
+            totalDiscountInPaise,
+            payableTodayInPaise: finalPayableInPaise,
+            balanceDueInPaise: partialPayment.balanceDueInPaise,
+            paymentMode: partialPayment.paymentMode
+          },
+          offerDiscountRule: offerDiscount.rule,
+          partialPaymentRule: partialPayment.partialRule
         },
         payment: {
           create: {
-            grossAmountInPaise: checkout.grossAmountInPaise,
+            grossAmountInPaise: chargeGrossInPaise,
             discountInPaise: checkout.discountInPaise,
             walletRedeemedInPaise: checkout.walletRedeemedInPaise,
-            amountInPaise: checkout.payableInPaise,
+            amountInPaise: finalPayableInPaise,
             billingPlanCode: selectedPlanCode,
             appliedRules: checkout.appliedRules,
             lineItems: {
@@ -1088,15 +1252,28 @@ hopeHubRouter.post(
                 selectedOffering?.sessionDurationMinutes || HOPE_HUB_SESSION_DURATION_MINUTES,
               sessionCount: selectedOffering?.sessionCount || 1,
               validityDays: selectedOffering?.validityDays || null,
-              consultationFeeInPaise: checkout.grossAmountInPaise,
-              discountInPaise: checkout.discountInPaise,
+              packageGrossInPaise: amountInPaise,
+              consultationFeeInPaise: chargeGrossInPaise,
+              offerDiscountInPaise: offerDiscount.discountInPaise,
+              checkoutDiscountInPaise: checkout.discountInPaise,
+              discountInPaise: totalDiscountInPaise,
               walletRedeemedInPaise: checkout.walletRedeemedInPaise,
-              payableInPaise: checkout.payableInPaise,
+              netAfterOfferDiscountInPaise,
+              paymentMode: partialPayment.paymentMode,
+              payableTodayInPaise: finalPayableInPaise,
+              balanceDueInPaise: partialPayment.balanceDueInPaise,
+              payableInPaise: finalPayableInPaise,
               grossRevenueSplit,
               payableRevenueSplit,
               planCode: selectedPlanCode,
               planName: selectedPlanName,
-              appliedRules: checkout.appliedRules
+              offerDiscountRule: offerDiscount.rule,
+              partialPaymentRule: partialPayment.partialRule,
+              appliedRules: [
+                offerDiscount.rule,
+                partialPayment.partialRule,
+                ...checkout.appliedRules
+              ].filter(Boolean)
             },
             status: PaymentStatus.CREATED
           }

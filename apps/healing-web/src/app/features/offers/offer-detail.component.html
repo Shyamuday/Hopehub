@@ -26,9 +26,12 @@
 
       <aside class="checkout-card">
         <span>Starting at</span>
-        <strong>{{ formatPrice(offer) }}</strong>
-        @if (offer.compareAtPriceInPaise) {
-          <del>{{ formatPrice({ ...offer, priceInPaise: offer.compareAtPriceInPaise }) }}</del>
+        <strong>{{ formatNetPrice(offer) }}</strong>
+        @if (discountInPaise(offer) > 0) {
+          <small>{{ offer.discountLabel || 'Offer applied' }}</small>
+        }
+        @if (offer.compareAtPriceInPaise || discountInPaise(offer) > 0) {
+          <del>{{ formatPrice({ ...offer, priceInPaise: offer.compareAtPriceInPaise || offer.priceInPaise }) }}</del>
         }
 
         @if (offer.requiresLeadForm || offer.type === 'ORGANISATION_PROGRAM') {
@@ -36,9 +39,19 @@
             {{ offer.ctaLabel || 'Request a call' }}
           </a>
         } @else {
-          <a routerLink="/contact" [queryParams]="bookingQuery(offer)">
-            {{ offer.ctaLabel || 'Book now' }}
-          </a>
+          @if (partialAmountInPaise(offer)) {
+            <a routerLink="/contact" [queryParams]="bookingQuery(offer, 'PARTIAL')">
+              Pay {{ formatPartialAmount(offer) }}
+            </a>
+            <a class="secondary" routerLink="/contact" [queryParams]="bookingQuery(offer, 'FULL')">
+              Pay full
+            </a>
+            <small>{{ offer.partialPaymentLabel || 'Balance can be paid later' }}</small>
+          } @else {
+            <a routerLink="/contact" [queryParams]="bookingQuery(offer, 'FULL')">
+              {{ offer.ctaLabel || 'Book now' }}
+            </a>
+          }
         }
       </aside>
     </section>

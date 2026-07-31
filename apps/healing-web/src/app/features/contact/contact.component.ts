@@ -149,6 +149,7 @@ export class ContactComponent implements OnInit {
         price: params['price'] || '',
         offering: params['offering'] || '',
         offeringId: params['offeringId'] || '',
+        paymentMode: params['paymentMode'] || 'FULL',
         source: params['source'] || '',
       });
     });
@@ -350,6 +351,7 @@ export class ContactComponent implements OnInit {
           servicePriceInPaise: this.resolveServicePriceInPaise(serviceName),
           offeringId: data.offeringId || '',
           offeringSlug: data.offering || '',
+          paymentMode: data.paymentMode === 'PARTIAL' ? 'PARTIAL' : 'FULL',
           message: bookingMessage,
           appointmentDate: this.formatLocalDate(appointment.date),
           appointmentTime: appointment.time,
@@ -444,6 +446,15 @@ export class ContactComponent implements OnInit {
       return this.paymentFlowError() || 'Payment could not be completed. You can retry safely.';
     }
     return '';
+  }
+
+  paymentButtonLabel(): string {
+    if (!this.selectedAppointment()) {
+      return this.contactForm.get('serviceInterest')?.value
+        ? 'Choose slot to pay'
+        : 'Book a session';
+    }
+    return this.prefilledData().paymentMode === 'PARTIAL' ? 'Book and pay deposit' : 'Book and pay';
   }
 
   private async submitLead(formData: ContactForm): Promise<void> {

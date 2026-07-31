@@ -1,8 +1,10 @@
 import { Router } from 'express';
 import {
+  HopeHubDiscountType,
   HopeHubDeliveryMode,
   HopeHubOfferingType,
   HopeHubOrganizationLeadStatus,
+  HopeHubPartialPaymentType,
   Prisma,
   Role
 } from '@prisma/client';
@@ -45,6 +47,20 @@ const offeringSchema = z.object({
   priceInPaise: z.number().int().min(0).nullable().optional(),
   compareAtPriceInPaise: z.number().int().min(0).nullable().optional(),
   currency: z.string().trim().min(3).max(3).default('INR'),
+  discountEnabled: z.boolean().default(false),
+  discountType: z.nativeEnum(HopeHubDiscountType).default(HopeHubDiscountType.NONE),
+  discountLabel: emptyToNull,
+  discountCode: emptyToNull,
+  discountPercent: z.number().int().min(1).max(100).nullable().optional(),
+  discountFlatInPaise: z.number().int().min(0).nullable().optional(),
+  discountMaxInPaise: z.number().int().min(0).nullable().optional(),
+  partialPaymentEnabled: z.boolean().default(false),
+  partialPaymentType: z
+    .nativeEnum(HopeHubPartialPaymentType)
+    .default(HopeHubPartialPaymentType.NONE),
+  partialPaymentLabel: emptyToNull,
+  partialPaymentPercent: z.number().int().min(1).max(100).nullable().optional(),
+  partialPaymentFlatInPaise: z.number().int().min(0).nullable().optional(),
   validityDays: z.number().int().positive().nullable().optional(),
   sessionCount: z.number().int().positive().nullable().optional(),
   sessionDurationMinutes: z.number().int().positive().nullable().optional(),

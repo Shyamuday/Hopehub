@@ -59,6 +59,29 @@ export class OffersPageComponent implements OnInit {
     }).format(offer.priceInPaise / 100);
   }
 
+  effectivePriceInPaise(offer: HopeHubOffering): number | null {
+    if (offer.priceInPaise == null) return null;
+    return Math.max(0, offer.priceInPaise - this.discountInPaise(offer));
+  }
+
+  formatEffectivePrice(offer: HopeHubOffering): string {
+    const price = this.effectivePriceInPaise(offer);
+    return price == null ? 'Custom quote' : this.formatPrice({ ...offer, priceInPaise: price });
+  }
+
+  discountInPaise(offer: HopeHubOffering): number {
+    if (!offer.discountEnabled || offer.discountType === 'NONE' || !offer.priceInPaise) return 0;
+    let amount = 0;
+    if (['PERCENT', 'REFERRAL', 'CUSTOM'].includes(offer.discountType) && offer.discountPercent) {
+      amount = Math.round((offer.priceInPaise * offer.discountPercent) / 100);
+    }
+    if (['FLAT', 'REFERRAL', 'CUSTOM'].includes(offer.discountType) && offer.discountFlatInPaise) {
+      amount = Math.max(amount, offer.discountFlatInPaise);
+    }
+    if (offer.discountMaxInPaise) amount = Math.min(amount, offer.discountMaxInPaise);
+    return Math.max(0, Math.min(amount, offer.priceInPaise - 100));
+  }
+
   private load(): void {
     this.loading.set(true);
     const types =

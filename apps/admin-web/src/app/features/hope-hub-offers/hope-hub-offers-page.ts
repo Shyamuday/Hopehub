@@ -25,6 +25,8 @@ const DELIVERY_MODES = [
   'CUSTOM',
 ];
 
+const DISCOUNT_TYPES = ['NONE', 'PERCENT', 'FLAT', 'REFERRAL', 'CUSTOM'];
+const PARTIAL_PAYMENT_TYPES = ['NONE', 'PERCENT', 'FLAT'];
 const LEAD_STATUSES = ['NEW', 'CONTACTED', 'PROPOSAL_SENT', 'WON', 'LOST'];
 
 @Component({
@@ -46,6 +48,8 @@ export class HopeHubOffersPage implements OnInit {
   readonly leads = signal<any[]>([]);
   readonly offerTypes = OFFER_TYPES;
   readonly deliveryModes = DELIVERY_MODES;
+  readonly discountTypes = DISCOUNT_TYPES;
+  readonly partialPaymentTypes = PARTIAL_PAYMENT_TYPES;
   readonly leadStatuses = LEAD_STATUSES;
 
   readonly offerForm = signal(this.emptyOffer());
@@ -82,6 +86,11 @@ export class HopeHubOffersPage implements OnInit {
       priceRupees: offer.priceInPaise == null ? null : offer.priceInPaise / 100,
       compareAtRupees:
         offer.compareAtPriceInPaise == null ? null : offer.compareAtPriceInPaise / 100,
+      discountFlatRupees:
+        offer.discountFlatInPaise == null ? null : offer.discountFlatInPaise / 100,
+      discountMaxRupees: offer.discountMaxInPaise == null ? null : offer.discountMaxInPaise / 100,
+      partialPaymentFlatRupees:
+        offer.partialPaymentFlatInPaise == null ? null : offer.partialPaymentFlatInPaise / 100,
       benefitsText: (offer.benefits || []).join('\n'),
       audienceText: (offer.audience || []).join('\n'),
       eventStartsAt: this.inputDateTime(offer.eventStartsAt),
@@ -115,6 +124,25 @@ export class HopeHubOffersPage implements OnInit {
         compareAtPriceInPaise:
           form.compareAtRupees == null ? null : Math.round(Number(form.compareAtRupees) * 100),
         currency: form.currency || 'INR',
+        discountEnabled: Boolean(form.discountEnabled),
+        discountType: form.discountEnabled ? form.discountType || 'NONE' : 'NONE',
+        discountLabel: form.discountLabel || null,
+        discountCode: form.discountCode || null,
+        discountPercent: this.numberOrNull(form.discountPercent),
+        discountFlatInPaise:
+          form.discountFlatRupees == null
+            ? null
+            : Math.round(Number(form.discountFlatRupees) * 100),
+        discountMaxInPaise:
+          form.discountMaxRupees == null ? null : Math.round(Number(form.discountMaxRupees) * 100),
+        partialPaymentEnabled: Boolean(form.partialPaymentEnabled),
+        partialPaymentType: form.partialPaymentEnabled ? form.partialPaymentType || 'NONE' : 'NONE',
+        partialPaymentLabel: form.partialPaymentLabel || null,
+        partialPaymentPercent: this.numberOrNull(form.partialPaymentPercent),
+        partialPaymentFlatInPaise:
+          form.partialPaymentFlatRupees == null
+            ? null
+            : Math.round(Number(form.partialPaymentFlatRupees) * 100),
         validityDays: this.numberOrNull(form.validityDays),
         sessionCount: this.numberOrNull(form.sessionCount),
         sessionDurationMinutes: this.numberOrNull(form.sessionDurationMinutes),
@@ -219,6 +247,18 @@ export class HopeHubOffersPage implements OnInit {
       priceRupees: null as number | null,
       compareAtRupees: null as number | null,
       currency: 'INR',
+      discountEnabled: false,
+      discountType: 'NONE',
+      discountLabel: '',
+      discountCode: '',
+      discountPercent: null as number | null,
+      discountFlatRupees: null as number | null,
+      discountMaxRupees: null as number | null,
+      partialPaymentEnabled: false,
+      partialPaymentType: 'NONE',
+      partialPaymentLabel: '',
+      partialPaymentPercent: null as number | null,
+      partialPaymentFlatRupees: null as number | null,
       validityDays: null as number | null,
       sessionCount: null as number | null,
       sessionDurationMinutes: 30 as number | null,
