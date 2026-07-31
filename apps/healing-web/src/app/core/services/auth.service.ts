@@ -46,8 +46,10 @@ type GoogleIdentityApi = {
         callback: (response: GoogleCredentialResponse) => void;
         auto_select?: boolean;
         cancel_on_tap_outside?: boolean;
+        use_fedcm_for_prompt?: boolean;
       }): void;
       prompt(callback?: (notification: GooglePromptMomentNotification) => void): void;
+      renderButton(parent: HTMLElement, options: Record<string, unknown>): void;
     };
   };
 };
@@ -468,10 +470,7 @@ export class AuthService {
 
     const clientId = await this.getGoogleClientId();
     if (!clientId) {
-      throw this.makeError(
-        'GOOGLE_NOT_CONFIGURED',
-        'Google sign-in is not configured yet. Please add GOOGLE_CLIENT_ID.',
-      );
+      throw this.makeError('GOOGLE_NOT_CONFIGURED', 'Google sign-in is not configured yet.');
     }
 
     await this.loadGoogleIdentityScript();
@@ -484,47 +483,85 @@ export class AuthService {
     return new Promise<string>((resolve, reject) => {
       let settled = false;
 
+      // Initialize with FedCM (avoids implicit grant warning)
       googleAccounts.id.initialize({
         client_id: clientId,
         auto_select: false,
         cancel_on_tap_outside: true,
+        use_fedcm_for_prompt: true,
         callback: (response) => {
           if (settled) return;
           settled = true;
-
           if (response.credential) {
             resolve(response.credential);
-            return;
+          } else {
+            reject(
+              this.makeError('GOOGLE_TOKEN_MISSING', 'Google did not return a sign-in token.'),
+            );
           }
-
-          reject(this.makeError('GOOGLE_TOKEN_MISSING', 'Google did not return a sign-in token.'));
         },
       });
 
-      googleAccounts.id.prompt((notification) => {
-        if (settled) return;
+      // Render a hidden button and programmatically click it
+      // This is the recommended approach over prompt() for SPAs
+      const container = document.createElement('div');
+      container.style.cssText = 'position:fixed;top:-9999px;left:-9999px;visibility:hidden';
+      document.body.appendChild(container);
 
-        if (notification.isNotDisplayed()) {
-          settled = true;
-          reject(
-            this.makeError(
-              'GOOGLE_PROMPT_NOT_DISPLAYED',
-              `Google sign-in could not open: ${notification.getNotDisplayedReason()}.`,
-            ),
-          );
-          return;
-        }
-
-        if (notification.isSkippedMoment()) {
-          settled = true;
-          reject(
-            this.makeError(
-              'GOOGLE_PROMPT_SKIPPED',
-              `Google sign-in was skipped: ${notification.getSkippedReason()}.`,
-            ),
-          );
-        }
+      googleAccounts.id.renderButton(container, {
+        type: 'standard',
+        theme: 'outline',
+        size: 'large',
       });
+
+      const btn = container.querySelector<HTMLElement>('[role="button"], div[tabindex]');
+      if (btn) {
+        btn.click();
+      } else {
+        // Fallback to prompt if renderButton didn't produce a clickable element
+        googleAccounts.id.prompt((notification) => {
+          if (settled) return;
+          if (notification.isNotDisplayed()) {
+            settled = true;
+            document.body.removeChild(container);
+            reject(
+              this.makeError(
+                'GOOGLE_PROMPT_NOT_DISPLAYED',
+                `Google sign-in could not open: ${notification.getNotDisplayedReason()}.`,
+              ),
+            );
+          } else if (notification.isSkippedMoment()) {
+            settled = true;
+            document.body.removeChild(container);
+            reject(
+              this.makeError(
+                'GOOGLE_PROMPT_SKIPPED',
+                `Google sign-in was skipped: ${notification.getSkippedReason()}.`,
+              ),
+            );
+          }
+        });
+      }
+
+      // Cleanup container after resolution
+      const originalResolve = resolve;
+      const originalReject = reject;
+      resolve = (v) => {
+        try {
+          document.body.removeChild(container);
+        } catch {
+          /**/
+        }
+        originalResolve(v);
+      };
+      reject = (e) => {
+        try {
+          document.body.removeChild(container);
+        } catch {
+          /**/
+        }
+        originalReject(e);
+      };
     });
   }
 
