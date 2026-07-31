@@ -68,6 +68,10 @@ export class LoginComponent implements OnInit {
 
   async onSubmit(): Promise<void> {
     if (this.loginMode() === 'otp') {
+      if (!this.otpSent()) {
+        await this.sendOtp();
+        return;
+      }
       await this.verifyOtp();
       return;
     }
@@ -114,6 +118,14 @@ export class LoginComponent implements OnInit {
       this.otpSentTo.set('');
       this.loginForm.patchValue({ otp: '' }, { emitEvent: false });
     }
+  }
+
+  changeOtpEmail(): void {
+    this.otpSent.set(false);
+    this.otpSentTo.set('');
+    this.statusMessage.set(null);
+    this.errorMessage.set(null);
+    this.loginForm.patchValue({ otp: '' }, { emitEvent: false });
   }
 
   async sendOtp(): Promise<void> {

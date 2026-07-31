@@ -115,14 +115,15 @@
                     </div>
                 </div>
                 } @else {
-                <div>
-                    <app-button type="button" variant="outline" size="sm" (click)="sendOtp()" [disabled]="isLoading() || !loginForm.get('email')?.valid" [loading]="isLoading()" block>
-                        {{ otpSent() ? 'Resend code' : 'Send code' }}
-                    </app-button>
+                <div class="otp-step">
                     @if (statusMessage()) {
                         <p class="mt-2 text-sm text-green-700">{{ statusMessage() }}</p>
                     }
                     @if (otpSent()) {
+                        <div class="otp-step__meta">
+                            <span>Code sent to {{ otpSentTo() }}</span>
+                            <button type="button" (click)="changeOtpEmail()">Change email</button>
+                        </div>
                         <label for="otp" class="sr-only">OTP</label>
                         <input
                             id="otp"
@@ -139,6 +140,14 @@
                                 <span>Enter the code.</span>
                             }
                         </div>
+                        <button
+                            type="button"
+                            class="otp-step__resend"
+                            (click)="sendOtp()"
+                            [disabled]="isLoading() || !loginForm.get('email')?.valid"
+                        >
+                            Resend code
+                        </button>
                     }
                 </div>
                 }
@@ -170,12 +179,12 @@
             <div>
                 <app-button
                     type="submit"
-                    [disabled]="isLoading() || (loginMode() === 'password' ? loginForm.invalid : (!loginForm.get('email')?.valid || !otpSent() || !loginForm.get('otp')?.value))"
+                    [disabled]="isLoading() || (loginMode() === 'password' ? loginForm.invalid : (!loginForm.get('email')?.valid || (otpSent() && !loginForm.get('otp')?.value)))"
                     [loading]="isLoading()"
                     size="sm"
                     block
                 >
-                {{ isLoading() ? 'Please wait...' : (loginMode() === 'otp' ? 'Continue' : 'Sign in') }}
+                {{ isLoading() ? 'Please wait...' : (loginMode() === 'otp' ? (otpSent() ? 'Continue' : 'Send code') : 'Sign in') }}
                 </app-button>
             </div>
 
