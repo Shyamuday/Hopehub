@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { environment } from '../../../environments/environment';
 import { BookingService, HopeHubProvider } from '../../core/services/booking.service';
+import { NotificationService } from '../../core/services/notification.service';
 
 @Component({
   selector: 'app-psychologist-detail',
@@ -14,6 +15,7 @@ export class PsychologistDetailComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly booking = inject(BookingService);
+  private readonly notificationService = inject(NotificationService);
 
   readonly provider = signal<HopeHubProvider | null>(null);
   readonly loading = signal(false);
@@ -22,7 +24,9 @@ export class PsychologistDetailComponent implements OnInit {
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
     if (!id) {
-      this.error.set('Provider not found.');
+      const message = 'Provider not found.';
+      this.error.set(message);
+      this.notificationService.error(message);
       return;
     }
     this.loading.set(true);
@@ -32,7 +36,9 @@ export class PsychologistDetailComponent implements OnInit {
         this.loading.set(false);
       },
       error: () => {
-        this.error.set('Could not load this profile.');
+        const message = 'Could not load this profile.';
+        this.error.set(message);
+        this.notificationService.error(message);
         this.loading.set(false);
       },
     });
@@ -52,11 +58,16 @@ export class PsychologistDetailComponent implements OnInit {
         serviceName: 'Mental wellness session',
         consultant: provider.name,
         providerId: provider.id,
-        duration: `${provider.sessionDurationMinutes ?? 30} minutes`,
+        duration: this.sessionLabel(provider),
         price: (provider.sessionFeeInPaise ?? 50000) / 100,
         source: 'psychologist-profile',
       },
     });
+  }
+
+  sessionLabel(provider: HopeHubProvider): string {
+    const minutes = provider.sessionDurationMinutes ?? 30;
+    return minutes === 30 ? '30 min + 15 min follow-up' : `${minutes} min session`;
   }
 
   listOrFallback(items: string[] | undefined, fallback: string[]) {

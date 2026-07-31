@@ -5,7 +5,7 @@ import { RouterLink } from '@angular/router';
 import {
   clinicalRecordsQuery,
   doctorAppointmentUrl,
-  doctorCaseAnalysisUrl
+  doctorCaseAnalysisUrl,
 } from '@hopehub/platform-ui';
 import { AdminApi } from '../../../core/services/admin-api';
 import { adminRouteLink, ROUTE_PATHS } from '../../../core/constants/app-routes.constants';
@@ -13,14 +13,14 @@ import { environment } from '../../../../environments/environment';
 import {
   CONSULTATION_PAYMENT_STYLES,
   CONSULTATION_STATUS_FALLBACK_STYLE,
-  CONSULTATION_STATUS_STYLES
+  CONSULTATION_STATUS_STYLES,
 } from '../constants/consultation-status.constants';
 
 @Component({
   selector: 'app-consultations-page',
   imports: [FormField, DatePipe, RouterLink],
   templateUrl: './consultations-page.html',
-  styleUrl: './consultations-page.scss'
+  styleUrl: './consultations-page.scss',
 })
 export class ConsultationsPage implements OnInit {
   private api = inject(AdminApi);
@@ -68,7 +68,7 @@ export class ConsultationsPage implements OnInit {
     { label: 'Assigned', value: 'ASSIGNED' },
     { label: 'In progress', value: 'IN_PROGRESS' },
     { label: 'Completed', value: 'COMPLETED' },
-    { label: 'Cancelled', value: 'CANCELLED' }
+    { label: 'Cancelled', value: 'CANCELLED' },
   ];
   statusOptions = [
     'PAYMENT_PENDING',
@@ -77,34 +77,43 @@ export class ConsultationsPage implements OnInit {
     'IN_PROGRESS',
     'PRESCRIPTION_UPLOADED',
     'COMPLETED',
-    'CANCELLED'
+    'CANCELLED',
   ];
   assignedFilters = [
     { label: 'All', value: '' },
     { label: 'Unassigned', value: 'no' },
-    { label: 'Assigned', value: 'yes' }
+    { label: 'Assigned', value: 'yes' },
   ];
 
   private searchTimer: ReturnType<typeof setTimeout> | null = null;
 
-  ngOnInit(): void { this.load(); this.loadUnassignedCount(); }
+  ngOnInit(): void {
+    this.load();
+    this.loadUnassignedCount();
+  }
 
   load(): void {
     this.loading.set(true);
-    this.api.getAdminConsultations({
-      status: this.statusFilter(),
-      assigned: this.assignedFilter(),
-      q: this.searchModel().q,
-      page: this.page(),
-      pageSize: this.pageSize
-    })
-      .then(r => { this.consultations.set(r.consultations); this.total.set(r.total); this.loading.set(false); })
+    this.api
+      .getAdminConsultations({
+        status: this.statusFilter(),
+        assigned: this.assignedFilter(),
+        q: this.searchModel().q,
+        page: this.page(),
+        pageSize: this.pageSize,
+      })
+      .then((r) => {
+        this.consultations.set(r.consultations);
+        this.total.set(r.total);
+        this.loading.set(false);
+      })
       .catch(() => this.loading.set(false));
   }
 
   loadUnassignedCount(): void {
-    this.api.getAdminConsultations({ assigned: 'no', status: 'PAID', pageSize: 1 })
-      .then(r => this.unassignedCount.set(r.total))
+    this.api
+      .getAdminConsultations({ assigned: 'no', status: 'PAID', pageSize: 1 })
+      .then((r) => this.unassignedCount.set(r.total))
       .catch(() => {});
   }
 
@@ -113,11 +122,31 @@ export class ConsultationsPage implements OnInit {
     this.searchTimer = setTimeout(() => this.load(), 300);
   }
 
-  setStatus(v: string): void { this.statusFilter.set(v); this.page.set(1); this.load(); }
-  setAssigned(v: string): void { this.assignedFilter.set(v); this.page.set(1); this.load(); }
-  prevPage(): void { if (this.page() > 1) { this.page.update(p => p - 1); this.load(); } }
-  nextPage(): void { if (this.page() < this.totalPages()) { this.page.update(p => p + 1); this.load(); } }
-  totalPages(): number { return Math.ceil(this.total() / this.pageSize); }
+  setStatus(v: string): void {
+    this.statusFilter.set(v);
+    this.page.set(1);
+    this.load();
+  }
+  setAssigned(v: string): void {
+    this.assignedFilter.set(v);
+    this.page.set(1);
+    this.load();
+  }
+  prevPage(): void {
+    if (this.page() > 1) {
+      this.page.update((p) => p - 1);
+      this.load();
+    }
+  }
+  nextPage(): void {
+    if (this.page() < this.totalPages()) {
+      this.page.update((p) => p + 1);
+      this.load();
+    }
+  }
+  totalPages(): number {
+    return Math.ceil(this.total() / this.pageSize);
+  }
 
   ss(s: string): { bg: string; color: string } {
     return CONSULTATION_STATUS_STYLES[s] ?? CONSULTATION_STATUS_FALLBACK_STYLE;
@@ -134,8 +163,9 @@ export class ConsultationsPage implements OnInit {
     this.modal.set(true);
     if (this.doctors().length === 0) {
       this.doctorsLoading.set(true);
-      this.api.getActiveDoctors()
-        .then(r => {
+      this.api
+        .getActiveDoctors()
+        .then((r) => {
           this.doctors.set(r.doctors);
           this.filteredDoctors.set(r.doctors);
           this.doctorsLoading.set(false);
@@ -149,11 +179,14 @@ export class ConsultationsPage implements OnInit {
   filterDoctors(): void {
     const q = this.doctorSearchModel().q.toLowerCase();
     this.filteredDoctors.set(
-      q ? this.doctors().filter(d => d.name.toLowerCase().includes(q)) : this.doctors()
+      q ? this.doctors().filter((d) => d.name.toLowerCase().includes(q)) : this.doctors(),
     );
   }
 
-  closeModal(): void { this.modal.set(false); this.statusModal.set(false); }
+  closeModal(): void {
+    this.modal.set(false);
+    this.statusModal.set(false);
+  }
 
   openStatus(c: any): void {
     this.selectedConsult.set(c);
@@ -169,10 +202,12 @@ export class ConsultationsPage implements OnInit {
     try {
       const r = await this.api.updateConsultationStatus(
         this.selectedConsult()!.id,
-        this.statusModel().value
+        this.statusModel().value,
       );
-      this.consultations.update(list =>
-        list.map(c => c.id === this.selectedConsult()!.id ? { ...c, status: r.consultation.status } : c)
+      this.consultations.update((list) =>
+        list.map((c) =>
+          c.id === this.selectedConsult()!.id ? { ...c, status: r.consultation.status } : c,
+        ),
       );
       this.statusModal.set(false);
       this.showToast('Status updated ✓');
@@ -188,9 +223,16 @@ export class ConsultationsPage implements OnInit {
     this.saving.set(true);
     this.err.set('');
     try {
-      const r = await this.api.assignConsultationDoctor(this.selectedConsult()!.id, this.selectedDoctorId());
-      this.consultations.update(list =>
-        list.map(c => c.id === this.selectedConsult()!.id ? { ...c, assignedDoctor: r.consultation.assignedDoctor, status: r.consultation.status } : c)
+      const r = await this.api.assignConsultationDoctor(
+        this.selectedConsult()!.id,
+        this.selectedDoctorId(),
+      );
+      this.consultations.update((list) =>
+        list.map((c) =>
+          c.id === this.selectedConsult()!.id
+            ? { ...c, assignedDoctor: r.consultation.assignedDoctor, status: r.consultation.status }
+            : c,
+        ),
       );
       this.modal.set(false);
       this.loadUnassignedCount();
@@ -207,11 +249,14 @@ export class ConsultationsPage implements OnInit {
     setTimeout(() => this.toast.set(''), 2500);
   }
 
-  clinicalQuery(consultation: { id: string; patient?: { id?: string } | null }, tab: 'prescriptions' | 'analyses' = 'prescriptions') {
+  clinicalQuery(
+    consultation: { id: string; patient?: { id?: string } | null },
+    tab: 'prescriptions' | 'analyses' = 'prescriptions',
+  ) {
     return clinicalRecordsQuery({
       tab,
       patientId: consultation.patient?.id,
-      consultationId: consultation.id
+      consultationId: consultation.id,
     });
   }
 
@@ -233,5 +278,53 @@ export class ConsultationsPage implements OnInit {
 
   isCardMenuOpen(consultationId: string) {
     return this.expandedCardId() === consultationId;
+  }
+
+  packageUsage(c: any) {
+    return c?.pricingSnapshot?.packageUsage || c?.payment?.lineItems?.packageUsage || null;
+  }
+
+  balanceDueInPaise(c: any): number {
+    return Number(
+      c?.pricingSnapshot?.balanceDueInPaise ?? c?.payment?.lineItems?.balanceDueInPaise ?? 0,
+    );
+  }
+
+  formatPaise(value: number): string {
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      maximumFractionDigits: 0,
+    }).format((value || 0) / 100);
+  }
+
+  async adjustPackageUsage(c: any, delta: number): Promise<void> {
+    const usage = this.packageUsage(c);
+    if (!usage || this.saving()) return;
+    const total = Number(usage.totalSessions || 0);
+    const current = Number(usage.usedSessions || 0);
+    const next = Math.max(0, Math.min(total, current + delta));
+    this.saving.set(true);
+    try {
+      const result = await this.api.updateHopeHubPackageUsage(c.id, next);
+      this.consultations.update((list) =>
+        list.map((item) =>
+          item.id === c.id
+            ? {
+                ...item,
+                pricingSnapshot: {
+                  ...(item.pricingSnapshot || {}),
+                  packageUsage: result.packageUsage,
+                },
+              }
+            : item,
+        ),
+      );
+      this.showToast('Package usage updated ✓');
+    } catch (e: any) {
+      this.err.set(e?.error?.message ?? 'Package usage update failed');
+    } finally {
+      this.saving.set(false);
+    }
   }
 }

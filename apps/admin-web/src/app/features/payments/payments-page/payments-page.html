@@ -125,9 +125,19 @@
         <div><span>Amount</span><strong>₹{{ formatPaise(selected.amountInPaise) }}</strong></div>
         <div><span>Refunded</span><strong>₹{{ formatPaise(selected.refundedAmountInPaise || 0) }}</strong></div>
         <div><span>Refundable</span><strong>₹{{ formatPaise(refundableAmount(selected)) }}</strong></div>
+        <div><span>Balance due</span><strong>₹{{ formatPaise(balanceDueInPaise(selected)) }}</strong></div>
         <div><span>Order</span><strong>{{ selected.providerOrderId || '—' }}</strong></div>
         <div><span>Payment</span><strong>{{ selected.providerPaymentId || '—' }}</strong></div>
       </div>
+
+      @if (packageUsage(selected); as usage) {
+        <div class="muted-panel">
+          Package usage: {{ usage.usedSessions || 0 }}/{{ usage.totalSessions || 0 }} sessions used.
+          @if (usage.validUntil) {
+            Valid till {{ usage.validUntil | date:'mediumDate' }}.
+          }
+        </div>
+      }
 
       @if (canRefund(selected)) {
         <form class="refund-form" (submit)="$event.preventDefault(); submitRefund()">

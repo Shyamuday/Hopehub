@@ -8,3 +8,4 @@ export * from './realtime.service';
 export * from './auth-modal.service';
 export * from './auth.service';
 export * from './seo.service';
+export * from './notification.service';

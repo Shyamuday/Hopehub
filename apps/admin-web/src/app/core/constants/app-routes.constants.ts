@@ -14,6 +14,8 @@ export const ROUTE_PATHS = {
   ONLINE_DOCTORS: 'online-doctors',
   PAYROLL: 'payroll',
   RATES: 'rates',
+  HOPE_HUB_OFFERS: 'hope-hub-offers',
+  ASSESSMENT_DEFINITIONS: 'assessment-definitions',
   PAYMENTS: 'payments',
   FINANCE: 'finance',
   AUDIT: 'audit',
@@ -68,6 +70,8 @@ export const NAV_ITEMS = [
   { path: adminNavPath(ROUTE_PATHS.SCAN), label: 'Scan patient' },
   { path: adminNavPath(ROUTE_PATHS.DISEASES), label: 'Services / Diseases' },
   { path: adminNavPath(ROUTE_PATHS.RATES), label: '💲 Rates & Pay' },
+  { path: adminNavPath(ROUTE_PATHS.HOPE_HUB_OFFERS), label: '🧠 Healing Hub Offers' },
+  { path: adminNavPath(ROUTE_PATHS.ASSESSMENT_DEFINITIONS), label: 'Assessments' },
   { path: adminNavPath(ROUTE_PATHS.REWARDS), label: '🎁 Rewards & Referrals' },
   { path: adminNavPath(ROUTE_PATHS.CLINICAL_RECORDS), label: '📋 Clinical Records' },
   { path: adminNavPath(ROUTE_PATHS.VACANCIES), label: '📢 Vacancies' },
@@ -134,7 +138,13 @@ export const NAV_GROUPS: AdminNavGroup[] = [
   {
     id: 'catalog',
     label: 'Catalog & pricing',
-    segments: [ROUTE_PATHS.DISEASES, ROUTE_PATHS.RATES, ROUTE_PATHS.REWARDS],
+    segments: [
+      ROUTE_PATHS.DISEASES,
+      ROUTE_PATHS.RATES,
+      ROUTE_PATHS.HOPE_HUB_OFFERS,
+      ROUTE_PATHS.ASSESSMENT_DEFINITIONS,
+      ROUTE_PATHS.REWARDS,
+    ],
   },
   {
     id: 'people',

@@ -29,7 +29,7 @@
 }
 
 .quick-access__main:hover {
-  background: #3d5b88;
+  background: var(--brand-primary-hover);
   box-shadow:
     0 22px 44px rgba(15, 23, 42, 0.32),
     0 0 0 6px rgba(74, 111, 165, 0.18);

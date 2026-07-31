@@ -188,6 +188,14 @@ export class PaymentsPage implements OnInit {
     );
   }
 
+  balanceDueInPaise(payment: any): number {
+    return Number(payment?.lineItems?.balanceDueInPaise || 0);
+  }
+
+  packageUsage(payment: any) {
+    return payment?.lineItems?.packageUsage || null;
+  }
+
   onRefundAmountInput(event: Event): void {
     this.refundAmountRupees.set((event.target as HTMLInputElement).value);
   }

@@ -1,0 +1,123 @@
+.notification-center {
+  position: fixed;
+  left: 1rem;
+  top: 5.25rem;
+  z-index: 80;
+  display: grid;
+  width: min(24rem, calc(100vw - 2rem));
+  gap: 0.75rem;
+  pointer-events: none;
+}
+
+.notification {
+  display: grid;
+  grid-template-columns: 2rem minmax(0, 1fr) 2rem;
+  gap: 0.75rem;
+  align-items: start;
+  border: 1px solid var(--notification-border);
+  border-left-width: 4px;
+  border-radius: 0.5rem;
+  background: #ffffff;
+  color: var(--text-primary);
+  box-shadow: 0 18px 38px rgba(15, 23, 42, 0.16);
+  padding: 0.875rem;
+  pointer-events: auto;
+  animation: notification-enter 180ms ease-out;
+}
+
+.notification__icon {
+  display: inline-grid;
+  width: 2rem;
+  height: 2rem;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--notification-soft);
+  color: var(--notification-strong);
+  font-size: 0.95rem;
+  font-weight: 800;
+}
+
+.notification__content {
+  min-width: 0;
+}
+
+.notification__content strong {
+  display: block;
+  color: var(--notification-strong);
+  font-size: 0.9rem;
+  line-height: 1.3;
+}
+
+.notification__content p {
+  margin: 0.25rem 0 0;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  line-height: 1.45;
+}
+
+.notification__close {
+  display: inline-grid;
+  width: 2rem;
+  height: 2rem;
+  place-items: center;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 800;
+  transition:
+    background-color 160ms ease,
+    color 160ms ease;
+}
+
+.notification__close:hover {
+  background: var(--notification-soft);
+  color: var(--notification-strong);
+}
+
+.notification--success {
+  --notification-border: var(--brand-success);
+  --notification-soft: #eef5ef;
+  --notification-strong: #476342;
+}
+
+.notification--error {
+  --notification-border: var(--brand-error);
+  --notification-soft: #fef2f2;
+  --notification-strong: var(--brand-error);
+}
+
+.notification--warning {
+  --notification-border: var(--brand-warning);
+  --notification-soft: #fff7ed;
+  --notification-strong: var(--brand-warning);
+}
+
+.notification--info {
+  --notification-border: var(--brand-primary);
+  --notification-soft: var(--brand-primary-light);
+  --notification-strong: var(--brand-primary-hover);
+}
+
+@keyframes notification-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-0.5rem);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 640px) {
+  .notification-center {
+    left: 0.75rem;
+    right: 0.75rem;
+    top: 4.75rem;
+    width: auto;
+  }
+}

@@ -2,6 +2,7 @@ import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { LeadService } from '../../core/services/lead.service';
+import { NotificationService } from '../../core/services/notification.service';
 
 @Component({
   selector: 'app-feedback-page',
@@ -13,6 +14,7 @@ import { LeadService } from '../../core/services/lead.service';
 export class FeedbackComponent {
   private readonly formBuilder = inject(FormBuilder);
   private readonly leadService = inject(LeadService);
+  private readonly notificationService = inject(NotificationService);
 
   readonly isSubmitting = signal(false);
   readonly successMessage = signal('');
@@ -32,6 +34,7 @@ export class FeedbackComponent {
   submitFeedback(): void {
     if (this.feedbackForm.invalid) {
       this.feedbackForm.markAllAsTouched();
+      this.notificationService.warning('Please complete the required feedback fields.');
       return;
     }
 
@@ -55,6 +58,7 @@ export class FeedbackComponent {
         next: (success) => {
           if (success) {
             this.successMessage.set('Thank you. Your feedback is saved for admin review.');
+            this.notificationService.success('Thank you. Your feedback is saved for admin review.');
             this.feedbackForm.reset({
               displayName: '',
               email: '',
@@ -66,12 +70,16 @@ export class FeedbackComponent {
               consentToPublish: false,
             });
           } else {
-            this.errorMessage.set('Could not submit feedback. Please try again.');
+            const message = 'Could not submit feedback. Please try again.';
+            this.errorMessage.set(message);
+            this.notificationService.error(message);
           }
           this.isSubmitting.set(false);
         },
         error: () => {
-          this.errorMessage.set('Could not submit feedback. Please try again.');
+          const message = 'Could not submit feedback. Please try again.';
+          this.errorMessage.set(message);
+          this.notificationService.error(message);
           this.isSubmitting.set(false);
         },
       });

@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { HomeopathicDoctorType, PaymentStatus, Role } from '@prisma/client';
+import { HomeopathicDoctorType, HopeHubOfferingType, PaymentStatus, Role } from '@prisma/client';
 import { authRequired, allowRoles } from '../auth.js';
 import { prisma } from '../db.js';
 import {
@@ -14,6 +14,8 @@ import { ensureBillingPlans } from './catalog.js';
 import { resolveConsultationCheckout } from '../services/checkout-pricing.js';
 import { PRODUCT_EVENTS, trackProductEvent } from '../services/product-analytics.js';
 import { enrichWithProfileImageUrl, userProfileImagePath } from '../utils/profile-image-url.js';
+import { hopeHubMediaMimeType, readHopeHubMediaFile } from '../services/hope-hub-media-storage.js';
+import { getAssessmentDefinition, scoreAssessment } from '../services/assessment-definitions.js';
 
 export const hopeHubRouter = Router();
 
@@ -60,6 +62,9 @@ const hopeHubBookingSchema = z.object({
   preferredTime: z.string().trim().max(120).optional().or(z.literal('')),
   preferAnonymousTelegram: z.boolean().optional(),
   providerId: z.string().trim().min(1).max(120).optional().or(z.literal('')),
+  offeringId: z.string().trim().min(1).max(120).optional().or(z.literal('')),
+  offeringSlug: z.string().trim().min(1).max(160).optional().or(z.literal('')),
+  paymentMode: z.enum(['FULL', 'PARTIAL']).optional(),
   concernCategory: z.string().trim().max(160).optional().or(z.literal('')),
   preferredExpertType: z.string().trim().max(160).optional().or(z.literal('')),
   sessionMode: z.string().trim().max(80).optional().or(z.literal('')),
@@ -70,16 +75,32 @@ const hopeHubBookingSchema = z.object({
   entryPage: z.string().trim().max(500).optional().or(z.literal(''))
 });
 
+const organizationLeadSchema = z.object({
+  organizationName: z.string().trim().min(2).max(160),
+  organizationType: z.string().trim().min(2).max(80),
+  contactName: z.string().trim().min(2).max(120),
+  contactEmail: z.string().trim().email().max(254).optional().or(z.literal('')),
+  contactPhone: z.string().trim().max(30).optional().or(z.literal('')),
+  city: z.string().trim().max(100).optional().or(z.literal('')),
+  audienceSize: z.number().int().positive().max(1000000).optional().nullable(),
+  needType: z.string().trim().max(120).optional().or(z.literal('')),
+  preferredDate: z.string().trim().max(120).optional().or(z.literal('')),
+  notes: z.string().trim().max(3000).optional().or(z.literal('')),
+  offeringId: z.string().trim().max(120).optional().or(z.literal('')),
+  offeringSlug: z.string().trim().max(160).optional().or(z.literal('')),
+  entryPage: z.string().trim().max(500).optional().or(z.literal(''))
+});
+
 const hopeHubAssessmentAttemptSchema = z.object({
   assessmentId: z.string().trim().min(1).max(120),
-  assessmentType: z.string().trim().min(1).max(120),
+  assessmentType: z.string().trim().min(1).max(120).optional(),
   category: z.string().trim().max(120).optional().or(z.literal('')),
-  title: z.string().trim().min(1).max(200),
+  title: z.string().trim().min(1).max(200).optional(),
   version: z.string().trim().min(1).max(40).optional(),
   answers: z.array(z.number().int().min(0).max(10)).min(1).max(120),
-  totalScore: z.number().int().min(0).max(1000),
-  maxScore: z.number().int().min(1).max(1000),
-  level: z.string().trim().min(1).max(160),
+  totalScore: z.number().int().min(0).max(1000).optional(),
+  maxScore: z.number().int().min(1).max(1000).optional(),
+  level: z.string().trim().min(1).max(160).optional(),
   color: z.string().trim().max(40).optional().or(z.literal('')),
   description: z.string().trim().max(3000).optional().or(z.literal('')),
   suggestions: z.array(z.string().trim().min(1).max(500)).max(30).optional(),
@@ -88,6 +109,20 @@ const hopeHubAssessmentAttemptSchema = z.object({
   entryPage: z.string().trim().max(500).optional().or(z.literal('')),
   completedAt: z.string().datetime().optional()
 });
+
+function normalizeHopeHubMediaKey(value: string) {
+  try {
+    const decoded = value
+      .split('/')
+      .map((part) => decodeURIComponent(part))
+      .join('/');
+    if (!decoded.startsWith('hope-hub-media/')) return '';
+    if (decoded.includes('..')) return '';
+    return decoded;
+  } catch {
+    return '';
+  }
+}
 
 function slugify(value: string) {
   return value
@@ -167,6 +202,144 @@ function hopeHubRevenueSplit(amountInPaise: number) {
     platformSharePercent: HOPE_HUB_PLATFORM_SHARE_PERCENT,
     psychologistShareInPaise,
     platformShareInPaise: amountInPaise - psychologistShareInPaise
+  };
+}
+
+function clampPaise(value: number, min: number, max: number) {
+  return Math.max(min, Math.min(max, Math.round(value)));
+}
+
+function hopeHubDiscountSnapshot(
+  offering: {
+    id: string;
+    code: string;
+    discountEnabled: boolean;
+    discountType: string;
+    discountLabel: string | null;
+    discountCode: string | null;
+    discountPercent: number | null;
+    discountFlatInPaise: number | null;
+    discountMaxInPaise: number | null;
+    discountStartsAt: Date | null;
+    discountEndsAt: Date | null;
+  } | null,
+  grossInPaise: number
+) {
+  if (!offering?.discountEnabled || offering.discountType === 'NONE' || grossInPaise <= 0) {
+    return { discountInPaise: 0, rule: null };
+  }
+  const now = new Date();
+  if (offering.discountStartsAt && offering.discountStartsAt > now) {
+    return { discountInPaise: 0, rule: null };
+  }
+  if (offering.discountEndsAt && offering.discountEndsAt < now) {
+    return { discountInPaise: 0, rule: null };
+  }
+
+  let discountInPaise = 0;
+  if (
+    (offering.discountType === 'PERCENT' ||
+      offering.discountType === 'REFERRAL' ||
+      offering.discountType === 'CUSTOM') &&
+    offering.discountPercent
+  ) {
+    discountInPaise = Math.round((grossInPaise * offering.discountPercent) / 100);
+  }
+  if (
+    (offering.discountType === 'FLAT' ||
+      offering.discountType === 'REFERRAL' ||
+      offering.discountType === 'CUSTOM') &&
+    offering.discountFlatInPaise
+  ) {
+    discountInPaise = Math.max(discountInPaise, offering.discountFlatInPaise);
+  }
+  if (offering.discountMaxInPaise) {
+    discountInPaise = Math.min(discountInPaise, offering.discountMaxInPaise);
+  }
+  discountInPaise = clampPaise(discountInPaise, 0, Math.max(0, grossInPaise - 100));
+  if (discountInPaise <= 0) return { discountInPaise: 0, rule: null };
+
+  return {
+    discountInPaise,
+    rule: {
+      source: 'hope-hub-offering',
+      offeringId: offering.id,
+      offeringCode: offering.code,
+      type: offering.discountType,
+      label: offering.discountLabel || 'Offer discount',
+      code: offering.discountCode || null,
+      percent: offering.discountPercent,
+      flatInPaise: offering.discountFlatInPaise,
+      maxInPaise: offering.discountMaxInPaise,
+      startsAt: offering.discountStartsAt?.toISOString() ?? null,
+      endsAt: offering.discountEndsAt?.toISOString() ?? null,
+      amountInPaise: discountInPaise
+    }
+  };
+}
+
+function isOfferingDiscountActive(offering: {
+  discountEnabled: boolean;
+  discountType: string;
+  discountStartsAt: Date | null;
+  discountEndsAt: Date | null;
+}) {
+  if (!offering.discountEnabled || offering.discountType === 'NONE') return false;
+  const now = new Date();
+  if (offering.discountStartsAt && offering.discountStartsAt > now) return false;
+  if (offering.discountEndsAt && offering.discountEndsAt < now) return false;
+  return true;
+}
+
+function hopeHubPartialPaymentSnapshot(
+  offering: {
+    partialPaymentEnabled: boolean;
+    partialPaymentType: string;
+    partialPaymentLabel: string | null;
+    partialPaymentPercent: number | null;
+    partialPaymentFlatInPaise: number | null;
+  } | null,
+  netInPaise: number,
+  requestedMode?: 'FULL' | 'PARTIAL'
+) {
+  if (
+    requestedMode !== 'PARTIAL' ||
+    !offering?.partialPaymentEnabled ||
+    offering.partialPaymentType === 'NONE' ||
+    netInPaise <= 0
+  ) {
+    return {
+      paymentMode: 'FULL' as const,
+      payableInPaise: netInPaise,
+      balanceDueInPaise: 0,
+      partialRule: null
+    };
+  }
+
+  let payableInPaise = netInPaise;
+  if (offering.partialPaymentType === 'PERCENT' && offering.partialPaymentPercent) {
+    payableInPaise = Math.round((netInPaise * offering.partialPaymentPercent) / 100);
+  }
+  if (offering.partialPaymentType === 'FLAT' && offering.partialPaymentFlatInPaise) {
+    payableInPaise = offering.partialPaymentFlatInPaise;
+  }
+  payableInPaise = clampPaise(payableInPaise, 100, netInPaise);
+  return {
+    paymentMode: payableInPaise < netInPaise ? ('PARTIAL' as const) : ('FULL' as const),
+    payableInPaise,
+    balanceDueInPaise: Math.max(0, netInPaise - payableInPaise),
+    partialRule:
+      payableInPaise < netInPaise
+        ? {
+            source: 'hope-hub-offering',
+            type: offering.partialPaymentType,
+            label: offering.partialPaymentLabel || 'Partial payment',
+            percent: offering.partialPaymentPercent,
+            flatInPaise: offering.partialPaymentFlatInPaise,
+            payableInPaise,
+            balanceDueInPaise: netInPaise - payableInPaise
+          }
+        : null
   };
 }
 
@@ -283,6 +456,94 @@ function servicePublicPayload(service: {
   };
 }
 
+function offeringPublicPayload(
+  offering: {
+    id: string;
+    code: string;
+    slug: string;
+    title: string;
+    subtitle: string | null;
+    description: string;
+    type: string;
+    priceInPaise: number | null;
+    compareAtPriceInPaise: number | null;
+    currency: string;
+    discountEnabled: boolean;
+    discountType: string;
+    discountLabel: string | null;
+    discountCode: string | null;
+    discountPercent: number | null;
+    discountFlatInPaise: number | null;
+    discountMaxInPaise: number | null;
+    discountStartsAt: Date | null;
+    discountEndsAt: Date | null;
+    partialPaymentEnabled: boolean;
+    partialPaymentType: string;
+    partialPaymentLabel: string | null;
+    partialPaymentPercent: number | null;
+    partialPaymentFlatInPaise: number | null;
+    validityDays: number | null;
+    sessionCount: number | null;
+    sessionDurationMinutes: number | null;
+    deliveryMode: string;
+    eventStartsAt: Date | null;
+    eventEndsAt: Date | null;
+    seatLimit: number | null;
+    venue: string | null;
+    imageUrl: string | null;
+    ctaLabel: string;
+    routePath: string | null;
+    benefits: string[];
+    audience: string[];
+    metadata: unknown;
+    isFeatured: boolean;
+    requiresLeadForm: boolean;
+    sortOrder: number;
+  },
+  seatsBooked = 0
+) {
+  const seatsRemaining =
+    offering.seatLimit == null ? null : Math.max(0, offering.seatLimit - seatsBooked);
+  return {
+    ...offering,
+    eventStartsAt: offering.eventStartsAt?.toISOString() ?? null,
+    eventEndsAt: offering.eventEndsAt?.toISOString() ?? null,
+    discountStartsAt: offering.discountStartsAt?.toISOString() ?? null,
+    discountEndsAt: offering.discountEndsAt?.toISOString() ?? null,
+    isDiscountActive: isOfferingDiscountActive(offering),
+    seatsBooked,
+    seatsRemaining,
+    isFull: seatsRemaining === 0,
+    routePath:
+      offering.routePath ||
+      (offering.type === 'WORKSHOP' ||
+      offering.type === 'MEETUP' ||
+      offering.type === 'WEBINAR' ||
+      offering.type === 'GROUP_SESSION'
+        ? `/events/${offering.slug}`
+        : offering.type === 'RECORDED_SESSION'
+          ? `/resources/${offering.slug}`
+          : offering.type === 'ORGANISATION_PROGRAM'
+            ? '/organization'
+            : `/packages/${offering.slug}`)
+  };
+}
+
+function bannerPublicPayload(banner: {
+  id: string;
+  title: string;
+  subtitle: string | null;
+  eyebrow: string | null;
+  imageUrl: string | null;
+  ctaLabel: string;
+  routePath: string;
+  offeringId: string | null;
+  backgroundColor: string | null;
+  textColor: string | null;
+}) {
+  return banner;
+}
+
 const hopeHubServiceSelect = {
   id: true,
   name: true,
@@ -297,6 +558,190 @@ const hopeHubServiceSelect = {
   seoTitle: true,
   seoDescription: true
 } as const;
+
+const hopeHubOfferingSelect = {
+  id: true,
+  code: true,
+  slug: true,
+  title: true,
+  subtitle: true,
+  description: true,
+  type: true,
+  priceInPaise: true,
+  compareAtPriceInPaise: true,
+  currency: true,
+  discountEnabled: true,
+  discountType: true,
+  discountLabel: true,
+  discountCode: true,
+  discountPercent: true,
+  discountFlatInPaise: true,
+  discountMaxInPaise: true,
+  discountStartsAt: true,
+  discountEndsAt: true,
+  partialPaymentEnabled: true,
+  partialPaymentType: true,
+  partialPaymentLabel: true,
+  partialPaymentPercent: true,
+  partialPaymentFlatInPaise: true,
+  validityDays: true,
+  sessionCount: true,
+  sessionDurationMinutes: true,
+  deliveryMode: true,
+  eventStartsAt: true,
+  eventEndsAt: true,
+  seatLimit: true,
+  venue: true,
+  imageUrl: true,
+  ctaLabel: true,
+  routePath: true,
+  benefits: true,
+  audience: true,
+  metadata: true,
+  isFeatured: true,
+  requiresLeadForm: true,
+  sortOrder: true
+} as const;
+
+async function bookedSeatsByOfferingCode(codes: string[]) {
+  if (!codes.length) return new Map<string, number>();
+  const recentReservationCutoff = new Date(Date.now() - 30 * 60 * 1000);
+  const rows = await prisma.payment.groupBy({
+    by: ['billingPlanCode'],
+    where: {
+      billingPlanCode: { in: codes },
+      OR: [
+        { status: PaymentStatus.PAID },
+        { status: PaymentStatus.CREATED, createdAt: { gte: recentReservationCutoff } }
+      ]
+    },
+    _count: { _all: true }
+  });
+  return new Map(rows.map((row) => [row.billingPlanCode || '', row._count._all]));
+}
+
+hopeHubRouter.get(
+  /^\/hope-hub\/media\/(.+)$/,
+  asyncRoute(async (req, res) => {
+    const storageKey = normalizeHopeHubMediaKey(String(req.params[0] || ''));
+    if (!storageKey) return res.status(404).json({ message: 'Media not found.' });
+    try {
+      const bytes = await readHopeHubMediaFile(storageKey);
+      res.setHeader('Content-Type', hopeHubMediaMimeType(storageKey));
+      res.setHeader('Cache-Control', 'public, max-age=86400');
+      res.send(bytes);
+    } catch {
+      res.status(404).json({ message: 'Media not found.' });
+    }
+  })
+);
+
+hopeHubRouter.get(
+  '/hope-hub/offerings',
+  asyncRoute(async (req, res) => {
+    const type = queryText(req, 'type').trim();
+    const featured = queryText(req, 'featured').trim();
+    const normalizedType = Object.values(HopeHubOfferingType).includes(type as HopeHubOfferingType)
+      ? (type as HopeHubOfferingType)
+      : undefined;
+    const where = {
+      isActive: true,
+      ...(normalizedType ? { type: normalizedType } : {}),
+      ...(featured === 'true' ? { isFeatured: true } : {})
+    };
+    const offerings = await prisma.hopeHubOffering.findMany({
+      where,
+      select: hopeHubOfferingSelect,
+      orderBy: [{ sortOrder: 'asc' }, { createdAt: 'desc' }]
+    });
+    const seatCounts = await bookedSeatsByOfferingCode(offerings.map((offering) => offering.code));
+    res.json({
+      offerings: offerings.map((offering) =>
+        offeringPublicPayload(offering, seatCounts.get(offering.code) ?? 0)
+      )
+    });
+  })
+);
+
+hopeHubRouter.get(
+  '/hope-hub/offerings/:slug',
+  asyncRoute(async (req, res) => {
+    const slug = routeParam(req, 'slug');
+    const offering = await prisma.hopeHubOffering.findFirst({
+      where: { isActive: true, OR: [{ slug }, { code: slug }, { id: slug }] },
+      select: hopeHubOfferingSelect
+    });
+    if (!offering) return res.status(404).json({ message: 'Offering not found.' });
+    const seatCounts = await bookedSeatsByOfferingCode([offering.code]);
+    res.json({ offering: offeringPublicPayload(offering, seatCounts.get(offering.code) ?? 0) });
+  })
+);
+
+hopeHubRouter.get(
+  '/hope-hub/banners',
+  asyncRoute(async (_req, res) => {
+    const now = new Date();
+    const banners = await prisma.hopeHubBanner.findMany({
+      where: {
+        isActive: true,
+        AND: [
+          { OR: [{ startsAt: null }, { startsAt: { lte: now } }] },
+          { OR: [{ endsAt: null }, { endsAt: { gte: now } }] }
+        ]
+      },
+      select: {
+        id: true,
+        title: true,
+        subtitle: true,
+        eyebrow: true,
+        imageUrl: true,
+        ctaLabel: true,
+        routePath: true,
+        offeringId: true,
+        backgroundColor: true,
+        textColor: true
+      },
+      orderBy: [{ sortOrder: 'asc' }, { createdAt: 'desc' }]
+    });
+    res.json({ banners: banners.map(bannerPublicPayload) });
+  })
+);
+
+hopeHubRouter.post(
+  '/hope-hub/organization-leads',
+  asyncRoute(async (req, res) => {
+    const body = organizationLeadSchema.parse(req.body);
+    const offering =
+      body.offeringId || body.offeringSlug
+        ? await prisma.hopeHubOffering.findFirst({
+            where: {
+              OR: [
+                ...(body.offeringId ? [{ id: body.offeringId }, { code: body.offeringId }] : []),
+                ...(body.offeringSlug ? [{ slug: body.offeringSlug }] : [])
+              ]
+            },
+            select: { id: true }
+          })
+        : null;
+    const lead = await prisma.hopeHubOrganizationLead.create({
+      data: {
+        organizationName: body.organizationName,
+        organizationType: body.organizationType,
+        contactName: body.contactName,
+        contactEmail: body.contactEmail || null,
+        contactPhone: body.contactPhone || null,
+        city: body.city || null,
+        audienceSize: body.audienceSize ?? null,
+        needType: body.needType || null,
+        preferredDate: body.preferredDate || null,
+        notes: body.notes || null,
+        offeringId: offering?.id ?? null,
+        entryPage: body.entryPage || req.get('referer') || null
+      }
+    });
+    res.status(201).json({ leadId: lead.id, success: true });
+  })
+);
 
 hopeHubRouter.get(
   '/hope-hub/services',
@@ -565,16 +1010,24 @@ hopeHubRouter.post(
   allowRoles(Role.PATIENT),
   asyncRoute(async (req, res) => {
     const body = hopeHubAssessmentAttemptSchema.parse(req.body);
-    const normalizedAnswers = body.answers.map((answer) => Number(answer || 0));
-    const computedTotal = normalizedAnswers.reduce((sum, answer) => sum + answer, 0);
-    if (computedTotal !== body.totalScore) {
-      return res.status(400).json({ message: 'Assessment score does not match answers.' });
+    const definition = await getAssessmentDefinition(body.assessmentId);
+    if (!definition) {
+      return res.status(404).json({ message: 'Assessment definition not found.' });
+    }
+
+    let scored;
+    try {
+      scored = scoreAssessment(definition, body.answers);
+    } catch (error) {
+      return res.status(400).json({
+        message: error instanceof Error ? error.message : 'Could not score assessment.'
+      });
     }
 
     const previous = await prisma.hopeHubAssessmentAttempt.findFirst({
       where: {
         userId: req.user!.id,
-        assessmentId: body.assessmentId
+        assessmentId: scored.assessmentId
       },
       orderBy: { completedAt: 'desc' },
       select: { id: true, retakeNumber: true, totalScore: true, level: true, completedAt: true }
@@ -583,19 +1036,19 @@ hopeHubRouter.post(
     const attempt = await prisma.hopeHubAssessmentAttempt.create({
       data: {
         userId: req.user!.id,
-        assessmentId: body.assessmentId,
-        assessmentType: body.assessmentType,
-        category: body.category || null,
-        title: body.title,
-        version: body.version || 'v1',
-        answers: normalizedAnswers,
-        totalScore: computedTotal,
-        maxScore: body.maxScore,
-        level: body.level,
-        color: body.color || null,
-        description: body.description || null,
-        suggestions: body.suggestions ?? [],
-        safetyFlag: Boolean(body.safetyFlag),
+        assessmentId: scored.assessmentId,
+        assessmentType: scored.assessmentType,
+        category: scored.category || null,
+        title: scored.title,
+        version: scored.version,
+        answers: scored.answers,
+        totalScore: scored.total,
+        maxScore: scored.maxScore,
+        level: scored.level,
+        color: scored.color || null,
+        description: scored.description || null,
+        suggestions: scored.suggestions,
+        safetyFlag: scored.safetyFlag,
         retakeNumber: (previous?.retakeNumber ?? 0) + 1,
         previousId: previous?.id ?? null,
         source: body.source || null,
@@ -695,6 +1148,37 @@ hopeHubRouter.post(
   asyncRoute(async (req, res) => {
     const body = hopeHubBookingSchema.parse(req.body);
     const slug = slugify(body.serviceName);
+    const selectedOffering =
+      body.offeringId || body.offeringSlug
+        ? await prisma.hopeHubOffering.findFirst({
+            where: {
+              isActive: true,
+              OR: [
+                ...(body.offeringId
+                  ? [{ id: body.offeringId }, { code: body.offeringId }, { slug: body.offeringId }]
+                  : []),
+                ...(body.offeringSlug
+                  ? [{ slug: body.offeringSlug }, { code: body.offeringSlug }]
+                  : [])
+              ]
+            },
+            select: hopeHubOfferingSelect
+          })
+        : null;
+    if ((body.offeringId || body.offeringSlug) && !selectedOffering) {
+      return res.status(400).json({ message: 'Selected Hope Hub offer is not available.' });
+    }
+    if (selectedOffering?.requiresLeadForm || selectedOffering?.type === 'ORGANISATION_PROGRAM') {
+      return res
+        .status(400)
+        .json({ message: 'This offer needs a request call form, not checkout.' });
+    }
+    if (selectedOffering?.seatLimit) {
+      const seatCounts = await bookedSeatsByOfferingCode([selectedOffering.code]);
+      if ((seatCounts.get(selectedOffering.code) ?? 0) >= selectedOffering.seatLimit) {
+        return res.status(409).json({ message: 'This event is full.' });
+      }
+    }
     const existingService = await prisma.disease.findFirst({
       where: {
         isActive: true,
@@ -704,7 +1188,18 @@ hopeHubRouter.post(
       select: { id: true, feeInPaise: true }
     });
     const amountInPaise =
-      body.servicePriceInPaise || existingService?.feeInPaise || HOPE_HUB_SESSION_FEE_IN_PAISE;
+      selectedOffering?.priceInPaise ??
+      (body.servicePriceInPaise || existingService?.feeInPaise || HOPE_HUB_SESSION_FEE_IN_PAISE);
+    if (!amountInPaise || amountInPaise <= 0) {
+      return res.status(400).json({ message: 'Selected offer cannot be paid online.' });
+    }
+    const offerDiscount = hopeHubDiscountSnapshot(selectedOffering, amountInPaise);
+    const netAfterOfferDiscountInPaise = amountInPaise - offerDiscount.discountInPaise;
+    const partialPayment = hopeHubPartialPaymentSnapshot(
+      selectedOffering,
+      netAfterOfferDiscountInPaise,
+      body.paymentMode
+    );
     const requestedProvider = body.providerId
       ? await prisma.doctor.findFirst({
           where: {
@@ -765,18 +1260,30 @@ hopeHubRouter.post(
           }
         });
 
-    const selectedPlan = await prisma.billingPlan.findFirst({
-      where: { code: 'ONE_TIME', isActive: true }
-    });
-    if (!selectedPlan) {
-      return res.status(400).json({ message: 'One-time consultation plan is not available.' });
-    }
+    const selectedPlanCode = selectedOffering?.code || 'ONE_TIME';
+    const selectedPlanName = selectedOffering?.title || 'One-Time Appointment';
+    const packageValidUntil =
+      selectedOffering?.validityDays && selectedOffering.validityDays > 0
+        ? new Date(Date.now() + selectedOffering.validityDays * 24 * 60 * 60 * 1000)
+        : null;
+    const packageUsage =
+      selectedOffering && (selectedOffering.sessionCount || 0) > 1
+        ? {
+            totalSessions: selectedOffering.sessionCount || 1,
+            usedSessions: 0,
+            remainingSessions: selectedOffering.sessionCount || 1,
+            validUntil: packageValidUntil?.toISOString() ?? null
+          }
+        : null;
 
     const checkout = await resolveConsultationCheckout({
       patientId: req.user!.id,
-      grossInPaise: amountInPaise
+      grossInPaise: partialPayment.payableInPaise
     });
-    const grossRevenueSplit = hopeHubRevenueSplit(checkout.grossAmountInPaise);
+    const chargeGrossInPaise = checkout.grossAmountInPaise;
+    const finalPayableInPaise = checkout.payableInPaise;
+    const totalDiscountInPaise = offerDiscount.discountInPaise + checkout.discountInPaise;
+    const grossRevenueSplit = hopeHubRevenueSplit(amountInPaise);
     const payableRevenueSplit = hopeHubRevenueSplit(checkout.payableInPaise);
 
     const consultation = await prisma.consultation.create({
@@ -794,6 +1301,10 @@ hopeHubRouter.post(
           appointmentTime: body.appointmentTime,
           consultantName: body.consultantName || '',
           consultantPhone: body.consultantPhone || '',
+          offeringId: selectedOffering?.id || body.offeringId || '',
+          offeringSlug: selectedOffering?.slug || body.offeringSlug || '',
+          offeringTitle: selectedOffering?.title || '',
+          offeringType: selectedOffering?.type || '',
           providerId: requestedProvider?.id || body.providerId || '',
           requestedProviderName: requestedProvider?.user.name || '',
           concernCategory: body.concernCategory || '',
@@ -803,7 +1314,7 @@ hopeHubRouter.post(
           safetyRisk: body.safetyRisk || '',
           previousTherapyOrMedication: body.previousTherapyOrMedication || '',
           emergencyConsent: Boolean(body.emergencyConsent),
-          sessionDuration: `${HOPE_HUB_SESSION_DURATION_MINUTES} minutes`,
+          sessionDuration: `${selectedOffering?.sessionDurationMinutes || HOPE_HUB_SESSION_DURATION_MINUTES} minutes`,
           requestedSessionDuration: body.sessionDuration || '',
           preferredContact: body.preferredContact || '',
           urgencyLevel: body.urgencyLevel || '',
@@ -811,40 +1322,85 @@ hopeHubRouter.post(
           preferAnonymousTelegram: Boolean(body.preferAnonymousTelegram),
           entryPage: body.entryPage || ''
         },
-        billingPlanCode: selectedPlan.code,
+        billingPlanCode: selectedPlanCode,
         pricingSnapshot: {
           source: 'hope-hub',
-          purchaseType: 'ONE_TIME',
+          purchaseType: selectedOffering?.type || 'ONE_TIME',
+          offeringId: selectedOffering?.id || null,
+          offeringCode: selectedOffering?.code || null,
+          offeringSlug: selectedOffering?.slug || null,
+          offeringTitle: selectedOffering?.title || null,
           serviceName: body.serviceName,
           sessionFeeInPaise: amountInPaise,
-          sessionDurationMinutes: HOPE_HUB_SESSION_DURATION_MINUTES,
+          netAfterOfferDiscountInPaise,
+          paymentMode: partialPayment.paymentMode,
+          balanceDueInPaise: partialPayment.balanceDueInPaise,
+          packageUsage,
+          sessionDurationMinutes:
+            selectedOffering?.sessionDurationMinutes || HOPE_HUB_SESSION_DURATION_MINUTES,
+          sessionCount: selectedOffering?.sessionCount || 1,
+          validityDays: selectedOffering?.validityDays || null,
           grossRevenueSplit,
           payableRevenueSplit,
-          checkout
+          checkout: {
+            ...checkout,
+            packageGrossInPaise: amountInPaise,
+            chargeGrossInPaise,
+            offerDiscountInPaise: offerDiscount.discountInPaise,
+            checkoutDiscountInPaise: checkout.discountInPaise,
+            totalDiscountInPaise,
+            payableTodayInPaise: finalPayableInPaise,
+            balanceDueInPaise: partialPayment.balanceDueInPaise,
+            paymentMode: partialPayment.paymentMode
+          },
+          offerDiscountRule: offerDiscount.rule,
+          partialPaymentRule: partialPayment.partialRule
         },
         payment: {
           create: {
-            grossAmountInPaise: checkout.grossAmountInPaise,
+            grossAmountInPaise: chargeGrossInPaise,
             discountInPaise: checkout.discountInPaise,
             walletRedeemedInPaise: checkout.walletRedeemedInPaise,
-            amountInPaise: checkout.payableInPaise,
-            billingPlanCode: selectedPlan.code,
+            amountInPaise: finalPayableInPaise,
+            billingPlanCode: selectedPlanCode,
             appliedRules: checkout.appliedRules,
             lineItems: {
               source: 'hope-hub',
               serviceName: body.serviceName,
+              offeringId: selectedOffering?.id || null,
+              offeringCode: selectedOffering?.code || null,
+              offeringSlug: selectedOffering?.slug || null,
+              offeringTitle: selectedOffering?.title || null,
+              offeringType: selectedOffering?.type || null,
               providerId: requestedProvider?.id || body.providerId || '',
               requestedProviderName: requestedProvider?.user.name || '',
-              sessionDurationMinutes: HOPE_HUB_SESSION_DURATION_MINUTES,
-              consultationFeeInPaise: checkout.grossAmountInPaise,
-              discountInPaise: checkout.discountInPaise,
+              sessionDurationMinutes:
+                selectedOffering?.sessionDurationMinutes || HOPE_HUB_SESSION_DURATION_MINUTES,
+              sessionCount: selectedOffering?.sessionCount || 1,
+              validityDays: selectedOffering?.validityDays || null,
+              packageGrossInPaise: amountInPaise,
+              consultationFeeInPaise: chargeGrossInPaise,
+              offerDiscountInPaise: offerDiscount.discountInPaise,
+              checkoutDiscountInPaise: checkout.discountInPaise,
+              discountInPaise: totalDiscountInPaise,
               walletRedeemedInPaise: checkout.walletRedeemedInPaise,
-              payableInPaise: checkout.payableInPaise,
+              netAfterOfferDiscountInPaise,
+              paymentMode: partialPayment.paymentMode,
+              payableTodayInPaise: finalPayableInPaise,
+              balanceDueInPaise: partialPayment.balanceDueInPaise,
+              packageUsage,
+              payableInPaise: finalPayableInPaise,
               grossRevenueSplit,
               payableRevenueSplit,
-              planCode: selectedPlan.code,
-              planName: selectedPlan.name,
-              appliedRules: checkout.appliedRules
+              planCode: selectedPlanCode,
+              planName: selectedPlanName,
+              offerDiscountRule: offerDiscount.rule,
+              partialPaymentRule: partialPayment.partialRule,
+              appliedRules: [
+                offerDiscount.rule,
+                partialPayment.partialRule,
+                ...checkout.appliedRules
+              ].filter(Boolean)
             },
             status: PaymentStatus.CREATED
           }
@@ -869,6 +1425,7 @@ hopeHubRouter.post(
         visitorPhone: body.visitorPhone || req.user!.mobile,
         concern: [
           `Service: ${body.serviceName}`,
+          selectedOffering ? `Offer: ${selectedOffering.title}` : '',
           `Appointment: ${body.appointmentDate} ${body.appointmentTime}`,
           body.preferredContact ? `Preferred contact: ${body.preferredContact}` : '',
           body.urgencyLevel ? `Urgency: ${body.urgencyLevel}` : '',
@@ -900,6 +1457,8 @@ hopeHubRouter.post(
         consultationId: consultation.id,
         diseaseId: disease.id,
         serviceName: body.serviceName,
+        offeringId: selectedOffering?.id ?? '',
+        offeringCode: selectedOffering?.code ?? '',
         providerId: requestedProvider?.id ?? body.providerId ?? ''
       }
     });

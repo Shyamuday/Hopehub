@@ -16,6 +16,8 @@ import { ProgressService } from '../../../core/services/progress.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { AuthModalService } from '../../../core/services/auth-modal.service';
 import { AssessmentAttemptsService } from '../../../core/services/assessment-attempts.service';
+import { AssessmentDefinitionService } from '../../../core/services/assessment-definition.service';
+import { NotificationService } from '../../../core/services/notification.service';
 import { firstValueFrom } from 'rxjs';
 
 @Component({
@@ -34,6 +36,8 @@ export class MultiAssessmentComponent implements OnInit {
   private authService = inject(AuthService);
   private authModalService = inject(AuthModalService);
   private assessmentAttemptsService = inject(AssessmentAttemptsService);
+  private assessmentDefinitionService = inject(AssessmentDefinitionService);
+  private notificationService = inject(NotificationService);
 
   // Signal-based state
   assessments = signal<AssessmentConfig[]>(ASSESSMENT_CONFIGS);
@@ -75,7 +79,18 @@ export class MultiAssessmentComponent implements OnInit {
   }
 
   ngOnInit() {
+    void this.loadAssessments();
     this.restorePendingResult();
+  }
+
+  private async loadAssessments() {
+    try {
+      const assessments = await firstValueFrom(this.assessmentDefinitionService.list());
+      this.assessments.set(assessments);
+      this.categories.set([...new Set(assessments.map((assessment) => assessment.category))]);
+    } catch {
+      this.notificationService.warning('Live assessments could not load. Showing saved tests.');
+    }
   }
 
   filterByCategory(category: AssessmentCategory) {
@@ -118,39 +133,38 @@ export class MultiAssessmentComponent implements OnInit {
     this.answers.set(answersArray);
   }
 
-  calculateResults() {
+  async calculateResults() {
     const assessment = this.selectedAssessment();
     if (!assessment) return;
 
     const answersArray = this.answers();
-    const total = answersArray.reduce((sum, answer) => sum + (answer || 0), 0);
-    const maxScore =
-      assessment.responseOptions[assessment.responseOptions.length - 1].value *
-      assessment.questions.length;
-
-    // Check for safety flag
-    const safetyFlag =
-      assessment.safetyQuestionIndex !== undefined &&
-      answersArray[assessment.safetyQuestionIndex] > 0;
-
-    // Find appropriate scoring interpretation
-    const scoring = assessment.scoring.find((s) => total >= s.min && total <= s.max);
-
-    if (!scoring) return;
-
-    const result: AssessmentResult = {
-      assessmentId: assessment.id,
-      assessmentType: assessment.type,
-      total,
-      maxScore,
-      level: scoring.level,
-      color: scoring.color,
-      description: scoring.description,
-      suggestions: scoring.suggestions,
-      safetyFlag,
-      completedAt: new Date(),
-      answers: [...answersArray],
-    };
+    this.savingResult.set(true);
+    let result: AssessmentResult;
+    try {
+      const response = await firstValueFrom(
+        this.assessmentAttemptsService.scoreAttempt(assessment.id, answersArray),
+      );
+      result = {
+        assessmentId: response.result.assessmentId,
+        assessmentType: response.result.assessmentType as AssessmentResult['assessmentType'],
+        total: response.result.total,
+        maxScore: response.result.maxScore,
+        level: response.result.level,
+        color: response.result.color,
+        description: response.result.description,
+        suggestions: response.result.suggestions,
+        safetyFlag: response.result.safetyFlag,
+        completedAt: new Date(),
+        answers: [...response.result.answers],
+      };
+    } catch (error: any) {
+      this.notificationService.error(
+        error?.error?.message || error?.message || 'Could not calculate your result.',
+      );
+      return;
+    } finally {
+      this.savingResult.set(false);
+    }
 
     this.result.set(result);
     this.savePendingResultLocally(result, assessment);
@@ -158,6 +172,7 @@ export class MultiAssessmentComponent implements OnInit {
     if (!this.authService.getToken()) {
       this.resultLocked.set(true);
       this.showResults.set(false);
+      this.notificationService.info('Sign up or log in to save your assessment result.');
       this.authModalService.openRegister();
       return;
     }
@@ -298,18 +313,7 @@ export class MultiAssessmentComponent implements OnInit {
       const response = await firstValueFrom(
         this.assessmentAttemptsService.saveAttempt({
           assessmentId: assessment.id,
-          assessmentType: assessment.type,
-          category: assessment.category,
-          title: assessment.title,
-          version: 'v1',
           answers: result.answers,
-          totalScore: result.total,
-          maxScore: result.maxScore,
-          level: result.level,
-          color: result.color,
-          description: result.description,
-          suggestions: result.suggestions,
-          safetyFlag: result.safetyFlag,
           source: 'healing-web',
           entryPage: typeof window === 'undefined' ? undefined : window.location.href,
           completedAt: result.completedAt.toISOString(),
@@ -332,10 +336,12 @@ export class MultiAssessmentComponent implements OnInit {
       this.clearPendingResult();
       this.resultLocked.set(false);
       this.showResults.set(true);
+      this.notificationService.success('Your assessment result is saved.');
     } catch (error: any) {
-      this.saveError.set(
-        error?.error?.message || error?.message || 'Could not save your result. Please try again.',
-      );
+      const message =
+        error?.error?.message || error?.message || 'Could not save your result. Please try again.';
+      this.saveError.set(message);
+      this.notificationService.error(message);
     } finally {
       this.savingResult.set(false);
     }

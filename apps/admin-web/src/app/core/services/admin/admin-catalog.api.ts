@@ -257,4 +257,134 @@ export class AdminCatalogApi extends AdminApiBase {
       this.http.put(`${this.apiBase}${API_PATHS.ADMIN.BILLING_PLANS}/${id}`, payload),
     );
   }
+
+  getHopeHubOfferingsAdmin() {
+    return firstValueFrom(
+      this.http.get<{ offerings: Array<any> }>(
+        `${this.apiBase}${API_PATHS.ADMIN.HOPE_HUB_OFFERINGS}`,
+      ),
+    );
+  }
+
+  uploadHopeHubMedia(payload: { mimeType: string; fileName?: string; dataBase64: string }) {
+    return firstValueFrom(
+      this.http.post<{
+        storageKey: string;
+        fileUrl: string;
+        byteSize: number;
+        sha256: string;
+        mimeType: string;
+      }>(`${this.apiBase}${API_PATHS.ADMIN.HOPE_HUB_MEDIA}`, payload),
+    );
+  }
+
+  createHopeHubOffering(payload: Record<string, unknown>) {
+    return firstValueFrom(
+      this.http.post<{ offering: any }>(
+        `${this.apiBase}${API_PATHS.ADMIN.HOPE_HUB_OFFERINGS}`,
+        payload,
+      ),
+    );
+  }
+
+  updateHopeHubOffering(id: string, payload: Record<string, unknown>) {
+    return firstValueFrom(
+      this.http.put<{ offering: any }>(
+        `${this.apiBase}${API_PATHS.ADMIN.HOPE_HUB_OFFERING_BY_ID(id)}`,
+        payload,
+      ),
+    );
+  }
+
+  getHopeHubBannersAdmin() {
+    return firstValueFrom(
+      this.http.get<{ banners: Array<any> }>(`${this.apiBase}${API_PATHS.ADMIN.HOPE_HUB_BANNERS}`),
+    );
+  }
+
+  createHopeHubBanner(payload: Record<string, unknown>) {
+    return firstValueFrom(
+      this.http.post<{ banner: any }>(
+        `${this.apiBase}${API_PATHS.ADMIN.HOPE_HUB_BANNERS}`,
+        payload,
+      ),
+    );
+  }
+
+  updateHopeHubBanner(id: string, payload: Record<string, unknown>) {
+    return firstValueFrom(
+      this.http.put<{ banner: any }>(
+        `${this.apiBase}${API_PATHS.ADMIN.HOPE_HUB_BANNER_BY_ID(id)}`,
+        payload,
+      ),
+    );
+  }
+
+  getHopeHubOrganizationLeadsAdmin() {
+    return firstValueFrom(
+      this.http.get<{ leads: Array<any> }>(
+        `${this.apiBase}${API_PATHS.ADMIN.HOPE_HUB_ORGANIZATION_LEADS}`,
+      ),
+    );
+  }
+
+  updateHopeHubOrganizationLead(id: string, payload: Record<string, unknown>) {
+    return firstValueFrom(
+      this.http.put<{ lead: any }>(
+        `${this.apiBase}${API_PATHS.ADMIN.HOPE_HUB_ORGANIZATION_LEAD_BY_ID(id)}`,
+        payload,
+      ),
+    );
+  }
+
+  getAssessmentDefinitionsAdmin(params: { includeInactive?: boolean; q?: string } = {}) {
+    return firstValueFrom(
+      this.http.get<{ definitions: Array<any>; pagination: any }>(
+        `${this.apiBase}${API_PATHS.ADMIN.ASSESSMENT_DEFINITIONS}`,
+        {
+          params: {
+            includeInactive: String(params.includeInactive ?? true),
+            q: params.q ?? '',
+            pageSize: '100',
+          },
+        },
+      ),
+    );
+  }
+
+  createAssessmentDefinition(payload: Record<string, unknown>) {
+    return firstValueFrom(
+      this.http.post<{ definition: any }>(
+        `${this.apiBase}${API_PATHS.ADMIN.ASSESSMENT_DEFINITIONS}`,
+        payload,
+      ),
+    );
+  }
+
+  updateAssessmentDefinition(id: string, payload: Record<string, unknown>) {
+    return firstValueFrom(
+      this.http.patch<{ definition: any }>(
+        `${this.apiBase}${API_PATHS.ADMIN.ASSESSMENT_DEFINITION_BY_ID(id)}`,
+        payload,
+      ),
+    );
+  }
+
+  publishAssessmentDefinition(id: string) {
+    return firstValueFrom(
+      this.http.post<{ definition: any }>(
+        `${this.apiBase}${API_PATHS.ADMIN.ASSESSMENT_DEFINITION_PUBLISH(id)}`,
+        {},
+      ),
+    );
+  }
+
+  unpublishAssessmentDefinition(id: string) {
+    return firstValueFrom(
+      this.http.post<{ definition: any }>(
+        `${this.apiBase}${API_PATHS.ADMIN.ASSESSMENT_DEFINITION_UNPUBLISH(id)}`,
+        {},
+      ),
+    );
+  }
 }

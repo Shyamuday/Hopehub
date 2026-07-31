@@ -1,0 +1,72 @@
+<div class="assessment-page">
+  <header class="page-head">
+    <div>
+      <p>Healing Hub</p>
+      <h2>Assessment Definitions</h2>
+    </div>
+    <button type="button" class="primary" (click)="newDraft()">New draft</button>
+  </header>
+
+  @if (toast()) {
+    <div class="toast">{{ toast() }}</div>
+  }
+  @if (error()) {
+    <div class="error">{{ error() }}</div>
+  }
+
+  <section class="toolbar">
+    <input
+      name="query"
+      placeholder="Search assessments"
+      [ngModel]="query()"
+      (ngModelChange)="query.set($event)"
+      (keyup.enter)="load()"
+    />
+    <button type="button" (click)="load()">Search</button>
+  </section>
+
+  <section class="grid-layout">
+    <form class="panel edit-form" (ngSubmit)="save()">
+      <h3>{{ form().id ? 'Edit assessment' : 'New assessment' }}</h3>
+      <div class="two">
+        <label>Id <input name="id" [(ngModel)]="form().id" required /></label>
+        <label>Version <input name="version" [(ngModel)]="form().version" required /></label>
+        <label>Type <input name="type" [(ngModel)]="form().type" required /></label>
+        <label>Category <input name="category" [(ngModel)]="form().category" required /></label>
+        <label>Title <input name="title" [(ngModel)]="form().title" required /></label>
+        <label>Sort order <input type="number" name="sortOrder" [(ngModel)]="form().sortOrder" /></label>
+      </div>
+      <label>Description <textarea rows="3" name="description" [(ngModel)]="form().description" required></textarea></label>
+      <label class="check"><input type="checkbox" name="active" [(ngModel)]="form().isActive" /> Publish after save</label>
+      <label>Config JSON <textarea class="json" rows="24" name="configJson" [(ngModel)]="form().configJson" required></textarea></label>
+      <div class="actions">
+        <button type="submit" class="primary" [disabled]="saving()">{{ saving() ? 'Saving...' : 'Save assessment' }}</button>
+      </div>
+    </form>
+
+    <section class="panel rows">
+      <h3>Assessments</h3>
+      @if (loading()) {
+        <p class="muted">Loading...</p>
+      } @else {
+        @for (definition of definitions(); track definition.id) {
+          <article class="row">
+            <div>
+              <strong>{{ definition.title }}</strong>
+              <span>{{ definition.id }} · {{ definition.category }} · {{ definition.version }}</span>
+            </div>
+            <div class="row-actions">
+              <span class="status" [class.live]="definition.isActive">{{ definition.isActive ? 'Live' : 'Draft' }}</span>
+              <button type="button" (click)="edit(definition)">Edit</button>
+              @if (definition.isActive) {
+                <button type="button" (click)="unpublish(definition)">Unpublish</button>
+              } @else {
+                <button type="button" class="primary" (click)="publish(definition)">Publish</button>
+              }
+            </div>
+          </article>
+        }
+      }
+    </section>
+  </section>
+</div>

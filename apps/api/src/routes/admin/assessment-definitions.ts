@@ -1,0 +1,258 @@
+import { Router } from 'express';
+import { Prisma, Role } from '@prisma/client';
+import { z } from 'zod';
+import { authRequired, allowRoles } from '../../auth.js';
+import { prisma } from '../../db.js';
+import {
+  asyncRoute,
+  queryPositiveInt,
+  queryText,
+  routeParam,
+  writeAuditLog
+} from '../../utils/helpers.js';
+import {
+  type AssessmentConfigDefinition,
+  getAssessmentDefinition,
+  validateAssessmentConfig
+} from '../../services/assessment-definitions.js';
+
+const assessmentDefinitionSchema = z.object({
+  id: z
+    .string()
+    .trim()
+    .min(2)
+    .max(120)
+    .regex(/^[a-z0-9-]+$/),
+  type: z.string().trim().min(1).max(120),
+  category: z.string().trim().min(1).max(120),
+  title: z.string().trim().min(2).max(200),
+  description: z.string().trim().min(5).max(3000),
+  version: z.string().trim().min(1).max(40).default('v1'),
+  config: z.record(z.string(), z.unknown()),
+  isActive: z.boolean().default(false),
+  sortOrder: z.number().int().min(0).max(100000).default(0)
+});
+
+const updateAssessmentDefinitionSchema = assessmentDefinitionSchema.partial().omit({ id: true });
+
+function serializeDefinition(definition: Awaited<ReturnType<typeof getAssessmentDefinition>>) {
+  return definition;
+}
+
+function validateForPublish(config: unknown) {
+  const errors = validateAssessmentConfig(config);
+  if (errors.length) {
+    return errors;
+  }
+  const typed = config as AssessmentConfigDefinition;
+  const maxOption = Math.max(...typed.responseOptions.map((option) => option.value));
+  const maxScore = maxOption * typed.questions.length;
+  const coversZero = typed.scoring.some((band) => band.min <= 0 && band.max >= 0);
+  const coversMax = typed.scoring.some((band) => band.min <= maxScore && band.max >= maxScore);
+  const coverageErrors: string[] = [];
+  if (!coversZero) coverageErrors.push('Scoring bands must cover score 0.');
+  if (!coversMax) coverageErrors.push(`Scoring bands must cover maximum score ${maxScore}.`);
+  return coverageErrors;
+}
+
+export function registerAdminAssessmentDefinitionRoutes(router: Router) {
+  router.get(
+    '/admin/assessment-definitions',
+    authRequired,
+    allowRoles(Role.ADMIN, Role.MARKETING),
+    asyncRoute(async (req, res) => {
+      const page = queryPositiveInt(req, 'page', 1, 1, 500);
+      const pageSize = queryPositiveInt(req, 'pageSize', 50, 1, 100);
+      const q = queryText(req, 'q').trim();
+      const category = queryText(req, 'category').trim();
+      const includeInactive = queryText(req, 'includeInactive') === 'true';
+      const conditions: Prisma.Sql[] = [];
+      if (!includeInactive) conditions.push(Prisma.sql`"isActive" = true`);
+      if (q) {
+        const search = `%${q}%`;
+        conditions.push(
+          Prisma.sql`("title" ILIKE ${search} OR "description" ILIKE ${search} OR "type" ILIKE ${search})`
+        );
+      }
+      if (category) conditions.push(Prisma.sql`"category" = ${category}`);
+      const where = conditions.length
+        ? Prisma.sql`WHERE ${Prisma.join(conditions, ' AND ')}`
+        : Prisma.empty;
+
+      const [definitions, countRows] = await Promise.all([
+        prisma.$queryRaw(Prisma.sql`
+          SELECT "id", "type", "category", "title", "description", "version", "config", "isActive", "sortOrder"
+          FROM "AssessmentDefinition"
+          ${where}
+          ORDER BY "sortOrder" ASC, "title" ASC
+          LIMIT ${pageSize}
+          OFFSET ${(page - 1) * pageSize}
+        `),
+        prisma.$queryRaw<{ count: bigint | number }[]>(Prisma.sql`
+          SELECT COUNT(*) AS "count"
+          FROM "AssessmentDefinition"
+          ${where}
+        `)
+      ]);
+
+      const total = Number(countRows[0]?.count ?? 0);
+      res.json({
+        definitions,
+        pagination: { page, pageSize, total, totalPages: Math.max(1, Math.ceil(total / pageSize)) }
+      });
+    })
+  );
+
+  router.get(
+    '/admin/assessment-definitions/:id',
+    authRequired,
+    allowRoles(Role.ADMIN, Role.MARKETING),
+    asyncRoute(async (req, res) => {
+      const definition = await getAssessmentDefinition(routeParam(req, 'id'), true);
+      if (!definition) {
+        res.status(404).json({ message: 'Assessment definition not found.' });
+        return;
+      }
+      res.json({ definition: serializeDefinition(definition) });
+    })
+  );
+
+  router.post(
+    '/admin/assessment-definitions',
+    authRequired,
+    allowRoles(Role.ADMIN),
+    asyncRoute(async (req, res) => {
+      const body = assessmentDefinitionSchema.parse(req.body);
+      const errors = body.isActive
+        ? validateForPublish(body.config)
+        : validateAssessmentConfig(body.config);
+      if (errors.length) {
+        res.status(400).json({ message: 'Assessment definition is not valid.', errors });
+        return;
+      }
+
+      await prisma.$executeRaw(Prisma.sql`
+        INSERT INTO "AssessmentDefinition" ("id", "type", "category", "title", "description", "version", "config", "isActive", "sortOrder", "updatedAt")
+        VALUES (${body.id}, ${body.type}, ${body.category}, ${body.title}, ${body.description}, ${body.version}, ${body.config as Prisma.InputJsonValue}::jsonb, ${body.isActive}, ${body.sortOrder}, CURRENT_TIMESTAMP)
+        ON CONFLICT ("id") DO UPDATE SET
+          "type" = EXCLUDED."type",
+          "category" = EXCLUDED."category",
+          "title" = EXCLUDED."title",
+          "description" = EXCLUDED."description",
+          "version" = EXCLUDED."version",
+          "config" = EXCLUDED."config",
+          "isActive" = EXCLUDED."isActive",
+          "sortOrder" = EXCLUDED."sortOrder",
+          "updatedAt" = CURRENT_TIMESTAMP
+      `);
+      await writeAuditLog({
+        actorId: req.user!.id,
+        actorRole: req.user!.role,
+        action: 'assessment_definition.upsert',
+        targetType: 'assessment_definition',
+        targetId: body.id,
+        summary: 'Assessment definition saved.'
+      });
+      res.status(201).json({ definition: await getAssessmentDefinition(body.id, true) });
+    })
+  );
+
+  router.patch(
+    '/admin/assessment-definitions/:id',
+    authRequired,
+    allowRoles(Role.ADMIN),
+    asyncRoute(async (req, res) => {
+      const id = routeParam(req, 'id');
+      const current = await getAssessmentDefinition(id, true);
+      if (!current) {
+        res.status(404).json({ message: 'Assessment definition not found.' });
+        return;
+      }
+      const body = updateAssessmentDefinitionSchema.parse(req.body);
+      const next = {
+        ...current,
+        ...body,
+        config: (body.config ?? current.config) as AssessmentConfigDefinition
+      };
+      const errors = next.isActive
+        ? validateForPublish(next.config)
+        : validateAssessmentConfig(next.config);
+      if (errors.length) {
+        res.status(400).json({ message: 'Assessment definition is not valid.', errors });
+        return;
+      }
+
+      await prisma.$executeRaw(Prisma.sql`
+        UPDATE "AssessmentDefinition"
+        SET
+          "type" = ${next.type},
+          "category" = ${next.category},
+          "title" = ${next.title},
+          "description" = ${next.description},
+          "version" = ${next.version},
+          "config" = ${next.config as Prisma.InputJsonValue}::jsonb,
+          "isActive" = ${next.isActive},
+          "sortOrder" = ${next.sortOrder},
+          "updatedAt" = CURRENT_TIMESTAMP
+        WHERE "id" = ${id}
+      `);
+      await writeAuditLog({
+        actorId: req.user!.id,
+        actorRole: req.user!.role,
+        action: 'assessment_definition.update',
+        targetType: 'assessment_definition',
+        targetId: id,
+        summary: 'Assessment definition updated.'
+      });
+      res.json({ definition: await getAssessmentDefinition(id, true) });
+    })
+  );
+
+  router.post(
+    '/admin/assessment-definitions/:id/publish',
+    authRequired,
+    allowRoles(Role.ADMIN),
+    asyncRoute(async (req, res) => {
+      const id = routeParam(req, 'id');
+      const definition = await getAssessmentDefinition(id, true);
+      if (!definition) {
+        res.status(404).json({ message: 'Assessment definition not found.' });
+        return;
+      }
+      const errors = validateForPublish(definition.config);
+      if (errors.length) {
+        res.status(400).json({ message: 'Assessment definition is not valid.', errors });
+        return;
+      }
+      await prisma.$executeRaw`UPDATE "AssessmentDefinition" SET "isActive" = true, "updatedAt" = CURRENT_TIMESTAMP WHERE "id" = ${id}`;
+      await writeAuditLog({
+        actorId: req.user!.id,
+        actorRole: req.user!.role,
+        action: 'assessment_definition.publish',
+        targetType: 'assessment_definition',
+        targetId: id,
+        summary: 'Assessment definition published.'
+      });
+      res.json({ definition: await getAssessmentDefinition(id, true) });
+    })
+  );
+
+  router.post(
+    '/admin/assessment-definitions/:id/unpublish',
+    authRequired,
+    allowRoles(Role.ADMIN),
+    asyncRoute(async (req, res) => {
+      const id = routeParam(req, 'id');
+      await prisma.$executeRaw`UPDATE "AssessmentDefinition" SET "isActive" = false, "updatedAt" = CURRENT_TIMESTAMP WHERE "id" = ${id}`;
+      await writeAuditLog({
+        actorId: req.user!.id,
+        actorRole: req.user!.role,
+        action: 'assessment_definition.unpublish',
+        targetType: 'assessment_definition',
+        targetId: id,
+        summary: 'Assessment definition unpublished.'
+      });
+      res.json({ definition: await getAssessmentDefinition(id, true) });
+    })
+  );
+}

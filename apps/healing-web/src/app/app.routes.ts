@@ -64,6 +64,88 @@ export const routes: Routes = [
     },
   },
   {
+    path: 'packages',
+    loadComponent: () =>
+      import('./features/offers/offers-page.component').then((m) => m.OffersPageComponent),
+    title: 'Care Packages - Hope Hub',
+    data: {
+      mode: 'packages',
+      breadcrumb: 'Packages',
+      description: 'Hope Hub care packages, single sessions, and longer support plans',
+      keywords: 'mental health packages, counselling package, hope hub plans',
+    },
+  },
+  {
+    path: 'packages/:slug',
+    loadComponent: () =>
+      import('./features/offers/offer-detail.component').then((m) => m.OfferDetailComponent),
+    title: 'Package Details - Hope Hub',
+    data: {
+      breadcrumb: 'Package Details',
+      description: 'View Hope Hub package details and book support',
+      keywords: 'hope hub package, counselling plan, mental wellness support',
+    },
+  },
+  {
+    path: 'events',
+    loadComponent: () =>
+      import('./features/offers/offers-page.component').then((m) => m.OffersPageComponent),
+    title: 'Events - Hope Hub',
+    data: {
+      mode: 'events',
+      breadcrumb: 'Events',
+      description: 'Hope Hub workshops, meetups, webinars, and group sessions',
+      keywords: 'mental health workshop, meetup, webinar, group session',
+    },
+  },
+  {
+    path: 'events/:slug',
+    loadComponent: () =>
+      import('./features/offers/offer-detail.component').then((m) => m.OfferDetailComponent),
+    title: 'Event Details - Hope Hub',
+    data: {
+      breadcrumb: 'Event Details',
+      description: 'View Hope Hub event details and register',
+      keywords: 'hope hub event, mental health workshop, meetup',
+    },
+  },
+  {
+    path: 'resources',
+    loadComponent: () =>
+      import('./features/offers/offers-page.component').then((m) => m.OffersPageComponent),
+    title: 'Recorded Sessions - Hope Hub',
+    data: {
+      mode: 'resources',
+      breadcrumb: 'Recorded Sessions',
+      description: 'Hope Hub recorded sessions, Telegram audio and video, and YouTube resources',
+      keywords:
+        'recorded mental health session, telegram audio, youtube session, hope hub resources',
+    },
+  },
+  {
+    path: 'resources/:slug',
+    loadComponent: () =>
+      import('./features/offers/offer-detail.component').then((m) => m.OfferDetailComponent),
+    title: 'Recorded Session - Hope Hub',
+    data: {
+      breadcrumb: 'Recorded Session',
+      description: 'Watch or listen to a Hope Hub recorded session',
+      keywords: 'recorded session, hope hub media, mental wellness video',
+    },
+  },
+  {
+    path: 'organization',
+    loadComponent: () =>
+      import('./features/organization/organization.component').then((m) => m.OrganizationComponent),
+    title: 'Organisation Programs - Hope Hub',
+    data: {
+      breadcrumb: 'Organisation Programs',
+      description:
+        'Request Hope Hub mental wellness programs for schools, colleges, and corporates',
+      keywords: 'school counselling program, corporate wellness, college mental health',
+    },
+  },
+  {
     path: 'profile',
     loadComponent: () =>
       import('./features/profile/profile.component').then((m) => m.ProfileComponent),
@@ -156,6 +238,19 @@ export const routes: Routes = [
       description:
         'Comprehensive mental health assessments including PHQ-9, GAD-7, and other validated tools',
       keywords: 'mental health assessment, PHQ-9, GAD-7, depression screening, anxiety assessment',
+    },
+  },
+  {
+    path: 'assessments/:assessmentId',
+    loadComponent: () =>
+      import('./features/assessments/direct-assessment.component').then(
+        (m) => m.DirectAssessmentComponent,
+      ),
+    title: 'Mental Health Test - Hope Hub',
+    data: {
+      breadcrumb: 'Mental Health Test',
+      description: 'Take a private mental health self-check and get recommendations after sign in',
+      keywords: 'mental health test, self-check, screening, Hope Hub',
     },
   },
   {
@@ -282,6 +377,90 @@ export const routes: Routes = [
       breadcrumb: 'Mental Health Test',
       description: 'Take a combined depression, anxiety, and stress test',
       keywords: 'mental health test, DASS-21, depression anxiety stress test',
+    },
+  },
+  {
+    path: 'panic-test',
+    loadComponent: () =>
+      import('./features/assessments/direct-assessment.component').then(
+        (m) => m.DirectAssessmentComponent,
+      ),
+    title: 'Panic Symptoms Test - Hope Hub',
+    data: {
+      assessmentId: 'panic-symptoms',
+      breadcrumb: 'Panic Test',
+      description: 'Take a private panic symptoms self-check and get support recommendations',
+      keywords: 'panic test, panic attack symptoms, anxiety self check',
+    },
+  },
+  {
+    path: 'social-anxiety-test',
+    loadComponent: () =>
+      import('./features/assessments/direct-assessment.component').then(
+        (m) => m.DirectAssessmentComponent,
+      ),
+    title: 'Social Anxiety Test - Hope Hub',
+    data: {
+      assessmentId: 'social-anxiety',
+      breadcrumb: 'Social Anxiety Test',
+      description: 'Take a private social anxiety self-check',
+      keywords: 'social anxiety test, fear of judgement, social anxiety self check',
+    },
+  },
+  {
+    path: 'loneliness-test',
+    loadComponent: () =>
+      import('./features/assessments/direct-assessment.component').then(
+        (m) => m.DirectAssessmentComponent,
+      ),
+    title: 'Loneliness Test - Hope Hub',
+    data: {
+      assessmentId: 'loneliness',
+      breadcrumb: 'Loneliness Test',
+      description: 'Take a private loneliness and connection self-check',
+      keywords: 'loneliness test, emotional loneliness, connection self check',
+    },
+  },
+  {
+    path: 'self-esteem-test',
+    loadComponent: () =>
+      import('./features/assessments/direct-assessment.component').then(
+        (m) => m.DirectAssessmentComponent,
+      ),
+    title: 'Self-Esteem Test - Hope Hub',
+    data: {
+      assessmentId: 'self-esteem',
+      breadcrumb: 'Self-Esteem Test',
+      description: 'Take a private self-esteem self-check',
+      keywords: 'self-esteem test, self worth, confidence self check',
+    },
+  },
+  {
+    path: 'anger-test',
+    loadComponent: () =>
+      import('./features/assessments/direct-assessment.component').then(
+        (m) => m.DirectAssessmentComponent,
+      ),
+    title: 'Anger Regulation Test - Hope Hub',
+    data: {
+      assessmentId: 'anger-regulation',
+      breadcrumb: 'Anger Test',
+      description: 'Take a private anger regulation self-check',
+      keywords: 'anger test, anger management, irritability self check',
+    },
+  },
+  {
+    path: 'grief-test',
+    loadComponent: () =>
+      import('./features/assessments/direct-assessment.component').then(
+        (m) => m.DirectAssessmentComponent,
+      ),
+    title: 'Grief Support Test - Hope Hub',
+    data: {
+      assessmentId: 'grief-support',
+      breadcrumb: 'Grief Test',
+      description: 'Take a private grief support self-check',
+      keywords: 'grief test, grief support, loss self check',
     },
   },
   {

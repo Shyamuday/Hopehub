@@ -1,0 +1,315 @@
+import { Router } from 'express';
+import {
+  HopeHubDiscountType,
+  HopeHubDeliveryMode,
+  HopeHubOfferingType,
+  HopeHubOrganizationLeadStatus,
+  HopeHubPartialPaymentType,
+  Prisma,
+  Role
+} from '@prisma/client';
+import { z } from 'zod';
+import { authRequired, allowRoles } from '../../auth.js';
+import { prisma } from '../../db.js';
+import { asyncRoute, routeParam, writeAuditLog } from '../../utils/helpers.js';
+import { saveHopeHubMedia } from '../../services/hope-hub-media-storage.js';
+
+const emptyToNull = z
+  .string()
+  .trim()
+  .optional()
+  .nullable()
+  .or(z.literal(''))
+  .transform((value) => {
+    const text = typeof value === 'string' ? value.trim() : '';
+    return text || null;
+  });
+
+const dateTimeOrNull = z
+  .string()
+  .trim()
+  .optional()
+  .nullable()
+  .or(z.literal(''))
+  .transform((value) => {
+    const text = typeof value === 'string' ? value.trim() : '';
+    return text ? new Date(text) : null;
+  });
+
+const stringList = z.array(z.string().trim().min(1).max(160)).max(30).default([]);
+
+const offeringSchema = z.object({
+  code: z.string().trim().min(2).max(80),
+  slug: z.string().trim().min(2).max(120),
+  title: z.string().trim().min(2).max(160),
+  subtitle: emptyToNull,
+  description: z.string().trim().min(10).max(3000),
+  type: z.nativeEnum(HopeHubOfferingType),
+  priceInPaise: z.number().int().min(0).nullable().optional(),
+  compareAtPriceInPaise: z.number().int().min(0).nullable().optional(),
+  currency: z.string().trim().min(3).max(3).default('INR'),
+  discountEnabled: z.boolean().default(false),
+  discountType: z.nativeEnum(HopeHubDiscountType).default(HopeHubDiscountType.NONE),
+  discountLabel: emptyToNull,
+  discountCode: emptyToNull,
+  discountPercent: z.number().int().min(1).max(100).nullable().optional(),
+  discountFlatInPaise: z.number().int().min(0).nullable().optional(),
+  discountMaxInPaise: z.number().int().min(0).nullable().optional(),
+  discountStartsAt: dateTimeOrNull,
+  discountEndsAt: dateTimeOrNull,
+  partialPaymentEnabled: z.boolean().default(false),
+  partialPaymentType: z
+    .nativeEnum(HopeHubPartialPaymentType)
+    .default(HopeHubPartialPaymentType.NONE),
+  partialPaymentLabel: emptyToNull,
+  partialPaymentPercent: z.number().int().min(1).max(100).nullable().optional(),
+  partialPaymentFlatInPaise: z.number().int().min(0).nullable().optional(),
+  validityDays: z.number().int().positive().nullable().optional(),
+  sessionCount: z.number().int().positive().nullable().optional(),
+  sessionDurationMinutes: z.number().int().positive().nullable().optional(),
+  deliveryMode: z.nativeEnum(HopeHubDeliveryMode).default(HopeHubDeliveryMode.ONLINE_AUDIO),
+  eventStartsAt: dateTimeOrNull,
+  eventEndsAt: dateTimeOrNull,
+  seatLimit: z.number().int().positive().nullable().optional(),
+  venue: emptyToNull,
+  imageUrl: emptyToNull,
+  ctaLabel: z.string().trim().min(2).max(80).default('Book now'),
+  routePath: emptyToNull,
+  benefits: stringList,
+  audience: stringList,
+  metadata: z.record(z.string(), z.unknown()).nullable().optional(),
+  isActive: z.boolean().default(true),
+  isFeatured: z.boolean().default(false),
+  requiresLeadForm: z.boolean().default(false),
+  sortOrder: z.number().int().default(0)
+});
+
+const bannerSchema = z.object({
+  title: z.string().trim().min(2).max(160),
+  subtitle: emptyToNull,
+  eyebrow: emptyToNull,
+  imageUrl: emptyToNull,
+  ctaLabel: z.string().trim().min(2).max(80).default('Explore'),
+  routePath: z.string().trim().min(1).max(300),
+  offeringId: emptyToNull,
+  startsAt: dateTimeOrNull,
+  endsAt: dateTimeOrNull,
+  isActive: z.boolean().default(true),
+  sortOrder: z.number().int().default(0),
+  backgroundColor: emptyToNull,
+  textColor: emptyToNull,
+  metadata: z.record(z.string(), z.unknown()).nullable().optional()
+});
+
+const leadUpdateSchema = z.object({
+  status: z.nativeEnum(HopeHubOrganizationLeadStatus).optional(),
+  followUpNotes: emptyToNull
+});
+
+const mediaUploadSchema = z.object({
+  mimeType: z.string().trim().min(3).max(80),
+  fileName: z.string().trim().max(200).optional(),
+  dataBase64: z.string().min(1)
+});
+
+function jsonValue(value: Record<string, unknown> | null | undefined) {
+  return value == null ? Prisma.JsonNull : (value as Prisma.InputJsonObject);
+}
+
+function mapMediaUploadError(error: unknown) {
+  const code = error instanceof Error ? error.message : '';
+  if (code === 'UNSUPPORTED_MIME') {
+    return {
+      status: 400,
+      message: 'Only MP3, M4A, WAV, WebM, MP4, and MOV media files are allowed.'
+    };
+  }
+  if (code === 'EMPTY_FILE') {
+    return { status: 400, message: 'Media file is empty.' };
+  }
+  if (code === 'FILE_TOO_LARGE') {
+    return {
+      status: 400,
+      message:
+        'Media upload must be 5 MB or smaller. Use YouTube, Telegram, or direct S3 links for larger recordings.'
+    };
+  }
+  return { status: 500, message: 'Could not save media file.' };
+}
+
+export function registerAdminHopeHubOfferingRoutes(router: Router) {
+  router.post(
+    '/admin/hope-hub/media',
+    authRequired,
+    allowRoles(Role.ADMIN, Role.MARKETING),
+    asyncRoute(async (req, res) => {
+      const body = mediaUploadSchema.parse(req.body);
+      try {
+        const saved = await saveHopeHubMedia({
+          mimeType: body.mimeType,
+          fileName: body.fileName,
+          dataBase64: body.dataBase64
+        });
+        await writeAuditLog({
+          actorId: req.user!.id,
+          actorRole: req.user!.role,
+          action: 'hopehub.media.upload',
+          targetType: 'hope_hub_media',
+          targetId: saved.storageKey,
+          summary: `Uploaded Hope Hub media "${body.fileName || saved.storageKey}".`
+        });
+        res.status(201).json(saved);
+      } catch (error) {
+        const mapped = mapMediaUploadError(error);
+        res.status(mapped.status).json({ message: mapped.message });
+      }
+    })
+  );
+
+  router.get(
+    '/admin/hope-hub/offerings',
+    authRequired,
+    allowRoles(Role.ADMIN, Role.MARKETING),
+    asyncRoute(async (_req, res) => {
+      const offerings = await prisma.hopeHubOffering.findMany({
+        orderBy: [{ sortOrder: 'asc' }, { createdAt: 'desc' }]
+      });
+      res.json({ offerings });
+    })
+  );
+
+  router.post(
+    '/admin/hope-hub/offerings',
+    authRequired,
+    allowRoles(Role.ADMIN, Role.MARKETING),
+    asyncRoute(async (req, res) => {
+      const body = offeringSchema.parse(req.body);
+      const offering = await prisma.hopeHubOffering.create({
+        data: { ...body, metadata: jsonValue(body.metadata) }
+      });
+      await writeAuditLog({
+        actorId: req.user!.id,
+        actorRole: req.user!.role,
+        action: 'hopehub.offering.create',
+        targetType: 'hope_hub_offering',
+        targetId: offering.id,
+        summary: `Created Hope Hub offering "${offering.title}".`
+      });
+      res.status(201).json({ offering });
+    })
+  );
+
+  router.put(
+    '/admin/hope-hub/offerings/:id',
+    authRequired,
+    allowRoles(Role.ADMIN, Role.MARKETING),
+    asyncRoute(async (req, res) => {
+      const id = routeParam(req, 'id');
+      const body = offeringSchema.partial().parse(req.body);
+      const offering = await prisma.hopeHubOffering.update({
+        where: { id },
+        data: { ...body, metadata: 'metadata' in body ? jsonValue(body.metadata) : undefined }
+      });
+      await writeAuditLog({
+        actorId: req.user!.id,
+        actorRole: req.user!.role,
+        action: 'hopehub.offering.update',
+        targetType: 'hope_hub_offering',
+        targetId: id,
+        summary: 'Updated Hope Hub offering.'
+      });
+      res.json({ offering });
+    })
+  );
+
+  router.get(
+    '/admin/hope-hub/banners',
+    authRequired,
+    allowRoles(Role.ADMIN, Role.MARKETING),
+    asyncRoute(async (_req, res) => {
+      const banners = await prisma.hopeHubBanner.findMany({
+        include: { offering: { select: { id: true, title: true, slug: true, type: true } } },
+        orderBy: [{ sortOrder: 'asc' }, { createdAt: 'desc' }]
+      });
+      res.json({ banners });
+    })
+  );
+
+  router.post(
+    '/admin/hope-hub/banners',
+    authRequired,
+    allowRoles(Role.ADMIN, Role.MARKETING),
+    asyncRoute(async (req, res) => {
+      const body = bannerSchema.parse(req.body);
+      const banner = await prisma.hopeHubBanner.create({
+        data: { ...body, metadata: jsonValue(body.metadata) }
+      });
+      await writeAuditLog({
+        actorId: req.user!.id,
+        actorRole: req.user!.role,
+        action: 'hopehub.banner.create',
+        targetType: 'hope_hub_banner',
+        targetId: banner.id,
+        summary: `Created Hope Hub banner "${banner.title}".`
+      });
+      res.status(201).json({ banner });
+    })
+  );
+
+  router.put(
+    '/admin/hope-hub/banners/:id',
+    authRequired,
+    allowRoles(Role.ADMIN, Role.MARKETING),
+    asyncRoute(async (req, res) => {
+      const id = routeParam(req, 'id');
+      const body = bannerSchema.partial().parse(req.body);
+      const banner = await prisma.hopeHubBanner.update({
+        where: { id },
+        data: { ...body, metadata: 'metadata' in body ? jsonValue(body.metadata) : undefined }
+      });
+      await writeAuditLog({
+        actorId: req.user!.id,
+        actorRole: req.user!.role,
+        action: 'hopehub.banner.update',
+        targetType: 'hope_hub_banner',
+        targetId: id,
+        summary: 'Updated Hope Hub banner.'
+      });
+      res.json({ banner });
+    })
+  );
+
+  router.get(
+    '/admin/hope-hub/organization-leads',
+    authRequired,
+    allowRoles(Role.ADMIN, Role.MARKETING),
+    asyncRoute(async (_req, res) => {
+      const leads = await prisma.hopeHubOrganizationLead.findMany({
+        include: { offering: { select: { id: true, title: true, slug: true } } },
+        orderBy: { createdAt: 'desc' },
+        take: 200
+      });
+      res.json({ leads });
+    })
+  );
+
+  router.put(
+    '/admin/hope-hub/organization-leads/:id',
+    authRequired,
+    allowRoles(Role.ADMIN, Role.MARKETING),
+    asyncRoute(async (req, res) => {
+      const id = routeParam(req, 'id');
+      const body = leadUpdateSchema.parse(req.body);
+      const lead = await prisma.hopeHubOrganizationLead.update({ where: { id }, data: body });
+      await writeAuditLog({
+        actorId: req.user!.id,
+        actorRole: req.user!.role,
+        action: 'hopehub.organization_lead.update',
+        targetType: 'hope_hub_organization_lead',
+        targetId: id,
+        summary: 'Updated Hope Hub organisation lead.'
+      });
+      res.json({ lead });
+    })
+  );
+}

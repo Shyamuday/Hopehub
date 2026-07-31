@@ -70,6 +70,11 @@ if should_build healing; then
   rm -rf "$STATIC/healing"
   mkdir -p "$STATIC/healing"
   cp -r "$ROOT/apps/healing-web/dist/hope-hub-website/browser/"* "$STATIC/healing/"
+  if [ -n "${GOOGLE_CLIENT_ID:-}" ]; then
+    google_client_id_escaped="${GOOGLE_CLIENT_ID//\\/\\\\}"
+    google_client_id_escaped="${google_client_id_escaped//\'/\\\'}"
+    printf "window.GOOGLE_CLIENT_ID = '%s';\n" "$google_client_id_escaped" > "$STATIC/healing/runtime-config.js"
+  fi
 fi
 
 echo "==> Static files ready in deploy/static/"

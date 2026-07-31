@@ -3,13 +3,14 @@ import { ActivatedRoute, RouterModule } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { firstValueFrom } from 'rxjs';
 import { AssessmentConfig, AssessmentResult } from '../../core/models/assessment.model';
-import { getAssessmentConfig } from '../../core/data/assessment-configs';
 import { getExerciseRecommendations } from '../../core/data/exercise-recommendations';
 import { getLifestyleTipRecommendations } from '../../core/data/lifestyle-tip-recommendations';
 import { getArticleRecommendations } from '../../core/data/article-recommendations';
 import { AuthService } from '../../core/services/auth.service';
 import { AuthModalService } from '../../core/services/auth-modal.service';
 import { AssessmentAttemptsService } from '../../core/services/assessment-attempts.service';
+import { AssessmentDefinitionService } from '../../core/services/assessment-definition.service';
+import { NotificationService } from '../../core/services/notification.service';
 
 @Component({
   selector: 'app-direct-assessment',
@@ -43,12 +44,39 @@ import { AssessmentAttemptsService } from '../../core/services/assessment-attemp
               </div>
 
               <div class="mb-4">
-                <div class="mb-2 flex justify-between text-sm text-gray-600">
-                  <span
-                    >Question {{ currentQuestion() + 1 }} of
-                    {{ assessment()!.questions.length }}</span
-                  >
-                  <span>{{ progressPercent() }}%</span>
+                <div
+                  class="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
+                >
+                  <div class="text-sm text-gray-600">
+                    @if (viewMode() === 'single') {
+                      <span
+                        >Question {{ currentQuestion() + 1 }} of
+                        {{ assessment()!.questions.length }}</span
+                      >
+                    } @else {
+                      <span
+                        >{{ answeredCount() }} of
+                        {{ assessment()!.questions.length }} answered</span
+                      >
+                    }
+                    <span class="ml-2 font-semibold text-gray-800">{{ progressPercent() }}%</span>
+                  </div>
+                  <div class="direct-test__mode" aria-label="Question view mode">
+                    <button
+                      type="button"
+                      [class.active]="viewMode() === 'single'"
+                      (click)="setViewMode('single')"
+                    >
+                      One by one
+                    </button>
+                    <button
+                      type="button"
+                      [class.active]="viewMode() === 'all'"
+                      (click)="setViewMode('all')"
+                    >
+                      All questions
+                    </button>
+                  </div>
                 </div>
                 <div class="h-2 rounded-full bg-gray-100">
                   <div
@@ -58,7 +86,7 @@ import { AssessmentAttemptsService } from '../../core/services/assessment-attemp
                 </div>
               </div>
 
-              <div>
+              @if (viewMode() === 'single') {
                 <h2 class="mb-3 text-base font-semibold leading-snug text-gray-950 sm:text-lg">
                   {{ currentQuestionText() }}
                 </h2>
@@ -101,14 +129,56 @@ import { AssessmentAttemptsService } from '../../core/services/assessment-attemp
                     <button
                       type="button"
                       class="btn-primary btn-sm"
-                      [disabled]="!hasCurrentAnswer() || savingResult()"
+                      [disabled]="!hasAllAnswers() || savingResult()"
                       (click)="completeAssessment()"
                     >
                       {{ savingResult() ? 'Saving...' : 'See result' }}
                     </button>
                   }
                 </div>
-              </div>
+              } @else {
+                <div class="grid gap-4">
+                  @for (question of assessment()!.questions; track question.id; let i = $index) {
+                    <section class="direct-test__question-block">
+                      <div class="mb-2 flex items-start gap-3">
+                        <span class="direct-test__question-number">{{ i + 1 }}</span>
+                        <h2 class="text-sm font-semibold leading-6 text-gray-950 sm:text-base">
+                          {{ question.text }}
+                        </h2>
+                      </div>
+
+                      <div class="grid gap-2 sm:grid-cols-2">
+                        @for (option of assessment()!.responseOptions; track option.value) {
+                          <button
+                            type="button"
+                            class="direct-test__option"
+                            [class.direct-test__option--selected]="answers()[i] === option.value"
+                            (click)="selectAnswerAt(i, option.value)"
+                          >
+                            {{ option.label }}
+                          </button>
+                        }
+                      </div>
+                    </section>
+                  }
+                </div>
+
+                <div
+                  class="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"
+                >
+                  <p class="text-sm font-semibold text-gray-600">
+                    {{ answeredCount() }} of {{ assessment()!.questions.length }} answered
+                  </p>
+                  <button
+                    type="button"
+                    class="btn-primary btn-sm"
+                    [disabled]="!hasAllAnswers() || savingResult()"
+                    (click)="completeAssessment()"
+                  >
+                    {{ savingResult() ? 'Saving...' : 'See result' }}
+                  </button>
+                </div>
+              }
             </div>
           }
 
@@ -256,6 +326,53 @@ import { AssessmentAttemptsService } from '../../core/services/assessment-attemp
         box-shadow: inset 0 0 0 1px var(--brand-primary);
       }
 
+      .direct-test__mode {
+        display: inline-grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        overflow: hidden;
+        border: 1px solid #d1d5db;
+        border-radius: 0.5rem;
+        background: #f8fafc;
+        padding: 0.2rem;
+      }
+
+      .direct-test__mode button {
+        border: 0;
+        border-radius: 0.35rem;
+        background: transparent;
+        color: #475569;
+        padding: 0.45rem 0.65rem;
+        font-size: 0.8rem;
+        font-weight: 800;
+        cursor: pointer;
+      }
+
+      .direct-test__mode button.active {
+        background: #fff;
+        color: var(--brand-primary);
+        box-shadow: 0 1px 4px rgba(15, 23, 42, 0.1);
+      }
+
+      .direct-test__question-block {
+        border: 1px solid #e5e7eb;
+        border-radius: 0.75rem;
+        background: #f8fafc;
+        padding: 0.9rem;
+      }
+
+      .direct-test__question-number {
+        display: inline-grid;
+        width: 1.65rem;
+        height: 1.65rem;
+        flex: 0 0 auto;
+        place-items: center;
+        border-radius: 999px;
+        background: rgba(74, 111, 165, 0.11);
+        color: var(--brand-primary);
+        font-size: 0.78rem;
+        font-weight: 900;
+      }
+
       @media (max-width: 639px) {
         .direct-test__option {
           min-height: 2.45rem;
@@ -271,10 +388,13 @@ export class DirectAssessmentComponent implements OnInit {
   private readonly authService = inject(AuthService);
   private readonly authModalService = inject(AuthModalService);
   private readonly assessmentAttemptsService = inject(AssessmentAttemptsService);
+  private readonly assessmentDefinitionService = inject(AssessmentDefinitionService);
+  private readonly notificationService = inject(NotificationService);
   private readonly pendingStorageKey = 'hope_hub_direct_pending_assessment_result';
   private autoNextTimer: ReturnType<typeof setTimeout> | null = null;
 
   assessment = signal<AssessmentConfig | null>(null);
+  viewMode = signal<'single' | 'all'>('single');
   currentQuestion = signal(0);
   answers = signal<number[]>([]);
   result = signal<AssessmentResult | null>(null);
@@ -286,8 +406,10 @@ export class DirectAssessmentComponent implements OnInit {
   progressPercent = computed(() => {
     const assessment = this.assessment();
     if (!assessment) return 0;
-    return Math.round(((this.currentQuestion() + 1) / assessment.questions.length) * 100);
+    return Math.round((this.answeredCount() / assessment.questions.length) * 100);
   });
+
+  answeredCount = computed(() => this.answers().filter((answer) => answer !== undefined).length);
 
   publicTitle = computed(() => {
     const assessment = this.assessment();
@@ -308,9 +430,14 @@ export class DirectAssessmentComponent implements OnInit {
     });
   }
 
-  ngOnInit(): void {
-    const assessmentId = this.route.snapshot.data['assessmentId'] as string | undefined;
-    const assessment = assessmentId ? getAssessmentConfig(assessmentId) : null;
+  async ngOnInit(): Promise<void> {
+    const assessmentId =
+      (this.route.snapshot.data['assessmentId'] as string | undefined) ??
+      this.route.snapshot.paramMap.get('assessmentId') ??
+      undefined;
+    const assessment = assessmentId
+      ? await firstValueFrom(this.assessmentDefinitionService.get(assessmentId))
+      : null;
     if (!assessment) return;
 
     this.assessment.set(assessment);
@@ -322,11 +449,26 @@ export class DirectAssessmentComponent implements OnInit {
     return this.answers()[this.currentQuestion()] !== undefined;
   }
 
-  selectAnswer(value: number): void {
-    const next = [...this.answers()];
-    next[this.currentQuestion()] = value;
-    this.answers.set(next);
+  hasAllAnswers(): boolean {
+    const assessment = this.assessment();
+    return Boolean(assessment && this.answeredCount() === assessment.questions.length);
+  }
 
+  setViewMode(mode: 'single' | 'all'): void {
+    this.clearAutoNextTimer();
+    this.viewMode.set(mode);
+    if (mode === 'single') {
+      const firstUnanswered = this.answers().findIndex((answer) => answer === undefined);
+      if (firstUnanswered >= 0) {
+        this.currentQuestion.set(firstUnanswered);
+      }
+    }
+  }
+
+  selectAnswer(value: number): void {
+    this.selectAnswerAt(this.currentQuestion(), value);
+
+    if (this.viewMode() !== 'single') return;
     this.clearAutoNextTimer();
     const assessment = this.assessment();
     if (!assessment || this.currentQuestion() >= assessment.questions.length - 1) return;
@@ -334,6 +476,12 @@ export class DirectAssessmentComponent implements OnInit {
     this.autoNextTimer = setTimeout(() => {
       this.nextQuestion();
     }, 220);
+  }
+
+  selectAnswerAt(index: number, value: number): void {
+    const next = [...this.answers()];
+    next[index] = value;
+    this.answers.set(next);
   }
 
   nextQuestion(): void {
@@ -352,38 +500,45 @@ export class DirectAssessmentComponent implements OnInit {
     }
   }
 
-  completeAssessment(): void {
+  async completeAssessment(): Promise<void> {
     const assessment = this.assessment();
-    if (!assessment || !this.hasCurrentAnswer()) return;
+    if (!assessment || !this.hasAllAnswers()) return;
 
     const answers = this.answers();
-    const total = answers.reduce((sum, answer) => sum + (answer || 0), 0);
-    const maxScore =
-      assessment.responseOptions[assessment.responseOptions.length - 1].value *
-      assessment.questions.length;
-    const scoring = assessment.scoring.find((score) => total >= score.min && total <= score.max);
-    if (!scoring) return;
-
-    const result: AssessmentResult = {
-      assessmentId: assessment.id,
-      assessmentType: assessment.type,
-      total,
-      maxScore,
-      level: scoring.level,
-      color: scoring.color,
-      description: scoring.description,
-      suggestions: scoring.suggestions,
-      safetyFlag:
-        assessment.safetyQuestionIndex !== undefined && answers[assessment.safetyQuestionIndex] > 0,
-      completedAt: new Date(),
-      answers: [...answers],
-    };
+    let result: AssessmentResult;
+    this.savingResult.set(true);
+    try {
+      const response = await firstValueFrom(
+        this.assessmentAttemptsService.scoreAttempt(assessment.id, answers),
+      );
+      result = {
+        assessmentId: response.result.assessmentId,
+        assessmentType: response.result.assessmentType as AssessmentResult['assessmentType'],
+        total: response.result.total,
+        maxScore: response.result.maxScore,
+        level: response.result.level,
+        color: response.result.color,
+        description: response.result.description,
+        suggestions: response.result.suggestions,
+        safetyFlag: response.result.safetyFlag,
+        completedAt: new Date(),
+        answers: [...response.result.answers],
+      };
+    } catch (error: any) {
+      this.notificationService.error(
+        error?.error?.message || error?.message || 'Could not calculate your result.',
+      );
+      return;
+    } finally {
+      this.savingResult.set(false);
+    }
 
     this.result.set(result);
     this.savePendingResultLocally(assessment, result);
 
     if (!this.authService.getToken()) {
       this.resultLocked.set(true);
+      this.notificationService.info('Sign up or log in to save your test result.');
       this.authModalService.openRegister();
       return;
     }
@@ -401,18 +556,7 @@ export class DirectAssessmentComponent implements OnInit {
       const response = await firstValueFrom(
         this.assessmentAttemptsService.saveAttempt({
           assessmentId: assessment.id,
-          assessmentType: assessment.type,
-          category: assessment.category,
-          title: assessment.title,
-          version: 'v1',
           answers: result.answers,
-          totalScore: result.total,
-          maxScore: result.maxScore,
-          level: result.level,
-          color: result.color,
-          description: result.description,
-          suggestions: result.suggestions,
-          safetyFlag: result.safetyFlag,
           source: 'direct-test',
           entryPage: typeof window === 'undefined' ? undefined : window.location.href,
           completedAt: result.completedAt.toISOString(),
@@ -425,6 +569,11 @@ export class DirectAssessmentComponent implements OnInit {
       this.clearPendingResult();
       this.resultLocked.set(false);
       this.showResults.set(true);
+      this.notificationService.success('Your test result is saved.');
+    } catch (error: any) {
+      this.notificationService.error(
+        error?.error?.message || error?.message || 'Could not save your result. Please try again.',
+      );
     } finally {
       this.savingResult.set(false);
     }
@@ -465,6 +614,7 @@ export class DirectAssessmentComponent implements OnInit {
     if (!assessment) return;
     this.answers.set(new Array(assessment.questions.length).fill(undefined));
     this.currentQuestion.set(0);
+    this.viewMode.set('single');
     this.result.set(null);
     this.showResults.set(false);
     this.resultLocked.set(false);

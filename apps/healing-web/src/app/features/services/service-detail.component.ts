@@ -4,7 +4,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NOTE_CONTENT } from '../../core/constants/note-content.constants';
 import { Service, ServiceCategory } from '../../core/models';
 import { ServiceInquiryComponent } from '../../shared/components';
-import { BookingService, SEOService } from '../../core/services';
+import { BookingService, NotificationService, SEOService } from '../../core/services';
 import { getServiceById } from '../../core/data/services-data';
 import { HopeHubService } from '../../core/services/booking.service';
 
@@ -24,6 +24,7 @@ export class ServiceDetailComponent implements OnInit {
   private router = inject(Router);
   private seoService = inject(SEOService);
   private bookingService = inject(BookingService);
+  private notificationService = inject(NotificationService);
 
   constructor() {
     this.route.params.pipe(takeUntilDestroyed()).subscribe((params: any) => {
@@ -47,7 +48,7 @@ export class ServiceDetailComponent implements OnInit {
         service: this.service()?.id,
         serviceName: this.service()?.name,
         price: this.service()?.pricing?.individual,
-        duration: '30 minutes',
+        duration: '30 minutes + 15 min follow-up',
         source: 'service-detail',
       },
     });
@@ -132,6 +133,7 @@ export class ServiceDetailComponent implements OnInit {
       'Identify the main pressure point',
       'Practice one calming or clarity tool',
       'Leave with a simple next-step plan',
+      'Use your included 15-minute follow-up to review progress',
     ];
   }
 
@@ -140,6 +142,7 @@ export class ServiceDetailComponent implements OnInit {
       'A clearer understanding of your concern',
       'One practical coping tool',
       'A next-step plan for the coming days',
+      'One included follow-up check-in',
     ];
   }
 
@@ -185,6 +188,9 @@ export class ServiceDetailComponent implements OnInit {
       },
       error: () => {
         this.setLoadedService(getServiceById(serviceId) || null);
+        this.notificationService.warning(
+          'Live service details could not load. Showing saved details.',
+        );
       },
     });
   }

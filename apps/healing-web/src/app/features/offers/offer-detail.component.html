@@ -1,0 +1,168 @@
+<main class="offer-detail">
+  @if (loading()) {
+    <section class="detail-shell loading"></section>
+  } @else if (offer(); as offer) {
+    <section class="detail-shell">
+      <div class="detail-copy">
+        <p>{{ offer.type.replace('_', ' ') }}</p>
+        <h1>{{ offer.title }}</h1>
+        @if (offer.subtitle) { <span>{{ offer.subtitle }}</span> }
+        <p class="description">{{ offer.description }}</p>
+
+        <div class="meta-grid">
+          @if (offer.sessionCount) { <div><strong>{{ offer.sessionCount }}</strong><span>Sessions</span></div> }
+          @if (offer.sessionDurationMinutes) { <div><strong>{{ offer.sessionDurationMinutes }}m</strong><span>Each session</span></div> }
+          @if (offer.validityDays) { <div><strong>{{ offer.validityDays }}</strong><span>Days validity</span></div> }
+          @if (offer.seatLimit) { <div><strong>{{ offer.seatLimit }}</strong><span>Seats</span></div> }
+          @if (offer.seatsRemaining != null) { <div><strong>{{ offer.seatsRemaining }}</strong><span>Seats left</span></div> }
+        </div>
+
+        @if (offer.eventStartsAt) {
+          <div class="event-note">
+            <strong>{{ offer.eventStartsAt | date: 'medium' }}</strong>
+            @if (offer.venue) { <span>{{ offer.venue }}</span> }
+          </div>
+        }
+
+        @if (hasMediaLinks(offer)) {
+          <div class="media-panel">
+            <h2>Session media</h2>
+            @if (offer.metadata?.mediaAccessNote) {
+              <p>{{ offer.metadata.mediaAccessNote }}</p>
+            }
+            @if (canAccessMedia(offer)) {
+              @if (youtubeEmbedUrl(offer); as youtubeUrl) {
+                <iframe
+                  class="youtube-frame"
+                  [src]="youtubeUrl"
+                  title="Recorded Hope Hub session"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowfullscreen
+                ></iframe>
+              }
+              @for (audioUrl of audioSources(offer); track audioUrl) {
+                <audio controls [src]="audioUrl"></audio>
+              }
+              @for (videoUrl of videoSources(offer); track videoUrl) {
+                <video controls playsinline [src]="videoUrl"></video>
+              }
+              <div class="media-links">
+                @for (link of mediaLinks(offer); track link.url) {
+                  <a
+                    [href]="link.url"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    (click)="trackMediaClick(offer, link)"
+                  >
+                    <span>{{ link.kind }}</span>
+                    <strong>{{ link.label }}</strong>
+                  </a>
+                }
+              </div>
+            } @else {
+              <div class="media-locked">
+                <strong>{{ mediaAccessMessage(offer) }}</strong>
+                @if (offer.metadata?.mediaAccessMode === 'LOGIN_REQUIRED') {
+                  <button type="button" (click)="openLogin()">Sign in</button>
+                }
+              </div>
+            }
+          </div>
+        }
+      </div>
+
+      <aside class="checkout-card">
+        <span>{{ offer.type === 'RECORDED_SESSION' ? 'Access' : 'Starting at' }}</span>
+        <strong>{{ formatNetPrice(offer) }}</strong>
+        @if (discountInPaise(offer) > 0) {
+          <small>{{ offer.discountLabel || 'Offer applied' }}</small>
+        }
+        @if (offer.compareAtPriceInPaise || discountInPaise(offer) > 0) {
+          <del>{{ formatPrice({ ...offer, priceInPaise: offer.compareAtPriceInPaise || offer.priceInPaise }) }}</del>
+        }
+        @if (checkoutError()) {
+          <small class="checkout-error">{{ checkoutError() }}</small>
+        }
+
+        @if (offer.type === 'RECORDED_SESSION' && !offer.priceInPaise) {
+          @if (hasMediaLinks(offer) && canAccessMedia(offer)) {
+            <a
+              [href]="mediaLinks(offer)[0].url"
+              target="_blank"
+              rel="noopener noreferrer"
+              (click)="trackMediaClick(offer, mediaLinks(offer)[0])"
+            >
+              {{ offer.ctaLabel || 'Open session' }}
+            </a>
+            <small>Use the media links on this page for audio, video, Telegram, or YouTube access.</small>
+          } @else {
+            <span class="sold-out">{{ hasMediaLinks(offer) ? 'Access required' : 'Media coming soon' }}</span>
+          }
+        } @else if (offer.requiresLeadForm || offer.type === 'ORGANISATION_PROGRAM') {
+          <a routerLink="/organization" [queryParams]="{ offering: offer.slug, offeringId: offer.id }">
+            {{ offer.ctaLabel || 'Request a call' }}
+          </a>
+        } @else if (offer.isFull) {
+          <span class="sold-out">Full</span>
+        } @else if (isEventOffer(offer)) {
+          @if (partialAmountInPaise(offer)) {
+            <button type="button" [disabled]="checkoutState() !== 'IDLE'" (click)="payEvent(offer, 'PARTIAL')">
+              {{ checkoutLabel('Pay ' + formatPartialAmount(offer)) }}
+            </button>
+            <button type="button" class="secondary" [disabled]="checkoutState() !== 'IDLE'" (click)="payEvent(offer, 'FULL')">
+              {{ checkoutLabel('Pay full') }}
+            </button>
+            <small>{{ offer.partialPaymentLabel || 'Balance can be paid later' }}</small>
+          } @else {
+            <button type="button" [disabled]="checkoutState() !== 'IDLE'" (click)="payEvent(offer, 'FULL')">
+              {{ checkoutLabel(offer.ctaLabel || 'Pay now') }}
+            </button>
+          }
+        } @else {
+          @if (partialAmountInPaise(offer)) {
+            <a routerLink="/contact" [queryParams]="bookingQuery(offer, 'PARTIAL')">
+              Pay {{ formatPartialAmount(offer) }}
+            </a>
+            <a class="secondary" routerLink="/contact" [queryParams]="bookingQuery(offer, 'FULL')">
+              Pay full
+            </a>
+            <small>{{ offer.partialPaymentLabel || 'Balance can be paid later' }}</small>
+          } @else {
+            <a routerLink="/contact" [queryParams]="bookingQuery(offer, 'FULL')">
+              {{ offer.ctaLabel || 'Book now' }}
+            </a>
+          }
+        }
+      </aside>
+    </section>
+
+    @if (offer.benefits.length || offer.audience.length) {
+      <section class="detail-lists">
+        @if (offer.benefits.length) {
+          <div>
+            <h2>Included</h2>
+            <ul>
+              @for (benefit of offer.benefits; track benefit) { <li>{{ benefit }}</li> }
+            </ul>
+          </div>
+        }
+        @if (offer.audience.length) {
+          <div>
+            <h2>Best for</h2>
+            <ul>
+              @for (item of offer.audience; track item) { <li>{{ item }}</li> }
+            </ul>
+          </div>
+        }
+      </section>
+    }
+  } @else {
+    <section class="detail-shell">
+      <div class="detail-copy">
+        <h1>Offer not available</h1>
+        <p class="description">This offer may be inactive or removed.</p>
+        <a routerLink="/packages" class="back-link">View packages</a>
+      </div>
+    </section>
+  }
+</main>

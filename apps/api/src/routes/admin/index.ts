@@ -34,6 +34,8 @@ import { registerAdminPricingRoutes } from './pricing.routes.js';
 import { registerAdminRewardsRoutes } from './rewards.js';
 import { registerAdminClinicalRecordsRoutes } from './clinical-records.js';
 import { registerAdminContactMailRoutes } from './contact-mail.js';
+import { registerAdminHopeHubOfferingRoutes } from './hope-hub-offerings.js';
+import { registerAdminAssessmentDefinitionRoutes } from './assessment-definitions.js';
 import { adminPermissionMiddleware } from '../../admin-route-permissions.js';
 
 export function createAdminRouter(io: SocketIoServer) {
@@ -75,6 +77,8 @@ export function createAdminRouter(io: SocketIoServer) {
   registerAdminRewardsRoutes(router);
   registerAdminClinicalRecordsRoutes(router);
   registerAdminContactMailRoutes(router);
+  registerAdminHopeHubOfferingRoutes(router);
+  registerAdminAssessmentDefinitionRoutes(router);
 
   return router;
 }

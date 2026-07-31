@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { Role, ConsultationStatus, SupportNoteCategory } from '@prisma/client';
+import { Role, ConsultationStatus, SupportNoteCategory, Prisma } from '@prisma/client';
 import type { Server as SocketIoServer } from 'socket.io';
 import { authRequired, allowRoles } from '../../auth.js';
 import { prisma } from '../../db.js';
@@ -130,7 +130,9 @@ export function registerAdminConsultationRoutes(router: Router, io: SocketIoServ
             patient: { select: { id: true, name: true, mobile: true } },
             assignedDoctor: { select: { id: true, name: true } },
             disease: { select: { id: true, name: true } },
-            payment: { select: { status: true, amountInPaise: true } }
+            payment: { select: { status: true, amountInPaise: true, lineItems: true } },
+            pricingSnapshot: true,
+            intakeAnswers: true
           },
           orderBy: { createdAt: 'desc' },
           skip: (page - 1) * pageSize,
@@ -261,7 +263,9 @@ export function registerAdminConsultationRoutes(router: Router, io: SocketIoServ
           patient: { select: { id: true, name: true, mobile: true } },
           assignedDoctor: { select: { id: true, name: true } },
           disease: { select: { id: true, name: true } },
-          payment: { select: { status: true, amountInPaise: true } }
+          payment: { select: { status: true, amountInPaise: true, lineItems: true } },
+          pricingSnapshot: true,
+          intakeAnswers: true
         }
       });
 
@@ -286,6 +290,60 @@ export function registerAdminConsultationRoutes(router: Router, io: SocketIoServ
       });
 
       res.json({ consultation, message: 'Consultation status updated.' });
+    })
+  );
+
+  router.patch(
+    '/admin/consultations/:id/hope-hub-usage',
+    authRequired,
+    allowRoles(Role.ADMIN),
+    asyncRoute(async (req, res) => {
+      const body = z.object({ usedSessions: z.number().int().min(0) }).parse(req.body);
+      const existing = await prisma.consultation.findUnique({
+        where: { id: routeParam(req, 'id') },
+        select: { id: true, pricingSnapshot: true, patient: { select: { name: true } } }
+      });
+      if (!existing) return res.status(404).json({ message: 'Consultation not found.' });
+
+      const snapshot = ((existing.pricingSnapshot || {}) as Record<string, unknown>) || {};
+      const currentUsage = (snapshot['packageUsage'] || null) as Record<string, unknown> | null;
+      if (!currentUsage) {
+        return res.status(400).json({ message: 'This consultation has no package usage.' });
+      }
+
+      const totalSessions = Math.max(1, Number(currentUsage['totalSessions'] || 1));
+      const usedSessions = Math.min(totalSessions, body.usedSessions);
+      const nextSnapshot = {
+        ...snapshot,
+        packageUsage: {
+          ...currentUsage,
+          totalSessions,
+          usedSessions,
+          remainingSessions: Math.max(0, totalSessions - usedSessions)
+        }
+      };
+
+      const consultation = await prisma.consultation.update({
+        where: { id: existing.id },
+        data: { pricingSnapshot: nextSnapshot as Prisma.InputJsonObject },
+        include: {
+          patient: { select: { id: true, name: true, mobile: true } },
+          assignedDoctor: { select: { id: true, name: true } },
+          disease: { select: { id: true, name: true } },
+          payment: { select: { status: true, amountInPaise: true, lineItems: true } }
+        }
+      });
+
+      await writeAuditLog({
+        actorId: req.user!.id,
+        actorRole: req.user!.role,
+        action: 'hopehub.package_usage.update',
+        targetType: 'consultation',
+        targetId: consultation.id,
+        summary: `Updated package usage to ${usedSessions}/${totalSessions} for ${existing.patient?.name || 'patient'}.`
+      });
+
+      res.json({ consultation, packageUsage: nextSnapshot.packageUsage });
     })
   );
 }

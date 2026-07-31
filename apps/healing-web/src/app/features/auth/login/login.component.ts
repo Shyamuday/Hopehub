@@ -4,6 +4,7 @@ import { RouterModule, Router } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AuthService } from '../../../core/services/auth.service';
 import { AuthModalService } from '../../../core/services/auth-modal.service';
+import { NotificationService } from '../../../core/services/notification.service';
 import { LoginCredentials } from '../../../core/models/auth.model';
 import { AppButtonComponent } from '../../../shared/components/app-button/app-button.component';
 
@@ -19,6 +20,7 @@ export class LoginComponent implements OnInit {
   private authService = inject(AuthService);
   private router = inject(Router);
   private authModalService = inject(AuthModalService);
+  private notificationService = inject(NotificationService);
 
   loginForm: FormGroup;
   loginMode = signal<'otp' | 'password'>('otp');
@@ -68,6 +70,10 @@ export class LoginComponent implements OnInit {
 
   async onSubmit(): Promise<void> {
     if (this.loginMode() === 'otp') {
+      if (!this.otpSent()) {
+        await this.sendOtp();
+        return;
+      }
       await this.verifyOtp();
       return;
     }
@@ -80,6 +86,7 @@ export class LoginComponent implements OnInit {
         };
 
         await this.authService.login(credentials);
+        this.notificationService.success('You are signed in.');
 
         // Close modal and navigate
         this.authModalService.close();
@@ -95,6 +102,9 @@ export class LoginComponent implements OnInit {
         ) {
           this.setLoginMode('otp');
         }
+        this.notificationService.error(
+          this.readErrorMessage(error, 'Sign in failed. Please try again.'),
+        );
         console.error('Login error:', error);
       }
     } else {
@@ -102,6 +112,7 @@ export class LoginComponent implements OnInit {
       Object.keys(this.loginForm.controls).forEach((key) => {
         this.loginForm.get(key)?.markAsTouched();
       });
+      this.notificationService.warning('Please enter valid sign-in details.');
     }
   }
 
@@ -114,6 +125,14 @@ export class LoginComponent implements OnInit {
       this.otpSentTo.set('');
       this.loginForm.patchValue({ otp: '' }, { emitEvent: false });
     }
+  }
+
+  changeOtpEmail(): void {
+    this.otpSent.set(false);
+    this.otpSentTo.set('');
+    this.statusMessage.set(null);
+    this.errorMessage.set(null);
+    this.loginForm.patchValue({ otp: '' }, { emitEvent: false });
   }
 
   async sendOtp(): Promise<void> {
@@ -132,7 +151,9 @@ export class LoginComponent implements OnInit {
       this.otpSentTo.set(email);
       this.errorMessage.set(null);
       this.statusMessage.set('Code sent. Check your email.');
+      this.notificationService.success('Code sent. Check your email.');
     } catch (error) {
+      this.notificationService.error('Could not send the code. Please try again.');
       console.error('OTP request error:', error);
     } finally {
       this.isLoading.set(false);
@@ -149,22 +170,28 @@ export class LoginComponent implements OnInit {
       .toLowerCase();
     if (!email?.valid || this.isLoading()) return;
     if (!this.otpSent() || this.otpSentTo() !== normalizedEmail) {
-      this.errorMessage.set('Send a code first.');
+      const message = 'Send a code first.';
+      this.errorMessage.set(message);
+      this.notificationService.warning(message);
       return;
     }
     if (!otp?.value || String(otp.value).trim().length < 4) {
-      this.errorMessage.set('Enter the code.');
+      const message = 'Enter the code.';
+      this.errorMessage.set(message);
+      this.notificationService.warning(message);
       return;
     }
 
     try {
       await this.authService.loginWithOtp(normalizedEmail, String(otp.value).trim());
+      this.notificationService.success('You are signed in.');
       this.authModalService.close();
       if (this.router.url === '/' || this.router.url.startsWith('/auth')) {
         this.router.navigate(['/dashboard']);
       }
     } catch (error) {
       this.errorMessage.set('Invalid or expired code. Send a new code and try again.');
+      this.notificationService.error('Invalid or expired code. Send a new code and try again.');
       console.error('OTP login error:', error);
     }
   }
@@ -172,12 +199,16 @@ export class LoginComponent implements OnInit {
   async loginWithGoogle(): Promise<void> {
     try {
       await this.authService.loginWithGoogle();
+      this.notificationService.success('You are signed in with Google.');
       this.authModalService.close();
       if (this.router.url === '/' || this.router.url.startsWith('/auth')) {
         this.router.navigate(['/dashboard']);
       }
     } catch (error) {
       // Error is handled by the auth service and displayed via the subscription
+      this.notificationService.error(
+        this.readErrorMessage(error, 'Google sign-in failed. Please try again.'),
+      );
       console.error('Google login error:', error);
     }
   }
@@ -188,5 +219,14 @@ export class LoginComponent implements OnInit {
 
   openForgotPassword(): void {
     this.authModalService.openForgotPassword();
+  }
+
+  private readErrorMessage(error: unknown, fallback: string): string {
+    if (typeof error === 'object' && error !== null && 'message' in error) {
+      const message = String(error.message || '').trim();
+      if (message) return message;
+    }
+
+    return fallback;
   }
 }

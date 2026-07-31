@@ -31,7 +31,7 @@
               @if (p.yearsOfExperience) {
                 <p>{{ p.yearsOfExperience }}+ years experience</p>
               }
-              <p>₹{{ (p.sessionFeeInPaise || 50000) / 100 | number: '1.0-0' }} · {{ p.sessionDurationMinutes || 30 }} min session</p>
+              <p>₹{{ (p.sessionFeeInPaise || 50000) / 100 | number: '1.0-0' }} · {{ sessionLabel(p) }}</p>
             </div>
           </div>
 

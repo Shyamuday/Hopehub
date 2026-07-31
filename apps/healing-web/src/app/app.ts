@@ -8,6 +8,7 @@ import {
   QuickAccessComponent,
   AuthModalComponent,
   ScrollToTopComponent,
+  NotificationCenterComponent,
 } from './shared/components';
 import { NavigationService, SEOService } from './core/services';
 import { AuthModalService } from './core/services/auth-modal.service';
@@ -24,6 +25,7 @@ import { FontLoader } from './core/utils/font-loader.util';
     QuickAccessComponent,
     AuthModalComponent,
     ScrollToTopComponent,
+    NotificationCenterComponent,
   ],
   templateUrl: './app.html',
   styleUrl: './app.scss',

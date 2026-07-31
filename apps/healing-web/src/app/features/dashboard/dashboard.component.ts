@@ -5,6 +5,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AuthService } from '../../core/services/auth.service';
 import { BookingService } from '../../core/services/booking.service';
 import { PaymentService } from '../../core/services/payment.service';
+import { NotificationService } from '../../core/services/notification.service';
 import { User } from '../../core/models/auth.model';
 import { ProgressDashboardComponent } from '../../shared/components/progress-dashboard/progress-dashboard.component';
 import {
@@ -26,9 +27,29 @@ type HopeHubConsultation = {
     concernCategory?: string;
     preferredLanguage?: string;
   } | null;
+  pricingSnapshot?: {
+    balanceDueInPaise?: number;
+    paymentMode?: string;
+    packageUsage?: {
+      totalSessions?: number;
+      usedSessions?: number;
+      remainingSessions?: number;
+      validUntil?: string | null;
+    } | null;
+  } | null;
   payment?: {
     status?: string | null;
     amountInPaise?: number | null;
+    lineItems?: {
+      balanceDueInPaise?: number;
+      paymentMode?: string;
+      packageUsage?: {
+        totalSessions?: number;
+        usedSessions?: number;
+        remainingSessions?: number;
+        validUntil?: string | null;
+      } | null;
+    } | null;
   } | null;
 };
 
@@ -261,6 +282,30 @@ type BookingTimelineStep = {
                         }
                       </p>
                     }
+                    @if (balanceDueInPaise(consultation) > 0 || packageUsage(consultation)) {
+                      <div
+                        class="mt-3 rounded-md border border-blue-100 bg-white p-3 text-sm text-gray-700"
+                      >
+                        @if (packageUsage(consultation); as usage) {
+                          <p class="font-semibold text-gray-900">
+                            Package: {{ usage.remainingSessions || 0 }}/{{
+                              usage.totalSessions || 0
+                            }}
+                            sessions left
+                          </p>
+                          @if (usage.validUntil) {
+                            <p class="mt-1">
+                              Valid till {{ usage.validUntil | date: 'mediumDate' }}
+                            </p>
+                          }
+                        }
+                        @if (balanceDueInPaise(consultation) > 0) {
+                          <p class="mt-1 font-semibold text-blue-700">
+                            Balance later: {{ formatPaise(balanceDueInPaise(consultation)) }}
+                          </p>
+                        }
+                      </div>
+                    }
                     @if (consultation.intakeAnswers; as intake) {
                       @if (intake.appointmentDate || intake.appointmentTime) {
                         <p class="mt-2 text-sm text-gray-600">
@@ -402,6 +447,7 @@ export class DashboardComponent implements OnInit {
   private authService = inject(AuthService);
   private bookingService = inject(BookingService);
   private paymentService = inject(PaymentService);
+  private notificationService = inject(NotificationService);
   user = signal<User | null>(null);
   isLoading = signal(false);
   isPaying = signal(false);
@@ -431,6 +477,7 @@ export class DashboardComponent implements OnInit {
         this.isLoading.set(false);
       },
       error: () => {
+        this.notificationService.error('Could not load your dashboard right now.');
         this.isLoading.set(false);
       },
     });
@@ -470,6 +517,9 @@ export class DashboardComponent implements OnInit {
       this.notice.set(
         'Payment verified successfully. Your booking is now ready for expert confirmation.',
       );
+      this.notificationService.success(
+        'Payment verified successfully. Your booking is ready for expert confirmation.',
+      );
       this.loadDashboard();
     } catch (error) {
       const message =
@@ -479,6 +529,7 @@ export class DashboardComponent implements OnInit {
       this.paymentFlowError.set(message);
       this.paymentFlowState.set('ERROR');
       this.notice.set(message);
+      this.notificationService.error(message);
     } finally {
       this.isPaying.set(false);
     }
@@ -537,10 +588,35 @@ export class DashboardComponent implements OnInit {
     ];
   }
 
+  packageUsage(consultation: HopeHubConsultation) {
+    return (
+      consultation.pricingSnapshot?.packageUsage ||
+      consultation.payment?.lineItems?.packageUsage ||
+      null
+    );
+  }
+
+  balanceDueInPaise(consultation: HopeHubConsultation): number {
+    return Number(
+      consultation.pricingSnapshot?.balanceDueInPaise ??
+        consultation.payment?.lineItems?.balanceDueInPaise ??
+        0,
+    );
+  }
+
+  formatPaise(value: number): string {
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      maximumFractionDigits: 0,
+    }).format((value || 0) / 100);
+  }
+
   async logout(): Promise<void> {
     try {
       await this.authService.logout();
     } catch (error) {
+      this.notificationService.error('Could not sign you out. Please try again.');
       console.error('Logout error:', error);
     }
   }

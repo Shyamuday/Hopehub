@@ -60,6 +60,16 @@
                         {{ c.payment.status }}
                       </span>
                       <div class="pay-amt">₹{{ (c.payment.amountInPaise / 100).toFixed(0) }}</div>
+                      @if (balanceDueInPaise(c) > 0) {
+                        <div class="pat-mobile">Due {{ formatPaise(balanceDueInPaise(c)) }}</div>
+                      }
+                    }
+                    @if (packageUsage(c); as usage) {
+                      <div class="usage-chip">
+                        <span>{{ usage.usedSessions || 0 }}/{{ usage.totalSessions || 0 }} used</span>
+                        <button type="button" (click)="adjustPackageUsage(c, -1)" [disabled]="saving()">−</button>
+                        <button type="button" (click)="adjustPackageUsage(c, 1)" [disabled]="saving()">+</button>
+                      </div>
                     }
                   </td>
                   <td><span class="date-txt">{{ c.createdAt | date:'dd MMM yy, h:mm a' }}</span></td>
@@ -115,6 +125,19 @@
                     {{ c.payment.status }}
                   </span>
                   <span class="pay-amt">₹{{ (c.payment.amountInPaise / 100).toFixed(0) }}</span>
+                </div>
+                @if (balanceDueInPaise(c) > 0) {
+                  <div class="card-row">
+                    <span>Balance due</span>
+                    <strong>{{ formatPaise(balanceDueInPaise(c)) }}</strong>
+                  </div>
+                }
+              }
+              @if (packageUsage(c); as usage) {
+                <div class="usage-chip mobile">
+                  <span>{{ usage.usedSessions || 0 }}/{{ usage.totalSessions || 0 }} sessions used</span>
+                  <button type="button" (click)="adjustPackageUsage(c, -1)" [disabled]="saving()">−</button>
+                  <button type="button" (click)="adjustPackageUsage(c, 1)" [disabled]="saving()">+</button>
                 </div>
               }
               <div class="card-row doctor-row">

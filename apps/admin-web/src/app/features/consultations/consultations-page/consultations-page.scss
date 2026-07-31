@@ -17,6 +17,38 @@
   display: none;
 }
 
+.usage-chip {
+  display: inline-flex;
+  gap: 0.35rem;
+  align-items: center;
+  margin-top: 0.35rem;
+  border: 1px solid rgba(94, 234, 212, 0.22);
+  border-radius: 999px;
+  background: rgba(20, 184, 166, 0.08);
+  color: #99f6e4;
+  padding: 0.25rem 0.4rem 0.25rem 0.55rem;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.usage-chip button {
+  display: inline-grid;
+  width: 1.35rem;
+  height: 1.35rem;
+  place-items: center;
+  border: 1px solid rgba(94, 234, 212, 0.32);
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.4);
+  color: #ccfbf1;
+  cursor: pointer;
+  font-weight: 900;
+}
+
+.usage-chip button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
 @media (max-width: 768px) {
   .desktop-only {
     display: none !important;
@@ -73,6 +105,13 @@
     width: 100%;
     margin-top: 0.45rem;
     min-height: 40px;
+  }
+
+  .usage-chip.mobile {
+    justify-content: space-between;
+    width: 100%;
+    border-radius: 10px;
+    padding: 0.45rem;
   }
 }
 

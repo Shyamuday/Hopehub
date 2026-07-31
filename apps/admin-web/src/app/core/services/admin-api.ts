@@ -290,6 +290,84 @@ export class AdminApi {
       ...(args as Parameters<AdminCatalogApi['updateBillingPlan']>),
     );
   }
+  getHopeHubOfferingsAdmin(...args: Parameters<AdminCatalogApi['getHopeHubOfferingsAdmin']>) {
+    return this.catalog.getHopeHubOfferingsAdmin(
+      ...(args as Parameters<AdminCatalogApi['getHopeHubOfferingsAdmin']>),
+    );
+  }
+  uploadHopeHubMedia(...args: Parameters<AdminCatalogApi['uploadHopeHubMedia']>) {
+    return this.catalog.uploadHopeHubMedia(
+      ...(args as Parameters<AdminCatalogApi['uploadHopeHubMedia']>),
+    );
+  }
+  createHopeHubOffering(...args: Parameters<AdminCatalogApi['createHopeHubOffering']>) {
+    return this.catalog.createHopeHubOffering(
+      ...(args as Parameters<AdminCatalogApi['createHopeHubOffering']>),
+    );
+  }
+  updateHopeHubOffering(...args: Parameters<AdminCatalogApi['updateHopeHubOffering']>) {
+    return this.catalog.updateHopeHubOffering(
+      ...(args as Parameters<AdminCatalogApi['updateHopeHubOffering']>),
+    );
+  }
+  getHopeHubBannersAdmin(...args: Parameters<AdminCatalogApi['getHopeHubBannersAdmin']>) {
+    return this.catalog.getHopeHubBannersAdmin(
+      ...(args as Parameters<AdminCatalogApi['getHopeHubBannersAdmin']>),
+    );
+  }
+  createHopeHubBanner(...args: Parameters<AdminCatalogApi['createHopeHubBanner']>) {
+    return this.catalog.createHopeHubBanner(
+      ...(args as Parameters<AdminCatalogApi['createHopeHubBanner']>),
+    );
+  }
+  updateHopeHubBanner(...args: Parameters<AdminCatalogApi['updateHopeHubBanner']>) {
+    return this.catalog.updateHopeHubBanner(
+      ...(args as Parameters<AdminCatalogApi['updateHopeHubBanner']>),
+    );
+  }
+  getHopeHubOrganizationLeadsAdmin(
+    ...args: Parameters<AdminCatalogApi['getHopeHubOrganizationLeadsAdmin']>
+  ) {
+    return this.catalog.getHopeHubOrganizationLeadsAdmin(
+      ...(args as Parameters<AdminCatalogApi['getHopeHubOrganizationLeadsAdmin']>),
+    );
+  }
+  updateHopeHubOrganizationLead(
+    ...args: Parameters<AdminCatalogApi['updateHopeHubOrganizationLead']>
+  ) {
+    return this.catalog.updateHopeHubOrganizationLead(
+      ...(args as Parameters<AdminCatalogApi['updateHopeHubOrganizationLead']>),
+    );
+  }
+  getAssessmentDefinitionsAdmin(
+    ...args: Parameters<AdminCatalogApi['getAssessmentDefinitionsAdmin']>
+  ) {
+    return this.catalog.getAssessmentDefinitionsAdmin(
+      ...(args as Parameters<AdminCatalogApi['getAssessmentDefinitionsAdmin']>),
+    );
+  }
+  createAssessmentDefinition(...args: Parameters<AdminCatalogApi['createAssessmentDefinition']>) {
+    return this.catalog.createAssessmentDefinition(
+      ...(args as Parameters<AdminCatalogApi['createAssessmentDefinition']>),
+    );
+  }
+  updateAssessmentDefinition(...args: Parameters<AdminCatalogApi['updateAssessmentDefinition']>) {
+    return this.catalog.updateAssessmentDefinition(
+      ...(args as Parameters<AdminCatalogApi['updateAssessmentDefinition']>),
+    );
+  }
+  publishAssessmentDefinition(...args: Parameters<AdminCatalogApi['publishAssessmentDefinition']>) {
+    return this.catalog.publishAssessmentDefinition(
+      ...(args as Parameters<AdminCatalogApi['publishAssessmentDefinition']>),
+    );
+  }
+  unpublishAssessmentDefinition(
+    ...args: Parameters<AdminCatalogApi['unpublishAssessmentDefinition']>
+  ) {
+    return this.catalog.unpublishAssessmentDefinition(
+      ...(args as Parameters<AdminCatalogApi['unpublishAssessmentDefinition']>),
+    );
+  }
   getHrDoctors(...args: Parameters<AdminHrApi['getHrDoctors']>) {
     return this.hr.getHrDoctors(...(args as Parameters<AdminHrApi['getHrDoctors']>));
   }
@@ -381,6 +459,11 @@ export class AdminApi {
   assignConsultationDoctor(...args: Parameters<AdminHrApi['assignConsultationDoctor']>) {
     return this.hr.assignConsultationDoctor(
       ...(args as Parameters<AdminHrApi['assignConsultationDoctor']>),
+    );
+  }
+  updateHopeHubPackageUsage(...args: Parameters<AdminHrApi['updateHopeHubPackageUsage']>) {
+    return this.hr.updateHopeHubPackageUsage(
+      ...(args as Parameters<AdminHrApi['updateHopeHubPackageUsage']>),
     );
   }
   getPayroll(...args: Parameters<AdminHrApi['getPayroll']>) {

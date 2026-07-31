@@ -12,11 +12,10 @@ import {
 import {
   ALL_EXERCISES,
   getExerciseById,
-  getExercisesByCategory,
-  getExercisesByType,
   searchExercises,
 } from '../../../core/data/exercise-configs';
 import { ProgressService } from '../../../core/services/progress.service';
+import { NotificationService } from '../../../core/services/notification.service';
 import { MoodRating } from '../../../core/models/progress.model';
 import {
   FormDropdownComponent,
@@ -428,6 +427,7 @@ export class ExercisesComponent implements OnInit {
   constructor(
     private route: ActivatedRoute,
     private progressService: ProgressService,
+    private notificationService: NotificationService,
     @Inject(PLATFORM_ID) platformId: object,
   ) {
     this.isBrowser = isPlatformBrowser(platformId);
@@ -504,8 +504,7 @@ export class ExercisesComponent implements OnInit {
 
   startExercise() {
     if (!this.isBrowser) return;
-    // Could implement timer, guided mode, etc.
-    alert('Exercise started! Follow the step-by-step instructions above.');
+    this.notificationService.info('Exercise started. Follow the step-by-step instructions above.');
   }
 
   completeExercise(
@@ -526,10 +525,9 @@ export class ExercisesComponent implements OnInit {
       notes,
     );
 
-    // Show completion message
-    if (this.isBrowser) {
-      alert(`Great job completing "${exercise.title}"! Your progress has been recorded.`);
-    }
+    this.notificationService.success(
+      `Great job completing "${exercise.title}". Your progress has been recorded.`,
+    );
   }
 
   // Method to show completion modal (could be enhanced with a proper modal)

@@ -3,7 +3,7 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { NOTE_CONTENT } from '../../core/constants/note-content.constants';
 import { ContactMethod } from '../../core/models/contact.model';
-import { LeadService, LoadingService } from '../../core/services';
+import { LeadService, LoadingService, NotificationService } from '../../core/services';
 import { FormDropdownComponent, FormDropdownOption } from '../../shared/components';
 
 @Component({
@@ -18,6 +18,7 @@ export class CareersComponent {
   private readonly formBuilder = inject(FormBuilder);
   private readonly leadService = inject(LeadService);
   private readonly loadingService = inject(LoadingService);
+  private readonly notificationService = inject(NotificationService);
 
   readonly isSubmitting = signal(false);
   readonly successMessage = signal('');
@@ -67,6 +68,7 @@ export class CareersComponent {
   async onSubmit(): Promise<void> {
     if (this.applicationForm.invalid) {
       this.applicationForm.markAllAsTouched();
+      this.notificationService.warning('Please complete the required application fields.');
       return;
     }
 
@@ -98,20 +100,25 @@ export class CareersComponent {
         .subscribe({
           next: (success) => {
             if (success) {
-              this.successMessage.set(
-                'Application submitted successfully. Our team will review it and contact shortlisted counsellors.',
-              );
+              const message =
+                'Application submitted successfully. Our team will review it and contact shortlisted counsellors.';
+              this.successMessage.set(message);
+              this.notificationService.success(message);
               this.applicationForm.reset({
                 preferredChannel: ContactMethod.WHATSAPP,
                 consent: false,
               });
             } else {
-              this.errorMessage.set('Could not submit your application. Please try again.');
+              const message = 'Could not submit your application. Please try again.';
+              this.errorMessage.set(message);
+              this.notificationService.error(message);
             }
             resolve();
           },
           error: () => {
-            this.errorMessage.set('Could not submit your application. Please try again.');
+            const message = 'Could not submit your application. Please try again.';
+            this.errorMessage.set(message);
+            this.notificationService.error(message);
             resolve();
           },
         });

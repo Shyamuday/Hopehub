@@ -4,6 +4,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NavigationService, NavigationState } from '../../core/services/navigation.service';
 import { AuthService } from '../../core/services/auth.service';
 import { AuthModalService } from '../../core/services/auth-modal.service';
+import { NotificationService } from '../../core/services/notification.service';
 import { User } from '../../core/models/auth.model';
 
 @Component({
@@ -118,16 +119,60 @@ import { User } from '../../core/models/auth.model';
                   >Articles</a
                 >
                 <a
+                  routerLink="/packages"
+                  routerLinkActive="text-primary-600 bg-primary-50"
+                  class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-primary-600"
+                  role="menuitem"
+                  >Packages</a
+                >
+                <a
+                  routerLink="/events"
+                  routerLinkActive="text-primary-600 bg-primary-50"
+                  class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-primary-600"
+                  role="menuitem"
+                  >Events</a
+                >
+                <a
+                  routerLink="/resources"
+                  routerLinkActive="text-primary-600 bg-primary-50"
+                  class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-primary-600"
+                  role="menuitem"
+                  >Recorded sessions</a
+                >
+                <a
+                  routerLink="/organization"
+                  routerLinkActive="text-primary-600 bg-primary-50"
+                  class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-primary-600"
+                  role="menuitem"
+                  >Organisation</a
+                >
+                <a
                   routerLink="/feedback"
                   routerLinkActive="text-primary-600 bg-primary-50"
                   class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-primary-600"
                   role="menuitem"
                   >Share feedback</a
                 >
+                <a
+                  routerLink="/donate"
+                  routerLinkActive="text-primary-600 bg-primary-50"
+                  class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-primary-600"
+                  role="menuitem"
+                  >Support us</a
+                >
+                <a
+                  routerLink="/careers"
+                  routerLinkActive="text-primary-600 bg-primary-50"
+                  class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-primary-600"
+                  role="menuitem"
+                  >Careers</a
+                >
               </div>
             </div>
             <!-- Authentication Section -->
             <div class="flex items-center space-x-2">
+              <a routerLink="/contact" class="btn-outline btn-sm whitespace-nowrap">Book session</a>
+
               <!-- Authenticated User -->
               @if (user()) {
                 <div class="relative group">
@@ -317,6 +362,42 @@ import { User } from '../../core/models/auth.model';
                   Articles
                 </a>
                 <a
+                  routerLink="/packages"
+                  (click)="closeMobileMenu()"
+                  routerLinkActive="text-primary-600 bg-primary-50"
+                  class="block rounded-md px-3 py-2 text-base font-medium text-gray-700 transition-colors duration-200 hover:bg-gray-50 hover:text-primary-600"
+                  role="menuitem"
+                >
+                  Packages
+                </a>
+                <a
+                  routerLink="/events"
+                  (click)="closeMobileMenu()"
+                  routerLinkActive="text-primary-600 bg-primary-50"
+                  class="block rounded-md px-3 py-2 text-base font-medium text-gray-700 transition-colors duration-200 hover:bg-gray-50 hover:text-primary-600"
+                  role="menuitem"
+                >
+                  Events
+                </a>
+                <a
+                  routerLink="/resources"
+                  (click)="closeMobileMenu()"
+                  routerLinkActive="text-primary-600 bg-primary-50"
+                  class="block rounded-md px-3 py-2 text-base font-medium text-gray-700 transition-colors duration-200 hover:bg-gray-50 hover:text-primary-600"
+                  role="menuitem"
+                >
+                  Recorded sessions
+                </a>
+                <a
+                  routerLink="/organization"
+                  (click)="closeMobileMenu()"
+                  routerLinkActive="text-primary-600 bg-primary-50"
+                  class="block rounded-md px-3 py-2 text-base font-medium text-gray-700 transition-colors duration-200 hover:bg-gray-50 hover:text-primary-600"
+                  role="menuitem"
+                >
+                  Organisation
+                </a>
+                <a
                   routerLink="/feedback"
                   (click)="closeMobileMenu()"
                   routerLinkActive="text-primary-600 bg-primary-50"
@@ -325,7 +406,35 @@ import { User } from '../../core/models/auth.model';
                 >
                   Share feedback
                 </a>
+                <a
+                  routerLink="/donate"
+                  (click)="closeMobileMenu()"
+                  routerLinkActive="text-primary-600 bg-primary-50"
+                  class="block rounded-md px-3 py-2 text-base font-medium text-gray-700 transition-colors duration-200 hover:bg-gray-50 hover:text-primary-600"
+                  role="menuitem"
+                >
+                  Support us
+                </a>
+                <a
+                  routerLink="/careers"
+                  (click)="closeMobileMenu()"
+                  routerLinkActive="text-primary-600 bg-primary-50"
+                  class="block rounded-md px-3 py-2 text-base font-medium text-gray-700 transition-colors duration-200 hover:bg-gray-50 hover:text-primary-600"
+                  role="menuitem"
+                >
+                  Careers
+                </a>
               </div>
+
+              <a
+                routerLink="/contact"
+                (click)="closeMobileMenu()"
+                routerLinkActive="text-primary-600 bg-primary-50"
+                class="btn-outline btn-sm justify-start text-base"
+                role="menuitem"
+              >
+                Book session
+              </a>
 
               @if (user()) {
                 <div class="border-t border-gray-200 mt-2 pt-2"></div>
@@ -421,6 +530,7 @@ export class HeaderComponent implements OnInit {
   private navigationService = inject(NavigationService);
   private authService = inject(AuthService);
   private authModalService = inject(AuthModalService);
+  private notificationService = inject(NotificationService);
 
   constructor() {
     this.navigationService.navigationState$
@@ -478,6 +588,7 @@ export class HeaderComponent implements OnInit {
     try {
       await this.authService.logout();
     } catch (error) {
+      this.notificationService.error('Could not sign you out. Please try again.');
       console.error('Logout error:', error);
     }
   }

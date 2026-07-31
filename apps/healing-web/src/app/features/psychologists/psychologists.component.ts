@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { environment } from '../../../environments/environment';
 import { BookingService, HopeHubProvider } from '../../core/services/booking.service';
+import { NotificationService } from '../../core/services/notification.service';
 
 @Component({
   selector: 'app-psychologists',
@@ -12,6 +13,7 @@ import { BookingService, HopeHubProvider } from '../../core/services/booking.ser
 })
 export class PsychologistsComponent implements OnInit {
   private readonly bookingService = inject(BookingService);
+  private readonly notificationService = inject(NotificationService);
 
   readonly providers = signal<HopeHubProvider[]>([]);
   readonly loading = signal(false);
@@ -69,7 +71,9 @@ export class PsychologistsComponent implements OnInit {
           this.loading.set(false);
         },
         error: () => {
-          this.error.set('Could not load psychologists right now.');
+          const message = 'Could not load psychologists right now.';
+          this.error.set(message);
+          this.notificationService.error(message);
           this.loading.set(false);
         },
       });

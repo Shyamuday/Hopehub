@@ -1,0 +1,53 @@
+<main class="organization-page">
+  <section class="org-hero">
+    <div>
+      <p>Organisation programs</p>
+      <h1>Bring mental wellness support to your school, college, company, or community</h1>
+      <span>
+        Share your requirement. We will suggest workshops, counselling plans, awareness sessions,
+        or a custom program.
+      </span>
+    </div>
+  </section>
+
+  <section class="org-layout">
+    <form class="org-form" (ngSubmit)="submit()">
+      <div class="two">
+        <label>Organisation name <input name="organizationName" [(ngModel)]="form.organizationName" required /></label>
+        <label>Organisation type
+          <select name="organizationType" [(ngModel)]="form.organizationType">
+            @for (type of organizationTypes; track type) { <option [value]="type">{{ type }}</option> }
+          </select>
+        </label>
+        <label>Contact person <input name="contactName" [(ngModel)]="form.contactName" required /></label>
+        <label>Email <input type="email" name="contactEmail" [(ngModel)]="form.contactEmail" /></label>
+        <label>Phone <input name="contactPhone" [(ngModel)]="form.contactPhone" /></label>
+        <label>City <input name="city" [(ngModel)]="form.city" /></label>
+        <label>Approx people <input type="number" name="audienceSize" [(ngModel)]="form.audienceSize" /></label>
+        <label>Need type
+          <select name="needType" [(ngModel)]="form.needType">
+            @for (need of needTypes; track need) { <option [value]="need">{{ need }}</option> }
+          </select>
+        </label>
+      </div>
+
+      <label>Preferred date/time <input name="preferredDate" [(ngModel)]="form.preferredDate" /></label>
+      <label>Notes <textarea rows="5" name="notes" [(ngModel)]="form.notes"></textarea></label>
+
+      @if (success()) { <p class="success">{{ success() }}</p> }
+      @if (error()) { <p class="error">{{ error() }}</p> }
+
+      <button type="submit" [disabled]="saving()">{{ saving() ? 'Sending...' : 'Request a call' }}</button>
+    </form>
+
+    <aside class="org-panel">
+      <h2>What admin can configure</h2>
+      <ul>
+        <li>School and college workshops</li>
+        <li>Corporate employee wellness programs</li>
+        <li>Meetups, webinars, and group sessions</li>
+        <li>Custom proposal and follow-up status</li>
+      </ul>
+    </aside>
+  </section>
+</main>

@@ -1,0 +1,110 @@
+.offer-banner {
+  border-bottom: 1px solid #e5e7eb;
+  padding: 1rem;
+}
+
+.offer-banner__inner {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 1rem;
+  align-items: center;
+  width: min(100%, 72rem);
+  margin: 0 auto;
+}
+
+.offer-banner__copy {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.offer-banner__copy p {
+  margin: 0;
+  color: var(--brand-primary);
+  font-size: 0.74rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.offer-banner__copy h2 {
+  margin: 0;
+  font-size: clamp(1.15rem, 2.4vw, 1.65rem);
+  font-weight: 850;
+  line-height: 1.15;
+}
+
+.offer-banner__copy span {
+  color: #475569;
+  font-weight: 650;
+}
+
+.offer-banner__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.offer-banner__actions > button {
+  min-height: 42px;
+  border: 0;
+  border-radius: 0.5rem;
+  background: var(--brand-primary);
+  color: #ffffff;
+  padding: 0.65rem 0.9rem;
+  font-weight: 850;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.offer-banner__dots {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.offer-banner__dots button {
+  width: 0.55rem;
+  height: 0.55rem;
+  border: 0;
+  border-radius: 999px;
+  background: #94a3b8;
+  padding: 0;
+}
+
+.offer-banner__dots button.active {
+  background: var(--brand-primary);
+}
+
+@media (max-width: 720px) {
+  .offer-banner {
+    padding: 0.85rem 1rem;
+  }
+
+  .offer-banner__inner {
+    grid-template-columns: 1fr;
+    gap: 0.85rem;
+  }
+
+  .offer-banner__actions {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 0.65rem;
+  }
+
+  .offer-banner__actions > button {
+    width: 100%;
+    min-height: 40px;
+  }
+
+  .offer-banner__dots {
+    justify-content: center;
+  }
+
+  .offer-banner__copy h2 {
+    font-size: 1.12rem;
+  }
+
+  .offer-banner__copy span {
+    display: block;
+    font-size: 0.9rem;
+    line-height: 1.45;
+  }
+}

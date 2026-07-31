@@ -25,6 +25,38 @@ const TOKEN_KEY = 'clinic_token';
 const LEGACY_TOKEN_KEY = 'hh_patient_token';
 const USER_KEY = 'hh_patient_user';
 const PREFS_KEY = 'hh_patient_prefs';
+const GOOGLE_GSI_SRC = 'https://accounts.google.com/gsi/client';
+
+type GoogleCredentialResponse = {
+  credential?: string;
+};
+
+type GooglePromptMomentNotification = {
+  isNotDisplayed(): boolean;
+  isSkippedMoment(): boolean;
+  getNotDisplayedReason(): string;
+  getSkippedReason(): string;
+};
+
+type GoogleIdentityApi = {
+  accounts: {
+    id: {
+      initialize(config: {
+        client_id: string;
+        callback: (response: GoogleCredentialResponse) => void;
+        auto_select?: boolean;
+        cancel_on_tap_outside?: boolean;
+      }): void;
+      prompt(callback?: (notification: GooglePromptMomentNotification) => void): void;
+    };
+  };
+};
+
+type GoogleWindow = Window &
+  typeof globalThis & {
+    google?: GoogleIdentityApi;
+    GOOGLE_CLIENT_ID?: string;
+  };
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
@@ -34,6 +66,8 @@ export class AuthService {
 
   private isBrowser = isPlatformBrowser(this.platformId);
   private apiUrl = environment.apiUrl;
+  private googleScriptPromise: Promise<void> | null = null;
+  private googleClientIdPromise: Promise<string> | null = null;
 
   private authStateSubject = new BehaviorSubject<AuthState>({
     user: null,
@@ -237,15 +271,14 @@ export class AuthService {
     }
   }
 
-  /**
-   * Stub kept so existing components that call loginWithGoogle() don't break.
-   * Replace with a real Google Sign-In SDK flow when ready.
-   */
   async loginWithGoogle(): Promise<User> {
-    throw this.makeError(
-      'GOOGLE_NOT_CONFIGURED',
-      'Google sign-in is not yet configured. Please use email and password.',
-    );
+    this.updateState({ isLoading: true, error: null });
+    try {
+      const idToken = await this.getGoogleIdToken();
+      return await this.loginWithGoogleToken(idToken);
+    } catch (err) {
+      throw this.handleError(err);
+    }
   }
 
   async logout(): Promise<void> {
@@ -406,5 +439,138 @@ export class AuthService {
 
   private isAuthError(val: unknown): val is AuthError {
     return typeof val === 'object' && val !== null && 'code' in val && 'message' in val;
+  }
+
+  private async getGoogleClientId(): Promise<string> {
+    if (!this.isBrowser) return environment.googleClientId || '';
+    const runtimeClientId = (window as GoogleWindow).GOOGLE_CLIENT_ID;
+    const bundledClientId = runtimeClientId || environment.googleClientId || '';
+    if (bundledClientId) return bundledClientId;
+
+    if (!this.googleClientIdPromise) {
+      this.googleClientIdPromise = firstValueFrom(
+        this.http.get<{ configured: boolean; clientId: string | null }>(
+          `${this.apiUrl}/auth/google-config`,
+        ),
+      ).then((config) => config.clientId || '');
+    }
+
+    return this.googleClientIdPromise;
+  }
+
+  private async getGoogleIdToken(): Promise<string> {
+    if (!this.isBrowser) {
+      throw this.makeError(
+        'GOOGLE_BROWSER_REQUIRED',
+        'Google sign-in is available in the browser only.',
+      );
+    }
+
+    const clientId = await this.getGoogleClientId();
+    if (!clientId) {
+      throw this.makeError(
+        'GOOGLE_NOT_CONFIGURED',
+        'Google sign-in is not configured yet. Please add GOOGLE_CLIENT_ID.',
+      );
+    }
+
+    await this.loadGoogleIdentityScript();
+
+    const googleAccounts = (window as GoogleWindow).google?.accounts;
+    if (!googleAccounts?.id) {
+      throw this.makeError('GOOGLE_SDK_UNAVAILABLE', 'Google sign-in could not be loaded.');
+    }
+
+    return new Promise<string>((resolve, reject) => {
+      let settled = false;
+
+      googleAccounts.id.initialize({
+        client_id: clientId,
+        auto_select: false,
+        cancel_on_tap_outside: true,
+        callback: (response) => {
+          if (settled) return;
+          settled = true;
+
+          if (response.credential) {
+            resolve(response.credential);
+            return;
+          }
+
+          reject(this.makeError('GOOGLE_TOKEN_MISSING', 'Google did not return a sign-in token.'));
+        },
+      });
+
+      googleAccounts.id.prompt((notification) => {
+        if (settled) return;
+
+        if (notification.isNotDisplayed()) {
+          settled = true;
+          reject(
+            this.makeError(
+              'GOOGLE_PROMPT_NOT_DISPLAYED',
+              `Google sign-in could not open: ${notification.getNotDisplayedReason()}.`,
+            ),
+          );
+          return;
+        }
+
+        if (notification.isSkippedMoment()) {
+          settled = true;
+          reject(
+            this.makeError(
+              'GOOGLE_PROMPT_SKIPPED',
+              `Google sign-in was skipped: ${notification.getSkippedReason()}.`,
+            ),
+          );
+        }
+      });
+    });
+  }
+
+  private loadGoogleIdentityScript(): Promise<void> {
+    if (!this.isBrowser) {
+      return Promise.reject(
+        this.makeError(
+          'GOOGLE_BROWSER_REQUIRED',
+          'Google sign-in is available in the browser only.',
+        ),
+      );
+    }
+
+    if ((window as GoogleWindow).google?.accounts?.id) {
+      return Promise.resolve();
+    }
+
+    if (this.googleScriptPromise) {
+      return this.googleScriptPromise;
+    }
+
+    this.googleScriptPromise = new Promise<void>((resolve, reject) => {
+      const existingScript = document.querySelector<HTMLScriptElement>(
+        `script[src="${GOOGLE_GSI_SRC}"]`,
+      );
+
+      if (existingScript) {
+        existingScript.addEventListener('load', () => resolve(), { once: true });
+        existingScript.addEventListener(
+          'error',
+          () => reject(this.makeError('GOOGLE_SDK_LOAD_FAILED', 'Google sign-in failed to load.')),
+          { once: true },
+        );
+        return;
+      }
+
+      const script = document.createElement('script');
+      script.src = GOOGLE_GSI_SRC;
+      script.async = true;
+      script.defer = true;
+      script.onload = () => resolve();
+      script.onerror = () =>
+        reject(this.makeError('GOOGLE_SDK_LOAD_FAILED', 'Google sign-in failed to load.'));
+      document.head.appendChild(script);
+    });
+
+    return this.googleScriptPromise;
   }
 }

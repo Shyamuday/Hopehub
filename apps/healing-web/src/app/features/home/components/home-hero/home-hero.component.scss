@@ -46,8 +46,14 @@
 @media (max-width: 639px) {
   .home-hero {
     min-height: auto;
-    padding-top: 3rem;
-    padding-bottom: 3rem;
+    padding-top: 2.75rem;
+    padding-bottom: 2.75rem;
+  }
+
+  .home-hero .hope-eyebrow {
+    max-width: 100%;
+    white-space: normal;
+    text-align: center;
   }
 
   .home-hero__lead {
@@ -65,10 +71,12 @@
   .home-hero__trust {
     align-items: stretch;
     flex-direction: column;
+    gap: 0.5rem;
+    margin-top: 1.25rem;
   }
 
   .home-hero__trust a {
     width: 100%;
+    text-align: center;
   }
-
 }

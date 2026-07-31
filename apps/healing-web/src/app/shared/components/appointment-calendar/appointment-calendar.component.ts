@@ -1,6 +1,6 @@
 import { Component, OnInit, output, input, signal, inject } from '@angular/core';
 import { catchError, forkJoin, of } from 'rxjs';
-import { BookingService } from '../../../core/services';
+import { BookingService, NotificationService } from '../../../core/services';
 
 export interface TimeSlot {
   time: string;
@@ -32,6 +32,7 @@ interface AppointmentDay {
 })
 export class AppointmentCalendarComponent implements OnInit {
   private bookingService = inject(BookingService);
+  private notificationService = inject(NotificationService);
 
   appointmentSelected = output<AppointmentSlot>();
   selectedService = input<string | undefined>(undefined);
@@ -149,6 +150,7 @@ export class AppointmentCalendarComponent implements OnInit {
       error: () => {
         this.appointmentDays.set(days.map((day) => ({ ...day, loading: false })));
         this.isLoadingSlots.set(false);
+        this.notificationService.error('Could not load appointment slots right now.');
       },
     });
   }

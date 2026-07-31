@@ -61,6 +61,8 @@ import { websiteLeadsRouter } from './routes/website-leads.js';
 import { counsellorApplicationsRouter } from './routes/counsellor-applications.js';
 import { publicPaymentsRouter } from './routes/public-payments.js';
 import { hopeHubRouter } from './routes/hope-hub.js';
+import { psychologicalTestsRouter } from './routes/psychological-tests.js';
+import { assessmentDefinitionsRouter } from './routes/assessment-definitions.js';
 import { rtcRouter } from './routes/rtc.js';
 import { createRepertoryRouter } from './routes/repertory/index.js';
 import { roleGuidesRouter } from './routes/role-guides.js';
@@ -242,6 +244,8 @@ app.use(websiteLeadsRouter);
 app.use(counsellorApplicationsRouter);
 app.use(publicPaymentsRouter);
 app.use(hopeHubRouter);
+app.use(psychologicalTestsRouter);
+app.use(assessmentDefinitionsRouter);
 
 // ── Global error handler ───────────────────────────────────────────────────────
 

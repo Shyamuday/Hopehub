@@ -11,9 +11,11 @@ import {
   AuthModalService,
   BookingService,
   PaymentService,
+  NotificationService,
 } from '../../core/services';
 import { APP_CONSTANTS } from '../../core';
 import { FEATURED_SERVICES, getAllServices } from '../../core/data/services-data';
+import type { HopeHubOffering } from '../../core/services/booking.service';
 import {
   AppointmentCalendarComponent,
   AppointmentSlot,
@@ -50,6 +52,7 @@ export class ContactComponent implements OnInit {
   private authModalService = inject(AuthModalService);
   private bookingService = inject(BookingService);
   private paymentService = inject(PaymentService);
+  private notificationService = inject(NotificationService);
 
   contactForm!: FormGroup;
 
@@ -65,6 +68,7 @@ export class ContactComponent implements OnInit {
   paymentFlowError = signal('');
   paymentFlowConsultation = signal<any | null>(null);
   prefilledData = signal<any>({});
+  selectedOffering = signal<HopeHubOffering | null>(null);
   currentUser = signal<User | null>(null);
   services = getAllServices();
   serviceOptions: FormDropdownOption[] = [
@@ -147,8 +151,25 @@ export class ContactComponent implements OnInit {
         consultantPhone: params['consultantPhone'] || '',
         duration: params['duration'] || '',
         price: params['price'] || '',
+        offering: params['offering'] || '',
+        offeringId: params['offeringId'] || '',
+        paymentMode: params['paymentMode'] || 'FULL',
         source: params['source'] || '',
       });
+      this.loadSelectedOffering(params);
+    });
+  }
+
+  private loadSelectedOffering(params: any): void {
+    const offeringKey = params['offering'] || params['offeringId'] || '';
+    if (!offeringKey) {
+      this.selectedOffering.set(null);
+      return;
+    }
+
+    this.bookingService.offering(offeringKey).subscribe({
+      next: ({ offering }) => this.selectedOffering.set(offering),
+      error: () => this.selectedOffering.set(null),
     });
   }
 
@@ -290,6 +311,7 @@ export class ContactComponent implements OnInit {
           this.showErrorMessage.set(true);
           this.errorTitle.set('Choose a slot to continue');
           this.errorMessage.set('Select an appointment slot before payment.');
+          this.notificationService.warning('Select an appointment slot before payment.');
           return;
         }
 
@@ -299,8 +321,10 @@ export class ContactComponent implements OnInit {
           await this.submitLead(formData);
         }
       } catch (error: any) {
+        const message = this.readErrorMessage(error);
         this.showErrorMessage.set(true);
-        this.errorMessage.set(this.readErrorMessage(error));
+        this.errorMessage.set(message);
+        this.notificationService.error(message);
         setTimeout(() => {
           this.showErrorMessage.set(false);
           this.errorMessage.set('');
@@ -314,6 +338,7 @@ export class ContactComponent implements OnInit {
       Object.keys(this.contactForm.controls).forEach((key) => {
         this.contactForm.get(key)?.markAsTouched();
       });
+      this.notificationService.warning('Please complete the required booking fields.');
     }
   }
 
@@ -328,6 +353,7 @@ export class ContactComponent implements OnInit {
     if (!user) {
       this.savePendingBooking(formData, appointment);
       this.waitingForAuthToBook.set(true);
+      this.notificationService.info('Sign up or log in to continue to secure payment.');
       this.authModalService.openRegister();
       throw new Error('Sign up or log in to continue to secure payment.');
     }
@@ -346,6 +372,9 @@ export class ContactComponent implements OnInit {
         .createBooking({
           serviceName,
           servicePriceInPaise: this.resolveServicePriceInPaise(serviceName),
+          offeringId: data.offeringId || '',
+          offeringSlug: data.offering || '',
+          paymentMode: data.paymentMode === 'PARTIAL' ? 'PARTIAL' : 'FULL',
           message: bookingMessage,
           appointmentDate: this.formatLocalDate(appointment.date),
           appointmentTime: appointment.time,
@@ -402,8 +431,10 @@ export class ContactComponent implements OnInit {
         this.showSuccessAndReset('Appointment booked and payment verified successfully.');
       })
       .catch((error) => {
-        this.paymentFlowError.set(this.readErrorMessage(error));
+        const message = this.readErrorMessage(error);
+        this.paymentFlowError.set(message);
         this.paymentFlowState.set('ERROR');
+        this.notificationService.error(message);
       })
       .finally(() => this.isSubmitting.set(false));
   }
@@ -442,6 +473,70 @@ export class ContactComponent implements OnInit {
     return '';
   }
 
+  paymentButtonLabel(): string {
+    if (!this.selectedAppointment()) {
+      return this.contactForm.get('serviceInterest')?.value
+        ? 'Choose slot to pay'
+        : 'Book a session';
+    }
+    return this.prefilledData().paymentMode === 'PARTIAL' ? 'Book and pay deposit' : 'Book and pay';
+  }
+
+  offerDiscountInPaise(): number {
+    const offer = this.selectedOffering();
+    if (!offer?.isDiscountActive || offer.discountType === 'NONE' || !offer.priceInPaise) return 0;
+    let amount = 0;
+    if (['PERCENT', 'REFERRAL', 'CUSTOM'].includes(offer.discountType) && offer.discountPercent) {
+      amount = Math.round((offer.priceInPaise * offer.discountPercent) / 100);
+    }
+    if (['FLAT', 'REFERRAL', 'CUSTOM'].includes(offer.discountType) && offer.discountFlatInPaise) {
+      amount = Math.max(amount, offer.discountFlatInPaise);
+    }
+    if (offer.discountMaxInPaise) amount = Math.min(amount, offer.discountMaxInPaise);
+    return Math.max(0, Math.min(amount, offer.priceInPaise - 100));
+  }
+
+  offerFinalInPaise(): number {
+    const offer = this.selectedOffering();
+    if (!offer?.priceInPaise)
+      return this.resolveServicePriceInPaise(this.contactForm?.get('serviceInterest')?.value || '');
+    return Math.max(0, offer.priceInPaise - this.offerDiscountInPaise());
+  }
+
+  payTodayInPaise(): number {
+    const offer = this.selectedOffering();
+    const finalAmount = this.offerFinalInPaise();
+    if (
+      this.prefilledData().paymentMode !== 'PARTIAL' ||
+      !offer?.partialPaymentEnabled ||
+      offer.partialPaymentType === 'NONE'
+    ) {
+      return finalAmount;
+    }
+    if (offer.partialPaymentType === 'PERCENT' && offer.partialPaymentPercent) {
+      return Math.max(
+        100,
+        Math.min(finalAmount, Math.round((finalAmount * offer.partialPaymentPercent) / 100)),
+      );
+    }
+    if (offer.partialPaymentType === 'FLAT' && offer.partialPaymentFlatInPaise) {
+      return Math.max(100, Math.min(finalAmount, offer.partialPaymentFlatInPaise));
+    }
+    return finalAmount;
+  }
+
+  balanceDueInPaise(): number {
+    return Math.max(0, this.offerFinalInPaise() - this.payTodayInPaise());
+  }
+
+  formatPaise(value: number): string {
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      maximumFractionDigits: 0,
+    }).format(value / 100);
+  }
+
   private async submitLead(formData: ContactForm): Promise<void> {
     const leadData: ContactForm = {
       ...formData,
@@ -467,6 +562,7 @@ export class ContactComponent implements OnInit {
   private showSuccessAndReset(message: string): void {
     this.showSuccessMessage.set(true);
     this.errorMessage.set(message);
+    this.notificationService.success(message);
 
     const user = this.currentUser();
     const userName = this.getUserName(user);
