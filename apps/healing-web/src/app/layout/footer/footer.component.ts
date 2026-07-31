@@ -77,6 +77,7 @@ import { APP_CONSTANTS } from '../../core';
                 <li><a routerLink="/exercises" class="footer-link">Exercises</a></li>
                 <li><a routerLink="/lifestyle-tips" class="footer-link">Lifestyle tips</a></li>
                 <li><a routerLink="/articles" class="footer-link">Articles</a></li>
+                <li><a routerLink="/resources" class="footer-link">Recorded sessions</a></li>
                 <li>
                   <a routerLink="/mental-health-test" class="footer-link">Mental health test</a>
                 </li>

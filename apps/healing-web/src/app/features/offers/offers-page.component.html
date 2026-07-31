@@ -1,6 +1,6 @@
 <main class="offers-page">
   <section class="offers-hero">
-    <p>{{ mode() === 'events' ? 'Events' : 'Packages' }}</p>
+    <p>{{ mode() === 'events' ? 'Events' : mode() === 'resources' ? 'Resources' : 'Packages' }}</p>
     <h1>{{ title() }}</h1>
     <span>{{ subtitle() }}</span>
   </section>
@@ -40,6 +40,7 @@
             @if (offer.eventStartsAt) { <span>{{ offer.eventStartsAt | date: 'mediumDate' }}</span> }
             @if (offer.seatsRemaining != null) { <span>{{ offer.seatsRemaining }} left</span> }
             @if (offer.partialPaymentEnabled) { <span>{{ offer.partialPaymentLabel || 'Partial payment' }}</span> }
+            @if (mediaLinkCount(offer)) { <span>{{ mediaLinkCount(offer) }} media links</span> }
           </div>
 
           <ul>

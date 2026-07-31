@@ -74,6 +74,24 @@ export class OfferDetailComponent implements OnInit {
     return amount == null ? '' : this.formatPrice({ ...offer, priceInPaise: amount });
   }
 
+  mediaLinks(offer: HopeHubOffering): Array<{ label: string; url: string; kind: string }> {
+    const metadata = offer.metadata || {};
+    return [
+      { label: 'Open Telegram group', url: metadata.telegramGroupUrl, kind: 'Telegram' },
+      { label: 'Listen on Telegram', url: metadata.telegramAudioUrl, kind: 'Audio' },
+      { label: 'Watch on Telegram', url: metadata.telegramVideoUrl, kind: 'Video' },
+      { label: 'Listen to recording', url: metadata.recordedAudioUrl, kind: 'Audio' },
+      { label: 'Watch recording', url: metadata.recordedVideoUrl, kind: 'Video' },
+      { label: 'Watch on YouTube', url: metadata.youtubeUrl, kind: 'YouTube' },
+    ]
+      .filter((link): link is { label: string; url: string; kind: string } => Boolean(link.url))
+      .map((link) => ({ ...link, url: link.url.trim() }));
+  }
+
+  hasMediaLinks(offer: HopeHubOffering): boolean {
+    return this.mediaLinks(offer).length > 0;
+  }
+
   bookingQuery(offer: HopeHubOffering, paymentMode: 'FULL' | 'PARTIAL' = 'FULL') {
     return {
       offering: offer.slug,

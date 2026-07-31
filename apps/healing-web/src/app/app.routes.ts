@@ -110,6 +110,30 @@ export const routes: Routes = [
     },
   },
   {
+    path: 'resources',
+    loadComponent: () =>
+      import('./features/offers/offers-page.component').then((m) => m.OffersPageComponent),
+    title: 'Recorded Sessions - Hope Hub',
+    data: {
+      mode: 'resources',
+      breadcrumb: 'Recorded Sessions',
+      description: 'Hope Hub recorded sessions, Telegram audio and video, and YouTube resources',
+      keywords:
+        'recorded mental health session, telegram audio, youtube session, hope hub resources',
+    },
+  },
+  {
+    path: 'resources/:slug',
+    loadComponent: () =>
+      import('./features/offers/offer-detail.component').then((m) => m.OfferDetailComponent),
+    title: 'Recorded Session - Hope Hub',
+    data: {
+      breadcrumb: 'Recorded Session',
+      description: 'Watch or listen to a Hope Hub recorded session',
+      keywords: 'recorded session, hope hub media, mental wellness video',
+    },
+  },
+  {
     path: 'organization',
     loadComponent: () =>
       import('./features/organization/organization.component').then((m) => m.OrganizationComponent),

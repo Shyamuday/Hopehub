@@ -73,6 +73,16 @@ export type HopeHubOffering = {
   routePath: string;
   benefits: string[];
   audience: string[];
+  metadata?: {
+    telegramGroupUrl?: string;
+    telegramAudioUrl?: string;
+    telegramVideoUrl?: string;
+    recordedAudioUrl?: string;
+    recordedVideoUrl?: string;
+    youtubeUrl?: string;
+    mediaAccessNote?: string;
+    [key: string]: unknown;
+  } | null;
   isFeatured: boolean;
   requiresLeadForm: boolean;
   seatsBooked?: number;

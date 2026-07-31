@@ -3,7 +3,7 @@ import { DatePipe } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { BookingService, HopeHubOffering } from '../../core/services/booking.service';
 
-type OfferMode = 'packages' | 'events';
+type OfferMode = 'packages' | 'events' | 'resources';
 
 @Component({
   selector: 'app-offers-page',
@@ -21,12 +21,18 @@ export class OffersPageComponent implements OnInit {
   readonly loading = signal(true);
 
   readonly title = computed(() =>
-    this.mode() === 'events' ? 'Workshops, meetups and group care' : 'Choose a care package',
+    this.mode() === 'events'
+      ? 'Workshops, meetups and group care'
+      : this.mode() === 'resources'
+        ? 'Recorded sessions and community media'
+        : 'Choose a care package',
   );
   readonly subtitle = computed(() =>
     this.mode() === 'events'
       ? 'Join fixed-date group sessions, workshops, webinars, and community meetups.'
-      : 'Pick a single session or a care package. Admin can update these prices anytime.',
+      : this.mode() === 'resources'
+        ? 'Watch or listen to selected Telegram group recordings, uploaded sessions, and YouTube sessions.'
+        : 'Pick a single session or a care package. Admin can update these prices anytime.',
   );
 
   ngOnInit(): void {
@@ -45,8 +51,21 @@ export class OffersPageComponent implements OnInit {
     ) {
       return `/events/${offer.slug}`;
     }
+    if (offer.type === 'RECORDED_SESSION') return `/resources/${offer.slug}`;
     if (offer.type === 'ORGANISATION_PROGRAM') return '/organization';
     return `/packages/${offer.slug}`;
+  }
+
+  mediaLinkCount(offer: HopeHubOffering): number {
+    const metadata = offer.metadata || {};
+    return [
+      metadata.telegramGroupUrl,
+      metadata.telegramAudioUrl,
+      metadata.telegramVideoUrl,
+      metadata.recordedAudioUrl,
+      metadata.recordedVideoUrl,
+      metadata.youtubeUrl,
+    ].filter(Boolean).length;
   }
 
   formatPrice(offer: HopeHubOffering): string {
@@ -87,7 +106,9 @@ export class OffersPageComponent implements OnInit {
     const types =
       this.mode() === 'events'
         ? ['WORKSHOP', 'MEETUP', 'WEBINAR', 'GROUP_SESSION']
-        : ['INDIVIDUAL_SESSION', 'CARE_PACKAGE', 'ORGANISATION_PROGRAM'];
+        : this.mode() === 'resources'
+          ? ['RECORDED_SESSION']
+          : ['INDIVIDUAL_SESSION', 'CARE_PACKAGE', 'ORGANISATION_PROGRAM'];
     this.bookingService.offerings().subscribe({
       next: ({ offerings }) => {
         this.offerings.set(offerings.filter((offer) => types.includes(offer.type)));

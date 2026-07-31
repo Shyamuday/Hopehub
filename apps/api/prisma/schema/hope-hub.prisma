@@ -62,6 +62,7 @@ enum HopeHubOfferingType {
   MEETUP
   WEBINAR
   GROUP_SESSION
+  RECORDED_SESSION
   ORGANISATION_PROGRAM
   CUSTOM
 }
@@ -69,6 +70,7 @@ enum HopeHubOfferingType {
 enum HopeHubDeliveryMode {
   ONLINE_AUDIO
   ONLINE_VIDEO
+  RECORDED
   CHAT
   GROUP_ONLINE
   OFFLINE

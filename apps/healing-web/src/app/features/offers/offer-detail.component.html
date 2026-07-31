@@ -23,10 +23,27 @@
             @if (offer.venue) { <span>{{ offer.venue }}</span> }
           </div>
         }
+
+        @if (hasMediaLinks(offer)) {
+          <div class="media-panel">
+            <h2>Session media</h2>
+            @if (offer.metadata?.mediaAccessNote) {
+              <p>{{ offer.metadata?.mediaAccessNote }}</p>
+            }
+            <div class="media-links">
+              @for (link of mediaLinks(offer); track link.url) {
+                <a [href]="link.url" target="_blank" rel="noopener noreferrer">
+                  <span>{{ link.kind }}</span>
+                  <strong>{{ link.label }}</strong>
+                </a>
+              }
+            </div>
+          </div>
+        }
       </div>
 
       <aside class="checkout-card">
-        <span>Starting at</span>
+        <span>{{ offer.type === 'RECORDED_SESSION' ? 'Access' : 'Starting at' }}</span>
         <strong>{{ formatNetPrice(offer) }}</strong>
         @if (discountInPaise(offer) > 0) {
           <small>{{ offer.discountLabel || 'Offer applied' }}</small>
@@ -35,7 +52,16 @@
           <del>{{ formatPrice({ ...offer, priceInPaise: offer.compareAtPriceInPaise || offer.priceInPaise }) }}</del>
         }
 
-        @if (offer.requiresLeadForm || offer.type === 'ORGANISATION_PROGRAM') {
+        @if (offer.type === 'RECORDED_SESSION' && !offer.priceInPaise) {
+          @if (hasMediaLinks(offer)) {
+            <a [href]="mediaLinks(offer)[0].url" target="_blank" rel="noopener noreferrer">
+              {{ offer.ctaLabel || 'Open session' }}
+            </a>
+            <small>Use the media links on this page for audio, video, Telegram, or YouTube access.</small>
+          } @else {
+            <span class="sold-out">Media coming soon</span>
+          }
+        } @else if (offer.requiresLeadForm || offer.type === 'ORGANISATION_PROGRAM') {
           <a routerLink="/organization" [queryParams]="{ offering: offer.slug, offeringId: offer.id }">
             {{ offer.ctaLabel || 'Request a call' }}
           </a>

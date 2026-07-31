@@ -143,6 +143,22 @@
               </div>
             </section>
 
+            <section class="form-section">
+              <div class="section-head">
+                <strong>Recorded session links</strong>
+                <span>Use for Telegram group recordings, uploaded audio/video, or YouTube sessions.</span>
+              </div>
+              <div class="two">
+                <label>Telegram group URL <input name="telegramGroupUrl" [(ngModel)]="offerForm().telegramGroupUrl" placeholder="https://t.me/..." /></label>
+                <label>Telegram audio URL <input name="telegramAudioUrl" [(ngModel)]="offerForm().telegramAudioUrl" placeholder="https://t.me/..." /></label>
+                <label>Telegram video URL <input name="telegramVideoUrl" [(ngModel)]="offerForm().telegramVideoUrl" placeholder="https://t.me/..." /></label>
+                <label>Recorded audio URL <input name="recordedAudioUrl" [(ngModel)]="offerForm().recordedAudioUrl" placeholder="https://..." /></label>
+                <label>Recorded video URL <input name="recordedVideoUrl" [(ngModel)]="offerForm().recordedVideoUrl" placeholder="https://..." /></label>
+                <label>YouTube URL <input name="youtubeUrl" [(ngModel)]="offerForm().youtubeUrl" placeholder="https://youtube.com/..." /></label>
+              </div>
+              <label>Access note <textarea rows="3" name="mediaAccessNote" [(ngModel)]="offerForm().mediaAccessNote" placeholder="Any joining or access instruction for this recording"></textarea></label>
+            </section>
+
             <div class="checks">
               <label><input type="checkbox" name="active" [(ngModel)]="offerForm().isActive" /> Active</label>
               <label><input type="checkbox" name="featured" [(ngModel)]="offerForm().isFeatured" /> Featured</label>
@@ -165,6 +181,9 @@
                     <span>{{ offer.type }} / {{ formatPaise(offer.priceInPaise) }}</span>
                     @if (offer.discountEnabled) { <span>Discount: {{ offer.discountLabel || offer.discountType }}</span> }
                     @if (offer.partialPaymentEnabled) { <span>Partial: {{ offer.partialPaymentLabel || offer.partialPaymentType }}</span> }
+                    @if (offer.metadata?.youtubeUrl || offer.metadata?.telegramGroupUrl || offer.metadata?.recordedAudioUrl || offer.metadata?.recordedVideoUrl) {
+                      <span>Media links added</span>
+                    }
                   </div>
                   <div class="row-actions">
                     @if (offer.isActive) { <span class="badge">Active</span> } @else { <span class="badge off">Off</span> }

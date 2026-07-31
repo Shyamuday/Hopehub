@@ -96,6 +96,57 @@ h1 {
   margin-top: 1rem;
 }
 
+.media-panel {
+  display: grid;
+  gap: 0.85rem;
+  margin-top: 1rem;
+  border-radius: 0.5rem;
+  background: #f8fafc;
+  padding: 1rem;
+}
+
+.media-panel h2,
+.media-panel p {
+  margin: 0;
+}
+
+.media-panel p {
+  color: #475569;
+  line-height: 1.6;
+}
+
+.media-links {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65rem;
+}
+
+.media-links a {
+  display: grid;
+  gap: 0.25rem;
+  border: 1px solid #bfdbfe;
+  border-radius: 0.5rem;
+  background: #ffffff;
+  color: #0f172a;
+  padding: 0.75rem;
+  text-decoration: none;
+}
+
+.media-links a:hover {
+  border-color: #2563eb;
+}
+
+.media-links span {
+  color: #2563eb;
+  font-size: 0.72rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.media-links strong {
+  font-size: 0.92rem;
+}
+
 .checkout-card {
   display: grid;
   gap: 0.8rem;
@@ -158,7 +209,8 @@ h1 {
 @media (max-width: 900px) {
   .detail-shell,
   .detail-lists,
-  .meta-grid {
+  .meta-grid,
+  .media-links {
     grid-template-columns: 1fr;
   }
 

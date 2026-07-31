@@ -479,6 +479,7 @@ function offeringPublicPayload(
     routePath: string | null;
     benefits: string[];
     audience: string[];
+    metadata: unknown;
     isFeatured: boolean;
     requiresLeadForm: boolean;
     sortOrder: number;
@@ -504,9 +505,11 @@ function offeringPublicPayload(
       offering.type === 'WEBINAR' ||
       offering.type === 'GROUP_SESSION'
         ? `/events/${offering.slug}`
-        : offering.type === 'ORGANISATION_PROGRAM'
-          ? '/organization'
-          : `/packages/${offering.slug}`)
+        : offering.type === 'RECORDED_SESSION'
+          ? `/resources/${offering.slug}`
+          : offering.type === 'ORGANISATION_PROGRAM'
+            ? '/organization'
+            : `/packages/${offering.slug}`)
   };
 }
 
@@ -578,6 +581,7 @@ const hopeHubOfferingSelect = {
   routePath: true,
   benefits: true,
   audience: true,
+  metadata: true,
   isFeatured: true,
   requiresLeadForm: true,
   sortOrder: true

@@ -11,6 +11,7 @@ const OFFER_TYPES = [
   'MEETUP',
   'WEBINAR',
   'GROUP_SESSION',
+  'RECORDED_SESSION',
   'ORGANISATION_PROGRAM',
   'CUSTOM',
 ];
@@ -18,6 +19,7 @@ const OFFER_TYPES = [
 const DELIVERY_MODES = [
   'ONLINE_AUDIO',
   'ONLINE_VIDEO',
+  'RECORDED',
   'CHAT',
   'GROUP_ONLINE',
   'OFFLINE',
@@ -97,6 +99,13 @@ export class HopeHubOffersPage implements OnInit {
       audienceText: (offer.audience || []).join('\n'),
       eventStartsAt: this.inputDateTime(offer.eventStartsAt),
       eventEndsAt: this.inputDateTime(offer.eventEndsAt),
+      telegramGroupUrl: offer.metadata?.telegramGroupUrl || '',
+      telegramAudioUrl: offer.metadata?.telegramAudioUrl || '',
+      telegramVideoUrl: offer.metadata?.telegramVideoUrl || '',
+      recordedAudioUrl: offer.metadata?.recordedAudioUrl || '',
+      recordedVideoUrl: offer.metadata?.recordedVideoUrl || '',
+      youtubeUrl: offer.metadata?.youtubeUrl || '',
+      mediaAccessNote: offer.metadata?.mediaAccessNote || '',
     });
     this.tab.set('offers');
   }
@@ -160,6 +169,7 @@ export class HopeHubOffersPage implements OnInit {
         routePath: form.routePath || null,
         benefits: this.lines(form.benefitsText),
         audience: this.lines(form.audienceText),
+        metadata: this.mediaMetadata(form),
         isActive: Boolean(form.isActive),
         isFeatured: Boolean(form.isFeatured),
         requiresLeadForm: Boolean(form.requiresLeadForm),
@@ -368,6 +378,13 @@ export class HopeHubOffersPage implements OnInit {
       routePath: '',
       benefitsText: '',
       audienceText: '',
+      telegramGroupUrl: '',
+      telegramAudioUrl: '',
+      telegramVideoUrl: '',
+      recordedAudioUrl: '',
+      recordedVideoUrl: '',
+      youtubeUrl: '',
+      mediaAccessNote: '',
       isActive: true,
       isFeatured: false,
       requiresLeadForm: false,
@@ -405,6 +422,28 @@ export class HopeHubOffersPage implements OnInit {
     if (value === '' || value == null) return null;
     const parsed = Number(value);
     return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+  }
+
+  private mediaMetadata(form: {
+    telegramGroupUrl: string;
+    telegramAudioUrl: string;
+    telegramVideoUrl: string;
+    recordedAudioUrl: string;
+    recordedVideoUrl: string;
+    youtubeUrl: string;
+    mediaAccessNote: string;
+  }): Record<string, string> | null {
+    const metadata = {
+      telegramGroupUrl: form.telegramGroupUrl.trim(),
+      telegramAudioUrl: form.telegramAudioUrl.trim(),
+      telegramVideoUrl: form.telegramVideoUrl.trim(),
+      recordedAudioUrl: form.recordedAudioUrl.trim(),
+      recordedVideoUrl: form.recordedVideoUrl.trim(),
+      youtubeUrl: form.youtubeUrl.trim(),
+      mediaAccessNote: form.mediaAccessNote.trim(),
+    };
+    const clean = Object.fromEntries(Object.entries(metadata).filter(([, value]) => value));
+    return Object.keys(clean).length ? clean : null;
   }
 
   private slugify(value: string): string {
