@@ -6,38 +6,41 @@ import { COMBINED_ASSESSMENTS } from './assessments/combined-assessments';
 import { WELLBEING_ASSESSMENTS } from './assessments/wellbeing-assessments';
 import { LIFESTYLE_ASSESSMENTS } from './assessments/lifestyle-assessments';
 import { BREAKUP_ASSESSMENTS } from './assessments/breakup-assessments';
+import { ADDITIONAL_ASSESSMENTS } from './assessments/additional-assessments';
 
 // Combine all assessments into a single array
 export const ASSESSMENT_CONFIGS: AssessmentConfig[] = [
-    ...DEPRESSION_ASSESSMENTS,
-    ...ANXIETY_ASSESSMENTS,
-    ...STRESS_ASSESSMENTS,
-    ...COMBINED_ASSESSMENTS,
-    ...WELLBEING_ASSESSMENTS,
-    ...LIFESTYLE_ASSESSMENTS,
-    ...BREAKUP_ASSESSMENTS
+  ...DEPRESSION_ASSESSMENTS,
+  ...ANXIETY_ASSESSMENTS,
+  ...STRESS_ASSESSMENTS,
+  ...COMBINED_ASSESSMENTS,
+  ...WELLBEING_ASSESSMENTS,
+  ...LIFESTYLE_ASSESSMENTS,
+  ...BREAKUP_ASSESSMENTS,
+  ...ADDITIONAL_ASSESSMENTS,
 ];
 
 // Utility functions
 export function getAssessmentConfig(assessmentId: string): AssessmentConfig | undefined {
-    return ASSESSMENT_CONFIGS.find(config => config.id === assessmentId);
+  return ASSESSMENT_CONFIGS.find((config) => config.id === assessmentId);
 }
 
 export function getAssessmentsByCategory(category: AssessmentCategory): AssessmentConfig[] {
-    return ASSESSMENT_CONFIGS.filter(config => config.category === category);
+  return ASSESSMENT_CONFIGS.filter((config) => config.category === category);
 }
 
 export function getAllAssessmentTypes(): AssessmentType[] {
-    return Object.values(AssessmentType);
+  return Object.values(AssessmentType);
 }
 
 // Export individual assessment arrays for specific use cases
 export {
-    DEPRESSION_ASSESSMENTS,
-    ANXIETY_ASSESSMENTS,
-    STRESS_ASSESSMENTS,
-    COMBINED_ASSESSMENTS,
-    WELLBEING_ASSESSMENTS,
-    LIFESTYLE_ASSESSMENTS,
-    BREAKUP_ASSESSMENTS
+  DEPRESSION_ASSESSMENTS,
+  ANXIETY_ASSESSMENTS,
+  STRESS_ASSESSMENTS,
+  COMBINED_ASSESSMENTS,
+  WELLBEING_ASSESSMENTS,
+  LIFESTYLE_ASSESSMENTS,
+  BREAKUP_ASSESSMENTS,
+  ADDITIONAL_ASSESSMENTS,
 };

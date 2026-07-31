@@ -16,6 +16,7 @@ import { ProgressService } from '../../../core/services/progress.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { AuthModalService } from '../../../core/services/auth-modal.service';
 import { AssessmentAttemptsService } from '../../../core/services/assessment-attempts.service';
+import { AssessmentDefinitionService } from '../../../core/services/assessment-definition.service';
 import { firstValueFrom } from 'rxjs';
 
 @Component({
@@ -34,6 +35,7 @@ export class MultiAssessmentComponent implements OnInit {
   private authService = inject(AuthService);
   private authModalService = inject(AuthModalService);
   private assessmentAttemptsService = inject(AssessmentAttemptsService);
+  private assessmentDefinitionService = inject(AssessmentDefinitionService);
 
   // Signal-based state
   assessments = signal<AssessmentConfig[]>(ASSESSMENT_CONFIGS);
@@ -75,7 +77,14 @@ export class MultiAssessmentComponent implements OnInit {
   }
 
   ngOnInit() {
+    void this.loadAssessments();
     this.restorePendingResult();
+  }
+
+  private async loadAssessments() {
+    const assessments = await firstValueFrom(this.assessmentDefinitionService.list());
+    this.assessments.set(assessments);
+    this.categories.set([...new Set(assessments.map((assessment) => assessment.category))]);
   }
 
   filterByCategory(category: AssessmentCategory) {

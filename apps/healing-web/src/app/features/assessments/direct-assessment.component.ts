@@ -3,13 +3,13 @@ import { ActivatedRoute, RouterModule } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { firstValueFrom } from 'rxjs';
 import { AssessmentConfig, AssessmentResult } from '../../core/models/assessment.model';
-import { getAssessmentConfig } from '../../core/data/assessment-configs';
 import { getExerciseRecommendations } from '../../core/data/exercise-recommendations';
 import { getLifestyleTipRecommendations } from '../../core/data/lifestyle-tip-recommendations';
 import { getArticleRecommendations } from '../../core/data/article-recommendations';
 import { AuthService } from '../../core/services/auth.service';
 import { AuthModalService } from '../../core/services/auth-modal.service';
 import { AssessmentAttemptsService } from '../../core/services/assessment-attempts.service';
+import { AssessmentDefinitionService } from '../../core/services/assessment-definition.service';
 
 @Component({
   selector: 'app-direct-assessment',
@@ -387,6 +387,7 @@ export class DirectAssessmentComponent implements OnInit {
   private readonly authService = inject(AuthService);
   private readonly authModalService = inject(AuthModalService);
   private readonly assessmentAttemptsService = inject(AssessmentAttemptsService);
+  private readonly assessmentDefinitionService = inject(AssessmentDefinitionService);
   private readonly pendingStorageKey = 'hope_hub_direct_pending_assessment_result';
   private autoNextTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -427,9 +428,14 @@ export class DirectAssessmentComponent implements OnInit {
     });
   }
 
-  ngOnInit(): void {
-    const assessmentId = this.route.snapshot.data['assessmentId'] as string | undefined;
-    const assessment = assessmentId ? getAssessmentConfig(assessmentId) : null;
+  async ngOnInit(): Promise<void> {
+    const assessmentId =
+      (this.route.snapshot.data['assessmentId'] as string | undefined) ??
+      this.route.snapshot.paramMap.get('assessmentId') ??
+      undefined;
+    const assessment = assessmentId
+      ? await firstValueFrom(this.assessmentDefinitionService.get(assessmentId))
+      : null;
     if (!assessment) return;
 
     this.assessment.set(assessment);

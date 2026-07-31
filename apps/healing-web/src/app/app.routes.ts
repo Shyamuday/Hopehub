@@ -241,6 +241,19 @@ export const routes: Routes = [
     },
   },
   {
+    path: 'assessments/:assessmentId',
+    loadComponent: () =>
+      import('./features/assessments/direct-assessment.component').then(
+        (m) => m.DirectAssessmentComponent,
+      ),
+    title: 'Mental Health Test - Hope Hub',
+    data: {
+      breadcrumb: 'Mental Health Test',
+      description: 'Take a private mental health self-check and get recommendations after sign in',
+      keywords: 'mental health test, self-check, screening, Hope Hub',
+    },
+  },
+  {
     path: 'anxiety-test',
     loadComponent: () =>
       import('./features/assessments/direct-assessment.component').then(
@@ -364,6 +377,90 @@ export const routes: Routes = [
       breadcrumb: 'Mental Health Test',
       description: 'Take a combined depression, anxiety, and stress test',
       keywords: 'mental health test, DASS-21, depression anxiety stress test',
+    },
+  },
+  {
+    path: 'panic-test',
+    loadComponent: () =>
+      import('./features/assessments/direct-assessment.component').then(
+        (m) => m.DirectAssessmentComponent,
+      ),
+    title: 'Panic Symptoms Test - Hope Hub',
+    data: {
+      assessmentId: 'panic-symptoms',
+      breadcrumb: 'Panic Test',
+      description: 'Take a private panic symptoms self-check and get support recommendations',
+      keywords: 'panic test, panic attack symptoms, anxiety self check',
+    },
+  },
+  {
+    path: 'social-anxiety-test',
+    loadComponent: () =>
+      import('./features/assessments/direct-assessment.component').then(
+        (m) => m.DirectAssessmentComponent,
+      ),
+    title: 'Social Anxiety Test - Hope Hub',
+    data: {
+      assessmentId: 'social-anxiety',
+      breadcrumb: 'Social Anxiety Test',
+      description: 'Take a private social anxiety self-check',
+      keywords: 'social anxiety test, fear of judgement, social anxiety self check',
+    },
+  },
+  {
+    path: 'loneliness-test',
+    loadComponent: () =>
+      import('./features/assessments/direct-assessment.component').then(
+        (m) => m.DirectAssessmentComponent,
+      ),
+    title: 'Loneliness Test - Hope Hub',
+    data: {
+      assessmentId: 'loneliness',
+      breadcrumb: 'Loneliness Test',
+      description: 'Take a private loneliness and connection self-check',
+      keywords: 'loneliness test, emotional loneliness, connection self check',
+    },
+  },
+  {
+    path: 'self-esteem-test',
+    loadComponent: () =>
+      import('./features/assessments/direct-assessment.component').then(
+        (m) => m.DirectAssessmentComponent,
+      ),
+    title: 'Self-Esteem Test - Hope Hub',
+    data: {
+      assessmentId: 'self-esteem',
+      breadcrumb: 'Self-Esteem Test',
+      description: 'Take a private self-esteem self-check',
+      keywords: 'self-esteem test, self worth, confidence self check',
+    },
+  },
+  {
+    path: 'anger-test',
+    loadComponent: () =>
+      import('./features/assessments/direct-assessment.component').then(
+        (m) => m.DirectAssessmentComponent,
+      ),
+    title: 'Anger Regulation Test - Hope Hub',
+    data: {
+      assessmentId: 'anger-regulation',
+      breadcrumb: 'Anger Test',
+      description: 'Take a private anger regulation self-check',
+      keywords: 'anger test, anger management, irritability self check',
+    },
+  },
+  {
+    path: 'grief-test',
+    loadComponent: () =>
+      import('./features/assessments/direct-assessment.component').then(
+        (m) => m.DirectAssessmentComponent,
+      ),
+    title: 'Grief Support Test - Hope Hub',
+    data: {
+      assessmentId: 'grief-support',
+      breadcrumb: 'Grief Test',
+      description: 'Take a private grief support self-check',
+      keywords: 'grief test, grief support, loss self check',
     },
   },
   {

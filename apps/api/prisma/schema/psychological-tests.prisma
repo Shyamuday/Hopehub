@@ -1,0 +1,69 @@
+enum PsychologicalTestCategory {
+  COGNITIVE_INTELLIGENCE
+  ACHIEVEMENT
+  PSYCHOLOGICAL_PROCESS
+  VISUAL_MOTOR_GRAPHOMOTOR
+  BEHAVIOR_RATING
+  ADAPTIVE_BEHAVIOR
+  NEUROPSYCHOLOGICAL
+  AUTISM_ASD
+  PSYCHOLOGICAL_EMOTIONAL
+  OBSERVATION_RECORD_REVIEW
+  ADDITIONAL_SERVICE
+  OPEN_RESEARCH_SCALE
+}
+
+enum PsychologicalTestAccessLevel {
+  METADATA_ONLY
+  LICENSED_PROFESSIONAL
+  OPEN_RESEARCH
+  PUBLIC_DOMAIN
+  INTERNAL_SERVICE
+}
+
+enum PsychologicalTestSourceRepository {
+  APA_PSYCTESTS
+  ETS_TESTLINK
+  PSYTOOLKIT
+  IPIP
+  OPEN_SOURCE_PSYCHOMETRICS
+  PUBLISHER
+  CLINICAL_SERVICE
+  SCHOOL_RECORD
+  CUSTOM
+}
+
+model PsychologicalTestCatalog {
+  id String @id @default(cuid())
+
+  slug         String  @unique
+  name         String
+  abbreviation String?
+  edition      String?
+
+  category         PsychologicalTestCategory
+  sourceRepository PsychologicalTestSourceRepository
+  sourceUrl        String?
+  accessLevel      PsychologicalTestAccessLevel      @default(METADATA_ONLY)
+
+  ageRange           String?
+  administrationMode String?
+  domains            String[] @default([])
+
+  purpose     String @db.Text
+  licenseNote String @db.Text
+
+  canAdministerInApp   Boolean @default(false)
+  requiresProfessional Boolean @default(true)
+  isActive             Boolean @default(true)
+  sortOrder            Int     @default(0)
+
+  metadata Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([category, isActive])
+  @@index([accessLevel, isActive])
+  @@index([sourceRepository])
+}
