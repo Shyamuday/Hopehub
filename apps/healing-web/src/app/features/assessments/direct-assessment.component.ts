@@ -43,12 +43,39 @@ import { AssessmentAttemptsService } from '../../core/services/assessment-attemp
               </div>
 
               <div class="mb-4">
-                <div class="mb-2 flex justify-between text-sm text-gray-600">
-                  <span
-                    >Question {{ currentQuestion() + 1 }} of
-                    {{ assessment()!.questions.length }}</span
-                  >
-                  <span>{{ progressPercent() }}%</span>
+                <div
+                  class="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
+                >
+                  <div class="text-sm text-gray-600">
+                    @if (viewMode() === 'single') {
+                      <span
+                        >Question {{ currentQuestion() + 1 }} of
+                        {{ assessment()!.questions.length }}</span
+                      >
+                    } @else {
+                      <span
+                        >{{ answeredCount() }} of
+                        {{ assessment()!.questions.length }} answered</span
+                      >
+                    }
+                    <span class="ml-2 font-semibold text-gray-800">{{ progressPercent() }}%</span>
+                  </div>
+                  <div class="direct-test__mode" aria-label="Question view mode">
+                    <button
+                      type="button"
+                      [class.active]="viewMode() === 'single'"
+                      (click)="setViewMode('single')"
+                    >
+                      One by one
+                    </button>
+                    <button
+                      type="button"
+                      [class.active]="viewMode() === 'all'"
+                      (click)="setViewMode('all')"
+                    >
+                      All questions
+                    </button>
+                  </div>
                 </div>
                 <div class="h-2 rounded-full bg-gray-100">
                   <div
@@ -58,7 +85,7 @@ import { AssessmentAttemptsService } from '../../core/services/assessment-attemp
                 </div>
               </div>
 
-              <div>
+              @if (viewMode() === 'single') {
                 <h2 class="mb-3 text-base font-semibold leading-snug text-gray-950 sm:text-lg">
                   {{ currentQuestionText() }}
                 </h2>
@@ -101,14 +128,56 @@ import { AssessmentAttemptsService } from '../../core/services/assessment-attemp
                     <button
                       type="button"
                       class="btn-primary btn-sm"
-                      [disabled]="!hasCurrentAnswer() || savingResult()"
+                      [disabled]="!hasAllAnswers() || savingResult()"
                       (click)="completeAssessment()"
                     >
                       {{ savingResult() ? 'Saving...' : 'See result' }}
                     </button>
                   }
                 </div>
-              </div>
+              } @else {
+                <div class="grid gap-4">
+                  @for (question of assessment()!.questions; track question.id; let i = $index) {
+                    <section class="direct-test__question-block">
+                      <div class="mb-2 flex items-start gap-3">
+                        <span class="direct-test__question-number">{{ i + 1 }}</span>
+                        <h2 class="text-sm font-semibold leading-6 text-gray-950 sm:text-base">
+                          {{ question.text }}
+                        </h2>
+                      </div>
+
+                      <div class="grid gap-2 sm:grid-cols-2">
+                        @for (option of assessment()!.responseOptions; track option.value) {
+                          <button
+                            type="button"
+                            class="direct-test__option"
+                            [class.direct-test__option--selected]="answers()[i] === option.value"
+                            (click)="selectAnswerAt(i, option.value)"
+                          >
+                            {{ option.label }}
+                          </button>
+                        }
+                      </div>
+                    </section>
+                  }
+                </div>
+
+                <div
+                  class="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"
+                >
+                  <p class="text-sm font-semibold text-gray-600">
+                    {{ answeredCount() }} of {{ assessment()!.questions.length }} answered
+                  </p>
+                  <button
+                    type="button"
+                    class="btn-primary btn-sm"
+                    [disabled]="!hasAllAnswers() || savingResult()"
+                    (click)="completeAssessment()"
+                  >
+                    {{ savingResult() ? 'Saving...' : 'See result' }}
+                  </button>
+                </div>
+              }
             </div>
           }
 
@@ -256,6 +325,53 @@ import { AssessmentAttemptsService } from '../../core/services/assessment-attemp
         box-shadow: inset 0 0 0 1px var(--brand-primary);
       }
 
+      .direct-test__mode {
+        display: inline-grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        overflow: hidden;
+        border: 1px solid #d1d5db;
+        border-radius: 0.5rem;
+        background: #f8fafc;
+        padding: 0.2rem;
+      }
+
+      .direct-test__mode button {
+        border: 0;
+        border-radius: 0.35rem;
+        background: transparent;
+        color: #475569;
+        padding: 0.45rem 0.65rem;
+        font-size: 0.8rem;
+        font-weight: 800;
+        cursor: pointer;
+      }
+
+      .direct-test__mode button.active {
+        background: #fff;
+        color: var(--brand-primary);
+        box-shadow: 0 1px 4px rgba(15, 23, 42, 0.1);
+      }
+
+      .direct-test__question-block {
+        border: 1px solid #e5e7eb;
+        border-radius: 0.75rem;
+        background: #f8fafc;
+        padding: 0.9rem;
+      }
+
+      .direct-test__question-number {
+        display: inline-grid;
+        width: 1.65rem;
+        height: 1.65rem;
+        flex: 0 0 auto;
+        place-items: center;
+        border-radius: 999px;
+        background: rgba(74, 111, 165, 0.11);
+        color: var(--brand-primary);
+        font-size: 0.78rem;
+        font-weight: 900;
+      }
+
       @media (max-width: 639px) {
         .direct-test__option {
           min-height: 2.45rem;
@@ -275,6 +391,7 @@ export class DirectAssessmentComponent implements OnInit {
   private autoNextTimer: ReturnType<typeof setTimeout> | null = null;
 
   assessment = signal<AssessmentConfig | null>(null);
+  viewMode = signal<'single' | 'all'>('single');
   currentQuestion = signal(0);
   answers = signal<number[]>([]);
   result = signal<AssessmentResult | null>(null);
@@ -286,8 +403,10 @@ export class DirectAssessmentComponent implements OnInit {
   progressPercent = computed(() => {
     const assessment = this.assessment();
     if (!assessment) return 0;
-    return Math.round(((this.currentQuestion() + 1) / assessment.questions.length) * 100);
+    return Math.round((this.answeredCount() / assessment.questions.length) * 100);
   });
+
+  answeredCount = computed(() => this.answers().filter((answer) => answer !== undefined).length);
 
   publicTitle = computed(() => {
     const assessment = this.assessment();
@@ -322,11 +441,26 @@ export class DirectAssessmentComponent implements OnInit {
     return this.answers()[this.currentQuestion()] !== undefined;
   }
 
-  selectAnswer(value: number): void {
-    const next = [...this.answers()];
-    next[this.currentQuestion()] = value;
-    this.answers.set(next);
+  hasAllAnswers(): boolean {
+    const assessment = this.assessment();
+    return Boolean(assessment && this.answeredCount() === assessment.questions.length);
+  }
 
+  setViewMode(mode: 'single' | 'all'): void {
+    this.clearAutoNextTimer();
+    this.viewMode.set(mode);
+    if (mode === 'single') {
+      const firstUnanswered = this.answers().findIndex((answer) => answer === undefined);
+      if (firstUnanswered >= 0) {
+        this.currentQuestion.set(firstUnanswered);
+      }
+    }
+  }
+
+  selectAnswer(value: number): void {
+    this.selectAnswerAt(this.currentQuestion(), value);
+
+    if (this.viewMode() !== 'single') return;
     this.clearAutoNextTimer();
     const assessment = this.assessment();
     if (!assessment || this.currentQuestion() >= assessment.questions.length - 1) return;
@@ -334,6 +468,12 @@ export class DirectAssessmentComponent implements OnInit {
     this.autoNextTimer = setTimeout(() => {
       this.nextQuestion();
     }, 220);
+  }
+
+  selectAnswerAt(index: number, value: number): void {
+    const next = [...this.answers()];
+    next[index] = value;
+    this.answers.set(next);
   }
 
   nextQuestion(): void {
@@ -354,7 +494,7 @@ export class DirectAssessmentComponent implements OnInit {
 
   completeAssessment(): void {
     const assessment = this.assessment();
-    if (!assessment || !this.hasCurrentAnswer()) return;
+    if (!assessment || !this.hasAllAnswers()) return;
 
     const answers = this.answers();
     const total = answers.reduce((sum, answer) => sum + (answer || 0), 0);
@@ -465,6 +605,7 @@ export class DirectAssessmentComponent implements OnInit {
     if (!assessment) return;
     this.answers.set(new Array(assessment.questions.length).fill(undefined));
     this.currentQuestion.set(0);
+    this.viewMode.set('single');
     this.result.set(null);
     this.showResults.set(false);
     this.resultLocked.set(false);
