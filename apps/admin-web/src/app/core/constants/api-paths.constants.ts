@@ -63,6 +63,7 @@ export const API_PATHS = {
     DISEASE_PUBLIC_PAGE: (id: string) => `/admin/diseases/${id}/public-page`,
     LOCATION_FEES: '/admin/pricing/location-fees',
     BILLING_PLANS: '/admin/billing/plans',
+    HOPE_HUB_MEDIA: '/admin/hope-hub/media',
     HOPE_HUB_OFFERINGS: '/admin/hope-hub/offerings',
     HOPE_HUB_OFFERING_BY_ID: (id: string) => `/admin/hope-hub/offerings/${id}`,
     HOPE_HUB_BANNERS: '/admin/hope-hub/banners',

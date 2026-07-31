@@ -149,11 +149,28 @@
                 <span>Use for Telegram group recordings, uploaded audio/video, or YouTube sessions.</span>
               </div>
               <div class="two">
+                <label>Access
+                  <select name="mediaAccessMode" [(ngModel)]="offerForm().mediaAccessMode">
+                    @for (mode of mediaAccessModes; track mode) { <option [value]="mode">{{ mode }}</option> }
+                  </select>
+                </label>
                 <label>Telegram group URL <input name="telegramGroupUrl" [(ngModel)]="offerForm().telegramGroupUrl" placeholder="https://t.me/..." /></label>
                 <label>Telegram audio URL <input name="telegramAudioUrl" [(ngModel)]="offerForm().telegramAudioUrl" placeholder="https://t.me/..." /></label>
                 <label>Telegram video URL <input name="telegramVideoUrl" [(ngModel)]="offerForm().telegramVideoUrl" placeholder="https://t.me/..." /></label>
-                <label>Recorded audio URL <input name="recordedAudioUrl" [(ngModel)]="offerForm().recordedAudioUrl" placeholder="https://..." /></label>
-                <label>Recorded video URL <input name="recordedVideoUrl" [(ngModel)]="offerForm().recordedVideoUrl" placeholder="https://..." /></label>
+                <label>Recorded audio URL
+                  <input name="recordedAudioUrl" [(ngModel)]="offerForm().recordedAudioUrl" placeholder="https://..." />
+                  <span class="inline-upload">
+                    <input type="file" accept="audio/*" (change)="uploadRecordedMedia($event, 'recordedAudioUrl')" />
+                    {{ uploadingMedia() === 'recordedAudioUrl' ? 'Uploading audio...' : 'Upload small audio' }}
+                  </span>
+                </label>
+                <label>Recorded video URL
+                  <input name="recordedVideoUrl" [(ngModel)]="offerForm().recordedVideoUrl" placeholder="https://..." />
+                  <span class="inline-upload">
+                    <input type="file" accept="video/mp4,video/webm,video/quicktime" (change)="uploadRecordedMedia($event, 'recordedVideoUrl')" />
+                    {{ uploadingMedia() === 'recordedVideoUrl' ? 'Uploading video...' : 'Upload small video' }}
+                  </span>
+                </label>
                 <label>YouTube URL <input name="youtubeUrl" [(ngModel)]="offerForm().youtubeUrl" placeholder="https://youtube.com/..." /></label>
               </div>
               <label>Access note <textarea rows="3" name="mediaAccessNote" [(ngModel)]="offerForm().mediaAccessNote" placeholder="Any joining or access instruction for this recording"></textarea></label>

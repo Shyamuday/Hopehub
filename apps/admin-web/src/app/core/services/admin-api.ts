@@ -295,6 +295,11 @@ export class AdminApi {
       ...(args as Parameters<AdminCatalogApi['getHopeHubOfferingsAdmin']>),
     );
   }
+  uploadHopeHubMedia(...args: Parameters<AdminCatalogApi['uploadHopeHubMedia']>) {
+    return this.catalog.uploadHopeHubMedia(
+      ...(args as Parameters<AdminCatalogApi['uploadHopeHubMedia']>),
+    );
+  }
   createHopeHubOffering(...args: Parameters<AdminCatalogApi['createHopeHubOffering']>) {
     return this.catalog.createHopeHubOffering(
       ...(args as Parameters<AdminCatalogApi['createHopeHubOffering']>),

@@ -266,6 +266,18 @@ export class AdminCatalogApi extends AdminApiBase {
     );
   }
 
+  uploadHopeHubMedia(payload: { mimeType: string; fileName?: string; dataBase64: string }) {
+    return firstValueFrom(
+      this.http.post<{
+        storageKey: string;
+        fileUrl: string;
+        byteSize: number;
+        sha256: string;
+        mimeType: string;
+      }>(`${this.apiBase}${API_PATHS.ADMIN.HOPE_HUB_MEDIA}`, payload),
+    );
+  }
+
   createHopeHubOffering(payload: Record<string, unknown>) {
     return firstValueFrom(
       this.http.post<{ offering: any }>(

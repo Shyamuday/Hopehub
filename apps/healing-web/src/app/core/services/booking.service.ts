@@ -74,6 +74,7 @@ export type HopeHubOffering = {
   benefits: string[];
   audience: string[];
   metadata?: {
+    mediaAccessMode?: 'PUBLIC' | 'LOGIN_REQUIRED' | 'PAID_ONLY' | string;
     telegramGroupUrl?: string;
     telegramAudioUrl?: string;
     telegramVideoUrl?: string;

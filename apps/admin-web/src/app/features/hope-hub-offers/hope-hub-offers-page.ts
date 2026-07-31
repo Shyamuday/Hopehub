@@ -30,6 +30,9 @@ const DELIVERY_MODES = [
 const DISCOUNT_TYPES = ['NONE', 'PERCENT', 'FLAT', 'REFERRAL', 'CUSTOM'];
 const PARTIAL_PAYMENT_TYPES = ['NONE', 'PERCENT', 'FLAT'];
 const LEAD_STATUSES = ['NEW', 'CONTACTED', 'PROPOSAL_SENT', 'WON', 'LOST'];
+const MEDIA_UPLOAD_LIMIT_BYTES = 5 * 1024 * 1024;
+type MediaField = 'recordedAudioUrl' | 'recordedVideoUrl';
+const MEDIA_ACCESS_MODES = ['PUBLIC', 'LOGIN_REQUIRED', 'PAID_ONLY'];
 
 @Component({
   selector: 'app-hope-hub-offers-page',
@@ -44,6 +47,7 @@ export class HopeHubOffersPage implements OnInit {
   readonly tab = signal<Tab>('offers');
   readonly loading = signal(true);
   readonly saving = signal(false);
+  readonly uploadingMedia = signal<MediaField | null>(null);
   readonly toast = signal('');
   readonly offerings = signal<any[]>([]);
   readonly banners = signal<any[]>([]);
@@ -53,6 +57,7 @@ export class HopeHubOffersPage implements OnInit {
   readonly discountTypes = DISCOUNT_TYPES;
   readonly partialPaymentTypes = PARTIAL_PAYMENT_TYPES;
   readonly leadStatuses = LEAD_STATUSES;
+  readonly mediaAccessModes = MEDIA_ACCESS_MODES;
 
   readonly offerForm = signal(this.emptyOffer());
   readonly bannerForm = signal(this.emptyBanner());
@@ -106,6 +111,7 @@ export class HopeHubOffersPage implements OnInit {
       recordedVideoUrl: offer.metadata?.recordedVideoUrl || '',
       youtubeUrl: offer.metadata?.youtubeUrl || '',
       mediaAccessNote: offer.metadata?.mediaAccessNote || '',
+      mediaAccessMode: offer.metadata?.mediaAccessMode || 'PUBLIC',
     });
     this.tab.set('offers');
   }
@@ -230,6 +236,35 @@ export class HopeHubOffersPage implements OnInit {
       followUpNotes: lead.followUpNotes || null,
     });
     this.showToast('Lead updated');
+  }
+
+  async uploadRecordedMedia(event: Event, field: MediaField): Promise<void> {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = '';
+    if (!file) return;
+    if (file.size > MEDIA_UPLOAD_LIMIT_BYTES) {
+      this.showToast(
+        'File is too large. Use YouTube, Telegram, or direct S3 link for recordings over 5 MB.',
+      );
+      return;
+    }
+
+    this.uploadingMedia.set(field);
+    try {
+      const dataBase64 = await this.fileToBase64(file);
+      const uploaded = await this.api.uploadHopeHubMedia({
+        mimeType: file.type || 'application/octet-stream',
+        fileName: file.name,
+        dataBase64,
+      });
+      this.offerForm.update((form) => ({ ...form, [field]: uploaded.fileUrl }));
+      this.showToast(field === 'recordedAudioUrl' ? 'Audio uploaded' : 'Video uploaded');
+    } catch {
+      this.showToast('Could not upload media');
+    } finally {
+      this.uploadingMedia.set(null);
+    }
   }
 
   formatPaise(value: number | null | undefined): string {
@@ -385,6 +420,7 @@ export class HopeHubOffersPage implements OnInit {
       recordedVideoUrl: '',
       youtubeUrl: '',
       mediaAccessNote: '',
+      mediaAccessMode: 'PUBLIC',
       isActive: true,
       isFeatured: false,
       requiresLeadForm: false,
@@ -432,8 +468,10 @@ export class HopeHubOffersPage implements OnInit {
     recordedVideoUrl: string;
     youtubeUrl: string;
     mediaAccessNote: string;
+    mediaAccessMode: string;
   }): Record<string, string> | null {
     const metadata = {
+      mediaAccessMode: form.mediaAccessMode.trim() || 'PUBLIC',
       telegramGroupUrl: form.telegramGroupUrl.trim(),
       telegramAudioUrl: form.telegramAudioUrl.trim(),
       telegramVideoUrl: form.telegramVideoUrl.trim(),
@@ -444,6 +482,18 @@ export class HopeHubOffersPage implements OnInit {
     };
     const clean = Object.fromEntries(Object.entries(metadata).filter(([, value]) => value));
     return Object.keys(clean).length ? clean : null;
+  }
+
+  private fileToBase64(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const value = String(reader.result || '');
+        resolve(value.includes(',') ? value.split(',').pop() || '' : value);
+      };
+      reader.onerror = () => reject(reader.error);
+      reader.readAsDataURL(file);
+    });
   }
 
   private slugify(value: string): string {

@@ -30,14 +30,43 @@
             @if (offer.metadata?.mediaAccessNote) {
               <p>{{ offer.metadata?.mediaAccessNote }}</p>
             }
-            <div class="media-links">
-              @for (link of mediaLinks(offer); track link.url) {
-                <a [href]="link.url" target="_blank" rel="noopener noreferrer">
-                  <span>{{ link.kind }}</span>
-                  <strong>{{ link.label }}</strong>
-                </a>
+            @if (canAccessMedia(offer)) {
+              @if (youtubeEmbedUrl(offer); as youtubeUrl) {
+                <iframe
+                  class="youtube-frame"
+                  [src]="youtubeUrl"
+                  title="Recorded Hope Hub session"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowfullscreen
+                ></iframe>
               }
-            </div>
+              @for (audioUrl of audioSources(offer); track audioUrl) {
+                <audio controls [src]="audioUrl"></audio>
+              }
+              @for (videoUrl of videoSources(offer); track videoUrl) {
+                <video controls playsinline [src]="videoUrl"></video>
+              }
+              <div class="media-links">
+                @for (link of mediaLinks(offer); track link.url) {
+                  <a
+                    [href]="link.url"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    (click)="trackMediaClick(offer, link)"
+                  >
+                    <span>{{ link.kind }}</span>
+                    <strong>{{ link.label }}</strong>
+                  </a>
+                }
+              </div>
+            } @else {
+              <div class="media-locked">
+                <strong>{{ mediaAccessMessage(offer) }}</strong>
+                @if (offer.metadata?.mediaAccessMode === 'LOGIN_REQUIRED') {
+                  <button type="button" (click)="openLogin()">Sign in</button>
+                }
+              </div>
+            }
           </div>
         }
       </div>
@@ -53,13 +82,18 @@
         }
 
         @if (offer.type === 'RECORDED_SESSION' && !offer.priceInPaise) {
-          @if (hasMediaLinks(offer)) {
-            <a [href]="mediaLinks(offer)[0].url" target="_blank" rel="noopener noreferrer">
+          @if (hasMediaLinks(offer) && canAccessMedia(offer)) {
+            <a
+              [href]="mediaLinks(offer)[0].url"
+              target="_blank"
+              rel="noopener noreferrer"
+              (click)="trackMediaClick(offer, mediaLinks(offer)[0])"
+            >
               {{ offer.ctaLabel || 'Open session' }}
             </a>
             <small>Use the media links on this page for audio, video, Telegram, or YouTube access.</small>
           } @else {
-            <span class="sold-out">Media coming soon</span>
+            <span class="sold-out">{{ hasMediaLinks(offer) ? 'Access required' : 'Media coming soon' }}</span>
           }
         } @else if (offer.requiresLeadForm || offer.type === 'ORGANISATION_PROGRAM') {
           <a routerLink="/organization" [queryParams]="{ offering: offer.slug, offeringId: offer.id }">

@@ -12,6 +12,7 @@ import { z } from 'zod';
 import { authRequired, allowRoles } from '../../auth.js';
 import { prisma } from '../../db.js';
 import { asyncRoute, routeParam, writeAuditLog } from '../../utils/helpers.js';
+import { saveHopeHubMedia } from '../../services/hope-hub-media-storage.js';
 
 const emptyToNull = z
   .string()
@@ -105,11 +106,66 @@ const leadUpdateSchema = z.object({
   followUpNotes: emptyToNull
 });
 
+const mediaUploadSchema = z.object({
+  mimeType: z.string().trim().min(3).max(80),
+  fileName: z.string().trim().max(200).optional(),
+  dataBase64: z.string().min(1)
+});
+
 function jsonValue(value: Record<string, unknown> | null | undefined) {
   return value == null ? Prisma.JsonNull : (value as Prisma.InputJsonObject);
 }
 
+function mapMediaUploadError(error: unknown) {
+  const code = error instanceof Error ? error.message : '';
+  if (code === 'UNSUPPORTED_MIME') {
+    return {
+      status: 400,
+      message: 'Only MP3, M4A, WAV, WebM, MP4, and MOV media files are allowed.'
+    };
+  }
+  if (code === 'EMPTY_FILE') {
+    return { status: 400, message: 'Media file is empty.' };
+  }
+  if (code === 'FILE_TOO_LARGE') {
+    return {
+      status: 400,
+      message:
+        'Media upload must be 5 MB or smaller. Use YouTube, Telegram, or direct S3 links for larger recordings.'
+    };
+  }
+  return { status: 500, message: 'Could not save media file.' };
+}
+
 export function registerAdminHopeHubOfferingRoutes(router: Router) {
+  router.post(
+    '/admin/hope-hub/media',
+    authRequired,
+    allowRoles(Role.ADMIN, Role.MARKETING),
+    asyncRoute(async (req, res) => {
+      const body = mediaUploadSchema.parse(req.body);
+      try {
+        const saved = await saveHopeHubMedia({
+          mimeType: body.mimeType,
+          fileName: body.fileName,
+          dataBase64: body.dataBase64
+        });
+        await writeAuditLog({
+          actorId: req.user!.id,
+          actorRole: req.user!.role,
+          action: 'hopehub.media.upload',
+          targetType: 'hope_hub_media',
+          targetId: saved.storageKey,
+          summary: `Uploaded Hope Hub media "${body.fileName || saved.storageKey}".`
+        });
+        res.status(201).json(saved);
+      } catch (error) {
+        const mapped = mapMediaUploadError(error);
+        res.status(mapped.status).json({ message: mapped.message });
+      }
+    })
+  );
+
   router.get(
     '/admin/hope-hub/offerings',
     authRequired,

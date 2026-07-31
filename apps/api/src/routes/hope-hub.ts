@@ -14,6 +14,7 @@ import { ensureBillingPlans } from './catalog.js';
 import { resolveConsultationCheckout } from '../services/checkout-pricing.js';
 import { PRODUCT_EVENTS, trackProductEvent } from '../services/product-analytics.js';
 import { enrichWithProfileImageUrl, userProfileImagePath } from '../utils/profile-image-url.js';
+import { hopeHubMediaMimeType, readHopeHubMediaFile } from '../services/hope-hub-media-storage.js';
 
 export const hopeHubRouter = Router();
 
@@ -107,6 +108,20 @@ const hopeHubAssessmentAttemptSchema = z.object({
   entryPage: z.string().trim().max(500).optional().or(z.literal('')),
   completedAt: z.string().datetime().optional()
 });
+
+function normalizeHopeHubMediaKey(value: string) {
+  try {
+    const decoded = value
+      .split('/')
+      .map((part) => decodeURIComponent(part))
+      .join('/');
+    if (!decoded.startsWith('hope-hub-media/')) return '';
+    if (decoded.includes('..')) return '';
+    return decoded;
+  } catch {
+    return '';
+  }
+}
 
 function slugify(value: string) {
   return value
@@ -603,6 +618,22 @@ async function bookedSeatsByOfferingCode(codes: string[]) {
   });
   return new Map(rows.map((row) => [row.billingPlanCode || '', row._count._all]));
 }
+
+hopeHubRouter.get(
+  /^\/hope-hub\/media\/(.+)$/,
+  asyncRoute(async (req, res) => {
+    const storageKey = normalizeHopeHubMediaKey(String(req.params[0] || ''));
+    if (!storageKey) return res.status(404).json({ message: 'Media not found.' });
+    try {
+      const bytes = await readHopeHubMediaFile(storageKey);
+      res.setHeader('Content-Type', hopeHubMediaMimeType(storageKey));
+      res.setHeader('Cache-Control', 'public, max-age=86400');
+      res.send(bytes);
+    } catch {
+      res.status(404).json({ message: 'Media not found.' });
+    }
+  })
+);
 
 hopeHubRouter.get(
   '/hope-hub/offerings',
