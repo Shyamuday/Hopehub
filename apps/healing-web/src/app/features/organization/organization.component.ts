@@ -2,6 +2,7 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { BookingService } from '../../core/services/booking.service';
+import { NotificationService } from '../../core/services/notification.service';
 
 @Component({
   selector: 'app-organization',
@@ -13,6 +14,7 @@ import { BookingService } from '../../core/services/booking.service';
 export class OrganizationComponent implements OnInit {
   private readonly bookingService = inject(BookingService);
   private readonly route = inject(ActivatedRoute);
+  private readonly notificationService = inject(NotificationService);
 
   readonly saving = signal(false);
   readonly success = signal('');
@@ -61,7 +63,9 @@ export class OrganizationComponent implements OnInit {
 
   submit(): void {
     if (!this.form.organizationName || !this.form.contactName) {
-      this.error.set('Organisation name and contact person are required.');
+      const message = 'Organisation name and contact person are required.';
+      this.error.set(message);
+      this.notificationService.warning(message);
       return;
     }
 
@@ -77,11 +81,15 @@ export class OrganizationComponent implements OnInit {
       })
       .subscribe({
         next: () => {
-          this.success.set('Request received. Our team will contact you soon.');
+          const message = 'Request received. Our team will contact you soon.';
+          this.success.set(message);
+          this.notificationService.success(message);
           this.saving.set(false);
         },
         error: () => {
-          this.error.set('Could not send request. Please try again.');
+          const message = 'Could not send request. Please try again.';
+          this.error.set(message);
+          this.notificationService.error(message);
           this.saving.set(false);
         },
       });

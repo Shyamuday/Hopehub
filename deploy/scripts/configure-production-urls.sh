@@ -54,7 +54,7 @@ patch_app_constants "$ROOT/apps/admin-web/src/environments/production-url.consta
 patch_app_constants "$ROOT/apps/operations-web/src/environments/production-url.constants.ts" "$API_URL" "$OPS_URL" "$DOCTOR_URL"
 patch_app_constants "$ROOT/apps/healing-web/src/environments/production-url.constants.ts" "$API_URL" "$HEALING_URL"
 
-# Inject Google Client ID into healing-web environment files
+# Inject Google Client ID into healing-web environment and runtime config files
 GOOGLE_CLIENT_ID="${GOOGLE_CLIENT_ID:-}"
 if [ -n "$GOOGLE_CLIENT_ID" ]; then
   for env_file in \
@@ -66,6 +66,14 @@ if [ -n "$GOOGLE_CLIENT_ID" ]; then
       echo "Patched googleClientId in $env_file"
     fi
   done
+
+  runtime_config="$ROOT/apps/healing-web/public/runtime-config.js"
+  if [ -f "$runtime_config" ]; then
+    google_client_id_escaped="${GOOGLE_CLIENT_ID//\\/\\\\}"
+    google_client_id_escaped="${google_client_id_escaped//\'/\\\'}"
+    printf "window.GOOGLE_CLIENT_ID = '%s';\n" "$google_client_id_escaped" > "$runtime_config"
+    echo "Patched Google Client ID in $runtime_config"
+  fi
 fi
 
 echo "Production URLs configured:"

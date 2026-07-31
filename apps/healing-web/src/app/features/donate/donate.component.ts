@@ -1,6 +1,6 @@
 import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { PaymentService } from '../../core/services';
+import { NotificationService, PaymentService } from '../../core/services';
 
 @Component({
   selector: 'app-donate',
@@ -214,6 +214,7 @@ import { PaymentService } from '../../core/services';
 })
 export class DonateComponent {
   private paymentService = inject(PaymentService);
+  private notificationService = inject(NotificationService);
 
   readonly amounts = [51, 101, 251, 501, 1001, 2101, 5001, 11000, 21000, 51000];
   selectedAmount = signal<number | null>(null);
@@ -245,11 +246,12 @@ export class DonateComponent {
       await this.paymentService.donate({ amount });
       this.paymentSuccess.set(true);
       this.paymentMessage.set('Thank you. Your donation payment was verified successfully.');
+      this.notificationService.success('Thank you. Your donation payment was verified.');
     } catch (error) {
+      const message = error instanceof Error ? error.message : 'Payment could not be completed.';
       this.paymentSuccess.set(false);
-      this.paymentMessage.set(
-        error instanceof Error ? error.message : 'Payment could not be completed.',
-      );
+      this.paymentMessage.set(message);
+      this.notificationService.error(message);
     } finally {
       this.isPaying.set(false);
     }

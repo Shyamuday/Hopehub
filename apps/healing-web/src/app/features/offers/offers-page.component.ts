@@ -2,6 +2,7 @@ import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { BookingService, HopeHubOffering } from '../../core/services/booking.service';
+import { NotificationService } from '../../core/services/notification.service';
 
 type OfferMode = 'packages' | 'events' | 'resources';
 
@@ -15,6 +16,7 @@ type OfferMode = 'packages' | 'events' | 'resources';
 export class OffersPageComponent implements OnInit {
   private readonly bookingService = inject(BookingService);
   private readonly route = inject(ActivatedRoute);
+  private readonly notificationService = inject(NotificationService);
 
   readonly mode = signal<OfferMode>('packages');
   readonly offerings = signal<HopeHubOffering[]>([]);
@@ -116,6 +118,7 @@ export class OffersPageComponent implements OnInit {
       },
       error: () => {
         this.offerings.set([]);
+        this.notificationService.error('Could not load offers right now.');
         this.loading.set(false);
       },
     });

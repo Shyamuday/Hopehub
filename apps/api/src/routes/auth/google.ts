@@ -7,41 +7,52 @@ import { asyncRoute, publicUserSelect, toAuthResponse, logAuthEvent } from '../.
 import { googleClient, googleClientId } from './shared.js';
 
 export function registerAuthGoogleRoutes(router: Router) {
-// ─── Google OAuth ──────────────────────────────────────────────────────────────
+  // ─── Google OAuth ──────────────────────────────────────────────────────────────
 
-router.post(
-  '/auth/google',
-  asyncRoute(async (req, res) => {
-    const body = z.object({ idToken: z.string().min(20) }).parse(req.body);
-    if (!googleClient || !googleClientId) {
-      return res.status(503).json({ message: 'Google login is not configured. Set GOOGLE_CLIENT_ID.' });
-    }
-
-    const ticket = await googleClient.verifyIdToken({ idToken: body.idToken, audience: googleClientId });
-    const payload = ticket.getPayload();
-    if (!payload?.email) {
-      return res.status(401).json({ message: 'Google account email is required' });
-    }
-
-    const existing = await prisma.user.findUnique({
-      where: { email: payload.email },
-      select: publicUserSelect
+  router.get('/auth/google-config', (_req, res) => {
+    res.json({
+      configured: Boolean(googleClientId),
+      clientId: googleClientId || null
     });
+  });
 
-    const user = existing
-      ? await prisma.user.update({
-          where: { email: payload.email },
-          data: { name: payload.name || payload.email },
-          select: publicUserSelect
-        })
-      : await createPatientRecord({
-          name: payload.name || payload.email,
-          email: payload.email
-        });
+  router.post(
+    '/auth/google',
+    asyncRoute(async (req, res) => {
+      const body = z.object({ idToken: z.string().min(20) }).parse(req.body);
+      if (!googleClient || !googleClientId) {
+        return res
+          .status(503)
+          .json({ message: 'Google login is not configured. Set GOOGLE_CLIENT_ID.' });
+      }
 
-    logAuthEvent('patient_login', { userId: user.id, event: 'google' });
-    res.json(toAuthResponse({ ...user, role: Role.PATIENT }));
-  })
-);
+      const ticket = await googleClient.verifyIdToken({
+        idToken: body.idToken,
+        audience: googleClientId
+      });
+      const payload = ticket.getPayload();
+      if (!payload?.email) {
+        return res.status(401).json({ message: 'Google account email is required' });
+      }
 
+      const existing = await prisma.user.findUnique({
+        where: { email: payload.email },
+        select: publicUserSelect
+      });
+
+      const user = existing
+        ? await prisma.user.update({
+            where: { email: payload.email },
+            data: { name: payload.name || payload.email },
+            select: publicUserSelect
+          })
+        : await createPatientRecord({
+            name: payload.name || payload.email,
+            email: payload.email
+          });
+
+      logAuthEvent('patient_login', { userId: user.id, event: 'google' });
+      res.json(toAuthResponse({ ...user, role: Role.PATIENT }));
+    })
+  );
 }

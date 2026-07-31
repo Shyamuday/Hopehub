@@ -11,6 +11,7 @@ import { RouterModule, Router } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AuthService } from '../../../core/services/auth.service';
 import { AuthModalService } from '../../../core/services/auth-modal.service';
+import { NotificationService } from '../../../core/services/notification.service';
 import { RegisterCredentials } from '../../../core/models/auth.model';
 import { AppButtonComponent } from '../../../shared/components/app-button/app-button.component';
 
@@ -26,6 +27,7 @@ export class RegisterComponent implements OnInit {
   private authService = inject(AuthService);
   private router = inject(Router);
   private authModalService = inject(AuthModalService);
+  private notificationService = inject(NotificationService);
 
   registerForm: FormGroup;
   isLoading = signal(false);
@@ -100,6 +102,7 @@ export class RegisterComponent implements OnInit {
         await this.authService.register(credentials);
 
         this.successMessage.set('Account created successfully.');
+        this.notificationService.success('Account created successfully.');
 
         // Registration returns a patient session, so keep the user on the current page.
         setTimeout(() => {
@@ -107,6 +110,9 @@ export class RegisterComponent implements OnInit {
         }, 800);
       } catch (error) {
         // Error is handled by the auth service and displayed via the subscription
+        this.notificationService.error(
+          this.readErrorMessage(error, 'Could not create your account. Please try again.'),
+        );
         console.error('Registration error:', error);
       }
     } else {
@@ -114,23 +120,37 @@ export class RegisterComponent implements OnInit {
       Object.keys(this.registerForm.controls).forEach((key) => {
         this.registerForm.get(key)?.markAsTouched();
       });
+      this.notificationService.warning('Please complete the required account details.');
     }
   }
 
   async registerWithGoogle(): Promise<void> {
     try {
       await this.authService.loginWithGoogle();
+      this.notificationService.success('Account ready. You are signed in with Google.');
       this.authModalService.close();
       if (this.router.url === '/' || this.router.url.startsWith('/auth')) {
         this.router.navigate(['/dashboard']);
       }
     } catch (error) {
       // Error is handled by the auth service and displayed via the subscription
+      this.notificationService.error(
+        this.readErrorMessage(error, 'Google sign-up failed. Please try again.'),
+      );
       console.error('Google registration error:', error);
     }
   }
 
   openLogin(): void {
     this.authModalService.openLogin();
+  }
+
+  private readErrorMessage(error: unknown, fallback: string): string {
+    if (typeof error === 'object' && error !== null && 'message' in error) {
+      const message = String(error.message || '').trim();
+      if (message) return message;
+    }
+
+    return fallback;
   }
 }

@@ -4,6 +4,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NavigationService, NavigationState } from '../../core/services/navigation.service';
 import { AuthService } from '../../core/services/auth.service';
 import { AuthModalService } from '../../core/services/auth-modal.service';
+import { NotificationService } from '../../core/services/notification.service';
 import { User } from '../../core/models/auth.model';
 
 @Component({
@@ -485,6 +486,7 @@ export class HeaderComponent implements OnInit {
   private navigationService = inject(NavigationService);
   private authService = inject(AuthService);
   private authModalService = inject(AuthModalService);
+  private notificationService = inject(NotificationService);
 
   constructor() {
     this.navigationService.navigationState$
@@ -542,6 +544,7 @@ export class HeaderComponent implements OnInit {
     try {
       await this.authService.logout();
     } catch (error) {
+      this.notificationService.error('Could not sign you out. Please try again.');
       console.error('Logout error:', error);
     }
   }

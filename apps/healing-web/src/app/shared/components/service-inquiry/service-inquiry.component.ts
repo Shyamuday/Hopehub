@@ -1,6 +1,6 @@
-import { Component, input, inject, signal, OnInit } from '@angular/core';
+import { Component, input, inject, signal } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { LeadService, LoadingService } from '../../../core/services';
+import { LeadService, LoadingService, NotificationService } from '../../../core/services';
 
 @Component({
   selector: 'app-service-inquiry',
@@ -15,6 +15,7 @@ export class ServiceInquiryComponent {
   private formBuilder = inject(FormBuilder);
   private leadService = inject(LeadService);
   private loadingService = inject(LoadingService);
+  private notificationService = inject(NotificationService);
 
   inquiryForm!: FormGroup;
   isSubmitting = signal(false);
@@ -51,6 +52,7 @@ export class ServiceInquiryComponent {
 
           if (success) {
             this.showSuccessMessage.set(true);
+            this.notificationService.success('Inquiry sent successfully.');
             this.inquiryForm.reset();
             this.initializeForm();
 
@@ -59,15 +61,19 @@ export class ServiceInquiryComponent {
               this.showSuccessMessage.set(false);
             }, 5000);
           } else {
+            const message = 'Failed to send inquiry. Please try again.';
             this.showErrorMessage.set(true);
-            this.errorMessage.set('Failed to send inquiry. Please try again.');
+            this.errorMessage.set(message);
+            this.notificationService.error(message);
           }
         },
         error: (error: any) => {
           this.isSubmitting.set(false);
           this.loadingService.hide();
+          const message = error.message || 'An unexpected error occurred. Please try again.';
           this.showErrorMessage.set(true);
-          this.errorMessage.set(error.message || 'An unexpected error occurred. Please try again.');
+          this.errorMessage.set(message);
+          this.notificationService.error(message);
 
           // Hide error message after 8 seconds
           setTimeout(() => {
@@ -81,6 +87,7 @@ export class ServiceInquiryComponent {
       Object.keys(this.inquiryForm.controls).forEach((key) => {
         this.inquiryForm.get(key)?.markAsTouched();
       });
+      this.notificationService.warning('Please complete the required inquiry fields.');
     }
   }
 }

@@ -1,0 +1,27 @@
+@if (notifications().length) {
+  <section class="notification-center" aria-live="polite" aria-label="Notifications">
+    @for (notification of notifications(); track notification.id) {
+      <article class="notification notification--{{ notification.tone }}" role="status">
+        <span class="notification__icon" aria-hidden="true">
+          {{ iconFor(notification.tone) }}
+        </span>
+
+        <div class="notification__content">
+          <strong>{{ notification.title }}</strong>
+          @if (notification.message) {
+            <p>{{ notification.message }}</p>
+          }
+        </div>
+
+        <button
+          type="button"
+          class="notification__close"
+          aria-label="Dismiss notification"
+          (click)="dismiss(notification.id)"
+        >
+          x
+        </button>
+      </article>
+    }
+  </section>
+}

@@ -11,6 +11,7 @@ import {
   AuthModalService,
   BookingService,
   PaymentService,
+  NotificationService,
 } from '../../core/services';
 import { APP_CONSTANTS } from '../../core';
 import { FEATURED_SERVICES, getAllServices } from '../../core/data/services-data';
@@ -51,6 +52,7 @@ export class ContactComponent implements OnInit {
   private authModalService = inject(AuthModalService);
   private bookingService = inject(BookingService);
   private paymentService = inject(PaymentService);
+  private notificationService = inject(NotificationService);
 
   contactForm!: FormGroup;
 
@@ -309,6 +311,7 @@ export class ContactComponent implements OnInit {
           this.showErrorMessage.set(true);
           this.errorTitle.set('Choose a slot to continue');
           this.errorMessage.set('Select an appointment slot before payment.');
+          this.notificationService.warning('Select an appointment slot before payment.');
           return;
         }
 
@@ -318,8 +321,10 @@ export class ContactComponent implements OnInit {
           await this.submitLead(formData);
         }
       } catch (error: any) {
+        const message = this.readErrorMessage(error);
         this.showErrorMessage.set(true);
-        this.errorMessage.set(this.readErrorMessage(error));
+        this.errorMessage.set(message);
+        this.notificationService.error(message);
         setTimeout(() => {
           this.showErrorMessage.set(false);
           this.errorMessage.set('');
@@ -333,6 +338,7 @@ export class ContactComponent implements OnInit {
       Object.keys(this.contactForm.controls).forEach((key) => {
         this.contactForm.get(key)?.markAsTouched();
       });
+      this.notificationService.warning('Please complete the required booking fields.');
     }
   }
 
@@ -347,6 +353,7 @@ export class ContactComponent implements OnInit {
     if (!user) {
       this.savePendingBooking(formData, appointment);
       this.waitingForAuthToBook.set(true);
+      this.notificationService.info('Sign up or log in to continue to secure payment.');
       this.authModalService.openRegister();
       throw new Error('Sign up or log in to continue to secure payment.');
     }
@@ -424,8 +431,10 @@ export class ContactComponent implements OnInit {
         this.showSuccessAndReset('Appointment booked and payment verified successfully.');
       })
       .catch((error) => {
-        this.paymentFlowError.set(this.readErrorMessage(error));
+        const message = this.readErrorMessage(error);
+        this.paymentFlowError.set(message);
         this.paymentFlowState.set('ERROR');
+        this.notificationService.error(message);
       })
       .finally(() => this.isSubmitting.set(false));
   }
@@ -553,6 +562,7 @@ export class ContactComponent implements OnInit {
   private showSuccessAndReset(message: string): void {
     this.showSuccessMessage.set(true);
     this.errorMessage.set(message);
+    this.notificationService.success(message);
 
     const user = this.currentUser();
     const userName = this.getUserName(user);

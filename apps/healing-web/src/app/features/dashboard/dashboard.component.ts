@@ -5,6 +5,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AuthService } from '../../core/services/auth.service';
 import { BookingService } from '../../core/services/booking.service';
 import { PaymentService } from '../../core/services/payment.service';
+import { NotificationService } from '../../core/services/notification.service';
 import { User } from '../../core/models/auth.model';
 import { ProgressDashboardComponent } from '../../shared/components/progress-dashboard/progress-dashboard.component';
 import {
@@ -446,6 +447,7 @@ export class DashboardComponent implements OnInit {
   private authService = inject(AuthService);
   private bookingService = inject(BookingService);
   private paymentService = inject(PaymentService);
+  private notificationService = inject(NotificationService);
   user = signal<User | null>(null);
   isLoading = signal(false);
   isPaying = signal(false);
@@ -475,6 +477,7 @@ export class DashboardComponent implements OnInit {
         this.isLoading.set(false);
       },
       error: () => {
+        this.notificationService.error('Could not load your dashboard right now.');
         this.isLoading.set(false);
       },
     });
@@ -514,6 +517,9 @@ export class DashboardComponent implements OnInit {
       this.notice.set(
         'Payment verified successfully. Your booking is now ready for expert confirmation.',
       );
+      this.notificationService.success(
+        'Payment verified successfully. Your booking is ready for expert confirmation.',
+      );
       this.loadDashboard();
     } catch (error) {
       const message =
@@ -523,6 +529,7 @@ export class DashboardComponent implements OnInit {
       this.paymentFlowError.set(message);
       this.paymentFlowState.set('ERROR');
       this.notice.set(message);
+      this.notificationService.error(message);
     } finally {
       this.isPaying.set(false);
     }
@@ -609,6 +616,7 @@ export class DashboardComponent implements OnInit {
     try {
       await this.authService.logout();
     } catch (error) {
+      this.notificationService.error('Could not sign you out. Please try again.');
       console.error('Logout error:', error);
     }
   }

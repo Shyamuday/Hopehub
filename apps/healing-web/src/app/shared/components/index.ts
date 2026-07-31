@@ -15,3 +15,4 @@ export * from './feedback-section/feedback-section.component';
 export * from './offer-banner-carousel/offer-banner-carousel.component';
 export * from './scroll-to-top/scroll-to-top.component';
 export * from './form-dropdown/form-dropdown.component';
+export * from './notification-center/notification-center.component';

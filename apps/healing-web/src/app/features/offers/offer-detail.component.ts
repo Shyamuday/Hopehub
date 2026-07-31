@@ -8,6 +8,7 @@ import { BookingService, HopeHubOffering } from '../../core/services/booking.ser
 import { AuthService } from '../../core/services/auth.service';
 import { AuthModalService } from '../../core/services/auth-modal.service';
 import { PaymentService } from '../../core/services/payment.service';
+import { NotificationService } from '../../core/services/notification.service';
 import { environment } from '../../../environments/environment';
 
 type MediaLink = {
@@ -32,6 +33,7 @@ export class OfferDetailComponent implements OnInit {
   private readonly auth = inject(AuthService);
   private readonly authModal = inject(AuthModalService);
   private readonly paymentService = inject(PaymentService);
+  private readonly notificationService = inject(NotificationService);
 
   readonly offer = signal<HopeHubOffering | null>(null);
   readonly loading = signal(true);
@@ -211,7 +213,9 @@ export class OfferDetailComponent implements OnInit {
 
   async payEvent(offer: HopeHubOffering, paymentMode: 'FULL' | 'PARTIAL' = 'FULL'): Promise<void> {
     if (!this.auth.getToken()) {
-      this.checkoutError.set('Sign in or create an account to continue to secure payment.');
+      const message = 'Sign in or create an account to continue to secure payment.';
+      this.checkoutError.set(message);
+      this.notificationService.info(message);
       this.authModal.openRegister();
       return;
     }
@@ -242,11 +246,12 @@ export class OfferDetailComponent implements OnInit {
         onVerifying: () => this.checkoutState.set('VERIFYING'),
       });
       this.checkoutState.set('SUCCESS');
+      this.notificationService.success('Payment verified. Your registration is confirmed.');
     } catch (error: any) {
       this.checkoutState.set('IDLE');
-      this.checkoutError.set(
-        error?.error?.message || error?.message || 'Could not start event checkout.',
-      );
+      const message = error?.error?.message || error?.message || 'Could not start event checkout.';
+      this.checkoutError.set(message);
+      this.notificationService.error(message);
     }
   }
 
@@ -268,6 +273,7 @@ export class OfferDetailComponent implements OnInit {
       },
       error: () => {
         this.offer.set(null);
+        this.notificationService.error('Could not load this offer.');
         this.loading.set(false);
       },
     });

@@ -10,6 +10,7 @@ import { AuthService } from '../../core/services/auth.service';
 import { AuthModalService } from '../../core/services/auth-modal.service';
 import { AssessmentAttemptsService } from '../../core/services/assessment-attempts.service';
 import { AssessmentDefinitionService } from '../../core/services/assessment-definition.service';
+import { NotificationService } from '../../core/services/notification.service';
 
 @Component({
   selector: 'app-direct-assessment',
@@ -388,6 +389,7 @@ export class DirectAssessmentComponent implements OnInit {
   private readonly authModalService = inject(AuthModalService);
   private readonly assessmentAttemptsService = inject(AssessmentAttemptsService);
   private readonly assessmentDefinitionService = inject(AssessmentDefinitionService);
+  private readonly notificationService = inject(NotificationService);
   private readonly pendingStorageKey = 'hope_hub_direct_pending_assessment_result';
   private autoNextTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -522,6 +524,11 @@ export class DirectAssessmentComponent implements OnInit {
         completedAt: new Date(),
         answers: [...response.result.answers],
       };
+    } catch (error: any) {
+      this.notificationService.error(
+        error?.error?.message || error?.message || 'Could not calculate your result.',
+      );
+      return;
     } finally {
       this.savingResult.set(false);
     }
@@ -531,6 +538,7 @@ export class DirectAssessmentComponent implements OnInit {
 
     if (!this.authService.getToken()) {
       this.resultLocked.set(true);
+      this.notificationService.info('Sign up or log in to save your test result.');
       this.authModalService.openRegister();
       return;
     }
@@ -561,6 +569,11 @@ export class DirectAssessmentComponent implements OnInit {
       this.clearPendingResult();
       this.resultLocked.set(false);
       this.showResults.set(true);
+      this.notificationService.success('Your test result is saved.');
+    } catch (error: any) {
+      this.notificationService.error(
+        error?.error?.message || error?.message || 'Could not save your result. Please try again.',
+      );
     } finally {
       this.savingResult.set(false);
     }

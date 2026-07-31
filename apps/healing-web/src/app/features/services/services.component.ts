@@ -6,6 +6,7 @@ import { Service, ServiceCategory } from '../../core/models';
 import { getAllServices } from '../../core/data/services-data';
 import { ServiceCardComponent } from '../../shared/components';
 import { BookingService, HopeHubService } from '../../core/services/booking.service';
+import { NotificationService } from '../../core/services/notification.service';
 
 @Component({
   selector: 'app-services',
@@ -49,6 +50,7 @@ export class ServicesComponent implements OnInit {
   constructor(
     private router: Router,
     private bookingService: BookingService,
+    private notificationService: NotificationService,
   ) {}
 
   ngOnInit() {
@@ -74,7 +76,10 @@ export class ServicesComponent implements OnInit {
           services.length ? services.map((service) => this.toService(service)) : getAllServices(),
         );
       },
-      error: () => this.services.set(getAllServices()),
+      error: () => {
+        this.services.set(getAllServices());
+        this.notificationService.warning('Live services could not load. Showing saved services.');
+      },
     });
   }
 

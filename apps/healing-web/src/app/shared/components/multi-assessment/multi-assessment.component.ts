@@ -17,6 +17,7 @@ import { AuthService } from '../../../core/services/auth.service';
 import { AuthModalService } from '../../../core/services/auth-modal.service';
 import { AssessmentAttemptsService } from '../../../core/services/assessment-attempts.service';
 import { AssessmentDefinitionService } from '../../../core/services/assessment-definition.service';
+import { NotificationService } from '../../../core/services/notification.service';
 import { firstValueFrom } from 'rxjs';
 
 @Component({
@@ -36,6 +37,7 @@ export class MultiAssessmentComponent implements OnInit {
   private authModalService = inject(AuthModalService);
   private assessmentAttemptsService = inject(AssessmentAttemptsService);
   private assessmentDefinitionService = inject(AssessmentDefinitionService);
+  private notificationService = inject(NotificationService);
 
   // Signal-based state
   assessments = signal<AssessmentConfig[]>(ASSESSMENT_CONFIGS);
@@ -82,9 +84,13 @@ export class MultiAssessmentComponent implements OnInit {
   }
 
   private async loadAssessments() {
-    const assessments = await firstValueFrom(this.assessmentDefinitionService.list());
-    this.assessments.set(assessments);
-    this.categories.set([...new Set(assessments.map((assessment) => assessment.category))]);
+    try {
+      const assessments = await firstValueFrom(this.assessmentDefinitionService.list());
+      this.assessments.set(assessments);
+      this.categories.set([...new Set(assessments.map((assessment) => assessment.category))]);
+    } catch {
+      this.notificationService.warning('Live assessments could not load. Showing saved tests.');
+    }
   }
 
   filterByCategory(category: AssessmentCategory) {
@@ -151,6 +157,11 @@ export class MultiAssessmentComponent implements OnInit {
         completedAt: new Date(),
         answers: [...response.result.answers],
       };
+    } catch (error: any) {
+      this.notificationService.error(
+        error?.error?.message || error?.message || 'Could not calculate your result.',
+      );
+      return;
     } finally {
       this.savingResult.set(false);
     }
@@ -161,6 +172,7 @@ export class MultiAssessmentComponent implements OnInit {
     if (!this.authService.getToken()) {
       this.resultLocked.set(true);
       this.showResults.set(false);
+      this.notificationService.info('Sign up or log in to save your assessment result.');
       this.authModalService.openRegister();
       return;
     }
@@ -324,10 +336,12 @@ export class MultiAssessmentComponent implements OnInit {
       this.clearPendingResult();
       this.resultLocked.set(false);
       this.showResults.set(true);
+      this.notificationService.success('Your assessment result is saved.');
     } catch (error: any) {
-      this.saveError.set(
-        error?.error?.message || error?.message || 'Could not save your result. Please try again.',
-      );
+      const message =
+        error?.error?.message || error?.message || 'Could not save your result. Please try again.';
+      this.saveError.set(message);
+      this.notificationService.error(message);
     } finally {
       this.savingResult.set(false);
     }

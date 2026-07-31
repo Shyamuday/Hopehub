@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { AuthService } from '../../core/services/auth.service';
 import { AuthModalService } from '../../core/services/auth-modal.service';
+import { NotificationService } from '../../core/services/notification.service';
 import type { PatientProfile, PatientProfileUpdateRequest } from '../../core/models/auth.model';
 
 @Component({
@@ -15,6 +16,7 @@ export class ProfileComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly auth = inject(AuthService);
   private readonly authModal = inject(AuthModalService);
+  private readonly notificationService = inject(NotificationService);
 
   readonly loading = signal(false);
   readonly saving = signal(false);
@@ -54,6 +56,7 @@ export class ProfileComponent implements OnInit {
   loadProfile(): void {
     if (!this.auth.getToken()) {
       this.needsLogin.set(true);
+      this.notificationService.info('Sign in to view and update your profile.');
       this.authModal.openLogin();
       return;
     }
@@ -67,7 +70,9 @@ export class ProfileComponent implements OnInit {
         this.loading.set(false);
       },
       error: () => {
-        this.error.set('Could not load your profile.');
+        const message = 'Could not load your profile.';
+        this.error.set(message);
+        this.notificationService.error(message);
         this.loading.set(false);
       },
     });
@@ -76,6 +81,7 @@ export class ProfileComponent implements OnInit {
   async saveProfile(): Promise<void> {
     if (this.profileForm.invalid || this.saving()) {
       this.profileForm.markAllAsTouched();
+      this.notificationService.warning('Please check the highlighted profile fields.');
       return;
     }
 
@@ -87,8 +93,11 @@ export class ProfileComponent implements OnInit {
       this.patientCode.set(response.profile.patientCode);
       this.profileForm.reset(this.toFormValue(response.profile));
       this.message.set('Profile saved.');
+      this.notificationService.success('Profile saved.');
     } catch {
-      this.error.set('Could not save your profile.');
+      const message = 'Could not save your profile.';
+      this.error.set(message);
+      this.notificationService.error(message);
     } finally {
       this.saving.set(false);
     }
