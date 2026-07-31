@@ -3,9 +3,11 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
+import { firstValueFrom } from 'rxjs';
 import { BookingService, HopeHubOffering } from '../../core/services/booking.service';
 import { AuthService } from '../../core/services/auth.service';
 import { AuthModalService } from '../../core/services/auth-modal.service';
+import { PaymentService } from '../../core/services/payment.service';
 import { environment } from '../../../environments/environment';
 
 type MediaLink = {
@@ -29,9 +31,14 @@ export class OfferDetailComponent implements OnInit {
   private readonly http = inject(HttpClient);
   private readonly auth = inject(AuthService);
   private readonly authModal = inject(AuthModalService);
+  private readonly paymentService = inject(PaymentService);
 
   readonly offer = signal<HopeHubOffering | null>(null);
   readonly loading = signal(true);
+  readonly checkoutState = signal<'IDLE' | 'CREATING' | 'OPENING' | 'VERIFYING' | 'SUCCESS'>(
+    'IDLE',
+  );
+  readonly checkoutError = signal('');
 
   ngOnInit(): void {
     this.route.paramMap.subscribe((params) => {
@@ -88,6 +95,10 @@ export class OfferDetailComponent implements OnInit {
   formatPartialAmount(offer: HopeHubOffering): string {
     const amount = this.partialAmountInPaise(offer);
     return amount == null ? '' : this.formatPrice({ ...offer, priceInPaise: amount });
+  }
+
+  isEventOffer(offer: HopeHubOffering): boolean {
+    return ['WORKSHOP', 'MEETUP', 'WEBINAR', 'GROUP_SESSION'].includes(offer.type);
   }
 
   mediaLinks(offer: HopeHubOffering): MediaLink[] {
@@ -198,6 +209,56 @@ export class OfferDetailComponent implements OnInit {
     };
   }
 
+  async payEvent(offer: HopeHubOffering, paymentMode: 'FULL' | 'PARTIAL' = 'FULL'): Promise<void> {
+    if (!this.auth.getToken()) {
+      this.checkoutError.set('Sign in or create an account to continue to secure payment.');
+      this.authModal.openRegister();
+      return;
+    }
+
+    this.checkoutError.set('');
+    this.checkoutState.set('CREATING');
+    try {
+      const response = await firstValueFrom(
+        this.bookingService.createBooking({
+          serviceName: offer.title,
+          servicePriceInPaise: offer.priceInPaise || undefined,
+          offeringId: offer.id,
+          offeringSlug: offer.slug,
+          paymentMode,
+          message: `${offer.type.replace('_', ' ')} registration`,
+          appointmentDate: this.eventDateValue(offer),
+          appointmentTime: this.eventTimeValue(offer),
+          sessionDuration: offer.sessionDurationMinutes
+            ? `${offer.sessionDurationMinutes} min`
+            : '',
+          entryPage: typeof window === 'undefined' ? undefined : window.location.href,
+        }),
+      );
+
+      await this.paymentService.payConsultation(response.consultation, {
+        onOrderCreated: () => this.checkoutState.set('OPENING'),
+        onCheckoutOpened: () => this.checkoutState.set('OPENING'),
+        onVerifying: () => this.checkoutState.set('VERIFYING'),
+      });
+      this.checkoutState.set('SUCCESS');
+    } catch (error: any) {
+      this.checkoutState.set('IDLE');
+      this.checkoutError.set(
+        error?.error?.message || error?.message || 'Could not start event checkout.',
+      );
+    }
+  }
+
+  checkoutLabel(defaultLabel: string): string {
+    const state = this.checkoutState();
+    if (state === 'CREATING') return 'Preparing checkout...';
+    if (state === 'OPENING') return 'Opening checkout...';
+    if (state === 'VERIFYING') return 'Verifying payment...';
+    if (state === 'SUCCESS') return 'Payment verified';
+    return defaultLabel;
+  }
+
   private load(slug: string): void {
     this.loading.set(true);
     this.bookingService.offering(slug).subscribe({
@@ -227,5 +288,19 @@ export class OfferDetailComponent implements OnInit {
     } catch {
       return '';
     }
+  }
+
+  private eventDateValue(offer: HopeHubOffering): string {
+    if (!offer.eventStartsAt) return new Date().toISOString().slice(0, 10);
+    return new Date(offer.eventStartsAt).toISOString().slice(0, 10);
+  }
+
+  private eventTimeValue(offer: HopeHubOffering): string {
+    if (!offer.eventStartsAt) return 'Event registration';
+    return new Date(offer.eventStartsAt).toLocaleTimeString('en-IN', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+    });
   }
 }

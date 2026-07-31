@@ -80,6 +80,9 @@
         @if (offer.compareAtPriceInPaise || discountInPaise(offer) > 0) {
           <del>{{ formatPrice({ ...offer, priceInPaise: offer.compareAtPriceInPaise || offer.priceInPaise }) }}</del>
         }
+        @if (checkoutError()) {
+          <small class="checkout-error">{{ checkoutError() }}</small>
+        }
 
         @if (offer.type === 'RECORDED_SESSION' && !offer.priceInPaise) {
           @if (hasMediaLinks(offer) && canAccessMedia(offer)) {
@@ -101,6 +104,20 @@
           </a>
         } @else if (offer.isFull) {
           <span class="sold-out">Full</span>
+        } @else if (isEventOffer(offer)) {
+          @if (partialAmountInPaise(offer)) {
+            <button type="button" [disabled]="checkoutState() !== 'IDLE'" (click)="payEvent(offer, 'PARTIAL')">
+              {{ checkoutLabel('Pay ' + formatPartialAmount(offer)) }}
+            </button>
+            <button type="button" class="secondary" [disabled]="checkoutState() !== 'IDLE'" (click)="payEvent(offer, 'FULL')">
+              {{ checkoutLabel('Pay full') }}
+            </button>
+            <small>{{ offer.partialPaymentLabel || 'Balance can be paid later' }}</small>
+          } @else {
+            <button type="button" [disabled]="checkoutState() !== 'IDLE'" (click)="payEvent(offer, 'FULL')">
+              {{ checkoutLabel(offer.ctaLabel || 'Pay now') }}
+            </button>
+          }
         } @else {
           @if (partialAmountInPaise(offer)) {
             <a routerLink="/contact" [queryParams]="bookingQuery(offer, 'PARTIAL')">

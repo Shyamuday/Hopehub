@@ -106,6 +106,7 @@ export class PaymentService {
       donorName: consultation.patient?.name || '',
       donorEmail: consultation.patient?.email || '',
       donorPhone: consultation.patient?.mobile || '',
+      description: this.checkoutDescription(consultation),
     });
 
     lifecycle?.onVerifying?.();
@@ -164,6 +165,7 @@ export class PaymentService {
       donorName?: string | null;
       donorEmail?: string | null;
       donorPhone?: string | null;
+      description?: string | null;
     },
   ): Promise<RazorpayCheckoutResponse> {
     return new Promise((resolve, reject) => {
@@ -184,7 +186,7 @@ export class PaymentService {
         amount: order.amountInPaise,
         currency: order.currency,
         name: 'Hope Hub',
-        description: 'Secure session payment',
+        description: donor.description || 'Secure Hope Hub payment',
         order_id: order.orderId,
         prefill: {
           name: donor.donorName || '',
@@ -211,5 +213,15 @@ export class PaymentService {
 
       checkout.open();
     });
+  }
+
+  private checkoutDescription(consultation: any): string {
+    const lineItems = consultation?.payment?.lineItems || {};
+    const offeringType = String(lineItems.offeringType || '');
+    if (['WORKSHOP', 'MEETUP', 'WEBINAR', 'GROUP_SESSION'].includes(offeringType)) {
+      return `Secure ${offeringType.replace('_', ' ').toLowerCase()} payment`;
+    }
+    if (offeringType === 'RECORDED_SESSION') return 'Secure recorded session payment';
+    return 'Secure session payment';
   }
 }

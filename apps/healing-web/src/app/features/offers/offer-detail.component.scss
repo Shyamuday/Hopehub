@@ -203,21 +203,38 @@ h1 {
 }
 
 .checkout-card a,
+.checkout-card button,
 .back-link {
   display: inline-flex;
   justify-content: center;
+  border: 0;
   border-radius: 0.5rem;
   background: #2563eb;
   color: #ffffff;
   padding: 0.8rem 1rem;
   font-weight: 850;
   text-decoration: none;
+  cursor: pointer;
 }
 
-.checkout-card a.secondary {
+.checkout-card a.secondary,
+.checkout-card button.secondary {
   border: 1px solid #bfdbfe;
   background: #eff6ff;
   color: #1d4ed8;
+}
+
+.checkout-card button:disabled {
+  cursor: wait;
+  opacity: 0.78;
+}
+
+.checkout-error {
+  border: 1px solid #fecaca;
+  border-radius: 0.5rem;
+  background: #fef2f2;
+  color: #b91c1c !important;
+  padding: 0.65rem 0.75rem;
 }
 
 .sold-out {
@@ -284,6 +301,7 @@ h1 {
   }
 
   .checkout-card a,
+  .checkout-card button,
   .back-link,
   .sold-out,
   .media-locked button {
