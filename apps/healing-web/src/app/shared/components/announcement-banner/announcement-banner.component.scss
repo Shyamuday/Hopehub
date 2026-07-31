@@ -7,9 +7,9 @@
 }
 
 .announcement--blue {
-  --announcement-bg: #eff6ff;
-  --announcement-border: #bfdbfe;
-  --announcement-accent: #1d4ed8;
+  --announcement-bg: var(--brand-primary-light);
+  --announcement-border: var(--brand-primary-border);
+  --announcement-accent: var(--brand-primary);
 }
 
 .announcement--emerald {

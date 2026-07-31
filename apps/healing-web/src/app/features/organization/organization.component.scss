@@ -1,6 +1,6 @@
 .organization-page {
   min-height: 100vh;
-  background: #f8fafc;
+  background: #ffffff;
   color: #0f172a;
   padding: clamp(2rem, 5vw, 4rem) 1rem;
 }
@@ -17,7 +17,7 @@
 
 .org-hero p {
   margin: 0 0 0.6rem;
-  color: #2563eb;
+  color: var(--brand-primary);
   font-size: 0.8rem;
   font-weight: 900;
   text-transform: uppercase;
@@ -88,7 +88,7 @@ textarea {
 button {
   border: 0;
   border-radius: 0.5rem;
-  background: #2563eb;
+  background: var(--brand-primary);
   color: #ffffff;
   padding: 0.8rem 1rem;
   font-weight: 850;

@@ -92,7 +92,7 @@ export class ServicesCarouselComponent implements OnInit {
   }
 
   formatSessionLabel(_currency: string): string {
-    return '30 min session';
+    return '30 min + 15 min follow-up';
   }
 
   whatsappHref(_service: CarouselService): string {

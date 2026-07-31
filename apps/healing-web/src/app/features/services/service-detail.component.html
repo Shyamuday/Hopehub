@@ -39,7 +39,7 @@
               <div class="space-y-2 rounded-lg border border-primary-100 bg-primary-50 p-4">
                 @if (service()!.pricing!.individual) {
                   <div class="flex justify-between items-center">
-                    <span class="text-gray-700">30-minute support session</span>
+                    <span class="text-gray-700">30-minute support session + 15-minute follow-up</span>
                     <span class="font-semibold">{{ formatPrice(service()!.pricing!.individual, service()!.pricing!.currency) }}</span>
                   </div>
                 }
@@ -64,7 +64,7 @@
             <button 
               (click)="bookService()" 
               class="btn-primary btn-block">
-              Request 30-minute session
+              Book 30-minute session
             </button>
             <button 
               (click)="contactForInfo()" 
@@ -123,7 +123,7 @@
       </div>
 
       <div class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-        <h2 class="mb-4 text-xl font-semibold text-gray-900">What happens in 30 minutes</h2>
+        <h2 class="mb-4 text-xl font-semibold text-gray-900">What happens in the session</h2>
         <ol class="space-y-3">
           @for (step of sessionFlow(); track step; let i = $index) {
             <li class="flex items-start">

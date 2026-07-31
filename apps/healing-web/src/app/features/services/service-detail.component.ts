@@ -47,7 +47,7 @@ export class ServiceDetailComponent implements OnInit {
         service: this.service()?.id,
         serviceName: this.service()?.name,
         price: this.service()?.pricing?.individual,
-        duration: '30 minutes',
+        duration: '30 minutes + 15 min follow-up',
         source: 'service-detail',
       },
     });
@@ -132,6 +132,7 @@ export class ServiceDetailComponent implements OnInit {
       'Identify the main pressure point',
       'Practice one calming or clarity tool',
       'Leave with a simple next-step plan',
+      'Use your included 15-minute follow-up to review progress',
     ];
   }
 
@@ -140,6 +141,7 @@ export class ServiceDetailComponent implements OnInit {
       'A clearer understanding of your concern',
       'One practical coping tool',
       'A next-step plan for the coming days',
+      'One included follow-up check-in',
     ];
   }
 

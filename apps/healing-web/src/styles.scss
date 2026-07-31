@@ -45,10 +45,12 @@
 /* Hope Hub Brand Variables */
 :root {
   --brand-primary: #4a6fa5;
+  --brand-primary-hover: #3d5b88;
   --brand-primary-light: #e3ebf2;
+  --brand-primary-border: #c9d6e4;
   --brand-secondary: #7ea8be;
   --brand-accent: #829b78;
-  --brand-surface: #f4f7f9;
+  --brand-surface: #ffffff;
   --brand-neutral: #1c2d37;
   --brand-success: #829b78;
   --brand-warning: #b45309;
@@ -88,7 +90,7 @@ body {
   font-weight: var(--font-weight-normal);
   line-height: 1.5;
   color: var(--text-primary);
-  background-color: var(--brand-surface);
+  background-color: #ffffff;
 }
 
 /* Font Loading Optimization - Prevent FOIT (Flash of Invisible Text) */
@@ -382,7 +384,7 @@ a:focus {
 }
 
 .hope-section {
-  background-color: var(--brand-surface);
+  background-color: #ffffff;
   @apply py-10 sm:py-12;
 }
 
@@ -441,7 +443,7 @@ a:focus {
 }
 
 .professional-page {
-  @apply min-h-screen bg-[var(--brand-surface)] py-8 sm:py-10;
+  @apply min-h-screen bg-white py-8 sm:py-10;
 }
 
 .professional-header {

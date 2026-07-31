@@ -1,6 +1,6 @@
 .offer-detail {
   min-height: 100vh;
-  background: #f8fafc;
+  background: #ffffff;
   color: #0f172a;
   padding: clamp(2rem, 5vw, 4rem) 1rem;
 }
@@ -21,7 +21,7 @@
 .detail-shell.loading {
   min-height: 24rem;
   border-radius: 0.5rem;
-  background: linear-gradient(90deg, #ffffff, #eff6ff, #ffffff);
+  background: linear-gradient(90deg, #ffffff, var(--brand-primary-light), #ffffff);
 }
 
 .detail-copy,
@@ -36,7 +36,7 @@
 
 .detail-copy > p:first-child {
   margin: 0 0 0.6rem;
-  color: #2563eb;
+  color: var(--brand-primary);
   font-size: 0.78rem;
   font-weight: 900;
   text-transform: uppercase;
@@ -72,14 +72,14 @@ h1 {
 .meta-grid div,
 .event-note {
   border-radius: 0.5rem;
-  background: #eff6ff;
+  background: var(--brand-primary-light);
   padding: 0.8rem;
 }
 
 .meta-grid strong,
 .event-note strong {
   display: block;
-  color: #1d4ed8;
+  color: var(--brand-primary);
   font-weight: 900;
 }
 
@@ -138,7 +138,7 @@ h1 {
 .media-links a {
   display: grid;
   gap: 0.25rem;
-  border: 1px solid #bfdbfe;
+  border: 1px solid var(--brand-primary-border);
   border-radius: 0.5rem;
   background: #ffffff;
   color: #0f172a;
@@ -147,11 +147,11 @@ h1 {
 }
 
 .media-links a:hover {
-  border-color: #2563eb;
+  border-color: var(--brand-primary);
 }
 
 .media-links span {
-  color: #2563eb;
+  color: var(--brand-primary);
   font-size: 0.72rem;
   font-weight: 900;
   text-transform: uppercase;
@@ -164,7 +164,7 @@ h1 {
 .media-locked {
   display: grid;
   gap: 0.75rem;
-  border: 1px solid #bfdbfe;
+  border: 1px solid var(--brand-primary-border);
   border-radius: 0.5rem;
   background: #ffffff;
   padding: 1rem;
@@ -178,7 +178,7 @@ h1 {
   width: fit-content;
   border: 0;
   border-radius: 0.5rem;
-  background: #2563eb;
+  background: var(--brand-primary);
   color: #ffffff;
   padding: 0.65rem 0.9rem;
   font-weight: 850;
@@ -209,7 +209,7 @@ h1 {
   justify-content: center;
   border: 0;
   border-radius: 0.5rem;
-  background: #2563eb;
+  background: var(--brand-primary);
   color: #ffffff;
   padding: 0.8rem 1rem;
   font-weight: 850;
@@ -219,9 +219,9 @@ h1 {
 
 .checkout-card a.secondary,
 .checkout-card button.secondary {
-  border: 1px solid #bfdbfe;
-  background: #eff6ff;
-  color: #1d4ed8;
+  border: 1px solid var(--brand-primary-border);
+  background: var(--brand-primary-light);
+  color: var(--brand-primary);
 }
 
 .checkout-card button:disabled {

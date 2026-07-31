@@ -52,11 +52,16 @@ export class PsychologistDetailComponent implements OnInit {
         serviceName: 'Mental wellness session',
         consultant: provider.name,
         providerId: provider.id,
-        duration: `${provider.sessionDurationMinutes ?? 30} minutes`,
+        duration: this.sessionLabel(provider),
         price: (provider.sessionFeeInPaise ?? 50000) / 100,
         source: 'psychologist-profile',
       },
     });
+  }
+
+  sessionLabel(provider: HopeHubProvider): string {
+    const minutes = provider.sessionDurationMinutes ?? 30;
+    return minutes === 30 ? '30 min + 15 min follow-up' : `${minutes} min session`;
   }
 
   listOrFallback(items: string[] | undefined, fallback: string[]) {

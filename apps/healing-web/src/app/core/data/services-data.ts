@@ -2,7 +2,7 @@ import { Service, ServiceCategory } from '../models';
 
 export const HOPE_HUB_SESSION_PRICE = 500;
 export const HOPE_HUB_SESSION_CURRENCY = 'INR';
-export const HOPE_HUB_SESSION_DURATION = '30 minutes';
+export const HOPE_HUB_SESSION_DURATION = '30 minutes + 15 min follow-up';
 
 const SERVICE_IMAGES = {
   sunrise: '/image/hopehub-healing-sunrise.png',
@@ -23,6 +23,7 @@ export const HOPE_HUB_SERVICES: Service[] = [
       'Process intense emotions safely',
       'Reduce overthinking and urge to reconnect',
       'Rebuild confidence and routine',
+      'Use the included 15-minute follow-up for next-step support',
       'Create a simple healing plan',
     ],
     approach:
@@ -43,6 +44,7 @@ export const HOPE_HUB_SERVICES: Service[] = [
       'Understand your anxiety pattern',
       'Learn grounding and breathing tools',
       'Reduce avoidance',
+      'Use the included 15-minute follow-up for next-step support',
       'Build confidence for daily situations',
     ],
     approach:
@@ -63,6 +65,7 @@ export const HOPE_HUB_SERVICES: Service[] = [
       'Identify stress triggers',
       'Create a realistic recovery routine',
       'Improve boundaries',
+      'Use the included 15-minute follow-up for next-step support',
       'Reduce emotional overload',
     ],
     approach:
