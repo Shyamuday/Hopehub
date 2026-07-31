@@ -83,6 +83,36 @@
   gap: 0.8rem;
 }
 
+.form-section,
+.sub-section {
+  display: grid;
+  gap: 0.8rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  background: #f8fafc;
+  padding: 0.9rem;
+}
+
+.sub-section {
+  background: #ffffff;
+}
+
+.section-head {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.section-head strong {
+  color: #0f172a;
+  font-size: 0.95rem;
+}
+
+.section-head span {
+  color: #64748b;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
 .two {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -113,20 +143,68 @@ textarea {
 
 .checks,
 .actions,
-.row-actions {
+.row-actions,
+.toggle-row {
   display: flex;
   flex-wrap: wrap;
   gap: 0.6rem;
   align-items: center;
 }
 
-.checks label {
+.checks label,
+.toggle-row label {
   display: inline-flex;
   align-items: center;
+  border: 1px solid #dbeafe;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  padding: 0.45rem 0.65rem;
 }
 
-.checks input[type='checkbox'] {
+.checks input[type='checkbox'],
+.toggle-row input[type='checkbox'] {
   width: auto;
+}
+
+.price-preview {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.55rem;
+}
+
+.price-preview div {
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  background: #ffffff;
+  padding: 0.75rem;
+}
+
+.price-preview span,
+.price-preview strong {
+  display: block;
+}
+
+.price-preview span {
+  color: #64748b;
+  font-size: 0.72rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.price-preview strong {
+  margin-top: 0.25rem;
+  color: #0f172a;
+  font-size: 1rem;
+}
+
+.price-preview .preview-total {
+  border-color: #bfdbfe;
+  background: #eff6ff;
+}
+
+.price-preview .preview-total strong {
+  color: #1d4ed8;
 }
 
 .row-card,
@@ -181,7 +259,8 @@ textarea {
 
 @media (max-width: 900px) {
   .grid-layout,
-  .two {
+  .two,
+  .price-preview {
     grid-template-columns: 1fr;
   }
 

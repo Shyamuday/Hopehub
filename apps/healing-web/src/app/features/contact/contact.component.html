@@ -212,6 +212,41 @@
           </div>
         }
 
+        @if (selectedOffering(); as offer) {
+          <section class="payment-summary" aria-label="Payment summary">
+            <div class="payment-summary__head">
+              <span>{{ prefilledData().paymentMode === 'PARTIAL' ? 'Deposit checkout' : 'Full checkout' }}</span>
+              <strong>{{ offer.title }}</strong>
+            </div>
+            <div class="payment-summary__rows">
+              <div>
+                <span>Package price</span>
+                <strong>{{ formatPaise(offer.priceInPaise || 0) }}</strong>
+              </div>
+              @if (offerDiscountInPaise() > 0) {
+                <div>
+                  <span>{{ offer.discountLabel || 'Offer discount' }}</span>
+                  <strong>-{{ formatPaise(offerDiscountInPaise()) }}</strong>
+                </div>
+              }
+              <div>
+                <span>Final price</span>
+                <strong>{{ formatPaise(offerFinalInPaise()) }}</strong>
+              </div>
+              <div class="payment-summary__pay">
+                <span>Pay today</span>
+                <strong>{{ formatPaise(payTodayInPaise()) }}</strong>
+              </div>
+              @if (balanceDueInPaise() > 0) {
+                <div>
+                  <span>Balance later</span>
+                  <strong>{{ formatPaise(balanceDueInPaise()) }}</strong>
+                </div>
+              }
+            </div>
+          </section>
+        }
+
         <label class="safety-check">
           <input type="checkbox" formControlName="emergencyConsent" />
           <span>I understand this is not emergency care.</span>

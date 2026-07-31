@@ -235,6 +235,82 @@ export class HopeHubOffersPage implements OnInit {
     this.bannerForm.set(this.emptyBanner());
   }
 
+  showDiscountPercent(): boolean {
+    const type = this.offerForm().discountType;
+    return this.offerForm().discountEnabled && ['PERCENT', 'REFERRAL', 'CUSTOM'].includes(type);
+  }
+
+  showDiscountFlat(): boolean {
+    const type = this.offerForm().discountType;
+    return this.offerForm().discountEnabled && ['FLAT', 'REFERRAL', 'CUSTOM'].includes(type);
+  }
+
+  showPartialPercent(): boolean {
+    return (
+      this.offerForm().partialPaymentEnabled && this.offerForm().partialPaymentType === 'PERCENT'
+    );
+  }
+
+  showPartialFlat(): boolean {
+    return this.offerForm().partialPaymentEnabled && this.offerForm().partialPaymentType === 'FLAT';
+  }
+
+  previewPriceRupees(): number {
+    return Math.max(0, Number(this.offerForm().priceRupees || 0));
+  }
+
+  previewDiscountRupees(): number {
+    const form = this.offerForm();
+    const price = this.previewPriceRupees();
+    if (!form.discountEnabled || form.discountType === 'NONE' || price <= 0) return 0;
+
+    let discount = 0;
+    if (['PERCENT', 'REFERRAL', 'CUSTOM'].includes(form.discountType) && form.discountPercent) {
+      discount = Math.round((price * Number(form.discountPercent)) / 100);
+    }
+    if (['FLAT', 'REFERRAL', 'CUSTOM'].includes(form.discountType) && form.discountFlatRupees) {
+      discount = Math.max(discount, Number(form.discountFlatRupees));
+    }
+    if (form.discountMaxRupees) {
+      discount = Math.min(discount, Number(form.discountMaxRupees));
+    }
+    return Math.max(0, Math.min(discount, Math.max(0, price - 1)));
+  }
+
+  previewFinalRupees(): number {
+    return Math.max(0, this.previewPriceRupees() - this.previewDiscountRupees());
+  }
+
+  previewPayTodayRupees(): number {
+    const form = this.offerForm();
+    const finalPrice = this.previewFinalRupees();
+    if (!form.partialPaymentEnabled || form.partialPaymentType === 'NONE' || finalPrice <= 0) {
+      return finalPrice;
+    }
+    if (form.partialPaymentType === 'PERCENT' && form.partialPaymentPercent) {
+      return Math.max(
+        1,
+        Math.min(finalPrice, Math.round((finalPrice * Number(form.partialPaymentPercent)) / 100)),
+      );
+    }
+    if (form.partialPaymentType === 'FLAT' && form.partialPaymentFlatRupees) {
+      return Math.max(1, Math.min(finalPrice, Number(form.partialPaymentFlatRupees)));
+    }
+    return finalPrice;
+  }
+
+  previewBalanceRupees(): number {
+    return Math.max(0, this.previewFinalRupees() - this.previewPayTodayRupees());
+  }
+
+  formatRupees(value: number): string {
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      maximumFractionDigits: 0,
+    }).format(value);
+  }
+
   private emptyOffer() {
     return {
       id: '',
