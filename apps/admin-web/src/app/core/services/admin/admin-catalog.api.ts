@@ -336,4 +336,55 @@ export class AdminCatalogApi extends AdminApiBase {
       ),
     );
   }
+
+  getAssessmentDefinitionsAdmin(params: { includeInactive?: boolean; q?: string } = {}) {
+    return firstValueFrom(
+      this.http.get<{ definitions: Array<any>; pagination: any }>(
+        `${this.apiBase}${API_PATHS.ADMIN.ASSESSMENT_DEFINITIONS}`,
+        {
+          params: {
+            includeInactive: String(params.includeInactive ?? true),
+            q: params.q ?? '',
+            pageSize: '100',
+          },
+        },
+      ),
+    );
+  }
+
+  createAssessmentDefinition(payload: Record<string, unknown>) {
+    return firstValueFrom(
+      this.http.post<{ definition: any }>(
+        `${this.apiBase}${API_PATHS.ADMIN.ASSESSMENT_DEFINITIONS}`,
+        payload,
+      ),
+    );
+  }
+
+  updateAssessmentDefinition(id: string, payload: Record<string, unknown>) {
+    return firstValueFrom(
+      this.http.patch<{ definition: any }>(
+        `${this.apiBase}${API_PATHS.ADMIN.ASSESSMENT_DEFINITION_BY_ID(id)}`,
+        payload,
+      ),
+    );
+  }
+
+  publishAssessmentDefinition(id: string) {
+    return firstValueFrom(
+      this.http.post<{ definition: any }>(
+        `${this.apiBase}${API_PATHS.ADMIN.ASSESSMENT_DEFINITION_PUBLISH(id)}`,
+        {},
+      ),
+    );
+  }
+
+  unpublishAssessmentDefinition(id: string) {
+    return firstValueFrom(
+      this.http.post<{ definition: any }>(
+        `${this.apiBase}${API_PATHS.ADMIN.ASSESSMENT_DEFINITION_UNPUBLISH(id)}`,
+        {},
+      ),
+    );
+  }
 }

@@ -136,3 +136,43 @@
     grid-template-columns: 1fr;
   }
 }
+
+@media (max-width: 640px) {
+  .offers-page {
+    padding: 1.5rem 1rem 2.5rem;
+  }
+
+  .offers-hero {
+    margin-bottom: 1rem;
+  }
+
+  .offers-hero h1 {
+    font-size: 1.75rem;
+    line-height: 1.14;
+  }
+
+  .offers-hero span {
+    font-size: 0.95rem;
+    line-height: 1.6;
+  }
+
+  .offer-card,
+  .empty {
+    gap: 0.85rem;
+    padding: 0.95rem;
+  }
+
+  .offer-card__price {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.15rem;
+  }
+
+  .offer-card__price strong {
+    font-size: 1.32rem;
+  }
+
+  .offer-card__cta {
+    width: 100%;
+  }
+}

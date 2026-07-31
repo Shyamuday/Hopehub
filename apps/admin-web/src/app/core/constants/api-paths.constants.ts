@@ -70,6 +70,11 @@ export const API_PATHS = {
     HOPE_HUB_BANNER_BY_ID: (id: string) => `/admin/hope-hub/banners/${id}`,
     HOPE_HUB_ORGANIZATION_LEADS: '/admin/hope-hub/organization-leads',
     HOPE_HUB_ORGANIZATION_LEAD_BY_ID: (id: string) => `/admin/hope-hub/organization-leads/${id}`,
+    ASSESSMENT_DEFINITIONS: '/admin/assessment-definitions',
+    ASSESSMENT_DEFINITION_BY_ID: (id: string) => `/admin/assessment-definitions/${id}`,
+    ASSESSMENT_DEFINITION_PUBLISH: (id: string) => `/admin/assessment-definitions/${id}/publish`,
+    ASSESSMENT_DEFINITION_UNPUBLISH: (id: string) =>
+      `/admin/assessment-definitions/${id}/unpublish`,
     VACANCIES: '/admin/vacancies',
     VACANCY_BY_ID: (id: string) => `/admin/vacancies/${id}`,
     COUNSELLOR_APPLICATIONS: '/admin/counsellor-applications',

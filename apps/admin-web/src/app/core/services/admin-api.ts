@@ -339,6 +339,35 @@ export class AdminApi {
       ...(args as Parameters<AdminCatalogApi['updateHopeHubOrganizationLead']>),
     );
   }
+  getAssessmentDefinitionsAdmin(
+    ...args: Parameters<AdminCatalogApi['getAssessmentDefinitionsAdmin']>
+  ) {
+    return this.catalog.getAssessmentDefinitionsAdmin(
+      ...(args as Parameters<AdminCatalogApi['getAssessmentDefinitionsAdmin']>),
+    );
+  }
+  createAssessmentDefinition(...args: Parameters<AdminCatalogApi['createAssessmentDefinition']>) {
+    return this.catalog.createAssessmentDefinition(
+      ...(args as Parameters<AdminCatalogApi['createAssessmentDefinition']>),
+    );
+  }
+  updateAssessmentDefinition(...args: Parameters<AdminCatalogApi['updateAssessmentDefinition']>) {
+    return this.catalog.updateAssessmentDefinition(
+      ...(args as Parameters<AdminCatalogApi['updateAssessmentDefinition']>),
+    );
+  }
+  publishAssessmentDefinition(...args: Parameters<AdminCatalogApi['publishAssessmentDefinition']>) {
+    return this.catalog.publishAssessmentDefinition(
+      ...(args as Parameters<AdminCatalogApi['publishAssessmentDefinition']>),
+    );
+  }
+  unpublishAssessmentDefinition(
+    ...args: Parameters<AdminCatalogApi['unpublishAssessmentDefinition']>
+  ) {
+    return this.catalog.unpublishAssessmentDefinition(
+      ...(args as Parameters<AdminCatalogApi['unpublishAssessmentDefinition']>),
+    );
+  }
   getHrDoctors(...args: Parameters<AdminHrApi['getHrDoctors']>) {
     return this.hr.getHrDoctors(...(args as Parameters<AdminHrApi['getHrDoctors']>));
   }

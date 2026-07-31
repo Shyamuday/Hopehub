@@ -356,7 +356,22 @@ form {
 
 @media (max-width: 640px) {
   .request-page {
-    padding-top: 1.25rem;
+    padding: 1.25rem 0.85rem 2.5rem;
+  }
+
+  .request-hero {
+    margin-bottom: 1rem;
+    text-align: left;
+  }
+
+  .request-hero h1 {
+    font-size: 1.75rem;
+    line-height: 1.14;
+  }
+
+  .request-hero p {
+    font-size: 0.95rem;
+    line-height: 1.6;
   }
 
   .request-card {
@@ -370,6 +385,16 @@ form {
   .form-grid.two,
   .contact-methods {
     grid-template-columns: 1fr;
+  }
+
+  .payment-summary__rows div {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.15rem;
+  }
+
+  .request-card button[type="submit"] {
+    width: 100%;
   }
 }
 

@@ -28,7 +28,7 @@
           <div class="media-panel">
             <h2>Session media</h2>
             @if (offer.metadata?.mediaAccessNote) {
-              <p>{{ offer.metadata?.mediaAccessNote }}</p>
+              <p>{{ offer.metadata.mediaAccessNote }}</p>
             }
             @if (canAccessMedia(offer)) {
               @if (youtubeEmbedUrl(offer); as youtubeUrl) {

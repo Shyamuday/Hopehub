@@ -5,14 +5,14 @@ import { environment } from '../../../environments/environment';
 
 export type AssessmentAttemptPayload = {
   assessmentId: string;
-  assessmentType: string;
+  assessmentType?: string;
   category?: string;
-  title: string;
+  title?: string;
   version?: string;
   answers: number[];
-  totalScore: number;
-  maxScore: number;
-  level: string;
+  totalScore?: number;
+  maxScore?: number;
+  level?: string;
   color?: string;
   description?: string;
   suggestions?: string[];
@@ -55,6 +55,28 @@ export class AssessmentAttemptsService {
         completedAt: string;
       } | null;
     }>(`${this.apiUrl}/hope-hub/assessments`, payload);
+  }
+
+  scoreAttempt(assessmentId: string, answers: number[]) {
+    return this.http.post<{
+      result: {
+        assessmentId: string;
+        assessmentType: string;
+        category: string;
+        title: string;
+        version: string;
+        total: number;
+        maxScore: number;
+        level: string;
+        color: string;
+        description: string;
+        suggestions: string[];
+        safetyFlag: boolean;
+        answers: number[];
+      };
+    }>(`${this.apiUrl}/assessment-definitions/${encodeURIComponent(assessmentId)}/score`, {
+      answers,
+    });
   }
 
   listAttempts(params: { page?: number; pageSize?: number; assessmentId?: string } = {}) {

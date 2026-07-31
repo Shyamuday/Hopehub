@@ -498,32 +498,33 @@ export class DirectAssessmentComponent implements OnInit {
     }
   }
 
-  completeAssessment(): void {
+  async completeAssessment(): Promise<void> {
     const assessment = this.assessment();
     if (!assessment || !this.hasAllAnswers()) return;
 
     const answers = this.answers();
-    const total = answers.reduce((sum, answer) => sum + (answer || 0), 0);
-    const maxScore =
-      assessment.responseOptions[assessment.responseOptions.length - 1].value *
-      assessment.questions.length;
-    const scoring = assessment.scoring.find((score) => total >= score.min && total <= score.max);
-    if (!scoring) return;
-
-    const result: AssessmentResult = {
-      assessmentId: assessment.id,
-      assessmentType: assessment.type,
-      total,
-      maxScore,
-      level: scoring.level,
-      color: scoring.color,
-      description: scoring.description,
-      suggestions: scoring.suggestions,
-      safetyFlag:
-        assessment.safetyQuestionIndex !== undefined && answers[assessment.safetyQuestionIndex] > 0,
-      completedAt: new Date(),
-      answers: [...answers],
-    };
+    let result: AssessmentResult;
+    this.savingResult.set(true);
+    try {
+      const response = await firstValueFrom(
+        this.assessmentAttemptsService.scoreAttempt(assessment.id, answers),
+      );
+      result = {
+        assessmentId: response.result.assessmentId,
+        assessmentType: response.result.assessmentType as AssessmentResult['assessmentType'],
+        total: response.result.total,
+        maxScore: response.result.maxScore,
+        level: response.result.level,
+        color: response.result.color,
+        description: response.result.description,
+        suggestions: response.result.suggestions,
+        safetyFlag: response.result.safetyFlag,
+        completedAt: new Date(),
+        answers: [...response.result.answers],
+      };
+    } finally {
+      this.savingResult.set(false);
+    }
 
     this.result.set(result);
     this.savePendingResultLocally(assessment, result);
@@ -547,18 +548,7 @@ export class DirectAssessmentComponent implements OnInit {
       const response = await firstValueFrom(
         this.assessmentAttemptsService.saveAttempt({
           assessmentId: assessment.id,
-          assessmentType: assessment.type,
-          category: assessment.category,
-          title: assessment.title,
-          version: 'v1',
           answers: result.answers,
-          totalScore: result.total,
-          maxScore: result.maxScore,
-          level: result.level,
-          color: result.color,
-          description: result.description,
-          suggestions: result.suggestions,
-          safetyFlag: result.safetyFlag,
           source: 'direct-test',
           entryPage: typeof window === 'undefined' ? undefined : window.location.href,
           completedAt: result.completedAt.toISOString(),

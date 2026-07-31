@@ -15,6 +15,7 @@ import { resolveConsultationCheckout } from '../services/checkout-pricing.js';
 import { PRODUCT_EVENTS, trackProductEvent } from '../services/product-analytics.js';
 import { enrichWithProfileImageUrl, userProfileImagePath } from '../utils/profile-image-url.js';
 import { hopeHubMediaMimeType, readHopeHubMediaFile } from '../services/hope-hub-media-storage.js';
+import { getAssessmentDefinition, scoreAssessment } from '../services/assessment-definitions.js';
 
 export const hopeHubRouter = Router();
 
@@ -92,14 +93,14 @@ const organizationLeadSchema = z.object({
 
 const hopeHubAssessmentAttemptSchema = z.object({
   assessmentId: z.string().trim().min(1).max(120),
-  assessmentType: z.string().trim().min(1).max(120),
+  assessmentType: z.string().trim().min(1).max(120).optional(),
   category: z.string().trim().max(120).optional().or(z.literal('')),
-  title: z.string().trim().min(1).max(200),
+  title: z.string().trim().min(1).max(200).optional(),
   version: z.string().trim().min(1).max(40).optional(),
   answers: z.array(z.number().int().min(0).max(10)).min(1).max(120),
-  totalScore: z.number().int().min(0).max(1000),
-  maxScore: z.number().int().min(1).max(1000),
-  level: z.string().trim().min(1).max(160),
+  totalScore: z.number().int().min(0).max(1000).optional(),
+  maxScore: z.number().int().min(1).max(1000).optional(),
+  level: z.string().trim().min(1).max(160).optional(),
   color: z.string().trim().max(40).optional().or(z.literal('')),
   description: z.string().trim().max(3000).optional().or(z.literal('')),
   suggestions: z.array(z.string().trim().min(1).max(500)).max(30).optional(),
@@ -1009,16 +1010,24 @@ hopeHubRouter.post(
   allowRoles(Role.PATIENT),
   asyncRoute(async (req, res) => {
     const body = hopeHubAssessmentAttemptSchema.parse(req.body);
-    const normalizedAnswers = body.answers.map((answer) => Number(answer || 0));
-    const computedTotal = normalizedAnswers.reduce((sum, answer) => sum + answer, 0);
-    if (computedTotal !== body.totalScore) {
-      return res.status(400).json({ message: 'Assessment score does not match answers.' });
+    const definition = await getAssessmentDefinition(body.assessmentId);
+    if (!definition) {
+      return res.status(404).json({ message: 'Assessment definition not found.' });
+    }
+
+    let scored;
+    try {
+      scored = scoreAssessment(definition, body.answers);
+    } catch (error) {
+      return res.status(400).json({
+        message: error instanceof Error ? error.message : 'Could not score assessment.'
+      });
     }
 
     const previous = await prisma.hopeHubAssessmentAttempt.findFirst({
       where: {
         userId: req.user!.id,
-        assessmentId: body.assessmentId
+        assessmentId: scored.assessmentId
       },
       orderBy: { completedAt: 'desc' },
       select: { id: true, retakeNumber: true, totalScore: true, level: true, completedAt: true }
@@ -1027,19 +1036,19 @@ hopeHubRouter.post(
     const attempt = await prisma.hopeHubAssessmentAttempt.create({
       data: {
         userId: req.user!.id,
-        assessmentId: body.assessmentId,
-        assessmentType: body.assessmentType,
-        category: body.category || null,
-        title: body.title,
-        version: body.version || 'v1',
-        answers: normalizedAnswers,
-        totalScore: computedTotal,
-        maxScore: body.maxScore,
-        level: body.level,
-        color: body.color || null,
-        description: body.description || null,
-        suggestions: body.suggestions ?? [],
-        safetyFlag: Boolean(body.safetyFlag),
+        assessmentId: scored.assessmentId,
+        assessmentType: scored.assessmentType,
+        category: scored.category || null,
+        title: scored.title,
+        version: scored.version,
+        answers: scored.answers,
+        totalScore: scored.total,
+        maxScore: scored.maxScore,
+        level: scored.level,
+        color: scored.color || null,
+        description: scored.description || null,
+        suggestions: scored.suggestions,
+        safetyFlag: scored.safetyFlag,
         retakeNumber: (previous?.retakeNumber ?? 0) + 1,
         previousId: previous?.id ?? null,
         source: body.source || null,

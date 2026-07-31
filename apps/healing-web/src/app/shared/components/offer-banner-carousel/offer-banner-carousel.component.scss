@@ -74,11 +74,37 @@
 }
 
 @media (max-width: 720px) {
+  .offer-banner {
+    padding: 0.85rem 1rem;
+  }
+
   .offer-banner__inner {
     grid-template-columns: 1fr;
+    gap: 0.85rem;
   }
 
   .offer-banner__actions {
-    justify-content: space-between;
+    align-items: stretch;
+    flex-direction: column;
+    gap: 0.65rem;
+  }
+
+  .offer-banner__actions > button {
+    width: 100%;
+    min-height: 40px;
+  }
+
+  .offer-banner__dots {
+    justify-content: center;
+  }
+
+  .offer-banner__copy h2 {
+    font-size: 1.12rem;
+  }
+
+  .offer-banner__copy span {
+    display: block;
+    font-size: 0.9rem;
+    line-height: 1.45;
   }
 }

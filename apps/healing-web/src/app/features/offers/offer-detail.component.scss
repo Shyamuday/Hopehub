@@ -256,3 +256,43 @@ h1 {
     position: static;
   }
 }
+
+@media (max-width: 640px) {
+  .offer-detail {
+    padding: 1.5rem 1rem 2.5rem;
+  }
+
+  .detail-copy,
+  .checkout-card,
+  .detail-lists > div {
+    padding: 1rem;
+  }
+
+  h1 {
+    font-size: 1.75rem;
+    line-height: 1.14;
+  }
+
+  .detail-copy > span,
+  .description {
+    font-size: 0.95rem;
+    line-height: 1.6;
+  }
+
+  .checkout-card strong {
+    font-size: 1.55rem;
+  }
+
+  .checkout-card a,
+  .back-link,
+  .sold-out,
+  .media-locked button {
+    width: 100%;
+  }
+
+  .meta-grid div,
+  .event-note,
+  .media-panel {
+    padding: 0.75rem;
+  }
+}

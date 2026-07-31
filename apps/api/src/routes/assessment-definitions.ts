@@ -1,7 +1,9 @@
 import { Router } from 'express';
 import { Prisma } from '@prisma/client';
+import { z } from 'zod';
 import { prisma } from '../db.js';
 import { asyncRoute, queryPositiveInt, queryText, routeParam } from '../utils/helpers.js';
+import { getAssessmentDefinition, scoreAssessment } from '../services/assessment-definitions.js';
 
 type AssessmentDefinitionRow = {
   id: string;
@@ -15,6 +17,9 @@ type AssessmentDefinitionRow = {
 };
 
 export const assessmentDefinitionsRouter = Router();
+const assessmentScoreSchema = z.object({
+  answers: z.array(z.number().int().min(0).max(10)).min(1).max(120)
+});
 
 function serializeDefinition(row: AssessmentDefinitionRow) {
   return {
@@ -120,5 +125,26 @@ assessmentDefinitionsRouter.get(
       assessment: definition.config,
       definition: serializeDefinition(definition)
     });
+  })
+);
+
+assessmentDefinitionsRouter.post(
+  '/assessment-definitions/:id/score',
+  asyncRoute(async (req, res) => {
+    const id = routeParam(req, 'id');
+    const body = assessmentScoreSchema.parse(req.body);
+    const definition = await getAssessmentDefinition(id);
+    if (!definition) {
+      res.status(404).json({ error: 'Assessment definition not found' });
+      return;
+    }
+
+    try {
+      res.json({ result: scoreAssessment(definition, body.answers) });
+    } catch (error) {
+      res.status(400).json({
+        error: error instanceof Error ? error.message : 'Could not score assessment'
+      });
+    }
   })
 );

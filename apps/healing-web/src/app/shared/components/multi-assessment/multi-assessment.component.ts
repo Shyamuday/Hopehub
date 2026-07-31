@@ -127,39 +127,33 @@ export class MultiAssessmentComponent implements OnInit {
     this.answers.set(answersArray);
   }
 
-  calculateResults() {
+  async calculateResults() {
     const assessment = this.selectedAssessment();
     if (!assessment) return;
 
     const answersArray = this.answers();
-    const total = answersArray.reduce((sum, answer) => sum + (answer || 0), 0);
-    const maxScore =
-      assessment.responseOptions[assessment.responseOptions.length - 1].value *
-      assessment.questions.length;
-
-    // Check for safety flag
-    const safetyFlag =
-      assessment.safetyQuestionIndex !== undefined &&
-      answersArray[assessment.safetyQuestionIndex] > 0;
-
-    // Find appropriate scoring interpretation
-    const scoring = assessment.scoring.find((s) => total >= s.min && total <= s.max);
-
-    if (!scoring) return;
-
-    const result: AssessmentResult = {
-      assessmentId: assessment.id,
-      assessmentType: assessment.type,
-      total,
-      maxScore,
-      level: scoring.level,
-      color: scoring.color,
-      description: scoring.description,
-      suggestions: scoring.suggestions,
-      safetyFlag,
-      completedAt: new Date(),
-      answers: [...answersArray],
-    };
+    this.savingResult.set(true);
+    let result: AssessmentResult;
+    try {
+      const response = await firstValueFrom(
+        this.assessmentAttemptsService.scoreAttempt(assessment.id, answersArray),
+      );
+      result = {
+        assessmentId: response.result.assessmentId,
+        assessmentType: response.result.assessmentType as AssessmentResult['assessmentType'],
+        total: response.result.total,
+        maxScore: response.result.maxScore,
+        level: response.result.level,
+        color: response.result.color,
+        description: response.result.description,
+        suggestions: response.result.suggestions,
+        safetyFlag: response.result.safetyFlag,
+        completedAt: new Date(),
+        answers: [...response.result.answers],
+      };
+    } finally {
+      this.savingResult.set(false);
+    }
 
     this.result.set(result);
     this.savePendingResultLocally(result, assessment);
@@ -307,18 +301,7 @@ export class MultiAssessmentComponent implements OnInit {
       const response = await firstValueFrom(
         this.assessmentAttemptsService.saveAttempt({
           assessmentId: assessment.id,
-          assessmentType: assessment.type,
-          category: assessment.category,
-          title: assessment.title,
-          version: 'v1',
           answers: result.answers,
-          totalScore: result.total,
-          maxScore: result.maxScore,
-          level: result.level,
-          color: result.color,
-          description: result.description,
-          suggestions: result.suggestions,
-          safetyFlag: result.safetyFlag,
           source: 'healing-web',
           entryPage: typeof window === 'undefined' ? undefined : window.location.href,
           completedAt: result.completedAt.toISOString(),
