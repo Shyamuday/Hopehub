@@ -126,11 +126,12 @@ export class PaymentService {
   async payAssessment(
     assessment: AssessmentConfig,
     lifecycle?: PaymentLifecycle,
+    couponCode?: string,
   ): Promise<AssessmentAccess | null> {
     const order = await firstValueFrom(
       this.http.post<DonationOrder>(
         `${this.apiUrl}/assessment-definitions/${encodeURIComponent(assessment.id)}/create-order`,
-        {},
+        { couponCode: couponCode || '' },
       ),
     ).catch((error) => {
       throw this.friendlyPaymentError(error);

@@ -13,6 +13,8 @@ type DefinitionForm = {
   priceRupees: number | null;
   couponCode: string;
   couponLabel: string;
+  couponDiscountType: 'FREE' | 'PERCENT' | 'FLAT';
+  couponDiscountValue: number | null;
   couponStartsAt: string;
   couponEndsAt: string;
   couponMaxRedemptions: number | null;
@@ -118,6 +120,11 @@ export class AssessmentDefinitionsPage implements OnInit {
           : Math.round(Number(definition.priceInPaise) / 100),
       couponCode: definition.couponCode || '',
       couponLabel: definition.couponLabel || '',
+      couponDiscountType: definition.couponDiscountType || 'FREE',
+      couponDiscountValue:
+        definition.couponDiscountType === 'FLAT' && definition.couponDiscountValue != null
+          ? Math.round(Number(definition.couponDiscountValue) / 100)
+          : (definition.couponDiscountValue ?? null),
       couponStartsAt: this.toDateTimeInput(definition.couponStartsAt),
       couponEndsAt: this.toDateTimeInput(definition.couponEndsAt),
       couponMaxRedemptions: definition.couponMaxRedemptions ?? null,
@@ -152,6 +159,13 @@ export class AssessmentDefinitionsPage implements OnInit {
             : Math.max(0, Math.round(Number(current.priceRupees) * 100)),
         couponCode: current.couponCode.trim() || null,
         couponLabel: current.couponLabel.trim() || null,
+        couponDiscountType: current.couponDiscountType,
+        couponDiscountValue:
+          current.couponDiscountValue === null || current.couponDiscountValue === undefined
+            ? null
+            : current.couponDiscountType === 'FLAT'
+              ? Math.max(0, Math.round(Number(current.couponDiscountValue) * 100))
+              : Number(current.couponDiscountValue),
         couponStartsAt: current.couponStartsAt
           ? new Date(current.couponStartsAt).toISOString()
           : null,
@@ -259,6 +273,8 @@ export class AssessmentDefinitionsPage implements OnInit {
       priceRupees: null,
       couponCode: '',
       couponLabel: '',
+      couponDiscountType: 'FREE',
+      couponDiscountValue: null,
       couponStartsAt: '',
       couponEndsAt: '',
       couponMaxRedemptions: null,

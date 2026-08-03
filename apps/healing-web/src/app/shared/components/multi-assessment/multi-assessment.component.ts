@@ -17,7 +17,10 @@ import { ProgressService } from '../../../core/services/progress.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { AuthModalService } from '../../../core/services/auth-modal.service';
 import { AssessmentAttemptsService } from '../../../core/services/assessment-attempts.service';
-import { AssessmentDefinitionService } from '../../../core/services/assessment-definition.service';
+import {
+  AssessmentCouponQuote,
+  AssessmentDefinitionService,
+} from '../../../core/services/assessment-definition.service';
 import { NotificationService } from '../../../core/services/notification.service';
 import { PaymentService } from '../../../core/services/payment.service';
 import { firstValueFrom } from 'rxjs';
@@ -48,6 +51,7 @@ export class MultiAssessmentComponent implements OnInit {
   selectedCategory = signal<AssessmentCategory | null>(null);
   selectedAssessment = signal<AssessmentConfig | null>(null);
   selectedAccess = signal<AssessmentAccess | null>(null);
+  couponQuote = signal<AssessmentCouponQuote | null>(null);
   couponCode = signal('');
   redeemingCoupon = signal(false);
   payingAssessment = signal(false);
@@ -121,6 +125,7 @@ export class MultiAssessmentComponent implements OnInit {
   selectAssessment(assessment: AssessmentConfig) {
     this.selectedAssessment.set(assessment);
     this.selectedAccess.set(assessment.access ?? null);
+    this.couponQuote.set(null);
     this.answers.set(new Array(assessment.questions.length).fill(undefined));
     void this.refreshSelectedAccess();
     this.startAssessment();
@@ -183,6 +188,15 @@ export class MultiAssessmentComponent implements OnInit {
     return priceInPaise ? `₹${Math.round(priceInPaise / 100)}` : 'Paid';
   }
 
+  assessmentAmountLabel(amountInPaise: number): string {
+    return `₹${Math.round(Number(amountInPaise || 0) / 100)}`;
+  }
+
+  payAssessmentLabel(): string {
+    const amount = this.couponQuote()?.payableAmountInPaise ?? this.selectedAccess()?.priceInPaise;
+    return amount ? `Pay ${this.assessmentAmountLabel(amount)} and unlock` : 'Pay and unlock';
+  }
+
   lockedAssessmentMessage(): string {
     const access = this.selectedAccess();
     if (access?.reason === 'SIGN_IN_REQUIRED' || access?.accessMode === 'LOGIN_REQUIRED') {
@@ -208,12 +222,19 @@ export class MultiAssessmentComponent implements OnInit {
       );
       this.selectedAccess.set(response.access);
       this.couponCode.set('');
+      this.couponQuote.set(null);
       this.notificationService.success(
         response.alreadyRedeemed
           ? 'This test is already unlocked.'
           : 'Coupon applied. Test unlocked.',
       );
     } catch (error: any) {
+      if (error?.status === 402 && error?.error?.quote) {
+        this.couponQuote.set(error.error.quote);
+        this.couponCode.set(error.error.quote.couponCode || code);
+        this.notificationService.success('Discount coupon applied.');
+        return;
+      }
       this.notificationService.error(
         error?.error?.message || error?.message || 'Could not apply coupon.',
       );
@@ -233,9 +254,14 @@ export class MultiAssessmentComponent implements OnInit {
 
     this.payingAssessment.set(true);
     try {
-      const access = await this.paymentService.payAssessment(assessment);
+      const access = await this.paymentService.payAssessment(
+        assessment,
+        undefined,
+        this.couponQuote()?.couponCode,
+      );
       if (access) this.selectedAccess.set(access);
       await this.refreshSelectedAccess();
+      this.couponQuote.set(null);
       this.notificationService.success('Payment verified. Test unlocked.');
     } catch (error: any) {
       this.notificationService.error(error?.message || 'Payment could not be completed.');
@@ -314,6 +340,7 @@ export class MultiAssessmentComponent implements OnInit {
   takeAnotherAssessment() {
     this.selectedAssessment.set(null);
     this.selectedAccess.set(null);
+    this.couponQuote.set(null);
     this.assessmentStarted.set(false);
     this.showResults.set(false);
     this.resultLocked.set(false);
@@ -329,6 +356,7 @@ export class MultiAssessmentComponent implements OnInit {
   goBack() {
     this.selectedAssessment.set(null);
     this.selectedAccess.set(null);
+    this.couponQuote.set(null);
     this.assessmentStarted.set(false);
     this.showResults.set(false);
     this.resultLocked.set(false);

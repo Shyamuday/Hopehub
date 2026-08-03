@@ -568,7 +568,7 @@ export class ExercisesComponent implements OnInit {
         .recordSession(exercise.id, {
           durationMinutes: duration,
           helpfulRating: rating,
-          moodAfter: mood,
+          moodAfter: String(mood),
           notes,
           source: 'healing-web',
         })

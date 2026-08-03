@@ -226,10 +226,18 @@ export class BookingService {
     return this.http.post<{ consultation: any }>(`${this.apiUrl}/hope-hub/bookings`, payload);
   }
 
-  dashboard(): Observable<{ consultations: any[]; leads: any[] }> {
-    return this.http.get<{ consultations: any[]; leads: any[] }>(
-      `${this.apiUrl}/hope-hub/dashboard`,
-    );
+  dashboard(): Observable<{
+    consultations: any[];
+    leads: any[];
+    resources?: any[];
+    summary?: any;
+  }> {
+    return this.http.get<{
+      consultations: any[];
+      leads: any[];
+      resources?: any[];
+      summary?: any;
+    }>(`${this.apiUrl}/hope-hub/dashboard`);
   }
 
   requestFollowUp(entitlementId: string): Observable<{ entitlement: any }> {

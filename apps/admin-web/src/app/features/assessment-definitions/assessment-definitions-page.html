@@ -83,6 +83,10 @@
                     / {{ coupon.couponMaxRedemptions }}
                   }
                   used
+                  · {{ coupon.couponDiscountType || 'FREE' }}
+                  @if (coupon.couponDiscountValue) {
+                    {{ coupon.couponDiscountType === 'FLAT' ? rupees(coupon.couponDiscountValue) : coupon.couponDiscountValue + '%' }}
+                  }
                 </span>
               </article>
             } @empty {
@@ -155,6 +159,24 @@
         <label>Price (INR) <input type="number" min="0" name="priceRupees" [(ngModel)]="form().priceRupees" /></label>
         <label>Coupon code <input name="couponCode" [(ngModel)]="form().couponCode" placeholder="TESTFREE" /></label>
         <label>Coupon label <input name="couponLabel" [(ngModel)]="form().couponLabel" placeholder="Free access code" /></label>
+        <label>
+          Coupon type
+          <select name="couponDiscountType" [(ngModel)]="form().couponDiscountType">
+            <option value="FREE">Free unlock</option>
+            <option value="PERCENT">Percent discount</option>
+            <option value="FLAT">Flat discount</option>
+          </select>
+        </label>
+        <label>
+          Coupon value
+          <input
+            type="number"
+            min="0"
+            name="couponDiscountValue"
+            [(ngModel)]="form().couponDiscountValue"
+            placeholder="% or INR"
+          />
+        </label>
         <label>Coupon starts <input type="datetime-local" name="couponStartsAt" [(ngModel)]="form().couponStartsAt" /></label>
         <label>Coupon ends <input type="datetime-local" name="couponEndsAt" [(ngModel)]="form().couponEndsAt" /></label>
         <label>Max redemptions <input type="number" min="1" name="couponMaxRedemptions" [(ngModel)]="form().couponMaxRedemptions" /></label>

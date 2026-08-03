@@ -6,8 +6,11 @@ import { prisma } from '../db.js';
 import { asyncRoute, queryPositiveInt, queryText, routeParam } from '../utils/helpers.js';
 import {
   assertAssessmentAccess,
+  assertAssessmentCouponUsageAvailable,
+  buildAssessmentCouponQuote,
   getAssessmentAccessStatus,
   getAssessmentDefinition,
+  normalizeAssessmentCouponDiscountType,
   normalizeAssessmentAccessMode,
   redeemAssessmentCoupon,
   scoreAssessment,
@@ -39,6 +42,8 @@ type AssessmentDefinitionRow = {
   accessMode: string;
   priceInPaise: number | null;
   couponLabel: string | null;
+  couponDiscountType: string;
+  couponDiscountValue: number | null;
   accessNote: string | null;
   sortOrder: number;
 };
@@ -49,6 +54,9 @@ const assessmentScoreSchema = z.object({
 });
 const redeemCouponSchema = z.object({
   couponCode: z.string().trim().min(2).max(80)
+});
+const createOrderSchema = z.object({
+  couponCode: z.string().trim().min(2).max(80).optional().or(z.literal(''))
 });
 const verifyPaymentSchema = z.object({
   razorpayOrderId: z.string().min(1),
@@ -61,6 +69,8 @@ function serializeDefinition(row: AssessmentDefinitionRow) {
     accessMode: normalizeAssessmentAccessMode(row.accessMode),
     priceInPaise: row.priceInPaise,
     couponLabel: row.couponLabel,
+    couponDiscountType: normalizeAssessmentCouponDiscountType(row.couponDiscountType),
+    couponDiscountValue: row.couponDiscountValue,
     accessNote: row.accessNote
   });
   return {
@@ -120,6 +130,8 @@ assessmentDefinitionsRouter.get(
           "accessMode",
           "priceInPaise",
           "couponLabel",
+          "couponDiscountType",
+          "couponDiscountValue",
           "accessNote",
           "sortOrder"
         FROM "AssessmentDefinition"
@@ -165,6 +177,8 @@ assessmentDefinitionsRouter.get(
         "accessMode",
         "priceInPaise",
         "couponLabel",
+        "couponDiscountType",
+        "couponDiscountValue",
         "accessNote",
         "sortOrder"
       FROM "AssessmentDefinition"
@@ -214,9 +228,11 @@ assessmentDefinitionsRouter.post(
       const result = await redeemAssessmentCoupon(definition, req.user!.id, body.couponCode);
       res.json(result);
     } catch (error) {
-      const statusCode = (error as Error & { statusCode?: number }).statusCode ?? 400;
+      const typedError = error as Error & { statusCode?: number; quote?: unknown };
+      const statusCode = typedError.statusCode ?? 400;
       res.status(statusCode).json({
-        message: error instanceof Error ? error.message : 'Could not redeem coupon.'
+        message: error instanceof Error ? error.message : 'Could not redeem coupon.',
+        ...(typedError.quote ? { quote: typedError.quote } : {})
       });
     }
   })
@@ -250,15 +266,30 @@ assessmentDefinitionsRouter.post(
       return;
     }
 
+    const body = createOrderSchema.parse(req.body ?? {});
+    const couponCode = body.couponCode?.trim();
+    const couponQuote = couponCode
+      ? await buildAssessmentCouponQuote(definition, couponCode)
+      : null;
+    if (couponQuote) {
+      await assertAssessmentCouponUsageAvailable(definition, couponQuote.couponCode, req.user!.id);
+      if (couponQuote.unlocksFully) {
+        res.status(400).json({ message: 'This coupon unlocks the assessment without payment.' });
+        return;
+      }
+    }
+    const payableAmountInPaise = couponQuote?.payableAmountInPaise ?? definition.priceInPaise;
+
     const razorpay = getRazorpayClient();
     const order = await razorpay.orders.create({
-      amount: definition.priceInPaise,
+      amount: payableAmountInPaise,
       currency: 'INR',
       receipt: `assessment_${definition.id}_${Date.now()}`.slice(0, 40),
       notes: {
         purpose: 'assessment_unlock',
         assessmentId: definition.id,
-        userId: req.user!.id
+        userId: req.user!.id,
+        couponCode: couponQuote?.couponCode ?? ''
       }
     });
 
@@ -267,12 +298,13 @@ assessmentDefinitionsRouter.post(
         userId: req.user!.id,
         assessmentId: definition.id,
         providerOrderId: order.id,
-        amountInPaise: definition.priceInPaise,
+        amountInPaise: payableAmountInPaise,
         currency: 'INR',
         status: PaymentStatus.CREATED,
         notes: {
           purpose: 'assessment_unlock',
           assessmentTitle: definition.title,
+          couponQuote: couponQuote ?? null,
           receipt: order.receipt || null
         }
       }
@@ -280,10 +312,11 @@ assessmentDefinitionsRouter.post(
 
     res.json({
       orderId: order.id,
-      amountInPaise: definition.priceInPaise,
+      amountInPaise: payableAmountInPaise,
       currency: 'INR',
       razorpayKeyId,
-      description: `Unlock ${definition.title}`
+      description: `Unlock ${definition.title}`,
+      couponQuote
     });
   })
 );
@@ -353,7 +386,15 @@ assessmentDefinitionsRouter.post(
       return;
     }
 
-    await prisma.$transaction([
+    const paymentNotes =
+      assessmentPayment.notes &&
+      typeof assessmentPayment.notes === 'object' &&
+      !Array.isArray(assessmentPayment.notes)
+        ? (assessmentPayment.notes as Record<string, unknown>)
+        : {};
+    const couponQuote = paymentNotes['couponQuote'] as { couponCode?: string } | null | undefined;
+    const couponCode = couponQuote?.couponCode?.trim().toUpperCase() || '';
+    const transactionItems: Prisma.PrismaPromise<unknown>[] = [
       prisma.assessmentPayment.update({
         where: { id: assessmentPayment.id },
         data: {
@@ -361,26 +402,37 @@ assessmentDefinitionsRouter.post(
           status: PaymentStatus.PAID,
           verifiedAt: new Date()
         }
-      }),
+      })
+    ];
+    if (couponCode) {
+      transactionItems.push(
+        prisma.assessmentCouponRedemption.create({
+          data: { userId: req.user!.id, assessmentId: definition.id, couponCode }
+        })
+      );
+    }
+    transactionItems.push(
       prisma.assessmentAccessGrant.upsert({
         where: {
           userId_assessmentId_source_couponCode: {
             userId: req.user!.id,
             assessmentId: definition.id,
             source: 'PAYMENT',
-            couponCode: ''
+            couponCode
           }
         },
         create: {
           userId: req.user!.id,
           assessmentId: definition.id,
           source: 'PAYMENT',
-          couponCode: '',
+          couponCode,
           paymentId: assessmentPayment.id
         },
         update: { paymentId: assessmentPayment.id }
       })
-    ]);
+    );
+
+    await prisma.$transaction(transactionItems);
 
     res.json({ ok: true, access: await getAssessmentAccessStatus(definition, req.user!.id) });
   })

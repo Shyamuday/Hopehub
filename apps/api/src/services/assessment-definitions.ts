@@ -41,6 +41,7 @@ export type AssessmentConfigDefinition = {
 };
 
 export type AssessmentAccessMode = 'FREE' | 'LOGIN_REQUIRED' | 'PAID';
+export type AssessmentCouponDiscountType = 'FREE' | 'PERCENT' | 'FLAT';
 
 export type AssessmentDefinitionRecord = {
   id: string;
@@ -54,6 +55,8 @@ export type AssessmentDefinitionRecord = {
   priceInPaise: number | null;
   couponCode: string | null;
   couponLabel: string | null;
+  couponDiscountType: AssessmentCouponDiscountType;
+  couponDiscountValue: number | null;
   couponStartsAt: Date | null;
   couponEndsAt: Date | null;
   couponMaxRedemptions: number | null;
@@ -88,7 +91,30 @@ export type AssessmentAccessStatus = {
   reason: 'FREE' | 'SIGNED_IN' | 'GRANTED' | 'SIGN_IN_REQUIRED' | 'PAYMENT_REQUIRED';
   priceInPaise: number | null;
   couponLabel: string | null;
+  couponDiscountType: AssessmentCouponDiscountType;
+  couponDiscountValue: number | null;
   accessNote: string | null;
+};
+
+export type AssessmentCouponQuote = {
+  couponCode: string;
+  couponLabel: string | null;
+  discountType: AssessmentCouponDiscountType;
+  discountValue: number | null;
+  originalAmountInPaise: number;
+  discountInPaise: number;
+  payableAmountInPaise: number;
+  unlocksFully: boolean;
+};
+
+type ResolvedAssessmentCoupon = {
+  code: string;
+  label: string | null;
+  discountType: AssessmentCouponDiscountType;
+  discountValue: number | null;
+  startsAt: Date | null;
+  endsAt: Date | null;
+  maxRedemptions: number | null;
 };
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
@@ -199,6 +225,7 @@ function normalizeDefinition(row: AssessmentDefinitionRow): AssessmentDefinition
   return {
     ...row,
     accessMode: normalizeAssessmentAccessMode(row.accessMode),
+    couponDiscountType: normalizeAssessmentCouponDiscountType(row.couponDiscountType),
     config: row.config as AssessmentConfigDefinition
   };
 }
@@ -208,16 +235,38 @@ export function normalizeAssessmentAccessMode(value: unknown): AssessmentAccessM
   return 'FREE';
 }
 
+export function normalizeAssessmentCouponDiscountType(
+  value: unknown
+): AssessmentCouponDiscountType {
+  if (value === 'PERCENT' || value === 'FLAT') return value;
+  return 'FREE';
+}
+
 export function serializeAssessmentAccess(
   definition: Pick<
     AssessmentDefinitionRecord,
-    'accessMode' | 'priceInPaise' | 'couponLabel' | 'accessNote'
+    | 'accessMode'
+    | 'priceInPaise'
+    | 'couponLabel'
+    | 'couponDiscountType'
+    | 'couponDiscountValue'
+    | 'accessNote'
   >
-): Pick<AssessmentAccessStatus, 'accessMode' | 'priceInPaise' | 'couponLabel' | 'accessNote'> {
+): Pick<
+  AssessmentAccessStatus,
+  | 'accessMode'
+  | 'priceInPaise'
+  | 'couponLabel'
+  | 'couponDiscountType'
+  | 'couponDiscountValue'
+  | 'accessNote'
+> {
   return {
     accessMode: normalizeAssessmentAccessMode(definition.accessMode),
     priceInPaise: definition.priceInPaise ?? null,
     couponLabel: definition.couponLabel ?? null,
+    couponDiscountType: normalizeAssessmentCouponDiscountType(definition.couponDiscountType),
+    couponDiscountValue: definition.couponDiscountValue ?? null,
     accessNote: definition.accessNote ?? null
   };
 }
@@ -236,6 +285,8 @@ export async function getAssessmentDefinition(id: string, includeInactive = fals
       "priceInPaise",
       "couponCode",
       "couponLabel",
+      "couponDiscountType",
+      "couponDiscountValue",
       "couponStartsAt",
       "couponEndsAt",
       "couponMaxRedemptions",
@@ -247,6 +298,139 @@ export async function getAssessmentDefinition(id: string, includeInactive = fals
     LIMIT 1
   `);
   return rows[0] ? normalizeDefinition(rows[0]) : null;
+}
+
+async function resolveAssessmentCoupon(
+  definition: AssessmentDefinitionRecord,
+  couponCode: string
+): Promise<ResolvedAssessmentCoupon> {
+  const normalized = couponCode.trim().toUpperCase();
+  const rows = await prisma.$queryRaw<
+    Array<{
+      code: string;
+      label: string | null;
+      discountType: string;
+      discountValue: number | null;
+      startsAt: Date | null;
+      endsAt: Date | null;
+      maxRedemptions: number | null;
+    }>
+  >(Prisma.sql`
+    SELECT "code", "label", "discountType", "discountValue", "startsAt", "endsAt", "maxRedemptions"
+    FROM "AssessmentCoupon"
+    WHERE "assessmentId" = ${definition.id}
+      AND "code" = ${normalized}
+      AND "isActive" = true
+    LIMIT 1
+  `);
+  const row = rows[0] ?? null;
+
+  const legacyExpected = definition.couponCode?.trim().toUpperCase();
+  const coupon: ResolvedAssessmentCoupon | null = row
+    ? {
+        code: row.code.trim().toUpperCase(),
+        label: row.label,
+        discountType: normalizeAssessmentCouponDiscountType(row.discountType),
+        discountValue: row.discountValue,
+        startsAt: row.startsAt,
+        endsAt: row.endsAt,
+        maxRedemptions: row.maxRedemptions
+      }
+    : legacyExpected === normalized
+      ? {
+          code: normalized,
+          label: definition.couponLabel,
+          discountType: normalizeAssessmentCouponDiscountType(definition.couponDiscountType),
+          discountValue: definition.couponDiscountValue,
+          startsAt: definition.couponStartsAt,
+          endsAt: definition.couponEndsAt,
+          maxRedemptions: definition.couponMaxRedemptions
+        }
+      : null;
+
+  if (!coupon) {
+    const error = new Error('Coupon code is not valid for this assessment.');
+    (error as Error & { statusCode?: number }).statusCode = 400;
+    throw error;
+  }
+
+  const now = new Date();
+  if (coupon.startsAt && coupon.startsAt > now) {
+    const error = new Error('This coupon is not active yet.');
+    (error as Error & { statusCode?: number }).statusCode = 400;
+    throw error;
+  }
+  if (coupon.endsAt && coupon.endsAt < now) {
+    const error = new Error('This coupon has expired.');
+    (error as Error & { statusCode?: number }).statusCode = 400;
+    throw error;
+  }
+  return coupon;
+}
+
+export async function buildAssessmentCouponQuote(
+  definition: AssessmentDefinitionRecord,
+  couponCode: string
+): Promise<AssessmentCouponQuote> {
+  const coupon = await resolveAssessmentCoupon(definition, couponCode);
+  const originalAmountInPaise = Math.max(0, definition.priceInPaise ?? 0);
+  const discountType = coupon.discountType;
+  const discountValue = coupon.discountValue ?? null;
+  const discountInPaise =
+    discountType === 'FREE'
+      ? originalAmountInPaise
+      : discountType === 'PERCENT'
+        ? Math.floor((originalAmountInPaise * Math.min(100, Math.max(0, discountValue ?? 0))) / 100)
+        : Math.min(originalAmountInPaise, Math.max(0, discountValue ?? 0));
+  const payableAmountInPaise =
+    discountType === 'FREE'
+      ? 0
+      : Math.round(Math.max(0, originalAmountInPaise - discountInPaise) / 100) * 100;
+  return {
+    couponCode: coupon.code,
+    couponLabel: coupon.label ?? null,
+    discountType,
+    discountValue,
+    originalAmountInPaise,
+    discountInPaise,
+    payableAmountInPaise,
+    unlocksFully: payableAmountInPaise === 0
+  };
+}
+
+export async function assertAssessmentCouponUsageAvailable(
+  definition: AssessmentDefinitionRecord,
+  couponCode: string,
+  userId: string
+) {
+  const coupon = await resolveAssessmentCoupon(definition, couponCode);
+  const existing = await prisma.assessmentCouponRedemption.findUnique({
+    where: {
+      userId_assessmentId_couponCode: {
+        userId,
+        assessmentId: definition.id,
+        couponCode: coupon.code
+      }
+    },
+    select: { id: true }
+  });
+  if (existing) {
+    const error = new Error('You have already used this coupon for this assessment.');
+    (error as Error & { statusCode?: number }).statusCode = 409;
+    throw error;
+  }
+
+  if (coupon.maxRedemptions !== null && coupon.maxRedemptions !== undefined) {
+    const used = await prisma.assessmentCouponRedemption.count({
+      where: { assessmentId: definition.id, couponCode: coupon.code }
+    });
+    if (used >= coupon.maxRedemptions) {
+      const error = new Error('This coupon has reached its usage limit.');
+      (error as Error & { statusCode?: number }).statusCode = 400;
+      throw error;
+    }
+  }
+  return coupon.code;
 }
 
 export async function getAssessmentAccessStatus(
@@ -304,25 +488,14 @@ export async function redeemAssessmentCoupon(
   userId: string,
   couponCode: string
 ): Promise<{ access: AssessmentAccessStatus; alreadyRedeemed: boolean }> {
-  const normalized = couponCode.trim().toUpperCase();
-  const expected = definition.couponCode?.trim().toUpperCase();
-  if (!expected || normalized !== expected) {
-    const error = new Error('Coupon code is not valid for this assessment.');
-    (error as Error & { statusCode?: number }).statusCode = 400;
+  const quote = await buildAssessmentCouponQuote(definition, couponCode);
+  if (!quote.unlocksFully) {
+    const error = new Error('This coupon gives a discount. Complete payment to unlock.');
+    (error as Error & { statusCode?: number; quote?: AssessmentCouponQuote }).statusCode = 402;
+    (error as Error & { statusCode?: number; quote?: AssessmentCouponQuote }).quote = quote;
     throw error;
   }
-
-  const now = new Date();
-  if (definition.couponStartsAt && definition.couponStartsAt > now) {
-    const error = new Error('This coupon is not active yet.');
-    (error as Error & { statusCode?: number }).statusCode = 400;
-    throw error;
-  }
-  if (definition.couponEndsAt && definition.couponEndsAt < now) {
-    const error = new Error('This coupon has expired.');
-    (error as Error & { statusCode?: number }).statusCode = 400;
-    throw error;
-  }
+  const normalized = quote.couponCode;
 
   const existing = await prisma.assessmentCouponRedemption.findUnique({
     where: {
@@ -342,16 +515,7 @@ export async function redeemAssessmentCoupon(
     };
   }
 
-  if (definition.couponMaxRedemptions !== null && definition.couponMaxRedemptions !== undefined) {
-    const used = await prisma.assessmentCouponRedemption.count({
-      where: { assessmentId: definition.id, couponCode: normalized }
-    });
-    if (used >= definition.couponMaxRedemptions) {
-      const error = new Error('This coupon has reached its usage limit.');
-      (error as Error & { statusCode?: number }).statusCode = 400;
-      throw error;
-    }
-  }
+  await assertAssessmentCouponUsageAvailable(definition, normalized, userId);
 
   await prisma.$transaction([
     prisma.assessmentCouponRedemption.create({

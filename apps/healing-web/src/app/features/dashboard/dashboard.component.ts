@@ -800,7 +800,8 @@ export class DashboardComponent implements OnInit {
         if (consultation.followUpEntitlement?.status === 'AVAILABLE') {
           acc.availableFollowUpCount += 1;
         }
-        if (this.packageUsage(consultation)?.remainingSessions > 0) {
+        const packageUsage = this.packageUsage(consultation);
+        if ((packageUsage?.remainingSessions ?? 0) > 0) {
           acc.activePackageCount += 1;
         }
         acc.balanceDueInPaise += this.balanceDueInPaise(consultation);

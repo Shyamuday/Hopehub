@@ -17,6 +17,8 @@ const definition: AssessmentDefinitionRecord = {
   priceInPaise: null,
   couponCode: null,
   couponLabel: null,
+  couponDiscountType: 'FREE',
+  couponDiscountValue: null,
   couponStartsAt: null,
   couponEndsAt: null,
   couponMaxRedemptions: null,

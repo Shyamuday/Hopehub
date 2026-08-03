@@ -7,6 +7,17 @@ import { ASSESSMENT_CONFIGS, getAssessmentConfig } from '../data/assessment-conf
 
 export type AssessmentAccess = NonNullable<AssessmentConfig['access']>;
 
+export type AssessmentCouponQuote = {
+  couponCode: string;
+  couponLabel?: string | null;
+  discountType: 'FREE' | 'PERCENT' | 'FLAT';
+  discountValue?: number | null;
+  originalAmountInPaise: number;
+  discountInPaise: number;
+  payableAmountInPaise: number;
+  unlocksFully: boolean;
+};
+
 type AssessmentDefinitionsResponse = {
   assessments: AssessmentConfig[];
 };
@@ -18,6 +29,7 @@ type AssessmentDefinitionResponse = {
 type AssessmentAccessResponse = {
   access: AssessmentAccess;
   alreadyRedeemed?: boolean;
+  quote?: AssessmentCouponQuote;
 };
 
 @Injectable({ providedIn: 'root' })

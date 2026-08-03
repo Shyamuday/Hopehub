@@ -13,6 +13,8 @@ model AssessmentDefinition {
   priceInPaise         Int?
   couponCode           String?
   couponLabel          String?
+  couponDiscountType   String    @default("FREE")
+  couponDiscountValue  Int?
   couponStartsAt       DateTime?
   couponEndsAt         DateTime?
   couponMaxRedemptions Int?
@@ -27,10 +29,32 @@ model AssessmentDefinition {
   accessGrants      AssessmentAccessGrant[]
   couponRedemptions AssessmentCouponRedemption[]
   payments          AssessmentPayment[]
+  coupons           AssessmentCoupon[]
 
   @@index([category, isActive])
   @@index([isActive, sortOrder])
   @@index([accessMode])
+}
+
+model AssessmentCoupon {
+  id             String    @id @default(cuid())
+  assessmentId   String
+  code           String
+  label          String?
+  discountType   String    @default("FREE")
+  discountValue  Int?
+  startsAt       DateTime?
+  endsAt         DateTime?
+  maxRedemptions Int?
+  isActive       Boolean   @default(true)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  assessment AssessmentDefinition @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+
+  @@unique([assessmentId, code])
+  @@index([code, isActive])
+  @@index([assessmentId, isActive])
 }
 
 model AssessmentPayment {

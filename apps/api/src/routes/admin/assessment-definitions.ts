@@ -33,6 +33,8 @@ const assessmentDefinitionSchema = z.object({
   priceInPaise: z.number().int().min(0).max(10000000).nullable().optional(),
   couponCode: z.string().trim().min(2).max(80).nullable().optional(),
   couponLabel: z.string().trim().min(2).max(160).nullable().optional(),
+  couponDiscountType: z.enum(['FREE', 'PERCENT', 'FLAT']).default('FREE'),
+  couponDiscountValue: z.number().int().min(0).max(10000000).nullable().optional(),
   couponStartsAt: z.coerce.date().nullable().optional(),
   couponEndsAt: z.coerce.date().nullable().optional(),
   couponMaxRedemptions: z.number().int().min(1).max(100000).nullable().optional(),
@@ -146,6 +148,8 @@ export function registerAdminAssessmentDefinitionRoutes(router: Router) {
                 title: true,
                 couponCode: true,
                 couponLabel: true,
+                couponDiscountType: true,
+                couponDiscountValue: true,
                 couponMaxRedemptions: true
               }
             }
@@ -169,6 +173,8 @@ export function registerAdminAssessmentDefinitionRoutes(router: Router) {
             priceInPaise: true,
             couponCode: true,
             couponLabel: true,
+            couponDiscountType: true,
+            couponDiscountValue: true,
             couponMaxRedemptions: true
           },
           orderBy: [{ sortOrder: 'asc' }, { title: 'asc' }]
@@ -189,6 +195,8 @@ export function registerAdminAssessmentDefinitionRoutes(router: Router) {
           priceInPaise: definition.priceInPaise,
           couponCode: definition.couponCode,
           couponLabel: definition.couponLabel,
+          couponDiscountType: definition.couponDiscountType,
+          couponDiscountValue: definition.couponDiscountValue,
           couponMaxRedemptions: definition.couponMaxRedemptions,
           used: definition.couponCode
             ? (usageByAssessmentAndCode.get(`${definition.id}:${definition.couponCode}`) ?? 0)
@@ -239,7 +247,8 @@ export function registerAdminAssessmentDefinitionRoutes(router: Router) {
           SELECT
             "id", "type", "category", "title", "description", "version", "config",
             "accessMode", "priceInPaise", "couponCode", "couponLabel", "couponStartsAt",
-            "couponEndsAt", "couponMaxRedemptions", "accessNote", "isActive", "sortOrder"
+            "couponDiscountType", "couponDiscountValue", "couponEndsAt", "couponMaxRedemptions",
+            "accessNote", "isActive", "sortOrder"
           FROM "AssessmentDefinition"
           ${where}
           ORDER BY "sortOrder" ASC, "title" ASC
@@ -293,13 +302,15 @@ export function registerAdminAssessmentDefinitionRoutes(router: Router) {
         INSERT INTO "AssessmentDefinition" (
           "id", "type", "category", "title", "description", "version", "config",
           "accessMode", "priceInPaise", "couponCode", "couponLabel", "couponStartsAt",
-          "couponEndsAt", "couponMaxRedemptions", "accessNote", "isActive", "sortOrder", "updatedAt"
+          "couponDiscountType", "couponDiscountValue", "couponEndsAt", "couponMaxRedemptions",
+          "accessNote", "isActive", "sortOrder", "updatedAt"
         )
         VALUES (
           ${body.id}, ${body.type}, ${body.category}, ${body.title}, ${body.description}, ${body.version},
           ${body.config as Prisma.InputJsonValue}::jsonb, ${body.accessMode}, ${body.priceInPaise ?? null},
           ${body.couponCode?.toUpperCase() ?? null}, ${body.couponLabel ?? null}, ${body.couponStartsAt ?? null},
-          ${body.couponEndsAt ?? null}, ${body.couponMaxRedemptions ?? null}, ${body.accessNote ?? null},
+          ${body.couponDiscountType}, ${body.couponDiscountValue ?? null}, ${body.couponEndsAt ?? null},
+          ${body.couponMaxRedemptions ?? null}, ${body.accessNote ?? null},
           ${body.isActive}, ${body.sortOrder}, CURRENT_TIMESTAMP
         )
         ON CONFLICT ("id") DO UPDATE SET
@@ -313,6 +324,8 @@ export function registerAdminAssessmentDefinitionRoutes(router: Router) {
           "priceInPaise" = EXCLUDED."priceInPaise",
           "couponCode" = EXCLUDED."couponCode",
           "couponLabel" = EXCLUDED."couponLabel",
+          "couponDiscountType" = EXCLUDED."couponDiscountType",
+          "couponDiscountValue" = EXCLUDED."couponDiscountValue",
           "couponStartsAt" = EXCLUDED."couponStartsAt",
           "couponEndsAt" = EXCLUDED."couponEndsAt",
           "couponMaxRedemptions" = EXCLUDED."couponMaxRedemptions",
@@ -371,6 +384,8 @@ export function registerAdminAssessmentDefinitionRoutes(router: Router) {
           "priceInPaise" = ${next.priceInPaise ?? null},
           "couponCode" = ${next.couponCode?.toUpperCase() ?? null},
           "couponLabel" = ${next.couponLabel ?? null},
+          "couponDiscountType" = ${next.couponDiscountType},
+          "couponDiscountValue" = ${next.couponDiscountValue ?? null},
           "couponStartsAt" = ${next.couponStartsAt ?? null},
           "couponEndsAt" = ${next.couponEndsAt ?? null},
           "couponMaxRedemptions" = ${next.couponMaxRedemptions ?? null},

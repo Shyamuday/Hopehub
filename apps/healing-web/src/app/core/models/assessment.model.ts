@@ -85,6 +85,8 @@ export interface AssessmentAccess {
   reason?: 'FREE' | 'SIGNED_IN' | 'GRANTED' | 'SIGN_IN_REQUIRED' | 'PAYMENT_REQUIRED';
   priceInPaise?: number | null;
   couponLabel?: string | null;
+  couponDiscountType?: 'FREE' | 'PERCENT' | 'FLAT';
+  couponDiscountValue?: number | null;
   accessNote?: string | null;
 }
 
