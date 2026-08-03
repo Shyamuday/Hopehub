@@ -174,6 +174,15 @@
                 <label>YouTube URL <input name="youtubeUrl" [(ngModel)]="offerForm().youtubeUrl" placeholder="https://youtube.com/..." /></label>
               </div>
               <label>Access note <textarea rows="3" name="mediaAccessNote" [(ngModel)]="offerForm().mediaAccessNote" placeholder="Any joining or access instruction for this recording"></textarea></label>
+              <div class="two">
+                <label>Unlock by offer slugs
+                  <textarea rows="3" name="allowedOfferingSlugs" [(ngModel)]="offerForm().allowedOfferingSlugsText" placeholder="weekly-care-package&#10;goa-wellness-meetup"></textarea>
+                </label>
+                <label>Unlock by offer codes
+                  <textarea rows="3" name="allowedOfferingCodes" [(ngModel)]="offerForm().allowedOfferingCodesText" placeholder="WEEKLY_CARE&#10;GOA_MEETUP"></textarea>
+                </label>
+              </div>
+              <label>Unlock by offer IDs <textarea rows="2" name="allowedOfferingIds" [(ngModel)]="offerForm().allowedOfferingIdsText" placeholder="Optional internal offering IDs, one per line"></textarea></label>
             </section>
 
             <div class="checks">

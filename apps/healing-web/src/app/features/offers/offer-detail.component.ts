@@ -4,7 +4,11 @@ import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
-import { BookingService, HopeHubOffering } from '../../core/services/booking.service';
+import {
+  BookingService,
+  HopeHubOffering,
+  HopeHubOfferingAccess,
+} from '../../core/services/booking.service';
 import { AuthService } from '../../core/services/auth.service';
 import { AuthModalService } from '../../core/services/auth-modal.service';
 import { PaymentService } from '../../core/services/payment.service';
@@ -41,6 +45,7 @@ export class OfferDetailComponent implements OnInit {
   private readonly productAnalytics = inject(ProductAnalyticsService);
 
   readonly offer = signal<HopeHubOffering | null>(null);
+  readonly access = signal<HopeHubOfferingAccess | null>(null);
   readonly loading = signal(true);
   readonly checkoutState = signal<'IDLE' | 'CREATING' | 'OPENING' | 'VERIFYING' | 'SUCCESS'>(
     'IDLE',
@@ -147,19 +152,20 @@ export class OfferDetailComponent implements OnInit {
   }
 
   canAccessMedia(offer: HopeHubOffering): boolean {
-    const mode = offer.metadata?.mediaAccessMode || 'PUBLIC';
-    if (mode === 'PUBLIC') return true;
-    if (mode === 'LOGIN_REQUIRED') return Boolean(this.auth.getToken());
-    if (mode === 'PAID_ONLY') return false;
-    return true;
+    return this.access()?.canAccess ?? offer.metadata?.mediaAccessMode === 'PUBLIC';
   }
 
   mediaAccessMessage(offer: HopeHubOffering): string {
-    const mode = offer.metadata?.mediaAccessMode || 'PUBLIC';
-    if (mode === 'LOGIN_REQUIRED') return 'Sign in to access this recorded session.';
-    if (mode === 'PAID_ONLY')
+    const access = this.access();
+    if (access?.accessNote) return access.accessNote;
+    if (access?.reason === 'LOGIN_REQUIRED') return 'Sign in to access this recorded session.';
+    if (access?.reason === 'PURCHASE_REQUIRED') {
       return 'This recording is available after purchase or admin approval.';
-    return '';
+    }
+    if (offer.metadata?.mediaAccessMode === 'LOGIN_REQUIRED') {
+      return 'Sign in to access this recorded session.';
+    }
+    return 'Access is required for this content.';
   }
 
   openLogin(): void {
@@ -202,6 +208,18 @@ export class OfferDetailComponent implements OnInit {
         },
       })
       .subscribe({ error: () => undefined });
+    this.productAnalytics.track(
+      HOPE_HUB_ANALYTICS_EVENTS.CONTENT_UNLOCKED_CLICKED,
+      {
+        offeringId: offer.id,
+        offeringSlug: offer.slug,
+        offeringTitle: offer.title,
+        mediaSource: link.source,
+        mediaKind: link.kind,
+        mediaLabel: link.label,
+      },
+      'ENGAGEMENT',
+    );
   }
 
   bookingQuery(offer: HopeHubOffering, paymentMode: 'FULL' | 'PARTIAL' = 'FULL') {
@@ -297,9 +315,11 @@ export class OfferDetailComponent implements OnInit {
 
   private load(slug: string): void {
     this.loading.set(true);
-    this.bookingService.offering(slug).subscribe({
-      next: ({ offering }) => {
+    this.access.set(null);
+    this.bookingService.offeringAccess(slug).subscribe({
+      next: ({ offering, access }) => {
         this.offer.set(offering);
+        this.access.set(access);
         this.productAnalytics.track(HOPE_HUB_ANALYTICS_EVENTS.OFFER_VIEWED, {
           offeringId: offering.id,
           offeringSlug: offering.slug,
@@ -307,6 +327,15 @@ export class OfferDetailComponent implements OnInit {
           offeringType: offering.type,
           priceInPaise: offering.priceInPaise,
         });
+        if (this.hasMediaLinks(offering) && !access.canAccess) {
+          this.productAnalytics.track(HOPE_HUB_ANALYTICS_EVENTS.CONTENT_LOCKED_VIEWED, {
+            offeringId: offering.id,
+            offeringSlug: offering.slug,
+            offeringTitle: offering.title,
+            reason: access.reason,
+            accessMode: access.accessMode,
+          });
+        }
         this.loading.set(false);
       },
       error: () => {

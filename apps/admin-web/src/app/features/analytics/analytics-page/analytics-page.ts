@@ -60,6 +60,8 @@ type HopeHubAnalyticsReport = {
     paymentSuccess: number;
     loginRequired: number;
     followUpsRequested: number;
+    contentLockedViews: number;
+    contentUnlockedClicks: number;
     offerDiscountInPaise: number;
     checkoutDiscountInPaise: number;
   };

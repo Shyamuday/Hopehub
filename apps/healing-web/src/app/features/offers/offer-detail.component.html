@@ -62,7 +62,7 @@
             } @else {
               <div class="media-locked">
                 <strong>{{ mediaAccessMessage(offer) }}</strong>
-                @if (offer.metadata?.mediaAccessMode === 'LOGIN_REQUIRED') {
+                @if (access()?.reason === 'LOGIN_REQUIRED') {
                   <button type="button" (click)="openLogin()">Sign in</button>
                 }
               </div>

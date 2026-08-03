@@ -576,6 +576,124 @@ function bannerPublicPayload(banner: {
   return banner;
 }
 
+function mediaMetadataFromOffering(offering: { metadata: unknown }) {
+  const metadata = (offering.metadata || {}) as Record<string, unknown>;
+  return {
+    accessMode: String(metadata['mediaAccessMode'] || 'PUBLIC'),
+    accessNote:
+      typeof metadata['mediaAccessNote'] === 'string' ? metadata['mediaAccessNote'] : null,
+    allowedOfferingIds: Array.isArray(metadata['allowedOfferingIds'])
+      ? metadata['allowedOfferingIds'].map(String)
+      : [],
+    allowedOfferingSlugs: Array.isArray(metadata['allowedOfferingSlugs'])
+      ? metadata['allowedOfferingSlugs'].map(String)
+      : [],
+    allowedOfferingCodes: Array.isArray(metadata['allowedOfferingCodes'])
+      ? metadata['allowedOfferingCodes'].map(String)
+      : []
+  };
+}
+
+function mediaLinkCount(metadata: unknown) {
+  const data = (metadata || {}) as Record<string, unknown>;
+  return [
+    data['telegramGroupUrl'],
+    data['telegramAudioUrl'],
+    data['telegramVideoUrl'],
+    data['recordedAudioUrl'],
+    data['recordedVideoUrl'],
+    data['youtubeUrl']
+  ].filter(Boolean).length;
+}
+
+function paidStatuses() {
+  return [PaymentStatus.PAID, PaymentStatus.PARTIALLY_REFUNDED];
+}
+
+async function resolveOfferingMediaAccess(input: {
+  offering: { id: string; code: string; slug: string; metadata: unknown };
+  userId?: string | null;
+}) {
+  const metadata = mediaMetadataFromOffering(input.offering);
+  const mode = metadata.accessMode;
+
+  if (mode === 'PUBLIC') {
+    return { accessMode: mode, canAccess: true, reason: 'PUBLIC', accessNote: metadata.accessNote };
+  }
+
+  if (!input.userId) {
+    return {
+      accessMode: mode,
+      canAccess: false,
+      reason: 'LOGIN_REQUIRED',
+      accessNote: metadata.accessNote
+    };
+  }
+
+  if (mode === 'LOGIN_REQUIRED') {
+    return {
+      accessMode: mode,
+      canAccess: true,
+      reason: 'SIGNED_IN',
+      accessNote: metadata.accessNote
+    };
+  }
+
+  const allowedIds = new Set([input.offering.id, ...metadata.allowedOfferingIds]);
+  const allowedSlugs = new Set([input.offering.slug, ...metadata.allowedOfferingSlugs]);
+  const allowedCodes = new Set([input.offering.code, ...metadata.allowedOfferingCodes]);
+
+  const paidConsultations = await prisma.consultation.findMany({
+    where: {
+      patientId: input.userId,
+      payment: { status: { in: paidStatuses() } }
+    },
+    select: {
+      billingPlanCode: true,
+      intakeAnswers: true,
+      pricingSnapshot: true,
+      payment: { select: { billingPlanCode: true, lineItems: true } }
+    },
+    orderBy: { createdAt: 'desc' },
+    take: 100
+  });
+
+  const matched = paidConsultations.some((consultation) => {
+    const intake = (consultation.intakeAnswers || {}) as Record<string, unknown>;
+    const snapshot = (consultation.pricingSnapshot || {}) as Record<string, unknown>;
+    const lineItems = (consultation.payment?.lineItems || {}) as Record<string, unknown>;
+    const purchasedIds = [
+      snapshot['offeringId'],
+      intake['offeringId'],
+      lineItems['offeringId']
+    ].map((value) => String(value || ''));
+    const purchasedSlugs = [
+      snapshot['offeringSlug'],
+      intake['offeringSlug'],
+      lineItems['offeringSlug']
+    ].map((value) => String(value || ''));
+    const purchasedCodes = [
+      consultation.billingPlanCode,
+      consultation.payment?.billingPlanCode,
+      snapshot['offeringCode'],
+      lineItems['offeringCode']
+    ].map((value) => String(value || ''));
+
+    return (
+      purchasedIds.some((id) => allowedIds.has(id)) ||
+      purchasedSlugs.some((slug) => allowedSlugs.has(slug)) ||
+      purchasedCodes.some((code) => allowedCodes.has(code))
+    );
+  });
+
+  return {
+    accessMode: mode,
+    canAccess: matched,
+    reason: matched ? 'PURCHASED' : 'PURCHASE_REQUIRED',
+    accessNote: metadata.accessNote
+  };
+}
+
 const hopeHubServiceSelect = {
   id: true,
   name: true,
@@ -923,6 +1041,29 @@ hopeHubRouter.get(
     if (!offering) return res.status(404).json({ message: 'Offering not found.' });
     const seatCounts = await bookedSeatsByOfferingCode([offering.code]);
     res.json({ offering: offeringPublicPayload(offering, seatCounts.get(offering.code) ?? 0) });
+  })
+);
+
+hopeHubRouter.get(
+  '/hope-hub/offerings/:slug/access',
+  authOptional,
+  asyncRoute(async (req, res) => {
+    const slug = routeParam(req, 'slug');
+    const offering = await prisma.hopeHubOffering.findFirst({
+      where: { isActive: true, OR: [{ slug }, { code: slug }, { id: slug }] },
+      select: hopeHubOfferingSelect
+    });
+    if (!offering) return res.status(404).json({ message: 'Offering not found.' });
+
+    const access = await resolveOfferingMediaAccess({
+      offering,
+      userId: req.user?.id
+    });
+
+    res.json({
+      offering: offeringPublicPayload(offering),
+      access
+    });
   })
 );
 
@@ -1686,6 +1827,29 @@ hopeHubRouter.get(
       orderBy: { createdAt: 'desc' },
       take: 10
     });
+    const activeOfferings = await activeHopeHubOfferings();
+    const resources = (
+      await Promise.all(
+        activeOfferings
+          .filter((offering) => mediaLinkCount(offering.metadata) > 0)
+          .map(async (offering) => ({
+            offering,
+            access: await resolveOfferingMediaAccess({ offering, userId: req.user!.id })
+          }))
+      )
+    )
+      .filter(({ access }) => access.canAccess)
+      .map(({ offering, access }) => ({
+        id: offering.id,
+        slug: offering.slug,
+        title: offering.title,
+        subtitle: offering.subtitle,
+        type: offering.type,
+        routePath: offering.routePath,
+        imageUrl: offering.imageUrl,
+        mediaLinkCount: mediaLinkCount(offering.metadata),
+        accessReason: access.reason
+      }));
     const paidStatuses = new Set(['CAPTURED', 'PAID']);
     const summary = consultations.reduce(
       (acc, consultation) => {
@@ -1725,7 +1889,8 @@ hopeHubRouter.get(
           : null
       })),
       leads,
-      summary
+      summary,
+      resources
     });
   })
 );

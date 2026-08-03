@@ -101,6 +101,13 @@ export type HopeHubOfferingQuote = {
   rule?: Record<string, unknown> | null;
 };
 
+export type HopeHubOfferingAccess = {
+  accessMode: string;
+  canAccess: boolean;
+  reason: 'PUBLIC' | 'SIGNED_IN' | 'PURCHASED' | 'LOGIN_REQUIRED' | 'PURCHASE_REQUIRED' | string;
+  accessNote?: string | null;
+};
+
 export type HopeHubBanner = {
   id: string;
   title: string;
@@ -313,6 +320,15 @@ export class BookingService {
   offering(slug: string): Observable<{ offering: HopeHubOffering }> {
     return this.http.get<{ offering: HopeHubOffering }>(
       `${this.apiUrl}/hope-hub/offerings/${encodeURIComponent(slug)}`,
+    );
+  }
+
+  offeringAccess(slug: string): Observable<{
+    offering: HopeHubOffering;
+    access: HopeHubOfferingAccess;
+  }> {
+    return this.http.get<{ offering: HopeHubOffering; access: HopeHubOfferingAccess }>(
+      `${this.apiUrl}/hope-hub/offerings/${encodeURIComponent(slug)}/access`,
     );
   }
 

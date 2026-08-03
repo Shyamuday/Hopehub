@@ -81,6 +81,18 @@ type DashboardSummary = {
   requestCount: number;
 };
 
+type DashboardResource = {
+  id: string;
+  slug: string;
+  title: string;
+  subtitle?: string | null;
+  type: string;
+  routePath: string;
+  imageUrl?: string | null;
+  mediaLinkCount: number;
+  accessReason: string;
+};
+
 @Component({
   selector: 'app-dashboard',
   standalone: true,
@@ -276,6 +288,44 @@ type DashboardSummary = {
 
         <!-- Progress Dashboard -->
         <app-progress-dashboard></app-progress-dashboard>
+
+        @if (resources().length) {
+          <section class="mt-8 rounded-lg bg-white p-6 shadow">
+            <div class="mb-4 flex items-center justify-between gap-3">
+              <div>
+                <h2 class="text-lg font-semibold text-gray-900">My resources</h2>
+                <p class="mt-1 text-sm text-gray-500">
+                  Recordings, groups, and session media you can access.
+                </p>
+              </div>
+              <a
+                routerLink="/resources"
+                class="text-sm font-semibold text-blue-600 hover:text-blue-700"
+                >View all</a
+              >
+            </div>
+            <div class="grid gap-4 md:grid-cols-3">
+              @for (resource of resources(); track resource.id) {
+                <a
+                  [routerLink]="resource.routePath || '/resources/' + resource.slug"
+                  class="rounded-lg border border-gray-200 bg-white p-4 text-gray-900 shadow-sm transition hover:border-blue-300 hover:shadow-md"
+                >
+                  <p class="text-xs font-bold uppercase text-blue-600">
+                    {{ resource.type.replace('_', ' ') }}
+                  </p>
+                  <h3 class="mt-2 font-semibold">{{ resource.title }}</h3>
+                  @if (resource.subtitle) {
+                    <p class="mt-1 text-sm text-gray-500">{{ resource.subtitle }}</p>
+                  }
+                  <p class="mt-3 text-sm font-semibold text-gray-700">
+                    {{ resource.mediaLinkCount }} media
+                    {{ resource.mediaLinkCount === 1 ? 'link' : 'links' }}
+                  </p>
+                </a>
+              }
+            </div>
+          </section>
+        }
 
         <div class="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
           <section class="bg-white shadow rounded-lg p-6">
@@ -528,6 +578,7 @@ export class DashboardComponent implements OnInit {
   paymentFlowConsultation = signal<HopeHubConsultation | null>(null);
   consultations = signal<HopeHubConsultation[]>([]);
   leads = signal<any[]>([]);
+  resources = signal<DashboardResource[]>([]);
   summary = signal<DashboardSummary>({
     totalBookings: 0,
     pendingPaymentCount: 0,
@@ -553,6 +604,7 @@ export class DashboardComponent implements OnInit {
       next: (dashboard) => {
         this.consultations.set(dashboard.consultations || []);
         this.leads.set(dashboard.leads || []);
+        this.resources.set(dashboard.resources || []);
         this.summary.set(
           dashboard.summary ||
             this.buildLocalSummary(dashboard.consultations || [], dashboard.leads || []),

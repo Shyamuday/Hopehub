@@ -12,6 +12,8 @@ export const HOPE_HUB_ANALYTICS_EVENTS = {
   PAYMENT_SUCCESS: 'hope_hub.payment_success',
   PAYMENT_FAILED: 'hope_hub.payment_failed',
   FOLLOW_UP_REQUESTED: 'hope_hub.follow_up_requested',
+  CONTENT_LOCKED_VIEWED: 'hope_hub.content_locked_viewed',
+  CONTENT_UNLOCKED_CLICKED: 'hope_hub.content_unlocked_clicked',
 } as const;
 
 @Injectable({ providedIn: 'root' })

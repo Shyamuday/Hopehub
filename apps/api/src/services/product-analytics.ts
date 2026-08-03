@@ -23,7 +23,9 @@ export const HOPE_HUB_EVENTS = {
   PAYMENT_STARTED: 'hope_hub.payment_started',
   PAYMENT_SUCCESS: 'hope_hub.payment_success',
   PAYMENT_FAILED: 'hope_hub.payment_failed',
-  FOLLOW_UP_REQUESTED: 'hope_hub.follow_up_requested'
+  FOLLOW_UP_REQUESTED: 'hope_hub.follow_up_requested',
+  CONTENT_LOCKED_VIEWED: 'hope_hub.content_locked_viewed',
+  CONTENT_UNLOCKED_CLICKED: 'hope_hub.content_unlocked_clicked'
 } as const;
 
 export const HOPE_HUB_FUNNEL_STEPS = [
@@ -165,7 +167,9 @@ export async function buildHopeHubAnalyticsReport(days: number) {
     ...HOPE_HUB_FUNNEL_STEPS.map((step) => step.key),
     HOPE_HUB_EVENTS.LOGIN_REQUIRED,
     HOPE_HUB_EVENTS.PAYMENT_FAILED,
-    HOPE_HUB_EVENTS.FOLLOW_UP_REQUESTED
+    HOPE_HUB_EVENTS.FOLLOW_UP_REQUESTED,
+    HOPE_HUB_EVENTS.CONTENT_LOCKED_VIEWED,
+    HOPE_HUB_EVENTS.CONTENT_UNLOCKED_CLICKED
   ];
 
   const [events, consultations, payments] = await Promise.all([
@@ -344,6 +348,8 @@ export async function buildHopeHubAnalyticsReport(days: number) {
         (counts.get(PRODUCT_EVENTS.PAYMENT_COMPLETED) ?? 0),
       loginRequired: counts.get(HOPE_HUB_EVENTS.LOGIN_REQUIRED) ?? 0,
       followUpsRequested: counts.get(HOPE_HUB_EVENTS.FOLLOW_UP_REQUESTED) ?? 0,
+      contentLockedViews: counts.get(HOPE_HUB_EVENTS.CONTENT_LOCKED_VIEWED) ?? 0,
+      contentUnlockedClicks: counts.get(HOPE_HUB_EVENTS.CONTENT_UNLOCKED_CLICKED) ?? 0,
       offerDiscountInPaise,
       checkoutDiscountInPaise
     },

@@ -112,6 +112,9 @@ export class HopeHubOffersPage implements OnInit {
       youtubeUrl: offer.metadata?.youtubeUrl || '',
       mediaAccessNote: offer.metadata?.mediaAccessNote || '',
       mediaAccessMode: offer.metadata?.mediaAccessMode || 'PUBLIC',
+      allowedOfferingIdsText: (offer.metadata?.allowedOfferingIds || []).join('\n'),
+      allowedOfferingSlugsText: (offer.metadata?.allowedOfferingSlugs || []).join('\n'),
+      allowedOfferingCodesText: (offer.metadata?.allowedOfferingCodes || []).join('\n'),
     });
     this.tab.set('offers');
   }
@@ -421,6 +424,9 @@ export class HopeHubOffersPage implements OnInit {
       youtubeUrl: '',
       mediaAccessNote: '',
       mediaAccessMode: 'PUBLIC',
+      allowedOfferingIdsText: '',
+      allowedOfferingSlugsText: '',
+      allowedOfferingCodesText: '',
       isActive: true,
       isFeatured: false,
       requiresLeadForm: false,
@@ -469,7 +475,10 @@ export class HopeHubOffersPage implements OnInit {
     youtubeUrl: string;
     mediaAccessNote: string;
     mediaAccessMode: string;
-  }): Record<string, string> | null {
+    allowedOfferingIdsText: string;
+    allowedOfferingSlugsText: string;
+    allowedOfferingCodesText: string;
+  }): Record<string, string | string[]> | null {
     const metadata = {
       mediaAccessMode: form.mediaAccessMode.trim() || 'PUBLIC',
       telegramGroupUrl: form.telegramGroupUrl.trim(),
@@ -479,8 +488,15 @@ export class HopeHubOffersPage implements OnInit {
       recordedVideoUrl: form.recordedVideoUrl.trim(),
       youtubeUrl: form.youtubeUrl.trim(),
       mediaAccessNote: form.mediaAccessNote.trim(),
+      allowedOfferingIds: this.lines(form.allowedOfferingIdsText),
+      allowedOfferingSlugs: this.lines(form.allowedOfferingSlugsText),
+      allowedOfferingCodes: this.lines(form.allowedOfferingCodesText),
     };
-    const clean = Object.fromEntries(Object.entries(metadata).filter(([, value]) => value));
+    const clean = Object.fromEntries(
+      Object.entries(metadata).filter(([, value]) =>
+        Array.isArray(value) ? value.length > 0 : Boolean(value),
+      ),
+    );
     return Object.keys(clean).length ? clean : null;
   }
 
