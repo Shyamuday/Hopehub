@@ -37,6 +37,23 @@
         <label>Sort order <input type="number" name="sortOrder" [(ngModel)]="form().sortOrder" /></label>
       </div>
       <label>Description <textarea rows="3" name="description" [(ngModel)]="form().description" required></textarea></label>
+      <div class="two">
+        <label>
+          Access
+          <select name="accessMode" [(ngModel)]="form().accessMode">
+            <option value="FREE">Free</option>
+            <option value="LOGIN_REQUIRED">Free after sign in</option>
+            <option value="PAID">Paid</option>
+          </select>
+        </label>
+        <label>Price (INR) <input type="number" min="0" name="priceRupees" [(ngModel)]="form().priceRupees" /></label>
+        <label>Coupon code <input name="couponCode" [(ngModel)]="form().couponCode" placeholder="TESTFREE" /></label>
+        <label>Coupon label <input name="couponLabel" [(ngModel)]="form().couponLabel" placeholder="Free access code" /></label>
+        <label>Coupon starts <input type="datetime-local" name="couponStartsAt" [(ngModel)]="form().couponStartsAt" /></label>
+        <label>Coupon ends <input type="datetime-local" name="couponEndsAt" [(ngModel)]="form().couponEndsAt" /></label>
+        <label>Max redemptions <input type="number" min="1" name="couponMaxRedemptions" [(ngModel)]="form().couponMaxRedemptions" /></label>
+      </div>
+      <label>Access note <textarea rows="2" name="accessNote" [(ngModel)]="form().accessNote" placeholder="Shown to users before unlocking"></textarea></label>
       <label class="check"><input type="checkbox" name="active" [(ngModel)]="form().isActive" /> Publish after save</label>
       <label>Config JSON <textarea class="json" rows="24" name="configJson" [(ngModel)]="form().configJson" required></textarea></label>
       <div class="actions">
@@ -53,7 +70,13 @@
           <article class="row">
             <div>
               <strong>{{ definition.title }}</strong>
-              <span>{{ definition.id }} · {{ definition.category }} · {{ definition.version }}</span>
+              <span>
+                {{ definition.id }} · {{ definition.category }} · {{ definition.version }} ·
+                {{ definition.accessMode || 'FREE' }}
+                @if (definition.priceInPaise) {
+                  · ₹{{ definition.priceInPaise / 100 }}
+                }
+              </span>
             </div>
             <div class="row-actions">
               <span class="status" [class.live]="definition.isActive">{{ definition.isActive ? 'Live' : 'Draft' }}</span>

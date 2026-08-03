@@ -1,9 +1,18 @@
 import { Router } from 'express';
 import { Prisma } from '@prisma/client';
 import { z } from 'zod';
+import { authOptional, authRequired } from '../auth.js';
 import { prisma } from '../db.js';
 import { asyncRoute, queryPositiveInt, queryText, routeParam } from '../utils/helpers.js';
-import { getAssessmentDefinition, scoreAssessment } from '../services/assessment-definitions.js';
+import {
+  assertAssessmentAccess,
+  getAssessmentAccessStatus,
+  getAssessmentDefinition,
+  normalizeAssessmentAccessMode,
+  redeemAssessmentCoupon,
+  scoreAssessment,
+  serializeAssessmentAccess
+} from '../services/assessment-definitions.js';
 
 type AssessmentDefinitionRow = {
   id: string;
@@ -13,6 +22,10 @@ type AssessmentDefinitionRow = {
   description: string;
   version: string;
   config: unknown;
+  accessMode: string;
+  priceInPaise: number | null;
+  couponLabel: string | null;
+  accessNote: string | null;
   sortOrder: number;
 };
 
@@ -20,8 +33,17 @@ export const assessmentDefinitionsRouter = Router();
 const assessmentScoreSchema = z.object({
   answers: z.array(z.number().int().min(0).max(10)).min(1).max(120)
 });
+const redeemCouponSchema = z.object({
+  couponCode: z.string().trim().min(2).max(80)
+});
 
 function serializeDefinition(row: AssessmentDefinitionRow) {
+  const access = serializeAssessmentAccess({
+    accessMode: normalizeAssessmentAccessMode(row.accessMode),
+    priceInPaise: row.priceInPaise,
+    couponLabel: row.couponLabel,
+    accessNote: row.accessNote
+  });
   return {
     id: row.id,
     type: row.type,
@@ -30,7 +52,15 @@ function serializeDefinition(row: AssessmentDefinitionRow) {
     description: row.description,
     version: row.version,
     sortOrder: row.sortOrder,
-    config: row.config
+    config: row.config,
+    access
+  };
+}
+
+function serializeAssessmentConfig(row: AssessmentDefinitionRow) {
+  return {
+    ...(row.config as Record<string, unknown>),
+    access: serializeDefinition(row).access
   };
 }
 
@@ -68,6 +98,10 @@ assessmentDefinitionsRouter.get(
           "description",
           "version",
           "config",
+          "accessMode",
+          "priceInPaise",
+          "couponLabel",
+          "accessNote",
           "sortOrder"
         FROM "AssessmentDefinition"
         ${where}
@@ -84,7 +118,7 @@ assessmentDefinitionsRouter.get(
 
     const total = Number(countRows[0]?.count ?? 0);
     res.json({
-      assessments: rows.map((row) => row.config),
+      assessments: rows.map(serializeAssessmentConfig),
       definitions: rows.map(serializeDefinition),
       pagination: {
         page,
@@ -109,6 +143,10 @@ assessmentDefinitionsRouter.get(
         "description",
         "version",
         "config",
+        "accessMode",
+        "priceInPaise",
+        "couponLabel",
+        "accessNote",
         "sortOrder"
       FROM "AssessmentDefinition"
       WHERE "id" = ${id} AND "isActive" = true
@@ -122,14 +160,52 @@ assessmentDefinitionsRouter.get(
     }
 
     res.json({
-      assessment: definition.config,
+      assessment: serializeAssessmentConfig(definition),
       definition: serializeDefinition(definition)
     });
   })
 );
 
+assessmentDefinitionsRouter.get(
+  '/assessment-definitions/:id/access',
+  authOptional,
+  asyncRoute(async (req, res) => {
+    const definition = await getAssessmentDefinition(routeParam(req, 'id'));
+    if (!definition) {
+      res.status(404).json({ message: 'Assessment definition not found.' });
+      return;
+    }
+
+    res.json({ access: await getAssessmentAccessStatus(definition, req.user?.id) });
+  })
+);
+
+assessmentDefinitionsRouter.post(
+  '/assessment-definitions/:id/redeem-coupon',
+  authRequired,
+  asyncRoute(async (req, res) => {
+    const definition = await getAssessmentDefinition(routeParam(req, 'id'));
+    if (!definition) {
+      res.status(404).json({ message: 'Assessment definition not found.' });
+      return;
+    }
+
+    const body = redeemCouponSchema.parse(req.body);
+    try {
+      const result = await redeemAssessmentCoupon(definition, req.user!.id, body.couponCode);
+      res.json(result);
+    } catch (error) {
+      const statusCode = (error as Error & { statusCode?: number }).statusCode ?? 400;
+      res.status(statusCode).json({
+        message: error instanceof Error ? error.message : 'Could not redeem coupon.'
+      });
+    }
+  })
+);
+
 assessmentDefinitionsRouter.post(
   '/assessment-definitions/:id/score',
+  authOptional,
   asyncRoute(async (req, res) => {
     const id = routeParam(req, 'id');
     const body = assessmentScoreSchema.parse(req.body);
@@ -140,9 +216,12 @@ assessmentDefinitionsRouter.post(
     }
 
     try {
+      await assertAssessmentAccess(definition, req.user?.id);
       res.json({ result: scoreAssessment(definition, body.answers) });
     } catch (error) {
-      res.status(400).json({
+      const statusCode = (error as Error & { statusCode?: number }).statusCode ?? 400;
+      res.status(statusCode).json({
+        message: error instanceof Error ? error.message : 'Could not score assessment',
         error: error instanceof Error ? error.message : 'Could not score assessment'
       });
     }

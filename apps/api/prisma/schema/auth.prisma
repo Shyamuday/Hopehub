@@ -189,6 +189,8 @@ model User {
   followUpEntitlements ConsultationFollowUpEntitlement[] @relation("UserFollowUpEntitlements")
   practiceSessions    UserPracticeSession[] @relation("UserPracticeSessions")
   lifestyleTipSessions UserLifestyleTipSession[] @relation("UserLifestyleTipSessions")
+  assessmentAccessGrants AssessmentAccessGrant[] @relation("AssessmentAccessGrants")
+  assessmentCouponRedemptions AssessmentCouponRedemption[] @relation("AssessmentCouponRedemptions")
   emailVerified      Boolean        @default(false)
   authProvider       String?
   lastLoginAt        DateTime?

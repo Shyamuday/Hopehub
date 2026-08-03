@@ -5,12 +5,19 @@ import { environment } from '../../../environments/environment';
 import { AssessmentConfig } from '../models/assessment.model';
 import { ASSESSMENT_CONFIGS, getAssessmentConfig } from '../data/assessment-configs';
 
+export type AssessmentAccess = NonNullable<AssessmentConfig['access']>;
+
 type AssessmentDefinitionsResponse = {
   assessments: AssessmentConfig[];
 };
 
 type AssessmentDefinitionResponse = {
   assessment: AssessmentConfig;
+};
+
+type AssessmentAccessResponse = {
+  access: AssessmentAccess;
+  alreadyRedeemed?: boolean;
 };
 
 @Injectable({ providedIn: 'root' })
@@ -43,5 +50,23 @@ export class AssessmentDefinitionService {
         map((response) => response.assessment ?? getAssessmentConfig(id) ?? null),
         catchError(() => of(getAssessmentConfig(id) ?? null)),
       );
+  }
+
+  access(id: string): Observable<AssessmentAccess | null> {
+    return this.http
+      .get<AssessmentAccessResponse>(
+        `${this.apiUrl}/assessment-definitions/${encodeURIComponent(id)}/access`,
+      )
+      .pipe(
+        map((response) => response.access ?? null),
+        catchError(() => of(null)),
+      );
+  }
+
+  redeemCoupon(id: string, couponCode: string): Observable<AssessmentAccessResponse> {
+    return this.http.post<AssessmentAccessResponse>(
+      `${this.apiUrl}/assessment-definitions/${encodeURIComponent(id)}/redeem-coupon`,
+      { couponCode },
+    );
   }
 }

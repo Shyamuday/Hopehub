@@ -29,6 +29,14 @@ const assessmentDefinitionSchema = z.object({
   description: z.string().trim().min(5).max(3000),
   version: z.string().trim().min(1).max(40).default('v1'),
   config: z.record(z.string(), z.unknown()),
+  accessMode: z.enum(['FREE', 'LOGIN_REQUIRED', 'PAID']).default('FREE'),
+  priceInPaise: z.number().int().min(0).max(10000000).nullable().optional(),
+  couponCode: z.string().trim().min(2).max(80).nullable().optional(),
+  couponLabel: z.string().trim().min(2).max(160).nullable().optional(),
+  couponStartsAt: z.coerce.date().nullable().optional(),
+  couponEndsAt: z.coerce.date().nullable().optional(),
+  couponMaxRedemptions: z.number().int().min(1).max(100000).nullable().optional(),
+  accessNote: z.string().trim().max(1000).nullable().optional(),
   isActive: z.boolean().default(false),
   sortOrder: z.number().int().min(0).max(100000).default(0)
 });
@@ -81,7 +89,10 @@ export function registerAdminAssessmentDefinitionRoutes(router: Router) {
 
       const [definitions, countRows] = await Promise.all([
         prisma.$queryRaw(Prisma.sql`
-          SELECT "id", "type", "category", "title", "description", "version", "config", "isActive", "sortOrder"
+          SELECT
+            "id", "type", "category", "title", "description", "version", "config",
+            "accessMode", "priceInPaise", "couponCode", "couponLabel", "couponStartsAt",
+            "couponEndsAt", "couponMaxRedemptions", "accessNote", "isActive", "sortOrder"
           FROM "AssessmentDefinition"
           ${where}
           ORDER BY "sortOrder" ASC, "title" ASC
@@ -132,8 +143,18 @@ export function registerAdminAssessmentDefinitionRoutes(router: Router) {
       }
 
       await prisma.$executeRaw(Prisma.sql`
-        INSERT INTO "AssessmentDefinition" ("id", "type", "category", "title", "description", "version", "config", "isActive", "sortOrder", "updatedAt")
-        VALUES (${body.id}, ${body.type}, ${body.category}, ${body.title}, ${body.description}, ${body.version}, ${body.config as Prisma.InputJsonValue}::jsonb, ${body.isActive}, ${body.sortOrder}, CURRENT_TIMESTAMP)
+        INSERT INTO "AssessmentDefinition" (
+          "id", "type", "category", "title", "description", "version", "config",
+          "accessMode", "priceInPaise", "couponCode", "couponLabel", "couponStartsAt",
+          "couponEndsAt", "couponMaxRedemptions", "accessNote", "isActive", "sortOrder", "updatedAt"
+        )
+        VALUES (
+          ${body.id}, ${body.type}, ${body.category}, ${body.title}, ${body.description}, ${body.version},
+          ${body.config as Prisma.InputJsonValue}::jsonb, ${body.accessMode}, ${body.priceInPaise ?? null},
+          ${body.couponCode?.toUpperCase() ?? null}, ${body.couponLabel ?? null}, ${body.couponStartsAt ?? null},
+          ${body.couponEndsAt ?? null}, ${body.couponMaxRedemptions ?? null}, ${body.accessNote ?? null},
+          ${body.isActive}, ${body.sortOrder}, CURRENT_TIMESTAMP
+        )
         ON CONFLICT ("id") DO UPDATE SET
           "type" = EXCLUDED."type",
           "category" = EXCLUDED."category",
@@ -141,6 +162,14 @@ export function registerAdminAssessmentDefinitionRoutes(router: Router) {
           "description" = EXCLUDED."description",
           "version" = EXCLUDED."version",
           "config" = EXCLUDED."config",
+          "accessMode" = EXCLUDED."accessMode",
+          "priceInPaise" = EXCLUDED."priceInPaise",
+          "couponCode" = EXCLUDED."couponCode",
+          "couponLabel" = EXCLUDED."couponLabel",
+          "couponStartsAt" = EXCLUDED."couponStartsAt",
+          "couponEndsAt" = EXCLUDED."couponEndsAt",
+          "couponMaxRedemptions" = EXCLUDED."couponMaxRedemptions",
+          "accessNote" = EXCLUDED."accessNote",
           "isActive" = EXCLUDED."isActive",
           "sortOrder" = EXCLUDED."sortOrder",
           "updatedAt" = CURRENT_TIMESTAMP
@@ -191,6 +220,14 @@ export function registerAdminAssessmentDefinitionRoutes(router: Router) {
           "description" = ${next.description},
           "version" = ${next.version},
           "config" = ${next.config as Prisma.InputJsonValue}::jsonb,
+          "accessMode" = ${next.accessMode},
+          "priceInPaise" = ${next.priceInPaise ?? null},
+          "couponCode" = ${next.couponCode?.toUpperCase() ?? null},
+          "couponLabel" = ${next.couponLabel ?? null},
+          "couponStartsAt" = ${next.couponStartsAt ?? null},
+          "couponEndsAt" = ${next.couponEndsAt ?? null},
+          "couponMaxRedemptions" = ${next.couponMaxRedemptions ?? null},
+          "accessNote" = ${next.accessNote ?? null},
           "isActive" = ${next.isActive},
           "sortOrder" = ${next.sortOrder},
           "updatedAt" = CURRENT_TIMESTAMP

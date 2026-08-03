@@ -9,12 +9,57 @@ model AssessmentDefinition {
 
   config Json
 
+  accessMode           String    @default("FREE")
+  priceInPaise         Int?
+  couponCode           String?
+  couponLabel          String?
+  couponStartsAt       DateTime?
+  couponEndsAt         DateTime?
+  couponMaxRedemptions Int?
+  accessNote           String?   @db.Text
+
   isActive  Boolean @default(true)
   sortOrder Int     @default(0)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  accessGrants      AssessmentAccessGrant[]
+  couponRedemptions AssessmentCouponRedemption[]
+
   @@index([category, isActive])
   @@index([isActive, sortOrder])
+  @@index([accessMode])
+}
+
+model AssessmentAccessGrant {
+  id           String   @id @default(cuid())
+  userId       String
+  assessmentId String
+  source       String
+  couponCode   String?
+  paymentId    String?
+  expiresAt    DateTime?
+  createdAt    DateTime @default(now())
+
+  user       User                 @relation("AssessmentAccessGrants", fields: [userId], references: [id], onDelete: Cascade)
+  assessment AssessmentDefinition @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, assessmentId, source, couponCode])
+  @@index([assessmentId, createdAt])
+  @@index([userId, createdAt])
+}
+
+model AssessmentCouponRedemption {
+  id           String   @id @default(cuid())
+  userId       String
+  assessmentId String
+  couponCode   String
+  createdAt    DateTime @default(now())
+
+  user       User                 @relation("AssessmentCouponRedemptions", fields: [userId], references: [id], onDelete: Cascade)
+  assessment AssessmentDefinition @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, assessmentId, couponCode])
+  @@index([assessmentId, couponCode])
 }

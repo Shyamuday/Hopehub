@@ -9,7 +9,10 @@ import { getArticleRecommendations } from '../../core/data/article-recommendatio
 import { AuthService } from '../../core/services/auth.service';
 import { AuthModalService } from '../../core/services/auth-modal.service';
 import { AssessmentAttemptsService } from '../../core/services/assessment-attempts.service';
-import { AssessmentDefinitionService } from '../../core/services/assessment-definition.service';
+import {
+  AssessmentAccess,
+  AssessmentDefinitionService,
+} from '../../core/services/assessment-definition.service';
 import { NotificationService } from '../../core/services/notification.service';
 
 @Component({
@@ -41,91 +44,184 @@ import { NotificationService } from '../../core/services/notification.service';
                 <h1 class="mt-1 text-xl font-semibold text-gray-950 sm:text-2xl">
                   {{ publicTitle() }}
                 </h1>
-              </div>
-
-              <div class="mb-4">
-                <div
-                  class="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
-                >
-                  <div class="text-sm text-gray-600">
-                    @if (viewMode() === 'single') {
-                      <span
-                        >Question {{ currentQuestion() + 1 }} of
-                        {{ assessment()!.questions.length }}</span
-                      >
-                    } @else {
-                      <span
-                        >{{ answeredCount() }} of
-                        {{ assessment()!.questions.length }} answered</span
-                      >
+                @if (assessmentAccess()?.accessMode === 'PAID') {
+                  <p class="mt-2 text-sm font-semibold text-primary-700">
+                    {{ assessmentPriceLabel() }}
+                    @if (assessmentAccess()?.canAccess) {
+                      <span class="ml-2 text-green-700">Unlocked</span>
                     }
-                    <span class="ml-2 font-semibold text-gray-800">{{ progressPercent() }}%</span>
-                  </div>
-                  <div class="direct-test__mode" aria-label="Question view mode">
-                    <button
-                      type="button"
-                      [class.active]="viewMode() === 'single'"
-                      (click)="setViewMode('single')"
-                    >
-                      One by one
-                    </button>
-                    <button
-                      type="button"
-                      [class.active]="viewMode() === 'all'"
-                      (click)="setViewMode('all')"
-                    >
-                      All questions
-                    </button>
-                  </div>
-                </div>
-                <div class="h-2 rounded-full bg-gray-100">
-                  <div
-                    class="h-2 rounded-full bg-primary-600 transition-all"
-                    [style.width.%]="progressPercent()"
-                  ></div>
-                </div>
+                  </p>
+                }
               </div>
 
-              @if (viewMode() === 'single') {
-                <h2 class="mb-3 text-base font-semibold leading-snug text-gray-950 sm:text-lg">
-                  {{ currentQuestionText() }}
-                </h2>
-
-                <div class="grid gap-2">
-                  @for (option of assessment()!.responseOptions; track option.value) {
-                    <button
-                      type="button"
-                      class="direct-test__option"
-                      [class.direct-test__option--selected]="
-                        answers()[currentQuestion()] === option.value
-                      "
-                      (click)="selectAnswer(option.value)"
-                    >
-                      {{ option.label }}
-                    </button>
+              @if (!canStartAssessment()) {
+                <div class="direct-test__lock mb-4">
+                  <h2 class="text-lg font-semibold text-gray-950">Unlock this test</h2>
+                  <p class="mt-2 text-sm leading-6 text-gray-700">
+                    {{ assessmentAccess()?.accessNote || lockedAssessmentMessage() }}
+                  </p>
+                  @if (assessmentAccess()?.accessMode === 'PAID') {
+                    <div class="mt-4 flex flex-col gap-3 sm:flex-row">
+                      <input
+                        type="text"
+                        class="direct-test__coupon"
+                        placeholder="Coupon code"
+                        [value]="couponCode()"
+                        (input)="couponCode.set($any($event.target).value)"
+                      />
+                      <button
+                        type="button"
+                        class="btn-primary btn-sm"
+                        [disabled]="redeemingCoupon() || !couponCode().trim()"
+                        (click)="redeemCoupon()"
+                      >
+                        {{ redeemingCoupon() ? 'Checking...' : 'Apply coupon' }}
+                      </button>
+                    </div>
+                    @if (assessmentAccess()?.couponLabel) {
+                      <p class="mt-2 text-xs font-semibold text-gray-500">
+                        {{ assessmentAccess()!.couponLabel }}
+                      </p>
+                    }
                   }
+                  <div class="mt-4 flex flex-col gap-3 sm:flex-row">
+                    <button type="button" class="btn-outline btn-sm" (click)="openLogin()">
+                      Sign in
+                    </button>
+                    @if (assessmentAccess()?.accessMode === 'PAID') {
+                      <a routerLink="/contact" class="btn-primary btn-sm">Book to unlock</a>
+                    }
+                  </div>
+                </div>
+              }
+
+              @if (canStartAssessment()) {
+                <div class="mb-4">
+                  <div
+                    class="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
+                  >
+                    <div class="text-sm text-gray-600">
+                      @if (viewMode() === 'single') {
+                        <span
+                          >Question {{ currentQuestion() + 1 }} of
+                          {{ assessment()!.questions.length }}</span
+                        >
+                      } @else {
+                        <span
+                          >{{ answeredCount() }} of
+                          {{ assessment()!.questions.length }} answered</span
+                        >
+                      }
+                      <span class="ml-2 font-semibold text-gray-800">{{ progressPercent() }}%</span>
+                    </div>
+                    <div class="direct-test__mode" aria-label="Question view mode">
+                      <button
+                        type="button"
+                        [class.active]="viewMode() === 'single'"
+                        (click)="setViewMode('single')"
+                      >
+                        One by one
+                      </button>
+                      <button
+                        type="button"
+                        [class.active]="viewMode() === 'all'"
+                        (click)="setViewMode('all')"
+                      >
+                        All questions
+                      </button>
+                    </div>
+                  </div>
+                  <div class="h-2 rounded-full bg-gray-100">
+                    <div
+                      class="h-2 rounded-full bg-primary-600 transition-all"
+                      [style.width.%]="progressPercent()"
+                    ></div>
+                  </div>
                 </div>
 
-                <div class="flex items-center justify-between gap-3 pt-4">
-                  <button
-                    type="button"
-                    class="btn-outline btn-sm"
-                    [disabled]="currentQuestion() === 0"
-                    (click)="previousQuestion()"
-                  >
-                    Previous
-                  </button>
+                @if (viewMode() === 'single') {
+                  <h2 class="mb-3 text-base font-semibold leading-snug text-gray-950 sm:text-lg">
+                    {{ currentQuestionText() }}
+                  </h2>
 
-                  @if (currentQuestion() < assessment()!.questions.length - 1) {
+                  <div class="grid gap-2">
+                    @for (option of assessment()!.responseOptions; track option.value) {
+                      <button
+                        type="button"
+                        class="direct-test__option"
+                        [class.direct-test__option--selected]="
+                          answers()[currentQuestion()] === option.value
+                        "
+                        (click)="selectAnswer(option.value)"
+                      >
+                        {{ option.label }}
+                      </button>
+                    }
+                  </div>
+
+                  <div class="flex items-center justify-between gap-3 pt-4">
                     <button
                       type="button"
-                      class="btn-primary btn-sm"
-                      [disabled]="!hasCurrentAnswer()"
-                      (click)="nextQuestion()"
+                      class="btn-outline btn-sm"
+                      [disabled]="currentQuestion() === 0"
+                      (click)="previousQuestion()"
                     >
-                      Next
+                      Previous
                     </button>
-                  } @else {
+
+                    @if (currentQuestion() < assessment()!.questions.length - 1) {
+                      <button
+                        type="button"
+                        class="btn-primary btn-sm"
+                        [disabled]="!hasCurrentAnswer()"
+                        (click)="nextQuestion()"
+                      >
+                        Next
+                      </button>
+                    } @else {
+                      <button
+                        type="button"
+                        class="btn-primary btn-sm"
+                        [disabled]="!hasAllAnswers() || savingResult()"
+                        (click)="completeAssessment()"
+                      >
+                        {{ savingResult() ? 'Saving...' : 'See result' }}
+                      </button>
+                    }
+                  </div>
+                } @else {
+                  <div class="grid gap-4">
+                    @for (question of assessment()!.questions; track question.id; let i = $index) {
+                      <section class="direct-test__question-block">
+                        <div class="mb-2 flex items-start gap-3">
+                          <span class="direct-test__question-number">{{ i + 1 }}</span>
+                          <h2 class="text-sm font-semibold leading-6 text-gray-950 sm:text-base">
+                            {{ question.text }}
+                          </h2>
+                        </div>
+
+                        <div class="grid gap-2 sm:grid-cols-2">
+                          @for (option of assessment()!.responseOptions; track option.value) {
+                            <button
+                              type="button"
+                              class="direct-test__option"
+                              [class.direct-test__option--selected]="answers()[i] === option.value"
+                              (click)="selectAnswerAt(i, option.value)"
+                            >
+                              {{ option.label }}
+                            </button>
+                          }
+                        </div>
+                      </section>
+                    }
+                  </div>
+
+                  <div
+                    class="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"
+                  >
+                    <p class="text-sm font-semibold text-gray-600">
+                      {{ answeredCount() }} of {{ assessment()!.questions.length }} answered
+                    </p>
                     <button
                       type="button"
                       class="btn-primary btn-sm"
@@ -134,50 +230,8 @@ import { NotificationService } from '../../core/services/notification.service';
                     >
                       {{ savingResult() ? 'Saving...' : 'See result' }}
                     </button>
-                  }
-                </div>
-              } @else {
-                <div class="grid gap-4">
-                  @for (question of assessment()!.questions; track question.id; let i = $index) {
-                    <section class="direct-test__question-block">
-                      <div class="mb-2 flex items-start gap-3">
-                        <span class="direct-test__question-number">{{ i + 1 }}</span>
-                        <h2 class="text-sm font-semibold leading-6 text-gray-950 sm:text-base">
-                          {{ question.text }}
-                        </h2>
-                      </div>
-
-                      <div class="grid gap-2 sm:grid-cols-2">
-                        @for (option of assessment()!.responseOptions; track option.value) {
-                          <button
-                            type="button"
-                            class="direct-test__option"
-                            [class.direct-test__option--selected]="answers()[i] === option.value"
-                            (click)="selectAnswerAt(i, option.value)"
-                          >
-                            {{ option.label }}
-                          </button>
-                        }
-                      </div>
-                    </section>
-                  }
-                </div>
-
-                <div
-                  class="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"
-                >
-                  <p class="text-sm font-semibold text-gray-600">
-                    {{ answeredCount() }} of {{ assessment()!.questions.length }} answered
-                  </p>
-                  <button
-                    type="button"
-                    class="btn-primary btn-sm"
-                    [disabled]="!hasAllAnswers() || savingResult()"
-                    (click)="completeAssessment()"
-                  >
-                    {{ savingResult() ? 'Saving...' : 'See result' }}
-                  </button>
-                </div>
+                  </div>
+                }
               }
             </div>
           }
@@ -373,6 +427,25 @@ import { NotificationService } from '../../core/services/notification.service';
         font-weight: 900;
       }
 
+      .direct-test__lock {
+        border: 1px solid rgba(74, 111, 165, 0.22);
+        border-radius: 0.75rem;
+        background: rgba(74, 111, 165, 0.06);
+        padding: 1rem;
+      }
+
+      .direct-test__coupon {
+        min-height: 2.5rem;
+        flex: 1 1 auto;
+        border: 1px solid #d1d5db;
+        border-radius: 0.5rem;
+        background: #fff;
+        padding: 0.55rem 0.75rem;
+        color: #111827;
+        font-weight: 700;
+        text-transform: uppercase;
+      }
+
       @media (max-width: 639px) {
         .direct-test__option {
           min-height: 2.45rem;
@@ -394,6 +467,9 @@ export class DirectAssessmentComponent implements OnInit {
   private autoNextTimer: ReturnType<typeof setTimeout> | null = null;
 
   assessment = signal<AssessmentConfig | null>(null);
+  assessmentAccess = signal<AssessmentAccess | null>(null);
+  couponCode = signal('');
+  redeemingCoupon = signal(false);
   viewMode = signal<'single' | 'all'>('single');
   currentQuestion = signal(0);
   answers = signal<number[]>([]);
@@ -424,6 +500,9 @@ export class DirectAssessmentComponent implements OnInit {
 
   constructor() {
     this.authService.authState$.pipe(takeUntilDestroyed()).subscribe((state) => {
+      if (state.isAuthenticated && this.assessment()) {
+        void this.refreshAccess();
+      }
       if (state.isAuthenticated && this.resultLocked() && this.result()) {
         void this.saveAndShowResult();
       }
@@ -441,8 +520,60 @@ export class DirectAssessmentComponent implements OnInit {
     if (!assessment) return;
 
     this.assessment.set(assessment);
+    this.assessmentAccess.set(assessment.access ?? null);
     this.answers.set(new Array(assessment.questions.length).fill(undefined));
+    await this.refreshAccess();
     this.restorePendingResult(assessment.id);
+  }
+
+  canStartAssessment(): boolean {
+    const access = this.assessmentAccess() ?? this.assessment()?.access ?? null;
+    return !access || access.accessMode === 'FREE' || access.canAccess === true;
+  }
+
+  assessmentPriceLabel(): string {
+    const priceInPaise =
+      this.assessmentAccess()?.priceInPaise ?? this.assessment()?.access?.priceInPaise;
+    return priceInPaise ? `₹${Math.round(priceInPaise / 100)}` : 'Paid test';
+  }
+
+  lockedAssessmentMessage(): string {
+    const access = this.assessmentAccess();
+    if (access?.reason === 'SIGN_IN_REQUIRED' || access?.accessMode === 'LOGIN_REQUIRED') {
+      return 'Sign in to start this test and keep the result saved to your account.';
+    }
+    return 'This is a paid test. Use a valid coupon code or complete payment to unlock it.';
+  }
+
+  async redeemCoupon(): Promise<void> {
+    const assessment = this.assessment();
+    const code = this.couponCode().trim();
+    if (!assessment || !code) return;
+    if (!this.authService.getToken()) {
+      this.notificationService.info('Please sign in before applying a coupon.');
+      this.authModalService.openLogin();
+      return;
+    }
+
+    this.redeemingCoupon.set(true);
+    try {
+      const response = await firstValueFrom(
+        this.assessmentDefinitionService.redeemCoupon(assessment.id, code),
+      );
+      this.assessmentAccess.set(response.access);
+      this.couponCode.set('');
+      this.notificationService.success(
+        response.alreadyRedeemed
+          ? 'This test is already unlocked.'
+          : 'Coupon applied. Test unlocked.',
+      );
+    } catch (error: any) {
+      this.notificationService.error(
+        error?.error?.message || error?.message || 'Could not apply coupon.',
+      );
+    } finally {
+      this.redeemingCoupon.set(false);
+    }
   }
 
   hasCurrentAnswer(): boolean {
@@ -503,6 +634,10 @@ export class DirectAssessmentComponent implements OnInit {
   async completeAssessment(): Promise<void> {
     const assessment = this.assessment();
     if (!assessment || !this.hasAllAnswers()) return;
+    if (!this.canStartAssessment()) {
+      this.notificationService.warning(this.lockedAssessmentMessage());
+      return;
+    }
 
     const answers = this.answers();
     let result: AssessmentResult;
@@ -626,6 +761,13 @@ export class DirectAssessmentComponent implements OnInit {
     if (!this.autoNextTimer) return;
     clearTimeout(this.autoNextTimer);
     this.autoNextTimer = null;
+  }
+
+  private async refreshAccess(): Promise<void> {
+    const assessment = this.assessment();
+    if (!assessment) return;
+    const access = await firstValueFrom(this.assessmentDefinitionService.access(assessment.id));
+    if (access) this.assessmentAccess.set(access);
   }
 
   private savePendingResultLocally(assessment: AssessmentConfig, result: AssessmentResult): void {

@@ -25,7 +25,11 @@ import {
 } from '../services/product-analytics.js';
 import { enrichWithProfileImageUrl, userProfileImagePath } from '../utils/profile-image-url.js';
 import { hopeHubMediaMimeType, readHopeHubMediaFile } from '../services/hope-hub-media-storage.js';
-import { getAssessmentDefinition, scoreAssessment } from '../services/assessment-definitions.js';
+import {
+  assertAssessmentAccess,
+  getAssessmentDefinition,
+  scoreAssessment
+} from '../services/assessment-definitions.js';
 import { isFirstPaidConsultation } from '../services/referral-codes.js';
 
 export const hopeHubRouter = Router();
@@ -1339,9 +1343,11 @@ hopeHubRouter.post(
 
     let scored;
     try {
+      await assertAssessmentAccess(definition, req.user!.id);
       scored = scoreAssessment(definition, body.answers);
     } catch (error) {
-      return res.status(400).json({
+      const statusCode = (error as Error & { statusCode?: number }).statusCode ?? 400;
+      return res.status(statusCode).json({
         message: error instanceof Error ? error.message : 'Could not score assessment.'
       });
     }

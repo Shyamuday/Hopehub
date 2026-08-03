@@ -40,6 +40,8 @@ export type AssessmentConfigDefinition = {
   references?: string[];
 };
 
+export type AssessmentAccessMode = 'FREE' | 'LOGIN_REQUIRED' | 'PAID';
+
 export type AssessmentDefinitionRecord = {
   id: string;
   type: string;
@@ -48,6 +50,14 @@ export type AssessmentDefinitionRecord = {
   description: string;
   version: string;
   config: AssessmentConfigDefinition;
+  accessMode: AssessmentAccessMode;
+  priceInPaise: number | null;
+  couponCode: string | null;
+  couponLabel: string | null;
+  couponStartsAt: Date | null;
+  couponEndsAt: Date | null;
+  couponMaxRedemptions: number | null;
+  accessNote: string | null;
   isActive: boolean;
   sortOrder: number;
 };
@@ -70,6 +80,15 @@ export type AssessmentScoreResult = {
 
 type AssessmentDefinitionRow = Omit<AssessmentDefinitionRecord, 'config'> & {
   config: unknown;
+};
+
+export type AssessmentAccessStatus = {
+  accessMode: AssessmentAccessMode;
+  canAccess: boolean;
+  reason: 'FREE' | 'SIGNED_IN' | 'GRANTED' | 'SIGN_IN_REQUIRED' | 'PAYMENT_REQUIRED';
+  priceInPaise: number | null;
+  couponLabel: string | null;
+  accessNote: string | null;
 };
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
@@ -179,7 +198,27 @@ export function validateAssessmentConfig(config: unknown): string[] {
 function normalizeDefinition(row: AssessmentDefinitionRow): AssessmentDefinitionRecord {
   return {
     ...row,
+    accessMode: normalizeAssessmentAccessMode(row.accessMode),
     config: row.config as AssessmentConfigDefinition
+  };
+}
+
+export function normalizeAssessmentAccessMode(value: unknown): AssessmentAccessMode {
+  if (value === 'LOGIN_REQUIRED' || value === 'PAID') return value;
+  return 'FREE';
+}
+
+export function serializeAssessmentAccess(
+  definition: Pick<
+    AssessmentDefinitionRecord,
+    'accessMode' | 'priceInPaise' | 'couponLabel' | 'accessNote'
+  >
+): Pick<AssessmentAccessStatus, 'accessMode' | 'priceInPaise' | 'couponLabel' | 'accessNote'> {
+  return {
+    accessMode: normalizeAssessmentAccessMode(definition.accessMode),
+    priceInPaise: definition.priceInPaise ?? null,
+    couponLabel: definition.couponLabel ?? null,
+    accessNote: definition.accessNote ?? null
   };
 }
 
@@ -193,6 +232,14 @@ export async function getAssessmentDefinition(id: string, includeInactive = fals
       "description",
       "version",
       "config",
+      "accessMode",
+      "priceInPaise",
+      "couponCode",
+      "couponLabel",
+      "couponStartsAt",
+      "couponEndsAt",
+      "couponMaxRedemptions",
+      "accessNote",
       "isActive",
       "sortOrder"
     FROM "AssessmentDefinition"
@@ -200,6 +247,130 @@ export async function getAssessmentDefinition(id: string, includeInactive = fals
     LIMIT 1
   `);
   return rows[0] ? normalizeDefinition(rows[0]) : null;
+}
+
+export async function getAssessmentAccessStatus(
+  definition: AssessmentDefinitionRecord,
+  userId?: string | null
+): Promise<AssessmentAccessStatus> {
+  const base = serializeAssessmentAccess(definition);
+  const accessMode = normalizeAssessmentAccessMode(definition.accessMode);
+  if (accessMode === 'FREE') {
+    return { ...base, accessMode, canAccess: true, reason: 'FREE' };
+  }
+  if (!userId) {
+    return { ...base, accessMode, canAccess: false, reason: 'SIGN_IN_REQUIRED' };
+  }
+  if (accessMode === 'LOGIN_REQUIRED') {
+    return { ...base, accessMode, canAccess: true, reason: 'SIGNED_IN' };
+  }
+
+  const now = new Date();
+  const grant = await prisma.assessmentAccessGrant.findFirst({
+    where: {
+      userId,
+      assessmentId: definition.id,
+      OR: [{ expiresAt: null }, { expiresAt: { gt: now } }]
+    },
+    select: { id: true }
+  });
+
+  return {
+    ...base,
+    accessMode,
+    canAccess: Boolean(grant),
+    reason: grant ? 'GRANTED' : 'PAYMENT_REQUIRED'
+  };
+}
+
+export async function assertAssessmentAccess(
+  definition: AssessmentDefinitionRecord,
+  userId?: string | null
+): Promise<AssessmentAccessStatus> {
+  const access = await getAssessmentAccessStatus(definition, userId);
+  if (access.canAccess) return access;
+  const error = new Error(
+    access.reason === 'SIGN_IN_REQUIRED'
+      ? 'Please sign in to access this assessment.'
+      : 'This assessment is locked. Use a valid coupon or complete payment to continue.'
+  );
+  (error as Error & { statusCode?: number }).statusCode =
+    access.reason === 'SIGN_IN_REQUIRED' ? 401 : 403;
+  throw error;
+}
+
+export async function redeemAssessmentCoupon(
+  definition: AssessmentDefinitionRecord,
+  userId: string,
+  couponCode: string
+): Promise<{ access: AssessmentAccessStatus; alreadyRedeemed: boolean }> {
+  const normalized = couponCode.trim().toUpperCase();
+  const expected = definition.couponCode?.trim().toUpperCase();
+  if (!expected || normalized !== expected) {
+    const error = new Error('Coupon code is not valid for this assessment.');
+    (error as Error & { statusCode?: number }).statusCode = 400;
+    throw error;
+  }
+
+  const now = new Date();
+  if (definition.couponStartsAt && definition.couponStartsAt > now) {
+    const error = new Error('This coupon is not active yet.');
+    (error as Error & { statusCode?: number }).statusCode = 400;
+    throw error;
+  }
+  if (definition.couponEndsAt && definition.couponEndsAt < now) {
+    const error = new Error('This coupon has expired.');
+    (error as Error & { statusCode?: number }).statusCode = 400;
+    throw error;
+  }
+
+  const existing = await prisma.assessmentCouponRedemption.findUnique({
+    where: {
+      userId_assessmentId_couponCode: {
+        userId,
+        assessmentId: definition.id,
+        couponCode: normalized
+      }
+    },
+    select: { id: true }
+  });
+
+  if (existing) {
+    return {
+      access: await getAssessmentAccessStatus(definition, userId),
+      alreadyRedeemed: true
+    };
+  }
+
+  if (definition.couponMaxRedemptions !== null && definition.couponMaxRedemptions !== undefined) {
+    const used = await prisma.assessmentCouponRedemption.count({
+      where: { assessmentId: definition.id, couponCode: normalized }
+    });
+    if (used >= definition.couponMaxRedemptions) {
+      const error = new Error('This coupon has reached its usage limit.');
+      (error as Error & { statusCode?: number }).statusCode = 400;
+      throw error;
+    }
+  }
+
+  await prisma.$transaction([
+    prisma.assessmentCouponRedemption.create({
+      data: { userId, assessmentId: definition.id, couponCode: normalized }
+    }),
+    prisma.assessmentAccessGrant.create({
+      data: {
+        userId,
+        assessmentId: definition.id,
+        source: 'COUPON',
+        couponCode: normalized
+      }
+    })
+  ]);
+
+  return {
+    access: await getAssessmentAccessStatus(definition, userId),
+    alreadyRedeemed: false
+  };
 }
 
 export function scoreAssessment(

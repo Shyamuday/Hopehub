@@ -76,6 +76,16 @@ export interface AssessmentConfig {
   safetyQuestionIndex?: number;
   duration: string;
   references?: string[];
+  access?: AssessmentAccess;
+}
+
+export interface AssessmentAccess {
+  accessMode: 'FREE' | 'LOGIN_REQUIRED' | 'PAID';
+  canAccess?: boolean;
+  reason?: 'FREE' | 'SIGNED_IN' | 'GRANTED' | 'SIGN_IN_REQUIRED' | 'PAYMENT_REQUIRED';
+  priceInPaise?: number | null;
+  couponLabel?: string | null;
+  accessNote?: string | null;
 }
 
 export interface AssessmentResult {

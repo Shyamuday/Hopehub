@@ -4,6 +4,7 @@ import { RouterModule, Router } from '@angular/router';
 import { DatePipe } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
+  AssessmentAccess,
   AssessmentConfig,
   AssessmentResult,
   AssessmentCategory,
@@ -44,6 +45,9 @@ export class MultiAssessmentComponent implements OnInit {
   categories = signal<AssessmentCategory[]>(Object.values(AssessmentCategory));
   selectedCategory = signal<AssessmentCategory | null>(null);
   selectedAssessment = signal<AssessmentConfig | null>(null);
+  selectedAccess = signal<AssessmentAccess | null>(null);
+  couponCode = signal('');
+  redeemingCoupon = signal(false);
   assessmentStarted = signal(false);
   showResults = signal(false);
   viewMode = signal<'single' | 'all'>('single');
@@ -79,6 +83,9 @@ export class MultiAssessmentComponent implements OnInit {
 
   constructor() {
     this.authService.authState$.pipe(takeUntilDestroyed()).subscribe((state) => {
+      if (state.isAuthenticated && this.selectedAssessment()) {
+        void this.refreshSelectedAccess();
+      }
       if (state.isAuthenticated && this.resultLocked() && this.result()) {
         void this.savePendingResultAndShow();
       }
@@ -110,7 +117,9 @@ export class MultiAssessmentComponent implements OnInit {
 
   selectAssessment(assessment: AssessmentConfig) {
     this.selectedAssessment.set(assessment);
+    this.selectedAccess.set(assessment.access ?? null);
     this.answers.set(new Array(assessment.questions.length).fill(undefined));
+    void this.refreshSelectedAccess();
     this.startAssessment();
   }
 
@@ -161,9 +170,62 @@ export class MultiAssessmentComponent implements OnInit {
     return Boolean(assessment && this.answeredCount() === assessment.questions.length);
   }
 
+  canStartSelectedAssessment(): boolean {
+    const access = this.selectedAccess() ?? this.selectedAssessment()?.access ?? null;
+    return !access || access.accessMode === 'FREE' || access.canAccess === true;
+  }
+
+  assessmentPriceLabel(assessment: AssessmentConfig): string {
+    const priceInPaise = assessment.access?.priceInPaise;
+    return priceInPaise ? `₹${Math.round(priceInPaise / 100)}` : 'Paid';
+  }
+
+  lockedAssessmentMessage(): string {
+    const access = this.selectedAccess();
+    if (access?.reason === 'SIGN_IN_REQUIRED' || access?.accessMode === 'LOGIN_REQUIRED') {
+      return 'Sign in to start this test and save the result privately.';
+    }
+    return 'Use a valid coupon code or complete payment to unlock this test.';
+  }
+
+  async redeemCoupon(): Promise<void> {
+    const assessment = this.selectedAssessment();
+    const code = this.couponCode().trim();
+    if (!assessment || !code) return;
+    if (!this.authService.getToken()) {
+      this.notificationService.info('Please sign in before applying a coupon.');
+      this.authModalService.openLogin();
+      return;
+    }
+
+    this.redeemingCoupon.set(true);
+    try {
+      const response = await firstValueFrom(
+        this.assessmentDefinitionService.redeemCoupon(assessment.id, code),
+      );
+      this.selectedAccess.set(response.access);
+      this.couponCode.set('');
+      this.notificationService.success(
+        response.alreadyRedeemed
+          ? 'This test is already unlocked.'
+          : 'Coupon applied. Test unlocked.',
+      );
+    } catch (error: any) {
+      this.notificationService.error(
+        error?.error?.message || error?.message || 'Could not apply coupon.',
+      );
+    } finally {
+      this.redeemingCoupon.set(false);
+    }
+  }
+
   async calculateResults() {
     const assessment = this.selectedAssessment();
     if (!assessment) return;
+    if (!this.canStartSelectedAssessment()) {
+      this.notificationService.warning(this.lockedAssessmentMessage());
+      return;
+    }
 
     const answersArray = this.answers();
     this.savingResult.set(true);
@@ -226,6 +288,7 @@ export class MultiAssessmentComponent implements OnInit {
 
   takeAnotherAssessment() {
     this.selectedAssessment.set(null);
+    this.selectedAccess.set(null);
     this.assessmentStarted.set(false);
     this.showResults.set(false);
     this.resultLocked.set(false);
@@ -240,6 +303,7 @@ export class MultiAssessmentComponent implements OnInit {
 
   goBack() {
     this.selectedAssessment.set(null);
+    this.selectedAccess.set(null);
     this.assessmentStarted.set(false);
     this.showResults.set(false);
     this.resultLocked.set(false);
@@ -409,6 +473,7 @@ export class MultiAssessmentComponent implements OnInit {
       }
 
       this.selectedAssessment.set(parsed.assessment);
+      this.selectedAccess.set(parsed.assessment.access ?? null);
       this.answers.set(parsed.result.answers);
       this.result.set({
         ...parsed.result,
@@ -424,5 +489,12 @@ export class MultiAssessmentComponent implements OnInit {
   private clearPendingResult() {
     if (typeof sessionStorage === 'undefined') return;
     sessionStorage.removeItem(this.pendingStorageKey);
+  }
+
+  private async refreshSelectedAccess(): Promise<void> {
+    const assessment = this.selectedAssessment();
+    if (!assessment) return;
+    const access = await firstValueFrom(this.assessmentDefinitionService.access(assessment.id));
+    if (access) this.selectedAccess.set(access);
   }
 }

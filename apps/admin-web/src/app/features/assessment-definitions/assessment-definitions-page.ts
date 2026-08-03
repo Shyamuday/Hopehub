@@ -9,6 +9,14 @@ type DefinitionForm = {
   title: string;
   description: string;
   version: string;
+  accessMode: 'FREE' | 'LOGIN_REQUIRED' | 'PAID';
+  priceRupees: number | null;
+  couponCode: string;
+  couponLabel: string;
+  couponStartsAt: string;
+  couponEndsAt: string;
+  couponMaxRedemptions: number | null;
+  accessNote: string;
   sortOrder: number;
   isActive: boolean;
   configJson: string;
@@ -60,6 +68,17 @@ export class AssessmentDefinitionsPage implements OnInit {
       title: definition.title,
       description: definition.description,
       version: definition.version || 'v1',
+      accessMode: definition.accessMode || 'FREE',
+      priceRupees:
+        definition.priceInPaise === null || definition.priceInPaise === undefined
+          ? null
+          : Math.round(Number(definition.priceInPaise) / 100),
+      couponCode: definition.couponCode || '',
+      couponLabel: definition.couponLabel || '',
+      couponStartsAt: this.toDateTimeInput(definition.couponStartsAt),
+      couponEndsAt: this.toDateTimeInput(definition.couponEndsAt),
+      couponMaxRedemptions: definition.couponMaxRedemptions ?? null,
+      accessNote: definition.accessNote || '',
       sortOrder: definition.sortOrder || 0,
       isActive: Boolean(definition.isActive),
       configJson: JSON.stringify(definition.config, null, 2),
@@ -83,6 +102,22 @@ export class AssessmentDefinitionsPage implements OnInit {
         title: current.title || config.title,
         description: current.description || config.description,
         version: current.version,
+        accessMode: current.accessMode,
+        priceInPaise:
+          current.priceRupees === null || current.priceRupees === undefined
+            ? null
+            : Math.max(0, Math.round(Number(current.priceRupees) * 100)),
+        couponCode: current.couponCode.trim() || null,
+        couponLabel: current.couponLabel.trim() || null,
+        couponStartsAt: current.couponStartsAt
+          ? new Date(current.couponStartsAt).toISOString()
+          : null,
+        couponEndsAt: current.couponEndsAt ? new Date(current.couponEndsAt).toISOString() : null,
+        couponMaxRedemptions:
+          current.couponMaxRedemptions === null || current.couponMaxRedemptions === undefined
+            ? null
+            : Number(current.couponMaxRedemptions),
+        accessNote: current.accessNote.trim() || null,
         sortOrder: Number(current.sortOrder || 0),
         isActive: current.isActive,
         config,
@@ -177,9 +212,24 @@ export class AssessmentDefinitionsPage implements OnInit {
       title: '',
       description: '',
       version: 'v1',
+      accessMode: 'FREE',
+      priceRupees: null,
+      couponCode: '',
+      couponLabel: '',
+      couponStartsAt: '',
+      couponEndsAt: '',
+      couponMaxRedemptions: null,
+      accessNote: '',
       sortOrder: 0,
       isActive: false,
       configJson: JSON.stringify(config, null, 2),
     };
+  }
+
+  private toDateTimeInput(value: string | null | undefined): string {
+    if (!value) return '';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '';
+    return date.toISOString().slice(0, 16);
   }
 }
