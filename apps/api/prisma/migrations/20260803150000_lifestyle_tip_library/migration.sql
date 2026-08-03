@@ -205,8 +205,8 @@ INSERT INTO "LifestyleTip" (
 );
 
 INSERT INTO "LifestyleTipRecommendationRule" (
-  "lifestyleTipId", "assessmentType", "concernSlug", "minScore", "maxScore", "priority", "routineSlot", "notes", "updatedAt"
+  "id", "lifestyleTipId", "assessmentType", "concernSlug", "minScore", "maxScore", "priority", "routineSlot", "notes", "updatedAt"
 ) VALUES
-('lifestyle-digital-sunset-anxiety', 'gad7', 'anxiety', 5, 21, 1, 'evening', 'Use for anxiety with sleep disruption or overchecking.', NOW()),
-('lifestyle-breakup-trigger-map', 'breakup-recovery', 'breakup', 61, 160, 1, 'anytime', 'Use when breakup triggers and no-contact difficulty are present.', NOW()),
-('lifestyle-morning-light-low-mood', 'phq9', 'depression', 5, 27, 1, 'morning', 'Use for mild to severe low mood as a small activation step.', NOW());
+('rule-lifestyle-digital-sunset-anxiety-gad7', 'lifestyle-digital-sunset-anxiety', 'gad7', 'anxiety', 5, 21, 1, 'evening', 'Use for anxiety with sleep disruption or overchecking.', NOW()),
+('rule-lifestyle-breakup-trigger-map-breakup', 'lifestyle-breakup-trigger-map', 'breakup-recovery', 'breakup', 61, 160, 1, 'anytime', 'Use when breakup triggers and no-contact difficulty are present.', NOW()),
+('rule-lifestyle-morning-light-low-mood-phq9', 'lifestyle-morning-light-low-mood', 'phq9', 'depression', 5, 27, 1, 'morning', 'Use for mild to severe low mood as a small activation step.', NOW());
