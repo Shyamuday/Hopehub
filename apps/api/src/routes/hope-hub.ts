@@ -1,6 +1,12 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { HomeopathicDoctorType, HopeHubOfferingType, PaymentStatus, Role } from '@prisma/client';
+import {
+  FollowUpEntitlementStatus,
+  HomeopathicDoctorType,
+  HopeHubOfferingType,
+  PaymentStatus,
+  Role
+} from '@prisma/client';
 import { authOptional, authRequired, allowRoles } from '../auth.js';
 import { prisma } from '../db.js';
 import {
@@ -1550,7 +1556,10 @@ hopeHubRouter.get(
   asyncRoute(async (req, res) => {
     const consultations = await prisma.consultation.findMany({
       where: { patientId: req.user!.id },
-      include: includeConsultationRelations(),
+      include: {
+        ...includeConsultationRelations(),
+        followUpEntitlement: true
+      },
       orderBy: { createdAt: 'desc' },
       take: 10
     });
@@ -1582,5 +1591,43 @@ hopeHubRouter.get(
       })),
       leads
     });
+  })
+);
+
+hopeHubRouter.post(
+  '/hope-hub/follow-ups/:id/request',
+  authRequired,
+  allowRoles(Role.PATIENT),
+  asyncRoute(async (req, res) => {
+    const entitlementId = routeParam(req, 'id');
+    const entitlement = await prisma.consultationFollowUpEntitlement.findFirst({
+      where: {
+        id: entitlementId,
+        patientId: req.user!.id
+      }
+    });
+    if (!entitlement) {
+      return res.status(404).json({ message: 'Follow-up session was not found.' });
+    }
+    if (entitlement.status !== FollowUpEntitlementStatus.AVAILABLE) {
+      return res.status(409).json({ message: 'Follow-up session is not available to request.' });
+    }
+    if (entitlement.expiresAt && entitlement.expiresAt.getTime() < Date.now()) {
+      await prisma.consultationFollowUpEntitlement.update({
+        where: { id: entitlement.id },
+        data: { status: FollowUpEntitlementStatus.EXPIRED }
+      });
+      return res.status(410).json({ message: 'Follow-up session has expired.' });
+    }
+
+    const updated = await prisma.consultationFollowUpEntitlement.update({
+      where: { id: entitlement.id },
+      data: {
+        status: FollowUpEntitlementStatus.REQUESTED,
+        requestedAt: new Date()
+      }
+    });
+
+    res.json({ entitlement: updated });
   })
 );

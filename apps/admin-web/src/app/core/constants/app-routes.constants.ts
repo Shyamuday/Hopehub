@@ -12,6 +12,7 @@ export const ROUTE_PATHS = {
   CONSULTATIONS: 'consultations',
   SAFETY_FLAGS: 'safety-flags',
   ONLINE_DOCTORS: 'online-doctors',
+  FOLLOW_UPS: 'follow-ups',
   PAYROLL: 'payroll',
   RATES: 'rates',
   HOPE_HUB_OFFERS: 'hope-hub-offers',
@@ -97,6 +98,7 @@ export const NAV_ITEMS = [
   { path: adminNavPath(ROUTE_PATHS.STAFF), label: '🛡️ Staff permissions' },
   { path: adminNavPath(ROUTE_PATHS.ECOSYSTEM_USERS), label: '🌐 Portal Users' },
   { path: adminNavPath(ROUTE_PATHS.CONSULTATIONS), label: '🩺 Consultations' },
+  { path: adminNavPath(ROUTE_PATHS.FOLLOW_UPS), label: 'Follow-ups' },
   { path: adminNavPath(ROUTE_PATHS.SAFETY_FLAGS), label: '🚨 Safety Flags' },
   { path: adminNavPath(ROUTE_PATHS.ONLINE_DOCTORS), label: '🟢 Online doctors' },
   { path: adminNavPath(ROUTE_PATHS.PAYMENTS), label: '💳 Payments' },
@@ -129,6 +131,7 @@ export const NAV_GROUPS: AdminNavGroup[] = [
     label: 'Care delivery',
     segments: [
       ROUTE_PATHS.CONSULTATIONS,
+      ROUTE_PATHS.FOLLOW_UPS,
       ROUTE_PATHS.SAFETY_FLAGS,
       ROUTE_PATHS.ONLINE_DOCTORS,
       ROUTE_PATHS.DOCTORS,

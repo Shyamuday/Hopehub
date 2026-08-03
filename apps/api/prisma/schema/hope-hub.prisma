@@ -100,6 +100,15 @@ enum HopeHubPartialPaymentType {
   FLAT
 }
 
+enum FollowUpEntitlementStatus {
+  AVAILABLE
+  REQUESTED
+  SCHEDULED
+  USED
+  EXPIRED
+  CANCELLED
+}
+
 model HopeHubOffering {
   id                     String              @id @default(cuid())
   code                   String              @unique
@@ -201,4 +210,28 @@ model HopeHubOrganizationLead {
   @@index([status, createdAt])
   @@index([organizationType])
   @@index([offeringId])
+}
+
+model ConsultationFollowUpEntitlement {
+  id              String                    @id @default(cuid())
+  consultationId  String                    @unique
+  patientId       String
+  durationMinutes Int                       @default(15)
+  status          FollowUpEntitlementStatus @default(AVAILABLE)
+  source          String                    @default("single_session_offer")
+  availableAfter  DateTime?
+  expiresAt       DateTime?
+  requestedAt     DateTime?
+  scheduledAt     DateTime?
+  usedAt          DateTime?
+  notes           String?                   @db.Text
+  metadata        Json?
+  createdAt       DateTime                  @default(now())
+  updatedAt       DateTime                  @updatedAt
+
+  consultation    Consultation              @relation(fields: [consultationId], references: [id], onDelete: Cascade)
+  patient         User                      @relation("UserFollowUpEntitlements", fields: [patientId], references: [id], onDelete: Cascade)
+
+  @@index([patientId, status])
+  @@index([expiresAt])
 }

@@ -51,6 +51,16 @@ type HopeHubConsultation = {
       } | null;
     } | null;
   } | null;
+  followUpEntitlement?: {
+    id: string;
+    durationMinutes: number;
+    status: string;
+    availableAfter?: string | null;
+    expiresAt?: string | null;
+    requestedAt?: string | null;
+    scheduledAt?: string | null;
+    usedAt?: string | null;
+  } | null;
 };
 
 type BookingTimelineStep = {
@@ -306,6 +316,42 @@ type BookingTimelineStep = {
                         }
                       </div>
                     }
+                    @if (consultation.followUpEntitlement; as followUp) {
+                      <div
+                        class="mt-3 rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-950"
+                      >
+                        <div
+                          class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
+                        >
+                          <div>
+                            <p class="font-semibold">Included follow-up</p>
+                            <p class="mt-1">
+                              {{ followUp.durationMinutes || 15 }} min follow-up ·
+                              {{ followUpStatusLabel(followUp.status) }}
+                            </p>
+                            @if (followUp.expiresAt && followUp.status === 'AVAILABLE') {
+                              <p class="mt-1 text-emerald-800">
+                                Available till {{ followUp.expiresAt | date: 'mediumDate' }}
+                              </p>
+                            }
+                          </div>
+                          @if (followUp.status === 'AVAILABLE') {
+                            <button
+                              type="button"
+                              class="inline-flex items-center justify-center rounded-md bg-emerald-700 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60"
+                              [disabled]="requestingFollowUpId() === followUp.id"
+                              (click)="requestFollowUp(followUp.id)"
+                            >
+                              {{
+                                requestingFollowUpId() === followUp.id
+                                  ? 'Requesting...'
+                                  : 'Request follow-up'
+                              }}
+                            </button>
+                          }
+                        </div>
+                      </div>
+                    }
                     @if (consultation.intakeAnswers; as intake) {
                       @if (intake.appointmentDate || intake.appointmentTime) {
                         <p class="mt-2 text-sm text-gray-600">
@@ -451,6 +497,7 @@ export class DashboardComponent implements OnInit {
   user = signal<User | null>(null);
   isLoading = signal(false);
   isPaying = signal(false);
+  requestingFollowUpId = signal<string | null>(null);
   notice = signal('');
   paymentFlowState = signal<PaymentFlowState>('IDLE');
   paymentFlowError = signal('');
@@ -499,6 +546,33 @@ export class DashboardComponent implements OnInit {
   canRetryPayment(consultation: HopeHubConsultation): boolean {
     const paymentStatus = consultation.payment?.status?.toUpperCase();
     return Boolean(paymentStatus && paymentStatus !== 'CAPTURED' && paymentStatus !== 'PAID');
+  }
+
+  followUpStatusLabel(status: string | null | undefined): string {
+    const normalized = (status || '').toUpperCase();
+    if (normalized === 'AVAILABLE') return 'ready to schedule';
+    if (normalized === 'REQUESTED') return 'request sent';
+    if (normalized === 'SCHEDULED') return 'scheduled';
+    if (normalized === 'USED') return 'completed';
+    if (normalized === 'EXPIRED') return 'expired';
+    if (normalized === 'CANCELLED') return 'cancelled';
+    return 'available';
+  }
+
+  requestFollowUp(entitlementId: string): void {
+    if (!entitlementId || this.requestingFollowUpId()) return;
+    this.requestingFollowUpId.set(entitlementId);
+    this.bookingService.requestFollowUp(entitlementId).subscribe({
+      next: () => {
+        this.notificationService.success('Follow-up request sent. The team will confirm a slot.');
+        this.loadDashboard();
+        this.requestingFollowUpId.set(null);
+      },
+      error: () => {
+        this.notificationService.error('Could not request follow-up right now.');
+        this.requestingFollowUpId.set(null);
+      },
+    });
   }
 
   async retryPayment(consultation: HopeHubConsultation): Promise<void> {

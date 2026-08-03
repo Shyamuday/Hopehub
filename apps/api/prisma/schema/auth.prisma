@@ -186,6 +186,7 @@ model User {
   blogComments         BlogComment[]          @relation("BlogCommentAuthor")
   doctorOnlineSession  DoctorOnlineSession?
   hopeHubAssessmentAttempts HopeHubAssessmentAttempt[] @relation("UserHopeHubAssessmentAttempts")
+  followUpEntitlements ConsultationFollowUpEntitlement[] @relation("UserFollowUpEntitlements")
   emailVerified      Boolean        @default(false)
   authProvider       String?
   lastLoginAt        DateTime?

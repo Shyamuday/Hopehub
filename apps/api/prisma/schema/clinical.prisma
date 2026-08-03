@@ -85,6 +85,7 @@ model Consultation {
   labReferrals    LabReferral[]
   clinicalMedia   ClinicalMedia[]
   websiteLead     WebsiteLead?
+  followUpEntitlement ConsultationFollowUpEntitlement?
   createdAt       DateTime           @default(now())
   updatedAt       DateTime           @updatedAt
 }

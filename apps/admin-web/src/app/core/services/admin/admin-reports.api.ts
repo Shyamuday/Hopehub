@@ -43,6 +43,9 @@ export type AdminPaymentRefund = {
   createdAt: string;
 };
 
+export type FollowUpStatus =
+  'AVAILABLE' | 'REQUESTED' | 'SCHEDULED' | 'USED' | 'EXPIRED' | 'CANCELLED';
+
 @Service()
 export class AdminReportsApi extends AdminApiBase {
   getReports() {
@@ -168,6 +171,40 @@ export class AdminReportsApi extends AdminApiBase {
           q: params.q ?? '',
         },
       }),
+    );
+  }
+
+  getFollowUps(params: {
+    page?: number;
+    pageSize?: number;
+    status?: FollowUpStatus | 'ALL';
+    q?: string;
+  }) {
+    return firstValueFrom(
+      this.http.get<{
+        followUps: Array<any>;
+        summary: { requested: number; available: number; scheduled: number };
+        pagination: any;
+      }>(`${this.apiBase}${API_PATHS.ADMIN.FOLLOW_UPS}`, {
+        params: {
+          page: String(params.page ?? 1),
+          pageSize: String(params.pageSize ?? PAGE_SIZES.PAYMENTS),
+          status: params.status ?? FILTER_ALL,
+          q: params.q ?? '',
+        },
+      }),
+    );
+  }
+
+  updateFollowUp(
+    id: string,
+    payload: { status: FollowUpStatus; scheduledAt?: string | null; notes?: string | null },
+  ) {
+    return firstValueFrom(
+      this.http.patch<{ followUp: any }>(
+        `${this.apiBase}${API_PATHS.ADMIN.FOLLOW_UP_BY_ID(id)}`,
+        payload,
+      ),
     );
   }
 

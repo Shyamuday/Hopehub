@@ -206,6 +206,13 @@ export class BookingService {
     );
   }
 
+  requestFollowUp(entitlementId: string): Observable<{ entitlement: any }> {
+    return this.http.post<{ entitlement: any }>(
+      `${this.apiUrl}/hope-hub/follow-ups/${entitlementId}/request`,
+      {},
+    );
+  }
+
   providers(
     params: {
       page?: number;

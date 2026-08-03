@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { PaymentStatus, Prisma, Role } from '@prisma/client';
+import { FollowUpEntitlementStatus, PaymentStatus, Prisma, Role } from '@prisma/client';
 import { z } from 'zod';
 import { authRequired, allowRoles } from '../../auth.js';
 import { prisma } from '../../db.js';
@@ -25,6 +25,12 @@ const refundSchema = z.object({
   reason: z.string().trim().min(3).max(500),
   speed: z.enum(['normal', 'optimum']).default('normal'),
   cancelConsultation: z.boolean().optional()
+});
+
+const followUpStatusSchema = z.object({
+  status: z.nativeEnum(FollowUpEntitlementStatus),
+  scheduledAt: z.coerce.date().nullable().optional(),
+  notes: z.string().trim().max(1000).nullable().optional()
 });
 
 export function registerAdminPaymentRoutes(router: Router) {
@@ -143,6 +149,132 @@ export function registerAdminPaymentRoutes(router: Router) {
           totalPages: Math.max(1, Math.ceil(total / pageSize))
         }
       });
+    })
+  );
+
+  router.get(
+    '/admin/follow-ups',
+    authRequired,
+    allowRoles(Role.ADMIN),
+    asyncRoute(async (req, res) => {
+      const page = queryPositiveInt(req, 'page', 1, 1, 1000);
+      const pageSize = queryPositiveInt(req, 'pageSize', 20, 1, 100);
+      const status = queryText(req, 'status');
+      const q = queryText(req, 'q').trim();
+      const where: Prisma.ConsultationFollowUpEntitlementWhereInput = {
+        ...(status && status in FollowUpEntitlementStatus
+          ? { status: status as FollowUpEntitlementStatus }
+          : {}),
+        ...(q
+          ? {
+              OR: [
+                { patient: { name: { contains: q, mode: 'insensitive' } } },
+                { patient: { email: { contains: q, mode: 'insensitive' } } },
+                { patient: { mobile: { contains: q, mode: 'insensitive' } } },
+                { consultationId: { contains: q, mode: 'insensitive' } },
+                { consultation: { disease: { name: { contains: q, mode: 'insensitive' } } } }
+              ]
+            }
+          : {})
+      };
+
+      const [followUps, total, requested, available, scheduled] = await Promise.all([
+        prisma.consultationFollowUpEntitlement.findMany({
+          where,
+          include: {
+            patient: { select: { id: true, name: true, email: true, mobile: true } },
+            consultation: {
+              select: {
+                id: true,
+                status: true,
+                createdAt: true,
+                disease: { select: { name: true } },
+                assignedDoctor: { select: { id: true, name: true, email: true, mobile: true } },
+                payment: {
+                  select: {
+                    id: true,
+                    status: true,
+                    amountInPaise: true,
+                    providerPaymentId: true,
+                    createdAt: true
+                  }
+                }
+              }
+            }
+          },
+          orderBy: [{ requestedAt: 'desc' }, { createdAt: 'desc' }],
+          skip: (page - 1) * pageSize,
+          take: pageSize
+        }),
+        prisma.consultationFollowUpEntitlement.count({ where }),
+        prisma.consultationFollowUpEntitlement.count({
+          where: { status: FollowUpEntitlementStatus.REQUESTED }
+        }),
+        prisma.consultationFollowUpEntitlement.count({
+          where: { status: FollowUpEntitlementStatus.AVAILABLE }
+        }),
+        prisma.consultationFollowUpEntitlement.count({
+          where: { status: FollowUpEntitlementStatus.SCHEDULED }
+        })
+      ]);
+
+      res.json({
+        followUps,
+        summary: { requested, available, scheduled },
+        pagination: {
+          page,
+          pageSize,
+          total,
+          totalPages: Math.max(1, Math.ceil(total / pageSize))
+        }
+      });
+    })
+  );
+
+  router.patch(
+    '/admin/follow-ups/:id',
+    authRequired,
+    allowRoles(Role.ADMIN),
+    asyncRoute(async (req, res) => {
+      const id = routeParam(req, 'id');
+      const body = followUpStatusSchema.parse(req.body);
+      const data: Prisma.ConsultationFollowUpEntitlementUpdateInput = {
+        status: body.status,
+        notes: body.notes ?? undefined,
+        scheduledAt:
+          body.status === FollowUpEntitlementStatus.SCHEDULED
+            ? (body.scheduledAt ?? new Date())
+            : undefined,
+        usedAt: body.status === FollowUpEntitlementStatus.USED ? new Date() : undefined
+      };
+
+      const followUp = await prisma.consultationFollowUpEntitlement.update({
+        where: { id },
+        data,
+        include: {
+          patient: { select: { id: true, name: true, email: true, mobile: true } },
+          consultation: {
+            select: {
+              id: true,
+              status: true,
+              createdAt: true,
+              disease: { select: { name: true } },
+              assignedDoctor: { select: { id: true, name: true, email: true, mobile: true } },
+              payment: {
+                select: {
+                  id: true,
+                  status: true,
+                  amountInPaise: true,
+                  providerPaymentId: true,
+                  createdAt: true
+                }
+              }
+            }
+          }
+        }
+      });
+
+      res.json({ followUp });
     })
   );
 

@@ -41,6 +41,12 @@ export class AdminApi {
   getDonations(...args: Parameters<AdminReportsApi['getDonations']>) {
     return this.reports.getDonations(...(args as Parameters<AdminReportsApi['getDonations']>));
   }
+  getFollowUps(...args: Parameters<AdminReportsApi['getFollowUps']>) {
+    return this.reports.getFollowUps(...(args as Parameters<AdminReportsApi['getFollowUps']>));
+  }
+  updateFollowUp(...args: Parameters<AdminReportsApi['updateFollowUp']>) {
+    return this.reports.updateFollowUp(...(args as Parameters<AdminReportsApi['updateFollowUp']>));
+  }
   getSafetyFlags(...args: Parameters<AdminReportsApi['getSafetyFlags']>) {
     return this.reports.getSafetyFlags(...(args as Parameters<AdminReportsApi['getSafetyFlags']>));
   }

@@ -19,6 +19,8 @@ export const API_PATHS = {
     ANALYTICS_FUNNELS: '/admin/analytics/funnels',
     PAYMENTS: '/admin/payments',
     DONATIONS: '/admin/donations',
+    FOLLOW_UPS: '/admin/follow-ups',
+    FOLLOW_UP_BY_ID: (id: string) => `/admin/follow-ups/${id}`,
     PAYMENT_EVENTS: (id: string) => `/admin/payments/${id}/events`,
     PAYMENT_REFUND: (id: string) => `/admin/payments/${id}/refund`,
     DOCTORS: '/admin/doctors',

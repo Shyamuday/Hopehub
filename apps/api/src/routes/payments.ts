@@ -1,7 +1,13 @@
 import crypto from 'node:crypto';
 import { Router } from 'express';
 import { z } from 'zod';
-import { ConsultationStatus, PaymentStatus, Prisma, Role } from '@prisma/client';
+import {
+  ConsultationStatus,
+  FollowUpEntitlementStatus,
+  PaymentStatus,
+  Prisma,
+  Role
+} from '@prisma/client';
 import type { Server as SocketIoServer } from 'socket.io';
 import { authRequired, allowRoles } from '../auth.js';
 import { prisma } from '../db.js';
@@ -55,6 +61,61 @@ type RazorpayRefundEntity = {
 
 export function createPaymentsRouter(io: SocketIoServer) {
   const router = Router();
+
+  function asJsonObject(value: unknown): Record<string, unknown> {
+    return value && typeof value === 'object' && !Array.isArray(value)
+      ? (value as Record<string, unknown>)
+      : {};
+  }
+
+  function isSingleSessionPayment(payment: {
+    lineItems: Prisma.JsonValue | null;
+    consultation: { pricingSnapshot: Prisma.JsonValue | null };
+  }) {
+    const lineItems = asJsonObject(payment.lineItems);
+    const pricingSnapshot = asJsonObject(payment.consultation.pricingSnapshot);
+    return (
+      lineItems['offeringCode'] === 'SINGLE_30' || pricingSnapshot['offeringCode'] === 'SINGLE_30'
+    );
+  }
+
+  async function ensureFollowUpEntitlement(input: {
+    paymentId: string;
+    consultationId: string;
+    patientId: string;
+    providerPaymentId: string;
+  }) {
+    const payment = await prisma.payment.findUnique({
+      where: { id: input.paymentId },
+      select: {
+        lineItems: true,
+        consultation: { select: { pricingSnapshot: true } }
+      }
+    });
+    if (!payment || !isSingleSessionPayment(payment)) return;
+
+    const now = new Date();
+    const expiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+
+    await prisma.consultationFollowUpEntitlement.upsert({
+      where: { consultationId: input.consultationId },
+      create: {
+        consultationId: input.consultationId,
+        patientId: input.patientId,
+        durationMinutes: 15,
+        status: FollowUpEntitlementStatus.AVAILABLE,
+        source: 'single_session_offer',
+        availableAfter: now,
+        expiresAt,
+        metadata: {
+          paymentId: input.paymentId,
+          providerPaymentId: input.providerPaymentId,
+          offeringCode: 'SINGLE_30'
+        }
+      },
+      update: {}
+    });
+  }
 
   async function recordGatewayEvent(input: {
     paymentId?: string | null;
@@ -134,6 +195,13 @@ export function createPaymentsRouter(io: SocketIoServer) {
     }
 
     if (!input.wasPaid) {
+      await ensureFollowUpEntitlement({
+        paymentId: input.paymentId,
+        consultationId: input.consultationId,
+        patientId: input.patientId,
+        providerPaymentId: input.providerPaymentId
+      });
+
       void tryAssignInstantConsultation(io, input.consultationId).catch((err) => {
         console.error('[instant] Auto-assign failed after payment', err);
       });
