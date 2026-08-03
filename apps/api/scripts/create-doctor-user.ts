@@ -17,6 +17,7 @@ const designation = process.env.DOCTOR_DESIGNATION?.trim() || 'Psychologist';
 const department = process.env.DOCTOR_DEPARTMENT?.trim() || 'Healing Hub';
 const yearsOfExperience = Number.parseInt(process.env.DOCTOR_EXPERIENCE_YEARS ?? '', 10);
 const showOnWebsite = (process.env.DOCTOR_SHOW_ON_WEBSITE ?? 'true').toLowerCase() !== 'false';
+const websiteOrder = Number.parseInt(process.env.DOCTOR_WEBSITE_ORDER ?? '', 10);
 
 function csv(name: string, fallback: string[]) {
   return (process.env[name] ?? '')
@@ -90,6 +91,7 @@ const result = await prisma.$transaction(async (tx) => {
         process.env.DOCTOR_BIO?.trim() ||
         `${name} is a psychologist and breakup coach specialist with ${Number.isFinite(yearsOfExperience) ? yearsOfExperience : 7}+ years of experience supporting people through relationship stress, emotional overwhelm, and recovery after separation.`,
       showOnWebsite,
+      websiteOrder: Number.isFinite(websiteOrder) ? websiteOrder : null,
       yearsOfExperience: Number.isFinite(yearsOfExperience) ? yearsOfExperience : 7,
       focusAreas: csv('DOCTOR_FOCUS_AREAS', [
         'Breakup recovery',
@@ -111,6 +113,7 @@ const result = await prisma.$transaction(async (tx) => {
         process.env.DOCTOR_BIO?.trim() ||
         `${name} is a psychologist and breakup coach specialist with ${Number.isFinite(yearsOfExperience) ? yearsOfExperience : 7}+ years of experience supporting people through relationship stress, emotional overwhelm, and recovery after separation.`,
       showOnWebsite,
+      websiteOrder: Number.isFinite(websiteOrder) ? websiteOrder : undefined,
       yearsOfExperience: Number.isFinite(yearsOfExperience) ? yearsOfExperience : 7,
       focusAreas: csv('DOCTOR_FOCUS_AREAS', [
         'Breakup recovery',
@@ -187,6 +190,7 @@ const result = await prisma.$transaction(async (tx) => {
           doctorType: true,
           specialty: true,
           showOnWebsite: true,
+          websiteOrder: true,
           yearsOfExperience: true
         }
       }
