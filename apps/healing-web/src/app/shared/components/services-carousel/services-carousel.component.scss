@@ -7,6 +7,19 @@
     box-shadow: 0 12px 28px rgba(15, 23, 42, 0.06);
 }
 
+.offer-price-panel {
+    min-width: 13rem;
+    background: var(--brand-primary-light);
+    border-color: var(--brand-primary-border);
+}
+
+.offer-price-panel del {
+    margin-left: 0.35rem;
+    color: var(--text-muted);
+    font-size: 0.88rem;
+    font-weight: 700;
+}
+
 /* Mobile responsiveness */
 @media (max-width: 768px) {
     .px-4 {

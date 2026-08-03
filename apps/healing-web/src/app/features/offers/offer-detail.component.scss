@@ -192,6 +192,24 @@ h1 {
   top: 1rem;
 }
 
+.session-offer-banner {
+  display: grid;
+  gap: 0.2rem;
+  border: 1px solid var(--brand-primary-border);
+  border-radius: 0.5rem;
+  background: var(--brand-primary-light);
+  padding: 0.8rem;
+}
+
+.session-offer-banner strong {
+  color: var(--brand-primary);
+  font-size: 1rem;
+}
+
+.session-offer-banner span {
+  color: var(--text-secondary);
+}
+
 .checkout-card strong {
   font-size: 2rem;
 }

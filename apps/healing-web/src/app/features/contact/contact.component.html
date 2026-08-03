@@ -214,6 +214,12 @@
 
         @if (selectedOffering(); as offer) {
           <section class="payment-summary" aria-label="Payment summary">
+            @if (offerDiscountInPaise() > 0 && offer.type === 'INDIVIDUAL_SESSION') {
+              <div class="payment-summary__offer">
+                <strong>{{ offer.discountPercent || 50 }}% off first session</strong>
+                <span>30 min private support + 15 min follow-up included.</span>
+              </div>
+            }
             <div class="payment-summary__head">
               <span>{{ prefilledData().paymentMode === 'PARTIAL' ? 'Deposit checkout' : 'Full checkout' }}</span>
               <strong>{{ offer.title }}</strong>

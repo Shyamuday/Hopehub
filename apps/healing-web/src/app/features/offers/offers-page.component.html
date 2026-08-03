@@ -14,9 +14,12 @@
   } @else {
     <section class="offers-grid">
       @for (offer of offerings(); track offer.id) {
-        <article class="offer-card">
+        <article class="offer-card" [class.offer-card--highlight]="discountInPaise(offer) > 0 && offer.type === 'INDIVIDUAL_SESSION'">
           <div>
             <span class="offer-card__type">{{ offer.type.replace('_', ' ') }}</span>
+            @if (discountInPaise(offer) > 0 && offer.type === 'INDIVIDUAL_SESSION') {
+              <span class="offer-card__badge">{{ offer.discountPercent || 50 }}% off</span>
+            }
             <h2>{{ offer.title }}</h2>
             @if (offer.subtitle) {
               <p>{{ offer.subtitle }}</p>

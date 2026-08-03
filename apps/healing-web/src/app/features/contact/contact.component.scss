@@ -220,6 +220,26 @@ form {
   gap: 0.2rem;
 }
 
+.payment-summary__offer {
+  display: grid;
+  gap: 0.2rem;
+  border: 1px solid var(--brand-primary-border);
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 0.8rem;
+}
+
+.payment-summary__offer strong {
+  color: var(--brand-primary);
+  font-size: 1rem;
+}
+
+.payment-summary__offer span {
+  color: var(--text-secondary);
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
 .payment-summary__head span {
   color: var(--brand-primary);
   font-size: 0.76rem;

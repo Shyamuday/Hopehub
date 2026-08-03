@@ -2,7 +2,12 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { RouterModule, Router } from '@angular/router';
 import { interval } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { getFeaturedServices } from '../../../core/data/services-data';
+import {
+  HOPE_HUB_SESSION_DISCOUNT_PERCENT,
+  HOPE_HUB_SESSION_OFFER_PRICE,
+  HOPE_HUB_SESSION_PRICE,
+  getFeaturedServices,
+} from '../../../core/data/services-data';
 import { APP_CONSTANTS } from '../../../core/constants/app.constants';
 
 export interface CarouselService {
@@ -36,7 +41,16 @@ export class ServicesCarouselComponent implements OnInit {
   isAutoPlaying = signal(true);
   private readonly autoSlideInterval = 9000;
 
-  featuredServices = signal<CarouselService[]>(getFeaturedServices());
+  featuredServices = signal<CarouselService[]>(
+    getFeaturedServices().map((service) => ({
+      ...service,
+      price: HOPE_HUB_SESSION_OFFER_PRICE,
+      originalPrice: HOPE_HUB_SESSION_PRICE,
+      discount: HOPE_HUB_SESSION_DISCOUNT_PERCENT,
+      badge: 'First session 50% off',
+      bookingUrl: '/contact?offering=single-30-minute-session',
+    })),
+  );
 
   constructor() {
     // Auto-slide functionality with takeUntilDestroyed
@@ -108,6 +122,7 @@ export class ServicesCarouselComponent implements OnInit {
         consultantPhone: service.consultantPhone,
         duration: service.duration,
         price: service.price,
+        offering: 'single-30-minute-session',
         source: 'carousel',
       },
     });

@@ -72,6 +72,12 @@
       </div>
 
       <aside class="checkout-card">
+        @if (discountInPaise(offer) > 0 && offer.type === 'INDIVIDUAL_SESSION') {
+          <div class="session-offer-banner">
+            <strong>{{ offer.discountPercent || 50 }}% off</strong>
+            <span>30 min session + 15 min follow-up</span>
+          </div>
+        }
         <span>{{ offer.type === 'RECORDED_SESSION' ? 'Access' : 'Starting at' }}</span>
         <strong>{{ formatNetPrice(offer) }}</strong>
         @if (discountInPaise(offer) > 0) {

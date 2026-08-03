@@ -30,10 +30,17 @@
                     <p class="mt-3 text-sm leading-7 text-gray-600 md:text-base">{{ service.description }}</p>
                   </div>
 
-                  <div class="shrink-0 rounded-lg border border-gray-200 bg-white px-4 py-3 md:text-right">
-                    <p class="text-xs font-semibold uppercase text-gray-500">Support path</p>
-                    <p class="mt-1 text-lg font-semibold text-gray-950">Book session</p>
-                    <p class="mt-1 text-sm text-gray-600">Slot details confirmed</p>
+                  <div class="offer-price-panel shrink-0 rounded-lg border border-gray-200 bg-white px-4 py-3 md:text-right">
+                    <p class="text-xs font-semibold uppercase text-gray-500">Limited offer</p>
+                    <p class="mt-1 text-lg font-semibold text-gray-950">
+                      {{ formatPrice(service.price, service.currency) }}
+                      @if (service.originalPrice) {
+                        <del>{{ formatPrice(service.originalPrice, service.currency) }}</del>
+                      }
+                    </p>
+                    @if (service.discount) {
+                      <p class="mt-1 text-sm font-semibold text-primary-700">{{ service.discount }}% off today</p>
+                    }
                   </div>
                 </div>
               </div>
@@ -49,8 +56,8 @@
                     <p class="mt-1 text-sm font-semibold text-gray-900">Matched by concern</p>
                   </div>
                   <div>
-                    <p class="text-xs font-semibold uppercase text-gray-500">Next step</p>
-                    <p class="mt-1 text-sm font-semibold text-gray-900">Review details</p>
+                    <p class="text-xs font-semibold uppercase text-gray-500">Included</p>
+                    <p class="mt-1 text-sm font-semibold text-gray-900">15 min follow-up</p>
                   </div>
                 </div>
               </div>
