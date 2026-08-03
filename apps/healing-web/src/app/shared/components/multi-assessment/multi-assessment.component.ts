@@ -46,6 +46,7 @@ export class MultiAssessmentComponent implements OnInit {
   selectedAssessment = signal<AssessmentConfig | null>(null);
   assessmentStarted = signal(false);
   showResults = signal(false);
+  viewMode = signal<'single' | 'all'>('single');
   currentQuestion = signal(0);
   answers = signal<number[]>([]);
   result = signal<AssessmentResult | null>(null);
@@ -68,6 +69,12 @@ export class MultiAssessmentComponent implements OnInit {
       return this.assessments();
     }
     return this.assessments().filter((a) => a.category === category);
+  });
+  answeredCount = computed(() => this.answers().filter((answer) => answer !== undefined).length);
+  progressPercent = computed(() => {
+    const assessment = this.selectedAssessment();
+    if (!assessment) return 0;
+    return Math.round((this.answeredCount() / assessment.questions.length) * 100);
   });
 
   constructor() {
@@ -104,11 +111,13 @@ export class MultiAssessmentComponent implements OnInit {
   selectAssessment(assessment: AssessmentConfig) {
     this.selectedAssessment.set(assessment);
     this.answers.set(new Array(assessment.questions.length).fill(undefined));
+    this.startAssessment();
   }
 
   startAssessment() {
     this.assessmentStarted.set(true);
     this.currentQuestion.set(0);
+    this.viewMode.set('single');
   }
 
   nextQuestion() {
@@ -128,9 +137,28 @@ export class MultiAssessmentComponent implements OnInit {
 
   selectAnswer(value: number) {
     const current = this.currentQuestion();
+    this.selectAnswerAt(current, value);
+  }
+
+  selectAnswerAt(index: number, value: number) {
     const answersArray = [...this.answers()];
-    answersArray[current] = value;
+    answersArray[index] = value;
     this.answers.set(answersArray);
+  }
+
+  setViewMode(mode: 'single' | 'all') {
+    this.viewMode.set(mode);
+    if (mode === 'single') {
+      const firstUnanswered = this.answers().findIndex((answer) => answer === undefined);
+      if (firstUnanswered >= 0) {
+        this.currentQuestion.set(firstUnanswered);
+      }
+    }
+  }
+
+  hasAllAnswers() {
+    const assessment = this.selectedAssessment();
+    return Boolean(assessment && this.answeredCount() === assessment.questions.length);
   }
 
   async calculateResults() {
@@ -188,6 +216,7 @@ export class MultiAssessmentComponent implements OnInit {
     this.savedAttempt.set(null);
     this.previousAttempt.set(null);
     this.currentQuestion.set(0);
+    this.viewMode.set('single');
     const assessment = this.selectedAssessment();
     if (assessment) {
       this.answers.set(new Array(assessment.questions.length).fill(undefined));
@@ -204,6 +233,7 @@ export class MultiAssessmentComponent implements OnInit {
     this.savedAttempt.set(null);
     this.previousAttempt.set(null);
     this.currentQuestion.set(0);
+    this.viewMode.set('single');
     this.answers.set([]);
     this.result.set(null);
   }
@@ -217,6 +247,7 @@ export class MultiAssessmentComponent implements OnInit {
     this.savedAttempt.set(null);
     this.previousAttempt.set(null);
     this.currentQuestion.set(0);
+    this.viewMode.set('single');
     this.answers.set([]);
     this.result.set(null);
   }
