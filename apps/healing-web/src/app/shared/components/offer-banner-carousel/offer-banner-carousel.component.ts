@@ -25,7 +25,7 @@ export class OfferBannerCarouselComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.bookingService.banners().subscribe({
+    this.bookingService.cachedBanners().subscribe({
       next: ({ banners }) => {
         this.banners.set(banners);
         this.loading.set(false);

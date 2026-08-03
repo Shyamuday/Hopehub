@@ -1,6 +1,7 @@
 /** Legal / policy page copy — edit here to update Privacy, Terms, Refunds, Shipping, and Payment pages. */
 
 import type { PublicNavLink } from './public-site-content.constants';
+import { PUBLIC_CONTACT } from './contact.constants';
 
 export type LegalSection = {
   title: string;
@@ -35,7 +36,7 @@ export const LEGAL_HUB_CONTENT = {
 } as const;
 
 const CLINIC_NAME = 'HopeHub Care and Research Centre';
-const CONTACT_EMAIL = 'support@hopehub.in';
+const CONTACT_EMAIL = PUBLIC_CONTACT.EMAIL;
 const GOVERNING_LAW = 'Jharkhand, India';
 
 export const LEGAL_PAGES = {

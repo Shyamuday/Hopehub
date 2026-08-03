@@ -1,8 +1,9 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
 import { ServiceCardComponent } from '../../../../shared/components';
-import { Service } from '../../../../core/models';
+import { Service, ServiceCategory } from '../../../../core/models';
 import { getAllServices } from '../../../../core/data/services-data';
+import { BookingService, HopeHubService } from '../../../../core/services/booking.service';
 
 @Component({
   selector: 'app-services-overview',
@@ -11,12 +12,39 @@ import { getAllServices } from '../../../../core/data/services-data';
   templateUrl: './services-overview.component.html',
   styleUrl: './services-overview.component.scss',
 })
-export class ServicesOverviewComponent {
-  readonly services: Service[] = getAllServices();
+export class ServicesOverviewComponent implements OnInit {
+  private readonly bookingService = inject(BookingService);
+  readonly services = signal<Service[]>(getAllServices());
 
   constructor(private readonly router: Router) {}
 
+  ngOnInit(): void {
+    this.bookingService.servicesPageData().subscribe({
+      next: ({ services }) => {
+        if (services.length) this.services.set(services.map((service) => this.toService(service)));
+      },
+      error: () => this.services.set(getAllServices()),
+    });
+  }
+
   navigateToService(serviceId: string): void {
     this.router.navigate(['/services', serviceId]);
+  }
+
+  private toService(service: HopeHubService): Service {
+    return {
+      id: service.id,
+      name: service.name,
+      description: service.description,
+      detailedDescription: service.detailedDescription,
+      benefits: service.benefits || [],
+      approach: service.approach || '',
+      pricing: service.pricing || { individual: 500, currency: 'INR' },
+      category: Object.values(ServiceCategory).includes(service.category as ServiceCategory)
+        ? (service.category as ServiceCategory)
+        : ServiceCategory.MENTAL_HEALTH,
+      featured: service.featured,
+      imageUrl: service.imageUrl || undefined,
+    };
   }
 }

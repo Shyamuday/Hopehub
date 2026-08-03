@@ -109,6 +109,61 @@ enum FollowUpEntitlementStatus {
   CANCELLED
 }
 
+enum PracticeType {
+  BREATHING
+  MINDFULNESS
+  PHYSICAL
+  COGNITIVE
+  RELAXATION
+  GROUNDING
+  JOURNALING
+  VISUALIZATION
+  YOGA
+  PRANAYAMA
+  MEDITATION
+  SOMATIC
+  MOBILITY
+  AYURVEDA_LIFESTYLE
+  SPIRITUAL_GROUNDING
+}
+
+enum PracticeDifficulty {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+}
+
+enum PracticeStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum LifestyleTipType {
+  SLEEP
+  NUTRITION
+  EXERCISE
+  SOCIAL
+  WORK_LIFE_BALANCE
+  ENVIRONMENT
+  HABITS
+  SELF_CARE
+  DIGITAL_BOUNDARIES
+  AYURVEDA_LIFESTYLE
+}
+
+enum LifestyleTipDifficulty {
+  EASY
+  MODERATE
+  CHALLENGING
+}
+
+enum LifestyleTipStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
 model HopeHubOffering {
   id                     String              @id @default(cuid())
   code                   String              @unique
@@ -234,4 +289,176 @@ model ConsultationFollowUpEntitlement {
 
   @@index([patientId, status])
   @@index([expiresAt])
+}
+
+model Practice {
+  id                      String              @id @default(cuid())
+  slug                    String              @unique
+  title                   String
+  shortDescription        String
+  description             String              @db.Text
+  type                    PracticeType
+  difficulty              PracticeDifficulty  @default(BEGINNER)
+  durationMinutes         Int?
+  durationLabel           String?
+  concernSlugs            String[]            @default([])
+  categories              String[]            @default([])
+  benefits                String[]            @default([])
+  steps                   Json
+  tips                    String[]            @default([])
+  whenToUse               String[]            @default([])
+  contraindications       String[]            @default([])
+  avoidIf                 String[]            @default([])
+  tags                    String[]            @default([])
+  mediaUrl                String?
+  audioUrl                String?
+  videoUrl                String?
+  youtubeUrl              String?
+  telegramUrl             String?
+  thumbnailUrl            String?
+  language                String              @default("en")
+  sourceSystem            String?
+  expertReviewed          Boolean             @default(false)
+  expertReviewedBy        String?
+  expertReviewedAt        DateTime?
+  safetyLevel             String              @default("LOW")
+  status                  PracticeStatus      @default(DRAFT)
+  sortOrder               Int                 @default(0)
+  metadata                Json?
+  createdAt               DateTime            @default(now())
+  updatedAt               DateTime            @updatedAt
+
+  recommendationRules     PracticeRecommendationRule[]
+  sessions                UserPracticeSession[]
+
+  @@index([status, sortOrder])
+  @@index([type, status])
+}
+
+model PracticeRecommendationRule {
+  id             String   @id @default(cuid())
+  practiceId     String
+  assessmentType String?
+  concernSlug    String?
+  minScore       Int?
+  maxScore       Int?
+  level          String?
+  priority       Int      @default(3)
+  routineSlot    String?
+  isActive       Boolean  @default(true)
+  notes          String?  @db.Text
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  practice       Practice @relation(fields: [practiceId], references: [id], onDelete: Cascade)
+
+  @@index([assessmentType, minScore, maxScore])
+  @@index([concernSlug, priority])
+  @@index([practiceId])
+}
+
+model UserPracticeSession {
+  id              String   @id @default(cuid())
+  userId          String
+  practiceId      String
+  completedAt     DateTime @default(now())
+  durationMinutes Int?
+  helpfulRating   Int?
+  moodBefore      String?
+  moodAfter       String?
+  notes           String?  @db.Text
+  source          String?
+  metadata        Json?
+  createdAt       DateTime @default(now())
+
+  user            User     @relation("UserPracticeSessions", fields: [userId], references: [id], onDelete: Cascade)
+  practice        Practice @relation(fields: [practiceId], references: [id], onDelete: Cascade)
+
+  @@index([userId, completedAt])
+  @@index([practiceId, completedAt])
+}
+
+model LifestyleTip {
+  id                String                 @id @default(cuid())
+  slug              String                 @unique
+  title             String
+  shortDescription  String
+  description       String                 @db.Text
+  type              LifestyleTipType
+  difficulty        LifestyleTipDifficulty @default(EASY)
+  timeToImplement   String
+  concernSlugs      String[]               @default([])
+  categories        String[]               @default([])
+  benefits          String[]               @default([])
+  steps             Json
+  tips              String[]               @default([])
+  scientificBasis   String?                @db.Text
+  commonMistakes    String[]               @default([])
+  progressTracking  String[]               @default([])
+  relatedTipSlugs   String[]               @default([])
+  contraindications String[]               @default([])
+  avoidIf           String[]               @default([])
+  tags              String[]               @default([])
+  mediaUrl          String?
+  audioUrl          String?
+  videoUrl          String?
+  youtubeUrl        String?
+  telegramUrl       String?
+  thumbnailUrl      String?
+  language          String                 @default("en")
+  expertReviewed    Boolean                @default(false)
+  expertReviewedBy  String?
+  expertReviewedAt  DateTime?
+  safetyLevel       String                 @default("LOW")
+  status            LifestyleTipStatus     @default(DRAFT)
+  sortOrder         Int                    @default(0)
+  metadata          Json?
+  createdAt         DateTime               @default(now())
+  updatedAt         DateTime               @updatedAt
+
+  recommendationRules LifestyleTipRecommendationRule[]
+  sessions            UserLifestyleTipSession[]
+
+  @@index([status, sortOrder])
+  @@index([type, status])
+}
+
+model LifestyleTipRecommendationRule {
+  id             String       @id @default(cuid())
+  lifestyleTipId String
+  assessmentType String?
+  concernSlug    String?
+  minScore       Int?
+  maxScore       Int?
+  level          String?
+  priority       Int          @default(3)
+  routineSlot    String?
+  isActive       Boolean      @default(true)
+  notes          String?      @db.Text
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  lifestyleTip   LifestyleTip @relation(fields: [lifestyleTipId], references: [id], onDelete: Cascade)
+
+  @@index([assessmentType, minScore, maxScore])
+  @@index([concernSlug, priority])
+  @@index([lifestyleTipId])
+}
+
+model UserLifestyleTipSession {
+  id              String       @id @default(cuid())
+  userId          String
+  lifestyleTipId  String
+  completedAt     DateTime     @default(now())
+  helpfulRating   Int?
+  notes           String?      @db.Text
+  source          String?
+  metadata        Json?
+  createdAt       DateTime     @default(now())
+
+  user            User         @relation("UserLifestyleTipSessions", fields: [userId], references: [id], onDelete: Cascade)
+  lifestyleTip    LifestyleTip @relation(fields: [lifestyleTipId], references: [id], onDelete: Cascade)
+
+  @@index([userId, completedAt])
+  @@index([lifestyleTipId, completedAt])
 }

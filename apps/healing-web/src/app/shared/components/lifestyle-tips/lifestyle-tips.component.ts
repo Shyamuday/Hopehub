@@ -1,4 +1,13 @@
-import { Component, OnInit, Inject, PLATFORM_ID, inject, signal, computed } from '@angular/core';
+import {
+  Component,
+  DestroyRef,
+  OnInit,
+  Inject,
+  PLATFORM_ID,
+  inject,
+  signal,
+  computed,
+} from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterModule } from '@angular/router';
@@ -15,14 +24,10 @@ import {
 } from '../../../core/models/lifestyle-tip.model';
 import {
   ALL_LIFESTYLE_TIPS,
-  LIFESTYLE_TIPS_BY_TYPE,
-  LIFESTYLE_TIPS_BY_CATEGORY,
   getLifestyleTipsByIds,
-  getLifestyleTipsByCategory,
-  searchLifestyleTips,
-  getRelatedLifestyleTips,
 } from '../../../core/data/lifestyle-tip-configs';
 import { getLifestyleTipRecommendations } from '../../../core/data/lifestyle-tip-recommendations';
+import { LifestyleTipService } from '../../../core/services/lifestyle-tip.service';
 
 @Component({
   selector: 'app-lifestyle-tips',
@@ -34,6 +39,8 @@ import { getLifestyleTipRecommendations } from '../../../core/data/lifestyle-tip
 export class LifestyleTipsComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private platformId = inject(PLATFORM_ID);
+  private destroyRef = inject(DestroyRef);
+  private lifestyleTipService = inject(LifestyleTipService);
   private isBrowser = isPlatformBrowser(this.platformId);
 
   // Signal-based state
@@ -66,44 +73,39 @@ export class LifestyleTipsComponent implements OnInit {
     level: string;
   } | null>(null);
 
-  constructor() {
-    // Check for recommended tips from assessment results
-    this.route.queryParams
-      .pipe(takeUntilDestroyed())
-      .subscribe((params: { [key: string]: any }) => {
-        if (params['recommended']) {
-          const recommendedIds = params['recommended'].split(',');
-          this.recommendedTips.set(getLifestyleTipsByIds(recommendedIds));
-
-          if (params['assessment'] && params['score'] && params['level']) {
-            this.assessmentInfo.set({
-              type: params['assessment'],
-              score: parseInt(params['score']),
-              level: params['level'],
-            });
-          }
-        }
-
-        // Check for category filter
-        if (params['category']) {
-          const category = params['category'] as LifestyleTipCategory;
-          if (this.categories().includes(category)) {
-            this.setFilter('category', category);
-          }
-        }
-
-        // Check for specific tip
-        if (params['tip']) {
-          const tip = this.allTips().find((t) => t.id === params['tip']);
-          if (tip) {
-            this.selectTip(tip);
-          }
-        }
-      });
-  }
+  constructor() {}
 
   ngOnInit() {
     this.filteredTips.set(this.allTips());
+    this.route.queryParams
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((params: { [key: string]: any }) => {
+        this.loadPageData(params);
+      });
+  }
+
+  private loadPageData(params: { [key: string]: any }): void {
+    this.lifestyleTipService
+      .pageData({
+        assessmentType: params['assessment'],
+        concern: params['concern'],
+        score: params['score'],
+      })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (pageData) => {
+          if (pageData.tips.length) {
+            this.allTips.set(pageData.tips);
+            this.filteredTips.set(pageData.tips);
+          }
+          this.applyQueryParams(params, pageData.recommendations);
+        },
+        error: () => {
+          this.allTips.set(ALL_LIFESTYLE_TIPS);
+          this.filteredTips.set(ALL_LIFESTYLE_TIPS);
+          this.applyQueryParams(params, []);
+        },
+      });
   }
 
   setFilter(type: string, value?: string) {
@@ -112,7 +114,9 @@ export class LifestyleTipsComponent implements OnInit {
       this.filteredTips.set(this.allTips());
     } else if (type === 'category' && value) {
       this.currentFilter.set(`category:${value}`);
-      this.filteredTips.set(getLifestyleTipsByCategory(value as LifestyleTipCategory));
+      this.filteredTips.set(
+        this.allTips().filter((tip) => tip.category.includes(value as LifestyleTipCategory)),
+      );
     } else if (type === 'type' && value) {
       this.currentFilter.set(`type:${value}`);
       this.filteredTips.set(this.allTips().filter((tip) => tip.type === value));
@@ -145,14 +149,14 @@ export class LifestyleTipsComponent implements OnInit {
         this.filteredTips.set(this.allTips());
       } else if (filter.startsWith('category:')) {
         const category = filter.split(':')[1] as LifestyleTipCategory;
-        this.filteredTips.set(getLifestyleTipsByCategory(category));
+        this.filteredTips.set(this.allTips().filter((tip) => tip.category.includes(category)));
       } else if (filter.startsWith('type:')) {
         const type = filter.split(':')[1];
         this.filteredTips.set(this.allTips().filter((tip) => tip.type === type));
       }
     } else {
       // Search within current filter
-      const searchResults = searchLifestyleTips(query);
+      const searchResults = this.searchTips(query, this.allTips());
       const filter = this.currentFilter();
 
       if (filter === 'all') {
@@ -169,7 +173,13 @@ export class LifestyleTipsComponent implements OnInit {
 
   selectTip(tip: LifestyleTip) {
     this.selectedTip.set(tip);
-    this.relatedTips.set(getRelatedLifestyleTips(tip.id));
+    const relatedIds = tip.relatedTips || [];
+    this.relatedTips.set(
+      this.allTips().filter(
+        (item) =>
+          relatedIds.includes(item.id) || (item.sourceSlug && relatedIds.includes(item.sourceSlug)),
+      ),
+    );
 
     // Scroll to top
     if (this.isBrowser) {
@@ -183,10 +193,83 @@ export class LifestyleTipsComponent implements OnInit {
   }
 
   getCategoryCount(category: LifestyleTipCategory): number {
-    return LIFESTYLE_TIPS_BY_CATEGORY[category]?.length || 0;
+    return this.allTips().filter((tip) => tip.category.includes(category)).length;
   }
 
   getTypeCount(type: LifestyleTipType): number {
-    return LIFESTYLE_TIPS_BY_TYPE[type]?.length || 0;
+    return this.allTips().filter((tip) => tip.type === type).length;
+  }
+
+  private applyQueryParams(params: { [key: string]: any }, backendRecommendations: LifestyleTip[]) {
+    if (params['assessment'] && params['score'] && params['level']) {
+      this.assessmentInfo.set({
+        type: params['assessment'],
+        score: parseInt(params['score']),
+        level: params['level'],
+      });
+    }
+
+    if (params['recommended']) {
+      const recommendedIds = params['recommended'].split(',');
+      const fromCurrentTips = this.allTips().filter(
+        (tip) =>
+          recommendedIds.includes(tip.id) ||
+          (tip.sourceSlug && recommendedIds.includes(tip.sourceSlug)),
+      );
+      this.recommendedTips.set(
+        fromCurrentTips.length ? fromCurrentTips : getLifestyleTipsByIds(recommendedIds),
+      );
+    }
+
+    if (backendRecommendations.length) {
+      this.recommendedTips.set(backendRecommendations);
+    } else if (params['assessment'] && params['score']) {
+      this.setStaticRecommendations(params);
+    }
+
+    // Check for category filter
+    if (params['category']) {
+      const category = params['category'] as LifestyleTipCategory;
+      if (this.categories().includes(category)) {
+        this.setFilter('category', category);
+      }
+    }
+
+    // Check for specific tip
+    if (params['tip']) {
+      const tip = this.allTips().find(
+        (t) => t.id === params['tip'] || t.sourceSlug === params['tip'],
+      );
+      if (tip) {
+        this.selectTip(tip);
+      }
+    }
+  }
+
+  private setStaticRecommendations(params: { [key: string]: any }) {
+    if (!params['assessment'] || !params['score']) return;
+    const recommendedIds = getLifestyleTipRecommendations(
+      params['assessment'],
+      parseInt(params['score']),
+    );
+    const fromCurrentTips = this.allTips().filter(
+      (tip) =>
+        recommendedIds.includes(tip.id) ||
+        (tip.sourceSlug && recommendedIds.includes(tip.sourceSlug)),
+    );
+    this.recommendedTips.set(
+      fromCurrentTips.length ? fromCurrentTips : getLifestyleTipsByIds(recommendedIds),
+    );
+  }
+
+  private searchTips(query: string, tips: LifestyleTip[]): LifestyleTip[] {
+    const searchTerm = query.toLowerCase();
+    return tips.filter(
+      (tip) =>
+        tip.title.toLowerCase().includes(searchTerm) ||
+        tip.description.toLowerCase().includes(searchTerm) ||
+        tip.tags.some((tag) => tag.toLowerCase().includes(searchTerm)) ||
+        tip.benefits.some((benefit) => benefit.toLowerCase().includes(searchTerm)),
+    );
   }
 }

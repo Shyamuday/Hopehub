@@ -61,8 +61,7 @@ export class ServicesComponent implements OnInit {
   ) {}
 
   ngOnInit() {
-    this.loadServices();
-    this.loadSingleSessionQuote();
+    this.loadPageData();
   }
 
   navigateToService(serviceId: string) {
@@ -77,29 +76,20 @@ export class ServicesComponent implements OnInit {
     this.searchTerm.set(value);
   }
 
-  private loadServices() {
-    this.bookingService.services().subscribe({
-      next: ({ services }) => {
+  private loadPageData() {
+    this.bookingService.servicesPageData().subscribe({
+      next: ({ services, singleSessionQuote }) => {
         this.services.set(
           services.length ? services.map((service) => this.toService(service)) : getAllServices(),
         );
+        this.singleSessionOffer.set(singleSessionQuote?.offering ?? null);
+        this.singleSessionQuote.set(singleSessionQuote?.quote ?? null);
       },
       error: () => {
         this.services.set(getAllServices());
-        this.notificationService.warning('Live services could not load. Showing saved services.');
-      },
-    });
-  }
-
-  private loadSingleSessionQuote(): void {
-    this.bookingService.offeringQuote('single-30-minute-session').subscribe({
-      next: ({ offering, quote }) => {
-        this.singleSessionOffer.set(offering);
-        this.singleSessionQuote.set(quote);
-      },
-      error: () => {
         this.singleSessionOffer.set(null);
         this.singleSessionQuote.set(null);
+        this.notificationService.warning('Live services could not load. Showing saved services.');
       },
     });
   }

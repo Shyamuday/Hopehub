@@ -648,6 +648,213 @@ async function bookedSeatsByOfferingCode(codes: string[]) {
   return new Map(rows.map((row) => [row.billingPlanCode || '', row._count._all]));
 }
 
+async function activeHopeHubBanners() {
+  const now = new Date();
+  const banners = await prisma.hopeHubBanner.findMany({
+    where: {
+      isActive: true,
+      AND: [
+        { OR: [{ startsAt: null }, { startsAt: { lte: now } }] },
+        { OR: [{ endsAt: null }, { endsAt: { gte: now } }] }
+      ]
+    },
+    select: {
+      id: true,
+      title: true,
+      subtitle: true,
+      eyebrow: true,
+      imageUrl: true,
+      ctaLabel: true,
+      routePath: true,
+      offeringId: true,
+      backgroundColor: true,
+      textColor: true
+    },
+    orderBy: [{ sortOrder: 'asc' }, { createdAt: 'desc' }]
+  });
+  return banners.map(bannerPublicPayload);
+}
+
+async function activeHopeHubOfferings(params: { type?: string; featured?: boolean } = {}) {
+  const normalizedType = Object.values(HopeHubOfferingType).includes(
+    params.type as HopeHubOfferingType
+  )
+    ? (params.type as HopeHubOfferingType)
+    : undefined;
+  const where = {
+    isActive: true,
+    ...(normalizedType ? { type: normalizedType } : {}),
+    ...(params.featured ? { isFeatured: true } : {})
+  };
+  const offerings = await prisma.hopeHubOffering.findMany({
+    where,
+    select: hopeHubOfferingSelect,
+    orderBy: [{ sortOrder: 'asc' }, { createdAt: 'desc' }]
+  });
+  const seatCounts = await bookedSeatsByOfferingCode(offerings.map((offering) => offering.code));
+  return offerings.map((offering) =>
+    offeringPublicPayload(offering, seatCounts.get(offering.code) ?? 0)
+  );
+}
+
+async function activeHopeHubServices() {
+  const services = await prisma.disease.findMany({
+    where: { isActive: true, publicCategory: 'Hope Hub' },
+    select: hopeHubServiceSelect,
+    orderBy: [{ name: 'asc' }]
+  });
+  return services.map(servicePublicPayload);
+}
+
+function hopeHubProviderWhere(params: {
+  q?: string;
+  concern?: string;
+  language?: string;
+  modality?: string;
+  sessionType?: string;
+  ageGroup?: string;
+}) {
+  const { q, concern, language, modality, sessionType, ageGroup } = params;
+  return {
+    showOnWebsite: true,
+    user: { isActive: true },
+    ...(concern || language || modality || sessionType || ageGroup
+      ? {
+          mentalHealthProfile: {
+            is: {
+              ...(concern ? { concernsHandled: { has: concern } } : {}),
+              ...(language ? { languages: { has: language } } : {}),
+              ...(modality ? { modalities: { has: modality } } : {}),
+              ...(sessionType ? { sessionTypes: { has: sessionType } } : {}),
+              ...(ageGroup ? { ageGroups: { has: ageGroup } } : {})
+            }
+          }
+        }
+      : {}),
+    OR: [
+      { doctorType: HomeopathicDoctorType.PSYCHOLOGIST },
+      { specialty: { contains: 'psycholog', mode: 'insensitive' as const } },
+      { designation: { contains: 'psycholog', mode: 'insensitive' as const } },
+      { department: { contains: 'mental', mode: 'insensitive' as const } },
+      { department: { contains: 'wellness', mode: 'insensitive' as const } },
+      {
+        focusAreas: {
+          hasSome: ['Psychology', 'Anxiety support', 'Stress management', 'Counselling']
+        }
+      }
+    ],
+    ...(q
+      ? {
+          AND: [
+            {
+              OR: [
+                { user: { name: { contains: q, mode: 'insensitive' as const } } },
+                { specialty: { contains: q, mode: 'insensitive' as const } },
+                { designation: { contains: q, mode: 'insensitive' as const } },
+                { department: { contains: q, mode: 'insensitive' as const } },
+                { bio: { contains: q, mode: 'insensitive' as const } },
+                { mentalHealthProfile: { is: { concernsHandled: { has: q } } } },
+                { mentalHealthProfile: { is: { modalities: { has: q } } } }
+              ]
+            }
+          ]
+        }
+      : {})
+  };
+}
+
+async function activeHopeHubProviders(params: {
+  page?: number;
+  pageSize?: number;
+  q?: string;
+  concern?: string;
+  language?: string;
+  modality?: string;
+  sessionType?: string;
+  ageGroup?: string;
+}) {
+  const page = params.page ?? 1;
+  const pageSize = Math.max(1, Math.min(50, params.pageSize ?? 20));
+  const where = hopeHubProviderWhere(params);
+  const [providers, total] = await Promise.all([
+    prisma.doctor.findMany({
+      where,
+      select: {
+        id: true,
+        specialty: true,
+        designation: true,
+        department: true,
+        bio: true,
+        yearsOfExperience: true,
+        focusAreas: true,
+        websiteOrder: true,
+        mentalHealthProfile: {
+          select: {
+            qualifications: true,
+            licenseNumber: true,
+            licenseCouncil: true,
+            languages: true,
+            modalities: true,
+            sessionTypes: true,
+            ageGroups: true,
+            concernsHandled: true,
+            introSessionTitle: true,
+            counsellingApproach: true,
+            safetyEscalationNote: true,
+            acceptsHighRiskCases: true
+          }
+        },
+        user: { select: { id: true, name: true, profileImageKey: true } }
+      },
+      orderBy: [{ websiteOrder: { sort: 'asc', nulls: 'last' } }, { user: { name: 'asc' } }],
+      skip: (page - 1) * pageSize,
+      take: pageSize
+    }),
+    prisma.doctor.count({ where })
+  ]);
+  return {
+    providers: providers.map(providerPublicPayload),
+    pagination: {
+      page,
+      pageSize,
+      total,
+      totalPages: Math.max(1, Math.ceil(total / pageSize))
+    }
+  };
+}
+
+function publicOfferingQuote(offering: Awaited<ReturnType<typeof activeHopeHubOfferings>>[number]) {
+  if (offering.priceInPaise == null) {
+    return {
+      grossInPaise: null,
+      discountInPaise: 0,
+      payableInPaise: null,
+      isEligibleForDiscount: false,
+      reason: 'CUSTOM_QUOTE',
+      rule: null
+    };
+  }
+  const discount = hopeHubDiscountSnapshot(
+    {
+      ...offering,
+      discountStartsAt: offering.discountStartsAt ? new Date(offering.discountStartsAt) : null,
+      discountEndsAt: offering.discountEndsAt ? new Date(offering.discountEndsAt) : null
+    },
+    offering.priceInPaise
+  );
+  return {
+    grossInPaise: offering.priceInPaise,
+    discountInPaise: discount.discountInPaise,
+    payableInPaise: offering.priceInPaise - discount.discountInPaise,
+    isEligibleForDiscount: discount.discountInPaise > 0,
+    reason:
+      discount.discountInPaise > 0
+        ? 'DISCOUNT_APPLIED'
+        : discount.rule?.skippedReason || 'NO_DISCOUNT',
+    rule: discount.rule
+  };
+}
+
 hopeHubRouter.get(
   /^\/hope-hub\/media\/(.+)$/,
   asyncRoute(async (req, res) => {
@@ -665,29 +872,39 @@ hopeHubRouter.get(
 );
 
 hopeHubRouter.get(
+  '/hope-hub/bootstrap',
+  authOptional,
+  asyncRoute(async (_req, res) => {
+    const [banners, offerings, services, providerResponse] = await Promise.all([
+      activeHopeHubBanners(),
+      activeHopeHubOfferings(),
+      activeHopeHubServices(),
+      activeHopeHubProviders({ page: 1, pageSize: 5 })
+    ]);
+    const singleSession =
+      offerings.find((offering) => offering.slug === 'single-30-minute-session') ||
+      offerings.find((offering) => offering.code === 'SINGLE_30') ||
+      null;
+    res.set('Cache-Control', 'private, max-age=300');
+    res.json({
+      banners,
+      offerings,
+      services,
+      providers: providerResponse.providers,
+      providerPagination: providerResponse.pagination,
+      singleSessionQuote: singleSession
+        ? { offering: singleSession, quote: publicOfferingQuote(singleSession) }
+        : null
+    });
+  })
+);
+
+hopeHubRouter.get(
   '/hope-hub/offerings',
   asyncRoute(async (req, res) => {
     const type = queryText(req, 'type').trim();
     const featured = queryText(req, 'featured').trim();
-    const normalizedType = Object.values(HopeHubOfferingType).includes(type as HopeHubOfferingType)
-      ? (type as HopeHubOfferingType)
-      : undefined;
-    const where = {
-      isActive: true,
-      ...(normalizedType ? { type: normalizedType } : {}),
-      ...(featured === 'true' ? { isFeatured: true } : {})
-    };
-    const offerings = await prisma.hopeHubOffering.findMany({
-      where,
-      select: hopeHubOfferingSelect,
-      orderBy: [{ sortOrder: 'asc' }, { createdAt: 'desc' }]
-    });
-    const seatCounts = await bookedSeatsByOfferingCode(offerings.map((offering) => offering.code));
-    res.json({
-      offerings: offerings.map((offering) =>
-        offeringPublicPayload(offering, seatCounts.get(offering.code) ?? 0)
-      )
-    });
+    res.json({ offerings: await activeHopeHubOfferings({ type, featured: featured === 'true' }) });
   })
 );
 
@@ -756,30 +973,7 @@ hopeHubRouter.get(
 hopeHubRouter.get(
   '/hope-hub/banners',
   asyncRoute(async (_req, res) => {
-    const now = new Date();
-    const banners = await prisma.hopeHubBanner.findMany({
-      where: {
-        isActive: true,
-        AND: [
-          { OR: [{ startsAt: null }, { startsAt: { lte: now } }] },
-          { OR: [{ endsAt: null }, { endsAt: { gte: now } }] }
-        ]
-      },
-      select: {
-        id: true,
-        title: true,
-        subtitle: true,
-        eyebrow: true,
-        imageUrl: true,
-        ctaLabel: true,
-        routePath: true,
-        offeringId: true,
-        backgroundColor: true,
-        textColor: true
-      },
-      orderBy: [{ sortOrder: 'asc' }, { createdAt: 'desc' }]
-    });
-    res.json({ banners: banners.map(bannerPublicPayload) });
+    res.json({ banners: await activeHopeHubBanners() });
   })
 );
 
@@ -822,12 +1016,7 @@ hopeHubRouter.post(
 hopeHubRouter.get(
   '/hope-hub/services',
   asyncRoute(async (_req, res) => {
-    const services = await prisma.disease.findMany({
-      where: { isActive: true, publicCategory: 'Hope Hub' },
-      select: hopeHubServiceSelect,
-      orderBy: [{ name: 'asc' }]
-    });
-    res.json({ services: services.map(servicePublicPayload) });
+    res.json({ services: await activeHopeHubServices() });
   })
 );
 
@@ -924,106 +1113,18 @@ hopeHubRouter.get(
   asyncRoute(async (req, res) => {
     const page = queryPositiveInt(req, 'page', 1);
     const pageSize = Math.max(1, Math.min(50, queryPositiveInt(req, 'pageSize', 20)));
-    const q = queryText(req, 'q').trim();
-    const concern = queryText(req, 'concern').trim();
-    const language = queryText(req, 'language').trim();
-    const modality = queryText(req, 'modality').trim();
-    const sessionType = queryText(req, 'sessionType').trim();
-    const ageGroup = queryText(req, 'ageGroup').trim();
-
-    const psychologyWhere = {
-      showOnWebsite: true,
-      user: { isActive: true },
-      ...(concern || language || modality || sessionType || ageGroup
-        ? {
-            mentalHealthProfile: {
-              is: {
-                ...(concern ? { concernsHandled: { has: concern } } : {}),
-                ...(language ? { languages: { has: language } } : {}),
-                ...(modality ? { modalities: { has: modality } } : {}),
-                ...(sessionType ? { sessionTypes: { has: sessionType } } : {}),
-                ...(ageGroup ? { ageGroups: { has: ageGroup } } : {})
-              }
-            }
-          }
-        : {}),
-      OR: [
-        { doctorType: HomeopathicDoctorType.PSYCHOLOGIST },
-        { specialty: { contains: 'psycholog', mode: 'insensitive' as const } },
-        { designation: { contains: 'psycholog', mode: 'insensitive' as const } },
-        { department: { contains: 'mental', mode: 'insensitive' as const } },
-        { department: { contains: 'wellness', mode: 'insensitive' as const } },
-        {
-          focusAreas: {
-            hasSome: ['Psychology', 'Anxiety support', 'Stress management', 'Counselling']
-          }
-        }
-      ],
-      ...(q
-        ? {
-            AND: [
-              {
-                OR: [
-                  { user: { name: { contains: q, mode: 'insensitive' as const } } },
-                  { specialty: { contains: q, mode: 'insensitive' as const } },
-                  { designation: { contains: q, mode: 'insensitive' as const } },
-                  { department: { contains: q, mode: 'insensitive' as const } },
-                  { bio: { contains: q, mode: 'insensitive' as const } },
-                  { mentalHealthProfile: { is: { concernsHandled: { has: q } } } },
-                  { mentalHealthProfile: { is: { modalities: { has: q } } } }
-                ]
-              }
-            ]
-          }
-        : {})
-    };
-
-    const [providers, total] = await Promise.all([
-      prisma.doctor.findMany({
-        where: psychologyWhere,
-        select: {
-          id: true,
-          specialty: true,
-          designation: true,
-          department: true,
-          bio: true,
-          yearsOfExperience: true,
-          focusAreas: true,
-          websiteOrder: true,
-          mentalHealthProfile: {
-            select: {
-              qualifications: true,
-              licenseNumber: true,
-              licenseCouncil: true,
-              languages: true,
-              modalities: true,
-              sessionTypes: true,
-              ageGroups: true,
-              concernsHandled: true,
-              introSessionTitle: true,
-              counsellingApproach: true,
-              safetyEscalationNote: true,
-              acceptsHighRiskCases: true
-            }
-          },
-          user: { select: { id: true, name: true, profileImageKey: true } }
-        },
-        orderBy: [{ websiteOrder: { sort: 'asc', nulls: 'last' } }, { user: { name: 'asc' } }],
-        skip: (page - 1) * pageSize,
-        take: pageSize
-      }),
-      prisma.doctor.count({ where: psychologyWhere })
-    ]);
-
-    res.json({
-      providers: providers.map(providerPublicPayload),
-      pagination: {
+    res.json(
+      await activeHopeHubProviders({
         page,
         pageSize,
-        total,
-        totalPages: Math.max(1, Math.ceil(total / pageSize))
-      }
-    });
+        q: queryText(req, 'q').trim(),
+        concern: queryText(req, 'concern').trim(),
+        language: queryText(req, 'language').trim(),
+        modality: queryText(req, 'modality').trim(),
+        sessionType: queryText(req, 'sessionType').trim(),
+        ageGroup: queryText(req, 'ageGroup').trim()
+      })
+    );
   })
 );
 

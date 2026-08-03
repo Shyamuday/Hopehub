@@ -19,8 +19,8 @@
   } @else {
     <div class="mail-toolbar">
       <div>
-        <strong>contact@hopehub.in</strong>
-        <span class="muted">Replies send from {{ replyFrom() || 'contact@hopehub.in' }}</span>
+        <strong>{{ defaultReplyFrom }}</strong>
+        <span class="muted">Replies send from {{ replyFrom() || defaultReplyFrom }}</span>
       </div>
       <button type="button" class="btn" (click)="loadMail()" [disabled]="loading()">
         {{ loading() ? 'Refreshing...' : 'Refresh' }}
@@ -64,7 +64,7 @@
           <div class="detail-head">
             <div>
               <h3>{{ mail.subject || '(no subject)' }}</h3>
-              <p class="muted">From {{ mail.from || mail.fromEmail }} to {{ mail.to || 'contact@hopehub.in' }}</p>
+              <p class="muted">From {{ mail.from || mail.fromEmail }} to {{ mail.to || defaultReplyFrom }}</p>
               <p class="muted">{{ mail.date | date: 'full' }}</p>
             </div>
           </div>

@@ -29,6 +29,11 @@ const defaultCorsOrigins = [
   'http://127.0.0.1:5800'
 ];
 
+export const CONTACT_IDENTITY = {
+  EMAIL: 'contact@hopehub.in',
+  EMAIL_FROM: 'contact@hopehub.in'
+} as const;
+
 export const SERVER_CONFIG = {
   DEFAULT_PORT: 4000,
   ORIGINS: {
@@ -44,7 +49,7 @@ export const SERVER_CONFIG = {
   API_PUBLIC_URL: process.env.API_PUBLIC_URL || process.env.API_URL || 'http://localhost:4000',
   SMTP: {
     DEFAULT_PORT: 587,
-    DEFAULT_FROM: 'noreply@hopehub.in'
+    DEFAULT_FROM: CONTACT_IDENTITY.EMAIL_FROM
   },
   DEV_OTP: process.env.DEV_OTP || '123456'
 } as const;

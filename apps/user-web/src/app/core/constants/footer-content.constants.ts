@@ -1,5 +1,7 @@
 /** Footer layout & links — edit here to update the site footer. */
 
+import { PUBLIC_CONTACT } from './contact.constants';
+
 export type FooterLink = {
   label: string;
   href: string;
@@ -26,8 +28,8 @@ export const FOOTER_CONTENT = {
     phoneLabel: 'Contact',
     phone: '+91-98765-43210',
     phoneHref: 'tel:+919876543210',
-    email: 'support@hopehub.in',
-    emailHref: 'mailto:support@hopehub.in',
+    email: PUBLIC_CONTACT.EMAIL,
+    emailHref: PUBLIC_CONTACT.EMAIL_HREF,
   },
   columns: [
     {

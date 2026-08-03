@@ -4,6 +4,7 @@ import { NotificationInboxComponent } from '@hopehub/platform-ui';
 import { CROSS_APP_API_PATHS } from '@hopehub/clinic-api/cross-app-api-paths.constants';
 import { environment } from '../../../environments/environment';
 import { AUTH_TOKEN_KEY } from '../../core/constants/auth.constants';
+import { ADMIN_CONTACT } from '../../core/constants/contact.constants';
 import {
   AdminContactMailApi,
   type ContactMailDetail,
@@ -20,6 +21,7 @@ import {
 export class NotificationsInboxPage implements OnInit {
   private readonly mailApi = inject(AdminContactMailApi);
 
+  readonly defaultReplyFrom = ADMIN_CONTACT.replyFrom;
   readonly tab = signal<'notifications' | 'email'>('notifications');
   readonly messages = signal<ContactMailSummary[]>([]);
   readonly selected = signal<ContactMailDetail | null>(null);

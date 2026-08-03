@@ -18,7 +18,7 @@ This note tracks third-party services and approvals needed for Hope Hub producti
 ### AWS SES SMTP Production Access
 
 - Request production access for verified domain `hopehub.in`.
-- Use domain-based senders such as `contact@hopehub.in`, `support@hopehub.in`, or `care@hopehub.in`.
+- Use the verified domain sender `contact@hopehub.in`.
 - Configure SPF, DKIM, DMARC, bounce handling, complaint handling, unsubscribe handling, and suppression list.
 - Use transactional emails for OTP, password reset, booking confirmation, payment confirmation, and refund updates.
 

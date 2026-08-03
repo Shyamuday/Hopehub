@@ -387,4 +387,133 @@ export class AdminCatalogApi extends AdminApiBase {
       ),
     );
   }
+
+  getPracticesAdmin(
+    params: { q?: string; status?: string; page?: number; pageSize?: number } = {},
+  ) {
+    return firstValueFrom(
+      this.http.get<{ practices: Array<any>; pagination: any }>(
+        `${this.apiBase}${API_PATHS.ADMIN.PRACTICES}`,
+        {
+          params: {
+            q: params.q ?? '',
+            status: params.status ?? '',
+            page: String(params.page ?? 1),
+            pageSize: String(params.pageSize ?? 100),
+          },
+        },
+      ),
+    );
+  }
+
+  createPractice(payload: Record<string, unknown>) {
+    return firstValueFrom(
+      this.http.post<{ practice: any }>(`${this.apiBase}${API_PATHS.ADMIN.PRACTICES}`, payload),
+    );
+  }
+
+  updatePractice(id: string, payload: Record<string, unknown>) {
+    return firstValueFrom(
+      this.http.put<{ practice: any }>(
+        `${this.apiBase}${API_PATHS.ADMIN.PRACTICE_BY_ID(id)}`,
+        payload,
+      ),
+    );
+  }
+
+  archivePractice(id: string) {
+    return firstValueFrom(
+      this.http.delete<{ ok: boolean }>(`${this.apiBase}${API_PATHS.ADMIN.PRACTICE_BY_ID(id)}`),
+    );
+  }
+
+  createPracticeRule(payload: Record<string, unknown>) {
+    return firstValueFrom(
+      this.http.post<{ rule: any }>(`${this.apiBase}${API_PATHS.ADMIN.PRACTICE_RULES}`, payload),
+    );
+  }
+
+  updatePracticeRule(id: string, payload: Record<string, unknown>) {
+    return firstValueFrom(
+      this.http.put<{ rule: any }>(
+        `${this.apiBase}${API_PATHS.ADMIN.PRACTICE_RULE_BY_ID(id)}`,
+        payload,
+      ),
+    );
+  }
+
+  deletePracticeRule(id: string) {
+    return firstValueFrom(
+      this.http.delete<{ ok: boolean }>(
+        `${this.apiBase}${API_PATHS.ADMIN.PRACTICE_RULE_BY_ID(id)}`,
+      ),
+    );
+  }
+
+  getLifestyleTipsAdmin(
+    params: { q?: string; status?: string; page?: number; pageSize?: number } = {},
+  ) {
+    return firstValueFrom(
+      this.http.get<{ tips: Array<any>; pagination: any }>(
+        `${this.apiBase}${API_PATHS.ADMIN.LIFESTYLE_TIPS}`,
+        {
+          params: {
+            q: params.q ?? '',
+            status: params.status ?? '',
+            page: String(params.page ?? 1),
+            pageSize: String(params.pageSize ?? 100),
+          },
+        },
+      ),
+    );
+  }
+
+  createLifestyleTip(payload: Record<string, unknown>) {
+    return firstValueFrom(
+      this.http.post<{ tip: any }>(`${this.apiBase}${API_PATHS.ADMIN.LIFESTYLE_TIPS}`, payload),
+    );
+  }
+
+  updateLifestyleTip(id: string, payload: Record<string, unknown>) {
+    return firstValueFrom(
+      this.http.put<{ tip: any }>(
+        `${this.apiBase}${API_PATHS.ADMIN.LIFESTYLE_TIP_BY_ID(id)}`,
+        payload,
+      ),
+    );
+  }
+
+  archiveLifestyleTip(id: string) {
+    return firstValueFrom(
+      this.http.delete<{ ok: boolean }>(
+        `${this.apiBase}${API_PATHS.ADMIN.LIFESTYLE_TIP_BY_ID(id)}`,
+      ),
+    );
+  }
+
+  createLifestyleTipRule(payload: Record<string, unknown>) {
+    return firstValueFrom(
+      this.http.post<{ rule: any }>(
+        `${this.apiBase}${API_PATHS.ADMIN.LIFESTYLE_TIP_RULES}`,
+        payload,
+      ),
+    );
+  }
+
+  updateLifestyleTipRule(id: string, payload: Record<string, unknown>) {
+    return firstValueFrom(
+      this.http.put<{ rule: any }>(
+        `${this.apiBase}${API_PATHS.ADMIN.LIFESTYLE_TIP_RULE_BY_ID(id)}`,
+        payload,
+      ),
+    );
+  }
+
+  deleteLifestyleTipRule(id: string) {
+    return firstValueFrom(
+      this.http.delete<{ ok: boolean }>(
+        `${this.apiBase}${API_PATHS.ADMIN.LIFESTYLE_TIP_RULE_BY_ID(id)}`,
+      ),
+    );
+  }
 }

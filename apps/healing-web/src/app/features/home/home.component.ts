@@ -36,7 +36,7 @@ export class HomeComponent implements OnInit {
 
   private loadPsychologists(): void {
     this.psychologistsLoading.set(true);
-    this.bookingService.providers({ page: 1, pageSize: 5 }).subscribe({
+    this.bookingService.featuredProviders().subscribe({
       next: (res) => {
         this.psychologists.set(res.providers);
         this.psychologistsLoading.set(false);

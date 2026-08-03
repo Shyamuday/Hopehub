@@ -111,9 +111,9 @@ export class OffersPageComponent implements OnInit {
         : this.mode() === 'resources'
           ? ['RECORDED_SESSION']
           : ['INDIVIDUAL_SESSION', 'CARE_PACKAGE', 'ORGANISATION_PROGRAM'];
-    this.bookingService.offerings().subscribe({
+    this.bookingService.offeringsPageData({ types }).subscribe({
       next: ({ offerings }) => {
-        this.offerings.set(offerings.filter((offer) => types.includes(offer.type)));
+        this.offerings.set(offerings);
         this.loading.set(false);
       },
       error: () => {

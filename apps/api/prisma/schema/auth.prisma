@@ -187,6 +187,8 @@ model User {
   doctorOnlineSession  DoctorOnlineSession?
   hopeHubAssessmentAttempts HopeHubAssessmentAttempt[] @relation("UserHopeHubAssessmentAttempts")
   followUpEntitlements ConsultationFollowUpEntitlement[] @relation("UserFollowUpEntitlements")
+  practiceSessions    UserPracticeSession[] @relation("UserPracticeSessions")
+  lifestyleTipSessions UserLifestyleTipSession[] @relation("UserLifestyleTipSessions")
   emailVerified      Boolean        @default(false)
   authProvider       String?
   lastLoginAt        DateTime?

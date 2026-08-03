@@ -14,6 +14,15 @@ export interface SitemapUrl {
 export class SitemapGenerator {
   private static readonly baseUrl = 'https://hopehub.in';
   private static readonly currentDate = new Date().toISOString().split('T')[0];
+  private static readonly offerRoutes = [
+    { loc: '/packages', priority: 0.9 },
+    { loc: '/packages/single-30-minute-session', priority: 0.9 },
+    { loc: '/packages/weekly-care-package', priority: 0.8 },
+    { loc: '/packages/monthly-care-package', priority: 0.8 },
+    { loc: '/packages/three-month-care-package', priority: 0.8 },
+    { loc: '/events', priority: 0.8 },
+    { loc: '/events/goa-wellness-meetup', priority: 0.8 },
+  ] as const;
 
   /**
    * Generate sitemap XML
@@ -49,6 +58,12 @@ ${urlEntries}
         changefreq: 'weekly',
         priority: 0.9,
       },
+      ...this.offerRoutes.map((route) => ({
+        loc: route.loc,
+        lastmod: this.currentDate,
+        changefreq: 'weekly' as const,
+        priority: route.priority,
+      })),
       {
         loc: '/community',
         lastmod: this.currentDate,

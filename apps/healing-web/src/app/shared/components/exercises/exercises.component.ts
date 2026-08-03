@@ -1,4 +1,4 @@
-import { Component, OnInit, input, signal, Inject, PLATFORM_ID } from '@angular/core';
+import { Component, DestroyRef, OnInit, input, signal, Inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
@@ -9,13 +9,10 @@ import {
   ExerciseType,
   ExerciseDifficulty,
 } from '../../../core/models/exercise.model';
-import {
-  ALL_EXERCISES,
-  getExerciseById,
-  searchExercises,
-} from '../../../core/data/exercise-configs';
+import { ALL_EXERCISES, getExerciseById } from '../../../core/data/exercise-configs';
 import { ProgressService } from '../../../core/services/progress.service';
 import { NotificationService } from '../../../core/services/notification.service';
+import { PracticeService } from '../../../core/services/practice.service';
 import { MoodRating } from '../../../core/models/progress.model';
 import {
   FormDropdownComponent,
@@ -427,22 +424,19 @@ export class ExercisesComponent implements OnInit {
   constructor(
     private route: ActivatedRoute,
     private progressService: ProgressService,
+    private practiceService: PracticeService,
     private notificationService: NotificationService,
+    private destroyRef: DestroyRef,
     @Inject(PLATFORM_ID) platformId: object,
   ) {
     this.isBrowser = isPlatformBrowser(platformId);
   }
 
   ngOnInit() {
-    // Check for recommended exercises from route params
-    this.route.queryParams.pipe(takeUntilDestroyed()).subscribe((params: any) => {
-      if (params['recommended']) {
-        const recommendedIds = params['recommended'].split(',');
-        this.showRecommendedExercises(recommendedIds);
-      }
+    this.route.queryParams.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params: any) => {
+      this.loadPageData(params);
     });
 
-    // If recommended exercises provided as input, show them
     if (this.recommendedExerciseIds().length > 0) {
       this.showRecommendedExercises(this.recommendedExerciseIds());
     }
@@ -450,9 +444,46 @@ export class ExercisesComponent implements OnInit {
     this.filterExercises();
   }
 
+  private loadPageData(params: any): void {
+    this.practiceService
+      .pageData({
+        assessmentType: params['assessment'],
+        concern: params['concern'],
+        score: params['score'],
+      })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (pageData) => {
+          if (pageData.exercises.length) {
+            this.exercises = pageData.exercises;
+            this.filteredExercises.set(pageData.exercises);
+          }
+
+          if (pageData.recommendations.length) {
+            this.filteredExercises.set(pageData.recommendations);
+          } else if (params['recommended']) {
+            this.showRecommendedExercises(params['recommended'].split(','));
+          } else {
+            this.filterExercises();
+          }
+        },
+        error: () => {
+          this.exercises = ALL_EXERCISES;
+          this.filteredExercises.set(ALL_EXERCISES);
+          if (params['recommended'])
+            this.showRecommendedExercises(params['recommended'].split(','));
+          else this.filterExercises();
+        },
+      });
+  }
+
   showRecommendedExercises(exerciseIds: string[]) {
     const recommended = exerciseIds
-      .map((id) => getExerciseById(id))
+      .map(
+        (id) =>
+          this.exercises.find((exercise) => exercise.id === id || exercise.sourceSlug === id) ||
+          getExerciseById(id),
+      )
       .filter((ex) => ex !== undefined) as Exercise[];
     if (recommended.length > 0) {
       this.filteredExercises.set(recommended);
@@ -464,7 +495,14 @@ export class ExercisesComponent implements OnInit {
 
     // Apply search filter
     if (this.searchTerm.trim()) {
-      filtered = searchExercises(this.searchTerm);
+      const searchTerm = this.searchTerm.toLowerCase();
+      filtered = filtered.filter(
+        (exercise) =>
+          exercise.title.toLowerCase().includes(searchTerm) ||
+          exercise.description.toLowerCase().includes(searchTerm) ||
+          exercise.tags.some((tag) => tag.toLowerCase().includes(searchTerm)) ||
+          exercise.benefits.some((benefit) => benefit.toLowerCase().includes(searchTerm)),
+      );
     }
 
     // Apply category filter
@@ -524,6 +562,18 @@ export class ExercisesComponent implements OnInit {
       mood,
       notes,
     );
+
+    if (exercise.sourceSlug) {
+      this.practiceService
+        .recordSession(exercise.id, {
+          durationMinutes: duration,
+          helpfulRating: rating,
+          moodAfter: mood,
+          notes,
+          source: 'healing-web',
+        })
+        .subscribe({ error: () => undefined });
+    }
 
     this.notificationService.success(
       `Great job completing "${exercise.title}". Your progress has been recorded.`,

@@ -10,7 +10,7 @@
     </div>
 
     <div class="service-grid">
-      @for (service of services; track service.id) {
+      @for (service of services(); track service.id) {
         <app-service-card
           [service]="service"
           [hidePricing]="true"

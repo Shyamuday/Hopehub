@@ -377,6 +377,72 @@ export class AdminApi {
       ...(args as Parameters<AdminCatalogApi['unpublishAssessmentDefinition']>),
     );
   }
+  getPracticesAdmin(...args: Parameters<AdminCatalogApi['getPracticesAdmin']>) {
+    return this.catalog.getPracticesAdmin(
+      ...(args as Parameters<AdminCatalogApi['getPracticesAdmin']>),
+    );
+  }
+  createPractice(...args: Parameters<AdminCatalogApi['createPractice']>) {
+    return this.catalog.createPractice(...(args as Parameters<AdminCatalogApi['createPractice']>));
+  }
+  updatePractice(...args: Parameters<AdminCatalogApi['updatePractice']>) {
+    return this.catalog.updatePractice(...(args as Parameters<AdminCatalogApi['updatePractice']>));
+  }
+  archivePractice(...args: Parameters<AdminCatalogApi['archivePractice']>) {
+    return this.catalog.archivePractice(
+      ...(args as Parameters<AdminCatalogApi['archivePractice']>),
+    );
+  }
+  createPracticeRule(...args: Parameters<AdminCatalogApi['createPracticeRule']>) {
+    return this.catalog.createPracticeRule(
+      ...(args as Parameters<AdminCatalogApi['createPracticeRule']>),
+    );
+  }
+  updatePracticeRule(...args: Parameters<AdminCatalogApi['updatePracticeRule']>) {
+    return this.catalog.updatePracticeRule(
+      ...(args as Parameters<AdminCatalogApi['updatePracticeRule']>),
+    );
+  }
+  deletePracticeRule(...args: Parameters<AdminCatalogApi['deletePracticeRule']>) {
+    return this.catalog.deletePracticeRule(
+      ...(args as Parameters<AdminCatalogApi['deletePracticeRule']>),
+    );
+  }
+  getLifestyleTipsAdmin(...args: Parameters<AdminCatalogApi['getLifestyleTipsAdmin']>) {
+    return this.catalog.getLifestyleTipsAdmin(
+      ...(args as Parameters<AdminCatalogApi['getLifestyleTipsAdmin']>),
+    );
+  }
+  createLifestyleTip(...args: Parameters<AdminCatalogApi['createLifestyleTip']>) {
+    return this.catalog.createLifestyleTip(
+      ...(args as Parameters<AdminCatalogApi['createLifestyleTip']>),
+    );
+  }
+  updateLifestyleTip(...args: Parameters<AdminCatalogApi['updateLifestyleTip']>) {
+    return this.catalog.updateLifestyleTip(
+      ...(args as Parameters<AdminCatalogApi['updateLifestyleTip']>),
+    );
+  }
+  archiveLifestyleTip(...args: Parameters<AdminCatalogApi['archiveLifestyleTip']>) {
+    return this.catalog.archiveLifestyleTip(
+      ...(args as Parameters<AdminCatalogApi['archiveLifestyleTip']>),
+    );
+  }
+  createLifestyleTipRule(...args: Parameters<AdminCatalogApi['createLifestyleTipRule']>) {
+    return this.catalog.createLifestyleTipRule(
+      ...(args as Parameters<AdminCatalogApi['createLifestyleTipRule']>),
+    );
+  }
+  updateLifestyleTipRule(...args: Parameters<AdminCatalogApi['updateLifestyleTipRule']>) {
+    return this.catalog.updateLifestyleTipRule(
+      ...(args as Parameters<AdminCatalogApi['updateLifestyleTipRule']>),
+    );
+  }
+  deleteLifestyleTipRule(...args: Parameters<AdminCatalogApi['deleteLifestyleTipRule']>) {
+    return this.catalog.deleteLifestyleTipRule(
+      ...(args as Parameters<AdminCatalogApi['deleteLifestyleTipRule']>),
+    );
+  }
   getHrDoctors(...args: Parameters<AdminHrApi['getHrDoctors']>) {
     return this.hr.getHrDoctors(...(args as Parameters<AdminHrApi['getHrDoctors']>));
   }

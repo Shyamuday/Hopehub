@@ -6,9 +6,10 @@ import {
   keyForContactMailId,
   listContactMail
 } from '../../services/contact-mailbox.js';
+import { CONTACT_IDENTITY } from '../../constants/config.constants.js';
 import { sendEmail } from '../../services/mail.js';
 
-const CONTACT_REPLY_FROM = process.env.CONTACT_REPLY_FROM || 'contact@hopehub.in';
+const CONTACT_REPLY_FROM = process.env.CONTACT_REPLY_FROM || CONTACT_IDENTITY.EMAIL_FROM;
 
 const replySchema = z.object({
   body: z.string().trim().min(1).max(8000)

@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, map, shareReplay } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import type { IceServerConfig } from '../../shared/components/consultation-call/webrtc-call.types';
 
@@ -189,12 +189,31 @@ export type HopeHubService = {
   seoDescription?: string | null;
 };
 
+export type HopeHubBootstrap = {
+  banners: HopeHubBanner[];
+  offerings: HopeHubOffering[];
+  services: HopeHubService[];
+  providers: HopeHubProvider[];
+  providerPagination: HopeHubProviderResponse['pagination'];
+  singleSessionQuote: { offering: HopeHubOffering; quote: HopeHubOfferingQuote } | null;
+};
+
 @Injectable({
   providedIn: 'root',
 })
 export class BookingService {
   private http = inject(HttpClient);
   private readonly apiUrl = environment.apiUrl;
+  private bootstrapCache?: Observable<HopeHubBootstrap>;
+
+  bootstrap(): Observable<HopeHubBootstrap> {
+    if (!this.bootstrapCache) {
+      this.bootstrapCache = this.http
+        .get<HopeHubBootstrap>(`${this.apiUrl}/hope-hub/bootstrap`)
+        .pipe(shareReplay({ bufferSize: 1, refCount: false }));
+    }
+    return this.bootstrapCache;
+  }
 
   createBooking(payload: HopeHubBookingPayload): Observable<{ consultation: any }> {
     return this.http.post<{ consultation: any }>(`${this.apiUrl}/hope-hub/bookings`, payload);
@@ -250,6 +269,15 @@ export class BookingService {
     return this.http.get<{ services: HopeHubService[] }>(`${this.apiUrl}/hope-hub/services`);
   }
 
+  servicesPageData(): Observable<{
+    services: HopeHubService[];
+    singleSessionQuote: { offering: HopeHubOffering; quote: HopeHubOfferingQuote } | null;
+  }> {
+    return this.bootstrap().pipe(
+      map(({ services, singleSessionQuote }) => ({ services, singleSessionQuote })),
+    );
+  }
+
   service(id: string): Observable<{ service: HopeHubService }> {
     return this.http.get<{ service: HopeHubService }>(
       `${this.apiUrl}/hope-hub/services/${encodeURIComponent(id)}`,
@@ -265,6 +293,20 @@ export class BookingService {
     const query = searchParams.toString();
     return this.http.get<{ offerings: HopeHubOffering[] }>(
       `${this.apiUrl}/hope-hub/offerings${query ? `?${query}` : ''}`,
+    );
+  }
+
+  offeringsPageData(params: { types?: string[]; featured?: boolean } = {}): Observable<{
+    offerings: HopeHubOffering[];
+  }> {
+    return this.bootstrap().pipe(
+      map(({ offerings }) => ({
+        offerings: offerings.filter((offering) => {
+          const matchesType = !params.types?.length || params.types.includes(offering.type);
+          const matchesFeatured = !params.featured || offering.isFeatured;
+          return matchesType && matchesFeatured;
+        }),
+      })),
     );
   }
 
@@ -284,6 +326,19 @@ export class BookingService {
 
   banners(): Observable<{ banners: HopeHubBanner[] }> {
     return this.http.get<{ banners: HopeHubBanner[] }>(`${this.apiUrl}/hope-hub/banners`);
+  }
+
+  cachedBanners(): Observable<{ banners: HopeHubBanner[] }> {
+    return this.bootstrap().pipe(map(({ banners }) => ({ banners })));
+  }
+
+  featuredProviders(): Observable<HopeHubProviderResponse> {
+    return this.bootstrap().pipe(
+      map(({ providers, providerPagination }) => ({
+        providers,
+        pagination: providerPagination,
+      })),
+    );
   }
 
   createOrganizationLead(

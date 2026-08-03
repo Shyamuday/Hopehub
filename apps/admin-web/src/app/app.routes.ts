@@ -47,6 +47,8 @@ import { AccountPage } from './features/account/account-page/account-page';
 import { NotificationsInboxPage } from './features/notifications-inbox/notifications-inbox-page';
 import { SafetyFlagsPage } from './features/safety-flags/safety-flags-page';
 import { FollowUpsPage } from './features/follow-ups/follow-ups-page';
+import { PracticesPage } from './features/practices/practices-page';
+import { LifestyleTipsAdminPage } from './features/lifestyle-tips-admin/lifestyle-tips-admin-page';
 
 const guard = [adminPermissionGuard];
 
@@ -70,6 +72,8 @@ export const routes: Routes = [
         component: AssessmentDefinitionsPage,
         canActivate: guard,
       },
+      { path: ROUTE_PATHS.PRACTICES, component: PracticesPage, canActivate: guard },
+      { path: ROUTE_PATHS.LIFESTYLE_TIPS, component: LifestyleTipsAdminPage, canActivate: guard },
       { path: ROUTE_PATHS.REWARDS, component: RewardsPage, canActivate: guard },
       { path: ROUTE_PATHS.CLINICAL_RECORDS, component: ClinicalRecordsPage, canActivate: guard },
       { path: ROUTE_PATHS.VACANCIES, component: VacanciesPage, canActivate: guard },

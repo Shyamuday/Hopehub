@@ -4,6 +4,7 @@ import { Role } from '@prisma/client';
 import { authRequired, allowRoles } from '../auth.js';
 import { prisma } from '../db.js';
 import { DEFAULT_BILLING_PLANS } from '../constants/billing.constants.js';
+import { CONTACT_IDENTITY } from '../constants/config.constants.js';
 import { asyncRoute, routeParam, queryText } from '../utils/helpers.js';
 import {
   DISEASE_PUBLIC_CATEGORIES,
@@ -499,7 +500,7 @@ router.get(
       clinicName: 'HopeHub Care and Research Centre',
       contactPhone: '+91-98765-43210',
       contactPhoneTel: '+919876543210',
-      contactEmail: 'support@hopehub.in',
+      contactEmail: CONTACT_IDENTITY.EMAIL,
       clinicAddressLine1: 'Ranchi Main Clinic',
       clinicAddressLine2: 'Near City Centre, Main Road',
       clinicAddressLine3: 'Ranchi, Jharkhand, India',

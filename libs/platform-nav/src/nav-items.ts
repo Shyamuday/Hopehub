@@ -37,7 +37,7 @@ export const OPERATIONS_NAV_ITEMS: PlatformNavItem[] = [
   { path: '/schedules', label: 'Schedules', icon: '🗓️', capability: 'clinic_manager.portal' },
   { path: '/finance', label: 'Finance', icon: '💳', capability: 'accountant.portal' },
   { path: '/branch-dashboard', label: 'Branch P&L', icon: '📈', capability: 'branch_owner.portal' },
-  { path: '/follow-ups', label: 'Follow-ups', icon: '🔔', capability: 'coordinator.portal' },
+  { path: '/follow-ups', label: 'Adherence', icon: '🔔', capability: 'coordinator.portal' },
   { path: '/patients', label: 'Patient search', icon: '🔍', capability: 'call_center.portal' },
   { path: '/consultations', label: 'Consultations', icon: '💬', capability: 'call_center.portal' },
   { path: '/funnels', label: 'Funnels', icon: '📣', capability: 'marketing.portal' },
