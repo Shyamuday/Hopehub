@@ -186,11 +186,40 @@ model User {
   blogComments         BlogComment[]          @relation("BlogCommentAuthor")
   doctorOnlineSession  DoctorOnlineSession?
   hopeHubAssessmentAttempts HopeHubAssessmentAttempt[] @relation("UserHopeHubAssessmentAttempts")
+  emailVerified      Boolean        @default(false)
+  authProvider       String?
+  lastLoginAt        DateTime?
+  lastLoginMethod    String?
+  externalAvatarUrl  String?
+  identities         UserIdentity[] @relation("UserIdentities")
   createdAt           DateTime       @default(now())
   updatedAt           DateTime       @updatedAt
 
   @@index([mobile])
   @@index([homeClinicStoreId])
+  @@index([authProvider])
+  @@index([lastLoginAt])
+}
+
+model UserIdentity {
+  id             String   @id @default(cuid())
+  userId         String
+  provider       String
+  providerUserId String
+  email          String?
+  emailVerified  Boolean  @default(false)
+  displayName    String?
+  avatarUrl      String?
+  rawProfile     Json?
+  lastLoginAt    DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  user           User     @relation("UserIdentities", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerUserId])
+  @@index([userId])
+  @@index([email])
+  @@index([provider, email])
 }
 
 model AuditLog {
