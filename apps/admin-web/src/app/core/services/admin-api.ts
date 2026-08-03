@@ -360,6 +360,11 @@ export class AdminApi {
       ...(args as Parameters<AdminCatalogApi['getAssessmentDefinitionsAdmin']>),
     );
   }
+  getAssessmentAccessReport(...args: Parameters<AdminCatalogApi['getAssessmentAccessReport']>) {
+    return this.catalog.getAssessmentAccessReport(
+      ...(args as Parameters<AdminCatalogApi['getAssessmentAccessReport']>),
+    );
+  }
   createAssessmentDefinition(...args: Parameters<AdminCatalogApi['createAssessmentDefinition']>) {
     return this.catalog.createAssessmentDefinition(
       ...(args as Parameters<AdminCatalogApi['createAssessmentDefinition']>),

@@ -33,15 +33,26 @@ export class AssessmentDefinitionsPage implements OnInit {
   private readonly api = inject(AdminApi);
 
   readonly loading = signal(true);
+  readonly reportLoading = signal(true);
   readonly saving = signal(false);
   readonly toast = signal('');
   readonly error = signal('');
   readonly query = signal('');
+  readonly reportQuery = signal('');
+  readonly reportStatus = signal('');
   readonly definitions = signal<any[]>([]);
+  readonly accessReport = signal<any>({
+    payments: [],
+    redemptions: [],
+    couponUsage: [],
+    summary: {},
+    pagination: {},
+  });
   readonly form = signal<DefinitionForm>(this.emptyForm());
 
   ngOnInit(): void {
     void this.load();
+    void this.loadAccessReport();
   }
 
   async load(): Promise<void> {
@@ -58,6 +69,38 @@ export class AssessmentDefinitionsPage implements OnInit {
     } finally {
       this.loading.set(false);
     }
+  }
+
+  async loadAccessReport(): Promise<void> {
+    this.reportLoading.set(true);
+    this.error.set('');
+    try {
+      const response = await this.api.getAssessmentAccessReport({
+        q: this.reportQuery(),
+        status: this.reportStatus(),
+      });
+      this.accessReport.set(response);
+    } catch (error: any) {
+      this.error.set(error?.error?.message || error?.message || 'Could not load access report.');
+    } finally {
+      this.reportLoading.set(false);
+    }
+  }
+
+  rupees(value: number | null | undefined): string {
+    return `₹${Math.round(Number(value || 0) / 100)}`;
+  }
+
+  formatDate(value: string | null | undefined): string {
+    if (!value) return '—';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '—';
+    return date.toLocaleString('en-IN', {
+      day: '2-digit',
+      month: 'short',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
   }
 
   edit(definition: any): void {

@@ -352,6 +352,34 @@ export class AdminCatalogApi extends AdminApiBase {
     );
   }
 
+  getAssessmentAccessReport(
+    params: {
+      q?: string;
+      status?: string;
+      assessmentId?: string;
+      page?: number;
+      pageSize?: number;
+    } = {},
+  ) {
+    return firstValueFrom(
+      this.http.get<{
+        payments: Array<any>;
+        redemptions: Array<any>;
+        couponUsage: Array<any>;
+        summary: any;
+        pagination: any;
+      }>(`${this.apiBase}${API_PATHS.ADMIN.ASSESSMENT_ACCESS_REPORT}`, {
+        params: {
+          q: params.q ?? '',
+          status: params.status ?? '',
+          assessmentId: params.assessmentId ?? '',
+          page: String(params.page ?? 1),
+          pageSize: String(params.pageSize ?? 20),
+        },
+      }),
+    );
+  }
+
   createAssessmentDefinition(payload: Record<string, unknown>) {
     return firstValueFrom(
       this.http.post<{ definition: any }>(

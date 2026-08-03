@@ -75,6 +75,7 @@ export const API_PATHS = {
     HOPE_HUB_ORGANIZATION_LEADS: '/admin/hope-hub/organization-leads',
     HOPE_HUB_ORGANIZATION_LEAD_BY_ID: (id: string) => `/admin/hope-hub/organization-leads/${id}`,
     ASSESSMENT_DEFINITIONS: '/admin/assessment-definitions',
+    ASSESSMENT_ACCESS_REPORT: '/admin/assessment-definitions/access-report',
     ASSESSMENT_DEFINITION_BY_ID: (id: string) => `/admin/assessment-definitions/${id}`,
     ASSESSMENT_DEFINITION_PUBLISH: (id: string) => `/admin/assessment-definitions/${id}/publish`,
     ASSESSMENT_DEFINITION_UNPUBLISH: (id: string) =>

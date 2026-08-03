@@ -25,6 +25,112 @@
     <button type="button" (click)="load()">Search</button>
   </section>
 
+  <section class="panel access-report">
+    <div class="report-head">
+      <div>
+        <h3>Assessment access</h3>
+        <p>Paid unlocks, pending orders, and one-time coupon usage.</p>
+      </div>
+      <div class="report-filters">
+        <input
+          name="reportQuery"
+          placeholder="Search user, test, order"
+          [ngModel]="reportQuery()"
+          (ngModelChange)="reportQuery.set($event)"
+          (keyup.enter)="loadAccessReport()"
+        />
+        <select name="reportStatus" [ngModel]="reportStatus()" (ngModelChange)="reportStatus.set($event)">
+          <option value="">All payments</option>
+          <option value="PAID">Paid</option>
+          <option value="CREATED">Pending</option>
+          <option value="FAILED">Failed</option>
+        </select>
+        <button type="button" (click)="loadAccessReport()">Refresh</button>
+      </div>
+    </div>
+
+    @if (reportLoading()) {
+      <p class="muted">Loading access report...</p>
+    } @else {
+      <div class="summary-grid">
+        <div>
+          <span>Paid revenue</span>
+          <strong>{{ rupees(accessReport().summary?.paidAmountInPaise) }}</strong>
+          <small>{{ accessReport().summary?.paidCount || 0 }} unlocks</small>
+        </div>
+        <div>
+          <span>Pending orders</span>
+          <strong>{{ rupees(accessReport().summary?.pendingAmountInPaise) }}</strong>
+          <small>{{ accessReport().summary?.pendingCount || 0 }} orders</small>
+        </div>
+        <div>
+          <span>Coupon redemptions</span>
+          <strong>{{ accessReport().summary?.redemptionCount || 0 }}</strong>
+          <small>one use per user/test/code</small>
+        </div>
+      </div>
+
+      <div class="report-columns">
+        <section>
+          <h4>Coupon usage</h4>
+          <div class="compact-list">
+            @for (coupon of accessReport().couponUsage; track coupon.assessmentId + coupon.couponCode) {
+              <article>
+                <strong>{{ coupon.title }}</strong>
+                <span>
+                  {{ coupon.couponCode || 'No code' }} · {{ coupon.used || 0 }}
+                  @if (coupon.couponMaxRedemptions) {
+                    / {{ coupon.couponMaxRedemptions }}
+                  }
+                  used
+                </span>
+              </article>
+            } @empty {
+              <p class="muted">No paid or coupon assessments yet.</p>
+            }
+          </div>
+        </section>
+
+        <section>
+          <h4>Recent payments</h4>
+          <div class="compact-list">
+            @for (payment of accessReport().payments; track payment.id) {
+              <article>
+                <strong>{{ payment.assessment?.title || payment.assessmentId }}</strong>
+                <span>
+                  {{ payment.user?.name || 'User' }} · {{ payment.user?.email || payment.user?.mobile || 'No contact' }}
+                </span>
+                <span>
+                  {{ payment.status }} · {{ rupees(payment.amountInPaise) }} · {{ formatDate(payment.createdAt) }}
+                </span>
+                <small>{{ payment.providerPaymentId || payment.providerOrderId }}</small>
+              </article>
+            } @empty {
+              <p class="muted">No assessment payments yet.</p>
+            }
+          </div>
+        </section>
+
+        <section>
+          <h4>Recent coupon unlocks</h4>
+          <div class="compact-list">
+            @for (redemption of accessReport().redemptions; track redemption.id) {
+              <article>
+                <strong>{{ redemption.assessment?.title || redemption.assessmentId }}</strong>
+                <span>
+                  {{ redemption.user?.name || 'User' }} · {{ redemption.user?.email || redemption.user?.mobile || 'No contact' }}
+                </span>
+                <span>{{ redemption.couponCode }} · {{ formatDate(redemption.createdAt) }}</span>
+              </article>
+            } @empty {
+              <p class="muted">No coupon redemptions yet.</p>
+            }
+          </div>
+        </section>
+      </div>
+    }
+  </section>
+
   <section class="grid-layout">
     <form class="panel edit-form" (ngSubmit)="save()">
       <h3>{{ form().id ? 'Edit assessment' : 'New assessment' }}</h3>

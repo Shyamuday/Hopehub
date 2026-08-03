@@ -44,8 +44,83 @@
   gap: 0.75rem;
 }
 
-.toolbar input {
+.toolbar input,
+.report-filters input {
   flex: 1;
+}
+
+.report-head {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.report-head p,
+.compact-list p {
+  margin: 0.25rem 0 0;
+}
+
+.report-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  min-width: min(100%, 32rem);
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.summary-grid div,
+.compact-list article {
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  background: #f8fafc;
+  padding: 0.85rem;
+}
+
+.summary-grid span,
+.summary-grid small,
+.compact-list span,
+.compact-list small {
+  display: block;
+  color: #64748b;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.summary-grid strong {
+  display: block;
+  margin-top: 0.2rem;
+  color: #0f172a;
+  font-size: 1.35rem;
+}
+
+.report-columns {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.85rem;
+  margin-top: 1rem;
+}
+
+.report-columns h4 {
+  margin: 0 0 0.6rem;
+  color: #0f172a;
+}
+
+.compact-list {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.compact-list strong {
+  display: block;
+  color: #0f172a;
+  font-size: 0.9rem;
 }
 
 .grid-layout {
@@ -188,7 +263,23 @@ button {
 
 @media (max-width: 900px) {
   .grid-layout,
-  .two {
+  .two,
+  .summary-grid,
+  .report-columns {
     grid-template-columns: 1fr;
+  }
+
+  .report-head,
+  .report-filters,
+  .toolbar {
+    flex-direction: column;
+  }
+
+  .report-filters input,
+  .report-filters select,
+  .report-filters button,
+  .toolbar input,
+  .toolbar button {
+    width: 100%;
   }
 }

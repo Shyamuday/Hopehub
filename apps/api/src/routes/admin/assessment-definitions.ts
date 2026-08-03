@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { Prisma, Role } from '@prisma/client';
+import { PaymentStatus, Prisma, Role } from '@prisma/client';
 import { z } from 'zod';
 import { authRequired, allowRoles } from '../../auth.js';
 import { prisma } from '../../db.js';
@@ -64,6 +64,153 @@ function validateForPublish(config: unknown) {
 }
 
 export function registerAdminAssessmentDefinitionRoutes(router: Router) {
+  router.get(
+    '/admin/assessment-definitions/access-report',
+    authRequired,
+    allowRoles(Role.ADMIN, Role.MARKETING),
+    asyncRoute(async (req, res) => {
+      const page = queryPositiveInt(req, 'page', 1, 1, 1000);
+      const pageSize = queryPositiveInt(req, 'pageSize', 20, 1, 100);
+      const q = queryText(req, 'q').trim();
+      const status = queryText(req, 'status');
+      const assessmentId = queryText(req, 'assessmentId').trim();
+      const paymentWhere: Prisma.AssessmentPaymentWhereInput = {
+        ...(status && status in PaymentStatus ? { status: status as PaymentStatus } : {}),
+        ...(assessmentId ? { assessmentId } : {}),
+        ...(q
+          ? {
+              OR: [
+                { providerOrderId: { contains: q, mode: 'insensitive' } },
+                { providerPaymentId: { contains: q, mode: 'insensitive' } },
+                { user: { name: { contains: q, mode: 'insensitive' } } },
+                { user: { email: { contains: q, mode: 'insensitive' } } },
+                { assessment: { title: { contains: q, mode: 'insensitive' } } }
+              ]
+            }
+          : {})
+      };
+      const redemptionWhere: Prisma.AssessmentCouponRedemptionWhereInput = {
+        ...(assessmentId ? { assessmentId } : {}),
+        ...(q
+          ? {
+              OR: [
+                { couponCode: { contains: q, mode: 'insensitive' } },
+                { user: { name: { contains: q, mode: 'insensitive' } } },
+                { user: { email: { contains: q, mode: 'insensitive' } } },
+                { assessment: { title: { contains: q, mode: 'insensitive' } } }
+              ]
+            }
+          : {})
+      };
+
+      const [
+        payments,
+        paymentTotal,
+        paidSummary,
+        pendingSummary,
+        redemptions,
+        redemptionTotal,
+        couponUsage,
+        paidDefinitions
+      ] = await Promise.all([
+        prisma.assessmentPayment.findMany({
+          where: paymentWhere,
+          orderBy: { createdAt: 'desc' },
+          skip: (page - 1) * pageSize,
+          take: pageSize,
+          include: {
+            user: { select: { id: true, name: true, email: true, mobile: true } },
+            assessment: { select: { id: true, title: true, accessMode: true, priceInPaise: true } }
+          }
+        }),
+        prisma.assessmentPayment.count({ where: paymentWhere }),
+        prisma.assessmentPayment.aggregate({
+          where: { ...paymentWhere, status: 'PAID' },
+          _sum: { amountInPaise: true },
+          _count: { _all: true }
+        }),
+        prisma.assessmentPayment.aggregate({
+          where: { ...paymentWhere, status: 'CREATED' },
+          _sum: { amountInPaise: true },
+          _count: { _all: true }
+        }),
+        prisma.assessmentCouponRedemption.findMany({
+          where: redemptionWhere,
+          orderBy: { createdAt: 'desc' },
+          take: 50,
+          include: {
+            user: { select: { id: true, name: true, email: true, mobile: true } },
+            assessment: {
+              select: {
+                id: true,
+                title: true,
+                couponCode: true,
+                couponLabel: true,
+                couponMaxRedemptions: true
+              }
+            }
+          }
+        }),
+        prisma.assessmentCouponRedemption.count({ where: redemptionWhere }),
+        prisma.assessmentCouponRedemption.groupBy({
+          by: ['assessmentId', 'couponCode'],
+          _count: { _all: true },
+          orderBy: { _count: { couponCode: 'desc' } },
+          take: 50
+        }),
+        prisma.assessmentDefinition.findMany({
+          where: {
+            OR: [{ accessMode: 'PAID' }, { couponCode: { not: null } }]
+          },
+          select: {
+            id: true,
+            title: true,
+            accessMode: true,
+            priceInPaise: true,
+            couponCode: true,
+            couponLabel: true,
+            couponMaxRedemptions: true
+          },
+          orderBy: [{ sortOrder: 'asc' }, { title: 'asc' }]
+        })
+      ]);
+
+      const usageByAssessmentAndCode = new Map(
+        couponUsage.map((item) => [`${item.assessmentId}:${item.couponCode}`, item._count._all])
+      );
+
+      res.json({
+        payments,
+        redemptions,
+        couponUsage: paidDefinitions.map((definition) => ({
+          assessmentId: definition.id,
+          title: definition.title,
+          accessMode: definition.accessMode,
+          priceInPaise: definition.priceInPaise,
+          couponCode: definition.couponCode,
+          couponLabel: definition.couponLabel,
+          couponMaxRedemptions: definition.couponMaxRedemptions,
+          used: definition.couponCode
+            ? (usageByAssessmentAndCode.get(`${definition.id}:${definition.couponCode}`) ?? 0)
+            : 0
+        })),
+        summary: {
+          paidAmountInPaise: paidSummary._sum.amountInPaise ?? 0,
+          paidCount: paidSummary._count._all,
+          pendingAmountInPaise: pendingSummary._sum.amountInPaise ?? 0,
+          pendingCount: pendingSummary._count._all,
+          redemptionCount: redemptionTotal
+        },
+        pagination: {
+          page,
+          pageSize,
+          total: paymentTotal,
+          totalPages: Math.max(1, Math.ceil(paymentTotal / pageSize))
+        }
+      });
+    })
+  );
+
   router.get(
     '/admin/assessment-definitions',
     authRequired,
