@@ -118,12 +118,13 @@
                 }
               </div>
             </div>
-            <p class="mt-4 flex-1 text-sm leading-6 text-gray-700">
+            <div class="relative mt-4 max-h-24 flex-1 overflow-hidden text-sm leading-6 text-gray-700">
               {{
                 provider.bio ||
                   'Available for private Hope Hub support and guided mental wellness conversation.'
               }}
-            </p>
+              <div class="pointer-events-none absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-white to-transparent"></div>
+            </div>
             @if (provider.focusAreas.length) {
               <div class="mt-4 flex flex-wrap gap-2">
                 @for (focus of provider.focusAreas.slice(0, 4); track focus) {
