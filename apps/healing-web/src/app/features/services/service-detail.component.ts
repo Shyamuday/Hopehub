@@ -5,7 +5,12 @@ import { NOTE_CONTENT } from '../../core/constants/note-content.constants';
 import { Service, ServiceCategory } from '../../core/models';
 import { ServiceInquiryComponent } from '../../shared/components';
 import { BookingService, NotificationService, SEOService } from '../../core/services';
-import { getServiceById } from '../../core/data/services-data';
+import {
+  HOPE_HUB_SESSION_DISCOUNT_PERCENT,
+  HOPE_HUB_SESSION_OFFER_PRICE,
+  HOPE_HUB_SESSION_PRICE,
+  getServiceById,
+} from '../../core/data/services-data';
 import { HopeHubService } from '../../core/services/booking.service';
 
 @Component({
@@ -17,6 +22,9 @@ import { HopeHubService } from '../../core/services/booking.service';
 })
 export class ServiceDetailComponent implements OnInit {
   readonly notes = NOTE_CONTENT;
+  readonly sessionPrice = HOPE_HUB_SESSION_PRICE;
+  readonly sessionOfferPrice = HOPE_HUB_SESSION_OFFER_PRICE;
+  readonly sessionDiscountPercent = HOPE_HUB_SESSION_DISCOUNT_PERCENT;
   service = signal<Service | null>(null);
   loading = signal(true);
 
@@ -47,7 +55,8 @@ export class ServiceDetailComponent implements OnInit {
       queryParams: {
         service: this.service()?.id,
         serviceName: this.service()?.name,
-        price: this.service()?.pricing?.individual,
+        offering: 'single-30-minute-session',
+        price: this.sessionOfferPrice,
         duration: '30 minutes + 15 min follow-up',
         source: 'service-detail',
       },

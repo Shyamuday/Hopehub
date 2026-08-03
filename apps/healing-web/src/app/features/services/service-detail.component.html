@@ -37,10 +37,17 @@
             <div class="mb-6">
               <h3 class="text-lg font-semibold text-gray-900 mb-3">Session fee</h3>
               <div class="space-y-2 rounded-lg border border-primary-100 bg-primary-50 p-4">
+                <div class="session-offer-banner">
+                  <strong>{{ sessionDiscountPercent }}% off first session</strong>
+                  <span>30 min private support + 15 min follow-up included</span>
+                </div>
                 @if (service()!.pricing!.individual) {
                   <div class="flex justify-between items-center">
                     <span class="text-gray-700">30-minute support session + 15-minute follow-up</span>
-                    <span class="font-semibold">{{ formatPrice(service()!.pricing!.individual, service()!.pricing!.currency) }}</span>
+                    <span class="font-semibold">
+                      {{ formatPrice(sessionOfferPrice, service()!.pricing!.currency) }}
+                      <del class="ml-2 text-sm font-semibold text-gray-500">{{ formatPrice(sessionPrice, service()!.pricing!.currency) }}</del>
+                    </span>
                   </div>
                 }
                 @if (service()!.pricing!.couples) {

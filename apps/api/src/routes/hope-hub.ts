@@ -16,6 +16,7 @@ import { PRODUCT_EVENTS, trackProductEvent } from '../services/product-analytics
 import { enrichWithProfileImageUrl, userProfileImagePath } from '../utils/profile-image-url.js';
 import { hopeHubMediaMimeType, readHopeHubMediaFile } from '../services/hope-hub-media-storage.js';
 import { getAssessmentDefinition, scoreAssessment } from '../services/assessment-definitions.js';
+import { isFirstPaidConsultation } from '../services/referral-codes.js';
 
 export const hopeHubRouter = Router();
 
@@ -223,7 +224,8 @@ function hopeHubDiscountSnapshot(
     discountStartsAt: Date | null;
     discountEndsAt: Date | null;
   } | null,
-  grossInPaise: number
+  grossInPaise: number,
+  options: { isFirstPaidConsultation?: boolean } = {}
 ) {
   if (!offering?.discountEnabled || offering.discountType === 'NONE' || grossInPaise <= 0) {
     return { discountInPaise: 0, rule: null };
@@ -234,6 +236,26 @@ function hopeHubDiscountSnapshot(
   }
   if (offering.discountEndsAt && offering.discountEndsAt < now) {
     return { discountInPaise: 0, rule: null };
+  }
+  if (offering.code === 'SINGLE_30' && options.isFirstPaidConsultation === false) {
+    return {
+      discountInPaise: 0,
+      rule: {
+        source: 'hope-hub-offering',
+        offeringId: offering.id,
+        offeringCode: offering.code,
+        type: offering.discountType,
+        label: 'First session offer already used',
+        code: offering.discountCode || null,
+        percent: offering.discountPercent,
+        flatInPaise: offering.discountFlatInPaise,
+        maxInPaise: offering.discountMaxInPaise,
+        startsAt: offering.discountStartsAt?.toISOString() ?? null,
+        endsAt: offering.discountEndsAt?.toISOString() ?? null,
+        amountInPaise: 0,
+        skippedReason: 'FIRST_PAID_CONSULTATION_ONLY'
+      }
+    };
   }
 
   let discountInPaise = 0;
@@ -1193,7 +1215,13 @@ hopeHubRouter.post(
     if (!amountInPaise || amountInPaise <= 0) {
       return res.status(400).json({ message: 'Selected offer cannot be paid online.' });
     }
-    const offerDiscount = hopeHubDiscountSnapshot(selectedOffering, amountInPaise);
+    const isFirstPaidHopeHubSession =
+      !selectedOffering || selectedOffering.code !== 'SINGLE_30'
+        ? undefined
+        : await isFirstPaidConsultation(req.user!.id);
+    const offerDiscount = hopeHubDiscountSnapshot(selectedOffering, amountInPaise, {
+      isFirstPaidConsultation: isFirstPaidHopeHubSession
+    });
     const netAfterOfferDiscountInPaise = amountInPaise - offerDiscount.discountInPaise;
     const partialPayment = hopeHubPartialPaymentSnapshot(
       selectedOffering,

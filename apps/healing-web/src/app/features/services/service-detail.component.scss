@@ -1,3 +1,19 @@
-// Service detail component styles
-// Most styles are handled by Tailwind classes
+.session-offer-banner {
+  display: grid;
+  gap: 0.2rem;
+  border: 1px solid var(--brand-primary-border);
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 0.8rem;
+}
+
+.session-offer-banner strong {
+  color: var(--brand-primary);
+  font-size: 1rem;
+}
+
+.session-offer-banner span {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
 
