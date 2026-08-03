@@ -26,10 +26,34 @@ model AssessmentDefinition {
 
   accessGrants      AssessmentAccessGrant[]
   couponRedemptions AssessmentCouponRedemption[]
+  payments          AssessmentPayment[]
 
   @@index([category, isActive])
   @@index([isActive, sortOrder])
   @@index([accessMode])
+}
+
+model AssessmentPayment {
+  id                String        @id @default(cuid())
+  userId            String
+  assessmentId      String
+  provider          String        @default("razorpay")
+  providerOrderId   String        @unique
+  providerPaymentId String?
+  amountInPaise     Int
+  currency          String        @default("INR")
+  status            PaymentStatus @default(CREATED)
+  notes             Json?
+  verifiedAt        DateTime?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  user       User                 @relation("AssessmentPayments", fields: [userId], references: [id], onDelete: Cascade)
+  assessment AssessmentDefinition @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([assessmentId, status])
+  @@index([providerPaymentId])
 }
 
 model AssessmentAccessGrant {

@@ -19,6 +19,7 @@ import { AuthModalService } from '../../../core/services/auth-modal.service';
 import { AssessmentAttemptsService } from '../../../core/services/assessment-attempts.service';
 import { AssessmentDefinitionService } from '../../../core/services/assessment-definition.service';
 import { NotificationService } from '../../../core/services/notification.service';
+import { PaymentService } from '../../../core/services/payment.service';
 import { firstValueFrom } from 'rxjs';
 
 @Component({
@@ -39,6 +40,7 @@ export class MultiAssessmentComponent implements OnInit {
   private assessmentAttemptsService = inject(AssessmentAttemptsService);
   private assessmentDefinitionService = inject(AssessmentDefinitionService);
   private notificationService = inject(NotificationService);
+  private paymentService = inject(PaymentService);
 
   // Signal-based state
   assessments = signal<AssessmentConfig[]>(ASSESSMENT_CONFIGS);
@@ -48,6 +50,7 @@ export class MultiAssessmentComponent implements OnInit {
   selectedAccess = signal<AssessmentAccess | null>(null);
   couponCode = signal('');
   redeemingCoupon = signal(false);
+  payingAssessment = signal(false);
   assessmentStarted = signal(false);
   showResults = signal(false);
   viewMode = signal<'single' | 'all'>('single');
@@ -216,6 +219,28 @@ export class MultiAssessmentComponent implements OnInit {
       );
     } finally {
       this.redeemingCoupon.set(false);
+    }
+  }
+
+  async payAndUnlock(): Promise<void> {
+    const assessment = this.selectedAssessment();
+    if (!assessment) return;
+    if (!this.authService.getToken()) {
+      this.notificationService.info('Please sign in before payment.');
+      this.authModalService.openLogin();
+      return;
+    }
+
+    this.payingAssessment.set(true);
+    try {
+      const access = await this.paymentService.payAssessment(assessment);
+      if (access) this.selectedAccess.set(access);
+      await this.refreshSelectedAccess();
+      this.notificationService.success('Payment verified. Test unlocked.');
+    } catch (error: any) {
+      this.notificationService.error(error?.message || 'Payment could not be completed.');
+    } finally {
+      this.payingAssessment.set(false);
     }
   }
 

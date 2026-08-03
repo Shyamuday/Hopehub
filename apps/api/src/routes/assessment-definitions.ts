@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { Prisma } from '@prisma/client';
+import { PaymentStatus, Prisma } from '@prisma/client';
 import { z } from 'zod';
 import { authOptional, authRequired } from '../auth.js';
 import { prisma } from '../db.js';
@@ -13,6 +13,20 @@ import {
   scoreAssessment,
   serializeAssessmentAccess
 } from '../services/assessment-definitions.js';
+import {
+  getRazorpayClient,
+  isRazorpayConfigured,
+  razorpayKeyId,
+  verifyRazorpaySignature
+} from '../services/razorpay.js';
+
+type RazorpayPaymentEntity = {
+  id: string;
+  order_id?: string | null;
+  amount?: number | string | null;
+  currency?: string | null;
+  status?: string | null;
+};
 
 type AssessmentDefinitionRow = {
   id: string;
@@ -35,6 +49,11 @@ const assessmentScoreSchema = z.object({
 });
 const redeemCouponSchema = z.object({
   couponCode: z.string().trim().min(2).max(80)
+});
+const verifyPaymentSchema = z.object({
+  razorpayOrderId: z.string().min(1),
+  razorpayPaymentId: z.string().min(1),
+  razorpaySignature: z.string().min(1)
 });
 
 function serializeDefinition(row: AssessmentDefinitionRow) {
@@ -200,6 +219,170 @@ assessmentDefinitionsRouter.post(
         message: error instanceof Error ? error.message : 'Could not redeem coupon.'
       });
     }
+  })
+);
+
+assessmentDefinitionsRouter.post(
+  '/assessment-definitions/:id/create-order',
+  authRequired,
+  asyncRoute(async (req, res) => {
+    const definition = await getAssessmentDefinition(routeParam(req, 'id'));
+    if (!definition) {
+      res.status(404).json({ message: 'Assessment definition not found.' });
+      return;
+    }
+
+    const existingAccess = await getAssessmentAccessStatus(definition, req.user!.id);
+    if (existingAccess.canAccess) {
+      res.status(400).json({ message: 'This assessment is already unlocked.' });
+      return;
+    }
+    if (
+      definition.accessMode !== 'PAID' ||
+      !definition.priceInPaise ||
+      definition.priceInPaise <= 0
+    ) {
+      res.status(400).json({ message: 'This assessment does not require payment.' });
+      return;
+    }
+    if (!isRazorpayConfigured()) {
+      res.status(503).json({ message: 'Payment gateway is not configured.' });
+      return;
+    }
+
+    const razorpay = getRazorpayClient();
+    const order = await razorpay.orders.create({
+      amount: definition.priceInPaise,
+      currency: 'INR',
+      receipt: `assessment_${definition.id}_${Date.now()}`.slice(0, 40),
+      notes: {
+        purpose: 'assessment_unlock',
+        assessmentId: definition.id,
+        userId: req.user!.id
+      }
+    });
+
+    await prisma.assessmentPayment.create({
+      data: {
+        userId: req.user!.id,
+        assessmentId: definition.id,
+        providerOrderId: order.id,
+        amountInPaise: definition.priceInPaise,
+        currency: 'INR',
+        status: PaymentStatus.CREATED,
+        notes: {
+          purpose: 'assessment_unlock',
+          assessmentTitle: definition.title,
+          receipt: order.receipt || null
+        }
+      }
+    });
+
+    res.json({
+      orderId: order.id,
+      amountInPaise: definition.priceInPaise,
+      currency: 'INR',
+      razorpayKeyId,
+      description: `Unlock ${definition.title}`
+    });
+  })
+);
+
+assessmentDefinitionsRouter.post(
+  '/assessment-definitions/:id/verify-payment',
+  authRequired,
+  asyncRoute(async (req, res) => {
+    const definition = await getAssessmentDefinition(routeParam(req, 'id'));
+    if (!definition) {
+      res.status(404).json({ message: 'Assessment definition not found.' });
+      return;
+    }
+
+    if (!isRazorpayConfigured()) {
+      res.status(503).json({ message: 'Payment gateway is not configured.' });
+      return;
+    }
+
+    const body = verifyPaymentSchema.parse(req.body);
+    if (!verifyRazorpaySignature(body)) {
+      res.status(400).json({ message: 'Invalid Razorpay signature.' });
+      return;
+    }
+
+    const assessmentPayment = await prisma.assessmentPayment.findUnique({
+      where: { providerOrderId: body.razorpayOrderId }
+    });
+    if (
+      !assessmentPayment ||
+      assessmentPayment.userId !== req.user!.id ||
+      assessmentPayment.assessmentId !== definition.id
+    ) {
+      res.status(400).json({ message: 'Payment order does not match this assessment.' });
+      return;
+    }
+    if (assessmentPayment.status === PaymentStatus.PAID) {
+      res.json({ ok: true, access: await getAssessmentAccessStatus(definition, req.user!.id) });
+      return;
+    }
+
+    const razorpay = getRazorpayClient();
+    const gatewayPayment = (await razorpay.payments.fetch(
+      body.razorpayPaymentId
+    )) as RazorpayPaymentEntity;
+    const gatewayAmount = Number(gatewayPayment.amount);
+    const gatewayCurrency = (gatewayPayment.currency || '').toUpperCase();
+    if (
+      gatewayPayment.order_id !== body.razorpayOrderId ||
+      gatewayAmount !== assessmentPayment.amountInPaise ||
+      gatewayCurrency !== 'INR'
+    ) {
+      res.status(400).json({ message: 'Payment details do not match this assessment.' });
+      return;
+    }
+
+    let capturedPayment = gatewayPayment;
+    if (gatewayPayment.status === 'authorized') {
+      capturedPayment = (await razorpay.payments.capture(
+        body.razorpayPaymentId,
+        assessmentPayment.amountInPaise,
+        'INR'
+      )) as RazorpayPaymentEntity;
+    }
+    if (capturedPayment.status !== 'captured') {
+      res.status(400).json({ message: 'Payment is not captured yet.' });
+      return;
+    }
+
+    await prisma.$transaction([
+      prisma.assessmentPayment.update({
+        where: { id: assessmentPayment.id },
+        data: {
+          providerPaymentId: body.razorpayPaymentId,
+          status: PaymentStatus.PAID,
+          verifiedAt: new Date()
+        }
+      }),
+      prisma.assessmentAccessGrant.upsert({
+        where: {
+          userId_assessmentId_source_couponCode: {
+            userId: req.user!.id,
+            assessmentId: definition.id,
+            source: 'PAYMENT',
+            couponCode: ''
+          }
+        },
+        create: {
+          userId: req.user!.id,
+          assessmentId: definition.id,
+          source: 'PAYMENT',
+          couponCode: '',
+          paymentId: assessmentPayment.id
+        },
+        update: { paymentId: assessmentPayment.id }
+      })
+    ]);
+
+    res.json({ ok: true, access: await getAssessmentAccessStatus(definition, req.user!.id) });
   })
 );
 

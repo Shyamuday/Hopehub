@@ -47,6 +47,35 @@ CREATE UNIQUE INDEX IF NOT EXISTS "AssessmentCouponRedemption_userId_assessmentI
 CREATE INDEX IF NOT EXISTS "AssessmentCouponRedemption_assessmentId_couponCode_idx"
   ON "AssessmentCouponRedemption"("assessmentId", "couponCode");
 
+CREATE TABLE IF NOT EXISTS "AssessmentPayment" (
+  "id" TEXT NOT NULL,
+  "userId" TEXT NOT NULL,
+  "assessmentId" TEXT NOT NULL,
+  "provider" TEXT NOT NULL DEFAULT 'razorpay',
+  "providerOrderId" TEXT NOT NULL,
+  "providerPaymentId" TEXT,
+  "amountInPaise" INTEGER NOT NULL,
+  "currency" TEXT NOT NULL DEFAULT 'INR',
+  "status" "PaymentStatus" NOT NULL DEFAULT 'CREATED',
+  "notes" JSONB,
+  "verifiedAt" TIMESTAMP(3),
+  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT "AssessmentPayment_pkey" PRIMARY KEY ("id")
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS "AssessmentPayment_providerOrderId_key"
+  ON "AssessmentPayment"("providerOrderId");
+
+CREATE INDEX IF NOT EXISTS "AssessmentPayment_userId_createdAt_idx"
+  ON "AssessmentPayment"("userId", "createdAt");
+
+CREATE INDEX IF NOT EXISTS "AssessmentPayment_assessmentId_status_idx"
+  ON "AssessmentPayment"("assessmentId", "status");
+
+CREATE INDEX IF NOT EXISTS "AssessmentPayment_providerPaymentId_idx"
+  ON "AssessmentPayment"("providerPaymentId");
+
 DO $$
 BEGIN
   IF NOT EXISTS (
@@ -78,6 +107,22 @@ BEGIN
   ) THEN
     ALTER TABLE "AssessmentCouponRedemption"
       ADD CONSTRAINT "AssessmentCouponRedemption_assessmentId_fkey"
+      FOREIGN KEY ("assessmentId") REFERENCES "AssessmentDefinition"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'AssessmentPayment_userId_fkey'
+  ) THEN
+    ALTER TABLE "AssessmentPayment"
+      ADD CONSTRAINT "AssessmentPayment_userId_fkey"
+      FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'AssessmentPayment_assessmentId_fkey'
+  ) THEN
+    ALTER TABLE "AssessmentPayment"
+      ADD CONSTRAINT "AssessmentPayment_assessmentId_fkey"
       FOREIGN KEY ("assessmentId") REFERENCES "AssessmentDefinition"("id") ON DELETE CASCADE ON UPDATE CASCADE;
   END IF;
 END $$;

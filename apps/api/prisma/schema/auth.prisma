@@ -191,6 +191,7 @@ model User {
   lifestyleTipSessions UserLifestyleTipSession[] @relation("UserLifestyleTipSessions")
   assessmentAccessGrants AssessmentAccessGrant[] @relation("AssessmentAccessGrants")
   assessmentCouponRedemptions AssessmentCouponRedemption[] @relation("AssessmentCouponRedemptions")
+  assessmentPayments AssessmentPayment[] @relation("AssessmentPayments")
   emailVerified      Boolean        @default(false)
   authProvider       String?
   lastLoginAt        DateTime?

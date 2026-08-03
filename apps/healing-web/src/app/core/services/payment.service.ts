@@ -2,12 +2,14 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../environments/environment';
+import { AssessmentAccess, AssessmentConfig } from '../models/assessment.model';
 
 type DonationOrder = {
   orderId: string;
   amountInPaise: number;
   currency: 'INR';
   razorpayKeyId: string;
+  description?: string;
 };
 
 type RazorpayCheckoutResponse = {
@@ -119,6 +121,44 @@ export class PaymentService {
     ).catch((error) => {
       throw this.friendlyPaymentError(error);
     });
+  }
+
+  async payAssessment(
+    assessment: AssessmentConfig,
+    lifecycle?: PaymentLifecycle,
+  ): Promise<AssessmentAccess | null> {
+    const order = await firstValueFrom(
+      this.http.post<DonationOrder>(
+        `${this.apiUrl}/assessment-definitions/${encodeURIComponent(assessment.id)}/create-order`,
+        {},
+      ),
+    ).catch((error) => {
+      throw this.friendlyPaymentError(error);
+    });
+    this.assertOrderReady(order);
+    lifecycle?.onOrderCreated?.();
+
+    await this.loadRazorpayScript();
+    lifecycle?.onCheckoutOpened?.();
+    const payment = await this.openCheckout(order, {
+      amount: Math.round(order.amountInPaise / 100),
+      description: order.description || `Unlock ${assessment.title}`,
+    });
+
+    lifecycle?.onVerifying?.();
+    const verified = await firstValueFrom(
+      this.http.post<{ ok: boolean; access?: AssessmentAccess }>(
+        `${this.apiUrl}/assessment-definitions/${encodeURIComponent(assessment.id)}/verify-payment`,
+        {
+          razorpayOrderId: payment.razorpay_order_id,
+          razorpayPaymentId: payment.razorpay_payment_id,
+          razorpaySignature: payment.razorpay_signature,
+        },
+      ),
+    ).catch((error) => {
+      throw this.friendlyPaymentError(error);
+    });
+    return verified.access ?? null;
   }
 
   private loadRazorpayScript(): Promise<void> {

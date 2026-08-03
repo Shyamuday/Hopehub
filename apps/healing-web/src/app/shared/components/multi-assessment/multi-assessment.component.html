@@ -140,7 +140,14 @@
         <div class="mt-4 flex flex-col gap-3 sm:flex-row">
           <button type="button" class="btn-outline btn-sm" (click)="openLogin()">Sign in</button>
           @if (selectedAccess()?.accessMode === 'PAID') {
-          <a routerLink="/contact" class="btn-primary btn-sm">Book to unlock</a>
+          <button
+            type="button"
+            class="btn-primary btn-sm"
+            [disabled]="payingAssessment()"
+            (click)="payAndUnlock()"
+          >
+            {{ payingAssessment() ? 'Opening payment...' : 'Pay and unlock' }}
+          </button>
           }
         </div>
       </div>

@@ -14,6 +14,7 @@ import {
   AssessmentDefinitionService,
 } from '../../core/services/assessment-definition.service';
 import { NotificationService } from '../../core/services/notification.service';
+import { PaymentService } from '../../core/services/payment.service';
 
 @Component({
   selector: 'app-direct-assessment',
@@ -89,7 +90,14 @@ import { NotificationService } from '../../core/services/notification.service';
                       Sign in
                     </button>
                     @if (assessmentAccess()?.accessMode === 'PAID') {
-                      <a routerLink="/contact" class="btn-primary btn-sm">Book to unlock</a>
+                      <button
+                        type="button"
+                        class="btn-primary btn-sm"
+                        [disabled]="payingAssessment()"
+                        (click)="payAndUnlock()"
+                      >
+                        {{ payingAssessment() ? 'Opening payment...' : 'Pay and unlock' }}
+                      </button>
                     }
                   </div>
                 </div>
@@ -463,6 +471,7 @@ export class DirectAssessmentComponent implements OnInit {
   private readonly assessmentAttemptsService = inject(AssessmentAttemptsService);
   private readonly assessmentDefinitionService = inject(AssessmentDefinitionService);
   private readonly notificationService = inject(NotificationService);
+  private readonly paymentService = inject(PaymentService);
   private readonly pendingStorageKey = 'hope_hub_direct_pending_assessment_result';
   private autoNextTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -470,6 +479,7 @@ export class DirectAssessmentComponent implements OnInit {
   assessmentAccess = signal<AssessmentAccess | null>(null);
   couponCode = signal('');
   redeemingCoupon = signal(false);
+  payingAssessment = signal(false);
   viewMode = signal<'single' | 'all'>('single');
   currentQuestion = signal(0);
   answers = signal<number[]>([]);
@@ -573,6 +583,28 @@ export class DirectAssessmentComponent implements OnInit {
       );
     } finally {
       this.redeemingCoupon.set(false);
+    }
+  }
+
+  async payAndUnlock(): Promise<void> {
+    const assessment = this.assessment();
+    if (!assessment) return;
+    if (!this.authService.getToken()) {
+      this.notificationService.info('Please sign in before payment.');
+      this.authModalService.openLogin();
+      return;
+    }
+
+    this.payingAssessment.set(true);
+    try {
+      const access = await this.paymentService.payAssessment(assessment);
+      if (access) this.assessmentAccess.set(access);
+      await this.refreshAccess();
+      this.notificationService.success('Payment verified. Test unlocked.');
+    } catch (error: any) {
+      this.notificationService.error(error?.message || 'Payment could not be completed.');
+    } finally {
+      this.payingAssessment.set(false);
     }
   }
 
