@@ -130,9 +130,7 @@ export function registerAdminConsultationRoutes(router: Router, io: SocketIoServ
             patient: { select: { id: true, name: true, mobile: true } },
             assignedDoctor: { select: { id: true, name: true } },
             disease: { select: { id: true, name: true } },
-            payment: { select: { status: true, amountInPaise: true, lineItems: true } },
-            pricingSnapshot: true,
-            intakeAnswers: true
+            payment: { select: { status: true, amountInPaise: true, lineItems: true } }
           },
           orderBy: { createdAt: 'desc' },
           skip: (page - 1) * pageSize,
@@ -263,9 +261,7 @@ export function registerAdminConsultationRoutes(router: Router, io: SocketIoServ
           patient: { select: { id: true, name: true, mobile: true } },
           assignedDoctor: { select: { id: true, name: true } },
           disease: { select: { id: true, name: true } },
-          payment: { select: { status: true, amountInPaise: true, lineItems: true } },
-          pricingSnapshot: true,
-          intakeAnswers: true
+          payment: { select: { status: true, amountInPaise: true, lineItems: true } }
         }
       });
 

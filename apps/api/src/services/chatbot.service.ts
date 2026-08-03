@@ -41,12 +41,7 @@ const CONCERN_OPTIONS = [
   'Something else'
 ] as const;
 
-const DURATION_OPTIONS = [
-  'A few days',
-  '1–2 weeks',
-  '1–3 months',
-  'More than 3 months'
-] as const;
+const DURATION_OPTIONS = ['A few days', '1–2 weeks', '1–3 months', 'More than 3 months'] as const;
 
 const TREATMENT_OPTIONS = [
   'First time seeking help',
@@ -55,11 +50,7 @@ const TREATMENT_OPTIONS = [
   'Not sure / mixed'
 ] as const;
 
-const BOOK_OPTIONS = [
-  'Yes, book now',
-  'Tell me more first',
-  'Not right now'
-] as const;
+const BOOK_OPTIONS = ['Yes, book now', 'Tell me more first', 'Not right now'] as const;
 
 const BOOK_FOLLOWUP_OPTIONS = [
   'Book consultation now',
@@ -120,16 +111,16 @@ const NO_RE =
   /\bno\b|\bnot\b|\bdon'?t\b|\bnope\b|\bnah\b|\bnot now\b|\bmaybe later\b|\blater\b|\bnot interested\b|\bno thanks?\b|not right now|no, i am good|close chat/i;
 
 function hasPhone(text: string): boolean {
-  return /(\+?\d[\d\s\-]{8,14}\d)/.test(text);
+  return /(\+?\d[\d\s-]{8,14}\d)/.test(text);
 }
 
 function extractPhone(text: string): string | undefined {
-  const m = text.match(/(\+?\d[\d\s\-]{8,14}\d)/);
+  const m = text.match(/(\+?\d[\d\s-]{8,14}\d)/);
   return m?.[1]?.replace(/\s/g, '');
 }
 
 function extractName(text: string): string | undefined {
-  const withoutPhone = text.replace(/(\+?\d[\d\s\-]{8,14}\d)/g, '').trim();
+  const withoutPhone = text.replace(/(\+?\d[\d\s-]{8,14}\d)/g, '').trim();
   if (withoutPhone.length >= 2 && withoutPhone.length < 60) {
     return withoutPhone;
   }
@@ -153,7 +144,10 @@ function matchesAny(text: string, options: readonly string[]): boolean {
 }
 
 function matchesIntent(text: string, intent: string): boolean {
-  return matchesAny(text, [intent]) || text.trim().toLowerCase().includes(intent.toLowerCase().slice(0, 12));
+  return (
+    matchesAny(text, [intent]) ||
+    text.trim().toLowerCase().includes(intent.toLowerCase().slice(0, 12))
+  );
 }
 
 function infoAnswer(topic: string): string {
@@ -290,7 +284,8 @@ export function getBotReply(stage: number, userMessage: string): BotReply {
     }
     if (matchesIntent(msg, 'How consultations work')) {
       return {
-        message: infoAnswer('How online consultation works') + `\n\nWhat else would you like to know?`,
+        message:
+          infoAnswer('How online consultation works') + `\n\nWhat else would you like to know?`,
         nextStage: 30,
         needsOperator: false,
         options: [...INFO_TOPIC_OPTIONS],
@@ -350,8 +345,7 @@ export function getBotReply(stage: number, userMessage: string): BotReply {
 
   if (stage === 12) {
     return {
-      message:
-        `Thank you. Based on what you shared, a personalised online consultation with our homeopathic doctors would be a good next step.\n\nWould you like to book a consultation?`,
+      message: `Thank you. Based on what you shared, a personalised online consultation with our homeopathic doctors would be a good next step.\n\nWould you like to book a consultation?`,
       nextStage: 13,
       needsOperator: false,
       options: [...BOOK_OPTIONS],
@@ -362,8 +356,7 @@ export function getBotReply(stage: number, userMessage: string): BotReply {
   if (stage === 13) {
     if (matchesAny(msg, ['Tell me more first']) || /more|cost|process|how|what|doctor/i.test(msg)) {
       return {
-        message:
-          `Of course! Our consultations are private, doctor-led, and done from your phone or laptop. A doctor reviews your case and guides you on medicine and follow-up.\n\nMost patients find it convenient compared to repeated clinic visits.`,
+        message: `Of course! Our consultations are private, doctor-led, and done from your phone or laptop. A doctor reviews your case and guides you on medicine and follow-up.\n\nMost patients find it convenient compared to repeated clinic visits.`,
         nextStage: 14,
         needsOperator: false,
         options: [...BOOK_FOLLOWUP_OPTIONS],
@@ -453,8 +446,7 @@ export function getBotReply(stage: number, userMessage: string): BotReply {
 
   if (stage === 22) {
     return {
-      message:
-        `Perfect. Our care coordinator will reach out soon at your preferred time. You are in good hands! 💚`,
+      message: `Perfect. Our care coordinator will reach out soon at your preferred time. You are in good hands! 💚`,
       nextStage: 23,
       needsOperator: true,
       options: [...CLOSING_OPTIONS],
@@ -535,8 +527,7 @@ export function getBotReply(stage: number, userMessage: string): BotReply {
   // ── Something else (40–49) ─────────────────────────────────────────────────
   if (stage === 40) {
     return {
-      message:
-        `Thank you for explaining. Our care team can help with specific questions like yours.\n\nWhat would you like to do next?`,
+      message: `Thank you for explaining. Our care team can help with specific questions like yours.\n\nWhat would you like to do next?`,
       nextStage: 41,
       needsOperator: false,
       options: [...OTHER_FOLLOWUP_OPTIONS],

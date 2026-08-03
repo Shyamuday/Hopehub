@@ -17,6 +17,8 @@ export type AuthUser = {
 };
 
 declare global {
+  // Express uses namespace merging for request augmentation.
+  // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace Express {
     interface Request {
       user?: AuthUser;
@@ -31,7 +33,9 @@ if (jwtSecret === DEFAULT_JWT_SECRET) {
     console.error('FATAL: JWT_SECRET must be set in production. Refusing to start.');
     process.exit(1);
   } else {
-    console.warn('[auth] WARNING: JWT_SECRET is not set — using insecure dev-only secret. Set JWT_SECRET before deploying.');
+    console.warn(
+      '[auth] WARNING: JWT_SECRET is not set — using insecure dev-only secret. Set JWT_SECRET before deploying.'
+    );
   }
 }
 
@@ -81,7 +85,15 @@ async function resolveAuthUser(token: string): Promise<AuthUser | null> {
 
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { id: true, name: true, role: true, email: true, mobile: true, patientCode: true, isActive: true }
+    select: {
+      id: true,
+      name: true,
+      role: true,
+      email: true,
+      mobile: true,
+      patientCode: true,
+      isActive: true
+    }
   });
 
   if (!user?.isActive) return null;

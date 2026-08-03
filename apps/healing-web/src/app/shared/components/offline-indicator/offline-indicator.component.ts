@@ -9,14 +9,14 @@ import { map, startWith } from 'rxjs/operators';
   standalone: true,
   imports: [],
   templateUrl: './offline-indicator.component.html',
-  styleUrl: './offline-indicator.component.scss'
+  styleUrl: './offline-indicator.component.scss',
 })
 export class OfflineIndicatorComponent implements OnInit {
   isOnline = signal(true);
   wasOffline = signal(false);
   private isBrowser: boolean;
 
-  constructor(@Inject(PLATFORM_ID) platformId: Object) {
+  constructor(@Inject(PLATFORM_ID) platformId: object) {
     this.isBrowser = isPlatformBrowser(platformId);
     if (this.isBrowser) {
       this.isOnline.set(navigator.onLine);
@@ -29,22 +29,21 @@ export class OfflineIndicatorComponent implements OnInit {
     // Listen to online/offline events
     merge(
       fromEvent(window, 'online').pipe(map(() => true)),
-      fromEvent(window, 'offline').pipe(map(() => false))
-    ).pipe(
-      startWith(navigator.onLine),
-      takeUntilDestroyed()
-    ).subscribe((online: boolean) => {
-      if (!online && this.isOnline()) {
-        // Just went offline
-        this.wasOffline.set(true);
-      } else if (online && !this.isOnline() && this.wasOffline()) {
-        // Just came back online
-        setTimeout(() => {
-          this.wasOffline.set(false);
-        }, 3000); // Hide "back online" message after 3 seconds
-      }
+      fromEvent(window, 'offline').pipe(map(() => false)),
+    )
+      .pipe(startWith(navigator.onLine), takeUntilDestroyed())
+      .subscribe((online: boolean) => {
+        if (!online && this.isOnline()) {
+          // Just went offline
+          this.wasOffline.set(true);
+        } else if (online && !this.isOnline() && this.wasOffline()) {
+          // Just came back online
+          setTimeout(() => {
+            this.wasOffline.set(false);
+          }, 3000); // Hide "back online" message after 3 seconds
+        }
 
-      this.isOnline.set(online);
-    });
+        this.isOnline.set(online);
+      });
   }
 }

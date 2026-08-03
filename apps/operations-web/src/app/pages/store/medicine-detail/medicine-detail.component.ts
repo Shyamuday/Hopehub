@@ -30,7 +30,10 @@ export class MedicineDetailComponent implements OnInit {
     this.loading.set(true);
     this.error.set('');
     this.api.getMedicine(id).subscribe({
-      next: (data) => { this.detail.set(data); this.loading.set(false); },
+      next: (data) => {
+        this.detail.set(data);
+        this.loading.set(false);
+      },
       error: (err) => {
         this.loading.set(false);
         this.error.set(err.error?.message || 'Failed to load medicine');
@@ -39,7 +42,12 @@ export class MedicineDetailComponent implements OnInit {
   }
 
   goBack(): void {
-    window.history.length > 1 ? window.history.back() : void this.router.navigate(this.storeRoutes.link('search'));
+    if (window.history.length > 1) {
+      window.history.back();
+      return;
+    }
+
+    void this.router.navigate(this.storeRoutes.link('search'));
   }
 
   getPotencyClass(potency: string): string {

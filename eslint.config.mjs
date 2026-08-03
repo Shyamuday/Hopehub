@@ -17,6 +17,21 @@ export default tseslint.config(
   eslint.configs.recommended,
   ...tseslint.configs.recommended,
   {
+    files: ['**/*.{js,cjs,mjs}'],
+    languageOptions: {
+      globals: {
+        console: 'readonly',
+        module: 'readonly',
+        require: 'readonly',
+        process: 'readonly',
+        __dirname: 'readonly',
+        __filename: 'readonly',
+        Buffer: 'readonly',
+        URL: 'readonly'
+      }
+    }
+  },
+  {
     files: ['**/*.{ts,tsx,mts,cts}'],
     rules: {
       '@typescript-eslint/no-explicit-any': 'off',
