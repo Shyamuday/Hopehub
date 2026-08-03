@@ -38,6 +38,9 @@ export class AdminApi {
   getPayments(...args: Parameters<AdminReportsApi['getPayments']>) {
     return this.reports.getPayments(...(args as Parameters<AdminReportsApi['getPayments']>));
   }
+  getDonations(...args: Parameters<AdminReportsApi['getDonations']>) {
+    return this.reports.getDonations(...(args as Parameters<AdminReportsApi['getDonations']>));
+  }
   getSafetyFlags(...args: Parameters<AdminReportsApi['getSafetyFlags']>) {
     return this.reports.getSafetyFlags(...(args as Parameters<AdminReportsApi['getSafetyFlags']>));
   }

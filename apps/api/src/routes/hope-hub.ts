@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { HomeopathicDoctorType, HopeHubOfferingType, PaymentStatus, Role } from '@prisma/client';
-import { authRequired, allowRoles } from '../auth.js';
+import { authOptional, authRequired, allowRoles } from '../auth.js';
 import { prisma } from '../db.js';
 import {
   asyncRoute,
@@ -696,6 +696,54 @@ hopeHubRouter.get(
     if (!offering) return res.status(404).json({ message: 'Offering not found.' });
     const seatCounts = await bookedSeatsByOfferingCode([offering.code]);
     res.json({ offering: offeringPublicPayload(offering, seatCounts.get(offering.code) ?? 0) });
+  })
+);
+
+hopeHubRouter.get(
+  '/hope-hub/offerings/:slug/quote',
+  authOptional,
+  asyncRoute(async (req, res) => {
+    const slug = routeParam(req, 'slug');
+    const offering = await prisma.hopeHubOffering.findFirst({
+      where: { isActive: true, OR: [{ slug }, { code: slug }, { id: slug }] },
+      select: hopeHubOfferingSelect
+    });
+    if (!offering) return res.status(404).json({ message: 'Offering not found.' });
+    if (offering.priceInPaise == null) {
+      return res.json({
+        offering: offeringPublicPayload(offering),
+        quote: {
+          grossInPaise: null,
+          discountInPaise: 0,
+          payableInPaise: null,
+          isEligibleForDiscount: false,
+          reason: 'CUSTOM_QUOTE'
+        }
+      });
+    }
+
+    const isFirstPaid =
+      req.user && offering.code === 'SINGLE_30'
+        ? await isFirstPaidConsultation(req.user.id)
+        : undefined;
+    const discount = hopeHubDiscountSnapshot(offering, offering.priceInPaise, {
+      isFirstPaidConsultation: isFirstPaid
+    });
+
+    res.json({
+      offering: offeringPublicPayload(offering),
+      quote: {
+        grossInPaise: offering.priceInPaise,
+        discountInPaise: discount.discountInPaise,
+        payableInPaise: offering.priceInPaise - discount.discountInPaise,
+        isEligibleForDiscount: discount.discountInPaise > 0,
+        reason:
+          discount.discountInPaise > 0
+            ? 'DISCOUNT_APPLIED'
+            : discount.rule?.skippedReason || 'NO_DISCOUNT',
+        rule: discount.rule
+      }
+    });
   })
 );
 

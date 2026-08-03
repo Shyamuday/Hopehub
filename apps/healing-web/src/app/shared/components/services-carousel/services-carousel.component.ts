@@ -9,6 +9,7 @@ import {
   getFeaturedServices,
 } from '../../../core/data/services-data';
 import { APP_CONSTANTS } from '../../../core/constants/app.constants';
+import { BookingService } from '../../../core/services/booking.service';
 
 export interface CarouselService {
   id: string;
@@ -36,6 +37,7 @@ export interface CarouselService {
 })
 export class ServicesCarouselComponent implements OnInit {
   private router = inject(Router);
+  private bookingService = inject(BookingService);
 
   currentSlide = signal(0);
   isAutoPlaying = signal(true);
@@ -64,7 +66,39 @@ export class ServicesCarouselComponent implements OnInit {
   }
 
   ngOnInit() {
-    // Component initialization
+    this.bookingService.offeringQuote('single-30-minute-session').subscribe({
+      next: ({ offering, quote }) => {
+        const gross =
+          quote.grossInPaise == null ? HOPE_HUB_SESSION_PRICE : quote.grossInPaise / 100;
+        const payable =
+          quote.payableInPaise == null ? HOPE_HUB_SESSION_OFFER_PRICE : quote.payableInPaise / 100;
+        this.featuredServices.set(
+          getFeaturedServices().map((service) => ({
+            ...service,
+            price: payable,
+            originalPrice: quote.discountInPaise > 0 ? gross : undefined,
+            discount: quote.discountInPaise > 0 ? offering.discountPercent || undefined : undefined,
+            badge:
+              quote.discountInPaise > 0
+                ? offering.discountLabel || 'First session offer'
+                : undefined,
+            bookingUrl: '/contact?offering=single-30-minute-session',
+          })),
+        );
+      },
+      error: () => {
+        this.featuredServices.set(
+          getFeaturedServices().map((service) => ({
+            ...service,
+            price: HOPE_HUB_SESSION_PRICE,
+            originalPrice: undefined,
+            discount: undefined,
+            badge: undefined,
+            bookingUrl: '/contact?offering=single-30-minute-session',
+          })),
+        );
+      },
+    });
   }
 
   nextSlide() {

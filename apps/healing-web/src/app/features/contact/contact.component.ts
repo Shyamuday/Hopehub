@@ -15,7 +15,7 @@ import {
 } from '../../core/services';
 import { APP_CONSTANTS } from '../../core';
 import { FEATURED_SERVICES, getAllServices } from '../../core/data/services-data';
-import type { HopeHubOffering } from '../../core/services/booking.service';
+import type { HopeHubOffering, HopeHubOfferingQuote } from '../../core/services/booking.service';
 import {
   AppointmentCalendarComponent,
   AppointmentSlot,
@@ -69,6 +69,7 @@ export class ContactComponent implements OnInit {
   paymentFlowConsultation = signal<any | null>(null);
   prefilledData = signal<any>({});
   selectedOffering = signal<HopeHubOffering | null>(null);
+  selectedOfferingQuote = signal<HopeHubOfferingQuote | null>(null);
   currentUser = signal<User | null>(null);
   services = getAllServices();
   serviceOptions: FormDropdownOption[] = [
@@ -164,12 +165,19 @@ export class ContactComponent implements OnInit {
     const offeringKey = params['offering'] || params['offeringId'] || '';
     if (!offeringKey) {
       this.selectedOffering.set(null);
+      this.selectedOfferingQuote.set(null);
       return;
     }
 
-    this.bookingService.offering(offeringKey).subscribe({
-      next: ({ offering }) => this.selectedOffering.set(offering),
-      error: () => this.selectedOffering.set(null),
+    this.bookingService.offeringQuote(offeringKey).subscribe({
+      next: ({ offering, quote }) => {
+        this.selectedOffering.set(offering);
+        this.selectedOfferingQuote.set(quote);
+      },
+      error: () => {
+        this.selectedOffering.set(null);
+        this.selectedOfferingQuote.set(null);
+      },
     });
   }
 
@@ -483,6 +491,11 @@ export class ContactComponent implements OnInit {
   }
 
   offerDiscountInPaise(): number {
+    const quote = this.selectedOfferingQuote();
+    const quotedOffer = this.selectedOffering();
+    if (quote && quotedOffer && quote.grossInPaise === quotedOffer.priceInPaise) {
+      return quote.discountInPaise;
+    }
     const offer = this.selectedOffering();
     if (!offer?.isDiscountActive || offer.discountType === 'NONE' || !offer.priceInPaise) return 0;
     let amount = 0;

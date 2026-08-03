@@ -1,5 +1,7 @@
 import { Router } from 'express';
+import { PaymentStatus } from '@prisma/client';
 import { z } from 'zod';
+import { prisma } from '../db.js';
 import { asyncRoute } from '../utils/helpers.js';
 import {
   getRazorpayClient,
@@ -38,6 +40,22 @@ publicPaymentsRouter.post(
       }
     });
 
+    await prisma.donationPayment.create({
+      data: {
+        providerOrderId: order.id,
+        amountInPaise: body.amountInPaise,
+        currency: 'INR',
+        donorName: body.donorName || null,
+        donorEmail: body.donorEmail || null,
+        donorPhone: body.donorPhone || null,
+        status: PaymentStatus.CREATED,
+        notes: {
+          purpose: 'hope_hub_donation',
+          receipt: order.receipt || null
+        }
+      }
+    });
+
     res.json({
       orderId: order.id,
       amountInPaise: body.amountInPaise,
@@ -66,6 +84,15 @@ publicPaymentsRouter.post(
       return res.status(400).json({ message: 'Invalid Razorpay signature.' });
     }
 
-    res.json({ ok: true });
+    const donation = await prisma.donationPayment.update({
+      where: { providerOrderId: body.razorpayOrderId },
+      data: {
+        providerPaymentId: body.razorpayPaymentId,
+        status: PaymentStatus.PAID,
+        verifiedAt: new Date()
+      }
+    });
+
+    res.json({ ok: true, donation });
   })
 );

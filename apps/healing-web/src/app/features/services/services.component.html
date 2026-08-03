@@ -51,6 +51,9 @@
            (click)="navigateToService(service.id)">
         <app-service-card 
           [service]="service"
+          [offerPrice]="singleSessionQuote()?.payableInPaise != null ? (singleSessionQuote()!.payableInPaise! / 100) : null"
+          [originalPrice]="singleSessionQuote()?.grossInPaise != null ? (singleSessionQuote()!.grossInPaise! / 100) : null"
+          [discountPercent]="singleSessionOffer()?.discountPercent || null"
           (learnMore)="navigateToService($event)">
         </app-service-card>
       </div>

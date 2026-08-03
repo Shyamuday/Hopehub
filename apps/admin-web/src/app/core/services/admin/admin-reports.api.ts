@@ -144,6 +144,33 @@ export class AdminReportsApi extends AdminApiBase {
     );
   }
 
+  getDonations(params: {
+    page?: number;
+    pageSize?: number;
+    status?: PaymentStatus | 'ALL';
+    q?: string;
+  }) {
+    return firstValueFrom(
+      this.http.get<{
+        donations: Array<any>;
+        summary: {
+          paidAmountInPaise: number;
+          paidCount: number;
+          pendingAmountInPaise: number;
+          pendingCount: number;
+        };
+        pagination: any;
+      }>(`${this.apiBase}${API_PATHS.ADMIN.DONATIONS}`, {
+        params: {
+          page: String(params.page ?? 1),
+          pageSize: String(params.pageSize ?? PAGE_SIZES.PAYMENTS),
+          status: params.status ?? FILTER_ALL,
+          q: params.q ?? '',
+        },
+      }),
+    );
+  }
+
   getSafetyFlags(page = 1, pageSize = 20) {
     return firstValueFrom(
       this.http.get<{

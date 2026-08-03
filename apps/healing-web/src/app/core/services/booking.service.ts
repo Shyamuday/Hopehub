@@ -92,6 +92,15 @@ export type HopeHubOffering = {
   sortOrder: number;
 };
 
+export type HopeHubOfferingQuote = {
+  grossInPaise: number | null;
+  discountInPaise: number;
+  payableInPaise: number | null;
+  isEligibleForDiscount: boolean;
+  reason: string;
+  rule?: Record<string, unknown> | null;
+};
+
 export type HopeHubBanner = {
   id: string;
   title: string;
@@ -255,6 +264,14 @@ export class BookingService {
   offering(slug: string): Observable<{ offering: HopeHubOffering }> {
     return this.http.get<{ offering: HopeHubOffering }>(
       `${this.apiUrl}/hope-hub/offerings/${encodeURIComponent(slug)}`,
+    );
+  }
+
+  offeringQuote(
+    slug: string,
+  ): Observable<{ offering: HopeHubOffering; quote: HopeHubOfferingQuote }> {
+    return this.http.get<{ offering: HopeHubOffering; quote: HopeHubOfferingQuote }>(
+      `${this.apiUrl}/hope-hub/offerings/${encodeURIComponent(slug)}/quote`,
     );
   }
 

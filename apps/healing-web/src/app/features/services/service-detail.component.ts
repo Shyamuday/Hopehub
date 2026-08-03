@@ -11,7 +11,11 @@ import {
   HOPE_HUB_SESSION_PRICE,
   getServiceById,
 } from '../../core/data/services-data';
-import { HopeHubService } from '../../core/services/booking.service';
+import {
+  HopeHubOffering,
+  HopeHubOfferingQuote,
+  HopeHubService,
+} from '../../core/services/booking.service';
 
 @Component({
   selector: 'app-service-detail',
@@ -26,6 +30,8 @@ export class ServiceDetailComponent implements OnInit {
   readonly sessionOfferPrice = HOPE_HUB_SESSION_OFFER_PRICE;
   readonly sessionDiscountPercent = HOPE_HUB_SESSION_DISCOUNT_PERCENT;
   service = signal<Service | null>(null);
+  singleSessionOffer = signal<HopeHubOffering | null>(null);
+  singleSessionQuote = signal<HopeHubOfferingQuote | null>(null);
   loading = signal(true);
 
   private route = inject(ActivatedRoute);
@@ -42,7 +48,7 @@ export class ServiceDetailComponent implements OnInit {
   }
 
   ngOnInit() {
-    // Component initialization if needed
+    this.loadSingleSessionQuote();
   }
 
   goBack() {
@@ -81,6 +87,22 @@ export class ServiceDetailComponent implements OnInit {
       currency,
       maximumFractionDigits: 0,
     }).format(amount);
+  }
+
+  currentSessionPrice(): number {
+    return this.singleSessionQuote()?.payableInPaise != null
+      ? Math.round(this.singleSessionQuote()!.payableInPaise! / 100)
+      : this.sessionOfferPrice;
+  }
+
+  currentOriginalPrice(): number {
+    return this.singleSessionQuote()?.grossInPaise != null
+      ? Math.round(this.singleSessionQuote()!.grossInPaise! / 100)
+      : this.sessionPrice;
+  }
+
+  hasActiveSessionDiscount(): boolean {
+    return Boolean(this.singleSessionQuote()?.discountInPaise);
   }
 
   whoThisIsFor(service: Service): string[] {
@@ -200,6 +222,19 @@ export class ServiceDetailComponent implements OnInit {
         this.notificationService.warning(
           'Live service details could not load. Showing saved details.',
         );
+      },
+    });
+  }
+
+  private loadSingleSessionQuote(): void {
+    this.bookingService.offeringQuote('single-30-minute-session').subscribe({
+      next: ({ offering, quote }) => {
+        this.singleSessionOffer.set(offering);
+        this.singleSessionQuote.set(quote);
+      },
+      error: () => {
+        this.singleSessionOffer.set(null);
+        this.singleSessionQuote.set(null);
       },
     });
   }

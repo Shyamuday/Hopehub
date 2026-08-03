@@ -18,6 +18,7 @@ export const API_PATHS = {
     ADHERENCE_RISK: '/admin/adherence/risk-cohorts',
     ANALYTICS_FUNNELS: '/admin/analytics/funnels',
     PAYMENTS: '/admin/payments',
+    DONATIONS: '/admin/donations',
     PAYMENT_EVENTS: (id: string) => `/admin/payments/${id}/events`,
     PAYMENT_REFUND: (id: string) => `/admin/payments/${id}/refund`,
     DOCTORS: '/admin/doctors',

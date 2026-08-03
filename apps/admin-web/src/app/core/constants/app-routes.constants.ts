@@ -17,6 +17,7 @@ export const ROUTE_PATHS = {
   HOPE_HUB_OFFERS: 'hope-hub-offers',
   ASSESSMENT_DEFINITIONS: 'assessment-definitions',
   PAYMENTS: 'payments',
+  DONATIONS: 'donations',
   FINANCE: 'finance',
   AUDIT: 'audit',
   ADHERENCE: 'adherence',
@@ -99,6 +100,7 @@ export const NAV_ITEMS = [
   { path: adminNavPath(ROUTE_PATHS.SAFETY_FLAGS), label: '🚨 Safety Flags' },
   { path: adminNavPath(ROUTE_PATHS.ONLINE_DOCTORS), label: '🟢 Online doctors' },
   { path: adminNavPath(ROUTE_PATHS.PAYMENTS), label: '💳 Payments' },
+  { path: adminNavPath(ROUTE_PATHS.DONATIONS), label: '🤝 Donations' },
   { path: adminNavPath(ROUTE_PATHS.AUDIT), label: '📋 Audit Trail' },
   { path: adminNavPath(ROUTE_PATHS.SECURITY), label: '🛡️ Security' },
   { path: adminNavPath(ROUTE_PATHS.ADHERENCE), label: '📉 Adherence Risk' },
@@ -184,7 +186,7 @@ export const NAV_GROUPS: AdminNavGroup[] = [
   {
     id: 'finance',
     label: 'Finance',
-    segments: [ROUTE_PATHS.PAYMENTS, ROUTE_PATHS.FINANCE],
+    segments: [ROUTE_PATHS.PAYMENTS, ROUTE_PATHS.DONATIONS, ROUTE_PATHS.FINANCE],
   },
   {
     id: 'platform',

@@ -19,6 +19,7 @@ import { RatesPage } from './features/rates/rates-page/rates-page';
 import { HopeHubOffersPage } from './features/hope-hub-offers/hope-hub-offers-page';
 import { AssessmentDefinitionsPage } from './features/assessment-definitions/assessment-definitions-page';
 import { PaymentsPage } from './features/payments/payments-page/payments-page';
+import { DonationsPage } from './features/donations/donations-page';
 import { FinancePage } from './features/finance/finance-page/finance-page';
 import { AuditPage } from './features/audit/audit-page/audit-page';
 import { AdherencePage } from './features/adherence/adherence-page/adherence-page';
@@ -101,6 +102,7 @@ export const routes: Routes = [
       { path: ROUTE_PATHS.SAFETY_FLAGS, component: SafetyFlagsPage, canActivate: guard },
       { path: ROUTE_PATHS.ONLINE_DOCTORS, component: OnlineDoctorsPage, canActivate: guard },
       { path: ROUTE_PATHS.PAYMENTS, component: PaymentsPage, canActivate: guard },
+      { path: ROUTE_PATHS.DONATIONS, component: DonationsPage, canActivate: guard },
       { path: ROUTE_PATHS.AUDIT, component: AuditPage, canActivate: guard },
       { path: ROUTE_PATHS.SECURITY, component: SecurityPage, canActivate: guard },
       { path: ROUTE_PATHS.ADHERENCE, component: AdherencePage, canActivate: guard },

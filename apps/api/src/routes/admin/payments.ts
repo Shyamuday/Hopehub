@@ -84,6 +84,68 @@ export function registerAdminPaymentRoutes(router: Router) {
     })
   );
 
+  router.get(
+    '/admin/donations',
+    authRequired,
+    allowRoles(Role.ADMIN),
+    asyncRoute(async (req, res) => {
+      const page = queryPositiveInt(req, 'page', 1, 1, 1000);
+      const pageSize = queryPositiveInt(req, 'pageSize', 20, 1, 100);
+      const status = queryText(req, 'status');
+      const q = queryText(req, 'q').trim();
+      const where: Prisma.DonationPaymentWhereInput = {
+        ...(status && status in PaymentStatus ? { status: status as PaymentStatus } : {}),
+        ...(q
+          ? {
+              OR: [
+                { donorName: { contains: q, mode: 'insensitive' } },
+                { donorEmail: { contains: q, mode: 'insensitive' } },
+                { donorPhone: { contains: q, mode: 'insensitive' } },
+                { providerOrderId: { contains: q, mode: 'insensitive' } },
+                { providerPaymentId: { contains: q, mode: 'insensitive' } }
+              ]
+            }
+          : {})
+      };
+
+      const [donations, total, paidSummary, createdSummary] = await Promise.all([
+        prisma.donationPayment.findMany({
+          where,
+          orderBy: { createdAt: 'desc' },
+          skip: (page - 1) * pageSize,
+          take: pageSize
+        }),
+        prisma.donationPayment.count({ where }),
+        prisma.donationPayment.aggregate({
+          where: { ...where, status: PaymentStatus.PAID },
+          _sum: { amountInPaise: true },
+          _count: { _all: true }
+        }),
+        prisma.donationPayment.aggregate({
+          where: { ...where, status: PaymentStatus.CREATED },
+          _sum: { amountInPaise: true },
+          _count: { _all: true }
+        })
+      ]);
+
+      res.json({
+        donations,
+        summary: {
+          paidAmountInPaise: paidSummary._sum.amountInPaise ?? 0,
+          paidCount: paidSummary._count._all,
+          pendingAmountInPaise: createdSummary._sum.amountInPaise ?? 0,
+          pendingCount: createdSummary._count._all
+        },
+        pagination: {
+          page,
+          pageSize,
+          total,
+          totalPages: Math.max(1, Math.ceil(total / pageSize))
+        }
+      });
+    })
+  );
+
   router.post(
     '/admin/payments/:paymentId/refund',
     authRequired,

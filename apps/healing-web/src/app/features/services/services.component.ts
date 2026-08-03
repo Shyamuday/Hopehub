@@ -5,7 +5,12 @@ import { NOTE_CONTENT } from '../../core/constants/note-content.constants';
 import { Service, ServiceCategory } from '../../core/models';
 import { getAllServices } from '../../core/data/services-data';
 import { ServiceCardComponent } from '../../shared/components';
-import { BookingService, HopeHubService } from '../../core/services/booking.service';
+import {
+  BookingService,
+  HopeHubOffering,
+  HopeHubOfferingQuote,
+  HopeHubService,
+} from '../../core/services/booking.service';
 import { NotificationService } from '../../core/services/notification.service';
 
 @Component({
@@ -20,6 +25,8 @@ export class ServicesComponent implements OnInit {
   services = signal<Service[]>([]);
   searchTerm = signal('');
   selectedFilter = signal('all');
+  singleSessionOffer = signal<HopeHubOffering | null>(null);
+  singleSessionQuote = signal<HopeHubOfferingQuote | null>(null);
 
   filters = [
     { id: 'all', label: 'All' },
@@ -55,6 +62,7 @@ export class ServicesComponent implements OnInit {
 
   ngOnInit() {
     this.loadServices();
+    this.loadSingleSessionQuote();
   }
 
   navigateToService(serviceId: string) {
@@ -79,6 +87,19 @@ export class ServicesComponent implements OnInit {
       error: () => {
         this.services.set(getAllServices());
         this.notificationService.warning('Live services could not load. Showing saved services.');
+      },
+    });
+  }
+
+  private loadSingleSessionQuote(): void {
+    this.bookingService.offeringQuote('single-30-minute-session').subscribe({
+      next: ({ offering, quote }) => {
+        this.singleSessionOffer.set(offering);
+        this.singleSessionQuote.set(quote);
+      },
+      error: () => {
+        this.singleSessionOffer.set(null);
+        this.singleSessionQuote.set(null);
       },
     });
   }

@@ -159,6 +159,28 @@ model PaymentRefund {
   @@index([status])
 }
 
+model DonationPayment {
+  id                    String        @id @default(cuid())
+  provider              String        @default("razorpay")
+  providerOrderId       String        @unique
+  providerPaymentId     String?
+  amountInPaise         Int
+  currency              String        @default("INR")
+  donorName             String?
+  donorEmail            String?
+  donorPhone            String?
+  status                PaymentStatus @default(CREATED)
+  notes                 Json?
+  verifiedAt            DateTime?
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
+
+  @@index([status, createdAt])
+  @@index([providerPaymentId])
+  @@index([donorEmail])
+  @@index([donorPhone])
+}
+
 model BillingPlan {
   id                 String          @id @default(cuid())
   code               String          @unique

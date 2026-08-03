@@ -16,6 +16,9 @@ import {
 export class ServiceCardComponent {
   service = input.required<Service>();
   hidePricing = input(false);
+  offerPrice = input<number | null>(null);
+  originalPrice = input<number | null>(null);
+  discountPercent = input<number | null>(null);
   learnMore = output<string>();
   readonly sessionPrice = HOPE_HUB_SESSION_PRICE;
   readonly sessionOfferPrice = HOPE_HUB_SESSION_OFFER_PRICE;
@@ -30,7 +33,20 @@ export class ServiceCardComponent {
   }
 
   hasSessionOffer(): boolean {
-    return !this.hidePricing() && Boolean(this.service().pricing?.individual);
+    return !this.hidePricing() && Boolean(this.offerPrice() && this.originalPrice());
+  }
+
+  displayPrice(): number {
+    return this.offerPrice() || this.service().pricing?.individual || this.sessionPrice;
+  }
+
+  displayOriginalPrice(): number | null {
+    const original = this.originalPrice();
+    return original && original > this.displayPrice() ? original : null;
+  }
+
+  displayDiscountPercent(): number | null {
+    return this.discountPercent();
   }
 
   onLearnMore(event?: Event) {
