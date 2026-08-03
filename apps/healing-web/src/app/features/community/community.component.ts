@@ -115,7 +115,7 @@ import { APP_CONSTANTS } from '../../core';
           >
             <div>
               <h2 class="text-2xl font-semibold mb-3 text-gray-950">Anonymous-Friendly Telegram</h2>
-              <ul class="mb-6 space-y-3 text-sm leading-6 text-gray-700">
+              <ul class="mb-4 space-y-3 text-sm leading-6 text-gray-700">
                 <li class="rounded-lg bg-gray-50 p-3">
                   Daily 9 PM voice chat with Hope Hub experts.
                 </li>
@@ -125,17 +125,24 @@ import { APP_CONSTANTS } from '../../core';
                 <li class="rounded-lg bg-gray-50 p-3">
                   Join with a username or display name if identity privacy matters.
                 </li>
-                <li class="rounded-lg bg-gray-50 p-3">
-                  Review Telegram privacy settings and avoid sharing personal details publicly.
-                </li>
               </ul>
-              <button (click)="joinTelegramGroup()" class="btn-primary">
+              <div class="flex justify-center mb-4">
+                <img
+                  [src]="APP_CONSTANTS.TELEGRAM.QR_CODE"
+                  alt="Scan to join @MINDHOPEHUB on Telegram"
+                  class="w-36 h-36 rounded-xl object-contain border border-gray-100"
+                />
+              </div>
+              <p class="text-center text-xs text-gray-400 mb-3">
+                Scan or click to join <strong>@MINDHOPEHUB</strong>
+              </p>
+              <button (click)="joinTelegramGroup()" class="btn-primary w-full justify-center">
                 <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
                   <path
                     d="M12 0C5.374 0 0 5.373 0 12s5.374 12 12 12 12-5.373 12-12S18.626 0 12 0zm5.568 8.16l-1.61 7.59c-.12.54-.44.67-.89.42l-2.46-1.81-1.19 1.14c-.13.13-.24.24-.49.24l.17-2.43 4.47-4.03c.19-.17-.04-.27-.3-.1L9.28 13.47l-2.38-.75c-.52-.16-.53-.52.11-.77l9.28-3.58c.43-.16.81.11.67.77z"
                   />
                 </svg>
-                Join Telegram Group
+                Join @MINDHOPEHUB
               </button>
             </div>
           </div>
