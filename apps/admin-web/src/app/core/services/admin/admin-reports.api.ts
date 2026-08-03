@@ -123,6 +123,14 @@ export class AdminReportsApi extends AdminApiBase {
     );
   }
 
+  getHopeHubAnalytics(params: { days?: number } = {}) {
+    return firstValueFrom(
+      this.http.get<any>(`${this.apiBase}${API_PATHS.ADMIN.ANALYTICS_HOPE_HUB}`, {
+        params: { days: String(params.days ?? 30) },
+      }),
+    );
+  }
+
   getPayments(params: {
     page?: number;
     pageSize?: number;

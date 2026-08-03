@@ -35,6 +35,11 @@ export class AdminApi {
       ...(args as Parameters<AdminReportsApi['getAnalyticsFunnels']>),
     );
   }
+  getHopeHubAnalytics(...args: Parameters<AdminReportsApi['getHopeHubAnalytics']>) {
+    return this.reports.getHopeHubAnalytics(
+      ...(args as Parameters<AdminReportsApi['getHopeHubAnalytics']>),
+    );
+  }
   getPayments(...args: Parameters<AdminReportsApi['getPayments']>) {
     return this.reports.getPayments(...(args as Parameters<AdminReportsApi['getPayments']>));
   }

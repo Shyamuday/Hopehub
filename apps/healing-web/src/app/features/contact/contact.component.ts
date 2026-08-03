@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -16,6 +16,10 @@ import {
 import { APP_CONSTANTS } from '../../core';
 import { FEATURED_SERVICES, getAllServices } from '../../core/data/services-data';
 import type { HopeHubOffering, HopeHubOfferingQuote } from '../../core/services/booking.service';
+import {
+  HOPE_HUB_ANALYTICS_EVENTS,
+  ProductAnalyticsService,
+} from '../../core/services/product-analytics.service';
 import {
   AppointmentCalendarComponent,
   AppointmentSlot,
@@ -53,6 +57,8 @@ export class ContactComponent implements OnInit {
   private bookingService = inject(BookingService);
   private paymentService = inject(PaymentService);
   private notificationService = inject(NotificationService);
+  private destroyRef = inject(DestroyRef);
+  private productAnalytics = inject(ProductAnalyticsService);
 
   contactForm!: FormGroup;
 
@@ -70,6 +76,8 @@ export class ContactComponent implements OnInit {
   prefilledData = signal<any>({});
   selectedOffering = signal<HopeHubOffering | null>(null);
   selectedOfferingQuote = signal<HopeHubOfferingQuote | null>(null);
+  defaultSessionOffer = signal<HopeHubOffering | null>(null);
+  defaultSessionQuote = signal<HopeHubOfferingQuote | null>(null);
   currentUser = signal<User | null>(null);
   services = getAllServices();
   serviceOptions: FormDropdownOption[] = [
@@ -125,6 +133,13 @@ export class ContactComponent implements OnInit {
   ngOnInit(): void {
     this.initializeForm();
     this.restorePendingBooking();
+    this.loadDefaultSessionOffer();
+    this.productAnalytics.track(HOPE_HUB_ANALYTICS_EVENTS.BOOKING_FORM_OPENED, {
+      source: this.prefilledData().source || 'direct',
+      serviceName: this.prefilledData().serviceName || this.prefilledData().service || '',
+      offeringSlug: this.prefilledData().offering || '',
+      paymentMode: this.prefilledData().paymentMode || 'FULL',
+    });
   }
 
   private loadUserData(): void {
@@ -211,6 +226,11 @@ export class ContactComponent implements OnInit {
       message: [initialMessage],
       preferredContact: ['telegram', [Validators.required]],
     });
+
+    this.contactForm
+      .get('serviceInterest')
+      ?.valueChanges.pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.applyDefaultSessionOffer());
   }
 
   private updateFormWithUserData(user: User | null): void {
@@ -233,6 +253,41 @@ export class ContactComponent implements OnInit {
     if (!this.contactForm.get('preferredContact')?.value) {
       this.contactForm.patchValue({ preferredContact: 'email' });
     }
+  }
+
+  private loadDefaultSessionOffer(): void {
+    this.bookingService
+      .servicesPageData()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: ({ singleSessionQuote }) => {
+          this.defaultSessionOffer.set(singleSessionQuote?.offering ?? null);
+          this.defaultSessionQuote.set(singleSessionQuote?.quote ?? null);
+          this.applyDefaultSessionOffer();
+        },
+        error: () => {
+          this.defaultSessionOffer.set(null);
+          this.defaultSessionQuote.set(null);
+        },
+      });
+  }
+
+  private applyDefaultSessionOffer(): void {
+    if (
+      this.prefilledData().offering ||
+      this.prefilledData().offeringId ||
+      this.selectedOffering()
+    ) {
+      return;
+    }
+    if (!this.contactForm?.get('serviceInterest')?.value) {
+      return;
+    }
+    const offer = this.defaultSessionOffer();
+    const quote = this.defaultSessionQuote();
+    if (!offer || !quote) return;
+    this.selectedOffering.set(offer);
+    this.selectedOfferingQuote.set(quote);
   }
 
   private getUserName(user: User | null): string {
@@ -280,7 +335,14 @@ export class ContactComponent implements OnInit {
 
   onAppointmentSelected(appointment: AppointmentSlot): void {
     this.selectedAppointment.set(appointment);
-    console.log('Appointment selected:', appointment);
+    this.productAnalytics.track(HOPE_HUB_ANALYTICS_EVENTS.SLOT_SELECTED, {
+      serviceName:
+        this.contactForm?.get('serviceInterest')?.value || this.prefilledData().serviceName || '',
+      appointmentDate: this.formatLocalDate(appointment.date),
+      appointmentTime: appointment.time,
+      providerId: this.prefilledData().providerId || '',
+      offeringSlug: this.selectedOffering()?.slug || this.prefilledData().offering || '',
+    });
   }
 
   async onSubmit(): Promise<void> {
@@ -362,11 +424,16 @@ export class ContactComponent implements OnInit {
       this.savePendingBooking(formData, appointment);
       this.waitingForAuthToBook.set(true);
       this.notificationService.info('Sign up or log in to continue to secure payment.');
+      this.productAnalytics.track(HOPE_HUB_ANALYTICS_EVENTS.LOGIN_REQUIRED, {
+        serviceName: formData.serviceInterest || this.prefilledData().serviceName || '',
+        offeringSlug: this.selectedOffering()?.slug || this.prefilledData().offering || '',
+      });
       this.authModalService.openRegister();
       throw new Error('Sign up or log in to continue to secure payment.');
     }
 
     const data = this.prefilledData();
+    const selectedOffer = this.selectedOffering();
     const serviceName =
       formData.serviceInterest || data.serviceName || data.service || 'Hope Hub Consultation';
     const bookingMessage =
@@ -380,8 +447,8 @@ export class ContactComponent implements OnInit {
         .createBooking({
           serviceName,
           servicePriceInPaise: this.resolveServicePriceInPaise(serviceName),
-          offeringId: data.offeringId || '',
-          offeringSlug: data.offering || '',
+          offeringId: data.offeringId || selectedOffer?.id || '',
+          offeringSlug: data.offering || selectedOffer?.slug || '',
           paymentMode: data.paymentMode === 'PARTIAL' ? 'PARTIAL' : 'FULL',
           message: bookingMessage,
           appointmentDate: this.formatLocalDate(appointment.date),
@@ -412,12 +479,35 @@ export class ContactComponent implements OnInit {
     this.paymentFlowConsultation.set(response.consultation);
     this.paymentFlowError.set('');
     this.paymentFlowState.set('CREATING_ORDER');
-    await this.paymentService.payConsultation(response.consultation, {
-      onOrderCreated: () => this.paymentFlowState.set('OPENING_CHECKOUT'),
-      onCheckoutOpened: () => this.paymentFlowState.set('OPENING_CHECKOUT'),
-      onVerifying: () => this.paymentFlowState.set('VERIFYING'),
+    this.productAnalytics.track(HOPE_HUB_ANALYTICS_EVENTS.PAYMENT_STARTED, {
+      consultationId: response.consultation.id,
+      serviceName,
+      offeringSlug: selectedOffer?.slug || data.offering || '',
+      paymentMode: data.paymentMode === 'PARTIAL' ? 'PARTIAL' : 'FULL',
+      payableInPaise: this.payTodayInPaise(),
     });
+    try {
+      await this.paymentService.payConsultation(response.consultation, {
+        onOrderCreated: () => this.paymentFlowState.set('OPENING_CHECKOUT'),
+        onCheckoutOpened: () => this.paymentFlowState.set('OPENING_CHECKOUT'),
+        onVerifying: () => this.paymentFlowState.set('VERIFYING'),
+      });
+    } catch (error) {
+      const message = this.readErrorMessage(error);
+      this.productAnalytics.track(HOPE_HUB_ANALYTICS_EVENTS.PAYMENT_FAILED, {
+        consultationId: response.consultation.id,
+        serviceName,
+        offeringSlug: selectedOffer?.slug || data.offering || '',
+        message,
+      });
+      throw error;
+    }
     this.paymentFlowState.set('SUCCESS');
+    this.productAnalytics.track(HOPE_HUB_ANALYTICS_EVENTS.PAYMENT_SUCCESS, {
+      consultationId: response.consultation.id,
+      serviceName,
+      offeringSlug: selectedOffer?.slug || data.offering || '',
+    });
     this.clearPendingBooking();
     this.showSuccessAndReset('Appointment booked and payment verified successfully.');
   }
@@ -442,6 +532,10 @@ export class ContactComponent implements OnInit {
         const message = this.readErrorMessage(error);
         this.paymentFlowError.set(message);
         this.paymentFlowState.set('ERROR');
+        this.productAnalytics.track(HOPE_HUB_ANALYTICS_EVENTS.PAYMENT_FAILED, {
+          consultationId: consultation.id,
+          message,
+        });
         this.notificationService.error(message);
       })
       .finally(() => this.isSubmitting.set(false));

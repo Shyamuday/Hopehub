@@ -6,6 +6,10 @@ import { Service, ServiceCategory } from '../../core/models';
 import { ServiceInquiryComponent } from '../../shared/components';
 import { BookingService, NotificationService, SEOService } from '../../core/services';
 import {
+  HOPE_HUB_ANALYTICS_EVENTS,
+  ProductAnalyticsService,
+} from '../../core/services/product-analytics.service';
+import {
   HOPE_HUB_SESSION_DISCOUNT_PERCENT,
   HOPE_HUB_SESSION_OFFER_PRICE,
   HOPE_HUB_SESSION_PRICE,
@@ -39,6 +43,7 @@ export class ServiceDetailComponent implements OnInit {
   private seoService = inject(SEOService);
   private bookingService = inject(BookingService);
   private notificationService = inject(NotificationService);
+  private productAnalytics = inject(ProductAnalyticsService);
 
   constructor() {
     this.route.params.pipe(takeUntilDestroyed()).subscribe((params: any) => {
@@ -245,6 +250,12 @@ export class ServiceDetailComponent implements OnInit {
 
     // Update SEO for service page
     if (foundService) {
+      this.productAnalytics.track(HOPE_HUB_ANALYTICS_EVENTS.SERVICE_VIEWED, {
+        serviceId: foundService.id,
+        serviceName: foundService.name,
+        category: foundService.category,
+      });
+
       this.seoService.updateSEO({
         title: `${foundService.name} - Hope Hub`,
         description: foundService.detailedDescription || foundService.description,

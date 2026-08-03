@@ -17,6 +17,7 @@ export const API_PATHS = {
     SAFETY_FLAG_NOTE: (consultationId: string) => `/admin/safety-flags/${consultationId}/notes`,
     ADHERENCE_RISK: '/admin/adherence/risk-cohorts',
     ANALYTICS_FUNNELS: '/admin/analytics/funnels',
+    ANALYTICS_HOPE_HUB: '/admin/analytics/hope-hub',
     PAYMENTS: '/admin/payments',
     DONATIONS: '/admin/donations',
     FOLLOW_UPS: '/admin/follow-ups',

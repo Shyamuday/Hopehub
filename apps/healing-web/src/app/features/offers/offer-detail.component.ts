@@ -9,6 +9,10 @@ import { AuthService } from '../../core/services/auth.service';
 import { AuthModalService } from '../../core/services/auth-modal.service';
 import { PaymentService } from '../../core/services/payment.service';
 import { NotificationService } from '../../core/services/notification.service';
+import {
+  HOPE_HUB_ANALYTICS_EVENTS,
+  ProductAnalyticsService,
+} from '../../core/services/product-analytics.service';
 import { environment } from '../../../environments/environment';
 
 type MediaLink = {
@@ -34,6 +38,7 @@ export class OfferDetailComponent implements OnInit {
   private readonly authModal = inject(AuthModalService);
   private readonly paymentService = inject(PaymentService);
   private readonly notificationService = inject(NotificationService);
+  private readonly productAnalytics = inject(ProductAnalyticsService);
 
   readonly offer = signal<HopeHubOffering | null>(null);
   readonly loading = signal(true);
@@ -216,12 +221,25 @@ export class OfferDetailComponent implements OnInit {
       const message = 'Sign in or create an account to continue to secure payment.';
       this.checkoutError.set(message);
       this.notificationService.info(message);
+      this.productAnalytics.track(HOPE_HUB_ANALYTICS_EVENTS.LOGIN_REQUIRED, {
+        offeringId: offer.id,
+        offeringSlug: offer.slug,
+        offeringTitle: offer.title,
+        paymentMode,
+      });
       this.authModal.openRegister();
       return;
     }
 
     this.checkoutError.set('');
     this.checkoutState.set('CREATING');
+    this.productAnalytics.track(HOPE_HUB_ANALYTICS_EVENTS.PAYMENT_STARTED, {
+      offeringId: offer.id,
+      offeringSlug: offer.slug,
+      offeringTitle: offer.title,
+      paymentMode,
+      amountInPaise: offer.priceInPaise,
+    });
     try {
       const response = await firstValueFrom(
         this.bookingService.createBooking({
@@ -246,11 +264,24 @@ export class OfferDetailComponent implements OnInit {
         onVerifying: () => this.checkoutState.set('VERIFYING'),
       });
       this.checkoutState.set('SUCCESS');
+      this.productAnalytics.track(HOPE_HUB_ANALYTICS_EVENTS.PAYMENT_SUCCESS, {
+        offeringId: offer.id,
+        offeringSlug: offer.slug,
+        offeringTitle: offer.title,
+        paymentMode,
+      });
       this.notificationService.success('Payment verified. Your registration is confirmed.');
     } catch (error: any) {
       this.checkoutState.set('IDLE');
       const message = error?.error?.message || error?.message || 'Could not start event checkout.';
       this.checkoutError.set(message);
+      this.productAnalytics.track(HOPE_HUB_ANALYTICS_EVENTS.PAYMENT_FAILED, {
+        offeringId: offer.id,
+        offeringSlug: offer.slug,
+        offeringTitle: offer.title,
+        paymentMode,
+        message,
+      });
       this.notificationService.error(message);
     }
   }
@@ -269,6 +300,13 @@ export class OfferDetailComponent implements OnInit {
     this.bookingService.offering(slug).subscribe({
       next: ({ offering }) => {
         this.offer.set(offering);
+        this.productAnalytics.track(HOPE_HUB_ANALYTICS_EVENTS.OFFER_VIEWED, {
+          offeringId: offering.id,
+          offeringSlug: offering.slug,
+          offeringTitle: offering.title,
+          offeringType: offering.type,
+          priceInPaise: offering.priceInPaise,
+        });
         this.loading.set(false);
       },
       error: () => {

@@ -23,6 +23,114 @@
       <button type="button" class="retry-btn" (click)="load()">Retry</button>
     </div>
   } @else if (report(); as report) {
+    @if (hopeHubReport(); as hopeHub) {
+      <div class="funnel-block">
+        <h3>Hope Hub funnel</h3>
+        <div class="summary-cards compact">
+          <div class="card ok"><div class="val">{{ hopeHub.summary.bookings }}</div><div class="lbl">Bookings</div></div>
+          <div class="card ok"><div class="val">{{ formatPaise(hopeHub.summary.revenueInPaise) }}</div><div class="lbl">Revenue</div></div>
+          <div class="card"><div class="val">{{ hopeHub.summary.paymentStarted }}</div><div class="lbl">Payment started</div></div>
+          <div class="card ok"><div class="val">{{ hopeHub.summary.paymentSuccess }}</div><div class="lbl">Payment success</div></div>
+          <div class="card"><div class="val">{{ hopeHub.summary.failedPayments }}</div><div class="lbl">Failed payments</div></div>
+          <div class="card"><div class="val">{{ hopeHub.summary.pendingPayments }}</div><div class="lbl">Pending payments</div></div>
+          <div class="card"><div class="val">{{ hopeHub.summary.loginRequired }}</div><div class="lbl">Login gates</div></div>
+          <div class="card"><div class="val">{{ hopeHub.summary.followUpsRequested }}</div><div class="lbl">Follow-ups</div></div>
+          <div class="card"><div class="val">{{ formatPaise(hopeHub.summary.offerDiscountInPaise) }}</div><div class="lbl">Offer discounts</div></div>
+          <div class="card"><div class="val">{{ formatPaise(hopeHub.summary.checkoutDiscountInPaise) }}</div><div class="lbl">Other discounts</div></div>
+        </div>
+
+        <div class="table-wrap desktop-only">
+          <table>
+            <thead>
+              <tr>
+                <th>Step</th>
+                <th class="num">Events</th>
+                <th class="num">Unique users</th>
+                <th class="num">From start</th>
+                <th class="num">From previous</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (step of hopeHub.funnel; track step.key) {
+                <tr>
+                  <td>{{ step.label }}</td>
+                  <td class="num">{{ step.total }}</td>
+                  <td class="num">{{ step.uniqueActors }}</td>
+                  <td class="num">{{ step.conversionFromStart }}%</td>
+                  <td class="num">{{ step.conversionFromPrevious }}%</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        <div class="mobile-row-cards">
+          @for (step of hopeHub.funnel; track step.key) {
+            <article class="mobile-row-card">
+              <div class="card-head"><strong>{{ step.label }}</strong><span>{{ step.total }} events</span></div>
+              <div class="card-row"><span>Unique users</span><span>{{ step.uniqueActors }}</span></div>
+              <div class="card-row"><span>From start</span><span>{{ step.conversionFromStart }}%</span></div>
+              <div class="card-row"><span>From previous</span><span>{{ step.conversionFromPrevious }}%</span></div>
+            </article>
+          }
+        </div>
+
+        <div class="split-grid">
+          <div>
+            <h4>Top services</h4>
+            <div class="table-wrap">
+              <table>
+                <tbody>
+                  @for (row of hopeHub.topServices; track row.name) {
+                    <tr><td>{{ row.name }}</td><td class="num">{{ row.count }}</td></tr>
+                  } @empty {
+                    <tr><td>No service data yet.</td><td></td></tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div>
+            <h4>Top offers</h4>
+            <div class="table-wrap">
+              <table>
+                <tbody>
+                  @for (row of hopeHub.topOffers; track row.name) {
+                    <tr><td>{{ row.name }}</td><td class="num">{{ row.count }}</td></tr>
+                  } @empty {
+                    <tr><td>No offer data yet.</td><td></td></tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        @if (hopeHub.couponUsage.length) {
+          <h4>Coupon usage</h4>
+          <div class="table-wrap desktop-only">
+            <table>
+              <thead>
+                <tr>
+                  <th>Code</th>
+                  <th class="num">Uses</th>
+                  <th class="num">Discount</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (row of hopeHub.couponUsage; track row.code) {
+                  <tr>
+                    <td>{{ row.code }}</td>
+                    <td class="num">{{ row.count }}</td>
+                    <td class="num">{{ formatPaise(row.discountInPaise) }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </div>
+    }
+
     <div class="summary-cards">
       <div class="card">
         <div class="val">{{ report.summary.patientLogins }}</div>

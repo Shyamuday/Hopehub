@@ -9,3 +9,4 @@ export * from './auth-modal.service';
 export * from './auth.service';
 export * from './seo.service';
 export * from './notification.service';
+export * from './product-analytics.service';

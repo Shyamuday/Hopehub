@@ -18,7 +18,11 @@ import {
 } from '../utils/helpers.js';
 import { ensureBillingPlans } from './catalog.js';
 import { resolveConsultationCheckout } from '../services/checkout-pricing.js';
-import { PRODUCT_EVENTS, trackProductEvent } from '../services/product-analytics.js';
+import {
+  HOPE_HUB_EVENTS,
+  PRODUCT_EVENTS,
+  trackProductEvent
+} from '../services/product-analytics.js';
 import { enrichWithProfileImageUrl, userProfileImagePath } from '../utils/profile-image-url.js';
 import { hopeHubMediaMimeType, readHopeHubMediaFile } from '../services/hope-hub-media-storage.js';
 import { getAssessmentDefinition, scoreAssessment } from '../services/assessment-definitions.js';
@@ -1682,6 +1686,36 @@ hopeHubRouter.get(
       orderBy: { createdAt: 'desc' },
       take: 10
     });
+    const paidStatuses = new Set(['CAPTURED', 'PAID']);
+    const summary = consultations.reduce(
+      (acc, consultation) => {
+        const paymentStatus = consultation.payment?.status?.toUpperCase() || '';
+        const pricingSnapshot = (consultation.pricingSnapshot || {}) as Record<string, any>;
+        const lineItems = (consultation.payment?.lineItems || {}) as Record<string, any>;
+        const packageUsage = pricingSnapshot['packageUsage'] || lineItems['packageUsage'] || null;
+        const balanceDueInPaise = Number(
+          pricingSnapshot['balanceDueInPaise'] ?? lineItems['balanceDueInPaise'] ?? 0
+        );
+
+        if (!paidStatuses.has(paymentStatus)) acc.pendingPaymentCount += 1;
+        if (consultation.followUpEntitlement?.status === FollowUpEntitlementStatus.AVAILABLE) {
+          acc.availableFollowUpCount += 1;
+        }
+        if (packageUsage && Number(packageUsage.remainingSessions || 0) > 0) {
+          acc.activePackageCount += 1;
+        }
+        acc.balanceDueInPaise += balanceDueInPaise;
+        return acc;
+      },
+      {
+        totalBookings: consultations.length,
+        pendingPaymentCount: 0,
+        availableFollowUpCount: 0,
+        activePackageCount: 0,
+        balanceDueInPaise: 0,
+        requestCount: leads.length
+      }
+    );
 
     res.json({
       consultations: consultations.map((consultation) => ({
@@ -1690,7 +1724,8 @@ hopeHubRouter.get(
           ? providerIdByUserId.get(consultation.assignedDoctorId) || null
           : null
       })),
-      leads
+      leads,
+      summary
     });
   })
 );
@@ -1726,6 +1761,16 @@ hopeHubRouter.post(
       data: {
         status: FollowUpEntitlementStatus.REQUESTED,
         requestedAt: new Date()
+      }
+    });
+
+    void trackProductEvent({
+      name: HOPE_HUB_EVENTS.FOLLOW_UP_REQUESTED,
+      actorId: req.user!.id,
+      actorRole: req.user!.role,
+      properties: {
+        entitlementId: entitlement.id,
+        consultationId: entitlement.consultationId
       }
     });
 

@@ -284,6 +284,22 @@ form {
   font-weight: 900;
 }
 
+.booking-includes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.booking-includes span {
+  border: 1px solid var(--brand-primary-border);
+  border-radius: 999px;
+  background: #ffffff;
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+  font-weight: 800;
+  padding: 0.35rem 0.65rem;
+}
+
 .feedback {
   display: grid;
   gap: 0.25rem;

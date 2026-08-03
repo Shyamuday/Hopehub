@@ -213,6 +213,7 @@
         }
 
         @if (selectedOffering(); as offer) {
+          @if (contactForm.get('serviceInterest')?.value || prefilledData().serviceName || prefilledData().offering) {
           <section class="payment-summary" aria-label="Payment summary">
             @if (offerDiscountInPaise() > 0 && offer.type === 'INDIVIDUAL_SESSION') {
               <div class="payment-summary__offer">
@@ -250,7 +251,15 @@
                 </div>
               }
             </div>
+            @if (offer.type === 'INDIVIDUAL_SESSION') {
+              <div class="booking-includes">
+                <span>30 min private session</span>
+                <span>15 min follow-up</span>
+                <span>Online audio by default</span>
+              </div>
+            }
           </section>
+          }
         }
 
         <label class="safety-check">

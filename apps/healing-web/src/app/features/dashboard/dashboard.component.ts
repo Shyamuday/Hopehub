@@ -6,6 +6,10 @@ import { AuthService } from '../../core/services/auth.service';
 import { BookingService } from '../../core/services/booking.service';
 import { PaymentService } from '../../core/services/payment.service';
 import { NotificationService } from '../../core/services/notification.service';
+import {
+  HOPE_HUB_ANALYTICS_EVENTS,
+  ProductAnalyticsService,
+} from '../../core/services/product-analytics.service';
 import { User } from '../../core/models/auth.model';
 import { ProgressDashboardComponent } from '../../shared/components/progress-dashboard/progress-dashboard.component';
 import {
@@ -68,6 +72,15 @@ type BookingTimelineStep = {
   done: boolean;
 };
 
+type DashboardSummary = {
+  totalBookings: number;
+  pendingPaymentCount: number;
+  availableFollowUpCount: number;
+  activePackageCount: number;
+  balanceDueInPaise: number;
+  requestCount: number;
+};
+
 @Component({
   selector: 'app-dashboard',
   standalone: true,
@@ -117,6 +130,16 @@ type BookingTimelineStep = {
         }
 
         <!-- Quick Actions -->
+        <div class="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-5">
+          @for (item of summaryCards(); track item.label) {
+            <div class="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+              <p class="text-xs font-semibold uppercase text-gray-500">{{ item.label }}</p>
+              <p class="mt-2 text-2xl font-bold text-gray-950">{{ item.value }}</p>
+              <p class="mt-1 text-xs text-gray-500">{{ item.help }}</p>
+            </div>
+          }
+        </div>
+
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <a
             routerLink="/assessments"
@@ -494,6 +517,7 @@ export class DashboardComponent implements OnInit {
   private bookingService = inject(BookingService);
   private paymentService = inject(PaymentService);
   private notificationService = inject(NotificationService);
+  private productAnalytics = inject(ProductAnalyticsService);
   user = signal<User | null>(null);
   isLoading = signal(false);
   isPaying = signal(false);
@@ -504,6 +528,14 @@ export class DashboardComponent implements OnInit {
   paymentFlowConsultation = signal<HopeHubConsultation | null>(null);
   consultations = signal<HopeHubConsultation[]>([]);
   leads = signal<any[]>([]);
+  summary = signal<DashboardSummary>({
+    totalBookings: 0,
+    pendingPaymentCount: 0,
+    availableFollowUpCount: 0,
+    activePackageCount: 0,
+    balanceDueInPaise: 0,
+    requestCount: 0,
+  });
 
   constructor() {
     this.authService.user$.pipe(takeUntilDestroyed()).subscribe((user: User | null) => {
@@ -521,6 +553,10 @@ export class DashboardComponent implements OnInit {
       next: (dashboard) => {
         this.consultations.set(dashboard.consultations || []);
         this.leads.set(dashboard.leads || []);
+        this.summary.set(
+          dashboard.summary ||
+            this.buildLocalSummary(dashboard.consultations || [], dashboard.leads || []),
+        );
         this.isLoading.set(false);
       },
       error: () => {
@@ -541,6 +577,17 @@ export class DashboardComponent implements OnInit {
     }
 
     return 'Your expert is assigned. The team will share the confirmed session instructions through your selected contact method.';
+  }
+
+  summaryCards(): Array<{ label: string; value: string; help: string }> {
+    const summary = this.summary();
+    return [
+      { label: 'Bookings', value: String(summary.totalBookings), help: 'Total sessions' },
+      { label: 'Pending pay', value: String(summary.pendingPaymentCount), help: 'Need action' },
+      { label: 'Follow-ups', value: String(summary.availableFollowUpCount), help: 'Available now' },
+      { label: 'Packages', value: String(summary.activePackageCount), help: 'Active plans' },
+      { label: 'Balance', value: this.formatPaise(summary.balanceDueInPaise), help: 'Due later' },
+    ];
   }
 
   canRetryPayment(consultation: HopeHubConsultation): boolean {
@@ -564,6 +611,9 @@ export class DashboardComponent implements OnInit {
     this.requestingFollowUpId.set(entitlementId);
     this.bookingService.requestFollowUp(entitlementId).subscribe({
       next: () => {
+        this.productAnalytics.track(HOPE_HUB_ANALYTICS_EVENTS.FOLLOW_UP_REQUESTED, {
+          entitlementId,
+        });
         this.notificationService.success('Follow-up request sent. The team will confirm a slot.');
         this.loadDashboard();
         this.requestingFollowUpId.set(null);
@@ -581,6 +631,10 @@ export class DashboardComponent implements OnInit {
     this.paymentFlowState.set('CREATING_ORDER');
     this.isPaying.set(true);
     this.notice.set('');
+    this.productAnalytics.track(HOPE_HUB_ANALYTICS_EVENTS.PAYMENT_STARTED, {
+      consultationId: consultation.id,
+      source: 'dashboard_retry',
+    });
     try {
       await this.paymentService.payConsultation(consultation, {
         onOrderCreated: () => this.paymentFlowState.set('OPENING_CHECKOUT'),
@@ -588,6 +642,10 @@ export class DashboardComponent implements OnInit {
         onVerifying: () => this.paymentFlowState.set('VERIFYING'),
       });
       this.paymentFlowState.set('SUCCESS');
+      this.productAnalytics.track(HOPE_HUB_ANALYTICS_EVENTS.PAYMENT_SUCCESS, {
+        consultationId: consultation.id,
+        source: 'dashboard_retry',
+      });
       this.notice.set(
         'Payment verified successfully. Your booking is now ready for expert confirmation.',
       );
@@ -602,6 +660,11 @@ export class DashboardComponent implements OnInit {
           : 'Payment could not be completed. Please retry or contact support.';
       this.paymentFlowError.set(message);
       this.paymentFlowState.set('ERROR');
+      this.productAnalytics.track(HOPE_HUB_ANALYTICS_EVENTS.PAYMENT_FAILED, {
+        consultationId: consultation.id,
+        source: 'dashboard_retry',
+        message,
+      });
       this.notice.set(message);
       this.notificationService.error(message);
     } finally {
@@ -675,6 +738,30 @@ export class DashboardComponent implements OnInit {
       consultation.pricingSnapshot?.balanceDueInPaise ??
         consultation.payment?.lineItems?.balanceDueInPaise ??
         0,
+    );
+  }
+
+  private buildLocalSummary(consultations: HopeHubConsultation[], leads: any[]): DashboardSummary {
+    return consultations.reduce(
+      (acc, consultation) => {
+        if (this.canRetryPayment(consultation)) acc.pendingPaymentCount += 1;
+        if (consultation.followUpEntitlement?.status === 'AVAILABLE') {
+          acc.availableFollowUpCount += 1;
+        }
+        if (this.packageUsage(consultation)?.remainingSessions > 0) {
+          acc.activePackageCount += 1;
+        }
+        acc.balanceDueInPaise += this.balanceDueInPaise(consultation);
+        return acc;
+      },
+      {
+        totalBookings: consultations.length,
+        pendingPaymentCount: 0,
+        availableFollowUpCount: 0,
+        activePackageCount: 0,
+        balanceDueInPaise: 0,
+        requestCount: leads.length,
+      },
     );
   }
 

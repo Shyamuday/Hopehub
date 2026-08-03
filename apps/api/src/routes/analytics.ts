@@ -1,9 +1,13 @@
 import { Router } from 'express';
 import { ProductEventCategory, Role } from '@prisma/client';
 import { z } from 'zod';
-import { authRequired, allowRoles } from '../auth.js';
+import { authOptional, authRequired, allowRoles } from '../auth.js';
 import { asyncRoute, queryPositiveInt } from '../utils/helpers.js';
-import { buildProductFunnelReport, trackProductEvent } from '../services/product-analytics.js';
+import {
+  buildHopeHubAnalyticsReport,
+  buildProductFunnelReport,
+  trackProductEvent
+} from '../services/product-analytics.js';
 
 const clientEventSchema = z.object({
   name: z.string().min(2).max(120),
@@ -16,14 +20,15 @@ export const analyticsRouter = Router();
 
 analyticsRouter.post(
   '/analytics/events',
-  authRequired,
+  authOptional,
   asyncRoute(async (req, res) => {
     const body = clientEventSchema.parse(req.body);
     await trackProductEvent({
       name: body.name,
-      category: (body.category as ProductEventCategory | undefined) ?? ProductEventCategory.ENGAGEMENT,
-      actorId: req.user!.id,
-      actorRole: req.user!.role,
+      category:
+        (body.category as ProductEventCategory | undefined) ?? ProductEventCategory.ENGAGEMENT,
+      actorId: req.user?.id,
+      actorRole: req.user?.role,
       sessionId: body.sessionId,
       properties: body.properties
     });
@@ -39,6 +44,17 @@ export function registerAdminAnalyticsRoutes(router: Router) {
     asyncRoute(async (req, res) => {
       const days = queryPositiveInt(req, 'days', 30, 7, 90);
       const report = await buildProductFunnelReport(days);
+      res.json(report);
+    })
+  );
+
+  router.get(
+    '/admin/analytics/hope-hub',
+    authRequired,
+    allowRoles(Role.ADMIN),
+    asyncRoute(async (req, res) => {
+      const days = queryPositiveInt(req, 'days', 30, 1, 90);
+      const report = await buildHopeHubAnalyticsReport(days);
       res.json(report);
     })
   );
