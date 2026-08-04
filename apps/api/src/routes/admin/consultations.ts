@@ -19,6 +19,7 @@ import {
 import { emitConsultationAssigned } from '../../services/consultation-realtime.js';
 import { PRODUCT_EVENTS, trackProductEvent } from '../../services/product-analytics.js';
 import { upsertProviderEarningForPayment } from '../../services/provider-earnings.js';
+import { applyConsultationCancellationEffects } from '../../services/consultation-cancellation.js';
 
 export function registerAdminConsultationRoutes(router: Router, io: SocketIoServer) {
   // ─── Admin consultations ───────────────────────────────────────────────────────
@@ -247,7 +248,13 @@ export function registerAdminConsultationRoutes(router: Router, io: SocketIoServ
     authRequired,
     allowRoles(Role.ADMIN),
     asyncRoute(async (req, res) => {
-      const body = z.object({ status: z.nativeEnum(ConsultationStatus) }).parse(req.body);
+      const body = z
+        .object({
+          status: z.nativeEnum(ConsultationStatus),
+          reason: z.string().trim().max(1000).optional(),
+          restorePackageSession: z.boolean().optional()
+        })
+        .parse(req.body);
 
       const existing = await prisma.consultation.findUnique({
         where: { id: routeParam(req, 'id') },
@@ -260,7 +267,7 @@ export function registerAdminConsultationRoutes(router: Router, io: SocketIoServ
         return res.status(404).json({ message: 'Consultation not found.' });
       }
 
-      const consultation = await prisma.consultation.update({
+      let consultation = await prisma.consultation.update({
         where: { id: existing.id },
         data: { status: body.status },
         include: {
@@ -270,6 +277,29 @@ export function registerAdminConsultationRoutes(router: Router, io: SocketIoServ
           payment: { select: { status: true, amountInPaise: true, lineItems: true } }
         }
       });
+
+      const cancellationResult =
+        body.status === ConsultationStatus.CANCELLED
+          ? await applyConsultationCancellationEffects({
+              consultationId: existing.id,
+              actorId: req.user!.id,
+              actorRole: req.user!.role,
+              reason: body.reason,
+              restorePackageSession: body.restorePackageSession
+            })
+          : null;
+
+      if (cancellationResult) {
+        consultation = await prisma.consultation.findUniqueOrThrow({
+          where: { id: existing.id },
+          include: {
+            patient: { select: { id: true, name: true, mobile: true } },
+            assignedDoctor: { select: { id: true, name: true } },
+            disease: { select: { id: true, name: true } },
+            payment: { select: { status: true, amountInPaise: true, lineItems: true } }
+          }
+        });
+      }
 
       await writeAuditLog({
         actorId: req.user!.id,
@@ -281,6 +311,9 @@ export function registerAdminConsultationRoutes(router: Router, io: SocketIoServ
         metadata: {
           previousStatus: existing.status,
           nextStatus: body.status,
+          reason: body.reason || null,
+          restoredPackageSession: cancellationResult?.restoredPackageSession ?? false,
+          packageConsultationId: cancellationResult?.packageConsultationId ?? null,
           patientId: consultation.patientId,
           diseaseName: existing.disease?.name ?? null
         }

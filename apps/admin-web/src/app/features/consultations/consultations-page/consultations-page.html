@@ -269,6 +269,27 @@
                 }
               </select>
             </label>
+            @if (statusModel().value === 'CANCELLED') {
+              <label>Cancellation reason
+                <textarea
+                  [value]="cancelReason()"
+                  (input)="onCancelReasonInput($event)"
+                  rows="3"
+                  placeholder="User cancelled, provider unavailable, duplicate booking..."
+                ></textarea>
+              </label>
+              <label class="check-row">
+                <input
+                  type="checkbox"
+                  [checked]="restorePackageSession()"
+                  (change)="onRestorePackageToggle($event)"
+                />
+                Restore package session if this was paid by package
+              </label>
+              <p class="cancel-note">
+                Cancellation will hold provider payout. Refund still needs to be handled from Payments if money was collected.
+              </p>
+            }
           </div>
           <div class="mfooter">
             <button class="btn-ghost" (click)="closeModal()">Cancel</button>

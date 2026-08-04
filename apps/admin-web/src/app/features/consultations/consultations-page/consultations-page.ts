@@ -47,6 +47,8 @@ export class ConsultationsPage implements OnInit {
 
   readonly statusModel = signal({ value: 'ASSIGNED' });
   readonly statusForm = form(this.statusModel);
+  cancelReason = signal('');
+  restorePackageSession = signal(true);
 
   doctors = signal<any[]>([]);
   filteredDoctors = signal<any[]>([]);
@@ -191,6 +193,8 @@ export class ConsultationsPage implements OnInit {
   openStatus(c: any): void {
     this.selectedConsult.set(c);
     this.statusModel.set({ value: c.status });
+    this.cancelReason.set('');
+    this.restorePackageSession.set(true);
     this.err.set('');
     this.statusModal.set(true);
   }
@@ -203,6 +207,12 @@ export class ConsultationsPage implements OnInit {
       const r = await this.api.updateConsultationStatus(
         this.selectedConsult()!.id,
         this.statusModel().value,
+        this.statusModel().value === 'CANCELLED'
+          ? {
+              reason: this.cancelReason().trim() || 'Cancelled by admin',
+              restorePackageSession: this.restorePackageSession(),
+            }
+          : undefined,
       );
       this.consultations.update((list) =>
         list.map((c) =>
@@ -210,12 +220,24 @@ export class ConsultationsPage implements OnInit {
         ),
       );
       this.statusModal.set(false);
-      this.showToast('Status updated ✓');
+      this.showToast(
+        this.statusModel().value === 'CANCELLED'
+          ? 'Cancelled — payout held/package restored if applicable ✓'
+          : 'Status updated ✓',
+      );
     } catch (e: any) {
       this.err.set(e?.error?.message ?? 'Status update failed');
     } finally {
       this.saving.set(false);
     }
+  }
+
+  onCancelReasonInput(event: Event): void {
+    this.cancelReason.set((event.target as HTMLTextAreaElement).value);
+  }
+
+  onRestorePackageToggle(event: Event): void {
+    this.restorePackageSession.set((event.target as HTMLInputElement).checked);
   }
 
   async confirmAssign(): Promise<void> {

@@ -10,6 +10,8 @@ import {
   exportAdminPaymentsCsv,
   listAdminPayments
 } from '../../services/admin-payments.js';
+import { applyConsultationCancellationEffects } from '../../services/consultation-cancellation.js';
+import { upsertProviderEarningForPayment } from '../../services/provider-earnings.js';
 
 type RazorpayRefundEntity = {
   id: string;
@@ -369,6 +371,22 @@ export function registerAdminPaymentRoutes(router: Router) {
           }
         })
       ]);
+
+      await upsertProviderEarningForPayment(payment.id, {
+        forceHold: true,
+        payoutNote: `Refund ${nextStatus === PaymentStatus.REFUNDED ? 'full' : 'partial'}: ${body.reason}`
+      });
+
+      if (body.cancelConsultation && nextStatus === PaymentStatus.REFUNDED) {
+        await applyConsultationCancellationEffects({
+          consultationId: payment.consultationId,
+          actorId: req.user!.id,
+          actorRole: req.user!.role,
+          reason: body.reason,
+          restorePackageSession: true,
+          holdProviderPayout: true
+        });
+      }
 
       res.status(201).json({ refund: savedRefund, payment: updatedPayment });
     })

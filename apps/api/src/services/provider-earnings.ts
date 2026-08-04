@@ -19,7 +19,10 @@ function computeShare(grossAmountInPaise: number, sharePercent: number) {
   };
 }
 
-export async function upsertProviderEarningForPayment(paymentId: string) {
+export async function upsertProviderEarningForPayment(
+  paymentId: string,
+  options?: { forceHold?: boolean; payoutNote?: string }
+) {
   const payment = await prisma.payment.findUnique({
     where: { id: paymentId },
     include: {
@@ -45,11 +48,13 @@ export async function upsertProviderEarningForPayment(paymentId: string) {
   const snapshot = asRecord(payment.consultation.pricingSnapshot);
   const lineItems = asRecord(payment.lineItems);
   const packageUsage = snapshot['packageUsage'] || lineItems['packageUsage'] || null;
-  const grossAmountInPaise = Math.max(0, Number(payment.amountInPaise || 0));
-  const split = computeShare(
-    payment.status === PaymentStatus.PAID ? grossAmountInPaise : 0,
-    sharePercent
+  const grossAmountInPaise = Math.max(
+    0,
+    Number(payment.amountInPaise || 0) - Number(payment.refundedAmountInPaise || 0)
   );
+  const isEarnable =
+    payment.status === PaymentStatus.PAID || payment.status === PaymentStatus.PARTIALLY_REFUNDED;
+  const split = computeShare(isEarnable ? grossAmountInPaise : 0, sharePercent);
 
   const existing = await prisma.providerEarning.findUnique({
     where: { paymentId: payment.id },
@@ -61,10 +66,11 @@ export async function upsertProviderEarningForPayment(paymentId: string) {
       payoutNote: true
     }
   });
-  const nextPayoutStatus =
-    existing?.payoutStatus === ProviderPayoutStatus.PAID
+  const nextPayoutStatus = options?.forceHold
+    ? ProviderPayoutStatus.HOLD
+    : existing?.payoutStatus === ProviderPayoutStatus.PAID
       ? ProviderPayoutStatus.PAID
-      : payment.status === PaymentStatus.PAID
+      : isEarnable
         ? ProviderPayoutStatus.PENDING
         : ProviderPayoutStatus.HOLD;
 
@@ -81,6 +87,7 @@ export async function upsertProviderEarningForPayment(paymentId: string) {
       platformFeeInPaise: split.platformFeeInPaise,
       paymentStatus: payment.status,
       payoutStatus: nextPayoutStatus,
+      payoutNote: options?.payoutNote || null,
       pricingMode:
         String(snapshot['careTeamPricingMode'] || lineItems['careTeamPricingMode'] || '') || null,
       pricingRule:
@@ -98,6 +105,7 @@ export async function upsertProviderEarningForPayment(paymentId: string) {
       platformFeeInPaise: split.platformFeeInPaise,
       paymentStatus: payment.status,
       payoutStatus: nextPayoutStatus,
+      ...(options?.payoutNote ? { payoutNote: options.payoutNote } : {}),
       pricingMode:
         String(snapshot['careTeamPricingMode'] || lineItems['careTeamPricingMode'] || '') || null,
       pricingRule:

@@ -19,6 +19,7 @@ import { ensureBillingPlans } from './catalog.js';
 import { resolveDiseaseConsultationFee } from '../services/consultation-pricing.js';
 import { resolveConsultationCheckout } from '../services/checkout-pricing.js';
 import { PRODUCT_EVENTS, trackProductEvent } from '../services/product-analytics.js';
+import { applyConsultationCancellationEffects } from '../services/consultation-cancellation.js';
 
 function serializeHopeHubAssessmentAttempt(attempt: {
   id: string;
@@ -168,6 +169,53 @@ export function createConsultationsRouter(io: SocketIoServer) {
       });
 
       res.status(201).json({ consultation });
+    })
+  );
+
+  router.patch(
+    '/consultations/:id/cancel',
+    authRequired,
+    allowRoles(Role.PATIENT),
+    asyncRoute(async (req, res) => {
+      const body = z.object({ reason: z.string().trim().max(1000).optional() }).parse(req.body);
+      const consultation = await prisma.consultation.findUnique({
+        where: { id: routeParam(req, 'id') },
+        select: { id: true, patientId: true, status: true }
+      });
+      if (!consultation) return res.status(404).json({ message: 'Consultation not found.' });
+      if (consultation.patientId !== req.user!.id) {
+        return res.status(403).json({ message: 'Access denied.' });
+      }
+      if (
+        consultation.status === ConsultationStatus.COMPLETED ||
+        consultation.status === ConsultationStatus.CANCELLED
+      ) {
+        return res.status(400).json({ message: 'This consultation can no longer be cancelled.' });
+      }
+
+      const result = await applyConsultationCancellationEffects({
+        consultationId: consultation.id,
+        actorId: req.user!.id,
+        actorRole: req.user!.role,
+        reason: body.reason || 'Cancelled by user',
+        restorePackageSession: true,
+        holdProviderPayout: true
+      });
+      const updated = await prisma.consultation.findUniqueOrThrow({
+        where: { id: consultation.id },
+        include: includeConsultationRelations()
+      });
+      io.to(`user:${consultation.patientId}`).emit('consultation:updated', {
+        consultationId: consultation.id,
+        status: ConsultationStatus.CANCELLED
+      });
+      res.json({
+        consultation: updated,
+        cancellation: result,
+        message: result?.restoredPackageSession
+          ? 'Consultation cancelled and package session restored.'
+          : 'Consultation cancelled.'
+      });
     })
   );
 

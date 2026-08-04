@@ -289,6 +289,16 @@ export function createPaymentsRouter(io: SocketIoServer) {
       })
     ]);
 
+    await upsertProviderEarningForPayment(payment.id, {
+      forceHold: nextPaymentStatus !== PaymentStatus.PAID,
+      payoutNote:
+        nextPaymentStatus === PaymentStatus.REFUNDED
+          ? 'Refund webhook: full refund'
+          : nextPaymentStatus === PaymentStatus.PARTIALLY_REFUNDED
+            ? 'Refund webhook: partial refund'
+            : undefined
+    });
+
     io.to(`user:${payment.consultation.patientId}`).emit('payment:updated', {
       paymentId: payment.id,
       status: nextPaymentStatus

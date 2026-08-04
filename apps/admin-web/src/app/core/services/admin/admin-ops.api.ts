@@ -180,11 +180,15 @@ export class AdminOpsApi extends AdminApiBase {
     );
   }
 
-  updateConsultationStatus(consultationId: string, status: string) {
+  updateConsultationStatus(
+    consultationId: string,
+    status: string,
+    options?: { reason?: string; restorePackageSession?: boolean },
+  ) {
     return firstValueFrom(
       this.http.patch<{ consultation: any }>(
         `${this.apiBase}${API_PATHS.ADMIN.CONSULTATION_STATUS(consultationId)}`,
-        { status },
+        { status, ...(options || {}) },
       ),
     );
   }
