@@ -49,6 +49,10 @@ export class ConsultationsPage implements OnInit {
   readonly statusForm = form(this.statusModel);
   cancelReason = signal('');
   restorePackageSession = signal(true);
+  outcomeNote = signal('');
+  outcomeNextStep = signal('');
+  outcomeRestorePackage = signal(false);
+  outcomeHoldPayout = signal(false);
 
   doctors = signal<any[]>([]);
   filteredDoctors = signal<any[]>([]);
@@ -195,6 +199,10 @@ export class ConsultationsPage implements OnInit {
     this.statusModel.set({ value: c.status });
     this.cancelReason.set('');
     this.restorePackageSession.set(true);
+    this.outcomeNote.set('');
+    this.outcomeNextStep.set('');
+    this.outcomeRestorePackage.set(false);
+    this.outcomeHoldPayout.set(false);
     this.err.set('');
     this.statusModal.set(true);
   }
@@ -204,16 +212,25 @@ export class ConsultationsPage implements OnInit {
     this.saving.set(true);
     this.err.set('');
     try {
-      const r = await this.api.updateConsultationStatus(
-        this.selectedConsult()!.id,
-        this.statusModel().value,
-        this.statusModel().value === 'CANCELLED'
-          ? {
-              reason: this.cancelReason().trim() || 'Cancelled by admin',
-              restorePackageSession: this.restorePackageSession(),
-            }
-          : undefined,
-      );
+      const r =
+        this.statusModel().value === 'COMPLETED'
+          ? await this.api.updateConsultationOutcome(this.selectedConsult()!.id, {
+              outcome: 'COMPLETED',
+              privateNote: this.outcomeNote().trim() || undefined,
+              recommendedNextStep: this.outcomeNextStep().trim() || undefined,
+              restorePackageSession: this.outcomeRestorePackage(),
+              holdProviderPayout: this.outcomeHoldPayout(),
+            })
+          : await this.api.updateConsultationStatus(
+              this.selectedConsult()!.id,
+              this.statusModel().value,
+              this.statusModel().value === 'CANCELLED'
+                ? {
+                    reason: this.cancelReason().trim() || 'Cancelled by admin',
+                    restorePackageSession: this.restorePackageSession(),
+                  }
+                : undefined,
+            );
       this.consultations.update((list) =>
         list.map((c) =>
           c.id === this.selectedConsult()!.id ? { ...c, status: r.consultation.status } : c,
@@ -223,7 +240,9 @@ export class ConsultationsPage implements OnInit {
       this.showToast(
         this.statusModel().value === 'CANCELLED'
           ? 'Cancelled — payout held/package restored if applicable ✓'
-          : 'Status updated ✓',
+          : this.statusModel().value === 'COMPLETED'
+            ? 'Session outcome saved ✓'
+            : 'Status updated ✓',
       );
     } catch (e: any) {
       this.err.set(e?.error?.message ?? 'Status update failed');
@@ -238,6 +257,22 @@ export class ConsultationsPage implements OnInit {
 
   onRestorePackageToggle(event: Event): void {
     this.restorePackageSession.set((event.target as HTMLInputElement).checked);
+  }
+
+  onOutcomeNoteInput(event: Event): void {
+    this.outcomeNote.set((event.target as HTMLTextAreaElement).value);
+  }
+
+  onOutcomeNextStepInput(event: Event): void {
+    this.outcomeNextStep.set((event.target as HTMLInputElement).value);
+  }
+
+  onOutcomeRestorePackageToggle(event: Event): void {
+    this.outcomeRestorePackage.set((event.target as HTMLInputElement).checked);
+  }
+
+  onOutcomeHoldPayoutToggle(event: Event): void {
+    this.outcomeHoldPayout.set((event.target as HTMLInputElement).checked);
   }
 
   async confirmAssign(): Promise<void> {

@@ -2,6 +2,7 @@ import { DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { form, FormField } from '@angular/forms/signals';
+import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, ParamMap, Router } from '@angular/router';
 import { RouterLink } from '@angular/router';
 import { ROUTE_PATHS } from '../../../core/constants/app-routes.constants';
@@ -71,6 +72,7 @@ function emptyPrescriptionModel() {
   selector: 'app-appointments-page',
   imports: [
     FormField,
+    FormsModule,
     DatePipe,
     PatientHealthProfileComponent,
     RouterLink,
@@ -818,6 +820,46 @@ export class AppointmentsPage implements OnInit {
       this.message = 'Consultation marked as completed.';
     } catch {
       this.error = 'Could not close consultation.';
+    } finally {
+      this.saving = false;
+    }
+  }
+
+  outcomeModel = {
+    outcome: 'COMPLETED',
+    privateNote: '',
+    userSummary: '',
+    recommendedNextStep: '',
+    restorePackageSession: false,
+    holdProviderPayout: false,
+  };
+
+  async submitSessionOutcome() {
+    const consultationId = this.prescriptionModel().consultationId;
+    this.saving = true;
+    this.error = '';
+    try {
+      const outcome = this.outcomeModel.outcome;
+      await this.prescriptions.closeConsultation(consultationId, {
+        outcome,
+        privateNote: this.outcomeModel.privateNote || undefined,
+        userSummary: this.outcomeModel.userSummary || undefined,
+        recommendedNextStep: this.outcomeModel.recommendedNextStep || undefined,
+        restorePackageSession:
+          this.outcomeModel.restorePackageSession ||
+          outcome === 'PROVIDER_NO_SHOW' ||
+          outcome === 'RESCHEDULE_NEEDED',
+        holdProviderPayout:
+          this.outcomeModel.holdProviderPayout ||
+          outcome === 'PROVIDER_NO_SHOW' ||
+          outcome === 'RESCHEDULE_NEEDED',
+      });
+      this.consultationStatus =
+        outcome === 'COMPLETED' || outcome === 'USER_MISSED' ? 'COMPLETED' : 'CANCELLED';
+      this.confirmingClose = false;
+      this.message = 'Session outcome saved.';
+    } catch {
+      this.error = 'Could not save session outcome.';
     } finally {
       this.saving = false;
     }

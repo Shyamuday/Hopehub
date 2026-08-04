@@ -330,11 +330,44 @@
             Mark as Completed
           </button>
         } @else {
-          <span class="close-warning">This will permanently close the consultation.</span>
-          <button type="button" class="btn-confirm-close" (click)="closeConsultation()" [disabled]="saving">
-            {{ saving ? 'Closing…' : 'Yes, close it' }}
-          </button>
-          <button type="button" (click)="confirmingClose = false" [disabled]="saving">Cancel</button>
+          <div class="outcome-panel">
+            <span class="close-warning">Close this session with outcome.</span>
+            <label>
+              Outcome
+              <select [(ngModel)]="outcomeModel.outcome" name="sessionOutcome">
+                <option value="COMPLETED">Completed</option>
+                <option value="USER_MISSED">User missed</option>
+                <option value="PROVIDER_NO_SHOW">Provider no-show</option>
+                <option value="RESCHEDULE_NEEDED">Reschedule needed</option>
+              </select>
+            </label>
+            <label>
+              User-facing summary
+              <textarea [(ngModel)]="outcomeModel.userSummary" name="outcomeUserSummary" rows="2" placeholder="Short summary visible in notes later"></textarea>
+            </label>
+            <label>
+              Recommended next step
+              <input [(ngModel)]="outcomeModel.recommendedNextStep" name="outcomeNextStep" placeholder="Book follow-up, continue plan..." />
+            </label>
+            <label>
+              Private note
+              <textarea [(ngModel)]="outcomeModel.privateNote" name="outcomePrivateNote" rows="2" placeholder="Internal note"></textarea>
+            </label>
+            <label class="check-row">
+              <input type="checkbox" [(ngModel)]="outcomeModel.restorePackageSession" name="restorePackageSession" />
+              Restore package session
+            </label>
+            <label class="check-row">
+              <input type="checkbox" [(ngModel)]="outcomeModel.holdProviderPayout" name="holdProviderPayout" />
+              Hold provider payout
+            </label>
+            <div class="outcome-actions">
+              <button type="button" class="btn-confirm-close" (click)="submitSessionOutcome()" [disabled]="saving">
+                {{ saving ? 'Saving…' : 'Save outcome' }}
+              </button>
+              <button type="button" (click)="confirmingClose = false" [disabled]="saving">Cancel</button>
+            </div>
+          </div>
         }
       </div>
     }

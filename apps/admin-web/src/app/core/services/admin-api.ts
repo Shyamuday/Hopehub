@@ -739,6 +739,11 @@ export class AdminApi {
       ...(args as Parameters<AdminOpsApi['updateConsultationStatus']>),
     );
   }
+  updateConsultationOutcome(...args: Parameters<AdminOpsApi['updateConsultationOutcome']>) {
+    return this.ops.updateConsultationOutcome(
+      ...(args as Parameters<AdminOpsApi['updateConsultationOutcome']>),
+    );
+  }
   getInventoryOverview(...args: Parameters<AdminOpsApi['getInventoryOverview']>) {
     return this.ops.getInventoryOverview(
       ...(args as Parameters<AdminOpsApi['getInventoryOverview']>),

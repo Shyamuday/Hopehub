@@ -21,6 +21,7 @@ import { resolveConsultationCheckout } from '../services/checkout-pricing.js';
 import { PRODUCT_EVENTS, trackProductEvent } from '../services/product-analytics.js';
 import { applyConsultationCancellationEffects } from '../services/consultation-cancellation.js';
 import { notifyConsultationBooked } from '../services/consultation-reminders.js';
+import { applySessionOutcome } from '../services/consultation-outcomes.js';
 
 function serializeHopeHubAssessmentAttempt(attempt: {
   id: string;
@@ -512,10 +513,62 @@ export function createConsultationsRouter(io: SocketIoServer) {
           .json({ message: 'Only the assigned doctor can complete consultation' });
       }
 
-      const updated = await prisma.consultation.update({
-        where: { id: consultation.id },
-        data: { status: ConsultationStatus.COMPLETED },
-        include: includeConsultationRelations()
+      const result = await applySessionOutcome({
+        consultationId: consultation.id,
+        actorId: req.user!.id,
+        actorRole: req.user!.role,
+        outcome: 'COMPLETED',
+        privateNote: 'Marked complete from legacy complete action.'
+      });
+      const updated = result?.consultation;
+
+      if (consultation.consultationMode === 'INSTANT_ONLINE' && consultation.assignedDoctorId) {
+        const { setDoctorLiveStatus } = await import('../services/online-doctor-presence.js');
+        const { LivePresenceStatus } = await import('@prisma/client');
+        await setDoctorLiveStatus(
+          consultation.assignedDoctorId,
+          { liveStatus: LivePresenceStatus.ONLINE },
+          io
+        );
+      }
+
+      res.json({ consultation: updated, sessionOutcome: result?.sessionOutcome });
+    })
+  );
+
+  router.post(
+    '/consultations/:id/outcome',
+    authRequired,
+    allowRoles(Role.DOCTOR, Role.ADMIN),
+    asyncRoute(async (req, res) => {
+      const body = z
+        .object({
+          outcome: z.enum(['COMPLETED', 'USER_MISSED', 'PROVIDER_NO_SHOW', 'RESCHEDULE_NEEDED']),
+          privateNote: z.string().trim().max(5000).optional(),
+          userSummary: z.string().trim().max(2000).optional(),
+          recommendedNextStep: z.string().trim().max(1000).optional(),
+          restorePackageSession: z.boolean().optional(),
+          holdProviderPayout: z.boolean().optional()
+        })
+        .parse(req.body);
+      const consultation = await prisma.consultation.findUniqueOrThrow({
+        where: { id: routeParam(req, 'id') }
+      });
+      if (req.user!.role === Role.DOCTOR && consultation.assignedDoctorId !== req.user!.id) {
+        return res
+          .status(403)
+          .json({ message: 'Only the assigned provider can close this session.' });
+      }
+      const result = await applySessionOutcome({
+        consultationId: consultation.id,
+        actorId: req.user!.id,
+        actorRole: req.user!.role,
+        outcome: body.outcome,
+        privateNote: body.privateNote,
+        userSummary: body.userSummary,
+        recommendedNextStep: body.recommendedNextStep,
+        restorePackageSession: body.restorePackageSession,
+        holdProviderPayout: body.holdProviderPayout
       });
 
       if (consultation.consultationMode === 'INSTANT_ONLINE' && consultation.assignedDoctorId) {
@@ -528,7 +581,7 @@ export function createConsultationsRouter(io: SocketIoServer) {
         );
       }
 
-      res.json({ consultation: updated });
+      res.json({ consultation: result?.consultation, sessionOutcome: result?.sessionOutcome });
     })
   );
 

@@ -193,6 +193,25 @@ export class AdminOpsApi extends AdminApiBase {
     );
   }
 
+  updateConsultationOutcome(
+    consultationId: string,
+    data: {
+      outcome: string;
+      privateNote?: string;
+      userSummary?: string;
+      recommendedNextStep?: string;
+      restorePackageSession?: boolean;
+      holdProviderPayout?: boolean;
+    },
+  ) {
+    return firstValueFrom(
+      this.http.post<{ consultation: any; sessionOutcome: any }>(
+        `${this.apiBase}${API_PATHS.CONSULTATIONS}/${consultationId}/outcome`,
+        data,
+      ),
+    );
+  }
+
   getInventoryOverview() {
     return firstValueFrom(
       this.http.get<{ stores: Array<any> }>(`${this.apiBase}${API_PATHS.ADMIN.INVENTORY_OVERVIEW}`),

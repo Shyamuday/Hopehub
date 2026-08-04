@@ -361,6 +361,45 @@ button {
   &.completed { background: #dcfce7; color: #166534; }
 }
 
+.outcome-panel {
+  display: grid;
+  gap: 0.55rem;
+  width: min(620px, 100%);
+}
+
+.outcome-panel label {
+  display: grid;
+  gap: 0.25rem;
+  color: #475569;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.outcome-panel input,
+.outcome-panel select,
+.outcome-panel textarea {
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 0.55rem 0.65rem;
+  font: inherit;
+}
+
+.outcome-panel .check-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.outcome-panel .check-row input {
+  width: auto;
+}
+
+.outcome-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
 .btn-close-consult {
   background: #f3f4f6;
   border: 1px solid #d1d5db;
