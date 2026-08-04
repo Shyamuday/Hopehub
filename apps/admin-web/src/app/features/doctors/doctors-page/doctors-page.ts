@@ -170,6 +170,16 @@ function emptyEditModel() {
 })
 export class DoctorsPage {
   readonly doctorTypeOptions = DOCTOR_TYPE_OPTIONS;
+  readonly careServicePricingModeOptions: Array<{
+    value: NonNullable<CareTeamService['pricingMode']>;
+    label: string;
+  }> = [
+    { value: 'FIXED', label: 'Fixed price' },
+    { value: 'FREE_INTRO', label: 'First session free' },
+    { value: 'DISCOUNTED_FIRST', label: 'Discounted first session' },
+    { value: 'PACKAGE', label: 'Package' },
+    { value: 'FREE_VOLUNTEER', label: 'Free volunteer support' },
+  ];
   readonly careTeamTypeOptions: Array<{ value: CareTeamMemberType; label: string }> = [
     { value: 'MENTAL_WELLNESS_PROFESSIONAL', label: 'Mental wellness professional' },
     { value: 'QUALIFIED_COUNSELLOR', label: 'Qualified counsellor' },
@@ -203,6 +213,8 @@ export class DoctorsPage {
   readonly createForm = form(this.createModel);
   readonly editModel = signal(emptyEditModel());
   readonly editForm = form(this.editModel);
+  readonly createCareServices = signal<CareTeamService[]>([]);
+  readonly editCareServices = signal<CareTeamService[]>([]);
 
   pageSize = DOCTORS_PAGE_SIZE;
   doctorsPage = 1;
@@ -371,7 +383,7 @@ export class DoctorsPage {
               counsellingApproach: edit.counsellingApproach.trim() || null,
               safetyEscalationNote: edit.safetyEscalationNote.trim() || null,
               acceptsHighRiskCases: edit.acceptsHighRiskCases,
-              services: this.parseServiceOffers(edit.serviceOffersText),
+              services: this.servicesForSave(this.editCareServices(), edit.serviceOffersText),
             }
           : undefined,
       });
@@ -423,12 +435,13 @@ export class DoctorsPage {
               sessionTypes: this.lines(create.sessionTypesText),
               ageGroups: this.lines(create.ageGroupsText),
               concernsHandled: this.lines(create.concernsHandledText),
-              services: this.parseServiceOffers(create.serviceOffersText),
+              services: this.servicesForSave(this.createCareServices(), create.serviceOffersText),
             }
           : undefined,
       });
       this.message.set('Doctor created successfully.');
       this.createModel.set(emptyCreateModel());
+      this.createCareServices.set([]);
       await this.load();
     } catch {
       this.error.set('Could not create doctor.');
@@ -656,6 +669,110 @@ export class DoctorsPage {
         selected.doctorProfile?.mentalHealthProfile?.services ?? [],
       ),
     });
+    this.editCareServices.set(
+      this.normalizeServiceList(selected.doctorProfile?.mentalHealthProfile?.services ?? []),
+    );
+  }
+
+  addCareService(target: 'create' | 'edit') {
+    const service: CareTeamService = {
+      title: '',
+      pricingMode: 'FIXED',
+      priceInPaise: 50000,
+      firstSessionPriceInPaise: null,
+      followUpPriceInPaise: null,
+      introSessionLimit: 1,
+      packageSessionCount: null,
+      packagePriceInPaise: null,
+      currency: 'INR',
+      durationMinutes: 30,
+      description: '',
+      isFree: false,
+      isActive: true,
+      sortOrder: this.serviceSignal(target)().length,
+    };
+    this.serviceSignal(target).update((services) => [...services, service]);
+  }
+
+  removeCareService(target: 'create' | 'edit', index: number) {
+    this.serviceSignal(target).update((services) =>
+      services
+        .filter((_, i) => i !== index)
+        .map((service, sortOrder) => ({ ...service, sortOrder })),
+    );
+  }
+
+  updateCareService(
+    target: 'create' | 'edit',
+    index: number,
+    key: keyof CareTeamService,
+    value: string | boolean,
+  ) {
+    this.serviceSignal(target).update((services) =>
+      services.map((service, i) => {
+        if (i !== index) return service;
+        const next = { ...service };
+        if (
+          key === 'priceInPaise' ||
+          key === 'firstSessionPriceInPaise' ||
+          key === 'followUpPriceInPaise' ||
+          key === 'packagePriceInPaise'
+        ) {
+          (next as any)[key] = value === '' ? null : Math.max(0, Math.round(Number(value) * 100));
+        } else if (
+          key === 'durationMinutes' ||
+          key === 'introSessionLimit' ||
+          key === 'packageSessionCount'
+        ) {
+          (next as any)[key] = value === '' ? null : Math.max(1, Math.round(Number(value)));
+        } else {
+          (next as any)[key] = value;
+        }
+        if (key === 'pricingMode') {
+          next.isFree = value === 'FREE_VOLUNTEER';
+        }
+        return next;
+      }),
+    );
+  }
+
+  rupees(value: number | null | undefined) {
+    return value == null ? '' : String(value / 100);
+  }
+
+  showFirstPrice(service: CareTeamService) {
+    return service.pricingMode === 'DISCOUNTED_FIRST';
+  }
+
+  showFollowUpPrice(service: CareTeamService) {
+    return service.pricingMode === 'FREE_INTRO' || service.pricingMode === 'DISCOUNTED_FIRST';
+  }
+
+  showPackageFields(service: CareTeamService) {
+    return service.pricingMode === 'PACKAGE';
+  }
+
+  private serviceSignal(target: 'create' | 'edit') {
+    return target === 'create' ? this.createCareServices : this.editCareServices;
+  }
+
+  private normalizeServiceList(services: CareTeamService[]) {
+    return services.map((service, index) => ({
+      ...service,
+      pricingMode: service.pricingMode || 'FIXED',
+      priceInPaise: service.priceInPaise ?? 0,
+      introSessionLimit: service.introSessionLimit || 1,
+      durationMinutes: service.durationMinutes || 30,
+      isActive: service.isActive !== false,
+      sortOrder: service.sortOrder ?? index,
+    }));
+  }
+
+  private servicesForSave(services: CareTeamService[], legacyText: string) {
+    const structured = services.filter((service) => service.title.trim());
+    return structured.length
+      ? this.normalizeServiceList(structured)
+      : this.parseServiceOffers(legacyText);
   }
 
   private parseServiceOffers(text: string): CareTeamService[] {

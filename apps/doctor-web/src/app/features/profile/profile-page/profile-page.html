@@ -161,13 +161,38 @@ Hypertension"
         </label>
 
         <label for="serviceOffers">Services & pricing</label>
-        <textarea
-          id="serviceOffers"
-          rows="5"
-          [formField]="profileForm.serviceOffersText"
-          placeholder="Breakup support | DISCOUNTED_FIRST | 600 | 300 | 600 | 1 | | | 40 | First session offer | yes&#10;Volunteer talk | FREE_VOLUNTEER | 0 | | | 1 | | | 20 | Non-clinical support | yes&#10;4-session package | PACKAGE | 0 | | | 1 | 4 | 1800 | 40 | Package support | yes"
-        ></textarea>
-        <p class="section-hint">Advanced: title | mode | base ₹ | first ₹ | follow-up ₹ | intro limit | package sessions | package ₹ | minutes | description | yes/no. Old format still works.</p>
+        <div class="service-editor">
+          @for (service of careServices(); track $index) {
+            <article class="service-editor-card">
+              <input [value]="service.title" placeholder="Service title" (input)="updateCareService($index, 'title', $any($event.target).value)" />
+              <select [value]="service.pricingMode || 'FIXED'" (change)="updateCareService($index, 'pricingMode', $any($event.target).value)">
+                @for (mode of servicePricingModeOptions; track mode.value) {
+                  <option [value]="mode.value">{{ mode.label }}</option>
+                }
+              </select>
+              @if (service.pricingMode !== 'FREE_VOLUNTEER') {
+                <input type="number" [value]="rupees(service.priceInPaise)" placeholder="Base ₹" (input)="updateCareService($index, 'priceInPaise', $any($event.target).value)" />
+              }
+              @if (showFirstPrice(service)) {
+                <input type="number" [value]="rupees(service.firstSessionPriceInPaise)" placeholder="First ₹" (input)="updateCareService($index, 'firstSessionPriceInPaise', $any($event.target).value)" />
+              }
+              @if (showFollowUpPrice(service)) {
+                <input type="number" [value]="rupees(service.followUpPriceInPaise)" placeholder="Follow-up ₹" (input)="updateCareService($index, 'followUpPriceInPaise', $any($event.target).value)" />
+                <input type="number" [value]="service.introSessionLimit || 1" placeholder="Intro limit" (input)="updateCareService($index, 'introSessionLimit', $any($event.target).value)" />
+              }
+              @if (showPackageFields(service)) {
+                <input type="number" [value]="service.packageSessionCount || ''" placeholder="Package sessions" (input)="updateCareService($index, 'packageSessionCount', $any($event.target).value)" />
+                <input type="number" [value]="rupees(service.packagePriceInPaise)" placeholder="Package ₹" (input)="updateCareService($index, 'packagePriceInPaise', $any($event.target).value)" />
+              }
+              <input type="number" [value]="service.durationMinutes || 30" placeholder="Minutes" (input)="updateCareService($index, 'durationMinutes', $any($event.target).value)" />
+              <input [value]="service.description || ''" placeholder="Description" (input)="updateCareService($index, 'description', $any($event.target).value)" />
+              <label><input type="checkbox" [checked]="service.isActive !== false" (change)="updateCareService($index, 'isActive', $any($event.target).checked)" /> Active</label>
+              <button type="button" (click)="removeCareService($index)">Remove</button>
+            </article>
+          }
+          <button type="button" (click)="addCareService()">Add service</button>
+        </div>
+        <p class="section-hint">Use pricing mode for fixed, first free, discounted first, package, or free volunteer support.</p>
       </section>
     }
   </div>

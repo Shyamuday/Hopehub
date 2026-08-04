@@ -58,6 +58,14 @@ export class ProfilePage {
 
   readonly profileModel = signal(emptyProfileModel());
   readonly profileForm = form(this.profileModel);
+  readonly servicePricingModeOptions = [
+    { value: 'FIXED', label: 'Fixed price' },
+    { value: 'FREE_INTRO', label: 'First session free' },
+    { value: 'DISCOUNTED_FIRST', label: 'Discounted first session' },
+    { value: 'PACKAGE', label: 'Package' },
+    { value: 'FREE_VOLUNTEER', label: 'Free volunteer support' },
+  ];
+  readonly careServices = signal<Array<any>>([]);
 
   methodOptions: Array<{ id: string; label: string }> = [];
   doctorTypeLabel = '';
@@ -131,6 +139,7 @@ export class ProfilePage {
         serviceOffersText: this.formatServiceOffers(mental?.services ?? []),
         defaultMethodOptionId: profile.doctorProfile?.defaultMethodOptionId || '',
       });
+      this.careServices.set(this.normalizeServiceList(mental?.services ?? []));
       this.doctorTypeLabel = profile.doctorProfile?.doctorTypeLabel || 'Doctor';
       this.specialtyFocusLabel = profile.doctorProfile?.specialtyFocusLabel || '';
       this.showOnWebsite = profile.doctorProfile?.showOnWebsite ?? false;
@@ -182,7 +191,7 @@ export class ProfilePage {
                 counsellingApproach: form.counsellingApproach || null,
                 safetyEscalationNote: form.safetyEscalationNote || null,
                 acceptsHighRiskCases: form.acceptsHighRiskCases,
-                services: this.parseServiceOffers(form.serviceOffersText),
+                services: this.servicesForSave(form.serviceOffersText),
               }
             : undefined,
           defaultMethodOptionId: this.canPrescribe ? form.defaultMethodOptionId || null : undefined,
@@ -202,6 +211,98 @@ export class ProfilePage {
       .split('\n')
       .map((item) => item.trim())
       .filter(Boolean);
+  }
+
+  addCareService() {
+    this.careServices.update((services) => [
+      ...services,
+      {
+        title: '',
+        pricingMode: 'FIXED',
+        priceInPaise: 50000,
+        firstSessionPriceInPaise: null,
+        followUpPriceInPaise: null,
+        introSessionLimit: 1,
+        packageSessionCount: null,
+        packagePriceInPaise: null,
+        currency: 'INR',
+        durationMinutes: 30,
+        description: '',
+        isFree: false,
+        isActive: true,
+        sortOrder: services.length,
+      },
+    ]);
+  }
+
+  removeCareService(index: number) {
+    this.careServices.update((services) =>
+      services
+        .filter((_, i) => i !== index)
+        .map((service, sortOrder) => ({ ...service, sortOrder })),
+    );
+  }
+
+  updateCareService(index: number, key: string, value: string | boolean) {
+    this.careServices.update((services) =>
+      services.map((service, i) => {
+        if (i !== index) return service;
+        const next = { ...service };
+        if (
+          key === 'priceInPaise' ||
+          key === 'firstSessionPriceInPaise' ||
+          key === 'followUpPriceInPaise' ||
+          key === 'packagePriceInPaise'
+        ) {
+          next[key] = value === '' ? null : Math.max(0, Math.round(Number(value) * 100));
+        } else if (
+          key === 'durationMinutes' ||
+          key === 'introSessionLimit' ||
+          key === 'packageSessionCount'
+        ) {
+          next[key] = value === '' ? null : Math.max(1, Math.round(Number(value)));
+        } else {
+          next[key] = value;
+        }
+        if (key === 'pricingMode') next.isFree = value === 'FREE_VOLUNTEER';
+        return next;
+      }),
+    );
+  }
+
+  rupees(value: number | null | undefined) {
+    return value == null ? '' : String(value / 100);
+  }
+
+  showFirstPrice(service: any) {
+    return service.pricingMode === 'DISCOUNTED_FIRST';
+  }
+
+  showFollowUpPrice(service: any) {
+    return service.pricingMode === 'FREE_INTRO' || service.pricingMode === 'DISCOUNTED_FIRST';
+  }
+
+  showPackageFields(service: any) {
+    return service.pricingMode === 'PACKAGE';
+  }
+
+  private normalizeServiceList(services: Array<any>) {
+    return services.map((service, index) => ({
+      ...service,
+      pricingMode: service.pricingMode || 'FIXED',
+      priceInPaise: service.priceInPaise ?? 0,
+      introSessionLimit: service.introSessionLimit || 1,
+      durationMinutes: service.durationMinutes || 30,
+      isActive: service.isActive !== false,
+      sortOrder: service.sortOrder ?? index,
+    }));
+  }
+
+  private servicesForSave(legacyText: string) {
+    const structured = this.careServices().filter((service) => service.title?.trim());
+    return structured.length
+      ? this.normalizeServiceList(structured)
+      : this.parseServiceOffers(legacyText);
   }
 
   private parseServiceOffers(text: string) {

@@ -160,13 +160,38 @@
       </div>
       <div class="field">
         <label class="field-label" for="doc-create-services">Services & pricing</label>
-        <textarea
-          id="doc-create-services"
-          rows="4"
-          [formField]="createForm.serviceOffersText"
-          placeholder="Breakup support | DISCOUNTED_FIRST | 600 | 300 | 600 | 1 | | | 40 | First session offer | yes&#10;Volunteer talk | FREE_VOLUNTEER | 0 | | | 1 | | | 20 | Non-clinical support | yes&#10;4-session package | PACKAGE | 0 | | | 1 | 4 | 1800 | 40 | Package support | yes"
-        ></textarea>
-        <p class="field-hint">Advanced: title | mode | base ₹ | first ₹ | follow-up ₹ | intro limit | package sessions | package ₹ | minutes | description | yes/no. Old format still works: title | price ₹ | minutes | description | yes/no.</p>
+        <div class="service-editor">
+          @for (service of createCareServices(); track $index) {
+            <article class="service-editor-card">
+              <input [value]="service.title" placeholder="Service title" (input)="updateCareService('create', $index, 'title', $any($event.target).value)" />
+              <select [value]="service.pricingMode || 'FIXED'" (change)="updateCareService('create', $index, 'pricingMode', $any($event.target).value)">
+                @for (mode of careServicePricingModeOptions; track mode.value) {
+                  <option [value]="mode.value">{{ mode.label }}</option>
+                }
+              </select>
+              @if (service.pricingMode !== 'FREE_VOLUNTEER') {
+                <input type="number" [value]="rupees(service.priceInPaise)" placeholder="Base ₹" (input)="updateCareService('create', $index, 'priceInPaise', $any($event.target).value)" />
+              }
+              @if (showFirstPrice(service)) {
+                <input type="number" [value]="rupees(service.firstSessionPriceInPaise)" placeholder="First ₹" (input)="updateCareService('create', $index, 'firstSessionPriceInPaise', $any($event.target).value)" />
+              }
+              @if (showFollowUpPrice(service)) {
+                <input type="number" [value]="rupees(service.followUpPriceInPaise)" placeholder="Follow-up ₹" (input)="updateCareService('create', $index, 'followUpPriceInPaise', $any($event.target).value)" />
+                <input type="number" [value]="service.introSessionLimit || 1" placeholder="Intro limit" (input)="updateCareService('create', $index, 'introSessionLimit', $any($event.target).value)" />
+              }
+              @if (showPackageFields(service)) {
+                <input type="number" [value]="service.packageSessionCount || ''" placeholder="Package sessions" (input)="updateCareService('create', $index, 'packageSessionCount', $any($event.target).value)" />
+                <input type="number" [value]="rupees(service.packagePriceInPaise)" placeholder="Package ₹" (input)="updateCareService('create', $index, 'packagePriceInPaise', $any($event.target).value)" />
+              }
+              <input type="number" [value]="service.durationMinutes || 30" placeholder="Minutes" (input)="updateCareService('create', $index, 'durationMinutes', $any($event.target).value)" />
+              <input [value]="service.description || ''" placeholder="Description" (input)="updateCareService('create', $index, 'description', $any($event.target).value)" />
+              <label><input type="checkbox" [checked]="service.isActive !== false" (change)="updateCareService('create', $index, 'isActive', $any($event.target).checked)" /> Active</label>
+              <button type="button" class="btn-secondary" (click)="removeCareService('create', $index)">Remove</button>
+            </article>
+          }
+          <button type="button" class="btn-secondary" (click)="addCareService('create')">Add service</button>
+        </div>
+        <p class="field-hint">Use pricing mode for fixed, first free, discounted first, package, or free volunteer support.</p>
       </div>
     }
     <button type="button" (click)="createDoctor()" [disabled]="mutating() || loading()">
@@ -594,13 +619,38 @@
           </label>
           <div class="field">
             <label class="field-label" for="doc-edit-services">Services & pricing</label>
-            <textarea
-              id="doc-edit-services"
-              rows="5"
-              [formField]="editForm.serviceOffersText"
-              placeholder="Breakup support | DISCOUNTED_FIRST | 600 | 300 | 600 | 1 | | | 40 | First session offer | yes&#10;Volunteer talk | FREE_VOLUNTEER | 0 | | | 1 | | | 20 | Non-clinical support | yes&#10;4-session package | PACKAGE | 0 | | | 1 | 4 | 1800 | 40 | Package support | yes"
-            ></textarea>
-            <p class="field-hint">Advanced: title | mode | base ₹ | first ₹ | follow-up ₹ | intro limit | package sessions | package ₹ | minutes | description | yes/no. Modes: FIXED, FREE_INTRO, DISCOUNTED_FIRST, PACKAGE, FREE_VOLUNTEER.</p>
+            <div class="service-editor">
+              @for (service of editCareServices(); track $index) {
+                <article class="service-editor-card">
+                  <input [value]="service.title" placeholder="Service title" (input)="updateCareService('edit', $index, 'title', $any($event.target).value)" />
+                  <select [value]="service.pricingMode || 'FIXED'" (change)="updateCareService('edit', $index, 'pricingMode', $any($event.target).value)">
+                    @for (mode of careServicePricingModeOptions; track mode.value) {
+                      <option [value]="mode.value">{{ mode.label }}</option>
+                    }
+                  </select>
+                  @if (service.pricingMode !== 'FREE_VOLUNTEER') {
+                    <input type="number" [value]="rupees(service.priceInPaise)" placeholder="Base ₹" (input)="updateCareService('edit', $index, 'priceInPaise', $any($event.target).value)" />
+                  }
+                  @if (showFirstPrice(service)) {
+                    <input type="number" [value]="rupees(service.firstSessionPriceInPaise)" placeholder="First ₹" (input)="updateCareService('edit', $index, 'firstSessionPriceInPaise', $any($event.target).value)" />
+                  }
+                  @if (showFollowUpPrice(service)) {
+                    <input type="number" [value]="rupees(service.followUpPriceInPaise)" placeholder="Follow-up ₹" (input)="updateCareService('edit', $index, 'followUpPriceInPaise', $any($event.target).value)" />
+                    <input type="number" [value]="service.introSessionLimit || 1" placeholder="Intro limit" (input)="updateCareService('edit', $index, 'introSessionLimit', $any($event.target).value)" />
+                  }
+                  @if (showPackageFields(service)) {
+                    <input type="number" [value]="service.packageSessionCount || ''" placeholder="Package sessions" (input)="updateCareService('edit', $index, 'packageSessionCount', $any($event.target).value)" />
+                    <input type="number" [value]="rupees(service.packagePriceInPaise)" placeholder="Package ₹" (input)="updateCareService('edit', $index, 'packagePriceInPaise', $any($event.target).value)" />
+                  }
+                  <input type="number" [value]="service.durationMinutes || 30" placeholder="Minutes" (input)="updateCareService('edit', $index, 'durationMinutes', $any($event.target).value)" />
+                  <input [value]="service.description || ''" placeholder="Description" (input)="updateCareService('edit', $index, 'description', $any($event.target).value)" />
+                  <label><input type="checkbox" [checked]="service.isActive !== false" (change)="updateCareService('edit', $index, 'isActive', $any($event.target).checked)" /> Active</label>
+                  <button type="button" class="btn-secondary" (click)="removeCareService('edit', $index)">Remove</button>
+                </article>
+              }
+              <button type="button" class="btn-secondary" (click)="addCareService('edit')">Add service</button>
+            </div>
+            <p class="field-hint">Use pricing mode for fixed, first free, discounted first, package, or free volunteer support.</p>
           </div>
         }
         <button type="button" (click)="saveDoctorEdits()" [disabled]="mutating()">
