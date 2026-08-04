@@ -11,6 +11,10 @@ on:
         description: 'Optional failed Prisma migration to mark rolled back before an API deploy'
         required: false
         default: ''
+      repair_failed_migration:
+        description: 'Optional known partially-applied Prisma migration to repair before an API deploy'
+        required: false
+        default: ''
   push:
     branches: [main]
     paths:
@@ -373,6 +377,24 @@ jobs:
             exit 1
           fi
           npx prisma migrate resolve --rolled-back "$FAILED_MIGRATION"
+
+      - name: Repair partially-applied Prisma migration
+        if: steps.api-changes.outputs.deploy == 'true' && github.event.inputs.repair_failed_migration != ''
+        working-directory: /opt/hopehub/apps/api
+        env:
+          FAILED_MIGRATION: ${{ github.event.inputs.repair_failed_migration }}
+        run: |
+          set -euo pipefail
+          case "$FAILED_MIGRATION" in
+            20260803143000_practice_library)
+              npx prisma db execute --file prisma/recovery/20260803143000_practice_library.sql
+              npx prisma migrate resolve --applied "$FAILED_MIGRATION"
+              ;;
+            *)
+              echo "No repair procedure is defined for $FAILED_MIGRATION."
+              exit 1
+              ;;
+          esac
 
       - name: Deploy API locally
         if: steps.api-changes.outputs.deploy == 'true'
