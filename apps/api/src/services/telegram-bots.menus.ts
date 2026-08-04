@@ -60,6 +60,7 @@ export async function menuFor(kind: TelegramBotKind, linked: boolean): Promise<I
         { text: 'My queue', callback_data: 'doctor:queue' },
         { text: 'Go online', callback_data: 'doctor:online' }
       ],
+      [{ text: 'Close session / outcome', callback_data: 'doctor:outcomes' }],
       [
         { text: 'Go offline', callback_data: 'doctor:offline' },
         linked
@@ -73,10 +74,13 @@ export async function menuFor(kind: TelegramBotKind, linked: boolean): Promise<I
   return [
     [
       { text: 'Ops summary', callback_data: 'admin:summary' },
-      { text: 'New leads', callback_data: 'admin:leads' }
+      { text: 'Session quality', callback_data: 'admin:quality:30' }
     ],
     [
-      { text: 'Contributors', callback_data: 'admin:contributors' },
+      { text: 'New leads', callback_data: 'admin:leads' },
+      { text: 'Contributors', callback_data: 'admin:contributors' }
+    ],
+    [
       linked
         ? { text: 'My account', callback_data: 'common:me' }
         : { text: 'Link account', callback_data: 'common:link' }
@@ -115,6 +119,7 @@ export function helpText(kind: TelegramBotKind) {
       '/link doctor@example.com - link doctor account',
       '/assignments - assigned support leads',
       '/queue - real queue summary',
+      '/outcomes - close a session with outcome',
       '/online - mark online',
       '/offline - mark offline'
     ].join('\n');
@@ -123,6 +128,7 @@ export function helpText(kind: TelegramBotKind) {
     '<b>Ops bot commands</b>',
     '/link admin@example.com - link admin account',
     '/summary - ops summary',
+    '/quality - session quality summary',
     '/leads - new leads',
     '/contributors - contributor applications'
   ].join('\n');

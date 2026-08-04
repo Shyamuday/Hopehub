@@ -61,6 +61,12 @@ import {
   setDoctorPresence
 } from './telegram-bots.ops.js';
 import {
+  applyDoctorSessionOutcome,
+  showDoctorOutcomeOptions,
+  showDoctorOutcomeSessions
+} from './telegram-bots.outcomes.js';
+import { adminQualitySummary } from './telegram-bots.quality.js';
+import {
   ensureSession,
   logEvent,
   updateSession,
@@ -2442,6 +2448,8 @@ async function handleCommand(kind: TelegramBotKind, session: TelegramSession, te
     if (command === '/signup') await startProviderSignup(kind, session);
     else if (command === '/assignments') await showProviderAssignments(kind, session);
     else if (command === '/queue') await doctorQueue(kind, session);
+    else if (command === '/outcomes' || command === '/close')
+      await showDoctorOutcomeSessions(kind, session);
     else if (command === '/online') await setDoctorPresence(kind, session, true);
     else if (command === '/offline') await setDoctorPresence(kind, session, false);
     else await replyMenu(kind, session, 'Choose an option or send /help.');
@@ -2449,6 +2457,7 @@ async function handleCommand(kind: TelegramBotKind, session: TelegramSession, te
   }
 
   if (command === '/summary') await adminSummary(kind, session);
+  else if (command === '/quality') await adminQualitySummary(kind, session, 30);
   else if (command === '/leads') await adminLeads(kind, session);
   else if (command === '/contributors') await adminContributors(kind, session);
   else await replyMenu(kind, session, 'Choose an option or send /help.');
@@ -2609,7 +2618,23 @@ async function handleCallback(
       else await startProviderSignup(kind, session);
     } else if (data === 'doctor:assignments') await showProviderAssignments(kind, session);
     else if (data === 'doctor:queue') await doctorQueue(kind, session);
-    else if (data === 'doctor:online') await setDoctorPresence(kind, session, true);
+    else if (data === 'doctor:outcomes') await showDoctorOutcomeSessions(kind, session);
+    else if (data.startsWith('doctor:outcomes:'))
+      await showDoctorOutcomeOptions(kind, session, data.slice('doctor:outcomes:'.length));
+    else if (data.startsWith('doctor:outcome:')) {
+      const parts = data.split(':');
+      const outcome = parts[2] as
+        'COMPLETED' | 'USER_MISSED' | 'PROVIDER_NO_SHOW' | 'RESCHEDULE_NEEDED';
+      const consultationId = parts.slice(3).join(':');
+      if (
+        ['COMPLETED', 'USER_MISSED', 'PROVIDER_NO_SHOW', 'RESCHEDULE_NEEDED'].includes(outcome) &&
+        consultationId
+      ) {
+        await applyDoctorSessionOutcome(kind, session, outcome, consultationId);
+      } else {
+        await replyMenu(kind, session, 'Unknown outcome action.');
+      }
+    } else if (data === 'doctor:online') await setDoctorPresence(kind, session, true);
     else if (data === 'doctor:offline') await setDoctorPresence(kind, session, false);
     else if (data.startsWith('provider:assign:')) {
       const [, , action, assignmentId] = data.split(':');
@@ -2628,7 +2653,10 @@ async function handleCallback(
   }
 
   if (data === 'admin:summary') await adminSummary(kind, session);
-  else if (data === 'admin:leads') await adminLeads(kind, session);
+  else if (data.startsWith('admin:quality:')) {
+    const days = Number(data.slice('admin:quality:'.length)) || 30;
+    await adminQualitySummary(kind, session, days);
+  } else if (data === 'admin:leads') await adminLeads(kind, session);
   else if (data === 'admin:contributors') await adminContributors(kind, session);
   else if (data.startsWith('admin:safety_reviewed:'))
     await markSafetyFlagReviewed(kind, session, data.slice('admin:safety_reviewed:'.length));
