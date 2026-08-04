@@ -81,6 +81,11 @@ import {
   telegramReminderSweepEnabled,
   telegramReminderSweepIntervalMs
 } from './services/telegram-bot-reminders.js';
+import {
+  consultationReminderSweepEnabled,
+  consultationReminderSweepIntervalMs,
+  runConsultationReminderSchedulers
+} from './services/consultation-reminders.js';
 
 // ── Schedulers ─────────────────────────────────────────────────────────────────
 import {
@@ -317,12 +322,22 @@ httpServer.listen(port, () => {
       `[scheduler] Telegram reminder sweep enabled (interval: ${telegramReminderSweepIntervalMs}ms)`
     );
   }
+  if (!consultationReminderSweepEnabled) {
+    console.log('[scheduler] Consultation reminder sweep disabled');
+  } else {
+    console.log(
+      `[scheduler] Consultation reminder sweep enabled (interval: ${consultationReminderSweepIntervalMs}ms)`
+    );
+  }
 
   void runDoseSchedulers().catch((e) =>
     console.error('[scheduler] Initial dose scheduler run failed', e)
   );
   void runTelegramReminderSchedulers().catch((e) =>
     console.error('[scheduler] Initial Telegram reminder scheduler run failed', e)
+  );
+  void runConsultationReminderSchedulers().catch((e) =>
+    console.error('[scheduler] Initial consultation reminder scheduler run failed', e)
   );
 
   const doseTimer = setInterval(() => {
@@ -338,6 +353,13 @@ httpServer.listen(port, () => {
     );
   }, telegramReminderSweepIntervalMs);
   telegramReminderTimer.unref();
+
+  const consultationReminderTimer = setInterval(() => {
+    void runConsultationReminderSchedulers().catch((e) =>
+      console.error('[scheduler] Consultation reminder scheduler run failed', e)
+    );
+  }, consultationReminderSweepIntervalMs);
+  consultationReminderTimer.unref();
 
   void restoreEmployeesFromLeave().catch((e) =>
     console.error('[scheduler] Leave restore failed', e)

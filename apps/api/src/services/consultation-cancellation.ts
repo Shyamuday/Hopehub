@@ -1,6 +1,7 @@
 import { ConsultationStatus, Prisma } from '@prisma/client';
 import { prisma } from '../db.js';
 import { upsertProviderEarningForPayment } from './provider-earnings.js';
+import { cancelConsultationReminders } from './consultation-reminders.js';
 
 function asRecord(value: unknown): Record<string, any> {
   return value && typeof value === 'object' && !Array.isArray(value)
@@ -128,6 +129,8 @@ export async function applyConsultationCancellationEffects(input: {
         : 'Cancelled consultation — payout on hold'
     });
   }
+
+  await cancelConsultationReminders(consultation.id, input.reason || null);
 
   return {
     consultationId: consultation.id,

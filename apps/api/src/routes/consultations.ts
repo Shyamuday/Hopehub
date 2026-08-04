@@ -20,6 +20,7 @@ import { resolveDiseaseConsultationFee } from '../services/consultation-pricing.
 import { resolveConsultationCheckout } from '../services/checkout-pricing.js';
 import { PRODUCT_EVENTS, trackProductEvent } from '../services/product-analytics.js';
 import { applyConsultationCancellationEffects } from '../services/consultation-cancellation.js';
+import { notifyConsultationBooked } from '../services/consultation-reminders.js';
 
 function serializeHopeHubAssessmentAttempt(attempt: {
   id: string;
@@ -167,6 +168,12 @@ export function createConsultationsRouter(io: SocketIoServer) {
           purchaseType: body.purchaseType
         }
       });
+
+      if (consultation.payment?.status === PaymentStatus.PAID) {
+        void notifyConsultationBooked(consultation.id).catch((err) =>
+          console.error('[booking-reminders] Consultation booking notification failed', err)
+        );
+      }
 
       res.status(201).json({ consultation });
     })

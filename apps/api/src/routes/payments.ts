@@ -19,10 +19,6 @@ import {
   razorpayKeyId,
   razorpayWebhookSecret
 } from '../services/razorpay.js';
-import {
-  enabledNotificationChannels,
-  notificationService
-} from '../services/notification-service.js';
 import { buildDoctorPayslip, buildPayslipHistory, parseMonth } from '../services/payroll.js';
 import {
   doctorReceivesConsultationShare,
@@ -33,6 +29,7 @@ import { upsertProviderEarningForPayment } from '../services/provider-earnings.j
 import { settleConsultationPaymentRewards } from '../services/reward-settlement.js';
 import { PRODUCT_EVENTS, trackProductEvent } from '../services/product-analytics.js';
 import { tryAssignInstantConsultation } from '../services/online-doctor-presence.js';
+import { notifyConsultationBooked } from '../services/consultation-reminders.js';
 
 type RazorpayPaymentEntity = {
   id: string;
@@ -177,18 +174,6 @@ export function createPaymentsRouter(io: SocketIoServer) {
     });
 
     if (input.patient) {
-      void notificationService.sendBatch(
-        enabledNotificationChannels.map((channel) => ({
-          eventType: 'BOOKING_CONFIRMED' as const,
-          channel,
-          recipientId: input.patient!.id,
-          recipientName: input.patient!.name,
-          recipientMobile: input.patient!.mobile,
-          recipientEmail: input.patient!.email,
-          title: 'Booking confirmed — HopeHub Care',
-          body: `Your consultation for ${input.diseaseName || 'your concern'} has been booked and payment received. A doctor will be assigned shortly.`
-        }))
-      );
       io.to(`user:${input.patient.id}`).emit('payment:updated', {
         consultationId: input.consultationId,
         status: 'PAID'
@@ -204,6 +189,9 @@ export function createPaymentsRouter(io: SocketIoServer) {
       });
 
       await upsertProviderEarningForPayment(input.paymentId);
+      void notifyConsultationBooked(input.consultationId).catch((err) =>
+        console.error('[booking-reminders] Payment booking notification failed', err)
+      );
 
       void tryAssignInstantConsultation(io, input.consultationId).catch((err) => {
         console.error('[instant] Auto-assign failed after payment', err);

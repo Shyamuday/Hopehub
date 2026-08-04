@@ -20,6 +20,7 @@ import { emitConsultationAssigned } from '../../services/consultation-realtime.j
 import { PRODUCT_EVENTS, trackProductEvent } from '../../services/product-analytics.js';
 import { upsertProviderEarningForPayment } from '../../services/provider-earnings.js';
 import { applyConsultationCancellationEffects } from '../../services/consultation-cancellation.js';
+import { notifyProviderAssignedAndSchedule } from '../../services/consultation-reminders.js';
 
 export function registerAdminConsultationRoutes(router: Router, io: SocketIoServer) {
   // ─── Admin consultations ───────────────────────────────────────────────────────
@@ -227,6 +228,9 @@ export function registerAdminConsultationRoutes(router: Router, io: SocketIoServ
       if (consultation.payment?.id) {
         await upsertProviderEarningForPayment(consultation.payment.id);
       }
+      void notifyProviderAssignedAndSchedule(consultation.id).catch((err) =>
+        console.error('[booking-reminders] Provider assignment notification failed', err)
+      );
 
       void trackProductEvent({
         name: PRODUCT_EVENTS.CONSULTATION_ASSIGNED,

@@ -35,6 +35,7 @@ import {
 import { isFirstPaidConsultation } from '../services/referral-codes.js';
 import { getSiteConfigMap, getSiteConfigValue } from '../services/site-config.service.js';
 import { upsertProviderEarningForPayment } from '../services/provider-earnings.js';
+import { notifyConsultationBooked } from '../services/consultation-reminders.js';
 
 export const hopeHubRouter = Router();
 
@@ -2360,6 +2361,9 @@ hopeHubRouter.post(
 
     if (consultation.payment?.status === PaymentStatus.PAID) {
       await upsertProviderEarningForPayment(consultation.payment.id);
+      void notifyConsultationBooked(consultation.id).catch((err) =>
+        console.error('[booking-reminders] Hope Hub booking notification failed', err)
+      );
     }
 
     if (activeCareTeamPackageBalance) {
