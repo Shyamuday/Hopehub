@@ -10,9 +10,7 @@
         "files": [
           "/index.html",
           "/site.webmanifest",
-          "/favicon-192x192.png",
-          "/favicon-512x512.png",
-          "/apple-touch-icon.png",
+          "/hopehublogom.jpg",
           "/image/hopehublogom.jpg",
           "/*.css",
           "/*.js"
