@@ -2,12 +2,7 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { RouterModule, Router } from '@angular/router';
 import { interval } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import {
-  HOPE_HUB_SESSION_DISCOUNT_PERCENT,
-  HOPE_HUB_SESSION_OFFER_PRICE,
-  HOPE_HUB_SESSION_PRICE,
-  getFeaturedServices,
-} from '../../../core/data/services-data';
+import { getFeaturedServices } from '../../../core/data/services-data';
 import { APP_CONSTANTS } from '../../../core/constants/app.constants';
 import { BookingService } from '../../../core/services/booking.service';
 import { PublicCommunicationConfigService } from '../../../core/services/public-communication-config.service';
@@ -48,10 +43,10 @@ export class ServicesCarouselComponent implements OnInit {
   featuredServices = signal<CarouselService[]>(
     getFeaturedServices().map((service) => ({
       ...service,
-      price: HOPE_HUB_SESSION_OFFER_PRICE,
-      originalPrice: HOPE_HUB_SESSION_PRICE,
-      discount: HOPE_HUB_SESSION_DISCOUNT_PERCENT,
-      badge: 'First session 50% off',
+      price: this.publicConfig.defaultSessionPriceRupees(),
+      originalPrice: undefined,
+      discount: undefined,
+      badge: undefined,
       bookingUrl: this.offeringContactUrl(),
     })),
   );
@@ -73,9 +68,13 @@ export class ServicesCarouselComponent implements OnInit {
     this.bookingService.offeringQuote(offeringSlug).subscribe({
       next: ({ offering, quote }) => {
         const gross =
-          quote.grossInPaise == null ? HOPE_HUB_SESSION_PRICE : quote.grossInPaise / 100;
+          quote.grossInPaise == null
+            ? this.publicConfig.defaultSessionPriceRupees()
+            : quote.grossInPaise / 100;
         const payable =
-          quote.payableInPaise == null ? HOPE_HUB_SESSION_OFFER_PRICE : quote.payableInPaise / 100;
+          quote.payableInPaise == null
+            ? this.publicConfig.defaultSessionPriceRupees()
+            : quote.payableInPaise / 100;
         this.featuredServices.set(
           getFeaturedServices().map((service) => ({
             ...service,
@@ -94,7 +93,7 @@ export class ServicesCarouselComponent implements OnInit {
         this.featuredServices.set(
           getFeaturedServices().map((service) => ({
             ...service,
-            price: HOPE_HUB_SESSION_PRICE,
+            price: this.publicConfig.defaultSessionPriceRupees(),
             originalPrice: undefined,
             discount: undefined,
             badge: undefined,
@@ -144,7 +143,7 @@ export class ServicesCarouselComponent implements OnInit {
   }
 
   formatSessionLabel(_currency: string): string {
-    return '30 min + 15 min follow-up';
+    return this.publicConfig.defaultSessionLabel;
   }
 
   whatsappHref(_service: CarouselService): string {

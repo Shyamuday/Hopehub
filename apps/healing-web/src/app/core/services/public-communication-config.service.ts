@@ -20,6 +20,11 @@ function telegramHandle(username: string) {
 @Injectable({ providedIn: 'root' })
 export class PublicCommunicationConfigService {
   defaultOfferingSlug = '';
+  defaultServiceName = 'Mental wellness session';
+  defaultSessionPriceInPaise = 50000;
+  defaultSessionDurationMinutes = 30;
+  defaultSessionLabel = '30 min + 15 min follow-up';
+  defaultCareRoleLabel = 'Hope Hub care guide';
 
   constructor(private readonly http: HttpClient) {}
 
@@ -46,6 +51,11 @@ export class PublicCommunicationConfigService {
     const whatsappUrl = config['whatsappGroupUrl']?.trim();
     const whatsappQr = config['whatsappQrCodePath']?.trim();
     const defaultOfferingSlug = config['telegramDefaultOfferingSlug']?.trim();
+    const defaultServiceName = config['hopeHubDefaultServiceName']?.trim();
+    const defaultSessionPriceInPaise = Number(config['hopeHubDefaultSessionPriceInPaise']);
+    const defaultSessionDurationMinutes = Number(config['hopeHubDefaultSessionDurationMinutes']);
+    const defaultSessionLabel = config['hopeHubDefaultSessionLabel']?.trim();
+    const defaultCareRoleLabel = config['hopeHubDefaultCareRoleLabel']?.trim();
 
     if (telegramUsername) {
       (APP_CONSTANTS.TELEGRAM as any).USERNAME = telegramUsername.replace(/^@/, '');
@@ -74,5 +84,18 @@ export class PublicCommunicationConfigService {
     if (whatsappUrl) (APP_CONSTANTS.WHATSAPP as any).GROUP_URL = whatsappUrl;
     if (whatsappQr) (APP_CONSTANTS.WHATSAPP as any).QR_CODE = whatsappQr;
     this.defaultOfferingSlug = defaultOfferingSlug || '';
+    if (defaultServiceName) this.defaultServiceName = defaultServiceName;
+    if (Number.isFinite(defaultSessionPriceInPaise) && defaultSessionPriceInPaise > 0) {
+      this.defaultSessionPriceInPaise = Math.round(defaultSessionPriceInPaise);
+    }
+    if (Number.isFinite(defaultSessionDurationMinutes) && defaultSessionDurationMinutes > 0) {
+      this.defaultSessionDurationMinutes = Math.round(defaultSessionDurationMinutes);
+    }
+    if (defaultSessionLabel) this.defaultSessionLabel = defaultSessionLabel;
+    if (defaultCareRoleLabel) this.defaultCareRoleLabel = defaultCareRoleLabel;
+  }
+
+  defaultSessionPriceRupees(): number {
+    return Math.round(this.defaultSessionPriceInPaise / 100);
   }
 }

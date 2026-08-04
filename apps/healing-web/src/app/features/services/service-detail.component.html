@@ -40,7 +40,7 @@
                 @if (hasActiveSessionDiscount()) {
                   <div class="session-offer-banner">
                     <strong>{{ singleSessionOffer()?.discountPercent || sessionDiscountPercent }}% off first session</strong>
-                    <span>30 min private support + 15 min follow-up included</span>
+                    <span>{{ currentSessionDuration() }} included</span>
                   </div>
                 }
                 @if (service()!.pricing!.individual) {

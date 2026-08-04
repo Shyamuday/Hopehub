@@ -20,6 +20,7 @@ import {
   HOPE_HUB_ANALYTICS_EVENTS,
   ProductAnalyticsService,
 } from '../../core/services/product-analytics.service';
+import { PublicCommunicationConfigService } from '../../core/services/public-communication-config.service';
 import {
   AppointmentCalendarComponent,
   AppointmentSlot,
@@ -59,6 +60,7 @@ export class ContactComponent implements OnInit {
   private notificationService = inject(NotificationService);
   private destroyRef = inject(DestroyRef);
   private productAnalytics = inject(ProductAnalyticsService);
+  private publicConfig = inject(PublicCommunicationConfigService);
 
   contactForm!: FormGroup;
 
@@ -715,7 +717,7 @@ export class ContactComponent implements OnInit {
     const featured = FEATURED_SERVICES.find(
       (service) => service.name === serviceName || service.id === serviceName,
     );
-    return Math.round((featured?.price ?? 500) * 100);
+    return Math.round((featured?.price ?? this.publicConfig.defaultSessionPriceRupees()) * 100);
   }
 
   private formatLocalDate(date: Date): string {

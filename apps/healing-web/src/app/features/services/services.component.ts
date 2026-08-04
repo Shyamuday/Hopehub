@@ -12,6 +12,7 @@ import {
   HopeHubService,
 } from '../../core/services/booking.service';
 import { NotificationService } from '../../core/services/notification.service';
+import { PublicCommunicationConfigService } from '../../core/services/public-communication-config.service';
 
 @Component({
   selector: 'app-services',
@@ -58,6 +59,7 @@ export class ServicesComponent implements OnInit {
     private router: Router,
     private bookingService: BookingService,
     private notificationService: NotificationService,
+    private publicConfig: PublicCommunicationConfigService,
   ) {}
 
   ngOnInit() {
@@ -80,13 +82,15 @@ export class ServicesComponent implements OnInit {
     this.bookingService.servicesPageData().subscribe({
       next: ({ services, singleSessionQuote }) => {
         this.services.set(
-          services.length ? services.map((service) => this.toService(service)) : getAllServices(),
+          services.length
+            ? services.map((service) => this.toService(service))
+            : this.savedServicesWithConfigPricing(),
         );
         this.singleSessionOffer.set(singleSessionQuote?.offering ?? null);
         this.singleSessionQuote.set(singleSessionQuote?.quote ?? null);
       },
       error: () => {
-        this.services.set(getAllServices());
+        this.services.set(this.savedServicesWithConfigPricing());
         this.singleSessionOffer.set(null);
         this.singleSessionQuote.set(null);
         this.notificationService.warning('Live services could not load. Showing saved services.');
@@ -102,11 +106,28 @@ export class ServicesComponent implements OnInit {
       detailedDescription: service.detailedDescription,
       benefits: service.benefits || [],
       approach: service.approach || '',
-      pricing: service.pricing || { individual: 500, currency: 'INR' },
+      pricing: service.pricing || {
+        individual: this.publicConfig.defaultSessionPriceRupees(),
+        currency: 'INR',
+      },
+      duration: service.duration || this.publicConfig.defaultSessionLabel,
       category: this.toServiceCategory(service.category),
       featured: service.featured,
       imageUrl: service.imageUrl || undefined,
     };
+  }
+
+  private savedServicesWithConfigPricing(): Service[] {
+    const defaultPrice = this.publicConfig.defaultSessionPriceRupees();
+    return getAllServices().map((service) => ({
+      ...service,
+      pricing: {
+        ...(service.pricing || { currency: 'INR' }),
+        individual: defaultPrice,
+        currency: service.pricing?.currency || 'INR',
+      },
+      duration: service.duration || this.publicConfig.defaultSessionLabel,
+    }));
   }
 
   private toServiceCategory(category: string): ServiceCategory {

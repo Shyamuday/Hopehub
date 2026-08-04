@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { environment } from '../../../environments/environment';
 import { BookingService, HopeHubProvider } from '../../core/services/booking.service';
+import { PublicCommunicationConfigService } from '../../core/services/public-communication-config.service';
 
 type CareTeamListService = NonNullable<HopeHubProvider['services']>[number];
 import { NotificationService } from '../../core/services/notification.service';
@@ -15,6 +16,7 @@ import { NotificationService } from '../../core/services/notification.service';
 })
 export class PsychologistsComponent implements OnInit {
   private readonly bookingService = inject(BookingService);
+  readonly publicConfig = inject(PublicCommunicationConfigService);
   private readonly notificationService = inject(NotificationService);
 
   readonly providers = signal<HopeHubProvider[]>([]);
@@ -130,7 +132,7 @@ export class PsychologistsComponent implements OnInit {
   }
 
   providerRoleLabel(provider: HopeHubProvider): string {
-    return provider.supportRoleLabel || 'Hope Hub care guide';
+    return provider.supportRoleLabel || this.publicConfig.defaultCareRoleLabel;
   }
 
   providerRoleBadgeClass(provider: HopeHubProvider): string {
@@ -160,14 +162,17 @@ export class PsychologistsComponent implements OnInit {
   }
 
   bookingQueryParams(provider: HopeHubProvider, service: CareTeamListService | null = null) {
-    const directProviderPrice = (provider.sessionFeeInPaise ?? 50000) / 100;
+    const directProviderPrice =
+      (provider.sessionFeeInPaise ?? this.publicConfig.defaultSessionPriceInPaise) / 100;
     return {
-      service: service?.title || 'Mental wellness session',
-      serviceName: service?.title || 'Mental wellness session',
+      service: service?.title || this.publicConfig.defaultServiceName,
+      serviceName: service?.title || this.publicConfig.defaultServiceName,
       consultant: provider.name,
       providerId: provider.id,
       careTeamServiceId: service?.id || '',
-      duration: service ? `${service.durationMinutes} minutes` : '30 minutes + 15 min follow-up',
+      duration: service
+        ? `${service.durationMinutes} minutes`
+        : this.publicConfig.defaultSessionLabel,
       price: service ? service.priceInPaise / 100 : directProviderPrice,
       source: service ? 'care-team-service-list' : 'care-team-list',
     };

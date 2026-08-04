@@ -24,7 +24,7 @@
               >
                 {{ providerRoleLabel(p) }}
               </span>
-              <p class="font-semibold">{{ p.designation || p.specialty || 'Hope Hub care guide' }}</p>
+              <p class="font-semibold">{{ p.designation || p.specialty || publicConfig.defaultCareRoleLabel }}</p>
               @if (p.qualifications?.length) {
                 <p>{{ p.qualifications!.join(', ') }}</p>
               }
@@ -40,7 +40,7 @@
               @if (p.yearsOfExperience) {
                 <p>{{ p.yearsOfExperience }}+ years experience</p>
               }
-              <p>₹{{ (p.sessionFeeInPaise || 50000) / 100 | number: '1.0-0' }} · {{ sessionLabel(p) }}</p>
+              <p>₹{{ (p.sessionFeeInPaise || publicConfig.defaultSessionPriceInPaise) / 100 | number: '1.0-0' }} · {{ sessionLabel(p) }}</p>
             </div>
           </div>
 

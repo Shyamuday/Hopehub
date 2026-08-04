@@ -4,6 +4,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { environment } from '../../../environments/environment';
 import { BookingService, HopeHubProvider } from '../../core/services/booking.service';
 import { NotificationService } from '../../core/services/notification.service';
+import { PublicCommunicationConfigService } from '../../core/services/public-communication-config.service';
 
 type CareTeamService = NonNullable<HopeHubProvider['services']>[number];
 
@@ -18,6 +19,7 @@ export class PsychologistDetailComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly booking = inject(BookingService);
   private readonly notificationService = inject(NotificationService);
+  readonly publicConfig = inject(PublicCommunicationConfigService);
 
   readonly provider = signal<HopeHubProvider | null>(null);
   readonly loading = signal(false);
@@ -63,8 +65,8 @@ export class PsychologistDetailComponent implements OnInit {
     const selectedService = service || null;
     this.router.navigate(['/contact'], {
       queryParams: {
-        service: selectedService?.title || 'Mental wellness session',
-        serviceName: selectedService?.title || 'Mental wellness session',
+        service: selectedService?.title || this.publicConfig.defaultServiceName,
+        serviceName: selectedService?.title || this.publicConfig.defaultServiceName,
         consultant: provider.name,
         providerId: provider.id,
         careTeamServiceId: selectedService?.id || '',
@@ -73,19 +75,22 @@ export class PsychologistDetailComponent implements OnInit {
           : this.sessionLabel(provider),
         price: selectedService
           ? selectedService.priceInPaise / 100
-          : (provider.sessionFeeInPaise ?? 50000) / 100,
+          : (provider.sessionFeeInPaise ?? this.publicConfig.defaultSessionPriceInPaise) / 100,
         source: selectedService ? 'care-team-service-profile' : 'care-team-profile',
       },
     });
   }
 
   sessionLabel(provider: HopeHubProvider): string {
-    const minutes = provider.sessionDurationMinutes ?? 30;
-    return minutes === 30 ? '30 min + 15 min follow-up' : `${minutes} min session`;
+    const minutes =
+      provider.sessionDurationMinutes ?? this.publicConfig.defaultSessionDurationMinutes;
+    return minutes === this.publicConfig.defaultSessionDurationMinutes
+      ? this.publicConfig.defaultSessionLabel
+      : `${minutes} min session`;
   }
 
   providerRoleLabel(provider: HopeHubProvider): string {
-    return provider.supportRoleLabel || 'Hope Hub care guide';
+    return provider.supportRoleLabel || this.publicConfig.defaultCareRoleLabel;
   }
 
   providerRoleBadgeClass(provider: HopeHubProvider): string {

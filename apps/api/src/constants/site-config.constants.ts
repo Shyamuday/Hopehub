@@ -44,6 +44,27 @@ export const SITE_CONFIG_META: Record<string, { label: string; description: stri
     label: 'Telegram default paid offering',
     description: 'Hope Hub offering slug used by Telegram payment links.'
   },
+  hopeHubDefaultServiceName: {
+    label: 'Hope Hub default service name',
+    description:
+      'Fallback service name used when a user books directly without selecting a specific service.'
+  },
+  hopeHubDefaultSessionPriceInPaise: {
+    label: 'Hope Hub default session price',
+    description: 'Fallback direct booking session price in paise. E.g. 50000 for ₹500.'
+  },
+  hopeHubDefaultSessionDurationMinutes: {
+    label: 'Hope Hub default session duration',
+    description: 'Fallback direct booking session duration in minutes. E.g. 30.'
+  },
+  hopeHubDefaultSessionLabel: {
+    label: 'Hope Hub default session label',
+    description: 'Human-readable session duration label. E.g. "30 min + 15 min follow-up".'
+  },
+  hopeHubDefaultCareRoleLabel: {
+    label: 'Hope Hub default care role label',
+    description: 'Fallback public role label for care team members without a custom role label.'
+  },
   clinicName: {
     label: 'Clinic name',
     description: 'Public clinic name shown in header, emails, and meta tags.'
@@ -124,6 +145,14 @@ export const SITE_CONFIG_META: Record<string, { label: string; description: stri
 
 export const SITE_CONFIG_KEYS = Object.keys(SITE_CONFIG_META);
 
+export const SITE_CONFIG_DEFAULTS: Record<string, string> = {
+  hopeHubDefaultServiceName: 'Mental wellness session',
+  hopeHubDefaultSessionPriceInPaise: '50000',
+  hopeHubDefaultSessionDurationMinutes: '30',
+  hopeHubDefaultSessionLabel: '30 min + 15 min follow-up',
+  hopeHubDefaultCareRoleLabel: 'Hope Hub care guide'
+};
+
 export const PUBLIC_SITE_CONFIG_KEYS = [
   'whatsappPhone',
   'whatsappGroupUrl',
@@ -134,6 +163,11 @@ export const PUBLIC_SITE_CONFIG_KEYS = [
   'telegramQrCodePath',
   'whatsappQrCodePath',
   'telegramDefaultOfferingSlug',
+  'hopeHubDefaultServiceName',
+  'hopeHubDefaultSessionPriceInPaise',
+  'hopeHubDefaultSessionDurationMinutes',
+  'hopeHubDefaultSessionLabel',
+  'hopeHubDefaultCareRoleLabel',
   'clinicName',
   'contactPhone',
   'contactPhoneTel',

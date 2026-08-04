@@ -2,7 +2,11 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { Role } from '@prisma/client';
 import { authRequired, allowRoles } from '../../auth.js';
-import { SITE_CONFIG_KEYS, SITE_CONFIG_META } from '../../constants/site-config.constants.js';
+import {
+  SITE_CONFIG_DEFAULTS,
+  SITE_CONFIG_KEYS,
+  SITE_CONFIG_META
+} from '../../constants/site-config.constants.js';
 import { prisma } from '../../db.js';
 import { asyncRoute, routeParam, writeAuditLog } from '../../utils/helpers.js';
 
@@ -18,7 +22,7 @@ export function registerAdminSiteConfigRoutes(router: Router) {
 
       const config = SITE_CONFIG_KEYS.map((key) => ({
         key,
-        value: map[key] ?? '',
+        value: map[key] ?? SITE_CONFIG_DEFAULTS[key] ?? '',
         label: SITE_CONFIG_META[key].label,
         description: SITE_CONFIG_META[key].description
       }));

@@ -6,7 +6,8 @@ import { prisma } from '../db.js';
 import { DEFAULT_BILLING_PLANS } from '../constants/billing.constants.js';
 import {
   PUBLIC_SITE_CONFIG_KEYS,
-  REQUIRED_PUBLIC_SITE_CONFIG_KEYS
+  REQUIRED_PUBLIC_SITE_CONFIG_KEYS,
+  SITE_CONFIG_DEFAULTS
 } from '../constants/site-config.constants.js';
 import { asyncRoute, routeParam, queryText } from '../utils/helpers.js';
 import {
@@ -480,7 +481,9 @@ router.get(
       where: { key: { in: [...PUBLIC_SITE_CONFIG_KEYS] } }
     });
     const map: Record<string, string> = Object.fromEntries(rows.map((r) => [r.key, r.value]));
-    const config = Object.fromEntries(PUBLIC_SITE_CONFIG_KEYS.map((key) => [key, map[key] ?? '']));
+    const config = Object.fromEntries(
+      PUBLIC_SITE_CONFIG_KEYS.map((key) => [key, map[key] ?? SITE_CONFIG_DEFAULTS[key] ?? ''])
+    );
     const missingRequired = REQUIRED_PUBLIC_SITE_CONFIG_KEYS.filter((key) => !config[key]);
     res.json({ config, missingRequired });
   })

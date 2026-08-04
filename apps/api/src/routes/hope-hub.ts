@@ -31,7 +31,7 @@ import {
   scoreAssessment
 } from '../services/assessment-definitions.js';
 import { isFirstPaidConsultation } from '../services/referral-codes.js';
-import { getSiteConfigValue } from '../services/site-config.service.js';
+import { getSiteConfigMap, getSiteConfigValue } from '../services/site-config.service.js';
 
 export const hopeHubRouter = Router();
 
@@ -39,6 +39,43 @@ const HOPE_HUB_SESSION_FEE_IN_PAISE = 50000;
 const HOPE_HUB_SESSION_DURATION_MINUTES = 30;
 const HOPE_HUB_PSYCHOLOGIST_SHARE_PERCENT = 50;
 const HOPE_HUB_PLATFORM_SHARE_PERCENT = 100 - HOPE_HUB_PSYCHOLOGIST_SHARE_PERCENT;
+
+type HopeHubPublicDefaults = {
+  serviceName: string;
+  sessionPriceInPaise: number;
+  sessionDurationMinutes: number;
+  sessionLabel: string;
+  careRoleLabel: string;
+};
+
+function positiveConfigInt(value: string | undefined, fallback: number) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed > 0 ? Math.round(parsed) : fallback;
+}
+
+async function hopeHubPublicDefaults(): Promise<HopeHubPublicDefaults> {
+  const config = await getSiteConfigMap([
+    'hopeHubDefaultServiceName',
+    'hopeHubDefaultSessionPriceInPaise',
+    'hopeHubDefaultSessionDurationMinutes',
+    'hopeHubDefaultSessionLabel',
+    'hopeHubDefaultCareRoleLabel'
+  ]);
+  const duration = positiveConfigInt(
+    config.hopeHubDefaultSessionDurationMinutes,
+    HOPE_HUB_SESSION_DURATION_MINUTES
+  );
+  return {
+    serviceName: config.hopeHubDefaultServiceName?.trim() || 'Mental wellness session',
+    sessionPriceInPaise: positiveConfigInt(
+      config.hopeHubDefaultSessionPriceInPaise,
+      HOPE_HUB_SESSION_FEE_IN_PAISE
+    ),
+    sessionDurationMinutes: duration,
+    sessionLabel: config.hopeHubDefaultSessionLabel?.trim() || `${duration} minutes`,
+    careRoleLabel: config.hopeHubDefaultCareRoleLabel?.trim() || 'Hope Hub care guide'
+  };
+}
 
 const HOPE_HUB_TIME_SLOTS = [
   { time: '9:00 AM', period: 'morning' },
@@ -381,43 +418,46 @@ function hopeHubPartialPaymentSnapshot(
   };
 }
 
-function providerPublicPayload(provider: {
-  id: string;
-  specialty: string;
-  designation: string | null;
-  department: string | null;
-  bio: string | null;
-  yearsOfExperience: number | null;
-  focusAreas: string[];
-  mentalHealthProfile?: {
-    careTeamType: string;
-    qualifications: string[];
-    qualifiedFrom: string | null;
-    licenseNumber: string | null;
-    licenseCouncil: string | null;
-    languages: string[];
-    modalities: string[];
-    sessionTypes: string[];
-    ageGroups: string[];
-    concernsHandled: string[];
-    introSessionTitle: string | null;
-    counsellingApproach: string | null;
-    safetyEscalationNote: string | null;
-    acceptsHighRiskCases: boolean;
-    services: Array<{
-      id: string;
-      title: string;
-      description: string | null;
-      priceInPaise: number;
-      currency: string;
-      durationMinutes: number;
-      isFree: boolean;
-      isActive: boolean;
-      sortOrder: number;
-    }>;
-  } | null;
-  user: { id: string; name: string; profileImageKey: string | null };
-}) {
+function providerPublicPayload(
+  provider: {
+    id: string;
+    specialty: string;
+    designation: string | null;
+    department: string | null;
+    bio: string | null;
+    yearsOfExperience: number | null;
+    focusAreas: string[];
+    mentalHealthProfile?: {
+      careTeamType: string;
+      qualifications: string[];
+      qualifiedFrom: string | null;
+      licenseNumber: string | null;
+      licenseCouncil: string | null;
+      languages: string[];
+      modalities: string[];
+      sessionTypes: string[];
+      ageGroups: string[];
+      concernsHandled: string[];
+      introSessionTitle: string | null;
+      counsellingApproach: string | null;
+      safetyEscalationNote: string | null;
+      acceptsHighRiskCases: boolean;
+      services: Array<{
+        id: string;
+        title: string;
+        description: string | null;
+        priceInPaise: number;
+        currency: string;
+        durationMinutes: number;
+        isFree: boolean;
+        isActive: boolean;
+        sortOrder: number;
+      }>;
+    } | null;
+    user: { id: string; name: string; profileImageKey: string | null };
+  },
+  defaults: HopeHubPublicDefaults
+) {
   const user = enrichWithProfileImageUrl(provider.user, userProfileImagePath);
   const focusAreas = provider.focusAreas || [];
   const mental = provider.mentalHealthProfile;
@@ -450,7 +490,7 @@ function providerPublicPayload(provider: {
                 ? 'Meditation / breathwork guide'
                 : careTeamType === 'CAREER_STUDY_MENTOR'
                   ? 'Career / study mentor'
-                  : 'Mental wellness professional';
+                  : defaults.careRoleLabel;
   const activeServices = (mental?.services ?? []).filter((service) => service.isActive);
   const primaryService = activeServices[0];
   return {
@@ -496,25 +536,28 @@ function providerPublicPayload(provider: {
     safetyEscalationNote: mental?.safetyEscalationNote ?? null,
     acceptsHighRiskCases: mental?.acceptsHighRiskCases ?? false,
     services: activeServices,
-    sessionFeeInPaise: primaryService?.priceInPaise ?? HOPE_HUB_SESSION_FEE_IN_PAISE,
-    sessionDurationMinutes: primaryService?.durationMinutes ?? HOPE_HUB_SESSION_DURATION_MINUTES
+    sessionFeeInPaise: primaryService?.priceInPaise ?? defaults.sessionPriceInPaise,
+    sessionDurationMinutes: primaryService?.durationMinutes ?? defaults.sessionDurationMinutes
   };
 }
 
-function servicePublicPayload(service: {
-  id: string;
-  name: string;
-  slug: string | null;
-  description: string;
-  publicDescription: string | null;
-  publicImageUrl: string | null;
-  feeInPaise: number;
-  intakeQuestions: unknown;
-  publicFaq: unknown;
-  publicPageContent: unknown;
-  seoTitle: string | null;
-  seoDescription: string | null;
-}) {
+function servicePublicPayload(
+  service: {
+    id: string;
+    name: string;
+    slug: string | null;
+    description: string;
+    publicDescription: string | null;
+    publicImageUrl: string | null;
+    feeInPaise: number;
+    intakeQuestions: unknown;
+    publicFaq: unknown;
+    publicPageContent: unknown;
+    seoTitle: string | null;
+    seoDescription: string | null;
+  },
+  defaults: HopeHubPublicDefaults
+) {
   const content = (service.publicPageContent ?? {}) as {
     benefits?: string[];
     approach?: string;
@@ -536,7 +579,7 @@ function servicePublicPayload(service: {
     imageUrl: service.publicImageUrl || '',
     pricing: { individual: Math.round(service.feeInPaise / 100), currency: 'INR' },
     feeInPaise: service.feeInPaise,
-    duration: content.duration || `${HOPE_HUB_SESSION_DURATION_MINUTES} minutes`,
+    duration: content.duration || defaults.sessionLabel,
     intakeQuestions: service.intakeQuestions,
     publicFaq: service.publicFaq,
     seoTitle: service.seoTitle,
@@ -876,12 +919,15 @@ async function activeHopeHubOfferings(params: { type?: string; featured?: boolea
 }
 
 async function activeHopeHubServices() {
-  const services = await prisma.disease.findMany({
-    where: { isActive: true, publicCategory: 'Hope Hub' },
-    select: hopeHubServiceSelect,
-    orderBy: [{ name: 'asc' }]
-  });
-  return services.map(servicePublicPayload);
+  const [services, defaults] = await Promise.all([
+    prisma.disease.findMany({
+      where: { isActive: true, publicCategory: 'Hope Hub' },
+      select: hopeHubServiceSelect,
+      orderBy: [{ name: 'asc' }]
+    }),
+    hopeHubPublicDefaults()
+  ]);
+  return services.map((service) => servicePublicPayload(service, defaults));
 }
 
 function hopeHubProviderWhere(params: {
@@ -1020,8 +1066,9 @@ async function activeHopeHubProviders(params: {
     }),
     prisma.doctor.count({ where })
   ]);
+  const defaults = await hopeHubPublicDefaults();
   return {
-    providers: providers.map(providerPublicPayload),
+    providers: providers.map((provider) => providerPublicPayload(provider, defaults)),
     pagination: {
       page,
       pageSize,
@@ -1268,7 +1315,7 @@ hopeHubRouter.get(
     if (!service) {
       return res.status(404).json({ message: 'Service not found.' });
     }
-    res.json({ service: servicePublicPayload(service) });
+    res.json({ service: servicePublicPayload(service, await hopeHubPublicDefaults()) });
   })
 );
 
@@ -1437,7 +1484,7 @@ hopeHubRouter.get(
     if (!provider) {
       return res.status(404).json({ message: 'Provider not found.' });
     }
-    res.json({ provider: providerPublicPayload(provider) });
+    res.json({ provider: providerPublicPayload(provider, await hopeHubPublicDefaults()) });
   })
 );
 
@@ -1586,6 +1633,7 @@ hopeHubRouter.post(
   allowRoles(Role.PATIENT),
   asyncRoute(async (req, res) => {
     const body = hopeHubBookingSchema.parse(req.body);
+    const defaults = await hopeHubPublicDefaults();
     const selectedOffering =
       body.offeringId || body.offeringSlug
         ? await prisma.hopeHubOffering.findFirst({
@@ -1655,7 +1703,7 @@ hopeHubRouter.post(
     }
     const effectiveServiceName = selectedCareTeamService?.title || body.serviceName;
     const selectedServiceDurationMinutes =
-      selectedCareTeamService?.durationMinutes || HOPE_HUB_SESSION_DURATION_MINUTES;
+      selectedCareTeamService?.durationMinutes || defaults.sessionDurationMinutes;
     const slug = slugify(effectiveServiceName);
     const existingService = await prisma.disease.findFirst({
       where: {
@@ -1668,7 +1716,7 @@ hopeHubRouter.post(
     const amountInPaise =
       selectedOffering?.priceInPaise ??
       selectedCareTeamService?.priceInPaise ??
-      (body.servicePriceInPaise || existingService?.feeInPaise || HOPE_HUB_SESSION_FEE_IN_PAISE);
+      (body.servicePriceInPaise || existingService?.feeInPaise || defaults.sessionPriceInPaise);
     if (!amountInPaise || amountInPaise <= 0) {
       return res.status(400).json({ message: 'Selected offer cannot be paid online.' });
     }

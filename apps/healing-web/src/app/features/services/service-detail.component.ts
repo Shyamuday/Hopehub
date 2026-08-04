@@ -10,12 +10,7 @@ import {
   HOPE_HUB_ANALYTICS_EVENTS,
   ProductAnalyticsService,
 } from '../../core/services/product-analytics.service';
-import {
-  HOPE_HUB_SESSION_DISCOUNT_PERCENT,
-  HOPE_HUB_SESSION_OFFER_PRICE,
-  HOPE_HUB_SESSION_PRICE,
-  getServiceById,
-} from '../../core/data/services-data';
+import { HOPE_HUB_SESSION_DISCOUNT_PERCENT, getServiceById } from '../../core/data/services-data';
 import {
   HopeHubOffering,
   HopeHubOfferingQuote,
@@ -31,8 +26,6 @@ import {
 })
 export class ServiceDetailComponent implements OnInit {
   readonly notes = NOTE_CONTENT;
-  readonly sessionPrice = HOPE_HUB_SESSION_PRICE;
-  readonly sessionOfferPrice = HOPE_HUB_SESSION_OFFER_PRICE;
   readonly sessionDiscountPercent = HOPE_HUB_SESSION_DISCOUNT_PERCENT;
   service = signal<Service | null>(null);
   singleSessionOffer = signal<HopeHubOffering | null>(null);
@@ -70,8 +63,8 @@ export class ServiceDetailComponent implements OnInit {
         service: this.service()?.id,
         serviceName: this.service()?.name,
         ...(offering ? { offering } : {}),
-        price: this.sessionOfferPrice,
-        duration: '30 minutes + 15 min follow-up',
+        price: this.currentSessionPrice(),
+        duration: this.currentSessionDuration(),
         source: 'service-detail',
       },
     });
@@ -100,13 +93,17 @@ export class ServiceDetailComponent implements OnInit {
   currentSessionPrice(): number {
     return this.singleSessionQuote()?.payableInPaise != null
       ? Math.round(this.singleSessionQuote()!.payableInPaise! / 100)
-      : this.sessionOfferPrice;
+      : this.publicConfig.defaultSessionPriceRupees();
   }
 
   currentOriginalPrice(): number {
     return this.singleSessionQuote()?.grossInPaise != null
       ? Math.round(this.singleSessionQuote()!.grossInPaise! / 100)
-      : this.sessionPrice;
+      : this.publicConfig.defaultSessionPriceRupees();
+  }
+
+  currentSessionDuration(): string {
+    return this.service()?.duration || this.publicConfig.defaultSessionLabel;
   }
 
   hasActiveSessionDiscount(): boolean {
@@ -207,7 +204,7 @@ export class ServiceDetailComponent implements OnInit {
           'Yes. Choose Telegram or the low-identity Telegram preference in the contact form if you are worried about identity reveal.',
       },
       {
-        question: 'Is the ₹500 session refundable?',
+        question: `Is the ${this.formatPrice(this.currentOriginalPrice(), 'INR')} session refundable?`,
         answer:
           'Refund or reschedule handling depends on whether the session has already been confirmed or started. Contact the team as early as possible if you need a change.',
       },
@@ -226,7 +223,9 @@ export class ServiceDetailComponent implements OnInit {
         this.setLoadedService(this.toService(service));
       },
       error: () => {
-        this.setLoadedService(getServiceById(serviceId) || null);
+        this.setLoadedService(
+          this.savedServiceWithConfigPricing(getServiceById(serviceId) || null),
+        );
         this.notificationService.warning(
           'Live service details could not load. Showing saved details.',
         );
@@ -294,7 +293,11 @@ export class ServiceDetailComponent implements OnInit {
       detailedDescription: service.detailedDescription,
       benefits: service.benefits || [],
       approach: service.approach || '',
-      pricing: service.pricing || { individual: 500, currency: 'INR' },
+      pricing: service.pricing || {
+        individual: this.publicConfig.defaultSessionPriceRupees(),
+        currency: 'INR',
+      },
+      duration: service.duration || this.publicConfig.defaultSessionLabel,
       category: this.toServiceCategory(service.category),
       featured: service.featured,
       imageUrl: service.imageUrl || undefined,
@@ -305,5 +308,18 @@ export class ServiceDetailComponent implements OnInit {
     return Object.values(ServiceCategory).includes(category as ServiceCategory)
       ? (category as ServiceCategory)
       : ServiceCategory.MENTAL_HEALTH;
+  }
+
+  private savedServiceWithConfigPricing(service: Service | null): Service | null {
+    if (!service) return null;
+    return {
+      ...service,
+      pricing: {
+        ...(service.pricing || { currency: 'INR' }),
+        individual: this.publicConfig.defaultSessionPriceRupees(),
+        currency: service.pricing?.currency || 'INR',
+      },
+      duration: service.duration || this.publicConfig.defaultSessionLabel,
+    };
   }
 }
