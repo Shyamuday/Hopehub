@@ -230,6 +230,40 @@ export class WorklistPage {
     return buildDetailRows(item, this.worklistMetaFieldDefs);
   }
 
+  pricingInsight(item: WorklistItem) {
+    const pricing = item.pricing;
+    if (!pricing) return null;
+    const remaining = Number(pricing.remainingSessions || 0);
+    const total = Number(pricing.totalSessions || 0);
+    const used = Number(pricing.usedSessions || 0);
+    const amount = Number(pricing.amountInPaise || 0);
+    const amountLabel = this.formatPaise(amount);
+
+    return {
+      headline: pricing.isPackageRedemption
+        ? 'Package session'
+        : pricing.isPackagePurchase
+          ? 'Package purchase'
+          : pricing.label || pricing.serviceTitle || 'Care pricing',
+      subline: pricing.isPackageRedemption
+        ? `Paid by package · ₹0 today${remaining ? ` · ${remaining} left after this` : ''}`
+        : pricing.isPackagePurchase
+          ? `${used}/${total} sessions used${remaining ? ` · ${remaining} left` : ''}`
+          : [pricing.serviceTitle, pricing.label || amountLabel].filter(Boolean).join(' · '),
+      serviceTitle: pricing.serviceTitle,
+      packageConsultationId: pricing.packageConsultationId,
+      amountLabel,
+    };
+  }
+
+  formatPaise(value: number): string {
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      maximumFractionDigits: 0,
+    }).format((value || 0) / 100);
+  }
+
   toggleCardMenu(consultationId: string) {
     this.expandedCardId.update((current) => (current === consultationId ? null : consultationId));
   }

@@ -71,6 +71,17 @@
                         <button type="button" (click)="adjustPackageUsage(c, 1)" [disabled]="saving()">+</button>
                       </div>
                     }
+                    @if (pricingInsight(c); as pricing) {
+                      <div class="pricing-insight" [class.package]="pricing.isPackagePurchase || pricing.isPackageRedemption">
+                        <strong>{{ pricing.headline }}</strong>
+                        @if (pricing.subline) {
+                          <span>{{ pricing.subline }}</span>
+                        }
+                        @if (pricing.packageConsultationId && pricing.isPackageRedemption) {
+                          <small>Package ID: {{ pricing.packageConsultationId }}</small>
+                        }
+                      </div>
+                    }
                   </td>
                   <td><span class="date-txt">{{ c.createdAt | date:'dd MMM yy, h:mm a' }}</span></td>
                   <td>
@@ -138,6 +149,17 @@
                   <span>{{ usage.usedSessions || 0 }}/{{ usage.totalSessions || 0 }} sessions used</span>
                   <button type="button" (click)="adjustPackageUsage(c, -1)" [disabled]="saving()">−</button>
                   <button type="button" (click)="adjustPackageUsage(c, 1)" [disabled]="saving()">+</button>
+                </div>
+              }
+              @if (pricingInsight(c); as pricing) {
+                <div class="pricing-insight mobile" [class.package]="pricing.isPackagePurchase || pricing.isPackageRedemption">
+                  <strong>{{ pricing.headline }}</strong>
+                  @if (pricing.subline) {
+                    <span>{{ pricing.subline }}</span>
+                  }
+                  @if (pricing.packageConsultationId && pricing.isPackageRedemption) {
+                    <small>Package ID: {{ pricing.packageConsultationId }}</small>
+                  }
                 </div>
               }
               <div class="card-row doctor-row">

@@ -72,6 +72,12 @@
         }
       </div>
       <hopehub-detail-rows [rows]="worklistMetaRows(item)" />
+      @if (pricingInsight(item); as pricing) {
+        <div class="pricing-chip">
+          <strong>{{ pricing.headline }}</strong>
+          <span>{{ pricing.subline }}</span>
+        </div>
+      }
       <small class="muted">
         Patient {{ item.patient?.patientCode || item.patient?.id }}
         @if (item.followUpDate) {
@@ -133,6 +139,12 @@
     <article class="card">
       <strong>{{ item.patient?.name || 'Patient' }} — {{ item.disease?.name || 'Consultation' }}</strong>
       <hopehub-detail-rows [rows]="worklistMetaRows(item)" />
+      @if (pricingInsight(item); as pricing) {
+        <div class="pricing-chip">
+          <strong>{{ pricing.headline }}</strong>
+          <span>{{ pricing.subline }}</span>
+        </div>
+      }
       <small class="muted">Patient {{ item.patient?.patientCode || item.patient?.id }}</small>
       <div class="actions actions-mobile">
         <div class="actions-primary">
@@ -186,6 +198,12 @@
     <article class="card">
       <strong>{{ item.patient?.name || 'Patient' }} — {{ item.disease?.name || 'Consultation' }}</strong>
       <hopehub-detail-rows [rows]="worklistMetaRows(item)" />
+      @if (pricingInsight(item); as pricing) {
+        <div class="pricing-chip">
+          <strong>{{ pricing.headline }}</strong>
+          <span>{{ pricing.subline }}</span>
+        </div>
+      }
       <small class="muted">Patient {{ item.patient?.patientCode || item.patient?.id }}</small>
       <div class="actions actions-mobile">
         <div class="actions-primary">

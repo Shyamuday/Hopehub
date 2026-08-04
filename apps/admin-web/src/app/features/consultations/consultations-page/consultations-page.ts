@@ -284,6 +284,47 @@ export class ConsultationsPage implements OnInit {
     return c?.pricingSnapshot?.packageUsage || c?.payment?.lineItems?.packageUsage || null;
   }
 
+  pricingInsight(c: any) {
+    const snapshot = c?.pricingSnapshot || {};
+    const lineItems = c?.payment?.lineItems || {};
+    const usage = this.packageUsage(c) || {};
+    const rule = snapshot.careTeamPricingRule || lineItems.careTeamPricingRule || '';
+    const type = String(usage.type || '').toUpperCase();
+    const isPackagePurchase = rule === 'PACKAGE_PRICE' || type === 'PURCHASE';
+    const isPackageRedemption = rule === 'PACKAGE_REDEMPTION' || type === 'REDEMPTION';
+    const label = snapshot.careTeamPricingLabel || lineItems.careTeamPricingLabel || '';
+    const serviceTitle = snapshot.careTeamServiceTitle || lineItems.careTeamServiceTitle || '';
+    const packageConsultationId =
+      snapshot.careTeamPackageConsultationId || usage.packageConsultationId || '';
+    const remaining = Number(usage.remainingSessions || 0);
+    const total = Number(usage.totalSessions || 0);
+    const used = Number(usage.usedSessions || 0);
+
+    if (!label && !serviceTitle && !rule && !type) return null;
+
+    return {
+      serviceTitle,
+      label,
+      rule,
+      isPackagePurchase,
+      isPackageRedemption,
+      packageConsultationId,
+      remaining,
+      total,
+      used,
+      headline: isPackageRedemption
+        ? 'Package session'
+        : isPackagePurchase
+          ? 'Package purchase'
+          : label || serviceTitle || 'Care pricing',
+      subline: isPackageRedemption
+        ? `Paid by package · ₹0 today${remaining ? ` · ${remaining} left after this` : ''}`
+        : isPackagePurchase
+          ? `${used}/${total} sessions used${remaining ? ` · ${remaining} left` : ''}`
+          : [serviceTitle, label].filter(Boolean).join(' · '),
+    };
+  }
+
   balanceDueInPaise(c: any): number {
     return Number(
       c?.pricingSnapshot?.balanceDueInPaise ?? c?.payment?.lineItems?.balanceDueInPaise ?? 0,

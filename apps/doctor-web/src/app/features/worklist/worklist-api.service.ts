@@ -16,6 +16,22 @@ export type WorklistItem = {
   sections: Array<'ASSIGNED' | 'IN_PROGRESS' | 'FOLLOW_UP_DUE'>;
   patient?: { id: string; name: string; mobile?: string | null; patientCode?: string | null };
   disease?: { name?: string };
+  pricing?: {
+    serviceTitle?: string | null;
+    label?: string | null;
+    rule?: string | null;
+    mode?: string | null;
+    paymentStatus?: string | null;
+    amountInPaise?: number | null;
+    isPackagePurchase?: boolean;
+    isPackageRedemption?: boolean;
+    isPaidByPackage?: boolean;
+    packageConsultationId?: string | null;
+    totalSessions?: number;
+    usedSessions?: number;
+    remainingSessions?: number;
+    remainingBefore?: number | null;
+  } | null;
 };
 
 export type WorklistResponse = {

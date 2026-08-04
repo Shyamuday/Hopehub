@@ -15,6 +15,59 @@ import {
 } from '../services/doctor-worklist.js';
 import { PRODUCT_EVENTS, trackProductEvent } from '../services/product-analytics.js';
 
+function readJsonObject(value: unknown): Record<string, any> {
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? (value as Record<string, any>)
+    : {};
+}
+
+function toPricingSummary(
+  consultation: Awaited<ReturnType<typeof loadDoctorConsultations>>[number]
+) {
+  const pricingSnapshot = readJsonObject(consultation.pricingSnapshot);
+  const lineItems = readJsonObject(consultation.payment?.lineItems);
+  const packageUsage = readJsonObject(pricingSnapshot['packageUsage'] || lineItems['packageUsage']);
+  const pricingLabel = String(
+    pricingSnapshot['careTeamPricingLabel'] || lineItems['careTeamPricingLabel'] || ''
+  );
+  const pricingRule = String(
+    pricingSnapshot['careTeamPricingRule'] || lineItems['careTeamPricingRule'] || ''
+  );
+  const pricingMode = String(
+    pricingSnapshot['careTeamPricingMode'] || lineItems['careTeamPricingMode'] || ''
+  );
+  const serviceTitle = String(
+    pricingSnapshot['careTeamServiceTitle'] || lineItems['careTeamServiceTitle'] || ''
+  );
+  const packageType = String(packageUsage['type'] || '').toUpperCase();
+  const isPackagePurchase = pricingRule === 'PACKAGE_PRICE' || packageType === 'PURCHASE';
+  const isPackageRedemption = pricingRule === 'PACKAGE_REDEMPTION' || packageType === 'REDEMPTION';
+
+  if (!pricingLabel && !pricingRule && !pricingMode && !serviceTitle && !packageType) {
+    return null;
+  }
+
+  return {
+    serviceTitle: serviceTitle || null,
+    label: pricingLabel || null,
+    rule: pricingRule || null,
+    mode: pricingMode || null,
+    paymentStatus: consultation.payment?.status || null,
+    amountInPaise: consultation.payment?.amountInPaise ?? null,
+    isPackagePurchase,
+    isPackageRedemption,
+    isPaidByPackage: isPackageRedemption,
+    packageConsultationId:
+      pricingSnapshot['careTeamPackageConsultationId'] ||
+      packageUsage['packageConsultationId'] ||
+      null,
+    totalSessions: Number(packageUsage['totalSessions'] || 0),
+    usedSessions: Number(packageUsage['usedSessions'] || 0),
+    remainingSessions: Number(packageUsage['remainingSessions'] || 0),
+    remainingBefore: Number(pricingSnapshot['careTeamPackageRemainingBefore'] ?? 0) || null
+  };
+}
+
 function toWorklistItem(consultation: Awaited<ReturnType<typeof loadDoctorConsultations>>[number]) {
   const followUpDate = publishedFollowUpDate(consultation);
   return {
@@ -23,6 +76,7 @@ function toWorklistItem(consultation: Awaited<ReturnType<typeof loadDoctorConsul
     createdAt: consultation.createdAt,
     patient: consultation.patient,
     disease: consultation.disease,
+    pricing: toPricingSummary(consultation),
     followUpDate,
     followUpUrgency: resolveFollowUpUrgency(followUpDate),
     sections: worklistSections(consultation)

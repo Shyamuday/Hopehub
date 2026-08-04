@@ -49,6 +49,46 @@
   opacity: 0.55;
 }
 
+.pricing-insight {
+  display: grid;
+  gap: 0.12rem;
+  margin-top: 0.35rem;
+  width: fit-content;
+  max-width: 16rem;
+  border: 1px solid rgba(147, 197, 253, 0.24);
+  border-radius: 12px;
+  background: rgba(37, 99, 235, 0.1);
+  color: #bfdbfe;
+  padding: 0.45rem 0.55rem;
+  font-size: 0.72rem;
+  line-height: 1.25;
+}
+
+.pricing-insight strong {
+  color: #dbeafe;
+  font-size: 0.76rem;
+}
+
+.pricing-insight span,
+.pricing-insight small {
+  color: #93c5fd;
+}
+
+.pricing-insight.package {
+  border-color: rgba(94, 234, 212, 0.28);
+  background: rgba(20, 184, 166, 0.1);
+  color: #99f6e4;
+}
+
+.pricing-insight.package strong {
+  color: #ccfbf1;
+}
+
+.pricing-insight.package span,
+.pricing-insight.package small {
+  color: #99f6e4;
+}
+
 @media (max-width: 768px) {
   .desktop-only {
     display: none !important;
@@ -112,6 +152,11 @@
     width: 100%;
     border-radius: 10px;
     padding: 0.45rem;
+  }
+
+  .pricing-insight.mobile {
+    width: 100%;
+    max-width: none;
   }
 }
 
