@@ -12,11 +12,13 @@ type LeadResponse = {
 export type CounsellorApplicationPayload = {
   applicationTrack:
     'PROFESSIONAL_PSYCHOLOGIST' | 'PSYCHOLOGY_STUDENT_VOLUNTEER' | 'PEER_SUPPORT_VOLUNTEER';
+  careTeamType?: string;
   fullName: string;
   email: string;
   phone: string;
   city: string;
   qualification: string;
+  qualifiedFrom?: string;
   specialization: string;
   experienceYears: string;
   registrationDetails?: string;

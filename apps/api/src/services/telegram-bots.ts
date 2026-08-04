@@ -1,4 +1,4 @@
-import { Prisma, TelegramBotKind } from '@prisma/client';
+import { CareTeamMemberType, Prisma, TelegramBotKind } from '@prisma/client';
 import { prisma } from '../db.js';
 import {
   assertAssessmentAccess,
@@ -1067,6 +1067,49 @@ const providerTrackLabels: Record<ProviderApplicationTrack, string> = {
   PEER_SUPPORT_VOLUNTEER: 'Peer support volunteer'
 };
 
+const careTeamTypeOptions: Array<{
+  type: CareTeamMemberType;
+  track: ProviderApplicationTrack;
+  label: string;
+}> = [
+  {
+    type: CareTeamMemberType.MENTAL_WELLNESS_PROFESSIONAL,
+    track: 'PROFESSIONAL_PSYCHOLOGIST',
+    label: 'Mental wellness professional'
+  },
+  {
+    type: CareTeamMemberType.QUALIFIED_COUNSELLOR,
+    track: 'PROFESSIONAL_PSYCHOLOGIST',
+    label: 'Qualified counsellor'
+  },
+  {
+    type: CareTeamMemberType.PSYCHOLOGY_STUDENT_VOLUNTEER,
+    track: 'PSYCHOLOGY_STUDENT_VOLUNTEER',
+    label: 'Psychology student volunteer'
+  },
+  {
+    type: CareTeamMemberType.PEER_SUPPORT_VOLUNTEER,
+    track: 'PEER_SUPPORT_VOLUNTEER',
+    label: 'Peer support volunteer'
+  },
+  { type: CareTeamMemberType.NLP_COACH, track: 'PROFESSIONAL_PSYCHOLOGIST', label: 'NLP coach' },
+  { type: CareTeamMemberType.LIFE_COACH, track: 'PROFESSIONAL_PSYCHOLOGIST', label: 'Life coach' },
+  {
+    type: CareTeamMemberType.MEDITATION_BREATHWORK_GUIDE,
+    track: 'PROFESSIONAL_PSYCHOLOGIST',
+    label: 'Meditation / breathwork guide'
+  },
+  {
+    type: CareTeamMemberType.CAREER_STUDY_MENTOR,
+    track: 'PROFESSIONAL_PSYCHOLOGIST',
+    label: 'Career / study mentor'
+  }
+];
+
+const careTeamTypeLabels = Object.fromEntries(
+  careTeamTypeOptions.map((option) => [option.type, option.label])
+) as Record<CareTeamMemberType, string>;
+
 function providerApplicationOf(session: TelegramSession) {
   return metadataOf(session).pendingProviderApplication ?? {};
 }
@@ -1096,24 +1139,13 @@ async function startProviderSignup(kind: TelegramBotKind, session: TelegramSessi
     parse_mode: 'HTML',
     reply_markup: {
       inline_keyboard: [
-        [
-          {
-            text: 'Professional psychologist',
-            callback_data: 'provider_signup:track:PROFESSIONAL_PSYCHOLOGIST'
-          }
-        ],
-        [
-          {
-            text: 'Psychology student volunteer',
-            callback_data: 'provider_signup:track:PSYCHOLOGY_STUDENT_VOLUNTEER'
-          }
-        ],
-        [
-          {
-            text: 'Peer support volunteer',
-            callback_data: 'provider_signup:track:PEER_SUPPORT_VOLUNTEER'
-          }
-        ],
+        ...callbackRows(
+          careTeamTypeOptions.map((option) => ({
+            text: option.label,
+            callback_data: `provider_signup:type:${option.type}`
+          })),
+          1
+        ),
         ...menuCancelRows()
       ]
     }
@@ -1123,11 +1155,12 @@ async function startProviderSignup(kind: TelegramBotKind, session: TelegramSessi
 async function setProviderSignupTrack(
   kind: TelegramBotKind,
   session: TelegramSession,
-  track: ProviderApplicationTrack
+  track: ProviderApplicationTrack,
+  careTeamType: CareTeamMemberType = CareTeamMemberType.MENTAL_WELLNESS_PROFESSIONAL
 ) {
   const metadata: SessionMetadata = {
     ...metadataOf(session),
-    pendingProviderApplication: { applicationTrack: track }
+    pendingProviderApplication: { applicationTrack: track, careTeamType }
   };
   await updateSession(session, {
     state: 'WAITING_PROVIDER_APPLICATION_NAME',
@@ -1136,7 +1169,7 @@ async function setProviderSignupTrack(
   });
   await sendTelegramMessage(kind, {
     chat_id: session.chatId,
-    text: [`<b>${providerTrackLabels[track]}</b>`, 'Please send your full name.'].join('\n'),
+    text: [`<b>${careTeamTypeLabels[careTeamType]}</b>`, 'Please send your full name.'].join('\n'),
     parse_mode: 'HTML',
     reply_markup: { inline_keyboard: menuCancelRows() }
   });
@@ -1221,9 +1254,10 @@ async function handleProviderApplicationText(
               'Send professional details in 4 lines:',
               '',
               'Qualification',
+              'Qualified from / institute',
               'Specialization',
               'Experience years',
-              'Registration/license details'
+              'Registration/license details, if any'
             ].join('\n')
           : track === 'PSYCHOLOGY_STUDENT_VOLUNTEER'
             ? [
@@ -1250,9 +1284,10 @@ async function handleProviderApplicationText(
       track === 'PROFESSIONAL_PSYCHOLOGIST'
         ? {
             qualification: lines[0] || '',
-            specialization: lines[1] || '',
-            experienceYears: lines[2] || '',
-            registrationDetails: lines.slice(3).join(' ') || ''
+            qualifiedFrom: lines[1] || '',
+            specialization: lines[2] || '',
+            experienceYears: lines[3] || '',
+            registrationDetails: lines.slice(4).join(' ') || ''
           }
         : track === 'PSYCHOLOGY_STUDENT_VOLUNTEER'
           ? {
@@ -1374,11 +1409,13 @@ async function finishProviderApplication(
   const application = await prisma.counsellorApplication.create({
     data: {
       applicationTrack: pending.applicationTrack,
+      careTeamType: pending.careTeamType || CareTeamMemberType.MENTAL_WELLNESS_PROFESSIONAL,
       fullName: pending.fullName || telegramDisplayName(session),
       email: pending.email || `${session.chatId}@telegram.local`,
       phone: pending.phone || session.chatId,
       city: pending.city || 'Not provided',
       qualification: pending.qualification || null,
+      qualifiedFrom: pending.qualifiedFrom || null,
       specialization: pending.specialization || null,
       experienceYears: pending.experienceYears || null,
       registrationDetails:
@@ -1406,7 +1443,8 @@ async function finishProviderApplication(
       fullName: true,
       email: true,
       phone: true,
-      applicationTrack: true
+      applicationTrack: true,
+      careTeamType: true
     }
   });
 
@@ -1424,7 +1462,7 @@ async function finishProviderApplication(
     text: [
       '<b>Application received</b>',
       `ID: ${escapeHtml(application.id.slice(-8))}`,
-      `Role: ${escapeHtml(providerTrackLabels[application.applicationTrack])}`,
+      `Role: ${escapeHtml(careTeamTypeLabels[application.careTeamType])}`,
       '',
       'Admin will review it. If approved, your care team account/access will be created or linked after onboarding.'
     ].join('\n'),
@@ -2560,7 +2598,12 @@ async function handleCallback(
 
   if (kind === TelegramBotKind.DOCTOR) {
     if (data === 'doctor:signup') await startProviderSignup(kind, session);
-    else if (data.startsWith('provider_signup:track:')) {
+    else if (data.startsWith('provider_signup:type:')) {
+      const type = data.slice('provider_signup:type:'.length) as CareTeamMemberType;
+      const option = careTeamTypeOptions.find((item) => item.type === type);
+      if (option) await setProviderSignupTrack(kind, session, option.track, option.type);
+      else await startProviderSignup(kind, session);
+    } else if (data.startsWith('provider_signup:track:')) {
       const track = data.slice('provider_signup:track:'.length) as ProviderApplicationTrack;
       if (track in providerTrackLabels) await setProviderSignupTrack(kind, session, track);
       else await startProviderSignup(kind, session);

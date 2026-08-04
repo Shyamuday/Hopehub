@@ -102,12 +102,27 @@ Hypertension"
 
     @if (isPsychologist) {
       <section class="mental-profile-section">
-        <h3>Mental Health Provider Details</h3>
-        <p class="section-hint">Shown on Hope Hub psychologist profile pages and used for session matching.</p>
+        <h3>Care Team Public Details</h3>
+        <p class="section-hint">Shown on Hope Hub care team profile pages and used for session matching.</p>
 
         <div class="grid two-column">
+          <label for="careTeamType">Care team type</label>
+          <select id="careTeamType" [formField]="profileForm.careTeamType">
+            <option value="MENTAL_WELLNESS_PROFESSIONAL">Mental wellness professional</option>
+            <option value="QUALIFIED_COUNSELLOR">Qualified counsellor</option>
+            <option value="PSYCHOLOGY_STUDENT_VOLUNTEER">Psychology student volunteer</option>
+            <option value="PEER_SUPPORT_VOLUNTEER">Peer support volunteer</option>
+            <option value="NLP_COACH">NLP coach</option>
+            <option value="LIFE_COACH">Life coach</option>
+            <option value="MEDITATION_BREATHWORK_GUIDE">Meditation / breathwork guide</option>
+            <option value="CAREER_STUDY_MENTOR">Career / study mentor</option>
+          </select>
+
           <label for="qualifications">Qualifications <span class="hint">(one per line)</span></label>
           <textarea id="qualifications" rows="3" [formField]="profileForm.qualificationsText"></textarea>
+
+          <label for="qualifiedFrom">Qualified from</label>
+          <input id="qualifiedFrom" [formField]="profileForm.qualifiedFrom" placeholder="University, institute, academy, or training body" />
 
           <label for="licenseCouncil">License / council</label>
           <input id="licenseCouncil" [formField]="profileForm.licenseCouncil" placeholder="e.g. RCI, state council" />
@@ -144,6 +159,15 @@ Hypertension"
           <input type="checkbox" [formField]="profileForm.acceptsHighRiskCases" />
           Accepts high-risk cases with escalation support
         </label>
+
+        <label for="serviceOffers">Services & pricing</label>
+        <textarea
+          id="serviceOffers"
+          rows="5"
+          [formField]="profileForm.serviceOffersText"
+          placeholder="NLP confidence coaching | 499 | 40 | Mindset and confidence work | yes&#10;Peer listening session | 0 | 20 | Non-clinical support | yes"
+        ></textarea>
+        <p class="section-hint">One per line: title | price in ₹ | minutes | description | yes/no</p>
       </section>
     }
   </div>

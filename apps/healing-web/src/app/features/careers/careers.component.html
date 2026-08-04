@@ -73,16 +73,16 @@
               @for (track of applicationTracks; track track.value) {
                 <label
                   class="cursor-pointer rounded-lg border p-4 transition"
-                  [class.border-primary-600]="isTrack(track.value)"
-                  [class.bg-primary-50]="isTrack(track.value)"
-                  [class.border-gray-200]="!isTrack(track.value)"
-                  [class.bg-white]="!isTrack(track.value)"
+                  [class.border-primary-600]="isType(track.value)"
+                  [class.bg-primary-50]="isType(track.value)"
+                  [class.border-gray-200]="!isType(track.value)"
+                  [class.bg-white]="!isType(track.value)"
                 >
                   <input
                     type="radio"
-                    name="applicationTrack"
+                    name="careTeamType"
                     [value]="track.value"
-                    [checked]="isTrack(track.value)"
+                    [checked]="isType(track.value)"
                     (change)="selectTrack(track.value)"
                     class="sr-only"
                   />
@@ -138,6 +138,11 @@
               </label>
 
               <label>
+                <span>Qualified from</span>
+                <input type="text" formControlName="qualifiedFrom" placeholder="University, institute, academy, or training body" />
+              </label>
+
+              <label>
                 <span>{{ isTrack('PROFESSIONAL_PSYCHOLOGIST') ? 'Specialization *' : 'Area of interest *' }}</span>
                 <app-form-dropdown
                   formControlName="specialization"
@@ -163,7 +168,7 @@
                 </label>
 
                 <label>
-                  <span>Registration / license *</span>
+                  <span>Registration / license {{ isType('MENTAL_WELLNESS_PROFESSIONAL') ? '*' : '(if applicable)' }}</span>
                   <input type="text" formControlName="registrationDetails" placeholder="Registration number and council" />
                   @if (hasError('registrationDetails')) {
                     <small>Registration or license details are required.</small>

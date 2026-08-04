@@ -51,7 +51,9 @@ export type DoctorProfileSummary = {
   yearsOfExperience?: number | null;
   focusAreas?: string[];
   mentalHealthProfile?: {
+    careTeamType?: string;
     qualifications: string[];
+    qualifiedFrom?: string | null;
     licenseNumber?: string | null;
     licenseCouncil?: string | null;
     languages: string[];
@@ -63,6 +65,15 @@ export type DoctorProfileSummary = {
     counsellingApproach?: string | null;
     safetyEscalationNote?: string | null;
     acceptsHighRiskCases: boolean;
+    services?: Array<{
+      title: string;
+      description?: string | null;
+      priceInPaise: number;
+      durationMinutes: number;
+      isFree?: boolean;
+      isActive?: boolean;
+      sortOrder?: number;
+    }>;
   } | null;
   showOnWebsite?: boolean;
   defaultMethodOptionId?: string | null;

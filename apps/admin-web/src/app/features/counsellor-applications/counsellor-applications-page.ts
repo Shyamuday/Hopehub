@@ -174,6 +174,20 @@ export class CounsellorApplicationsPage implements OnInit {
     return labels[track] || track;
   }
 
+  careTeamTypeLabel(type: string): string {
+    const labels: Record<string, string> = {
+      MENTAL_WELLNESS_PROFESSIONAL: 'Mental wellness professional',
+      QUALIFIED_COUNSELLOR: 'Qualified counsellor',
+      PSYCHOLOGY_STUDENT_VOLUNTEER: 'Psychology student volunteer',
+      PEER_SUPPORT_VOLUNTEER: 'Peer-support volunteer',
+      NLP_COACH: 'NLP coach',
+      LIFE_COACH: 'Life coach',
+      MEDITATION_BREATHWORK_GUIDE: 'Meditation / breathwork guide',
+      CAREER_STUDY_MENTOR: 'Career / study mentor',
+    };
+    return labels[type] || type || 'Care team member';
+  }
+
   contributorStatusClass(status: string): string {
     return `status contributor-status-${status.toLowerCase()}`;
   }

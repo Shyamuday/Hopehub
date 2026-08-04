@@ -70,11 +70,21 @@ export type SessionMetadata = {
   pendingProviderApplication?: {
     applicationTrack?:
       'PROFESSIONAL_PSYCHOLOGIST' | 'PSYCHOLOGY_STUDENT_VOLUNTEER' | 'PEER_SUPPORT_VOLUNTEER';
+    careTeamType?:
+      | 'MENTAL_WELLNESS_PROFESSIONAL'
+      | 'QUALIFIED_COUNSELLOR'
+      | 'PSYCHOLOGY_STUDENT_VOLUNTEER'
+      | 'PEER_SUPPORT_VOLUNTEER'
+      | 'NLP_COACH'
+      | 'LIFE_COACH'
+      | 'MEDITATION_BREATHWORK_GUIDE'
+      | 'CAREER_STUDY_MENTOR';
     fullName?: string;
     email?: string;
     phone?: string;
     city?: string;
     qualification?: string;
+    qualifiedFrom?: string;
     specialization?: string;
     experienceYears?: string;
     registrationDetails?: string;

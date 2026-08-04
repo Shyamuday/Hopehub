@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
+import { CareTeamMemberType } from '@prisma/client';
 import { prisma } from '../db.js';
 import { notifyAdminsAboutProviderApplication } from '../services/provider-application-notifications.js';
 import { asyncRoute } from '../utils/helpers.js';
@@ -15,11 +16,13 @@ export const counsellorApplicationSchema = z
       'PSYCHOLOGY_STUDENT_VOLUNTEER',
       'PEER_SUPPORT_VOLUNTEER'
     ]),
+    careTeamType: z.nativeEnum(CareTeamMemberType).optional(),
     fullName: z.string().trim().min(2).max(120),
     email: z.string().trim().email().max(254),
     phone: z.string().trim().min(5).max(30),
     city: z.string().trim().min(2).max(120),
     qualification: optionalText(180),
+    qualifiedFrom: optionalText(240),
     specialization: optionalText(160),
     experienceYears: optionalText(80),
     registrationDetails: optionalText(180),
@@ -43,23 +46,28 @@ export const counsellorApplicationSchema = z
       requireText(
         body.qualification,
         'qualification',
-        'Qualification is required for psychologist applications.'
+        'Qualification is required for professional care team applications.'
       );
       requireText(
         body.specialization,
         'specialization',
-        'Specialization is required for psychologist applications.'
+        'Specialization is required for professional care team applications.'
       );
       requireText(
         body.experienceYears,
         'experienceYears',
-        'Experience is required for psychologist applications.'
+        'Experience is required for professional care team applications.'
       );
-      requireText(
-        body.registrationDetails,
-        'registrationDetails',
-        'Registration or license details are required.'
-      );
+      if (
+        (body.careTeamType || CareTeamMemberType.MENTAL_WELLNESS_PROFESSIONAL) ===
+        CareTeamMemberType.MENTAL_WELLNESS_PROFESSIONAL
+      ) {
+        requireText(
+          body.registrationDetails,
+          'registrationDetails',
+          'Registration or license details are required for mental wellness professionals.'
+        );
+      }
       requireText(body.resumeLink, 'resumeLink', 'A resume or profile link is required.');
     }
 
@@ -107,11 +115,13 @@ counsellorApplicationsRouter.post(
     const application = await prisma.counsellorApplication.create({
       data: {
         applicationTrack: body.applicationTrack,
+        careTeamType: body.careTeamType || CareTeamMemberType.MENTAL_WELLNESS_PROFESSIONAL,
         fullName: body.fullName,
         email: body.email,
         phone: body.phone,
         city: body.city,
         qualification: body.qualification || null,
+        qualifiedFrom: body.qualifiedFrom || null,
         specialization: body.specialization || null,
         experienceYears: body.experienceYears || null,
         registrationDetails: body.registrationDetails || null,

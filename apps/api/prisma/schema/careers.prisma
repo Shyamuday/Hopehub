@@ -83,11 +83,13 @@ model CounsellorApplication {
   id                  String                       @id @default(cuid())
   status              CounsellorApplicationStatus  @default(NEW)
   applicationTrack    CounsellorApplicationTrack   @default(PROFESSIONAL_PSYCHOLOGIST)
+  careTeamType        CareTeamMemberType           @default(MENTAL_WELLNESS_PROFESSIONAL)
   fullName            String
   email               String
   phone               String
   city                String
   qualification       String?
+  qualifiedFrom       String?
   specialization      String?
   experienceYears     String?
   registrationDetails String?
@@ -123,6 +125,7 @@ model CareContributor {
   applicationId                String                         @unique
   application                  CounsellorApplication          @relation(fields: [applicationId], references: [id], onDelete: Restrict)
   applicationTrack             CounsellorApplicationTrack
+  careTeamType                 CareTeamMemberType          @default(MENTAL_WELLNESS_PROFESSIONAL)
   serviceScope                 CareContributorServiceScope
   status                       CareContributorStatus          @default(PENDING_ORIENTATION)
   credentialVerificationStatus CredentialVerificationStatus   @default(PENDING)
@@ -131,6 +134,7 @@ model CareContributor {
   phone                        String
   city                         String
   qualification                String?
+  qualifiedFrom                String?
   specialization               String?
   registrationDetails          String?
   languages                    String

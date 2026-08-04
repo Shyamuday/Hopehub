@@ -34,7 +34,7 @@
                 <span [class]="statusClass(application.status)">{{ application.status }}</span>
               </div>
               <p class="muted">
-                {{ trackLabel(application.applicationTrack) }} • {{ application.specialization || 'General support' }} • {{ application.city }}
+                {{ careTeamTypeLabel(application.careTeamType) }} • {{ application.specialization || 'General support' }} • {{ application.city }}
               </p>
               <p class="muted">{{ application.email }} • {{ application.phone }}</p>
             </div>
@@ -47,7 +47,9 @@
             <div class="detail">
               <div class="grid">
                 <p><strong>Pathway:</strong> {{ trackLabel(application.applicationTrack) }}</p>
+                <p><strong>Care team type:</strong> {{ careTeamTypeLabel(application.careTeamType) }}</p>
                 <p><strong>Qualification:</strong> {{ application.qualification || 'Not required for this pathway' }}</p>
+                <p><strong>Qualified from:</strong> {{ application.qualifiedFrom || 'Not provided' }}</p>
                 <p><strong>Experience:</strong> {{ application.experienceYears || 'Not provided' }}</p>
                 <p><strong>Languages:</strong> {{ application.languages }}</p>
                 <p><strong>Availability:</strong> {{ application.availability }}</p>

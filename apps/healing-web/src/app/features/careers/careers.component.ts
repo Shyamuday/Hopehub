@@ -8,6 +8,15 @@ import { FormDropdownComponent, FormDropdownOption } from '../../shared/componen
 
 type CareContributorTrack =
   'PROFESSIONAL_PSYCHOLOGIST' | 'PSYCHOLOGY_STUDENT_VOLUNTEER' | 'PEER_SUPPORT_VOLUNTEER';
+type CareTeamMemberType =
+  | 'MENTAL_WELLNESS_PROFESSIONAL'
+  | 'QUALIFIED_COUNSELLOR'
+  | 'PSYCHOLOGY_STUDENT_VOLUNTEER'
+  | 'PEER_SUPPORT_VOLUNTEER'
+  | 'NLP_COACH'
+  | 'LIFE_COACH'
+  | 'MEDITATION_BREATHWORK_GUIDE'
+  | 'CAREER_STUDY_MENTOR';
 
 @Component({
   selector: 'app-careers',
@@ -28,24 +37,58 @@ export class CareersComponent {
   readonly errorMessage = signal('');
   readonly selectedTrack = signal<CareContributorTrack>('PROFESSIONAL_PSYCHOLOGIST');
   readonly applicationTracks: Array<{
-    value: CareContributorTrack;
+    value: CareTeamMemberType;
+    track: CareContributorTrack;
     title: string;
     description: string;
   }> = [
     {
-      value: 'PROFESSIONAL_PSYCHOLOGIST',
+      value: 'MENTAL_WELLNESS_PROFESSIONAL',
+      track: 'PROFESSIONAL_PSYCHOLOGIST',
       title: 'Mental wellness professional',
       description: 'Verified professional pathway for paid Hope Hub consultations.',
     },
     {
+      value: 'QUALIFIED_COUNSELLOR',
+      track: 'PROFESSIONAL_PSYCHOLOGIST',
+      title: 'Qualified counsellor',
+      description: 'Counselling qualification or experience for structured support sessions.',
+    },
+    {
       value: 'PSYCHOLOGY_STUDENT_VOLUNTEER',
+      track: 'PSYCHOLOGY_STUDENT_VOLUNTEER',
       title: 'Psychology student volunteer',
       description: 'Supervised, non-clinical support and community learning pathway.',
     },
     {
       value: 'PEER_SUPPORT_VOLUNTEER',
+      track: 'PEER_SUPPORT_VOLUNTEER',
       title: 'Peer-support volunteer',
       description: 'Non-clinical listening, community support, and guided escalation.',
+    },
+    {
+      value: 'NLP_COACH',
+      track: 'PROFESSIONAL_PSYCHOLOGIST',
+      title: 'NLP coach',
+      description: 'Mindset, confidence, habits, communication, and change-work support.',
+    },
+    {
+      value: 'LIFE_COACH',
+      track: 'PROFESSIONAL_PSYCHOLOGIST',
+      title: 'Life coach',
+      description: 'Goals, clarity, emotional direction, and practical life guidance.',
+    },
+    {
+      value: 'MEDITATION_BREATHWORK_GUIDE',
+      track: 'PROFESSIONAL_PSYCHOLOGIST',
+      title: 'Meditation / breathwork guide',
+      description: 'Grounding, relaxation, breathing, mindfulness, and calming practices.',
+    },
+    {
+      value: 'CAREER_STUDY_MENTOR',
+      track: 'PROFESSIONAL_PSYCHOLOGIST',
+      title: 'Career / study mentor',
+      description: 'Career confusion, study pressure, confidence, and student guidance.',
     },
   ];
   readonly specializationOptions: FormDropdownOption[] = [
@@ -74,11 +117,13 @@ export class CareersComponent {
 
   readonly applicationForm = this.formBuilder.group({
     applicationTrack: ['PROFESSIONAL_PSYCHOLOGIST' as CareContributorTrack, [Validators.required]],
+    careTeamType: ['MENTAL_WELLNESS_PROFESSIONAL' as CareTeamMemberType, [Validators.required]],
     fullName: ['', [Validators.required, Validators.minLength(2)]],
     email: ['', [Validators.required, Validators.email]],
     phone: ['', [Validators.required]],
     city: ['', [Validators.required]],
     qualification: ['', [Validators.required]],
+    qualifiedFrom: [''],
     specialization: ['', [Validators.required]],
     experienceYears: ['', [Validators.required]],
     registrationDetails: [''],
@@ -98,14 +143,22 @@ export class CareersComponent {
     this.updateTrackValidators(this.selectedTrack());
   }
 
-  selectTrack(track: CareContributorTrack): void {
+  selectTrack(type: CareTeamMemberType): void {
+    const track =
+      this.applicationTracks.find((item) => item.value === type)?.track ??
+      'PROFESSIONAL_PSYCHOLOGIST';
     this.selectedTrack.set(track);
+    this.applicationForm.controls.careTeamType.setValue(type);
     this.applicationForm.controls.applicationTrack.setValue(track);
     this.updateTrackValidators(track);
   }
 
   isTrack(track: CareContributorTrack): boolean {
     return this.selectedTrack() === track;
+  }
+
+  isType(type: CareTeamMemberType): boolean {
+    return this.applicationForm.controls.careTeamType.value === type;
   }
 
   async onSubmit(): Promise<void> {
@@ -126,11 +179,13 @@ export class CareersComponent {
       this.leadService
         .sendCounsellorApplication({
           applicationTrack: value.applicationTrack as CareContributorTrack,
+          careTeamType: value.careTeamType || 'MENTAL_WELLNESS_PROFESSIONAL',
           fullName: value.fullName || '',
           email: value.email || '',
           phone: value.phone || '',
           city: value.city || '',
           qualification: value.qualification || '',
+          qualifiedFrom: value.qualifiedFrom || '',
           specialization: value.specialization || '',
           experienceYears: value.experienceYears || '',
           registrationDetails: value.registrationDetails || '',
@@ -154,6 +209,7 @@ export class CareersComponent {
               this.notificationService.success(message);
               this.applicationForm.reset({
                 applicationTrack: 'PROFESSIONAL_PSYCHOLOGIST',
+                careTeamType: 'MENTAL_WELLNESS_PROFESSIONAL',
                 preferredChannel: ContactMethod.WHATSAPP,
                 agreesToNonClinicalRole: false,
                 consent: false,
@@ -198,11 +254,14 @@ export class CareersComponent {
     const professional = track === 'PROFESSIONAL_PSYCHOLOGIST';
     const student = track === 'PSYCHOLOGY_STUDENT_VOLUNTEER';
     const peer = track === 'PEER_SUPPORT_VOLUNTEER';
+    const needsRegistration =
+      professional &&
+      this.applicationForm.controls.careTeamType.value === 'MENTAL_WELLNESS_PROFESSIONAL';
 
     setRequired('qualification', professional || student);
     setRequired('specialization', professional || student);
     setRequired('experienceYears', professional);
-    setRequired('registrationDetails', professional);
+    setRequired('registrationDetails', needsRegistration);
     setRequired('resumeLink', professional);
     setRequired('supervisionDetails', student);
     setRequired('livedExperienceSummary', peer);

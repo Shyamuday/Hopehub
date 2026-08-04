@@ -176,6 +176,7 @@ export function registerAdminCounsellorApplicationRoutes(router: Router) {
           data: {
             applicationId: application.id,
             applicationTrack: application.applicationTrack,
+            careTeamType: application.careTeamType,
             serviceScope: serviceScopeFor(application.applicationTrack),
             status,
             credentialVerificationStatus,
@@ -184,6 +185,7 @@ export function registerAdminCounsellorApplicationRoutes(router: Router) {
             phone: application.phone,
             city: application.city,
             qualification: application.qualification,
+            qualifiedFrom: application.qualifiedFrom,
             specialization: application.specialization,
             registrationDetails: application.registrationDetails,
             languages: application.languages,

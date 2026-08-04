@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { HomeopathicDoctorType, Role } from '@prisma/client';
+import { CareTeamMemberType, HomeopathicDoctorType, Role } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import { authRequired, allowRoles } from '../../auth.js';
 import { prisma } from '../../db.js';
@@ -25,7 +25,9 @@ function inferDoctorTypeFromSpecialty(specialty: string) {
 
 const mentalHealthProviderProfileSchema = z
   .object({
+    careTeamType: z.nativeEnum(CareTeamMemberType).optional(),
     qualifications: z.array(z.string().trim().min(1).max(160)).max(20).optional(),
+    qualifiedFrom: z.string().trim().max(240).optional().nullable().or(z.literal('')),
     licenseNumber: z.string().trim().max(120).optional().nullable().or(z.literal('')),
     licenseCouncil: z.string().trim().max(160).optional().nullable().or(z.literal('')),
     languages: z.array(z.string().trim().min(1).max(80)).max(20).optional(),
@@ -36,7 +38,22 @@ const mentalHealthProviderProfileSchema = z
     introSessionTitle: z.string().trim().max(180).optional().nullable().or(z.literal('')),
     counsellingApproach: z.string().trim().max(3000).optional().nullable().or(z.literal('')),
     safetyEscalationNote: z.string().trim().max(2000).optional().nullable().or(z.literal('')),
-    acceptsHighRiskCases: z.boolean().optional()
+    acceptsHighRiskCases: z.boolean().optional(),
+    services: z
+      .array(
+        z.object({
+          title: z.string().trim().min(2).max(120),
+          description: z.string().trim().max(1000).optional().nullable().or(z.literal('')),
+          priceInPaise: z.number().int().min(0).max(500000).optional().default(0),
+          currency: z.string().trim().max(8).optional().default('INR'),
+          durationMinutes: z.number().int().min(5).max(240).optional().default(30),
+          isFree: z.boolean().optional().default(false),
+          isActive: z.boolean().optional().default(true),
+          sortOrder: z.number().int().min(0).max(999).optional().default(0)
+        })
+      )
+      .max(20)
+      .optional()
   })
   .optional();
 
@@ -181,6 +198,10 @@ export function registerAuthDoctorRoutes(router: Router) {
         profilePayload.doctorType === HomeopathicDoctorType.PSYCHOLOGIST && body.mentalHealthProfile
           ? {
               qualifications: cleanList(body.mentalHealthProfile.qualifications),
+              careTeamType:
+                body.mentalHealthProfile.careTeamType ??
+                CareTeamMemberType.MENTAL_WELLNESS_PROFESSIONAL,
+              qualifiedFrom: cleanNullableText(body.mentalHealthProfile.qualifiedFrom),
               licenseNumber: cleanNullableText(body.mentalHealthProfile.licenseNumber),
               licenseCouncil: cleanNullableText(body.mentalHealthProfile.licenseCouncil),
               languages: cleanList(body.mentalHealthProfile.languages),
@@ -196,6 +217,34 @@ export function registerAuthDoctorRoutes(router: Router) {
               acceptsHighRiskCases: body.mentalHealthProfile.acceptsHighRiskCases ?? false
             }
           : null;
+      const mentalHealthServices =
+        profilePayload.doctorType === HomeopathicDoctorType.PSYCHOLOGIST && body.mentalHealthProfile
+          ? (body.mentalHealthProfile.services ?? []).map((service, index) => ({
+              title: service.title,
+              description: service.description || null,
+              priceInPaise: service.isFree ? 0 : (service.priceInPaise ?? 0),
+              currency: service.currency || 'INR',
+              durationMinutes: service.durationMinutes ?? 30,
+              isFree: service.isFree ?? (service.priceInPaise ?? 0) === 0,
+              isActive: service.isActive ?? true,
+              sortOrder: service.sortOrder ?? index
+            }))
+          : [];
+      const mentalHealthProfileCreate = mentalHealthProfile
+        ? {
+            ...mentalHealthProfile,
+            services: mentalHealthServices.length ? { create: mentalHealthServices } : undefined
+          }
+        : null;
+      const mentalHealthProfileUpdate = mentalHealthProfile
+        ? {
+            ...mentalHealthProfile,
+            services: {
+              deleteMany: {},
+              ...(mentalHealthServices.length ? { create: mentalHealthServices } : {})
+            }
+          }
+        : null;
       const compensationFields =
         profilePayload.doctorType === HomeopathicDoctorType.PSYCHOLOGIST
           ? { consultationSharePercent: PSYCHOLOGIST_CONSULTATION_SHARE_PERCENT }
@@ -212,8 +261,8 @@ export function registerAuthDoctorRoutes(router: Router) {
                 ...profilePayload,
                 ...compensationFields,
                 ...publicFields,
-                ...(mentalHealthProfile
-                  ? { mentalHealthProfile: { create: mentalHealthProfile } }
+                ...(mentalHealthProfileCreate
+                  ? { mentalHealthProfile: { create: mentalHealthProfileCreate } }
                   : {}),
                 defaultMethodOptionId: body.defaultMethodOptionId ?? null
               },
@@ -226,12 +275,12 @@ export function registerAuthDoctorRoutes(router: Router) {
                   ? { defaultMethodOptionId: body.defaultMethodOptionId }
                   : {}),
                 ...publicFields,
-                ...(mentalHealthProfile
+                ...(mentalHealthProfileCreate && mentalHealthProfileUpdate
                   ? {
                       mentalHealthProfile: {
                         upsert: {
-                          create: mentalHealthProfile,
-                          update: mentalHealthProfile
+                          create: mentalHealthProfileCreate,
+                          update: mentalHealthProfileUpdate
                         }
                       }
                     }
