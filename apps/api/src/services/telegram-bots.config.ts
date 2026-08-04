@@ -57,6 +57,7 @@ export const commandMenus: Record<TelegramBotKind, { command: string; descriptio
     { command: 'signup', description: 'Apply for care team/volunteer' },
     { command: 'link', description: 'Link doctor account' },
     { command: 'services', description: 'Manage services and pricing' },
+    { command: 'availability', description: 'Manage weekly availability' },
     { command: 'assignments', description: 'Assigned support leads' },
     { command: 'queue', description: 'Show consultation queue' },
     { command: 'outcomes', description: 'Close session with outcome' },

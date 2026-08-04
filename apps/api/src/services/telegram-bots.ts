@@ -35,6 +35,15 @@ import {
 } from './telegram-bots.account.js';
 import { answerButtonRows, assessmentNavRows } from './telegram-bots.assessment-ui.js';
 import {
+  chooseAvailabilityDay,
+  chooseAvailabilityService,
+  chooseAvailabilityTime,
+  createAvailabilityRuleFromPreset,
+  generateAvailabilitySlots,
+  showProviderAvailability,
+  toggleAvailabilityRule
+} from './telegram-bots.availability.js';
+import {
   escapeHtml,
   metadataOf,
   telegramDisplayName,
@@ -2455,6 +2464,8 @@ async function handleCommand(kind: TelegramBotKind, session: TelegramSession, te
     if (command === '/signup') await startProviderSignup(kind, session);
     else if (command === '/services' || command === '/pricing')
       await showProviderServices(kind, session);
+    else if (command === '/availability' || command === '/slots')
+      await showProviderAvailability(kind, session);
     else if (command === '/assignments') await showProviderAssignments(kind, session);
     else if (command === '/queue') await doctorQueue(kind, session);
     else if (command === '/outcomes' || command === '/close')
@@ -2651,6 +2662,34 @@ async function handleCallback(
       }
     } else if (data.startsWith('provider:service:toggle:')) {
       await toggleProviderService(kind, session, data.slice('provider:service:toggle:'.length));
+    } else if (data === 'provider:availability') await showProviderAvailability(kind, session);
+    else if (data === 'provider:availability:add') await chooseAvailabilityService(kind, session);
+    else if (data.startsWith('provider:availability:service:')) {
+      const serviceId = data.slice('provider:availability:service:'.length);
+      await chooseAvailabilityDay(kind, session, serviceId === 'none' ? null : serviceId);
+    } else if (data.startsWith('provider:availability:day:')) {
+      const parts = data.split(':');
+      const serviceId = parts[3] === 'none' ? null : parts[3];
+      const weekday = Number(parts[4]);
+      await chooseAvailabilityTime(kind, session, serviceId, weekday);
+    } else if (data.startsWith('provider:availability:create:')) {
+      const parts = data.split(':');
+      const serviceId = parts[3] === 'none' ? null : parts[3];
+      const weekday = Number(parts[4]);
+      const presetKey = parts[5];
+      await createAvailabilityRuleFromPreset(kind, session, serviceId, weekday, presetKey);
+    } else if (data.startsWith('provider:availability:toggle:')) {
+      await toggleAvailabilityRule(
+        kind,
+        session,
+        data.slice('provider:availability:toggle:'.length)
+      );
+    } else if (data.startsWith('provider:availability:generate:')) {
+      await generateAvailabilitySlots(
+        kind,
+        session,
+        data.slice('provider:availability:generate:'.length)
+      );
     } else if (data === 'doctor:assignments') await showProviderAssignments(kind, session);
     else if (data === 'doctor:queue') await doctorQueue(kind, session);
     else if (data === 'doctor:outcomes') await showDoctorOutcomeSessions(kind, session);
