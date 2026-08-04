@@ -126,4 +126,19 @@ export class PsychologistsComponent implements OnInit {
     }
     return `${environment.apiUrl}${provider.profileImageUrl}`;
   }
+
+  providerRoleLabel(provider: HopeHubProvider): string {
+    return provider.supportRoleLabel || 'Hope Hub expert';
+  }
+
+  providerRoleBadgeClass(provider: HopeHubProvider): string {
+    switch (provider.supportRole) {
+      case 'PSYCHOLOGIST':
+        return 'bg-emerald-50 text-emerald-700 ring-emerald-200';
+      case 'STUDENT_VOLUNTEER':
+        return 'bg-sky-50 text-sky-700 ring-sky-200';
+      default:
+        return 'bg-amber-50 text-amber-800 ring-amber-200';
+    }
+  }
 }

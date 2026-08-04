@@ -146,6 +146,8 @@ export type HopeHubProvider = {
   specialty?: string | null;
   designation?: string | null;
   department?: string | null;
+  supportRole?: 'PSYCHOLOGIST' | 'STUDENT_VOLUNTEER' | 'VOLUNTEER';
+  supportRoleLabel?: string;
   bio?: string | null;
   yearsOfExperience?: number | null;
   focusAreas: string[];

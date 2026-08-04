@@ -406,6 +406,29 @@ function providerPublicPayload(provider: {
   const user = enrichWithProfileImageUrl(provider.user, userProfileImagePath);
   const focusAreas = provider.focusAreas || [];
   const mental = provider.mentalHealthProfile;
+  const providerText = [
+    provider.specialty,
+    provider.designation,
+    provider.department,
+    ...focusAreas,
+    ...(mental?.qualifications ?? []),
+    ...(mental?.modalities ?? []),
+    ...(mental?.sessionTypes ?? [])
+  ]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase();
+  const supportRole = /student|intern|trainee/.test(providerText)
+    ? 'STUDENT_VOLUNTEER'
+    : /volunteer|peer support|non-clinical/.test(providerText)
+      ? 'VOLUNTEER'
+      : 'PSYCHOLOGIST';
+  const supportRoleLabel =
+    supportRole === 'STUDENT_VOLUNTEER'
+      ? 'Student volunteer'
+      : supportRole === 'VOLUNTEER'
+        ? 'Volunteer support'
+        : 'Psychologist';
   return {
     id: provider.id,
     slug: `${slugify(user.name || provider.designation || provider.specialty || 'expert')}-${provider.id}`,
@@ -415,6 +438,8 @@ function providerPublicPayload(provider: {
     specialty: provider.specialty,
     designation: provider.designation,
     department: provider.department,
+    supportRole,
+    supportRoleLabel,
     bio: provider.bio,
     yearsOfExperience: provider.yearsOfExperience,
     focusAreas,

@@ -1,7 +1,7 @@
 <main class="professional-page">
   <div class="container mx-auto px-4 py-8 sm:px-6 lg:px-8">
     <a routerLink="/psychologists" class="mb-6 inline-flex text-sm font-semibold text-primary-700 hover:text-primary-800">
-      Back to psychologists
+      Back to support providers
     </a>
 
     @if (loading()) {
@@ -18,7 +18,13 @@
               </div>
             }
             <div class="mt-6 space-y-2 text-sm text-primary-950">
-              <p class="font-semibold">{{ p.designation || p.specialty || 'Psychologist' }}</p>
+              <span
+                class="inline-flex rounded-full px-2.5 py-1 text-xs font-bold ring-1"
+                [class]="providerRoleBadgeClass(p)"
+              >
+                {{ providerRoleLabel(p) }}
+              </span>
+              <p class="font-semibold">{{ p.designation || p.specialty || 'Hope Hub expert' }}</p>
               @if (p.qualifications?.length) {
                 <p>{{ p.qualifications!.join(', ') }}</p>
               }
@@ -36,14 +42,16 @@
           </div>
 
           <div class="p-6 sm:p-8">
-            <p class="text-sm font-semibold uppercase tracking-wide text-primary-700">Hope Hub expert</p>
+            <p class="text-sm font-semibold uppercase tracking-wide text-primary-700">
+              {{ providerRoleLabel(p) }}
+            </p>
             <h1 class="mt-2 text-3xl font-semibold text-gray-950">{{ p.name }}</h1>
             <div class="mt-4 max-w-3xl">
               <div
                 class="relative overflow-hidden text-base leading-7 text-gray-700 whitespace-pre-line"
                 [class.max-h-44]="textIsLong(p.bio) && !expandedBio()"
               >
-                {{ p.bio || 'Available for private Hope Hub support, emotional clarity, and guided mental wellness conversations.' }}
+                {{ p.bio || 'Available for private Hope Hub support, emotional clarity, and guided emotional wellness conversations.' }}
                 @if (textIsLong(p.bio) && !expandedBio()) {
                   <div class="pointer-events-none absolute inset-x-0 bottom-0 h-14 bg-gradient-to-t from-white to-transparent"></div>
                 }
@@ -60,7 +68,7 @@
             </div>
             @if (p.counsellingApproach) {
               <div class="mt-5 rounded-lg border border-gray-200 bg-gray-50 p-4 text-sm leading-6 text-gray-700">
-                <strong class="text-gray-900">{{ p.introSessionTitle || 'Counselling approach' }}</strong>
+                <strong class="text-gray-900">{{ p.introSessionTitle || 'Support approach' }}</strong>
                 <div
                   class="relative mt-2 overflow-hidden whitespace-pre-line"
                   [class.max-h-28]="textIsLong(p.counsellingApproach) && !expandedApproach()"

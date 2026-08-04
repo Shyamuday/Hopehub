@@ -3,19 +3,21 @@
     <div class="mb-8 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
       <div>
         <p class="text-sm font-semibold uppercase tracking-wide text-primary-700">
-          Hope Hub experts
+          Hope Hub support team
         </p>
-        <h1 class="mt-2 text-2xl font-semibold text-gray-950 sm:text-3xl">Psychologists</h1>
+        <h1 class="mt-2 text-2xl font-semibold text-gray-950 sm:text-3xl">
+          Psychologists & volunteer support
+        </h1>
         <p class="mt-3 max-w-3xl text-sm leading-6 text-gray-700 sm:text-base">
-          Find published Hope Hub psychologists for mental wellness support, relationship stress,
-          anxiety, overthinking, family concerns, and private guidance.
+          Find published Hope Hub psychologists, student volunteers, and peer-support volunteers.
+          Each profile is labelled clearly so users know what kind of support they are choosing.
         </p>
       </div>
       <a routerLink="/contact" class="btn-primary btn-sm">Book session</a>
     </div>
 
     <div class="mb-6 rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-      <label for="providerSearch" class="sr-only">Search psychologists</label>
+      <label for="providerSearch" class="sr-only">Search support providers</label>
       <input
         id="providerSearch"
         type="search"
@@ -108,8 +110,14 @@
               }
               <div>
                 <h2 class="text-lg font-bold text-gray-900">{{ provider.name }}</h2>
-                <p class="text-sm font-semibold text-primary-800">
-                  {{ provider.designation || provider.specialty || 'Psychologist' }}
+                <span
+                  class="mt-1 inline-flex rounded-full px-2.5 py-1 text-xs font-bold ring-1"
+                  [class]="providerRoleBadgeClass(provider)"
+                >
+                  {{ providerRoleLabel(provider) }}
+                </span>
+                <p class="mt-2 text-sm font-semibold text-primary-800">
+                  {{ provider.designation || provider.specialty || 'Hope Hub expert' }}
                 </p>
                 @if (provider.yearsOfExperience) {
                   <p class="mt-1 text-xs font-medium text-gray-500 whitespace-nowrap">
@@ -121,7 +129,7 @@
             <div class="relative mt-4 max-h-24 flex-1 overflow-hidden text-sm leading-6 text-gray-700">
               {{
                 provider.bio ||
-                  'Available for private Hope Hub support and guided mental wellness conversation.'
+                  'Available for private Hope Hub support and guided emotional wellness conversation.'
               }}
               <div class="pointer-events-none absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-white to-transparent"></div>
             </div>
@@ -197,9 +205,9 @@
       </div>
     } @else {
       <div class="professional-empty border-dashed">
-        <h2 class="text-xl font-semibold text-gray-900">No psychologists available right now</h2>
+        <h2 class="text-xl font-semibold text-gray-900">No support providers available right now</h2>
         <p class="mt-2 text-gray-700">
-          Admin can publish psychologist profiles from provider website settings.
+          Admin can publish psychologist, student volunteer, or peer-support volunteer profiles from provider website settings.
         </p>
       </div>
     }
