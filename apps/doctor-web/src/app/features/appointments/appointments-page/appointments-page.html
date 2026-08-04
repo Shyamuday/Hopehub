@@ -376,6 +376,30 @@
         <span class="status-badge completed">✓ Consultation closed</span>
       </div>
     }
+    @if (sessionOutcome(); as outcome) {
+      <div class="session-outcome-card">
+        <div>
+          <span class="eyebrow">Session outcome</span>
+          <h3>{{ sessionOutcomeLabel(outcome.outcome) }}</h3>
+          @if (outcome.closedAt) {
+            <small>Closed {{ outcome.closedAt | date:'dd MMM yy, h:mm a' }} @if (outcome.closedByRole) { · {{ outcome.closedByRole }} }</small>
+          }
+        </div>
+        <div class="outcome-tags">
+          @if (outcome.packageRestored) { <span>Package restored</span> }
+          @if (outcome.payoutAction) { <span>Payout {{ outcome.payoutAction }}</span> }
+        </div>
+        @if (outcome.userSummary) {
+          <p><strong>User summary:</strong> {{ outcome.userSummary }}</p>
+        }
+        @if (outcome.recommendedNextStep) {
+          <p><strong>Next step:</strong> {{ outcome.recommendedNextStep }}</p>
+        }
+        @if (outcome.privateNote) {
+          <p class="private-note"><strong>Private note:</strong> {{ outcome.privateNote }}</p>
+        }
+      </div>
+    }
 
     @if (pdfError) {
       <p class="error">{{ pdfError }}</p>

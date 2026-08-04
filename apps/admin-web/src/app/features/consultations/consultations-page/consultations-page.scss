@@ -89,6 +89,31 @@
   color: #99f6e4;
 }
 
+.session-outcome-mini {
+  display: grid;
+  gap: 0.12rem;
+  margin-top: 0.35rem;
+  width: fit-content;
+  max-width: 16rem;
+  border: 1px solid rgba(167, 139, 250, 0.28);
+  border-radius: 12px;
+  background: rgba(109, 40, 217, 0.12);
+  color: #ddd6fe;
+  padding: 0.45rem 0.55rem;
+  font-size: 0.72rem;
+  line-height: 1.25;
+}
+
+.session-outcome-mini strong {
+  color: #ede9fe;
+  font-size: 0.76rem;
+}
+
+.session-outcome-mini span,
+.session-outcome-mini small {
+  color: #c4b5fd;
+}
+
 .check-row {
   display: flex !important;
   flex-direction: row !important;
@@ -172,6 +197,11 @@
   }
 
   .pricing-insight.mobile {
+    width: 100%;
+    max-width: none;
+  }
+
+  .session-outcome-mini.mobile {
     width: 100%;
     max-width: none;
   }

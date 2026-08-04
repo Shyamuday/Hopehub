@@ -82,6 +82,20 @@
                         }
                       </div>
                     }
+                    @if (sessionOutcome(c); as outcome) {
+                      <div class="session-outcome-mini">
+                        <strong>{{ sessionOutcomeLabel(outcome.outcome) }}</strong>
+                        @if (outcome.closedAt) {
+                          <span>{{ outcome.closedAt | date:'dd MMM, h:mm a' }}</span>
+                        }
+                        @if (outcome.packageRestored || outcome.payoutAction) {
+                          <small>
+                            @if (outcome.packageRestored) { Package restored }
+                            @if (outcome.payoutAction) { Payout {{ outcome.payoutAction }} }
+                          </small>
+                        }
+                      </div>
+                    }
                   </td>
                   <td><span class="date-txt">{{ c.createdAt | date:'dd MMM yy, h:mm a' }}</span></td>
                   <td>
@@ -159,6 +173,20 @@
                   }
                   @if (pricing.packageConsultationId && pricing.isPackageRedemption) {
                     <small>Package ID: {{ pricing.packageConsultationId }}</small>
+                  }
+                </div>
+              }
+              @if (sessionOutcome(c); as outcome) {
+                <div class="session-outcome-mini mobile">
+                  <strong>Outcome: {{ sessionOutcomeLabel(outcome.outcome) }}</strong>
+                  @if (outcome.closedAt) {
+                    <span>{{ outcome.closedAt | date:'dd MMM yy, h:mm a' }}</span>
+                  }
+                  @if (outcome.userSummary) {
+                    <span>{{ outcome.userSummary }}</span>
+                  }
+                  @if (outcome.recommendedNextStep) {
+                    <small>Next: {{ outcome.recommendedNextStep }}</small>
                   }
                 </div>
               }

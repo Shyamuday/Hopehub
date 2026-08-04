@@ -106,6 +106,12 @@ export class AppointmentsPage implements OnInit {
   });
   readonly mobileTab = signal<PrescriptionMobileTab>('setup');
   readonly mobileContextOpen = signal(false);
+  readonly outcomeLabels: Record<string, string> = {
+    COMPLETED: 'Completed',
+    USER_MISSED: 'User missed',
+    PROVIDER_NO_SHOW: 'Provider no-show',
+    RESCHEDULE_NEEDED: 'Reschedule needed',
+  };
 
   defaultMethodOptionId = '';
 
@@ -168,6 +174,14 @@ export class AppointmentsPage implements OnInit {
 
   showReviewPane() {
     return !this.isMobile() || this.mobileTab() === 'review';
+  }
+
+  sessionOutcome() {
+    return this.consultationContext?.pricingSnapshot?.sessionOutcome ?? null;
+  }
+
+  sessionOutcomeLabel(outcome?: string | null) {
+    return outcome ? (this.outcomeLabels[outcome] ?? outcome.replace(/_/g, ' ')) : 'Not recorded';
   }
 
   ngOnInit() {

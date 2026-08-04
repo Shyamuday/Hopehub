@@ -36,9 +36,24 @@ export type ConsultationAssessmentSummary = {
   safetyFlaggedCount: number;
 };
 
+export type ConsultationSessionOutcome = {
+  outcome?: 'COMPLETED' | 'USER_MISSED' | 'PROVIDER_NO_SHOW' | 'RESCHEDULE_NEEDED' | string;
+  closedAt?: string;
+  closedByRole?: string;
+  privateNote?: string;
+  userSummary?: string;
+  recommendedNextStep?: string;
+  packageRestored?: boolean;
+  payoutAction?: string;
+};
+
 export type DoctorConsultation = {
   id: string;
   status: string;
+  pricingSnapshot?: {
+    sessionOutcome?: ConsultationSessionOutcome | null;
+    [key: string]: unknown;
+  } | null;
   intakeAnswers?: Record<string, string> | null;
   patient?: { id: string; name: string; patientCode?: string | null };
   disease?: { id: string; name: string; intakeQuestions?: string[] };

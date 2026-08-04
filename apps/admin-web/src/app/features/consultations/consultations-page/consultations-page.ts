@@ -85,6 +85,12 @@ export class ConsultationsPage implements OnInit {
     'COMPLETED',
     'CANCELLED',
   ];
+  readonly outcomeLabels: Record<string, string> = {
+    COMPLETED: 'Completed',
+    USER_MISSED: 'User missed',
+    PROVIDER_NO_SHOW: 'Provider no-show',
+    RESCHEDULE_NEEDED: 'Reschedule needed',
+  };
   assignedFilters = [
     { label: 'All', value: '' },
     { label: 'Unassigned', value: 'no' },
@@ -232,9 +238,7 @@ export class ConsultationsPage implements OnInit {
                 : undefined,
             );
       this.consultations.update((list) =>
-        list.map((c) =>
-          c.id === this.selectedConsult()!.id ? { ...c, status: r.consultation.status } : c,
-        ),
+        list.map((c) => (c.id === this.selectedConsult()!.id ? { ...c, ...r.consultation } : c)),
       );
       this.statusModal.set(false);
       this.showToast(
@@ -339,6 +343,16 @@ export class ConsultationsPage implements OnInit {
 
   packageUsage(c: any) {
     return c?.pricingSnapshot?.packageUsage || c?.payment?.lineItems?.packageUsage || null;
+  }
+
+  sessionOutcome(c: any) {
+    return c?.pricingSnapshot?.sessionOutcome || null;
+  }
+
+  sessionOutcomeLabel(outcome?: string | null) {
+    return outcome
+      ? (this.outcomeLabels[outcome] ?? String(outcome).replace(/_/g, ' '))
+      : 'Not recorded';
   }
 
   pricingInsight(c: any) {
