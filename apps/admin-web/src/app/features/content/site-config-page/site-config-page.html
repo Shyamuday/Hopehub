@@ -38,5 +38,86 @@
   }
 </section>
 
+<section class="panel">
+  <h2>Care pricing templates</h2>
+  <p class="page-hint">Providers can choose these ready plans and still customize per service.</p>
+
+  <article class="template-card template-card--new">
+    <input
+      [value]="templateDraft().title"
+      placeholder="Template title"
+      (input)="updateDraft('title', $any($event.target).value)"
+    />
+    <select
+      [value]="templateDraft().pricingMode"
+      (change)="updateDraft('pricingMode', $any($event.target).value)"
+    >
+      @for (mode of pricingModeOptions; track mode.value) {
+        <option [value]="mode.value">{{ mode.label }}</option>
+      }
+    </select>
+    @if (templateDraft().pricingMode !== 'FREE_VOLUNTEER') {
+      <input type="number" [value]="rupees(templateDraft().priceInPaise)" placeholder="Base ₹" (input)="updateDraft('priceInPaise', $any($event.target).value)" />
+    }
+    @if (showFirstPrice(templateDraft())) {
+      <input type="number" [value]="rupees(templateDraft().firstSessionPriceInPaise)" placeholder="First ₹" (input)="updateDraft('firstSessionPriceInPaise', $any($event.target).value)" />
+    }
+    @if (showFollowUpPrice(templateDraft())) {
+      <input type="number" [value]="rupees(templateDraft().followUpPriceInPaise)" placeholder="Follow-up ₹" (input)="updateDraft('followUpPriceInPaise', $any($event.target).value)" />
+      <input type="number" [value]="templateDraft().introSessionLimit" placeholder="Intro limit" (input)="updateDraft('introSessionLimit', $any($event.target).value)" />
+    }
+    @if (showPackageFields(templateDraft())) {
+      <input type="number" [value]="templateDraft().packageSessionCount || ''" placeholder="Package sessions" (input)="updateDraft('packageSessionCount', $any($event.target).value)" />
+      <input type="number" [value]="rupees(templateDraft().packagePriceInPaise)" placeholder="Package ₹" (input)="updateDraft('packagePriceInPaise', $any($event.target).value)" />
+    }
+    <input type="number" [value]="templateDraft().durationMinutes" placeholder="Minutes" (input)="updateDraft('durationMinutes', $any($event.target).value)" />
+    <input [value]="templateDraft().description || ''" placeholder="Description" (input)="updateDraft('description', $any($event.target).value)" />
+    <input type="number" [value]="templateDraft().sortOrder" placeholder="Sort" (input)="updateDraft('sortOrder', $any($event.target).value)" />
+    <button type="button" (click)="createTemplate()" [disabled]="savingTemplate() === 'new'">
+      {{ savingTemplate() === 'new' ? 'Creating…' : 'Create template' }}
+    </button>
+  </article>
+
+  <div class="template-list">
+    @for (template of templates(); track template.id; let i = $index) {
+      <article class="template-card" [class.template-card--inactive]="!template.isActive">
+        <input [value]="template.title" placeholder="Template title" (input)="updateTemplate(i, 'title', $any($event.target).value)" />
+        <select [value]="template.pricingMode" (change)="updateTemplate(i, 'pricingMode', $any($event.target).value)">
+          @for (mode of pricingModeOptions; track mode.value) {
+            <option [value]="mode.value">{{ mode.label }}</option>
+          }
+        </select>
+        @if (template.pricingMode !== 'FREE_VOLUNTEER') {
+          <input type="number" [value]="rupees(template.priceInPaise)" placeholder="Base ₹" (input)="updateTemplate(i, 'priceInPaise', $any($event.target).value)" />
+        }
+        @if (showFirstPrice(template)) {
+          <input type="number" [value]="rupees(template.firstSessionPriceInPaise)" placeholder="First ₹" (input)="updateTemplate(i, 'firstSessionPriceInPaise', $any($event.target).value)" />
+        }
+        @if (showFollowUpPrice(template)) {
+          <input type="number" [value]="rupees(template.followUpPriceInPaise)" placeholder="Follow-up ₹" (input)="updateTemplate(i, 'followUpPriceInPaise', $any($event.target).value)" />
+          <input type="number" [value]="template.introSessionLimit" placeholder="Intro limit" (input)="updateTemplate(i, 'introSessionLimit', $any($event.target).value)" />
+        }
+        @if (showPackageFields(template)) {
+          <input type="number" [value]="template.packageSessionCount || ''" placeholder="Package sessions" (input)="updateTemplate(i, 'packageSessionCount', $any($event.target).value)" />
+          <input type="number" [value]="rupees(template.packagePriceInPaise)" placeholder="Package ₹" (input)="updateTemplate(i, 'packagePriceInPaise', $any($event.target).value)" />
+        }
+        <input type="number" [value]="template.durationMinutes" placeholder="Minutes" (input)="updateTemplate(i, 'durationMinutes', $any($event.target).value)" />
+        <input [value]="template.description || ''" placeholder="Description" (input)="updateTemplate(i, 'description', $any($event.target).value)" />
+        <input type="number" [value]="template.sortOrder" placeholder="Sort" (input)="updateTemplate(i, 'sortOrder', $any($event.target).value)" />
+        <label class="template-toggle">
+          <input type="checkbox" [checked]="template.isActive" (change)="updateTemplate(i, 'isActive', $any($event.target).checked)" />
+          Active
+        </label>
+        <button type="button" (click)="saveTemplate(template)" [disabled]="savingTemplate() === template.id">
+          {{ savingTemplate() === template.id ? 'Saving…' : 'Save' }}
+        </button>
+        <button type="button" class="danger" (click)="deactivateTemplate(template)" [disabled]="savingTemplate() === template.id || !template.isActive">
+          Deactivate
+        </button>
+      </article>
+    }
+  </div>
+</section>
+
 @if (message()) { <p class="success">{{ message() }}</p> }
 @if (error()) { <p class="error">{{ error() }}</p> }

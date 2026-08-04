@@ -129,6 +129,30 @@ export class AdminApi {
       ...(args as Parameters<AdminDoctorsApi['listCareTeamPricingTemplates']>),
     );
   }
+  listAdminCarePricingTemplates(
+    ...args: Parameters<AdminDoctorsApi['listAdminCarePricingTemplates']>
+  ) {
+    return this.doctors.listAdminCarePricingTemplates(
+      ...(args as Parameters<AdminDoctorsApi['listAdminCarePricingTemplates']>),
+    );
+  }
+  createCarePricingTemplate(...args: Parameters<AdminDoctorsApi['createCarePricingTemplate']>) {
+    return this.doctors.createCarePricingTemplate(
+      ...(args as Parameters<AdminDoctorsApi['createCarePricingTemplate']>),
+    );
+  }
+  updateCarePricingTemplate(...args: Parameters<AdminDoctorsApi['updateCarePricingTemplate']>) {
+    return this.doctors.updateCarePricingTemplate(
+      ...(args as Parameters<AdminDoctorsApi['updateCarePricingTemplate']>),
+    );
+  }
+  deactivateCarePricingTemplate(
+    ...args: Parameters<AdminDoctorsApi['deactivateCarePricingTemplate']>
+  ) {
+    return this.doctors.deactivateCarePricingTemplate(
+      ...(args as Parameters<AdminDoctorsApi['deactivateCarePricingTemplate']>),
+    );
+  }
   listTestimonials() {
     return this.doctors.listTestimonials();
   }

@@ -200,6 +200,40 @@ export class AdminDoctorsApi extends AdminApiBase {
     );
   }
 
+  listAdminCarePricingTemplates() {
+    return firstValueFrom(
+      this.http.get<{ templates: Array<any> }>(
+        `${this.apiBase}/admin/hope-hub/care-pricing-templates`,
+      ),
+    );
+  }
+
+  createCarePricingTemplate(payload: any) {
+    return firstValueFrom(
+      this.http.post<{ template: any }>(
+        `${this.apiBase}/admin/hope-hub/care-pricing-templates`,
+        payload,
+      ),
+    );
+  }
+
+  updateCarePricingTemplate(id: string, payload: any) {
+    return firstValueFrom(
+      this.http.put<{ template: any }>(
+        `${this.apiBase}/admin/hope-hub/care-pricing-templates/${encodeURIComponent(id)}`,
+        payload,
+      ),
+    );
+  }
+
+  deactivateCarePricingTemplate(id: string) {
+    return firstValueFrom(
+      this.http.delete<{ template: any }>(
+        `${this.apiBase}/admin/hope-hub/care-pricing-templates/${encodeURIComponent(id)}`,
+      ),
+    );
+  }
+
   // ── Testimonials ──────────────────────────────────────────────────────────
   listTestimonials() {
     return firstValueFrom(

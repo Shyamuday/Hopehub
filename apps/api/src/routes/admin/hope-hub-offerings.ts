@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import {
+  CareTeamServicePricingMode,
   HopeHubDiscountType,
   HopeHubDeliveryMode,
   HopeHubOfferingType,
@@ -106,6 +107,22 @@ const leadUpdateSchema = z.object({
   followUpNotes: emptyToNull
 });
 
+const carePricingTemplateSchema = z.object({
+  title: z.string().trim().min(2).max(160),
+  description: emptyToNull,
+  pricingMode: z.nativeEnum(CareTeamServicePricingMode).default(CareTeamServicePricingMode.FIXED),
+  priceInPaise: z.number().int().min(0).max(5000000).default(0),
+  firstSessionPriceInPaise: z.number().int().min(0).max(5000000).nullable().optional(),
+  followUpPriceInPaise: z.number().int().min(0).max(5000000).nullable().optional(),
+  introSessionLimit: z.number().int().min(1).max(50).default(1),
+  packageSessionCount: z.number().int().min(1).max(200).nullable().optional(),
+  packagePriceInPaise: z.number().int().min(0).max(50000000).nullable().optional(),
+  durationMinutes: z.number().int().min(5).max(480).default(30),
+  isFree: z.boolean().default(false),
+  isActive: z.boolean().default(true),
+  sortOrder: z.number().int().default(0)
+});
+
 const mediaUploadSchema = z.object({
   mimeType: z.string().trim().min(3).max(80),
   fileName: z.string().trim().max(200).optional(),
@@ -138,6 +155,79 @@ function mapMediaUploadError(error: unknown) {
 }
 
 export function registerAdminHopeHubOfferingRoutes(router: Router) {
+  router.get(
+    '/admin/hope-hub/care-pricing-templates',
+    authRequired,
+    allowRoles(Role.ADMIN, Role.MARKETING),
+    asyncRoute(async (_req, res) => {
+      const templates = await prisma.careTeamPricingTemplate.findMany({
+        orderBy: [{ sortOrder: 'asc' }, { title: 'asc' }]
+      });
+      res.json({ templates });
+    })
+  );
+
+  router.post(
+    '/admin/hope-hub/care-pricing-templates',
+    authRequired,
+    allowRoles(Role.ADMIN, Role.MARKETING),
+    asyncRoute(async (req, res) => {
+      const body = carePricingTemplateSchema.parse(req.body);
+      const template = await prisma.careTeamPricingTemplate.create({ data: body });
+      await writeAuditLog({
+        actorId: req.user!.id,
+        actorRole: req.user!.role,
+        action: 'hopehub.care_pricing_template.create',
+        targetType: 'care_team_pricing_template',
+        targetId: template.id,
+        summary: `Created care pricing template "${template.title}".`
+      });
+      res.status(201).json({ template });
+    })
+  );
+
+  router.put(
+    '/admin/hope-hub/care-pricing-templates/:id',
+    authRequired,
+    allowRoles(Role.ADMIN, Role.MARKETING),
+    asyncRoute(async (req, res) => {
+      const id = routeParam(req, 'id');
+      const body = carePricingTemplateSchema.partial().parse(req.body);
+      const template = await prisma.careTeamPricingTemplate.update({ where: { id }, data: body });
+      await writeAuditLog({
+        actorId: req.user!.id,
+        actorRole: req.user!.role,
+        action: 'hopehub.care_pricing_template.update',
+        targetType: 'care_team_pricing_template',
+        targetId: id,
+        summary: `Updated care pricing template "${template.title}".`
+      });
+      res.json({ template });
+    })
+  );
+
+  router.delete(
+    '/admin/hope-hub/care-pricing-templates/:id',
+    authRequired,
+    allowRoles(Role.ADMIN, Role.MARKETING),
+    asyncRoute(async (req, res) => {
+      const id = routeParam(req, 'id');
+      const template = await prisma.careTeamPricingTemplate.update({
+        where: { id },
+        data: { isActive: false }
+      });
+      await writeAuditLog({
+        actorId: req.user!.id,
+        actorRole: req.user!.role,
+        action: 'hopehub.care_pricing_template.deactivate',
+        targetType: 'care_team_pricing_template',
+        targetId: id,
+        summary: `Deactivated care pricing template "${template.title}".`
+      });
+      res.json({ template });
+    })
+  );
+
   router.post(
     '/admin/hope-hub/media',
     authRequired,

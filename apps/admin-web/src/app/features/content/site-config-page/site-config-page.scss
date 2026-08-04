@@ -2,6 +2,74 @@
 
 .page-hint { font-size: 0.875rem; color: #6b7280; margin: -0.4rem 0 1rem; }
 
+.template-list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.template-card {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.6rem;
+  align-items: center;
+  padding: 0.85rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #fff;
+
+  input,
+  select {
+    min-width: 0;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 0.45rem 0.6rem;
+    min-height: 38px;
+    font-size: 0.875rem;
+  }
+
+  button {
+    border: 0;
+    border-radius: 8px;
+    padding: 0.45rem 0.75rem;
+    min-height: 38px;
+    font-weight: 700;
+    color: #fff;
+    background: #2563eb;
+    cursor: pointer;
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    &.danger {
+      background: #dc2626;
+    }
+  }
+}
+
+.template-card--new {
+  margin-bottom: 1rem;
+  background: #f8fafc;
+}
+
+.template-card--inactive {
+  opacity: 0.65;
+  background: #f9fafb;
+}
+
+.template-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  color: #374151;
+
+  input {
+    min-height: auto;
+  }
+}
+
 .config-row {
   display: flex;
   gap: 1.5rem;
@@ -56,4 +124,5 @@
 @media (max-width: 640px) {
   .config-row { flex-direction: column; }
   .config-input { width: 100%; }
+  .template-card { grid-template-columns: 1fr; }
 }
