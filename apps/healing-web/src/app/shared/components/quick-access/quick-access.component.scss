@@ -35,6 +35,23 @@
     0 0 0 6px rgba(74, 111, 165, 0.18);
 }
 
+.quick-access__main--telegram {
+  background: #229ed9;
+}
+
+.quick-access__main--telegram:hover {
+  background: #1d8ec3;
+  box-shadow:
+    0 22px 44px rgba(15, 23, 42, 0.32),
+    0 0 0 6px rgba(34, 158, 217, 0.2);
+}
+
+.quick-access__telegram-icon {
+  width: 1.55rem;
+  height: 1.55rem;
+  transform: translate(-1px, 1px);
+}
+
 .quick-access__label {
   border: 1px solid #e2e8f0;
   border-radius: 999px;
