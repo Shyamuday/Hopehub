@@ -107,11 +107,12 @@ async function showPaymentHub(kind: TelegramBotKind, session: TelegramSession) {
       'Payment is completed on the Hope Hub website through Razorpay.'
     ].join('\n'),
     parse_mode: 'HTML',
-    reply_markup: { inline_keyboard: paymentHubRows(session) }
+    reply_markup: { inline_keyboard: await paymentHubRows(session) }
   });
 }
 
 async function showWhatsAppJoin(kind: TelegramBotKind, session: TelegramSession) {
+  const whatsappButton = await whatsappJoinButton();
   await sendTelegramMessage(kind, {
     chat_id: session.chatId,
     text: [
@@ -122,10 +123,7 @@ async function showWhatsAppJoin(kind: TelegramBotKind, session: TelegramSession)
     ].join('\n'),
     parse_mode: 'HTML',
     reply_markup: {
-      inline_keyboard: [
-        [whatsappJoinButton()],
-        [{ text: 'Main menu', callback_data: 'common:menu' }]
-      ]
+      inline_keyboard: [[whatsappButton], [{ text: 'Main menu', callback_data: 'common:menu' }]]
     }
   });
 }
@@ -1608,12 +1606,18 @@ async function promptLeadConcern(
       : leadKind === 'SUPPORT'
         ? supportConcernOptions
         : volunteerConcernOptions;
+  const [fullSessionUrl, depositUrl, volunteerTalkUrl, whatsappButton] = await Promise.all([
+    sessionPaymentUrl(session),
+    sessionPaymentUrl(session, 'PARTIAL'),
+    volunteerTalkPaymentUrl(session),
+    whatsappJoinButton()
+  ]);
   const paymentRows: InlineButton[][] =
     leadKind === 'BOOKING'
       ? [
           [
-            { text: 'Book & pay now', url: sessionPaymentUrl(session) },
-            { text: 'Pay deposit', url: sessionPaymentUrl(session, 'PARTIAL') }
+            { text: 'Book & pay now', url: fullSessionUrl },
+            { text: 'Pay deposit', url: depositUrl }
           ],
           [{ text: 'Retry pending payment', url: dashboardPaymentUrl(session) }]
         ]
@@ -1630,14 +1634,14 @@ async function promptLeadConcern(
               { text: 'Payment help', url: webUrl('/payment-policy') },
               { text: 'Donate', url: donationPaymentUrl(session) }
             ],
-            [whatsappJoinButton()]
+            [whatsappButton]
           ]
         : [
             [
-              { text: 'Pay for volunteer talk', url: volunteerTalkPaymentUrl(session) },
+              { text: 'Pay for volunteer talk', url: volunteerTalkUrl },
               { text: 'Become volunteer', url: volunteerApplicationUrl(session) }
             ],
-            [whatsappJoinButton()],
+            [whatsappButton],
             [{ text: 'Donate/support free talks', url: donationPaymentUrl(session) }]
           ];
   await sendTelegramMessage(kind, {
@@ -1794,6 +1798,12 @@ async function createLeadRequest(
     lastCommand:
       leadKind === 'BOOKING' ? '/book' : leadKind === 'SUPPORT' ? '/support' : '/volunteer'
   });
+  const [fullSessionUrl, depositUrl, volunteerTalkUrl, whatsappButton] = await Promise.all([
+    sessionPaymentUrl(updated),
+    sessionPaymentUrl(updated, 'PARTIAL'),
+    volunteerTalkPaymentUrl(updated),
+    whatsappJoinButton()
+  ]);
 
   await sendTelegramMessage(kind, {
     chat_id: updated.chatId,
@@ -1814,8 +1824,8 @@ async function createLeadRequest(
         leadKind === 'BOOKING'
           ? [
               [
-                { text: 'Book & pay now', url: sessionPaymentUrl(updated) },
-                { text: 'Pay deposit', url: sessionPaymentUrl(updated, 'PARTIAL') }
+                { text: 'Book & pay now', url: fullSessionUrl },
+                { text: 'Pay deposit', url: depositUrl }
               ],
               [{ text: 'Retry pending payment', url: dashboardPaymentUrl(updated) }],
               [{ text: 'Main menu', callback_data: 'common:menu' }]
@@ -1833,14 +1843,14 @@ async function createLeadRequest(
                   { text: 'Payment help', url: webUrl('/payment-policy') },
                   { text: 'Main menu', callback_data: 'common:menu' }
                 ],
-                [whatsappJoinButton()]
+                [whatsappButton]
               ]
             : [
                 [
-                  { text: 'Pay for support talk', url: volunteerTalkPaymentUrl(updated) },
+                  { text: 'Pay for support talk', url: volunteerTalkUrl },
                   { text: 'Become volunteer', url: volunteerApplicationUrl(updated) }
                 ],
-                [whatsappJoinButton()],
+                [whatsappButton],
                 [{ text: 'Donate/support free talks', url: donationPaymentUrl(updated) }],
                 [{ text: 'Main menu', callback_data: 'common:menu' }]
               ]

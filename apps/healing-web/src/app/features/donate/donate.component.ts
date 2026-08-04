@@ -174,7 +174,7 @@ import { NotificationService, PaymentService } from '../../core/services';
                   >
                   or
                   <a
-                    href="https://chat.whatsapp.com/CbbNoo5kXw3FWWKTGO82kz"
+                    [href]="APP_CONSTANTS.WHATSAPP.GROUP_URL"
                     target="_blank"
                     rel="noopener"
                     class="font-semibold underline"

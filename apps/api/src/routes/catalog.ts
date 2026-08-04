@@ -4,7 +4,10 @@ import { Role } from '@prisma/client';
 import { authRequired, allowRoles } from '../auth.js';
 import { prisma } from '../db.js';
 import { DEFAULT_BILLING_PLANS } from '../constants/billing.constants.js';
-import { CONTACT_IDENTITY } from '../constants/config.constants.js';
+import {
+  PUBLIC_SITE_CONFIG_KEYS,
+  SITE_CONFIG_DEFAULTS
+} from '../constants/site-config.constants.js';
 import { asyncRoute, routeParam, queryText } from '../utils/helpers.js';
 import {
   DISEASE_PUBLIC_CATEGORIES,
@@ -473,54 +476,13 @@ router.get(
 router.get(
   '/public-config',
   asyncRoute(async (_req, res) => {
-    const PUBLIC_KEYS = [
-      'whatsappPhone',
-      'clinicName',
-      'contactPhone',
-      'contactPhoneTel',
-      'contactEmail',
-      'clinicAddressLine1',
-      'clinicAddressLine2',
-      'clinicAddressLine3',
-      'clinicAddressLine4',
-      'homeHeroEyebrow',
-      'homeHeroHeadline',
-      'homeHeroLead',
-      'statConsultations',
-      'statDoctors',
-      'statRating',
-      'statFollowUp',
-      'statPatientsTreated',
-      'statConditionsTreated',
-      'statImprovement',
-      'statSatisfaction'
-    ];
-    const DEFAULTS: Record<string, string> = {
-      whatsappPhone: '919876543210',
-      clinicName: 'HopeHub Care and Research Centre',
-      contactPhone: '+91-98765-43210',
-      contactPhoneTel: '+919876543210',
-      contactEmail: CONTACT_IDENTITY.EMAIL,
-      clinicAddressLine1: 'Ranchi Main Clinic',
-      clinicAddressLine2: 'Near City Centre, Main Road',
-      clinicAddressLine3: 'Ranchi, Jharkhand, India',
-      clinicAddressLine4: 'Pincode — 834001',
-      homeHeroEyebrow: 'Doctor-led homeopathy',
-      homeHeroHeadline: 'Personalised homeopathic care for every health concern.',
-      homeHeroLead:
-        'Acute illnesses, chronic conditions, skin and hair issues, digestive problems, allergies, mental wellness, and more — consult qualified homeopathic doctors online with prescriptions and follow-up.',
-      statConsultations: '5,000+',
-      statDoctors: '12+',
-      statRating: '4.8★',
-      statFollowUp: '92%',
-      statPatientsTreated: '4,800+',
-      statConditionsTreated: '15+',
-      statImprovement: '92%',
-      statSatisfaction: '4.8 / 5'
-    };
-    const rows = await prisma.siteConfig.findMany({ where: { key: { in: PUBLIC_KEYS } } });
+    const rows = await prisma.siteConfig.findMany({
+      where: { key: { in: [...PUBLIC_SITE_CONFIG_KEYS] } }
+    });
     const map: Record<string, string> = Object.fromEntries(rows.map((r) => [r.key, r.value]));
-    const config = Object.fromEntries(PUBLIC_KEYS.map((k) => [k, map[k] ?? DEFAULTS[k] ?? '']));
+    const config = Object.fromEntries(
+      PUBLIC_SITE_CONFIG_KEYS.map((key) => [key, map[key] ?? SITE_CONFIG_DEFAULTS[key] ?? ''])
+    );
     res.json({ config });
   })
 );

@@ -131,12 +131,3 @@ export const callbackTimeOptions = [
   { key: 'evening', label: 'Evening' },
   { key: 'weekend', label: 'Weekend' }
 ] as const;
-
-export const telegramPaymentLinks = {
-  defaultSessionOfferingSlug: 'single-30-minute-session'
-} as const;
-
-export const whatsappLinks = {
-  groupUrl: 'https://chat.whatsapp.com/CbbNoo5kXw3FWWKTGO82kz',
-  label: 'Join WhatsApp group'
-} as const;

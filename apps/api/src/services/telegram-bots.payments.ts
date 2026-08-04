@@ -1,8 +1,9 @@
 import type { TelegramBotKind } from '@prisma/client';
 import type { AssessmentDefinitionRecord } from './assessment-definitions.js';
-import { botSlugByKind, telegramPaymentLinks, whatsappLinks } from './telegram-bots.config.js';
+import { botSlugByKind } from './telegram-bots.config.js';
 import type { InlineButton } from './telegram-bots.types.js';
 import { menuCancelRows, webUrl } from './telegram-bots.ui.js';
+import { getSiteConfigMap } from './site-config.service.js';
 
 export type PaymentLinkSession = {
   botKind: TelegramBotKind;
@@ -45,13 +46,27 @@ export function assessmentPaymentUrl(
   );
 }
 
-export function sessionPaymentUrl(
+async function telegramPaymentConfig() {
+  const config = await getSiteConfigMap([
+    'telegramDefaultOfferingSlug',
+    'whatsappGroupUrl',
+    'whatsappGroupLabel'
+  ]);
+  return {
+    defaultSessionOfferingSlug: config.telegramDefaultOfferingSlug,
+    whatsappGroupUrl: config.whatsappGroupUrl,
+    whatsappGroupLabel: config.whatsappGroupLabel || 'Join WhatsApp group'
+  };
+}
+
+export async function sessionPaymentUrl(
   session: PaymentLinkSession,
   paymentMode: 'FULL' | 'PARTIAL' = 'FULL'
 ) {
+  const config = await telegramPaymentConfig();
   return webUrl(
     withTelegramSource('/contact', session, {
-      offering: telegramPaymentLinks.defaultSessionOfferingSlug,
+      offering: config.defaultSessionOfferingSlug,
       paymentMode,
       action: 'book_pay'
     })
@@ -66,10 +81,11 @@ export function donationPaymentUrl(session: PaymentLinkSession) {
   return webUrl(withTelegramSource('/donate', session, { action: 'donate' }));
 }
 
-export function volunteerTalkPaymentUrl(session: PaymentLinkSession) {
+export async function volunteerTalkPaymentUrl(session: PaymentLinkSession) {
+  const config = await telegramPaymentConfig();
   return webUrl(
     withTelegramSource('/contact', session, {
-      offering: telegramPaymentLinks.defaultSessionOfferingSlug,
+      offering: config.defaultSessionOfferingSlug,
       paymentMode: 'PARTIAL',
       action: 'volunteer_talk_pay'
     })
@@ -80,19 +96,27 @@ export function volunteerApplicationUrl(session: PaymentLinkSession) {
   return webUrl(withTelegramSource('/careers', session, { action: 'volunteer_apply' }));
 }
 
-export function whatsappGroupUrl() {
-  return whatsappLinks.groupUrl;
+export async function whatsappGroupUrl() {
+  const config = await telegramPaymentConfig();
+  return config.whatsappGroupUrl;
 }
 
-export function whatsappJoinButton(): InlineButton {
-  return { text: whatsappLinks.label, url: whatsappLinks.groupUrl };
+export async function whatsappJoinButton(): Promise<InlineButton> {
+  const config = await telegramPaymentConfig();
+  return { text: config.whatsappGroupLabel, url: config.whatsappGroupUrl };
 }
 
-export function paymentHubRows(session: PaymentLinkSession): InlineButton[][] {
+export async function paymentHubRows(session: PaymentLinkSession): Promise<InlineButton[][]> {
+  const [fullSessionUrl, depositUrl, volunteerTalkUrl, whatsappButton] = await Promise.all([
+    sessionPaymentUrl(session),
+    sessionPaymentUrl(session, 'PARTIAL'),
+    volunteerTalkPaymentUrl(session),
+    whatsappJoinButton()
+  ]);
   return [
     [
-      { text: 'Pay for session', url: sessionPaymentUrl(session) },
-      { text: 'Pay deposit', url: sessionPaymentUrl(session, 'PARTIAL') }
+      { text: 'Pay for session', url: fullSessionUrl },
+      { text: 'Pay deposit', url: depositUrl }
     ],
     [
       {
@@ -102,10 +126,10 @@ export function paymentHubRows(session: PaymentLinkSession): InlineButton[][] {
       { text: 'Retry pending payment', url: dashboardPaymentUrl(session) }
     ],
     [
-      { text: 'Volunteer talk payment', url: volunteerTalkPaymentUrl(session) },
+      { text: 'Volunteer talk payment', url: volunteerTalkUrl },
       { text: 'Donate', url: donationPaymentUrl(session) }
     ],
-    [whatsappJoinButton()],
+    [whatsappButton],
     [{ text: 'Payment policy', url: webUrl('/payment-policy') }],
     ...menuCancelRows()
   ];

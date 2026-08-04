@@ -1,9 +1,10 @@
 import type { TelegramBotKind } from '@prisma/client';
-import { botKindBySlug, botSlugByKind, whatsappLinks } from './telegram-bots.config.js';
+import { botKindBySlug, botSlugByKind } from './telegram-bots.config.js';
 import type { TelegramBotSlug } from './telegram-bots.types.js';
 import { adminUrl, doctorUrl, webUrl } from './telegram-bots.ui.js';
 import { escapeHtml } from './telegram-bots.helpers.js';
 import type { InlineButton } from './telegram-bots.types.js';
+import { whatsappJoinButton } from './telegram-bots.payments.js';
 
 type MenuSession = {
   linkedUser?: { name: string } | null;
@@ -13,8 +14,9 @@ export function telegramBotKindFromSlug(slug: string): TelegramBotKind | null {
   return (botKindBySlug as Record<string, TelegramBotKind | undefined>)[slug] ?? null;
 }
 
-export function menuFor(kind: TelegramBotKind, linked: boolean): InlineButton[][] {
+export async function menuFor(kind: TelegramBotKind, linked: boolean): Promise<InlineButton[][]> {
   if (kind === 'USER') {
+    const whatsappButton = await whatsappJoinButton();
     return [
       [
         { text: 'Daily plan', callback_data: 'user:plan' },
@@ -32,10 +34,7 @@ export function menuFor(kind: TelegramBotKind, linked: boolean): InlineButton[][
         { text: 'Book session', callback_data: 'user:book' },
         { text: 'Get support', callback_data: 'user:support' }
       ],
-      [
-        { text: 'Volunteer support', callback_data: 'user:volunteer' },
-        { text: 'Join WhatsApp', url: whatsappLinks.groupUrl }
-      ],
+      [{ text: 'Volunteer support', callback_data: 'user:volunteer' }, whatsappButton],
       [{ text: 'Payments / Donate', callback_data: 'user:payments' }],
       [
         linked

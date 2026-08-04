@@ -23,7 +23,7 @@ export async function replyMenu(kind: TelegramBotKind, session: TelegramSession,
     chat_id: session.chatId,
     text,
     parse_mode: 'HTML',
-    reply_markup: { inline_keyboard: menuFor(kind, Boolean(session.linkedUserId)) }
+    reply_markup: { inline_keyboard: await menuFor(kind, Boolean(session.linkedUserId)) }
   });
 }
 

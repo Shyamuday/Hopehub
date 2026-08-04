@@ -1,5 +1,6 @@
 import {
   ApplicationConfig,
+  APP_INITIALIZER,
   provideBrowserGlobalErrorListeners,
   provideZonelessChangeDetection,
   ErrorHandler,
@@ -19,6 +20,7 @@ import { routes } from './app.routes';
 import { GlobalErrorHandler } from './core/services/global-error-handler.service';
 import { provideServiceWorker } from '@angular/service-worker';
 import { authInterceptor } from './core/interceptors/auth.interceptor';
+import { PublicCommunicationConfigService } from './core/services/public-communication-config.service';
 
 function isLazyChunkError(error: unknown): boolean {
   const errorLike = error as { name?: string; message?: string; reason?: unknown };
@@ -57,6 +59,12 @@ export const appConfig: ApplicationConfig = {
     provideZonelessChangeDetection(),
     provideBrowserGlobalErrorListeners(),
     provideHttpClient(withFetch(), withInterceptors([authInterceptor])),
+    {
+      provide: APP_INITIALIZER,
+      multi: true,
+      deps: [PublicCommunicationConfigService],
+      useFactory: (config: PublicCommunicationConfigService) => () => config.load(),
+    },
     { provide: ErrorHandler, useClass: GlobalErrorHandler },
 
     provideRouter(
