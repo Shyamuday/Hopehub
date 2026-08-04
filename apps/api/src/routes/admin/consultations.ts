@@ -119,12 +119,32 @@ export function registerAdminConsultationRoutes(router: Router, io: SocketIoServ
       const pageSize = queryPositiveInt(req, 'pageSize', 20);
       const status = queryText(req, 'status');
       const assigned = queryText(req, 'assigned');
+      const outcome = queryText(req, 'outcome');
+      const outcomeFlag = queryText(req, 'outcomeFlag');
       const q = queryText(req, 'q').trim().toLowerCase();
 
-      const where: Record<string, unknown> = {};
-      if (status) where['status'] = status;
+      const where: Prisma.ConsultationWhereInput = {};
+      if (Object.values(ConsultationStatus).includes(status as ConsultationStatus)) {
+        where['status'] = status as ConsultationStatus;
+      }
       if (assigned === 'no') where['assignedDoctorId'] = null;
       if (assigned === 'yes') where['assignedDoctorId'] = { not: null };
+      if (['COMPLETED', 'USER_MISSED', 'PROVIDER_NO_SHOW', 'RESCHEDULE_NEEDED'].includes(outcome)) {
+        where['pricingSnapshot'] = {
+          path: ['sessionOutcome', 'outcome'],
+          equals: outcome
+        };
+      } else if (outcomeFlag === 'package_restored') {
+        where['pricingSnapshot'] = {
+          path: ['sessionOutcome', 'packageRestored'],
+          equals: true
+        };
+      } else if (outcomeFlag === 'payout_hold') {
+        where['pricingSnapshot'] = {
+          path: ['sessionOutcome', 'payoutAction'],
+          equals: 'HOLD'
+        };
+      }
 
       const [consultations, total] = await Promise.all([
         prisma.consultation.findMany({

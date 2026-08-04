@@ -23,6 +23,16 @@
             <button class="ftab sm" [class.active]="assignedFilter() === f.value" (click)="setAssigned(f.value)">{{ f.label }}</button>
           }
         </div>
+        <div class="ftabs outcome-tabs">
+          @for (f of outcomeFilters; track f.value) {
+            <button class="ftab sm" [class.active]="outcomeFilter() === f.value && !outcomeFlagFilter()" (click)="setOutcome(f.value)">{{ f.label }}</button>
+          }
+        </div>
+        <div class="ftabs outcome-tabs">
+          @for (f of outcomeFlagFilters; track f.value) {
+            <button class="ftab sm" [class.active]="outcomeFlagFilter() === f.value && !outcomeFilter()" (click)="setOutcomeFlag(f.value)">{{ f.label }}</button>
+          }
+        </div>
       </div>
 
       @if (loading()) {

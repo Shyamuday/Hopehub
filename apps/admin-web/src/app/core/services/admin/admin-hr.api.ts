@@ -221,6 +221,8 @@ export class AdminHrApi extends AdminApiBase {
   getAdminConsultations(params: {
     status?: string;
     assigned?: string;
+    outcome?: string;
+    outcomeFlag?: string;
     q?: string;
     page?: number;
     pageSize?: number;
@@ -232,6 +234,8 @@ export class AdminHrApi extends AdminApiBase {
           params: {
             status: params.status ?? '',
             assigned: params.assigned ?? '',
+            outcome: params.outcome ?? '',
+            outcomeFlag: params.outcomeFlag ?? '',
             q: params.q ?? '',
             page: String(params.page ?? 1),
             pageSize: String(params.pageSize ?? 20),

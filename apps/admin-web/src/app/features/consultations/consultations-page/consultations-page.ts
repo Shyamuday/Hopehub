@@ -37,6 +37,8 @@ export class ConsultationsPage implements OnInit {
 
   statusFilter = signal('');
   assignedFilter = signal('no');
+  outcomeFilter = signal('');
+  outcomeFlagFilter = signal('');
 
   readonly searchModel = signal({ q: '' });
   readonly searchForm = form(this.searchModel);
@@ -91,6 +93,18 @@ export class ConsultationsPage implements OnInit {
     PROVIDER_NO_SHOW: 'Provider no-show',
     RESCHEDULE_NEEDED: 'Reschedule needed',
   };
+  outcomeFilters = [
+    { label: 'All outcomes', value: '' },
+    { label: 'Completed', value: 'COMPLETED' },
+    { label: 'User missed', value: 'USER_MISSED' },
+    { label: 'Provider no-show', value: 'PROVIDER_NO_SHOW' },
+    { label: 'Reschedule needed', value: 'RESCHEDULE_NEEDED' },
+  ];
+  outcomeFlagFilters = [
+    { label: 'All flags', value: '' },
+    { label: 'Package restored', value: 'package_restored' },
+    { label: 'Payout held', value: 'payout_hold' },
+  ];
   assignedFilters = [
     { label: 'All', value: '' },
     { label: 'Unassigned', value: 'no' },
@@ -110,6 +124,8 @@ export class ConsultationsPage implements OnInit {
       .getAdminConsultations({
         status: this.statusFilter(),
         assigned: this.assignedFilter(),
+        outcome: this.outcomeFilter(),
+        outcomeFlag: this.outcomeFlagFilter(),
         q: this.searchModel().q,
         page: this.page(),
         pageSize: this.pageSize,
@@ -141,6 +157,18 @@ export class ConsultationsPage implements OnInit {
   }
   setAssigned(v: string): void {
     this.assignedFilter.set(v);
+    this.page.set(1);
+    this.load();
+  }
+  setOutcome(v: string): void {
+    this.outcomeFilter.set(v);
+    if (v) this.outcomeFlagFilter.set('');
+    this.page.set(1);
+    this.load();
+  }
+  setOutcomeFlag(v: string): void {
+    this.outcomeFlagFilter.set(v);
+    if (v) this.outcomeFilter.set('');
     this.page.set(1);
     this.load();
   }
