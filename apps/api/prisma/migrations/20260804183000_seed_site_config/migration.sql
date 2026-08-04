@@ -5,7 +5,7 @@ INSERT INTO "SiteConfig" ("key", "value", "label", "updatedAt") VALUES
   ('whatsappGroupLabel', 'Join WhatsApp group', 'WhatsApp button label', NOW()),
   ('telegramUsername', 'hopehubindia', 'Telegram public username', NOW()),
   ('telegramUserBotUsername', 'Hopehubbot', 'Telegram user bot username', NOW()),
-  ('telegramDoctorBotUsername', 'Hopehubprovidersbot', 'Telegram provider bot username', NOW()),
+  ('telegramDoctorBotUsername', 'Hopehubprovidersbot', 'Telegram care team bot username', NOW()),
   ('telegramAdminBotUsername', 'Hopehuboperationbot', 'Telegram admin bot username', NOW()),
   ('telegramQrCodePath', '/image/hopehubindiaqr.jpg', 'Telegram QR image path', NOW()),
   ('whatsappQrCodePath', '/image/whatsapp-qr.jpeg', 'WhatsApp QR image path', NOW()),

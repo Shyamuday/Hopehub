@@ -249,15 +249,15 @@ export async function startSignup(
     await sendTelegramMessage(kind, {
       chat_id: session.chatId,
       text: [
-        '<b>Provider application</b>',
+        '<b>Care team application</b>',
         'You can apply from this bot now.',
         '',
-        'Tap Join as provider and choose your role. Admin will review before any provider access is enabled.'
+        'Tap Join care team and choose your role. Admin will review before any care team access is enabled.'
       ].join('\n'),
       parse_mode: 'HTML',
       reply_markup: {
         inline_keyboard: [
-          [{ text: 'Join as provider', callback_data: 'doctor:signup' }],
+          [{ text: 'Join care team', callback_data: 'doctor:signup' }],
           ...menuCancelRows()
         ]
       }

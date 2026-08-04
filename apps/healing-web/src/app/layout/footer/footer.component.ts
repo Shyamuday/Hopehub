@@ -143,7 +143,7 @@ export class FooterComponent {
       title: 'Care & booking',
       links: [
         { label: 'Services', routerLink: '/services' },
-        { label: 'Care team', routerLink: '/psychologists' },
+        { label: 'Care team', routerLink: '/care-team' },
         { label: 'Care packages', routerLink: '/packages' },
         { label: 'Book session', routerLink: '/contact' },
         { label: 'My consultations', routerLink: '/dashboard' },

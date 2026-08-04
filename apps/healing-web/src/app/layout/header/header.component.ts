@@ -49,10 +49,12 @@ import { APP_CONSTANTS } from '../../core/constants/app.constants';
               Services
             </a>
             <a
-              routerLink="/psychologists"
+              routerLink="/care-team"
               routerLinkActive="text-primary-600 border-b-2 border-primary-600"
               class="text-gray-700 hover:text-primary-600 px-2 py-2 text-sm font-medium transition-colors duration-200 whitespace-nowrap"
-              [attr.aria-current]="isCurrentRoute('/psychologists') ? 'page' : null"
+              [attr.aria-current]="
+                isCurrentRoute('/care-team') || isCurrentRoute('/psychologists') ? 'page' : null
+              "
             >
               Care team
             </a>
@@ -300,11 +302,13 @@ import { APP_CONSTANTS } from '../../core/constants/app.constants';
                 Services
               </a>
               <a
-                routerLink="/psychologists"
+                routerLink="/care-team"
                 (click)="closeMobileMenu()"
                 routerLinkActive="text-primary-600 bg-primary-50"
                 class="text-gray-700 hover:text-primary-600 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium transition-colors duration-200"
-                [attr.aria-current]="isCurrentRoute('/psychologists') ? 'page' : null"
+                [attr.aria-current]="
+                  isCurrentRoute('/care-team') || isCurrentRoute('/psychologists') ? 'page' : null
+                "
                 role="menuitem"
               >
                 Care team

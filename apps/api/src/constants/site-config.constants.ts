@@ -25,8 +25,8 @@ export const SITE_CONFIG_META: Record<string, { label: string; description: stri
     description: 'User/support bot username without @. E.g. Hopehubbot.'
   },
   telegramDoctorBotUsername: {
-    label: 'Telegram provider bot username',
-    description: 'Doctor/provider bot username without @. E.g. Hopehubprovidersbot.'
+    label: 'Telegram care team bot username',
+    description: 'Care team/doctor bot username without @. E.g. Hopehubprovidersbot.'
   },
   telegramAdminBotUsername: {
     label: 'Telegram admin bot username',

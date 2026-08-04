@@ -54,7 +54,7 @@ export async function menuFor(kind: TelegramBotKind, linked: boolean): Promise<I
 
   if (kind === 'DOCTOR') {
     return [
-      [{ text: 'Join as provider', callback_data: 'doctor:signup' }],
+      [{ text: 'Join care team', callback_data: 'doctor:signup' }],
       [{ text: 'Assigned support leads', callback_data: 'doctor:assignments' }],
       [
         { text: 'My queue', callback_data: 'doctor:queue' },
@@ -111,7 +111,7 @@ export function helpText(kind: TelegramBotKind) {
   }
   if (kind === 'DOCTOR') {
     return [
-      '<b>Doctor bot commands</b>',
+      '<b>Care team bot commands</b>',
       '/link doctor@example.com - link doctor account',
       '/assignments - assigned support leads',
       '/queue - real queue summary',
@@ -164,11 +164,11 @@ export function startGuideText(kind: TelegramBotKind, session: MenuSession) {
 
   if (kind === 'DOCTOR') {
     return [
-      '<b>Hope Hub Provider Bot</b>',
+      '<b>Hope Hub Care Team Bot</b>',
       linkedLine,
       '',
       '<b>Purpose</b>',
-      'This bot helps providers see their queue and manage live availability.',
+      'This bot helps care team members see their queue and manage live availability.',
       '',
       '<b>Guideline</b>',
       'Keep clinical notes and sensitive records inside the doctor portal. Telegram is only for lightweight workflow updates.',

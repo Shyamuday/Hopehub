@@ -66,7 +66,7 @@ export class PsychologistDetailComponent implements OnInit {
         providerId: provider.id,
         duration: this.sessionLabel(provider),
         price: (provider.sessionFeeInPaise ?? 50000) / 100,
-        source: 'psychologist-profile',
+        source: 'care-team-profile',
       },
     });
   }

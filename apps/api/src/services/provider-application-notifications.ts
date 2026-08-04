@@ -32,7 +32,7 @@ export async function notifyAdminsAboutProviderApplication(application: {
       sendTelegramMessage(TelegramBotKind.ADMIN, {
         chat_id: adminSession.chatId,
         text: [
-          '<b>New provider application</b>',
+          '<b>New care team application</b>',
           `Name: ${escapeHtml(application.fullName)}`,
           `Role: ${escapeHtml(providerTrackLabels[application.applicationTrack])}`,
           `Email: ${escapeHtml(application.email)}`,

@@ -38,6 +38,32 @@ export const routes: Routes = [
     },
   },
   {
+    path: 'care-team',
+    loadComponent: () =>
+      import('./features/psychologists/psychologists.component').then(
+        (m) => m.PsychologistsComponent,
+      ),
+    title: 'Care Team - Hope Hub',
+    data: {
+      breadcrumb: 'Care team',
+      description: 'Meet Hope Hub care team members available for mental wellness support',
+      keywords: 'care team, mental wellness support, counsellors, volunteers, hope hub support',
+    },
+  },
+  {
+    path: 'care-team/:id',
+    loadComponent: () =>
+      import('./features/psychologists/psychologist-detail.component').then(
+        (m) => m.PsychologistDetailComponent,
+      ),
+    title: 'Care Team Profile - Hope Hub',
+    data: {
+      breadcrumb: 'Care team profile',
+      description: 'View care team profile, focus areas, session details, and book support',
+      keywords: 'care team profile, counsellor profile, mental wellness guide',
+    },
+  },
+  {
     path: 'psychologists',
     loadComponent: () =>
       import('./features/psychologists/psychologists.component').then(

@@ -1073,7 +1073,7 @@ function providerApplicationOf(session: TelegramSession) {
 
 async function startProviderSignup(kind: TelegramBotKind, session: TelegramSession) {
   if (kind !== TelegramBotKind.DOCTOR) {
-    await replyMenu(kind, session, 'Provider signup is available in the provider bot.');
+    await replyMenu(kind, session, 'Care team signup is available in the care team bot.');
     return;
   }
 
@@ -1091,7 +1091,7 @@ async function startProviderSignup(kind: TelegramBotKind, session: TelegramSessi
     text: [
       '<b>Apply to work with Hope Hub</b>',
       '',
-      'Choose your role. This creates an application for admin review; it does not activate provider access automatically.'
+      'Choose your role. This creates an application for admin review; it does not activate care team access automatically.'
     ].join('\n'),
     parse_mode: 'HTML',
     reply_markup: {
@@ -1426,7 +1426,7 @@ async function finishProviderApplication(
       `ID: ${escapeHtml(application.id.slice(-8))}`,
       `Role: ${escapeHtml(providerTrackLabels[application.applicationTrack])}`,
       '',
-      'Admin will review it. If approved, your provider account/access will be created or linked after onboarding.'
+      'Admin will review it. If approved, your care team account/access will be created or linked after onboarding.'
     ].join('\n'),
     parse_mode: 'HTML',
     reply_markup: {

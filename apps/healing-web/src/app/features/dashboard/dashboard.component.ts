@@ -486,7 +486,7 @@ type DashboardResource = {
                         @if (consultation.assignedProviderId) {
                           ·
                           <a
-                            [routerLink]="['/psychologists', consultation.assignedProviderId]"
+                            [routerLink]="['/care-team', consultation.assignedProviderId]"
                             class="font-semibold text-blue-600 hover:text-blue-700"
                           >
                             View profile

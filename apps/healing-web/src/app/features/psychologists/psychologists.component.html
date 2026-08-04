@@ -16,6 +16,12 @@
       <a routerLink="/contact" class="btn-primary btn-sm">Book session</a>
     </div>
 
+    <div class="mb-6 rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm leading-6 text-emerald-950">
+      <strong>Clear roles, safer support:</strong>
+      paid counselling is handled by verified mental wellness professionals. Student and peer
+      volunteers offer non-clinical listening support and follow Hope Hub safety escalation rules.
+    </div>
+
     <div class="mb-6 rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
       <label for="providerSearch" class="sr-only">Search care team</label>
       <input
@@ -145,7 +151,7 @@
             }
             <div class="mt-5 flex flex-col gap-2">
               <a
-                [routerLink]="['/psychologists', provider.slug || provider.id]"
+                [routerLink]="['/care-team', provider.slug || provider.id]"
                 class="btn-secondary btn-sm"
               >
                 View profile
@@ -159,7 +165,7 @@
                   providerId: provider.id,
                   duration: '30 minutes + 15 min follow-up',
                   price: 500,
-                  source: 'psychologists-list',
+                  source: 'care-team-list',
                 }"
                 class="btn-outline btn-sm"
               >
