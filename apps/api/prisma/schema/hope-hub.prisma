@@ -18,11 +18,15 @@ model HopeHubAssessmentAttempt {
   previousId     String?
   source         String?
   entryPage      String?
+  safetyReviewedAt DateTime?
+  safetyReviewedById String?
+  safetyReviewNote String? @db.Text
   completedAt    DateTime
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
   user           User     @relation("UserHopeHubAssessmentAttempts", fields: [userId], references: [id], onDelete: Cascade)
+  safetyReviewedBy User?   @relation("HopeHubAssessmentSafetyReviews", fields: [safetyReviewedById], references: [id], onDelete: SetNull)
   previous       HopeHubAssessmentAttempt? @relation("HopeHubAssessmentRetakes", fields: [previousId], references: [id], onDelete: SetNull)
   retakes        HopeHubAssessmentAttempt[] @relation("HopeHubAssessmentRetakes")
 
@@ -30,6 +34,8 @@ model HopeHubAssessmentAttempt {
   @@index([userId, completedAt])
   @@index([assessmentId])
   @@index([safetyFlag])
+  @@index([safetyFlag, safetyReviewedAt])
+  @@index([safetyReviewedById])
 }
 
 model MentalHealthProviderProfile {

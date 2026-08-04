@@ -37,6 +37,7 @@ export const commandMenus: Record<TelegramBotKind, { command: string; descriptio
     { command: 'link', description: 'Link Hope Hub account' },
     { command: 'plan', description: 'Daily plan and review' },
     { command: 'assessments', description: 'Take an assessment test' },
+    { command: 'results', description: 'Show latest assessment results' },
     { command: 'addtask', description: 'Add a daily task' },
     { command: 'review', description: 'Save daily review' },
     { command: 'book', description: 'Request a session' },

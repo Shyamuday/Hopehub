@@ -192,6 +192,7 @@ model User {
   blogComments         BlogComment[]          @relation("BlogCommentAuthor")
   doctorOnlineSession  DoctorOnlineSession?
   hopeHubAssessmentAttempts HopeHubAssessmentAttempt[] @relation("UserHopeHubAssessmentAttempts")
+  hopeHubAssessmentSafetyReviews HopeHubAssessmentAttempt[] @relation("HopeHubAssessmentSafetyReviews")
   followUpEntitlements ConsultationFollowUpEntitlement[] @relation("UserFollowUpEntitlements")
   practiceSessions    UserPracticeSession[] @relation("UserPracticeSessions")
   dailyPlans          PatientDailyPlan[] @relation("PatientDailyPlans")
