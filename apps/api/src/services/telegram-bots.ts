@@ -629,6 +629,81 @@ async function showAssessmentResults(kind: TelegramBotKind, session: TelegramSes
   });
 }
 
+async function showUserRequests(kind: TelegramBotKind, session: TelegramSession) {
+  if (!(await requireLinked(kind, session))) return;
+
+  const leads = await prisma.websiteLead.findMany({
+    where: { userId: session.linkedUserId! },
+    include: {
+      assignments: {
+        orderBy: { assignedAt: 'desc' },
+        take: 1,
+        select: {
+          id: true,
+          assignmentType: true,
+          status: true,
+          assignedAt: true,
+          provider: { select: { name: true } }
+        }
+      }
+    },
+    orderBy: { updatedAt: 'desc' },
+    take: 8
+  });
+
+  if (!leads.length) {
+    await sendTelegramMessage(kind, {
+      chat_id: session.chatId,
+      text: 'No support, booking, or volunteer requests yet.',
+      reply_markup: {
+        inline_keyboard: [
+          [
+            { text: 'Get support', callback_data: 'user:support' },
+            { text: 'Book session', callback_data: 'user:book' }
+          ],
+          [{ text: 'Main menu', callback_data: 'common:menu' }]
+        ]
+      }
+    });
+    return;
+  }
+
+  const rows = leads
+    .map((lead, index) => {
+      const assignment = lead.assignments[0];
+      return [
+        `${index + 1}. <b>${escapeHtml(lead.concern || 'Request')}</b>`,
+        `Status: ${lead.followUpStatus}`,
+        assignment
+          ? `Assigned: ${escapeHtml(assignment.provider?.name || assignment.assignmentType)} · ${assignment.status}`
+          : 'Assigned: Not yet',
+        lead.preferredCallbackTime
+          ? `Preferred time: ${escapeHtml(lead.preferredCallbackTime)}`
+          : '',
+        `Lead: ${escapeHtml(lead.id.slice(-8))}`
+      ]
+        .filter(Boolean)
+        .join('\n');
+    })
+    .join('\n\n');
+
+  await sendTelegramMessage(kind, {
+    chat_id: session.chatId,
+    text: `<b>Your Hope Hub requests</b>\n\n${rows}`,
+    parse_mode: 'HTML',
+    reply_markup: {
+      inline_keyboard: [
+        [
+          { text: 'Get support', callback_data: 'user:support' },
+          { text: 'Book session', callback_data: 'user:book' }
+        ],
+        [{ text: 'Open profile', url: webUrl('/profile') }],
+        [{ text: 'Main menu', callback_data: 'common:menu' }]
+      ]
+    }
+  });
+}
+
 async function createPlanFromAssessment(
   kind: TelegramBotKind,
   session: TelegramSession,
@@ -1171,6 +1246,118 @@ async function showProviderAssignments(kind: TelegramBotKind, session: TelegramS
   });
 }
 
+async function notifyUserAboutAssignmentStatus(input: {
+  lead: {
+    id: string;
+    userId: string | null;
+    concern: string | null;
+  };
+  providerName: string;
+  status: 'ACCEPTED' | 'CONTACTED' | 'COMPLETED';
+}) {
+  if (!input.lead.userId) return;
+  const userSessions = await prisma.telegramBotSession.findMany({
+    where: {
+      botKind: TelegramBotKind.USER,
+      linkedUserId: input.lead.userId,
+      linkedUser: { isActive: true, role: 'PATIENT' }
+    },
+    select: { chatId: true }
+  });
+  if (!userSessions.length) return;
+
+  const statusLine =
+    input.status === 'ACCEPTED'
+      ? `${input.providerName} accepted your support request.`
+      : input.status === 'CONTACTED'
+        ? `${input.providerName} marked your support request as contacted.`
+        : `${input.providerName} marked your support request as completed.`;
+
+  await Promise.allSettled(
+    userSessions.map((userSession) =>
+      sendTelegramMessage(TelegramBotKind.USER, {
+        chat_id: userSession.chatId,
+        text: [
+          '<b>Request update</b>',
+          escapeHtml(statusLine),
+          `Request: ${escapeHtml(input.lead.concern || input.lead.id.slice(-8))}`,
+          '',
+          input.status === 'COMPLETED'
+            ? 'If you still need help, you can create a new support request.'
+            : 'You can check your request status anytime from My requests.'
+        ].join('\n'),
+        parse_mode: 'HTML',
+        reply_markup: {
+          inline_keyboard: [
+            [{ text: 'My requests', callback_data: 'user:requests' }],
+            [
+              { text: 'Get support', callback_data: 'user:support' },
+              { text: 'Open profile', url: webUrl('/profile') }
+            ]
+          ]
+        }
+      })
+    )
+  );
+}
+
+async function notifyAdminsAboutAssignmentStatus(input: {
+  assignmentId: string;
+  lead: {
+    id: string;
+    visitorName: string | null;
+    concern: string | null;
+  };
+  providerName: string;
+  status: 'ACCEPTED' | 'DECLINED' | 'CONTACTED' | 'COMPLETED';
+}) {
+  const adminSessions = await prisma.telegramBotSession.findMany({
+    where: {
+      botKind: TelegramBotKind.ADMIN,
+      linkedUser: { role: 'ADMIN', isActive: true }
+    },
+    select: { chatId: true }
+  });
+  if (!adminSessions.length) return;
+
+  const isDeclined = input.status === 'DECLINED';
+  await Promise.allSettled(
+    adminSessions.map((adminSession) =>
+      sendTelegramMessage(TelegramBotKind.ADMIN, {
+        chat_id: adminSession.chatId,
+        text: [
+          `<b>Assignment ${input.status.toLowerCase()}</b>`,
+          `Provider: ${escapeHtml(input.providerName)}`,
+          `User: ${escapeHtml(input.lead.visitorName || 'Visitor')}`,
+          `Lead: ${escapeHtml(input.lead.id.slice(-8))}`,
+          `Concern: ${escapeHtml(input.lead.concern || 'No concern added')}`,
+          isDeclined ? '' : 'Status is synced to admin lead history.'
+        ]
+          .filter(Boolean)
+          .join('\n'),
+        parse_mode: 'HTML',
+        reply_markup: {
+          inline_keyboard: isDeclined
+            ? [
+                [
+                  { text: 'Assign Shyam', callback_data: `lead:assign:shyam:${input.lead.id}` },
+                  { text: 'Assign Abhi', callback_data: `lead:assign:abhi:${input.lead.id}` }
+                ],
+                [
+                  {
+                    text: 'Assign psychologist',
+                    callback_data: `lead:assign:psychologist:${input.lead.id}`
+                  },
+                  { text: 'Open lead', url: leadAdminUrl(input.lead.id) }
+                ]
+              ]
+            : [[{ text: 'Open lead', url: leadAdminUrl(input.lead.id) }]]
+        }
+      })
+    )
+  );
+}
+
 async function updateProviderAssignmentStatus(
   kind: TelegramBotKind,
   session: TelegramSession,
@@ -1194,7 +1381,18 @@ async function updateProviderAssignmentStatus(
 
   const assignment = await prisma.websiteLeadAssignment.findFirst({
     where: { id: assignmentId, providerId: session.linkedUserId! },
-    include: { lead: { select: { id: true, operatorNote: true } } }
+    include: {
+      provider: { select: { name: true } },
+      lead: {
+        select: {
+          id: true,
+          userId: true,
+          visitorName: true,
+          concern: true,
+          operatorNote: true
+        }
+      }
+    }
   });
   if (!assignment) {
     await sendTelegramMessage(kind, {
@@ -1225,6 +1423,25 @@ async function updateProviderAssignmentStatus(
         .join('\n')
     }
   });
+
+  const providerName = assignment.provider?.name || session.linkedUser?.name || 'Provider';
+  await notifyAdminsAboutAssignmentStatus({
+    assignmentId: assignment.id,
+    lead: assignment.lead,
+    providerName,
+    status: statusByAction[action]
+  });
+  if (
+    statusByAction[action] === 'ACCEPTED' ||
+    statusByAction[action] === 'CONTACTED' ||
+    statusByAction[action] === 'COMPLETED'
+  ) {
+    await notifyUserAboutAssignmentStatus({
+      lead: assignment.lead,
+      providerName,
+      status: statusByAction[action]
+    });
+  }
 
   await sendTelegramMessage(kind, {
     chat_id: session.chatId,
@@ -1891,6 +2108,7 @@ async function handleCommand(kind: TelegramBotKind, session: TelegramSession, te
     else if (command === '/assessments' || command === '/assessment')
       await listAssessments(kind, session);
     else if (command === '/results') await showAssessmentResults(kind, session);
+    else if (command === '/requests') await showUserRequests(kind, session);
     else if (command === '/addtask') await promptAddTask(kind, session);
     else if (command === '/review') await promptReview(kind, session);
     else if (command === '/book') await promptLead(kind, session, 'BOOKING');
@@ -1973,6 +2191,7 @@ async function handleCallback(
     if (data === 'user:plan') await showUserPlan(kind, session);
     else if (data === 'user:assessments') await listAssessments(kind, session);
     else if (data === 'user:results') await showAssessmentResults(kind, session);
+    else if (data === 'user:requests') await showUserRequests(kind, session);
     else if (data === 'user:payments') await showPaymentHub(kind, session);
     else if (data === 'user:whatsapp') await showWhatsAppJoin(kind, session);
     else if (data.startsWith('assessment:start:'))

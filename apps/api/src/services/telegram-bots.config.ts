@@ -41,6 +41,7 @@ export const commandMenus: Record<TelegramBotKind, { command: string; descriptio
     { command: 'plan', description: 'Daily plan and review' },
     { command: 'assessments', description: 'Take an assessment test' },
     { command: 'results', description: 'Show latest assessment results' },
+    { command: 'requests', description: 'Show support request status' },
     { command: 'addtask', description: 'Add a daily task' },
     { command: 'review', description: 'Save daily review' },
     { command: 'book', description: 'Request a session' },

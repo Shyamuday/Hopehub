@@ -20,7 +20,10 @@ export function menuFor(kind: TelegramBotKind, linked: boolean): InlineButton[][
         { text: 'Daily plan', callback_data: 'user:plan' },
         { text: 'Take assessment', callback_data: 'user:assessments' }
       ],
-      [{ text: 'My assessment results', callback_data: 'user:results' }],
+      [
+        { text: 'My assessment results', callback_data: 'user:results' },
+        { text: 'My requests', callback_data: 'user:requests' }
+      ],
       [
         { text: 'Add task', callback_data: 'user:addtask' },
         { text: 'Review day', callback_data: 'user:review' }
@@ -93,6 +96,7 @@ export function helpText(kind: TelegramBotKind) {
       '/plan - show today plan',
       '/assessments - take an assessment test',
       '/results - latest assessment results',
+      '/requests - support, booking, and volunteer request status',
       '/addtask - add a task',
       '/review - save end-of-day review',
       '/book - request a session',
