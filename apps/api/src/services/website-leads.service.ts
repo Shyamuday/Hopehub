@@ -40,7 +40,9 @@ function phoneForLead(phone?: string | null) {
 
 async function findExistingLead(input: LeadCaptureInput) {
   if (input.chatSessionId) {
-    const byChat = await prisma.websiteLead.findUnique({ where: { chatSessionId: input.chatSessionId } });
+    const byChat = await prisma.websiteLead.findUnique({
+      where: { chatSessionId: input.chatSessionId }
+    });
     if (byChat) return byChat;
   }
 
@@ -115,7 +117,11 @@ export async function upsertWebsiteLead(input: LeadCaptureInput) {
       chatSessionId: input.chatSessionId ?? null,
       userId: input.userId ?? null,
       registeredAt: input.userId ? new Date() : null,
-      followUpStatus: input.userId ? 'REGISTERED' : input.source === 'CHAT_BOT' ? 'NEW' : 'NEEDS_CALLBACK'
+      followUpStatus: input.userId
+        ? 'REGISTERED'
+        : input.source === 'CHAT_BOT'
+          ? 'NEW'
+          : 'NEEDS_CALLBACK'
     }
   });
 
@@ -123,24 +129,27 @@ export async function upsertWebsiteLead(input: LeadCaptureInput) {
   return created;
 }
 
-export async function syncLeadFromChatSession(session: Pick<
-  ChatSession,
-  | 'id'
-  | 'visitorName'
-  | 'visitorPhone'
-  | 'visitorEmail'
-  | 'concern'
-  | 'entryPage'
-  | 'visitorKey'
-  | 'userId'
-  | 'status'
-  | 'preferredCallbackTime'
->) {
+export async function syncLeadFromChatSession(
+  session: Pick<
+    ChatSession,
+    | 'id'
+    | 'visitorName'
+    | 'visitorPhone'
+    | 'visitorEmail'
+    | 'concern'
+    | 'entryPage'
+    | 'visitorKey'
+    | 'userId'
+    | 'status'
+    | 'preferredCallbackTime'
+  >
+) {
   const existing = await prisma.websiteLead.findUnique({ where: { chatSessionId: session.id } });
-  const nextStatus: WebsiteLeadFollowUp =
-    session.userId ? 'REGISTERED'
-    : session.status === 'NEEDS_OPERATOR' ? 'NEEDS_CALLBACK'
-    : 'NEW';
+  const nextStatus: WebsiteLeadFollowUp = session.userId
+    ? 'REGISTERED'
+    : session.status === 'NEEDS_OPERATOR'
+      ? 'NEEDS_CALLBACK'
+      : 'NEW';
 
   if (existing) {
     const wasActionable = ['NEW', 'NEEDS_CALLBACK'].includes(existing.followUpStatus);
@@ -156,12 +165,15 @@ export async function syncLeadFromChatSession(session: Pick<
         preferredCallbackTime: session.preferredCallbackTime,
         userId: session.userId,
         registeredAt: session.userId && !existing.registeredAt ? new Date() : existing.registeredAt,
-        followUpStatus:
-          session.userId ? 'REGISTERED'
-          : existing.followUpStatus === 'REGISTERED' ? 'REGISTERED'
-          : existing.followUpStatus === 'BOOKED' ? 'BOOKED'
-          : session.status === 'NEEDS_OPERATOR' ? 'NEEDS_CALLBACK'
-          : existing.followUpStatus
+        followUpStatus: session.userId
+          ? 'REGISTERED'
+          : existing.followUpStatus === 'REGISTERED'
+            ? 'REGISTERED'
+            : existing.followUpStatus === 'BOOKED'
+              ? 'BOOKED'
+              : session.status === 'NEEDS_OPERATOR'
+                ? 'NEEDS_CALLBACK'
+                : existing.followUpStatus
       }
     });
     if (!wasActionable && updated.followUpStatus === 'NEEDS_CALLBACK') {
@@ -245,7 +257,10 @@ export async function updateLeadFollowUp(input: {
 
   const notInterestedReason =
     input.followUpStatus === 'NOT_INTERESTED'
-      ? resolveNotInterestedReason(input.notInterestedReasonPreset ?? '', input.notInterestedReasonDetail)
+      ? resolveNotInterestedReason(
+          input.notInterestedReasonPreset ?? '',
+          input.notInterestedReasonDetail
+        )
       : undefined;
 
   const data: Prisma.WebsiteLeadUpdateInput = {
@@ -286,6 +301,22 @@ export const leadInclude = {
       operatorNote: true,
       resolvedAt: true,
       _count: { select: { messages: true } }
+    }
+  },
+  assignments: {
+    orderBy: { assignedAt: 'desc' },
+    select: {
+      id: true,
+      assignmentType: true,
+      status: true,
+      note: true,
+      assignedAt: true,
+      acceptedAt: true,
+      declinedAt: true,
+      contactedAt: true,
+      completedAt: true,
+      provider: { select: { id: true, name: true, email: true, mobile: true } },
+      assignedBy: { select: { id: true, name: true, email: true } }
     }
   }
 } satisfies Prisma.WebsiteLeadInclude;

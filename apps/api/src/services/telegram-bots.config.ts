@@ -54,6 +54,7 @@ export const commandMenus: Record<TelegramBotKind, { command: string; descriptio
   [TelegramBotKind.DOCTOR]: [
     { command: 'start', description: 'Open doctor menu' },
     { command: 'link', description: 'Link doctor account' },
+    { command: 'assignments', description: 'Assigned support leads' },
     { command: 'queue', description: 'Show consultation queue' },
     { command: 'online', description: 'Go online' },
     { command: 'offline', description: 'Go offline' },

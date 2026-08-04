@@ -16,6 +16,21 @@ enum WebsiteLeadFollowUp {
   CLOSED
 }
 
+enum WebsiteLeadAssignmentType {
+  VOLUNTEER
+  PSYCHOLOGIST
+  ADMIN
+}
+
+enum WebsiteLeadAssignmentStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  CONTACTED
+  COMPLETED
+  CANCELLED
+}
+
 model WebsiteLead {
   id             String              @id @default(cuid())
   source         WebsiteLeadSource
@@ -39,6 +54,7 @@ model WebsiteLead {
   calledAt              DateTime?
   calledById            String?
   calledBy              User?               @relation("LeadCalledBy", fields: [calledById], references: [id], onDelete: SetNull)
+  assignments           WebsiteLeadAssignment[]
   registeredAt          DateTime?
   bookedAt              DateTime?
   consultationId        String?             @unique
@@ -52,4 +68,31 @@ model WebsiteLead {
   @@index([userId])
   @@index([consultationId])
   @@index([createdAt])
+}
+
+model WebsiteLeadAssignment {
+  id             String                      @id @default(cuid())
+  leadId         String
+  lead           WebsiteLead                 @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  providerId     String?
+  provider       User?                       @relation("LeadAssignmentProvider", fields: [providerId], references: [id], onDelete: SetNull)
+  assignedById   String?
+  assignedBy     User?                       @relation("LeadAssignmentAdmin", fields: [assignedById], references: [id], onDelete: SetNull)
+  assignmentType WebsiteLeadAssignmentType
+  status         WebsiteLeadAssignmentStatus @default(PENDING)
+  note           String?                     @db.Text
+  assignedAt     DateTime                    @default(now())
+  acceptedAt     DateTime?
+  declinedAt     DateTime?
+  contactedAt    DateTime?
+  completedAt    DateTime?
+  createdAt      DateTime                    @default(now())
+  updatedAt      DateTime                    @updatedAt
+
+  @@index([leadId])
+  @@index([providerId])
+  @@index([assignedById])
+  @@index([status])
+  @@index([assignmentType])
+  @@index([assignedAt])
 }

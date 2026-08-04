@@ -901,7 +901,15 @@ async function setLeadAssignmentIntent(
   } as const;
   const lead = await prisma.websiteLead.findUnique({
     where: { id: leadId },
-    select: { id: true, operatorNote: true }
+    select: {
+      id: true,
+      visitorName: true,
+      visitorEmail: true,
+      visitorPhone: true,
+      concern: true,
+      preferredCallbackTime: true,
+      operatorNote: true
+    }
   });
   if (!lead) {
     await sendTelegramMessage(kind, {
@@ -911,7 +919,23 @@ async function setLeadAssignmentIntent(
     return;
   }
 
-  const note = `[Telegram admin] Suggested assignment: ${labels[assignee]} by ${session.linkedUser?.name || 'admin'} at ${new Date().toISOString()}`;
+  const provider = await providerForAssignment(assignee);
+  const assignmentType = assignee === 'psychologist' ? 'PSYCHOLOGIST' : 'VOLUNTEER';
+  const now = new Date();
+  const note = `[Telegram admin] Assigned to ${labels[assignee]} by ${session.linkedUser?.name || 'admin'} at ${now.toISOString()}`;
+
+  const assignment = await prisma.websiteLeadAssignment.create({
+    data: {
+      leadId,
+      providerId: provider?.id ?? null,
+      assignedById: session.linkedUserId ?? null,
+      assignmentType,
+      status: 'PENDING',
+      note
+    },
+    select: { id: true }
+  });
+
   await prisma.websiteLead.update({
     where: { id: leadId },
     data: {
@@ -920,9 +944,21 @@ async function setLeadAssignmentIntent(
     }
   });
 
+  await notifyProviderAboutLeadAssignment({
+    assignmentId: assignment.id,
+    providerId: provider?.id ?? null,
+    lead
+  });
+
   await sendTelegramMessage(kind, {
     chat_id: session.chatId,
-    text: `Saved assignment intent: ${labels[assignee]} for lead ${leadId.slice(-8)}.`,
+    text: [
+      `Assignment created: ${labels[assignee]} for lead ${leadId.slice(-8)}.`,
+      provider
+        ? `Provider: ${escapeHtml(provider.name)}${provider.email ? ` (${escapeHtml(provider.email)})` : ''}`
+        : 'No matching provider account found yet; assignment is saved without provider notification.'
+    ].join('\n'),
+    parse_mode: 'HTML',
     reply_markup: {
       inline_keyboard: [[{ text: 'Open lead', url: leadAdminUrl(leadId) }]]
     }
@@ -961,6 +997,240 @@ async function markTelegramLeadFollowUp(
     text: `Marked follow-up needed for lead ${leadId.slice(-8)}.`,
     reply_markup: {
       inline_keyboard: [[{ text: 'Open lead', url: leadAdminUrl(leadId) }]]
+    }
+  });
+}
+
+async function providerForAssignment(assignee: 'shyam' | 'abhi' | 'psychologist') {
+  const where =
+    assignee === 'shyam'
+      ? { user: { name: { contains: 'shyam', mode: 'insensitive' as const }, isActive: true } }
+      : assignee === 'abhi'
+        ? {
+            user: {
+              OR: [
+                { name: { contains: 'abhi', mode: 'insensitive' as const } },
+                { email: { contains: 'inboxmead', mode: 'insensitive' as const } }
+              ],
+              isActive: true
+            }
+          }
+        : {
+            showOnWebsite: true,
+            user: { isActive: true },
+            OR: [
+              { doctorType: 'PSYCHOLOGIST' as const },
+              { specialty: { contains: 'psycholog', mode: 'insensitive' as const } },
+              { designation: { contains: 'psycholog', mode: 'insensitive' as const } }
+            ]
+          };
+
+  const doctor = await prisma.doctor.findFirst({
+    where,
+    orderBy: [{ websiteOrder: { sort: 'asc', nulls: 'last' } }, { createdAt: 'asc' }],
+    select: {
+      userId: true,
+      user: { select: { id: true, name: true, email: true } }
+    }
+  });
+  return doctor?.user ?? null;
+}
+
+async function notifyProviderAboutLeadAssignment(input: {
+  assignmentId: string;
+  providerId: string | null;
+  lead: {
+    id: string;
+    visitorName: string | null;
+    visitorEmail: string | null;
+    visitorPhone: string | null;
+    concern: string | null;
+    preferredCallbackTime: string | null;
+  };
+}) {
+  if (!input.providerId) return;
+  const providerSessions = await prisma.telegramBotSession.findMany({
+    where: {
+      botKind: TelegramBotKind.DOCTOR,
+      linkedUserId: input.providerId,
+      linkedUser: { isActive: true, role: 'DOCTOR' }
+    },
+    select: { chatId: true }
+  });
+  if (!providerSessions.length) return;
+
+  await Promise.allSettled(
+    providerSessions.map((providerSession) =>
+      sendTelegramMessage(TelegramBotKind.DOCTOR, {
+        chat_id: providerSession.chatId,
+        text: [
+          '<b>New assigned support lead</b>',
+          `Lead: ${escapeHtml(input.lead.id.slice(-8))}`,
+          `User: ${escapeHtml(input.lead.visitorName || 'Visitor')}`,
+          input.lead.visitorEmail ? `Email: ${escapeHtml(input.lead.visitorEmail)}` : '',
+          input.lead.visitorPhone ? `Phone: ${escapeHtml(input.lead.visitorPhone)}` : '',
+          `Concern: ${escapeHtml(input.lead.concern || 'No concern added')}`,
+          input.lead.preferredCallbackTime
+            ? `Preferred time: ${escapeHtml(input.lead.preferredCallbackTime)}`
+            : '',
+          '',
+          'Please accept if you can handle this.'
+        ]
+          .filter(Boolean)
+          .join('\n'),
+        parse_mode: 'HTML',
+        reply_markup: {
+          inline_keyboard: [
+            [
+              { text: 'Accept', callback_data: `provider:assign:accept:${input.assignmentId}` },
+              { text: 'Decline', callback_data: `provider:assign:decline:${input.assignmentId}` }
+            ],
+            [
+              {
+                text: 'Mark contacted',
+                callback_data: `provider:assign:contacted:${input.assignmentId}`
+              },
+              { text: 'Complete', callback_data: `provider:assign:complete:${input.assignmentId}` }
+            ],
+            [{ text: 'My assignments', callback_data: 'doctor:assignments' }]
+          ]
+        }
+      })
+    )
+  );
+}
+
+async function showProviderAssignments(kind: TelegramBotKind, session: TelegramSession) {
+  if (!(await requireLinked(kind, session))) return;
+  const assignments = await prisma.websiteLeadAssignment.findMany({
+    where: {
+      providerId: session.linkedUserId!,
+      status: { in: ['PENDING', 'ACCEPTED', 'CONTACTED'] }
+    },
+    include: {
+      lead: {
+        select: {
+          id: true,
+          visitorName: true,
+          visitorEmail: true,
+          visitorPhone: true,
+          concern: true,
+          preferredCallbackTime: true,
+          createdAt: true
+        }
+      }
+    },
+    orderBy: [{ assignedAt: 'desc' }],
+    take: 8
+  });
+
+  if (!assignments.length) {
+    await sendTelegramMessage(kind, {
+      chat_id: session.chatId,
+      text: 'No active support lead assignments right now.',
+      reply_markup: { inline_keyboard: [[{ text: 'Main menu', callback_data: 'common:menu' }]] }
+    });
+    return;
+  }
+
+  await sendTelegramMessage(kind, {
+    chat_id: session.chatId,
+    text: [
+      '<b>Your support assignments</b>',
+      '',
+      ...assignments.map(
+        (assignment, index) =>
+          `${index + 1}. <b>${escapeHtml(assignment.lead.visitorName || 'Visitor')}</b> · ${assignment.status}\n${escapeHtml(assignment.lead.concern || 'No concern added')}\nLead: ${escapeHtml(assignment.lead.id.slice(-8))}`
+      )
+    ].join('\n\n'),
+    parse_mode: 'HTML',
+    reply_markup: {
+      inline_keyboard: assignments.flatMap((assignment) => [
+        [
+          {
+            text: `Accept ${assignment.lead.id.slice(-4)}`,
+            callback_data: `provider:assign:accept:${assignment.id}`
+          },
+          {
+            text: `Decline ${assignment.lead.id.slice(-4)}`,
+            callback_data: `provider:assign:decline:${assignment.id}`
+          }
+        ],
+        [
+          {
+            text: `Contacted ${assignment.lead.id.slice(-4)}`,
+            callback_data: `provider:assign:contacted:${assignment.id}`
+          },
+          {
+            text: `Complete ${assignment.lead.id.slice(-4)}`,
+            callback_data: `provider:assign:complete:${assignment.id}`
+          }
+        ]
+      ])
+    }
+  });
+}
+
+async function updateProviderAssignmentStatus(
+  kind: TelegramBotKind,
+  session: TelegramSession,
+  assignmentId: string,
+  action: 'accept' | 'decline' | 'contacted' | 'complete'
+) {
+  if (!(await requireLinked(kind, session))) return;
+  const now = new Date();
+  const statusByAction = {
+    accept: 'ACCEPTED',
+    decline: 'DECLINED',
+    contacted: 'CONTACTED',
+    complete: 'COMPLETED'
+  } as const;
+  const timestampField = {
+    accept: 'acceptedAt',
+    decline: 'declinedAt',
+    contacted: 'contactedAt',
+    complete: 'completedAt'
+  } as const;
+
+  const assignment = await prisma.websiteLeadAssignment.findFirst({
+    where: { id: assignmentId, providerId: session.linkedUserId! },
+    include: { lead: { select: { id: true, operatorNote: true } } }
+  });
+  if (!assignment) {
+    await sendTelegramMessage(kind, {
+      chat_id: session.chatId,
+      text: 'Assignment not found for your provider account.'
+    });
+    return;
+  }
+
+  await prisma.websiteLeadAssignment.update({
+    where: { id: assignment.id },
+    data: {
+      status: statusByAction[action],
+      [timestampField[action]]: now
+    }
+  });
+  await prisma.websiteLead.update({
+    where: { id: assignment.leadId },
+    data: {
+      followUpStatus:
+        action === 'complete' ? 'CLOSED' : action === 'contacted' ? 'CALLED' : 'NEEDS_CALLBACK',
+      calledAt: action === 'contacted' ? now : undefined,
+      operatorNote: [
+        `[Provider bot] ${session.linkedUser?.name || 'Provider'} marked assignment ${statusByAction[action]} at ${now.toISOString()}`,
+        assignment.lead.operatorNote
+      ]
+        .filter(Boolean)
+        .join('\n')
+    }
+  });
+
+  await sendTelegramMessage(kind, {
+    chat_id: session.chatId,
+    text: `Assignment ${assignment.leadId.slice(-8)} updated: ${statusByAction[action]}.`,
+    reply_markup: {
+      inline_keyboard: [[{ text: 'My assignments', callback_data: 'doctor:assignments' }]]
     }
   });
 }
@@ -1633,7 +1903,8 @@ async function handleCommand(kind: TelegramBotKind, session: TelegramSession, te
   }
 
   if (kind === TelegramBotKind.DOCTOR) {
-    if (command === '/queue') await doctorQueue(kind, session);
+    if (command === '/assignments') await showProviderAssignments(kind, session);
+    else if (command === '/queue') await doctorQueue(kind, session);
     else if (command === '/online') await setDoctorPresence(kind, session, true);
     else if (command === '/offline') await setDoctorPresence(kind, session, false);
     else await replyMenu(kind, session, 'Choose an option or send /help.');
@@ -1788,10 +2059,23 @@ async function handleCallback(
   }
 
   if (kind === TelegramBotKind.DOCTOR) {
-    if (data === 'doctor:queue') await doctorQueue(kind, session);
+    if (data === 'doctor:assignments') await showProviderAssignments(kind, session);
+    else if (data === 'doctor:queue') await doctorQueue(kind, session);
     else if (data === 'doctor:online') await setDoctorPresence(kind, session, true);
     else if (data === 'doctor:offline') await setDoctorPresence(kind, session, false);
-    else await replyMenu(kind, session, 'Choose an option from the menu.');
+    else if (data.startsWith('provider:assign:')) {
+      const [, , action, assignmentId] = data.split(':');
+      if (
+        action === 'accept' ||
+        action === 'decline' ||
+        action === 'contacted' ||
+        action === 'complete'
+      ) {
+        await updateProviderAssignmentStatus(kind, session, assignmentId, action);
+      } else {
+        await replyMenu(kind, session, 'Unknown assignment action.');
+      }
+    } else await replyMenu(kind, session, 'Choose an option from the menu.');
     return;
   }
 

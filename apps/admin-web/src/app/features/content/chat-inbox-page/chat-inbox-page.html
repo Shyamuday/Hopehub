@@ -181,6 +181,34 @@
         <p class="view-only-hint">Updates are done by reception in Operations → Visitor Leads.</p>
       </div>
 
+      @if (lead.assignments?.length) {
+        <div class="follow-up-summary assignment-summary">
+          <h3>Telegram/provider assignments</h3>
+          @for (assignment of lead.assignments; track assignment.id) {
+            <article class="assignment-card">
+              <div>
+                <strong>
+                  {{ assignment.provider?.name || 'Unassigned provider' }}
+                </strong>
+                <p>
+                  {{ assignment.assignmentType }} · {{ assignment.status }} ·
+                  {{ formatTime(assignment.assignedAt) }}
+                  @if (assignment.assignedBy?.name) {
+                    by {{ assignment.assignedBy!.name }}
+                  }
+                </p>
+                @if (assignment.note) {
+                  <small>{{ assignment.note }}</small>
+                }
+              </div>
+              <span class="badge" [class]="followUpClass(assignment.status)">
+                {{ assignment.status }}
+              </span>
+            </article>
+          }
+        </div>
+      }
+
       @if (lead.chatSession?.messages?.length) {
         <h3 class="thread-heading">Chat conversation</h3>
         <div class="messages-thread">

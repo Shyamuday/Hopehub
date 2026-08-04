@@ -52,6 +52,7 @@ export function menuFor(kind: TelegramBotKind, linked: boolean): InlineButton[][
 
   if (kind === 'DOCTOR') {
     return [
+      [{ text: 'Assigned support leads', callback_data: 'doctor:assignments' }],
       [
         { text: 'My queue', callback_data: 'doctor:queue' },
         { text: 'Go online', callback_data: 'doctor:online' }
@@ -108,6 +109,7 @@ export function helpText(kind: TelegramBotKind) {
     return [
       '<b>Doctor bot commands</b>',
       '/link doctor@example.com - link doctor account',
+      '/assignments - assigned support leads',
       '/queue - real queue summary',
       '/online - mark online',
       '/offline - mark offline'

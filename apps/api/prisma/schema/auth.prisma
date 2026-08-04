@@ -198,6 +198,8 @@ model User {
   dailyPlans          PatientDailyPlan[] @relation("PatientDailyPlans")
   dailyPlanUploads    PatientDailyPlanImage[] @relation("PatientDailyPlanUploads")
   telegramBotSessions TelegramBotSession[] @relation("UserTelegramBotSessions")
+  leadAssignmentsReceived WebsiteLeadAssignment[] @relation("LeadAssignmentProvider")
+  leadAssignmentsCreated WebsiteLeadAssignment[] @relation("LeadAssignmentAdmin")
   lifestyleTipSessions UserLifestyleTipSession[] @relation("UserLifestyleTipSessions")
   assessmentAccessGrants AssessmentAccessGrant[] @relation("AssessmentAccessGrants")
   assessmentCouponRedemptions AssessmentCouponRedemption[] @relation("AssessmentCouponRedemptions")

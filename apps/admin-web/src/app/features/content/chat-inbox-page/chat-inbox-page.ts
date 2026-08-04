@@ -31,6 +31,19 @@ type WebsiteLead = {
   user?: { id: string; name: string; mobile?: string | null; email?: string | null } | null;
   calledBy?: { id: string; name: string } | null;
   consultation?: { id: string; status: string; disease?: { name: string } | null } | null;
+  assignments?: Array<{
+    id: string;
+    assignmentType: string;
+    status: string;
+    note?: string | null;
+    assignedAt: string;
+    acceptedAt?: string | null;
+    declinedAt?: string | null;
+    contactedAt?: string | null;
+    completedAt?: string | null;
+    provider?: { id: string; name: string; email?: string | null; mobile?: string | null } | null;
+    assignedBy?: { id: string; name: string; email?: string | null } | null;
+  }>;
   chatSession?: {
     id: string;
     status: string;
