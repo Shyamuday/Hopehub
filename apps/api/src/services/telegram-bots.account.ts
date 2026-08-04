@@ -253,6 +253,14 @@ export async function finishSignup(
       name: name.slice(0, 120),
       email: pending.email
     });
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        authProvider: 'TELEGRAM',
+        lastLoginAt: new Date(),
+        lastLoginMethod: 'TELEGRAM_BOT_SIGNUP'
+      }
+    });
 
     const nextMetadata: SessionMetadata = { ...metadata };
     delete nextMetadata.pendingSignup;
@@ -328,6 +336,14 @@ export async function verifyLink(
     });
     return;
   }
+
+  await prisma.user.update({
+    where: { id: user.id },
+    data: {
+      lastLoginAt: new Date(),
+      lastLoginMethod: `TELEGRAM_${kind}_LINK`
+    }
+  });
 
   const nextMetadata: SessionMetadata = { ...metadata };
   delete nextMetadata.pendingLink;
