@@ -76,6 +76,11 @@ import { StockTransferError } from './services/stock-transfers.js';
 import { MedicineDeliveryError } from './services/medicine-deliveries.js';
 import { LabReferralError } from './services/lab-referrals.js';
 import { scheduleAuthProcessLogRetention } from './services/auth-process-log.js';
+import {
+  runTelegramReminderSchedulers,
+  telegramReminderSweepEnabled,
+  telegramReminderSweepIntervalMs
+} from './services/telegram-bot-reminders.js';
 
 // ── Schedulers ─────────────────────────────────────────────────────────────────
 import {
@@ -305,9 +310,19 @@ httpServer.listen(port, () => {
   console.log(
     `[scheduler] Notification channels: ${enabledNotificationChannels.join(', ') || 'none'}`
   );
+  if (!telegramReminderSweepEnabled) {
+    console.log('[scheduler] Telegram reminder sweep disabled');
+  } else {
+    console.log(
+      `[scheduler] Telegram reminder sweep enabled (interval: ${telegramReminderSweepIntervalMs}ms)`
+    );
+  }
 
   void runDoseSchedulers().catch((e) =>
     console.error('[scheduler] Initial dose scheduler run failed', e)
+  );
+  void runTelegramReminderSchedulers().catch((e) =>
+    console.error('[scheduler] Initial Telegram reminder scheduler run failed', e)
   );
 
   const doseTimer = setInterval(() => {
@@ -316,6 +331,13 @@ httpServer.listen(port, () => {
     );
   }, doseOverdueSweepIntervalMs);
   doseTimer.unref();
+
+  const telegramReminderTimer = setInterval(() => {
+    void runTelegramReminderSchedulers().catch((e) =>
+      console.error('[scheduler] Telegram reminder scheduler run failed', e)
+    );
+  }, telegramReminderSweepIntervalMs);
+  telegramReminderTimer.unref();
 
   void restoreEmployeesFromLeave().catch((e) =>
     console.error('[scheduler] Leave restore failed', e)

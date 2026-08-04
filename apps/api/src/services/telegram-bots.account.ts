@@ -14,7 +14,7 @@ import { botNameByKind, roleByKind } from './telegram-bots.config.js';
 import { sendTelegramMessage } from './telegram-bots.client.js';
 import { menuFor } from './telegram-bots.menus.js';
 import { escapeHtml, metadataOf } from './telegram-bots.helpers.js';
-import { menuCancelRows } from './telegram-bots.ui.js';
+import { menuCancelRows, webUrl } from './telegram-bots.ui.js';
 import type { SessionMetadata } from './telegram-bots.types.js';
 import { updateSession, type TelegramSession } from './telegram-bots.sessions.js';
 
@@ -28,9 +28,10 @@ export async function replyMenu(kind: TelegramBotKind, session: TelegramSession,
 }
 
 export async function cancelPending(kind: TelegramBotKind, session: TelegramSession) {
+  const metadata = metadataOf(session);
   const updated = await updateSession(session, {
     state: 'ACTIVE',
-    metadata: {},
+    metadata: (metadata.settings ? { settings: metadata.settings } : {}) as Prisma.InputJsonValue,
     lastCommand: '/cancel'
   });
   await replyMenu(kind, updated, 'Cancelled. Back to main menu.');
@@ -66,6 +67,99 @@ export async function requireLinked(kind: TelegramBotKind, session: TelegramSess
     }
   });
   return false;
+}
+
+export async function showOnboarding(kind: TelegramBotKind, session: TelegramSession) {
+  if (kind !== TelegramBotKind.USER) {
+    await replyMenu(kind, session, 'Use the menu to continue.');
+    return;
+  }
+
+  await sendTelegramMessage(kind, {
+    chat_id: session.chatId,
+    text: [
+      '<b>Welcome checklist</b>',
+      '',
+      '1. ✅ Create/link your Hope Hub account',
+      '2. Complete your website profile',
+      '3. Take your first assessment',
+      '4. Create today’s healing plan',
+      '5. Join WhatsApp community',
+      '6. Book support if you need human help',
+      '',
+      'Small steps. Less chaos. Tiny lantern, big cave energy.'
+    ].join('\n'),
+    parse_mode: 'HTML',
+    reply_markup: {
+      inline_keyboard: [
+        [
+          { text: 'Open profile', url: webUrl('/profile') },
+          { text: 'Take assessment', callback_data: 'user:assessments' }
+        ],
+        [
+          { text: 'Create plan', callback_data: 'user:plan' },
+          { text: 'Get support', callback_data: 'user:support' }
+        ],
+        [{ text: 'Settings', callback_data: 'common:settings' }],
+        [{ text: 'Main menu', callback_data: 'common:menu' }]
+      ]
+    }
+  });
+}
+
+export async function showSettings(kind: TelegramBotKind, session: TelegramSession) {
+  if (!(await requireLinked(kind, session))) return;
+  const metadata = metadataOf(session);
+  const dailyReminders = metadata.settings?.dailyReminders ?? false;
+  const username = session.username ? `@${session.username}` : 'Not available';
+
+  await sendTelegramMessage(kind, {
+    chat_id: session.chatId,
+    text: [
+      '<b>Telegram settings</b>',
+      '',
+      `Linked account: ${escapeHtml(session.linkedUser?.name || 'Unknown')}`,
+      `Role: ${session.linkedUser?.role || roleByKind[kind]}`,
+      `Telegram: ${escapeHtml(username)}`,
+      `Daily reminders: ${dailyReminders ? 'On' : 'Off'}`,
+      '',
+      '<b>Privacy</b>',
+      'Telegram is used for lightweight actions and reminders. Keep sensitive health documents inside the Hope Hub website/app.'
+    ].join('\n'),
+    parse_mode: 'HTML',
+    reply_markup: {
+      inline_keyboard: [
+        [
+          {
+            text: dailyReminders ? 'Turn reminders off' : 'Turn reminders on',
+            callback_data: 'common:toggle_daily_reminders'
+          }
+        ],
+        [
+          { text: 'Open profile', url: webUrl('/profile') },
+          { text: 'Onboarding', callback_data: 'common:onboarding' }
+        ],
+        [
+          { text: 'Unlink', callback_data: 'common:unlink' },
+          { text: 'Main menu', callback_data: 'common:menu' }
+        ]
+      ]
+    }
+  });
+}
+
+export async function toggleDailyReminders(kind: TelegramBotKind, session: TelegramSession) {
+  if (!(await requireLinked(kind, session))) return;
+  const metadata = metadataOf(session);
+  const nextSettings = {
+    ...(metadata.settings ?? {}),
+    dailyReminders: !(metadata.settings?.dailyReminders ?? false)
+  };
+  const updated = await updateSession(session, {
+    metadata: { ...metadata, settings: nextSettings } as Prisma.InputJsonValue,
+    lastCommand: '/settings'
+  });
+  await showSettings(kind, updated);
 }
 
 export async function startLink(
@@ -282,6 +376,7 @@ export async function finishSignup(
         'You can now use daily plan, assessments, support, booking, and payments from Telegram.'
       ].join('\n')
     );
+    await showOnboarding(kind, linkedSession);
   } catch (error) {
     if (error instanceof Error && error.message === 'EMAIL_TAKEN') {
       await sendTelegramMessage(kind, {
@@ -359,6 +454,9 @@ export async function verifyLink(
     linkedSession,
     `<b>Linked.</b>\n${escapeHtml(user.name)} is now connected to this ${botNameByKind[kind]}.`
   );
+  if (kind === TelegramBotKind.USER) {
+    await showOnboarding(kind, linkedSession);
+  }
 }
 
 export async function unlink(kind: TelegramBotKind, session: TelegramSession) {

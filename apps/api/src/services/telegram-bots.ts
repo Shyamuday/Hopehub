@@ -25,8 +25,11 @@ import {
   replyMenu,
   requireLinked,
   showMe,
+  showOnboarding,
+  showSettings,
   startLink,
   startSignup,
+  toggleDailyReminders,
   unlink,
   verifyLink
 } from './telegram-bots.account.js';
@@ -752,6 +755,216 @@ async function notifyAdminsAboutSafetyFlag(
   );
 }
 
+async function notifyAdminsAboutSafetySupportLead(
+  session: TelegramSession,
+  lead: { id: string },
+  details: { concern: string; preferredCallbackTime?: string | null }
+) {
+  const adminSessions = await prisma.telegramBotSession.findMany({
+    where: {
+      botKind: TelegramBotKind.ADMIN,
+      linkedUser: { role: 'ADMIN', isActive: true }
+    },
+    select: { chatId: true }
+  });
+
+  const userLine = session.linkedUser
+    ? `${session.linkedUser.name} (${session.linkedUser.email || 'no email'})`
+    : telegramDisplayName(session);
+
+  await Promise.allSettled(
+    adminSessions.map((adminSession) =>
+      sendTelegramMessage(TelegramBotKind.ADMIN, {
+        chat_id: adminSession.chatId,
+        text: [
+          '<b>Safety support request</b>',
+          `User: ${escapeHtml(userLine)}`,
+          `Telegram: ${escapeHtml(session.username ? `@${session.username}` : session.chatId)}`,
+          `Lead: ${escapeHtml(lead.id.slice(-8))}`,
+          `Concern: ${escapeHtml(details.concern)}`,
+          details.preferredCallbackTime
+            ? `Preferred time: ${escapeHtml(details.preferredCallbackTime)}`
+            : '',
+          '',
+          'Follow safety protocol. Do not assign volunteer-only handling for crisis risk.'
+        ]
+          .filter(Boolean)
+          .join('\n'),
+        parse_mode: 'HTML',
+        reply_markup: {
+          inline_keyboard: [
+            [
+              {
+                text: 'Assign psychologist',
+                callback_data: `lead:assign:psychologist:${lead.id}`
+              },
+              { text: 'Mark follow-up', callback_data: `lead:followup:${lead.id}` }
+            ],
+            [{ text: 'Open lead', url: leadAdminUrl(lead.id) }]
+          ]
+        }
+      })
+    )
+  );
+}
+
+function leadAdminUrl(leadId: string) {
+  return adminUrl(`/chat-inbox?leadId=${encodeURIComponent(leadId)}`);
+}
+
+async function notifyAdminsAboutTelegramLead(
+  session: TelegramSession,
+  lead: { id: string },
+  details: {
+    kind: 'BOOKING' | 'SUPPORT' | 'VOLUNTEER';
+    concern: string;
+    preferredCallbackTime?: string | null;
+    safety: boolean;
+  }
+) {
+  if (details.safety) {
+    await notifyAdminsAboutSafetySupportLead(session, lead, {
+      concern: details.concern,
+      preferredCallbackTime: details.preferredCallbackTime
+    });
+    return;
+  }
+
+  const adminSessions = await prisma.telegramBotSession.findMany({
+    where: {
+      botKind: TelegramBotKind.ADMIN,
+      linkedUser: { role: 'ADMIN', isActive: true }
+    },
+    select: { chatId: true }
+  });
+
+  if (!adminSessions.length) return;
+
+  const userLine = session.linkedUser
+    ? `${session.linkedUser.name} (${session.linkedUser.email || 'no email'})`
+    : telegramDisplayName(session);
+  const kindLabel =
+    details.kind === 'BOOKING'
+      ? 'Booking request'
+      : details.kind === 'SUPPORT'
+        ? 'Support request'
+        : 'Volunteer request';
+
+  await Promise.allSettled(
+    adminSessions.map((adminSession) =>
+      sendTelegramMessage(TelegramBotKind.ADMIN, {
+        chat_id: adminSession.chatId,
+        text: [
+          `<b>New Telegram ${kindLabel}</b>`,
+          `User: ${escapeHtml(userLine)}`,
+          `Telegram: ${escapeHtml(session.username ? `@${session.username}` : session.chatId)}`,
+          `Lead: ${escapeHtml(lead.id.slice(-8))}`,
+          `Concern: ${escapeHtml(details.concern)}`,
+          details.preferredCallbackTime
+            ? `Preferred time: ${escapeHtml(details.preferredCallbackTime)}`
+            : '',
+          '',
+          'Choose a quick handoff or open admin for full review.'
+        ]
+          .filter(Boolean)
+          .join('\n'),
+        parse_mode: 'HTML',
+        reply_markup: {
+          inline_keyboard: [
+            [
+              { text: 'Assign Shyam', callback_data: `lead:assign:shyam:${lead.id}` },
+              { text: 'Assign Abhi', callback_data: `lead:assign:abhi:${lead.id}` }
+            ],
+            [
+              { text: 'Assign psychologist', callback_data: `lead:assign:psychologist:${lead.id}` },
+              { text: 'Mark follow-up', callback_data: `lead:followup:${lead.id}` }
+            ],
+            [{ text: 'Open lead', url: leadAdminUrl(lead.id) }]
+          ]
+        }
+      })
+    )
+  );
+}
+
+async function setLeadAssignmentIntent(
+  kind: TelegramBotKind,
+  session: TelegramSession,
+  leadId: string,
+  assignee: 'shyam' | 'abhi' | 'psychologist'
+) {
+  if (kind !== TelegramBotKind.ADMIN || !(await requireLinked(kind, session))) return;
+  const labels = {
+    shyam: 'Shyam',
+    abhi: 'Abhi',
+    psychologist: 'Psychologist'
+  } as const;
+  const lead = await prisma.websiteLead.findUnique({
+    where: { id: leadId },
+    select: { id: true, operatorNote: true }
+  });
+  if (!lead) {
+    await sendTelegramMessage(kind, {
+      chat_id: session.chatId,
+      text: 'Lead not found. It may have been deleted or merged.'
+    });
+    return;
+  }
+
+  const note = `[Telegram admin] Suggested assignment: ${labels[assignee]} by ${session.linkedUser?.name || 'admin'} at ${new Date().toISOString()}`;
+  await prisma.websiteLead.update({
+    where: { id: leadId },
+    data: {
+      followUpStatus: 'NEEDS_CALLBACK',
+      operatorNote: [note, lead.operatorNote].filter(Boolean).join('\n')
+    }
+  });
+
+  await sendTelegramMessage(kind, {
+    chat_id: session.chatId,
+    text: `Saved assignment intent: ${labels[assignee]} for lead ${leadId.slice(-8)}.`,
+    reply_markup: {
+      inline_keyboard: [[{ text: 'Open lead', url: leadAdminUrl(leadId) }]]
+    }
+  });
+}
+
+async function markTelegramLeadFollowUp(
+  kind: TelegramBotKind,
+  session: TelegramSession,
+  leadId: string
+) {
+  if (kind !== TelegramBotKind.ADMIN || !(await requireLinked(kind, session))) return;
+  const lead = await prisma.websiteLead.findUnique({
+    where: { id: leadId },
+    select: { id: true, operatorNote: true }
+  });
+  if (!lead) {
+    await sendTelegramMessage(kind, {
+      chat_id: session.chatId,
+      text: 'Lead not found. It may have been deleted or merged.'
+    });
+    return;
+  }
+
+  const note = `[Telegram admin] Follow-up acknowledged by ${session.linkedUser?.name || 'admin'} at ${new Date().toISOString()}`;
+  await prisma.websiteLead.update({
+    where: { id: leadId },
+    data: {
+      followUpStatus: 'NEEDS_CALLBACK',
+      operatorNote: [note, lead.operatorNote].filter(Boolean).join('\n')
+    }
+  });
+
+  await sendTelegramMessage(kind, {
+    chat_id: session.chatId,
+    text: `Marked follow-up needed for lead ${leadId.slice(-8)}.`,
+    reply_markup: {
+      inline_keyboard: [[{ text: 'Open lead', url: leadAdminUrl(leadId) }]]
+    }
+  });
+}
+
 async function markSafetyFlagReviewed(
   kind: TelegramBotKind,
   session: TelegramSession,
@@ -1101,7 +1314,9 @@ async function setLeadConcern(kind: TelegramBotKind, session: TelegramSession, c
       chat_id: session.chatId,
       text: [
         '<b>Safety note</b>',
-        'If there is immediate danger or risk of self-harm, contact local emergency services now. Hope Hub Telegram support is not an emergency service.',
+        'If there is immediate danger, self-harm risk, violence, overdose, or medical emergency, contact local emergency services now or go to the nearest emergency department.',
+        '',
+        'Hope Hub Telegram support is not an emergency service. A volunteer should not handle crisis risk alone.',
         '',
         'You can still continue below so our team can follow up.'
       ].join('\n'),
@@ -1194,6 +1409,16 @@ async function createLeadRequest(
     preferredCallbackTime: timeText || pendingLead.time || null,
     entryPage: `telegram:${botSlugByKind[session.botKind]}`,
     userId: linkedUser?.id ?? null
+  });
+
+  const isSafetySupportLead =
+    leadKind === 'SUPPORT' &&
+    /safety|self[-\s]?harm|suicide|unsafe|danger|emergency/i.test(concern);
+  await notifyAdminsAboutTelegramLead(session, lead, {
+    kind: leadKind,
+    concern,
+    preferredCallbackTime: timeText || pendingLead.time || null,
+    safety: isSafetySupportLead
   });
 
   const nextMetadata: SessionMetadata = { ...metadata };
@@ -1381,6 +1606,16 @@ async function handleCommand(kind: TelegramBotKind, session: TelegramSession, te
     return command;
   }
 
+  if (command === '/settings') {
+    await showSettings(kind, session);
+    return command;
+  }
+
+  if (command === '/onboarding') {
+    await showOnboarding(kind, session);
+    return command;
+  }
+
   if (kind === TelegramBotKind.USER) {
     if (command === '/plan') await showUserPlan(kind, session);
     else if (command === '/assessments' || command === '/assessment')
@@ -1444,6 +1679,18 @@ async function handleCallback(
   }
   if (data === 'common:me') {
     await showMe(kind, session);
+    return;
+  }
+  if (data === 'common:settings') {
+    await showSettings(kind, session);
+    return;
+  }
+  if (data === 'common:toggle_daily_reminders') {
+    await toggleDailyReminders(kind, session);
+    return;
+  }
+  if (data === 'common:onboarding') {
+    await showOnboarding(kind, session);
     return;
   }
   if (data === 'common:unlink') {
@@ -1553,6 +1800,15 @@ async function handleCallback(
   else if (data === 'admin:contributors') await adminContributors(kind, session);
   else if (data.startsWith('admin:safety_reviewed:'))
     await markSafetyFlagReviewed(kind, session, data.slice('admin:safety_reviewed:'.length));
+  else if (data.startsWith('lead:assign:')) {
+    const [, , assignee, leadId] = data.split(':');
+    if (assignee === 'shyam' || assignee === 'abhi' || assignee === 'psychologist') {
+      await setLeadAssignmentIntent(kind, session, leadId, assignee);
+    } else {
+      await replyMenu(kind, session, 'Unknown assignment option.');
+    }
+  } else if (data.startsWith('lead:followup:'))
+    await markTelegramLeadFollowUp(kind, session, data.slice('lead:followup:'.length));
   else await replyMenu(kind, session, 'Choose an option from the menu.');
 }
 

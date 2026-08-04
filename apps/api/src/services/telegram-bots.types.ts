@@ -72,4 +72,7 @@ export type SessionMetadata = {
     answers: number[];
   };
   pendingTaskId?: string;
+  settings?: {
+    dailyReminders?: boolean;
+  };
 };

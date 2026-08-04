@@ -27,44 +27,28 @@ export function registerAdminConsumerRoutes(router: Router) {
       const sortDirection =
         queryText(req, 'sortDirection').toLowerCase() === 'asc' ? 'asc' : 'desc';
 
-      const consultations = await prisma.consultation.findMany({
-        select: { patient: { select: publicUserSelect } }
+      const patients = await prisma.user.findMany({
+        where: { role: Role.PATIENT },
+        select: {
+          ...publicUserSelect,
+          _count: { select: { patientConsults: true } }
+        }
       });
 
-      const grouped = new Map<
-        string,
-        {
-          id: string;
-          name: string;
-          email: string;
-          mobile: string;
-          patientCode: string;
-          consultations: number;
-        }
-      >();
-      for (const row of consultations) {
-        const patient = row.patient;
-        if (!patient?.id) continue;
-        const existing = grouped.get(patient.id);
-        if (existing) {
-          existing.consultations += 1;
-          continue;
-        }
-        grouped.set(patient.id, {
+      const filtered = patients
+        .map((patient) => ({
           id: patient.id,
           name: patient.name || 'Unknown',
           email: patient.email || '',
           mobile: patient.mobile || '',
           patientCode: patient.patientCode || '',
-          consultations: 1
-        });
-      }
-
-      const filtered = Array.from(grouped.values()).filter(
-        (c) =>
-          !query ||
-          [c.name, c.email, c.mobile, c.patientCode, c.id].join(' ').toLowerCase().includes(query)
-      );
+          consultations: patient._count.patientConsults
+        }))
+        .filter(
+          (c) =>
+            !query ||
+            [c.name, c.email, c.mobile, c.patientCode, c.id].join(' ').toLowerCase().includes(query)
+        );
 
       filtered.sort((a, b) => {
         if (sortBy === 'name') {
@@ -96,7 +80,29 @@ export function registerAdminConsumerRoutes(router: Router) {
       const patientId = routeParam(req, 'id');
       const patient = await prisma.user.findFirst({
         where: { id: patientId, role: Role.PATIENT },
-        select: patientProfileSelect
+        select: {
+          ...patientProfileSelect,
+          authProvider: true,
+          lastLoginAt: true,
+          lastLoginMethod: true,
+          telegramBotSessions: {
+            orderBy: { updatedAt: 'desc' },
+            select: {
+              id: true,
+              botKind: true,
+              chatId: true,
+              telegramUserId: true,
+              username: true,
+              firstName: true,
+              lastName: true,
+              state: true,
+              lastCommand: true,
+              metadata: true,
+              createdAt: true,
+              updatedAt: true
+            }
+          }
+        }
       });
       if (!patient) return res.status(404).json({ message: 'Consumer not found' });
 
@@ -159,7 +165,32 @@ export function registerAdminConsumerRoutes(router: Router) {
       });
 
       res.json({
-        consumer: patient,
+        consumer: {
+          ...patient,
+          lastLoginAt: patient.lastLoginAt?.toISOString() ?? null,
+          telegramBotSessions: patient.telegramBotSessions.map((session) => {
+            const metadata =
+              session.metadata &&
+              typeof session.metadata === 'object' &&
+              !Array.isArray(session.metadata)
+                ? (session.metadata as { settings?: { dailyReminders?: boolean } })
+                : {};
+            return {
+              id: session.id,
+              botKind: session.botKind,
+              chatId: session.chatId,
+              telegramUserId: session.telegramUserId,
+              username: session.username,
+              firstName: session.firstName,
+              lastName: session.lastName,
+              state: session.state,
+              lastCommand: session.lastCommand,
+              dailyReminders: metadata.settings?.dailyReminders ?? false,
+              createdAt: session.createdAt.toISOString(),
+              updatedAt: session.updatedAt.toISOString()
+            };
+          })
+        },
         consultations,
         adherence: {
           total: totalDoses,

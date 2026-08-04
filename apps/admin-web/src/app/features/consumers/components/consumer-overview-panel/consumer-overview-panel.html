@@ -12,6 +12,55 @@
   <hopehub-detail-rows inlineTag="small" [inlineHostless]="true" [rows]="adherenceRows" />
 </article>
 
+<section class="telegram-panel">
+  <div class="assessment-header">
+    <div>
+      <h3>Telegram access</h3>
+      <p class="muted">
+        {{ detail.consumer.authProvider === 'TELEGRAM' ? 'Signed up from Telegram' : 'Website/admin created or unknown source' }}
+        @if (detail.consumer.lastLoginMethod) {
+          · Last method: {{ detail.consumer.lastLoginMethod }}
+        }
+        @if (detail.consumer.lastLoginAt) {
+          · {{ detail.consumer.lastLoginAt | date: 'short' }}
+        }
+      </p>
+    </div>
+    @if (detail.consumer.telegramBotSessions?.length) {
+      <span class="telegram-pill linked">Telegram linked</span>
+    } @else {
+      <span class="telegram-pill muted-pill">Not linked</span>
+    }
+  </div>
+
+  @if (detail.consumer.telegramBotSessions?.length) {
+    <div class="telegram-session-list">
+      @for (session of detail.consumer.telegramBotSessions; track session.id) {
+        <article class="telegram-session-card">
+          <div>
+            <strong>{{ session.botKind }} bot</strong>
+            <p class="muted">
+              {{ session.username ? '@' + session.username : (session.firstName || 'Telegram user') }}
+              · State {{ session.state }}
+              @if (session.lastCommand) {
+                · Last: {{ session.lastCommand }}
+              }
+            </p>
+            <p class="muted">
+              Chat {{ session.chatId }} · Updated {{ session.updatedAt | date: 'short' }}
+            </p>
+          </div>
+          <span class="telegram-pill" [class.linked]="session.dailyReminders" [class.muted-pill]="!session.dailyReminders">
+            Reminders {{ session.dailyReminders ? 'on' : 'off' }}
+          </span>
+        </article>
+      }
+    </div>
+  } @else {
+    <p class="empty-state">No Telegram bot session linked to this consumer yet.</p>
+  }
+</section>
+
 <app-consumer-clinical-summary-panel
   [clinicalSummary]="clinicalSummary"
   [clinicalSummaryLoading]="clinicalSummaryLoading"

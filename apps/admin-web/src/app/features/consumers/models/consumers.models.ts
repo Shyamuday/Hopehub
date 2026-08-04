@@ -17,6 +17,23 @@ export type ConsumerDetail = {
     email?: string;
     mobile?: string;
     patientCode?: string;
+    authProvider?: string | null;
+    lastLoginAt?: string | null;
+    lastLoginMethod?: string | null;
+    telegramBotSessions?: Array<{
+      id: string;
+      botKind: 'USER' | 'DOCTOR' | 'ADMIN' | string;
+      chatId: string;
+      telegramUserId?: string | null;
+      username?: string | null;
+      firstName?: string | null;
+      lastName?: string | null;
+      state: string;
+      lastCommand?: string | null;
+      dailyReminders: boolean;
+      createdAt: string;
+      updatedAt: string;
+    }>;
     allergies?: string | null;
     currentMedications?: string | null;
     chronicConditions?: string | null;

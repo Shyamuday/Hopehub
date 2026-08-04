@@ -42,6 +42,10 @@ export function menuFor(kind: TelegramBotKind, linked: boolean): InlineButton[][
           ? { text: 'Open profile', url: webUrl('/profile') }
           : { text: 'Create account', callback_data: 'common:signup' }
       ],
+      [
+        { text: 'Settings', callback_data: 'common:settings' },
+        { text: 'Onboarding checklist', callback_data: 'common:onboarding' }
+      ],
       [{ text: 'Open website', url: webUrl('/') }]
     ];
   }
@@ -83,6 +87,8 @@ export function helpText(kind: TelegramBotKind) {
       '<b>Care bot commands</b>',
       '/signup - create a new Hope Hub user account',
       '/link email@example.com - link your account',
+      '/settings - account, privacy, and reminder settings',
+      '/onboarding - show first steps checklist',
       '/plan - show today plan',
       '/assessments - take an assessment test',
       '/results - latest assessment results',
