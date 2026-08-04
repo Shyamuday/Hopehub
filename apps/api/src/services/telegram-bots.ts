@@ -21,10 +21,12 @@ import { answerTelegramCallback, sendTelegramMessage } from './telegram-bots.cli
 import { adminUrl, callbackRows, menuCancelRows, webUrl } from './telegram-bots.ui.js';
 import {
   cancelPending,
+  finishSignup,
   replyMenu,
   requireLinked,
   showMe,
   startLink,
+  startSignup,
   unlink,
   verifyLink
 } from './telegram-bots.account.js';
@@ -1273,6 +1275,14 @@ async function handlePendingState(kind: TelegramBotKind, session: TelegramSessio
     await startLink(kind, session, text);
     return true;
   }
+  if (session.state === 'WAITING_SIGNUP_EMAIL') {
+    await startSignup(kind, session, text);
+    return true;
+  }
+  if (session.state === 'WAITING_SIGNUP_NAME') {
+    await finishSignup(kind, session, text);
+    return true;
+  }
   if (session.state === 'LINK_OTP' && /^\d{4,8}$/.test(text.trim())) {
     await verifyLink(kind, session, text);
     return true;
@@ -1351,6 +1361,11 @@ async function handleCommand(kind: TelegramBotKind, session: TelegramSession, te
     return command;
   }
 
+  if (command === '/signup') {
+    await startSignup(kind, session, argText);
+    return command;
+  }
+
   if (command === '/verify') {
     await verifyLink(kind, session, argText);
     return command;
@@ -1415,6 +1430,10 @@ async function handleCallback(
   }
   if (data === 'common:link') {
     await startLink(kind, session);
+    return;
+  }
+  if (data === 'common:signup') {
+    await startSignup(kind, session);
     return;
   }
   if (data === 'common:resend_otp') {

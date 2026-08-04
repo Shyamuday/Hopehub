@@ -1,5 +1,6 @@
-import { Prisma, TelegramBotKind } from '@prisma/client';
+import { Prisma, Role, TelegramBotKind } from '@prisma/client';
 import { prisma } from '../db.js';
+import { createPatientRecord } from './patient-identity.js';
 import { getMailTransporter } from './mail.js';
 import {
   devOtp,
@@ -56,6 +57,9 @@ export async function requireLinked(kind: TelegramBotKind, session: TelegramSess
     ].join('\n'),
     reply_markup: {
       inline_keyboard: [
+        ...(kind === TelegramBotKind.USER
+          ? [[{ text: 'Create account', callback_data: 'common:signup' }]]
+          : []),
         [{ text: 'Link account', callback_data: 'common:link' }],
         [{ text: 'Main menu', callback_data: 'common:menu' }]
       ]
@@ -140,6 +144,152 @@ export async function startLink(
       ]
     }
   });
+}
+
+export async function startSignup(
+  kind: TelegramBotKind,
+  session: TelegramSession,
+  emailText?: string
+) {
+  if (kind !== TelegramBotKind.USER) {
+    await sendTelegramMessage(kind, {
+      chat_id: session.chatId,
+      text: 'Signup from Telegram is available only in the user care bot. Doctor/admin accounts must be created by admin first.'
+    });
+    return;
+  }
+
+  if (
+    session.linkedUserId &&
+    session.linkedUser?.role === Role.PATIENT &&
+    session.linkedUser.isActive
+  ) {
+    await replyMenu(kind, session, 'You already have a linked Hope Hub account.');
+    return;
+  }
+
+  const email = (emailText || '').trim().toLowerCase();
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    await updateSession(session, { state: 'WAITING_SIGNUP_EMAIL', lastCommand: '/signup' });
+    await sendTelegramMessage(kind, {
+      chat_id: session.chatId,
+      text: [
+        '<b>Create Hope Hub account</b>',
+        'Please send your email address.',
+        '',
+        'If you already have an account, use Link account instead.'
+      ].join('\n'),
+      parse_mode: 'HTML',
+      reply_markup: {
+        inline_keyboard: [
+          [{ text: 'I already have account', callback_data: 'common:link' }],
+          ...menuCancelRows()
+        ]
+      }
+    });
+    return;
+  }
+
+  const existing = await prisma.user.findFirst({
+    where: { email, role: Role.PATIENT },
+    select: { id: true, isActive: true }
+  });
+  if (existing) {
+    await sendTelegramMessage(kind, {
+      chat_id: session.chatId,
+      text: 'A Hope Hub user account already exists with this email. Please use Link account and verify by OTP.',
+      reply_markup: {
+        inline_keyboard: [
+          [{ text: 'Link account', callback_data: 'common:link' }],
+          ...menuCancelRows()
+        ]
+      }
+    });
+    return;
+  }
+
+  const metadata: SessionMetadata = {
+    ...metadataOf(session),
+    pendingSignup: { email, requestedAt: new Date().toISOString() }
+  };
+  await updateSession(session, {
+    state: 'WAITING_SIGNUP_NAME',
+    metadata: metadata as Prisma.InputJsonValue,
+    lastCommand: '/signup'
+  });
+  await sendTelegramMessage(kind, {
+    chat_id: session.chatId,
+    text: 'Great. Now send your full name.',
+    reply_markup: { inline_keyboard: menuCancelRows() }
+  });
+}
+
+export async function finishSignup(
+  kind: TelegramBotKind,
+  session: TelegramSession,
+  nameText?: string
+) {
+  if (kind !== TelegramBotKind.USER) return;
+  const metadata = metadataOf(session);
+  const pending = metadata.pendingSignup;
+  const name = (nameText || '').trim().replace(/\s+/g, ' ');
+
+  if (!pending?.email) {
+    await startSignup(kind, session);
+    return;
+  }
+
+  if (name.length < 2) {
+    await sendTelegramMessage(kind, {
+      chat_id: session.chatId,
+      text: 'Please send a name with at least 2 characters.',
+      reply_markup: { inline_keyboard: menuCancelRows() }
+    });
+    return;
+  }
+
+  try {
+    const user = await createPatientRecord({
+      name: name.slice(0, 120),
+      email: pending.email
+    });
+
+    const nextMetadata: SessionMetadata = { ...metadata };
+    delete nextMetadata.pendingSignup;
+    const linkedSession = await updateSession(session, {
+      linkedUser: { connect: { id: user.id } },
+      state: 'ACTIVE',
+      metadata: nextMetadata as Prisma.InputJsonValue,
+      lastCommand: '/signup'
+    });
+
+    await replyMenu(
+      kind,
+      linkedSession,
+      [
+        '<b>Account created and linked.</b>',
+        `Name: ${escapeHtml(user.name)}`,
+        `Patient ID: ${escapeHtml(user.patientCode || '-')}`,
+        '',
+        'You can now use daily plan, assessments, support, booking, and payments from Telegram.'
+      ].join('\n')
+    );
+  } catch (error) {
+    if (error instanceof Error && error.message === 'EMAIL_TAKEN') {
+      await sendTelegramMessage(kind, {
+        chat_id: session.chatId,
+        text: 'This email is already registered. Please use Link account instead.',
+        reply_markup: {
+          inline_keyboard: [
+            [{ text: 'Link account', callback_data: 'common:link' }],
+            ...menuCancelRows()
+          ]
+        }
+      });
+      return;
+    }
+    throw error;
+  }
 }
 
 export async function verifyLink(

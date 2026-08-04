@@ -38,7 +38,9 @@ export function menuFor(kind: TelegramBotKind, linked: boolean): InlineButton[][
         linked
           ? { text: 'My account', callback_data: 'common:me' }
           : { text: 'Link account', callback_data: 'common:link' },
-        { text: 'Open profile', url: webUrl('/profile') }
+        linked
+          ? { text: 'Open profile', url: webUrl('/profile') }
+          : { text: 'Create account', callback_data: 'common:signup' }
       ],
       [{ text: 'Open website', url: webUrl('/') }]
     ];
@@ -79,6 +81,7 @@ export function helpText(kind: TelegramBotKind) {
   if (kind === 'USER') {
     return [
       '<b>Care bot commands</b>',
+      '/signup - create a new Hope Hub user account',
       '/link email@example.com - link your account',
       '/plan - show today plan',
       '/assessments - take an assessment test',
@@ -116,7 +119,7 @@ export function helpText(kind: TelegramBotKind) {
 export function startGuideText(kind: TelegramBotKind, session: MenuSession) {
   const linkedLine = session.linkedUser
     ? `Linked as ${escapeHtml(session.linkedUser.name)}.`
-    : 'Not linked yet. Send /link your-email@example.com, then /verify OTP.';
+    : 'Not linked yet. Send /signup to create an account, or /link your-email@example.com if you already have one.';
 
   if (kind === 'USER') {
     return [
@@ -143,7 +146,7 @@ export function startGuideText(kind: TelegramBotKind, session: MenuSession) {
       '',
       `<b>Website</b>\n${webUrl('/')}`,
       '',
-      'Start with /link, /plan, /support, /book, /payments, or /help.'
+      'Start with /signup, /link, /plan, /support, /book, /payments, or /help.'
     ].join('\n');
   }
 

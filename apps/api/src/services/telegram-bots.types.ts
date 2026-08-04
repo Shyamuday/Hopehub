@@ -57,6 +57,10 @@ export type SessionMetadata = {
     role: Role;
     requestedAt: string;
   };
+  pendingSignup?: {
+    email: string;
+    requestedAt: string;
+  };
   pendingLead?: {
     kind: 'BOOKING' | 'VOLUNTEER' | 'SUPPORT';
     concern?: string;

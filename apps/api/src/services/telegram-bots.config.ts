@@ -34,6 +34,7 @@ export const botNameByKind: Record<TelegramBotKind, string> = {
 export const commandMenus: Record<TelegramBotKind, { command: string; description: string }[]> = {
   [TelegramBotKind.USER]: [
     { command: 'start', description: 'Open care menu' },
+    { command: 'signup', description: 'Create user account' },
     { command: 'link', description: 'Link Hope Hub account' },
     { command: 'plan', description: 'Daily plan and review' },
     { command: 'assessments', description: 'Take an assessment test' },
