@@ -28,6 +28,32 @@
   gap: 0.5rem;
 }
 
+.onboarding-checks,
+.contributor-panel {
+  border: 1px solid #99f6e4;
+  border-radius: 0.5rem;
+  background: #f0fdfa;
+  display: grid;
+  gap: 0.55rem;
+  padding: 0.75rem;
+  width: 100%;
+}
+
+.onboarding-checks label {
+  color: #134e4a;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.contributor-panel p {
+  margin: 0;
+}
+
+.contributor-status-pending_orientation { background: #e0e7ff; color: #3730a3; }
+.contributor-status-active { background: #dcfce7; color: #166534; }
+.contributor-status-suspended,
+.contributor-status-inactive { background: #fee2e2; color: #991b1b; }
+
 button,
 .links a {
   border: 1px solid #d1d5db;

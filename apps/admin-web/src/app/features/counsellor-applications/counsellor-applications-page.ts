@@ -4,6 +4,13 @@ import { FormsModule } from '@angular/forms';
 import { AdminApi } from '../../core/services/admin-api';
 
 type StatusFilter = 'ALL' | 'NEW' | 'REVIEWING' | 'SHORTLISTED' | 'REJECTED' | 'ONBOARDED';
+type ContributorStatus = 'ACTIVE' | 'SUSPENDED' | 'INACTIVE';
+
+interface OnboardingChecks {
+  credentialVerified: boolean;
+  supervisionVerified: boolean;
+  orientationCompleted: boolean;
+}
 
 @Component({
   selector: 'app-counsellor-applications-page',
@@ -23,6 +30,7 @@ export class CounsellorApplicationsPage implements OnInit {
   readonly statusFilter = signal<StatusFilter>('ALL');
   readonly expandedId = signal<string | null>(null);
   readonly notes = signal<Record<string, string>>({});
+  readonly onboardingChecks = signal<Record<string, OnboardingChecks>>({});
   readonly statuses: StatusFilter[] = [
     'ALL',
     'NEW',
@@ -50,8 +58,16 @@ export class CounsellorApplicationsPage implements OnInit {
           res.applications.map((application) => [application.id, application.adminNote || '']),
         ),
       );
+      this.onboardingChecks.set(
+        Object.fromEntries(
+          res.applications.map((application) => [
+            application.id,
+            { credentialVerified: false, supervisionVerified: false, orientationCompleted: false },
+          ]),
+        ),
+      );
     } catch {
-      this.error.set('Could not load counsellor applications.');
+      this.error.set('Could not load care contributor applications.');
     } finally {
       this.loading.set(false);
     }
@@ -70,6 +86,20 @@ export class CounsellorApplicationsPage implements OnInit {
     this.notes.update((current) => ({ ...current, [applicationId]: note }));
   }
 
+  setOnboardingCheck(applicationId: string, field: keyof OnboardingChecks, value: boolean): void {
+    this.onboardingChecks.update((current) => ({
+      ...current,
+      [applicationId]: {
+        ...(current[applicationId] || {
+          credentialVerified: false,
+          supervisionVerified: false,
+          orientationCompleted: false,
+        }),
+        [field]: value,
+      },
+    }));
+  }
+
   async updateStatus(application: any, status: Exclude<StatusFilter, 'ALL'>): Promise<void> {
     this.savingId.set(application.id);
     this.error.set('');
@@ -79,8 +109,53 @@ export class CounsellorApplicationsPage implements OnInit {
         adminNote: this.notes()[application.id] || '',
       });
       await this.load();
-    } catch {
-      this.error.set('Could not update application status.');
+    } catch (error: any) {
+      this.error.set(error?.error?.message || 'Could not update the application.');
+    } finally {
+      this.savingId.set('');
+    }
+  }
+
+  async onboard(application: any): Promise<void> {
+    this.savingId.set(application.id);
+    this.error.set('');
+    try {
+      const checks = this.onboardingChecks()[application.id] || {
+        credentialVerified: false,
+        supervisionVerified: false,
+        orientationCompleted: false,
+      };
+      await this.api.onboardCounsellorApplication(application.id, {
+        ...checks,
+        onboardingNote: this.notes()[application.id] || '',
+      });
+      await this.load();
+    } catch (error: any) {
+      this.error.set(error?.error?.message || 'Could not create the contributor profile.');
+    } finally {
+      this.savingId.set('');
+    }
+  }
+
+  async updateContributorStatus(
+    application: any,
+    status: ContributorStatus,
+    completeOrientation = false,
+  ): Promise<void> {
+    const contributor = application.onboardedContributor;
+    if (!contributor) return;
+
+    this.savingId.set(application.id);
+    this.error.set('');
+    try {
+      await this.api.updateCareContributorStatus(contributor.id, {
+        status,
+        orientationCompleted: completeOrientation,
+        onboardingNote: this.notes()[application.id] || '',
+      });
+      await this.load();
+    } catch (error: any) {
+      this.error.set(error?.error?.message || 'Could not update the contributor profile.');
     } finally {
       this.savingId.set('');
     }
@@ -88,5 +163,27 @@ export class CounsellorApplicationsPage implements OnInit {
 
   statusClass(status: string): string {
     return `status status-${status.toLowerCase()}`;
+  }
+
+  trackLabel(track: string): string {
+    const labels: Record<string, string> = {
+      PROFESSIONAL_PSYCHOLOGIST: 'Professional psychologist',
+      PSYCHOLOGY_STUDENT_VOLUNTEER: 'Psychology student volunteer',
+      PEER_SUPPORT_VOLUNTEER: 'Peer-support volunteer',
+    };
+    return labels[track] || track;
+  }
+
+  contributorStatusClass(status: string): string {
+    return `status contributor-status-${status.toLowerCase()}`;
+  }
+
+  contributorScopeLabel(scope: string): string {
+    const labels: Record<string, string> = {
+      CLINICAL_PSYCHOLOGY: 'Clinical psychology (account pending)',
+      SUPERVISED_STUDENT_SUPPORT: 'Supervised student support',
+      NON_CLINICAL_PEER_SUPPORT: 'Non-clinical peer support',
+    };
+    return labels[scope] || scope;
   }
 }

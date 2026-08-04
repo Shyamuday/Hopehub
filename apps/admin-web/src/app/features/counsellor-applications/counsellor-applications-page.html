@@ -1,8 +1,8 @@
 <section class="counsellor-apps">
   <div class="page-head">
     <div>
-      <h1>Counsellor applications</h1>
-      <p>Review Hope Hub counsellor applications and update onboarding status.</p>
+      <h1>Care contributor applications</h1>
+      <p>Review professional psychologist, student volunteer, and peer-support volunteer applications.</p>
     </div>
   </div>
 
@@ -22,7 +22,7 @@
   @if (loading()) {
     <div class="panel muted">Loading applications...</div>
   } @else if (!applications().length) {
-    <div class="panel muted">No counsellor applications found.</div>
+    <div class="panel muted">No care contributor applications found.</div>
   } @else {
     <div class="list">
       @for (application of applications(); track application.id) {
@@ -34,7 +34,7 @@
                 <span [class]="statusClass(application.status)">{{ application.status }}</span>
               </div>
               <p class="muted">
-                {{ application.specialization }} • {{ application.experienceYears }} • {{ application.city }}
+                {{ trackLabel(application.applicationTrack) }} • {{ application.specialization || 'General support' }} • {{ application.city }}
               </p>
               <p class="muted">{{ application.email }} • {{ application.phone }}</p>
             </div>
@@ -46,7 +46,9 @@
           @if (expandedId() === application.id) {
             <div class="detail">
               <div class="grid">
-                <p><strong>Qualification:</strong> {{ application.qualification }}</p>
+                <p><strong>Pathway:</strong> {{ trackLabel(application.applicationTrack) }}</p>
+                <p><strong>Qualification:</strong> {{ application.qualification || 'Not required for this pathway' }}</p>
+                <p><strong>Experience:</strong> {{ application.experienceYears || 'Not provided' }}</p>
                 <p><strong>Languages:</strong> {{ application.languages }}</p>
                 <p><strong>Availability:</strong> {{ application.availability }}</p>
                 <p><strong>Preferred contact:</strong> {{ application.preferredChannel }}</p>
@@ -54,10 +56,24 @@
                 <p><strong>Applied:</strong> {{ application.createdAt | date: 'medium' }}</p>
               </div>
 
+              @if (application.supervisionDetails) {
+                <p class="why"><strong>Supervision details:</strong> {{ application.supervisionDetails }}</p>
+              }
+
+              @if (application.livedExperienceSummary) {
+                <p class="why"><strong>Peer-support experience:</strong> {{ application.livedExperienceSummary }}</p>
+              }
+
+              @if (application.applicationTrack !== 'PROFESSIONAL_PSYCHOLOGIST') {
+                <p class="why"><strong>Non-clinical agreement:</strong> {{ application.agreesToNonClinicalRole ? 'Accepted' : 'Not accepted' }}</p>
+              }
+
               <p class="why"><strong>Why join:</strong> {{ application.whyJoin }}</p>
 
               <div class="links">
-                <a [href]="application.resumeLink" target="_blank" rel="noopener">Open resume/profile</a>
+                @if (application.resumeLink) {
+                  <a [href]="application.resumeLink" target="_blank" rel="noopener">Open resume/profile</a>
+                }
                 @if (application.portfolioLink) {
                   <a [href]="application.portfolioLink" target="_blank" rel="noopener">Open portfolio</a>
                 }
@@ -73,10 +89,88 @@
               </label>
 
               <div class="actions">
-                <button (click)="updateStatus(application, 'REVIEWING')" [disabled]="savingId() === application.id">Reviewing</button>
-                <button (click)="updateStatus(application, 'SHORTLISTED')" [disabled]="savingId() === application.id">Shortlist</button>
-                <button (click)="updateStatus(application, 'ONBOARDED')" [disabled]="savingId() === application.id">Onboard</button>
-                <button class="danger" (click)="updateStatus(application, 'REJECTED')" [disabled]="savingId() === application.id">Reject</button>
+                @if (!application.onboardedContributor) {
+                  <button (click)="updateStatus(application, 'REVIEWING')" [disabled]="savingId() === application.id">Reviewing</button>
+                  <button (click)="updateStatus(application, 'SHORTLISTED')" [disabled]="savingId() === application.id">Shortlist</button>
+                  @if (application.status === 'SHORTLISTED') {
+                    <div class="onboarding-checks">
+                      @if (application.applicationTrack === 'PROFESSIONAL_PSYCHOLOGIST') {
+                        <label>
+                          <input
+                            type="checkbox"
+                            [checked]="onboardingChecks()[application.id]?.credentialVerified"
+                            (change)="setOnboardingCheck(application.id, 'credentialVerified', $any($event.target).checked)"
+                          />
+                          I verified the professional credential and registration.
+                        </label>
+                      }
+                      @if (application.applicationTrack === 'PSYCHOLOGY_STUDENT_VOLUNTEER') {
+                        <label>
+                          <input
+                            type="checkbox"
+                            [checked]="onboardingChecks()[application.id]?.supervisionVerified"
+                            (change)="setOnboardingCheck(application.id, 'supervisionVerified', $any($event.target).checked)"
+                          />
+                          I verified the student supervision or faculty details.
+                        </label>
+                      }
+                      <label>
+                        <input
+                          type="checkbox"
+                          [checked]="onboardingChecks()[application.id]?.orientationCompleted"
+                          (change)="setOnboardingCheck(application.id, 'orientationCompleted', $any($event.target).checked)"
+                        />
+                        Orientation is complete; activate this contributor now.
+                      </label>
+                    </div>
+                    <button
+                      class="onboard"
+                      (click)="onboard(application)"
+                      [disabled]="savingId() === application.id"
+                    >
+                      Create contributor profile
+                    </button>
+                  }
+                  <button class="danger" (click)="updateStatus(application, 'REJECTED')" [disabled]="savingId() === application.id">Reject</button>
+                } @else {
+                  <div class="contributor-panel">
+                    <p>
+                      <strong>Contributor profile:</strong>
+                      <span [class]="contributorStatusClass(application.onboardedContributor.status)">
+                        {{ application.onboardedContributor.status }}
+                      </span>
+                    </p>
+                    <p><strong>Scope:</strong> {{ contributorScopeLabel(application.onboardedContributor.serviceScope) }}</p>
+                    <p><strong>Credential:</strong> {{ application.onboardedContributor.credentialVerificationStatus }}</p>
+                    <p class="muted">No user or doctor account is created from this action.</p>
+                    @if (application.onboardedContributor.status === 'PENDING_ORIENTATION') {
+                      <button
+                        class="onboard"
+                        (click)="updateContributorStatus(application, 'ACTIVE', true)"
+                        [disabled]="savingId() === application.id"
+                      >
+                        Complete orientation & activate
+                      </button>
+                    }
+                    @if (application.onboardedContributor.status === 'ACTIVE') {
+                      <button
+                        class="danger"
+                        (click)="updateContributorStatus(application, 'SUSPENDED')"
+                        [disabled]="savingId() === application.id"
+                      >
+                        Suspend contributor
+                      </button>
+                    } @else if (application.onboardedContributor.status === 'SUSPENDED' || application.onboardedContributor.status === 'INACTIVE') {
+                      <button
+                        class="onboard"
+                        (click)="updateContributorStatus(application, 'ACTIVE')"
+                        [disabled]="savingId() === application.id"
+                      >
+                        Reactivate contributor
+                      </button>
+                    }
+                  </div>
+                }
               </div>
             </div>
           }

@@ -25,6 +25,36 @@ enum CounsellorApplicationStatus {
   ONBOARDED
 }
 
+enum CounsellorApplicationTrack {
+  PROFESSIONAL_PSYCHOLOGIST
+  PSYCHOLOGY_STUDENT_VOLUNTEER
+  PEER_SUPPORT_VOLUNTEER
+}
+
+// This is deliberately separate from User/Doctor. Creating an onboarding record
+// must never give a student or peer volunteer access to clinical data or a doctor
+// workspace. A platform account can only be connected in a later, reviewed step.
+enum CareContributorStatus {
+  PENDING_ORIENTATION
+  ACTIVE
+  SUSPENDED
+  INACTIVE
+}
+
+enum CareContributorServiceScope {
+  CLINICAL_PSYCHOLOGY
+  SUPERVISED_STUDENT_SUPPORT
+  NON_CLINICAL_PEER_SUPPORT
+}
+
+enum CredentialVerificationStatus {
+  NOT_REQUIRED
+  PENDING
+  VERIFIED
+  EXPIRED
+  REJECTED
+}
+
 model JobVacancy {
   id               String        @id @default(cuid())
   title            String
@@ -52,19 +82,23 @@ model JobVacancy {
 model CounsellorApplication {
   id                  String                       @id @default(cuid())
   status              CounsellorApplicationStatus  @default(NEW)
+  applicationTrack    CounsellorApplicationTrack   @default(PROFESSIONAL_PSYCHOLOGIST)
   fullName            String
   email               String
   phone               String
   city                String
-  qualification       String
-  specialization      String
-  experienceYears     String
+  qualification       String?
+  specialization      String?
+  experienceYears     String?
   registrationDetails String?
   languages           String
   availability        String
   preferredChannel    String
-  resumeLink          String
+  resumeLink          String?
   portfolioLink       String?
+  supervisionDetails  String?                      @db.Text
+  livedExperienceSummary String?                   @db.Text
+  agreesToNonClinicalRole Boolean                  @default(false)
   whyJoin             String                       @db.Text
   source              String                       @default("healing-web")
   entryPage           String?
@@ -72,12 +106,50 @@ model CounsellorApplication {
   reviewedById        String?
   reviewedBy          User?                        @relation("CounsellorApplicationReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
   reviewedAt          DateTime?
+  onboardedContributor CareContributor?
   createdAt           DateTime                     @default(now())
   updatedAt           DateTime                     @updatedAt
 
   @@index([status])
+  @@index([applicationTrack])
   @@index([email])
   @@index([phone])
   @@index([specialization])
   @@index([createdAt])
+}
+
+model CareContributor {
+  id                           String                         @id @default(cuid())
+  applicationId                String                         @unique
+  application                  CounsellorApplication          @relation(fields: [applicationId], references: [id], onDelete: Restrict)
+  applicationTrack             CounsellorApplicationTrack
+  serviceScope                 CareContributorServiceScope
+  status                       CareContributorStatus          @default(PENDING_ORIENTATION)
+  credentialVerificationStatus CredentialVerificationStatus   @default(PENDING)
+  fullName                     String
+  email                        String
+  phone                        String
+  city                         String
+  qualification                String?
+  specialization               String?
+  registrationDetails          String?
+  languages                    String
+  availability                 String
+  supervisionDetails           String?                        @db.Text
+  nonClinicalAgreementAccepted Boolean                        @default(false)
+  credentialVerifiedAt         DateTime?
+  supervisionVerifiedAt        DateTime?
+  orientationCompletedAt       DateTime?
+  activatedAt                  DateTime?
+  onboardingNote               String?                        @db.Text
+  // No account is created by this model. It exists to make the later account
+  // and assignment step explicit and reviewable.
+  platformAccountLinkedAt      DateTime?
+  createdAt                    DateTime                       @default(now())
+  updatedAt                    DateTime                       @updatedAt
+
+  @@index([status])
+  @@index([applicationTrack])
+  @@index([serviceScope])
+  @@index([email])
 }

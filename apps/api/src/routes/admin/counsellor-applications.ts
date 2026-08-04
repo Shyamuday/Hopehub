@@ -10,6 +10,30 @@ const statusSchema = z.object({
   adminNote: z.string().trim().max(3000).optional().or(z.literal(''))
 });
 
+const onboardingSchema = z.object({
+  credentialVerified: z.boolean().optional().default(false),
+  supervisionVerified: z.boolean().optional().default(false),
+  orientationCompleted: z.boolean().optional().default(false),
+  onboardingNote: z.string().trim().max(3000).optional().or(z.literal(''))
+});
+
+const contributorStatusSchema = z.object({
+  status: z.enum(['ACTIVE', 'SUSPENDED', 'INACTIVE']),
+  orientationCompleted: z.boolean().optional().default(false),
+  onboardingNote: z.string().trim().max(3000).optional().or(z.literal(''))
+});
+
+function serviceScopeFor(track: string) {
+  switch (track) {
+    case 'PROFESSIONAL_PSYCHOLOGIST':
+      return 'CLINICAL_PSYCHOLOGY' as const;
+    case 'PSYCHOLOGY_STUDENT_VOLUNTEER':
+      return 'SUPERVISED_STUDENT_SUPPORT' as const;
+    default:
+      return 'NON_CLINICAL_PEER_SUPPORT' as const;
+  }
+}
+
 export function registerAdminCounsellorApplicationRoutes(router: Router) {
   router.get(
     '/admin/counsellor-applications',
@@ -21,7 +45,18 @@ export function registerAdminCounsellorApplicationRoutes(router: Router) {
         where: status ? { status: status as any } : {},
         orderBy: [{ status: 'asc' }, { createdAt: 'desc' }],
         include: {
-          reviewedBy: { select: { id: true, name: true, email: true } }
+          reviewedBy: { select: { id: true, name: true, email: true } },
+          onboardedContributor: {
+            select: {
+              id: true,
+              status: true,
+              serviceScope: true,
+              credentialVerificationStatus: true,
+              orientationCompletedAt: true,
+              activatedAt: true,
+              platformAccountLinkedAt: true
+            }
+          }
         }
       });
 
@@ -45,6 +80,23 @@ export function registerAdminCounsellorApplicationRoutes(router: Router) {
     asyncRoute(async (req, res) => {
       const id = routeParam(req, 'id');
       const body = statusSchema.parse(req.body);
+      if (body.status === 'ONBOARDED') {
+        return res.status(400).json({
+          message:
+            'Use the onboarding action so the contributor profile and safeguards are recorded.'
+        });
+      }
+      const existing = await prisma.counsellorApplication.findUnique({
+        where: { id },
+        select: { id: true, onboardedContributor: { select: { id: true } } }
+      });
+      if (!existing) return res.status(404).json({ message: 'Application not found.' });
+      if (existing.onboardedContributor) {
+        return res.status(400).json({
+          message: 'Manage the contributor profile instead of changing an onboarded application.'
+        });
+      }
+
       const application = await prisma.counsellorApplication.update({
         where: { id },
         data: {
@@ -65,6 +117,160 @@ export function registerAdminCounsellorApplicationRoutes(router: Router) {
       });
 
       res.json({ application });
+    })
+  );
+
+  router.post(
+    '/admin/counsellor-applications/:id/onboard',
+    authRequired,
+    allowRoles(Role.ADMIN, Role.HR),
+    asyncRoute(async (req, res) => {
+      const id = routeParam(req, 'id');
+      const body = onboardingSchema.parse(req.body);
+      const application = await prisma.counsellorApplication.findUnique({ where: { id } });
+
+      if (!application) return res.status(404).json({ message: 'Application not found.' });
+      if (application.status !== 'SHORTLISTED') {
+        return res.status(400).json({ message: 'Shortlist the application before onboarding.' });
+      }
+
+      const existing = await prisma.careContributor.findUnique({ where: { applicationId: id } });
+      if (existing) {
+        return res
+          .status(409)
+          .json({ message: 'A contributor profile already exists for this application.' });
+      }
+
+      if (
+        application.applicationTrack === 'PROFESSIONAL_PSYCHOLOGIST' &&
+        !body.credentialVerified
+      ) {
+        return res
+          .status(400)
+          .json({ message: 'Verify the psychologist credential before onboarding.' });
+      }
+      if (
+        application.applicationTrack === 'PSYCHOLOGY_STUDENT_VOLUNTEER' &&
+        !body.supervisionVerified
+      ) {
+        return res
+          .status(400)
+          .json({ message: 'Verify the student supervision details before onboarding.' });
+      }
+      if (
+        application.applicationTrack !== 'PROFESSIONAL_PSYCHOLOGIST' &&
+        !application.agreesToNonClinicalRole
+      ) {
+        return res
+          .status(400)
+          .json({ message: 'The non-clinical role agreement is required before onboarding.' });
+      }
+
+      const now = new Date();
+      const status = body.orientationCompleted ? 'ACTIVE' : 'PENDING_ORIENTATION';
+      const credentialVerificationStatus =
+        application.applicationTrack === 'PROFESSIONAL_PSYCHOLOGIST' ? 'VERIFIED' : 'NOT_REQUIRED';
+
+      const contributor = await prisma.$transaction(async (tx) => {
+        const created = await tx.careContributor.create({
+          data: {
+            applicationId: application.id,
+            applicationTrack: application.applicationTrack,
+            serviceScope: serviceScopeFor(application.applicationTrack),
+            status,
+            credentialVerificationStatus,
+            fullName: application.fullName,
+            email: application.email,
+            phone: application.phone,
+            city: application.city,
+            qualification: application.qualification,
+            specialization: application.specialization,
+            registrationDetails: application.registrationDetails,
+            languages: application.languages,
+            availability: application.availability,
+            supervisionDetails: application.supervisionDetails,
+            nonClinicalAgreementAccepted: application.agreesToNonClinicalRole,
+            credentialVerifiedAt: body.credentialVerified ? now : null,
+            supervisionVerifiedAt: body.supervisionVerified ? now : null,
+            orientationCompletedAt: body.orientationCompleted ? now : null,
+            activatedAt: body.orientationCompleted ? now : null,
+            onboardingNote: body.onboardingNote || null
+          }
+        });
+        await tx.counsellorApplication.update({
+          where: { id: application.id },
+          data: {
+            status: 'ONBOARDED',
+            adminNote: body.onboardingNote || application.adminNote,
+            reviewedById: req.user?.id || null,
+            reviewedAt: now
+          }
+        });
+        return created;
+      });
+
+      await writeAuditLog({
+        actorId: req.user?.id,
+        actorRole: req.user?.role,
+        action: 'CARE_CONTRIBUTOR_ONBOARDED',
+        targetType: 'CareContributor',
+        targetId: contributor.id,
+        summary: `Onboarded ${contributor.fullName} as ${contributor.serviceScope}.`,
+        metadata: {
+          applicationId: application.id,
+          track: contributor.applicationTrack,
+          status: contributor.status,
+          credentialVerificationStatus: contributor.credentialVerificationStatus
+        }
+      });
+
+      res.status(201).json({ contributor });
+    })
+  );
+
+  router.patch(
+    '/admin/care-contributors/:id/status',
+    authRequired,
+    allowRoles(Role.ADMIN, Role.HR),
+    asyncRoute(async (req, res) => {
+      const id = routeParam(req, 'id');
+      const body = contributorStatusSchema.parse(req.body);
+      const existing = await prisma.careContributor.findUnique({ where: { id } });
+      if (!existing) return res.status(404).json({ message: 'Care contributor not found.' });
+
+      const orientationCompletedAt =
+        existing.orientationCompletedAt ?? (body.orientationCompleted ? new Date() : null);
+      if (body.status === 'ACTIVE' && !orientationCompletedAt) {
+        return res
+          .status(400)
+          .json({ message: 'Complete orientation before activating this contributor.' });
+      }
+
+      const contributor = await prisma.careContributor.update({
+        where: { id },
+        data: {
+          status: body.status,
+          orientationCompletedAt,
+          activatedAt:
+            body.status === 'ACTIVE' ? existing.activatedAt || new Date() : existing.activatedAt,
+          onboardingNote: body.onboardingNote || existing.onboardingNote
+        }
+      });
+
+      await writeAuditLog({
+        actorId: req.user?.id,
+        actorRole: req.user?.role,
+        action: 'CARE_CONTRIBUTOR_STATUS_UPDATED',
+        targetType: 'CareContributor',
+        targetId: contributor.id,
+        summary: `Updated ${contributor.fullName} to ${contributor.status}.`,
+        metadata: {
+          status: contributor.status,
+          orientationCompleted: Boolean(contributor.orientationCompletedAt)
+        }
+      });
+
+      res.json({ contributor });
     })
   );
 }

@@ -844,6 +844,16 @@ export class AdminApi {
       ...(args as Parameters<AdminOpsApi['updateCounsellorApplicationStatus']>),
     );
   }
+  onboardCounsellorApplication(...args: Parameters<AdminOpsApi['onboardCounsellorApplication']>) {
+    return this.ops.onboardCounsellorApplication(
+      ...(args as Parameters<AdminOpsApi['onboardCounsellorApplication']>),
+    );
+  }
+  updateCareContributorStatus(...args: Parameters<AdminOpsApi['updateCareContributorStatus']>) {
+    return this.ops.updateCareContributorStatus(
+      ...(args as Parameters<AdminOpsApi['updateCareContributorStatus']>),
+    );
+  }
 
   listRewardRules() {
     return this.rewards.listRewardRules();

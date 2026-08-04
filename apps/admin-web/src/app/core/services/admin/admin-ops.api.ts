@@ -447,4 +447,37 @@ export class AdminOpsApi extends AdminApiBase {
       ),
     );
   }
+
+  onboardCounsellorApplication(
+    id: string,
+    payload: {
+      credentialVerified?: boolean;
+      supervisionVerified?: boolean;
+      orientationCompleted?: boolean;
+      onboardingNote?: string;
+    },
+  ) {
+    return firstValueFrom(
+      this.http.post<{ contributor: any }>(
+        `${this.apiBase}${API_PATHS.ADMIN.COUNSELLOR_APPLICATION_ONBOARD(id)}`,
+        payload,
+      ),
+    );
+  }
+
+  updateCareContributorStatus(
+    id: string,
+    payload: {
+      status: 'ACTIVE' | 'SUSPENDED' | 'INACTIVE';
+      orientationCompleted?: boolean;
+      onboardingNote?: string;
+    },
+  ) {
+    return firstValueFrom(
+      this.http.patch<{ contributor: any }>(
+        `${this.apiBase}${API_PATHS.ADMIN.CARE_CONTRIBUTOR_STATUS(id)}`,
+        payload,
+      ),
+    );
+  }
 }

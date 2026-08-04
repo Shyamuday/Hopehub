@@ -5,23 +5,99 @@ import { asyncRoute } from '../utils/helpers.js';
 
 export const counsellorApplicationsRouter = Router();
 
-export const counsellorApplicationSchema = z.object({
-  fullName: z.string().trim().min(2).max(120),
-  email: z.string().trim().email().max(254),
-  phone: z.string().trim().min(5).max(30),
-  city: z.string().trim().min(2).max(120),
-  qualification: z.string().trim().min(2).max(180),
-  specialization: z.string().trim().min(2).max(160),
-  experienceYears: z.string().trim().min(1).max(80),
-  registrationDetails: z.string().trim().max(180).optional().or(z.literal('')),
-  languages: z.string().trim().min(2).max(180),
-  availability: z.string().trim().min(2).max(180),
-  preferredChannel: z.enum(['email', 'phone', 'whatsapp', 'telegram']),
-  resumeLink: z.string().trim().min(5).max(500),
-  portfolioLink: z.string().trim().max(500).optional().or(z.literal('')),
-  whyJoin: z.string().trim().min(40).max(3000),
-  entryPage: z.string().trim().max(500).optional().or(z.literal(''))
-});
+const optionalText = (max: number) => z.string().trim().max(max).optional().or(z.literal(''));
+
+export const counsellorApplicationSchema = z
+  .object({
+    applicationTrack: z.enum([
+      'PROFESSIONAL_PSYCHOLOGIST',
+      'PSYCHOLOGY_STUDENT_VOLUNTEER',
+      'PEER_SUPPORT_VOLUNTEER'
+    ]),
+    fullName: z.string().trim().min(2).max(120),
+    email: z.string().trim().email().max(254),
+    phone: z.string().trim().min(5).max(30),
+    city: z.string().trim().min(2).max(120),
+    qualification: optionalText(180),
+    specialization: optionalText(160),
+    experienceYears: optionalText(80),
+    registrationDetails: optionalText(180),
+    languages: z.string().trim().min(2).max(180),
+    availability: z.string().trim().min(2).max(180),
+    preferredChannel: z.enum(['email', 'phone', 'whatsapp', 'telegram']),
+    resumeLink: optionalText(500),
+    portfolioLink: optionalText(500),
+    supervisionDetails: optionalText(3000),
+    livedExperienceSummary: optionalText(3000),
+    agreesToNonClinicalRole: z.boolean().optional().default(false),
+    whyJoin: z.string().trim().min(40).max(3000),
+    entryPage: z.string().trim().max(500).optional().or(z.literal(''))
+  })
+  .superRefine((body, ctx) => {
+    const requireText = (value: string | undefined, path: string, message: string) => {
+      if (!value?.trim()) ctx.addIssue({ code: z.ZodIssueCode.custom, path: [path], message });
+    };
+
+    if (body.applicationTrack === 'PROFESSIONAL_PSYCHOLOGIST') {
+      requireText(
+        body.qualification,
+        'qualification',
+        'Qualification is required for psychologist applications.'
+      );
+      requireText(
+        body.specialization,
+        'specialization',
+        'Specialization is required for psychologist applications.'
+      );
+      requireText(
+        body.experienceYears,
+        'experienceYears',
+        'Experience is required for psychologist applications.'
+      );
+      requireText(
+        body.registrationDetails,
+        'registrationDetails',
+        'Registration or license details are required.'
+      );
+      requireText(body.resumeLink, 'resumeLink', 'A resume or profile link is required.');
+    }
+
+    if (body.applicationTrack === 'PSYCHOLOGY_STUDENT_VOLUNTEER') {
+      requireText(
+        body.qualification,
+        'qualification',
+        'Current course or qualification is required.'
+      );
+      requireText(body.specialization, 'specialization', 'Area of interest is required.');
+      requireText(
+        body.supervisionDetails,
+        'supervisionDetails',
+        'Supervisor or faculty details are required.'
+      );
+      if (!body.agreesToNonClinicalRole) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['agreesToNonClinicalRole'],
+          message: 'Student volunteers must agree to the supervised, non-clinical role.'
+        });
+      }
+    }
+
+    if (body.applicationTrack === 'PEER_SUPPORT_VOLUNTEER') {
+      requireText(
+        body.livedExperienceSummary,
+        'livedExperienceSummary',
+        'Please share your relevant support experience without private medical details.'
+      );
+      if (!body.agreesToNonClinicalRole) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['agreesToNonClinicalRole'],
+          message: 'Peer volunteers must agree to the non-clinical role.'
+        });
+      }
+    }
+  });
 
 counsellorApplicationsRouter.post(
   '/counsellor-applications',
@@ -29,19 +105,23 @@ counsellorApplicationsRouter.post(
     const body = counsellorApplicationSchema.parse(req.body);
     const application = await prisma.counsellorApplication.create({
       data: {
+        applicationTrack: body.applicationTrack,
         fullName: body.fullName,
         email: body.email,
         phone: body.phone,
         city: body.city,
-        qualification: body.qualification,
-        specialization: body.specialization,
-        experienceYears: body.experienceYears,
+        qualification: body.qualification || null,
+        specialization: body.specialization || null,
+        experienceYears: body.experienceYears || null,
         registrationDetails: body.registrationDetails || null,
         languages: body.languages,
         availability: body.availability,
         preferredChannel: body.preferredChannel,
-        resumeLink: body.resumeLink,
+        resumeLink: body.resumeLink || null,
         portfolioLink: body.portfolioLink || null,
+        supervisionDetails: body.supervisionDetails || null,
+        livedExperienceSummary: body.livedExperienceSummary || null,
+        agreesToNonClinicalRole: body.agreesToNonClinicalRole,
         whyJoin: body.whyJoin,
         entryPage: body.entryPage || req.get('referer') || null
       }

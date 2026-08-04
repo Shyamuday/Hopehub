@@ -4,7 +4,7 @@
       <div>
         <p class="text-sm font-bold uppercase text-primary-700">Careers at Hope Hub</p>
         <h1 class="mt-3 text-3xl font-semibold text-gray-950 sm:text-5xl">
-          Apply to become a Hope Hub counsellor
+          Join Hope Hub's care and peer-support network
         </h1>
         <p class="mt-4 max-w-2xl text-base leading-7 text-gray-700 sm:text-lg">
           We are building an accessible mental wellness support network for people who need calm,
@@ -16,9 +16,9 @@
       <div class="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
         <h2 class="text-lg font-semibold text-gray-950">Who should apply?</h2>
         <ul class="mt-4 space-y-3 text-sm leading-6 text-gray-700">
-          <li>Qualified counsellors, psychologists, therapists, or supervised trainees.</li>
-          <li>People comfortable with online support, chat follow-up, and community guidance.</li>
-          <li>Professionals who respect confidentiality, boundaries, and crisis escalation limits.</li>
+          <li>Verified psychologists and qualified counsellors for paid consultations.</li>
+          <li>Psychology students who want supervised, non-clinical volunteer experience.</li>
+          <li>Peer supporters with relevant lived experience who respect boundaries and escalation limits.</li>
         </ul>
       </div>
     </div>
@@ -30,10 +30,10 @@
         <div class="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
           <h2 class="text-xl font-semibold text-gray-950">Selection Steps</h2>
           <ol class="mt-4 space-y-3 text-sm leading-6 text-gray-700">
-            <li><strong>1.</strong> Submit your counsellor application.</li>
-            <li><strong>2.</strong> Team reviews qualification, experience, and availability.</li>
-            <li><strong>3.</strong> Shortlisted profiles are contacted for verification.</li>
-            <li><strong>4.</strong> Approved counsellors are onboarded for Hope Hub support flows.</li>
+            <li><strong>1.</strong> Choose the professional or volunteer path that fits you.</li>
+            <li><strong>2.</strong> Team reviews your profile, availability, and safeguards.</li>
+            <li><strong>3.</strong> Professional profiles are verified before paid work is discussed.</li>
+            <li><strong>4.</strong> Volunteers complete orientation before supporting the community.</li>
           </ol>
         </div>
 
@@ -48,7 +48,7 @@
       </aside>
 
       <section class="rounded-lg border border-gray-200 bg-white p-5 shadow-sm sm:p-8">
-        <h2 class="text-2xl font-semibold text-gray-950">Counsellor Application Form</h2>
+        <h2 class="text-2xl font-semibold text-gray-950">Care Contributor Application</h2>
         <p class="mt-2 text-sm leading-6 text-gray-700">
           Fields marked with * are required. Add a public resume, Drive link, LinkedIn, or website
           link so the team can review your profile.
@@ -67,6 +67,32 @@
         }
 
         <form [formGroup]="applicationForm" (submit)="$event.preventDefault(); onSubmit()" class="mt-6 space-y-5">
+          <fieldset>
+            <legend class="font-semibold text-gray-900">Choose your pathway *</legend>
+            <div class="mt-3 grid gap-3 md:grid-cols-3">
+              @for (track of applicationTracks; track track.value) {
+                <label
+                  class="cursor-pointer rounded-lg border p-4 transition"
+                  [class.border-primary-600]="isTrack(track.value)"
+                  [class.bg-primary-50]="isTrack(track.value)"
+                  [class.border-gray-200]="!isTrack(track.value)"
+                  [class.bg-white]="!isTrack(track.value)"
+                >
+                  <input
+                    type="radio"
+                    name="applicationTrack"
+                    [value]="track.value"
+                    [checked]="isTrack(track.value)"
+                    (change)="selectTrack(track.value)"
+                    class="sr-only"
+                  />
+                  <span class="block font-semibold text-gray-950">{{ track.title }}</span>
+                  <span class="mt-1 block text-sm leading-5 text-gray-700">{{ track.description }}</span>
+                </label>
+              }
+            </div>
+          </fieldset>
+
           <div class="grid gap-5 sm:grid-cols-2">
             <label>
               <span>Full name *</span>
@@ -101,44 +127,79 @@
             </label>
           </div>
 
-          <div class="grid gap-5 sm:grid-cols-2">
+          @if (isTrack('PROFESSIONAL_PSYCHOLOGIST') || isTrack('PSYCHOLOGY_STUDENT_VOLUNTEER')) {
+            <div class="grid gap-5 sm:grid-cols-2">
+              <label>
+                <span>{{ isTrack('PROFESSIONAL_PSYCHOLOGIST') ? 'Highest qualification *' : 'Current course / qualification *' }}</span>
+                <input type="text" formControlName="qualification" placeholder="MA Psychology, MSW, diploma..." />
+                @if (hasError('qualification')) {
+                  <small>Qualification is required.</small>
+                }
+              </label>
+
+              <label>
+                <span>{{ isTrack('PROFESSIONAL_PSYCHOLOGIST') ? 'Specialization *' : 'Area of interest *' }}</span>
+                <app-form-dropdown
+                  formControlName="specialization"
+                  placeholder="Select specialization"
+                  [options]="specializationOptions"
+                ></app-form-dropdown>
+                @if (hasError('specialization')) {
+                  <small>Specialization is required.</small>
+                }
+              </label>
+
+              @if (isTrack('PROFESSIONAL_PSYCHOLOGIST')) {
+                <label>
+                  <span>Professional experience *</span>
+                  <app-form-dropdown
+                    formControlName="experienceYears"
+                    placeholder="Select experience"
+                    [options]="experienceOptions"
+                  ></app-form-dropdown>
+                  @if (hasError('experienceYears')) {
+                    <small>Experience is required.</small>
+                  }
+                </label>
+
+                <label>
+                  <span>Registration / license *</span>
+                  <input type="text" formControlName="registrationDetails" placeholder="Registration number and council" />
+                  @if (hasError('registrationDetails')) {
+                    <small>Registration or license details are required.</small>
+                  }
+                </label>
+              }
+
+              @if (isTrack('PSYCHOLOGY_STUDENT_VOLUNTEER')) {
+                <label class="sm:col-span-2">
+                  <span>Supervisor or faculty details *</span>
+                  <textarea
+                    rows="3"
+                    formControlName="supervisionDetails"
+                    placeholder="Share your institution, supervisor or faculty contact, and the scope of supervision."
+                  ></textarea>
+                  @if (hasError('supervisionDetails')) {
+                    <small>Supervisor or faculty details are required.</small>
+                  }
+                </label>
+              }
+            </div>
+          }
+
+          @if (isTrack('PEER_SUPPORT_VOLUNTEER')) {
             <label>
-              <span>Highest qualification *</span>
-              <input type="text" formControlName="qualification" placeholder="MA Psychology, MSW, diploma..." />
-              @if (hasError('qualification')) {
-                <small>Qualification is required.</small>
+              <span>Relevant support or lived experience *</span>
+              <textarea
+                rows="5"
+                formControlName="livedExperienceSummary"
+                placeholder="Share why you would be a supportive peer volunteer. Please do not include private medical records or another person's identifying details."
+              ></textarea>
+              @if (hasError('livedExperienceSummary')) {
+                <small>Please share the experience that prepares you for peer support.</small>
               }
             </label>
-
-            <label>
-              <span>Specialization *</span>
-              <app-form-dropdown
-                formControlName="specialization"
-                placeholder="Select specialization"
-                [options]="specializationOptions"
-              ></app-form-dropdown>
-              @if (hasError('specialization')) {
-                <small>Specialization is required.</small>
-              }
-            </label>
-
-            <label>
-              <span>Experience *</span>
-              <app-form-dropdown
-                formControlName="experienceYears"
-                placeholder="Select experience"
-                [options]="experienceOptions"
-              ></app-form-dropdown>
-              @if (hasError('experienceYears')) {
-                <small>Experience is required.</small>
-              }
-            </label>
-
-            <label>
-              <span>Registration / license</span>
-              <input type="text" formControlName="registrationDetails" placeholder="Optional registration details" />
-            </label>
-          </div>
+          }
 
           <div class="grid gap-5 sm:grid-cols-2">
             <label>
@@ -166,26 +227,42 @@
               ></app-form-dropdown>
             </label>
 
-            <label>
-              <span>Resume / profile link *</span>
-              <input type="url" formControlName="resumeLink" placeholder="Google Drive, LinkedIn, website..." />
-              @if (hasError('resumeLink')) {
-                <small>Resume or profile link is required.</small>
-              }
-            </label>
+            @if (isTrack('PROFESSIONAL_PSYCHOLOGIST')) {
+              <label>
+                <span>Resume / profile link *</span>
+                <input type="url" formControlName="resumeLink" placeholder="Google Drive, LinkedIn, website..." />
+                @if (hasError('resumeLink')) {
+                  <small>Resume or profile link is required.</small>
+                }
+              </label>
+            }
           </div>
 
-          <label>
-            <span>Portfolio / LinkedIn link</span>
-            <input type="url" formControlName="portfolioLink" placeholder="Optional additional link" />
-          </label>
+          @if (!isTrack('PEER_SUPPORT_VOLUNTEER')) {
+            <label>
+              <span>Portfolio / LinkedIn link</span>
+              <input type="url" formControlName="portfolioLink" placeholder="Optional additional link" />
+            </label>
+          }
+
+          @if (!isTrack('PROFESSIONAL_PSYCHOLOGIST')) {
+            <label class="consent">
+              <input type="checkbox" formControlName="agreesToNonClinicalRole" />
+              <span>
+                I understand this is a volunteer, non-clinical role. I will not present myself as a psychologist or therapist, diagnose, prescribe, or handle crisis concerns independently.
+              </span>
+            </label>
+            @if (hasError('agreesToNonClinicalRole')) {
+              <small class="block text-red-700">This agreement is required for volunteer applications.</small>
+            }
+          }
 
           <label>
             <span>Why do you want to work with Hope Hub? *</span>
             <textarea
               rows="5"
               formControlName="whyJoin"
-              placeholder="Tell us about your counselling approach, values, and the people you want to support."
+              placeholder="Tell us about your approach, values, and the people or community you want to support."
             ></textarea>
             @if (hasError('whyJoin')) {
               <small>Please write at least 40 characters.</small>
@@ -204,7 +281,7 @@
           }
 
           <button type="submit" [disabled]="isSubmitting()" class="submit-button">
-            {{ isSubmitting() ? 'Submitting application...' : 'Submit counsellor application' }}
+            {{ isSubmitting() ? 'Submitting application...' : 'Submit application' }}
           </button>
         </form>
       </section>

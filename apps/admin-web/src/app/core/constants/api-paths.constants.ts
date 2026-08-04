@@ -92,6 +92,8 @@ export const API_PATHS = {
     VACANCY_BY_ID: (id: string) => `/admin/vacancies/${id}`,
     COUNSELLOR_APPLICATIONS: '/admin/counsellor-applications',
     COUNSELLOR_APPLICATION_STATUS: (id: string) => `/admin/counsellor-applications/${id}/status`,
+    COUNSELLOR_APPLICATION_ONBOARD: (id: string) => `/admin/counsellor-applications/${id}/onboard`,
+    CARE_CONTRIBUTOR_STATUS: (id: string) => `/admin/care-contributors/${id}/status`,
     SITE_CONFIG: '/admin/site-config',
     TESTIMONIALS: '/admin/testimonials',
     TESTIMONIAL_BY_ID: (id: string) => `/admin/testimonials/${id}`,

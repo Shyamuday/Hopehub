@@ -10,6 +10,8 @@ type LeadResponse = {
 };
 
 export type CounsellorApplicationPayload = {
+  applicationTrack:
+    'PROFESSIONAL_PSYCHOLOGIST' | 'PSYCHOLOGY_STUDENT_VOLUNTEER' | 'PEER_SUPPORT_VOLUNTEER';
   fullName: string;
   email: string;
   phone: string;
@@ -23,6 +25,9 @@ export type CounsellorApplicationPayload = {
   preferredChannel: ContactMethod;
   resumeLink: string;
   portfolioLink?: string;
+  supervisionDetails?: string;
+  livedExperienceSummary?: string;
+  agreesToNonClinicalRole?: boolean;
   whyJoin: string;
 };
 
