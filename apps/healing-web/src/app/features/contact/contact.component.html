@@ -290,6 +290,12 @@
                     <strong>{{ serviceQuote.quote.previousUseCount }}</strong>
                   </div>
                 }
+                @if (serviceQuote.quote.packageBalance) {
+                  <div>
+                    <span>Package balance</span>
+                    <strong>{{ serviceQuote.quote.packageBalance.remainingAfterThis }} left after this</strong>
+                  </div>
+                }
               }
               <div>
                 <span>{{ prefilledData().careTeamServiceId ? 'Service price' : 'Session price' }}</span>

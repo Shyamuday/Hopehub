@@ -93,6 +93,21 @@ type DashboardResource = {
   accessReason: string;
 };
 
+type DashboardPackage = {
+  consultationId: string;
+  serviceName: string;
+  careTeamServiceId?: string | null;
+  providerId?: string | null;
+  providerName?: string | null;
+  pricingLabel?: string | null;
+  totalSessions: number;
+  usedSessions: number;
+  remainingSessions: number;
+  validUntil?: string | null;
+  lastRedeemedAt?: string | null;
+  lastRedeemedConsultationId?: string | null;
+};
+
 @Component({
   selector: 'app-dashboard',
   standalone: true,
@@ -322,6 +337,68 @@ type DashboardResource = {
                     {{ resource.mediaLinkCount === 1 ? 'link' : 'links' }}
                   </p>
                 </a>
+              }
+            </div>
+          </section>
+        }
+
+        @if (packages().length) {
+          <section class="mt-8 rounded-lg bg-white p-6 shadow">
+            <div class="mb-4 flex items-center justify-between gap-3">
+              <div>
+                <h2 class="text-lg font-semibold text-gray-900">Your packages</h2>
+                <p class="mt-1 text-sm text-gray-500">
+                  Track remaining sessions and book your next package session.
+                </p>
+              </div>
+            </div>
+            <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              @for (item of packages(); track item.consultationId) {
+                <article class="rounded-lg border border-blue-100 bg-blue-50/40 p-4 shadow-sm">
+                  <div class="flex items-start justify-between gap-3">
+                    <div>
+                      <h3 class="font-semibold text-gray-950">{{ item.serviceName }}</h3>
+                      @if (item.providerName) {
+                        <p class="mt-1 text-sm text-gray-600">With {{ item.providerName }}</p>
+                      }
+                    </div>
+                    <span class="rounded-full bg-blue-600 px-2.5 py-1 text-xs font-bold text-white">
+                      {{ item.remainingSessions }} left
+                    </span>
+                  </div>
+                  @if (item.pricingLabel) {
+                    <p class="mt-3 text-sm font-semibold text-blue-800">{{ item.pricingLabel }}</p>
+                  }
+                  <div class="mt-4">
+                    <div class="flex justify-between text-xs font-semibold text-gray-600">
+                      <span>{{ item.usedSessions }} used</span>
+                      <span>{{ item.totalSessions }} total</span>
+                    </div>
+                    <div class="mt-2 h-2 rounded-full bg-white">
+                      <div
+                        class="h-2 rounded-full bg-blue-600"
+                        [style.width.%]="packageProgress(item)"
+                      ></div>
+                    </div>
+                  </div>
+                  @if (item.lastRedeemedAt) {
+                    <p class="mt-3 text-xs text-gray-500">
+                      Last used {{ item.lastRedeemedAt | date: 'mediumDate' }}
+                    </p>
+                  }
+                  @if (item.validUntil) {
+                    <p class="mt-1 text-xs text-gray-500">
+                      Valid till {{ item.validUntil | date: 'mediumDate' }}
+                    </p>
+                  }
+                  <a
+                    routerLink="/contact"
+                    [queryParams]="bookNextPackageQueryParams(item)"
+                    class="mt-4 inline-flex rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+                  >
+                    Book next session
+                  </a>
+                </article>
               }
             </div>
           </section>
@@ -579,6 +656,7 @@ export class DashboardComponent implements OnInit {
   consultations = signal<HopeHubConsultation[]>([]);
   leads = signal<any[]>([]);
   resources = signal<DashboardResource[]>([]);
+  packages = signal<DashboardPackage[]>([]);
   summary = signal<DashboardSummary>({
     totalBookings: 0,
     pendingPaymentCount: 0,
@@ -605,6 +683,7 @@ export class DashboardComponent implements OnInit {
         this.consultations.set(dashboard.consultations || []);
         this.leads.set(dashboard.leads || []);
         this.resources.set(dashboard.resources || []);
+        this.packages.set(dashboard.packages || []);
         this.summary.set(
           dashboard.summary ||
             this.buildLocalSummary(dashboard.consultations || [], dashboard.leads || []),
@@ -783,6 +862,22 @@ export class DashboardComponent implements OnInit {
       consultation.payment?.lineItems?.packageUsage ||
       null
     );
+  }
+
+  packageProgress(item: DashboardPackage): number {
+    if (!item.totalSessions) return 0;
+    return Math.min(100, Math.max(0, (item.usedSessions / item.totalSessions) * 100));
+  }
+
+  bookNextPackageQueryParams(item: DashboardPackage) {
+    return {
+      service: item.serviceName,
+      serviceName: item.serviceName,
+      providerId: item.providerId || '',
+      careTeamServiceId: item.careTeamServiceId || '',
+      consultant: item.providerName || '',
+      source: 'dashboard-package',
+    };
   }
 
   balanceDueInPaise(consultation: HopeHubConsultation): number {

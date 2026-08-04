@@ -503,6 +503,69 @@ async function previousCareTeamServiceUseCount(patientId: string, careTeamServic
   }).length;
 }
 
+type CareTeamPackageBalance = {
+  consultationId: string;
+  pricingSnapshot: Record<string, any>;
+  packageUsage: Record<string, any>;
+  totalSessions: number;
+  usedSessions: number;
+  remainingSessions: number;
+};
+
+function readPackageUsage(snapshot: Record<string, any>) {
+  const usage = snapshot['packageUsage'] as Record<string, any> | null | undefined;
+  if (!usage) return null;
+  const totalSessions = Number(usage['totalSessions'] ?? 0);
+  const usedSessions = Number(usage['usedSessions'] ?? 0);
+  const remainingSessions = Number(usage['remainingSessions'] ?? 0);
+  if (
+    !Number.isFinite(totalSessions) ||
+    !Number.isFinite(usedSessions) ||
+    !Number.isFinite(remainingSessions)
+  ) {
+    return null;
+  }
+  return { usage, totalSessions, usedSessions, remainingSessions };
+}
+
+async function findActiveCareTeamPackageBalance(patientId: string, careTeamServiceId: string) {
+  const consultations = await prisma.consultation.findMany({
+    where: {
+      patientId,
+      payment: { is: { status: { in: [PaymentStatus.PAID, PaymentStatus.PARTIALLY_REFUNDED] } } }
+    },
+    select: { id: true, pricingSnapshot: true },
+    orderBy: { createdAt: 'asc' },
+    take: 200
+  });
+  for (const consultation of consultations) {
+    const snapshot = (consultation.pricingSnapshot || {}) as Record<string, any>;
+    if (snapshot['careTeamServiceId'] !== careTeamServiceId) continue;
+    if (snapshot['careTeamPricingRule'] !== 'PACKAGE_PRICE') continue;
+    const parsed = readPackageUsage(snapshot);
+    if (!parsed || parsed.remainingSessions <= 0) continue;
+    return {
+      consultationId: consultation.id,
+      pricingSnapshot: snapshot,
+      packageUsage: parsed.usage,
+      totalSessions: parsed.totalSessions,
+      usedSessions: parsed.usedSessions,
+      remainingSessions: parsed.remainingSessions
+    } satisfies CareTeamPackageBalance;
+  }
+  return null;
+}
+
+function careTeamPackageRedemptionPricing(packageBalance: CareTeamPackageBalance) {
+  const remainingAfterThis = Math.max(0, packageBalance.remainingSessions - 1);
+  return {
+    amountInPaise: 0,
+    label: `Using package balance · ${remainingAfterThis} session${remainingAfterThis === 1 ? '' : 's'} left after this`,
+    appliedRule: 'PACKAGE_SESSION_REDEEMED',
+    sessionCount: 1
+  };
+}
+
 function careTeamServiceSelect() {
   return {
     id: true,
@@ -1684,8 +1747,15 @@ hopeHubRouter.get(
       return res.status(404).json({ message: 'Selected care team service is not available.' });
     }
 
-    const previousUseCount = await previousCareTeamServiceUseCount(req.user!.id, service.id);
-    const pricing = careTeamServicePricingPreview(service, previousUseCount);
+    const [previousUseCount, packageBalance] = await Promise.all([
+      previousCareTeamServiceUseCount(req.user!.id, service.id),
+      service.pricingMode === CareTeamServicePricingMode.PACKAGE
+        ? findActiveCareTeamPackageBalance(req.user!.id, service.id)
+        : Promise.resolve(null)
+    ]);
+    const pricing = packageBalance
+      ? careTeamPackageRedemptionPricing(packageBalance)
+      : careTeamServicePricingPreview(service, previousUseCount);
 
     res.json({
       service: {
@@ -1703,7 +1773,16 @@ hopeHubRouter.get(
         appliedRule: pricing.appliedRule,
         previousUseCount,
         sessionCount: pricing.sessionCount,
-        requiresPayment: pricing.amountInPaise > 0
+        requiresPayment: pricing.amountInPaise > 0,
+        packageBalance: packageBalance
+          ? {
+              packageConsultationId: packageBalance.consultationId,
+              totalSessions: packageBalance.totalSessions,
+              usedSessions: packageBalance.usedSessions,
+              remainingSessions: packageBalance.remainingSessions,
+              remainingAfterThis: Math.max(0, packageBalance.remainingSessions - 1)
+            }
+          : null
       }
     });
   })
@@ -1892,11 +1971,18 @@ hopeHubRouter.post(
     if (body.careTeamServiceId && !selectedCareTeamService) {
       return res.status(400).json({ message: 'Selected care team service is not available.' });
     }
-    const careTeamServiceUseCount = selectedCareTeamService
-      ? await previousCareTeamServiceUseCount(req.user!.id, selectedCareTeamService.id)
-      : 0;
+    const [careTeamServiceUseCount, activeCareTeamPackageBalance] = selectedCareTeamService
+      ? await Promise.all([
+          previousCareTeamServiceUseCount(req.user!.id, selectedCareTeamService.id),
+          selectedCareTeamService.pricingMode === CareTeamServicePricingMode.PACKAGE
+            ? findActiveCareTeamPackageBalance(req.user!.id, selectedCareTeamService.id)
+            : Promise.resolve(null)
+        ])
+      : [0, null];
     const careTeamServicePricing = selectedCareTeamService
-      ? careTeamServicePricingPreview(selectedCareTeamService, careTeamServiceUseCount)
+      ? activeCareTeamPackageBalance
+        ? careTeamPackageRedemptionPricing(activeCareTeamPackageBalance)
+        : careTeamServicePricingPreview(selectedCareTeamService, careTeamServiceUseCount)
       : null;
     const effectiveServiceName = selectedCareTeamService?.title || body.serviceName;
     const selectedServiceDurationMinutes =
@@ -2013,15 +2099,38 @@ hopeHubRouter.post(
       selectedOffering?.validityDays && selectedOffering.validityDays > 0
         ? new Date(Date.now() + selectedOffering.validityDays * 24 * 60 * 60 * 1000)
         : null;
-    const packageUsage =
-      selectedOffering && (selectedOffering.sessionCount || 0) > 1
+    const selectedCarePackageSessionCount = careTeamServicePricing?.sessionCount || 1;
+    const packageUsage = activeCareTeamPackageBalance
+      ? {
+          source: 'care-team-service',
+          type: 'REDEMPTION',
+          packageConsultationId: activeCareTeamPackageBalance.consultationId,
+          careTeamServiceId: selectedCareTeamService?.id || null,
+          totalSessions: activeCareTeamPackageBalance.totalSessions,
+          usedSessions: activeCareTeamPackageBalance.usedSessions + 1,
+          remainingSessions: Math.max(0, activeCareTeamPackageBalance.remainingSessions - 1),
+          validUntil: activeCareTeamPackageBalance.packageUsage['validUntil'] ?? null
+        }
+      : selectedCareTeamService?.pricingMode === CareTeamServicePricingMode.PACKAGE
         ? {
-            totalSessions: selectedOffering.sessionCount || 1,
-            usedSessions: 0,
-            remainingSessions: selectedOffering.sessionCount || 1,
-            validUntil: packageValidUntil?.toISOString() ?? null
+            source: 'care-team-service',
+            type: 'PURCHASE',
+            careTeamServiceId: selectedCareTeamService.id,
+            totalSessions: selectedCarePackageSessionCount,
+            usedSessions: 1,
+            remainingSessions: Math.max(0, selectedCarePackageSessionCount - 1),
+            validUntil: null
           }
-        : null;
+        : selectedOffering && (selectedOffering.sessionCount || 0) > 1
+          ? {
+              source: 'hope-hub-offering',
+              type: 'PURCHASE',
+              totalSessions: selectedOffering.sessionCount || 1,
+              usedSessions: 0,
+              remainingSessions: selectedOffering.sessionCount || 1,
+              validUntil: packageValidUntil?.toISOString() ?? null
+            }
+          : null;
 
     const checkout = await resolveConsultationCheckout({
       patientId: req.user!.id,
@@ -2059,6 +2168,8 @@ hopeHubRouter.post(
           careTeamPricingMode: selectedCareTeamService?.pricingMode || '',
           careTeamPricingLabel: careTeamServicePricing?.label || '',
           careTeamPreviousUseCount: careTeamServiceUseCount,
+          careTeamPackageConsultationId: activeCareTeamPackageBalance?.consultationId || '',
+          careTeamPackageRemainingBefore: activeCareTeamPackageBalance?.remainingSessions ?? null,
           providerId: requestedProvider?.id || body.providerId || '',
           requestedProviderName: requestedProvider?.user.name || '',
           concernCategory: body.concernCategory || '',
@@ -2093,6 +2204,8 @@ hopeHubRouter.post(
           careTeamPricingLabel: careTeamServicePricing?.label || null,
           careTeamPricingRule: careTeamServicePricing?.appliedRule || null,
           careTeamPreviousUseCount: careTeamServiceUseCount,
+          careTeamPackageConsultationId: activeCareTeamPackageBalance?.consultationId || null,
+          careTeamPackageRemainingBefore: activeCareTeamPackageBalance?.remainingSessions ?? null,
           sessionFeeInPaise: amountInPaise,
           netAfterOfferDiscountInPaise,
           paymentMode: partialPayment.paymentMode,
@@ -2140,6 +2253,9 @@ hopeHubRouter.post(
               careTeamPricingLabel: careTeamServicePricing?.label || null,
               careTeamPricingRule: careTeamServicePricing?.appliedRule || null,
               careTeamPreviousUseCount: careTeamServiceUseCount,
+              careTeamPackageConsultationId: activeCareTeamPackageBalance?.consultationId || null,
+              careTeamPackageRemainingBefore:
+                activeCareTeamPackageBalance?.remainingSessions ?? null,
               providerId: requestedProvider?.id || body.providerId || '',
               requestedProviderName: requestedProvider?.user.name || '',
               sessionDurationMinutes:
@@ -2181,6 +2297,40 @@ hopeHubRouter.post(
       await prisma.doctorSlot.update({
         where: { id: requestedSlot.id },
         data: { isBooked: true }
+      });
+    }
+
+    if (activeCareTeamPackageBalance) {
+      const updatedPackageUsage = {
+        ...activeCareTeamPackageBalance.packageUsage,
+        usedSessions: activeCareTeamPackageBalance.usedSessions + 1,
+        remainingSessions: Math.max(0, activeCareTeamPackageBalance.remainingSessions - 1),
+        lastRedeemedAt: new Date().toISOString(),
+        lastRedeemedConsultationId: consultation.id
+      };
+      const redemptionHistory = Array.isArray(
+        activeCareTeamPackageBalance.pricingSnapshot['redemptions']
+      )
+        ? activeCareTeamPackageBalance.pricingSnapshot['redemptions']
+        : [];
+      await prisma.consultation.update({
+        where: { id: activeCareTeamPackageBalance.consultationId },
+        data: {
+          pricingSnapshot: {
+            ...activeCareTeamPackageBalance.pricingSnapshot,
+            packageUsage: updatedPackageUsage,
+            redemptions: [
+              ...redemptionHistory,
+              {
+                consultationId: consultation.id,
+                redeemedAt: new Date().toISOString(),
+                appointmentDate: body.appointmentDate,
+                appointmentTime: body.appointmentTime,
+                providerId: requestedProvider?.id || body.providerId || ''
+              }
+            ]
+          }
+        }
       });
     }
 
@@ -2323,6 +2473,37 @@ hopeHubRouter.get(
         requestCount: leads.length
       }
     );
+    const packages = consultations
+      .map((consultation) => {
+        const pricingSnapshot = (consultation.pricingSnapshot || {}) as Record<string, any>;
+        const lineItems = (consultation.payment?.lineItems || {}) as Record<string, any>;
+        const packageUsage = pricingSnapshot['packageUsage'] || lineItems['packageUsage'] || null;
+        if (!packageUsage || Number(packageUsage.remainingSessions || 0) <= 0) return null;
+        return {
+          consultationId: consultation.id,
+          serviceName: pricingSnapshot['serviceName'] || consultation.disease?.name || 'Package',
+          careTeamServiceId: pricingSnapshot['careTeamServiceId'] || null,
+          providerId:
+            pricingSnapshot['providerId'] ||
+            lineItems['providerId'] ||
+            (consultation.assignedDoctorId
+              ? providerIdByUserId.get(consultation.assignedDoctorId) || null
+              : null),
+          providerName:
+            pricingSnapshot['requestedProviderName'] ||
+            lineItems['requestedProviderName'] ||
+            consultation.assignedDoctor?.name ||
+            '',
+          pricingLabel: pricingSnapshot['careTeamPricingLabel'] || '',
+          totalSessions: Number(packageUsage.totalSessions || 0),
+          usedSessions: Number(packageUsage.usedSessions || 0),
+          remainingSessions: Number(packageUsage.remainingSessions || 0),
+          validUntil: packageUsage.validUntil || null,
+          lastRedeemedAt: packageUsage.lastRedeemedAt || null,
+          lastRedeemedConsultationId: packageUsage.lastRedeemedConsultationId || null
+        };
+      })
+      .filter(Boolean);
 
     res.json({
       consultations: consultations.map((consultation) => ({
@@ -2333,7 +2514,8 @@ hopeHubRouter.get(
       })),
       leads,
       summary,
-      resources
+      resources,
+      packages
     });
   })
 );

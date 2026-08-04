@@ -119,6 +119,13 @@ export type CareTeamServiceQuote = {
     previousUseCount: number;
     sessionCount: number;
     requiresPayment: boolean;
+    packageBalance?: {
+      packageConsultationId: string;
+      totalSessions: number;
+      usedSessions: number;
+      remainingSessions: number;
+      remainingAfterThis: number;
+    } | null;
   };
 };
 
@@ -286,12 +293,14 @@ export class BookingService {
     consultations: any[];
     leads: any[];
     resources?: any[];
+    packages?: any[];
     summary?: any;
   }> {
     return this.http.get<{
       consultations: any[];
       leads: any[];
       resources?: any[];
+      packages?: any[];
       summary?: any;
     }>(`${this.apiUrl}/hope-hub/dashboard`);
   }
