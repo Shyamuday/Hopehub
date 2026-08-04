@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { prisma } from '../db.js';
+import { notifyAdminsAboutProviderApplication } from '../services/provider-application-notifications.js';
 import { asyncRoute } from '../utils/helpers.js';
 
 export const counsellorApplicationsRouter = Router();
@@ -126,6 +127,8 @@ counsellorApplicationsRouter.post(
         entryPage: body.entryPage || req.get('referer') || null
       }
     });
+
+    await notifyAdminsAboutProviderApplication(application);
 
     res.status(201).json({ applicationId: application.id, success: true });
   })

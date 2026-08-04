@@ -67,6 +67,23 @@ export type SessionMetadata = {
     channel?: string;
     time?: string;
   };
+  pendingProviderApplication?: {
+    applicationTrack?:
+      'PROFESSIONAL_PSYCHOLOGIST' | 'PSYCHOLOGY_STUDENT_VOLUNTEER' | 'PEER_SUPPORT_VOLUNTEER';
+    fullName?: string;
+    email?: string;
+    phone?: string;
+    city?: string;
+    qualification?: string;
+    specialization?: string;
+    experienceYears?: string;
+    registrationDetails?: string;
+    livedExperienceSummary?: string;
+    languages?: string;
+    availability?: string;
+    preferredChannel?: 'email' | 'phone' | 'whatsapp' | 'telegram';
+    whyJoin?: string;
+  };
   pendingAssessment?: {
     assessmentId: string;
     answers: number[];

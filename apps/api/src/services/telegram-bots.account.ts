@@ -245,6 +245,26 @@ export async function startSignup(
   session: TelegramSession,
   emailText?: string
 ) {
+  if (kind === TelegramBotKind.DOCTOR) {
+    await sendTelegramMessage(kind, {
+      chat_id: session.chatId,
+      text: [
+        '<b>Provider application</b>',
+        'You can apply from this bot now.',
+        '',
+        'Tap Join as provider and choose your role. Admin will review before any provider access is enabled.'
+      ].join('\n'),
+      parse_mode: 'HTML',
+      reply_markup: {
+        inline_keyboard: [
+          [{ text: 'Join as provider', callback_data: 'doctor:signup' }],
+          ...menuCancelRows()
+        ]
+      }
+    });
+    return;
+  }
+
   if (kind !== TelegramBotKind.USER) {
     await sendTelegramMessage(kind, {
       chat_id: session.chatId,

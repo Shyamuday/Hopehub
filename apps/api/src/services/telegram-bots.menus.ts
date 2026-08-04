@@ -54,6 +54,7 @@ export async function menuFor(kind: TelegramBotKind, linked: boolean): Promise<I
 
   if (kind === 'DOCTOR') {
     return [
+      [{ text: 'Join as provider', callback_data: 'doctor:signup' }],
       [{ text: 'Assigned support leads', callback_data: 'doctor:assignments' }],
       [
         { text: 'My queue', callback_data: 'doctor:queue' },

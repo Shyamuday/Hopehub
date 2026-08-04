@@ -13,6 +13,7 @@ import {
 } from '../../constants/homeopathic-doctor-types.js';
 import { assertMethodOptionId } from '../../services/doctor-prescribing-preferences.js';
 import { PSYCHOLOGIST_CONSULTATION_SHARE_PERCENT } from '../../services/doctor-compensation.js';
+import { notifyAdminsAboutDoctorSignup } from '../../services/doctor-signup-notifications.js';
 import { asyncRoute, publicUserSelect, toAuthResponse, logAuthEvent } from '../../utils/helpers.js';
 import { enrichWithProfileImageUrl, userProfileImagePath } from '../../utils/profile-image-url.js';
 
@@ -81,6 +82,15 @@ export function registerAuthDoctorRoutes(router: Router) {
           }
         },
         select: publicUserSelect
+      });
+
+      await notifyAdminsAboutDoctorSignup({
+        id: doctor.id,
+        name: body.name,
+        email: body.email,
+        mobile: doctor.mobile,
+        specialty: body.specialty,
+        registrationNo: body.registrationNo || null
       });
 
       res.status(201).json({

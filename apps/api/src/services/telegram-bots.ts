@@ -66,6 +66,7 @@ import {
   updateSession,
   type TelegramSession
 } from './telegram-bots.sessions.js';
+import { notifyAdminsAboutProviderApplication } from './provider-application-notifications.js';
 import type {
   InlineButton,
   SessionMetadata,
@@ -1057,6 +1058,386 @@ async function markTelegramLeadFollowUp(
   });
 }
 
+type ProviderApplicationTrack =
+  'PROFESSIONAL_PSYCHOLOGIST' | 'PSYCHOLOGY_STUDENT_VOLUNTEER' | 'PEER_SUPPORT_VOLUNTEER';
+
+const providerTrackLabels: Record<ProviderApplicationTrack, string> = {
+  PROFESSIONAL_PSYCHOLOGIST: 'Professional psychologist',
+  PSYCHOLOGY_STUDENT_VOLUNTEER: 'Psychology student volunteer',
+  PEER_SUPPORT_VOLUNTEER: 'Peer support volunteer'
+};
+
+function providerApplicationOf(session: TelegramSession) {
+  return metadataOf(session).pendingProviderApplication ?? {};
+}
+
+async function startProviderSignup(kind: TelegramBotKind, session: TelegramSession) {
+  if (kind !== TelegramBotKind.DOCTOR) {
+    await replyMenu(kind, session, 'Provider signup is available in the provider bot.');
+    return;
+  }
+
+  await updateSession(session, {
+    state: 'WAITING_PROVIDER_APPLICATION_TRACK',
+    metadata: {
+      ...metadataOf(session),
+      pendingProviderApplication: {}
+    } as Prisma.InputJsonValue,
+    lastCommand: '/signup'
+  });
+
+  await sendTelegramMessage(kind, {
+    chat_id: session.chatId,
+    text: [
+      '<b>Apply to work with Hope Hub</b>',
+      '',
+      'Choose your role. This creates an application for admin review; it does not activate provider access automatically.'
+    ].join('\n'),
+    parse_mode: 'HTML',
+    reply_markup: {
+      inline_keyboard: [
+        [
+          {
+            text: 'Professional psychologist',
+            callback_data: 'provider_signup:track:PROFESSIONAL_PSYCHOLOGIST'
+          }
+        ],
+        [
+          {
+            text: 'Psychology student volunteer',
+            callback_data: 'provider_signup:track:PSYCHOLOGY_STUDENT_VOLUNTEER'
+          }
+        ],
+        [
+          {
+            text: 'Peer support volunteer',
+            callback_data: 'provider_signup:track:PEER_SUPPORT_VOLUNTEER'
+          }
+        ],
+        ...menuCancelRows()
+      ]
+    }
+  });
+}
+
+async function setProviderSignupTrack(
+  kind: TelegramBotKind,
+  session: TelegramSession,
+  track: ProviderApplicationTrack
+) {
+  const metadata: SessionMetadata = {
+    ...metadataOf(session),
+    pendingProviderApplication: { applicationTrack: track }
+  };
+  await updateSession(session, {
+    state: 'WAITING_PROVIDER_APPLICATION_NAME',
+    metadata: metadata as Prisma.InputJsonValue,
+    lastCommand: '/signup'
+  });
+  await sendTelegramMessage(kind, {
+    chat_id: session.chatId,
+    text: [`<b>${providerTrackLabels[track]}</b>`, 'Please send your full name.'].join('\n'),
+    parse_mode: 'HTML',
+    reply_markup: { inline_keyboard: menuCancelRows() }
+  });
+}
+
+function splitLines(text: string) {
+  return text
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+}
+
+async function handleProviderApplicationText(
+  kind: TelegramBotKind,
+  session: TelegramSession,
+  text: string
+) {
+  if (kind !== TelegramBotKind.DOCTOR) return false;
+  const metadata = metadataOf(session);
+  const pending = metadata.pendingProviderApplication;
+  if (!pending) return false;
+
+  if (session.state === 'WAITING_PROVIDER_APPLICATION_NAME') {
+    const fullName = text.trim().slice(0, 120);
+    if (fullName.length < 2) {
+      await sendTelegramMessage(kind, {
+        chat_id: session.chatId,
+        text: 'Please send your full name.',
+        reply_markup: { inline_keyboard: menuCancelRows() }
+      });
+      return true;
+    }
+    await updateSession(session, {
+      state: 'WAITING_PROVIDER_APPLICATION_CONTACT',
+      metadata: {
+        ...metadata,
+        pendingProviderApplication: { ...pending, fullName }
+      } as Prisma.InputJsonValue
+    });
+    await sendTelegramMessage(kind, {
+      chat_id: session.chatId,
+      text: [
+        'Send contact details in 3 lines:',
+        '',
+        'email@example.com',
+        '+91 phone number',
+        'City'
+      ].join('\n'),
+      reply_markup: { inline_keyboard: menuCancelRows() }
+    });
+    return true;
+  }
+
+  if (session.state === 'WAITING_PROVIDER_APPLICATION_CONTACT') {
+    const [email = '', phone = '', city = ''] = splitLines(text);
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || phone.length < 5 || city.length < 2) {
+      await sendTelegramMessage(kind, {
+        chat_id: session.chatId,
+        text: 'Please send valid email, phone, and city in 3 separate lines.',
+        reply_markup: { inline_keyboard: menuCancelRows() }
+      });
+      return true;
+    }
+    await updateSession(session, {
+      state: 'WAITING_PROVIDER_APPLICATION_QUALIFICATION',
+      metadata: {
+        ...metadata,
+        pendingProviderApplication: {
+          ...pending,
+          email: email.toLowerCase(),
+          phone: phone.slice(0, 30),
+          city: city.slice(0, 120)
+        }
+      } as Prisma.InputJsonValue
+    });
+    const track = pending.applicationTrack;
+    await sendTelegramMessage(kind, {
+      chat_id: session.chatId,
+      text:
+        track === 'PROFESSIONAL_PSYCHOLOGIST'
+          ? [
+              'Send professional details in 4 lines:',
+              '',
+              'Qualification',
+              'Specialization',
+              'Experience years',
+              'Registration/license details'
+            ].join('\n')
+          : track === 'PSYCHOLOGY_STUDENT_VOLUNTEER'
+            ? [
+                'Send student volunteer details in 3 lines:',
+                '',
+                'Current course/qualification',
+                'Area of interest',
+                'Supervisor/faculty details'
+              ].join('\n')
+            : [
+                'Briefly share your peer-support or life-experience background.',
+                '',
+                'Do not include private medical details. Keep it safe and general.'
+              ].join('\n'),
+      reply_markup: { inline_keyboard: menuCancelRows() }
+    });
+    return true;
+  }
+
+  if (session.state === 'WAITING_PROVIDER_APPLICATION_QUALIFICATION') {
+    const lines = splitLines(text);
+    const track = pending.applicationTrack;
+    const next =
+      track === 'PROFESSIONAL_PSYCHOLOGIST'
+        ? {
+            qualification: lines[0] || '',
+            specialization: lines[1] || '',
+            experienceYears: lines[2] || '',
+            registrationDetails: lines.slice(3).join(' ') || ''
+          }
+        : track === 'PSYCHOLOGY_STUDENT_VOLUNTEER'
+          ? {
+              qualification: lines[0] || '',
+              specialization: lines[1] || '',
+              registrationDetails: lines.slice(2).join(' ') || '',
+              experienceYears: 'Student volunteer'
+            }
+          : {
+              qualification: 'Peer support experience',
+              specialization: 'Non-clinical peer support',
+              experienceYears: 'Life experience',
+              registrationDetails: '',
+              livedExperienceSummary: text.trim().slice(0, 3000)
+            };
+    const requiredValues =
+      track === 'PROFESSIONAL_PSYCHOLOGIST'
+        ? [next.qualification, next.specialization, next.experienceYears, next.registrationDetails]
+        : track === 'PSYCHOLOGY_STUDENT_VOLUNTEER'
+          ? [next.qualification, next.specialization, next.registrationDetails]
+          : [next.livedExperienceSummary];
+    if (requiredValues.some((value) => typeof value === 'string' && !value.trim())) {
+      await sendTelegramMessage(kind, {
+        chat_id: session.chatId,
+        text: 'Please complete the requested details. Use separate lines as shown.',
+        reply_markup: { inline_keyboard: menuCancelRows() }
+      });
+      return true;
+    }
+    await updateSession(session, {
+      state: 'WAITING_PROVIDER_APPLICATION_AVAILABILITY',
+      metadata: {
+        ...metadata,
+        pendingProviderApplication: { ...pending, ...next }
+      } as Prisma.InputJsonValue
+    });
+    await sendTelegramMessage(kind, {
+      chat_id: session.chatId,
+      text: [
+        'Send availability details in 3 lines:',
+        '',
+        'Languages you can support',
+        'Availability, e.g. evenings/weekends',
+        'Preferred contact: email / phone / whatsapp / telegram'
+      ].join('\n'),
+      reply_markup: { inline_keyboard: menuCancelRows() }
+    });
+    return true;
+  }
+
+  if (session.state === 'WAITING_PROVIDER_APPLICATION_AVAILABILITY') {
+    const [languages = '', availability = '', preferred = 'telegram'] = splitLines(text);
+    const preferredChannel = ['email', 'phone', 'whatsapp', 'telegram'].includes(
+      preferred.toLowerCase()
+    )
+      ? (preferred.toLowerCase() as 'email' | 'phone' | 'whatsapp' | 'telegram')
+      : 'telegram';
+    if (languages.length < 2 || availability.length < 2) {
+      await sendTelegramMessage(kind, {
+        chat_id: session.chatId,
+        text: 'Please send languages, availability, and preferred contact in 3 lines.',
+        reply_markup: { inline_keyboard: menuCancelRows() }
+      });
+      return true;
+    }
+    await updateSession(session, {
+      state: 'WAITING_PROVIDER_APPLICATION_WHY',
+      metadata: {
+        ...metadata,
+        pendingProviderApplication: {
+          ...pending,
+          languages: languages.slice(0, 180),
+          availability: availability.slice(0, 180),
+          preferredChannel
+        }
+      } as Prisma.InputJsonValue
+    });
+    await sendTelegramMessage(kind, {
+      chat_id: session.chatId,
+      text: [
+        'Last step: tell us why you want to work with Hope Hub.',
+        '',
+        'Please write at least 40 characters. Also confirm you understand volunteers/student supporters are non-clinical and must follow safety escalation.'
+      ].join('\n'),
+      reply_markup: { inline_keyboard: menuCancelRows() }
+    });
+    return true;
+  }
+
+  if (session.state === 'WAITING_PROVIDER_APPLICATION_WHY') {
+    const whyJoin = text.trim().slice(0, 3000);
+    if (whyJoin.length < 40) {
+      await sendTelegramMessage(kind, {
+        chat_id: session.chatId,
+        text: 'Please share a little more — at least 40 characters.',
+        reply_markup: { inline_keyboard: menuCancelRows() }
+      });
+      return true;
+    }
+    await finishProviderApplication(kind, session, whyJoin);
+    return true;
+  }
+
+  return false;
+}
+
+async function finishProviderApplication(
+  kind: TelegramBotKind,
+  session: TelegramSession,
+  whyJoin: string
+) {
+  const metadata = metadataOf(session);
+  const pending = metadata.pendingProviderApplication;
+  if (!pending?.applicationTrack) {
+    await startProviderSignup(kind, session);
+    return;
+  }
+
+  const application = await prisma.counsellorApplication.create({
+    data: {
+      applicationTrack: pending.applicationTrack,
+      fullName: pending.fullName || telegramDisplayName(session),
+      email: pending.email || `${session.chatId}@telegram.local`,
+      phone: pending.phone || session.chatId,
+      city: pending.city || 'Not provided',
+      qualification: pending.qualification || null,
+      specialization: pending.specialization || null,
+      experienceYears: pending.experienceYears || null,
+      registrationDetails:
+        pending.applicationTrack === 'PSYCHOLOGY_STUDENT_VOLUNTEER'
+          ? null
+          : pending.registrationDetails || null,
+      languages: pending.languages || 'Not provided',
+      availability: pending.availability || 'Not provided',
+      preferredChannel: pending.preferredChannel || 'telegram',
+      supervisionDetails:
+        pending.applicationTrack === 'PSYCHOLOGY_STUDENT_VOLUNTEER'
+          ? pending.registrationDetails || null
+          : null,
+      livedExperienceSummary:
+        pending.applicationTrack === 'PEER_SUPPORT_VOLUNTEER'
+          ? pending.livedExperienceSummary || whyJoin
+          : null,
+      agreesToNonClinicalRole: pending.applicationTrack !== 'PROFESSIONAL_PSYCHOLOGIST',
+      whyJoin,
+      source: 'telegram-provider-bot',
+      entryPage: `telegram:${session.botKind}:${session.chatId}`
+    },
+    select: {
+      id: true,
+      fullName: true,
+      email: true,
+      phone: true,
+      applicationTrack: true
+    }
+  });
+
+  const nextMetadata: SessionMetadata = { ...metadata };
+  delete nextMetadata.pendingProviderApplication;
+  await updateSession(session, {
+    state: 'ACTIVE',
+    metadata: nextMetadata as Prisma.InputJsonValue,
+    lastCommand: '/signup'
+  });
+  await notifyAdminsAboutProviderApplication(application);
+
+  await sendTelegramMessage(kind, {
+    chat_id: session.chatId,
+    text: [
+      '<b>Application received</b>',
+      `ID: ${escapeHtml(application.id.slice(-8))}`,
+      `Role: ${escapeHtml(providerTrackLabels[application.applicationTrack])}`,
+      '',
+      'Admin will review it. If approved, your provider account/access will be created or linked after onboarding.'
+    ].join('\n'),
+    parse_mode: 'HTML',
+    reply_markup: {
+      inline_keyboard: [
+        [{ text: 'Open website careers', url: volunteerApplicationUrl(session) }],
+        [{ text: 'Main menu', callback_data: 'common:menu' }]
+      ]
+    }
+  });
+}
+
 async function showProviderAssignments(kind: TelegramBotKind, session: TelegramSession) {
   if (!(await requireLinked(kind, session))) return;
   const assignments = await prisma.websiteLeadAssignment.findMany({
@@ -1871,6 +2252,17 @@ async function createLeadFromText(kind: TelegramBotKind, session: TelegramSessio
 }
 
 async function handlePendingState(kind: TelegramBotKind, session: TelegramSession, text: string) {
+  if (
+    session.state === 'WAITING_PROVIDER_APPLICATION_TRACK' ||
+    session.state === 'WAITING_PROVIDER_APPLICATION_NAME' ||
+    session.state === 'WAITING_PROVIDER_APPLICATION_CONTACT' ||
+    session.state === 'WAITING_PROVIDER_APPLICATION_QUALIFICATION' ||
+    session.state === 'WAITING_PROVIDER_APPLICATION_AVAILABILITY' ||
+    session.state === 'WAITING_PROVIDER_APPLICATION_WHY'
+  ) {
+    return handleProviderApplicationText(kind, session, text);
+  }
+
   if (session.state === 'WAITING_LINK_EMAIL') {
     await startLink(kind, session, text);
     return true;
@@ -2009,7 +2401,8 @@ async function handleCommand(kind: TelegramBotKind, session: TelegramSession, te
   }
 
   if (kind === TelegramBotKind.DOCTOR) {
-    if (command === '/assignments') await showProviderAssignments(kind, session);
+    if (command === '/signup') await startProviderSignup(kind, session);
+    else if (command === '/assignments') await showProviderAssignments(kind, session);
     else if (command === '/queue') await doctorQueue(kind, session);
     else if (command === '/online') await setDoctorPresence(kind, session, true);
     else if (command === '/offline') await setDoctorPresence(kind, session, false);
@@ -2166,7 +2559,12 @@ async function handleCallback(
   }
 
   if (kind === TelegramBotKind.DOCTOR) {
-    if (data === 'doctor:assignments') await showProviderAssignments(kind, session);
+    if (data === 'doctor:signup') await startProviderSignup(kind, session);
+    else if (data.startsWith('provider_signup:track:')) {
+      const track = data.slice('provider_signup:track:'.length) as ProviderApplicationTrack;
+      if (track in providerTrackLabels) await setProviderSignupTrack(kind, session, track);
+      else await startProviderSignup(kind, session);
+    } else if (data === 'doctor:assignments') await showProviderAssignments(kind, session);
     else if (data === 'doctor:queue') await doctorQueue(kind, session);
     else if (data === 'doctor:online') await setDoctorPresence(kind, session, true);
     else if (data === 'doctor:offline') await setDoctorPresence(kind, session, false);
