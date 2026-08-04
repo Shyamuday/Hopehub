@@ -38,10 +38,23 @@ model HopeHubAssessmentAttempt {
   @@index([safetyReviewedById])
 }
 
+enum CareTeamMemberType {
+  MENTAL_WELLNESS_PROFESSIONAL
+  QUALIFIED_COUNSELLOR
+  PSYCHOLOGY_STUDENT_VOLUNTEER
+  PEER_SUPPORT_VOLUNTEER
+  NLP_COACH
+  LIFE_COACH
+  MEDITATION_BREATHWORK_GUIDE
+  CAREER_STUDY_MENTOR
+}
+
 model MentalHealthProviderProfile {
   id                    String   @id @default(cuid())
   doctorId              String   @unique
+  careTeamType          CareTeamMemberType @default(MENTAL_WELLNESS_PROFESSIONAL)
   qualifications         String[] @default([])
+  qualifiedFrom          String?
   licenseNumber          String?
   licenseCouncil         String?
   languages              String[] @default([])
@@ -57,8 +70,29 @@ model MentalHealthProviderProfile {
   updatedAt              DateTime @updatedAt
 
   doctor                Doctor   @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  services              CareTeamService[]
 
   @@index([doctorId])
+  @@index([careTeamType])
+}
+
+model CareTeamService {
+  id                     String   @id @default(cuid())
+  mentalHealthProfileId  String
+  title                  String
+  description            String?  @db.Text
+  priceInPaise           Int      @default(0)
+  currency               String   @default("INR")
+  durationMinutes        Int      @default(30)
+  isFree                 Boolean  @default(false)
+  isActive               Boolean  @default(true)
+  sortOrder              Int      @default(0)
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  mentalHealthProfile    MentalHealthProviderProfile @relation(fields: [mentalHealthProfileId], references: [id], onDelete: Cascade)
+
+  @@index([mentalHealthProfileId, isActive, sortOrder])
 }
 
 enum HopeHubOfferingType {

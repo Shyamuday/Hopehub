@@ -114,6 +114,8 @@ export const doctorProfileSelect = {
   mentalHealthProfile: {
     select: {
       qualifications: true,
+      qualifiedFrom: true,
+      careTeamType: true,
       licenseNumber: true,
       licenseCouncil: true,
       languages: true,
@@ -124,7 +126,21 @@ export const doctorProfileSelect = {
       introSessionTitle: true,
       counsellingApproach: true,
       safetyEscalationNote: true,
-      acceptsHighRiskCases: true
+      acceptsHighRiskCases: true,
+      services: {
+        orderBy: { sortOrder: 'asc' },
+        select: {
+          id: true,
+          title: true,
+          description: true,
+          priceInPaise: true,
+          currency: true,
+          durationMinutes: true,
+          isFree: true,
+          isActive: true,
+          sortOrder: true
+        }
+      }
     }
   },
   defaultMethodOptionId: true,

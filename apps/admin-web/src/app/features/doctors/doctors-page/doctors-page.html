@@ -107,6 +107,14 @@
     </div>
     @if (isPsychologistType(createModel().doctorType)) {
       <div class="field">
+        <label class="field-label" for="doc-create-care-team-type">Care team type</label>
+        <select id="doc-create-care-team-type" [formField]="createForm.careTeamType">
+          @for (option of careTeamTypeOptions; track option.value) {
+            <option [value]="option.value">{{ option.label }}</option>
+          }
+        </select>
+      </div>
+      <div class="field">
         <label class="field-label" for="doc-create-qualifications">Qualifications</label>
         <textarea
           id="doc-create-qualifications"
@@ -114,6 +122,14 @@
           [formField]="createForm.qualificationsText"
           placeholder="One per line"
         ></textarea>
+      </div>
+      <div class="field">
+        <label class="field-label" for="doc-create-qualified-from">Qualified from</label>
+        <input
+          id="doc-create-qualified-from"
+          [formField]="createForm.qualifiedFrom"
+          placeholder="e.g. Delhi University / NLP Academy"
+        />
       </div>
       <div class="field">
         <label class="field-label" for="doc-create-languages">Languages</label>
@@ -141,6 +157,16 @@
           [formField]="createForm.concernsHandledText"
           placeholder="Anxiety&#10;Stress&#10;Relationship concerns"
         ></textarea>
+      </div>
+      <div class="field">
+        <label class="field-label" for="doc-create-services">Services & pricing</label>
+        <textarea
+          id="doc-create-services"
+          rows="4"
+          [formField]="createForm.serviceOffersText"
+          placeholder="NLP confidence coaching | 499 | 40 | Mindset and confidence work | yes&#10;Peer listening session | 0 | 20 | Non-clinical support | yes"
+        ></textarea>
+        <p class="field-hint">One per line: title | price in ₹ | minutes | description | yes/no</p>
       </div>
     }
     <button type="button" (click)="createDoctor()" [disabled]="mutating() || loading()">
@@ -451,7 +477,15 @@
           ></textarea>
         </div>
         @if (isPsychologistType(editModel().doctorType)) {
-          <p class="form-section-label">Psychologist public profile</p>
+          <p class="form-section-label">Care team public profile</p>
+          <div class="field">
+            <label class="field-label" for="doc-edit-care-team-type">Care team type</label>
+            <select id="doc-edit-care-team-type" [formField]="editForm.careTeamType">
+              @for (option of careTeamTypeOptions; track option.value) {
+                <option [value]="option.value">{{ option.label }}</option>
+              }
+            </select>
+          </div>
           <div class="field">
             <label class="field-label" for="doc-edit-qualifications">Qualifications</label>
             <textarea
@@ -460,6 +494,14 @@
               placeholder="One per line"
               [formField]="editForm.qualificationsText"
             ></textarea>
+          </div>
+          <div class="field">
+            <label class="field-label" for="doc-edit-qualified-from">Qualified from</label>
+            <input
+              id="doc-edit-qualified-from"
+              [formField]="editForm.qualifiedFrom"
+              placeholder="e.g. Delhi University / NLP Academy"
+            />
           </div>
           <div class="field">
             <label class="field-label" for="doc-edit-license-number">License number</label>
@@ -550,6 +592,16 @@
             <input type="checkbox" [formField]="editForm.acceptsHighRiskCases" />
             Accept high-risk cases after team review
           </label>
+          <div class="field">
+            <label class="field-label" for="doc-edit-services">Services & pricing</label>
+            <textarea
+              id="doc-edit-services"
+              rows="5"
+              [formField]="editForm.serviceOffersText"
+              placeholder="NLP confidence coaching | 499 | 40 | Mindset and confidence work | yes&#10;Peer listening session | 0 | 20 | Non-clinical support | yes"
+            ></textarea>
+            <p class="field-hint">One per line: title | price in ₹ | minutes | description | yes/no</p>
+          </div>
         }
         <button type="button" (click)="saveDoctorEdits()" [disabled]="mutating()">
           {{ mutating() ? 'Saving...' : 'Save changes' }}

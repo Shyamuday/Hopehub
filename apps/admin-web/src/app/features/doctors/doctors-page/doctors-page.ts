@@ -43,7 +43,9 @@ type Doctor = {
     yearsOfExperience?: number | null;
     focusAreas?: string[];
     mentalHealthProfile?: {
+      careTeamType?: CareTeamMemberType;
       qualifications?: string[];
+      qualifiedFrom?: string | null;
       licenseNumber?: string | null;
       licenseCouncil?: string | null;
       languages?: string[];
@@ -55,11 +57,31 @@ type Doctor = {
       counsellingApproach?: string | null;
       safetyEscalationNote?: string | null;
       acceptsHighRiskCases?: boolean;
+      services?: CareTeamService[];
     } | null;
   };
 };
 
 type SiteConfigEntry = { key: string; value: string; label: string; description: string };
+type CareTeamMemberType =
+  | 'MENTAL_WELLNESS_PROFESSIONAL'
+  | 'QUALIFIED_COUNSELLOR'
+  | 'PSYCHOLOGY_STUDENT_VOLUNTEER'
+  | 'PEER_SUPPORT_VOLUNTEER'
+  | 'NLP_COACH'
+  | 'LIFE_COACH'
+  | 'MEDITATION_BREATHWORK_GUIDE'
+  | 'CAREER_STUDY_MENTOR';
+type CareTeamService = {
+  title: string;
+  description?: string | null;
+  priceInPaise: number;
+  currency?: string;
+  durationMinutes: number;
+  isFree?: boolean;
+  isActive?: boolean;
+  sortOrder?: number;
+};
 
 const STALE_PSYCHOLOGIST_PROFILE_TEXT = /homeopathic|doctor|clinical operations/i;
 
@@ -81,11 +103,14 @@ function emptyCreateModel() {
     doctorType: 'JUNIOR_DOCTOR' as HomeopathicDoctorType,
     specialtyFocus: '' as HomeopathicSpecialtyFocus | '',
     qualificationsText: '',
+    qualifiedFrom: '',
     languagesText: '',
     modalitiesText: '',
     sessionTypesText: '',
     ageGroupsText: '',
     concernsHandledText: '',
+    careTeamType: 'MENTAL_WELLNESS_PROFESSIONAL' as CareTeamMemberType,
+    serviceOffersText: '',
   };
 }
 
@@ -106,7 +131,9 @@ function emptyEditModel() {
     websiteOrder: '' as number | '',
     yearsOfExperience: '' as number | '',
     focusAreasText: '',
+    careTeamType: 'MENTAL_WELLNESS_PROFESSIONAL' as CareTeamMemberType,
     qualificationsText: '',
+    qualifiedFrom: '',
     licenseNumber: '',
     licenseCouncil: '',
     languagesText: '',
@@ -118,6 +145,7 @@ function emptyEditModel() {
     counsellingApproach: '',
     safetyEscalationNote: '',
     acceptsHighRiskCases: false,
+    serviceOffersText: '',
   };
 }
 
@@ -129,6 +157,16 @@ function emptyEditModel() {
 })
 export class DoctorsPage {
   readonly doctorTypeOptions = DOCTOR_TYPE_OPTIONS;
+  readonly careTeamTypeOptions: Array<{ value: CareTeamMemberType; label: string }> = [
+    { value: 'MENTAL_WELLNESS_PROFESSIONAL', label: 'Mental wellness professional' },
+    { value: 'QUALIFIED_COUNSELLOR', label: 'Qualified counsellor' },
+    { value: 'PSYCHOLOGY_STUDENT_VOLUNTEER', label: 'Psychology student volunteer' },
+    { value: 'PEER_SUPPORT_VOLUNTEER', label: 'Peer support volunteer' },
+    { value: 'NLP_COACH', label: 'NLP coach' },
+    { value: 'LIFE_COACH', label: 'Life coach' },
+    { value: 'MEDITATION_BREATHWORK_GUIDE', label: 'Meditation / breathwork guide' },
+    { value: 'CAREER_STUDY_MENTOR', label: 'Career / study mentor' },
+  ];
   readonly specialtyFocusOptions = SPECIALTY_FOCUS_OPTIONS;
   readonly clinicalRecordsRoute = adminRouteLink(ROUTE_PATHS.CLINICAL_RECORDS);
 
@@ -307,6 +345,8 @@ export class DoctorsPage {
         mentalHealthProfile: this.isPsychologistType(edit.doctorType)
           ? {
               qualifications: this.lines(edit.qualificationsText),
+              careTeamType: edit.careTeamType,
+              qualifiedFrom: edit.qualifiedFrom.trim() || null,
               licenseNumber: edit.licenseNumber.trim() || null,
               licenseCouncil: edit.licenseCouncil.trim() || null,
               languages: this.lines(edit.languagesText),
@@ -318,6 +358,7 @@ export class DoctorsPage {
               counsellingApproach: edit.counsellingApproach.trim() || null,
               safetyEscalationNote: edit.safetyEscalationNote.trim() || null,
               acceptsHighRiskCases: edit.acceptsHighRiskCases,
+              services: this.parseServiceOffers(edit.serviceOffersText),
             }
           : undefined,
       });
@@ -362,11 +403,14 @@ export class DoctorsPage {
         mentalHealthProfile: this.isPsychologistType(create.doctorType)
           ? {
               qualifications: this.lines(create.qualificationsText),
+              careTeamType: create.careTeamType,
+              qualifiedFrom: create.qualifiedFrom.trim() || null,
               languages: this.lines(create.languagesText),
               modalities: this.lines(create.modalitiesText),
               sessionTypes: this.lines(create.sessionTypesText),
               ageGroups: this.lines(create.ageGroupsText),
               concernsHandled: this.lines(create.concernsHandledText),
+              services: this.parseServiceOffers(create.serviceOffersText),
             }
           : undefined,
       });
@@ -573,9 +617,12 @@ export class DoctorsPage {
       websiteOrder: selected.doctorProfile?.websiteOrder ?? '',
       yearsOfExperience: selected.doctorProfile?.yearsOfExperience ?? '',
       focusAreasText: (selected.doctorProfile?.focusAreas ?? []).join('\n'),
+      careTeamType:
+        selected.doctorProfile?.mentalHealthProfile?.careTeamType ?? 'MENTAL_WELLNESS_PROFESSIONAL',
       qualificationsText: (selected.doctorProfile?.mentalHealthProfile?.qualifications ?? []).join(
         '\n',
       ),
+      qualifiedFrom: selected.doctorProfile?.mentalHealthProfile?.qualifiedFrom || '',
       licenseNumber: selected.doctorProfile?.mentalHealthProfile?.licenseNumber || '',
       licenseCouncil: selected.doctorProfile?.mentalHealthProfile?.licenseCouncil || '',
       languagesText: (selected.doctorProfile?.mentalHealthProfile?.languages ?? []).join('\n'),
@@ -592,7 +639,42 @@ export class DoctorsPage {
       safetyEscalationNote: selected.doctorProfile?.mentalHealthProfile?.safetyEscalationNote || '',
       acceptsHighRiskCases:
         selected.doctorProfile?.mentalHealthProfile?.acceptsHighRiskCases ?? false,
+      serviceOffersText: this.formatServiceOffers(
+        selected.doctorProfile?.mentalHealthProfile?.services ?? [],
+      ),
     });
+  }
+
+  private parseServiceOffers(text: string): CareTeamService[] {
+    return text
+      .split('\n')
+      .map((line, index) => {
+        const [title = '', price = '', minutes = '', description = '', active = 'yes'] = line
+          .split('|')
+          .map((part) => part.trim());
+        if (!title) return null;
+        const priceInPaise = Math.max(0, Math.round(Number(price || 0) * 100));
+        return {
+          title,
+          description: description || null,
+          priceInPaise,
+          currency: 'INR',
+          durationMinutes: Math.max(5, Number(minutes || 30)),
+          isFree: priceInPaise === 0,
+          isActive: !/^no|false|inactive$/i.test(active),
+          sortOrder: index,
+        };
+      })
+      .filter(Boolean) as CareTeamService[];
+  }
+
+  private formatServiceOffers(services: CareTeamService[]) {
+    return services
+      .map(
+        (service) =>
+          `${service.title} | ${(service.priceInPaise || 0) / 100} | ${service.durationMinutes || 30} | ${service.description || ''} | ${service.isActive === false ? 'no' : 'yes'}`,
+      )
+      .join('\n');
   }
 
   async loadSiteConfig() {

@@ -389,7 +389,9 @@ function providerPublicPayload(provider: {
   yearsOfExperience: number | null;
   focusAreas: string[];
   mentalHealthProfile?: {
+    careTeamType: string;
     qualifications: string[];
+    qualifiedFrom: string | null;
     licenseNumber: string | null;
     licenseCouncil: string | null;
     languages: string[];
@@ -401,6 +403,17 @@ function providerPublicPayload(provider: {
     counsellingApproach: string | null;
     safetyEscalationNote: string | null;
     acceptsHighRiskCases: boolean;
+    services: Array<{
+      id: string;
+      title: string;
+      description: string | null;
+      priceInPaise: number;
+      currency: string;
+      durationMinutes: number;
+      isFree: boolean;
+      isActive: boolean;
+      sortOrder: number;
+    }>;
   } | null;
   user: { id: string; name: string; profileImageKey: string | null };
 }) {
@@ -419,17 +432,26 @@ function providerPublicPayload(provider: {
     .filter(Boolean)
     .join(' ')
     .toLowerCase();
-  const supportRole = /student|intern|trainee/.test(providerText)
-    ? 'STUDENT_VOLUNTEER'
-    : /volunteer|peer support|non-clinical/.test(providerText)
-      ? 'VOLUNTEER'
-      : 'PSYCHOLOGIST';
+  const careTeamType = mental?.careTeamType ?? 'MENTAL_WELLNESS_PROFESSIONAL';
+  const supportRole = careTeamType;
   const supportRoleLabel =
-    supportRole === 'STUDENT_VOLUNTEER'
-      ? 'Student volunteer'
-      : supportRole === 'VOLUNTEER'
-        ? 'Volunteer support'
-        : 'Psychologist';
+    careTeamType === 'QUALIFIED_COUNSELLOR'
+      ? 'Qualified counsellor'
+      : careTeamType === 'PSYCHOLOGY_STUDENT_VOLUNTEER'
+        ? 'Psychology student volunteer'
+        : careTeamType === 'PEER_SUPPORT_VOLUNTEER'
+          ? 'Peer support volunteer'
+          : careTeamType === 'NLP_COACH'
+            ? 'NLP coach'
+            : careTeamType === 'LIFE_COACH'
+              ? 'Life coach'
+              : careTeamType === 'MEDITATION_BREATHWORK_GUIDE'
+                ? 'Meditation / breathwork guide'
+                : careTeamType === 'CAREER_STUDY_MENTOR'
+                  ? 'Career / study mentor'
+                  : 'Mental wellness professional';
+  const activeServices = (mental?.services ?? []).filter((service) => service.isActive);
+  const primaryService = activeServices[0];
   return {
     id: provider.id,
     slug: `${slugify(user.name || provider.designation || provider.specialty || 'expert')}-${provider.id}`,
@@ -441,10 +463,12 @@ function providerPublicPayload(provider: {
     department: provider.department,
     supportRole,
     supportRoleLabel,
+    careTeamType,
     bio: provider.bio,
     yearsOfExperience: provider.yearsOfExperience,
     focusAreas,
     qualifications: mental?.qualifications ?? [],
+    qualifiedFrom: mental?.qualifiedFrom ?? null,
     licenseNumber: mental?.licenseNumber ?? null,
     licenseCouncil: mental?.licenseCouncil ?? null,
     languages: mental?.languages?.length
@@ -470,8 +494,9 @@ function providerPublicPayload(provider: {
     counsellingApproach: mental?.counsellingApproach ?? null,
     safetyEscalationNote: mental?.safetyEscalationNote ?? null,
     acceptsHighRiskCases: mental?.acceptsHighRiskCases ?? false,
-    sessionFeeInPaise: HOPE_HUB_SESSION_FEE_IN_PAISE,
-    sessionDurationMinutes: HOPE_HUB_SESSION_DURATION_MINUTES
+    services: activeServices,
+    sessionFeeInPaise: primaryService?.priceInPaise ?? HOPE_HUB_SESSION_FEE_IN_PAISE,
+    sessionDurationMinutes: primaryService?.durationMinutes ?? HOPE_HUB_SESSION_DURATION_MINUTES
   };
 }
 
@@ -955,7 +980,9 @@ async function activeHopeHubProviders(params: {
         websiteOrder: true,
         mentalHealthProfile: {
           select: {
+            careTeamType: true,
             qualifications: true,
+            qualifiedFrom: true,
             licenseNumber: true,
             licenseCouncil: true,
             languages: true,
@@ -966,7 +993,22 @@ async function activeHopeHubProviders(params: {
             introSessionTitle: true,
             counsellingApproach: true,
             safetyEscalationNote: true,
-            acceptsHighRiskCases: true
+            acceptsHighRiskCases: true,
+            services: {
+              where: { isActive: true },
+              orderBy: [{ sortOrder: 'asc' }, { title: 'asc' }],
+              select: {
+                id: true,
+                title: true,
+                description: true,
+                priceInPaise: true,
+                currency: true,
+                durationMinutes: true,
+                isFree: true,
+                isActive: true,
+                sortOrder: true
+              }
+            }
           }
         },
         user: { select: { id: true, name: true, profileImageKey: true } }
@@ -1356,7 +1398,9 @@ hopeHubRouter.get(
         focusAreas: true,
         mentalHealthProfile: {
           select: {
+            careTeamType: true,
             qualifications: true,
+            qualifiedFrom: true,
             licenseNumber: true,
             licenseCouncil: true,
             languages: true,
@@ -1367,7 +1411,22 @@ hopeHubRouter.get(
             introSessionTitle: true,
             counsellingApproach: true,
             safetyEscalationNote: true,
-            acceptsHighRiskCases: true
+            acceptsHighRiskCases: true,
+            services: {
+              where: { isActive: true },
+              orderBy: [{ sortOrder: 'asc' }, { title: 'asc' }],
+              select: {
+                id: true,
+                title: true,
+                description: true,
+                priceInPaise: true,
+                currency: true,
+                durationMinutes: true,
+                isFree: true,
+                isActive: true,
+                sortOrder: true
+              }
+            }
           }
         },
         user: { select: { id: true, name: true, profileImageKey: true } }

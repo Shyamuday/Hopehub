@@ -146,12 +146,25 @@ export type HopeHubProvider = {
   specialty?: string | null;
   designation?: string | null;
   department?: string | null;
-  supportRole?: 'PSYCHOLOGIST' | 'STUDENT_VOLUNTEER' | 'VOLUNTEER';
+  supportRole?:
+    | 'MENTAL_WELLNESS_PROFESSIONAL'
+    | 'QUALIFIED_COUNSELLOR'
+    | 'PSYCHOLOGY_STUDENT_VOLUNTEER'
+    | 'PEER_SUPPORT_VOLUNTEER'
+    | 'NLP_COACH'
+    | 'LIFE_COACH'
+    | 'MEDITATION_BREATHWORK_GUIDE'
+    | 'CAREER_STUDY_MENTOR'
+    | 'PSYCHOLOGIST'
+    | 'STUDENT_VOLUNTEER'
+    | 'VOLUNTEER';
   supportRoleLabel?: string;
+  careTeamType?: string;
   bio?: string | null;
   yearsOfExperience?: number | null;
   focusAreas: string[];
   qualifications?: string[];
+  qualifiedFrom?: string | null;
   licenseNumber?: string | null;
   licenseCouncil?: string | null;
   languages?: string[];
@@ -163,6 +176,16 @@ export type HopeHubProvider = {
   counsellingApproach?: string | null;
   safetyEscalationNote?: string | null;
   acceptsHighRiskCases?: boolean;
+  services?: Array<{
+    id: string;
+    title: string;
+    description?: string | null;
+    priceInPaise: number;
+    currency: string;
+    durationMinutes: number;
+    isFree: boolean;
+    sortOrder: number;
+  }>;
   sessionFeeInPaise?: number;
   sessionDurationMinutes?: number;
 };

@@ -82,13 +82,28 @@ export class PsychologistDetailComponent implements OnInit {
 
   providerRoleBadgeClass(provider: HopeHubProvider): string {
     switch (provider.supportRole) {
+      case 'MENTAL_WELLNESS_PROFESSIONAL':
+      case 'QUALIFIED_COUNSELLOR':
       case 'PSYCHOLOGIST':
         return 'bg-emerald-50 text-emerald-700 ring-emerald-200';
+      case 'PSYCHOLOGY_STUDENT_VOLUNTEER':
       case 'STUDENT_VOLUNTEER':
         return 'bg-sky-50 text-sky-700 ring-sky-200';
+      case 'PEER_SUPPORT_VOLUNTEER':
+        return 'bg-purple-50 text-purple-700 ring-purple-200';
+      case 'NLP_COACH':
+      case 'LIFE_COACH':
+      case 'CAREER_STUDY_MENTOR':
+        return 'bg-amber-50 text-amber-800 ring-amber-200';
+      case 'MEDITATION_BREATHWORK_GUIDE':
+        return 'bg-teal-50 text-teal-700 ring-teal-200';
       default:
         return 'bg-amber-50 text-amber-800 ring-amber-200';
     }
+  }
+
+  servicePriceLabel(service: { priceInPaise: number; isFree: boolean }) {
+    return service.isFree || service.priceInPaise === 0 ? 'Free' : `₹${service.priceInPaise / 100}`;
   }
 
   listOrFallback(items: string[] | undefined, fallback: string[]) {
