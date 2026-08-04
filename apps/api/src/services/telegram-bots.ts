@@ -1,6 +1,24 @@
-import { Prisma, TelegramBotKind } from '@prisma/client';
+import {
+  ConsultationStatus,
+  CounsellorApplicationStatus,
+  LivePresenceStatus,
+  Prisma,
+  Role,
+  TelegramBotKind
+} from '@prisma/client';
 import { SERVER_CONFIG } from '../constants/config.constants.js';
 import { prisma } from '../db.js';
+import { getMailTransporter } from './mail.js';
+import {
+  devOtp,
+  generateOtp,
+  isProduction,
+  sendOtpEmail,
+  storeOtp,
+  verifyOtpDetailed
+} from './otp.js';
+import { setDoctorLiveStatus } from './online-doctor-presence.js';
+import { upsertWebsiteLead } from './website-leads.service.js';
 
 export type TelegramBotSlug = 'user' | 'doctor' | 'admin';
 
@@ -52,6 +70,21 @@ type SendMessagePayload = {
   };
 };
 
+type SessionMetadata = {
+  pendingLink?: {
+    email: string;
+    otpKey: string;
+    role: Role;
+    requestedAt: string;
+  };
+  pendingLead?: {
+    kind: 'BOOKING' | 'VOLUNTEER';
+  };
+  pendingTaskId?: string;
+};
+
+type TelegramSession = Awaited<ReturnType<typeof ensureSession>>;
+
 const botKindBySlug: Record<TelegramBotSlug, TelegramBotKind> = {
   user: TelegramBotKind.USER,
   doctor: TelegramBotKind.DOCTOR,
@@ -70,6 +103,12 @@ const botTokenEnvByKind: Record<TelegramBotKind, string> = {
   [TelegramBotKind.ADMIN]: 'TELEGRAM_ADMIN_BOT_TOKEN'
 };
 
+const roleByKind: Record<TelegramBotKind, Role> = {
+  [TelegramBotKind.USER]: Role.PATIENT,
+  [TelegramBotKind.DOCTOR]: Role.DOCTOR,
+  [TelegramBotKind.ADMIN]: Role.ADMIN
+};
+
 const botNameByKind: Record<TelegramBotKind, string> = {
   [TelegramBotKind.USER]: 'Hope Hub Care Bot',
   [TelegramBotKind.DOCTOR]: 'Hope Hub Doctor Bot',
@@ -78,21 +117,32 @@ const botNameByKind: Record<TelegramBotKind, string> = {
 
 const commandMenus: Record<TelegramBotKind, { command: string; description: string }[]> = {
   [TelegramBotKind.USER]: [
-    { command: 'start', description: 'Open the care menu' },
+    { command: 'start', description: 'Open care menu' },
+    { command: 'link', description: 'Link Hope Hub account' },
     { command: 'plan', description: 'Daily plan and review' },
-    { command: 'book', description: 'Book a session' },
-    { command: 'help', description: 'Get support options' }
+    { command: 'addtask', description: 'Add a daily task' },
+    { command: 'review', description: 'Save daily review' },
+    { command: 'book', description: 'Request a session' },
+    { command: 'volunteer', description: 'Request volunteer support' },
+    { command: 'me', description: 'Show linked account' },
+    { command: 'help', description: 'Get help' }
   ],
   [TelegramBotKind.DOCTOR]: [
     { command: 'start', description: 'Open doctor menu' },
-    { command: 'queue', description: 'Open consultation queue' },
-    { command: 'online', description: 'Open live doctor controls' },
+    { command: 'link', description: 'Link doctor account' },
+    { command: 'queue', description: 'Show consultation queue' },
+    { command: 'online', description: 'Go online' },
+    { command: 'offline', description: 'Go offline' },
+    { command: 'me', description: 'Show linked account' },
     { command: 'help', description: 'Doctor bot help' }
   ],
   [TelegramBotKind.ADMIN]: [
     { command: 'start', description: 'Open ops menu' },
-    { command: 'leads', description: 'Open leads' },
-    { command: 'contributors', description: 'Review care contributors' },
+    { command: 'link', description: 'Link admin account' },
+    { command: 'summary', description: 'Ops summary' },
+    { command: 'leads', description: 'New leads' },
+    { command: 'contributors', description: 'Contributor applications' },
+    { command: 'me', description: 'Show linked account' },
     { command: 'help', description: 'Ops bot help' }
   ]
 };
@@ -111,6 +161,30 @@ function doctorUrl(path = '') {
 
 function adminUrl(path = '') {
   return `${stripTrailingSlash(SERVER_CONFIG.ORIGINS.ADMIN)}${path}`;
+}
+
+function escapeHtml(value: string | null | undefined) {
+  return (value || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function todayStart() {
+  const now = new Date();
+  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+}
+
+function metadataOf(session: { metadata?: Prisma.JsonValue | null }): SessionMetadata {
+  if (
+    !session.metadata ||
+    typeof session.metadata !== 'object' ||
+    Array.isArray(session.metadata)
+  ) {
+    return {};
+  }
+  return session.metadata as SessionMetadata;
+}
+
+function telegramDisplayName(session: TelegramSession) {
+  return session.firstName || session.username || 'Telegram user';
 }
 
 export function telegramBotKindFromSlug(slug: string): TelegramBotKind | null {
@@ -136,7 +210,7 @@ export function telegramBotToken(kind: TelegramBotKind) {
 }
 
 function getBotTokenOrThrow(kind: TelegramBotKind) {
-  const token = telegramBotToken(kind);
+  const token = telegramBotToken(kind).trim();
   if (!token) throw new Error(`${botTokenEnvByKind[kind]} is not configured.`);
   return token;
 }
@@ -191,18 +265,23 @@ export async function setTelegramCommands(kind: TelegramBotKind) {
   });
 }
 
-function menuFor(kind: TelegramBotKind): InlineButton[][] {
+function menuFor(kind: TelegramBotKind, linked: boolean): InlineButton[][] {
   if (kind === TelegramBotKind.USER) {
     return [
       [
         { text: 'Daily plan', callback_data: 'user:plan' },
-        { text: 'Book session', callback_data: 'user:book' }
+        { text: 'Add task', callback_data: 'user:addtask' }
       ],
       [
-        { text: 'Talk to volunteer', callback_data: 'user:volunteer' },
-        { text: 'Crisis help', callback_data: 'user:crisis' }
+        { text: 'Book session', callback_data: 'user:book' },
+        { text: 'Volunteer support', callback_data: 'user:volunteer' }
       ],
-      [{ text: 'Open Hope Hub', url: webUrl('/profile') }]
+      [
+        linked
+          ? { text: 'My account', callback_data: 'common:me' }
+          : { text: 'Link account', callback_data: 'common:link' },
+        { text: 'Open Hope Hub', url: webUrl('/profile') }
+      ]
     ];
   }
 
@@ -213,65 +292,60 @@ function menuFor(kind: TelegramBotKind): InlineButton[][] {
         { text: 'Go online', callback_data: 'doctor:online' }
       ],
       [
-        { text: 'Appointments', url: doctorUrl('/appointments') },
-        { text: 'Open doctor app', url: doctorUrl('/') }
-      ]
+        { text: 'Go offline', callback_data: 'doctor:offline' },
+        linked
+          ? { text: 'My account', callback_data: 'common:me' }
+          : { text: 'Link account', callback_data: 'common:link' }
+      ],
+      [{ text: 'Open doctor app', url: doctorUrl('/') }]
     ];
   }
 
   return [
     [
-      { text: 'New leads', callback_data: 'admin:leads' },
-      { text: 'Care contributors', callback_data: 'admin:contributors' }
+      { text: 'Ops summary', callback_data: 'admin:summary' },
+      { text: 'New leads', callback_data: 'admin:leads' }
     ],
     [
-      { text: 'Consultations', url: adminUrl('/consultations') },
-      { text: 'Open admin', url: adminUrl('/') }
-    ]
+      { text: 'Contributors', callback_data: 'admin:contributors' },
+      linked
+        ? { text: 'My account', callback_data: 'common:me' }
+        : { text: 'Link account', callback_data: 'common:link' }
+    ],
+    [{ text: 'Open admin', url: adminUrl('/') }]
   ];
-}
-
-function startText(kind: TelegramBotKind, linked: boolean) {
-  if (kind === TelegramBotKind.USER) {
-    return [
-      '<b>Welcome to Hope Hub.</b>',
-      linked
-        ? 'Your Telegram is linked to your Hope Hub account.'
-        : 'Use this bot for care shortcuts. Account linking will come next.',
-      '',
-      'You can manage daily plans, book support, or reach the right help path.'
-    ].join('\n');
-  }
-
-  if (kind === TelegramBotKind.DOCTOR) {
-    return [
-      '<b>Hope Hub Doctor Bot</b>',
-      linked
-        ? 'Your doctor account is linked.'
-        : 'Use this bot as a shortcut panel. Secure account linking will come next.',
-      '',
-      'Open your queue, online controls, and appointments from here.'
-    ].join('\n');
-  }
-
-  return [
-    '<b>Hope Hub Ops Bot</b>',
-    linked
-      ? 'Your admin account is linked.'
-      : 'Use this bot as an ops shortcut. Secure account linking will come next.',
-    '',
-    'Review leads, contributor applications, and operational queues.'
-  ].join('\n');
 }
 
 function helpText(kind: TelegramBotKind) {
   if (kind === TelegramBotKind.USER) {
-    return 'Use /plan for daily planning, /book to book support, or the menu buttons below. This bot is not an emergency service.';
+    return [
+      '<b>Care bot commands</b>',
+      '/link email@example.com - link your account',
+      '/plan - show today plan',
+      '/addtask - add a task',
+      '/review - save end-of-day review',
+      '/book - request a session',
+      '/volunteer - request volunteer support',
+      '',
+      'This bot is not an emergency service.'
+    ].join('\n');
   }
   if (kind === TelegramBotKind.DOCTOR) {
-    return 'Use /queue for your consultation queue or /online for live doctor controls. Patient-sensitive actions still open in the secure doctor app.';
+    return [
+      '<b>Doctor bot commands</b>',
+      '/link doctor@example.com - link doctor account',
+      '/queue - real queue summary',
+      '/online - mark online',
+      '/offline - mark offline'
+    ].join('\n');
   }
-  return 'Use /leads or /contributors for quick ops shortcuts. Sensitive actions still open in the secure admin panel.';
+  return [
+    '<b>Ops bot commands</b>',
+    '/link admin@example.com - link admin account',
+    '/summary - ops summary',
+    '/leads - new leads',
+    '/contributors - contributor applications'
+  ].join('\n');
 }
 
 async function ensureSession(kind: TelegramBotKind, chat: TelegramChat, from?: TelegramUser) {
@@ -291,6 +365,23 @@ async function ensureSession(kind: TelegramBotKind, chat: TelegramChat, from?: T
       username: from?.username ?? undefined,
       firstName: from?.first_name ?? undefined,
       lastName: from?.last_name ?? undefined
+    },
+    include: {
+      linkedUser: {
+        select: { id: true, name: true, email: true, mobile: true, role: true, isActive: true }
+      }
+    }
+  });
+}
+
+async function updateSession(session: TelegramSession, data: Prisma.TelegramBotSessionUpdateInput) {
+  return prisma.telegramBotSession.update({
+    where: { id: session.id },
+    data,
+    include: {
+      linkedUser: {
+        select: { id: true, name: true, email: true, mobile: true, role: true, isActive: true }
+      }
     }
   });
 }
@@ -315,128 +406,680 @@ async function logEvent(input: {
   });
 }
 
-async function replyMenu(kind: TelegramBotKind, chatId: string, text: string) {
+async function replyMenu(kind: TelegramBotKind, session: TelegramSession, text: string) {
   await sendTelegramMessage(kind, {
-    chat_id: chatId,
+    chat_id: session.chatId,
     text,
     parse_mode: 'HTML',
-    reply_markup: { inline_keyboard: menuFor(kind) }
+    reply_markup: { inline_keyboard: menuFor(kind, Boolean(session.linkedUserId)) }
   });
 }
 
-async function handleCommand(kind: TelegramBotKind, chatId: string, text: string, linked: boolean) {
-  const command = text.split(/\s+/)[0]?.toLowerCase() || '';
+function assertLinkedRole(kind: TelegramBotKind, session: TelegramSession) {
+  const expectedRole = roleByKind[kind];
+  return Boolean(
+    session.linkedUserId &&
+    session.linkedUser &&
+    session.linkedUser.role === expectedRole &&
+    session.linkedUser.isActive
+  );
+}
+
+async function requireLinked(kind: TelegramBotKind, session: TelegramSession) {
+  if (assertLinkedRole(kind, session)) return true;
+  await sendTelegramMessage(kind, {
+    chat_id: session.chatId,
+    text: [
+      'Please link your Hope Hub account first.',
+      '',
+      `Send: /link your-email@example.com`,
+      'Then reply with /verify 123456 after the OTP arrives.'
+    ].join('\n')
+  });
+  return false;
+}
+
+async function startLink(kind: TelegramBotKind, session: TelegramSession, emailText?: string) {
+  const email = (emailText || '').trim().toLowerCase();
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    await sendTelegramMessage(kind, {
+      chat_id: session.chatId,
+      text: `Send your email like this:\n/link your-email@example.com`
+    });
+    return;
+  }
+
+  const expectedRole = roleByKind[kind];
+  const user = await prisma.user.findFirst({
+    where: { email, role: expectedRole, isActive: true },
+    select: { id: true, email: true, name: true, role: true }
+  });
+
+  if (!user) {
+    await sendTelegramMessage(kind, {
+      chat_id: session.chatId,
+      text: `No active ${expectedRole.toLowerCase()} account was found for this email.`
+    });
+    return;
+  }
+
+  if (isProduction && !getMailTransporter()) {
+    await sendTelegramMessage(kind, {
+      chat_id: session.chatId,
+      text: 'Email OTP delivery is not configured right now. Please try later.'
+    });
+    return;
+  }
+
+  const otp = isProduction ? generateOtp() : devOtp;
+  const otpKey = `telegram:${kind}:${session.id}:${email}`;
+  await storeOtp(otpKey, otp);
+  if (isProduction) {
+    await sendOtpEmail(email, otp);
+  } else {
+    console.info(`[telegram] DEV OTP for ${email}: ${otp}`);
+  }
+
+  const metadata: SessionMetadata = {
+    ...metadataOf(session),
+    pendingLink: {
+      email,
+      otpKey,
+      role: expectedRole,
+      requestedAt: new Date().toISOString()
+    }
+  };
+
+  await updateSession(session, {
+    state: 'LINK_OTP',
+    metadata: metadata as Prisma.InputJsonValue,
+    lastCommand: '/link'
+  });
+
+  await sendTelegramMessage(kind, {
+    chat_id: session.chatId,
+    text: `OTP sent to ${email}.\nReply with: /verify 123456`
+  });
+}
+
+async function verifyLink(kind: TelegramBotKind, session: TelegramSession, otpText?: string) {
+  const metadata = metadataOf(session);
+  const pending = metadata.pendingLink;
+  const otp = (otpText || '').trim();
+  if (!pending || !otp) {
+    await sendTelegramMessage(kind, {
+      chat_id: session.chatId,
+      text: 'No pending link request. Send /link your-email@example.com first.'
+    });
+    return;
+  }
+
+  const result = await verifyOtpDetailed(pending.otpKey, otp);
+  if (!result.ok) {
+    await sendTelegramMessage(kind, {
+      chat_id: session.chatId,
+      text: 'Invalid or expired OTP. Send /link your-email@example.com to request a fresh one.'
+    });
+    return;
+  }
+
+  const user = await prisma.user.findFirst({
+    where: { email: pending.email, role: pending.role, isActive: true },
+    select: { id: true, name: true, email: true, role: true }
+  });
+  if (!user) {
+    await sendTelegramMessage(kind, {
+      chat_id: session.chatId,
+      text: 'The account could not be linked. Please contact support.'
+    });
+    return;
+  }
+
+  const nextMetadata: SessionMetadata = { ...metadata };
+  delete nextMetadata.pendingLink;
+  const linkedSession = await updateSession(session, {
+    linkedUser: { connect: { id: user.id } },
+    state: 'ACTIVE',
+    metadata: nextMetadata as Prisma.InputJsonValue,
+    lastCommand: '/verify'
+  });
+
+  await replyMenu(
+    kind,
+    linkedSession,
+    `<b>Linked.</b>\n${escapeHtml(user.name)} is now connected to this ${botNameByKind[kind]}.`
+  );
+}
+
+async function unlink(kind: TelegramBotKind, session: TelegramSession) {
+  const updated = await updateSession(session, {
+    linkedUser: { disconnect: true },
+    state: 'ACTIVE',
+    metadata: {},
+    lastCommand: '/unlink'
+  });
+  await replyMenu(kind, updated, 'Telegram account unlinked.');
+}
+
+async function showMe(kind: TelegramBotKind, session: TelegramSession) {
+  if (!session.linkedUser) {
+    await requireLinked(kind, session);
+    return;
+  }
+  await sendTelegramMessage(kind, {
+    chat_id: session.chatId,
+    text: [
+      '<b>Linked account</b>',
+      `Name: ${escapeHtml(session.linkedUser.name)}`,
+      `Role: ${session.linkedUser.role}`,
+      `Email: ${escapeHtml(session.linkedUser.email || 'Not added')}`
+    ].join('\n'),
+    parse_mode: 'HTML',
+    reply_markup: {
+      inline_keyboard: [
+        [{ text: 'Unlink', callback_data: 'common:unlink' }],
+        [{ text: 'Menu', callback_data: 'common:menu' }]
+      ]
+    }
+  });
+}
+
+async function ensureTodayPlan(userId: string) {
+  const planDate = todayStart();
+  return prisma.patientDailyPlan.upsert({
+    where: { userId_planDate: { userId, planDate } },
+    create: {
+      userId,
+      planDate,
+      title: 'Today plan',
+      focus: 'Small steady steps',
+      tasks: {
+        create: [
+          { title: 'One grounding practice', sortOrder: 0 },
+          { title: 'One practical task', sortOrder: 1 },
+          { title: 'One connection or self-care step', sortOrder: 2 }
+        ]
+      }
+    },
+    update: {},
+    include: {
+      tasks: { orderBy: { sortOrder: 'asc' } },
+      images: { where: { taskId: null }, orderBy: { createdAt: 'desc' } }
+    }
+  });
+}
+
+async function showUserPlan(kind: TelegramBotKind, session: TelegramSession) {
+  if (!(await requireLinked(kind, session))) return;
+  const plan = await ensureTodayPlan(session.linkedUserId!);
+  const done = plan.tasks.filter((task) => task.completed).length;
+  const taskLines = plan.tasks.length
+    ? plan.tasks
+        .map(
+          (task, index) => `${task.completed ? '✓' : '☐'} ${index + 1}. ${escapeHtml(task.title)}`
+        )
+        .join('\n')
+    : 'No tasks yet.';
+
+  await sendTelegramMessage(kind, {
+    chat_id: session.chatId,
+    text: [
+      `<b>${escapeHtml(plan.title)}</b>`,
+      `${done}/${plan.tasks.length} tasks done`,
+      '',
+      taskLines,
+      plan.reviewNote ? `\nReview: ${escapeHtml(plan.reviewNote)}` : ''
+    ].join('\n'),
+    parse_mode: 'HTML',
+    reply_markup: {
+      inline_keyboard: [
+        ...plan.tasks.slice(0, 8).map((task) => [
+          {
+            text: `${task.completed ? 'Undo' : 'Done'}: ${task.title.slice(0, 24)}`,
+            callback_data: `user:task:${task.id}`
+          }
+        ]),
+        [
+          { text: 'Add task', callback_data: 'user:addtask' },
+          { text: 'Review day', callback_data: 'user:review' }
+        ],
+        [{ text: 'Open full profile', url: webUrl('/profile') }]
+      ]
+    }
+  });
+}
+
+async function promptAddTask(kind: TelegramBotKind, session: TelegramSession) {
+  if (!(await requireLinked(kind, session))) return;
+  await updateSession(session, { state: 'WAITING_USER_PLAN_TASK', lastCommand: '/addtask' });
+  await sendTelegramMessage(kind, {
+    chat_id: session.chatId,
+    text: 'Send the task you want to add for today.'
+  });
+}
+
+async function addTaskFromText(kind: TelegramBotKind, session: TelegramSession, text: string) {
+  if (!(await requireLinked(kind, session))) return;
+  const title = text.trim().slice(0, 160);
+  if (!title) {
+    await sendTelegramMessage(kind, { chat_id: session.chatId, text: 'Please send a task title.' });
+    return;
+  }
+  const plan = await ensureTodayPlan(session.linkedUserId!);
+  await prisma.patientDailyPlanTask.create({
+    data: {
+      planId: plan.id,
+      title,
+      sortOrder: plan.tasks.length
+    }
+  });
+  const updated = await updateSession(session, { state: 'ACTIVE', lastCommand: '/addtask' });
+  await sendTelegramMessage(kind, { chat_id: session.chatId, text: 'Task added.' });
+  await showUserPlan(kind, updated);
+}
+
+async function promptReview(kind: TelegramBotKind, session: TelegramSession) {
+  if (!(await requireLinked(kind, session))) return;
+  await updateSession(session, { state: 'WAITING_USER_PLAN_REVIEW', lastCommand: '/review' });
+  await sendTelegramMessage(kind, {
+    chat_id: session.chatId,
+    text: 'Send your end-of-day review note.'
+  });
+}
+
+async function saveReviewFromText(kind: TelegramBotKind, session: TelegramSession, text: string) {
+  if (!(await requireLinked(kind, session))) return;
+  const plan = await ensureTodayPlan(session.linkedUserId!);
+  await prisma.patientDailyPlan.update({
+    where: { id: plan.id },
+    data: { reviewNote: text.trim().slice(0, 2000) || null, reviewedAt: new Date() }
+  });
+  const updated = await updateSession(session, { state: 'ACTIVE', lastCommand: '/review' });
+  await sendTelegramMessage(kind, { chat_id: session.chatId, text: 'Review saved.' });
+  await showUserPlan(kind, updated);
+}
+
+async function toggleTask(kind: TelegramBotKind, session: TelegramSession, taskId: string) {
+  if (!(await requireLinked(kind, session))) return;
+  const task = await prisma.patientDailyPlanTask.findFirst({
+    where: { id: taskId, plan: { userId: session.linkedUserId! } }
+  });
+  if (!task) {
+    await sendTelegramMessage(kind, { chat_id: session.chatId, text: 'Task not found.' });
+    return;
+  }
+  await prisma.patientDailyPlanTask.update({
+    where: { id: task.id },
+    data: {
+      completed: !task.completed,
+      completedAt: task.completed ? null : new Date(),
+      reviewTick: !task.completed || task.reviewTick
+    }
+  });
+  await showUserPlan(kind, session);
+}
+
+async function promptLead(
+  kind: TelegramBotKind,
+  session: TelegramSession,
+  leadKind: 'BOOKING' | 'VOLUNTEER'
+) {
+  const metadata: SessionMetadata = {
+    ...metadataOf(session),
+    pendingLead: { kind: leadKind }
+  };
+  await updateSession(session, {
+    state: 'WAITING_LEAD_CONCERN',
+    metadata: metadata as Prisma.InputJsonValue,
+    lastCommand: leadKind === 'BOOKING' ? '/book' : '/volunteer'
+  });
+  await sendTelegramMessage(kind, {
+    chat_id: session.chatId,
+    text:
+      leadKind === 'BOOKING'
+        ? 'Tell us what you need help with and your preferred callback time.'
+        : 'Tell us what kind of volunteer support you want and your preferred callback time.'
+  });
+}
+
+async function createLeadFromText(kind: TelegramBotKind, session: TelegramSession, text: string) {
+  const metadata = metadataOf(session);
+  const leadKind = metadata.pendingLead?.kind ?? 'BOOKING';
+  const linkedUser = session.linkedUser;
+  const name = linkedUser?.name || telegramDisplayName(session);
+  const concernPrefix =
+    leadKind === 'VOLUNTEER' ? 'Volunteer support request' : 'Telegram booking request';
+  const lead = await upsertWebsiteLead({
+    source: 'CHAT_BOT',
+    visitorName: name,
+    visitorEmail: linkedUser?.email ?? null,
+    visitorPhone: linkedUser?.mobile ?? null,
+    visitorKey: `telegram:${session.botKind}:${session.chatId}`,
+    concern: `${concernPrefix}: ${text.trim().slice(0, 1200)}`,
+    entryPage: `telegram:${botSlugByKind[session.botKind]}`,
+    userId: linkedUser?.id ?? null
+  });
+
+  const nextMetadata: SessionMetadata = { ...metadata };
+  delete nextMetadata.pendingLead;
+  const updated = await updateSession(session, {
+    state: 'ACTIVE',
+    metadata: nextMetadata as Prisma.InputJsonValue,
+    lastCommand: leadKind === 'BOOKING' ? '/book' : '/volunteer'
+  });
+
+  await replyMenu(
+    kind,
+    updated,
+    `Request saved. Ops can now follow up.\nLead ID: ${escapeHtml(lead.id.slice(-8))}`
+  );
+}
+
+async function doctorQueue(kind: TelegramBotKind, session: TelegramSession) {
+  if (!(await requireLinked(kind, session))) return;
+  const consultations = await prisma.consultation.findMany({
+    where: {
+      assignedDoctorId: session.linkedUserId!,
+      status: { notIn: [ConsultationStatus.COMPLETED, ConsultationStatus.CANCELLED] }
+    },
+    include: {
+      patient: { select: { name: true, patientCode: true } },
+      disease: { select: { name: true } }
+    },
+    orderBy: { createdAt: 'desc' },
+    take: 5
+  });
+  const counts = await prisma.consultation.groupBy({
+    by: ['status'],
+    where: {
+      assignedDoctorId: session.linkedUserId!,
+      status: { notIn: [ConsultationStatus.COMPLETED, ConsultationStatus.CANCELLED] }
+    },
+    _count: { _all: true }
+  });
+  const countText =
+    counts.map((item) => `${item.status}: ${item._count._all}`).join('\n') || 'No open cases.';
+  const rows =
+    consultations
+      .map(
+        (item, index) =>
+          `${index + 1}. ${escapeHtml(item.patient.name)} (${escapeHtml(item.patient.patientCode || '-')}) - ${escapeHtml(item.disease.name)}`
+      )
+      .join('\n') || 'Your queue is clear.';
+
+  await sendTelegramMessage(kind, {
+    chat_id: session.chatId,
+    text: [`<b>Doctor queue</b>`, countText, '', rows].join('\n'),
+    parse_mode: 'HTML',
+    reply_markup: {
+      inline_keyboard: [[{ text: 'Open appointments', url: doctorUrl('/appointments') }]]
+    }
+  });
+}
+
+async function setDoctorPresence(kind: TelegramBotKind, session: TelegramSession, online: boolean) {
+  if (!(await requireLinked(kind, session))) return;
+  const profile = await setDoctorLiveStatus(session.linkedUserId!, {
+    liveStatus: online ? LivePresenceStatus.ONLINE : LivePresenceStatus.OFFLINE
+  });
+  await sendTelegramMessage(kind, {
+    chat_id: session.chatId,
+    text: profile
+      ? `Doctor status updated: ${online ? 'ONLINE' : 'OFFLINE'}`
+      : 'Doctor profile was not found.'
+  });
+}
+
+async function adminSummary(kind: TelegramBotKind, session: TelegramSession) {
+  if (!(await requireLinked(kind, session))) return;
+  const [newLeads, callbackLeads, newContributors, shortlistedContributors, openConsultations] =
+    await Promise.all([
+      prisma.websiteLead.count({ where: { followUpStatus: 'NEW' } }),
+      prisma.websiteLead.count({ where: { followUpStatus: 'NEEDS_CALLBACK' } }),
+      prisma.counsellorApplication.count({ where: { status: CounsellorApplicationStatus.NEW } }),
+      prisma.counsellorApplication.count({
+        where: { status: CounsellorApplicationStatus.SHORTLISTED }
+      }),
+      prisma.consultation.count({
+        where: {
+          status: {
+            in: [
+              ConsultationStatus.PAID,
+              ConsultationStatus.ASSIGNED,
+              ConsultationStatus.IN_PROGRESS
+            ]
+          }
+        }
+      })
+    ]);
+
+  await sendTelegramMessage(kind, {
+    chat_id: session.chatId,
+    text: [
+      '<b>Hope Hub ops summary</b>',
+      `New leads: ${newLeads}`,
+      `Needs callback: ${callbackLeads}`,
+      `New contributor applications: ${newContributors}`,
+      `Shortlisted contributors: ${shortlistedContributors}`,
+      `Open consultations: ${openConsultations}`
+    ].join('\n'),
+    parse_mode: 'HTML',
+    reply_markup: {
+      inline_keyboard: [
+        [
+          { text: 'Open leads', url: adminUrl('/visitor-leads') },
+          { text: 'Contributors', url: adminUrl('/counsellor-applications') }
+        ]
+      ]
+    }
+  });
+}
+
+async function adminLeads(kind: TelegramBotKind, session: TelegramSession) {
+  if (!(await requireLinked(kind, session))) return;
+  const leads = await prisma.websiteLead.findMany({
+    where: { followUpStatus: { in: ['NEW', 'NEEDS_CALLBACK'] } },
+    orderBy: { createdAt: 'desc' },
+    take: 5
+  });
+  const rows =
+    leads
+      .map(
+        (lead, index) =>
+          `${index + 1}. ${escapeHtml(lead.visitorName || 'Visitor')} - ${escapeHtml(lead.concern || 'No concern added')}`
+      )
+      .join('\n') || 'No fresh leads.';
+
+  await sendTelegramMessage(kind, {
+    chat_id: session.chatId,
+    text: `<b>Latest leads</b>\n${rows}`,
+    parse_mode: 'HTML',
+    reply_markup: { inline_keyboard: [[{ text: 'Open leads', url: adminUrl('/visitor-leads') }]] }
+  });
+}
+
+async function adminContributors(kind: TelegramBotKind, session: TelegramSession) {
+  if (!(await requireLinked(kind, session))) return;
+  const applications = await prisma.counsellorApplication.findMany({
+    where: {
+      status: {
+        in: [
+          CounsellorApplicationStatus.NEW,
+          CounsellorApplicationStatus.REVIEWING,
+          CounsellorApplicationStatus.SHORTLISTED
+        ]
+      }
+    },
+    orderBy: { createdAt: 'desc' },
+    take: 5
+  });
+  const rows =
+    applications
+      .map(
+        (app, index) =>
+          `${index + 1}. ${escapeHtml(app.fullName)} - ${app.applicationTrack} - ${app.status}`
+      )
+      .join('\n') || 'No pending contributor applications.';
+
+  await sendTelegramMessage(kind, {
+    chat_id: session.chatId,
+    text: `<b>Contributor applications</b>\n${rows}`,
+    parse_mode: 'HTML',
+    reply_markup: {
+      inline_keyboard: [[{ text: 'Open contributors', url: adminUrl('/counsellor-applications') }]]
+    }
+  });
+}
+
+async function handlePendingState(kind: TelegramBotKind, session: TelegramSession, text: string) {
+  if (session.state === 'LINK_OTP' && /^\d{4,8}$/.test(text.trim())) {
+    await verifyLink(kind, session, text);
+    return true;
+  }
+  if (session.state === 'WAITING_USER_PLAN_TASK') {
+    await addTaskFromText(kind, session, text);
+    return true;
+  }
+  if (session.state === 'WAITING_USER_PLAN_REVIEW') {
+    await saveReviewFromText(kind, session, text);
+    return true;
+  }
+  if (session.state === 'WAITING_LEAD_CONCERN') {
+    await createLeadFromText(kind, session, text);
+    return true;
+  }
+  return false;
+}
+
+async function handleCommand(kind: TelegramBotKind, session: TelegramSession, text: string) {
+  const [commandRaw, ...rest] = text.trim().split(/\s+/);
+  const command = (commandRaw || '').toLowerCase();
+  const argText = rest.join(' ');
+
+  if (!command || !command.startsWith('/')) {
+    if (await handlePendingState(kind, session, text)) return 'state';
+    await replyMenu(kind, session, 'Choose an option or send /help.');
+    return 'message';
+  }
 
   if (command === '/start' || command === '/menu') {
-    await replyMenu(kind, chatId, startText(kind, linked));
+    await replyMenu(
+      kind,
+      session,
+      [
+        `<b>${botNameByKind[kind]}</b>`,
+        session.linkedUser
+          ? `Linked as ${escapeHtml(session.linkedUser.name)}.`
+          : 'Link your account to unlock private actions.',
+        '',
+        helpText(kind).split('\n')[0]
+      ].join('\n')
+    );
     return command;
   }
 
   if (command === '/help') {
-    await replyMenu(kind, chatId, helpText(kind));
+    await replyMenu(kind, session, helpText(kind));
     return command;
   }
 
-  if (kind === TelegramBotKind.USER && command === '/plan') {
-    await sendTelegramMessage(kind, {
-      chat_id: chatId,
-      text: 'Open your Hope Hub profile to create, tick, review, and upload daily plan images.',
-      reply_markup: { inline_keyboard: [[{ text: 'Open daily plan', url: webUrl('/profile') }]] }
-    });
+  if (command === '/link') {
+    await startLink(kind, session, argText);
     return command;
   }
 
-  if (kind === TelegramBotKind.USER && command === '/book') {
-    await sendTelegramMessage(kind, {
-      chat_id: chatId,
-      text: 'You can book a Hope Hub session from the booking page.',
-      reply_markup: { inline_keyboard: [[{ text: 'Book session', url: webUrl('/contact') }]] }
-    });
+  if (command === '/verify') {
+    await verifyLink(kind, session, argText);
     return command;
   }
 
-  if (kind === TelegramBotKind.DOCTOR && command === '/queue') {
-    await sendTelegramMessage(kind, {
-      chat_id: chatId,
-      text: 'Open your doctor queue in the secure doctor app.',
-      reply_markup: { inline_keyboard: [[{ text: 'Open queue', url: doctorUrl('/appointments') }]] }
-    });
+  if (command === '/unlink') {
+    await unlink(kind, session);
     return command;
   }
 
-  if (kind === TelegramBotKind.DOCTOR && command === '/online') {
-    await sendTelegramMessage(kind, {
-      chat_id: chatId,
-      text: 'Open live doctor controls in the secure doctor app.',
-      reply_markup: { inline_keyboard: [[{ text: 'Go online', url: doctorUrl('/online') }]] }
-    });
+  if (command === '/me') {
+    await showMe(kind, session);
     return command;
   }
 
-  if (kind === TelegramBotKind.ADMIN && command === '/leads') {
-    await sendTelegramMessage(kind, {
-      chat_id: chatId,
-      text: 'Open new leads in the admin panel.',
-      reply_markup: { inline_keyboard: [[{ text: 'Open leads', url: adminUrl('/leads') }]] }
-    });
+  if (kind === TelegramBotKind.USER) {
+    if (command === '/plan') await showUserPlan(kind, session);
+    else if (command === '/addtask') await promptAddTask(kind, session);
+    else if (command === '/review') await promptReview(kind, session);
+    else if (command === '/book') await promptLead(kind, session, 'BOOKING');
+    else if (command === '/volunteer') await promptLead(kind, session, 'VOLUNTEER');
+    else await replyMenu(kind, session, 'Choose an option or send /help.');
     return command;
   }
 
-  if (kind === TelegramBotKind.ADMIN && command === '/contributors') {
-    await sendTelegramMessage(kind, {
-      chat_id: chatId,
-      text: 'Open care contributor applications in the admin panel.',
-      reply_markup: {
-        inline_keyboard: [
-          [{ text: 'Review contributors', url: adminUrl('/counsellor-applications') }]
-        ]
-      }
-    });
+  if (kind === TelegramBotKind.DOCTOR) {
+    if (command === '/queue') await doctorQueue(kind, session);
+    else if (command === '/online') await setDoctorPresence(kind, session, true);
+    else if (command === '/offline') await setDoctorPresence(kind, session, false);
+    else await replyMenu(kind, session, 'Choose an option or send /help.');
     return command;
   }
 
-  await replyMenu(kind, chatId, 'Choose an option from the menu.');
-  return 'message';
+  if (command === '/summary') await adminSummary(kind, session);
+  else if (command === '/leads') await adminLeads(kind, session);
+  else if (command === '/contributors') await adminContributors(kind, session);
+  else await replyMenu(kind, session, 'Choose an option or send /help.');
+  return command;
 }
 
-async function handleCallback(kind: TelegramBotKind, query: TelegramCallbackQuery) {
-  const chatId = query.message?.chat.id == null ? null : String(query.message.chat.id);
+async function handleCallback(
+  kind: TelegramBotKind,
+  session: TelegramSession,
+  query: TelegramCallbackQuery
+) {
   const data = query.data || '';
-  if (!chatId) {
-    await answerTelegramCallback(kind, query.id, 'Could not find this chat.');
+  await answerTelegramCallback(kind, query.id);
+
+  if (data === 'common:menu') {
+    await replyMenu(kind, session, 'Menu');
+    return;
+  }
+  if (data === 'common:link') {
+    await sendTelegramMessage(kind, {
+      chat_id: session.chatId,
+      text: 'Send /link your-email@example.com to receive an OTP.'
+    });
+    return;
+  }
+  if (data === 'common:me') {
+    await showMe(kind, session);
+    return;
+  }
+  if (data === 'common:unlink') {
+    await unlink(kind, session);
     return;
   }
 
-  await answerTelegramCallback(kind, query.id);
+  if (kind === TelegramBotKind.USER) {
+    if (data === 'user:plan') await showUserPlan(kind, session);
+    else if (data === 'user:addtask') await promptAddTask(kind, session);
+    else if (data === 'user:review') await promptReview(kind, session);
+    else if (data === 'user:book') await promptLead(kind, session, 'BOOKING');
+    else if (data === 'user:volunteer') await promptLead(kind, session, 'VOLUNTEER');
+    else if (data.startsWith('user:task:'))
+      await toggleTask(kind, session, data.slice('user:task:'.length));
+    else await replyMenu(kind, session, 'Choose an option from the menu.');
+    return;
+  }
 
-  const actions: Record<string, { text: string; url?: string }> = {
-    'user:plan': { text: 'Open your daily plan and review page.', url: webUrl('/profile') },
-    'user:book': { text: 'Book a Hope Hub session.', url: webUrl('/contact') },
-    'user:volunteer': {
-      text: 'Volunteer and peer support requests will be routed after we add secure assignment. For now, open Hope Hub support.',
-      url: webUrl('/contact')
-    },
-    'user:crisis': {
-      text: 'If there is immediate danger, contact local emergency services now. For Hope Hub support, use the crisis resources page.',
-      url: webUrl('/crisis-support')
-    },
-    'doctor:queue': { text: 'Open your consultation queue.', url: doctorUrl('/appointments') },
-    'doctor:online': { text: 'Open live doctor controls.', url: doctorUrl('/online') },
-    'admin:leads': { text: 'Open new leads.', url: adminUrl('/leads') },
-    'admin:contributors': {
-      text: 'Open care contributor applications.',
-      url: adminUrl('/counsellor-applications')
-    }
-  };
+  if (kind === TelegramBotKind.DOCTOR) {
+    if (data === 'doctor:queue') await doctorQueue(kind, session);
+    else if (data === 'doctor:online') await setDoctorPresence(kind, session, true);
+    else if (data === 'doctor:offline') await setDoctorPresence(kind, session, false);
+    else await replyMenu(kind, session, 'Choose an option from the menu.');
+    return;
+  }
 
-  const action = actions[data] ?? { text: 'Choose an option from the menu.' };
-  await sendTelegramMessage(kind, {
-    chat_id: chatId,
-    text: action.text,
-    reply_markup: action.url
-      ? { inline_keyboard: [[{ text: 'Open', url: action.url }]] }
-      : undefined
-  });
+  if (data === 'admin:summary') await adminSummary(kind, session);
+  else if (data === 'admin:leads') await adminLeads(kind, session);
+  else if (data === 'admin:contributors') await adminContributors(kind, session);
+  else await replyMenu(kind, session, 'Choose an option from the menu.');
 }
 
 export async function handleTelegramUpdate(kind: TelegramBotKind, update: TelegramUpdate) {
@@ -444,41 +1087,31 @@ export async function handleTelegramUpdate(kind: TelegramBotKind, update: Telegr
   const callback = update.callback_query;
 
   if (message) {
-    const chatId = String(message.chat.id);
     const session = await ensureSession(kind, message.chat, message.from);
-    const command = await handleCommand(
-      kind,
-      chatId,
-      message.text || '',
-      Boolean(session.linkedUserId)
-    );
+    const command = await handleCommand(kind, session, message.text || '');
     await prisma.telegramBotSession.update({
       where: { id: session.id },
-      data: {
-        state: command === 'message' ? 'ACTIVE' : 'COMMAND',
-        lastCommand: command
-      }
+      data: { lastCommand: command }
     });
     await logEvent({
       kind,
       sessionId: session.id,
       updateId: update.update_id,
-      chatId,
+      chatId: session.chatId,
       eventType: 'message',
       payload: { text: message.text || null }
     });
     return;
   }
 
-  if (callback) {
-    const chat = callback.message?.chat;
-    const session = chat ? await ensureSession(kind, chat, callback.from) : null;
-    await handleCallback(kind, callback);
+  if (callback?.message?.chat) {
+    const session = await ensureSession(kind, callback.message.chat, callback.from);
+    await handleCallback(kind, session, callback);
     await logEvent({
       kind,
-      sessionId: session?.id,
+      sessionId: session.id,
       updateId: update.update_id,
-      chatId: chat?.id == null ? undefined : String(chat.id),
+      chatId: session.chatId,
       eventType: 'callback_query',
       payload: { data: callback.data || null }
     });
