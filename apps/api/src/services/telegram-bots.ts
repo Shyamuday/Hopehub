@@ -3,10 +3,8 @@ import {
   CounsellorApplicationStatus,
   LivePresenceStatus,
   Prisma,
-  Role,
   TelegramBotKind
 } from '@prisma/client';
-import { SERVER_CONFIG } from '../constants/config.constants.js';
 import { prisma } from '../db.js';
 import { getMailTransporter } from './mail.js';
 import {
@@ -18,159 +16,40 @@ import {
   verifyOtpDetailed
 } from './otp.js';
 import { setDoctorLiveStatus } from './online-doctor-presence.js';
+import {
+  bookingConcernOptions,
+  botKindBySlug,
+  botNameByKind,
+  botSlugByKind,
+  callbackTimeOptions,
+  planTaskPresets,
+  reviewPresets,
+  roleByKind,
+  supportChannelOptions,
+  volunteerConcernOptions
+} from './telegram-bots.config.js';
+import { answerTelegramCallback, sendTelegramMessage } from './telegram-bots.client.js';
+import { adminUrl, callbackRows, doctorUrl, menuCancelRows, webUrl } from './telegram-bots.ui.js';
+import type {
+  InlineButton,
+  SessionMetadata,
+  TelegramCallbackQuery,
+  TelegramChat,
+  TelegramUpdate,
+  TelegramUser
+} from './telegram-bots.types.js';
 import { upsertWebsiteLead } from './website-leads.service.js';
 
-export type TelegramBotSlug = 'user' | 'doctor' | 'admin';
-
-type TelegramUser = {
-  id: number;
-  is_bot?: boolean;
-  first_name?: string;
-  last_name?: string;
-  username?: string;
-};
-
-type TelegramChat = {
-  id: number | string;
-  type?: string;
-};
-
-type TelegramMessage = {
-  message_id: number;
-  text?: string;
-  chat: TelegramChat;
-  from?: TelegramUser;
-};
-
-type TelegramCallbackQuery = {
-  id: string;
-  from: TelegramUser;
-  message?: TelegramMessage;
-  data?: string;
-};
-
-export type TelegramUpdate = {
-  update_id: number;
-  message?: TelegramMessage;
-  callback_query?: TelegramCallbackQuery;
-};
-
-type InlineButton = {
-  text: string;
-  callback_data?: string;
-  url?: string;
-};
-
-type SendMessagePayload = {
-  chat_id: string;
-  text: string;
-  parse_mode?: 'HTML';
-  reply_markup?: {
-    inline_keyboard: InlineButton[][];
-  };
-};
-
-type SessionMetadata = {
-  pendingLink?: {
-    email: string;
-    otpKey: string;
-    role: Role;
-    requestedAt: string;
-  };
-  pendingLead?: {
-    kind: 'BOOKING' | 'VOLUNTEER';
-  };
-  pendingTaskId?: string;
-};
+export {
+  setTelegramCommands,
+  setTelegramWebhook,
+  telegramBotStatus,
+  telegramBotToken,
+  telegramWebhookSecret
+} from './telegram-bots.client.js';
+export type { TelegramUpdate } from './telegram-bots.types.js';
 
 type TelegramSession = Awaited<ReturnType<typeof ensureSession>>;
-
-const botKindBySlug: Record<TelegramBotSlug, TelegramBotKind> = {
-  user: TelegramBotKind.USER,
-  doctor: TelegramBotKind.DOCTOR,
-  admin: TelegramBotKind.ADMIN
-};
-
-const botSlugByKind: Record<TelegramBotKind, TelegramBotSlug> = {
-  [TelegramBotKind.USER]: 'user',
-  [TelegramBotKind.DOCTOR]: 'doctor',
-  [TelegramBotKind.ADMIN]: 'admin'
-};
-
-const botTokenEnvByKind: Record<TelegramBotKind, string> = {
-  [TelegramBotKind.USER]: 'TELEGRAM_USER_BOT_TOKEN',
-  [TelegramBotKind.DOCTOR]: 'TELEGRAM_DOCTOR_BOT_TOKEN',
-  [TelegramBotKind.ADMIN]: 'TELEGRAM_ADMIN_BOT_TOKEN'
-};
-
-const roleByKind: Record<TelegramBotKind, Role> = {
-  [TelegramBotKind.USER]: Role.PATIENT,
-  [TelegramBotKind.DOCTOR]: Role.DOCTOR,
-  [TelegramBotKind.ADMIN]: Role.ADMIN
-};
-
-const botNameByKind: Record<TelegramBotKind, string> = {
-  [TelegramBotKind.USER]: 'Hope Hub Care Bot',
-  [TelegramBotKind.DOCTOR]: 'Hope Hub Doctor Bot',
-  [TelegramBotKind.ADMIN]: 'Hope Hub Ops Bot'
-};
-
-const commandMenus: Record<TelegramBotKind, { command: string; description: string }[]> = {
-  [TelegramBotKind.USER]: [
-    { command: 'start', description: 'Open care menu' },
-    { command: 'link', description: 'Link Hope Hub account' },
-    { command: 'plan', description: 'Daily plan and review' },
-    { command: 'addtask', description: 'Add a daily task' },
-    { command: 'review', description: 'Save daily review' },
-    { command: 'book', description: 'Request a session' },
-    { command: 'volunteer', description: 'Request volunteer support' },
-    { command: 'me', description: 'Show linked account' },
-    { command: 'help', description: 'Get help' }
-  ],
-  [TelegramBotKind.DOCTOR]: [
-    { command: 'start', description: 'Open doctor menu' },
-    { command: 'link', description: 'Link doctor account' },
-    { command: 'queue', description: 'Show consultation queue' },
-    { command: 'online', description: 'Go online' },
-    { command: 'offline', description: 'Go offline' },
-    { command: 'me', description: 'Show linked account' },
-    { command: 'help', description: 'Doctor bot help' }
-  ],
-  [TelegramBotKind.ADMIN]: [
-    { command: 'start', description: 'Open ops menu' },
-    { command: 'link', description: 'Link admin account' },
-    { command: 'summary', description: 'Ops summary' },
-    { command: 'leads', description: 'New leads' },
-    { command: 'contributors', description: 'Contributor applications' },
-    { command: 'me', description: 'Show linked account' },
-    { command: 'help', description: 'Ops bot help' }
-  ]
-};
-
-function stripTrailingSlash(value: string) {
-  return value.replace(/\/+$/, '');
-}
-
-function publicOrigin(value: string) {
-  return (
-    value
-      .split(',')
-      .map((origin) => origin.trim())
-      .find((origin) => /^https?:\/\//i.test(origin)) || value.trim()
-  );
-}
-
-function webUrl(path = '') {
-  return `${stripTrailingSlash(publicOrigin(SERVER_CONFIG.ORIGINS.WEB))}${path}`;
-}
-
-function doctorUrl(path = '') {
-  return `${stripTrailingSlash(publicOrigin(SERVER_CONFIG.ORIGINS.DOCTOR))}${path}`;
-}
-
-function adminUrl(path = '') {
-  return `${stripTrailingSlash(publicOrigin(SERVER_CONFIG.ORIGINS.ADMIN))}${path}`;
-}
 
 function escapeHtml(value: string | null | undefined) {
   return (value || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -198,80 +77,6 @@ function telegramDisplayName(session: TelegramSession) {
 
 export function telegramBotKindFromSlug(slug: string): TelegramBotKind | null {
   return (botKindBySlug as Record<string, TelegramBotKind | undefined>)[slug] ?? null;
-}
-
-export function telegramBotStatus() {
-  return Object.values(TelegramBotKind).map((kind) => ({
-    kind,
-    slug: botSlugByKind[kind],
-    name: botNameByKind[kind],
-    configured: Boolean(process.env[botTokenEnvByKind[kind]]),
-    tokenEnv: botTokenEnvByKind[kind]
-  }));
-}
-
-export function telegramWebhookSecret() {
-  return process.env.TELEGRAM_WEBHOOK_SECRET || '';
-}
-
-export function telegramBotToken(kind: TelegramBotKind) {
-  return process.env[botTokenEnvByKind[kind]] || '';
-}
-
-function getBotTokenOrThrow(kind: TelegramBotKind) {
-  const token = telegramBotToken(kind).trim();
-  if (!token) throw new Error(`${botTokenEnvByKind[kind]} is not configured.`);
-  return token;
-}
-
-async function callTelegramApi<T>(kind: TelegramBotKind, method: string, payload: unknown) {
-  const token = getBotTokenOrThrow(kind);
-  const response = await fetch(`https://api.telegram.org/bot${token}/${method}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload)
-  });
-  const body = (await response.json()) as { ok?: boolean; description?: string; result?: T };
-  if (!response.ok || !body.ok) {
-    throw new Error(body.description || `Telegram ${method} failed.`);
-  }
-  return body.result as T;
-}
-
-export function sendTelegramMessage(kind: TelegramBotKind, payload: SendMessagePayload) {
-  return callTelegramApi(kind, 'sendMessage', payload);
-}
-
-export function answerTelegramCallback(
-  kind: TelegramBotKind,
-  callbackQueryId: string,
-  text?: string
-) {
-  return callTelegramApi(kind, 'answerCallbackQuery', {
-    callback_query_id: callbackQueryId,
-    text
-  });
-}
-
-export async function setTelegramWebhook(input: {
-  kind: TelegramBotKind;
-  publicApiUrl: string;
-  dropPendingUpdates?: boolean;
-}) {
-  const slug = botSlugByKind[input.kind];
-  const secret = telegramWebhookSecret();
-  return callTelegramApi(input.kind, 'setWebhook', {
-    url: `${stripTrailingSlash(input.publicApiUrl)}/telegram/webhook/${slug}`,
-    secret_token: secret || undefined,
-    allowed_updates: ['message', 'callback_query'],
-    drop_pending_updates: Boolean(input.dropPendingUpdates)
-  });
-}
-
-export async function setTelegramCommands(kind: TelegramBotKind) {
-  return callTelegramApi(kind, 'setMyCommands', {
-    commands: commandMenus[kind]
-  });
 }
 
 function menuFor(kind: TelegramBotKind, linked: boolean): InlineButton[][] {
@@ -493,6 +298,15 @@ async function replyMenu(kind: TelegramBotKind, session: TelegramSession, text: 
   });
 }
 
+async function cancelPending(kind: TelegramBotKind, session: TelegramSession) {
+  const updated = await updateSession(session, {
+    state: 'ACTIVE',
+    metadata: {},
+    lastCommand: '/cancel'
+  });
+  await replyMenu(kind, updated, 'Cancelled. Back to main menu.');
+}
+
 function assertLinkedRole(kind: TelegramBotKind, session: TelegramSession) {
   const expectedRole = roleByKind[kind];
   return Boolean(
@@ -510,9 +324,14 @@ async function requireLinked(kind: TelegramBotKind, session: TelegramSession) {
     text: [
       'Please link your Hope Hub account first.',
       '',
-      `Send: /link your-email@example.com`,
-      'Then reply with /verify 123456 after the OTP arrives.'
-    ].join('\n')
+      'Tap Link account, then send your registered email. After OTP arrives, send only the OTP.'
+    ].join('\n'),
+    reply_markup: {
+      inline_keyboard: [
+        [{ text: 'Link account', callback_data: 'common:link' }],
+        [{ text: 'Main menu', callback_data: 'common:menu' }]
+      ]
+    }
   });
   return false;
 }
@@ -520,9 +339,11 @@ async function requireLinked(kind: TelegramBotKind, session: TelegramSession) {
 async function startLink(kind: TelegramBotKind, session: TelegramSession, emailText?: string) {
   const email = (emailText || '').trim().toLowerCase();
   if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    await updateSession(session, { state: 'WAITING_LINK_EMAIL', lastCommand: '/link' });
     await sendTelegramMessage(kind, {
       chat_id: session.chatId,
-      text: `Send your email like this:\n/link your-email@example.com`
+      text: 'Please send your registered Hope Hub email address.',
+      reply_markup: { inline_keyboard: menuCancelRows() }
     });
     return;
   }
@@ -576,7 +397,16 @@ async function startLink(kind: TelegramBotKind, session: TelegramSession, emailT
 
   await sendTelegramMessage(kind, {
     chat_id: session.chatId,
-    text: `OTP sent to ${email}.\nReply with: /verify 123456`
+    text: `OTP sent to ${email}.\nPlease send only the OTP code.`,
+    reply_markup: {
+      inline_keyboard: [
+        [
+          { text: 'Resend OTP', callback_data: 'common:resend_otp' },
+          { text: 'Change email', callback_data: 'common:link' }
+        ],
+        ...menuCancelRows()
+      ]
+    }
   });
 }
 
@@ -729,16 +559,28 @@ async function showUserPlan(kind: TelegramBotKind, session: TelegramSession) {
 
 async function promptAddTask(kind: TelegramBotKind, session: TelegramSession) {
   if (!(await requireLinked(kind, session))) return;
-  await updateSession(session, { state: 'WAITING_USER_PLAN_TASK', lastCommand: '/addtask' });
+  await updateSession(session, { state: 'ACTIVE', lastCommand: '/addtask' });
   await sendTelegramMessage(kind, {
     chat_id: session.chatId,
-    text: 'Send the task you want to add for today.'
+    text: 'Choose a task to add, or tap Custom task if you want to type your own.',
+    reply_markup: {
+      inline_keyboard: [
+        ...callbackRows(
+          planTaskPresets.map((task) => ({
+            text: task.title,
+            callback_data: `user:addpreset:${task.key}`
+          }))
+        ),
+        [{ text: 'Custom task', callback_data: 'user:addcustom' }],
+        ...menuCancelRows()
+      ]
+    }
   });
 }
 
-async function addTaskFromText(kind: TelegramBotKind, session: TelegramSession, text: string) {
+async function addTaskTitle(kind: TelegramBotKind, session: TelegramSession, titleText: string) {
   if (!(await requireLinked(kind, session))) return;
-  const title = text.trim().slice(0, 160);
+  const title = titleText.trim().slice(0, 160);
   if (!title) {
     await sendTelegramMessage(kind, { chat_id: session.chatId, text: 'Please send a task title.' });
     return;
@@ -756,25 +598,45 @@ async function addTaskFromText(kind: TelegramBotKind, session: TelegramSession, 
   await showUserPlan(kind, updated);
 }
 
+async function addTaskFromText(kind: TelegramBotKind, session: TelegramSession, text: string) {
+  await addTaskTitle(kind, session, text);
+}
+
 async function promptReview(kind: TelegramBotKind, session: TelegramSession) {
   if (!(await requireLinked(kind, session))) return;
-  await updateSession(session, { state: 'WAITING_USER_PLAN_REVIEW', lastCommand: '/review' });
+  await updateSession(session, { state: 'ACTIVE', lastCommand: '/review' });
   await sendTelegramMessage(kind, {
     chat_id: session.chatId,
-    text: 'Send your end-of-day review note.'
+    text: 'How was today? Choose one, or add a custom note.',
+    reply_markup: {
+      inline_keyboard: [
+        ...callbackRows(
+          reviewPresets.map((review) => ({
+            text: review.note.split('.')[0],
+            callback_data: `user:reviewpreset:${review.key}`
+          }))
+        ),
+        [{ text: 'Custom note', callback_data: 'user:reviewcustom' }],
+        ...menuCancelRows()
+      ]
+    }
   });
 }
 
-async function saveReviewFromText(kind: TelegramBotKind, session: TelegramSession, text: string) {
+async function saveReviewNote(kind: TelegramBotKind, session: TelegramSession, noteText: string) {
   if (!(await requireLinked(kind, session))) return;
   const plan = await ensureTodayPlan(session.linkedUserId!);
   await prisma.patientDailyPlan.update({
     where: { id: plan.id },
-    data: { reviewNote: text.trim().slice(0, 2000) || null, reviewedAt: new Date() }
+    data: { reviewNote: noteText.trim().slice(0, 2000) || null, reviewedAt: new Date() }
   });
   const updated = await updateSession(session, { state: 'ACTIVE', lastCommand: '/review' });
   await sendTelegramMessage(kind, { chat_id: session.chatId, text: 'Review saved.' });
   await showUserPlan(kind, updated);
+}
+
+async function saveReviewFromText(kind: TelegramBotKind, session: TelegramSession, text: string) {
+  await saveReviewNote(kind, session, text);
 }
 
 async function toggleTask(kind: TelegramBotKind, session: TelegramSession, taskId: string) {
@@ -807,33 +669,128 @@ async function promptLead(
     pendingLead: { kind: leadKind }
   };
   await updateSession(session, {
-    state: 'WAITING_LEAD_CONCERN',
+    state: 'ACTIVE',
     metadata: metadata as Prisma.InputJsonValue,
     lastCommand: leadKind === 'BOOKING' ? '/book' : '/volunteer'
   });
+  await promptLeadConcern(kind, session, leadKind);
+}
+
+async function promptLeadConcern(
+  kind: TelegramBotKind,
+  session: TelegramSession,
+  leadKind: 'BOOKING' | 'VOLUNTEER'
+) {
+  const options = leadKind === 'BOOKING' ? bookingConcernOptions : volunteerConcernOptions;
   await sendTelegramMessage(kind, {
     chat_id: session.chatId,
     text:
-      leadKind === 'BOOKING'
-        ? 'Tell us what you need help with and your preferred callback time.'
-        : 'Tell us what kind of volunteer support you want and your preferred callback time.'
+      leadKind === 'BOOKING' ? 'What do you need help with?' : 'What volunteer option do you want?',
+    reply_markup: {
+      inline_keyboard: [
+        ...callbackRows(
+          options.map((option) => ({
+            text: option.label,
+            callback_data: `lead:concern:${option.key}`
+          }))
+        ),
+        [{ text: 'Other / type details', callback_data: 'lead:concern:other' }],
+        ...menuCancelRows()
+      ]
+    }
   });
 }
 
-async function createLeadFromText(kind: TelegramBotKind, session: TelegramSession, text: string) {
+async function setLeadConcern(kind: TelegramBotKind, session: TelegramSession, concern: string) {
   const metadata = metadataOf(session);
   const leadKind = metadata.pendingLead?.kind ?? 'BOOKING';
+  const updated = await updateSession(session, {
+    state: 'ACTIVE',
+    metadata: {
+      ...metadata,
+      pendingLead: { ...(metadata.pendingLead || { kind: leadKind }), concern }
+    } as Prisma.InputJsonValue
+  });
+  await promptLeadChannel(kind, updated);
+}
+
+async function promptLeadChannel(kind: TelegramBotKind, session: TelegramSession) {
+  await sendTelegramMessage(kind, {
+    chat_id: session.chatId,
+    text: 'How should the team support you?',
+    reply_markup: {
+      inline_keyboard: [
+        ...callbackRows(
+          supportChannelOptions.map((option) => ({
+            text: option.label,
+            callback_data: `lead:channel:${option.key}`
+          }))
+        ),
+        ...menuCancelRows()
+      ]
+    }
+  });
+}
+
+async function setLeadChannel(kind: TelegramBotKind, session: TelegramSession, channel: string) {
+  const metadata = metadataOf(session);
+  const leadKind = metadata.pendingLead?.kind ?? 'BOOKING';
+  const updated = await updateSession(session, {
+    state: 'ACTIVE',
+    metadata: {
+      ...metadata,
+      pendingLead: { ...(metadata.pendingLead || { kind: leadKind }), channel }
+    } as Prisma.InputJsonValue
+  });
+  await promptLeadTime(kind, updated);
+}
+
+async function promptLeadTime(kind: TelegramBotKind, session: TelegramSession) {
+  await sendTelegramMessage(kind, {
+    chat_id: session.chatId,
+    text: 'Preferred callback time?',
+    reply_markup: {
+      inline_keyboard: [
+        ...callbackRows(
+          callbackTimeOptions.map((option) => ({
+            text: option.label,
+            callback_data: `lead:time:${option.key}`
+          }))
+        ),
+        [{ text: 'Custom time', callback_data: 'lead:time:custom' }],
+        ...menuCancelRows()
+      ]
+    }
+  });
+}
+
+async function createLeadRequest(
+  kind: TelegramBotKind,
+  session: TelegramSession,
+  timeText?: string
+) {
+  const metadata = metadataOf(session);
+  const leadKind = metadata.pendingLead?.kind ?? 'BOOKING';
+  const pendingLead = metadata.pendingLead || { kind: leadKind };
   const linkedUser = session.linkedUser;
   const name = linkedUser?.name || telegramDisplayName(session);
   const concernPrefix =
     leadKind === 'VOLUNTEER' ? 'Volunteer support request' : 'Telegram booking request';
+  const concern = [
+    pendingLead.concern || 'Not selected',
+    pendingLead.channel ? `Support: ${pendingLead.channel}` : '',
+    timeText || pendingLead.time ? `Preferred time: ${timeText || pendingLead.time}` : ''
+  ]
+    .filter(Boolean)
+    .join(' | ');
   const lead = await upsertWebsiteLead({
     source: 'CHAT_BOT',
     visitorName: name,
     visitorEmail: linkedUser?.email ?? null,
     visitorPhone: linkedUser?.mobile ?? null,
     visitorKey: `telegram:${session.botKind}:${session.chatId}`,
-    concern: `${concernPrefix}: ${text.trim().slice(0, 1200)}`,
+    concern: `${concernPrefix}: ${concern}`.slice(0, 1200),
+    preferredCallbackTime: timeText || pendingLead.time || null,
     entryPage: `telegram:${botSlugByKind[session.botKind]}`,
     userId: linkedUser?.id ?? null
   });
@@ -851,6 +808,18 @@ async function createLeadFromText(kind: TelegramBotKind, session: TelegramSessio
     updated,
     `Request saved. Ops can now follow up.\nLead ID: ${escapeHtml(lead.id.slice(-8))}`
   );
+}
+
+async function createLeadFromText(kind: TelegramBotKind, session: TelegramSession, text: string) {
+  if (session.state === 'WAITING_LEAD_CUSTOM_TIME') {
+    await createLeadRequest(kind, session, text.trim().slice(0, 120));
+    return;
+  }
+  if (session.state === 'WAITING_LEAD_CUSTOM_CONCERN') {
+    await setLeadConcern(kind, session, text.trim().slice(0, 240));
+    return;
+  }
+  await createLeadRequest(kind, session, text.trim().slice(0, 1200));
 }
 
 async function doctorQueue(kind: TelegramBotKind, session: TelegramSession) {
@@ -1010,6 +979,10 @@ async function adminContributors(kind: TelegramBotKind, session: TelegramSession
 }
 
 async function handlePendingState(kind: TelegramBotKind, session: TelegramSession, text: string) {
+  if (session.state === 'WAITING_LINK_EMAIL') {
+    await startLink(kind, session, text);
+    return true;
+  }
   if (session.state === 'LINK_OTP' && /^\d{4,8}$/.test(text.trim())) {
     await verifyLink(kind, session, text);
     return true;
@@ -1022,7 +995,11 @@ async function handlePendingState(kind: TelegramBotKind, session: TelegramSessio
     await saveReviewFromText(kind, session, text);
     return true;
   }
-  if (session.state === 'WAITING_LEAD_CONCERN') {
+  if (
+    session.state === 'WAITING_LEAD_CONCERN' ||
+    session.state === 'WAITING_LEAD_CUSTOM_CONCERN' ||
+    session.state === 'WAITING_LEAD_CUSTOM_TIME'
+  ) {
     await createLeadFromText(kind, session, text);
     return true;
   }
@@ -1107,11 +1084,18 @@ async function handleCallback(
     await replyMenu(kind, session, 'Menu');
     return;
   }
+  if (data === 'common:cancel') {
+    await cancelPending(kind, session);
+    return;
+  }
   if (data === 'common:link') {
-    await sendTelegramMessage(kind, {
-      chat_id: session.chatId,
-      text: 'Send /link your-email@example.com to receive an OTP.'
-    });
+    await startLink(kind, session);
+    return;
+  }
+  if (data === 'common:resend_otp') {
+    const pending = metadataOf(session).pendingLink;
+    if (pending?.email) await startLink(kind, session, pending.email);
+    else await startLink(kind, session);
     return;
   }
   if (data === 'common:me') {
@@ -1126,10 +1110,68 @@ async function handleCallback(
   if (kind === TelegramBotKind.USER) {
     if (data === 'user:plan') await showUserPlan(kind, session);
     else if (data === 'user:addtask') await promptAddTask(kind, session);
-    else if (data === 'user:review') await promptReview(kind, session);
-    else if (data === 'user:book') await promptLead(kind, session, 'BOOKING');
+    else if (data === 'user:addcustom') {
+      await updateSession(session, { state: 'WAITING_USER_PLAN_TASK', lastCommand: '/addtask' });
+      await sendTelegramMessage(kind, {
+        chat_id: session.chatId,
+        text: 'Type the custom task you want to add for today.',
+        reply_markup: { inline_keyboard: menuCancelRows() }
+      });
+    } else if (data.startsWith('user:addpreset:')) {
+      const preset = planTaskPresets.find(
+        (task) => task.key === data.slice('user:addpreset:'.length)
+      );
+      if (preset) await addTaskTitle(kind, session, preset.title);
+      else await promptAddTask(kind, session);
+    } else if (data === 'user:review') await promptReview(kind, session);
+    else if (data === 'user:reviewcustom') {
+      await updateSession(session, { state: 'WAITING_USER_PLAN_REVIEW', lastCommand: '/review' });
+      await sendTelegramMessage(kind, {
+        chat_id: session.chatId,
+        text: 'Type your end-of-day review note.',
+        reply_markup: { inline_keyboard: menuCancelRows() }
+      });
+    } else if (data.startsWith('user:reviewpreset:')) {
+      const preset = reviewPresets.find(
+        (review) => review.key === data.slice('user:reviewpreset:'.length)
+      );
+      if (preset) await saveReviewNote(kind, session, preset.note);
+      else await promptReview(kind, session);
+    } else if (data === 'user:book') await promptLead(kind, session, 'BOOKING');
     else if (data === 'user:volunteer') await promptLead(kind, session, 'VOLUNTEER');
-    else if (data.startsWith('user:task:'))
+    else if (data.startsWith('lead:concern:')) {
+      const key = data.slice('lead:concern:'.length);
+      if (key === 'other') {
+        await updateSession(session, { state: 'WAITING_LEAD_CUSTOM_CONCERN' });
+        await sendTelegramMessage(kind, {
+          chat_id: session.chatId,
+          text: 'Type a short detail about what you need.',
+          reply_markup: { inline_keyboard: menuCancelRows() }
+        });
+      } else {
+        const leadKind = metadataOf(session).pendingLead?.kind ?? 'BOOKING';
+        const options = leadKind === 'BOOKING' ? bookingConcernOptions : volunteerConcernOptions;
+        const option = options.find((item) => item.key === key);
+        await setLeadConcern(kind, session, option?.label || key);
+      }
+    } else if (data.startsWith('lead:channel:')) {
+      const key = data.slice('lead:channel:'.length);
+      const option = supportChannelOptions.find((item) => item.key === key);
+      await setLeadChannel(kind, session, option?.label || key);
+    } else if (data.startsWith('lead:time:')) {
+      const key = data.slice('lead:time:'.length);
+      if (key === 'custom') {
+        await updateSession(session, { state: 'WAITING_LEAD_CUSTOM_TIME' });
+        await sendTelegramMessage(kind, {
+          chat_id: session.chatId,
+          text: 'Type your preferred callback time.',
+          reply_markup: { inline_keyboard: menuCancelRows() }
+        });
+      } else {
+        const option = callbackTimeOptions.find((item) => item.key === key);
+        await createLeadRequest(kind, session, option?.label || key);
+      }
+    } else if (data.startsWith('user:task:'))
       await toggleTask(kind, session, data.slice('user:task:'.length));
     else await replyMenu(kind, session, 'Choose an option from the menu.');
     return;
