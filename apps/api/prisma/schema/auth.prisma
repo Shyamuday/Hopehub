@@ -188,6 +188,8 @@ model User {
   hopeHubAssessmentAttempts HopeHubAssessmentAttempt[] @relation("UserHopeHubAssessmentAttempts")
   followUpEntitlements ConsultationFollowUpEntitlement[] @relation("UserFollowUpEntitlements")
   practiceSessions    UserPracticeSession[] @relation("UserPracticeSessions")
+  dailyPlans          PatientDailyPlan[] @relation("PatientDailyPlans")
+  dailyPlanUploads    PatientDailyPlanImage[] @relation("PatientDailyPlanUploads")
   lifestyleTipSessions UserLifestyleTipSession[] @relation("UserLifestyleTipSessions")
   assessmentAccessGrants AssessmentAccessGrant[] @relation("AssessmentAccessGrants")
   assessmentCouponRedemptions AssessmentCouponRedemption[] @relation("AssessmentCouponRedemptions")
@@ -275,6 +277,63 @@ model ReminderPreference {
   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+}
+
+model PatientDailyPlan {
+  id          String                 @id @default(cuid())
+  userId      String
+  planDate    DateTime
+  title       String
+  focus       String?
+  summary     String?                @db.Text
+  reviewNote  String?                @db.Text
+  reviewedAt  DateTime?
+  tasks       PatientDailyPlanTask[]
+  images      PatientDailyPlanImage[]
+  user        User                   @relation("PatientDailyPlans", fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime               @default(now())
+  updatedAt   DateTime               @updatedAt
+
+  @@unique([userId, planDate])
+  @@index([userId, planDate])
+}
+
+model PatientDailyPlanTask {
+  id          String                  @id @default(cuid())
+  planId      String
+  title       String
+  notes       String?                 @db.Text
+  sortOrder   Int                     @default(0)
+  completed   Boolean                 @default(false)
+  completedAt DateTime?
+  reviewTick  Boolean                 @default(false)
+  reviewNote  String?                 @db.Text
+  images      PatientDailyPlanImage[]
+  plan        PatientDailyPlan        @relation(fields: [planId], references: [id], onDelete: Cascade)
+  createdAt   DateTime                @default(now())
+  updatedAt   DateTime                @updatedAt
+
+  @@index([planId, sortOrder])
+}
+
+model PatientDailyPlanImage {
+  id          String                @id @default(cuid())
+  userId      String
+  planId      String
+  taskId      String?
+  storageKey  String
+  mimeType    String
+  fileName    String?
+  byteSize    Int
+  caption     String?               @db.Text
+  createdAt   DateTime              @default(now())
+  user        User                  @relation("PatientDailyPlanUploads", fields: [userId], references: [id], onDelete: Cascade)
+  plan        PatientDailyPlan      @relation(fields: [planId], references: [id], onDelete: Cascade)
+  task        PatientDailyPlanTask? @relation(fields: [taskId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+  @@index([planId, createdAt])
+  @@index([taskId])
 }
 
 model PasswordResetToken {

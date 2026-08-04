@@ -62,6 +62,84 @@ export interface PatientProfileResponse {
   };
 }
 
+export interface PatientDailyPlanImage {
+  id: string;
+  taskId: string | null;
+  mimeType: string;
+  fileName: string | null;
+  byteSize: number;
+  caption: string | null;
+  imageUrl: string;
+  createdAt: string;
+}
+
+export interface PatientDailyPlanTask {
+  id: string;
+  title: string;
+  notes: string | null;
+  sortOrder: number;
+  completed: boolean;
+  completedAt: string | null;
+  reviewTick: boolean;
+  reviewNote: string | null;
+  images: PatientDailyPlanImage[];
+}
+
+export interface PatientDailyPlan {
+  id: string;
+  planDate: string;
+  title: string;
+  focus: string | null;
+  summary: string | null;
+  reviewNote: string | null;
+  reviewedAt: string | null;
+  tasks: PatientDailyPlanTask[];
+  images: PatientDailyPlanImage[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PatientDailyPlansResponse {
+  plans: PatientDailyPlan[];
+}
+
+export interface PatientDailyPlanResponse {
+  plan: PatientDailyPlan;
+}
+
+export interface PatientDailyPlanCreateRequest {
+  planDate: string;
+  title: string;
+  focus?: string | null;
+  summary?: string | null;
+  tasks?: Array<{ title: string; notes?: string | null; sortOrder?: number }>;
+}
+
+export interface PatientDailyPlanUpdateRequest {
+  title?: string;
+  focus?: string | null;
+  summary?: string | null;
+  reviewNote?: string | null;
+  reviewed?: boolean;
+}
+
+export interface PatientDailyPlanTaskUpdateRequest {
+  title?: string;
+  notes?: string | null;
+  sortOrder?: number;
+  completed?: boolean;
+  reviewTick?: boolean;
+  reviewNote?: string | null;
+}
+
+export interface PatientDailyPlanImageUploadRequest {
+  taskId?: string | null;
+  mimeType: string;
+  fileName?: string;
+  dataBase64: string;
+  caption?: string | null;
+}
+
 export type PatientProfileUpdateRequest = Pick<
   PatientProfile,
   | 'name'

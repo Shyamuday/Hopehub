@@ -14,6 +14,12 @@ import {
   UpdateProfileRequest,
   PatientProfileResponse,
   PatientProfileUpdateRequest,
+  PatientDailyPlanCreateRequest,
+  PatientDailyPlanImageUploadRequest,
+  PatientDailyPlanResponse,
+  PatientDailyPlansResponse,
+  PatientDailyPlanTaskUpdateRequest,
+  PatientDailyPlanUpdateRequest,
   AuthError,
   UserPreferences,
   ApiAuthResponse,
@@ -341,6 +347,75 @@ export class AuthService {
       this.updateState({ user: updated });
     }
     return response;
+  }
+
+  loadPatientDailyPlans() {
+    return this.http.get<PatientDailyPlansResponse>(`${this.apiUrl}/patient/daily-plans`);
+  }
+
+  createPatientDailyPlan(
+    request: PatientDailyPlanCreateRequest,
+  ): Promise<PatientDailyPlanResponse> {
+    return firstValueFrom(
+      this.http.post<PatientDailyPlanResponse>(`${this.apiUrl}/patient/daily-plans`, request),
+    );
+  }
+
+  updatePatientDailyPlan(
+    planId: string,
+    request: PatientDailyPlanUpdateRequest,
+  ): Promise<PatientDailyPlanResponse> {
+    return firstValueFrom(
+      this.http.patch<PatientDailyPlanResponse>(
+        `${this.apiUrl}/patient/daily-plans/${planId}`,
+        request,
+      ),
+    );
+  }
+
+  addPatientDailyPlanTask(
+    planId: string,
+    request: { title: string; notes?: string | null; sortOrder?: number },
+  ): Promise<PatientDailyPlanResponse> {
+    return firstValueFrom(
+      this.http.post<PatientDailyPlanResponse>(
+        `${this.apiUrl}/patient/daily-plans/${planId}/tasks`,
+        request,
+      ),
+    );
+  }
+
+  updatePatientDailyPlanTask(
+    planId: string,
+    taskId: string,
+    request: PatientDailyPlanTaskUpdateRequest,
+  ): Promise<PatientDailyPlanResponse> {
+    return firstValueFrom(
+      this.http.patch<PatientDailyPlanResponse>(
+        `${this.apiUrl}/patient/daily-plans/${planId}/tasks/${taskId}`,
+        request,
+      ),
+    );
+  }
+
+  deletePatientDailyPlanTask(planId: string, taskId: string): Promise<PatientDailyPlanResponse> {
+    return firstValueFrom(
+      this.http.delete<PatientDailyPlanResponse>(
+        `${this.apiUrl}/patient/daily-plans/${planId}/tasks/${taskId}`,
+      ),
+    );
+  }
+
+  uploadPatientDailyPlanImage(
+    planId: string,
+    request: PatientDailyPlanImageUploadRequest,
+  ): Promise<PatientDailyPlanResponse> {
+    return firstValueFrom(
+      this.http.post<PatientDailyPlanResponse>(
+        `${this.apiUrl}/patient/daily-plans/${planId}/images`,
+        request,
+      ),
+    );
   }
 
   /** Email verification is handled server-side via the reset email flow — no-op here. */
