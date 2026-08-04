@@ -38,6 +38,56 @@
         <button class="btn-primary" (click)="addSlot()">+ Add Slot</button>
       </div>
 
+      <section class="rules-panel">
+        <div class="rules-head">
+          <div>
+            <h3>Recurring availability</h3>
+            <p>Create weekly rules and auto-generate the next 30 days of bookable slots.</p>
+          </div>
+        </div>
+        <div class="rule-form">
+          <input [formField]="ruleForm.label" placeholder="Rule label" />
+          <select [formField]="ruleForm.weekday">
+            @for (day of weekdayOptions; track day.value) {
+              <option [value]="day.value">{{ day.label }}</option>
+            }
+          </select>
+          <input type="time" [formField]="ruleForm.startTime" />
+          <input type="time" [formField]="ruleForm.endTime" />
+          <input type="number" [formField]="ruleForm.slotDurationMinutes" title="Slot minutes" />
+          <input type="number" [formField]="ruleForm.bufferMinutes" title="Buffer minutes" />
+          <input type="number" [formField]="ruleForm.maxSessionsPerDay" title="Max sessions/day" />
+          <input type="date" [formField]="ruleForm.startsOn" />
+          <input type="date" [formField]="ruleForm.endsOn" title="Optional end date" />
+          <select [formField]="ruleForm.careTeamServiceId">
+            <option value="">All services</option>
+            @for (service of services(); track service.id) {
+              <option [value]="service.id">{{ service.title }} · {{ service.durationMinutes }} min</option>
+            }
+          </select>
+          <button class="btn-primary" type="button" (click)="addRule()">Save & generate</button>
+        </div>
+        @if (rules().length) {
+          <div class="rule-list">
+            @for (rule of rules(); track rule.id) {
+              <article class="rule-card" [class.inactive]="!rule.isActive">
+                <strong>{{ rule.label }}</strong>
+                <span>{{ weekdayLabel(rule.weekday) }} · {{ rule.startTime }}–{{ rule.endTime }} · {{ rule.slotDurationMinutes }} min</span>
+                <small>
+                  {{ rule.careTeamService?.title || 'All services' }}
+                  · Buffer {{ rule.bufferMinutes }} min
+                  @if (rule.maxSessionsPerDay) { · Max {{ rule.maxSessionsPerDay }}/day }
+                </small>
+                <div class="rule-actions">
+                  <button type="button" (click)="generateRule(rule)" [disabled]="!rule.isActive">Generate</button>
+                  <button type="button" class="danger" (click)="deleteRule(rule)" [disabled]="!rule.isActive">Disable</button>
+                </div>
+              </article>
+            }
+          </div>
+        }
+      </section>
+
       @if (loading()) {
         <div class="loading"><div class="spinner"></div></div>
       } @else {
@@ -45,6 +95,9 @@
           @for (s of slots(); track s.id) {
             <div class="slot-card" [class.booked]="s.isBooked" [class.blocked]="s.isBlocked">
               <div class="slot-time">{{ s.startTime }} – {{ s.endTime }}</div>
+              @if (s.careTeamService) {
+                <div class="slot-service">{{ s.careTeamService.title }}</div>
+              }
               <div class="slot-status">
                 @if (s.isBooked) { <span class="badge booked">Booked</span> }
                 @else if (s.isBlocked) { <span class="badge blocked">Blocked</span> }

@@ -455,6 +455,7 @@ export class BookingService {
   slots(
     date: string,
     providerId?: string,
+    careTeamServiceId?: string,
   ): Observable<{
     date: string;
     providerId?: string;
@@ -476,7 +477,7 @@ export class BookingService {
     }>(
       `${this.apiUrl}/hope-hub/slots?date=${encodeURIComponent(date)}${
         providerId ? `&providerId=${encodeURIComponent(providerId)}` : ''
-      }`,
+      }${careTeamServiceId ? `&careTeamServiceId=${encodeURIComponent(careTeamServiceId)}` : ''}`,
     );
   }
 }

@@ -37,6 +37,7 @@ export class AppointmentCalendarComponent implements OnInit {
   appointmentSelected = output<AppointmentSlot>();
   selectedService = input<string | undefined>(undefined);
   providerId = input<string | undefined>(undefined);
+  careTeamServiceId = input<string | undefined>(undefined);
 
   selectedDate = signal<Date | null>(null);
   selectedTime = signal<string | null>(null);
@@ -122,7 +123,7 @@ export class AppointmentCalendarComponent implements OnInit {
 
     forkJoin(
       days.map((day) =>
-        this.bookingService.slots(day.dateKey, this.providerId()).pipe(
+        this.bookingService.slots(day.dateKey, this.providerId(), this.careTeamServiceId()).pipe(
           catchError(() =>
             of({
               date: day.dateKey,

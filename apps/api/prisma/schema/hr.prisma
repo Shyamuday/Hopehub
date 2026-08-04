@@ -107,6 +107,7 @@ model Doctor {
   joiningLetter    JoiningLetter?
   leaveRequests    LeaveRequest[]
   slots            DoctorSlot[]
+  availabilityRules ProviderAvailabilityRule[]
   onlineSession    DoctorOnlineSession?
   mentalHealthProfile MentalHealthProviderProfile?
   salaryStructure  EmployeeSalary?
@@ -245,18 +246,50 @@ model JoiningLetter {
 model DoctorSlot {
   id          String   @id @default(cuid())
   doctorId    String
+  careTeamServiceId String?
+  generatedByRuleId String?
   date        DateTime @db.Date
   startTime   String
   endTime     String
+  bufferMinutes Int    @default(0)
   isBooked    Boolean  @default(false)
   isBlocked   Boolean  @default(false)
   doctor      Doctor   @relation(fields: [doctorId], references: [id])
+  careTeamService CareTeamService? @relation(fields: [careTeamServiceId], references: [id], onDelete: SetNull)
+  generatedByRule ProviderAvailabilityRule? @relation(fields: [generatedByRuleId], references: [id], onDelete: SetNull)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   @@unique([doctorId, date, startTime])
   @@index([doctorId, date])
+  @@index([careTeamServiceId])
+  @@index([generatedByRuleId])
   @@index([date, isBooked])
+}
+
+model ProviderAvailabilityRule {
+  id                  String   @id @default(cuid())
+  doctorId            String
+  careTeamServiceId   String?
+  label               String
+  weekday             Int
+  startTime           String
+  endTime             String
+  slotDurationMinutes Int      @default(30)
+  bufferMinutes       Int      @default(0)
+  maxSessionsPerDay   Int?
+  startsOn            DateTime @db.Date
+  endsOn              DateTime? @db.Date
+  isActive            Boolean  @default(true)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  doctor              Doctor   @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  careTeamService     CareTeamService? @relation(fields: [careTeamServiceId], references: [id], onDelete: SetNull)
+  generatedSlots      DoctorSlot[]
+
+  @@index([doctorId, weekday, isActive])
+  @@index([careTeamServiceId])
 }
 
 /// Admin-managed monthly salary breakdown (Basic, HRA, PF, ESIC, etc.)

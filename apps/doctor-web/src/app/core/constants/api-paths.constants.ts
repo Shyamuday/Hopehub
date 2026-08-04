@@ -10,6 +10,9 @@ export const API_PATHS = {
     PAYMENTS_SUMMARY: '/doctor/payments/summary',
     MY_PAYSLIP: '/doctor/my-payslip',
     SLOTS: '/doctor/slots',
+    AVAILABILITY_RULES: '/doctor/availability-rules',
+    AVAILABILITY_RULE_GENERATE: (id: string) => `/doctor/availability-rules/${id}/generate`,
+    AVAILABILITY_RULE: (id: string) => `/doctor/availability-rules/${id}`,
     PRESCRIPTION_OPTIONS: '/doctor/prescription-options',
     DISEASES: '/doctor/diseases',
     DISEASE_CATEGORIES: '/doctor/diseases/categories',
@@ -38,9 +41,12 @@ export const API_PATHS = {
     CASE_ANALYSIS: CROSS_APP_API_PATHS.DOCTOR.CASE_ANALYSIS,
     CASE_ANALYSIS_FIELD_SUGGESTIONS: CROSS_APP_API_PATHS.DOCTOR.CASE_ANALYSIS_FIELD_SUGGESTIONS,
     CASE_ANALYSIS_SUGGEST_REMEDIES: CROSS_APP_API_PATHS.DOCTOR.CASE_ANALYSIS_SUGGEST_REMEDIES,
-    CASE_ANALYSIS_REPERTORIZE: (analysisId: string) => `/doctor/case-analyses/${analysisId}/repertorize`,
-    CASE_ANALYSIS_SELECT_REMEDY: (analysisId: string) => `/doctor/case-analyses/${analysisId}/select-remedy`,
-    REPERTORY_REMEDY_MATERIA_MEDICA: (remedyId: string) => `/doctor/repertory/remedies/${remedyId}/materia-medica`,
+    CASE_ANALYSIS_REPERTORIZE: (analysisId: string) =>
+      `/doctor/case-analyses/${analysisId}/repertorize`,
+    CASE_ANALYSIS_SELECT_REMEDY: (analysisId: string) =>
+      `/doctor/case-analyses/${analysisId}/select-remedy`,
+    REPERTORY_REMEDY_MATERIA_MEDICA: (remedyId: string) =>
+      `/doctor/repertory/remedies/${remedyId}/materia-medica`,
     PATIENT_CASE_HISTORY: CROSS_APP_API_PATHS.DOCTOR.PATIENT_CASE_HISTORY,
     CLINICAL_MEDIA_OBSERVATION_HINTS: '/doctor/clinical-media/observation-hints',
     CLINICAL_MEDIA_SUGGEST_PHRASES: '/doctor/clinical-media/suggest-rubric-phrases',
@@ -50,7 +56,8 @@ export const API_PATHS = {
     PATIENT_CLINICAL_MEDIA: (patientId: string) => `/doctor/patients/${patientId}/clinical-media`,
     PATIENT_CLINICAL_MEDIA_ITEM: (patientId: string, mediaId: string) =>
       `/doctor/patients/${patientId}/clinical-media/${mediaId}`,
-    CASE_ANALYSIS_CLINICAL_MEDIA: (analysisId: string) => `/doctor/case-analyses/${analysisId}/clinical-media`,
+    CASE_ANALYSIS_CLINICAL_MEDIA: (analysisId: string) =>
+      `/doctor/case-analyses/${analysisId}/clinical-media`,
     CASE_ANALYSIS_CLINICAL_MEDIA_ITEM: (analysisId: string, mediaId: string) =>
       `/doctor/case-analyses/${analysisId}/clinical-media/${mediaId}`,
     CASE_ANALYSIS_CLINICAL_MEDIA_FILE: (analysisId: string, mediaId: string) =>
@@ -58,11 +65,11 @@ export const API_PATHS = {
     CASE_ANALYSIS_CLINICAL_MEDIA_ANALYZE: (analysisId: string, mediaId: string) =>
       `/doctor/case-analyses/${analysisId}/clinical-media/${mediaId}/analyze-image`,
     CASE_ANALYSIS_CLINICAL_MEDIA_APPLY_INTERPRETATION: (analysisId: string, mediaId: string) =>
-      `/doctor/case-analyses/${analysisId}/clinical-media/${mediaId}/apply-interpretation`
+      `/doctor/case-analyses/${analysisId}/clinical-media/${mediaId}/apply-interpretation`,
   },
   HR: {
     SELF_DOCTOR_LEAVES: '/hr/self/doctor-leaves',
-    SELF_DOCTOR_LEAVE: '/hr/self/doctor-leave'
+    SELF_DOCTOR_LEAVE: '/hr/self/doctor-leave',
   },
   PATIENTS: {
     SEARCH: '/patients/search',
@@ -71,6 +78,6 @@ export const API_PATHS = {
     CREATE: '/patients',
     ADHERENCE_TREND: (id: string) => `/doctor/patients/${id}/adherence-trend`,
     DOSE_EVENTS: (id: string) => `/doctor/patients/${id}/dose-events`,
-    LAB_REFERRALS: (id: string) => `/doctor/patients/${id}/lab-referrals`
-  }
+    LAB_REFERRALS: (id: string) => `/doctor/patients/${id}/lab-referrals`,
+  },
 } as const;

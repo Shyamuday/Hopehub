@@ -209,6 +209,12 @@ function time24HourFromDisplay(value: string) {
   return `${String(hour).padStart(2, '0')}:${minute}`;
 }
 
+function minutesBetweenTimes(start: string, end: string) {
+  const [startHour = 0, startMinute = 0] = start.split(':').map(Number);
+  const [endHour = 0, endMinute = 0] = end.split(':').map(Number);
+  return endHour * 60 + endMinute - (startHour * 60 + startMinute);
+}
+
 function periodForTime(value: string): 'morning' | 'afternoon' | 'evening' {
   const hour = Number(time24HourFromDisplay(value).split(':')[0]);
   if (hour < 12) return 'morning';
@@ -1540,6 +1546,7 @@ hopeHubRouter.get(
   asyncRoute(async (req, res) => {
     const date = queryText(req, 'date');
     const providerId = queryText(req, 'providerId').trim();
+    const careTeamServiceId = queryText(req, 'careTeamServiceId').trim();
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
       return res.status(400).json({ message: 'date must be in YYYY-MM-DD format.' });
     }
@@ -1553,6 +1560,20 @@ hopeHubRouter.get(
         return res.status(404).json({ message: 'Expert not found.' });
       }
 
+      const careTeamService = careTeamServiceId
+        ? await prisma.careTeamService.findFirst({
+            where: {
+              id: careTeamServiceId,
+              isActive: true,
+              mentalHealthProfile: { doctorId: provider.id }
+            },
+            select: { id: true, durationMinutes: true }
+          })
+        : null;
+      if (careTeamServiceId && !careTeamService) {
+        return res.status(404).json({ message: 'Service not found for this expert.' });
+      }
+
       const slots = await prisma.doctorSlot.findMany({
         where: { doctorId: provider.id, date: new Date(date), isBlocked: false },
         orderBy: { startTime: 'asc' }
@@ -1561,15 +1582,33 @@ hopeHubRouter.get(
       return res.json({
         date,
         providerId,
-        slots: slots.map((slot) => {
-          const time = displayTimeFrom24Hour(slot.startTime);
-          return {
-            time,
-            period: periodForTime(time),
-            available: !slot.isBooked,
-            booked: slot.isBooked
-          };
-        })
+        careTeamServiceId: careTeamService?.id ?? undefined,
+        slots: slots
+          .filter((slot) => {
+            if (
+              careTeamServiceId &&
+              slot.careTeamServiceId &&
+              slot.careTeamServiceId !== careTeamServiceId
+            ) {
+              return false;
+            }
+            if (
+              careTeamService &&
+              minutesBetweenTimes(slot.startTime, slot.endTime) < careTeamService.durationMinutes
+            ) {
+              return false;
+            }
+            return true;
+          })
+          .map((slot) => {
+            const time = displayTimeFrom24Hour(slot.startTime);
+            return {
+              time,
+              period: periodForTime(time),
+              available: !slot.isBooked,
+              booked: slot.isBooked
+            };
+          })
       });
     }
 
@@ -2055,13 +2094,31 @@ hopeHubRouter.post(
               date: new Date(body.appointmentDate),
               startTime: time24HourFromDisplay(body.appointmentTime),
               isBooked: false,
-              isBlocked: false
+              isBlocked: false,
+              ...(selectedCareTeamService
+                ? {
+                    OR: [
+                      { careTeamServiceId: null },
+                      { careTeamServiceId: selectedCareTeamService.id }
+                    ]
+                  }
+                : {})
             },
-            select: { id: true }
+            select: { id: true, startTime: true, endTime: true }
           })
         : null;
     if (requestedProvider && !requestedSlot) {
       return res.status(409).json({ message: 'Selected expert slot is no longer available.' });
+    }
+    if (
+      requestedSlot &&
+      selectedCareTeamService &&
+      minutesBetweenTimes(requestedSlot.startTime, requestedSlot.endTime) <
+        selectedCareTeamService.durationMinutes
+    ) {
+      return res
+        .status(409)
+        .json({ message: 'Selected expert slot is too short for this service.' });
     }
 
     await ensureBillingPlans();

@@ -207,6 +207,7 @@
             <app-appointment-calendar
               [selectedService]="contactForm.get('serviceInterest')?.value"
               [providerId]="prefilledData().providerId || undefined"
+              [careTeamServiceId]="prefilledData().careTeamServiceId || undefined"
               (appointmentSelected)="onAppointmentSelected($event)"
             ></app-appointment-calendar>
           </div>

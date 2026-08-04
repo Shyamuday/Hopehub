@@ -20,6 +20,21 @@
     .manual-add span { color: #94a3b8; font-size: 13px; }
     .btn-primary { padding: 9px 16px; border-radius: 9px; border: none; background: linear-gradient(135deg,#6366f1,#4f46e5); color: white; font-size: 13px; font-weight: 700; cursor: pointer; }
 
+    .rules-panel { margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); border-radius: 16px; padding: 14px; }
+    .rules-head h3 { margin: 0; font-size: 15px; }
+    .rules-head p { margin: 4px 0 12px; color: #94a3b8; font-size: 12px; }
+    .rule-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; align-items: center; }
+    .rule-form input, .rule-form select { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 8px 10px; color: white; font-size: 13px; outline: none; min-width: 0; }
+    .rule-form select option { color: #0f172a; }
+    .rule-list { display: grid; gap: 8px; margin-top: 12px; }
+    .rule-card { display: grid; gap: 3px; border: 1px solid rgba(99,102,241,0.25); background: rgba(99,102,241,0.06); border-radius: 12px; padding: 10px; }
+    .rule-card.inactive { opacity: 0.55; filter: grayscale(0.5); }
+    .rule-card span, .rule-card small { color: #c4b5fd; font-size: 12px; }
+    .rule-actions { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; }
+    .rule-actions button { border: 1px solid rgba(99,102,241,0.25); background: rgba(99,102,241,0.08); color: #c4b5fd; border-radius: 8px; padding: 6px 10px; cursor: pointer; font-size: 12px; }
+    .rule-actions button.danger { border-color: rgba(248,113,113,0.25); color: #f87171; background: rgba(248,113,113,0.06); }
+    .rule-actions button:disabled { opacity: 0.55; cursor: not-allowed; }
+
     .loading { text-align: center; padding: 40px; }
     .spinner { width: 28px; height: 28px; border: 3px solid rgba(99,102,241,0.2); border-top-color: #6366f1; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto; }
     @keyframes spin { to { transform: rotate(360deg); } }
@@ -27,6 +42,7 @@
     .slot-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px,1fr)); gap: 10px; }
     .slot-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 6px; &.booked { border-color: rgba(251,146,60,0.2); background: rgba(251,146,60,0.04); } &.blocked { border-color: rgba(148,163,184,0.2); background: rgba(148,163,184,0.04); } }
     .slot-time { font-size: 14px; font-weight: 800; }
+    .slot-service { color: #a5b4fc; font-size: 11px; font-weight: 700; }
     .slot-status .badge { padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; &.open { background: rgba(74,222,128,0.12); color: #4ade80; } &.booked { background: rgba(251,146,60,0.12); color: #fb923c; } &.blocked { background: rgba(148,163,184,0.12); color: #94a3b8; } }
     .slot-actions { display: flex; gap: 5px; margin-top: 4px; }
     .icon-btn { width: 26px; height: 26px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.08); background: transparent; color: #94a3b8; font-size: 12px; cursor: pointer; &.danger { border-color: rgba(248,113,113,0.2); color: #f87171; } }
@@ -40,6 +56,7 @@
       .sp { padding: 1rem; }
       .manual-add { flex-wrap: wrap; align-items: stretch; }
       .manual-add input, .manual-add select, .manual-add button { width: 100%; }
+      .rule-form { grid-template-columns: 1fr; }
       .date-nav { flex-wrap: wrap; }
       .slot-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
     }

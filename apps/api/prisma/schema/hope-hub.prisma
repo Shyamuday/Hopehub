@@ -105,6 +105,8 @@ model CareTeamService {
   updatedAt              DateTime @updatedAt
 
   mentalHealthProfile    MentalHealthProviderProfile @relation(fields: [mentalHealthProfileId], references: [id], onDelete: Cascade)
+  availabilityRules      ProviderAvailabilityRule[]
+  slots                  DoctorSlot[]
 
   @@index([mentalHealthProfileId, isActive, sortOrder])
 }
