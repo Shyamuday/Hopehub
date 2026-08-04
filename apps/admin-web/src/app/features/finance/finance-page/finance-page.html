@@ -428,6 +428,97 @@
         </div>
       </div>
     }
+    @case ('provider-payouts') {
+      <div class="cards">
+        <div class="card"><div class="val">₹{{ paiseToK(providerPayoutSummary()?.providerEarningInPaise ?? 0) }}</div><div class="lbl">Provider Earnings</div></div>
+        <div class="card"><div class="val">₹{{ paiseToK(providerPayoutSummary()?.platformFeeInPaise ?? 0) }}</div><div class="lbl">Platform Fee</div></div>
+        <div class="card warn"><div class="val">₹{{ paiseToK(providerPayoutSummary()?.pendingInPaise ?? 0) }}</div><div class="lbl">Pending Payout</div></div>
+        <div class="card"><div class="val">₹{{ paiseToK(providerPayoutSummary()?.holdInPaise ?? 0) }}</div><div class="lbl">On Hold</div></div>
+        <div class="card net"><div class="val">₹{{ paiseToK(providerPayoutSummary()?.paidInPaise ?? 0) }}</div><div class="lbl">Paid Out</div></div>
+      </div>
+      <div class="actions">
+        <button class="btn-primary" type="button" (click)="backfillProviderPayouts()">Backfill old bookings</button>
+      </div>
+      <div class="panel">
+        <h3>Provider payout ledger</h3>
+        <p class="branch-note">Shows user paid amount, platform fee, provider earning, and payout status for care/doctor sessions.</p>
+        @if (!providerPayouts().length) {
+          <p class="empty-state">No provider payout rows for this month yet. Use backfill after old assignments.</p>
+        } @else {
+          <div class="table-wrap desktop-only">
+            <table>
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Provider</th>
+                  <th>Patient / Service</th>
+                  <th>Status</th>
+                  <th class="num">User Paid</th>
+                  <th class="num">Provider</th>
+                  <th class="num">Platform</th>
+                  <th>Payout</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (row of providerPayouts(); track row.id) {
+                  <tr>
+                    <td>{{ row.createdAt | date:'mediumDate' }}</td>
+                    <td>{{ row.doctor?.name || '—' }}</td>
+                    <td>
+                      <div>{{ row.patient?.name || '—' }}</div>
+                      <div class="branch-code">{{ row.serviceTitle || row.consultation?.disease?.name || 'Session' }}</div>
+                    </td>
+                    <td>{{ row.paymentStatus }}</td>
+                    <td class="num">{{ formatPaise(row.grossAmountInPaise) }}</td>
+                    <td class="num">{{ formatPaise(row.providerEarningInPaise) }}</td>
+                    <td class="num">{{ formatPaise(row.platformFeeInPaise) }}</td>
+                    <td>
+                      <span class="status-pill" [class.paid]="row.payoutStatus === 'PAID'" [class.hold]="row.payoutStatus === 'HOLD'">{{ row.payoutStatus }}</span>
+                      @if (row.payoutReference) { <div class="branch-code">{{ row.payoutReference }}</div> }
+                    </td>
+                    <td class="actions-cell">
+                      @if (row.payoutStatus !== 'PAID') {
+                        <button type="button" (click)="updateProviderPayoutStatus(row, 'PAID', true)">Paid</button>
+                      }
+                      @if (row.payoutStatus !== 'HOLD') {
+                        <button type="button" (click)="updateProviderPayoutStatus(row, 'HOLD')">Hold</button>
+                      }
+                      @if (row.payoutStatus !== 'PENDING') {
+                        <button type="button" (click)="updateProviderPayoutStatus(row, 'PENDING')">Pending</button>
+                      }
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+          <div class="mobile-row-cards">
+            @for (row of providerPayouts(); track row.id) {
+              <article class="mobile-row-card">
+                <div class="card-head"><strong>{{ row.doctor?.name || 'Provider' }}</strong><span>{{ row.payoutStatus }}</span></div>
+                <div class="card-row"><span>Patient</span><span>{{ row.patient?.name || '—' }}</span></div>
+                <div class="card-row"><span>Service</span><span>{{ row.serviceTitle || row.consultation?.disease?.name || 'Session' }}</span></div>
+                <div class="card-row"><span>User paid</span><span>{{ formatPaise(row.grossAmountInPaise) }}</span></div>
+                <div class="card-row"><span>Provider</span><strong>{{ formatPaise(row.providerEarningInPaise) }}</strong></div>
+                <div class="card-row"><span>Platform</span><span>{{ formatPaise(row.platformFeeInPaise) }}</span></div>
+                <div class="card-actions">
+                  @if (row.payoutStatus !== 'PAID') {
+                    <button type="button" (click)="updateProviderPayoutStatus(row, 'PAID', true)">Paid</button>
+                  }
+                  @if (row.payoutStatus !== 'HOLD') {
+                    <button type="button" (click)="updateProviderPayoutStatus(row, 'HOLD')">Hold</button>
+                  }
+                  @if (row.payoutStatus !== 'PENDING') {
+                    <button type="button" (click)="updateProviderPayoutStatus(row, 'PENDING')">Pending</button>
+                  }
+                </div>
+              </article>
+            }
+          </div>
+        }
+      </div>
+    }
     @case ('clinic-expenses') {
       <div class="actions"><button class="btn-primary" (click)="openExpenseModal(undefined, 'CLINIC')">+ Add Clinic Expense</button></div>
       <div class="panel">

@@ -661,6 +661,21 @@ export class AdminApi {
       ...(args as Parameters<AdminFinanceApi['getPeriodReport']>),
     );
   }
+  getProviderPayouts(...args: Parameters<AdminFinanceApi['getProviderPayouts']>) {
+    return this.finance.getProviderPayouts(
+      ...(args as Parameters<AdminFinanceApi['getProviderPayouts']>),
+    );
+  }
+  updateProviderPayout(...args: Parameters<AdminFinanceApi['updateProviderPayout']>) {
+    return this.finance.updateProviderPayout(
+      ...(args as Parameters<AdminFinanceApi['updateProviderPayout']>),
+    );
+  }
+  backfillProviderPayouts(...args: Parameters<AdminFinanceApi['backfillProviderPayouts']>) {
+    return this.finance.backfillProviderPayouts(
+      ...(args as Parameters<AdminFinanceApi['backfillProviderPayouts']>),
+    );
+  }
   exportAccountantBundle(...args: Parameters<AdminFinanceApi['exportAccountantBundle']>) {
     return this.finance.exportAccountantBundle(
       ...(args as Parameters<AdminFinanceApi['exportAccountantBundle']>),

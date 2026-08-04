@@ -4,6 +4,7 @@ import { registerFinanceExpenseRoutes } from './expenses.js';
 import { registerFinanceOutstandingRoutes } from './outstanding.js';
 import { registerFinancePayslipRoutes } from './payslip.js';
 import { registerFinancePeriodReportRoutes } from './period-report.js';
+import { registerFinanceProviderPayoutRoutes } from './provider-payouts.js';
 import { registerFinanceRevenueRoutes } from './revenue.js';
 import { registerFinanceSummaryRoutes } from './summary.js';
 
@@ -16,3 +17,4 @@ registerFinanceOutstandingRoutes(financeRouter);
 registerFinancePayslipRoutes(financeRouter);
 registerFinanceExpenseRoutes(financeRouter);
 registerFinancePeriodReportRoutes(financeRouter);
+registerFinanceProviderPayoutRoutes(financeRouter);

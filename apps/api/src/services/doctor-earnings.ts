@@ -25,6 +25,9 @@ export type DoctorEarningsLineItem = {
   medicineFeeInPaise: number;
   totalGrossInPaise: number;
   doctorEarningsInPaise: number;
+  payoutStatus?: string | null;
+  payoutReference?: string | null;
+  paidAt?: Date | null;
   createdAt: Date;
 };
 
@@ -56,7 +59,10 @@ function readPaise(value: unknown): number | null {
 }
 
 /** Split a payment total into consultation vs medicine using lineItems when available. */
-export function parsePaymentFeeBreakdown(lineItems: unknown, totalInPaise: number): PaymentFeeBreakdown {
+export function parsePaymentFeeBreakdown(
+  lineItems: unknown,
+  totalInPaise: number
+): PaymentFeeBreakdown {
   const items = asRecord(lineItems);
   const explicitConsult =
     readPaise(items?.consultationFeeInPaise) ??
@@ -141,6 +147,14 @@ export async function buildDoctorEarningsReport(
           disease: { select: { name: true } },
           patient: { select: { name: true } }
         }
+      },
+      providerEarning: {
+        select: {
+          payoutStatus: true,
+          payoutReference: true,
+          paidAt: true,
+          providerEarningInPaise: true
+        }
       }
     },
     orderBy: { createdAt: 'desc' }
@@ -150,7 +164,10 @@ export async function buildDoctorEarningsReport(
     const fees = parsePaymentFeeBreakdown(payment.lineItems, payment.amountInPaise);
     const earningsInPaise =
       payment.status === PaymentStatus.PAID
-        ? computeDoctorShareAmount(fees.consultationFeeInPaise + fees.medicineFeeInPaise, sharePercent)
+        ? computeDoctorShareAmount(
+            fees.consultationFeeInPaise + fees.medicineFeeInPaise,
+            sharePercent
+          )
         : 0;
 
     if (payment.status === PaymentStatus.PAID) {
@@ -170,7 +187,10 @@ export async function buildDoctorEarningsReport(
       consultationFeeInPaise: fees.consultationFeeInPaise,
       medicineFeeInPaise: fees.medicineFeeInPaise,
       totalGrossInPaise: payment.amountInPaise,
-      doctorEarningsInPaise: earningsInPaise,
+      doctorEarningsInPaise: payment.providerEarning?.providerEarningInPaise ?? earningsInPaise,
+      payoutStatus: payment.providerEarning?.payoutStatus ?? null,
+      payoutReference: payment.providerEarning?.payoutReference ?? null,
+      paidAt: payment.providerEarning?.paidAt ?? null,
       createdAt: payment.createdAt
     });
   }
@@ -230,7 +250,10 @@ export async function buildDoctorEarningsReport(
   const pendingInPaise = pending.doctorEarningsInPaise;
   const failedGrossInPaise = failed.totalGrossInPaise;
   const totalGrossInPaise =
-    paid.totalGrossInPaise + pending.totalGrossInPaise + failed.totalGrossInPaise + medicineSales.totalGrossInPaise;
+    paid.totalGrossInPaise +
+    pending.totalGrossInPaise +
+    failed.totalGrossInPaise +
+    medicineSales.totalGrossInPaise;
 
   return {
     doctorSharePercent: sharePercent,
@@ -241,7 +264,11 @@ export async function buildDoctorEarningsReport(
   };
 }
 
-export async function getDoctorEarningsForMonth(doctorUserId: string, monthStart: Date, monthEnd: Date) {
+export async function getDoctorEarningsForMonth(
+  doctorUserId: string,
+  monthStart: Date,
+  monthEnd: Date
+) {
   const doctor = await prisma.doctor.findUnique({
     where: { userId: doctorUserId },
     select: { consultationSharePercent: true, compensationModel: true }

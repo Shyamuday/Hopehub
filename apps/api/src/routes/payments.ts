@@ -29,6 +29,7 @@ import {
   resolveDoctorSharePercent
 } from '../services/doctor-compensation.js';
 import { buildDoctorEarningsReport } from '../services/doctor-earnings.js';
+import { upsertProviderEarningForPayment } from '../services/provider-earnings.js';
 import { settleConsultationPaymentRewards } from '../services/reward-settlement.js';
 import { PRODUCT_EVENTS, trackProductEvent } from '../services/product-analytics.js';
 import { tryAssignInstantConsultation } from '../services/online-doctor-presence.js';
@@ -201,6 +202,8 @@ export function createPaymentsRouter(io: SocketIoServer) {
         patientId: input.patientId,
         providerPaymentId: input.providerPaymentId
       });
+
+      await upsertProviderEarningForPayment(input.paymentId);
 
       void tryAssignInstantConsultation(io, input.consultationId).catch((err) => {
         console.error('[instant] Auto-assign failed after payment', err);

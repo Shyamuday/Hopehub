@@ -34,6 +34,7 @@ import {
 } from '../services/assessment-definitions.js';
 import { isFirstPaidConsultation } from '../services/referral-codes.js';
 import { getSiteConfigMap, getSiteConfigValue } from '../services/site-config.service.js';
+import { upsertProviderEarningForPayment } from '../services/provider-earnings.js';
 
 export const hopeHubRouter = Router();
 
@@ -2298,6 +2299,10 @@ hopeHubRouter.post(
         where: { id: requestedSlot.id },
         data: { isBooked: true }
       });
+    }
+
+    if (consultation.payment?.status === PaymentStatus.PAID) {
+      await upsertProviderEarningForPayment(consultation.payment.id);
     }
 
     if (activeCareTeamPackageBalance) {

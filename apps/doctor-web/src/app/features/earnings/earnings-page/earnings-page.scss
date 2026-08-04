@@ -12,6 +12,9 @@
 .panel .sub { color: #64748b; font-size: 0.85rem; margin: 0 0 0.75rem; }
 .pending-row td { color: #b45309; }
 .failed-row td { color: #b91c1c; opacity: 0.85; }
+.payout-pill { display: inline-flex; align-items: center; border-radius: 999px; padding: 0.18rem 0.55rem; background: #fef3c7; color: #92400e; font-size: 0.78rem; font-weight: 700; }
+.payout-pill.paid { background: #dcfce7; color: #166534; }
+.payout-pill.hold { background: #fee2e2; color: #991b1b; }
 .panel { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1rem; }
 table { width: 100%; border-collapse: collapse; }
 th, td { padding: 0.65rem; border-bottom: 1px solid #f1f5f9; text-align: left; }

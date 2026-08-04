@@ -86,6 +86,7 @@ model Consultation {
   clinicalMedia   ClinicalMedia[]
   websiteLead     WebsiteLead?
   followUpEntitlement ConsultationFollowUpEntitlement?
+  providerEarning ProviderEarning?
   createdAt       DateTime           @default(now())
   updatedAt       DateTime           @updatedAt
 }
@@ -109,6 +110,7 @@ model Payment {
   rewardRedemptions RewardRedemption[]
   gatewayEvents   PaymentGatewayEvent[]
   refunds         PaymentRefund[]
+  providerEarning ProviderEarning?
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 }
@@ -158,6 +160,49 @@ model PaymentRefund {
   @@index([paymentId, createdAt])
   @@index([providerPaymentId])
   @@index([status])
+}
+
+enum ProviderPayoutStatus {
+  PENDING
+  HOLD
+  PAID
+}
+
+model ProviderEarning {
+  id                    String               @id @default(cuid())
+  consultationId         String               @unique
+  paymentId              String               @unique
+  doctorUserId           String
+  patientId              String?
+  source                 String               @default("consultation")
+  grossAmountInPaise     Int                  @default(0)
+  providerSharePercent   Int                  @default(0)
+  providerEarningInPaise Int                  @default(0)
+  platformFeeInPaise     Int                  @default(0)
+  paymentStatus          PaymentStatus        @default(CREATED)
+  payoutStatus           ProviderPayoutStatus @default(PENDING)
+  pricingMode            String?
+  pricingRule            String?
+  serviceTitle           String?
+  packageUsage           Json?
+  payoutReference        String?
+  payoutNote             String?              @db.Text
+  paidAt                 DateTime?
+  paidByUserId           String?
+  createdAt              DateTime             @default(now())
+  updatedAt              DateTime             @updatedAt
+
+  consultation           Consultation         @relation(fields: [consultationId], references: [id], onDelete: Cascade)
+  payment                Payment              @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  doctor                 User                 @relation("DoctorProviderEarnings", fields: [doctorUserId], references: [id], onDelete: Cascade)
+  patient                User?                @relation("PatientProviderEarnings", fields: [patientId], references: [id], onDelete: SetNull)
+  paidBy                 User?                @relation("ProviderEarningsPaidBy", fields: [paidByUserId], references: [id], onDelete: SetNull)
+
+  @@index([doctorUserId, payoutStatus])
+  @@index([patientId])
+  @@index([paymentStatus])
+  @@index([createdAt])
+  @@index([paidAt])
 }
 
 model DonationPayment {

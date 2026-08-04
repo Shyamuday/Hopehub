@@ -18,6 +18,7 @@ import {
 } from '../../services/notification-service.js';
 import { emitConsultationAssigned } from '../../services/consultation-realtime.js';
 import { PRODUCT_EVENTS, trackProductEvent } from '../../services/product-analytics.js';
+import { upsertProviderEarningForPayment } from '../../services/provider-earnings.js';
 
 export function registerAdminConsultationRoutes(router: Router, io: SocketIoServer) {
   // ─── Admin consultations ───────────────────────────────────────────────────────
@@ -174,7 +175,8 @@ export function registerAdminConsultationRoutes(router: Router, io: SocketIoServ
           patient: {
             select: { id: true, name: true, mobile: true, email: true, patientCode: true }
           },
-          disease: { select: { name: true } }
+          disease: { select: { name: true } },
+          payment: { select: { id: true } }
         }
       });
 
@@ -220,6 +222,10 @@ export function registerAdminConsultationRoutes(router: Router, io: SocketIoServ
           diseaseName: consultation.disease?.name ?? null
         }
       });
+
+      if (consultation.payment?.id) {
+        await upsertProviderEarningForPayment(consultation.payment.id);
+      }
 
       void trackProductEvent({
         name: PRODUCT_EVENTS.CONSULTATION_ASSIGNED,

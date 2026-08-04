@@ -95,6 +95,7 @@
               <th class="num">Consult Fee</th>
               <th class="num">Medicine</th>
               <th class="num">Your Share</th>
+              <th>Payout</th>
             </tr>
           </thead>
           <tbody>
@@ -111,6 +112,14 @@
                 <td class="num">₹{{ formatPaise(row.consultationFeeInPaise) }}</td>
                 <td class="num">₹{{ formatPaise(row.medicineFeeInPaise) }}</td>
                 <td class="num"><strong>₹{{ formatPaise(row.doctorEarningsInPaise) }}</strong></td>
+                <td>
+                  @if (row.payoutStatus) {
+                    <span class="payout-pill" [class.paid]="row.payoutStatus === 'PAID'" [class.hold]="row.payoutStatus === 'HOLD'">{{ row.payoutStatus }}</span>
+                    @if (row.payoutReference) { <div class="sub">{{ row.payoutReference }}</div> }
+                  } @else {
+                    <span class="sub">Not in payout ledger</span>
+                  }
+                </td>
               </tr>
             }
           </tbody>
@@ -134,6 +143,10 @@
               <div class="card-row"><span>{{ row.createdAt | date: 'dd MMM yyyy' }}</span></div>
               <div class="card-row"><span>Consult</span><span>₹{{ formatPaise(row.consultationFeeInPaise) }}</span></div>
               <div class="card-row"><span>Medicine</span><span>₹{{ formatPaise(row.medicineFeeInPaise) }}</span></div>
+              <div class="card-row"><span>Payout</span><span>{{ row.payoutStatus || 'Not in ledger' }}</span></div>
+              @if (row.payoutReference) {
+                <div class="card-row"><span>Reference</span><span>{{ row.payoutReference }}</span></div>
+              }
             </article>
           }
         </div>
