@@ -348,6 +348,75 @@ function helpText(kind: TelegramBotKind) {
   ].join('\n');
 }
 
+function startGuideText(kind: TelegramBotKind, session: TelegramSession) {
+  const linkedLine = session.linkedUser
+    ? `Linked as ${escapeHtml(session.linkedUser.name)}.`
+    : 'Not linked yet. Send /link your-email@example.com, then /verify OTP.';
+
+  if (kind === TelegramBotKind.USER) {
+    return [
+      '<b>Hope Hub Care Bot</b>',
+      linkedLine,
+      '',
+      '<b>Purpose</b>',
+      'This bot helps you manage daily wellness tasks, request sessions, and ask for volunteer support from Telegram.',
+      '',
+      '<b>What you can do</b>',
+      '• Create and review your daily plan',
+      '• Add and tick daily tasks',
+      '• Request booking follow-up',
+      '• Request volunteer support',
+      '',
+      '<b>Safety guideline</b>',
+      'This bot is not an emergency service and does not replace a doctor, psychologist, or crisis helpline. If there is immediate danger, contact local emergency services now.',
+      '',
+      '<b>Privacy guideline</b>',
+      'Avoid sharing highly sensitive personal details in Telegram. For private records, use the Hope Hub app/profile.',
+      '',
+      'Start with /link, /plan, /book, or /help.'
+    ].join('\n');
+  }
+
+  if (kind === TelegramBotKind.DOCTOR) {
+    return [
+      '<b>Hope Hub Provider Bot</b>',
+      linkedLine,
+      '',
+      '<b>Purpose</b>',
+      'This bot gives providers quick access to queue status and online availability controls.',
+      '',
+      '<b>What you can do</b>',
+      '• View assigned queue summary',
+      '• Mark yourself online/offline',
+      '• Open the secure doctor panel',
+      '',
+      '<b>Clinical privacy guideline</b>',
+      'Do not share diagnosis, prescriptions, or detailed patient records inside Telegram. Use the secure doctor app for clinical work.',
+      '',
+      'Start with /link, /queue, /online, or /help.'
+    ].join('\n');
+  }
+
+  return [
+    '<b>Hope Hub Ops Bot</b>',
+    linkedLine,
+    '',
+    '<b>Purpose</b>',
+    'This bot helps admins monitor leads, contributor applications, and operational workload from Telegram.',
+    '',
+    '<b>What you can do</b>',
+    '• See ops summary',
+    '• Review latest leads',
+    '• Check contributor application queue',
+    '• Open secure admin pages',
+    '',
+    '<b>Security guideline</b>',
+    'Admin actions are role-gated. Do not paste patient-sensitive details in Telegram; use the admin panel for private records and approvals.',
+    '',
+    'Start with /link, /summary, /leads, or /help.'
+  ].join('\n');
+}
+
 async function ensureSession(kind: TelegramBotKind, chat: TelegramChat, from?: TelegramUser) {
   const chatId = String(chat.id);
   return prisma.telegramBotSession.upsert({
@@ -963,18 +1032,7 @@ async function handleCommand(kind: TelegramBotKind, session: TelegramSession, te
   }
 
   if (command === '/start' || command === '/menu') {
-    await replyMenu(
-      kind,
-      session,
-      [
-        `<b>${botNameByKind[kind]}</b>`,
-        session.linkedUser
-          ? `Linked as ${escapeHtml(session.linkedUser.name)}.`
-          : 'Link your account to unlock private actions.',
-        '',
-        helpText(kind).split('\n')[0]
-      ].join('\n')
-    );
+    await replyMenu(kind, session, startGuideText(kind, session));
     return command;
   }
 
