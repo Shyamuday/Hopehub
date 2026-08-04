@@ -43,11 +43,11 @@ export const routes: Routes = [
       import('./features/psychologists/psychologists.component').then(
         (m) => m.PsychologistsComponent,
       ),
-    title: 'Psychologists - Hope Hub',
+    title: 'Care Team - Hope Hub',
     data: {
-      breadcrumb: 'Psychologists',
-      description: 'Meet Hope Hub psychologists available for mental wellness support',
-      keywords: 'psychologists, mental wellness providers, hope hub support, counseling',
+      breadcrumb: 'Care team',
+      description: 'Meet Hope Hub care team members available for mental wellness support',
+      keywords: 'care team, mental wellness support, counsellors, volunteers, hope hub support',
     },
   },
   {
@@ -56,11 +56,11 @@ export const routes: Routes = [
       import('./features/psychologists/psychologist-detail.component').then(
         (m) => m.PsychologistDetailComponent,
       ),
-    title: 'Psychologist Profile - Hope Hub',
+    title: 'Care Team Profile - Hope Hub',
     data: {
-      breadcrumb: 'Psychologist Profile',
-      description: 'View psychologist profile, focus areas, session details, and book support',
-      keywords: 'psychologist profile, counsellor profile, mental wellness expert',
+      breadcrumb: 'Care team profile',
+      description: 'View care team profile, focus areas, session details, and book support',
+      keywords: 'care team profile, counsellor profile, mental wellness guide',
     },
   },
   {
@@ -175,9 +175,8 @@ export const routes: Routes = [
     title: 'Telegram Hub - Hope Hub',
     data: {
       breadcrumb: 'Telegram Hub',
-      description: 'All Hope Hub Telegram bots, provider bot, operations bot, and community links',
-      keywords:
-        'Hope Hub Telegram, Telegram bot, provider bot, doctor bot, support group, community',
+      description: 'All Hope Hub Telegram bots, care team bot, operations bot, and community links',
+      keywords: 'Hope Hub Telegram, Telegram bot, care team bot, support group, community',
     },
   },
   {
@@ -221,7 +220,8 @@ export const routes: Routes = [
     title: 'Careers - Hope Hub',
     data: {
       breadcrumb: 'Careers',
-      description: 'Apply to become a Hope Hub counsellor or mental wellness support provider',
+      description:
+        'Apply to become a Hope Hub counsellor, volunteer, or mental wellness care team member',
       keywords: 'hope hub careers, counsellor application, counselor jobs, mental health careers',
     },
   },

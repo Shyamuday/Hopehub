@@ -28,7 +28,7 @@ import { APP_CONSTANTS } from '../../core';
             All Hope Hub Telegram bots and groups
           </h1>
           <p class="mx-auto mt-5 max-w-2xl text-lg leading-8 text-gray-700">
-            Choose the right Telegram link for user support, doctors/providers, or our community
+            Choose the right Telegram link for user support, care team access, or our community
             group. These links are managed from one constants file so we can update them anytime.
           </p>
         </div>
@@ -104,7 +104,7 @@ import { APP_CONSTANTS } from '../../core';
               <p class="mt-3 text-sm leading-6 text-gray-700">
                 Telegram is useful for quick access, reminders, and community support. For private
                 clinical records, payments, and sensitive documents, use the Hope Hub web app or the
-                official admin/provider dashboards.
+                official admin or care-team dashboards.
               </p>
               <a routerLink="/community" class="btn-outline btn-sm mt-5 justify-center">
                 View community page

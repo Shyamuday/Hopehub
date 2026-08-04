@@ -143,7 +143,7 @@ export class FooterComponent {
       title: 'Care & booking',
       links: [
         { label: 'Services', routerLink: '/services' },
-        { label: 'Psychologists', routerLink: '/psychologists' },
+        { label: 'Care team', routerLink: '/psychologists' },
         { label: 'Care packages', routerLink: '/packages' },
         { label: 'Book session', routerLink: '/contact' },
         { label: 'My consultations', routerLink: '/dashboard' },
@@ -158,7 +158,7 @@ export class FooterComponent {
         { label: 'WhatsApp group', externalUrl: APP_CONSTANTS.WHATSAPP.GROUP_URL },
         { label: 'Events', routerLink: '/events' },
         { label: 'Organisation programs', routerLink: '/organization' },
-        { label: 'Join as provider', routerLink: '/careers' },
+        { label: 'Join our care network', routerLink: '/careers' },
         { label: 'Support us', routerLink: '/donate' },
       ],
     },

@@ -54,7 +54,7 @@ import { APP_CONSTANTS } from '../../core/constants/app.constants';
               class="text-gray-700 hover:text-primary-600 px-2 py-2 text-sm font-medium transition-colors duration-200 whitespace-nowrap"
               [attr.aria-current]="isCurrentRoute('/psychologists') ? 'page' : null"
             >
-              Psychologists
+              Care team
             </a>
 
             <a
@@ -307,7 +307,7 @@ import { APP_CONSTANTS } from '../../core/constants/app.constants';
                 [attr.aria-current]="isCurrentRoute('/psychologists') ? 'page' : null"
                 role="menuitem"
               >
-                Psychologists
+                Care team
               </a>
 
               <a

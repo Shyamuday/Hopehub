@@ -1,7 +1,7 @@
 <main class="professional-page">
   <div class="container mx-auto px-4 py-8 sm:px-6 lg:px-8">
     <a routerLink="/psychologists" class="mb-6 inline-flex text-sm font-semibold text-primary-700 hover:text-primary-800">
-      Back to support providers
+      Back to care team
     </a>
 
     @if (loading()) {
@@ -24,7 +24,7 @@
               >
                 {{ providerRoleLabel(p) }}
               </span>
-              <p class="font-semibold">{{ p.designation || p.specialty || 'Hope Hub expert' }}</p>
+              <p class="font-semibold">{{ p.designation || p.specialty || 'Hope Hub care guide' }}</p>
               @if (p.qualifications?.length) {
                 <p>{{ p.qualifications!.join(', ') }}</p>
               }
@@ -164,7 +164,7 @@
         {{ p.safetyEscalationNote || 'Hope Hub support is not emergency care. If there is immediate danger, self-harm risk, violence, or medical emergency, contact local emergency services or a crisis helpline now.' }}
       </section>
     } @else {
-      <div class="rounded-lg border border-red-200 bg-red-50 p-6 text-red-700">{{ error() || 'Provider not found.' }}</div>
+      <div class="rounded-lg border border-red-200 bg-red-50 p-6 text-red-700">{{ error() || 'Care team profile not found.' }}</div>
     }
   </div>
 </main>

@@ -101,10 +101,10 @@ export class ContactComponent implements OnInit {
   ];
   expertTypeOptions: FormDropdownOption[] = [
     { value: '', label: 'No preference' },
-    { value: 'Psychologist', label: 'Psychologist' },
-    { value: 'Counsellor', label: 'Counsellor' },
-    { value: 'Psychotherapist', label: 'Psychotherapist' },
-    { value: 'Mental wellness expert', label: 'Mental wellness expert' },
+    { value: 'Mental wellness professional', label: 'Mental wellness professional' },
+    { value: 'Qualified counsellor', label: 'Qualified counsellor' },
+    { value: 'Student volunteer', label: 'Student volunteer' },
+    { value: 'Peer support volunteer', label: 'Peer support volunteer' },
   ];
   sessionModeOptions: FormDropdownOption[] = [
     { value: 'online_audio', label: 'Online audio' },

@@ -37,8 +37,8 @@ import { APP_CONSTANTS } from '../../core';
             <h2 class="text-xl font-bold text-slate-950">Confirmation</h2>
             <p class="mt-3 leading-7">
               After a user submits a request and completes payment where required, Hope Hub reviews
-              the request and confirms the suitable support path, provider availability, and session
-              timing.
+              the request and confirms the suitable support path, care team availability, and
+              session timing.
             </p>
             <p class="mt-3 leading-7">
               Payment confirmation depends on secure gateway verification. If payment fails or is
@@ -49,8 +49,8 @@ import { APP_CONSTANTS } from '../../core';
           <section>
             <h2 class="text-xl font-bold text-slate-950">Delivery Timeline</h2>
             <p class="mt-3 leading-7">
-              Session timing depends on the slot selected by the user and provider availability. For
-              community and contact requests, we typically respond within 24 hours.
+              Session timing depends on the slot selected by the user and care team availability.
+              For community and contact requests, we typically respond within 24 hours.
             </p>
           </section>
 

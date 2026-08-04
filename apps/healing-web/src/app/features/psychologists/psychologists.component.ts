@@ -71,7 +71,7 @@ export class PsychologistsComponent implements OnInit {
           this.loading.set(false);
         },
         error: () => {
-          const message = 'Could not load psychologists right now.';
+          const message = 'Could not load the care team right now.';
           this.error.set(message);
           this.notificationService.error(message);
           this.loading.set(false);
@@ -128,7 +128,7 @@ export class PsychologistsComponent implements OnInit {
   }
 
   providerRoleLabel(provider: HopeHubProvider): string {
-    return provider.supportRoleLabel || 'Hope Hub expert';
+    return provider.supportRoleLabel || 'Hope Hub care guide';
   }
 
   providerRoleBadgeClass(provider: HopeHubProvider): string {

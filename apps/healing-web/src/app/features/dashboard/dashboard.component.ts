@@ -754,7 +754,7 @@ export class DashboardComponent implements OnInit {
     if (state === 'OPENING_CHECKOUT') return 'Complete payment in the secure checkout window.';
     if (state === 'VERIFYING') return 'Confirming your payment. This usually takes a few seconds.';
     if (state === 'SUCCESS') {
-      return 'Your payment was verified. The Hope Hub team can now confirm your provider and session instructions.';
+      return 'Your payment was verified. The Hope Hub team can now confirm your care guide and session instructions.';
     }
     if (state === 'ERROR') {
       return (

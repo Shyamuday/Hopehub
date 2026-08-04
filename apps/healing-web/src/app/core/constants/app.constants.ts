@@ -25,11 +25,12 @@ export const APP_CONSTANTS = {
       },
       {
         key: 'doctor-provider',
-        title: 'Doctor / Provider Bot',
+        title: 'Care Team Bot',
         handle: '',
         url: '',
-        audience: 'Doctors and psychologists',
-        purpose: 'For providers to link their account, manage queue, and update availability.',
+        audience: 'Doctors, counsellors, and volunteers',
+        purpose:
+          'For care team members to link their account, manage queue, and update availability.',
       },
       // Internal admin bot. Keep this private; do not show on public Telegram hub.
       // {

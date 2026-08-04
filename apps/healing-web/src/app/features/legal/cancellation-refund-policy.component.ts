@@ -35,7 +35,7 @@ import { APP_CONSTANTS } from '../../core';
           <section>
             <h2 class="text-xl font-bold text-slate-950">Cancellation Before Confirmation</h2>
             <p class="mt-3 leading-7">
-              If your requested slot or provider has not yet been confirmed, you may ask us to
+              If your requested slot or care guide has not yet been confirmed, you may ask us to
               cancel the request. If payment was already collected and the session cannot be
               confirmed, we will offer a reschedule or refund.
             </p>
@@ -45,7 +45,7 @@ import { APP_CONSTANTS } from '../../core';
             <h2 class="text-xl font-bold text-slate-950">Rescheduling</h2>
             <p class="mt-3 leading-7">
               You may request rescheduling before the confirmed session time. Rescheduling depends
-              on provider availability. Please contact us as early as possible using the contact
+              on care team availability. Please contact us as early as possible using the contact
               details below.
             </p>
           </section>
@@ -54,7 +54,7 @@ import { APP_CONSTANTS } from '../../core';
             <h2 class="text-xl font-bold text-slate-950">Refund Eligibility</h2>
             <p class="mt-3 leading-7">
               Refunds may be considered if the session was paid for but not delivered due to Hope
-              Hub or provider-side unavailability, duplicate payment, or a technical/payment error.
+              Hub or care-team unavailability, duplicate payment, or a technical/payment error.
               Sessions that have already started or been completed are generally not refundable.
             </p>
           </section>

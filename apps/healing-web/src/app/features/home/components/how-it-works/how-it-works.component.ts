@@ -26,7 +26,7 @@ export class HowItWorksComponent {
     },
     {
       title: 'Expert matched',
-      description: 'A suitable psychologist or Hope Hub expert is assigned based on your concern.',
+      description: 'A suitable Hope Hub care guide is assigned based on your concern.',
     },
     {
       title: 'Confirm slot',

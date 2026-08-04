@@ -215,7 +215,7 @@ export const BREAKUP_ARTICLES: Article[] = [
     category: [ArticleCategory.BREAKUP, ArticleCategory.RELATIONSHIPS],
     difficulty: ArticleDifficulty.BEGINNER,
     readingTime: '8 min read',
-    author: 'Dr. Lisa Park, Clinical Psychologist',
+    author: 'Hope Hub Wellness Team',
     publishedDate: new Date('2024-01-20'),
     tags: ['breakup', 'grief', 'emotions', 'healing', 'psychology', 'relationships'],
     introduction:

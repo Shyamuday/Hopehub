@@ -27,7 +27,7 @@ export class PsychologistDetailComponent implements OnInit {
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
     if (!id) {
-      const message = 'Provider not found.';
+      const message = 'Care team profile not found.';
       this.error.set(message);
       this.notificationService.error(message);
       return;
@@ -77,7 +77,7 @@ export class PsychologistDetailComponent implements OnInit {
   }
 
   providerRoleLabel(provider: HopeHubProvider): string {
-    return provider.supportRoleLabel || 'Hope Hub expert';
+    return provider.supportRoleLabel || 'Hope Hub care guide';
   }
 
   providerRoleBadgeClass(provider: HopeHubProvider): string {

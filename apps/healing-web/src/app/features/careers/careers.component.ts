@@ -34,7 +34,7 @@ export class CareersComponent {
   }> = [
     {
       value: 'PROFESSIONAL_PSYCHOLOGIST',
-      title: 'Psychologist or qualified counsellor',
+      title: 'Mental wellness professional',
       description: 'Verified professional pathway for paid Hope Hub consultations.',
     },
     {
