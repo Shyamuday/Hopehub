@@ -1,6 +1,6 @@
 import type { TelegramBotKind } from '@prisma/client';
 import type { AssessmentDefinitionRecord } from './assessment-definitions.js';
-import { botSlugByKind, telegramPaymentLinks } from './telegram-bots.config.js';
+import { botSlugByKind, telegramPaymentLinks, whatsappLinks } from './telegram-bots.config.js';
 import type { InlineButton } from './telegram-bots.types.js';
 import { menuCancelRows, webUrl } from './telegram-bots.ui.js';
 
@@ -80,6 +80,14 @@ export function volunteerApplicationUrl(session: PaymentLinkSession) {
   return webUrl(withTelegramSource('/careers', session, { action: 'volunteer_apply' }));
 }
 
+export function whatsappGroupUrl() {
+  return whatsappLinks.groupUrl;
+}
+
+export function whatsappJoinButton(): InlineButton {
+  return { text: whatsappLinks.label, url: whatsappLinks.groupUrl };
+}
+
 export function paymentHubRows(session: PaymentLinkSession): InlineButton[][] {
   return [
     [
@@ -97,6 +105,7 @@ export function paymentHubRows(session: PaymentLinkSession): InlineButton[][] {
       { text: 'Volunteer talk payment', url: volunteerTalkPaymentUrl(session) },
       { text: 'Donate', url: donationPaymentUrl(session) }
     ],
+    [whatsappJoinButton()],
     [{ text: 'Payment policy', url: webUrl('/payment-policy') }],
     ...menuCancelRows()
   ];

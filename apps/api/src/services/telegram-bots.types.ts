@@ -58,7 +58,7 @@ export type SessionMetadata = {
     requestedAt: string;
   };
   pendingLead?: {
-    kind: 'BOOKING' | 'VOLUNTEER';
+    kind: 'BOOKING' | 'VOLUNTEER' | 'SUPPORT';
     concern?: string;
     channel?: string;
     time?: string;

@@ -13,6 +13,7 @@ import {
   callbackTimeOptions,
   planTaskPresets,
   reviewPresets,
+  supportConcernOptions,
   supportChannelOptions,
   volunteerConcernOptions
 } from './telegram-bots.config.js';
@@ -44,6 +45,7 @@ import {
   sessionPaymentUrl,
   volunteerApplicationUrl,
   volunteerTalkPaymentUrl,
+  whatsappJoinButton,
   withTelegramSource
 } from './telegram-bots.payments.js';
 import {
@@ -96,6 +98,25 @@ async function showPaymentHub(kind: TelegramBotKind, session: TelegramSession) {
     ].join('\n'),
     parse_mode: 'HTML',
     reply_markup: { inline_keyboard: paymentHubRows(session) }
+  });
+}
+
+async function showWhatsAppJoin(kind: TelegramBotKind, session: TelegramSession) {
+  await sendTelegramMessage(kind, {
+    chat_id: session.chatId,
+    text: [
+      '<b>Join Hope Hub WhatsApp</b>',
+      'Tap below to join the WhatsApp group/community link.',
+      '',
+      'Note: WhatsApp groups may show your phone number/name according to WhatsApp settings.'
+    ].join('\n'),
+    parse_mode: 'HTML',
+    reply_markup: {
+      inline_keyboard: [
+        [whatsappJoinButton()],
+        [{ text: 'Main menu', callback_data: 'common:menu' }]
+      ]
+    }
   });
 }
 
@@ -982,7 +1003,7 @@ async function toggleTask(kind: TelegramBotKind, session: TelegramSession, taskI
 async function promptLead(
   kind: TelegramBotKind,
   session: TelegramSession,
-  leadKind: 'BOOKING' | 'VOLUNTEER'
+  leadKind: 'BOOKING' | 'VOLUNTEER' | 'SUPPORT'
 ) {
   const metadata: SessionMetadata = {
     ...metadataOf(session),
@@ -999,9 +1020,14 @@ async function promptLead(
 async function promptLeadConcern(
   kind: TelegramBotKind,
   session: TelegramSession,
-  leadKind: 'BOOKING' | 'VOLUNTEER'
+  leadKind: 'BOOKING' | 'VOLUNTEER' | 'SUPPORT'
 ) {
-  const options = leadKind === 'BOOKING' ? bookingConcernOptions : volunteerConcernOptions;
+  const options =
+    leadKind === 'BOOKING'
+      ? bookingConcernOptions
+      : leadKind === 'SUPPORT'
+        ? supportConcernOptions
+        : volunteerConcernOptions;
   const paymentRows: InlineButton[][] =
     leadKind === 'BOOKING'
       ? [
@@ -1011,19 +1037,37 @@ async function promptLeadConcern(
           ],
           [{ text: 'Retry pending payment', url: dashboardPaymentUrl(session) }]
         ]
-      : [
-          [
-            { text: 'Pay for volunteer talk', url: volunteerTalkPaymentUrl(session) },
-            { text: 'Become volunteer', url: volunteerApplicationUrl(session) }
-          ],
-          [{ text: 'Donate/support free talks', url: donationPaymentUrl(session) }]
-        ];
+      : leadKind === 'SUPPORT'
+        ? [
+            [
+              {
+                text: 'Open support page',
+                url: webUrl(withTelegramSource('/contact', session, { action: 'support' }))
+              },
+              { text: 'My dashboard', url: dashboardPaymentUrl(session) }
+            ],
+            [
+              { text: 'Payment help', url: webUrl('/payment-policy') },
+              { text: 'Donate', url: donationPaymentUrl(session) }
+            ],
+            [whatsappJoinButton()]
+          ]
+        : [
+            [
+              { text: 'Pay for volunteer talk', url: volunteerTalkPaymentUrl(session) },
+              { text: 'Become volunteer', url: volunteerApplicationUrl(session) }
+            ],
+            [whatsappJoinButton()],
+            [{ text: 'Donate/support free talks', url: donationPaymentUrl(session) }]
+          ];
   await sendTelegramMessage(kind, {
     chat_id: session.chatId,
     text:
       leadKind === 'BOOKING'
         ? 'What do you need help with? You can also book and pay directly below.'
-        : 'What volunteer option do you want? Paid talk, volunteer application, and donation links are below.',
+        : leadKind === 'SUPPORT'
+          ? 'What support do you need? Tap one option so the right team can follow up.'
+          : 'What volunteer option do you want? Paid talk, volunteer application, and donation links are below.',
     reply_markup: {
       inline_keyboard: [
         ...paymentRows,
@@ -1050,6 +1094,18 @@ async function setLeadConcern(kind: TelegramBotKind, session: TelegramSession, c
       pendingLead: { ...(metadata.pendingLead || { kind: leadKind }), concern }
     } as Prisma.InputJsonValue
   });
+  if (leadKind === 'SUPPORT' && /safety/i.test(concern)) {
+    await sendTelegramMessage(kind, {
+      chat_id: session.chatId,
+      text: [
+        '<b>Safety note</b>',
+        'If there is immediate danger or risk of self-harm, contact local emergency services now. Hope Hub Telegram support is not an emergency service.',
+        '',
+        'You can still continue below so our team can follow up.'
+      ].join('\n'),
+      parse_mode: 'HTML'
+    });
+  }
   await promptLeadChannel(kind, updated);
 }
 
@@ -1114,7 +1170,11 @@ async function createLeadRequest(
   const linkedUser = session.linkedUser;
   const name = linkedUser?.name || telegramDisplayName(session);
   const concernPrefix =
-    leadKind === 'VOLUNTEER' ? 'Volunteer support request' : 'Telegram booking request';
+    leadKind === 'VOLUNTEER'
+      ? 'Volunteer support request'
+      : leadKind === 'SUPPORT'
+        ? 'Telegram support request'
+        : 'Telegram booking request';
   const concern = [
     pendingLead.concern || 'Not selected',
     pendingLead.channel ? `Support: ${pendingLead.channel}` : '',
@@ -1139,7 +1199,8 @@ async function createLeadRequest(
   const updated = await updateSession(session, {
     state: 'ACTIVE',
     metadata: nextMetadata as Prisma.InputJsonValue,
-    lastCommand: leadKind === 'BOOKING' ? '/book' : '/volunteer'
+    lastCommand:
+      leadKind === 'BOOKING' ? '/book' : leadKind === 'SUPPORT' ? '/support' : '/volunteer'
   });
 
   await sendTelegramMessage(kind, {
@@ -1151,7 +1212,9 @@ async function createLeadRequest(
       '',
       leadKind === 'BOOKING'
         ? 'If you want to move faster, you can book and pay securely now.'
-        : 'You can pay for a volunteer/support talk, apply as a volunteer, or donate to support free talks.'
+        : leadKind === 'SUPPORT'
+          ? 'The team can follow up. You can also open dashboard, payment help, or contact page below.'
+          : 'You can pay for a volunteer/support talk, apply as a volunteer, or donate to support free talks.'
     ].join('\n'),
     parse_mode: 'HTML',
     reply_markup: {
@@ -1165,14 +1228,30 @@ async function createLeadRequest(
               [{ text: 'Retry pending payment', url: dashboardPaymentUrl(updated) }],
               [{ text: 'Main menu', callback_data: 'common:menu' }]
             ]
-          : [
-              [
-                { text: 'Pay for support talk', url: volunteerTalkPaymentUrl(updated) },
-                { text: 'Become volunteer', url: volunteerApplicationUrl(updated) }
-              ],
-              [{ text: 'Donate/support free talks', url: donationPaymentUrl(updated) }],
-              [{ text: 'Main menu', callback_data: 'common:menu' }]
-            ]
+          : leadKind === 'SUPPORT'
+            ? [
+                [
+                  {
+                    text: 'Open contact page',
+                    url: webUrl(withTelegramSource('/contact', updated, { action: 'support' }))
+                  },
+                  { text: 'My dashboard', url: dashboardPaymentUrl(updated) }
+                ],
+                [
+                  { text: 'Payment help', url: webUrl('/payment-policy') },
+                  { text: 'Main menu', callback_data: 'common:menu' }
+                ],
+                [whatsappJoinButton()]
+              ]
+            : [
+                [
+                  { text: 'Pay for support talk', url: volunteerTalkPaymentUrl(updated) },
+                  { text: 'Become volunteer', url: volunteerApplicationUrl(updated) }
+                ],
+                [whatsappJoinButton()],
+                [{ text: 'Donate/support free talks', url: donationPaymentUrl(updated) }],
+                [{ text: 'Main menu', callback_data: 'common:menu' }]
+              ]
     }
   });
 }
@@ -1295,6 +1374,8 @@ async function handleCommand(kind: TelegramBotKind, session: TelegramSession, te
     else if (command === '/addtask') await promptAddTask(kind, session);
     else if (command === '/review') await promptReview(kind, session);
     else if (command === '/book') await promptLead(kind, session, 'BOOKING');
+    else if (command === '/support') await promptLead(kind, session, 'SUPPORT');
+    else if (command === '/whatsapp') await showWhatsAppJoin(kind, session);
     else if (command === '/payments' || command === '/pay') await showPaymentHub(kind, session);
     else if (command === '/volunteer') await promptLead(kind, session, 'VOLUNTEER');
     else await replyMenu(kind, session, 'Choose an option or send /help.');
@@ -1356,6 +1437,7 @@ async function handleCallback(
     else if (data === 'user:assessments') await listAssessments(kind, session);
     else if (data === 'user:results') await showAssessmentResults(kind, session);
     else if (data === 'user:payments') await showPaymentHub(kind, session);
+    else if (data === 'user:whatsapp') await showWhatsAppJoin(kind, session);
     else if (data.startsWith('assessment:start:'))
       await startAssessment(kind, session, data.slice('assessment:start:'.length));
     else if (data.startsWith('assessment:plan:'))
@@ -1394,6 +1476,7 @@ async function handleCallback(
       if (preset) await saveReviewNote(kind, session, preset.note);
       else await promptReview(kind, session);
     } else if (data === 'user:book') await promptLead(kind, session, 'BOOKING');
+    else if (data === 'user:support') await promptLead(kind, session, 'SUPPORT');
     else if (data === 'user:volunteer') await promptLead(kind, session, 'VOLUNTEER');
     else if (data.startsWith('lead:concern:')) {
       const key = data.slice('lead:concern:'.length);
@@ -1406,7 +1489,12 @@ async function handleCallback(
         });
       } else {
         const leadKind = metadataOf(session).pendingLead?.kind ?? 'BOOKING';
-        const options = leadKind === 'BOOKING' ? bookingConcernOptions : volunteerConcernOptions;
+        const options =
+          leadKind === 'BOOKING'
+            ? bookingConcernOptions
+            : leadKind === 'SUPPORT'
+              ? supportConcernOptions
+              : volunteerConcernOptions;
         const option = options.find((item) => item.key === key);
         await setLeadConcern(kind, session, option?.label || key);
       }

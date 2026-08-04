@@ -41,6 +41,8 @@ export const commandMenus: Record<TelegramBotKind, { command: string; descriptio
     { command: 'addtask', description: 'Add a daily task' },
     { command: 'review', description: 'Save daily review' },
     { command: 'book', description: 'Request a session' },
+    { command: 'support', description: 'Get support options' },
+    { command: 'whatsapp', description: 'Join WhatsApp group' },
     { command: 'payments', description: 'Payment and donation links' },
     { command: 'volunteer', description: 'Request volunteer support' },
     { command: 'me', description: 'Show linked account' },
@@ -102,6 +104,15 @@ export const volunteerConcernOptions = [
   { key: 'team', label: 'Talk to team' }
 ] as const;
 
+export const supportConcernOptions = [
+  { key: 'emotional', label: 'Emotional support' },
+  { key: 'assessment', label: 'Assessment help' },
+  { key: 'booking', label: 'Booking help' },
+  { key: 'payment', label: 'Payment issue' },
+  { key: 'volunteer', label: 'Volunteer help' },
+  { key: 'safety', label: 'Safety concern' }
+] as const;
+
 export const supportChannelOptions = [
   { key: 'chat', label: 'Chat follow-up' },
   { key: 'voice', label: 'Voice call' },
@@ -118,4 +129,9 @@ export const callbackTimeOptions = [
 
 export const telegramPaymentLinks = {
   defaultSessionOfferingSlug: 'single-30-minute-session'
+} as const;
+
+export const whatsappLinks = {
+  groupUrl: 'https://chat.whatsapp.com/CbbNoo5kXw3FWWKTGO82kz',
+  label: 'Join WhatsApp group'
 } as const;

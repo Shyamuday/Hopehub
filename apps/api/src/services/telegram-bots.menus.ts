@@ -1,5 +1,5 @@
 import type { TelegramBotKind } from '@prisma/client';
-import { botKindBySlug, botSlugByKind } from './telegram-bots.config.js';
+import { botKindBySlug, botSlugByKind, whatsappLinks } from './telegram-bots.config.js';
 import type { TelegramBotSlug } from './telegram-bots.types.js';
 import { adminUrl, doctorUrl, webUrl } from './telegram-bots.ui.js';
 import { escapeHtml } from './telegram-bots.helpers.js';
@@ -27,15 +27,20 @@ export function menuFor(kind: TelegramBotKind, linked: boolean): InlineButton[][
       ],
       [
         { text: 'Book session', callback_data: 'user:book' },
-        { text: 'Volunteer support', callback_data: 'user:volunteer' }
+        { text: 'Get support', callback_data: 'user:support' }
+      ],
+      [
+        { text: 'Volunteer support', callback_data: 'user:volunteer' },
+        { text: 'Join WhatsApp', url: whatsappLinks.groupUrl }
       ],
       [{ text: 'Payments / Donate', callback_data: 'user:payments' }],
       [
         linked
           ? { text: 'My account', callback_data: 'common:me' }
           : { text: 'Link account', callback_data: 'common:link' },
-        { text: 'Open Hope Hub', url: webUrl('/profile') }
-      ]
+        { text: 'Open profile', url: webUrl('/profile') }
+      ],
+      [{ text: 'Open website', url: webUrl('/') }]
     ];
   }
 
@@ -81,8 +86,11 @@ export function helpText(kind: TelegramBotKind) {
       '/addtask - add a task',
       '/review - save end-of-day review',
       '/book - request a session',
+      '/support - support options',
+      '/whatsapp - join WhatsApp group',
       '/payments - payment, retry, and donation links',
       '/volunteer - request volunteer support',
+      'WhatsApp group: use Join WhatsApp button in menu',
       '',
       'This bot is not an emergency service.'
     ].join('\n');
@@ -122,6 +130,8 @@ export function startGuideText(kind: TelegramBotKind, session: MenuSession) {
       '• Create and review your daily plan',
       '• Add and tick daily tasks',
       '• Request booking follow-up',
+      '• Get support for assessments, booking, payments, or safety concerns',
+      '• Join WhatsApp community/support group',
       '• Request volunteer support',
       '• Open secure payment, retry payment, or donate',
       '',
@@ -131,7 +141,9 @@ export function startGuideText(kind: TelegramBotKind, session: MenuSession) {
       '<b>Privacy guideline</b>',
       'Avoid sharing highly sensitive personal details in Telegram. For private records, use the Hope Hub app/profile.',
       '',
-      'Start with /link, /plan, /book, /payments, or /help.'
+      `<b>Website</b>\n${webUrl('/')}`,
+      '',
+      'Start with /link, /plan, /support, /book, /payments, or /help.'
     ].join('\n');
   }
 
@@ -146,6 +158,8 @@ export function startGuideText(kind: TelegramBotKind, session: MenuSession) {
       '<b>Guideline</b>',
       'Keep clinical notes and sensitive records inside the doctor portal. Telegram is only for lightweight workflow updates.',
       '',
+      `<b>Doctor app</b>\n${doctorUrl('/')}`,
+      '',
       'Start with /link, /queue, /online, or /help.'
     ].join('\n');
   }
@@ -159,6 +173,8 @@ export function startGuideText(kind: TelegramBotKind, session: MenuSession) {
     '',
     '<b>Guideline</b>',
     'Do not share private user documents in Telegram. Use the admin portal for sensitive details.',
+    '',
+    `<b>Admin portal</b>\n${adminUrl('/')}`,
     '',
     'Start with /link, /summary, /leads, /contributors, or /help.'
   ].join('\n');
