@@ -116,3 +116,8 @@ for i in $(seq 1 15); do
   echo "Attempt $i: not ready yet, retrying in 2s..."
   sleep 2
 done
+
+if [ -n "${TELEGRAM_USER_BOT_TOKEN_VALUE}${TELEGRAM_DOCTOR_BOT_TOKEN_VALUE}${TELEGRAM_ADMIN_BOT_TOKEN_VALUE}" ]; then
+  echo "Configuring Telegram bot webhooks..."
+  npm run telegram:setup -- --drop-pending
+fi
