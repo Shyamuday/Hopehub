@@ -169,6 +169,49 @@
   }
 }
 
+.assignment-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.btn-assign-ui,
+.btn-cancel-assignment {
+  border: 1px solid #bfdbfe;
+  background: #fff;
+  color: #1d4ed8;
+  border-radius: 8px;
+  padding: 0.45rem 0.7rem;
+  font-weight: 700;
+  cursor: pointer;
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.btn-assign-ui.primary {
+  background: #1d4ed8;
+  color: #fff;
+}
+
+.btn-cancel-assignment {
+  border-color: #fecaca;
+  color: #991b1b;
+  margin-left: auto;
+}
+
+.safety-warning {
+  margin: 0 0 0.75rem;
+  padding: 0.6rem 0.75rem;
+  border-radius: 8px;
+  background: #fef2f2;
+  color: #991b1b;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
 .thread-heading {
   margin: 0 0 0.75rem;
   font-size: 0.95rem;

@@ -3,7 +3,7 @@
     <h1>📋 Visitor Leads</h1>
     <p class="subtitle">
       Website inquiries from chat, home booking, and promo popup.
-      Receptionists mark follow-up in the Operations portal — this view is read-only for admins.
+      Review follow-up and assign Telegram support leads to volunteers or psychologists.
     </p>
   </div>
   @if (pendingCount() > 0) {
@@ -178,7 +178,41 @@
             <dd>{{ lead.consultation.disease?.name }} — {{ lead.consultation.status }}</dd>
           }
         </dl>
-        <p class="view-only-hint">Updates are done by reception in Operations → Visitor Leads.</p>
+        <p class="view-only-hint">Use assignment actions below for support handoff; reception follow-up remains in Operations.</p>
+      </div>
+
+      <div class="follow-up-summary assignment-summary">
+        <h3>Assign support</h3>
+        @if (isSafetyLead(lead)) {
+          <p class="safety-warning">
+            Safety lead: volunteer assignment is blocked. Assign to psychologist/admin escalation only.
+          </p>
+        }
+        <div class="assignment-actions">
+          @if (assignableProvidersLoading()) {
+            <p class="view-only-hint">Loading providers…</p>
+          } @else if (assignableProviders().length) {
+            @for (provider of assignableProviders(); track provider.providerId) {
+              <button
+                type="button"
+                class="btn-assign-ui"
+                [class.primary]="provider.assignmentType === 'PSYCHOLOGIST'"
+                (click)="assignLead(provider.providerId)"
+                [disabled]="!!assigning()"
+              >
+                {{ assigning() === provider.providerId ? 'Assigning…' : 'Assign ' + provider.name }}
+                <small>{{ providerLabel(provider) }}</small>
+              </button>
+            }
+          } @else {
+            <p class="view-only-hint">
+              No active assignable provider found. Enable a visible volunteer or psychologist in doctors.
+            </p>
+          }
+        </div>
+        @if (assignmentError()) {
+          <p class="error-msg">{{ assignmentError() }}</p>
+        }
       </div>
 
       @if (lead.assignments?.length) {
@@ -204,6 +238,16 @@
               <span class="badge" [class]="followUpClass(assignment.status)">
                 {{ assignment.status }}
               </span>
+              @if (assignment.status !== 'CANCELLED' && assignment.status !== 'COMPLETED') {
+                <button
+                  type="button"
+                  class="btn-cancel-assignment"
+                  (click)="cancelAssignment(assignment.id)"
+                  [disabled]="!!assigning()"
+                >
+                  {{ assigning() === 'cancel:' + assignment.id ? 'Cancelling…' : 'Cancel' }}
+                </button>
+              }
             </article>
           }
         </div>

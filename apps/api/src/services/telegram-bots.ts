@@ -73,6 +73,11 @@ import type {
   TelegramUpdate
 } from './telegram-bots.types.js';
 import { upsertWebsiteLead } from './website-leads.service.js';
+import {
+  assignWebsiteLead,
+  isSafetyLead,
+  listAssignableLeadProviders
+} from './website-lead-assignments.js';
 
 export {
   setTelegramCommands,
@@ -846,6 +851,8 @@ async function notifyAdminsAboutSafetySupportLead(
   const userLine = session.linkedUser
     ? `${session.linkedUser.name} (${session.linkedUser.email || 'no email'})`
     : telegramDisplayName(session);
+  const providers = await listAssignableLeadProviders({ safety: true });
+  const assignmentRows = leadAssignmentRows(lead.id, providers);
 
   await Promise.allSettled(
     adminSessions.map((adminSession) =>
@@ -868,13 +875,8 @@ async function notifyAdminsAboutSafetySupportLead(
         parse_mode: 'HTML',
         reply_markup: {
           inline_keyboard: [
-            [
-              {
-                text: 'Assign psychologist',
-                callback_data: `lead:assign:psychologist:${lead.id}`
-              },
-              { text: 'Mark follow-up', callback_data: `lead:followup:${lead.id}` }
-            ],
+            ...assignmentRows,
+            [{ text: 'Mark follow-up', callback_data: `lead:followup:${lead.id}` }],
             [{ text: 'Open lead', url: leadAdminUrl(lead.id) }]
           ]
         }
@@ -885,6 +887,22 @@ async function notifyAdminsAboutSafetySupportLead(
 
 function leadAdminUrl(leadId: string) {
   return adminUrl(`/chat-inbox?leadId=${encodeURIComponent(leadId)}`);
+}
+
+type AssignableLeadProvider = Awaited<ReturnType<typeof listAssignableLeadProviders>>[number];
+
+function leadAssignmentRows(leadId: string, providers: AssignableLeadProvider[]): InlineButton[][] {
+  const providerRows = callbackRows(
+    providers.slice(0, 6).map((provider) => ({
+      text:
+        provider.assignmentType === 'PSYCHOLOGIST'
+          ? `Assign ${provider.name} (Psychologist)`
+          : `Assign ${provider.name}`,
+      callback_data: `lead:assign:${provider.providerId}:${leadId}`
+    })),
+    2
+  );
+  return providerRows;
 }
 
 async function notifyAdminsAboutTelegramLead(
@@ -924,6 +942,8 @@ async function notifyAdminsAboutTelegramLead(
       : details.kind === 'SUPPORT'
         ? 'Support request'
         : 'Volunteer request';
+  const providers = await listAssignableLeadProviders({ safety: details.safety });
+  const assignmentRows = leadAssignmentRows(lead.id, providers);
 
   await Promise.allSettled(
     adminSessions.map((adminSession) =>
@@ -946,14 +966,8 @@ async function notifyAdminsAboutTelegramLead(
         parse_mode: 'HTML',
         reply_markup: {
           inline_keyboard: [
-            [
-              { text: 'Assign Shyam', callback_data: `lead:assign:shyam:${lead.id}` },
-              { text: 'Assign Abhi', callback_data: `lead:assign:abhi:${lead.id}` }
-            ],
-            [
-              { text: 'Assign psychologist', callback_data: `lead:assign:psychologist:${lead.id}` },
-              { text: 'Mark follow-up', callback_data: `lead:followup:${lead.id}` }
-            ],
+            ...assignmentRows,
+            [{ text: 'Mark follow-up', callback_data: `lead:followup:${lead.id}` }],
             [{ text: 'Open lead', url: leadAdminUrl(lead.id) }]
           ]
         }
@@ -966,78 +980,47 @@ async function setLeadAssignmentIntent(
   kind: TelegramBotKind,
   session: TelegramSession,
   leadId: string,
-  assignee: 'shyam' | 'abhi' | 'psychologist'
+  providerId: string
 ) {
   if (kind !== TelegramBotKind.ADMIN || !(await requireLinked(kind, session))) return;
-  const labels = {
-    shyam: 'Shyam',
-    abhi: 'Abhi',
-    psychologist: 'Psychologist'
-  } as const;
-  const lead = await prisma.websiteLead.findUnique({
-    where: { id: leadId },
-    select: {
-      id: true,
-      visitorName: true,
-      visitorEmail: true,
-      visitorPhone: true,
-      concern: true,
-      preferredCallbackTime: true,
-      operatorNote: true
-    }
-  });
-  if (!lead) {
+  try {
+    const result = await assignWebsiteLead({
+      leadId,
+      providerId,
+      assignedById: session.linkedUserId!,
+      assignedByName: session.linkedUser?.name
+    });
+
     await sendTelegramMessage(kind, {
       chat_id: session.chatId,
-      text: 'Lead not found. It may have been deleted or merged.'
+      text: [
+        `Assignment created for lead ${leadId.slice(-8)}.`,
+        `Provider: ${escapeHtml(result.provider.name)}${
+          result.provider.email ? ` (${escapeHtml(result.provider.email)})` : ''
+        }`
+      ].join('\n'),
+      parse_mode: 'HTML',
+      reply_markup: {
+        inline_keyboard: [[{ text: 'Open lead', url: leadAdminUrl(leadId) }]]
+      }
     });
-    return;
+  } catch (error) {
+    const message =
+      error instanceof Error && error.message === 'LEAD_NOT_FOUND'
+        ? 'Lead not found. It may have been deleted or merged.'
+        : error instanceof Error && error.message === 'PROVIDER_NOT_FOUND'
+          ? 'Provider not found or inactive. Refresh the lead and try another provider.'
+          : error instanceof Error && error.message === 'SAFETY_LEAD_REQUIRES_PSYCHOLOGIST'
+            ? 'Safety leads can only be assigned to psychologist/admin escalation. Volunteer assignment is blocked.'
+            : 'Could not assign this lead right now.';
+    await sendTelegramMessage(kind, {
+      chat_id: session.chatId,
+      text: message,
+      reply_markup: {
+        inline_keyboard: [[{ text: 'Open lead', url: leadAdminUrl(leadId) }]]
+      }
+    });
   }
-
-  const provider = await providerForAssignment(assignee);
-  const assignmentType = assignee === 'psychologist' ? 'PSYCHOLOGIST' : 'VOLUNTEER';
-  const now = new Date();
-  const note = `[Telegram admin] Assigned to ${labels[assignee]} by ${session.linkedUser?.name || 'admin'} at ${now.toISOString()}`;
-
-  const assignment = await prisma.websiteLeadAssignment.create({
-    data: {
-      leadId,
-      providerId: provider?.id ?? null,
-      assignedById: session.linkedUserId ?? null,
-      assignmentType,
-      status: 'PENDING',
-      note
-    },
-    select: { id: true }
-  });
-
-  await prisma.websiteLead.update({
-    where: { id: leadId },
-    data: {
-      followUpStatus: 'NEEDS_CALLBACK',
-      operatorNote: [note, lead.operatorNote].filter(Boolean).join('\n')
-    }
-  });
-
-  await notifyProviderAboutLeadAssignment({
-    assignmentId: assignment.id,
-    providerId: provider?.id ?? null,
-    lead
-  });
-
-  await sendTelegramMessage(kind, {
-    chat_id: session.chatId,
-    text: [
-      `Assignment created: ${labels[assignee]} for lead ${leadId.slice(-8)}.`,
-      provider
-        ? `Provider: ${escapeHtml(provider.name)}${provider.email ? ` (${escapeHtml(provider.email)})` : ''}`
-        : 'No matching provider account found yet; assignment is saved without provider notification.'
-    ].join('\n'),
-    parse_mode: 'HTML',
-    reply_markup: {
-      inline_keyboard: [[{ text: 'Open lead', url: leadAdminUrl(leadId) }]]
-    }
-  });
 }
 
 async function markTelegramLeadFollowUp(
@@ -1074,105 +1057,6 @@ async function markTelegramLeadFollowUp(
       inline_keyboard: [[{ text: 'Open lead', url: leadAdminUrl(leadId) }]]
     }
   });
-}
-
-async function providerForAssignment(assignee: 'shyam' | 'abhi' | 'psychologist') {
-  const where =
-    assignee === 'shyam'
-      ? { user: { name: { contains: 'shyam', mode: 'insensitive' as const }, isActive: true } }
-      : assignee === 'abhi'
-        ? {
-            user: {
-              OR: [
-                { name: { contains: 'abhi', mode: 'insensitive' as const } },
-                { email: { contains: 'inboxmead', mode: 'insensitive' as const } }
-              ],
-              isActive: true
-            }
-          }
-        : {
-            showOnWebsite: true,
-            user: { isActive: true },
-            OR: [
-              { doctorType: 'PSYCHOLOGIST' as const },
-              { specialty: { contains: 'psycholog', mode: 'insensitive' as const } },
-              { designation: { contains: 'psycholog', mode: 'insensitive' as const } }
-            ]
-          };
-
-  const doctor = await prisma.doctor.findFirst({
-    where,
-    orderBy: [{ websiteOrder: { sort: 'asc', nulls: 'last' } }, { createdAt: 'asc' }],
-    select: {
-      userId: true,
-      user: { select: { id: true, name: true, email: true } }
-    }
-  });
-  return doctor?.user ?? null;
-}
-
-async function notifyProviderAboutLeadAssignment(input: {
-  assignmentId: string;
-  providerId: string | null;
-  lead: {
-    id: string;
-    visitorName: string | null;
-    visitorEmail: string | null;
-    visitorPhone: string | null;
-    concern: string | null;
-    preferredCallbackTime: string | null;
-  };
-}) {
-  if (!input.providerId) return;
-  const providerSessions = await prisma.telegramBotSession.findMany({
-    where: {
-      botKind: TelegramBotKind.DOCTOR,
-      linkedUserId: input.providerId,
-      linkedUser: { isActive: true, role: 'DOCTOR' }
-    },
-    select: { chatId: true }
-  });
-  if (!providerSessions.length) return;
-
-  await Promise.allSettled(
-    providerSessions.map((providerSession) =>
-      sendTelegramMessage(TelegramBotKind.DOCTOR, {
-        chat_id: providerSession.chatId,
-        text: [
-          '<b>New assigned support lead</b>',
-          `Lead: ${escapeHtml(input.lead.id.slice(-8))}`,
-          `User: ${escapeHtml(input.lead.visitorName || 'Visitor')}`,
-          input.lead.visitorEmail ? `Email: ${escapeHtml(input.lead.visitorEmail)}` : '',
-          input.lead.visitorPhone ? `Phone: ${escapeHtml(input.lead.visitorPhone)}` : '',
-          `Concern: ${escapeHtml(input.lead.concern || 'No concern added')}`,
-          input.lead.preferredCallbackTime
-            ? `Preferred time: ${escapeHtml(input.lead.preferredCallbackTime)}`
-            : '',
-          '',
-          'Please accept if you can handle this.'
-        ]
-          .filter(Boolean)
-          .join('\n'),
-        parse_mode: 'HTML',
-        reply_markup: {
-          inline_keyboard: [
-            [
-              { text: 'Accept', callback_data: `provider:assign:accept:${input.assignmentId}` },
-              { text: 'Decline', callback_data: `provider:assign:decline:${input.assignmentId}` }
-            ],
-            [
-              {
-                text: 'Mark contacted',
-                callback_data: `provider:assign:contacted:${input.assignmentId}`
-              },
-              { text: 'Complete', callback_data: `provider:assign:complete:${input.assignmentId}` }
-            ],
-            [{ text: 'My assignments', callback_data: 'doctor:assignments' }]
-          ]
-        }
-      })
-    )
-  );
 }
 
 async function showProviderAssignments(kind: TelegramBotKind, session: TelegramSession) {
@@ -1321,6 +1205,12 @@ async function notifyAdminsAboutAssignmentStatus(input: {
   if (!adminSessions.length) return;
 
   const isDeclined = input.status === 'DECLINED';
+  const reassignmentRows = isDeclined
+    ? leadAssignmentRows(
+        input.lead.id,
+        await listAssignableLeadProviders({ safety: isSafetyLead(input.lead.concern) })
+      )
+    : [];
   await Promise.allSettled(
     adminSessions.map((adminSession) =>
       sendTelegramMessage(TelegramBotKind.ADMIN, {
@@ -1338,19 +1228,7 @@ async function notifyAdminsAboutAssignmentStatus(input: {
         parse_mode: 'HTML',
         reply_markup: {
           inline_keyboard: isDeclined
-            ? [
-                [
-                  { text: 'Assign Shyam', callback_data: `lead:assign:shyam:${input.lead.id}` },
-                  { text: 'Assign Abhi', callback_data: `lead:assign:abhi:${input.lead.id}` }
-                ],
-                [
-                  {
-                    text: 'Assign psychologist',
-                    callback_data: `lead:assign:psychologist:${input.lead.id}`
-                  },
-                  { text: 'Open lead', url: leadAdminUrl(input.lead.id) }
-                ]
-              ]
+            ? [...reassignmentRows, [{ text: 'Open lead', url: leadAdminUrl(input.lead.id) }]]
             : [[{ text: 'Open lead', url: leadAdminUrl(input.lead.id) }]]
         }
       })
@@ -2304,9 +2182,9 @@ async function handleCallback(
   else if (data.startsWith('admin:safety_reviewed:'))
     await markSafetyFlagReviewed(kind, session, data.slice('admin:safety_reviewed:'.length));
   else if (data.startsWith('lead:assign:')) {
-    const [, , assignee, leadId] = data.split(':');
-    if (assignee === 'shyam' || assignee === 'abhi' || assignee === 'psychologist') {
-      await setLeadAssignmentIntent(kind, session, leadId, assignee);
+    const [, , providerId, leadId] = data.split(':');
+    if (providerId && leadId) {
+      await setLeadAssignmentIntent(kind, session, leadId, providerId);
     } else {
       await replyMenu(kind, session, 'Unknown assignment option.');
     }

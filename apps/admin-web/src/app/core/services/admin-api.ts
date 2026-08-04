@@ -206,6 +206,15 @@ export class AdminApi {
   updateVisitorLeadFollowUp(...args: Parameters<AdminDoctorsApi['updateVisitorLeadFollowUp']>) {
     return this.doctors.updateVisitorLeadFollowUp(...args);
   }
+  listAssignableLeadProviders(...args: Parameters<AdminDoctorsApi['listAssignableLeadProviders']>) {
+    return this.doctors.listAssignableLeadProviders(...args);
+  }
+  assignVisitorLead(...args: Parameters<AdminDoctorsApi['assignVisitorLead']>) {
+    return this.doctors.assignVisitorLead(...args);
+  }
+  cancelVisitorLeadAssignment(...args: Parameters<AdminDoctorsApi['cancelVisitorLeadAssignment']>) {
+    return this.doctors.cancelVisitorLeadAssignment(...args);
+  }
   bookVisitorLeadConsultation(...args: Parameters<AdminDoctorsApi['bookVisitorLeadConsultation']>) {
     return this.doctors.bookVisitorLeadConsultation(...args);
   }

@@ -3,16 +3,13 @@ import { z } from 'zod';
 import { Role, WebsiteLeadFollowUp } from '@prisma/client';
 import { authRequired, allowRoles } from '../../auth.js';
 import { prisma } from '../../db.js';
+import { asyncRoute, routeParam, queryPositiveInt, writeAuditLog } from '../../utils/helpers.js';
+import { leadInclude, updateLeadFollowUp } from '../../services/website-leads.service.js';
 import {
-  asyncRoute,
-  routeParam,
-  queryPositiveInt,
-  writeAuditLog
-} from '../../utils/helpers.js';
-import {
-  leadInclude,
-  updateLeadFollowUp
-} from '../../services/website-leads.service.js';
+  assignWebsiteLead,
+  cancelWebsiteLeadAssignment,
+  listAssignableLeadProviders
+} from '../../services/website-lead-assignments.js';
 import { bookConsultationFromLead } from '../../services/visitor-lead-booking.js';
 import { buildLeadFunnelReport } from '../../services/visitor-lead-analytics.js';
 import {
@@ -28,6 +25,7 @@ import {
 
 const VIEW_ROLES = [Role.ADMIN, Role.RECEPTIONIST, Role.PATIENT_COORDINATOR] as const;
 const FOLLOW_UP_ROLES = [Role.RECEPTIONIST, Role.PATIENT_COORDINATOR] as const;
+const ASSIGN_ROLES = [Role.ADMIN, Role.RECEPTIONIST, Role.PATIENT_COORDINATOR] as const;
 const BOOK_ROLES = [Role.RECEPTIONIST, Role.PATIENT_COORDINATOR, Role.ADMIN] as const;
 
 export function registerAdminVisitorLeadRoutes(router: Router) {
@@ -38,15 +36,15 @@ export function registerAdminVisitorLeadRoutes(router: Router) {
     asyncRoute(async (_req, res) => {
       const [total, newLeads, needsCallback, called, registered, booked, notInterested, bySource] =
         await Promise.all([
-        prisma.websiteLead.count(),
-        prisma.websiteLead.count({ where: { followUpStatus: 'NEW' } }),
-        prisma.websiteLead.count({ where: { followUpStatus: 'NEEDS_CALLBACK' } }),
-        prisma.websiteLead.count({ where: { followUpStatus: 'CALLED' } }),
-        prisma.websiteLead.count({ where: { followUpStatus: 'REGISTERED' } }),
-        prisma.websiteLead.count({ where: { followUpStatus: 'BOOKED' } }),
-        prisma.websiteLead.count({ where: { followUpStatus: 'NOT_INTERESTED' } }),
-        prisma.websiteLead.groupBy({ by: ['source'], _count: { _all: true } })
-      ]);
+          prisma.websiteLead.count(),
+          prisma.websiteLead.count({ where: { followUpStatus: 'NEW' } }),
+          prisma.websiteLead.count({ where: { followUpStatus: 'NEEDS_CALLBACK' } }),
+          prisma.websiteLead.count({ where: { followUpStatus: 'CALLED' } }),
+          prisma.websiteLead.count({ where: { followUpStatus: 'REGISTERED' } }),
+          prisma.websiteLead.count({ where: { followUpStatus: 'BOOKED' } }),
+          prisma.websiteLead.count({ where: { followUpStatus: 'NOT_INTERESTED' } }),
+          prisma.websiteLead.groupBy({ by: ['source'], _count: { _all: true } })
+        ]);
 
       res.json({
         stats: {
@@ -94,7 +92,8 @@ export function registerAdminVisitorLeadRoutes(router: Router) {
     authRequired,
     allowRoles(...VIEW_ROLES),
     asyncRoute(async (_req, res) => {
-      const { NOT_INTERESTED_REASONS } = await import('../../constants/visitor-lead-follow-up.constants.js');
+      const { NOT_INTERESTED_REASONS } =
+        await import('../../constants/visitor-lead-follow-up.constants.js');
       res.json({ notInterestedReasons: NOT_INTERESTED_REASONS });
     })
   );
@@ -115,6 +114,17 @@ export function registerAdminVisitorLeadRoutes(router: Router) {
       res.setHeader('Content-Type', 'text/csv; charset=utf-8');
       res.setHeader('Content-Disposition', 'attachment; filename="visitor-leads.csv"');
       res.send(csv);
+    })
+  );
+
+  router.get(
+    '/admin/visitor-leads/assignable-providers',
+    authRequired,
+    allowRoles(...ASSIGN_ROLES),
+    asyncRoute(async (req, res) => {
+      const safety = String(req.query.safety ?? '').toLowerCase() === 'true';
+      const providers = await listAssignableLeadProviders({ safety });
+      res.json({ providers });
     })
   );
 
@@ -231,6 +241,90 @@ export function registerAdminVisitorLeadRoutes(router: Router) {
     })
   );
 
+  router.post(
+    '/admin/visitor-leads/:id/assign',
+    authRequired,
+    allowRoles(...ASSIGN_ROLES),
+    asyncRoute(async (req, res) => {
+      const id = routeParam(req, 'id');
+      const body = z.object({ providerId: z.string().min(1) }).parse(req.body);
+
+      try {
+        const result = await assignWebsiteLead({
+          leadId: id,
+          providerId: body.providerId,
+          assignedById: req.user!.id,
+          assignedByName: req.user!.name
+        });
+
+        await writeAuditLog({
+          actorId: req.user!.id,
+          actorRole: req.user!.role,
+          action: 'visitor_lead.assign',
+          targetType: 'website_lead',
+          targetId: id,
+          summary: `Lead assigned to ${result.provider?.name || body.providerId}.`,
+          metadata: { assignmentId: result.assignment.id, providerId: result.provider?.id ?? null }
+        });
+
+        const lead = await prisma.websiteLead.findUnique({ where: { id }, include: leadInclude });
+        res.status(201).json({ lead, assignment: result.assignment, provider: result.provider });
+      } catch (error) {
+        if (error instanceof Error) {
+          if (error.message === 'LEAD_NOT_FOUND') {
+            return res.status(404).json({ message: 'Lead not found.' });
+          }
+          if (error.message === 'PROVIDER_NOT_FOUND') {
+            return res.status(404).json({ message: 'Assignable provider not found.' });
+          }
+          if (error.message === 'SAFETY_LEAD_REQUIRES_PSYCHOLOGIST') {
+            return res
+              .status(400)
+              .json({
+                message: 'Safety leads can only be assigned to psychologist/admin escalation.'
+              });
+          }
+        }
+        throw error;
+      }
+    })
+  );
+
+  router.post(
+    '/admin/visitor-leads/assignments/:assignmentId/cancel',
+    authRequired,
+    allowRoles(...ASSIGN_ROLES),
+    asyncRoute(async (req, res) => {
+      const assignmentId = routeParam(req, 'assignmentId');
+      try {
+        const assignment = await cancelWebsiteLeadAssignment({
+          assignmentId,
+          actorName: req.user!.name
+        });
+
+        await writeAuditLog({
+          actorId: req.user!.id,
+          actorRole: req.user!.role,
+          action: 'visitor_lead.assignment_cancel',
+          targetType: 'website_lead_assignment',
+          targetId: assignmentId,
+          summary: 'Lead assignment cancelled.'
+        });
+
+        const lead = await prisma.websiteLead.findUnique({
+          where: { id: assignment.leadId },
+          include: leadInclude
+        });
+        res.json({ lead, assignment });
+      } catch (error) {
+        if (error instanceof Error && error.message === 'ASSIGNMENT_NOT_FOUND') {
+          return res.status(404).json({ message: 'Assignment not found.' });
+        }
+        throw error;
+      }
+    })
+  );
+
   router.get(
     '/admin/analytics/lead-funnel',
     authRequired,
@@ -295,7 +389,8 @@ export function registerAdminVisitorLeadRoutes(router: Router) {
           return res.status(400).json({ message: error.message });
         }
         if (error instanceof Error) {
-          if (error.message === 'LEAD_NOT_FOUND') return res.status(404).json({ message: 'Lead not found.' });
+          if (error.message === 'LEAD_NOT_FOUND')
+            return res.status(404).json({ message: 'Lead not found.' });
           if (error.message === 'LEAD_ALREADY_BOOKED') {
             return res.status(409).json({ message: 'Lead already has a consultation.' });
           }

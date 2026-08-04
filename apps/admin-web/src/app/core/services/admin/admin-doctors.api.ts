@@ -410,6 +410,42 @@ export class AdminDoctorsApi extends AdminApiBase {
     );
   }
 
+  listAssignableLeadProviders(safety = false) {
+    return firstValueFrom(
+      this.http.get<{
+        providers: Array<{
+          doctorId: string;
+          providerId: string;
+          name: string;
+          email?: string | null;
+          specialty?: string | null;
+          designation?: string | null;
+          assignmentType: 'VOLUNTEER' | 'PSYCHOLOGIST' | 'ADMIN';
+        }>;
+      }>(`${this.apiBase}${API_PATHS.ADMIN.VISITOR_LEAD_ASSIGNABLE_PROVIDERS}`, {
+        params: { safety: String(safety) },
+      }),
+    );
+  }
+
+  assignVisitorLead(id: string, providerId: string) {
+    return firstValueFrom(
+      this.http.post<{ lead: any; assignment: any; provider: any }>(
+        `${this.apiBase}${API_PATHS.ADMIN.VISITOR_LEAD_ASSIGN(id)}`,
+        { providerId },
+      ),
+    );
+  }
+
+  cancelVisitorLeadAssignment(assignmentId: string) {
+    return firstValueFrom(
+      this.http.post<{ lead: any; assignment: any }>(
+        `${this.apiBase}${API_PATHS.ADMIN.VISITOR_LEAD_ASSIGNMENT_CANCEL(assignmentId)}`,
+        {},
+      ),
+    );
+  }
+
   bookVisitorLeadConsultation(
     id: string,
     payload: { diseaseId: string; storeId?: string; collectCash?: boolean; notes?: string },

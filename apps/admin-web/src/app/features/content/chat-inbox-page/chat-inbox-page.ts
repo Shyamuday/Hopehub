@@ -65,6 +65,16 @@ type FollowUpFilter =
   | 'NOT_INTERESTED'
   | 'CLOSED';
 
+type AssignableProvider = {
+  doctorId: string;
+  providerId: string;
+  name: string;
+  email?: string | null;
+  specialty?: string | null;
+  designation?: string | null;
+  assignmentType: 'VOLUNTEER' | 'PSYCHOLOGIST' | 'ADMIN';
+};
+
 @Component({
   selector: 'app-chat-inbox-page',
   imports: [CommonModule, FormsModule],
@@ -93,6 +103,10 @@ export class ChatInboxPage implements OnDestroy {
   readonly notInterestedOnly = signal(false);
   readonly csvExporting = signal(false);
   readonly csvError = signal('');
+  readonly assigning = signal('');
+  readonly assignmentError = signal('');
+  readonly assignableProviders = signal<AssignableProvider[]>([]);
+  readonly assignableProvidersLoading = signal(false);
   readonly stats = signal<{
     total: number;
     newLeads: number;
@@ -115,6 +129,7 @@ export class ChatInboxPage implements OnDestroy {
 
   backToList() {
     this.selected.set(null);
+    this.assignableProviders.set([]);
     this.mobileLayout.clearPageFocus();
   }
 
@@ -156,6 +171,7 @@ export class ChatInboxPage implements OnDestroy {
 
   async applyAdvancedFilters() {
     this.selected.set(null);
+    this.assignableProviders.set([]);
     await this.load();
   }
 
@@ -181,14 +197,17 @@ export class ChatInboxPage implements OnDestroy {
   async setFilter(status: FollowUpFilter) {
     this.followUpFilter.set(status);
     this.selected.set(null);
+    this.assignableProviders.set([]);
     await this.load();
   }
 
   async selectLead(id: string) {
     this.detailLoading.set(true);
+    this.assignableProviders.set([]);
     try {
       const res = await this.api.getVisitorLead(id);
       this.selected.set(res.lead);
+      await this.loadAssignableProviders(res.lead);
       this.syncMobileFocus();
     } catch {
       this.error.set('Could not load lead.');
@@ -258,6 +277,68 @@ export class ChatInboxPage implements OnDestroy {
       hour: '2-digit',
       minute: '2-digit',
     });
+  }
+
+  isSafetyLead(lead: WebsiteLead): boolean {
+    return /safety|self[-\s]?harm|suicide|unsafe|danger|emergency|violence|overdose/i.test(
+      lead.concern || lead.visitorIssue || '',
+    );
+  }
+
+  async loadAssignableProviders(lead: WebsiteLead) {
+    this.assignableProvidersLoading.set(true);
+    this.assignmentError.set('');
+    try {
+      const res = await this.api.listAssignableLeadProviders(this.isSafetyLead(lead));
+      this.assignableProviders.set(res.providers);
+    } catch {
+      this.assignableProviders.set([]);
+      this.assignmentError.set('Could not load assignable providers.');
+    } finally {
+      this.assignableProvidersLoading.set(false);
+    }
+  }
+
+  providerLabel(provider: AssignableProvider): string {
+    const role =
+      provider.assignmentType === 'PSYCHOLOGIST'
+        ? 'Psychologist'
+        : provider.assignmentType === 'ADMIN'
+          ? 'Admin'
+          : 'Volunteer';
+    return [role, provider.designation || provider.specialty].filter(Boolean).join(' · ');
+  }
+
+  async assignLead(providerId: string) {
+    const lead = this.selected();
+    if (!lead) return;
+    this.assigning.set(providerId);
+    this.assignmentError.set('');
+    try {
+      const res = await this.api.assignVisitorLead(lead.id, providerId);
+      this.selected.set(res.lead);
+      this.leads.update((items) => items.map((item) => (item.id === lead.id ? res.lead : item)));
+    } catch (error: any) {
+      this.assignmentError.set(error?.error?.message || 'Could not assign this lead.');
+    } finally {
+      this.assigning.set('');
+    }
+  }
+
+  async cancelAssignment(assignmentId: string) {
+    const lead = this.selected();
+    if (!lead) return;
+    this.assigning.set(`cancel:${assignmentId}`);
+    this.assignmentError.set('');
+    try {
+      const res = await this.api.cancelVisitorLeadAssignment(assignmentId);
+      this.selected.set(res.lead);
+      this.leads.update((items) => items.map((item) => (item.id === lead.id ? res.lead : item)));
+    } catch (error: any) {
+      this.assignmentError.set(error?.error?.message || 'Could not cancel this assignment.');
+    } finally {
+      this.assigning.set('');
+    }
   }
 
   leadPreview(lead: WebsiteLead): string {
