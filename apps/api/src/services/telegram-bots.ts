@@ -1,48 +1,69 @@
-import {
-  ConsultationStatus,
-  CounsellorApplicationStatus,
-  LivePresenceStatus,
-  Prisma,
-  TelegramBotKind
-} from '@prisma/client';
+import { Prisma, TelegramBotKind } from '@prisma/client';
 import { prisma } from '../db.js';
-import { getMailTransporter } from './mail.js';
-import {
-  devOtp,
-  generateOtp,
-  isProduction,
-  sendOtpEmail,
-  storeOtp,
-  verifyOtpDetailed
-} from './otp.js';
-import { setDoctorLiveStatus } from './online-doctor-presence.js';
 import {
   assertAssessmentAccess,
+  getAssessmentAccessStatus,
   getAssessmentDefinition,
   scoreAssessment,
   type AssessmentDefinitionRecord
 } from './assessment-definitions.js';
 import {
   bookingConcernOptions,
-  botKindBySlug,
-  botNameByKind,
   botSlugByKind,
   callbackTimeOptions,
   planTaskPresets,
   reviewPresets,
-  roleByKind,
   supportChannelOptions,
   volunteerConcernOptions
 } from './telegram-bots.config.js';
 import { answerTelegramCallback, sendTelegramMessage } from './telegram-bots.client.js';
-import { adminUrl, callbackRows, doctorUrl, menuCancelRows, webUrl } from './telegram-bots.ui.js';
+import { adminUrl, callbackRows, menuCancelRows, webUrl } from './telegram-bots.ui.js';
+import {
+  cancelPending,
+  replyMenu,
+  requireLinked,
+  showMe,
+  startLink,
+  unlink,
+  verifyLink
+} from './telegram-bots.account.js';
+import { answerButtonRows, assessmentNavRows } from './telegram-bots.assessment-ui.js';
+import {
+  escapeHtml,
+  metadataOf,
+  telegramDisplayName,
+  todayStart
+} from './telegram-bots.helpers.js';
+import { helpText, startGuideText } from './telegram-bots.menus.js';
+import {
+  assessmentPaymentUrl,
+  dashboardPaymentUrl,
+  donationPaymentUrl,
+  paymentHubRows,
+  rupees,
+  sessionPaymentUrl,
+  volunteerApplicationUrl,
+  volunteerTalkPaymentUrl,
+  withTelegramSource
+} from './telegram-bots.payments.js';
+import {
+  adminContributors,
+  adminLeads,
+  adminSummary,
+  doctorQueue,
+  setDoctorPresence
+} from './telegram-bots.ops.js';
+import {
+  ensureSession,
+  logEvent,
+  updateSession,
+  type TelegramSession
+} from './telegram-bots.sessions.js';
 import type {
   InlineButton,
   SessionMetadata,
   TelegramCallbackQuery,
-  TelegramChat,
-  TelegramUpdate,
-  TelegramUser
+  TelegramUpdate
 } from './telegram-bots.types.js';
 import { upsertWebsiteLead } from './website-leads.service.js';
 
@@ -53,474 +74,28 @@ export {
   telegramBotToken,
   telegramWebhookSecret
 } from './telegram-bots.client.js';
+export { telegramBotKindFromSlug } from './telegram-bots.menus.js';
 export type { TelegramUpdate } from './telegram-bots.types.js';
 
-type TelegramSession = Awaited<ReturnType<typeof ensureSession>>;
+async function showPaymentHub(kind: TelegramBotKind, session: TelegramSession) {
+  if (!(await requireLinked(kind, session))) return;
 
-function escapeHtml(value: string | null | undefined) {
-  return (value || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-}
-
-function todayStart() {
-  const now = new Date();
-  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
-}
-
-function metadataOf(session: { metadata?: Prisma.JsonValue | null }): SessionMetadata {
-  if (
-    !session.metadata ||
-    typeof session.metadata !== 'object' ||
-    Array.isArray(session.metadata)
-  ) {
-    return {};
-  }
-  return session.metadata as SessionMetadata;
-}
-
-function telegramDisplayName(session: TelegramSession) {
-  return session.firstName || session.username || 'Telegram user';
-}
-
-function answerButtonRows(definition: AssessmentDefinitionRecord): InlineButton[][] {
-  return callbackRows(
-    definition.config.responseOptions.map((option) => ({
-      text: option.label,
-      callback_data: `assessment:answer:${option.value}`
-    })),
-    1
-  );
-}
-
-function assessmentNavRows(questionIndex: number): InlineButton[][] {
-  return [
-    [
-      ...(questionIndex > 0 ? [{ text: 'Back', callback_data: 'assessment:back' }] : []),
-      { text: 'Pause', callback_data: 'assessment:pause' }
-    ]
-  ];
-}
-
-export function telegramBotKindFromSlug(slug: string): TelegramBotKind | null {
-  return (botKindBySlug as Record<string, TelegramBotKind | undefined>)[slug] ?? null;
-}
-
-function menuFor(kind: TelegramBotKind, linked: boolean): InlineButton[][] {
-  if (kind === TelegramBotKind.USER) {
-    return [
-      [
-        { text: 'Daily plan', callback_data: 'user:plan' },
-        { text: 'Take assessment', callback_data: 'user:assessments' }
-      ],
-      [{ text: 'My assessment results', callback_data: 'user:results' }],
-      [
-        { text: 'Add task', callback_data: 'user:addtask' },
-        { text: 'Review day', callback_data: 'user:review' }
-      ],
-      [
-        { text: 'Book session', callback_data: 'user:book' },
-        { text: 'Volunteer support', callback_data: 'user:volunteer' }
-      ],
-      [
-        linked
-          ? { text: 'My account', callback_data: 'common:me' }
-          : { text: 'Link account', callback_data: 'common:link' },
-        { text: 'Open Hope Hub', url: webUrl('/profile') }
-      ]
-    ];
-  }
-
-  if (kind === TelegramBotKind.DOCTOR) {
-    return [
-      [
-        { text: 'My queue', callback_data: 'doctor:queue' },
-        { text: 'Go online', callback_data: 'doctor:online' }
-      ],
-      [
-        { text: 'Go offline', callback_data: 'doctor:offline' },
-        linked
-          ? { text: 'My account', callback_data: 'common:me' }
-          : { text: 'Link account', callback_data: 'common:link' }
-      ],
-      [{ text: 'Open doctor app', url: doctorUrl('/') }]
-    ];
-  }
-
-  return [
-    [
-      { text: 'Ops summary', callback_data: 'admin:summary' },
-      { text: 'New leads', callback_data: 'admin:leads' }
-    ],
-    [
-      { text: 'Contributors', callback_data: 'admin:contributors' },
-      linked
-        ? { text: 'My account', callback_data: 'common:me' }
-        : { text: 'Link account', callback_data: 'common:link' }
-    ],
-    [{ text: 'Open admin', url: adminUrl('/') }]
-  ];
-}
-
-function helpText(kind: TelegramBotKind) {
-  if (kind === TelegramBotKind.USER) {
-    return [
-      '<b>Care bot commands</b>',
-      '/link email@example.com - link your account',
-      '/plan - show today plan',
-      '/assessments - take an assessment test',
-      '/results - latest assessment results',
-      '/addtask - add a task',
-      '/review - save end-of-day review',
-      '/book - request a session',
-      '/volunteer - request volunteer support',
-      '',
-      'This bot is not an emergency service.'
-    ].join('\n');
-  }
-  if (kind === TelegramBotKind.DOCTOR) {
-    return [
-      '<b>Doctor bot commands</b>',
-      '/link doctor@example.com - link doctor account',
-      '/queue - real queue summary',
-      '/online - mark online',
-      '/offline - mark offline'
-    ].join('\n');
-  }
-  return [
-    '<b>Ops bot commands</b>',
-    '/link admin@example.com - link admin account',
-    '/summary - ops summary',
-    '/leads - new leads',
-    '/contributors - contributor applications'
-  ].join('\n');
-}
-
-function startGuideText(kind: TelegramBotKind, session: TelegramSession) {
-  const linkedLine = session.linkedUser
-    ? `Linked as ${escapeHtml(session.linkedUser.name)}.`
-    : 'Not linked yet. Send /link your-email@example.com, then /verify OTP.';
-
-  if (kind === TelegramBotKind.USER) {
-    return [
-      '<b>Hope Hub Care Bot</b>',
-      linkedLine,
-      '',
-      '<b>Purpose</b>',
-      'This bot helps you manage daily wellness tasks, request sessions, and ask for volunteer support from Telegram.',
-      '',
-      '<b>What you can do</b>',
-      '• Create and review your daily plan',
-      '• Add and tick daily tasks',
-      '• Request booking follow-up',
-      '• Request volunteer support',
-      '',
-      '<b>Safety guideline</b>',
-      'This bot is not an emergency service and does not replace a doctor, psychologist, or crisis helpline. If there is immediate danger, contact local emergency services now.',
-      '',
-      '<b>Privacy guideline</b>',
-      'Avoid sharing highly sensitive personal details in Telegram. For private records, use the Hope Hub app/profile.',
-      '',
-      'Start with /link, /plan, /book, or /help.'
-    ].join('\n');
-  }
-
-  if (kind === TelegramBotKind.DOCTOR) {
-    return [
-      '<b>Hope Hub Provider Bot</b>',
-      linkedLine,
-      '',
-      '<b>Purpose</b>',
-      'This bot gives providers quick access to queue status and online availability controls.',
-      '',
-      '<b>What you can do</b>',
-      '• View assigned queue summary',
-      '• Mark yourself online/offline',
-      '• Open the secure doctor panel',
-      '',
-      '<b>Clinical privacy guideline</b>',
-      'Do not share diagnosis, prescriptions, or detailed patient records inside Telegram. Use the secure doctor app for clinical work.',
-      '',
-      'Start with /link, /queue, /online, or /help.'
-    ].join('\n');
-  }
-
-  return [
-    '<b>Hope Hub Ops Bot</b>',
-    linkedLine,
-    '',
-    '<b>Purpose</b>',
-    'This bot helps admins monitor leads, contributor applications, and operational workload from Telegram.',
-    '',
-    '<b>What you can do</b>',
-    '• See ops summary',
-    '• Review latest leads',
-    '• Check contributor application queue',
-    '• Open secure admin pages',
-    '',
-    '<b>Security guideline</b>',
-    'Admin actions are role-gated. Do not paste patient-sensitive details in Telegram; use the admin panel for private records and approvals.',
-    '',
-    'Start with /link, /summary, /leads, or /help.'
-  ].join('\n');
-}
-
-async function ensureSession(kind: TelegramBotKind, chat: TelegramChat, from?: TelegramUser) {
-  const chatId = String(chat.id);
-  return prisma.telegramBotSession.upsert({
-    where: { botKind_chatId: { botKind: kind, chatId } },
-    create: {
-      botKind: kind,
-      chatId,
-      telegramUserId: from?.id ? String(from.id) : null,
-      username: from?.username ?? null,
-      firstName: from?.first_name ?? null,
-      lastName: from?.last_name ?? null
-    },
-    update: {
-      telegramUserId: from?.id ? String(from.id) : undefined,
-      username: from?.username ?? undefined,
-      firstName: from?.first_name ?? undefined,
-      lastName: from?.last_name ?? undefined
-    },
-    include: {
-      linkedUser: {
-        select: { id: true, name: true, email: true, mobile: true, role: true, isActive: true }
-      }
-    }
-  });
-}
-
-async function updateSession(session: TelegramSession, data: Prisma.TelegramBotSessionUpdateInput) {
-  return prisma.telegramBotSession.update({
-    where: { id: session.id },
-    data,
-    include: {
-      linkedUser: {
-        select: { id: true, name: true, email: true, mobile: true, role: true, isActive: true }
-      }
-    }
-  });
-}
-
-async function logEvent(input: {
-  kind: TelegramBotKind;
-  sessionId?: string;
-  updateId?: number;
-  chatId?: string;
-  eventType: string;
-  payload?: unknown;
-}) {
-  await prisma.telegramBotEvent.create({
-    data: {
-      sessionId: input.sessionId,
-      botKind: input.kind,
-      updateId: input.updateId == null ? null : BigInt(input.updateId),
-      chatId: input.chatId,
-      eventType: input.eventType,
-      payload: input.payload as Prisma.InputJsonValue
-    }
-  });
-}
-
-async function replyMenu(kind: TelegramBotKind, session: TelegramSession, text: string) {
-  await sendTelegramMessage(kind, {
-    chat_id: session.chatId,
-    text,
-    parse_mode: 'HTML',
-    reply_markup: { inline_keyboard: menuFor(kind, Boolean(session.linkedUserId)) }
-  });
-}
-
-async function cancelPending(kind: TelegramBotKind, session: TelegramSession) {
-  const updated = await updateSession(session, {
-    state: 'ACTIVE',
-    metadata: {},
-    lastCommand: '/cancel'
-  });
-  await replyMenu(kind, updated, 'Cancelled. Back to main menu.');
-}
-
-function assertLinkedRole(kind: TelegramBotKind, session: TelegramSession) {
-  const expectedRole = roleByKind[kind];
-  return Boolean(
-    session.linkedUserId &&
-    session.linkedUser &&
-    session.linkedUser.role === expectedRole &&
-    session.linkedUser.isActive
-  );
-}
-
-async function requireLinked(kind: TelegramBotKind, session: TelegramSession) {
-  if (assertLinkedRole(kind, session)) return true;
   await sendTelegramMessage(kind, {
     chat_id: session.chatId,
     text: [
-      'Please link your Hope Hub account first.',
+      '<b>Hope Hub payments</b>',
+      'Use these secure website links from Telegram.',
       '',
-      'Tap Link account, then send your registered email. After OTP arrives, send only the OTP.'
-    ].join('\n'),
-    reply_markup: {
-      inline_keyboard: [
-        [{ text: 'Link account', callback_data: 'common:link' }],
-        [{ text: 'Main menu', callback_data: 'common:menu' }]
-      ]
-    }
-  });
-  return false;
-}
-
-async function startLink(kind: TelegramBotKind, session: TelegramSession, emailText?: string) {
-  const email = (emailText || '').trim().toLowerCase();
-  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    await updateSession(session, { state: 'WAITING_LINK_EMAIL', lastCommand: '/link' });
-    await sendTelegramMessage(kind, {
-      chat_id: session.chatId,
-      text: 'Please send your registered Hope Hub email address.',
-      reply_markup: { inline_keyboard: menuCancelRows() }
-    });
-    return;
-  }
-
-  const expectedRole = roleByKind[kind];
-  const user = await prisma.user.findFirst({
-    where: { email, role: expectedRole, isActive: true },
-    select: { id: true, email: true, name: true, role: true }
-  });
-
-  if (!user) {
-    await sendTelegramMessage(kind, {
-      chat_id: session.chatId,
-      text: `No active ${expectedRole.toLowerCase()} account was found for this email.`
-    });
-    return;
-  }
-
-  if (isProduction && !getMailTransporter()) {
-    await sendTelegramMessage(kind, {
-      chat_id: session.chatId,
-      text: 'Email OTP delivery is not configured right now. Please try later.'
-    });
-    return;
-  }
-
-  const otp = isProduction ? generateOtp() : devOtp;
-  const otpKey = `telegram:${kind}:${session.id}:${email}`;
-  await storeOtp(otpKey, otp);
-  if (isProduction) {
-    await sendOtpEmail(email, otp);
-  } else {
-    console.info(`[telegram] DEV OTP for ${email}: ${otp}`);
-  }
-
-  const metadata: SessionMetadata = {
-    ...metadataOf(session),
-    pendingLink: {
-      email,
-      otpKey,
-      role: expectedRole,
-      requestedAt: new Date().toISOString()
-    }
-  };
-
-  await updateSession(session, {
-    state: 'LINK_OTP',
-    metadata: metadata as Prisma.InputJsonValue,
-    lastCommand: '/link'
-  });
-
-  await sendTelegramMessage(kind, {
-    chat_id: session.chatId,
-    text: `OTP sent to ${email}.\nPlease send only the OTP code.`,
-    reply_markup: {
-      inline_keyboard: [
-        [
-          { text: 'Resend OTP', callback_data: 'common:resend_otp' },
-          { text: 'Change email', callback_data: 'common:link' }
-        ],
-        ...menuCancelRows()
-      ]
-    }
-  });
-}
-
-async function verifyLink(kind: TelegramBotKind, session: TelegramSession, otpText?: string) {
-  const metadata = metadataOf(session);
-  const pending = metadata.pendingLink;
-  const otp = (otpText || '').trim();
-  if (!pending || !otp) {
-    await sendTelegramMessage(kind, {
-      chat_id: session.chatId,
-      text: 'No pending link request. Send /link your-email@example.com first.'
-    });
-    return;
-  }
-
-  const result = await verifyOtpDetailed(pending.otpKey, otp);
-  if (!result.ok) {
-    await sendTelegramMessage(kind, {
-      chat_id: session.chatId,
-      text: 'Invalid or expired OTP. Send /link your-email@example.com to request a fresh one.'
-    });
-    return;
-  }
-
-  const user = await prisma.user.findFirst({
-    where: { email: pending.email, role: pending.role, isActive: true },
-    select: { id: true, name: true, email: true, role: true }
-  });
-  if (!user) {
-    await sendTelegramMessage(kind, {
-      chat_id: session.chatId,
-      text: 'The account could not be linked. Please contact support.'
-    });
-    return;
-  }
-
-  const nextMetadata: SessionMetadata = { ...metadata };
-  delete nextMetadata.pendingLink;
-  const linkedSession = await updateSession(session, {
-    linkedUser: { connect: { id: user.id } },
-    state: 'ACTIVE',
-    metadata: nextMetadata as Prisma.InputJsonValue,
-    lastCommand: '/verify'
-  });
-
-  await replyMenu(
-    kind,
-    linkedSession,
-    `<b>Linked.</b>\n${escapeHtml(user.name)} is now connected to this ${botNameByKind[kind]}.`
-  );
-}
-
-async function unlink(kind: TelegramBotKind, session: TelegramSession) {
-  const updated = await updateSession(session, {
-    linkedUser: { disconnect: true },
-    state: 'ACTIVE',
-    metadata: {},
-    lastCommand: '/unlink'
-  });
-  await replyMenu(kind, updated, 'Telegram account unlinked.');
-}
-
-async function showMe(kind: TelegramBotKind, session: TelegramSession) {
-  if (!session.linkedUser) {
-    await requireLinked(kind, session);
-    return;
-  }
-  await sendTelegramMessage(kind, {
-    chat_id: session.chatId,
-    text: [
-      '<b>Linked account</b>',
-      `Name: ${escapeHtml(session.linkedUser.name)}`,
-      `Role: ${session.linkedUser.role}`,
-      `Email: ${escapeHtml(session.linkedUser.email || 'Not added')}`
+      '• Session booking: pay full amount or deposit',
+      '• Paid assessments: unlock and take tests',
+      '• Pending payments: retry from dashboard',
+      '• Volunteer talk/support: open paid support route',
+      '• Donations: support Hope Hub work',
+      '',
+      'Payment is completed on the Hope Hub website through Razorpay.'
     ].join('\n'),
     parse_mode: 'HTML',
-    reply_markup: {
-      inline_keyboard: [
-        [{ text: 'Unlink', callback_data: 'common:unlink' }],
-        [{ text: 'Menu', callback_data: 'common:menu' }]
-      ]
-    }
+    reply_markup: { inline_keyboard: paymentHubRows(session) }
   });
 }
 
@@ -549,6 +124,21 @@ async function listAssessments(kind: TelegramBotKind, session: TelegramSession) 
     return;
   }
 
+  const paidAssessmentIds = definitions
+    .filter((definition) => definition.accessMode === 'PAID')
+    .map((definition) => definition.id);
+  const activeGrants = paidAssessmentIds.length
+    ? await prisma.assessmentAccessGrant.findMany({
+        where: {
+          userId: session.linkedUserId!,
+          assessmentId: { in: paidAssessmentIds },
+          OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }]
+        },
+        select: { assessmentId: true }
+      })
+    : [];
+  const unlockedAssessmentIds = new Set(activeGrants.map((grant) => grant.assessmentId));
+
   await sendTelegramMessage(kind, {
     chat_id: session.chatId,
     text: [
@@ -562,11 +152,19 @@ async function listAssessments(kind: TelegramBotKind, session: TelegramSession) 
       inline_keyboard: [
         ...definitions.map((definition) => [
           {
-            text: `${definition.title}${definition.accessMode === 'PAID' ? ' 🔒' : ''}`,
+            text:
+              definition.accessMode === 'PAID'
+                ? `${unlockedAssessmentIds.has(definition.id) ? '✅' : '🔒'} ${definition.title}${unlockedAssessmentIds.has(definition.id) ? '' : ` ${rupees(definition.priceInPaise)}`}`
+                : definition.title,
             callback_data: `assessment:start:${definition.id}`
           }
         ]),
-        [{ text: 'Open all tests', url: webUrl('/assessments') }],
+        [
+          {
+            text: 'Open all / pay for tests',
+            url: webUrl(withTelegramSource('/assessments', session, { action: 'paid_tests' }))
+          }
+        ],
         ...menuCancelRows()
       ]
     }
@@ -593,18 +191,36 @@ async function startAssessment(
   try {
     await assertAssessmentAccess(definition, session.linkedUserId!);
   } catch (error) {
+    const access = await getAssessmentAccessStatus(definition, session.linkedUserId);
+    const amountLabel = rupees(access.priceInPaise);
     await sendTelegramMessage(kind, {
       chat_id: session.chatId,
       text: [
         `<b>${escapeHtml(definition.title)}</b>`,
         error instanceof Error ? escapeHtml(error.message) : 'This assessment is locked.',
+        access.reason === 'PAYMENT_REQUIRED' && amountLabel
+          ? `Price: ${escapeHtml(amountLabel)}`
+          : '',
+        definition.couponLabel ? `Coupon available: ${escapeHtml(definition.couponLabel)}` : '',
+        definition.accessNote ? escapeHtml(definition.accessNote) : '',
         '',
-        'Open the web app to unlock or continue.'
-      ].join('\n'),
+        'Payment opens on the Hope Hub website through secure Razorpay checkout. After payment, come back and tap this test again.'
+      ]
+        .filter(Boolean)
+        .join('\n'),
       parse_mode: 'HTML',
       reply_markup: {
         inline_keyboard: [
-          [{ text: 'Open assessment', url: webUrl(`/assessments/${definition.id}`) }],
+          [
+            {
+              text: amountLabel ? `Pay ${amountLabel} & unlock` : 'Pay & unlock',
+              url: assessmentPaymentUrl(definition, session)
+            }
+          ],
+          [
+            { text: 'Open assessment page', url: assessmentPaymentUrl(definition, session) },
+            { text: 'Payment help', url: webUrl('/payment-policy') }
+          ],
           ...menuCancelRows()
         ]
       }
@@ -1386,12 +1002,31 @@ async function promptLeadConcern(
   leadKind: 'BOOKING' | 'VOLUNTEER'
 ) {
   const options = leadKind === 'BOOKING' ? bookingConcernOptions : volunteerConcernOptions;
+  const paymentRows: InlineButton[][] =
+    leadKind === 'BOOKING'
+      ? [
+          [
+            { text: 'Book & pay now', url: sessionPaymentUrl(session) },
+            { text: 'Pay deposit', url: sessionPaymentUrl(session, 'PARTIAL') }
+          ],
+          [{ text: 'Retry pending payment', url: dashboardPaymentUrl(session) }]
+        ]
+      : [
+          [
+            { text: 'Pay for volunteer talk', url: volunteerTalkPaymentUrl(session) },
+            { text: 'Become volunteer', url: volunteerApplicationUrl(session) }
+          ],
+          [{ text: 'Donate/support free talks', url: donationPaymentUrl(session) }]
+        ];
   await sendTelegramMessage(kind, {
     chat_id: session.chatId,
     text:
-      leadKind === 'BOOKING' ? 'What do you need help with?' : 'What volunteer option do you want?',
+      leadKind === 'BOOKING'
+        ? 'What do you need help with? You can also book and pay directly below.'
+        : 'What volunteer option do you want? Paid talk, volunteer application, and donation links are below.',
     reply_markup: {
       inline_keyboard: [
+        ...paymentRows,
         ...callbackRows(
           options.map((option) => ({
             text: option.label,
@@ -1507,11 +1142,39 @@ async function createLeadRequest(
     lastCommand: leadKind === 'BOOKING' ? '/book' : '/volunteer'
   });
 
-  await replyMenu(
-    kind,
-    updated,
-    `Request saved. Ops can now follow up.\nLead ID: ${escapeHtml(lead.id.slice(-8))}`
-  );
+  await sendTelegramMessage(kind, {
+    chat_id: updated.chatId,
+    text: [
+      '<b>Request saved</b>',
+      'Ops can now follow up.',
+      `Lead ID: ${escapeHtml(lead.id.slice(-8))}`,
+      '',
+      leadKind === 'BOOKING'
+        ? 'If you want to move faster, you can book and pay securely now.'
+        : 'You can pay for a volunteer/support talk, apply as a volunteer, or donate to support free talks.'
+    ].join('\n'),
+    parse_mode: 'HTML',
+    reply_markup: {
+      inline_keyboard:
+        leadKind === 'BOOKING'
+          ? [
+              [
+                { text: 'Book & pay now', url: sessionPaymentUrl(updated) },
+                { text: 'Pay deposit', url: sessionPaymentUrl(updated, 'PARTIAL') }
+              ],
+              [{ text: 'Retry pending payment', url: dashboardPaymentUrl(updated) }],
+              [{ text: 'Main menu', callback_data: 'common:menu' }]
+            ]
+          : [
+              [
+                { text: 'Pay for support talk', url: volunteerTalkPaymentUrl(updated) },
+                { text: 'Become volunteer', url: volunteerApplicationUrl(updated) }
+              ],
+              [{ text: 'Donate/support free talks', url: donationPaymentUrl(updated) }],
+              [{ text: 'Main menu', callback_data: 'common:menu' }]
+            ]
+    }
+  });
 }
 
 async function createLeadFromText(kind: TelegramBotKind, session: TelegramSession, text: string) {
@@ -1524,162 +1187,6 @@ async function createLeadFromText(kind: TelegramBotKind, session: TelegramSessio
     return;
   }
   await createLeadRequest(kind, session, text.trim().slice(0, 1200));
-}
-
-async function doctorQueue(kind: TelegramBotKind, session: TelegramSession) {
-  if (!(await requireLinked(kind, session))) return;
-  const consultations = await prisma.consultation.findMany({
-    where: {
-      assignedDoctorId: session.linkedUserId!,
-      status: { notIn: [ConsultationStatus.COMPLETED, ConsultationStatus.CANCELLED] }
-    },
-    include: {
-      patient: { select: { name: true, patientCode: true } },
-      disease: { select: { name: true } }
-    },
-    orderBy: { createdAt: 'desc' },
-    take: 5
-  });
-  const counts = await prisma.consultation.groupBy({
-    by: ['status'],
-    where: {
-      assignedDoctorId: session.linkedUserId!,
-      status: { notIn: [ConsultationStatus.COMPLETED, ConsultationStatus.CANCELLED] }
-    },
-    _count: { _all: true }
-  });
-  const countText =
-    counts.map((item) => `${item.status}: ${item._count._all}`).join('\n') || 'No open cases.';
-  const rows =
-    consultations
-      .map(
-        (item, index) =>
-          `${index + 1}. ${escapeHtml(item.patient.name)} (${escapeHtml(item.patient.patientCode || '-')}) - ${escapeHtml(item.disease.name)}`
-      )
-      .join('\n') || 'Your queue is clear.';
-
-  await sendTelegramMessage(kind, {
-    chat_id: session.chatId,
-    text: [`<b>Doctor queue</b>`, countText, '', rows].join('\n'),
-    parse_mode: 'HTML',
-    reply_markup: {
-      inline_keyboard: [[{ text: 'Open appointments', url: doctorUrl('/appointments') }]]
-    }
-  });
-}
-
-async function setDoctorPresence(kind: TelegramBotKind, session: TelegramSession, online: boolean) {
-  if (!(await requireLinked(kind, session))) return;
-  const profile = await setDoctorLiveStatus(session.linkedUserId!, {
-    liveStatus: online ? LivePresenceStatus.ONLINE : LivePresenceStatus.OFFLINE
-  });
-  await sendTelegramMessage(kind, {
-    chat_id: session.chatId,
-    text: profile
-      ? `Doctor status updated: ${online ? 'ONLINE' : 'OFFLINE'}`
-      : 'Doctor profile was not found.'
-  });
-}
-
-async function adminSummary(kind: TelegramBotKind, session: TelegramSession) {
-  if (!(await requireLinked(kind, session))) return;
-  const [newLeads, callbackLeads, newContributors, shortlistedContributors, openConsultations] =
-    await Promise.all([
-      prisma.websiteLead.count({ where: { followUpStatus: 'NEW' } }),
-      prisma.websiteLead.count({ where: { followUpStatus: 'NEEDS_CALLBACK' } }),
-      prisma.counsellorApplication.count({ where: { status: CounsellorApplicationStatus.NEW } }),
-      prisma.counsellorApplication.count({
-        where: { status: CounsellorApplicationStatus.SHORTLISTED }
-      }),
-      prisma.consultation.count({
-        where: {
-          status: {
-            in: [
-              ConsultationStatus.PAID,
-              ConsultationStatus.ASSIGNED,
-              ConsultationStatus.IN_PROGRESS
-            ]
-          }
-        }
-      })
-    ]);
-
-  await sendTelegramMessage(kind, {
-    chat_id: session.chatId,
-    text: [
-      '<b>Hope Hub ops summary</b>',
-      `New leads: ${newLeads}`,
-      `Needs callback: ${callbackLeads}`,
-      `New contributor applications: ${newContributors}`,
-      `Shortlisted contributors: ${shortlistedContributors}`,
-      `Open consultations: ${openConsultations}`
-    ].join('\n'),
-    parse_mode: 'HTML',
-    reply_markup: {
-      inline_keyboard: [
-        [
-          { text: 'Open leads', url: adminUrl('/visitor-leads') },
-          { text: 'Contributors', url: adminUrl('/counsellor-applications') }
-        ]
-      ]
-    }
-  });
-}
-
-async function adminLeads(kind: TelegramBotKind, session: TelegramSession) {
-  if (!(await requireLinked(kind, session))) return;
-  const leads = await prisma.websiteLead.findMany({
-    where: { followUpStatus: { in: ['NEW', 'NEEDS_CALLBACK'] } },
-    orderBy: { createdAt: 'desc' },
-    take: 5
-  });
-  const rows =
-    leads
-      .map(
-        (lead, index) =>
-          `${index + 1}. ${escapeHtml(lead.visitorName || 'Visitor')} - ${escapeHtml(lead.concern || 'No concern added')}`
-      )
-      .join('\n') || 'No fresh leads.';
-
-  await sendTelegramMessage(kind, {
-    chat_id: session.chatId,
-    text: `<b>Latest leads</b>\n${rows}`,
-    parse_mode: 'HTML',
-    reply_markup: { inline_keyboard: [[{ text: 'Open leads', url: adminUrl('/visitor-leads') }]] }
-  });
-}
-
-async function adminContributors(kind: TelegramBotKind, session: TelegramSession) {
-  if (!(await requireLinked(kind, session))) return;
-  const applications = await prisma.counsellorApplication.findMany({
-    where: {
-      status: {
-        in: [
-          CounsellorApplicationStatus.NEW,
-          CounsellorApplicationStatus.REVIEWING,
-          CounsellorApplicationStatus.SHORTLISTED
-        ]
-      }
-    },
-    orderBy: { createdAt: 'desc' },
-    take: 5
-  });
-  const rows =
-    applications
-      .map(
-        (app, index) =>
-          `${index + 1}. ${escapeHtml(app.fullName)} - ${app.applicationTrack} - ${app.status}`
-      )
-      .join('\n') || 'No pending contributor applications.';
-
-  await sendTelegramMessage(kind, {
-    chat_id: session.chatId,
-    text: `<b>Contributor applications</b>\n${rows}`,
-    parse_mode: 'HTML',
-    reply_markup: {
-      inline_keyboard: [[{ text: 'Open contributors', url: adminUrl('/counsellor-applications') }]]
-    }
-  });
 }
 
 async function handlePendingState(kind: TelegramBotKind, session: TelegramSession, text: string) {
@@ -1788,6 +1295,7 @@ async function handleCommand(kind: TelegramBotKind, session: TelegramSession, te
     else if (command === '/addtask') await promptAddTask(kind, session);
     else if (command === '/review') await promptReview(kind, session);
     else if (command === '/book') await promptLead(kind, session, 'BOOKING');
+    else if (command === '/payments' || command === '/pay') await showPaymentHub(kind, session);
     else if (command === '/volunteer') await promptLead(kind, session, 'VOLUNTEER');
     else await replyMenu(kind, session, 'Choose an option or send /help.');
     return command;
@@ -1847,6 +1355,7 @@ async function handleCallback(
     if (data === 'user:plan') await showUserPlan(kind, session);
     else if (data === 'user:assessments') await listAssessments(kind, session);
     else if (data === 'user:results') await showAssessmentResults(kind, session);
+    else if (data === 'user:payments') await showPaymentHub(kind, session);
     else if (data.startsWith('assessment:start:'))
       await startAssessment(kind, session, data.slice('assessment:start:'.length));
     else if (data.startsWith('assessment:plan:'))

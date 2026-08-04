@@ -41,6 +41,7 @@ export const commandMenus: Record<TelegramBotKind, { command: string; descriptio
     { command: 'addtask', description: 'Add a daily task' },
     { command: 'review', description: 'Save daily review' },
     { command: 'book', description: 'Request a session' },
+    { command: 'payments', description: 'Payment and donation links' },
     { command: 'volunteer', description: 'Request volunteer support' },
     { command: 'me', description: 'Show linked account' },
     { command: 'help', description: 'Get help' }
@@ -114,3 +115,7 @@ export const callbackTimeOptions = [
   { key: 'evening', label: 'Evening' },
   { key: 'weekend', label: 'Weekend' }
 ] as const;
+
+export const telegramPaymentLinks = {
+  defaultSessionOfferingSlug: 'single-30-minute-session'
+} as const;
