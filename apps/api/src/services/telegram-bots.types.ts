@@ -63,5 +63,9 @@ export type SessionMetadata = {
     channel?: string;
     time?: string;
   };
+  pendingAssessment?: {
+    assessmentId: string;
+    answers: number[];
+  };
   pendingTaskId?: string;
 };

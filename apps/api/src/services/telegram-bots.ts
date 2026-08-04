@@ -17,6 +17,12 @@ import {
 } from './otp.js';
 import { setDoctorLiveStatus } from './online-doctor-presence.js';
 import {
+  assertAssessmentAccess,
+  getAssessmentDefinition,
+  scoreAssessment,
+  type AssessmentDefinitionRecord
+} from './assessment-definitions.js';
+import {
   bookingConcernOptions,
   botKindBySlug,
   botNameByKind,
@@ -75,6 +81,16 @@ function telegramDisplayName(session: TelegramSession) {
   return session.firstName || session.username || 'Telegram user';
 }
 
+function answerButtonRows(definition: AssessmentDefinitionRecord): InlineButton[][] {
+  return callbackRows(
+    definition.config.responseOptions.map((option) => ({
+      text: option.label,
+      callback_data: `assessment:answer:${option.value}`
+    })),
+    1
+  );
+}
+
 export function telegramBotKindFromSlug(slug: string): TelegramBotKind | null {
   return (botKindBySlug as Record<string, TelegramBotKind | undefined>)[slug] ?? null;
 }
@@ -84,7 +100,11 @@ function menuFor(kind: TelegramBotKind, linked: boolean): InlineButton[][] {
     return [
       [
         { text: 'Daily plan', callback_data: 'user:plan' },
-        { text: 'Add task', callback_data: 'user:addtask' }
+        { text: 'Take assessment', callback_data: 'user:assessments' }
+      ],
+      [
+        { text: 'Add task', callback_data: 'user:addtask' },
+        { text: 'Review day', callback_data: 'user:review' }
       ],
       [
         { text: 'Book session', callback_data: 'user:book' },
@@ -136,6 +156,7 @@ function helpText(kind: TelegramBotKind) {
       '<b>Care bot commands</b>',
       '/link email@example.com - link your account',
       '/plan - show today plan',
+      '/assessments - take an assessment test',
       '/addtask - add a task',
       '/review - save end-of-day review',
       '/book - request a session',
@@ -487,6 +508,302 @@ async function showMe(kind: TelegramBotKind, session: TelegramSession) {
       inline_keyboard: [
         [{ text: 'Unlink', callback_data: 'common:unlink' }],
         [{ text: 'Menu', callback_data: 'common:menu' }]
+      ]
+    }
+  });
+}
+
+async function listAssessments(kind: TelegramBotKind, session: TelegramSession) {
+  if (!(await requireLinked(kind, session))) return;
+
+  const definitions = await prisma.assessmentDefinition.findMany({
+    where: { isActive: true },
+    orderBy: [{ sortOrder: 'asc' }, { title: 'asc' }],
+    take: 8,
+    select: {
+      id: true,
+      title: true,
+      category: true,
+      accessMode: true,
+      priceInPaise: true
+    }
+  });
+
+  if (!definitions.length) {
+    await sendTelegramMessage(kind, {
+      chat_id: session.chatId,
+      text: 'No assessment tests are active right now. Please try again later.',
+      reply_markup: { inline_keyboard: menuCancelRows() }
+    });
+    return;
+  }
+
+  await sendTelegramMessage(kind, {
+    chat_id: session.chatId,
+    text: [
+      '<b>Choose an assessment</b>',
+      'Answer by tapping buttons. Your result will be saved to your Hope Hub profile.',
+      '',
+      'For longer or paid tests, the bot may ask you to open the web app.'
+    ].join('\n'),
+    parse_mode: 'HTML',
+    reply_markup: {
+      inline_keyboard: [
+        ...definitions.map((definition) => [
+          {
+            text: `${definition.title}${definition.accessMode === 'PAID' ? ' 🔒' : ''}`,
+            callback_data: `assessment:start:${definition.id}`
+          }
+        ]),
+        [{ text: 'Open all tests', url: webUrl('/assessments') }],
+        ...menuCancelRows()
+      ]
+    }
+  });
+}
+
+async function startAssessment(
+  kind: TelegramBotKind,
+  session: TelegramSession,
+  assessmentId: string
+) {
+  if (!(await requireLinked(kind, session))) return;
+
+  const definition = await getAssessmentDefinition(assessmentId);
+  if (!definition) {
+    await sendTelegramMessage(kind, {
+      chat_id: session.chatId,
+      text: 'This assessment is not available right now.',
+      reply_markup: { inline_keyboard: menuCancelRows() }
+    });
+    return;
+  }
+
+  try {
+    await assertAssessmentAccess(definition, session.linkedUserId!);
+  } catch (error) {
+    await sendTelegramMessage(kind, {
+      chat_id: session.chatId,
+      text: [
+        `<b>${escapeHtml(definition.title)}</b>`,
+        error instanceof Error ? escapeHtml(error.message) : 'This assessment is locked.',
+        '',
+        'Open the web app to unlock or continue.'
+      ].join('\n'),
+      parse_mode: 'HTML',
+      reply_markup: {
+        inline_keyboard: [
+          [{ text: 'Open assessment', url: webUrl(`/assessments/${definition.id}`) }],
+          ...menuCancelRows()
+        ]
+      }
+    });
+    return;
+  }
+
+  const updated = await updateSession(session, {
+    state: 'ASSESSMENT_IN_PROGRESS',
+    metadata: {
+      ...metadataOf(session),
+      pendingAssessment: { assessmentId: definition.id, answers: [] }
+    } as Prisma.InputJsonValue,
+    lastCommand: '/assessments'
+  });
+
+  await sendTelegramMessage(kind, {
+    chat_id: session.chatId,
+    text: [
+      `<b>${escapeHtml(definition.title)}</b>`,
+      escapeHtml(definition.config.instructions),
+      definition.config.timeframe ? `Timeframe: ${escapeHtml(definition.config.timeframe)}` : '',
+      '',
+      'Tap an answer for each question.'
+    ]
+      .filter(Boolean)
+      .join('\n'),
+    parse_mode: 'HTML'
+  });
+  await showAssessmentQuestion(kind, updated);
+}
+
+async function showAssessmentQuestion(kind: TelegramBotKind, session: TelegramSession) {
+  const pending = metadataOf(session).pendingAssessment;
+  if (!pending) {
+    await listAssessments(kind, session);
+    return;
+  }
+
+  const definition = await getAssessmentDefinition(pending.assessmentId);
+  if (!definition) {
+    await cancelPending(kind, session);
+    return;
+  }
+
+  const questionIndex = pending.answers.length;
+  const question = definition.config.questions[questionIndex];
+  if (!question) {
+    await completeAssessment(kind, session);
+    return;
+  }
+
+  await sendTelegramMessage(kind, {
+    chat_id: session.chatId,
+    text: [
+      `<b>${escapeHtml(definition.title)}</b>`,
+      `Question ${questionIndex + 1}/${definition.config.questions.length}`,
+      '',
+      escapeHtml(question.text)
+    ].join('\n'),
+    parse_mode: 'HTML',
+    reply_markup: {
+      inline_keyboard: [...answerButtonRows(definition), ...menuCancelRows()]
+    }
+  });
+}
+
+async function recordAssessmentAnswer(
+  kind: TelegramBotKind,
+  session: TelegramSession,
+  answerValue: number
+) {
+  const metadata = metadataOf(session);
+  const pending = metadata.pendingAssessment;
+  if (!pending) {
+    await listAssessments(kind, session);
+    return;
+  }
+
+  const definition = await getAssessmentDefinition(pending.assessmentId);
+  if (!definition) {
+    await cancelPending(kind, session);
+    return;
+  }
+
+  const allowed = new Set(definition.config.responseOptions.map((option) => option.value));
+  if (!allowed.has(answerValue)) {
+    await sendTelegramMessage(kind, {
+      chat_id: session.chatId,
+      text: 'That answer option is not valid for this test.',
+      reply_markup: { inline_keyboard: menuCancelRows() }
+    });
+    return;
+  }
+
+  const answers = [...pending.answers, answerValue];
+  const updated = await updateSession(session, {
+    state: 'ASSESSMENT_IN_PROGRESS',
+    metadata: {
+      ...metadata,
+      pendingAssessment: { assessmentId: pending.assessmentId, answers }
+    } as Prisma.InputJsonValue
+  });
+
+  if (answers.length >= definition.config.questions.length) {
+    await completeAssessment(kind, updated);
+    return;
+  }
+  await showAssessmentQuestion(kind, updated);
+}
+
+async function completeAssessment(kind: TelegramBotKind, session: TelegramSession) {
+  if (!(await requireLinked(kind, session))) return;
+  const metadata = metadataOf(session);
+  const pending = metadata.pendingAssessment;
+  if (!pending) {
+    await listAssessments(kind, session);
+    return;
+  }
+
+  const definition = await getAssessmentDefinition(pending.assessmentId);
+  if (!definition) {
+    await cancelPending(kind, session);
+    return;
+  }
+
+  let scored;
+  try {
+    await assertAssessmentAccess(definition, session.linkedUserId!);
+    scored = scoreAssessment(definition, pending.answers);
+  } catch (error) {
+    await sendTelegramMessage(kind, {
+      chat_id: session.chatId,
+      text: error instanceof Error ? error.message : 'Could not score this assessment.',
+      reply_markup: { inline_keyboard: menuCancelRows() }
+    });
+    return;
+  }
+
+  const previous = await prisma.hopeHubAssessmentAttempt.findFirst({
+    where: {
+      userId: session.linkedUserId!,
+      assessmentId: scored.assessmentId
+    },
+    orderBy: { completedAt: 'desc' },
+    select: { id: true, retakeNumber: true, totalScore: true, level: true, completedAt: true }
+  });
+
+  const attempt = await prisma.hopeHubAssessmentAttempt.create({
+    data: {
+      userId: session.linkedUserId!,
+      assessmentId: scored.assessmentId,
+      assessmentType: scored.assessmentType,
+      category: scored.category || null,
+      title: scored.title,
+      version: scored.version,
+      answers: scored.answers,
+      totalScore: scored.total,
+      maxScore: scored.maxScore,
+      level: scored.level,
+      color: scored.color || null,
+      description: scored.description || null,
+      suggestions: scored.suggestions,
+      safetyFlag: scored.safetyFlag,
+      retakeNumber: (previous?.retakeNumber ?? 0) + 1,
+      previousId: previous?.id ?? null,
+      source: 'TELEGRAM_BOT',
+      entryPage: `telegram:${botSlugByKind[session.botKind]}`,
+      completedAt: new Date()
+    }
+  });
+
+  const nextMetadata: SessionMetadata = { ...metadata };
+  delete nextMetadata.pendingAssessment;
+  await updateSession(session, {
+    state: 'ACTIVE',
+    metadata: nextMetadata as Prisma.InputJsonValue,
+    lastCommand: '/assessments'
+  });
+
+  await sendTelegramMessage(kind, {
+    chat_id: session.chatId,
+    text: [
+      `<b>${escapeHtml(scored.title)} completed</b>`,
+      `Score: ${scored.total}/${scored.maxScore}`,
+      `Level: ${escapeHtml(scored.level)}`,
+      '',
+      escapeHtml(scored.description),
+      scored.safetyFlag
+        ? '\nSafety note: Your answer suggests possible self-harm or urgent risk. Please contact local emergency support now if you may be in danger.'
+        : '',
+      scored.suggestions.length
+        ? `\nSuggestions:\n${scored.suggestions
+            .slice(0, 3)
+            .map((item) => `• ${escapeHtml(item)}`)
+            .join('\n')}`
+        : '',
+      `\nSaved to profile. Result ID: ${escapeHtml(attempt.id.slice(-8))}`
+    ]
+      .filter(Boolean)
+      .join('\n'),
+    parse_mode: 'HTML',
+    reply_markup: {
+      inline_keyboard: [
+        [
+          { text: 'Take another test', callback_data: 'user:assessments' },
+          { text: 'Daily plan', callback_data: 'user:plan' }
+        ],
+        [{ text: 'Open full results', url: webUrl('/profile') }],
+        [{ text: 'Main menu', callback_data: 'common:menu' }]
       ]
     }
   });
@@ -995,6 +1312,14 @@ async function handlePendingState(kind: TelegramBotKind, session: TelegramSessio
     await saveReviewFromText(kind, session, text);
     return true;
   }
+  if (session.state === 'ASSESSMENT_IN_PROGRESS') {
+    await sendTelegramMessage(kind, {
+      chat_id: session.chatId,
+      text: 'Please answer using the buttons under the assessment question.',
+      reply_markup: { inline_keyboard: menuCancelRows() }
+    });
+    return true;
+  }
   if (
     session.state === 'WAITING_LEAD_CONCERN' ||
     session.state === 'WAITING_LEAD_CUSTOM_CONCERN' ||
@@ -1049,6 +1374,8 @@ async function handleCommand(kind: TelegramBotKind, session: TelegramSession, te
 
   if (kind === TelegramBotKind.USER) {
     if (command === '/plan') await showUserPlan(kind, session);
+    else if (command === '/assessments' || command === '/assessment')
+      await listAssessments(kind, session);
     else if (command === '/addtask') await promptAddTask(kind, session);
     else if (command === '/review') await promptReview(kind, session);
     else if (command === '/book') await promptLead(kind, session, 'BOOKING');
@@ -1109,6 +1436,11 @@ async function handleCallback(
 
   if (kind === TelegramBotKind.USER) {
     if (data === 'user:plan') await showUserPlan(kind, session);
+    else if (data === 'user:assessments') await listAssessments(kind, session);
+    else if (data.startsWith('assessment:start:'))
+      await startAssessment(kind, session, data.slice('assessment:start:'.length));
+    else if (data.startsWith('assessment:answer:'))
+      await recordAssessmentAnswer(kind, session, Number(data.slice('assessment:answer:'.length)));
     else if (data === 'user:addtask') await promptAddTask(kind, session);
     else if (data === 'user:addcustom') {
       await updateSession(session, { state: 'WAITING_USER_PLAN_TASK', lastCommand: '/addtask' });
