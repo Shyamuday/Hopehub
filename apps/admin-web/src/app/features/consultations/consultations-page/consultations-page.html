@@ -10,6 +10,38 @@
         </div>
       </div>
 
+      <section class="quality-panel">
+        <div class="quality-head">
+          <div>
+            <h3>Session quality</h3>
+            <p>Outcome health for the last {{ qualityDays() }} days</p>
+          </div>
+          <div class="quality-range">
+            <button type="button" [class.active]="qualityDays() === 7" (click)="setQualityDays(7)">7d</button>
+            <button type="button" [class.active]="qualityDays() === 30" (click)="setQualityDays(30)">30d</button>
+            <button type="button" [class.active]="qualityDays() === 90" (click)="setQualityDays(90)">90d</button>
+          </div>
+        </div>
+        @if (qualityCards().length) {
+          <div class="quality-grid">
+            @for (card of qualityCards(); track card.label) {
+              <article
+                class="quality-card"
+                [class.good]="card.tone === 'good'"
+                [class.warn]="card.tone === 'warn'"
+                [class.danger]="card.tone === 'danger'"
+              >
+                <span>{{ card.label }}</span>
+                <strong>{{ card.value }}</strong>
+                <small>{{ card.hint }}</small>
+              </article>
+            }
+          </div>
+        } @else {
+          <div class="quality-empty">No session outcome data yet.</div>
+        }
+      </section>
+
       <!-- Filters -->
       <div class="filters">
         <input class="search" [formField]="searchForm.q" (input)="onSearch()" placeholder="🔍 Search by patient or disease…" />

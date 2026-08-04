@@ -16,6 +16,19 @@ import {
   CONSULTATION_STATUS_STYLES,
 } from '../constants/consultation-status.constants';
 
+type ConsultationQualitySummary = {
+  totalClosed: number;
+  completed: number;
+  userMissed: number;
+  providerNoShow: number;
+  rescheduleNeeded: number;
+  packageRestored: number;
+  payoutHeld: number;
+  cancelled: number;
+  issueCount: number;
+  issueRate: number;
+};
+
 @Component({
   selector: 'app-consultations-page',
   imports: [FormField, DatePipe, RouterLink],
@@ -34,6 +47,8 @@ export class ConsultationsPage implements OnInit {
   page = signal(1);
   pageSize = 20;
   unassignedCount = signal(0);
+  qualitySummary = signal<ConsultationQualitySummary | null>(null);
+  qualityDays = signal(30);
 
   statusFilter = signal('');
   assignedFilter = signal('no');
@@ -116,6 +131,7 @@ export class ConsultationsPage implements OnInit {
   ngOnInit(): void {
     this.load();
     this.loadUnassignedCount();
+    this.loadQualitySummary();
   }
 
   load(): void {
@@ -143,6 +159,61 @@ export class ConsultationsPage implements OnInit {
       .getAdminConsultations({ assigned: 'no', status: 'PAID', pageSize: 1 })
       .then((r) => this.unassignedCount.set(r.total))
       .catch(() => {});
+  }
+
+  loadQualitySummary(): void {
+    this.api
+      .getConsultationQualitySummary(this.qualityDays())
+      .then((r) => this.qualitySummary.set(r.summary))
+      .catch(() => this.qualitySummary.set(null));
+  }
+
+  setQualityDays(days: number): void {
+    this.qualityDays.set(days);
+    this.loadQualitySummary();
+  }
+
+  qualityCards() {
+    const s = this.qualitySummary();
+    if (!s) return [];
+    return [
+      {
+        label: 'Closed sessions',
+        value: s.totalClosed,
+        hint: `${s.completed} completed · ${s.cancelled} cancelled`,
+        tone: 'neutral',
+      },
+      {
+        label: 'Issue rate',
+        value: `${s.issueRate}%`,
+        hint: `${s.issueCount} missed/no-show/reschedule`,
+        tone: s.issueRate >= 20 ? 'danger' : s.issueRate >= 10 ? 'warn' : 'good',
+      },
+      {
+        label: 'Provider no-show',
+        value: s.providerNoShow,
+        hint: 'Provider-side missed sessions',
+        tone: s.providerNoShow ? 'danger' : 'good',
+      },
+      {
+        label: 'User missed',
+        value: s.userMissed,
+        hint: 'User did not attend',
+        tone: s.userMissed ? 'warn' : 'good',
+      },
+      {
+        label: 'Reschedules',
+        value: s.rescheduleNeeded,
+        hint: 'Needs booking follow-up',
+        tone: s.rescheduleNeeded ? 'warn' : 'good',
+      },
+      {
+        label: 'Money/package flags',
+        value: s.payoutHeld + s.packageRestored,
+        hint: `${s.payoutHeld} payout held · ${s.packageRestored} package restored`,
+        tone: s.payoutHeld || s.packageRestored ? 'warn' : 'neutral',
+      },
+    ];
   }
 
   onSearch(): void {
@@ -269,6 +340,7 @@ export class ConsultationsPage implements OnInit {
         list.map((c) => (c.id === this.selectedConsult()!.id ? { ...c, ...r.consultation } : c)),
       );
       this.statusModal.set(false);
+      this.loadQualitySummary();
       this.showToast(
         this.statusModel().value === 'CANCELLED'
           ? 'Cancelled — payout held/package restored if applicable ✓'
@@ -461,6 +533,7 @@ export class ConsultationsPage implements OnInit {
         ),
       );
       this.showToast('Package usage updated ✓');
+      this.loadQualitySummary();
     } catch (e: any) {
       this.err.set(e?.error?.message ?? 'Package usage update failed');
     } finally {

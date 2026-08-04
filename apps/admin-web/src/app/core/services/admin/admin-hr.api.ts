@@ -245,6 +245,29 @@ export class AdminHrApi extends AdminApiBase {
     );
   }
 
+  getConsultationQualitySummary(days = 30) {
+    return firstValueFrom(
+      this.http.get<{
+        days: number;
+        from: string;
+        summary: {
+          totalClosed: number;
+          completed: number;
+          userMissed: number;
+          providerNoShow: number;
+          rescheduleNeeded: number;
+          packageRestored: number;
+          payoutHeld: number;
+          cancelled: number;
+          issueCount: number;
+          issueRate: number;
+        };
+      }>(`${this.apiBase}/admin/consultations/quality-summary`, {
+        params: { days: String(days) },
+      }),
+    );
+  }
+
   assignConsultationDoctor(consultationId: string, doctorId: string) {
     return firstValueFrom(
       this.http.put<{ consultation: any }>(

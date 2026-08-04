@@ -175,6 +175,82 @@ export function registerAdminConsultationRoutes(router: Router, io: SocketIoServ
     })
   );
 
+  router.get(
+    '/admin/consultations/quality-summary',
+    authRequired,
+    allowRoles(Role.ADMIN),
+    asyncRoute(async (req, res) => {
+      const days = Math.max(1, Math.min(365, queryPositiveInt(req, 'days', 30)));
+      const from = new Date();
+      from.setDate(from.getDate() - days);
+
+      const baseWhere: Prisma.ConsultationWhereInput = {
+        updatedAt: { gte: from }
+      };
+
+      const jsonOutcome = (outcome: string): Prisma.ConsultationWhereInput => ({
+        ...baseWhere,
+        pricingSnapshot: { path: ['sessionOutcome', 'outcome'], equals: outcome }
+      });
+      const jsonFlag = (
+        key: 'packageRestored' | 'payoutAction',
+        value: boolean | string
+      ): Prisma.ConsultationWhereInput => ({
+        ...baseWhere,
+        pricingSnapshot: { path: ['sessionOutcome', key], equals: value }
+      });
+
+      const [
+        totalClosed,
+        completed,
+        userMissed,
+        providerNoShow,
+        rescheduleNeeded,
+        packageRestored,
+        payoutHeld,
+        cancelled
+      ] = await Promise.all([
+        prisma.consultation.count({
+          where: {
+            ...baseWhere,
+            OR: [
+              { status: ConsultationStatus.COMPLETED },
+              { status: ConsultationStatus.CANCELLED },
+              { pricingSnapshot: { path: ['sessionOutcome', 'outcome'], not: Prisma.JsonNull } }
+            ]
+          }
+        }),
+        prisma.consultation.count({ where: jsonOutcome('COMPLETED') }),
+        prisma.consultation.count({ where: jsonOutcome('USER_MISSED') }),
+        prisma.consultation.count({ where: jsonOutcome('PROVIDER_NO_SHOW') }),
+        prisma.consultation.count({ where: jsonOutcome('RESCHEDULE_NEEDED') }),
+        prisma.consultation.count({ where: jsonFlag('packageRestored', true) }),
+        prisma.consultation.count({ where: jsonFlag('payoutAction', 'HOLD') }),
+        prisma.consultation.count({ where: { ...baseWhere, status: ConsultationStatus.CANCELLED } })
+      ]);
+
+      const issueCount = userMissed + providerNoShow + rescheduleNeeded;
+      const issueRate = totalClosed ? Math.round((issueCount / totalClosed) * 100) : 0;
+
+      res.json({
+        days,
+        from: from.toISOString(),
+        summary: {
+          totalClosed,
+          completed,
+          userMissed,
+          providerNoShow,
+          rescheduleNeeded,
+          packageRestored,
+          payoutHeld,
+          cancelled,
+          issueCount,
+          issueRate
+        }
+      });
+    })
+  );
+
   router.put(
     '/admin/consultations/:id/assign',
     authRequired,

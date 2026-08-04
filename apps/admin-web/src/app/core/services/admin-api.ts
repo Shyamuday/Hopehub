@@ -581,6 +581,11 @@ export class AdminApi {
       ...(args as Parameters<AdminHrApi['getAdminConsultations']>),
     );
   }
+  getConsultationQualitySummary(...args: Parameters<AdminHrApi['getConsultationQualitySummary']>) {
+    return this.hr.getConsultationQualitySummary(
+      ...(args as Parameters<AdminHrApi['getConsultationQualitySummary']>),
+    );
+  }
   assignConsultationDoctor(...args: Parameters<AdminHrApi['assignConsultationDoctor']>) {
     return this.hr.assignConsultationDoctor(
       ...(args as Parameters<AdminHrApi['assignConsultationDoctor']>),
