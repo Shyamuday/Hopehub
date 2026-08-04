@@ -2,7 +2,7 @@
 
 Hope Hub sends email only from the backend API. Do not put SES credentials in any frontend app.
 
-Automated system mail is sent from `noreply@hopehub.in`. Public replies and website contact mail should go to `contact@hopehub.in`.
+Automated system mail, public replies, and website contact mail should use the verified sender `contact@hopehub.in`.
 
 ## Required SES Setup
 
@@ -23,7 +23,7 @@ sudo sh -c 'printf "%s" "email-smtp.us-east-1.amazonaws.com" > /etc/hopehub-ses-
 sudo sh -c 'printf "%s" "587" > /etc/hopehub-ses-smtp-port'
 sudo sh -c 'printf "%s" "SES_SMTP_USERNAME" > /etc/hopehub-ses-smtp-username'
 sudo sh -c 'printf "%s" "SES_SMTP_PASSWORD" > /etc/hopehub-ses-smtp-password'
-sudo sh -c 'printf "%s" "noreply@hopehub.in" > /etc/hopehub-ses-from'
+sudo sh -c 'printf "%s" "contact@hopehub.in" > /etc/hopehub-ses-from'
 sudo chmod 600 /etc/hopehub-ses-smtp-* /etc/hopehub-ses-from
 ```
 
@@ -61,7 +61,7 @@ S3 inbox bucket: hopehub-contact-inbox
 S3 prefix: contact/
 ```
 
-SES inbound stores raw email objects in S3. The admin app reads those messages in **Inbox & Email** and can reply using SES SMTP from `contact@hopehub.in`. Automated OTP/system email remains `noreply@hopehub.in`.
+SES inbound stores raw email objects in S3. The admin app reads those messages in **Inbox & Email** and can reply using SES SMTP from `contact@hopehub.in`. Automated OTP/system email also uses `contact@hopehub.in`.
 
 Admin test email endpoint:
 

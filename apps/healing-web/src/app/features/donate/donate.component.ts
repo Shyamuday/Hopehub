@@ -1,5 +1,6 @@
 import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { APP_CONSTANTS } from '../../core';
 import { NotificationService, PaymentService } from '../../core/services';
 
 @Component({
@@ -165,7 +166,7 @@ import { NotificationService, PaymentService } from '../../core/services';
                 <p class="text-sm leading-6 text-gray-700">
                   After payment, you can message us on
                   <a
-                    href="https://t.me/mindhopehub"
+                    [href]="APP_CONSTANTS.TELEGRAM.GROUP_URL"
                     target="_blank"
                     rel="noopener"
                     class="font-semibold underline"
@@ -216,6 +217,7 @@ export class DonateComponent {
   private paymentService = inject(PaymentService);
   private notificationService = inject(NotificationService);
 
+  readonly APP_CONSTANTS = APP_CONSTANTS;
   readonly amounts = [51, 101, 251, 501, 1001, 2101, 5001, 11000, 21000, 51000];
   selectedAmount = signal<number | null>(null);
   copied = signal(false);

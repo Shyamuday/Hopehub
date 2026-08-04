@@ -8,12 +8,16 @@ API_DIR="$APP_DIR/apps/api"
 
 cd "$APP_DIR"
 git remote set-url origin https://github.com/Shyamuday/Hopehub.git
-git update-index --no-skip-worktree apps/api/.env || true
-git checkout --force -- apps/api/.env || true
+if git ls-files --error-unmatch apps/api/.env >/dev/null 2>&1; then
+  git update-index --no-skip-worktree apps/api/.env || true
+  git checkout --force -- apps/api/.env || true
+fi
 git fetch origin main
 git checkout -f main
 git reset --hard origin/main
-git update-index --skip-worktree apps/api/.env || true
+if git ls-files --error-unmatch apps/api/.env >/dev/null 2>&1; then
+  git update-index --skip-worktree apps/api/.env || true
+fi
 
 cd "$API_DIR"
 if [ ! -f /etc/hopehub-db-pass ] || [ ! -f /etc/hopehub-jwt-secret ]; then
@@ -27,7 +31,7 @@ SES_SMTP_HOST="$(sudo cat /etc/hopehub-ses-smtp-host 2>/dev/null || true)"
 SES_SMTP_PORT="$(sudo cat /etc/hopehub-ses-smtp-port 2>/dev/null || echo 587)"
 SES_SMTP_USER="$(sudo cat /etc/hopehub-ses-smtp-username 2>/dev/null || true)"
 SES_SMTP_PASS="$(sudo cat /etc/hopehub-ses-smtp-password 2>/dev/null || true)"
-SMTP_FROM="$(sudo cat /etc/hopehub-ses-from 2>/dev/null || echo noreply@hopehub.in)"
+SMTP_FROM="$(sudo cat /etc/hopehub-ses-from 2>/dev/null || echo contact@hopehub.in)"
 TURN_URL="$(sudo cat /etc/hopehub-turn-url 2>/dev/null || true)"
 TURN_USERNAME="$(sudo cat /etc/hopehub-turn-username 2>/dev/null || true)"
 TURN_CREDENTIAL="$(sudo cat /etc/hopehub-turn-credential 2>/dev/null || true)"

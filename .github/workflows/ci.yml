@@ -28,6 +28,8 @@ jobs:
       - name: API install and generate
         working-directory: apps/api
         run: npm ci && npm run prisma:generate
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/hopehub_ci?schema=public
 
       - name: Typecheck all apps
         run: npm run typecheck
@@ -71,10 +73,13 @@ jobs:
       - name: Prisma generate
         if: matrix.app == 'apps/api'
         run: npm run prisma:generate
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/hopehub_ci?schema=public
 
       - name: Build
         run: npm run build
         env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/hopehub_ci?schema=public
           npm_config_legacy_peer_deps: ${{ matrix.app == 'apps/healing-web' && 'true' || '' }}
 
   test-angular:
