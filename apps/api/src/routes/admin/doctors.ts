@@ -1,6 +1,11 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { CareTeamMemberType, HomeopathicDoctorType, Role } from '@prisma/client';
+import {
+  CareTeamMemberType,
+  CareTeamServicePricingMode,
+  HomeopathicDoctorType,
+  Role
+} from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import { authRequired, allowRoles } from '../../auth.js';
 import { prisma } from '../../db.js';
@@ -33,7 +38,16 @@ const textArraySchema = z.array(z.string().trim().min(1).max(160)).max(40).optio
 const careTeamServiceSchema = z.object({
   title: z.string().trim().min(2).max(120),
   description: z.string().trim().max(1000).optional().nullable().or(z.literal('')),
+  pricingMode: z
+    .nativeEnum(CareTeamServicePricingMode)
+    .optional()
+    .default(CareTeamServicePricingMode.FIXED),
   priceInPaise: z.number().int().min(0).max(500000).optional().default(0),
+  firstSessionPriceInPaise: z.number().int().min(0).max(500000).optional().nullable(),
+  followUpPriceInPaise: z.number().int().min(0).max(500000).optional().nullable(),
+  introSessionLimit: z.number().int().min(1).max(20).optional().default(1),
+  packageSessionCount: z.number().int().min(1).max(100).optional().nullable(),
+  packagePriceInPaise: z.number().int().min(0).max(5000000).optional().nullable(),
   currency: z.string().trim().max(8).optional().default('INR'),
   durationMinutes: z.number().int().min(5).max(240).optional().default(30),
   isFree: z.boolean().optional().default(false),
@@ -68,7 +82,13 @@ function toMentalHealthProfilePayload(body: z.infer<typeof mentalHealthProfileSc
   const services = (body?.services ?? []).map((service, index) => ({
     title: service.title,
     description: service.description || null,
+    pricingMode: service.pricingMode ?? CareTeamServicePricingMode.FIXED,
     priceInPaise: service.isFree ? 0 : (service.priceInPaise ?? 0),
+    firstSessionPriceInPaise: service.firstSessionPriceInPaise ?? null,
+    followUpPriceInPaise: service.followUpPriceInPaise ?? null,
+    introSessionLimit: service.introSessionLimit ?? 1,
+    packageSessionCount: service.packageSessionCount ?? null,
+    packagePriceInPaise: service.packagePriceInPaise ?? null,
     currency: service.currency || 'INR',
     durationMinutes: service.durationMinutes ?? 30,
     isFree: service.isFree ?? (service.priceInPaise ?? 0) === 0,

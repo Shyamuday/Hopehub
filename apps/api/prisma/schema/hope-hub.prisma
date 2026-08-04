@@ -49,6 +49,14 @@ enum CareTeamMemberType {
   CAREER_STUDY_MENTOR
 }
 
+enum CareTeamServicePricingMode {
+  FIXED
+  FREE_INTRO
+  DISCOUNTED_FIRST
+  PACKAGE
+  FREE_VOLUNTEER
+}
+
 model MentalHealthProviderProfile {
   id                    String   @id @default(cuid())
   doctorId              String   @unique
@@ -81,7 +89,13 @@ model CareTeamService {
   mentalHealthProfileId  String
   title                  String
   description            String?  @db.Text
+  pricingMode            CareTeamServicePricingMode @default(FIXED)
   priceInPaise           Int      @default(0)
+  firstSessionPriceInPaise Int?
+  followUpPriceInPaise   Int?
+  introSessionLimit      Int      @default(1)
+  packageSessionCount    Int?
+  packagePriceInPaise    Int?
   currency               String   @default("INR")
   durationMinutes        Int      @default(30)
   isFree                 Boolean  @default(false)

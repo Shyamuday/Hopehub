@@ -1,6 +1,8 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import {
+  CareTeamServicePricingMode,
+  ConsultationStatus,
   FollowUpEntitlementStatus,
   HomeopathicDoctorType,
   HopeHubOfferingType,
@@ -418,6 +420,89 @@ function hopeHubPartialPaymentSnapshot(
   };
 }
 
+type CareTeamServicePricingInput = {
+  id: string;
+  pricingMode: CareTeamServicePricingMode;
+  priceInPaise: number;
+  firstSessionPriceInPaise: number | null;
+  followUpPriceInPaise: number | null;
+  introSessionLimit: number;
+  packageSessionCount: number | null;
+  packagePriceInPaise: number | null;
+  isFree: boolean;
+};
+
+function rupeeLabel(amountInPaise: number) {
+  return amountInPaise <= 0 ? 'Free' : `₹${Math.round(amountInPaise / 100)}`;
+}
+
+function careTeamServicePricingPreview(service: CareTeamServicePricingInput, previousUseCount = 0) {
+  const introLimit = Math.max(1, service.introSessionLimit || 1);
+  const basePrice = service.isFree ? 0 : Math.max(0, service.priceInPaise || 0);
+  const firstPrice = Math.max(0, service.firstSessionPriceInPaise ?? basePrice);
+  const followUpPrice = Math.max(0, service.followUpPriceInPaise ?? basePrice);
+  const packagePrice = Math.max(0, service.packagePriceInPaise ?? basePrice);
+  const packageSessions = Math.max(1, service.packageSessionCount ?? 1);
+  const introAvailable = previousUseCount < introLimit;
+
+  switch (service.pricingMode) {
+    case CareTeamServicePricingMode.FREE_VOLUNTEER:
+      return {
+        amountInPaise: 0,
+        label: 'Free volunteer support',
+        appliedRule: 'FREE_VOLUNTEER',
+        sessionCount: 1
+      };
+    case CareTeamServicePricingMode.FREE_INTRO:
+      return {
+        amountInPaise: introAvailable ? 0 : followUpPrice,
+        label: introAvailable
+          ? `First session free, then ${rupeeLabel(followUpPrice)}`
+          : `Follow-up ${rupeeLabel(followUpPrice)}`,
+        appliedRule: introAvailable ? 'FREE_INTRO' : 'FOLLOW_UP_PRICE',
+        sessionCount: 1
+      };
+    case CareTeamServicePricingMode.DISCOUNTED_FIRST:
+      return {
+        amountInPaise: introAvailable ? firstPrice : followUpPrice,
+        label: introAvailable
+          ? `First session ${rupeeLabel(firstPrice)}, then ${rupeeLabel(followUpPrice)}`
+          : `Follow-up ${rupeeLabel(followUpPrice)}`,
+        appliedRule: introAvailable ? 'DISCOUNTED_FIRST' : 'FOLLOW_UP_PRICE',
+        sessionCount: 1
+      };
+    case CareTeamServicePricingMode.PACKAGE:
+      return {
+        amountInPaise: packagePrice,
+        label: `${packageSessions} session package · ${rupeeLabel(packagePrice)}`,
+        appliedRule: 'PACKAGE_PRICE',
+        sessionCount: packageSessions
+      };
+    case CareTeamServicePricingMode.FIXED:
+    default:
+      return {
+        amountInPaise: basePrice,
+        label: basePrice <= 0 ? 'Free' : `Fixed ${rupeeLabel(basePrice)}`,
+        appliedRule: 'FIXED_PRICE',
+        sessionCount: 1
+      };
+  }
+}
+
+async function previousCareTeamServiceUseCount(patientId: string, careTeamServiceId: string) {
+  const consultations = await prisma.consultation.findMany({
+    where: {
+      patientId,
+      payment: { is: { status: { in: [PaymentStatus.PAID, PaymentStatus.PARTIALLY_REFUNDED] } } }
+    },
+    select: { pricingSnapshot: true }
+  });
+  return consultations.filter((consultation) => {
+    const snapshot = (consultation.pricingSnapshot || {}) as Record<string, unknown>;
+    return snapshot['careTeamServiceId'] === careTeamServiceId;
+  }).length;
+}
+
 function providerPublicPayload(
   provider: {
     id: string;
@@ -446,7 +531,13 @@ function providerPublicPayload(
         id: string;
         title: string;
         description: string | null;
+        pricingMode: CareTeamServicePricingMode;
         priceInPaise: number;
+        firstSessionPriceInPaise: number | null;
+        followUpPriceInPaise: number | null;
+        introSessionLimit: number;
+        packageSessionCount: number | null;
+        packagePriceInPaise: number | null;
         currency: string;
         durationMinutes: number;
         isFree: boolean;
@@ -491,7 +582,18 @@ function providerPublicPayload(
                 : careTeamType === 'CAREER_STUDY_MENTOR'
                   ? 'Career / study mentor'
                   : defaults.careRoleLabel;
-  const activeServices = (mental?.services ?? []).filter((service) => service.isActive);
+  const activeServices = (mental?.services ?? [])
+    .filter((service) => service.isActive)
+    .map((service) => {
+      const price = careTeamServicePricingPreview(service, 0);
+      return {
+        ...service,
+        effectivePriceInPaise: price.amountInPaise,
+        pricingLabel: price.label,
+        pricingRule: price.appliedRule,
+        effectiveSessionCount: price.sessionCount
+      };
+    });
   const primaryService = activeServices[0];
   return {
     id: provider.id,
@@ -536,7 +638,7 @@ function providerPublicPayload(
     safetyEscalationNote: mental?.safetyEscalationNote ?? null,
     acceptsHighRiskCases: mental?.acceptsHighRiskCases ?? false,
     services: activeServices,
-    sessionFeeInPaise: primaryService?.priceInPaise ?? defaults.sessionPriceInPaise,
+    sessionFeeInPaise: primaryService?.effectivePriceInPaise ?? defaults.sessionPriceInPaise,
     sessionDurationMinutes: primaryService?.durationMinutes ?? defaults.sessionDurationMinutes
   };
 }
@@ -1048,7 +1150,13 @@ async function activeHopeHubProviders(params: {
                 id: true,
                 title: true,
                 description: true,
+                pricingMode: true,
                 priceInPaise: true,
+                firstSessionPriceInPaise: true,
+                followUpPriceInPaise: true,
+                introSessionLimit: true,
+                packageSessionCount: true,
+                packagePriceInPaise: true,
                 currency: true,
                 durationMinutes: true,
                 isFree: true,
@@ -1467,7 +1575,13 @@ hopeHubRouter.get(
                 id: true,
                 title: true,
                 description: true,
+                pricingMode: true,
                 priceInPaise: true,
+                firstSessionPriceInPaise: true,
+                followUpPriceInPaise: true,
+                introSessionLimit: true,
+                packageSessionCount: true,
+                packagePriceInPaise: true,
                 currency: true,
                 durationMinutes: true,
                 isFree: true,
@@ -1681,7 +1795,13 @@ hopeHubRouter.post(
           select: {
             id: true,
             title: true,
+            pricingMode: true,
             priceInPaise: true,
+            firstSessionPriceInPaise: true,
+            followUpPriceInPaise: true,
+            introSessionLimit: true,
+            packageSessionCount: true,
+            packagePriceInPaise: true,
             durationMinutes: true,
             isFree: true,
             mentalHealthProfile: {
@@ -1701,6 +1821,12 @@ hopeHubRouter.post(
     if (body.careTeamServiceId && !selectedCareTeamService) {
       return res.status(400).json({ message: 'Selected care team service is not available.' });
     }
+    const careTeamServiceUseCount = selectedCareTeamService
+      ? await previousCareTeamServiceUseCount(req.user!.id, selectedCareTeamService.id)
+      : 0;
+    const careTeamServicePricing = selectedCareTeamService
+      ? careTeamServicePricingPreview(selectedCareTeamService, careTeamServiceUseCount)
+      : null;
     const effectiveServiceName = selectedCareTeamService?.title || body.serviceName;
     const selectedServiceDurationMinutes =
       selectedCareTeamService?.durationMinutes || defaults.sessionDurationMinutes;
@@ -1715,9 +1841,9 @@ hopeHubRouter.post(
     });
     const amountInPaise =
       selectedOffering?.priceInPaise ??
-      selectedCareTeamService?.priceInPaise ??
+      careTeamServicePricing?.amountInPaise ??
       (body.servicePriceInPaise || existingService?.feeInPaise || defaults.sessionPriceInPaise);
-    if (!amountInPaise || amountInPaise <= 0) {
+    if (amountInPaise < 0 || (!selectedCareTeamService && amountInPaise <= 0)) {
       return res.status(400).json({ message: 'Selected offer cannot be paid online.' });
     }
     const isFirstPaidHopeHubSession =
@@ -1842,6 +1968,8 @@ hopeHubRouter.post(
         diseaseId: disease.id,
         clinicStoreId: null,
         assignedDoctorId: requestedProvider?.userId ?? null,
+        status:
+          finalPayableInPaise <= 0 ? ConsultationStatus.PAID : ConsultationStatus.PAYMENT_PENDING,
         consultationMode: 'INSTANT_ONLINE',
         intakeAnswers: {
           source: 'hope-hub',
@@ -1857,6 +1985,9 @@ hopeHubRouter.post(
           offeringType: selectedOffering?.type || '',
           careTeamServiceId: selectedCareTeamService?.id || body.careTeamServiceId || '',
           careTeamServiceTitle: selectedCareTeamService?.title || '',
+          careTeamPricingMode: selectedCareTeamService?.pricingMode || '',
+          careTeamPricingLabel: careTeamServicePricing?.label || '',
+          careTeamPreviousUseCount: careTeamServiceUseCount,
           providerId: requestedProvider?.id || body.providerId || '',
           requestedProviderName: requestedProvider?.user.name || '',
           concernCategory: body.concernCategory || '',
@@ -1887,6 +2018,10 @@ hopeHubRouter.post(
           serviceName: effectiveServiceName,
           careTeamServiceId: selectedCareTeamService?.id || null,
           careTeamServiceTitle: selectedCareTeamService?.title || null,
+          careTeamPricingMode: selectedCareTeamService?.pricingMode || null,
+          careTeamPricingLabel: careTeamServicePricing?.label || null,
+          careTeamPricingRule: careTeamServicePricing?.appliedRule || null,
+          careTeamPreviousUseCount: careTeamServiceUseCount,
           sessionFeeInPaise: amountInPaise,
           netAfterOfferDiscountInPaise,
           paymentMode: partialPayment.paymentMode,
@@ -1930,6 +2065,10 @@ hopeHubRouter.post(
               offeringType: selectedOffering?.type || null,
               careTeamServiceId: selectedCareTeamService?.id || null,
               careTeamServiceTitle: selectedCareTeamService?.title || null,
+              careTeamPricingMode: selectedCareTeamService?.pricingMode || null,
+              careTeamPricingLabel: careTeamServicePricing?.label || null,
+              careTeamPricingRule: careTeamServicePricing?.appliedRule || null,
+              careTeamPreviousUseCount: careTeamServiceUseCount,
               providerId: requestedProvider?.id || body.providerId || '',
               requestedProviderName: requestedProvider?.user.name || '',
               sessionDurationMinutes:
@@ -1960,7 +2099,7 @@ hopeHubRouter.post(
                 ...checkout.appliedRules
               ].filter(Boolean)
             },
-            status: PaymentStatus.CREATED
+            status: finalPayableInPaise <= 0 ? PaymentStatus.PAID : PaymentStatus.CREATED
           }
         }
       },
@@ -1985,6 +2124,7 @@ hopeHubRouter.post(
           `Service: ${effectiveServiceName}`,
           selectedOffering ? `Offer: ${selectedOffering.title}` : '',
           selectedCareTeamService ? `Care team service: ${selectedCareTeamService.title}` : '',
+          careTeamServicePricing?.label ? `Pricing: ${careTeamServicePricing.label}` : '',
           `Appointment: ${body.appointmentDate} ${body.appointmentTime}`,
           body.preferredContact ? `Preferred contact: ${body.preferredContact}` : '',
           body.urgencyLevel ? `Urgency: ${body.urgencyLevel}` : '',

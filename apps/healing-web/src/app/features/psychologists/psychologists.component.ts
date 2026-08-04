@@ -173,7 +173,9 @@ export class PsychologistsComponent implements OnInit {
       duration: service
         ? `${service.durationMinutes} minutes`
         : this.publicConfig.defaultSessionLabel,
-      price: service ? service.priceInPaise / 100 : directProviderPrice,
+      price: service
+        ? (service.effectivePriceInPaise ?? service.priceInPaise) / 100
+        : directProviderPrice,
       source: service ? 'care-team-service-list' : 'care-team-list',
     };
   }

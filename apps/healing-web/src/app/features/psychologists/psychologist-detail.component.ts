@@ -74,7 +74,7 @@ export class PsychologistDetailComponent implements OnInit {
           ? `${selectedService.durationMinutes} minutes`
           : this.sessionLabel(provider),
         price: selectedService
-          ? selectedService.priceInPaise / 100
+          ? (selectedService.effectivePriceInPaise ?? selectedService.priceInPaise) / 100
           : (provider.sessionFeeInPaise ?? this.publicConfig.defaultSessionPriceInPaise) / 100,
         source: selectedService ? 'care-team-service-profile' : 'care-team-profile',
       },
@@ -115,8 +115,15 @@ export class PsychologistDetailComponent implements OnInit {
     }
   }
 
-  servicePriceLabel(service: { priceInPaise: number; isFree: boolean }) {
-    return service.isFree || service.priceInPaise === 0 ? 'Free' : `₹${service.priceInPaise / 100}`;
+  servicePriceLabel(service: {
+    priceInPaise: number;
+    effectivePriceInPaise?: number;
+    pricingLabel?: string;
+    isFree: boolean;
+  }) {
+    if (service.pricingLabel) return service.pricingLabel;
+    const amount = service.effectivePriceInPaise ?? service.priceInPaise;
+    return service.isFree || amount === 0 ? 'Free' : `₹${amount / 100}`;
   }
 
   listOrFallback(items: string[] | undefined, fallback: string[]) {

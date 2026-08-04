@@ -68,7 +68,13 @@ export type DoctorProfileSummary = {
     services?: Array<{
       title: string;
       description?: string | null;
+      pricingMode?: 'FIXED' | 'FREE_INTRO' | 'DISCOUNTED_FIRST' | 'PACKAGE' | 'FREE_VOLUNTEER';
       priceInPaise: number;
+      firstSessionPriceInPaise?: number | null;
+      followUpPriceInPaise?: number | null;
+      introSessionLimit?: number;
+      packageSessionCount?: number | null;
+      packagePriceInPaise?: number | null;
       durationMinutes: number;
       isFree?: boolean;
       isActive?: boolean;

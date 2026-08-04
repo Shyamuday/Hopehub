@@ -132,7 +132,7 @@
                 }
                 @if (primaryService(provider); as service) {
                   <p class="mt-1 text-xs font-bold text-gray-700">
-                    {{ service.isFree ? 'Free' : ('₹' + service.priceInPaise / 100) }} ·
+                    {{ service.pricingLabel || (service.isFree ? 'Free' : ('₹' + ((service.effectivePriceInPaise ?? service.priceInPaise) / 100))) }} ·
                     {{ service.durationMinutes }} min
                   </p>
                 }
@@ -165,7 +165,7 @@
                 @for (service of provider.services!.slice(0, 2); track service.id) {
                   <div class="flex items-center justify-between gap-3 rounded-md bg-gray-50 px-3 py-2">
                     <span class="font-semibold">{{ service.title }}</span>
-                    <span class="whitespace-nowrap">{{ service.isFree ? 'Free' : ('₹' + service.priceInPaise / 100) }}</span>
+                    <span class="whitespace-nowrap">{{ service.pricingLabel || (service.isFree ? 'Free' : ('₹' + ((service.effectivePriceInPaise ?? service.priceInPaise) / 100))) }}</span>
                   </div>
                 }
               </div>
@@ -179,7 +179,7 @@
               </a>
               <a
                 routerLink="/contact"
-                [queryParams]="bookingQueryParams(provider)"
+                [queryParams]="bookingQueryParams(provider, primaryService(provider))"
                 class="btn-outline btn-sm"
               >
                 Book session

@@ -484,6 +484,19 @@ export class ContactComponent implements OnInit {
 
     this.paymentFlowConsultation.set(response.consultation);
     this.paymentFlowError.set('');
+    const payableFromServer = Number(response.consultation?.payment?.amountInPaise ?? 0);
+    if (payableFromServer <= 0) {
+      this.paymentFlowState.set('SUCCESS');
+      this.productAnalytics.track(HOPE_HUB_ANALYTICS_EVENTS.PAYMENT_SUCCESS, {
+        consultationId: response.consultation.id,
+        serviceName,
+        offeringSlug: selectedOffer?.slug || data.offering || '',
+        payableInPaise: 0,
+      });
+      this.clearPendingBooking();
+      this.showSuccessAndReset('Free booking confirmed. We will share the next details soon.');
+      return;
+    }
     this.paymentFlowState.set('CREATING_ORDER');
     this.productAnalytics.track(HOPE_HUB_ANALYTICS_EVENTS.PAYMENT_STARTED, {
       consultationId: response.consultation.id,
@@ -710,6 +723,9 @@ export class ContactComponent implements OnInit {
 
   private resolveServicePriceInPaise(serviceName: string): number {
     const queryPrice = Number(this.prefilledData().price);
+    if (this.prefilledData().careTeamServiceId && Number.isFinite(queryPrice) && queryPrice >= 0) {
+      return Math.round(queryPrice * 100);
+    }
     if (Number.isFinite(queryPrice) && queryPrice > 0) {
       return Math.round(queryPrice * 100);
     }

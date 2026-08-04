@@ -205,21 +205,40 @@ export class ProfilePage {
   }
 
   private parseServiceOffers(text: string) {
+    const modes = new Set(['FIXED', 'FREE_INTRO', 'DISCOUNTED_FIRST', 'PACKAGE', 'FREE_VOLUNTEER']);
+    const rupeesToPaise = (value: string) =>
+      value === '' ? null : Math.max(0, Math.round(Number(value || 0) * 100));
     return text
       .split('\n')
       .map((line, index) => {
-        const [title = '', price = '', minutes = '', description = '', active = 'yes'] = line
-          .split('|')
-          .map((part) => part.trim());
+        const parts = line.split('|').map((part) => part.trim());
+        const [title = ''] = parts;
         if (!title) return null;
-        const priceInPaise = Math.max(0, Math.round(Number(price || 0) * 100));
+        const advanced = modes.has((parts[1] || '').toUpperCase());
+        const pricingMode = advanced ? parts[1].toUpperCase() : 'FIXED';
+        const price = advanced ? parts[2] || '' : parts[1] || '';
+        const first = advanced ? parts[3] || '' : '';
+        const followUp = advanced ? parts[4] || '' : '';
+        const introLimit = advanced ? parts[5] || '' : '';
+        const packageSessions = advanced ? parts[6] || '' : '';
+        const packagePrice = advanced ? parts[7] || '' : '';
+        const minutes = advanced ? parts[8] || '' : parts[2] || '';
+        const description = advanced ? parts[9] || '' : parts[3] || '';
+        const active = advanced ? parts[10] || 'yes' : parts[4] || 'yes';
+        const priceInPaise = rupeesToPaise(price) ?? 0;
         return {
           title,
           description: description || null,
+          pricingMode,
           priceInPaise,
+          firstSessionPriceInPaise: rupeesToPaise(first),
+          followUpPriceInPaise: rupeesToPaise(followUp),
+          introSessionLimit: Math.max(1, Number(introLimit || 1)),
+          packageSessionCount: packageSessions ? Math.max(1, Number(packageSessions)) : null,
+          packagePriceInPaise: rupeesToPaise(packagePrice),
           currency: 'INR',
           durationMinutes: Math.max(5, Number(minutes || 30)),
-          isFree: priceInPaise === 0,
+          isFree: pricingMode === 'FREE_VOLUNTEER' || priceInPaise === 0,
           isActive: !/^no|false|inactive$/i.test(active),
           sortOrder: index,
         };
@@ -231,7 +250,7 @@ export class ProfilePage {
     return services
       .map(
         (service) =>
-          `${service.title} | ${(service.priceInPaise || 0) / 100} | ${service.durationMinutes || 30} | ${service.description || ''} | ${service.isActive === false ? 'no' : 'yes'}`,
+          `${service.title} | ${service.pricingMode || 'FIXED'} | ${(service.priceInPaise || 0) / 100} | ${service.firstSessionPriceInPaise == null ? '' : service.firstSessionPriceInPaise / 100} | ${service.followUpPriceInPaise == null ? '' : service.followUpPriceInPaise / 100} | ${service.introSessionLimit || 1} | ${service.packageSessionCount || ''} | ${service.packagePriceInPaise == null ? '' : service.packagePriceInPaise / 100} | ${service.durationMinutes || 30} | ${service.description || ''} | ${service.isActive === false ? 'no' : 'yes'}`,
       )
       .join('\n');
   }
