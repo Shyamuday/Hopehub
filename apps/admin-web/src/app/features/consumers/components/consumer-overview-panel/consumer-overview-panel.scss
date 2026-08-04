@@ -52,6 +52,56 @@
   }
 }
 
+.assessment-header,
+.assessment-card {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.assessment-list {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.assessment-card {
+  padding: 0.75rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  background: #fff;
+
+  &.flagged {
+    border-color: #fca5a5;
+    background: #fff7f7;
+  }
+}
+
+.safety-pill {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0.25rem 0.55rem;
+  font-size: 0.75rem;
+  font-weight: 800;
+  white-space: nowrap;
+
+  &.pending {
+    background: #fee2e2;
+    color: #991b1b;
+  }
+
+  &.reviewed {
+    background: #dcfce7;
+    color: #166534;
+  }
+
+  &.clear {
+    background: #e0f2fe;
+    color: #075985;
+  }
+}
+
 .card-panel {
   margin: 1rem 0;
   padding: 1rem;

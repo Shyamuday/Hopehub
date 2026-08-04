@@ -2,7 +2,15 @@ import { Router } from 'express';
 import { Role, DoseEventStatus } from '@prisma/client';
 import { authRequired, allowRoles } from '../../auth.js';
 import { prisma } from '../../db.js';
-import { asyncRoute, routeParam, queryText, queryPositiveInt, publicUserSelect, patientProfileSelect, includeConsultationRelations } from '../../utils/helpers.js';
+import {
+  asyncRoute,
+  routeParam,
+  queryText,
+  queryPositiveInt,
+  publicUserSelect,
+  patientProfileSelect,
+  includeConsultationRelations
+} from '../../utils/helpers.js';
 
 export function registerAdminConsumerRoutes(router: Router) {
   // ─── Consumers ────────────────────────────────────────────────────────────────
@@ -16,21 +24,46 @@ export function registerAdminConsumerRoutes(router: Router) {
       const pageSize = queryPositiveInt(req, 'pageSize', 10);
       const query = queryText(req, 'q').trim().toLowerCase();
       const sortBy = queryText(req, 'sortBy');
-      const sortDirection = queryText(req, 'sortDirection').toLowerCase() === 'asc' ? 'asc' : 'desc';
+      const sortDirection =
+        queryText(req, 'sortDirection').toLowerCase() === 'asc' ? 'asc' : 'desc';
 
-      const consultations = await prisma.consultation.findMany({ select: { patient: { select: publicUserSelect } } });
+      const consultations = await prisma.consultation.findMany({
+        select: { patient: { select: publicUserSelect } }
+      });
 
-      const grouped = new Map<string, { id: string; name: string; email: string; mobile: string; patientCode: string; consultations: number }>();
+      const grouped = new Map<
+        string,
+        {
+          id: string;
+          name: string;
+          email: string;
+          mobile: string;
+          patientCode: string;
+          consultations: number;
+        }
+      >();
       for (const row of consultations) {
         const patient = row.patient;
         if (!patient?.id) continue;
         const existing = grouped.get(patient.id);
-        if (existing) { existing.consultations += 1; continue; }
-        grouped.set(patient.id, { id: patient.id, name: patient.name || 'Unknown', email: patient.email || '', mobile: patient.mobile || '', patientCode: patient.patientCode || '', consultations: 1 });
+        if (existing) {
+          existing.consultations += 1;
+          continue;
+        }
+        grouped.set(patient.id, {
+          id: patient.id,
+          name: patient.name || 'Unknown',
+          email: patient.email || '',
+          mobile: patient.mobile || '',
+          patientCode: patient.patientCode || '',
+          consultations: 1
+        });
       }
 
-      const filtered = Array.from(grouped.values()).filter((c) =>
-        !query || [c.name, c.email, c.mobile, c.patientCode, c.id].join(' ').toLowerCase().includes(query)
+      const filtered = Array.from(grouped.values()).filter(
+        (c) =>
+          !query ||
+          [c.name, c.email, c.mobile, c.patientCode, c.id].join(' ').toLowerCase().includes(query)
       );
 
       filtered.sort((a, b) => {
@@ -39,14 +72,19 @@ export function registerAdminConsumerRoutes(router: Router) {
           return sortDirection === 'asc' ? cmp : -cmp;
         }
         if (sortBy === 'consultations') {
-          return sortDirection === 'asc' ? a.consultations - b.consultations : b.consultations - a.consultations;
+          return sortDirection === 'asc'
+            ? a.consultations - b.consultations
+            : b.consultations - a.consultations;
         }
         return 0;
       });
 
       const total = filtered.length;
       const items = filtered.slice((page - 1) * pageSize, page * pageSize);
-      res.json({ consumers: items, pagination: { page, pageSize, total, totalPages: Math.max(1, Math.ceil(total / pageSize)) } });
+      res.json({
+        consumers: items,
+        pagination: { page, pageSize, total, totalPages: Math.max(1, Math.ceil(total / pageSize)) }
+      });
     })
   );
 
@@ -101,15 +139,52 @@ export function registerAdminConsumerRoutes(router: Router) {
         take: 20
       });
 
+      const assessmentAttempts = await prisma.hopeHubAssessmentAttempt.findMany({
+        where: { userId: patientId },
+        select: {
+          id: true,
+          assessmentId: true,
+          title: true,
+          totalScore: true,
+          maxScore: true,
+          level: true,
+          safetyFlag: true,
+          safetyReviewedAt: true,
+          safetyReviewNote: true,
+          completedAt: true,
+          safetyReviewedBy: { select: { id: true, name: true, email: true } }
+        },
+        orderBy: { completedAt: 'desc' },
+        take: 8
+      });
+
       res.json({
         consumer: patient,
         consultations,
-        adherence: { total: totalDoses, taken: takenDoses, skipped: skippedDoses, missed: missedDoses, percent: adherencePercent },
+        adherence: {
+          total: totalDoses,
+          taken: takenDoses,
+          skipped: skippedDoses,
+          missed: missedDoses,
+          percent: adherencePercent
+        },
+        assessments: {
+          latest: assessmentAttempts.map((attempt) => ({
+            ...attempt,
+            completedAt: attempt.completedAt.toISOString(),
+            safetyReviewedAt: attempt.safetyReviewedAt?.toISOString() ?? null
+          })),
+          safetyFlaggedCount: assessmentAttempts.filter((attempt) => attempt.safetyFlag).length,
+          pendingSafetyReviewCount: assessmentAttempts.filter(
+            (attempt) => attempt.safetyFlag && !attempt.safetyReviewedAt
+          ).length
+        },
         doseNotes: doseNotes.map((event) => ({
           id: event.id,
           status: event.status,
           scheduledFor: event.scheduledFor,
-          interactedAt: event.skippedAt ?? (event.status === DoseEventStatus.MISSED ? event.updatedAt : null),
+          interactedAt:
+            event.skippedAt ?? (event.status === DoseEventStatus.MISSED ? event.updatedAt : null),
           note: event.note ?? null,
           medicineName: event.prescriptionItem.medicineName
         }))

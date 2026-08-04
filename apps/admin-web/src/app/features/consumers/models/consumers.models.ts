@@ -36,6 +36,23 @@ export type ConsumerDetail = {
     missed: number;
     percent: number;
   };
+  assessments?: {
+    latest: Array<{
+      id: string;
+      assessmentId: string;
+      title: string;
+      totalScore: number;
+      maxScore: number;
+      level: string;
+      safetyFlag: boolean;
+      safetyReviewedAt?: string | null;
+      safetyReviewNote?: string | null;
+      completedAt: string;
+      safetyReviewedBy?: { id: string; name: string; email?: string | null } | null;
+    }>;
+    safetyFlaggedCount: number;
+    pendingSafetyReviewCount: number;
+  };
   doseNotes?: Array<{
     id: string;
     status: 'SKIPPED' | 'MISSED';
@@ -63,7 +80,12 @@ export type SupportNote = {
 };
 
 export type SupportContext = {
-  account: { isActive: boolean; patientCode?: string | null; mobile?: string | null; email?: string | null };
+  account: {
+    isActive: boolean;
+    patientCode?: string | null;
+    mobile?: string | null;
+    email?: string | null;
+  };
   reminderPreferences?: {
     inApp: boolean;
     sms: boolean;
@@ -82,7 +104,13 @@ export type SupportContext = {
     messageCount: number;
     createdAt: string;
   }>;
-  adherenceSummary: { total: number; taken: number; skipped: number; missed: number; percent: number | null };
+  adherenceSummary: {
+    total: number;
+    taken: number;
+    skipped: number;
+    missed: number;
+    percent: number | null;
+  };
   flags: string[];
   recentAudit: Array<{
     id: string;
@@ -121,7 +149,7 @@ export type ClinicalSummary = {
 export function clinicalRecordsQuery(
   patientId: string,
   tab: 'prescriptions' | 'analyses' = 'prescriptions',
-  consultationId?: string
+  consultationId?: string,
 ) {
   const query: Record<string, string> = { tab, patientId };
   if (consultationId) query['consultationId'] = consultationId;

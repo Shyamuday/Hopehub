@@ -20,6 +20,54 @@
 />
 
 <section class="health-profile-panel">
+  <div class="assessment-header">
+    <div>
+      <h3>Hope Hub assessments</h3>
+      <p class="muted">
+        {{ detail.assessments?.latest?.length || 0 }} recent results ·
+        {{ detail.assessments?.safetyFlaggedCount || 0 }} safety flagged ·
+        {{ detail.assessments?.pendingSafetyReviewCount || 0 }} pending review
+      </p>
+    </div>
+    @if ((detail.assessments?.pendingSafetyReviewCount || 0) > 0) {
+      <span class="safety-pill pending">Needs safety review</span>
+    }
+  </div>
+
+  @if (detail.assessments?.latest?.length) {
+    <div class="assessment-list">
+      @for (attempt of detail.assessments!.latest; track attempt.id) {
+        <article class="assessment-card" [class.flagged]="attempt.safetyFlag">
+          <div>
+            <strong>{{ attempt.title }}</strong>
+            <p class="muted">
+              {{ attempt.completedAt | date: 'mediumDate' }} · Score
+              {{ attempt.totalScore }}/{{ attempt.maxScore }} · {{ attempt.level }}
+            </p>
+          </div>
+          @if (attempt.safetyFlag) {
+            @if (attempt.safetyReviewedAt) {
+              <span class="safety-pill reviewed">
+                Reviewed {{ attempt.safetyReviewedAt | date: 'short' }}
+                @if (attempt.safetyReviewedBy?.name) {
+                  · {{ attempt.safetyReviewedBy?.name }}
+                }
+              </span>
+            } @else {
+              <span class="safety-pill pending">Pending review</span>
+            }
+          } @else {
+            <span class="safety-pill clear">No safety flag</span>
+          }
+        </article>
+      }
+    </div>
+  } @else {
+    <p class="empty-state">No Hope Hub assessments recorded yet.</p>
+  }
+</section>
+
+<section class="health-profile-panel">
   <h3>Clinical profile</h3>
   @if (clinicalProfileHasData) {
     <hopehub-detail-rows variant="grid" [rows]="clinicalProfileRows" />
