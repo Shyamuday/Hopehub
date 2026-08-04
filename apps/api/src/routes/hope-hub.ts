@@ -860,12 +860,25 @@ function hopeHubProviderWhere(params: {
     OR: [
       { doctorType: HomeopathicDoctorType.PSYCHOLOGIST },
       { specialty: { contains: 'psycholog', mode: 'insensitive' as const } },
+      { specialty: { contains: 'volunteer', mode: 'insensitive' as const } },
+      { specialty: { contains: 'peer support', mode: 'insensitive' as const } },
       { designation: { contains: 'psycholog', mode: 'insensitive' as const } },
+      { designation: { contains: 'volunteer', mode: 'insensitive' as const } },
+      { designation: { contains: 'peer support', mode: 'insensitive' as const } },
       { department: { contains: 'mental', mode: 'insensitive' as const } },
       { department: { contains: 'wellness', mode: 'insensitive' as const } },
+      { department: { contains: 'volunteer', mode: 'insensitive' as const } },
       {
         focusAreas: {
-          hasSome: ['Psychology', 'Anxiety support', 'Stress management', 'Counselling']
+          hasSome: [
+            'Psychology',
+            'Anxiety support',
+            'Stress management',
+            'Counselling',
+            'Volunteer support',
+            'Peer support',
+            'Non-clinical peer support'
+          ]
         }
       }
     ],
@@ -1290,9 +1303,19 @@ hopeHubRouter.get(
         OR: [
           { doctorType: HomeopathicDoctorType.PSYCHOLOGIST },
           { specialty: { contains: 'psycholog', mode: 'insensitive' } },
+          { specialty: { contains: 'volunteer', mode: 'insensitive' } },
+          { specialty: { contains: 'peer support', mode: 'insensitive' } },
           { designation: { contains: 'psycholog', mode: 'insensitive' } },
+          { designation: { contains: 'volunteer', mode: 'insensitive' } },
+          { designation: { contains: 'peer support', mode: 'insensitive' } },
           { department: { contains: 'mental', mode: 'insensitive' } },
-          { department: { contains: 'wellness', mode: 'insensitive' } }
+          { department: { contains: 'wellness', mode: 'insensitive' } },
+          { department: { contains: 'volunteer', mode: 'insensitive' } },
+          {
+            focusAreas: {
+              hasSome: ['Volunteer support', 'Peer support', 'Non-clinical peer support']
+            }
+          }
         ]
       },
       select: {
@@ -1543,9 +1566,19 @@ hopeHubRouter.post(
             OR: [
               { doctorType: HomeopathicDoctorType.PSYCHOLOGIST },
               { specialty: { contains: 'psycholog', mode: 'insensitive' } },
+              { specialty: { contains: 'volunteer', mode: 'insensitive' } },
+              { specialty: { contains: 'peer support', mode: 'insensitive' } },
               { designation: { contains: 'psycholog', mode: 'insensitive' } },
+              { designation: { contains: 'volunteer', mode: 'insensitive' } },
+              { designation: { contains: 'peer support', mode: 'insensitive' } },
               { department: { contains: 'mental', mode: 'insensitive' } },
-              { department: { contains: 'wellness', mode: 'insensitive' } }
+              { department: { contains: 'wellness', mode: 'insensitive' } },
+              { department: { contains: 'volunteer', mode: 'insensitive' } },
+              {
+                focusAreas: {
+                  hasSome: ['Volunteer support', 'Peer support', 'Non-clinical peer support']
+                }
+              }
             ]
           },
           select: { id: true, userId: true, user: { select: { name: true } } }
