@@ -192,6 +192,14 @@ export class AdminDoctorsApi extends AdminApiBase {
     );
   }
 
+  listCareTeamPricingTemplates() {
+    return firstValueFrom(
+      this.http.get<{ templates: Array<any> }>(
+        `${this.apiBase}/hope-hub/care-team-pricing-templates`,
+      ),
+    );
+  }
+
   // ── Testimonials ──────────────────────────────────────────────────────────
   listTestimonials() {
     return firstValueFrom(

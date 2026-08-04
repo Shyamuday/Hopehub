@@ -262,11 +262,35 @@
           }
         } @else if (contactForm.get('serviceInterest')?.value || prefilledData().serviceName) {
           <section class="payment-summary" aria-label="Payment summary">
+            @if (careTeamServiceQuoteLoading()) {
+              <div class="payment-summary__offer">
+                <strong>Checking your exact price…</strong>
+                <span>We are verifying first-session, follow-up, or package pricing.</span>
+              </div>
+            }
+            @if (careTeamServiceQuoteError()) {
+              <div class="payment-summary__offer">
+                <strong>Exact price not loaded</strong>
+                <span>{{ careTeamServiceQuoteError() }}</span>
+              </div>
+            }
             <div class="payment-summary__head">
               <span>{{ prefilledData().careTeamServiceId ? 'Fixed service checkout' : 'Direct provider checkout' }}</span>
               <strong>{{ contactForm.get('serviceInterest')?.value || prefilledData().serviceName || 'Hope Hub session' }}</strong>
             </div>
             <div class="payment-summary__rows">
+              @if (careTeamServiceQuote(); as serviceQuote) {
+                <div>
+                  <span>Applied pricing</span>
+                  <strong>{{ serviceQuote.quote.label }}</strong>
+                </div>
+                @if (serviceQuote.quote.previousUseCount > 0) {
+                  <div>
+                    <span>Previous sessions</span>
+                    <strong>{{ serviceQuote.quote.previousUseCount }}</strong>
+                  </div>
+                }
+              }
               <div>
                 <span>{{ prefilledData().careTeamServiceId ? 'Service price' : 'Session price' }}</span>
                 <strong>{{ formatPaise(payTodayInPaise()) }}</strong>

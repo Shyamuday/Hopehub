@@ -109,6 +109,27 @@ model CareTeamService {
   @@index([mentalHealthProfileId, isActive, sortOrder])
 }
 
+model CareTeamPricingTemplate {
+  id                       String   @id @default(cuid())
+  title                    String
+  description              String?  @db.Text
+  pricingMode              CareTeamServicePricingMode @default(FIXED)
+  priceInPaise             Int      @default(0)
+  firstSessionPriceInPaise Int?
+  followUpPriceInPaise     Int?
+  introSessionLimit        Int      @default(1)
+  packageSessionCount      Int?
+  packagePriceInPaise      Int?
+  durationMinutes          Int      @default(30)
+  isFree                   Boolean  @default(false)
+  isActive                 Boolean  @default(true)
+  sortOrder                Int      @default(0)
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
+
+  @@index([isActive, sortOrder])
+}
+
 enum HopeHubOfferingType {
   INDIVIDUAL_SESSION
   CARE_PACKAGE

@@ -165,6 +165,15 @@ Hypertension"
           @for (service of careServices(); track $index) {
             <article class="service-editor-card">
               <input [value]="service.title" placeholder="Service title" (input)="updateCareService($index, 'title', $any($event.target).value)" />
+              <div class="template-row">
+                <select #serviceTemplate>
+                  <option value="">Choose ready plan</option>
+                  @for (template of carePricingTemplates(); track template.id) {
+                    <option [value]="template.id">{{ template.title }}</option>
+                  }
+                </select>
+                <button type="button" (click)="applyPricingTemplate($index, serviceTemplate.value)">Use plan</button>
+              </div>
               <select [value]="service.pricingMode || 'FIXED'" (change)="updateCareService($index, 'pricingMode', $any($event.target).value)">
                 @for (mode of servicePricingModeOptions; track mode.value) {
                   <option [value]="mode.value">{{ mode.label }}</option>

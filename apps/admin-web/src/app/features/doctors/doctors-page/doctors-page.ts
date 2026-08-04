@@ -88,6 +88,11 @@ type CareTeamService = {
   isActive?: boolean;
   sortOrder?: number;
 };
+type CareTeamPricingTemplate = CareTeamService & {
+  id: string;
+  title: string;
+  sortOrder?: number;
+};
 
 const STALE_PSYCHOLOGIST_PROFILE_TEXT = /homeopathic|doctor|clinical operations/i;
 const CARE_SERVICE_PRICING_MODES = new Set([
@@ -228,6 +233,7 @@ export class DoctorsPage {
   readonly message = signal('');
 
   readonly siteConfig = signal<SiteConfigEntry[]>([]);
+  readonly carePricingTemplates = signal<CareTeamPricingTemplate[]>([]);
   readonly savingConfig = signal(false);
   readonly configMessage = signal('');
   readonly doctorListLimitValue = signal('12');
@@ -235,6 +241,7 @@ export class DoctorsPage {
   constructor(private readonly api: AdminApi) {
     void this.load();
     void this.loadSiteConfig();
+    void this.loadCarePricingTemplates();
   }
 
   async load() {
@@ -734,6 +741,39 @@ export class DoctorsPage {
         return next;
       }),
     );
+  }
+
+  applyPricingTemplate(target: 'create' | 'edit', index: number, templateId: string) {
+    const template = this.carePricingTemplates().find((item) => item.id === templateId);
+    if (!template) return;
+    this.serviceSignal(target).update((services) =>
+      services.map((service, i) =>
+        i === index
+          ? {
+              ...service,
+              pricingMode: template.pricingMode || 'FIXED',
+              priceInPaise: template.priceInPaise ?? 0,
+              firstSessionPriceInPaise: template.firstSessionPriceInPaise ?? null,
+              followUpPriceInPaise: template.followUpPriceInPaise ?? null,
+              introSessionLimit: template.introSessionLimit || 1,
+              packageSessionCount: template.packageSessionCount ?? null,
+              packagePriceInPaise: template.packagePriceInPaise ?? null,
+              durationMinutes: template.durationMinutes || 30,
+              isFree: template.isFree || template.pricingMode === 'FREE_VOLUNTEER',
+              description: service.description || template.description || '',
+            }
+          : service,
+      ),
+    );
+  }
+
+  async loadCarePricingTemplates() {
+    try {
+      const res = await this.api.listCareTeamPricingTemplates();
+      this.carePricingTemplates.set(res.templates as CareTeamPricingTemplate[]);
+    } catch {
+      this.carePricingTemplates.set([]);
+    }
   }
 
   rupees(value: number | null | undefined) {

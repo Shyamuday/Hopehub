@@ -102,6 +102,26 @@ export type HopeHubOfferingQuote = {
   rule?: Record<string, unknown> | null;
 };
 
+export type CareTeamServiceQuote = {
+  service: {
+    id: string;
+    title: string;
+    providerId: string;
+    providerName: string;
+    pricingMode: string;
+    durationMinutes: number;
+  };
+  quote: {
+    amountInPaise: number;
+    payableInPaise: number;
+    label: string;
+    appliedRule: string;
+    previousUseCount: number;
+    sessionCount: number;
+    requiresPayment: boolean;
+  };
+};
+
 export type HopeHubOfferingAccess = {
   accessMode: string;
   canAccess: boolean;
@@ -381,6 +401,15 @@ export class BookingService {
   ): Observable<{ offering: HopeHubOffering; quote: HopeHubOfferingQuote }> {
     return this.http.get<{ offering: HopeHubOffering; quote: HopeHubOfferingQuote }>(
       `${this.apiUrl}/hope-hub/offerings/${encodeURIComponent(slug)}/quote`,
+    );
+  }
+
+  careTeamServiceQuote(id: string, providerId?: string): Observable<CareTeamServiceQuote> {
+    const searchParams = new URLSearchParams();
+    if (providerId) searchParams.set('providerId', providerId);
+    const query = searchParams.toString();
+    return this.http.get<CareTeamServiceQuote>(
+      `${this.apiUrl}/hope-hub/care-team-services/${encodeURIComponent(id)}/quote${query ? `?${query}` : ''}`,
     );
   }
 

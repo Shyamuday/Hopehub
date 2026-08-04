@@ -164,6 +164,15 @@
           @for (service of createCareServices(); track $index) {
             <article class="service-editor-card">
               <input [value]="service.title" placeholder="Service title" (input)="updateCareService('create', $index, 'title', $any($event.target).value)" />
+              <div class="template-row">
+                <select #createTemplate>
+                  <option value="">Choose ready plan</option>
+                  @for (template of carePricingTemplates(); track template.id) {
+                    <option [value]="template.id">{{ template.title }}</option>
+                  }
+                </select>
+                <button type="button" class="btn-secondary" (click)="applyPricingTemplate('create', $index, createTemplate.value)">Use plan</button>
+              </div>
               <select [value]="service.pricingMode || 'FIXED'" (change)="updateCareService('create', $index, 'pricingMode', $any($event.target).value)">
                 @for (mode of careServicePricingModeOptions; track mode.value) {
                   <option [value]="mode.value">{{ mode.label }}</option>
@@ -623,6 +632,15 @@
               @for (service of editCareServices(); track $index) {
                 <article class="service-editor-card">
                   <input [value]="service.title" placeholder="Service title" (input)="updateCareService('edit', $index, 'title', $any($event.target).value)" />
+                  <div class="template-row">
+                    <select #editTemplate>
+                      <option value="">Choose ready plan</option>
+                      @for (template of carePricingTemplates(); track template.id) {
+                        <option [value]="template.id">{{ template.title }}</option>
+                      }
+                    </select>
+                    <button type="button" class="btn-secondary" (click)="applyPricingTemplate('edit', $index, editTemplate.value)">Use plan</button>
+                  </div>
                   <select [value]="service.pricingMode || 'FIXED'" (change)="updateCareService('edit', $index, 'pricingMode', $any($event.target).value)">
                     @for (mode of careServicePricingModeOptions; track mode.value) {
                       <option [value]="mode.value">{{ mode.label }}</option>

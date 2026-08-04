@@ -15,7 +15,11 @@ import {
 } from '../../core/services';
 import { APP_CONSTANTS } from '../../core';
 import { FEATURED_SERVICES, getAllServices } from '../../core/data/services-data';
-import type { HopeHubOffering, HopeHubOfferingQuote } from '../../core/services/booking.service';
+import type {
+  CareTeamServiceQuote,
+  HopeHubOffering,
+  HopeHubOfferingQuote,
+} from '../../core/services/booking.service';
 import {
   HOPE_HUB_ANALYTICS_EVENTS,
   ProductAnalyticsService,
@@ -78,6 +82,9 @@ export class ContactComponent implements OnInit {
   prefilledData = signal<any>({});
   selectedOffering = signal<HopeHubOffering | null>(null);
   selectedOfferingQuote = signal<HopeHubOfferingQuote | null>(null);
+  careTeamServiceQuote = signal<CareTeamServiceQuote | null>(null);
+  careTeamServiceQuoteLoading = signal(false);
+  careTeamServiceQuoteError = signal('');
   defaultSessionOffer = signal<HopeHubOffering | null>(null);
   defaultSessionQuote = signal<HopeHubOfferingQuote | null>(null);
   currentUser = signal<User | null>(null);
@@ -156,6 +163,7 @@ export class ContactComponent implements OnInit {
         this.waitingForAuthToBook.set(false);
         setTimeout(() => void this.onSubmit(), 0);
       }
+      this.loadCareTeamServiceQuote();
     });
   }
 
@@ -176,7 +184,33 @@ export class ContactComponent implements OnInit {
         source: params['source'] || '',
       });
       this.loadSelectedOffering(params);
+      this.loadCareTeamServiceQuote();
     });
+  }
+
+  private loadCareTeamServiceQuote(): void {
+    const data = this.prefilledData();
+    if (!data.careTeamServiceId || !this.currentUser()) {
+      this.careTeamServiceQuote.set(null);
+      this.careTeamServiceQuoteLoading.set(false);
+      this.careTeamServiceQuoteError.set('');
+      return;
+    }
+    this.careTeamServiceQuoteLoading.set(true);
+    this.careTeamServiceQuoteError.set('');
+    this.bookingService
+      .careTeamServiceQuote(data.careTeamServiceId, data.providerId || undefined)
+      .subscribe({
+        next: (quote) => {
+          this.careTeamServiceQuote.set(quote);
+          this.careTeamServiceQuoteLoading.set(false);
+        },
+        error: () => {
+          this.careTeamServiceQuote.set(null);
+          this.careTeamServiceQuoteLoading.set(false);
+          this.careTeamServiceQuoteError.set('Could not load exact service price yet.');
+        },
+      });
   }
 
   private loadSelectedOffering(params: any): void {
@@ -600,6 +634,9 @@ export class ContactComponent implements OnInit {
         ? 'Choose slot to pay'
         : 'Book a session';
     }
+    if (this.payTodayInPaise() <= 0) {
+      return 'Confirm free booking';
+    }
     return this.prefilledData().paymentMode === 'PARTIAL' ? 'Book and pay deposit' : 'Book and pay';
   }
 
@@ -623,6 +660,8 @@ export class ContactComponent implements OnInit {
   }
 
   offerFinalInPaise(): number {
+    const serviceQuote = this.careTeamServiceQuote();
+    if (serviceQuote) return serviceQuote.quote.amountInPaise;
     const offer = this.selectedOffering();
     if (!offer?.priceInPaise)
       return this.resolveServicePriceInPaise(this.contactForm?.get('serviceInterest')?.value || '');
@@ -630,6 +669,8 @@ export class ContactComponent implements OnInit {
   }
 
   payTodayInPaise(): number {
+    const serviceQuote = this.careTeamServiceQuote();
+    if (serviceQuote) return serviceQuote.quote.payableInPaise;
     const offer = this.selectedOffering();
     const finalAmount = this.offerFinalInPaise();
     if (
@@ -722,6 +763,10 @@ export class ContactComponent implements OnInit {
   }
 
   private resolveServicePriceInPaise(serviceName: string): number {
+    const serviceQuote = this.careTeamServiceQuote();
+    if (serviceQuote) {
+      return serviceQuote.quote.amountInPaise;
+    }
     const queryPrice = Number(this.prefilledData().price);
     if (this.prefilledData().careTeamServiceId && Number.isFinite(queryPrice) && queryPrice >= 0) {
       return Math.round(queryPrice * 100);

@@ -66,6 +66,7 @@ export class ProfilePage {
     { value: 'FREE_VOLUNTEER', label: 'Free volunteer support' },
   ];
   readonly careServices = signal<Array<any>>([]);
+  readonly carePricingTemplates = signal<Array<any>>([]);
 
   methodOptions: Array<{ id: string; label: string }> = [];
   doctorTypeLabel = '';
@@ -80,6 +81,20 @@ export class ProfilePage {
 
   constructor() {
     void this.loadProfile();
+    void this.loadCarePricingTemplates();
+  }
+
+  async loadCarePricingTemplates() {
+    try {
+      const res = await firstValueFrom(
+        this.http.get<{ templates: Array<any> }>(
+          `${this.apiBase}/hope-hub/care-team-pricing-templates`,
+        ),
+      );
+      this.carePricingTemplates.set(res.templates);
+    } catch {
+      this.carePricingTemplates.set([]);
+    }
   }
 
   async loadProfile() {
@@ -267,6 +282,30 @@ export class ProfilePage {
         if (key === 'pricingMode') next.isFree = value === 'FREE_VOLUNTEER';
         return next;
       }),
+    );
+  }
+
+  applyPricingTemplate(index: number, templateId: string) {
+    const template = this.carePricingTemplates().find((item) => item.id === templateId);
+    if (!template) return;
+    this.careServices.update((services) =>
+      services.map((service, i) =>
+        i === index
+          ? {
+              ...service,
+              pricingMode: template.pricingMode || 'FIXED',
+              priceInPaise: template.priceInPaise ?? 0,
+              firstSessionPriceInPaise: template.firstSessionPriceInPaise ?? null,
+              followUpPriceInPaise: template.followUpPriceInPaise ?? null,
+              introSessionLimit: template.introSessionLimit || 1,
+              packageSessionCount: template.packageSessionCount ?? null,
+              packagePriceInPaise: template.packagePriceInPaise ?? null,
+              durationMinutes: template.durationMinutes || 30,
+              isFree: template.isFree || template.pricingMode === 'FREE_VOLUNTEER',
+              description: service.description || template.description || '',
+            }
+          : service,
+      ),
     );
   }
 

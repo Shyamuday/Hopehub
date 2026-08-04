@@ -503,6 +503,50 @@ async function previousCareTeamServiceUseCount(patientId: string, careTeamServic
   }).length;
 }
 
+function careTeamServiceSelect() {
+  return {
+    id: true,
+    title: true,
+    pricingMode: true,
+    priceInPaise: true,
+    firstSessionPriceInPaise: true,
+    followUpPriceInPaise: true,
+    introSessionLimit: true,
+    packageSessionCount: true,
+    packagePriceInPaise: true,
+    durationMinutes: true,
+    isFree: true,
+    mentalHealthProfile: {
+      select: {
+        doctor: {
+          select: {
+            id: true,
+            userId: true,
+            user: { select: { name: true } }
+          }
+        }
+      }
+    }
+  } as const;
+}
+
+async function findAvailableCareTeamService(id: string, providerId?: string) {
+  return prisma.careTeamService.findFirst({
+    where: {
+      id,
+      isActive: true,
+      mentalHealthProfile: {
+        doctor: {
+          ...(providerId ? { id: providerId } : {}),
+          showOnWebsite: true,
+          user: { isActive: true }
+        }
+      }
+    },
+    select: careTeamServiceSelect()
+  });
+}
+
 function providerPublicPayload(
   provider: {
     id: string;
@@ -1602,6 +1646,69 @@ hopeHubRouter.get(
   })
 );
 
+hopeHubRouter.get(
+  '/hope-hub/care-team-pricing-templates',
+  asyncRoute(async (_req, res) => {
+    const templates = await prisma.careTeamPricingTemplate.findMany({
+      where: { isActive: true },
+      orderBy: [{ sortOrder: 'asc' }, { title: 'asc' }],
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        pricingMode: true,
+        priceInPaise: true,
+        firstSessionPriceInPaise: true,
+        followUpPriceInPaise: true,
+        introSessionLimit: true,
+        packageSessionCount: true,
+        packagePriceInPaise: true,
+        durationMinutes: true,
+        isFree: true,
+        sortOrder: true
+      }
+    });
+    res.json({ templates });
+  })
+);
+
+hopeHubRouter.get(
+  '/hope-hub/care-team-services/:id/quote',
+  authRequired,
+  allowRoles(Role.PATIENT),
+  asyncRoute(async (req, res) => {
+    const id = routeParam(req, 'id');
+    const providerId = queryText(req, 'providerId').trim();
+    const service = await findAvailableCareTeamService(id, providerId || undefined);
+    if (!service) {
+      return res.status(404).json({ message: 'Selected care team service is not available.' });
+    }
+
+    const previousUseCount = await previousCareTeamServiceUseCount(req.user!.id, service.id);
+    const pricing = careTeamServicePricingPreview(service, previousUseCount);
+
+    res.json({
+      service: {
+        id: service.id,
+        title: service.title,
+        providerId: service.mentalHealthProfile.doctor.id,
+        providerName: service.mentalHealthProfile.doctor.user.name,
+        pricingMode: service.pricingMode,
+        durationMinutes: service.durationMinutes
+      },
+      quote: {
+        amountInPaise: pricing.amountInPaise,
+        payableInPaise: pricing.amountInPaise,
+        label: pricing.label,
+        appliedRule: pricing.appliedRule,
+        previousUseCount,
+        sessionCount: pricing.sessionCount,
+        requiresPayment: pricing.amountInPaise > 0
+      }
+    });
+  })
+);
+
 hopeHubRouter.post(
   '/hope-hub/assessments',
   authRequired,
@@ -1780,43 +1887,7 @@ hopeHubRouter.post(
       }
     }
     const selectedCareTeamService = body.careTeamServiceId
-      ? await prisma.careTeamService.findFirst({
-          where: {
-            id: body.careTeamServiceId,
-            isActive: true,
-            mentalHealthProfile: {
-              doctor: {
-                ...(body.providerId ? { id: body.providerId } : {}),
-                showOnWebsite: true,
-                user: { isActive: true }
-              }
-            }
-          },
-          select: {
-            id: true,
-            title: true,
-            pricingMode: true,
-            priceInPaise: true,
-            firstSessionPriceInPaise: true,
-            followUpPriceInPaise: true,
-            introSessionLimit: true,
-            packageSessionCount: true,
-            packagePriceInPaise: true,
-            durationMinutes: true,
-            isFree: true,
-            mentalHealthProfile: {
-              select: {
-                doctor: {
-                  select: {
-                    id: true,
-                    userId: true,
-                    user: { select: { name: true } }
-                  }
-                }
-              }
-            }
-          }
-        })
+      ? await findAvailableCareTeamService(body.careTeamServiceId, body.providerId || undefined)
       : null;
     if (body.careTeamServiceId && !selectedCareTeamService) {
       return res.status(400).json({ message: 'Selected care team service is not available.' });
