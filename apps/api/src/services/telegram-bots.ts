@@ -65,6 +65,13 @@ import {
   showDoctorOutcomeOptions,
   showDoctorOutcomeSessions
 } from './telegram-bots.outcomes.js';
+import {
+  applyTemplateToProviderService,
+  createProviderServiceFromTemplate,
+  showProviderPricingTemplates,
+  showProviderServices,
+  toggleProviderService
+} from './telegram-bots.provider-services.js';
 import { adminQualitySummary } from './telegram-bots.quality.js';
 import {
   ensureSession,
@@ -2446,6 +2453,8 @@ async function handleCommand(kind: TelegramBotKind, session: TelegramSession, te
 
   if (kind === TelegramBotKind.DOCTOR) {
     if (command === '/signup') await startProviderSignup(kind, session);
+    else if (command === '/services' || command === '/pricing')
+      await showProviderServices(kind, session);
     else if (command === '/assignments') await showProviderAssignments(kind, session);
     else if (command === '/queue') await doctorQueue(kind, session);
     else if (command === '/outcomes' || command === '/close')
@@ -2616,6 +2625,32 @@ async function handleCallback(
       const track = data.slice('provider_signup:track:'.length) as ProviderApplicationTrack;
       if (track in providerTrackLabels) await setProviderSignupTrack(kind, session, track);
       else await startProviderSignup(kind, session);
+    } else if (data === 'provider:services') await showProviderServices(kind, session);
+    else if (data === 'provider:services:templates')
+      await showProviderPricingTemplates(kind, session);
+    else if (data.startsWith('provider:service:templates:')) {
+      await showProviderPricingTemplates(
+        kind,
+        session,
+        data.slice('provider:service:templates:'.length)
+      );
+    } else if (data.startsWith('provider:service:create_template:')) {
+      await createProviderServiceFromTemplate(
+        kind,
+        session,
+        data.slice('provider:service:create_template:'.length)
+      );
+    } else if (data.startsWith('provider:service:apply_template:')) {
+      const parts = data.split(':');
+      const serviceId = parts[3];
+      const templateId = parts[4];
+      if (serviceId && templateId) {
+        await applyTemplateToProviderService(kind, session, serviceId, templateId);
+      } else {
+        await showProviderServices(kind, session);
+      }
+    } else if (data.startsWith('provider:service:toggle:')) {
+      await toggleProviderService(kind, session, data.slice('provider:service:toggle:'.length));
     } else if (data === 'doctor:assignments') await showProviderAssignments(kind, session);
     else if (data === 'doctor:queue') await doctorQueue(kind, session);
     else if (data === 'doctor:outcomes') await showDoctorOutcomeSessions(kind, session);

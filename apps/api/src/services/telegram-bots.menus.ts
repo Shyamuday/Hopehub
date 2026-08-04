@@ -55,6 +55,7 @@ export async function menuFor(kind: TelegramBotKind, linked: boolean): Promise<I
   if (kind === 'DOCTOR') {
     return [
       [{ text: 'Join care team', callback_data: 'doctor:signup' }],
+      [{ text: 'My services & pricing', callback_data: 'provider:services' }],
       [{ text: 'Assigned support leads', callback_data: 'doctor:assignments' }],
       [
         { text: 'My queue', callback_data: 'doctor:queue' },
@@ -117,6 +118,7 @@ export function helpText(kind: TelegramBotKind) {
     return [
       '<b>Care team bot commands</b>',
       '/link doctor@example.com - link doctor account',
+      '/services - manage services and pricing',
       '/assignments - assigned support leads',
       '/queue - real queue summary',
       '/outcomes - close a session with outcome',
