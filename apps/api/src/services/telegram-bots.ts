@@ -151,16 +151,25 @@ function stripTrailingSlash(value: string) {
   return value.replace(/\/+$/, '');
 }
 
+function publicOrigin(value: string) {
+  return (
+    value
+      .split(',')
+      .map((origin) => origin.trim())
+      .find((origin) => /^https?:\/\//i.test(origin)) || value.trim()
+  );
+}
+
 function webUrl(path = '') {
-  return `${stripTrailingSlash(SERVER_CONFIG.ORIGINS.WEB)}${path}`;
+  return `${stripTrailingSlash(publicOrigin(SERVER_CONFIG.ORIGINS.WEB))}${path}`;
 }
 
 function doctorUrl(path = '') {
-  return `${stripTrailingSlash(SERVER_CONFIG.ORIGINS.DOCTOR)}${path}`;
+  return `${stripTrailingSlash(publicOrigin(SERVER_CONFIG.ORIGINS.DOCTOR))}${path}`;
 }
 
 function adminUrl(path = '') {
-  return `${stripTrailingSlash(SERVER_CONFIG.ORIGINS.ADMIN)}${path}`;
+  return `${stripTrailingSlash(publicOrigin(SERVER_CONFIG.ORIGINS.ADMIN))}${path}`;
 }
 
 function escapeHtml(value: string | null | undefined) {
