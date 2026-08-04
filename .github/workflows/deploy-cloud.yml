@@ -7,6 +7,10 @@ on:
         description: 'Apps to deploy: auto, all, patient, admin, doctor, operations, healing, api, or comma-separated list'
         required: false
         default: auto
+      resolve_failed_migration:
+        description: 'Optional failed Prisma migration to mark rolled back before an API deploy'
+        required: false
+        default: ''
   push:
     branches: [main]
     paths:
@@ -356,6 +360,19 @@ jobs:
 
           echo "deploy=$deploy" >> "$GITHUB_OUTPUT"
           echo "API deploy selected: $deploy"
+
+      - name: Resolve failed Prisma migration
+        if: steps.api-changes.outputs.deploy == 'true' && github.event.inputs.resolve_failed_migration != ''
+        working-directory: /opt/hopehub/apps/api
+        env:
+          FAILED_MIGRATION: ${{ github.event.inputs.resolve_failed_migration }}
+        run: |
+          set -euo pipefail
+          if [[ ! "$FAILED_MIGRATION" =~ ^[0-9]{14}_[a-z0-9_]+$ ]]; then
+            echo "Invalid migration name."
+            exit 1
+          fi
+          npx prisma migrate resolve --rolled-back "$FAILED_MIGRATION"
 
       - name: Deploy API locally
         if: steps.api-changes.outputs.deploy == 'true'
