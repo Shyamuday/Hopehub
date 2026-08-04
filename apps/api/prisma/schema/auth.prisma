@@ -56,6 +56,12 @@ enum ThermalPreference {
   NEUTRAL
 }
 
+enum TelegramBotKind {
+  USER
+  DOCTOR
+  ADMIN
+}
+
 model User {
   id                  String         @id @default(cuid())
   name                String
@@ -190,6 +196,7 @@ model User {
   practiceSessions    UserPracticeSession[] @relation("UserPracticeSessions")
   dailyPlans          PatientDailyPlan[] @relation("PatientDailyPlans")
   dailyPlanUploads    PatientDailyPlanImage[] @relation("PatientDailyPlanUploads")
+  telegramBotSessions TelegramBotSession[] @relation("UserTelegramBotSessions")
   lifestyleTipSessions UserLifestyleTipSession[] @relation("UserLifestyleTipSessions")
   assessmentAccessGrants AssessmentAccessGrant[] @relation("AssessmentAccessGrants")
   assessmentCouponRedemptions AssessmentCouponRedemption[] @relation("AssessmentCouponRedemptions")
@@ -334,6 +341,45 @@ model PatientDailyPlanImage {
   @@index([userId, createdAt])
   @@index([planId, createdAt])
   @@index([taskId])
+}
+
+model TelegramBotSession {
+  id             String          @id @default(cuid())
+  botKind        TelegramBotKind
+  chatId         String
+  telegramUserId String?
+  username       String?
+  firstName      String?
+  lastName       String?
+  linkedUserId   String?
+  linkedUser     User?           @relation("UserTelegramBotSessions", fields: [linkedUserId], references: [id], onDelete: SetNull)
+  state          String          @default("NEW")
+  lastCommand    String?
+  metadata       Json?
+  events         TelegramBotEvent[]
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  @@unique([botKind, chatId])
+  @@index([telegramUserId])
+  @@index([linkedUserId])
+  @@index([botKind, updatedAt])
+}
+
+model TelegramBotEvent {
+  id        String              @id @default(cuid())
+  sessionId String?
+  session   TelegramBotSession? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+  botKind   TelegramBotKind
+  updateId  BigInt?
+  chatId    String?
+  eventType String
+  payload   Json?
+  createdAt DateTime            @default(now())
+
+  @@index([sessionId, createdAt])
+  @@index([botKind, createdAt])
+  @@index([updateId])
 }
 
 model PasswordResetToken {

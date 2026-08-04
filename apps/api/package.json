@@ -21,6 +21,7 @@
     "repertory:import:oorep": "tsx scripts/import-oorep-sql.ts",
     "verify:doctor-earnings": "tsx scripts/verify-doctor-earnings.ts",
     "verify:finance-period": "tsx scripts/verify-finance-period.ts",
+    "telegram:setup": "tsx scripts/setup-telegram-bots.ts",
     "assets:migrate:s3": "tsx scripts/migrate-local-assets-to-s3.ts"
   },
   "dependencies": {

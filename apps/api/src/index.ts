@@ -66,6 +66,7 @@ import { assessmentDefinitionsRouter } from './routes/assessment-definitions.js'
 import { practicesRouter } from './routes/practices.js';
 import { lifestyleTipsRouter } from './routes/lifestyle-tips.js';
 import { rtcRouter } from './routes/rtc.js';
+import { telegramBotsRouter } from './routes/telegram-bots.js';
 import { createRepertoryRouter } from './routes/repertory/index.js';
 import { roleGuidesRouter } from './routes/role-guides.js';
 import { ReceptionScopeError } from './routes/reception/shared.js';
@@ -250,6 +251,7 @@ app.use(psychologicalTestsRouter);
 app.use(assessmentDefinitionsRouter);
 app.use(practicesRouter);
 app.use(lifestyleTipsRouter);
+app.use(telegramBotsRouter);
 
 // ── Global error handler ───────────────────────────────────────────────────────
 
