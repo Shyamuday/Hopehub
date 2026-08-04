@@ -1,5 +1,3 @@
-import { CONTACT_IDENTITY } from './config.constants.js';
-
 export const SITE_CONFIG_META: Record<string, { label: string; description: string }> = {
   doctorListLimit: {
     label: 'Doctor list limit',
@@ -124,40 +122,6 @@ export const SITE_CONFIG_META: Record<string, { label: string; description: stri
   }
 };
 
-export const SITE_CONFIG_DEFAULTS: Record<string, string> = {
-  doctorListLimit: '12',
-  whatsappPhone: '919876543210',
-  whatsappGroupUrl: 'https://chat.whatsapp.com/CbbNoo5kXw3FWWKTGO82kz',
-  whatsappGroupLabel: 'Join WhatsApp group',
-  telegramUsername: 'hopehubindia',
-  telegramUserBotUsername: 'Hopehubbot',
-  telegramDoctorBotUsername: 'Hopehubprovidersbot',
-  telegramAdminBotUsername: 'Hopehuboperationbot',
-  telegramQrCodePath: '/image/hopehubindiaqr.jpg',
-  whatsappQrCodePath: '/image/whatsapp-qr.jpeg',
-  telegramDefaultOfferingSlug: 'single-30-minute-session',
-  clinicName: 'HopeHub Care and Research Centre',
-  statConsultations: '5,000+',
-  statDoctors: '12+',
-  statRating: '4.8★',
-  statFollowUp: '92%',
-  statPatientsTreated: '4,800+',
-  statConditionsTreated: '15+',
-  statImprovement: '92%',
-  statSatisfaction: '4.8 / 5',
-  contactPhone: '+91-98765-43210',
-  contactPhoneTel: '+919876543210',
-  contactEmail: CONTACT_IDENTITY.EMAIL,
-  clinicAddressLine1: 'Ranchi Main Clinic',
-  clinicAddressLine2: 'Near City Centre, Main Road',
-  clinicAddressLine3: 'Ranchi, Jharkhand, India',
-  clinicAddressLine4: 'Pincode — 834001',
-  homeHeroEyebrow: 'Doctor-led homeopathy',
-  homeHeroHeadline: 'Personalised homeopathic care for every health concern.',
-  homeHeroLead:
-    'Acute illnesses, chronic conditions, skin and hair issues, digestive problems, allergies, mental wellness, and more — consult qualified homeopathic doctors online with prescriptions and follow-up.'
-};
-
 export const SITE_CONFIG_KEYS = Object.keys(SITE_CONFIG_META);
 
 export const PUBLIC_SITE_CONFIG_KEYS = [
@@ -189,4 +153,14 @@ export const PUBLIC_SITE_CONFIG_KEYS = [
   'statConditionsTreated',
   'statImprovement',
   'statSatisfaction'
+] as const;
+
+export const REQUIRED_PUBLIC_SITE_CONFIG_KEYS = [
+  'whatsappGroupUrl',
+  'telegramUsername',
+  'telegramUserBotUsername',
+  'telegramDoctorBotUsername',
+  'telegramQrCodePath',
+  'whatsappQrCodePath',
+  'telegramDefaultOfferingSlug'
 ] as const;

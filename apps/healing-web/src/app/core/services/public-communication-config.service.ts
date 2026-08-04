@@ -6,6 +6,7 @@ import { APP_CONSTANTS } from '../constants/app.constants';
 
 type PublicConfigResponse = {
   config: Partial<Record<string, string>>;
+  missingRequired?: string[];
 };
 
 function telegramUrl(username: string) {
@@ -18,16 +19,21 @@ function telegramHandle(username: string) {
 
 @Injectable({ providedIn: 'root' })
 export class PublicCommunicationConfigService {
+  defaultOfferingSlug = '';
+
   constructor(private readonly http: HttpClient) {}
 
   async load(): Promise<void> {
     try {
-      const { config } = await firstValueFrom(
+      const { config, missingRequired } = await firstValueFrom(
         this.http.get<PublicConfigResponse>(`${environment.apiUrl}/public-config`),
       );
+      if (missingRequired?.length) {
+        console.warn('Missing public communication config:', missingRequired);
+      }
       this.apply(config || {});
     } catch {
-      // Keep checked-in fallback constants when public config is unavailable.
+      // Fail closed: config-driven public links stay empty until backend config is available.
     }
   }
 
@@ -39,6 +45,7 @@ export class PublicCommunicationConfigService {
     const telegramQr = config['telegramQrCodePath']?.trim();
     const whatsappUrl = config['whatsappGroupUrl']?.trim();
     const whatsappQr = config['whatsappQrCodePath']?.trim();
+    const defaultOfferingSlug = config['telegramDefaultOfferingSlug']?.trim();
 
     if (telegramUsername) {
       (APP_CONSTANTS.TELEGRAM as any).USERNAME = telegramUsername.replace(/^@/, '');
@@ -66,5 +73,6 @@ export class PublicCommunicationConfigService {
     if (telegramQr) (APP_CONSTANTS.TELEGRAM as any).QR_CODE = telegramQr;
     if (whatsappUrl) (APP_CONSTANTS.WHATSAPP as any).GROUP_URL = whatsappUrl;
     if (whatsappQr) (APP_CONSTANTS.WHATSAPP as any).QR_CODE = whatsappQr;
+    this.defaultOfferingSlug = defaultOfferingSlug || '';
   }
 }

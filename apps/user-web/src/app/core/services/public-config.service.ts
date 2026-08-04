@@ -1,7 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { ClinicApiClient } from '../../clinic-api/clinic-api.client';
 import { API_PATHS } from '../constants/api-paths.constants';
-import { FOOTER_CONTENT } from '../constants/footer-content.constants';
 
 export type PublicConfig = {
   whatsappPhone: string;
@@ -36,28 +35,27 @@ export type PublicFooterContact = {
   emailHref: string;
 };
 
-const FALLBACK: PublicConfig = {
-  whatsappPhone: '919876543210',
-  clinicName: FOOTER_CONTENT.address.clinicName,
-  contactPhone: FOOTER_CONTENT.address.phone,
-  contactPhoneTel: FOOTER_CONTENT.address.phoneHref.replace('tel:', ''),
-  contactEmail: FOOTER_CONTENT.address.email,
-  clinicAddressLine1: FOOTER_CONTENT.address.lines[0] ?? '',
-  clinicAddressLine2: FOOTER_CONTENT.address.lines[1] ?? '',
-  clinicAddressLine3: FOOTER_CONTENT.address.lines[2] ?? '',
-  clinicAddressLine4: FOOTER_CONTENT.address.lines[3] ?? '',
-  homeHeroEyebrow: 'Doctor-led homeopathy',
-  homeHeroHeadline: 'Personalised homeopathic care for every health concern.',
-  homeHeroLead:
-    'Acute illnesses, chronic conditions, skin and hair issues, digestive problems, allergies, mental wellness, and more — consult qualified homeopathic doctors online with prescriptions and follow-up.',
-  statConsultations: '5,000+',
-  statDoctors: '12+',
-  statRating: '4.8★',
-  statFollowUp: '92%',
-  statPatientsTreated: '4,800+',
-  statConditionsTreated: '15+',
-  statImprovement: '92%',
-  statSatisfaction: '4.8 / 5',
+const EMPTY_PUBLIC_CONFIG: PublicConfig = {
+  whatsappPhone: '',
+  clinicName: '',
+  contactPhone: '',
+  contactPhoneTel: '',
+  contactEmail: '',
+  clinicAddressLine1: '',
+  clinicAddressLine2: '',
+  clinicAddressLine3: '',
+  clinicAddressLine4: '',
+  homeHeroEyebrow: '',
+  homeHeroHeadline: '',
+  homeHeroLead: '',
+  statConsultations: '',
+  statDoctors: '',
+  statRating: '',
+  statFollowUp: '',
+  statPatientsTreated: '',
+  statConditionsTreated: '',
+  statImprovement: '',
+  statSatisfaction: '',
 };
 
 @Injectable({ providedIn: 'root' })
@@ -72,16 +70,17 @@ export class PublicConfigService {
       this.loading = this.client
         .get<{ config: PublicConfig }>(API_PATHS.PUBLIC_CONFIG)
         .then((r: { config: PublicConfig }) => {
-          this.cached = { ...FALLBACK, ...r.config };
+          this.cached = r.config;
           return this.cached;
         })
-        .catch(() => FALLBACK as PublicConfig);
+        .catch(() => EMPTY_PUBLIC_CONFIG);
     }
     return this.loading!;
   }
 
   whatsappUrl(config: PublicConfig): string {
-    const phone = config.whatsappPhone || FALLBACK.whatsappPhone;
+    const phone = config.whatsappPhone;
+    if (!phone) return '';
     return `https://wa.me/${phone}?text=Hi%20HopeHub%20Care%2C%20I%20would%20like%20to%20know%20more%20about%20your%20services.`;
   }
 
@@ -94,13 +93,13 @@ export class PublicConfigService {
     ].filter((line) => line?.trim());
 
     return {
-      clinicName: config.clinicName || FALLBACK.clinicName,
+      clinicName: config.clinicName,
       lines,
-      phoneLabel: FOOTER_CONTENT.address.phoneLabel,
-      phone: config.contactPhone || FALLBACK.contactPhone,
-      phoneHref: `tel:${config.contactPhoneTel || FALLBACK.contactPhoneTel}`,
-      email: config.contactEmail || FALLBACK.contactEmail,
-      emailHref: `mailto:${config.contactEmail || FALLBACK.contactEmail}`,
+      phoneLabel: 'Phone',
+      phone: config.contactPhone,
+      phoneHref: config.contactPhoneTel ? `tel:${config.contactPhoneTel}` : '',
+      email: config.contactEmail,
+      emailHref: config.contactEmail ? `mailto:${config.contactEmail}` : '',
     };
   }
 }

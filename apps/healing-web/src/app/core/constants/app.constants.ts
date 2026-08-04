@@ -1,9 +1,3 @@
-// Update this value when the public Telegram username changes. URLs and labels derive from it.
-export const TELEGRAM_USERNAME = 'hopehubindia';
-export const TELEGRAM_USER_BOT_USERNAME = 'Hopehubbot';
-export const TELEGRAM_DOCTOR_BOT_USERNAME = 'Hopehubprovidersbot';
-export const TELEGRAM_ADMIN_BOT_USERNAME = 'Hopehuboperationbot';
-
 export const BRAND_ASSETS = {
   LOGO_PATH: '/image/hopehublogom.jpg',
   APP_ICON_PATH: '/hopehublogom.jpg',
@@ -15,16 +9,16 @@ export const APP_CONSTANTS = {
   SITE_NAME: 'Hope Hub',
   BRAND: BRAND_ASSETS,
   TELEGRAM: {
-    USERNAME: TELEGRAM_USERNAME,
-    GROUP_URL: `https://t.me/${TELEGRAM_USERNAME}`,
-    SUPPORT_HANDLE: `@${TELEGRAM_USERNAME}`,
-    QR_CODE: '/image/hopehubindiaqr.jpg',
+    USERNAME: '',
+    GROUP_URL: '',
+    SUPPORT_HANDLE: '',
+    QR_CODE: '',
     BOTS: [
       {
         key: 'user-support',
         title: 'User Support Bot',
-        handle: `@${TELEGRAM_USER_BOT_USERNAME}`,
-        url: `https://t.me/${TELEGRAM_USER_BOT_USERNAME}`,
+        handle: '',
+        url: '',
         audience: 'Users',
         purpose:
           'Start here for user help, daily plan, tasks, session requests, and volunteer support.',
@@ -32,8 +26,8 @@ export const APP_CONSTANTS = {
       {
         key: 'doctor-provider',
         title: 'Doctor / Provider Bot',
-        handle: `@${TELEGRAM_DOCTOR_BOT_USERNAME}`,
-        url: `https://t.me/${TELEGRAM_DOCTOR_BOT_USERNAME}`,
+        handle: '',
+        url: '',
         audience: 'Doctors and psychologists',
         purpose: 'For providers to link their account, manage queue, and update availability.',
       },
@@ -51,8 +45,8 @@ export const APP_CONSTANTS = {
       {
         key: 'community',
         title: 'Hope Hub India Community',
-        handle: `@${TELEGRAM_USERNAME}`,
-        url: `https://t.me/${TELEGRAM_USERNAME}`,
+        handle: '',
+        url: '',
         audience: 'Community members',
         purpose:
           'Anonymous-friendly community updates, support discussions, and daily voice circle.',
@@ -60,8 +54,8 @@ export const APP_CONSTANTS = {
     ],
   },
   WHATSAPP: {
-    GROUP_URL: 'https://chat.whatsapp.com/CbbNoo5kXw3FWWKTGO82kz',
-    QR_CODE: '/image/whatsapp-qr.jpeg',
+    GROUP_URL: '',
+    QR_CODE: '',
   },
   CONTACT: {
     EMAIL: 'contact@hopehub.in',

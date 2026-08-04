@@ -31,6 +31,7 @@ import {
   scoreAssessment
 } from '../services/assessment-definitions.js';
 import { isFirstPaidConsultation } from '../services/referral-codes.js';
+import { getSiteConfigValue } from '../services/site-config.service.js';
 
 export const hopeHubRouter = Router();
 
@@ -1039,16 +1040,18 @@ hopeHubRouter.get(
   '/hope-hub/bootstrap',
   authOptional,
   asyncRoute(async (_req, res) => {
-    const [banners, offerings, services, providerResponse] = await Promise.all([
-      activeHopeHubBanners(),
-      activeHopeHubOfferings(),
-      activeHopeHubServices(),
-      activeHopeHubProviders({ page: 1, pageSize: 5 })
-    ]);
-    const singleSession =
-      offerings.find((offering) => offering.slug === 'single-30-minute-session') ||
-      offerings.find((offering) => offering.code === 'SINGLE_30') ||
-      null;
+    const [banners, offerings, services, providerResponse, defaultOfferingSlug] = await Promise.all(
+      [
+        activeHopeHubBanners(),
+        activeHopeHubOfferings(),
+        activeHopeHubServices(),
+        activeHopeHubProviders({ page: 1, pageSize: 5 }),
+        getSiteConfigValue('telegramDefaultOfferingSlug')
+      ]
+    );
+    const singleSession = defaultOfferingSlug
+      ? offerings.find((offering) => offering.slug === defaultOfferingSlug) || null
+      : null;
     res.set('Cache-Control', 'private, max-age=300');
     res.json({
       banners,

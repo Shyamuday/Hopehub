@@ -5,6 +5,7 @@ import { NOTE_CONTENT } from '../../core/constants/note-content.constants';
 import { Service, ServiceCategory } from '../../core/models';
 import { ServiceInquiryComponent } from '../../shared/components';
 import { BookingService, NotificationService, SEOService } from '../../core/services';
+import { PublicCommunicationConfigService } from '../../core/services/public-communication-config.service';
 import {
   HOPE_HUB_ANALYTICS_EVENTS,
   ProductAnalyticsService,
@@ -42,6 +43,7 @@ export class ServiceDetailComponent implements OnInit {
   private router = inject(Router);
   private seoService = inject(SEOService);
   private bookingService = inject(BookingService);
+  private publicConfig = inject(PublicCommunicationConfigService);
   private notificationService = inject(NotificationService);
   private productAnalytics = inject(ProductAnalyticsService);
 
@@ -61,12 +63,13 @@ export class ServiceDetailComponent implements OnInit {
   }
 
   bookService() {
+    const offering = this.publicConfig.defaultOfferingSlug;
     // Navigate to contact form with service pre-selected
     this.router.navigate(['/contact'], {
       queryParams: {
         service: this.service()?.id,
         serviceName: this.service()?.name,
-        offering: 'single-30-minute-session',
+        ...(offering ? { offering } : {}),
         price: this.sessionOfferPrice,
         duration: '30 minutes + 15 min follow-up',
         source: 'service-detail',
@@ -232,7 +235,9 @@ export class ServiceDetailComponent implements OnInit {
   }
 
   private loadSingleSessionQuote(): void {
-    this.bookingService.offeringQuote('single-30-minute-session').subscribe({
+    const offeringSlug = this.publicConfig.defaultOfferingSlug;
+    if (!offeringSlug) return;
+    this.bookingService.offeringQuote(offeringSlug).subscribe({
       next: ({ offering, quote }) => {
         this.singleSessionOffer.set(offering);
         this.singleSessionQuote.set(quote);

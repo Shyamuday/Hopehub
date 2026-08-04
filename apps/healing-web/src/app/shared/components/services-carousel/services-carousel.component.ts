@@ -10,6 +10,7 @@ import {
 } from '../../../core/data/services-data';
 import { APP_CONSTANTS } from '../../../core/constants/app.constants';
 import { BookingService } from '../../../core/services/booking.service';
+import { PublicCommunicationConfigService } from '../../../core/services/public-communication-config.service';
 
 export interface CarouselService {
   id: string;
@@ -38,6 +39,7 @@ export interface CarouselService {
 export class ServicesCarouselComponent implements OnInit {
   private router = inject(Router);
   private bookingService = inject(BookingService);
+  private publicConfig = inject(PublicCommunicationConfigService);
 
   currentSlide = signal(0);
   isAutoPlaying = signal(true);
@@ -50,7 +52,7 @@ export class ServicesCarouselComponent implements OnInit {
       originalPrice: HOPE_HUB_SESSION_PRICE,
       discount: HOPE_HUB_SESSION_DISCOUNT_PERCENT,
       badge: 'First session 50% off',
-      bookingUrl: '/contact?offering=single-30-minute-session',
+      bookingUrl: this.offeringContactUrl(),
     })),
   );
 
@@ -66,7 +68,9 @@ export class ServicesCarouselComponent implements OnInit {
   }
 
   ngOnInit() {
-    this.bookingService.offeringQuote('single-30-minute-session').subscribe({
+    const offeringSlug = this.publicConfig.defaultOfferingSlug;
+    if (!offeringSlug) return;
+    this.bookingService.offeringQuote(offeringSlug).subscribe({
       next: ({ offering, quote }) => {
         const gross =
           quote.grossInPaise == null ? HOPE_HUB_SESSION_PRICE : quote.grossInPaise / 100;
@@ -82,7 +86,7 @@ export class ServicesCarouselComponent implements OnInit {
               quote.discountInPaise > 0
                 ? offering.discountLabel || 'First session offer'
                 : undefined,
-            bookingUrl: '/contact?offering=single-30-minute-session',
+            bookingUrl: this.offeringContactUrl(),
           })),
         );
       },
@@ -94,7 +98,7 @@ export class ServicesCarouselComponent implements OnInit {
             originalPrice: undefined,
             discount: undefined,
             badge: undefined,
-            bookingUrl: '/contact?offering=single-30-minute-session',
+            bookingUrl: this.offeringContactUrl(),
           })),
         );
       },
@@ -147,7 +151,13 @@ export class ServicesCarouselComponent implements OnInit {
     return APP_CONSTANTS.WHATSAPP.GROUP_URL;
   }
 
+  private offeringContactUrl(): string {
+    const offering = this.publicConfig.defaultOfferingSlug;
+    return offering ? `/contact?offering=${encodeURIComponent(offering)}` : '/contact';
+  }
+
   bookService(service: CarouselService) {
+    const offering = this.publicConfig.defaultOfferingSlug;
     this.router.navigate(['/contact'], {
       queryParams: {
         service: service.id,
@@ -156,7 +166,7 @@ export class ServicesCarouselComponent implements OnInit {
         consultantPhone: service.consultantPhone,
         duration: service.duration,
         price: service.price,
-        offering: 'single-30-minute-session',
+        ...(offering ? { offering } : {}),
         source: 'carousel',
       },
     });
