@@ -2,6 +2,18 @@ import { Component } from '@angular/core';
 import { RouterModule } from '@angular/router';
 import { APP_CONSTANTS } from '../../core';
 
+type FooterLink = {
+  label: string;
+  routerLink?: string;
+  externalUrl?: string;
+  breakAll?: boolean;
+};
+
+type FooterSection = {
+  title: string;
+  links: FooterLink[];
+};
+
 @Component({
   selector: 'app-footer',
   standalone: true,
@@ -58,65 +70,39 @@ import { APP_CONSTANTS } from '../../core';
             </div>
           </section>
 
-          <nav class="grid gap-6 sm:grid-cols-3" aria-label="Footer navigation">
-            <section>
-              <h2 class="text-sm font-semibold uppercase tracking-wide text-gray-950">Support</h2>
-              <ul class="mt-3 space-y-2 text-sm">
-                <li><a routerLink="/services" class="footer-link">Services</a></li>
-                <li><a routerLink="/psychologists" class="footer-link">Psychologists</a></li>
-                <li><a routerLink="/contact" class="footer-link">Book session</a></li>
-                <li><a routerLink="/community" class="footer-link">Community</a></li>
-                <li><a routerLink="/donate" class="footer-link">Support us</a></li>
-              </ul>
-            </section>
-
-            <section>
-              <h2 class="text-sm font-semibold uppercase tracking-wide text-gray-950">Resources</h2>
-              <ul class="mt-3 space-y-2 text-sm">
-                <li><a routerLink="/assessments" class="footer-link">Assessments</a></li>
-                <li><a routerLink="/exercises" class="footer-link">Exercises</a></li>
-                <li><a routerLink="/lifestyle-tips" class="footer-link">Lifestyle tips</a></li>
-                <li><a routerLink="/articles" class="footer-link">Articles</a></li>
-                <li><a routerLink="/resources" class="footer-link">Recorded sessions</a></li>
-                <li>
-                  <a routerLink="/mental-health-test" class="footer-link">Mental health test</a>
-                </li>
-              </ul>
-            </section>
-
-            <section>
-              <h2 class="text-sm font-semibold uppercase tracking-wide text-gray-950">Contact</h2>
-              <ul class="mt-3 space-y-2 text-sm">
-                <li>
-                  <a href="mailto:{{ APP_CONSTANTS.CONTACT.EMAIL }}" class="footer-link break-all">
-                    {{ APP_CONSTANTS.CONTACT.EMAIL }}
-                  </a>
-                </li>
-                <li>
-                  <span class="text-gray-700">{{ APP_CONSTANTS.CONTACT.PHONE }}</span>
-                </li>
-                <li>
-                  <a
-                    href="{{ APP_CONSTANTS.TELEGRAM.GROUP_URL }}"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    class="footer-link"
-                  >
-                    Daily 9 PM Telegram voice circle
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="{{ APP_CONSTANTS.WHATSAPP.GROUP_URL }}"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    class="footer-link"
-                  >
-                    WhatsApp support group
-                  </a>
-                </li>
-              </ul>
-            </section>
+          <nav class="grid gap-6 sm:grid-cols-2 lg:grid-cols-4" aria-label="Footer navigation">
+            @for (section of footerSections; track section.title) {
+              <section>
+                <h2 class="text-sm font-semibold uppercase tracking-wide text-gray-950">
+                  {{ section.title }}
+                </h2>
+                <ul class="mt-3 space-y-2 text-sm">
+                  @for (link of section.links; track link.label) {
+                    <li>
+                      @if (link.externalUrl) {
+                        <a
+                          [href]="link.externalUrl"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          class="footer-link"
+                          [class.break-all]="link.breakAll"
+                        >
+                          {{ link.label }}
+                        </a>
+                      } @else {
+                        <a
+                          [routerLink]="link.routerLink"
+                          class="footer-link"
+                          [class.break-all]="link.breakAll"
+                        >
+                          {{ link.label }}
+                        </a>
+                      }
+                    </li>
+                  }
+                </ul>
+              </section>
+            }
           </nav>
         </div>
 
@@ -125,13 +111,9 @@ import { APP_CONSTANTS } from '../../core';
         >
           <p class="text-sm text-gray-600">© {{ currentYear }} Hope Hub. All rights reserved.</p>
           <div class="flex flex-wrap gap-x-5 gap-y-2 text-sm">
-            <a routerLink="/about" class="footer-link">About</a>
-            <a routerLink="/careers" class="footer-link">Careers</a>
-            <a routerLink="/privacy" class="footer-link">Privacy</a>
-            <a routerLink="/terms" class="footer-link">Terms</a>
-            <a routerLink="/refund-policy" class="footer-link">Refunds</a>
-            <a routerLink="/payment-policy" class="footer-link">Payments</a>
-            <a routerLink="/shipping-policy" class="footer-link">Service delivery</a>
+            @for (link of bottomLinks; track link.label) {
+              <a [routerLink]="link.routerLink" class="footer-link">{{ link.label }}</a>
+            }
           </div>
         </div>
       </div>
@@ -155,4 +137,72 @@ import { APP_CONSTANTS } from '../../core';
 export class FooterComponent {
   currentYear = new Date().getFullYear();
   APP_CONSTANTS = APP_CONSTANTS;
+
+  readonly footerSections: FooterSection[] = [
+    {
+      title: 'Care & booking',
+      links: [
+        { label: 'Services', routerLink: '/services' },
+        { label: 'Psychologists', routerLink: '/psychologists' },
+        { label: 'Care packages', routerLink: '/packages' },
+        { label: 'Book session', routerLink: '/contact' },
+        { label: 'My consultations', routerLink: '/dashboard' },
+        { label: 'My profile', routerLink: '/profile' },
+      ],
+    },
+    {
+      title: 'Community',
+      links: [
+        { label: 'Community', routerLink: '/community' },
+        { label: 'Telegram hub', routerLink: '/telegram' },
+        { label: 'WhatsApp group', externalUrl: APP_CONSTANTS.WHATSAPP.GROUP_URL },
+        { label: 'Events', routerLink: '/events' },
+        { label: 'Organisation programs', routerLink: '/organization' },
+        { label: 'Join as provider', routerLink: '/careers' },
+        { label: 'Support us', routerLink: '/donate' },
+      ],
+    },
+    {
+      title: 'Resources & tests',
+      links: [
+        { label: 'Assessments', routerLink: '/assessments' },
+        { label: 'Mental health test', routerLink: '/mental-health-test' },
+        { label: 'Anxiety test', routerLink: '/anxiety-test' },
+        { label: 'Depression test', routerLink: '/depression-test' },
+        { label: 'Stress test', routerLink: '/stress-test' },
+        { label: 'Exercises', routerLink: '/exercises' },
+        { label: 'Lifestyle tips', routerLink: '/lifestyle-tips' },
+        { label: 'Articles', routerLink: '/articles' },
+        { label: 'Recorded sessions', routerLink: '/resources' },
+      ],
+    },
+    {
+      title: 'Company & legal',
+      links: [
+        { label: 'About Hope Hub', routerLink: '/about' },
+        { label: 'Share feedback', routerLink: '/feedback' },
+        { label: 'Privacy policy', routerLink: '/privacy' },
+        { label: 'Terms of service', routerLink: '/terms' },
+        { label: 'Cancellation & refunds', routerLink: '/refund-policy' },
+        { label: 'Payment policy', routerLink: '/payment-policy' },
+        { label: 'Service delivery', routerLink: '/shipping-policy' },
+        {
+          label: APP_CONSTANTS.CONTACT.EMAIL,
+          externalUrl: `mailto:${APP_CONSTANTS.CONTACT.EMAIL}`,
+          breakAll: true,
+        },
+      ],
+    },
+  ];
+
+  readonly bottomLinks: FooterLink[] = [
+    { label: 'Telegram', routerLink: '/telegram' },
+    { label: 'About', routerLink: '/about' },
+    { label: 'Careers', routerLink: '/careers' },
+    { label: 'Privacy', routerLink: '/privacy' },
+    { label: 'Terms', routerLink: '/terms' },
+    { label: 'Refunds', routerLink: '/refund-policy' },
+    { label: 'Payments', routerLink: '/payment-policy' },
+    { label: 'Service delivery', routerLink: '/shipping-policy' },
+  ];
 }

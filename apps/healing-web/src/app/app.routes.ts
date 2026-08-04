@@ -169,6 +169,18 @@ export const routes: Routes = [
     },
   },
   {
+    path: 'telegram',
+    loadComponent: () =>
+      import('./features/telegram/telegram.component').then((m) => m.TelegramComponent),
+    title: 'Telegram Hub - Hope Hub',
+    data: {
+      breadcrumb: 'Telegram Hub',
+      description: 'All Hope Hub Telegram bots, provider bot, operations bot, and community links',
+      keywords:
+        'Hope Hub Telegram, Telegram bot, provider bot, doctor bot, support group, community',
+    },
+  },
+  {
     path: 'about',
     loadComponent: () => import('./features/about/about.component').then((m) => m.AboutComponent),
     title: 'About Us - Hope Hub',
