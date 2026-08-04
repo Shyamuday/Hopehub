@@ -164,6 +164,7 @@ export class ContactComponent implements OnInit {
         serviceName: params['serviceName'] || '',
         consultant: params['consultant'] || '',
         providerId: params['providerId'] || '',
+        careTeamServiceId: params['careTeamServiceId'] || '',
         consultantPhone: params['consultantPhone'] || '',
         duration: params['duration'] || '',
         price: params['price'] || '',
@@ -276,6 +277,8 @@ export class ContactComponent implements OnInit {
     if (
       this.prefilledData().offering ||
       this.prefilledData().offeringId ||
+      this.prefilledData().careTeamServiceId ||
+      this.prefilledData().providerId ||
       this.selectedOffering()
     ) {
       return;
@@ -456,6 +459,7 @@ export class ContactComponent implements OnInit {
           consultantName: data.consultant || appointment.consultant || '',
           consultantPhone: data.consultantPhone || '',
           providerId: data.providerId || '',
+          careTeamServiceId: data.careTeamServiceId || '',
           sessionDuration: data.duration || '',
           visitorName: formData.name,
           visitorEmail: formData.email,

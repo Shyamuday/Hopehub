@@ -260,6 +260,23 @@
             }
           </section>
           }
+        } @else if (contactForm.get('serviceInterest')?.value || prefilledData().serviceName) {
+          <section class="payment-summary" aria-label="Payment summary">
+            <div class="payment-summary__head">
+              <span>{{ prefilledData().careTeamServiceId ? 'Fixed service checkout' : 'Direct provider checkout' }}</span>
+              <strong>{{ contactForm.get('serviceInterest')?.value || prefilledData().serviceName || 'Hope Hub session' }}</strong>
+            </div>
+            <div class="payment-summary__rows">
+              <div>
+                <span>{{ prefilledData().careTeamServiceId ? 'Service price' : 'Session price' }}</span>
+                <strong>{{ formatPaise(payTodayInPaise()) }}</strong>
+              </div>
+              <div class="payment-summary__pay">
+                <span>Pay today</span>
+                <strong>{{ formatPaise(payTodayInPaise()) }}</strong>
+              </div>
+            </div>
+          </section>
         }
 
         <label class="safety-check">

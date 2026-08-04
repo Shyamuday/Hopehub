@@ -179,15 +179,7 @@
               </a>
               <a
                 routerLink="/contact"
-                [queryParams]="{
-                  service: 'Mental wellness session',
-                  serviceName: 'Mental wellness session',
-                  consultant: provider.name,
-                  providerId: provider.id,
-                  duration: '30 minutes + 15 min follow-up',
-                  price: 500,
-                  source: 'care-team-list',
-                }"
+                [queryParams]="bookingQueryParams(provider)"
                 class="btn-outline btn-sm"
               >
                 Book session

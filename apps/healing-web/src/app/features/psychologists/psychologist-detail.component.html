@@ -123,6 +123,13 @@
                 <p class="mt-3 text-xs font-semibold uppercase tracking-wide text-gray-500">
                   {{ service.durationMinutes }} minutes
                 </p>
+                <button
+                  type="button"
+                  class="btn-outline btn-sm mt-4"
+                  (click)="book(p, service)"
+                >
+                  Book this service
+                </button>
               </article>
             }
           </div>

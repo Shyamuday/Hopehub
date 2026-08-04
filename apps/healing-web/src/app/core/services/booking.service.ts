@@ -24,6 +24,7 @@ export type HopeHubBookingPayload = {
   preferredTime?: string;
   preferAnonymousTelegram?: boolean;
   providerId?: string;
+  careTeamServiceId?: string;
   concernCategory?: string;
   preferredExpertType?: string;
   sessionMode?: string;

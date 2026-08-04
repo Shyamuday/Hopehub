@@ -3,6 +3,8 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { environment } from '../../../environments/environment';
 import { BookingService, HopeHubProvider } from '../../core/services/booking.service';
+
+type CareTeamListService = NonNullable<HopeHubProvider['services']>[number];
 import { NotificationService } from '../../core/services/notification.service';
 
 @Component({
@@ -155,5 +157,19 @@ export class PsychologistsComponent implements OnInit {
 
   primaryService(provider: HopeHubProvider) {
     return provider.services?.[0] ?? null;
+  }
+
+  bookingQueryParams(provider: HopeHubProvider, service: CareTeamListService | null = null) {
+    const directProviderPrice = (provider.sessionFeeInPaise ?? 50000) / 100;
+    return {
+      service: service?.title || 'Mental wellness session',
+      serviceName: service?.title || 'Mental wellness session',
+      consultant: provider.name,
+      providerId: provider.id,
+      careTeamServiceId: service?.id || '',
+      duration: service ? `${service.durationMinutes} minutes` : '30 minutes + 15 min follow-up',
+      price: service ? service.priceInPaise / 100 : directProviderPrice,
+      source: service ? 'care-team-service-list' : 'care-team-list',
+    };
   }
 }

@@ -78,6 +78,7 @@ const hopeHubBookingSchema = z.object({
   preferredTime: z.string().trim().max(120).optional().or(z.literal('')),
   preferAnonymousTelegram: z.boolean().optional(),
   providerId: z.string().trim().min(1).max(120).optional().or(z.literal('')),
+  careTeamServiceId: z.string().trim().min(1).max(120).optional().or(z.literal('')),
   offeringId: z.string().trim().min(1).max(120).optional().or(z.literal('')),
   offeringSlug: z.string().trim().min(1).max(160).optional().or(z.literal('')),
   paymentMode: z.enum(['FULL', 'PARTIAL']).optional(),
@@ -1585,7 +1586,6 @@ hopeHubRouter.post(
   allowRoles(Role.PATIENT),
   asyncRoute(async (req, res) => {
     const body = hopeHubBookingSchema.parse(req.body);
-    const slug = slugify(body.serviceName);
     const selectedOffering =
       body.offeringId || body.offeringSlug
         ? await prisma.hopeHubOffering.findFirst({
@@ -1617,16 +1617,57 @@ hopeHubRouter.post(
         return res.status(409).json({ message: 'This event is full.' });
       }
     }
+    const selectedCareTeamService = body.careTeamServiceId
+      ? await prisma.careTeamService.findFirst({
+          where: {
+            id: body.careTeamServiceId,
+            isActive: true,
+            mentalHealthProfile: {
+              doctor: {
+                ...(body.providerId ? { id: body.providerId } : {}),
+                showOnWebsite: true,
+                user: { isActive: true }
+              }
+            }
+          },
+          select: {
+            id: true,
+            title: true,
+            priceInPaise: true,
+            durationMinutes: true,
+            isFree: true,
+            mentalHealthProfile: {
+              select: {
+                doctor: {
+                  select: {
+                    id: true,
+                    userId: true,
+                    user: { select: { name: true } }
+                  }
+                }
+              }
+            }
+          }
+        })
+      : null;
+    if (body.careTeamServiceId && !selectedCareTeamService) {
+      return res.status(400).json({ message: 'Selected care team service is not available.' });
+    }
+    const effectiveServiceName = selectedCareTeamService?.title || body.serviceName;
+    const selectedServiceDurationMinutes =
+      selectedCareTeamService?.durationMinutes || HOPE_HUB_SESSION_DURATION_MINUTES;
+    const slug = slugify(effectiveServiceName);
     const existingService = await prisma.disease.findFirst({
       where: {
         isActive: true,
         publicCategory: 'Hope Hub',
-        OR: [{ name: body.serviceName }, { slug }]
+        OR: [{ name: effectiveServiceName }, { slug }]
       },
       select: { id: true, feeInPaise: true }
     });
     const amountInPaise =
       selectedOffering?.priceInPaise ??
+      selectedCareTeamService?.priceInPaise ??
       (body.servicePriceInPaise || existingService?.feeInPaise || HOPE_HUB_SESSION_FEE_IN_PAISE);
     if (!amountInPaise || amountInPaise <= 0) {
       return res.status(400).json({ message: 'Selected offer cannot be paid online.' });
@@ -1670,7 +1711,10 @@ hopeHubRouter.post(
           },
           select: { id: true, userId: true, user: { select: { name: true } } }
         })
-      : null;
+      : (selectedCareTeamService?.mentalHealthProfile.doctor ?? null);
+    if (body.providerId && !requestedProvider) {
+      return res.status(400).json({ message: 'Selected care team member is not available.' });
+    }
     const requestedSlot =
       requestedProvider && body.appointmentDate && body.appointmentTime
         ? await prisma.doctorSlot.findFirst({
@@ -1689,18 +1733,22 @@ hopeHubRouter.post(
     }
 
     await ensureBillingPlans();
+    const shouldSyncCatalogServiceFee =
+      !selectedOffering && !selectedCareTeamService && !body.providerId;
     const disease = existingService
-      ? await prisma.disease.update({
-          where: { id: existingService.id },
-          data: { feeInPaise: amountInPaise }
-        })
+      ? shouldSyncCatalogServiceFee
+        ? await prisma.disease.update({
+            where: { id: existingService.id },
+            data: { feeInPaise: amountInPaise }
+          })
+        : existingService
       : await prisma.disease.upsert({
-          where: { name: body.serviceName },
+          where: { name: effectiveServiceName },
           create: {
-            name: body.serviceName,
+            name: effectiveServiceName,
             slug,
-            description: defaultDescription(body.serviceName),
-            publicDescription: defaultDescription(body.serviceName),
+            description: defaultDescription(effectiveServiceName),
+            publicDescription: defaultDescription(effectiveServiceName),
             publicCategory: 'Hope Hub',
             feeInPaise: amountInPaise,
             intakeQuestions: [
@@ -1749,7 +1797,7 @@ hopeHubRouter.post(
         consultationMode: 'INSTANT_ONLINE',
         intakeAnswers: {
           source: 'hope-hub',
-          serviceName: body.serviceName,
+          serviceName: effectiveServiceName,
           message: body.message || '',
           appointmentDate: body.appointmentDate,
           appointmentTime: body.appointmentTime,
@@ -1759,6 +1807,8 @@ hopeHubRouter.post(
           offeringSlug: selectedOffering?.slug || body.offeringSlug || '',
           offeringTitle: selectedOffering?.title || '',
           offeringType: selectedOffering?.type || '',
+          careTeamServiceId: selectedCareTeamService?.id || body.careTeamServiceId || '',
+          careTeamServiceTitle: selectedCareTeamService?.title || '',
           providerId: requestedProvider?.id || body.providerId || '',
           requestedProviderName: requestedProvider?.user.name || '',
           concernCategory: body.concernCategory || '',
@@ -1768,7 +1818,9 @@ hopeHubRouter.post(
           safetyRisk: body.safetyRisk || '',
           previousTherapyOrMedication: body.previousTherapyOrMedication || '',
           emergencyConsent: Boolean(body.emergencyConsent),
-          sessionDuration: `${selectedOffering?.sessionDurationMinutes || HOPE_HUB_SESSION_DURATION_MINUTES} minutes`,
+          sessionDuration: `${
+            selectedOffering?.sessionDurationMinutes || selectedServiceDurationMinutes
+          } minutes`,
           requestedSessionDuration: body.sessionDuration || '',
           preferredContact: body.preferredContact || '',
           urgencyLevel: body.urgencyLevel || '',
@@ -1784,14 +1836,16 @@ hopeHubRouter.post(
           offeringCode: selectedOffering?.code || null,
           offeringSlug: selectedOffering?.slug || null,
           offeringTitle: selectedOffering?.title || null,
-          serviceName: body.serviceName,
+          serviceName: effectiveServiceName,
+          careTeamServiceId: selectedCareTeamService?.id || null,
+          careTeamServiceTitle: selectedCareTeamService?.title || null,
           sessionFeeInPaise: amountInPaise,
           netAfterOfferDiscountInPaise,
           paymentMode: partialPayment.paymentMode,
           balanceDueInPaise: partialPayment.balanceDueInPaise,
           packageUsage,
           sessionDurationMinutes:
-            selectedOffering?.sessionDurationMinutes || HOPE_HUB_SESSION_DURATION_MINUTES,
+            selectedOffering?.sessionDurationMinutes || selectedServiceDurationMinutes,
           sessionCount: selectedOffering?.sessionCount || 1,
           validityDays: selectedOffering?.validityDays || null,
           grossRevenueSplit,
@@ -1820,16 +1874,18 @@ hopeHubRouter.post(
             appliedRules: checkout.appliedRules,
             lineItems: {
               source: 'hope-hub',
-              serviceName: body.serviceName,
+              serviceName: effectiveServiceName,
               offeringId: selectedOffering?.id || null,
               offeringCode: selectedOffering?.code || null,
               offeringSlug: selectedOffering?.slug || null,
               offeringTitle: selectedOffering?.title || null,
               offeringType: selectedOffering?.type || null,
+              careTeamServiceId: selectedCareTeamService?.id || null,
+              careTeamServiceTitle: selectedCareTeamService?.title || null,
               providerId: requestedProvider?.id || body.providerId || '',
               requestedProviderName: requestedProvider?.user.name || '',
               sessionDurationMinutes:
-                selectedOffering?.sessionDurationMinutes || HOPE_HUB_SESSION_DURATION_MINUTES,
+                selectedOffering?.sessionDurationMinutes || selectedServiceDurationMinutes,
               sessionCount: selectedOffering?.sessionCount || 1,
               validityDays: selectedOffering?.validityDays || null,
               packageGrossInPaise: amountInPaise,
@@ -1878,8 +1934,9 @@ hopeHubRouter.post(
         visitorEmail: body.visitorEmail || req.user!.email,
         visitorPhone: body.visitorPhone || req.user!.mobile,
         concern: [
-          `Service: ${body.serviceName}`,
+          `Service: ${effectiveServiceName}`,
           selectedOffering ? `Offer: ${selectedOffering.title}` : '',
+          selectedCareTeamService ? `Care team service: ${selectedCareTeamService.title}` : '',
           `Appointment: ${body.appointmentDate} ${body.appointmentTime}`,
           body.preferredContact ? `Preferred contact: ${body.preferredContact}` : '',
           body.urgencyLevel ? `Urgency: ${body.urgencyLevel}` : '',
@@ -1910,9 +1967,10 @@ hopeHubRouter.post(
         source: 'hope-hub',
         consultationId: consultation.id,
         diseaseId: disease.id,
-        serviceName: body.serviceName,
+        serviceName: effectiveServiceName,
         offeringId: selectedOffering?.id ?? '',
         offeringCode: selectedOffering?.code ?? '',
+        careTeamServiceId: selectedCareTeamService?.id ?? '',
         providerId: requestedProvider?.id ?? body.providerId ?? ''
       }
     });

@@ -5,6 +5,8 @@ import { environment } from '../../../environments/environment';
 import { BookingService, HopeHubProvider } from '../../core/services/booking.service';
 import { NotificationService } from '../../core/services/notification.service';
 
+type CareTeamService = NonNullable<HopeHubProvider['services']>[number];
+
 @Component({
   selector: 'app-psychologist-detail',
   standalone: true,
@@ -57,16 +59,22 @@ export class PsychologistDetailComponent implements OnInit {
       : `${environment.apiUrl}${provider.profileImageUrl}`;
   }
 
-  book(provider: HopeHubProvider): void {
+  book(provider: HopeHubProvider, service?: CareTeamService): void {
+    const selectedService = service || null;
     this.router.navigate(['/contact'], {
       queryParams: {
-        service: 'Mental wellness session',
-        serviceName: 'Mental wellness session',
+        service: selectedService?.title || 'Mental wellness session',
+        serviceName: selectedService?.title || 'Mental wellness session',
         consultant: provider.name,
         providerId: provider.id,
-        duration: this.sessionLabel(provider),
-        price: (provider.sessionFeeInPaise ?? 50000) / 100,
-        source: 'care-team-profile',
+        careTeamServiceId: selectedService?.id || '',
+        duration: selectedService
+          ? `${selectedService.durationMinutes} minutes`
+          : this.sessionLabel(provider),
+        price: selectedService
+          ? selectedService.priceInPaise / 100
+          : (provider.sessionFeeInPaise ?? 50000) / 100,
+        source: selectedService ? 'care-team-service-profile' : 'care-team-profile',
       },
     });
   }
