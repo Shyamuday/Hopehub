@@ -4,7 +4,7 @@
       [class.app-header--guest]="!effectiveUser()"
       [class.menu-open]="menuOpen()">
       <a class="brand" href="/" (click)="closeMenu()">
-        <img class="brand-logo" src="/image/logo.svg" alt="" width="185" height="40" />
+        <img class="brand-logo" [src]="brandAssets.LOGO_PATH" alt="" width="48" height="48" />
         <span class="brand-copy">
           <small>{{ subtitle }}</small>
         </span>

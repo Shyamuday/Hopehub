@@ -3,9 +3,9 @@
   "short_name": "HopeHub",
   "icons": [
     {
-      "src": "/hopehub.png",
-      "sizes": "482x164",
-      "type": "image/png",
+      "src": "/hopehublogom.jpg",
+      "sizes": "640x640",
+      "type": "image/jpeg",
       "purpose": "any"
     }
   ],

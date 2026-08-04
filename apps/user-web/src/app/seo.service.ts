@@ -4,7 +4,7 @@ import { Meta, Title } from '@angular/platform-browser';
 import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
 import { filter } from 'rxjs';
 import { ClinicApiClient } from './clinic-api/clinic-api.client';
-import { SEO_DEFAULTS } from './core/constants/branding.constants';
+import { BRAND_ASSETS, SEO_DEFAULTS } from './core/constants/branding.constants';
 
 type DiseaseSeo = {
   metaTitle?: string;
@@ -28,7 +28,7 @@ export class SeoService {
   private readonly siteUrl = SEO_DEFAULTS.SITE_URL;
   private readonly defaultTitle = SEO_DEFAULTS.DEFAULT_TITLE;
   private readonly defaultDescription = SEO_DEFAULTS.DEFAULT_DESCRIPTION;
-  private readonly defaultImage = `${this.siteUrl}/image/hopehublogo.png`;
+  private readonly defaultImage = `${this.siteUrl}${BRAND_ASSETS.OG_IMAGE_PATH}`;
 
   init() {
     this.router.events

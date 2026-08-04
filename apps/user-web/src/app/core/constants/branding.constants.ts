@@ -1,6 +1,12 @@
 export const WHATSAPP_CONTACT_URL =
   'https://wa.me/919876543210?text=Hi%20HopeHub%20Care%2C%20I%20would%20like%20to%20know%20more%20about%20your%20services.';
 
+export const BRAND_ASSETS = {
+  LOGO_PATH: '/image/hopehublogom.jpg',
+  APP_ICON_PATH: '/hopehublogom.jpg',
+  OG_IMAGE_PATH: '/image/hopehublogom.jpg',
+} as const;
+
 export const RAZORPAY_CHECKOUT = {
   NAME: 'HopeHub Care',
   THEME_COLOR: '#0f62fe',

@@ -12,9 +12,9 @@
   "lang": "en-US",
   "icons": [
     {
-      "src": "/hopehub.png",
-      "sizes": "482x164",
-      "type": "image/png",
+      "src": "/hopehublogom.jpg",
+      "sizes": "640x640",
+      "type": "image/jpeg",
       "purpose": "any"
     }
   ],
@@ -26,9 +26,9 @@
       "url": "/assessments",
       "icons": [
         {
-          "src": "/hopehub.png",
-          "sizes": "482x164",
-          "type": "image/png"
+          "src": "/hopehublogom.jpg",
+          "sizes": "640x640",
+          "type": "image/jpeg"
         }
       ]
     },
@@ -39,9 +39,9 @@
       "url": "/exercises",
       "icons": [
         {
-          "src": "/hopehub.png",
-          "sizes": "482x164",
-          "type": "image/png"
+          "src": "/hopehublogom.jpg",
+          "sizes": "640x640",
+          "type": "image/jpeg"
         }
       ]
     }

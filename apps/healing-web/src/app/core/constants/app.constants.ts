@@ -4,9 +4,16 @@ export const TELEGRAM_USER_BOT_USERNAME = 'Hopehubbot';
 export const TELEGRAM_DOCTOR_BOT_USERNAME = 'Hopehubprovidersbot';
 export const TELEGRAM_ADMIN_BOT_USERNAME = 'Hopehuboperationbot';
 
+export const BRAND_ASSETS = {
+  LOGO_PATH: '/image/hopehublogom.jpg',
+  APP_ICON_PATH: '/hopehublogom.jpg',
+  OG_IMAGE_PATH: '/image/hopehublogom.jpg',
+} as const;
+
 export const APP_CONSTANTS = {
   SITE_URL: 'https://hopehub.in',
   SITE_NAME: 'Hope Hub',
+  BRAND: BRAND_ASSETS,
   TELEGRAM: {
     USERNAME: TELEGRAM_USERNAME,
     GROUP_URL: `https://t.me/${TELEGRAM_USERNAME}`,

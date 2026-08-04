@@ -6,6 +6,7 @@ import { AuthService } from '../../core/services/auth.service';
 import { AuthModalService } from '../../core/services/auth-modal.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { User } from '../../core/models/auth.model';
+import { APP_CONSTANTS } from '../../core/constants/app.constants';
 
 @Component({
   selector: 'app-header',
@@ -28,10 +29,10 @@ import { User } from '../../core/models/auth.model';
               aria-label="Hope Hub - Go to homepage"
             >
               <img
-                src="/image/logo.svg"
+                [src]="APP_CONSTANTS.BRAND.LOGO_PATH"
                 alt="Hope Hub"
-                class="h-11 w-[190px] object-contain sm:h-12 sm:w-[220px]"
-                width="220"
+                class="h-12 w-12 rounded-2xl object-cover"
+                width="48"
                 height="48"
               />
             </a>
@@ -541,6 +542,7 @@ import { User } from '../../core/models/auth.model';
   styles: [],
 })
 export class HeaderComponent implements OnInit {
+  readonly APP_CONSTANTS = APP_CONSTANTS;
   mobileMenuOpen = signal(false);
   navigationState = signal<NavigationState | null>(null);
   user = signal<User | null>(null);

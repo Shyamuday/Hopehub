@@ -3,6 +3,7 @@ import { isPlatformBrowser } from '@angular/common';
 import { SwUpdate, VersionReadyEvent } from '@angular/service-worker';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { filter, map } from 'rxjs/operators';
+import { APP_CONSTANTS } from '../constants/app.constants';
 
 export interface PWAInstallPrompt {
   canInstall: boolean;
@@ -224,8 +225,8 @@ export class PWAService {
   public sendNotification(title: string, options?: NotificationOptions): void {
     if (this.isBrowser && Notification.permission === 'granted') {
       const notification = new Notification(title, {
-        icon: '/hopehub.png',
-        badge: '/hopehub.png',
+        icon: APP_CONSTANTS.BRAND.APP_ICON_PATH,
+        badge: APP_CONSTANTS.BRAND.APP_ICON_PATH,
         ...options,
       });
 

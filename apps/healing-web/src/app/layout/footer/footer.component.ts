@@ -25,11 +25,11 @@ type FooterSection = {
           <section>
             <a routerLink="/" class="inline-flex items-center" aria-label="Hope Hub homepage">
               <img
-                src="/image/logo.svg"
+                [src]="APP_CONSTANTS.BRAND.LOGO_PATH"
                 alt="Hope Hub"
-                class="h-11 w-[190px] object-contain"
-                width="190"
-                height="45"
+                class="h-12 w-12 rounded-2xl object-cover"
+                width="48"
+                height="48"
               />
             </a>
             <p class="mt-4 max-w-md text-sm leading-6 text-gray-700">
