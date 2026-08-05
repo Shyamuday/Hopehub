@@ -27,7 +27,7 @@ jobs:
 
       - name: API install and generate
         working-directory: apps/api
-        run: npm ci && npm run prisma:generate
+        run: npm ci --ignore-scripts && npm run prisma:generate
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/hopehub_ci?schema=public
 
@@ -68,7 +68,7 @@ jobs:
           cache-dependency-path: ${{ matrix.app }}/package-lock.json
 
       - name: Install
-        run: npm ci ${{ matrix.app == 'apps/healing-web' && '--legacy-peer-deps' || '' }}
+        run: npm ci --ignore-scripts ${{ matrix.app == 'apps/healing-web' && '--legacy-peer-deps' || '' }}
 
       - name: Prisma generate
         if: matrix.app == 'apps/api'
@@ -110,7 +110,7 @@ jobs:
           cache-dependency-path: ${{ matrix.app }}/package-lock.json
 
       - name: Install
-        run: npm ci
+        run: npm ci --ignore-scripts
 
       - name: Unit tests
         run: npm test -- --watch=false
