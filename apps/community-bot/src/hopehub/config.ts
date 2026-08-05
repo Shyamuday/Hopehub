@@ -53,7 +53,7 @@ export function loadConfig(): BotConfig {
     ),
     welcomeMessage: env(
       'COMMUNITY_BOT_WELCOME',
-      'Welcome to HopeHub, India’s favourite peer-support group! 🌟\nWe’re thrilled to have you in this one-of-a-kind community where we uplift, listen, and support each other. 😊\n\nThis is a safe, privacy-aware space to share, listen, experience growth and progress, or simply browse the conversations at your own pace. 💚\n\nRemember, we’re all in this together — gently, respectfully, and one step at a time.'
+      'Welcome to HopeHub, India’s best emotional support and peer-support group! 🌟\nWe’re thrilled to have you in this one-of-a-kind community where we uplift, listen, and support each other. 😊\n\nThis is a safe space to share, listen, experience growth and progress, and connect with people who care. Feel free to introduce yourself, ask for support, or simply browse the conversations at your own pace. 💚\n\nRemember, we’re all in this together — with kindness, respect, and hope.'
     ),
     rules: envLines('COMMUNITY_BOT_RULES', [
       'Protect the vibe. Speak with kindness, dignity, and patience — no judging, shaming, bullying, or personal attacks.',
