@@ -117,6 +117,8 @@ const carePricingTemplateSchema = z.object({
   introSessionLimit: z.number().int().min(1).max(50).default(1),
   packageSessionCount: z.number().int().min(1).max(200).nullable().optional(),
   packagePriceInPaise: z.number().int().min(0).max(50000000).nullable().optional(),
+  freeMinutes: z.number().int().min(0).max(480).default(0),
+  pricePerMinuteInPaise: z.number().int().min(0).max(50000).nullable().optional(),
   durationMinutes: z.number().int().min(5).max(480).default(30),
   isFree: z.boolean().default(false),
   isActive: z.boolean().default(true),

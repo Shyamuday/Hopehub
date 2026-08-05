@@ -3,7 +3,8 @@ import { Component, signal } from '@angular/core';
 import { AdminApi } from '../../../core/services/admin-api';
 
 type ConfigEntry = { key: string; value: string; label: string; description: string };
-type PricingMode = 'FIXED' | 'FREE_INTRO' | 'DISCOUNTED_FIRST' | 'PACKAGE' | 'FREE_VOLUNTEER';
+type PricingMode =
+  'FIXED' | 'FREE_INTRO' | 'DISCOUNTED_FIRST' | 'PACKAGE' | 'FREE_VOLUNTEER' | 'PER_MINUTE';
 type CarePricingTemplate = {
   id?: string;
   title: string;
@@ -15,6 +16,8 @@ type CarePricingTemplate = {
   introSessionLimit: number;
   packageSessionCount?: number | null;
   packagePriceInPaise?: number | null;
+  freeMinutes?: number;
+  pricePerMinuteInPaise?: number | null;
   durationMinutes: number;
   isFree: boolean;
   isActive: boolean;
@@ -32,6 +35,8 @@ function emptyTemplate(): CarePricingTemplate {
     introSessionLimit: 1,
     packageSessionCount: null,
     packagePriceInPaise: null,
+    freeMinutes: 5,
+    pricePerMinuteInPaise: null,
     durationMinutes: 30,
     isFree: false,
     isActive: true,
@@ -70,6 +75,7 @@ export class SiteConfigPage {
     { value: 'DISCOUNTED_FIRST', label: 'Discounted first session' },
     { value: 'PACKAGE', label: 'Package' },
     { value: 'FREE_VOLUNTEER', label: 'Free volunteer support' },
+    { value: 'PER_MINUTE', label: 'Per-minute pricing' },
   ];
 
   constructor(private readonly api: AdminApi) {
@@ -223,6 +229,10 @@ export class SiteConfigPage {
     return template.pricingMode === 'PACKAGE';
   }
 
+  showPerMinuteFields(template: CarePricingTemplate) {
+    return template.pricingMode === 'PER_MINUTE';
+  }
+
   private patchTemplate(
     template: CarePricingTemplate,
     key: keyof CarePricingTemplate,
@@ -233,12 +243,14 @@ export class SiteConfigPage {
       key === 'priceInPaise' ||
       key === 'firstSessionPriceInPaise' ||
       key === 'followUpPriceInPaise' ||
-      key === 'packagePriceInPaise'
+      key === 'packagePriceInPaise' ||
+      key === 'pricePerMinuteInPaise'
     ) {
       (next as any)[key] = value === '' ? null : Math.max(0, Math.round(Number(value) * 100));
     } else if (
       key === 'introSessionLimit' ||
       key === 'packageSessionCount' ||
+      key === 'freeMinutes' ||
       key === 'durationMinutes' ||
       key === 'sortOrder'
     ) {
@@ -246,7 +258,10 @@ export class SiteConfigPage {
     } else {
       (next as any)[key] = value;
     }
-    if (key === 'pricingMode') next.isFree = value === 'FREE_VOLUNTEER';
+    if (key === 'pricingMode') {
+      next.isFree = value === 'FREE_VOLUNTEER';
+      if (value === 'FREE_VOLUNTEER' || value === 'PER_MINUTE') next.priceInPaise = 0;
+    }
     return next;
   }
 
@@ -255,12 +270,17 @@ export class SiteConfigPage {
       title: template.title.trim(),
       description: template.description?.trim() || null,
       pricingMode: template.pricingMode,
-      priceInPaise: template.pricingMode === 'FREE_VOLUNTEER' ? 0 : template.priceInPaise || 0,
+      priceInPaise:
+        template.pricingMode === 'FREE_VOLUNTEER' || template.pricingMode === 'PER_MINUTE'
+          ? 0
+          : template.priceInPaise || 0,
       firstSessionPriceInPaise: template.firstSessionPriceInPaise ?? null,
       followUpPriceInPaise: template.followUpPriceInPaise ?? null,
       introSessionLimit: template.introSessionLimit || 1,
       packageSessionCount: template.packageSessionCount ?? null,
       packagePriceInPaise: template.packagePriceInPaise ?? null,
+      freeMinutes: template.freeMinutes || 0,
+      pricePerMinuteInPaise: template.pricePerMinuteInPaise ?? null,
       durationMinutes: template.durationMinutes || 30,
       isFree: template.isFree || template.pricingMode === 'FREE_VOLUNTEER',
       isActive: template.isActive !== false,

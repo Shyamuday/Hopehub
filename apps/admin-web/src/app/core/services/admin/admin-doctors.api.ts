@@ -114,7 +114,21 @@ export class AdminDoctorsApi extends AdminApiBase {
         services?: Array<{
           title: string;
           description?: string | null;
+          pricingMode?:
+            | 'FIXED'
+            | 'FREE_INTRO'
+            | 'DISCOUNTED_FIRST'
+            | 'PACKAGE'
+            | 'FREE_VOLUNTEER'
+            | 'PER_MINUTE';
           priceInPaise?: number;
+          firstSessionPriceInPaise?: number | null;
+          followUpPriceInPaise?: number | null;
+          introSessionLimit?: number;
+          packageSessionCount?: number | null;
+          packagePriceInPaise?: number | null;
+          freeMinutes?: number;
+          pricePerMinuteInPaise?: number | null;
           currency?: string;
           durationMinutes?: number;
           isFree?: boolean;
@@ -158,7 +172,16 @@ export class AdminDoctorsApi extends AdminApiBase {
       services?: Array<{
         title: string;
         description?: string | null;
+        pricingMode?:
+          'FIXED' | 'FREE_INTRO' | 'DISCOUNTED_FIRST' | 'PACKAGE' | 'FREE_VOLUNTEER' | 'PER_MINUTE';
         priceInPaise?: number;
+        firstSessionPriceInPaise?: number | null;
+        followUpPriceInPaise?: number | null;
+        introSessionLimit?: number;
+        packageSessionCount?: number | null;
+        packagePriceInPaise?: number | null;
+        freeMinutes?: number;
+        pricePerMinuteInPaise?: number | null;
         currency?: string;
         durationMinutes?: number;
         isFree?: boolean;

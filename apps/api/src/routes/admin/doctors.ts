@@ -48,6 +48,8 @@ const careTeamServiceSchema = z.object({
   introSessionLimit: z.number().int().min(1).max(20).optional().default(1),
   packageSessionCount: z.number().int().min(1).max(100).optional().nullable(),
   packagePriceInPaise: z.number().int().min(0).max(5000000).optional().nullable(),
+  freeMinutes: z.number().int().min(0).max(240).optional().default(0),
+  pricePerMinuteInPaise: z.number().int().min(0).max(50000).optional().nullable(),
   currency: z.string().trim().max(8).optional().default('INR'),
   durationMinutes: z.number().int().min(5).max(240).optional().default(30),
   isFree: z.boolean().optional().default(false),
@@ -83,15 +85,25 @@ function toMentalHealthProfilePayload(body: z.infer<typeof mentalHealthProfileSc
     title: service.title,
     description: service.description || null,
     pricingMode: service.pricingMode ?? CareTeamServicePricingMode.FIXED,
-    priceInPaise: service.isFree ? 0 : (service.priceInPaise ?? 0),
+    priceInPaise:
+      service.isFree && service.pricingMode !== CareTeamServicePricingMode.PER_MINUTE
+        ? 0
+        : (service.priceInPaise ?? 0),
     firstSessionPriceInPaise: service.firstSessionPriceInPaise ?? null,
     followUpPriceInPaise: service.followUpPriceInPaise ?? null,
     introSessionLimit: service.introSessionLimit ?? 1,
     packageSessionCount: service.packageSessionCount ?? null,
     packagePriceInPaise: service.packagePriceInPaise ?? null,
+    freeMinutes: service.freeMinutes ?? 0,
+    pricePerMinuteInPaise: service.pricePerMinuteInPaise ?? null,
     currency: service.currency || 'INR',
     durationMinutes: service.durationMinutes ?? 30,
-    isFree: service.isFree ?? (service.priceInPaise ?? 0) === 0,
+    isFree:
+      service.pricingMode === CareTeamServicePricingMode.FREE_VOLUNTEER
+        ? true
+        : service.pricingMode === CareTeamServicePricingMode.PER_MINUTE
+          ? false
+          : (service.isFree ?? (service.priceInPaise ?? 0) === 0),
     isActive: service.isActive ?? true,
     sortOrder: service.sortOrder ?? index
   }));

@@ -17,6 +17,8 @@ function pricingLine(service: {
   followUpPriceInPaise?: number | null;
   packageSessionCount?: number | null;
   packagePriceInPaise?: number | null;
+  freeMinutes?: number | null;
+  pricePerMinuteInPaise?: number | null;
   durationMinutes: number;
   isFree: boolean;
 }) {
@@ -31,6 +33,11 @@ function pricingLine(service: {
   }
   if (service.pricingMode === CareTeamServicePricingMode.PACKAGE) {
     return `${service.packageSessionCount || 1} sessions · ${rupees(service.packagePriceInPaise)} · ${service.durationMinutes} min`;
+  }
+  if (service.pricingMode === CareTeamServicePricingMode.PER_MINUTE) {
+    const freeMinutes = Math.max(0, service.freeMinutes ?? 0);
+    const billableMinutes = Math.max(0, service.durationMinutes - freeMinutes);
+    return `${freeMinutes ? `First ${freeMinutes} min free · ` : ''}${rupees(service.pricePerMinuteInPaise)}/min · ${billableMinutes} billable min`;
   }
   return `${rupees(service.priceInPaise)} · ${service.durationMinutes} min`;
 }
@@ -195,6 +202,8 @@ export async function createProviderServiceFromTemplate(
       introSessionLimit: template.introSessionLimit,
       packageSessionCount: template.packageSessionCount,
       packagePriceInPaise: template.packagePriceInPaise,
+      freeMinutes: template.freeMinutes,
+      pricePerMinuteInPaise: template.pricePerMinuteInPaise,
       durationMinutes: template.durationMinutes,
       isFree: template.isFree,
       isActive: true,
@@ -246,6 +255,8 @@ export async function applyTemplateToProviderService(
       introSessionLimit: template.introSessionLimit,
       packageSessionCount: template.packageSessionCount,
       packagePriceInPaise: template.packagePriceInPaise,
+      freeMinutes: template.freeMinutes,
+      pricePerMinuteInPaise: template.pricePerMinuteInPaise,
       durationMinutes: template.durationMinutes,
       isFree: template.isFree,
       isActive: true

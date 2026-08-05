@@ -179,7 +179,7 @@ Hypertension"
                   <option [value]="mode.value">{{ mode.label }}</option>
                 }
               </select>
-              @if (service.pricingMode !== 'FREE_VOLUNTEER') {
+              @if (service.pricingMode !== 'FREE_VOLUNTEER' && service.pricingMode !== 'PER_MINUTE') {
                 <input type="number" [value]="rupees(service.priceInPaise)" placeholder="Base ₹" (input)="updateCareService($index, 'priceInPaise', $any($event.target).value)" />
               }
               @if (showFirstPrice(service)) {
@@ -193,6 +193,10 @@ Hypertension"
                 <input type="number" [value]="service.packageSessionCount || ''" placeholder="Package sessions" (input)="updateCareService($index, 'packageSessionCount', $any($event.target).value)" />
                 <input type="number" [value]="rupees(service.packagePriceInPaise)" placeholder="Package ₹" (input)="updateCareService($index, 'packagePriceInPaise', $any($event.target).value)" />
               }
+              @if (showPerMinuteFields(service)) {
+                <input type="number" [value]="service.freeMinutes || 0" placeholder="Free minutes" (input)="updateCareService($index, 'freeMinutes', $any($event.target).value)" />
+                <input type="number" [value]="rupees(service.pricePerMinuteInPaise)" placeholder="₹ per minute" (input)="updateCareService($index, 'pricePerMinuteInPaise', $any($event.target).value)" />
+              }
               <input type="number" [value]="service.durationMinutes || 30" placeholder="Minutes" (input)="updateCareService($index, 'durationMinutes', $any($event.target).value)" />
               <input [value]="service.description || ''" placeholder="Description" (input)="updateCareService($index, 'description', $any($event.target).value)" />
               <label><input type="checkbox" [checked]="service.isActive !== false" (change)="updateCareService($index, 'isActive', $any($event.target).checked)" /> Active</label>
@@ -201,7 +205,7 @@ Hypertension"
           }
           <button type="button" (click)="addCareService()">Add service</button>
         </div>
-        <p class="section-hint">Use pricing mode for fixed, first free, discounted first, package, or free volunteer support.</p>
+        <p class="section-hint">Use pricing mode for fixed, first free, discounted first, package, per-minute, or free volunteer support.</p>
       </section>
     }
   </div>

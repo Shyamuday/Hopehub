@@ -437,7 +437,10 @@ type CareTeamServicePricingInput = {
   introSessionLimit: number;
   packageSessionCount: number | null;
   packagePriceInPaise: number | null;
+  freeMinutes: number;
+  pricePerMinuteInPaise: number | null;
   isFree: boolean;
+  durationMinutes: number;
 };
 
 function rupeeLabel(amountInPaise: number) {
@@ -451,6 +454,10 @@ function careTeamServicePricingPreview(service: CareTeamServicePricingInput, pre
   const followUpPrice = Math.max(0, service.followUpPriceInPaise ?? basePrice);
   const packagePrice = Math.max(0, service.packagePriceInPaise ?? basePrice);
   const packageSessions = Math.max(1, service.packageSessionCount ?? 1);
+  const freeMinutes = Math.max(0, service.freeMinutes || 0);
+  const billableMinutes = Math.max(0, (service.durationMinutes || 0) - freeMinutes);
+  const pricePerMinute = Math.max(0, service.pricePerMinuteInPaise ?? 0);
+  const perMinutePrice = billableMinutes * pricePerMinute;
   const introAvailable = previousUseCount < introLimit;
 
   switch (service.pricingMode) {
@@ -485,6 +492,16 @@ function careTeamServicePricingPreview(service: CareTeamServicePricingInput, pre
         label: `${packageSessions} session package · ${rupeeLabel(packagePrice)}`,
         appliedRule: 'PACKAGE_PRICE',
         sessionCount: packageSessions
+      };
+    case CareTeamServicePricingMode.PER_MINUTE:
+      return {
+        amountInPaise: perMinutePrice,
+        label:
+          freeMinutes > 0
+            ? `First ${freeMinutes} min free, then ${rupeeLabel(pricePerMinute)}/min · ${billableMinutes} billable min`
+            : `${rupeeLabel(pricePerMinute)}/min · ${billableMinutes} min`,
+        appliedRule: 'PER_MINUTE_PRICE',
+        sessionCount: 1
       };
     case CareTeamServicePricingMode.FIXED:
     default:
@@ -585,6 +602,8 @@ function careTeamServiceSelect() {
     introSessionLimit: true,
     packageSessionCount: true,
     packagePriceInPaise: true,
+    freeMinutes: true,
+    pricePerMinuteInPaise: true,
     durationMinutes: true,
     isFree: true,
     mentalHealthProfile: {
@@ -653,6 +672,8 @@ function providerPublicPayload(
         introSessionLimit: number;
         packageSessionCount: number | null;
         packagePriceInPaise: number | null;
+        freeMinutes: number;
+        pricePerMinuteInPaise: number | null;
         currency: string;
         durationMinutes: number;
         isFree: boolean;
@@ -1272,6 +1293,8 @@ async function activeHopeHubProviders(params: {
                 introSessionLimit: true,
                 packageSessionCount: true,
                 packagePriceInPaise: true,
+                freeMinutes: true,
+                pricePerMinuteInPaise: true,
                 currency: true,
                 durationMinutes: true,
                 isFree: true,
@@ -1730,6 +1753,8 @@ hopeHubRouter.get(
                 introSessionLimit: true,
                 packageSessionCount: true,
                 packagePriceInPaise: true,
+                freeMinutes: true,
+                pricePerMinuteInPaise: true,
                 currency: true,
                 durationMinutes: true,
                 isFree: true,
@@ -1767,6 +1792,8 @@ hopeHubRouter.get(
         introSessionLimit: true,
         packageSessionCount: true,
         packagePriceInPaise: true,
+        freeMinutes: true,
+        pricePerMinuteInPaise: true,
         durationMinutes: true,
         isFree: true,
         sortOrder: true
@@ -2226,6 +2253,16 @@ hopeHubRouter.post(
           careTeamServiceTitle: selectedCareTeamService?.title || '',
           careTeamPricingMode: selectedCareTeamService?.pricingMode || '',
           careTeamPricingLabel: careTeamServicePricing?.label || '',
+          careTeamFreeMinutes: selectedCareTeamService?.freeMinutes ?? null,
+          careTeamPricePerMinuteInPaise: selectedCareTeamService?.pricePerMinuteInPaise ?? null,
+          careTeamBillableMinutes:
+            selectedCareTeamService?.pricingMode === CareTeamServicePricingMode.PER_MINUTE
+              ? Math.max(
+                  0,
+                  (selectedCareTeamService.durationMinutes || 0) -
+                    (selectedCareTeamService.freeMinutes || 0)
+                )
+              : null,
           careTeamPreviousUseCount: careTeamServiceUseCount,
           careTeamPackageConsultationId: activeCareTeamPackageBalance?.consultationId || '',
           careTeamPackageRemainingBefore: activeCareTeamPackageBalance?.remainingSessions ?? null,
@@ -2262,6 +2299,16 @@ hopeHubRouter.post(
           careTeamPricingMode: selectedCareTeamService?.pricingMode || null,
           careTeamPricingLabel: careTeamServicePricing?.label || null,
           careTeamPricingRule: careTeamServicePricing?.appliedRule || null,
+          careTeamFreeMinutes: selectedCareTeamService?.freeMinutes ?? null,
+          careTeamPricePerMinuteInPaise: selectedCareTeamService?.pricePerMinuteInPaise ?? null,
+          careTeamBillableMinutes:
+            selectedCareTeamService?.pricingMode === CareTeamServicePricingMode.PER_MINUTE
+              ? Math.max(
+                  0,
+                  (selectedCareTeamService.durationMinutes || 0) -
+                    (selectedCareTeamService.freeMinutes || 0)
+                )
+              : null,
           careTeamPreviousUseCount: careTeamServiceUseCount,
           careTeamPackageConsultationId: activeCareTeamPackageBalance?.consultationId || null,
           careTeamPackageRemainingBefore: activeCareTeamPackageBalance?.remainingSessions ?? null,
@@ -2311,6 +2358,16 @@ hopeHubRouter.post(
               careTeamPricingMode: selectedCareTeamService?.pricingMode || null,
               careTeamPricingLabel: careTeamServicePricing?.label || null,
               careTeamPricingRule: careTeamServicePricing?.appliedRule || null,
+              careTeamFreeMinutes: selectedCareTeamService?.freeMinutes ?? null,
+              careTeamPricePerMinuteInPaise: selectedCareTeamService?.pricePerMinuteInPaise ?? null,
+              careTeamBillableMinutes:
+                selectedCareTeamService?.pricingMode === CareTeamServicePricingMode.PER_MINUTE
+                  ? Math.max(
+                      0,
+                      (selectedCareTeamService.durationMinutes || 0) -
+                        (selectedCareTeamService.freeMinutes || 0)
+                    )
+                  : null,
               careTeamPreviousUseCount: careTeamServiceUseCount,
               careTeamPackageConsultationId: activeCareTeamPackageBalance?.consultationId || null,
               careTeamPackageRemainingBefore:

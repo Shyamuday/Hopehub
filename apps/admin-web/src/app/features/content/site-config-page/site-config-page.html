@@ -56,7 +56,7 @@
         <option [value]="mode.value">{{ mode.label }}</option>
       }
     </select>
-    @if (templateDraft().pricingMode !== 'FREE_VOLUNTEER') {
+    @if (templateDraft().pricingMode !== 'FREE_VOLUNTEER' && templateDraft().pricingMode !== 'PER_MINUTE') {
       <input type="number" [value]="rupees(templateDraft().priceInPaise)" placeholder="Base ₹" (input)="updateDraft('priceInPaise', $any($event.target).value)" />
     }
     @if (showFirstPrice(templateDraft())) {
@@ -69,6 +69,10 @@
     @if (showPackageFields(templateDraft())) {
       <input type="number" [value]="templateDraft().packageSessionCount || ''" placeholder="Package sessions" (input)="updateDraft('packageSessionCount', $any($event.target).value)" />
       <input type="number" [value]="rupees(templateDraft().packagePriceInPaise)" placeholder="Package ₹" (input)="updateDraft('packagePriceInPaise', $any($event.target).value)" />
+    }
+    @if (showPerMinuteFields(templateDraft())) {
+      <input type="number" [value]="templateDraft().freeMinutes || 0" placeholder="Free minutes" (input)="updateDraft('freeMinutes', $any($event.target).value)" />
+      <input type="number" [value]="rupees(templateDraft().pricePerMinuteInPaise)" placeholder="₹ per minute" (input)="updateDraft('pricePerMinuteInPaise', $any($event.target).value)" />
     }
     <input type="number" [value]="templateDraft().durationMinutes" placeholder="Minutes" (input)="updateDraft('durationMinutes', $any($event.target).value)" />
     <input [value]="templateDraft().description || ''" placeholder="Description" (input)="updateDraft('description', $any($event.target).value)" />
@@ -87,7 +91,7 @@
             <option [value]="mode.value">{{ mode.label }}</option>
           }
         </select>
-        @if (template.pricingMode !== 'FREE_VOLUNTEER') {
+        @if (template.pricingMode !== 'FREE_VOLUNTEER' && template.pricingMode !== 'PER_MINUTE') {
           <input type="number" [value]="rupees(template.priceInPaise)" placeholder="Base ₹" (input)="updateTemplate(i, 'priceInPaise', $any($event.target).value)" />
         }
         @if (showFirstPrice(template)) {
@@ -100,6 +104,10 @@
         @if (showPackageFields(template)) {
           <input type="number" [value]="template.packageSessionCount || ''" placeholder="Package sessions" (input)="updateTemplate(i, 'packageSessionCount', $any($event.target).value)" />
           <input type="number" [value]="rupees(template.packagePriceInPaise)" placeholder="Package ₹" (input)="updateTemplate(i, 'packagePriceInPaise', $any($event.target).value)" />
+        }
+        @if (showPerMinuteFields(template)) {
+          <input type="number" [value]="template.freeMinutes || 0" placeholder="Free minutes" (input)="updateTemplate(i, 'freeMinutes', $any($event.target).value)" />
+          <input type="number" [value]="rupees(template.pricePerMinuteInPaise)" placeholder="₹ per minute" (input)="updateTemplate(i, 'pricePerMinuteInPaise', $any($event.target).value)" />
         }
         <input type="number" [value]="template.durationMinutes" placeholder="Minutes" (input)="updateTemplate(i, 'durationMinutes', $any($event.target).value)" />
         <input [value]="template.description || ''" placeholder="Description" (input)="updateTemplate(i, 'description', $any($event.target).value)" />

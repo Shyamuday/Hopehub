@@ -55,6 +55,7 @@ enum CareTeamServicePricingMode {
   DISCOUNTED_FIRST
   PACKAGE
   FREE_VOLUNTEER
+  PER_MINUTE
 }
 
 model MentalHealthProviderProfile {
@@ -96,6 +97,8 @@ model CareTeamService {
   introSessionLimit      Int      @default(1)
   packageSessionCount    Int?
   packagePriceInPaise    Int?
+  freeMinutes            Int      @default(0)
+  pricePerMinuteInPaise  Int?
   currency               String   @default("INR")
   durationMinutes        Int      @default(30)
   isFree                 Boolean  @default(false)
@@ -122,6 +125,8 @@ model CareTeamPricingTemplate {
   introSessionLimit        Int      @default(1)
   packageSessionCount      Int?
   packagePriceInPaise      Int?
+  freeMinutes              Int      @default(0)
+  pricePerMinuteInPaise    Int?
   durationMinutes          Int      @default(30)
   isFree                   Boolean  @default(false)
   isActive                 Boolean  @default(true)

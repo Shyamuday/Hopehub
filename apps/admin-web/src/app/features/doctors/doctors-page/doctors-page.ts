@@ -75,13 +75,16 @@ type CareTeamMemberType =
 type CareTeamService = {
   title: string;
   description?: string | null;
-  pricingMode?: 'FIXED' | 'FREE_INTRO' | 'DISCOUNTED_FIRST' | 'PACKAGE' | 'FREE_VOLUNTEER';
+  pricingMode?:
+    'FIXED' | 'FREE_INTRO' | 'DISCOUNTED_FIRST' | 'PACKAGE' | 'FREE_VOLUNTEER' | 'PER_MINUTE';
   priceInPaise: number;
   firstSessionPriceInPaise?: number | null;
   followUpPriceInPaise?: number | null;
   introSessionLimit?: number;
   packageSessionCount?: number | null;
   packagePriceInPaise?: number | null;
+  freeMinutes?: number;
+  pricePerMinuteInPaise?: number | null;
   currency?: string;
   durationMinutes: number;
   isFree?: boolean;
@@ -101,6 +104,7 @@ const CARE_SERVICE_PRICING_MODES = new Set([
   'DISCOUNTED_FIRST',
   'PACKAGE',
   'FREE_VOLUNTEER',
+  'PER_MINUTE',
 ]);
 
 function psychologistProfileValue(value: string, fallback = 'Psychologist') {
@@ -184,6 +188,7 @@ export class DoctorsPage {
     { value: 'DISCOUNTED_FIRST', label: 'Discounted first session' },
     { value: 'PACKAGE', label: 'Package' },
     { value: 'FREE_VOLUNTEER', label: 'Free volunteer support' },
+    { value: 'PER_MINUTE', label: 'Per-minute pricing' },
   ];
   readonly careTeamTypeOptions: Array<{ value: CareTeamMemberType; label: string }> = [
     { value: 'MENTAL_WELLNESS_PROFESSIONAL', label: 'Mental wellness professional' },
@@ -691,6 +696,8 @@ export class DoctorsPage {
       introSessionLimit: 1,
       packageSessionCount: null,
       packagePriceInPaise: null,
+      freeMinutes: 5,
+      pricePerMinuteInPaise: null,
       currency: 'INR',
       durationMinutes: 30,
       description: '',
@@ -723,13 +730,15 @@ export class DoctorsPage {
           key === 'priceInPaise' ||
           key === 'firstSessionPriceInPaise' ||
           key === 'followUpPriceInPaise' ||
-          key === 'packagePriceInPaise'
+          key === 'packagePriceInPaise' ||
+          key === 'pricePerMinuteInPaise'
         ) {
           (next as any)[key] = value === '' ? null : Math.max(0, Math.round(Number(value) * 100));
         } else if (
           key === 'durationMinutes' ||
           key === 'introSessionLimit' ||
-          key === 'packageSessionCount'
+          key === 'packageSessionCount' ||
+          key === 'freeMinutes'
         ) {
           (next as any)[key] = value === '' ? null : Math.max(1, Math.round(Number(value)));
         } else {
@@ -737,6 +746,9 @@ export class DoctorsPage {
         }
         if (key === 'pricingMode') {
           next.isFree = value === 'FREE_VOLUNTEER';
+          if (value === 'FREE_VOLUNTEER' || value === 'PER_MINUTE') {
+            next.priceInPaise = 0;
+          }
         }
         return next;
       }),
@@ -758,6 +770,8 @@ export class DoctorsPage {
               introSessionLimit: template.introSessionLimit || 1,
               packageSessionCount: template.packageSessionCount ?? null,
               packagePriceInPaise: template.packagePriceInPaise ?? null,
+              freeMinutes: template.freeMinutes || 0,
+              pricePerMinuteInPaise: template.pricePerMinuteInPaise ?? null,
               durationMinutes: template.durationMinutes || 30,
               isFree: template.isFree || template.pricingMode === 'FREE_VOLUNTEER',
               description: service.description || template.description || '',
@@ -792,6 +806,10 @@ export class DoctorsPage {
     return service.pricingMode === 'PACKAGE';
   }
 
+  showPerMinuteFields(service: CareTeamService) {
+    return service.pricingMode === 'PER_MINUTE';
+  }
+
   private serviceSignal(target: 'create' | 'edit') {
     return target === 'create' ? this.createCareServices : this.editCareServices;
   }
@@ -802,6 +820,8 @@ export class DoctorsPage {
       pricingMode: service.pricingMode || 'FIXED',
       priceInPaise: service.priceInPaise ?? 0,
       introSessionLimit: service.introSessionLimit || 1,
+      freeMinutes: service.freeMinutes || 0,
+      pricePerMinuteInPaise: service.pricePerMinuteInPaise ?? null,
       durationMinutes: service.durationMinutes || 30,
       isActive: service.isActive !== false,
       sortOrder: service.sortOrder ?? index,
@@ -834,9 +854,11 @@ export class DoctorsPage {
         const introLimit = advanced ? parts[5] || '' : '';
         const packageSessions = advanced ? parts[6] || '' : '';
         const packagePrice = advanced ? parts[7] || '' : '';
-        const minutes = advanced ? parts[8] || '' : parts[2] || '';
-        const description = advanced ? parts[9] || '' : parts[3] || '';
-        const active = advanced ? parts[10] || 'yes' : parts[4] || 'yes';
+        const freeMinutes = advanced ? parts[8] || '' : '';
+        const pricePerMinute = advanced ? parts[9] || '' : '';
+        const minutes = advanced ? parts[10] || '' : parts[2] || '';
+        const description = advanced ? parts[11] || '' : parts[3] || '';
+        const active = advanced ? parts[12] || 'yes' : parts[4] || 'yes';
         const priceInPaise = rupeesToPaise(price) ?? 0;
         const firstSessionPriceInPaise = rupeesToPaise(first);
         const followUpPriceInPaise = rupeesToPaise(followUp);
@@ -851,9 +873,13 @@ export class DoctorsPage {
           introSessionLimit: Math.max(1, Number(introLimit || 1)),
           packageSessionCount: packageSessions ? Math.max(1, Number(packageSessions)) : null,
           packagePriceInPaise,
+          freeMinutes: Math.max(0, Number(freeMinutes || 0)),
+          pricePerMinuteInPaise: rupeesToPaise(pricePerMinute),
           currency: 'INR',
           durationMinutes: Math.max(5, Number(minutes || 30)),
-          isFree: pricingMode === 'FREE_VOLUNTEER' || priceInPaise === 0,
+          isFree:
+            pricingMode === 'FREE_VOLUNTEER' ||
+            (pricingMode !== 'PER_MINUTE' && priceInPaise === 0),
           isActive: !/^no|false|inactive$/i.test(active),
           sortOrder: index,
         };
@@ -865,7 +891,7 @@ export class DoctorsPage {
     return services
       .map(
         (service) =>
-          `${service.title} | ${service.pricingMode || 'FIXED'} | ${(service.priceInPaise || 0) / 100} | ${service.firstSessionPriceInPaise == null ? '' : service.firstSessionPriceInPaise / 100} | ${service.followUpPriceInPaise == null ? '' : service.followUpPriceInPaise / 100} | ${service.introSessionLimit || 1} | ${service.packageSessionCount || ''} | ${service.packagePriceInPaise == null ? '' : service.packagePriceInPaise / 100} | ${service.durationMinutes || 30} | ${service.description || ''} | ${service.isActive === false ? 'no' : 'yes'}`,
+          `${service.title} | ${service.pricingMode || 'FIXED'} | ${(service.priceInPaise || 0) / 100} | ${service.firstSessionPriceInPaise == null ? '' : service.firstSessionPriceInPaise / 100} | ${service.followUpPriceInPaise == null ? '' : service.followUpPriceInPaise / 100} | ${service.introSessionLimit || 1} | ${service.packageSessionCount || ''} | ${service.packagePriceInPaise == null ? '' : service.packagePriceInPaise / 100} | ${service.freeMinutes || 0} | ${service.pricePerMinuteInPaise == null ? '' : service.pricePerMinuteInPaise / 100} | ${service.durationMinutes || 30} | ${service.description || ''} | ${service.isActive === false ? 'no' : 'yes'}`,
       )
       .join('\n');
   }

@@ -140,6 +140,8 @@ export const doctorProfileSelect = {
           introSessionLimit: true,
           packageSessionCount: true,
           packagePriceInPaise: true,
+          freeMinutes: true,
+          pricePerMinuteInPaise: true,
           currency: true,
           durationMinutes: true,
           isFree: true,

@@ -178,7 +178,7 @@
                   <option [value]="mode.value">{{ mode.label }}</option>
                 }
               </select>
-              @if (service.pricingMode !== 'FREE_VOLUNTEER') {
+              @if (service.pricingMode !== 'FREE_VOLUNTEER' && service.pricingMode !== 'PER_MINUTE') {
                 <input type="number" [value]="rupees(service.priceInPaise)" placeholder="Base ₹" (input)="updateCareService('create', $index, 'priceInPaise', $any($event.target).value)" />
               }
               @if (showFirstPrice(service)) {
@@ -192,6 +192,10 @@
                 <input type="number" [value]="service.packageSessionCount || ''" placeholder="Package sessions" (input)="updateCareService('create', $index, 'packageSessionCount', $any($event.target).value)" />
                 <input type="number" [value]="rupees(service.packagePriceInPaise)" placeholder="Package ₹" (input)="updateCareService('create', $index, 'packagePriceInPaise', $any($event.target).value)" />
               }
+              @if (showPerMinuteFields(service)) {
+                <input type="number" [value]="service.freeMinutes || 0" placeholder="Free minutes" (input)="updateCareService('create', $index, 'freeMinutes', $any($event.target).value)" />
+                <input type="number" [value]="rupees(service.pricePerMinuteInPaise)" placeholder="₹ per minute" (input)="updateCareService('create', $index, 'pricePerMinuteInPaise', $any($event.target).value)" />
+              }
               <input type="number" [value]="service.durationMinutes || 30" placeholder="Minutes" (input)="updateCareService('create', $index, 'durationMinutes', $any($event.target).value)" />
               <input [value]="service.description || ''" placeholder="Description" (input)="updateCareService('create', $index, 'description', $any($event.target).value)" />
               <label><input type="checkbox" [checked]="service.isActive !== false" (change)="updateCareService('create', $index, 'isActive', $any($event.target).checked)" /> Active</label>
@@ -200,7 +204,7 @@
           }
           <button type="button" class="btn-secondary" (click)="addCareService('create')">Add service</button>
         </div>
-        <p class="field-hint">Use pricing mode for fixed, first free, discounted first, package, or free volunteer support.</p>
+        <p class="field-hint">Use pricing mode for fixed, first free, discounted first, package, per-minute, or free volunteer support.</p>
       </div>
     }
     <button type="button" (click)="createDoctor()" [disabled]="mutating() || loading()">
@@ -646,7 +650,7 @@
                       <option [value]="mode.value">{{ mode.label }}</option>
                     }
                   </select>
-                  @if (service.pricingMode !== 'FREE_VOLUNTEER') {
+                  @if (service.pricingMode !== 'FREE_VOLUNTEER' && service.pricingMode !== 'PER_MINUTE') {
                     <input type="number" [value]="rupees(service.priceInPaise)" placeholder="Base ₹" (input)="updateCareService('edit', $index, 'priceInPaise', $any($event.target).value)" />
                   }
                   @if (showFirstPrice(service)) {
@@ -660,6 +664,10 @@
                     <input type="number" [value]="service.packageSessionCount || ''" placeholder="Package sessions" (input)="updateCareService('edit', $index, 'packageSessionCount', $any($event.target).value)" />
                     <input type="number" [value]="rupees(service.packagePriceInPaise)" placeholder="Package ₹" (input)="updateCareService('edit', $index, 'packagePriceInPaise', $any($event.target).value)" />
                   }
+                  @if (showPerMinuteFields(service)) {
+                    <input type="number" [value]="service.freeMinutes || 0" placeholder="Free minutes" (input)="updateCareService('edit', $index, 'freeMinutes', $any($event.target).value)" />
+                    <input type="number" [value]="rupees(service.pricePerMinuteInPaise)" placeholder="₹ per minute" (input)="updateCareService('edit', $index, 'pricePerMinuteInPaise', $any($event.target).value)" />
+                  }
                   <input type="number" [value]="service.durationMinutes || 30" placeholder="Minutes" (input)="updateCareService('edit', $index, 'durationMinutes', $any($event.target).value)" />
                   <input [value]="service.description || ''" placeholder="Description" (input)="updateCareService('edit', $index, 'description', $any($event.target).value)" />
                   <label><input type="checkbox" [checked]="service.isActive !== false" (change)="updateCareService('edit', $index, 'isActive', $any($event.target).checked)" /> Active</label>
@@ -668,7 +676,7 @@
               }
               <button type="button" class="btn-secondary" (click)="addCareService('edit')">Add service</button>
             </div>
-            <p class="field-hint">Use pricing mode for fixed, first free, discounted first, package, or free volunteer support.</p>
+            <p class="field-hint">Use pricing mode for fixed, first free, discounted first, package, per-minute, or free volunteer support.</p>
           </div>
         }
         <button type="button" (click)="saveDoctorEdits()" [disabled]="mutating()">

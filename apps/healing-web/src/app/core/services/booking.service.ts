@@ -208,7 +208,8 @@ export type HopeHubProvider = {
     id: string;
     title: string;
     description?: string | null;
-    pricingMode?: 'FIXED' | 'FREE_INTRO' | 'DISCOUNTED_FIRST' | 'PACKAGE' | 'FREE_VOLUNTEER';
+    pricingMode?:
+      'FIXED' | 'FREE_INTRO' | 'DISCOUNTED_FIRST' | 'PACKAGE' | 'FREE_VOLUNTEER' | 'PER_MINUTE';
     priceInPaise: number;
     effectivePriceInPaise?: number;
     firstSessionPriceInPaise?: number | null;
@@ -216,6 +217,8 @@ export type HopeHubProvider = {
     introSessionLimit?: number;
     packageSessionCount?: number | null;
     packagePriceInPaise?: number | null;
+    freeMinutes?: number;
+    pricePerMinuteInPaise?: number | null;
     pricingLabel?: string;
     pricingRule?: string;
     effectiveSessionCount?: number;
