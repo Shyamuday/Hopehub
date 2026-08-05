@@ -5,9 +5,9 @@ import { config } from './config.js';
 export function hopeHubWebBotKeyboard() {
   return new InlineKeyboard()
     .url('Hope Hub Bot', config.webBotUrl)
-    .row()
     .url('Website', config.websiteUrl)
     .row()
+    .url('Channel', config.channelUrl)
     .text('Rules', 'community:rules');
 }
 

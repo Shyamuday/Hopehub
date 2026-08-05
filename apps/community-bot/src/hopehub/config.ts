@@ -6,6 +6,7 @@ export type BotConfig = {
   webhookSecret: string;
   webBotUrl: string;
   websiteUrl: string;
+  channelUrl: string;
   logoUrl: string;
   welcomeMessage: string;
   rules: string[];
@@ -47,6 +48,7 @@ export function loadConfig(): BotConfig {
     webhookSecret: env('TELEGRAM_COMMUNITY_WEBHOOK_SECRET'),
     webBotUrl: env('HOPEHUB_WEB_BOT_URL', 'https://t.me/Hopehubwebbot'),
     websiteUrl: env('HOPEHUB_WEBSITE_URL', 'https://hopehub.in'),
+    channelUrl: env('HOPEHUB_CHANNEL_URL', 'https://t.me/HopeHubGlobal'),
     logoUrl: env(
       'HOPEHUB_LOGO_URL',
       'https://hopehub-public-assets-924479393196.s3.us-east-1.amazonaws.com/brand/hopehublogom.jpg'
