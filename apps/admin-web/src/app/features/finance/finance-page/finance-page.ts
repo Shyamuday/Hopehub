@@ -346,6 +346,24 @@ export class FinancePage implements OnInit {
       });
   }
 
+  providerPricingText(row: any): string {
+    return [row.pricingLabel, this.providerPricingModeLabel(row.pricingMode)]
+      .filter(Boolean)
+      .join(' · ');
+  }
+
+  providerPricingModeLabel(mode?: string | null): string {
+    const labels: Record<string, string> = {
+      FIXED: 'Fixed',
+      FREE_INTRO: 'Free intro',
+      DISCOUNTED_FIRST: 'First/follow-up',
+      PACKAGE: 'Package',
+      FREE_VOLUNTEER: 'Volunteer/free',
+      PER_MINUTE: 'Per-minute',
+    };
+    return mode ? (labels[mode] ?? mode.replace(/_/g, ' ')) : '';
+  }
+
   backfillProviderPayouts(): void {
     this.api
       .backfillProviderPayouts()

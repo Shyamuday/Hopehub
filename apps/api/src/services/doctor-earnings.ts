@@ -21,9 +21,19 @@ export type DoctorEarningsLineItem = {
   status: PaymentStatus | 'RECORDED';
   patientName: string | null;
   label: string;
+  pricingLabel?: string | null;
+  pricingMode?: string | null;
+  pricingRule?: string | null;
+  serviceTitle?: string | null;
+  platformFeeInPaise?: number | null;
+  providerSharePercent?: number | null;
+  packageUsage?: unknown;
+  billableMinutes?: number | null;
   consultationFeeInPaise: number;
   medicineFeeInPaise: number;
   totalGrossInPaise: number;
+  refundedAmountInPaise?: number;
+  netPaidInPaise?: number;
   doctorEarningsInPaise: number;
   payoutStatus?: string | null;
   payoutReference?: string | null;
@@ -140,6 +150,7 @@ export async function buildDoctorEarningsReport(
       id: true,
       status: true,
       amountInPaise: true,
+      refundedAmountInPaise: true,
       lineItems: true,
       createdAt: true,
       consultation: {
@@ -153,7 +164,13 @@ export async function buildDoctorEarningsReport(
           payoutStatus: true,
           payoutReference: true,
           paidAt: true,
-          providerEarningInPaise: true
+          providerEarningInPaise: true,
+          platformFeeInPaise: true,
+          providerSharePercent: true,
+          pricingMode: true,
+          pricingRule: true,
+          serviceTitle: true,
+          packageUsage: true
         }
       }
     },
@@ -162,6 +179,7 @@ export async function buildDoctorEarningsReport(
 
   for (const payment of payments) {
     const fees = parsePaymentFeeBreakdown(payment.lineItems, payment.amountInPaise);
+    const lineItemMeta = asRecord(payment.lineItems);
     const earningsInPaise =
       payment.status === PaymentStatus.PAID
         ? computeDoctorShareAmount(
@@ -183,10 +201,36 @@ export async function buildDoctorEarningsReport(
       kind: 'CONSULTATION_PAYMENT',
       status: payment.status,
       patientName: payment.consultation.patient?.name ?? null,
-      label: payment.consultation.disease?.name ?? 'Consultation',
+      label:
+        payment.providerEarning?.serviceTitle ||
+        String(lineItemMeta?.careTeamServiceTitle || '') ||
+        payment.consultation.disease?.name ||
+        'Consultation',
+      pricingLabel: String(lineItemMeta?.careTeamPricingLabel || '') || null,
+      pricingMode:
+        payment.providerEarning?.pricingMode ||
+        String(lineItemMeta?.careTeamPricingMode || '') ||
+        null,
+      pricingRule:
+        payment.providerEarning?.pricingRule ||
+        String(lineItemMeta?.careTeamPricingRule || '') ||
+        null,
+      serviceTitle:
+        payment.providerEarning?.serviceTitle ||
+        String(lineItemMeta?.careTeamServiceTitle || '') ||
+        null,
+      platformFeeInPaise: payment.providerEarning?.platformFeeInPaise ?? null,
+      providerSharePercent: payment.providerEarning?.providerSharePercent ?? null,
+      packageUsage: payment.providerEarning?.packageUsage || lineItemMeta?.packageUsage || null,
+      billableMinutes:
+        readPaise(lineItemMeta?.careTeamBillableMinutes) ??
+        readPaise(lineItemMeta?.billableMinutes) ??
+        null,
       consultationFeeInPaise: fees.consultationFeeInPaise,
       medicineFeeInPaise: fees.medicineFeeInPaise,
       totalGrossInPaise: payment.amountInPaise,
+      refundedAmountInPaise: payment.refundedAmountInPaise,
+      netPaidInPaise: Math.max(0, payment.amountInPaise - payment.refundedAmountInPaise),
       doctorEarningsInPaise: payment.providerEarning?.providerEarningInPaise ?? earningsInPaise,
       payoutStatus: payment.providerEarning?.payoutStatus ?? null,
       payoutReference: payment.providerEarning?.payoutReference ?? null,

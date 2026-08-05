@@ -43,6 +43,19 @@ export function parsePaymentDateRange(from?: string, to?: string) {
 }
 
 const paymentInclude = {
+  providerEarning: {
+    select: {
+      id: true,
+      payoutStatus: true,
+      providerEarningInPaise: true,
+      platformFeeInPaise: true,
+      providerSharePercent: true,
+      pricingMode: true,
+      pricingRule: true,
+      serviceTitle: true,
+      packageUsage: true
+    }
+  },
   consultation: {
     select: {
       id: true,

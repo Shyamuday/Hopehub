@@ -193,7 +193,46 @@ export class PaymentsPage implements OnInit {
   }
 
   packageUsage(payment: any) {
-    return payment?.lineItems?.packageUsage || null;
+    return payment?.providerEarning?.packageUsage || payment?.lineItems?.packageUsage || null;
+  }
+
+  pricingText(payment: any): string {
+    return [
+      payment?.providerEarning?.serviceTitle || payment?.lineItems?.careTeamServiceTitle,
+      payment?.lineItems?.careTeamPricingLabel,
+      this.pricingModeLabel(
+        payment?.providerEarning?.pricingMode || payment?.lineItems?.careTeamPricingMode,
+      ),
+    ]
+      .filter(Boolean)
+      .join(' · ');
+  }
+
+  pricingModeLabel(mode?: string | null): string {
+    const labels: Record<string, string> = {
+      FIXED: 'Fixed',
+      FREE_INTRO: 'Free intro',
+      DISCOUNTED_FIRST: 'First/follow-up',
+      PACKAGE: 'Package',
+      FREE_VOLUNTEER: 'Volunteer/free',
+      PER_MINUTE: 'Per-minute',
+    };
+    return mode ? (labels[mode] ?? mode.replace(/_/g, ' ')) : '';
+  }
+
+  payoutText(payment: any): string {
+    const earning = payment?.providerEarning;
+    if (!earning) return 'Not in payout ledger';
+    return `${earning.payoutStatus || 'PENDING'} · Provider ₹${this.formatPaise(earning.providerEarningInPaise || 0)} · Platform ₹${this.formatPaise(earning.platformFeeInPaise || 0)}`;
+  }
+
+  refundImpactText(payment: any): string {
+    const refunded = Number(payment?.refundedAmountInPaise || 0);
+    if (!refunded) return '';
+    const refundable = this.refundableAmount(payment);
+    return refundable
+      ? `Partial refund recorded. Provider earning is recalculated on net paid amount.`
+      : `Full refund recorded. Provider payout should stay on hold unless manually released.`;
   }
 
   onRefundAmountInput(event: Event): void {

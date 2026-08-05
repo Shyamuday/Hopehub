@@ -496,6 +496,32 @@ export class ConsultationsPage implements OnInit {
     };
   }
 
+  payoutInsight(c: any) {
+    const earning = c?.payment?.providerEarning;
+    if (!earning) return null;
+    return {
+      status: earning.payoutStatus || 'PENDING',
+      provider: Number(earning.providerEarningInPaise || 0),
+      platform: Number(earning.platformFeeInPaise || 0),
+      reference: earning.payoutReference || '',
+      note: earning.payoutNote || '',
+    };
+  }
+
+  refundInsight(c: any) {
+    const refunded = Number(c?.payment?.refundedAmountInPaise || 0);
+    if (!refunded) return null;
+    const paid = Number(c?.payment?.amountInPaise || 0);
+    return {
+      refunded,
+      isFull: refunded >= paid,
+      text:
+        refunded >= paid
+          ? 'Full refund · payout should be held'
+          : 'Partial refund · payout recalculated on net paid',
+    };
+  }
+
   balanceDueInPaise(c: any): number {
     return Number(
       c?.pricingSnapshot?.balanceDueInPaise ?? c?.payment?.lineItems?.balanceDueInPaise ?? 0,

@@ -11,7 +11,7 @@ import { formatPaise, paiseToK } from '../constants/earnings.constants';
   selector: 'app-earnings-page',
   imports: [FormField, DatePipe],
   templateUrl: './earnings-page.html',
-  styleUrl: './earnings-page.scss'
+  styleUrl: './earnings-page.scss',
 })
 export class EarningsPage implements OnInit {
   private http = inject(HttpClient);
@@ -38,10 +38,16 @@ export class EarningsPage implements OnInit {
     this.error.set('');
     try {
       const [payslipRes, summary] = await Promise.all([
-        firstValueFrom(this.http.get<any>(`${this.apiBase}${API_PATHS.DOCTOR.MY_PAYSLIP}`, { params: { month: this.monthModel().selectedMonth } })),
-        firstValueFrom(this.http.get<any>(`${this.apiBase}${API_PATHS.DOCTOR.PAYMENTS_SUMMARY}`, {
-          params: { month: this.monthModel().selectedMonth }
-        }))
+        firstValueFrom(
+          this.http.get<any>(`${this.apiBase}${API_PATHS.DOCTOR.MY_PAYSLIP}`, {
+            params: { month: this.monthModel().selectedMonth },
+          }),
+        ),
+        firstValueFrom(
+          this.http.get<any>(`${this.apiBase}${API_PATHS.DOCTOR.PAYMENTS_SUMMARY}`, {
+            params: { month: this.monthModel().selectedMonth },
+          }),
+        ),
       ]);
       this.payslip.set(payslipRes.payslip);
       this.history.set(payslipRes.history ?? []);
@@ -51,5 +57,46 @@ export class EarningsPage implements OnInit {
     } finally {
       this.loading.set(false);
     }
+  }
+
+  providerRows(): any[] {
+    return (this.consultationSummary()?.lineItems ?? []).filter(
+      (row: any) => row.kind === 'CONSULTATION_PAYMENT' && (row.pricingMode || row.payoutStatus),
+    );
+  }
+
+  providerSummary() {
+    const rows = this.providerRows();
+    return rows.reduce(
+      (acc, row: any) => {
+        const earning = Number(row.doctorEarningsInPaise || 0);
+        const platform = Number(row.platformFeeInPaise || 0);
+        acc.total += earning;
+        acc.platform += platform;
+        if (row.payoutStatus === 'PAID') acc.paid += earning;
+        else if (row.payoutStatus === 'HOLD') acc.hold += earning;
+        else acc.pending += earning;
+        return acc;
+      },
+      { total: 0, paid: 0, pending: 0, hold: 0, platform: 0 },
+    );
+  }
+
+  pricingText(row: any): string {
+    return [row.serviceTitle || row.label, row.pricingLabel, this.pricingModeLabel(row.pricingMode)]
+      .filter(Boolean)
+      .join(' · ');
+  }
+
+  pricingModeLabel(mode?: string | null): string {
+    const labels: Record<string, string> = {
+      FIXED: 'Fixed',
+      FREE_INTRO: 'Free intro',
+      DISCOUNTED_FIRST: 'First/follow-up',
+      PACKAGE: 'Package',
+      FREE_VOLUNTEER: 'Volunteer/free',
+      PER_MINUTE: 'Per-minute',
+    };
+    return mode ? (labels[mode] ?? mode.replace(/_/g, ' ')) : '';
   }
 }

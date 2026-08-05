@@ -7,6 +7,28 @@ import { asyncRoute, queryText, routeParam } from '../../utils/helpers.js';
 import { backfillProviderEarnings } from '../../services/provider-earnings.js';
 import { monthDateRange } from './shared.js';
 
+function asRecord(value: unknown): Record<string, any> {
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? (value as Record<string, any>)
+    : {};
+}
+
+function enrichPayoutRow(row: any) {
+  const lineItems = asRecord(row.payment?.lineItems);
+  const usage = row.packageUsage || lineItems['packageUsage'] || null;
+  return {
+    ...row,
+    pricingLabel: String(lineItems['careTeamPricingLabel'] || '') || null,
+    pricingMode: row.pricingMode || String(lineItems['careTeamPricingMode'] || '') || null,
+    pricingRule: row.pricingRule || String(lineItems['careTeamPricingRule'] || '') || null,
+    serviceTitle: row.serviceTitle || String(lineItems['careTeamServiceTitle'] || '') || null,
+    packageUsage: usage,
+    freeMinutes: Number(lineItems['careTeamFreeMinutes'] || 0) || null,
+    pricePerMinuteInPaise: Number(lineItems['careTeamPricePerMinuteInPaise'] || 0) || null,
+    billableMinutes: Number(lineItems['careTeamBillableMinutes'] || 0) || null
+  };
+}
+
 const payoutStatusSchema = z.object({
   status: z.nativeEnum(ProviderPayoutStatus),
   payoutReference: z.string().trim().max(160).optional().nullable(),
@@ -56,6 +78,7 @@ export function registerFinanceProviderPayoutRoutes(router: Router) {
                 amountInPaise: true,
                 status: true,
                 providerPaymentId: true,
+                lineItems: true,
                 createdAt: true
               }
             },
@@ -91,7 +114,7 @@ export function registerFinanceProviderPayoutRoutes(router: Router) {
       ]);
 
       res.json({
-        earnings,
+        earnings: earnings.map(enrichPayoutRow),
         summary: {
           count: totals._count._all,
           grossAmountInPaise: totals._sum.grossAmountInPaise ?? 0,

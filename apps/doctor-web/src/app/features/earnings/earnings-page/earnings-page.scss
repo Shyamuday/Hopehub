@@ -9,6 +9,30 @@
 .card .sub { color: #94a3b8; font-size: 0.8rem; margin-top: 0.35rem; }
 .card.warn { background: #fffbeb; border-color: #fcd34d; }
 .card.net { background: #ecfdf5; border-color: #6ee7b7; }
+.provider-earnings-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 0.75rem;
+  margin: 0 0 1rem;
+}
+.provider-earnings-strip > div {
+  background: linear-gradient(135deg, #eff6ff, #f8fafc);
+  border: 1px solid #bfdbfe;
+  border-radius: 14px;
+  padding: 0.9rem;
+}
+.provider-earnings-strip span,
+.provider-earnings-strip small {
+  display: block;
+  color: #64748b;
+  font-size: 0.8rem;
+}
+.provider-earnings-strip strong {
+  display: block;
+  color: #0f172a;
+  font-size: 1.35rem;
+  margin: 0.2rem 0;
+}
 .panel .sub { color: #64748b; font-size: 0.85rem; margin: 0 0 0.75rem; }
 .pending-row td { color: #b45309; }
 .failed-row td { color: #b91c1c; opacity: 0.85; }

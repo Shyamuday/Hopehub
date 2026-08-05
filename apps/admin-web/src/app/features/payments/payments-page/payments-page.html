@@ -46,6 +46,7 @@
             <th>Patient</th>
             <th>Disease</th>
             <th>Doctor</th>
+            <th>Pricing / Payout</th>
             <th>Status</th>
             <th class="num">Amount (₹)</th>
             <th class="num">Refunded (₹)</th>
@@ -59,6 +60,13 @@
               <td>{{ p.consultation?.patient?.name ?? '—' }}</td>
               <td>{{ p.consultation?.disease?.name ?? '—' }}</td>
               <td>{{ p.consultation?.assignedDoctor?.name ?? 'Unassigned' }}</td>
+              <td>
+                <div>{{ pricingText(p) || 'Standard consultation' }}</div>
+                <div class="muted">{{ payoutText(p) }}</div>
+                @if (refundImpactText(p)) {
+                  <div class="muted">{{ refundImpactText(p) }}</div>
+                }
+              </td>
               <td>
                 <span class="badge" [style.background]="statusStyles[p.status]?.bg" [style.color]="statusStyles[p.status]?.color">
                   {{ p.status }}
@@ -93,6 +101,8 @@
           <div class="card-row"><span>{{ p.consultation?.disease?.name ?? '—' }}</span><strong>₹{{ formatPaise(p.amountInPaise) }}</strong></div>
           <div class="card-row"><span>Refunded</span><span>₹{{ formatPaise(p.refundedAmountInPaise || 0) }}</span></div>
           <div class="card-row"><span>Doctor</span><span>{{ p.consultation?.assignedDoctor?.name ?? 'Unassigned' }}</span></div>
+          <div class="card-row"><span>Pricing</span><span>{{ pricingText(p) || 'Standard consultation' }}</span></div>
+          <div class="card-row"><span>Payout</span><span>{{ payoutText(p) }}</span></div>
           <div class="row-actions">
             <button type="button" class="btn-clear" (click)="openDetails(p)">Details</button>
             <button type="button" class="btn-apply" [disabled]="!canRefund(p)" (click)="openDetails(p)">Refund</button>
@@ -126,9 +136,28 @@
         <div><span>Refunded</span><strong>₹{{ formatPaise(selected.refundedAmountInPaise || 0) }}</strong></div>
         <div><span>Refundable</span><strong>₹{{ formatPaise(refundableAmount(selected)) }}</strong></div>
         <div><span>Balance due</span><strong>₹{{ formatPaise(balanceDueInPaise(selected)) }}</strong></div>
+        <div><span>Provider payout</span><strong>{{ selected.providerEarning?.payoutStatus || '—' }}</strong></div>
+        <div><span>Provider share</span><strong>₹{{ formatPaise(selected.providerEarning?.providerEarningInPaise || 0) }}</strong></div>
+        <div><span>Platform fee</span><strong>₹{{ formatPaise(selected.providerEarning?.platformFeeInPaise || 0) }}</strong></div>
         <div><span>Order</span><strong>{{ selected.providerOrderId || '—' }}</strong></div>
         <div><span>Payment</span><strong>{{ selected.providerPaymentId || '—' }}</strong></div>
       </div>
+
+      @if (pricingText(selected)) {
+        <div class="muted-panel">
+          Pricing: {{ pricingText(selected) }}.
+          @if (selected.lineItems?.careTeamBillableMinutes) {
+            Billable minutes: {{ selected.lineItems.careTeamBillableMinutes }}.
+          }
+          @if (selected.lineItems?.balanceDueInPaise) {
+            Balance due: ₹{{ formatPaise(selected.lineItems.balanceDueInPaise) }}.
+          }
+        </div>
+      }
+
+      @if (refundImpactText(selected)) {
+        <div class="muted-panel">{{ refundImpactText(selected) }}</div>
+      }
 
       @if (packageUsage(selected); as usage) {
         <div class="muted-panel">

@@ -124,6 +124,21 @@
                         }
                       </div>
                     }
+                    @if (payoutInsight(c); as payout) {
+                      <div class="session-outcome-mini">
+                        <strong>Payout {{ payout.status }} · {{ formatPaise(payout.provider) }}</strong>
+                        <span>Platform {{ formatPaise(payout.platform) }}</span>
+                        @if (payout.reference) {
+                          <small>{{ payout.reference }}</small>
+                        }
+                      </div>
+                    }
+                    @if (refundInsight(c); as refund) {
+                      <div class="session-outcome-mini">
+                        <strong>{{ refund.text }}</strong>
+                        <span>Refunded {{ formatPaise(refund.refunded) }}</span>
+                      </div>
+                    }
                     @if (sessionOutcome(c); as outcome) {
                       <div class="session-outcome-mini">
                         <strong>{{ sessionOutcomeLabel(outcome.outcome) }}</strong>
@@ -216,6 +231,21 @@
                   @if (pricing.packageConsultationId && pricing.isPackageRedemption) {
                     <small>Package ID: {{ pricing.packageConsultationId }}</small>
                   }
+                </div>
+              }
+              @if (payoutInsight(c); as payout) {
+                <div class="session-outcome-mini mobile">
+                  <strong>Payout {{ payout.status }} · {{ formatPaise(payout.provider) }}</strong>
+                  <span>Platform {{ formatPaise(payout.platform) }}</span>
+                  @if (payout.note) {
+                    <small>{{ payout.note }}</small>
+                  }
+                </div>
+              }
+              @if (refundInsight(c); as refund) {
+                <div class="session-outcome-mini mobile">
+                  <strong>{{ refund.text }}</strong>
+                  <span>Refunded {{ formatPaise(refund.refunded) }}</span>
                 </div>
               }
               @if (sessionOutcome(c); as outcome) {

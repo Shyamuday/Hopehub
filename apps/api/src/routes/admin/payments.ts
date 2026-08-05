@@ -377,18 +377,53 @@ export function registerAdminPaymentRoutes(router: Router) {
         payoutNote: `Refund ${nextStatus === PaymentStatus.REFUNDED ? 'full' : 'partial'}: ${body.reason}`
       });
 
-      if (body.cancelConsultation && nextStatus === PaymentStatus.REFUNDED) {
-        await applyConsultationCancellationEffects({
-          consultationId: payment.consultationId,
-          actorId: req.user!.id,
-          actorRole: req.user!.role,
-          reason: body.reason,
-          restorePackageSession: true,
-          holdProviderPayout: true
-        });
-      }
+      const cancellationResult =
+        body.cancelConsultation && nextStatus === PaymentStatus.REFUNDED
+          ? await applyConsultationCancellationEffects({
+              consultationId: payment.consultationId,
+              actorId: req.user!.id,
+              actorRole: req.user!.role,
+              reason: body.reason,
+              restorePackageSession: true,
+              holdProviderPayout: true
+            })
+          : null;
 
-      res.status(201).json({ refund: savedRefund, payment: updatedPayment });
+      const enrichedPayment = await prisma.payment.findUnique({
+        where: { id: payment.id },
+        include: {
+          providerEarning: {
+            select: {
+              id: true,
+              payoutStatus: true,
+              providerEarningInPaise: true,
+              platformFeeInPaise: true,
+              providerSharePercent: true,
+              pricingMode: true,
+              pricingRule: true,
+              serviceTitle: true,
+              packageUsage: true,
+              payoutReference: true,
+              payoutNote: true
+            }
+          },
+          consultation: {
+            select: {
+              id: true,
+              status: true,
+              patient: { select: { id: true, name: true } },
+              assignedDoctor: { select: { id: true, name: true } },
+              disease: { select: { name: true } }
+            }
+          }
+        }
+      });
+
+      res.status(201).json({
+        refund: savedRefund,
+        payment: enrichedPayment ?? updatedPayment,
+        cancellation: cancellationResult
+      });
     })
   );
 }

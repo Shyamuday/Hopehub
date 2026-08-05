@@ -452,6 +452,7 @@
                   <th>Date</th>
                   <th>Provider</th>
                   <th>Patient / Service</th>
+                  <th>Pricing</th>
                   <th>Status</th>
                   <th class="num">User Paid</th>
                   <th class="num">Provider</th>
@@ -468,6 +469,15 @@
                     <td>
                       <div>{{ row.patient?.name || '—' }}</div>
                       <div class="branch-code">{{ row.serviceTitle || row.consultation?.disease?.name || 'Session' }}</div>
+                    </td>
+                    <td>
+                      {{ providerPricingText(row) || 'Standard' }}
+                      @if (row.packageUsage) {
+                        <div class="branch-code">Package session</div>
+                      }
+                      @if (row.billableMinutes) {
+                        <div class="branch-code">{{ row.billableMinutes }} billable min</div>
+                      }
                     </td>
                     <td>{{ row.paymentStatus }}</td>
                     <td class="num">{{ formatPaise(row.grossAmountInPaise) }}</td>
@@ -499,6 +509,10 @@
                 <div class="card-head"><strong>{{ row.doctor?.name || 'Provider' }}</strong><span>{{ row.payoutStatus }}</span></div>
                 <div class="card-row"><span>Patient</span><span>{{ row.patient?.name || '—' }}</span></div>
                 <div class="card-row"><span>Service</span><span>{{ row.serviceTitle || row.consultation?.disease?.name || 'Session' }}</span></div>
+                <div class="card-row"><span>Pricing</span><span>{{ providerPricingText(row) || 'Standard' }}</span></div>
+                @if (row.billableMinutes) {
+                  <div class="card-row"><span>Billable</span><span>{{ row.billableMinutes }} min</span></div>
+                }
                 <div class="card-row"><span>User paid</span><span>{{ formatPaise(row.grossAmountInPaise) }}</span></div>
                 <div class="card-row"><span>Provider</span><strong>{{ formatPaise(row.providerEarningInPaise) }}</strong></div>
                 <div class="card-row"><span>Platform</span><span>{{ formatPaise(row.platformFeeInPaise) }}</span></div>
