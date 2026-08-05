@@ -54,6 +54,17 @@ function toPricingSummary(
     mode: pricingMode || null,
     paymentStatus: consultation.payment?.status || null,
     amountInPaise: consultation.payment?.amountInPaise ?? null,
+    refundedAmountInPaise: consultation.payment?.refundedAmountInPaise ?? null,
+    netPaidInPaise: consultation.payment
+      ? Math.max(0, consultation.payment.amountInPaise - consultation.payment.refundedAmountInPaise)
+      : null,
+    balanceDueInPaise: Number(
+      pricingSnapshot['balanceDueInPaise'] ?? lineItems['balanceDueInPaise'] ?? 0
+    ),
+    billableMinutes: Number(lineItems['careTeamBillableMinutes'] || 0) || null,
+    payoutStatus: consultation.payment?.providerEarning?.payoutStatus || null,
+    providerEarningInPaise: consultation.payment?.providerEarning?.providerEarningInPaise ?? null,
+    platformFeeInPaise: consultation.payment?.providerEarning?.platformFeeInPaise ?? null,
     isPackagePurchase,
     isPackageRedemption,
     isPaidByPackage: isPackageRedemption,

@@ -12,6 +12,48 @@ import { escapeHtml } from './telegram-bots.helpers.js';
 import type { TelegramSession } from './telegram-bots.sessions.js';
 import { adminUrl, doctorUrl } from './telegram-bots.ui.js';
 
+function asRecord(value: unknown): Record<string, any> {
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? (value as Record<string, any>)
+    : {};
+}
+
+function rupees(amountInPaise: number | null | undefined) {
+  return `₹${Math.round(Number(amountInPaise || 0) / 100)}`;
+}
+
+function queueMoneyLine(item: {
+  pricingSnapshot?: unknown;
+  payment?: {
+    amountInPaise?: number | null;
+    refundedAmountInPaise?: number | null;
+    lineItems?: unknown;
+    providerEarning?: {
+      payoutStatus?: string | null;
+      providerEarningInPaise?: number | null;
+    } | null;
+  } | null;
+}) {
+  const snapshot = asRecord(item.pricingSnapshot);
+  const lineItems = asRecord(item.payment?.lineItems);
+  const label = String(snapshot['careTeamPricingLabel'] || lineItems['careTeamPricingLabel'] || '');
+  const billableMinutes = Number(lineItems['careTeamBillableMinutes'] || 0);
+  const balanceDue = Number(snapshot['balanceDueInPaise'] ?? lineItems['balanceDueInPaise'] ?? 0);
+  const refunded = Number(item.payment?.refundedAmountInPaise || 0);
+  const payout = item.payment?.providerEarning;
+  return [
+    label,
+    billableMinutes ? `${billableMinutes} billable min` : '',
+    balanceDue ? `balance ${rupees(balanceDue)}` : '',
+    refunded ? `refunded ${rupees(refunded)}` : '',
+    payout
+      ? `payout ${payout.payoutStatus || 'PENDING'} ${rupees(payout.providerEarningInPaise)}`
+      : ''
+  ]
+    .filter(Boolean)
+    .join(' · ');
+}
+
 export async function doctorQueue(kind: TelegramBotKind, session: TelegramSession) {
   if (!(await requireLinked(kind, session))) return;
   const consultations = await prisma.consultation.findMany({
@@ -21,7 +63,14 @@ export async function doctorQueue(kind: TelegramBotKind, session: TelegramSessio
     },
     include: {
       patient: { select: { name: true, patientCode: true } },
-      disease: { select: { name: true } }
+      disease: { select: { name: true } },
+      payment: {
+        include: {
+          providerEarning: {
+            select: { payoutStatus: true, providerEarningInPaise: true }
+          }
+        }
+      }
     },
     orderBy: { createdAt: 'desc' },
     take: 5
@@ -38,10 +87,10 @@ export async function doctorQueue(kind: TelegramBotKind, session: TelegramSessio
     counts.map((item) => `${item.status}: ${item._count._all}`).join('\n') || 'No open cases.';
   const rows =
     consultations
-      .map(
-        (item, index) =>
-          `${index + 1}. ${escapeHtml(item.patient.name)} (${escapeHtml(item.patient.patientCode || '-')}) - ${escapeHtml(item.disease.name)}`
-      )
+      .map((item, index) => {
+        const money = queueMoneyLine(item);
+        return `${index + 1}. ${escapeHtml(item.patient.name)} (${escapeHtml(item.patient.patientCode || '-')}) - ${escapeHtml(item.disease.name)}${money ? `\n   ${escapeHtml(money)}` : ''}`;
+      })
       .join('\n') || 'Your queue is clear.';
 
   await sendTelegramMessage(kind, {

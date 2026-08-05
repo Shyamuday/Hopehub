@@ -76,6 +76,18 @@
         <div class="pricing-chip">
           <strong>{{ pricing.headline }}</strong>
           <span>{{ pricing.subline }}</span>
+          @if (pricing.billableMinutes) {
+            <span>{{ pricing.billableMinutes }} billable min</span>
+          }
+          @if (pricing.balanceDueLabel) {
+            <span>Balance due {{ pricing.balanceDueLabel }}</span>
+          }
+          @if (pricing.refundedLabel) {
+            <span>Refunded {{ pricing.refundedLabel }}</span>
+          }
+          @if (pricing.payoutLabel) {
+            <span>Payout {{ pricing.payoutLabel }}</span>
+          }
         </div>
       }
       <small class="muted">
@@ -143,6 +155,18 @@
         <div class="pricing-chip">
           <strong>{{ pricing.headline }}</strong>
           <span>{{ pricing.subline }}</span>
+          @if (pricing.billableMinutes) {
+            <span>{{ pricing.billableMinutes }} billable min</span>
+          }
+          @if (pricing.balanceDueLabel) {
+            <span>Balance due {{ pricing.balanceDueLabel }}</span>
+          }
+          @if (pricing.refundedLabel) {
+            <span>Refunded {{ pricing.refundedLabel }}</span>
+          }
+          @if (pricing.payoutLabel) {
+            <span>Payout {{ pricing.payoutLabel }}</span>
+          }
         </div>
       }
       <small class="muted">Patient {{ item.patient?.patientCode || item.patient?.id }}</small>
@@ -202,6 +226,18 @@
         <div class="pricing-chip">
           <strong>{{ pricing.headline }}</strong>
           <span>{{ pricing.subline }}</span>
+          @if (pricing.billableMinutes) {
+            <span>{{ pricing.billableMinutes }} billable min</span>
+          }
+          @if (pricing.balanceDueLabel) {
+            <span>Balance due {{ pricing.balanceDueLabel }}</span>
+          }
+          @if (pricing.refundedLabel) {
+            <span>Refunded {{ pricing.refundedLabel }}</span>
+          }
+          @if (pricing.payoutLabel) {
+            <span>Payout {{ pricing.payoutLabel }}</span>
+          }
         </div>
       }
       <small class="muted">Patient {{ item.patient?.patientCode || item.patient?.id }}</small>

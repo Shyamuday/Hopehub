@@ -23,6 +23,13 @@ export type WorklistItem = {
     mode?: string | null;
     paymentStatus?: string | null;
     amountInPaise?: number | null;
+    refundedAmountInPaise?: number | null;
+    netPaidInPaise?: number | null;
+    balanceDueInPaise?: number | null;
+    billableMinutes?: number | null;
+    payoutStatus?: string | null;
+    providerEarningInPaise?: number | null;
+    platformFeeInPaise?: number | null;
     isPackagePurchase?: boolean;
     isPackageRedemption?: boolean;
     isPaidByPackage?: boolean;

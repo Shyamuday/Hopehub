@@ -18,6 +18,48 @@ function shortId(id: string) {
   return id.slice(-6);
 }
 
+function asRecord(value: unknown): Record<string, any> {
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? (value as Record<string, any>)
+    : {};
+}
+
+function rupees(amountInPaise: number | null | undefined) {
+  return `₹${Math.round(Number(amountInPaise || 0) / 100)}`;
+}
+
+function moneyLine(item: {
+  pricingSnapshot?: unknown;
+  payment?: {
+    amountInPaise?: number | null;
+    refundedAmountInPaise?: number | null;
+    lineItems?: unknown;
+    providerEarning?: {
+      payoutStatus?: string | null;
+      providerEarningInPaise?: number | null;
+    } | null;
+  } | null;
+}) {
+  const snapshot = asRecord(item.pricingSnapshot);
+  const lineItems = asRecord(item.payment?.lineItems);
+  const label = String(snapshot['careTeamPricingLabel'] || lineItems['careTeamPricingLabel'] || '');
+  const billableMinutes = Number(lineItems['careTeamBillableMinutes'] || 0);
+  const balanceDue = Number(snapshot['balanceDueInPaise'] ?? lineItems['balanceDueInPaise'] ?? 0);
+  const refunded = Number(item.payment?.refundedAmountInPaise || 0);
+  const payout = item.payment?.providerEarning;
+  return [
+    label,
+    billableMinutes ? `${billableMinutes} billable min` : '',
+    balanceDue ? `balance ${rupees(balanceDue)}` : '',
+    refunded ? `refunded ${rupees(refunded)}` : '',
+    payout
+      ? `payout ${payout.payoutStatus || 'PENDING'} ${rupees(payout.providerEarningInPaise)}`
+      : ''
+  ]
+    .filter(Boolean)
+    .join(' · ');
+}
+
 export async function showDoctorOutcomeSessions(kind: TelegramBotKind, session: TelegramSession) {
   if (!(await requireLinked(kind, session))) return;
 
@@ -28,7 +70,14 @@ export async function showDoctorOutcomeSessions(kind: TelegramBotKind, session: 
     },
     include: {
       patient: { select: { name: true, patientCode: true } },
-      disease: { select: { name: true } }
+      disease: { select: { name: true } },
+      payment: {
+        include: {
+          providerEarning: {
+            select: { payoutStatus: true, providerEarningInPaise: true }
+          }
+        }
+      }
     },
     orderBy: { createdAt: 'desc' },
     take: 8
@@ -51,10 +100,10 @@ export async function showDoctorOutcomeSessions(kind: TelegramBotKind, session: 
       '<b>Close session with outcome</b>',
       'Choose the session first. Keep clinical/private notes in the doctor portal.',
       '',
-      ...consultations.map(
-        (item, index) =>
-          `${index + 1}. ${escapeHtml(item.patient.name)} · ${escapeHtml(item.disease.name)} · ${escapeHtml(item.status)} · ${shortId(item.id)}`
-      )
+      ...consultations.map((item, index) => {
+        const money = moneyLine(item);
+        return `${index + 1}. ${escapeHtml(item.patient.name)} · ${escapeHtml(item.disease.name)} · ${escapeHtml(item.status)} · ${shortId(item.id)}${money ? `\n   ${escapeHtml(money)}` : ''}`;
+      })
     ].join('\n'),
     parse_mode: 'HTML',
     reply_markup: {
@@ -86,7 +135,14 @@ export async function showDoctorOutcomeOptions(
     },
     include: {
       patient: { select: { name: true, patientCode: true } },
-      disease: { select: { name: true } }
+      disease: { select: { name: true } },
+      payment: {
+        include: {
+          providerEarning: {
+            select: { payoutStatus: true, providerEarningInPaise: true }
+          }
+        }
+      }
     }
   });
 
@@ -107,6 +163,7 @@ export async function showDoctorOutcomeOptions(
       '<b>Select session outcome</b>',
       `User: ${escapeHtml(consultation.patient.name)} (${escapeHtml(consultation.patient.patientCode || '-')})`,
       `Session: ${escapeHtml(consultation.disease.name)}`,
+      moneyLine(consultation) ? `Money: ${escapeHtml(moneyLine(consultation))}` : '',
       '',
       'Package restore/payout hold is automatic for provider no-show and reschedule-needed outcomes.'
     ].join('\n'),

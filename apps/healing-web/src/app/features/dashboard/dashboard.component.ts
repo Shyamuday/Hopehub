@@ -34,6 +34,22 @@ type HopeHubConsultation = {
   pricingSnapshot?: {
     balanceDueInPaise?: number;
     paymentMode?: string;
+    careTeamPricingLabel?: string | null;
+    careTeamPricingMode?: string | null;
+    careTeamPricingRule?: string | null;
+    careTeamBillableMinutes?: number | null;
+    cancellation?: {
+      reason?: string | null;
+      restorePackageSession?: boolean;
+      cancelledAt?: string | null;
+    } | null;
+    sessionOutcome?: {
+      outcome?: string | null;
+      packageRestored?: boolean;
+      payoutAction?: string | null;
+      recommendedNextStep?: string | null;
+      userSummary?: string | null;
+    } | null;
     packageUsage?: {
       totalSessions?: number;
       usedSessions?: number;
@@ -44,9 +60,14 @@ type HopeHubConsultation = {
   payment?: {
     status?: string | null;
     amountInPaise?: number | null;
+    refundedAmountInPaise?: number | null;
     lineItems?: {
       balanceDueInPaise?: number;
       paymentMode?: string;
+      careTeamPricingLabel?: string | null;
+      careTeamPricingMode?: string | null;
+      careTeamPricingRule?: string | null;
+      careTeamBillableMinutes?: number | null;
       packageUsage?: {
         totalSessions?: number;
         usedSessions?: number;
@@ -78,6 +99,7 @@ type DashboardSummary = {
   availableFollowUpCount: number;
   activePackageCount: number;
   balanceDueInPaise: number;
+  refundedInPaise?: number;
   requestCount: number;
 };
 
@@ -157,7 +179,7 @@ type DashboardPackage = {
         }
 
         <!-- Quick Actions -->
-        <div class="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-5">
+        <div class="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-6">
           @for (item of summaryCards(); track item.label) {
             <div class="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
               <p class="text-xs font-semibold uppercase text-gray-500">{{ item.label }}</p>
@@ -442,6 +464,35 @@ type DashboardPackage = {
                         }
                       </p>
                     }
+                    @if (pricingLabel(consultation) || billableMinutes(consultation)) {
+                      <div
+                        class="mt-3 rounded-md border border-indigo-100 bg-indigo-50/70 p-3 text-sm text-indigo-950"
+                      >
+                        @if (pricingLabel(consultation)) {
+                          <p class="font-semibold">{{ pricingLabel(consultation) }}</p>
+                        }
+                        @if (pricingModeLabel(consultation)) {
+                          <p class="mt-1">{{ pricingModeLabel(consultation) }}</p>
+                        }
+                        @if (billableMinutes(consultation)) {
+                          <p class="mt-1">{{ billableMinutes(consultation) }} billable minutes</p>
+                        }
+                      </div>
+                    }
+                    @if (refundText(consultation)) {
+                      <div
+                        class="mt-3 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-950"
+                      >
+                        {{ refundText(consultation) }}
+                      </div>
+                    }
+                    @if (sessionOutcomeText(consultation)) {
+                      <div
+                        class="mt-3 rounded-md border border-slate-200 bg-slate-50 p-3 text-sm text-slate-800"
+                      >
+                        {{ sessionOutcomeText(consultation) }}
+                      </div>
+                    }
                     @if (balanceDueInPaise(consultation) > 0 || packageUsage(consultation)) {
                       <div
                         class="mt-3 rounded-md border border-blue-100 bg-white p-3 text-sm text-gray-700"
@@ -663,6 +714,7 @@ export class DashboardComponent implements OnInit {
     availableFollowUpCount: 0,
     activePackageCount: 0,
     balanceDueInPaise: 0,
+    refundedInPaise: 0,
     requestCount: 0,
   });
 
@@ -718,6 +770,11 @@ export class DashboardComponent implements OnInit {
       { label: 'Follow-ups', value: String(summary.availableFollowUpCount), help: 'Available now' },
       { label: 'Packages', value: String(summary.activePackageCount), help: 'Active plans' },
       { label: 'Balance', value: this.formatPaise(summary.balanceDueInPaise), help: 'Due later' },
+      {
+        label: 'Refunded',
+        value: this.formatPaise(summary.refundedInPaise || 0),
+        help: 'Returned amount',
+      },
     ];
   }
 
@@ -864,6 +921,65 @@ export class DashboardComponent implements OnInit {
     );
   }
 
+  pricingLabel(consultation: HopeHubConsultation): string {
+    return (
+      consultation.pricingSnapshot?.careTeamPricingLabel ||
+      consultation.payment?.lineItems?.careTeamPricingLabel ||
+      ''
+    );
+  }
+
+  pricingModeLabel(consultation: HopeHubConsultation): string {
+    const mode =
+      consultation.pricingSnapshot?.careTeamPricingMode ||
+      consultation.payment?.lineItems?.careTeamPricingMode ||
+      '';
+    const labels: Record<string, string> = {
+      FIXED: 'Fixed session price',
+      FREE_INTRO: 'Free introductory session',
+      DISCOUNTED_FIRST: 'First/follow-up pricing',
+      PACKAGE: 'Package pricing',
+      FREE_VOLUNTEER: 'Volunteer/free support',
+      PER_MINUTE: 'Per-minute pricing',
+    };
+    return mode ? (labels[mode] ?? mode.replace(/_/g, ' ')) : '';
+  }
+
+  billableMinutes(consultation: HopeHubConsultation): number {
+    return Number(
+      consultation.pricingSnapshot?.careTeamBillableMinutes ??
+        consultation.payment?.lineItems?.careTeamBillableMinutes ??
+        0,
+    );
+  }
+
+  refundText(consultation: HopeHubConsultation): string {
+    const refunded = Number(consultation.payment?.refundedAmountInPaise || 0);
+    if (!refunded) return '';
+    const amount = Number(consultation.payment?.amountInPaise || 0);
+    return refunded >= amount
+      ? `Full refund recorded: ${this.formatPaise(refunded)}.`
+      : `Partial refund recorded: ${this.formatPaise(refunded)}.`;
+  }
+
+  sessionOutcomeText(consultation: HopeHubConsultation): string {
+    const outcome = consultation.pricingSnapshot?.sessionOutcome;
+    const cancellation = consultation.pricingSnapshot?.cancellation;
+    if (outcome?.userSummary) return outcome.userSummary;
+    if (outcome?.outcome) {
+      const parts = [`Session outcome: ${String(outcome.outcome).replace(/_/g, ' ')}`];
+      if (outcome.packageRestored) parts.push('package session restored');
+      if (outcome.recommendedNextStep) parts.push(outcome.recommendedNextStep);
+      return parts.join(' · ');
+    }
+    if (cancellation?.reason) {
+      return `Cancelled: ${cancellation.reason}${
+        cancellation.restorePackageSession ? ' · package session restored' : ''
+      }`;
+    }
+    return '';
+  }
+
   packageProgress(item: DashboardPackage): number {
     if (!item.totalSessions) return 0;
     return Math.min(100, Math.max(0, (item.usedSessions / item.totalSessions) * 100));
@@ -900,6 +1016,8 @@ export class DashboardComponent implements OnInit {
           acc.activePackageCount += 1;
         }
         acc.balanceDueInPaise += this.balanceDueInPaise(consultation);
+        acc.refundedInPaise =
+          (acc.refundedInPaise || 0) + Number(consultation.payment?.refundedAmountInPaise || 0);
         return acc;
       },
       {
@@ -908,6 +1026,7 @@ export class DashboardComponent implements OnInit {
         availableFollowUpCount: 0,
         activePackageCount: 0,
         balanceDueInPaise: 0,
+        refundedInPaise: 0,
         requestCount: leads.length,
       },
     );

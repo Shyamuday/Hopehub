@@ -2576,6 +2576,7 @@ hopeHubRouter.get(
         const balanceDueInPaise = Number(
           pricingSnapshot['balanceDueInPaise'] ?? lineItems['balanceDueInPaise'] ?? 0
         );
+        const refundedInPaise = Number(consultation.payment?.refundedAmountInPaise || 0);
 
         if (!paidStatuses.has(paymentStatus)) acc.pendingPaymentCount += 1;
         if (consultation.followUpEntitlement?.status === FollowUpEntitlementStatus.AVAILABLE) {
@@ -2585,6 +2586,7 @@ hopeHubRouter.get(
           acc.activePackageCount += 1;
         }
         acc.balanceDueInPaise += balanceDueInPaise;
+        acc.refundedInPaise += refundedInPaise;
         return acc;
       },
       {
@@ -2593,6 +2595,7 @@ hopeHubRouter.get(
         availableFollowUpCount: 0,
         activePackageCount: 0,
         balanceDueInPaise: 0,
+        refundedInPaise: 0,
         requestCount: leads.length
       }
     );

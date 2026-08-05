@@ -253,6 +253,16 @@ export class WorklistPage {
       serviceTitle: pricing.serviceTitle,
       packageConsultationId: pricing.packageConsultationId,
       amountLabel,
+      balanceDueLabel: pricing.balanceDueInPaise
+        ? this.formatPaise(Number(pricing.balanceDueInPaise))
+        : '',
+      refundedLabel: pricing.refundedAmountInPaise
+        ? this.formatPaise(Number(pricing.refundedAmountInPaise))
+        : '',
+      payoutLabel: pricing.payoutStatus
+        ? `${pricing.payoutStatus} · ${this.formatPaise(Number(pricing.providerEarningInPaise || 0))}`
+        : '',
+      billableMinutes: pricing.billableMinutes || null,
     };
   }
 

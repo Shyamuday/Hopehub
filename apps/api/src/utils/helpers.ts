@@ -22,7 +22,13 @@ export function queryText(req: express.Request, key: string) {
   return typeof value === 'string' ? value : '';
 }
 
-export function queryPositiveInt(req: express.Request, key: string, fallback: number, min = 1, max = 100) {
+export function queryPositiveInt(
+  req: express.Request,
+  key: string,
+  fallback: number,
+  min = 1,
+  max = 100
+) {
   const parsed = Number(queryText(req, key));
   if (!Number.isFinite(parsed)) return fallback;
   return Math.min(max, Math.max(min, Math.floor(parsed)));
@@ -171,7 +177,26 @@ export function includeConsultationRelations() {
     patient: { select: publicUserSelect },
     assignedDoctor: { select: publicUserSelect },
     disease: true,
-    payment: true,
+    payment: {
+      include: {
+        providerEarning: {
+          select: {
+            id: true,
+            payoutStatus: true,
+            providerEarningInPaise: true,
+            platformFeeInPaise: true,
+            providerSharePercent: true,
+            pricingMode: true,
+            pricingRule: true,
+            serviceTitle: true,
+            packageUsage: true,
+            payoutReference: true,
+            payoutNote: true,
+            paidAt: true
+          }
+        }
+      }
+    },
     prescriptions: {
       include: {
         items: { orderBy: { sortOrder: 'asc' as const } },
@@ -223,7 +248,12 @@ export function fallbackIntakeTimesFromFrequency(frequency?: string | null) {
 export function buildDoseScheduleEvents(input: {
   patientId: string;
   prescriptionId: string;
-  prescriptionItems: Array<{ id: string; frequency?: string | null; durationDays?: number | null; intakeTimes?: unknown }>;
+  prescriptionItems: Array<{
+    id: string;
+    frequency?: string | null;
+    durationDays?: number | null;
+    intakeTimes?: unknown;
+  }>;
 }) {
   const today = new Date();
   const dayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
@@ -235,8 +265,12 @@ export function buildDoseScheduleEvents(input: {
   }> = [];
 
   for (const item of input.prescriptionItems) {
-    const rawTimes = Array.isArray(item.intakeTimes) ? item.intakeTimes.filter((t) => typeof t === 'string') : [];
-    const times = rawTimes.length ? (rawTimes as string[]) : fallbackIntakeTimesFromFrequency(item.frequency);
+    const rawTimes = Array.isArray(item.intakeTimes)
+      ? item.intakeTimes.filter((t) => typeof t === 'string')
+      : [];
+    const times = rawTimes.length
+      ? (rawTimes as string[])
+      : fallbackIntakeTimesFromFrequency(item.frequency);
     const durationDays = Math.min(Math.max(item.durationDays || 1, 1), 120);
 
     for (let dayOffset = 0; dayOffset < durationDays; dayOffset += 1) {
