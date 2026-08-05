@@ -6,6 +6,8 @@ import { BookingService, HopeHubProvider } from '../../core/services/booking.ser
 import { PublicCommunicationConfigService } from '../../core/services/public-communication-config.service';
 
 type CareTeamListService = NonNullable<HopeHubProvider['services']>[number];
+type RoleGroup =
+  '' | 'PROFESSIONALS' | 'COUNSELLORS' | 'VOLUNTEERS' | 'COACHES' | 'WELLNESS_GUIDES' | 'MENTORS';
 import { NotificationService } from '../../core/services/notification.service';
 
 @Component({
@@ -28,6 +30,7 @@ export class PsychologistsComponent implements OnInit {
   readonly modality = signal('');
   readonly sessionType = signal('');
   readonly ageGroup = signal('');
+  readonly roleGroup = signal<RoleGroup>('');
   readonly page = signal(1);
   readonly pageSize = 20;
   readonly total = signal(0);
@@ -48,6 +51,15 @@ export class PsychologistsComponent implements OnInit {
     'Family support',
   ];
   readonly ageGroupOptions = ['', 'Adults', 'Teens', 'Children', 'Older adults'];
+  readonly roleTabs: Array<{ value: RoleGroup; label: string; help: string }> = [
+    { value: '', label: 'All', help: 'Show every published support option' },
+    { value: 'PROFESSIONALS', label: 'Professionals', help: 'Structured mental-wellness care' },
+    { value: 'COUNSELLORS', label: 'Counsellors', help: 'Guided counselling support' },
+    { value: 'VOLUNTEERS', label: 'Volunteers', help: 'Non-clinical listening support' },
+    { value: 'COACHES', label: 'Coaches', help: 'Goals, habits, confidence' },
+    { value: 'WELLNESS_GUIDES', label: 'Wellness guides', help: 'Breathing and mindfulness' },
+    { value: 'MENTORS', label: 'Mentors', help: 'Study and career support' },
+  ];
 
   ngOnInit(): void {
     this.load();
@@ -61,6 +73,7 @@ export class PsychologistsComponent implements OnInit {
         page: this.page(),
         pageSize: this.pageSize,
         q: this.q(),
+        roleGroup: this.roleGroup(),
         concern: this.concern(),
         language: this.language(),
         modality: this.modality(),
@@ -69,7 +82,7 @@ export class PsychologistsComponent implements OnInit {
       })
       .subscribe({
         next: (res) => {
-          this.providers.set(res.providers);
+          this.providers.set(this.sortedProviders(res.providers));
           this.total.set(res.pagination.total);
           this.totalPages.set(res.pagination.totalPages);
           this.loading.set(false);
@@ -98,6 +111,12 @@ export class PsychologistsComponent implements OnInit {
     this.load();
   }
 
+  setRoleGroup(value: RoleGroup): void {
+    this.roleGroup.set(value);
+    this.page.set(1);
+    this.load();
+  }
+
   clearFilters(): void {
     this.q.set('');
     this.concern.set('');
@@ -105,8 +124,59 @@ export class PsychologistsComponent implements OnInit {
     this.modality.set('');
     this.sessionType.set('');
     this.ageGroup.set('');
+    this.roleGroup.set('');
     this.page.set(1);
     this.load();
+  }
+
+  recommendedHint(): string {
+    const concern = `${this.concern()} ${this.q()}`.toLowerCase();
+    if (/anxiety|stress|panic|depress|trauma|relationship|family/.test(concern)) {
+      return 'Recommended: start with Professionals or Counsellors for structured support.';
+    }
+    if (/lonely|loneliness|breakup|motivation|heartbreak|friend/.test(concern)) {
+      return 'Recommended: Peer volunteers or Coaches may be a softer first step.';
+    }
+    if (/study|career|exam|focus|job/.test(concern)) {
+      return 'Recommended: Career / Study Mentors first, then Counsellors if emotions feel heavy.';
+    }
+    if (/breath|sleep|relax|mindful|meditation/.test(concern)) {
+      return 'Recommended: Wellness guides for breathing and grounding practice.';
+    }
+    return 'Tip: choose a provider type tab if you already know the kind of support you want.';
+  }
+
+  private sortedProviders(providers: HopeHubProvider[]): HopeHubProvider[] {
+    const concernText = `${this.concern()} ${this.q()}`.toLowerCase();
+    const roleWeight = (provider: HopeHubProvider) => {
+      const tone = provider.supportTierTone || '';
+      const role = provider.supportRole || '';
+      if (/anxiety|stress|panic|depress|trauma|relationship|family/.test(concernText)) {
+        if (tone === 'professional') return 0;
+        if (role === 'QUALIFIED_COUNSELLOR') return 1;
+      }
+      if (/lonely|loneliness|breakup|motivation|heartbreak|friend/.test(concernText)) {
+        if (role === 'PEER_SUPPORT_VOLUNTEER') return 0;
+        if (tone === 'coach') return 1;
+      }
+      if (/study|career|exam|focus|job/.test(concernText)) {
+        if (role === 'CAREER_STUDY_MENTOR') return 0;
+        if (tone === 'coach') return 1;
+      }
+      if (/breath|sleep|relax|mindful|meditation/.test(concernText)) {
+        if (role === 'MEDITATION_BREATHWORK_GUIDE') return 0;
+        if (tone === 'wellness') return 1;
+      }
+      return 5;
+    };
+    return [...providers].sort((a, b) => {
+      const byRole = roleWeight(a) - roleWeight(b);
+      if (byRole) return byRole;
+      const aHasService = a.services?.length ? 0 : 1;
+      const bHasService = b.services?.length ? 0 : 1;
+      if (aHasService !== bHasService) return aHasService - bHasService;
+      return a.name.localeCompare(b.name);
+    });
   }
 
   setPage(page: number): void {

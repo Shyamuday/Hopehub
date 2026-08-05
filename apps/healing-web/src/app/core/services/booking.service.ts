@@ -328,6 +328,7 @@ export class BookingService {
       page?: number;
       pageSize?: number;
       q?: string;
+      roleGroup?: string;
       concern?: string;
       language?: string;
       modality?: string;
@@ -340,6 +341,7 @@ export class BookingService {
       pageSize: String(params.pageSize ?? 20),
       q: params.q ?? '',
     });
+    if (params.roleGroup) searchParams.set('roleGroup', params.roleGroup);
     if (params.concern) searchParams.set('concern', params.concern);
     if (params.language) searchParams.set('language', params.language);
     if (params.modality) searchParams.set('modality', params.modality);
