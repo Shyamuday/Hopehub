@@ -12,6 +12,9 @@ export type BotConfig = {
   rules: string[];
   moderationDataPath: string;
   editWarningsBeforeBan: number;
+  bannedWordsDataPath: string;
+  bannedWordsFilePath: string;
+  bannedWords: string[];
 };
 
 function env(name: string, fallback = '') {
@@ -71,7 +74,13 @@ export function loadConfig(): BotConfig {
       'COMMUNITY_BOT_MODERATION_DATA_PATH',
       './data/moderation-warnings.json'
     ),
-    editWarningsBeforeBan: Number(env('COMMUNITY_BOT_EDIT_WARNINGS_BEFORE_BAN', '3'))
+    editWarningsBeforeBan: Number(env('COMMUNITY_BOT_EDIT_WARNINGS_BEFORE_BAN', '3')),
+    bannedWordsDataPath: env('COMMUNITY_BOT_BANNED_WORDS_DATA_PATH', './data/banned-words.json'),
+    bannedWordsFilePath: env(
+      'COMMUNITY_BOT_BANNED_WORDS_FILE_PATH',
+      './src/hopehub/banned-words.txt'
+    ),
+    bannedWords: envLines('COMMUNITY_BOT_BANNED_WORDS', [])
   };
 }
 

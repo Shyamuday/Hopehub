@@ -20,10 +20,11 @@ function displayName(user: NonNullable<Context['from']>) {
 bot.api.setMyCommands([
   { command: 'start', description: 'Hope Hub bot link' },
   { command: 'help', description: 'Hope Hub bot link' },
-  { command: 'unban', description: 'Admin: unban by Telegram user ID' }
+  { command: 'unban', description: 'Admin: unban by Telegram user ID' },
+  { command: 'banwords', description: 'Admin: list blocked words' },
+  { command: 'banword', description: 'Admin: add a blocked word' },
+  { command: 'allowword', description: 'Admin: remove a blocked word' }
 ]);
-
-registerModeration(bot);
 
 bot.command(['start', 'help'], async (ctx) => {
   await replyWithHopeHubLogo(ctx, startText());
@@ -47,6 +48,8 @@ bot.on('message:new_chat_members', async (ctx) => {
 
   await replyWithHopeHubLogo(ctx, welcomeText(names));
 });
+
+registerModeration(bot);
 
 bot.catch((err) => {
   const ctx = err.ctx;
