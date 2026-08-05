@@ -8,6 +8,7 @@ import {
   startText,
   welcomeText
 } from './messages.js';
+import { registerModeration } from './moderation.js';
 
 const bot = new Bot(config.token);
 const webhookPath = '/telegram/community/webhook';
@@ -18,8 +19,11 @@ function displayName(user: NonNullable<Context['from']>) {
 
 bot.api.setMyCommands([
   { command: 'start', description: 'Hope Hub bot link' },
-  { command: 'help', description: 'Hope Hub bot link' }
+  { command: 'help', description: 'Hope Hub bot link' },
+  { command: 'unban', description: 'Admin: unban by Telegram user ID' }
 ]);
+
+registerModeration(bot);
 
 bot.command(['start', 'help'], async (ctx) => {
   await replyWithHopeHubLogo(ctx, startText());
@@ -73,7 +77,7 @@ async function startWebhook() {
   const webhookUrl = `${config.webhookBaseUrl.replace(/\/$/, '')}${webhookPath}`;
   await bot.api.setWebhook(webhookUrl, {
     secret_token: config.webhookSecret || undefined,
-    allowed_updates: ['message', 'callback_query']
+    allowed_updates: ['message', 'edited_message', 'callback_query']
   });
 
   const app = express();

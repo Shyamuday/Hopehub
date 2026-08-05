@@ -10,6 +10,8 @@ export type BotConfig = {
   logoUrl: string;
   welcomeMessage: string;
   rules: string[];
+  moderationDataPath: string;
+  editWarningsBeforeBan: number;
 };
 
 function env(name: string, fallback = '') {
@@ -64,7 +66,12 @@ export function loadConfig(): BotConfig {
       'Keep the group clean. No spam, promotions, repeated forwards, unrelated links, or aggressive selling.',
       'Use private support for personal help. For booking, tests, payments, volunteer support, or account help, tap the Hope Hub Bot button.',
       'Emergency note: Hope Hub is not an emergency service. If there is immediate danger, self-harm risk, violence, or a medical emergency, contact local emergency services now.'
-    ])
+    ]),
+    moderationDataPath: env(
+      'COMMUNITY_BOT_MODERATION_DATA_PATH',
+      './data/moderation-warnings.json'
+    ),
+    editWarningsBeforeBan: Number(env('COMMUNITY_BOT_EDIT_WARNINGS_BEFORE_BAN', '3'))
   };
 }
 
