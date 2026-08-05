@@ -11,6 +11,7 @@ import {
 import { authRequired, allowRoles } from '../../auth.js';
 import { prisma } from '../../db.js';
 import { asyncRoute, routeParam } from '../../utils/helpers.js';
+import { parseMultipartForm } from '../../utils/multipart.js';
 import {
   deleteClinicalMediaFile,
   readClinicalMediaFile,
@@ -25,13 +26,19 @@ import {
   resolvePatientIdForAnalysis,
   serializeClinicalMedia
 } from '../../services/clinical-media-shared.js';
-import { analyzeClinicalMediaImage, applyImagingInterpretation } from '../../services/clinical-media-rubric-analysis.js';
+import {
+  analyzeClinicalMediaImage,
+  applyImagingInterpretation
+} from '../../services/clinical-media-rubric-analysis.js';
 import {
   getPatientMediaAiPreview,
   latestAiPreviewStatusForMedia,
   queuePatientMediaAnalysis
 } from '../../services/patient-media-analysis.js';
-import { isOllamaVisionAvailable, ollamaVisionConfig } from '../../services/clinical-media-vision.js';
+import {
+  isOllamaVisionAvailable,
+  ollamaVisionConfig
+} from '../../services/clinical-media-vision.js';
 import { analysisIdFromReq, loadCaseAnalysisForDoctor } from './shared.js';
 
 const mediaTypeSchema = z.nativeEnum(ClinicalMediaType);
@@ -46,7 +53,7 @@ const createMediaSchema = z.object({
   consultationId: z.string().min(1).optional(),
   mimeType: z.string().min(3).max(80),
   fileName: z.string().max(200).optional(),
-  dataBase64: z.string().min(1)
+  data: z.instanceof(Buffer)
 });
 
 const updateMediaSchema = z.object({
@@ -63,6 +70,38 @@ const suggestPhrasesSchema = z.object({
   bodyRegion: z.string().max(120).optional()
 });
 
+const MAX_CLINICAL_MEDIA_BYTES = 15 * 1024 * 1024;
+
+function optionalField(value: string | undefined) {
+  const text = value?.trim();
+  return text || undefined;
+}
+
+async function parseClinicalMediaUpload(
+  req: import('express').Request,
+  overrides?: { patientConsent?: boolean }
+) {
+  const form = await parseMultipartForm(req, { maxFileBytes: MAX_CLINICAL_MEDIA_BYTES });
+  if (!form.file) throw new Error('EMPTY_FILE');
+
+  return createMediaSchema.parse({
+    mediaType: form.fields['mediaType'],
+    bodyRegion: optionalField(form.fields['bodyRegion']),
+    observations: optionalField(form.fields['observations']),
+    patientConsent:
+      overrides?.patientConsent ??
+      ['true', '1', 'yes', 'on'].includes(
+        String(form.fields['patientConsent'] || '').toLowerCase()
+      ),
+    diseaseId: optionalField(form.fields['diseaseId']),
+    conditionLabel: optionalField(form.fields['conditionLabel']),
+    consultationId: optionalField(form.fields['consultationId']),
+    mimeType: form.file.mimeType,
+    fileName: optionalField(form.fields['fileName']) || form.file.fileName || undefined,
+    data: form.file.buffer
+  });
+}
+
 async function saveUploadedClinicalMedia(input: {
   patientId: string;
   uploadedById: string;
@@ -73,7 +112,12 @@ async function saveUploadedClinicalMedia(input: {
   requireConsent: boolean;
 }) {
   if (input.requireConsent && !input.body.patientConsent) {
-    return { error: { status: 400, message: 'Patient consent is required before attaching clinical images.' } };
+    return {
+      error: {
+        status: 400,
+        message: 'Patient consent is required before attaching clinical images.'
+      }
+    };
   }
 
   let storageKey: string;
@@ -82,7 +126,7 @@ async function saveUploadedClinicalMedia(input: {
       patientId: input.patientId,
       mimeType: input.body.mimeType,
       fileName: input.body.fileName,
-      dataBase64: input.body.dataBase64
+      data: input.body.data
     }));
   } catch (error) {
     return { error: mapClinicalMediaUploadError(error) };
@@ -200,7 +244,7 @@ export function registerClinicalMediaRoutes(router: Router) {
     authRequired,
     allowRoles(Role.PATIENT),
     asyncRoute(async (req, res) => {
-      const body = createMediaSchema.parse({ ...req.body, patientConsent: true });
+      const body = await parseClinicalMediaUpload(req, { patientConsent: true });
       const result = await saveUploadedClinicalMedia({
         patientId: req.user!.id,
         uploadedById: req.user!.id,
@@ -246,9 +290,13 @@ export function registerClinicalMediaRoutes(router: Router) {
         where: { id: mediaId },
         data: {
           ...(body.bodyRegion !== undefined ? { bodyRegion: body.bodyRegion.trim() || null } : {}),
-          ...(body.observations !== undefined ? { observations: body.observations.trim() || null } : {}),
+          ...(body.observations !== undefined
+            ? { observations: body.observations.trim() || null }
+            : {}),
           ...(body.diseaseId !== undefined ? { diseaseId: body.diseaseId } : {}),
-          ...(body.conditionLabel !== undefined ? { conditionLabel: body.conditionLabel?.trim() || null } : {})
+          ...(body.conditionLabel !== undefined
+            ? { conditionLabel: body.conditionLabel?.trim() || null }
+            : {})
         },
         include: clinicalMediaInclude
       });
@@ -304,7 +352,7 @@ export function registerClinicalMediaRoutes(router: Router) {
         if (!allowed) return res.status(403).json({ message: 'Access denied.' });
       }
 
-      const body = createMediaSchema.parse(req.body);
+      const body = await parseClinicalMediaUpload(req);
       const result = await saveUploadedClinicalMedia({
         patientId,
         uploadedById: req.user!.id,
@@ -404,7 +452,9 @@ export function registerClinicalMediaRoutes(router: Router) {
           saveObservations: body.saveObservations
         });
         if (!result) {
-          return res.status(404).json({ message: 'Clinical media not found for this case analysis.' });
+          return res
+            .status(404)
+            .json({ message: 'Clinical media not found for this case analysis.' });
         }
 
         let media = null;
@@ -428,7 +478,8 @@ export function registerClinicalMediaRoutes(router: Router) {
         }
         if (error instanceof Error && error.message === 'PDF_NOT_SUPPORTED') {
           return res.status(400).json({
-            message: 'PDF analysis is not supported yet. Upload a screenshot/photo of the report or imaging slice.'
+            message:
+              'PDF analysis is not supported yet. Upload a screenshot/photo of the report or imaging slice.'
           });
         }
         if (error instanceof Error && error.message === 'PDF_NO_TEXT') {
@@ -501,7 +552,7 @@ export function registerClinicalMediaRoutes(router: Router) {
       const analysis = await loadCaseAnalysisForDoctor(req, res, analysisId);
       if (!analysis) return;
 
-      const body = createMediaSchema.parse(req.body);
+      const body = await parseClinicalMediaUpload(req);
       const patientContext = await resolvePatientIdForAnalysis(analysisId);
       if (!patientContext) {
         return res.status(400).json({
@@ -545,10 +596,14 @@ export function registerClinicalMediaRoutes(router: Router) {
         where: { id: mediaId },
         data: {
           ...(body.bodyRegion !== undefined ? { bodyRegion: body.bodyRegion.trim() || null } : {}),
-          ...(body.observations !== undefined ? { observations: body.observations.trim() || null } : {}),
+          ...(body.observations !== undefined
+            ? { observations: body.observations.trim() || null }
+            : {}),
           ...(body.patientConsent !== undefined ? { patientConsent: body.patientConsent } : {}),
           ...(body.diseaseId !== undefined ? { diseaseId: body.diseaseId } : {}),
-          ...(body.conditionLabel !== undefined ? { conditionLabel: body.conditionLabel?.trim() || null } : {})
+          ...(body.conditionLabel !== undefined
+            ? { conditionLabel: body.conditionLabel?.trim() || null }
+            : {})
         },
         include: clinicalMediaInclude
       });

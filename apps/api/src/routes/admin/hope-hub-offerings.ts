@@ -13,6 +13,7 @@ import { z } from 'zod';
 import { authRequired, allowRoles } from '../../auth.js';
 import { prisma } from '../../db.js';
 import { asyncRoute, routeParam, writeAuditLog } from '../../utils/helpers.js';
+import { parseMultipartForm } from '../../utils/multipart.js';
 import { saveHopeHubMedia } from '../../services/hope-hub-media-storage.js';
 
 const emptyToNull = z
@@ -125,11 +126,17 @@ const carePricingTemplateSchema = z.object({
   sortOrder: z.number().int().default(0)
 });
 
-const mediaUploadSchema = z.object({
-  mimeType: z.string().trim().min(3).max(80),
-  fileName: z.string().trim().max(200).optional(),
-  dataBase64: z.string().min(1)
-});
+const MAX_HOPE_HUB_MEDIA_BYTES = 5 * 1024 * 1024;
+
+async function parseHopeHubMediaUpload(req: import('express').Request) {
+  const form = await parseMultipartForm(req, { maxFileBytes: MAX_HOPE_HUB_MEDIA_BYTES });
+  if (!form.file) throw new Error('EMPTY_FILE');
+  return {
+    mimeType: form.file.mimeType,
+    fileName: form.fields['fileName'] || form.file.fileName,
+    data: form.file.buffer
+  };
+}
 
 function jsonValue(value: Record<string, unknown> | null | undefined) {
   return value == null ? Prisma.JsonNull : (value as Prisma.InputJsonObject);
@@ -235,12 +242,12 @@ export function registerAdminHopeHubOfferingRoutes(router: Router) {
     authRequired,
     allowRoles(Role.ADMIN, Role.MARKETING),
     asyncRoute(async (req, res) => {
-      const body = mediaUploadSchema.parse(req.body);
       try {
+        const body = await parseHopeHubMediaUpload(req);
         const saved = await saveHopeHubMedia({
           mimeType: body.mimeType,
           fileName: body.fileName,
-          dataBase64: body.dataBase64
+          data: body.data
         });
         await writeAuditLog({
           actorId: req.user!.id,
