@@ -1,3 +1,5 @@
+import { PUBLIC_IMAGE_ASSETS } from './public-assets.constants.js';
+
 export const SITE_CONFIG_META: Record<string, { label: string; description: string }> = {
   doctorListLimit: {
     label: 'Doctor list limit',
@@ -34,11 +36,13 @@ export const SITE_CONFIG_META: Record<string, { label: string; description: stri
   },
   telegramQrCodePath: {
     label: 'Telegram QR image path',
-    description: 'Public image path for Telegram QR code. E.g. /image/hopehubindiaqr.jpg.'
+    description:
+      'Public image URL for Telegram QR code. E.g. https://cdn.hopehub.in/qr/telegram/hopehubindiaqr.jpg.'
   },
   whatsappQrCodePath: {
     label: 'WhatsApp QR image path',
-    description: 'Public image path for WhatsApp QR code. E.g. /image/whatsapp-qr.jpeg.'
+    description:
+      'Public image URL for WhatsApp QR code. E.g. https://cdn.hopehub.in/qr/whatsapp/whatsapp-qr.jpeg.'
   },
   telegramDefaultOfferingSlug: {
     label: 'Telegram default paid offering',
@@ -146,6 +150,8 @@ export const SITE_CONFIG_META: Record<string, { label: string; description: stri
 export const SITE_CONFIG_KEYS = Object.keys(SITE_CONFIG_META);
 
 export const SITE_CONFIG_DEFAULTS: Record<string, string> = {
+  telegramQrCodePath: PUBLIC_IMAGE_ASSETS.QR.TELEGRAM,
+  whatsappQrCodePath: PUBLIC_IMAGE_ASSETS.QR.WHATSAPP,
   hopeHubDefaultServiceName: 'Mental wellness session',
   hopeHubDefaultSessionPriceInPaise: '50000',
   hopeHubDefaultSessionDurationMinutes: '30',

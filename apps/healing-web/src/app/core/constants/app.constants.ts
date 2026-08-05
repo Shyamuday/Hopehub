@@ -1,7 +1,9 @@
+import { IMAGE_ASSETS } from './image-assets.constants';
+
 export const BRAND_ASSETS = {
-  LOGO_PATH: '/image/hopehublogom.jpg',
-  APP_ICON_PATH: '/hopehublogom.jpg',
-  OG_IMAGE_PATH: '/image/hopehublogom.jpg',
+  LOGO_PATH: IMAGE_ASSETS.BRAND.LOGO,
+  APP_ICON_PATH: IMAGE_ASSETS.BRAND.APP_ICON,
+  OG_IMAGE_PATH: IMAGE_ASSETS.BRAND.OG_IMAGE,
 } as const;
 
 export const APP_CONSTANTS = {
@@ -58,6 +60,7 @@ export const APP_CONSTANTS = {
     GROUP_URL: '',
     QR_CODE: '',
   },
+  PUBLIC_ASSETS: IMAGE_ASSETS,
   CONTACT: {
     EMAIL: 'contact@hopehub.in',
     PHONE: 'Use the request form for routing',

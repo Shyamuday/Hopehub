@@ -1,6 +1,6 @@
 import { createHash, randomUUID } from 'node:crypto';
 import path from 'node:path';
-import { readAssetObject, writeAssetObject } from './asset-storage.js';
+import { assetPublicUrl, readPublicAssetObject, writePublicAssetObject } from './asset-storage.js';
 
 const MAX_BYTES = 5 * 1024 * 1024;
 const ALLOWED_MIME = new Set([
@@ -62,11 +62,11 @@ export async function saveHopeHubMedia(input: {
 
   const ext = extensionForMime(input.mimeType) || safeExtension(input.fileName) || '.bin';
   const storageKey = `hope-hub-media/${new Date().toISOString().slice(0, 10)}/${randomUUID()}${ext}`;
-  await writeAssetObject({ storageKey, body: buffer, contentType: input.mimeType });
+  await writePublicAssetObject({ storageKey, body: buffer, contentType: input.mimeType });
 
   return {
     storageKey,
-    fileUrl: hopeHubMediaFilePath(storageKey),
+    fileUrl: assetPublicUrl(storageKey) ?? hopeHubMediaFilePath(storageKey),
     byteSize: buffer.length,
     sha256: createHash('sha256').update(buffer).digest('hex'),
     mimeType: input.mimeType
@@ -74,7 +74,7 @@ export async function saveHopeHubMedia(input: {
 }
 
 export async function readHopeHubMediaFile(storageKey: string) {
-  return readAssetObject(storageKey);
+  return readPublicAssetObject(storageKey);
 }
 
 export function hopeHubMediaMimeType(storageKey: string) {

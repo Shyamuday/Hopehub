@@ -1,6 +1,6 @@
 import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { APP_CONSTANTS } from '../../core';
+import { APP_CONSTANTS, IMAGE_ASSETS } from '../../core';
 import { NotificationService, PaymentService } from '../../core/services';
 
 @Component({
@@ -70,7 +70,7 @@ import { NotificationService, PaymentService } from '../../core/services';
               </p>
               <div class="rounded-lg border border-gray-200 bg-white p-2 shadow-sm">
                 <img
-                  src="/image/upiqr.jpg"
+                  [src]="IMAGE_ASSETS.PAYMENTS.UPI_QR"
                   alt="BHIM UPI QR Code"
                   class="w-56 h-56 object-contain rounded-xl"
                 />
@@ -218,6 +218,7 @@ export class DonateComponent {
   private notificationService = inject(NotificationService);
 
   readonly APP_CONSTANTS = APP_CONSTANTS;
+  readonly IMAGE_ASSETS = IMAGE_ASSETS;
   readonly amounts = [51, 101, 251, 501, 1001, 2101, 5001, 11000, 21000, 51000];
   selectedAmount = signal<number | null>(null);
   copied = signal(false);

@@ -1,4 +1,5 @@
 import { Service, ServiceCategory } from '../models';
+import { IMAGE_ASSETS } from '../constants/image-assets.constants';
 
 export const HOPE_HUB_SESSION_PRICE = 500;
 export const HOPE_HUB_SESSION_OFFER_PRICE = 250;
@@ -7,10 +8,10 @@ export const HOPE_HUB_SESSION_CURRENCY = 'INR';
 export const HOPE_HUB_SESSION_DURATION = '30 minutes + 15 min follow-up';
 
 const SERVICE_IMAGES = {
-  sunrise: '/image/hopehub-healing-sunrise.png',
-  meditation: '/image/hopehub-hero-meditation.png',
-  nature: '/image/hopehub-calm-nature.png',
-  flow: '/image/hopehub-abstract-flow.png',
+  sunrise: IMAGE_ASSETS.SERVICES.SUNRISE,
+  meditation: IMAGE_ASSETS.SERVICES.MEDITATION,
+  nature: IMAGE_ASSETS.SERVICES.NATURE,
+  flow: IMAGE_ASSETS.SERVICES.FLOW,
 } as const;
 
 export const HOPE_HUB_SERVICES: Service[] = [

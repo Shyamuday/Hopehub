@@ -11,16 +11,55 @@ const LOCAL_UPLOAD_ROOT = path.resolve(process.cwd(), 'uploads');
 const ASSET_BUCKET = process.env.ASSET_BUCKET || process.env.S3_ASSET_BUCKET || '';
 const ASSET_BUCKET_REGION =
   process.env.ASSET_BUCKET_REGION || process.env.AWS_REGION || 'us-east-1';
+const PUBLIC_ASSET_BUCKET =
+  process.env.PUBLIC_ASSET_BUCKET || process.env.S3_PUBLIC_ASSET_BUCKET || '';
+const PUBLIC_ASSET_BUCKET_REGION =
+  process.env.PUBLIC_ASSET_BUCKET_REGION ||
+  process.env.S3_PUBLIC_ASSET_BUCKET_REGION ||
+  ASSET_BUCKET_REGION;
+const PUBLIC_ASSET_BASE_URL = (
+  process.env.PUBLIC_ASSET_BASE_URL ||
+  process.env.ASSET_PUBLIC_BASE_URL ||
+  process.env.S3_PUBLIC_ASSET_BASE_URL ||
+  process.env.S3_ASSET_PUBLIC_BASE_URL ||
+  ''
+).replace(/\/+$/, '');
 
-let s3Client: S3Client | null = null;
+const s3Clients = new Map<string, S3Client>();
 
 export function assetStorageMode() {
   return ASSET_BUCKET ? 's3' : 'local';
 }
 
-function client() {
-  s3Client ??= new S3Client({ region: ASSET_BUCKET_REGION });
-  return s3Client;
+export function publicAssetStorageMode() {
+  return PUBLIC_ASSET_BUCKET ? 's3-public' : assetStorageMode();
+}
+
+function encodeStorageKeyForUrl(storageKey: string) {
+  return normalizeStorageKey(storageKey).split('/').map(encodeURIComponent).join('/');
+}
+
+export function assetPublicUrl(storageKey: string | null | undefined) {
+  if (!storageKey) return null;
+  const encodedKey = encodeStorageKeyForUrl(storageKey);
+
+  if (PUBLIC_ASSET_BASE_URL) {
+    return `${PUBLIC_ASSET_BASE_URL}/${encodedKey}`;
+  }
+
+  if (!PUBLIC_ASSET_BUCKET) {
+    return null;
+  }
+
+  return `https://${PUBLIC_ASSET_BUCKET}.s3.${PUBLIC_ASSET_BUCKET_REGION}.amazonaws.com/${encodedKey}`;
+}
+
+function client(region: string) {
+  const existing = s3Clients.get(region);
+  if (existing) return existing;
+  const next = new S3Client({ region });
+  s3Clients.set(region, next);
+  return next;
 }
 
 function normalizeStorageKey(storageKey: string) {
@@ -49,22 +88,46 @@ export async function writeAssetObject(input: {
   body: Buffer;
   contentType: string;
 }) {
-  const storageKey = normalizeStorageKey(input.storageKey);
-
   if (ASSET_BUCKET) {
-    await client().send(
-      new PutObjectCommand({
-        Bucket: ASSET_BUCKET,
-        Key: storageKey,
-        Body: input.body,
-        ContentType: input.contentType,
-        ServerSideEncryption: 'AES256'
-      })
-    );
+    await writeS3Object(ASSET_BUCKET, ASSET_BUCKET_REGION, input);
     return;
   }
 
-  const { absolutePath } = localPathFor(storageKey);
+  await writeLocalObject(input);
+}
+
+export async function writePublicAssetObject(input: {
+  storageKey: string;
+  body: Buffer;
+  contentType: string;
+}) {
+  if (PUBLIC_ASSET_BUCKET) {
+    await writeS3Object(PUBLIC_ASSET_BUCKET, PUBLIC_ASSET_BUCKET_REGION, input);
+    return;
+  }
+
+  return writeAssetObject(input);
+}
+
+async function writeS3Object(
+  bucket: string,
+  region: string,
+  input: { storageKey: string; body: Buffer; contentType: string }
+) {
+  const storageKey = normalizeStorageKey(input.storageKey);
+  await client(region).send(
+    new PutObjectCommand({
+      Bucket: bucket,
+      Key: storageKey,
+      Body: input.body,
+      ContentType: input.contentType,
+      ServerSideEncryption: 'AES256'
+    })
+  );
+}
+
+async function writeLocalObject(input: { storageKey: string; body: Buffer }) {
+  const { absolutePath } = localPathFor(input.storageKey);
   await mkdir(path.dirname(absolutePath), { recursive: true });
   await writeFile(absolutePath, input.body);
 }
@@ -74,7 +137,7 @@ export async function readAssetObject(storageKey: string, legacyLocalRoot?: stri
 
   if (ASSET_BUCKET) {
     try {
-      const object = await client().send(
+      const object = await client(ASSET_BUCKET_REGION).send(
         new GetObjectCommand({
           Bucket: ASSET_BUCKET,
           Key: normalized
@@ -100,11 +163,35 @@ export async function readAssetObject(storageKey: string, legacyLocalRoot?: stri
   }
 }
 
+export async function readPublicAssetObject(storageKey: string, legacyLocalRoot?: string) {
+  const normalized = normalizeStorageKey(storageKey);
+
+  if (PUBLIC_ASSET_BUCKET) {
+    try {
+      const object = await client(PUBLIC_ASSET_BUCKET_REGION).send(
+        new GetObjectCommand({
+          Bucket: PUBLIC_ASSET_BUCKET,
+          Key: normalized
+        })
+      );
+
+      const bytes = await object.Body?.transformToByteArray();
+      return Buffer.from(bytes ?? []);
+    } catch (error) {
+      if (!legacyLocalRoot) throw error;
+      const { absolutePath } = localPathFor(normalized, legacyLocalRoot);
+      return readFile(absolutePath);
+    }
+  }
+
+  return readAssetObject(normalized, legacyLocalRoot);
+}
+
 export async function deleteAssetObject(storageKey: string, legacyLocalRoot?: string) {
   const normalized = normalizeStorageKey(storageKey);
 
   if (ASSET_BUCKET) {
-    await client()
+    await client(ASSET_BUCKET_REGION)
       .send(
         new DeleteObjectCommand({
           Bucket: ASSET_BUCKET,
