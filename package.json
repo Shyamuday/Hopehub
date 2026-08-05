@@ -9,6 +9,7 @@
     "apps/admin-web",
     "apps/operations-web",
     "apps/healing-web",
+    "apps/community-bot",
     "libs/*",
     "shared"
   ],
@@ -29,6 +30,7 @@
     "dev:admin": "npm start --prefix apps/admin-web",
     "dev:operations": "npm start --prefix apps/operations-web",
     "dev:healing": "npm start --prefix apps/healing-web",
+    "dev:community-bot": "npm run dev --prefix apps/community-bot",
     "dev:hr": "npm run dev:operations",
     "dev:receptionist": "npm run dev:operations",
     "dev:clinic-manager": "npm run dev:operations",
@@ -54,6 +56,7 @@
     "build:admin": "npm run build --prefix apps/admin-web",
     "build:operations": "npm run build --prefix apps/operations-web",
     "build:healing": "npm run build --prefix apps/healing-web",
+    "build:community-bot": "npm run build --prefix apps/community-bot",
     "build:api": "npm run build --prefix apps/api",
     "lint": "eslint . && npm run typecheck",
     "typecheck": "npm run typecheck --prefix apps/api && npm run typecheck --prefix apps/user-web && npm run typecheck --prefix apps/doctor-web && npm run typecheck --prefix apps/admin-web && npm run typecheck --prefix apps/operations-web",
