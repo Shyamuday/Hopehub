@@ -736,8 +736,30 @@ export class AdminApi {
   createAdmin(...args: Parameters<AdminOpsApi['createAdmin']>) {
     return this.ops.createAdmin(...(args as Parameters<AdminOpsApi['createAdmin']>));
   }
+  setUserRole(...args: Parameters<AdminOpsApi['setUserRole']>) {
+    return this.ops.setUserRole(...(args as Parameters<AdminOpsApi['setUserRole']>));
+  }
+  setUserStatus(...args: Parameters<AdminOpsApi['setUserStatus']>) {
+    return this.ops.setUserStatus(...(args as Parameters<AdminOpsApi['setUserStatus']>));
+  }
   setAdminStatus(...args: Parameters<AdminOpsApi['setAdminStatus']>) {
     return this.ops.setAdminStatus(...(args as Parameters<AdminOpsApi['setAdminStatus']>));
+  }
+  getTelegramBots(...args: Parameters<AdminOpsApi['getTelegramBots']>) {
+    return this.ops.getTelegramBots(...(args as Parameters<AdminOpsApi['getTelegramBots']>));
+  }
+  setupTelegramBot(...args: Parameters<AdminOpsApi['setupTelegramBot']>) {
+    return this.ops.setupTelegramBot(...(args as Parameters<AdminOpsApi['setupTelegramBot']>));
+  }
+  setupAllTelegramBots(...args: Parameters<AdminOpsApi['setupAllTelegramBots']>) {
+    return this.ops.setupAllTelegramBots(
+      ...(args as Parameters<AdminOpsApi['setupAllTelegramBots']>),
+    );
+  }
+  unlinkTelegramBotSession(...args: Parameters<AdminOpsApi['unlinkTelegramBotSession']>) {
+    return this.ops.unlinkTelegramBotSession(
+      ...(args as Parameters<AdminOpsApi['unlinkTelegramBotSession']>),
+    );
   }
   updateConsultationStatus(...args: Parameters<AdminOpsApi['updateConsultationStatus']>) {
     return this.ops.updateConsultationStatus(

@@ -16,7 +16,17 @@ const ADMIN_ROUTE_RULES: Array<{ pattern: RegExp; rules: RouteRule[] }> = [
   },
   {
     pattern: /^\/admin\/users/,
-    rules: [{ permissions: [PERMISSIONS.STAFF_READ] }]
+    rules: [
+      { method: 'GET', permissions: [PERMISSIONS.STAFF_READ] },
+      { permissions: [PERMISSIONS.STAFF_WRITE] }
+    ]
+  },
+  {
+    pattern: /^\/admin\/telegram-bots/,
+    rules: [
+      { method: 'GET', permissions: [PERMISSIONS.STAFF_READ] },
+      { permissions: [PERMISSIONS.NOTIFICATIONS_WRITE] }
+    ]
   },
   {
     pattern: /^\/admin\/doctors/,

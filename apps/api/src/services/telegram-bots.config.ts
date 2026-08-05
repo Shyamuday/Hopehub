@@ -26,7 +26,7 @@ export const roleByKind: Record<TelegramBotKind, Role> = {
 };
 
 export const botNameByKind: Record<TelegramBotKind, string> = {
-  [TelegramBotKind.USER]: 'Hope Hub Care Bot',
+  [TelegramBotKind.USER]: 'Hope Hub Web Bot',
   [TelegramBotKind.DOCTOR]: 'Hope Hub Doctor Bot',
   [TelegramBotKind.ADMIN]: 'Hope Hub Ops Bot'
 };

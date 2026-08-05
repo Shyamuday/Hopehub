@@ -145,7 +145,7 @@ export function startGuideText(kind: TelegramBotKind, session: MenuSession) {
 
   if (kind === 'USER') {
     return [
-      '<b>Hope Hub Care Bot</b>',
+      '<b>Hope Hub Web Bot</b>',
       linkedLine,
       '',
       '<b>Purpose</b>',

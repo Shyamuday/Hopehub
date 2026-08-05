@@ -185,6 +185,23 @@ export async function startLink(
   });
 
   if (!user) {
+    const accountWithEmail = await prisma.user.findFirst({
+      where: { email },
+      select: { role: true, isActive: true }
+    });
+
+    if (accountWithEmail) {
+      await sendTelegramMessage(kind, {
+        chat_id: session.chatId,
+        text: [
+          `This email exists as ${accountWithEmail.role.toLowerCase()} (${accountWithEmail.isActive ? 'active' : 'inactive'}).`,
+          `${botNameByKind[kind]} can only link active ${expectedRole.toLowerCase()} accounts.`,
+          'Please use the matching bot or ask admin to update the account role.'
+        ].join('\n')
+      });
+      return;
+    }
+
     await sendTelegramMessage(kind, {
       chat_id: session.chatId,
       text: `No active ${expectedRole.toLowerCase()} account was found for this email.`
