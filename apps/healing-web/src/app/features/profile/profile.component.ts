@@ -338,12 +338,10 @@ export class ProfileComponent implements OnInit {
     const target = task?.id || plan.id;
     this.uploadingTarget.set(target);
     try {
-      const dataBase64 = await this.fileToBase64(file);
       const response = await this.auth.uploadPatientDailyPlanImage(plan.id, {
         taskId: task?.id || null,
-        mimeType: file.type,
+        file,
         fileName: file.name,
-        dataBase64,
         caption: task ? `Task proof: ${task.title}` : 'Plan image',
       });
       this.upsertDailyPlan(response.plan);
@@ -498,17 +496,5 @@ export class ProfileComponent implements OnInit {
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
-  }
-
-  private fileToBase64(file: File): Promise<string> {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => {
-        const value = String(reader.result || '');
-        resolve(value.includes(',') ? value.split(',')[1] : value);
-      };
-      reader.onerror = () => reject(reader.error);
-      reader.readAsDataURL(file);
-    });
   }
 }

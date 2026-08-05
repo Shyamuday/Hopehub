@@ -28,13 +28,13 @@ export async function savePatientDailyPlanImage(input: {
   planId: string;
   mimeType: string;
   fileName?: string | null;
-  dataBase64: string;
+  data: Buffer;
 }) {
   if (!ALLOWED_MIME.has(input.mimeType)) {
     throw new Error('UNSUPPORTED_MIME');
   }
 
-  const buffer = Buffer.from(input.dataBase64, 'base64');
+  const buffer = input.data;
   if (!buffer.length) throw new Error('EMPTY_FILE');
   if (buffer.length > MAX_BYTES) throw new Error('FILE_TOO_LARGE');
 

@@ -28,7 +28,7 @@ export async function saveUserProfileImage(input: {
   userId: string;
   mimeType: string;
   fileName?: string | null;
-  dataBase64: string;
+  data: Buffer;
 }) {
   return saveProfileImage('users', input.userId, input);
 }
@@ -37,7 +37,7 @@ export async function saveStoreStaffProfileImage(input: {
   staffId: string;
   mimeType: string;
   fileName?: string | null;
-  dataBase64: string;
+  data: Buffer;
 }) {
   return saveProfileImage('store-staff', input.staffId, input);
 }
@@ -45,13 +45,13 @@ export async function saveStoreStaffProfileImage(input: {
 async function saveProfileImage(
   scope: 'users' | 'store-staff',
   ownerId: string,
-  input: { mimeType: string; fileName?: string | null; dataBase64: string }
+  input: { mimeType: string; fileName?: string | null; data: Buffer }
 ) {
   if (!ALLOWED_MIME.has(input.mimeType)) {
     throw new Error('UNSUPPORTED_MIME');
   }
 
-  const buffer = Buffer.from(input.dataBase64, 'base64');
+  const buffer = input.data;
   if (!buffer.length) throw new Error('EMPTY_FILE');
   if (buffer.length > MAX_BYTES) throw new Error('FILE_TOO_LARGE');
 

@@ -1,9 +1,9 @@
 import { Router } from 'express';
-import { z } from 'zod';
 import { authRequired } from '../../auth.js';
 import { STORE_ROLES } from '../../constants/store-api-routes.constants.js';
 import { prisma } from '../../db.js';
 import { asyncRoute, routeParam } from '../../utils/helpers.js';
+import { parseMultipartForm } from '../../utils/multipart.js';
 import {
   deleteProfileImageFile,
   profileImageMimeType,
@@ -18,11 +18,19 @@ import {
 } from '../../utils/profile-image-url.js';
 import { getStoreStaff, storeAuthMiddleware } from '../store/shared.js';
 
-const uploadSchema = z.object({
-  mimeType: z.string().min(3).max(80),
-  fileName: z.string().max(200).optional(),
-  dataBase64: z.string().min(1)
-});
+const MAX_PROFILE_IMAGE_BYTES = 2 * 1024 * 1024;
+
+async function parseProfileImageUpload(req: import('express').Request) {
+  const form = await parseMultipartForm(req, { maxFileBytes: MAX_PROFILE_IMAGE_BYTES });
+  if (!form.file) {
+    throw new Error('EMPTY_FILE');
+  }
+  return {
+    mimeType: form.file.mimeType,
+    fileName: form.fields['fileName'] || form.file.fileName,
+    data: form.file.buffer
+  };
+}
 
 function mapUploadError(error: unknown) {
   const code = error instanceof Error ? error.message : '';
@@ -61,10 +69,10 @@ export function registerProfileImageRoutes(router: Router) {
     '/me/profile-image',
     authRequired,
     asyncRoute(async (req, res) => {
-      const body = uploadSchema.parse(req.body);
       const userId = req.user!.id;
 
       try {
+        const body = await parseProfileImageUpload(req);
         const existing = await prisma.user.findUniqueOrThrow({
           where: { id: userId },
           select: { profileImageKey: true }
@@ -74,7 +82,7 @@ export function registerProfileImageRoutes(router: Router) {
           userId,
           mimeType: body.mimeType,
           fileName: body.fileName,
-          dataBase64: body.dataBase64
+          data: body.data
         });
 
         await prisma.user.update({
@@ -155,10 +163,10 @@ export function registerStoreProfileImageRoutes(router: Router) {
     '/me/profile-image',
     storeAuthMiddleware,
     asyncRoute(async (req, res) => {
-      const body = uploadSchema.parse(req.body);
       const staffId = getStoreStaff(req).staffId;
 
       try {
+        const body = await parseProfileImageUpload(req);
         const existing = await prisma.storeStaff.findUniqueOrThrow({
           where: { id: staffId },
           select: { profileImageKey: true }
@@ -168,7 +176,7 @@ export function registerStoreProfileImageRoutes(router: Router) {
           staffId,
           mimeType: body.mimeType,
           fileName: body.fileName,
-          dataBase64: body.dataBase64
+          data: body.data
         });
 
         await prisma.storeStaff.update({

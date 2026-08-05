@@ -135,9 +135,8 @@ export interface PatientDailyPlanTaskUpdateRequest {
 
 export interface PatientDailyPlanImageUploadRequest {
   taskId?: string | null;
-  mimeType: string;
-  fileName?: string;
-  dataBase64: string;
+  file: File;
+  fileName?: string | null;
   caption?: string | null;
 }
 

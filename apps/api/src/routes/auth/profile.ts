@@ -6,6 +6,7 @@ import { authRequired, allowRoles } from '../../auth.js';
 import { prisma } from '../../db.js';
 import { DEFAULT_REMINDER_PREFERENCE } from '../../constants/reminder-preferences.constants.js';
 import { asyncRoute, patientProfileSelect, routeParam } from '../../utils/helpers.js';
+import { parseMultipartForm } from '../../utils/multipart.js';
 import { buildPatientIdCard } from '../../services/patient-identity.js';
 import { normalizeMobile } from '../../services/patient-identity.js';
 import {
@@ -86,13 +87,21 @@ const dailyPlanTaskUpdateSchema = z.object({
   reviewNote: z.string().trim().max(1000).optional().nullable()
 });
 
-const dailyPlanImageUploadSchema = z.object({
-  taskId: z.string().min(1).optional().nullable(),
-  mimeType: z.string().min(3).max(80),
-  fileName: z.string().max(200).optional(),
-  dataBase64: z.string().min(1),
-  caption: z.string().trim().max(500).optional().nullable()
-});
+const MAX_DAILY_PLAN_IMAGE_BYTES = 4 * 1024 * 1024;
+
+async function parseDailyPlanImageUpload(req: import('express').Request) {
+  const form = await parseMultipartForm(req, { maxFileBytes: MAX_DAILY_PLAN_IMAGE_BYTES });
+  if (!form.file) {
+    throw new Error('EMPTY_FILE');
+  }
+  return {
+    taskId: cleanText(form.fields['taskId']),
+    mimeType: form.file.mimeType,
+    fileName: form.fields['fileName'] || form.file.fileName,
+    data: form.file.buffer,
+    caption: cleanText(form.fields['caption'])
+  };
+}
 
 function parsePlanDate(value: string) {
   return new Date(`${value}T00:00:00.000Z`);
@@ -560,21 +569,21 @@ export function registerAuthProfileRoutes(router: Router) {
     allowRoles(Role.PATIENT),
     asyncRoute(async (req, res) => {
       const planId = routeParam(req, 'planId');
-      const body = dailyPlanImageUploadSchema.parse(req.body);
       const plan = await getOwnedDailyPlan(planId, req.user!.id);
       if (!plan) return res.status(404).json({ message: 'Daily plan not found.' });
 
-      if (body.taskId && !plan.tasks.some((task) => task.id === body.taskId)) {
-        return res.status(400).json({ message: 'Selected task does not belong to this plan.' });
-      }
-
       try {
+        const body = await parseDailyPlanImageUpload(req);
+        if (body.taskId && !plan.tasks.some((task) => task.id === body.taskId)) {
+          return res.status(400).json({ message: 'Selected task does not belong to this plan.' });
+        }
+
         const saved = await savePatientDailyPlanImage({
           userId: req.user!.id,
           planId,
           mimeType: body.mimeType,
           fileName: body.fileName,
-          dataBase64: body.dataBase64
+          data: body.data
         });
 
         await prisma.patientDailyPlanImage.create({

@@ -410,10 +410,16 @@ export class AuthService {
     planId: string,
     request: PatientDailyPlanImageUploadRequest,
   ): Promise<PatientDailyPlanResponse> {
+    const formData = new FormData();
+    formData.append('file', request.file, request.fileName || request.file.name);
+    if (request.taskId) formData.append('taskId', request.taskId);
+    if (request.fileName) formData.append('fileName', request.fileName);
+    if (request.caption) formData.append('caption', request.caption);
+
     return firstValueFrom(
       this.http.post<PatientDailyPlanResponse>(
         `${this.apiUrl}/patient/daily-plans/${planId}/images`,
-        request,
+        formData,
       ),
     );
   }
