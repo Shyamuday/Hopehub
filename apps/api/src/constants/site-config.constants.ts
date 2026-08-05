@@ -24,7 +24,7 @@ export const SITE_CONFIG_META: Record<string, { label: string; description: stri
   },
   telegramUserBotUsername: {
     label: 'Telegram user bot username',
-    description: 'User/support bot username without @. E.g. Hopehubbot.'
+    description: 'User/support web bot username without @. E.g. Hopehubwebbot.'
   },
   telegramDoctorBotUsername: {
     label: 'Telegram care team bot username',
@@ -150,6 +150,7 @@ export const SITE_CONFIG_META: Record<string, { label: string; description: stri
 export const SITE_CONFIG_KEYS = Object.keys(SITE_CONFIG_META);
 
 export const SITE_CONFIG_DEFAULTS: Record<string, string> = {
+  telegramUserBotUsername: 'Hopehubwebbot',
   telegramQrCodePath: PUBLIC_IMAGE_ASSETS.QR.TELEGRAM,
   whatsappQrCodePath: PUBLIC_IMAGE_ASSETS.QR.WHATSAPP,
   hopeHubDefaultServiceName: 'Mental wellness session',
