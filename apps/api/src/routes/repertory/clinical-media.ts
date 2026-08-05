@@ -10,7 +10,7 @@ import {
 } from '../../lib/homeopathy-approaches.js';
 import { authRequired, allowRoles } from '../../auth.js';
 import { prisma } from '../../db.js';
-import { asyncRoute, routeParam } from '../../utils/helpers.js';
+import { asyncRoute, routeParam, writeAuditLog } from '../../utils/helpers.js';
 import { parseMultipartForm } from '../../utils/multipart.js';
 import {
   deleteClinicalMediaFile,
@@ -105,6 +105,7 @@ async function parseClinicalMediaUpload(
 async function saveUploadedClinicalMedia(input: {
   patientId: string;
   uploadedById: string;
+  uploadedByRole: Role;
   body: z.infer<typeof createMediaSchema>;
   caseAnalysisId?: string | null;
   consultationId?: string | null;
@@ -126,7 +127,10 @@ async function saveUploadedClinicalMedia(input: {
       patientId: input.patientId,
       mimeType: input.body.mimeType,
       fileName: input.body.fileName,
-      data: input.body.data
+      data: input.body.data,
+      uploadedById: input.uploadedById,
+      caseAnalysisId: input.caseAnalysisId ?? null,
+      consultationId: input.consultationId ?? input.body.consultationId ?? null
     }));
   } catch (error) {
     return { error: mapClinicalMediaUploadError(error) };
@@ -149,6 +153,22 @@ async function saveUploadedClinicalMedia(input: {
       patientConsent: input.requireConsent ? true : Boolean(input.body.patientConsent)
     },
     include: clinicalMediaInclude
+  });
+
+  await writeAuditLog({
+    actorId: input.uploadedById,
+    actorRole: input.uploadedByRole,
+    action: 'clinical_media.upload',
+    targetType: 'ClinicalMedia',
+    targetId: media.id,
+    summary: 'Clinical media uploaded.',
+    metadata: {
+      patientId: input.patientId,
+      storageKey,
+      mediaType: input.body.mediaType,
+      caseAnalysisId: input.caseAnalysisId ?? null,
+      consultationId: input.consultationId ?? input.body.consultationId ?? null
+    }
   });
 
   return { media };
@@ -248,6 +268,7 @@ export function registerClinicalMediaRoutes(router: Router) {
       const result = await saveUploadedClinicalMedia({
         patientId: req.user!.id,
         uploadedById: req.user!.id,
+        uploadedByRole: req.user!.role,
         body,
         requireConsent: false
       });
@@ -317,6 +338,15 @@ export function registerClinicalMediaRoutes(router: Router) {
 
       await deleteClinicalMediaFile(existing.storageKey);
       await prisma.clinicalMedia.delete({ where: { id: mediaId } });
+      await writeAuditLog({
+        actorId: req.user!.id,
+        actorRole: req.user!.role,
+        action: 'clinical_media.delete',
+        targetType: 'ClinicalMedia',
+        targetId: mediaId,
+        summary: 'Clinical media deleted by patient.',
+        metadata: { patientId: req.user!.id, storageKey: existing.storageKey }
+      });
       res.json({ ok: true });
     })
   );
@@ -356,6 +386,7 @@ export function registerClinicalMediaRoutes(router: Router) {
       const result = await saveUploadedClinicalMedia({
         patientId,
         uploadedById: req.user!.id,
+        uploadedByRole: req.user!.role,
         body,
         requireConsent: true
       });
@@ -385,6 +416,15 @@ export function registerClinicalMediaRoutes(router: Router) {
 
       await deleteClinicalMediaFile(existing.storageKey);
       await prisma.clinicalMedia.delete({ where: { id: mediaId } });
+      await writeAuditLog({
+        actorId: req.user!.id,
+        actorRole: req.user!.role,
+        action: 'clinical_media.delete',
+        targetType: 'ClinicalMedia',
+        targetId: mediaId,
+        summary: 'Clinical media deleted by doctor/admin.',
+        metadata: { patientId, storageKey: existing.storageKey }
+      });
       res.json({ ok: true });
     })
   );
@@ -563,6 +603,7 @@ export function registerClinicalMediaRoutes(router: Router) {
       const result = await saveUploadedClinicalMedia({
         patientId: patientContext.patientId,
         uploadedById: req.user!.id,
+        uploadedByRole: req.user!.role,
         body,
         caseAnalysisId: analysisId,
         consultationId: patientContext.consultationId,
@@ -629,6 +670,19 @@ export function registerClinicalMediaRoutes(router: Router) {
 
       await deleteClinicalMediaFile(existing.storageKey);
       await prisma.clinicalMedia.delete({ where: { id: mediaId } });
+      await writeAuditLog({
+        actorId: req.user!.id,
+        actorRole: req.user!.role,
+        action: 'clinical_media.delete',
+        targetType: 'ClinicalMedia',
+        targetId: mediaId,
+        summary: 'Clinical media deleted from case analysis.',
+        metadata: {
+          patientId: existing.patientId,
+          caseAnalysisId: analysisId,
+          storageKey: existing.storageKey
+        }
+      });
       res.json({ ok: true });
     })
   );

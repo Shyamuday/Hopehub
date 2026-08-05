@@ -138,6 +138,7 @@ export async function writeAssetObject(input: {
   storageKey: string;
   body: Buffer;
   contentType: string;
+  metadata?: Record<string, string>;
 }) {
   if (ASSET_BUCKET) {
     await writeS3Object(ASSET_BUCKET, ASSET_BUCKET_REGION, input);
@@ -151,6 +152,7 @@ export async function writePublicAssetObject(input: {
   storageKey: string;
   body: Buffer;
   contentType: string;
+  metadata?: Record<string, string>;
 }) {
   if (PUBLIC_ASSET_BUCKET) {
     await writeS3Object(PUBLIC_ASSET_BUCKET, PUBLIC_ASSET_BUCKET_REGION, input);
@@ -163,7 +165,12 @@ export async function writePublicAssetObject(input: {
 async function writeS3Object(
   bucket: string,
   region: string,
-  input: { storageKey: string; body: Buffer; contentType: string }
+  input: {
+    storageKey: string;
+    body: Buffer;
+    contentType: string;
+    metadata?: Record<string, string>;
+  }
 ) {
   const storageKey = normalizeStorageKey(input.storageKey);
   await client(region).send(
@@ -172,6 +179,7 @@ async function writeS3Object(
       Key: storageKey,
       Body: input.body,
       ContentType: input.contentType,
+      Metadata: input.metadata,
       ServerSideEncryption: 'AES256'
     })
   );
@@ -263,4 +271,26 @@ export async function deleteAssetObject(storageKey: string, legacyLocalRoot?: st
     const legacy = localPathFor(normalized, legacyLocalRoot);
     await unlink(legacy.absolutePath).catch(() => undefined);
   }
+}
+
+export async function deletePublicAssetObject(storageKey: string, legacyLocalRoot?: string) {
+  const normalized = normalizeStorageKey(storageKey);
+
+  if (PUBLIC_ASSET_BUCKET) {
+    await client(PUBLIC_ASSET_BUCKET_REGION)
+      .send(
+        new DeleteObjectCommand({
+          Bucket: PUBLIC_ASSET_BUCKET,
+          Key: normalized
+        })
+      )
+      .catch(() => undefined);
+    if (legacyLocalRoot) {
+      const legacy = localPathFor(normalized, legacyLocalRoot);
+      await unlink(legacy.absolutePath).catch(() => undefined);
+    }
+    return;
+  }
+
+  return deleteAssetObject(normalized, legacyLocalRoot);
 }

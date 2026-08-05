@@ -14,7 +14,7 @@ import { authRequired, allowRoles } from '../../auth.js';
 import { prisma } from '../../db.js';
 import { asyncRoute, routeParam, writeAuditLog } from '../../utils/helpers.js';
 import { parseMultipartForm } from '../../utils/multipart.js';
-import { saveHopeHubMedia } from '../../services/hope-hub-media-storage.js';
+import { deleteHopeHubMediaFile, saveHopeHubMedia } from '../../services/hope-hub-media-storage.js';
 
 const emptyToNull = z
   .string()
@@ -247,7 +247,8 @@ export function registerAdminHopeHubOfferingRoutes(router: Router) {
         const saved = await saveHopeHubMedia({
           mimeType: body.mimeType,
           fileName: body.fileName,
-          data: body.data
+          data: body.data,
+          uploadedById: req.user!.id
         });
         await writeAuditLog({
           actorId: req.user!.id,
@@ -262,6 +263,38 @@ export function registerAdminHopeHubOfferingRoutes(router: Router) {
         const mapped = mapMediaUploadError(error);
         res.status(mapped.status).json({ message: mapped.message });
       }
+    })
+  );
+
+  router.delete(
+    /^\/admin\/hope-hub\/media\/(.+)$/,
+    authRequired,
+    allowRoles(Role.ADMIN, Role.MARKETING),
+    asyncRoute(async (req, res) => {
+      let storageKey = '';
+      try {
+        storageKey = String(req.params[0] || '')
+          .split('/')
+          .map((part) => decodeURIComponent(part))
+          .join('/');
+      } catch {
+        return res.status(400).json({ message: 'Invalid Hope Hub media key.' });
+      }
+
+      if (!storageKey || !storageKey.startsWith('hope-hub-media/')) {
+        return res.status(400).json({ message: 'Invalid Hope Hub media key.' });
+      }
+
+      await deleteHopeHubMediaFile(storageKey);
+      await writeAuditLog({
+        actorId: req.user!.id,
+        actorRole: req.user!.role,
+        action: 'hopehub.media.delete',
+        targetType: 'hope_hub_media',
+        targetId: storageKey,
+        summary: `Deleted Hope Hub media "${storageKey}".`
+      });
+      res.json({ ok: true });
     })
   );
 

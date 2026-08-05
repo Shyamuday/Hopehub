@@ -34,6 +34,9 @@ export async function saveClinicalMediaFile(input: {
   mimeType: string;
   fileName?: string | null;
   data: Buffer;
+  uploadedById?: string;
+  caseAnalysisId?: string | null;
+  consultationId?: string | null;
 }) {
   if (!ALLOWED_MIME.has(input.mimeType)) {
     throw new Error('UNSUPPORTED_MIME');
@@ -45,7 +48,19 @@ export async function saveClinicalMediaFile(input: {
 
   const ext = extensionForMime(input.mimeType) || path.extname(input.fileName || '') || '.bin';
   const storageKey = `clinical-media/${input.patientId}/${randomUUID()}${ext}`;
-  await writeAssetObject({ storageKey, body: buffer, contentType: input.mimeType });
+  await writeAssetObject({
+    storageKey,
+    body: buffer,
+    contentType: input.mimeType,
+    metadata: {
+      context: 'clinical-media',
+      patientId: input.patientId,
+      uploadedById: input.uploadedById || '',
+      caseAnalysisId: input.caseAnalysisId || '',
+      consultationId: input.consultationId || '',
+      originalFileName: input.fileName || ''
+    }
+  });
 
   return {
     storageKey,

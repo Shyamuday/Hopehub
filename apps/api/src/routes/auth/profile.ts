@@ -5,7 +5,12 @@ import { Prisma, Role } from '@prisma/client';
 import { authRequired, allowRoles } from '../../auth.js';
 import { prisma } from '../../db.js';
 import { DEFAULT_REMINDER_PREFERENCE } from '../../constants/reminder-preferences.constants.js';
-import { asyncRoute, patientProfileSelect, routeParam } from '../../utils/helpers.js';
+import {
+  asyncRoute,
+  patientProfileSelect,
+  routeParam,
+  writeAuditLog
+} from '../../utils/helpers.js';
 import { parseMultipartForm } from '../../utils/multipart.js';
 import { assetAccessUrl } from '../../services/asset-storage.js';
 import { buildPatientIdCard } from '../../services/patient-identity.js';
@@ -481,14 +486,27 @@ export function registerAuthProfileRoutes(router: Router) {
       const planId = routeParam(req, 'planId');
       const existing = await prisma.patientDailyPlan.findFirst({
         where: { id: planId, userId: req.user!.id },
-        include: { images: true }
+        include: { images: true, tasks: { include: { images: true } } }
       });
       if (!existing) return res.status(404).json({ message: 'Daily plan not found.' });
 
       await prisma.patientDailyPlan.delete({ where: { id: planId } });
       await Promise.all(
-        existing.images.map((image) => deletePatientDailyPlanImage(image.storageKey))
+        [...existing.images, ...existing.tasks.flatMap((task) => task.images)].map((image) =>
+          deletePatientDailyPlanImage(image.storageKey)
+        )
       );
+      await writeAuditLog({
+        actorId: req.user!.id,
+        actorRole: req.user!.role,
+        action: 'daily_plan.delete',
+        targetType: 'PatientDailyPlan',
+        targetId: planId,
+        summary: 'Daily plan and attached images removed.',
+        metadata: {
+          imageCount: existing.images.length + existing.tasks.flatMap((task) => task.images).length
+        }
+      });
       res.json({ message: 'Daily plan deleted.' });
     })
   );
@@ -595,7 +613,9 @@ export function registerAuthProfileRoutes(router: Router) {
           planId,
           mimeType: body.mimeType,
           fileName: body.fileName,
-          data: body.data
+          data: body.data,
+          taskId: body.taskId || null,
+          uploadedById: req.user!.id
         });
 
         const image = await prisma.patientDailyPlanImage.create({
@@ -614,6 +634,22 @@ export function registerAuthProfileRoutes(router: Router) {
         await prisma.patientDailyPlanImage.update({
           where: { id: image.id },
           data: { imageUrl: patientDailyPlanImagePath(image.id) }
+        });
+
+        await writeAuditLog({
+          actorId: req.user!.id,
+          actorRole: req.user!.role,
+          action: 'daily_plan_image.upload',
+          targetType: 'PatientDailyPlanImage',
+          targetId: image.id,
+          summary: 'Daily plan image uploaded.',
+          metadata: {
+            planId,
+            taskId: body.taskId || null,
+            storageKey: saved.storageKey,
+            byteSize: saved.byteSize,
+            mimeType: saved.mimeType
+          }
         });
 
         const updated = await getOwnedDailyPlan(planId, req.user!.id);
@@ -661,8 +697,32 @@ export function registerAuthProfileRoutes(router: Router) {
 
       await prisma.patientDailyPlanImage.delete({ where: { id: imageId } });
       await deletePatientDailyPlanImage(image.storageKey);
+      await writeAuditLog({
+        actorId: req.user!.id,
+        actorRole: req.user!.role,
+        action: 'daily_plan_image.delete',
+        targetType: 'PatientDailyPlanImage',
+        targetId: imageId,
+        summary: 'Daily plan image removed.',
+        metadata: { planId, storageKey: image.storageKey }
+      });
       const plan = await getOwnedDailyPlan(planId, req.user!.id);
       res.json({ plan: await serializeDailyPlan(plan!) });
+    })
+  );
+
+  router.post(
+    '/patient/daily-plan-images/refresh',
+    authRequired,
+    allowRoles(Role.PATIENT),
+    asyncRoute(async (req, res) => {
+      const plans = await prisma.patientDailyPlan.findMany({
+        where: { userId: req.user!.id },
+        include: dailyPlanInclude,
+        orderBy: { planDate: 'desc' },
+        take: 30
+      });
+      res.json({ plans: await Promise.all(plans.map(serializeDailyPlan)) });
     })
   );
 

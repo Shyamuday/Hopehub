@@ -29,6 +29,8 @@ export async function savePatientDailyPlanImage(input: {
   mimeType: string;
   fileName?: string | null;
   data: Buffer;
+  taskId?: string | null;
+  uploadedById?: string;
 }) {
   if (!ALLOWED_MIME.has(input.mimeType)) {
     throw new Error('UNSUPPORTED_MIME');
@@ -40,7 +42,19 @@ export async function savePatientDailyPlanImage(input: {
 
   const ext = extensionForMime(input.mimeType) || path.extname(input.fileName || '') || '.bin';
   const storageKey = `patient-daily-plans/${input.userId}/${input.planId}/${randomUUID()}${ext}`;
-  await writeAssetObject({ storageKey, body: buffer, contentType: input.mimeType });
+  await writeAssetObject({
+    storageKey,
+    body: buffer,
+    contentType: input.mimeType,
+    metadata: {
+      context: 'patient-daily-plan',
+      userId: input.userId,
+      planId: input.planId,
+      taskId: input.taskId || '',
+      uploadedById: input.uploadedById || input.userId,
+      originalFileName: input.fileName || ''
+    }
+  });
 
   return {
     storageKey,

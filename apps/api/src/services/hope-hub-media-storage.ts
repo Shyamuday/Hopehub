@@ -1,6 +1,11 @@
 import { createHash, randomUUID } from 'node:crypto';
 import path from 'node:path';
-import { assetPublicUrl, readPublicAssetObject, writePublicAssetObject } from './asset-storage.js';
+import {
+  assetPublicUrl,
+  deletePublicAssetObject,
+  readPublicAssetObject,
+  writePublicAssetObject
+} from './asset-storage.js';
 
 const MAX_BYTES = 5 * 1024 * 1024;
 const ALLOWED_MIME = new Set([
@@ -51,6 +56,7 @@ export async function saveHopeHubMedia(input: {
   mimeType: string;
   fileName?: string | null;
   data: Buffer;
+  uploadedById?: string;
 }) {
   if (!ALLOWED_MIME.has(input.mimeType)) {
     throw new Error('UNSUPPORTED_MIME');
@@ -62,7 +68,16 @@ export async function saveHopeHubMedia(input: {
 
   const ext = extensionForMime(input.mimeType) || safeExtension(input.fileName) || '.bin';
   const storageKey = `hope-hub-media/${new Date().toISOString().slice(0, 10)}/${randomUUID()}${ext}`;
-  await writePublicAssetObject({ storageKey, body: buffer, contentType: input.mimeType });
+  await writePublicAssetObject({
+    storageKey,
+    body: buffer,
+    contentType: input.mimeType,
+    metadata: {
+      context: 'hope-hub-public-media',
+      uploadedById: input.uploadedById || '',
+      originalFileName: input.fileName || ''
+    }
+  });
 
   return {
     storageKey,
@@ -75,6 +90,10 @@ export async function saveHopeHubMedia(input: {
 
 export async function readHopeHubMediaFile(storageKey: string) {
   return readPublicAssetObject(storageKey);
+}
+
+export async function deleteHopeHubMediaFile(storageKey: string) {
+  return deletePublicAssetObject(storageKey);
 }
 
 export function hopeHubMediaMimeType(storageKey: string) {

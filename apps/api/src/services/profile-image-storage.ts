@@ -29,6 +29,7 @@ export async function saveUserProfileImage(input: {
   mimeType: string;
   fileName?: string | null;
   data: Buffer;
+  uploadedById?: string;
 }) {
   return saveProfileImage('users', input.userId, input);
 }
@@ -38,6 +39,7 @@ export async function saveStoreStaffProfileImage(input: {
   mimeType: string;
   fileName?: string | null;
   data: Buffer;
+  uploadedById?: string;
 }) {
   return saveProfileImage('store-staff', input.staffId, input);
 }
@@ -45,7 +47,7 @@ export async function saveStoreStaffProfileImage(input: {
 async function saveProfileImage(
   scope: 'users' | 'store-staff',
   ownerId: string,
-  input: { mimeType: string; fileName?: string | null; data: Buffer }
+  input: { mimeType: string; fileName?: string | null; data: Buffer; uploadedById?: string }
 ) {
   if (!ALLOWED_MIME.has(input.mimeType)) {
     throw new Error('UNSUPPORTED_MIME');
@@ -57,7 +59,18 @@ async function saveProfileImage(
 
   const ext = extensionForMime(input.mimeType) || path.extname(input.fileName || '') || '.bin';
   const storageKey = `profile-images/${scope}/${ownerId}/${randomUUID()}${ext}`;
-  await writeAssetObject({ storageKey, body: buffer, contentType: input.mimeType });
+  await writeAssetObject({
+    storageKey,
+    body: buffer,
+    contentType: input.mimeType,
+    metadata: {
+      context: 'profile-image',
+      scope,
+      ownerId,
+      uploadedById: input.uploadedById || ownerId,
+      originalFileName: input.fileName || ''
+    }
+  });
 
   return {
     storageKey,

@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { authRequired } from '../../auth.js';
 import { STORE_ROLES } from '../../constants/store-api-routes.constants.js';
 import { prisma } from '../../db.js';
-import { asyncRoute, routeParam } from '../../utils/helpers.js';
+import { asyncRoute, routeParam, writeAuditLog } from '../../utils/helpers.js';
 import { parseMultipartForm } from '../../utils/multipart.js';
 import { assetAccessUrl } from '../../services/asset-storage.js';
 import {
@@ -84,7 +84,8 @@ export function registerProfileImageRoutes(router: Router) {
           userId,
           mimeType: body.mimeType,
           fileName: body.fileName,
-          data: body.data
+          data: body.data,
+          uploadedById: userId
         });
 
         await prisma.user.update({
@@ -95,6 +96,20 @@ export function registerProfileImageRoutes(router: Router) {
         if (existing.profileImageKey && existing.profileImageKey !== saved.storageKey) {
           await deleteProfileImageFile(existing.profileImageKey);
         }
+
+        await writeAuditLog({
+          actorId: userId,
+          actorRole: req.user!.role,
+          action: 'profile_image.upload',
+          targetType: 'User',
+          targetId: userId,
+          summary: 'User profile image uploaded.',
+          metadata: {
+            storageKey: saved.storageKey,
+            byteSize: saved.byteSize,
+            mimeType: saved.mimeType
+          }
+        });
 
         res.json({
           profileImageUrl: await assetAccessUrl(saved.storageKey, userProfileImagePath(userId)),
@@ -123,9 +138,36 @@ export function registerProfileImageRoutes(router: Router) {
           where: { id: userId },
           data: { profileImageKey: null, profileImageUrl: null }
         });
+        await writeAuditLog({
+          actorId: userId,
+          actorRole: req.user!.role,
+          action: 'profile_image.delete',
+          targetType: 'User',
+          targetId: userId,
+          summary: 'User profile image removed.',
+          metadata: { storageKey: existing.profileImageKey }
+        });
       }
 
       res.json({ message: 'Profile photo removed.', profileImageUrl: null });
+    })
+  );
+
+  router.get(
+    '/me/profile-image/url',
+    authRequired,
+    asyncRoute(async (req, res) => {
+      const userId = req.user!.id;
+      const user = await prisma.user.findUniqueOrThrow({
+        where: { id: userId },
+        select: { profileImageKey: true }
+      });
+
+      res.json({
+        profileImageUrl: user.profileImageKey
+          ? await assetAccessUrl(user.profileImageKey, userProfileImagePath(userId))
+          : null
+      });
     })
   );
 
@@ -178,7 +220,8 @@ export function registerStoreProfileImageRoutes(router: Router) {
           staffId,
           mimeType: body.mimeType,
           fileName: body.fileName,
-          data: body.data
+          data: body.data,
+          uploadedById: staffId
         });
 
         await prisma.storeStaff.update({
