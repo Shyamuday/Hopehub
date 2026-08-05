@@ -2,7 +2,12 @@ import { Router } from 'express';
 import { authRequired } from '../../auth.js';
 import { STORE_ROLES } from '../../constants/store-api-routes.constants.js';
 import { prisma } from '../../db.js';
-import { asyncRoute, routeParam, writeAuditLog } from '../../utils/helpers.js';
+import {
+  asyncRoute,
+  routeParam,
+  writeAuditLog,
+  writeStoreStaffAuditLog
+} from '../../utils/helpers.js';
 import { parseMultipartForm } from '../../utils/multipart.js';
 import { assetAccessUrl } from '../../services/asset-storage.js';
 import {
@@ -207,7 +212,8 @@ export function registerStoreProfileImageRoutes(router: Router) {
     '/me/profile-image',
     storeAuthMiddleware,
     asyncRoute(async (req, res) => {
-      const staffId = getStoreStaff(req).staffId;
+      const staffActor = getStoreStaff(req);
+      const staffId = staffActor.staffId;
 
       try {
         const body = await parseProfileImageUpload(req);
@@ -236,6 +242,20 @@ export function registerStoreProfileImageRoutes(router: Router) {
           await deleteProfileImageFile(existing.profileImageKey);
         }
 
+        await writeStoreStaffAuditLog({
+          actorStoreStaffId: staffId,
+          actorStoreRole: staffActor.role,
+          action: 'store_staff.profile_image.upload',
+          targetType: 'StoreStaff',
+          targetId: staffId,
+          summary: 'Store staff profile image uploaded.',
+          metadata: {
+            storageKey: saved.storageKey,
+            byteSize: saved.byteSize,
+            mimeType: saved.mimeType
+          }
+        });
+
         res.json({
           profileImageUrl: await assetAccessUrl(
             saved.storageKey,
@@ -254,7 +274,8 @@ export function registerStoreProfileImageRoutes(router: Router) {
     '/me/profile-image',
     storeAuthMiddleware,
     asyncRoute(async (req, res) => {
-      const staffId = getStoreStaff(req).staffId;
+      const staffActor = getStoreStaff(req);
+      const staffId = staffActor.staffId;
       const existing = await prisma.storeStaff.findUniqueOrThrow({
         where: { id: staffId },
         select: { profileImageKey: true }
@@ -265,6 +286,15 @@ export function registerStoreProfileImageRoutes(router: Router) {
         await prisma.storeStaff.update({
           where: { id: staffId },
           data: { profileImageKey: null, profileImageUrl: null }
+        });
+        await writeStoreStaffAuditLog({
+          actorStoreStaffId: staffId,
+          actorStoreRole: staffActor.role,
+          action: 'store_staff.profile_image.delete',
+          targetType: 'StoreStaff',
+          targetId: staffId,
+          summary: 'Store staff profile image removed.',
+          metadata: { storageKey: existing.profileImageKey }
         });
       }
 

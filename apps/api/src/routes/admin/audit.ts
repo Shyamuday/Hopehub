@@ -88,7 +88,10 @@ export function registerAdminAuditRoutes(router: Router) {
                 { targetId: { contains: q, mode: 'insensitive' } },
                 { summary: { contains: q, mode: 'insensitive' } },
                 { actor: { name: { contains: q, mode: 'insensitive' } } },
-                { actor: { email: { contains: q, mode: 'insensitive' } } }
+                { actor: { email: { contains: q, mode: 'insensitive' } } },
+                { actorStoreStaff: { name: { contains: q, mode: 'insensitive' } } },
+                { actorStoreStaff: { staffCode: { contains: q, mode: 'insensitive' } } },
+                { actorStoreStaff: { email: { contains: q, mode: 'insensitive' } } }
               ]
             }
           : {})
@@ -96,7 +99,10 @@ export function registerAdminAuditRoutes(router: Router) {
 
       const total = await prisma.auditLog.count({ where });
       const include = {
-        actor: { select: { id: true, name: true, email: true, role: true } }
+        actor: { select: { id: true, name: true, email: true, role: true } },
+        actorStoreStaff: {
+          select: { id: true, name: true, email: true, staffCode: true, role: true, storeId: true }
+        }
       } as const;
       const logs =
         exportType === 'csv'
@@ -118,6 +124,7 @@ export function registerAdminAuditRoutes(router: Router) {
         id: log.id,
         action: log.action,
         actorRole: log.actorRole,
+        actorStoreRole: log.actorStoreRole,
         targetType: log.targetType,
         targetId: log.targetId,
         summary: log.summary,
@@ -125,6 +132,16 @@ export function registerAdminAuditRoutes(router: Router) {
         createdAt: log.createdAt,
         actor: log.actor
           ? { id: log.actor.id, name: log.actor.name, email: log.actor.email, role: log.actor.role }
+          : null,
+        actorStoreStaff: log.actorStoreStaff
+          ? {
+              id: log.actorStoreStaff.id,
+              name: log.actorStoreStaff.name,
+              email: log.actorStoreStaff.email,
+              staffCode: log.actorStoreStaff.staffCode,
+              role: log.actorStoreStaff.role,
+              storeId: log.actorStoreStaff.storeId
+            }
           : null
       }));
 
@@ -135,9 +152,13 @@ export function registerAdminAuditRoutes(router: Router) {
           const cells = [
             log.createdAt.toISOString(),
             log.action,
-            log.actor?.name ?? '',
-            log.actor?.email ?? '',
-            log.actorRole ?? log.actor?.role ?? '',
+            log.actor?.name ?? log.actorStoreStaff?.name ?? '',
+            log.actor?.email ?? log.actorStoreStaff?.email ?? log.actorStoreStaff?.staffCode ?? '',
+            log.actorRole ??
+              log.actor?.role ??
+              log.actorStoreRole ??
+              log.actorStoreStaff?.role ??
+              '',
             log.targetType,
             log.targetId,
             (log.summary ?? '').replace(/"/g, '""')

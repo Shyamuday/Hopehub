@@ -1,6 +1,6 @@
 import crypto from 'node:crypto';
 import express from 'express';
-import { Prisma, Role } from '@prisma/client';
+import { Prisma, Role, StoreRole } from '@prisma/client';
 import { signToken } from '../auth.js';
 import { prisma } from '../db.js';
 
@@ -162,6 +162,28 @@ export async function writeAuditLog(input: {
     data: {
       actorId: input.actorId || null,
       actorRole: input.actorRole || null,
+      action: input.action,
+      targetType: input.targetType,
+      targetId: input.targetId,
+      summary: input.summary,
+      metadata: input.metadata as Prisma.InputJsonValue | undefined
+    }
+  });
+}
+
+export async function writeStoreStaffAuditLog(input: {
+  actorStoreStaffId?: string;
+  actorStoreRole?: StoreRole;
+  action: string;
+  targetType: string;
+  targetId: string;
+  summary?: string;
+  metadata?: Record<string, unknown>;
+}) {
+  await prisma.auditLog.create({
+    data: {
+      actorStoreStaffId: input.actorStoreStaffId || null,
+      actorStoreRole: input.actorStoreRole || null,
       action: input.action,
       targetType: input.targetType,
       targetId: input.targetId,

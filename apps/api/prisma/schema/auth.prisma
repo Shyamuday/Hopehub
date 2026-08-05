@@ -246,19 +246,23 @@ model UserIdentity {
 }
 
 model AuditLog {
-  id        String   @id @default(cuid())
-  actorId   String?
-  actorRole Role?
-  action    String
-  targetType String
-  targetId  String
-  summary   String?
-  metadata  Json?
-  actor     User?    @relation("AuditActor", fields: [actorId], references: [id], onDelete: SetNull)
-  createdAt DateTime @default(now())
+  id                String      @id @default(cuid())
+  actorId           String?
+  actorRole         Role?
+  actorStoreStaffId String?
+  actorStoreRole    StoreRole?
+  action            String
+  targetType        String
+  targetId          String
+  summary           String?
+  metadata          Json?
+  actor             User?       @relation("AuditActor", fields: [actorId], references: [id], onDelete: SetNull)
+  actorStoreStaff   StoreStaff? @relation("StoreStaffAuditActor", fields: [actorStoreStaffId], references: [id], onDelete: SetNull)
+  createdAt         DateTime    @default(now())
 
   @@index([targetType, targetId])
   @@index([createdAt])
+  @@index([actorStoreStaffId])
 }
 
 model AuthProcessLog {
