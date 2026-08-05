@@ -1,6 +1,9 @@
 {
-  "extends": "./tsconfig.json",
+  "extends": ["./tsconfig.json", "../../tsconfig.base.json"],
   "compilerOptions": {
+    "baseUrl": "../..",
+    "rootDir": "../..",
+    "ignoreDeprecations": "6.0",
     "outDir": "./out-tsc/spec",
     "types": ["vitest/globals"]
   },

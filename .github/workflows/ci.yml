@@ -27,7 +27,7 @@ jobs:
 
       - name: API install and generate
         working-directory: apps/api
-        run: npm ci --ignore-scripts && npm run prisma:generate
+        run: npm run prisma:generate
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/hopehub_ci?schema=public
 
@@ -52,10 +52,6 @@ jobs:
           - apps/operations-web
           - apps/healing-web
 
-    defaults:
-      run:
-        working-directory: ${{ matrix.app }}
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -65,18 +61,20 @@ jobs:
         with:
           node-version: '24'
           cache: 'npm'
-          cache-dependency-path: ${{ matrix.app }}/package-lock.json
+          cache-dependency-path: package-lock.json
 
       - name: Install
-        run: npm ci --ignore-scripts ${{ matrix.app == 'apps/healing-web' && '--legacy-peer-deps' || '' }}
+        run: npm ci --ignore-scripts
 
       - name: Prisma generate
         if: matrix.app == 'apps/api'
+        working-directory: apps/api
         run: npm run prisma:generate
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/hopehub_ci?schema=public
 
       - name: Build
+        working-directory: ${{ matrix.app }}
         run: npm run build
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/hopehub_ci?schema=public
@@ -94,10 +92,6 @@ jobs:
           - apps/admin-web
           - apps/operations-web
 
-    defaults:
-      run:
-        working-directory: ${{ matrix.app }}
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -107,10 +101,11 @@ jobs:
         with:
           node-version: '24'
           cache: 'npm'
-          cache-dependency-path: ${{ matrix.app }}/package-lock.json
+          cache-dependency-path: package-lock.json
 
       - name: Install
         run: npm ci --ignore-scripts
 
       - name: Unit tests
+        working-directory: ${{ matrix.app }}
         run: npm test -- --watch=false
