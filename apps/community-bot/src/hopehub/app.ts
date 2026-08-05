@@ -1,7 +1,7 @@
 import express from 'express';
 import { Bot, GrammyError, HttpError, type Context, webhookCallback } from 'grammy';
 import { config } from './config.js';
-import { hopeHubWebBotKeyboard, startText, welcomeText } from './messages.js';
+import { replyWithHopeHubLogo, startText, welcomeText } from './messages.js';
 
 const bot = new Bot(config.token);
 const webhookPath = '/telegram/community/webhook';
@@ -16,10 +16,7 @@ bot.api.setMyCommands([
 ]);
 
 bot.command(['start', 'help'], async (ctx) => {
-  await ctx.reply(startText(), {
-    parse_mode: 'HTML',
-    reply_markup: hopeHubWebBotKeyboard()
-  });
+  await replyWithHopeHubLogo(ctx, startText());
 });
 
 bot.on('message:new_chat_members', async (ctx) => {
@@ -30,10 +27,7 @@ bot.on('message:new_chat_members', async (ctx) => {
 
   if (!names.length) return;
 
-  await ctx.reply(welcomeText(names), {
-    parse_mode: 'HTML',
-    reply_markup: hopeHubWebBotKeyboard()
-  });
+  await replyWithHopeHubLogo(ctx, welcomeText(names));
 });
 
 bot.catch((err) => {

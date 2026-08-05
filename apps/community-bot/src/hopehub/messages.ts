@@ -1,4 +1,5 @@
 import { InlineKeyboard } from 'grammy';
+import type { Context } from 'grammy';
 import { config } from './config.js';
 
 export function hopeHubWebBotKeyboard() {
@@ -27,4 +28,23 @@ export function startText() {
     '',
     'For all Hope Hub features, use the main Hope Hub bot below.'
   ].join('\n');
+}
+
+export async function replyWithHopeHubLogo(ctx: Context, text: string) {
+  const replyMarkup = hopeHubWebBotKeyboard();
+  if (!config.logoUrl) {
+    await ctx.reply(text, { parse_mode: 'HTML', reply_markup: replyMarkup });
+    return;
+  }
+
+  try {
+    await ctx.replyWithPhoto(config.logoUrl, {
+      caption: text,
+      parse_mode: 'HTML',
+      reply_markup: replyMarkup
+    });
+  } catch (error) {
+    console.warn('Could not send Hope Hub logo, falling back to text message.', error);
+    await ctx.reply(text, { parse_mode: 'HTML', reply_markup: replyMarkup });
+  }
 }

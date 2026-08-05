@@ -10,6 +10,7 @@ Use:
 This bot only:
 
 - welcomes new group members
+- shows Hope Hub logo above the welcome text
 - shows one button to open `@Hopehubwebbot`
 - shows one button to open `https://hopehub.in`
 - replies to `/start` and `/help` with the same button

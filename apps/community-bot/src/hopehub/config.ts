@@ -6,6 +6,7 @@ export type BotConfig = {
   webhookSecret: string;
   webBotUrl: string;
   websiteUrl: string;
+  logoUrl: string;
   welcomeMessage: string;
 };
 
@@ -35,6 +36,10 @@ export function loadConfig(): BotConfig {
     webhookSecret: env('TELEGRAM_COMMUNITY_WEBHOOK_SECRET'),
     webBotUrl: env('HOPEHUB_WEB_BOT_URL', 'https://t.me/Hopehubwebbot'),
     websiteUrl: env('HOPEHUB_WEBSITE_URL', 'https://hopehub.in'),
+    logoUrl: env(
+      'HOPEHUB_LOGO_URL',
+      'https://hopehub-public-assets-924479393196.s3.us-east-1.amazonaws.com/brand/hopehublogom.jpg'
+    ),
     welcomeMessage: env(
       'COMMUNITY_BOT_WELCOME',
       'Welcome to Hope Hub India 💙\nThis group is for Hope Hub community updates and gentle support. Please avoid sharing private documents or sensitive personal details here.'
