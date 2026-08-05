@@ -40,6 +40,9 @@
             [title]="tab.help"
           >
             {{ tab.label }}
+            <span class="ml-1 rounded-full bg-black/10 px-1.5 py-0.5 text-[11px]">
+              {{ roleCount(tab.value) }}
+            </span>
           </button>
         }
       </div>
@@ -139,6 +142,11 @@
               }
               <div>
                 <h2 class="text-lg font-bold text-gray-900">{{ provider.name }}</h2>
+                @if (bestMatchLabel(provider)) {
+                  <span class="mt-1 inline-flex rounded-full bg-blue-600 px-2 py-0.5 text-[11px] font-bold text-white">
+                    {{ bestMatchLabel(provider) }}
+                  </span>
+                }
                 <span
                   class="mt-1 inline-flex rounded-full px-2.5 py-1 text-xs font-bold ring-1"
                   [class]="providerRoleBadgeClass(provider)"
@@ -258,8 +266,12 @@
       <div class="professional-empty border-dashed">
         <h2 class="text-xl font-semibold text-gray-900">No care team profiles available right now</h2>
         <p class="mt-2 text-gray-700">
-          Admin can publish mental wellness professional, student volunteer, or peer-support volunteer profiles from website settings.
+          {{ emptySuggestion() }}
         </p>
+        <div class="mt-4 flex flex-wrap justify-center gap-2">
+          <button type="button" class="btn-secondary btn-sm" (click)="setRoleGroup('')">Show all</button>
+          <a routerLink="/contact" class="btn-primary btn-sm">Send request</a>
+        </div>
       </div>
     }
 

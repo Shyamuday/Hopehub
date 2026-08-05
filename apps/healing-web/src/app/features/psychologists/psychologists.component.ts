@@ -1,6 +1,7 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { BookingService, HopeHubProvider } from '../../core/services/booking.service';
 import { PublicCommunicationConfigService } from '../../core/services/public-communication-config.service';
@@ -20,6 +21,8 @@ export class PsychologistsComponent implements OnInit {
   private readonly bookingService = inject(BookingService);
   readonly publicConfig = inject(PublicCommunicationConfigService);
   private readonly notificationService = inject(NotificationService);
+  private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
 
   readonly providers = signal<HopeHubProvider[]>([]);
   readonly loading = signal(false);
@@ -35,6 +38,15 @@ export class PsychologistsComponent implements OnInit {
   readonly pageSize = 20;
   readonly total = signal(0);
   readonly totalPages = signal(1);
+  readonly roleCounts = signal<Record<RoleGroup, number>>({
+    '': 0,
+    PROFESSIONALS: 0,
+    COUNSELLORS: 0,
+    VOLUNTEERS: 0,
+    COACHES: 0,
+    WELLNESS_GUIDES: 0,
+    MENTORS: 0,
+  });
   readonly concernOptions = ['', 'Anxiety', 'Stress', 'Relationship concerns', 'Family concerns'];
   readonly languageOptions = ['', 'English', 'Hindi', 'Bengali', 'Tamil', 'Telugu'];
   readonly modalityOptions = [
@@ -62,10 +74,13 @@ export class PsychologistsComponent implements OnInit {
   ];
 
   ngOnInit(): void {
+    this.hydrateFiltersFromUrl();
     this.load();
+    this.loadRoleCounts();
   }
 
-  load(): void {
+  load(options: { syncUrl?: boolean; refreshCounts?: boolean } = {}): void {
+    if (options.syncUrl !== false) this.syncUrl();
     this.loading.set(true);
     this.error.set('');
     this.bookingService
@@ -86,6 +101,7 @@ export class PsychologistsComponent implements OnInit {
           this.total.set(res.pagination.total);
           this.totalPages.set(res.pagination.totalPages);
           this.loading.set(false);
+          if (options.refreshCounts) this.loadRoleCounts();
         },
         error: () => {
           const message = 'Could not load the care team right now.';
@@ -99,7 +115,7 @@ export class PsychologistsComponent implements OnInit {
   search(value: string): void {
     this.q.set(value);
     this.page.set(1);
-    this.load();
+    this.load({ refreshCounts: true });
   }
 
   setFilter(
@@ -108,7 +124,7 @@ export class PsychologistsComponent implements OnInit {
   ): void {
     this[key].set(value);
     this.page.set(1);
-    this.load();
+    this.load({ refreshCounts: true });
   }
 
   setRoleGroup(value: RoleGroup): void {
@@ -126,7 +142,65 @@ export class PsychologistsComponent implements OnInit {
     this.ageGroup.set('');
     this.roleGroup.set('');
     this.page.set(1);
-    this.load();
+    this.load({ refreshCounts: true });
+  }
+
+  private hydrateFiltersFromUrl(): void {
+    const params = this.route.snapshot.queryParamMap;
+    const role = params.get('roleGroup') || '';
+    this.q.set(params.get('q') || '');
+    this.concern.set(params.get('concern') || '');
+    this.language.set(params.get('language') || '');
+    this.modality.set(params.get('modality') || '');
+    this.sessionType.set(params.get('sessionType') || '');
+    this.ageGroup.set(params.get('ageGroup') || '');
+    this.roleGroup.set(this.isRoleGroup(role) ? role : '');
+    const page = Number(params.get('page') || 1);
+    this.page.set(Number.isFinite(page) && page > 0 ? page : 1);
+  }
+
+  private syncUrl(): void {
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: {
+        q: this.q() || null,
+        roleGroup: this.roleGroup() || null,
+        concern: this.concern() || null,
+        language: this.language() || null,
+        modality: this.modality() || null,
+        sessionType: this.sessionType() || null,
+        ageGroup: this.ageGroup() || null,
+        page: this.page() > 1 ? this.page() : null,
+      },
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    });
+  }
+
+  private isRoleGroup(value: string): value is RoleGroup {
+    return this.roleTabs.some((tab) => tab.value === value);
+  }
+
+  private loadRoleCounts(): void {
+    const base = {
+      q: this.q(),
+      concern: this.concern(),
+      language: this.language(),
+      modality: this.modality(),
+      sessionType: this.sessionType(),
+      ageGroup: this.ageGroup(),
+      page: 1,
+      pageSize: 1,
+    };
+    Promise.all(
+      this.roleTabs.map((tab) =>
+        firstValueFrom(this.bookingService.providers({ ...base, roleGroup: tab.value }))
+          .then((res) => [tab.value, res?.pagination.total ?? 0] as const)
+          .catch(() => [tab.value, 0] as const),
+      ),
+    ).then((entries) => {
+      this.roleCounts.set(Object.fromEntries(entries) as Record<RoleGroup, number>);
+    });
   }
 
   recommendedHint(): string {
@@ -144,6 +218,44 @@ export class PsychologistsComponent implements OnInit {
       return 'Recommended: Wellness guides for breathing and grounding practice.';
     }
     return 'Tip: choose a provider type tab if you already know the kind of support you want.';
+  }
+
+  roleCount(value: RoleGroup): number {
+    return this.roleCounts()[value] || 0;
+  }
+
+  bestMatchLabel(provider: HopeHubProvider): string {
+    const concernText = `${this.concern()} ${this.q()}`.toLowerCase();
+    const role = provider.supportRole || '';
+    const tone = provider.supportTierTone || '';
+    if (/anxiety|stress|panic|depress|trauma|relationship|family/.test(concernText)) {
+      if (tone === 'professional' || role === 'QUALIFIED_COUNSELLOR') return 'Best match';
+    }
+    if (/lonely|loneliness|breakup|motivation|heartbreak|friend/.test(concernText)) {
+      if (role === 'PEER_SUPPORT_VOLUNTEER' || tone === 'coach') return 'Best match';
+    }
+    if (/study|career|exam|focus|job/.test(concernText)) {
+      if (role === 'CAREER_STUDY_MENTOR' || tone === 'coach') return 'Best match';
+    }
+    if (/breath|sleep|relax|mindful|meditation/.test(concernText)) {
+      if (role === 'MEDITATION_BREATHWORK_GUIDE' || tone === 'wellness') return 'Best match';
+    }
+    if (this.roleGroup()) return 'Selected type';
+    return '';
+  }
+
+  emptySuggestion(): string {
+    const tab = this.roleTabs.find((item) => item.value === this.roleGroup());
+    if (this.roleGroup() === 'VOLUNTEERS') {
+      return 'No volunteers match this filter right now. Try Counsellors or send a general request so the team can guide you.';
+    }
+    if (this.roleGroup() === 'PROFESSIONALS' || this.roleGroup() === 'COUNSELLORS') {
+      return 'No professional/counsellor match found for this filter. Try All, adjust concern/language, or book a general request.';
+    }
+    if (this.roleGroup()) {
+      return `No ${tab?.label.toLowerCase()} match this filter right now. Try All or send a general request.`;
+    }
+    return 'No profiles match these filters. Try clearing filters or book a general request.';
   }
 
   private sortedProviders(providers: HopeHubProvider[]): HopeHubProvider[] {
