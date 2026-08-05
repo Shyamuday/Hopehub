@@ -1,7 +1,13 @@
 import express from 'express';
 import { Bot, GrammyError, HttpError, type Context, webhookCallback } from 'grammy';
 import { config } from './config.js';
-import { replyWithHopeHubLogo, startText, welcomeText } from './messages.js';
+import {
+  hopeHubWebBotKeyboard,
+  replyWithHopeHubLogo,
+  rulesText,
+  startText,
+  welcomeText
+} from './messages.js';
 
 const bot = new Bot(config.token);
 const webhookPath = '/telegram/community/webhook';
@@ -11,12 +17,20 @@ function displayName(user: NonNullable<Context['from']>) {
 }
 
 bot.api.setMyCommands([
-  { command: 'start', description: 'Open Hope Hub bot link' },
-  { command: 'help', description: 'Open Hope Hub bot link' }
+  { command: 'start', description: 'Hope Hub bot link' },
+  { command: 'help', description: 'Hope Hub bot link' }
 ]);
 
 bot.command(['start', 'help'], async (ctx) => {
   await replyWithHopeHubLogo(ctx, startText());
+});
+
+bot.callbackQuery('community:rules', async (ctx) => {
+  await ctx.answerCallbackQuery();
+  await ctx.reply(rulesText(), {
+    parse_mode: 'HTML',
+    reply_markup: hopeHubWebBotKeyboard()
+  });
 });
 
 bot.on('message:new_chat_members', async (ctx) => {
@@ -59,7 +73,7 @@ async function startWebhook() {
   const webhookUrl = `${config.webhookBaseUrl.replace(/\/$/, '')}${webhookPath}`;
   await bot.api.setWebhook(webhookUrl, {
     secret_token: config.webhookSecret || undefined,
-    allowed_updates: ['message']
+    allowed_updates: ['message', 'callback_query']
   });
 
   const app = express();

@@ -11,8 +11,9 @@ This bot only:
 
 - welcomes new group members
 - shows Hope Hub logo above the welcome text
-- shows one button to open `@Hopehubwebbot`
-- shows one button to open `https://hopehub.in`
+- shows one `Hope Hub Bot` button for `@Hopehubwebbot`
+- shows one `Website` button for `https://hopehub.in`
+- shows one `Rules` button that replies with group rules
 - replies to `/start` and `/help` with the same button
 
 ## Local run

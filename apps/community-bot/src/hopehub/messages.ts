@@ -4,9 +4,11 @@ import { config } from './config.js';
 
 export function hopeHubWebBotKeyboard() {
   return new InlineKeyboard()
-    .url('Open Hope Hub Bot', config.webBotUrl)
+    .url('Hope Hub Bot', config.webBotUrl)
     .row()
-    .url('Open Website', config.websiteUrl);
+    .url('Website', config.websiteUrl)
+    .row()
+    .text('Rules', 'community:rules');
 }
 
 export function welcomeText(names: string[]) {
@@ -16,7 +18,7 @@ export function welcomeText(names: string[]) {
     '',
     config.welcomeMessage,
     '',
-    'For support, booking, tests, payments, or account help, tap the button below.'
+    'For private support, self-check tests, bookings, payments, or account help, use the buttons below.'
   ].join('\n');
 }
 
@@ -24,9 +26,17 @@ export function startText() {
   return [
     '<b>Hope Hub Welcome Bot 💙</b>',
     '',
-    'I welcome people in the Hope Hub Telegram group.',
+    'I welcome people into the Hope Hub India emotional-support community.',
     '',
-    'For all Hope Hub features, use the main Hope Hub bot below.'
+    'For private support and Hope Hub services, use the main bot below.'
+  ].join('\n');
+}
+
+export function rulesText() {
+  return [
+    '<b>Hope Hub group rules</b>',
+    '',
+    ...config.rules.map((rule, index) => `${index + 1}. ${rule}`)
   ].join('\n');
 }
 

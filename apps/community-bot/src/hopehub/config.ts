@@ -8,10 +8,21 @@ export type BotConfig = {
   websiteUrl: string;
   logoUrl: string;
   welcomeMessage: string;
+  rules: string[];
 };
 
 function env(name: string, fallback = '') {
   return process.env[name]?.trim() || fallback;
+}
+
+function envLines(name: string, fallback: string[]) {
+  const value = env(name);
+  if (!value) return fallback;
+  return value
+    .replace(/\\n/g, '\n')
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean);
 }
 
 export function loadConfig(): BotConfig {
@@ -42,8 +53,16 @@ export function loadConfig(): BotConfig {
     ),
     welcomeMessage: env(
       'COMMUNITY_BOT_WELCOME',
-      'Welcome to Hope Hub India 💙\nThis group is for Hope Hub community updates and gentle support. Please avoid sharing private documents or sensitive personal details here.'
-    )
+      'Welcome to HopeHub, India’s favourite peer-support group! 🌟\nWe’re thrilled to have you in this one-of-a-kind community where we uplift, listen, and support each other. 😊\n\nThis is a safe, privacy-aware space to share, listen, experience growth and progress, or simply browse the conversations at your own pace. 💚\n\nRemember, we’re all in this together — gently, respectfully, and one step at a time.'
+    ),
+    rules: envLines('COMMUNITY_BOT_RULES', [
+      'Protect the vibe. Speak with kindness, dignity, and patience — no judging, shaming, bullying, or personal attacks.',
+      'Protect privacy. Do not post private documents, medical records, payment screenshots, phone numbers, or anyone’s personal details.',
+      'Share support, not diagnosis. You may share experiences, but avoid labelling, prescribing, or giving unsafe advice.',
+      'Keep the group clean. No spam, promotions, repeated forwards, unrelated links, or aggressive selling.',
+      'Use private support for personal help. For booking, tests, payments, volunteer support, or account help, tap the Hope Hub Bot button.',
+      'Emergency note: Hope Hub is not an emergency service. If there is immediate danger, self-harm risk, violence, or a medical emergency, contact local emergency services now.'
+    ])
   };
 }
 
