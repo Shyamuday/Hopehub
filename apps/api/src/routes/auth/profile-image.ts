@@ -4,6 +4,7 @@ import { STORE_ROLES } from '../../constants/store-api-routes.constants.js';
 import { prisma } from '../../db.js';
 import { asyncRoute, routeParam } from '../../utils/helpers.js';
 import { parseMultipartForm } from '../../utils/multipart.js';
+import { assetAccessUrl } from '../../services/asset-storage.js';
 import {
   deleteProfileImageFile,
   profileImageMimeType,
@@ -12,6 +13,7 @@ import {
   saveUserProfileImage
 } from '../../services/profile-image-storage.js';
 import {
+  enrichWithProfileImageAccessUrl,
   enrichWithProfileImageUrl,
   storeStaffProfileImagePath,
   userProfileImagePath
@@ -87,7 +89,7 @@ export function registerProfileImageRoutes(router: Router) {
 
         await prisma.user.update({
           where: { id: userId },
-          data: { profileImageKey: saved.storageKey, profileImageUrl: saved.imageUrl }
+          data: { profileImageKey: saved.storageKey, profileImageUrl: userProfileImagePath(userId) }
         });
 
         if (existing.profileImageKey && existing.profileImageKey !== saved.storageKey) {
@@ -95,7 +97,7 @@ export function registerProfileImageRoutes(router: Router) {
         }
 
         res.json({
-          profileImageUrl: saved.imageUrl ?? userProfileImagePath(userId),
+          profileImageUrl: await assetAccessUrl(saved.storageKey, userProfileImagePath(userId)),
           message: 'Profile photo saved.'
         });
       } catch (error) {
@@ -181,7 +183,10 @@ export function registerStoreProfileImageRoutes(router: Router) {
 
         await prisma.storeStaff.update({
           where: { id: staffId },
-          data: { profileImageKey: saved.storageKey, profileImageUrl: saved.imageUrl }
+          data: {
+            profileImageKey: saved.storageKey,
+            profileImageUrl: storeStaffProfileImagePath(staffId)
+          }
         });
 
         if (existing.profileImageKey && existing.profileImageKey !== saved.storageKey) {
@@ -189,7 +194,10 @@ export function registerStoreProfileImageRoutes(router: Router) {
         }
 
         res.json({
-          profileImageUrl: saved.imageUrl ?? storeStaffProfileImagePath(staffId),
+          profileImageUrl: await assetAccessUrl(
+            saved.storageKey,
+            storeStaffProfileImagePath(staffId)
+          ),
           message: 'Profile photo saved.'
         });
       } catch (error) {
@@ -232,7 +240,7 @@ export function registerStoreProfileImageRoutes(router: Router) {
       });
 
       res.json({
-        staff: enrichWithProfileImageUrl(staff, storeStaffProfileImagePath)
+        staff: await enrichWithProfileImageAccessUrl(staff, storeStaffProfileImagePath)
       });
     })
   );

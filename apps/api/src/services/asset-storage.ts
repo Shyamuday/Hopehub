@@ -4,6 +4,7 @@ import {
   PutObjectCommand,
   S3Client
 } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { mkdir, readFile, unlink, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
@@ -17,6 +18,10 @@ const ASSET_BASE_URL = (
   process.env.ASSET_OBJECT_BASE_URL ||
   ''
 ).replace(/\/+$/, '');
+const ASSET_SIGNED_URL_TTL_SECONDS = Math.max(
+  60,
+  Math.min(Number(process.env.ASSET_SIGNED_URL_TTL_SECONDS || 900), 604800)
+);
 const PUBLIC_ASSET_BUCKET =
   process.env.PUBLIC_ASSET_BUCKET || process.env.S3_PUBLIC_ASSET_BUCKET || '';
 const PUBLIC_ASSET_BUCKET_REGION =
@@ -73,6 +78,31 @@ export function assetObjectUrl(storageKey: string | null | undefined) {
   }
 
   return `https://${ASSET_BUCKET}.s3.${ASSET_BUCKET_REGION}.amazonaws.com/${encodedKey}`;
+}
+
+export async function assetAccessUrl(
+  storageKey: string | null | undefined,
+  fallbackUrl: string | null
+) {
+  if (!storageKey) return fallbackUrl;
+
+  if (ASSET_BASE_URL) {
+    return assetObjectUrl(storageKey) ?? fallbackUrl;
+  }
+
+  if (!ASSET_BUCKET) {
+    return fallbackUrl;
+  }
+
+  const normalized = normalizeStorageKey(storageKey);
+  return getSignedUrl(
+    client(ASSET_BUCKET_REGION),
+    new GetObjectCommand({
+      Bucket: ASSET_BUCKET,
+      Key: normalized
+    }),
+    { expiresIn: ASSET_SIGNED_URL_TTL_SECONDS }
+  );
 }
 
 function client(region: string) {

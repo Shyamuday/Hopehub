@@ -7,6 +7,7 @@ import { prisma } from '../../db.js';
 import { DEFAULT_REMINDER_PREFERENCE } from '../../constants/reminder-preferences.constants.js';
 import { asyncRoute, patientProfileSelect, routeParam } from '../../utils/helpers.js';
 import { parseMultipartForm } from '../../utils/multipart.js';
+import { assetAccessUrl } from '../../services/asset-storage.js';
 import { buildPatientIdCard } from '../../services/patient-identity.js';
 import { normalizeMobile } from '../../services/patient-identity.js';
 import {
@@ -23,7 +24,11 @@ import {
   sessionPayloadForUser
 } from '../../constants/rbac-helpers.js';
 import { attachStaffProfile } from '../../staff-profile.js';
-import { enrichWithProfileImageUrl, userProfileImagePath } from '../../utils/profile-image-url.js';
+import {
+  enrichWithProfileImageAccessUrl,
+  enrichWithProfileImageUrl,
+  userProfileImagePath
+} from '../../utils/profile-image-url.js';
 import {
   deletePatientDailyPlanImage,
   patientDailyPlanImagePath,
@@ -31,18 +36,19 @@ import {
   savePatientDailyPlanImage
 } from '../../services/patient-daily-plan-storage.js';
 
-function serializePatientProfile(user: {
+async function serializePatientProfile(user: {
   passwordHash?: string | null;
   dateOfBirth?: Date | null;
   profileImageKey?: string | null;
+  profileImageUrl?: string | null;
   [key: string]: unknown;
 }) {
-  const { passwordHash, dateOfBirth, profileImageKey, ...rest } = user;
+  const { passwordHash, dateOfBirth, profileImageKey, profileImageUrl, ...rest } = user;
   return {
-    ...enrichWithProfileImageUrl(
-      { ...rest, id: String(rest.id), profileImageKey },
+    ...(await enrichWithProfileImageAccessUrl(
+      { ...rest, id: String(rest.id), profileImageKey, profileImageUrl },
       userProfileImagePath
-    ),
+    )),
     dateOfBirth: formatDateOfBirth(dateOfBirth ?? null),
     hasPassword: Boolean(passwordHash)
   };
@@ -111,9 +117,10 @@ function cleanText(value: string | null | undefined) {
   return value?.trim() || null;
 }
 
-function serializeDailyPlanImage(image: {
+async function serializeDailyPlanImage(image: {
   id: string;
   taskId?: string | null;
+  storageKey?: string | null;
   imageUrl?: string | null;
   mimeType: string;
   fileName?: string | null;
@@ -128,12 +135,15 @@ function serializeDailyPlanImage(image: {
     fileName: image.fileName ?? null,
     byteSize: image.byteSize,
     caption: image.caption ?? null,
-    imageUrl: image.imageUrl || patientDailyPlanImagePath(image.id),
+    imageUrl: await assetAccessUrl(
+      image.storageKey,
+      image.imageUrl || patientDailyPlanImagePath(image.id)
+    ),
     createdAt: image.createdAt.toISOString()
   };
 }
 
-function serializeDailyPlan(plan: {
+async function serializeDailyPlan(plan: {
   id: string;
   userId: string;
   planDate: Date;
@@ -167,18 +177,20 @@ function serializeDailyPlan(plan: {
     summary: plan.summary ?? null,
     reviewNote: plan.reviewNote ?? null,
     reviewedAt: plan.reviewedAt?.toISOString() ?? null,
-    tasks: plan.tasks.map((task) => ({
-      id: task.id,
-      title: task.title,
-      notes: task.notes ?? null,
-      sortOrder: task.sortOrder,
-      completed: task.completed,
-      completedAt: task.completedAt?.toISOString() ?? null,
-      reviewTick: task.reviewTick,
-      reviewNote: task.reviewNote ?? null,
-      images: task.images.map(serializeDailyPlanImage)
-    })),
-    images: plan.images.map(serializeDailyPlanImage),
+    tasks: await Promise.all(
+      plan.tasks.map(async (task) => ({
+        id: task.id,
+        title: task.title,
+        notes: task.notes ?? null,
+        sortOrder: task.sortOrder,
+        completed: task.completed,
+        completedAt: task.completedAt?.toISOString() ?? null,
+        reviewTick: task.reviewTick,
+        reviewNote: task.reviewNote ?? null,
+        images: await Promise.all(task.images.map(serializeDailyPlanImage))
+      }))
+    ),
+    images: await Promise.all(plan.images.map(serializeDailyPlanImage)),
     createdAt: plan.createdAt.toISOString(),
     updatedAt: plan.updatedAt.toISOString()
   };
@@ -221,7 +233,7 @@ export function registerAuthProfileRoutes(router: Router) {
       });
       const withProfile = await attachStaffProfile(userRow);
       const payload = sessionPayloadForUser(withProfile);
-      payload.user = enrichWithProfileImageUrl(withProfile, userProfileImagePath);
+      payload.user = await enrichWithProfileImageAccessUrl(withProfile, userProfileImagePath);
       res.json(payload);
     })
   );
@@ -267,7 +279,7 @@ export function registerAuthProfileRoutes(router: Router) {
       ]);
 
       res.json({
-        profile: serializePatientProfile(user),
+        profile: await serializePatientProfile(user),
         reminderPreferences: reminderPreferences || DEFAULT_REMINDER_PREFERENCE
       });
     })
@@ -350,7 +362,7 @@ export function registerAuthProfileRoutes(router: Router) {
         select: patientProfileSelect
       });
 
-      res.json({ profile: serializePatientProfile(updated) });
+      res.json({ profile: await serializePatientProfile(updated) });
     })
   );
 
@@ -393,7 +405,7 @@ export function registerAuthProfileRoutes(router: Router) {
         take: 30
       });
 
-      res.json({ plans: plans.map(serializeDailyPlan) });
+      res.json({ plans: await Promise.all(plans.map(serializeDailyPlan)) });
     })
   );
 
@@ -431,7 +443,7 @@ export function registerAuthProfileRoutes(router: Router) {
         throw error;
       }
 
-      res.status(201).json({ plan: serializeDailyPlan(plan) });
+      res.status(201).json({ plan: await serializeDailyPlan(plan) });
     })
   );
 
@@ -457,7 +469,7 @@ export function registerAuthProfileRoutes(router: Router) {
         include: dailyPlanInclude
       });
 
-      res.json({ plan: serializeDailyPlan(plan) });
+      res.json({ plan: await serializeDailyPlan(plan) });
     })
   );
 
@@ -502,7 +514,7 @@ export function registerAuthProfileRoutes(router: Router) {
       });
 
       const plan = await getOwnedDailyPlan(planId, req.user!.id);
-      res.status(201).json({ plan: serializeDailyPlan(plan!) });
+      res.status(201).json({ plan: await serializeDailyPlan(plan!) });
     })
   );
 
@@ -538,7 +550,7 @@ export function registerAuthProfileRoutes(router: Router) {
       });
 
       const plan = await getOwnedDailyPlan(planId, req.user!.id);
-      res.json({ plan: serializeDailyPlan(plan!) });
+      res.json({ plan: await serializeDailyPlan(plan!) });
     })
   );
 
@@ -559,7 +571,7 @@ export function registerAuthProfileRoutes(router: Router) {
       await prisma.patientDailyPlanTask.delete({ where: { id: taskId } });
       await Promise.all(task.images.map((image) => deletePatientDailyPlanImage(image.storageKey)));
       const plan = await getOwnedDailyPlan(planId, req.user!.id);
-      res.json({ plan: serializeDailyPlan(plan!) });
+      res.json({ plan: await serializeDailyPlan(plan!) });
     })
   );
 
@@ -586,22 +598,26 @@ export function registerAuthProfileRoutes(router: Router) {
           data: body.data
         });
 
-        await prisma.patientDailyPlanImage.create({
+        const image = await prisma.patientDailyPlanImage.create({
           data: {
             userId: req.user!.id,
             planId,
             taskId: body.taskId || null,
             storageKey: saved.storageKey,
-            imageUrl: saved.imageUrl,
+            imageUrl: '',
             mimeType: saved.mimeType,
             fileName: body.fileName || null,
             byteSize: saved.byteSize,
             caption: cleanText(body.caption)
           }
         });
+        await prisma.patientDailyPlanImage.update({
+          where: { id: image.id },
+          data: { imageUrl: patientDailyPlanImagePath(image.id) }
+        });
 
         const updated = await getOwnedDailyPlan(planId, req.user!.id);
-        res.status(201).json({ plan: serializeDailyPlan(updated!) });
+        res.status(201).json({ plan: await serializeDailyPlan(updated!) });
       } catch (error) {
         const mapped = mapImageUploadError(error);
         return res.status(mapped.status).json({ message: mapped.message });
@@ -646,7 +662,7 @@ export function registerAuthProfileRoutes(router: Router) {
       await prisma.patientDailyPlanImage.delete({ where: { id: imageId } });
       await deletePatientDailyPlanImage(image.storageKey);
       const plan = await getOwnedDailyPlan(planId, req.user!.id);
-      res.json({ plan: serializeDailyPlan(plan!) });
+      res.json({ plan: await serializeDailyPlan(plan!) });
     })
   );
 
