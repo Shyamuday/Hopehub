@@ -8,6 +8,7 @@
     "apps/doctor-web",
     "apps/admin-web",
     "apps/operations-web",
+    "apps/healing-web",
     "libs/*",
     "shared"
   ],
