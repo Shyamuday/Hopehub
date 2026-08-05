@@ -144,6 +144,7 @@ export function registerAuthDoctorRoutes(router: Router) {
         select: {
           ...publicUserSelect,
           profileImageKey: true,
+          profileImageUrl: true,
           isActive: true,
           doctorProfile: { select: doctorProfileSelect }
         }
@@ -324,6 +325,7 @@ export function registerAuthDoctorRoutes(router: Router) {
         select: {
           ...publicUserSelect,
           profileImageKey: true,
+          profileImageUrl: true,
           isActive: true,
           doctorProfile: { select: doctorProfileSelect }
         }

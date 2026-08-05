@@ -37,6 +37,7 @@ const liveDoctorInclude = {
       id: true,
       name: true,
       profileImageKey: true,
+      profileImageUrl: true,
       isActive: true
     }
   },
@@ -63,7 +64,13 @@ export function mapLiveDoctor(session: {
   acceptsVoiceCall: boolean;
   lastHeartbeatAt: Date | null;
   wentLiveAt: Date | null;
-  user: { id: string; name: string; profileImageKey: string | null; isActive: boolean };
+  user: {
+    id: string;
+    name: string;
+    profileImageKey: string | null;
+    profileImageUrl?: string | null;
+    isActive: boolean;
+  };
   doctor: {
     specialty: string;
     doctorType: import('@prisma/client').HomeopathicDoctorType;
@@ -75,7 +82,11 @@ export function mapLiveDoctor(session: {
   };
 }) {
   const profileImageUrl = enrichWithProfileImageUrl(
-    { id: session.user.id, profileImageKey: session.user.profileImageKey },
+    {
+      id: session.user.id,
+      profileImageKey: session.user.profileImageKey,
+      profileImageUrl: session.user.profileImageUrl
+    },
     userProfileImagePath
   ).profileImageUrl;
 

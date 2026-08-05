@@ -1435,7 +1435,7 @@ async function activeHopeHubProviders(params: {
             }
           }
         },
-        user: { select: { id: true, name: true, profileImageKey: true } }
+        user: { select: { id: true, name: true, profileImageKey: true, profileImageUrl: true } }
       },
       orderBy: [{ websiteOrder: { sort: 'asc', nulls: 'last' } }, { user: { name: 'asc' } }],
       skip: (page - 1) * pageSize,
@@ -1896,7 +1896,7 @@ hopeHubRouter.get(
             }
           }
         },
-        user: { select: { id: true, name: true, profileImageKey: true } }
+        user: { select: { id: true, name: true, profileImageKey: true, profileImageUrl: true } }
       }
     });
 

@@ -38,7 +38,10 @@ function mapUploadError(error: unknown) {
   return { status: 500, message: 'Could not save profile image.' };
 }
 
-async function serveProfileImage(storageKey: string | null | undefined, res: import('express').Response) {
+async function serveProfileImage(
+  storageKey: string | null | undefined,
+  res: import('express').Response
+) {
   if (!storageKey) {
     return res.status(404).json({ message: 'Profile image not found.' });
   }
@@ -76,7 +79,7 @@ export function registerProfileImageRoutes(router: Router) {
 
         await prisma.user.update({
           where: { id: userId },
-          data: { profileImageKey: saved.storageKey }
+          data: { profileImageKey: saved.storageKey, profileImageUrl: saved.imageUrl }
         });
 
         if (existing.profileImageKey && existing.profileImageKey !== saved.storageKey) {
@@ -84,7 +87,7 @@ export function registerProfileImageRoutes(router: Router) {
         }
 
         res.json({
-          profileImageUrl: userProfileImagePath(userId),
+          profileImageUrl: saved.imageUrl ?? userProfileImagePath(userId),
           message: 'Profile photo saved.'
         });
       } catch (error) {
@@ -108,7 +111,7 @@ export function registerProfileImageRoutes(router: Router) {
         await deleteProfileImageFile(existing.profileImageKey);
         await prisma.user.update({
           where: { id: userId },
-          data: { profileImageKey: null }
+          data: { profileImageKey: null, profileImageUrl: null }
         });
       }
 
@@ -170,7 +173,7 @@ export function registerStoreProfileImageRoutes(router: Router) {
 
         await prisma.storeStaff.update({
           where: { id: staffId },
-          data: { profileImageKey: saved.storageKey }
+          data: { profileImageKey: saved.storageKey, profileImageUrl: saved.imageUrl }
         });
 
         if (existing.profileImageKey && existing.profileImageKey !== saved.storageKey) {
@@ -178,7 +181,7 @@ export function registerStoreProfileImageRoutes(router: Router) {
         }
 
         res.json({
-          profileImageUrl: storeStaffProfileImagePath(staffId),
+          profileImageUrl: saved.imageUrl ?? storeStaffProfileImagePath(staffId),
           message: 'Profile photo saved.'
         });
       } catch (error) {
@@ -202,7 +205,7 @@ export function registerStoreProfileImageRoutes(router: Router) {
         await deleteProfileImageFile(existing.profileImageKey);
         await prisma.storeStaff.update({
           where: { id: staffId },
-          data: { profileImageKey: null }
+          data: { profileImageKey: null, profileImageUrl: null }
         });
       }
 

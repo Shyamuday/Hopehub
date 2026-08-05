@@ -72,6 +72,7 @@ model User {
   isActive            Boolean        @default(true)
   patientCode         String?        @unique
   profileImageKey     String?
+  profileImageUrl     String?
   homeClinicStoreId   String?
   homeClinicStore     Store?         @relation("PatientHomeClinic", fields: [homeClinicStoreId], references: [id])
   allergies           String?
@@ -336,6 +337,7 @@ model PatientDailyPlanImage {
   planId      String
   taskId      String?
   storageKey  String
+  imageUrl    String?
   mimeType    String
   fileName    String?
   byteSize    Int

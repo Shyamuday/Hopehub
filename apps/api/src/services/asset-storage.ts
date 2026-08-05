@@ -11,6 +11,12 @@ const LOCAL_UPLOAD_ROOT = path.resolve(process.cwd(), 'uploads');
 const ASSET_BUCKET = process.env.ASSET_BUCKET || process.env.S3_ASSET_BUCKET || '';
 const ASSET_BUCKET_REGION =
   process.env.ASSET_BUCKET_REGION || process.env.AWS_REGION || 'us-east-1';
+const ASSET_BASE_URL = (
+  process.env.ASSET_BASE_URL ||
+  process.env.S3_ASSET_BASE_URL ||
+  process.env.ASSET_OBJECT_BASE_URL ||
+  ''
+).replace(/\/+$/, '');
 const PUBLIC_ASSET_BUCKET =
   process.env.PUBLIC_ASSET_BUCKET || process.env.S3_PUBLIC_ASSET_BUCKET || '';
 const PUBLIC_ASSET_BUCKET_REGION =
@@ -52,6 +58,21 @@ export function assetPublicUrl(storageKey: string | null | undefined) {
   }
 
   return `https://${PUBLIC_ASSET_BUCKET}.s3.${PUBLIC_ASSET_BUCKET_REGION}.amazonaws.com/${encodedKey}`;
+}
+
+export function assetObjectUrl(storageKey: string | null | undefined) {
+  if (!storageKey) return null;
+  const encodedKey = encodeStorageKeyForUrl(storageKey);
+
+  if (ASSET_BASE_URL) {
+    return `${ASSET_BASE_URL}/${encodedKey}`;
+  }
+
+  if (!ASSET_BUCKET) {
+    return null;
+  }
+
+  return `https://${ASSET_BUCKET}.s3.${ASSET_BUCKET_REGION}.amazonaws.com/${encodedKey}`;
 }
 
 function client(region: string) {

@@ -70,6 +70,7 @@ export interface PatientDailyPlanImage {
   byteSize: number;
   caption: string | null;
   imageUrl: string;
+  storageUrl?: string | null;
   createdAt: string;
 }
 

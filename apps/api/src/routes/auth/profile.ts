@@ -105,6 +105,7 @@ function cleanText(value: string | null | undefined) {
 function serializeDailyPlanImage(image: {
   id: string;
   taskId?: string | null;
+  imageUrl?: string | null;
   mimeType: string;
   fileName?: string | null;
   byteSize: number;
@@ -118,7 +119,7 @@ function serializeDailyPlanImage(image: {
     fileName: image.fileName ?? null,
     byteSize: image.byteSize,
     caption: image.caption ?? null,
-    imageUrl: patientDailyPlanImagePath(image.id),
+    imageUrl: image.imageUrl || patientDailyPlanImagePath(image.id),
     createdAt: image.createdAt.toISOString()
   };
 }
@@ -205,7 +206,8 @@ export function registerAuthProfileRoutes(router: Router) {
           email: true,
           mobile: true,
           patientCode: true,
-          profileImageKey: true
+          profileImageKey: true,
+          profileImageUrl: true
         }
       });
       const withProfile = await attachStaffProfile(userRow);
@@ -581,6 +583,7 @@ export function registerAuthProfileRoutes(router: Router) {
             planId,
             taskId: body.taskId || null,
             storageKey: saved.storageKey,
+            imageUrl: saved.imageUrl,
             mimeType: saved.mimeType,
             fileName: body.fileName || null,
             byteSize: saved.byteSize,

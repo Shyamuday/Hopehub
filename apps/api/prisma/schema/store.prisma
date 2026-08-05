@@ -66,10 +66,11 @@ model Store {
 }
 
 model StoreStaff {
-  id               String         @id @default(cuid())
-  name             String
-  profileImageKey  String?
-  staffCode        String         @unique
+    id               String         @id @default(cuid())
+    name             String
+    profileImageKey  String?
+    profileImageUrl  String?
+    staffCode        String         @unique
   employeeId       String?        @unique
   pinHash          String
   role             StoreRole      @default(STAFF)

@@ -1,0 +1,5 @@
+ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "profileImageUrl" TEXT;
+
+ALTER TABLE "StoreStaff" ADD COLUMN IF NOT EXISTS "profileImageUrl" TEXT;
+
+ALTER TABLE "PatientDailyPlanImage" ADD COLUMN IF NOT EXISTS "imageUrl" TEXT;

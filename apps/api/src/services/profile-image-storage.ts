@@ -1,6 +1,11 @@
 import { createHash, randomUUID } from 'node:crypto';
 import path from 'node:path';
-import { deleteAssetObject, readAssetObject, writeAssetObject } from './asset-storage.js';
+import {
+  assetObjectUrl,
+  deleteAssetObject,
+  readAssetObject,
+  writeAssetObject
+} from './asset-storage.js';
 
 const UPLOAD_ROOT = path.resolve(process.cwd(), 'uploads', 'profile-images');
 const MAX_BYTES = 2 * 1024 * 1024;
@@ -56,6 +61,7 @@ async function saveProfileImage(
 
   return {
     storageKey,
+    imageUrl: assetObjectUrl(storageKey),
     byteSize: buffer.length,
     sha256: createHash('sha256').update(buffer).digest('hex'),
     mimeType: input.mimeType

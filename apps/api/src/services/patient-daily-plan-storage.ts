@@ -1,6 +1,11 @@
 import { createHash, randomUUID } from 'node:crypto';
 import path from 'node:path';
-import { deleteAssetObject, readAssetObject, writeAssetObject } from './asset-storage.js';
+import {
+  assetObjectUrl,
+  deleteAssetObject,
+  readAssetObject,
+  writeAssetObject
+} from './asset-storage.js';
 
 const MAX_BYTES = 4 * 1024 * 1024;
 const ALLOWED_MIME = new Set(['image/jpeg', 'image/png', 'image/webp']);
@@ -39,6 +44,7 @@ export async function savePatientDailyPlanImage(input: {
 
   return {
     storageKey,
+    imageUrl: assetObjectUrl(storageKey),
     byteSize: buffer.length,
     sha256: createHash('sha256').update(buffer).digest('hex'),
     mimeType: input.mimeType

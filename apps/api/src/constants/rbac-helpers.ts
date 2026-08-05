@@ -5,7 +5,10 @@ import {
   capabilitiesFromStaffProfile,
   type StaffProfileSummary
 } from '../permission-capabilities.js';
-import { enrichWithProfileImageUrl, storeStaffProfileImagePath } from '../utils/profile-image-url.js';
+import {
+  enrichWithProfileImageUrl,
+  storeStaffProfileImagePath
+} from '../utils/profile-image-url.js';
 
 export type PortalId = 'patient' | 'clinical' | 'operations';
 
@@ -48,7 +51,11 @@ export const OPERATIONS_DEFAULT_ROUTE: Partial<Record<Role, string>> = {
   INSURANCE_PARTNER: 'claims'
 };
 
-export const STORE_COUNTER_CAPABILITIES = ['store_counter.portal', 'store.stock', 'patient.scan'] as const;
+export const STORE_COUNTER_CAPABILITIES = [
+  'store_counter.portal',
+  'store.stock',
+  'patient.scan'
+] as const;
 export const STORE_MANAGER_CAPABILITIES = [
   'store_manager.portal',
   'store.stock',
@@ -111,9 +118,12 @@ export function sessionPayloadForStoreStaff(staff: {
   storeId: string;
   storeName: string;
   profileImageKey?: string | null;
+  profileImageUrl?: string | null;
 }) {
   const isManager = staff.role === STORE_ROLES.MANAGER;
-  const capabilities = isManager ? [...STORE_MANAGER_CAPABILITIES] : [...STORE_COUNTER_CAPABILITIES];
+  const capabilities = isManager
+    ? [...STORE_MANAGER_CAPABILITIES]
+    : [...STORE_COUNTER_CAPABILITIES];
   const storeStaff = enrichWithProfileImageUrl(
     {
       id: staff.id,
@@ -122,7 +132,8 @@ export function sessionPayloadForStoreStaff(staff: {
       staffCode: staff.staffCode,
       storeId: staff.storeId,
       storeName: staff.storeName,
-      profileImageKey: staff.profileImageKey
+      profileImageKey: staff.profileImageKey,
+      profileImageUrl: staff.profileImageUrl
     },
     storeStaffProfileImagePath
   );

@@ -6,13 +6,12 @@ export function storeStaffProfileImagePath(staffId: string) {
   return `/store/profile-images/${staffId}`;
 }
 
-export function enrichWithProfileImageUrl<T extends { id: string; profileImageKey?: string | null }>(
-  entity: T,
-  pathFor: (id: string) => string
-) {
-  const { profileImageKey, ...rest } = entity;
+export function enrichWithProfileImageUrl<
+  T extends { id: string; profileImageKey?: string | null; profileImageUrl?: string | null }
+>(entity: T, pathFor: (id: string) => string) {
+  const { profileImageKey, profileImageUrl, ...rest } = entity;
   return {
     ...rest,
-    profileImageUrl: profileImageKey ? pathFor(entity.id) : null
+    profileImageUrl: profileImageUrl || (profileImageKey ? pathFor(entity.id) : null)
   };
 }
