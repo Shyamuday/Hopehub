@@ -11,6 +11,7 @@ This bot only:
 
 - welcomes new group members
 - shows one button to open `@Hopehubwebbot`
+- shows one button to open `https://hopehub.in`
 - replies to `/start` and `/help` with the same button
 
 ## Local run

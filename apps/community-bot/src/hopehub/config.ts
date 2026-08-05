@@ -5,6 +5,7 @@ export type BotConfig = {
   webhookBaseUrl: string;
   webhookSecret: string;
   webBotUrl: string;
+  websiteUrl: string;
   welcomeMessage: string;
 };
 
@@ -33,6 +34,7 @@ export function loadConfig(): BotConfig {
     webhookBaseUrl,
     webhookSecret: env('TELEGRAM_COMMUNITY_WEBHOOK_SECRET'),
     webBotUrl: env('HOPEHUB_WEB_BOT_URL', 'https://t.me/Hopehubwebbot'),
+    websiteUrl: env('HOPEHUB_WEBSITE_URL', 'https://hopehub.in'),
     welcomeMessage: env(
       'COMMUNITY_BOT_WELCOME',
       'Welcome to Hope Hub India 💙\nThis group is for Hope Hub community updates and gentle support. Please avoid sharing private documents or sensitive personal details here.'

@@ -2,7 +2,10 @@ import { InlineKeyboard } from 'grammy';
 import { config } from './config.js';
 
 export function hopeHubWebBotKeyboard() {
-  return new InlineKeyboard().url('Open Hope Hub Bot', config.webBotUrl);
+  return new InlineKeyboard()
+    .url('Open Hope Hub Bot', config.webBotUrl)
+    .row()
+    .url('Open Website', config.websiteUrl);
 }
 
 export function welcomeText(names: string[]) {
