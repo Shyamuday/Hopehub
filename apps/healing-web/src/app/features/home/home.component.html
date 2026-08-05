@@ -62,8 +62,8 @@
         <p class="hope-eyebrow">Care team</p>
         <h2 class="hope-section-title">Talk with a Hope Hub expert</h2>
         <p class="hope-section-copy max-w-2xl">
-          Browse published mental wellness experts for anxiety, relationship stress, overthinking,
-          family concerns, and private guidance.
+          Browse verified professionals, counsellors, volunteers, coaches, and wellness guides for
+          anxiety, relationship stress, overthinking, family concerns, and private guidance.
         </p>
       </div>
       <a routerLink="/care-team" class="btn-secondary">Meet care team</a>
@@ -93,13 +93,19 @@
               }
               <div>
                 <h3 class="hope-card-title text-base">{{ provider.name }}</h3>
+                <span
+                  class="mt-1 inline-flex rounded-full px-2 py-0.5 text-[11px] font-bold ring-1"
+                  [class]="providerRoleBadgeClass(provider)"
+                >
+                  {{ providerTierLabel(provider) }}
+                </span>
                 <p class="mt-1 text-sm font-medium text-gray-600">
-                  {{ provider.designation || provider.specialty || 'Hope Hub care guide' }}
+                  {{ providerRoleLabel(provider) }}
                 </p>
               </div>
             </div>
             <p class="hope-card-copy line-clamp-3">
-              {{ provider.bio || 'Available for mental wellness support and guided conversation.' }}
+              {{ provider.supportRoleDescription || provider.bio || 'Available for mental wellness support and guided conversation.' }}
             </p>
           </article>
         }

@@ -110,10 +110,14 @@ export class ContactComponent implements OnInit {
   ];
   expertTypeOptions: FormDropdownOption[] = [
     { value: '', label: 'No preference' },
-    { value: 'Mental wellness professional', label: 'Mental wellness professional' },
-    { value: 'Qualified counsellor', label: 'Qualified counsellor' },
-    { value: 'Student volunteer', label: 'Student volunteer' },
-    { value: 'Peer support volunteer', label: 'Peer support volunteer' },
+    { value: 'Verified Mental Health Professional', label: 'Verified professional' },
+    { value: 'Qualified Counsellor', label: 'Qualified counsellor' },
+    { value: 'Psychology Student Volunteer', label: 'Psychology student volunteer' },
+    { value: 'Peer Support Volunteer', label: 'Peer support volunteer' },
+    { value: 'NLP Coach', label: 'NLP coach' },
+    { value: 'Life Coach', label: 'Life coach' },
+    { value: 'Meditation / Breathwork Guide', label: 'Meditation / breathwork guide' },
+    { value: 'Career / Study Mentor', label: 'Career / study mentor' },
   ];
   sessionModeOptions: FormDropdownOption[] = [
     { value: 'online_audio', label: 'Online audio' },

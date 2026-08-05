@@ -94,6 +94,19 @@ export class PsychologistDetailComponent implements OnInit {
   }
 
   providerRoleBadgeClass(provider: HopeHubProvider): string {
+    switch (provider.supportTierTone) {
+      case 'professional':
+        return 'bg-emerald-50 text-emerald-700 ring-emerald-200';
+      case 'student':
+        return 'bg-sky-50 text-sky-700 ring-sky-200';
+      case 'volunteer':
+        return 'bg-purple-50 text-purple-700 ring-purple-200';
+      case 'coach':
+      case 'mentor':
+        return 'bg-amber-50 text-amber-800 ring-amber-200';
+      case 'wellness':
+        return 'bg-teal-50 text-teal-700 ring-teal-200';
+    }
     switch (provider.supportRole) {
       case 'MENTAL_WELLNESS_PROFESSIONAL':
       case 'QUALIFIED_COUNSELLOR':
@@ -113,6 +126,39 @@ export class PsychologistDetailComponent implements OnInit {
       default:
         return 'bg-amber-50 text-amber-800 ring-amber-200';
     }
+  }
+
+  providerTierLabel(provider: HopeHubProvider): string {
+    return provider.supportTierLabel || (provider.isClinicalCare ? 'Professional care' : 'Support');
+  }
+
+  providerRoleDescription(provider: HopeHubProvider): string {
+    return (
+      provider.supportRoleDescription ||
+      'Hope Hub support for emotional wellness and guided conversation.'
+    );
+  }
+
+  providerScope(provider: HopeHubProvider): string {
+    return (
+      provider.supportScope || 'Support scope depends on the person’s qualification and service.'
+    );
+  }
+
+  providerBestFor(provider: HopeHubProvider): string[] {
+    return provider.supportBestFor?.length
+      ? provider.supportBestFor
+      : this.listOrFallback(provider.concernsHandled, ['Emotional support', 'Stress', 'Clarity']);
+  }
+
+  providerNotFor(provider: HopeHubProvider): string[] {
+    return provider.supportNotFor?.length
+      ? provider.supportNotFor
+      : ['Emergency care', 'Medical crisis'];
+  }
+
+  bookingCta(provider: HopeHubProvider): string {
+    return provider.bookingCtaLabel || 'Book session';
   }
 
   servicePriceLabel(service: {

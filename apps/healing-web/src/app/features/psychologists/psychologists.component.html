@@ -9,8 +9,9 @@
           Meet the care team
         </h1>
         <p class="mt-3 max-w-3xl text-sm leading-6 text-gray-700 sm:text-base">
-          Find Hope Hub mental wellness professionals, student volunteers, and peer-support volunteers.
-          Each profile is labelled clearly so you know what kind of support you are choosing.
+          Choose from verified professionals, qualified counsellors, student volunteers, peer
+          volunteers, coaches, and wellness guides. Each profile clearly shows the support level and
+          scope before you book.
         </p>
       </div>
       <a routerLink="/contact" class="btn-primary btn-sm">Book session</a>
@@ -18,8 +19,9 @@
 
     <div class="mb-6 rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm leading-6 text-emerald-950">
       <strong>Clear roles, safer support:</strong>
-      paid counselling is handled by verified mental wellness professionals. Student and peer
-      volunteers offer non-clinical listening support and follow Hope Hub safety escalation rules.
+      professionals and counsellors can offer structured counselling support. Student, peer, coach,
+      mentor, and wellness-guide sessions are non-clinical and follow Hope Hub safety escalation
+      rules.
     </div>
 
     <div class="mb-6 rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
@@ -120,8 +122,11 @@
                   class="mt-1 inline-flex rounded-full px-2.5 py-1 text-xs font-bold ring-1"
                   [class]="providerRoleBadgeClass(provider)"
                 >
-                  {{ providerRoleLabel(provider) }}
+                  {{ providerTierLabel(provider) }}
                 </span>
+                <p class="mt-2 text-xs font-bold uppercase tracking-wide text-gray-500">
+                  {{ providerRoleLabel(provider) }}
+                </p>
                 <p class="mt-2 text-sm font-semibold text-primary-800">
                   {{ provider.designation || provider.specialty || publicConfig.defaultCareRoleLabel }}
                 </p>
@@ -144,11 +149,17 @@
               </p>
             }
             <div class="relative mt-4 max-h-24 flex-1 overflow-hidden text-sm leading-6 text-gray-700">
-              {{
-                provider.bio ||
-                  'Available for private Hope Hub support and guided emotional wellness conversation.'
-              }}
+              {{ providerRoleDescription(provider) }}
+              @if (provider.bio) {
+                <span> {{ provider.bio }}</span>
+              }
               <div class="pointer-events-none absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-white to-transparent"></div>
+            </div>
+            <div class="mt-4 rounded-md border border-gray-100 bg-gray-50 p-3 text-xs leading-5 text-gray-700">
+              <p class="font-bold text-gray-900">Best for</p>
+              <p>{{ providerBestFor(provider).slice(0, 3).join(' · ') }}</p>
+              <p class="mt-2 font-bold text-gray-900">Scope</p>
+              <p>{{ providerScope(provider) }}</p>
             </div>
             @if (provider.focusAreas.length) {
               <div class="mt-4 flex flex-wrap gap-2">
@@ -182,7 +193,7 @@
                 [queryParams]="bookingQueryParams(provider, primaryService(provider))"
                 class="btn-outline btn-sm"
               >
-                Book session
+                {{ bookingCta(provider) }}
               </a>
             </div>
           </article>

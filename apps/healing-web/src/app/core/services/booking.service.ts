@@ -187,6 +187,14 @@ export type HopeHubProvider = {
     | 'STUDENT_VOLUNTEER'
     | 'VOLUNTEER';
   supportRoleLabel?: string;
+  supportTierLabel?: string;
+  supportTierTone?: string;
+  supportRoleDescription?: string;
+  supportScope?: string;
+  supportBestFor?: string[];
+  supportNotFor?: string[];
+  bookingCtaLabel?: string;
+  isClinicalCare?: boolean;
   careTeamType?: string;
   bio?: string | null;
   yearsOfExperience?: number | null;

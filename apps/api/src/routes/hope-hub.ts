@@ -637,6 +637,132 @@ async function findAvailableCareTeamService(id: string, providerId?: string) {
   });
 }
 
+function careTeamRoleDisplay(careTeamType: string, defaultLabel: string) {
+  const map: Record<
+    string,
+    {
+      label: string;
+      tierLabel: string;
+      tone: string;
+      description: string;
+      scope: string;
+      bestFor: string[];
+      notFor: string[];
+      ctaLabel: string;
+      isClinicalCare: boolean;
+    }
+  > = {
+    MENTAL_WELLNESS_PROFESSIONAL: {
+      label: 'Verified Mental Health Professional',
+      tierLabel: 'Professional care',
+      tone: 'professional',
+      description: 'Qualified support for structured mental-wellness consultations.',
+      scope:
+        'Can support structured counselling and mental-wellness care within their qualification.',
+      bestFor: ['anxiety or stress support', 'relationship concerns', 'structured counselling'],
+      notFor: [
+        'medical emergencies',
+        'instant diagnosis without assessment',
+        'psychiatric prescription'
+      ],
+      ctaLabel: 'Book consultation',
+      isClinicalCare: true
+    },
+    QUALIFIED_COUNSELLOR: {
+      label: 'Qualified Counsellor',
+      tierLabel: 'Counselling support',
+      tone: 'professional',
+      description: 'Trained counselling support for emotional concerns and guided conversations.',
+      scope: 'Can provide counselling-style support and practical coping guidance.',
+      bestFor: ['emotional clarity', 'stress and relationship support', 'guided coping tools'],
+      notFor: ['emergency crisis care', 'medicine or prescription advice', 'formal diagnosis'],
+      ctaLabel: 'Book counselling session',
+      isClinicalCare: true
+    },
+    PSYCHOLOGY_STUDENT_VOLUNTEER: {
+      label: 'Psychology Student Volunteer',
+      tierLabel: 'Supervised volunteer',
+      tone: 'student',
+      description:
+        'Student volunteer support for listening, reflection, and non-clinical guidance.',
+      scope: 'Non-clinical support. Works within Hope Hub guidance and escalation rules.',
+      bestFor: ['listening support', 'study stress', 'daily emotional check-ins'],
+      notFor: ['diagnosis', 'therapy replacement', 'high-risk or emergency concerns'],
+      ctaLabel: 'Request student volunteer talk',
+      isClinicalCare: false
+    },
+    PEER_SUPPORT_VOLUNTEER: {
+      label: 'Peer Support Volunteer',
+      tierLabel: 'Peer support',
+      tone: 'volunteer',
+      description: 'Lived-experience or community volunteer support for safe, human conversation.',
+      scope: 'Non-clinical peer listening. Escalates safety concerns to the Hope Hub team.',
+      bestFor: ['loneliness', 'breakup recovery', 'motivation and encouragement'],
+      notFor: ['clinical treatment', 'diagnosis', 'crisis or emergency support'],
+      ctaLabel: 'Request peer support',
+      isClinicalCare: false
+    },
+    NLP_COACH: {
+      label: 'NLP Coach',
+      tierLabel: 'Coaching support',
+      tone: 'coach',
+      description: 'Coaching-oriented support for goals, reframing, habits, and confidence.',
+      scope: 'Coaching support, not clinical therapy or medical care.',
+      bestFor: ['confidence', 'habit change', 'goal clarity'],
+      notFor: ['clinical diagnosis', 'emergency care', 'medical treatment'],
+      ctaLabel: 'Book coaching session',
+      isClinicalCare: false
+    },
+    LIFE_COACH: {
+      label: 'Life Coach',
+      tierLabel: 'Coaching support',
+      tone: 'coach',
+      description: 'Practical coaching for decisions, motivation, routines, and life direction.',
+      scope: 'Coaching support, not clinical therapy or medical care.',
+      bestFor: ['life direction', 'motivation', 'routine planning'],
+      notFor: ['diagnosis', 'prescription', 'crisis intervention'],
+      ctaLabel: 'Book coaching session',
+      isClinicalCare: false
+    },
+    MEDITATION_BREATHWORK_GUIDE: {
+      label: 'Meditation / Breathwork Guide',
+      tierLabel: 'Wellness guide',
+      tone: 'wellness',
+      description: 'Guided relaxation, breathwork, mindfulness, and grounding support.',
+      scope: 'Wellness practice guidance. Not a replacement for mental-health treatment.',
+      bestFor: ['relaxation', 'breathing practice', 'mindfulness routines'],
+      notFor: ['acute panic emergency', 'clinical treatment', 'medical advice'],
+      ctaLabel: 'Book guided practice',
+      isClinicalCare: false
+    },
+    CAREER_STUDY_MENTOR: {
+      label: 'Career / Study Mentor',
+      tierLabel: 'Mentor support',
+      tone: 'mentor',
+      description: 'Mentoring support for study pressure, focus, confidence, and career direction.',
+      scope: 'Mentoring and practical guidance. Not clinical counselling.',
+      bestFor: ['study stress', 'career confusion', 'focus and planning'],
+      notFor: ['clinical therapy', 'diagnosis', 'emergency support'],
+      ctaLabel: 'Book mentoring session',
+      isClinicalCare: false
+    }
+  };
+
+  return (
+    map[careTeamType] || {
+      label: defaultLabel,
+      tierLabel: 'Hope Hub support',
+      tone: 'support',
+      description: 'Hope Hub support for emotional wellness and guided conversation.',
+      scope: 'Support scope depends on the person’s qualification and service.',
+      bestFor: ['emotional support', 'wellness guidance'],
+      notFor: ['emergency care', 'medical crisis'],
+      ctaLabel: 'Book session',
+      isClinicalCare: false
+    }
+  );
+}
+
 function providerPublicPayload(
   provider: {
     id: string;
@@ -702,22 +828,7 @@ function providerPublicPayload(
     .toLowerCase();
   const careTeamType = mental?.careTeamType ?? 'MENTAL_WELLNESS_PROFESSIONAL';
   const supportRole = careTeamType;
-  const supportRoleLabel =
-    careTeamType === 'QUALIFIED_COUNSELLOR'
-      ? 'Qualified counsellor'
-      : careTeamType === 'PSYCHOLOGY_STUDENT_VOLUNTEER'
-        ? 'Psychology student volunteer'
-        : careTeamType === 'PEER_SUPPORT_VOLUNTEER'
-          ? 'Peer support volunteer'
-          : careTeamType === 'NLP_COACH'
-            ? 'NLP coach'
-            : careTeamType === 'LIFE_COACH'
-              ? 'Life coach'
-              : careTeamType === 'MEDITATION_BREATHWORK_GUIDE'
-                ? 'Meditation / breathwork guide'
-                : careTeamType === 'CAREER_STUDY_MENTOR'
-                  ? 'Career / study mentor'
-                  : defaults.careRoleLabel;
+  const roleDisplay = careTeamRoleDisplay(careTeamType, defaults.careRoleLabel);
   const activeServices = (mental?.services ?? [])
     .filter((service) => service.isActive)
     .map((service) => {
@@ -741,7 +852,15 @@ function providerPublicPayload(
     designation: provider.designation,
     department: provider.department,
     supportRole,
-    supportRoleLabel,
+    supportRoleLabel: roleDisplay.label,
+    supportTierLabel: roleDisplay.tierLabel,
+    supportTierTone: roleDisplay.tone,
+    supportRoleDescription: roleDisplay.description,
+    supportScope: roleDisplay.scope,
+    supportBestFor: roleDisplay.bestFor,
+    supportNotFor: roleDisplay.notFor,
+    bookingCtaLabel: roleDisplay.ctaLabel,
+    isClinicalCare: roleDisplay.isClinicalCare,
     careTeamType,
     bio: provider.bio,
     yearsOfExperience: provider.yearsOfExperience,
@@ -1170,20 +1289,31 @@ async function activeHopeHubServices() {
 
 function hopeHubProviderWhere(params: {
   q?: string;
+  roleGroup?: string;
   concern?: string;
   language?: string;
   modality?: string;
   sessionType?: string;
   ageGroup?: string;
 }) {
-  const { q, concern, language, modality, sessionType, ageGroup } = params;
+  const { q, roleGroup, concern, language, modality, sessionType, ageGroup } = params;
+  const roleGroupTypes: Record<string, string[]> = {
+    PROFESSIONALS: ['MENTAL_WELLNESS_PROFESSIONAL'],
+    COUNSELLORS: ['QUALIFIED_COUNSELLOR'],
+    VOLUNTEERS: ['PSYCHOLOGY_STUDENT_VOLUNTEER', 'PEER_SUPPORT_VOLUNTEER'],
+    COACHES: ['NLP_COACH', 'LIFE_COACH'],
+    WELLNESS_GUIDES: ['MEDITATION_BREATHWORK_GUIDE'],
+    MENTORS: ['CAREER_STUDY_MENTOR']
+  };
+  const roleTypes = roleGroup ? roleGroupTypes[roleGroup] || [] : [];
   return {
     showOnWebsite: true,
     user: { isActive: true },
-    ...(concern || language || modality || sessionType || ageGroup
+    ...(roleTypes.length || concern || language || modality || sessionType || ageGroup
       ? {
           mentalHealthProfile: {
             is: {
+              ...(roleTypes.length ? { careTeamType: { in: roleTypes as any[] } } : {}),
               ...(concern ? { concernsHandled: { has: concern } } : {}),
               ...(language ? { languages: { has: language } } : {}),
               ...(modality ? { modalities: { has: modality } } : {}),
@@ -1242,6 +1372,7 @@ async function activeHopeHubProviders(params: {
   page?: number;
   pageSize?: number;
   q?: string;
+  roleGroup?: string;
   concern?: string;
   language?: string;
   modality?: string;
@@ -1677,6 +1808,7 @@ hopeHubRouter.get(
         page,
         pageSize,
         q: queryText(req, 'q').trim(),
+        roleGroup: queryText(req, 'roleGroup').trim(),
         concern: queryText(req, 'concern').trim(),
         language: queryText(req, 'language').trim(),
         modality: queryText(req, 'modality').trim(),
