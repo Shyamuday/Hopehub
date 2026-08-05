@@ -38,6 +38,7 @@ import { registerAdminHopeHubOfferingRoutes } from './hope-hub-offerings.js';
 import { registerAdminAssessmentDefinitionRoutes } from './assessment-definitions.js';
 import { registerAdminPracticeRoutes } from './practices.js';
 import { registerAdminLifestyleTipRoutes } from './lifestyle-tips.js';
+import { registerAdminTelegramBotRoutes } from './telegram-bots.js';
 import { adminPermissionMiddleware } from '../../admin-route-permissions.js';
 
 export function createAdminRouter(io: SocketIoServer) {
@@ -83,6 +84,7 @@ export function createAdminRouter(io: SocketIoServer) {
   registerAdminAssessmentDefinitionRoutes(router);
   registerAdminPracticeRoutes(router);
   registerAdminLifestyleTipRoutes(router);
+  registerAdminTelegramBotRoutes(router);
 
   return router;
 }

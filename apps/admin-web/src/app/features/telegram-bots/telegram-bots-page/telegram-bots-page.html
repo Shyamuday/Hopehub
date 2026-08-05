@@ -1,0 +1,176 @@
+<div class="page">
+  <div class="page-header">
+    <div>
+      <h2>Telegram bots</h2>
+      <p class="muted">Monitor Hope Hub Care, Doctor, and Ops bots without exposing tokens.</p>
+    </div>
+    <div class="header-actions">
+      <button type="button" class="btn-sec" (click)="load()" [disabled]="loading()">Refresh</button>
+      <button type="button" class="btn-primary" (click)="setupAll()" [disabled]="saving() === 'all'">
+        {{ saving() === 'all' ? 'Updating…' : 'Setup all' }}
+      </button>
+    </div>
+  </div>
+
+  <section class="setup-panel">
+    <label>
+      Public API URL override
+      <input
+        type="url"
+        [ngModel]="publicApiUrl()"
+        (ngModelChange)="publicApiUrl.set($event)"
+        placeholder="Optional, e.g. https://api.hopehub..."
+      />
+    </label>
+    <label class="check">
+      <input
+        type="checkbox"
+        [ngModel]="dropPendingUpdates()"
+        (ngModelChange)="dropPendingUpdates.set($event)"
+      />
+      Drop pending updates during setup
+    </label>
+  </section>
+
+  @if (loading()) {
+    <p class="loading-text">Loading Telegram status...</p>
+  } @else if (error()) {
+    <p class="error">{{ error() }}</p>
+  } @else {
+    <section class="bot-grid">
+      @for (bot of bots(); track bot.kind) {
+        <article class="bot-card">
+          <div class="bot-title">
+            <div>
+              <h3>{{ bot.name }}</h3>
+              <p>{{ bot.slug }} bot · links {{ bot.expectedRole }} accounts</p>
+            </div>
+            <span class="badge" [class.off]="!bot.configured">
+              {{ bot.configured ? 'Configured' : 'Missing token' }}
+            </span>
+          </div>
+
+          <div class="metrics">
+            <span><strong>{{ bot.summary.totalSessions }}</strong> sessions</span>
+            <span><strong>{{ bot.summary.linkedSessions }}</strong> linked</span>
+            <span><strong>{{ bot.summary.activeLinkedSessions }}</strong> active</span>
+          </div>
+
+          <div class="webhook">
+            <small>Webhook</small>
+            <code>{{ webhookUrl(bot) }}</code>
+            @if (webhookIssue(bot)) {
+              <p class="issue">{{ webhookIssue(bot) }}</p>
+            }
+          </div>
+
+          <button
+            type="button"
+            class="btn-sec"
+            [disabled]="!bot.configured || saving() === bot.slug"
+            (click)="setup(bot)"
+          >
+            {{ saving() === bot.slug ? 'Updating…' : 'Update commands + webhook' }}
+          </button>
+        </article>
+      }
+    </section>
+
+    <section class="summary-strip">
+      <span><strong>{{ sessions().length }}</strong> sessions</span>
+      <span><strong>{{ linkedSessions() }}</strong> linked</span>
+      <span><strong>{{ unlinkedSessions() }}</strong> waiting/linking</span>
+      <span><strong>{{ events().length }}</strong> recent events</span>
+    </section>
+
+    <section class="panel">
+      <div class="section-header">
+        <div>
+          <h3>Linked Telegram sessions</h3>
+          <p class="muted">Use unlink when a person connected the wrong bot/account.</p>
+        </div>
+      </div>
+
+      @if (!sessions().length) {
+        <p class="empty">No Telegram sessions yet.</p>
+      } @else {
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Telegram user</th>
+                <th>Bot</th>
+                <th>Linked account</th>
+                <th>State</th>
+                <th>Updated</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (session of sessions(); track session.id) {
+                <tr>
+                  <td>
+                    <strong>{{ session.displayName }}</strong>
+                    <span>{{ session.username ? '@' + session.username : session.chatId }}</span>
+                  </td>
+                  <td>{{ session.botKind }}</td>
+                  <td>
+                    @if (session.linkedUser) {
+                      <strong>{{ session.linkedUser.name }}</strong>
+                      <span>{{ session.linkedUser.email || session.linkedUser.mobile || session.linkedUser.id }}</span>
+                      <span class="mini-badge" [class.off]="!session.linkedUser.isActive">
+                        {{ session.linkedUser.role }} · {{ session.linkedUser.isActive ? 'active' : 'inactive' }}
+                      </span>
+                    } @else {
+                      <span class="muted">Not linked</span>
+                    }
+                  </td>
+                  <td>
+                    <strong>{{ session.state }}</strong>
+                    <span>{{ session.lastCommand || 'No command yet' }}</span>
+                  </td>
+                  <td>{{ session.updatedAt | date:'medium' }}</td>
+                  <td>
+                    <button
+                      type="button"
+                      class="btn-ghost"
+                      [disabled]="!session.linkedUserId || saving() === session.id"
+                      (click)="unlink(session)"
+                    >
+                      Unlink
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </section>
+
+    <section class="panel">
+      <div class="section-header">
+        <div>
+          <h3>Recent bot events</h3>
+          <p class="muted">Latest webhook activity saved by the API.</p>
+        </div>
+      </div>
+
+      @if (!events().length) {
+        <p class="empty">No bot events yet.</p>
+      } @else {
+        <div class="event-list">
+          @for (event of events(); track event.id) {
+            <article>
+              <strong>{{ event.eventType }}</strong>
+              <span>{{ event.botKind }} · chat {{ event.chatId || '-' }} · update {{ event.updateId || '-' }}</span>
+              <small>{{ event.createdAt | date:'medium' }}</small>
+            </article>
+          }
+        </div>
+      }
+    </section>
+  }
+</div>
+
+@if (toast()) { <div class="toast">{{ toast() }}</div> }

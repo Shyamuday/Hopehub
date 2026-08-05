@@ -49,6 +49,7 @@ import { SafetyFlagsPage } from './features/safety-flags/safety-flags-page';
 import { FollowUpsPage } from './features/follow-ups/follow-ups-page';
 import { PracticesPage } from './features/practices/practices-page';
 import { LifestyleTipsAdminPage } from './features/lifestyle-tips-admin/lifestyle-tips-admin-page';
+import { TelegramBotsPage } from './features/telegram-bots/telegram-bots-page/telegram-bots-page';
 
 const guard = [adminPermissionGuard];
 
@@ -100,6 +101,7 @@ export const routes: Routes = [
         component: NotificationsInboxPage,
         canActivate: guard,
       },
+      { path: ROUTE_PATHS.TELEGRAM_BOTS, component: TelegramBotsPage, canActivate: guard },
       { path: ROUTE_PATHS.ADMIN_USERS, component: AdminUsersPage, canActivate: guard },
       { path: ROUTE_PATHS.STAFF, component: StaffPage, canActivate: guard },
       { path: ROUTE_PATHS.ECOSYSTEM_USERS, component: EcosystemUsersPage, canActivate: guard },

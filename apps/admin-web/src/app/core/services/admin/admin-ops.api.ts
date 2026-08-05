@@ -172,11 +172,63 @@ export class AdminOpsApi extends AdminApiBase {
     );
   }
 
+  setUserRole(id: string, role: string) {
+    return firstValueFrom(
+      this.http.patch<{ user: any }>(`${this.apiBase}${API_PATHS.ADMIN.USER_ROLE(id)}`, { role }),
+    );
+  }
+
+  setUserStatus(id: string, isActive: boolean) {
+    return firstValueFrom(
+      this.http.patch<{ user: any }>(`${this.apiBase}${API_PATHS.ADMIN.USER_STATUS(id)}`, {
+        isActive,
+      }),
+    );
+  }
+
   setAdminStatus(id: string, isActive: boolean) {
     return firstValueFrom(
       this.http.patch<{ admin: any }>(`${this.apiBase}${API_PATHS.ADMIN.ADMIN_STATUS(id)}`, {
         isActive,
       }),
+    );
+  }
+
+  getTelegramBots() {
+    return firstValueFrom(
+      this.http.get<{ bots: any[]; sessions: any[]; events: any[] }>(
+        `${this.apiBase}${API_PATHS.ADMIN.TELEGRAM_BOTS}`,
+      ),
+    );
+  }
+
+  setupTelegramBot(
+    slug: string,
+    payload?: { dropPendingUpdates?: boolean; publicApiUrl?: string },
+  ) {
+    return firstValueFrom(
+      this.http.post<{ ok: boolean; webhook: unknown }>(
+        `${this.apiBase}${API_PATHS.ADMIN.TELEGRAM_BOT_SETUP(slug)}`,
+        payload ?? {},
+      ),
+    );
+  }
+
+  setupAllTelegramBots(payload?: { dropPendingUpdates?: boolean; publicApiUrl?: string }) {
+    return firstValueFrom(
+      this.http.post<{ ok: boolean; results: unknown[] }>(
+        `${this.apiBase}${API_PATHS.ADMIN.TELEGRAM_BOTS_SETUP_ALL}`,
+        payload ?? {},
+      ),
+    );
+  }
+
+  unlinkTelegramBotSession(id: string) {
+    return firstValueFrom(
+      this.http.post<{ session: any }>(
+        `${this.apiBase}${API_PATHS.ADMIN.TELEGRAM_BOT_SESSION_UNLINK(id)}`,
+        {},
+      ),
     );
   }
 

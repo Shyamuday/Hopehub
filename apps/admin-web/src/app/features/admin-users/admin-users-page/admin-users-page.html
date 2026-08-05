@@ -90,10 +90,33 @@
                   <strong>{{ user.name }}</strong>
                   <span>{{ user.patientCode || user.doctorProfile?.specialty || user.homeClinicStore?.name || user.id }}</span>
                 </td>
-                <td><span class="role-pill">{{ user.role }}</span></td>
+                <td>
+                  <select
+                    class="inline-select"
+                    [ngModel]="user.role"
+                    [disabled]="userUpdating() === user.id"
+                    (ngModelChange)="changeUserRole(user, $event)"
+                    [title]="'Change role for ' + user.name"
+                  >
+                    @for (role of roles(); track role) {
+                      <option [value]="role">{{ role }}</option>
+                    }
+                  </select>
+                  <small class="hint">Bot expects {{ user.role === 'ADMIN' ? 'Ops' : user.role === 'DOCTOR' ? 'Doctor' : user.role === 'PATIENT' ? 'Care' : 'web' }} access</small>
+                </td>
                 <td>{{ user.email || '-' }}</td>
                 <td>{{ user.mobile || '-' }}</td>
-                <td><span class="badge" [class.off]="!user.isActive">{{ user.isActive ? 'Active' : 'Inactive' }}</span></td>
+                <td>
+                  <button
+                    type="button"
+                    class="status-toggle"
+                    [class.off]="!user.isActive"
+                    [disabled]="userUpdating() === user.id"
+                    (click)="toggleUserStatus(user)"
+                  >
+                    {{ user.isActive ? 'Active' : 'Inactive' }}
+                  </button>
+                </td>
                 <td>{{ user.createdAt | date:'mediumDate' }}</td>
               </tr>
             }

@@ -72,6 +72,10 @@ export async function setTelegramCommands(kind: TelegramBotKind) {
   });
 }
 
+export function getTelegramWebhookInfo(kind: TelegramBotKind) {
+  return callTelegramApi(kind, 'getWebhookInfo', {});
+}
+
 export function telegramBotStatus() {
   return Object.values(TelegramBotKind).map((kind) => ({
     kind,

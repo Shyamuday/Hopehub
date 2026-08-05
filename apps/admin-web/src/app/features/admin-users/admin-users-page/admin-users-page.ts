@@ -26,6 +26,7 @@ export class AdminUsersPage implements OnInit {
   loading = signal(true);
   usersLoading = signal(true);
   saving = signal(false);
+  userUpdating = signal('');
   modal = signal(false);
   error = signal('');
   usersError = signal('');
@@ -149,6 +150,46 @@ export class AdminUsersPage implements OnInit {
       this.showToast(`${admin.name} ${admin.isActive ? 'deactivated' : 'activated'}.`);
     } catch (e: any) {
       this.showToast(e?.error?.message || 'Could not update status.');
+    }
+  }
+
+  async changeUserRole(user: any, role: string) {
+    if (!role || role === user.role) return;
+    const previousRole = user.role;
+    this.userUpdating.set(user.id);
+    this.users.update((list) => list.map((row) => (row.id === user.id ? { ...row, role } : row)));
+    try {
+      const response = await this.api.setUserRole(user.id, role);
+      this.users.update((list) =>
+        list.map((row) => (row.id === user.id ? { ...row, ...response.user } : row)),
+      );
+      await this.load();
+      await this.loadUsers(this.pagination().page);
+      this.showToast(`${user.name} role updated to ${role}.`);
+    } catch (e: any) {
+      this.users.update((list) =>
+        list.map((row) => (row.id === user.id ? { ...row, role: previousRole } : row)),
+      );
+      this.showToast(e?.error?.message || 'Could not update user role.');
+    } finally {
+      this.userUpdating.set('');
+    }
+  }
+
+  async toggleUserStatus(user: any) {
+    const nextStatus = !user.isActive;
+    this.userUpdating.set(user.id);
+    try {
+      const response = await this.api.setUserStatus(user.id, nextStatus);
+      this.users.update((list) =>
+        list.map((row) => (row.id === user.id ? { ...row, ...response.user } : row)),
+      );
+      if (response.user.role === 'ADMIN') await this.load();
+      this.showToast(`${user.name} ${nextStatus ? 'activated' : 'deactivated'}.`);
+    } catch (e: any) {
+      this.showToast(e?.error?.message || 'Could not update user status.');
+    } finally {
+      this.userUpdating.set('');
     }
   }
 

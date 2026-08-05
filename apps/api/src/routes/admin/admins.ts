@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { Role, Prisma } from '@prisma/client';
+import { z } from 'zod';
 import { authRequired, allowRoles } from '../../auth.js';
 import { prisma } from '../../db.js';
 import {
@@ -11,6 +12,22 @@ import {
 } from '../../utils/helpers.js';
 
 const allRoles = Object.values(Role);
+const userRoleSchema = z.object({ role: z.nativeEnum(Role) });
+const userStatusSchema = z.object({ isActive: z.boolean() });
+
+const userListSelect = {
+  id: true,
+  name: true,
+  email: true,
+  mobile: true,
+  role: true,
+  isActive: true,
+  patientCode: true,
+  createdAt: true,
+  updatedAt: true,
+  homeClinicStore: { select: { id: true, name: true, code: true } },
+  doctorProfile: { select: { id: true, specialty: true } }
+} satisfies Prisma.UserSelect;
 
 function toUserListItem(user: {
   id: string;
@@ -99,19 +116,7 @@ export function registerAdminUserRoutes(router: Router) {
         prisma.user.count({ where }),
         prisma.user.findMany({
           where,
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            mobile: true,
-            role: true,
-            isActive: true,
-            patientCode: true,
-            createdAt: true,
-            updatedAt: true,
-            homeClinicStore: { select: { id: true, name: true, code: true } },
-            doctorProfile: { select: { id: true, specialty: true } }
-          },
+          select: userListSelect,
           orderBy,
           skip: (page - 1) * pageSize,
           take: pageSize
@@ -131,6 +136,106 @@ export function registerAdminUserRoutes(router: Router) {
         },
         pagination: { page, pageSize, total, totalPages: Math.max(1, Math.ceil(total / pageSize)) }
       });
+    })
+  );
+
+  router.patch(
+    '/admin/users/:id/role',
+    authRequired,
+    allowRoles(Role.ADMIN),
+    asyncRoute(async (req, res) => {
+      const userId = routeParam(req, 'id');
+      const parsed = userRoleSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ message: 'A valid role is required.' });
+      }
+
+      if (userId === req.user!.id && parsed.data.role !== Role.ADMIN) {
+        return res.status(400).json({ message: 'You cannot remove your own admin role.' });
+      }
+
+      const existing = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { id: true, name: true, email: true, role: true, isActive: true }
+      });
+      if (!existing) return res.status(404).json({ message: 'User not found.' });
+
+      if (existing.role === Role.ADMIN && parsed.data.role !== Role.ADMIN) {
+        const otherActiveAdmins = await prisma.user.count({
+          where: { id: { not: userId }, role: Role.ADMIN, isActive: true }
+        });
+        if (otherActiveAdmins === 0) {
+          return res.status(400).json({ message: 'At least one active admin must remain.' });
+        }
+      }
+
+      const user = await prisma.user.update({
+        where: { id: userId },
+        data: { role: parsed.data.role },
+        select: userListSelect
+      });
+
+      await writeAuditLog({
+        actorId: req.user!.id,
+        actorRole: req.user!.role,
+        action: 'user.role.update',
+        targetType: 'user',
+        targetId: user.id,
+        summary: `Changed ${user.name}'s role from ${existing.role} to ${user.role}.`,
+        metadata: { email: user.email, previousRole: existing.role, newRole: user.role }
+      });
+
+      res.json({ user: toUserListItem(user) });
+    })
+  );
+
+  router.patch(
+    '/admin/users/:id/status',
+    authRequired,
+    allowRoles(Role.ADMIN),
+    asyncRoute(async (req, res) => {
+      const userId = routeParam(req, 'id');
+      const parsed = userStatusSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ message: 'A valid active status is required.' });
+      }
+
+      if (userId === req.user!.id && parsed.data.isActive === false) {
+        return res.status(400).json({ message: 'You cannot deactivate your own account.' });
+      }
+
+      const existing = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { id: true, name: true, email: true, role: true, isActive: true }
+      });
+      if (!existing) return res.status(404).json({ message: 'User not found.' });
+
+      if (existing.role === Role.ADMIN && parsed.data.isActive === false) {
+        const otherActiveAdmins = await prisma.user.count({
+          where: { id: { not: userId }, role: Role.ADMIN, isActive: true }
+        });
+        if (otherActiveAdmins === 0) {
+          return res.status(400).json({ message: 'At least one active admin must remain.' });
+        }
+      }
+
+      const user = await prisma.user.update({
+        where: { id: userId },
+        data: { isActive: parsed.data.isActive },
+        select: userListSelect
+      });
+
+      await writeAuditLog({
+        actorId: req.user!.id,
+        actorRole: req.user!.role,
+        action: user.isActive ? 'user.activate' : 'user.deactivate',
+        targetType: 'user',
+        targetId: user.id,
+        summary: `${user.isActive ? 'Activated' : 'Deactivated'} user ${user.name}.`,
+        metadata: { email: user.email, role: user.role, previousIsActive: existing.isActive }
+      });
+
+      res.json({ user: toUserListItem(user) });
     })
   );
 
