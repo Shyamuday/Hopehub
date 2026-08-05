@@ -1,77 +1,139 @@
 <main class="feedback-page">
   <section class="feedback-page__header">
     <div>
-      <p class="feedback-page__eyebrow">Feedback</p>
-      <h1>Share your Hope Hub experience</h1>
+      <p class="feedback-page__eyebrow">Feedback desk</p>
+      <h1>Help us improve Hope Hub</h1>
       <p>
-        Tell us what helped and what we can improve. Public reviews appear only after consent and
-        admin approval.
+        Share improvement ideas, complaints, bugs, service feedback, or a review. Complaints stay
+        private with admin; public reviews appear only after your consent and approval.
       </p>
     </div>
   </section>
 
   <section class="feedback-page__body" aria-label="Feedback form">
+    <aside class="feedback-page__notice" aria-label="Safety note">
+      <strong>Quick note:</strong>
+      Hope Hub feedback is not emergency support. If you are in immediate danger or may harm
+      yourself, contact local emergency services now. For booking help, you can also
+      <a routerLink="/contact">contact support</a>.
+    </aside>
+
     <form class="feedback-form" [formGroup]="feedbackForm" (ngSubmit)="submitFeedback()">
-      <div class="feedback-form__grid">
-        <label>
-          Name
-          <input type="text" formControlName="displayName" placeholder="Optional" />
-        </label>
+      <input type="hidden" formControlName="feedbackType" />
+
+      <div class="feedback-form__section">
+        <div>
+          <h2>What do you want to share?</h2>
+          <p>{{ selectedTypeCopy() }}</p>
+        </div>
+
+        <div class="feedback-type-grid" role="list">
+          @for (type of feedbackTypes; track type.value) {
+            <button
+              type="button"
+              class="feedback-type-card"
+              [class.feedback-type-card--active]="selectedType() === type.value"
+              (click)="selectType(type.value)"
+            >
+              <strong>{{ type.label }}</strong>
+              <span>{{ type.description }}</span>
+            </button>
+          }
+        </div>
+      </div>
+
+      <div class="feedback-form__section">
+        <div class="feedback-form__grid">
+          <label>
+            Rating
+            <select formControlName="rating">
+              <option value="5">5 - Excellent</option>
+              <option value="4">4 - Good</option>
+              <option value="3">3 - Okay</option>
+              <option value="2">2 - Needs work</option>
+              <option value="1">1 - Poor</option>
+            </select>
+          </label>
+
+          <label>
+            Page, feature, service, or team member
+            <input
+              type="text"
+              formControlName="pageOrFeature"
+              placeholder="Optional, e.g. Telegram bot, payment, care team"
+            />
+          </label>
+        </div>
 
         <label>
-          Email
-          <input type="email" formControlName="email" placeholder="Optional" />
-        </label>
-
-        <label>
-          City
-          <input type="text" formControlName="location" placeholder="Optional" />
-        </label>
-
-        <label>
-          Rating
-          <select formControlName="stars">
-            <option value="5">5 stars</option>
-            <option value="4">4 stars</option>
-            <option value="3">3 stars</option>
-            <option value="2">2 stars</option>
-            <option value="1">1 star</option>
-          </select>
+          Your feedback *
+          <textarea
+            rows="7"
+            formControlName="message"
+            placeholder="Tell us what happened, what confused you, or what we should improve."
+          ></textarea>
+          @if (hasError('message')) {
+            <span class="feedback-form__error">Please write at least 15 characters.</span>
+          }
         </label>
       </div>
 
-      <label>
-        Support area
-        <input type="text" formControlName="supportArea" placeholder="Optional" />
-      </label>
+      <div class="feedback-form__section">
+        <div>
+          <h2>Contact preference</h2>
+          <p>Keep it anonymous, or allow the team to follow up if needed.</p>
+        </div>
 
-      <label>
-        Review
-        <textarea
-          rows="6"
-          formControlName="quote"
-          placeholder="Share what helped or what we can improve."
-        ></textarea>
-        @if (hasError('quote')) {
-          <span class="feedback-form__error">Please write at least 20 characters.</span>
-        }
-      </label>
+        <div class="feedback-form__grid">
+          <label>
+            Name
+            <input type="text" formControlName="name" placeholder="Optional" />
+          </label>
+
+          <label>
+            Email
+            <input type="email" formControlName="email" placeholder="Optional" />
+            @if (hasError('email')) {
+              <span class="feedback-form__error">Please enter a valid email.</span>
+            }
+          </label>
+
+          <label>
+            Phone / WhatsApp
+            <input type="tel" formControlName="phone" placeholder="Optional" />
+          </label>
+
+          <label>
+            Preferred follow-up
+            <select formControlName="preferredContact">
+              <option value="none">No follow-up needed</option>
+              <option value="whatsapp">WhatsApp</option>
+              <option value="telegram">Telegram</option>
+              <option value="phone">Phone call</option>
+              <option value="email">Email</option>
+            </select>
+          </label>
+        </div>
+      </div>
 
       <div class="feedback-form__options">
         <label class="feedback-form__check">
+          <input type="checkbox" formControlName="allowFollowUp" />
+          <span>Hope Hub may contact me about this feedback if needed.</span>
+        </label>
+
+        <label class="feedback-form__check">
           <input type="checkbox" formControlName="isAnonymous" />
-          <span>Show my review anonymously if published.</span>
+          <span>Keep my name anonymous in internal review and any public display.</span>
         </label>
 
         <label class="feedback-form__check">
           <input type="checkbox" formControlName="consentToPublish" />
-          <span>I allow Hope Hub to publish this review after approval.</span>
+          <span>
+            If this is useful as a review, I allow Hope Hub to publish it after admin approval.
+          </span>
         </label>
       </div>
-
-      @if (hasError('consentToPublish')) {
-        <span class="feedback-form__error">Consent is required to submit a public review.</span>
-      }
 
       @if (successMessage()) {
         <p class="feedback-form__success">{{ successMessage() }}</p>
@@ -83,7 +145,7 @@
 
       <div class="feedback-form__actions">
         <button type="submit" [disabled]="isSubmitting()">
-          {{ isSubmitting() ? 'Submitting...' : 'Submit review' }}
+          {{ isSubmitting() ? 'Submitting...' : 'Submit feedback' }}
         </button>
         <a routerLink="/">Back to home</a>
       </div>

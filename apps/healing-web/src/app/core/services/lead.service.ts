@@ -56,6 +56,20 @@ export type TestimonialFeedbackPayload = {
   consentToPublish: boolean;
 };
 
+export type FeedbackPayload = {
+  feedbackType: 'IMPROVEMENT' | 'COMPLAINT' | 'BUG' | 'SERVICE_EXPERIENCE' | 'PRAISE' | 'OTHER';
+  message: string;
+  rating?: number;
+  pageOrFeature?: string;
+  name?: string;
+  email?: string;
+  phone?: string;
+  preferredContact?: 'email' | 'phone' | 'whatsapp' | 'telegram' | 'none';
+  allowFollowUp: boolean;
+  isAnonymous: boolean;
+  consentToPublish: boolean;
+};
+
 @Injectable({
   providedIn: 'root',
 })
@@ -99,6 +113,15 @@ export class LeadService {
     return this.http
       .post<{ success: boolean }>(
         `${environment.apiUrl}/testimonials`,
+        this.withBrowserContext(payload),
+      )
+      .pipe(map((response) => response.success));
+  }
+
+  sendFeedback(payload: FeedbackPayload): Observable<boolean> {
+    return this.http
+      .post<{ success: boolean }>(
+        `${environment.apiUrl}/website-leads/feedback`,
         this.withBrowserContext(payload),
       )
       .pipe(map((response) => response.success));

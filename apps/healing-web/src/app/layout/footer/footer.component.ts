@@ -199,6 +199,7 @@ export class FooterComponent {
     { label: 'Telegram', routerLink: '/telegram' },
     { label: 'About', routerLink: '/about' },
     { label: 'Careers', routerLink: '/careers' },
+    { label: 'Feedback', routerLink: '/feedback' },
     { label: 'Privacy', routerLink: '/privacy' },
     { label: 'Terms', routerLink: '/terms' },
     { label: 'Refunds', routerLink: '/refund-policy' },
