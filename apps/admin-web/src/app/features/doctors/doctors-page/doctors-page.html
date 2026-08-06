@@ -40,6 +40,14 @@
       <input id="doc-create-mobile" [formField]="createForm.mobile" placeholder="10-digit mobile" />
     </div>
     <div class="field">
+      <label class="field-label" for="doc-create-gender">Gender</label>
+      <select id="doc-create-gender" [formField]="createForm.gender">
+        @for (option of genderOptions; track option.value) {
+          <option [value]="option.value">{{ option.label }}</option>
+        }
+      </select>
+    </div>
+    <div class="field">
       <label class="field-label" for="doc-create-password">Password</label>
       <span class="password-input-wrap">
         <input
@@ -418,6 +426,14 @@
         <div class="field">
           <label class="field-label" for="doc-edit-mobile">Mobile</label>
           <input id="doc-edit-mobile" [formField]="editForm.mobile" placeholder="10-digit mobile" />
+        </div>
+        <div class="field">
+          <label class="field-label" for="doc-edit-gender">Gender</label>
+          <select id="doc-edit-gender" [formField]="editForm.gender">
+            @for (option of genderOptions; track option.value) {
+              <option [value]="option.value">{{ option.label }}</option>
+            }
+          </select>
         </div>
         <div class="field">
           <label class="field-label" for="doc-edit-type">Doctor type</label>

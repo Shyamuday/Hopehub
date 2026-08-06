@@ -164,6 +164,19 @@
                     {{ provider.yearsOfExperience }}+ years experience
                   </p>
                 }
+                @if (genderLabel(provider) || languagesLabel(provider)) {
+                  <p class="mt-1 text-xs font-medium text-gray-600">
+                    @if (genderLabel(provider)) {
+                      <span>{{ genderLabel(provider) }}</span>
+                    }
+                    @if (genderLabel(provider) && languagesLabel(provider)) {
+                      <span> · </span>
+                    }
+                    @if (languagesLabel(provider)) {
+                      <span>{{ languagesLabel(provider) }}</span>
+                    }
+                  </p>
+                }
                 @if (primaryService(provider); as service) {
                   <p class="mt-1 text-xs font-bold text-gray-700">
                     {{ service.pricingLabel || (service.isFree ? 'Free' : ('₹' + ((service.effectivePriceInPaise ?? service.priceInPaise) / 100))) }} ·

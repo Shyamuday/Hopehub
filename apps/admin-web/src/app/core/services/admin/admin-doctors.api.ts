@@ -83,6 +83,7 @@ export class AdminDoctorsApi extends AdminApiBase {
     payload: {
       name: string;
       email: string;
+      gender?: 'MALE' | 'FEMALE' | 'OTHER' | 'PREFER_NOT_TO_SAY' | null;
       mobile?: string;
       specialty?: string;
       registrationNo?: string;
@@ -146,6 +147,7 @@ export class AdminDoctorsApi extends AdminApiBase {
   createDoctor(payload: {
     name: string;
     email: string;
+    gender?: 'MALE' | 'FEMALE' | 'OTHER' | 'PREFER_NOT_TO_SAY' | null;
     mobile?: string;
     password: string;
     specialty?: string;

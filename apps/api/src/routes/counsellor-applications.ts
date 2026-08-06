@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { CareTeamMemberType } from '@prisma/client';
+import { CareTeamMemberType, PatientGender } from '@prisma/client';
 import { prisma } from '../db.js';
 import { notifyAdminsAboutProviderApplication } from '../services/provider-application-notifications.js';
 import { asyncRoute } from '../utils/helpers.js';
@@ -20,6 +20,7 @@ export const counsellorApplicationSchema = z
     fullName: z.string().trim().min(2).max(120),
     email: z.string().trim().email().max(254),
     phone: z.string().trim().min(5).max(30),
+    gender: z.nativeEnum(PatientGender).optional().nullable(),
     city: z.string().trim().min(2).max(120),
     qualification: optionalText(180),
     qualifiedFrom: optionalText(240),
@@ -119,6 +120,7 @@ counsellorApplicationsRouter.post(
         fullName: body.fullName,
         email: body.email,
         phone: body.phone,
+        gender: body.gender ?? null,
         city: body.city,
         qualification: body.qualification || null,
         qualifiedFrom: body.qualifiedFrom || null,

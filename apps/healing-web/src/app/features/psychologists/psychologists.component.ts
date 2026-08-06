@@ -360,6 +360,24 @@ export class PsychologistsComponent implements OnInit {
     return provider.supportTierLabel || (provider.isClinicalCare ? 'Professional care' : 'Support');
   }
 
+  genderLabel(provider: HopeHubProvider): string {
+    const labels: Record<string, string> = {
+      FEMALE: 'Female',
+      MALE: 'Male',
+      OTHER: 'Other',
+      PREFER_NOT_TO_SAY: 'Prefer not to say',
+    };
+    return provider.gender ? labels[provider.gender] || provider.gender : '';
+  }
+
+  languagesLabel(provider: HopeHubProvider, limit = 3): string {
+    const languages = provider.languages ?? [];
+    if (!languages.length) return '';
+    const visible = languages.slice(0, limit).join(', ');
+    const extra = languages.length > limit ? ` +${languages.length - limit}` : '';
+    return `${visible}${extra}`;
+  }
+
   providerRoleDescription(provider: HopeHubProvider): string {
     return (
       provider.supportRoleDescription ||

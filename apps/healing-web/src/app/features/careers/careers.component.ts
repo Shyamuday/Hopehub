@@ -115,6 +115,13 @@ export class CareersComponent {
     { value: ContactMethod.EMAIL, label: 'Email' },
     { value: ContactMethod.PHONE, label: 'Phone' },
   ];
+  readonly genderOptions: FormDropdownOption[] = [
+    { value: '', label: 'Select gender' },
+    { value: 'FEMALE', label: 'Female' },
+    { value: 'MALE', label: 'Male' },
+    { value: 'OTHER', label: 'Other' },
+    { value: 'PREFER_NOT_TO_SAY', label: 'Prefer not to say' },
+  ];
 
   readonly applicationForm = this.formBuilder.group({
     applicationTrack: ['PROFESSIONAL_PSYCHOLOGIST' as CareContributorTrack, [Validators.required]],
@@ -122,6 +129,7 @@ export class CareersComponent {
     fullName: ['', [Validators.required, Validators.minLength(2)]],
     email: ['', [Validators.required, Validators.email]],
     phone: ['', [Validators.required]],
+    gender: [''],
     city: ['', [Validators.required]],
     qualification: ['', [Validators.required]],
     qualifiedFrom: [''],
@@ -184,6 +192,7 @@ export class CareersComponent {
           fullName: value.fullName || '',
           email: value.email || '',
           phone: value.phone || '',
+          gender: (value.gender as 'MALE' | 'FEMALE' | 'OTHER' | 'PREFER_NOT_TO_SAY') || null,
           city: value.city || '',
           qualification: value.qualification || '',
           qualifiedFrom: value.qualifiedFrom || '',

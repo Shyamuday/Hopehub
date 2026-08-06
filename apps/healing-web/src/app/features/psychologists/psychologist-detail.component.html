@@ -42,6 +42,9 @@
               @if (p.yearsOfExperience) {
                 <p>{{ p.yearsOfExperience }}+ years experience</p>
               }
+              @if (genderLabel(p)) {
+                <p>Gender: {{ genderLabel(p) }}</p>
+              }
               @if (p.sessionFeeInPaise != null) {
                 <p>₹{{ p.sessionFeeInPaise / 100 | number: '1.0-0' }} · {{ sessionLabel(p) }}</p>
               }
@@ -217,7 +220,7 @@
                 Show less
               </button>
             }
-            <p><strong>Languages:</strong> {{ listOrEmpty(p.languages).join(', ') }}</p>
+            <p><strong>Languages:</strong> {{ listOrEmpty(p.languages).join(', ') || 'Not listed' }}</p>
           </div>
         </article>
       </section>

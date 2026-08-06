@@ -51,6 +51,7 @@
                 <p><strong>Qualification:</strong> {{ application.qualification || 'Not required for this pathway' }}</p>
                 <p><strong>Qualified from:</strong> {{ application.qualifiedFrom || 'Not provided' }}</p>
                 <p><strong>Experience:</strong> {{ application.experienceYears || 'Not provided' }}</p>
+                <p><strong>Gender:</strong> {{ genderLabel(application.gender) }}</p>
                 <p><strong>Languages:</strong> {{ application.languages }}</p>
                 <p><strong>Availability:</strong> {{ application.availability }}</p>
                 <p><strong>Preferred contact:</strong> {{ application.preferredChannel }}</p>

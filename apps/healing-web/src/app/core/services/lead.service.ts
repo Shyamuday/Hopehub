@@ -16,6 +16,7 @@ export type CounsellorApplicationPayload = {
   fullName: string;
   email: string;
   phone: string;
+  gender?: 'MALE' | 'FEMALE' | 'OTHER' | 'PREFER_NOT_TO_SAY' | null;
   city: string;
   qualification: string;
   qualifiedFrom?: string;

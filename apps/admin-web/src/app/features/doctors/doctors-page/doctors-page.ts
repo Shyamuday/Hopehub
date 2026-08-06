@@ -26,6 +26,7 @@ type Doctor = {
   id: string;
   name: string;
   email?: string;
+  gender?: ProviderGender | null;
   mobile?: string;
   isActive: boolean;
   createdAt?: string;
@@ -63,6 +64,7 @@ type Doctor = {
 };
 
 type SiteConfigEntry = { key: string; value: string; label: string; description: string };
+type ProviderGender = 'MALE' | 'FEMALE' | 'OTHER' | 'PREFER_NOT_TO_SAY';
 type CareTeamMemberType =
   | 'MENTAL_WELLNESS_PROFESSIONAL'
   | 'QUALIFIED_COUNSELLOR'
@@ -116,6 +118,7 @@ function emptyCreateModel() {
   return {
     name: '',
     email: '',
+    gender: '' as ProviderGender | '',
     mobile: '',
     password: '',
     specialty: '',
@@ -140,6 +143,7 @@ function emptyEditModel() {
   return {
     name: '',
     email: '',
+    gender: '' as ProviderGender | '',
     mobile: '',
     specialty: '',
     registrationNo: '',
@@ -202,6 +206,13 @@ export class DoctorsPage {
     { value: 'LIFE_COACH', label: 'Life coach' },
     { value: 'MEDITATION_BREATHWORK_GUIDE', label: 'Meditation / breathwork guide' },
     { value: 'CAREER_STUDY_MENTOR', label: 'Career / study mentor' },
+  ];
+  readonly genderOptions: Array<{ value: ProviderGender | ''; label: string }> = [
+    { value: '', label: 'Prefer not to show' },
+    { value: 'FEMALE', label: 'Female' },
+    { value: 'MALE', label: 'Male' },
+    { value: 'OTHER', label: 'Other' },
+    { value: 'PREFER_NOT_TO_SAY', label: 'Prefer not to say' },
   ];
   readonly specialtyFocusOptions = SPECIALTY_FOCUS_OPTIONS;
   readonly clinicalRecordsRoute = adminRouteLink(ROUTE_PATHS.CLINICAL_RECORDS);
@@ -365,6 +376,7 @@ export class DoctorsPage {
       await this.api.updateDoctor(doctorId, {
         name: edit.name.trim(),
         email: edit.email.trim(),
+        gender: edit.gender || null,
         mobile: edit.mobile.trim(),
         specialty: editSpecialty,
         registrationNo: edit.registrationNo.trim(),
@@ -431,6 +443,7 @@ export class DoctorsPage {
       await this.api.createDoctor({
         name: create.name.trim(),
         email: create.email.trim(),
+        gender: create.gender || null,
         mobile: create.mobile.trim(),
         password: create.password,
         specialty: createSpecialty,
@@ -645,6 +658,7 @@ export class DoctorsPage {
     this.editModel.set({
       name: selected.name || '',
       email: selected.email || '',
+      gender: selected.gender || '',
       mobile: selected.mobile || '',
       specialty: selected.doctorProfile?.specialty || '',
       registrationNo: selected.doctorProfile?.registrationNo || '',

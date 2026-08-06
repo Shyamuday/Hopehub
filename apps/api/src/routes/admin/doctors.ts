@@ -4,6 +4,7 @@ import {
   CareTeamMemberType,
   CareTeamServicePricingMode,
   HomeopathicDoctorType,
+  PatientGender,
   Role
 } from '@prisma/client';
 import bcrypt from 'bcryptjs';
@@ -193,6 +194,7 @@ export function registerAdminDoctorRoutes(router: Router) {
         where,
         select: {
           ...publicUserSelect,
+          gender: true,
           isActive: true,
           createdAt: true,
           doctorProfile: { select: doctorProfileSelect }
@@ -238,6 +240,7 @@ export function registerAdminDoctorRoutes(router: Router) {
         where,
         select: {
           ...publicUserSelect,
+          gender: true,
           isActive: true,
           createdAt: true,
           doctorProfile: { select: doctorProfileSelect }
@@ -340,6 +343,7 @@ export function registerAdminDoctorRoutes(router: Router) {
           name: z.string().min(2),
           email: z.string().email(),
           mobile: z.string().min(8).optional(),
+          gender: z.nativeEnum(PatientGender).optional().nullable(),
           password: z.string().min(8),
           specialty: z.string().min(2).optional(),
           registrationNo: z.string().optional(),
@@ -369,6 +373,7 @@ export function registerAdminDoctorRoutes(router: Router) {
           name: body.name,
           email: body.email,
           mobile: body.mobile,
+          gender: body.gender ?? null,
           passwordHash,
           role: Role.DOCTOR,
           doctorProfile: {
@@ -387,7 +392,11 @@ export function registerAdminDoctorRoutes(router: Router) {
             }
           }
         },
-        select: { ...publicUserSelect, doctorProfile: { select: doctorProfileSelect } }
+        select: {
+          ...publicUserSelect,
+          gender: true,
+          doctorProfile: { select: doctorProfileSelect }
+        }
       });
       await writeAuditLog({
         actorId: req.user!.id,
@@ -415,6 +424,7 @@ export function registerAdminDoctorRoutes(router: Router) {
           name: true,
           email: true,
           mobile: true,
+          gender: true,
           isActive: true,
           doctorProfile: {
             select: {
@@ -437,6 +447,7 @@ export function registerAdminDoctorRoutes(router: Router) {
           name: z.string().min(2),
           email: z.string().email(),
           mobile: z.string().min(8).optional().or(z.literal('')),
+          gender: z.nativeEnum(PatientGender).optional().nullable(),
           specialty: z.string().min(2).optional(),
           registrationNo: z.string().optional().or(z.literal('')),
           designation: z.string().optional().or(z.literal('')),
@@ -498,6 +509,7 @@ export function registerAdminDoctorRoutes(router: Router) {
         data: {
           name: body.name,
           email: body.email,
+          gender: body.gender ?? null,
           mobile: body.mobile || null,
           doctorProfile: {
             upsert: {
@@ -524,6 +536,7 @@ export function registerAdminDoctorRoutes(router: Router) {
         },
         select: {
           ...publicUserSelect,
+          gender: true,
           isActive: true,
           doctorProfile: { select: doctorProfileSelect }
         }
@@ -540,6 +553,7 @@ export function registerAdminDoctorRoutes(router: Router) {
             name: existing.name,
             email: existing.email,
             mobile: existing.mobile,
+            gender: existing.gender,
             isActive: existing.isActive,
             specialty: existing.doctorProfile?.specialty ?? null,
             registrationNo: existing.doctorProfile?.registrationNo ?? null,
@@ -552,6 +566,7 @@ export function registerAdminDoctorRoutes(router: Router) {
           after: {
             name: body.name,
             email: body.email,
+            gender: body.gender ?? null,
             mobile: body.mobile || null,
             specialty: profilePayload.specialty,
             registrationNo: profilePayload.registrationNo,

@@ -1131,6 +1131,16 @@ const careTeamTypeOptions: Array<{
 const careTeamTypeLabels = Object.fromEntries(
   careTeamTypeOptions.map((option) => [option.type, option.label])
 ) as Record<CareTeamMemberType, string>;
+const providerGenderOptions: Record<string, 'MALE' | 'FEMALE' | 'OTHER' | 'PREFER_NOT_TO_SAY'> = {
+  male: 'MALE',
+  m: 'MALE',
+  female: 'FEMALE',
+  f: 'FEMALE',
+  other: 'OTHER',
+  prefer: 'PREFER_NOT_TO_SAY',
+  'prefer not to say': 'PREFER_NOT_TO_SAY',
+  skip: 'PREFER_NOT_TO_SAY'
+};
 
 function providerApplicationOf(session: TelegramSession) {
   return metadataOf(session).pendingProviderApplication ?? {};
@@ -1256,7 +1266,7 @@ async function handleProviderApplicationText(
       return true;
     }
     await updateSession(session, {
-      state: 'WAITING_PROVIDER_APPLICATION_QUALIFICATION',
+      state: 'WAITING_PROVIDER_APPLICATION_GENDER',
       metadata: {
         ...metadata,
         pendingProviderApplication: {
@@ -1267,13 +1277,38 @@ async function handleProviderApplicationText(
         }
       } as Prisma.InputJsonValue
     });
+    await sendTelegramMessage(kind, {
+      chat_id: session.chatId,
+      text: 'Please send gender for matching: male / female / other / skip.',
+      reply_markup: { inline_keyboard: menuCancelRows() }
+    });
+    return true;
+  }
+
+  if (session.state === 'WAITING_PROVIDER_APPLICATION_GENDER') {
+    const gender = providerGenderOptions[text.trim().toLowerCase()];
+    if (!gender) {
+      await sendTelegramMessage(kind, {
+        chat_id: session.chatId,
+        text: 'Please reply with male, female, other, or skip.',
+        reply_markup: { inline_keyboard: menuCancelRows() }
+      });
+      return true;
+    }
+    await updateSession(session, {
+      state: 'WAITING_PROVIDER_APPLICATION_QUALIFICATION',
+      metadata: {
+        ...metadata,
+        pendingProviderApplication: { ...pending, gender }
+      } as Prisma.InputJsonValue
+    });
     const track = pending.applicationTrack;
     await sendTelegramMessage(kind, {
       chat_id: session.chatId,
       text:
         track === 'PROFESSIONAL_PSYCHOLOGIST'
           ? [
-              'Send professional details in 4 lines:',
+              'Send professional details in 5 lines:',
               '',
               'Qualification',
               'Qualified from / institute',
@@ -1435,6 +1470,7 @@ async function finishProviderApplication(
       fullName: pending.fullName || telegramDisplayName(session),
       email: pending.email || `${session.chatId}@telegram.local`,
       phone: pending.phone || session.chatId,
+      gender: pending.gender || null,
       city: pending.city || 'Not provided',
       qualification: pending.qualification || null,
       qualifiedFrom: pending.qualifiedFrom || null,

@@ -170,6 +170,7 @@ export type HopeHubProvider = {
   slug?: string;
   userId: string;
   name: string;
+  gender?: 'MALE' | 'FEMALE' | 'OTHER' | 'PREFER_NOT_TO_SAY' | null;
   profileImageUrl?: string | null;
   specialty?: string | null;
   designation?: string | null;

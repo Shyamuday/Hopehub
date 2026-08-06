@@ -82,6 +82,7 @@ export type SessionMetadata = {
     fullName?: string;
     email?: string;
     phone?: string;
+    gender?: 'MALE' | 'FEMALE' | 'OTHER' | 'PREFER_NOT_TO_SAY';
     city?: string;
     qualification?: string;
     qualifiedFrom?: string;

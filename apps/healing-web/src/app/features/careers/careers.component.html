@@ -119,6 +119,15 @@
             </label>
 
             <label>
+              <span>Gender</span>
+              <app-form-dropdown
+                formControlName="gender"
+                placeholder="Prefer not to say"
+                [options]="genderOptions"
+              ></app-form-dropdown>
+            </label>
+
+            <label>
               <span>City / State *</span>
               <input type="text" formControlName="city" placeholder="City, State" />
               @if (hasError('city')) {

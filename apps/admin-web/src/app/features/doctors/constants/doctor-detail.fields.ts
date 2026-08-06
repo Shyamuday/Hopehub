@@ -8,6 +8,7 @@ import {
 
 export type DoctorDetailSource = {
   email?: string;
+  gender?: 'MALE' | 'FEMALE' | 'OTHER' | 'PREFER_NOT_TO_SAY' | null;
   mobile?: string;
   isActive: boolean;
   doctorProfile?: {
@@ -22,11 +23,27 @@ export type DoctorDetailSource = {
     showOnWebsite?: boolean;
     websiteOrder?: number | null;
     focusAreas?: string[];
+    mentalHealthProfile?: {
+      languages?: string[];
+    } | null;
   };
 };
 
 export const DOCTOR_DETAIL_FIELDS: DetailFieldDef<DoctorDetailSource>[] = [
   { label: 'Email', getValue: (d) => d.email, emptyText: 'N/A' },
+  {
+    label: 'Gender',
+    getValue: (d) => {
+      const labels: Record<string, string> = {
+        FEMALE: 'Female',
+        MALE: 'Male',
+        OTHER: 'Other',
+        PREFER_NOT_TO_SAY: 'Prefer not to say',
+      };
+      return d.gender ? labels[d.gender] || d.gender : '';
+    },
+    omitWhenEmpty: true,
+  },
   { label: 'Mobile', getValue: (d) => d.mobile, emptyText: 'N/A' },
   {
     label: 'Doctor type',
@@ -51,6 +68,11 @@ export const DOCTOR_DETAIL_FIELDS: DetailFieldDef<DoctorDetailSource>[] = [
     omitWhenEmpty: true,
   },
   { label: 'Registration No', getValue: (d) => d.doctorProfile?.registrationNo, emptyText: 'N/A' },
+  {
+    label: 'Languages',
+    getValue: (d) => (d.doctorProfile?.mentalHealthProfile?.languages ?? []).join(', '),
+    omitWhenEmpty: true,
+  },
   {
     label: 'Status',
     getValue: (d) => (d.isActive ? 'Active' : 'Inactive'),

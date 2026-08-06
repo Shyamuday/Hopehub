@@ -188,6 +188,16 @@ export class CounsellorApplicationsPage implements OnInit {
     return labels[type] || type || 'Care team member';
   }
 
+  genderLabel(gender: string | null | undefined): string {
+    const labels: Record<string, string> = {
+      FEMALE: 'Female',
+      MALE: 'Male',
+      OTHER: 'Other',
+      PREFER_NOT_TO_SAY: 'Prefer not to say',
+    };
+    return gender ? labels[gender] || gender : 'Not provided';
+  }
+
   contributorStatusClass(status: string): string {
     return `status contributor-status-${status.toLowerCase()}`;
   }

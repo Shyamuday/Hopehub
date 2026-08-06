@@ -87,6 +87,7 @@ model CounsellorApplication {
   fullName            String
   email               String
   phone               String
+  gender              PatientGender?
   city                String
   qualification       String?
   qualifiedFrom       String?
@@ -132,6 +133,7 @@ model CareContributor {
   fullName                     String
   email                        String
   phone                        String
+  gender                       PatientGender?
   city                         String
   qualification                String?
   qualifiedFrom                String?

@@ -16,6 +16,7 @@ function emptyProfileModel() {
   return {
     name: '',
     email: '',
+    gender: '',
     mobile: '',
     specialty: '',
     registrationNo: '',
@@ -107,6 +108,7 @@ export class ProfilePage {
           profile: {
             name: string;
             email?: string | null;
+            gender?: 'MALE' | 'FEMALE' | 'OTHER' | 'PREFER_NOT_TO_SAY' | null;
             mobile?: string | null;
             doctorProfile?: DoctorProfileSummary | null;
           };
@@ -131,6 +133,7 @@ export class ProfilePage {
       this.profileModel.set({
         name: profile.name || '',
         email: profile.email || '',
+        gender: profile.gender || '',
         mobile: profile.mobile || '',
         specialty: profile.doctorProfile?.specialty || '',
         registrationNo: profile.doctorProfile?.registrationNo || '',
@@ -181,6 +184,7 @@ export class ProfilePage {
       await firstValueFrom(
         this.http.put(`${this.apiBase}${API_PATHS.DOCTOR.PROFILE}`, {
           name: form.name,
+          gender: form.gender || null,
           mobile: form.mobile,
           specialty: form.specialty,
           registrationNo: form.registrationNo,

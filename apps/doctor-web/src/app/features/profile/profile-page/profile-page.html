@@ -36,6 +36,15 @@
     <label for="mobile">Mobile</label>
     <input id="mobile" [formField]="profileForm.mobile" />
 
+    <label for="gender">Gender</label>
+    <select id="gender" [formField]="profileForm.gender">
+      <option value="">Prefer not to show</option>
+      <option value="FEMALE">Female</option>
+      <option value="MALE">Male</option>
+      <option value="OTHER">Other</option>
+      <option value="PREFER_NOT_TO_SAY">Prefer not to say</option>
+    </select>
+
     <label for="specialty">Specialty</label>
     <input id="specialty" [formField]="profileForm.specialty" />
 

@@ -183,6 +183,7 @@ export function registerAdminCounsellorApplicationRoutes(router: Router) {
             fullName: application.fullName,
             email: application.email,
             phone: application.phone,
+            gender: application.gender,
             city: application.city,
             qualification: application.qualification,
             qualifiedFrom: application.qualifiedFrom,

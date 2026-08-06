@@ -4,6 +4,7 @@ import {
   CareTeamMemberType,
   CareTeamServicePricingMode,
   HomeopathicDoctorType,
+  PatientGender,
   Role
 } from '@prisma/client';
 import bcrypt from 'bcryptjs';
@@ -143,6 +144,7 @@ export function registerAuthDoctorRoutes(router: Router) {
         where: { id: req.user!.id },
         select: {
           ...publicUserSelect,
+          gender: true,
           profileImageKey: true,
           profileImageUrl: true,
           isActive: true,
@@ -174,6 +176,7 @@ export function registerAuthDoctorRoutes(router: Router) {
       const body = z
         .object({
           name: z.string().min(2),
+          gender: z.nativeEnum(PatientGender).optional().nullable(),
           mobile: z.string().min(8).optional().or(z.literal('')),
           specialty: z.string().min(2),
           registrationNo: z.string().optional().or(z.literal('')),
@@ -287,6 +290,7 @@ export function registerAuthDoctorRoutes(router: Router) {
         where: { id: req.user!.id },
         data: {
           name: body.name,
+          gender: body.gender ?? null,
           mobile: body.mobile || null,
           doctorProfile: {
             upsert: {
@@ -324,6 +328,7 @@ export function registerAuthDoctorRoutes(router: Router) {
         },
         select: {
           ...publicUserSelect,
+          gender: true,
           profileImageKey: true,
           profileImageUrl: true,
           isActive: true,

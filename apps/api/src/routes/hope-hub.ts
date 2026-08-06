@@ -807,7 +807,13 @@ function providerPublicPayload(
         sortOrder: number;
       }>;
     } | null;
-    user: { id: string; name: string; profileImageKey: string | null };
+    user: {
+      id: string;
+      name: string;
+      gender: string | null;
+      profileImageKey: string | null;
+      profileImageUrl?: string | null;
+    };
   },
   defaults: HopeHubPublicDefaults
 ) {
@@ -847,6 +853,7 @@ function providerPublicPayload(
     slug: `${slugify(user.name || provider.designation || provider.specialty || 'expert')}-${provider.id}`,
     userId: user.id,
     name: user.name,
+    gender: user.gender,
     profileImageUrl: user.profileImageUrl,
     specialty: provider.specialty,
     designation: provider.designation,
@@ -1435,7 +1442,15 @@ async function activeHopeHubProviders(params: {
             }
           }
         },
-        user: { select: { id: true, name: true, profileImageKey: true, profileImageUrl: true } }
+        user: {
+          select: {
+            id: true,
+            name: true,
+            gender: true,
+            profileImageKey: true,
+            profileImageUrl: true
+          }
+        }
       },
       orderBy: [{ websiteOrder: { sort: 'asc', nulls: 'last' } }, { user: { name: 'asc' } }],
       skip: (page - 1) * pageSize,
@@ -1896,7 +1911,15 @@ hopeHubRouter.get(
             }
           }
         },
-        user: { select: { id: true, name: true, profileImageKey: true, profileImageUrl: true } }
+        user: {
+          select: {
+            id: true,
+            name: true,
+            gender: true,
+            profileImageKey: true,
+            profileImageUrl: true
+          }
+        }
       }
     });
 
