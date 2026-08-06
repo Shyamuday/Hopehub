@@ -611,6 +611,21 @@ function careTeamServicePricingPreview(service: CareTeamServicePricingInput, pre
   }
 }
 
+function quickTalkSessionPricingLabel(
+  service: CareTeamServicePricingInput | null,
+  pricing: ReturnType<typeof careTeamServicePricingPreview> | null,
+  fallbackDurationMinutes: number,
+  fallbackAmountInPaise: number
+) {
+  const durationMinutes = service?.durationMinutes || fallbackDurationMinutes;
+  const amountInPaise = pricing?.amountInPaise ?? fallbackAmountInPaise;
+  const sessionLabel = `${durationMinutes} min live session`;
+  if (amountInPaise <= 0) return `${sessionLabel} · Free`;
+  if (!pricing) return `${sessionLabel} · ${rupeeLabel(amountInPaise)}`;
+  if (pricing.appliedRule === 'PACKAGE_PRICE') return `${sessionLabel} · ${pricing.label}`;
+  return `${sessionLabel} · ${rupeeLabel(amountInPaise)}`;
+}
+
 async function previousCareTeamServiceUseCount(patientId: string, careTeamServiceId: string) {
   const consultations = await prisma.consultation.findMany({
     where: {
@@ -2327,6 +2342,12 @@ hopeHubRouter.post(
     if (amountInPaise < 0 || (!careTeamService && amountInPaise <= 0)) {
       return res.status(400).json({ message: 'Quick Talk payment is not available.' });
     }
+    const quickTalkPricingLabel = quickTalkSessionPricingLabel(
+      careTeamService,
+      careTeamServicePricing,
+      selectedServiceDurationMinutes,
+      amountInPaise
+    );
 
     const disease = await prisma.disease.upsert({
       where: { name: effectiveServiceName },
@@ -2382,7 +2403,7 @@ hopeHubRouter.post(
           careTeamServiceId: careTeamService?.id || '',
           careTeamServiceTitle: careTeamService?.title || '',
           careTeamPricingMode: careTeamService?.pricingMode || '',
-          careTeamPricingLabel: careTeamServicePricing?.label || '',
+          careTeamPricingLabel: quickTalkPricingLabel,
           careTeamPreviousUseCount: previousUseCount,
           concernCategory: body.concernCategory || '',
           preferredExpertType: body.preferredExpertType || '',
@@ -2406,7 +2427,7 @@ hopeHubRouter.post(
           careTeamServiceId: careTeamService?.id || null,
           careTeamServiceTitle: careTeamService?.title || null,
           careTeamPricingMode: careTeamService?.pricingMode || null,
-          careTeamPricingLabel: careTeamServicePricing?.label || null,
+          careTeamPricingLabel: quickTalkPricingLabel,
           careTeamPricingRule: careTeamServicePricing?.appliedRule || null,
           careTeamPreviousUseCount: previousUseCount,
           sessionDurationMinutes: selectedServiceDurationMinutes,
@@ -2432,7 +2453,7 @@ hopeHubRouter.post(
               careTeamServiceId: careTeamService?.id || null,
               careTeamServiceTitle: careTeamService?.title || null,
               careTeamPricingMode: careTeamService?.pricingMode || null,
-              careTeamPricingLabel: careTeamServicePricing?.label || null,
+              careTeamPricingLabel: quickTalkPricingLabel,
               careTeamPricingRule: careTeamServicePricing?.appliedRule || null,
               careTeamPreviousUseCount: previousUseCount,
               sessionDurationMinutes: selectedServiceDurationMinutes,

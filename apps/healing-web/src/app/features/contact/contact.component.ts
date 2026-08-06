@@ -453,6 +453,14 @@ export class ContactComponent implements OnInit {
       .join(' · ');
   }
 
+  quickTalkSessionMeta(provider: HopeHubProvider): string {
+    const service = provider.services?.[0];
+    const duration = service?.durationMinutes || provider.sessionDurationMinutes || 30;
+    const amount = service?.effectivePriceInPaise ?? provider.sessionFeeInPaise ?? 0;
+    const price = amount <= 0 ? 'Free' : this.formatPaise(amount);
+    return `${duration} min live session · ${price}`;
+  }
+
   private genderLabel(value: string): string {
     const labels: Record<string, string> = {
       FEMALE: 'Female',
