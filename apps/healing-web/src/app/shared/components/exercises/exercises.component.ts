@@ -9,7 +9,6 @@ import {
   ExerciseType,
   ExerciseDifficulty,
 } from '../../../core/models/exercise.model';
-import { ALL_EXERCISES, getExerciseById } from '../../../core/data/exercise-configs';
 import { ProgressService } from '../../../core/services/progress.service';
 import { NotificationService } from '../../../core/services/notification.service';
 import { PracticeService } from '../../../core/services/practice.service';
@@ -395,8 +394,8 @@ import {
 export class ExercisesComponent implements OnInit {
   recommendedExerciseIds = input<string[]>([]);
 
-  exercises: Exercise[] = ALL_EXERCISES;
-  filteredExercises = signal<Exercise[]>(ALL_EXERCISES);
+  exercises: Exercise[] = [];
+  filteredExercises = signal<Exercise[]>([]);
   selectedExercise = signal<Exercise | null>(null);
 
   categories: ExerciseCategory[] = Object.values(ExerciseCategory);
@@ -454,10 +453,8 @@ export class ExercisesComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (pageData) => {
-          if (pageData.exercises.length) {
-            this.exercises = pageData.exercises;
-            this.filteredExercises.set(pageData.exercises);
-          }
+          this.exercises = pageData.exercises;
+          this.filteredExercises.set(pageData.exercises);
 
           if (pageData.recommendations.length) {
             this.filteredExercises.set(pageData.recommendations);
@@ -468,21 +465,16 @@ export class ExercisesComponent implements OnInit {
           }
         },
         error: () => {
-          this.exercises = ALL_EXERCISES;
-          this.filteredExercises.set(ALL_EXERCISES);
-          if (params['recommended'])
-            this.showRecommendedExercises(params['recommended'].split(','));
-          else this.filterExercises();
+          this.exercises = [];
+          this.filteredExercises.set([]);
         },
       });
   }
 
   showRecommendedExercises(exerciseIds: string[]) {
     const recommended = exerciseIds
-      .map(
-        (id) =>
-          this.exercises.find((exercise) => exercise.id === id || exercise.sourceSlug === id) ||
-          getExerciseById(id),
+      .map((id) =>
+        this.exercises.find((exercise) => exercise.id === id || exercise.sourceSlug === id),
       )
       .filter((ex) => ex !== undefined) as Exercise[];
     if (recommended.length > 0) {

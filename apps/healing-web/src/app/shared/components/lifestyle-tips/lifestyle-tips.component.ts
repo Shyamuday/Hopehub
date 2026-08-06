@@ -22,11 +22,6 @@ import {
   LifestyleTipCategory,
   LifestyleTipDifficulty,
 } from '../../../core/models/lifestyle-tip.model';
-import {
-  ALL_LIFESTYLE_TIPS,
-  getLifestyleTipsByIds,
-} from '../../../core/data/lifestyle-tip-configs';
-import { getLifestyleTipRecommendations } from '../../../core/data/lifestyle-tip-recommendations';
 import { LifestyleTipService } from '../../../core/services/lifestyle-tip.service';
 
 @Component({
@@ -44,8 +39,8 @@ export class LifestyleTipsComponent implements OnInit {
   private isBrowser = isPlatformBrowser(this.platformId);
 
   // Signal-based state
-  allTips = signal<LifestyleTip[]>(ALL_LIFESTYLE_TIPS);
-  filteredTips = signal<LifestyleTip[]>(ALL_LIFESTYLE_TIPS);
+  allTips = signal<LifestyleTip[]>([]);
+  filteredTips = signal<LifestyleTip[]>([]);
   recommendedTips = signal<LifestyleTip[]>([]);
   relatedTips = signal<LifestyleTip[]>([]);
 
@@ -94,15 +89,13 @@ export class LifestyleTipsComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (pageData) => {
-          if (pageData.tips.length) {
-            this.allTips.set(pageData.tips);
-            this.filteredTips.set(pageData.tips);
-          }
+          this.allTips.set(pageData.tips);
+          this.filteredTips.set(pageData.tips);
           this.applyQueryParams(params, pageData.recommendations);
         },
         error: () => {
-          this.allTips.set(ALL_LIFESTYLE_TIPS);
-          this.filteredTips.set(ALL_LIFESTYLE_TIPS);
+          this.allTips.set([]);
+          this.filteredTips.set([]);
           this.applyQueryParams(params, []);
         },
       });
@@ -216,15 +209,11 @@ export class LifestyleTipsComponent implements OnInit {
           recommendedIds.includes(tip.id) ||
           (tip.sourceSlug && recommendedIds.includes(tip.sourceSlug)),
       );
-      this.recommendedTips.set(
-        fromCurrentTips.length ? fromCurrentTips : getLifestyleTipsByIds(recommendedIds),
-      );
+      this.recommendedTips.set(fromCurrentTips);
     }
 
     if (backendRecommendations.length) {
       this.recommendedTips.set(backendRecommendations);
-    } else if (params['assessment'] && params['score']) {
-      this.setStaticRecommendations(params);
     }
 
     // Check for category filter
@@ -244,22 +233,6 @@ export class LifestyleTipsComponent implements OnInit {
         this.selectTip(tip);
       }
     }
-  }
-
-  private setStaticRecommendations(params: { [key: string]: any }) {
-    if (!params['assessment'] || !params['score']) return;
-    const recommendedIds = getLifestyleTipRecommendations(
-      params['assessment'],
-      parseInt(params['score']),
-    );
-    const fromCurrentTips = this.allTips().filter(
-      (tip) =>
-        recommendedIds.includes(tip.id) ||
-        (tip.sourceSlug && recommendedIds.includes(tip.sourceSlug)),
-    );
-    this.recommendedTips.set(
-      fromCurrentTips.length ? fromCurrentTips : getLifestyleTipsByIds(recommendedIds),
-    );
   }
 
   private searchTips(query: string, tips: LifestyleTip[]): LifestyleTip[] {
