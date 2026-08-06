@@ -6,5 +6,12 @@ import { RouterModule } from '@angular/router';
   standalone: true,
   imports: [RouterModule],
   templateUrl: './home-tools.component.html',
+  styles: [
+    `
+      .hope-card > .hope-icon-box {
+        display: none;
+      }
+    `,
+  ],
 })
 export class HomeToolsComponent {}

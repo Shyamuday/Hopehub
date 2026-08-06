@@ -1,5 +1,5 @@
 .home-hero {
-  min-height: clamp(32rem, 66vh, 43rem);
+  min-height: clamp(34rem, 66vh, 46rem);
   display: flex;
   align-items: center;
   isolation: isolate;
@@ -11,8 +11,46 @@
   inset: 0;
   content: '';
   background:
-    radial-gradient(circle at 50% 0%, rgba(74, 111, 165, 0.11), transparent 42rem),
+    radial-gradient(circle at 80% 10%, rgba(111, 143, 121, 0.14), transparent 36rem),
     linear-gradient(180deg, #ffffff 0%, #f9fbfc 100%);
+}
+
+.home-hero__grid {
+  display: grid;
+  align-items: center;
+  gap: clamp(2.5rem, 6vw, 5.5rem);
+  grid-template-columns: minmax(0, 1fr) minmax(20rem, 0.82fr);
+  margin: 0 auto;
+  max-width: 76rem;
+}
+
+.home-hero__content {
+  padding-block: 1rem;
+}
+
+.home-hero__visual {
+  position: relative;
+  margin: 0;
+  min-height: 28rem;
+  overflow: hidden;
+  border-radius: 1.5rem;
+  box-shadow: 0 1.5rem 4rem rgba(31, 41, 55, 0.12);
+}
+
+.home-hero__visual::after {
+  position: absolute;
+  inset: 0;
+  content: '';
+  background: linear-gradient(120deg, rgba(255, 255, 255, 0.2), transparent 45%);
+  pointer-events: none;
+}
+
+.home-hero__visual img {
+  width: 100%;
+  height: 100%;
+  min-height: 28rem;
+  object-fit: cover;
+  object-position: 70% center;
 }
 
 .hero-kicker {
@@ -24,7 +62,7 @@
 .home-hero__trust {
   display: flex;
   flex-wrap: wrap;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 0.65rem;
   margin: 1.5rem auto 0;
   max-width: 48rem;
@@ -72,6 +110,29 @@
     text-align: center;
   }
 
+  .home-hero__grid {
+    display: grid;
+    gap: 2rem;
+    grid-template-columns: 1fr;
+    text-align: center;
+  }
+
+  .home-hero__content {
+    padding-block: 0;
+  }
+
+  .home-hero__visual {
+    min-height: 17rem;
+    border: 1px solid rgba(111, 143, 121, 0.18);
+    border-radius: 1.25rem;
+    box-shadow: 0 1rem 2.5rem rgba(31, 41, 55, 0.09);
+  }
+
+  .home-hero__visual img {
+    min-height: 17rem;
+    object-position: 72% center;
+  }
+
   .home-hero__lead {
     margin-bottom: 1rem;
     font-size: 1rem;
@@ -85,6 +146,7 @@
   }
 
   .home-hero__trust {
+    justify-content: center;
     align-items: stretch;
     flex-direction: column;
     gap: 0.5rem;

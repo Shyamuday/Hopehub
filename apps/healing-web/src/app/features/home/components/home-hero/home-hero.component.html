@@ -1,39 +1,45 @@
 <section class="home-hero relative overflow-hidden bg-white py-14 sm:py-16 md:py-20 lg:py-24">
   <div class="absolute inset-x-0 bottom-0 border-b border-gray-200"></div>
 
-  <div class="relative z-10 container mx-auto px-4 sm:px-6 lg:px-8 text-center">
-    <p class="hero-kicker hope-animate-fade-up hope-eyebrow mx-auto mb-5">
-      Calm, confidential support at your pace
-    </p>
-    <h1
-      class="hope-animate-fade-up hope-delay-1 font-serif mx-auto mb-5 max-w-4xl text-4xl font-semibold text-gray-950 sm:text-5xl md:text-6xl"
-    >
-      Feel <span class="text-primary-700">supported</span> when life feels heavy
-    </h1>
-    <p
-      class="home-hero__lead hope-animate-fade-up hope-delay-2 mx-auto mb-3 max-w-3xl text-base leading-7 text-gray-700 sm:text-lg"
-    >
-      Private mental wellness support with Hope Hub experts.
-    </p>
-    <p
-      class="home-hero__sublead hope-animate-fade-up hope-delay-3 mx-auto mb-6 max-w-2xl text-base leading-7 text-gray-600 sm:mb-8"
-    >
-      Start with a test, book a session, or join our anonymous-friendly Telegram community.
-    </p>
-    <div
-      class="hope-animate-fade-up hope-delay-4 flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-center max-w-md sm:max-w-none mx-auto"
-    >
-      <button class="btn-primary" routerLink="/contact">
-        Book session
-      </button>
-      <button class="btn-outline" routerLink="/mental-health-test">
-        Start test
-      </button>
-    </div>
-    <div class="home-hero__trust hope-animate-fade-up hope-delay-4">
-      <a routerLink="/contact">30-minute expert support</a>
-      <a routerLink="/community">Daily 9 PM voice circle</a>
-      <a routerLink="/dashboard">Private result tracking</a>
+  <div class="relative z-10 container mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="home-hero__grid">
+      <div class="home-hero__content">
+        <p class="hero-kicker hope-animate-fade-up hope-eyebrow mb-5">
+          Calm, confidential support at your pace
+        </p>
+        <h1
+          class="hope-animate-fade-up hope-delay-1 font-serif mb-5 max-w-2xl text-4xl font-semibold text-gray-950 sm:text-5xl"
+        >
+          Feel <span class="text-primary-700">supported</span> when life feels heavy
+        </h1>
+        <p
+          class="home-hero__lead hope-animate-fade-up hope-delay-2 mb-3 max-w-xl text-base leading-7 text-gray-700 sm:text-lg"
+        >
+          Private mental wellness support with Hope Hub experts.
+        </p>
+        <p
+          class="home-hero__sublead hope-animate-fade-up hope-delay-3 mb-6 max-w-xl text-base leading-7 text-gray-600 sm:mb-8"
+        >
+          Start with a test, book a session, or join our anonymous-friendly Telegram community.
+        </p>
+        <div class="hope-animate-fade-up hope-delay-4 flex flex-col sm:flex-row gap-3 sm:gap-4 items-center sm:items-start">
+          <button class="btn-primary" routerLink="/contact">Book session</button>
+          <button class="btn-outline" routerLink="/mental-health-test">Start test</button>
+        </div>
+        <div class="home-hero__trust hope-animate-fade-up hope-delay-4">
+          <a routerLink="/contact">30-minute expert support</a>
+          <a routerLink="/community">Daily 9 PM voice circle</a>
+          <a routerLink="/dashboard">Private result tracking</a>
+        </div>
+      </div>
+
+      <figure class="home-hero__visual hope-animate-fade-up hope-delay-2">
+        <img
+          src="https://hopehub-public-assets-924479393196.s3.us-east-1.amazonaws.com/healing-hub/hero/wellness-hero-v1.png"
+          alt="Person taking a calm moment with herbal tea by a sunlit window"
+          fetchpriority="high"
+        />
+      </figure>
     </div>
   </div>
 </section>
