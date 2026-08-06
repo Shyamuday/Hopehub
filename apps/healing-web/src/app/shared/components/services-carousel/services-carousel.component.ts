@@ -2,9 +2,8 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { RouterModule, Router } from '@angular/router';
 import { interval } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { getFeaturedServices } from '../../../core/data/services-data';
 import { APP_CONSTANTS } from '../../../core/constants/app.constants';
-import { BookingService } from '../../../core/services/booking.service';
+import { BookingService, HopeHubService } from '../../../core/services/booking.service';
 import { PublicCommunicationConfigService } from '../../../core/services/public-communication-config.service';
 
 export interface CarouselService {
@@ -40,16 +39,7 @@ export class ServicesCarouselComponent implements OnInit {
   isAutoPlaying = signal(true);
   private readonly autoSlideInterval = 9000;
 
-  featuredServices = signal<CarouselService[]>(
-    getFeaturedServices().map((service) => ({
-      ...service,
-      price: this.publicConfig.defaultSessionPriceRupees(),
-      originalPrice: undefined,
-      discount: undefined,
-      badge: undefined,
-      bookingUrl: this.offeringContactUrl(),
-    })),
-  );
+  featuredServices = signal<CarouselService[]>([]);
 
   constructor() {
     // Auto-slide functionality with takeUntilDestroyed
@@ -63,55 +53,28 @@ export class ServicesCarouselComponent implements OnInit {
   }
 
   ngOnInit() {
-    const offeringSlug = this.publicConfig.defaultOfferingSlug;
-    if (!offeringSlug) return;
-    this.bookingService.offeringQuote(offeringSlug).subscribe({
-      next: ({ offering, quote }) => {
-        const gross =
-          quote.grossInPaise == null
-            ? this.publicConfig.defaultSessionPriceRupees()
-            : quote.grossInPaise / 100;
-        const payable =
-          quote.payableInPaise == null
-            ? this.publicConfig.defaultSessionPriceRupees()
-            : quote.payableInPaise / 100;
+    this.bookingService.servicesPageData().subscribe({
+      next: ({ services, singleSessionQuote }) => {
         this.featuredServices.set(
-          getFeaturedServices().map((service) => ({
-            ...service,
-            price: payable,
-            originalPrice: quote.discountInPaise > 0 ? gross : undefined,
-            discount: quote.discountInPaise > 0 ? offering.discountPercent || undefined : undefined,
-            badge:
-              quote.discountInPaise > 0
-                ? offering.discountLabel || 'First session offer'
-                : undefined,
-            bookingUrl: this.offeringContactUrl(),
-          })),
+          services
+            .filter((service) => service.featured)
+            .map((service) => this.toCarouselService(service, singleSessionQuote)),
         );
       },
-      error: () => {
-        this.featuredServices.set(
-          getFeaturedServices().map((service) => ({
-            ...service,
-            price: this.publicConfig.defaultSessionPriceRupees(),
-            originalPrice: undefined,
-            discount: undefined,
-            badge: undefined,
-            bookingUrl: this.offeringContactUrl(),
-          })),
-        );
-      },
+      error: () => this.featuredServices.set([]),
     });
   }
 
   nextSlide() {
-    this.currentSlide.update((current: number) => (current + 1) % this.featuredServices().length);
+    const count = this.featuredServices().length;
+    if (!count) return;
+    this.currentSlide.update((current: number) => (current + 1) % count);
   }
 
   previousSlide() {
-    this.currentSlide.update((current: number) =>
-      current === 0 ? this.featuredServices().length - 1 : current - 1,
-    );
+    const count = this.featuredServices().length;
+    if (!count) return;
+    this.currentSlide.update((current: number) => (current === 0 ? count - 1 : current - 1));
   }
 
   goToSlide(index: number) {
@@ -143,11 +106,46 @@ export class ServicesCarouselComponent implements OnInit {
   }
 
   formatSessionLabel(_currency: string): string {
-    return this.publicConfig.defaultSessionLabel;
+    return '';
   }
 
   whatsappHref(_service: CarouselService): string {
     return APP_CONSTANTS.WHATSAPP.GROUP_URL;
+  }
+
+  private toCarouselService(
+    service: HopeHubService,
+    sessionQuote: {
+      offering: { discountPercent?: number | null; discountLabel?: string | null };
+      quote: {
+        grossInPaise?: number | null;
+        payableInPaise?: number | null;
+        discountInPaise?: number | null;
+      };
+    } | null,
+  ): CarouselService {
+    const quote = sessionQuote?.quote;
+    const hasDiscount = Boolean(quote?.discountInPaise && quote.discountInPaise > 0);
+    return {
+      id: service.id,
+      name: service.name,
+      description: service.description,
+      price:
+        quote?.payableInPaise != null
+          ? quote.payableInPaise / 100
+          : (service.pricing?.individual ?? 0),
+      originalPrice:
+        hasDiscount && quote?.grossInPaise != null ? quote.grossInPaise / 100 : undefined,
+      currency: service.pricing?.currency ?? '',
+      discount: hasDiscount ? (sessionQuote?.offering.discountPercent ?? undefined) : undefined,
+      consultantName: '',
+      consultantPhone: '',
+      duration: service.duration ?? '',
+      image: service.imageUrl ?? '',
+      featured: service.featured,
+      badge: hasDiscount ? (sessionQuote?.offering.discountLabel ?? undefined) : undefined,
+      bookingUrl: this.offeringContactUrl(),
+    };
   }
 
   private offeringContactUrl(): string {

@@ -1,6 +1,5 @@
 import { Component } from '@angular/core';
 import { RouterModule } from '@angular/router';
-import { IMAGE_ASSETS } from '../../../../core/constants/image-assets.constants';
 
 @Component({
   selector: 'app-home-hero',
@@ -9,6 +8,4 @@ import { IMAGE_ASSETS } from '../../../../core/constants/image-assets.constants'
   templateUrl: './home-hero.component.html',
   styleUrl: './home-hero.component.scss',
 })
-export class HomeHeroComponent {
-  readonly heroImage = IMAGE_ASSETS.SERVICES.MEDITATION;
-}
+export class HomeHeroComponent {}

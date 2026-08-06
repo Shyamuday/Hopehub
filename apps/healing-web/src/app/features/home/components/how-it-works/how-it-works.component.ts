@@ -1,6 +1,5 @@
 import { Component } from '@angular/core';
 import { RouterModule } from '@angular/router';
-import { IMAGE_ASSETS } from '../../../../core/constants/image-assets.constants';
 import { NOTE_CONTENT } from '../../../../core/constants/note-content.constants';
 
 interface HowItWorksStep {
@@ -16,7 +15,6 @@ interface HowItWorksStep {
 })
 export class HowItWorksComponent {
   readonly notes = NOTE_CONTENT;
-  readonly backgroundImage = IMAGE_ASSETS.SERVICES.FLOW;
   readonly steps: HowItWorksStep[] = [
     {
       title: 'Book session',

@@ -9,7 +9,6 @@ import {
   AssessmentResult,
   AssessmentCategory,
 } from '../../../core/models/assessment.model';
-import { ASSESSMENT_CONFIGS } from '../../../core/data/assessment-configs';
 import { getExerciseRecommendations } from '../../../core/data/exercise-recommendations';
 import { getLifestyleTipRecommendations } from '../../../core/data/lifestyle-tip-recommendations';
 import { getArticleRecommendations } from '../../../core/data/article-recommendations';
@@ -46,8 +45,8 @@ export class MultiAssessmentComponent implements OnInit {
   private paymentService = inject(PaymentService);
 
   // Signal-based state
-  assessments = signal<AssessmentConfig[]>(ASSESSMENT_CONFIGS);
-  categories = signal<AssessmentCategory[]>(Object.values(AssessmentCategory));
+  assessments = signal<AssessmentConfig[]>([]);
+  categories = signal<AssessmentCategory[]>([]);
   selectedCategory = signal<AssessmentCategory | null>(null);
   selectedAssessment = signal<AssessmentConfig | null>(null);
   selectedAccess = signal<AssessmentAccess | null>(null);
@@ -110,7 +109,11 @@ export class MultiAssessmentComponent implements OnInit {
       this.assessments.set(assessments);
       this.categories.set([...new Set(assessments.map((assessment) => assessment.category))]);
     } catch {
-      this.notificationService.warning('Live assessments could not load. Showing saved tests.');
+      this.assessments.set([]);
+      this.categories.set([]);
+      this.notificationService.error(
+        'Assessments are unavailable right now. Please try again later.',
+      );
     }
   }
 

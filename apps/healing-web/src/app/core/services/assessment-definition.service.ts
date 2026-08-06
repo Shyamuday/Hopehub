@@ -1,9 +1,8 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, catchError, map, of } from 'rxjs';
+import { Observable, map } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { AssessmentConfig } from '../models/assessment.model';
-import { ASSESSMENT_CONFIGS, getAssessmentConfig } from '../data/assessment-configs';
 
 export type AssessmentAccess = NonNullable<AssessmentConfig['access']>;
 
@@ -45,12 +44,7 @@ export class AssessmentDefinitionService {
 
     return this.http
       .get<AssessmentDefinitionsResponse>(`${this.apiUrl}/assessment-definitions`, { params })
-      .pipe(
-        map((response) =>
-          response.assessments?.length ? response.assessments : ASSESSMENT_CONFIGS,
-        ),
-        catchError(() => of(ASSESSMENT_CONFIGS)),
-      );
+      .pipe(map((response) => response.assessments ?? []));
   }
 
   get(id: string): Observable<AssessmentConfig | null> {
@@ -58,10 +52,7 @@ export class AssessmentDefinitionService {
       .get<AssessmentDefinitionResponse>(
         `${this.apiUrl}/assessment-definitions/${encodeURIComponent(id)}`,
       )
-      .pipe(
-        map((response) => response.assessment ?? getAssessmentConfig(id) ?? null),
-        catchError(() => of(getAssessmentConfig(id) ?? null)),
-      );
+      .pipe(map((response) => response.assessment ?? null));
   }
 
   access(id: string): Observable<AssessmentAccess | null> {
@@ -69,10 +60,7 @@ export class AssessmentDefinitionService {
       .get<AssessmentAccessResponse>(
         `${this.apiUrl}/assessment-definitions/${encodeURIComponent(id)}/access`,
       )
-      .pipe(
-        map((response) => response.access ?? null),
-        catchError(() => of(null)),
-      );
+      .pipe(map((response) => response.access ?? null));
   }
 
   redeemCoupon(id: string, couponCode: string): Observable<AssessmentAccessResponse> {

@@ -7,14 +7,11 @@ import {
   UrlTree,
 } from '@angular/router';
 import { Observable } from 'rxjs';
-import { getServiceIds } from '../data/services-data';
 
 @Injectable({
   providedIn: 'root',
 })
 export class NavigationGuard implements CanActivate {
-  private readonly validServiceIds = getServiceIds();
-
   constructor(private router: Router) {}
 
   canActivate(
@@ -44,14 +41,6 @@ export class NavigationGuard implements CanActivate {
       // Check for reasonable ID length (prevent extremely long URLs)
       if (serviceId.length > 100) {
         console.warn('NavigationGuard: Service ID too long, redirecting to services list');
-        return this.router.createUrlTree(['/services']);
-      }
-
-      // Validate against known service IDs
-      if (!this.validServiceIds.includes(serviceId)) {
-        console.warn(
-          `NavigationGuard: Unknown service ID '${serviceId}', redirecting to services list`,
-        );
         return this.router.createUrlTree(['/services']);
       }
     }

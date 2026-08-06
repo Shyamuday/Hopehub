@@ -82,15 +82,11 @@ export class PsychologistDetailComponent implements OnInit {
   }
 
   sessionLabel(provider: HopeHubProvider): string {
-    const minutes =
-      provider.sessionDurationMinutes ?? this.publicConfig.defaultSessionDurationMinutes;
-    return minutes === this.publicConfig.defaultSessionDurationMinutes
-      ? this.publicConfig.defaultSessionLabel
-      : `${minutes} min session`;
+    return provider.sessionDurationMinutes ? `${provider.sessionDurationMinutes} min session` : '';
   }
 
   providerRoleLabel(provider: HopeHubProvider): string {
-    return provider.supportRoleLabel || this.publicConfig.defaultCareRoleLabel;
+    return provider.supportRoleLabel ?? '';
   }
 
   providerRoleBadgeClass(provider: HopeHubProvider): string {
@@ -129,36 +125,29 @@ export class PsychologistDetailComponent implements OnInit {
   }
 
   providerTierLabel(provider: HopeHubProvider): string {
-    return provider.supportTierLabel || (provider.isClinicalCare ? 'Professional care' : 'Support');
+    return provider.supportTierLabel ?? '';
   }
 
   providerRoleDescription(provider: HopeHubProvider): string {
-    return (
-      provider.supportRoleDescription ||
-      'Hope Hub support for emotional wellness and guided conversation.'
-    );
+    return provider.supportRoleDescription ?? '';
   }
 
   providerScope(provider: HopeHubProvider): string {
-    return (
-      provider.supportScope || 'Support scope depends on the person’s qualification and service.'
-    );
+    return provider.supportScope ?? '';
   }
 
   providerBestFor(provider: HopeHubProvider): string[] {
     return provider.supportBestFor?.length
       ? provider.supportBestFor
-      : this.listOrFallback(provider.concernsHandled, ['Emotional support', 'Stress', 'Clarity']);
+      : (provider.concernsHandled ?? []);
   }
 
   providerNotFor(provider: HopeHubProvider): string[] {
-    return provider.supportNotFor?.length
-      ? provider.supportNotFor
-      : ['Emergency care', 'Medical crisis'];
+    return provider.supportNotFor ?? [];
   }
 
   bookingCta(provider: HopeHubProvider): string {
-    return provider.bookingCtaLabel || 'Book session';
+    return provider.bookingCtaLabel ?? '';
   }
 
   servicePriceLabel(service: {
@@ -172,8 +161,8 @@ export class PsychologistDetailComponent implements OnInit {
     return service.isFree || amount === 0 ? 'Free' : `₹${amount / 100}`;
   }
 
-  listOrFallback(items: string[] | undefined, fallback: string[]) {
-    return items?.length ? items : fallback;
+  listOrEmpty(items: string[] | undefined) {
+    return items ?? [];
   }
 
   textIsLong(value: string | null | undefined): boolean {
@@ -188,13 +177,13 @@ export class PsychologistDetailComponent implements OnInit {
     this.expandedApproach.update((value) => !value);
   }
 
-  visibleItems(key: string, items: string[] | undefined, fallback: string[], limit = 6): string[] {
-    const list = this.listOrFallback(items, fallback);
+  visibleItems(key: string, items: string[] | undefined, limit = 6): string[] {
+    const list = this.listOrEmpty(items);
     return this.expandedSections()[key] ? list : list.slice(0, limit);
   }
 
-  hiddenItemCount(key: string, items: string[] | undefined, fallback: string[], limit = 6): number {
-    const list = this.listOrFallback(items, fallback);
+  hiddenItemCount(key: string, items: string[] | undefined, limit = 6): number {
+    const list = this.listOrEmpty(items);
     return this.expandedSections()[key] ? 0 : Math.max(0, list.length - limit);
   }
 

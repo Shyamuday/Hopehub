@@ -12,10 +12,6 @@
           <div class="bg-primary-50 p-6">
             @if (providerImageUrl(p); as imageUrl) {
               <img [src]="imageUrl" [alt]="p.name" class="h-48 w-48 rounded-full object-cover shadow-sm" />
-            } @else {
-              <div class="flex h-48 w-48 items-center justify-center rounded-full bg-primary-600 text-5xl font-bold text-white">
-                {{ p.name.charAt(0) }}
-              </div>
             }
             <div class="mt-6 space-y-2 text-sm text-primary-950">
               <span
@@ -30,7 +26,7 @@
               <p class="rounded-md bg-white/70 p-3 text-xs leading-5">
                 {{ providerScope(p) }}
               </p>
-              <p class="font-semibold">{{ p.designation || p.specialty || publicConfig.defaultCareRoleLabel }}</p>
+              <p class="font-semibold">{{ p.designation || p.specialty }}</p>
               @if (p.qualifications?.length) {
                 <p>{{ p.qualifications!.join(', ') }}</p>
               }
@@ -41,12 +37,14 @@
                 <p>{{ p.department }}</p>
               }
               @if (p.licenseNumber || p.licenseCouncil) {
-                <p>{{ p.licenseCouncil || 'Registration' }}: {{ p.licenseNumber || 'Available on request' }}</p>
+                <p>{{ p.licenseCouncil }}: {{ p.licenseNumber }}</p>
               }
               @if (p.yearsOfExperience) {
                 <p>{{ p.yearsOfExperience }}+ years experience</p>
               }
-              <p>₹{{ (p.sessionFeeInPaise || publicConfig.defaultSessionPriceInPaise) / 100 | number: '1.0-0' }} · {{ sessionLabel(p) }}</p>
+              @if (p.sessionFeeInPaise != null) {
+                <p>₹{{ p.sessionFeeInPaise / 100 | number: '1.0-0' }} · {{ sessionLabel(p) }}</p>
+              }
             </div>
           </div>
 
@@ -64,7 +62,7 @@
                 class="relative overflow-hidden text-base leading-7 text-gray-700 whitespace-pre-line"
                 [class.max-h-44]="textIsLong(p.bio) && !expandedBio()"
               >
-                {{ p.bio || 'Available for private Hope Hub support, emotional clarity, and guided emotional wellness conversations.' }}
+                {{ p.bio }}
                 @if (textIsLong(p.bio) && !expandedBio()) {
                   <div class="pointer-events-none absolute inset-x-0 bottom-0 h-14 bg-gradient-to-t from-white to-transparent"></div>
                 }
@@ -81,7 +79,7 @@
             </div>
             @if (p.counsellingApproach) {
               <div class="mt-5 rounded-lg border border-gray-200 bg-gray-50 p-4 text-sm leading-6 text-gray-700">
-                <strong class="text-gray-900">{{ p.introSessionTitle || 'Support approach' }}</strong>
+                <strong class="text-gray-900">{{ p.introSessionTitle }}</strong>
                 <div
                   class="relative mt-2 overflow-hidden whitespace-pre-line"
                   [class.max-h-28]="textIsLong(p.counsellingApproach) && !expandedApproach()"
@@ -168,13 +166,13 @@
         <article class="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
           <h2 class="text-lg font-semibold text-gray-900">Concerns handled</h2>
           <div class="mt-4 flex flex-wrap gap-2">
-            @for (item of visibleItems('concerns', p.concernsHandled, ['Anxiety', 'Stress', 'Relationship concerns', 'Emotional support']); track item) {
+            @for (item of visibleItems('concerns', p.concernsHandled); track item) {
               <span class="rounded-md bg-primary-50 px-3 py-1 text-xs font-semibold text-primary-700">{{ item }}</span>
             }
           </div>
-          @if (hiddenItemCount('concerns', p.concernsHandled, ['Anxiety', 'Stress', 'Relationship concerns', 'Emotional support'])) {
+          @if (hiddenItemCount('concerns', p.concernsHandled)) {
             <button type="button" class="mt-4 text-sm font-semibold text-primary-700 hover:text-primary-800" (click)="toggleSection('concerns')">
-              See {{ hiddenItemCount('concerns', p.concernsHandled, ['Anxiety', 'Stress', 'Relationship concerns', 'Emotional support']) }} more
+              See {{ hiddenItemCount('concerns', p.concernsHandled) }} more
             </button>
           } @else if (expandedSections()['concerns']) {
             <button type="button" class="mt-4 text-sm font-semibold text-primary-700 hover:text-primary-800" (click)="toggleSection('concerns')">
@@ -186,13 +184,13 @@
         <article class="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
           <h2 class="text-lg font-semibold text-gray-900">Session style</h2>
           <div class="mt-4 flex flex-wrap gap-2">
-            @for (item of visibleItems('sessions', p.sessionTypes, ['Individual support', 'Online session', 'Follow-up guidance']); track item) {
+            @for (item of visibleItems('sessions', p.sessionTypes); track item) {
               <span class="rounded-md bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-700">{{ item }}</span>
             }
           </div>
-          @if (hiddenItemCount('sessions', p.sessionTypes, ['Individual support', 'Online session', 'Follow-up guidance'])) {
+          @if (hiddenItemCount('sessions', p.sessionTypes)) {
             <button type="button" class="mt-4 text-sm font-semibold text-primary-700 hover:text-primary-800" (click)="toggleSection('sessions')">
-              See {{ hiddenItemCount('sessions', p.sessionTypes, ['Individual support', 'Online session', 'Follow-up guidance']) }} more
+              See {{ hiddenItemCount('sessions', p.sessionTypes) }} more
             </button>
           } @else if (expandedSections()['sessions']) {
             <button type="button" class="mt-4 text-sm font-semibold text-primary-700 hover:text-primary-800" (click)="toggleSection('sessions')">
@@ -209,24 +207,26 @@
         <article class="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
           <h2 class="text-lg font-semibold text-gray-900">Methods and language</h2>
           <div class="mt-4 space-y-3 text-sm leading-6 text-gray-700">
-            <p><strong>Modalities:</strong> {{ visibleItems('modalities', p.modalities, ['Supportive counselling', 'Practical coping tools'], 4).join(', ') }}</p>
-            @if (hiddenItemCount('modalities', p.modalities, ['Supportive counselling', 'Practical coping tools'], 4)) {
+            <p><strong>Modalities:</strong> {{ visibleItems('modalities', p.modalities, 4).join(', ') }}</p>
+            @if (hiddenItemCount('modalities', p.modalities, 4)) {
               <button type="button" class="text-sm font-semibold text-primary-700 hover:text-primary-800" (click)="toggleSection('modalities')">
-                See {{ hiddenItemCount('modalities', p.modalities, ['Supportive counselling', 'Practical coping tools'], 4) }} more methods
+                See {{ hiddenItemCount('modalities', p.modalities, 4) }} more methods
               </button>
             } @else if (expandedSections()['modalities']) {
               <button type="button" class="text-sm font-semibold text-primary-700 hover:text-primary-800" (click)="toggleSection('modalities')">
                 Show less
               </button>
             }
-            <p><strong>Languages:</strong> {{ listOrFallback(p.languages, ['English', 'Hindi']).join(', ') }}</p>
+            <p><strong>Languages:</strong> {{ listOrEmpty(p.languages).join(', ') }}</p>
           </div>
         </article>
       </section>
 
-      <section class="mt-8 rounded-lg border border-amber-200 bg-amber-50 p-5 text-sm leading-6 text-amber-950">
-        {{ p.safetyEscalationNote || 'Hope Hub support is not emergency care. If there is immediate danger, self-harm risk, violence, or medical emergency, contact local emergency services or a crisis helpline now.' }}
-      </section>
+      @if (p.safetyEscalationNote) {
+        <section class="mt-8 rounded-lg border border-amber-200 bg-amber-50 p-5 text-sm leading-6 text-amber-950">
+          {{ p.safetyEscalationNote }}
+        </section>
+      }
     } @else {
       <div class="rounded-lg border border-red-200 bg-red-50 p-6 text-red-700">{{ error() || 'Care team profile not found.' }}</div>
     }

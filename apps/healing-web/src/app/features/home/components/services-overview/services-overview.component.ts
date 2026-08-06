@@ -2,7 +2,6 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
 import { ServiceCardComponent } from '../../../../shared/components';
 import { Service, ServiceCategory } from '../../../../core/models';
-import { getAllServices } from '../../../../core/data/services-data';
 import { BookingService, HopeHubService } from '../../../../core/services/booking.service';
 
 @Component({
@@ -14,16 +13,16 @@ import { BookingService, HopeHubService } from '../../../../core/services/bookin
 })
 export class ServicesOverviewComponent implements OnInit {
   private readonly bookingService = inject(BookingService);
-  readonly services = signal<Service[]>(getAllServices());
+  readonly services = signal<Service[]>([]);
 
   constructor(private readonly router: Router) {}
 
   ngOnInit(): void {
     this.bookingService.servicesPageData().subscribe({
       next: ({ services }) => {
-        if (services.length) this.services.set(services.map((service) => this.toService(service)));
+        this.services.set(services.map((service) => this.toService(service)));
       },
-      error: () => this.services.set(getAllServices()),
+      error: () => this.services.set([]),
     });
   }
 
@@ -39,7 +38,7 @@ export class ServicesOverviewComponent implements OnInit {
       detailedDescription: service.detailedDescription,
       benefits: service.benefits || [],
       approach: service.approach || '',
-      pricing: service.pricing || { individual: 500, currency: 'INR' },
+      pricing: service.pricing,
       category: Object.values(ServiceCategory).includes(service.category as ServiceCategory)
         ? (service.category as ServiceCategory)
         : ServiceCategory.MENTAL_HEALTH,

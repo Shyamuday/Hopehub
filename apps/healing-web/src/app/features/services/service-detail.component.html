@@ -39,7 +39,7 @@
               <div class="space-y-2 rounded-lg border border-primary-100 bg-primary-50 p-4">
                 @if (hasActiveSessionDiscount()) {
                   <div class="session-offer-banner">
-                    <strong>{{ singleSessionOffer()?.discountPercent || sessionDiscountPercent }}% off first session</strong>
+                    <strong>{{ singleSessionOffer()?.discountPercent }}% off first session</strong>
                     <span>{{ currentSessionDuration() }} included</span>
                   </div>
                 }

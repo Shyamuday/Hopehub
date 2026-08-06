@@ -14,11 +14,11 @@ import {
   NotificationService,
 } from '../../core/services';
 import { APP_CONSTANTS } from '../../core';
-import { FEATURED_SERVICES, getAllServices } from '../../core/data/services-data';
 import type {
   CareTeamServiceQuote,
   HopeHubOffering,
   HopeHubOfferingQuote,
+  HopeHubService,
 } from '../../core/services/booking.service';
 import {
   HOPE_HUB_ANALYTICS_EVENTS,
@@ -88,11 +88,8 @@ export class ContactComponent implements OnInit {
   defaultSessionOffer = signal<HopeHubOffering | null>(null);
   defaultSessionQuote = signal<HopeHubOfferingQuote | null>(null);
   currentUser = signal<User | null>(null);
-  services = getAllServices();
-  serviceOptions: FormDropdownOption[] = [
-    { value: '', label: 'Select a service (optional)' },
-    ...this.services.map((service) => ({ value: service.name, label: service.name })),
-  ];
+  services: HopeHubService[] = [];
+  serviceOptions: FormDropdownOption[] = [{ value: '', label: 'Select a service (optional)' }];
   urgencyOptions: FormDropdownOption[] = [
     { value: 'low', label: 'Low - I can wait a few days' },
     { value: 'normal', label: 'Normal - Please respond within 24 hours' },
@@ -301,7 +298,12 @@ export class ContactComponent implements OnInit {
       .servicesPageData()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: ({ singleSessionQuote }) => {
+        next: ({ services, singleSessionQuote }) => {
+          this.services = services;
+          this.serviceOptions = [
+            { value: '', label: 'Select a service (optional)' },
+            ...services.map((service) => ({ value: service.name, label: service.name })),
+          ];
           this.defaultSessionOffer.set(singleSessionQuote?.offering ?? null);
           this.defaultSessionQuote.set(singleSessionQuote?.quote ?? null);
           this.applyDefaultSessionOffer();
@@ -779,10 +781,10 @@ export class ContactComponent implements OnInit {
       return Math.round(queryPrice * 100);
     }
 
-    const featured = FEATURED_SERVICES.find(
+    const service = this.services.find(
       (service) => service.name === serviceName || service.id === serviceName,
     );
-    return Math.round((featured?.price ?? this.publicConfig.defaultSessionPriceRupees()) * 100);
+    return Math.round((service?.pricing?.individual ?? 0) * 100);
   }
 
   private formatLocalDate(date: Date): string {

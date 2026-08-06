@@ -10,7 +10,6 @@ import {
   HOPE_HUB_ANALYTICS_EVENTS,
   ProductAnalyticsService,
 } from '../../core/services/product-analytics.service';
-import { HOPE_HUB_SESSION_DISCOUNT_PERCENT, getServiceById } from '../../core/data/services-data';
 import {
   HopeHubOffering,
   HopeHubOfferingQuote,
@@ -26,7 +25,6 @@ import {
 })
 export class ServiceDetailComponent implements OnInit {
   readonly notes = NOTE_CONTENT;
-  readonly sessionDiscountPercent = HOPE_HUB_SESSION_DISCOUNT_PERCENT;
   service = signal<Service | null>(null);
   singleSessionOffer = signal<HopeHubOffering | null>(null);
   singleSessionQuote = signal<HopeHubOfferingQuote | null>(null);
@@ -93,13 +91,13 @@ export class ServiceDetailComponent implements OnInit {
   currentSessionPrice(): number {
     return this.singleSessionQuote()?.payableInPaise != null
       ? Math.round(this.singleSessionQuote()!.payableInPaise! / 100)
-      : this.publicConfig.defaultSessionPriceRupees();
+      : (this.service()?.pricing?.individual ?? 0);
   }
 
   currentOriginalPrice(): number {
     return this.singleSessionQuote()?.grossInPaise != null
       ? Math.round(this.singleSessionQuote()!.grossInPaise! / 100)
-      : this.publicConfig.defaultSessionPriceRupees();
+      : (this.service()?.pricing?.individual ?? 0);
   }
 
   currentSessionDuration(): string {
@@ -223,11 +221,9 @@ export class ServiceDetailComponent implements OnInit {
         this.setLoadedService(this.toService(service));
       },
       error: () => {
-        this.setLoadedService(
-          this.savedServiceWithConfigPricing(getServiceById(serviceId) || null),
-        );
-        this.notificationService.warning(
-          'Live service details could not load. Showing saved details.',
+        this.setLoadedService(null);
+        this.notificationService.error(
+          'This service is unavailable right now. Please try again later.',
         );
       },
     });
@@ -293,11 +289,8 @@ export class ServiceDetailComponent implements OnInit {
       detailedDescription: service.detailedDescription,
       benefits: service.benefits || [],
       approach: service.approach || '',
-      pricing: service.pricing || {
-        individual: this.publicConfig.defaultSessionPriceRupees(),
-        currency: 'INR',
-      },
-      duration: service.duration || this.publicConfig.defaultSessionLabel,
+      pricing: service.pricing,
+      duration: service.duration,
       category: this.toServiceCategory(service.category),
       featured: service.featured,
       imageUrl: service.imageUrl || undefined,
@@ -308,18 +301,5 @@ export class ServiceDetailComponent implements OnInit {
     return Object.values(ServiceCategory).includes(category as ServiceCategory)
       ? (category as ServiceCategory)
       : ServiceCategory.MENTAL_HEALTH;
-  }
-
-  private savedServiceWithConfigPricing(service: Service | null): Service | null {
-    if (!service) return null;
-    return {
-      ...service,
-      pricing: {
-        ...(service.pricing || { currency: 'INR' }),
-        individual: this.publicConfig.defaultSessionPriceRupees(),
-        currency: service.pricing?.currency || 'INR',
-      },
-      duration: service.duration || this.publicConfig.defaultSessionLabel,
-    };
   }
 }

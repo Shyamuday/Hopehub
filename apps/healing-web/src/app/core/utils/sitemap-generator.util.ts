@@ -2,7 +2,6 @@
  * Sitemap Generator Utility
  * Generates sitemap.xml for SEO
  */
-import { getServiceIds } from '../data/services-data';
 
 export interface SitemapUrl {
   loc: string;
@@ -153,12 +152,6 @@ ${urlEntries}
         changefreq: 'daily',
         priority: 0.9,
       },
-      ...getServiceIds().map((serviceId) => ({
-        loc: `/services/${serviceId}`,
-        lastmod: this.currentDate,
-        changefreq: 'monthly' as const,
-        priority: 0.8,
-      })),
     ];
 
     return this.generateSitemap(urls);
