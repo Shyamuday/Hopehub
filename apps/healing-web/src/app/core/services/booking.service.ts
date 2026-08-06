@@ -29,6 +29,7 @@ export type HopeHubBookingPayload = {
   preferredExpertType?: string;
   sessionMode?: string;
   preferredLanguage?: string;
+  preferredProviderGender?: string;
   safetyRisk?: string;
   previousTherapyOrMedication?: string;
   emergencyConsent?: boolean;
@@ -335,6 +336,7 @@ export class BookingService {
       modality?: string;
       sessionType?: string;
       ageGroup?: string;
+      gender?: string;
     } = {},
   ): Observable<HopeHubProviderResponse> {
     const searchParams = new URLSearchParams({
@@ -348,6 +350,7 @@ export class BookingService {
     if (params.modality) searchParams.set('modality', params.modality);
     if (params.sessionType) searchParams.set('sessionType', params.sessionType);
     if (params.ageGroup) searchParams.set('ageGroup', params.ageGroup);
+    if (params.gender) searchParams.set('gender', params.gender);
     return this.http.get<HopeHubProviderResponse>(
       `${this.apiUrl}/hope-hub/providers?${searchParams.toString()}`,
     );

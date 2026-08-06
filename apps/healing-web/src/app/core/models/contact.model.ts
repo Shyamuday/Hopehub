@@ -9,6 +9,8 @@ export interface ContactForm {
   preferredExpertType?: string;
   sessionMode?: string;
   preferredLanguage?: string;
+  preferredProviderGender?: string;
+  autoMatchProvider?: boolean;
   safetyRisk?: string;
   previousTherapyOrMedication?: string;
   emergencyConsent?: boolean;

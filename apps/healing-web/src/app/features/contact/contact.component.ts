@@ -2,6 +2,7 @@ import { Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { debounceTime, firstValueFrom } from 'rxjs';
 import { NOTE_CONTENT } from '../../core/constants/note-content.constants';
 import { ContactForm } from '../../core/models/contact.model';
 import {
@@ -18,6 +19,7 @@ import type {
   CareTeamServiceQuote,
   HopeHubOffering,
   HopeHubOfferingQuote,
+  HopeHubProvider,
   HopeHubService,
 } from '../../core/services/booking.service';
 import {
@@ -85,6 +87,9 @@ export class ContactComponent implements OnInit {
   careTeamServiceQuote = signal<CareTeamServiceQuote | null>(null);
   careTeamServiceQuoteLoading = signal(false);
   careTeamServiceQuoteError = signal('');
+  matchedProvider = signal<HopeHubProvider | null>(null);
+  providerMatchLoading = signal(false);
+  providerMatchMessage = signal('');
   defaultSessionOffer = signal<HopeHubOffering | null>(null);
   defaultSessionQuote = signal<HopeHubOfferingQuote | null>(null);
   currentUser = signal<User | null>(null);
@@ -131,6 +136,12 @@ export class ContactComponent implements OnInit {
     { value: 'Bengali', label: 'Bengali' },
     { value: 'Tamil', label: 'Tamil' },
     { value: 'Telugu', label: 'Telugu' },
+  ];
+  providerGenderOptions: FormDropdownOption[] = [
+    { value: '', label: 'No preference' },
+    { value: 'FEMALE', label: 'Female provider' },
+    { value: 'MALE', label: 'Male provider' },
+    { value: 'OTHER', label: 'Other' },
   ];
   safetyRiskOptions: FormDropdownOption[] = [
     { value: 'none', label: 'No immediate safety risk' },
@@ -260,6 +271,8 @@ export class ContactComponent implements OnInit {
       preferredExpertType: [''],
       sessionMode: ['online_audio'],
       preferredLanguage: [''],
+      preferredProviderGender: [''],
+      autoMatchProvider: [true],
       safetyRisk: ['none'],
       previousTherapyOrMedication: [''],
       emergencyConsent: [true],
@@ -272,6 +285,10 @@ export class ContactComponent implements OnInit {
       .get('serviceInterest')
       ?.valueChanges.pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => this.applyDefaultSessionOffer());
+    this.contactForm.valueChanges
+      .pipe(debounceTime(250), takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => void this.updateProviderSuggestion());
+    void this.updateProviderSuggestion();
   }
 
   private updateFormWithUserData(user: User | null): void {
@@ -388,9 +405,54 @@ export class ContactComponent implements OnInit {
         this.contactForm?.get('serviceInterest')?.value || this.prefilledData().serviceName || '',
       appointmentDate: this.formatLocalDate(appointment.date),
       appointmentTime: appointment.time,
-      providerId: this.prefilledData().providerId || '',
+      providerId: this.activeProviderId(),
       offeringSlug: this.selectedOffering()?.slug || this.prefilledData().offering || '',
     });
+  }
+
+  activeProviderId(): string {
+    const data = this.prefilledData();
+    if (data.providerId) return data.providerId;
+    if (!this.contactForm?.get('autoMatchProvider')?.value) return '';
+    return this.matchedProvider()?.id || '';
+  }
+
+  activeProviderName(): string {
+    const data = this.prefilledData();
+    if (data.consultant) return data.consultant;
+    if (!this.contactForm?.get('autoMatchProvider')?.value) return '';
+    return this.matchedProvider()?.name || '';
+  }
+
+  activeProviderNotice(): string {
+    const data = this.prefilledData();
+    if (data.providerId && data.consultant) return `Selected provider: ${data.consultant}`;
+    if (!this.contactForm?.get('autoMatchProvider')?.value) {
+      return 'Auto-match is off. Our team will assign a suitable provider after review.';
+    }
+    const provider = this.matchedProvider();
+    if (provider) return `Auto-matched: ${provider.name}`;
+    return this.providerMatchMessage();
+  }
+
+  matchedProviderMeta(provider: HopeHubProvider): string {
+    return [
+      provider.supportRoleLabel,
+      provider.gender ? this.genderLabel(provider.gender) : '',
+      provider.languages?.slice(0, 3).join(', '),
+    ]
+      .filter(Boolean)
+      .join(' · ');
+  }
+
+  private genderLabel(value: string): string {
+    const labels: Record<string, string> = {
+      FEMALE: 'Female',
+      MALE: 'Male',
+      OTHER: 'Other',
+      PREFER_NOT_TO_SAY: 'Prefer not to say',
+    };
+    return labels[value] || value;
   }
 
   async onSubmit(): Promise<void> {
@@ -481,6 +543,8 @@ export class ContactComponent implements OnInit {
     }
 
     const data = this.prefilledData();
+    const activeProviderId = this.activeProviderId();
+    const activeProviderName = this.activeProviderName();
     const selectedOffer = this.selectedOffering();
     const serviceName =
       formData.serviceInterest || data.serviceName || data.service || 'Hope Hub Consultation';
@@ -501,9 +565,9 @@ export class ContactComponent implements OnInit {
           message: bookingMessage,
           appointmentDate: this.formatLocalDate(appointment.date),
           appointmentTime: appointment.time,
-          consultantName: data.consultant || appointment.consultant || '',
+          consultantName: activeProviderName || appointment.consultant || '',
           consultantPhone: data.consultantPhone || '',
-          providerId: data.providerId || '',
+          providerId: activeProviderId,
           careTeamServiceId: data.careTeamServiceId || '',
           sessionDuration: data.duration || '',
           visitorName: formData.name,
@@ -516,6 +580,7 @@ export class ContactComponent implements OnInit {
           preferredExpertType: (formData as any).preferredExpertType || '',
           sessionMode: (formData as any).sessionMode || '',
           preferredLanguage: (formData as any).preferredLanguage || '',
+          preferredProviderGender: (formData as any).preferredProviderGender || '',
           safetyRisk: (formData as any).safetyRisk || '',
           previousTherapyOrMedication: (formData as any).previousTherapyOrMedication || '',
           emergencyConsent: Boolean((formData as any).emergencyConsent),
@@ -757,6 +822,8 @@ export class ContactComponent implements OnInit {
       preferredExpertType: '',
       sessionMode: 'online_audio',
       preferredLanguage: '',
+      preferredProviderGender: '',
+      autoMatchProvider: true,
       safetyRisk: 'none',
       previousTherapyOrMedication: '',
       emergencyConsent: true,
@@ -788,6 +855,126 @@ export class ContactComponent implements OnInit {
       (service) => service.name === serviceName || service.id === serviceName,
     );
     return Math.round((service?.pricing?.individual ?? 0) * 100);
+  }
+
+  private async updateProviderSuggestion(): Promise<void> {
+    if (!this.contactForm || this.prefilledData().providerId) {
+      this.matchedProvider.set(null);
+      this.providerMatchLoading.set(false);
+      this.providerMatchMessage.set('');
+      return;
+    }
+    if (!this.contactForm.get('autoMatchProvider')?.value) {
+      this.matchedProvider.set(null);
+      this.providerMatchLoading.set(false);
+      this.providerMatchMessage.set('Auto-match is off.');
+      return;
+    }
+
+    const formValue = this.contactForm.value as ContactForm;
+    const roleGroup = this.roleGroupForExpertType(formValue.preferredExpertType || '');
+    const gender = formValue.preferredProviderGender || '';
+    const language = formValue.preferredLanguage || '';
+    const concern = formValue.concernCategory || '';
+
+    if (!roleGroup && !gender && !language && !concern) {
+      this.matchedProvider.set(null);
+      this.providerMatchLoading.set(false);
+      this.providerMatchMessage.set('Add preferences to auto-match a provider.');
+      return;
+    }
+
+    const beforeProviderId = this.activeProviderId();
+    this.providerMatchLoading.set(true);
+    this.providerMatchMessage.set('');
+    try {
+      let res = await firstValueFrom(
+        this.bookingService.providers({
+          page: 1,
+          pageSize: 8,
+          roleGroup,
+          concern,
+          language,
+          gender,
+        }),
+      );
+      if (!res.providers.length && concern) {
+        res = await firstValueFrom(
+          this.bookingService.providers({
+            page: 1,
+            pageSize: 8,
+            roleGroup,
+            language,
+            gender,
+          }),
+        );
+      }
+      const provider = this.pickBestProvider(res.providers, formValue);
+      this.matchedProvider.set(provider);
+      this.providerMatchMessage.set(
+        provider ? '' : 'No exact provider match found. Our team will assign manually.',
+      );
+      if (beforeProviderId !== this.activeProviderId()) {
+        this.selectedAppointment.set(null);
+      }
+    } catch {
+      this.matchedProvider.set(null);
+      this.providerMatchMessage.set('Could not auto-match right now. Team review will handle it.');
+    } finally {
+      this.providerMatchLoading.set(false);
+    }
+  }
+
+  private roleGroupForExpertType(value: string): string {
+    if (/professional/i.test(value)) return 'PROFESSIONALS';
+    if (/counsellor/i.test(value)) return 'COUNSELLORS';
+    if (/student|peer|volunteer|listener/i.test(value)) return 'VOLUNTEERS';
+    if (/coach/i.test(value)) return 'COACHES';
+    if (/meditation|breathwork/i.test(value)) return 'WELLNESS_GUIDES';
+    if (/mentor|career|study/i.test(value)) return 'MENTORS';
+    return '';
+  }
+
+  private pickBestProvider(
+    providers: HopeHubProvider[],
+    formValue: ContactForm,
+  ): HopeHubProvider | null {
+    if (!providers.length) return null;
+    const concern = (formValue.concernCategory || '').toLowerCase();
+    const sessionMode = (formValue.sessionMode || '').toLowerCase();
+    const scored = providers.map((provider) => {
+      let score = 0;
+      if (
+        formValue.preferredLanguage &&
+        provider.languages?.includes(formValue.preferredLanguage)
+      ) {
+        score += 4;
+      }
+      if (
+        formValue.preferredProviderGender &&
+        formValue.preferredProviderGender !== 'PREFER_NOT_TO_SAY' &&
+        provider.gender === formValue.preferredProviderGender
+      ) {
+        score += 4;
+      }
+      if (
+        concern &&
+        provider.concernsHandled?.some((item) => item.toLowerCase().includes(concern))
+      ) {
+        score += 3;
+      }
+      if (
+        sessionMode &&
+        provider.sessionTypes?.some((item) => item.toLowerCase().includes(sessionMode))
+      ) {
+        score += 1;
+      }
+      if (provider.services?.length) score += 1;
+      if (provider.isClinicalCare) score += 1;
+      return { provider, score };
+    });
+    scored.sort((a, b) => b.score - a.score || a.provider.name.localeCompare(b.provider.name));
+    return scored[0]?.provider ?? null;
   }
 
   private formatLocalDate(date: Date): string {

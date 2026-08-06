@@ -127,6 +127,10 @@ const hopeHubBookingSchema = z.object({
   preferredExpertType: z.string().trim().max(160).optional().or(z.literal('')),
   sessionMode: z.string().trim().max(80).optional().or(z.literal('')),
   preferredLanguage: z.string().trim().max(80).optional().or(z.literal('')),
+  preferredProviderGender: z
+    .enum(['MALE', 'FEMALE', 'OTHER', 'PREFER_NOT_TO_SAY'])
+    .optional()
+    .nullable(),
   safetyRisk: z.string().trim().max(80).optional().or(z.literal('')),
   previousTherapyOrMedication: z.string().trim().max(1000).optional().or(z.literal('')),
   emergencyConsent: z.boolean().optional(),
@@ -1302,8 +1306,9 @@ function hopeHubProviderWhere(params: {
   modality?: string;
   sessionType?: string;
   ageGroup?: string;
+  gender?: string;
 }) {
-  const { q, roleGroup, concern, language, modality, sessionType, ageGroup } = params;
+  const { q, roleGroup, concern, language, modality, sessionType, ageGroup, gender } = params;
   const roleGroupTypes: Record<string, string[]> = {
     PROFESSIONALS: ['MENTAL_WELLNESS_PROFESSIONAL'],
     COUNSELLORS: ['QUALIFIED_COUNSELLOR'],
@@ -1315,7 +1320,10 @@ function hopeHubProviderWhere(params: {
   const roleTypes = roleGroup ? roleGroupTypes[roleGroup] || [] : [];
   return {
     showOnWebsite: true,
-    user: { isActive: true },
+    user: {
+      isActive: true,
+      ...(gender && gender !== 'PREFER_NOT_TO_SAY' ? { gender: gender as any } : {})
+    },
     ...(roleTypes.length || concern || language || modality || sessionType || ageGroup
       ? {
           mentalHealthProfile: {
@@ -1385,6 +1393,7 @@ async function activeHopeHubProviders(params: {
   modality?: string;
   sessionType?: string;
   ageGroup?: string;
+  gender?: string;
 }) {
   const page = params.page ?? 1;
   const pageSize = Math.max(1, Math.min(50, params.pageSize ?? 20));
@@ -1828,7 +1837,8 @@ hopeHubRouter.get(
         language: queryText(req, 'language').trim(),
         modality: queryText(req, 'modality').trim(),
         sessionType: queryText(req, 'sessionType').trim(),
-        ageGroup: queryText(req, 'ageGroup').trim()
+        ageGroup: queryText(req, 'ageGroup').trim(),
+        gender: queryText(req, 'gender').trim()
       })
     );
   })
@@ -2427,6 +2437,7 @@ hopeHubRouter.post(
           preferredExpertType: body.preferredExpertType || '',
           sessionMode: body.sessionMode || '',
           preferredLanguage: body.preferredLanguage || '',
+          preferredProviderGender: body.preferredProviderGender || '',
           safetyRisk: body.safetyRisk || '',
           previousTherapyOrMedication: body.previousTherapyOrMedication || '',
           emergencyConsent: Boolean(body.emergencyConsent),
@@ -2630,6 +2641,9 @@ hopeHubRouter.post(
           body.concernCategory ? `Concern category: ${body.concernCategory}` : '',
           body.preferredExpertType ? `Preferred expert: ${body.preferredExpertType}` : '',
           body.preferredLanguage ? `Preferred language: ${body.preferredLanguage}` : '',
+          body.preferredProviderGender
+            ? `Preferred provider gender: ${body.preferredProviderGender}`
+            : '',
           body.safetyRisk ? `Safety risk: ${body.safetyRisk}` : '',
           body.preferredTime ? `Preferred callback time: ${body.preferredTime}` : '',
           requestedProvider ? `Requested expert: ${requestedProvider.user.name}` : '',
