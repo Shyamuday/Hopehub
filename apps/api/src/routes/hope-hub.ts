@@ -227,6 +227,77 @@ function periodForTime(value: string): 'morning' | 'afternoon' | 'evening' {
   return 'evening';
 }
 
+function appointmentDateOnly(value: string) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
+  const date = new Date(`${value}T00:00:00.000Z`);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function addUtcDays(date: Date, days: number) {
+  const next = new Date(date);
+  next.setUTCDate(next.getUTCDate() + days);
+  return next;
+}
+
+function utcWeekRange(date: Date) {
+  const day = date.getUTCDay();
+  const mondayOffset = day === 0 ? -6 : 1 - day;
+  const start = addUtcDays(date, mondayOffset);
+  const end = addUtcDays(start, 7);
+  return { start, end };
+}
+
+async function providerBookingCapacityStatus(doctorId: string, appointmentDate: string) {
+  const profile = await prisma.mentalHealthProviderProfile.findUnique({
+    where: { doctorId },
+    select: {
+      acceptingNewUsers: true,
+      maxSessionsPerDay: true,
+      maxSessionsPerWeek: true
+    }
+  });
+
+  if (!profile) return { available: true, message: '' };
+  if (!profile.acceptingNewUsers) {
+    return { available: false, message: 'This expert is not accepting new bookings right now.' };
+  }
+
+  const date = appointmentDateOnly(appointmentDate);
+  if (!date) return { available: true, message: '' };
+
+  if (profile.maxSessionsPerDay) {
+    const dayBookedCount = await prisma.doctorSlot.count({
+      where: { doctorId, date, isBooked: true, isBlocked: false }
+    });
+    if (dayBookedCount >= profile.maxSessionsPerDay) {
+      return {
+        available: false,
+        message: 'This expert has reached their booking limit for the selected day.'
+      };
+    }
+  }
+
+  if (profile.maxSessionsPerWeek) {
+    const { start, end } = utcWeekRange(date);
+    const weekBookedCount = await prisma.doctorSlot.count({
+      where: {
+        doctorId,
+        isBooked: true,
+        isBlocked: false,
+        date: { gte: start, lt: end }
+      }
+    });
+    if (weekBookedCount >= profile.maxSessionsPerWeek) {
+      return {
+        available: false,
+        message: 'This expert has reached their booking limit for the selected week.'
+      };
+    }
+  }
+
+  return { available: true, message: '' };
+}
+
 function serializeAssessmentAttempt(attempt: {
   id: string;
   assessmentId: string;
@@ -791,6 +862,10 @@ function providerPublicPayload(
       counsellingApproach: string | null;
       safetyEscalationNote: string | null;
       acceptsHighRiskCases: boolean;
+      autoMatchEnabled: boolean;
+      acceptingNewUsers: boolean;
+      maxSessionsPerDay: number | null;
+      maxSessionsPerWeek: number | null;
       services: Array<{
         id: string;
         title: string;
@@ -903,6 +978,10 @@ function providerPublicPayload(
     counsellingApproach: mental?.counsellingApproach ?? null,
     safetyEscalationNote: mental?.safetyEscalationNote ?? null,
     acceptsHighRiskCases: mental?.acceptsHighRiskCases ?? false,
+    autoMatchEnabled: mental?.autoMatchEnabled ?? true,
+    acceptingNewUsers: mental?.acceptingNewUsers ?? true,
+    maxSessionsPerDay: mental?.maxSessionsPerDay ?? null,
+    maxSessionsPerWeek: mental?.maxSessionsPerWeek ?? null,
     services: activeServices,
     sessionFeeInPaise: primaryService?.effectivePriceInPaise ?? defaults.sessionPriceInPaise,
     sessionDurationMinutes: primaryService?.durationMinutes ?? defaults.sessionDurationMinutes
@@ -1307,8 +1386,19 @@ function hopeHubProviderWhere(params: {
   sessionType?: string;
   ageGroup?: string;
   gender?: string;
+  autoMatchOnly?: boolean;
 }) {
-  const { q, roleGroup, concern, language, modality, sessionType, ageGroup, gender } = params;
+  const {
+    q,
+    roleGroup,
+    concern,
+    language,
+    modality,
+    sessionType,
+    ageGroup,
+    gender,
+    autoMatchOnly
+  } = params;
   const roleGroupTypes: Record<string, string[]> = {
     PROFESSIONALS: ['MENTAL_WELLNESS_PROFESSIONAL'],
     COUNSELLORS: ['QUALIFIED_COUNSELLOR'],
@@ -1324,11 +1414,19 @@ function hopeHubProviderWhere(params: {
       isActive: true,
       ...(gender && gender !== 'PREFER_NOT_TO_SAY' ? { gender: gender as any } : {})
     },
-    ...(roleTypes.length || concern || language || modality || sessionType || ageGroup
+    ...(autoMatchOnly ? { isAvailable: true } : {}),
+    ...(roleTypes.length ||
+    concern ||
+    language ||
+    modality ||
+    sessionType ||
+    ageGroup ||
+    autoMatchOnly
       ? {
           mentalHealthProfile: {
             is: {
               ...(roleTypes.length ? { careTeamType: { in: roleTypes as any[] } } : {}),
+              ...(autoMatchOnly ? { autoMatchEnabled: true, acceptingNewUsers: true } : {}),
               ...(concern ? { concernsHandled: { has: concern } } : {}),
               ...(language ? { languages: { has: language } } : {}),
               ...(modality ? { modalities: { has: modality } } : {}),
@@ -1394,6 +1492,7 @@ async function activeHopeHubProviders(params: {
   sessionType?: string;
   ageGroup?: string;
   gender?: string;
+  autoMatchOnly?: boolean;
 }) {
   const page = params.page ?? 1;
   const pageSize = Math.max(1, Math.min(50, params.pageSize ?? 20));
@@ -1426,6 +1525,10 @@ async function activeHopeHubProviders(params: {
             counsellingApproach: true,
             safetyEscalationNote: true,
             acceptsHighRiskCases: true,
+            autoMatchEnabled: true,
+            acceptingNewUsers: true,
+            maxSessionsPerDay: true,
+            maxSessionsPerWeek: true,
             services: {
               where: { isActive: true },
               orderBy: [{ sortOrder: 'asc' }, { title: 'asc' }],
@@ -1753,15 +1856,19 @@ hopeHubRouter.get(
         return res.status(404).json({ message: 'Service not found for this expert.' });
       }
 
-      const slots = await prisma.doctorSlot.findMany({
-        where: { doctorId: provider.id, date: new Date(date), isBlocked: false },
-        orderBy: { startTime: 'asc' }
-      });
+      const [slots, capacity] = await Promise.all([
+        prisma.doctorSlot.findMany({
+          where: { doctorId: provider.id, date: new Date(date), isBlocked: false },
+          orderBy: { startTime: 'asc' }
+        }),
+        providerBookingCapacityStatus(provider.id, date)
+      ]);
 
       return res.json({
         date,
         providerId,
         careTeamServiceId: careTeamService?.id ?? undefined,
+        capacityMessage: capacity.message || undefined,
         slots: slots
           .filter((slot) => {
             if (
@@ -1781,11 +1888,12 @@ hopeHubRouter.get(
           })
           .map((slot) => {
             const time = displayTimeFrom24Hour(slot.startTime);
+            const available = capacity.available && !slot.isBooked;
             return {
               time,
               period: periodForTime(time),
-              available: !slot.isBooked,
-              booked: slot.isBooked
+              available,
+              booked: !available
             };
           })
       });
@@ -1838,7 +1946,8 @@ hopeHubRouter.get(
         modality: queryText(req, 'modality').trim(),
         sessionType: queryText(req, 'sessionType').trim(),
         ageGroup: queryText(req, 'ageGroup').trim(),
-        gender: queryText(req, 'gender').trim()
+        gender: queryText(req, 'gender').trim(),
+        autoMatchOnly: queryText(req, 'autoMatchOnly').trim() === 'true'
       })
     );
   })
@@ -1896,6 +2005,10 @@ hopeHubRouter.get(
             counsellingApproach: true,
             safetyEscalationNote: true,
             acceptsHighRiskCases: true,
+            autoMatchEnabled: true,
+            acceptingNewUsers: true,
+            maxSessionsPerDay: true,
+            maxSessionsPerWeek: true,
             services: {
               where: { isActive: true },
               orderBy: [{ sortOrder: 'asc' }, { title: 'asc' }],
@@ -2278,6 +2391,13 @@ hopeHubRouter.post(
       : (selectedCareTeamService?.mentalHealthProfile.doctor ?? null);
     if (body.providerId && !requestedProvider) {
       return res.status(400).json({ message: 'Selected care team member is not available.' });
+    }
+    const providerCapacity =
+      requestedProvider && body.appointmentDate
+        ? await providerBookingCapacityStatus(requestedProvider.id, body.appointmentDate)
+        : { available: true, message: '' };
+    if (!providerCapacity.available) {
+      return res.status(409).json({ message: providerCapacity.message });
     }
     const requestedSlot =
       requestedProvider && body.appointmentDate && body.appointmentTime

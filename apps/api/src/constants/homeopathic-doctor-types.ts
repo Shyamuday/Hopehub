@@ -127,6 +127,10 @@ export const doctorProfileSelect = {
       counsellingApproach: true,
       safetyEscalationNote: true,
       acceptsHighRiskCases: true,
+      autoMatchEnabled: true,
+      acceptingNewUsers: true,
+      maxSessionsPerDay: true,
+      maxSessionsPerWeek: true,
       services: {
         orderBy: { sortOrder: 'asc' },
         select: {

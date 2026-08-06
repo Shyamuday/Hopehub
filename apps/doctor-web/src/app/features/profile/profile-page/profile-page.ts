@@ -38,6 +38,10 @@ function emptyProfileModel() {
     counsellingApproach: '',
     safetyEscalationNote: '',
     acceptsHighRiskCases: false,
+    autoMatchEnabled: true,
+    acceptingNewUsers: true,
+    maxSessionsPerDay: '' as number | '',
+    maxSessionsPerWeek: '' as number | '',
     serviceOffersText: '',
     defaultMethodOptionId: '',
   };
@@ -155,6 +159,10 @@ export class ProfilePage {
         counsellingApproach: mental?.counsellingApproach || '',
         safetyEscalationNote: mental?.safetyEscalationNote || '',
         acceptsHighRiskCases: mental?.acceptsHighRiskCases ?? false,
+        autoMatchEnabled: mental?.autoMatchEnabled ?? true,
+        acceptingNewUsers: mental?.acceptingNewUsers ?? true,
+        maxSessionsPerDay: mental?.maxSessionsPerDay ?? '',
+        maxSessionsPerWeek: mental?.maxSessionsPerWeek ?? '',
         serviceOffersText: this.formatServiceOffers(mental?.services ?? []),
         defaultMethodOptionId: profile.doctorProfile?.defaultMethodOptionId || '',
       });
@@ -211,6 +219,12 @@ export class ProfilePage {
                 counsellingApproach: form.counsellingApproach || null,
                 safetyEscalationNote: form.safetyEscalationNote || null,
                 acceptsHighRiskCases: form.acceptsHighRiskCases,
+                autoMatchEnabled: form.autoMatchEnabled,
+                acceptingNewUsers: form.acceptingNewUsers,
+                maxSessionsPerDay:
+                  form.maxSessionsPerDay !== '' ? Number(form.maxSessionsPerDay) : null,
+                maxSessionsPerWeek:
+                  form.maxSessionsPerWeek !== '' ? Number(form.maxSessionsPerWeek) : null,
                 services: this.servicesForSave(form.serviceOffersText),
               }
             : undefined,

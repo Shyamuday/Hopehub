@@ -58,6 +58,10 @@ type Doctor = {
       counsellingApproach?: string | null;
       safetyEscalationNote?: string | null;
       acceptsHighRiskCases?: boolean;
+      autoMatchEnabled?: boolean;
+      acceptingNewUsers?: boolean;
+      maxSessionsPerDay?: number | null;
+      maxSessionsPerWeek?: number | null;
       services?: CareTeamService[];
     } | null;
   };
@@ -135,6 +139,10 @@ function emptyCreateModel() {
     ageGroupsText: '',
     concernsHandledText: '',
     careTeamType: 'MENTAL_WELLNESS_PROFESSIONAL' as CareTeamMemberType,
+    autoMatchEnabled: true,
+    acceptingNewUsers: true,
+    maxSessionsPerDay: '' as number | '',
+    maxSessionsPerWeek: '' as number | '',
     serviceOffersText: '',
   };
 }
@@ -171,6 +179,10 @@ function emptyEditModel() {
     counsellingApproach: '',
     safetyEscalationNote: '',
     acceptsHighRiskCases: false,
+    autoMatchEnabled: true,
+    acceptingNewUsers: true,
+    maxSessionsPerDay: '' as number | '',
+    maxSessionsPerWeek: '' as number | '',
     serviceOffersText: '',
   };
 }
@@ -410,6 +422,12 @@ export class DoctorsPage {
               counsellingApproach: edit.counsellingApproach.trim() || null,
               safetyEscalationNote: edit.safetyEscalationNote.trim() || null,
               acceptsHighRiskCases: edit.acceptsHighRiskCases,
+              autoMatchEnabled: edit.autoMatchEnabled,
+              acceptingNewUsers: edit.acceptingNewUsers,
+              maxSessionsPerDay:
+                edit.maxSessionsPerDay !== '' ? Number(edit.maxSessionsPerDay) : null,
+              maxSessionsPerWeek:
+                edit.maxSessionsPerWeek !== '' ? Number(edit.maxSessionsPerWeek) : null,
               services: this.servicesForSave(this.editCareServices(), edit.serviceOffersText),
             }
           : undefined,
@@ -463,6 +481,12 @@ export class DoctorsPage {
               sessionTypes: this.lines(create.sessionTypesText),
               ageGroups: this.lines(create.ageGroupsText),
               concernsHandled: this.lines(create.concernsHandledText),
+              autoMatchEnabled: create.autoMatchEnabled,
+              acceptingNewUsers: create.acceptingNewUsers,
+              maxSessionsPerDay:
+                create.maxSessionsPerDay !== '' ? Number(create.maxSessionsPerDay) : null,
+              maxSessionsPerWeek:
+                create.maxSessionsPerWeek !== '' ? Number(create.maxSessionsPerWeek) : null,
               services: this.servicesForSave(this.createCareServices(), create.serviceOffersText),
             }
           : undefined,
@@ -694,6 +718,10 @@ export class DoctorsPage {
       safetyEscalationNote: selected.doctorProfile?.mentalHealthProfile?.safetyEscalationNote || '',
       acceptsHighRiskCases:
         selected.doctorProfile?.mentalHealthProfile?.acceptsHighRiskCases ?? false,
+      autoMatchEnabled: selected.doctorProfile?.mentalHealthProfile?.autoMatchEnabled ?? true,
+      acceptingNewUsers: selected.doctorProfile?.mentalHealthProfile?.acceptingNewUsers ?? true,
+      maxSessionsPerDay: selected.doctorProfile?.mentalHealthProfile?.maxSessionsPerDay ?? '',
+      maxSessionsPerWeek: selected.doctorProfile?.mentalHealthProfile?.maxSessionsPerWeek ?? '',
       serviceOffersText: this.formatServiceOffers(
         selected.doctorProfile?.mentalHealthProfile?.services ?? [],
       ),

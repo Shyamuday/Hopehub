@@ -45,6 +45,10 @@ const mentalHealthProviderProfileSchema = z
     counsellingApproach: z.string().trim().max(3000).optional().nullable().or(z.literal('')),
     safetyEscalationNote: z.string().trim().max(2000).optional().nullable().or(z.literal('')),
     acceptsHighRiskCases: z.boolean().optional(),
+    autoMatchEnabled: z.boolean().optional(),
+    acceptingNewUsers: z.boolean().optional(),
+    maxSessionsPerDay: z.number().int().min(1).max(50).optional().nullable(),
+    maxSessionsPerWeek: z.number().int().min(1).max(300).optional().nullable(),
     services: z
       .array(
         z.object({
@@ -234,7 +238,11 @@ export function registerAuthDoctorRoutes(router: Router) {
               safetyEscalationNote: cleanNullableText(
                 body.mentalHealthProfile.safetyEscalationNote
               ),
-              acceptsHighRiskCases: body.mentalHealthProfile.acceptsHighRiskCases ?? false
+              acceptsHighRiskCases: body.mentalHealthProfile.acceptsHighRiskCases ?? false,
+              autoMatchEnabled: body.mentalHealthProfile.autoMatchEnabled ?? true,
+              acceptingNewUsers: body.mentalHealthProfile.acceptingNewUsers ?? true,
+              maxSessionsPerDay: body.mentalHealthProfile.maxSessionsPerDay ?? null,
+              maxSessionsPerWeek: body.mentalHealthProfile.maxSessionsPerWeek ?? null
             }
           : null;
       const mentalHealthServices =

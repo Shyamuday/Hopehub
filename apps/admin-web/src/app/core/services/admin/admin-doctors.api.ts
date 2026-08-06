@@ -112,6 +112,10 @@ export class AdminDoctorsApi extends AdminApiBase {
         counsellingApproach?: string | null;
         safetyEscalationNote?: string | null;
         acceptsHighRiskCases?: boolean;
+        autoMatchEnabled?: boolean;
+        acceptingNewUsers?: boolean;
+        maxSessionsPerDay?: number | null;
+        maxSessionsPerWeek?: number | null;
         services?: Array<{
           title: string;
           description?: string | null;
@@ -171,6 +175,10 @@ export class AdminDoctorsApi extends AdminApiBase {
       counsellingApproach?: string | null;
       safetyEscalationNote?: string | null;
       acceptsHighRiskCases?: boolean;
+      autoMatchEnabled?: boolean;
+      acceptingNewUsers?: boolean;
+      maxSessionsPerDay?: number | null;
+      maxSessionsPerWeek?: number | null;
       services?: Array<{
         title: string;
         description?: string | null;

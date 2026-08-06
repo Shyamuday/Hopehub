@@ -73,6 +73,10 @@ const mentalHealthProfileSchema = z
     counsellingApproach: z.string().trim().max(4000).optional().nullable().or(z.literal('')),
     safetyEscalationNote: z.string().trim().max(2000).optional().nullable().or(z.literal('')),
     acceptsHighRiskCases: z.boolean().optional(),
+    autoMatchEnabled: z.boolean().optional(),
+    acceptingNewUsers: z.boolean().optional(),
+    maxSessionsPerDay: z.number().int().min(1).max(50).optional().nullable(),
+    maxSessionsPerWeek: z.number().int().min(1).max(300).optional().nullable(),
     services: z.array(careTeamServiceSchema).max(20).optional()
   })
   .optional();
@@ -123,6 +127,10 @@ function toMentalHealthProfilePayload(body: z.infer<typeof mentalHealthProfileSc
     counsellingApproach: body?.counsellingApproach || null,
     safetyEscalationNote: body?.safetyEscalationNote || null,
     acceptsHighRiskCases: body?.acceptsHighRiskCases ?? false,
+    autoMatchEnabled: body?.autoMatchEnabled ?? true,
+    acceptingNewUsers: body?.acceptingNewUsers ?? true,
+    maxSessionsPerDay: body?.maxSessionsPerDay ?? null,
+    maxSessionsPerWeek: body?.maxSessionsPerWeek ?? null,
     services
   };
 }

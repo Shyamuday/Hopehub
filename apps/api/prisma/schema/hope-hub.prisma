@@ -75,6 +75,10 @@ model MentalHealthProviderProfile {
   counsellingApproach    String?  @db.Text
   safetyEscalationNote   String?  @db.Text
   acceptsHighRiskCases   Boolean  @default(false)
+  autoMatchEnabled       Boolean  @default(true)
+  acceptingNewUsers      Boolean  @default(true)
+  maxSessionsPerDay      Int?
+  maxSessionsPerWeek     Int?
   createdAt              DateTime @default(now())
   updatedAt              DateTime @updatedAt
 
@@ -83,6 +87,7 @@ model MentalHealthProviderProfile {
 
   @@index([doctorId])
   @@index([careTeamType])
+  @@index([autoMatchEnabled, acceptingNewUsers])
 }
 
 model CareTeamService {

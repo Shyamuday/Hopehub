@@ -169,6 +169,27 @@ Hypertension"
           Accepts high-risk cases with escalation support
         </label>
 
+        <label class="checkbox">
+          <input type="checkbox" [formField]="profileForm.autoMatchEnabled" />
+          Available for user auto-match
+        </label>
+
+        <label class="checkbox">
+          <input type="checkbox" [formField]="profileForm.acceptingNewUsers" />
+          Accepting new bookings
+        </label>
+
+        <div class="grid two">
+          <div>
+            <label for="maxSessionsPerDay">Max bookings per day</label>
+            <input id="maxSessionsPerDay" type="number" [formField]="profileForm.maxSessionsPerDay" placeholder="No daily limit" />
+          </div>
+          <div>
+            <label for="maxSessionsPerWeek">Max bookings per week</label>
+            <input id="maxSessionsPerWeek" type="number" [formField]="profileForm.maxSessionsPerWeek" placeholder="No weekly limit" />
+          </div>
+        </div>
+
         <label for="serviceOffers">Services & pricing</label>
         <div class="service-editor">
           @for (service of careServices(); track $index) {

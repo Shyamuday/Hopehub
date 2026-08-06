@@ -214,6 +214,10 @@ export type HopeHubProvider = {
   counsellingApproach?: string | null;
   safetyEscalationNote?: string | null;
   acceptsHighRiskCases?: boolean;
+  autoMatchEnabled?: boolean;
+  acceptingNewUsers?: boolean;
+  maxSessionsPerDay?: number | null;
+  maxSessionsPerWeek?: number | null;
   services?: Array<{
     id: string;
     title: string;
@@ -337,6 +341,7 @@ export class BookingService {
       sessionType?: string;
       ageGroup?: string;
       gender?: string;
+      autoMatchOnly?: boolean;
     } = {},
   ): Observable<HopeHubProviderResponse> {
     const searchParams = new URLSearchParams({
@@ -351,6 +356,7 @@ export class BookingService {
     if (params.sessionType) searchParams.set('sessionType', params.sessionType);
     if (params.ageGroup) searchParams.set('ageGroup', params.ageGroup);
     if (params.gender) searchParams.set('gender', params.gender);
+    if (params.autoMatchOnly) searchParams.set('autoMatchOnly', 'true');
     return this.http.get<HopeHubProviderResponse>(
       `${this.apiUrl}/hope-hub/providers?${searchParams.toString()}`,
     );
@@ -476,6 +482,7 @@ export class BookingService {
   ): Observable<{
     date: string;
     providerId?: string;
+    capacityMessage?: string;
     slots: Array<{
       time: string;
       period: 'morning' | 'afternoon' | 'evening';
@@ -485,6 +492,8 @@ export class BookingService {
   }> {
     return this.http.get<{
       date: string;
+      providerId?: string;
+      capacityMessage?: string;
       slots: Array<{
         time: string;
         period: 'morning' | 'afternoon' | 'evening';

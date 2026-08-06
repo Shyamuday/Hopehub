@@ -122,6 +122,22 @@
           }
         </select>
       </div>
+      <label class="website-toggle">
+        <input type="checkbox" [formField]="createForm.autoMatchEnabled" />
+        Available for user auto-match
+      </label>
+      <label class="website-toggle">
+        <input type="checkbox" [formField]="createForm.acceptingNewUsers" />
+        Accepting new bookings
+      </label>
+      <div class="field">
+        <label class="field-label" for="doc-create-max-day">Max bookings per day</label>
+        <input id="doc-create-max-day" type="number" [formField]="createForm.maxSessionsPerDay" placeholder="No daily limit" />
+      </div>
+      <div class="field">
+        <label class="field-label" for="doc-create-max-week">Max bookings per week</label>
+        <input id="doc-create-max-week" type="number" [formField]="createForm.maxSessionsPerWeek" placeholder="No weekly limit" />
+      </div>
       <div class="field">
         <label class="field-label" for="doc-create-qualifications">Qualifications</label>
         <textarea
@@ -648,6 +664,22 @@
             <input type="checkbox" [formField]="editForm.acceptsHighRiskCases" />
             Accept high-risk cases after team review
           </label>
+          <label class="website-toggle">
+            <input type="checkbox" [formField]="editForm.autoMatchEnabled" />
+            Available for user auto-match
+          </label>
+          <label class="website-toggle">
+            <input type="checkbox" [formField]="editForm.acceptingNewUsers" />
+            Accepting new bookings
+          </label>
+          <div class="field">
+            <label class="field-label" for="doc-edit-max-day">Max bookings per day</label>
+            <input id="doc-edit-max-day" type="number" [formField]="editForm.maxSessionsPerDay" placeholder="No daily limit" />
+          </div>
+          <div class="field">
+            <label class="field-label" for="doc-edit-max-week">Max bookings per week</label>
+            <input id="doc-edit-max-week" type="number" [formField]="editForm.maxSessionsPerWeek" placeholder="No weekly limit" />
+          </div>
           <div class="field">
             <label class="field-label" for="doc-edit-services">Services & pricing</label>
             <div class="service-editor">

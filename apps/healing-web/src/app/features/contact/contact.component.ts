@@ -896,6 +896,7 @@ export class ContactComponent implements OnInit {
           concern,
           language,
           gender,
+          autoMatchOnly: true,
         }),
       );
       if (!res.providers.length && concern) {
@@ -906,6 +907,7 @@ export class ContactComponent implements OnInit {
             roleGroup,
             language,
             gender,
+            autoMatchOnly: true,
           }),
         );
       }

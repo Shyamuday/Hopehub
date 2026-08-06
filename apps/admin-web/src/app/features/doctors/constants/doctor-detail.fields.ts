@@ -25,6 +25,10 @@ export type DoctorDetailSource = {
     focusAreas?: string[];
     mentalHealthProfile?: {
       languages?: string[];
+      autoMatchEnabled?: boolean;
+      acceptingNewUsers?: boolean;
+      maxSessionsPerDay?: number | null;
+      maxSessionsPerWeek?: number | null;
     } | null;
   };
 };
@@ -71,6 +75,37 @@ export const DOCTOR_DETAIL_FIELDS: DetailFieldDef<DoctorDetailSource>[] = [
   {
     label: 'Languages',
     getValue: (d) => (d.doctorProfile?.mentalHealthProfile?.languages ?? []).join(', '),
+    omitWhenEmpty: true,
+  },
+  {
+    label: 'Auto-match',
+    getValue: (d) =>
+      d.doctorProfile?.mentalHealthProfile
+        ? d.doctorProfile.mentalHealthProfile.autoMatchEnabled === false
+          ? 'Off'
+          : 'On'
+        : '',
+    omitWhenEmpty: true,
+  },
+  {
+    label: 'Accepting bookings',
+    getValue: (d) =>
+      d.doctorProfile?.mentalHealthProfile
+        ? d.doctorProfile.mentalHealthProfile.acceptingNewUsers === false
+          ? 'No'
+          : 'Yes'
+        : '',
+    omitWhenEmpty: true,
+  },
+  {
+    label: 'Booking cap',
+    getValue: (d) => {
+      const mental = d.doctorProfile?.mentalHealthProfile;
+      if (!mental) return '';
+      const daily = mental.maxSessionsPerDay ? `${mental.maxSessionsPerDay}/day` : '';
+      const weekly = mental.maxSessionsPerWeek ? `${mental.maxSessionsPerWeek}/week` : '';
+      return [daily, weekly].filter(Boolean).join(', ') || 'No cap';
+    },
     omitWhenEmpty: true,
   },
   {
