@@ -35,7 +35,7 @@ export function loadConfig(): BotConfig {
   const token = env('TELEGRAM_COMMUNITY_BOT_TOKEN') || env('TELEGRAM_BOT_TOKEN');
   if (!token) {
     throw new Error(
-      'TELEGRAM_COMMUNITY_BOT_TOKEN is required. Use the @Hopehubbot token for this welcome bot.'
+      'TELEGRAM_COMMUNITY_BOT_TOKEN is required. Use the community/welcome bot token for this bot.'
     );
   }
 
@@ -51,7 +51,7 @@ export function loadConfig(): BotConfig {
     port: Number(env('PORT', '3104')),
     webhookBaseUrl,
     webhookSecret: env('TELEGRAM_COMMUNITY_WEBHOOK_SECRET'),
-    webBotUrl: env('HOPEHUB_WEB_BOT_URL', 'https://t.me/Hopehubwebbot'),
+    webBotUrl: env('HOPEHUB_WEB_BOT_URL', 'https://t.me/Hopehubbot'),
     websiteUrl: env('HOPEHUB_WEBSITE_URL', 'https://hopehub.in'),
     channelUrl: env('HOPEHUB_CHANNEL_URL', 'https://t.me/HopeHubGlobal'),
     logoUrl: env(

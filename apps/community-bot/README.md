@@ -2,16 +2,16 @@
 
 Tiny Telegram welcome bot for the Hope Hub group.
 
-Use:
+Current production swap:
 
-- `@Hopehubbot` token here as `TELEGRAM_COMMUNITY_BOT_TOKEN`
-- `@Hopehubwebbot` for the main Hope Hub user/web workflow bot
+- `@Hopehubwebbot` runs this welcome/community bot
+- `@Hopehubbot` runs the main Hope Hub user/web workflow bot
 
 This bot only:
 
 - welcomes new group members
 - shows Hope Hub logo above the welcome text
-- shows one `Hope Hub Bot` button for `@Hopehubwebbot`
+- shows one `Hope Hub Bot` button for `@Hopehubbot`
 - shows one `Website` button for `https://hopehub.in`
 - shows one `Rules` button that replies with group rules
 - replies to `/start` and `/help` with the same button
