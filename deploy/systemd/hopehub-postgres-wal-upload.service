@@ -1,0 +1,10 @@
+[Unit]
+Description=Upload staged HopeHub PostgreSQL WAL archives to S3
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+WorkingDirectory=/opt/hopehub/apps/api
+ExecStart=/usr/local/bin/hopehub-upload-postgres-wal-to-s3

@@ -16,6 +16,7 @@
     "prisma:sync": "tsx prisma/sync-migrations.ts",
     "assessments:sync": "tsx scripts/sync-assessment-definitions.ts",
     "healing-content:sync": "tsx scripts/sync-healing-content.ts",
+    "db-backup:bucket:configure": "tsx scripts/configure-db-backup-bucket.ts",
     "prisma:verify": "tsx scripts/verify-migrations.ts",
     "prisma:push": "prisma db push",
     "repertory:download:oorep": "tsx scripts/download-oorep-sql.ts",

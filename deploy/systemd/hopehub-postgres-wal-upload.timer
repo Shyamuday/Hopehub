@@ -1,0 +1,11 @@
+[Unit]
+Description=Upload HopeHub PostgreSQL WAL archives every five minutes
+
+[Timer]
+OnBootSec=5min
+OnUnitActiveSec=5min
+Persistent=true
+Unit=hopehub-postgres-wal-upload.service
+
+[Install]
+WantedBy=timers.target

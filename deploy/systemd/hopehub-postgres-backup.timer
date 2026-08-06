@@ -1,0 +1,10 @@
+[Unit]
+Description=Run HopeHub PostgreSQL S3 backup daily
+
+[Timer]
+OnCalendar=Sun *-*-* 02:15:00 UTC
+Persistent=true
+Unit=hopehub-postgres-backup.service
+
+[Install]
+WantedBy=timers.target

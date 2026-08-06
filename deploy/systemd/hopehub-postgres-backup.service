@@ -1,0 +1,10 @@
+[Unit]
+Description=HopeHub PostgreSQL encrypted S3 backup
+After=network-online.target postgresql@16-main.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+WorkingDirectory=/opt/hopehub/apps/api
+ExecStart=/usr/local/bin/hopehub-backup-postgres-to-s3
