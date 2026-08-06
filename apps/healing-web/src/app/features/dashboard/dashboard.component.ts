@@ -939,7 +939,7 @@ export class DashboardComponent implements OnInit {
       FREE_INTRO: 'Free introductory session',
       DISCOUNTED_FIRST: 'First/follow-up pricing',
       PACKAGE: 'Package pricing',
-      FREE_VOLUNTEER: 'Volunteer/free support',
+      FREE_VOLUNTEER: 'Emotional support/free support',
       PER_MINUTE: 'Per-minute pricing',
     };
     return mode ? (labels[mode] ?? mode.replace(/_/g, ' ')) : '';

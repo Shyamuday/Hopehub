@@ -124,7 +124,7 @@ async function showPaymentHub(kind: TelegramBotKind, session: TelegramSession) {
       '• Session booking: pay full amount or deposit',
       '• Paid assessments: unlock and take tests',
       '• Pending payments: retry from dashboard',
-      '• Volunteer talk/support: open paid support route',
+      '• Listener talk/support: open paid support route',
       '• Donations: support Hope Hub work',
       '',
       'Payment is completed on the Hope Hub website through Razorpay.'
@@ -680,7 +680,7 @@ async function showUserRequests(kind: TelegramBotKind, session: TelegramSession)
   if (!leads.length) {
     await sendTelegramMessage(kind, {
       chat_id: session.chatId,
-      text: 'No support, booking, or volunteer requests yet.',
+      text: 'No support, booking, or emotional support listener requests yet.',
       reply_markup: {
         inline_keyboard: [
           [
@@ -889,7 +889,7 @@ async function notifyAdminsAboutSafetySupportLead(
             ? `Preferred time: ${escapeHtml(details.preferredCallbackTime)}`
             : '',
           '',
-          'Follow safety protocol. Do not assign volunteer-only handling for crisis risk.'
+          'Follow safety protocol. Do not assign listener-only handling for crisis risk.'
         ]
           .filter(Boolean)
           .join('\n'),
@@ -962,7 +962,7 @@ async function notifyAdminsAboutTelegramLead(
       ? 'Booking request'
       : details.kind === 'SUPPORT'
         ? 'Support request'
-        : 'Volunteer request';
+        : 'Emotional support request';
   const providers = await listAssignableLeadProviders({ safety: details.safety });
   const assignmentRows = leadAssignmentRows(lead.id, providers);
 
@@ -1032,7 +1032,7 @@ async function setLeadAssignmentIntent(
         : error instanceof Error && error.message === 'PROVIDER_NOT_FOUND'
           ? 'Provider not found or inactive. Refresh the lead and try another provider.'
           : error instanceof Error && error.message === 'SAFETY_LEAD_REQUIRES_PSYCHOLOGIST'
-            ? 'Safety leads can only be assigned to psychologist/admin escalation. Volunteer assignment is blocked.'
+            ? 'Safety leads can only be assigned to psychologist/admin escalation. Listener assignment is blocked.'
             : 'Could not assign this lead right now.';
     await sendTelegramMessage(kind, {
       chat_id: session.chatId,
@@ -1085,8 +1085,8 @@ type ProviderApplicationTrack =
 
 const providerTrackLabels: Record<ProviderApplicationTrack, string> = {
   PROFESSIONAL_PSYCHOLOGIST: 'Professional psychologist',
-  PSYCHOLOGY_STUDENT_VOLUNTEER: 'Psychology student volunteer',
-  PEER_SUPPORT_VOLUNTEER: 'Peer support volunteer'
+  PSYCHOLOGY_STUDENT_VOLUNTEER: 'Psychology student emotional support listener',
+  PEER_SUPPORT_VOLUNTEER: 'Peer emotional support listener'
 };
 
 const careTeamTypeOptions: Array<{
@@ -1107,12 +1107,12 @@ const careTeamTypeOptions: Array<{
   {
     type: CareTeamMemberType.PSYCHOLOGY_STUDENT_VOLUNTEER,
     track: 'PSYCHOLOGY_STUDENT_VOLUNTEER',
-    label: 'Psychology student volunteer'
+    label: 'Psychology student emotional support listener'
   },
   {
     type: CareTeamMemberType.PEER_SUPPORT_VOLUNTEER,
     track: 'PEER_SUPPORT_VOLUNTEER',
-    label: 'Peer support volunteer'
+    label: 'Peer emotional support listener'
   },
   { type: CareTeamMemberType.NLP_COACH, track: 'PROFESSIONAL_PSYCHOLOGIST', label: 'NLP coach' },
   { type: CareTeamMemberType.LIFE_COACH, track: 'PROFESSIONAL_PSYCHOLOGIST', label: 'Life coach' },
@@ -1283,7 +1283,7 @@ async function handleProviderApplicationText(
             ].join('\n')
           : track === 'PSYCHOLOGY_STUDENT_VOLUNTEER'
             ? [
-                'Send student volunteer details in 3 lines:',
+                'Send student listener details in 3 lines:',
                 '',
                 'Current course/qualification',
                 'Area of interest',
@@ -1316,7 +1316,7 @@ async function handleProviderApplicationText(
               qualification: lines[0] || '',
               specialization: lines[1] || '',
               registrationDetails: lines.slice(2).join(' ') || '',
-              experienceYears: 'Student volunteer'
+              experienceYears: 'Student listener'
             }
           : {
               qualification: 'Peer support experience',
@@ -1392,7 +1392,7 @@ async function handleProviderApplicationText(
       text: [
         'Last step: tell us why you want to work with Hope Hub.',
         '',
-        'Please write at least 40 characters. Also confirm you understand volunteers/student supporters are non-clinical and must follow safety escalation.'
+        'Please write at least 40 characters. Also confirm you understand listeners/student supporters are non-clinical and must follow safety escalation.'
       ].join('\n'),
       reply_markup: { inline_keyboard: menuCancelRows() }
     });
@@ -2079,8 +2079,8 @@ async function promptLeadConcern(
           ]
         : [
             [
-              { text: 'Pay for volunteer talk', url: volunteerTalkUrl },
-              { text: 'Become volunteer', url: volunteerApplicationUrl(session) }
+              { text: 'Pay for listener talk', url: volunteerTalkUrl },
+              { text: 'Become listener', url: volunteerApplicationUrl(session) }
             ],
             [whatsappButton],
             [{ text: 'Donate/support free talks', url: donationPaymentUrl(session) }]
@@ -2092,7 +2092,7 @@ async function promptLeadConcern(
         ? 'What do you need help with? You can also book and pay directly below.'
         : leadKind === 'SUPPORT'
           ? 'What support do you need? Tap one option so the right team can follow up.'
-          : 'What volunteer option do you want? Paid talk, volunteer application, and donation links are below.',
+          : 'What listener option do you want? Paid talk, listener application, and donation links are below.',
     reply_markup: {
       inline_keyboard: [
         ...paymentRows,
@@ -2126,7 +2126,7 @@ async function setLeadConcern(kind: TelegramBotKind, session: TelegramSession, c
         '<b>Safety note</b>',
         'If there is immediate danger, self-harm risk, violence, overdose, or medical emergency, contact local emergency services now or go to the nearest emergency department.',
         '',
-        'Hope Hub Telegram support is not an emergency service. A volunteer should not handle crisis risk alone.',
+        'Hope Hub Telegram support is not an emergency service. A listener should not handle crisis risk alone.',
         '',
         'You can still continue below so our team can follow up.'
       ].join('\n'),
@@ -2198,7 +2198,7 @@ async function createLeadRequest(
   const name = linkedUser?.name || telegramDisplayName(session);
   const concernPrefix =
     leadKind === 'VOLUNTEER'
-      ? 'Volunteer support request'
+      ? 'Listener support request'
       : leadKind === 'SUPPORT'
         ? 'Telegram support request'
         : 'Telegram booking request';
@@ -2257,7 +2257,7 @@ async function createLeadRequest(
         ? 'If you want to move faster, you can book and pay securely now.'
         : leadKind === 'SUPPORT'
           ? 'The team can follow up. You can also open dashboard, payment help, or contact page below.'
-          : 'You can pay for a volunteer/support talk, apply as a volunteer, or donate to support free talks.'
+          : 'You can pay for a listener/support talk, apply as a listener, or donate to support free talks.'
     ].join('\n'),
     parse_mode: 'HTML',
     reply_markup: {
@@ -2289,7 +2289,7 @@ async function createLeadRequest(
             : [
                 [
                   { text: 'Pay for support talk', url: volunteerTalkUrl },
-                  { text: 'Become volunteer', url: volunteerApplicationUrl(updated) }
+                  { text: 'Become listener', url: volunteerApplicationUrl(updated) }
                 ],
                 [whatsappButton],
                 [{ text: 'Donate/support free talks', url: donationPaymentUrl(updated) }],

@@ -67,7 +67,11 @@ export class PsychologistsComponent implements OnInit {
     { value: '', label: 'All', help: 'Show every published support option' },
     { value: 'PROFESSIONALS', label: 'Professionals', help: 'Structured mental-wellness care' },
     { value: 'COUNSELLORS', label: 'Counsellors', help: 'Guided counselling support' },
-    { value: 'VOLUNTEERS', label: 'Volunteers', help: 'Non-clinical listening support' },
+    {
+      value: 'VOLUNTEERS',
+      label: 'Emotional Support Listeners',
+      help: 'Non-clinical listening support',
+    },
     { value: 'COACHES', label: 'Coaches', help: 'Goals, habits, confidence' },
     { value: 'WELLNESS_GUIDES', label: 'Wellness guides', help: 'Breathing and mindfulness' },
     { value: 'MENTORS', label: 'Mentors', help: 'Study and career support' },
@@ -209,7 +213,7 @@ export class PsychologistsComponent implements OnInit {
       return 'Recommended: start with Professionals or Counsellors for structured support.';
     }
     if (/lonely|loneliness|breakup|motivation|heartbreak|friend/.test(concern)) {
-      return 'Recommended: Peer volunteers or Coaches may be a softer first step.';
+      return 'Recommended: Listener peers or Coaches may be a softer first step.';
     }
     if (/study|career|exam|focus|job/.test(concern)) {
       return 'Recommended: Career / Study Mentors first, then Counsellors if emotions feel heavy.';
@@ -247,7 +251,7 @@ export class PsychologistsComponent implements OnInit {
   emptySuggestion(): string {
     const tab = this.roleTabs.find((item) => item.value === this.roleGroup());
     if (this.roleGroup() === 'VOLUNTEERS') {
-      return 'No volunteers match this filter right now. Try Counsellors or send a general request so the team can guide you.';
+      return 'No listeners match this filter right now. Try Counsellors or send a general request so the team can guide you.';
     }
     if (this.roleGroup() === 'PROFESSIONALS' || this.roleGroup() === 'COUNSELLORS') {
       return 'No professional/counsellor match found for this filter. Try All, adjust concern/language, or book a general request.';

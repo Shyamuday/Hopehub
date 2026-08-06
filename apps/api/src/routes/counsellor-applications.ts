@@ -87,7 +87,7 @@ export const counsellorApplicationSchema = z
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           path: ['agreesToNonClinicalRole'],
-          message: 'Student volunteers must agree to the supervised, non-clinical role.'
+          message: 'Psychology student listeners must agree to the supervised, non-clinical role.'
         });
       }
     }
@@ -102,7 +102,7 @@ export const counsellorApplicationSchema = z
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           path: ['agreesToNonClinicalRole'],
-          message: 'Peer volunteers must agree to the non-clinical role.'
+          message: 'Peer listeners must agree to the non-clinical role.'
         });
       }
     }

@@ -126,7 +126,7 @@ export async function paymentHubRows(session: PaymentLinkSession): Promise<Inlin
       { text: 'Retry pending payment', url: dashboardPaymentUrl(session) }
     ],
     [
-      { text: 'Volunteer talk payment', url: volunteerTalkUrl },
+      { text: 'Emotional support listener talk payment', url: volunteerTalkUrl },
       { text: 'Donate', url: donationPaymentUrl(session) }
     ],
     [whatsappButton],

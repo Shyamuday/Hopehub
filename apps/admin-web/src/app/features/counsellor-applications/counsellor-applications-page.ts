@@ -168,8 +168,8 @@ export class CounsellorApplicationsPage implements OnInit {
   trackLabel(track: string): string {
     const labels: Record<string, string> = {
       PROFESSIONAL_PSYCHOLOGIST: 'Professional psychologist',
-      PSYCHOLOGY_STUDENT_VOLUNTEER: 'Psychology student volunteer',
-      PEER_SUPPORT_VOLUNTEER: 'Peer-support volunteer',
+      PSYCHOLOGY_STUDENT_VOLUNTEER: 'Psychology student emotional support listener',
+      PEER_SUPPORT_VOLUNTEER: 'Peer emotional support listener',
     };
     return labels[track] || track;
   }
@@ -178,8 +178,8 @@ export class CounsellorApplicationsPage implements OnInit {
     const labels: Record<string, string> = {
       MENTAL_WELLNESS_PROFESSIONAL: 'Mental wellness professional',
       QUALIFIED_COUNSELLOR: 'Qualified counsellor',
-      PSYCHOLOGY_STUDENT_VOLUNTEER: 'Psychology student volunteer',
-      PEER_SUPPORT_VOLUNTEER: 'Peer-support volunteer',
+      PSYCHOLOGY_STUDENT_VOLUNTEER: 'Psychology student emotional support listener',
+      PEER_SUPPORT_VOLUNTEER: 'Peer emotional support listener',
       NLP_COACH: 'NLP coach',
       LIFE_COACH: 'Life coach',
       MEDITATION_BREATHWORK_GUIDE: 'Meditation / breathwork guide',

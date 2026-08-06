@@ -34,7 +34,7 @@ export async function menuFor(kind: TelegramBotKind, linked: boolean): Promise<I
         { text: 'Book session', callback_data: 'user:book' },
         { text: 'Get support', callback_data: 'user:support' }
       ],
-      [{ text: 'Volunteer support', callback_data: 'user:volunteer' }, whatsappButton],
+      [{ text: 'Emotional support listener', callback_data: 'user:volunteer' }, whatsappButton],
       [{ text: 'Payments / Donate', callback_data: 'user:payments' }],
       [
         linked
@@ -102,14 +102,14 @@ export function helpText(kind: TelegramBotKind) {
       '/plan - show today plan',
       '/assessments - take an assessment test',
       '/results - latest assessment results',
-      '/requests - support, booking, and volunteer request status',
+      '/requests - support, booking, and listener request status',
       '/addtask - add a task',
       '/review - save end-of-day review',
       '/book - request a session',
       '/support - support options',
       '/whatsapp - join WhatsApp group',
       '/payments - payment, retry, and donation links',
-      '/volunteer - request volunteer support',
+      '/volunteer - request emotional support listener',
       'WhatsApp group: use Join WhatsApp button in menu',
       '',
       'This bot is not an emergency service.'
@@ -149,7 +149,7 @@ export function startGuideText(kind: TelegramBotKind, session: MenuSession) {
       linkedLine,
       '',
       '<b>Purpose</b>',
-      'This bot helps you manage daily wellness tasks, request sessions, and ask for volunteer support from Telegram.',
+      'This bot helps you manage daily wellness tasks, request sessions, and ask for emotional support listeners from Telegram.',
       '',
       '<b>What you can do</b>',
       '• Create and review your daily plan',
@@ -157,7 +157,7 @@ export function startGuideText(kind: TelegramBotKind, session: MenuSession) {
       '• Request booking follow-up',
       '• Get support for assessments, booking, payments, or safety concerns',
       '• Join WhatsApp community/support group',
-      '• Request volunteer support',
+      '• Request emotional support listener',
       '• Open secure payment, retry payment, or donate',
       '',
       '<b>Safety guideline</b>',

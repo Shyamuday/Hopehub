@@ -204,7 +204,9 @@
           }
           <button type="button" class="btn-secondary" (click)="addCareService('create')">Add service</button>
         </div>
-        <p class="field-hint">Use pricing mode for fixed, first free, discounted first, package, per-minute, or free volunteer support.</p>
+        <p class="field-hint">
+          Use pricing mode for fixed, first free, discounted first, package, per-minute, or free emotional support listener support.
+        </p>
       </div>
     }
     <button type="button" (click)="createDoctor()" [disabled]="mutating() || loading()">
@@ -676,7 +678,9 @@
               }
               <button type="button" class="btn-secondary" (click)="addCareService('edit')">Add service</button>
             </div>
-            <p class="field-hint">Use pricing mode for fixed, first free, discounted first, package, per-minute, or free volunteer support.</p>
+            <p class="field-hint">
+              Use pricing mode for fixed, first free, discounted first, package, per-minute, or free emotional support listener support.
+            </p>
           </div>
         }
         <button type="button" (click)="saveDoctorEdits()" [disabled]="mutating()">

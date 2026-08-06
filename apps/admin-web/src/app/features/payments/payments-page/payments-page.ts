@@ -214,7 +214,7 @@ export class PaymentsPage implements OnInit {
       FREE_INTRO: 'Free intro',
       DISCOUNTED_FIRST: 'First/follow-up',
       PACKAGE: 'Package',
-      FREE_VOLUNTEER: 'Volunteer/free',
+      FREE_VOLUNTEER: 'Emotional support listener/free',
       PER_MINUTE: 'Per-minute',
     };
     return mode ? (labels[mode] ?? mode.replace(/_/g, ' ')) : '';

@@ -23,14 +23,14 @@ export const APP_CONSTANTS = {
         url: '',
         audience: 'Users',
         purpose:
-          'Start here for user help, daily plan, tasks, session requests, and volunteer support.',
+          'Start here for user help, daily plan, tasks, session requests, and emotional support listener help.',
       },
       {
         key: 'doctor-provider',
         title: 'Care Team Bot',
         handle: '',
         url: '',
-        audience: 'Doctors, counsellors, and volunteers',
+        audience: 'Doctors, counsellors, and emotional support listeners',
         purpose:
           'For care team members to link their account, manage queue, and update availability.',
       },

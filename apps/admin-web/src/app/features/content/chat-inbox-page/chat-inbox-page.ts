@@ -305,7 +305,7 @@ export class ChatInboxPage implements OnDestroy {
         ? 'Psychologist'
         : provider.assignmentType === 'ADMIN'
           ? 'Admin'
-          : 'Volunteer';
+          : 'Emotional support listener';
     return [role, provider.designation || provider.specialty].filter(Boolean).join(' · ');
   }
 

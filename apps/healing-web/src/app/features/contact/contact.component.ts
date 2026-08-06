@@ -109,8 +109,11 @@ export class ContactComponent implements OnInit {
     { value: '', label: 'No preference' },
     { value: 'Verified Mental Health Professional', label: 'Verified professional' },
     { value: 'Qualified Counsellor', label: 'Qualified counsellor' },
-    { value: 'Psychology Student Volunteer', label: 'Psychology student volunteer' },
-    { value: 'Peer Support Volunteer', label: 'Peer support volunteer' },
+    {
+      value: 'Psychology Student Volunteer',
+      label: 'Psychology student emotional support listener',
+    },
+    { value: 'Peer Support Volunteer', label: 'Peer emotional support listener' },
     { value: 'NLP Coach', label: 'NLP coach' },
     { value: 'Life Coach', label: 'Life coach' },
     { value: 'Meditation / Breathwork Guide', label: 'Meditation / breathwork guide' },

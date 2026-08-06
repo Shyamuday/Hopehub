@@ -46,7 +46,7 @@ export class FeedbackComponent {
     {
       value: 'SERVICE_EXPERIENCE',
       label: 'Service experience',
-      description: 'Share feedback about a session, package, volunteer, or care team member.',
+      description: 'Share feedback about a session, package, listener, or care team member.',
     },
     {
       value: 'PRAISE',

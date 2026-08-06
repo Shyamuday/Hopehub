@@ -63,7 +63,7 @@ export class ProfilePage {
     { value: 'FREE_INTRO', label: 'First session free' },
     { value: 'DISCOUNTED_FIRST', label: 'Discounted first session' },
     { value: 'PACKAGE', label: 'Package' },
-    { value: 'FREE_VOLUNTEER', label: 'Free volunteer support' },
+    { value: 'FREE_VOLUNTEER', label: 'Free emotional support listener support' },
     { value: 'PER_MINUTE', label: 'Per-minute pricing' },
   ];
   readonly careServices = signal<Array<any>>([]);

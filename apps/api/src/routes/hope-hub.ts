@@ -464,7 +464,7 @@ function careTeamServicePricingPreview(service: CareTeamServicePricingInput, pre
     case CareTeamServicePricingMode.FREE_VOLUNTEER:
       return {
         amountInPaise: 0,
-        label: 'Free volunteer support',
+        label: 'Free emotional support listener support',
         appliedRule: 'FREE_VOLUNTEER',
         sessionCount: 1
       };
@@ -680,22 +680,22 @@ function careTeamRoleDisplay(careTeamType: string, defaultLabel: string) {
       isClinicalCare: true
     },
     PSYCHOLOGY_STUDENT_VOLUNTEER: {
-      label: 'Psychology Student Volunteer',
-      tierLabel: 'Supervised volunteer',
+      label: 'Psychology Student Listener',
+      tierLabel: 'Supervised emotional support listener',
       tone: 'student',
-      description:
-        'Student volunteer support for listening, reflection, and non-clinical guidance.',
+      description: 'Student listener support for listening, reflection, and non-clinical guidance.',
       scope: 'Non-clinical support. Works within Hope Hub guidance and escalation rules.',
       bestFor: ['listening support', 'study stress', 'daily emotional check-ins'],
       notFor: ['diagnosis', 'therapy replacement', 'high-risk or emergency concerns'],
-      ctaLabel: 'Request student volunteer talk',
+      ctaLabel: 'Request student listener support',
       isClinicalCare: false
     },
     PEER_SUPPORT_VOLUNTEER: {
-      label: 'Peer Support Volunteer',
+      label: 'Peer Support Listener',
       tierLabel: 'Peer support',
-      tone: 'volunteer',
-      description: 'Lived-experience or community volunteer support for safe, human conversation.',
+      tone: 'listener',
+      description:
+        'Lived-experience or peer emotional support listening for safe, human conversation.',
       scope: 'Non-clinical peer listening. Escalates safety concerns to the Hope Hub team.',
       bestFor: ['loneliness', 'breakup recovery', 'motivation and encouragement'],
       notFor: ['clinical treatment', 'diagnosis', 'crisis or emergency support'],

@@ -47,7 +47,7 @@ export const routes: Routes = [
     data: {
       breadcrumb: 'Care team',
       description: 'Meet Hope Hub care team members available for mental wellness support',
-      keywords: 'care team, mental wellness support, counsellors, volunteers, hope hub support',
+      keywords: 'care team, mental wellness support, counsellors, listeners, hope hub support',
     },
   },
   {
@@ -73,7 +73,7 @@ export const routes: Routes = [
     data: {
       breadcrumb: 'Care team',
       description: 'Meet Hope Hub care team members available for mental wellness support',
-      keywords: 'care team, mental wellness support, counsellors, volunteers, hope hub support',
+      keywords: 'care team, mental wellness support, counsellors, listeners, hope hub support',
     },
   },
   {
@@ -247,7 +247,7 @@ export const routes: Routes = [
     data: {
       breadcrumb: 'Careers',
       description:
-        'Apply to become a Hope Hub counsellor, volunteer, or mental wellness care team member',
+        'Apply to become a Hope Hub counsellor, emotional support listener, or mental wellness care team member',
       keywords: 'hope hub careers, counsellor application, counselor jobs, mental health careers',
     },
   },

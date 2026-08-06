@@ -57,13 +57,14 @@ export class CareersComponent {
     {
       value: 'PSYCHOLOGY_STUDENT_VOLUNTEER',
       track: 'PSYCHOLOGY_STUDENT_VOLUNTEER',
-      title: 'Psychology student volunteer',
-      description: 'Supervised, non-clinical support and community learning pathway.',
+      title: 'Psychology student emotional support listener',
+      description:
+        'Supervised, non-clinical emotional support listening and community learning pathway.',
     },
     {
       value: 'PEER_SUPPORT_VOLUNTEER',
       track: 'PEER_SUPPORT_VOLUNTEER',
-      title: 'Peer-support volunteer',
+      title: 'Peer emotional support listener',
       description: 'Non-clinical listening, community support, and guided escalation.',
     },
     {
@@ -276,8 +277,8 @@ export class CareersComponent {
       return 'Application submitted. Our team will verify your profile before discussing paid Hope Hub consultations.';
     }
     if (track === 'PSYCHOLOGY_STUDENT_VOLUNTEER') {
-      return 'Student volunteer application submitted. We will review your supervision details and contact shortlisted applicants.';
+      return 'Emotional support listener application submitted. We will review your supervision details and contact shortlisted applicants.';
     }
-    return 'Peer-support volunteer application submitted. We will review it and contact shortlisted applicants.';
+    return 'Peer emotional support listener application submitted. We will review it and contact shortlisted applicants.';
   }
 }

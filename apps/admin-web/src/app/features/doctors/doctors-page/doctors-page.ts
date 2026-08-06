@@ -187,14 +187,17 @@ export class DoctorsPage {
     { value: 'FREE_INTRO', label: 'First session free' },
     { value: 'DISCOUNTED_FIRST', label: 'Discounted first session' },
     { value: 'PACKAGE', label: 'Package' },
-    { value: 'FREE_VOLUNTEER', label: 'Free volunteer support' },
+    { value: 'FREE_VOLUNTEER', label: 'Free emotional support listener support' },
     { value: 'PER_MINUTE', label: 'Per-minute pricing' },
   ];
   readonly careTeamTypeOptions: Array<{ value: CareTeamMemberType; label: string }> = [
     { value: 'MENTAL_WELLNESS_PROFESSIONAL', label: 'Mental wellness professional' },
     { value: 'QUALIFIED_COUNSELLOR', label: 'Qualified counsellor' },
-    { value: 'PSYCHOLOGY_STUDENT_VOLUNTEER', label: 'Psychology student volunteer' },
-    { value: 'PEER_SUPPORT_VOLUNTEER', label: 'Peer support volunteer' },
+    {
+      value: 'PSYCHOLOGY_STUDENT_VOLUNTEER',
+      label: 'Psychology student emotional support listener',
+    },
+    { value: 'PEER_SUPPORT_VOLUNTEER', label: 'Peer emotional support listener' },
     { value: 'NLP_COACH', label: 'NLP coach' },
     { value: 'LIFE_COACH', label: 'Life coach' },
     { value: 'MEDITATION_BREATHWORK_GUIDE', label: 'Meditation / breathwork guide' },

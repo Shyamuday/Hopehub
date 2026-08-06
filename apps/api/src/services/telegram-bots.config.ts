@@ -48,13 +48,13 @@ export const commandMenus: Record<TelegramBotKind, { command: string; descriptio
     { command: 'support', description: 'Get support options' },
     { command: 'whatsapp', description: 'Join WhatsApp group' },
     { command: 'payments', description: 'Payment and donation links' },
-    { command: 'volunteer', description: 'Request volunteer support' },
+    { command: 'volunteer', description: 'Request emotional support listener help' },
     { command: 'me', description: 'Show linked account' },
     { command: 'help', description: 'Get help' }
   ],
   [TelegramBotKind.DOCTOR]: [
     { command: 'start', description: 'Open doctor menu' },
-    { command: 'signup', description: 'Apply for care team/volunteer' },
+    { command: 'signup', description: 'Apply for care team/emotional support listener' },
     { command: 'link', description: 'Link doctor account' },
     { command: 'services', description: 'Manage services and pricing' },
     { command: 'availability', description: 'Manage weekly availability' },
@@ -106,8 +106,8 @@ export const bookingConcernOptions = [
 ] as const;
 
 export const volunteerConcernOptions = [
-  { key: 'talk', label: 'Talk to volunteer' },
-  { key: 'become', label: 'Become volunteer' },
+  { key: 'talk', label: 'Talk to emotional support listener' },
+  { key: 'become', label: 'Become emotional support listener' },
   { key: 'student', label: 'Psychology student' },
   { key: 'life_exp', label: 'Life experience' },
   { key: 'paid_free', label: 'Paid/free details' },
@@ -119,7 +119,7 @@ export const supportConcernOptions = [
   { key: 'assessment', label: 'Assessment help' },
   { key: 'booking', label: 'Booking help' },
   { key: 'payment', label: 'Payment issue' },
-  { key: 'volunteer', label: 'Volunteer help' },
+  { key: 'volunteer', label: 'Emotional support listener help' },
   { key: 'safety', label: 'Safety concern' }
 ] as const;
 
