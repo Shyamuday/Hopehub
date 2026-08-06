@@ -2,6 +2,7 @@ import type { Server as SocketIoServer } from 'socket.io';
 import {
   ConsultationMode,
   ConsultationStatus,
+  Prisma,
   LivePresenceStatus,
   OnlineDoctorCategory,
   Role
@@ -236,6 +237,94 @@ export async function isDoctorLiveForInstant(userId: string, diseaseId: string) 
   return Boolean(session);
 }
 
+function asRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
+}
+
+function isHopeHubQuickTalkConsultation(consultation: {
+  intakeAnswers: Prisma.JsonValue;
+  pricingSnapshot: Prisma.JsonValue | null;
+}) {
+  const intake = asRecord(consultation.intakeAnswers);
+  const pricing = asRecord(consultation.pricingSnapshot);
+  return (
+    intake['source'] === 'hope-hub-quick-talk' ||
+    pricing['source'] === 'hope-hub-quick-talk' ||
+    intake['quickTalk'] === true
+  );
+}
+
+async function isHopeHubProviderLiveForInstant(userId: string) {
+  const cutoff = new Date(Date.now() - ONLINE_HEARTBEAT_TTL_MS);
+  const session = await prisma.doctorOnlineSession.findFirst({
+    where: {
+      userId,
+      enabled: true,
+      liveStatus: LivePresenceStatus.ONLINE,
+      lastHeartbeatAt: { gte: cutoff },
+      user: { isActive: true, role: Role.DOCTOR },
+      doctor: {
+        isAvailable: true,
+        showOnWebsite: true,
+        employeeStatus: 'ACTIVE',
+        mentalHealthProfile: { is: { acceptingNewUsers: true, autoMatchEnabled: true } }
+      }
+    }
+  });
+  return Boolean(session);
+}
+
+async function findBestHopeHubLiveProvider(consultation: {
+  intakeAnswers: Prisma.JsonValue;
+  preferredDoctorUserId: string | null;
+}) {
+  if (
+    consultation.preferredDoctorUserId &&
+    (await isHopeHubProviderLiveForInstant(consultation.preferredDoctorUserId))
+  ) {
+    return consultation.preferredDoctorUserId;
+  }
+
+  const intake = asRecord(consultation.intakeAnswers);
+  const language = String(intake['preferredLanguage'] || '').trim();
+  const gender = String(intake['preferredProviderGender'] || '').trim();
+  const concern = String(intake['concernCategory'] || '').trim();
+
+  async function queryBest(opts: { includeConcern: boolean }) {
+    const session = await prisma.doctorOnlineSession.findFirst({
+      where: {
+        enabled: true,
+        liveStatus: LivePresenceStatus.ONLINE,
+        lastHeartbeatAt: { gte: new Date(Date.now() - ONLINE_HEARTBEAT_TTL_MS) },
+        acceptsVoiceCall: true,
+        user: { isActive: true, role: Role.DOCTOR },
+        doctor: {
+          isAvailable: true,
+          showOnWebsite: true,
+          employeeStatus: 'ACTIVE',
+          ...(gender && gender !== 'PREFER_NOT_TO_SAY' ? { user: { gender: gender as any } } : {}),
+          mentalHealthProfile: {
+            is: {
+              acceptingNewUsers: true,
+              autoMatchEnabled: true,
+              ...(language ? { languages: { has: language } } : {}),
+              ...(opts.includeConcern && concern ? { concernsHandled: { has: concern } } : {})
+            }
+          }
+        }
+      },
+      orderBy: [{ wentLiveAt: 'asc' }, { updatedAt: 'asc' }]
+    });
+    return session?.userId ?? null;
+  }
+
+  return (
+    (await queryBest({ includeConcern: true })) ?? (await queryBest({ includeConcern: false }))
+  );
+}
+
 export async function findBestLiveDoctor(diseaseId: string) {
   const doctors = await listLiveOnlineDoctors({ diseaseId });
   const specialist = doctors.find(
@@ -262,11 +351,18 @@ export async function tryAssignInstantConsultation(io: SocketIoServer, consultat
     return null;
   if (consultation.status !== ConsultationStatus.PAID || consultation.assignedDoctorId) return null;
 
-  let doctorUserId = consultation.preferredDoctorUserId;
-  if (doctorUserId && !(await isDoctorLiveForInstant(doctorUserId, consultation.diseaseId))) {
+  const isHopeHubQuickTalk = isHopeHubQuickTalkConsultation(consultation);
+  let doctorUserId = isHopeHubQuickTalk
+    ? await findBestHopeHubLiveProvider(consultation)
+    : consultation.preferredDoctorUserId;
+  if (
+    !isHopeHubQuickTalk &&
+    doctorUserId &&
+    !(await isDoctorLiveForInstant(doctorUserId, consultation.diseaseId))
+  ) {
     doctorUserId = null;
   }
-  if (!doctorUserId) {
+  if (!doctorUserId && !isHopeHubQuickTalk) {
     doctorUserId = await findBestLiveDoctor(consultation.diseaseId);
   }
   if (!doctorUserId) return null;

@@ -2,10 +2,12 @@ import { Router } from 'express';
 import { z } from 'zod';
 import {
   CareTeamServicePricingMode,
+  ConsultationMode,
   ConsultationStatus,
   FollowUpEntitlementStatus,
   HomeopathicDoctorType,
   HopeHubOfferingType,
+  LivePresenceStatus,
   PaymentStatus,
   Role
 } from '@prisma/client';
@@ -36,6 +38,7 @@ import { isFirstPaidConsultation } from '../services/referral-codes.js';
 import { getSiteConfigMap, getSiteConfigValue } from '../services/site-config.service.js';
 import { upsertProviderEarningForPayment } from '../services/provider-earnings.js';
 import { notifyConsultationBooked } from '../services/consultation-reminders.js';
+import { markDoctorBusy } from '../services/online-doctor-presence.js';
 
 export const hopeHubRouter = Router();
 
@@ -134,6 +137,25 @@ const hopeHubBookingSchema = z.object({
   safetyRisk: z.string().trim().max(80).optional().or(z.literal('')),
   previousTherapyOrMedication: z.string().trim().max(1000).optional().or(z.literal('')),
   emergencyConsent: z.boolean().optional(),
+  entryPage: z.string().trim().max(500).optional().or(z.literal(''))
+});
+
+const hopeHubQuickTalkSchema = z.object({
+  providerId: z.string().trim().min(1).max(120).optional().or(z.literal('')),
+  careTeamServiceId: z.string().trim().min(1).max(120).optional().or(z.literal('')),
+  message: z.string().trim().max(3000).optional().or(z.literal('')),
+  concernCategory: z.string().trim().max(160).optional().or(z.literal('')),
+  preferredExpertType: z.string().trim().max(160).optional().or(z.literal('')),
+  sessionMode: z.string().trim().max(80).optional().or(z.literal('online_voice')),
+  preferredLanguage: z.string().trim().max(80).optional().or(z.literal('')),
+  preferredProviderGender: z
+    .enum(['MALE', 'FEMALE', 'OTHER', 'PREFER_NOT_TO_SAY'])
+    .optional()
+    .nullable(),
+  safetyRisk: z.string().trim().max(80).optional().or(z.literal('')),
+  previousTherapyOrMedication: z.string().trim().max(1000).optional().or(z.literal('')),
+  emergencyConsent: z.boolean().optional(),
+  walletRedeemInPaise: z.number().int().min(0).optional(),
   entryPage: z.string().trim().max(500).optional().or(z.literal(''))
 });
 
@@ -1582,6 +1604,107 @@ async function activeHopeHubProviders(params: {
   };
 }
 
+function hopeHubLiveOnlineSessionWhere() {
+  return {
+    is: {
+      enabled: true,
+      liveStatus: LivePresenceStatus.ONLINE,
+      acceptsVoiceCall: true,
+      lastHeartbeatAt: { gte: new Date(Date.now() - 90_000) }
+    }
+  };
+}
+
+async function activeLiveHopeHubProviders(params: {
+  q?: string;
+  roleGroup?: string;
+  concern?: string;
+  language?: string;
+  modality?: string;
+  sessionType?: string;
+  ageGroup?: string;
+  gender?: string;
+}) {
+  const providerResponse = await activeHopeHubProviders({
+    ...params,
+    page: 1,
+    pageSize: 50,
+    autoMatchOnly: true
+  });
+  const providerUserIds = providerResponse.providers.map((provider) => provider.userId);
+  if (!providerUserIds.length) return [];
+
+  const sessions = await prisma.doctorOnlineSession.findMany({
+    where: {
+      userId: { in: providerUserIds },
+      enabled: true,
+      liveStatus: LivePresenceStatus.ONLINE,
+      acceptsVoiceCall: true,
+      lastHeartbeatAt: { gte: new Date(Date.now() - 90_000) }
+    },
+    select: {
+      userId: true,
+      liveStatus: true,
+      wentLiveAt: true,
+      acceptsChat: true,
+      acceptsVoiceCall: true
+    }
+  });
+  const liveByUserId = new Map(sessions.map((session) => [session.userId, session]));
+
+  return providerResponse.providers
+    .filter((provider) => liveByUserId.has(provider.userId))
+    .map((provider) => {
+      const session = liveByUserId.get(provider.userId)!;
+      return {
+        ...provider,
+        quickTalkAvailable: true,
+        liveStatus: session.liveStatus,
+        acceptsChat: session.acceptsChat,
+        acceptsVoiceCall: session.acceptsVoiceCall,
+        wentLiveAt: session.wentLiveAt?.toISOString() ?? null
+      };
+    });
+}
+
+async function findLiveHopeHubProviderForQuickTalk(params: {
+  providerId?: string;
+  roleGroup?: string;
+  concern?: string;
+  language?: string;
+  gender?: string | null;
+}) {
+  return prisma.doctor.findFirst({
+    where: {
+      ...hopeHubProviderWhere({
+        roleGroup: params.roleGroup,
+        concern: params.concern,
+        language: params.language,
+        gender: params.gender || undefined,
+        autoMatchOnly: true
+      }),
+      ...(params.providerId ? { id: params.providerId } : {}),
+      onlineSession: hopeHubLiveOnlineSessionWhere()
+    },
+    select: {
+      id: true,
+      userId: true,
+      user: { select: { name: true } },
+      mentalHealthProfile: {
+        select: {
+          careTeamType: true,
+          services: {
+            where: { isActive: true },
+            orderBy: [{ sortOrder: 'asc' }, { title: 'asc' }],
+            select: careTeamServiceSelect()
+          }
+        }
+      }
+    },
+    orderBy: [{ websiteOrder: 'asc' }, { updatedAt: 'desc' }]
+  });
+}
+
 function publicOfferingQuote(offering: Awaited<ReturnType<typeof activeHopeHubOfferings>>[number]) {
   if (offering.priceInPaise == null) {
     return {
@@ -1954,6 +2077,23 @@ hopeHubRouter.get(
 );
 
 hopeHubRouter.get(
+  '/hope-hub/quick-talk/providers',
+  asyncRoute(async (req, res) => {
+    const providers = await activeLiveHopeHubProviders({
+      q: queryText(req, 'q').trim(),
+      roleGroup: queryText(req, 'roleGroup').trim(),
+      concern: queryText(req, 'concern').trim(),
+      language: queryText(req, 'language').trim(),
+      modality: queryText(req, 'modality').trim(),
+      sessionType: queryText(req, 'sessionType').trim(),
+      ageGroup: queryText(req, 'ageGroup').trim(),
+      gender: queryText(req, 'gender').trim()
+    });
+    res.json({ providers, total: providers.length });
+  })
+);
+
+hopeHubRouter.get(
   '/hope-hub/providers/:id',
   asyncRoute(async (req, res) => {
     const idOrSlug = routeParam(req, 'id');
@@ -2129,6 +2269,205 @@ hopeHubRouter.get(
               remainingAfterThis: Math.max(0, packageBalance.remainingSessions - 1)
             }
           : null
+      }
+    });
+  })
+);
+
+hopeHubRouter.post(
+  '/hope-hub/quick-talk',
+  authRequired,
+  allowRoles(Role.PATIENT),
+  asyncRoute(async (req, res) => {
+    const body = hopeHubQuickTalkSchema.parse(req.body);
+    const defaults = await hopeHubPublicDefaults();
+    const roleGroup = /professional/i.test(body.preferredExpertType || '')
+      ? 'PROFESSIONALS'
+      : /counsellor/i.test(body.preferredExpertType || '')
+        ? 'COUNSELLORS'
+        : /listener|volunteer|peer/i.test(body.preferredExpertType || '')
+          ? 'VOLUNTEERS'
+          : '';
+
+    const selectedCareTeamService = body.careTeamServiceId
+      ? await findAvailableCareTeamService(body.careTeamServiceId, body.providerId || undefined)
+      : null;
+    if (body.careTeamServiceId && !selectedCareTeamService) {
+      return res.status(400).json({ message: 'Selected quick-talk service is not available.' });
+    }
+
+    const provider = await findLiveHopeHubProviderForQuickTalk({
+      providerId:
+        selectedCareTeamService?.mentalHealthProfile.doctor.id || body.providerId || undefined,
+      roleGroup,
+      concern: body.concernCategory || undefined,
+      language: body.preferredLanguage || undefined,
+      gender: body.preferredProviderGender || undefined
+    });
+    if (!provider) {
+      return res.status(409).json({
+        message: body.providerId
+          ? 'This expert is not available for Quick Talk right now.'
+          : 'No Quick Talk expert is available right now.'
+      });
+    }
+
+    const careTeamService =
+      selectedCareTeamService || provider.mentalHealthProfile?.services[0] || null;
+    const previousUseCount = careTeamService
+      ? await previousCareTeamServiceUseCount(req.user!.id, careTeamService.id)
+      : 0;
+    const careTeamServicePricing = careTeamService
+      ? careTeamServicePricingPreview(careTeamService, previousUseCount)
+      : null;
+    const effectiveServiceName = careTeamService?.title || 'Quick Hope Hub talk';
+    const selectedServiceDurationMinutes =
+      careTeamService?.durationMinutes || defaults.sessionDurationMinutes;
+    const amountInPaise = careTeamServicePricing?.amountInPaise ?? defaults.sessionPriceInPaise;
+    if (amountInPaise < 0 || (!careTeamService && amountInPaise <= 0)) {
+      return res.status(400).json({ message: 'Quick Talk payment is not available.' });
+    }
+
+    const disease = await prisma.disease.upsert({
+      where: { name: effectiveServiceName },
+      create: {
+        name: effectiveServiceName,
+        slug: slugify(effectiveServiceName),
+        description: defaultDescription(effectiveServiceName),
+        publicDescription: defaultDescription(effectiveServiceName),
+        publicCategory: 'Hope Hub',
+        feeInPaise: amountInPaise,
+        intakeQuestions: [
+          { id: 'concern', label: 'What would you like support with?' },
+          { id: 'quickTalk', label: 'Quick Talk request' }
+        ]
+      },
+      update: {
+        publicCategory: 'Hope Hub',
+        feeInPaise: amountInPaise
+      }
+    });
+
+    const checkout = await resolveConsultationCheckout({
+      patientId: req.user!.id,
+      grossInPaise: amountInPaise,
+      walletRedeemInPaise: body.walletRedeemInPaise
+    });
+    const finalPayableInPaise = checkout.payableInPaise;
+    const isFreeOrWalletPaid = finalPayableInPaise <= 0;
+    const grossRevenueSplit = hopeHubRevenueSplit(amountInPaise);
+    const payableRevenueSplit = hopeHubRevenueSplit(finalPayableInPaise);
+
+    const consultation = await prisma.consultation.create({
+      data: {
+        patientId: req.user!.id,
+        diseaseId: disease.id,
+        clinicStoreId: null,
+        consultationMode: ConsultationMode.INSTANT_ONLINE,
+        preferredDoctorUserId: provider.userId,
+        assignedDoctorId: isFreeOrWalletPaid ? provider.userId : null,
+        status: isFreeOrWalletPaid
+          ? ConsultationStatus.ASSIGNED
+          : ConsultationStatus.PAYMENT_PENDING,
+        billingPlanCode: 'ONE_TIME',
+        intakeAnswers: {
+          source: 'hope-hub-quick-talk',
+          quickTalk: true,
+          serviceName: effectiveServiceName,
+          message: body.message || '',
+          appointmentDate: new Date().toISOString().slice(0, 10),
+          appointmentTime: 'ASAP',
+          providerId: provider.id,
+          requestedProviderName: provider.user.name,
+          careTeamServiceId: careTeamService?.id || '',
+          careTeamServiceTitle: careTeamService?.title || '',
+          careTeamPricingMode: careTeamService?.pricingMode || '',
+          careTeamPricingLabel: careTeamServicePricing?.label || '',
+          careTeamPreviousUseCount: previousUseCount,
+          concernCategory: body.concernCategory || '',
+          preferredExpertType: body.preferredExpertType || '',
+          sessionMode: body.sessionMode || 'online_voice',
+          preferredLanguage: body.preferredLanguage || '',
+          preferredProviderGender: body.preferredProviderGender || '',
+          safetyRisk: body.safetyRisk || '',
+          previousTherapyOrMedication: body.previousTherapyOrMedication || '',
+          emergencyConsent: Boolean(body.emergencyConsent),
+          sessionDuration: `${selectedServiceDurationMinutes} minutes`,
+          preferredContact: 'online',
+          urgencyLevel: 'high',
+          entryPage: body.entryPage || ''
+        },
+        pricingSnapshot: {
+          source: 'hope-hub-quick-talk',
+          purchaseType: 'QUICK_TALK',
+          serviceName: effectiveServiceName,
+          providerId: provider.id,
+          requestedProviderName: provider.user.name,
+          careTeamServiceId: careTeamService?.id || null,
+          careTeamServiceTitle: careTeamService?.title || null,
+          careTeamPricingMode: careTeamService?.pricingMode || null,
+          careTeamPricingLabel: careTeamServicePricing?.label || null,
+          careTeamPricingRule: careTeamServicePricing?.appliedRule || null,
+          careTeamPreviousUseCount: previousUseCount,
+          sessionDurationMinutes: selectedServiceDurationMinutes,
+          sessionFeeInPaise: amountInPaise,
+          grossRevenueSplit,
+          payableRevenueSplit,
+          checkout
+        },
+        payment: {
+          create: {
+            grossAmountInPaise: checkout.grossAmountInPaise,
+            discountInPaise: checkout.discountInPaise,
+            walletRedeemedInPaise: checkout.walletRedeemedInPaise,
+            amountInPaise: finalPayableInPaise,
+            billingPlanCode: 'ONE_TIME',
+            appliedRules: checkout.appliedRules,
+            lineItems: {
+              source: 'hope-hub-quick-talk',
+              purchaseType: 'QUICK_TALK',
+              serviceName: effectiveServiceName,
+              providerId: provider.id,
+              requestedProviderName: provider.user.name,
+              careTeamServiceId: careTeamService?.id || null,
+              careTeamServiceTitle: careTeamService?.title || null,
+              careTeamPricingMode: careTeamService?.pricingMode || null,
+              careTeamPricingLabel: careTeamServicePricing?.label || null,
+              careTeamPricingRule: careTeamServicePricing?.appliedRule || null,
+              careTeamPreviousUseCount: previousUseCount,
+              sessionDurationMinutes: selectedServiceDurationMinutes,
+              consultationFeeInPaise: checkout.grossAmountInPaise,
+              discountInPaise: checkout.discountInPaise,
+              walletRedeemedInPaise: checkout.walletRedeemedInPaise,
+              payableInPaise: finalPayableInPaise,
+              grossRevenueSplit,
+              payableRevenueSplit,
+              planCode: 'ONE_TIME',
+              planName: 'Quick Talk',
+              appliedRules: checkout.appliedRules
+            },
+            status: isFreeOrWalletPaid ? PaymentStatus.PAID : PaymentStatus.CREATED
+          }
+        }
+      },
+      include: includeConsultationRelations()
+    });
+
+    if (isFreeOrWalletPaid && consultation.payment?.id) {
+      await markDoctorBusy(provider.userId, 'BUSY');
+      await upsertProviderEarningForPayment(consultation.payment.id);
+      void notifyConsultationBooked(consultation.id).catch((err) =>
+        console.error('[booking-reminders] Quick Talk booking notification failed', err)
+      );
+    }
+
+    res.status(201).json({
+      consultation,
+      provider: {
+        id: provider.id,
+        userId: provider.userId,
+        name: provider.user.name,
+        quickTalkAvailable: true
       }
     });
   })

@@ -90,6 +90,10 @@ export class ContactComponent implements OnInit {
   matchedProvider = signal<HopeHubProvider | null>(null);
   providerMatchLoading = signal(false);
   providerMatchMessage = signal('');
+  quickTalkProviders = signal<Array<HopeHubProvider & { quickTalkAvailable?: boolean }>>([]);
+  quickTalkLoading = signal(false);
+  quickTalkMessage = signal('');
+  quickTalkStartingProviderId = signal('');
   defaultSessionOffer = signal<HopeHubOffering | null>(null);
   defaultSessionQuote = signal<HopeHubOfferingQuote | null>(null);
   currentUser = signal<User | null>(null);
@@ -287,8 +291,12 @@ export class ContactComponent implements OnInit {
       .subscribe(() => this.applyDefaultSessionOffer());
     this.contactForm.valueChanges
       .pipe(debounceTime(250), takeUntilDestroyed(this.destroyRef))
-      .subscribe(() => void this.updateProviderSuggestion());
+      .subscribe(() => {
+        void this.updateProviderSuggestion();
+        void this.loadQuickTalkProviders();
+      });
     void this.updateProviderSuggestion();
+    void this.loadQuickTalkProviders();
   }
 
   private updateFormWithUserData(user: User | null): void {
@@ -639,6 +647,68 @@ export class ContactComponent implements OnInit {
     this.showSuccessAndReset('Appointment booked and payment verified successfully.');
   }
 
+  async startQuickTalk(provider?: HopeHubProvider): Promise<void> {
+    if (this.isSubmitting() || this.quickTalkStartingProviderId()) return;
+    const user = this.currentUser();
+    if (!user) {
+      this.notificationService.info('Sign up or log in to start Quick Talk.');
+      this.authModalService.openRegister();
+      return;
+    }
+
+    const formData = (this.contactForm?.value || {}) as ContactForm;
+    const providerId = provider?.id || this.activeProviderId();
+    this.quickTalkStartingProviderId.set(providerId || 'auto');
+    this.isSubmitting.set(true);
+    this.paymentFlowError.set('');
+    this.quickTalkMessage.set('');
+    try {
+      const response = await firstValueFrom(
+        this.bookingService.createQuickTalk({
+          providerId,
+          careTeamServiceId: this.prefilledData().careTeamServiceId || '',
+          message: formData.message || '',
+          concernCategory: formData.concernCategory || '',
+          preferredExpertType: formData.preferredExpertType || '',
+          sessionMode: formData.sessionMode || 'online_audio',
+          preferredLanguage: formData.preferredLanguage || '',
+          preferredProviderGender: formData.preferredProviderGender || '',
+          safetyRisk: formData.safetyRisk || '',
+          previousTherapyOrMedication: formData.previousTherapyOrMedication || '',
+          emergencyConsent: Boolean(formData.emergencyConsent),
+          entryPage: typeof window === 'undefined' ? undefined : window.location.href,
+        }),
+      );
+
+      this.paymentFlowConsultation.set(response.consultation);
+      const payableFromServer = Number(response.consultation?.payment?.amountInPaise ?? 0);
+      if (payableFromServer > 0) {
+        this.paymentFlowState.set('CREATING_ORDER');
+        await this.paymentService.payConsultation(response.consultation, {
+          onOrderCreated: () => this.paymentFlowState.set('OPENING_CHECKOUT'),
+          onCheckoutOpened: () => this.paymentFlowState.set('OPENING_CHECKOUT'),
+          onVerifying: () => this.paymentFlowState.set('VERIFYING'),
+        });
+      }
+
+      this.paymentFlowState.set('SUCCESS');
+      this.quickTalkMessage.set(
+        `Quick Talk is ready with ${response.provider?.name || 'an available expert'}. Open your dashboard to join when assigned.`,
+      );
+      this.notificationService.success('Quick Talk confirmed. Please open your dashboard to join.');
+      void this.loadQuickTalkProviders();
+    } catch (error) {
+      const message = this.readErrorMessage(error);
+      this.paymentFlowError.set(message);
+      this.paymentFlowState.set('ERROR');
+      this.quickTalkMessage.set(message);
+      this.notificationService.error(message);
+    } finally {
+      this.quickTalkStartingProviderId.set('');
+      this.isSubmitting.set(false);
+    }
+  }
+
   retrySelectedPayment(): void {
     const consultation = this.paymentFlowConsultation();
     if (!consultation || this.isSubmitting()) return;
@@ -924,6 +994,32 @@ export class ContactComponent implements OnInit {
       this.providerMatchMessage.set('Could not auto-match right now. Team review will handle it.');
     } finally {
       this.providerMatchLoading.set(false);
+    }
+  }
+
+  private async loadQuickTalkProviders(): Promise<void> {
+    if (!this.contactForm) return;
+    const formValue = this.contactForm.value as ContactForm;
+    const roleGroup = this.roleGroupForExpertType(formValue.preferredExpertType || '');
+    this.quickTalkLoading.set(true);
+    try {
+      const res = await firstValueFrom(
+        this.bookingService.quickTalkProviders({
+          roleGroup,
+          concern: formValue.concernCategory || '',
+          language: formValue.preferredLanguage || '',
+          gender: formValue.preferredProviderGender || '',
+        }),
+      );
+      this.quickTalkProviders.set(res.providers.slice(0, 3));
+      this.quickTalkMessage.set(
+        res.providers.length ? '' : 'No one is live right now. You can still book a slot.',
+      );
+    } catch {
+      this.quickTalkProviders.set([]);
+      this.quickTalkMessage.set('Could not check live providers right now.');
+    } finally {
+      this.quickTalkLoading.set(false);
     }
   }
 

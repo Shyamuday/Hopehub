@@ -188,14 +188,14 @@ export function createPaymentsRouter(io: SocketIoServer) {
         providerPaymentId: input.providerPaymentId
       });
 
+      await tryAssignInstantConsultation(io, input.consultationId).catch((err) => {
+        console.error('[instant] Auto-assign failed after payment', err);
+        return null;
+      });
       await upsertProviderEarningForPayment(input.paymentId);
       void notifyConsultationBooked(input.consultationId).catch((err) =>
         console.error('[booking-reminders] Payment booking notification failed', err)
       );
-
-      void tryAssignInstantConsultation(io, input.consultationId).catch((err) => {
-        console.error('[instant] Auto-assign failed after payment', err);
-      });
       void trackProductEvent({
         name: PRODUCT_EVENTS.PAYMENT_COMPLETED,
         actorId: input.patientId,

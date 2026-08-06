@@ -306,6 +306,27 @@ export class BookingService {
     return this.http.post<{ consultation: any }>(`${this.apiUrl}/hope-hub/bookings`, payload);
   }
 
+  createQuickTalk(payload: {
+    providerId?: string;
+    careTeamServiceId?: string;
+    message?: string;
+    concernCategory?: string;
+    preferredExpertType?: string;
+    sessionMode?: string;
+    preferredLanguage?: string;
+    preferredProviderGender?: string;
+    safetyRisk?: string;
+    previousTherapyOrMedication?: string;
+    emergencyConsent?: boolean;
+    walletRedeemInPaise?: number;
+    entryPage?: string;
+  }): Observable<{ consultation: any; provider: { id: string; userId: string; name: string } }> {
+    return this.http.post<{
+      consultation: any;
+      provider: { id: string; userId: string; name: string };
+    }>(`${this.apiUrl}/hope-hub/quick-talk`, payload);
+  }
+
   dashboard(): Observable<{
     consultations: any[];
     leads: any[];
@@ -360,6 +381,47 @@ export class BookingService {
     return this.http.get<HopeHubProviderResponse>(
       `${this.apiUrl}/hope-hub/providers?${searchParams.toString()}`,
     );
+  }
+
+  quickTalkProviders(
+    params: {
+      q?: string;
+      roleGroup?: string;
+      concern?: string;
+      language?: string;
+      modality?: string;
+      sessionType?: string;
+      ageGroup?: string;
+      gender?: string;
+    } = {},
+  ): Observable<{
+    providers: Array<
+      HopeHubProvider & {
+        quickTalkAvailable?: boolean;
+        liveStatus?: string;
+        wentLiveAt?: string | null;
+      }
+    >;
+    total: number;
+  }> {
+    const searchParams = new URLSearchParams({ q: params.q ?? '' });
+    if (params.roleGroup) searchParams.set('roleGroup', params.roleGroup);
+    if (params.concern) searchParams.set('concern', params.concern);
+    if (params.language) searchParams.set('language', params.language);
+    if (params.modality) searchParams.set('modality', params.modality);
+    if (params.sessionType) searchParams.set('sessionType', params.sessionType);
+    if (params.ageGroup) searchParams.set('ageGroup', params.ageGroup);
+    if (params.gender) searchParams.set('gender', params.gender);
+    return this.http.get<{
+      providers: Array<
+        HopeHubProvider & {
+          quickTalkAvailable?: boolean;
+          liveStatus?: string;
+          wentLiveAt?: string | null;
+        }
+      >;
+      total: number;
+    }>(`${this.apiUrl}/hope-hub/quick-talk/providers?${searchParams.toString()}`);
   }
 
   provider(id: string): Observable<{ provider: HopeHubProvider }> {
