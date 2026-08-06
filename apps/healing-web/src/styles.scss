@@ -385,7 +385,15 @@ a:focus {
 
 .hope-section {
   background-color: #ffffff;
-  @apply py-10 sm:py-12;
+  @apply py-14 sm:py-16 lg:py-20;
+}
+
+.hope-section--mist {
+  background: #f4f7f9;
+}
+
+.hope-section--sage {
+  background: #f1f5ef;
 }
 
 .hope-section-inner {
@@ -393,7 +401,7 @@ a:focus {
 }
 
 .hope-section-header {
-  @apply mx-auto mb-8 max-w-3xl text-center sm:mb-10;
+  @apply mx-auto mb-10 max-w-3xl text-center sm:mb-12;
 }
 
 .hope-eyebrow {
@@ -401,15 +409,28 @@ a:focus {
 }
 
 .hope-section-title {
-  @apply mt-2 text-2xl font-semibold text-gray-950 sm:text-3xl;
+  @apply mt-3 text-3xl font-semibold text-gray-950 sm:text-4xl;
 }
 
 .hope-section-copy {
-  @apply mt-3 text-base leading-7 text-gray-700;
+  @apply mt-4 text-base leading-7 text-gray-700 sm:text-lg;
 }
 
 .hope-card {
-  @apply rounded-lg border border-gray-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md;
+  border: 1px solid rgba(28, 45, 55, 0.1);
+  border-radius: 1rem;
+  background: #ffffff;
+  padding: 1.5rem;
+  box-shadow: none;
+  transition:
+    transform 220ms ease,
+    border-color 220ms ease,
+    box-shadow 220ms ease;
+}
+
+.hope-card:hover {
+  border-color: var(--brand-primary-border);
+  box-shadow: 0 16px 36px rgba(28, 45, 55, 0.08);
 }
 
 .hope-card-title {
@@ -421,7 +442,7 @@ a:focus {
 }
 
 .hope-icon-box {
-  @apply flex h-10 w-10 items-center justify-center rounded-md border border-primary-100 bg-primary-50 text-primary-700;
+  @apply flex h-10 w-10 items-center justify-center rounded-full border border-primary-100 bg-white text-primary-700;
 }
 
 /* Form styling consistency */

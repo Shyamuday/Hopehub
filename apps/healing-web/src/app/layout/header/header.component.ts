@@ -13,13 +13,13 @@ import { APP_CONSTANTS } from '../../core/constants/app.constants';
   standalone: true,
   imports: [RouterModule],
   template: `
-    <header class="bg-white shadow-sm border-b border-gray-200">
+    <header class="sticky top-0 z-40 border-b border-gray-200 bg-white/95 backdrop-blur">
       <nav
         class="container mx-auto px-4 sm:px-6 lg:px-8"
         role="navigation"
         aria-label="Main navigation"
       >
-        <div class="flex justify-between items-center h-16">
+        <div class="flex h-[4.5rem] items-center justify-between">
           <!-- Logo and Brand -->
           <div class="flex items-center">
             <a

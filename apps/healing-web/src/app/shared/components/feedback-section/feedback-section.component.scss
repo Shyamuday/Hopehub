@@ -1,11 +1,10 @@
 .feedback-section {
   position: relative;
   overflow: hidden;
-  background: #ffffff;
+  background: #f7f9fa;
   color: var(--text-primary);
   padding: clamp(3rem, 7vw, 5rem) 1rem;
-  border-top: 1px solid #e5e7eb;
-  border-bottom: 1px solid #e5e7eb;
+  border: 0;
 }
 
 .feedback-section__inner {
@@ -99,7 +98,7 @@
   border-radius: 0.5rem;
   background: #ffffff;
   padding: 0.8rem;
-  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.06);
+  box-shadow: none;
 }
 
 .review-summary strong {
@@ -136,11 +135,11 @@
   gap: 0.75rem;
   min-height: 14.5rem;
   align-content: space-between;
-  border: 1px solid #dbe3ef;
-  border-radius: 0.5rem;
+  border: 1px solid rgba(28, 45, 55, 0.1);
+  border-radius: 1rem;
   background: #ffffff;
   padding: 1rem;
-  box-shadow: 0 14px 34px rgba(15, 23, 42, 0.07);
+  box-shadow: none;
 }
 
 .story-card::before {

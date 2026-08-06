@@ -19,7 +19,7 @@ type FooterSection = {
   standalone: true,
   imports: [RouterModule],
   template: `
-    <footer class="border-t border-gray-200 bg-white">
+    <footer class="border-t border-gray-200 bg-[#f7f9fa]">
       <div class="container mx-auto px-4 py-10 sm:px-6 lg:px-8">
         <div class="grid gap-8 lg:grid-cols-[1.35fr_2fr]">
           <section>

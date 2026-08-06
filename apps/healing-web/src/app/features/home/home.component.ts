@@ -35,11 +35,11 @@ export class HomeComponent implements OnInit {
   }
 
   providerTierLabel(provider: HopeHubProvider): string {
-    return provider.supportTierLabel || (provider.isClinicalCare ? 'Professional care' : 'Support');
+    return provider.supportTierLabel ?? '';
   }
 
   providerRoleLabel(provider: HopeHubProvider): string {
-    return provider.supportRoleLabel || 'Hope Hub care guide';
+    return provider.supportRoleLabel ?? '';
   }
 
   providerRoleBadgeClass(provider: HopeHubProvider): string {

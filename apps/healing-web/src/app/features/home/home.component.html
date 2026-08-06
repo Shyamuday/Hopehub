@@ -1,7 +1,7 @@
 <app-home-hero />
 <app-offer-banner-carousel />
 
-<section class="hope-section border-b border-gray-100">
+<section class="hope-section hope-section--mist">
   <div class="hope-section-inner">
     <div class="hope-section-header">
       <p class="hope-eyebrow">Start here</p>
@@ -55,7 +55,7 @@
   </div>
 </section>
 
-<section class="hope-section border-b border-gray-100">
+<section class="hope-section">
   <div class="hope-section-inner">
     <div class="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
       <div>
@@ -86,10 +86,6 @@
                   [alt]="provider.name"
                   class="h-12 w-12 rounded-md object-cover"
                 />
-              } @else {
-                <div class="hope-icon-box text-sm font-semibold">
-                  {{ provider.name.charAt(0) }}
-                </div>
               }
               <div>
                 <h3 class="hope-card-title text-base">{{ provider.name }}</h3>
@@ -104,9 +100,11 @@
                 </p>
               </div>
             </div>
-            <p class="hope-card-copy line-clamp-3">
-              {{ provider.supportRoleDescription || provider.bio || 'Available for mental wellness support and guided conversation.' }}
-            </p>
+            @if (provider.supportRoleDescription || provider.bio) {
+              <p class="hope-card-copy line-clamp-3">
+                {{ provider.supportRoleDescription || provider.bio }}
+              </p>
+            }
           </article>
         }
       </div>
@@ -120,9 +118,9 @@
 
 <app-feedback-section />
 
-<section class="hope-section">
+<section class="hope-section hope-section--sage">
   <div class="hope-section-inner">
-    <div class="mx-auto max-w-3xl rounded-lg border border-gray-200 bg-white p-6 text-center sm:p-8">
+    <div class="mx-auto max-w-3xl text-center sm:p-8">
       <p class="hope-eyebrow">Next step</p>
       <h2 class="hope-section-title">Start privately. Continue only when ready.</h2>
       <p class="hope-section-copy">
