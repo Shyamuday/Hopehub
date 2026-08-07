@@ -226,6 +226,7 @@ export class AdminHrApi extends AdminApiBase {
     q?: string;
     page?: number;
     pageSize?: number;
+    workspace?: 'homeopathy' | 'hope-hub';
   }) {
     return firstValueFrom(
       this.http.get<{ consultations: any[]; total: number }>(
@@ -239,13 +240,14 @@ export class AdminHrApi extends AdminApiBase {
             q: params.q ?? '',
             page: String(params.page ?? 1),
             pageSize: String(params.pageSize ?? 20),
+            workspace: params.workspace ?? '',
           },
         },
       ),
     );
   }
 
-  getConsultationQualitySummary(days = 30) {
+  getConsultationQualitySummary(days = 30, workspace?: 'homeopathy' | 'hope-hub') {
     return firstValueFrom(
       this.http.get<{
         days: number;
@@ -263,7 +265,7 @@ export class AdminHrApi extends AdminApiBase {
           issueRate: number;
         };
       }>(`${this.apiBase}/admin/consultations/quality-summary`, {
-        params: { days: String(days) },
+        params: { days: String(days), workspace: workspace ?? '' },
       }),
     );
   }

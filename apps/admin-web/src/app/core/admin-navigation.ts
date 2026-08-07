@@ -1,5 +1,5 @@
 import { ADMIN_PERMISSIONS, staffHasAllPermissions, type StaffUser } from './admin-permissions';
-import { ROUTE_PATHS } from './constants/app-routes.constants';
+import { ROUTE_PATHS, type AdminWorkspace } from './constants/app-routes.constants';
 
 const ROUTE_PERMISSIONS: Record<string, string[]> = {
   [ROUTE_PATHS.DASHBOARD]: [
@@ -65,12 +65,22 @@ export function canUserAccessAdminRoute(user: StaffUser | null, segment: string)
 }
 
 export function navItemsForUser(
-  items: ReadonlyArray<{ path: string; label: string }>,
+  items: ReadonlyArray<{ path: string; label: string; workspaces?: readonly AdminWorkspace[] }>,
   user: StaffUser | null,
 ) {
   return items.filter((item) => {
     const segment = item.path.split('/').filter(Boolean).pop() ?? '';
     return canUserAccessAdminRoute(user, segment);
+  });
+}
+
+export function navItemsForWorkspace<T extends { workspaces?: readonly AdminWorkspace[] }>(
+  items: readonly T[],
+  workspace: Exclude<AdminWorkspace, 'shared'>,
+) {
+  return items.filter((item) => {
+    const workspaces = item.workspaces ?? ['shared'];
+    return workspaces.includes('shared') || workspaces.includes(workspace);
   });
 }
 

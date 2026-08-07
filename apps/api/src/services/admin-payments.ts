@@ -7,9 +7,11 @@ export function buildPaymentWhere(input: {
   status?: string;
   from?: string;
   to?: string;
+  workspace?: string;
 }): Prisma.PaymentWhereInput {
   const status = (input.status || '').toUpperCase();
   const createdAt = parsePaymentDateRange(input.from, input.to);
+  const consultationWhere = paymentConsultationWorkspaceWhere(input.workspace || '');
 
   return {
     ...(status === PaymentStatus.PAID ||
@@ -19,8 +21,19 @@ export function buildPaymentWhere(input: {
     status === PaymentStatus.REFUNDED
       ? { status: status as PaymentStatus }
       : {}),
-    ...(createdAt ? { createdAt } : {})
+    ...(createdAt ? { createdAt } : {}),
+    ...(Object.keys(consultationWhere).length ? { consultation: { is: consultationWhere } } : {})
   };
+}
+
+function paymentConsultationWorkspaceWhere(workspace: string): Prisma.ConsultationWhereInput {
+  const hopeHubSources: Prisma.ConsultationWhereInput[] = [
+    { pricingSnapshot: { path: ['source'], equals: 'hope-hub' } },
+    { pricingSnapshot: { path: ['source'], equals: 'hope-hub-quick-talk' } }
+  ];
+  if (workspace === 'hope-hub') return { OR: hopeHubSources };
+  if (workspace === 'homeopathy') return { NOT: hopeHubSources };
+  return {};
 }
 
 export function parsePaymentDateRange(from?: string, to?: string) {

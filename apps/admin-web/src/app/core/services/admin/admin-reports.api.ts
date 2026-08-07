@@ -48,8 +48,12 @@ export type FollowUpStatus =
 
 @Service()
 export class AdminReportsApi extends AdminApiBase {
-  getReports() {
-    return firstValueFrom(this.http.get(`${this.apiBase}${API_PATHS.ADMIN.REPORTS}`));
+  getReports(params?: { workspace?: 'homeopathy' | 'hope-hub' }) {
+    return firstValueFrom(
+      this.http.get(`${this.apiBase}${API_PATHS.ADMIN.REPORTS}`, {
+        params: { workspace: params?.workspace ?? '' },
+      }),
+    );
   }
 
   getAuditLogs(
@@ -137,6 +141,7 @@ export class AdminReportsApi extends AdminApiBase {
     status?: PaymentStatus;
     from?: string;
     to?: string;
+    workspace?: 'homeopathy' | 'hope-hub';
   }) {
     return firstValueFrom(
       this.http.get<{
@@ -150,6 +155,7 @@ export class AdminReportsApi extends AdminApiBase {
           status: params.status ?? FILTER_ALL,
           from: params.from ?? '',
           to: params.to ?? '',
+          workspace: params.workspace ?? '',
         },
       }),
     );
@@ -263,13 +269,19 @@ export class AdminReportsApi extends AdminApiBase {
     );
   }
 
-  async exportPaymentsCsv(params: { status?: PaymentStatus; from?: string; to?: string }) {
+  async exportPaymentsCsv(params: {
+    status?: PaymentStatus;
+    from?: string;
+    to?: string;
+    workspace?: 'homeopathy' | 'hope-hub';
+  }) {
     const query = new URLSearchParams({
       status: params.status ?? FILTER_ALL,
       export: API_EXPORT_FORMAT.CSV,
     });
     if (params.from) query.set('from', params.from);
     if (params.to) query.set('to', params.to);
+    if (params.workspace) query.set('workspace', params.workspace);
     const response = await fetch(`${this.apiBase}${API_PATHS.ADMIN.PAYMENTS}?${query.toString()}`, {
       headers: { Authorization: `Bearer ${this.auth.token()}` },
     });

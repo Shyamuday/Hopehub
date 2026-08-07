@@ -1,3 +1,23 @@
+<section class="workspace-context-panel" [class.hope-hub]="workspaceKey() === 'hope-hub'">
+  <div>
+    <p>{{ workspaceLabel() }} workspace</p>
+    <h2>
+      {{
+        workspaceKey() === 'hope-hub'
+          ? 'Psychologists & emotional support listeners'
+          : 'Homeopathy doctors'
+      }}
+    </h2>
+    <span>
+      {{
+        workspaceKey() === 'hope-hub'
+          ? 'Showing Hope Hub providers only. Create and pending lists are restricted to psychologist/listener roles.'
+          : 'Showing homeopathy doctors only. Psychologist/listener providers stay in Hope Hub.'
+      }}
+    </span>
+  </div>
+</section>
+
 <section class="panel website-settings-panel">
   <h2>Website — Doctor List Settings</h2>
   <p class="panel-hint">
@@ -25,7 +45,7 @@
 </section>
 
 <section class="panel">
-  <h2>Create Doctor</h2>
+  <h2>{{ workspaceKey() === 'hope-hub' ? 'Create Hope Hub Provider' : 'Create Doctor' }}</h2>
   <fieldset class="create-doctor-form form-grid" [disabled]="mutating()">
     <div class="field">
       <label class="field-label" for="doc-create-name">Name</label>
@@ -65,7 +85,7 @@
     <div class="field">
       <label class="field-label" for="doc-create-type">Doctor type</label>
       <select id="doc-create-type" [formField]="createForm.doctorType" (change)="onCreateDoctorTypeChange()">
-        @for (option of doctorTypeOptions; track option.value) {
+        @for (option of workspaceDoctorTypeOptions(); track option.value) {
           <option [value]="option.value">{{ option.label }}</option>
         }
       </select>

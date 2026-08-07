@@ -1,4 +1,4 @@
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { Component, effect, inject, signal, OnInit } from '@angular/core';
 import { form, FormField } from '@angular/forms/signals';
 import { DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
@@ -9,6 +9,7 @@ import {
 } from '@hopehub/platform-ui';
 import { AdminApi } from '../../../core/services/admin-api';
 import { adminRouteLink, ROUTE_PATHS } from '../../../core/constants/app-routes.constants';
+import { AdminWorkspaceService } from '../../../core/services/admin-workspace.service';
 import { environment } from '../../../../environments/environment';
 import {
   CONSULTATION_PAYMENT_STYLES,
@@ -37,9 +38,12 @@ type ConsultationQualitySummary = {
 })
 export class ConsultationsPage implements OnInit {
   private api = inject(AdminApi);
+  private workspace = inject(AdminWorkspaceService);
 
   readonly clinicalRecordsRoute = adminRouteLink(ROUTE_PATHS.CLINICAL_RECORDS);
   readonly doctorOrigins = { doctor: environment.doctorAppUrl };
+  readonly workspaceKey = this.workspace.selectedWorkspace;
+  readonly workspaceLabel = this.workspace.workspaceLabel;
 
   consultations = signal<any[]>([]);
   loading = signal(true);
@@ -128,10 +132,18 @@ export class ConsultationsPage implements OnInit {
 
   private searchTimer: ReturnType<typeof setTimeout> | null = null;
 
-  ngOnInit(): void {
+  private readonly workspaceReload = effect(() => {
+    this.workspace.selectedWorkspace();
+    this.page.set(1);
+    this.doctors.set([]);
+    this.filteredDoctors.set([]);
     this.load();
     this.loadUnassignedCount();
     this.loadQualitySummary();
+  });
+
+  ngOnInit(): void {
+    // Initial load is handled by the workspace effect so switching workspace reloads this page too.
   }
 
   load(): void {
@@ -145,6 +157,7 @@ export class ConsultationsPage implements OnInit {
         q: this.searchModel().q,
         page: this.page(),
         pageSize: this.pageSize,
+        workspace: this.workspace.selectedWorkspace(),
       })
       .then((r) => {
         this.consultations.set(r.consultations);
@@ -156,14 +169,19 @@ export class ConsultationsPage implements OnInit {
 
   loadUnassignedCount(): void {
     this.api
-      .getAdminConsultations({ assigned: 'no', status: 'PAID', pageSize: 1 })
+      .getAdminConsultations({
+        assigned: 'no',
+        status: 'PAID',
+        pageSize: 1,
+        workspace: this.workspace.selectedWorkspace(),
+      })
       .then((r) => this.unassignedCount.set(r.total))
       .catch(() => {});
   }
 
   loadQualitySummary(): void {
     this.api
-      .getConsultationQualitySummary(this.qualityDays())
+      .getConsultationQualitySummary(this.qualityDays(), this.workspace.selectedWorkspace())
       .then((r) => this.qualitySummary.set(r.summary))
       .catch(() => this.qualitySummary.set(null));
   }
@@ -275,7 +293,7 @@ export class ConsultationsPage implements OnInit {
     if (this.doctors().length === 0) {
       this.doctorsLoading.set(true);
       this.api
-        .getActiveDoctors()
+        .getActiveDoctors({ workspace: this.workspace.selectedWorkspace() })
         .then((r) => {
           this.doctors.set(r.doctors);
           this.filteredDoctors.set(r.doctors);

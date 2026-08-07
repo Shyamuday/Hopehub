@@ -22,6 +22,16 @@ import { upsertProviderEarningForPayment } from '../../services/provider-earning
 import { applyConsultationCancellationEffects } from '../../services/consultation-cancellation.js';
 import { notifyProviderAssignedAndSchedule } from '../../services/consultation-reminders.js';
 
+function consultationWorkspaceWhere(workspace: string): Prisma.ConsultationWhereInput {
+  const hopeHubSources: Prisma.ConsultationWhereInput[] = [
+    { pricingSnapshot: { path: ['source'], equals: 'hope-hub' } },
+    { pricingSnapshot: { path: ['source'], equals: 'hope-hub-quick-talk' } }
+  ];
+  if (workspace === 'hope-hub') return { OR: hopeHubSources };
+  if (workspace === 'homeopathy') return { NOT: hopeHubSources };
+  return {};
+}
+
 export function registerAdminConsultationRoutes(router: Router, io: SocketIoServer) {
   // ─── Admin consultations ───────────────────────────────────────────────────────
 
@@ -121,30 +131,41 @@ export function registerAdminConsultationRoutes(router: Router, io: SocketIoServ
       const assigned = queryText(req, 'assigned');
       const outcome = queryText(req, 'outcome');
       const outcomeFlag = queryText(req, 'outcomeFlag');
+      const workspace = queryText(req, 'workspace');
       const q = queryText(req, 'q').trim().toLowerCase();
 
       const where: Prisma.ConsultationWhereInput = {};
+      const andFilters: Prisma.ConsultationWhereInput[] = [];
+      const workspaceWhere = consultationWorkspaceWhere(workspace);
+      if (Object.keys(workspaceWhere).length) andFilters.push(workspaceWhere);
       if (Object.values(ConsultationStatus).includes(status as ConsultationStatus)) {
         where['status'] = status as ConsultationStatus;
       }
       if (assigned === 'no') where['assignedDoctorId'] = null;
       if (assigned === 'yes') where['assignedDoctorId'] = { not: null };
       if (['COMPLETED', 'USER_MISSED', 'PROVIDER_NO_SHOW', 'RESCHEDULE_NEEDED'].includes(outcome)) {
-        where['pricingSnapshot'] = {
-          path: ['sessionOutcome', 'outcome'],
-          equals: outcome
-        };
+        andFilters.push({
+          pricingSnapshot: {
+            path: ['sessionOutcome', 'outcome'],
+            equals: outcome
+          }
+        });
       } else if (outcomeFlag === 'package_restored') {
-        where['pricingSnapshot'] = {
-          path: ['sessionOutcome', 'packageRestored'],
-          equals: true
-        };
+        andFilters.push({
+          pricingSnapshot: {
+            path: ['sessionOutcome', 'packageRestored'],
+            equals: true
+          }
+        });
       } else if (outcomeFlag === 'payout_hold') {
-        where['pricingSnapshot'] = {
-          path: ['sessionOutcome', 'payoutAction'],
-          equals: 'HOLD'
-        };
+        andFilters.push({
+          pricingSnapshot: {
+            path: ['sessionOutcome', 'payoutAction'],
+            equals: 'HOLD'
+          }
+        });
       }
+      if (andFilters.length) where['AND'] = andFilters;
 
       const [consultations, total] = await Promise.all([
         prisma.consultation.findMany({
@@ -197,11 +218,13 @@ export function registerAdminConsultationRoutes(router: Router, io: SocketIoServ
     allowRoles(Role.ADMIN),
     asyncRoute(async (req, res) => {
       const days = Math.max(1, Math.min(365, queryPositiveInt(req, 'days', 30)));
+      const workspace = queryText(req, 'workspace');
       const from = new Date();
       from.setDate(from.getDate() - days);
 
       const baseWhere: Prisma.ConsultationWhereInput = {
-        updatedAt: { gte: from }
+        updatedAt: { gte: from },
+        ...consultationWorkspaceWhere(workspace)
       };
 
       const jsonOutcome = (outcome: string): Prisma.ConsultationWhereInput => ({

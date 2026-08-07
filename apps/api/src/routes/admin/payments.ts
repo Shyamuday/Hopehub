@@ -47,7 +47,8 @@ export function registerAdminPaymentRoutes(router: Router) {
       const where = buildPaymentWhere({
         status: queryText(req, 'status'),
         from: queryText(req, 'from'),
-        to: queryText(req, 'to')
+        to: queryText(req, 'to'),
+        workspace: queryText(req, 'workspace')
       });
 
       if (exportType === 'csv') {

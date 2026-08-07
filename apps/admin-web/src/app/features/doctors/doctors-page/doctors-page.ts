@@ -1,10 +1,11 @@
 import { CommonModule } from '@angular/common';
-import { Component, signal } from '@angular/core';
+import { Component, computed, effect, inject, signal } from '@angular/core';
 import { form, FormField } from '@angular/forms/signals';
 import { RouterLink } from '@angular/router';
 import { buildDetailRows, DetailRowsComponent } from '@hopehub/platform-ui';
 import { AdminApi } from '../../../core/services/admin-api';
 import { adminRouteLink, ROUTE_PATHS } from '../../../core/constants/app-routes.constants';
+import { AdminWorkspaceService } from '../../../core/services/admin-workspace.service';
 import {
   DOCTORS_LIST_DEFAULTS,
   DOCTORS_PAGE_SIZE,
@@ -194,7 +195,16 @@ function emptyEditModel() {
   styleUrl: './doctors-page.scss',
 })
 export class DoctorsPage {
+  private readonly workspace = inject(AdminWorkspaceService);
+
   readonly doctorTypeOptions = DOCTOR_TYPE_OPTIONS;
+  readonly workspaceKey = this.workspace.selectedWorkspace;
+  readonly workspaceLabel = this.workspace.workspaceLabel;
+  readonly workspaceDoctorTypeOptions = computed(() =>
+    this.workspace.isHopeHub()
+      ? this.doctorTypeOptions.filter((option) => option.value === 'PSYCHOLOGIST')
+      : this.doctorTypeOptions.filter((option) => option.value !== 'PSYCHOLOGIST'),
+  );
   readonly careServicePricingModeOptions: Array<{
     value: NonNullable<CareTeamService['pricingMode']>;
     label: string;
@@ -270,7 +280,14 @@ export class DoctorsPage {
   readonly doctorListLimitValue = signal('12');
 
   constructor(private readonly api: AdminApi) {
-    void this.load();
+    effect(() => {
+      this.workspace.selectedWorkspace();
+      this.doctorsPage = 1;
+      this.pendingPage = 1;
+      this.selectedDoctorId = '';
+      this.applyWorkspaceDefaults();
+      void this.load();
+    });
     void this.loadSiteConfig();
     void this.loadCarePricingTemplates();
   }
@@ -289,11 +306,13 @@ export class DoctorsPage {
           status: filters.statusFilter,
           sortBy: filters.sortBy,
           sortDirection: filters.sortDirection,
+          workspace: this.workspace.selectedWorkspace(),
         }),
         this.api.getPendingDoctorsPaged({
           page: this.pendingPage,
           pageSize: this.pageSize,
           q: pendingFilters.searchTerm,
+          workspace: this.workspace.selectedWorkspace(),
         }),
       ]);
       this.doctors.set(allDoctors.doctors || []);
@@ -989,6 +1008,29 @@ export class DoctorsPage {
 
   isPsychologistType(type: HomeopathicDoctorType) {
     return type === 'PSYCHOLOGIST';
+  }
+
+  private applyWorkspaceDefaults() {
+    const create = this.createModel();
+    if (this.workspace.isHopeHub() && create.doctorType !== 'PSYCHOLOGIST') {
+      this.createModel.set({
+        ...create,
+        doctorType: 'PSYCHOLOGIST',
+        specialty: psychologistProfileValue(create.specialty, 'Psychologist'),
+        designation: psychologistProfileValue(create.designation, 'Psychologist'),
+        department: psychologistProfileValue(create.department, 'Mental Wellness'),
+      });
+      return;
+    }
+    if (this.workspace.isHomeopathy() && create.doctorType === 'PSYCHOLOGIST') {
+      this.createModel.set({
+        ...create,
+        doctorType: 'JUNIOR_DOCTOR',
+        specialty: '',
+        designation: '',
+        department: '',
+      });
+    }
   }
 
   private lines(value: string) {

@@ -63,6 +63,84 @@
   word-break: break-word;
 }
 
+.workspace-switcher {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  display: grid;
+  gap: 0.55rem;
+  padding: 0.75rem;
+}
+
+.workspace-switcher p {
+  color: #94a3b8;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.workspace-buttons {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.workspace-buttons.compact {
+  grid-template-columns: 1fr 1fr;
+}
+
+.workspace-button {
+  align-items: flex-start;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.85rem;
+  background: rgba(255, 255, 255, 0.05);
+  color: #e2e8f0;
+  cursor: pointer;
+  display: flex;
+  gap: 0.55rem;
+  min-height: 3rem;
+  padding: 0.65rem;
+  text-align: left;
+  width: 100%;
+}
+
+.workspace-button.active {
+  background: rgba(20, 184, 166, 0.16);
+  border-color: rgba(45, 212, 191, 0.4);
+  color: #ccfbf1;
+}
+
+.workspace-icon {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.09);
+  border-radius: 0.65rem;
+  display: inline-flex;
+  flex: 0 0 auto;
+  height: 2rem;
+  justify-content: center;
+  width: 2rem;
+}
+
+.workspace-button strong,
+.workspace-button small {
+  display: block;
+}
+
+.workspace-button strong {
+  font-size: 0.84rem;
+  line-height: 1.25;
+}
+
+.workspace-button small {
+  color: #94a3b8;
+  font-size: 0.7rem;
+  line-height: 1.35;
+  margin-top: 0.12rem;
+}
+
+.workspace-button.active small {
+  color: #99f6e4;
+}
+
 .sidebar app-admin-nav-tabs {
   flex: 1;
   min-height: 0;
@@ -136,6 +214,34 @@
   gap: 0.55rem;
   min-width: 0;
   flex: 1;
+}
+
+.topbar-workspace {
+  align-items: center;
+  display: flex;
+  flex: 0 0 auto;
+  gap: 0.35rem;
+}
+
+.workspace-chip {
+  align-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #cbd5e1;
+  cursor: pointer;
+  display: inline-flex;
+  gap: 0.35rem;
+  min-height: 2.2rem;
+  padding: 0.4rem 0.7rem;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.workspace-chip.active {
+  background: #ccfbf1;
+  border-color: #5eead4;
+  color: #0f766e;
 }
 
 .menu-btn {
@@ -270,6 +376,10 @@
   min-height: 0;
 }
 
+.drawer-workspace {
+  padding-inline: 1rem;
+}
+
 .drawer-footer {
   padding: 0.75rem 1rem;
   padding-bottom: calc(0.75rem + var(--safe-bottom));
@@ -345,6 +455,15 @@
 
   .account-label {
     display: none;
+  }
+
+  .topbar-workspace {
+    margin-left: auto;
+  }
+
+  .workspace-chip {
+    min-height: 2rem;
+    padding-inline: 0.55rem;
   }
 
   .bottom-nav {

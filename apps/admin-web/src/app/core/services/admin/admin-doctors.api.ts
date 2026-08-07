@@ -27,6 +27,7 @@ export class AdminDoctorsApi extends AdminApiBase {
     status?: 'ALL' | 'ACTIVE' | 'INACTIVE';
     sortBy?: DoctorSortField;
     sortDirection?: SortDirection;
+    workspace?: 'homeopathy' | 'hope-hub';
   }) {
     return firstValueFrom(
       this.http.get<{ doctors: Array<any>; pagination: any }>(
@@ -39,13 +40,19 @@ export class AdminDoctorsApi extends AdminApiBase {
             status: params.status ?? FILTER_ALL,
             sortBy: params.sortBy ?? 'createdAt',
             sortDirection: params.sortDirection ?? SORT_DIRECTIONS.DESC,
+            workspace: params.workspace ?? '',
           },
         },
       ),
     );
   }
 
-  getPendingDoctorsPaged(params: { page?: number; pageSize?: number; q?: string }) {
+  getPendingDoctorsPaged(params: {
+    page?: number;
+    pageSize?: number;
+    q?: string;
+    workspace?: 'homeopathy' | 'hope-hub';
+  }) {
     return firstValueFrom(
       this.http.get<{ pendingDoctors: Array<any>; pagination: any }>(
         `${this.apiBase}${API_PATHS.ADMIN.DOCTORS_PENDING}`,
@@ -54,6 +61,7 @@ export class AdminDoctorsApi extends AdminApiBase {
             page: String(params.page ?? 1),
             pageSize: String(params.pageSize ?? PAGE_SIZES.DOCTORS),
             q: params.q ?? '',
+            workspace: params.workspace ?? '',
           },
         },
       ),

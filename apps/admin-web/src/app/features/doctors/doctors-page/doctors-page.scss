@@ -12,6 +12,60 @@
   }
 }
 
+.workspace-context-panel {
+  border: 1px solid #bbf7d0;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #f0fdf4, #ffffff);
+  color: #14532d;
+  margin-bottom: 1rem;
+  padding: 1rem;
+
+  p,
+  h2,
+  span {
+    margin: 0;
+  }
+
+  p {
+    color: #15803d;
+    font-size: 0.72rem;
+    font-weight: 900;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  h2 {
+    color: #052e16;
+    font-size: 1.25rem;
+    margin-top: 0.2rem;
+  }
+
+  span {
+    color: #3f6212;
+    display: block;
+    font-size: 0.9rem;
+    line-height: 1.55;
+    margin-top: 0.35rem;
+  }
+
+  &.hope-hub {
+    border-color: #c4b5fd;
+    background: linear-gradient(135deg, #f5f3ff, #ffffff);
+
+    p {
+      color: #7c3aed;
+    }
+
+    h2 {
+      color: #2e1065;
+    }
+
+    span {
+      color: #5b21b6;
+    }
+  }
+}
+
 // Create / edit doctor — labels must show above each input (component-scoped for reliability)
 .create-doctor-form,
 .edit-doctor-form {

@@ -1,29 +1,34 @@
 import { CommonModule } from '@angular/common';
-import { Component, signal } from '@angular/core';
+import { Component, effect, inject, signal } from '@angular/core';
 import { form, FormField } from '@angular/forms/signals';
 import { RouterLink } from '@angular/router';
 import { buildDetailRows, DetailRowsComponent } from '@hopehub/platform-ui';
 import { AdminApi } from '../../../core/services/admin-api';
 import { adminNavPath, ROUTE_PATHS } from '../../../core/constants/app-routes.constants';
+import { AdminWorkspaceService } from '../../../core/services/admin-workspace.service';
 import { formatAuditAction } from '../../audit/constants/audit.constants';
 import { ADMIN_DASHBOARD_STAT_FIELDS } from '../constants/dashboard-stat.fields';
 import {
   AUDIT_LOGS_PAGE_SIZE,
   PAYMENTS_DEFAULTS,
   PAYMENTS_PAGE_SIZE,
-  type PaymentStatus
+  type PaymentStatus,
 } from '../constants/payments.constants';
 
 @Component({
   selector: 'app-admin-dashboard',
   imports: [CommonModule, FormField, RouterLink, DetailRowsComponent],
   templateUrl: './admin-dashboard.html',
-  styleUrl: './admin-dashboard.scss'
+  styleUrl: './admin-dashboard.scss',
 })
 export class AdminDashboard {
+  private readonly workspace = inject(AdminWorkspaceService);
+
   readonly auditPath = adminNavPath(ROUTE_PATHS.AUDIT);
   readonly adherencePath = adminNavPath(ROUTE_PATHS.ADHERENCE);
   readonly visitorLeadsPath = adminNavPath(ROUTE_PATHS.CHAT_INBOX);
+  readonly workspaceKey = this.workspace.selectedWorkspace;
+  readonly workspaceLabel = this.workspace.workspaceLabel;
   readonly formatAuditAction = formatAuditAction;
   revenueInPaise = 0;
   activeDoctors = 0;
@@ -47,7 +52,12 @@ export class AdminDashboard {
   csvExporting = false;
   csvError = '';
   error = '';
-  adherenceSummary = { highRiskCount: 0, mediumRiskCount: 0, alertCount: 0, platformAdherencePercent: 0 };
+  adherenceSummary = {
+    highRiskCount: 0,
+    mediumRiskCount: 0,
+    alertCount: 0,
+    platformAdherencePercent: 0,
+  };
   adherenceAlerts: Array<{ patientName: string; message: string; severity: string }> = [];
   visitorLeadStats = {
     total: 0,
@@ -56,24 +66,29 @@ export class AdminDashboard {
     called: 0,
     registered: 0,
     booked: 0,
-    notInterested: 0
+    notInterested: 0,
   };
 
   readonly paymentFilterModel = signal({
     paymentStatus: PAYMENTS_DEFAULTS.STATUS as PaymentStatus,
     paymentFrom: '',
-    paymentTo: ''
+    paymentTo: '',
   });
   readonly paymentFilterForm = form(this.paymentFilterModel);
 
   constructor(private readonly api: AdminApi) {
-    void this.load();
+    effect(() => {
+      this.workspace.selectedWorkspace();
+      void this.load();
+    });
   }
 
   async load() {
     this.error = '';
     try {
-      const report = (await this.api.getReports()) as {
+      const report = (await this.api.getReports({
+        workspace: this.workspace.selectedWorkspace(),
+      })) as {
         revenueInPaise: number;
         activeDoctors: number;
         consultations: Array<unknown>;
@@ -83,7 +98,11 @@ export class AdminDashboard {
       this.consultationsCount = report.consultations?.length || 0;
       const audit = await this.api.getAuditLogs({ page: 1, pageSize: AUDIT_LOGS_PAGE_SIZE });
       this.auditLogs = audit.logs || [];
-      await Promise.all([this.loadPayments(), this.loadAdherenceSummary(), this.loadVisitorLeadStats()]);
+      await Promise.all([
+        this.loadPayments(),
+        this.loadAdherenceSummary(),
+        this.loadVisitorLeadStats(),
+      ]);
     } catch {
       this.error = 'Could not load admin dashboard summary.';
     }
@@ -100,7 +119,8 @@ export class AdminDashboard {
         pageSize: PAYMENTS_PAGE_SIZE,
         status: filters.paymentStatus,
         from: filters.paymentFrom || undefined,
-        to: filters.paymentTo || undefined
+        to: filters.paymentTo || undefined,
+        workspace: this.workspace.selectedWorkspace(),
       });
       this.payments = result.payments || [];
       this.paymentSummary = result.summary || this.paymentSummary;
@@ -120,7 +140,7 @@ export class AdminDashboard {
     this.paymentFilterModel.set({
       paymentStatus: PAYMENTS_DEFAULTS.STATUS,
       paymentFrom: '',
-      paymentTo: ''
+      paymentTo: '',
     });
     void this.loadPayments(1);
   }
@@ -137,7 +157,8 @@ export class AdminDashboard {
       const csv = await this.api.exportPaymentsCsv({
         status: filters.paymentStatus,
         from: filters.paymentFrom || undefined,
-        to: filters.paymentTo || undefined
+        to: filters.paymentTo || undefined,
+        workspace: this.workspace.selectedWorkspace(),
       });
       const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
       const url = URL.createObjectURL(blob);
@@ -160,7 +181,7 @@ export class AdminDashboard {
         highRiskCount: report.summary?.highRiskCount ?? 0,
         mediumRiskCount: report.summary?.mediumRiskCount ?? 0,
         alertCount: report.summary?.alertCount ?? 0,
-        platformAdherencePercent: report.summary?.platformAdherencePercent ?? 0
+        platformAdherencePercent: report.summary?.platformAdherencePercent ?? 0,
       };
       this.adherenceAlerts = (report.alerts ?? []).slice(0, 3);
     } catch {
@@ -178,7 +199,7 @@ export class AdminDashboard {
         called: res.stats.called ?? 0,
         registered: res.stats.registered ?? 0,
         booked: (res.stats as { booked?: number }).booked ?? 0,
-        notInterested: (res.stats as { notInterested?: number }).notInterested ?? 0
+        notInterested: (res.stats as { notInterested?: number }).notInterested ?? 0,
       };
     } catch {
       // optional dashboard block
@@ -190,9 +211,9 @@ export class AdminDashboard {
       {
         revenueInPaise: this.revenueInPaise,
         activeDoctors: this.activeDoctors,
-        consultationsCount: this.consultationsCount
+        consultationsCount: this.consultationsCount,
       },
-      ADMIN_DASHBOARD_STAT_FIELDS
+      ADMIN_DASHBOARD_STAT_FIELDS,
     );
   }
 }

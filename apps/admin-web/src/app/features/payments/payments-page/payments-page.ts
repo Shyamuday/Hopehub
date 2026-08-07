@@ -1,7 +1,8 @@
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { Component, effect, inject, signal, OnInit } from '@angular/core';
 import { form, FormField } from '@angular/forms/signals';
 import { DatePipe } from '@angular/common';
 import { AdminApi } from '../../../core/services/admin-api';
+import { AdminWorkspaceService } from '../../../core/services/admin-workspace.service';
 import type {
   AdminPaymentEvent,
   AdminPaymentRefund,
@@ -22,8 +23,11 @@ import {
 })
 export class PaymentsPage implements OnInit {
   private api = inject(AdminApi);
+  private workspace = inject(AdminWorkspaceService);
 
   payments = signal<any[]>([]);
+  readonly workspaceKey = this.workspace.selectedWorkspace;
+  readonly workspaceLabel = this.workspace.workspaceLabel;
   summary = signal<AdminPaymentSummary>({
     total: 0,
     paid: 0,
@@ -58,8 +62,14 @@ export class PaymentsPage implements OnInit {
   readonly statusStyles = PAYMENT_STATUS_STYLES;
   readonly formatPaise = formatPaise;
 
-  ngOnInit(): void {
+  private readonly workspaceReload = effect(() => {
+    this.workspace.selectedWorkspace();
+    this.page.set(1);
     this.load();
+  });
+
+  ngOnInit(): void {
+    // Initial load is handled by the workspace effect so workspace switching refreshes payments.
   }
 
   load(): void {
@@ -73,6 +83,7 @@ export class PaymentsPage implements OnInit {
         status: this.statusFilter() as any,
         from: dates.from || undefined,
         to: dates.to || undefined,
+        workspace: this.workspace.selectedWorkspace(),
       })
       .then((r) => {
         this.payments.set(r.payments);
@@ -130,6 +141,7 @@ export class PaymentsPage implements OnInit {
         status: this.statusFilter() as any,
         from: dates.from || undefined,
         to: dates.to || undefined,
+        workspace: this.workspace.selectedWorkspace(),
       });
       const blob = new Blob([csv], { type: 'text/csv' });
       const url = URL.createObjectURL(blob);

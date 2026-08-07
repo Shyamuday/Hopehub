@@ -18,7 +18,11 @@ import {
   adminNavPath,
   type AdminNavItem,
 } from '../../core/constants/app-routes.constants';
-import { navItemsForUser } from '../../core/admin-navigation';
+import { navItemsForUser, navItemsForWorkspace } from '../../core/admin-navigation';
+import {
+  AdminWorkspaceService,
+  type AdminFocusedWorkspace,
+} from '../../core/services/admin-workspace.service';
 
 const MOBILE_BOTTOM_NAV_LIMIT = 4;
 
@@ -49,10 +53,16 @@ export class AdminShell {
   readonly auth = inject(AdminAuth);
   private readonly router = inject(Router);
   private readonly mobileLayout = inject(AdminMobileLayoutService);
+  readonly workspace = inject(AdminWorkspaceService);
 
   readonly menuOpen = signal(false);
+  readonly workspaceOptions = this.workspace.workspaceOptions;
+  readonly selectedWorkspace = this.workspace.selectedWorkspace;
+  readonly selectedWorkspaceOption = this.workspace.selectedWorkspaceOption;
   readonly focusMode = computed(() => this.mobileLayout.pageFocus());
-  readonly filteredNavItems = computed(() => navItemsForUser(NAV_ITEMS, this.auth.user()));
+  readonly filteredNavItems = computed(() =>
+    navItemsForWorkspace(navItemsForUser(NAV_ITEMS, this.auth.user()), this.selectedWorkspace()),
+  );
   readonly accountPath = adminNavPath(ROUTE_PATHS.ACCOUNT);
   readonly apiBase = environment.apiUrl;
   readonly authTokenKey = AUTH_TOKEN_KEY;
@@ -86,9 +96,11 @@ export class AdminShell {
   );
 
   constructor() {
+    this.workspace.syncFromUrl(this.router.url);
     this.router.events
       .pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd))
-      .subscribe(() => {
+      .subscribe((event) => {
+        this.workspace.syncFromUrl(event.urlAfterRedirects);
         this.closeMenu();
         this.mobileLayout.clearPageFocus();
       });
@@ -105,6 +117,10 @@ export class AdminShell {
 
   closeMenu() {
     this.menuOpen.set(false);
+  }
+
+  selectWorkspace(workspace: AdminFocusedWorkspace) {
+    this.workspace.selectWorkspace(workspace);
   }
 
   navIcon(item: AdminNavItem) {

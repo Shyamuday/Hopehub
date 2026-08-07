@@ -5,6 +5,7 @@ import {
   CareTeamServicePricingMode,
   HomeopathicDoctorType,
   PatientGender,
+  Prisma,
   Role
 } from '@prisma/client';
 import bcrypt from 'bcryptjs';
@@ -158,6 +159,18 @@ function mentalHealthProfileUpdatePayload(
   };
 }
 
+function doctorWorkspaceWhere(workspace: string): Prisma.UserWhereInput {
+  if (workspace === 'hope-hub') {
+    return { doctorProfile: { is: { doctorType: HomeopathicDoctorType.PSYCHOLOGIST } } };
+  }
+  if (workspace === 'homeopathy') {
+    return {
+      doctorProfile: { is: { doctorType: { not: HomeopathicDoctorType.PSYCHOLOGIST } } }
+    };
+  }
+  return {};
+}
+
 export function registerAdminDoctorRoutes(router: Router) {
   // ─── Doctors ──────────────────────────────────────────────────────────────────
 
@@ -171,11 +184,13 @@ export function registerAdminDoctorRoutes(router: Router) {
       const query = queryText(req, 'q').trim();
       const status = queryText(req, 'status').toUpperCase();
       const sortBy = queryText(req, 'sortBy');
+      const workspace = queryText(req, 'workspace');
       const sortDirection =
         queryText(req, 'sortDirection').toLowerCase() === 'asc' ? 'asc' : 'desc';
 
-      const where = {
+      const where: Prisma.UserWhereInput = {
         role: Role.DOCTOR,
+        ...doctorWorkspaceWhere(workspace),
         ...(status === 'ACTIVE' ? { isActive: true } : {}),
         ...(status === 'INACTIVE' ? { isActive: false } : {}),
         ...(query
@@ -227,10 +242,12 @@ export function registerAdminDoctorRoutes(router: Router) {
       const page = queryPositiveInt(req, 'page', 1);
       const pageSize = queryPositiveInt(req, 'pageSize', 10);
       const query = queryText(req, 'q').trim();
+      const workspace = queryText(req, 'workspace');
 
-      const where = {
+      const where: Prisma.UserWhereInput = {
         role: Role.DOCTOR,
         isActive: false,
+        ...doctorWorkspaceWhere(workspace),
         ...(query
           ? {
               OR: [

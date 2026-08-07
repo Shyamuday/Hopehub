@@ -77,7 +77,7 @@ export class AdminCatalogApi extends AdminApiBase {
     );
   }
 
-  getActiveDoctors() {
+  getActiveDoctors(params?: { workspace?: 'homeopathy' | 'hope-hub' }) {
     return firstValueFrom(
       this.http.get<{
         doctors: Array<{ id: string; name: string; doctorProfile?: { specialty?: string } | null }>;
@@ -89,6 +89,7 @@ export class AdminCatalogApi extends AdminApiBase {
           q: '',
           sortBy: 'name',
           sortDirection: SORT_DIRECTIONS.ASC,
+          workspace: params?.workspace ?? '',
         },
       }),
     );

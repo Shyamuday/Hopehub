@@ -1,3 +1,23 @@
+<section class="workspace-context-panel" [class.hope-hub]="workspaceKey() === 'hope-hub'">
+  <div>
+    <p>{{ workspaceLabel() }} workspace</p>
+    <h2>
+      {{
+        workspaceKey() === 'hope-hub'
+          ? 'Hope Hub command view'
+          : 'Homeopathy command view'
+      }}
+    </h2>
+    <span>
+      {{
+        workspaceKey() === 'hope-hub'
+          ? 'Top stats are filtered for Hope Hub sessions and providers. Shared blocks remain visible below.'
+          : 'Top stats are filtered for homeopathy consultations and doctors. Shared blocks remain visible below.'
+      }}
+    </span>
+  </div>
+</section>
+
 <section class="stats">
   <hopehub-detail-rows variant="stat" [rows]="dashboardStatRows()" />
 </section>

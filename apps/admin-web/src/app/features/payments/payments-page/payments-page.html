@@ -1,8 +1,28 @@
 <div class="pay-page">
+  <section class="workspace-context-panel" [class.hope-hub]="workspaceKey() === 'hope-hub'">
+    <div>
+      <p>{{ workspaceLabel() }} workspace</p>
+      <h2>
+        {{
+          workspaceKey() === 'hope-hub'
+            ? 'Hope Hub payments'
+            : 'Homeopathy payments'
+        }}
+      </h2>
+      <span>
+        {{
+          workspaceKey() === 'hope-hub'
+            ? 'Showing payments linked to Hope Hub sessions and quick talk only.'
+            : 'Showing payments linked to homeopathy consultations only.'
+        }}
+      </span>
+    </div>
+  </section>
+
   <div class="pay-hdr">
     <div>
-      <h2>Payments</h2>
-      <p>Filter consultation payments and export records for reconciliation</p>
+      <h2>{{ workspaceKey() === 'hope-hub' ? 'Hope Hub Payments' : 'Payments' }}</h2>
+      <p>Filter {{ workspaceLabel() }} consultation payments and export records for reconciliation</p>
     </div>
     <button class="btn-primary" [disabled]="exporting() || loading()" (click)="exportCsv()">
       {{ exporting() ? 'Exporting…' : 'Export CSV' }}

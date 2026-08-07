@@ -1,9 +1,37 @@
 
     <div class="cp">
+      <section class="workspace-context-panel" [class.hope-hub]="workspaceKey() === 'hope-hub'">
+        <div>
+          <p>{{ workspaceLabel() }} workspace</p>
+          <h2>
+            {{
+              workspaceKey() === 'hope-hub'
+                ? 'Hope Hub consultation queue'
+                : 'Homeopathy consultation queue'
+            }}
+          </h2>
+          <span>
+            {{
+              workspaceKey() === 'hope-hub'
+                ? 'Showing mental wellness, quick talk, listener, and psychologist sessions only.'
+                : 'Showing homeopathy consultations only. Hope Hub sessions stay in the Hope Hub workspace.'
+            }}
+          </span>
+        </div>
+      </section>
+
       <div class="cp-hdr">
         <div>
-          <h2 class="cp-title">🩺 Consultation Queue</h2>
-          <p class="cp-sub">Assign unassigned consultations to available doctors</p>
+          <h2 class="cp-title">
+            {{ workspaceKey() === 'hope-hub' ? '🧠 Hope Hub Queue' : '🩺 Consultation Queue' }}
+          </h2>
+          <p class="cp-sub">
+            {{
+              workspaceKey() === 'hope-hub'
+                ? 'Assign unassigned Hope Hub sessions to available providers'
+                : 'Assign unassigned consultations to available homeopathy doctors'
+            }}
+          </p>
         </div>
         <div class="hdr-stats">
           <div class="stat-pill unassigned">{{ unassignedCount() }} Unassigned</div>
