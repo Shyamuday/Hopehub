@@ -221,6 +221,20 @@ export class CounsellorApplicationsPage implements OnInit {
     return flags;
   }
 
+  listenerIncorrectAnswers(application: any): any[] {
+    return application.listenerScreeningReview?.incorrect || [];
+  }
+
+  listenerChecklistItems(application: any): any[] {
+    return application.listenerProfileChecklist?.items || [];
+  }
+
+  listenerChecklistLabel(application: any): string {
+    const checklist = application.listenerProfileChecklist;
+    if (!checklist) return 'No profile linked yet';
+    return `${checklist.completed}/${checklist.total} ready`;
+  }
+
   contributorStatusClass(status: string): string {
     return `status contributor-status-${status.toLowerCase()}`;
   }

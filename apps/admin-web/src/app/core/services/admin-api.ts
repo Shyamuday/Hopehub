@@ -969,6 +969,16 @@ export class AdminApi {
       ...(args as Parameters<AdminOpsApi['publishListenerScreeningQuestionSet']>),
     );
   }
+  listHopeHubLiveGroupReports(...args: Parameters<AdminOpsApi['listHopeHubLiveGroupReports']>) {
+    return this.ops.listHopeHubLiveGroupReports(
+      ...(args as Parameters<AdminOpsApi['listHopeHubLiveGroupReports']>),
+    );
+  }
+  reviewHopeHubLiveGroupReport(...args: Parameters<AdminOpsApi['reviewHopeHubLiveGroupReport']>) {
+    return this.ops.reviewHopeHubLiveGroupReport(
+      ...(args as Parameters<AdminOpsApi['reviewHopeHubLiveGroupReport']>),
+    );
+  }
 
   listRewardRules() {
     return this.rewards.listRewardRules();

@@ -39,7 +39,11 @@ export class ListenerScreeningPage implements OnInit {
   readonly toast = signal('');
   readonly error = signal('');
   readonly questionSets = signal<any[]>([]);
+  readonly auditLogs = signal<any[]>([]);
+  readonly liveGroupReports = signal<any[]>([]);
   readonly form = signal<ListenerScreeningSetForm>(this.emptyForm());
+  readonly previewOpen = signal(false);
+  readonly validationIssues = signal<string[]>([]);
 
   ngOnInit(): void {
     void this.load();
@@ -51,9 +55,11 @@ export class ListenerScreeningPage implements OnInit {
     try {
       const response = await this.api.listListenerScreeningQuestionSets();
       this.questionSets.set(response.questionSets || []);
+      this.auditLogs.set(response.auditLogs || []);
       const current =
         response.questionSets?.find((set: any) => set.isActive) ?? response.questionSets?.[0];
       if (current && !this.form().id) this.edit(current);
+      await this.loadLiveGroupReports();
     } catch (error: any) {
       this.error.set(error?.error?.message || error?.message || 'Could not load listener tests.');
     } finally {
@@ -83,6 +89,8 @@ export class ListenerScreeningPage implements OnInit {
 
   newDraft(): void {
     this.form.set(this.emptyForm());
+    this.previewOpen.set(false);
+    this.validationIssues.set([]);
   }
 
   duplicateAsDraft(questionSet: any): void {
@@ -135,6 +143,7 @@ export class ListenerScreeningPage implements OnInit {
   async save(): Promise<void> {
     const validationMessage = this.validateForm();
     if (validationMessage) {
+      this.validationIssues.set([validationMessage]);
       this.error.set(validationMessage);
       return;
     }
@@ -195,6 +204,47 @@ export class ListenerScreeningPage implements OnInit {
       await this.load();
     } catch (error: any) {
       this.error.set(error?.error?.message || error?.message || 'Could not publish listener test.');
+    } finally {
+      this.saving.set(false);
+    }
+  }
+
+  validateAndPreview(): void {
+    const validationMessage = this.validateForm();
+    this.validationIssues.set(validationMessage ? [validationMessage] : []);
+    this.previewOpen.set(!validationMessage);
+    this.error.set(validationMessage);
+    if (!validationMessage) {
+      this.toast.set('Preview ready. Check the correct answers before publishing.');
+    }
+  }
+
+  correctOptionText(question: ListenerScreeningQuestionForm): string {
+    return (
+      question.options.find((option) => option.id === question.correctOptionId)?.text ||
+      question.correctOptionId ||
+      'Not selected'
+    );
+  }
+
+  async loadLiveGroupReports(): Promise<void> {
+    try {
+      const response = await this.api.listHopeHubLiveGroupReports();
+      this.liveGroupReports.set(response.reports || []);
+    } catch {
+      this.liveGroupReports.set([]);
+    }
+  }
+
+  async reviewLiveGroupReport(report: any, status: 'REVIEWED' | 'DISMISSED'): Promise<void> {
+    this.saving.set(true);
+    this.error.set('');
+    try {
+      await this.api.reviewHopeHubLiveGroupReport(report.id, status);
+      this.toast.set(`Live group report marked ${status.toLowerCase()}.`);
+      await this.loadLiveGroupReports();
+    } catch (error: any) {
+      this.error.set(error?.error?.message || error?.message || 'Could not review report.');
     } finally {
       this.saving.set(false);
     }

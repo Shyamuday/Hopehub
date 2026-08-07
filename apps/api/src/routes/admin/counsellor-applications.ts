@@ -3,6 +3,10 @@ import { z } from 'zod';
 import { Role } from '@prisma/client';
 import { authRequired, allowRoles } from '../../auth.js';
 import { prisma } from '../../db.js';
+import {
+  listenerScreeningReviewDetails,
+  sanitizeListenerScreeningQuestions
+} from '../../services/listener-screening-question-sets.js';
 import { asyncRoute, routeParam, writeAuditLog } from '../../utils/helpers.js';
 
 const statusSchema = z.object({
@@ -34,6 +38,86 @@ function serviceScopeFor(track: string) {
   }
 }
 
+function normalizeListenerAnswers(raw: unknown): Array<{ questionId: string; optionId: string }> {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map((item) => {
+      if (!item || typeof item !== 'object') return null;
+      const record = item as Record<string, unknown>;
+      return {
+        questionId: String(record['questionId'] || ''),
+        optionId: String(record['optionId'] || '')
+      };
+    })
+    .filter((item): item is { questionId: string; optionId: string } =>
+      Boolean(item?.questionId && item.optionId)
+    );
+}
+
+function listenerProfileChecklist(application: any) {
+  const doctorProfile = application.autoApprovedDoctorUser?.doctorProfile;
+  const mental = doctorProfile?.mentalHealthProfile;
+  const services = mental?.services ?? [];
+  const items = [
+    {
+      key: 'photo',
+      label: 'Profile photo added',
+      complete: Boolean(
+        application.autoApprovedDoctorUser?.profileImageKey ||
+        application.autoApprovedDoctorUser?.profileImageUrl
+      )
+    },
+    {
+      key: 'bio',
+      label: 'Public bio has at least 80 characters',
+      complete: Boolean((doctorProfile?.bio || '').trim().length >= 80)
+    },
+    {
+      key: 'gender',
+      label: 'Gender selected',
+      complete: Boolean(application.autoApprovedDoctorUser?.gender)
+    },
+    {
+      key: 'languages',
+      label: 'Languages added',
+      complete: Boolean(mental?.languages?.length)
+    },
+    {
+      key: 'sessionTypes',
+      label: 'Session types added',
+      complete: Boolean(mental?.sessionTypes?.length)
+    },
+    {
+      key: 'concerns',
+      label: 'Concerns handled added',
+      complete: Boolean(mental?.concernsHandled?.length)
+    },
+    {
+      key: 'safety',
+      label: 'Safety escalation note added',
+      complete: Boolean((mental?.safetyEscalationNote || '').trim())
+    },
+    {
+      key: 'availability',
+      label: 'Available and accepting new users',
+      complete: Boolean(doctorProfile?.isAvailable && mental?.acceptingNewUsers)
+    },
+    {
+      key: 'services',
+      label: 'At least one active service/pricing plan',
+      complete: services.some((service: any) => service.isActive)
+    }
+  ];
+  const completed = items.filter((item) => item.complete).length;
+  return {
+    items,
+    completed,
+    total: items.length,
+    ready: completed === items.length,
+    showOnWebsite: Boolean(doctorProfile?.showOnWebsite)
+  };
+}
+
 export function registerAdminCounsellorApplicationRoutes(router: Router) {
   router.get(
     '/admin/counsellor-applications',
@@ -55,6 +139,20 @@ export function registerAdminCounsellorApplicationRoutes(router: Router) {
               orientationCompletedAt: true,
               activatedAt: true,
               platformAccountLinkedAt: true
+            }
+          },
+          listenerScreeningAttempts: {
+            orderBy: { createdAt: 'desc' },
+            take: 5,
+            include: {
+              questionSet: {
+                select: {
+                  id: true,
+                  version: true,
+                  passScore: true,
+                  questions: true
+                }
+              }
             }
           }
         }
@@ -81,17 +179,103 @@ export function registerAdminCounsellorApplicationRoutes(router: Router) {
       const recentFailedAttemptCountByEmail = new Map(
         recentFailedAttempts.map((row) => [row.email.toLowerCase(), row._count.id])
       );
+      const autoApprovedUserIds = applications
+        .map((application) => application.autoApprovedDoctorUserId)
+        .filter((id): id is string => Boolean(id));
+      const autoApprovedUsers = autoApprovedUserIds.length
+        ? await prisma.user.findMany({
+            where: { id: { in: autoApprovedUserIds } },
+            select: {
+              id: true,
+              name: true,
+              gender: true,
+              profileImageKey: true,
+              profileImageUrl: true,
+              doctorProfile: {
+                select: {
+                  id: true,
+                  showOnWebsite: true,
+                  isAvailable: true,
+                  bio: true,
+                  mentalHealthProfile: {
+                    select: {
+                      languages: true,
+                      sessionTypes: true,
+                      concernsHandled: true,
+                      safetyEscalationNote: true,
+                      acceptingNewUsers: true,
+                      services: {
+                        select: {
+                          id: true,
+                          title: true,
+                          pricingMode: true,
+                          priceInPaise: true,
+                          durationMinutes: true,
+                          isFree: true,
+                          isActive: true
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          })
+        : [];
+      const autoApprovedUserById = new Map(autoApprovedUsers.map((user) => [user.id, user]));
       const summary = { NEW: 0, REVIEWING: 0, SHORTLISTED: 0, REJECTED: 0, ONBOARDED: 0 };
       for (const row of counts) {
         summary[row.status as keyof typeof summary] = row._count.id;
       }
 
       res.json({
-        applications: applications.map((application) => ({
-          ...application,
-          listenerRecentFailedAttempts:
-            recentFailedAttemptCountByEmail.get(application.email.toLowerCase()) ?? 0
-        })),
+        applications: applications.map((application) => {
+          const { listenerScreeningAttempts, ...applicationPayload } = application;
+          const questionSet = listenerScreeningAttempts[0]?.questionSet;
+          const answers = normalizeListenerAnswers(application.listenerScreeningAnswers);
+          const reviewDetails = questionSet
+            ? listenerScreeningReviewDetails(
+                sanitizeListenerScreeningQuestions(questionSet.questions),
+                answers
+              )
+            : [];
+          return {
+            ...applicationPayload,
+            autoApprovedDoctorUser: application.autoApprovedDoctorUserId
+              ? (autoApprovedUserById.get(application.autoApprovedDoctorUserId) ?? null)
+              : null,
+            listenerScreeningAttempts: listenerScreeningAttempts.map((attempt) => ({
+              id: attempt.id,
+              questionSetId: attempt.questionSetId,
+              questionSetVersion: attempt.questionSetVersion,
+              score: attempt.score,
+              maxScore: attempt.maxScore,
+              passed: attempt.passed,
+              guidelinesAccepted: attempt.guidelinesAccepted,
+              guidelinesReadSeconds: attempt.guidelinesReadSeconds,
+              trainingCompleted: attempt.trainingCompleted,
+              cooldownExpiresAt: attempt.cooldownExpiresAt?.toISOString() ?? null,
+              createdAt: attempt.createdAt.toISOString()
+            })),
+            listenerRecentFailedAttempts:
+              recentFailedAttemptCountByEmail.get(application.email.toLowerCase()) ?? 0,
+            listenerScreeningReview: {
+              questionSetId: questionSet?.id ?? application.listenerScreeningQuestionSetId,
+              questionSetVersion:
+                questionSet?.version ?? application.listenerScreeningQuestionSetVersion,
+              passScore: questionSet?.passScore ?? null,
+              incorrect: reviewDetails.filter((item) => !item.correct),
+              correctCount: reviewDetails.filter((item) => item.correct).length,
+              details: reviewDetails
+            },
+            listenerProfileChecklist: listenerProfileChecklist({
+              ...application,
+              autoApprovedDoctorUser: application.autoApprovedDoctorUserId
+                ? (autoApprovedUserById.get(application.autoApprovedDoctorUserId) ?? null)
+                : null
+            })
+          };
+        }),
         summary
       });
     })

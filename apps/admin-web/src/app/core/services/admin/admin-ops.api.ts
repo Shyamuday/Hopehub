@@ -558,7 +558,7 @@ export class AdminOpsApi extends AdminApiBase {
 
   listListenerScreeningQuestionSets() {
     return firstValueFrom(
-      this.http.get<{ questionSets: any[] }>(
+      this.http.get<{ questionSets: any[]; auditLogs: any[] }>(
         `${this.apiBase}${API_PATHS.ADMIN.LISTENER_SCREENING}`,
       ),
     );
@@ -587,6 +587,23 @@ export class AdminOpsApi extends AdminApiBase {
       this.http.post<{ questionSet: any }>(
         `${this.apiBase}${API_PATHS.ADMIN.LISTENER_SCREENING_PUBLISH(id)}`,
         {},
+      ),
+    );
+  }
+
+  listHopeHubLiveGroupReports() {
+    return firstValueFrom(
+      this.http.get<{ reports: any[] }>(
+        `${this.apiBase}${API_PATHS.ADMIN.HOPE_HUB_LIVE_GROUP_REPORTS}`,
+      ),
+    );
+  }
+
+  reviewHopeHubLiveGroupReport(id: string, status: 'REVIEWED' | 'DISMISSED') {
+    return firstValueFrom(
+      this.http.post<{ report: any }>(
+        `${this.apiBase}${API_PATHS.ADMIN.HOPE_HUB_LIVE_GROUP_REPORT_REVIEW(id)}`,
+        { status },
       ),
     );
   }

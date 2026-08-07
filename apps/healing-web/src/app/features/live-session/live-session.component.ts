@@ -306,6 +306,21 @@ export class LiveSessionComponent implements OnInit, OnDestroy {
     void this.router.navigate(['/dashboard']);
   }
 
+  openSafetyHelp(): void {
+    this.notificationService.warning(
+      'If there is immediate danger, call local emergency services now. Hope Hub chat is not an emergency service.',
+    );
+  }
+
+  reportSafetyConcern(): void {
+    const message =
+      '[SAFETY] I need urgent support or want this session reviewed by the Hope Hub care/admin team.';
+    this.draft.set(message);
+    this.notificationService.info(
+      'Safety message prepared. Press Send to notify your expert in this room.',
+    );
+  }
+
   private connectRealtime(): void {
     const socket = this.realtimeService.connect();
     if (!socket) return;

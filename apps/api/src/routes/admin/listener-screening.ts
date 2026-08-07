@@ -49,11 +49,111 @@ export function registerAdminListenerScreeningRoutes(router: Router) {
     authRequired,
     allowRoles(Role.ADMIN),
     asyncRoute(async (_req, res) => {
-      const questionSets = await prisma.listenerScreeningQuestionSet.findMany({
-        orderBy: [{ isActive: 'desc' }, { updatedAt: 'desc' }]
+      const [questionSets, auditLogs] = await Promise.all([
+        prisma.listenerScreeningQuestionSet.findMany({
+          orderBy: [{ isActive: 'desc' }, { updatedAt: 'desc' }]
+        }),
+        prisma.auditLog.findMany({
+          where: { targetType: 'ListenerScreeningQuestionSet' },
+          orderBy: { createdAt: 'desc' },
+          take: 25,
+          include: { actor: { select: { id: true, name: true, email: true } } }
+        })
+      ]);
+
+      res.json({
+        questionSets: questionSets.map(adminListenerScreeningQuestionSet),
+        auditLogs: auditLogs.map((log) => ({
+          id: log.id,
+          action: log.action,
+          targetId: log.targetId,
+          summary: log.summary,
+          metadata: log.metadata,
+          actor: log.actor
+            ? { id: log.actor.id, name: log.actor.name, email: log.actor.email }
+            : null,
+          createdAt: log.createdAt.toISOString()
+        }))
+      });
+    })
+  );
+
+  router.get(
+    '/admin/hope-hub/live-group-reports',
+    authRequired,
+    allowRoles(Role.ADMIN, Role.HR),
+    asyncRoute(async (_req, res) => {
+      const reports = await prisma.hopeHubLiveGroupReport.findMany({
+        orderBy: [{ status: 'asc' }, { createdAt: 'desc' }],
+        take: 100,
+        include: {
+          group: { select: { id: true, title: true, slug: true } },
+          message: { select: { id: true, body: true, senderName: true, senderRole: true } }
+        }
       });
 
-      res.json({ questionSets: questionSets.map(adminListenerScreeningQuestionSet) });
+      res.json({
+        reports: reports.map((report) => ({
+          id: report.id,
+          groupId: report.groupId,
+          groupTitle: report.group.title,
+          groupSlug: report.group.slug,
+          messageId: report.messageId,
+          messageBody: report.message?.body ?? null,
+          messageSenderName: report.message?.senderName ?? null,
+          messageSenderRole: report.message?.senderRole ?? null,
+          reporterUserId: report.reporterUserId,
+          reporterName: report.reporterName,
+          targetUserId: report.targetUserId,
+          targetDisplayName: report.targetDisplayName,
+          reason: report.reason,
+          details: report.details,
+          status: report.status,
+          reviewedByUserId: report.reviewedByUserId,
+          reviewedAt: report.reviewedAt?.toISOString() ?? null,
+          createdAt: report.createdAt.toISOString()
+        }))
+      });
+    })
+  );
+
+  router.post(
+    '/admin/hope-hub/live-group-reports/:id/review',
+    authRequired,
+    allowRoles(Role.ADMIN, Role.HR),
+    asyncRoute(async (req, res) => {
+      const id = routeParam(req, 'id');
+      const body = z
+        .object({
+          status: z.enum(['REVIEWED', 'DISMISSED']).default('REVIEWED')
+        })
+        .parse(req.body);
+      const report = await prisma.hopeHubLiveGroupReport.update({
+        where: { id },
+        data: {
+          status: body.status,
+          reviewedAt: new Date(),
+          reviewedByUserId: req.user?.id || null
+        }
+      });
+
+      await writeAuditLog({
+        actorId: req.user?.id,
+        actorRole: req.user?.role,
+        action: 'HOPE_HUB_LIVE_GROUP_REPORT_REVIEWED',
+        targetType: 'HopeHubLiveGroupReport',
+        targetId: report.id,
+        summary: `Marked live group report ${report.id} as ${report.status}.`,
+        metadata: { groupId: report.groupId, messageId: report.messageId }
+      });
+
+      res.json({
+        report: {
+          id: report.id,
+          status: report.status,
+          reviewedAt: report.reviewedAt?.toISOString() ?? null
+        }
+      });
     })
   );
 

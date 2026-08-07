@@ -152,3 +152,24 @@ export function scoreListenerScreening(
     passed: score >= passScore
   };
 }
+
+export function listenerScreeningReviewDetails(
+  questions: ListenerScreeningQuestion[],
+  answers: Array<{ questionId: string; optionId: string }>
+) {
+  const answerByQuestion = new Map(answers.map((answer) => [answer.questionId, answer.optionId]));
+  return questions.map((question) => {
+    const selectedOptionId = answerByQuestion.get(question.id) || '';
+    const selectedOption = question.options.find((option) => option.id === selectedOptionId);
+    const correctOption = question.options.find((option) => option.id === question.correctOptionId);
+    return {
+      questionId: question.id,
+      questionText: question.text,
+      selectedOptionId,
+      selectedOptionText: selectedOption?.text ?? '',
+      correctOptionId: question.correctOptionId,
+      correctOptionText: correctOption?.text ?? '',
+      correct: selectedOptionId === question.correctOptionId
+    };
+  });
+}

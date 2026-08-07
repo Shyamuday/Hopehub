@@ -11,8 +11,15 @@
   @if (toast()) {
     <div class="toast">{{ toast() }}</div>
   }
-  @if (error()) {
+      @if (error()) {
     <div class="error">{{ error() }}</div>
+  }
+  @if (validationIssues().length) {
+    <div class="error">
+      @for (issue of validationIssues(); track issue) {
+        <div>{{ issue }}</div>
+      }
+    </div>
   }
 
   <section class="grid-layout">
@@ -155,6 +162,7 @@
 
       <div class="actions">
         <button type="button" (click)="newDraft()">Clear</button>
+        <button type="button" (click)="validateAndPreview()">Validate & preview</button>
         <button type="submit" class="primary" [disabled]="saving()">
           {{ saving() ? 'Saving...' : 'Save listener test' }}
         </button>
@@ -164,8 +172,34 @@
           </button>
         }
       </div>
+
+      @if (previewOpen()) {
+        <section class="preview-panel">
+          <div class="panel-head">
+            <div>
+              <h3>Preview before publish</h3>
+              <p>Admin-only answer key preview. This is never sent to the public Careers page.</p>
+            </div>
+            <button type="button" (click)="previewOpen.set(false)">Close preview</button>
+          </div>
+          @for (question of form().questions; track question.id; let previewIndex = $index) {
+            <article class="preview-question">
+              <strong>{{ previewIndex + 1 }}. {{ question.text }}</strong>
+              <span>Correct: {{ correctOptionText(question) }}</span>
+              <ul>
+                @for (option of question.options; track option.id) {
+                  <li [class.correct]="option.id === question.correctOptionId">
+                    {{ option.id }} — {{ option.text }}
+                  </li>
+                }
+              </ul>
+            </article>
+          }
+        </section>
+      }
     </form>
 
+    <div class="side-stack">
     <section class="panel versions">
       <div class="panel-head">
         <div>
@@ -206,5 +240,60 @@
         }
       }
     </section>
+    <section class="panel versions">
+      <div class="panel-head">
+        <div>
+          <h3>Change history</h3>
+          <p>Recent listener-test audit events.</p>
+        </div>
+      </div>
+      @for (log of auditLogs(); track log.id) {
+        <article class="history-row">
+          <strong>{{ log.action }}</strong>
+          <span>{{ log.summary || log.targetId }}</span>
+          <small>{{ formatDate(log.createdAt) }} · {{ log.actor?.name || 'System' }}</small>
+        </article>
+      } @empty {
+        <p class="muted">No listener test change history yet.</p>
+      }
+    </section>
+
+    <section class="panel versions">
+      <div class="panel-head">
+        <div>
+          <h3>Group chat safety reports</h3>
+          <p>Reported live group messages waiting for admin review.</p>
+        </div>
+        <button type="button" (click)="loadLiveGroupReports()">Refresh</button>
+      </div>
+      @for (report of liveGroupReports(); track report.id) {
+        <article class="report-row" [class.closed]="report.status !== 'OPEN'">
+          <div>
+            <strong>{{ report.reason }}</strong>
+            <span>{{ report.groupTitle }} · target {{ report.targetDisplayName || report.messageSenderName || 'Unknown' }}</span>
+            @if (report.messageBody) {
+              <p>{{ report.messageBody }}</p>
+            }
+            @if (report.details) {
+              <small>{{ report.details }}</small>
+            }
+            <small>{{ report.status }} · {{ formatDate(report.createdAt) }}</small>
+          </div>
+          @if (report.status === 'OPEN') {
+            <div class="row-actions">
+              <button type="button" class="publish" (click)="reviewLiveGroupReport(report, 'REVIEWED')">
+                Mark reviewed
+              </button>
+              <button type="button" (click)="reviewLiveGroupReport(report, 'DISMISSED')">
+                Dismiss
+              </button>
+            </div>
+          }
+        </article>
+      } @empty {
+        <p class="muted">No live group safety reports.</p>
+      }
+    </section>
+    </div>
   </section>
 </div>

@@ -83,6 +83,9 @@ export const API_PATHS = {
     LISTENER_SCREENING: '/admin/hope-hub/listener-screening',
     LISTENER_SCREENING_BY_ID: (id: string) => `/admin/hope-hub/listener-screening/${id}`,
     LISTENER_SCREENING_PUBLISH: (id: string) => `/admin/hope-hub/listener-screening/${id}/publish`,
+    HOPE_HUB_LIVE_GROUP_REPORTS: '/admin/hope-hub/live-group-reports',
+    HOPE_HUB_LIVE_GROUP_REPORT_REVIEW: (id: string) =>
+      `/admin/hope-hub/live-group-reports/${id}/review`,
     ASSESSMENT_DEFINITIONS: '/admin/assessment-definitions',
     ASSESSMENT_ACCESS_REPORT: '/admin/assessment-definitions/access-report',
     ASSESSMENT_DEFINITION_BY_ID: (id: string) => `/admin/assessment-definitions/${id}`,

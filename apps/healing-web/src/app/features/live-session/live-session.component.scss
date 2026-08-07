@@ -281,6 +281,23 @@
   padding: 0.4rem 0.65rem;
 }
 
+.safety-card {
+  border-color: rgba(251, 191, 36, 0.28);
+  background: linear-gradient(135deg, #fffbeb, #ffffff);
+}
+
+.safety-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.85rem;
+}
+
+.danger-soft {
+  border-color: #fecaca;
+  color: #b91c1c;
+}
+
 .call-history-card {
   border-color: rgba(99, 102, 241, 0.18);
 }

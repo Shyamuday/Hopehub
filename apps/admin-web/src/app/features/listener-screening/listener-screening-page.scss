@@ -71,7 +71,9 @@
 
 .editor,
 .versions,
-.questions {
+.questions,
+.side-stack,
+.preview-panel {
   display: grid;
   gap: 0.9rem;
 }
@@ -144,7 +146,10 @@ button:disabled {
 }
 
 .question-card,
-.version-row {
+.version-row,
+.history-row,
+.report-row,
+.preview-question {
   display: grid;
   gap: 0.8rem;
   border: 1px solid #e5e7eb;
@@ -177,15 +182,55 @@ button:disabled {
   align-items: end;
 }
 
-.version-row {
+.version-row,
+.report-row {
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
 }
 
 .version-row span,
-.version-row small {
+.version-row small,
+.history-row span,
+.history-row small,
+.report-row span,
+.report-row small {
   display: block;
   margin-top: 0.25rem;
+}
+
+.report-row p {
+  border-left: 3px solid #ddd6fe;
+  margin: 0.45rem 0 0;
+  padding-left: 0.65rem;
+  color: #334155;
+  font-size: 0.88rem;
+}
+
+.report-row.closed {
+  opacity: 0.72;
+}
+
+.preview-panel {
+  border: 1px solid #c4b5fd;
+  border-radius: 0.75rem;
+  background: #f5f3ff;
+  padding: 0.9rem;
+}
+
+.preview-question {
+  background: #ffffff;
+}
+
+.preview-question ul {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0;
+  padding-left: 1.2rem;
+}
+
+.preview-question li.correct {
+  color: #047857;
+  font-weight: 900;
 }
 
 .status {

@@ -95,6 +95,63 @@ export class ProfilePage {
     return type === 'PSYCHOLOGY_STUDENT_VOLUNTEER' || type === 'PEER_SUPPORT_VOLUNTEER';
   }
 
+  listenerReadinessItems() {
+    const form = this.profileModel();
+    const activeServices = this.careServices().filter((service) => service.isActive !== false);
+    return [
+      {
+        key: 'photo',
+        label: 'Profile photo added',
+        complete: Boolean(this.profileImageUrl),
+      },
+      {
+        key: 'gender',
+        label: 'Gender selected',
+        complete: Boolean(form.gender),
+      },
+      {
+        key: 'bio',
+        label: 'Bio explains your listener role',
+        complete: form.bio.trim().length >= 80,
+      },
+      {
+        key: 'languages',
+        label: 'Languages added',
+        complete: this.lines(form.languagesText).length > 0,
+      },
+      {
+        key: 'sessionTypes',
+        label: 'Session types added',
+        complete: this.lines(form.sessionTypesText).length > 0,
+      },
+      {
+        key: 'concerns',
+        label: 'Concerns handled added',
+        complete: this.lines(form.concernsHandledText).length > 0,
+      },
+      {
+        key: 'safety',
+        label: 'Safety escalation note added',
+        complete: Boolean(form.safetyEscalationNote.trim()),
+      },
+      {
+        key: 'availability',
+        label: 'Available and accepting new users',
+        complete: Boolean(form.isAvailable && form.acceptingNewUsers),
+      },
+      {
+        key: 'services',
+        label: 'At least one active service/price',
+        complete: activeServices.length > 0,
+      },
+    ];
+  }
+
+  listenerReadinessLabel(): string {
+    const items = this.listenerReadinessItems();
+    return `${items.filter((item) => item.complete).length}/${items.length} complete`;
+  }
+
   async loadCarePricingTemplates() {
     try {
       const res = await firstValueFrom(

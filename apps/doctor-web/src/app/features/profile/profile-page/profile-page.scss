@@ -165,6 +165,12 @@
   li {
     font-size: var(--text-sm);
     line-height: var(--leading-relaxed);
+    color: #854d0e;
+    font-weight: 600;
+  }
+
+  li.complete {
+    color: #15803d;
   }
 }
 

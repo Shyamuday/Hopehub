@@ -90,7 +90,12 @@
                           : 'Not completed'
                       }}
                     </strong>
-                    <small>{{ application.listenerScreeningPassed ? 'Passed' : 'Manual review / not passed' }}</small>
+                    <small>
+                      {{ application.listenerScreeningPassed ? 'Passed' : 'Manual review / not passed' }}
+                      @if (application.listenerScreeningReview?.questionSetVersion) {
+                        · {{ application.listenerScreeningReview.questionSetVersion }}
+                      }
+                    </small>
                   </div>
                   <div>
                     <span>Guidelines</span>
@@ -130,7 +135,50 @@
                     <strong>₹99 chat/voice · ₹299 video</strong>
                     <small>30 min plans when auto-approved</small>
                   </div>
+                  <div>
+                    <span>Public profile readiness</span>
+                    <strong>{{ listenerChecklistLabel(application) }}</strong>
+                    <small>
+                      {{
+                        application.listenerProfileChecklist?.showOnWebsite
+                          ? 'Visible on website'
+                          : 'Hidden until checklist is complete'
+                      }}
+                    </small>
+                  </div>
                 </div>
+
+                @if (listenerIncorrectAnswers(application).length) {
+                  <section class="listener-review-panel">
+                    <h3>Missed screening topics</h3>
+                    <p class="muted">
+                      Use this for manual review, coaching, or rejection notes. Correct answers stay admin-only.
+                    </p>
+                    @for (item of listenerIncorrectAnswers(application); track item.questionId) {
+                      <article>
+                        <strong>{{ item.questionText }}</strong>
+                        <span>Selected: {{ item.selectedOptionText || item.selectedOptionId || 'No answer' }}</span>
+                        <span>Expected: {{ item.correctOptionText || item.correctOptionId }}</span>
+                      </article>
+                    }
+                  </section>
+                }
+
+                @if (application.autoApprovedDoctorUserId) {
+                  <section class="listener-review-panel">
+                    <h3>Listener public profile checklist</h3>
+                    <p class="muted">
+                      Auto-approved listeners stay hidden until the provider profile meets these safety/trust requirements.
+                    </p>
+                    <div class="checklist-grid">
+                      @for (item of listenerChecklistItems(application); track item.key) {
+                        <span [class.complete]="item.complete">
+                          {{ item.complete ? '✓' : '•' }} {{ item.label }}
+                        </span>
+                      }
+                    </div>
+                  </section>
+                }
               }
 
               <p class="why"><strong>Why join:</strong> {{ application.whyJoin }}</p>
