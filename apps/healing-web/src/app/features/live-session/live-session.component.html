@@ -45,8 +45,31 @@
           <span class="session-pill">{{ sessionModeLabel() }}</span>
         </div>
 
+        @if (showWaitingPanel()) {
+          <div class="waiting-panel">
+            <div class="waiting-icon">⏳</div>
+            <div>
+              <h3>{{ waitingTitle() }}</h3>
+              <p>{{ waitingCopy() }}</p>
+              <small>{{ refreshStatusLabel() }}</small>
+            </div>
+          </div>
+        }
+
         <div class="chat-scroll">
-          @if (session.messages?.length) {
+          @if (showWaitingPanel()) {
+            <div class="empty-chat">
+              <div
+                class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-50 text-2xl"
+              >
+                🌿
+              </div>
+              <h3 class="text-lg font-black text-slate-950">You are in the right place</h3>
+              <p class="mx-auto mt-2 max-w-sm text-sm leading-6 text-slate-600">
+                Keep this room open. Chat and call controls will unlock automatically when the session is ready.
+              </p>
+            </div>
+          } @else if (session.messages?.length) {
             @for (message of session.messages; track message.id) {
               <div
                 class="message-row"
@@ -82,7 +105,7 @@
         <div class="composer">
           @if (!canInteract()) {
             <p class="composer-disabled">
-              Chat unlocks when payment is complete and an expert is assigned.
+              {{ waitingTitle() }}. Chat unlocks automatically when the session is ready.
             </p>
           } @else {
             <textarea
@@ -156,9 +179,13 @@
           </div>
         } @else {
           <div class="side-card">
-            <p class="side-eyebrow">Privacy</p>
+            <p class="side-eyebrow">{{ showWaitingPanel() ? 'Waiting' : 'Privacy' }}</p>
             <p class="mt-1 text-sm leading-6 text-slate-600">
-              This room is tied to your consultation. Keep emergency or crisis needs on phone/local emergency support.
+              {{
+                showWaitingPanel()
+                  ? 'This room is checking for assignment updates every few seconds.'
+                  : 'This room is tied to your consultation. Keep emergency or crisis needs on phone/local emergency support.'
+              }}
             </p>
           </div>
         }

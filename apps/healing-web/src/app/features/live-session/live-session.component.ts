@@ -74,12 +74,20 @@ export class LiveSessionComponent implements OnInit, OnDestroy {
   readonly draft = signal('');
   readonly socket = signal<CallSignalingSocket | null>(null);
   readonly iceServers = signal<IceServerConfig[]>([{ urls: 'stun:stun.l.google.com:19302' }]);
+  readonly refreshing = signal(false);
+  readonly lastRefreshedAt = signal<Date | null>(null);
 
   private consultationId = '';
+  private autoRefreshTimer: ReturnType<typeof setInterval> | null = null;
   private readonly handleIncomingMessage = (raw: unknown) => {
     const message = raw as Partial<LiveSessionMessage>;
     if (!message?.id || message.consultationId !== this.consultationId) return;
     this.mergeMessage(message as LiveSessionMessage);
+  };
+  private readonly handleConsultationUpdated = (raw: unknown) => {
+    const payload = raw as { consultationId?: string };
+    if (payload?.consultationId !== this.consultationId) return;
+    this.loadSession(this.consultationId, { silent: true });
   };
 
   ngOnInit(): void {
@@ -103,6 +111,8 @@ export class LiveSessionComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.socket()?.off?.('message:new', this.handleIncomingMessage);
+    this.socket()?.off?.('consultation:updated', this.handleConsultationUpdated);
+    this.stopAutoRefresh();
     this.realtimeService.disconnect();
   }
 
@@ -156,6 +166,35 @@ export class LiveSessionComponent implements OnInit, OnDestroy {
     return status.replaceAll('_', ' ') || 'Session';
   }
 
+  waitingTitle(): string {
+    const status = (this.consultation()?.status || '').toUpperCase();
+    if (status === 'PAYMENT_PENDING') return 'Payment confirmation is pending';
+    if (!this.consultation()?.assignedDoctor?.id) return 'Finding your live expert';
+    return 'Preparing your live room';
+  }
+
+  waitingCopy(): string {
+    const status = (this.consultation()?.status || '').toUpperCase();
+    if (status === 'PAYMENT_PENDING') {
+      return 'Once payment is verified, we will assign an available expert and unlock this room automatically.';
+    }
+    if (!this.consultation()?.assignedDoctor?.id) {
+      return 'We are matching you with an available Hope Hub expert. This page refreshes automatically.';
+    }
+    return 'This usually takes a few seconds. Please keep the page open.';
+  }
+
+  showWaitingPanel(): boolean {
+    return Boolean(this.consultation()) && !this.canInteract();
+  }
+
+  refreshStatusLabel(): string {
+    if (this.refreshing()) return 'Checking now...';
+    const last = this.lastRefreshedAt();
+    if (!last) return 'Auto-checking for updates';
+    return `Last checked ${last.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+  }
+
   canInteract(): boolean {
     const consultation = this.consultation();
     const status = (consultation?.status || '').toUpperCase();
@@ -203,7 +242,9 @@ export class LiveSessionComponent implements OnInit, OnDestroy {
     const socket = this.realtimeService.connect();
     if (!socket) return;
     socket.off?.('message:new', this.handleIncomingMessage);
+    socket.off?.('consultation:updated', this.handleConsultationUpdated);
     socket.on('message:new', this.handleIncomingMessage);
+    socket.on('consultation:updated', this.handleConsultationUpdated);
     this.socket.set(socket);
   }
 
@@ -215,19 +256,51 @@ export class LiveSessionComponent implements OnInit, OnDestroy {
     });
   }
 
-  private loadSession(id: string): void {
-    this.loading.set(true);
+  private loadSession(id: string, options: { silent?: boolean } = {}): void {
+    if (options.silent) {
+      this.refreshing.set(true);
+    } else {
+      this.loading.set(true);
+    }
     this.error.set('');
     this.bookingService.consultation(id).subscribe({
       next: (res) => {
         this.consultation.set(res.consultation);
+        this.lastRefreshedAt.set(new Date());
+        this.configureAutoRefresh();
         this.loading.set(false);
+        this.refreshing.set(false);
       },
       error: (error) => {
         this.error.set(this.readErrorMessage(error));
         this.loading.set(false);
+        this.refreshing.set(false);
       },
     });
+  }
+
+  private configureAutoRefresh(): void {
+    if (this.showWaitingPanel()) {
+      this.startAutoRefresh();
+    } else {
+      this.stopAutoRefresh();
+    }
+  }
+
+  private startAutoRefresh(): void {
+    if (this.autoRefreshTimer || !this.consultationId) return;
+    this.autoRefreshTimer = setInterval(() => {
+      if (!this.consultationId || !this.showWaitingPanel()) {
+        this.stopAutoRefresh();
+        return;
+      }
+      this.loadSession(this.consultationId, { silent: true });
+    }, 5000);
+  }
+
+  private stopAutoRefresh(): void {
+    if (this.autoRefreshTimer) clearInterval(this.autoRefreshTimer);
+    this.autoRefreshTimer = null;
   }
 
   private mergeMessage(message: LiveSessionMessage): void {

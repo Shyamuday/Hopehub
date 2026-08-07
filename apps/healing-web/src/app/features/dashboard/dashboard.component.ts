@@ -29,10 +29,13 @@ type HopeHubConsultation = {
     appointmentTime?: string;
     sessionMode?: string;
     quickTalkMode?: string;
+    quickTalk?: boolean;
     concernCategory?: string;
     preferredLanguage?: string;
   } | null;
   pricingSnapshot?: {
+    source?: string | null;
+    purchaseType?: string | null;
     balanceDueInPaise?: number;
     paymentMode?: string;
     careTeamPricingLabel?: string | null;
@@ -622,16 +625,16 @@ type DashboardPackage = {
                           </a>
                         }
                       </p>
-                      @if (canLiveConnect(consultation)) {
-                        <a
-                          [routerLink]="['/live-session', consultation.id]"
-                          class="mt-4 inline-flex items-center justify-center rounded-md bg-emerald-700 px-4 py-2 text-sm font-bold text-white hover:bg-emerald-800"
-                        >
-                          Join live session
-                        </a>
-                      }
                     } @else {
                       <p class="mt-2 text-sm text-gray-600">Expert matching is pending.</p>
+                    }
+                    @if (canOpenLiveRoom(consultation)) {
+                      <a
+                        [routerLink]="['/live-session', consultation.id]"
+                        class="mt-4 inline-flex items-center justify-center rounded-md bg-emerald-700 px-4 py-2 text-sm font-bold text-white hover:bg-emerald-800"
+                      >
+                        {{ liveRoomButtonLabel(consultation) }}
+                      </a>
                     }
                   </div>
                 }
@@ -736,6 +739,30 @@ export class DashboardComponent implements OnInit {
       consultation.assignedDoctor?.id &&
       ['ASSIGNED', 'IN_PROGRESS', 'PRESCRIPTION_UPLOADED'].includes(status),
     );
+  }
+
+  isLiveConnectConsultation(consultation: HopeHubConsultation): boolean {
+    const intake = consultation.intakeAnswers;
+    const pricing = consultation.pricingSnapshot;
+    return Boolean(
+      intake?.quickTalk ||
+      intake?.quickTalkMode ||
+      pricing?.source === 'hope-hub-quick-talk' ||
+      pricing?.purchaseType === 'QUICK_TALK',
+    );
+  }
+
+  canOpenLiveRoom(consultation: HopeHubConsultation): boolean {
+    if (this.canLiveConnect(consultation)) return true;
+    const status = (consultation.status || '').toUpperCase();
+    const paymentStatus = (consultation.payment?.status || '').toUpperCase();
+    const paymentDone = paymentStatus === 'CAPTURED' || paymentStatus === 'PAID';
+    return this.isLiveConnectConsultation(consultation) && (paymentDone || status === 'PAID');
+  }
+
+  liveRoomButtonLabel(consultation: HopeHubConsultation): string {
+    if (this.canLiveConnect(consultation)) return 'Join live session';
+    return 'Open waiting room';
   }
 
   private loadDashboard(): void {

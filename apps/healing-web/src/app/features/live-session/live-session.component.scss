@@ -90,6 +90,46 @@
   text-transform: uppercase;
 }
 
+.waiting-panel {
+  align-items: center;
+  background: linear-gradient(135deg, #ecfdf5, #ffffff);
+  border-bottom: 1px solid rgba(16, 185, 129, 0.12);
+  display: flex;
+  gap: 0.9rem;
+  padding: 1rem;
+}
+
+.waiting-panel h3 {
+  color: #064e3b;
+  font-size: 1rem;
+  font-weight: 900;
+  margin: 0;
+}
+
+.waiting-panel p {
+  color: #475569;
+  font-size: 0.9rem;
+  line-height: 1.55;
+  margin: 0.25rem 0;
+}
+
+.waiting-panel small {
+  color: #047857;
+  font-weight: 800;
+}
+
+.waiting-icon {
+  align-items: center;
+  background: #ffffff;
+  border-radius: 999px;
+  box-shadow: 0 10px 24px rgba(16, 185, 129, 0.12);
+  display: inline-flex;
+  flex: 0 0 auto;
+  height: 2.8rem;
+  justify-content: center;
+  width: 2.8rem;
+}
+
 .chat-scroll {
   background:
     radial-gradient(circle at 20% 20%, rgba(16, 185, 129, 0.06), transparent 20rem),
