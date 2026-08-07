@@ -207,6 +207,22 @@
   padding: 0.4rem 0.65rem;
 }
 
+.listener-guidelines-read-status {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
+.listener-guidelines-read-status span {
+  border: 1px solid #a7f3d0;
+  border-radius: 999px;
+  background: #ecfdf5;
+  color: #047857;
+  font-size: 0.82rem;
+  font-weight: 900;
+  padding: 0.45rem 0.7rem;
+}
+
 .listener-guidelines-scrollbox {
   max-height: 18rem;
   overflow: auto;

@@ -344,14 +344,32 @@
                       <span class="listener-screening__pill">Required listener step</span>
                       <h3>Read listener guidelines before submitting</h3>
                       <p>
-                        Scroll to the end of these rules, then accept them. If your screening passes on
-                        the server, this acceptance completes the listener auto-approval step.
+                        Spend at least 2 minutes reading and scroll to the end before accepting. If
+                        your screening passes on the server, this acceptance completes the listener
+                        auto-approval step.
                         <a routerLink="/listener-guidelines" target="_blank" rel="noopener noreferrer">
                           Open full guidelines anytime
                         </a>
                       </p>
                     </div>
                     <strong>{{ listenerGuidelinesAccepted() ? 'Accepted' : 'Required' }}</strong>
+                  </div>
+
+                  <div class="listener-guidelines-read-status" aria-live="polite">
+                    <span>
+                      {{
+                        listenerGuidelinesTimerComplete()
+                          ? '2-minute reading time complete'
+                          : 'Minimum reading time left: ' + listenerGuidelinesTimerLabel()
+                      }}
+                    </span>
+                    <span>
+                      {{
+                        listenerGuidelinesScrolled()
+                          ? 'Scrolled to the end'
+                          : 'Scroll to the end required'
+                      }}
+                    </span>
                   </div>
 
                   <div class="listener-guidelines-scrollbox" (scroll)="onGuidelinesScroll($event)">
@@ -371,15 +389,17 @@
                   <button
                     type="button"
                     class="listener-guidelines-accept-button"
-                    [disabled]="!listenerGuidelinesScrolled() || listenerGuidelinesAccepted()"
+                    [disabled]="!listenerGuidelinesAcceptReady() || listenerGuidelinesAccepted()"
                     (click)="acceptListenerGuidelines()"
                   >
                     {{
                       listenerGuidelinesAccepted()
                         ? 'Guidelines accepted'
-                        : listenerGuidelinesScrolled()
+                        : listenerGuidelinesAcceptReady()
                           ? 'I have read and accept the listener guidelines'
-                          : 'Scroll to the end to accept'
+                          : listenerGuidelinesTimerComplete()
+                            ? 'Scroll to the end to accept'
+                            : 'Read for 2 minutes to accept'
                     }}
                   </button>
                 </section>

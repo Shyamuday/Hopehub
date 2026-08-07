@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, OnDestroy, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { NOTE_CONTENT } from '../../core/constants/note-content.constants';
@@ -34,7 +34,7 @@ type ListenerScreeningQuestion = {
   templateUrl: './careers.component.html',
   styleUrl: './careers.component.scss',
 })
-export class CareersComponent {
+export class CareersComponent implements OnDestroy {
   readonly notes = NOTE_CONTENT;
   private readonly formBuilder = inject(FormBuilder);
   private readonly leadService = inject(LeadService);
@@ -48,8 +48,12 @@ export class CareersComponent {
   readonly listenerScreeningAnswers = signal<Record<string, string>>({});
   readonly listenerGuidelinesScrolled = signal(false);
   readonly listenerGuidelinesAccepted = signal(false);
+  readonly listenerGuidelinesMinimumReadSeconds = 120;
+  readonly listenerGuidelinesRemainingSeconds = signal(this.listenerGuidelinesMinimumReadSeconds);
+  readonly listenerGuidelinesTimerComplete = signal(false);
   readonly listenerGuidelinesVersion = LISTENER_GUIDELINES_VERSION;
   readonly listenerGuidelinesSections = LISTENER_GUIDELINES_SECTIONS;
+  private listenerGuidelinesTimerId: ReturnType<typeof setInterval> | null = null;
   readonly applicationTracks: Array<{
     value: CareTeamMemberType;
     track: CareContributorTrack;
@@ -395,6 +399,10 @@ export class CareersComponent {
     this.updateTrackValidators(this.selectedTrack());
   }
 
+  ngOnDestroy(): void {
+    this.clearListenerGuidelinesTimer();
+  }
+
   selectTrack(type: CareTeamMemberType): void {
     const track =
       this.applicationTracks.find((item) => item.value === type)?.track ??
@@ -423,8 +431,10 @@ export class CareersComponent {
 
   answerScreeningQuestion(questionId: string, optionId: string): void {
     this.listenerScreeningAnswers.update((answers) => ({ ...answers, [questionId]: optionId }));
-    this.listenerGuidelinesAccepted.set(false);
-    this.listenerGuidelinesScrolled.set(false);
+    this.resetListenerGuidelineAcceptance();
+    if (this.listenerGuidelinesRequired()) {
+      this.startListenerGuidelinesTimer();
+    }
   }
 
   screeningAnsweredCount(): number {
@@ -440,6 +450,17 @@ export class CareersComponent {
     return this.isListenerTrack() && this.screeningComplete();
   }
 
+  listenerGuidelinesAcceptReady(): boolean {
+    return this.listenerGuidelinesScrolled() && this.listenerGuidelinesTimerComplete();
+  }
+
+  listenerGuidelinesTimerLabel(): string {
+    const remaining = this.listenerGuidelinesRemainingSeconds();
+    const minutes = Math.floor(remaining / 60);
+    const seconds = remaining % 60;
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  }
+
   onGuidelinesScroll(event: Event): void {
     const element = event.target as HTMLElement | null;
     if (!element) return;
@@ -450,6 +471,12 @@ export class CareersComponent {
   }
 
   acceptListenerGuidelines(): void {
+    if (!this.listenerGuidelinesTimerComplete()) {
+      this.notificationService.warning(
+        `Please spend at least 2 minutes reading the listener guidelines. ${this.listenerGuidelinesTimerLabel()} remaining.`,
+      );
+      return;
+    }
     if (!this.listenerGuidelinesScrolled()) {
       this.notificationService.warning(
         'Please scroll to the end of the listener guidelines first.',
@@ -483,7 +510,7 @@ export class CareersComponent {
       !this.listenerGuidelinesAccepted()
     ) {
       this.notificationService.warning(
-        'Please scroll through and accept the listener guidelines before submitting.',
+        'Please spend 2 minutes reading, scroll to the end, and accept the listener guidelines before submitting.',
       );
       return;
     }
@@ -607,8 +634,33 @@ export class CareersComponent {
 
   private resetListenerScreeningAndGuidelines(): void {
     this.listenerScreeningAnswers.set({});
+    this.resetListenerGuidelineAcceptance();
+  }
+
+  private resetListenerGuidelineAcceptance(): void {
+    this.clearListenerGuidelinesTimer();
     this.listenerGuidelinesScrolled.set(false);
     this.listenerGuidelinesAccepted.set(false);
+    this.listenerGuidelinesRemainingSeconds.set(this.listenerGuidelinesMinimumReadSeconds);
+    this.listenerGuidelinesTimerComplete.set(false);
+  }
+
+  private startListenerGuidelinesTimer(): void {
+    if (this.listenerGuidelinesTimerId) return;
+    this.listenerGuidelinesTimerId = setInterval(() => {
+      const nextRemaining = Math.max(0, this.listenerGuidelinesRemainingSeconds() - 1);
+      this.listenerGuidelinesRemainingSeconds.set(nextRemaining);
+      if (nextRemaining === 0) {
+        this.listenerGuidelinesTimerComplete.set(true);
+        this.clearListenerGuidelinesTimer();
+      }
+    }, 1000);
+  }
+
+  private clearListenerGuidelinesTimer(): void {
+    if (!this.listenerGuidelinesTimerId) return;
+    clearInterval(this.listenerGuidelinesTimerId);
+    this.listenerGuidelinesTimerId = null;
   }
 
   private successMessageForTrack(
