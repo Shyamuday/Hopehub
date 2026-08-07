@@ -92,7 +92,7 @@ export class GroupChatTeaserComponent implements OnInit {
     {
       author: 'Asha',
       role: 'Host',
-      body: 'For private voice/video, use 1:1 Live Connect. This room is for gentle group chat.',
+      body: 'For private support, use 1:1 Live Connect. This room is for gentle group chat.',
       tone: 'host',
     },
   ];

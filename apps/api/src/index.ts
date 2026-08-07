@@ -172,6 +172,25 @@ io.on('connection', (socket) => {
       void socket.join(`${SOCKET_ROOM_PREFIXES.HOPE_HUB_GROUP}${groupId}`);
     }
   });
+  socket.on(SOCKET_EVENTS.HOPE_HUB_GROUP_TYPING, (payload: unknown) => {
+    const data = payload as {
+      groupId?: unknown;
+      displayName?: unknown;
+      isTyping?: unknown;
+    };
+    if (typeof data.groupId !== 'string') return;
+    socket
+      .to(`${SOCKET_ROOM_PREFIXES.HOPE_HUB_GROUP}${data.groupId}`)
+      .emit(SOCKET_EVENTS.HOPE_HUB_GROUP_TYPING, {
+        groupId: data.groupId,
+        userId,
+        displayName:
+          typeof data.displayName === 'string' && data.displayName.trim()
+            ? data.displayName.trim().slice(0, 80)
+            : 'Someone',
+        isTyping: Boolean(data.isTyping)
+      });
+  });
 
   registerOnlineDoctorSockets(io, socket, userId);
 });

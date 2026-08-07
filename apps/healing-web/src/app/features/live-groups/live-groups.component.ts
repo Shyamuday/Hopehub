@@ -19,6 +19,7 @@ import {
 } from '../../core/services/booking.service';
 
 const GROUP_MESSAGE_EVENT = 'hopehub-group:message:new';
+const GROUP_TYPING_EVENT = 'hopehub-group:typing';
 
 @Component({
   selector: 'app-live-groups',
@@ -56,17 +57,48 @@ export class LiveGroupsComponent implements OnInit, OnDestroy {
   readonly settingsRoomRules = signal('');
   readonly settingsSlowModeSeconds = signal(0);
   readonly reportingMessageId = signal('');
+  readonly typingUsers = signal<string[]>([]);
   readonly canSend = computed(
     () => !!this.currentUser() && !!this.draft().trim() && !this.sending(),
   );
 
   private groupId = '';
   private socket: Socket | null = null;
+  private typingStopTimer: ReturnType<typeof setTimeout> | null = null;
+  private typingClearTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
   private readonly handleIncomingMessage = (raw: unknown) => {
     const message = raw as HopeHubLiveGroupMessage;
     if (!message?.id || message.groupId !== this.group()?.id) return;
     this.mergeMessage(message);
+  };
+
+  private readonly handleTyping = (raw: unknown) => {
+    const event = raw as {
+      groupId?: string;
+      userId?: string;
+      displayName?: string;
+      isTyping?: boolean;
+    };
+    if (!event?.groupId || event.groupId !== this.group()?.id) return;
+    if (!event.userId || event.userId === this.currentUser()?.id) return;
+
+    const name = (event.displayName || 'Someone').trim();
+    const existingTimer = this.typingClearTimers.get(event.userId);
+    if (existingTimer) clearTimeout(existingTimer);
+
+    if (!event.isTyping) {
+      this.removeTypingUser(name);
+      this.typingClearTimers.delete(event.userId);
+      return;
+    }
+
+    this.typingUsers.update((users) => (users.includes(name) ? users : [...users, name]));
+    const timer = setTimeout(() => {
+      this.removeTypingUser(name);
+      this.typingClearTimers.delete(event.userId || '');
+    }, 3500);
+    this.typingClearTimers.set(event.userId, timer);
   };
 
   ngOnInit(): void {
@@ -86,6 +118,10 @@ export class LiveGroupsComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.socket?.off?.(GROUP_MESSAGE_EVENT, this.handleIncomingMessage);
+    this.socket?.off?.(GROUP_TYPING_EVENT, this.handleTyping);
+    if (this.typingStopTimer) clearTimeout(this.typingStopTimer);
+    this.typingClearTimers.forEach((timer) => clearTimeout(timer));
+    this.emitTyping(false);
   }
 
   isOwnMessage(message: HopeHubLiveGroupMessage): boolean {
@@ -107,6 +143,29 @@ export class LiveGroupsComponent implements OnInit, OnDestroy {
 
   groupModeLabel(): string {
     return 'Open chat';
+  }
+
+  senderInitials(message: HopeHubLiveGroupMessage): string {
+    return (message.senderName || 'M')
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part[0]?.toUpperCase() || '')
+      .join('');
+  }
+
+  messageTime(message: HopeHubLiveGroupMessage): string {
+    const date = new Date(message.createdAt);
+    if (Number.isNaN(date.getTime())) return '';
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  }
+
+  typingLabel(): string {
+    const users = this.typingUsers();
+    if (!users.length) return '';
+    if (users.length === 1) return `${users[0]} is typing`;
+    if (users.length === 2) return `${users[0]} and ${users[1]} are typing`;
+    return 'Several members are typing';
   }
 
   signUpForFreeChat(): void {
@@ -182,6 +241,7 @@ export class LiveGroupsComponent implements OnInit, OnDestroy {
     }
 
     this.sending.set(true);
+    this.emitTyping(false);
     this.bookingService.sendLiveGroupMessage(this.groupId, body).subscribe({
       next: (res) => {
         this.mergeMessage(res.message);
@@ -195,6 +255,18 @@ export class LiveGroupsComponent implements OnInit, OnDestroy {
         this.notificationService.error(message);
       },
     });
+  }
+
+  onDraftChange(value: string): void {
+    this.draft.set(value);
+    if (!this.currentUser() || !this.group()?.id) return;
+
+    const isTyping = Boolean(value.trim());
+    this.emitTyping(isTyping);
+    if (this.typingStopTimer) clearTimeout(this.typingStopTimer);
+    if (isTyping) {
+      this.typingStopTimer = setTimeout(() => this.emitTyping(false), 1600);
+    }
   }
 
   private loadGroup(): void {
@@ -224,6 +296,8 @@ export class LiveGroupsComponent implements OnInit, OnDestroy {
     this.socket = this.realtime.getSocket();
     this.socket?.off?.(GROUP_MESSAGE_EVENT, this.handleIncomingMessage);
     this.socket?.on?.(GROUP_MESSAGE_EVENT, this.handleIncomingMessage);
+    this.socket?.off?.(GROUP_TYPING_EVENT, this.handleTyping);
+    this.socket?.on?.(GROUP_TYPING_EVENT, this.handleTyping);
   }
 
   moderateMessageSender(
@@ -304,6 +378,17 @@ export class LiveGroupsComponent implements OnInit, OnDestroy {
         (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
       );
     });
+  }
+
+  private emitTyping(isTyping: boolean): void {
+    const room = this.group();
+    const user = this.currentUser();
+    if (!room?.id || !user) return;
+    this.realtime.sendLiveGroupTyping(room.id, user.name || 'Member', isTyping);
+  }
+
+  private removeTypingUser(name: string): void {
+    this.typingUsers.update((users) => users.filter((user) => user !== name));
   }
 
   private readErrorMessage(error: unknown): string {

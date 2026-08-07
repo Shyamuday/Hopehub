@@ -5,6 +5,7 @@ export const SOCKET_EVENTS = {
   CONSULTATION_UPDATED: 'consultation:updated',
   MESSAGE_NEW: 'message:new',
   HOPE_HUB_GROUP_MESSAGE_NEW: 'hopehub-group:message:new',
+  HOPE_HUB_GROUP_TYPING: 'hopehub-group:typing',
   PRESCRIPTION_NEW: 'prescription:new',
   PAYMENT_UPDATED: 'payment:updated',
   CONSULTATION_ASSIGNED: 'consultation:assigned',

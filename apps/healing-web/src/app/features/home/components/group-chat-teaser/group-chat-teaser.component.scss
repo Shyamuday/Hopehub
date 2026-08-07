@@ -11,12 +11,16 @@
 
 .chat-teaser {
   background:
-    radial-gradient(circle at 12% 0%, rgba(16, 185, 129, 0.16), transparent 11rem),
+    radial-gradient(circle at 12% 0%, rgba(16, 185, 129, 0.2), transparent 11rem),
+    radial-gradient(circle at 100% 100%, rgba(14, 165, 233, 0.1), transparent 12rem),
     rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(18px);
   border: 1px solid rgba(16, 185, 129, 0.18);
   border-radius: 1.6rem;
   bottom: 6.25rem;
-  box-shadow: 0 26px 80px rgba(15, 23, 42, 0.22);
+  box-shadow:
+    0 26px 80px rgba(15, 23, 42, 0.24),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
   max-width: min(25rem, calc(100vw - 1.5rem));
   overflow: hidden;
   right: 1.25rem;
@@ -80,6 +84,14 @@
     height: 1.9rem;
     justify-content: center;
     width: 1.9rem;
+    transition:
+      background-color 160ms ease,
+      transform 160ms ease;
+  }
+
+  button:hover {
+    background: #ecfdf5;
+    transform: translateY(-1px);
   }
 }
 
@@ -92,7 +104,9 @@
 }
 
 .chat-teaser__message {
+  border: 1px solid rgba(148, 163, 184, 0.13);
   border-radius: 1.05rem;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
   padding: 0.7rem 0.8rem;
 
   div {
@@ -122,15 +136,15 @@
 }
 
 .chat-teaser__message--host {
-  background: #ecfdf5;
+  background: linear-gradient(135deg, #ecfdf5, #f0fdfa);
 }
 
 .chat-teaser__message--member {
-  background: #f8fafc;
+  background: rgba(248, 250, 252, 0.92);
 }
 
 .chat-teaser__message--listener {
-  background: #eef2ff;
+  background: linear-gradient(135deg, #eef2ff, #f8fafc);
 }
 
 .chat-teaser__composer {
@@ -148,6 +162,17 @@
     font-size: 0.9rem;
     min-width: 0;
     padding: 0.72rem 0.9rem;
+    transition:
+      border-color 160ms ease,
+      box-shadow 160ms ease,
+      background-color 160ms ease;
+  }
+
+  input:focus {
+    background: #ffffff;
+    border-color: rgba(16, 185, 129, 0.5);
+    box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.12);
+    outline: none;
   }
 
   button {
@@ -157,6 +182,14 @@
     color: #ffffff;
     font-weight: 900;
     padding: 0.72rem 1rem;
+    transition:
+      filter 160ms ease,
+      transform 160ms ease;
+  }
+
+  button:hover {
+    filter: brightness(0.97);
+    transform: translateY(-1px);
   }
 }
 
@@ -184,6 +217,14 @@
   font-size: 0.85rem;
   font-weight: 900;
   padding: 0.72rem 1rem;
+  transition:
+    background-color 160ms ease,
+    transform 160ms ease;
+}
+
+.chat-teaser__primary:hover {
+  background: #064e3b;
+  transform: translateY(-1px);
 }
 
 .chat-teaser-pill {

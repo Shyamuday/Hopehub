@@ -7,6 +7,7 @@ import { AuthService } from './auth.service';
 const SOCKET_TRANSPORTS = ['websocket', 'polling'] as const;
 const SUBSCRIBE_CONSULTATION = 'subscribe:consultation';
 const SUBSCRIBE_HOPE_HUB_GROUP = 'subscribe:hopehub-group';
+const HOPE_HUB_GROUP_TYPING = 'hopehub-group:typing';
 
 @Injectable({ providedIn: 'root' })
 export class HopeHubRealtimeService implements OnDestroy {
@@ -43,6 +44,10 @@ export class HopeHubRealtimeService implements OnDestroy {
 
   subscribeLiveGroup(groupId: string): void {
     this.connect()?.emit(SUBSCRIBE_HOPE_HUB_GROUP, groupId);
+  }
+
+  sendLiveGroupTyping(groupId: string, displayName: string, isTyping: boolean): void {
+    this.connect()?.emit(HOPE_HUB_GROUP_TYPING, { groupId, displayName, isTyping });
   }
 
   disconnect(): void {

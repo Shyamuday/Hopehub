@@ -100,8 +100,8 @@
           <p class="hope-eyebrow">Open group chat</p>
           <h2>{{ room.callTitle || room.title }}</h2>
           <p>
-            Group voice/video is paused for now to avoid LiveKit/SFU cost. This room is open for moderated
-            real-time chat; use 1:1 Live Connect when someone needs private voice or video support.
+            A moderated real-time support chat where you can read quietly, share gently, and move to
+            private 1:1 support whenever you need more personal help.
           </p>
           @if (room.callAgenda) {
             <p class="group-call-agenda">{{ room.callAgenda }}</p>
@@ -115,7 +115,7 @@
         </div>
 
         <div class="group-call-actions">
-          <a routerLink="/" fragment="live-connect" class="btn-secondary">Start 1:1 voice/video</a>
+          <a routerLink="/" fragment="live-connect" class="btn-secondary">Start private 1:1 support</a>
           @if (!currentUser()) {
             <button type="button" class="btn-primary" (click)="signUpForFreeChat()">
               Sign up free to chat
@@ -150,10 +150,16 @@
                   class="message-row"
                   [class.message-row--mine]="isOwnMessage(message)"
                 >
+                  @if (!isOwnMessage(message)) {
+                    <span class="message-avatar">{{ senderInitials(message) }}</span>
+                  }
                   <div class="message-bubble">
                     <div class="message-meta">
-                      <strong>{{ isOwnMessage(message) ? 'You' : message.senderName }}</strong>
-                      <span>{{ roleLabel(message) }}</span>
+                      <div>
+                        <strong>{{ isOwnMessage(message) ? 'You' : message.senderName }}</strong>
+                        <span>{{ roleLabel(message) }}</span>
+                      </div>
+                      <time>{{ messageTime(message) }}</time>
                     </div>
                     <p>{{ message.body }}</p>
                     @if (canModerateMessage(message) || canReportMessage(message)) {
@@ -176,12 +182,23 @@
                       </div>
                     }
                   </div>
+                  @if (isOwnMessage(message)) {
+                    <span class="message-avatar message-avatar--mine">{{ senderInitials(message) }}</span>
+                  }
                 </article>
               }
             } @else {
               <div class="empty-chat">
                 <strong>No messages yet.</strong>
                 <span>Start gently. A simple “Hi, I’m here” is enough.</span>
+              </div>
+            }
+            @if (typingLabel()) {
+              <div class="typing-indicator">
+                <span>{{ typingLabel() }}</span>
+                <i></i>
+                <i></i>
+                <i></i>
               </div>
             }
           </div>
@@ -195,7 +212,7 @@
             <textarea
               name="groupMessage"
               [ngModel]="draft()"
-              (ngModelChange)="draft.set($event)"
+              (ngModelChange)="onDraftChange($event)"
               [placeholder]="currentUser() ? 'Write a supportive group message...' : 'Sign up free to chat in this group...'"
               rows="2"
               [disabled]="!currentUser() || sending()"
