@@ -152,6 +152,8 @@ export type HopeHubLiveGroup = {
   description?: string | null;
   callTitle?: string | null;
   callAgenda?: string | null;
+  pinnedMessage?: string | null;
+  roomRules?: string | null;
   status: 'LIVE' | 'SCHEDULED' | string;
   mode: 'CHAT' | 'VOICE' | 'VIDEO' | string;
   slowModeSeconds?: number;
@@ -452,6 +454,8 @@ export class BookingService {
       description?: string;
       callTitle?: string;
       callAgenda?: string;
+      pinnedMessage?: string;
+      roomRules?: string;
       slowModeSeconds?: number;
     },
   ): Observable<{ group: HopeHubLiveGroup }> {
@@ -538,6 +542,22 @@ export class BookingService {
     return this.http.post<{ message: HopeHubLiveGroupMessage }>(
       `${this.apiUrl}/hope-hub/live-groups/${encodeURIComponent(groupId)}/messages`,
       { body },
+    );
+  }
+
+  reportLiveGroupMessage(
+    groupId: string,
+    payload: {
+      messageId?: string;
+      targetUserId?: string;
+      targetDisplayName?: string;
+      reason: string;
+      details?: string;
+    },
+  ): Observable<{ report: { id: string; status: string; createdAt: string } }> {
+    return this.http.post<{ report: { id: string; status: string; createdAt: string } }>(
+      `${this.apiUrl}/hope-hub/live-groups/${encodeURIComponent(groupId)}/reports`,
+      payload,
     );
   }
 

@@ -218,6 +218,8 @@ const hopeHubLiveGroupDetailsSchema = z.object({
   description: z.string().trim().max(1200).optional().or(z.literal('')),
   callTitle: z.string().trim().max(140).optional().or(z.literal('')),
   callAgenda: z.string().trim().max(1200).optional().or(z.literal('')),
+  pinnedMessage: z.string().trim().max(1200).optional().or(z.literal('')),
+  roomRules: z.string().trim().max(2000).optional().or(z.literal('')),
   slowModeSeconds: z.number().int().min(0).max(300).optional()
 });
 
@@ -228,6 +230,14 @@ const hopeHubLiveGroupModerationSchema = z.object({
   action: z.enum(['MUTE', 'UNMUTE', 'BAN', 'UNBAN', 'REMOVE']),
   mutedMinutes: z.number().int().min(1).max(10080).optional(),
   reason: z.string().trim().max(1000).optional().or(z.literal(''))
+});
+
+const hopeHubLiveGroupReportSchema = z.object({
+  messageId: z.string().trim().max(160).optional().or(z.literal('')),
+  targetUserId: z.string().trim().max(160).optional().or(z.literal('')),
+  targetDisplayName: z.string().trim().max(160).optional().or(z.literal('')),
+  reason: z.string().trim().min(2).max(120),
+  details: z.string().trim().max(1200).optional().or(z.literal(''))
 });
 
 function normalizeHopeHubMediaKey(value: string) {
@@ -1823,6 +1833,8 @@ function serializeLiveGroup(group: {
   description: string | null;
   callTitle?: string | null;
   callAgenda?: string | null;
+  pinnedMessage?: string | null;
+  roomRules?: string | null;
   status: string;
   mode: string;
   slowModeSeconds?: number;
@@ -1841,6 +1853,8 @@ function serializeLiveGroup(group: {
     description: group.description,
     callTitle: group.callTitle ?? null,
     callAgenda: group.callAgenda ?? null,
+    pinnedMessage: group.pinnedMessage ?? null,
+    roomRules: group.roomRules ?? null,
     status: group.status,
     mode: group.mode,
     slowModeSeconds: group.slowModeSeconds ?? 0,
@@ -2040,6 +2054,60 @@ hopeHubRouter.post(
   })
 );
 
+hopeHubRouter.post(
+  '/hope-hub/live-groups/:id/reports',
+  authRequired,
+  asyncRoute(async (req, res) => {
+    const id = routeParam(req, 'id');
+    const body = hopeHubLiveGroupReportSchema.parse(req.body);
+    const group = await prisma.hopeHubLiveGroup.findFirst({
+      where: {
+        OR: [{ id }, { slug: id }],
+        isActive: true,
+        isPublic: true
+      }
+    });
+
+    if (!group) return res.status(404).json({ message: 'Live group not found.' });
+
+    const messageId = body.messageId || null;
+    let message: {
+      id: string;
+      senderId: string;
+      senderName: string;
+    } | null = null;
+
+    if (messageId) {
+      message = await prisma.hopeHubLiveGroupMessage.findFirst({
+        where: { id: messageId, groupId: group.id, isDeleted: false },
+        select: { id: true, senderId: true, senderName: true }
+      });
+      if (!message) return res.status(404).json({ message: 'Message not found.' });
+    }
+
+    const report = await prisma.hopeHubLiveGroupReport.create({
+      data: {
+        groupId: group.id,
+        messageId: message?.id ?? null,
+        reporterUserId: req.user!.id,
+        reporterName: req.user!.name,
+        targetUserId: body.targetUserId || message?.senderId || null,
+        targetDisplayName: body.targetDisplayName || message?.senderName || null,
+        reason: body.reason,
+        details: body.details || null
+      }
+    });
+
+    res.status(201).json({
+      report: {
+        id: report.id,
+        status: report.status,
+        createdAt: report.createdAt.toISOString()
+      }
+    });
+  })
+);
+
 hopeHubRouter.patch(
   '/hope-hub/live-groups/:id/details',
   authRequired,
@@ -2064,6 +2132,8 @@ hopeHubRouter.patch(
         ...(body.description !== undefined ? { description: body.description || null } : {}),
         ...(body.callTitle !== undefined ? { callTitle: body.callTitle || null } : {}),
         ...(body.callAgenda !== undefined ? { callAgenda: body.callAgenda || null } : {}),
+        ...(body.pinnedMessage !== undefined ? { pinnedMessage: body.pinnedMessage || null } : {}),
+        ...(body.roomRules !== undefined ? { roomRules: body.roomRules || null } : {}),
         ...(body.slowModeSeconds !== undefined ? { slowModeSeconds: body.slowModeSeconds } : {})
       }
     });

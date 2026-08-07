@@ -60,6 +60,20 @@
               rows="2"
               placeholder="Room agenda / topic"
             ></textarea>
+            <textarea
+              name="settingsPinnedMessage"
+              [ngModel]="settingsPinnedMessage()"
+              (ngModelChange)="settingsPinnedMessage.set($event)"
+              rows="2"
+              placeholder="Pinned message shown above the chat"
+            ></textarea>
+            <textarea
+              name="settingsRoomRules"
+              [ngModel]="settingsRoomRules()"
+              (ngModelChange)="settingsRoomRules.set($event)"
+              rows="3"
+              placeholder="Room rules / safety note"
+            ></textarea>
             <label>
               Slow mode seconds
               <input
@@ -92,6 +106,12 @@
           @if (room.callAgenda) {
             <p class="group-call-agenda">{{ room.callAgenda }}</p>
           }
+          @if (room.pinnedMessage) {
+            <div class="group-pinned-note">
+              <strong>Pinned</strong>
+              <p>{{ room.pinnedMessage }}</p>
+            </div>
+          }
         </div>
 
         <div class="group-call-actions">
@@ -107,6 +127,12 @@
       <div class="group-layout">
         <section class="chat-panel" aria-label="Group messages">
           <div class="chat-list">
+            @if (room.roomRules) {
+              <div class="room-rules-card">
+                <strong>Room rules</strong>
+                <p>{{ room.roomRules }}</p>
+              </div>
+            }
             @if (!currentUser()) {
               <div class="anonymous-preview anonymous-preview--compact">
                 <strong>You can read this group as a guest</strong>
@@ -130,12 +156,23 @@
                       <span>{{ roleLabel(message) }}</span>
                     </div>
                     <p>{{ message.body }}</p>
-                    @if (canModerateMessage(message)) {
+                    @if (canModerateMessage(message) || canReportMessage(message)) {
                       <div class="message-actions">
-                        <button type="button" (click)="moderateMessageSender(message, 'MUTE')">Mute</button>
-                        <button type="button" (click)="moderateMessageSender(message, 'REMOVE')">Remove user</button>
-                        <button type="button" (click)="moderateMessageSender(message, 'BAN')">Ban</button>
-                        <button type="button" (click)="removeMessage(message)">Remove msg</button>
+                        @if (canReportMessage(message)) {
+                          <button
+                            type="button"
+                            (click)="reportMessage(message)"
+                            [disabled]="reportingMessageId() === message.id"
+                          >
+                            {{ reportingMessageId() === message.id ? 'Reporting...' : 'Report' }}
+                          </button>
+                        }
+                        @if (canModerateMessage(message)) {
+                          <button type="button" (click)="moderateMessageSender(message, 'MUTE')">Mute</button>
+                          <button type="button" (click)="moderateMessageSender(message, 'REMOVE')">Remove user</button>
+                          <button type="button" (click)="moderateMessageSender(message, 'BAN')">Ban</button>
+                          <button type="button" (click)="removeMessage(message)">Remove msg</button>
+                        }
                       </div>
                     }
                   </div>
@@ -173,11 +210,15 @@
 
         <aside class="room-guide">
           <h2>Room boundaries</h2>
-          <ul>
-            <li>Keep it kind, short, and supportive.</li>
-            <li>Do not share emergency or highly identifying details in a group.</li>
-            <li>For private help, use 1:1 Live Connect with a provider.</li>
-          </ul>
+          @if (room.roomRules) {
+            <p>{{ room.roomRules }}</p>
+          } @else {
+            <ul>
+              <li>Keep it kind, short, and supportive.</li>
+              <li>Do not share emergency or highly identifying details in a group.</li>
+              <li>For private help, use 1:1 Live Connect with a provider.</li>
+            </ul>
+          }
           <a routerLink="/" fragment="live-connect" class="btn-secondary">Find 1:1 support</a>
         </aside>
       </div>

@@ -149,6 +149,8 @@ model HopeHubLiveGroup {
   description     String?  @db.Text
   callTitle       String?
   callAgenda      String?  @db.Text
+  pinnedMessage   String?  @db.Text
+  roomRules       String?  @db.Text
   status          String   @default("LIVE")
   mode            String   @default("CHAT")
   slowModeSeconds Int      @default(0)
@@ -163,6 +165,7 @@ model HopeHubLiveGroup {
 
   messages        HopeHubLiveGroupMessage[]
   moderation      HopeHubLiveGroupMemberModeration[]
+  reports         HopeHubLiveGroupReport[]
 
   @@index([status, isActive])
   @@index([hostUserId])
@@ -182,9 +185,35 @@ model HopeHubLiveGroupMessage {
   createdAt      DateTime @default(now())
 
   group          HopeHubLiveGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  reports        HopeHubLiveGroupReport[]
 
   @@index([groupId, createdAt])
   @@index([senderId, createdAt])
+}
+
+model HopeHubLiveGroupReport {
+  id                String   @id @default(cuid())
+  groupId           String
+  messageId         String?
+  reporterUserId    String
+  reporterName      String?
+  targetUserId      String?
+  targetDisplayName String?
+  reason            String
+  details           String?  @db.Text
+  status            String   @default("OPEN")
+  reviewedByUserId  String?
+  reviewedAt        DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  group             HopeHubLiveGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  message           HopeHubLiveGroupMessage? @relation(fields: [messageId], references: [id], onDelete: SetNull)
+
+  @@index([groupId, status])
+  @@index([messageId])
+  @@index([reporterUserId, createdAt])
+  @@index([targetUserId])
 }
 
 model HopeHubLiveGroupMemberModeration {

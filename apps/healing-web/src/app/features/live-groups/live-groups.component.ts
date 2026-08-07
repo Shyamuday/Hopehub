@@ -52,7 +52,10 @@ export class LiveGroupsComponent implements OnInit, OnDestroy {
   readonly settingsDescription = signal('');
   readonly settingsCallTitle = signal('');
   readonly settingsCallAgenda = signal('');
+  readonly settingsPinnedMessage = signal('');
+  readonly settingsRoomRules = signal('');
   readonly settingsSlowModeSeconds = signal(0);
+  readonly reportingMessageId = signal('');
   readonly canSend = computed(
     () => !!this.currentUser() && !!this.draft().trim() && !this.sending(),
   );
@@ -137,6 +140,8 @@ export class LiveGroupsComponent implements OnInit, OnDestroy {
     this.settingsDescription.set(room.description || '');
     this.settingsCallTitle.set(room.callTitle || room.title || '');
     this.settingsCallAgenda.set(room.callAgenda || '');
+    this.settingsPinnedMessage.set(room.pinnedMessage || '');
+    this.settingsRoomRules.set(room.roomRules || '');
     this.settingsSlowModeSeconds.set(Number(room.slowModeSeconds || 0));
     this.roomSettingsOpen.set(true);
   }
@@ -150,6 +155,8 @@ export class LiveGroupsComponent implements OnInit, OnDestroy {
         description: this.settingsDescription().trim(),
         callTitle: this.settingsCallTitle().trim(),
         callAgenda: this.settingsCallAgenda().trim(),
+        pinnedMessage: this.settingsPinnedMessage().trim(),
+        roomRules: this.settingsRoomRules().trim(),
         slowModeSeconds: Number(this.settingsSlowModeSeconds() || 0),
       })
       .subscribe({
@@ -247,9 +254,43 @@ export class LiveGroupsComponent implements OnInit, OnDestroy {
     });
   }
 
+  reportMessage(message: HopeHubLiveGroupMessage): void {
+    if (!this.currentUser()) {
+      this.signUpForFreeChat();
+      return;
+    }
+    if (!this.canReportMessage(message) || this.reportingMessageId()) return;
+
+    this.reportingMessageId.set(message.id);
+    this.bookingService
+      .reportLiveGroupMessage(this.groupId, {
+        messageId: message.id,
+        targetUserId: message.senderId,
+        targetDisplayName: message.senderName,
+        reason: 'Concern or unsafe message',
+        details: 'Reported from Hope Hub group chat.',
+      })
+      .subscribe({
+        next: () => {
+          this.reportingMessageId.set('');
+          this.notificationService.success('Thanks. This message was reported for review.');
+        },
+        error: (error) => {
+          this.reportingMessageId.set('');
+          this.notificationService.error(this.readErrorMessage(error));
+        },
+      });
+  }
+
   canModerateMessage(message: HopeHubLiveGroupMessage): boolean {
     return (
       this.canHostGroups() && message.senderId !== this.currentUser()?.id && !message.isDeleted
+    );
+  }
+
+  canReportMessage(message: HopeHubLiveGroupMessage): boolean {
+    return (
+      !!this.currentUser() && message.senderId !== this.currentUser()?.id && !message.isDeleted
     );
   }
 
