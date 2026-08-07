@@ -430,6 +430,32 @@ export function createConsultationsRouter(io: SocketIoServer) {
   );
 
   router.get(
+    '/consultations/:id/call-sessions',
+    authRequired,
+    asyncRoute(async (req, res) => {
+      const consultation = await prisma.consultation.findUniqueOrThrow({
+        where: { id: routeParam(req, 'id') },
+        select: { id: true, patientId: true, assignedDoctorId: true }
+      });
+
+      const canView =
+        req.user!.role === Role.ADMIN ||
+        consultation.patientId === req.user!.id ||
+        consultation.assignedDoctorId === req.user!.id;
+
+      if (!canView) return res.status(403).json({ message: 'Access denied' });
+
+      const callSessions = await prisma.consultationCallSession.findMany({
+        where: { consultationId: consultation.id },
+        orderBy: { startedAt: 'desc' },
+        take: 25
+      });
+
+      res.json({ callSessions });
+    })
+  );
+
+  router.get(
     '/consultations/:id/assessment-summary',
     authRequired,
     allowRoles(Role.DOCTOR, Role.ADMIN),

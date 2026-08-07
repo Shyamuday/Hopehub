@@ -109,7 +109,15 @@ export class LiveConnectComponent implements OnInit {
 
   buttonLabel(provider: HopeHubProvider): string {
     const meta = this.sessionMeta(provider);
-    return `Start ${this.modeLabel().toLowerCase()}${meta ? ` · ${meta}` : ''}`;
+    const prefix = this.isFreeProvider(provider) ? 'Start free' : 'Start';
+    return `${prefix} ${this.modeLabel().toLowerCase()}${meta ? ` · ${meta}` : ''}`;
+  }
+
+  isFreeProvider(provider: HopeHubProvider): boolean {
+    const service = provider.services?.[0];
+    const price =
+      service?.effectivePriceInPaise ?? service?.priceInPaise ?? provider.sessionFeeInPaise;
+    return Number(price ?? 0) <= 0;
   }
 
   sessionMeta(provider: HopeHubProvider): string {
@@ -160,7 +168,9 @@ export class LiveConnectComponent implements OnInit {
 
       this.paymentFlowState.set('SUCCESS');
       this.message.set(
-        `${this.modeLabel()} session is ready with ${response.provider?.name || provider.name}.`,
+        `${this.modeLabel()} session is ready with ${response.provider?.name || provider.name}.${
+          this.isFreeProvider(provider) ? ' No wallet or payment was needed.' : ''
+        }`,
       );
       this.notificationService.success('Live session confirmed. Opening your session room.');
       void this.openLiveSession(response.consultation?.id);

@@ -47,6 +47,21 @@ export type ConsultationSessionOutcome = {
   payoutAction?: string;
 };
 
+export type ConsultationCallSession = {
+  id: string;
+  consultationId: string;
+  initiatedByUserId: string;
+  targetUserId: string;
+  mode: string;
+  status: string;
+  startedAt: string;
+  answeredAt?: string | null;
+  endedAt?: string | null;
+  durationSeconds?: number | null;
+  endReason?: string | null;
+  lastSignalEvent?: string | null;
+};
+
 export type DoctorConsultation = {
   id: string;
   status: string;

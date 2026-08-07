@@ -198,6 +198,43 @@
         }
       </section>
 
+      <section class="call-history-card">
+        <div class="session-notes-head">
+          <div>
+            <h3>Call history</h3>
+            <p class="muted">Voice/video attempts and durations for this session.</p>
+          </div>
+          <button
+            type="button"
+            class="ghost"
+            (click)="loadCallSessions()"
+            [disabled]="callSessionsLoading()"
+          >
+            Refresh
+          </button>
+        </div>
+
+        @if (callSessionsLoading() && !callSessions().length) {
+          <p class="muted">Loading call history...</p>
+        } @else if (!callSessions().length) {
+          <p class="muted">No calls recorded yet.</p>
+        } @else {
+          <div class="call-history-list">
+            @for (call of callSessions(); track call.id) {
+              <article class="call-history-item">
+                <div>
+                  <strong>{{ call.mode === 'video' ? 'Video' : 'Voice' }}</strong>
+                  <span>{{ callStatusLabel(call.status) }}</span>
+                </div>
+                <small>
+                  {{ call.startedAt | date: 'short' }} · {{ callDurationLabel(call) }}
+                </small>
+              </article>
+            }
+          </div>
+        }
+      </section>
+
       <section class="assessment-summary-card">
         <div class="session-notes-head">
           <div>

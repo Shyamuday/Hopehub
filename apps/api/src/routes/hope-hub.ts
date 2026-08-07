@@ -2404,10 +2404,12 @@ hopeHubRouter.post(
     const checkout = await resolveConsultationCheckout({
       patientId: req.user!.id,
       grossInPaise: amountInPaise,
-      walletRedeemInPaise: body.walletRedeemInPaise
+      walletRedeemInPaise: amountInPaise <= 0 ? 0 : body.walletRedeemInPaise
     });
     const finalPayableInPaise = checkout.payableInPaise;
     const isFreeOrWalletPaid = finalPayableInPaise <= 0;
+    const isFreeByPricing = amountInPaise <= 0;
+    const paymentProvider = isFreeByPricing ? 'internal_free' : 'razorpay';
     const grossRevenueSplit = hopeHubRevenueSplit(amountInPaise);
     const payableRevenueSplit = hopeHubRevenueSplit(finalPayableInPaise);
 
@@ -2437,6 +2439,8 @@ hopeHubRouter.post(
           careTeamPricingMode: careTeamService?.pricingMode || '',
           careTeamPricingLabel: quickTalkPricingLabel,
           careTeamPreviousUseCount: previousUseCount,
+          isFreeSession: isFreeByPricing,
+          requiresPayment: !isFreeOrWalletPaid,
           concernCategory: body.concernCategory || '',
           preferredExpertType: body.preferredExpertType || '',
           sessionMode: normalizedSessionMode,
@@ -2465,6 +2469,8 @@ hopeHubRouter.post(
           careTeamPricingLabel: quickTalkPricingLabel,
           careTeamPricingRule: careTeamServicePricing?.appliedRule || null,
           careTeamPreviousUseCount: previousUseCount,
+          isFreeSession: isFreeByPricing,
+          requiresPayment: !isFreeOrWalletPaid,
           sessionDurationMinutes: selectedServiceDurationMinutes,
           sessionFeeInPaise: amountInPaise,
           grossRevenueSplit,
@@ -2473,6 +2479,7 @@ hopeHubRouter.post(
         },
         payment: {
           create: {
+            provider: paymentProvider,
             grossAmountInPaise: checkout.grossAmountInPaise,
             discountInPaise: checkout.discountInPaise,
             walletRedeemedInPaise: checkout.walletRedeemedInPaise,
@@ -2493,6 +2500,8 @@ hopeHubRouter.post(
               careTeamPricingLabel: quickTalkPricingLabel,
               careTeamPricingRule: careTeamServicePricing?.appliedRule || null,
               careTeamPreviousUseCount: previousUseCount,
+              isFreeSession: isFreeByPricing,
+              requiresPayment: !isFreeOrWalletPaid,
               sessionDurationMinutes: selectedServiceDurationMinutes,
               consultationFeeInPaise: checkout.grossAmountInPaise,
               discountInPaise: checkout.discountInPaise,
@@ -2906,6 +2915,9 @@ hopeHubRouter.post(
     });
     const chargeGrossInPaise = checkout.grossAmountInPaise;
     const finalPayableInPaise = checkout.payableInPaise;
+    const isFreeByPricing = amountInPaise <= 0;
+    const requiresPayment = finalPayableInPaise > 0;
+    const paymentProvider = isFreeByPricing ? 'internal_free' : 'razorpay';
     const totalDiscountInPaise = offerDiscount.discountInPaise + checkout.discountInPaise;
     const grossRevenueSplit = hopeHubRevenueSplit(amountInPaise);
     const payableRevenueSplit = hopeHubRevenueSplit(checkout.payableInPaise);
@@ -2935,6 +2947,8 @@ hopeHubRouter.post(
           careTeamServiceTitle: selectedCareTeamService?.title || '',
           careTeamPricingMode: selectedCareTeamService?.pricingMode || '',
           careTeamPricingLabel: careTeamServicePricing?.label || '',
+          isFreeSession: isFreeByPricing,
+          requiresPayment,
           careTeamFreeMinutes: selectedCareTeamService?.freeMinutes ?? null,
           careTeamPricePerMinuteInPaise: selectedCareTeamService?.pricePerMinuteInPaise ?? null,
           careTeamBillableMinutes:
@@ -2982,6 +2996,8 @@ hopeHubRouter.post(
           careTeamPricingMode: selectedCareTeamService?.pricingMode || null,
           careTeamPricingLabel: careTeamServicePricing?.label || null,
           careTeamPricingRule: careTeamServicePricing?.appliedRule || null,
+          isFreeSession: isFreeByPricing,
+          requiresPayment,
           careTeamFreeMinutes: selectedCareTeamService?.freeMinutes ?? null,
           careTeamPricePerMinuteInPaise: selectedCareTeamService?.pricePerMinuteInPaise ?? null,
           careTeamBillableMinutes:
@@ -3022,6 +3038,7 @@ hopeHubRouter.post(
         },
         payment: {
           create: {
+            provider: paymentProvider,
             grossAmountInPaise: chargeGrossInPaise,
             discountInPaise: checkout.discountInPaise,
             walletRedeemedInPaise: checkout.walletRedeemedInPaise,
@@ -3041,6 +3058,8 @@ hopeHubRouter.post(
               careTeamPricingMode: selectedCareTeamService?.pricingMode || null,
               careTeamPricingLabel: careTeamServicePricing?.label || null,
               careTeamPricingRule: careTeamServicePricing?.appliedRule || null,
+              isFreeSession: isFreeByPricing,
+              requiresPayment,
               careTeamFreeMinutes: selectedCareTeamService?.freeMinutes ?? null,
               careTeamPricePerMinuteInPaise: selectedCareTeamService?.pricePerMinuteInPaise ?? null,
               careTeamBillableMinutes:

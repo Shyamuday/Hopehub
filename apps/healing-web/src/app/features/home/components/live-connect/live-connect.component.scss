@@ -139,10 +139,27 @@
   width: 0.42rem;
 }
 
+.free-dot {
+  align-items: center;
+  background: #fef3c7;
+  border-radius: 999px;
+  color: #92400e;
+  display: inline-flex;
+  font-size: 0.68rem;
+  font-weight: 900;
+  padding: 0.18rem 0.48rem;
+  text-transform: uppercase;
+}
+
 .live-mini-chip {
   background: #f1f5f9;
   border-radius: 999px;
   padding: 0.28rem 0.55rem;
+}
+
+.live-mini-chip--free {
+  background: #fffbeb;
+  color: #92400e;
 }
 
 .live-empty-card {

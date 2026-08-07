@@ -88,8 +88,33 @@ model Consultation {
   followUpEntitlement ConsultationFollowUpEntitlement?
   providerEarning ProviderEarning?
   reminders       ConsultationReminder[]
+  callSessions    ConsultationCallSession[]
   createdAt       DateTime           @default(now())
   updatedAt       DateTime           @updatedAt
+}
+
+model ConsultationCallSession {
+  id                  String       @id @default(cuid())
+  consultationId      String
+  initiatedByUserId   String
+  targetUserId        String
+  mode                String
+  status              String       @default("RINGING")
+  startedAt           DateTime     @default(now())
+  answeredAt          DateTime?
+  endedAt             DateTime?
+  durationSeconds     Int?
+  endReason           String?
+  lastSignalEvent     String?
+  metadata            Json?
+  consultation        Consultation @relation(fields: [consultationId], references: [id], onDelete: Cascade)
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
+
+  @@index([consultationId, startedAt])
+  @@index([initiatedByUserId, startedAt])
+  @@index([targetUserId, startedAt])
+  @@index([status])
 }
 
 model Payment {

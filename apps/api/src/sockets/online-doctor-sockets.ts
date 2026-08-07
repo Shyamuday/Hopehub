@@ -7,6 +7,7 @@ import { heartbeatDoctor, setDoctorLiveStatus } from '../services/online-doctor-
 type CallSignalPayload = {
   consultationId: string;
   targetUserId: string;
+  mode?: string;
   sdp?: unknown;
   candidate?: unknown;
 };
@@ -56,6 +57,99 @@ async function markConsultationInProgressFromCall(
   }
 }
 
+async function findActiveCallSession(input: {
+  consultationId: string;
+  userA: string;
+  userB: string;
+}) {
+  return prisma.consultationCallSession.findFirst({
+    where: {
+      consultationId: input.consultationId,
+      endedAt: null,
+      OR: [
+        { initiatedByUserId: input.userA, targetUserId: input.userB },
+        { initiatedByUserId: input.userB, targetUserId: input.userA }
+      ]
+    },
+    orderBy: { startedAt: 'desc' }
+  });
+}
+
+async function recordCallSignal(fromUserId: string, event: string, payload: CallSignalPayload) {
+  if (event === SOCKET_EVENTS.CALL_RING || event === SOCKET_EVENTS.CALL_OFFER) {
+    const existing = await findActiveCallSession({
+      consultationId: payload.consultationId,
+      userA: fromUserId,
+      userB: payload.targetUserId
+    });
+    if (existing) {
+      await prisma.consultationCallSession.update({
+        where: { id: existing.id },
+        data: {
+          mode: payload.mode || existing.mode,
+          status: event === SOCKET_EVENTS.CALL_OFFER ? 'CONNECTING' : existing.status,
+          lastSignalEvent: event
+        }
+      });
+      return;
+    }
+    await prisma.consultationCallSession.create({
+      data: {
+        consultationId: payload.consultationId,
+        initiatedByUserId: fromUserId,
+        targetUserId: payload.targetUserId,
+        mode: payload.mode || 'audio',
+        status: event === SOCKET_EVENTS.CALL_OFFER ? 'CONNECTING' : 'RINGING',
+        lastSignalEvent: event
+      }
+    });
+    return;
+  }
+
+  if (event === SOCKET_EVENTS.CALL_ANSWER) {
+    const existing = await findActiveCallSession({
+      consultationId: payload.consultationId,
+      userA: fromUserId,
+      userB: payload.targetUserId
+    });
+    if (!existing) return;
+    await prisma.consultationCallSession.update({
+      where: { id: existing.id },
+      data: {
+        status: 'CONNECTED',
+        answeredAt: existing.answeredAt ?? new Date(),
+        lastSignalEvent: event
+      }
+    });
+    return;
+  }
+
+  if (event === SOCKET_EVENTS.CALL_END || event === SOCKET_EVENTS.CALL_REJECT) {
+    const existing = await findActiveCallSession({
+      consultationId: payload.consultationId,
+      userA: fromUserId,
+      userB: payload.targetUserId
+    });
+    if (!existing) return;
+    const endedAt = new Date();
+    const startedFrom = existing.answeredAt ?? existing.startedAt;
+    const durationSeconds = Math.max(
+      0,
+      Math.round((endedAt.getTime() - startedFrom.getTime()) / 1000)
+    );
+    await prisma.consultationCallSession.update({
+      where: { id: existing.id },
+      data: {
+        status: event === SOCKET_EVENTS.CALL_REJECT ? 'REJECTED' : 'ENDED',
+        endedAt,
+        durationSeconds,
+        endReason: event === SOCKET_EVENTS.CALL_REJECT ? 'rejected' : 'ended',
+        lastSignalEvent: event
+      }
+    });
+  }
+}
+
 export function registerOnlineDoctorSockets(io: SocketIoServer, socket: Socket, userId?: string) {
   if (!userId) return;
 
@@ -97,6 +191,7 @@ export function registerOnlineDoctorSockets(io: SocketIoServer, socket: Socket, 
       if (event === SOCKET_EVENTS.CALL_RING || event === SOCKET_EVENTS.CALL_OFFER) {
         void markConsultationInProgressFromCall(io, userId, payload);
       }
+      void recordCallSignal(userId, event, payload);
       relayCallSignal(io, userId, relay, payload);
     });
   }

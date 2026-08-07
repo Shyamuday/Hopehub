@@ -62,7 +62,8 @@
 .panel,
 .session-notes-card,
 .assessment-summary-card,
-.session-outcome-card {
+.session-outcome-card,
+.call-history-card {
   border: 1px solid #dbeafe;
   border-radius: 14px;
   background: #fff;
@@ -257,6 +258,50 @@
 .status-badge.completed {
   background: #dcfce7;
   color: #166534;
+}
+
+.call-history-card {
+  border-color: #e0e7ff;
+  background: #eef2ff;
+}
+
+.call-history-list {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.call-history-item {
+  display: grid;
+  gap: 0.25rem;
+  border: 1px solid #c7d2fe;
+  border-radius: 9px;
+  background: #fff;
+  padding: 0.7rem;
+}
+
+.call-history-item div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.call-history-item strong {
+  color: #1e1b4b;
+}
+
+.call-history-item span {
+  border-radius: 999px;
+  background: #eef2ff;
+  color: #3730a3;
+  font-size: 0.72rem;
+  font-weight: 900;
+  padding: 0.18rem 0.5rem;
+  text-transform: capitalize;
+}
+
+.call-history-item small {
+  color: #64748b;
 }
 
 .session-note-list {

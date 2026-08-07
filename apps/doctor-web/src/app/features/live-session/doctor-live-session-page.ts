@@ -13,6 +13,7 @@ import { capabilitiesForDoctorType } from '../../core/constants/doctor-types.con
 import { ROUTE_PATHS } from '../../core/constants/app-routes.constants';
 import type {
   ConsultationAssessmentSummary,
+  ConsultationCallSession,
   ConsultationSessionOutcome,
   ConsultationSessionNote,
   DoctorConsultation,
@@ -40,8 +41,10 @@ export class DoctorLiveSessionPage implements OnInit, OnDestroy {
   readonly message = signal('');
   readonly error = signal('');
   readonly sessionNotes = signal<ConsultationSessionNote[]>([]);
+  readonly callSessions = signal<ConsultationCallSession[]>([]);
   readonly sessionNoteText = signal('');
   readonly sessionNotesLoading = signal(false);
+  readonly callSessionsLoading = signal(false);
   readonly sessionNoteSaving = signal(false);
   readonly assessmentSummary = signal<ConsultationAssessmentSummary | null>(null);
   readonly assessmentSummaryLoading = signal(false);
@@ -92,7 +95,11 @@ export class DoctorLiveSessionPage implements OnInit, OnDestroy {
       ]);
       if (profile?.profile) this.online.profile.set(profile.profile);
       this.consultation.set(consultation);
-      await Promise.all([this.loadSessionNotes(), this.loadAssessmentSummary()]);
+      await Promise.all([
+        this.loadSessionNotes(),
+        this.loadAssessmentSummary(),
+        this.loadCallSessions(),
+      ]);
     } catch {
       this.error.set('Could not open this live session.');
     } finally {
@@ -169,6 +176,18 @@ export class DoctorLiveSessionPage implements OnInit, OnDestroy {
     return outcome ? (this.outcomeLabels[outcome] ?? outcome.replace(/_/g, ' ')) : 'Not recorded';
   }
 
+  callStatusLabel(status: string): string {
+    return status ? status.replace(/_/g, ' ').toLowerCase() : 'unknown';
+  }
+
+  callDurationLabel(call: ConsultationCallSession): string {
+    const seconds = Math.max(0, Number(call.durationSeconds || 0));
+    if (!seconds) return call.endedAt ? '0s' : 'In progress';
+    const minutes = Math.floor(seconds / 60);
+    const remainder = seconds % 60;
+    return minutes ? `${minutes}m ${remainder}s` : `${remainder}s`;
+  }
+
   isPsychologist(): boolean {
     return this.profile()?.doctorType === 'PSYCHOLOGIST';
   }
@@ -194,6 +213,18 @@ export class DoctorLiveSessionPage implements OnInit, OnDestroy {
       this.error.set('Could not load session notes.');
     } finally {
       this.sessionNotesLoading.set(false);
+    }
+  }
+
+  async loadCallSessions(): Promise<void> {
+    if (!this.consultationId) return;
+    this.callSessionsLoading.set(true);
+    try {
+      this.callSessions.set(await this.consultationApi.loadCallSessions(this.consultationId));
+    } catch {
+      this.callSessions.set([]);
+    } finally {
+      this.callSessionsLoading.set(false);
     }
   }
 

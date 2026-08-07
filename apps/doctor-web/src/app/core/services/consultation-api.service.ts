@@ -5,6 +5,7 @@ import { environment } from '../../../environments/environment';
 import { API_PATHS } from '../constants/api-paths.constants';
 import type {
   ConsultationAssessmentSummary,
+  ConsultationCallSession,
   ConsultationMessage,
   ConsultationSessionNote,
   ConsultationSessionOutcome,
@@ -50,6 +51,14 @@ export class ConsultationApiService {
         `${this.apiBase}${API_PATHS.CONSULTATIONS}/${consultationId}/session-notes`,
       ),
     ).then((response) => response.notes);
+  }
+
+  loadCallSessions(consultationId: string) {
+    return firstValueFrom(
+      this.http.get<{ callSessions: ConsultationCallSession[] }>(
+        `${this.apiBase}${API_PATHS.CONSULTATIONS}/${consultationId}/call-sessions`,
+      ),
+    ).then((response) => response.callSessions);
   }
 
   addSessionNote(consultationId: string, note: string) {
