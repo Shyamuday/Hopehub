@@ -12,7 +12,12 @@ import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { filter, pairwise, startWith } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { AuthModalService, AuthService, BookingService } from '../../../../core/services';
+import {
+  AuthModalService,
+  AuthService,
+  BookingService,
+  GroupChatTeaserService,
+} from '../../../../core/services';
 import {
   HopeHubLiveGroup,
   HopeHubLiveGroupMessage,
@@ -36,6 +41,7 @@ export class GroupChatTeaserComponent implements OnInit {
   private readonly authService = inject(AuthService);
   private readonly authModalService = inject(AuthModalService);
   private readonly bookingService = inject(BookingService);
+  private readonly groupChatTeaser = inject(GroupChatTeaserService);
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
   private readonly platformId = inject(PLATFORM_ID);
@@ -116,6 +122,10 @@ export class GroupChatTeaserComponent implements OnInit {
         }
       });
 
+    this.groupChatTeaser.openRequested$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.openFromFloatingButton());
+
     this.destroyRef.onDestroy(() => {
       if (this.openTimer) window.clearTimeout(this.openTimer);
       if (this.revealTimer) window.clearInterval(this.revealTimer);
@@ -138,6 +148,7 @@ export class GroupChatTeaserComponent implements OnInit {
   restore(): void {
     this.isMinimized.set(false);
     this.isOpen.set(true);
+    this.startMessageReveal();
   }
 
   askToJoin(): void {
@@ -203,6 +214,13 @@ export class GroupChatTeaserComponent implements OnInit {
     }, 500);
   }
 
+  private openFromFloatingButton(): void {
+    this.clearDismissed();
+    this.isMinimized.set(false);
+    this.isOpen.set(true);
+    this.startMessageReveal();
+  }
+
   private startMessageReveal(): void {
     if (this.revealTimer) return;
     this.revealTimer = window.setInterval(() => {
@@ -230,6 +248,14 @@ export class GroupChatTeaserComponent implements OnInit {
   private markDismissed(): void {
     try {
       window.sessionStorage.setItem(this.dismissedStorageKey, 'true');
+    } catch {
+      // Ignore storage failures.
+    }
+  }
+
+  private clearDismissed(): void {
+    try {
+      window.sessionStorage.removeItem(this.dismissedStorageKey);
     } catch {
       // Ignore storage failures.
     }

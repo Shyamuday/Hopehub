@@ -1,5 +1,26 @@
 <div class="quick-access">
-  <!-- Telegram-only floating action button -->
+  <button
+    type="button"
+    class="quick-access__main quick-access__main--chat"
+    aria-label="Open Hope Hub group chat"
+    (click)="openChatTeaser()">
+    <svg class="quick-access__chat-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path
+        d="M5.25 6.75A3.75 3.75 0 0 1 9 3h6a3.75 3.75 0 0 1 3.75 3.75v4.5A3.75 3.75 0 0 1 15 15H9.4l-3.2 3.05c-.47.45-1.2.12-1.2-.53V15A3.75 3.75 0 0 1 1.5 11.25v-4.5a3.75 3.75 0 0 1 3.75-3.75Z"
+        stroke="currentColor"
+        stroke-width="1.8"
+        stroke-linejoin="round"
+      />
+      <path
+        d="M8 8.25h8M8 11.25h5"
+        stroke="currentColor"
+        stroke-width="1.8"
+        stroke-linecap="round"
+      />
+    </svg>
+  </button>
+
+  <!-- Telegram floating action button -->
   <a
     [href]="APP_CONSTANTS.TELEGRAM.GROUP_URL"
     target="_blank"

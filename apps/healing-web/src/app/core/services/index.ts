@@ -6,6 +6,7 @@ export * from './booking.service';
 export * from './payment.service';
 export * from './realtime.service';
 export * from './auth-modal.service';
+export * from './group-chat-teaser.service';
 export * from './auth.service';
 export * from './seo.service';
 export * from './notification.service';
