@@ -12,6 +12,8 @@ import {
 } from '../../../core/constants/doctor-types.constants';
 import { DoctorSessionService } from '../../../core/services/doctor-session';
 
+const LISTENER_SAFETY_ACKNOWLEDGEMENT_VERSION = 'listener-safety-v1-2026-08-07';
+
 function emptyProfileModel() {
   return {
     name: '',
@@ -37,6 +39,8 @@ function emptyProfileModel() {
     introSessionTitle: '',
     counsellingApproach: '',
     safetyEscalationNote: '',
+    listenerSafetyAcknowledged: false,
+    listenerSafetyAcknowledgedVersion: LISTENER_SAFETY_ACKNOWLEDGEMENT_VERSION,
     acceptsHighRiskCases: false,
     autoMatchEnabled: true,
     acceptingNewUsers: true,
@@ -135,6 +139,11 @@ export class ProfilePage {
         complete: Boolean(form.safetyEscalationNote.trim()),
       },
       {
+        key: 'safetyAcknowledgement',
+        label: 'Safety acknowledgement accepted',
+        complete: Boolean(form.listenerSafetyAcknowledged),
+      },
+      {
         key: 'availability',
         label: 'Available and accepting new users',
         complete: Boolean(form.isAvailable && form.acceptingNewUsers),
@@ -220,6 +229,11 @@ export class ProfilePage {
         introSessionTitle: mental?.introSessionTitle || '',
         counsellingApproach: mental?.counsellingApproach || '',
         safetyEscalationNote: mental?.safetyEscalationNote || '',
+        listenerSafetyAcknowledged: Boolean(
+          mental?.listenerSafetyAcknowledgedAt || mental?.listenerSafetyAcknowledgedVersion,
+        ),
+        listenerSafetyAcknowledgedVersion:
+          mental?.listenerSafetyAcknowledgedVersion || LISTENER_SAFETY_ACKNOWLEDGEMENT_VERSION,
         acceptsHighRiskCases: mental?.acceptsHighRiskCases ?? false,
         autoMatchEnabled: mental?.autoMatchEnabled ?? true,
         acceptingNewUsers: mental?.acceptingNewUsers ?? true,
@@ -280,6 +294,8 @@ export class ProfilePage {
                 introSessionTitle: form.introSessionTitle || null,
                 counsellingApproach: form.counsellingApproach || null,
                 safetyEscalationNote: form.safetyEscalationNote || null,
+                listenerSafetyAcknowledged: form.listenerSafetyAcknowledged,
+                listenerSafetyAcknowledgedVersion: LISTENER_SAFETY_ACKNOWLEDGEMENT_VERSION,
                 acceptsHighRiskCases: form.acceptsHighRiskCases,
                 autoMatchEnabled: form.autoMatchEnabled,
                 acceptingNewUsers: form.acceptingNewUsers,

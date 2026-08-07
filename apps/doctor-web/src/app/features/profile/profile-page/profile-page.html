@@ -180,6 +180,22 @@ Hypertension"
         <label for="safetyEscalationNote">Safety escalation note</label>
         <textarea id="safetyEscalationNote" rows="4" [formField]="profileForm.safetyEscalationNote"></textarea>
 
+        @if (isListenerProfile()) {
+          <div class="listener-safety-ack">
+            <label class="checkbox">
+              <input type="checkbox" [formField]="profileForm.listenerSafetyAcknowledged" />
+              <span>
+                I understand listener sessions are emotional support only, not therapy, diagnosis,
+                prescriptions, emergency care, or crisis handling.
+              </span>
+            </label>
+            <p>
+              If a user mentions self-harm, harm to others, abuse, medical danger, or another urgent
+              risk, I will pause normal listening and follow Hope Hub escalation guidance.
+            </p>
+          </div>
+        }
+
         <label class="checkbox">
           <input type="checkbox" [formField]="profileForm.acceptsHighRiskCases" />
           Accepts high-risk cases with escalation support

@@ -23,6 +23,9 @@ export type ListenerScreeningQuestionSetLike = {
   publishedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
+  _count?: {
+    attempts?: number;
+  };
 };
 
 export const listenerScreeningQuestionOptionSchema = z.object({
@@ -127,6 +130,7 @@ export function adminListenerScreeningQuestionSet(set: ListenerScreeningQuestion
     publishedAt: set.publishedAt?.toISOString() ?? null,
     createdAt: set.createdAt.toISOString(),
     updatedAt: set.updatedAt.toISOString(),
+    attemptsCount: set._count?.attempts ?? 0,
     questions: sanitizeListenerScreeningQuestions(set.questions)
   };
 }

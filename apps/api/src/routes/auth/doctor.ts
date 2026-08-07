@@ -23,6 +23,8 @@ import { notifyAdminsAboutDoctorSignup } from '../../services/doctor-signup-noti
 import { asyncRoute, publicUserSelect, toAuthResponse, logAuthEvent } from '../../utils/helpers.js';
 import { enrichWithProfileImageUrl, userProfileImagePath } from '../../utils/profile-image-url.js';
 
+const LISTENER_SAFETY_ACKNOWLEDGEMENT_VERSION = 'listener-safety-v1-2026-08-07';
+
 function inferDoctorTypeFromSpecialty(specialty: string) {
   return /psycholog|counsell|counsel|therapist|mental/i.test(specialty)
     ? HomeopathicDoctorType.PSYCHOLOGIST
@@ -44,6 +46,14 @@ const mentalHealthProviderProfileSchema = z
     introSessionTitle: z.string().trim().max(180).optional().nullable().or(z.literal('')),
     counsellingApproach: z.string().trim().max(3000).optional().nullable().or(z.literal('')),
     safetyEscalationNote: z.string().trim().max(2000).optional().nullable().or(z.literal('')),
+    listenerSafetyAcknowledged: z.boolean().optional().default(false),
+    listenerSafetyAcknowledgedVersion: z
+      .string()
+      .trim()
+      .max(120)
+      .optional()
+      .nullable()
+      .or(z.literal('')),
     acceptsHighRiskCases: z.boolean().optional(),
     autoMatchEnabled: z.boolean().optional(),
     acceptingNewUsers: z.boolean().optional(),
@@ -100,10 +110,15 @@ function listenerPublicProfileReady(input: {
   bio?: string | null;
   isAvailable: boolean;
   hasProfileImage: boolean;
-  mentalHealthProfile: NonNullable<z.infer<typeof mentalHealthProviderProfileSchema>>;
+  mentalHealthProfile: NonNullable<z.infer<typeof mentalHealthProviderProfileSchema>> & {
+    listenerSafetyAcknowledgedAt?: Date | string | null;
+  };
   services: Array<{ isActive: boolean; title: string; durationMinutes: number }>;
 }) {
   const mental = input.mentalHealthProfile;
+  const hasSafetyAcknowledgement = Boolean(
+    mental.listenerSafetyAcknowledged || mental.listenerSafetyAcknowledgedAt
+  );
   return Boolean(
     input.name.trim().length >= 2 &&
     input.mobile?.trim() &&
@@ -114,6 +129,7 @@ function listenerPublicProfileReady(input: {
     cleanList(mental.sessionTypes).length > 0 &&
     cleanList(mental.concernsHandled).length > 0 &&
     cleanNullableText(mental.safetyEscalationNote) &&
+    hasSafetyAcknowledgement &&
     input.isAvailable &&
     (mental.acceptingNewUsers ?? true) &&
     input.services.some(
@@ -241,7 +257,13 @@ export function registerAuthDoctorRoutes(router: Router) {
         select: {
           doctorType: true,
           specialtyFocus: true,
-          user: { select: { profileImageKey: true, profileImageUrl: true } }
+          user: { select: { profileImageKey: true, profileImageUrl: true } },
+          mentalHealthProfile: {
+            select: {
+              listenerSafetyAcknowledgedAt: true,
+              listenerSafetyAcknowledgedVersion: true
+            }
+          }
         }
       });
 
@@ -278,6 +300,13 @@ export function registerAuthDoctorRoutes(router: Router) {
               safetyEscalationNote: cleanNullableText(
                 body.mentalHealthProfile.safetyEscalationNote
               ),
+              listenerSafetyAcknowledgedAt: body.mentalHealthProfile.listenerSafetyAcknowledged
+                ? new Date()
+                : (existing?.mentalHealthProfile?.listenerSafetyAcknowledgedAt ?? null),
+              listenerSafetyAcknowledgedVersion: body.mentalHealthProfile.listenerSafetyAcknowledged
+                ? (cleanNullableText(body.mentalHealthProfile.listenerSafetyAcknowledgedVersion) ??
+                  LISTENER_SAFETY_ACKNOWLEDGEMENT_VERSION)
+                : (existing?.mentalHealthProfile?.listenerSafetyAcknowledgedVersion ?? null),
               acceptsHighRiskCases: body.mentalHealthProfile.acceptsHighRiskCases ?? false,
               autoMatchEnabled: body.mentalHealthProfile.autoMatchEnabled ?? true,
               acceptingNewUsers: body.mentalHealthProfile.acceptingNewUsers ?? true,
@@ -328,7 +357,11 @@ export function registerAuthDoctorRoutes(router: Router) {
               hasProfileImage: Boolean(
                 existing?.user.profileImageKey || existing?.user.profileImageUrl
               ),
-              mentalHealthProfile: body.mentalHealthProfile,
+              mentalHealthProfile: {
+                ...body.mentalHealthProfile,
+                listenerSafetyAcknowledgedAt:
+                  mentalHealthProfile?.listenerSafetyAcknowledgedAt ?? null
+              },
               services: mentalHealthServices
             })
           : false;

@@ -149,6 +149,7 @@ button:disabled {
 .version-row,
 .history-row,
 .report-row,
+.attempt-warning,
 .preview-question {
   display: grid;
   gap: 0.8rem;
@@ -156,6 +157,28 @@ button:disabled {
   border-radius: 0.75rem;
   background: #f8fafc;
   padding: 0.9rem;
+}
+
+.attempt-warning {
+  border-color: #fed7aa;
+  background: #fff7ed;
+  color: #9a3412;
+
+  strong {
+    color: #7c2d12;
+  }
+
+  span {
+    color: #9a3412;
+    font-size: 0.88rem;
+    line-height: 1.55;
+  }
+
+  button {
+    justify-self: start;
+    border-color: #fdba74;
+    color: #9a3412;
+  }
 }
 
 .question-card__head {

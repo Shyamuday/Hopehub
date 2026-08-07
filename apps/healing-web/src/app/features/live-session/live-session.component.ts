@@ -37,6 +37,7 @@ type LiveSessionConsultation = {
     serviceName?: string;
     requestedProviderName?: string;
     careTeamPricingLabel?: string;
+    preferredExpertType?: string;
   } | null;
   pricingSnapshot?: {
     serviceName?: string | null;
@@ -143,6 +144,21 @@ export class LiveSessionComponent implements OnInit, OnDestroy {
       consultation?.disease?.name ||
       'Hope Hub live session'
     );
+  }
+
+  isListenerSupportSession(): boolean {
+    const consultation = this.consultation();
+    const text = [
+      this.serviceName(),
+      this.providerName(),
+      consultation?.pricingSnapshot?.careTeamPricingLabel,
+      consultation?.intakeAnswers?.careTeamPricingLabel,
+      consultation?.intakeAnswers?.preferredExpertType,
+    ]
+      .filter(Boolean)
+      .join(' ')
+      .toLowerCase();
+    return /listener|emotional support|peer support|student support|non-clinical/.test(text);
   }
 
   sessionModeLabel(): string {

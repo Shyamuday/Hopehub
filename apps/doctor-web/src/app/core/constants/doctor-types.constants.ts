@@ -64,6 +64,8 @@ export type DoctorProfileSummary = {
     introSessionTitle?: string | null;
     counsellingApproach?: string | null;
     safetyEscalationNote?: string | null;
+    listenerSafetyAcknowledgedAt?: string | null;
+    listenerSafetyAcknowledgedVersion?: string | null;
     acceptsHighRiskCases: boolean;
     autoMatchEnabled?: boolean;
     acceptingNewUsers?: boolean;

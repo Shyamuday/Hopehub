@@ -37,6 +37,20 @@
         </span>
       </div>
 
+      @if (hasAttemptHistory()) {
+        <div class="attempt-warning">
+          <strong>This version already has {{ selectedAttemptsCount() }} listener attempt(s).</strong>
+          <span>
+            You can still edit it, but changing questions or correct answers can make old review
+            history harder to understand. Best practice: duplicate as draft, update the copy, then
+            publish the new version.
+          </span>
+          <button type="button" (click)="duplicateAsDraft(selectedQuestionSet())">
+            Duplicate this version
+          </button>
+        </div>
+      }
+
       <div class="two">
         <label>
           Title
@@ -220,7 +234,12 @@
                 {{ questionSet.version }} · {{ questionSet.questions?.length || 0 }} questions ·
                 pass {{ questionSet.passScore }}/{{ questionSet.questions?.length || 0 }}
               </span>
-              <small>{{ questionSet.isActive ? 'Published ' + formatDate(questionSet.publishedAt) : 'Draft' }}</small>
+              <small>
+                {{ questionSet.isActive ? 'Published ' + formatDate(questionSet.publishedAt) : 'Draft' }}
+                @if (questionSet.attemptsCount) {
+                  · {{ questionSet.attemptsCount }} attempt(s)
+                }
+              </small>
             </div>
             <div class="row-actions">
               <span class="status" [class.live]="questionSet.isActive">

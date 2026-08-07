@@ -126,6 +126,8 @@ export const doctorProfileSelect = {
       introSessionTitle: true,
       counsellingApproach: true,
       safetyEscalationNote: true,
+      listenerSafetyAcknowledgedAt: true,
+      listenerSafetyAcknowledgedVersion: true,
       acceptsHighRiskCases: true,
       autoMatchEnabled: true,
       acceptingNewUsers: true,

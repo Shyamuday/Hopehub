@@ -51,7 +51,8 @@ export function registerAdminListenerScreeningRoutes(router: Router) {
     asyncRoute(async (_req, res) => {
       const [questionSets, auditLogs] = await Promise.all([
         prisma.listenerScreeningQuestionSet.findMany({
-          orderBy: [{ isActive: 'desc' }, { updatedAt: 'desc' }]
+          orderBy: [{ isActive: 'desc' }, { updatedAt: 'desc' }],
+          include: { _count: { select: { attempts: true } } }
         }),
         prisma.auditLog.findMany({
           where: { targetType: 'ListenerScreeningQuestionSet' },

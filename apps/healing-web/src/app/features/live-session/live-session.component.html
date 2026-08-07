@@ -45,6 +45,19 @@
           <span class="session-pill">{{ sessionModeLabel() }}</span>
         </div>
 
+        @if (isListenerSupportSession()) {
+          <div class="listener-scope-note">
+            <div class="listener-scope-note__icon">🌿</div>
+            <div>
+              <strong>Emotional support listener session</strong>
+              <p>
+                This is a private supportive conversation for listening, grounding, and gentle next
+                steps. It is not therapy, diagnosis, prescription, or emergency/crisis care.
+              </p>
+            </div>
+          </div>
+        }
+
         @if (showWaitingPanel()) {
           <div class="waiting-panel">
             <div class="waiting-icon">⏳</div>
@@ -205,6 +218,18 @@
             }
           </div>
         </div>
+
+        @if (isListenerSupportSession()) {
+          <div class="side-card listener-boundary-card">
+            <p class="side-eyebrow">Care boundary</p>
+            <h2 class="mt-1 text-lg font-black text-slate-950">What listeners can help with</h2>
+            <p class="mt-2 text-sm leading-6 text-slate-600">
+              They can listen, reflect, and support you in organizing your thoughts. For clinical
+              advice, diagnosis, medication, or urgent risk, please book a qualified professional or
+              contact emergency support.
+            </p>
+          </div>
+        }
 
         @if (showCallPanel()) {
           <div class="side-card">

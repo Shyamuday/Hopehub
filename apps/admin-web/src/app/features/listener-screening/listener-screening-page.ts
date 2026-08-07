@@ -93,13 +93,28 @@ export class ListenerScreeningPage implements OnInit {
     this.validationIssues.set([]);
   }
 
-  duplicateAsDraft(questionSet: any): void {
+  duplicateAsDraft(questionSet: any | null): void {
+    if (!questionSet) return;
     this.edit({
       ...questionSet,
       id: '',
       isActive: false,
       version: this.nextVersion(),
     });
+  }
+
+  selectedQuestionSet(): any | null {
+    const id = this.form().id;
+    if (!id) return null;
+    return this.questionSets().find((set) => set.id === id) ?? null;
+  }
+
+  selectedAttemptsCount(): number {
+    return Number(this.selectedQuestionSet()?.attemptsCount || 0);
+  }
+
+  hasAttemptHistory(): boolean {
+    return this.selectedAttemptsCount() > 0;
   }
 
   addQuestion(): void {

@@ -74,6 +74,8 @@ model MentalHealthProviderProfile {
   introSessionTitle      String?
   counsellingApproach    String?  @db.Text
   safetyEscalationNote   String?  @db.Text
+  listenerSafetyAcknowledgedAt DateTime?
+  listenerSafetyAcknowledgedVersion String?
   acceptsHighRiskCases   Boolean  @default(false)
   autoMatchEnabled       Boolean  @default(true)
   acceptingNewUsers      Boolean  @default(true)
@@ -87,6 +89,7 @@ model MentalHealthProviderProfile {
 
   @@index([doctorId])
   @@index([careTeamType])
+  @@index([listenerSafetyAcknowledgedAt])
   @@index([autoMatchEnabled, acceptingNewUsers])
 }
 

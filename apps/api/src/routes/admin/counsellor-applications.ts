@@ -98,6 +98,11 @@ function listenerProfileChecklist(application: any) {
       complete: Boolean((mental?.safetyEscalationNote || '').trim())
     },
     {
+      key: 'safetyAcknowledgement',
+      label: 'Listener safety acknowledgement accepted',
+      complete: Boolean(mental?.listenerSafetyAcknowledgedAt)
+    },
+    {
       key: 'availability',
       label: 'Available and accepting new users',
       complete: Boolean(doctorProfile?.isAvailable && mental?.acceptingNewUsers)
@@ -203,6 +208,8 @@ export function registerAdminCounsellorApplicationRoutes(router: Router) {
                       sessionTypes: true,
                       concernsHandled: true,
                       safetyEscalationNote: true,
+                      listenerSafetyAcknowledgedAt: true,
+                      listenerSafetyAcknowledgedVersion: true,
                       acceptingNewUsers: true,
                       services: {
                         select: {
