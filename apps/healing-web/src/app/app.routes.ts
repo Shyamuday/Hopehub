@@ -609,6 +609,17 @@ export const routes: Routes = [
     },
   },
   {
+    path: 'live-session/:consultationId',
+    loadComponent: () =>
+      import('./features/live-session/live-session.component').then((m) => m.LiveSessionComponent),
+    title: 'Live Session - Hope Hub',
+    data: {
+      breadcrumb: 'Live Session',
+      description: 'Join your Hope Hub live chat, voice, or video session',
+      keywords: 'hope hub live session, chat, voice call, video call',
+    },
+  },
+  {
     path: '404',
     loadComponent: () =>
       import('./features/not-found/not-found.component').then((m) => m.NotFoundComponent),

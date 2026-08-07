@@ -1,0 +1,168 @@
+<div class="live-session-page">
+  <header class="live-session-topbar">
+    <button type="button" class="ghost-btn" (click)="backToDashboard()">← Dashboard</button>
+    <div class="min-w-0">
+      <p class="text-xs font-bold uppercase tracking-[0.2em] text-emerald-700">Hope Hub Live</p>
+      <h1 class="truncate text-xl font-black text-slate-950 sm:text-2xl">{{ serviceName() }}</h1>
+    </div>
+    <button type="button" class="ghost-btn" (click)="refresh()">Refresh</button>
+  </header>
+
+  @if (loading()) {
+    <main class="live-session-shell">
+      <section class="live-panel animate-pulse">
+        <div class="h-8 w-56 rounded bg-slate-100"></div>
+        <div class="mt-4 h-[32rem] rounded-3xl bg-slate-100"></div>
+      </section>
+      <aside class="live-side-panel animate-pulse">
+        <div class="h-8 rounded bg-slate-100"></div>
+        <div class="mt-4 h-48 rounded-3xl bg-slate-100"></div>
+      </aside>
+    </main>
+  } @else if (error()) {
+    <main class="mx-auto max-w-2xl px-4 py-16 text-center">
+      <div class="rounded-3xl border border-red-100 bg-white p-8 shadow-sm">
+        <p class="text-lg font-bold text-red-700">{{ error() }}</p>
+        <p class="mt-2 text-sm text-slate-600">
+          Open your dashboard and join from an assigned consultation.
+        </p>
+        <a routerLink="/dashboard" class="btn-primary mt-6">Go to dashboard</a>
+      </div>
+    </main>
+  } @else if (consultation(); as session) {
+    <main class="live-session-shell">
+      <section class="live-panel">
+        <div class="live-chat-header">
+          <div class="flex min-w-0 items-center gap-3">
+            <div class="expert-avatar">{{ providerName().slice(0, 1) }}</div>
+            <div class="min-w-0">
+              <h2 class="truncate text-lg font-black text-slate-950">{{ providerName() }}</h2>
+              <p class="text-sm font-medium text-slate-600">
+                {{ sessionModeLabel() }} · {{ statusLabel() }}
+              </p>
+            </div>
+          </div>
+          <span class="session-pill">{{ sessionModeLabel() }}</span>
+        </div>
+
+        <div class="chat-scroll">
+          @if (session.messages?.length) {
+            @for (message of session.messages; track message.id) {
+              <div
+                class="message-row"
+                [class.message-row--mine]="isOwnMessage(message)"
+                [class.message-row--theirs]="!isOwnMessage(message)"
+              >
+                <article
+                  class="message-bubble"
+                  [class.message-bubble--mine]="isOwnMessage(message)"
+                  [class.message-bubble--theirs]="!isOwnMessage(message)"
+                >
+                  <p class="message-sender">
+                    {{ message.sender?.name || (isOwnMessage(message) ? 'You' : providerName()) }}
+                  </p>
+                  <p class="message-body">{{ message.body }}</p>
+                  <p class="message-time">{{ message.createdAt | date: 'shortTime' }}</p>
+                </article>
+              </div>
+            }
+          } @else {
+            <div class="empty-chat">
+              <div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-50 text-2xl">
+                💬
+              </div>
+              <h3 class="text-lg font-black text-slate-950">Start with a simple hello</h3>
+              <p class="mx-auto mt-2 max-w-sm text-sm leading-6 text-slate-600">
+                Share what is happening right now. Keep it short if that feels easier.
+              </p>
+            </div>
+          }
+        </div>
+
+        <div class="composer">
+          @if (!canInteract()) {
+            <p class="composer-disabled">
+              Chat unlocks when payment is complete and an expert is assigned.
+            </p>
+          } @else {
+            <textarea
+              rows="2"
+              class="composer-input"
+              placeholder="Message your expert privately..."
+              [value]="draft()"
+              (input)="draft.set($any($event.target).value)"
+              (keydown.control.enter)="sendMessage()"
+              (keydown.meta.enter)="sendMessage()"
+            ></textarea>
+            <button
+              type="button"
+              class="composer-send"
+              [disabled]="sending() || !draft().trim()"
+              (click)="sendMessage()"
+            >
+              {{ sending() ? 'Sending...' : 'Send' }}
+            </button>
+          }
+        </div>
+      </section>
+
+      <aside class="live-side-panel">
+        <div class="side-card">
+          <p class="side-eyebrow">Session</p>
+          <h2 class="mt-1 text-lg font-black text-slate-950">{{ serviceName() }}</h2>
+          <dl class="mt-4 space-y-3 text-sm">
+            <div>
+              <dt class="font-bold text-slate-500">Expert</dt>
+              <dd class="text-slate-950">{{ providerName() }}</dd>
+            </div>
+            <div>
+              <dt class="font-bold text-slate-500">Mode</dt>
+              <dd class="text-slate-950">{{ sessionModeLabel() }}</dd>
+            </div>
+            <div>
+              <dt class="font-bold text-slate-500">Status</dt>
+              <dd class="text-slate-950">{{ statusLabel() }}</dd>
+            </div>
+            @if (session.intakeAnswers?.concernCategory; as concernCategory) {
+              <div>
+                <dt class="font-bold text-slate-500">Concern</dt>
+                <dd class="text-slate-950">{{ concernCategory }}</dd>
+              </div>
+            }
+            @if (session.pricingSnapshot?.careTeamPricingLabel || session.intakeAnswers?.careTeamPricingLabel) {
+              <div>
+                <dt class="font-bold text-slate-500">Plan</dt>
+                <dd class="text-slate-950">
+                  {{ session.pricingSnapshot?.careTeamPricingLabel || session.intakeAnswers?.careTeamPricingLabel }}
+                </dd>
+              </div>
+            }
+          </dl>
+        </div>
+
+        @if (showCallPanel()) {
+          <div class="side-card">
+            <p class="side-eyebrow">Call</p>
+            <p class="mb-3 mt-1 text-sm leading-6 text-slate-600">
+              Use this when both you and the expert are ready. Browser may ask for mic/camera permission.
+            </p>
+            <app-consultation-call-panel
+              [consultationId]="session.id"
+              [targetUserId]="session.assignedDoctor?.id || ''"
+              [socket]="socket()"
+              [iceServers]="iceServers()"
+              [enabled]="canInteract()"
+            ></app-consultation-call-panel>
+          </div>
+        } @else {
+          <div class="side-card">
+            <p class="side-eyebrow">Privacy</p>
+            <p class="mt-1 text-sm leading-6 text-slate-600">
+              This room is tied to your consultation. Keep emergency or crisis needs on phone/local emergency support.
+            </p>
+          </div>
+        }
+      </aside>
+    </main>
+  }
+</div>

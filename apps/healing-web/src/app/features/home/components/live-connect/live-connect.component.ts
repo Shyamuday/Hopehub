@@ -162,10 +162,8 @@ export class LiveConnectComponent implements OnInit {
       this.message.set(
         `${this.modeLabel()} session is ready with ${response.provider?.name || provider.name}.`,
       );
-      this.notificationService.success('Live session confirmed. Opening your dashboard.');
-      void this.router.navigate(['/dashboard'], {
-        queryParams: { consultationId: response.consultation?.id || undefined },
-      });
+      this.notificationService.success('Live session confirmed. Opening your session room.');
+      void this.openLiveSession(response.consultation?.id);
     } catch (error) {
       const message = this.readErrorMessage(error);
       this.paymentFlowError.set(message);
@@ -190,10 +188,8 @@ export class LiveConnectComponent implements OnInit {
       })
       .then(() => {
         this.paymentFlowState.set('SUCCESS');
-        this.notificationService.success('Payment confirmed. Opening your dashboard.');
-        void this.router.navigate(['/dashboard'], {
-          queryParams: { consultationId: consultation.id || undefined },
-        });
+        this.notificationService.success('Payment confirmed. Opening your session room.');
+        void this.openLiveSession(consultation.id);
       })
       .catch((error) => {
         const message = this.readErrorMessage(error);
@@ -227,7 +223,7 @@ export class LiveConnectComponent implements OnInit {
     if (state === 'CREATING_ORDER') return 'Setting up secure payment for this live session.';
     if (state === 'OPENING_CHECKOUT') return 'Complete payment in the secure checkout window.';
     if (state === 'VERIFYING') return 'Confirming payment. Please keep this page open.';
-    if (state === 'SUCCESS') return 'Your session is confirmed. We are opening your dashboard.';
+    if (state === 'SUCCESS') return 'Your session is confirmed. We are opening your live room.';
     if (state === 'ERROR') return this.paymentFlowError() || 'Please retry safely.';
     return '';
   }
@@ -264,6 +260,13 @@ export class LiveConnectComponent implements OnInit {
       currency: 'INR',
       maximumFractionDigits: 0,
     }).format(amountInPaise / 100);
+  }
+
+  private openLiveSession(consultationId: string | undefined): Promise<boolean> {
+    if (consultationId) {
+      return this.router.navigate(['/live-session', consultationId]);
+    }
+    return this.router.navigate(['/dashboard']);
   }
 
   private readErrorMessage(error: unknown): string {
