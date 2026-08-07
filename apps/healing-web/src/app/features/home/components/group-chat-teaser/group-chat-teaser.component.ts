@@ -64,35 +64,49 @@ export class GroupChatTeaserComponent implements OnInit {
   readonly displayedMessages = computed(() =>
     this.hasRealChat() ? this.realMessages() : this.fallbackMessages,
   );
-  readonly roomTitle = computed(() => this.activeGroup()?.title || 'Evening support room');
+  readonly roomTitle = computed(
+    () => this.activeGroup()?.title || 'See how Hope Hub support chat feels',
+  );
+  readonly teaserLabel = computed(() =>
+    this.hasRealChat() ? 'Live support chat' : 'Sample support chat',
+  );
+  readonly footerLinkLabel = computed(() =>
+    this.hasRealChat() ? 'See live support' : 'Explore support options',
+  );
   readonly primaryActionLabel = computed(() => {
     if (!this.isAuthenticated()) return 'Sign up free to chat';
-    return this.hasRealChat() ? 'Open group chat' : 'See live support';
+    return this.hasRealChat() ? 'Open support chat' : 'See live support';
   });
 
   readonly fallbackMessages: TeaserMessage[] = [
     {
       author: 'Asha',
       role: 'Host',
-      body: 'Welcome in. You can just read quietly first — no pressure to explain everything.',
+      body: 'Hey, welcome in. You can just sit here and read for a bit — no pressure to explain everything.',
       tone: 'host',
     },
     {
-      author: 'Riya',
+      author: 'Meera',
       role: 'Member',
-      body: 'I joined because evenings feel heavy sometimes. Reading others helped me feel less alone.',
+      body: 'Today was honestly too much. I kept smiling at work but inside I was so irritated and tired.',
+      tone: 'member',
+    },
+    {
+      author: 'Rohan',
+      role: 'Member',
+      body: 'Same here. I got angry over a small thing at home, then felt guilty for hours. Just needed to say it somewhere.',
       tone: 'member',
     },
     {
       author: 'Kabir',
       role: 'Emotional support listener',
-      body: 'If you want to reply, create a free account so we can keep the room safe from spam.',
+      body: 'That makes sense. Sometimes we carry the whole day quietly, and it comes out sideways. You’re not bad for feeling overwhelmed.',
       tone: 'listener',
     },
     {
       author: 'Asha',
       role: 'Host',
-      body: 'For private support, use 1:1 Live Connect. This room is for gentle group chat.',
+      body: 'If you want to reply or vent safely, sign up free. We keep the room moderated so it stays kind.',
       tone: 'host',
     },
   ];

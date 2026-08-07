@@ -5,28 +5,9 @@
         <p class="hope-eyebrow">Live Connect</p>
         <h2 class="hope-section-title">Talk now with someone who is actually available</h2>
         <p class="hope-section-copy max-w-2xl">
-          Pick private 1:1 support or join a moderated group room. We show only live Hope Hub experts and emotional
+          Pick private 1:1 chat, voice, or video support. We show only live Hope Hub experts and emotional
           support listeners who are accepting that mode right now.
         </p>
-      </div>
-
-      <div class="live-view-toggle" aria-label="Choose live connect type">
-        <button
-          type="button"
-          [class.live-view-toggle__button--active]="view() === 'providers'"
-          class="live-view-toggle__button"
-          (click)="setView('providers')"
-        >
-          1:1 providers
-        </button>
-        <button
-          type="button"
-          [class.live-view-toggle__button--active]="view() === 'groups'"
-          class="live-view-toggle__button"
-          (click)="setView('groups')"
-        >
-          Group rooms
-        </button>
       </div>
 
       @if (view() === 'providers') {
@@ -145,7 +126,7 @@
           <form class="live-group-create" (submit)="$event.preventDefault(); createGroup()">
             <div>
               <span class="live-mini-chip live-mini-chip--free">Provider/admin tool</span>
-              <h3>Open a moderated group room</h3>
+              <h3>Open a moderated support chat</h3>
               <p>Start a simple chat room for live emotional support. Voice/video can be added later with SFU media.</p>
             </div>
             <div class="live-group-create__fields">
@@ -153,7 +134,7 @@
                 name="newGroupTitle"
                 [ngModel]="newGroupTitle()"
                 (ngModelChange)="newGroupTitle.set($event)"
-                placeholder="Room title, e.g. Evening Anxiety Support"
+                placeholder="Chat title, e.g. Evening Anxiety Support"
                 maxlength="140"
                 required
               />
@@ -161,15 +142,15 @@
                 name="newGroupDescription"
                 [ngModel]="newGroupDescription()"
                 (ngModelChange)="newGroupDescription.set($event)"
-                placeholder="Short room description"
+                placeholder="Short chat description"
                 rows="2"
                 maxlength="1200"
               ></textarea>
               <p class="live-group-create__note">
-                Group rooms are chat-only for now. Use 1:1 Live Connect for voice/video sessions.
+                Support chats are text-only for now. Use 1:1 Live Connect for voice/video sessions.
               </p>
               <button type="submit" class="btn-primary justify-center" [disabled]="creatingGroup() || !newGroupTitle().trim()">
-                {{ creatingGroup() ? 'Opening...' : 'Open group room' }}
+                {{ creatingGroup() ? 'Opening...' : 'Open support chat' }}
               </button>
             </div>
           </form>
@@ -206,14 +187,14 @@
                   <span>Group support</span>
                 </div>
                 <button type="button" class="btn-primary mt-5 w-full justify-center" (click)="joinGroup(group)">
-                  Join group room
+                  Join support chat
                 </button>
               </article>
             }
           </div>
         } @else {
           <div class="live-empty-card">
-            <p>No live group rooms are open right now.</p>
+            <p>No live support chats are open right now.</p>
             <a routerLink="/community" class="btn-secondary">See community options</a>
           </div>
         }

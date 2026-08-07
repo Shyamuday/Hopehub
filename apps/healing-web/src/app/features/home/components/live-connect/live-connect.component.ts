@@ -162,7 +162,7 @@ export class LiveConnectComponent implements OnInit {
     const description = this.newGroupDescription().trim();
     if (!title || this.creatingGroup()) return;
     if (!this.canHostGroups()) {
-      this.notificationService.warning('Only providers and admins can open group rooms.');
+      this.notificationService.warning('Only providers and admins can open support chats.');
       return;
     }
 
@@ -184,8 +184,8 @@ export class LiveConnectComponent implements OnInit {
           this.newGroupTitle.set('');
           this.newGroupDescription.set('');
           this.creatingGroup.set(false);
-          this.groupMessage.set('Group room is live. Opening it now.');
-          this.notificationService.success('Group room created.');
+          this.groupMessage.set('Support chat is live. Opening it now.');
+          this.notificationService.success('Support chat created.');
           void this.router.navigate(['/live-groups', res.group.slug || res.group.id]);
         },
         error: (error) => {

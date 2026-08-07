@@ -178,11 +178,11 @@ export class LiveGroupsComponent implements OnInit, OnDestroy {
   async shareRoom(): Promise<void> {
     const room = this.group();
     const url = typeof window === 'undefined' ? '' : window.location.href;
-    const title = room?.callTitle || room?.title || 'Hope Hub live group';
+    const title = room?.callTitle || room?.title || 'Hope Hub support chat';
     const browserNavigator: any = typeof window === 'undefined' ? null : window.navigator;
     try {
       if (browserNavigator && 'share' in browserNavigator) {
-        await browserNavigator.share({ title, text: 'Join this Hope Hub live room.', url });
+        await browserNavigator.share({ title, text: 'Join this Hope Hub support chat.', url });
       } else if (browserNavigator?.clipboard && url) {
         await browserNavigator.clipboard.writeText(url);
         this.shareMessage.set('Room link copied.');
@@ -312,7 +312,7 @@ export class LiveGroupsComponent implements OnInit, OnDestroy {
         role: message.senderRole || '',
         action,
         mutedMinutes: action === 'MUTE' ? 60 : undefined,
-        reason: `Moderated from Hope Hub group room by ${this.currentUser()?.name || 'moderator'}`,
+        reason: `Moderated from Hope Hub support chat by ${this.currentUser()?.name || 'moderator'}`,
       })
       .subscribe({
         next: () => this.notificationService.success(`Member ${action.toLowerCase()} applied.`),
@@ -342,7 +342,7 @@ export class LiveGroupsComponent implements OnInit, OnDestroy {
         targetUserId: message.senderId,
         targetDisplayName: message.senderName,
         reason: 'Concern or unsafe message',
-        details: 'Reported from Hope Hub group chat.',
+        details: 'Reported from Hope Hub support chat.',
       })
       .subscribe({
         next: () => {

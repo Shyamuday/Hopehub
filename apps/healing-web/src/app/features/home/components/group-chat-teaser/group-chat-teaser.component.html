@@ -2,26 +2,26 @@
   @if (isMinimized()) {
     <button type="button" class="chat-teaser-pill" (click)="restore()">
       <span class="chat-teaser-pill__dot"></span>
-      Open group chat
+      Open support chat
     </button>
   } @else {
-    <aside class="chat-teaser" aria-label="Hope Hub open group chat preview">
+    <aside class="chat-teaser" [attr.aria-label]="hasRealChat() ? 'Hope Hub live support chat' : 'Hope Hub sample support chat'">
       <header class="chat-teaser__header">
         <div>
           <span class="chat-teaser__eyebrow">
             <span></span>
-            {{ hasRealChat() ? 'Live group chat' : 'Group chat preview' }}
+            {{ teaserLabel() }}
           </span>
           <h2>{{ roomTitle() }}</h2>
           <p>
             @if (hasRealChat() && isAuthenticated()) {
-              Real members are chatting now. Reply here or open the full room.
+              Real members are chatting now. Reply here or open the full support chat.
             } @else if (hasRealChat()) {
               Real members are chatting now. Read quietly, then sign up free to reply.
             } @else if (isAuthenticated()) {
               You are signed in. You can reply here or open the full support area.
             } @else {
-              No active group chat yet, so this is a sample. Sign up free when you want to reply.
+              No active support chat is happening yet, so this is only a sample. Sign up free when you want to join.
             }
           </p>
         </div>
@@ -63,7 +63,11 @@
         <button type="button" class="chat-teaser__primary" (click)="askToJoin()">
           {{ primaryActionLabel() }}
         </button>
-        <a routerLink="/" fragment="live-connect">See live support</a>
+        @if (hasRealChat()) {
+          <a routerLink="/" fragment="live-connect">{{ footerLinkLabel() }}</a>
+        } @else {
+          <a routerLink="/telegram">{{ footerLinkLabel() }}</a>
+        }
       </div>
     </aside>
   }
