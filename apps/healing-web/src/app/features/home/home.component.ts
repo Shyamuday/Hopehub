@@ -4,6 +4,7 @@ import { FeedbackSectionComponent, OfferBannerCarouselComponent } from '../../sh
 import { APP_CONSTANTS } from '../../core';
 import { environment } from '../../../environments/environment';
 import { BookingService, HopeHubProvider } from '../../core/services/booking.service';
+import { GroupChatTeaserComponent } from './components/group-chat-teaser/group-chat-teaser.component';
 import { HomeHeroComponent } from './components/home-hero/home-hero.component';
 import { LiveConnectComponent } from './components/live-connect/live-connect.component';
 
@@ -12,6 +13,7 @@ import { LiveConnectComponent } from './components/live-connect/live-connect.com
   standalone: true,
   imports: [
     FeedbackSectionComponent,
+    GroupChatTeaserComponent,
     HomeHeroComponent,
     LiveConnectComponent,
     OfferBannerCarouselComponent,

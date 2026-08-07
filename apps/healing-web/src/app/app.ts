@@ -67,9 +67,9 @@ export class App implements OnInit {
 
         window.setTimeout(() => {
           if (!this.authService.getToken() && !this.authModalService.getCurrentModal()) {
-            this.authModalService.openLogin();
+            this.authModalService.openRegister();
           }
-        }, 20000);
+        }, 12000);
       });
   }
 }

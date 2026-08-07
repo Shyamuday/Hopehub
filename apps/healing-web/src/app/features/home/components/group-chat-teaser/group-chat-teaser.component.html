@@ -1,0 +1,66 @@
+@if (isOpen()) {
+  @if (isMinimized()) {
+    <button type="button" class="chat-teaser-pill" (click)="restore()">
+      <span class="chat-teaser-pill__dot"></span>
+      Open group chat
+    </button>
+  } @else {
+    <aside class="chat-teaser" aria-label="Hope Hub open group chat preview">
+      <header class="chat-teaser__header">
+        <div>
+          <span class="chat-teaser__eyebrow">
+            <span></span>
+            Live group chat
+          </span>
+          <h2>Evening support room</h2>
+          <p>
+            @if (isAuthenticated()) {
+              You are signed in. You can reply here or open the full support area.
+            } @else {
+              Read quietly as a guest. Sign up free when you want to reply.
+            }
+          </p>
+        </div>
+        <div class="chat-teaser__controls">
+          <button type="button" aria-label="Minimize chat preview" (click)="minimize()">−</button>
+          <button type="button" aria-label="Close chat preview" (click)="close()">×</button>
+        </div>
+      </header>
+
+      <div class="chat-teaser__messages">
+        @for (message of messages.slice(0, visibleMessageCount()); track message.author + message.body) {
+          <article
+            class="chat-teaser__message"
+            [class.chat-teaser__message--host]="message.tone === 'host'"
+            [class.chat-teaser__message--member]="message.tone === 'member'"
+            [class.chat-teaser__message--listener]="message.tone === 'listener'"
+          >
+            <div>
+              <strong>{{ message.author }}</strong>
+              <span>{{ message.role }}</span>
+            </div>
+            <p>{{ message.body }}</p>
+          </article>
+        }
+      </div>
+
+      <form class="chat-teaser__composer" (submit)="$event.preventDefault(); sendPreviewReply()">
+        <input
+          name="teaserReply"
+          [ngModel]="draft()"
+          (ngModelChange)="draft.set($event)"
+          placeholder="Type a reply..."
+          autocomplete="off"
+        />
+        <button type="submit">Reply</button>
+      </form>
+
+      <div class="chat-teaser__footer">
+        <button type="button" class="chat-teaser__primary" (click)="askToJoin()">
+          {{ isAuthenticated() ? 'Open group chat' : 'Sign up free to chat' }}
+        </button>
+        <a routerLink="/" fragment="live-connect">See live support</a>
+      </div>
+    </aside>
+  }
+}
