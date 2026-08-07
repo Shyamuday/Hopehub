@@ -33,16 +33,10 @@
   margin: 0;
   min-height: 28rem;
   overflow: hidden;
-  border-radius: 1.5rem;
-  box-shadow: 0 1.5rem 4rem rgba(31, 41, 55, 0.12);
 }
 
 .home-hero__visual::after {
-  position: absolute;
-  inset: 0;
-  content: '';
-  background: linear-gradient(120deg, rgba(255, 255, 255, 0.2), transparent 45%);
-  pointer-events: none;
+  display: none;
 }
 
 .home-hero__visual img {
@@ -52,9 +46,9 @@
   height: 100%;
   min-height: 28rem;
   opacity: 0;
-  object-fit: cover;
+  background: #f8fafc;
+  object-fit: contain;
   object-position: center;
-  transform: scale(1.04);
   animation: heroVisualFade 15s infinite;
 }
 
@@ -68,33 +62,14 @@
   object-position: center;
 }
 
-.home-hero__caption {
-  position: absolute;
-  right: 1rem;
-  bottom: 1rem;
-  left: 1rem;
-  z-index: 1;
-  border: 1px solid rgba(255, 255, 255, 0.5);
-  border-radius: 999px;
-  background: rgba(15, 23, 42, 0.58);
-  color: #ffffff;
-  font-size: 0.82rem;
-  font-weight: 800;
-  padding: 0.75rem 1rem;
-  text-align: center;
-  backdrop-filter: blur(10px);
-}
-
 @keyframes heroVisualFade {
   0%,
   30% {
     opacity: 1;
-    transform: scale(1);
   }
   38%,
   100% {
     opacity: 0;
-    transform: scale(1.02);
   }
 }
 
@@ -168,9 +143,6 @@
 
   .home-hero__visual {
     min-height: 17rem;
-    border: 1px solid rgba(111, 143, 121, 0.18);
-    border-radius: 1.25rem;
-    box-shadow: 0 1rem 2.5rem rgba(31, 41, 55, 0.09);
   }
 
   .home-hero__visual img {
