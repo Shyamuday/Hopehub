@@ -42,6 +42,12 @@ type LiveSessionConsultation = {
     requestedProviderName?: string | null;
     careTeamPricingLabel?: string | null;
     sessionDurationMinutes?: number | null;
+    sessionOutcome?: {
+      outcome?: string | null;
+      closedAt?: string | null;
+      userSummary?: string | null;
+      recommendedNextStep?: string | null;
+    } | null;
   } | null;
   payment?: {
     status?: string | null;
@@ -163,7 +169,29 @@ export class LiveSessionComponent implements OnInit, OnDestroy {
     if (status === 'IN_PROGRESS') return 'In progress';
     if (status === 'PAYMENT_PENDING') return 'Payment pending';
     if (status === 'PAID') return 'Matching expert';
+    if (status === 'COMPLETED') return 'Session completed';
+    if (status === 'CANCELLED') return 'Session closed';
     return status.replaceAll('_', ' ') || 'Session';
+  }
+
+  isSessionClosed(): boolean {
+    const status = (this.consultation()?.status || '').toUpperCase();
+    return ['COMPLETED', 'CANCELLED'].includes(status);
+  }
+
+  closedTitle(): string {
+    const outcome = this.consultation()?.pricingSnapshot?.sessionOutcome?.outcome || '';
+    if (outcome === 'USER_MISSED') return 'This session was marked missed';
+    if (outcome === 'PROVIDER_NO_SHOW') return 'This session was closed for provider no-show';
+    if (outcome === 'RESCHEDULE_NEEDED') return 'This session needs rescheduling';
+    return 'This live session has ended';
+  }
+
+  closedCopy(): string {
+    const snapshot = this.consultation()?.pricingSnapshot?.sessionOutcome;
+    if (snapshot?.recommendedNextStep) return snapshot.recommendedNextStep;
+    if (snapshot?.userSummary) return snapshot.userSummary;
+    return 'You can review the conversation here. New messages and calls are locked after closure.';
   }
 
   waitingTitle(): string {
@@ -185,7 +213,7 @@ export class LiveSessionComponent implements OnInit, OnDestroy {
   }
 
   showWaitingPanel(): boolean {
-    return Boolean(this.consultation()) && !this.canInteract();
+    return Boolean(this.consultation()) && !this.canInteract() && !this.isSessionClosed();
   }
 
   refreshStatusLabel(): string {

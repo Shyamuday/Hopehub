@@ -99,6 +99,20 @@
   padding: 1rem;
 }
 
+.closed-panel {
+  background: linear-gradient(135deg, #f8fafc, #ffffff);
+  border-bottom-color: rgba(100, 116, 139, 0.14);
+}
+
+.closed-panel h3 {
+  color: #0f172a;
+}
+
+.closed-panel small,
+.closed-panel .waiting-icon {
+  color: #475569;
+}
+
 .waiting-panel h3 {
   color: #064e3b;
   font-size: 1rem;

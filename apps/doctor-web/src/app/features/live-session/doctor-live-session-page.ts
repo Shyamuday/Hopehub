@@ -9,9 +9,12 @@ import { capabilitiesForDoctorType } from '../../core/constants/doctor-types.con
 import { ROUTE_PATHS } from '../../core/constants/app-routes.constants';
 import type {
   ConsultationAssessmentSummary,
+  ConsultationSessionOutcome,
   ConsultationSessionNote,
   DoctorConsultation,
 } from '../../core/types/consultation.types';
+
+type LiveSessionOutcome = 'COMPLETED' | 'USER_MISSED' | 'PROVIDER_NO_SHOW' | 'RESCHEDULE_NEEDED';
 
 @Component({
   selector: 'app-doctor-live-session-page',
@@ -38,6 +41,19 @@ export class DoctorLiveSessionPage implements OnInit {
   readonly assessmentSummary = signal<ConsultationAssessmentSummary | null>(null);
   readonly assessmentSummaryLoading = signal(false);
   readonly profile = this.online.profile;
+  readonly outcome = signal<LiveSessionOutcome>('COMPLETED');
+  readonly outcomeUserSummary = signal('');
+  readonly outcomeRecommendedNextStep = signal('');
+  readonly outcomePrivateNote = signal('');
+  readonly outcomeRestorePackageSession = signal(false);
+  readonly outcomeHoldProviderPayout = signal(false);
+  readonly closingSession = signal(false);
+  readonly outcomeLabels: Record<LiveSessionOutcome | string, string> = {
+    COMPLETED: 'Completed',
+    USER_MISSED: 'User missed',
+    PROVIDER_NO_SHOW: 'Provider no-show',
+    RESCHEDULE_NEEDED: 'Reschedule needed',
+  };
 
   private consultationId = '';
 
@@ -101,6 +117,19 @@ export class DoctorLiveSessionPage implements OnInit {
 
   concernLabel(): string {
     return String(this.consultation()?.intakeAnswers?.['concernCategory'] || '').trim();
+  }
+
+  isSessionClosed(): boolean {
+    const status = (this.consultation()?.status || '').toUpperCase();
+    return ['COMPLETED', 'CANCELLED'].includes(status);
+  }
+
+  sessionOutcome(): ConsultationSessionOutcome | null {
+    return this.consultation()?.pricingSnapshot?.sessionOutcome ?? null;
+  }
+
+  sessionOutcomeLabel(outcome?: string | null): string {
+    return outcome ? (this.outcomeLabels[outcome] ?? outcome.replace(/_/g, ' ')) : 'Not recorded';
   }
 
   isPsychologist(): boolean {
@@ -180,6 +209,36 @@ export class DoctorLiveSessionPage implements OnInit {
       this.error.set('Could not flag safety risk.');
     } finally {
       this.sessionNoteSaving.set(false);
+    }
+  }
+
+  async closeSession(): Promise<void> {
+    if (!this.consultationId || this.closingSession() || this.isSessionClosed()) return;
+
+    this.closingSession.set(true);
+    this.error.set('');
+    try {
+      const outcome = this.outcome();
+      const response = await this.consultationApi.closeConsultation(this.consultationId, {
+        outcome,
+        privateNote: this.outcomePrivateNote().trim() || undefined,
+        userSummary: this.outcomeUserSummary().trim() || undefined,
+        recommendedNextStep: this.outcomeRecommendedNextStep().trim() || undefined,
+        restorePackageSession:
+          this.outcomeRestorePackageSession() ||
+          outcome === 'PROVIDER_NO_SHOW' ||
+          outcome === 'RESCHEDULE_NEEDED',
+        holdProviderPayout:
+          this.outcomeHoldProviderPayout() ||
+          outcome === 'PROVIDER_NO_SHOW' ||
+          outcome === 'RESCHEDULE_NEEDED',
+      });
+      if (response.consultation) this.consultation.set(response.consultation);
+      this.message.set('Session outcome saved. Your live availability has been released.');
+    } catch {
+      this.error.set('Could not close this session.');
+    } finally {
+      this.closingSession.set(false);
     }
   }
 }

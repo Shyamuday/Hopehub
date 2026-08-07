@@ -54,6 +54,14 @@
               <small>{{ refreshStatusLabel() }}</small>
             </div>
           </div>
+        } @else if (isSessionClosed()) {
+          <div class="waiting-panel closed-panel">
+            <div class="waiting-icon">✓</div>
+            <div>
+              <h3>{{ closedTitle() }}</h3>
+              <p>{{ closedCopy() }}</p>
+            </div>
+          </div>
         }
 
         <div class="chat-scroll">
@@ -67,6 +75,18 @@
               <h3 class="text-lg font-black text-slate-950">You are in the right place</h3>
               <p class="mx-auto mt-2 max-w-sm text-sm leading-6 text-slate-600">
                 Keep this room open. Chat and call controls will unlock automatically when the session is ready.
+              </p>
+            </div>
+          } @else if (isSessionClosed() && !session.messages?.length) {
+            <div class="empty-chat">
+              <div
+                class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-slate-100 text-2xl"
+              >
+                ✓
+              </div>
+              <h3 class="text-lg font-black text-slate-950">Session closed</h3>
+              <p class="mx-auto mt-2 max-w-sm text-sm leading-6 text-slate-600">
+                This room is now read-only. You can start another live connect from the home page when needed.
               </p>
             </div>
           } @else if (session.messages?.length) {
@@ -105,7 +125,11 @@
         <div class="composer">
           @if (!canInteract()) {
             <p class="composer-disabled">
-              {{ waitingTitle() }}. Chat unlocks automatically when the session is ready.
+              {{
+                isSessionClosed()
+                  ? 'This session is closed. Chat and call controls are now locked.'
+                  : waitingTitle() + '. Chat unlocks automatically when the session is ready.'
+              }}
             </p>
           } @else {
             <textarea
@@ -179,10 +203,12 @@
           </div>
         } @else {
           <div class="side-card">
-            <p class="side-eyebrow">{{ showWaitingPanel() ? 'Waiting' : 'Privacy' }}</p>
+            <p class="side-eyebrow">{{ isSessionClosed() ? 'Closed' : showWaitingPanel() ? 'Waiting' : 'Privacy' }}</p>
             <p class="mt-1 text-sm leading-6 text-slate-600">
               {{
-                showWaitingPanel()
+                isSessionClosed()
+                  ? 'This room remains available for review, but live chat, voice, and video are disabled after closure.'
+                  : showWaitingPanel()
                   ? 'This room is checking for assignment updates every few seconds.'
                   : 'This room is tied to your consultation. Keep emergency or crisis needs on phone/local emergency support.'
               }}

@@ -7,8 +7,18 @@ import type {
   ConsultationAssessmentSummary,
   ConsultationMessage,
   ConsultationSessionNote,
+  ConsultationSessionOutcome,
   DoctorConsultation,
 } from '../types/consultation.types';
+
+type CloseConsultationPayload = {
+  outcome?: 'COMPLETED' | 'USER_MISSED' | 'PROVIDER_NO_SHOW' | 'RESCHEDULE_NEEDED' | string;
+  privateNote?: string;
+  userSummary?: string;
+  recommendedNextStep?: string;
+  restorePackageSession?: boolean;
+  holdProviderPayout?: boolean;
+};
 
 @Service()
 export class ConsultationApiService {
@@ -56,6 +66,24 @@ export class ConsultationApiService {
       this.http.get<ConsultationAssessmentSummary>(
         `${this.apiBase}${API_PATHS.CONSULTATIONS}/${consultationId}/assessment-summary`,
       ),
+    );
+  }
+
+  closeConsultation(consultationId: string, payload?: CloseConsultationPayload) {
+    if (payload?.outcome) {
+      return firstValueFrom(
+        this.http.post<{
+          consultation: DoctorConsultation;
+          sessionOutcome?: ConsultationSessionOutcome | null;
+        }>(`${this.apiBase}${API_PATHS.CONSULTATIONS}/${consultationId}/outcome`, payload),
+      );
+    }
+
+    return firstValueFrom(
+      this.http.post<{
+        consultation: DoctorConsultation;
+        sessionOutcome?: ConsultationSessionOutcome | null;
+      }>(`${this.apiBase}${API_PATHS.CONSULTATIONS}/${consultationId}/complete`, {}),
     );
   }
 }

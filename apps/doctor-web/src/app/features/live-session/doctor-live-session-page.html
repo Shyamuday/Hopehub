@@ -86,6 +86,111 @@
         </dl>
       </section>
 
+      <section class="session-outcome-card">
+        <div class="session-notes-head">
+          <div>
+            <h3>Session lifecycle</h3>
+            <p class="muted">Close the live session with the right outcome.</p>
+          </div>
+        </div>
+
+        @if (sessionOutcome(); as savedOutcome) {
+          <div class="outcome-saved">
+            <span class="status-badge completed">Closed</span>
+            <h4>{{ sessionOutcomeLabel(savedOutcome.outcome) }}</h4>
+            @if (savedOutcome.closedAt) {
+              <small>{{ savedOutcome.closedAt | date: 'medium' }}</small>
+            }
+            @if (savedOutcome.userSummary) {
+              <p><strong>User summary:</strong> {{ savedOutcome.userSummary }}</p>
+            }
+            @if (savedOutcome.recommendedNextStep) {
+              <p><strong>Next step:</strong> {{ savedOutcome.recommendedNextStep }}</p>
+            }
+            @if (savedOutcome.privateNote) {
+              <p class="private-note"><strong>Private:</strong> {{ savedOutcome.privateNote }}</p>
+            }
+          </div>
+        } @else {
+          <div class="outcome-form">
+            <label>
+              Outcome
+              <select
+                [value]="outcome()"
+                (change)="outcome.set($any($event.target).value)"
+                [disabled]="closingSession() || isSessionClosed()"
+              >
+                <option value="COMPLETED">Completed</option>
+                <option value="USER_MISSED">User missed</option>
+                <option value="PROVIDER_NO_SHOW">Provider no-show</option>
+                <option value="RESCHEDULE_NEEDED">Reschedule needed</option>
+              </select>
+            </label>
+
+            <label>
+              Summary for record
+              <textarea
+                rows="2"
+                placeholder="Short summary or what was discussed..."
+                [value]="outcomeUserSummary()"
+                (input)="outcomeUserSummary.set($any($event.target).value)"
+                [disabled]="closingSession() || isSessionClosed()"
+              ></textarea>
+            </label>
+
+            <label>
+              Recommended next step
+              <input
+                placeholder="Follow-up, self-care task, reschedule..."
+                [value]="outcomeRecommendedNextStep()"
+                (input)="outcomeRecommendedNextStep.set($any($event.target).value)"
+                [disabled]="closingSession() || isSessionClosed()"
+              />
+            </label>
+
+            <label>
+              Private note
+              <textarea
+                rows="2"
+                placeholder="Internal care/admin note..."
+                [value]="outcomePrivateNote()"
+                (input)="outcomePrivateNote.set($any($event.target).value)"
+                [disabled]="closingSession() || isSessionClosed()"
+              ></textarea>
+            </label>
+
+            <label class="check-row">
+              <input
+                type="checkbox"
+                [checked]="outcomeRestorePackageSession()"
+                (change)="outcomeRestorePackageSession.set($any($event.target).checked)"
+                [disabled]="closingSession() || isSessionClosed()"
+              />
+              Restore package/session credit
+            </label>
+
+            <label class="check-row">
+              <input
+                type="checkbox"
+                [checked]="outcomeHoldProviderPayout()"
+                (change)="outcomeHoldProviderPayout.set($any($event.target).checked)"
+                [disabled]="closingSession() || isSessionClosed()"
+              />
+              Hold provider payout
+            </label>
+
+            <button
+              type="button"
+              class="btn-primary full-width"
+              (click)="closeSession()"
+              [disabled]="closingSession() || isSessionClosed()"
+            >
+              {{ closingSession() ? 'Closing...' : 'Save outcome & close' }}
+            </button>
+          </div>
+        }
+      </section>
+
       <section class="assessment-summary-card">
         <div class="session-notes-head">
           <div>

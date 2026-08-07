@@ -61,7 +61,8 @@
 
 .panel,
 .session-notes-card,
-.assessment-summary-card {
+.assessment-summary-card,
+.session-outcome-card {
   border: 1px solid #dbeafe;
   border-radius: 14px;
   background: #fff;
@@ -157,10 +158,105 @@
 }
 
 .session-note-actions .btn-primary:disabled,
+.outcome-form .btn-primary:disabled,
 .danger:disabled,
 .ghost:disabled {
   cursor: not-allowed;
   opacity: 0.55;
+}
+
+.session-outcome-card {
+  border-color: #fde68a;
+  background: #fffbeb;
+}
+
+.outcome-form {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.outcome-form label {
+  display: grid;
+  gap: 0.35rem;
+  color: #92400e;
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.outcome-form input,
+.outcome-form select,
+.outcome-form textarea {
+  width: 100%;
+  border: 1px solid #fcd34d;
+  border-radius: 8px;
+  background: #fff;
+  color: #0f172a;
+  font: inherit;
+  font-size: 0.92rem;
+  font-weight: 500;
+  padding: 0.65rem 0.75rem;
+  text-transform: none;
+}
+
+.outcome-form textarea {
+  resize: vertical;
+}
+
+.outcome-form .check-row {
+  align-items: center;
+  display: flex;
+  flex-direction: row;
+  gap: 0.55rem;
+  text-transform: none;
+}
+
+.outcome-form .check-row input {
+  width: auto;
+}
+
+.outcome-form .full-width {
+  width: 100%;
+  justify-content: center;
+}
+
+.outcome-saved {
+  display: grid;
+  gap: 0.45rem;
+  border: 1px solid #bbf7d0;
+  border-radius: 10px;
+  background: #f0fdf4;
+  padding: 0.85rem;
+}
+
+.outcome-saved h4 {
+  margin: 0;
+  color: #14532d;
+  font-size: 1.05rem;
+}
+
+.outcome-saved p,
+.outcome-saved small {
+  margin: 0;
+  color: #475569;
+}
+
+.outcome-saved .private-note {
+  color: #92400e;
+}
+
+.status-badge {
+  justify-self: start;
+  border-radius: 999px;
+  padding: 0.25rem 0.55rem;
+  font-size: 0.72rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.status-badge.completed {
+  background: #dcfce7;
+  color: #166534;
 }
 
 .session-note-list {
