@@ -90,6 +90,11 @@ export class ProfilePage {
     void this.loadCarePricingTemplates();
   }
 
+  isListenerProfile(): boolean {
+    const type = this.profileModel().careTeamType;
+    return type === 'PSYCHOLOGY_STUDENT_VOLUNTEER' || type === 'PEER_SUPPORT_VOLUNTEER';
+  }
+
   async loadCarePricingTemplates() {
     try {
       const res = await firstValueFrom(

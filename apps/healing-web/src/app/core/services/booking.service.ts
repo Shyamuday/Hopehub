@@ -255,6 +255,9 @@ export type HopeHubProvider = {
   supportNotFor?: string[];
   bookingCtaLabel?: string;
   isClinicalCare?: boolean;
+  isScreenedListener?: boolean;
+  listenerTrustLabel?: string | null;
+  listenerTrustNote?: string | null;
   careTeamType?: string;
   bio?: string | null;
   yearsOfExperience?: number | null;

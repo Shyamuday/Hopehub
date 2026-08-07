@@ -34,6 +34,8 @@ export type CounsellorApplicationPayload = {
   listenerScreeningAnswers?: Array<{ questionId: string; optionId: string }>;
   listenerGuidelinesAccepted?: boolean;
   listenerGuidelinesVersion?: string;
+  listenerGuidelinesReadStartedAt?: string | null;
+  listenerGuidelinesReadSeconds?: number;
   whyJoin: string;
 };
 

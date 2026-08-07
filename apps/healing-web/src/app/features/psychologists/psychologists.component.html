@@ -153,6 +153,11 @@
                 >
                   {{ providerTierLabel(provider) }}
                 </span>
+                @if (provider.isScreenedListener) {
+                  <span class="mt-1 inline-flex rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700 ring-1 ring-emerald-200">
+                    {{ provider.listenerTrustLabel || 'Screened listener' }}
+                  </span>
+                }
                 <p class="mt-2 text-xs font-bold uppercase tracking-wide text-gray-500">
                   {{ providerRoleLabel(provider) }}
                 </p>
@@ -202,6 +207,11 @@
               <p>{{ providerBestFor(provider).slice(0, 3).join(' · ') }}</p>
               <p class="mt-2 font-bold text-gray-900">Scope</p>
               <p>{{ providerScope(provider) }}</p>
+              @if (provider.isScreenedListener) {
+                <p class="mt-2 rounded-md bg-emerald-50 px-2 py-1 font-bold text-emerald-800">
+                  {{ provider.listenerTrustNote }}
+                </p>
+              }
             </div>
             @if (provider.focusAreas.length) {
               <div class="mt-4 flex flex-wrap gap-2">

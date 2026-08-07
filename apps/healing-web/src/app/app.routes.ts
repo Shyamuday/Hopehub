@@ -265,6 +265,20 @@ export const routes: Routes = [
     },
   },
   {
+    path: 'listener-training',
+    loadComponent: () =>
+      import('./features/listener-training/listener-training.component').then(
+        (m) => m.ListenerTrainingComponent,
+      ),
+    title: 'Listener Training - Hope Hub',
+    data: {
+      breadcrumb: 'Listener training',
+      description: 'Practical Hope Hub emotional support listener training and examples',
+      keywords:
+        'Hope Hub listener training, emotional support listener orientation, peer support training',
+    },
+  },
+  {
     path: 'exercises',
     loadComponent: () =>
       import('./shared/components/exercises/exercises.component').then((m) => m.ExercisesComponent),

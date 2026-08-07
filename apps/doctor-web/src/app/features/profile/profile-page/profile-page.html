@@ -155,6 +155,19 @@ Hypertension"
           <textarea id="concernsHandled" rows="4" [formField]="profileForm.concernsHandledText"></textarea>
         </div>
 
+        @if (isListenerProfile()) {
+          <div class="listener-profile-checklist">
+            <strong>Listener profile completion checklist</strong>
+            <ul>
+              <li>Add a clear profile photo so users can trust who they are speaking with.</li>
+              <li>Keep gender, languages, availability, session types, and concerns handled updated.</li>
+              <li>Write a short bio that says you provide emotional support listening, not therapy.</li>
+              <li>Use the safety escalation note to explain when you involve Hope Hub/professional support.</li>
+              <li>Keep chat/voice/video service prices and availability accurate before going live.</li>
+            </ul>
+          </div>
+        }
+
         <label for="introSessionTitle">Intro session title</label>
         <input id="introSessionTitle" [formField]="profileForm.introSessionTitle" placeholder="e.g. Calm first conversation" />
 

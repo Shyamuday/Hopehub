@@ -14,13 +14,20 @@ import {
 } from '@prisma/client';
 import { prisma } from '../db.js';
 import { notifyAdminsAboutProviderApplication } from '../services/provider-application-notifications.js';
-import { asyncRoute } from '../utils/helpers.js';
+import { asyncRoute, writeAuditLog } from '../utils/helpers.js';
 
 export const counsellorApplicationsRouter = Router();
 
 const optionalText = (max: number) => z.string().trim().max(max).optional().or(z.literal(''));
+const optionalDate = z.preprocess(
+  (value) => (value === '' || value == null ? undefined : value),
+  z.coerce.date().optional()
+);
 const LISTENER_SCREENING_PASS_SCORE = 16;
 const LISTENER_GUIDELINES_VERSION = 'listener-guidelines-v1-2026-08-07';
+const MINIMUM_LISTENER_GUIDELINES_READ_SECONDS = 120;
+const MAX_FAILED_LISTENER_SCREENING_ATTEMPTS = 3;
+const LISTENER_SCREENING_COOLDOWN_HOURS = 24;
 const AUTO_APPROVED_LISTENER_CHAT_VOICE_PRICE_IN_PAISE = 9900;
 const AUTO_APPROVED_LISTENER_VIDEO_PRICE_IN_PAISE = 29900;
 const AUTO_APPROVED_LISTENER_DURATION_MINUTES = 30;
@@ -82,6 +89,8 @@ export const counsellorApplicationSchema = z
     listenerScreeningAnswers: z.array(listenerScreeningAnswerSchema).optional().default([]),
     listenerGuidelinesAccepted: z.boolean().optional().default(false),
     listenerGuidelinesVersion: z.string().trim().max(120).optional().or(z.literal('')),
+    listenerGuidelinesReadStartedAt: optionalDate,
+    listenerGuidelinesReadSeconds: z.coerce.number().int().min(0).max(86400).optional().default(0),
     whyJoin: z.string().trim().min(40).max(3000),
     entryPage: z.string().trim().max(500).optional().or(z.literal(''))
   })
@@ -172,6 +181,10 @@ export const counsellorApplicationSchema = z
 
 function isListenerTrack(track: string) {
   return track === 'PSYCHOLOGY_STUDENT_VOLUNTEER' || track === 'PEER_SUPPORT_VOLUNTEER';
+}
+
+function listenerAttemptCooldownStart(now = new Date()) {
+  return new Date(now.getTime() - LISTENER_SCREENING_COOLDOWN_HOURS * 60 * 60 * 1000);
 }
 
 function scoreListenerScreening(answers: Array<{ questionId: string; optionId: string }>): {
@@ -438,17 +451,71 @@ counsellorApplicationsRouter.post(
   '/counsellor-applications',
   asyncRoute(async (req, res) => {
     const body = counsellorApplicationSchema.parse(req.body);
-    const listenerScreening = isListenerTrack(body.applicationTrack)
+    const isListenerApplication = isListenerTrack(body.applicationTrack);
+    if (isListenerApplication) {
+      const cooldownStart = listenerAttemptCooldownStart();
+      const recentFailedAttempts = await prisma.counsellorApplication.count({
+        where: {
+          applicationTrack: {
+            in: ['PSYCHOLOGY_STUDENT_VOLUNTEER', 'PEER_SUPPORT_VOLUNTEER']
+          },
+          listenerScreeningCompletedAt: { gte: cooldownStart },
+          listenerScreeningPassed: false,
+          OR: [{ email: { equals: body.email, mode: 'insensitive' } }, { phone: body.phone }]
+        }
+      });
+
+      if (recentFailedAttempts >= MAX_FAILED_LISTENER_SCREENING_ATTEMPTS) {
+        await writeAuditLog({
+          action: 'LISTENER_SCREENING_ATTEMPT_LOCKED',
+          targetType: 'CounsellorApplication',
+          targetId: body.email,
+          summary: `Blocked listener screening retry for ${body.email} after ${recentFailedAttempts} failed attempts.`,
+          metadata: {
+            email: body.email,
+            phone: body.phone,
+            track: body.applicationTrack,
+            recentFailedAttempts,
+            cooldownHours: LISTENER_SCREENING_COOLDOWN_HOURS
+          }
+        });
+        return res.status(429).json({
+          message:
+            'Too many unsuccessful listener screening attempts. Please wait 24 hours before trying again, or submit through manual review with the Hope Hub team.'
+        });
+      }
+    }
+
+    const listenerScreening = isListenerApplication
       ? scoreListenerScreening(body.listenerScreeningAnswers)
       : null;
     const shouldAutoApprove = Boolean(listenerScreening?.passed);
-    if (shouldAutoApprove && !body.listenerGuidelinesAccepted) {
-      return res.status(400).json({
-        message: 'Read and accept the listener guidelines before auto-approval.'
-      });
+    const listenerGuidelinesReadStartedAt = body.listenerGuidelinesReadStartedAt ?? null;
+    const listenerGuidelinesReadSeconds = Math.floor(body.listenerGuidelinesReadSeconds ?? 0);
+    const listenerGuidelinesServerElapsedSeconds = listenerGuidelinesReadStartedAt
+      ? Math.floor((Date.now() - listenerGuidelinesReadStartedAt.getTime()) / 1000)
+      : 0;
+    const listenerGuidelinesReadTimeSatisfied =
+      listenerGuidelinesReadSeconds >= MINIMUM_LISTENER_GUIDELINES_READ_SECONDS &&
+      listenerGuidelinesServerElapsedSeconds >= MINIMUM_LISTENER_GUIDELINES_READ_SECONDS;
+
+    if (shouldAutoApprove) {
+      if (!body.listenerGuidelinesAccepted) {
+        return res.status(400).json({
+          message: 'Read and accept the listener guidelines before auto-approval.'
+        });
+      }
+      if (!listenerGuidelinesReadTimeSatisfied) {
+        return res.status(400).json({
+          message:
+            'Please spend at least 2 minutes reading the listener guidelines before auto-approval.'
+        });
+      }
     }
 
     const application = await prisma.$transaction(async (tx) => {
+      const hasAcceptedListenerGuidelines =
+        isListenerApplication && Boolean(body.listenerGuidelinesAccepted);
       const created = await tx.counsellorApplication.create({
         data: {
           applicationTrack: body.applicationTrack,
@@ -472,20 +539,26 @@ counsellorApplicationsRouter.post(
           supervisionDetails: body.supervisionDetails || null,
           livedExperienceSummary: body.livedExperienceSummary || null,
           agreesToNonClinicalRole: body.agreesToNonClinicalRole,
-          listenerScreeningAnswers: isListenerTrack(body.applicationTrack)
+          listenerScreeningAnswers: isListenerApplication
             ? body.listenerScreeningAnswers
             : undefined,
           listenerScreeningScore: listenerScreening?.score,
           listenerScreeningMaxScore: listenerScreening?.maxScore,
           listenerScreeningPassed: listenerScreening?.passed ?? false,
           listenerScreeningCompletedAt: listenerScreening ? new Date() : null,
-          listenerGuidelinesAccepted: shouldAutoApprove
+          listenerGuidelinesAccepted: hasAcceptedListenerGuidelines
             ? Boolean(body.listenerGuidelinesAccepted)
             : false,
-          listenerGuidelinesVersion: shouldAutoApprove
+          listenerGuidelinesVersion: hasAcceptedListenerGuidelines
             ? body.listenerGuidelinesVersion || LISTENER_GUIDELINES_VERSION
             : null,
-          listenerGuidelinesAcceptedAt: shouldAutoApprove ? new Date() : null,
+          listenerGuidelinesReadStartedAt: hasAcceptedListenerGuidelines
+            ? listenerGuidelinesReadStartedAt
+            : null,
+          listenerGuidelinesReadSeconds: hasAcceptedListenerGuidelines
+            ? listenerGuidelinesReadSeconds
+            : null,
+          listenerGuidelinesAcceptedAt: hasAcceptedListenerGuidelines ? new Date() : null,
           autoApprovedAt: shouldAutoApprove ? new Date() : null,
           whyJoin: body.whyJoin,
           entryPage: body.entryPage || req.get('referer') || null,
@@ -527,6 +600,34 @@ counsellorApplicationsRouter.post(
     if (!shouldAutoApprove) {
       await notifyAdminsAboutProviderApplication(application);
     }
+
+    await writeAuditLog({
+      action: shouldAutoApprove
+        ? 'LISTENER_APPLICATION_AUTO_APPROVED'
+        : isListenerApplication
+          ? 'LISTENER_APPLICATION_SUBMITTED_FOR_REVIEW'
+          : 'COUNSELLOR_APPLICATION_SUBMITTED',
+      targetType: 'CounsellorApplication',
+      targetId: application.id,
+      summary: shouldAutoApprove
+        ? `Auto-approved listener ${application.fullName} after screening.`
+        : isListenerApplication
+          ? `Listener ${application.fullName} submitted for manual review.`
+          : `Care contributor ${application.fullName} submitted an application.`,
+      metadata: {
+        track: application.applicationTrack,
+        careTeamType: application.careTeamType,
+        status: application.status,
+        screeningScore: listenerScreening?.score ?? null,
+        screeningMaxScore: listenerScreening?.maxScore ?? null,
+        screeningPassed: listenerScreening?.passed ?? null,
+        guidelinesAccepted: application.listenerGuidelinesAccepted,
+        guidelinesVersion: application.listenerGuidelinesVersion,
+        guidelinesReadSeconds: application.listenerGuidelinesReadSeconds,
+        autoApprovedAt: application.autoApprovedAt?.toISOString() ?? null,
+        autoApprovedDoctorUserId: application.autoApprovedDoctorUserId
+      }
+    });
 
     res.status(201).json({
       applicationId: application.id,

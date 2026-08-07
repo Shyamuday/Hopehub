@@ -1,0 +1,36 @@
+<main class="listener-training-page">
+  <section class="listener-training-hero">
+    <p>Hope Hub listener orientation</p>
+    <h1>Practical training for emotional support listeners</h1>
+    <span>Version: {{ version }}</span>
+  </section>
+
+  <section class="listener-training-grid" aria-label="Listener training modules">
+    @for (module of modules; track module.title) {
+      <article class="listener-training-card">
+        <h2>{{ module.title }}</h2>
+        <ul>
+          @for (point of module.points; track point) {
+            <li>{{ point }}</li>
+          }
+        </ul>
+        <div class="listener-training-example">
+          <p><strong>Use:</strong> {{ module.example.good }}</p>
+          <p><strong>Avoid:</strong> {{ module.example.avoid }}</p>
+        </div>
+      </article>
+    }
+  </section>
+
+  <section class="listener-training-note">
+    <h2>Golden rule</h2>
+    <p>
+      Be warm, boundaried, and safety-first. If the situation feels bigger than listening,
+      escalate to Hope Hub admin/professional support.
+    </p>
+    <div>
+      <a routerLink="/listener-guidelines">Read listener guidelines</a>
+      <a routerLink="/careers">Back to application</a>
+    </div>
+  </section>
+</main>

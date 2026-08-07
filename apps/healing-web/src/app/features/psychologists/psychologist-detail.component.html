@@ -20,6 +20,11 @@
               >
                 {{ providerTierLabel(p) }}
               </span>
+              @if (p.isScreenedListener) {
+                <span class="inline-flex rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700 ring-1 ring-emerald-200">
+                  {{ p.listenerTrustLabel || 'Screened emotional support listener' }}
+                </span>
+              }
               <p class="text-xs font-bold uppercase tracking-wide text-primary-800">
                 {{ providerRoleLabel(p) }}
               </p>
@@ -59,6 +64,11 @@
             <div class="mt-4 rounded-lg border border-gray-200 bg-gray-50 p-4 text-sm leading-6 text-gray-700">
               <strong class="text-gray-950">{{ providerRoleDescription(p) }}</strong>
               <p class="mt-2">{{ providerScope(p) }}</p>
+              @if (p.isScreenedListener) {
+                <p class="mt-3 rounded-md bg-emerald-50 px-3 py-2 text-sm font-bold text-emerald-800">
+                  {{ p.listenerTrustNote }}
+                </p>
+              }
             </div>
             <div class="mt-4 max-w-3xl">
               <div

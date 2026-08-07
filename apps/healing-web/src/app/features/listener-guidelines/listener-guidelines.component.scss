@@ -78,6 +78,13 @@
   padding: 1rem;
 }
 
+.listener-guidelines-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+}
+
+.listener-guidelines-actions a,
 .listener-guidelines-back {
   color: #047857;
   font-weight: 900;

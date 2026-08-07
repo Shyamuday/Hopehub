@@ -998,6 +998,8 @@ function providerPublicPayload(
   const careTeamType = mental?.careTeamType ?? 'MENTAL_WELLNESS_PROFESSIONAL';
   const supportRole = careTeamType;
   const roleDisplay = careTeamRoleDisplay(careTeamType, defaults.careRoleLabel);
+  const isScreenedListener =
+    careTeamType === 'PSYCHOLOGY_STUDENT_VOLUNTEER' || careTeamType === 'PEER_SUPPORT_VOLUNTEER';
   const activeServices = (mental?.services ?? [])
     .filter((service) => service.isActive)
     .map((service) => {
@@ -1031,6 +1033,11 @@ function providerPublicPayload(
     supportNotFor: roleDisplay.notFor,
     bookingCtaLabel: roleDisplay.ctaLabel,
     isClinicalCare: roleDisplay.isClinicalCare,
+    isScreenedListener,
+    listenerTrustLabel: isScreenedListener ? 'Screened emotional support listener' : null,
+    listenerTrustNote: isScreenedListener
+      ? 'Passed Hope Hub listener screening and follows non-clinical safety guidelines.'
+      : null,
     careTeamType,
     bio: provider.bio,
     yearsOfExperience: provider.yearsOfExperience,

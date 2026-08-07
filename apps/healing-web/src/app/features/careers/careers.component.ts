@@ -51,9 +51,11 @@ export class CareersComponent implements OnDestroy {
   readonly listenerGuidelinesMinimumReadSeconds = 120;
   readonly listenerGuidelinesRemainingSeconds = signal(this.listenerGuidelinesMinimumReadSeconds);
   readonly listenerGuidelinesTimerComplete = signal(false);
+  readonly listenerGuidelinesReadStartedAt = signal<string | null>(null);
   readonly listenerGuidelinesVersion = LISTENER_GUIDELINES_VERSION;
   readonly listenerGuidelinesSections = LISTENER_GUIDELINES_SECTIONS;
   private listenerGuidelinesTimerId: ReturnType<typeof setInterval> | null = null;
+  private listenerGuidelinesReadStartedAtMs: number | null = null;
   readonly applicationTracks: Array<{
     value: CareTeamMemberType;
     track: CareContributorTrack;
@@ -461,6 +463,11 @@ export class CareersComponent implements OnDestroy {
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   }
 
+  listenerGuidelinesReadSeconds(): number {
+    if (!this.listenerGuidelinesReadStartedAtMs) return 0;
+    return Math.max(0, Math.floor((Date.now() - this.listenerGuidelinesReadStartedAtMs) / 1000));
+  }
+
   onGuidelinesScroll(event: Event): void {
     const element = event.target as HTMLElement | null;
     if (!element) return;
@@ -554,6 +561,12 @@ export class CareersComponent implements OnDestroy {
           listenerGuidelinesVersion: this.listenerGuidelinesRequired()
             ? this.listenerGuidelinesVersion
             : undefined,
+          listenerGuidelinesReadStartedAt: this.listenerGuidelinesRequired()
+            ? this.listenerGuidelinesReadStartedAt()
+            : undefined,
+          listenerGuidelinesReadSeconds: this.listenerGuidelinesRequired()
+            ? this.listenerGuidelinesReadSeconds()
+            : undefined,
           whyJoin: value.whyJoin || '',
         })
         .subscribe({
@@ -643,12 +656,19 @@ export class CareersComponent implements OnDestroy {
     this.listenerGuidelinesAccepted.set(false);
     this.listenerGuidelinesRemainingSeconds.set(this.listenerGuidelinesMinimumReadSeconds);
     this.listenerGuidelinesTimerComplete.set(false);
+    this.listenerGuidelinesReadStartedAt.set(null);
+    this.listenerGuidelinesReadStartedAtMs = null;
   }
 
   private startListenerGuidelinesTimer(): void {
     if (this.listenerGuidelinesTimerId) return;
+    this.listenerGuidelinesReadStartedAtMs = Date.now();
+    this.listenerGuidelinesReadStartedAt.set(
+      new Date(this.listenerGuidelinesReadStartedAtMs).toISOString(),
+    );
     this.listenerGuidelinesTimerId = setInterval(() => {
-      const nextRemaining = Math.max(0, this.listenerGuidelinesRemainingSeconds() - 1);
+      const elapsedSeconds = this.listenerGuidelinesReadSeconds();
+      const nextRemaining = Math.max(0, this.listenerGuidelinesMinimumReadSeconds - elapsedSeconds);
       this.listenerGuidelinesRemainingSeconds.set(nextRemaining);
       if (nextRemaining === 0) {
         this.listenerGuidelinesTimerComplete.set(true);

@@ -71,6 +71,55 @@
                 <p class="why"><strong>Non-clinical agreement:</strong> {{ application.agreesToNonClinicalRole ? 'Accepted' : 'Not accepted' }}</p>
               }
 
+              @if (application.applicationTrack !== 'PROFESSIONAL_PSYCHOLOGIST') {
+                <div class="listener-evidence">
+                  <div>
+                    <span>Screening</span>
+                    <strong>
+                      {{
+                        application.listenerScreeningScore != null
+                          ? application.listenerScreeningScore + '/' + application.listenerScreeningMaxScore
+                          : 'Not completed'
+                      }}
+                    </strong>
+                    <small>{{ application.listenerScreeningPassed ? 'Passed' : 'Manual review / not passed' }}</small>
+                  </div>
+                  <div>
+                    <span>Guidelines</span>
+                    <strong>{{ application.listenerGuidelinesAccepted ? 'Accepted' : 'Not accepted' }}</strong>
+                    <small>{{ application.listenerGuidelinesVersion || 'No version stored' }}</small>
+                  </div>
+                  <div>
+                    <span>Reading time</span>
+                    <strong>{{ formatReadSeconds(application.listenerGuidelinesReadSeconds) }}</strong>
+                    <small>
+                      Started:
+                      {{
+                        application.listenerGuidelinesReadStartedAt
+                          ? (application.listenerGuidelinesReadStartedAt | date: 'short')
+                          : 'Not stored'
+                      }}
+                    </small>
+                  </div>
+                  <div>
+                    <span>Auto approval</span>
+                    <strong>{{ application.autoApprovedAt ? 'Yes' : 'No' }}</strong>
+                    <small>
+                      {{
+                        application.autoApprovedAt
+                          ? (application.autoApprovedAt | date: 'short')
+                          : 'Needs review or did not pass'
+                      }}
+                    </small>
+                  </div>
+                  <div>
+                    <span>Default listener pricing</span>
+                    <strong>₹99 chat/voice · ₹299 video</strong>
+                    <small>30 min plans when auto-approved</small>
+                  </div>
+                </div>
+              }
+
               <p class="why"><strong>Why join:</strong> {{ application.whyJoin }}</p>
 
               <div class="links">

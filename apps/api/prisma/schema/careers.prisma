@@ -110,6 +110,8 @@ model CounsellorApplication {
   listenerScreeningCompletedAt DateTime?
   listenerGuidelinesAccepted Boolean              @default(false)
   listenerGuidelinesVersion String?
+  listenerGuidelinesReadStartedAt DateTime?
+  listenerGuidelinesReadSeconds Int?
   listenerGuidelinesAcceptedAt DateTime?
   autoApprovedAt      DateTime?
   autoApprovedDoctorUserId String?
@@ -128,6 +130,7 @@ model CounsellorApplication {
   @@index([email])
   @@index([phone])
   @@index([specialization])
+  @@index([listenerScreeningPassed, listenerScreeningCompletedAt])
   @@index([createdAt])
 }
 

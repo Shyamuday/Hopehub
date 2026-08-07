@@ -49,6 +49,33 @@
   margin: 0;
 }
 
+.listener-evidence {
+  display: grid;
+  gap: 0.7rem;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.listener-evidence div {
+  border: 1px solid #bfdbfe;
+  border-radius: 0.65rem;
+  background: #eff6ff;
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.75rem;
+}
+
+.listener-evidence span,
+.listener-evidence small {
+  color: #475569;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.listener-evidence strong {
+  color: #1e3a8a;
+  font-size: 0.95rem;
+}
+
 .contributor-status-pending_orientation { background: #e0e7ff; color: #3730a3; }
 .contributor-status-active { background: #dcfce7; color: #166534; }
 .contributor-status-suspended,

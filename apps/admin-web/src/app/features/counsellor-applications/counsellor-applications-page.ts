@@ -198,6 +198,13 @@ export class CounsellorApplicationsPage implements OnInit {
     return gender ? labels[gender] || gender : 'Not provided';
   }
 
+  formatReadSeconds(seconds: number | null | undefined): string {
+    if (!seconds) return 'Not stored';
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes}m ${remainingSeconds}s`;
+  }
+
   contributorStatusClass(status: string): string {
     return `status contributor-status-${status.toLowerCase()}`;
   }

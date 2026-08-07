@@ -141,6 +141,33 @@
   }
 }
 
+.listener-profile-checklist {
+  border: 1px solid #bbf7d0;
+  border-radius: var(--radius-md);
+  background: #f0fdf4;
+  color: #14532d;
+  display: grid;
+  gap: 0.55rem;
+  margin: 0.8rem 0;
+  padding: 0.9rem;
+
+  strong {
+    font-size: var(--text-sm);
+  }
+
+  ul {
+    display: grid;
+    gap: 0.35rem;
+    margin: 0;
+    padding-left: 1.1rem;
+  }
+
+  li {
+    font-size: var(--text-sm);
+    line-height: var(--leading-relaxed);
+  }
+}
+
 .char-hint {
   font-size: var(--text-xs);
   color: var(--color-text-muted);
