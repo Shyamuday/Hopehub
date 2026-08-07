@@ -217,6 +217,45 @@
             </p>
           </div>
         }
+
+        @if (normalizedMode() !== 'chat' || callSessions().length) {
+          <div class="side-card call-history-card">
+            <div class="call-history-head">
+              <div>
+                <p class="side-eyebrow">Call activity</p>
+                <p class="mt-1 text-sm leading-6 text-slate-600">
+                  Recent voice/video attempts for this session.
+                </p>
+              </div>
+              <button
+                type="button"
+                class="ghost-btn ghost-btn--small"
+                (click)="loadCallSessions()"
+                [disabled]="callSessionsLoading()"
+              >
+                Refresh
+              </button>
+            </div>
+
+            @if (callSessionsLoading() && !callSessions().length) {
+              <p class="mt-3 text-sm font-semibold text-slate-500">Loading call activity...</p>
+            } @else if (!callSessions().length) {
+              <p class="mt-3 text-sm font-semibold text-slate-500">No calls yet.</p>
+            } @else {
+              <div class="call-history-list">
+                @for (call of callSessions(); track call.id) {
+                  <article class="call-history-item">
+                    <div>
+                      <strong>{{ call.mode === 'video' ? 'Video' : 'Voice' }}</strong>
+                      <span>{{ callStatusLabel(call.status) }}</span>
+                    </div>
+                    <small>{{ call.startedAt | date: 'short' }} · {{ callDurationLabel(call) }}</small>
+                  </article>
+                }
+              </div>
+            }
+          </div>
+        }
       </aside>
     </main>
   }

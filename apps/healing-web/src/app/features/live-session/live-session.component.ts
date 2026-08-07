@@ -4,6 +4,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AuthService } from '../../core/services/auth.service';
 import { BookingService } from '../../core/services/booking.service';
+import type { ConsultationCallSession } from '../../core/services/booking.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { HopeHubRealtimeService } from '../../core/services/realtime.service';
 import { User } from '../../core/models/auth.model';
@@ -80,6 +81,8 @@ export class LiveSessionComponent implements OnInit, OnDestroy {
   readonly draft = signal('');
   readonly socket = signal<CallSignalingSocket | null>(null);
   readonly iceServers = signal<IceServerConfig[]>([{ urls: 'stun:stun.l.google.com:19302' }]);
+  readonly callSessions = signal<ConsultationCallSession[]>([]);
+  readonly callSessionsLoading = signal(false);
   readonly refreshing = signal(false);
   readonly lastRefreshedAt = signal<Date | null>(null);
 
@@ -223,6 +226,18 @@ export class LiveSessionComponent implements OnInit, OnDestroy {
     return `Last checked ${last.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
   }
 
+  callStatusLabel(status: string): string {
+    return status ? status.replaceAll('_', ' ').toLowerCase() : 'unknown';
+  }
+
+  callDurationLabel(call: ConsultationCallSession): string {
+    const seconds = Math.max(0, Number(call.durationSeconds || 0));
+    if (!seconds) return call.endedAt ? '0s' : 'In progress';
+    const minutes = Math.floor(seconds / 60);
+    const remainder = seconds % 60;
+    return minutes ? `${minutes}m ${remainder}s` : `${remainder}s`;
+  }
+
   canInteract(): boolean {
     const consultation = this.consultation();
     const status = (consultation?.status || '').toUpperCase();
@@ -272,6 +287,21 @@ export class LiveSessionComponent implements OnInit, OnDestroy {
     if (this.consultationId) this.loadSession(this.consultationId);
   }
 
+  loadCallSessions(): void {
+    if (!this.consultationId) return;
+    this.callSessionsLoading.set(true);
+    this.bookingService.consultationCallSessions(this.consultationId).subscribe({
+      next: (res) => {
+        this.callSessions.set(res.callSessions || []);
+        this.callSessionsLoading.set(false);
+      },
+      error: () => {
+        this.callSessions.set([]);
+        this.callSessionsLoading.set(false);
+      },
+    });
+  }
+
   backToDashboard(): void {
     void this.router.navigate(['/dashboard']);
   }
@@ -304,6 +334,7 @@ export class LiveSessionComponent implements OnInit, OnDestroy {
     this.bookingService.consultation(id).subscribe({
       next: (res) => {
         this.consultation.set(res.consultation);
+        this.loadCallSessions();
         this.lastRefreshedAt.set(new Date());
         this.configureAutoRefresh();
         this.loading.set(false);

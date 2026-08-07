@@ -276,6 +276,63 @@
   text-transform: uppercase;
 }
 
+.ghost-btn--small {
+  font-size: 0.74rem;
+  padding: 0.4rem 0.65rem;
+}
+
+.call-history-card {
+  border-color: rgba(99, 102, 241, 0.18);
+}
+
+.call-history-head {
+  align-items: flex-start;
+  display: flex;
+  gap: 0.75rem;
+  justify-content: space-between;
+}
+
+.call-history-list {
+  display: grid;
+  gap: 0.55rem;
+  margin-top: 0.8rem;
+}
+
+.call-history-item {
+  display: grid;
+  gap: 0.25rem;
+  border: 1px solid #e0e7ff;
+  border-radius: 0.85rem;
+  background: #f8fafc;
+  padding: 0.7rem;
+}
+
+.call-history-item div {
+  align-items: center;
+  display: flex;
+  gap: 0.5rem;
+  justify-content: space-between;
+}
+
+.call-history-item strong {
+  color: #0f172a;
+}
+
+.call-history-item span {
+  border-radius: 999px;
+  background: #eef2ff;
+  color: #3730a3;
+  font-size: 0.7rem;
+  font-weight: 900;
+  padding: 0.18rem 0.5rem;
+  text-transform: capitalize;
+}
+
+.call-history-item small {
+  color: #64748b;
+  font-weight: 700;
+}
+
 @media (max-width: 960px) {
   .live-session-shell {
     grid-template-columns: 1fr;

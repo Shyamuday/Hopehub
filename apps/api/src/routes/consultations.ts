@@ -45,6 +45,30 @@ function serializeHopeHubAssessmentAttempt(attempt: {
   };
 }
 
+async function closeOpenCallSessionsForConsultation(consultationId: string, reason: string) {
+  const openCalls = await prisma.consultationCallSession.findMany({
+    where: { consultationId, endedAt: null }
+  });
+  const endedAt = new Date();
+  for (const call of openCalls) {
+    const startedFrom = call.answeredAt ?? call.startedAt;
+    const durationSeconds = Math.max(
+      0,
+      Math.round((endedAt.getTime() - startedFrom.getTime()) / 1000)
+    );
+    await prisma.consultationCallSession.update({
+      where: { id: call.id },
+      data: {
+        status: call.status === 'RINGING' ? 'MISSED' : 'ENDED',
+        endedAt,
+        durationSeconds,
+        endReason: reason,
+        lastSignalEvent: 'session:closed'
+      }
+    });
+  }
+}
+
 export function createConsultationsRouter(io: SocketIoServer) {
   const router = Router();
 
@@ -584,6 +608,7 @@ export function createConsultationsRouter(io: SocketIoServer) {
       }
 
       if (updated) {
+        await closeOpenCallSessionsForConsultation(updated.id, 'completed');
         const updatePayload = { consultationId: updated.id, status: updated.status };
         io.to(`${SOCKET_ROOM_PREFIXES.CONSULTATION}${updated.id}`).emit(
           SOCKET_EVENTS.CONSULTATION_UPDATED,
@@ -651,6 +676,10 @@ export function createConsultationsRouter(io: SocketIoServer) {
       }
 
       if (result?.consultation) {
+        await closeOpenCallSessionsForConsultation(
+          result.consultation.id,
+          result.sessionOutcome?.outcome || 'closed'
+        );
         const updatePayload = {
           consultationId: result.consultation.id,
           status: result.consultation.status

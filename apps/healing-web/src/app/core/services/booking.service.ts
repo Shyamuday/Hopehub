@@ -130,6 +130,21 @@ export type CareTeamServiceQuote = {
   };
 };
 
+export type ConsultationCallSession = {
+  id: string;
+  consultationId: string;
+  initiatedByUserId: string;
+  targetUserId: string;
+  mode: string;
+  status: string;
+  startedAt: string;
+  answeredAt?: string | null;
+  endedAt?: string | null;
+  durationSeconds?: number | null;
+  endReason?: string | null;
+  lastSignalEvent?: string | null;
+};
+
 export type HopeHubOfferingAccess = {
   accessMode: string;
   canAccess: boolean;
@@ -360,6 +375,14 @@ export class BookingService {
     return this.http.post<{ message: any }>(
       `${this.apiUrl}/consultations/${encodeURIComponent(consultationId)}/messages`,
       { body },
+    );
+  }
+
+  consultationCallSessions(
+    consultationId: string,
+  ): Observable<{ callSessions: ConsultationCallSession[] }> {
+    return this.http.get<{ callSessions: ConsultationCallSession[] }>(
+      `${this.apiUrl}/consultations/${encodeURIComponent(consultationId)}/call-sessions`,
     );
   }
 
