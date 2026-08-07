@@ -111,8 +111,11 @@
           </div>
         } @else {
           <div class="live-empty-card">
-            <p>{{ message() }}</p>
-            <a routerLink="/contact" class="btn-secondary">Book a scheduled session</a>
+            <h3>{{ unavailableTitle() }}</h3>
+            <p>{{ message() || unavailableMessage() }}</p>
+            <button type="button" class="btn-secondary" (click)="bookConsultation()">
+              Book consultation
+            </button>
           </div>
         }
 

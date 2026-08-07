@@ -141,6 +141,23 @@ export class LiveConnectComponent implements OnInit {
     return 'Open chat';
   }
 
+  unavailableTitle(): string {
+    return `No ${this.modeLabel().toLowerCase()} expert is live right now`;
+  }
+
+  unavailableMessage(): string {
+    return `You can still book a consultation and we will route you to the right Hope Hub expert for ${this.modeLabel().toLowerCase()} support.`;
+  }
+
+  bookConsultation(): void {
+    void this.router.navigate(['/contact'], {
+      queryParams: {
+        source: 'live-connect',
+        mode: this.mode(),
+      },
+    });
+  }
+
   groupLastMessageLabel(group: HopeHubLiveGroup): string {
     const message = group.lastMessage;
     if (!message?.body) return 'No messages yet — be the first to say hello.';
@@ -335,9 +352,7 @@ export class LiveConnectComponent implements OnInit {
           this.providers.set(res.providers.slice(0, 8));
           this.loading.set(false);
           if (!res.providers.length) {
-            this.message.set(
-              `No ${this.modeLabel().toLowerCase()} experts are live in this tab right now.`,
-            );
+            this.message.set(this.unavailableMessage());
           }
         },
         error: () => {
