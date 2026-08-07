@@ -237,6 +237,16 @@ export class LiveSessionComponent implements OnInit, OnDestroy {
     return this.canInteract() && mode !== 'chat';
   }
 
+  allowAudioCall(): boolean {
+    const mode = this.normalizedMode();
+    return mode === 'voice' || mode === 'video' || mode === 'session';
+  }
+
+  allowVideoCall(): boolean {
+    const mode = this.normalizedMode();
+    return mode === 'video' || mode === 'session';
+  }
+
   isOwnMessage(message: LiveSessionMessage): boolean {
     return message.senderId === this.user()?.id || message.sender?.id === this.user()?.id;
   }

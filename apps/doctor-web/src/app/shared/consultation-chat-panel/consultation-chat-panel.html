@@ -9,6 +9,8 @@
     [socket]="consultationSocket()"
     [iceServers]="iceServers()"
     [enabled]="callEnabled()"
+    [allowAudio]="allowAudio"
+    [allowVideo]="allowVideo"
   />
 
   @if (error()) {
@@ -34,14 +36,18 @@
     }
   </div>
 
-  <div class="chat-compose">
-    <textarea
-      rows="3"
-      placeholder="Type a message to the patient…"
-      [formField]="draftForm.body"
-    ></textarea>
-    <button type="button" (click)="send()" [disabled]="sending() || !draftModel().body.trim()">
-      {{ sending() ? 'Sending…' : 'Send' }}
-    </button>
-  </div>
+  @if (interactionEnabled) {
+    <div class="chat-compose">
+      <textarea
+        rows="3"
+        placeholder="Type a message to the patient…"
+        [formField]="draftForm.body"
+      ></textarea>
+      <button type="button" (click)="send()" [disabled]="sending() || !draftModel().body.trim()">
+        {{ sending() ? 'Sending…' : 'Send' }}
+      </button>
+    </div>
+  } @else {
+    <p class="locked-message">{{ lockedMessage }}</p>
+  }
 </section>

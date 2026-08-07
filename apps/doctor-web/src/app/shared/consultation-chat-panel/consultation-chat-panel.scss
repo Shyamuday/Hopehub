@@ -60,6 +60,16 @@
   color: #b91c1c;
 }
 
+.locked-message {
+  border-radius: 10px;
+  background: #f8fafc;
+  color: #64748b;
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin: 0;
+  padding: 0.85rem;
+}
+
 @media (max-width: 768px) {
   .chat-head,
   .chat-meta {

@@ -104,15 +104,37 @@ export class DoctorLiveSessionPage implements OnInit {
   }
 
   sessionModeLabel(): string {
+    const mode = this.sessionMode();
+    if (mode === 'video') return 'Video';
+    if (mode === 'voice') return 'Voice';
+    if (mode === 'chat') return 'Chat';
+    return 'Live';
+  }
+
+  sessionMode(): 'chat' | 'voice' | 'video' | 'live' {
     const raw = String(
       this.consultation()?.intakeAnswers?.['quickTalkMode'] ||
         this.consultation()?.intakeAnswers?.['sessionMode'] ||
         '',
     ).toLowerCase();
-    if (raw.includes('video')) return 'Video';
-    if (raw.includes('voice') || raw.includes('audio')) return 'Voice';
-    if (raw.includes('chat')) return 'Chat';
-    return 'Live';
+    if (raw.includes('video')) return 'video';
+    if (raw.includes('voice') || raw.includes('audio')) return 'voice';
+    if (raw.includes('chat')) return 'chat';
+    return 'live';
+  }
+
+  showCallControls(): boolean {
+    return this.sessionMode() !== 'chat';
+  }
+
+  allowAudioCall(): boolean {
+    const mode = this.sessionMode();
+    return mode === 'voice' || mode === 'video' || mode === 'live';
+  }
+
+  allowVideoCall(): boolean {
+    const mode = this.sessionMode();
+    return mode === 'video' || mode === 'live';
   }
 
   concernLabel(): string {

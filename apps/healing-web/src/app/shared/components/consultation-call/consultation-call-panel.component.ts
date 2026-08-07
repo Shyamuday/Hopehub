@@ -27,6 +27,8 @@ export class ConsultationCallPanelComponent implements OnChanges, OnDestroy {
   @Input() socket: CallSignalingSocket | null = null;
   @Input() iceServers: IceServerConfig[] = [{ urls: 'stun:stun.l.google.com:19302' }];
   @Input() enabled = true;
+  @Input() allowAudio = true;
+  @Input() allowVideo = true;
 
   @ViewChild('localVideo') localVideoRef?: ElementRef<HTMLVideoElement>;
   @ViewChild('remoteVideo') remoteVideoRef?: ElementRef<HTMLVideoElement>;
@@ -88,7 +90,13 @@ export class ConsultationCallPanelComponent implements OnChanges, OnDestroy {
   }
 
   canCall(): boolean {
-    return this.enabled && !!this.consultationId && !!this.targetUserId && !!this.socket;
+    return (
+      this.enabled &&
+      (this.allowAudio || this.allowVideo) &&
+      !!this.consultationId &&
+      !!this.targetUserId &&
+      !!this.socket
+    );
   }
 
   isVideoActive(): boolean {
@@ -99,8 +107,14 @@ export class ConsultationCallPanelComponent implements OnChanges, OnDestroy {
   }
 
   statusLabel(): string {
+    const idleLabel =
+      this.allowAudio && this.allowVideo
+        ? 'Voice & video consultation available'
+        : this.allowVideo
+          ? 'Video consultation available'
+          : 'Voice consultation available';
     const map: Record<string, string> = {
-      idle: 'Voice & video consultation available',
+      idle: idleLabel,
       ringing: this.call.incomingCall() ? 'Incoming call...' : 'Calling...',
       connecting: 'Connecting...',
       connected: this.call.callMode() === 'video' ? 'On video call' : 'On voice call',
@@ -120,6 +134,7 @@ export class ConsultationCallPanelComponent implements OnChanges, OnDestroy {
   }
 
   async start(mode: CallMode): Promise<void> {
+    if ((mode === 'audio' && !this.allowAudio) || (mode === 'video' && !this.allowVideo)) return;
     if (!this.socket || !this.consultationId || !this.targetUserId) return;
     this.busy.set(true);
     try {

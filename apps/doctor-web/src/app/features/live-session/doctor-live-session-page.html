@@ -51,7 +51,14 @@
           </div>
         </div>
 
-        <app-consultation-chat-panel [consultationId]="active.id" />
+        <app-consultation-chat-panel
+          [consultationId]="active.id"
+          [interactionEnabled]="!isSessionClosed()"
+          [showCallControls]="showCallControls()"
+          [allowAudio]="allowAudioCall()"
+          [allowVideo]="allowVideoCall()"
+          lockedMessage="This live session is closed. Conversation and calls are now read-only."
+        />
       </section>
     </main>
 

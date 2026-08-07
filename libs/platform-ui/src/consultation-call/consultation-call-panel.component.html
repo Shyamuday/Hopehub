@@ -4,8 +4,12 @@
       <span class="call-status">{{ statusLabel() }}</span>
       <div class="call-actions">
         @if (call.state() === 'idle' || call.state() === 'ended') {
-          <button type="button" class="btn-voice" (click)="start('audio')" [disabled]="busy()">Voice call</button>
-          <button type="button" class="btn-video" (click)="start('video')" [disabled]="busy()">Video call</button>
+          @if (allowAudio) {
+            <button type="button" class="btn-voice" (click)="start('audio')" [disabled]="busy()">Voice call</button>
+          }
+          @if (allowVideo) {
+            <button type="button" class="btn-video" (click)="start('video')" [disabled]="busy()">Video call</button>
+          }
         }
         @if (call.state() === 'ringing' && call.incomingCall()) {
           <button type="button" class="btn-accept" (click)="accept()">Accept</button>

@@ -14,7 +14,7 @@ import type { ConsultationMessage } from '../../core/types/consultation.types';
   selector: 'app-consultation-chat-panel',
   imports: [FormField, DatePipe, ConsultationCallPanelComponent],
   templateUrl: './consultation-chat-panel.html',
-  styleUrl: './consultation-chat-panel.scss'
+  styleUrl: './consultation-chat-panel.scss',
 })
 export class ConsultationChatPanelComponent implements OnChanges, OnDestroy {
   private readonly consultationApi = inject(ConsultationApiService);
@@ -22,6 +22,11 @@ export class ConsultationChatPanelComponent implements OnChanges, OnDestroy {
   private readonly http = inject(HttpClient);
 
   @Input({ required: true }) consultationId = '';
+  @Input() interactionEnabled = true;
+  @Input() showCallControls = true;
+  @Input() allowAudio = true;
+  @Input() allowVideo = true;
+  @Input() lockedMessage = 'This consultation is closed. Messages and calls are read-only.';
 
   readonly messages = signal<ConsultationMessage[]>([]);
   readonly loading = signal(false);
@@ -47,14 +52,23 @@ export class ConsultationChatPanelComponent implements OnChanges, OnDestroy {
   }
 
   constructor() {
-    this.realtime.connect(() => undefined, () => {
-      if (this.consultationId) void this.load();
-    });
+    this.realtime.connect(
+      () => undefined,
+      () => {
+        if (this.consultationId) void this.load();
+      },
+    );
     void this.loadIceServers();
   }
 
   callEnabled() {
-    return !!this.patientUserId() && !!this.consultationId;
+    return (
+      this.interactionEnabled &&
+      this.showCallControls &&
+      (this.allowAudio || this.allowVideo) &&
+      !!this.patientUserId() &&
+      !!this.consultationId
+    );
   }
 
   consultationSocket() {
@@ -64,7 +78,9 @@ export class ConsultationChatPanelComponent implements OnChanges, OnDestroy {
   private async loadIceServers() {
     try {
       const res = await firstValueFrom(
-        this.http.get<{ iceServers: IceServerConfig[] }>(`${environment.apiUrl}${API_PATHS.RTC_ICE_SERVERS}`)
+        this.http.get<{ iceServers: IceServerConfig[] }>(
+          `${environment.apiUrl}${API_PATHS.RTC_ICE_SERVERS}`,
+        ),
       );
       this.iceServers.set(res.iceServers);
     } catch {
@@ -92,7 +108,7 @@ export class ConsultationChatPanelComponent implements OnChanges, OnDestroy {
 
   async send() {
     const body = this.draftModel().body.trim();
-    if (!this.consultationId || !body) return;
+    if (!this.interactionEnabled || !this.consultationId || !body) return;
 
     this.sending.set(true);
     this.error.set('');
