@@ -1,6 +1,6 @@
 import { Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../../../environments/environment';
@@ -20,7 +20,7 @@ type LiveConnectMode = 'chat' | 'voice' | 'video';
 @Component({
   selector: 'app-live-connect',
   standalone: true,
-  imports: [FormsModule, PaymentStatusOverlayComponent, RouterLink],
+  imports: [FormsModule, PaymentStatusOverlayComponent, RouterModule],
   templateUrl: './live-connect.component.html',
   styleUrl: './live-connect.component.scss',
 })
@@ -43,7 +43,6 @@ export class LiveConnectComponent implements OnInit {
   readonly groupMessage = signal('');
   readonly newGroupTitle = signal('');
   readonly newGroupDescription = signal('');
-  readonly newGroupMode = signal<'CHAT' | 'VOICE' | 'VIDEO'>('CHAT');
   readonly startingProviderId = signal('');
   readonly view = signal<'providers' | 'groups'>('providers');
   readonly mode = signal<LiveConnectMode>('chat');
@@ -138,6 +137,10 @@ export class LiveConnectComponent implements OnInit {
     return group.status;
   }
 
+  liveGroupModeLabel(_group: HopeHubLiveGroup): string {
+    return 'Open chat';
+  }
+
   canHostGroups(): boolean {
     const role = this.currentUser()?.role;
     return role === 'DOCTOR' || role === 'ADMIN' || role === 'HR';
@@ -162,7 +165,7 @@ export class LiveConnectComponent implements OnInit {
       .createLiveGroup({
         title,
         description,
-        mode: this.newGroupMode(),
+        mode: 'CHAT',
         status: 'LIVE',
       })
       .subscribe({
@@ -173,7 +176,6 @@ export class LiveConnectComponent implements OnInit {
           ]);
           this.newGroupTitle.set('');
           this.newGroupDescription.set('');
-          this.newGroupMode.set('CHAT');
           this.creatingGroup.set(false);
           this.groupMessage.set('Group room is live. Opening it now.');
           this.notificationService.success('Group room created.');

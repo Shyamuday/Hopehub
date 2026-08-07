@@ -1,20 +1,9 @@
-import {
-  Component,
-  DestroyRef,
-  ElementRef,
-  OnDestroy,
-  OnInit,
-  ViewChild,
-  computed,
-  inject,
-  signal,
-} from '@angular/core';
+import { Component, DestroyRef, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterModule } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import type { Socket } from 'socket.io-client';
-import { Room, RoomEvent, Track } from 'livekit-client';
 import {
   AuthModalService,
   AuthService,
@@ -34,7 +23,7 @@ const GROUP_MESSAGE_EVENT = 'hopehub-group:message:new';
 @Component({
   selector: 'app-live-groups',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterModule],
   templateUrl: './live-groups.component.html',
   styleUrl: './live-groups.component.scss',
 })
@@ -56,14 +45,6 @@ export class LiveGroupsComponent implements OnInit, OnDestroy {
   readonly draft = signal('');
   readonly requiresLoginToSpeak = signal(false);
   readonly moderation = signal<HopeHubLiveGroupModeration | null>(null);
-  readonly joiningCall = signal(false);
-  readonly callConnected = signal(false);
-  readonly callError = signal('');
-  readonly callStatus = signal('');
-  readonly callParticipantCount = signal(0);
-  readonly listenOnly = signal(false);
-  readonly canPublishInCall = signal(false);
-  readonly speaking = signal(false);
   readonly shareMessage = signal('');
   readonly roomSettingsOpen = signal(false);
   readonly savingRoomSettings = signal(false);
@@ -76,12 +57,8 @@ export class LiveGroupsComponent implements OnInit, OnDestroy {
     () => !!this.currentUser() && !!this.draft().trim() && !this.sending(),
   );
 
-  @ViewChild('localMedia', { static: false }) localMedia?: ElementRef<HTMLElement>;
-  @ViewChild('remoteMedia', { static: false }) remoteMedia?: ElementRef<HTMLElement>;
-
   private groupId = '';
   private socket: Socket | null = null;
-  private liveKitRoom: Room | null = null;
 
   private readonly handleIncomingMessage = (raw: unknown) => {
     const message = raw as HopeHubLiveGroupMessage;
@@ -106,7 +83,6 @@ export class LiveGroupsComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.socket?.off?.(GROUP_MESSAGE_EVENT, this.handleIncomingMessage);
-    this.leaveCall();
   }
 
   isOwnMessage(message: HopeHubLiveGroupMessage): boolean {
@@ -126,27 +102,13 @@ export class LiveGroupsComponent implements OnInit, OnDestroy {
     return role === 'DOCTOR' || role === 'ADMIN' || role === 'HR';
   }
 
-  isCallRoom(): boolean {
-    const mode = this.group()?.mode;
-    return mode === 'VOICE' || mode === 'VIDEO';
-  }
-
-  callTitle(): string {
-    const room = this.group();
-    return room?.callTitle || room?.title || 'Live group call';
-  }
-
-  callButtonLabel(): string {
-    const mode = this.group()?.mode;
-    if (this.joiningCall()) return 'Joining...';
-    if (this.callConnected()) return 'Connected';
-    if (!this.currentUser()) return mode === 'VIDEO' ? 'Watch live' : 'Listen live';
-    return mode === 'VIDEO' ? 'Join video call' : 'Join voice call';
+  groupModeLabel(): string {
+    return 'Open chat';
   }
 
   signUpForFreeChat(): void {
     this.notificationService.info(
-      'Create a free account to speak in the group or start a free chat.',
+      'Create a free account to chat in the group or start a free consultation chat.',
     );
     this.authModalService.openRegister();
   }
@@ -228,71 +190,6 @@ export class LiveGroupsComponent implements OnInit, OnDestroy {
     });
   }
 
-  startGroupCall(mode: 'VOICE' | 'VIDEO'): void {
-    if (!this.currentUser()) {
-      this.signUpForFreeChat();
-      return;
-    }
-    if (!this.canHostGroups()) {
-      this.notificationService.warning('Only providers and admins can start group calls.');
-      return;
-    }
-
-    this.callError.set('');
-    this.callStatus.set(mode === 'VIDEO' ? 'Starting video room...' : 'Starting voice room...');
-    this.bookingService.updateLiveGroupMode(this.groupId, mode).subscribe({
-      next: (res) => {
-        this.group.set(res.group);
-        this.joinGroupCall();
-      },
-      error: (error) => {
-        const message = this.readErrorMessage(error);
-        this.callError.set(message);
-        this.callStatus.set('');
-        this.notificationService.error(message);
-      },
-    });
-  }
-
-  joinGroupCall(): void {
-    if (!this.isCallRoom()) {
-      this.callError.set('A provider or admin has not started voice/video for this group yet.');
-      return;
-    }
-    if (this.joiningCall() || this.callConnected()) return;
-
-    this.joiningCall.set(true);
-    this.callError.set('');
-    this.callStatus.set('Connecting to secure group room...');
-    this.bookingService.liveGroupCallToken(this.groupId).subscribe({
-      next: (res) => {
-        this.group.set(res.group);
-        this.moderation.set(res.moderation || null);
-        void this.connectLiveKit(res.url, res.token, res.mode === 'VIDEO', res.canPublish);
-      },
-      error: (error) => {
-        const message = this.readErrorMessage(error);
-        this.callError.set(message);
-        this.callStatus.set('');
-        this.joiningCall.set(false);
-        this.notificationService.error(message);
-      },
-    });
-  }
-
-  leaveCall(): void {
-    this.liveKitRoom?.disconnect();
-    this.liveKitRoom = null;
-    this.clearMedia();
-    this.callConnected.set(false);
-    this.joiningCall.set(false);
-    this.callParticipantCount.set(0);
-    this.listenOnly.set(false);
-    this.canPublishInCall.set(false);
-    this.speaking.set(false);
-    this.callStatus.set('');
-  }
-
   private loadGroup(): void {
     this.loading.set(true);
     this.error.set('');
@@ -320,46 +217,6 @@ export class LiveGroupsComponent implements OnInit, OnDestroy {
     this.socket = this.realtime.getSocket();
     this.socket?.off?.(GROUP_MESSAGE_EVENT, this.handleIncomingMessage);
     this.socket?.on?.(GROUP_MESSAGE_EVENT, this.handleIncomingMessage);
-  }
-
-  tryToSpeak(): void {
-    if (!this.currentUser()) {
-      this.signUpForFreeChat();
-      return;
-    }
-    if (this.moderation()?.isMuted) {
-      this.callError.set('You are muted by a moderator in this room.');
-      return;
-    }
-    if (!this.callConnected()) {
-      this.joinGroupCall();
-      return;
-    }
-    void this.enableSpeaking();
-  }
-
-  private async enableSpeaking(): Promise<void> {
-    const room = this.liveKitRoom;
-    if (!room) return;
-    if (!this.canPublishInCall()) {
-      this.signUpForFreeChat();
-      return;
-    }
-    try {
-      await room.localParticipant.setMicrophoneEnabled(true);
-      if (this.group()?.mode === 'VIDEO') {
-        await room.localParticipant.setCameraEnabled(true);
-      }
-      this.attachLocalTracks(room);
-      this.speaking.set(true);
-      this.listenOnly.set(false);
-      this.callError.set('');
-      this.callStatus.set('You can speak now.');
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Could not enable microphone.';
-      this.callError.set(message);
-      this.notificationService.error(message);
-    }
   }
 
   moderateMessageSender(
@@ -394,115 +251,6 @@ export class LiveGroupsComponent implements OnInit, OnDestroy {
     return (
       this.canHostGroups() && message.senderId !== this.currentUser()?.id && !message.isDeleted
     );
-  }
-
-  private async connectLiveKit(
-    url: string,
-    token: string,
-    withVideo: boolean,
-    canPublish: boolean,
-  ): Promise<void> {
-    try {
-      this.leaveCall();
-      this.joiningCall.set(true);
-      this.callStatus.set('Joining media room...');
-
-      const room = new Room({ adaptiveStream: true, dynacast: true });
-      this.liveKitRoom = room;
-
-      room
-        .on(
-          RoomEvent.TrackSubscribed,
-          (track: unknown, _publication: unknown, participant: any) => {
-            this.attachTrack(track, participant?.name || participant?.identity || 'Guest', false);
-            this.updateCallParticipantCount();
-          },
-        )
-        .on(RoomEvent.TrackUnsubscribed, (track: any) => {
-          track?.detach?.().forEach((element: HTMLElement) => element.remove());
-          this.updateCallParticipantCount();
-        })
-        .on(RoomEvent.ParticipantConnected, () => this.updateCallParticipantCount())
-        .on(RoomEvent.ParticipantDisconnected, () => this.updateCallParticipantCount())
-        .on(RoomEvent.Disconnected, () => {
-          this.clearMedia();
-          this.callConnected.set(false);
-          this.joiningCall.set(false);
-          this.callParticipantCount.set(0);
-          this.callStatus.set('Call ended.');
-        });
-
-      await room.connect(url, token);
-      this.attachLocalTracks(room);
-      this.attachExistingRemoteTracks(room);
-      this.updateCallParticipantCount();
-      this.callConnected.set(true);
-      this.joiningCall.set(false);
-      this.canPublishInCall.set(canPublish);
-      this.listenOnly.set(true);
-      this.speaking.set(false);
-      this.callStatus.set(
-        canPublish
-          ? 'You are listening. Tap speak when you are ready.'
-          : 'You are listening only. Sign up free to speak.',
-      );
-    } catch (error) {
-      this.leaveCall();
-      const message = error instanceof Error ? error.message : 'Could not join group call.';
-      this.callError.set(message);
-      this.notificationService.error(message);
-    }
-  }
-
-  private attachLocalTracks(room: Room): void {
-    this.localMedia?.nativeElement.replaceChildren();
-    room.localParticipant.trackPublications.forEach((publication: any) => {
-      const track = publication.track;
-      if (track) this.attachTrack(track, 'You', true);
-    });
-  }
-
-  private attachExistingRemoteTracks(room: Room): void {
-    room.remoteParticipants.forEach((participant: any) => {
-      participant.trackPublications?.forEach((publication: any) => {
-        const track = publication.track;
-        if (track)
-          this.attachTrack(track, participant.name || participant.identity || 'Guest', false);
-      });
-    });
-  }
-
-  private attachTrack(track: unknown, label: string, local: boolean): void {
-    const mediaTrack = track as {
-      attach?: () => HTMLElement;
-      kind?: string;
-    };
-    const container = local ? this.localMedia?.nativeElement : this.remoteMedia?.nativeElement;
-    if (!container || !mediaTrack.attach) return;
-    const element = mediaTrack.attach();
-    element.classList.add('lk-media-tile__media');
-    if (mediaTrack.kind === Track.Kind.Video) {
-      element.setAttribute('playsinline', 'true');
-      if (local) element.setAttribute('muted', 'true');
-    }
-    const tile = document.createElement('div');
-    tile.className = 'lk-media-tile';
-    const name = document.createElement('span');
-    name.className = 'lk-media-tile__name';
-    name.textContent = label;
-    tile.appendChild(element);
-    tile.appendChild(name);
-    container.appendChild(tile);
-  }
-
-  private clearMedia(): void {
-    this.localMedia?.nativeElement.replaceChildren();
-    this.remoteMedia?.nativeElement.replaceChildren();
-  }
-
-  private updateCallParticipantCount(): void {
-    const room = this.liveKitRoom;
-    this.callParticipantCount.set(room ? 1 + room.remoteParticipants.size : 0);
   }
 
   private mergeMessage(message: HopeHubLiveGroupMessage, replace = false): void {

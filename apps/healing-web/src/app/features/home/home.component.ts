@@ -1,5 +1,5 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { RouterModule } from '@angular/router';
 import { FeedbackSectionComponent, OfferBannerCarouselComponent } from '../../shared/components';
 import { APP_CONSTANTS } from '../../core';
 import { environment } from '../../../environments/environment';
@@ -15,7 +15,7 @@ import { LiveConnectComponent } from './components/live-connect/live-connect.com
     HomeHeroComponent,
     LiveConnectComponent,
     OfferBannerCarouselComponent,
-    RouterLink,
+    RouterModule,
   ],
   templateUrl: './home.component.html',
   styleUrl: './home.component.scss',

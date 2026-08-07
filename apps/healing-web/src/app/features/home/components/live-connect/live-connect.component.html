@@ -165,16 +165,9 @@
                 rows="2"
                 maxlength="1200"
               ></textarea>
-              <select
-                name="newGroupMode"
-                [ngModel]="newGroupMode()"
-                (ngModelChange)="newGroupMode.set($event)"
-                aria-label="Group room mode"
-              >
-                <option value="CHAT">Chat room</option>
-                <option value="VOICE">Voice room</option>
-                <option value="VIDEO">Video room</option>
-              </select>
+              <p class="live-group-create__note">
+                Group rooms are chat-only for now. Use 1:1 Live Connect for voice/video sessions.
+              </p>
               <button type="submit" class="btn-primary justify-center" [disabled]="creatingGroup() || !newGroupTitle().trim()">
                 {{ creatingGroup() ? 'Opening...' : 'Open group room' }}
               </button>
@@ -200,7 +193,7 @@
               <article class="live-group-card">
                 <div class="flex items-center justify-between gap-3">
                   <span class="live-dot">{{ groupStatusLabel(group) }}</span>
-                  <span class="live-mini-chip">{{ group.mode }}</span>
+                  <span class="live-mini-chip">{{ liveGroupModeLabel(group) }}</span>
                 </div>
                 <h3>{{ group.title }}</h3>
                 <p>{{ group.description || 'A moderated Hope Hub support room.' }}</p>

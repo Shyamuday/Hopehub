@@ -1,7 +1,5 @@
-import crypto from 'node:crypto';
 import { Router } from 'express';
 import { z } from 'zod';
-import { AccessToken, RoomServiceClient } from 'livekit-server-sdk';
 import {
   CareTeamServicePricingMode,
   ConsultationMode,
@@ -1903,28 +1901,6 @@ function moderationSummary(moderation: Awaited<ReturnType<typeof liveGroupModera
   };
 }
 
-function liveKitRoomName(groupId: string) {
-  return `hopehub-group-${groupId}`;
-}
-
-function liveKitConfig() {
-  const url = process.env.LIVEKIT_URL || process.env.PUBLIC_LIVEKIT_URL || '';
-  const apiKey = process.env.LIVEKIT_API_KEY || '';
-  const apiSecret = process.env.LIVEKIT_API_SECRET || '';
-  return {
-    url,
-    apiKey,
-    apiSecret,
-    configured: Boolean(url && apiKey && apiSecret)
-  };
-}
-
-function liveKitRoomService() {
-  const config = liveKitConfig();
-  if (!config.configured) return null;
-  return new RoomServiceClient(config.url, config.apiKey, config.apiSecret);
-}
-
 hopeHubRouter.get(
   '/hope-hub/live-groups',
   authOptional,
@@ -1964,7 +1940,7 @@ hopeHubRouter.post(
         callTitle: body.callTitle || body.title,
         callAgenda: body.callAgenda || null,
         status: body.status || 'LIVE',
-        mode: body.mode || 'CHAT',
+        mode: 'CHAT',
         hostUserId: req.user?.id,
         createdByUserId: req.user?.id,
         startsAt: body.status === 'SCHEDULED' ? null : new Date()
@@ -2159,41 +2135,6 @@ hopeHubRouter.post(
       }
     });
 
-    const roomService = liveKitRoomService();
-    if (roomService && (group.mode === 'VOICE' || group.mode === 'VIDEO')) {
-      const roomName = liveKitRoomName(group.id);
-      try {
-        if (body.action === 'MUTE') {
-          await roomService.updateParticipant(roomName, body.userId, {
-            permission: {
-              canPublish: false,
-              canSubscribe: true,
-              canPublishData: false
-            }
-          });
-        } else if (body.action === 'UNMUTE') {
-          await roomService.updateParticipant(roomName, body.userId, {
-            permission: {
-              canPublish: true,
-              canSubscribe: true,
-              canPublishData: true
-            }
-          });
-        } else if (body.action === 'BAN' || body.action === 'REMOVE') {
-          await roomService.removeParticipant(roomName, body.userId, {
-            revokeTokenTs: BigInt(Math.floor(Date.now() / 1000))
-          });
-        }
-      } catch (error) {
-        console.warn('[hope-hub] Live group moderation sync failed', {
-          groupId: group.id,
-          action: body.action,
-          userId: body.userId,
-          error: error instanceof Error ? error.message : String(error)
-        });
-      }
-    }
-
     res.json({ moderation: moderationSummary(moderation) });
   })
 );
@@ -2238,12 +2179,19 @@ hopeHubRouter.patch(
     });
 
     if (!group) return res.status(404).json({ message: 'Live group not found.' });
+    if (body.mode !== 'CHAT') {
+      return res.status(410).json({
+        code: 'GROUP_CALLS_DISABLED',
+        message:
+          'Group voice/video is disabled for now to avoid media server cost. Use open group chat or 1:1 Live Connect.'
+      });
+    }
 
     const updated = await prisma.hopeHubLiveGroup.update({
       where: { id: group.id },
       data: {
-        mode: body.mode,
-        status: body.mode === 'CHAT' ? group.status : 'LIVE',
+        mode: 'CHAT',
+        status: group.status,
         startsAt: group.startsAt ?? new Date()
       }
     });
@@ -2267,53 +2215,15 @@ hopeHubRouter.post(
     });
 
     if (!group) return res.status(404).json({ message: 'Live group not found.' });
-    if (group.mode !== 'VOICE' && group.mode !== 'VIDEO') {
-      return res.status(409).json({
-        message: 'This group is currently chat-only. A provider or admin can start voice/video.'
-      });
-    }
     const moderation = req.user ? await liveGroupModerationFor(group.id, req.user.id) : null;
     if (moderation?.isBanned) {
       return res.status(403).json({ message: 'You are banned from this group room.' });
     }
 
-    const config = liveKitConfig();
-    if (!config.configured) {
-      return res.status(503).json({
-        code: 'LIVEKIT_NOT_CONFIGURED',
-        message:
-          'Group voice/video is not configured yet. Set LIVEKIT_URL, LIVEKIT_API_KEY, and LIVEKIT_API_SECRET.'
-      });
-    }
-
-    const roomName = liveKitRoomName(group.id);
-    const canPublish = Boolean(req.user && !isMuted(moderation));
-    const identity = req.user?.id || `guest-${crypto.randomUUID()}`;
-    const displayName = req.user?.name || 'Guest listener';
-    const token = new AccessToken(config.apiKey, config.apiSecret, {
-      identity,
-      name: displayName,
-      ttl: '2h',
-      metadata: JSON.stringify({
-        role: req.user?.role || 'GUEST_LISTENER',
-        groupId: group.id,
-        canSpeak: canPublish
-      })
-    });
-    token.addGrant({
-      room: roomName,
-      roomJoin: true,
-      canPublish,
-      canSubscribe: true,
-      canPublishData: canPublish
-    });
-
-    res.json({
-      url: config.url,
-      token: await token.toJwt(),
-      roomName,
-      mode: group.mode,
-      canPublish,
+    res.status(410).json({
+      code: 'GROUP_CALLS_DISABLED',
+      message:
+        'Group voice/video is disabled for now to avoid media server cost. Use open group chat or 1:1 Live Connect.',
       moderation: moderationSummary(moderation),
       group: serializeLiveGroup(group)
     });

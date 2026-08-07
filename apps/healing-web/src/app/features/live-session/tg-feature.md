@@ -5,39 +5,39 @@ This file is now the product/engineering checklist for the Telegram-like HopeHub
 ### Already covered in current dev direction
 
 - Public live group discovery on the consumer/home flow.
-- Provider/admin can create a group room with title and mode: chat, voice, or video.
-- Unlogged users can open/listen/preview a public room.
+- Provider/admin can create an open group chat room.
+- Unlogged users can open/read/preview a public room.
 - Unlogged users cannot speak or chat; when they try, route them to signup/login for free consultation chat.
 - Logged-in users can join and chat.
-- Provider/admin/host can update room title, description, topic, and mode.
+- Provider/admin/host can update room title, description, topic, and slow mode.
 - Shareable room link.
-- Tap-to-speak style UI direction.
 - Basic moderation direction: mute, unmute, ban, unban, remove user, remove message.
-- LiveKit-based voice/video direction for real-time group call.
 - Wallet is not required when the room/session is marked free.
+- Group voice/video is disabled for now to avoid LiveKit/SFU cost.
+- 1:1 chat, voice, and video should remain available through Live Connect/provider sessions.
 
 ### Add next — highest value
 
-1. Speaker request / raise hand flow
+1. Strong open group chat experience
 
-   - Listener taps "Request to speak".
-   - Host sees a speaker queue.
-   - Host can approve, reject, or move user back to listener.
-   - Approved user gets mic/video publish permission.
-   - If guest taps speak, send to signup/login first.
+   - Keep group rooms chat-only until we choose a media/SFU budget.
+   - Make the chat feel alive with online count, recent messages, and provider/admin presence.
+   - Guest users can read the public room.
+   - Guest users who try to send a message should go to signup/login for free consultation chat.
+   - Keep CTA for private 1:1 voice/video with provider.
 
 2. Live participant roster
 
-   - Show current listeners, speakers, hosts, and admins.
+   - Show current readers/members when possible.
    - Add badges: Host, Provider, Admin, Listener, Guest.
-   - Host actions from roster: mute mic, remove from stage, remove from room, ban.
-   - Show live counts: listeners, speakers, total joined.
+   - Host actions from roster: mute, remove from room, ban.
+   - Show live counts: readers, logged-in members, total active.
 
 3. Host/co-host system
 
    - Room creator is host.
    - Provider/admin can assign co-host.
-   - Co-host can moderate, approve speakers, mute users, and manage room flow.
+   - Co-host can moderate and manage room flow.
    - Keep full destructive actions, like ban, limited to admin/host.
 
 4. Pinned room intro and rules
@@ -63,9 +63,9 @@ This file is now the product/engineering checklist for the Telegram-like HopeHub
 
 7. Notifications
 
-   - Notify users when a followed provider starts a live room.
-   - Notify when someone is approved to speak.
-   - Notify host when speaker request arrives.
+   - Notify users when a followed provider opens a live group chat.
+   - Notify when someone replies/mentions.
+   - Notify host when a report arrives.
    - Optional push/email later.
 
 8. Chat improvements
@@ -85,10 +85,27 @@ This file is now the product/engineering checklist for the Telegram-like HopeHub
 10. Admin dashboard support
 
 - List live rooms.
-- See active participants.
+- See active readers/members.
 - See reports and moderation logs.
 - Force end a room.
 - Ban/unban users globally if needed.
+
+### Keep parked until budget/product decision
+
+1. Group speaker request / raise hand flow
+
+   - Listener taps "Request to speak".
+   - Host sees a speaker queue.
+   - Host can approve, reject, or move user back to listener.
+   - Approved user gets mic/video publish permission.
+   - If guest taps speak, send to signup/login first.
+
+2. Group voice/video with LiveKit or another SFU
+
+   - Enable only after cost, scale, and moderation policy are clear.
+   - Anonymous guests may listen only.
+   - Logged-in speakers must use request-to-speak.
+   - Host/admin can mute/remove/ban from the call.
 
 ### Add later — useful but not urgent
 
@@ -110,20 +127,17 @@ This file is now the product/engineering checklist for the Telegram-like HopeHub
 - Per-minute billing unless the product decision changes; current direction is session-based/free-or-paid, not per-minute.
 - Making every room paid. Free rooms should bypass wallet checks.
 
-### Acceptance checklist for Telegram-like group calls
+### Acceptance checklist for Telegram-like group chat
 
-- Guest can open room and listen.
-- Guest tapping chat/speak/video is routed to signup/login.
+- Guest can open room and read messages.
+- Guest trying to chat is routed to signup/login.
 - Logged-in user can join room.
-- Logged-in user can request to speak.
-- Host sees speaker request.
-- Host can approve speaker.
-- Approved speaker can publish mic/video.
-- Muted user cannot publish or send messages.
-- Banned user cannot join/speak/chat.
+- Logged-in user can send messages.
+- Muted user cannot send messages.
+- Banned user cannot join/chat.
 - Host/admin can remove user.
 - Share room link opens same room.
-- Mobile layout shows call area and chat together, not isolated.
+- Mobile layout shows the group context and chat together, not isolated.
 - Free room does not ask for wallet.
 - Paid room later checks wallet/payment before allowing private paid session.
 
