@@ -13,25 +13,34 @@ export type ConsultationAssignedPayload = {
   consultationMode?: 'CLINIC_QUEUE' | 'INSTANT_ONLINE';
 };
 
+export type ConsultationUpdatedPayload = {
+  consultationId: string;
+  status?: string;
+};
+
 @Injectable({ providedIn: 'root' })
 export class DoctorRealtimeService implements OnDestroy {
   private socket: Socket | null = null;
   private onAssigned: ((payload: ConsultationAssignedPayload) => void) | null = null;
   private onMessage: ((message: unknown) => void) | null = null;
+  private onUpdated: ((payload: ConsultationUpdatedPayload) => void) | null = null;
 
   connect(
-    handler: (payload: ConsultationAssignedPayload) => void,
-    onMessage?: (message: unknown) => void
+    handler?: (payload: ConsultationAssignedPayload) => void,
+    onMessage?: (message: unknown) => void,
+    onUpdated?: (payload: ConsultationUpdatedPayload) => void,
   ): void {
-    this.onAssigned = handler;
-    this.onMessage = onMessage ?? null;
+    if (handler) this.onAssigned = handler;
+    if (onMessage) this.onMessage = onMessage;
+    if (onUpdated) this.onUpdated = onUpdated;
     const token = localStorage.getItem(AUTH_TOKEN_KEY);
     if (!token) return;
 
-    this.socket?.disconnect();
+    if (this.socket?.connected || this.socket?.active) return;
+
     this.socket = io(environment.apiUrl, {
       auth: { token },
-      transports: ['websocket', 'polling']
+      transports: ['websocket', 'polling'],
     });
 
     this.socket.on(SOCKET_EVENTS.CONSULTATION_ASSIGNED, (payload: ConsultationAssignedPayload) => {
@@ -40,10 +49,17 @@ export class DoctorRealtimeService implements OnDestroy {
     this.socket.on(SOCKET_EVENTS.MESSAGE_NEW, (message: unknown) => {
       this.onMessage?.(message);
     });
+    this.socket.on(SOCKET_EVENTS.CONSULTATION_UPDATED, (payload: ConsultationUpdatedPayload) => {
+      this.onUpdated?.(payload);
+    });
   }
 
   subscribeConsultation(consultationId: string) {
     this.socket?.emit(SOCKET_EVENTS.SUBSCRIBE_CONSULTATION, consultationId);
+  }
+
+  clearConsultationUpdatedHandler(handler: (payload: ConsultationUpdatedPayload) => void): void {
+    if (this.onUpdated === handler) this.onUpdated = null;
   }
 
   getSocket() {
@@ -55,6 +71,7 @@ export class DoctorRealtimeService implements OnDestroy {
     this.socket = null;
     this.onAssigned = null;
     this.onMessage = null;
+    this.onUpdated = null;
   }
 
   ngOnDestroy(): void {

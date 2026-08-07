@@ -52,12 +52,9 @@ export class ConsultationChatPanelComponent implements OnChanges, OnDestroy {
   }
 
   constructor() {
-    this.realtime.connect(
-      () => undefined,
-      () => {
-        if (this.consultationId) void this.load();
-      },
-    );
+    this.realtime.connect(undefined, () => {
+      if (this.consultationId) void this.load();
+    });
     void this.loadIceServers();
   }
 

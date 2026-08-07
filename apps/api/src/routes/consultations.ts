@@ -22,6 +22,7 @@ import { PRODUCT_EVENTS, trackProductEvent } from '../services/product-analytics
 import { applyConsultationCancellationEffects } from '../services/consultation-cancellation.js';
 import { notifyConsultationBooked } from '../services/consultation-reminders.js';
 import { applySessionOutcome } from '../services/consultation-outcomes.js';
+import { SOCKET_EVENTS, SOCKET_ROOM_PREFIXES } from '../constants/socket.constants.js';
 
 function serializeHopeHubAssessmentAttempt(attempt: {
   id: string;
@@ -362,16 +363,40 @@ export function createConsultationsRouter(io: SocketIoServer) {
       });
 
       if (consultation.status === ConsultationStatus.ASSIGNED) {
-        await prisma.consultation.update({
+        const updated = await prisma.consultation.update({
           where: { id: consultation.id },
           data: { status: ConsultationStatus.IN_PROGRESS }
         });
+        const updatePayload = { consultationId: consultation.id, status: updated.status };
+        io.to(`${SOCKET_ROOM_PREFIXES.CONSULTATION}${consultation.id}`).emit(
+          SOCKET_EVENTS.CONSULTATION_UPDATED,
+          updatePayload
+        );
+        io.to(`${SOCKET_ROOM_PREFIXES.USER}${consultation.patientId}`).emit(
+          SOCKET_EVENTS.CONSULTATION_UPDATED,
+          updatePayload
+        );
+        if (consultation.assignedDoctorId) {
+          io.to(`${SOCKET_ROOM_PREFIXES.USER}${consultation.assignedDoctorId}`).emit(
+            SOCKET_EVENTS.CONSULTATION_UPDATED,
+            updatePayload
+          );
+        }
       }
 
-      io.to(`consultation:${consultation.id}`).emit('message:new', message);
-      io.to(`user:${consultation.patientId}`).emit('message:new', message);
+      io.to(`${SOCKET_ROOM_PREFIXES.CONSULTATION}${consultation.id}`).emit(
+        SOCKET_EVENTS.MESSAGE_NEW,
+        message
+      );
+      io.to(`${SOCKET_ROOM_PREFIXES.USER}${consultation.patientId}`).emit(
+        SOCKET_EVENTS.MESSAGE_NEW,
+        message
+      );
       if (consultation.assignedDoctorId) {
-        io.to(`user:${consultation.assignedDoctorId}`).emit('message:new', message);
+        io.to(`${SOCKET_ROOM_PREFIXES.USER}${consultation.assignedDoctorId}`).emit(
+          SOCKET_EVENTS.MESSAGE_NEW,
+          message
+        );
       }
 
       res.status(201).json({ message });
@@ -532,6 +557,24 @@ export function createConsultationsRouter(io: SocketIoServer) {
         );
       }
 
+      if (updated) {
+        const updatePayload = { consultationId: updated.id, status: updated.status };
+        io.to(`${SOCKET_ROOM_PREFIXES.CONSULTATION}${updated.id}`).emit(
+          SOCKET_EVENTS.CONSULTATION_UPDATED,
+          updatePayload
+        );
+        io.to(`${SOCKET_ROOM_PREFIXES.USER}${updated.patientId}`).emit(
+          SOCKET_EVENTS.CONSULTATION_UPDATED,
+          updatePayload
+        );
+        if (updated.assignedDoctorId) {
+          io.to(`${SOCKET_ROOM_PREFIXES.USER}${updated.assignedDoctorId}`).emit(
+            SOCKET_EVENTS.CONSULTATION_UPDATED,
+            updatePayload
+          );
+        }
+      }
+
       res.json({ consultation: updated, sessionOutcome: result?.sessionOutcome });
     })
   );
@@ -579,6 +622,27 @@ export function createConsultationsRouter(io: SocketIoServer) {
           { liveStatus: LivePresenceStatus.ONLINE },
           io
         );
+      }
+
+      if (result?.consultation) {
+        const updatePayload = {
+          consultationId: result.consultation.id,
+          status: result.consultation.status
+        };
+        io.to(`${SOCKET_ROOM_PREFIXES.CONSULTATION}${result.consultation.id}`).emit(
+          SOCKET_EVENTS.CONSULTATION_UPDATED,
+          updatePayload
+        );
+        io.to(`${SOCKET_ROOM_PREFIXES.USER}${result.consultation.patientId}`).emit(
+          SOCKET_EVENTS.CONSULTATION_UPDATED,
+          updatePayload
+        );
+        if (result.consultation.assignedDoctorId) {
+          io.to(`${SOCKET_ROOM_PREFIXES.USER}${result.consultation.assignedDoctorId}`).emit(
+            SOCKET_EVENTS.CONSULTATION_UPDATED,
+            updatePayload
+          );
+        }
       }
 
       res.json({ consultation: result?.consultation, sessionOutcome: result?.sessionOutcome });

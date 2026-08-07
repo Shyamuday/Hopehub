@@ -1,9 +1,13 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ConsultationChatPanelComponent } from '../../shared/consultation-chat-panel/consultation-chat-panel';
 import { ConsultationApiService } from '../../core/services/consultation-api.service';
 import { ConsultationNavigationService } from '../../core/services/consultation-navigation.service';
+import {
+  DoctorRealtimeService,
+  type ConsultationUpdatedPayload,
+} from '../../core/services/doctor-realtime.service';
 import { OnlineDoctorService } from '../../core/services/online-doctor.service';
 import { capabilitiesForDoctorType } from '../../core/constants/doctor-types.constants';
 import { ROUTE_PATHS } from '../../core/constants/app-routes.constants';
@@ -23,10 +27,11 @@ type LiveSessionOutcome = 'COMPLETED' | 'USER_MISSED' | 'PROVIDER_NO_SHOW' | 'RE
   templateUrl: './doctor-live-session-page.html',
   styleUrl: './doctor-live-session-page.scss',
 })
-export class DoctorLiveSessionPage implements OnInit {
+export class DoctorLiveSessionPage implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly consultationApi = inject(ConsultationApiService);
   private readonly consultationNav = inject(ConsultationNavigationService);
+  private readonly realtime = inject(DoctorRealtimeService);
   private readonly online = inject(OnlineDoctorService);
 
   readonly onlineDoctorPath = ROUTE_PATHS.ONLINE_DOCTOR;
@@ -56,6 +61,10 @@ export class DoctorLiveSessionPage implements OnInit {
   };
 
   private consultationId = '';
+  private readonly handleConsultationUpdated = (payload: ConsultationUpdatedPayload) => {
+    if (payload.consultationId !== this.consultationId) return;
+    void this.load({ silent: true });
+  };
 
   ngOnInit(): void {
     this.consultationId = this.route.snapshot.paramMap.get('consultationId') || '';
@@ -64,11 +73,17 @@ export class DoctorLiveSessionPage implements OnInit {
       this.loading.set(false);
       return;
     }
+    this.realtime.connect(undefined, undefined, this.handleConsultationUpdated);
+    this.realtime.subscribeConsultation(this.consultationId);
     void this.load();
   }
 
-  async load(): Promise<void> {
-    this.loading.set(true);
+  ngOnDestroy(): void {
+    this.realtime.clearConsultationUpdatedHandler(this.handleConsultationUpdated);
+  }
+
+  async load(options: { silent?: boolean } = {}): Promise<void> {
+    if (!options.silent) this.loading.set(true);
     this.error.set('');
     try {
       const [profile, consultation] = await Promise.all([
@@ -81,7 +96,7 @@ export class DoctorLiveSessionPage implements OnInit {
     } catch {
       this.error.set('Could not open this live session.');
     } finally {
-      this.loading.set(false);
+      if (!options.silent) this.loading.set(false);
     }
   }
 

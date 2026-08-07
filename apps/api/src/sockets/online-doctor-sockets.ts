@@ -1,5 +1,5 @@
 import type { Server as SocketIoServer, Socket } from 'socket.io';
-import { LivePresenceStatus, Role } from '@prisma/client';
+import { ConsultationStatus, LivePresenceStatus, Role } from '@prisma/client';
 import { SOCKET_EVENTS, SOCKET_ROOM_PREFIXES } from '../constants/socket.constants.js';
 import { prisma } from '../db.js';
 import { heartbeatDoctor, setDoctorLiveStatus } from '../services/online-doctor-presence.js';
@@ -21,6 +21,39 @@ function relayCallSignal(
     ...payload,
     fromUserId
   });
+}
+
+async function markConsultationInProgressFromCall(
+  io: SocketIoServer,
+  fromUserId: string,
+  payload: CallSignalPayload
+) {
+  const consultation = await prisma.consultation.findUnique({
+    where: { id: payload.consultationId },
+    select: { id: true, status: true, patientId: true, assignedDoctorId: true }
+  });
+  if (!consultation || consultation.status !== ConsultationStatus.ASSIGNED) return;
+  if (consultation.patientId !== fromUserId && consultation.assignedDoctorId !== fromUserId) return;
+
+  const updated = await prisma.consultation.update({
+    where: { id: consultation.id },
+    data: { status: ConsultationStatus.IN_PROGRESS }
+  });
+  const updatePayload = { consultationId: consultation.id, status: updated.status };
+  io.to(`${SOCKET_ROOM_PREFIXES.CONSULTATION}${consultation.id}`).emit(
+    SOCKET_EVENTS.CONSULTATION_UPDATED,
+    updatePayload
+  );
+  io.to(`${SOCKET_ROOM_PREFIXES.USER}${consultation.patientId}`).emit(
+    SOCKET_EVENTS.CONSULTATION_UPDATED,
+    updatePayload
+  );
+  if (consultation.assignedDoctorId) {
+    io.to(`${SOCKET_ROOM_PREFIXES.USER}${consultation.assignedDoctorId}`).emit(
+      SOCKET_EVENTS.CONSULTATION_UPDATED,
+      updatePayload
+    );
+  }
 }
 
 export function registerOnlineDoctorSockets(io: SocketIoServer, socket: Socket, userId?: string) {
@@ -59,7 +92,11 @@ export function registerOnlineDoctorSockets(io: SocketIoServer, socket: Socket, 
     socket.on(event, (raw: unknown) => {
       if (!raw || typeof raw !== 'object') return;
       const payload = raw as CallSignalPayload;
-      if (typeof payload.consultationId !== 'string' || typeof payload.targetUserId !== 'string') return;
+      if (typeof payload.consultationId !== 'string' || typeof payload.targetUserId !== 'string')
+        return;
+      if (event === SOCKET_EVENTS.CALL_RING || event === SOCKET_EVENTS.CALL_OFFER) {
+        void markConsultationInProgressFromCall(io, userId, payload);
+      }
       relayCallSignal(io, userId, relay, payload);
     });
   }
