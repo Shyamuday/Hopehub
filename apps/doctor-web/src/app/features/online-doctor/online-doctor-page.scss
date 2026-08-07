@@ -12,6 +12,7 @@
 .inbox-head { display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; }
 .inbox-list { list-style: none; margin: 0.75rem 0; padding: 0; display: grid; gap: 0.4rem; }
 .inbox-item {
+  display: block;
   width: 100%;
   text-align: left;
   border: 1px solid #e5e7eb;
@@ -19,176 +20,16 @@
   padding: 0.55rem 0.7rem;
   background: #fff;
   cursor: pointer;
+  text-decoration: none;
 }
-.inbox-item.active { border-color: #2563eb; background: #eff6ff; }
 .inbox-item strong { display: block; }
 .inbox-item span { font-size: 0.82rem; color: #64748b; }
-.inbox-chat { margin-top: 1rem; border-top: 1px solid #e5e7eb; padding-top: 0.75rem; }
-.inbox-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-bottom: 0.75rem;
+.inbox-item em {
+  display: inline-block;
+  margin-top: 0.35rem;
+  color: #2563eb;
+  font-size: 0.8rem;
+  font-style: normal;
+  font-weight: 700;
 }
-.inbox-actions .btn-primary {
-  background: #2563eb;
-  color: #fff;
-  border: 1px solid #2563eb;
-  border-radius: 8px;
-  padding: 0.4rem 0.75rem;
-}
-.active-meta { font-size: 0.9rem; color: #475569; margin-bottom: 0.5rem; }
 .muted { color: #64748b; }
-.session-notes-card,
-.assessment-summary-card {
-  margin-top: 1rem;
-  border: 1px solid #dbeafe;
-  border-radius: 10px;
-  background: #f8fafc;
-  padding: 1rem;
-}
-.assessment-summary-card {
-  border-color: #ccfbf1;
-  background: #f0fdfa;
-}
-.session-notes-head {
-  display: flex;
-  justify-content: space-between;
-  gap: 0.75rem;
-  align-items: flex-start;
-  margin-bottom: 0.75rem;
-}
-.session-notes-head h3 {
-  margin: 0 0 0.2rem;
-  color: #0f172a;
-}
-.session-notes-card textarea {
-  width: 100%;
-  resize: vertical;
-  border: 1px solid #cbd5e1;
-  border-radius: 8px;
-  padding: 0.75rem;
-  font: inherit;
-  color: #0f172a;
-  background: #fff;
-}
-.session-note-actions {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.75rem;
-  margin: 0.75rem 0 1rem;
-}
-.session-note-actions .btn-primary {
-  background: #0f766e;
-  color: #fff;
-  border: 1px solid #0f766e;
-  border-radius: 8px;
-  padding: 0.55rem 0.85rem;
-}
-.session-note-actions .btn-primary:disabled {
-  cursor: not-allowed;
-  opacity: 0.55;
-}
-.session-note-list {
-  display: grid;
-  gap: 0.6rem;
-}
-.session-note-item {
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  background: #fff;
-  padding: 0.75rem;
-}
-.session-note-item p {
-  margin: 0 0 0.45rem;
-  color: #1e293b;
-  white-space: pre-wrap;
-}
-.session-note-item small {
-  color: #64748b;
-}
-.assessment-risk-alert {
-  border: 1px solid #fecaca;
-  border-radius: 8px;
-  background: #fef2f2;
-  color: #991b1b;
-  padding: 0.65rem 0.75rem;
-  margin-bottom: 0.75rem;
-  font-size: 0.9rem;
-  font-weight: 600;
-}
-.assessment-latest-grid {
-  display: grid;
-  gap: 0.7rem;
-  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
-}
-.assessment-score-card {
-  display: grid;
-  gap: 0.45rem;
-  border: 1px solid #99f6e4;
-  border-radius: 9px;
-  background: #fff;
-  padding: 0.8rem;
-}
-.assessment-score-card.has-risk {
-  border-color: #fca5a5;
-}
-.assessment-score-card div:first-child {
-  display: grid;
-  gap: 0.15rem;
-}
-.assessment-score-card strong {
-  color: #0f172a;
-}
-.assessment-score-card span,
-.assessment-score-card small {
-  color: #64748b;
-}
-.assessment-score-card p {
-  margin: 0;
-  color: #334155;
-  font-weight: 600;
-}
-.score-pill {
-  justify-self: start;
-  border-radius: 999px;
-  background: #0f766e;
-  color: #fff;
-  padding: 0.25rem 0.6rem;
-  font-weight: 700;
-}
-.assessment-history {
-  margin-top: 0.8rem;
-}
-.assessment-history summary {
-  cursor: pointer;
-  color: #0f766e;
-  font-weight: 700;
-}
-.assessment-history-list {
-  display: grid;
-  gap: 0.45rem;
-  margin-top: 0.6rem;
-}
-.assessment-history-row {
-  display: grid;
-  grid-template-columns: minmax(80px, 0.8fr) auto minmax(120px, 1.2fr) auto;
-  gap: 0.6rem;
-  align-items: center;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  background: #fff;
-  padding: 0.55rem 0.65rem;
-  font-size: 0.9rem;
-}
-.assessment-history-row span,
-.assessment-history-row small {
-  color: #64748b;
-}
-@media (max-width: 720px) {
-  .assessment-history-row {
-    grid-template-columns: 1fr;
-    gap: 0.25rem;
-  }
-}

@@ -1,0 +1,219 @@
+<section class="session-hero">
+  <a class="ghost-link" [routerLink]="['/', onlineDoctorPath]">← Online inbox</a>
+  <div>
+    <p class="eyebrow">Live session workspace</p>
+    <h1>{{ patientName() }}</h1>
+    <p class="lead">
+      {{ serviceName() }} · {{ sessionModeLabel() }} · {{ consultation()?.status || 'Loading' }}
+      @if (patientCode()) {
+        · {{ patientCode() }}
+      }
+    </p>
+  </div>
+  <button type="button" class="ghost" (click)="load()" [disabled]="loading()">Refresh</button>
+</section>
+
+@if (loading()) {
+  <section class="panel">
+    <p>Opening session…</p>
+  </section>
+} @else if (error() && !consultation()) {
+  <section class="panel error-panel">
+    <p>{{ error() }}</p>
+    <a [routerLink]="['/', onlineDoctorPath]">Back to online inbox</a>
+  </section>
+} @else if (consultation(); as active) {
+  <section class="session-layout">
+    <main class="session-main">
+      <section class="panel chat-panel">
+        <div class="panel-head">
+          <div>
+            <h2>Conversation</h2>
+            <p class="muted">Chat, voice, and video for this assigned session.</p>
+          </div>
+          <div class="inbox-actions">
+            @if (capabilities().caseAnalysis) {
+              <button type="button" (click)="openCaseAnalysis()">Case analysis</button>
+            }
+            @if (capabilities().prescribe) {
+              <button type="button" class="btn-primary" (click)="openPrescription()">Prescribe</button>
+            }
+            @if (isPsychologist()) {
+              <button
+                type="button"
+                class="danger"
+                (click)="flagSafetyRisk()"
+                [disabled]="sessionNoteSaving()"
+              >
+                Flag safety risk
+              </button>
+            }
+          </div>
+        </div>
+
+        <app-consultation-chat-panel [consultationId]="active.id" />
+      </section>
+    </main>
+
+    <aside class="session-sidebar">
+      <section class="panel">
+        <h2>Session context</h2>
+        <dl class="context-list">
+          <div>
+            <dt>Patient</dt>
+            <dd>{{ patientName() }}</dd>
+          </div>
+          @if (patientCode()) {
+            <div>
+              <dt>Patient code</dt>
+              <dd>{{ patientCode() }}</dd>
+            </div>
+          }
+          <div>
+            <dt>Service</dt>
+            <dd>{{ serviceName() }}</dd>
+          </div>
+          <div>
+            <dt>Mode</dt>
+            <dd>{{ sessionModeLabel() }}</dd>
+          </div>
+          @if (concernLabel()) {
+            <div>
+              <dt>Concern</dt>
+              <dd>{{ concernLabel() }}</dd>
+            </div>
+          }
+        </dl>
+      </section>
+
+      <section class="assessment-summary-card">
+        <div class="session-notes-head">
+          <div>
+            <h3>Mental health assessment history</h3>
+            <p class="muted">Latest saved scores from Hope Hub tests and recent retests.</p>
+          </div>
+          <button
+            type="button"
+            class="ghost"
+            (click)="loadAssessmentSummary()"
+            [disabled]="assessmentSummaryLoading()"
+          >
+            Refresh
+          </button>
+        </div>
+
+        @if (assessmentSummaryLoading() && !assessmentSummary()) {
+          <p class="muted">Loading assessment history...</p>
+        } @else if (!assessmentSummary()?.attempts?.length) {
+          <p class="muted">No saved assessment results yet.</p>
+        } @else {
+          @if ((assessmentSummary()?.safetyFlaggedCount || 0) > 0) {
+            <div class="assessment-risk-alert">
+              Safety flag appeared in {{ assessmentSummary()?.safetyFlaggedCount }} saved result(s).
+              Review gently and assess current risk.
+            </div>
+          }
+
+          <div class="assessment-latest-grid">
+            @for (attempt of assessmentSummary()?.latest || []; track attempt.id) {
+              <article class="assessment-score-card" [class.has-risk]="attempt.safetyFlag">
+                <div>
+                  <strong>{{ attempt.assessmentType }}</strong>
+                  <span>{{ attempt.title }}</span>
+                </div>
+                <div class="score-pill">{{ attempt.totalScore }}/{{ attempt.maxScore }}</div>
+                <p>{{ attempt.level }}</p>
+                <small>
+                  Attempt #{{ attempt.retakeNumber }} ·
+                  {{ attempt.completedAt | date: 'mediumDate' }}
+                </small>
+              </article>
+            }
+          </div>
+
+          <details class="assessment-history">
+            <summary>Recent test history</summary>
+            <div class="assessment-history-list">
+              @for (attempt of assessmentSummary()?.attempts || []; track attempt.id) {
+                <div class="assessment-history-row">
+                  <span>{{ attempt.assessmentType }}</span>
+                  <strong>{{ attempt.totalScore }}/{{ attempt.maxScore }}</strong>
+                  <span>{{ attempt.level }}</span>
+                  <small>{{ attempt.completedAt | date: 'short' }}</small>
+                </div>
+              }
+            </div>
+          </details>
+        }
+      </section>
+
+      <section class="session-notes-card">
+        <div class="session-notes-head">
+          <div>
+            <h3>{{ isPsychologist() ? 'Psychologist session notes' : 'Session notes' }}</h3>
+            <p class="muted">
+              {{
+                isPsychologist()
+                  ? 'Record discussion, support given, response, risk level, and next step.'
+                  : 'Record what happened during this consultation and the next step.'
+              }}
+            </p>
+          </div>
+          <button
+            type="button"
+            class="ghost"
+            (click)="loadSessionNotes()"
+            [disabled]="sessionNotesLoading()"
+          >
+            Refresh
+          </button>
+        </div>
+
+        <textarea
+          rows="5"
+          [value]="sessionNoteText()"
+          (input)="sessionNoteText.set($any($event.target).value)"
+          [placeholder]="
+            isPsychologist()
+              ? 'Example: Patient shared anxiety triggers. Provided grounding exercise. No immediate safety risk shared. Next: follow up in 7 days.'
+              : 'Write a private consultation note and next step...'
+          "
+        ></textarea>
+
+        <div class="session-note-actions">
+          <button
+            type="button"
+            class="btn-primary"
+            (click)="saveSessionNote()"
+            [disabled]="sessionNoteSaving() || sessionNoteText().trim().length < 3"
+          >
+            {{ sessionNoteSaving() ? 'Saving...' : 'Save note' }}
+          </button>
+          <span class="muted">Private to care/admin team. Not shown to patient by default.</span>
+        </div>
+
+        @if (sessionNotesLoading() && !sessionNotes().length) {
+          <p class="muted">Loading notes...</p>
+        } @else if (!sessionNotes().length) {
+          <p class="muted">No session notes yet.</p>
+        } @else {
+          <div class="session-note-list">
+            @for (note of sessionNotes(); track note.id) {
+              <article class="session-note-item">
+                <p>{{ note.body }}</p>
+                <small>{{ note.author.name }} · {{ note.createdAt | date: 'medium' }}</small>
+              </article>
+            }
+          </div>
+        }
+      </section>
+    </aside>
+  </section>
+}
+
+@if (message()) {
+  <p class="success">{{ message() }}</p>
+}
+@if (error() && consultation()) {
+  <p class="error">{{ error() }}</p>
+}

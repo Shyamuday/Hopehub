@@ -26,10 +26,10 @@
     </div>
   </section>
 
-  @if (isLive() || selectedConsultId()) {
+  @if (isLive()) {
     <section class="panel inbox-panel">
       <div class="inbox-head">
-        <h2>{{ isPsychologist() ? 'Session workspace' : 'Live consult inbox' }}</h2>
+        <h2>{{ isPsychologist() ? 'Live session inbox' : 'Live consult inbox' }}</h2>
         @if (isLive()) {
           <button type="button" class="ghost" (click)="loadInbox()" [disabled]="inboxLoading()">
             Refresh
@@ -39,7 +39,7 @@
       @if (isLive()) {
         @if (inboxLoading() && !instantConsults().length) {
           <p class="muted">Loading active consults…</p>
-        } @else if (!instantConsults().length && !selectedConsultId()) {
+        } @else if (!instantConsults().length) {
           <p class="muted">
             No active instant consults yet. Patients will appear here when assigned to you.
           </p>
@@ -47,176 +47,18 @@
           <ul class="inbox-list">
             @for (c of instantConsults(); track c.id) {
               <li>
-                <button
-                  type="button"
+                <a
                   class="inbox-item"
-                  [class.active]="selectedConsultId() === c.id"
-                  (click)="selectConsult(c.id)"
+                  [routerLink]="['/', sessionsPath, c.id]"
                 >
                   <strong>{{ c.patient.name }}</strong>
                   <span>{{ c.disease.name }} · {{ c.status }}</span>
-                </button>
+                  <em>Open live room →</em>
+                </a>
               </li>
             }
           </ul>
         }
-      }
-
-      @if (selectedConsultId()) {
-        <div class="inbox-chat">
-          @if (selectedConsult(); as active) {
-            <p class="active-meta">
-              {{ isPsychologist() ? 'Session with' : 'Chatting with' }}
-              <strong>{{ active.patient?.name || 'Patient' }}</strong>
-              — {{ active.disease?.name || 'Consultation' }}
-            </p>
-            <div class="inbox-actions">
-              @if (capabilities().caseAnalysis) {
-                <button type="button" (click)="openCaseAnalysis(active.id)">Case analysis</button>
-              }
-              @if (capabilities().prescribe) {
-                <button type="button" class="btn-primary" (click)="openPrescription(active.id)">
-                  Prescribe
-                </button>
-              }
-              @if (isPsychologist()) {
-                <button
-                  type="button"
-                  class="danger"
-                  (click)="flagSafetyRisk()"
-                  [disabled]="sessionNoteSaving()"
-                >
-                  Flag safety risk
-                </button>
-              }
-            </div>
-          }
-          <app-consultation-chat-panel [consultationId]="selectedConsultId()" />
-
-          <section class="assessment-summary-card">
-            <div class="session-notes-head">
-              <div>
-                <h3>Mental health assessment history</h3>
-                <p class="muted">Latest saved scores from Hope Hub tests and recent retests.</p>
-              </div>
-              <button
-                type="button"
-                class="ghost"
-                (click)="loadAssessmentSummary()"
-                [disabled]="assessmentSummaryLoading()"
-              >
-                Refresh scores
-              </button>
-            </div>
-
-            @if (assessmentSummaryLoading() && !assessmentSummary()) {
-              <p class="muted">Loading assessment history...</p>
-            } @else if (!assessmentSummary()?.attempts?.length) {
-              <p class="muted">No saved assessment results yet.</p>
-            } @else {
-              @if ((assessmentSummary()?.safetyFlaggedCount || 0) > 0) {
-                <div class="assessment-risk-alert">
-                  Safety flag appeared in {{ assessmentSummary()?.safetyFlaggedCount }} saved
-                  result(s). Review gently and assess current risk.
-                </div>
-              }
-
-              <div class="assessment-latest-grid">
-                @for (attempt of assessmentSummary()?.latest || []; track attempt.id) {
-                  <article class="assessment-score-card" [class.has-risk]="attempt.safetyFlag">
-                    <div>
-                      <strong>{{ attempt.assessmentType }}</strong>
-                      <span>{{ attempt.title }}</span>
-                    </div>
-                    <div class="score-pill">{{ attempt.totalScore }}/{{ attempt.maxScore }}</div>
-                    <p>{{ attempt.level }}</p>
-                    <small>
-                      Attempt #{{ attempt.retakeNumber }} ·
-                      {{ attempt.completedAt | date: 'mediumDate' }}
-                    </small>
-                  </article>
-                }
-              </div>
-
-              <details class="assessment-history">
-                <summary>Recent test history</summary>
-                <div class="assessment-history-list">
-                  @for (attempt of assessmentSummary()?.attempts || []; track attempt.id) {
-                    <div class="assessment-history-row">
-                      <span>{{ attempt.assessmentType }}</span>
-                      <strong>{{ attempt.totalScore }}/{{ attempt.maxScore }}</strong>
-                      <span>{{ attempt.level }}</span>
-                      <small>{{ attempt.completedAt | date: 'short' }}</small>
-                    </div>
-                  }
-                </div>
-              </details>
-            }
-          </section>
-
-          <section class="session-notes-card">
-            <div class="session-notes-head">
-              <div>
-                <h3>{{ isPsychologist() ? 'Psychologist session notes' : 'Session notes' }}</h3>
-                <p class="muted">
-                  {{
-                    isPsychologist()
-                      ? 'Record what was discussed, support given, user response, risk level, and next step.'
-                      : 'Record what happened during this consultation and the next step.'
-                  }}
-                </p>
-              </div>
-              <button
-                type="button"
-                class="ghost"
-                (click)="loadSessionNotes()"
-                [disabled]="sessionNotesLoading()"
-              >
-                Refresh notes
-              </button>
-            </div>
-
-            <textarea
-              rows="5"
-              [value]="sessionNoteText()"
-              (input)="sessionNoteText.set($any($event.target).value)"
-              [placeholder]="
-                isPsychologist()
-                  ? 'Example: Patient shared anxiety triggers. Provided grounding exercise and supportive counselling. No immediate safety risk shared. Next: follow up in 7 days.'
-                  : 'Write a private consultation note and next step...'
-              "
-            ></textarea>
-
-            <div class="session-note-actions">
-              <button
-                type="button"
-                class="btn-primary"
-                (click)="saveSessionNote()"
-                [disabled]="sessionNoteSaving() || sessionNoteText().trim().length < 3"
-              >
-                {{ sessionNoteSaving() ? 'Saving...' : 'Save note' }}
-              </button>
-              <span class="muted"
-                >Private to care/admin team. Not shown to patient by default.</span
-              >
-            </div>
-
-            @if (sessionNotesLoading() && !sessionNotes().length) {
-              <p class="muted">Loading notes...</p>
-            } @else if (!sessionNotes().length) {
-              <p class="muted">No session notes yet.</p>
-            } @else {
-              <div class="session-note-list">
-                @for (note of sessionNotes(); track note.id) {
-                  <article class="session-note-item">
-                    <p>{{ note.body }}</p>
-                    <small>{{ note.author.name }} · {{ note.createdAt | date: 'medium' }}</small>
-                  </article>
-                }
-              </div>
-            }
-          </section>
-        </div>
       }
     </section>
   }

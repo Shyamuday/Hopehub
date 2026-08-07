@@ -58,7 +58,13 @@ export const routes: Routes = [
       { path: ROUTE_PATHS.DISEASE_PAGES, component: DiseasePagesPage },
       { path: ROUTE_PATHS.BLOG, component: DoctorBlogPage },
       { path: ROUTE_PATHS.ONLINE_DOCTOR, component: OnlineDoctorPage },
-      { path: `${ROUTE_PATHS.SESSIONS}/:consultationId`, component: OnlineDoctorPage },
+      {
+        path: `${ROUTE_PATHS.SESSIONS}/:consultationId`,
+        loadComponent: () =>
+          import('./features/live-session/doctor-live-session-page').then(
+            (m) => m.DoctorLiveSessionPage,
+          ),
+      },
       { path: ROUTE_PATHS.REPERTORY_BROWSER, component: RepertoryBrowserPage },
       { path: ROUTE_PATHS.PROFILE, component: ProfilePage },
       { path: ROUTE_PATHS.LEAVES, component: MyLeaves },
