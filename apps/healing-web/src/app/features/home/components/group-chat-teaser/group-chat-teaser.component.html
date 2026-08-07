@@ -10,14 +10,18 @@
         <div>
           <span class="chat-teaser__eyebrow">
             <span></span>
-            Live group chat
+            {{ hasRealChat() ? 'Live group chat' : 'Group chat preview' }}
           </span>
-          <h2>Evening support room</h2>
+          <h2>{{ roomTitle() }}</h2>
           <p>
-            @if (isAuthenticated()) {
+            @if (hasRealChat() && isAuthenticated()) {
+              Real members are chatting now. Reply here or open the full room.
+            } @else if (hasRealChat()) {
+              Real members are chatting now. Read quietly, then sign up free to reply.
+            } @else if (isAuthenticated()) {
               You are signed in. You can reply here or open the full support area.
             } @else {
-              Read quietly as a guest. Sign up free when you want to reply.
+              No active group chat yet, so this is a sample. Sign up free when you want to reply.
             }
           </p>
         </div>
@@ -28,7 +32,7 @@
       </header>
 
       <div class="chat-teaser__messages">
-        @for (message of messages.slice(0, visibleMessageCount()); track message.author + message.body) {
+        @for (message of displayedMessages().slice(0, visibleMessageCount()); track message.author + message.body) {
           <article
             class="chat-teaser__message"
             [class.chat-teaser__message--host]="message.tone === 'host'"
@@ -52,12 +56,12 @@
           placeholder="Type a reply..."
           autocomplete="off"
         />
-        <button type="submit">Reply</button>
+        <button type="submit" [disabled]="sending()">{{ sending() ? 'Sending...' : 'Reply' }}</button>
       </form>
 
       <div class="chat-teaser__footer">
         <button type="button" class="chat-teaser__primary" (click)="askToJoin()">
-          {{ isAuthenticated() ? 'Open group chat' : 'Sign up free to chat' }}
+          {{ primaryActionLabel() }}
         </button>
         <a routerLink="/" fragment="live-connect">See live support</a>
       </div>

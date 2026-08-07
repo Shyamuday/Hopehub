@@ -1,10 +1,22 @@
 import { CommonModule, isPlatformBrowser } from '@angular/common';
-import { Component, DestroyRef, OnInit, PLATFORM_ID, inject, signal } from '@angular/core';
+import {
+  Component,
+  DestroyRef,
+  OnInit,
+  PLATFORM_ID,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterModule } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { filter, pairwise, startWith } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { AuthModalService, AuthService } from '../../../../core/services';
+import { AuthModalService, AuthService, BookingService } from '../../../../core/services';
+import {
+  HopeHubLiveGroup,
+  HopeHubLiveGroupMessage,
+} from '../../../../core/services/booking.service';
 
 type TeaserMessage = {
   author: string;
@@ -23,6 +35,8 @@ type TeaserMessage = {
 export class GroupChatTeaserComponent implements OnInit {
   private readonly authService = inject(AuthService);
   private readonly authModalService = inject(AuthModalService);
+  private readonly bookingService = inject(BookingService);
+  private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
   private readonly platformId = inject(PLATFORM_ID);
 
@@ -31,8 +45,20 @@ export class GroupChatTeaserComponent implements OnInit {
   readonly isAuthenticated = signal(false);
   readonly visibleMessageCount = signal(2);
   readonly draft = signal('');
+  readonly sending = signal(false);
+  readonly activeGroup = signal<HopeHubLiveGroup | null>(null);
+  readonly realMessages = signal<TeaserMessage[]>([]);
+  readonly hasRealChat = computed(() => this.realMessages().length > 0);
+  readonly displayedMessages = computed(() =>
+    this.hasRealChat() ? this.realMessages() : this.fallbackMessages,
+  );
+  readonly roomTitle = computed(() => this.activeGroup()?.title || 'Evening support room');
+  readonly primaryActionLabel = computed(() => {
+    if (!this.isAuthenticated()) return 'Sign up free to chat';
+    return this.hasRealChat() ? 'Open group chat' : 'See live support';
+  });
 
-  readonly messages: TeaserMessage[] = [
+  readonly fallbackMessages: TeaserMessage[] = [
     {
       author: 'Asha',
       role: 'Host',
@@ -65,6 +91,8 @@ export class GroupChatTeaserComponent implements OnInit {
 
   ngOnInit(): void {
     if (!isPlatformBrowser(this.platformId)) return;
+
+    this.loadRealGroupPreview();
 
     this.authService.authState$
       .pipe(
@@ -114,29 +142,53 @@ export class GroupChatTeaserComponent implements OnInit {
 
   askToJoin(): void {
     if (this.isAuthenticated()) {
-      this.isMinimized.set(false);
-      this.isOpen.set(true);
+      const group = this.activeGroup();
+      if (group) {
+        void this.router.navigate(['/live-groups', group.slug || group.id]);
+      } else {
+        void this.router.navigate(['/'], { fragment: 'live-connect' });
+      }
       return;
     }
     this.authModalService.openRegister();
   }
 
   sendPreviewReply(): void {
-    if (this.isAuthenticated() && this.draft().trim()) {
-      const reply = this.draft().trim();
-      this.messages.push({
-        author: 'You',
-        role: 'Member',
-        body: reply,
-        tone: 'member',
-      });
-      this.visibleMessageCount.set(this.messages.length);
+    if (!this.isAuthenticated()) {
       this.draft.set('');
+      this.askToJoin();
       return;
     }
 
-    this.draft.set('');
-    this.askToJoin();
+    if (!this.hasRealChat() || !this.activeGroup()) {
+      this.draft.set('');
+      this.askToJoin();
+      return;
+    }
+
+    if (this.draft().trim() && !this.sending()) {
+      const reply = this.draft().trim();
+      const group = this.activeGroup();
+      if (!group) return;
+      this.sending.set(true);
+      this.bookingService.sendLiveGroupMessage(group.slug || group.id, reply).subscribe({
+        next: (res) => {
+          this.realMessages.update((messages) => [
+            ...messages,
+            this.toTeaserMessage(res.message, true),
+          ]);
+          this.visibleMessageCount.set(this.displayedMessages().length);
+          this.draft.set('');
+          this.sending.set(false);
+        },
+        error: () => {
+          this.draft.set('');
+          this.sending.set(false);
+          this.askToJoin();
+        },
+      });
+      return;
+    }
   }
 
   private openTeaserAfterAuth(): void {
@@ -155,7 +207,7 @@ export class GroupChatTeaserComponent implements OnInit {
     if (this.revealTimer) return;
     this.revealTimer = window.setInterval(() => {
       this.visibleMessageCount.update((count) => {
-        if (count >= this.messages.length) {
+        if (count >= this.displayedMessages().length) {
           if (this.revealTimer) {
             window.clearInterval(this.revealTimer);
             this.revealTimer = null;
@@ -181,5 +233,72 @@ export class GroupChatTeaserComponent implements OnInit {
     } catch {
       // Ignore storage failures.
     }
+  }
+
+  private loadRealGroupPreview(): void {
+    this.bookingService
+      .liveGroups()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (res) => {
+          const activeGroup = (res.groups || []).find(
+            (group) => Number(group.messageCount || 0) > 0,
+          );
+          if (!activeGroup) {
+            this.activeGroup.set(null);
+            this.realMessages.set([]);
+            return;
+          }
+
+          this.bookingService
+            .liveGroup(activeGroup.slug || activeGroup.id)
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe({
+              next: (groupRes) => {
+                const realMessages = (groupRes.messages || [])
+                  .filter((message) => !message.isDeleted && !!message.body?.trim())
+                  .slice(-4)
+                  .map((message) => this.toTeaserMessage(message));
+
+                if (!realMessages.length) {
+                  this.activeGroup.set(null);
+                  this.realMessages.set([]);
+                  return;
+                }
+
+                this.activeGroup.set(groupRes.group);
+                this.realMessages.set(realMessages);
+                this.visibleMessageCount.set(Math.min(2, realMessages.length));
+              },
+              error: () => {
+                this.activeGroup.set(null);
+                this.realMessages.set([]);
+              },
+            });
+        },
+        error: () => {
+          this.activeGroup.set(null);
+          this.realMessages.set([]);
+        },
+      });
+  }
+
+  private toTeaserMessage(message: HopeHubLiveGroupMessage, own = false): TeaserMessage {
+    const role = String(message.senderRole || '').toUpperCase();
+    const isHost = role === 'ADMIN' || role === 'DOCTOR' || role === 'HR';
+    return {
+      author: own ? 'You' : message.senderName || 'Member',
+      role: own ? 'Member' : this.roleLabel(role),
+      body: message.body,
+      tone: isHost ? 'host' : role.includes('VOLUNTEER') ? 'listener' : 'member',
+    };
+  }
+
+  private roleLabel(role: string): string {
+    if (role === 'DOCTOR') return 'Provider';
+    if (role === 'ADMIN') return 'Admin';
+    if (role === 'HR') return 'Host';
+    if (role.includes('VOLUNTEER')) return 'Emotional support listener';
+    return 'Member';
   }
 }
