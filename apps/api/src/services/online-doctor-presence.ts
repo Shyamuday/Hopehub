@@ -63,6 +63,7 @@ export function mapLiveDoctor(session: {
   liveStatus: LivePresenceStatus;
   acceptsChat: boolean;
   acceptsVoiceCall: boolean;
+  acceptsVideoCall: boolean;
   lastHeartbeatAt: Date | null;
   wentLiveAt: Date | null;
   user: {
@@ -104,6 +105,7 @@ export function mapLiveDoctor(session: {
     liveStatus: session.liveStatus,
     acceptsChat: session.acceptsChat,
     acceptsVoiceCall: session.acceptsVoiceCall,
+    acceptsVideoCall: session.acceptsVideoCall,
     bio: session.doctor.bio,
     yearsOfExperience: session.doctor.yearsOfExperience,
     focusAreas: session.doctor.focusAreas,
@@ -147,6 +149,7 @@ export async function setDoctorLiveStatus(
     liveStatus: LivePresenceStatus;
     acceptsChat?: boolean;
     acceptsVoiceCall?: boolean;
+    acceptsVideoCall?: boolean;
   },
   io?: SocketIoServer
 ) {
@@ -161,6 +164,7 @@ export async function setDoctorLiveStatus(
       liveStatus: payload.liveStatus,
       acceptsChat: payload.acceptsChat ?? session.acceptsChat,
       acceptsVoiceCall: payload.acceptsVoiceCall ?? session.acceptsVoiceCall,
+      acceptsVideoCall: payload.acceptsVideoCall ?? session.acceptsVideoCall,
       lastHeartbeatAt:
         payload.liveStatus === LivePresenceStatus.OFFLINE ? session.lastHeartbeatAt : now,
       wentLiveAt:
@@ -256,7 +260,22 @@ function isHopeHubQuickTalkConsultation(consultation: {
   );
 }
 
-async function isHopeHubProviderLiveForInstant(userId: string) {
+type LiveConnectMode = 'chat' | 'voice' | 'video';
+
+function normalizeLiveConnectMode(value: unknown): LiveConnectMode {
+  const raw = String(value || '').toLowerCase();
+  if (raw.includes('video')) return 'video';
+  if (raw.includes('chat') || raw.includes('message')) return 'chat';
+  return 'voice';
+}
+
+function liveConnectModeWhere(mode: LiveConnectMode) {
+  if (mode === 'chat') return { acceptsChat: true };
+  if (mode === 'video') return { acceptsVideoCall: true };
+  return { acceptsVoiceCall: true };
+}
+
+async function isHopeHubProviderLiveForInstant(userId: string, mode: LiveConnectMode) {
   const cutoff = new Date(Date.now() - ONLINE_HEARTBEAT_TTL_MS);
   const session = await prisma.doctorOnlineSession.findFirst({
     where: {
@@ -264,6 +283,7 @@ async function isHopeHubProviderLiveForInstant(userId: string) {
       enabled: true,
       liveStatus: LivePresenceStatus.ONLINE,
       lastHeartbeatAt: { gte: cutoff },
+      ...liveConnectModeWhere(mode),
       user: { isActive: true, role: Role.DOCTOR },
       doctor: {
         isAvailable: true,
@@ -280,14 +300,15 @@ async function findBestHopeHubLiveProvider(consultation: {
   intakeAnswers: Prisma.JsonValue;
   preferredDoctorUserId: string | null;
 }) {
+  const intake = asRecord(consultation.intakeAnswers);
+  const mode = normalizeLiveConnectMode(intake['sessionMode']);
   if (
     consultation.preferredDoctorUserId &&
-    (await isHopeHubProviderLiveForInstant(consultation.preferredDoctorUserId))
+    (await isHopeHubProviderLiveForInstant(consultation.preferredDoctorUserId, mode))
   ) {
     return consultation.preferredDoctorUserId;
   }
 
-  const intake = asRecord(consultation.intakeAnswers);
   const language = String(intake['preferredLanguage'] || '').trim();
   const gender = String(intake['preferredProviderGender'] || '').trim();
   const concern = String(intake['concernCategory'] || '').trim();
@@ -298,7 +319,7 @@ async function findBestHopeHubLiveProvider(consultation: {
         enabled: true,
         liveStatus: LivePresenceStatus.ONLINE,
         lastHeartbeatAt: { gte: new Date(Date.now() - ONLINE_HEARTBEAT_TTL_MS) },
-        acceptsVoiceCall: true,
+        ...liveConnectModeWhere(mode),
         user: { isActive: true, role: Role.DOCTOR },
         doctor: {
           isAvailable: true,

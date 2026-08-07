@@ -15,6 +15,7 @@ export type OnlineDoctorProfile = {
   liveStatus: 'OFFLINE' | 'ONLINE' | 'BUSY' | 'ON_CALL';
   acceptsChat: boolean;
   acceptsVoiceCall: boolean;
+  acceptsVideoCall: boolean;
   specialty: string;
   doctorType?: HomeopathicDoctorType;
   doctorTypeLabel?: string;
@@ -53,6 +54,7 @@ export class OnlineDoctorService implements OnDestroy {
     liveStatus: OnlineDoctorProfile['liveStatus'];
     acceptsChat?: boolean;
     acceptsVoiceCall?: boolean;
+    acceptsVideoCall?: boolean;
   }) {
     return firstValueFrom(
       this.http.put<{ profile: OnlineDoctorProfile }>(

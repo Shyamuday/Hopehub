@@ -236,7 +236,11 @@
       >
       <label class="checkbox"
         ><input type="checkbox" [formField]="settingsForm.acceptsVoiceCall" /> Accept voice &amp;
-        video calls</label
+        calls</label
+      >
+      <label class="checkbox"
+        ><input type="checkbox" [formField]="settingsForm.acceptsVideoCall" /> Accept video
+        calls</label
       >
       @if (settingsModel().category === 'SPECIALIST') {
         <div class="field full">

@@ -1,0 +1,128 @@
+<section class="hope-section live-connect-section">
+  <div class="hope-section-inner">
+    <div class="live-connect-shell">
+      <div class="live-connect-intro">
+        <p class="hope-eyebrow">Live Connect</p>
+        <h2 class="hope-section-title">Talk now with someone who is actually available</h2>
+        <p class="hope-section-copy max-w-2xl">
+          Pick chat, voice, or video. We show only live Hope Hub experts and emotional support listeners who are
+          accepting that mode right now.
+        </p>
+      </div>
+
+      <div class="live-mode-grid">
+        @for (modeItem of modes; track modeItem.value) {
+          <button
+            type="button"
+            class="live-mode-card"
+            [class.live-mode-card--active]="mode() === modeItem.value"
+            (click)="setMode(modeItem.value)"
+          >
+            <span class="live-mode-icon">{{ modeItem.icon }}</span>
+            <span>
+              <strong>{{ modeItem.label }}</strong>
+              <small>{{ modeItem.copy }}</small>
+            </span>
+          </button>
+        }
+      </div>
+
+      <div class="live-tab-row" aria-label="Filter live providers">
+        @for (tab of tabs; track tab.value) {
+          <button
+            type="button"
+            class="live-tab"
+            [class.live-tab--active]="roleGroup() === tab.value"
+            (click)="setRoleGroup(tab.value)"
+          >
+            {{ tab.label }}
+          </button>
+        }
+      </div>
+
+      @if (loading()) {
+        <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          @for (item of [1, 2, 3, 4]; track item) {
+            <div class="h-56 animate-pulse rounded-3xl border border-emerald-100 bg-white/80"></div>
+          }
+        </div>
+      } @else if (providers().length) {
+        <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          @for (provider of providers(); track provider.id) {
+            <article class="live-provider-card">
+              <div class="flex items-start gap-3">
+                @if (providerImageUrl(provider); as imageUrl) {
+                  <img [src]="imageUrl" [alt]="provider.name" class="live-provider-avatar" />
+                } @else {
+                  <div class="live-provider-avatar live-provider-avatar--fallback">
+                    {{ provider.name.slice(0, 1) }}
+                  </div>
+                }
+                <div class="min-w-0">
+                  <div class="flex flex-wrap items-center gap-2">
+                    <h3 class="truncate text-base font-bold text-slate-950">{{ provider.name }}</h3>
+                    <span class="live-dot">Live</span>
+                  </div>
+                  <p class="mt-1 text-sm font-medium text-slate-600">
+                    {{ providerRoleLabel(provider) || providerTierLabel(provider) }}
+                  </p>
+                </div>
+              </div>
+
+              @if (provider.supportRoleDescription || provider.bio) {
+                <p class="mt-4 line-clamp-3 text-sm leading-6 text-slate-600">
+                  {{ provider.supportRoleDescription || provider.bio }}
+                </p>
+              }
+
+              <div class="mt-4 flex flex-wrap gap-2 text-xs font-semibold text-slate-600">
+                @if (provider.acceptsChat) {
+                  <span class="live-mini-chip">Chat</span>
+                }
+                @if (provider.acceptsVoiceCall) {
+                  <span class="live-mini-chip">Voice</span>
+                }
+                @if (provider.acceptsVideoCall) {
+                  <span class="live-mini-chip">Video</span>
+                }
+              </div>
+
+              <button
+                type="button"
+                class="btn-primary mt-5 w-full justify-center"
+                [disabled]="startingProviderId() === provider.id"
+                (click)="start(provider)"
+              >
+                {{
+                  startingProviderId() === provider.id
+                    ? 'Starting...'
+                    : buttonLabel(provider)
+                }}
+              </button>
+            </article>
+          }
+        </div>
+      } @else {
+        <div class="live-empty-card">
+          <p>{{ message() }}</p>
+          <a routerLink="/contact" class="btn-secondary">Book a scheduled session</a>
+        </div>
+      }
+
+      @if (message() && providers().length) {
+        <p class="mt-4 rounded-2xl bg-white/80 p-4 text-sm font-medium text-slate-700">
+          {{ message() }}
+        </p>
+      }
+    </div>
+  </div>
+</section>
+
+<app-payment-status-overlay
+  [state]="paymentFlowState()"
+  [title]="paymentFlowTitle()"
+  [message]="paymentFlowMessage()"
+  [canRetry]="!!paymentFlowConsultation()"
+  (retry)="retryPayment()"
+  (close)="closePaymentOverlay()"
+></app-payment-status-overlay>

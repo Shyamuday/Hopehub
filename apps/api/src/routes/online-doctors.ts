@@ -96,7 +96,8 @@ export function createOnlineDoctorsRouter(io: SocketIoServer) {
           category: z.nativeEnum(OnlineDoctorCategory).optional(),
           specialtyDiseaseIds: z.array(z.string().min(1)).max(20).optional(),
           acceptsChat: z.boolean().optional(),
-          acceptsVoiceCall: z.boolean().optional()
+          acceptsVoiceCall: z.boolean().optional(),
+          acceptsVideoCall: z.boolean().optional()
         })
         .parse(req.body);
 
@@ -143,7 +144,8 @@ export function createOnlineDoctorsRouter(io: SocketIoServer) {
         .object({
           liveStatus: z.nativeEnum(LivePresenceStatus),
           acceptsChat: z.boolean().optional(),
-          acceptsVoiceCall: z.boolean().optional()
+          acceptsVoiceCall: z.boolean().optional(),
+          acceptsVideoCall: z.boolean().optional()
         })
         .parse(req.body);
 

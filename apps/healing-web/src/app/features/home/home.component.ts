@@ -5,11 +5,18 @@ import { APP_CONSTANTS } from '../../core';
 import { environment } from '../../../environments/environment';
 import { BookingService, HopeHubProvider } from '../../core/services/booking.service';
 import { HomeHeroComponent } from './components/home-hero/home-hero.component';
+import { LiveConnectComponent } from './components/live-connect/live-connect.component';
 
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [FeedbackSectionComponent, HomeHeroComponent, OfferBannerCarouselComponent, RouterLink],
+  imports: [
+    FeedbackSectionComponent,
+    HomeHeroComponent,
+    LiveConnectComponent,
+    OfferBannerCarouselComponent,
+    RouterLink,
+  ],
   templateUrl: './home.component.html',
   styleUrl: './home.component.scss',
 })

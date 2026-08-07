@@ -1619,12 +1619,33 @@ async function activeHopeHubProviders(params: {
   };
 }
 
-function hopeHubLiveOnlineSessionWhere() {
+type HopeHubQuickTalkMode = 'chat' | 'voice' | 'video';
+
+function normalizeQuickTalkMode(value: unknown): HopeHubQuickTalkMode {
+  const raw = String(value || '').toLowerCase();
+  if (raw.includes('video')) return 'video';
+  if (raw.includes('chat') || raw.includes('message')) return 'chat';
+  return 'voice';
+}
+
+function quickTalkSessionModeLabel(mode: HopeHubQuickTalkMode) {
+  if (mode === 'chat') return 'live_chat';
+  if (mode === 'video') return 'online_video';
+  return 'online_audio';
+}
+
+function quickTalkModeWhere(mode: HopeHubQuickTalkMode) {
+  if (mode === 'chat') return { acceptsChat: true };
+  if (mode === 'video') return { acceptsVideoCall: true };
+  return { acceptsVoiceCall: true };
+}
+
+function hopeHubLiveOnlineSessionWhere(mode: HopeHubQuickTalkMode = 'voice') {
   return {
     is: {
       enabled: true,
       liveStatus: LivePresenceStatus.ONLINE,
-      acceptsVoiceCall: true,
+      ...quickTalkModeWhere(mode),
       lastHeartbeatAt: { gte: new Date(Date.now() - 90_000) }
     }
   };
@@ -1639,7 +1660,9 @@ async function activeLiveHopeHubProviders(params: {
   sessionType?: string;
   ageGroup?: string;
   gender?: string;
+  mode?: string;
 }) {
+  const mode = normalizeQuickTalkMode(params.mode);
   const providerResponse = await activeHopeHubProviders({
     ...params,
     page: 1,
@@ -1654,7 +1677,7 @@ async function activeLiveHopeHubProviders(params: {
       userId: { in: providerUserIds },
       enabled: true,
       liveStatus: LivePresenceStatus.ONLINE,
-      acceptsVoiceCall: true,
+      ...quickTalkModeWhere(mode),
       lastHeartbeatAt: { gte: new Date(Date.now() - 90_000) }
     },
     select: {
@@ -1662,7 +1685,8 @@ async function activeLiveHopeHubProviders(params: {
       liveStatus: true,
       wentLiveAt: true,
       acceptsChat: true,
-      acceptsVoiceCall: true
+      acceptsVoiceCall: true,
+      acceptsVideoCall: true
     }
   });
   const liveByUserId = new Map(sessions.map((session) => [session.userId, session]));
@@ -1677,6 +1701,8 @@ async function activeLiveHopeHubProviders(params: {
         liveStatus: session.liveStatus,
         acceptsChat: session.acceptsChat,
         acceptsVoiceCall: session.acceptsVoiceCall,
+        acceptsVideoCall: session.acceptsVideoCall,
+        liveConnectMode: mode,
         wentLiveAt: session.wentLiveAt?.toISOString() ?? null
       };
     });
@@ -1688,7 +1714,9 @@ async function findLiveHopeHubProviderForQuickTalk(params: {
   concern?: string;
   language?: string;
   gender?: string | null;
+  mode?: string;
 }) {
+  const mode = normalizeQuickTalkMode(params.mode);
   return prisma.doctor.findFirst({
     where: {
       ...hopeHubProviderWhere({
@@ -1699,7 +1727,7 @@ async function findLiveHopeHubProviderForQuickTalk(params: {
         autoMatchOnly: true
       }),
       ...(params.providerId ? { id: params.providerId } : {}),
-      onlineSession: hopeHubLiveOnlineSessionWhere()
+      onlineSession: hopeHubLiveOnlineSessionWhere(mode)
     },
     select: {
       id: true,
@@ -2102,7 +2130,8 @@ hopeHubRouter.get(
       modality: queryText(req, 'modality').trim(),
       sessionType: queryText(req, 'sessionType').trim(),
       ageGroup: queryText(req, 'ageGroup').trim(),
-      gender: queryText(req, 'gender').trim()
+      gender: queryText(req, 'gender').trim(),
+      mode: queryText(req, 'mode').trim()
     });
     res.json({ providers, total: providers.length });
   })
@@ -2295,6 +2324,8 @@ hopeHubRouter.post(
   allowRoles(Role.PATIENT),
   asyncRoute(async (req, res) => {
     const body = hopeHubQuickTalkSchema.parse(req.body);
+    const quickTalkMode = normalizeQuickTalkMode(body.sessionMode);
+    const normalizedSessionMode = quickTalkSessionModeLabel(quickTalkMode);
     const defaults = await hopeHubPublicDefaults();
     const roleGroup = /professional/i.test(body.preferredExpertType || '')
       ? 'PROFESSIONALS'
@@ -2317,7 +2348,8 @@ hopeHubRouter.post(
       roleGroup,
       concern: body.concernCategory || undefined,
       language: body.preferredLanguage || undefined,
-      gender: body.preferredProviderGender || undefined
+      gender: body.preferredProviderGender || undefined,
+      mode: quickTalkMode
     });
     if (!provider) {
       return res.status(409).json({
@@ -2407,7 +2439,8 @@ hopeHubRouter.post(
           careTeamPreviousUseCount: previousUseCount,
           concernCategory: body.concernCategory || '',
           preferredExpertType: body.preferredExpertType || '',
-          sessionMode: body.sessionMode || 'online_voice',
+          sessionMode: normalizedSessionMode,
+          quickTalkMode,
           preferredLanguage: body.preferredLanguage || '',
           preferredProviderGender: body.preferredProviderGender || '',
           safetyRisk: body.safetyRisk || '',
@@ -2424,6 +2457,8 @@ hopeHubRouter.post(
           serviceName: effectiveServiceName,
           providerId: provider.id,
           requestedProviderName: provider.user.name,
+          sessionMode: normalizedSessionMode,
+          quickTalkMode,
           careTeamServiceId: careTeamService?.id || null,
           careTeamServiceTitle: careTeamService?.title || null,
           careTeamPricingMode: careTeamService?.pricingMode || null,
@@ -2450,6 +2485,8 @@ hopeHubRouter.post(
               serviceName: effectiveServiceName,
               providerId: provider.id,
               requestedProviderName: provider.user.name,
+              sessionMode: normalizedSessionMode,
+              quickTalkMode,
               careTeamServiceId: careTeamService?.id || null,
               careTeamServiceTitle: careTeamService?.title || null,
               careTeamPricingMode: careTeamService?.pricingMode || null,

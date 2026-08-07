@@ -25,6 +25,7 @@ model DoctorOnlineSession {
   liveStatus          LivePresenceStatus   @default(OFFLINE)
   acceptsChat         Boolean              @default(true)
   acceptsVoiceCall    Boolean              @default(true)
+  acceptsVideoCall    Boolean              @default(true)
   lastHeartbeatAt     DateTime?
   wentLiveAt          DateTime?
   doctor              Doctor               @relation(fields: [doctorId], references: [id], onDelete: Cascade)

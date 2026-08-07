@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -6,16 +6,31 @@ import { AuthService } from '../../core/services/auth.service';
 import { BookingService } from '../../core/services/booking.service';
 import { PaymentService } from '../../core/services/payment.service';
 import { NotificationService } from '../../core/services/notification.service';
+import { HopeHubRealtimeService } from '../../core/services/realtime.service';
 import {
   HOPE_HUB_ANALYTICS_EVENTS,
   ProductAnalyticsService,
 } from '../../core/services/product-analytics.service';
 import { User } from '../../core/models/auth.model';
+import { ConsultationCallPanelComponent } from '../../shared/components/consultation-call/consultation-call-panel.component';
+import type {
+  CallSignalingSocket,
+  IceServerConfig,
+} from '../../shared/components/consultation-call/webrtc-call.types';
 import { ProgressDashboardComponent } from '../../shared/components/progress-dashboard/progress-dashboard.component';
 import {
   PaymentFlowState,
   PaymentStatusOverlayComponent,
 } from '../../shared/components/payment-status-overlay/payment-status-overlay.component';
+
+type HopeHubMessage = {
+  id: string;
+  consultationId: string;
+  senderId: string;
+  body: string;
+  createdAt: string;
+  sender?: { id: string; name?: string | null } | null;
+};
 
 type HopeHubConsultation = {
   id: string;
@@ -28,9 +43,11 @@ type HopeHubConsultation = {
     appointmentDate?: string;
     appointmentTime?: string;
     sessionMode?: string;
+    quickTalkMode?: string;
     concernCategory?: string;
     preferredLanguage?: string;
   } | null;
+  messages?: HopeHubMessage[];
   pricingSnapshot?: {
     balanceDueInPaise?: number;
     paymentMode?: string;
@@ -133,7 +150,13 @@ type DashboardPackage = {
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterModule, ProgressDashboardComponent, PaymentStatusOverlayComponent],
+  imports: [
+    CommonModule,
+    RouterModule,
+    ConsultationCallPanelComponent,
+    ProgressDashboardComponent,
+    PaymentStatusOverlayComponent,
+  ],
   template: `
     <div class="min-h-screen bg-gray-50">
       <!-- Header -->
@@ -621,13 +644,89 @@ type DashboardPackage = {
                           </a>
                         }
                       </p>
-                      <!--
-                        Live call UI is intentionally hidden for Hope Hub for now.
-                        Keep the WebRTC integration available for a later rollout.
-                        To restore it, import ConsultationCallPanelComponent,
-                        connect HopeHubRealtimeService, load ICE servers, and
-                        render app-consultation-call-panel for assigned bookings.
-                      -->
+                      <div class="mt-4 rounded-lg border border-emerald-100 bg-emerald-50/60 p-3">
+                        <div class="mb-3 flex items-center justify-between gap-3">
+                          <div>
+                            <p class="text-sm font-bold text-emerald-950">Live session room</p>
+                            <p class="mt-1 text-xs text-emerald-800">
+                              Message your expert here. Voice/video appears for call sessions.
+                            </p>
+                          </div>
+                          <span
+                            class="rounded-full bg-white px-2 py-1 text-xs font-bold uppercase text-emerald-700"
+                          >
+                            {{ sessionModeLabel(consultation) }}
+                          </span>
+                        </div>
+
+                        <div class="max-h-64 space-y-2 overflow-y-auto rounded-lg bg-white p-3">
+                          @if (consultation.messages?.length) {
+                            @for (message of consultation.messages; track message.id) {
+                              <div
+                                class="flex"
+                                [class.justify-end]="isOwnMessage(message)"
+                                [class.justify-start]="!isOwnMessage(message)"
+                              >
+                                <div
+                                  class="max-w-[82%] rounded-2xl px-3 py-2 text-sm shadow-sm"
+                                  [class.bg-emerald-600]="isOwnMessage(message)"
+                                  [class.text-white]="isOwnMessage(message)"
+                                  [class.bg-gray-100]="!isOwnMessage(message)"
+                                  [class.text-gray-800]="!isOwnMessage(message)"
+                                >
+                                  <p class="text-[11px] font-semibold opacity-75">
+                                    {{
+                                      message.sender?.name ||
+                                        (isOwnMessage(message) ? 'You' : 'Expert')
+                                    }}
+                                  </p>
+                                  <p class="mt-0.5 whitespace-pre-wrap">{{ message.body }}</p>
+                                  <p class="mt-1 text-[10px] opacity-70">
+                                    {{ message.createdAt | date: 'shortTime' }}
+                                  </p>
+                                </div>
+                              </div>
+                            }
+                          } @else {
+                            <p class="text-sm text-gray-500">
+                              No messages yet. Say hello and share what you need help with today.
+                            </p>
+                          }
+                        </div>
+
+                        <div class="mt-3 flex gap-2">
+                          <textarea
+                            rows="2"
+                            class="min-h-12 flex-1 rounded-lg border border-emerald-100 px-3 py-2 text-sm outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
+                            placeholder="Type a private message..."
+                            [value]="chatDraft(consultation.id)"
+                            (input)="updateChatDraft(consultation.id, $any($event.target).value)"
+                          ></textarea>
+                          <button
+                            type="button"
+                            class="rounded-lg bg-emerald-700 px-4 py-2 text-sm font-bold text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60"
+                            [disabled]="
+                              sendingMessageId() === consultation.id ||
+                              !chatDraft(consultation.id).trim()
+                            "
+                            (click)="sendChatMessage(consultation)"
+                          >
+                            {{ sendingMessageId() === consultation.id ? 'Sending...' : 'Send' }}
+                          </button>
+                        </div>
+
+                        @if (showCallPanel(consultation)) {
+                          <div class="mt-3">
+                            <app-consultation-call-panel
+                              [consultationId]="consultation.id"
+                              [targetUserId]="consultation.assignedDoctor.id"
+                              [socket]="callSocket()"
+                              [iceServers]="iceServers()"
+                              [enabled]="canLiveConnect(consultation)"
+                            ></app-consultation-call-panel>
+                          </div>
+                        }
+                      </div>
                     } @else {
                       <p class="mt-2 text-sm text-gray-600">Expert matching is pending.</p>
                     }
@@ -690,15 +789,20 @@ type DashboardPackage = {
     </div>
   `,
 })
-export class DashboardComponent implements OnInit {
+export class DashboardComponent implements OnInit, OnDestroy {
   private authService = inject(AuthService);
   private bookingService = inject(BookingService);
   private paymentService = inject(PaymentService);
   private notificationService = inject(NotificationService);
   private productAnalytics = inject(ProductAnalyticsService);
+  private realtimeService = inject(HopeHubRealtimeService);
   user = signal<User | null>(null);
   isLoading = signal(false);
   isPaying = signal(false);
+  sendingMessageId = signal('');
+  chatDrafts = signal<Record<string, string>>({});
+  callSocket = signal<CallSignalingSocket | null>(null);
+  iceServers = signal<IceServerConfig[]>([{ urls: 'stun:stun.l.google.com:19302' }]);
   requestingFollowUpId = signal<string | null>(null);
   notice = signal('');
   paymentFlowState = signal<PaymentFlowState>('IDLE');
@@ -718,6 +822,12 @@ export class DashboardComponent implements OnInit {
     requestCount: 0,
   });
 
+  private readonly handleIncomingMessage = (raw: unknown) => {
+    const message = raw as Partial<HopeHubMessage>;
+    if (!message?.id || !message.consultationId) return;
+    this.mergeMessage(message as HopeHubMessage);
+  };
+
   constructor() {
     this.authService.user$.pipe(takeUntilDestroyed()).subscribe((user: User | null) => {
       this.user.set(user);
@@ -725,7 +835,113 @@ export class DashboardComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.connectRealtime();
+    this.loadIceServers();
     this.loadDashboard();
+  }
+
+  ngOnDestroy(): void {
+    const socket = this.callSocket();
+    socket?.off?.('message:new', this.handleIncomingMessage);
+    this.realtimeService.disconnect();
+  }
+
+  private connectRealtime(): void {
+    const socket = this.realtimeService.connect();
+    if (!socket) return;
+    socket.off?.('message:new', this.handleIncomingMessage);
+    socket.on('message:new', this.handleIncomingMessage);
+    this.callSocket.set(socket);
+  }
+
+  private loadIceServers(): void {
+    this.bookingService.iceServers().subscribe({
+      next: (res) =>
+        this.iceServers.set(res.iceServers?.length ? res.iceServers : this.iceServers()),
+      error: () => undefined,
+    });
+  }
+
+  private subscribeAssignedConsultations(consultations: HopeHubConsultation[]): void {
+    this.connectRealtime();
+    consultations
+      .filter((consultation) => consultation.assignedDoctor)
+      .forEach((consultation) => this.realtimeService.subscribeConsultation(consultation.id));
+  }
+
+  chatDraft(consultationId: string): string {
+    return this.chatDrafts()[consultationId] || '';
+  }
+
+  updateChatDraft(consultationId: string, value: string): void {
+    this.chatDrafts.update((drafts) => ({ ...drafts, [consultationId]: value }));
+  }
+
+  isOwnMessage(message: HopeHubMessage): boolean {
+    return message.senderId === this.user()?.id || message.sender?.id === this.user()?.id;
+  }
+
+  sessionModeLabel(consultation: HopeHubConsultation): string {
+    const mode = (
+      consultation.intakeAnswers?.quickTalkMode ||
+      consultation.intakeAnswers?.sessionMode ||
+      ''
+    ).toLowerCase();
+    if (mode.includes('video')) return 'Video';
+    if (mode.includes('voice') || mode.includes('audio')) return 'Voice';
+    if (mode.includes('chat')) return 'Chat';
+    return 'Session';
+  }
+
+  canLiveConnect(consultation: HopeHubConsultation): boolean {
+    const status = (consultation.status || '').toUpperCase();
+    return Boolean(
+      consultation.assignedDoctor?.id &&
+      ['ASSIGNED', 'IN_PROGRESS', 'PRESCRIPTION_UPLOADED'].includes(status),
+    );
+  }
+
+  showCallPanel(consultation: HopeHubConsultation): boolean {
+    const mode = (
+      consultation.intakeAnswers?.quickTalkMode ||
+      consultation.intakeAnswers?.sessionMode ||
+      ''
+    ).toLowerCase();
+    return this.canLiveConnect(consultation) && !mode.includes('chat');
+  }
+
+  sendChatMessage(consultation: HopeHubConsultation): void {
+    const body = this.chatDraft(consultation.id).trim();
+    if (!body || this.sendingMessageId()) return;
+
+    this.sendingMessageId.set(consultation.id);
+    this.bookingService.sendConsultationMessage(consultation.id, body).subscribe({
+      next: (res) => {
+        this.mergeMessage(res.message as HopeHubMessage);
+        this.updateChatDraft(consultation.id, '');
+        this.sendingMessageId.set('');
+      },
+      error: () => {
+        this.notificationService.error('Could not send message right now.');
+        this.sendingMessageId.set('');
+      },
+    });
+  }
+
+  private mergeMessage(message: HopeHubMessage): void {
+    this.consultations.update((consultations) =>
+      consultations.map((consultation) => {
+        if (consultation.id !== message.consultationId) return consultation;
+        const messages = consultation.messages || [];
+        const withoutDuplicate = messages.filter((item) => item.id !== message.id);
+        return {
+          ...consultation,
+          messages: [...withoutDuplicate, message].sort(
+            (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+          ),
+        };
+      }),
+    );
   }
 
   private loadDashboard(): void {
@@ -733,6 +949,7 @@ export class DashboardComponent implements OnInit {
     this.bookingService.dashboard().subscribe({
       next: (dashboard) => {
         this.consultations.set(dashboard.consultations || []);
+        this.subscribeAssignedConsultations(dashboard.consultations || []);
         this.leads.set(dashboard.leads || []);
         this.resources.set(dashboard.resources || []);
         this.packages.set(dashboard.packages || []);

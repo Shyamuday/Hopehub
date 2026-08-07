@@ -55,6 +55,7 @@ export class OnlineDoctorPage implements OnInit, OnDestroy {
     specialtyDiseaseIds: [] as string[],
     acceptsChat: true,
     acceptsVoiceCall: true,
+    acceptsVideoCall: true,
   });
   readonly settingsForm = form(this.settingsModel);
 
@@ -91,6 +92,7 @@ export class OnlineDoctorPage implements OnInit, OnDestroy {
         specialtyDiseaseIds: [...res.profile.specialtyDiseaseIds],
         acceptsChat: res.profile.acceptsChat,
         acceptsVoiceCall: res.profile.acceptsVoiceCall,
+        acceptsVideoCall: res.profile.acceptsVideoCall,
       });
       if (this.isLive()) {
         void this.loadInbox();
@@ -164,6 +166,7 @@ export class OnlineDoctorPage implements OnInit, OnDestroy {
         specialtyDiseaseIds: m.specialtyDiseaseIds,
         acceptsChat: m.acceptsChat,
         acceptsVoiceCall: m.acceptsVoiceCall,
+        acceptsVideoCall: m.acceptsVideoCall,
       });
       this.online.profile.set(res.profile);
       this.message.set('Settings saved.');
@@ -194,6 +197,7 @@ export class OnlineDoctorPage implements OnInit, OnDestroy {
         liveStatus: 'ONLINE',
         acceptsChat: this.settingsModel().acceptsChat,
         acceptsVoiceCall: this.settingsModel().acceptsVoiceCall,
+        acceptsVideoCall: this.settingsModel().acceptsVideoCall,
       });
       this.online.profile.set(res.profile);
       this.online.connectRealtime();

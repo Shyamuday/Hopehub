@@ -243,6 +243,13 @@ export type HopeHubProvider = {
   }>;
   sessionFeeInPaise?: number;
   sessionDurationMinutes?: number;
+  quickTalkAvailable?: boolean;
+  liveStatus?: string;
+  acceptsChat?: boolean;
+  acceptsVoiceCall?: boolean;
+  acceptsVideoCall?: boolean;
+  liveConnectMode?: 'chat' | 'voice' | 'video' | string;
+  wentLiveAt?: string | null;
 };
 
 export type HopeHubProviderResponse = {
@@ -343,6 +350,19 @@ export class BookingService {
     }>(`${this.apiUrl}/hope-hub/dashboard`);
   }
 
+  consultation(consultationId: string): Observable<{ consultation: any }> {
+    return this.http.get<{ consultation: any }>(
+      `${this.apiUrl}/consultations/${encodeURIComponent(consultationId)}`,
+    );
+  }
+
+  sendConsultationMessage(consultationId: string, body: string): Observable<{ message: any }> {
+    return this.http.post<{ message: any }>(
+      `${this.apiUrl}/consultations/${encodeURIComponent(consultationId)}/messages`,
+      { body },
+    );
+  }
+
   requestFollowUp(entitlementId: string): Observable<{ entitlement: any }> {
     return this.http.post<{ entitlement: any }>(
       `${this.apiUrl}/hope-hub/follow-ups/${entitlementId}/request`,
@@ -393,15 +413,10 @@ export class BookingService {
       sessionType?: string;
       ageGroup?: string;
       gender?: string;
+      mode?: 'chat' | 'voice' | 'video' | string;
     } = {},
   ): Observable<{
-    providers: Array<
-      HopeHubProvider & {
-        quickTalkAvailable?: boolean;
-        liveStatus?: string;
-        wentLiveAt?: string | null;
-      }
-    >;
+    providers: HopeHubProvider[];
     total: number;
   }> {
     const searchParams = new URLSearchParams({ q: params.q ?? '' });
@@ -412,14 +427,9 @@ export class BookingService {
     if (params.sessionType) searchParams.set('sessionType', params.sessionType);
     if (params.ageGroup) searchParams.set('ageGroup', params.ageGroup);
     if (params.gender) searchParams.set('gender', params.gender);
+    if (params.mode) searchParams.set('mode', params.mode);
     return this.http.get<{
-      providers: Array<
-        HopeHubProvider & {
-          quickTalkAvailable?: boolean;
-          liveStatus?: string;
-          wentLiveAt?: string | null;
-        }
-      >;
+      providers: HopeHubProvider[];
       total: number;
     }>(`${this.apiUrl}/hope-hub/quick-talk/providers?${searchParams.toString()}`);
   }
