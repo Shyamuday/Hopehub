@@ -103,6 +103,13 @@ model CounsellorApplication {
   livedExperienceSummary String?                   @db.Text
   agreesToNonClinicalRole Boolean                  @default(false)
   whyJoin             String                       @db.Text
+  listenerScreeningAnswers Json?
+  listenerScreeningScore Int?
+  listenerScreeningMaxScore Int?
+  listenerScreeningPassed Boolean                  @default(false)
+  listenerScreeningCompletedAt DateTime?
+  autoApprovedAt      DateTime?
+  autoApprovedDoctorUserId String?
   source              String                       @default("healing-web")
   entryPage           String?
   adminNote           String?                      @db.Text

@@ -31,7 +31,16 @@ export type CounsellorApplicationPayload = {
   supervisionDetails?: string;
   livedExperienceSummary?: string;
   agreesToNonClinicalRole?: boolean;
+  listenerScreeningAnswers?: Array<{ questionId: string; optionId: string }>;
   whyJoin: string;
+};
+
+export type CounsellorApplicationResponse = {
+  applicationId: string;
+  success: boolean;
+  autoApproved?: boolean;
+  screeningScore?: number | null;
+  screeningMaxScore?: number | null;
 };
 
 export type PublicTestimonial = {
@@ -95,13 +104,15 @@ export class LeadService {
     });
   }
 
-  sendCounsellorApplication(payload: CounsellorApplicationPayload): Observable<boolean> {
+  sendCounsellorApplication(
+    payload: CounsellorApplicationPayload,
+  ): Observable<CounsellorApplicationResponse> {
     return this.http
-      .post<{ applicationId: string; success: boolean }>(
+      .post<CounsellorApplicationResponse>(
         `${environment.apiUrl}/counsellor-applications`,
         this.withBrowserContext(payload),
       )
-      .pipe(map((response) => response.success));
+      .pipe(map((response) => response));
   }
 
   listTestimonials(): Observable<PublicTestimonial[]> {

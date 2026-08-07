@@ -55,6 +55,111 @@
   line-height: 1.5;
 }
 
+.listener-screening {
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  border-radius: 1rem;
+  background:
+    radial-gradient(circle at 5% 0%, rgba(16, 185, 129, 0.12), transparent 12rem),
+    #ffffff;
+  padding: 1rem;
+}
+
+.listener-screening__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  border-bottom: 1px solid #d1fae5;
+  padding-bottom: 1rem;
+}
+
+.listener-screening__pill {
+  display: inline-flex;
+  width: fit-content;
+  border-radius: 999px;
+  background: #ecfdf5;
+  color: #047857;
+  font-size: 0.72rem;
+  font-weight: 900;
+  padding: 0.32rem 0.62rem;
+  text-transform: uppercase;
+}
+
+.listener-screening h3 {
+  margin: 0.75rem 0 0;
+  color: #0f172a;
+  font-size: 1.2rem;
+  font-weight: 900;
+}
+
+.listener-screening p {
+  margin: 0.35rem 0 0;
+  color: #475569;
+  font-size: 0.92rem;
+  line-height: 1.6;
+}
+
+.listener-screening__head strong {
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: #064e3b;
+  color: #ffffff;
+  font-size: 0.9rem;
+  padding: 0.45rem 0.7rem;
+}
+
+.listener-screening__list {
+  display: grid;
+  gap: 0.85rem;
+  margin-top: 1rem;
+}
+
+.listener-question {
+  border: 1px solid #e2e8f0;
+  border-radius: 0.85rem;
+  padding: 0.9rem;
+}
+
+.listener-question legend {
+  color: #0f172a;
+  font-size: 0.94rem;
+  font-weight: 800;
+  line-height: 1.45;
+  padding-right: 0.5rem;
+}
+
+.listener-question__options {
+  display: grid;
+  gap: 0.55rem;
+  margin-top: 0.75rem;
+}
+
+.listener-question__options label {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.7rem;
+  cursor: pointer;
+  padding: 0.7rem;
+}
+
+.listener-question__options input {
+  width: auto;
+  margin-top: 0.2rem;
+}
+
+.listener-question__options span {
+  color: #334155;
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.listener-question__options label:has(input:checked) {
+  border-color: #10b981;
+  background: #ecfdf5;
+}
+
 .submit-button {
   display: inline-flex;
   min-height: 48px;
@@ -76,4 +181,10 @@
 .submit-button:disabled {
   cursor: not-allowed;
   opacity: 0.65;
+}
+
+@media (max-width: 640px) {
+  .listener-screening__head {
+    display: grid;
+  }
 }

@@ -294,6 +294,48 @@
             <small class="block text-red-700">Consent is required before submitting.</small>
           }
 
+          @if (isListenerTrack()) {
+            <section class="listener-screening" aria-label="Listener screening test">
+              <div class="listener-screening__head">
+                <div>
+                  <span class="listener-screening__pill">Required for listener auto-approval</span>
+                  <h3>20-question listener safety test</h3>
+                  <p>
+                    Pass mark is 16/20. If you pass, your emotional support listener profile can be
+                    auto-approved for the Hope Hub website with a ₹99 / 30 min listener plan. If not,
+                    your application goes to manual review.
+                  </p>
+                </div>
+                <strong>{{ screeningAnsweredCount() }}/{{ listenerScreeningQuestions.length }}</strong>
+              </div>
+
+              <div class="listener-screening__list">
+                @for (question of listenerScreeningQuestions; track question.id; let index = $index) {
+                  <fieldset class="listener-question">
+                    <legend>{{ index + 1 }}. {{ question.text }}</legend>
+                    <div class="listener-question__options">
+                      @for (option of question.options; track option.id) {
+                        <label>
+                          <input
+                            type="radio"
+                            [name]="'listener-screening-' + question.id"
+                            [checked]="listenerScreeningAnswers()[question.id] === option.id"
+                            (change)="answerScreeningQuestion(question.id, option.id)"
+                          />
+                          <span>{{ option.text }}</span>
+                        </label>
+                      }
+                    </div>
+                  </fieldset>
+                }
+              </div>
+
+              @if (!screeningComplete()) {
+                <small class="block text-red-700">Answer all screening questions before submitting as a listener.</small>
+              }
+            </section>
+          }
+
           <button type="submit" [disabled]="isSubmitting()" class="submit-button">
             {{ isSubmitting() ? 'Submitting application...' : 'Submit application' }}
           </button>
