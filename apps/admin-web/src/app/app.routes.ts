@@ -17,6 +17,7 @@ import { ConsultationsPage } from './features/consultations/consultations-page/c
 import { PayrollPage } from './features/payroll/payroll-page/payroll-page';
 import { RatesPage } from './features/rates/rates-page/rates-page';
 import { HopeHubOffersPage } from './features/hope-hub-offers/hope-hub-offers-page';
+import { ListenerScreeningPage } from './features/listener-screening/listener-screening-page';
 import { AssessmentDefinitionsPage } from './features/assessment-definitions/assessment-definitions-page';
 import { PaymentsPage } from './features/payments/payments-page/payments-page';
 import { DonationsPage } from './features/donations/donations-page';
@@ -68,6 +69,11 @@ export const routes: Routes = [
       { path: ROUTE_PATHS.DISEASES, component: DiseasesPage, canActivate: guard },
       { path: ROUTE_PATHS.RATES, component: RatesPage, canActivate: guard },
       { path: ROUTE_PATHS.HOPE_HUB_OFFERS, component: HopeHubOffersPage, canActivate: guard },
+      {
+        path: ROUTE_PATHS.LISTENER_SCREENING,
+        component: ListenerScreeningPage,
+        canActivate: guard,
+      },
       {
         path: ROUTE_PATHS.ASSESSMENT_DEFINITIONS,
         component: AssessmentDefinitionsPage,

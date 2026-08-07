@@ -941,6 +941,34 @@ export class AdminApi {
       ...(args as Parameters<AdminOpsApi['updateCareContributorStatus']>),
     );
   }
+  listListenerScreeningQuestionSets(
+    ...args: Parameters<AdminOpsApi['listListenerScreeningQuestionSets']>
+  ) {
+    return this.ops.listListenerScreeningQuestionSets(
+      ...(args as Parameters<AdminOpsApi['listListenerScreeningQuestionSets']>),
+    );
+  }
+  createListenerScreeningQuestionSet(
+    ...args: Parameters<AdminOpsApi['createListenerScreeningQuestionSet']>
+  ) {
+    return this.ops.createListenerScreeningQuestionSet(
+      ...(args as Parameters<AdminOpsApi['createListenerScreeningQuestionSet']>),
+    );
+  }
+  updateListenerScreeningQuestionSet(
+    ...args: Parameters<AdminOpsApi['updateListenerScreeningQuestionSet']>
+  ) {
+    return this.ops.updateListenerScreeningQuestionSet(
+      ...(args as Parameters<AdminOpsApi['updateListenerScreeningQuestionSet']>),
+    );
+  }
+  publishListenerScreeningQuestionSet(
+    ...args: Parameters<AdminOpsApi['publishListenerScreeningQuestionSet']>
+  ) {
+    return this.ops.publishListenerScreeningQuestionSet(
+      ...(args as Parameters<AdminOpsApi['publishListenerScreeningQuestionSet']>),
+    );
+  }
 
   listRewardRules() {
     return this.rewards.listRewardRules();

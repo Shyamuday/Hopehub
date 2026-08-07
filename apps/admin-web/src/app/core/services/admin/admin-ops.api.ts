@@ -555,4 +555,39 @@ export class AdminOpsApi extends AdminApiBase {
       ),
     );
   }
+
+  listListenerScreeningQuestionSets() {
+    return firstValueFrom(
+      this.http.get<{ questionSets: any[] }>(
+        `${this.apiBase}${API_PATHS.ADMIN.LISTENER_SCREENING}`,
+      ),
+    );
+  }
+
+  createListenerScreeningQuestionSet(payload: Record<string, unknown>) {
+    return firstValueFrom(
+      this.http.post<{ questionSet: any }>(
+        `${this.apiBase}${API_PATHS.ADMIN.LISTENER_SCREENING}`,
+        payload,
+      ),
+    );
+  }
+
+  updateListenerScreeningQuestionSet(id: string, payload: Record<string, unknown>) {
+    return firstValueFrom(
+      this.http.patch<{ questionSet: any }>(
+        `${this.apiBase}${API_PATHS.ADMIN.LISTENER_SCREENING_BY_ID(id)}`,
+        payload,
+      ),
+    );
+  }
+
+  publishListenerScreeningQuestionSet(id: string) {
+    return firstValueFrom(
+      this.http.post<{ questionSet: any }>(
+        `${this.apiBase}${API_PATHS.ADMIN.LISTENER_SCREENING_PUBLISH(id)}`,
+        {},
+      ),
+    );
+  }
 }

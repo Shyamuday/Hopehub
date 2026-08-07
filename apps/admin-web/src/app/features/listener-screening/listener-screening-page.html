@@ -1,0 +1,210 @@
+<div class="listener-test-page">
+  <header class="page-head">
+    <div>
+      <p>Hope Hub safety</p>
+      <h2>Listener screening test</h2>
+      <span>Admin-editable questions used for listener auto-approval.</span>
+    </div>
+    <button type="button" class="primary" (click)="newDraft()">New draft</button>
+  </header>
+
+  @if (toast()) {
+    <div class="toast">{{ toast() }}</div>
+  }
+  @if (error()) {
+    <div class="error">{{ error() }}</div>
+  }
+
+  <section class="grid-layout">
+    <form class="panel editor" (ngSubmit)="save()">
+      <div class="panel-head">
+        <div>
+          <h3>{{ form().id ? 'Edit listener test' : 'Create listener test' }}</h3>
+          <p>
+            Keep one clear correct answer per question. Publishing this test makes it the live user
+            screening version.
+          </p>
+        </div>
+        <span class="status" [class.live]="form().isActive">
+          {{ form().isActive ? 'Will publish' : 'Draft' }}
+        </span>
+      </div>
+
+      <div class="two">
+        <label>
+          Title
+          <input name="title" [(ngModel)]="form().title" required />
+        </label>
+        <label>
+          Version
+          <input name="version" [(ngModel)]="form().version" required />
+        </label>
+        <label>
+          Pass score
+          <input
+            type="number"
+            min="1"
+            [max]="form().questions.length || 1"
+            name="passScore"
+            [(ngModel)]="form().passScore"
+            required
+          />
+        </label>
+        <label class="check">
+          <input type="checkbox" name="isActive" [(ngModel)]="form().isActive" />
+          Publish after save
+        </label>
+      </div>
+
+      <label>
+        Description
+        <textarea rows="3" name="description" [(ngModel)]="form().description"></textarea>
+      </label>
+
+      <div class="questions-head">
+        <h4>Questions · {{ form().questions.length }}</h4>
+        <button type="button" (click)="addQuestion()">Add question</button>
+      </div>
+
+      <div class="questions">
+        @for (question of form().questions; track question.id; let questionIndex = $index) {
+          <article class="question-card">
+            <div class="question-card__head">
+              <strong>Question {{ questionIndex + 1 }}</strong>
+              <button type="button" class="danger" (click)="removeQuestion(questionIndex)">
+                Remove
+              </button>
+            </div>
+
+            <div class="two">
+              <label>
+                Question id
+                <input
+                  [name]="'question-id-' + questionIndex"
+                  [(ngModel)]="question.id"
+                  placeholder="boundaries-role"
+                  required
+                />
+              </label>
+              <label>
+                Correct option id
+                <select
+                  [name]="'question-correct-' + questionIndex"
+                  [(ngModel)]="question.correctOptionId"
+                  required
+                >
+                  @for (option of question.options; track option.id) {
+                    <option [value]="option.id">{{ option.id || 'Unnamed option' }}</option>
+                  }
+                </select>
+              </label>
+            </div>
+
+            <label>
+              Question text
+              <textarea
+                rows="2"
+                [name]="'question-text-' + questionIndex"
+                [(ngModel)]="question.text"
+                required
+              ></textarea>
+            </label>
+
+            <div class="options-head">
+              <span>Options</span>
+              <button type="button" (click)="addOption(question)" [disabled]="question.options.length >= 6">
+                Add option
+              </button>
+            </div>
+
+            <div class="options">
+              @for (option of question.options; track option.id; let optionIndex = $index) {
+                <div class="option-row">
+                  <label>
+                    Id
+                    <input
+                      [name]="'option-id-' + questionIndex + '-' + optionIndex"
+                      [(ngModel)]="option.id"
+                      required
+                    />
+                  </label>
+                  <label>
+                    Text
+                    <input
+                      [name]="'option-text-' + questionIndex + '-' + optionIndex"
+                      [(ngModel)]="option.text"
+                      required
+                    />
+                  </label>
+                  <button
+                    type="button"
+                    class="danger"
+                    (click)="removeOption(question, optionIndex)"
+                    [disabled]="question.options.length <= 2"
+                  >
+                    Remove
+                  </button>
+                </div>
+              }
+            </div>
+          </article>
+        } @empty {
+          <p class="muted">No questions yet. Add questions or duplicate the active test.</p>
+        }
+      </div>
+
+      <div class="actions">
+        <button type="button" (click)="newDraft()">Clear</button>
+        <button type="submit" class="primary" [disabled]="saving()">
+          {{ saving() ? 'Saving...' : 'Save listener test' }}
+        </button>
+        @if (form().id) {
+          <button type="button" class="publish" (click)="publish()" [disabled]="saving()">
+            Publish now
+          </button>
+        }
+      </div>
+    </form>
+
+    <section class="panel versions">
+      <div class="panel-head">
+        <div>
+          <h3>Saved versions</h3>
+          <p>Only one version should be live at a time.</p>
+        </div>
+        <button type="button" (click)="load()">Refresh</button>
+      </div>
+
+      @if (loading()) {
+        <p class="muted">Loading listener tests...</p>
+      } @else {
+        @for (questionSet of questionSets(); track questionSet.id) {
+          <article class="version-row">
+            <div>
+              <strong>{{ questionSet.title }}</strong>
+              <span>
+                {{ questionSet.version }} · {{ questionSet.questions?.length || 0 }} questions ·
+                pass {{ questionSet.passScore }}/{{ questionSet.questions?.length || 0 }}
+              </span>
+              <small>{{ questionSet.isActive ? 'Published ' + formatDate(questionSet.publishedAt) : 'Draft' }}</small>
+            </div>
+            <div class="row-actions">
+              <span class="status" [class.live]="questionSet.isActive">
+                {{ questionSet.isActive ? 'Live' : 'Draft' }}
+              </span>
+              <button type="button" (click)="edit(questionSet)">Edit</button>
+              <button type="button" (click)="duplicateAsDraft(questionSet)">Duplicate</button>
+              @if (!questionSet.isActive) {
+                <button type="button" class="publish" (click)="publish(questionSet)">
+                  Publish
+                </button>
+              }
+            </div>
+          </article>
+        } @empty {
+          <p class="muted">No listener test versions found.</p>
+        }
+      }
+    </section>
+  </section>
+</div>

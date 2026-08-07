@@ -1,4 +1,4 @@
-import { Component, OnDestroy, inject, signal } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { NOTE_CONTENT } from '../../core/constants/note-content.constants';
@@ -38,7 +38,7 @@ type ListenerScreeningQuestion = {
   templateUrl: './careers.component.html',
   styleUrl: './careers.component.scss',
 })
-export class CareersComponent implements OnDestroy {
+export class CareersComponent implements OnInit, OnDestroy {
   readonly notes = NOTE_CONTENT;
   private readonly formBuilder = inject(FormBuilder);
   private readonly leadService = inject(LeadService);
@@ -153,236 +153,13 @@ export class CareersComponent implements OnDestroy {
     { value: 'OTHER', label: 'Other' },
     { value: 'PREFER_NOT_TO_SAY', label: 'Prefer not to say' },
   ];
-  readonly listenerScreeningQuestions: ListenerScreeningQuestion[] = [
-    {
-      id: 'boundaries-role',
-      text: 'A user asks you to become their therapist and make decisions for them. What should you do?',
-      options: [
-        { id: 'take-control', text: 'Take control so they feel safe.' },
-        {
-          id: 'listen-and-boundary',
-          text: 'Listen supportively and explain your non-clinical listener boundary.',
-        },
-        { id: 'give-diagnosis', text: 'Diagnose their issue so they know what is happening.' },
-      ],
-    },
-    {
-      id: 'crisis-self-harm',
-      text: 'A user says they may harm themselves tonight. What is the best response?',
-      options: [
-        { id: 'keep-secret', text: 'Promise secrecy and continue chatting casually.' },
-        {
-          id: 'escalate-immediately',
-          text: 'Stay calm, encourage immediate emergency/crisis support, and escalate per Hope Hub safety process.',
-        },
-        { id: 'wait-tomorrow', text: 'Ask them to sleep and talk tomorrow.' },
-      ],
-    },
-    {
-      id: 'confidentiality-risk',
-      text: 'Which confidentiality statement is safest?',
-      options: [
-        { id: 'absolute-secret', text: 'Everything is always secret, no matter what.' },
-        {
-          id: 'explain-limits',
-          text: 'Privacy matters, but safety risks may need escalation to protect someone.',
-        },
-        { id: 'share-team', text: 'I can share your story anywhere in our team chat.' },
-      ],
-    },
-    {
-      id: 'diagnosis',
-      text: 'A user asks, “Do I have depression?” What should you say?',
-      options: [
-        { id: 'confirm-depression', text: 'Yes, based on this chat you have depression.' },
-        {
-          id: 'avoid-diagnosis',
-          text: 'I cannot diagnose, but I can listen and suggest professional assessment/support.',
-        },
-        { id: 'ignore', text: 'Ignore the question and change the topic.' },
-      ],
-    },
-    {
-      id: 'medication-advice',
-      text: 'A user asks whether to stop their medication. What do you do?',
-      options: [
-        { id: 'say-stop', text: 'Tell them to stop if they feel better.' },
-        {
-          id: 'refer-professional',
-          text: 'Do not advise; ask them to speak with their doctor/qualified professional.',
-        },
-        { id: 'internet-dose', text: 'Search online and suggest a dose.' },
-      ],
-    },
-    {
-      id: 'active-listening',
-      text: 'Which response shows active listening?',
-      options: [
-        { id: 'compare-story', text: 'That happened to me too; here is my whole story.' },
-        { id: 'reflect-and-ask', text: 'It sounds exhausting. What part feels hardest right now?' },
-        { id: 'fix-fast', text: 'Just be positive and move on.' },
-      ],
-    },
-    {
-      id: 'judgement',
-      text: 'A user shares something embarrassing. Best listener response?',
-      options: [
-        { id: 'lecture', text: 'Lecture them about why it was wrong.' },
-        {
-          id: 'validate-without-judging',
-          text: 'Thank them for sharing and respond without shame or judgement.',
-        },
-        { id: 'joke', text: 'Make a joke to lighten it.' },
-      ],
-    },
-    {
-      id: 'dependency',
-      text: 'A user says they only want to talk to you and no one else. What is safest?',
-      options: [
-        { id: 'exclusive', text: 'Agree to be their only support.' },
-        {
-          id: 'encourage-support-network',
-          text: 'Support them while encouraging broader safe support and professional help if needed.',
-        },
-        { id: 'block', text: 'Block them immediately.' },
-      ],
-    },
-    {
-      id: 'privacy',
-      text: 'A user asks for your personal phone number/social media. What should you do?',
-      options: [
-        { id: 'share-number', text: 'Share it if they seem trustworthy.' },
-        {
-          id: 'no-personal-contact',
-          text: 'Keep communication on approved Hope Hub channels only.',
-        },
-        { id: 'ask-theirs', text: 'Ask for their personal social profile first.' },
-      ],
-    },
-    {
-      id: 'minor-safety',
-      text: 'A minor discloses a serious safety concern. What matters most?',
-      options: [
-        { id: 'promise-secret', text: 'Promise not to tell anyone.' },
-        {
-          id: 'follow-safeguarding',
-          text: 'Follow safeguarding/escalation rules and involve appropriate support.',
-        },
-        { id: 'give-punishment', text: 'Tell them they will get punished.' },
-      ],
-    },
-    {
-      id: 'abuse-disclosure',
-      text: 'Someone discloses abuse. Best first approach?',
-      options: [
-        { id: 'investigate', text: 'Interrogate them for proof.' },
-        {
-          id: 'validate-and-escalate',
-          text: 'Validate, avoid blame, and escalate/suggest safe professional or emergency support.',
-        },
-        { id: 'confront', text: 'Tell them to confront the abuser immediately.' },
-      ],
-    },
-    {
-      id: 'overpromising',
-      text: 'Which promise should a listener avoid?',
-      options: [
-        { id: 'clear-scope', text: 'I can listen and support within Hope Hub safety boundaries.' },
-        { id: 'cure', text: 'I will fix your anxiety completely.' },
-        { id: 'available', text: 'I will be present during this session.' },
-      ],
-    },
-    {
-      id: 'triggered-listener',
-      text: 'You feel personally triggered during a chat. What should you do?',
-      options: [
-        { id: 'push-through', text: 'Push through even if you are overwhelmed.' },
-        {
-          id: 'pause-and-supervise',
-          text: 'Pause safely, use supervision/escalation, and protect the user experience.',
-        },
-        { id: 'snap', text: 'Tell the user they upset you.' },
-      ],
-    },
-    {
-      id: 'cultural-sensitivity',
-      text: 'A user has beliefs different from yours. Best response?',
-      options: [
-        { id: 'correct-beliefs', text: 'Correct their beliefs to match yours.' },
-        { id: 'ask-respectfully', text: 'Ask respectfully and avoid assumptions.' },
-        { id: 'dismiss', text: 'Dismiss what you do not understand.' },
-      ],
-    },
-    {
-      id: 'financial-request',
-      text: 'A user asks you for money or offers to pay you directly. What should you do?',
-      options: [
-        { id: 'accept', text: 'Accept if it is a small amount.' },
-        {
-          id: 'decline-and-report',
-          text: 'Decline direct money exchange and report/escalate per policy.',
-        },
-        { id: 'negotiate', text: 'Negotiate outside Hope Hub.' },
-      ],
-    },
-    {
-      id: 'romantic-boundary',
-      text: 'A user becomes romantic/flirtatious with you. What is appropriate?',
-      options: [
-        { id: 'flirt-back', text: 'Flirt back if both are adults.' },
-        { id: 'firm-boundary', text: 'Set a respectful boundary and keep the session supportive.' },
-        { id: 'meet', text: 'Plan to meet outside the platform.' },
-      ],
-    },
-    {
-      id: 'data-notes',
-      text: 'What should session notes contain?',
-      options: [
-        { id: 'everything', text: 'Every private detail and gossip.' },
-        {
-          id: 'minimal-safe-notes',
-          text: 'Only minimal, relevant safety/support notes needed for continuity.',
-        },
-        { id: 'screenshots', text: 'Personal screenshots saved on your phone.' },
-      ],
-    },
-    {
-      id: 'high-risk-escalation',
-      text: 'If a user is high-risk but refuses help, what should you do?',
-      options: [
-        { id: 'drop', text: 'End the chat immediately.' },
-        {
-          id: 'warm-escalation',
-          text: 'Stay supportive, encourage immediate help, and escalate using Hope Hub protocol.',
-        },
-        { id: 'argue', text: 'Argue until they agree.' },
-      ],
-    },
-    {
-      id: 'advice-giving',
-      text: 'A user asks, “Should I break up today?” What is safest?',
-      options: [
-        { id: 'tell-breakup', text: 'Tell them exactly what to do.' },
-        {
-          id: 'support-choice',
-          text: 'Help them reflect on safety, feelings, options, and support — without deciding for them.',
-        },
-        { id: 'avoid-topic', text: 'Say relationship topics are not allowed.' },
-      ],
-    },
-    {
-      id: 'end-session',
-      text: 'How should you close a supportive chat?',
-      options: [
-        { id: 'vanish', text: 'Disappear once time is over.' },
-        {
-          id: 'summarize-next-step',
-          text: 'Summarize what was shared, offer grounding/next step, and remind them of support options.',
-        },
-        { id: 'promise-daily', text: 'Promise daily personal check-ins.' },
-      ],
-    },
-  ];
+  readonly listenerScreeningQuestions = signal<ListenerScreeningQuestion[]>([]);
+  readonly listenerScreeningQuestionSetId = signal('');
+  readonly listenerScreeningQuestionSetVersion = signal('');
+  readonly listenerScreeningTitle = signal('Listener safety test');
+  readonly listenerScreeningPassScore = signal(0);
+  readonly listenerScreeningLoading = signal(false);
+  readonly listenerScreeningError = signal('');
   readonly applicationForm = this.formBuilder.group({
     applicationTrack: ['PROFESSIONAL_PSYCHOLOGIST' as CareContributorTrack, [Validators.required]],
     careTeamType: ['MENTAL_WELLNESS_PROFESSIONAL' as CareTeamMemberType, [Validators.required]],
@@ -410,6 +187,10 @@ export class CareersComponent implements OnDestroy {
 
   constructor() {
     this.updateTrackValidators(this.selectedTrack());
+  }
+
+  ngOnInit(): void {
+    this.loadListenerScreeningQuestionSet();
   }
 
   ngOnDestroy(): void {
@@ -452,11 +233,12 @@ export class CareersComponent implements OnDestroy {
 
   screeningAnsweredCount(): number {
     const answers = this.listenerScreeningAnswers();
-    return this.listenerScreeningQuestions.filter((question) => answers[question.id]).length;
+    return this.listenerScreeningQuestions().filter((question) => answers[question.id]).length;
   }
 
   screeningComplete(): boolean {
-    return this.screeningAnsweredCount() === this.listenerScreeningQuestions.length;
+    const totalQuestions = this.listenerScreeningQuestions().length;
+    return totalQuestions > 0 && this.screeningAnsweredCount() === totalQuestions;
   }
 
   listenerGuidelinesRequired(): boolean {
@@ -542,7 +324,7 @@ export class CareersComponent implements OnDestroy {
 
   listenerScreeningPayload(): Array<{ questionId: string; optionId: string }> {
     const answers = this.listenerScreeningAnswers();
-    return this.listenerScreeningQuestions.map((question) => ({
+    return this.listenerScreeningQuestions().map((question) => ({
       questionId: question.id,
       optionId: answers[question.id] || '',
     }));
@@ -554,8 +336,19 @@ export class CareersComponent implements OnDestroy {
       this.notificationService.warning('Please complete the required application fields.');
       return;
     }
+    if (this.isListenerTrack() && this.listenerScreeningLoading()) {
+      this.notificationService.warning('Listener screening test is still loading. Please wait.');
+      return;
+    }
+    if (this.isListenerTrack() && !this.listenerScreeningQuestions().length) {
+      this.notificationService.warning(
+        this.listenerScreeningError() ||
+          'Listener screening test is not available right now. Please try again later.',
+      );
+      return;
+    }
     if (this.isListenerTrack() && !this.screeningComplete()) {
-      this.notificationService.warning('Please complete all 20 listener screening questions.');
+      this.notificationService.warning('Please complete all listener screening questions.');
       return;
     }
     if (
@@ -609,6 +402,12 @@ export class CareersComponent implements OnDestroy {
           agreesToNonClinicalRole: Boolean(value.agreesToNonClinicalRole),
           listenerScreeningAnswers: this.isListenerTrack()
             ? this.listenerScreeningPayload()
+            : undefined,
+          listenerScreeningQuestionSetId: this.isListenerTrack()
+            ? this.listenerScreeningQuestionSetId()
+            : undefined,
+          listenerScreeningQuestionSetVersion: this.isListenerTrack()
+            ? this.listenerScreeningQuestionSetVersion()
             : undefined,
           listenerGuidelinesAccepted: this.listenerGuidelinesRequired()
             ? this.listenerGuidelinesAccepted()
@@ -712,6 +511,32 @@ export class CareersComponent implements OnDestroy {
   private resetListenerScreeningAndGuidelines(): void {
     this.listenerScreeningAnswers.set({});
     this.resetListenerGuidelineAcceptance();
+  }
+
+  private loadListenerScreeningQuestionSet(): void {
+    this.listenerScreeningLoading.set(true);
+    this.listenerScreeningError.set('');
+    this.leadService.getListenerScreeningQuestionSet().subscribe({
+      next: ({ questionSet }) => {
+        this.listenerScreeningQuestions.set(questionSet.questions || []);
+        this.listenerScreeningQuestionSetId.set(questionSet.id);
+        this.listenerScreeningQuestionSetVersion.set(questionSet.version);
+        this.listenerScreeningTitle.set(questionSet.title || 'Listener safety test');
+        this.listenerScreeningPassScore.set(questionSet.passScore || 0);
+        this.resetListenerScreeningAndGuidelines();
+        this.listenerScreeningLoading.set(false);
+      },
+      error: () => {
+        this.listenerScreeningQuestions.set([]);
+        this.listenerScreeningQuestionSetId.set('');
+        this.listenerScreeningQuestionSetVersion.set('');
+        this.listenerScreeningPassScore.set(0);
+        this.listenerScreeningError.set(
+          'Listener screening test is not available right now. Please try again later.',
+        );
+        this.listenerScreeningLoading.set(false);
+      },
+    });
   }
 
   private resetListenerGuidelineAcceptance(): void {

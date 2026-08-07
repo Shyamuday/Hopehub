@@ -14,6 +14,11 @@ import {
 } from '@prisma/client';
 import { prisma } from '../db.js';
 import { notifyAdminsAboutProviderApplication } from '../services/provider-application-notifications.js';
+import {
+  publicListenerScreeningQuestionSet,
+  sanitizeListenerScreeningQuestions,
+  scoreListenerScreening
+} from '../services/listener-screening-question-sets.js';
 import { asyncRoute, hashToken, randomToken, writeAuditLog } from '../utils/helpers.js';
 
 export const counsellorApplicationsRouter = Router();
@@ -23,7 +28,6 @@ const optionalDate = z.preprocess(
   (value) => (value === '' || value == null ? undefined : value),
   z.coerce.date().optional()
 );
-const LISTENER_SCREENING_PASS_SCORE = 16;
 const LISTENER_GUIDELINES_VERSION = 'listener-guidelines-v1-2026-08-07';
 const LISTENER_TRAINING_VERSION = 'listener-training-v1-2026-08-07';
 const MINIMUM_LISTENER_GUIDELINES_READ_SECONDS = 120;
@@ -32,29 +36,6 @@ const LISTENER_SCREENING_COOLDOWN_HOURS = 24;
 const AUTO_APPROVED_LISTENER_CHAT_VOICE_PRICE_IN_PAISE = 9900;
 const AUTO_APPROVED_LISTENER_VIDEO_PRICE_IN_PAISE = 29900;
 const AUTO_APPROVED_LISTENER_DURATION_MINUTES = 30;
-
-const listenerScreeningQuestions = [
-  { id: 'boundaries-role', correctOptionId: 'listen-and-boundary' },
-  { id: 'crisis-self-harm', correctOptionId: 'escalate-immediately' },
-  { id: 'confidentiality-risk', correctOptionId: 'explain-limits' },
-  { id: 'diagnosis', correctOptionId: 'avoid-diagnosis' },
-  { id: 'medication-advice', correctOptionId: 'refer-professional' },
-  { id: 'active-listening', correctOptionId: 'reflect-and-ask' },
-  { id: 'judgement', correctOptionId: 'validate-without-judging' },
-  { id: 'dependency', correctOptionId: 'encourage-support-network' },
-  { id: 'privacy', correctOptionId: 'no-personal-contact' },
-  { id: 'minor-safety', correctOptionId: 'follow-safeguarding' },
-  { id: 'abuse-disclosure', correctOptionId: 'validate-and-escalate' },
-  { id: 'overpromising', correctOptionId: 'clear-scope' },
-  { id: 'triggered-listener', correctOptionId: 'pause-and-supervise' },
-  { id: 'cultural-sensitivity', correctOptionId: 'ask-respectfully' },
-  { id: 'financial-request', correctOptionId: 'decline-and-report' },
-  { id: 'romantic-boundary', correctOptionId: 'firm-boundary' },
-  { id: 'data-notes', correctOptionId: 'minimal-safe-notes' },
-  { id: 'high-risk-escalation', correctOptionId: 'warm-escalation' },
-  { id: 'advice-giving', correctOptionId: 'support-choice' },
-  { id: 'end-session', correctOptionId: 'summarize-next-step' }
-] as const;
 
 const listenerScreeningAnswerSchema = z.object({
   questionId: z.string().trim().min(1).max(80),
@@ -95,6 +76,8 @@ export const counsellorApplicationSchema = z
     livedExperienceSummary: optionalText(3000),
     agreesToNonClinicalRole: z.boolean().optional().default(false),
     listenerScreeningAnswers: z.array(listenerScreeningAnswerSchema).optional().default([]),
+    listenerScreeningQuestionSetId: z.string().trim().max(120).optional().or(z.literal('')),
+    listenerScreeningQuestionSetVersion: z.string().trim().max(120).optional().or(z.literal('')),
     listenerGuidelinesAccepted: z.boolean().optional().default(false),
     listenerGuidelinesVersion: z.string().trim().max(120).optional().or(z.literal('')),
     listenerGuidelinesReadSessionToken: z
@@ -164,7 +147,7 @@ export const counsellorApplicationSchema = z
           message: 'Psychology student listeners must agree to the supervised, non-clinical role.'
         });
       }
-      if (body.listenerScreeningAnswers.length !== listenerScreeningQuestions.length) {
+      if (!body.listenerScreeningAnswers.length) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           path: ['listenerScreeningAnswers'],
@@ -186,7 +169,7 @@ export const counsellorApplicationSchema = z
           message: 'Peer listeners must agree to the non-clinical role.'
         });
       }
-      if (body.listenerScreeningAnswers.length !== listenerScreeningQuestions.length) {
+      if (!body.listenerScreeningAnswers.length) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           path: ['listenerScreeningAnswers'],
@@ -202,24 +185,6 @@ function isListenerTrack(track: string) {
 
 function listenerAttemptCooldownStart(now = new Date()) {
   return new Date(now.getTime() - LISTENER_SCREENING_COOLDOWN_HOURS * 60 * 60 * 1000);
-}
-
-function scoreListenerScreening(answers: Array<{ questionId: string; optionId: string }>): {
-  score: number;
-  maxScore: number;
-  passed: boolean;
-} {
-  const answerByQuestion = new Map(answers.map((answer) => [answer.questionId, answer.optionId]));
-  const score = listenerScreeningQuestions.reduce(
-    (total, question) =>
-      total + (answerByQuestion.get(question.id) === question.correctOptionId ? 1 : 0),
-    0
-  );
-  return {
-    score,
-    maxScore: listenerScreeningQuestions.length,
-    passed: score >= LISTENER_SCREENING_PASS_SCORE
-  };
 }
 
 function splitList(value: string | null | undefined) {
@@ -464,6 +429,23 @@ async function autoApproveListenerApplication(
   return { doctorUserId: doctor.userId };
 }
 
+counsellorApplicationsRouter.get(
+  '/counsellor-applications/listener-screening',
+  asyncRoute(async (_req, res) => {
+    const questionSet = await prisma.listenerScreeningQuestionSet.findFirst({
+      where: { isActive: true },
+      orderBy: [{ publishedAt: 'desc' }, { createdAt: 'desc' }]
+    });
+    if (!questionSet) {
+      return res.status(503).json({
+        message: 'Listener screening test is not available right now. Please try again later.'
+      });
+    }
+
+    res.json({ questionSet: publicListenerScreeningQuestionSet(questionSet) });
+  })
+);
+
 counsellorApplicationsRouter.post(
   '/counsellor-applications/listener-guidelines/read-session',
   asyncRoute(async (req, res) => {
@@ -538,8 +520,54 @@ counsellorApplicationsRouter.post(
       }
     }
 
+    const listenerQuestionSet = isListenerApplication
+      ? await prisma.listenerScreeningQuestionSet.findFirst({
+          where: body.listenerScreeningQuestionSetId
+            ? { id: body.listenerScreeningQuestionSetId, isActive: true }
+            : { isActive: true },
+          orderBy: [{ publishedAt: 'desc' }, { createdAt: 'desc' }]
+        })
+      : null;
+    if (isListenerApplication && !listenerQuestionSet) {
+      return res.status(503).json({
+        message: 'Listener screening test is not available right now. Please try again later.'
+      });
+    }
+    if (
+      isListenerApplication &&
+      body.listenerScreeningQuestionSetVersion &&
+      listenerQuestionSet?.version !== body.listenerScreeningQuestionSetVersion
+    ) {
+      return res.status(409).json({
+        message:
+          'Listener screening test changed. Please refresh the page and answer the latest test.'
+      });
+    }
+    const listenerQuestions = listenerQuestionSet
+      ? sanitizeListenerScreeningQuestions(listenerQuestionSet.questions)
+      : [];
+    if (isListenerApplication) {
+      const expectedQuestionIds = new Set(listenerQuestions.map((question) => question.id));
+      const answeredQuestionIds = new Set(
+        body.listenerScreeningAnswers.map((answer) => answer.questionId)
+      );
+      if (
+        body.listenerScreeningAnswers.length !== listenerQuestions.length ||
+        answeredQuestionIds.size !== expectedQuestionIds.size ||
+        [...expectedQuestionIds].some((questionId) => !answeredQuestionIds.has(questionId))
+      ) {
+        return res.status(400).json({
+          message: 'Complete the latest listener screening test before submitting.'
+        });
+      }
+    }
+
     const listenerScreening = isListenerApplication
-      ? scoreListenerScreening(body.listenerScreeningAnswers)
+      ? scoreListenerScreening(
+          listenerQuestions,
+          body.listenerScreeningAnswers,
+          listenerQuestionSet?.passScore ?? 16
+        )
       : null;
     const shouldAutoApprove = Boolean(listenerScreening?.passed);
     const listenerGuidelinesReadSeconds = Math.floor(body.listenerGuidelinesReadSeconds ?? 0);
@@ -631,6 +659,8 @@ counsellorApplicationsRouter.post(
           listenerScreeningAnswers: isListenerApplication
             ? body.listenerScreeningAnswers
             : undefined,
+          listenerScreeningQuestionSetId: listenerQuestionSet?.id ?? null,
+          listenerScreeningQuestionSetVersion: listenerQuestionSet?.version ?? null,
           listenerScreeningScore: listenerScreening?.score,
           listenerScreeningMaxScore: listenerScreening?.maxScore,
           listenerScreeningPassed: listenerScreening?.passed ?? false,
@@ -669,6 +699,8 @@ counsellorApplicationsRouter.post(
         await tx.listenerScreeningAttempt.create({
           data: {
             applicationId: created.id,
+            questionSetId: listenerQuestionSet?.id ?? null,
+            questionSetVersion: listenerQuestionSet?.version ?? null,
             applicationTrack: created.applicationTrack,
             email: created.email,
             phone: created.phone,
@@ -757,6 +789,8 @@ counsellorApplicationsRouter.post(
         screeningScore: listenerScreening?.score ?? null,
         screeningMaxScore: listenerScreening?.maxScore ?? null,
         screeningPassed: listenerScreening?.passed ?? null,
+        screeningQuestionSetId: application.listenerScreeningQuestionSetId,
+        screeningQuestionSetVersion: application.listenerScreeningQuestionSetVersion,
         guidelinesAccepted: application.listenerGuidelinesAccepted,
         guidelinesVersion: application.listenerGuidelinesVersion,
         guidelinesReadSeconds: application.listenerGuidelinesReadSeconds,
@@ -773,7 +807,8 @@ counsellorApplicationsRouter.post(
       success: true,
       autoApproved: shouldAutoApprove,
       screeningScore: listenerScreening?.score ?? null,
-      screeningMaxScore: listenerScreening?.maxScore ?? null
+      screeningMaxScore: listenerScreening?.maxScore ?? null,
+      screeningQuestionSetVersion: application.listenerScreeningQuestionSetVersion
     });
   })
 );

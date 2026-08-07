@@ -32,6 +32,8 @@ export type CounsellorApplicationPayload = {
   livedExperienceSummary?: string;
   agreesToNonClinicalRole?: boolean;
   listenerScreeningAnswers?: Array<{ questionId: string; optionId: string }>;
+  listenerScreeningQuestionSetId?: string;
+  listenerScreeningQuestionSetVersion?: string;
   listenerGuidelinesAccepted?: boolean;
   listenerGuidelinesVersion?: string;
   listenerGuidelinesReadSessionToken?: string;
@@ -58,12 +60,32 @@ export type ListenerGuidelineReadSessionResponse = {
   guidelinesVersion: string;
 };
 
+export type ListenerScreeningQuestion = {
+  id: string;
+  text: string;
+  options: Array<{ id: string; text: string }>;
+};
+
+export type ListenerScreeningQuestionSetResponse = {
+  questionSet: {
+    id: string;
+    title: string;
+    version: string;
+    description?: string | null;
+    passScore: number;
+    publishedAt?: string | null;
+    updatedAt: string;
+    questions: ListenerScreeningQuestion[];
+  };
+};
+
 export type CounsellorApplicationResponse = {
   applicationId: string;
   success: boolean;
   autoApproved?: boolean;
   screeningScore?: number | null;
   screeningMaxScore?: number | null;
+  screeningQuestionSetVersion?: string | null;
 };
 
 export type PublicTestimonial = {
@@ -144,6 +166,12 @@ export class LeadService {
     return this.http.post<ListenerGuidelineReadSessionResponse>(
       `${environment.apiUrl}/counsellor-applications/listener-guidelines/read-session`,
       payload,
+    );
+  }
+
+  getListenerScreeningQuestionSet(): Observable<ListenerScreeningQuestionSetResponse> {
+    return this.http.get<ListenerScreeningQuestionSetResponse>(
+      `${environment.apiUrl}/counsellor-applications/listener-screening`,
     );
   }
 

@@ -103,6 +103,8 @@ model CounsellorApplication {
   livedExperienceSummary String?                   @db.Text
   agreesToNonClinicalRole Boolean                  @default(false)
   whyJoin             String                       @db.Text
+  listenerScreeningQuestionSetId String?
+  listenerScreeningQuestionSetVersion String?
   listenerScreeningAnswers Json?
   listenerScreeningScore Int?
   listenerScreeningMaxScore Int?
@@ -131,11 +133,32 @@ model CounsellorApplication {
 
   @@index([status])
   @@index([applicationTrack])
+  @@index([listenerScreeningQuestionSetId])
   @@index([email])
   @@index([phone])
   @@index([specialization])
   @@index([listenerScreeningPassed, listenerScreeningCompletedAt])
   @@index([createdAt])
+}
+
+model ListenerScreeningQuestionSet {
+  id           String   @id @default(cuid())
+  title        String   @default("Listener screening test")
+  version      String   @unique
+  description  String?  @db.Text
+  passScore    Int      @default(16)
+  questions    Json
+  isActive     Boolean  @default(false)
+  publishedAt  DateTime?
+  createdById  String?
+  updatedById  String?
+  attempts     ListenerScreeningAttempt[]
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([isActive, publishedAt])
+  @@index([createdById])
+  @@index([updatedById])
 }
 
 model ListenerGuidelineReadSession {
@@ -163,6 +186,9 @@ model ListenerScreeningAttempt {
   id                      String                      @id @default(cuid())
   applicationId           String?
   application             CounsellorApplication?      @relation(fields: [applicationId], references: [id], onDelete: SetNull)
+  questionSetId           String?
+  questionSet             ListenerScreeningQuestionSet? @relation(fields: [questionSetId], references: [id], onDelete: SetNull)
+  questionSetVersion      String?
   applicationTrack        CounsellorApplicationTrack
   email                   String
   phone                   String
@@ -186,6 +212,7 @@ model ListenerScreeningAttempt {
   @@index([passed, createdAt])
   @@index([cooldownExpiresAt])
   @@index([applicationId])
+  @@index([questionSetId])
 }
 
 model CareContributor {
