@@ -1,8 +1,9 @@
 import { Router } from 'express';
 import { Role, PaymentStatus, HomeopathicDoctorType, Prisma } from '@prisma/client';
 import { authRequired, allowRoles } from '../../auth.js';
+import { getAuthorizedAdminWorkspace } from '../../admin-workspace-access.js';
 import { prisma } from '../../db.js';
-import { asyncRoute, queryText } from '../../utils/helpers.js';
+import { asyncRoute } from '../../utils/helpers.js';
 
 function consultationWorkspaceWhere(workspace: string): Prisma.ConsultationWhereInput {
   const hopeHubSources: Prisma.ConsultationWhereInput[] = [
@@ -34,7 +35,8 @@ export function registerAdminReportRoutes(router: Router) {
     authRequired,
     allowRoles(Role.ADMIN),
     asyncRoute(async (req, res) => {
-      const workspace = queryText(req, 'workspace');
+      const workspace = getAuthorizedAdminWorkspace(req, res);
+      if (workspace === null) return;
       const consultationWhere = consultationWorkspaceWhere(workspace);
       const [consultations, revenue, doctors] = await Promise.all([
         prisma.consultation.groupBy({ by: ['status'], where: consultationWhere, _count: true }),

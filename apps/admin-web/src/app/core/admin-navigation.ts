@@ -1,5 +1,11 @@
-import { ADMIN_PERMISSIONS, staffHasAllPermissions, type StaffUser } from './admin-permissions';
-import { ROUTE_PATHS, type AdminWorkspace } from './constants/app-routes.constants';
+import {
+  ADMIN_PERMISSIONS,
+  staffCanAccessWorkspace,
+  staffHasAllPermissions,
+  type AdminFocusedWorkspace,
+  type StaffUser,
+} from './admin-permissions';
+import { NAV_ITEMS, ROUTE_PATHS, type AdminWorkspace } from './constants/app-routes.constants';
 
 const ROUTE_PERMISSIONS: Record<string, string[]> = {
   [ROUTE_PATHS.DASHBOARD]: [
@@ -13,6 +19,7 @@ const ROUTE_PERMISSIONS: Record<string, string[]> = {
   [ROUTE_PATHS.DISEASES]: [ADMIN_PERMISSIONS.DISEASES_READ, ADMIN_PERMISSIONS.CATALOG_READ],
   [ROUTE_PATHS.RATES]: [ADMIN_PERMISSIONS.DISEASES_READ, ADMIN_PERMISSIONS.PAYMENTS_READ],
   [ROUTE_PATHS.HOPE_HUB_OFFERS]: [ADMIN_PERMISSIONS.CATALOG_READ],
+  [ROUTE_PATHS.LISTENER_SCREENING]: [ADMIN_PERMISSIONS.CATALOG_READ],
   [ROUTE_PATHS.ASSESSMENT_DEFINITIONS]: [ADMIN_PERMISSIONS.CATALOG_READ],
   [ROUTE_PATHS.PRACTICES]: [ADMIN_PERMISSIONS.CATALOG_READ],
   [ROUTE_PATHS.LIFESTYLE_TIPS]: [ADMIN_PERMISSIONS.CATALOG_READ],
@@ -23,6 +30,7 @@ const ROUTE_PERMISSIONS: Record<string, string[]> = {
   [ROUTE_PATHS.BLOG]: [ADMIN_PERMISSIONS.CATALOG_READ, ADMIN_PERMISSIONS.HR_WRITE],
   [ROUTE_PATHS.SITE_CONFIG]: [ADMIN_PERMISSIONS.CATALOG_READ, ADMIN_PERMISSIONS.HR_WRITE],
   [ROUTE_PATHS.CHAT_INBOX]: [ADMIN_PERMISSIONS.CONSULTATIONS_READ, ADMIN_PERMISSIONS.HR_WRITE],
+  [ROUTE_PATHS.COUNSELLOR_APPLICATIONS]: [ADMIN_PERMISSIONS.DOCTORS_READ],
   [ROUTE_PATHS.HR]: [ADMIN_PERMISSIONS.DOCTORS_READ],
   [ROUTE_PATHS.HR_USERS]: [ADMIN_PERMISSIONS.STAFF_READ],
   [ROUTE_PATHS.EMPLOYEES]: [ADMIN_PERMISSIONS.CONSUMERS_READ],
@@ -43,6 +51,7 @@ const ROUTE_PERMISSIONS: Record<string, string[]> = {
   [ROUTE_PATHS.ECOSYSTEM_USERS]: [ADMIN_PERMISSIONS.ECOSYSTEM_USERS_WRITE],
   [ROUTE_PATHS.CONSULTATIONS]: [ADMIN_PERMISSIONS.CONSULTATIONS_READ],
   [ROUTE_PATHS.FOLLOW_UPS]: [ADMIN_PERMISSIONS.CONSULTATIONS_READ],
+  [ROUTE_PATHS.SAFETY_FLAGS]: [ADMIN_PERMISSIONS.CONSULTATIONS_READ],
   [ROUTE_PATHS.ONLINE_DOCTORS]: [ADMIN_PERMISSIONS.DOCTORS_READ],
   [ROUTE_PATHS.PAYMENTS]: [ADMIN_PERMISSIONS.PAYMENTS_READ],
   [ROUTE_PATHS.DONATIONS]: [ADMIN_PERMISSIONS.PAYMENTS_READ],
@@ -59,6 +68,7 @@ export function permissionsForAdminRoute(segment: string): string[] | undefined 
 }
 
 export function canUserAccessAdminRoute(user: StaffUser | null, segment: string): boolean {
+  if (!canUserAccessRouteWorkspace(user, segment)) return false;
   const required = ROUTE_PERMISSIONS[segment];
   if (!required?.length) return true;
   return required.some((code) => staffHasAllPermissions(user, code));
@@ -77,10 +87,14 @@ export function navItemsForUser(
 export function navItemsForWorkspace<T extends { workspaces?: readonly AdminWorkspace[] }>(
   items: readonly T[],
   workspace: Exclude<AdminWorkspace, 'shared'>,
+  user?: StaffUser | null,
 ) {
   return items.filter((item) => {
     const workspaces = item.workspaces ?? ['shared'];
-    return workspaces.includes('shared') || workspaces.includes(workspace);
+    return (
+      workspaces.includes('shared') ||
+      (workspaces.includes(workspace) && (!user || staffCanAccessWorkspace(user, workspace)))
+    );
   });
 }
 
@@ -89,14 +103,34 @@ export function pickFirstAllowedRoute(user: StaffUser | null): string | null {
   const P = ADMIN_PERMISSIONS;
   if (staffHasAny(user, P.REPORTS_VIEW, P.PAYMENTS_READ, P.AUDIT_READ))
     return `/${ROUTE_PATHS.DASHBOARD}`;
-  if (staffHasAllPermissions(user, P.CONSULTATIONS_READ)) return `/${ROUTE_PATHS.CONSULTATIONS}`;
+  if (staffHasAllPermissions(user, P.CONSULTATIONS_READ) && canUserAccessAnyFocusedWorkspace(user))
+    return `/${ROUTE_PATHS.CONSULTATIONS}`;
   if (staffHasAllPermissions(user, P.CONSUMERS_READ)) return `/${ROUTE_PATHS.CONSUMERS}`;
-  if (staffHasAllPermissions(user, P.DOCTORS_READ)) return `/${ROUTE_PATHS.DOCTORS}`;
-  if (staffHasAllPermissions(user, P.DISEASES_READ)) return `/${ROUTE_PATHS.DISEASES}`;
+  if (staffHasAllPermissions(user, P.DOCTORS_READ) && canUserAccessAnyFocusedWorkspace(user))
+    return `/${ROUTE_PATHS.DOCTORS}`;
+  if (staffHasAllPermissions(user, P.DISEASES_READ) && staffCanAccessWorkspace(user, 'homeopathy'))
+    return `/${ROUTE_PATHS.DISEASES}`;
   if (staffHasAllPermissions(user, P.STAFF_READ)) return `/${ROUTE_PATHS.STAFF}`;
   return null;
 }
 
 function staffHasAny(user: StaffUser | null, ...codes: string[]) {
   return codes.some((c) => staffHasAllPermissions(user, c));
+}
+
+function routeFocusedWorkspaces(segment: string): AdminFocusedWorkspace[] {
+  const route = NAV_ITEMS.find((item) => item.path.split('/').filter(Boolean).pop() === segment);
+  return (route?.workspaces ?? []).filter(
+    (workspace): workspace is AdminFocusedWorkspace => workspace !== 'shared',
+  );
+}
+
+function canUserAccessRouteWorkspace(user: StaffUser | null, segment: string): boolean {
+  const workspaces = routeFocusedWorkspaces(segment);
+  if (!workspaces.length) return true;
+  return workspaces.some((workspace) => staffCanAccessWorkspace(user, workspace));
+}
+
+function canUserAccessAnyFocusedWorkspace(user: StaffUser | null): boolean {
+  return staffCanAccessWorkspace(user, 'homeopathy') || staffCanAccessWorkspace(user, 'hope-hub');
 }

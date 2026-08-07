@@ -17,6 +17,9 @@ export type StaffUser = {
 
 export const ADMIN_PERMISSIONS = {
   FULL: 'admin.full',
+  WORKSPACE_ALL: 'workspace.all',
+  WORKSPACE_HOMEOPATHY: 'workspace.homeopathy',
+  WORKSPACE_HOPE_HUB: 'workspace.hope_hub',
   REPORTS_VIEW: 'admin.reports.view',
   DOCTORS_READ: 'admin.doctors.read',
   DOCTORS_WRITE: 'admin.doctors.write',
@@ -52,6 +55,14 @@ export const ADMIN_PERMISSIONS = {
 } as const;
 
 export const PERMISSION_GROUPS: Array<{ label: string; codes: string[] }> = [
+  {
+    label: 'Workspace access',
+    codes: [
+      ADMIN_PERMISSIONS.WORKSPACE_ALL,
+      ADMIN_PERMISSIONS.WORKSPACE_HOMEOPATHY,
+      ADMIN_PERMISSIONS.WORKSPACE_HOPE_HUB,
+    ],
+  },
   {
     label: 'Admin console',
     codes: [
@@ -118,4 +129,57 @@ export function staffHasAnyPermission(
   ...candidates: string[]
 ): boolean {
   return candidates.some((c) => staffHasAllPermissions(user, c));
+}
+
+export type AdminFocusedWorkspace = 'homeopathy' | 'hope-hub';
+
+function hasFullWorkspaceAccess(sp: StaffProfileSummary): boolean {
+  return (
+    sp.isSuperAdmin ||
+    sp.permissionCodes.includes(ADMIN_PERMISSIONS.FULL) ||
+    sp.permissionCodes.includes(ADMIN_PERMISSIONS.WORKSPACE_ALL)
+  );
+}
+
+function hasAnyWorkspaceCode(sp: StaffProfileSummary): boolean {
+  return (
+    sp.permissionCodes.includes(ADMIN_PERMISSIONS.WORKSPACE_ALL) ||
+    sp.permissionCodes.includes(ADMIN_PERMISSIONS.WORKSPACE_HOMEOPATHY) ||
+    sp.permissionCodes.includes(ADMIN_PERMISSIONS.WORKSPACE_HOPE_HUB)
+  );
+}
+
+export function staffCanAccessWorkspace(
+  user: StaffUser | null | undefined,
+  workspace: AdminFocusedWorkspace,
+): boolean {
+  if (!user || (user.role !== 'ADMIN' && user.role !== 'HR')) {
+    return false;
+  }
+
+  const sp = user.staffProfile;
+  if (user.role === 'ADMIN' && sp === null) {
+    return true;
+  }
+  if (!sp) {
+    return false;
+  }
+  if (hasFullWorkspaceAccess(sp)) {
+    return true;
+  }
+  if (!hasAnyWorkspaceCode(sp)) {
+    return true;
+  }
+  if (workspace === 'homeopathy') {
+    return sp.permissionCodes.includes(ADMIN_PERMISSIONS.WORKSPACE_HOMEOPATHY);
+  }
+  return sp.permissionCodes.includes(ADMIN_PERMISSIONS.WORKSPACE_HOPE_HUB);
+}
+
+export function allowedWorkspacesForUser(
+  user: StaffUser | null | undefined,
+): AdminFocusedWorkspace[] {
+  return (['homeopathy', 'hope-hub'] as const).filter((workspace) =>
+    staffCanAccessWorkspace(user, workspace),
+  );
 }

@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { Role } from '@prisma/client';
 import { z } from 'zod';
 import { authRequired, allowRoles } from '../../auth.js';
+import { requireAdminWorkspaceAccess } from '../../admin-workspace-access.js';
 import { prisma } from '../../db.js';
 import {
   adminListenerScreeningQuestionSet,
@@ -44,6 +45,13 @@ async function activateOnlyThisQuestionSet(id: string, actorId?: string) {
 }
 
 export function registerAdminListenerScreeningRoutes(router: Router) {
+  router.use(
+    '/admin/hope-hub',
+    authRequired,
+    allowRoles(Role.ADMIN, Role.HR),
+    requireAdminWorkspaceAccess('hope-hub')
+  );
+
   router.get(
     '/admin/hope-hub/listener-screening',
     authRequired,

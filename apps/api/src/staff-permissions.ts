@@ -5,6 +5,9 @@ import type { AuthUser } from './auth.js';
 /** Granular admin + ops capabilities. Super-admin / `admin.full` grants everything. */
 export const PERMISSIONS = {
   FULL: 'admin.full',
+  WORKSPACE_ALL: 'workspace.all',
+  WORKSPACE_HOMEOPATHY: 'workspace.homeopathy',
+  WORKSPACE_HOPE_HUB: 'workspace.hope_hub',
   REPORTS_VIEW: 'admin.reports.view',
   DOCTORS_READ: 'admin.doctors.read',
   DOCTORS_WRITE: 'admin.doctors.write',
@@ -45,6 +48,9 @@ export const ALL_PERMISSION_CODES: PermissionCode[] = Object.values(PERMISSIONS)
 
 export const PERMISSION_LABELS: Record<PermissionCode, string> = {
   [PERMISSIONS.FULL]: 'Full platform access',
+  [PERMISSIONS.WORKSPACE_ALL]: 'All admin workspaces',
+  [PERMISSIONS.WORKSPACE_HOMEOPATHY]: 'Homeopathy workspace',
+  [PERMISSIONS.WORKSPACE_HOPE_HUB]: 'Hope Hub workspace',
   [PERMISSIONS.REPORTS_VIEW]: 'View reports & analytics',
   [PERMISSIONS.DOCTORS_READ]: 'View doctors',
   [PERMISSIONS.DOCTORS_WRITE]: 'Manage doctors',
@@ -101,6 +107,47 @@ export const PERMISSION_MANAGEMENT_ROLES: Role[] = [Role.ADMIN, Role.HR];
 
 function hasFullAccess(sp: NonNullable<AuthUser['staffProfile']>): boolean {
   return sp.isSuperAdmin || sp.permissionCodes.includes(PERMISSIONS.FULL);
+}
+
+export type AdminFocusedWorkspace = 'homeopathy' | 'hope-hub';
+
+function hasFullWorkspaceAccess(sp: NonNullable<AuthUser['staffProfile']>): boolean {
+  return hasFullAccess(sp) || sp.permissionCodes.includes(PERMISSIONS.WORKSPACE_ALL);
+}
+
+function hasAnyWorkspaceCode(sp: NonNullable<AuthUser['staffProfile']>): boolean {
+  return (
+    sp.permissionCodes.includes(PERMISSIONS.WORKSPACE_ALL) ||
+    sp.permissionCodes.includes(PERMISSIONS.WORKSPACE_HOMEOPATHY) ||
+    sp.permissionCodes.includes(PERMISSIONS.WORKSPACE_HOPE_HUB)
+  );
+}
+
+export function staffCanAccessWorkspace(
+  user: AuthUser | undefined,
+  workspace: AdminFocusedWorkspace
+): boolean {
+  if (!user || !PERMISSION_MANAGEMENT_ROLES.includes(user.role)) {
+    return false;
+  }
+
+  const sp = user.staffProfile;
+  if (user.role === Role.ADMIN && sp === null) {
+    return true;
+  }
+  if (!sp) {
+    return false;
+  }
+  if (hasFullWorkspaceAccess(sp)) {
+    return true;
+  }
+  if (!hasAnyWorkspaceCode(sp)) {
+    return true;
+  }
+  if (workspace === 'homeopathy') {
+    return sp.permissionCodes.includes(PERMISSIONS.WORKSPACE_HOMEOPATHY);
+  }
+  return sp.permissionCodes.includes(PERMISSIONS.WORKSPACE_HOPE_HUB);
 }
 
 /**

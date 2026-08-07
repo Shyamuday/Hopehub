@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { FollowUpEntitlementStatus, PaymentStatus, Prisma, Role } from '@prisma/client';
 import { z } from 'zod';
 import { authRequired, allowRoles } from '../../auth.js';
+import { getAuthorizedAdminWorkspace } from '../../admin-workspace-access.js';
 import { prisma } from '../../db.js';
 import { asyncRoute, queryText, queryPositiveInt, routeParam } from '../../utils/helpers.js';
 import { getRazorpayClient } from '../../services/razorpay.js';
@@ -44,11 +45,13 @@ export function registerAdminPaymentRoutes(router: Router) {
       const page = queryPositiveInt(req, 'page', 1, 1, 1000);
       const pageSize = queryPositiveInt(req, 'pageSize', 20, 1, 100);
       const exportType = queryText(req, 'export').toLowerCase();
+      const workspace = getAuthorizedAdminWorkspace(req, res);
+      if (workspace === null) return;
       const where = buildPaymentWhere({
         status: queryText(req, 'status'),
         from: queryText(req, 'from'),
         to: queryText(req, 'to'),
-        workspace: queryText(req, 'workspace')
+        workspace
       });
 
       if (exportType === 'csv') {

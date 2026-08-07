@@ -1,4 +1,4 @@
-import { PERMISSIONS, type PermissionCode } from './staff-permissions.js';
+import { PERMISSIONS, PERMISSION_LABELS, type PermissionCode } from './staff-permissions.js';
 
 export const PRESET_CLUSTERS = {
   clinical_operations: 'Clinical & operations',
@@ -27,6 +27,7 @@ export const STAFF_ROLE_PRESETS: readonly StaffRolePreset[] = [
     summary: 'Consultations, assignments, read doctors.',
     cluster: 'clinical_operations',
     permissionCodes: [
+      PERMISSIONS.WORKSPACE_HOMEOPATHY,
       PERMISSIONS.CONSULTATIONS_READ,
       PERMISSIONS.ASSIGNMENTS_WRITE,
       PERMISSIONS.DOCTORS_READ,
@@ -39,10 +40,49 @@ export const STAFF_ROLE_PRESETS: readonly StaffRolePreset[] = [
     summary: 'Onboard doctors; HR ops portal.',
     cluster: 'clinical_operations',
     permissionCodes: [
+      PERMISSIONS.WORKSPACE_HOMEOPATHY,
+      PERMISSIONS.WORKSPACE_HOPE_HUB,
       PERMISSIONS.DOCTORS_READ,
       PERMISSIONS.DOCTORS_WRITE,
       PERMISSIONS.OPS_HR,
       PERMISSIONS.STAFF_READ
+    ]
+  },
+  {
+    id: 'hope_hub_manager',
+    label: 'Hope Hub manager',
+    summary: 'Psychologists, listeners, assessments, consultations, and safety signals.',
+    cluster: 'clinical_operations',
+    permissionCodes: [
+      PERMISSIONS.WORKSPACE_HOPE_HUB,
+      PERMISSIONS.DOCTORS_READ,
+      PERMISSIONS.DOCTORS_WRITE,
+      PERMISSIONS.CATALOG_READ,
+      PERMISSIONS.CATALOG_WRITE,
+      PERMISSIONS.CONSULTATIONS_READ,
+      PERMISSIONS.ASSIGNMENTS_WRITE,
+      PERMISSIONS.PAYMENTS_READ,
+      PERMISSIONS.REPORTS_VIEW
+    ]
+  },
+  {
+    id: 'homeopathy_manager',
+    label: 'Homeopathy manager',
+    summary: 'Homeopathy doctors, patients, consultations, catalog, and stock.',
+    cluster: 'clinical_operations',
+    permissionCodes: [
+      PERMISSIONS.WORKSPACE_HOMEOPATHY,
+      PERMISSIONS.DOCTORS_READ,
+      PERMISSIONS.DOCTORS_WRITE,
+      PERMISSIONS.DISEASES_READ,
+      PERMISSIONS.DISEASES_WRITE,
+      PERMISSIONS.CONSUMERS_READ,
+      PERMISSIONS.CONSULTATIONS_READ,
+      PERMISSIONS.ASSIGNMENTS_WRITE,
+      PERMISSIONS.INVENTORY_READ,
+      PERMISSIONS.CATALOG_READ,
+      PERMISSIONS.CATALOG_WRITE,
+      PERMISSIONS.REPORTS_VIEW
     ]
   },
   {
@@ -57,7 +97,12 @@ export const STAFF_ROLE_PRESETS: readonly StaffRolePreset[] = [
     label: 'Finance (read-only)',
     summary: 'Payments and reports.',
     cluster: 'commercial',
-    permissionCodes: [PERMISSIONS.PAYMENTS_READ, PERMISSIONS.REPORTS_VIEW, PERMISSIONS.OPS_ACCOUNTANT]
+    permissionCodes: [
+      PERMISSIONS.WORKSPACE_ALL,
+      PERMISSIONS.PAYMENTS_READ,
+      PERMISSIONS.REPORTS_VIEW,
+      PERMISSIONS.OPS_ACCOUNTANT
+    ]
   },
   {
     id: 'finance_with_export',
@@ -65,6 +110,7 @@ export const STAFF_ROLE_PRESETS: readonly StaffRolePreset[] = [
     summary: 'Payments, reports, CSV export.',
     cluster: 'commercial',
     permissionCodes: [
+      PERMISSIONS.WORKSPACE_ALL,
       PERMISSIONS.PAYMENTS_READ,
       PERMISSIONS.PAYMENTS_EXPORT,
       PERMISSIONS.REPORTS_VIEW,
@@ -76,7 +122,12 @@ export const STAFF_ROLE_PRESETS: readonly StaffRolePreset[] = [
     label: 'Support (light)',
     summary: 'Consumer lookup and consultations.',
     cluster: 'patient_crm',
-    permissionCodes: [PERMISSIONS.CONSUMERS_READ, PERMISSIONS.CONSULTATIONS_READ, PERMISSIONS.OPS_CALL_CENTER]
+    permissionCodes: [
+      PERMISSIONS.WORKSPACE_ALL,
+      PERMISSIONS.CONSUMERS_READ,
+      PERMISSIONS.CONSULTATIONS_READ,
+      PERMISSIONS.OPS_CALL_CENTER
+    ]
   },
   {
     id: 'compliance_security',
@@ -90,7 +141,12 @@ export const STAFF_ROLE_PRESETS: readonly StaffRolePreset[] = [
     label: 'Product / pricing',
     summary: 'Disease catalog and reports.',
     cluster: 'clinical_operations',
-    permissionCodes: [PERMISSIONS.DISEASES_READ, PERMISSIONS.DISEASES_WRITE, PERMISSIONS.REPORTS_VIEW]
+    permissionCodes: [
+      PERMISSIONS.WORKSPACE_HOMEOPATHY,
+      PERMISSIONS.DISEASES_READ,
+      PERMISSIONS.DISEASES_WRITE,
+      PERMISSIONS.REPORTS_VIEW
+    ]
   },
   {
     id: 'store_ops',
@@ -98,6 +154,7 @@ export const STAFF_ROLE_PRESETS: readonly StaffRolePreset[] = [
     summary: 'Inventory, catalog, store counter & manager portals.',
     cluster: 'ops_portals',
     permissionCodes: [
+      PERMISSIONS.WORKSPACE_HOMEOPATHY,
       PERMISSIONS.INVENTORY_READ,
       PERMISSIONS.CATALOG_READ,
       PERMISSIONS.OPS_STORE_COUNTER,
@@ -108,7 +165,8 @@ export const STAFF_ROLE_PRESETS: readonly StaffRolePreset[] = [
 ];
 
 export const GOVERNANCE_GUIDANCE = {
-  principle: 'Assign only the powers each email needs — admins and HR can combine multiple permission codes per user.',
+  principle:
+    'Assign only the powers each email needs — admins and HR can combine multiple permission codes per user.',
   superAdmin: 'Use Super admin only for platform owners.',
   staffWrite: 'admin.staff.write lets HR or admins change other users’ permissions.',
   presetsAreHints: 'Presets are starting bundles; you can tick any combination before save.'
@@ -122,7 +180,7 @@ export function getPermissionPresetsPayload() {
     allPermissions: Object.entries(PERMISSIONS).map(([key, code]) => ({
       code,
       key,
-      label: code
+      label: PERMISSION_LABELS[code]
     }))
   };
 }

@@ -19,10 +19,8 @@ import {
   type AdminNavItem,
 } from '../../core/constants/app-routes.constants';
 import { navItemsForUser, navItemsForWorkspace } from '../../core/admin-navigation';
-import {
-  AdminWorkspaceService,
-  type AdminFocusedWorkspace,
-} from '../../core/services/admin-workspace.service';
+import { type AdminFocusedWorkspace } from '../../core/admin-permissions';
+import { AdminWorkspaceService } from '../../core/services/admin-workspace.service';
 
 const MOBILE_BOTTOM_NAV_LIMIT = 4;
 
@@ -61,7 +59,11 @@ export class AdminShell {
   readonly selectedWorkspaceOption = this.workspace.selectedWorkspaceOption;
   readonly focusMode = computed(() => this.mobileLayout.pageFocus());
   readonly filteredNavItems = computed(() =>
-    navItemsForWorkspace(navItemsForUser(NAV_ITEMS, this.auth.user()), this.selectedWorkspace()),
+    navItemsForWorkspace(
+      navItemsForUser(NAV_ITEMS, this.auth.user()),
+      this.selectedWorkspace(),
+      this.auth.user(),
+    ),
   );
   readonly accountPath = adminNavPath(ROUTE_PATHS.ACCOUNT);
   readonly apiBase = environment.apiUrl;

@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { Role } from '@prisma/client';
 import { authRequired, allowRoles } from '../../auth.js';
+import { requireAdminWorkspaceAccess } from '../../admin-workspace-access.js';
 import { prisma } from '../../db.js';
 import {
   listenerScreeningReviewDetails,
@@ -124,6 +125,13 @@ function listenerProfileChecklist(application: any) {
 }
 
 export function registerAdminCounsellorApplicationRoutes(router: Router) {
+  router.use(
+    ['/admin/counsellor-applications', '/admin/care-contributors'],
+    authRequired,
+    allowRoles(Role.ADMIN, Role.HR),
+    requireAdminWorkspaceAccess('hope-hub')
+  );
+
   router.get(
     '/admin/counsellor-applications',
     authRequired,

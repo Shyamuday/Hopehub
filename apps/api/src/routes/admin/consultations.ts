@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { Role, ConsultationStatus, SupportNoteCategory, Prisma } from '@prisma/client';
 import type { Server as SocketIoServer } from 'socket.io';
 import { authRequired, allowRoles } from '../../auth.js';
+import { getAuthorizedAdminWorkspace } from '../../admin-workspace-access.js';
 import { prisma } from '../../db.js';
 import {
   asyncRoute,
@@ -131,7 +132,8 @@ export function registerAdminConsultationRoutes(router: Router, io: SocketIoServ
       const assigned = queryText(req, 'assigned');
       const outcome = queryText(req, 'outcome');
       const outcomeFlag = queryText(req, 'outcomeFlag');
-      const workspace = queryText(req, 'workspace');
+      const workspace = getAuthorizedAdminWorkspace(req, res);
+      if (workspace === null) return;
       const q = queryText(req, 'q').trim().toLowerCase();
 
       const where: Prisma.ConsultationWhereInput = {};
@@ -218,7 +220,8 @@ export function registerAdminConsultationRoutes(router: Router, io: SocketIoServ
     allowRoles(Role.ADMIN),
     asyncRoute(async (req, res) => {
       const days = Math.max(1, Math.min(365, queryPositiveInt(req, 'days', 30)));
-      const workspace = queryText(req, 'workspace');
+      const workspace = getAuthorizedAdminWorkspace(req, res);
+      if (workspace === null) return;
       const from = new Date();
       from.setDate(from.getDate() - days);
 

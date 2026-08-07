@@ -10,7 +10,7 @@
       </div>
     </div>
     <div class="topbar-workspace" aria-label="Admin workspace">
-      @for (workspace of workspaceOptions; track workspace.id) {
+      @for (workspace of workspaceOptions(); track workspace.id) {
         <button
           type="button"
           class="workspace-chip"
@@ -50,7 +50,7 @@
       <section class="workspace-switcher" aria-label="Admin workspace">
         <p>Workspace</p>
         <div class="workspace-buttons">
-          @for (workspace of workspaceOptions; track workspace.id) {
+          @for (workspace of workspaceOptions(); track workspace.id) {
             <button
               type="button"
               class="workspace-button"
@@ -106,7 +106,7 @@
       <section class="workspace-switcher drawer-workspace" aria-label="Admin workspace">
         <p>Workspace</p>
         <div class="workspace-buttons compact">
-          @for (workspace of workspaceOptions; track workspace.id) {
+          @for (workspace of workspaceOptions(); track workspace.id) {
             <button
               type="button"
               class="workspace-button"

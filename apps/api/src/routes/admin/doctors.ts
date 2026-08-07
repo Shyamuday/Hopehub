@@ -10,6 +10,7 @@ import {
 } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import { authRequired, allowRoles } from '../../auth.js';
+import { getAuthorizedAdminWorkspace } from '../../admin-workspace-access.js';
 import { prisma } from '../../db.js';
 import {
   asyncRoute,
@@ -184,7 +185,8 @@ export function registerAdminDoctorRoutes(router: Router) {
       const query = queryText(req, 'q').trim();
       const status = queryText(req, 'status').toUpperCase();
       const sortBy = queryText(req, 'sortBy');
-      const workspace = queryText(req, 'workspace');
+      const workspace = getAuthorizedAdminWorkspace(req, res);
+      if (workspace === null) return;
       const sortDirection =
         queryText(req, 'sortDirection').toLowerCase() === 'asc' ? 'asc' : 'desc';
 
@@ -242,7 +244,8 @@ export function registerAdminDoctorRoutes(router: Router) {
       const page = queryPositiveInt(req, 'page', 1);
       const pageSize = queryPositiveInt(req, 'pageSize', 10);
       const query = queryText(req, 'q').trim();
-      const workspace = queryText(req, 'workspace');
+      const workspace = getAuthorizedAdminWorkspace(req, res);
+      if (workspace === null) return;
 
       const where: Prisma.UserWhereInput = {
         role: Role.DOCTOR,
