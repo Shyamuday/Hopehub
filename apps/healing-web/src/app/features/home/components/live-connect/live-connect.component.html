@@ -51,7 +51,7 @@
           <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             @for (provider of providers(); track provider.id) {
               <article class="live-provider-card">
-                <div class="flex items-start gap-3">
+                <div class="live-provider-card__top">
                   @if (providerImageUrl(provider); as imageUrl) {
                     <img [src]="imageUrl" [alt]="provider.name" class="live-provider-avatar" />
                   } @else {
@@ -59,38 +59,45 @@
                       {{ provider.name.slice(0, 1) }}
                     </div>
                   }
-                  <div class="min-w-0">
-                    <div class="flex flex-wrap items-center gap-2">
-                      <h3 class="truncate text-base font-bold text-slate-950">{{ provider.name }}</h3>
-                      <span class="live-dot">Live</span>
-                      @if (isFreeProvider(provider)) {
-                        <span class="free-dot">Free</span>
-                      }
-                    </div>
-                    <p class="mt-1 text-sm font-medium text-slate-600">
-                      {{ providerRoleLabel(provider) || providerTierLabel(provider) }}
-                    </p>
+                  <div class="live-provider-card__identity">
+                    <span class="verified-dot">{{ providerTrustLabel(provider) }}</span>
+                    <h3>{{ provider.name }}</h3>
+                    <p>{{ providerRoleLabel(provider) || providerTierLabel(provider) }}</p>
                   </div>
                 </div>
 
+                <div class="live-provider-card__status-row">
+                  <span class="live-dot">{{ providerLiveLabel(provider) }}</span>
+                  @if (isFreeProvider(provider)) {
+                    <span class="free-dot">Free</span>
+                  } @else {
+                    <span class="price-dot">{{ sessionMeta(provider) }}</span>
+                  }
+                </div>
+
                 @if (provider.supportRoleDescription || provider.bio) {
-                  <p class="mt-4 line-clamp-3 text-sm leading-6 text-slate-600">
+                  <p class="live-provider-card__bio">
                     {{ provider.supportRoleDescription || provider.bio }}
                   </p>
                 }
 
-                <div class="mt-4 flex flex-wrap gap-2 text-xs font-semibold text-slate-600">
+                <div class="live-provider-card__meta">
+                  <span>🌐 {{ providerLanguagesLabel(provider) }}</span>
+                  <span>✨ {{ providerFocusLabel(provider) }}</span>
+                </div>
+
+                <div class="live-provider-card__modes" aria-label="Available live modes">
                   @if (isFreeProvider(provider)) {
                     <span class="live-mini-chip live-mini-chip--free">No wallet needed</span>
                   }
-                  @if (provider.acceptsChat) {
-                    <span class="live-mini-chip">Chat</span>
-                  }
-                  @if (provider.acceptsVoiceCall) {
-                    <span class="live-mini-chip">Voice</span>
-                  }
-                  @if (provider.acceptsVideoCall) {
-                    <span class="live-mini-chip">Video</span>
+                  @for (badge of providerModeBadges(provider); track badge.mode) {
+                    <span
+                      class="live-mini-chip"
+                      [class.live-mini-chip--active]="badge.mode === mode() && badge.enabled"
+                      [class.live-mini-chip--muted]="!badge.enabled"
+                    >
+                      {{ badge.icon }} {{ badge.label }}
+                    </span>
                   }
                 </div>
 
@@ -111,11 +118,29 @@
           </div>
         } @else {
           <div class="live-empty-card">
-            <h3>{{ unavailableTitle() }}</h3>
-            <p>{{ message() || unavailableMessage() }}</p>
-            <button type="button" class="btn-secondary" (click)="bookConsultation()">
-              Book consultation
-            </button>
+            <div class="live-empty-card__copy">
+              <h3>{{ unavailableTitle() }}</h3>
+              <p>{{ message() || unavailableMessage() }}</p>
+              @if (alternativeModesLoading()) {
+                <small>Checking other live options...</small>
+              } @else if (alternativeModes().length) {
+                <small>{{ alternativeModesMessage() }}</small>
+              }
+            </div>
+            <div class="live-empty-card__actions">
+              @for (alternative of alternativeModes(); track alternative.mode) {
+                <button
+                  type="button"
+                  class="btn-primary"
+                  (click)="tryAlternativeMode(alternative.mode)"
+                >
+                  {{ alternative.icon }} Try {{ alternative.label.toLowerCase() }} now
+                </button>
+              }
+              <button type="button" class="btn-secondary" (click)="bookConsultation()">
+                Book {{ modeLabel().toLowerCase() }} consultation
+              </button>
+            </div>
           </div>
         }
 

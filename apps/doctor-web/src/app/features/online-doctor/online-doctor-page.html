@@ -13,14 +13,19 @@
   <p>Loading…</p>
 } @else {
   <section class="panel status-panel" [class.is-live]="isLive()">
-    <h2>Live status</h2>
-    <p class="status">{{ profile()?.liveStatus || 'OFFLINE' }}</p>
+    <div>
+      <h2>Live status</h2>
+      <p class="status">{{ statusLabel() }}</p>
+      <p class="muted">Current modes: {{ acceptedModesLabel() }}</p>
+    </div>
     <div class="actions">
       @if (!isLive()) {
-        <button type="button" (click)="goOnline()" [disabled]="saving()">Go online</button>
+        <button type="button" (click)="goOnline()" [disabled]="saving() || !canAcceptAnyMode()">
+          Go online
+        </button>
       } @else {
         <button type="button" class="danger" (click)="goOffline()" [disabled]="saving()">
-          Go offline
+          Pause new requests
         </button>
       }
     </div>
@@ -73,17 +78,29 @@
           <option value="SPECIALIST">Disease specialist</option>
         </select>
       </div>
-      <label class="checkbox"
-        ><input type="checkbox" [formField]="settingsForm.acceptsChat" /> Accept chat</label
-      >
-      <label class="checkbox"
-        ><input type="checkbox" [formField]="settingsForm.acceptsVoiceCall" /> Accept voice &amp;
-        calls</label
-      >
-      <label class="checkbox"
-        ><input type="checkbox" [formField]="settingsForm.acceptsVideoCall" /> Accept video
-        calls</label
-      >
+      <div class="mode-control-grid full" aria-label="Live Connect modes">
+        <label class="mode-control-card">
+          <input type="checkbox" [formField]="settingsForm.acceptsChat" />
+          <span>💬</span>
+          <strong>Accept chat</strong>
+          <small>Private text support requests.</small>
+        </label>
+        <label class="mode-control-card">
+          <input type="checkbox" [formField]="settingsForm.acceptsVoiceCall" />
+          <span>🎧</span>
+          <strong>Accept voice</strong>
+          <small>Audio sessions without camera.</small>
+        </label>
+        <label class="mode-control-card">
+          <input type="checkbox" [formField]="settingsForm.acceptsVideoCall" />
+          <span>🎥</span>
+          <strong>Accept video</strong>
+          <small>Face-to-face sessions.</small>
+        </label>
+      </div>
+      @if (!canAcceptAnyMode()) {
+        <p class="warning full">Select at least one mode before going online.</p>
+      }
       @if (settingsModel().category === 'SPECIALIST') {
         <div class="field full">
           <label>Specialist for diseases</label>

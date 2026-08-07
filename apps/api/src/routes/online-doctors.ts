@@ -149,6 +149,22 @@ export function createOnlineDoctorsRouter(io: SocketIoServer) {
         })
         .parse(req.body);
 
+      const session = await ensureDoctorOnlineSession(req.user!.id);
+      if (!session) return res.status(404).json({ message: 'Doctor profile not found.' });
+      const nextAcceptsChat = body.acceptsChat ?? session.acceptsChat;
+      const nextAcceptsVoiceCall = body.acceptsVoiceCall ?? session.acceptsVoiceCall;
+      const nextAcceptsVideoCall = body.acceptsVideoCall ?? session.acceptsVideoCall;
+      if (
+        body.liveStatus !== LivePresenceStatus.OFFLINE &&
+        !nextAcceptsChat &&
+        !nextAcceptsVoiceCall &&
+        !nextAcceptsVideoCall
+      ) {
+        return res
+          .status(400)
+          .json({ message: 'Select at least one live mode before going online.' });
+      }
+
       const profile = await setDoctorLiveStatus(req.user!.id, body, io);
       if (!profile) return res.status(404).json({ message: 'Doctor profile not found.' });
       res.json({ profile });
@@ -239,7 +255,10 @@ export function createOnlineDoctorsRouter(io: SocketIoServer) {
           waitingInstant: instantQueue,
           onCall,
           generalists: live.filter((d) => d.category === 'GENERALIST').length,
-          specialists: live.filter((d) => d.category === 'SPECIALIST').length
+          specialists: live.filter((d) => d.category === 'SPECIALIST').length,
+          acceptingChat: live.filter((d) => d.acceptsChat).length,
+          acceptingVoice: live.filter((d) => d.acceptsVoiceCall).length,
+          acceptingVideo: live.filter((d) => d.acceptsVideoCall).length
         }
       });
     })

@@ -16,6 +16,12 @@ import { HopeHubLiveGroup, HopeHubProvider } from '../../../../core/services/boo
 import { PaymentFlowState, PaymentStatusOverlayComponent } from '../../../../shared/components';
 
 type LiveConnectMode = 'chat' | 'voice' | 'video';
+type LiveConnectAlternativeMode = {
+  mode: LiveConnectMode;
+  label: string;
+  icon: string;
+  count: number;
+};
 
 @Component({
   selector: 'app-live-connect',
@@ -47,6 +53,8 @@ export class LiveConnectComponent implements OnInit {
   readonly view = signal<'providers' | 'groups'>('providers');
   readonly mode = signal<LiveConnectMode>('chat');
   readonly roleGroup = signal('');
+  readonly alternativeModes = signal<LiveConnectAlternativeMode[]>([]);
+  readonly alternativeModesLoading = signal(false);
   readonly paymentFlowState = signal<PaymentFlowState>('IDLE');
   readonly paymentFlowError = signal('');
   readonly paymentFlowConsultation = signal<any | null>(null);
@@ -118,6 +126,10 @@ export class LiveConnectComponent implements OnInit {
     return this.modes.find((mode) => mode.value === this.mode())?.label ?? 'Chat';
   }
 
+  modeOption(mode: LiveConnectMode): (typeof this.modes)[number] {
+    return this.modes.find((item) => item.value === mode) ?? this.modes[0];
+  }
+
   sessionMode(): string {
     const mode = this.mode();
     if (mode === 'video') return 'online_video';
@@ -129,6 +141,56 @@ export class LiveConnectComponent implements OnInit {
     const meta = this.sessionMeta(provider);
     const prefix = this.isFreeProvider(provider) ? 'Start free' : 'Start';
     return `${prefix} ${this.modeLabel().toLowerCase()}${meta ? ` · ${meta}` : ''}`;
+  }
+
+  providerTrustLabel(provider: HopeHubProvider): string {
+    if (provider.isClinicalCare) return 'Verified professional';
+    const role = this.providerRoleLabel(provider) || this.providerTierLabel(provider);
+    if (/listener|volunteer/i.test(role)) return 'Reviewed listener';
+    if (/counsellor/i.test(role)) return 'Verified counsellor';
+    return 'Verified support';
+  }
+
+  providerLiveLabel(provider: HopeHubProvider): string {
+    const wentLiveAt = provider.wentLiveAt ? new Date(provider.wentLiveAt).getTime() : 0;
+    if (!wentLiveAt || Number.isNaN(wentLiveAt)) return 'Online now';
+    const minutes = Math.max(0, Math.floor((Date.now() - wentLiveAt) / 60_000));
+    if (minutes < 1) return 'Online just now';
+    if (minutes < 60) return `Online ${minutes} min`;
+    return 'Online today';
+  }
+
+  providerLanguagesLabel(provider: HopeHubProvider): string {
+    const languages = provider.languages?.filter(Boolean).slice(0, 3) || [];
+    return languages.length ? languages.join(', ') : 'Language flexible';
+  }
+
+  providerFocusLabel(provider: HopeHubProvider): string {
+    const focus = provider.concernsHandled?.length ? provider.concernsHandled : provider.focusAreas;
+    return focus?.filter(Boolean).slice(0, 2).join(' · ') || 'Emotional support';
+  }
+
+  providerModeBadges(provider: HopeHubProvider): Array<{
+    mode: LiveConnectMode;
+    label: string;
+    icon: string;
+    enabled: boolean;
+  }> {
+    return [
+      { mode: 'chat', label: 'Chat', icon: '💬', enabled: Boolean(provider.acceptsChat) },
+      {
+        mode: 'voice',
+        label: 'Voice',
+        icon: '🎧',
+        enabled: Boolean(provider.acceptsVoiceCall),
+      },
+      {
+        mode: 'video',
+        label: 'Video',
+        icon: '🎥',
+        enabled: Boolean(provider.acceptsVideoCall),
+      },
+    ];
   }
 
   groupStatusLabel(group: HopeHubLiveGroup): string {
@@ -147,6 +209,20 @@ export class LiveConnectComponent implements OnInit {
 
   unavailableMessage(): string {
     return `You can still book a consultation and we will route you to the right Hope Hub expert for ${this.modeLabel().toLowerCase()} support.`;
+  }
+
+  alternativeModesMessage(): string {
+    const alternatives = this.alternativeModes();
+    if (!alternatives.length) return '';
+    if (alternatives.length === 1) {
+      const item = alternatives[0];
+      return `${item.count} ${item.label.toLowerCase()} ${item.count === 1 ? 'expert is' : 'experts are'} live now.`;
+    }
+    return 'Other live options are available now.';
+  }
+
+  tryAlternativeMode(mode: LiveConnectMode): void {
+    this.setMode(mode);
   }
 
   bookConsultation(): void {
@@ -342,6 +418,8 @@ export class LiveConnectComponent implements OnInit {
   private loadProviders(): void {
     this.loading.set(true);
     this.message.set('');
+    this.alternativeModes.set([]);
+    this.alternativeModesLoading.set(false);
     this.bookingService
       .quickTalkProviders({
         roleGroup: this.roleGroup(),
@@ -353,14 +431,59 @@ export class LiveConnectComponent implements OnInit {
           this.loading.set(false);
           if (!res.providers.length) {
             this.message.set(this.unavailableMessage());
+            void this.loadAlternativeModes(this.mode(), this.roleGroup());
           }
         },
         error: () => {
           this.providers.set([]);
+          this.alternativeModes.set([]);
+          this.alternativeModesLoading.set(false);
           this.loading.set(false);
           this.message.set('Live Connect is loading slowly. Please try again in a moment.');
         },
       });
+  }
+
+  private async loadAlternativeModes(
+    requestedMode: LiveConnectMode,
+    requestedRoleGroup: string,
+  ): Promise<void> {
+    const modes = this.modes.filter((item) => item.value !== requestedMode);
+    this.alternativeModesLoading.set(true);
+    try {
+      const alternatives = await Promise.all(
+        modes.map(async (item) => {
+          try {
+            const res = await firstValueFrom(
+              this.bookingService.quickTalkProviders({
+                roleGroup: requestedRoleGroup,
+                mode: item.value,
+              }),
+            );
+            const count = Math.max(Number(res.total || 0), res.providers?.length || 0);
+            return count > 0
+              ? {
+                  mode: item.value,
+                  label: item.label,
+                  icon: item.icon,
+                  count,
+                }
+              : null;
+          } catch {
+            return null;
+          }
+        }),
+      );
+
+      if (this.mode() !== requestedMode || this.roleGroup() !== requestedRoleGroup) return;
+      this.alternativeModes.set(
+        alternatives.filter((item): item is LiveConnectAlternativeMode => Boolean(item)),
+      );
+    } finally {
+      if (this.mode() === requestedMode && this.roleGroup() === requestedRoleGroup) {
+        this.alternativeModesLoading.set(false);
+      }
+    }
   }
 
   private loadGroups(): void {

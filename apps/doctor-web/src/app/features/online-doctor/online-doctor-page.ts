@@ -87,6 +87,28 @@ export class OnlineDoctorPage implements OnInit, OnDestroy {
     return ['ONLINE', 'BUSY', 'ON_CALL'].includes(this.profile()?.liveStatus ?? 'OFFLINE');
   }
 
+  canAcceptAnyMode() {
+    const settings = this.settingsModel();
+    return settings.acceptsChat || settings.acceptsVoiceCall || settings.acceptsVideoCall;
+  }
+
+  statusLabel() {
+    const status = this.profile()?.liveStatus ?? 'OFFLINE';
+    if (status === 'ONLINE') return 'Online and accepting new live requests';
+    if (status === 'BUSY') return 'Busy with an assigned live session';
+    if (status === 'ON_CALL') return 'On a live call';
+    return 'Offline — hidden from Live Connect';
+  }
+
+  acceptedModesLabel() {
+    const modes = [
+      this.settingsModel().acceptsChat ? 'chat' : '',
+      this.settingsModel().acceptsVoiceCall ? 'voice' : '',
+      this.settingsModel().acceptsVideoCall ? 'video' : '',
+    ].filter(Boolean);
+    return modes.length ? modes.join(' + ') : 'No live mode selected';
+  }
+
   isPsychologist() {
     return this.profile()?.doctorType === 'PSYCHOLOGIST';
   }
@@ -126,7 +148,12 @@ export class OnlineDoctorPage implements OnInit, OnDestroy {
   }
 
   async goOnline() {
+    if (!this.canAcceptAnyMode()) {
+      this.error.set('Choose at least one live mode before going online.');
+      return;
+    }
     this.saving.set(true);
+    this.error.set('');
     try {
       await this.saveSettings();
       const res = await this.online.setLiveStatus({

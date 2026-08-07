@@ -1,14 +1,62 @@
 .lead { color: #4b5563; }
+.status-panel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
 .status-panel.is-live { border-left: 4px solid #16a34a; }
-.status { font-size: 1.25rem; font-weight: 700; text-transform: capitalize; }
+.status { font-size: 1.25rem; font-weight: 800; margin-bottom: 0.25rem; }
 .actions { margin-top: 0.75rem; }
 .form-grid { display: grid; gap: 0.75rem; }
-.field.full { grid-column: 1 / -1; }
+.field.full,
+.full { grid-column: 1 / -1; }
 .disease-picks { display: flex; flex-wrap: wrap; gap: 0.5rem; }
 .chip { font-size: 0.82rem; border: 1px solid #e5e7eb; border-radius: 999px; padding: 0.25rem 0.6rem; }
 .success { color: #047857; }
 .error { color: #b91c1c; }
 .danger { background: #b91c1c; color: #fff; }
+.warning {
+  border: 1px solid #f59e0b33;
+  border-radius: 0.65rem;
+  background: #fffbeb;
+  color: #92400e;
+  font-size: 0.9rem;
+  font-weight: 700;
+  margin: 0;
+  padding: 0.65rem 0.8rem;
+}
+.mode-control-grid {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.mode-control-card {
+  display: grid;
+  gap: 0.25rem;
+  border: 1px solid #d1fae5;
+  border-radius: 1rem;
+  background: linear-gradient(135deg, #ffffff 0%, #f0fdf4 100%);
+  cursor: pointer;
+  padding: 0.9rem;
+}
+.mode-control-card input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+}
+.mode-control-card span { font-size: 1.35rem; }
+.mode-control-card strong { color: #0f172a; }
+.mode-control-card small { color: #64748b; line-height: 1.4; }
+.mode-control-card:has(input:checked) {
+  border-color: #059669;
+  box-shadow: 0 14px 30px rgba(5, 150, 105, 0.13);
+}
+.mode-control-card:has(input:not(:checked)) {
+  opacity: 0.6;
+}
 .inbox-head { display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; }
 .inbox-list { list-style: none; margin: 0.75rem 0; padding: 0; display: grid; gap: 0.4rem; }
 .inbox-item {
@@ -33,3 +81,14 @@
   font-weight: 700;
 }
 .muted { color: #64748b; }
+
+@media (max-width: 760px) {
+  .status-panel {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .mode-control-grid {
+    grid-template-columns: 1fr;
+  }
+}
