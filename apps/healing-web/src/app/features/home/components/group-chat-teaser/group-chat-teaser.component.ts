@@ -17,18 +17,23 @@ import {
   AuthService,
   BookingService,
   GroupChatTeaserService,
+  HopeHubRealtimeService,
 } from '../../../../core/services';
 import {
   HopeHubLiveGroup,
   HopeHubLiveGroupMessage,
 } from '../../../../core/services/booking.service';
+import type { Socket } from 'socket.io-client';
 
 type TeaserMessage = {
+  id?: string;
   author: string;
   role: string;
   body: string;
   tone: 'host' | 'member' | 'listener';
 };
+
+const GROUP_MESSAGE_EVENT = 'hopehub-group:message:new';
 
 @Component({
   selector: 'app-group-chat-teaser',
@@ -42,6 +47,7 @@ export class GroupChatTeaserComponent implements OnInit {
   private readonly authModalService = inject(AuthModalService);
   private readonly bookingService = inject(BookingService);
   private readonly groupChatTeaser = inject(GroupChatTeaserService);
+  private readonly realtime = inject(HopeHubRealtimeService);
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
   private readonly platformId = inject(PLATFORM_ID);
@@ -93,7 +99,21 @@ export class GroupChatTeaserComponent implements OnInit {
 
   private revealTimer: number | null = null;
   private openTimer: number | null = null;
+  private socket: Socket | null = null;
+  private subscribedGroupId = '';
   private readonly dismissedStorageKey = 'hopehub-group-chat-teaser-dismissed';
+
+  private readonly handleIncomingMessage = (raw: unknown) => {
+    const message = raw as HopeHubLiveGroupMessage;
+    const group = this.activeGroup();
+    if (!message?.id || !group || message.groupId !== group.id || message.isDeleted) return;
+
+    this.realMessages.update((messages) => {
+      if (messages.some((item) => item.id === message.id)) return messages;
+      return [...messages, this.toTeaserMessage(message)].slice(-4);
+    });
+    this.visibleMessageCount.set(this.displayedMessages().length);
+  };
 
   ngOnInit(): void {
     if (!isPlatformBrowser(this.platformId)) return;
@@ -109,6 +129,7 @@ export class GroupChatTeaserComponent implements OnInit {
         const isAuthenticated = state.isAuthenticated || Boolean(this.authService.getToken());
         this.isAuthenticated.set(isAuthenticated);
         if (isAuthenticated) {
+          this.bindRealtimeForActiveGroup();
           this.openTeaserAfterAuth();
         }
       });
@@ -129,6 +150,7 @@ export class GroupChatTeaserComponent implements OnInit {
     this.destroyRef.onDestroy(() => {
       if (this.openTimer) window.clearTimeout(this.openTimer);
       if (this.revealTimer) window.clearInterval(this.revealTimer);
+      this.socket?.off?.(GROUP_MESSAGE_EVENT, this.handleIncomingMessage);
     });
   }
 
@@ -295,6 +317,7 @@ export class GroupChatTeaserComponent implements OnInit {
                 this.activeGroup.set(groupRes.group);
                 this.realMessages.set(realMessages);
                 this.visibleMessageCount.set(Math.min(2, realMessages.length));
+                this.bindRealtimeForActiveGroup();
               },
               error: () => {
                 this.activeGroup.set(null);
@@ -313,6 +336,7 @@ export class GroupChatTeaserComponent implements OnInit {
     const role = String(message.senderRole || '').toUpperCase();
     const isHost = role === 'ADMIN' || role === 'DOCTOR' || role === 'HR';
     return {
+      id: message.id,
       author: own ? 'You' : message.senderName || 'Member',
       role: own ? 'Member' : this.roleLabel(role),
       body: message.body,
@@ -326,5 +350,18 @@ export class GroupChatTeaserComponent implements OnInit {
     if (role === 'HR') return 'Host';
     if (role.includes('VOLUNTEER')) return 'Emotional support listener';
     return 'Member';
+  }
+
+  private bindRealtimeForActiveGroup(): void {
+    const group = this.activeGroup();
+    if (!group || !this.isAuthenticated()) return;
+    if (this.subscribedGroupId === group.id) return;
+
+    this.socket?.off?.(GROUP_MESSAGE_EVENT, this.handleIncomingMessage);
+    this.realtime.subscribeLiveGroup(group.id);
+    this.socket = this.realtime.getSocket();
+    this.socket?.off?.(GROUP_MESSAGE_EVENT, this.handleIncomingMessage);
+    this.socket?.on?.(GROUP_MESSAGE_EVENT, this.handleIncomingMessage);
+    this.subscribedGroupId = group.id;
   }
 }

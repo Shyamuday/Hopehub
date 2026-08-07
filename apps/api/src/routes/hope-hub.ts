@@ -1845,7 +1845,20 @@ function serializeLiveGroup(group: {
   createdAt: Date;
   updatedAt: Date;
   _count?: { messages?: number };
+  messages?: Array<{
+    id: string;
+    groupId: string;
+    senderId: string;
+    senderName: string;
+    senderRole: string | null;
+    body: string;
+    isDeleted?: boolean;
+    deletedAt?: Date | null;
+    deletedByUserId?: string | null;
+    createdAt: Date;
+  }>;
 }) {
+  const lastMessage = group.messages?.[0] ? serializeLiveGroupMessage(group.messages[0]) : null;
   return {
     id: group.id,
     title: group.title,
@@ -1864,7 +1877,8 @@ function serializeLiveGroup(group: {
     endedAt: group.endedAt?.toISOString() ?? null,
     createdAt: group.createdAt.toISOString(),
     updatedAt: group.updatedAt.toISOString(),
-    messageCount: group._count?.messages ?? 0
+    messageCount: group._count?.messages ?? 0,
+    lastMessage
   };
 }
 
@@ -1925,7 +1939,14 @@ hopeHubRouter.get(
         isPublic: true,
         status: { in: ['LIVE', 'SCHEDULED'] }
       },
-      include: { _count: { select: { messages: true } } },
+      include: {
+        _count: { select: { messages: true } },
+        messages: {
+          where: { isDeleted: false },
+          orderBy: { createdAt: 'desc' },
+          take: 1
+        }
+      },
       orderBy: [{ status: 'asc' }, { updatedAt: 'desc' }]
     });
 

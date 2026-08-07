@@ -222,6 +222,35 @@
   }
 }
 
+.live-group-preview {
+  background: #f8fafc;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 1rem;
+  margin-top: 0.85rem;
+  padding: 0.75rem 0.85rem;
+
+  span {
+    color: #047857;
+    display: block;
+    font-size: 0.72rem;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  p {
+    color: #334155;
+    display: -webkit-box;
+    flex: initial;
+    font-size: 0.86rem;
+    line-height: 1.45;
+    margin: 0.3rem 0 0;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+  }
+}
+
 .live-provider-avatar {
   border-radius: 1rem;
   height: 3.2rem;

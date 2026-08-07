@@ -164,6 +164,7 @@ export type HopeHubLiveGroup = {
   createdAt: string;
   updatedAt: string;
   messageCount: number;
+  lastMessage?: HopeHubLiveGroupMessage | null;
 };
 
 export type HopeHubLiveGroupMessage = {

@@ -197,6 +197,10 @@
                 </div>
                 <h3>{{ group.title }}</h3>
                 <p>{{ group.description || 'A moderated Hope Hub support room.' }}</p>
+                <div class="live-group-preview">
+                  <span>Latest message</span>
+                  <p>{{ groupLastMessageLabel(group) }}</p>
+                </div>
                 <div class="live-group-meta">
                   <span>{{ group.messageCount }} messages</span>
                   <span>Group support</span>

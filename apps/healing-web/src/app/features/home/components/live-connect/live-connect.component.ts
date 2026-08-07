@@ -141,6 +141,13 @@ export class LiveConnectComponent implements OnInit {
     return 'Open chat';
   }
 
+  groupLastMessageLabel(group: HopeHubLiveGroup): string {
+    const message = group.lastMessage;
+    if (!message?.body) return 'No messages yet — be the first to say hello.';
+    const author = message.senderName || 'Member';
+    return `${author}: ${message.body}`;
+  }
+
   canHostGroups(): boolean {
     const role = this.currentUser()?.role;
     return role === 'DOCTOR' || role === 'ADMIN' || role === 'HR';
