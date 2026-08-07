@@ -1,11 +1,39 @@
 <div class="request-page">
   <section class="request-hero">
-    <h1>Book a session</h1>
+    @if (isLiveConnectFallback()) {
+      <p class="eyebrow">Live Connect fallback</p>
+    }
+    <h1>{{ liveConnectHeroTitle() }}</h1>
+    <p>{{ liveConnectHeroCopy() }}</p>
   </section>
 
   <div class="request-layout">
     <section class="request-card" aria-label="Session booking form">
       <form [formGroup]="contactForm" (submit)="$event.preventDefault(); onSubmit()">
+        @if (isLiveConnectFallback()) {
+          <section class="live-handoff-card" aria-label="Live Connect booking handoff">
+            <div>
+              <span class="handoff-pill">No live expert available</span>
+              <h2>{{ liveConnectHandoffTitle() }}</h2>
+              <p>{{ liveConnectHandoffCopy() }}</p>
+            </div>
+            <div class="live-mode-choice-grid" aria-label="Choose consultation mode">
+              @for (item of liveConnectModeOptions; track item.value) {
+                <button
+                  type="button"
+                  class="live-mode-choice"
+                  [class.live-mode-choice--active]="requestedLiveMode() === item.value"
+                  (click)="setLiveConnectMode(item.value)"
+                >
+                  <span>{{ item.icon }}</span>
+                  <strong>{{ item.label }}</strong>
+                  <small>{{ item.copy }}</small>
+                </button>
+              }
+            </div>
+          </section>
+        }
+
         <div class="form-grid two">
           <div>
             <label for="name" class="form-label">Name *</label>
@@ -227,10 +255,9 @@
           <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <p class="text-xs font-bold uppercase tracking-wide text-primary-700">Need support now?</p>
-              <h2 class="text-lg font-bold text-gray-950">Quick Talk with a live expert</h2>
+              <h2 class="text-lg font-bold text-gray-950">{{ quickTalkTitle() }}</h2>
               <p class="mt-1 text-sm text-gray-600">
-                Pay for the configured live session and connect now with an online emotional
-                support listener or psychologist. Scheduled slot booking stays available below.
+                {{ quickTalkCopy() }}
               </p>
             </div>
             <button

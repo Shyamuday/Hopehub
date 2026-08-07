@@ -99,6 +99,93 @@ form {
   gap: 1rem;
 }
 
+.live-handoff-card {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  gap: 1rem;
+  align-items: center;
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 8% 0%, rgba(16, 185, 129, 0.16), transparent 12rem),
+    linear-gradient(135deg, #ffffff 0%, rgba(236, 253, 245, 0.82) 100%);
+  box-shadow: 0 16px 42px rgba(15, 23, 42, 0.08);
+  padding: 1rem;
+}
+
+.handoff-pill {
+  display: inline-flex;
+  width: fit-content;
+  border-radius: 999px;
+  background: rgba(6, 78, 59, 0.08);
+  color: #047857;
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.02em;
+  padding: 0.34rem 0.6rem;
+  text-transform: uppercase;
+}
+
+.live-handoff-card h2 {
+  margin: 0.7rem 0 0;
+  color: #0f172a;
+  font-size: 1.18rem;
+  font-weight: 900;
+}
+
+.live-handoff-card p {
+  margin: 0.4rem 0 0;
+  color: #475569;
+  font-size: 0.92rem;
+  line-height: 1.6;
+}
+
+.live-mode-choice-grid {
+  display: grid;
+  gap: 0.65rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.live-mode-choice {
+  display: grid;
+  gap: 0.18rem;
+  justify-items: start;
+  min-height: 5.25rem;
+  border: 1px solid rgba(16, 185, 129, 0.18);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.86);
+  color: #475569;
+  cursor: pointer;
+  padding: 0.78rem;
+  text-align: left;
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
+}
+
+.live-mode-choice:hover,
+.live-mode-choice--active {
+  border-color: #059669;
+  box-shadow: 0 12px 26px rgba(5, 150, 105, 0.14);
+  transform: translateY(-1px);
+}
+
+.live-mode-choice span {
+  font-size: 1.15rem;
+}
+
+.live-mode-choice strong {
+  color: #0f172a;
+  font-size: 0.92rem;
+}
+
+.live-mode-choice small {
+  color: #64748b;
+  font-size: 0.74rem;
+  line-height: 1.35;
+}
+
 .form-grid {
   display: grid;
   gap: 1rem;
@@ -416,6 +503,11 @@ form {
 
   .request-card-header {
     display: grid;
+  }
+
+  .live-handoff-card,
+  .live-mode-choice-grid {
+    grid-template-columns: 1fr;
   }
 
   .form-grid.two,

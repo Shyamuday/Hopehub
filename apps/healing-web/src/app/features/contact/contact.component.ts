@@ -37,6 +37,8 @@ import {
 } from '../../shared/components';
 import { User } from '../../core/models/auth.model';
 
+type LiveConnectMode = 'chat' | 'voice' | 'video';
+
 @Component({
   selector: 'app-contact',
   standalone: true,
@@ -129,9 +131,20 @@ export class ContactComponent implements OnInit {
     { value: 'Career / Study Mentor', label: 'Career / study mentor' },
   ];
   sessionModeOptions: FormDropdownOption[] = [
+    { value: 'live_chat', label: 'Live chat' },
     { value: 'online_audio', label: 'Online audio' },
     { value: 'online_video', label: 'Online video' },
     { value: 'chat_followup', label: 'Chat follow-up' },
+  ];
+  readonly liveConnectModeOptions: Array<{
+    value: LiveConnectMode;
+    label: string;
+    icon: string;
+    copy: string;
+  }> = [
+    { value: 'chat', label: 'Chat', icon: '💬', copy: 'Private text support' },
+    { value: 'voice', label: 'Voice', icon: '🎧', copy: 'Talk without camera' },
+    { value: 'video', label: 'Video', icon: '🎥', copy: 'Face-to-face support' },
   ];
   languageOptions: FormDropdownOption[] = [
     { value: '', label: 'No preference' },
@@ -201,7 +214,11 @@ export class ContactComponent implements OnInit {
         offeringId: params['offeringId'] || '',
         paymentMode: params['paymentMode'] || 'FULL',
         source: params['source'] || '',
+        mode: this.normalizeLiveConnectMode(params['mode'] || ''),
       });
+      if (this.contactForm) {
+        this.applyLiveConnectPrefill();
+      }
       this.loadSelectedOffering(params);
       this.loadCareTeamServiceQuote();
     });
@@ -255,7 +272,9 @@ export class ContactComponent implements OnInit {
   private initializeForm(): void {
     // Determine initial service value and message
     const initialServiceValue =
-      this.prefilledData().serviceName || this.prefilledData().service || '';
+      this.prefilledData().serviceName ||
+      this.prefilledData().service ||
+      (this.isLiveConnectFallback() ? 'Hope Hub Consultation' : '');
     const initialMessage = this.generateInitialMessage();
 
     // Get user data if logged in
@@ -273,7 +292,7 @@ export class ContactComponent implements OnInit {
       preferredTime: [''],
       concernCategory: [''],
       preferredExpertType: [''],
-      sessionMode: ['online_audio'],
+      sessionMode: [this.initialSessionMode()],
       preferredLanguage: [''],
       preferredProviderGender: [''],
       autoMatchProvider: [true],
@@ -296,6 +315,49 @@ export class ContactComponent implements OnInit {
         void this.loadQuickTalkProviders();
       });
     void this.updateProviderSuggestion();
+    void this.loadQuickTalkProviders();
+  }
+
+  isLiveConnectFallback(): boolean {
+    return this.prefilledData().source === 'live-connect';
+  }
+
+  requestedLiveMode(): LiveConnectMode {
+    if (this.contactForm) return this.activeQuickTalkMode();
+    return this.normalizeLiveConnectMode(this.prefilledData().mode) || 'voice';
+  }
+
+  requestedLiveModeLabel(): string {
+    const mode = this.requestedLiveMode();
+    if (mode === 'video') return 'video';
+    if (mode === 'voice') return 'voice';
+    return 'chat';
+  }
+
+  liveConnectHeroTitle(): string {
+    if (!this.isLiveConnectFallback()) return 'Book a session';
+    return `Book a ${this.requestedLiveModeLabel()} consultation`;
+  }
+
+  liveConnectHeroCopy(): string {
+    if (!this.isLiveConnectFallback()) {
+      return 'Share a few preferences, choose a slot, and we will confirm your private Hope Hub session.';
+    }
+    return `No live ${this.requestedLiveModeLabel()} expert was available immediately, so we brought you here to book the next suitable consultation without starting over.`;
+  }
+
+  liveConnectHandoffTitle(): string {
+    return `We kept your ${this.requestedLiveModeLabel()} preference`;
+  }
+
+  liveConnectHandoffCopy(): string {
+    return 'Choose a slot below, or use Quick Talk if someone comes online before you book.';
+  }
+
+  setLiveConnectMode(mode: LiveConnectMode): void {
+    this.prefilledData.set({ ...this.prefilledData(), mode });
+    this.contactForm.patchValue({ sessionMode: this.sessionModeForLiveConnectMode(mode) });
+    this.selectedAppointment.set(null);
     void this.loadQuickTalkProviders();
   }
 
@@ -383,6 +445,11 @@ export class ContactComponent implements OnInit {
 
   private generateInitialMessage(): string {
     const data = this.prefilledData();
+    if (data.source === 'live-connect') {
+      const mode = this.normalizeLiveConnectMode(data.mode) || 'voice';
+      return `I tried Live Connect for ${mode} support, but no one was available. I want to book the next suitable consultation.`;
+    }
+
     if (data.serviceName && data.consultant) {
       let message = `Interested in ${data.serviceName}`;
 
@@ -459,6 +526,14 @@ export class ContactComponent implements OnInit {
     const amount = service?.effectivePriceInPaise ?? provider.sessionFeeInPaise ?? 0;
     const price = amount <= 0 ? 'Free' : this.formatPaise(amount);
     return `${duration} min live session · ${price}`;
+  }
+
+  quickTalkTitle(): string {
+    return `Quick ${this.requestedLiveModeLabel()} if someone is live`;
+  }
+
+  quickTalkCopy(): string {
+    return `We will check for providers currently accepting ${this.requestedLiveModeLabel()} sessions. If no one is live, keep the scheduled booking below.`;
   }
 
   private genderLabel(value: string): string {
@@ -1017,11 +1092,14 @@ export class ContactComponent implements OnInit {
           concern: formValue.concernCategory || '',
           language: formValue.preferredLanguage || '',
           gender: formValue.preferredProviderGender || '',
+          mode: this.activeQuickTalkMode(),
         }),
       );
       this.quickTalkProviders.set(res.providers.slice(0, 3));
       this.quickTalkMessage.set(
-        res.providers.length ? '' : 'No one is live right now. You can still book a slot.',
+        res.providers.length
+          ? ''
+          : `No one is live for ${this.requestedLiveModeLabel()} right now. You can still book a slot.`,
       );
     } catch {
       this.quickTalkProviders.set([]);
@@ -1081,6 +1159,49 @@ export class ContactComponent implements OnInit {
     });
     scored.sort((a, b) => b.score - a.score || a.provider.name.localeCompare(b.provider.name));
     return scored[0]?.provider ?? null;
+  }
+
+  private applyLiveConnectPrefill(): void {
+    const mode = this.normalizeLiveConnectMode(this.prefilledData().mode);
+    const patch: Record<string, string> = {};
+    if (mode) {
+      patch['sessionMode'] = this.sessionModeForLiveConnectMode(mode);
+    }
+    if (this.isLiveConnectFallback() && !this.contactForm.get('serviceInterest')?.value) {
+      patch['serviceInterest'] = this.prefilledData().serviceName || 'Hope Hub Consultation';
+    }
+    if (this.isLiveConnectFallback() && !this.contactForm.get('message')?.value) {
+      patch['message'] = this.generateInitialMessage();
+    }
+    if (Object.keys(patch).length) {
+      this.contactForm.patchValue(patch, { emitEvent: false });
+    }
+  }
+
+  private initialSessionMode(): string {
+    const mode = this.normalizeLiveConnectMode(this.prefilledData().mode);
+    return mode ? this.sessionModeForLiveConnectMode(mode) : 'online_audio';
+  }
+
+  private activeQuickTalkMode(): LiveConnectMode {
+    const sessionMode = String(this.contactForm?.get('sessionMode')?.value || '').toLowerCase();
+    if (sessionMode.includes('video')) return 'video';
+    if (sessionMode.includes('chat')) return 'chat';
+    return 'voice';
+  }
+
+  private sessionModeForLiveConnectMode(mode: LiveConnectMode): string {
+    if (mode === 'video') return 'online_video';
+    if (mode === 'chat') return 'live_chat';
+    return 'online_audio';
+  }
+
+  private normalizeLiveConnectMode(value: unknown): LiveConnectMode | '' {
+    const raw = String(value || '').toLowerCase();
+    if (raw.includes('video')) return 'video';
+    if (raw.includes('voice') || raw.includes('audio')) return 'voice';
+    if (raw.includes('chat') || raw.includes('message')) return 'chat';
+    return '';
   }
 
   private formatLocalDate(date: Date): string {
