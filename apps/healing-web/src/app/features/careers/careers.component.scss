@@ -160,6 +160,111 @@
   background: #ecfdf5;
 }
 
+.listener-guideline-acceptance {
+  display: grid;
+  gap: 0.9rem;
+  border: 1px solid #bbf7d0;
+  border-radius: 1rem;
+  background: #f7fff9;
+  padding: 1rem;
+}
+
+.listener-guideline-acceptance__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.listener-guideline-acceptance h3 {
+  margin: 0.65rem 0 0;
+  color: #0f172a;
+  font-size: 1.1rem;
+  font-weight: 900;
+}
+
+.listener-guideline-acceptance p {
+  margin: 0.35rem 0 0;
+  color: #475569;
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+.listener-guideline-acceptance a {
+  color: #047857;
+  font-weight: 900;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.listener-guideline-acceptance__head strong {
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: #dcfce7;
+  color: #047857;
+  font-size: 0.78rem;
+  font-weight: 900;
+  padding: 0.4rem 0.65rem;
+}
+
+.listener-guidelines-scrollbox {
+  max-height: 18rem;
+  overflow: auto;
+  border: 1px solid #d1fae5;
+  border-radius: 0.85rem;
+  background: #ffffff;
+  padding: 0.95rem;
+}
+
+.listener-guidelines-scrollbox article + article {
+  margin-top: 1rem;
+}
+
+.listener-guidelines-scrollbox h4 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 0.95rem;
+  font-weight: 900;
+}
+
+.listener-guidelines-scrollbox ul {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0.55rem 0 0;
+  padding-left: 1.1rem;
+}
+
+.listener-guidelines-scrollbox li {
+  color: #334155;
+  font-size: 0.88rem;
+  line-height: 1.55;
+}
+
+.listener-guidelines-version {
+  border-top: 1px solid #d1fae5;
+  color: #047857 !important;
+  font-size: 0.82rem !important;
+  font-weight: 900;
+  margin: 1rem 0 0 !important;
+  padding-top: 0.8rem;
+}
+
+.listener-guidelines-accept-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.75rem;
+  background: #047857;
+  color: #ffffff;
+  font-weight: 900;
+  padding: 0.8rem 1rem;
+}
+
+.listener-guidelines-accept-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
 .submit-button {
   display: inline-flex;
   min-height: 48px;
@@ -184,7 +289,8 @@
 }
 
 @media (max-width: 640px) {
-  .listener-screening__head {
+  .listener-screening__head,
+  .listener-guideline-acceptance__head {
     display: grid;
   }
 }

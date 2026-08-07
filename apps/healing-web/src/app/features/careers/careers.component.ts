@@ -2,6 +2,10 @@ import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { NOTE_CONTENT } from '../../core/constants/note-content.constants';
+import {
+  LISTENER_GUIDELINES_SECTIONS,
+  LISTENER_GUIDELINES_VERSION,
+} from '../../core/content/listener-guidelines.content';
 import { ContactMethod } from '../../core/models/contact.model';
 import { LeadService, LoadingService, NotificationService } from '../../core/services';
 import { FormDropdownComponent, FormDropdownOption } from '../../shared/components';
@@ -42,6 +46,10 @@ export class CareersComponent {
   readonly errorMessage = signal('');
   readonly selectedTrack = signal<CareContributorTrack>('PROFESSIONAL_PSYCHOLOGIST');
   readonly listenerScreeningAnswers = signal<Record<string, string>>({});
+  readonly listenerGuidelinesScrolled = signal(false);
+  readonly listenerGuidelinesAccepted = signal(false);
+  readonly listenerGuidelinesVersion = LISTENER_GUIDELINES_VERSION;
+  readonly listenerGuidelinesSections = LISTENER_GUIDELINES_SECTIONS;
   readonly applicationTracks: Array<{
     value: CareTeamMemberType;
     track: CareContributorTrack;
@@ -358,7 +366,6 @@ export class CareersComponent {
       ],
     },
   ];
-
   readonly applicationForm = this.formBuilder.group({
     applicationTrack: ['PROFESSIONAL_PSYCHOLOGIST' as CareContributorTrack, [Validators.required]],
     careTeamType: ['MENTAL_WELLNESS_PROFESSIONAL' as CareTeamMemberType, [Validators.required]],
@@ -396,7 +403,7 @@ export class CareersComponent {
     this.applicationForm.controls.careTeamType.setValue(type);
     this.applicationForm.controls.applicationTrack.setValue(track);
     this.updateTrackValidators(track);
-    this.listenerScreeningAnswers.set({});
+    this.resetListenerScreeningAndGuidelines();
   }
 
   isTrack(track: CareContributorTrack): boolean {
@@ -416,6 +423,8 @@ export class CareersComponent {
 
   answerScreeningQuestion(questionId: string, optionId: string): void {
     this.listenerScreeningAnswers.update((answers) => ({ ...answers, [questionId]: optionId }));
+    this.listenerGuidelinesAccepted.set(false);
+    this.listenerGuidelinesScrolled.set(false);
   }
 
   screeningAnsweredCount(): number {
@@ -425,6 +434,29 @@ export class CareersComponent {
 
   screeningComplete(): boolean {
     return this.screeningAnsweredCount() === this.listenerScreeningQuestions.length;
+  }
+
+  listenerGuidelinesRequired(): boolean {
+    return this.isListenerTrack() && this.screeningComplete();
+  }
+
+  onGuidelinesScroll(event: Event): void {
+    const element = event.target as HTMLElement | null;
+    if (!element) return;
+    const remaining = element.scrollHeight - element.scrollTop - element.clientHeight;
+    if (remaining <= 12) {
+      this.listenerGuidelinesScrolled.set(true);
+    }
+  }
+
+  acceptListenerGuidelines(): void {
+    if (!this.listenerGuidelinesScrolled()) {
+      this.notificationService.warning(
+        'Please scroll to the end of the listener guidelines first.',
+      );
+      return;
+    }
+    this.listenerGuidelinesAccepted.set(true);
   }
 
   listenerScreeningPayload(): Array<{ questionId: string; optionId: string }> {
@@ -443,6 +475,16 @@ export class CareersComponent {
     }
     if (this.isListenerTrack() && !this.screeningComplete()) {
       this.notificationService.warning('Please complete all 20 listener screening questions.');
+      return;
+    }
+    if (
+      this.isListenerTrack() &&
+      this.listenerGuidelinesRequired() &&
+      !this.listenerGuidelinesAccepted()
+    ) {
+      this.notificationService.warning(
+        'Please scroll through and accept the listener guidelines before submitting.',
+      );
       return;
     }
 
@@ -479,6 +521,12 @@ export class CareersComponent {
           listenerScreeningAnswers: this.isListenerTrack()
             ? this.listenerScreeningPayload()
             : undefined,
+          listenerGuidelinesAccepted: this.listenerGuidelinesRequired()
+            ? this.listenerGuidelinesAccepted()
+            : undefined,
+          listenerGuidelinesVersion: this.listenerGuidelinesRequired()
+            ? this.listenerGuidelinesVersion
+            : undefined,
           whyJoin: value.whyJoin || '',
         })
         .subscribe({
@@ -499,7 +547,7 @@ export class CareersComponent {
                 agreesToNonClinicalRole: false,
                 consent: false,
               });
-              this.listenerScreeningAnswers.set({});
+              this.resetListenerScreeningAndGuidelines();
               this.selectedTrack.set('PROFESSIONAL_PSYCHOLOGIST');
               this.updateTrackValidators('PROFESSIONAL_PSYCHOLOGIST');
             } else {
@@ -557,6 +605,12 @@ export class CareersComponent {
     nonClinicalAgreement.updateValueAndValidity({ emitEvent: false });
   }
 
+  private resetListenerScreeningAndGuidelines(): void {
+    this.listenerScreeningAnswers.set({});
+    this.listenerGuidelinesScrolled.set(false);
+    this.listenerGuidelinesAccepted.set(false);
+  }
+
   private successMessageForTrack(
     track: CareContributorTrack,
     autoApproved?: boolean,
@@ -564,7 +618,7 @@ export class CareersComponent {
     maxScore?: number,
   ): string {
     if (autoApproved) {
-      return `Listener screening passed (${score}/${maxScore}). Your ₹99 / 30 min emotional support listener profile is auto-approved and can appear on Hope Hub.`;
+      return `Listener screening passed (${score}/${maxScore}). Your listener profile is auto-approved with chat/voice ₹99 and video ₹299 for 30 minutes.`;
     }
     if (track === 'PROFESSIONAL_PSYCHOLOGIST') {
       return 'Application submitted. Our team will verify your profile before discussing paid Hope Hub consultations.';

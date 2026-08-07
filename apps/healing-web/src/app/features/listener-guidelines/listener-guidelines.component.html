@@ -1,0 +1,27 @@
+<main class="listener-guidelines-page">
+  <section class="listener-guidelines-hero">
+    <p>Hope Hub listener rules</p>
+    <h1>Emotional support listener guidelines</h1>
+    <span>Version: {{ version }}</span>
+  </section>
+
+  <section class="listener-guidelines-card" aria-label="Listener guidelines">
+    @for (section of sections; track section.title) {
+      <article>
+        <h2>{{ section.title }}</h2>
+        <ul>
+          @for (point of section.points; track point) {
+            <li>{{ point }}</li>
+          }
+        </ul>
+      </article>
+    }
+
+    <div class="listener-guidelines-note">
+      Hope Hub emotional support listeners provide non-clinical support only. If a user is in
+      immediate danger, emergency/crisis support must take priority.
+    </div>
+
+    <a routerLink="/careers" class="listener-guidelines-back">Back to listener application</a>
+  </section>
+</main>

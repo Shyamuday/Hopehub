@@ -753,6 +753,7 @@ function careTeamServiceSelect() {
   return {
     id: true,
     title: true,
+    description: true,
     pricingMode: true,
     priceInPaise: true,
     firstSessionPriceInPaise: true,
@@ -1684,6 +1685,27 @@ function quickTalkModeWhere(mode: HopeHubQuickTalkMode) {
   if (mode === 'chat') return { acceptsChat: true };
   if (mode === 'video') return { acceptsVideoCall: true };
   return { acceptsVoiceCall: true };
+}
+
+function careTeamServiceMatchesQuickTalkMode(
+  service: { title?: string | null; description?: string | null },
+  mode: HopeHubQuickTalkMode
+) {
+  const text = `${service.title || ''} ${service.description || ''}`.toLowerCase();
+  if (mode === 'chat') return /\b(chat|message|text)\b/.test(text);
+  if (mode === 'video') return /\b(video)\b/.test(text);
+  return /\b(voice|audio|call)\b/.test(text);
+}
+
+function pickQuickTalkCareTeamService<
+  T extends { title?: string | null; description?: string | null }
+>(services: T[] | undefined, mode: HopeHubQuickTalkMode): T | null {
+  const activeServices = services || [];
+  return (
+    activeServices.find((service) => careTeamServiceMatchesQuickTalkMode(service, mode)) ||
+    activeServices[0] ||
+    null
+  );
 }
 
 function hopeHubLiveOnlineSessionWhere(mode: HopeHubQuickTalkMode = 'voice') {
@@ -2901,7 +2923,8 @@ hopeHubRouter.post(
     }
 
     const careTeamService =
-      selectedCareTeamService || provider.mentalHealthProfile?.services[0] || null;
+      selectedCareTeamService ||
+      pickQuickTalkCareTeamService(provider.mentalHealthProfile?.services, quickTalkMode);
     const previousUseCount = careTeamService
       ? await previousCareTeamServiceUseCount(req.user!.id, careTeamService.id)
       : 0;

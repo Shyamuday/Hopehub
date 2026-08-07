@@ -20,7 +20,9 @@ export const counsellorApplicationsRouter = Router();
 
 const optionalText = (max: number) => z.string().trim().max(max).optional().or(z.literal(''));
 const LISTENER_SCREENING_PASS_SCORE = 16;
-const AUTO_APPROVED_LISTENER_PRICE_IN_PAISE = 9900;
+const LISTENER_GUIDELINES_VERSION = 'listener-guidelines-v1-2026-08-07';
+const AUTO_APPROVED_LISTENER_CHAT_VOICE_PRICE_IN_PAISE = 9900;
+const AUTO_APPROVED_LISTENER_VIDEO_PRICE_IN_PAISE = 29900;
 const AUTO_APPROVED_LISTENER_DURATION_MINUTES = 30;
 
 const listenerScreeningQuestions = [
@@ -78,6 +80,8 @@ export const counsellorApplicationSchema = z
     livedExperienceSummary: optionalText(3000),
     agreesToNonClinicalRole: z.boolean().optional().default(false),
     listenerScreeningAnswers: z.array(listenerScreeningAnswerSchema).optional().default([]),
+    listenerGuidelinesAccepted: z.boolean().optional().default(false),
+    listenerGuidelinesVersion: z.string().trim().max(120).optional().or(z.literal('')),
     whyJoin: z.string().trim().min(40).max(3000),
     entryPage: z.string().trim().max(500).optional().or(z.literal(''))
   })
@@ -342,40 +346,61 @@ async function autoApproveListenerApplication(
     select: { id: true }
   });
 
-  const existingService = await tx.careTeamService.findFirst({
+  const listenerServices = [
+    {
+      title: 'Chat listener support session',
+      description: 'A 30-minute non-clinical emotional support listening chat session.',
+      priceInPaise: AUTO_APPROVED_LISTENER_CHAT_VOICE_PRICE_IN_PAISE,
+      sortOrder: 0
+    },
+    {
+      title: 'Voice listener support session',
+      description: 'A 30-minute non-clinical emotional support listening voice session.',
+      priceInPaise: AUTO_APPROVED_LISTENER_CHAT_VOICE_PRICE_IN_PAISE,
+      sortOrder: 1
+    },
+    {
+      title: 'Video listener support session',
+      description: 'A 30-minute non-clinical emotional support listening video session.',
+      priceInPaise: AUTO_APPROVED_LISTENER_VIDEO_PRICE_IN_PAISE,
+      sortOrder: 2
+    }
+  ];
+  await tx.careTeamService.updateMany({
     where: {
       mentalHealthProfileId: mentalHealthProfile.id,
       title: 'Listener support session'
     },
-    select: { id: true }
+    data: { isActive: false }
   });
-  if (existingService) {
-    await tx.careTeamService.update({
-      where: { id: existingService.id },
-      data: {
-        title: 'Listener support session',
-        description: 'A 30-minute non-clinical emotional support listening session.',
-        pricingMode: CareTeamServicePricingMode.FIXED,
-        priceInPaise: AUTO_APPROVED_LISTENER_PRICE_IN_PAISE,
-        durationMinutes: AUTO_APPROVED_LISTENER_DURATION_MINUTES,
-        isFree: false,
-        isActive: true
-      }
-    });
-  } else {
-    await tx.careTeamService.create({
-      data: {
+  for (const service of listenerServices) {
+    const existingService = await tx.careTeamService.findFirst({
+      where: {
         mentalHealthProfileId: mentalHealthProfile.id,
-        title: 'Listener support session',
-        description: 'A 30-minute non-clinical emotional support listening session.',
-        pricingMode: CareTeamServicePricingMode.FIXED,
-        priceInPaise: AUTO_APPROVED_LISTENER_PRICE_IN_PAISE,
-        durationMinutes: AUTO_APPROVED_LISTENER_DURATION_MINUTES,
-        isFree: false,
-        isActive: true,
-        sortOrder: 0
-      }
+        title: service.title
+      },
+      select: { id: true }
     });
+    const payload = {
+      title: service.title,
+      description: service.description,
+      pricingMode: CareTeamServicePricingMode.FIXED,
+      priceInPaise: service.priceInPaise,
+      durationMinutes: AUTO_APPROVED_LISTENER_DURATION_MINUTES,
+      isFree: false,
+      isActive: true,
+      sortOrder: service.sortOrder
+    };
+    if (existingService) {
+      await tx.careTeamService.update({ where: { id: existingService.id }, data: payload });
+    } else {
+      await tx.careTeamService.create({
+        data: {
+          mentalHealthProfileId: mentalHealthProfile.id,
+          ...payload
+        }
+      });
+    }
   }
 
   await tx.careContributor.create({
@@ -402,7 +427,7 @@ async function autoApproveListenerApplication(
       activatedAt: now,
       platformAccountLinkedAt: now,
       onboardingNote:
-        'Auto-approved after passing the listener screening test. Non-clinical listener scope only. Default plan: ₹99 for 30 minutes.'
+        'Auto-approved after passing the listener screening test. Non-clinical listener scope only. Default plans: chat/voice ₹99 for 30 minutes, video ₹299 for 30 minutes.'
     }
   });
 
@@ -417,6 +442,11 @@ counsellorApplicationsRouter.post(
       ? scoreListenerScreening(body.listenerScreeningAnswers)
       : null;
     const shouldAutoApprove = Boolean(listenerScreening?.passed);
+    if (shouldAutoApprove && !body.listenerGuidelinesAccepted) {
+      return res.status(400).json({
+        message: 'Read and accept the listener guidelines before auto-approval.'
+      });
+    }
 
     const application = await prisma.$transaction(async (tx) => {
       const created = await tx.counsellorApplication.create({
@@ -449,6 +479,13 @@ counsellorApplicationsRouter.post(
           listenerScreeningMaxScore: listenerScreening?.maxScore,
           listenerScreeningPassed: listenerScreening?.passed ?? false,
           listenerScreeningCompletedAt: listenerScreening ? new Date() : null,
+          listenerGuidelinesAccepted: shouldAutoApprove
+            ? Boolean(body.listenerGuidelinesAccepted)
+            : false,
+          listenerGuidelinesVersion: shouldAutoApprove
+            ? body.listenerGuidelinesVersion || LISTENER_GUIDELINES_VERSION
+            : null,
+          listenerGuidelinesAcceptedAt: shouldAutoApprove ? new Date() : null,
           autoApprovedAt: shouldAutoApprove ? new Date() : null,
           whyJoin: body.whyJoin,
           entryPage: body.entryPage || req.get('referer') || null,

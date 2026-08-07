@@ -521,7 +521,7 @@ export class ContactComponent implements OnInit {
   }
 
   quickTalkSessionMeta(provider: HopeHubProvider): string {
-    const service = provider.services?.[0];
+    const service = this.quickTalkServiceForProvider(provider);
     const duration = service?.durationMinutes || provider.sessionDurationMinutes || 30;
     const amount = service?.effectivePriceInPaise ?? provider.sessionFeeInPaise ?? 0;
     const price = amount <= 0 ? 'Free' : this.formatPaise(amount);
@@ -749,7 +749,10 @@ export class ContactComponent implements OnInit {
       const response = await firstValueFrom(
         this.bookingService.createQuickTalk({
           providerId,
-          careTeamServiceId: this.prefilledData().careTeamServiceId || '',
+          careTeamServiceId:
+            provider && !this.prefilledData().careTeamServiceId
+              ? this.quickTalkServiceForProvider(provider)?.id || ''
+              : this.prefilledData().careTeamServiceId || '',
           message: formData.message || '',
           concernCategory: formData.concernCategory || '',
           preferredExpertType: formData.preferredExpertType || '',
@@ -1188,6 +1191,20 @@ export class ContactComponent implements OnInit {
     if (sessionMode.includes('video')) return 'video';
     if (sessionMode.includes('chat')) return 'chat';
     return 'voice';
+  }
+
+  private quickTalkServiceForProvider(
+    provider: HopeHubProvider,
+  ): NonNullable<HopeHubProvider['services']>[number] | null {
+    const services = provider.services || [];
+    const mode = this.activeQuickTalkMode();
+    const matched = services.find((service) => {
+      const text = `${service.title || ''} ${service.description || ''}`.toLowerCase();
+      if (mode === 'chat') return /\b(chat|message|text)\b/.test(text);
+      if (mode === 'video') return /\b(video)\b/.test(text);
+      return /\b(voice|audio|call)\b/.test(text);
+    });
+    return matched || services[0] || null;
   }
 
   private sessionModeForLiveConnectMode(mode: LiveConnectMode): string {

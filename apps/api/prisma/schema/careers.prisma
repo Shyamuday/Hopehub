@@ -108,6 +108,9 @@ model CounsellorApplication {
   listenerScreeningMaxScore Int?
   listenerScreeningPassed Boolean                  @default(false)
   listenerScreeningCompletedAt DateTime?
+  listenerGuidelinesAccepted Boolean              @default(false)
+  listenerGuidelinesVersion String?
+  listenerGuidelinesAcceptedAt DateTime?
   autoApprovedAt      DateTime?
   autoApprovedDoctorUserId String?
   source              String                       @default("healing-web")

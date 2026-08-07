@@ -291,14 +291,14 @@ export class LiveConnectComponent implements OnInit {
   }
 
   isFreeProvider(provider: HopeHubProvider): boolean {
-    const service = provider.services?.[0];
+    const service = this.providerServiceForMode(provider);
     const price =
       service?.effectivePriceInPaise ?? service?.priceInPaise ?? provider.sessionFeeInPaise;
     return Number(price ?? 0) <= 0;
   }
 
   sessionMeta(provider: HopeHubProvider): string {
-    const service = provider.services?.[0];
+    const service = this.providerServiceForMode(provider);
     const duration = service?.durationMinutes || provider.sessionDurationMinutes;
     const price =
       service?.effectivePriceInPaise ?? service?.priceInPaise ?? provider.sessionFeeInPaise;
@@ -323,7 +323,7 @@ export class LiveConnectComponent implements OnInit {
       const response = await firstValueFrom(
         this.bookingService.createQuickTalk({
           providerId: provider.id,
-          careTeamServiceId: provider.services?.[0]?.id || '',
+          careTeamServiceId: this.providerServiceForMode(provider)?.id || '',
           preferredExpertType: provider.supportTierLabel || provider.supportRoleLabel || '',
           sessionMode: this.sessionMode(),
           preferredLanguage: provider.languages?.[0] || '',
@@ -442,6 +442,20 @@ export class LiveConnectComponent implements OnInit {
           this.message.set('Live Connect is loading slowly. Please try again in a moment.');
         },
       });
+  }
+
+  private providerServiceForMode(
+    provider: HopeHubProvider,
+  ): NonNullable<HopeHubProvider['services']>[number] | null {
+    const services = provider.services || [];
+    const mode = this.mode();
+    const matched = services.find((service) => {
+      const text = `${service.title || ''} ${service.description || ''}`.toLowerCase();
+      if (mode === 'chat') return /\b(chat|message|text)\b/.test(text);
+      if (mode === 'video') return /\b(video)\b/.test(text);
+      return /\b(voice|audio|call)\b/.test(text);
+    });
+    return matched || services[0] || null;
   }
 
   private async loadAlternativeModes(

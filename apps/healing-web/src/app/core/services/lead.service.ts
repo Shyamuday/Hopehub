@@ -32,6 +32,8 @@ export type CounsellorApplicationPayload = {
   livedExperienceSummary?: string;
   agreesToNonClinicalRole?: boolean;
   listenerScreeningAnswers?: Array<{ questionId: string; optionId: string }>;
+  listenerGuidelinesAccepted?: boolean;
+  listenerGuidelinesVersion?: string;
   whyJoin: string;
 };
 

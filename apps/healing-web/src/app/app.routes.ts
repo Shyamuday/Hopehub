@@ -252,6 +252,19 @@ export const routes: Routes = [
     },
   },
   {
+    path: 'listener-guidelines',
+    loadComponent: () =>
+      import('./features/listener-guidelines/listener-guidelines.component').then(
+        (m) => m.ListenerGuidelinesComponent,
+      ),
+    title: 'Listener Guidelines - Hope Hub',
+    data: {
+      breadcrumb: 'Listener guidelines',
+      description: 'Read Hope Hub emotional support listener rules, scope, and safety boundaries',
+      keywords: 'Hope Hub listener guidelines, emotional support listener rules, peer support',
+    },
+  },
+  {
     path: 'exercises',
     loadComponent: () =>
       import('./shared/components/exercises/exercises.component').then((m) => m.ExercisesComponent),

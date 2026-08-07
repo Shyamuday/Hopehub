@@ -1,0 +1,86 @@
+.listener-guidelines-page {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 2rem 1rem 3rem;
+}
+
+.listener-guidelines-hero {
+  border: 1px solid #d1fae5;
+  border-radius: 1.5rem;
+  background:
+    radial-gradient(circle at 8% 0%, rgba(16, 185, 129, 0.16), transparent 16rem),
+    #ffffff;
+  box-shadow: 0 22px 60px rgba(15, 23, 42, 0.08);
+  padding: clamp(1.25rem, 4vw, 2.25rem);
+}
+
+.listener-guidelines-hero p {
+  margin: 0;
+  color: #047857;
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.listener-guidelines-hero h1 {
+  margin: 0.5rem 0;
+  color: #0f172a;
+  font-size: clamp(2rem, 4vw, 3.5rem);
+  font-weight: 900;
+  line-height: 1.05;
+}
+
+.listener-guidelines-hero span {
+  color: #64748b;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.listener-guidelines-card {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1.25rem;
+}
+
+.listener-guidelines-card article {
+  border: 1px solid #e2e8f0;
+  border-radius: 1rem;
+  background: #ffffff;
+  padding: 1rem;
+}
+
+.listener-guidelines-card h2 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 1.1rem;
+  font-weight: 900;
+}
+
+.listener-guidelines-card ul {
+  display: grid;
+  gap: 0.45rem;
+  margin: 0.75rem 0 0;
+  padding-left: 1.15rem;
+}
+
+.listener-guidelines-card li {
+  color: #334155;
+  line-height: 1.6;
+}
+
+.listener-guidelines-note {
+  border: 1px solid #f59e0b33;
+  border-radius: 1rem;
+  background: #fffbeb;
+  color: #92400e;
+  font-weight: 800;
+  line-height: 1.6;
+  padding: 1rem;
+}
+
+.listener-guidelines-back {
+  color: #047857;
+  font-weight: 900;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}

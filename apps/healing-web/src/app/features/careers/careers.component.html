@@ -35,6 +35,9 @@
             <li><strong>3.</strong> Professional profiles are verified before paid work is discussed.</li>
             <li><strong>4.</strong> Listeners complete orientation before supporting the community.</li>
           </ol>
+          <a routerLink="/listener-guidelines" class="mt-4 inline-flex text-sm font-bold text-primary-700 underline underline-offset-2">
+            Read listener guidelines anytime
+          </a>
         </div>
 
         <div class="group relative inline-flex">
@@ -302,8 +305,8 @@
                   <h3>20-question listener safety test</h3>
                   <p>
                     Pass mark is 16/20. If you pass, your emotional support listener profile can be
-                    auto-approved for the Hope Hub website with a ₹99 / 30 min listener plan. If not,
-                    your application goes to manual review.
+                    auto-approved for the Hope Hub website with chat/voice at ₹99 and video at ₹299
+                    for 30 minutes. If not, your application goes to manual review.
                   </p>
                 </div>
                 <strong>{{ screeningAnsweredCount() }}/{{ listenerScreeningQuestions.length }}</strong>
@@ -332,6 +335,54 @@
 
               @if (!screeningComplete()) {
                 <small class="block text-red-700">Answer all screening questions before submitting as a listener.</small>
+              }
+
+              @if (listenerGuidelinesRequired()) {
+                <section class="listener-guideline-acceptance" aria-label="Required listener guidelines">
+                  <div class="listener-guideline-acceptance__head">
+                    <div>
+                      <span class="listener-screening__pill">Required listener step</span>
+                      <h3>Read listener guidelines before submitting</h3>
+                      <p>
+                        Scroll to the end of these rules, then accept them. If your screening passes on
+                        the server, this acceptance completes the listener auto-approval step.
+                        <a routerLink="/listener-guidelines" target="_blank" rel="noopener noreferrer">
+                          Open full guidelines anytime
+                        </a>
+                      </p>
+                    </div>
+                    <strong>{{ listenerGuidelinesAccepted() ? 'Accepted' : 'Required' }}</strong>
+                  </div>
+
+                  <div class="listener-guidelines-scrollbox" (scroll)="onGuidelinesScroll($event)">
+                    @for (section of listenerGuidelinesSections; track section.title) {
+                      <article>
+                        <h4>{{ section.title }}</h4>
+                        <ul>
+                          @for (point of section.points; track point) {
+                            <li>{{ point }}</li>
+                          }
+                        </ul>
+                      </article>
+                    }
+                    <p class="listener-guidelines-version">Version: {{ listenerGuidelinesVersion }}</p>
+                  </div>
+
+                  <button
+                    type="button"
+                    class="listener-guidelines-accept-button"
+                    [disabled]="!listenerGuidelinesScrolled() || listenerGuidelinesAccepted()"
+                    (click)="acceptListenerGuidelines()"
+                  >
+                    {{
+                      listenerGuidelinesAccepted()
+                        ? 'Guidelines accepted'
+                        : listenerGuidelinesScrolled()
+                          ? 'I have read and accept the listener guidelines'
+                          : 'Scroll to the end to accept'
+                    }}
+                  </button>
+                </section>
               }
             </section>
           }
