@@ -11,6 +11,7 @@ import {
   NotificationService,
   PaymentService,
 } from '../../../../core/services';
+import { IMAGE_ASSETS } from '../../../../core/constants/image-assets.constants';
 import { User } from '../../../../core/models/auth.model';
 import { HopeHubLiveGroup, HopeHubProvider } from '../../../../core/services/booking.service';
 import { PaymentFlowState, PaymentStatusOverlayComponent } from '../../../../shared/components';
@@ -58,6 +59,7 @@ export class LiveConnectComponent implements OnInit {
   readonly paymentFlowState = signal<PaymentFlowState>('IDLE');
   readonly paymentFlowError = signal('');
   readonly paymentFlowConsultation = signal<any | null>(null);
+  readonly liveConnectImage = IMAGE_ASSETS.HEALING_HUB.PHOTOS.PHONE_SESSION;
 
   readonly modes: Array<{
     value: LiveConnectMode;

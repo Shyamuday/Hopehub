@@ -2,12 +2,17 @@
   <div class="hope-section-inner">
     <div class="live-connect-shell">
       <div class="live-connect-intro">
-        <p class="hope-eyebrow">Live Connect</p>
-        <h2 class="hope-section-title">Talk now with someone who is actually available</h2>
-        <p class="hope-section-copy max-w-2xl">
-          Pick private 1:1 chat, voice, or video support. We show only live Hope Hub experts and emotional
-          support listeners who are accepting that mode right now.
-        </p>
+        <div>
+          <p class="hope-eyebrow">Live Connect</p>
+          <h2 class="hope-section-title">Talk now with someone who is actually available</h2>
+          <p class="hope-section-copy max-w-2xl">
+            Pick private 1:1 chat, voice, or video support. We show only live Hope Hub experts and emotional
+            support listeners who are accepting that mode right now.
+          </p>
+        </div>
+        <figure class="live-connect-intro__visual">
+          <img [src]="liveConnectImage" alt="Private live support session on a phone" loading="lazy" />
+        </figure>
       </div>
 
       @if (view() === 'providers') {

@@ -34,11 +34,18 @@
       </div>
 
       <figure class="home-hero__visual hope-animate-fade-up hope-delay-2">
-        <img
-          src="https://hopehub-public-assets-924479393196.s3.us-east-1.amazonaws.com/healing-hub/hero/wellness-hero-v1.png"
-          alt="Person taking a calm moment with herbal tea by a sunlit window"
-          fetchpriority="high"
-        />
+        @for (slide of heroSlides; track slide.src; let index = $index) {
+          <img
+            class="home-hero__slide"
+            [src]="slide.src"
+            [alt]="slide.alt"
+            [attr.fetchpriority]="index === 0 ? 'high' : null"
+            [attr.loading]="index === 0 ? null : 'lazy'"
+          />
+        }
+        <figcaption class="home-hero__caption">
+          Private support, gentle pace, no pressure.
+        </figcaption>
       </figure>
     </div>
   </div>

@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
 import { RouterModule } from '@angular/router';
+import { IMAGE_ASSETS } from '../../../../core/constants/image-assets.constants';
 
 @Component({
   selector: 'app-home-tools',
@@ -14,4 +15,11 @@ import { RouterModule } from '@angular/router';
     `,
   ],
 })
-export class HomeToolsComponent {}
+export class HomeToolsComponent {
+  readonly images = {
+    assessment: IMAGE_ASSETS.HEALING_HUB.PHOTOS.FEELING_WORDS,
+    exercises: IMAGE_ASSETS.HEALING_HUB.PHOTOS.HOME_MOVEMENT,
+    lifestyle: IMAGE_ASSETS.HEALING_HUB.PHOTOS.OPEN_AIR_RESET,
+    articles: IMAGE_ASSETS.HEALING_HUB.PHOTOS.BROKEN_HEART,
+  };
+}

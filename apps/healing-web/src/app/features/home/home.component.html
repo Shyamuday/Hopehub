@@ -3,6 +3,29 @@
 
 <app-live-connect />
 
+<section class="hope-section hope-section--photo-story">
+  <div class="hope-section-inner">
+    <div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+      <div>
+        <p class="hope-eyebrow">What brings people here</p>
+        <h2 class="hope-section-title">Real life is messy. Support can still feel simple.</h2>
+      </div>
+      <a routerLink="/telegram" class="btn-outline">Explore support options</a>
+    </div>
+
+    <div class="support-moment-rail" aria-label="Hope Hub support moments">
+      @for (moment of supportMoments; track moment.title) {
+        <a class="support-moment-card" [routerLink]="moment.route">
+          <img [src]="moment.image" [alt]="moment.title" loading="lazy" />
+          <span>{{ moment.label }}</span>
+          <h3>{{ moment.title }}</h3>
+          <p>{{ moment.copy }}</p>
+        </a>
+      }
+    </div>
+  </div>
+</section>
+
 <section class="hope-section hope-section--mist">
   <div class="hope-section-inner">
     <div class="hope-section-header">
@@ -56,6 +79,8 @@
     </div>
   </div>
 </section>
+
+<app-home-tools />
 
 <section class="hope-section">
   <div class="hope-section-inner">
