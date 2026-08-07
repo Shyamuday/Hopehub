@@ -5,120 +5,211 @@
         <p class="hope-eyebrow">Live Connect</p>
         <h2 class="hope-section-title">Talk now with someone who is actually available</h2>
         <p class="hope-section-copy max-w-2xl">
-          Pick chat, voice, or video. We show only live Hope Hub experts and emotional support listeners who are
-          accepting that mode right now.
+          Pick private 1:1 support or join a moderated group room. We show only live Hope Hub experts and emotional
+          support listeners who are accepting that mode right now.
         </p>
       </div>
 
-      <div class="live-mode-grid">
-        @for (modeItem of modes; track modeItem.value) {
-          <button
-            type="button"
-            class="live-mode-card"
-            [class.live-mode-card--active]="mode() === modeItem.value"
-            (click)="setMode(modeItem.value)"
-          >
-            <span class="live-mode-icon">{{ modeItem.icon }}</span>
-            <span>
-              <strong>{{ modeItem.label }}</strong>
-              <small>{{ modeItem.copy }}</small>
-            </span>
-          </button>
-        }
+      <div class="live-view-toggle" aria-label="Choose live connect type">
+        <button
+          type="button"
+          [class.live-view-toggle__button--active]="view() === 'providers'"
+          class="live-view-toggle__button"
+          (click)="setView('providers')"
+        >
+          1:1 providers
+        </button>
+        <button
+          type="button"
+          [class.live-view-toggle__button--active]="view() === 'groups'"
+          class="live-view-toggle__button"
+          (click)="setView('groups')"
+        >
+          Group rooms
+        </button>
       </div>
 
-      <div class="live-tab-row" aria-label="Filter live providers">
-        @for (tab of tabs; track tab.value) {
-          <button
-            type="button"
-            class="live-tab"
-            [class.live-tab--active]="roleGroup() === tab.value"
-            (click)="setRoleGroup(tab.value)"
-          >
-            {{ tab.label }}
-          </button>
-        }
-      </div>
-
-      @if (loading()) {
-        <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          @for (item of [1, 2, 3, 4]; track item) {
-            <div class="h-56 animate-pulse rounded-3xl border border-emerald-100 bg-white/80"></div>
+      @if (view() === 'providers') {
+        <div class="live-mode-grid">
+          @for (modeItem of modes; track modeItem.value) {
+            <button
+              type="button"
+              class="live-mode-card"
+              [class.live-mode-card--active]="mode() === modeItem.value"
+              (click)="setMode(modeItem.value)"
+            >
+              <span class="live-mode-icon">{{ modeItem.icon }}</span>
+              <span>
+                <strong>{{ modeItem.label }}</strong>
+                <small>{{ modeItem.copy }}</small>
+              </span>
+            </button>
           }
         </div>
-      } @else if (providers().length) {
-        <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          @for (provider of providers(); track provider.id) {
-            <article class="live-provider-card">
-              <div class="flex items-start gap-3">
-                @if (providerImageUrl(provider); as imageUrl) {
-                  <img [src]="imageUrl" [alt]="provider.name" class="live-provider-avatar" />
-                } @else {
-                  <div class="live-provider-avatar live-provider-avatar--fallback">
-                    {{ provider.name.slice(0, 1) }}
+
+        <div class="live-tab-row" aria-label="Filter live providers">
+          @for (tab of tabs; track tab.value) {
+            <button
+              type="button"
+              class="live-tab"
+              [class.live-tab--active]="roleGroup() === tab.value"
+              (click)="setRoleGroup(tab.value)"
+            >
+              {{ tab.label }}
+            </button>
+          }
+        </div>
+
+        @if (loading()) {
+          <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            @for (item of [1, 2, 3, 4]; track item) {
+              <div class="h-56 animate-pulse rounded-3xl border border-emerald-100 bg-white/80"></div>
+            }
+          </div>
+        } @else if (providers().length) {
+          <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            @for (provider of providers(); track provider.id) {
+              <article class="live-provider-card">
+                <div class="flex items-start gap-3">
+                  @if (providerImageUrl(provider); as imageUrl) {
+                    <img [src]="imageUrl" [alt]="provider.name" class="live-provider-avatar" />
+                  } @else {
+                    <div class="live-provider-avatar live-provider-avatar--fallback">
+                      {{ provider.name.slice(0, 1) }}
+                    </div>
+                  }
+                  <div class="min-w-0">
+                    <div class="flex flex-wrap items-center gap-2">
+                      <h3 class="truncate text-base font-bold text-slate-950">{{ provider.name }}</h3>
+                      <span class="live-dot">Live</span>
+                      @if (isFreeProvider(provider)) {
+                        <span class="free-dot">Free</span>
+                      }
+                    </div>
+                    <p class="mt-1 text-sm font-medium text-slate-600">
+                      {{ providerRoleLabel(provider) || providerTierLabel(provider) }}
+                    </p>
                   </div>
-                }
-                <div class="min-w-0">
-                  <div class="flex flex-wrap items-center gap-2">
-                    <h3 class="truncate text-base font-bold text-slate-950">{{ provider.name }}</h3>
-                    <span class="live-dot">Live</span>
-                    @if (isFreeProvider(provider)) {
-                      <span class="free-dot">Free</span>
-                    }
-                  </div>
-                  <p class="mt-1 text-sm font-medium text-slate-600">
-                    {{ providerRoleLabel(provider) || providerTierLabel(provider) }}
-                  </p>
                 </div>
-              </div>
 
-              @if (provider.supportRoleDescription || provider.bio) {
-                <p class="mt-4 line-clamp-3 text-sm leading-6 text-slate-600">
-                  {{ provider.supportRoleDescription || provider.bio }}
-                </p>
-              }
+                @if (provider.supportRoleDescription || provider.bio) {
+                  <p class="mt-4 line-clamp-3 text-sm leading-6 text-slate-600">
+                    {{ provider.supportRoleDescription || provider.bio }}
+                  </p>
+                }
 
-              <div class="mt-4 flex flex-wrap gap-2 text-xs font-semibold text-slate-600">
-                @if (isFreeProvider(provider)) {
-                  <span class="live-mini-chip live-mini-chip--free">No wallet needed</span>
-                }
-                @if (provider.acceptsChat) {
-                  <span class="live-mini-chip">Chat</span>
-                }
-                @if (provider.acceptsVoiceCall) {
-                  <span class="live-mini-chip">Voice</span>
-                }
-                @if (provider.acceptsVideoCall) {
-                  <span class="live-mini-chip">Video</span>
-                }
-              </div>
+                <div class="mt-4 flex flex-wrap gap-2 text-xs font-semibold text-slate-600">
+                  @if (isFreeProvider(provider)) {
+                    <span class="live-mini-chip live-mini-chip--free">No wallet needed</span>
+                  }
+                  @if (provider.acceptsChat) {
+                    <span class="live-mini-chip">Chat</span>
+                  }
+                  @if (provider.acceptsVoiceCall) {
+                    <span class="live-mini-chip">Voice</span>
+                  }
+                  @if (provider.acceptsVideoCall) {
+                    <span class="live-mini-chip">Video</span>
+                  }
+                </div>
 
-              <button
-                type="button"
-                class="btn-primary mt-5 w-full justify-center"
-                [disabled]="startingProviderId() === provider.id"
-                (click)="start(provider)"
-              >
-                {{
-                  startingProviderId() === provider.id
-                    ? 'Starting...'
-                    : buttonLabel(provider)
-                }}
-              </button>
-            </article>
-          }
-        </div>
+                <button
+                  type="button"
+                  class="btn-primary mt-5 w-full justify-center"
+                  [disabled]="startingProviderId() === provider.id"
+                  (click)="start(provider)"
+                >
+                  {{
+                    startingProviderId() === provider.id
+                      ? 'Starting...'
+                      : buttonLabel(provider)
+                  }}
+                </button>
+              </article>
+            }
+          </div>
+        } @else {
+          <div class="live-empty-card">
+            <p>{{ message() }}</p>
+            <a routerLink="/contact" class="btn-secondary">Book a scheduled session</a>
+          </div>
+        }
+
+        @if (message() && providers().length) {
+          <p class="mt-4 rounded-2xl bg-white/80 p-4 text-sm font-medium text-slate-700">
+            {{ message() }}
+          </p>
+        }
       } @else {
-        <div class="live-empty-card">
-          <p>{{ message() }}</p>
-          <a routerLink="/contact" class="btn-secondary">Book a scheduled session</a>
-        </div>
-      }
+        @if (canHostGroups()) {
+          <form class="live-group-create" (submit)="$event.preventDefault(); createGroup()">
+            <div>
+              <span class="live-mini-chip live-mini-chip--free">Provider/admin tool</span>
+              <h3>Open a moderated group room</h3>
+              <p>Start a simple chat room for live emotional support. Voice/video can be added later with SFU media.</p>
+            </div>
+            <div class="live-group-create__fields">
+              <input
+                name="newGroupTitle"
+                [ngModel]="newGroupTitle()"
+                (ngModelChange)="newGroupTitle.set($event)"
+                placeholder="Room title, e.g. Evening Anxiety Support"
+                maxlength="140"
+                required
+              />
+              <textarea
+                name="newGroupDescription"
+                [ngModel]="newGroupDescription()"
+                (ngModelChange)="newGroupDescription.set($event)"
+                placeholder="Short room description"
+                rows="2"
+                maxlength="1200"
+              ></textarea>
+              <button type="submit" class="btn-primary justify-center" [disabled]="creatingGroup() || !newGroupTitle().trim()">
+                {{ creatingGroup() ? 'Opening...' : 'Open group room' }}
+              </button>
+            </div>
+          </form>
 
-      @if (message() && providers().length) {
-        <p class="mt-4 rounded-2xl bg-white/80 p-4 text-sm font-medium text-slate-700">
-          {{ message() }}
-        </p>
+          @if (groupMessage()) {
+            <p class="mb-4 rounded-2xl bg-white/80 p-4 text-sm font-medium text-slate-700">
+              {{ groupMessage() }}
+            </p>
+          }
+        }
+
+        @if (groupsLoading()) {
+          <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            @for (item of [1, 2, 3]; track item) {
+              <div class="h-48 animate-pulse rounded-3xl border border-emerald-100 bg-white/80"></div>
+            }
+          </div>
+        } @else if (groups().length) {
+          <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            @for (group of groups(); track group.id) {
+              <article class="live-group-card">
+                <div class="flex items-center justify-between gap-3">
+                  <span class="live-dot">{{ groupStatusLabel(group) }}</span>
+                  <span class="live-mini-chip">{{ group.mode }}</span>
+                </div>
+                <h3>{{ group.title }}</h3>
+                <p>{{ group.description || 'A moderated Hope Hub support room.' }}</p>
+                <div class="live-group-meta">
+                  <span>{{ group.messageCount }} messages</span>
+                  <span>Group support</span>
+                </div>
+                <button type="button" class="btn-primary mt-5 w-full justify-center" (click)="joinGroup(group)">
+                  Join group room
+                </button>
+              </article>
+            }
+          </div>
+        } @else {
+          <div class="live-empty-card">
+            <p>No live group rooms are open right now.</p>
+            <a routerLink="/community" class="btn-secondary">See community options</a>
+          </div>
+        }
       }
     </div>
   </div>

@@ -1,0 +1,251 @@
+.group-room-page {
+  background:
+    radial-gradient(circle at 12% 8%, rgba(16, 185, 129, 0.16), transparent 26rem),
+    linear-gradient(135deg, #f8fffc 0%, #ffffff 46%, #f3fbf7 100%);
+  min-height: 100vh;
+  padding: clamp(1.25rem, 4vw, 3rem);
+}
+
+.group-room-shell {
+  margin: 0 auto;
+  max-width: 1180px;
+}
+
+.back-link {
+  color: #047857;
+  display: inline-flex;
+  font-weight: 800;
+  margin-bottom: 1rem;
+  text-decoration: none;
+}
+
+.group-header,
+.group-card,
+.chat-panel,
+.room-guide {
+  border: 1px solid rgba(16, 185, 129, 0.14);
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: 0 24px 80px rgba(15, 23, 42, 0.08);
+}
+
+.group-header {
+  align-items: flex-start;
+  border-radius: 2rem;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+  padding: clamp(1.25rem, 3vw, 2rem);
+
+  h1 {
+    color: #0f172a;
+    font-size: clamp(2rem, 5vw, 4rem);
+    font-weight: 900;
+    letter-spacing: -0.06em;
+    line-height: 0.95;
+    margin: 0.35rem 0 0;
+  }
+
+  p {
+    color: #475569;
+    line-height: 1.75;
+    margin: 0.75rem 0 0;
+    max-width: 48rem;
+  }
+}
+
+.group-status {
+  align-items: flex-end;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+
+  span,
+  strong {
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 900;
+    padding: 0.4rem 0.7rem;
+  }
+
+  span {
+    background: #dcfce7;
+    color: #047857;
+  }
+
+  strong {
+    background: #ecfeff;
+    color: #0e7490;
+  }
+}
+
+.group-layout {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  margin-top: 1rem;
+}
+
+.chat-panel {
+  border-radius: 2rem;
+  display: flex;
+  flex-direction: column;
+  min-height: 620px;
+  overflow: hidden;
+}
+
+.chat-list {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.8rem;
+  overflow-y: auto;
+  padding: 1rem;
+}
+
+.message-row {
+  display: flex;
+}
+
+.message-row--mine {
+  justify-content: flex-end;
+
+  .message-bubble {
+    background: #064e3b;
+    color: #ffffff;
+
+    .message-meta span,
+    p {
+      color: rgba(255, 255, 255, 0.78);
+    }
+  }
+}
+
+.message-bubble {
+  background: #f8fafc;
+  border-radius: 1.25rem;
+  color: #0f172a;
+  max-width: min(36rem, 92%);
+  padding: 0.85rem 1rem;
+}
+
+.message-meta {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.35rem;
+
+  strong {
+    font-size: 0.9rem;
+  }
+
+  span {
+    color: #64748b;
+    font-size: 0.72rem;
+    font-weight: 800;
+    text-transform: uppercase;
+  }
+}
+
+.message-bubble p {
+  color: #334155;
+  line-height: 1.65;
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.empty-chat {
+  align-items: center;
+  color: #64748b;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  justify-content: center;
+  text-align: center;
+}
+
+.composer {
+  align-items: center;
+  border-top: 1px solid rgba(148, 163, 184, 0.22);
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  padding: 1rem;
+
+  textarea {
+    border: 1px solid rgba(148, 163, 184, 0.32);
+    border-radius: 1rem;
+    min-height: 3rem;
+    padding: 0.75rem 0.9rem;
+    resize: vertical;
+  }
+}
+
+.room-guide,
+.group-card {
+  border-radius: 2rem;
+  color: #475569;
+  padding: 1.25rem;
+}
+
+.room-guide {
+  align-self: start;
+  position: sticky;
+  top: 1rem;
+
+  h2 {
+    color: #0f172a;
+    font-size: 1.1rem;
+    font-weight: 900;
+    margin: 0 0 0.75rem;
+  }
+
+  ul {
+    margin: 0 0 1rem;
+    padding-left: 1.2rem;
+  }
+
+  li {
+    line-height: 1.7;
+    margin: 0.4rem 0;
+  }
+}
+
+.group-card--loading {
+  min-height: 28rem;
+}
+
+@media (max-width: 860px) {
+  .group-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .room-guide {
+    position: static;
+  }
+}
+
+@media (max-width: 640px) {
+  .group-room-page {
+    padding: 1rem;
+  }
+
+  .group-header {
+    border-radius: 1.35rem;
+    flex-direction: column;
+  }
+
+  .group-status {
+    align-items: flex-start;
+    flex-direction: row;
+  }
+
+  .chat-panel {
+    border-radius: 1.35rem;
+    min-height: 72vh;
+  }
+
+  .composer {
+    grid-template-columns: 1fr;
+  }
+}

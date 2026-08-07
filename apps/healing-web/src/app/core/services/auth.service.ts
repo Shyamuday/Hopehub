@@ -158,7 +158,7 @@ export class AuthService {
       email: apiUser.email,
       mobile: apiUser.mobile,
       patientCode: apiUser.patientCode,
-      role: 'PATIENT',
+      role: apiUser.role || 'PATIENT',
       preferences: this.loadPreferences(),
     };
   }
@@ -186,12 +186,8 @@ export class AuthService {
   async login(credentials: LoginCredentials): Promise<User> {
     this.updateState({ isLoading: true, error: null });
     try {
-      const resp = await firstValueFrom(
-        this.http.post<ApiAuthResponse | PatientSelectionResponse>(
-          `${this.apiUrl}/auth/patient-login-password`,
-          { identifier: credentials.email, password: credentials.password },
-        ),
-      );
+      const email = credentials.email.trim().toLowerCase();
+      const resp = await this.loginPatientOrStaffWithPassword(email, credentials.password);
 
       // Multiple patients found under the same email — rare edge case
       if ('requiresPatientSelection' in resp) {
@@ -208,6 +204,34 @@ export class AuthService {
     }
   }
 
+  private async loginPatientOrStaffWithPassword(
+    email: string,
+    password: string,
+  ): Promise<ApiAuthResponse | PatientSelectionResponse> {
+    try {
+      return await firstValueFrom(
+        this.http.post<ApiAuthResponse | PatientSelectionResponse>(
+          `${this.apiUrl}/auth/patient-login-password`,
+          { identifier: email, password },
+        ),
+      );
+    } catch (error) {
+      if (!this.shouldTryStaffLogin(error)) {
+        throw error;
+      }
+      return firstValueFrom(
+        this.http.post<ApiAuthResponse>(`${this.apiUrl}/auth/staff-login`, {
+          email,
+          password,
+        }),
+      );
+    }
+  }
+
+  private shouldTryStaffLogin(error: unknown): boolean {
+    return error instanceof HttpErrorResponse && error.status === 401;
+  }
+
   async requestOtp(email: string): Promise<void> {
     try {
       await firstValueFrom(
@@ -221,15 +245,8 @@ export class AuthService {
   async loginWithOtp(email: string, otp: string): Promise<User> {
     this.updateState({ isLoading: true, error: null });
     try {
-      const resp = await firstValueFrom(
-        this.http.post<ApiAuthResponse | PatientSelectionResponse>(
-          `${this.apiUrl}/auth/patient-login`,
-          {
-            email,
-            otp,
-          },
-        ),
-      );
+      const normalizedEmail = email.trim().toLowerCase();
+      const resp = await this.loginPatientOrStaffWithOtp(normalizedEmail, otp);
 
       if ('requiresPatientSelection' in resp) {
         this.updateState({ isLoading: false });
@@ -242,6 +259,33 @@ export class AuthService {
       return this.applyAuthResponse(resp);
     } catch (err) {
       throw this.handleError(err);
+    }
+  }
+
+  private async loginPatientOrStaffWithOtp(
+    email: string,
+    otp: string,
+  ): Promise<ApiAuthResponse | PatientSelectionResponse> {
+    try {
+      return await firstValueFrom(
+        this.http.post<ApiAuthResponse | PatientSelectionResponse>(
+          `${this.apiUrl}/auth/patient-login`,
+          {
+            email,
+            otp,
+          },
+        ),
+      );
+    } catch (error) {
+      if (!this.shouldTryStaffLogin(error)) {
+        throw error;
+      }
+      return firstValueFrom(
+        this.http.post<ApiAuthResponse>(`${this.apiUrl}/auth/staff-login-otp`, {
+          email,
+          otp,
+        }),
+      );
     }
   }
 

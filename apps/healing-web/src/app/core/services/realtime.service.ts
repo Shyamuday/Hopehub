@@ -6,6 +6,7 @@ import { AuthService } from './auth.service';
 
 const SOCKET_TRANSPORTS = ['websocket', 'polling'] as const;
 const SUBSCRIBE_CONSULTATION = 'subscribe:consultation';
+const SUBSCRIBE_HOPE_HUB_GROUP = 'subscribe:hopehub-group';
 
 @Injectable({ providedIn: 'root' })
 export class HopeHubRealtimeService implements OnDestroy {
@@ -38,6 +39,10 @@ export class HopeHubRealtimeService implements OnDestroy {
 
   subscribeConsultation(consultationId: string): void {
     this.connect()?.emit(SUBSCRIBE_CONSULTATION, consultationId);
+  }
+
+  subscribeLiveGroup(groupId: string): void {
+    this.connect()?.emit(SUBSCRIBE_HOPE_HUB_GROUP, groupId);
   }
 
   disconnect(): void {

@@ -1,11 +1,29 @@
 // ── API User shape (matches backend toAuthResponse) ───────────────────────────
+export type AppUserRole =
+  | 'PATIENT'
+  | 'DOCTOR'
+  | 'ADMIN'
+  | 'HR'
+  | 'RECEPTIONIST'
+  | 'ACCOUNTANT'
+  | 'CLINIC_MANAGER'
+  | 'BRANCH_OWNER'
+  | 'COORDINATOR'
+  | 'CALL_CENTER'
+  | 'MARKETING'
+  | 'DELIVERY'
+  | 'DIAGNOSTIC'
+  | 'SUPPLIER'
+  | 'WAREHOUSE'
+  | string;
+
 export interface User {
   id: string;
   name: string;
   email: string | null;
   mobile: string | null;
   patientCode: string | null;
-  role: 'PATIENT';
+  role: AppUserRole;
   // stored locally from preferences
   preferences?: UserPreferences;
   profile?: UserProfile;
@@ -250,7 +268,7 @@ export interface ApiAuthResponse {
     email: string | null;
     mobile: string | null;
     patientCode: string | null;
-    role: string;
+    role: AppUserRole;
   };
 }
 

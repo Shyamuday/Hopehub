@@ -1,8 +1,10 @@
 export const SOCKET_EVENTS = {
   SUBSCRIBE_CONSULTATION: 'subscribe:consultation',
+  SUBSCRIBE_HOPE_HUB_GROUP: 'subscribe:hopehub-group',
   SUBSCRIBE_ONLINE_DOCTORS: 'subscribe:online-doctors',
   CONSULTATION_UPDATED: 'consultation:updated',
   MESSAGE_NEW: 'message:new',
+  HOPE_HUB_GROUP_MESSAGE_NEW: 'hopehub-group:message:new',
   PRESCRIPTION_NEW: 'prescription:new',
   PAYMENT_UPDATED: 'payment:updated',
   CONSULTATION_ASSIGNED: 'consultation:assigned',
@@ -21,6 +23,7 @@ export const SOCKET_EVENTS = {
 export const SOCKET_ROOM_PREFIXES = {
   USER: 'user:',
   CONSULTATION: 'consultation:',
+  HOPE_HUB_GROUP: 'hopehub-group:',
   STORE_STAFF: 'store-staff:',
   DOCTORS_LIVE: 'doctors:live',
   ONLINE_DOCTORS_WATCHERS: 'online-doctors:watchers'

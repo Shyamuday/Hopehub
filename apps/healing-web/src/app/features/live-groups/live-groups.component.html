@@ -1,0 +1,84 @@
+<section class="group-room-page">
+  <div class="group-room-shell">
+    <a routerLink="/" fragment="live-connect" class="back-link">← Back to Live Connect</a>
+
+    @if (loading()) {
+      <div class="group-card group-card--loading"></div>
+    } @else if (group(); as room) {
+      <header class="group-header">
+        <div>
+          <p class="hope-eyebrow">Live group room</p>
+          <h1>{{ room.title }}</h1>
+          <p>{{ room.description || 'A moderated Hope Hub support space.' }}</p>
+        </div>
+        <div class="group-status">
+          <span>{{ room.status }}</span>
+          <strong>{{ room.mode }}</strong>
+        </div>
+      </header>
+
+      <div class="group-layout">
+        <section class="chat-panel" aria-label="Group messages">
+          <div class="chat-list">
+            @if (messages().length) {
+              @for (message of messages(); track message.id) {
+                <article
+                  class="message-row"
+                  [class.message-row--mine]="isOwnMessage(message)"
+                >
+                  <div class="message-bubble">
+                    <div class="message-meta">
+                      <strong>{{ isOwnMessage(message) ? 'You' : message.senderName }}</strong>
+                      <span>{{ roleLabel(message) }}</span>
+                    </div>
+                    <p>{{ message.body }}</p>
+                  </div>
+                </article>
+              }
+            } @else {
+              <div class="empty-chat">
+                <strong>No messages yet.</strong>
+                <span>Start gently. A simple “Hi, I’m here” is enough.</span>
+              </div>
+            }
+          </div>
+
+          <form class="composer" (submit)="$event.preventDefault(); sendMessage()">
+            @if (!currentUser()) {
+              <button type="button" class="btn-secondary" (click)="signIn()">Sign in to join</button>
+            }
+            <textarea
+              name="groupMessage"
+              [ngModel]="draft()"
+              (ngModelChange)="draft.set($event)"
+              placeholder="Write a supportive group message..."
+              rows="2"
+              [disabled]="!currentUser() || sending()"
+              (keydown.control.enter)="sendMessage()"
+              (keydown.meta.enter)="sendMessage()"
+            ></textarea>
+            <button type="submit" class="btn-primary" [disabled]="!canSend()">
+              {{ sending() ? 'Sending...' : 'Send' }}
+            </button>
+          </form>
+        </section>
+
+        <aside class="room-guide">
+          <h2>Room boundaries</h2>
+          <ul>
+            <li>Keep it kind, short, and supportive.</li>
+            <li>Do not share emergency or highly identifying details in a group.</li>
+            <li>For private help, use 1:1 Live Connect with a provider.</li>
+          </ul>
+          <a routerLink="/" fragment="live-connect" class="btn-secondary">Find 1:1 support</a>
+        </aside>
+      </div>
+    } @else {
+      <div class="group-card">
+        <h1>Live group not found</h1>
+        <p>{{ error() || 'This room may be closed or unavailable.' }}</p>
+        <a routerLink="/" fragment="live-connect" class="btn-primary">Back to Live Connect</a>
+      </div>
+    }
+  </div>
+</section>

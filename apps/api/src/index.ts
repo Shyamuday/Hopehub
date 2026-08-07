@@ -98,6 +98,7 @@ import {
 } from './schedulers.js';
 import { enabledNotificationChannels } from './services/notification-service.js';
 import { setNotificationSocket } from './services/in-app-notifications.js';
+import { setHopeHubLiveGroupSocket } from './services/hope-hub-live-groups-realtime.js';
 
 // ── App & HTTP server ──────────────────────────────────────────────────────────
 
@@ -122,6 +123,7 @@ const io = new SocketIoServer(httpServer, {
 });
 
 setNotificationSocket(io);
+setHopeHubLiveGroupSocket(io);
 scheduleAuthProcessLogRetention();
 
 io.use((socket, next) => {
@@ -163,6 +165,11 @@ io.on('connection', (socket) => {
   socket.on(SOCKET_EVENTS.SUBSCRIBE_CONSULTATION, (consultationId: unknown) => {
     if (typeof consultationId === 'string') {
       void socket.join(`${SOCKET_ROOM_PREFIXES.CONSULTATION}${consultationId}`);
+    }
+  });
+  socket.on(SOCKET_EVENTS.SUBSCRIBE_HOPE_HUB_GROUP, (groupId: unknown) => {
+    if (typeof groupId === 'string') {
+      void socket.join(`${SOCKET_ROOM_PREFIXES.HOPE_HUB_GROUP}${groupId}`);
     }
   });
 

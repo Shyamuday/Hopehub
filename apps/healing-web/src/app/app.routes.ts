@@ -620,6 +620,17 @@ export const routes: Routes = [
     },
   },
   {
+    path: 'live-groups/:groupId',
+    loadComponent: () =>
+      import('./features/live-groups/live-groups.component').then((m) => m.LiveGroupsComponent),
+    title: 'Live Group - Hope Hub',
+    data: {
+      breadcrumb: 'Live Group',
+      description: 'Join a moderated Hope Hub group support room',
+      keywords: 'hope hub live group, support group chat, emotional support room',
+    },
+  },
+  {
     path: '404',
     loadComponent: () =>
       import('./features/not-found/not-found.component').then((m) => m.NotFoundComponent),

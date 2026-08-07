@@ -142,6 +142,44 @@ model CareTeamPricingTemplate {
   @@index([isActive, sortOrder])
 }
 
+model HopeHubLiveGroup {
+  id              String   @id @default(cuid())
+  title           String
+  slug            String   @unique
+  description     String?  @db.Text
+  status          String   @default("LIVE")
+  mode            String   @default("CHAT")
+  hostUserId      String?
+  createdByUserId String?
+  isPublic        Boolean  @default(true)
+  isActive        Boolean  @default(true)
+  startsAt        DateTime?
+  endedAt         DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  messages        HopeHubLiveGroupMessage[]
+
+  @@index([status, isActive])
+  @@index([hostUserId])
+  @@index([createdByUserId])
+}
+
+model HopeHubLiveGroupMessage {
+  id             String   @id @default(cuid())
+  groupId        String
+  senderId       String
+  senderName     String
+  senderRole     String?
+  body           String   @db.Text
+  createdAt      DateTime @default(now())
+
+  group          HopeHubLiveGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@index([groupId, createdAt])
+  @@index([senderId, createdAt])
+}
+
 enum HopeHubOfferingType {
   INDIVIDUAL_SESSION
   CARE_PACKAGE

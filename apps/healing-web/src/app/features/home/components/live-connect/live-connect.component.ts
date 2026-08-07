@@ -1,4 +1,5 @@
 import { Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { firstValueFrom } from 'rxjs';
@@ -11,7 +12,7 @@ import {
   PaymentService,
 } from '../../../../core/services';
 import { User } from '../../../../core/models/auth.model';
-import { HopeHubProvider } from '../../../../core/services/booking.service';
+import { HopeHubLiveGroup, HopeHubProvider } from '../../../../core/services/booking.service';
 import { PaymentFlowState, PaymentStatusOverlayComponent } from '../../../../shared/components';
 
 type LiveConnectMode = 'chat' | 'voice' | 'video';
@@ -19,7 +20,7 @@ type LiveConnectMode = 'chat' | 'voice' | 'video';
 @Component({
   selector: 'app-live-connect',
   standalone: true,
-  imports: [PaymentStatusOverlayComponent, RouterLink],
+  imports: [FormsModule, PaymentStatusOverlayComponent, RouterLink],
   templateUrl: './live-connect.component.html',
   styleUrl: './live-connect.component.scss',
 })
@@ -34,9 +35,16 @@ export class LiveConnectComponent implements OnInit {
 
   readonly currentUser = signal<User | null>(null);
   readonly providers = signal<HopeHubProvider[]>([]);
+  readonly groups = signal<HopeHubLiveGroup[]>([]);
   readonly loading = signal(false);
+  readonly groupsLoading = signal(false);
+  readonly creatingGroup = signal(false);
   readonly message = signal('');
+  readonly groupMessage = signal('');
+  readonly newGroupTitle = signal('');
+  readonly newGroupDescription = signal('');
   readonly startingProviderId = signal('');
+  readonly view = signal<'providers' | 'groups'>('providers');
   readonly mode = signal<LiveConnectMode>('chat');
   readonly roleGroup = signal('');
   readonly paymentFlowState = signal<PaymentFlowState>('IDLE');
@@ -68,6 +76,16 @@ export class LiveConnectComponent implements OnInit {
       this.currentUser.set(user);
     });
     this.loadProviders();
+    this.loadGroups();
+  }
+
+  setView(view: 'providers' | 'groups'): void {
+    if (this.view() === view) return;
+    this.view.set(view);
+    this.message.set('');
+    if (view === 'groups' && !this.groups().length) {
+      this.loadGroups();
+    }
   }
 
   setMode(mode: LiveConnectMode): void {
@@ -111,6 +129,66 @@ export class LiveConnectComponent implements OnInit {
     const meta = this.sessionMeta(provider);
     const prefix = this.isFreeProvider(provider) ? 'Start free' : 'Start';
     return `${prefix} ${this.modeLabel().toLowerCase()}${meta ? ` · ${meta}` : ''}`;
+  }
+
+  groupStatusLabel(group: HopeHubLiveGroup): string {
+    if (group.status === 'LIVE') return 'Live now';
+    if (group.status === 'SCHEDULED') return 'Scheduled';
+    return group.status;
+  }
+
+  canHostGroups(): boolean {
+    const role = this.currentUser()?.role;
+    return role === 'DOCTOR' || role === 'ADMIN' || role === 'HR';
+  }
+
+  joinGroup(group: HopeHubLiveGroup): void {
+    if (!this.currentUser()) {
+      this.notificationService.info('Sign in to join a live group room.');
+      this.authModalService.openLogin();
+      return;
+    }
+    void this.router.navigate(['/live-groups', group.slug || group.id]);
+  }
+
+  createGroup(): void {
+    const title = this.newGroupTitle().trim();
+    const description = this.newGroupDescription().trim();
+    if (!title || this.creatingGroup()) return;
+    if (!this.canHostGroups()) {
+      this.notificationService.warning('Only providers and admins can open group rooms.');
+      return;
+    }
+
+    this.creatingGroup.set(true);
+    this.groupMessage.set('');
+    this.bookingService
+      .createLiveGroup({
+        title,
+        description,
+        mode: 'CHAT',
+        status: 'LIVE',
+      })
+      .subscribe({
+        next: (res) => {
+          this.groups.update((groups) => [
+            res.group,
+            ...groups.filter((item) => item.id !== res.group.id),
+          ]);
+          this.newGroupTitle.set('');
+          this.newGroupDescription.set('');
+          this.creatingGroup.set(false);
+          this.groupMessage.set('Group room is live. Opening it now.');
+          this.notificationService.success('Group room created.');
+          void this.router.navigate(['/live-groups', res.group.slug || res.group.id]);
+        },
+        error: (error) => {
+          const message = this.readErrorMessage(error);
+          this.creatingGroup.set(false);
+          this.groupMessage.set(message);
+          this.notificationService.error(message);
+        },
+      });
   }
 
   isFreeProvider(provider: HopeHubProvider): boolean {
@@ -262,6 +340,20 @@ export class LiveConnectComponent implements OnInit {
           this.message.set('Live Connect is loading slowly. Please try again in a moment.');
         },
       });
+  }
+
+  private loadGroups(): void {
+    this.groupsLoading.set(true);
+    this.bookingService.liveGroups().subscribe({
+      next: (res) => {
+        this.groups.set((res.groups || []).slice(0, 6));
+        this.groupsLoading.set(false);
+      },
+      error: () => {
+        this.groups.set([]);
+        this.groupsLoading.set(false);
+      },
+    });
   }
 
   private formatPaise(amountInPaise: number): string {

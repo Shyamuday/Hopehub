@@ -17,6 +17,8 @@ import { asyncRoute, publicUserSelect, toAuthResponse, logAuthEvent } from '../.
 import { PRODUCT_EVENTS, trackProductEvent } from '../../services/product-analytics.js';
 import { recordAuthProcess } from '../../services/auth-process-log.js';
 
+const staffOtpKey = (email: string) => `staff:${email.trim().toLowerCase()}`;
+
 export function registerAuthOtpRoutes(router: Router) {
   // ─── OTP auth ──────────────────────────────────────────────────────────────────
 
@@ -33,9 +35,24 @@ export function registerAuthOtpRoutes(router: Router) {
         })
         .parse(req.body);
       const email = body.email.trim().toLowerCase();
+      const existingUser = await prisma.user.findUnique({
+        where: { email },
+        select: { id: true, role: true, isActive: true }
+      });
+      const isStaffUser = existingUser && existingUser.role !== Role.PATIENT;
+
+      if (isStaffUser && !existingUser.isActive) {
+        return res.status(existingUser.role === Role.DOCTOR ? 403 : 401).json({
+          message:
+            existingUser.role === Role.DOCTOR
+              ? 'Doctor account is pending admin approval.'
+              : 'Invalid credentials'
+        });
+      }
+
       if (isProduction && !getMailTransporter()) {
         await recordAuthProcess({
-          processType: 'patient_email_otp',
+          processType: isStaffUser ? 'staff_email_otp' : 'patient_email_otp',
           step: 'request',
           status: 'blocked',
           identifier: email,
@@ -46,13 +63,13 @@ export function registerAuthOtpRoutes(router: Router) {
       }
 
       const otp = isProduction ? generateOtp() : devOtp;
-      await storeOtp(email, otp);
+      await storeOtp(isStaffUser ? staffOtpKey(email) : email, otp);
       if (isProduction) {
         try {
           await sendOtpEmail(email, otp);
         } catch (error) {
           await recordAuthProcess({
-            processType: 'patient_email_otp',
+            processType: isStaffUser ? 'staff_email_otp' : 'patient_email_otp',
             step: 'request',
             status: 'failure',
             identifier: email,
@@ -67,7 +84,7 @@ export function registerAuthOtpRoutes(router: Router) {
       }
 
       await recordAuthProcess({
-        processType: 'patient_email_otp',
+        processType: isStaffUser ? 'staff_email_otp' : 'patient_email_otp',
         step: 'request',
         status: 'success',
         identifier: email,
@@ -75,7 +92,8 @@ export function registerAuthOtpRoutes(router: Router) {
         metadata: {
           leadSource: body.leadSource,
           entryPage: body.entryPage,
-          delivery: isProduction ? 'email' : 'dev'
+          delivery: isProduction ? 'email' : 'dev',
+          role: existingUser?.role
         }
       });
 

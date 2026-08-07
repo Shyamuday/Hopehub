@@ -145,6 +145,32 @@ export type ConsultationCallSession = {
   lastSignalEvent?: string | null;
 };
 
+export type HopeHubLiveGroup = {
+  id: string;
+  title: string;
+  slug: string;
+  description?: string | null;
+  status: 'LIVE' | 'SCHEDULED' | string;
+  mode: 'CHAT' | 'VOICE' | 'VIDEO' | string;
+  hostUserId?: string | null;
+  isPublic: boolean;
+  startsAt?: string | null;
+  endedAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  messageCount: number;
+};
+
+export type HopeHubLiveGroupMessage = {
+  id: string;
+  groupId: string;
+  senderId: string;
+  senderName: string;
+  senderRole?: string | null;
+  body: string;
+  createdAt: string;
+};
+
 export type HopeHubOfferingAccess = {
   accessMode: string;
   canAccess: boolean;
@@ -383,6 +409,43 @@ export class BookingService {
   ): Observable<{ callSessions: ConsultationCallSession[] }> {
     return this.http.get<{ callSessions: ConsultationCallSession[] }>(
       `${this.apiUrl}/consultations/${encodeURIComponent(consultationId)}/call-sessions`,
+    );
+  }
+
+  liveGroups(): Observable<{ groups: HopeHubLiveGroup[] }> {
+    return this.http.get<{ groups: HopeHubLiveGroup[] }>(`${this.apiUrl}/hope-hub/live-groups`);
+  }
+
+  createLiveGroup(payload: {
+    title: string;
+    slug?: string;
+    description?: string;
+    mode?: 'CHAT' | 'VOICE' | 'VIDEO';
+    status?: 'LIVE' | 'SCHEDULED';
+  }): Observable<{ group: HopeHubLiveGroup }> {
+    return this.http.post<{ group: HopeHubLiveGroup }>(
+      `${this.apiUrl}/hope-hub/live-groups`,
+      payload,
+    );
+  }
+
+  liveGroup(groupId: string): Observable<{
+    group: HopeHubLiveGroup;
+    messages: HopeHubLiveGroupMessage[];
+  }> {
+    return this.http.get<{
+      group: HopeHubLiveGroup;
+      messages: HopeHubLiveGroupMessage[];
+    }>(`${this.apiUrl}/hope-hub/live-groups/${encodeURIComponent(groupId)}`);
+  }
+
+  sendLiveGroupMessage(
+    groupId: string,
+    body: string,
+  ): Observable<{ message: HopeHubLiveGroupMessage }> {
+    return this.http.post<{ message: HopeHubLiveGroupMessage }>(
+      `${this.apiUrl}/hope-hub/live-groups/${encodeURIComponent(groupId)}/messages`,
+      { body },
     );
   }
 

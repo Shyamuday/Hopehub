@@ -39,6 +39,7 @@ import { getSiteConfigMap, getSiteConfigValue } from '../services/site-config.se
 import { upsertProviderEarningForPayment } from '../services/provider-earnings.js';
 import { notifyConsultationBooked } from '../services/consultation-reminders.js';
 import { markDoctorBusy } from '../services/online-doctor-presence.js';
+import { emitHopeHubLiveGroupMessage } from '../services/hope-hub-live-groups-realtime.js';
 
 export const hopeHubRouter = Router();
 
@@ -192,6 +193,18 @@ const hopeHubAssessmentAttemptSchema = z.object({
   source: z.string().trim().max(120).optional().or(z.literal('')),
   entryPage: z.string().trim().max(500).optional().or(z.literal('')),
   completedAt: z.string().datetime().optional()
+});
+
+const hopeHubLiveGroupCreateSchema = z.object({
+  title: z.string().trim().min(3).max(140),
+  slug: z.string().trim().min(3).max(160).optional().or(z.literal('')),
+  description: z.string().trim().max(1200).optional().or(z.literal('')),
+  mode: z.enum(['CHAT', 'VOICE', 'VIDEO']).optional(),
+  status: z.enum(['LIVE', 'SCHEDULED']).optional()
+});
+
+const hopeHubLiveGroupMessageSchema = z.object({
+  body: z.string().trim().min(1).max(2000)
 });
 
 function normalizeHopeHubMediaKey(value: string) {
@@ -1779,6 +1792,167 @@ function publicOfferingQuote(offering: Awaited<ReturnType<typeof activeHopeHubOf
     rule: discount.rule
   };
 }
+
+function serializeLiveGroup(group: {
+  id: string;
+  title: string;
+  slug: string;
+  description: string | null;
+  status: string;
+  mode: string;
+  hostUserId: string | null;
+  isPublic: boolean;
+  startsAt: Date | null;
+  endedAt: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+  _count?: { messages?: number };
+}) {
+  return {
+    id: group.id,
+    title: group.title,
+    slug: group.slug,
+    description: group.description,
+    status: group.status,
+    mode: group.mode,
+    hostUserId: group.hostUserId,
+    isPublic: group.isPublic,
+    startsAt: group.startsAt?.toISOString() ?? null,
+    endedAt: group.endedAt?.toISOString() ?? null,
+    createdAt: group.createdAt.toISOString(),
+    updatedAt: group.updatedAt.toISOString(),
+    messageCount: group._count?.messages ?? 0
+  };
+}
+
+function serializeLiveGroupMessage(message: {
+  id: string;
+  groupId: string;
+  senderId: string;
+  senderName: string;
+  senderRole: string | null;
+  body: string;
+  createdAt: Date;
+}) {
+  return {
+    id: message.id,
+    groupId: message.groupId,
+    senderId: message.senderId,
+    senderName: message.senderName,
+    senderRole: message.senderRole,
+    body: message.body,
+    createdAt: message.createdAt.toISOString()
+  };
+}
+
+hopeHubRouter.get(
+  '/hope-hub/live-groups',
+  authOptional,
+  asyncRoute(async (_req, res) => {
+    const groups = await prisma.hopeHubLiveGroup.findMany({
+      where: {
+        isActive: true,
+        isPublic: true,
+        status: { in: ['LIVE', 'SCHEDULED'] }
+      },
+      include: { _count: { select: { messages: true } } },
+      orderBy: [{ status: 'asc' }, { updatedAt: 'desc' }]
+    });
+
+    res.json({ groups: groups.map(serializeLiveGroup) });
+  })
+);
+
+hopeHubRouter.post(
+  '/hope-hub/live-groups',
+  authRequired,
+  allowRoles(Role.DOCTOR, Role.ADMIN, Role.HR),
+  asyncRoute(async (req, res) => {
+    const body = hopeHubLiveGroupCreateSchema.parse(req.body);
+    const baseSlug = slugify(body.slug || body.title);
+    const slug = baseSlug || `live-group-${Date.now()}`;
+    const existing = await prisma.hopeHubLiveGroup.findUnique({ where: { slug } });
+    if (existing) {
+      return res.status(409).json({ message: 'A live group with this slug already exists.' });
+    }
+
+    const group = await prisma.hopeHubLiveGroup.create({
+      data: {
+        title: body.title,
+        slug,
+        description: body.description || null,
+        status: body.status || 'LIVE',
+        mode: body.mode || 'CHAT',
+        hostUserId: req.user?.id,
+        createdByUserId: req.user?.id,
+        startsAt: body.status === 'SCHEDULED' ? null : new Date()
+      }
+    });
+
+    res.status(201).json({ group: serializeLiveGroup(group) });
+  })
+);
+
+hopeHubRouter.get(
+  '/hope-hub/live-groups/:id',
+  authRequired,
+  asyncRoute(async (req, res) => {
+    const id = routeParam(req, 'id');
+    const group = await prisma.hopeHubLiveGroup.findFirst({
+      where: {
+        OR: [{ id }, { slug: id }],
+        isActive: true,
+        isPublic: true
+      },
+      include: { _count: { select: { messages: true } } }
+    });
+
+    if (!group) return res.status(404).json({ message: 'Live group not found.' });
+
+    const messages = await prisma.hopeHubLiveGroupMessage.findMany({
+      where: { groupId: group.id },
+      orderBy: { createdAt: 'asc' },
+      take: 100
+    });
+
+    res.json({
+      group: serializeLiveGroup(group),
+      messages: messages.map(serializeLiveGroupMessage)
+    });
+  })
+);
+
+hopeHubRouter.post(
+  '/hope-hub/live-groups/:id/messages',
+  authRequired,
+  asyncRoute(async (req, res) => {
+    const id = routeParam(req, 'id');
+    const body = hopeHubLiveGroupMessageSchema.parse(req.body);
+    const group = await prisma.hopeHubLiveGroup.findFirst({
+      where: {
+        OR: [{ id }, { slug: id }],
+        isActive: true,
+        isPublic: true,
+        status: { in: ['LIVE', 'SCHEDULED'] }
+      }
+    });
+
+    if (!group) return res.status(404).json({ message: 'Live group not found.' });
+
+    const message = await prisma.hopeHubLiveGroupMessage.create({
+      data: {
+        groupId: group.id,
+        senderId: req.user!.id,
+        senderName: req.user!.name,
+        senderRole: req.user!.role,
+        body: body.body
+      }
+    });
+    const payload = serializeLiveGroupMessage(message);
+    emitHopeHubLiveGroupMessage(group.id, payload);
+    res.status(201).json({ message: payload });
+  })
+);
 
 hopeHubRouter.get(
   /^\/hope-hub\/media\/(.+)$/,
