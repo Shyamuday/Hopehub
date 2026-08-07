@@ -7,6 +7,7 @@ import { buildDetailRows, DetailRowsComponent } from '@hopehub/platform-ui';
 import { environment } from '../../../../environments/environment';
 import { API_PATHS } from '../../../core/constants/api-paths.constants';
 import { ROUTE_PATHS } from '../../../core/constants/app-routes.constants';
+import type { DoctorProfileSummary } from '../../../core/constants/doctor-types.constants';
 import { ConsultationNavigationService } from '../../../core/services/consultation-navigation.service';
 import { PAYMENT_SUMMARY_STAT_FIELDS } from '../constants/dashboard-stat.fields';
 import { WorklistApiService } from '../../worklist/worklist-api.service';
@@ -41,6 +42,8 @@ export class DashboardHome {
   readonly worklistCounts = signal({ assigned: 0, inProgress: 0, followUpDue: 0 });
   readonly summary = signal<PaymentSummary | null>(null);
   readonly canPrescribe = signal(true);
+  readonly listenerProfile = signal<DoctorProfileSummary | null>(null);
+  readonly listenerProfileImageUrl = signal<string | null>(null);
 
   constructor(
     private readonly http: HttpClient,
@@ -55,7 +58,12 @@ export class DashboardHome {
   private async loadRole() {
     try {
       await this.session.load();
+      const snapshot = this.session.snapshot();
       this.canPrescribe.set(this.session.capabilities().prescribe);
+      this.listenerProfile.set(
+        this.isListenerProfile(snapshot?.doctorProfile) ? (snapshot?.doctorProfile ?? null) : null,
+      );
+      this.listenerProfileImageUrl.set(snapshot?.profileImageUrl ?? null);
     } catch {
       this.canPrescribe.set(true);
     }
@@ -112,5 +120,26 @@ export class DashboardHome {
   openSession(consultationId?: string | null) {
     if (!consultationId) return;
     void this.consultationNav.openOnlineSession(consultationId);
+  }
+
+  listenerCompletionPercent(profile: DoctorProfileSummary | null = this.listenerProfile()): number {
+    if (!profile?.mentalHealthProfile) return 0;
+    const mental = profile.mentalHealthProfile;
+    const checks = [
+      Boolean(this.listenerProfileImageUrl()),
+      Boolean(profile.bio && profile.bio.trim().length >= 80),
+      Boolean(mental.languages?.length),
+      Boolean(mental.sessionTypes?.length),
+      Boolean(mental.concernsHandled?.length),
+      Boolean(mental.safetyEscalationNote?.trim()),
+      Boolean(mental.acceptingNewUsers),
+      Boolean(mental.services?.some((service: any) => service.isActive)),
+    ];
+    return Math.round((checks.filter(Boolean).length / checks.length) * 100);
+  }
+
+  private isListenerProfile(profile: DoctorProfileSummary | null | undefined): boolean {
+    const type = profile?.mentalHealthProfile?.careTeamType;
+    return type === 'PSYCHOLOGY_STUDENT_VOLUNTEER' || type === 'PEER_SUPPORT_VOLUNTEER';
   }
 }

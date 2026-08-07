@@ -64,12 +64,36 @@ export function registerAdminCounsellorApplicationRoutes(router: Router) {
         by: ['status'],
         _count: { id: true }
       });
+      const listenerEmails = applications
+        .filter((application) => application.applicationTrack !== 'PROFESSIONAL_PSYCHOLOGIST')
+        .map((application) => application.email.toLowerCase());
+      const recentFailedAttempts = listenerEmails.length
+        ? await prisma.listenerScreeningAttempt.groupBy({
+            by: ['email'],
+            where: {
+              email: { in: listenerEmails, mode: 'insensitive' },
+              passed: false,
+              createdAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) }
+            },
+            _count: { id: true }
+          })
+        : [];
+      const recentFailedAttemptCountByEmail = new Map(
+        recentFailedAttempts.map((row) => [row.email.toLowerCase(), row._count.id])
+      );
       const summary = { NEW: 0, REVIEWING: 0, SHORTLISTED: 0, REJECTED: 0, ONBOARDED: 0 };
       for (const row of counts) {
         summary[row.status as keyof typeof summary] = row._count.id;
       }
 
-      res.json({ applications, summary });
+      res.json({
+        applications: applications.map((application) => ({
+          ...application,
+          listenerRecentFailedAttempts:
+            recentFailedAttemptCountByEmail.get(application.email.toLowerCase()) ?? 0
+        })),
+        summary
+      });
     })
   );
 

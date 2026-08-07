@@ -14,7 +14,7 @@ import {
 } from '@prisma/client';
 import { prisma } from '../db.js';
 import { notifyAdminsAboutProviderApplication } from '../services/provider-application-notifications.js';
-import { asyncRoute, writeAuditLog } from '../utils/helpers.js';
+import { asyncRoute, hashToken, randomToken, writeAuditLog } from '../utils/helpers.js';
 
 export const counsellorApplicationsRouter = Router();
 
@@ -25,6 +25,7 @@ const optionalDate = z.preprocess(
 );
 const LISTENER_SCREENING_PASS_SCORE = 16;
 const LISTENER_GUIDELINES_VERSION = 'listener-guidelines-v1-2026-08-07';
+const LISTENER_TRAINING_VERSION = 'listener-training-v1-2026-08-07';
 const MINIMUM_LISTENER_GUIDELINES_READ_SECONDS = 120;
 const MAX_FAILED_LISTENER_SCREENING_ATTEMPTS = 3;
 const LISTENER_SCREENING_COOLDOWN_HOURS = 24;
@@ -60,6 +61,13 @@ const listenerScreeningAnswerSchema = z.object({
   optionId: z.string().trim().min(1).max(80)
 });
 
+const listenerGuidelineReadSessionSchema = z.object({
+  applicationTrack: z.enum(['PSYCHOLOGY_STUDENT_VOLUNTEER', 'PEER_SUPPORT_VOLUNTEER']),
+  email: z.string().trim().email().max(254),
+  phone: z.string().trim().min(5).max(30),
+  listenerGuidelinesVersion: z.string().trim().max(120).optional().or(z.literal(''))
+});
+
 export const counsellorApplicationSchema = z
   .object({
     applicationTrack: z.enum([
@@ -89,8 +97,17 @@ export const counsellorApplicationSchema = z
     listenerScreeningAnswers: z.array(listenerScreeningAnswerSchema).optional().default([]),
     listenerGuidelinesAccepted: z.boolean().optional().default(false),
     listenerGuidelinesVersion: z.string().trim().max(120).optional().or(z.literal('')),
+    listenerGuidelinesReadSessionToken: z
+      .string()
+      .trim()
+      .min(20)
+      .max(200)
+      .optional()
+      .or(z.literal('')),
     listenerGuidelinesReadStartedAt: optionalDate,
     listenerGuidelinesReadSeconds: z.coerce.number().int().min(0).max(86400).optional().default(0),
+    listenerTrainingCompleted: z.boolean().optional().default(false),
+    listenerTrainingVersion: z.string().trim().max(120).optional().or(z.literal('')),
     whyJoin: z.string().trim().min(40).max(3000),
     entryPage: z.string().trim().max(500).optional().or(z.literal(''))
   })
@@ -287,7 +304,7 @@ async function autoApproveListenerApplication(
       isAvailable: true,
       employeeStatus: EmployeeStatus.ACTIVE,
       bio: application.whyJoin.slice(0, 1200),
-      showOnWebsite: true,
+      showOnWebsite: false,
       yearsOfExperience: 0,
       focusAreas
     },
@@ -299,7 +316,7 @@ async function autoApproveListenerApplication(
       isAvailable: true,
       employeeStatus: EmployeeStatus.ACTIVE,
       bio: application.whyJoin.slice(0, 1200),
-      showOnWebsite: true,
+      showOnWebsite: false,
       focusAreas
     },
     select: { id: true, userId: true }
@@ -448,19 +465,54 @@ async function autoApproveListenerApplication(
 }
 
 counsellorApplicationsRouter.post(
+  '/counsellor-applications/listener-guidelines/read-session',
+  asyncRoute(async (req, res) => {
+    const body = listenerGuidelineReadSessionSchema.parse(req.body);
+    const token = randomToken();
+    const now = new Date();
+    const expiresAt = new Date(now.getTime() + 60 * 60 * 1000);
+    const session = await prisma.listenerGuidelineReadSession.create({
+      data: {
+        tokenHash: hashToken(token),
+        applicationTrack: body.applicationTrack,
+        email: body.email,
+        phone: body.phone,
+        guidelinesVersion: body.listenerGuidelinesVersion || LISTENER_GUIDELINES_VERSION,
+        minReadSeconds: MINIMUM_LISTENER_GUIDELINES_READ_SECONDS,
+        startedAt: now,
+        expiresAt
+      },
+      select: {
+        id: true,
+        startedAt: true,
+        expiresAt: true,
+        minReadSeconds: true,
+        guidelinesVersion: true
+      }
+    });
+
+    res.status(201).json({
+      token,
+      sessionId: session.id,
+      startedAt: session.startedAt.toISOString(),
+      expiresAt: session.expiresAt.toISOString(),
+      minReadSeconds: session.minReadSeconds,
+      guidelinesVersion: session.guidelinesVersion
+    });
+  })
+);
+
+counsellorApplicationsRouter.post(
   '/counsellor-applications',
   asyncRoute(async (req, res) => {
     const body = counsellorApplicationSchema.parse(req.body);
     const isListenerApplication = isListenerTrack(body.applicationTrack);
     if (isListenerApplication) {
       const cooldownStart = listenerAttemptCooldownStart();
-      const recentFailedAttempts = await prisma.counsellorApplication.count({
+      const recentFailedAttempts = await prisma.listenerScreeningAttempt.count({
         where: {
-          applicationTrack: {
-            in: ['PSYCHOLOGY_STUDENT_VOLUNTEER', 'PEER_SUPPORT_VOLUNTEER']
-          },
-          listenerScreeningCompletedAt: { gte: cooldownStart },
-          listenerScreeningPassed: false,
+          createdAt: { gte: cooldownStart },
+          passed: false,
           OR: [{ email: { equals: body.email, mode: 'insensitive' } }, { phone: body.phone }]
         }
       });
@@ -490,10 +542,16 @@ counsellorApplicationsRouter.post(
       ? scoreListenerScreening(body.listenerScreeningAnswers)
       : null;
     const shouldAutoApprove = Boolean(listenerScreening?.passed);
-    const listenerGuidelinesReadStartedAt = body.listenerGuidelinesReadStartedAt ?? null;
     const listenerGuidelinesReadSeconds = Math.floor(body.listenerGuidelinesReadSeconds ?? 0);
-    const listenerGuidelinesServerElapsedSeconds = listenerGuidelinesReadStartedAt
-      ? Math.floor((Date.now() - listenerGuidelinesReadStartedAt.getTime()) / 1000)
+    const listenerGuidelinesReadSessionToken = body.listenerGuidelinesReadSessionToken || '';
+    const listenerGuidelinesReadSession = listenerGuidelinesReadSessionToken
+      ? await prisma.listenerGuidelineReadSession.findUnique({
+          where: { tokenHash: hashToken(listenerGuidelinesReadSessionToken) }
+        })
+      : null;
+    const listenerGuidelinesReadStartedAt = listenerGuidelinesReadSession?.startedAt ?? null;
+    const listenerGuidelinesServerElapsedSeconds = listenerGuidelinesReadSession
+      ? Math.floor((Date.now() - listenerGuidelinesReadSession.startedAt.getTime()) / 1000)
       : 0;
     const listenerGuidelinesReadTimeSatisfied =
       listenerGuidelinesReadSeconds >= MINIMUM_LISTENER_GUIDELINES_READ_SECONDS &&
@@ -505,10 +563,39 @@ counsellorApplicationsRouter.post(
           message: 'Read and accept the listener guidelines before auto-approval.'
         });
       }
+      if (!listenerGuidelinesReadSession) {
+        return res.status(400).json({
+          message: 'Start the listener guideline reading session before auto-approval.'
+        });
+      }
+      if (listenerGuidelinesReadSession.usedAt) {
+        return res.status(400).json({
+          message: 'This listener guideline reading session was already used. Please read again.'
+        });
+      }
+      if (listenerGuidelinesReadSession.expiresAt.getTime() < Date.now()) {
+        return res.status(400).json({
+          message: 'Your listener guideline reading session expired. Please read again.'
+        });
+      }
+      if (
+        listenerGuidelinesReadSession.email.toLowerCase() !== body.email.toLowerCase() ||
+        listenerGuidelinesReadSession.phone !== body.phone ||
+        listenerGuidelinesReadSession.applicationTrack !== body.applicationTrack
+      ) {
+        return res.status(400).json({
+          message: 'Guideline reading session does not match this listener application.'
+        });
+      }
       if (!listenerGuidelinesReadTimeSatisfied) {
         return res.status(400).json({
           message:
             'Please spend at least 2 minutes reading the listener guidelines before auto-approval.'
+        });
+      }
+      if (!body.listenerTrainingCompleted) {
+        return res.status(400).json({
+          message: 'Complete listener training before auto-approval.'
         });
       }
     }
@@ -516,6 +603,8 @@ counsellorApplicationsRouter.post(
     const application = await prisma.$transaction(async (tx) => {
       const hasAcceptedListenerGuidelines =
         isListenerApplication && Boolean(body.listenerGuidelinesAccepted);
+      const hasCompletedListenerTraining =
+        isListenerApplication && Boolean(body.listenerTrainingCompleted);
       const created = await tx.counsellorApplication.create({
         data: {
           applicationTrack: body.applicationTrack,
@@ -559,6 +648,11 @@ counsellorApplicationsRouter.post(
             ? listenerGuidelinesReadSeconds
             : null,
           listenerGuidelinesAcceptedAt: hasAcceptedListenerGuidelines ? new Date() : null,
+          listenerTrainingCompleted: hasCompletedListenerTraining,
+          listenerTrainingVersion: hasCompletedListenerTraining
+            ? body.listenerTrainingVersion || LISTENER_TRAINING_VERSION
+            : null,
+          listenerTrainingCompletedAt: hasCompletedListenerTraining ? new Date() : null,
           autoApprovedAt: shouldAutoApprove ? new Date() : null,
           whyJoin: body.whyJoin,
           entryPage: body.entryPage || req.get('referer') || null,
@@ -570,6 +664,48 @@ counsellorApplicationsRouter.post(
                 : null
         }
       });
+
+      if (isListenerApplication && listenerScreening) {
+        await tx.listenerScreeningAttempt.create({
+          data: {
+            applicationId: created.id,
+            applicationTrack: created.applicationTrack,
+            email: created.email,
+            phone: created.phone,
+            score: listenerScreening.score,
+            maxScore: listenerScreening.maxScore,
+            passed: listenerScreening.passed,
+            guidelinesAccepted: hasAcceptedListenerGuidelines,
+            guidelinesVersion: hasAcceptedListenerGuidelines
+              ? body.listenerGuidelinesVersion || LISTENER_GUIDELINES_VERSION
+              : null,
+            guidelinesReadSessionId: listenerGuidelinesReadSession?.id ?? null,
+            guidelinesReadSeconds: hasAcceptedListenerGuidelines
+              ? listenerGuidelinesReadSeconds
+              : null,
+            trainingCompleted: hasCompletedListenerTraining,
+            trainingVersion: hasCompletedListenerTraining
+              ? body.listenerTrainingVersion || LISTENER_TRAINING_VERSION
+              : null,
+            cooldownExpiresAt: listenerScreening.passed
+              ? null
+              : new Date(Date.now() + LISTENER_SCREENING_COOLDOWN_HOURS * 60 * 60 * 1000),
+            source: body.entryPage ? 'healing-web' : 'healing-web',
+            ipAddress: req.ip || null,
+            userAgent: req.get('user-agent') || null
+          }
+        });
+      }
+
+      if (listenerGuidelinesReadSession && hasAcceptedListenerGuidelines) {
+        await tx.listenerGuidelineReadSession.update({
+          where: { id: listenerGuidelinesReadSession.id },
+          data: {
+            completedAt: new Date(),
+            usedAt: new Date()
+          }
+        });
+      }
 
       if (shouldAutoApprove && isListenerTrack(created.applicationTrack)) {
         const autoApproval = await autoApproveListenerApplication(tx, {
@@ -624,6 +760,9 @@ counsellorApplicationsRouter.post(
         guidelinesAccepted: application.listenerGuidelinesAccepted,
         guidelinesVersion: application.listenerGuidelinesVersion,
         guidelinesReadSeconds: application.listenerGuidelinesReadSeconds,
+        guidelinesReadSessionId: listenerGuidelinesReadSession?.id ?? null,
+        trainingCompleted: application.listenerTrainingCompleted,
+        trainingVersion: application.listenerTrainingVersion,
         autoApprovedAt: application.autoApprovedAt?.toISOString() ?? null,
         autoApprovedDoctorUserId: application.autoApprovedDoctorUserId
       }

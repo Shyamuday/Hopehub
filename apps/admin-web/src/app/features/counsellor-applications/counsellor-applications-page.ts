@@ -205,6 +205,22 @@ export class CounsellorApplicationsPage implements OnInit {
     return `${minutes}m ${remainingSeconds}s`;
   }
 
+  listenerRiskFlags(application: any): string[] {
+    if (application.applicationTrack === 'PROFESSIONAL_PSYCHOLOGIST') return [];
+    const flags: string[] = [];
+    if (application.listenerScreeningPassed === false) flags.push('Screening not passed');
+    if ((application.listenerRecentFailedAttempts || 0) >= 2) {
+      flags.push(`${application.listenerRecentFailedAttempts} failed attempts in 24h`);
+    }
+    if (!application.listenerGuidelinesAccepted) flags.push('Guidelines not accepted');
+    if ((application.listenerGuidelinesReadSeconds || 0) < 120) flags.push('Read time under 2 min');
+    if (!application.listenerTrainingCompleted) flags.push('Training not completed');
+    if (application.autoApprovedAt && !application.autoApprovedDoctorUserId) {
+      flags.push('Auto-approved but provider link missing');
+    }
+    return flags;
+  }
+
   contributorStatusClass(status: string): string {
     return `status contributor-status-${status.toLowerCase()}`;
   }

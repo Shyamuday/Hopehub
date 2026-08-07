@@ -33,6 +33,7 @@ export type HopeHubBookingPayload = {
   safetyRisk?: string;
   previousTherapyOrMedication?: string;
   emergencyConsent?: boolean;
+  listenerSupportConsent?: boolean;
   entryPage?: string;
 };
 
@@ -386,6 +387,7 @@ export class BookingService {
     safetyRisk?: string;
     previousTherapyOrMedication?: string;
     emergencyConsent?: boolean;
+    listenerSupportConsent?: boolean;
     walletRedeemInPaise?: number;
     entryPage?: string;
   }): Observable<{ consultation: any; provider: { id: string; userId: string; name: string } }> {

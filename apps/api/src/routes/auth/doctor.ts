@@ -86,6 +86,42 @@ function cleanNullableText(value: string | null | undefined) {
   return value?.trim() || null;
 }
 
+function isListenerCareTeamType(type: CareTeamMemberType | undefined) {
+  return (
+    type === CareTeamMemberType.PSYCHOLOGY_STUDENT_VOLUNTEER ||
+    type === CareTeamMemberType.PEER_SUPPORT_VOLUNTEER
+  );
+}
+
+function listenerPublicProfileReady(input: {
+  name: string;
+  mobile?: string | null;
+  gender?: PatientGender | null;
+  bio?: string | null;
+  isAvailable: boolean;
+  hasProfileImage: boolean;
+  mentalHealthProfile: NonNullable<z.infer<typeof mentalHealthProviderProfileSchema>>;
+  services: Array<{ isActive: boolean; title: string; durationMinutes: number }>;
+}) {
+  const mental = input.mentalHealthProfile;
+  return Boolean(
+    input.name.trim().length >= 2 &&
+    input.mobile?.trim() &&
+    input.gender &&
+    input.hasProfileImage &&
+    (input.bio?.trim().length ?? 0) >= 80 &&
+    cleanList(mental.languages).length > 0 &&
+    cleanList(mental.sessionTypes).length > 0 &&
+    cleanList(mental.concernsHandled).length > 0 &&
+    cleanNullableText(mental.safetyEscalationNote) &&
+    input.isAvailable &&
+    (mental.acceptingNewUsers ?? true) &&
+    input.services.some(
+      (service) => service.isActive && service.title.trim() && service.durationMinutes >= 5
+    )
+  );
+}
+
 export function registerAuthDoctorRoutes(router: Router) {
   router.post(
     '/doctor/enroll',
@@ -202,7 +238,11 @@ export function registerAuthDoctorRoutes(router: Router) {
 
       const existing = await prisma.doctor.findUnique({
         where: { userId: req.user!.id },
-        select: { doctorType: true, specialtyFocus: true }
+        select: {
+          doctorType: true,
+          specialtyFocus: true,
+          user: { select: { profileImageKey: true, profileImageUrl: true } }
+        }
       });
 
       const profilePayload = toDoctorProfilePayload({
@@ -274,6 +314,24 @@ export function registerAuthDoctorRoutes(router: Router) {
               sortOrder: service.sortOrder ?? index
             }))
           : [];
+      const isListenerProfile =
+        profilePayload.doctorType === HomeopathicDoctorType.PSYCHOLOGIST &&
+        isListenerCareTeamType(mentalHealthProfile?.careTeamType);
+      const listenerReadyForPublic =
+        isListenerProfile && body.mentalHealthProfile
+          ? listenerPublicProfileReady({
+              name: body.name,
+              mobile: body.mobile || null,
+              gender: body.gender ?? null,
+              bio: body.bio ?? null,
+              isAvailable: body.isAvailable,
+              hasProfileImage: Boolean(
+                existing?.user.profileImageKey || existing?.user.profileImageUrl
+              ),
+              mentalHealthProfile: body.mentalHealthProfile,
+              services: mentalHealthServices
+            })
+          : false;
       const mentalHealthProfileCreate = mentalHealthProfile
         ? {
             ...mentalHealthProfile,
@@ -304,6 +362,7 @@ export function registerAuthDoctorRoutes(router: Router) {
             upsert: {
               create: {
                 ...profilePayload,
+                ...(isListenerProfile ? { showOnWebsite: listenerReadyForPublic } : {}),
                 ...compensationFields,
                 ...publicFields,
                 ...(mentalHealthProfileCreate
@@ -315,6 +374,7 @@ export function registerAuthDoctorRoutes(router: Router) {
                 specialty: profilePayload.specialty,
                 registrationNo: profilePayload.registrationNo,
                 isAvailable: profilePayload.isAvailable,
+                ...(isListenerProfile ? { showOnWebsite: listenerReadyForPublic } : {}),
                 ...compensationFields,
                 ...(body.defaultMethodOptionId !== undefined
                   ? { defaultMethodOptionId: body.defaultMethodOptionId }

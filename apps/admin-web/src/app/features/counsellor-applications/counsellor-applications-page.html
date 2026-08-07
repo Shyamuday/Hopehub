@@ -72,6 +72,14 @@
               }
 
               @if (application.applicationTrack !== 'PROFESSIONAL_PSYCHOLOGIST') {
+                @if (listenerRiskFlags(application).length) {
+                  <div class="risk-flags">
+                    @for (flag of listenerRiskFlags(application); track flag) {
+                      <span>{{ flag }}</span>
+                    }
+                  </div>
+                }
+
                 <div class="listener-evidence">
                   <div>
                     <span>Screening</span>
@@ -111,6 +119,11 @@
                           : 'Needs review or did not pass'
                       }}
                     </small>
+                  </div>
+                  <div>
+                    <span>Training</span>
+                    <strong>{{ application.listenerTrainingCompleted ? 'Completed' : 'Not completed' }}</strong>
+                    <small>{{ application.listenerTrainingVersion || 'No version stored' }}</small>
                   </div>
                   <div>
                     <span>Default listener pricing</span>

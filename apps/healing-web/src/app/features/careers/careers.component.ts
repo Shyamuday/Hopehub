@@ -6,6 +6,10 @@ import {
   LISTENER_GUIDELINES_SECTIONS,
   LISTENER_GUIDELINES_VERSION,
 } from '../../core/content/listener-guidelines.content';
+import {
+  LISTENER_TRAINING_MODULES,
+  LISTENER_TRAINING_VERSION,
+} from '../../core/content/listener-training.content';
 import { ContactMethod } from '../../core/models/contact.model';
 import { LeadService, LoadingService, NotificationService } from '../../core/services';
 import { FormDropdownComponent, FormDropdownOption } from '../../shared/components';
@@ -52,8 +56,15 @@ export class CareersComponent implements OnDestroy {
   readonly listenerGuidelinesRemainingSeconds = signal(this.listenerGuidelinesMinimumReadSeconds);
   readonly listenerGuidelinesTimerComplete = signal(false);
   readonly listenerGuidelinesReadStartedAt = signal<string | null>(null);
+  readonly listenerGuidelinesReadSessionToken = signal('');
+  readonly listenerGuidelinesReadSessionLoading = signal(false);
+  readonly listenerGuidelinesReadSessionError = signal('');
   readonly listenerGuidelinesVersion = LISTENER_GUIDELINES_VERSION;
   readonly listenerGuidelinesSections = LISTENER_GUIDELINES_SECTIONS;
+  readonly listenerTrainingScrolled = signal(false);
+  readonly listenerTrainingCompleted = signal(false);
+  readonly listenerTrainingVersion = LISTENER_TRAINING_VERSION;
+  readonly listenerTrainingModules = LISTENER_TRAINING_MODULES;
   private listenerGuidelinesTimerId: ReturnType<typeof setInterval> | null = null;
   private listenerGuidelinesReadStartedAtMs: number | null = null;
   readonly applicationTracks: Array<{
@@ -435,7 +446,7 @@ export class CareersComponent implements OnDestroy {
     this.listenerScreeningAnswers.update((answers) => ({ ...answers, [questionId]: optionId }));
     this.resetListenerGuidelineAcceptance();
     if (this.listenerGuidelinesRequired()) {
-      this.startListenerGuidelinesTimer();
+      void this.startListenerGuidelinesTimer();
     }
   }
 
@@ -456,6 +467,14 @@ export class CareersComponent implements OnDestroy {
     return this.listenerGuidelinesScrolled() && this.listenerGuidelinesTimerComplete();
   }
 
+  listenerTrainingRequired(): boolean {
+    return this.listenerGuidelinesRequired() && this.listenerGuidelinesAccepted();
+  }
+
+  listenerTrainingAcceptReady(): boolean {
+    return this.listenerTrainingScrolled();
+  }
+
   listenerGuidelinesTimerLabel(): string {
     const remaining = this.listenerGuidelinesRemainingSeconds();
     const minutes = Math.floor(remaining / 60);
@@ -468,6 +487,10 @@ export class CareersComponent implements OnDestroy {
     return Math.max(0, Math.floor((Date.now() - this.listenerGuidelinesReadStartedAtMs) / 1000));
   }
 
+  startSecureGuidelineReadSession(): void {
+    void this.startListenerGuidelinesTimer();
+  }
+
   onGuidelinesScroll(event: Event): void {
     const element = event.target as HTMLElement | null;
     if (!element) return;
@@ -478,6 +501,13 @@ export class CareersComponent implements OnDestroy {
   }
 
   acceptListenerGuidelines(): void {
+    if (!this.listenerGuidelinesReadSessionToken()) {
+      this.notificationService.warning(
+        'Please start the secure listener guideline reading session first.',
+      );
+      void this.startListenerGuidelinesTimer();
+      return;
+    }
     if (!this.listenerGuidelinesTimerComplete()) {
       this.notificationService.warning(
         `Please spend at least 2 minutes reading the listener guidelines. ${this.listenerGuidelinesTimerLabel()} remaining.`,
@@ -491,6 +521,23 @@ export class CareersComponent implements OnDestroy {
       return;
     }
     this.listenerGuidelinesAccepted.set(true);
+  }
+
+  onTrainingScroll(event: Event): void {
+    const element = event.target as HTMLElement | null;
+    if (!element) return;
+    const remaining = element.scrollHeight - element.scrollTop - element.clientHeight;
+    if (remaining <= 12) {
+      this.listenerTrainingScrolled.set(true);
+    }
+  }
+
+  acceptListenerTraining(): void {
+    if (!this.listenerTrainingScrolled()) {
+      this.notificationService.warning('Please scroll to the end of listener training first.');
+      return;
+    }
+    this.listenerTrainingCompleted.set(true);
   }
 
   listenerScreeningPayload(): Array<{ questionId: string; optionId: string }> {
@@ -519,6 +566,14 @@ export class CareersComponent implements OnDestroy {
       this.notificationService.warning(
         'Please spend 2 minutes reading, scroll to the end, and accept the listener guidelines before submitting.',
       );
+      return;
+    }
+    if (
+      this.isListenerTrack() &&
+      this.listenerTrainingRequired() &&
+      !this.listenerTrainingCompleted()
+    ) {
+      this.notificationService.warning('Please complete listener training before submitting.');
       return;
     }
 
@@ -561,11 +616,20 @@ export class CareersComponent implements OnDestroy {
           listenerGuidelinesVersion: this.listenerGuidelinesRequired()
             ? this.listenerGuidelinesVersion
             : undefined,
+          listenerGuidelinesReadSessionToken: this.listenerGuidelinesRequired()
+            ? this.listenerGuidelinesReadSessionToken()
+            : undefined,
           listenerGuidelinesReadStartedAt: this.listenerGuidelinesRequired()
             ? this.listenerGuidelinesReadStartedAt()
             : undefined,
           listenerGuidelinesReadSeconds: this.listenerGuidelinesRequired()
             ? this.listenerGuidelinesReadSeconds()
+            : undefined,
+          listenerTrainingCompleted: this.listenerGuidelinesRequired()
+            ? this.listenerTrainingCompleted()
+            : undefined,
+          listenerTrainingVersion: this.listenerGuidelinesRequired()
+            ? this.listenerTrainingVersion
             : undefined,
           whyJoin: value.whyJoin || '',
         })
@@ -657,15 +721,54 @@ export class CareersComponent implements OnDestroy {
     this.listenerGuidelinesRemainingSeconds.set(this.listenerGuidelinesMinimumReadSeconds);
     this.listenerGuidelinesTimerComplete.set(false);
     this.listenerGuidelinesReadStartedAt.set(null);
+    this.listenerGuidelinesReadSessionToken.set('');
+    this.listenerGuidelinesReadSessionLoading.set(false);
+    this.listenerGuidelinesReadSessionError.set('');
     this.listenerGuidelinesReadStartedAtMs = null;
+    this.listenerTrainingScrolled.set(false);
+    this.listenerTrainingCompleted.set(false);
   }
 
-  private startListenerGuidelinesTimer(): void {
-    if (this.listenerGuidelinesTimerId) return;
-    this.listenerGuidelinesReadStartedAtMs = Date.now();
-    this.listenerGuidelinesReadStartedAt.set(
-      new Date(this.listenerGuidelinesReadStartedAtMs).toISOString(),
-    );
+  private async startListenerGuidelinesTimer(): Promise<void> {
+    if (this.listenerGuidelinesTimerId || this.listenerGuidelinesReadSessionToken()) return;
+    const email = this.applicationForm.controls.email.value || '';
+    const phone = this.applicationForm.controls.phone.value || '';
+    if (!email || !phone) {
+      this.listenerGuidelinesReadSessionError.set(
+        'Add email and phone to start the secure reading timer.',
+      );
+      return;
+    }
+    this.listenerGuidelinesReadSessionLoading.set(true);
+    this.listenerGuidelinesReadSessionError.set('');
+    try {
+      const session = await new Promise<{
+        token: string;
+        startedAt: string;
+        minReadSeconds: number;
+      }>((resolve, reject) => {
+        this.leadService
+          .startListenerGuidelineReadSession({
+            applicationTrack: this.selectedTrack() as
+              'PSYCHOLOGY_STUDENT_VOLUNTEER' | 'PEER_SUPPORT_VOLUNTEER',
+            email,
+            phone,
+            listenerGuidelinesVersion: this.listenerGuidelinesVersion,
+          })
+          .subscribe({ next: resolve, error: reject });
+      });
+      this.listenerGuidelinesReadSessionToken.set(session.token);
+      this.listenerGuidelinesReadStartedAt.set(session.startedAt);
+      this.listenerGuidelinesReadStartedAtMs = new Date(session.startedAt).getTime();
+      this.listenerGuidelinesRemainingSeconds.set(session.minReadSeconds);
+    } catch {
+      this.listenerGuidelinesReadSessionError.set(
+        'Could not start the secure reading timer. Check email/phone and try again.',
+      );
+      return;
+    } finally {
+      this.listenerGuidelinesReadSessionLoading.set(false);
+    }
     this.listenerGuidelinesTimerId = setInterval(() => {
       const elapsedSeconds = this.listenerGuidelinesReadSeconds();
       const nextRemaining = Math.max(0, this.listenerGuidelinesMinimumReadSeconds - elapsedSeconds);

@@ -421,6 +421,16 @@
           <span>I understand this is not emergency care.</span>
         </label>
 
+        @if (needsListenerSupportConsent()) {
+          <label class="safety-check listener-consent">
+            <input type="checkbox" formControlName="listenerSupportConsent" />
+            <span>
+              I understand emotional support listeners are non-clinical, cannot diagnose or
+              prescribe, and safety concerns may be escalated to Hope Hub/professional support.
+            </span>
+          </label>
+        }
+
         <button type="submit" [disabled]="contactForm.invalid || isSubmitting()" class="btn-primary btn-block">
           @if (!isSubmitting()) {
             <span>{{ paymentButtonLabel() }}</span>

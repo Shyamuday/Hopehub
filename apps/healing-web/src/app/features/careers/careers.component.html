@@ -364,7 +364,9 @@
                   <div class="listener-guidelines-read-status" aria-live="polite">
                     <span>
                       {{
-                        listenerGuidelinesTimerComplete()
+                        listenerGuidelinesReadSessionLoading()
+                          ? 'Starting secure timer...'
+                          : listenerGuidelinesTimerComplete()
                           ? '2-minute reading time complete'
                           : 'Minimum reading time left: ' + listenerGuidelinesTimerLabel()
                       }}
@@ -377,6 +379,18 @@
                       }}
                     </span>
                   </div>
+                  @if (listenerGuidelinesReadSessionError()) {
+                    <p class="listener-guidelines-error">{{ listenerGuidelinesReadSessionError() }}</p>
+                  }
+                  @if (!listenerGuidelinesReadSessionToken() && !listenerGuidelinesReadSessionLoading()) {
+                    <button
+                      type="button"
+                      class="listener-guidelines-accept-button listener-guidelines-accept-button--secondary"
+                      (click)="startSecureGuidelineReadSession()"
+                    >
+                      Start secure reading timer
+                    </button>
+                  }
 
                   <div class="listener-guidelines-scrollbox" (scroll)="onGuidelinesScroll($event)">
                     @for (section of listenerGuidelinesSections; track section.title) {
@@ -406,6 +420,58 @@
                           : listenerGuidelinesTimerComplete()
                             ? 'Scroll to the end to accept'
                             : 'Read for 2 minutes to accept'
+                    }}
+                  </button>
+                </section>
+              }
+
+              @if (listenerTrainingRequired()) {
+                <section class="listener-guideline-acceptance" aria-label="Required listener training">
+                  <div class="listener-guideline-acceptance__head">
+                    <div>
+                      <span class="listener-screening__pill">Training step</span>
+                      <h3>Review listener training examples</h3>
+                      <p>
+                        Read these practical examples before submitting. They explain what to say,
+                        what to avoid, and when to escalate.
+                        <a routerLink="/listener-training" target="_blank" rel="noopener noreferrer">
+                          Open full training anytime
+                        </a>
+                      </p>
+                    </div>
+                    <strong>{{ listenerTrainingCompleted() ? 'Completed' : 'Required' }}</strong>
+                  </div>
+
+                  <div class="listener-guidelines-scrollbox" (scroll)="onTrainingScroll($event)">
+                    @for (module of listenerTrainingModules; track module.title) {
+                      <article>
+                        <h4>{{ module.title }}</h4>
+                        <ul>
+                          @for (point of module.points; track point) {
+                            <li>{{ point }}</li>
+                          }
+                        </ul>
+                        <p class="listener-guidelines-version">
+                          Use: {{ module.example.good }}<br />
+                          Avoid: {{ module.example.avoid }}
+                        </p>
+                      </article>
+                    }
+                    <p class="listener-guidelines-version">Version: {{ listenerTrainingVersion }}</p>
+                  </div>
+
+                  <button
+                    type="button"
+                    class="listener-guidelines-accept-button"
+                    [disabled]="!listenerTrainingAcceptReady() || listenerTrainingCompleted()"
+                    (click)="acceptListenerTraining()"
+                  >
+                    {{
+                      listenerTrainingCompleted()
+                        ? 'Training completed'
+                        : listenerTrainingAcceptReady()
+                          ? 'I reviewed listener training'
+                          : 'Scroll training to the end'
                     }}
                   </button>
                 </section>

@@ -34,9 +34,28 @@ export type CounsellorApplicationPayload = {
   listenerScreeningAnswers?: Array<{ questionId: string; optionId: string }>;
   listenerGuidelinesAccepted?: boolean;
   listenerGuidelinesVersion?: string;
+  listenerGuidelinesReadSessionToken?: string;
   listenerGuidelinesReadStartedAt?: string | null;
   listenerGuidelinesReadSeconds?: number;
+  listenerTrainingCompleted?: boolean;
+  listenerTrainingVersion?: string;
   whyJoin: string;
+};
+
+export type ListenerGuidelineReadSessionRequest = {
+  applicationTrack: 'PSYCHOLOGY_STUDENT_VOLUNTEER' | 'PEER_SUPPORT_VOLUNTEER';
+  email: string;
+  phone: string;
+  listenerGuidelinesVersion?: string;
+};
+
+export type ListenerGuidelineReadSessionResponse = {
+  token: string;
+  sessionId: string;
+  startedAt: string;
+  expiresAt: string;
+  minReadSeconds: number;
+  guidelinesVersion: string;
 };
 
 export type CounsellorApplicationResponse = {
@@ -117,6 +136,15 @@ export class LeadService {
         this.withBrowserContext(payload),
       )
       .pipe(map((response) => response));
+  }
+
+  startListenerGuidelineReadSession(
+    payload: ListenerGuidelineReadSessionRequest,
+  ): Observable<ListenerGuidelineReadSessionResponse> {
+    return this.http.post<ListenerGuidelineReadSessionResponse>(
+      `${environment.apiUrl}/counsellor-applications/listener-guidelines/read-session`,
+      payload,
+    );
   }
 
   listTestimonials(): Observable<PublicTestimonial[]> {

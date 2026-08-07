@@ -223,6 +223,17 @@
   padding: 0.45rem 0.7rem;
 }
 
+.listener-guidelines-error {
+  border: 1px solid #fecaca;
+  border-radius: 0.75rem;
+  background: #fef2f2;
+  color: #991b1b !important;
+  font-size: 0.86rem !important;
+  font-weight: 800;
+  margin: 0 !important;
+  padding: 0.7rem;
+}
+
 .listener-guidelines-scrollbox {
   max-height: 18rem;
   overflow: auto;
@@ -279,6 +290,12 @@
 .listener-guidelines-accept-button:disabled {
   cursor: not-allowed;
   opacity: 0.55;
+}
+
+.listener-guidelines-accept-button--secondary {
+  background: #ffffff;
+  border: 1px solid #10b981;
+  color: #047857;
 }
 
 .submit-button {

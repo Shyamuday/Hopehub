@@ -113,6 +113,9 @@ model CounsellorApplication {
   listenerGuidelinesReadStartedAt DateTime?
   listenerGuidelinesReadSeconds Int?
   listenerGuidelinesAcceptedAt DateTime?
+  listenerTrainingCompleted Boolean                 @default(false)
+  listenerTrainingVersion String?
+  listenerTrainingCompletedAt DateTime?
   autoApprovedAt      DateTime?
   autoApprovedDoctorUserId String?
   source              String                       @default("healing-web")
@@ -122,6 +125,7 @@ model CounsellorApplication {
   reviewedBy          User?                        @relation("CounsellorApplicationReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
   reviewedAt          DateTime?
   onboardedContributor CareContributor?
+  listenerScreeningAttempts ListenerScreeningAttempt[]
   createdAt           DateTime                     @default(now())
   updatedAt           DateTime                     @updatedAt
 
@@ -132,6 +136,56 @@ model CounsellorApplication {
   @@index([specialization])
   @@index([listenerScreeningPassed, listenerScreeningCompletedAt])
   @@index([createdAt])
+}
+
+model ListenerGuidelineReadSession {
+  id                String   @id @default(cuid())
+  tokenHash         String   @unique
+  applicationTrack  CounsellorApplicationTrack
+  email             String
+  phone             String
+  guidelinesVersion String
+  minReadSeconds    Int      @default(120)
+  startedAt         DateTime @default(now())
+  expiresAt         DateTime
+  completedAt       DateTime?
+  usedAt            DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([email, startedAt])
+  @@index([phone, startedAt])
+  @@index([tokenHash])
+  @@index([expiresAt])
+}
+
+model ListenerScreeningAttempt {
+  id                      String                      @id @default(cuid())
+  applicationId           String?
+  application             CounsellorApplication?      @relation(fields: [applicationId], references: [id], onDelete: SetNull)
+  applicationTrack        CounsellorApplicationTrack
+  email                   String
+  phone                   String
+  score                   Int
+  maxScore                Int
+  passed                  Boolean                     @default(false)
+  guidelinesAccepted      Boolean                     @default(false)
+  guidelinesVersion       String?
+  guidelinesReadSessionId String?
+  guidelinesReadSeconds   Int?
+  trainingCompleted       Boolean                     @default(false)
+  trainingVersion         String?
+  cooldownExpiresAt       DateTime?
+  source                  String                      @default("healing-web")
+  ipAddress               String?
+  userAgent               String?
+  createdAt               DateTime                    @default(now())
+
+  @@index([email, createdAt])
+  @@index([phone, createdAt])
+  @@index([passed, createdAt])
+  @@index([cooldownExpiresAt])
+  @@index([applicationId])
 }
 
 model CareContributor {

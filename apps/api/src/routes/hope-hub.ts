@@ -138,6 +138,7 @@ const hopeHubBookingSchema = z.object({
   safetyRisk: z.string().trim().max(80).optional().or(z.literal('')),
   previousTherapyOrMedication: z.string().trim().max(1000).optional().or(z.literal('')),
   emergencyConsent: z.boolean().optional(),
+  listenerSupportConsent: z.boolean().optional().default(false),
   entryPage: z.string().trim().max(500).optional().or(z.literal(''))
 });
 
@@ -156,6 +157,7 @@ const hopeHubQuickTalkSchema = z.object({
   safetyRisk: z.string().trim().max(80).optional().or(z.literal('')),
   previousTherapyOrMedication: z.string().trim().max(1000).optional().or(z.literal('')),
   emergencyConsent: z.boolean().optional(),
+  listenerSupportConsent: z.boolean().optional().default(false),
   walletRedeemInPaise: z.number().int().min(0).optional(),
   entryPage: z.string().trim().max(500).optional().or(z.literal(''))
 });
@@ -767,6 +769,7 @@ function careTeamServiceSelect() {
     isFree: true,
     mentalHealthProfile: {
       select: {
+        careTeamType: true,
         doctor: {
           select: {
             id: true,
@@ -919,6 +922,12 @@ function careTeamRoleDisplay(careTeamType: string, defaultLabel: string) {
       ctaLabel: 'Book session',
       isClinicalCare: false
     }
+  );
+}
+
+function isListenerCareTeamType(careTeamType: string | null | undefined) {
+  return (
+    careTeamType === 'PSYCHOLOGY_STUDENT_VOLUNTEER' || careTeamType === 'PEER_SUPPORT_VOLUNTEER'
   );
 }
 
@@ -2932,6 +2941,15 @@ hopeHubRouter.post(
     const careTeamService =
       selectedCareTeamService ||
       pickQuickTalkCareTeamService(provider.mentalHealthProfile?.services, quickTalkMode);
+    const quickTalkUsesListener =
+      isListenerCareTeamType(provider.mentalHealthProfile?.careTeamType) ||
+      isListenerCareTeamType(careTeamService?.mentalHealthProfile?.careTeamType);
+    if (quickTalkUsesListener && !body.listenerSupportConsent) {
+      return res.status(400).json({
+        message:
+          'Please confirm you understand listener support is non-clinical and not emergency care.'
+      });
+    }
     const previousUseCount = careTeamService
       ? await previousCareTeamServiceUseCount(req.user!.id, careTeamService.id)
       : 0;
@@ -3363,11 +3381,29 @@ hopeHubRouter.post(
               }
             ]
           },
-          select: { id: true, userId: true, user: { select: { name: true } } }
+          select: {
+            id: true,
+            userId: true,
+            user: { select: { name: true } },
+            mentalHealthProfile: { select: { careTeamType: true } }
+          }
         })
       : (selectedCareTeamService?.mentalHealthProfile.doctor ?? null);
     if (body.providerId && !requestedProvider) {
       return res.status(400).json({ message: 'Selected care team member is not available.' });
+    }
+    const requestedProviderCareTeamType = body.providerId
+      ? (requestedProvider as { mentalHealthProfile?: { careTeamType?: string | null } } | null)
+          ?.mentalHealthProfile?.careTeamType
+      : selectedCareTeamService?.mentalHealthProfile?.careTeamType;
+    const bookingUsesListener =
+      isListenerCareTeamType(selectedCareTeamService?.mentalHealthProfile?.careTeamType) ||
+      isListenerCareTeamType(requestedProviderCareTeamType);
+    if (bookingUsesListener && !body.listenerSupportConsent) {
+      return res.status(400).json({
+        message:
+          'Please confirm you understand listener support is non-clinical and not emergency care.'
+      });
     }
     const providerCapacity =
       requestedProvider && body.appointmentDate

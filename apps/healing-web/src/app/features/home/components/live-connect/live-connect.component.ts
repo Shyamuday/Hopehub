@@ -316,6 +316,11 @@ export class LiveConnectComponent implements OnInit {
       return;
     }
 
+    const listenerConsent = this.needsListenerSupportConsent(provider)
+      ? this.confirmListenerSupportConsent()
+      : true;
+    if (!listenerConsent) return;
+
     this.startingProviderId.set(provider.id);
     this.message.set('');
     this.paymentFlowError.set('');
@@ -327,6 +332,7 @@ export class LiveConnectComponent implements OnInit {
           preferredExpertType: provider.supportTierLabel || provider.supportRoleLabel || '',
           sessionMode: this.sessionMode(),
           preferredLanguage: provider.languages?.[0] || '',
+          listenerSupportConsent: listenerConsent,
           message: `Homepage Live Connect ${this.modeLabel()} request`,
           entryPage: typeof window === 'undefined' ? undefined : window.location.href,
         }),
@@ -360,6 +366,28 @@ export class LiveConnectComponent implements OnInit {
     } finally {
       this.startingProviderId.set('');
     }
+  }
+
+  private needsListenerSupportConsent(provider: HopeHubProvider): boolean {
+    return /listener|volunteer|peer support/i.test(
+      [
+        provider.supportRole,
+        provider.careTeamType,
+        provider.supportRoleLabel,
+        provider.supportTierLabel,
+        provider.specialty,
+        provider.designation,
+      ]
+        .filter(Boolean)
+        .join(' '),
+    );
+  }
+
+  private confirmListenerSupportConsent(): boolean {
+    if (typeof window === 'undefined') return true;
+    return window.confirm(
+      'Emotional support listeners are non-clinical. They cannot diagnose, prescribe, or handle emergencies alone. Safety concerns may be escalated to Hope Hub/professional support. Continue?',
+    );
   }
 
   retryPayment(): void {

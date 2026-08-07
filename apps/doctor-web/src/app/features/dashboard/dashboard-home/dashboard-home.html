@@ -33,6 +33,44 @@
   }
 </section>
 
+@if (listenerProfile(); as listener) {
+  <section class="panel listener-dashboard-card">
+    <div class="panel-header">
+      <div>
+        <h2>Listener readiness</h2>
+        <p class="muted">Keep your public listener profile safe, complete, and ready for live users.</p>
+      </div>
+      <a class="primary-link" routerLink="/profile">Complete profile</a>
+    </div>
+
+    <div class="listener-meter">
+      <strong>{{ listenerCompletionPercent(listener) }}%</strong>
+      <span>profile completion</span>
+    </div>
+
+    <div class="listener-dashboard-grid">
+      <div class="listener-dashboard-chip">
+        <span>Default plans</span>
+        <strong>₹99 chat/voice · ₹299 video</strong>
+      </div>
+      <div class="listener-dashboard-chip">
+        <span>Public visibility</span>
+        <strong>{{ listener.showOnWebsite ? 'Visible' : 'Hidden until complete' }}</strong>
+      </div>
+      <div class="listener-dashboard-chip">
+        <span>Live availability</span>
+        <strong>{{ listener.isAvailable ? 'On' : 'Off' }}</strong>
+      </div>
+    </div>
+
+    <div class="listener-links">
+      <a href="https://hopehub.in/listener-guidelines" target="_blank" rel="noopener">Guidelines</a>
+      <a href="https://hopehub.in/listener-training" target="_blank" rel="noopener">Training</a>
+      <a routerLink="/online-doctor">Go live / pause</a>
+    </div>
+  </section>
+}
+
 <section class="panel">
   <div class="panel-header">
     <h2>{{ canPrescribe() ? 'Doctor Payment Dashboard' : 'Session Payment Dashboard' }}</h2>
