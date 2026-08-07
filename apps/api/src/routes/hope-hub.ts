@@ -1,5 +1,7 @@
+import crypto from 'node:crypto';
 import { Router } from 'express';
 import { z } from 'zod';
+import { AccessToken, RoomServiceClient } from 'livekit-server-sdk';
 import {
   CareTeamServicePricingMode,
   ConsultationMode,
@@ -199,12 +201,35 @@ const hopeHubLiveGroupCreateSchema = z.object({
   title: z.string().trim().min(3).max(140),
   slug: z.string().trim().min(3).max(160).optional().or(z.literal('')),
   description: z.string().trim().max(1200).optional().or(z.literal('')),
+  callTitle: z.string().trim().max(140).optional().or(z.literal('')),
+  callAgenda: z.string().trim().max(1200).optional().or(z.literal('')),
   mode: z.enum(['CHAT', 'VOICE', 'VIDEO']).optional(),
   status: z.enum(['LIVE', 'SCHEDULED']).optional()
 });
 
 const hopeHubLiveGroupMessageSchema = z.object({
   body: z.string().trim().min(1).max(2000)
+});
+
+const hopeHubLiveGroupModeSchema = z.object({
+  mode: z.enum(['CHAT', 'VOICE', 'VIDEO'])
+});
+
+const hopeHubLiveGroupDetailsSchema = z.object({
+  title: z.string().trim().min(3).max(140).optional(),
+  description: z.string().trim().max(1200).optional().or(z.literal('')),
+  callTitle: z.string().trim().max(140).optional().or(z.literal('')),
+  callAgenda: z.string().trim().max(1200).optional().or(z.literal('')),
+  slowModeSeconds: z.number().int().min(0).max(300).optional()
+});
+
+const hopeHubLiveGroupModerationSchema = z.object({
+  userId: z.string().trim().min(1).max(160),
+  displayName: z.string().trim().max(160).optional().or(z.literal('')),
+  role: z.string().trim().max(80).optional().or(z.literal('')),
+  action: z.enum(['MUTE', 'UNMUTE', 'BAN', 'UNBAN', 'REMOVE']),
+  mutedMinutes: z.number().int().min(1).max(10080).optional(),
+  reason: z.string().trim().max(1000).optional().or(z.literal(''))
 });
 
 function normalizeHopeHubMediaKey(value: string) {
@@ -1798,8 +1823,11 @@ function serializeLiveGroup(group: {
   title: string;
   slug: string;
   description: string | null;
+  callTitle?: string | null;
+  callAgenda?: string | null;
   status: string;
   mode: string;
+  slowModeSeconds?: number;
   hostUserId: string | null;
   isPublic: boolean;
   startsAt: Date | null;
@@ -1813,8 +1841,11 @@ function serializeLiveGroup(group: {
     title: group.title,
     slug: group.slug,
     description: group.description,
+    callTitle: group.callTitle ?? null,
+    callAgenda: group.callAgenda ?? null,
     status: group.status,
     mode: group.mode,
+    slowModeSeconds: group.slowModeSeconds ?? 0,
     hostUserId: group.hostUserId,
     isPublic: group.isPublic,
     startsAt: group.startsAt?.toISOString() ?? null,
@@ -1832,6 +1863,9 @@ function serializeLiveGroupMessage(message: {
   senderName: string;
   senderRole: string | null;
   body: string;
+  isDeleted?: boolean;
+  deletedAt?: Date | null;
+  deletedByUserId?: string | null;
   createdAt: Date;
 }) {
   return {
@@ -1840,9 +1874,55 @@ function serializeLiveGroupMessage(message: {
     senderId: message.senderId,
     senderName: message.senderName,
     senderRole: message.senderRole,
-    body: message.body,
+    body: message.isDeleted ? 'Message removed by moderator.' : message.body,
+    isDeleted: Boolean(message.isDeleted),
+    deletedAt: message.deletedAt?.toISOString() ?? null,
+    deletedByUserId: message.deletedByUserId ?? null,
     createdAt: message.createdAt.toISOString()
   };
+}
+
+async function liveGroupModerationFor(groupId: string, userId: string) {
+  return prisma.hopeHubLiveGroupMemberModeration.findUnique({
+    where: { groupId_userId: { groupId, userId } }
+  });
+}
+
+function isMuted(moderation: Awaited<ReturnType<typeof liveGroupModerationFor>>) {
+  if (!moderation?.isMuted) return false;
+  return !moderation.mutedUntil || moderation.mutedUntil > new Date();
+}
+
+function moderationSummary(moderation: Awaited<ReturnType<typeof liveGroupModerationFor>>) {
+  return {
+    isMuted: isMuted(moderation),
+    mutedUntil: moderation?.mutedUntil?.toISOString() ?? null,
+    isBanned: Boolean(moderation?.isBanned),
+    removedAt: moderation?.removedAt?.toISOString() ?? null,
+    reason: moderation?.reason ?? null
+  };
+}
+
+function liveKitRoomName(groupId: string) {
+  return `hopehub-group-${groupId}`;
+}
+
+function liveKitConfig() {
+  const url = process.env.LIVEKIT_URL || process.env.PUBLIC_LIVEKIT_URL || '';
+  const apiKey = process.env.LIVEKIT_API_KEY || '';
+  const apiSecret = process.env.LIVEKIT_API_SECRET || '';
+  return {
+    url,
+    apiKey,
+    apiSecret,
+    configured: Boolean(url && apiKey && apiSecret)
+  };
+}
+
+function liveKitRoomService() {
+  const config = liveKitConfig();
+  if (!config.configured) return null;
+  return new RoomServiceClient(config.url, config.apiKey, config.apiSecret);
 }
 
 hopeHubRouter.get(
@@ -1881,6 +1961,8 @@ hopeHubRouter.post(
         title: body.title,
         slug,
         description: body.description || null,
+        callTitle: body.callTitle || body.title,
+        callAgenda: body.callAgenda || null,
         status: body.status || 'LIVE',
         mode: body.mode || 'CHAT',
         hostUserId: req.user?.id,
@@ -1895,7 +1977,7 @@ hopeHubRouter.post(
 
 hopeHubRouter.get(
   '/hope-hub/live-groups/:id',
-  authRequired,
+  authOptional,
   asyncRoute(async (req, res) => {
     const id = routeParam(req, 'id');
     const group = await prisma.hopeHubLiveGroup.findFirst({
@@ -1908,6 +1990,10 @@ hopeHubRouter.get(
     });
 
     if (!group) return res.status(404).json({ message: 'Live group not found.' });
+    const moderation = req.user ? await liveGroupModerationFor(group.id, req.user.id) : null;
+    if (moderation?.isBanned) {
+      return res.status(403).json({ message: 'You are banned from this group room.' });
+    }
 
     const messages = await prisma.hopeHubLiveGroupMessage.findMany({
       where: { groupId: group.id },
@@ -1917,7 +2003,9 @@ hopeHubRouter.get(
 
     res.json({
       group: serializeLiveGroup(group),
-      messages: messages.map(serializeLiveGroupMessage)
+      messages: messages.map(serializeLiveGroupMessage),
+      requiresLoginToSpeak: !req.user,
+      moderation: moderationSummary(moderation)
     });
   })
 );
@@ -1938,6 +2026,28 @@ hopeHubRouter.post(
     });
 
     if (!group) return res.status(404).json({ message: 'Live group not found.' });
+    const moderation = await liveGroupModerationFor(group.id, req.user!.id);
+    if (moderation?.isBanned) {
+      return res.status(403).json({ message: 'You are banned from this group room.' });
+    }
+    if (isMuted(moderation)) {
+      return res.status(403).json({ message: 'You are muted in this group room.' });
+    }
+    if (group.slowModeSeconds > 0) {
+      const recentMessage = await prisma.hopeHubLiveGroupMessage.findFirst({
+        where: {
+          groupId: group.id,
+          senderId: req.user!.id,
+          createdAt: { gt: new Date(Date.now() - group.slowModeSeconds * 1000) }
+        },
+        orderBy: { createdAt: 'desc' }
+      });
+      if (recentMessage) {
+        return res.status(429).json({
+          message: `Slow mode is on. Please wait ${group.slowModeSeconds} seconds between messages.`
+        });
+      }
+    }
 
     const message = await prisma.hopeHubLiveGroupMessage.create({
       data: {
@@ -1951,6 +2061,262 @@ hopeHubRouter.post(
     const payload = serializeLiveGroupMessage(message);
     emitHopeHubLiveGroupMessage(group.id, payload);
     res.status(201).json({ message: payload });
+  })
+);
+
+hopeHubRouter.patch(
+  '/hope-hub/live-groups/:id/details',
+  authRequired,
+  allowRoles(Role.DOCTOR, Role.ADMIN, Role.HR),
+  asyncRoute(async (req, res) => {
+    const id = routeParam(req, 'id');
+    const body = hopeHubLiveGroupDetailsSchema.parse(req.body);
+    const group = await prisma.hopeHubLiveGroup.findFirst({
+      where: {
+        OR: [{ id }, { slug: id }],
+        isActive: true,
+        isPublic: true
+      }
+    });
+
+    if (!group) return res.status(404).json({ message: 'Live group not found.' });
+
+    const updated = await prisma.hopeHubLiveGroup.update({
+      where: { id: group.id },
+      data: {
+        ...(body.title !== undefined ? { title: body.title } : {}),
+        ...(body.description !== undefined ? { description: body.description || null } : {}),
+        ...(body.callTitle !== undefined ? { callTitle: body.callTitle || null } : {}),
+        ...(body.callAgenda !== undefined ? { callAgenda: body.callAgenda || null } : {}),
+        ...(body.slowModeSeconds !== undefined ? { slowModeSeconds: body.slowModeSeconds } : {})
+      }
+    });
+
+    res.json({ group: serializeLiveGroup(updated) });
+  })
+);
+
+hopeHubRouter.post(
+  '/hope-hub/live-groups/:id/moderation',
+  authRequired,
+  allowRoles(Role.DOCTOR, Role.ADMIN, Role.HR),
+  asyncRoute(async (req, res) => {
+    const id = routeParam(req, 'id');
+    const body = hopeHubLiveGroupModerationSchema.parse(req.body);
+    const group = await prisma.hopeHubLiveGroup.findFirst({
+      where: {
+        OR: [{ id }, { slug: id }],
+        isActive: true,
+        isPublic: true
+      }
+    });
+
+    if (!group) return res.status(404).json({ message: 'Live group not found.' });
+    if (body.userId === req.user!.id) {
+      return res.status(400).json({ message: 'You cannot moderate yourself.' });
+    }
+
+    const now = new Date();
+    const mutedUntil =
+      body.action === 'MUTE' ? new Date(Date.now() + (body.mutedMinutes ?? 60) * 60 * 1000) : null;
+    const moderation = await prisma.hopeHubLiveGroupMemberModeration.upsert({
+      where: { groupId_userId: { groupId: group.id, userId: body.userId } },
+      create: {
+        groupId: group.id,
+        userId: body.userId,
+        displayName: body.displayName || null,
+        role: body.role || null,
+        isMuted: body.action === 'MUTE' || body.action === 'REMOVE',
+        mutedUntil: body.action === 'MUTE' ? mutedUntil : body.action === 'REMOVE' ? now : null,
+        isBanned: body.action === 'BAN',
+        bannedAt: body.action === 'BAN' ? now : null,
+        removedAt: body.action === 'REMOVE' ? now : null,
+        reason: body.reason || null,
+        moderatedByUserId: req.user!.id
+      },
+      update: {
+        displayName: body.displayName || undefined,
+        role: body.role || undefined,
+        isMuted:
+          body.action === 'MUTE' || body.action === 'REMOVE'
+            ? true
+            : body.action === 'UNMUTE'
+              ? false
+              : undefined,
+        mutedUntil:
+          body.action === 'MUTE'
+            ? mutedUntil
+            : body.action === 'UNMUTE'
+              ? null
+              : body.action === 'REMOVE'
+                ? now
+                : undefined,
+        isBanned: body.action === 'BAN' ? true : body.action === 'UNBAN' ? false : undefined,
+        bannedAt: body.action === 'BAN' ? now : body.action === 'UNBAN' ? null : undefined,
+        removedAt: body.action === 'REMOVE' ? now : undefined,
+        reason: body.reason || undefined,
+        moderatedByUserId: req.user!.id
+      }
+    });
+
+    const roomService = liveKitRoomService();
+    if (roomService && (group.mode === 'VOICE' || group.mode === 'VIDEO')) {
+      const roomName = liveKitRoomName(group.id);
+      try {
+        if (body.action === 'MUTE') {
+          await roomService.updateParticipant(roomName, body.userId, {
+            permission: {
+              canPublish: false,
+              canSubscribe: true,
+              canPublishData: false
+            }
+          });
+        } else if (body.action === 'UNMUTE') {
+          await roomService.updateParticipant(roomName, body.userId, {
+            permission: {
+              canPublish: true,
+              canSubscribe: true,
+              canPublishData: true
+            }
+          });
+        } else if (body.action === 'BAN' || body.action === 'REMOVE') {
+          await roomService.removeParticipant(roomName, body.userId, {
+            revokeTokenTs: BigInt(Math.floor(Date.now() / 1000))
+          });
+        }
+      } catch (error) {
+        console.warn('[hope-hub] Live group moderation sync failed', {
+          groupId: group.id,
+          action: body.action,
+          userId: body.userId,
+          error: error instanceof Error ? error.message : String(error)
+        });
+      }
+    }
+
+    res.json({ moderation: moderationSummary(moderation) });
+  })
+);
+
+hopeHubRouter.delete(
+  '/hope-hub/live-groups/:id/messages/:messageId',
+  authRequired,
+  allowRoles(Role.DOCTOR, Role.ADMIN, Role.HR),
+  asyncRoute(async (req, res) => {
+    const id = routeParam(req, 'id');
+    const messageId = routeParam(req, 'messageId');
+    const group = await prisma.hopeHubLiveGroup.findFirst({
+      where: {
+        OR: [{ id }, { slug: id }],
+        isActive: true,
+        isPublic: true
+      }
+    });
+    if (!group) return res.status(404).json({ message: 'Live group not found.' });
+
+    const message = await prisma.hopeHubLiveGroupMessage.update({
+      where: { id: messageId },
+      data: { isDeleted: true, deletedAt: new Date(), deletedByUserId: req.user!.id }
+    });
+    res.json({ message: serializeLiveGroupMessage(message) });
+  })
+);
+
+hopeHubRouter.patch(
+  '/hope-hub/live-groups/:id/mode',
+  authRequired,
+  allowRoles(Role.DOCTOR, Role.ADMIN, Role.HR),
+  asyncRoute(async (req, res) => {
+    const id = routeParam(req, 'id');
+    const body = hopeHubLiveGroupModeSchema.parse(req.body);
+    const group = await prisma.hopeHubLiveGroup.findFirst({
+      where: {
+        OR: [{ id }, { slug: id }],
+        isActive: true,
+        isPublic: true
+      }
+    });
+
+    if (!group) return res.status(404).json({ message: 'Live group not found.' });
+
+    const updated = await prisma.hopeHubLiveGroup.update({
+      where: { id: group.id },
+      data: {
+        mode: body.mode,
+        status: body.mode === 'CHAT' ? group.status : 'LIVE',
+        startsAt: group.startsAt ?? new Date()
+      }
+    });
+
+    res.json({ group: serializeLiveGroup(updated) });
+  })
+);
+
+hopeHubRouter.post(
+  '/hope-hub/live-groups/:id/call-token',
+  authOptional,
+  asyncRoute(async (req, res) => {
+    const id = routeParam(req, 'id');
+    const group = await prisma.hopeHubLiveGroup.findFirst({
+      where: {
+        OR: [{ id }, { slug: id }],
+        isActive: true,
+        isPublic: true,
+        status: { in: ['LIVE', 'SCHEDULED'] }
+      }
+    });
+
+    if (!group) return res.status(404).json({ message: 'Live group not found.' });
+    if (group.mode !== 'VOICE' && group.mode !== 'VIDEO') {
+      return res.status(409).json({
+        message: 'This group is currently chat-only. A provider or admin can start voice/video.'
+      });
+    }
+    const moderation = req.user ? await liveGroupModerationFor(group.id, req.user.id) : null;
+    if (moderation?.isBanned) {
+      return res.status(403).json({ message: 'You are banned from this group room.' });
+    }
+
+    const config = liveKitConfig();
+    if (!config.configured) {
+      return res.status(503).json({
+        code: 'LIVEKIT_NOT_CONFIGURED',
+        message:
+          'Group voice/video is not configured yet. Set LIVEKIT_URL, LIVEKIT_API_KEY, and LIVEKIT_API_SECRET.'
+      });
+    }
+
+    const roomName = liveKitRoomName(group.id);
+    const canPublish = Boolean(req.user && !isMuted(moderation));
+    const identity = req.user?.id || `guest-${crypto.randomUUID()}`;
+    const displayName = req.user?.name || 'Guest listener';
+    const token = new AccessToken(config.apiKey, config.apiSecret, {
+      identity,
+      name: displayName,
+      ttl: '2h',
+      metadata: JSON.stringify({
+        role: req.user?.role || 'GUEST_LISTENER',
+        groupId: group.id,
+        canSpeak: canPublish
+      })
+    });
+    token.addGrant({
+      room: roomName,
+      roomJoin: true,
+      canPublish,
+      canSubscribe: true,
+      canPublishData: canPublish
+    });
+
+    res.json({
+      url: config.url,
+      token: await token.toJwt(),
+      roomName,
+      mode: group.mode,
+      canPublish,
+      moderation: moderationSummary(moderation),
+      group: serializeLiveGroup(group)
+    });
   })
 );
 

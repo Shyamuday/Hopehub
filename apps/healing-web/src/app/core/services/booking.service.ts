@@ -150,8 +150,11 @@ export type HopeHubLiveGroup = {
   title: string;
   slug: string;
   description?: string | null;
+  callTitle?: string | null;
+  callAgenda?: string | null;
   status: 'LIVE' | 'SCHEDULED' | string;
   mode: 'CHAT' | 'VOICE' | 'VIDEO' | string;
+  slowModeSeconds?: number;
   hostUserId?: string | null;
   isPublic: boolean;
   startsAt?: string | null;
@@ -168,7 +171,18 @@ export type HopeHubLiveGroupMessage = {
   senderName: string;
   senderRole?: string | null;
   body: string;
+  isDeleted?: boolean;
+  deletedAt?: string | null;
+  deletedByUserId?: string | null;
   createdAt: string;
+};
+
+export type HopeHubLiveGroupModeration = {
+  isMuted: boolean;
+  mutedUntil?: string | null;
+  isBanned: boolean;
+  removedAt?: string | null;
+  reason?: string | null;
 };
 
 export type HopeHubOfferingAccess = {
@@ -420,6 +434,8 @@ export class BookingService {
     title: string;
     slug?: string;
     description?: string;
+    callTitle?: string;
+    callAgenda?: string;
     mode?: 'CHAT' | 'VOICE' | 'VIDEO';
     status?: 'LIVE' | 'SCHEDULED';
   }): Observable<{ group: HopeHubLiveGroup }> {
@@ -429,14 +445,90 @@ export class BookingService {
     );
   }
 
+  updateLiveGroupDetails(
+    groupId: string,
+    payload: {
+      title?: string;
+      description?: string;
+      callTitle?: string;
+      callAgenda?: string;
+      slowModeSeconds?: number;
+    },
+  ): Observable<{ group: HopeHubLiveGroup }> {
+    return this.http.patch<{ group: HopeHubLiveGroup }>(
+      `${this.apiUrl}/hope-hub/live-groups/${encodeURIComponent(groupId)}/details`,
+      payload,
+    );
+  }
+
+  updateLiveGroupMode(
+    groupId: string,
+    mode: 'CHAT' | 'VOICE' | 'VIDEO',
+  ): Observable<{ group: HopeHubLiveGroup }> {
+    return this.http.patch<{ group: HopeHubLiveGroup }>(
+      `${this.apiUrl}/hope-hub/live-groups/${encodeURIComponent(groupId)}/mode`,
+      { mode },
+    );
+  }
+
   liveGroup(groupId: string): Observable<{
     group: HopeHubLiveGroup;
     messages: HopeHubLiveGroupMessage[];
+    requiresLoginToSpeak?: boolean;
+    moderation?: HopeHubLiveGroupModeration;
   }> {
     return this.http.get<{
       group: HopeHubLiveGroup;
       messages: HopeHubLiveGroupMessage[];
+      requiresLoginToSpeak?: boolean;
+      moderation?: HopeHubLiveGroupModeration;
     }>(`${this.apiUrl}/hope-hub/live-groups/${encodeURIComponent(groupId)}`);
+  }
+
+  liveGroupCallToken(groupId: string): Observable<{
+    url: string;
+    token: string;
+    roomName: string;
+    mode: 'VOICE' | 'VIDEO' | string;
+    canPublish: boolean;
+    moderation?: HopeHubLiveGroupModeration;
+    group: HopeHubLiveGroup;
+  }> {
+    return this.http.post<{
+      url: string;
+      token: string;
+      roomName: string;
+      mode: 'VOICE' | 'VIDEO' | string;
+      canPublish: boolean;
+      moderation?: HopeHubLiveGroupModeration;
+      group: HopeHubLiveGroup;
+    }>(`${this.apiUrl}/hope-hub/live-groups/${encodeURIComponent(groupId)}/call-token`, {});
+  }
+
+  moderateLiveGroupMember(
+    groupId: string,
+    payload: {
+      userId: string;
+      displayName?: string;
+      role?: string;
+      action: 'MUTE' | 'UNMUTE' | 'BAN' | 'UNBAN' | 'REMOVE';
+      mutedMinutes?: number;
+      reason?: string;
+    },
+  ): Observable<{ moderation: HopeHubLiveGroupModeration }> {
+    return this.http.post<{ moderation: HopeHubLiveGroupModeration }>(
+      `${this.apiUrl}/hope-hub/live-groups/${encodeURIComponent(groupId)}/moderation`,
+      payload,
+    );
+  }
+
+  removeLiveGroupMessage(
+    groupId: string,
+    messageId: string,
+  ): Observable<{ message: HopeHubLiveGroupMessage }> {
+    return this.http.delete<{ message: HopeHubLiveGroupMessage }>(
+      `${this.apiUrl}/hope-hub/live-groups/${encodeURIComponent(groupId)}/messages/${encodeURIComponent(messageId)}`,
+    );
   }
 
   sendLiveGroupMessage(

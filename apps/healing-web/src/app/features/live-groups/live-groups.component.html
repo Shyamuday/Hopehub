@@ -14,12 +14,171 @@
         <div class="group-status">
           <span>{{ room.status }}</span>
           <strong>{{ room.mode }}</strong>
+          <button type="button" class="btn-secondary" (click)="shareRoom()">Share link</button>
+          @if (canHostGroups()) {
+            <button type="button" class="btn-secondary" (click)="openRoomSettings()">Room settings</button>
+          }
         </div>
       </header>
+
+      @if (shareMessage()) {
+        <p class="group-call-message">{{ shareMessage() }}</p>
+      }
+
+      @if (roomSettingsOpen()) {
+        <form class="room-settings-card" (submit)="$event.preventDefault(); saveRoomSettings()">
+          <div>
+            <p class="hope-eyebrow">Host controls</p>
+            <h2>Room details</h2>
+            <p>Set the room title, call title, agenda, and slow mode for a calmer group.</p>
+          </div>
+          <div class="room-settings-grid">
+            <input
+              name="settingsTitle"
+              [ngModel]="settingsTitle()"
+              (ngModelChange)="settingsTitle.set($event)"
+              placeholder="Room title"
+              required
+            />
+            <input
+              name="settingsCallTitle"
+              [ngModel]="settingsCallTitle()"
+              (ngModelChange)="settingsCallTitle.set($event)"
+              placeholder="Call title"
+            />
+            <textarea
+              name="settingsDescription"
+              [ngModel]="settingsDescription()"
+              (ngModelChange)="settingsDescription.set($event)"
+              rows="2"
+              placeholder="Room description"
+            ></textarea>
+            <textarea
+              name="settingsCallAgenda"
+              [ngModel]="settingsCallAgenda()"
+              (ngModelChange)="settingsCallAgenda.set($event)"
+              rows="2"
+              placeholder="Call agenda / topic"
+            ></textarea>
+            <label>
+              Slow mode seconds
+              <input
+                type="number"
+                name="settingsSlowModeSeconds"
+                [ngModel]="settingsSlowModeSeconds()"
+                (ngModelChange)="settingsSlowModeSeconds.set(+$event || 0)"
+                min="0"
+                max="300"
+              />
+            </label>
+          </div>
+          <div class="group-call-actions">
+            <button type="submit" class="btn-primary" [disabled]="savingRoomSettings()">
+              {{ savingRoomSettings() ? 'Saving...' : 'Save settings' }}
+            </button>
+            <button type="button" class="btn-secondary" (click)="roomSettingsOpen.set(false)">Cancel</button>
+          </div>
+        </form>
+      }
+
+      <section class="group-call-panel" aria-label="Group voice and video call">
+        <div>
+          <p class="hope-eyebrow">Group call</p>
+          <h2>
+            @if (room.mode === 'VIDEO') {
+              {{ callTitle() }}
+            } @else if (room.mode === 'VOICE') {
+              {{ callTitle() }}
+            } @else {
+              Start live voice or video
+            }
+          </h2>
+          <p>
+            @if (room.mode === 'CHAT') {
+              Providers and admins can open a group voice or video room for everyone here.
+            } @else if (!currentUser()) {
+              You can listen live as a guest. Sign up free when you want to speak or chat.
+            } @else {
+              Join with your mic{{ room.mode === 'VIDEO' ? ' and camera' : '' }}. You can still use chat while the call is live.
+            }
+          </p>
+          @if (room.callAgenda) {
+            <p class="group-call-agenda">{{ room.callAgenda }}</p>
+          }
+        </div>
+
+        <div class="group-call-actions">
+          @if (isCallRoom()) {
+            <button
+              type="button"
+              class="btn-primary"
+              [disabled]="joiningCall() || callConnected()"
+              (click)="joinGroupCall()"
+            >
+              {{ callButtonLabel() }}
+            </button>
+            @if (callConnected()) {
+              <button type="button" class="btn-secondary" (click)="leaveCall()">Leave call</button>
+            }
+            @if (!currentUser() && callConnected()) {
+              <button type="button" class="btn-secondary" (click)="tryToSpeak()">
+                Sign up free to speak
+              </button>
+            }
+            @if (currentUser() && callConnected() && !speaking()) {
+              <button type="button" class="btn-secondary" (click)="tryToSpeak()">
+                Tap to speak
+              </button>
+            }
+          }
+
+          @if (canHostGroups()) {
+            <button type="button" class="btn-secondary" (click)="startGroupCall('VOICE')">
+              Start voice
+            </button>
+            <button type="button" class="btn-secondary" (click)="startGroupCall('VIDEO')">
+              Start video
+            </button>
+          }
+        </div>
+
+        @if (callStatus() || callError()) {
+          <p class="group-call-message" [class.group-call-message--error]="!!callError()">
+            {{ callError() || callStatus() }}
+          </p>
+        }
+
+        @if (callConnected() || joiningCall()) {
+          <div class="group-media-grid">
+            <div class="group-media-local">
+              <span>You</span>
+              <div #localMedia class="group-media-slot"></div>
+            </div>
+            <div class="group-media-remote">
+              <div class="group-media-heading">
+                <strong>{{ callParticipantCount() }} in call</strong>
+                <span>Remote participants</span>
+              </div>
+              <div #remoteMedia class="group-media-slot group-media-slot--remote"></div>
+            </div>
+          </div>
+        }
+      </section>
 
       <div class="group-layout">
         <section class="chat-panel" aria-label="Group messages">
           <div class="chat-list">
+            @if (!currentUser()) {
+              <div class="anonymous-preview anonymous-preview--compact">
+                <strong>You can read this group as a guest</strong>
+                <span>
+                  To protect the room from spam, sign up free when you want to send a message or speak.
+                </span>
+                <button type="button" class="btn-primary" (click)="signUpForFreeChat()">
+                  Sign up free to speak
+                </button>
+              </div>
+            }
             @if (messages().length) {
               @for (message of messages(); track message.id) {
                 <article
@@ -32,6 +191,14 @@
                       <span>{{ roleLabel(message) }}</span>
                     </div>
                     <p>{{ message.body }}</p>
+                    @if (canModerateMessage(message)) {
+                      <div class="message-actions">
+                        <button type="button" (click)="moderateMessageSender(message, 'MUTE')">Mute</button>
+                        <button type="button" (click)="moderateMessageSender(message, 'REMOVE')">Remove user</button>
+                        <button type="button" (click)="moderateMessageSender(message, 'BAN')">Ban</button>
+                        <button type="button" (click)="removeMessage(message)">Remove msg</button>
+                      </div>
+                    }
                   </div>
                 </article>
               }
@@ -45,13 +212,15 @@
 
           <form class="composer" (submit)="$event.preventDefault(); sendMessage()">
             @if (!currentUser()) {
-              <button type="button" class="btn-secondary" (click)="signIn()">Sign in to join</button>
+              <button type="button" class="btn-secondary" (click)="signUpForFreeChat()">
+                Sign up free
+              </button>
             }
             <textarea
               name="groupMessage"
               [ngModel]="draft()"
               (ngModelChange)="draft.set($event)"
-              placeholder="Write a supportive group message..."
+              [placeholder]="currentUser() ? 'Write a supportive group message...' : 'Sign up free to speak in this group...'"
               rows="2"
               [disabled]="!currentUser() || sending()"
               (keydown.control.enter)="sendMessage()"

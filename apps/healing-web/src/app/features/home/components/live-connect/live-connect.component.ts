@@ -43,6 +43,7 @@ export class LiveConnectComponent implements OnInit {
   readonly groupMessage = signal('');
   readonly newGroupTitle = signal('');
   readonly newGroupDescription = signal('');
+  readonly newGroupMode = signal<'CHAT' | 'VOICE' | 'VIDEO'>('CHAT');
   readonly startingProviderId = signal('');
   readonly view = signal<'providers' | 'groups'>('providers');
   readonly mode = signal<LiveConnectMode>('chat');
@@ -143,11 +144,6 @@ export class LiveConnectComponent implements OnInit {
   }
 
   joinGroup(group: HopeHubLiveGroup): void {
-    if (!this.currentUser()) {
-      this.notificationService.info('Sign in to join a live group room.');
-      this.authModalService.openLogin();
-      return;
-    }
     void this.router.navigate(['/live-groups', group.slug || group.id]);
   }
 
@@ -166,7 +162,7 @@ export class LiveConnectComponent implements OnInit {
       .createLiveGroup({
         title,
         description,
-        mode: 'CHAT',
+        mode: this.newGroupMode(),
         status: 'LIVE',
       })
       .subscribe({
@@ -177,6 +173,7 @@ export class LiveConnectComponent implements OnInit {
           ]);
           this.newGroupTitle.set('');
           this.newGroupDescription.set('');
+          this.newGroupMode.set('CHAT');
           this.creatingGroup.set(false);
           this.groupMessage.set('Group room is live. Opening it now.');
           this.notificationService.success('Group room created.');

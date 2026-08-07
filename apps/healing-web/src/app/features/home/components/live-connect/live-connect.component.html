@@ -165,6 +165,16 @@
                 rows="2"
                 maxlength="1200"
               ></textarea>
+              <select
+                name="newGroupMode"
+                [ngModel]="newGroupMode()"
+                (ngModelChange)="newGroupMode.set($event)"
+                aria-label="Group room mode"
+              >
+                <option value="CHAT">Chat room</option>
+                <option value="VOICE">Voice room</option>
+                <option value="VIDEO">Video room</option>
+              </select>
               <button type="submit" class="btn-primary justify-center" [disabled]="creatingGroup() || !newGroupTitle().trim()">
                 {{ creatingGroup() ? 'Opening...' : 'Open group room' }}
               </button>

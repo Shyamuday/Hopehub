@@ -147,8 +147,11 @@ model HopeHubLiveGroup {
   title           String
   slug            String   @unique
   description     String?  @db.Text
+  callTitle       String?
+  callAgenda      String?  @db.Text
   status          String   @default("LIVE")
   mode            String   @default("CHAT")
+  slowModeSeconds Int      @default(0)
   hostUserId      String?
   createdByUserId String?
   isPublic        Boolean  @default(true)
@@ -159,6 +162,7 @@ model HopeHubLiveGroup {
   updatedAt       DateTime @updatedAt
 
   messages        HopeHubLiveGroupMessage[]
+  moderation      HopeHubLiveGroupMemberModeration[]
 
   @@index([status, isActive])
   @@index([hostUserId])
@@ -172,12 +176,39 @@ model HopeHubLiveGroupMessage {
   senderName     String
   senderRole     String?
   body           String   @db.Text
+  isDeleted      Boolean  @default(false)
+  deletedAt      DateTime?
+  deletedByUserId String?
   createdAt      DateTime @default(now())
 
   group          HopeHubLiveGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
 
   @@index([groupId, createdAt])
   @@index([senderId, createdAt])
+}
+
+model HopeHubLiveGroupMemberModeration {
+  id                String   @id @default(cuid())
+  groupId           String
+  userId            String
+  displayName       String?
+  role              String?
+  isMuted           Boolean  @default(false)
+  mutedUntil        DateTime?
+  isBanned          Boolean  @default(false)
+  bannedAt          DateTime?
+  removedAt         DateTime?
+  reason            String?  @db.Text
+  moderatedByUserId String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  group             HopeHubLiveGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@unique([groupId, userId])
+  @@index([groupId, isMuted])
+  @@index([groupId, isBanned])
+  @@index([userId])
 }
 
 enum HopeHubOfferingType {
