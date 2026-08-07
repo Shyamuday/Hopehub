@@ -14,6 +14,7 @@
 }
 
 .quick-access__main {
+  position: relative;
   display: flex;
   width: 3.65rem;
   height: 3.65rem;
@@ -73,6 +74,24 @@
 .quick-access__chat-icon {
   height: 1.65rem;
   width: 1.65rem;
+}
+
+.quick-access__badge {
+  align-items: center;
+  background: #ef4444;
+  border: 2px solid #ffffff;
+  border-radius: 999px;
+  color: #ffffff;
+  display: inline-flex;
+  font-size: 0.7rem;
+  font-weight: 900;
+  height: 1.35rem;
+  justify-content: center;
+  min-width: 1.35rem;
+  padding: 0 0.25rem;
+  position: absolute;
+  right: -0.2rem;
+  top: -0.2rem;
 }
 
 .quick-access__label {

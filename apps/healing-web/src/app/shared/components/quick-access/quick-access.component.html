@@ -18,6 +18,9 @@
         stroke-linecap="round"
       />
     </svg>
+    @if (unreadCount() > 0) {
+      <span class="quick-access__badge">{{ unreadCount() > 9 ? '9+' : unreadCount() }}</span>
+    }
   </button>
 
   <!-- Telegram floating action button -->

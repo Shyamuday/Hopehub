@@ -102,6 +102,7 @@ export class GroupChatTeaserComponent implements OnInit {
   private socket: Socket | null = null;
   private subscribedGroupId = '';
   private readonly dismissedStorageKey = 'hopehub-group-chat-teaser-dismissed';
+  private readonly pendingDraftStorageKey = 'hopehub-group-chat-teaser-pending-draft';
 
   private readonly handleIncomingMessage = (raw: unknown) => {
     const message = raw as HopeHubLiveGroupMessage;
@@ -113,6 +114,9 @@ export class GroupChatTeaserComponent implements OnInit {
       return [...messages, this.toTeaserMessage(message)].slice(-4);
     });
     this.visibleMessageCount.set(this.displayedMessages().length);
+    if (!this.isOpen() || this.isMinimized()) {
+      this.groupChatTeaser.incrementUnread();
+    }
   };
 
   ngOnInit(): void {
@@ -129,6 +133,7 @@ export class GroupChatTeaserComponent implements OnInit {
         const isAuthenticated = state.isAuthenticated || Boolean(this.authService.getToken());
         this.isAuthenticated.set(isAuthenticated);
         if (isAuthenticated) {
+          this.restorePendingDraft();
           this.bindRealtimeForActiveGroup();
           this.openTeaserAfterAuth();
         }
@@ -143,9 +148,14 @@ export class GroupChatTeaserComponent implements OnInit {
         }
       });
 
-    this.groupChatTeaser.openRequested$
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(() => this.openFromFloatingButton());
+    this.groupChatTeaser.openRequested$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
+      this.groupChatTeaser.consumePendingOpen();
+      this.openFromFloatingButton();
+    });
+
+    if (this.groupChatTeaser.consumePendingOpen()) {
+      this.openFromFloatingButton();
+    }
 
     this.destroyRef.onDestroy(() => {
       if (this.openTimer) window.clearTimeout(this.openTimer);
@@ -170,6 +180,7 @@ export class GroupChatTeaserComponent implements OnInit {
   restore(): void {
     this.isMinimized.set(false);
     this.isOpen.set(true);
+    this.groupChatTeaser.clearUnread();
     this.startMessageReveal();
   }
 
@@ -188,6 +199,7 @@ export class GroupChatTeaserComponent implements OnInit {
 
   sendPreviewReply(): void {
     if (!this.isAuthenticated()) {
+      this.savePendingDraft();
       this.draft.set('');
       this.askToJoin();
       return;
@@ -212,6 +224,7 @@ export class GroupChatTeaserComponent implements OnInit {
           ]);
           this.visibleMessageCount.set(this.displayedMessages().length);
           this.draft.set('');
+          this.clearPendingDraft();
           this.sending.set(false);
         },
         error: () => {
@@ -231,6 +244,7 @@ export class GroupChatTeaserComponent implements OnInit {
       if (!this.authModalService.getCurrentModal() && !this.wasDismissed()) {
         this.isMinimized.set(false);
         this.isOpen.set(true);
+        this.groupChatTeaser.clearUnread();
         this.startMessageReveal();
       }
     }, 500);
@@ -240,6 +254,7 @@ export class GroupChatTeaserComponent implements OnInit {
     this.clearDismissed();
     this.isMinimized.set(false);
     this.isOpen.set(true);
+    this.groupChatTeaser.clearUnread();
     this.startMessageReveal();
   }
 
@@ -278,6 +293,34 @@ export class GroupChatTeaserComponent implements OnInit {
   private clearDismissed(): void {
     try {
       window.sessionStorage.removeItem(this.dismissedStorageKey);
+    } catch {
+      // Ignore storage failures.
+    }
+  }
+
+  private savePendingDraft(): void {
+    const value = this.draft().trim();
+    if (!value) return;
+    try {
+      window.sessionStorage.setItem(this.pendingDraftStorageKey, value);
+    } catch {
+      // Ignore storage failures.
+    }
+  }
+
+  private restorePendingDraft(): void {
+    if (this.draft().trim()) return;
+    try {
+      const value = window.sessionStorage.getItem(this.pendingDraftStorageKey);
+      if (value) this.draft.set(value);
+    } catch {
+      // Ignore storage failures.
+    }
+  }
+
+  private clearPendingDraft(): void {
+    try {
+      window.sessionStorage.removeItem(this.pendingDraftStorageKey);
     } catch {
       // Ignore storage failures.
     }
