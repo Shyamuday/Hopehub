@@ -1,0 +1,18 @@
+{
+  "name": "hopehub-confession-bot",
+  "version": "1.0.0",
+  "description": "HopeHub Anonymous Confession Telegram Bot",
+  "main": "bot.js",
+  "type": "module",
+  "scripts": {
+    "start": "node bot.js",
+    "dev": "node --watch bot.js"
+  },
+  "keywords": [],
+  "author": "HopeHub",
+  "license": "MIT",
+  "dependencies": {
+    "dotenv": "16.4.5",
+    "node-telegram-bot-api": "1.2.0"
+  }
+}
