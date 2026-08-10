@@ -52,6 +52,7 @@ export type DoctorProfileSummary = {
   focusAreas?: string[];
   mentalHealthProfile?: {
     careTeamType?: string;
+    careTeamTypes?: string[];
     qualifications: string[];
     qualifiedFrom?: string | null;
     licenseNumber?: string | null;
@@ -125,7 +126,7 @@ export const CARE_TEAM_TYPE_LABELS: Record<string, string> = {
 
 export type ProviderCapabilityInput = {
   doctorType?: HomeopathicDoctorType | null;
-  mentalHealthProfile?: { careTeamType?: string | null } | null;
+  mentalHealthProfile?: { careTeamType?: string | null; careTeamTypes?: string[] | null } | null;
 };
 
 export type DoctorCapabilities = {
@@ -289,10 +290,16 @@ export function capabilitiesForProvider(
   const base = capabilitiesForDoctorType(type);
   if (type !== 'PSYCHOLOGIST') return base;
 
-  const careTeamType = input?.mentalHealthProfile?.careTeamType;
-  const clinical = !careTeamType || isClinicalMentalHealthCareTeamType(careTeamType);
-  const listener = isListenerCareTeamType(careTeamType);
-  const coachGuide = isCoachGuideCareTeamType(careTeamType);
+  const careTeamTypes = input?.mentalHealthProfile?.careTeamTypes?.length
+    ? input.mentalHealthProfile.careTeamTypes
+    : input?.mentalHealthProfile?.careTeamType
+      ? [input.mentalHealthProfile.careTeamType]
+      : [];
+  const clinical =
+    careTeamTypes.length === 0 ||
+    careTeamTypes.some((type) => isClinicalMentalHealthCareTeamType(type));
+  const listener = careTeamTypes.some((type) => isListenerCareTeamType(type));
+  const coachGuide = careTeamTypes.some((type) => isCoachGuideCareTeamType(type));
 
   return {
     ...base,

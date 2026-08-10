@@ -304,7 +304,9 @@ export class ProfilePage {
       const profileSpecialty = profile.doctorProfile?.specialty || '';
       const primaryCareTeamType =
         (mental?.careTeamType as ProfileCareTeamType | undefined) || 'MENTAL_WELLNESS_PROFESSIONAL';
-      const careTeamTypes = this.inferProfileCareTeamTypes(primaryCareTeamType, profileSpecialty);
+      const careTeamTypes = mental?.careTeamTypes?.length
+        ? (mental.careTeamTypes as SelectableProfileCareTeamType[])
+        : this.inferProfileCareTeamTypes(primaryCareTeamType, profileSpecialty);
 
       this.profileModel.set({
         name: profile.name || '',
@@ -388,6 +390,7 @@ export class ProfilePage {
             ? {
                 qualifications: this.lines(form.qualificationsText),
                 careTeamType: this.primaryProfileCareTeamType(form.careTeamTypes) as any,
+                careTeamTypes: this.structuredProfileCareTeamTypes(form.careTeamTypes) as any,
                 qualifiedFrom: form.qualifiedFrom || null,
                 licenseNumber: form.licenseNumber || null,
                 licenseCouncil: form.licenseCouncil || null,
@@ -437,6 +440,13 @@ export class ProfilePage {
       (selected.find((value) => value !== 'OTHER') as ProfileCareTeamType | undefined) ||
       'MENTAL_WELLNESS_PROFESSIONAL'
     );
+  }
+
+  private structuredProfileCareTeamTypes(
+    selected: SelectableProfileCareTeamType[],
+  ): ProfileCareTeamType[] {
+    const structured = selected.filter((value): value is ProfileCareTeamType => value !== 'OTHER');
+    return structured.length ? structured : ['MENTAL_WELLNESS_PROFESSIONAL'];
   }
 
   private inferProfileCareTeamTypes(

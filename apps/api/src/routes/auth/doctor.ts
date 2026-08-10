@@ -34,6 +34,7 @@ function inferDoctorTypeFromSpecialty(specialty: string) {
 const mentalHealthProviderProfileSchema = z
   .object({
     careTeamType: z.nativeEnum(CareTeamMemberType).optional(),
+    careTeamTypes: z.array(z.nativeEnum(CareTeamMemberType)).max(12).optional(),
     qualifications: z.array(z.string().trim().min(1).max(160)).max(20).optional(),
     qualifiedFrom: z.string().trim().max(240).optional().nullable().or(z.literal('')),
     licenseNumber: z.string().trim().max(120).optional().nullable().or(z.literal('')),
@@ -103,6 +104,17 @@ function isListenerCareTeamType(type: CareTeamMemberType | undefined) {
   );
 }
 
+function normalizeCareTeamTypes(
+  primary: CareTeamMemberType | undefined,
+  selected: CareTeamMemberType[] | undefined
+): [CareTeamMemberType, ...CareTeamMemberType[]] {
+  const fallback = primary ?? CareTeamMemberType.MENTAL_WELLNESS_PROFESSIONAL;
+  return Array.from(new Set([fallback, ...(selected ?? [])])) as [
+    CareTeamMemberType,
+    ...CareTeamMemberType[]
+  ];
+}
+
 function listenerPublicProfileReady(input: {
   name: string;
   mobile?: string | null;
@@ -150,12 +162,15 @@ export function registerAuthDoctorRoutes(router: Router) {
           password: z.string().min(8),
           specialty: z.string().min(2),
           registrationNo: z.string().optional(),
-          careTeamType: z.nativeEnum(CareTeamMemberType).optional()
+          careTeamType: z.nativeEnum(CareTeamMemberType).optional(),
+          careTeamTypes: z.array(z.nativeEnum(CareTeamMemberType)).max(12).optional()
         })
         .parse(req.body);
 
       const passwordHash = await bcrypt.hash(body.password, 10);
-      const isHopeHubProvider = Boolean(body.careTeamType);
+      const careTeamTypes = normalizeCareTeamTypes(body.careTeamType, body.careTeamTypes);
+      const isHopeHubProvider = Boolean(body.careTeamType || body.careTeamTypes?.length);
+      const primaryCareTeamType = careTeamTypes[0];
       const inferredDoctorType = isHopeHubProvider
         ? HomeopathicDoctorType.PSYCHOLOGIST
         : inferDoctorTypeFromSpecialty(body.specialty);
@@ -174,11 +189,12 @@ export function registerAuthDoctorRoutes(router: Router) {
                 specialty: body.specialty,
                 registrationNo: body.registrationNo
               }),
-              ...(body.careTeamType
+              ...(isHopeHubProvider
                 ? {
                     mentalHealthProfile: {
                       create: {
-                        careTeamType: body.careTeamType,
+                        careTeamType: primaryCareTeamType,
+                        careTeamTypes,
                         acceptingNewUsers: true,
                         autoMatchEnabled: true
                       }
@@ -304,6 +320,10 @@ export function registerAuthDoctorRoutes(router: Router) {
               careTeamType:
                 body.mentalHealthProfile.careTeamType ??
                 CareTeamMemberType.MENTAL_WELLNESS_PROFESSIONAL,
+              careTeamTypes: normalizeCareTeamTypes(
+                body.mentalHealthProfile.careTeamType,
+                body.mentalHealthProfile.careTeamTypes
+              ),
               qualifiedFrom: cleanNullableText(body.mentalHealthProfile.qualifiedFrom),
               licenseNumber: cleanNullableText(body.mentalHealthProfile.licenseNumber),
               licenseCouncil: cleanNullableText(body.mentalHealthProfile.licenseCouncil),
@@ -362,7 +382,7 @@ export function registerAuthDoctorRoutes(router: Router) {
           : [];
       const isListenerProfile =
         profilePayload.doctorType === HomeopathicDoctorType.PSYCHOLOGIST &&
-        isListenerCareTeamType(mentalHealthProfile?.careTeamType);
+        mentalHealthProfile?.careTeamTypes.some((type) => isListenerCareTeamType(type));
       const listenerReadyForPublic =
         isListenerProfile && body.mentalHealthProfile
           ? listenerPublicProfileReady({

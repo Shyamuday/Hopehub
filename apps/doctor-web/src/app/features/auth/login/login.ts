@@ -363,6 +363,7 @@ export class Login {
     if (!this.canSignup()) return;
     const { email, password } = this.signInModel();
     const { name, mobile, careTeamTypes, registrationNo } = this.enrollModel();
+    const structuredCareTeamTypes = this.structuredCareTeamTypes(careTeamTypes);
     this.error.set('');
     this.message.set('');
     this.submitting.set(true);
@@ -377,6 +378,7 @@ export class Login {
           ? registrationNo || undefined
           : undefined,
         careTeamType: this.primaryCareTeamTypeFor(careTeamTypes, this.enrollModel().hopeHubGroup),
+        careTeamTypes: structuredCareTeamTypes,
       });
 
       if (!result.ok) {
@@ -404,6 +406,15 @@ export class Login {
       (selected.find((value) => value !== 'OTHER') as HopeHubCareTeamType | undefined) ||
       this.defaultCareTeamTypeForGroup(group)
     );
+  }
+
+  private structuredCareTeamTypes(
+    selected: SelectableHopeHubCareTeamType[],
+  ): HopeHubCareTeamType[] {
+    const structured = selected.filter((value): value is HopeHubCareTeamType => value !== 'OTHER');
+    return structured.length
+      ? structured
+      : [this.defaultCareTeamTypeForGroup(this.enrollModel().hopeHubGroup)];
   }
 
   private specialtyForEnrollment(): string {

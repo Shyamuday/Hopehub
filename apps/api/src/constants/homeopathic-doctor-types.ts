@@ -187,16 +187,25 @@ export function isCoachGuideCareTeamType(type?: CareTeamMemberType | null) {
 
 export function capabilitiesForDoctorProfile(input?: {
   doctorType?: HomeopathicDoctorType | null;
-  mentalHealthProfile?: { careTeamType?: CareTeamMemberType | null } | null;
+  mentalHealthProfile?: {
+    careTeamType?: CareTeamMemberType | null;
+    careTeamTypes?: CareTeamMemberType[] | null;
+  } | null;
 }) {
   const doctorType = input?.doctorType ?? HomeopathicDoctorType.JUNIOR_DOCTOR;
   const base = DOCTOR_TYPE_CAPABILITIES[doctorType];
   if (doctorType !== HomeopathicDoctorType.PSYCHOLOGIST) return base;
 
-  const careTeamType = input?.mentalHealthProfile?.careTeamType ?? null;
-  const clinical = !careTeamType || isClinicalMentalHealthCareTeamType(careTeamType);
-  const listener = isListenerCareTeamType(careTeamType);
-  const coachGuide = isCoachGuideCareTeamType(careTeamType);
+  const careTeamTypes = input?.mentalHealthProfile?.careTeamTypes?.length
+    ? input.mentalHealthProfile.careTeamTypes
+    : input?.mentalHealthProfile?.careTeamType
+      ? [input.mentalHealthProfile.careTeamType]
+      : [];
+  const clinical =
+    careTeamTypes.length === 0 ||
+    careTeamTypes.some((type) => isClinicalMentalHealthCareTeamType(type));
+  const listener = careTeamTypes.some((type) => isListenerCareTeamType(type));
+  const coachGuide = careTeamTypes.some((type) => isCoachGuideCareTeamType(type));
 
   return {
     ...base,
@@ -230,6 +239,7 @@ export const doctorProfileSelect = {
       qualifications: true,
       qualifiedFrom: true,
       careTeamType: true,
+      careTeamTypes: true,
       licenseNumber: true,
       licenseCouncil: true,
       languages: true,

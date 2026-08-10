@@ -109,7 +109,7 @@
         [placeholder]="specialtyPlaceholder(createModel().doctorType)"
       />
     </div>
-    @if (!isPsychologistType(createModel().doctorType) || isClinicalHopeHubType(createModel().careTeamType)) {
+    @if (!isPsychologistType(createModel().doctorType) || hasClinicalHopeHubType(createModel().careTeamTypes)) {
       <div class="field">
         <label class="field-label" for="doc-create-reg">
           {{ isPsychologistType(createModel().doctorType) ? 'License / registration no.' : 'Registration No' }}
@@ -139,12 +139,19 @@
     </div>
     @if (isPsychologistType(createModel().doctorType)) {
       <div class="field">
-        <label class="field-label" for="doc-create-care-team-type">Hope Hub subtype</label>
-        <select id="doc-create-care-team-type" [formField]="createForm.careTeamType">
+        <label class="field-label">Hope Hub subtype <span class="field-hint">(select all that apply)</span></label>
+        <div class="multi-check-grid">
           @for (option of careTeamTypeOptions; track option.value) {
-            <option [value]="option.value">{{ option.label }}</option>
+            <label class="multi-check-option">
+              <input
+                type="checkbox"
+                [checked]="isCreateCareTeamTypeSelected(option.value)"
+                (change)="toggleCreateCareTeamType(option.value, $any($event.target).checked)"
+              />
+              <span>{{ option.label }}</span>
+            </label>
           }
-        </select>
+        </div>
       </div>
       <label class="website-toggle">
         <input type="checkbox" [formField]="createForm.autoMatchEnabled" />
@@ -194,7 +201,7 @@
           id="doc-create-modalities"
           rows="3"
           [formField]="createForm.modalitiesText"
-          [placeholder]="isCoachHopeHubType(createModel().careTeamType) ? 'Goal setting&#10;Habit coaching' : isListenerHopeHubType(createModel().careTeamType) ? 'Non-judgemental listening&#10;Grounding support' : 'CBT&#10;Supportive counselling'"
+          [placeholder]="hasCoachHopeHubType(createModel().careTeamTypes) ? 'Goal setting&#10;Habit coaching' : hasListenerHopeHubType(createModel().careTeamTypes) ? 'Non-judgemental listening&#10;Grounding support' : 'CBT&#10;Supportive counselling'"
         ></textarea>
       </div>
       <div class="field">
@@ -502,7 +509,7 @@
             [placeholder]="specialtyPlaceholder(editModel().doctorType)"
           />
         </div>
-        @if (!isPsychologistType(editModel().doctorType) || isClinicalHopeHubType(editModel().careTeamType)) {
+        @if (!isPsychologistType(editModel().doctorType) || hasClinicalHopeHubType(editModel().careTeamTypes)) {
           <div class="field">
             <label class="field-label" for="doc-edit-reg">
               {{ isPsychologistType(editModel().doctorType) ? 'License / registration no.' : 'Registration No' }}
@@ -579,12 +586,19 @@
         @if (isPsychologistType(editModel().doctorType)) {
           <p class="form-section-label">Care team public profile</p>
           <div class="field">
-            <label class="field-label" for="doc-edit-care-team-type">Hope Hub subtype</label>
-            <select id="doc-edit-care-team-type" [formField]="editForm.careTeamType">
+            <label class="field-label">Hope Hub subtype <span class="field-hint">(select all that apply)</span></label>
+            <div class="multi-check-grid">
               @for (option of careTeamTypeOptions; track option.value) {
-                <option [value]="option.value">{{ option.label }}</option>
+                <label class="multi-check-option">
+                  <input
+                    type="checkbox"
+                    [checked]="isEditCareTeamTypeSelected(option.value)"
+                    (change)="toggleEditCareTeamType(option.value, $any($event.target).checked)"
+                  />
+                  <span>{{ option.label }}</span>
+                </label>
               }
-            </select>
+            </div>
           </div>
           <div class="field">
             <label class="field-label" for="doc-edit-qualifications">Qualifications</label>
@@ -603,7 +617,7 @@
               placeholder="e.g. Delhi University / NLP Academy"
             />
           </div>
-          @if (isClinicalHopeHubType(editModel().careTeamType)) {
+          @if (hasClinicalHopeHubType(editModel().careTeamTypes)) {
             <div class="field">
               <label class="field-label" for="doc-edit-license-number">License number</label>
               <input
@@ -635,7 +649,7 @@
             <textarea
               id="doc-edit-modalities"
               rows="3"
-              [placeholder]="isCoachHopeHubType(editModel().careTeamType) ? 'Goal setting&#10;Habit coaching' : isListenerHopeHubType(editModel().careTeamType) ? 'Non-judgemental listening&#10;Grounding support' : 'CBT&#10;Supportive counselling'"
+              [placeholder]="hasCoachHopeHubType(editModel().careTeamTypes) ? 'Goal setting&#10;Habit coaching' : hasListenerHopeHubType(editModel().careTeamTypes) ? 'Non-judgemental listening&#10;Grounding support' : 'CBT&#10;Supportive counselling'"
               [formField]="editForm.modalitiesText"
             ></textarea>
           </div>
@@ -690,7 +704,7 @@
               [formField]="editForm.safetyEscalationNote"
             ></textarea>
           </div>
-          @if (isClinicalHopeHubType(editModel().careTeamType)) {
+          @if (hasClinicalHopeHubType(editModel().careTeamTypes)) {
             <label class="website-toggle">
               <input type="checkbox" [formField]="editForm.acceptsHighRiskCases" />
               Accept high-risk cases after team review

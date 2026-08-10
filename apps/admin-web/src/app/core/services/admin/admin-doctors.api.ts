@@ -107,6 +107,7 @@ export class AdminDoctorsApi extends AdminApiBase {
       focusAreas?: string[];
       mentalHealthProfile?: {
         careTeamType?: string;
+        careTeamTypes?: string[];
         qualifications?: string[];
         qualifiedFrom?: string | null;
         licenseNumber?: string | null;
@@ -170,6 +171,7 @@ export class AdminDoctorsApi extends AdminApiBase {
     specialtyFocus?: string | null;
     mentalHealthProfile?: {
       careTeamType?: string;
+      careTeamTypes?: string[];
       qualifications?: string[];
       qualifiedFrom?: string | null;
       licenseNumber?: string | null;

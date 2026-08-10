@@ -46,6 +46,7 @@ type Doctor = {
     focusAreas?: string[];
     mentalHealthProfile?: {
       careTeamType?: CareTeamMemberType;
+      careTeamTypes?: CareTeamMemberType[];
       qualifications?: string[];
       qualifiedFrom?: string | null;
       licenseNumber?: string | null;
@@ -157,6 +158,7 @@ function emptyCreateModel() {
     ageGroupsText: '',
     concernsHandledText: '',
     careTeamType: 'MENTAL_WELLNESS_PROFESSIONAL' as CareTeamMemberType,
+    careTeamTypes: ['MENTAL_WELLNESS_PROFESSIONAL'] as CareTeamMemberType[],
     autoMatchEnabled: true,
     acceptingNewUsers: true,
     maxSessionsPerDay: '' as number | '',
@@ -184,6 +186,7 @@ function emptyEditModel() {
     yearsOfExperience: '' as number | '',
     focusAreasText: '',
     careTeamType: 'MENTAL_WELLNESS_PROFESSIONAL' as CareTeamMemberType,
+    careTeamTypes: ['MENTAL_WELLNESS_PROFESSIONAL'] as CareTeamMemberType[],
     qualificationsText: '',
     qualifiedFrom: '',
     licenseNumber: '',
@@ -432,8 +435,9 @@ export class DoctorsPage {
     const editDepartment = this.isPsychologistType(edit.doctorType)
       ? psychologistProfileValue(edit.department)
       : edit.department.trim();
+    const editCareTeamTypes = this.normalizedCareTeamTypes(edit.careTeamType, edit.careTeamTypes);
     const editIsClinicalHopeHub =
-      this.isPsychologistType(edit.doctorType) && this.isClinicalHopeHubType(edit.careTeamType);
+      this.isPsychologistType(edit.doctorType) && this.hasClinicalHopeHubType(editCareTeamTypes);
     this.mutating.set(true);
     try {
       await this.api.updateDoctor(doctorId, {
@@ -463,7 +467,8 @@ export class DoctorsPage {
         mentalHealthProfile: this.isPsychologistType(edit.doctorType)
           ? {
               qualifications: this.lines(edit.qualificationsText),
-              careTeamType: edit.careTeamType,
+              careTeamType: editCareTeamTypes[0],
+              careTeamTypes: editCareTeamTypes,
               qualifiedFrom: edit.qualifiedFrom.trim() || null,
               licenseNumber: editIsClinicalHopeHub ? edit.licenseNumber.trim() || null : null,
               licenseCouncil: editIsClinicalHopeHub ? edit.licenseCouncil.trim() || null : null,
@@ -510,8 +515,13 @@ export class DoctorsPage {
     const createDepartment = this.isPsychologistType(create.doctorType)
       ? psychologistProfileValue(create.department)
       : create.department.trim();
+    const createCareTeamTypes = this.normalizedCareTeamTypes(
+      create.careTeamType,
+      create.careTeamTypes,
+    );
     const createIsClinicalHopeHub =
-      this.isPsychologistType(create.doctorType) && this.isClinicalHopeHubType(create.careTeamType);
+      this.isPsychologistType(create.doctorType) &&
+      this.hasClinicalHopeHubType(createCareTeamTypes);
     this.mutating.set(true);
     try {
       await this.api.createDoctor({
@@ -533,7 +543,8 @@ export class DoctorsPage {
         mentalHealthProfile: this.isPsychologistType(create.doctorType)
           ? {
               qualifications: this.lines(create.qualificationsText),
-              careTeamType: create.careTeamType,
+              careTeamType: createCareTeamTypes[0],
+              careTeamTypes: createCareTeamTypes,
               qualifiedFrom: create.qualifiedFrom.trim() || null,
               languages: this.lines(create.languagesText),
               modalities: this.lines(create.modalitiesText),
@@ -761,6 +772,10 @@ export class DoctorsPage {
       focusAreasText: (selected.doctorProfile?.focusAreas ?? []).join('\n'),
       careTeamType:
         selected.doctorProfile?.mentalHealthProfile?.careTeamType ?? 'MENTAL_WELLNESS_PROFESSIONAL',
+      careTeamTypes: this.normalizedCareTeamTypes(
+        selected.doctorProfile?.mentalHealthProfile?.careTeamType,
+        selected.doctorProfile?.mentalHealthProfile?.careTeamTypes,
+      ),
       qualificationsText: (selected.doctorProfile?.mentalHealthProfile?.qualifications ?? []).join(
         '\n',
       ),
@@ -1058,12 +1073,66 @@ export class DoctorsPage {
     return !type || CLINICAL_HOPE_HUB_TYPES.has(type);
   }
 
+  hasClinicalHopeHubType(types?: CareTeamMemberType[] | null) {
+    return !types?.length || types.some((type) => CLINICAL_HOPE_HUB_TYPES.has(type));
+  }
+
   isListenerHopeHubType(type?: CareTeamMemberType | null) {
     return Boolean(type && LISTENER_HOPE_HUB_TYPES.has(type));
   }
 
+  hasListenerHopeHubType(types?: CareTeamMemberType[] | null) {
+    return Boolean(types?.some((type) => LISTENER_HOPE_HUB_TYPES.has(type)));
+  }
+
   isCoachHopeHubType(type?: CareTeamMemberType | null) {
     return Boolean(type && COACH_HOPE_HUB_TYPES.has(type));
+  }
+
+  hasCoachHopeHubType(types?: CareTeamMemberType[] | null) {
+    return Boolean(types?.some((type) => COACH_HOPE_HUB_TYPES.has(type)));
+  }
+
+  normalizedCareTeamTypes(
+    primary?: CareTeamMemberType | null,
+    selected?: CareTeamMemberType[] | null,
+  ): CareTeamMemberType[] {
+    const fallback = primary || 'MENTAL_WELLNESS_PROFESSIONAL';
+    return Array.from(new Set([fallback, ...(selected ?? [])]));
+  }
+
+  isCreateCareTeamTypeSelected(type: CareTeamMemberType) {
+    return this.createModel().careTeamTypes.includes(type);
+  }
+
+  isEditCareTeamTypeSelected(type: CareTeamMemberType) {
+    return this.editModel().careTeamTypes.includes(type);
+  }
+
+  toggleCreateCareTeamType(type: CareTeamMemberType, checked: boolean) {
+    const current = this.createModel();
+    const next = checked
+      ? Array.from(new Set([...current.careTeamTypes, type]))
+      : current.careTeamTypes.filter((item) => item !== type);
+    const careTeamTypes = next.length ? next : ['MENTAL_WELLNESS_PROFESSIONAL'];
+    this.createModel.set({
+      ...current,
+      careTeamTypes,
+      careTeamType: careTeamTypes[0],
+    });
+  }
+
+  toggleEditCareTeamType(type: CareTeamMemberType, checked: boolean) {
+    const current = this.editModel();
+    const next = checked
+      ? Array.from(new Set([...current.careTeamTypes, type]))
+      : current.careTeamTypes.filter((item) => item !== type);
+    const careTeamTypes = next.length ? next : ['MENTAL_WELLNESS_PROFESSIONAL'];
+    this.editModel.set({
+      ...current,
+      careTeamTypes,
+      careTeamType: careTeamTypes[0],
+    });
   }
 
   providerSingularTitle() {
