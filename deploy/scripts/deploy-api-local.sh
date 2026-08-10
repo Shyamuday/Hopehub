@@ -44,6 +44,7 @@ AWS_SECRET_ACCESS_KEY_VALUE="$(sudo cat /etc/hopehub-aws-secret-access-key 2>/de
 TELEGRAM_USER_BOT_TOKEN_VALUE="$(sudo cat /etc/hopehub-telegram-user-bot-token 2>/dev/null || echo "${TELEGRAM_USER_BOT_TOKEN:-}")"
 TELEGRAM_DOCTOR_BOT_TOKEN_VALUE="$(sudo cat /etc/hopehub-telegram-doctor-bot-token 2>/dev/null || echo "${TELEGRAM_DOCTOR_BOT_TOKEN:-}")"
 TELEGRAM_ADMIN_BOT_TOKEN_VALUE="$(sudo cat /etc/hopehub-telegram-admin-bot-token 2>/dev/null || echo "${TELEGRAM_ADMIN_BOT_TOKEN:-}")"
+TELEGRAM_HOPEHUBBOT_TOKEN_VALUE="$(sudo cat /etc/hopehub-telegram-hopehubbot-token 2>/dev/null || sudo cat /etc/hopehub-telegram-group-help-bot-token 2>/dev/null || echo "${TELEGRAM_HOPEHUBBOT_TOKEN:-${TELEGRAM_GROUP_HELP_BOT_TOKEN:-}}")"
 TELEGRAM_WEBHOOK_SECRET_VALUE="$(sudo cat /etc/hopehub-telegram-webhook-secret 2>/dev/null || echo "${TELEGRAM_WEBHOOK_SECRET:-}")"
 TELEGRAM_SETUP_SECRET_VALUE="$(sudo cat /etc/hopehub-telegram-setup-secret 2>/dev/null || echo "${TELEGRAM_SETUP_SECRET:-}")"
 
@@ -91,6 +92,7 @@ OOREP_TIMEOUT_MS="15000"
 TELEGRAM_USER_BOT_TOKEN="${TELEGRAM_USER_BOT_TOKEN_VALUE}"
 TELEGRAM_DOCTOR_BOT_TOKEN="${TELEGRAM_DOCTOR_BOT_TOKEN_VALUE}"
 TELEGRAM_ADMIN_BOT_TOKEN="${TELEGRAM_ADMIN_BOT_TOKEN_VALUE}"
+TELEGRAM_HOPEHUBBOT_TOKEN="${TELEGRAM_HOPEHUBBOT_TOKEN_VALUE}"
 TELEGRAM_WEBHOOK_SECRET="${TELEGRAM_WEBHOOK_SECRET_VALUE}"
 TELEGRAM_SETUP_SECRET="${TELEGRAM_SETUP_SECRET_VALUE}"
 ENV

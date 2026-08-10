@@ -761,6 +761,21 @@ export class AdminApi {
       ...(args as Parameters<AdminOpsApi['unlinkTelegramBotSession']>),
     );
   }
+  getTelegramGroupHelpConfig(...args: Parameters<AdminOpsApi['getTelegramGroupHelpConfig']>) {
+    return this.ops.getTelegramGroupHelpConfig(
+      ...(args as Parameters<AdminOpsApi['getTelegramGroupHelpConfig']>),
+    );
+  }
+  saveTelegramGroupHelpConfig(...args: Parameters<AdminOpsApi['saveTelegramGroupHelpConfig']>) {
+    return this.ops.saveTelegramGroupHelpConfig(
+      ...(args as Parameters<AdminOpsApi['saveTelegramGroupHelpConfig']>),
+    );
+  }
+  sendTelegramGroupHelpMessage(...args: Parameters<AdminOpsApi['sendTelegramGroupHelpMessage']>) {
+    return this.ops.sendTelegramGroupHelpMessage(
+      ...(args as Parameters<AdminOpsApi['sendTelegramGroupHelpMessage']>),
+    );
+  }
   updateConsultationStatus(...args: Parameters<AdminOpsApi['updateConsultationStatus']>) {
     return this.ops.updateConsultationStatus(
       ...(args as Parameters<AdminOpsApi['updateConsultationStatus']>),

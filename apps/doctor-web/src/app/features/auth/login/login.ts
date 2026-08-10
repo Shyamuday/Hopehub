@@ -1,7 +1,6 @@
 import { Component, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { form, FormField, required } from '@angular/forms/signals';
-import { MultiSelectComponent } from '@hopehub/platform-ui';
 import { DEFAULT_AUTHED_ROUTE } from '../../../core/constants/app-routes.constants';
 import { Auth } from '../../../core/services/auth';
 import { AppButtonComponent } from '../../../shared/ui/app-button.component';
@@ -17,16 +16,10 @@ type HopeHubCareTeamType =
   | 'LIFE_COACH'
   | 'MEDITATION_BREATHWORK_GUIDE'
   | 'CAREER_STUDY_MENTOR';
-type SelectableHopeHubCareTeamType = HopeHubCareTeamType | 'OTHER';
-type HopeHubCareTeamOption = {
-  value: SelectableHopeHubCareTeamType;
-  label: string;
-  helper: string;
-};
 
 @Component({
   selector: 'app-login',
-  imports: [FormField, AppButtonComponent, MultiSelectComponent],
+  imports: [FormField, AppButtonComponent],
   templateUrl: './login.html',
   styleUrl: './login.scss',
 })
@@ -82,71 +75,15 @@ export class Login {
       helper: 'For trained listeners who support users through safe active listening.',
     },
   ];
-  private readonly careTeamOptionsByGroup: Record<
-    HopeHubProviderGroup,
-    Array<HopeHubCareTeamOption>
-  > = {
-    PSYCHOLOGIST: [
-      {
-        value: 'MENTAL_WELLNESS_PROFESSIONAL',
-        label: 'Psychologist / mental wellness professional',
-        helper: 'For psychologists and experienced mental-health practitioners.',
-      },
-      {
-        value: 'QUALIFIED_COUNSELLOR',
-        label: 'Qualified counsellor',
-        helper: 'For certified counsellors offering structured emotional support.',
-      },
-      {
-        value: 'OTHER',
-        label: 'Other',
-        helper: 'For another Hope Hub clinical or counselling support role.',
-      },
-    ],
-    LIFE_COACH: [
-      {
-        value: 'LIFE_COACH',
-        label: 'Life coach',
-        helper: 'For goal, confidence, and life-direction support.',
-      },
-      {
-        value: 'NLP_COACH',
-        label: 'NLP coach',
-        helper: 'For NLP-based coaching and habit or mindset support.',
-      },
-      {
-        value: 'MEDITATION_BREATHWORK_GUIDE',
-        label: 'Meditation / breathwork guide',
-        helper: 'For guided calming, grounding, meditation, and breathwork sessions.',
-      },
-      {
-        value: 'CAREER_STUDY_MENTOR',
-        label: 'Career / study mentor',
-        helper: 'For academic, exam, career, and study-stress support.',
-      },
-      {
-        value: 'OTHER',
-        label: 'Other',
-        helper: 'For another coaching, mentoring, or guidance role.',
-      },
-    ],
-    PEER_SUPPORT: [
-      {
-        value: 'PEER_SUPPORT_VOLUNTEER',
-        label: 'Peer emotional support listener',
-        helper: 'For trained peer listeners who support users through active listening.',
-      },
-      {
-        value: 'PSYCHOLOGY_STUDENT_VOLUNTEER',
-        label: 'Psychology student emotional support listener',
-        helper: 'For student listeners joining Hope Hub after listener screening.',
-      },
-      {
-        value: 'OTHER',
-        label: 'Other',
-        helper: 'For another non-clinical emotional support listener role.',
-      },
-    ],
+  private readonly defaultCareTeamTypeByGroup: Record<HopeHubProviderGroup, HopeHubCareTeamType> = {
+    PSYCHOLOGIST: 'MENTAL_WELLNESS_PROFESSIONAL',
+    LIFE_COACH: 'LIFE_COACH',
+    PEER_SUPPORT: 'PEER_SUPPORT_VOLUNTEER',
+  };
+  private readonly defaultSpecialtyByGroup: Record<HopeHubProviderGroup, string> = {
+    PSYCHOLOGIST: 'Psychologist / counsellor',
+    LIFE_COACH: 'Life coach / guide',
+    PEER_SUPPORT: 'Peer emotional support listener',
   };
 
   readonly signInModel = signal({
@@ -164,10 +101,8 @@ export class Login {
     providerType: 'HOPE_HUB' as ProviderSignupKind,
     hopeHubGroup: 'PSYCHOLOGIST' as HopeHubProviderGroup,
     careTeamType: 'MENTAL_WELLNESS_PROFESSIONAL' as HopeHubCareTeamType,
-    careTeamTypes: ['MENTAL_WELLNESS_PROFESSIONAL'] as SelectableHopeHubCareTeamType[],
-    otherCareTeamType: '',
+    careTeamTypes: ['MENTAL_WELLNESS_PROFESSIONAL'] as HopeHubCareTeamType[],
     specialty: '',
-    registrationNo: '',
     confirmPassword: '',
   });
   readonly enrollForm = form(this.enrollModel, (schema) => {
@@ -192,60 +127,6 @@ export class Login {
     return this.hopeHubGroupOptions.find((option) => option.value === selected)?.helper || '';
   }
 
-  careTeamTypeOptions(): Array<HopeHubCareTeamOption> {
-    return this.careTeamOptionsByGroup[this.enrollModel().hopeHubGroup];
-  }
-
-  selectedCareTeamTypeHelper(): string {
-    const selected = this.enrollModel().careTeamTypes;
-    return selected
-      .map((value) => this.careTeamTypeOptions().find((option) => option.value === value)?.helper)
-      .filter(Boolean)
-      .join(' ');
-  }
-
-  isCareTeamTypeSelected(value: SelectableHopeHubCareTeamType): boolean {
-    return this.enrollModel().careTeamTypes.includes(value);
-  }
-
-  showRegistrationNumberOnSignup(): boolean {
-    const form = this.enrollModel();
-    return form.providerType === 'HOMEOPATHY' || form.hopeHubGroup === 'PSYCHOLOGIST';
-  }
-
-  onCareTeamTypeToggle(value: SelectableHopeHubCareTeamType, checked: boolean): void {
-    this.enrollModel.update((current) => {
-      const next = checked
-        ? Array.from(new Set([...current.careTeamTypes, value]))
-        : current.careTeamTypes.filter((item) => item !== value);
-      const careTeamTypes = next.length
-        ? next
-        : [this.defaultCareTeamTypeForGroup(current.hopeHubGroup)];
-      return {
-        ...current,
-        careTeamTypes,
-        careTeamType: this.primaryCareTeamTypeFor(careTeamTypes, current.hopeHubGroup),
-      };
-    });
-  }
-
-  setCareTeamTypes(values: string[]): void {
-    this.enrollModel.update((current) => {
-      const selected = values.filter((value): value is SelectableHopeHubCareTeamType =>
-        this.careTeamTypeOptions().some((option) => option.value === value),
-      );
-      const careTeamTypes = selected.length
-        ? selected
-        : [this.defaultCareTeamTypeForGroup(current.hopeHubGroup)];
-      return {
-        ...current,
-        careTeamTypes,
-        careTeamType: this.primaryCareTeamTypeFor(careTeamTypes, current.hopeHubGroup),
-        otherCareTeamType: careTeamTypes.includes('OTHER') ? current.otherCareTeamType : '',
-      };
-    });
-  }
-
   onProviderTypeChange(_value: ProviderSignupKind): void {
     this.enrollModel.update((current) => ({
       ...current,
@@ -265,7 +146,6 @@ export class Login {
       hopeHubGroup: value,
       careTeamType: defaultCareTeamType,
       careTeamTypes: [defaultCareTeamType],
-      otherCareTeamType: '',
     }));
   }
 
@@ -396,8 +276,8 @@ export class Login {
   async enroll() {
     if (!this.canSignup()) return;
     const { email, password } = this.signInModel();
-    const { name, mobile, careTeamTypes, registrationNo } = this.enrollModel();
-    const structuredCareTeamTypes = this.structuredCareTeamTypes(careTeamTypes);
+    const { name, mobile, hopeHubGroup } = this.enrollModel();
+    const defaultCareTeamType = this.defaultCareTeamTypeForGroup(hopeHubGroup);
     this.error.set('');
     this.message.set('');
     this.submitting.set(true);
@@ -408,11 +288,9 @@ export class Login {
         mobile: mobile || undefined,
         password,
         specialty: this.specialtyForEnrollment(),
-        registrationNo: this.showRegistrationNumberOnSignup()
-          ? registrationNo || undefined
-          : undefined,
-        careTeamType: this.primaryCareTeamTypeFor(careTeamTypes, this.enrollModel().hopeHubGroup),
-        careTeamTypes: structuredCareTeamTypes,
+        registrationNo: undefined,
+        careTeamType: defaultCareTeamType,
+        careTeamTypes: [defaultCareTeamType],
       });
 
       if (!result.ok) {
@@ -428,37 +306,11 @@ export class Login {
   }
 
   private defaultCareTeamTypeForGroup(group: HopeHubProviderGroup): HopeHubCareTeamType {
-    return this.careTeamOptionsByGroup[group].find((option) => option.value !== 'OTHER')!
-      .value as HopeHubCareTeamType;
-  }
-
-  private primaryCareTeamTypeFor(
-    selected: SelectableHopeHubCareTeamType[],
-    group: HopeHubProviderGroup,
-  ): HopeHubCareTeamType {
-    return (
-      (selected.find((value) => value !== 'OTHER') as HopeHubCareTeamType | undefined) ||
-      this.defaultCareTeamTypeForGroup(group)
-    );
-  }
-
-  private structuredCareTeamTypes(
-    selected: SelectableHopeHubCareTeamType[],
-  ): HopeHubCareTeamType[] {
-    const structured = selected.filter((value): value is HopeHubCareTeamType => value !== 'OTHER');
-    return structured.length
-      ? structured
-      : [this.defaultCareTeamTypeForGroup(this.enrollModel().hopeHubGroup)];
+    return this.defaultCareTeamTypeByGroup[group];
   }
 
   private specialtyForEnrollment(): string {
     const form = this.enrollModel();
-    const labels = form.careTeamTypes
-      .filter((value) => value !== 'OTHER')
-      .map((value) => this.careTeamTypeOptions().find((option) => option.value === value)?.label)
-      .filter(Boolean);
-    const other = form.otherCareTeamType.trim();
-    if (other) labels.push(`Other: ${other}`);
-    return labels.join(', ') || 'Hope Hub Provider';
+    return this.defaultSpecialtyByGroup[form.hopeHubGroup] || 'Hope Hub Provider';
   }
 }

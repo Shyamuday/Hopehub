@@ -12,10 +12,32 @@ import {
 } from '../../services/telegram-bots.client.js';
 import { roleByKind } from '../../services/telegram-bots.config.js';
 import { telegramBotKindFromSlug } from '../../services/telegram-bots.menus.js';
+import {
+  GROUP_HELP_CONFIG_DEFAULTS,
+  GROUP_HELP_CONFIG_KEYS,
+  GROUP_HELP_CONFIG_META
+} from '../../constants/group-help-config.constants.js';
 
 const setupSchema = z.object({
   dropPendingUpdates: z.boolean().optional(),
   publicApiUrl: z.string().url().optional()
+});
+
+const groupHelpSaveSchema = z.object({
+  entries: z
+    .array(
+      z.object({
+        key: z.string(),
+        value: z.string()
+      })
+    )
+    .min(1)
+    .max(GROUP_HELP_CONFIG_KEYS.length)
+});
+
+const groupHelpSendSchema = z.object({
+  message: z.string().trim().min(1).max(4096),
+  pin: z.boolean().optional()
 });
 
 type WebhookSnapshot =
@@ -49,6 +71,40 @@ function linkedName(session: {
 }) {
   const name = [session.firstName, session.lastName].filter(Boolean).join(' ').trim();
   return name || (session.username ? `@${session.username}` : 'Telegram user');
+}
+
+function groupHelpBotToken() {
+  return (
+    process.env.TELEGRAM_HOPEHUBBOT_TOKEN?.trim() ||
+    process.env.TELEGRAM_GROUP_HELP_BOT_TOKEN?.trim() ||
+    ''
+  );
+}
+
+async function callGroupHelpTelegramApi<T>(method: string, payload: unknown): Promise<T> {
+  const token = groupHelpBotToken();
+  if (!token) throw new Error('TELEGRAM_HOPEHUBBOT_TOKEN is not configured.');
+
+  const response = await fetch(`https://api.telegram.org/bot${token}/${method}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+  const body = (await response.json()) as { ok?: boolean; description?: string; result?: T };
+  if (!response.ok || !body.ok) {
+    throw new Error(body.description || `Telegram ${method} failed.`);
+  }
+  return body.result as T;
+}
+
+async function groupHelpConfigMap() {
+  const rows = await prisma.siteConfig.findMany({
+    where: { key: { in: GROUP_HELP_CONFIG_KEYS } }
+  });
+  return {
+    ...GROUP_HELP_CONFIG_DEFAULTS,
+    ...Object.fromEntries(rows.map((row) => [row.key, row.value]))
+  };
 }
 
 export function registerAdminTelegramBotRoutes(router: Router) {
@@ -133,6 +189,175 @@ export function registerAdminTelegramBotRoutes(router: Router) {
           updateId: event.updateId?.toString() ?? null
         }))
       });
+    })
+  );
+
+  router.get(
+    '/admin/telegram-bots/group-help',
+    authRequired,
+    allowRoles(Role.ADMIN, Role.HR),
+    asyncRoute(async (_req, res) => {
+      const values = await groupHelpConfigMap();
+      res.json({
+        tokenConfigured: Boolean(groupHelpBotToken()),
+        config: GROUP_HELP_CONFIG_KEYS.map((key) => ({
+          ...GROUP_HELP_CONFIG_META[key],
+          value: values[key] ?? GROUP_HELP_CONFIG_DEFAULTS[key] ?? ''
+        }))
+      });
+    })
+  );
+
+  router.patch(
+    '/admin/telegram-bots/group-help',
+    authRequired,
+    allowRoles(Role.ADMIN),
+    asyncRoute(async (req, res) => {
+      const parsed = groupHelpSaveSchema.safeParse(req.body ?? {});
+      if (!parsed.success) {
+        return res.status(400).json({ message: 'Invalid Group Help config payload.' });
+      }
+
+      const updates: Array<{
+        key: string;
+        value: string;
+        meta: (typeof GROUP_HELP_CONFIG_META)[string];
+      }> = [];
+
+      for (const entry of parsed.data.entries) {
+        const meta = GROUP_HELP_CONFIG_META[entry.key];
+        if (!meta) {
+          return res.status(400).json({ message: `Unknown Group Help config key: ${entry.key}` });
+        }
+        const value = entry.value.trim();
+        if (value.length > meta.maxLength) {
+          return res
+            .status(400)
+            .json({ message: `${meta.label} is too long. Maximum ${meta.maxLength} characters.` });
+        }
+        updates.push({ key: entry.key, value, meta });
+      }
+
+      const saved = await prisma.$transaction(
+        updates.map(({ key, value, meta }) =>
+          prisma.siteConfig.upsert({
+            where: { key },
+            create: { key, value, label: meta.label },
+            update: { value, label: meta.label }
+          })
+        )
+      );
+
+      await writeAuditLog({
+        actorId: req.user!.id,
+        actorRole: req.user!.role,
+        action: 'telegram_group_help.config_update',
+        targetType: 'telegram_group_help',
+        targetId: 'config',
+        summary: `Updated ${saved.length} Group Help config item(s).`,
+        metadata: { keys: saved.map((row) => row.key) }
+      });
+
+      const values = await groupHelpConfigMap();
+      res.json({
+        config: GROUP_HELP_CONFIG_KEYS.map((key) => ({
+          ...GROUP_HELP_CONFIG_META[key],
+          value: values[key] ?? GROUP_HELP_CONFIG_DEFAULTS[key] ?? ''
+        }))
+      });
+    })
+  );
+
+  router.post(
+    '/admin/telegram-bots/group-help/test',
+    authRequired,
+    allowRoles(Role.ADMIN, Role.HR),
+    asyncRoute(async (_req, res) => {
+      if (!groupHelpBotToken()) {
+        return res.json({
+          tokenConfigured: false,
+          ok: false,
+          message: 'TELEGRAM_HOPEHUBBOT_TOKEN is not configured.'
+        });
+      }
+
+      const values = await groupHelpConfigMap();
+      const chatId = values.telegramGroupHelpGroupChatId?.trim();
+      const [me, webhook] = await Promise.all([
+        callGroupHelpTelegramApi('getMe', {}),
+        callGroupHelpTelegramApi('getWebhookInfo', {})
+      ]);
+
+      let chat: unknown = null;
+      let chatError: string | null = null;
+      if (chatId) {
+        try {
+          chat = await callGroupHelpTelegramApi('getChat', { chat_id: chatId });
+        } catch (error) {
+          chatError = error instanceof Error ? error.message : 'Could not read Telegram chat.';
+        }
+      }
+
+      res.json({
+        tokenConfigured: true,
+        ok: true,
+        me,
+        webhook,
+        chat,
+        chatError
+      });
+    })
+  );
+
+  router.post(
+    '/admin/telegram-bots/group-help/send',
+    authRequired,
+    allowRoles(Role.ADMIN),
+    asyncRoute(async (req, res) => {
+      const parsed = groupHelpSendSchema.safeParse(req.body ?? {});
+      if (!parsed.success) {
+        return res.status(400).json({ message: 'Invalid Group Help send payload.' });
+      }
+
+      const values = await groupHelpConfigMap();
+      const chatId = values.telegramGroupHelpGroupChatId?.trim();
+      if (!groupHelpBotToken()) {
+        return res.status(400).json({ message: 'TELEGRAM_HOPEHUBBOT_TOKEN is not configured.' });
+      }
+      if (!chatId) {
+        return res.status(400).json({ message: 'Telegram group chat ID is not configured.' });
+      }
+
+      const sent = await callGroupHelpTelegramApi<{ message_id: number }>('sendMessage', {
+        chat_id: chatId,
+        text: parsed.data.message,
+        disable_web_page_preview: true
+      });
+
+      let pinned: unknown = null;
+      if (parsed.data.pin) {
+        pinned = await callGroupHelpTelegramApi('pinChatMessage', {
+          chat_id: chatId,
+          message_id: sent.message_id,
+          disable_notification: true
+        });
+      }
+
+      await writeAuditLog({
+        actorId: req.user!.id,
+        actorRole: req.user!.role,
+        action: parsed.data.pin
+          ? 'telegram_group_help.message_send_pin'
+          : 'telegram_group_help.message_send',
+        targetType: 'telegram_group_help',
+        targetId: chatId,
+        summary: parsed.data.pin
+          ? 'Sent and pinned Group Help message.'
+          : 'Sent Group Help message.',
+        metadata: { chatId, messageId: sent.message_id, pin: Boolean(parsed.data.pin) }
+      });
+
+      res.json({ ok: true, message: sent, pinned });
     })
   );
 
