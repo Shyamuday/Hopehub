@@ -313,10 +313,15 @@ export function registerAuthStaffRoutes(router: Router) {
           .json({ message: 'Google login is not configured. Set GOOGLE_CLIENT_ID.' });
       }
 
-      const ticket = await googleClient.verifyIdToken({
-        idToken: body.idToken,
-        audience: googleClientId
-      });
+      let ticket;
+      try {
+        ticket = await googleClient.verifyIdToken({
+          idToken: body.idToken,
+          audience: googleClientId
+        });
+      } catch {
+        return res.status(401).json({ message: 'Invalid Google sign-in token.' });
+      }
       const payload = ticket.getPayload();
       if (!payload?.email || !payload.sub) {
         return res.status(401).json({ message: 'Google account email is required' });
