@@ -32,7 +32,7 @@ export class AuthFormOverlayComponent {
     typeof window !== 'undefined'
       ? new URLSearchParams(window.location.search).get('ref') || undefined
       : undefined;
-  readonly authView = signal<AuthView>('login');
+  readonly authView = signal<AuthView>('signup');
   readonly loginMode = signal<LoginMode>('otp');
   readonly signupMode = signal<SignupMode>('password');
   readonly loginOtpSent = signal(false);

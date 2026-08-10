@@ -1,7 +1,7 @@
 <section class="login-card">
   <div class="switcher">
-    <button type="button" [class.active]="mode() === 'signin'" (click)="mode.set('signin')">Sign in</button>
     <button type="button" [class.active]="mode() === 'signup'" (click)="mode.set('signup')">Sign up</button>
+    <button type="button" [class.active]="mode() === 'signin'" (click)="mode.set('signin')">Sign in</button>
   </div>
 
   @if (mode() === 'signin') {

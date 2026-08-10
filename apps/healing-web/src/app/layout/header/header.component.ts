@@ -238,7 +238,7 @@ import { APP_CONSTANTS } from '../../core/constants/app.constants';
               <!-- Unauthenticated User -->
               @if (!user()) {
                 <div class="flex items-center space-x-2">
-                  <button (click)="openLogin()" class="btn-primary btn-sm">Sign in</button>
+                  <button (click)="openRegister()" class="btn-primary btn-sm">Sign up</button>
                 </div>
               }
             </div>
@@ -489,11 +489,11 @@ import { APP_CONSTANTS } from '../../core/constants/app.constants';
               } @else {
                 <div class="border-t border-gray-200 mt-2 pt-2"></div>
                 <button
-                  (click)="openLogin()"
+                  (click)="openRegister()"
                   class="btn-primary btn-sm justify-start text-base"
                   role="menuitem"
                 >
-                  Sign in
+                  Sign up
                 </button>
               }
             </div>

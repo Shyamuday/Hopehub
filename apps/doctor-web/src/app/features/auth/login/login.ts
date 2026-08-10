@@ -35,7 +35,7 @@ export class Login {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
 
-  mode = signal<'signin' | 'signup'>('signin');
+  mode = signal<'signin' | 'signup'>('signup');
   loginMode = signal<'otp' | 'password'>('otp');
   otp = signal('');
   otpSent = signal(false);
