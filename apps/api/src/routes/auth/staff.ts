@@ -28,8 +28,21 @@ import {
   storeOtp,
   verifyOtp
 } from '../../services/otp.js';
+import { googleClient, googleClientId } from './shared.js';
 
 const staffOtpKey = (email: string) => `staff:${email.trim().toLowerCase()}`;
+const googleStaffUserSelect = { ...publicUserSelect, isActive: true, authProvider: true } as const;
+type GoogleStaffPayload = {
+  sub: string;
+  email: string;
+  email_verified?: boolean;
+  name?: string;
+  given_name?: string;
+  family_name?: string;
+  picture?: string;
+  hd?: string;
+  iss?: string;
+};
 type ActiveStaffAccount =
   | {
       kind: 'user';
@@ -114,6 +127,115 @@ async function buildStaffLoginResponse(email: string) {
   return { ...toAuthResponse(withProfile), ...sessionPayloadForUser(withProfile) };
 }
 
+async function buildGoogleStaffLoginResponse(payload: GoogleStaffPayload) {
+  if (!payload.email || !payload.sub) return null;
+  if (payload.email_verified !== true) {
+    return { errorStatus: 401 as const, message: 'Google email is not verified.' };
+  }
+
+  const now = new Date();
+  const email = payload.email.trim().toLowerCase();
+  const user = await prisma.user.findUnique({
+    where: { email },
+    select: googleStaffUserSelect
+  });
+
+  if (!user || user.role === Role.PATIENT) {
+    return {
+      errorStatus: 401 as const,
+      message: 'No approved provider/admin account found for this Google email.'
+    };
+  }
+  if (!user.isActive && user.role === Role.DOCTOR) {
+    return { errorStatus: 403 as const, message: 'Doctor account is pending admin approval.' };
+  }
+  if (!user.isActive) {
+    return { errorStatus: 401 as const, message: 'Invalid credentials' };
+  }
+
+  const existingIdentity = await prisma.userIdentity.findUnique({
+    where: {
+      provider_providerUserId: {
+        provider: 'GOOGLE',
+        providerUserId: payload.sub
+      }
+    },
+    select: { userId: true }
+  });
+  if (existingIdentity && existingIdentity.userId !== user.id) {
+    return {
+      errorStatus: 409 as const,
+      message: 'This Google account is already linked to another Hope Hub account.'
+    };
+  }
+
+  const rawProfile = {
+    sub: payload.sub,
+    email,
+    emailVerified: payload.email_verified === true,
+    name: payload.name || null,
+    givenName: payload.given_name || null,
+    familyName: payload.family_name || null,
+    picture: payload.picture || null,
+    hostedDomain: payload.hd || null,
+    issuer: payload.iss || null
+  } satisfies Prisma.InputJsonObject;
+
+  const updated = await prisma.user.update({
+    where: { id: user.id },
+    data: {
+      emailVerified: true,
+      authProvider: user.authProvider || 'GOOGLE',
+      lastLoginAt: now,
+      lastLoginMethod: 'GOOGLE',
+      externalAvatarUrl: payload.picture || null
+    },
+    select: publicUserSelect
+  });
+
+  await prisma.userIdentity.upsert({
+    where: {
+      provider_providerUserId: {
+        provider: 'GOOGLE',
+        providerUserId: payload.sub
+      }
+    },
+    create: {
+      userId: updated.id,
+      provider: 'GOOGLE',
+      providerUserId: payload.sub,
+      email,
+      emailVerified: true,
+      displayName: payload.name || updated.name,
+      avatarUrl: payload.picture || null,
+      rawProfile,
+      lastLoginAt: now
+    },
+    update: {
+      userId: updated.id,
+      email,
+      emailVerified: true,
+      displayName: payload.name || updated.name,
+      avatarUrl: payload.picture || null,
+      rawProfile,
+      lastLoginAt: now
+    }
+  });
+
+  logAuthEvent('staff_login_success', { userId: updated.id, role: updated.role, method: 'google' });
+  if (updated.role === Role.DOCTOR) {
+    void trackProductEvent({
+      name: PRODUCT_EVENTS.DOCTOR_LOGIN,
+      actorId: updated.id,
+      actorRole: Role.DOCTOR,
+      properties: { method: 'google' }
+    });
+  }
+
+  const withProfile = await attachStaffProfile(updated);
+  return { ...toAuthResponse(withProfile), ...sessionPayloadForUser(withProfile) };
+}
+
 export function registerAuthStaffRoutes(router: Router) {
   // ─── Staff login ───────────────────────────────────────────────────────────────
 
@@ -174,6 +296,48 @@ export function registerAuthStaffRoutes(router: Router) {
       }
       if ('errorStatus' in response) {
         const status = response.errorStatus ?? 401;
+        return res.status(status).json({ message: response.message });
+      }
+
+      res.json(response);
+    })
+  );
+
+  router.post(
+    '/auth/staff-login-google',
+    asyncRoute(async (req, res) => {
+      const body = z.object({ idToken: z.string().min(20) }).parse(req.body);
+      if (!googleClient || !googleClientId) {
+        return res
+          .status(503)
+          .json({ message: 'Google login is not configured. Set GOOGLE_CLIENT_ID.' });
+      }
+
+      const ticket = await googleClient.verifyIdToken({
+        idToken: body.idToken,
+        audience: googleClientId
+      });
+      const payload = ticket.getPayload();
+      if (!payload?.email || !payload.sub) {
+        return res.status(401).json({ message: 'Google account email is required' });
+      }
+
+      const response = await buildGoogleStaffLoginResponse(payload as GoogleStaffPayload);
+      if (!response) {
+        logAuthEvent('staff_login_failure', {
+          email: payload.email,
+          reason: 'google_payload_missing_email',
+          method: 'google'
+        });
+        return res.status(401).json({ message: 'Google account email is required' });
+      }
+      if ('errorStatus' in response) {
+        const status = response.errorStatus ?? 401;
+        logAuthEvent('staff_login_failure', {
+          email: payload.email,
+          reason: response.message,
+          method: 'google'
+        });
         return res.status(status).json({ message: response.message });
       }
 

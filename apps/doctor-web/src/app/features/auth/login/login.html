@@ -63,6 +63,13 @@
       <app-button type="submit" [disabled]="submitting() || (loginMode() === 'password' ? signInForm().invalid() : signInForm.email().invalid() || !otpSent() || otp().length < 4)" [loading]="submitting()" block>
         {{ submitting() ? 'Signing in...' : (loginMode() === 'otp' ? 'Verify OTP & sign in' : 'Sign in') }}
       </app-button>
+
+      <div class="login-divider"><span>or</span></div>
+
+      <button type="button" class="google-login-button" (click)="loginWithGoogle()" [disabled]="submitting()">
+        <span class="google-login-button__mark" aria-hidden="true">G</span>
+        <span>Continue with Google</span>
+      </button>
     </form>
 
   } @else {

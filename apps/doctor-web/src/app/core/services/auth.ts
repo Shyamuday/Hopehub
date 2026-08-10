@@ -4,12 +4,49 @@ import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { AUTH_MESSAGES, AUTH_PATHS, AUTH_TOKEN_KEY } from '../constants/auth.constants';
 
+const GOOGLE_GSI_SRC = 'https://accounts.google.com/gsi/client';
+
+type GoogleCredentialResponse = {
+  credential?: string;
+};
+
+type GooglePromptMomentNotification = {
+  isNotDisplayed(): boolean;
+  isSkippedMoment(): boolean;
+  getNotDisplayedReason(): string;
+  getSkippedReason(): string;
+};
+
+type GoogleIdentityApi = {
+  accounts: {
+    id: {
+      initialize(config: {
+        client_id: string;
+        callback: (response: GoogleCredentialResponse) => void;
+        auto_select?: boolean;
+        cancel_on_tap_outside?: boolean;
+        use_fedcm_for_prompt?: boolean;
+      }): void;
+      prompt(callback?: (notification: GooglePromptMomentNotification) => void): void;
+      renderButton(parent: HTMLElement, options: Record<string, unknown>): void;
+    };
+  };
+};
+
+type GoogleWindow = Window &
+  typeof globalThis & {
+    google?: GoogleIdentityApi;
+    GOOGLE_CLIENT_ID?: string;
+  };
+
 @Injectable({
   providedIn: 'root',
 })
 export class Auth {
   private readonly tokenKey = AUTH_TOKEN_KEY;
   private readonly apiBase = environment.apiUrl;
+  private googleScriptPromise: Promise<void> | null = null;
+  private googleClientIdPromise: Promise<string> | null = null;
 
   constructor(private readonly http: HttpClient) {}
 
@@ -69,6 +106,28 @@ export class Auth {
     }
   }
 
+  async loginWithGoogle() {
+    try {
+      const idToken = await this.getGoogleIdToken();
+      const response = await firstValueFrom(
+        this.http.post<{ token: string }>(`${this.apiBase}${AUTH_PATHS.STAFF_GOOGLE_LOGIN}`, {
+          idToken,
+        }),
+      );
+
+      localStorage.setItem(this.tokenKey, response.token);
+      return { ok: true as const };
+    } catch (error: any) {
+      return {
+        ok: false as const,
+        message:
+          error?.error?.message ||
+          error?.message ||
+          'Google sign-in failed. Please use OTP or password.',
+      };
+    }
+  }
+
   async enrollDoctor(payload: {
     name: string;
     email: string;
@@ -106,5 +165,143 @@ export class Auth {
 
   token() {
     return localStorage.getItem(this.tokenKey) || '';
+  }
+
+  private async getGoogleClientId(): Promise<string> {
+    if (typeof window === 'undefined') {
+      return (environment as { googleClientId?: string }).googleClientId || '';
+    }
+
+    const runtimeClientId = (window as GoogleWindow).GOOGLE_CLIENT_ID;
+    const bundledClientId =
+      runtimeClientId || (environment as { googleClientId?: string }).googleClientId || '';
+    if (bundledClientId) return bundledClientId;
+
+    if (!this.googleClientIdPromise) {
+      this.googleClientIdPromise = firstValueFrom(
+        this.http.get<{ configured: boolean; clientId: string | null }>(
+          `${this.apiBase}${AUTH_PATHS.GOOGLE_CONFIG}`,
+        ),
+      ).then((config) => config.clientId || '');
+    }
+
+    return this.googleClientIdPromise;
+  }
+
+  private async getGoogleIdToken(): Promise<string> {
+    if (typeof window === 'undefined' || typeof document === 'undefined') {
+      throw new Error('Google sign-in is available in the browser only.');
+    }
+
+    const clientId = await this.getGoogleClientId();
+    if (!clientId) {
+      throw new Error('Google sign-in is not configured yet.');
+    }
+
+    await this.loadGoogleIdentityScript();
+
+    const googleAccounts = (window as GoogleWindow).google?.accounts;
+    if (!googleAccounts?.id) {
+      throw new Error('Google sign-in could not be loaded.');
+    }
+
+    return new Promise<string>((resolve, reject) => {
+      let settled = false;
+      const container = document.createElement('div');
+      container.style.cssText = 'position:fixed;top:-9999px;left:-9999px;visibility:hidden';
+      document.body.appendChild(container);
+
+      const cleanup = () => {
+        try {
+          document.body.removeChild(container);
+        } catch {
+          // Already removed.
+        }
+      };
+
+      googleAccounts.id.initialize({
+        client_id: clientId,
+        auto_select: false,
+        cancel_on_tap_outside: true,
+        use_fedcm_for_prompt: true,
+        callback: (response) => {
+          if (settled) return;
+          settled = true;
+          cleanup();
+          if (response.credential) {
+            resolve(response.credential);
+          } else {
+            reject(new Error('Google did not return a sign-in token.'));
+          }
+        },
+      });
+
+      googleAccounts.id.renderButton(container, {
+        type: 'standard',
+        theme: 'outline',
+        size: 'large',
+      });
+
+      const button = container.querySelector<HTMLElement>('[role="button"], div[tabindex]');
+      if (button) {
+        button.click();
+        return;
+      }
+
+      googleAccounts.id.prompt((notification) => {
+        if (settled) return;
+        if (notification.isNotDisplayed()) {
+          settled = true;
+          cleanup();
+          reject(
+            new Error(`Google sign-in could not open: ${notification.getNotDisplayedReason()}.`),
+          );
+        } else if (notification.isSkippedMoment()) {
+          settled = true;
+          cleanup();
+          reject(new Error(`Google sign-in was skipped: ${notification.getSkippedReason()}.`));
+        }
+      });
+    });
+  }
+
+  private loadGoogleIdentityScript(): Promise<void> {
+    if (typeof window === 'undefined' || typeof document === 'undefined') {
+      return Promise.reject(new Error('Google sign-in is available in the browser only.'));
+    }
+
+    if ((window as GoogleWindow).google?.accounts?.id) {
+      return Promise.resolve();
+    }
+
+    if (this.googleScriptPromise) {
+      return this.googleScriptPromise;
+    }
+
+    this.googleScriptPromise = new Promise<void>((resolve, reject) => {
+      const existingScript = document.querySelector<HTMLScriptElement>(
+        `script[src="${GOOGLE_GSI_SRC}"]`,
+      );
+
+      if (existingScript) {
+        existingScript.addEventListener('load', () => resolve(), { once: true });
+        existingScript.addEventListener(
+          'error',
+          () => reject(new Error('Google sign-in failed to load.')),
+          { once: true },
+        );
+        return;
+      }
+
+      const script = document.createElement('script');
+      script.src = GOOGLE_GSI_SRC;
+      script.async = true;
+      script.defer = true;
+      script.onload = () => resolve();
+      script.onerror = () => reject(new Error('Google sign-in failed to load.'));
+      document.head.appendChild(script);
+    });
+
+    return this.googleScriptPromise;
   }
 }

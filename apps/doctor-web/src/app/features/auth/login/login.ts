@@ -321,6 +321,22 @@ export class Login {
     }
   }
 
+  async loginWithGoogle() {
+    this.error.set('');
+    this.message.set('');
+    this.submitting.set(true);
+    try {
+      const result = await this.auth.loginWithGoogle();
+      if (!result.ok) {
+        this.error.set(result.message);
+        return;
+      }
+      void this.navigateAfterLogin();
+    } finally {
+      this.submitting.set(false);
+    }
+  }
+
   async sendOtp() {
     const { email } = this.signInModel();
     const normalizedEmail = email.trim().toLowerCase();

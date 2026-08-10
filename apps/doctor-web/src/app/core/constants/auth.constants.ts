@@ -2,6 +2,8 @@ export const AUTH_TOKEN_KEY = 'doctor_app_token';
 
 export const AUTH_PATHS = {
   STAFF_LOGIN: '/auth/staff-login',
+  STAFF_GOOGLE_LOGIN: '/auth/staff-login-google',
+  GOOGLE_CONFIG: '/auth/google-config',
   DOCTOR_ENROLL: '/doctor/enroll',
   ME: '/me',
 } as const;
