@@ -73,7 +73,8 @@ export function createOnlineDoctorsRouter(io: SocketIoServer) {
               isAvailable: true,
               mentalHealthProfile: {
                 select: {
-                  careTeamType: true
+                  careTeamType: true,
+                  careTeamTypes: true
                 }
               }
             }
@@ -119,7 +120,7 @@ export function createOnlineDoctorsRouter(io: SocketIoServer) {
         where: { userId: req.user!.id },
         select: {
           doctorType: true,
-          mentalHealthProfile: { select: { careTeamType: true } }
+          mentalHealthProfile: { select: { careTeamType: true, careTeamTypes: true } }
         }
       });
       const canUseDiseaseSettings = capabilitiesForDoctorProfile(doctor).diseaseSpecialtySettings;
@@ -160,7 +161,8 @@ export function createOnlineDoctorsRouter(io: SocketIoServer) {
               isAvailable: true,
               mentalHealthProfile: {
                 select: {
-                  careTeamType: true
+                  careTeamType: true,
+                  careTeamTypes: true
                 }
               }
             }
@@ -330,7 +332,8 @@ export function createOnlineDoctorsRouter(io: SocketIoServer) {
                 isAvailable: true,
                 mentalHealthProfile: {
                   select: {
-                    careTeamType: true
+                    careTeamType: true,
+                    careTeamTypes: true
                   }
                 }
               }

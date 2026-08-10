@@ -139,19 +139,15 @@
     </div>
     @if (isPsychologistType(createModel().doctorType)) {
       <div class="field">
-        <label class="field-label">Hope Hub subtype <span class="field-hint">(select all that apply)</span></label>
-        <div class="multi-check-grid">
-          @for (option of careTeamTypeOptions; track option.value) {
-            <label class="multi-check-option">
-              <input
-                type="checkbox"
-                [checked]="isCreateCareTeamTypeSelected(option.value)"
-                (change)="toggleCreateCareTeamType(option.value, $any($event.target).checked)"
-              />
-              <span>{{ option.label }}</span>
-            </label>
-          }
-        </div>
+        <hopehub-multi-select
+          label="Hope Hub subtype"
+          hint="Select all that apply"
+          placeholder="Choose Hope Hub subtype"
+          tone="hope"
+          [options]="careTeamTypeOptions"
+          [selected]="createModel().careTeamTypes"
+          (selectedChange)="setCreateCareTeamTypes($event)"
+        />
       </div>
       <label class="website-toggle">
         <input type="checkbox" [formField]="createForm.autoMatchEnabled" />
@@ -586,19 +582,15 @@
         @if (isPsychologistType(editModel().doctorType)) {
           <p class="form-section-label">Care team public profile</p>
           <div class="field">
-            <label class="field-label">Hope Hub subtype <span class="field-hint">(select all that apply)</span></label>
-            <div class="multi-check-grid">
-              @for (option of careTeamTypeOptions; track option.value) {
-                <label class="multi-check-option">
-                  <input
-                    type="checkbox"
-                    [checked]="isEditCareTeamTypeSelected(option.value)"
-                    (change)="toggleEditCareTeamType(option.value, $any($event.target).checked)"
-                  />
-                  <span>{{ option.label }}</span>
-                </label>
-              }
-            </div>
+            <hopehub-multi-select
+              label="Hope Hub subtype"
+              hint="Select all that apply"
+              placeholder="Choose Hope Hub subtype"
+              tone="hope"
+              [options]="careTeamTypeOptions"
+              [selected]="editModel().careTeamTypes"
+              (selectedChange)="setEditCareTeamTypes($event)"
+            />
           </div>
           <div class="field">
             <label class="field-label" for="doc-edit-qualifications">Qualifications</label>

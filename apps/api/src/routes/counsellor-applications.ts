@@ -292,6 +292,7 @@ async function autoApproveListenerApplication(
     create: {
       doctorId: doctor.id,
       careTeamType: application.careTeamType,
+      careTeamTypes: [application.careTeamType],
       qualifications: splitList(application.qualification),
       qualifiedFrom: application.qualifiedFrom,
       languages: splitList(application.languages),
@@ -316,6 +317,7 @@ async function autoApproveListenerApplication(
     },
     update: {
       careTeamType: application.careTeamType,
+      careTeamTypes: [application.careTeamType],
       qualifications: splitList(application.qualification),
       qualifiedFrom: application.qualifiedFrom,
       languages: splitList(application.languages),

@@ -116,19 +116,15 @@
         <p class="section-hint">Shown on Hope Hub care team profile pages and used for session matching.</p>
 
         <div class="grid two-column">
-          <label>Hope Hub subtype <span class="hint">(select all that apply)</span></label>
-          <div class="multi-check-grid">
-            @for (option of careTeamTypeOptions; track option.value) {
-              <label class="multi-check-option">
-                <input
-                  type="checkbox"
-                  [checked]="isProfileCareTeamTypeSelected(option.value)"
-                  (change)="toggleProfileCareTeamType(option.value, $any($event.target).checked)"
-                />
-                <span>{{ option.label }}</span>
-              </label>
-            }
-          </div>
+          <hopehub-multi-select
+            label="Hope Hub subtype"
+            hint="Select all that apply"
+            placeholder="Choose your Hope Hub subtype"
+            tone="hope"
+            [options]="careTeamTypeOptions"
+            [selected]="profileModel().careTeamTypes"
+            (selectedChange)="setProfileCareTeamTypes($event)"
+          />
 
           @if (isProfileCareTeamTypeSelected('OTHER')) {
             <label for="otherCareTeamType">Other subtype</label>

@@ -58,7 +58,8 @@ const liveDoctorInclude = {
       isAvailable: true,
       mentalHealthProfile: {
         select: {
-          careTeamType: true
+          careTeamType: true,
+          careTeamTypes: true
         }
       }
     }
@@ -93,6 +94,7 @@ export function mapLiveDoctor(session: {
     isAvailable: boolean;
     mentalHealthProfile?: {
       careTeamType: CareTeamMemberType;
+      careTeamTypes: CareTeamMemberType[];
     } | null;
   };
 }) {
@@ -114,7 +116,10 @@ export function mapLiveDoctor(session: {
     doctorType: session.doctor.doctorType,
     doctorTypeLabel: doctorTypeLabel(session.doctor.doctorType),
     mentalHealthProfile: session.doctor.mentalHealthProfile
-      ? { careTeamType: session.doctor.mentalHealthProfile.careTeamType }
+      ? {
+          careTeamType: session.doctor.mentalHealthProfile.careTeamType,
+          careTeamTypes: session.doctor.mentalHealthProfile.careTeamTypes
+        }
       : null,
     specialtyFocusLabel: specialtyFocusLabel(session.doctor.specialtyFocus),
     category: capabilities.diseaseSpecialtySettings

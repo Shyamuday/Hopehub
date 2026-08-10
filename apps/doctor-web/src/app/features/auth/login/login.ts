@@ -1,6 +1,7 @@
 import { Component, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { form, FormField, required } from '@angular/forms/signals';
+import { MultiSelectComponent } from '@hopehub/platform-ui';
 import { DEFAULT_AUTHED_ROUTE } from '../../../core/constants/app-routes.constants';
 import { Auth } from '../../../core/services/auth';
 import { AppButtonComponent } from '../../../shared/ui/app-button.component';
@@ -25,7 +26,7 @@ type HopeHubCareTeamOption = {
 
 @Component({
   selector: 'app-login',
-  imports: [FormField, AppButtonComponent],
+  imports: [FormField, AppButtonComponent, MultiSelectComponent],
   templateUrl: './login.html',
   styleUrl: './login.scss',
 })
@@ -224,6 +225,23 @@ export class Login {
         ...current,
         careTeamTypes,
         careTeamType: this.primaryCareTeamTypeFor(careTeamTypes, current.hopeHubGroup),
+      };
+    });
+  }
+
+  setCareTeamTypes(values: string[]): void {
+    this.enrollModel.update((current) => {
+      const selected = values.filter((value): value is SelectableHopeHubCareTeamType =>
+        this.careTeamTypeOptions().some((option) => option.value === value),
+      );
+      const careTeamTypes = selected.length
+        ? selected
+        : [this.defaultCareTeamTypeForGroup(current.hopeHubGroup)];
+      return {
+        ...current,
+        careTeamTypes,
+        careTeamType: this.primaryCareTeamTypeFor(careTeamTypes, current.hopeHubGroup),
+        otherCareTeamType: careTeamTypes.includes('OTHER') ? current.otherCareTeamType : '',
       };
     });
   }

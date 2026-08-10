@@ -102,19 +102,15 @@
           <p class="field-hint">{{ selectedHopeHubGroupHelper() }}</p>
         }
 
-        <label>Subtype <span class="hint">(select all that apply)</span></label>
-        <div class="multi-check-grid">
-          @for (option of careTeamTypeOptions(); track option.value) {
-            <label class="multi-check-option">
-              <input
-                type="checkbox"
-                [checked]="isCareTeamTypeSelected(option.value)"
-                (change)="onCareTeamTypeToggle(option.value, $any($event.target).checked)"
-              />
-              <span>{{ option.label }}</span>
-            </label>
-          }
-        </div>
+        <hopehub-multi-select
+          label="Subtype"
+          hint="Select all that apply"
+          placeholder="Choose Hope Hub subtype"
+          tone="hope"
+          [options]="careTeamTypeOptions()"
+          [selected]="enrollModel().careTeamTypes"
+          (selectedChange)="setCareTeamTypes($event)"
+        />
         @if (isCareTeamTypeSelected('OTHER')) {
           <label for="otherCareTeamType">Other subtype</label>
           <input

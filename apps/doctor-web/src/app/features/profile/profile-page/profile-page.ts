@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Component, inject, signal } from '@angular/core';
 import { form, FormField } from '@angular/forms/signals';
 import { firstValueFrom } from 'rxjs';
-import { ProfileAvatarUploadComponent } from '@hopehub/platform-ui';
+import { MultiSelectComponent, ProfileAvatarUploadComponent } from '@hopehub/platform-ui';
 import { environment } from '../../../../environments/environment';
 import { API_PATHS } from '../../../core/constants/api-paths.constants';
 import { AUTH_TOKEN_KEY } from '../../../core/constants/auth.constants';
@@ -72,7 +72,7 @@ function emptyProfileModel() {
 
 @Component({
   selector: 'app-profile-page',
-  imports: [FormField, ProfileAvatarUploadComponent],
+  imports: [FormField, ProfileAvatarUploadComponent, MultiSelectComponent],
   templateUrl: './profile-page.html',
   styleUrl: './profile-page.scss',
 })
@@ -167,12 +167,31 @@ export class ProfilePage {
       const next = checked
         ? Array.from(new Set([...current.careTeamTypes, value]))
         : current.careTeamTypes.filter((item) => item !== value);
-      const careTeamTypes = next.length ? next : ['MENTAL_WELLNESS_PROFESSIONAL'];
+      const careTeamTypes: SelectableProfileCareTeamType[] = next.length
+        ? next
+        : ['MENTAL_WELLNESS_PROFESSIONAL'];
       return {
         ...current,
         careTeamTypes,
         careTeamType: this.primaryProfileCareTeamType(careTeamTypes),
         otherCareTeamType: value === 'OTHER' && !checked ? '' : current.otherCareTeamType,
+      };
+    });
+  }
+
+  setProfileCareTeamTypes(values: string[]): void {
+    this.profileModel.update((current) => {
+      const selected = values.filter((value): value is SelectableProfileCareTeamType =>
+        this.careTeamTypeOptions.some((option) => option.value === value),
+      );
+      const careTeamTypes: SelectableProfileCareTeamType[] = selected.length
+        ? selected
+        : ['MENTAL_WELLNESS_PROFESSIONAL'];
+      return {
+        ...current,
+        careTeamTypes,
+        careTeamType: this.primaryProfileCareTeamType(careTeamTypes),
+        otherCareTeamType: careTeamTypes.includes('OTHER') ? current.otherCareTeamType : '',
       };
     });
   }
@@ -454,7 +473,7 @@ export class ProfilePage {
     specialty: string,
   ): SelectableProfileCareTeamType[] {
     const specialtyText = specialty.toLowerCase();
-    const selected = CARE_TEAM_TYPE_OPTIONS.filter((value) => {
+    const selected: SelectableProfileCareTeamType[] = CARE_TEAM_TYPE_OPTIONS.filter((value) => {
       const label = CARE_TEAM_TYPE_LABELS[value].toLowerCase();
       return value === primaryCareTeamType || specialtyText.includes(label);
     });

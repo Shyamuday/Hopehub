@@ -20,6 +20,10 @@ export type {
   PatientScanAppKey
 } from './patient-scan/types';
 export { DetailRowsComponent } from './detail-rows/detail-rows.component';
+export {
+  MultiSelectComponent,
+  type MultiSelectOption
+} from './multi-select/multi-select.component';
 export { ProfileAvatarUploadComponent } from './profile-avatar-upload/profile-avatar-upload.component';
 export { ProfileAvatarDisplayComponent } from './profile-avatar-display/profile-avatar-display.component';
 export { buildDetailRows } from './detail-rows/detail-rows.util';

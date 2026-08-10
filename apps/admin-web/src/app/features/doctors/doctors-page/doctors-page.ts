@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, computed, effect, inject, signal } from '@angular/core';
 import { form, FormField } from '@angular/forms/signals';
 import { RouterLink } from '@angular/router';
-import { buildDetailRows, DetailRowsComponent } from '@hopehub/platform-ui';
+import { buildDetailRows, DetailRowsComponent, MultiSelectComponent } from '@hopehub/platform-ui';
 import { AdminApi } from '../../../core/services/admin-api';
 import { adminRouteLink, ROUTE_PATHS } from '../../../core/constants/app-routes.constants';
 import { AdminWorkspaceService } from '../../../core/services/admin-workspace.service';
@@ -210,7 +210,7 @@ function emptyEditModel() {
 
 @Component({
   selector: 'app-doctors-page',
-  imports: [CommonModule, FormField, DetailRowsComponent, RouterLink],
+  imports: [CommonModule, FormField, DetailRowsComponent, MultiSelectComponent, RouterLink],
   templateUrl: './doctors-page.html',
   styleUrl: './doctors-page.scss',
 })
@@ -1114,7 +1114,19 @@ export class DoctorsPage {
     const next = checked
       ? Array.from(new Set([...current.careTeamTypes, type]))
       : current.careTeamTypes.filter((item) => item !== type);
-    const careTeamTypes = next.length ? next : ['MENTAL_WELLNESS_PROFESSIONAL'];
+    const careTeamTypes: CareTeamMemberType[] = next.length
+      ? next
+      : ['MENTAL_WELLNESS_PROFESSIONAL'];
+    this.createModel.set({
+      ...current,
+      careTeamTypes,
+      careTeamType: careTeamTypes[0],
+    });
+  }
+
+  setCreateCareTeamTypes(values: string[]) {
+    const current = this.createModel();
+    const careTeamTypes = this.normalizedSelectedCareTeamTypes(values);
     this.createModel.set({
       ...current,
       careTeamTypes,
@@ -1127,12 +1139,32 @@ export class DoctorsPage {
     const next = checked
       ? Array.from(new Set([...current.careTeamTypes, type]))
       : current.careTeamTypes.filter((item) => item !== type);
-    const careTeamTypes = next.length ? next : ['MENTAL_WELLNESS_PROFESSIONAL'];
+    const careTeamTypes: CareTeamMemberType[] = next.length
+      ? next
+      : ['MENTAL_WELLNESS_PROFESSIONAL'];
     this.editModel.set({
       ...current,
       careTeamTypes,
       careTeamType: careTeamTypes[0],
     });
+  }
+
+  setEditCareTeamTypes(values: string[]) {
+    const current = this.editModel();
+    const careTeamTypes = this.normalizedSelectedCareTeamTypes(values);
+    this.editModel.set({
+      ...current,
+      careTeamTypes,
+      careTeamType: careTeamTypes[0],
+    });
+  }
+
+  private normalizedSelectedCareTeamTypes(values: string[]): CareTeamMemberType[] {
+    const allowed = new Set(this.careTeamTypeOptions.map((option) => option.value));
+    const selected = values.filter((value): value is CareTeamMemberType =>
+      allowed.has(value as CareTeamMemberType),
+    );
+    return selected.length ? selected : ['MENTAL_WELLNESS_PROFESSIONAL'];
   }
 
   providerSingularTitle() {
