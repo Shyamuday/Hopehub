@@ -73,7 +73,7 @@ export class ListenerScreeningPage implements OnInit {
       title: questionSet.title || 'Listener screening test',
       version: questionSet.version || this.nextVersion(),
       description: questionSet.description || '',
-      passScore: Number(questionSet.passScore || 16),
+      passScore: Number(questionSet.passScore || 6),
       isActive: Boolean(questionSet.isActive),
       questions: (questionSet.questions || []).map((question: any) => ({
         id: question.id,
@@ -314,7 +314,7 @@ export class ListenerScreeningPage implements OnInit {
       version: this.nextVersion(),
       description:
         'Safety, boundaries, confidentiality, escalation, and active listening screening for emotional support listeners.',
-      passScore: 16,
+      passScore: 6,
       isActive: false,
       questions: [],
     };

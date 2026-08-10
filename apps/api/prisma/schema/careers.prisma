@@ -146,7 +146,7 @@ model ListenerScreeningQuestionSet {
   title        String   @default("Listener screening test")
   version      String   @unique
   description  String?  @db.Text
-  passScore    Int      @default(16)
+  passScore    Int      @default(6)
   questions    Json
   isActive     Boolean  @default(false)
   publishedAt  DateTime?
