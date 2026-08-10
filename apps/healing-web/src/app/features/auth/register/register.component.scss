@@ -13,12 +13,61 @@
     animation: fade-in 0.3s ease-out;
 }
 
+.auth-compact-card {
+    padding: 1.15rem !important;
+}
+
+.auth-compact-stack {
+    display: grid;
+    gap: 0.9rem !important;
+}
+
+.auth-compact-header {
+    text-align: center;
+}
+
+.auth-compact-icon {
+    height: 2.35rem !important;
+    width: 2.35rem !important;
+
+    svg {
+        height: 1.15rem;
+        width: 1.15rem;
+    }
+}
+
+.auth-compact-title {
+    font-size: 1.35rem !important;
+    margin-top: 0.7rem !important;
+}
+
+.auth-compact-switch {
+    font-size: 0.82rem !important;
+    margin-top: 0.35rem !important;
+}
+
+.auth-compact-form {
+    display: grid;
+    gap: 0.75rem !important;
+    margin-top: 0.9rem !important;
+}
+
+.auth-compact-fields {
+    display: grid;
+    gap: 0.45rem !important;
+}
+
+.auth-compact-fields label {
+    font-size: 0.78rem !important;
+    margin-bottom: 0.15rem;
+}
+
 .auth-field-error {
-    min-height: 1.25rem;
-    margin-top: 0.25rem;
+    min-height: 0.9rem;
+    margin-top: 0.12rem;
     color: #dc2626;
-    font-size: 0.8rem;
-    line-height: 1.25rem;
+    font-size: 0.72rem;
+    line-height: 0.9rem;
 }
 
 .password-input-wrap {
@@ -28,15 +77,36 @@
 .password-toggle {
     position: absolute;
     top: 50%;
-    right: 0.7rem;
+    right: 0.65rem;
     transform: translateY(-50%);
     border: 0;
     background: transparent;
     color: var(--brand-primary);
     cursor: pointer;
-    font-size: 0.8rem;
+    font-size: 0.74rem;
     font-weight: 700;
     padding: 0.2rem;
+}
+
+input {
+    min-height: 2.35rem;
+    padding-bottom: 0.48rem !important;
+    padding-top: 0.48rem !important;
+}
+
+.auth-compact-terms {
+    font-size: 0.8rem;
+    line-height: 1.35;
+}
+
+.auth-compact-divider,
+.auth-social-action {
+    margin-top: 0.8rem !important;
+}
+
+.auth-social-action button {
+    padding-bottom: 0.58rem !important;
+    padding-top: 0.58rem !important;
 }
 
 // Form input focus states
@@ -52,12 +122,32 @@ button:not(:disabled):hover {
 
 // Mobile responsiveness
 @media (max-width: 640px) {
+    .auth-compact-card {
+        max-height: 88dvh !important;
+        padding: 0.95rem !important;
+    }
+
+    .auth-compact-title {
+        font-size: 1.2rem !important;
+    }
+
+    .auth-compact-icon {
+        height: 2.15rem !important;
+        width: 2.15rem !important;
+    }
+
     .min-h-screen {
         padding: 1rem;
     }
 
     .grid-cols-2 {
         grid-template-columns: 1fr;
+    }
+}
+
+@media (min-width: 641px) {
+    .auth-compact-card {
+        padding: 1.35rem 1.45rem !important;
     }
 }
 

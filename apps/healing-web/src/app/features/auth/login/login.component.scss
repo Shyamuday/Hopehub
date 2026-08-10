@@ -13,12 +13,70 @@
     animation: fade-in 0.3s ease-out;
 }
 
+.auth-compact-card {
+    padding: 1.15rem !important;
+}
+
+.auth-compact-stack {
+    display: grid;
+    gap: 0.9rem !important;
+}
+
+.auth-compact-header {
+    text-align: center;
+}
+
+.auth-compact-icon {
+    height: 2.35rem !important;
+    width: 2.35rem !important;
+
+    svg {
+        height: 1.15rem;
+        width: 1.15rem;
+    }
+}
+
+.auth-compact-title {
+    font-size: 1.35rem !important;
+    margin-top: 0.7rem !important;
+}
+
+.auth-compact-role-note {
+    font-size: 0.64rem !important;
+    line-height: 1.2;
+    margin-top: 0.35rem !important;
+}
+
+.auth-compact-switch {
+    font-size: 0.82rem !important;
+    margin-top: 0.35rem !important;
+}
+
+.auth-compact-form {
+    display: grid;
+    gap: 0.8rem !important;
+    margin-top: 0.95rem !important;
+}
+
+.auth-mode-tabs {
+    gap: 0.25rem !important;
+
+    button {
+        padding: 0.48rem 0.6rem !important;
+    }
+}
+
+.auth-compact-fields {
+    display: grid;
+    gap: 0.55rem !important;
+}
+
 .auth-field-error {
-    min-height: 1.25rem;
-    margin-top: 0.25rem;
+    min-height: 0.95rem;
+    margin-top: 0.15rem;
     color: #dc2626;
-    font-size: 0.8rem;
-    line-height: 1.25rem;
+    font-size: 0.72rem;
+    line-height: 0.95rem;
 }
 
 .password-input-wrap {
@@ -28,20 +86,26 @@
 .password-toggle {
     position: absolute;
     top: 50%;
-    right: 0.7rem;
+    right: 0.65rem;
     transform: translateY(-50%);
     border: 0;
     background: transparent;
     color: var(--brand-primary);
     cursor: pointer;
-    font-size: 0.8rem;
+    font-size: 0.74rem;
     font-weight: 700;
     padding: 0.2rem;
 }
 
+input {
+    min-height: 2.35rem;
+    padding-bottom: 0.48rem !important;
+    padding-top: 0.48rem !important;
+}
+
 .otp-step {
     display: grid;
-    gap: 0.45rem;
+    gap: 0.35rem;
 }
 
 .otp-step__meta {
@@ -55,7 +119,7 @@
     font-size: 0.82rem;
     font-weight: 700;
     line-height: 1.35;
-    padding: 0.65rem 0.75rem;
+    padding: 0.5rem 0.65rem;
 }
 
 .otp-step__meta button,
@@ -74,6 +138,21 @@
     justify-self: start;
 }
 
+.auth-compact-row {
+    gap: 0.65rem;
+    font-size: 0.82rem;
+}
+
+.auth-compact-divider,
+.auth-social-action {
+    margin-top: 0.85rem !important;
+}
+
+.auth-social-action button {
+    padding-bottom: 0.58rem !important;
+    padding-top: 0.58rem !important;
+}
+
 // Form input focus states
 input:focus {
     outline: none;
@@ -83,6 +162,28 @@ input:focus {
 // Button hover effects
 button:not(:disabled):hover {
     transform: translateY(-1px);
+}
+
+@media (min-width: 641px) {
+    .auth-compact-card {
+        padding: 1.35rem 1.45rem !important;
+    }
+}
+
+@media (max-width: 640px) {
+    .auth-compact-card {
+        max-height: 88dvh !important;
+        padding: 0.95rem !important;
+    }
+
+    .auth-compact-title {
+        font-size: 1.2rem !important;
+    }
+
+    .auth-compact-icon {
+        height: 2.15rem !important;
+        width: 2.15rem !important;
+    }
 }
 
 // Scrollbar styling for modal content

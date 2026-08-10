@@ -1,19 +1,19 @@
-<div class="p-6 sm:p-8 max-h-[90vh] overflow-y-auto">
-    <div class="w-full space-y-6">
+<div class="auth-compact-card p-6 sm:p-8 max-h-[90vh] overflow-y-auto">
+    <div class="auth-compact-stack w-full space-y-6">
         <!-- Header -->
-        <div>
-            <div class="mx-auto h-12 w-12 flex items-center justify-center rounded-full bg-primary-600 shadow-lg">
+        <div class="auth-compact-header">
+            <div class="auth-compact-icon mx-auto h-12 w-12 flex items-center justify-center rounded-full bg-primary-600 shadow-lg">
                 <svg class="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
             </div>
-            <h2 class="mt-4 text-center text-2xl font-extrabold text-gray-900">
+            <h2 class="auth-compact-title mt-4 text-center text-2xl font-extrabold text-gray-900">
                 Sign in
             </h2>
-            <p class="mt-2 text-center text-xs font-semibold uppercase tracking-wide text-primary-700">
+            <p class="auth-compact-role-note mt-2 text-center text-xs font-semibold uppercase tracking-wide text-primary-700">
                 Patients, providers, and admins can use the same login.
             </p>
-            <p class="mt-2 text-center text-sm text-gray-600">
+            <p class="auth-compact-switch mt-2 text-center text-sm text-gray-600">
                 New here?
                 <button type="button" (click)="openRegister()" class="font-medium text-primary-600 hover:text-primary-700 transition-colors">
                     Sign up
@@ -40,8 +40,8 @@
         }
 
         <!-- Login Form -->
-        <form class="mt-6 space-y-5" [formGroup]="loginForm" (submit)="$event.preventDefault(); onSubmit()">
-            <div class="grid grid-cols-2 gap-2 rounded-md bg-gray-100 p-1">
+        <form class="auth-compact-form mt-6 space-y-5" [formGroup]="loginForm" (submit)="$event.preventDefault(); onSubmit()">
+            <div class="auth-mode-tabs grid grid-cols-2 gap-2 rounded-md bg-gray-100 p-1">
                 <button
                     type="button"
                     class="rounded-md px-3 py-2 text-sm font-semibold transition"
@@ -62,7 +62,7 @@
                 </button>
             </div>
 
-            <div class="space-y-3">
+            <div class="auth-compact-fields space-y-3">
                 <div>
                     <label for="email" class="sr-only">Email address</label>
                     <input
@@ -157,7 +157,7 @@
             </div>
 
             @if (loginMode() === 'password') {
-            <div class="flex items-center justify-between">
+            <div class="auth-compact-row flex items-center justify-between">
                 <div class="flex items-center">
                     <input
                         id="remember-me"
@@ -193,7 +193,7 @@
 
             @if (loginMode() === 'password') {
             <!-- Divider -->
-            <div class="mt-6">
+            <div class="auth-compact-divider mt-6">
                 <div class="relative">
                     <div class="absolute inset-0 flex items-center">
                         <div class="w-full border-t border-gray-300"></div>
@@ -203,7 +203,7 @@
                     </div>
                 </div>
 
-                <div class="mt-6">
+                <div class="auth-social-action mt-6">
                     <button
                         type="button"
                         (click)="loginWithGoogle()"
