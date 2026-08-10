@@ -95,7 +95,7 @@ export const listenerScreeningQuestionSetWriteSchema = z.object({
       'Version can only contain letters, numbers, dot, underscore, and hyphen.'
     ),
   description: z.string().trim().max(3000).nullable().optional(),
-  passScore: z.number().int().min(1).max(60).default(16),
+  passScore: z.number().int().min(1).max(60).default(6),
   questions: listenerScreeningQuestionsSchema,
   isActive: z.boolean().optional().default(false)
 });

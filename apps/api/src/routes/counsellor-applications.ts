@@ -30,7 +30,7 @@ const optionalDate = z.preprocess(
 );
 const LISTENER_GUIDELINES_VERSION = 'listener-guidelines-v1-2026-08-07';
 const LISTENER_TRAINING_VERSION = 'listener-training-v1-2026-08-07';
-const MINIMUM_LISTENER_GUIDELINES_READ_SECONDS = 120;
+const MINIMUM_LISTENER_GUIDELINES_READ_SECONDS = 5;
 const MAX_FAILED_LISTENER_SCREENING_ATTEMPTS = 3;
 const LISTENER_SCREENING_COOLDOWN_HOURS = 24;
 const AUTO_APPROVED_LISTENER_CHAT_VOICE_PRICE_IN_PAISE = 9900;
@@ -568,7 +568,7 @@ counsellorApplicationsRouter.post(
       ? scoreListenerScreening(
           listenerQuestions,
           body.listenerScreeningAnswers,
-          listenerQuestionSet?.passScore ?? 16
+          listenerQuestionSet?.passScore ?? 6
         )
       : null;
     const shouldAutoApprove = Boolean(listenerScreening?.passed);
@@ -620,7 +620,7 @@ counsellorApplicationsRouter.post(
       if (!listenerGuidelinesReadTimeSatisfied) {
         return res.status(400).json({
           message:
-            'Please spend at least 2 minutes reading the listener guidelines before auto-approval.'
+            'Please spend at least 5 seconds reading the listener guidelines before auto-approval.'
         });
       }
       if (!body.listenerTrainingCompleted) {
