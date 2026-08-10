@@ -127,6 +127,7 @@ function listenerPublicProfileReady(input: {
   mentalHealthProfile: NonNullable<z.infer<typeof mentalHealthProviderProfileSchema>> & {
     listenerSafetyAcknowledgedAt?: Date | string | null;
   };
+  listenerScreeningPassed: boolean;
   services: Array<{ isActive: boolean; title: string; durationMinutes: number }>;
 }) {
   const mental = input.mentalHealthProfile;
@@ -144,12 +145,85 @@ function listenerPublicProfileReady(input: {
     cleanList(mental.concernsHandled).length > 0 &&
     cleanNullableText(mental.safetyEscalationNote) &&
     hasSafetyAcknowledgement &&
+    input.listenerScreeningPassed &&
     input.isAvailable &&
     (mental.acceptingNewUsers ?? true) &&
     input.services.some(
       (service) => service.isActive && service.title.trim() && service.durationMinutes >= 5
     )
   );
+}
+
+async function latestListenerScreeningForEmail(email?: string | null) {
+  const normalizedEmail = email?.trim();
+  if (!normalizedEmail) return null;
+
+  const [attempt, application] = await Promise.all([
+    prisma.listenerScreeningAttempt.findFirst({
+      where: { email: { equals: normalizedEmail, mode: 'insensitive' } },
+      orderBy: { createdAt: 'desc' },
+      select: {
+        score: true,
+        maxScore: true,
+        passed: true,
+        createdAt: true,
+        questionSetVersion: true
+      }
+    }),
+    prisma.counsellorApplication.findFirst({
+      where: {
+        email: { equals: normalizedEmail, mode: 'insensitive' },
+        listenerScreeningCompletedAt: { not: null }
+      },
+      orderBy: { listenerScreeningCompletedAt: 'desc' },
+      select: {
+        listenerScreeningScore: true,
+        listenerScreeningMaxScore: true,
+        listenerScreeningPassed: true,
+        listenerScreeningCompletedAt: true,
+        listenerScreeningQuestionSetVersion: true
+      }
+    })
+  ]);
+
+  const applicationCompletedAt = application?.listenerScreeningCompletedAt ?? null;
+  const attemptCompletedAt = attempt?.createdAt ?? null;
+  const useApplication =
+    applicationCompletedAt &&
+    (!attemptCompletedAt || applicationCompletedAt.getTime() >= attemptCompletedAt.getTime());
+
+  if (useApplication && application) {
+    return {
+      score: application.listenerScreeningScore,
+      maxScore: application.listenerScreeningMaxScore,
+      passed: application.listenerScreeningPassed,
+      completedAt: applicationCompletedAt,
+      questionSetVersion: application.listenerScreeningQuestionSetVersion
+    };
+  }
+
+  if (!attempt) return null;
+  return {
+    score: attempt.score,
+    maxScore: attempt.maxScore,
+    passed: attempt.passed,
+    completedAt: attempt.createdAt,
+    questionSetVersion: attempt.questionSetVersion
+  };
+}
+
+function withListenerScreening(
+  doctorProfile: any,
+  listenerScreening: Awaited<ReturnType<typeof latestListenerScreeningForEmail>>
+) {
+  if (!doctorProfile?.mentalHealthProfile) return doctorProfile;
+  return {
+    ...doctorProfile,
+    mentalHealthProfile: {
+      ...doctorProfile.mentalHealthProfile,
+      listenerScreening
+    }
+  };
 }
 
 export function registerAuthDoctorRoutes(router: Router) {
@@ -267,6 +341,7 @@ export function registerAuthDoctorRoutes(router: Router) {
 
       if (!profile) return res.status(404).json({ message: 'Doctor profile not found' });
 
+      const listenerScreening = await latestListenerScreeningForEmail(profile.email);
       const doctorProfile = profile.doctorProfile
         ? {
             ...profile.doctorProfile,
@@ -276,7 +351,10 @@ export function registerAuthDoctorRoutes(router: Router) {
         : null;
 
       res.json({
-        profile: enrichWithProfileImageUrl({ ...profile, doctorProfile }, userProfileImagePath)
+        profile: enrichWithProfileImageUrl(
+          { ...profile, doctorProfile: withListenerScreening(doctorProfile, listenerScreening) },
+          userProfileImagePath
+        )
       });
     })
   );
@@ -407,6 +485,7 @@ export function registerAuthDoctorRoutes(router: Router) {
       const isListenerProfile =
         profilePayload.doctorType === HomeopathicDoctorType.PSYCHOLOGIST &&
         mentalHealthProfile?.careTeamTypes.some((type) => isListenerCareTeamType(type));
+      const listenerScreening = await latestListenerScreeningForEmail(req.user!.email);
       const listenerReadyForPublic =
         isListenerProfile && body.mentalHealthProfile
           ? listenerPublicProfileReady({
@@ -423,6 +502,7 @@ export function registerAuthDoctorRoutes(router: Router) {
                 listenerSafetyAcknowledgedAt:
                   mentalHealthProfile?.listenerSafetyAcknowledgedAt ?? null
               },
+              listenerScreeningPassed: Boolean(listenerScreening?.passed),
               services: mentalHealthServices
             })
           : false;
@@ -498,6 +578,7 @@ export function registerAuthDoctorRoutes(router: Router) {
         }
       });
 
+      const refreshedListenerScreening = await latestListenerScreeningForEmail(updated.email);
       const doctorProfile = updated.doctorProfile
         ? {
             ...updated.doctorProfile,
@@ -507,7 +588,13 @@ export function registerAuthDoctorRoutes(router: Router) {
         : null;
 
       res.json({
-        profile: enrichWithProfileImageUrl({ ...updated, doctorProfile }, userProfileImagePath)
+        profile: enrichWithProfileImageUrl(
+          {
+            ...updated,
+            doctorProfile: withListenerScreening(doctorProfile, refreshedListenerScreening)
+          },
+          userProfileImagePath
+        )
       });
     })
   );

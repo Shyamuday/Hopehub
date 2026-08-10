@@ -101,6 +101,9 @@ export function buildProviderOnboardingStatus(
   ].filter(Boolean);
   const servicesMissing =
     hopeHub && activeServiceCount(profile) <= 0 ? ['one active service/price'] : [];
+  const screeningMissing = [
+    listener && !mental?.listenerScreening?.passed ? 'passed listener screening test' : '',
+  ].filter(Boolean);
 
   const steps: ProviderOnboardingStep[] = [
     {
@@ -144,6 +147,16 @@ export function buildProviderOnboardingStatus(
           : hasList(profile?.focusAreas)),
       required: true,
       missing: bioMissing,
+    },
+    {
+      id: 'screening',
+      title: 'Listener screening test passed',
+      description: 'Complete the listener screening test before you can support users.',
+      actionLabel: 'Review status',
+      route: `/${ROUTE_PATHS.DASHBOARD}`,
+      complete: listener ? Boolean(mental?.listenerScreening?.passed) : true,
+      required: listener,
+      missing: screeningMissing,
     },
     {
       id: 'safety',

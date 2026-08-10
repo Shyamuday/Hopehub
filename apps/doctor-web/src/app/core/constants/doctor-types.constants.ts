@@ -67,6 +67,13 @@ export type DoctorProfileSummary = {
     safetyEscalationNote?: string | null;
     listenerSafetyAcknowledgedAt?: string | null;
     listenerSafetyAcknowledgedVersion?: string | null;
+    listenerScreening?: {
+      score?: number | null;
+      maxScore?: number | null;
+      passed?: boolean | null;
+      completedAt?: string | null;
+      questionSetVersion?: string | null;
+    } | null;
     acceptsHighRiskCases: boolean;
     autoMatchEnabled?: boolean;
     acceptingNewUsers?: boolean;
