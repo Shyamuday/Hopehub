@@ -10,7 +10,7 @@ function handler(event) {
     prefix = 'patient';
   } else if (host === 'admin.hopehub.in') {
     prefix = 'admin';
-  } else if (host === 'doctor.hopehub.in') {
+  } else if (host === 'ph.hopehub.in') {
     prefix = 'doctor';
   } else if (host === 'ops.hopehub.in' || host === 'operations.hopehub.in') {
     prefix = 'operations';

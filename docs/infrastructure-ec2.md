@@ -144,13 +144,13 @@ Security group: allow **5432** only from the API EC2 security group.
 
 Set these in `deploy/.env` (from `deploy/.env.production.example`):
 
-| Env var             | Example                     |
-| ------------------- | --------------------------- |
-| `API_PUBLIC_URL`    | `https://api.hopehub.in`    |
-| `WEB_ORIGIN`        | `https://hopehub.in`        |
-| `DOCTOR_ORIGIN`     | `https://doctor.hopehub.in` |
-| `OPERATIONS_ORIGIN` | `https://ops.hopehub.in`    |
-| `ADMIN_ORIGIN`      | `https://admin.hopehub.in`  |
+| Env var             | Example                    |
+| ------------------- | -------------------------- |
+| `API_PUBLIC_URL`    | `https://api.hopehub.in`   |
+| `WEB_ORIGIN`        | `https://hopehub.in`       |
+| `DOCTOR_ORIGIN`     | `https://ph.hopehub.in`    |
+| `OPERATIONS_ORIGIN` | `https://ops.hopehub.in`   |
+| `ADMIN_ORIGIN`      | `https://admin.hopehub.in` |
 
 Update `apiUrl` in each app's `environment.prod.ts` before building static assets.
 
@@ -201,7 +201,7 @@ sudo certbot certonly --webroot \
   -d api.hopehub.in \
   -d hopehub.in \
   -d admin.hopehub.in \
-  -d doctor.hopehub.in \
+  -d ph.hopehub.in \
   -d ops.hopehub.in
 ```
 

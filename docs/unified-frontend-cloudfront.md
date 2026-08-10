@@ -11,7 +11,7 @@ mind.hopehub.in         -> /patient/index.html
 user.hopehub.in         -> /patient/index.html
 patient.hopehub.in      -> /patient/index.html
 admin.hopehub.in        -> /admin/index.html
-doctor.hopehub.in       -> /doctor/index.html
+ph.hopehub.in           -> /doctor/index.html
 ops.hopehub.in          -> /operations/index.html
 operations.hopehub.in   -> /operations/index.html
 healing.hopehub.in      -> /healing/index.html
@@ -42,7 +42,7 @@ Attach `deploy/cloudfront/frontend-host-router.js` to the distribution as a view
 It rewrites requests by hostname:
 
 - `/login` on `admin.hopehub.in` -> `/admin/index.html`
-- `/main.js` on `doctor.hopehub.in` -> `/doctor/main.js`
+- `/main.js` on `ph.hopehub.in` -> `/doctor/main.js`
 - `/patient/dashboard` on `mind.hopehub.in` -> `/patient/index.html`
 - `/` on `hopehub.in` -> `/healing/index.html`
 
@@ -76,7 +76,7 @@ hopehub.in
 www.hopehub.in
 mind.hopehub.in
 admin.hopehub.in
-doctor.hopehub.in
+ph.hopehub.in
 ops.hopehub.in
 ```
 
