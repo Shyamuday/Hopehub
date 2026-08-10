@@ -136,7 +136,7 @@ jobs:
               if echo "$changed" | grep -Eq '^apps/healing-web/'; then healing=true; fi
               if echo "$changed" | grep -Eq '^apps/api/'; then api=true; fi
 
-              if echo "$changed" | grep -Eq '^(libs|shared|deploy/config|deploy/scripts|package\.json|package-lock\.json|\.github/workflows/deploy-cloud\.yml)'; then
+              if echo "$changed" | grep -Eq '^(libs|shared|deploy/config|deploy/scripts|deploy/cloudfront|package\.json|package-lock\.json|\.github/workflows/deploy-cloud\.yml)'; then
                 select_all
               fi
             fi
