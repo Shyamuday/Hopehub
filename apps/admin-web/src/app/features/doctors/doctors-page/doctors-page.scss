@@ -168,6 +168,31 @@
   min-width: 0;
 }
 
+.support-path-row {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.45rem;
+
+  small {
+    color: #64748b;
+    font-size: 0.78rem;
+  }
+}
+
+.support-path-chip {
+  background: #f5f3ff;
+  border: 1px solid #ddd6fe;
+  border-radius: 999px;
+  color: #5b21b6;
+  display: inline-flex;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  padding: 0.18rem 0.55rem;
+}
+
 .actions {
   display: flex;
   gap: 0.5rem;

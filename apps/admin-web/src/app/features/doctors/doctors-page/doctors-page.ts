@@ -105,6 +105,8 @@ type CareTeamPricingTemplate = CareTeamService & {
   title: string;
   sortOrder?: number;
 };
+type HopeHubSupportPath = 'PROFESSIONAL_CARE' | 'COACH_MENTOR' | 'EMOTIONAL_LISTENER';
+type HopeHubSupportPathFilter = '' | HopeHubSupportPath;
 
 const STALE_PSYCHOLOGIST_PROFILE_TEXT = /homeopathic|doctor|clinical operations/i;
 const CARE_SERVICE_PRICING_MODES = new Set([
@@ -132,6 +134,32 @@ const COACH_HOPE_HUB_TYPES = new Set<CareTeamMemberType>([
   'MEDITATION_BREATHWORK_GUIDE',
   'CAREER_STUDY_MENTOR',
 ]);
+
+const HOPE_HUB_SUPPORT_PATHS: Array<{
+  value: HopeHubSupportPath;
+  label: string;
+  title: string;
+  types: CareTeamMemberType[];
+}> = [
+  {
+    value: 'PROFESSIONAL_CARE',
+    label: 'Professional care',
+    title: 'Psychologist / counsellor',
+    types: ['MENTAL_WELLNESS_PROFESSIONAL', 'QUALIFIED_COUNSELLOR'],
+  },
+  {
+    value: 'COACH_MENTOR',
+    label: 'Clarity & growth',
+    title: 'Life coach / mentor',
+    types: ['NLP_COACH', 'LIFE_COACH', 'MEDITATION_BREATHWORK_GUIDE', 'CAREER_STUDY_MENTOR'],
+  },
+  {
+    value: 'EMOTIONAL_LISTENER',
+    label: 'Talk now',
+    title: 'Emotional support listener',
+    types: ['PSYCHOLOGY_STUDENT_VOLUNTEER', 'PEER_SUPPORT_VOLUNTEER'],
+  },
+];
 
 function psychologistProfileValue(value: string, fallback = 'Hope Hub Provider') {
   const trimmed = value.trim();
@@ -257,6 +285,13 @@ export class DoctorsPage {
     { value: 'MEDITATION_BREATHWORK_GUIDE', label: 'Meditation / breathwork guide' },
     { value: 'CAREER_STUDY_MENTOR', label: 'Career / study mentor' },
   ];
+  readonly supportPathOptions: Array<{ value: HopeHubSupportPathFilter; label: string }> = [
+    { value: '', label: 'All Hope Hub categories' },
+    ...HOPE_HUB_SUPPORT_PATHS.map((path) => ({
+      value: path.value,
+      label: `${path.label} - ${path.title}`,
+    })),
+  ];
   readonly genderOptions: Array<{ value: ProviderGender | ''; label: string }> = [
     { value: '', label: 'Prefer not to show' },
     { value: 'FEMALE', label: 'Female' },
@@ -277,10 +312,14 @@ export class DoctorsPage {
     sortBy: DOCTORS_LIST_DEFAULTS.SORT_BY as DoctorSortField,
     sortDirection: DOCTORS_LIST_DEFAULTS.SORT_DIRECTION as SortDirection,
     statusFilter: DOCTORS_LIST_DEFAULTS.STATUS_FILTER as DoctorStatusFilter,
+    supportPath: '' as HopeHubSupportPathFilter,
   });
   readonly listFilterForm = form(this.listFilterModel);
 
-  readonly pendingFilterModel = signal({ searchTerm: '' });
+  readonly pendingFilterModel = signal({
+    searchTerm: '',
+    supportPath: '' as HopeHubSupportPathFilter,
+  });
   readonly pendingFilterForm = form(this.pendingFilterModel);
 
   readonly createModel = signal(emptyCreateModel());
@@ -335,12 +374,14 @@ export class DoctorsPage {
           sortBy: filters.sortBy,
           sortDirection: filters.sortDirection,
           workspace: this.workspace.selectedWorkspace(),
+          supportPath: this.workspace.isHopeHub() ? filters.supportPath : '',
         }),
         this.api.getPendingDoctorsPaged({
           page: this.pendingPage,
           pageSize: this.pageSize,
           q: pendingFilters.searchTerm,
           workspace: this.workspace.selectedWorkspace(),
+          supportPath: this.workspace.isHopeHub() ? pendingFilters.supportPath : '',
         }),
       ]);
       this.doctors.set(allDoctors.doctors || []);
@@ -667,6 +708,33 @@ export class DoctorsPage {
 
   visiblePendingDoctors() {
     return this.pendingDoctors();
+  }
+
+  supportPathForDoctor(doctor: Doctor) {
+    const mental = doctor.doctorProfile?.mentalHealthProfile;
+    const types = mental?.careTeamTypes?.length
+      ? mental.careTeamTypes
+      : mental?.careTeamType
+        ? [mental.careTeamType]
+        : [];
+    return (
+      HOPE_HUB_SUPPORT_PATHS.find((path) => types.some((type) => path.types.includes(type))) ||
+      HOPE_HUB_SUPPORT_PATHS[0]
+    );
+  }
+
+  supportPathTypeSummary(doctor: Doctor): string {
+    const mental = doctor.doctorProfile?.mentalHealthProfile;
+    const types = mental?.careTeamTypes?.length
+      ? mental.careTeamTypes
+      : mental?.careTeamType
+        ? [mental.careTeamType]
+        : [];
+    return types
+      .map(
+        (type) => this.careTeamTypeOptions.find((option) => option.value === type)?.label || type,
+      )
+      .join(', ');
   }
 
   doctorsTotalPages() {
@@ -1230,6 +1298,10 @@ export class DoctorsPage {
 
   private applyWorkspaceDefaults() {
     const create = this.createModel();
+    if (!this.workspace.isHopeHub()) {
+      this.listFilterModel.update((current) => ({ ...current, supportPath: '' }));
+      this.pendingFilterModel.update((current) => ({ ...current, supportPath: '' }));
+    }
     if (this.workspace.isHopeHub() && create.doctorType !== 'PSYCHOLOGIST') {
       this.createModel.set({
         ...create,

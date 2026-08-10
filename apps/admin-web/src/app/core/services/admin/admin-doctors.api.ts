@@ -28,6 +28,7 @@ export class AdminDoctorsApi extends AdminApiBase {
     sortBy?: DoctorSortField;
     sortDirection?: SortDirection;
     workspace?: 'homeopathy' | 'hope-hub';
+    supportPath?: string;
   }) {
     return firstValueFrom(
       this.http.get<{ doctors: Array<any>; pagination: any }>(
@@ -41,6 +42,7 @@ export class AdminDoctorsApi extends AdminApiBase {
             sortBy: params.sortBy ?? 'createdAt',
             sortDirection: params.sortDirection ?? SORT_DIRECTIONS.DESC,
             workspace: params.workspace ?? '',
+            supportPath: params.supportPath ?? '',
           },
         },
       ),
@@ -52,6 +54,7 @@ export class AdminDoctorsApi extends AdminApiBase {
     pageSize?: number;
     q?: string;
     workspace?: 'homeopathy' | 'hope-hub';
+    supportPath?: string;
   }) {
     return firstValueFrom(
       this.http.get<{ pendingDoctors: Array<any>; pagination: any }>(
@@ -62,6 +65,7 @@ export class AdminDoctorsApi extends AdminApiBase {
             pageSize: String(params.pageSize ?? PAGE_SIZES.DOCTORS),
             q: params.q ?? '',
             workspace: params.workspace ?? '',
+            supportPath: params.supportPath ?? '',
           },
         },
       ),

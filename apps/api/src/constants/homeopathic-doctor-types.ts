@@ -173,6 +173,19 @@ export const COACH_GUIDE_CARE_TEAM_TYPES = [
   CareTeamMemberType.CAREER_STUDY_MENTOR
 ] as const;
 
+export const HOPE_HUB_SUPPORT_PATH_TYPES = {
+  PROFESSIONAL_CARE: CLINICAL_MENTAL_HEALTH_CARE_TEAM_TYPES,
+  COACH_MENTOR: COACH_GUIDE_CARE_TEAM_TYPES,
+  EMOTIONAL_LISTENER: LISTENER_CARE_TEAM_TYPES
+} as const;
+
+export type HopeHubSupportPath = keyof typeof HOPE_HUB_SUPPORT_PATH_TYPES;
+
+export function hopeHubCareTeamTypesForSupportPath(path?: string | null): CareTeamMemberType[] {
+  if (!path || !(path in HOPE_HUB_SUPPORT_PATH_TYPES)) return [];
+  return [...HOPE_HUB_SUPPORT_PATH_TYPES[path as HopeHubSupportPath]];
+}
+
 export function isClinicalMentalHealthCareTeamType(type?: CareTeamMemberType | null) {
   return CLINICAL_MENTAL_HEALTH_CARE_TEAM_TYPES.includes(type as any);
 }

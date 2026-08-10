@@ -28,6 +28,7 @@ import {
   doctorProfileSchema,
   doctorProfileSelect,
   doctorTypeLabel,
+  hopeHubCareTeamTypesForSupportPath,
   specialtyFocusLabel,
   toDoctorProfilePayload
 } from '../../constants/homeopathic-doctor-types.js';
@@ -189,6 +190,8 @@ export function registerAdminDoctorRoutes(router: Router) {
       const query = queryText(req, 'q').trim();
       const status = queryText(req, 'status').toUpperCase();
       const sortBy = queryText(req, 'sortBy');
+      const supportPath = queryText(req, 'supportPath').toUpperCase();
+      const supportPathTypes = hopeHubCareTeamTypesForSupportPath(supportPath);
       const workspace = getAuthorizedAdminWorkspace(req, res);
       if (workspace === null) return;
       const sortDirection =
@@ -199,6 +202,26 @@ export function registerAdminDoctorRoutes(router: Router) {
         ...doctorWorkspaceWhere(workspace),
         ...(status === 'ACTIVE' ? { isActive: true } : {}),
         ...(status === 'INACTIVE' ? { isActive: false } : {}),
+        ...(supportPathTypes.length
+          ? {
+              AND: [
+                {
+                  doctorProfile: {
+                    is: {
+                      mentalHealthProfile: {
+                        is: {
+                          OR: [
+                            { careTeamType: { in: supportPathTypes } },
+                            { careTeamTypes: { hasSome: supportPathTypes } }
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          : {}),
         ...(query
           ? {
               OR: [
@@ -248,6 +271,8 @@ export function registerAdminDoctorRoutes(router: Router) {
       const page = queryPositiveInt(req, 'page', 1);
       const pageSize = queryPositiveInt(req, 'pageSize', 10);
       const query = queryText(req, 'q').trim();
+      const supportPath = queryText(req, 'supportPath').toUpperCase();
+      const supportPathTypes = hopeHubCareTeamTypesForSupportPath(supportPath);
       const workspace = getAuthorizedAdminWorkspace(req, res);
       if (workspace === null) return;
 
@@ -255,6 +280,26 @@ export function registerAdminDoctorRoutes(router: Router) {
         role: Role.DOCTOR,
         isActive: false,
         ...doctorWorkspaceWhere(workspace),
+        ...(supportPathTypes.length
+          ? {
+              AND: [
+                {
+                  doctorProfile: {
+                    is: {
+                      mentalHealthProfile: {
+                        is: {
+                          OR: [
+                            { careTeamType: { in: supportPathTypes } },
+                            { careTeamTypes: { hasSome: supportPathTypes } }
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          : {}),
         ...(query
           ? {
               OR: [

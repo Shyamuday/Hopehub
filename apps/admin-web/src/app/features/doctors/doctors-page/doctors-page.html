@@ -277,6 +277,13 @@
       [formField]="pendingFilterForm.searchTerm"
       (change)="onPendingFilterChange()"
     />
+    @if (workspaceKey() === 'hope-hub') {
+      <select [formField]="pendingFilterForm.supportPath" (change)="onPendingFilterChange()">
+        @for (option of supportPathOptions; track option.value) {
+          <option [value]="option.value">{{ option.label }}</option>
+        }
+      </select>
+    }
     <label class="select-all">
       <input
         type="checkbox"
@@ -321,6 +328,14 @@
           {{ doctor.doctorProfile?.specialty || 'Specialty not set' }} |
           {{ doctor.doctorProfile?.registrationNo || 'No registration no.' }}</small
         >
+        @if (workspaceKey() === 'hope-hub') {
+          <div class="support-path-row">
+            <span class="support-path-chip">{{ supportPathForDoctor(doctor).label }}</span>
+            @if (supportPathTypeSummary(doctor)) {
+              <small>{{ supportPathTypeSummary(doctor) }}</small>
+            }
+          </div>
+        }
         <div class="actions">
           <button
             type="button"
@@ -364,6 +379,13 @@
       <option value="ACTIVE">Active only</option>
       <option value="INACTIVE">Inactive only</option>
     </select>
+    @if (workspaceKey() === 'hope-hub') {
+      <select [formField]="listFilterForm.supportPath" (change)="onListFilterChange()">
+        @for (option of supportPathOptions; track option.value) {
+          <option [value]="option.value">{{ option.label }}</option>
+        }
+      </select>
+    }
     <select [formField]="listFilterForm.sortBy" (change)="onListFilterChange()">
       <option value="name">Sort by name</option>
       <option value="createdAt">Sort by created time</option>
@@ -395,6 +417,14 @@
           {{ doctor.doctorProfile?.specialty || 'Specialty not set' }} |
           {{ doctor.isActive ? 'Active' : 'Inactive' }}</small
         >
+        @if (workspaceKey() === 'hope-hub') {
+          <div class="support-path-row">
+            <span class="support-path-chip">{{ supportPathForDoctor(doctor).label }}</span>
+            @if (supportPathTypeSummary(doctor)) {
+              <small>{{ supportPathTypeSummary(doctor) }}</small>
+            }
+          </div>
+        }
       </article>
     } @empty {
       <p class="empty-state">No {{ providerPluralLabel() }} found.</p>
