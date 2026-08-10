@@ -823,14 +823,6 @@ export class DoctorsPage {
     this.selectedDoctorId = doctorId;
     this.syncEditFormFromSelectedDoctor();
     this.message.set(`${this.providerSingularTitle()} details loaded.`);
-    if (typeof document !== 'undefined') {
-      setTimeout(() => {
-        document.getElementById('doctor-profile-details')?.scrollIntoView({
-          behavior: 'smooth',
-          block: 'start',
-        });
-      });
-    }
   }
 
   onCreateDoctorTypeChange() {

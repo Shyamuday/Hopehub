@@ -396,8 +396,9 @@
   </div>
 </section>
 
-<section class="panel">
-  <h2>All {{ providerPluralLabel() }}</h2>
+<section class="provider-master-detail">
+  <aside class="panel provider-list-panel">
+    <h2>All {{ providerPluralLabel() }}</h2>
   <div class="toolbar">
     <input
       [placeholder]="'Search ' + providerPluralLabel() + '...'"
@@ -430,13 +431,21 @@
   @if (!loading()) {
     <div class="provider-list-scroll">
       @for (doctor of visibleDoctors(); track doctor.id) {
-        <article class="card" [class.card--selected]="selectedDoctorId === doctor.id">
+        <article
+          class="card provider-list-card"
+          [class.card--selected]="selectedDoctorId === doctor.id"
+          tabindex="0"
+          role="button"
+          (click)="setSelectedDoctor(doctor.id)"
+          (keydown.enter)="setSelectedDoctor(doctor.id)"
+          (keydown.space)="setSelectedDoctor(doctor.id)"
+        >
         <div class="doctor-card-header">
           <strong>{{ doctor.name }}</strong>
           <button
             type="button"
             class="link-action"
-            (click)="setSelectedDoctor(doctor.id)"
+            (click)="$event.stopPropagation(); setSelectedDoctor(doctor.id)"
             [disabled]="mutating()"
           >
             View details
@@ -475,9 +484,9 @@
       </button>
     }
   </div>
-</section>
+</aside>
 
-<section id="doctor-profile-details" class="panel details-panel">
+<section id="doctor-profile-details" class="panel details-panel provider-detail-panel">
   <h2>{{ providerSingularTitle() }} Profile Details</h2>
   @if (selectedDoctorDetails(); as selectedDoctor) {
     <article class="card">
@@ -843,6 +852,7 @@
   } @else {
     <p>Select a {{ providerSingularLabel() }} from the list to view profile details.</p>
   }
+</section>
 </section>
 
 @if (message()) {
