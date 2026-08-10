@@ -16,6 +16,7 @@ import {
   scoreAssessment,
   serializeAssessmentAccess
 } from '../services/assessment-definitions.js';
+import { enrichAssessmentIntroMetadata } from '../services/assessment-intro-metadata.js';
 import {
   getRazorpayClient,
   isRazorpayConfigured,
@@ -87,10 +88,10 @@ function serializeDefinition(row: AssessmentDefinitionRow) {
 }
 
 function serializeAssessmentConfig(row: AssessmentDefinitionRow) {
-  return {
+  return enrichAssessmentIntroMetadata({
     ...(row.config as Record<string, unknown>),
     access: serializeDefinition(row).access
-  };
+  });
 }
 
 assessmentDefinitionsRouter.get(

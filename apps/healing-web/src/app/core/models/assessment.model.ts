@@ -67,6 +67,10 @@ export interface AssessmentConfig {
   title: string;
   description: string;
   instructions: string;
+  whoShouldTake?: string[];
+  possibleSymptoms?: string[];
+  whatThisTestChecks?: string[];
+  beforeYouStart?: string[];
   timeframe?: string;
   questions: AssessmentQuestion[];
   responseOptions: ResponseOption[];

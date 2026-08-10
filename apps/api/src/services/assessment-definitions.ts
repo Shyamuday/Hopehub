@@ -35,6 +35,10 @@ export type AssessmentConfigDefinition = {
   responseOptions: AssessmentResponseOptionDefinition[];
   scoring: AssessmentScoringBandDefinition[];
   disclaimer: string;
+  whoShouldTake?: string[];
+  possibleSymptoms?: string[];
+  whatThisTestChecks?: string[];
+  beforeYouStart?: string[];
   emergencyHelplines: { name: string; number: string }[];
   safetyQuestionIndex?: number;
   references?: string[];
@@ -215,6 +219,22 @@ export function validateAssessmentConfig(config: unknown): string[] {
       Number(safetyQuestionIndex) >= questionCount
     ) {
       errors.push('safetyQuestionIndex must point to an existing zero-based question index.');
+    }
+  }
+
+  for (const optionalListKey of [
+    'whoShouldTake',
+    'possibleSymptoms',
+    'whatThisTestChecks',
+    'beforeYouStart'
+  ]) {
+    const value = config[optionalListKey];
+    if (
+      value !== undefined &&
+      (!Array.isArray(value) ||
+        value.some((item) => typeof item !== 'string' || item.trim().length === 0))
+    ) {
+      errors.push(`${optionalListKey} must be an array of non-empty text items.`);
     }
   }
 

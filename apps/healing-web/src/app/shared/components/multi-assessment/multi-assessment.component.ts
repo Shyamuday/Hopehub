@@ -208,6 +208,17 @@ export class MultiAssessmentComponent implements OnInit {
     return 'Use a valid coupon code or complete payment to unlock this test.';
   }
 
+  hasAssessmentIntro(assessment: AssessmentConfig | null): boolean {
+    return Boolean(
+      assessment &&
+      ((assessment.whoShouldTake?.length ?? 0) ||
+        (assessment.possibleSymptoms?.length ?? 0) ||
+        (assessment.whatThisTestChecks?.length ?? 0) ||
+        (assessment.beforeYouStart?.length ?? 0) ||
+        assessment.disclaimer),
+    );
+  }
+
   async redeemCoupon(): Promise<void> {
     const assessment = this.selectedAssessment();
     const code = this.couponCode().trim();

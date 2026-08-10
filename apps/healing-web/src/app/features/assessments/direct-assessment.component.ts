@@ -56,6 +56,59 @@ import { PaymentService } from '../../core/services/payment.service';
                 }
               </div>
 
+              <section class="direct-test__summary">
+                <p>{{ assessment()!.description }}</p>
+                <p>{{ assessment()!.instructions }}</p>
+              </section>
+
+              @if (hasAssessmentIntro()) {
+                <section class="direct-test__intro">
+                  @if (assessment()!.whoShouldTake?.length) {
+                    <article>
+                      <h2>Who should take this test?</h2>
+                      <ul>
+                        @for (item of assessment()!.whoShouldTake; track item) {
+                          <li>{{ item }}</li>
+                        }
+                      </ul>
+                    </article>
+                  }
+                  @if (assessment()!.possibleSymptoms?.length) {
+                    <article>
+                      <h2>Possible symptoms / signs</h2>
+                      <ul>
+                        @for (item of assessment()!.possibleSymptoms; track item) {
+                          <li>{{ item }}</li>
+                        }
+                      </ul>
+                    </article>
+                  }
+                  @if (assessment()!.whatThisTestChecks?.length) {
+                    <article>
+                      <h2>What this test checks</h2>
+                      <ul>
+                        @for (item of assessment()!.whatThisTestChecks; track item) {
+                          <li>{{ item }}</li>
+                        }
+                      </ul>
+                    </article>
+                  }
+                  @if (assessment()!.beforeYouStart?.length) {
+                    <article>
+                      <h2>Before you start</h2>
+                      <ul>
+                        @for (item of assessment()!.beforeYouStart; track item) {
+                          <li>{{ item }}</li>
+                        }
+                      </ul>
+                    </article>
+                  }
+                </section>
+                @if (assessment()!.disclaimer) {
+                  <p class="direct-test__disclaimer">{{ assessment()!.disclaimer }}</p>
+                }
+              }
+
               @if (!canStartAssessment()) {
                 <div class="direct-test__lock mb-4">
                   <h2 class="text-lg font-semibold text-gray-950">Unlock this test</h2>
@@ -462,11 +515,79 @@ import { PaymentService } from '../../core/services/payment.service';
         text-transform: uppercase;
       }
 
+      .direct-test__summary {
+        display: grid;
+        gap: 0.45rem;
+        margin: 0 0 1rem;
+        border-radius: 0.75rem;
+        background: #f8fafc;
+        padding: 0.85rem;
+      }
+
+      .direct-test__summary p {
+        margin: 0;
+        color: #475569;
+        font-size: 0.9rem;
+        line-height: 1.6;
+      }
+
+      .direct-test__intro {
+        display: grid;
+        gap: 0.8rem;
+        margin: 0 0 1rem;
+      }
+
+      .direct-test__intro article {
+        border: 1px solid rgba(74, 111, 165, 0.16);
+        border-radius: 0.85rem;
+        background:
+          linear-gradient(135deg, rgba(74, 111, 165, 0.07), rgba(255, 255, 255, 0.92)), #fff;
+        padding: 0.95rem;
+      }
+
+      .direct-test__intro h2 {
+        margin: 0 0 0.55rem;
+        color: #0f172a;
+        font-size: 0.92rem;
+        font-weight: 900;
+      }
+
+      .direct-test__intro ul {
+        display: grid;
+        gap: 0.4rem;
+        margin: 0;
+        padding-left: 1.05rem;
+      }
+
+      .direct-test__intro li {
+        color: #475569;
+        font-size: 0.86rem;
+        line-height: 1.55;
+      }
+
+      .direct-test__disclaimer {
+        border: 1px solid #fde68a;
+        border-radius: 0.75rem;
+        background: #fffbeb;
+        color: #92400e;
+        font-size: 0.82rem;
+        font-weight: 650;
+        line-height: 1.6;
+        margin: 0 0 1rem;
+        padding: 0.8rem 0.95rem;
+      }
+
       @media (max-width: 639px) {
         .direct-test__option {
           min-height: 2.45rem;
           padding: 0.52rem 0.7rem;
           font-size: 0.9rem;
+        }
+      }
+
+      @media (min-width: 768px) {
+        .direct-test__intro {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
         }
       }
     `,
@@ -572,6 +693,18 @@ export class DirectAssessmentComponent implements OnInit {
       return 'Sign in to start this test and keep the result saved to your account.';
     }
     return 'This is a paid test. Use a valid coupon code or complete payment to unlock it.';
+  }
+
+  hasAssessmentIntro(): boolean {
+    const assessment = this.assessment();
+    return Boolean(
+      assessment &&
+      ((assessment.whoShouldTake?.length ?? 0) ||
+        (assessment.possibleSymptoms?.length ?? 0) ||
+        (assessment.whatThisTestChecks?.length ?? 0) ||
+        (assessment.beforeYouStart?.length ?? 0) ||
+        assessment.disclaimer),
+    );
   }
 
   async redeemCoupon(): Promise<void> {

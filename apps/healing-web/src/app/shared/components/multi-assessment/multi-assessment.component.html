@@ -62,6 +62,16 @@
           <!-- Title and Description -->
           <h3 class="mb-3 text-lg font-semibold text-gray-950">{{ assessment.title }}</h3>
           <p class="mb-4 line-clamp-2 text-sm leading-6 text-gray-700">{{ assessment.description }}</p>
+          @if (assessment.whoShouldTake?.length || assessment.possibleSymptoms?.length) {
+          <div class="assessment-card-info">
+            @if (assessment.whoShouldTake?.length) {
+            <span>For: {{ assessment.whoShouldTake![0] }}</span>
+            }
+            @if (assessment.possibleSymptoms?.length) {
+            <span>May help with: {{ assessment.possibleSymptoms![0] }}</span>
+            }
+          </div>
+          }
 
           <!-- Category -->
           <div class="mt-auto flex items-center justify-between border-t border-gray-100 pt-4">
@@ -108,6 +118,56 @@
           {{ selectedAssessment()!.instructions }}
         </p>
       </div>
+
+      @if (hasAssessmentIntro(selectedAssessment())) {
+      <section class="assessment-intro-grid">
+        @if (selectedAssessment()!.whoShouldTake?.length) {
+        <article class="assessment-intro-card">
+          <h3>Who should take this test?</h3>
+          <ul>
+            @for (item of selectedAssessment()!.whoShouldTake; track item) {
+            <li>{{ item }}</li>
+            }
+          </ul>
+        </article>
+        }
+        @if (selectedAssessment()!.possibleSymptoms?.length) {
+        <article class="assessment-intro-card">
+          <h3>Possible symptoms / signs</h3>
+          <ul>
+            @for (item of selectedAssessment()!.possibleSymptoms; track item) {
+            <li>{{ item }}</li>
+            }
+          </ul>
+        </article>
+        }
+        @if (selectedAssessment()!.whatThisTestChecks?.length) {
+        <article class="assessment-intro-card">
+          <h3>What this test checks</h3>
+          <ul>
+            @for (item of selectedAssessment()!.whatThisTestChecks; track item) {
+            <li>{{ item }}</li>
+            }
+          </ul>
+        </article>
+        }
+        @if (selectedAssessment()!.beforeYouStart?.length) {
+        <article class="assessment-intro-card">
+          <h3>Before you start</h3>
+          <ul>
+            @for (item of selectedAssessment()!.beforeYouStart; track item) {
+            <li>{{ item }}</li>
+            }
+          </ul>
+        </article>
+        }
+      </section>
+      @if (selectedAssessment()!.disclaimer) {
+      <p class="assessment-disclaimer">
+        {{ selectedAssessment()!.disclaimer }}
+      </p>
+      }
+      }
 
       @if (!canStartSelectedAssessment()) {
       <div class="mb-4 rounded-lg border border-primary-100 bg-primary-50/60 p-4">

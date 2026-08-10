@@ -5,6 +5,7 @@ import {
   validateAssessmentConfig,
   type AssessmentDefinitionRecord
 } from './assessment-definitions.js';
+import { enrichAssessmentIntroMetadata } from './assessment-intro-metadata.js';
 
 const definition: AssessmentDefinitionRecord = {
   id: 'sample-test',
@@ -87,4 +88,18 @@ test('validateAssessmentConfig catches broken definitions before publish', () =>
   });
   assert(errors.some((error) => error.includes('text is required')));
   assert(errors.some((error) => error.includes('At least two response options')));
+});
+
+test('enrichAssessmentIntroMetadata adds backend-driven intro metadata by category', () => {
+  const enriched = enrichAssessmentIntroMetadata({
+    ...definition.config,
+    id: 'gad7',
+    category: 'Anxiety'
+  });
+
+  assert(enriched.whoShouldTake?.some((item) => item.includes('worried')));
+  assert(enriched.possibleSymptoms?.some((item) => item.includes('worry')));
+  assert(enriched.whatThisTestChecks?.some((item) => item.includes('Seven common anxiety')));
+  assert(enriched.beforeYouStart?.length);
+  assert.equal(enriched.disclaimer, definition.config.disclaimer);
 });
