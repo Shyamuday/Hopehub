@@ -9,20 +9,19 @@
         }
       </div>
     </div>
-    <div class="topbar-workspace" aria-label="Admin workspace">
-      @for (workspace of workspaceOptions(); track workspace.id) {
-        <button
-          type="button"
-          class="workspace-chip"
-          [class.active]="selectedWorkspace() === workspace.id"
-          (click)="selectWorkspace(workspace.id)"
-          [attr.aria-pressed]="selectedWorkspace() === workspace.id"
-        >
-          <span aria-hidden="true">{{ workspace.icon }}</span>
-          <span>{{ workspace.shortLabel }}</span>
-        </button>
-      }
-    </div>
+    <label class="topbar-workspace workspace-select-wrap" aria-label="Admin workspace">
+      <span>{{ selectedWorkspaceOption().icon }}</span>
+      <select
+        class="workspace-select"
+        [value]="selectedWorkspace()"
+        [disabled]="workspaceOptions().length < 2"
+        (change)="selectWorkspaceFromEvent($event)"
+      >
+        @for (workspace of workspaceOptions(); track workspace.id) {
+          <option [value]="workspace.id">{{ workspace.label }}</option>
+        }
+      </select>
+    </label>
     <div class="topbar-actions">
       <app-notification-bell-host [config]="bellConfig" />
       <a class="account-link" [routerLink]="accountPath">
@@ -48,24 +47,23 @@
       </div>
 
       <section class="workspace-switcher" aria-label="Admin workspace">
-        <p>Workspace</p>
-        <div class="workspace-buttons">
-          @for (workspace of workspaceOptions(); track workspace.id) {
-            <button
-              type="button"
-              class="workspace-button"
-              [class.active]="selectedWorkspace() === workspace.id"
-              (click)="selectWorkspace(workspace.id)"
-              [attr.aria-pressed]="selectedWorkspace() === workspace.id"
+        <label class="workspace-select-card">
+          <span>Workspace</span>
+          <div class="workspace-select-wrap">
+            <span aria-hidden="true">{{ selectedWorkspaceOption().icon }}</span>
+            <select
+              class="workspace-select"
+              [value]="selectedWorkspace()"
+              [disabled]="workspaceOptions().length < 2"
+              (change)="selectWorkspaceFromEvent($event)"
             >
-              <span class="workspace-icon" aria-hidden="true">{{ workspace.icon }}</span>
-              <span>
-                <strong>{{ workspace.label }}</strong>
-                <small>{{ workspace.description }}</small>
-              </span>
-            </button>
-          }
-        </div>
+              @for (workspace of workspaceOptions(); track workspace.id) {
+                <option [value]="workspace.id">{{ workspace.label }}</option>
+              }
+            </select>
+          </div>
+          <small>{{ selectedWorkspaceOption().description }}</small>
+        </label>
       </section>
 
       <app-admin-nav-tabs [items]="filteredNavItems()" layout="sidebar" />
@@ -104,21 +102,22 @@
         <button type="button" class="drawer-close" aria-label="Close menu" (click)="closeMenu()">×</button>
       </div>
       <section class="workspace-switcher drawer-workspace" aria-label="Admin workspace">
-        <p>Workspace</p>
-        <div class="workspace-buttons compact">
-          @for (workspace of workspaceOptions(); track workspace.id) {
-            <button
-              type="button"
-              class="workspace-button"
-              [class.active]="selectedWorkspace() === workspace.id"
-              (click)="selectWorkspace(workspace.id)"
-              [attr.aria-pressed]="selectedWorkspace() === workspace.id"
+        <label class="workspace-select-card">
+          <span>Workspace</span>
+          <div class="workspace-select-wrap">
+            <span aria-hidden="true">{{ selectedWorkspaceOption().icon }}</span>
+            <select
+              class="workspace-select"
+              [value]="selectedWorkspace()"
+              [disabled]="workspaceOptions().length < 2"
+              (change)="selectWorkspaceFromEvent($event)"
             >
-              <span class="workspace-icon" aria-hidden="true">{{ workspace.icon }}</span>
-              <span><strong>{{ workspace.label }}</strong></span>
-            </button>
-          }
-        </div>
+              @for (workspace of workspaceOptions(); track workspace.id) {
+                <option [value]="workspace.id">{{ workspace.label }}</option>
+              }
+            </select>
+          </div>
+        </label>
       </section>
       <app-admin-nav-tabs [items]="filteredNavItems()" layout="sidebar" (navSelected)="closeMenu()" />
       <div class="drawer-footer">

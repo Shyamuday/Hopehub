@@ -7,7 +7,8 @@ import {
 import { ADMIN_WORKSPACES, NAV_ITEMS, type AdminNavItem } from '../constants/app-routes.constants';
 import { AdminAuth } from './admin-auth';
 
-const ADMIN_WORKSPACE_STORAGE_KEY = 'hopehub.admin.workspace';
+const ADMIN_WORKSPACE_STORAGE_KEY = 'hopehub.admin.workspace.v2';
+const DEFAULT_ADMIN_WORKSPACE: AdminFocusedWorkspace = 'hope-hub';
 
 @Injectable({ providedIn: 'root' })
 export class AdminWorkspaceService {
@@ -90,9 +91,10 @@ export class AdminWorkspaceService {
   }
 
   private readWorkspace(): AdminFocusedWorkspace {
-    if (typeof localStorage === 'undefined') return 'homeopathy';
+    if (typeof localStorage === 'undefined') return DEFAULT_ADMIN_WORKSPACE;
     const stored = localStorage.getItem(ADMIN_WORKSPACE_STORAGE_KEY);
-    return stored === 'hope-hub' ? 'hope-hub' : 'homeopathy';
+    if (stored === 'homeopathy' || stored === 'hope-hub') return stored;
+    return DEFAULT_ADMIN_WORKSPACE;
   }
 
   private writeWorkspace(workspace: AdminFocusedWorkspace): void {

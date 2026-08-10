@@ -82,13 +82,6 @@ export type AdminWorkspaceOption = {
 
 export const ADMIN_WORKSPACES: readonly AdminWorkspaceOption[] = [
   {
-    id: 'homeopathy',
-    label: 'Homeopathy',
-    shortLabel: 'Homeo',
-    description: 'Doctors, patients, clinical records, medicines, stock, and homeopathy ops.',
-    icon: '🌿',
-  },
-  {
     id: 'hope-hub',
     label: 'Hope Hub',
     shortLabel: 'Hope',
@@ -96,46 +89,57 @@ export const ADMIN_WORKSPACES: readonly AdminWorkspaceOption[] = [
       'Hope Hub providers, listeners, screening, wellness content, and safety moderation.',
     icon: '🧠',
   },
+  {
+    id: 'homeopathy',
+    label: 'Homeopathy',
+    shortLabel: 'Homeo',
+    description: 'Doctors, patients, clinical records, medicines, stock, and homeopathy ops.',
+    icon: '🌿',
+  },
 ] as const;
 
 export const NAV_ITEMS = [
-  { path: adminNavPath(ROUTE_PATHS.DASHBOARD), label: 'Dashboard', workspaces: ['shared'] },
+  { path: adminNavPath(ROUTE_PATHS.DASHBOARD), label: '🏠 Command Center', workspaces: ['shared'] },
   {
     path: adminNavPath(ROUTE_PATHS.DOCTORS),
-    label: 'Doctors',
+    label: '🧑‍⚕️ Providers',
     workspaces: ['homeopathy', 'hope-hub'],
   },
   {
     path: adminNavPath(ROUTE_PATHS.CONSUMERS),
-    label: 'Consumers',
+    label: '👤 Users / Consumers',
     workspaces: ['homeopathy', 'hope-hub'],
   },
-  { path: adminNavPath(ROUTE_PATHS.SCAN), label: 'Scan patient', workspaces: ['homeopathy'] },
+  { path: adminNavPath(ROUTE_PATHS.SCAN), label: '📷 Scan Patient', workspaces: ['homeopathy'] },
   {
     path: adminNavPath(ROUTE_PATHS.DISEASES),
-    label: 'Services / Diseases',
+    label: '🌿 Homeopathy Services',
     workspaces: ['homeopathy'],
   },
-  { path: adminNavPath(ROUTE_PATHS.RATES), label: '💲 Rates & Pay', workspaces: ['homeopathy'] },
+  {
+    path: adminNavPath(ROUTE_PATHS.RATES),
+    label: '💲 Homeopathy Rates',
+    workspaces: ['homeopathy'],
+  },
   {
     path: adminNavPath(ROUTE_PATHS.HOPE_HUB_OFFERS),
-    label: '🧠 Healing Hub Offers',
+    label: '🧠 Hope Hub Offers',
     workspaces: ['hope-hub'],
   },
   {
     path: adminNavPath(ROUTE_PATHS.LISTENER_SCREENING),
-    label: '🧪 Listener Test',
+    label: '🧪 Listener Screening',
     workspaces: ['hope-hub'],
   },
   {
     path: adminNavPath(ROUTE_PATHS.ASSESSMENT_DEFINITIONS),
-    label: 'Assessments',
+    label: '📋 Assessments',
     workspaces: ['hope-hub'],
   },
-  { path: adminNavPath(ROUTE_PATHS.PRACTICES), label: 'Practices', workspaces: ['hope-hub'] },
+  { path: adminNavPath(ROUTE_PATHS.PRACTICES), label: '🧘 Practices', workspaces: ['hope-hub'] },
   {
     path: adminNavPath(ROUTE_PATHS.LIFESTYLE_TIPS),
-    label: 'Lifestyle tips',
+    label: '🌱 Lifestyle Tips',
     workspaces: ['hope-hub'],
   },
   {
@@ -151,7 +155,7 @@ export const NAV_ITEMS = [
   { path: adminNavPath(ROUTE_PATHS.VACANCIES), label: '📢 Vacancies', workspaces: ['shared'] },
   {
     path: adminNavPath(ROUTE_PATHS.COUNSELLOR_APPLICATIONS),
-    label: '🧠 Counsellor Apps',
+    label: '🧠 Provider Applications',
     workspaces: ['hope-hub'],
   },
   {
@@ -169,7 +173,7 @@ export const NAV_ITEMS = [
   { path: adminNavPath(ROUTE_PATHS.CHAT_INBOX), label: '💬 Visitor Leads', workspaces: ['shared'] },
   {
     path: adminNavPath(ROUTE_PATHS.HR),
-    label: '🪪 Doctor HR',
+    label: '🪪 Provider HR',
     workspaces: ['homeopathy', 'hope-hub'],
   },
   { path: adminNavPath(ROUTE_PATHS.HR_USERS), label: '👥 HR Managers', workspaces: ['shared'] },
@@ -213,10 +217,14 @@ export const NAV_ITEMS = [
   },
   {
     path: adminNavPath(ROUTE_PATHS.CONSULTATIONS),
-    label: '🩺 Consultations',
+    label: '🩺 Sessions / Consultations',
     workspaces: ['homeopathy', 'hope-hub'],
   },
-  { path: adminNavPath(ROUTE_PATHS.FOLLOW_UPS), label: 'Follow-ups', workspaces: ['homeopathy'] },
+  {
+    path: adminNavPath(ROUTE_PATHS.FOLLOW_UPS),
+    label: '🔁 Follow-ups',
+    workspaces: ['homeopathy'],
+  },
   {
     path: adminNavPath(ROUTE_PATHS.SAFETY_FLAGS),
     label: '🚨 Safety Flags',
@@ -224,7 +232,7 @@ export const NAV_ITEMS = [
   },
   {
     path: adminNavPath(ROUTE_PATHS.ONLINE_DOCTORS),
-    label: '🟢 Online doctors',
+    label: '🟢 Live Providers',
     workspaces: ['homeopathy', 'hope-hub'],
   },
   { path: adminNavPath(ROUTE_PATHS.PAYMENTS), label: '💳 Payments', workspaces: ['shared'] },
@@ -258,58 +266,74 @@ export const NAV_GROUPS: AdminNavGroup[] = [
   {
     id: 'overview',
     label: 'Overview',
-    segments: [ROUTE_PATHS.DASHBOARD, ROUTE_PATHS.ANALYTICS, ROUTE_PATHS.ADHERENCE],
+    segments: [ROUTE_PATHS.DASHBOARD, ROUTE_PATHS.ANALYTICS],
   },
   {
     id: 'care',
-    label: 'Care delivery',
+    label: 'Care & sessions',
     segments: [
       ROUTE_PATHS.CONSULTATIONS,
       ROUTE_PATHS.FOLLOW_UPS,
-      ROUTE_PATHS.SAFETY_FLAGS,
       ROUTE_PATHS.ONLINE_DOCTORS,
       ROUTE_PATHS.DOCTORS,
       ROUTE_PATHS.CONSUMERS,
-      ROUTE_PATHS.SCAN,
-      ROUTE_PATHS.CLINICAL_RECORDS,
+      ROUTE_PATHS.CHAT_INBOX,
     ],
   },
   {
-    id: 'catalog',
-    label: 'Catalog & pricing',
+    id: 'hopehub',
+    label: 'Hope Hub',
     segments: [
-      ROUTE_PATHS.DISEASES,
-      ROUTE_PATHS.RATES,
       ROUTE_PATHS.HOPE_HUB_OFFERS,
       ROUTE_PATHS.LISTENER_SCREENING,
+      ROUTE_PATHS.COUNSELLOR_APPLICATIONS,
       ROUTE_PATHS.ASSESSMENT_DEFINITIONS,
       ROUTE_PATHS.PRACTICES,
       ROUTE_PATHS.LIFESTYLE_TIPS,
       ROUTE_PATHS.REWARDS,
+      ROUTE_PATHS.SAFETY_FLAGS,
+      ROUTE_PATHS.GROUP_HELP,
+    ],
+  },
+  {
+    id: 'homeopathy',
+    label: 'Homeopathy',
+    segments: [
+      ROUTE_PATHS.SCAN,
+      ROUTE_PATHS.CLINICAL_RECORDS,
+      ROUTE_PATHS.DISEASES,
+      ROUTE_PATHS.RATES,
+      ROUTE_PATHS.ADHERENCE,
     ],
   },
   {
     id: 'people',
     label: 'People & HR',
     segments: [
-      ROUTE_PATHS.VACANCIES,
-      ROUTE_PATHS.COUNSELLOR_APPLICATIONS,
       ROUTE_PATHS.HR,
       ROUTE_PATHS.HR_USERS,
       ROUTE_PATHS.EMPLOYEES,
       ROUTE_PATHS.LEAVES,
-      ROUTE_PATHS.PAYROLL,
+      ROUTE_PATHS.VACANCIES,
     ],
   },
   {
-    id: 'content',
-    label: 'Website & leads',
+    id: 'website',
+    label: 'Website content',
     segments: [
       ROUTE_PATHS.TESTIMONIALS,
       ROUTE_PATHS.FAQ,
       ROUTE_PATHS.BLOG,
       ROUTE_PATHS.SITE_CONFIG,
-      ROUTE_PATHS.CHAT_INBOX,
+    ],
+  },
+  {
+    id: 'communication',
+    label: 'Communication',
+    segments: [
+      ROUTE_PATHS.NOTIFICATIONS,
+      ROUTE_PATHS.NOTIFICATIONS_INBOX,
+      ROUTE_PATHS.TELEGRAM_BOTS,
     ],
   },
   {
@@ -325,17 +349,18 @@ export const NAV_GROUPS: AdminNavGroup[] = [
   },
   {
     id: 'finance',
-    label: 'Finance',
-    segments: [ROUTE_PATHS.PAYMENTS, ROUTE_PATHS.DONATIONS, ROUTE_PATHS.FINANCE],
+    label: 'Finance & money',
+    segments: [
+      ROUTE_PATHS.PAYMENTS,
+      ROUTE_PATHS.DONATIONS,
+      ROUTE_PATHS.FINANCE,
+      ROUTE_PATHS.PAYROLL,
+    ],
   },
   {
-    id: 'platform',
-    label: 'Platform',
+    id: 'access',
+    label: 'Access & security',
     segments: [
-      ROUTE_PATHS.NOTIFICATIONS,
-      ROUTE_PATHS.NOTIFICATIONS_INBOX,
-      ROUTE_PATHS.TELEGRAM_BOTS,
-      ROUTE_PATHS.GROUP_HELP,
       ROUTE_PATHS.ADMIN_USERS,
       ROUTE_PATHS.STAFF,
       ROUTE_PATHS.ECOSYSTEM_USERS,

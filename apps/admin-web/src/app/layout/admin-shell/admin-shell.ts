@@ -26,12 +26,19 @@ const MOBILE_BOTTOM_NAV_LIMIT = 4;
 
 const NAV_SHORT_LABELS: Record<string, string> = {
   Dashboard: 'Home',
+  'Command Center': 'Home',
   Doctors: 'Doctors',
+  Providers: 'Pro',
   Consumers: 'Users',
+  'Users / Consumers': 'Users',
   'Scan patient': 'Scan',
+  'Scan Patient': 'Scan',
   Consultations: 'Appts',
+  'Sessions / Consultations': 'Sessions',
   Diseases: 'Disease',
+  'Homeopathy Services': 'Homeo',
   'Clinical Records': 'Records',
+  'Live Providers': 'Live',
 };
 
 @Component({
@@ -123,6 +130,13 @@ export class AdminShell {
 
   selectWorkspace(workspace: AdminFocusedWorkspace) {
     this.workspace.selectWorkspace(workspace);
+  }
+
+  selectWorkspaceFromEvent(event: Event) {
+    const value = event.target instanceof HTMLSelectElement ? event.target.value : '';
+    if (value === 'homeopathy' || value === 'hope-hub') {
+      this.selectWorkspace(value);
+    }
   }
 
   navIcon(item: AdminNavItem) {
