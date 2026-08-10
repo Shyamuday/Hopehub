@@ -65,7 +65,7 @@ enum TelegramBotKind {
 model User {
   id                  String         @id @default(cuid())
   name                String
-  email               String?        @unique
+  email               String?
   mobile              String?
   passwordHash        String?
   role                Role
@@ -222,6 +222,7 @@ model User {
   @@index([homeClinicStoreId])
   @@index([authProvider])
   @@index([lastLoginAt])
+  @@unique([email, role])
 }
 
 model UserIdentity {

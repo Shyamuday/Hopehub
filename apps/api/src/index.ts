@@ -230,6 +230,7 @@ app.use('/auth/patient-login/select', authLimiter);
 app.use('/auth/patient-login/password-select', authLimiter);
 app.use('/auth/staff-login', authLimiter);
 app.use('/auth/staff-login-otp', authLimiter);
+app.use('/auth/staff-login-google', authLimiter);
 app.use('/hr/auth/login', authLimiter);
 app.use('/store/auth/manager-login', authLimiter);
 

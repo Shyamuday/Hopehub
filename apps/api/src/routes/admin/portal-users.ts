@@ -5,7 +5,11 @@ import { authRequired, allowRoles } from '../../auth.js';
 import { prisma } from '../../db.js';
 import { asyncRoute, queryText, routeParam, writeAuditLog } from '../../utils/helpers.js';
 
-export const STAFF_PORTAL_ROLES = [Role.RECEPTIONIST, Role.CLINIC_MANAGER, Role.ACCOUNTANT] as const;
+export const STAFF_PORTAL_ROLES = [
+  Role.RECEPTIONIST,
+  Role.CLINIC_MANAGER,
+  Role.ACCOUNTANT
+] as const;
 export const PARTNER_PORTAL_ROLES = [
   Role.SUPPLIER,
   Role.WAREHOUSE_MANAGER,
@@ -53,9 +57,15 @@ const userInclude = {
   clinicManagerProfile: { include: { store: { select: { id: true, name: true, code: true } } } },
   accountantProfile: true,
   supplierProfile: { include: { supplier: { select: { id: true, name: true, code: true } } } },
-  warehouseManagerProfile: { include: { warehouse: { select: { id: true, name: true, code: true } } } },
-  deliveryExecutiveProfile: { include: { store: { select: { id: true, name: true, code: true } } } },
-  diagnosticCenterProfile: { include: { diagnosticCenter: { select: { id: true, name: true, code: true } } } }
+  warehouseManagerProfile: {
+    include: { warehouse: { select: { id: true, name: true, code: true } } }
+  },
+  deliveryExecutiveProfile: {
+    include: { store: { select: { id: true, name: true, code: true } } }
+  },
+  diagnosticCenterProfile: {
+    include: { diagnosticCenter: { select: { id: true, name: true, code: true } } }
+  }
 };
 
 function serializeUser(user: any) {
@@ -127,7 +137,9 @@ export function registerAdminPortalUserRoutes(router: Router) {
     asyncRoute(async (req, res) => {
       const roleParam = queryText(req, 'role');
       const roles =
-        roleParam && isPortalRole(roleParam as Role) ? [roleParam as PortalUserRole] : [...PORTAL_USER_ROLES];
+        roleParam && isPortalRole(roleParam as Role)
+          ? [roleParam as PortalUserRole]
+          : [...PORTAL_USER_ROLES];
 
       const users = await prisma.user.findMany({
         where: { role: { in: roles } },
@@ -145,12 +157,14 @@ export function registerAdminPortalUserRoutes(router: Router) {
     asyncRoute(async (req, res) => {
       const body = createSchema.parse(req.body);
       const email = body.email.trim().toLowerCase();
-      if (await prisma.user.findUnique({ where: { email } })) {
-        return res.status(409).json({ message: 'Email already in use.' });
+      if (await prisma.user.findFirst({ where: { email, role: body.role } })) {
+        return res.status(409).json({ message: 'Email already in use for this role.' });
       }
 
       if (
-        (body.role === Role.RECEPTIONIST || body.role === Role.CLINIC_MANAGER || body.role === Role.DELIVERY_EXECUTIVE) &&
+        (body.role === Role.RECEPTIONIST ||
+          body.role === Role.CLINIC_MANAGER ||
+          body.role === Role.DELIVERY_EXECUTIVE) &&
         !body.storeId
       ) {
         return res.status(400).json({ message: 'storeId is required for this role.' });
@@ -208,7 +222,10 @@ export function registerAdminPortalUserRoutes(router: Router) {
             data: {
               ...base,
               accountantProfile: {
-                create: { employeeId: body.employeeId, designation: body.designation ?? 'Accountant' }
+                create: {
+                  employeeId: body.employeeId,
+                  designation: body.designation ?? 'Accountant'
+                }
               }
             },
             include: userInclude
@@ -257,7 +274,9 @@ export function registerAdminPortalUserRoutes(router: Router) {
           });
           break;
         case Role.DIAGNOSTIC_PARTNER:
-          await prisma.diagnosticCenter.findUniqueOrThrow({ where: { id: body.diagnosticCenterId! } });
+          await prisma.diagnosticCenter.findUniqueOrThrow({
+            where: { id: body.diagnosticCenterId! }
+          });
           user = await prisma.user.create({
             data: {
               ...base,
@@ -329,14 +348,22 @@ export function registerAdminPortalUserRoutes(router: Router) {
           if (body.storeId) await prisma.store.findUniqueOrThrow({ where: { id: body.storeId } });
           await prisma.receptionistProfile.update({
             where: { userId: id },
-            data: { storeId: body.storeId, employeeId: body.employeeId, designation: body.designation }
+            data: {
+              storeId: body.storeId,
+              employeeId: body.employeeId,
+              designation: body.designation
+            }
           });
           break;
         case Role.CLINIC_MANAGER:
           if (body.storeId) await prisma.store.findUniqueOrThrow({ where: { id: body.storeId } });
           await prisma.clinicManagerProfile.update({
             where: { userId: id },
-            data: { storeId: body.storeId, employeeId: body.employeeId, designation: body.designation }
+            data: {
+              storeId: body.storeId,
+              employeeId: body.employeeId,
+              designation: body.designation
+            }
           });
           break;
         case Role.ACCOUNTANT:
@@ -348,7 +375,10 @@ export function registerAdminPortalUserRoutes(router: Router) {
         case Role.SUPPLIER:
           if (body.supplierId) {
             await prisma.supplier.findUniqueOrThrow({ where: { id: body.supplierId } });
-            await prisma.supplierProfile.update({ where: { userId: id }, data: { supplierId: body.supplierId } });
+            await prisma.supplierProfile.update({
+              where: { userId: id },
+              data: { supplierId: body.supplierId }
+            });
           }
           break;
         case Role.WAREHOUSE_MANAGER:
@@ -356,7 +386,11 @@ export function registerAdminPortalUserRoutes(router: Router) {
             await prisma.store.findUniqueOrThrow({ where: { id: body.warehouseId } });
             await prisma.warehouseManagerProfile.update({
               where: { userId: id },
-              data: { warehouseId: body.warehouseId, employeeId: body.employeeId, designation: body.designation }
+              data: {
+                warehouseId: body.warehouseId,
+                employeeId: body.employeeId,
+                designation: body.designation
+              }
             });
           }
           break;
@@ -364,12 +398,18 @@ export function registerAdminPortalUserRoutes(router: Router) {
           if (body.storeId) await prisma.store.findUniqueOrThrow({ where: { id: body.storeId } });
           await prisma.deliveryExecutiveProfile.update({
             where: { userId: id },
-            data: { storeId: body.storeId, employeeId: body.employeeId, designation: body.designation }
+            data: {
+              storeId: body.storeId,
+              employeeId: body.employeeId,
+              designation: body.designation
+            }
           });
           break;
         case Role.DIAGNOSTIC_PARTNER:
           if (body.diagnosticCenterId) {
-            await prisma.diagnosticCenter.findUniqueOrThrow({ where: { id: body.diagnosticCenterId } });
+            await prisma.diagnosticCenter.findUniqueOrThrow({
+              where: { id: body.diagnosticCenterId }
+            });
             await prisma.diagnosticCenterProfile.update({
               where: { userId: id },
               data: { diagnosticCenterId: body.diagnosticCenterId }

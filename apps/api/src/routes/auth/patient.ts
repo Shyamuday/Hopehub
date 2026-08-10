@@ -32,11 +32,11 @@ export function registerAuthPatientRoutes(router: Router) {
       const email = body.email.trim().toLowerCase();
       const name = body.name?.trim() || 'Patient';
 
-      const existingEmail = await prisma.user.findFirst({
+      const existingUser = await prisma.user.findFirst({
         where: { email, role: Role.PATIENT },
-        select: { id: true, passwordHash: true }
+        select: { id: true, role: true, passwordHash: true }
       });
-      if (existingEmail?.passwordHash) {
+      if (existingUser?.passwordHash) {
         return res.status(409).json({
           code: 'PATIENT_ACCOUNT_EXISTS',
           message: 'This email is already registered. Please log in instead.'
@@ -44,13 +44,30 @@ export function registerAuthPatientRoutes(router: Router) {
       }
 
       const passwordHash = await bcrypt.hash(body.password, 10);
-      const user = existingEmail
-        ? await prisma.user.update({
-            where: { id: existingEmail.id },
-            data: { name, passwordHash },
-            select: publicUserSelect
-          })
-        : await createPatientRecord({ name, email, passwordHash });
+      let user;
+      try {
+        user = existingUser
+          ? await prisma.user.update({
+              where: { id: existingUser.id },
+              data: { name, passwordHash },
+              select: publicUserSelect
+            })
+          : await createPatientRecord({ name, email, passwordHash });
+      } catch (error) {
+        if (error instanceof Error && error.message === 'EMAIL_TAKEN') {
+          return res.status(409).json({
+            code: 'PATIENT_ACCOUNT_EXISTS',
+            message: 'This email is already registered. Please log in instead.'
+          });
+        }
+        if (error instanceof Error && error.message === 'EMAIL_USED_BY_OTHER_ROLE') {
+          return res.status(409).json({
+            code: 'EMAIL_REGISTERED_WITH_DIFFERENT_ROLE',
+            message: 'This email is already registered with another Hope Hub role.'
+          });
+        }
+        throw error;
+      }
 
       logAuthEvent('patient_login', { userId: user.id, event: 'register' });
       res.status(201).json(toAuthResponse({ ...user, role: Role.PATIENT }));
@@ -154,8 +171,8 @@ export function registerAuthPatientRoutes(router: Router) {
         return res.status(503).json({ message: 'Email delivery is not configured.' });
       }
 
-      const user = await prisma.user.findUnique({
-        where: { email },
+      const user = await prisma.user.findFirst({
+        where: { email, role: Role.PATIENT },
         select: { id: true, role: true, email: true, isActive: true }
       });
 

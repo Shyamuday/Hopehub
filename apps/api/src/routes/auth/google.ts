@@ -68,28 +68,49 @@ export function registerAuthGoogleRoutes(router: Router) {
 
       const existing = existingIdentity
         ? existingIdentity.user
-        : await prisma.user.findUnique({
-            where: { email },
+        : await prisma.user.findFirst({
+            where: { email, role: Role.PATIENT },
             select: googleAuthUserSelect
           });
 
-      const user = existing
-        ? await prisma.user.update({
-            where: { id: existing.id },
-            data: {
+      if (existing && existing.role !== Role.PATIENT) {
+        return res.status(409).json({
+          code: 'EMAIL_REGISTERED_WITH_DIFFERENT_ROLE',
+          message: `This Google email is already registered as ${existing.role}. Use the provider/admin portal or another email.`
+        });
+      }
+
+      let user;
+      try {
+        user = existing
+          ? await prisma.user.update({
+              where: { id: existing.id },
+              data: {
+                name: displayName,
+                emailVerified: existing.email === email ? emailVerified || undefined : undefined,
+                authProvider: existing.authProvider || 'GOOGLE',
+                lastLoginAt: now,
+                lastLoginMethod: 'GOOGLE',
+                externalAvatarUrl: avatarUrl
+              },
+              select: publicUserSelect
+            })
+          : await createPatientRecord({
               name: displayName,
-              emailVerified: existing.email === email ? emailVerified || undefined : undefined,
-              authProvider: existing.authProvider || 'GOOGLE',
-              lastLoginAt: now,
-              lastLoginMethod: 'GOOGLE',
-              externalAvatarUrl: avatarUrl
-            },
-            select: publicUserSelect
-          })
-        : await createPatientRecord({
-            name: displayName,
-            email
+              email
+            });
+      } catch (error) {
+        if (
+          error instanceof Error &&
+          (error.message === 'EMAIL_TAKEN' || error.message === 'EMAIL_USED_BY_OTHER_ROLE')
+        ) {
+          return res.status(409).json({
+            code: 'EMAIL_REGISTERED_WITH_DIFFERENT_ROLE',
+            message: 'This Google email is already registered with another Hope Hub account.'
           });
+        }
+        throw error;
+      }
 
       if (!existing) {
         await prisma.user.update({

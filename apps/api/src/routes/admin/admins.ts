@@ -280,11 +280,12 @@ export function registerAdminUserRoutes(router: Router) {
         return res.status(400).json({ message: 'Password must be at least 8 characters.' });
       }
 
-      const existing = await prisma.user.findUnique({
-        where: { email: email.trim().toLowerCase() }
+      const normalizedEmail = email.trim().toLowerCase();
+      const existing = await prisma.user.findFirst({
+        where: { email: normalizedEmail, role: Role.ADMIN }
       });
       if (existing) {
-        return res.status(409).json({ message: 'Email already in use.' });
+        return res.status(409).json({ message: 'Email already in use for admin role.' });
       }
 
       const bcrypt = await import('bcryptjs');
@@ -293,7 +294,7 @@ export function registerAdminUserRoutes(router: Router) {
       const admin = await prisma.user.create({
         data: {
           name: name.trim(),
-          email: email.trim().toLowerCase(),
+          email: normalizedEmail,
           mobile: mobile?.trim() || null,
           passwordHash,
           role: Role.ADMIN,

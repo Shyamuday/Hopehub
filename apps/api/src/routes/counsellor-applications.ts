@@ -229,8 +229,8 @@ async function autoApproveListenerApplication(
   }
 ) {
   const now = new Date();
-  const existingUser = await tx.user.findUnique({
-    where: { email: application.email },
+  const existingUser = await tx.user.findFirst({
+    where: { email: application.email, role: Role.DOCTOR },
     select: { id: true, role: true }
   });
   const user =

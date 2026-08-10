@@ -58,8 +58,8 @@ type ActiveStaffAccount =
 const staffUserSelect = { ...publicUserSelect, isActive: true } as const;
 
 async function findActiveStaffAccount(email: string): Promise<ActiveStaffAccount | null> {
-  const user = await prisma.user.findUnique({
-    where: { email },
+  const user = await prisma.user.findFirst({
+    where: { email, role: { not: Role.PATIENT } },
     select: staffUserSelect
   });
 
@@ -135,8 +135,8 @@ async function buildGoogleStaffLoginResponse(payload: GoogleStaffPayload) {
 
   const now = new Date();
   const email = payload.email.trim().toLowerCase();
-  const user = await prisma.user.findUnique({
-    where: { email },
+  const user = await prisma.user.findFirst({
+    where: { email, role: { not: Role.PATIENT } },
     select: googleStaffUserSelect
   });
 
@@ -351,25 +351,26 @@ export function registerAuthStaffRoutes(router: Router) {
       const body = z
         .object({ email: z.string().email(), password: z.string().min(8) })
         .parse(req.body);
-      const user = await prisma.user.findUnique({
-        where: { email: body.email },
+      const email = body.email.trim().toLowerCase();
+      const user = await prisma.user.findFirst({
+        where: { email, role: { not: Role.PATIENT } },
         select: { ...publicUserSelect, passwordHash: true, isActive: true }
       });
 
       if (!user?.passwordHash || user.role === Role.PATIENT) {
         const staff = await prisma.storeStaff.findFirst({
-          where: { email: body.email, isActive: true },
+          where: { email, isActive: true },
           include: { store: { select: { id: true, name: true } } }
         });
 
         if (!staff) {
-          logAuthEvent('staff_login_failure', { email: body.email, reason: 'invalid_credentials' });
+          logAuthEvent('staff_login_failure', { email, reason: 'invalid_credentials' });
           return res.status(401).json({ message: 'Invalid credentials' });
         }
 
         const staffValid = await bcrypt.compare(body.password, staff.pinHash);
         if (!staffValid) {
-          logAuthEvent('staff_login_failure', { email: body.email, reason: 'invalid_credentials' });
+          logAuthEvent('staff_login_failure', { email, reason: 'invalid_credentials' });
           return res.status(401).json({ message: 'Invalid credentials' });
         }
 
@@ -443,8 +444,9 @@ export function registerAuthStaffRoutes(router: Router) {
     '/auth/forgot-password',
     asyncRoute(async (req, res) => {
       const body = z.object({ email: z.string().email() }).parse(req.body);
-      const user = await prisma.user.findUnique({
-        where: { email: body.email },
+      const email = body.email.trim().toLowerCase();
+      const user = await prisma.user.findFirst({
+        where: { email, role: { not: Role.PATIENT } },
         select: { id: true, role: true, email: true, isActive: true }
       });
 
