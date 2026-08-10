@@ -85,7 +85,7 @@
                     </td>
                     <td>
                       <span class="type-badge" [class.doc]="r.empType === 'DOCTOR'">
-                        {{ r.empType === 'DOCTOR' ? '🩺' : '🏪' }} {{ r.empType === 'DOCTOR' ? 'Doctor' : 'Staff' }}
+                        {{ r.empType === 'DOCTOR' ? '🩺' : '🏪' }} {{ r.empType === 'DOCTOR' ? 'Provider' : 'Staff' }}
                       </span>
                     </td>
                     <td>{{ r.designation ?? '—' }}</td>
@@ -185,7 +185,7 @@
                   (click)="selectSalaryEmployee(e)"
                 >
                   <strong>{{ e.name }}</strong>
-                  <small>{{ e.empType === 'DOCTOR' ? 'Doctor' : 'Staff' }} · Gross ₹{{ fmt(e.grossPaise) }}</small>
+                  <small>{{ e.empType === 'DOCTOR' ? 'Provider' : 'Staff' }} · Gross ₹{{ fmt(e.grossPaise) }}</small>
                   @if (!e.hasStructure) {
                     <span class="salary-missing-tag">Not configured</span>
                   }
@@ -221,7 +221,7 @@
               <fieldset class="salary-fields" [disabled]="!salaryCanEdit()">
               @if (selectedSalaryEmployee()!.empType === 'DOCTOR') {
                 <div class="salary-section doctor-compensation-section">
-                  <h4>Doctor compensation</h4>
+                  <h4>Provider compensation</h4>
                   <div class="salary-grid compensation-grid">
                     <label>Employment type
                       <select [formField]="compensationForm.compensationModel">
@@ -238,7 +238,7 @@
                     </label>
                   </div>
                   @if (isConsultOnlyDoctor()) {
-                    <p class="muted-note">Consult-only doctors are paid from online consultations only. Salary fields are hidden.</p>
+                    <p class="muted-note">Consult-only providers are paid from online consultations only. Salary fields are hidden.</p>
                   }
                 </div>
               }

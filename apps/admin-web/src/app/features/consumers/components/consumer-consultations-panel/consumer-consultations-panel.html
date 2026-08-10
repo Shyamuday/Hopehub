@@ -7,7 +7,7 @@
     </div>
     <p class="consult-meta">{{ consultation.createdAt | date: 'mediumDate' }}</p>
     <p class="consult-doctor">
-      Doctor: <strong>{{ consultation.assignedDoctor?.name || '—' }}</strong>
+      Provider: <strong>{{ consultation.assignedDoctor?.name || '—' }}</strong>
     </p>
     <small>Prescriptions: {{ consultation.prescriptions?.length || 0 }}</small>
     @if ((consultation.prescriptions?.length || 0) > 0) {
@@ -22,14 +22,14 @@
 
     @if (consultation.status === 'PAID' && assigningConsultationId !== consultation.id) {
       <button type="button" class="btn-assign" (click)="startAssign.emit(consultation.id)" [disabled]="assigning">
-        Assign Doctor
+        Assign Provider
       </button>
     }
 
     @if (assigningConsultationId === consultation.id) {
       <div class="assign-panel">
         <label class="assign-label">
-          Select doctor
+          Select provider
           <select [formField]="assignForm.doctorId">
             @for (doctor of activeDoctors; track doctor.id) {
               <option [value]="doctor.id">

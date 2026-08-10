@@ -50,7 +50,7 @@
             <th>Disease</th>
             <th>Status</th>
             <th>Payment</th>
-            <th>Doctor</th>
+            <th>Provider</th>
             <th>Rx / msgs</th>
           </tr>
         </thead>
@@ -76,7 +76,7 @@
             <strong>{{ c.diseaseName }}</strong>
             <span>{{ c.status }}</span>
           </div>
-          <div class="card-row"><span>{{ c.paymentStatus || '—' }}</span><span>Dr. {{ c.doctorName || 'Unassigned' }}</span></div>
+          <div class="card-row"><span>{{ c.paymentStatus || '—' }}</span><span>Provider: {{ c.doctorName || 'Unassigned' }}</span></div>
           <div class="card-row"><span>Rx / msgs</span><span>{{ c.prescriptionCount }} / {{ c.messageCount }}</span></div>
         </article>
       }

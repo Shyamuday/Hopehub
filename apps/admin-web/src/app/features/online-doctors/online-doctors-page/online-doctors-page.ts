@@ -6,7 +6,7 @@ import { AdminApi } from '../../../core/services/admin-api';
   selector: 'app-online-doctors-page',
   imports: [CommonModule],
   templateUrl: './online-doctors-page.html',
-  styleUrl: './online-doctors-page.scss'
+  styleUrl: './online-doctors-page.scss',
 })
 export class OnlineDoctorsPage {
   readonly stats = signal<Record<string, number> | null>(null);
@@ -26,14 +26,14 @@ export class OnlineDoctorsPage {
     try {
       const [statsRes, listRes] = await Promise.all([
         this.api.getOnlineDoctorStats(),
-        this.api.listOnlineDoctors()
+        this.api.listOnlineDoctors(),
       ]);
       this.stats.set(statsRes.stats);
       this.liveDoctors.set(listRes.liveDoctors);
       this.sessions.set(listRes.sessions);
       this.instantQueue.set(listRes.instantQueue);
     } catch {
-      this.error.set('Could not load online doctor data.');
+      this.error.set('Could not load live provider data.');
     } finally {
       this.loading.set(false);
     }

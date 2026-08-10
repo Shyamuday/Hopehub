@@ -3,7 +3,7 @@
       <div class="ep-hdr">
         <div>
           <h2 class="ep-title">👥 Employee Directory</h2>
-          <p class="ep-sub">All doctors and store staff — HR profiles, shifts & joining letters</p>
+          <p class="ep-sub">All providers and store staff — HR profiles, shifts & joining letters</p>
         </div>
       </div>
 
@@ -44,7 +44,7 @@
                 <div class="emp-desg">{{ e.designation ?? '—' }}</div>
                 <div class="emp-meta">
                   <span class="type-badge" [class.doc]="e.empType === 'DOCTOR'">
-                    {{ e.empType === 'DOCTOR' ? '🩺 Doctor' : '🏪 Staff' }}
+                    {{ e.empType === 'DOCTOR' ? '🩺 Provider' : '🏪 Staff' }}
                   </span>
                   <span class="status-dot" [style.color]="statusColor(e.employeeStatus)">● {{ e.employeeStatus }}</span>
                 </div>
@@ -77,7 +77,7 @@
             </div>
             <div class="dh-info">
               <div class="dh-name">{{ selected()!.name }}</div>
-              <div class="dh-sub">{{ selected()!.empType === 'DOCTOR' ? '🩺 Doctor' : '🏪 ' + selected()!.storeName }}</div>
+              <div class="dh-sub">{{ selected()!.empType === 'DOCTOR' ? '🩺 Provider' : '🏪 ' + selected()!.storeName }}</div>
             </div>
             <div class="dh-tabs">
               <button [class.active]="tab() === 'profile'" (click)="tab.set('profile')">Profile</button>
@@ -164,11 +164,11 @@
             </div>
           }
 
-          <!-- Assignment Tab (Doctor only) -->
+          <!-- Assignment Tab (provider only) -->
           @if (tab() === 'assign' && selected()!.empType === 'DOCTOR') {
             <div class="form-body form-surface-dark">
               <div class="fsect">
-                <div class="ftitle">Doctor Assignment</div>
+                <div class="ftitle">Provider Assignment</div>
                 <div class="assign-toggle">
                   <button class="assign-btn" [class.active]="assignOnline()" (click)="assignOnline.set(true)">🌐 Online (Telemedicine)</button>
                   <button class="assign-btn" [class.active]="!assignOnline()" (click)="assignOnline.set(false)">📍 Location-Based</button>
@@ -190,9 +190,9 @@
               </div>
               <div class="assign-info">
                 @if (assignOnline()) {
-                  <p>This doctor will be available for online consultations across all locations.</p>
+                  <p>This provider will be available for online consultations across all locations.</p>
                 } @else {
-                  <p>This doctor will only handle patients at their assigned clinic store.</p>
+                  <p>This provider will only handle patients at their assigned clinic store.</p>
                 }
               </div>
               <button class="btn-save" [disabled]="saving()" (click)="saveAssignment()">

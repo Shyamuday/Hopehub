@@ -12,7 +12,7 @@
       {{
         workspaceKey() === 'hope-hub'
           ? 'Top stats are filtered for Hope Hub sessions and providers. Shared blocks remain visible below.'
-          : 'Top stats are filtered for homeopathy consultations and doctors. Shared blocks remain visible below.'
+          : 'Top stats are filtered for homeopathy consultations and providers. Shared blocks remain visible below.'
       }}
     </span>
   </div>
@@ -144,7 +144,7 @@
         </div>
         <div class="payment-detail">
           <small>{{ payment.createdAt | date: 'mediumDate' }}</small>
-          <small>Doctor: {{ payment.consultation?.assignedDoctor?.name || 'Unassigned' }}</small>
+          <small>Provider: {{ payment.consultation?.assignedDoctor?.name || 'Unassigned' }}</small>
         </div>
       </article>
     } @empty {
@@ -221,7 +221,7 @@
       </small>
     </article>
   } @empty {
-    <p class="empty-state">No audit activity yet. Approve or edit a doctor to create entries.</p>
+    <p class="empty-state">No audit activity yet. Approve or edit a provider to create entries.</p>
   }
 </section>
 

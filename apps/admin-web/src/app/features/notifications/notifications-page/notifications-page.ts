@@ -16,7 +16,7 @@ function emptyBroadcastForm() {
     channel: 'IN_APP',
     audience: 'ALL_PATIENTS',
     audienceRole: 'PATIENT',
-    templateId: ''
+    templateId: '',
   };
 }
 
@@ -24,7 +24,7 @@ function emptyBroadcastForm() {
   selector: 'app-notifications-page',
   imports: [FormField, DatePipe],
   templateUrl: './notifications-page.html',
-  styleUrl: './notifications-page.scss'
+  styleUrl: './notifications-page.scss',
 })
 export class NotificationsPage implements OnInit {
   private api = inject(AdminApi);
@@ -47,19 +47,21 @@ export class NotificationsPage implements OnInit {
   readonly channels = ['IN_APP', 'SMS', 'WHATSAPP', 'EMAIL', 'PUSH'];
   readonly audiences = [
     { value: 'ALL_PATIENTS', label: 'All patients' },
-    { value: 'ALL_DOCTORS', label: 'All doctors' },
-    { value: 'ROLE', label: 'Specific role' }
+    { value: 'ALL_DOCTORS', label: 'All providers' },
+    { value: 'ROLE', label: 'Specific role' },
   ];
   readonly roles = [...PLATFORM_BROADCAST_ROLES];
 
-  ngOnInit(): void { void this.load(); }
+  ngOnInit(): void {
+    void this.load();
+  }
 
   async load() {
     this.loading.set(true);
     try {
       const [templatesRes, broadcastsRes] = await Promise.all([
         this.api.getNotificationTemplates(),
-        this.api.getNotificationBroadcasts()
+        this.api.getNotificationBroadcasts(),
       ]);
       this.templates.set(templatesRes.templates);
       this.broadcasts.set(broadcastsRes.broadcasts);
@@ -84,7 +86,7 @@ export class NotificationsPage implements OnInit {
       title: template.title,
       body: template.body,
       channel: template.channel,
-      isActive: template.isActive !== false
+      isActive: template.isActive !== false,
     });
     this.error.set('');
     this.modal.set('edit');
@@ -97,13 +99,15 @@ export class NotificationsPage implements OnInit {
       channel: template?.channel ?? 'IN_APP',
       audience: 'ALL_PATIENTS',
       audienceRole: 'PATIENT',
-      templateId: template?.id ?? ''
+      templateId: template?.id ?? '',
     });
     this.error.set('');
     this.modal.set('send');
   }
 
-  closeModal() { this.modal.set(null); }
+  closeModal() {
+    this.modal.set(null);
+  }
 
   async saveTemplate() {
     const form = this.templateModel();
@@ -126,7 +130,7 @@ export class NotificationsPage implements OnInit {
           title: form.title,
           body: form.body,
           channel: form.channel,
-          isActive: form.isActive
+          isActive: form.isActive,
         });
         this.showToast('Template updated.');
       }
@@ -149,7 +153,7 @@ export class NotificationsPage implements OnInit {
     try {
       const result = await this.api.sendNotificationBroadcast({
         ...form,
-        templateId: form.templateId || undefined
+        templateId: form.templateId || undefined,
       });
       this.showToast(`Sent to ${result.recipientCount} recipients.`);
       this.modal.set(null);

@@ -7,20 +7,20 @@ import { PAISE_PER_RUPEE } from '../../../shared/constants/currency.constants';
 import {
   EMPLOYEE_STATUS_COLORS,
   EMPLOYEE_STATUS_FALLBACK_COLOR,
-  type EmployeeStatus
+  type EmployeeStatus,
 } from '../constants/employee-status.constants';
 import { DEFAULT_HOMEOPATHIC_CLINIC_NAME } from '../constants/organization.constants';
 import {
   DEFAULT_WORK_SHIFT,
   WEEK_DAYS,
   WORK_SHIFT_LABELS,
-  type WorkShift
+  type WorkShift,
 } from '../constants/shift.constants';
 import {
   DOCTOR_TYPE_OPTIONS,
   SPECIALTY_FOCUS_OPTIONS,
   type HomeopathicDoctorType,
-  type HomeopathicSpecialtyFocus
+  type HomeopathicSpecialtyFocus,
 } from '../../doctors/constants/doctor-types.constants';
 
 function emptyDoctorProfileForm() {
@@ -41,7 +41,7 @@ function emptyDoctorProfileForm() {
     phone: '',
     address: '',
     emergencyContact: '',
-    emergencyPhone: ''
+    emergencyPhone: '',
   };
 }
 
@@ -49,7 +49,7 @@ function emptyDoctorProfileForm() {
   selector: 'app-doctor-hr',
   imports: [FormField, DatePipe, DetailRowsComponent],
   templateUrl: './doctor-hr.html',
-  styleUrl: './doctor-hr.scss'
+  styleUrl: './doctor-hr.scss',
 })
 export class DoctorHrComponent implements OnInit {
   private api = inject(AdminApi);
@@ -71,13 +71,18 @@ export class DoctorHrComponent implements OnInit {
   readonly feeModel = signal({ value: 0 });
   readonly feeForm = form(this.feeModel);
 
-  shifts = Object.entries(WORK_SHIFT_LABELS).map(([value, label]) => ({ value: value as WorkShift, label }));
+  shifts = Object.entries(WORK_SHIFT_LABELS).map(([value, label]) => ({
+    value: value as WorkShift,
+    label,
+  }));
   days = WEEK_DAYS;
 
-  ngOnInit(): void { this.load(); }
+  ngOnInit(): void {
+    this.load();
+  }
 
   doctorName(d: { name?: string; user?: { name?: string } }) {
-    return d.name || d.user?.name || 'Doctor';
+    return d.name || d.user?.name || 'Provider';
   }
 
   async load() {
@@ -85,7 +90,9 @@ export class DoctorHrComponent implements OnInit {
     try {
       const r = await this.api.getHrDoctors();
       this.doctors.set(r.doctors);
-    } finally { this.loading.set(false); }
+    } finally {
+      this.loading.set(false);
+    }
   }
 
   openProfile(d: any): void {
@@ -109,15 +116,17 @@ export class DoctorHrComponent implements OnInit {
       phone: d.phone ?? '',
       address: d.address ?? '',
       emergencyContact: d.emergencyContact ?? '',
-      emergencyPhone: d.emergencyPhone ?? ''
+      emergencyPhone: d.emergencyPhone ?? '',
     });
     this.feeModel.set({
-      value: d.consultationFee != null ? d.consultationFee / PAISE_PER_RUPEE : 0
+      value: d.consultationFee != null ? d.consultationFee / PAISE_PER_RUPEE : 0,
     });
     this.profileOpen.set(true);
   }
 
-  close(): void { this.profileOpen.set(false); }
+  close(): void {
+    this.profileOpen.set(false);
+  }
 
   isSpecialistType(): boolean {
     return this.profileModel().doctorType === 'SPECIALIST_CONSULTANT';
@@ -131,20 +140,30 @@ export class DoctorHrComponent implements OnInit {
       const r = await this.api.updateHrDoctor(this.selected().id, {
         ...form,
         doctorType: form.doctorType as HomeopathicDoctorType,
-        specialtyFocus: this.isSpecialistType() ? (form.specialtyFocus as HomeopathicSpecialtyFocus) || null : null,
-        consultationFee: Math.round(this.feeModel().value * PAISE_PER_RUPEE)
+        specialtyFocus: this.isSpecialistType()
+          ? (form.specialtyFocus as HomeopathicSpecialtyFocus) || null
+          : null,
+        consultationFee: Math.round(this.feeModel().value * PAISE_PER_RUPEE),
       });
-      this.doctors.update(list => list.map(d => d.id === r.doctor.id ? { ...d, ...r.doctor } : d));
+      this.doctors.update((list) =>
+        list.map((d) => (d.id === r.doctor.id ? { ...d, ...r.doctor } : d)),
+      );
       this.selected.set({ ...this.selected(), ...r.doctor });
-    } finally { this.saving.set(false); }
+    } finally {
+      this.saving.set(false);
+    }
   }
 
   openLetter(): void {
     this.tab.set('letter');
     if (!this.letter()) {
       this.letterLoading.set(true);
-      this.api.getDoctorLetter(this.selected().id)
-        .then(r => { this.letter.set(r.letter); this.letterLoading.set(false); })
+      this.api
+        .getDoctorLetter(this.selected().id)
+        .then((r) => {
+          this.letter.set(r.letter);
+          this.letterLoading.set(false);
+        })
         .catch(() => this.letterLoading.set(false));
     }
   }
@@ -152,27 +171,43 @@ export class DoctorHrComponent implements OnInit {
   async generate() {
     this.letterLoading.set(true);
     try {
-      const r = await this.api.generateDoctorLetter(this.selected().id, DEFAULT_HOMEOPATHIC_CLINIC_NAME);
+      const r = await this.api.generateDoctorLetter(
+        this.selected().id,
+        DEFAULT_HOMEOPATHIC_CLINIC_NAME,
+      );
       this.letter.set(r.letter);
-    } finally { this.letterLoading.set(false); }
+    } finally {
+      this.letterLoading.set(false);
+    }
   }
 
-  async regen() { this.letter.set(null); await this.generate(); }
-  print(): void { window.print(); }
+  async regen() {
+    this.letter.set(null);
+    await this.generate();
+  }
+  print(): void {
+    window.print();
+  }
 
   setWorkShift(value: WorkShift): void {
     this.profileModel.update((profile) => ({ ...profile, workShift: value }));
   }
 
-  shiftLabel(s: WorkShift): string { return WORK_SHIFT_LABELS[s] ?? s; }
-  statusColor(s: EmployeeStatus): string { return EMPLOYEE_STATUS_COLORS[s] ?? EMPLOYEE_STATUS_FALLBACK_COLOR; }
-  isOff(d: string): boolean { return (this.profileModel().weeklyOffDays ?? []).includes(d); }
+  shiftLabel(s: WorkShift): string {
+    return WORK_SHIFT_LABELS[s] ?? s;
+  }
+  statusColor(s: EmployeeStatus): string {
+    return EMPLOYEE_STATUS_COLORS[s] ?? EMPLOYEE_STATUS_FALLBACK_COLOR;
+  }
+  isOff(d: string): boolean {
+    return (this.profileModel().weeklyOffDays ?? []).includes(d);
+  }
   toggleOff(d: string): void {
     const profile = this.profileModel();
     const c = profile.weeklyOffDays ?? [];
     this.profileModel.set({
       ...profile,
-      weeklyOffDays: c.includes(d) ? c.filter((x: string) => x !== d) : [...c, d]
+      weeklyOffDays: c.includes(d) ? c.filter((x: string) => x !== d) : [...c, d],
     });
   }
 
@@ -182,9 +217,13 @@ export class DoctorHrComponent implements OnInit {
       {
         referenceLabel: 'Letter No',
         referenceNumber: String(content['letterNumber'] ?? ''),
-        issuedDate: datePipe.transform(content['issuedDate'] as string | Date | null | undefined, dateFormat) ?? ''
+        issuedDate:
+          datePipe.transform(
+            content['issuedDate'] as string | Date | null | undefined,
+            dateFormat,
+          ) ?? '',
       },
-      HR_LETTER_META_FIELDS
+      HR_LETTER_META_FIELDS,
     );
   }
 }

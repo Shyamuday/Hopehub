@@ -138,7 +138,11 @@ const ANALYSIS_SUMMARY_FIELDS: DetailFieldDef<CaseAnalysisDetail>[] = [
     getValue: (a) => a.remedySuggestionSnapshot?.results?.[0]?.remedy?.name,
     omitWhenEmpty: true,
   },
-  { label: 'Doctor’s final remedy', getValue: (a) => a.selectedRemedy?.name, omitWhenEmpty: true },
+  {
+    label: 'Provider’s final remedy',
+    getValue: (a) => a.selectedRemedy?.name,
+    omitWhenEmpty: true,
+  },
   { label: 'Override reasoning', getValue: (a) => a.remedyOverrideRationale, omitWhenEmpty: true },
   {
     label: 'Consultation disease',

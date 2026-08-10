@@ -65,7 +65,7 @@
             <th>Date</th>
             <th>Patient</th>
             <th>Disease</th>
-            <th>Doctor</th>
+            <th>Provider</th>
             <th>Pricing / Payout</th>
             <th>Status</th>
             <th class="num">Amount (₹)</th>
@@ -120,7 +120,7 @@
           </div>
           <div class="card-row"><span>{{ p.consultation?.disease?.name ?? '—' }}</span><strong>₹{{ formatPaise(p.amountInPaise) }}</strong></div>
           <div class="card-row"><span>Refunded</span><span>₹{{ formatPaise(p.refundedAmountInPaise || 0) }}</span></div>
-          <div class="card-row"><span>Doctor</span><span>{{ p.consultation?.assignedDoctor?.name ?? 'Unassigned' }}</span></div>
+          <div class="card-row"><span>Provider</span><span>{{ p.consultation?.assignedDoctor?.name ?? 'Unassigned' }}</span></div>
           <div class="card-row"><span>Pricing</span><span>{{ pricingText(p) || 'Standard consultation' }}</span></div>
           <div class="card-row"><span>Payout</span><span>{{ payoutText(p) }}</span></div>
           <div class="row-actions">

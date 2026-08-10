@@ -80,7 +80,11 @@ async function syncLegacyGross(empType: EmployeeType, id: string, grossPaise: nu
   }
 }
 
-function buildSalaryPayload(components: SalaryComponentInput, notes?: string | null, updatedById?: string) {
+function buildSalaryPayload(
+  components: SalaryComponentInput,
+  notes?: string | null,
+  updatedById?: string
+) {
   const totals = computeSalaryTotals(components);
   return {
     ...components,
@@ -103,7 +107,9 @@ export function registerAdminSalaryRoutes(router: Router) {
         return res.status(403).json({ message: 'Insufficient permissions to view salary data.' });
       }
 
-      const q = String(req.query.q ?? '').trim().toLowerCase();
+      const q = String(req.query.q ?? '')
+        .trim()
+        .toLowerCase();
       const typeFilter = String(req.query.type ?? 'ALL');
 
       const [doctors, staff] = await Promise.all([
@@ -111,7 +117,9 @@ export function registerAdminSalaryRoutes(router: Router) {
           ? prisma.doctor.findMany({
               include: {
                 user: { select: { name: true } },
-                salaryStructure: { select: { grossPaise: true, netPaise: true, ctcPaise: true, updatedAt: true } }
+                salaryStructure: {
+                  select: { grossPaise: true, netPaise: true, ctcPaise: true, updatedAt: true }
+                }
               },
               orderBy: { user: { name: 'asc' } }
             })
@@ -120,7 +128,9 @@ export function registerAdminSalaryRoutes(router: Router) {
           ? prisma.storeStaff.findMany({
               include: {
                 store: { select: { name: true } },
-                salaryStructure: { select: { grossPaise: true, netPaise: true, ctcPaise: true, updatedAt: true } }
+                salaryStructure: {
+                  select: { grossPaise: true, netPaise: true, ctcPaise: true, updatedAt: true }
+                }
               },
               orderBy: { name: 'asc' }
             })
@@ -275,7 +285,8 @@ export function registerAdminSalaryRoutes(router: Router) {
           consultationFee?: number | null;
           salaryPerMonth?: number | null;
         } = {};
-        if (body.compensationModel !== undefined) compUpdate.compensationModel = body.compensationModel;
+        if (body.compensationModel !== undefined)
+          compUpdate.compensationModel = body.compensationModel;
         if (body.consultationSharePercent !== undefined) {
           compUpdate.consultationSharePercent = body.consultationSharePercent;
         }
@@ -295,11 +306,13 @@ export function registerAdminSalaryRoutes(router: Router) {
       const isConsultOnlyDoctor =
         empType === EmployeeType.DOCTOR &&
         (body.compensationModel === DoctorCompensationModel.CONSULT_ONLY ||
-          ('compensation' in employee && employee.compensation?.compensationModel === 'CONSULT_ONLY'));
+          ('compensation' in employee &&
+            employee.compensation?.compensationModel === 'CONSULT_ONLY'));
 
       if (isConsultOnlyDoctor) {
         return res.json({
-          message: 'Doctor compensation settings saved. Consult-only doctors do not receive a salary structure.',
+          message:
+            'Provider compensation settings saved. Consult-only providers do not receive a salary structure.',
           compensation:
             empType === EmployeeType.DOCTOR
               ? serializeDoctorCompensation(
@@ -320,8 +333,7 @@ export function registerAdminSalaryRoutes(router: Router) {
       const totals = computeSalaryTotals(components);
 
       const salary = await prisma.employeeSalary.upsert({
-        where:
-          empType === EmployeeType.DOCTOR ? { doctorId: id } : { storeStaffId: id },
+        where: empType === EmployeeType.DOCTOR ? { doctorId: id } : { storeStaffId: id },
         create: {
           employeeType: empType,
           doctorId: empType === EmployeeType.DOCTOR ? id : null,

@@ -232,7 +232,7 @@
                 <tr>
                   <th>Patient</th>
                   <th>Disease</th>
-                  <th>Doctor</th>
+                  <th>Provider</th>
                   <th>Status</th>
                   <th class="num">Amount</th>
                   <th>Created</th>
@@ -261,7 +261,7 @@
                 </div>
                 <div class="card-row"><span>Amount</span><strong>{{ formatPaise(payment.amountInPaise) }}</strong></div>
                 <div class="card-row"><span>Disease</span><span>{{ payment.consultation?.disease?.name || '—' }}</span></div>
-                <div class="card-row"><span>Doctor</span><span>{{ payment.consultation?.assignedDoctor?.name || 'Unassigned' }}</span></div>
+                <div class="card-row"><span>Provider</span><span>{{ payment.consultation?.assignedDoctor?.name || 'Unassigned' }}</span></div>
                 <div class="card-row"><span>Created</span><span>{{ payment.createdAt | date: 'mediumDate' }}</span></div>
               </article>
             }
@@ -342,10 +342,10 @@
     @case ('consultation') {
       <div class="grid-2">
         <div class="panel">
-          <h3>By Doctor</h3>
+          <h3>By Provider</h3>
           <div class="table-wrap desktop-only">
             <table>
-              <thead><tr><th>Doctor</th><th>Specialty</th><th class="num">Revenue (₹)</th></tr></thead>
+              <thead><tr><th>Provider</th><th>Specialty</th><th class="num">Revenue (₹)</th></tr></thead>
               <tbody>
                 @for (row of byDoctor(); track row.doctorId) {
                   <tr><td>{{ row.doctorName }}</td><td>{{ row.specialty }}</td><td class="num">{{ formatPaise(row.revenueInPaise) }}</td></tr>
@@ -441,7 +441,7 @@
       </div>
       <div class="panel">
         <h3>Provider payout ledger</h3>
-        <p class="branch-note">Shows user paid amount, platform fee, provider earning, and payout status for care/doctor sessions.</p>
+        <p class="branch-note">Shows user paid amount, platform fee, provider earning, and payout status for care/provider sessions.</p>
         @if (!providerPayouts().length) {
           <p class="empty-state">No provider payout rows for this month yet. Use backfill after old assignments.</p>
         } @else {

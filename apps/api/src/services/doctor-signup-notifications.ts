@@ -27,19 +27,21 @@ export async function notifyAdminsAboutDoctorSignup(doctor: {
       sendTelegramMessage(TelegramBotKind.ADMIN, {
         chat_id: adminSession.chatId,
         text: [
-          '<b>New doctor signup</b>',
+          '<b>New provider signup</b>',
           `Name: ${escapeHtml(doctor.name)}`,
           `Specialty: ${escapeHtml(doctor.specialty)}`,
           `Email: ${escapeHtml(doctor.email)}`,
           `Mobile: ${escapeHtml(doctor.mobile || 'Not provided')}`,
           `Registration: ${escapeHtml(doctor.registrationNo || 'Not provided')}`,
-          `Doctor: ${escapeHtml(doctor.id.slice(-8))}`,
+          `Provider: ${escapeHtml(doctor.id.slice(-8))}`,
           '',
-          'This doctor is pending admin approval.'
+          'This provider is pending admin approval.'
         ].join('\n'),
         parse_mode: 'HTML',
         reply_markup: {
-          inline_keyboard: [[{ text: 'Review pending doctors', url: adminUrl('/doctors/pending') }]]
+          inline_keyboard: [
+            [{ text: 'Review pending providers', url: adminUrl('/doctors/pending') }]
+          ]
         }
       })
     )
