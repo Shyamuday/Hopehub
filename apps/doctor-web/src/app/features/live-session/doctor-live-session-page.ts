@@ -128,6 +128,10 @@ export class DoctorLiveSessionPage implements OnInit, OnDestroy {
     return this.isPsychologist() ? 'User code' : 'Patient code';
   }
 
+  sessionNoun(): string {
+    return this.isPsychologist() ? 'session' : 'consultation';
+  }
+
   serviceName(): string {
     const consultation = this.consultation();
     return (
@@ -243,7 +247,7 @@ export class DoctorLiveSessionPage implements OnInit, OnDestroy {
     }
     return this.isPsychologist()
       ? 'Record support given, response, and next step.'
-      : 'Record what happened during this consultation and the next step.';
+      : `Record what happened during this ${this.sessionNoun()} and the next step.`;
   }
 
   sessionNotesPlaceholder(): string {
@@ -256,7 +260,7 @@ export class DoctorLiveSessionPage implements OnInit, OnDestroy {
     if (this.isCoachGuideProvider()) {
       return 'Example: User discussed confidence at work. Practiced reframing and set one small action before next session.';
     }
-    return 'Write a private consultation note and next step...';
+    return `Write a private ${this.sessionNoun()} note and next step...`;
   }
 
   capabilities() {

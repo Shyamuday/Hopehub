@@ -2,11 +2,12 @@ import { Component, computed, inject, signal, OnInit } from '@angular/core';
 import { form, FormField } from '@angular/forms/signals';
 import { AdminApi } from '../../../core/services/admin-api';
 import { AdminAuth } from '../../../core/services/admin-auth';
+import { AdminWorkspaceService } from '../../../core/services/admin-workspace.service';
 import {
   EMPLOYEE_STATUS_COLORS,
   formatPaise,
   paiseToK,
-  PAYROLL_TYPE_FILTERS
+  PAYROLL_TYPE_FILTERS,
 } from '../constants/payroll.constants';
 import {
   computeSalaryPreview,
@@ -16,14 +17,14 @@ import {
   SALARY_EMPLOYER_FIELDS,
   salaryApiToForm,
   salaryFormToPayload,
-  type SalaryFormModel
+  type SalaryFormModel,
 } from '../constants/salary-structure.constants';
 import {
   compensationApiToForm,
   compensationFormToPayload,
   COMPENSATION_MODEL_OPTIONS,
   EMPTY_DOCTOR_COMPENSATION_FORM,
-  type DoctorCompensationFormModel
+  type DoctorCompensationFormModel,
 } from '../constants/doctor-compensation.constants';
 
 interface PayrollRow {
@@ -61,14 +62,20 @@ type SalaryEmployeeRow = {
   selector: 'app-payroll-page',
   imports: [FormField],
   templateUrl: './payroll-page.html',
-  styleUrl: './payroll-page.scss'
+  styleUrl: './payroll-page.scss',
 })
 export class PayrollPage implements OnInit {
   private api = inject(AdminApi);
   private auth = inject(AdminAuth);
+  private workspace = inject(AdminWorkspaceService);
 
   readonly pageTab = signal<'summary' | 'salary'>('summary');
   readonly isAdmin = computed(() => this.auth.user()?.role === 'ADMIN');
+  readonly sessionTitleLabel = this.workspace.sessionTitleLabel;
+  readonly sessionSingularLabel = this.workspace.sessionSingularLabel;
+  readonly sessionPluralLabel = this.workspace.sessionPluralLabel;
+  readonly sessionPluralTitleLabel = this.workspace.sessionPluralTitleLabel;
+  readonly consumerPluralLabel = this.workspace.consumerPluralLabel;
 
   rows = signal<PayrollRow[]>([]);
   loading = signal(true);
@@ -78,7 +85,7 @@ export class PayrollPage implements OnInit {
     totalConsultEarnings: 0,
     totalEstimatedPay: 0,
     totalLeave: 0,
-    headcount: 0
+    headcount: 0,
   });
   typeFilter = signal<string>('ALL');
   toast = signal('');
@@ -100,9 +107,19 @@ export class PayrollPage implements OnInit {
   readonly salarySearchForm = form(this.salarySearchModel);
   readonly salaryFormModel = signal<SalaryFormModel>({ ...EMPTY_SALARY_FORM });
   readonly salaryForm = form(this.salaryFormModel);
-  readonly compensationFormModel = signal<DoctorCompensationFormModel>({ ...EMPTY_DOCTOR_COMPENSATION_FORM });
+  readonly compensationFormModel = signal<DoctorCompensationFormModel>({
+    ...EMPTY_DOCTOR_COMPENSATION_FORM,
+  });
   readonly compensationForm = form(this.compensationFormModel);
-  readonly compensationModelOptions = COMPENSATION_MODEL_OPTIONS;
+  readonly compensationModelOptions = computed(() =>
+    COMPENSATION_MODEL_OPTIONS.map((option) =>
+      option.value === 'CONSULT_ONLY'
+        ? { ...option, label: `${this.sessionTitleLabel()} only` }
+        : option.value === 'HYBRID'
+          ? { ...option, label: `Salary + ${this.sessionSingularLabel()} share` }
+          : option,
+    ),
+  );
 
   readonly earningFields = SALARY_EARNING_FIELDS;
   readonly deductionFields = SALARY_DEDUCTION_FIELDS;
@@ -179,8 +196,7 @@ export class PayrollPage implements OnInit {
 
   exportCSV(): void {
     const rows = this.filtered();
-    const header =
-      'Name,Type,Designation,Department,Compensation Model,Gross (Rs),Leave Days,Deduction (Rs),Net Salary (Rs),Consult Share %,Consult Earnings (Rs),Total Est. Pay (Rs)';
+    const header = `Name,Type,Designation,Department,Compensation Model,Gross (Rs),Leave Days,Deduction (Rs),Net Salary (Rs),${this.sessionTitleLabel()} Share %,${this.sessionTitleLabel()} Earnings (Rs),Total Est. Pay (Rs)`;
     const lines = rows.map((r) => {
       const deduction = (r.grossPaise - r.netPaise) / 100;
       const consult = (r.consultationEarningsPaise ?? 0) / 100;
@@ -207,7 +223,7 @@ export class PayrollPage implements OnInit {
     try {
       const res = await this.api.getSalaryEmployees({
         q: this.salarySearchModel().q,
-        type: this.salaryTypeFilter()
+        type: this.salaryTypeFilter(),
       });
       this.salaryEmployees.set(res.employees);
     } finally {
@@ -235,7 +251,9 @@ export class PayrollPage implements OnInit {
     try {
       await this.api.saveEmployeeSalary(employee.empType, employee.id, {
         ...salaryFormToPayload(this.salaryFormModel()),
-        ...(employee.empType === 'DOCTOR' ? compensationFormToPayload(this.compensationFormModel()) : {})
+        ...(employee.empType === 'DOCTOR'
+          ? compensationFormToPayload(this.compensationFormModel())
+          : {}),
       });
       this.showToast('Compensation saved ✓');
       await this.loadSalaryEmployees();
@@ -246,7 +264,7 @@ export class PayrollPage implements OnInit {
           grossPaise: Math.round(preview.gross * 100),
           netPaise: Math.round(preview.net * 100),
           ctcPaise: Math.round(preview.ctc * 100),
-          hasStructure: true
+          hasStructure: true,
         });
       } else {
         this.selectedSalaryEmployee.set({
@@ -254,7 +272,7 @@ export class PayrollPage implements OnInit {
           grossPaise: 0,
           netPaise: 0,
           ctcPaise: 0,
-          hasStructure: false
+          hasStructure: false,
         });
       }
     } catch {

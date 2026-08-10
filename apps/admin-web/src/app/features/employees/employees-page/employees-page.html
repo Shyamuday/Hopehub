@@ -190,9 +190,9 @@
               </div>
               <div class="assign-info">
                 @if (assignOnline()) {
-                  <p>This provider will be available for online consultations across all locations.</p>
+                  <p>This {{ providerSingularLabel() }} will be available for online {{ sessionPluralLabel() }} across all locations.</p>
                 } @else {
-                  <p>This provider will only handle patients at their assigned clinic store.</p>
+                  <p>This {{ providerSingularLabel() }} will only handle {{ consumerPluralLabel() }} at their assigned clinic store.</p>
                 }
               </div>
               <button class="btn-save" [disabled]="saving()" (click)="saveAssignment()">

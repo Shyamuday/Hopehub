@@ -41,7 +41,7 @@
             </div>
             <div class="scard consult">
               <div class="sc-val">₹{{ paise2k(summary().totalConsultEarnings) }}</div>
-              <div class="sc-lbl">Consult Earnings</div>
+              <div class="sc-lbl">{{ sessionTitleLabel() }} Earnings</div>
             </div>
             <div class="scard total-pay">
               <div class="sc-val">₹{{ paise2k(summary().totalEstimatedPay) }}</div>
@@ -72,7 +72,7 @@
                   <th class="num">Leave Days</th>
                   <th class="num">Deduction (₹)</th>
                   <th class="num net-col">Net Salary (₹)</th>
-                  <th class="num">Consult (₹)</th>
+                  <th class="num">{{ sessionTitleLabel() }} (₹)</th>
                   <th class="num total-col">Total Est. (₹)</th>
                 </tr>
               </thead>
@@ -98,7 +98,7 @@
                       @if (r.empType === 'DOCTOR') {
                         <strong>{{ fmt(r.consultationEarningsPaise ?? 0) }}</strong>
                         @if ((r.paidConsultations ?? 0) > 0) {
-                          <small class="consult-meta">{{ r.paidConsultations }} consults · {{ r.consultationSharePercent }}%</small>
+                          <small class="consult-meta">{{ r.paidConsultations }} {{ sessionPluralLabel() }} · {{ r.consultationSharePercent }}%</small>
                         }
                       } @else {
                         —
@@ -225,20 +225,20 @@
                   <div class="salary-grid compensation-grid">
                     <label>Employment type
                       <select [formField]="compensationForm.compensationModel">
-                        @for (opt of compensationModelOptions; track opt.value) {
+                        @for (opt of compensationModelOptions(); track opt.value) {
                           <option [value]="opt.value">{{ opt.label }}</option>
                         }
                       </select>
                     </label>
-                    <label>Consultation share (%)
+                    <label>{{ sessionTitleLabel() }} share (%)
                       <input type="number" [formField]="compensationForm.consultationSharePercent" />
                     </label>
-                    <label>Listed consultation fee (₹)
+                    <label>Listed {{ sessionSingularLabel() }} fee (₹)
                       <input type="number" [formField]="compensationForm.consultationFee" />
                     </label>
                   </div>
                   @if (isConsultOnlyDoctor()) {
-                    <p class="muted-note">Consult-only providers are paid from online consultations only. Salary fields are hidden.</p>
+                    <p class="muted-note">{{ sessionTitleLabel() }}-only providers are paid from online {{ sessionPluralLabel() }} only. Salary fields are hidden.</p>
                   }
                 </div>
               }

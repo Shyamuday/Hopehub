@@ -1,8 +1,8 @@
 
     <div class="hr-page">
       <div class="hr-header">
-        <h1>🩺 Provider HR Records</h1>
-        <p>Manage joining dates, shift schedules & employment letters for all providers</p>
+        <h1>🩺 {{ providerSingularLabel() | titlecase }} HR Records</h1>
+        <p>Manage joining dates, shift schedules & employment letters for all {{ providerPluralLabel() }}</p>
       </div>
 
       @if (loading()) {
@@ -37,7 +37,7 @@
 
         @if (doctors().length === 0) {
           <div class="empty">
-            <div>🩺</div><h3>No providers found</h3><p>Add providers first from the Providers page.</p>
+            <div>🩺</div><h3>No {{ providerPluralLabel() }} found</h3><p>Add {{ providerPluralLabel() }} first from the Providers page.</p>
           </div>
         }
       }
@@ -67,7 +67,7 @@
                 <div class="ftitle">Employment</div>
                 <div class="frow">
                   <div class="fg full">
-                    <label>Provider type</label>
+                    <label>{{ providerSingularLabel() | titlecase }} type</label>
                     <select [formField]="profileForm.doctorType">
                       @for (option of doctorTypeOptions; track option.value) {
                         <option [value]="option.value">{{ option.label }}</option>
@@ -100,7 +100,7 @@
                 </div>
                 <div class="frow">
                   <div class="fg full">
-                    <label>Clinical specialty (display)</label>
+                    <label>Specialty / support focus (display)</label>
                     <input [formField]="profileForm.specialty" placeholder="Homeopathy" />
                   </div>
                 </div>
@@ -131,7 +131,7 @@
                 </div>
                 <div class="frow">
                   <div class="fg">
-                    <label>Consultation Fee (₹)</label>
+                    <label>{{ sessionTitleLabel() }} Fee (₹)</label>
                     <input type="number" [formField]="feeForm.value" placeholder="500" />
                   </div>
                 </div>
@@ -237,7 +237,7 @@
                         <tr><td>Salary</td><td>{{ letter()!.content['salary'] }}</td></tr>
                       }
                       @if (letter()!.content['showConsultationFee'] !== false) {
-                        <tr><td>Consultation Fee</td><td>{{ letter()!.content['consultationFee'] }}</td></tr>
+                        <tr><td>{{ sessionTitleLabel() }} Fee</td><td>{{ letter()!.content['consultationFee'] }}</td></tr>
                       }
                       <tr><td>Working Hours</td><td>{{ letter()!.content['shift'] }}</td></tr>
                       <tr><td>Weekly Off</td><td>{{ letter()!.content['weeklyOff'] }}</td></tr>

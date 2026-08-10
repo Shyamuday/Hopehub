@@ -1,8 +1,9 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { form, FormField } from '@angular/forms/signals';
-import { DatePipe } from '@angular/common';
+import { DatePipe, TitleCasePipe } from '@angular/common';
 import { buildDetailRows, DetailRowsComponent, HR_LETTER_META_FIELDS } from '@hopehub/platform-ui';
 import { AdminApi } from '../../../core/services/admin-api';
+import { AdminWorkspaceService } from '../../../core/services/admin-workspace.service';
 import { PAISE_PER_RUPEE } from '../../../shared/constants/currency.constants';
 import {
   EMPLOYEE_STATUS_COLORS,
@@ -47,15 +48,19 @@ function emptyDoctorProfileForm() {
 
 @Component({
   selector: 'app-doctor-hr',
-  imports: [FormField, DatePipe, DetailRowsComponent],
+  imports: [FormField, DatePipe, TitleCasePipe, DetailRowsComponent],
   templateUrl: './doctor-hr.html',
   styleUrl: './doctor-hr.scss',
 })
 export class DoctorHrComponent implements OnInit {
   private api = inject(AdminApi);
+  private workspace = inject(AdminWorkspaceService);
 
   readonly doctorTypeOptions = DOCTOR_TYPE_OPTIONS;
   readonly specialtyFocusOptions = SPECIALTY_FOCUS_OPTIONS;
+  readonly providerSingularLabel = this.workspace.providerSingularLabel;
+  readonly providerPluralLabel = this.workspace.providerPluralLabel;
+  readonly sessionTitleLabel = this.workspace.sessionTitleLabel;
 
   doctors = signal<any[]>([]);
   loading = signal(true);

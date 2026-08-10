@@ -35,7 +35,7 @@
 <section class="panel">
   <div class="toolbar">
     <input
-      placeholder="Search patient, code, disease, status..."
+      [placeholder]="searchPlaceholder()"
       [formField]="filterForm.search"
       (keyup.enter)="load()"
     />
@@ -64,7 +64,7 @@
   @for (item of followUpDue(); track item.id) {
     <article class="card follow-up-card" [class.urgent]="item.followUpUrgency === 'OVERDUE' || item.followUpUrgency === 'DUE_TODAY'">
       <div class="card-head">
-        <strong>{{ item.patient?.name || 'Patient' }} — {{ item.disease?.name || 'Consultation' }}</strong>
+        <strong>{{ item.patient?.name || userTitle() }} — {{ item.disease?.name || sessionTitle() }}</strong>
         @if (item.followUpUrgency === 'OVERDUE') {
           <span class="badge overdue">Overdue</span>
         } @else if (item.followUpUrgency === 'DUE_TODAY') {
@@ -91,7 +91,7 @@
         </div>
       }
       <small class="muted">
-        Patient {{ item.patient?.patientCode || item.patient?.id }}
+        {{ userCodeTitle() }} {{ item.patient?.patientCode || item.patient?.id }}
         @if (item.followUpDate) {
           · Follow-up {{ item.followUpDate | date: 'mediumDate' }}
         }
@@ -126,8 +126,8 @@
             } @else {
               <button type="button" class="ghost" (click)="openConsultationContext(item.id)">Intake &amp; chat</button>
             }
-            @if (item.patient?.patientCode) {
-              <button type="button" class="ghost" (click)="scanPatient(item.patient?.patientCode)">Scan patient</button>
+            @if ((canPrescribe() || canCaseAnalysis()) && item.patient?.patientCode) {
+              <button type="button" class="ghost" (click)="scanPatient(item.patient?.patientCode)">Scan {{ userTitleLower() }}</button>
             }
           </div>
         }
@@ -145,11 +145,11 @@
 <section class="panel">
   <h3>Assigned</h3>
   @if (loading() && !assigned().length) {
-    <p class="loading-text">Loading assigned cases…</p>
+    <p class="loading-text">Loading assigned {{ sessionTitleLowerPlural() }}…</p>
   }
   @for (item of assigned(); track item.id) {
     <article class="card">
-      <strong>{{ item.patient?.name || 'Patient' }} — {{ item.disease?.name || 'Consultation' }}</strong>
+      <strong>{{ item.patient?.name || userTitle() }} — {{ item.disease?.name || sessionTitle() }}</strong>
       <hopehub-detail-rows [rows]="worklistMetaRows(item)" />
       @if (pricingInsight(item); as pricing) {
         <div class="pricing-chip">
@@ -169,7 +169,7 @@
           }
         </div>
       }
-      <small class="muted">Patient {{ item.patient?.patientCode || item.patient?.id }}</small>
+      <small class="muted">{{ userCodeTitle() }} {{ item.patient?.patientCode || item.patient?.id }}</small>
       <div class="actions actions-mobile">
         <div class="actions-primary">
           @if (!canPrescribe() && !canCaseAnalysis()) {
@@ -206,7 +206,7 @@
     </article>
   } @empty {
     @if (!loading()) {
-      <p class="empty-state">No newly assigned cases.</p>
+      <p class="empty-state">No newly assigned {{ sessionTitleLowerPlural() }}.</p>
     }
   }
 </section>
@@ -216,11 +216,11 @@
 <section class="panel">
   <h3>In progress</h3>
   @if (loading() && !inProgress().length) {
-    <p class="loading-text">Loading in-progress cases…</p>
+    <p class="loading-text">Loading in-progress {{ sessionTitleLowerPlural() }}…</p>
   }
   @for (item of inProgress(); track item.id) {
     <article class="card">
-      <strong>{{ item.patient?.name || 'Patient' }} — {{ item.disease?.name || 'Consultation' }}</strong>
+      <strong>{{ item.patient?.name || userTitle() }} — {{ item.disease?.name || sessionTitle() }}</strong>
       <hopehub-detail-rows [rows]="worklistMetaRows(item)" />
       @if (pricingInsight(item); as pricing) {
         <div class="pricing-chip">
@@ -240,7 +240,7 @@
           }
         </div>
       }
-      <small class="muted">Patient {{ item.patient?.patientCode || item.patient?.id }}</small>
+      <small class="muted">{{ userCodeTitle() }} {{ item.patient?.patientCode || item.patient?.id }}</small>
       <div class="actions actions-mobile">
         <div class="actions-primary">
           @if (!canPrescribe() && !canCaseAnalysis()) {
@@ -271,8 +271,8 @@
             } @else {
               <button type="button" class="ghost" (click)="openConsultationContext(item.id)">Intake &amp; chat</button>
             }
-            @if (item.patient?.patientCode) {
-              <button type="button" class="ghost" (click)="scanPatient(item.patient?.patientCode)">Scan patient</button>
+            @if ((canPrescribe() || canCaseAnalysis()) && item.patient?.patientCode) {
+              <button type="button" class="ghost" (click)="scanPatient(item.patient?.patientCode)">Scan {{ userTitleLower() }}</button>
             }
           </div>
         }
@@ -280,12 +280,16 @@
     </article>
   } @empty {
     @if (!loading()) {
-      <p class="empty-state">No in-progress cases.</p>
+      <p class="empty-state">No in-progress {{ sessionTitleLowerPlural() }}.</p>
     }
   }
 </section>
 }
 
 <p class="footer-link">
-  Need patient search or adherence? <a [routerLink]="['/', 'patients']">Go to Patients</a>
+  @if (canPrescribe() || canCaseAnalysis()) {
+    Need patient search or adherence? <a [routerLink]="['/', 'patients']">Go to Patients</a>
+  } @else {
+    Need live support controls? <a [routerLink]="['/', 'online-doctor']">Go to online inbox</a>
+  }
 </p>

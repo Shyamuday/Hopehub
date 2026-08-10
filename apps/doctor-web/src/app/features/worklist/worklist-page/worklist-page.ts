@@ -172,7 +172,7 @@ export class WorklistPage {
         case 'IN_PROGRESS':
           return 'Sessions and conversations you are actively handling.';
         case 'FOLLOW_UP_DUE':
-          return 'Patients due for follow-up support or review.';
+          return 'Users due for follow-up support or review.';
         default:
           return 'Your active sessions, assigned conversations, and follow-ups due.';
       }
@@ -197,6 +197,32 @@ export class WorklistPage {
       queryParamsHandling: 'merge',
     });
     void this.load();
+  }
+
+  userTitle(): string {
+    return !this.canPrescribe() && !this.canCaseAnalysis() ? 'User' : 'Patient';
+  }
+
+  userTitleLower(): string {
+    return !this.canPrescribe() && !this.canCaseAnalysis() ? 'user' : 'patient';
+  }
+
+  userCodeTitle(): string {
+    return !this.canPrescribe() && !this.canCaseAnalysis() ? 'User code' : 'Patient code';
+  }
+
+  sessionTitle(): string {
+    return !this.canPrescribe() && !this.canCaseAnalysis() ? 'Session' : 'Consultation';
+  }
+
+  sessionTitleLowerPlural(): string {
+    return !this.canPrescribe() && !this.canCaseAnalysis() ? 'sessions' : 'cases';
+  }
+
+  searchPlaceholder(): string {
+    return !this.canPrescribe() && !this.canCaseAnalysis()
+      ? 'Search user, code, support focus, status...'
+      : 'Search patient, code, disease, status...';
   }
 
   primaryAction(section: 'ASSIGNED' | 'IN_PROGRESS' | 'FOLLOW_UP_DUE') {

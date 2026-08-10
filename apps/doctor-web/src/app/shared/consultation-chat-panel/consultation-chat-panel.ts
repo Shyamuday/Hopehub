@@ -26,7 +26,8 @@ export class ConsultationChatPanelComponent implements OnChanges, OnDestroy {
   @Input() showCallControls = true;
   @Input() allowAudio = true;
   @Input() allowVideo = true;
-  @Input() lockedMessage = 'This consultation is closed. Messages and calls are read-only.';
+  @Input() participantLabel = 'patient';
+  @Input() lockedMessage = 'This session is closed. Messages and calls are read-only.';
 
   readonly messages = signal<ConsultationMessage[]>([]);
   readonly loading = signal(false);

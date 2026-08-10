@@ -31,7 +31,7 @@
       </article>
     } @empty {
       @if (!loading()) {
-        <p class="muted">No messages yet. Start the conversation with your patient.</p>
+        <p class="muted">No messages yet. Start the conversation with your {{ participantLabel }}.</p>
       }
     }
   </div>
@@ -40,7 +40,7 @@
     <div class="chat-compose">
       <textarea
         rows="3"
-        placeholder="Type a message to the patient…"
+        [placeholder]="'Type a message to the ' + participantLabel + '…'"
         [formField]="draftForm.body"
       ></textarea>
       <button type="button" (click)="send()" [disabled]="sending() || !draftModel().body.trim()">
