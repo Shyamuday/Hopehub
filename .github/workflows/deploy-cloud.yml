@@ -54,6 +54,8 @@ jobs:
             echo "DOCTOR_BUCKET=${DOCTOR_BUCKET}"
             echo "OPERATIONS_BUCKET=${OPERATIONS_BUCKET}"
             echo "HEALING_BUCKET=${HEALING_BUCKET}"
+            echo "FRONTEND_BUCKET=${FRONTEND_BUCKET:-}"
+            echo "FRONTEND_CLOUDFRONT_DISTRIBUTION_ID=${FRONTEND_CLOUDFRONT_DISTRIBUTION_ID:-}"
             echo "LIGHTSAIL_HOST=${LIGHTSAIL_HOST}"
             echo "LIGHTSAIL_USER=${LIGHTSAIL_USER}"
             echo "LIGHTSAIL_APP_DIR=${LIGHTSAIL_APP_DIR}"
@@ -319,6 +321,10 @@ jobs:
         run: |
           aws s3 sync deploy/static/healing "s3://${HEALING_BUCKET}" --delete --exclude "index.html" --cache-control "public,max-age=31536000,immutable"
           aws s3 cp deploy/static/healing/index.html "s3://${HEALING_BUCKET}/index.html" --cache-control "no-cache,no-store,must-revalidate"
+
+      - name: Deploy selected frontends to unified S3 bucket
+        if: steps.select-apps.outputs.frontend_selected == 'true' && env.FRONTEND_BUCKET != ''
+        run: bash deploy/scripts/deploy-unified-frontends.sh
 
   deploy-api:
     name: Deploy API on Lightsail
