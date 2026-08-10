@@ -50,7 +50,12 @@ const liveDoctorInclude = {
       bio: true,
       yearsOfExperience: true,
       focusAreas: true,
-      isAvailable: true
+      isAvailable: true,
+      mentalHealthProfile: {
+        select: {
+          careTeamType: true
+        }
+      }
     }
   }
 } as const;
@@ -81,6 +86,9 @@ export function mapLiveDoctor(session: {
     yearsOfExperience: number | null;
     focusAreas: string[];
     isAvailable: boolean;
+    mentalHealthProfile?: {
+      careTeamType: string;
+    } | null;
   };
 }) {
   const profileImageUrl = enrichWithProfileImageUrl(
@@ -99,6 +107,9 @@ export function mapLiveDoctor(session: {
     specialty: session.doctor.specialty,
     doctorType: session.doctor.doctorType,
     doctorTypeLabel: doctorTypeLabel(session.doctor.doctorType),
+    mentalHealthProfile: session.doctor.mentalHealthProfile
+      ? { careTeamType: session.doctor.mentalHealthProfile.careTeamType }
+      : null,
     specialtyFocusLabel: specialtyFocusLabel(session.doctor.specialtyFocus),
     category: session.category,
     specialtyDiseaseIds: session.specialtyDiseaseIds,

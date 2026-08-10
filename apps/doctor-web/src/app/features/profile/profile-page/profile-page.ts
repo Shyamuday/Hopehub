@@ -7,7 +7,11 @@ import { environment } from '../../../../environments/environment';
 import { API_PATHS } from '../../../core/constants/api-paths.constants';
 import { AUTH_TOKEN_KEY } from '../../../core/constants/auth.constants';
 import {
-  capabilitiesForDoctorType,
+  capabilitiesForProvider,
+  careTeamTypeLabel,
+  isClinicalMentalHealthCareTeamType,
+  isCoachGuideCareTeamType,
+  isListenerCareTeamType,
   type DoctorProfileSummary,
 } from '../../../core/constants/doctor-types.constants';
 import { DoctorSessionService } from '../../../core/services/doctor-session';
@@ -95,8 +99,47 @@ export class ProfilePage {
   }
 
   isListenerProfile(): boolean {
-    const type = this.profileModel().careTeamType;
-    return type === 'PSYCHOLOGY_STUDENT_VOLUNTEER' || type === 'PEER_SUPPORT_VOLUNTEER';
+    return isListenerCareTeamType(this.profileModel().careTeamType);
+  }
+
+  isClinicalMentalHealthProfile(): boolean {
+    return (
+      this.isPsychologist && isClinicalMentalHealthCareTeamType(this.profileModel().careTeamType)
+    );
+  }
+
+  isCoachGuideProfile(): boolean {
+    return this.isPsychologist && isCoachGuideCareTeamType(this.profileModel().careTeamType);
+  }
+
+  specialtyFieldLabel(): string {
+    if (!this.isPsychologist) return 'Specialty';
+    if (this.isListenerProfile()) return 'Listening focus';
+    if (this.isCoachGuideProfile()) return 'Coaching / guide focus';
+    return 'Specialization / support focus';
+  }
+
+  registrationFieldLabel(): string {
+    return this.isPsychologist ? 'Registration / certification number' : 'Registration Number';
+  }
+
+  focusAreasPlaceholder(): string {
+    if (!this.isPsychologist) {
+      return 'e.g.\nChronic kidney disease\nDiabetes management\nHypertension';
+    }
+    if (this.isListenerProfile()) {
+      return 'e.g.\nLoneliness\nExam pressure\nRelationship venting';
+    }
+    if (this.isCoachGuideProfile()) {
+      return 'e.g.\nConfidence building\nCareer stress\nBreathwork practice';
+    }
+    return 'e.g.\nAnxiety support\nRelationship stress\nStudent counselling';
+  }
+
+  approachLabel(): string {
+    if (this.isListenerProfile()) return 'Listening approach';
+    if (this.isCoachGuideProfile()) return 'Coaching / guidance approach';
+    return 'Counselling approach';
   }
 
   listenerReadinessItems() {
@@ -191,7 +234,7 @@ export class ProfilePage {
       );
 
       const profile = response.profile;
-      this.canPrescribe = capabilitiesForDoctorType(profile.doctorProfile?.doctorType).prescribe;
+      this.canPrescribe = capabilitiesForProvider(profile.doctorProfile).prescribe;
       this.isPsychologist = profile.doctorProfile?.doctorType === 'PSYCHOLOGIST';
       const mental = profile.doctorProfile?.mentalHealthProfile;
       this.methodOptions = this.canPrescribe
@@ -244,7 +287,9 @@ export class ProfilePage {
       });
       this.careServices.set(this.normalizeServiceList(mental?.services ?? []));
       this.doctorTypeLabel = profile.doctorProfile?.doctorTypeLabel || 'Provider';
-      this.specialtyFocusLabel = profile.doctorProfile?.specialtyFocusLabel || '';
+      this.specialtyFocusLabel = this.isPsychologist
+        ? careTeamTypeLabel(mental?.careTeamType)
+        : profile.doctorProfile?.specialtyFocusLabel || '';
       this.showOnWebsite = profile.doctorProfile?.showOnWebsite ?? false;
       this.profileImageUrl =
         (profile as { profileImageUrl?: string | null }).profileImageUrl ?? null;

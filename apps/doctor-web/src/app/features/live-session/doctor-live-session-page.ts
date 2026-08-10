@@ -9,7 +9,12 @@ import {
   type ConsultationUpdatedPayload,
 } from '../../core/services/doctor-realtime.service';
 import { OnlineDoctorService } from '../../core/services/online-doctor.service';
-import { capabilitiesForDoctorType } from '../../core/constants/doctor-types.constants';
+import {
+  capabilitiesForProvider,
+  isClinicalMentalHealthCareTeamType,
+  isCoachGuideCareTeamType,
+  isListenerCareTeamType,
+} from '../../core/constants/doctor-types.constants';
 import { ROUTE_PATHS } from '../../core/constants/app-routes.constants';
 import type {
   ConsultationAssessmentSummary,
@@ -192,8 +197,62 @@ export class DoctorLiveSessionPage implements OnInit, OnDestroy {
     return this.profile()?.doctorType === 'PSYCHOLOGIST';
   }
 
+  careTeamType(): string {
+    return this.profile()?.mentalHealthProfile?.careTeamType || '';
+  }
+
+  isClinicalMentalHealthProvider(): boolean {
+    return (
+      this.isPsychologist() &&
+      (!this.careTeamType() || isClinicalMentalHealthCareTeamType(this.careTeamType()))
+    );
+  }
+
+  isListenerProvider(): boolean {
+    return this.isPsychologist() && isListenerCareTeamType(this.careTeamType());
+  }
+
+  isCoachGuideProvider(): boolean {
+    return this.isPsychologist() && isCoachGuideCareTeamType(this.careTeamType());
+  }
+
+  sessionNotesTitle(): string {
+    if (this.isClinicalMentalHealthProvider()) return 'Clinical support notes';
+    if (this.isListenerProvider()) return 'Listener support notes';
+    if (this.isCoachGuideProvider()) return 'Coaching session notes';
+    return this.isPsychologist() ? 'Hope Hub session notes' : 'Session notes';
+  }
+
+  sessionNotesHint(): string {
+    if (this.isClinicalMentalHealthProvider()) {
+      return 'Record discussion, support given, response, risk level, and next step.';
+    }
+    if (this.isListenerProvider()) {
+      return 'Record what the user wanted support with, listening response, boundaries, and any escalation concern.';
+    }
+    if (this.isCoachGuideProvider()) {
+      return 'Record goals discussed, guidance offered, practice/homework, and next step.';
+    }
+    return this.isPsychologist()
+      ? 'Record support given, response, and next step.'
+      : 'Record what happened during this consultation and the next step.';
+  }
+
+  sessionNotesPlaceholder(): string {
+    if (this.isClinicalMentalHealthProvider()) {
+      return 'Example: User shared anxiety triggers. Provided grounding exercise. No immediate safety risk shared. Next: follow up in 7 days.';
+    }
+    if (this.isListenerProvider()) {
+      return 'Example: User vented about loneliness and exam pressure. Reflected feelings, encouraged support network, no emergency concern shared.';
+    }
+    if (this.isCoachGuideProvider()) {
+      return 'Example: User discussed confidence at work. Practiced reframing and set one small action before next session.';
+    }
+    return 'Write a private consultation note and next step...';
+  }
+
   capabilities() {
-    return capabilitiesForDoctorType(this.profile()?.doctorType ?? null);
+    return capabilitiesForProvider(this.profile());
   }
 
   openCaseAnalysis(): void {

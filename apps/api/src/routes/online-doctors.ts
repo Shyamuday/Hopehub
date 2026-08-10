@@ -69,7 +69,12 @@ export function createOnlineDoctorsRouter(io: SocketIoServer) {
               bio: true,
               yearsOfExperience: true,
               focusAreas: true,
-              isAvailable: true
+              isAvailable: true,
+              mentalHealthProfile: {
+                select: {
+                  careTeamType: true
+                }
+              }
             }
           }
         }
@@ -125,7 +130,12 @@ export function createOnlineDoctorsRouter(io: SocketIoServer) {
               bio: true,
               yearsOfExperience: true,
               focusAreas: true,
-              isAvailable: true
+              isAvailable: true,
+              mentalHealthProfile: {
+                select: {
+                  careTeamType: true
+                }
+              }
             }
           }
         }
@@ -290,7 +300,12 @@ export function createOnlineDoctorsRouter(io: SocketIoServer) {
                 bio: true,
                 yearsOfExperience: true,
                 focusAreas: true,
-                isAvailable: true
+                isAvailable: true,
+                mentalHealthProfile: {
+                  select: {
+                    careTeamType: true
+                  }
+                }
               }
             }
           },

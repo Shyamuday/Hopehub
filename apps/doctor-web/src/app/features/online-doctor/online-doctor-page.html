@@ -1,12 +1,6 @@
 <section class="panel">
-  <h1>{{ isPsychologist() ? 'Hope Hub live workspace' : 'Homeopathy provider — go live' }}</h1>
-  <p class="lead">
-    {{
-      isPsychologist()
-        ? 'Review assigned sessions, support patients by chat or call, record notes, and follow up safely.'
-        : 'Show yourself online for instant patient consults (chat + voice & video). Separate from your clinic worklist.'
-    }}
-  </p>
+  <h1>{{ workspaceTitle() }}</h1>
+  <p class="lead">{{ workspaceLead() }}</p>
 </section>
 
 @if (loading()) {
@@ -34,7 +28,7 @@
   @if (isLive()) {
     <section class="panel inbox-panel">
       <div class="inbox-head">
-        <h2>{{ isPsychologist() ? 'Live session inbox' : 'Live consult inbox' }}</h2>
+        <h2>{{ inboxTitle() }}</h2>
         @if (isLive()) {
           <button type="button" class="ghost" (click)="loadInbox()" [disabled]="inboxLoading()">
             Refresh
@@ -69,8 +63,9 @@
   }
 
   <section class="panel">
-    <h2>How patients see you</h2>
+    <h2>{{ isHomeopathyProvider() ? 'How patients see you' : 'How Hope Hub users see you' }}</h2>
     <fieldset class="form-grid" [disabled]="saving()">
+      @if (isHomeopathyProvider()) {
       <div class="field">
         <label>Category</label>
         <select [formField]="settingsForm.category">
@@ -78,6 +73,11 @@
           <option value="SPECIALIST">Disease specialist</option>
         </select>
       </div>
+      } @else {
+        <p class="muted full">
+          Your Hope Hub category comes from your approved provider subtype. Live settings here only control availability and modes.
+        </p>
+      }
       <div class="mode-control-grid full" aria-label="Live Connect modes">
         <label class="mode-control-card">
           <input type="checkbox" [formField]="settingsForm.acceptsChat" />
@@ -101,7 +101,7 @@
       @if (!canAcceptAnyMode()) {
         <p class="warning full">Select at least one mode before going online.</p>
       }
-      @if (settingsModel().category === 'SPECIALIST') {
+      @if (isHomeopathyProvider() && settingsModel().category === 'SPECIALIST') {
         <div class="field full">
           <label>Specialist for diseases</label>
           <div class="disease-picks">

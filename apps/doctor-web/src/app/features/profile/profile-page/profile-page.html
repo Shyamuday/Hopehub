@@ -45,11 +45,13 @@
       <option value="PREFER_NOT_TO_SAY">Prefer not to say</option>
     </select>
 
-    <label for="specialty">Specialty</label>
+    <label for="specialty">{{ specialtyFieldLabel() }}</label>
     <input id="specialty" [formField]="profileForm.specialty" />
 
-    <label for="registrationNo">Registration Number</label>
-    <input id="registrationNo" [formField]="profileForm.registrationNo" />
+    @if (!isListenerProfile()) {
+      <label for="registrationNo">{{ registrationFieldLabel() }}</label>
+      <input id="registrationNo" [formField]="profileForm.registrationNo" />
+    }
   </div>
 
   <label class="checkbox">
@@ -102,10 +104,7 @@
     <textarea
       id="focusAreas"
       rows="4"
-      placeholder="e.g.
-Chronic kidney disease
-Diabetes management
-Hypertension"
+      [placeholder]="focusAreasPlaceholder()"
       [formField]="profileForm.focusAreasText"
     ></textarea>
 
@@ -130,20 +129,29 @@ Hypertension"
           <label for="qualifications">Qualifications <span class="hint">(one per line)</span></label>
           <textarea id="qualifications" rows="3" [formField]="profileForm.qualificationsText"></textarea>
 
-          <label for="qualifiedFrom">Qualified from</label>
-          <input id="qualifiedFrom" [formField]="profileForm.qualifiedFrom" placeholder="University, institute, academy, or training body" />
+          @if (!isListenerProfile()) {
+            <label for="qualifiedFrom">Qualified / trained from</label>
+            <input id="qualifiedFrom" [formField]="profileForm.qualifiedFrom" placeholder="University, institute, academy, or training body" />
+          }
 
-          <label for="licenseCouncil">License / council</label>
-          <input id="licenseCouncil" [formField]="profileForm.licenseCouncil" placeholder="e.g. RCI, state council" />
+          @if (isClinicalMentalHealthProfile()) {
+            <label for="licenseCouncil">License / council</label>
+            <input id="licenseCouncil" [formField]="profileForm.licenseCouncil" placeholder="e.g. RCI, state council" />
 
-          <label for="licenseNumber">License / registration number</label>
-          <input id="licenseNumber" [formField]="profileForm.licenseNumber" />
+            <label for="licenseNumber">License / registration number</label>
+            <input id="licenseNumber" [formField]="profileForm.licenseNumber" />
+          }
 
           <label for="languages">Languages <span class="hint">(one per line)</span></label>
           <textarea id="languages" rows="3" [formField]="profileForm.languagesText"></textarea>
 
-          <label for="modalities">Modalities <span class="hint">(CBT, DBT, ACT, etc.)</span></label>
-          <textarea id="modalities" rows="3" [formField]="profileForm.modalitiesText"></textarea>
+          @if (isClinicalMentalHealthProfile()) {
+            <label for="modalities">Modalities <span class="hint">(CBT, DBT, ACT, etc.)</span></label>
+            <textarea id="modalities" rows="3" [formField]="profileForm.modalitiesText"></textarea>
+          } @else if (isCoachGuideProfile()) {
+            <label for="modalities">Coaching / guidance methods</label>
+            <textarea id="modalities" rows="3" [formField]="profileForm.modalitiesText"></textarea>
+          }
 
           <label for="sessionTypes">Session types <span class="hint">(one per line)</span></label>
           <textarea id="sessionTypes" rows="3" [formField]="profileForm.sessionTypesText"></textarea>
@@ -174,7 +182,7 @@ Hypertension"
         <label for="introSessionTitle">Intro session title</label>
         <input id="introSessionTitle" [formField]="profileForm.introSessionTitle" placeholder="e.g. Calm first conversation" />
 
-        <label for="counsellingApproach">Counselling approach</label>
+        <label for="counsellingApproach">{{ approachLabel() }}</label>
         <textarea id="counsellingApproach" rows="5" [formField]="profileForm.counsellingApproach"></textarea>
 
         <label for="safetyEscalationNote">Safety escalation note</label>
@@ -196,10 +204,12 @@ Hypertension"
           </div>
         }
 
-        <label class="checkbox">
-          <input type="checkbox" [formField]="profileForm.acceptsHighRiskCases" />
-          Accepts high-risk cases with escalation support
-        </label>
+        @if (isClinicalMentalHealthProfile()) {
+          <label class="checkbox">
+            <input type="checkbox" [formField]="profileForm.acceptsHighRiskCases" />
+            Accepts high-risk cases with escalation support
+          </label>
+        }
 
         <label class="checkbox">
           <input type="checkbox" [formField]="profileForm.autoMatchEnabled" />

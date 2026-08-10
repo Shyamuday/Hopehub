@@ -4,8 +4,8 @@ import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { API_PATHS } from '../constants/api-paths.constants';
 import type { DoctorProfileSummary } from '../constants/doctor-types.constants';
-import { capabilitiesForDoctorType } from '../constants/doctor-types.constants';
-import { navItemsForDoctorType } from '../constants/doctor-nav.constants';
+import { capabilitiesForProvider } from '../constants/doctor-types.constants';
+import { navItemsForDoctorProfile } from '../constants/doctor-nav.constants';
 
 export type DoctorSession = {
   name: string;
@@ -57,10 +57,10 @@ export class DoctorSessionService {
   }
 
   navItems() {
-    return navItemsForDoctorType(this.session?.doctorProfile?.doctorType);
+    return navItemsForDoctorProfile(this.session?.doctorProfile);
   }
 
   capabilities() {
-    return capabilitiesForDoctorType(this.session?.doctorProfile?.doctorType);
+    return capabilitiesForProvider(this.session?.doctorProfile);
   }
 }

@@ -38,7 +38,7 @@
             @if (capabilities().prescribe) {
               <button type="button" class="btn-primary" (click)="openPrescription()">Prescribe</button>
             }
-            @if (isPsychologist()) {
+            @if (isClinicalMentalHealthProvider()) {
               <button
                 type="button"
                 class="danger"
@@ -235,6 +235,7 @@
         }
       </section>
 
+      @if (isClinicalMentalHealthProvider()) {
       <section class="assessment-summary-card">
         <div class="session-notes-head">
           <div>
@@ -295,18 +296,13 @@
           </details>
         }
       </section>
+      }
 
       <section class="session-notes-card">
         <div class="session-notes-head">
           <div>
-            <h3>{{ isPsychologist() ? 'Hope Hub session notes' : 'Session notes' }}</h3>
-            <p class="muted">
-              {{
-                isPsychologist()
-                  ? 'Record discussion, support given, response, risk level, and next step.'
-                  : 'Record what happened during this consultation and the next step.'
-              }}
-            </p>
+            <h3>{{ sessionNotesTitle() }}</h3>
+            <p class="muted">{{ sessionNotesHint() }}</p>
           </div>
           <button
             type="button"
@@ -322,11 +318,7 @@
           rows="5"
           [value]="sessionNoteText()"
           (input)="sessionNoteText.set($any($event.target).value)"
-          [placeholder]="
-            isPsychologist()
-              ? 'Example: Patient shared anxiety triggers. Provided grounding exercise. No immediate safety risk shared. Next: follow up in 7 days.'
-              : 'Write a private consultation note and next step...'
-          "
+          [placeholder]="sessionNotesPlaceholder()"
         ></textarea>
 
         <div class="session-note-actions">

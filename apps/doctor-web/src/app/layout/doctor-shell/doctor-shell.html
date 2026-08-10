@@ -8,6 +8,9 @@
           <div class="doctor-meta">
             <strong>{{ doctorName }}</strong>
             <span class="type-badge">{{ doctorTypeLabel }}</span>
+            @if (specialtyLabel) {
+              <span class="specialty">{{ specialtyLabel }}</span>
+            }
           </div>
         }
       </div>
@@ -36,6 +39,9 @@
             <strong>{{ doctorName }}</strong>
             @if (doctorTypeLabel) {
               <span class="type-badge sidebar-badge">{{ doctorTypeLabel }}</span>
+            }
+            @if (specialtyLabel) {
+              <span class="specialty">{{ specialtyLabel }}</span>
             }
           </div>
         }
