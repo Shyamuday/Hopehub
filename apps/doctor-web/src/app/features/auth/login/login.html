@@ -74,7 +74,7 @@
 
   } @else {
     <h2>Create account</h2>
-    <p>Join as a {{ phLanguage.providerLower }}. You can add credentials, subtype, and verification details after signup.</p>
+    <p>Create your Professional Help account. You can add credentials, category, and verification details after signup.</p>
 
     <form (submit)="$event.preventDefault(); enroll()">
       <label for="name">Full name</label>
@@ -86,17 +86,8 @@
       <label for="mobile">Mobile</label>
       <input id="mobile" [formField]="enrollForm.mobile" />
 
-      <label>Provider type</label>
-      <div class="fixed-provider-type" aria-live="polite">
-        <strong>{{ phLanguage.providerTitle }}</strong>
-        <span>Fixed for now</span>
-      </div>
-      @if (selectedProviderHelper()) {
-        <p class="field-hint">{{ selectedProviderHelper() }}</p>
-      }
-
       @if (isHealingHubSignup()) {
-        <label for="hopeHubGroup">{{ phLanguage.providerTitle }} category</label>
+        <label for="hopeHubGroup">Professional category</label>
         <select id="hopeHubGroup" [formField]="enrollForm.hopeHubGroup" (change)="onHopeHubGroupChange($any($event.target).value)">
           @for (option of hopeHubGroupOptions; track option.value) {
             <option [value]="option.value">{{ option.label }}</option>

@@ -148,7 +148,7 @@ Set these in `deploy/.env` (from `deploy/.env.production.example`):
 | ------------------- | -------------------------- |
 | `API_PUBLIC_URL`    | `https://api.hopehub.in`   |
 | `WEB_ORIGIN`        | `https://hopehub.in`       |
-| `DOCTOR_ORIGIN`     | `https://ph.hopehub.in`    |
+| `DOCTOR_ORIGIN`     | `https://earn.hopehub.in`  |
 | `OPERATIONS_ORIGIN` | `https://ops.hopehub.in`   |
 | `ADMIN_ORIGIN`      | `https://admin.hopehub.in` |
 
@@ -201,7 +201,7 @@ sudo certbot certonly --webroot \
   -d api.hopehub.in \
   -d hopehub.in \
   -d admin.hopehub.in \
-  -d ph.hopehub.in \
+  -d earn.hopehub.in \
   -d ops.hopehub.in
 ```
 

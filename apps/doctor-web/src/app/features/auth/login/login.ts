@@ -51,7 +51,7 @@ export class Login {
     // },
     {
       value: 'HOPE_HUB',
-      label: 'Hope Hub provider',
+      label: 'Professional Help',
       helper: 'For emotional support, counselling, coaching, and mental-wellness sessions.',
     },
   ];
@@ -313,6 +313,6 @@ export class Login {
 
   private specialtyForEnrollment(): string {
     const form = this.enrollModel();
-    return this.defaultSpecialtyByGroup[form.hopeHubGroup] || 'Hope Hub Provider';
+    return this.defaultSpecialtyByGroup[form.hopeHubGroup] || 'Professional Help';
   }
 }
