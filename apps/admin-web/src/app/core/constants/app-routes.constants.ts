@@ -29,6 +29,7 @@ export const ROUTE_PATHS = {
   PURCHASE_ORDERS: 'purchase-orders',
   ADMIN_USERS: 'admin-users',
   TELEGRAM_BOTS: 'telegram-bots',
+  GROUP_HELP: 'group-help',
   SUPPLIERS: 'suppliers',
   MEDICINES: 'medicines',
   INVENTORY: 'inventory',
@@ -198,6 +199,11 @@ export const NAV_ITEMS = [
     label: '🤖 Telegram Bots',
     workspaces: ['shared'],
   },
+  {
+    path: adminNavPath(ROUTE_PATHS.GROUP_HELP),
+    label: '🛡️ Group Help',
+    workspaces: ['hope-hub'],
+  },
   { path: adminNavPath(ROUTE_PATHS.ADMIN_USERS), label: '🔐 Admin Users', workspaces: ['shared'] },
   { path: adminNavPath(ROUTE_PATHS.STAFF), label: '🛡️ Staff permissions', workspaces: ['shared'] },
   {
@@ -329,6 +335,7 @@ export const NAV_GROUPS: AdminNavGroup[] = [
       ROUTE_PATHS.NOTIFICATIONS,
       ROUTE_PATHS.NOTIFICATIONS_INBOX,
       ROUTE_PATHS.TELEGRAM_BOTS,
+      ROUTE_PATHS.GROUP_HELP,
       ROUTE_PATHS.ADMIN_USERS,
       ROUTE_PATHS.STAFF,
       ROUTE_PATHS.ECOSYSTEM_USERS,

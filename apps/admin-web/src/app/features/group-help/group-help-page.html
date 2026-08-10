@@ -1,0 +1,153 @@
+<section class="group-help-hero">
+  <div>
+    <p class="eyebrow">Telegram community</p>
+    <h1>Group Help Control</h1>
+    <p>
+      Manage the Hope Hub GroupHelp-powered bot config from one place. This panel stores the
+      official messages and generates commands for the external GroupHelp clone.
+    </p>
+  </div>
+  <div class="status-card" [class.status-card--ready]="tokenConfigured()">
+    <span>{{ tokenConfigured() ? 'Direct send ready' : 'Copy-command mode' }}</span>
+    <strong>{{ value('telegramGroupHelpBotUsername') || 'Hopehubbot' }}</strong>
+    <small>
+      {{
+        tokenConfigured()
+          ? 'TELEGRAM_GROUP_HELP_BOT_TOKEN is configured for send/pin.'
+          : 'Add TELEGRAM_GROUP_HELP_BOT_TOKEN only if you want direct announcements.'
+      }}
+    </small>
+  </div>
+</section>
+
+<section class="notice-panel">
+  <strong>Important safety line</strong>
+  <p>
+    GroupHelp controls the bot runtime. Do not set a HopeHub webhook for this bot. Use command copy
+    for GroupHelp settings; direct send only posts/pins announcements through Telegram API.
+  </p>
+</section>
+
+@if (loading()) {
+  <p class="loading-text">Loading Group Help config…</p>
+}
+
+<section class="config-grid">
+  @for (section of sectionOrder; track section) {
+    <article class="panel">
+      <h2>{{ sectionLabels[section] }}</h2>
+      <div class="field-list">
+        @for (entry of fieldsFor(section); track entry.key) {
+          <label class="config-field">
+            <span>
+              <strong>{{ entry.label }}</strong>
+              <small>{{ entry.description }}</small>
+            </span>
+
+            @if (entry.type === 'textarea') {
+              <textarea
+                rows="5"
+                [value]="value(entry.key)"
+                [attr.maxlength]="entry.maxLength"
+                [placeholder]="entry.placeholder || ''"
+                (input)="update(entry.key, $any($event.target).value)"
+              ></textarea>
+            } @else if (entry.type === 'select') {
+              <select
+                [value]="value(entry.key)"
+                (change)="update(entry.key, $any($event.target).value)"
+              >
+                @for (option of entry.options || []; track option) {
+                  <option [value]="option">{{ option }}</option>
+                }
+              </select>
+            } @else {
+              <input
+                [type]="entry.type === 'number' ? 'number' : 'text'"
+                [value]="value(entry.key)"
+                [attr.maxlength]="entry.maxLength"
+                [placeholder]="entry.placeholder || ''"
+                (input)="update(entry.key, $any($event.target).value)"
+              />
+            }
+          </label>
+        }
+      </div>
+    </article>
+  }
+</section>
+
+<section class="panel command-panel">
+  <div class="panel-head">
+    <div>
+      <h2>Generated GroupHelp commands</h2>
+      <p>Copy these into the GroupHelp bot/group. If your clone uses different syntax, edit the command templates above once.</p>
+    </div>
+    <button type="button" class="primary" (click)="saveAll()" [disabled]="saving()">
+      {{ saving() ? 'Saving…' : 'Save all config' }}
+    </button>
+  </div>
+
+  <div class="command-grid">
+    @for (item of messageCommands; track item.id) {
+      <article class="command-card">
+        <h3>{{ item.title }}</h3>
+        <p>{{ item.helper }}</p>
+        <pre>{{ commandFor(item) }}</pre>
+        <button type="button" (click)="copy(commandFor(item), item.title)">
+          {{ copied() === item.title ? 'Copied' : 'Copy command' }}
+        </button>
+      </article>
+    }
+
+    @for (item of moderationCommands; track item.id) {
+      <article class="command-card">
+        <h3>{{ item.title }}</h3>
+        <p>{{ item.helper }}</p>
+        <pre>{{ commandFor(item) }}</pre>
+        <button type="button" (click)="copy(commandFor(item), item.title)">
+          {{ copied() === item.title ? 'Copied' : 'Copy command' }}
+        </button>
+      </article>
+    }
+  </div>
+</section>
+
+<section class="panel direct-panel">
+  <h2>Direct announcement</h2>
+  <p>
+    This sends a normal Telegram message to the configured group. It does not change GroupHelp
+    internal settings.
+  </p>
+  <div class="direct-form">
+    <label>
+      Message
+      <select
+        [value]="selectedDirectMessageKey()"
+        (change)="selectedDirectMessageKey.set($any($event.target).value)"
+      >
+        @for (option of messageOptions(); track option.key) {
+          <option [value]="option.key">{{ option.label }}</option>
+        }
+      </select>
+    </label>
+    <label class="check-row">
+      <input
+        type="checkbox"
+        [checked]="pinDirectMessage()"
+        (change)="pinDirectMessage.set($any($event.target).checked)"
+      />
+      Pin after sending
+    </label>
+    <button type="button" class="primary" (click)="sendDirect()" [disabled]="sending()">
+      {{ sending() ? 'Sending…' : 'Send to group' }}
+    </button>
+  </div>
+</section>
+
+@if (message()) {
+  <p class="success">{{ message() }}</p>
+}
+@if (error()) {
+  <p class="error">{{ error() }}</p>
+}

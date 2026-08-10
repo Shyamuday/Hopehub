@@ -232,6 +232,42 @@ export class AdminOpsApi extends AdminApiBase {
     );
   }
 
+  getTelegramGroupHelpConfig() {
+    return firstValueFrom(
+      this.http.get<{
+        tokenConfigured: boolean;
+        config: Array<{
+          key: string;
+          label: string;
+          description: string;
+          section: 'connection' | 'messages' | 'moderation' | 'commands';
+          type: 'text' | 'textarea' | 'number' | 'select';
+          maxLength: number;
+          placeholder?: string;
+          options?: string[];
+          value: string;
+        }>;
+      }>(`${this.apiBase}${API_PATHS.ADMIN.TELEGRAM_GROUP_HELP}`),
+    );
+  }
+
+  saveTelegramGroupHelpConfig(entries: Array<{ key: string; value: string }>) {
+    return firstValueFrom(
+      this.http.patch<{ config: any[] }>(`${this.apiBase}${API_PATHS.ADMIN.TELEGRAM_GROUP_HELP}`, {
+        entries,
+      }),
+    );
+  }
+
+  sendTelegramGroupHelpMessage(payload: { message: string; pin?: boolean }) {
+    return firstValueFrom(
+      this.http.post<{ ok: boolean; message: any; pinned?: unknown }>(
+        `${this.apiBase}${API_PATHS.ADMIN.TELEGRAM_GROUP_HELP_SEND}`,
+        payload,
+      ),
+    );
+  }
+
   updateConsultationStatus(
     consultationId: string,
     status: string,
