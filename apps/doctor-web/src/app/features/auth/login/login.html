@@ -63,7 +63,7 @@
 
   } @else {
     <h2>Doctor Signup</h2>
-    <p>Create a doctor account with your specialty profile. Access starts after admin approval.</p>
+    <p>Create a provider account for Homeopathy or Hope Hub. Access starts after approval.</p>
 
     <form (submit)="$event.preventDefault(); enroll()">
       <label for="name">Full name</label>
@@ -75,8 +75,40 @@
       <label for="mobile">Mobile</label>
       <input id="mobile" [formField]="enrollForm.mobile" />
 
-      <label for="specialty">Specialty</label>
-      <input id="specialty" [formField]="enrollForm.specialty" />
+      <label for="providerType">Provider type</label>
+      <select id="providerType" [formField]="enrollForm.providerType" (change)="onProviderTypeChange($any($event.target).value)">
+        @for (option of providerTypeOptions; track option.value) {
+          <option [value]="option.value">{{ option.label }}</option>
+        }
+      </select>
+      @if (selectedProviderHelper()) {
+        <p class="field-hint">{{ selectedProviderHelper() }}</p>
+      }
+
+      @if (isHealingHubSignup()) {
+        <label for="hopeHubGroup">Hope Hub provider category</label>
+        <select id="hopeHubGroup" [formField]="enrollForm.hopeHubGroup" (change)="onHopeHubGroupChange($any($event.target).value)">
+          @for (option of hopeHubGroupOptions; track option.value) {
+            <option [value]="option.value">{{ option.label }}</option>
+          }
+        </select>
+        @if (selectedHopeHubGroupHelper()) {
+          <p class="field-hint">{{ selectedHopeHubGroupHelper() }}</p>
+        }
+
+        <label for="careTeamType">Subtype</label>
+        <select id="careTeamType" [formField]="enrollForm.careTeamType">
+          @for (option of careTeamTypeOptions(); track option.value) {
+            <option [value]="option.value">{{ option.label }}</option>
+          }
+        </select>
+        @if (selectedCareTeamTypeHelper()) {
+          <p class="field-hint">{{ selectedCareTeamTypeHelper() }}</p>
+        }
+      }
+
+      <label for="specialty">{{ specialtyLabel() }}</label>
+      <input id="specialty" [formField]="enrollForm.specialty" [placeholder]="specialtyPlaceholder()" />
 
       <label for="registrationNo">Registration number</label>
       <input id="registrationNo" [formField]="enrollForm.registrationNo" />

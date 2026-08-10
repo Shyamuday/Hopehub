@@ -149,12 +149,16 @@ export function registerAuthDoctorRoutes(router: Router) {
           mobile: z.string().min(8).optional(),
           password: z.string().min(8),
           specialty: z.string().min(2),
-          registrationNo: z.string().optional()
+          registrationNo: z.string().optional(),
+          careTeamType: z.nativeEnum(CareTeamMemberType).optional()
         })
         .parse(req.body);
 
       const passwordHash = await bcrypt.hash(body.password, 10);
-      const inferredDoctorType = inferDoctorTypeFromSpecialty(body.specialty);
+      const isHopeHubProvider = Boolean(body.careTeamType);
+      const inferredDoctorType = isHopeHubProvider
+        ? HomeopathicDoctorType.PSYCHOLOGIST
+        : inferDoctorTypeFromSpecialty(body.specialty);
       const doctor = await prisma.user.create({
         data: {
           name: body.name,
@@ -164,11 +168,24 @@ export function registerAuthDoctorRoutes(router: Router) {
           role: Role.DOCTOR,
           isActive: false,
           doctorProfile: {
-            create: toDoctorProfilePayload({
-              doctorType: inferredDoctorType,
-              specialty: body.specialty,
-              registrationNo: body.registrationNo
-            })
+            create: {
+              ...toDoctorProfilePayload({
+                doctorType: inferredDoctorType,
+                specialty: body.specialty,
+                registrationNo: body.registrationNo
+              }),
+              ...(body.careTeamType
+                ? {
+                    mentalHealthProfile: {
+                      create: {
+                        careTeamType: body.careTeamType,
+                        acceptingNewUsers: true,
+                        autoMatchEnabled: true
+                      }
+                    }
+                  }
+                : {})
+            }
           }
         },
         select: publicUserSelect

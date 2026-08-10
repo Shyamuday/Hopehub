@@ -91,7 +91,8 @@ export const ADMIN_WORKSPACES: readonly AdminWorkspaceOption[] = [
     id: 'hope-hub',
     label: 'Hope Hub',
     shortLabel: 'Hope',
-    description: 'Psychologists, listeners, screening, wellness content, and safety moderation.',
+    description:
+      'Hope Hub providers, listeners, screening, wellness content, and safety moderation.',
     icon: '🧠',
   },
 ] as const;

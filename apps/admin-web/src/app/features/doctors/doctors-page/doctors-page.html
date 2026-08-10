@@ -4,15 +4,15 @@
     <h2>
       {{
         workspaceKey() === 'hope-hub'
-          ? 'Psychologists & emotional support listeners'
+          ? 'Hope Hub providers'
           : 'Homeopathy doctors'
       }}
     </h2>
     <span>
       {{
         workspaceKey() === 'hope-hub'
-          ? 'Showing Hope Hub providers only. Create and pending lists are restricted to psychologist/listener roles.'
-          : 'Showing homeopathy doctors only. Psychologist/listener providers stay in Hope Hub.'
+          ? 'Showing Hope Hub providers only. Category and subtype decide whether someone appears as a psychologist, coach, guide, or listener.'
+          : 'Showing homeopathy doctors only. Hope Hub providers stay in the Hope Hub workspace.'
       }}
     </span>
   </div>
@@ -83,7 +83,7 @@
       </span>
     </div>
     <div class="field">
-      <label class="field-label" for="doc-create-type">Doctor type</label>
+      <label class="field-label" for="doc-create-type">Provider type</label>
       <select id="doc-create-type" [formField]="createForm.doctorType" (change)="onCreateDoctorTypeChange()">
         @for (option of workspaceDoctorTypeOptions(); track option.value) {
           <option [value]="option.value">{{ option.label }}</option>
@@ -135,7 +135,7 @@
     </div>
     @if (isPsychologistType(createModel().doctorType)) {
       <div class="field">
-        <label class="field-label" for="doc-create-care-team-type">Care team type</label>
+        <label class="field-label" for="doc-create-care-team-type">Hope Hub subtype</label>
         <select id="doc-create-care-team-type" [formField]="createForm.careTeamType">
           @for (option of careTeamTypeOptions; track option.value) {
             <option [value]="option.value">{{ option.label }}</option>
@@ -472,7 +472,7 @@
           </select>
         </div>
         <div class="field">
-          <label class="field-label" for="doc-edit-type">Doctor type</label>
+          <label class="field-label" for="doc-edit-type">Provider type</label>
           <select id="doc-edit-type" [formField]="editForm.doctorType" (change)="onEditDoctorTypeChange()">
             @for (option of doctorTypeOptions; track option.value) {
               <option [value]="option.value">{{ option.label }}</option>
@@ -571,7 +571,7 @@
         @if (isPsychologistType(editModel().doctorType)) {
           <p class="form-section-label">Care team public profile</p>
           <div class="field">
-            <label class="field-label" for="doc-edit-care-team-type">Care team type</label>
+            <label class="field-label" for="doc-edit-care-team-type">Hope Hub subtype</label>
             <select id="doc-edit-care-team-type" [formField]="editForm.careTeamType">
               @for (option of careTeamTypeOptions; track option.value) {
                 <option [value]="option.value">{{ option.label }}</option>

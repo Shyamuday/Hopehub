@@ -9,7 +9,7 @@ export const HOMEOPATHIC_DOCTOR_TYPE_LABELS: Record<HomeopathicDoctorType, strin
   TELEMEDICINE_DOCTOR: 'Telemedicine Doctor',
   MEDICAL_INTERN: 'Medical Intern',
   RESIDENT_MEDICAL_OFFICER: 'Resident Medical Officer (RMO)',
-  PSYCHOLOGIST: 'Psychologist'
+  PSYCHOLOGIST: 'Hope Hub Provider'
 };
 
 export const HOMEOPATHIC_SPECIALTY_FOCUS_LABELS: Record<HomeopathicSpecialtyFocus, string> = {

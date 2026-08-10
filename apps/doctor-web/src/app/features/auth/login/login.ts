@@ -5,6 +5,18 @@ import { DEFAULT_AUTHED_ROUTE } from '../../../core/constants/app-routes.constan
 import { Auth } from '../../../core/services/auth';
 import { AppButtonComponent } from '../../../shared/ui/app-button.component';
 
+type ProviderSignupKind = 'HOMEOPATHY' | 'HOPE_HUB';
+type HopeHubProviderGroup = 'PSYCHOLOGIST' | 'LIFE_COACH' | 'PEER_SUPPORT';
+type HopeHubCareTeamType =
+  | 'MENTAL_WELLNESS_PROFESSIONAL'
+  | 'QUALIFIED_COUNSELLOR'
+  | 'PSYCHOLOGY_STUDENT_VOLUNTEER'
+  | 'PEER_SUPPORT_VOLUNTEER'
+  | 'NLP_COACH'
+  | 'LIFE_COACH'
+  | 'MEDITATION_BREATHWORK_GUIDE'
+  | 'CAREER_STUDY_MENTOR';
+
 @Component({
   selector: 'app-login',
   imports: [FormField, AppButtonComponent],
@@ -24,6 +36,94 @@ export class Login {
   showPassword = signal(false);
   showEnrollPassword = signal(false);
   showConfirmPassword = signal(false);
+  readonly providerTypeOptions: Array<{
+    value: ProviderSignupKind;
+    label: string;
+    helper: string;
+  }> = [
+    {
+      value: 'HOMEOPATHY',
+      label: 'Homeopathy provider',
+      helper: 'For clinic doctors, specialists, interns, and homeopathy consultants.',
+    },
+    {
+      value: 'HOPE_HUB',
+      label: 'Hope Hub provider',
+      helper: 'For emotional support, counselling, coaching, and mental-wellness sessions.',
+    },
+  ];
+  readonly hopeHubGroupOptions: Array<{
+    value: HopeHubProviderGroup;
+    label: string;
+    helper: string;
+  }> = [
+    {
+      value: 'PSYCHOLOGIST',
+      label: 'Psychologist / counsellor',
+      helper: 'For qualified mental-health professionals and counsellors.',
+    },
+    {
+      value: 'LIFE_COACH',
+      label: 'Life coach / guide',
+      helper: 'For life coaching, NLP, meditation, breathwork, career, and study support.',
+    },
+    {
+      value: 'PEER_SUPPORT',
+      label: 'Peer support listener',
+      helper: 'For trained listeners who support users through safe active listening.',
+    },
+  ];
+  private readonly careTeamOptionsByGroup: Record<
+    HopeHubProviderGroup,
+    Array<{ value: HopeHubCareTeamType; label: string; helper: string }>
+  > = {
+    PSYCHOLOGIST: [
+      {
+        value: 'MENTAL_WELLNESS_PROFESSIONAL',
+        label: 'Psychologist / mental wellness professional',
+        helper: 'For psychologists and experienced mental-health practitioners.',
+      },
+      {
+        value: 'QUALIFIED_COUNSELLOR',
+        label: 'Qualified counsellor',
+        helper: 'For certified counsellors offering structured emotional support.',
+      },
+    ],
+    LIFE_COACH: [
+      {
+        value: 'LIFE_COACH',
+        label: 'Life coach',
+        helper: 'For goal, confidence, and life-direction support.',
+      },
+      {
+        value: 'NLP_COACH',
+        label: 'NLP coach',
+        helper: 'For NLP-based coaching and habit or mindset support.',
+      },
+      {
+        value: 'MEDITATION_BREATHWORK_GUIDE',
+        label: 'Meditation / breathwork guide',
+        helper: 'For guided calming, grounding, meditation, and breathwork sessions.',
+      },
+      {
+        value: 'CAREER_STUDY_MENTOR',
+        label: 'Career / study mentor',
+        helper: 'For academic, exam, career, and study-stress support.',
+      },
+    ],
+    PEER_SUPPORT: [
+      {
+        value: 'PEER_SUPPORT_VOLUNTEER',
+        label: 'Peer emotional support listener',
+        helper: 'For trained peer listeners who support users through active listening.',
+      },
+      {
+        value: 'PSYCHOLOGY_STUDENT_VOLUNTEER',
+        label: 'Psychology student emotional support listener',
+        helper: 'For student listeners joining Hope Hub after listener screening.',
+      },
+    ],
+  };
 
   readonly signInModel = signal({
     email: '',
@@ -37,6 +137,9 @@ export class Login {
   readonly enrollModel = signal({
     name: '',
     mobile: '',
+    providerType: 'HOMEOPATHY' as ProviderSignupKind,
+    hopeHubGroup: 'PSYCHOLOGIST' as HopeHubProviderGroup,
+    careTeamType: 'MENTAL_WELLNESS_PROFESSIONAL' as HopeHubCareTeamType,
     specialty: '',
     registrationNo: '',
     confirmPassword: '',
@@ -49,6 +152,63 @@ export class Login {
   error = signal('');
   message = signal('');
   submitting = signal(false);
+
+  isHealingHubSignup(): boolean {
+    return this.enrollModel().providerType === 'HOPE_HUB';
+  }
+
+  selectedProviderHelper(): string {
+    const selected = this.enrollModel().providerType;
+    return this.providerTypeOptions.find((option) => option.value === selected)?.helper || '';
+  }
+
+  selectedHopeHubGroupHelper(): string {
+    const selected = this.enrollModel().hopeHubGroup;
+    return this.hopeHubGroupOptions.find((option) => option.value === selected)?.helper || '';
+  }
+
+  careTeamTypeOptions(): Array<{ value: HopeHubCareTeamType; label: string; helper: string }> {
+    return this.careTeamOptionsByGroup[this.enrollModel().hopeHubGroup];
+  }
+
+  selectedCareTeamTypeHelper(): string {
+    const selected = this.enrollModel().careTeamType;
+    return this.careTeamTypeOptions().find((option) => option.value === selected)?.helper || '';
+  }
+
+  specialtyLabel(): string {
+    return this.isHealingHubSignup() ? 'Specialization / support focus' : 'Specialty';
+  }
+
+  specialtyPlaceholder(): string {
+    if (!this.isHealingHubSignup()) return 'e.g. chronic care, pediatrics, skin, kidney care';
+    const group = this.enrollModel().hopeHubGroup;
+    if (group === 'LIFE_COACH') return 'e.g. confidence coaching, breathwork, career stress';
+    if (group === 'PEER_SUPPORT') return 'e.g. loneliness, exam stress, relationship venting';
+    return 'e.g. anxiety support, relationship stress, student counselling';
+  }
+
+  onProviderTypeChange(value: ProviderSignupKind): void {
+    this.enrollModel.update((current) => ({
+      ...current,
+      providerType: value,
+      ...(value === 'HOPE_HUB'
+        ? {
+            hopeHubGroup: current.hopeHubGroup || 'PSYCHOLOGIST',
+            careTeamType: current.careTeamType || 'MENTAL_WELLNESS_PROFESSIONAL',
+          }
+        : {}),
+    }));
+  }
+
+  onHopeHubGroupChange(value: HopeHubProviderGroup): void {
+    const defaultCareTeamType = this.careTeamOptionsByGroup[value][0].value;
+    this.enrollModel.update((current) => ({
+      ...current,
+      hopeHubGroup: value,
+      careTeamType: defaultCareTeamType,
+    }));
+  }
 
   setLoginMode(mode: 'otp' | 'password'): void {
     this.loginMode.set(mode);
@@ -161,7 +321,8 @@ export class Login {
   async enroll() {
     if (!this.canSignup()) return;
     const { email, password } = this.signInModel();
-    const { name, mobile, specialty, registrationNo } = this.enrollModel();
+    const { name, mobile, providerType, careTeamType, specialty, registrationNo } =
+      this.enrollModel();
     this.error.set('');
     this.message.set('');
     this.submitting.set(true);
@@ -173,6 +334,7 @@ export class Login {
         password,
         specialty,
         registrationNo: registrationNo || undefined,
+        careTeamType: providerType === 'HOPE_HUB' ? careTeamType : undefined,
       });
 
       if (!result.ok) {

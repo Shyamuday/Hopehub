@@ -53,6 +53,23 @@ form {
   gap: 0.65rem;
 }
 
+select {
+  min-height: var(--touch-min);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text);
+  padding: 0.7rem 0.8rem;
+  font: inherit;
+}
+
+.field-hint {
+  margin: -0.25rem 0 0.15rem;
+  color: var(--color-text-secondary);
+  font-size: var(--text-xs);
+  line-height: var(--leading-relaxed);
+}
+
 button[type='submit'] {
   margin-top: 0.35rem;
   border: 0;

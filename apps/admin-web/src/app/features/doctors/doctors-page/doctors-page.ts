@@ -114,7 +114,7 @@ const CARE_SERVICE_PRICING_MODES = new Set([
   'PER_MINUTE',
 ]);
 
-function psychologistProfileValue(value: string, fallback = 'Psychologist') {
+function psychologistProfileValue(value: string, fallback = 'Hope Hub Provider') {
   const trimmed = value.trim();
   return !trimmed || STALE_PSYCHOLOGIST_PROFILE_TEXT.test(trimmed) ? fallback : trimmed;
 }
@@ -1016,8 +1016,8 @@ export class DoctorsPage {
       this.createModel.set({
         ...create,
         doctorType: 'PSYCHOLOGIST',
-        specialty: psychologistProfileValue(create.specialty, 'Psychologist'),
-        designation: psychologistProfileValue(create.designation, 'Psychologist'),
+        specialty: psychologistProfileValue(create.specialty, 'Hope Hub Provider'),
+        designation: psychologistProfileValue(create.designation, 'Hope Hub Provider'),
         department: psychologistProfileValue(create.department, 'Mental Wellness'),
       });
       return;

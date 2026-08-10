@@ -76,6 +76,7 @@ export class Auth {
     password: string;
     specialty: string;
     registrationNo?: string;
+    careTeamType?: string;
   }) {
     if (!payload.name || !payload.email || !payload.password || !payload.specialty) {
       return { ok: false as const, message: AUTH_MESSAGES.ENROLL_REQUIRED_FIELDS };
