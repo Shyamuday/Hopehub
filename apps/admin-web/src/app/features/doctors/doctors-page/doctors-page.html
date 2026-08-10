@@ -16,34 +16,55 @@
   </div>
 </section>
 
-<section class="panel website-settings-panel">
-  <h2>Website — {{ providerPluralTitleLabel() }} Directory Settings</h2>
-  <p class="panel-hint">
-    Control how many {{ providerPluralLabel() }} appear on the public
-    <em>{{ publicDirectoryLabel() }}</em>. Use the <em>Display order</em> field below to set the listing sequence.
-  </p>
-  <div class="config-row">
-    <label for="doctorListLimit">Max {{ providerPluralLabel() }} shown on website (1–50)</label>
-    <input
-      id="doctorListLimit"
-      type="number"
-      min="1"
-      max="50"
-      [value]="doctorListLimitValue()"
-      (input)="doctorListLimitValue.set($any($event.target).value)"
-      [disabled]="savingConfig()"
-    />
-    <button type="button" (click)="saveDoctorListLimit()" [disabled]="savingConfig()">
-      {{ savingConfig() ? 'Saving…' : 'Save limit' }}
+<section class="panel website-settings-panel panel--compact">
+  <div class="panel-header">
+    <div>
+      <h2>Website — {{ providerPluralTitleLabel() }} Directory Settings</h2>
+      <p class="panel-hint">
+        Public directory limit and display order.
+      </p>
+    </div>
+    <button type="button" class="btn-secondary" (click)="showDirectorySettings.set(!showDirectorySettings())">
+      {{ showDirectorySettings() ? 'Hide settings' : 'Show settings' }}
     </button>
   </div>
-  @if (configMessage()) {
-    <p class="success config-msg">{{ configMessage() }}</p>
+  @if (showDirectorySettings()) {
+    <p class="panel-hint">
+      Control how many {{ providerPluralLabel() }} appear on the public
+      <em>{{ publicDirectoryLabel() }}</em>. Use the <em>Display order</em> field below to set the listing sequence.
+    </p>
+    <div class="config-row">
+      <label for="doctorListLimit">Max {{ providerPluralLabel() }} shown on website (1–50)</label>
+      <input
+        id="doctorListLimit"
+        type="number"
+        min="1"
+        max="50"
+        [value]="doctorListLimitValue()"
+        (input)="doctorListLimitValue.set($any($event.target).value)"
+        [disabled]="savingConfig()"
+      />
+      <button type="button" (click)="saveDoctorListLimit()" [disabled]="savingConfig()">
+        {{ savingConfig() ? 'Saving…' : 'Save limit' }}
+      </button>
+    </div>
+    @if (configMessage()) {
+      <p class="success config-msg">{{ configMessage() }}</p>
+    }
   }
 </section>
 
-<section class="panel">
-  <h2>Create {{ providerTitleLabel() }}</h2>
+<section class="panel panel--compact">
+  <div class="panel-header">
+    <div>
+      <h2>Create {{ providerTitleLabel() }}</h2>
+      <p class="panel-hint">Keep closed during daily review so the page stays short.</p>
+    </div>
+    <button type="button" class="btn-primary" (click)="showCreateProviderForm.set(!showCreateProviderForm())">
+      {{ showCreateProviderForm() ? 'Close form' : 'Add ' + providerSingularLabel() }}
+    </button>
+  </div>
+  @if (showCreateProviderForm()) {
   <fieldset class="create-doctor-form form-grid" [disabled]="mutating()">
     <div class="field">
       <label class="field-label" for="doc-create-name">Name</label>
@@ -262,6 +283,7 @@
       {{ mutating() ? 'Creating...' : 'Create ' + providerSingularLabel() }}
     </button>
   </fieldset>
+  }
 </section>
 
 <section class="panel">
@@ -310,8 +332,9 @@
   </fieldset>
 
   @if (!loading()) {
-    @for (doctor of visiblePendingDoctors(); track doctor.id) {
-      <article class="card" [class.card--selected]="selectedDoctorId === doctor.id">
+    <div class="provider-list-scroll">
+      @for (doctor of visiblePendingDoctors(); track doctor.id) {
+        <article class="card" [class.card--selected]="selectedDoctorId === doctor.id">
         <label class="select-doctor">
           <input
             type="checkbox"
@@ -352,15 +375,22 @@
             Keep Pending
           </button>
         </div>
-      </article>
-    } @empty {
-      <p class="empty-state">No pending {{ providerSingularLabel() }} enrollments.</p>
-    }
+        </article>
+      } @empty {
+        <p class="empty-state">No pending {{ providerSingularLabel() }} enrollments.</p>
+      }
+    </div>
   }
   <div class="pagination">
     @for (page of pendingPages(); track page) {
-      <button type="button" [class.active]="pendingPage === page" (click)="setPendingPage(page)">
-        {{ page }}
+      <button
+        type="button"
+        [class.active]="pendingPage === page"
+        [class.pagination-gap]="isPaginationGap(page)"
+        [disabled]="isPaginationGap(page)"
+        (click)="setPendingPageFromToken(page)"
+      >
+        {{ isPaginationGap(page) ? '…' : page }}
       </button>
     }
   </div>
@@ -398,8 +428,9 @@
   </div>
 
   @if (!loading()) {
-    @for (doctor of visibleDoctors(); track doctor.id) {
-      <article class="card" [class.card--selected]="selectedDoctorId === doctor.id">
+    <div class="provider-list-scroll">
+      @for (doctor of visibleDoctors(); track doctor.id) {
+        <article class="card" [class.card--selected]="selectedDoctorId === doctor.id">
         <div class="doctor-card-header">
           <strong>{{ doctor.name }}</strong>
           <button
@@ -425,15 +456,22 @@
             }
           </div>
         }
-      </article>
-    } @empty {
-      <p class="empty-state">No {{ providerPluralLabel() }} found.</p>
-    }
+        </article>
+      } @empty {
+        <p class="empty-state">No {{ providerPluralLabel() }} found.</p>
+      }
+    </div>
   }
   <div class="pagination">
     @for (page of doctorsPages(); track page) {
-      <button type="button" [class.active]="doctorsPage === page" (click)="setDoctorsPage(page)">
-        {{ page }}
+      <button
+        type="button"
+        [class.active]="doctorsPage === page"
+        [class.pagination-gap]="isPaginationGap(page)"
+        [disabled]="isPaginationGap(page)"
+        (click)="setDoctorsPageFromToken(page)"
+      >
+        {{ isPaginationGap(page) ? '…' : page }}
       </button>
     }
   </div>

@@ -12,6 +12,49 @@
   }
 }
 
+.panel--compact {
+  padding: 0.85rem 1rem;
+}
+
+.panel-header {
+  align-items: flex-start;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+
+  h2 {
+    margin-bottom: 0.25rem;
+  }
+}
+
+.panel-hint {
+  color: #64748b;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  margin: 0.25rem 0 0.85rem;
+}
+
+.provider-list-scroll {
+  max-height: min(58vh, 620px);
+  overflow-y: auto;
+  padding-right: 0.35rem;
+  scrollbar-gutter: stable;
+}
+
+.provider-list-scroll::-webkit-scrollbar {
+  width: 8px;
+}
+
+.provider-list-scroll::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 999px;
+}
+
+.provider-list-scroll::-webkit-scrollbar-track {
+  background: #f8fafc;
+  border-radius: 999px;
+}
+
 .workspace-context-panel {
   border: 1px solid #bbf7d0;
   border-radius: 16px;
@@ -207,6 +250,18 @@ button {
   cursor: pointer;
 }
 
+.btn-primary {
+  background: #2563eb;
+  color: #fff;
+  font-weight: 800;
+}
+
+.btn-secondary {
+  background: #f1f5f9;
+  color: #334155;
+  font-weight: 800;
+}
+
 .pagination {
   display: flex;
   gap: 0.4rem;
@@ -217,6 +272,12 @@ button {
 .pagination button.active {
   background: #dbeafe;
   color: #1d4ed8;
+}
+
+.pagination .pagination-gap {
+  background: transparent;
+  color: #94a3b8;
+  cursor: default;
 }
 
 .select-doctor,

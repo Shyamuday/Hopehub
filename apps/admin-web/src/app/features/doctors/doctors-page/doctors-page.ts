@@ -345,6 +345,8 @@ export class DoctorsPage {
   readonly savingConfig = signal(false);
   readonly configMessage = signal('');
   readonly doctorListLimitValue = signal('12');
+  readonly showDirectorySettings = signal(false);
+  readonly showCreateProviderForm = signal(false);
 
   constructor(private readonly api: AdminApi) {
     effect(() => {
@@ -693,13 +695,25 @@ export class DoctorsPage {
   }
 
   async setDoctorsPage(page: number) {
-    this.doctorsPage = page;
+    this.doctorsPage = this.clampedPage(page, this.doctorsTotalPages());
     await this.load();
   }
 
   async setPendingPage(page: number) {
-    this.pendingPage = page;
+    this.pendingPage = this.clampedPage(page, this.pendingTotalPages());
     await this.load();
+  }
+
+  setDoctorsPageFromToken(page: number | string) {
+    if (typeof page === 'number') {
+      void this.setDoctorsPage(page);
+    }
+  }
+
+  setPendingPageFromToken(page: number | string) {
+    if (typeof page === 'number') {
+      void this.setPendingPage(page);
+    }
   }
 
   visibleDoctors() {
@@ -746,11 +760,54 @@ export class DoctorsPage {
   }
 
   doctorsPages() {
-    return Array.from({ length: this.doctorsTotalPages() }, (_, index) => index + 1);
+    return this.paginationWindow(this.doctorsPage, this.doctorsTotalPages());
   }
 
   pendingPages() {
-    return Array.from({ length: this.pendingTotalPages() }, (_, index) => index + 1);
+    return this.paginationWindow(this.pendingPage, this.pendingTotalPages());
+  }
+
+  isPaginationGap(page: number | string) {
+    return typeof page !== 'number';
+  }
+
+  private clampedPage(page: number, totalPages: number) {
+    const normalized = Number.isFinite(page) ? Math.trunc(page) : 1;
+    return Math.min(Math.max(normalized, 1), Math.max(totalPages, 1));
+  }
+
+  private paginationWindow(currentPage: number, totalPages: number): Array<number | string> {
+    const total = Math.max(1, Math.trunc(totalPages || 1));
+    const current = this.clampedPage(currentPage, total);
+    if (total <= 7) {
+      return Array.from({ length: total }, (_, index) => index + 1);
+    }
+
+    const pages = new Set<number>([1, total, current, current - 1, current + 1]);
+    if (current <= 3) {
+      pages.add(2);
+      pages.add(3);
+      pages.add(4);
+    }
+    if (current >= total - 2) {
+      pages.add(total - 1);
+      pages.add(total - 2);
+      pages.add(total - 3);
+    }
+
+    const sorted = Array.from(pages)
+      .filter((page) => page >= 1 && page <= total)
+      .sort((a, b) => a - b);
+
+    const windowed: Array<number | string> = [];
+    sorted.forEach((page, index) => {
+      const previous = sorted[index - 1];
+      if (previous && page - previous > 1) {
+        windowed.push(`gap-${previous}-${page}`);
+      }
+      windowed.push(page);
+    });
+    return windowed;
   }
 
   selectedDoctorDetails() {
