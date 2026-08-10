@@ -5,12 +5,17 @@ import {
   Prisma,
   LivePresenceStatus,
   OnlineDoctorCategory,
-  Role
+  Role,
+  CareTeamMemberType
 } from '@prisma/client';
 import { ONLINE_HEARTBEAT_TTL_MS } from '../constants/online-doctor.constants.js';
 import { SOCKET_EVENTS, SOCKET_ROOM_PREFIXES } from '../constants/socket.constants.js';
 import { prisma } from '../db.js';
-import { doctorTypeLabel, specialtyFocusLabel } from '../constants/homeopathic-doctor-types.js';
+import {
+  capabilitiesForDoctorProfile,
+  doctorTypeLabel,
+  specialtyFocusLabel
+} from '../constants/homeopathic-doctor-types.js';
 import { enrichWithProfileImageUrl, userProfileImagePath } from '../utils/profile-image-url.js';
 
 export function isHeartbeatFresh(lastHeartbeatAt: Date | null | undefined) {
@@ -87,10 +92,11 @@ export function mapLiveDoctor(session: {
     focusAreas: string[];
     isAvailable: boolean;
     mentalHealthProfile?: {
-      careTeamType: string;
+      careTeamType: CareTeamMemberType;
     } | null;
   };
 }) {
+  const capabilities = capabilitiesForDoctorProfile(session.doctor);
   const profileImageUrl = enrichWithProfileImageUrl(
     {
       id: session.user.id,
@@ -111,8 +117,10 @@ export function mapLiveDoctor(session: {
       ? { careTeamType: session.doctor.mentalHealthProfile.careTeamType }
       : null,
     specialtyFocusLabel: specialtyFocusLabel(session.doctor.specialtyFocus),
-    category: session.category,
-    specialtyDiseaseIds: session.specialtyDiseaseIds,
+    category: capabilities.diseaseSpecialtySettings
+      ? session.category
+      : OnlineDoctorCategory.GENERALIST,
+    specialtyDiseaseIds: capabilities.diseaseSpecialtySettings ? session.specialtyDiseaseIds : [],
     liveStatus: session.liveStatus,
     acceptsChat: session.acceptsChat,
     acceptsVoiceCall: session.acceptsVoiceCall,

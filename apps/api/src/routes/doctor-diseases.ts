@@ -26,6 +26,10 @@ doctorDiseasesRouter.get(
   '/doctor/diseases/categories',
   authRequired,
   allowRoles(Role.DOCTOR, Role.ADMIN),
+  requireDoctorCapability(
+    'treatmentPages',
+    'Treatment page management is available only for homeopathy providers.'
+  ),
   asyncRoute(async (_req, res) => {
     res.json({ categories: DISEASE_PUBLIC_CATEGORIES });
   })
@@ -37,7 +41,7 @@ doctorDiseasesRouter.get(
   allowRoles(Role.DOCTOR, Role.ADMIN),
   requireDoctorCapability(
     'treatmentPages',
-    'Treatment page management is available only for homeopathic doctors.'
+    'Treatment page management is available only for homeopathy providers.'
   ),
   asyncRoute(async (req, res) => {
     const q = queryText(req, 'q').trim() || undefined;
@@ -60,6 +64,10 @@ doctorDiseasesRouter.post(
   '/doctor/diseases',
   authRequired,
   allowRoles(Role.DOCTOR, Role.ADMIN),
+  requireDoctorCapability(
+    'treatmentPages',
+    'Treatment page management is available only for homeopathy providers.'
+  ),
   asyncRoute(async (req, res) => {
     const body = z
       .object({
@@ -95,7 +103,7 @@ doctorDiseasesRouter.get(
   allowRoles(Role.DOCTOR, Role.ADMIN),
   requireDoctorCapability(
     'treatmentPages',
-    'Treatment page editing is available only for homeopathic doctors.'
+    'Treatment page editing is available only for homeopathy providers.'
   ),
   asyncRoute(async (req, res) => {
     const payload = await getDiseasePublicPageEditPayload(routeParam(req, 'id'));
@@ -113,7 +121,7 @@ doctorDiseasesRouter.put(
   allowRoles(Role.DOCTOR, Role.ADMIN),
   requireDoctorCapability(
     'treatmentPages',
-    'Treatment page editing is available only for homeopathic doctors.'
+    'Treatment page editing is available only for homeopathy providers.'
   ),
   asyncRoute(async (req, res) => {
     const body = diseasePublicPageUpdateSchema.parse(req.body);

@@ -3,13 +3,18 @@ import { z } from 'zod';
 import { Role } from '@prisma/client';
 import { authRequired, allowRoles } from '../auth.js';
 import { BLOG_CATEGORIES } from '../constants/blog.constants.js';
+import { requireDoctorCapability } from '../doctor-capabilities.js';
 import { prisma } from '../db.js';
 import { asyncRoute, routeParam, writeAuditLog } from '../utils/helpers.js';
 
 const slugRegex = /^[a-z0-9-]+$/;
 
 const blogPostSchema = z.object({
-  slug: z.string().min(3).max(120).regex(slugRegex, 'Slug must be lowercase letters, numbers, and hyphens only'),
+  slug: z
+    .string()
+    .min(3)
+    .max(120)
+    .regex(slugRegex, 'Slug must be lowercase letters, numbers, and hyphens only'),
   title: z.string().min(5).max(200),
   excerpt: z.string().min(10).max(500),
   content: z.string().max(50000).optional().nullable(),
@@ -23,13 +28,23 @@ const blogPostSchema = z.object({
   authorRole: z.string().max(80).optional().nullable()
 });
 
-function publishedAtForUpdate(existing: { isPublished: boolean; publishedAt: Date | null }, isPublished?: boolean) {
+function publishedAtForUpdate(
+  existing: { isPublished: boolean; publishedAt: Date | null },
+  isPublished?: boolean
+) {
   if (isPublished === true && !existing.publishedAt) return new Date();
   if (isPublished === false) return null;
   return undefined;
 }
 
 export function registerDoctorBlogRoutes(router: Router) {
+  router.use(
+    '/doctor/blog',
+    authRequired,
+    allowRoles(Role.DOCTOR),
+    requireDoctorCapability('content', 'Content tools are available only for homeopathy providers.')
+  );
+
   router.get(
     '/doctor/blog',
     authRequired,
@@ -49,7 +64,14 @@ export function registerDoctorBlogRoutes(router: Router) {
     allowRoles(Role.DOCTOR),
     asyncRoute(async (req, res) => {
       const body = blogPostSchema
-        .omit({ isPublished: true, isHidden: true, isFeatured: true, sortOrder: true, authorName: true, authorRole: true })
+        .omit({
+          isPublished: true,
+          isHidden: true,
+          isFeatured: true,
+          sortOrder: true,
+          authorName: true,
+          authorRole: true
+        })
         .extend({ isPublished: z.literal(false).optional() })
         .parse({ ...req.body, isPublished: false });
 
@@ -58,12 +80,14 @@ export function registerDoctorBlogRoutes(router: Router) {
           ...body,
           authorId: req.user!.id,
           authorName: req.user!.name,
-          authorRole: 'Doctor',
+          authorRole: 'Provider',
           isPublished: false,
           publishedAt: null
         }
       });
-      res.status(201).json({ post, message: 'Article saved as draft. An admin will review before publishing.' });
+      res
+        .status(201)
+        .json({ post, message: 'Article saved as draft. An admin will review before publishing.' });
     })
   );
 
@@ -78,12 +102,19 @@ export function registerDoctorBlogRoutes(router: Router) {
 
       const body = blogPostSchema
         .partial()
-        .omit({ isPublished: true, isHidden: true, isFeatured: true, sortOrder: true, authorName: true, authorRole: true })
+        .omit({
+          isPublished: true,
+          isHidden: true,
+          isFeatured: true,
+          sortOrder: true,
+          authorName: true,
+          authorRole: true
+        })
         .parse(req.body);
 
       const post = await prisma.blogPost.update({
         where: { id },
-        data: { ...body, authorName: req.user!.name, authorRole: 'Doctor' }
+        data: { ...body, authorName: req.user!.name, authorRole: 'Provider' }
       });
       res.json({ post, message: 'Article updated.' });
     })
@@ -98,7 +129,8 @@ export function registerDoctorBlogRoutes(router: Router) {
       const existing = await prisma.blogPost.findFirst({
         where: { id, authorId: req.user!.id, isPublished: false }
       });
-      if (!existing) return res.status(404).json({ message: 'Only unpublished drafts can be deleted.' });
+      if (!existing)
+        return res.status(404).json({ message: 'Only unpublished drafts can be deleted.' });
 
       await prisma.blogPost.delete({ where: { id } });
       res.json({ message: 'Draft deleted.' });

@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { Role } from '@prisma/client';
 import { authRequired, allowRoles } from '../auth.js';
+import { requireDoctorCapability } from '../doctor-capabilities.js';
 import { prisma } from '../db.js';
 import { asyncRoute, routeParam, queryText } from '../utils/helpers.js';
 import {
@@ -11,6 +12,20 @@ import {
 } from '../services/provider-availability.js';
 
 export const router = Router();
+
+router.use(
+  '/doctor/slots',
+  authRequired,
+  allowRoles(Role.DOCTOR),
+  requireDoctorCapability('slots', 'Slot management is not available for your provider type.')
+);
+
+router.use(
+  '/doctor/availability-rules',
+  authRequired,
+  allowRoles(Role.DOCTOR),
+  requireDoctorCapability('slots', 'Availability rules are not available for your provider type.')
+);
 
 const timeSchema = z.string().regex(/^\d{2}:\d{2}$/);
 
@@ -40,7 +55,7 @@ router.get(
   asyncRoute(async (req, res) => {
     const dateStr = queryText(req, 'date');
     const doctor = await currentDoctor(req.user!.id);
-    if (!doctor) return res.status(404).json({ message: 'Doctor profile not found' });
+    if (!doctor) return res.status(404).json({ message: 'Provider profile not found' });
 
     const where = dateStr
       ? { doctorId: doctor.id, date: new Date(dateStr) }
@@ -90,7 +105,7 @@ router.post(
       return res.status(400).json({ message: 'End time must be after start time.' });
     }
     const doctor = await currentDoctor(req.user!.id);
-    if (!doctor) return res.status(404).json({ message: 'Doctor profile not found' });
+    if (!doctor) return res.status(404).json({ message: 'Provider profile not found' });
     const careTeamServiceId = body.careTeamServiceId || null;
     if (
       careTeamServiceId &&
@@ -131,7 +146,7 @@ router.post(
   allowRoles(Role.DOCTOR),
   asyncRoute(async (req, res) => {
     const doctor = await currentDoctor(req.user!.id);
-    if (!doctor) return res.status(404).json({ message: 'Doctor profile not found' });
+    if (!doctor) return res.status(404).json({ message: 'Provider profile not found' });
     const rule = await prisma.providerAvailabilityRule.findFirst({
       where: { id: routeParam(req, 'id'), doctorId: doctor.id },
       select: { id: true }
@@ -152,7 +167,7 @@ router.delete(
   allowRoles(Role.DOCTOR),
   asyncRoute(async (req, res) => {
     const doctor = await currentDoctor(req.user!.id);
-    if (!doctor) return res.status(404).json({ message: 'Doctor profile not found' });
+    if (!doctor) return res.status(404).json({ message: 'Provider profile not found' });
     await prisma.providerAvailabilityRule.update({
       where: { id: routeParam(req, 'id'), doctorId: doctor.id },
       data: { isActive: false }
@@ -178,7 +193,7 @@ router.post(
       .parse(req.body);
 
     const doctor = await currentDoctor(req.user!.id);
-    if (!doctor) return res.status(404).json({ message: 'Doctor profile not found' });
+    if (!doctor) return res.status(404).json({ message: 'Provider profile not found' });
     const careTeamServiceId = body.careTeamServiceId || null;
     if (
       careTeamServiceId &&
@@ -225,7 +240,7 @@ router.patch(
       where: { userId: req.user!.id },
       select: { id: true }
     });
-    if (!doctor) return res.status(404).json({ message: 'Doctor profile not found' });
+    if (!doctor) return res.status(404).json({ message: 'Provider profile not found' });
 
     const slot = await prisma.doctorSlot.update({
       where: { id: routeParam(req, 'id'), doctorId: doctor.id },
