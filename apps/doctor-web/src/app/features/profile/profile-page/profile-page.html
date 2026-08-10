@@ -3,13 +3,13 @@
     <hopehub-profile-avatar-upload
       [apiBase]="apiBase"
       [tokenKey]="authTokenKey"
-      [displayName]="profileModel().name || 'Doctor'"
+      [displayName]="profileModel().name || 'Provider'"
       [profileImageUrl]="profileImageUrl"
       [uploadPath]="profileImageUploadPath"
       (profileImageChange)="onProfileImageChange($event)"
     />
     <div>
-      <h2>Doctor Profile</h2>
+      <h2>{{ isPsychologist ? 'Hope Hub Provider Profile' : 'Homeopathy Provider Profile' }}</h2>
       @if (isLoading) {
         <p class="loading-text">Loading profile...</p>
       }
@@ -73,7 +73,7 @@
   <div class="public-profile-section">
     <h3>Public Profile</h3>
     <p class="section-hint">
-      This information may appear on our website under <em>Our Doctors</em>.
+      This information may appear on our website provider listing.
       @if (showOnWebsite) {
         <span class="visibility-badge visible">Currently visible on website</span>
       } @else {

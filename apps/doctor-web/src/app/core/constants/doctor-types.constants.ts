@@ -21,13 +21,13 @@ export const HOMEOPATHIC_SPECIALTY_FOCUSES = [
 export type HomeopathicSpecialtyFocus = (typeof HOMEOPATHIC_SPECIALTY_FOCUSES)[number];
 
 export const DOCTOR_TYPE_LABELS: Record<HomeopathicDoctorType, string> = {
-  CHIEF_CONSULTANT: 'Homeopathic Doctor (Chief Consultant)',
-  JUNIOR_DOCTOR: 'Junior Homeopathic Doctor',
+  CHIEF_CONSULTANT: 'Homeopathy Chief Consultant',
+  JUNIOR_DOCTOR: 'Homeopathy Provider',
   SPECIALIST_CONSULTANT: 'Specialist Homeopathic Consultant',
-  VISITING_DOCTOR: 'Visiting Doctor',
-  TELEMEDICINE_DOCTOR: 'Telemedicine Doctor',
-  MEDICAL_INTERN: 'Medical Intern',
-  RESIDENT_MEDICAL_OFFICER: 'Resident Medical Officer (RMO)',
+  VISITING_DOCTOR: 'Visiting Homeopathy Provider',
+  TELEMEDICINE_DOCTOR: 'Telemedicine Homeopathy Provider',
+  MEDICAL_INTERN: 'Homeopathy Intern',
+  RESIDENT_MEDICAL_OFFICER: 'Resident Care Officer (RMO)',
   PSYCHOLOGIST: 'Hope Hub Provider',
 };
 

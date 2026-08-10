@@ -44,7 +44,7 @@ export class Login {
     {
       value: 'HOMEOPATHY',
       label: 'Homeopathy provider',
-      helper: 'For clinic doctors, specialists, interns, and homeopathy consultants.',
+      helper: 'For homeopathy consultants, specialists, interns, and clinic care providers.',
     },
     {
       value: 'HOPE_HUB',

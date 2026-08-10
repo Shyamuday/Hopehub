@@ -56,6 +56,7 @@ export class DoctorShell implements OnInit, OnDestroy {
   doctorName = '';
   doctorProfileImageUrl: string | null = null;
   doctorTypeLabel = '';
+  providerWorkspaceTitle = 'Provider Console';
   specialtyLabel = '';
   doctorTypeKey: string | null = null;
   loadingSession = true;
@@ -92,7 +93,11 @@ export class DoctorShell implements OnInit, OnDestroy {
       const profile = await this.session.load();
       this.doctorName = profile.name;
       this.doctorProfileImageUrl = profile.profileImageUrl ?? null;
-      this.doctorTypeLabel = profile.doctorProfile?.doctorTypeLabel || 'Doctor';
+      this.doctorTypeLabel = profile.doctorProfile?.doctorTypeLabel || 'Provider';
+      this.providerWorkspaceTitle =
+        profile.doctorProfile?.doctorType === 'PSYCHOLOGIST'
+          ? 'Hope Hub Provider Console'
+          : 'Homeopathy Provider Console';
       this.specialtyLabel = profile.doctorProfile?.specialty || '';
       this.doctorTypeKey = profile.doctorProfile?.doctorType ?? null;
       this.navItems = this.buildNav(this.session.navItems());

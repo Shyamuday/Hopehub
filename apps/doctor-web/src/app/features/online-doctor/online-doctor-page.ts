@@ -64,7 +64,7 @@ export class OnlineDoctorPage implements OnInit, OnDestroy {
         this.startInboxRefresh();
       }
     } catch {
-      this.error.set('Could not load online doctor settings.');
+      this.error.set('Could not load online provider settings.');
     } finally {
       this.loading.set(false);
     }

@@ -73,7 +73,7 @@
 
 <section class="panel">
   <div class="panel-header">
-    <h2>{{ canPrescribe() ? 'Doctor Payment Dashboard' : 'Session Payment Dashboard' }}</h2>
+    <h2>{{ canPrescribe() ? 'Provider Payment Dashboard' : 'Session Payment Dashboard' }}</h2>
     <button type="button" (click)="loadSummary()" [disabled]="loading()">
       {{ loading() ? 'Refreshing...' : 'Refresh' }}
     </button>

@@ -305,7 +305,7 @@ export class AppointmentsPage implements OnInit {
       this.defaultMethodOptionId = session.doctorProfile?.defaultMethodOptionId || '';
       this.applyDefaultMethodIfEmpty();
     } catch {
-      // ignore — doctor can still pick manually
+      // ignore — provider can still pick manually
     }
   }
 
@@ -332,7 +332,7 @@ export class AppointmentsPage implements OnInit {
       }));
       this.applyDefaultMethodIfEmpty();
     } catch {
-      this.error = 'Could not load dropdown options. Login with API-backed doctor account.';
+      this.error = 'Could not load dropdown options. Login with an API-backed provider account.';
     }
   }
 
@@ -377,7 +377,7 @@ export class AppointmentsPage implements OnInit {
         const disease = await this.diseaseCatalog.createDisease({
           name: label,
           publicCategory: 'miscellaneous',
-          description: `${label} — doctor-added condition`,
+          description: `${label} — provider-added condition`,
         });
         await this.loadOptions();
         const optionId = disease.prescriptionOptionId;

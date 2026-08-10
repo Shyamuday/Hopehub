@@ -11,5 +11,5 @@ export const AUTH_MESSAGES = {
   INVALID_LOGIN: 'Invalid login or API unavailable.',
   ENROLL_REQUIRED_FIELDS: 'Name, email, password, and specialty/support focus are required.',
   ENROLL_DEFAULT_SUCCESS: 'Enrollment submitted. Wait for admin approval.',
-  ENROLL_FAILED: 'Could not enroll doctor account.',
+  ENROLL_FAILED: 'Could not enroll provider account.',
 } as const;

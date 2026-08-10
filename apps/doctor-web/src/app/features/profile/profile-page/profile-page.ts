@@ -243,7 +243,7 @@ export class ProfilePage {
         defaultMethodOptionId: profile.doctorProfile?.defaultMethodOptionId || '',
       });
       this.careServices.set(this.normalizeServiceList(mental?.services ?? []));
-      this.doctorTypeLabel = profile.doctorProfile?.doctorTypeLabel || 'Doctor';
+      this.doctorTypeLabel = profile.doctorProfile?.doctorTypeLabel || 'Provider';
       this.specialtyFocusLabel = profile.doctorProfile?.specialtyFocusLabel || '';
       this.showOnWebsite = profile.doctorProfile?.showOnWebsite ?? false;
       this.profileImageUrl =

@@ -48,6 +48,26 @@ p {
   line-height: var(--leading-relaxed);
 }
 
+.identity-guide {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.45rem;
+  margin: 0 0 1rem;
+}
+
+.identity-guide span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.4rem;
+  border: 1px solid color-mix(in srgb, var(--color-brand) 22%, var(--color-border));
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--color-brand) 7%, var(--color-surface));
+  color: var(--color-text);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  padding: 0.55rem 0.7rem;
+}
+
 form {
   display: grid;
   gap: 0.65rem;
@@ -123,5 +143,9 @@ button[type='submit'] {
     align-items: center;
     justify-content: center;
     padding: 2rem 1rem;
+  }
+
+  .identity-guide {
+    grid-template-columns: 1fr 1fr;
   }
 }
