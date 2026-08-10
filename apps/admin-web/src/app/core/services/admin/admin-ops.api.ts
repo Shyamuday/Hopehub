@@ -273,7 +273,23 @@ export class AdminOpsApi extends AdminApiBase {
     );
   }
 
-  sendTelegramGroupHelpMessage(payload: { message: string; pin?: boolean }) {
+  uploadTelegramGroupHelpImage(payload: {
+    mimeType: string;
+    fileName?: string;
+    dataBase64: string;
+  }) {
+    return firstValueFrom(
+      this.http.post<{
+        storageKey: string;
+        fileUrl: string;
+        byteSize: number;
+        sha256: string;
+        mimeType: string;
+      }>(`${this.apiBase}${API_PATHS.ADMIN.TELEGRAM_GROUP_HELP_MEDIA}`, payload),
+    );
+  }
+
+  sendTelegramGroupHelpMessage(payload: { message: string; imageUrl?: string; pin?: boolean }) {
     return firstValueFrom(
       this.http.post<{ ok: boolean; message: any; pinned?: unknown }>(
         `${this.apiBase}${API_PATHS.ADMIN.TELEGRAM_GROUP_HELP_SEND}`,

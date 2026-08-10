@@ -9,6 +9,10 @@ import {
 
 const MAX_BYTES = 5 * 1024 * 1024;
 const ALLOWED_MIME = new Set([
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'image/gif',
   'audio/mpeg',
   'audio/mp3',
   'audio/mp4',
@@ -22,6 +26,14 @@ const ALLOWED_MIME = new Set([
 
 function extensionForMime(mimeType: string) {
   switch (mimeType) {
+    case 'image/jpeg':
+      return '.jpg';
+    case 'image/png':
+      return '.png';
+    case 'image/webp':
+      return '.webp';
+    case 'image/gif':
+      return '.gif';
     case 'audio/mpeg':
     case 'audio/mp3':
       return '.mp3';
@@ -98,6 +110,10 @@ export async function deleteHopeHubMediaFile(storageKey: string) {
 
 export function hopeHubMediaMimeType(storageKey: string) {
   const ext = path.extname(storageKey).toLowerCase();
+  if (ext === '.jpg' || ext === '.jpeg') return 'image/jpeg';
+  if (ext === '.png') return 'image/png';
+  if (ext === '.webp') return 'image/webp';
+  if (ext === '.gif') return 'image/gif';
   if (ext === '.mp3') return 'audio/mpeg';
   if (ext === '.m4a' || ext === '.aac') return 'audio/mp4';
   if (ext === '.wav') return 'audio/wav';

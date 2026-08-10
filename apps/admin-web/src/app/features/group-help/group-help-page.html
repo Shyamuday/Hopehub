@@ -93,6 +93,29 @@
       <article class="command-card">
         <h3>{{ item.title }}</h3>
         <p>{{ item.helper }}</p>
+        @if (item.imageUrlKey) {
+          <div class="image-tools">
+            <div>
+              <strong>Image</strong>
+              <small>Upload to public S3 and attach the URL to this message.</small>
+            </div>
+            @if (value(item.imageUrlKey)) {
+              <img [src]="value(item.imageUrlKey)" [alt]="item.title + ' image preview'" />
+              <input
+                type="url"
+                [value]="value(item.imageUrlKey)"
+                (input)="update(item.imageUrlKey, $any($event.target).value)"
+                placeholder="https://..."
+              />
+            } @else {
+              <p class="empty-image">No image selected.</p>
+            }
+            <label class="upload-button">
+              <input type="file" accept="image/*" (change)="uploadImage($event, item)" />
+              {{ uploadingImage() === item.id ? 'Uploading…' : 'Upload image' }}
+            </label>
+          </div>
+        }
         <pre>{{ commandFor(item) }}</pre>
         <button type="button" (click)="copy(commandFor(item), item.title)">
           {{ copied() === item.title ? 'Copied' : 'Copy command' }}
@@ -131,6 +154,15 @@
         }
       </select>
     </label>
+    @if (imageUrlForMessageKey(selectedDirectMessageKey())) {
+      <div class="direct-image-preview">
+        <span>Image will be sent as Telegram photo</span>
+        <img
+          [src]="imageUrlForMessageKey(selectedDirectMessageKey())"
+          alt="Selected Group Help message image preview"
+        />
+      </div>
+    }
     <label class="check-row">
       <input
         type="checkbox"

@@ -24,6 +24,7 @@ export const API_PATHS = {
     TELEGRAM_GROUP_HELP: '/admin/telegram-bots/group-help',
     TELEGRAM_GROUP_HELP_TEST: '/admin/telegram-bots/group-help/test',
     TELEGRAM_GROUP_HELP_SEND: '/admin/telegram-bots/group-help/send',
+    TELEGRAM_GROUP_HELP_MEDIA: '/admin/telegram-bots/group-help/media',
     CONSULTATION_STATUS: (id: string) => `/admin/consultations/${id}/status`,
     SAFETY_FLAGS: '/admin/safety-flags',
     SAFETY_FLAG_NOTE: (consultationId: string) => `/admin/safety-flags/${consultationId}/notes`,

@@ -147,7 +147,8 @@ function mapMediaUploadError(error: unknown) {
   if (code === 'UNSUPPORTED_MIME') {
     return {
       status: 400,
-      message: 'Only MP3, M4A, WAV, WebM, MP4, and MOV media files are allowed.'
+      message:
+        'Only JPG, PNG, WebP, GIF, MP3, M4A, WAV, WebM, MP4, and MOV media files are allowed.'
     };
   }
   if (code === 'EMPTY_FILE') {

@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { authRequired, allowRoles } from '../../auth.js';
 import { prisma } from '../../db.js';
 import { asyncRoute, routeParam, writeAuditLog } from '../../utils/helpers.js';
+import { saveHopeHubMedia } from '../../services/hope-hub-media-storage.js';
 import {
   getTelegramWebhookInfo,
   setTelegramCommands,
@@ -38,8 +39,23 @@ const groupHelpSaveSchema = z.object({
 
 const groupHelpSendSchema = z.object({
   message: z.string().trim().min(1).max(4096),
+  imageUrl: z.preprocess(
+    (value) => (typeof value === 'string' && value.trim() === '' ? undefined : value),
+    z.string().trim().url().optional()
+  ),
   pin: z.boolean().optional()
 });
+
+const groupHelpMediaUploadSchema = z.object({
+  mimeType: z.enum(['image/jpeg', 'image/png', 'image/webp', 'image/gif']),
+  fileName: z.string().max(180).optional(),
+  dataBase64: z.string().min(20)
+});
+
+function decodeBase64Upload(dataBase64: string) {
+  const payload = dataBase64.includes(',') ? dataBase64.split(',').pop() || '' : dataBase64;
+  return Buffer.from(payload, 'base64');
+}
 
 type WebhookSnapshot =
   | {
@@ -329,11 +345,21 @@ export function registerAdminTelegramBotRoutes(router: Router) {
         return res.status(400).json({ message: 'Telegram group chat ID is not configured.' });
       }
 
-      const sent = await callGroupHelpTelegramApi<{ message_id: number }>('sendMessage', {
-        chat_id: chatId,
-        text: parsed.data.message,
-        disable_web_page_preview: true
-      });
+      const imageUrl = parsed.data.imageUrl?.trim();
+      const sent = imageUrl
+        ? await callGroupHelpTelegramApi<{ message_id: number }>('sendPhoto', {
+            chat_id: chatId,
+            photo: imageUrl,
+            caption:
+              parsed.data.message.length <= 1024
+                ? parsed.data.message
+                : `${parsed.data.message.slice(0, 1021)}...`
+          })
+        : await callGroupHelpTelegramApi<{ message_id: number }>('sendMessage', {
+            chat_id: chatId,
+            text: parsed.data.message,
+            disable_web_page_preview: true
+          });
 
       let pinned: unknown = null;
       if (parsed.data.pin) {
@@ -355,10 +381,61 @@ export function registerAdminTelegramBotRoutes(router: Router) {
         summary: parsed.data.pin
           ? 'Sent and pinned Group Help message.'
           : 'Sent Group Help message.',
-        metadata: { chatId, messageId: sent.message_id, pin: Boolean(parsed.data.pin) }
+        metadata: {
+          chatId,
+          messageId: sent.message_id,
+          pin: Boolean(parsed.data.pin),
+          hasImage: Boolean(imageUrl)
+        }
       });
 
       res.json({ ok: true, message: sent, pinned });
+    })
+  );
+
+  router.post(
+    '/admin/telegram-bots/group-help/media',
+    authRequired,
+    allowRoles(Role.ADMIN, Role.HR, Role.MARKETING),
+    asyncRoute(async (req, res) => {
+      const parsed = groupHelpMediaUploadSchema.safeParse(req.body ?? {});
+      if (!parsed.success) {
+        return res.status(400).json({ message: 'Invalid Group Help image upload payload.' });
+      }
+
+      try {
+        const saved = await saveHopeHubMedia({
+          mimeType: parsed.data.mimeType,
+          fileName: parsed.data.fileName,
+          data: decodeBase64Upload(parsed.data.dataBase64),
+          uploadedById: req.user!.id
+        });
+
+        await writeAuditLog({
+          actorId: req.user!.id,
+          actorRole: req.user!.role,
+          action: 'telegram_group_help.image_upload',
+          targetType: 'telegram_group_help_media',
+          targetId: saved.storageKey,
+          summary: `Uploaded Group Help image "${parsed.data.fileName || saved.storageKey}".`
+        });
+
+        res.status(201).json(saved);
+      } catch (error) {
+        const code = error instanceof Error ? error.message : '';
+        if (code === 'UNSUPPORTED_MIME') {
+          return res
+            .status(400)
+            .json({ message: 'Only JPG, PNG, WebP, and GIF images are allowed.' });
+        }
+        if (code === 'EMPTY_FILE') {
+          return res.status(400).json({ message: 'Image file is empty.' });
+        }
+        if (code === 'FILE_TOO_LARGE') {
+          return res.status(400).json({ message: 'Image upload must be 5 MB or smaller.' });
+        }
+        throw error;
+      }
     })
   );
 

@@ -19,9 +19,12 @@ type CommandItem = {
   title: string;
   helper: string;
   valueKey: string;
+  imageUrlKey?: string;
   templateKey: string;
   placeholder: 'message' | 'value' | 'lines';
 };
+
+const IMAGE_UPLOAD_LIMIT_BYTES = 5 * 1024 * 1024;
 
 const SECTION_LABELS: Record<GroupHelpConfigEntry['section'], string> = {
   connection: 'Connection',
@@ -43,6 +46,7 @@ export class GroupHelpPage {
   readonly loading = signal(false);
   readonly saving = signal(false);
   readonly sending = signal(false);
+  readonly uploadingImage = signal('');
   readonly copied = signal('');
   readonly message = signal('');
   readonly error = signal('');
@@ -63,6 +67,7 @@ export class GroupHelpPage {
       title: 'Welcome',
       helper: 'Copy this into the GroupHelp bot/group to update the join welcome.',
       valueKey: 'telegramGroupHelpWelcomeMessage',
+      imageUrlKey: 'telegramGroupHelpWelcomeImageUrl',
       templateKey: 'telegramGroupHelpWelcomeCommandTemplate',
       placeholder: 'message',
     },
@@ -71,6 +76,7 @@ export class GroupHelpPage {
       title: 'Rules',
       helper: 'Copy this command when you want GroupHelp rules to match HopeHub rules.',
       valueKey: 'telegramGroupHelpRulesMessage',
+      imageUrlKey: 'telegramGroupHelpRulesImageUrl',
       templateKey: 'telegramGroupHelpRulesCommandTemplate',
       placeholder: 'message',
     },
@@ -79,6 +85,7 @@ export class GroupHelpPage {
       title: 'Support command',
       helper: 'Suggested command for a /support or similar custom reply.',
       valueKey: 'telegramGroupHelpSupportMessage',
+      imageUrlKey: 'telegramGroupHelpSupportImageUrl',
       templateKey: 'telegramGroupHelpSupportCommandTemplate',
       placeholder: 'message',
     },
@@ -87,6 +94,7 @@ export class GroupHelpPage {
       title: 'Pinned intro',
       helper: 'Use this for a clean pinned group intro.',
       valueKey: 'telegramGroupHelpPinnedMessage',
+      imageUrlKey: 'telegramGroupHelpPinnedImageUrl',
       templateKey: 'telegramGroupHelpPinnedCommandTemplate',
       placeholder: 'message',
     },
@@ -95,6 +103,7 @@ export class GroupHelpPage {
       title: 'Recurring reminder',
       helper: 'Use this for daily/weekly group reminders if your GroupHelp clone supports it.',
       valueKey: 'telegramGroupHelpRecurringMessage',
+      imageUrlKey: 'telegramGroupHelpRecurringImageUrl',
       templateKey: 'telegramGroupHelpRecurringCommandTemplate',
       placeholder: 'message',
     },
@@ -162,6 +171,7 @@ export class GroupHelpPage {
     return this.messageCommands.map((item) => ({
       key: item.valueKey,
       label: item.title,
+      imageUrlKey: item.imageUrlKey,
     }));
   }
 
@@ -200,15 +210,60 @@ export class GroupHelpPage {
   commandFor(item: CommandItem) {
     const template = this.value(item.templateKey) || '{message}';
     const raw = this.value(item.valueKey).trim();
+    const imageUrl = item.imageUrlKey ? this.value(item.imageUrlKey).trim() : '';
     const lines = raw
       .split('\n')
       .map((line) => line.trim())
       .filter(Boolean)
       .join('\n');
-    return template
+    const command = template
       .replaceAll('{message}', raw)
+      .replaceAll('{imageUrl}', imageUrl)
       .replaceAll('{value}', raw)
       .replaceAll('{lines}', lines);
+
+    if (imageUrl && !template.includes('{imageUrl}')) {
+      return `${command}\n${imageUrl}`;
+    }
+    return command.trim();
+  }
+
+  imageUrlForMessageKey(messageKey: string) {
+    const option = this.messageOptions().find((item) => item.key === messageKey);
+    return option?.imageUrlKey ? this.value(option.imageUrlKey).trim() : '';
+  }
+
+  async uploadImage(event: Event, item: CommandItem) {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = '';
+    if (!file || !item.imageUrlKey) return;
+
+    if (!file.type.startsWith('image/')) {
+      this.error.set('Please choose an image file.');
+      return;
+    }
+    if (file.size > IMAGE_UPLOAD_LIMIT_BYTES) {
+      this.error.set('Image must be 5 MB or smaller.');
+      return;
+    }
+
+    this.uploadingImage.set(item.id);
+    this.error.set('');
+    this.message.set('');
+    try {
+      const uploaded = await this.api.uploadTelegramGroupHelpImage({
+        mimeType: file.type || 'image/jpeg',
+        fileName: file.name,
+        dataBase64: await this.fileToBase64(file),
+      });
+      this.update(item.imageUrlKey, uploaded.fileUrl);
+      this.message.set(`${item.title} image uploaded. Save config to keep it.`);
+    } catch {
+      this.error.set('Could not upload image.');
+    } finally {
+      this.uploadingImage.set('');
+    }
   }
 
   async copy(text: string, label: string) {
@@ -233,6 +288,7 @@ export class GroupHelpPage {
     try {
       await this.api.sendTelegramGroupHelpMessage({
         message,
+        imageUrl: this.imageUrlForMessageKey(this.selectedDirectMessageKey()),
         pin: this.pinDirectMessage(),
       });
       this.message.set(
@@ -245,5 +301,14 @@ export class GroupHelpPage {
     } finally {
       this.sending.set(false);
     }
+  }
+
+  private fileToBase64(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result || ''));
+      reader.onerror = () => reject(reader.error);
+      reader.readAsDataURL(file);
+    });
   }
 }

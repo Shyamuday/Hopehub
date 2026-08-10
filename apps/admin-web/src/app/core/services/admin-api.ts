@@ -771,6 +771,11 @@ export class AdminApi {
       ...(args as Parameters<AdminOpsApi['saveTelegramGroupHelpConfig']>),
     );
   }
+  uploadTelegramGroupHelpImage(...args: Parameters<AdminOpsApi['uploadTelegramGroupHelpImage']>) {
+    return this.ops.uploadTelegramGroupHelpImage(
+      ...(args as Parameters<AdminOpsApi['uploadTelegramGroupHelpImage']>),
+    );
+  }
   sendTelegramGroupHelpMessage(...args: Parameters<AdminOpsApi['sendTelegramGroupHelpMessage']>) {
     return this.ops.sendTelegramGroupHelpMessage(
       ...(args as Parameters<AdminOpsApi['sendTelegramGroupHelpMessage']>),

@@ -53,6 +53,16 @@ export const GROUP_HELP_CONFIG_FIELDS: GroupHelpConfigField[] = [
       'Welcome to Hope Hub. This is a safe, respectful space for emotional support. Please read the rules, protect privacy, and avoid sharing emergency situations here.'
   },
   {
+    key: 'telegramGroupHelpWelcomeImageUrl',
+    label: 'Welcome image URL',
+    description: 'Optional public S3/image URL attached to the welcome message or command.',
+    section: 'messages',
+    type: 'text',
+    maxLength: 1000,
+    placeholder: 'https://...',
+    defaultValue: ''
+  },
+  {
     key: 'telegramGroupHelpRulesMessage',
     label: 'Rules message',
     description: 'Core rules for safety, privacy, respectful conduct, and moderation.',
@@ -61,6 +71,16 @@ export const GROUP_HELP_CONFIG_FIELDS: GroupHelpConfigField[] = [
     maxLength: 4000,
     defaultValue:
       'Group rules:\\n1. Be kind and respectful.\\n2. Do not share anyone’s private information.\\n3. No diagnosis, medical claims, spam, promotions, or harassment.\\n4. If you are in immediate danger, contact local emergency services.'
+  },
+  {
+    key: 'telegramGroupHelpRulesImageUrl',
+    label: 'Rules image URL',
+    description: 'Optional public S3/image URL attached to the rules message or command.',
+    section: 'messages',
+    type: 'text',
+    maxLength: 1000,
+    placeholder: 'https://...',
+    defaultValue: ''
   },
   {
     key: 'telegramGroupHelpSupportMessage',
@@ -73,6 +93,16 @@ export const GROUP_HELP_CONFIG_FIELDS: GroupHelpConfigField[] = [
       'If you need one-to-one support, visit https://hopehub.in or use the Hope Hub web bot. For emergencies, please contact local emergency services or a crisis helpline.'
   },
   {
+    key: 'telegramGroupHelpSupportImageUrl',
+    label: 'Support image URL',
+    description: 'Optional public S3/image URL attached to the support message or command.',
+    section: 'messages',
+    type: 'text',
+    maxLength: 1000,
+    placeholder: 'https://...',
+    defaultValue: ''
+  },
+  {
     key: 'telegramGroupHelpPinnedMessage',
     label: 'Pinned intro message',
     description: 'Message admins can send and pin at the top of the group.',
@@ -83,6 +113,16 @@ export const GROUP_HELP_CONFIG_FIELDS: GroupHelpConfigField[] = [
       'Hope Hub group guide: keep conversations gentle, anonymous-friendly, and respectful. For private support, use https://hopehub.in.'
   },
   {
+    key: 'telegramGroupHelpPinnedImageUrl',
+    label: 'Pinned intro image URL',
+    description: 'Optional public S3/image URL attached to the pinned intro.',
+    section: 'messages',
+    type: 'text',
+    maxLength: 1000,
+    placeholder: 'https://...',
+    defaultValue: ''
+  },
+  {
     key: 'telegramGroupHelpRecurringMessage',
     label: 'Recurring reminder message',
     description: 'Reminder text for daily/weekly recurring Group Help messages.',
@@ -91,6 +131,16 @@ export const GROUP_HELP_CONFIG_FIELDS: GroupHelpConfigField[] = [
     maxLength: 4000,
     defaultValue:
       'Gentle reminder: this group is for peer support and community care. Please keep details private and reach out for professional help when needed.'
+  },
+  {
+    key: 'telegramGroupHelpRecurringImageUrl',
+    label: 'Recurring reminder image URL',
+    description: 'Optional public S3/image URL attached to the recurring reminder.',
+    section: 'messages',
+    type: 'text',
+    maxLength: 1000,
+    placeholder: 'https://...',
+    defaultValue: ''
   },
   {
     key: 'telegramGroupHelpCrisisMessage',
@@ -153,7 +203,7 @@ export const GROUP_HELP_CONFIG_FIELDS: GroupHelpConfigField[] = [
   {
     key: 'telegramGroupHelpWelcomeCommandTemplate',
     label: 'Welcome command template',
-    description: 'Command copied into Telegram. Use {message} as placeholder.',
+    description: 'Command copied into Telegram. Use {message} and optional {imageUrl}.',
     section: 'commands',
     type: 'textarea',
     maxLength: 1000,
@@ -162,7 +212,7 @@ export const GROUP_HELP_CONFIG_FIELDS: GroupHelpConfigField[] = [
   {
     key: 'telegramGroupHelpRulesCommandTemplate',
     label: 'Rules command template',
-    description: 'Command copied into Telegram. Use {message} as placeholder.',
+    description: 'Command copied into Telegram. Use {message} and optional {imageUrl}.',
     section: 'commands',
     type: 'textarea',
     maxLength: 1000,
@@ -171,7 +221,7 @@ export const GROUP_HELP_CONFIG_FIELDS: GroupHelpConfigField[] = [
   {
     key: 'telegramGroupHelpSupportCommandTemplate',
     label: 'Support command template',
-    description: 'Command copied into Telegram. Use {message} as placeholder.',
+    description: 'Command copied into Telegram. Use {message} and optional {imageUrl}.',
     section: 'commands',
     type: 'textarea',
     maxLength: 1000,
@@ -180,7 +230,7 @@ export const GROUP_HELP_CONFIG_FIELDS: GroupHelpConfigField[] = [
   {
     key: 'telegramGroupHelpPinnedCommandTemplate',
     label: 'Pinned intro command template',
-    description: 'Command copied into Telegram. Use {message} as placeholder.',
+    description: 'Command copied into Telegram. Use {message} and optional {imageUrl}.',
     section: 'commands',
     type: 'textarea',
     maxLength: 1000,
@@ -189,7 +239,7 @@ export const GROUP_HELP_CONFIG_FIELDS: GroupHelpConfigField[] = [
   {
     key: 'telegramGroupHelpRecurringCommandTemplate',
     label: 'Recurring reminder command template',
-    description: 'Command copied into Telegram. Use {message} as placeholder.',
+    description: 'Command copied into Telegram. Use {message} and optional {imageUrl}.',
     section: 'commands',
     type: 'textarea',
     maxLength: 1000,
