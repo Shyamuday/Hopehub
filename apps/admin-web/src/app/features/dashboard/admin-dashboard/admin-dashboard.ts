@@ -7,7 +7,7 @@ import { AdminApi } from '../../../core/services/admin-api';
 import { adminNavPath, ROUTE_PATHS } from '../../../core/constants/app-routes.constants';
 import { AdminWorkspaceService } from '../../../core/services/admin-workspace.service';
 import { formatAuditAction } from '../../audit/constants/audit.constants';
-import { ADMIN_DASHBOARD_STAT_FIELDS } from '../constants/dashboard-stat.fields';
+import { buildAdminDashboardStatFields } from '../constants/dashboard-stat.fields';
 import {
   AUDIT_LOGS_PAGE_SIZE,
   PAYMENTS_DEFAULTS,
@@ -29,6 +29,13 @@ export class AdminDashboard {
   readonly visitorLeadsPath = adminNavPath(ROUTE_PATHS.CHAT_INBOX);
   readonly workspaceKey = this.workspace.selectedWorkspace;
   readonly workspaceLabel = this.workspace.workspaceLabel;
+  readonly providerSingularLabel = this.workspace.providerSingularLabel;
+  readonly providerPluralLabel = this.workspace.providerPluralLabel;
+  readonly providerPluralTitleLabel = this.workspace.providerPluralTitleLabel;
+  readonly consumerTitleLabel = this.workspace.consumerTitleLabel;
+  readonly sessionSingularLabel = this.workspace.sessionSingularLabel;
+  readonly sessionPluralLabel = this.workspace.sessionPluralLabel;
+  readonly sessionPluralTitleLabel = this.workspace.sessionPluralTitleLabel;
   readonly formatAuditAction = formatAuditAction;
   revenueInPaise = 0;
   activeDoctors = 0;
@@ -213,7 +220,10 @@ export class AdminDashboard {
         activeDoctors: this.activeDoctors,
         consultationsCount: this.consultationsCount,
       },
-      ADMIN_DASHBOARD_STAT_FIELDS,
+      buildAdminDashboardStatFields({
+        providerPluralTitle: this.providerPluralTitleLabel(),
+        sessionPluralTitle: this.sessionPluralTitleLabel(),
+      }),
     );
   }
 }

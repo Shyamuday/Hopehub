@@ -6,6 +6,7 @@ import { buildDetailRows, DetailRowsComponent, MultiSelectComponent } from '@hop
 import { AdminApi } from '../../../core/services/admin-api';
 import { adminRouteLink, ROUTE_PATHS } from '../../../core/constants/app-routes.constants';
 import { AdminWorkspaceService } from '../../../core/services/admin-workspace.service';
+import { PROVIDER_LANGUAGE_BY_WORKSPACE } from '../../../core/constants/provider-language.constants';
 import {
   DOCTORS_LIST_DEFAULTS,
   DOCTORS_PAGE_SIZE,
@@ -220,15 +221,13 @@ export class DoctorsPage {
   readonly doctorTypeOptions = DOCTOR_TYPE_OPTIONS;
   readonly workspaceKey = this.workspace.selectedWorkspace;
   readonly workspaceLabel = this.workspace.workspaceLabel;
-  readonly providerSingularLabel = computed(() =>
-    this.workspace.isHopeHub() ? 'Hope Hub provider' : 'homeopathy doctor',
-  );
-  readonly providerPluralLabel = computed(() =>
-    this.workspace.isHopeHub() ? 'Hope Hub providers' : 'homeopathy providers',
-  );
-  readonly publicDirectoryLabel = computed(() =>
-    this.workspace.isHopeHub() ? 'Hope Hub provider directory' : 'Homeopathy provider directory',
-  );
+  readonly providerSingularLabel = this.workspace.providerSingularLabel;
+  readonly providerPluralLabel = this.workspace.providerPluralLabel;
+  readonly providerTitleLabel = this.workspace.providerTitleLabel;
+  readonly providerPluralTitleLabel = this.workspace.providerPluralTitleLabel;
+  readonly publicDirectoryLabel = this.workspace.providerDirectoryLabel;
+  readonly hopeHubProviderPluralLabel =
+    PROVIDER_LANGUAGE_BY_WORKSPACE['hope-hub'].provider.pluralLower;
   readonly workspaceDoctorTypeOptions = computed(() =>
     this.workspace.isHopeHub()
       ? this.doctorTypeOptions.filter((option) => option.value === 'PSYCHOLOGIST')

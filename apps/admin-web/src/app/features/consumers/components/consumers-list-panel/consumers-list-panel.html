@@ -1,13 +1,13 @@
 <div class="toolbar spaced">
-  <h2>Consumers (Patients)</h2>
+  <h2>Consumers ({{ consumerPluralTitleLabel() }})</h2>
   <button type="button" class="btn-primary" (click)="registerToggle.emit()">
-    {{ showRegister ? 'Close register' : '+ Register patient' }}
+    {{ showRegister ? 'Close register' : '+ Register ' + consumerSingularLabel() }}
   </button>
 </div>
 
 @if (showRegister) {
   <div class="register-box">
-    <h3>Register new patient</h3>
+    <h3>Register new {{ consumerSingularLabel() }}</h3>
     <div class="register-grid">
       <input placeholder="Full name *" [formField]="registerForm.name" />
       <input placeholder="Mobile (optional)" [formField]="registerForm.mobile" />
@@ -20,7 +20,7 @@
       </select>
     </div>
     <button type="button" (click)="registerPatient.emit()" [disabled]="registerSaving">
-      {{ registerSaving ? 'Saving…' : 'Create patient' }}
+      {{ registerSaving ? 'Saving…' : 'Create ' + consumerSingularLabel() }}
     </button>
     @if (registerError) { <p class="error">{{ registerError }}</p> }
     @if (registerMessage) { <p class="success">{{ registerMessage }}</p> }
@@ -28,7 +28,7 @@
 }
 
 <div class="toolbar">
-  <input placeholder="Global patient search (mobile, code, name)…" [formField]="patientSearchForm.q" (keyup.enter)="searchPatientsGlobal.emit()" />
+  <input [placeholder]="'Global ' + consumerSingularLabel() + ' search (mobile, code, name)…'" [formField]="patientSearchForm.q" (keyup.enter)="searchPatientsGlobal.emit()" />
   <button type="button" (click)="searchPatientsGlobal.emit()" [disabled]="patientSearchLoading">Search all</button>
 </div>
 @if (patientSearchResults.length) {
@@ -45,7 +45,7 @@
 <div class="toolbar">
   <input placeholder="Search consumers..." [formField]="listFilterForm.searchTerm" (change)="pageChange.emit(1)" />
   <select [formField]="listFilterForm.sortBy" (change)="pageChange.emit(1)">
-    <option value="consultations">Sort by consultations</option>
+    <option value="consultations">Sort by {{ sessionPluralLabel() }}</option>
     <option value="name">Sort by name</option>
   </select>
   <select [formField]="listFilterForm.sortDirection" (change)="pageChange.emit(1)">
@@ -68,7 +68,7 @@
       <p class="patient-code-badge">{{ consumer.patientCode || 'No ID yet' }}</p>
       <button type="button" class="link" (click)="selectConsumer.emit(consumer.id)" [disabled]="detailLoading">View details</button>
       <p>{{ consumer.email || 'No email' }} | {{ consumer.mobile || 'No mobile' }}</p>
-      <small>Total consultations: {{ consumer.consultations }}</small>
+      <small>Total {{ sessionPluralLabel() }}: {{ consumer.consultations }}</small>
     </article>
   } @empty {
     <p class="empty-state">No consumers found.</p>

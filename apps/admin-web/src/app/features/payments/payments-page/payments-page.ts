@@ -28,6 +28,12 @@ export class PaymentsPage implements OnInit {
   payments = signal<any[]>([]);
   readonly workspaceKey = this.workspace.selectedWorkspace;
   readonly workspaceLabel = this.workspace.workspaceLabel;
+  readonly providerSingularLabel = this.workspace.providerSingularLabel;
+  readonly providerTitleLabel = this.workspace.providerTitleLabel;
+  readonly consumerTitleLabel = this.workspace.consumerTitleLabel;
+  readonly sessionSingularLabel = this.workspace.sessionSingularLabel;
+  readonly sessionPluralLabel = this.workspace.sessionPluralLabel;
+  readonly sessionTitleLabel = this.workspace.sessionTitleLabel;
   summary = signal<AdminPaymentSummary>({
     total: 0,
     paid: 0,
@@ -235,7 +241,7 @@ export class PaymentsPage implements OnInit {
   payoutText(payment: any): string {
     const earning = payment?.providerEarning;
     if (!earning) return 'Not in payout ledger';
-    return `${earning.payoutStatus || 'PENDING'} · Provider ₹${this.formatPaise(earning.providerEarningInPaise || 0)} · Platform ₹${this.formatPaise(earning.platformFeeInPaise || 0)}`;
+    return `${earning.payoutStatus || 'PENDING'} · ${this.providerTitleLabel()} ₹${this.formatPaise(earning.providerEarningInPaise || 0)} · Platform ₹${this.formatPaise(earning.platformFeeInPaise || 0)}`;
   }
 
   refundImpactText(payment: any): string {
@@ -243,8 +249,8 @@ export class PaymentsPage implements OnInit {
     if (!refunded) return '';
     const refundable = this.refundableAmount(payment);
     return refundable
-      ? `Partial refund recorded. Provider earning is recalculated on net paid amount.`
-      : `Full refund recorded. Provider payout should stay on hold unless manually released.`;
+      ? `Partial refund recorded. ${this.providerTitleLabel()} earning is recalculated on net paid amount.`
+      : `Full refund recorded. ${this.providerTitleLabel()} payout should stay on hold unless manually released.`;
   }
 
   onRefundAmountInput(event: Event): void {

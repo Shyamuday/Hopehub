@@ -6,15 +6,15 @@
           <h2>
             {{
               workspaceKey() === 'hope-hub'
-                ? 'Hope Hub consultation queue'
-                : 'Homeopathy consultation queue'
+                ? 'Hope Hub ' + sessionPluralLabel() + ' queue'
+                : 'Homeopathy ' + sessionPluralLabel() + ' queue'
             }}
           </h2>
           <span>
             {{
               workspaceKey() === 'hope-hub'
-                ? 'Showing mental wellness, quick talk, listener, and Hope Hub provider sessions only.'
-                : 'Showing homeopathy consultations only. Hope Hub sessions stay in the Hope Hub workspace.'
+                ? 'Showing mental wellness, quick talk, listener, and ' + providerPluralLabel() + ' ' + sessionPluralLabel() + ' only.'
+                : 'Showing homeopathy ' + sessionPluralLabel() + ' only. Hope Hub ' + sessionPluralLabel() + ' stay in the Hope Hub workspace.'
             }}
           </span>
         </div>
@@ -23,13 +23,13 @@
       <div class="cp-hdr">
         <div>
           <h2 class="cp-title">
-            {{ workspaceKey() === 'hope-hub' ? '🧠 Hope Hub Queue' : '🩺 Consultation Queue' }}
+            {{ workspaceKey() === 'hope-hub' ? '🧠 Hope Hub Queue' : '🩺 ' + sessionSingularLabel() + ' Queue' }}
           </h2>
           <p class="cp-sub">
             {{
               workspaceKey() === 'hope-hub'
-                ? 'Assign unassigned Hope Hub sessions to available providers'
-                : 'Assign unassigned consultations to available homeopathy providers'
+                ? 'Assign unassigned Hope Hub ' + sessionPluralLabel() + ' to available ' + providerPluralLabel()
+                : 'Assign unassigned ' + sessionPluralLabel() + ' to available ' + providerPluralLabel()
             }}
           </p>
         </div>
@@ -72,7 +72,7 @@
 
       <!-- Filters -->
       <div class="filters">
-        <input class="search" [formField]="searchForm.q" (input)="onSearch()" placeholder="🔍 Search by patient or disease…" />
+        <input class="search" [formField]="searchForm.q" (input)="onSearch()" [placeholder]="'🔍 Search by ' + consumerSingularLabel() + ' or service…'" />
         <div class="ftabs">
           @for (f of statusFilters; track f.value) {
             <button class="ftab" [class.active]="statusFilter() === f.value" (click)="setStatus(f.value)">{{ f.label }}</button>
@@ -102,8 +102,8 @@
           <table class="ct">
             <thead>
               <tr>
-                <th>Patient</th>
-                <th>Disease</th>
+                <th>{{ consumerTitleLabel() }}</th>
+                <th>Service</th>
                 <th>Status</th>
                 <th>Payment</th>
                 <th>Created</th>
@@ -321,7 +321,7 @@
           }
         </div>
         @if (consultations().length === 0) {
-          <div class="empty"><div>🩺</div><p>No consultations match these filters</p></div>
+          <div class="empty"><div>🩺</div><p>No {{ sessionPluralLabel() }} match these filters</p></div>
         }
         @if (total() > pageSize) {
           <div class="pagination">
@@ -384,7 +384,7 @@
         <div class="modal form-surface-dark" (click)="$event.stopPropagation()">
           <div class="mhdr">
             <div>
-              <h3>Update consultation status</h3>
+              <h3>Update {{ sessionSingularLabel() }} status</h3>
               <p class="mhdr-sub">{{ selectedConsult()!.patient?.name }} — {{ selectedConsult()!.disease?.name }}</p>
             </div>
             <button class="close-btn" (click)="closeModal()">✕</button>

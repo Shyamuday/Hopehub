@@ -73,7 +73,7 @@
 
 <section class="panel">
   <div class="panel-header">
-    <h2>{{ canPrescribe() ? 'Provider Payment Dashboard' : 'Session Payment Dashboard' }}</h2>
+    <h2>{{ canPrescribe() ? 'Payment Dashboard' : language().sessionTitle + ' Payment Dashboard' }}</h2>
     <button type="button" (click)="loadSummary()" [disabled]="loading()">
       {{ loading() ? 'Refreshing...' : 'Refresh' }}
     </button>
@@ -94,13 +94,13 @@
 </section>
 
 <section class="panel">
-  <h3>{{ canPrescribe() ? 'Recent Paid Consultations' : 'Recent Paid Sessions' }}</h3>
+  <h3>Recent Paid {{ language().sessionPluralTitle }}</h3>
   @if (loading() && !summary()) {
     <p class="loading-text">Loading...</p>
   } @else {
     @for (item of summary()?.payments || []; track item.id) {
       <article class="card">
-        <strong>{{ item.consultation?.patient?.name || 'Patient' }} — {{ item.consultation?.disease?.name || 'Consultation' }}</strong>
+        <strong>{{ item.consultation?.patient?.name || language().userTitle }} — {{ item.consultation?.disease?.name || language().sessionTitle }}</strong>
         <p>
           {{ item.amountInPaise / 100 | currency: 'INR' }} | Plan: {{ item.billingPlanCode || 'ONE_TIME' }} |
           {{ item.createdAt | date: 'mediumDate' }}
@@ -117,7 +117,7 @@
         }
       </article>
     } @empty {
-      <p class="empty-state">No paid consultations yet.</p>
+      <p class="empty-state">No paid {{ language().sessionPluralLower }} yet.</p>
     }
   }
 </section>

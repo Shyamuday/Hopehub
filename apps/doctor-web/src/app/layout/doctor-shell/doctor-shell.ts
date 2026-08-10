@@ -17,6 +17,10 @@ import {
   DOCTOR_NAV_ICONS,
 } from '../../core/constants/doctor-nav.constants';
 import { careTeamTypeLabel } from '../../core/constants/doctor-types.constants';
+import {
+  HOMEOPATHY_PROVIDER_LANGUAGE,
+  PH_PROVIDER_LANGUAGE,
+} from '../../core/constants/provider-language.constants';
 import { Auth } from '../../core/services/auth';
 import {
   ConsultationNavigationService,
@@ -94,8 +98,8 @@ export class DoctorShell implements OnInit, OnDestroy {
       this.doctorTypeLabel = profile.doctorProfile?.doctorTypeLabel || 'Provider';
       this.providerWorkspaceTitle =
         profile.doctorProfile?.doctorType === 'PSYCHOLOGIST'
-          ? 'Hope Hub Provider Console'
-          : 'Homeopathy Provider Console';
+          ? PH_PROVIDER_LANGUAGE.workspaceTitle
+          : HOMEOPATHY_PROVIDER_LANGUAGE.workspaceTitle;
       this.specialtyLabel =
         profile.doctorProfile?.doctorType === 'PSYCHOLOGIST'
           ? careTeamTypeLabel(profile.doctorProfile?.mentalHealthProfile?.careTeamType) ||

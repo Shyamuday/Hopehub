@@ -5,6 +5,11 @@ import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { API_PATHS } from '../../../core/constants/api-paths.constants';
+import {
+  HOMEOPATHY_PROVIDER_LANGUAGE,
+  PH_PROVIDER_LANGUAGE,
+} from '../../../core/constants/provider-language.constants';
+import { DoctorSessionService } from '../../../core/services/doctor-session';
 import { formatPaise, paiseToK } from '../constants/earnings.constants';
 
 @Component({
@@ -15,6 +20,7 @@ import { formatPaise, paiseToK } from '../constants/earnings.constants';
 })
 export class EarningsPage implements OnInit {
   private http = inject(HttpClient);
+  private session = inject(DoctorSessionService);
   private apiBase = environment.apiUrl;
 
   loading = signal(true);
@@ -28,9 +34,25 @@ export class EarningsPage implements OnInit {
 
   readonly formatPaise = formatPaise;
   readonly paiseToK = paiseToK;
+  readonly language = signal(PH_PROVIDER_LANGUAGE);
 
   ngOnInit(): void {
+    void this.loadLanguage();
     void this.load();
+  }
+
+  private async loadLanguage(): Promise<void> {
+    try {
+      await this.session.load();
+      const profile = this.session.snapshot()?.doctorProfile;
+      this.language.set(
+        profile?.doctorType === 'PSYCHOLOGIST'
+          ? PH_PROVIDER_LANGUAGE
+          : HOMEOPATHY_PROVIDER_LANGUAGE,
+      );
+    } catch {
+      this.language.set(PH_PROVIDER_LANGUAGE);
+    }
   }
 
   async load(): Promise<void> {

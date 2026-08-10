@@ -1,16 +1,28 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output, inject } from '@angular/core';
 import { FormField } from '@angular/forms/signals';
 import { RouterLink } from '@angular/router';
-import { clinicalRecordsQuery, type ActiveDoctor, type ConsumerDetail } from '../../models/consumers.models';
+import { AdminWorkspaceService } from '../../../../core/services/admin-workspace.service';
+import {
+  clinicalRecordsQuery,
+  type ActiveDoctor,
+  type ConsumerDetail,
+} from '../../models/consumers.models';
 
 @Component({
   selector: 'app-consumer-consultations-panel',
   imports: [CommonModule, FormField, RouterLink],
   templateUrl: './consumer-consultations-panel.html',
-  styleUrl: './consumer-consultations-panel.scss'
+  styleUrl: './consumer-consultations-panel.scss',
 })
 export class ConsumerConsultationsPanelComponent {
+  private readonly workspace = inject(AdminWorkspaceService);
+
+  readonly providerTitleLabel = this.workspace.providerTitleLabel;
+  readonly consumerSingularLabel = this.workspace.consumerSingularLabel;
+  readonly sessionTitleLabel = this.workspace.sessionTitleLabel;
+  readonly sessionSingularLabel = this.workspace.sessionSingularLabel;
+  readonly sessionPluralLabel = this.workspace.sessionPluralLabel;
   @Input({ required: true }) assignForm!: any;
   @Input() consultations: ConsumerDetail['consultations'] = [];
   @Input() clinicalRecordsRoute: string | readonly string[] = '';

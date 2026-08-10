@@ -2,6 +2,7 @@ import { Component, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { form, FormField, required } from '@angular/forms/signals';
 import { DEFAULT_AUTHED_ROUTE } from '../../../core/constants/app-routes.constants';
+import { PH_PROVIDER_LANGUAGE } from '../../../core/constants/provider-language.constants';
 import { Auth } from '../../../core/services/auth';
 import { AppButtonComponent } from '../../../shared/ui/app-button.component';
 
@@ -112,6 +113,7 @@ export class Login {
   error = signal('');
   message = signal('');
   submitting = signal(false);
+  readonly phLanguage = PH_PROVIDER_LANGUAGE;
 
   isHealingHubSignup(): boolean {
     return true;

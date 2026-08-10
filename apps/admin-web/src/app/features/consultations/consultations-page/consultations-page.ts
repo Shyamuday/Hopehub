@@ -1,4 +1,4 @@
-import { Component, computed, effect, inject, signal, OnInit } from '@angular/core';
+import { Component, effect, inject, signal, OnInit } from '@angular/core';
 import { form, FormField } from '@angular/forms/signals';
 import { DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
@@ -44,12 +44,15 @@ export class ConsultationsPage implements OnInit {
   readonly doctorOrigins = { doctor: environment.doctorAppUrl };
   readonly workspaceKey = this.workspace.selectedWorkspace;
   readonly workspaceLabel = this.workspace.workspaceLabel;
-  readonly providerSingularLabel = computed(() =>
-    this.workspace.isHopeHub() ? 'Hope Hub provider' : 'homeopathy provider',
-  );
-  readonly providerPluralLabel = computed(() =>
-    this.workspace.isHopeHub() ? 'Hope Hub providers' : 'homeopathy providers',
-  );
+  readonly providerSingularLabel = this.workspace.providerSingularLabel;
+  readonly providerPluralLabel = this.workspace.providerPluralLabel;
+  readonly providerTitleLabel = this.workspace.providerTitleLabel;
+  readonly providerPluralTitleLabel = this.workspace.providerPluralTitleLabel;
+  readonly consumerSingularLabel = this.workspace.consumerSingularLabel;
+  readonly consumerTitleLabel = this.workspace.consumerTitleLabel;
+  readonly consumerPluralLabel = this.workspace.consumerPluralLabel;
+  readonly sessionSingularLabel = this.workspace.sessionSingularLabel;
+  readonly sessionPluralLabel = this.workspace.sessionPluralLabel;
 
   consultations = signal<any[]>([]);
   loading = signal(true);

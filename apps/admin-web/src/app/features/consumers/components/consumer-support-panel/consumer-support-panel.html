@@ -42,15 +42,15 @@
   </section>
 
   <section class="support-section">
-    <h3>Consultation timeline (read-only)</h3>
+    <h3>{{ sessionTitleLabel() }} timeline (read-only)</h3>
     <div class="support-table-wrap desktop-only">
       <table class="support-table">
         <thead>
           <tr>
-            <th>Disease</th>
+            <th>{{ supportFocusLabel() }}</th>
             <th>Status</th>
             <th>Payment</th>
-            <th>Provider</th>
+            <th>{{ providerTitleLabel() }}</th>
             <th>Rx / msgs</th>
           </tr>
         </thead>
@@ -64,7 +64,7 @@
               <td>{{ c.prescriptionCount }} / {{ c.messageCount }}</td>
             </tr>
           } @empty {
-            <tr><td colspan="5">No consultations.</td></tr>
+            <tr><td colspan="5">No {{ sessionPluralLabel() }}.</td></tr>
           }
         </tbody>
       </table>
@@ -76,7 +76,7 @@
             <strong>{{ c.diseaseName }}</strong>
             <span>{{ c.status }}</span>
           </div>
-          <div class="card-row"><span>{{ c.paymentStatus || '—' }}</span><span>Provider: {{ c.doctorName || 'Unassigned' }}</span></div>
+          <div class="card-row"><span>{{ c.paymentStatus || '—' }}</span><span>{{ providerTitleLabel() }}: {{ c.doctorName || 'Unassigned' }}</span></div>
           <div class="card-row"><span>Rx / msgs</span><span>{{ c.prescriptionCount }} / {{ c.messageCount }}</span></div>
         </article>
       }
@@ -108,7 +108,7 @@
         </div>
         <p class="note-body">{{ note.body }}</p>
         @if (note.consultation) {
-          <small class="muted">Linked: {{ note.consultation.disease?.name || 'Consultation' }} ({{ note.consultation.status }})</small>
+          <small class="muted">Linked: {{ note.consultation.disease?.name || sessionTitleLabel() }} ({{ note.consultation.status }})</small>
         }
       </article>
     } @empty {
@@ -124,9 +124,9 @@
           }
         </select>
         <select [formField]="noteForm.consultationId">
-          <option value="">No consultation link</option>
+          <option value="">No {{ sessionSingularLabel() }} link</option>
           @for (c of consultations; track c.id) {
-            <option [value]="c.id">{{ c.disease?.name || 'Consultation' }} — {{ c.status }}</option>
+            <option [value]="c.id">{{ c.disease?.name || sessionTitleLabel() }} — {{ c.status }}</option>
           }
         </select>
       </div>

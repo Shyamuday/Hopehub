@@ -133,15 +133,15 @@
     <article class="card dose-note-card">
       <strong>{{ note.medicineName }}</strong>
       <p>{{ note.scheduledFor | date: 'medium' }} · {{ note.status }}</p>
-      <small>{{ note.note || 'No patient reason recorded yet' }}</small>
+      <small>{{ note.note || 'No reason recorded yet' }}</small>
     </article>
   }
 }
 
 @if (patientCard) {
   <div class="card-panel">
-    <h3>Printable patient card</h3>
-    <p class="muted">Give this card to the patient for future visits.</p>
+    <h3>Printable ID card</h3>
+    <p class="muted">Give this card for future visits.</p>
     <hopehub-patient-id-card-display [card]="patientCard" />
   </div>
 }

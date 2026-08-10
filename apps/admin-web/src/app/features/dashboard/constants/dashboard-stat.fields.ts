@@ -15,3 +15,14 @@ export const ADMIN_DASHBOARD_STAT_FIELDS: DetailFieldDef<AdminDashboardStats>[] 
   { label: 'Active Providers', getValue: (s) => s.activeDoctors },
   { label: 'Consultations', getValue: (s) => s.consultationsCount },
 ];
+
+export function buildAdminDashboardStatFields(labels: {
+  providerPluralTitle: string;
+  sessionPluralTitle: string;
+}): DetailFieldDef<AdminDashboardStats>[] {
+  return [
+    { label: 'Revenue Collected', getValue: (s) => formatInr(s.revenueInPaise) },
+    { label: `Active ${labels.providerPluralTitle}`, getValue: (s) => s.activeDoctors },
+    { label: labels.sessionPluralTitle, getValue: (s) => s.consultationsCount },
+  ];
+}

@@ -8,8 +8,12 @@ import { environment } from '../../../../environments/environment';
 import { API_PATHS } from '../../../core/constants/api-paths.constants';
 import { ROUTE_PATHS } from '../../../core/constants/app-routes.constants';
 import type { DoctorProfileSummary } from '../../../core/constants/doctor-types.constants';
+import {
+  HOMEOPATHY_PROVIDER_LANGUAGE,
+  PH_PROVIDER_LANGUAGE,
+} from '../../../core/constants/provider-language.constants';
 import { ConsultationNavigationService } from '../../../core/services/consultation-navigation.service';
-import { PAYMENT_SUMMARY_STAT_FIELDS } from '../constants/dashboard-stat.fields';
+import { buildPaymentSummaryStatFields } from '../constants/dashboard-stat.fields';
 import { WorklistApiService } from '../../worklist/worklist-api.service';
 import { DoctorSessionService } from '../../../core/services/doctor-session';
 
@@ -44,6 +48,7 @@ export class DashboardHome {
   readonly canPrescribe = signal(true);
   readonly listenerProfile = signal<DoctorProfileSummary | null>(null);
   readonly listenerProfileImageUrl = signal<string | null>(null);
+  readonly language = signal(PH_PROVIDER_LANGUAGE);
 
   constructor(
     private readonly http: HttpClient,
@@ -60,12 +65,18 @@ export class DashboardHome {
       await this.session.load();
       const snapshot = this.session.snapshot();
       this.canPrescribe.set(this.session.capabilities().prescribe);
+      this.language.set(
+        snapshot?.doctorProfile?.doctorType === 'PSYCHOLOGIST'
+          ? PH_PROVIDER_LANGUAGE
+          : HOMEOPATHY_PROVIDER_LANGUAGE,
+      );
       this.listenerProfile.set(
         this.isListenerProfile(snapshot?.doctorProfile) ? (snapshot?.doctorProfile ?? null) : null,
       );
       this.listenerProfileImageUrl.set(snapshot?.profileImageUrl ?? null);
     } catch {
       this.canPrescribe.set(true);
+      this.language.set(HOMEOPATHY_PROVIDER_LANGUAGE);
     }
   }
 
@@ -108,7 +119,9 @@ export class DashboardHome {
         pendingEarningsInPaise: data.totals.pendingEarningsInPaise,
         doctorSharePercent: data.doctorSharePercent,
       },
-      PAYMENT_SUMMARY_STAT_FIELDS,
+      buildPaymentSummaryStatFields({
+        sessionPluralTitle: this.language().sessionPluralTitle,
+      }),
     );
   }
 

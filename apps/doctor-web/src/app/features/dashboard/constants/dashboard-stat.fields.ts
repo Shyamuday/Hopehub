@@ -9,7 +9,7 @@ export type WorklistStatCounts = {
 export const WORKLIST_STAT_FIELDS: DetailFieldDef<WorklistStatCounts>[] = [
   { label: 'Assigned', getValue: (c) => c.assigned },
   { label: 'In progress', getValue: (c) => c.inProgress },
-  { label: 'Follow-up due', getValue: (c) => c.followUpDue }
+  { label: 'Follow-up due', getValue: (c) => c.followUpDue },
 ];
 
 export type PaymentSummaryStats = {
@@ -26,16 +26,35 @@ function formatInr(paise: number) {
 }
 
 export const PAYMENT_SUMMARY_STAT_FIELDS: DetailFieldDef<PaymentSummaryStats>[] = [
-  { label: 'Paid Consultations', getValue: (s) => s.paidConsultations },
+  { label: 'Paid Sessions', getValue: (s) => s.paidConsultations },
   { label: 'Pending Payments', getValue: (s) => s.pendingConsultations ?? 0 },
   { label: 'Gross Revenue', getValue: (s) => formatInr(s.grossInPaise) },
   {
     label: 'Your Earnings',
     getLabel: (s) => `Your Earnings (${s.doctorSharePercent}%)`,
-    getValue: (s) => formatInr(s.estimatedDoctorEarningsInPaise)
+    getValue: (s) => formatInr(s.estimatedDoctorEarningsInPaise),
   },
   {
     label: 'Pending Earnings',
-    getValue: (s) => formatInr(s.pendingEarningsInPaise ?? 0)
-  }
+    getValue: (s) => formatInr(s.pendingEarningsInPaise ?? 0),
+  },
 ];
+
+export function buildPaymentSummaryStatFields(labels: {
+  sessionPluralTitle: string;
+}): DetailFieldDef<PaymentSummaryStats>[] {
+  return [
+    { label: `Paid ${labels.sessionPluralTitle}`, getValue: (s) => s.paidConsultations },
+    { label: 'Pending Payments', getValue: (s) => s.pendingConsultations ?? 0 },
+    { label: 'Gross Revenue', getValue: (s) => formatInr(s.grossInPaise) },
+    {
+      label: 'Your Earnings',
+      getLabel: (s) => `Your Earnings (${s.doctorSharePercent}%)`,
+      getValue: (s) => formatInr(s.estimatedDoctorEarningsInPaise),
+    },
+    {
+      label: 'Pending Earnings',
+      getValue: (s) => formatInr(s.pendingEarningsInPaise ?? 0),
+    },
+  ];
+}

@@ -5,6 +5,7 @@ import {
   type AdminFocusedWorkspace,
 } from '../admin-permissions';
 import { ADMIN_WORKSPACES, NAV_ITEMS, type AdminNavItem } from '../constants/app-routes.constants';
+import { providerLanguageForWorkspace } from '../constants/provider-language.constants';
 import { AdminAuth } from './admin-auth';
 
 const ADMIN_WORKSPACE_STORAGE_KEY = 'hopehub.admin.workspace.v2';
@@ -28,6 +29,21 @@ export class AdminWorkspaceService {
   );
 
   readonly workspaceLabel = computed(() => this.selectedWorkspaceOption().label);
+  readonly language = computed(() => providerLanguageForWorkspace(this.selectedWorkspace()));
+  readonly providerSingularLabel = computed(() => this.language().provider.singularLower);
+  readonly providerPluralLabel = computed(() => this.language().provider.pluralLower);
+  readonly providerTitleLabel = computed(() => this.language().provider.singular);
+  readonly providerPluralTitleLabel = computed(() => this.language().provider.plural);
+  readonly providerDirectoryLabel = computed(() => this.language().provider.directory);
+  readonly providerPortalLabel = computed(() => this.language().provider.portal);
+  readonly consumerSingularLabel = computed(() => this.language().consumer.singularLower);
+  readonly consumerPluralLabel = computed(() => this.language().consumer.pluralLower);
+  readonly consumerTitleLabel = computed(() => this.language().consumer.singular);
+  readonly consumerPluralTitleLabel = computed(() => this.language().consumer.plural);
+  readonly sessionSingularLabel = computed(() => this.language().session.singularLower);
+  readonly sessionPluralLabel = computed(() => this.language().session.pluralLower);
+  readonly sessionTitleLabel = computed(() => this.language().session.singular);
+  readonly sessionPluralTitleLabel = computed(() => this.language().session.plural);
 
   private readonly workspaceAccessSync = effect(() => {
     this.auth.user();

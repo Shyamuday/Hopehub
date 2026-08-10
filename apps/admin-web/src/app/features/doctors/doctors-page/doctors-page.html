@@ -3,23 +3,21 @@
     <p>{{ workspaceLabel() }} workspace</p>
     <h2>
       {{
-        workspaceKey() === 'hope-hub'
-          ? 'Hope Hub providers'
-          : 'Homeopathy providers'
+        providerPluralTitleLabel()
       }}
     </h2>
     <span>
       {{
         workspaceKey() === 'hope-hub'
-          ? 'Showing Hope Hub providers only. Category and subtype decide whether someone appears as a psychologist, coach, guide, or listener.'
-          : 'Showing homeopathy providers only. Hope Hub providers stay in the Hope Hub workspace.'
+          ? 'Showing ' + providerPluralLabel() + ' only. Category and subtype decide whether someone appears as a psychologist, coach, guide, or listener.'
+          : 'Showing ' + providerPluralLabel() + ' only. ' + hopeHubProviderPluralLabel + ' stay in the Hope Hub workspace.'
       }}
     </span>
   </div>
 </section>
 
 <section class="panel website-settings-panel">
-  <h2>Website — {{ workspaceKey() === 'hope-hub' ? 'Provider Directory Settings' : 'Doctor List Settings' }}</h2>
+  <h2>Website — {{ providerPluralTitleLabel() }} Directory Settings</h2>
   <p class="panel-hint">
     Control how many {{ providerPluralLabel() }} appear on the public
     <em>{{ publicDirectoryLabel() }}</em>. Use the <em>Display order</em> field below to set the listing sequence.
@@ -45,7 +43,7 @@
 </section>
 
 <section class="panel">
-  <h2>{{ workspaceKey() === 'hope-hub' ? 'Create Hope Hub Provider' : 'Create Homeopathy Provider' }}</h2>
+  <h2>Create {{ providerTitleLabel() }}</h2>
   <fieldset class="create-doctor-form form-grid" [disabled]="mutating()">
     <div class="field">
       <label class="field-label" for="doc-create-name">Name</label>

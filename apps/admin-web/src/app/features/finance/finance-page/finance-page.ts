@@ -2,6 +2,7 @@ import { Component, inject, signal, OnInit } from '@angular/core';
 import { form, FormField } from '@angular/forms/signals';
 import { DatePipe } from '@angular/common';
 import { AdminApi } from '../../../core/services/admin-api';
+import { AdminWorkspaceService } from '../../../core/services/admin-workspace.service';
 import {
   EMPTY_EXPENSE_FORM,
   EXPENSE_CATEGORIES,
@@ -24,6 +25,7 @@ import {
 })
 export class FinancePage implements OnInit {
   private api = inject(AdminApi);
+  private workspace = inject(AdminWorkspaceService);
 
   tab = signal<FinanceTabId>('period');
   periodLoading = signal(false);
@@ -82,6 +84,15 @@ export class FinancePage implements OnInit {
   readonly paiseToK = paiseToK;
 
   readonly tabs = FINANCE_TABS;
+  readonly workspaceKey = this.workspace.selectedWorkspace;
+  readonly providerTitleLabel = this.workspace.providerTitleLabel;
+  readonly providerSingularLabel = this.workspace.providerSingularLabel;
+  readonly consumerTitleLabel = this.workspace.consumerTitleLabel;
+  readonly consumerSingularLabel = this.workspace.consumerSingularLabel;
+  readonly sessionTitleLabel = this.workspace.sessionTitleLabel;
+  readonly sessionSingularLabel = this.workspace.sessionSingularLabel;
+  readonly sessionPluralLabel = this.workspace.sessionPluralLabel;
+  readonly sessionPluralTitleLabel = this.workspace.sessionPluralTitleLabel;
 
   ngOnInit(): void {
     this.loadStores();
@@ -128,8 +139,7 @@ export class FinancePage implements OnInit {
   exportPeriodCsv(): void {
     const report = this.periodReport();
     if (!report) return;
-    const header =
-      'Period,Consult Revenue,Medicine Revenue,Total Revenue,Pending Consult,Payroll,Store Expenses,Clinic Expenses,Net';
+    const header = `Period,${this.sessionTitleLabel()} Revenue,Medicine Revenue,Total Revenue,Pending ${this.sessionTitleLabel()},Payroll,Store Expenses,Clinic Expenses,Net`;
     const lines = (report.buckets as any[]).map(
       (b) =>
         `"${b.label}",${b.consultationRevenueInPaise / 100},${b.medicineRevenueInPaise / 100},` +

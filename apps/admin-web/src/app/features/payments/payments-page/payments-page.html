@@ -12,8 +12,8 @@
       <span>
         {{
           workspaceKey() === 'hope-hub'
-            ? 'Showing payments linked to Hope Hub sessions and quick talk only.'
-            : 'Showing payments linked to homeopathy consultations only.'
+            ? 'Showing payments linked to Hope Hub ' + sessionPluralLabel() + ' and quick talk only.'
+            : 'Showing payments linked to homeopathy ' + sessionPluralLabel() + ' only.'
         }}
       </span>
     </div>
@@ -22,7 +22,7 @@
   <div class="pay-hdr">
     <div>
       <h2>{{ workspaceKey() === 'hope-hub' ? 'Hope Hub Payments' : 'Payments' }}</h2>
-      <p>Filter {{ workspaceLabel() }} consultation payments and export records for reconciliation</p>
+      <p>Filter {{ workspaceLabel() }} {{ sessionPluralLabel() }} payments and export records for reconciliation</p>
     </div>
     <button class="btn-primary" [disabled]="exporting() || loading()" (click)="exportCsv()">
       {{ exporting() ? 'Exporting…' : 'Export CSV' }}
@@ -63,9 +63,9 @@
         <thead>
           <tr>
             <th>Date</th>
-            <th>Patient</th>
-            <th>Disease</th>
-            <th>Provider</th>
+            <th>{{ consumerTitleLabel() }}</th>
+            <th>{{ workspaceKey() === 'hope-hub' ? 'Support focus' : 'Disease' }}</th>
+            <th>{{ providerTitleLabel() }}</th>
             <th>Pricing / Payout</th>
             <th>Status</th>
             <th class="num">Amount (₹)</th>
@@ -81,7 +81,7 @@
               <td>{{ p.consultation?.disease?.name ?? '—' }}</td>
               <td>{{ p.consultation?.assignedDoctor?.name ?? 'Unassigned' }}</td>
               <td>
-                <div>{{ pricingText(p) || 'Standard consultation' }}</div>
+                <div>{{ pricingText(p) || 'Standard ' + sessionSingularLabel() }}</div>
                 <div class="muted">{{ payoutText(p) }}</div>
                 @if (refundImpactText(p)) {
                   <div class="muted">{{ refundImpactText(p) }}</div>
@@ -120,8 +120,8 @@
           </div>
           <div class="card-row"><span>{{ p.consultation?.disease?.name ?? '—' }}</span><strong>₹{{ formatPaise(p.amountInPaise) }}</strong></div>
           <div class="card-row"><span>Refunded</span><span>₹{{ formatPaise(p.refundedAmountInPaise || 0) }}</span></div>
-          <div class="card-row"><span>Provider</span><span>{{ p.consultation?.assignedDoctor?.name ?? 'Unassigned' }}</span></div>
-          <div class="card-row"><span>Pricing</span><span>{{ pricingText(p) || 'Standard consultation' }}</span></div>
+          <div class="card-row"><span>{{ providerTitleLabel() }}</span><span>{{ p.consultation?.assignedDoctor?.name ?? 'Unassigned' }}</span></div>
+          <div class="card-row"><span>Pricing</span><span>{{ pricingText(p) || 'Standard ' + sessionSingularLabel() }}</span></div>
           <div class="card-row"><span>Payout</span><span>{{ payoutText(p) }}</span></div>
           <div class="row-actions">
             <button type="button" class="btn-clear" (click)="openDetails(p)">Details</button>
@@ -144,8 +144,8 @@
       <div class="detail-head">
         <div>
           <p class="eyebrow">Payment Detail</p>
-          <h3>{{ selected.consultation?.patient?.name ?? 'Patient' }}</h3>
-          <p>{{ selected.consultation?.disease?.name ?? 'Consultation' }}</p>
+          <h3>{{ selected.consultation?.patient?.name ?? consumerTitleLabel() }}</h3>
+          <p>{{ selected.consultation?.disease?.name ?? sessionTitleLabel() }}</p>
         </div>
         <button type="button" class="icon-btn" (click)="closeDetails()" aria-label="Close">×</button>
       </div>
@@ -156,8 +156,8 @@
         <div><span>Refunded</span><strong>₹{{ formatPaise(selected.refundedAmountInPaise || 0) }}</strong></div>
         <div><span>Refundable</span><strong>₹{{ formatPaise(refundableAmount(selected)) }}</strong></div>
         <div><span>Balance due</span><strong>₹{{ formatPaise(balanceDueInPaise(selected)) }}</strong></div>
-        <div><span>Provider payout</span><strong>{{ selected.providerEarning?.payoutStatus || '—' }}</strong></div>
-        <div><span>Provider share</span><strong>₹{{ formatPaise(selected.providerEarning?.providerEarningInPaise || 0) }}</strong></div>
+        <div><span>{{ providerTitleLabel() }} payout</span><strong>{{ selected.providerEarning?.payoutStatus || '—' }}</strong></div>
+        <div><span>{{ providerTitleLabel() }} share</span><strong>₹{{ formatPaise(selected.providerEarning?.providerEarningInPaise || 0) }}</strong></div>
         <div><span>Platform fee</span><strong>₹{{ formatPaise(selected.providerEarning?.platformFeeInPaise || 0) }}</strong></div>
         <div><span>Order</span><strong>{{ selected.providerOrderId || '—' }}</strong></div>
         <div><span>Payment</span><strong>{{ selected.providerPaymentId || '—' }}</strong></div>
@@ -181,7 +181,7 @@
 
       @if (packageUsage(selected); as usage) {
         <div class="muted-panel">
-          Package usage: {{ usage.usedSessions || 0 }}/{{ usage.totalSessions || 0 }} sessions used.
+          Package usage: {{ usage.usedSessions || 0 }}/{{ usage.totalSessions || 0 }} {{ sessionPluralLabel() }} used.
           @if (usage.validUntil) {
             Valid till {{ usage.validUntil | date:'mediumDate' }}.
           }
@@ -223,7 +223,7 @@
               [checked]="refundCancelConsultation()"
               (change)="onRefundCancelChange($event)"
             />
-            Cancel consultation if fully refunded
+            Cancel {{ sessionSingularLabel() }} if fully refunded
           </label>
           <button type="submit" class="btn-primary" [disabled]="refundSubmitting()">
             {{ refundSubmitting() ? 'Submitting…' : 'Submit refund' }}

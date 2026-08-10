@@ -11,8 +11,8 @@
     <span>
       {{
         workspaceKey() === 'hope-hub'
-          ? 'Top stats are filtered for Hope Hub sessions and providers. Shared blocks remain visible below.'
-          : 'Top stats are filtered for homeopathy consultations and providers. Shared blocks remain visible below.'
+          ? 'Top stats are filtered for Hope Hub ' + sessionPluralLabel() + ' and ' + providerPluralLabel() + '. Shared blocks remain visible below.'
+          : 'Top stats are filtered for homeopathy ' + sessionPluralLabel() + ' and ' + providerPluralLabel() + '. Shared blocks remain visible below.'
       }}
     </span>
   </div>
@@ -134,8 +134,8 @@
     @for (payment of payments; track payment.id) {
       <article class="payment-row">
         <div class="payment-main">
-          <strong>{{ payment.consultation?.patient?.name || 'Patient' }}</strong>
-          <span class="disease-label">{{ payment.consultation?.disease?.name || 'Consultation' }}</span>
+          <strong>{{ payment.consultation?.patient?.name || consumerTitleLabel() }}</strong>
+          <span class="disease-label">{{ payment.consultation?.disease?.name || sessionSingularLabel() }}</span>
         </div>
         <div class="payment-meta">
           <span class="amount">{{ payment.amountInPaise / 100 | currency: 'INR' }}</span>
@@ -144,7 +144,7 @@
         </div>
         <div class="payment-detail">
           <small>{{ payment.createdAt | date: 'mediumDate' }}</small>
-          <small>Provider: {{ payment.consultation?.assignedDoctor?.name || 'Unassigned' }}</small>
+          <small>{{ providerSingularLabel() | titlecase }}: {{ payment.consultation?.assignedDoctor?.name || 'Unassigned' }}</small>
         </div>
       </article>
     } @empty {
@@ -221,7 +221,7 @@
       </small>
     </article>
   } @empty {
-    <p class="empty-state">No audit activity yet. Approve or edit a provider to create entries.</p>
+    <p class="empty-state">No audit activity yet. Approve or edit a {{ providerSingularLabel() }} to create entries.</p>
   }
 </section>
 

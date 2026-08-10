@@ -22,7 +22,7 @@
             <div class="summary-item">
               <strong>{{ rx.methodOption?.label || 'No method' }}</strong>
               <p>{{ rx.diagnosis || 'No diagnosis' }} · {{ rx.status }}</p>
-              <small>Dr. {{ rx.doctor?.name || '—' }} · {{ rx.createdAt | date: 'mediumDate' }}</small>
+              <small>Provider: {{ rx.doctor?.name || '—' }} · {{ rx.createdAt | date: 'mediumDate' }}</small>
             </div>
           }
         } @else {
@@ -36,7 +36,7 @@
             <div class="summary-item">
               <strong>{{ analysis.methodOption?.label || 'No method' }}</strong>
               <p>{{ analysis.selectedRemedy?.name || 'No remedy selected' }} · {{ analysis.status }}</p>
-              <small>Dr. {{ analysis.doctor?.name || '—' }} · {{ analysis.createdAt | date: 'mediumDate' }}</small>
+              <small>Provider: {{ analysis.doctor?.name || '—' }} · {{ analysis.createdAt | date: 'mediumDate' }}</small>
 
               @if (analysis.caseSheetRows.length || analysis.approachRows.length) {
                 <div class="summary-clinical-detail">

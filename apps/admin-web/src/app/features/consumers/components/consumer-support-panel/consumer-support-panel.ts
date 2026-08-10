@@ -1,18 +1,30 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output, inject } from '@angular/core';
 import { FormField } from '@angular/forms/signals';
 import { DetailRowsComponent } from '@hopehub/platform-ui';
 import type { DetailRow } from '@hopehub/platform-ui';
-import { SUPPORT_NOTE_CATEGORIES, SUPPORT_NOTE_CATEGORY_STYLES, type SupportNoteCategory } from '../../constants/support-note.constants';
+import { AdminWorkspaceService } from '../../../../core/services/admin-workspace.service';
+import {
+  SUPPORT_NOTE_CATEGORIES,
+  SUPPORT_NOTE_CATEGORY_STYLES,
+  type SupportNoteCategory,
+} from '../../constants/support-note.constants';
 import type { ConsumerDetail, SupportContext, SupportNote } from '../../models/consumers.models';
 
 @Component({
   selector: 'app-consumer-support-panel',
   imports: [CommonModule, FormField, DetailRowsComponent],
   templateUrl: './consumer-support-panel.html',
-  styleUrl: './consumer-support-panel.scss'
+  styleUrl: './consumer-support-panel.scss',
 })
 export class ConsumerSupportPanelComponent {
+  private readonly workspace = inject(AdminWorkspaceService);
+
+  readonly workspaceKey = this.workspace.selectedWorkspace;
+  readonly providerTitleLabel = this.workspace.providerTitleLabel;
+  readonly sessionTitleLabel = this.workspace.sessionTitleLabel;
+  readonly sessionSingularLabel = this.workspace.sessionSingularLabel;
+  readonly sessionPluralLabel = this.workspace.sessionPluralLabel;
   @Input({ required: true }) noteForm!: any;
   @Input() supportLoading = false;
   @Input() supportError = '';
@@ -29,6 +41,10 @@ export class ConsumerSupportPanelComponent {
 
   readonly supportCategories = SUPPORT_NOTE_CATEGORIES;
   private readonly categoryStyles = SUPPORT_NOTE_CATEGORY_STYLES;
+
+  supportFocusLabel(): string {
+    return this.workspaceKey() === 'hope-hub' ? 'Support focus' : 'Disease';
+  }
 
   categoryStyle(category: SupportNoteCategory) {
     return this.categoryStyles[category] ?? this.categoryStyles.GENERAL;

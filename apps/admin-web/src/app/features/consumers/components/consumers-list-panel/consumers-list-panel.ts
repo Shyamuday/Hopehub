@@ -1,15 +1,22 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output, inject } from '@angular/core';
 import { FormField } from '@angular/forms/signals';
+import { AdminWorkspaceService } from '../../../../core/services/admin-workspace.service';
 import type { Consumer } from '../../models/consumers.models';
 
 @Component({
   selector: 'app-consumers-list-panel',
   imports: [CommonModule, FormField],
   templateUrl: './consumers-list-panel.html',
-  styleUrl: './consumers-list-panel.scss'
+  styleUrl: './consumers-list-panel.scss',
 })
 export class ConsumersListPanelComponent {
+  private readonly workspace = inject(AdminWorkspaceService);
+
+  readonly consumerSingularLabel = this.workspace.consumerSingularLabel;
+  readonly consumerPluralTitleLabel = this.workspace.consumerPluralTitleLabel;
+  readonly consumerTitleLabel = this.workspace.consumerTitleLabel;
+  readonly sessionPluralLabel = this.workspace.sessionPluralLabel;
   @Input({ required: true }) registerForm!: any;
   @Input({ required: true }) patientSearchForm!: any;
   @Input({ required: true }) listFilterForm!: any;
@@ -20,7 +27,12 @@ export class ConsumersListPanelComponent {
   @Input() registerMessage = '';
   @Input() stores: Array<{ id: string; name: string; code: string }> = [];
   @Input() patientSearchLoading = false;
-  @Input() patientSearchResults: Array<{ id: string; name: string; patientCode?: string; mobile?: string }> = [];
+  @Input() patientSearchResults: Array<{
+    id: string;
+    name: string;
+    patientCode?: string;
+    mobile?: string;
+  }> = [];
   @Input() listLoading = false;
   @Input() listError = '';
   @Input() consumers: Consumer[] = [];

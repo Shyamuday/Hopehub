@@ -2,7 +2,7 @@
   <div class="earn-hdr">
     <div>
       <h2>My Earnings</h2>
-      <p>Salary, consultation fee, medicine sales, and payment status</p>
+      <p>Salary, {{ language().sessionLower }} fee, applicable sales, and payment status</p>
     </div>
     <input type="month" [formField]="monthForm.selectedMonth" (change)="load()" />
   </div>
@@ -19,7 +19,7 @@
         <div class="sub">Gross ₹{{ formatPaise(payslip()?.salary?.grossPaise ?? 0) }} · Leave {{ payslip()?.salary?.leaveDays ?? 0 }} days</div>
       </div>
       <div class="card">
-        <div class="lbl">Consultation Fee Share ({{ payslip()?.consultation?.doctorSharePercent ?? 60 }}%)</div>
+        <div class="lbl">{{ language().sessionTitle }} Fee Share ({{ payslip()?.consultation?.doctorSharePercent ?? 60 }}%)</div>
         <div class="val">₹{{ formatPaise(payslip()?.consultation?.consultationEarningsInPaise ?? 0) }}</div>
         <div class="sub">{{ payslip()?.consultation?.paidConsultations ?? 0 }} paid · Fee gross ₹{{ formatPaise(payslip()?.consultation?.consultationFeeGrossInPaise ?? 0) }}</div>
       </div>
@@ -45,7 +45,7 @@
         <div>
           <span>Care-team sessions</span>
           <strong>₹{{ formatPaise(providerSummary().total) }}</strong>
-          <small>Total provider share</small>
+          <small>Total {{ language().providerLower }} share</small>
         </div>
         <div>
           <span>Pending</span>
@@ -107,7 +107,7 @@
       <div class="panel">
         <h3>Income Breakdown</h3>
         <p class="sub">
-          Paid, pending, failed consultation payments and medicine sales linked to your prescriptions.
+          Paid, pending, failed {{ language().sessionPluralLower }} payments and applicable sales linked to your work.
         </p>
         <div class="table-scroll desktop-only">
         <table>
@@ -116,8 +116,8 @@
               <th>Date</th>
               <th>Type</th>
               <th>Status</th>
-              <th>Patient / Item</th>
-              <th class="num">Consult Fee</th>
+              <th>{{ language().userTitle }} / Item</th>
+              <th class="num">{{ language().sessionTitle }} Fee</th>
               <th class="num">Medicine</th>
               <th class="num">Your Share</th>
               <th>Payout</th>
@@ -127,7 +127,7 @@
             @for (row of consultationSummary()!.lineItems; track row.id) {
               <tr [class.pending-row]="row.status === 'CREATED'" [class.failed-row]="row.status === 'FAILED'">
                 <td>{{ row.createdAt | date: 'dd MMM yyyy' }}</td>
-                <td>{{ row.kind === 'MEDICINE_SALE' ? 'Medicine' : 'Consultation' }}</td>
+                <td>{{ row.kind === 'MEDICINE_SALE' ? 'Medicine' : language().sessionTitle }}</td>
                 <td>
                   @if (row.status === 'PAID' || row.status === 'RECORDED') { Paid }
                   @else if (row.status === 'CREATED') { Pending }
@@ -158,7 +158,7 @@
                 <strong>₹{{ formatPaise(row.doctorEarningsInPaise) }}</strong>
               </div>
               <div class="card-row">
-                <span>{{ row.kind === 'MEDICINE_SALE' ? 'Medicine' : 'Consultation' }}</span>
+                <span>{{ row.kind === 'MEDICINE_SALE' ? 'Medicine' : language().sessionTitle }}</span>
                 <span>
                   @if (row.status === 'PAID' || row.status === 'RECORDED') { Paid }
                   @else if (row.status === 'CREATED') { Pending }
@@ -166,7 +166,7 @@
                 </span>
               </div>
               <div class="card-row"><span>{{ row.createdAt | date: 'dd MMM yyyy' }}</span></div>
-              <div class="card-row"><span>Consult</span><span>₹{{ formatPaise(row.consultationFeeInPaise) }}</span></div>
+              <div class="card-row"><span>{{ language().sessionTitle }}</span><span>₹{{ formatPaise(row.consultationFeeInPaise) }}</span></div>
               <div class="card-row"><span>Medicine</span><span>₹{{ formatPaise(row.medicineFeeInPaise) }}</span></div>
               <div class="card-row"><span>Payout</span><span>{{ row.payoutStatus || 'Not in ledger' }}</span></div>
               @if (row.payoutReference) {
@@ -182,14 +182,14 @@
       <div class="panel">
         <h3>Care-team payout ledger</h3>
         <p class="sub">
-          Shows how each user booking converts into your earning, platform fee, and payout status.
+          Shows how each {{ language().userLower }} booking converts into your earning, platform fee, and payout status.
         </p>
         <div class="table-scroll desktop-only">
           <table>
             <thead>
               <tr>
                 <th>Date</th>
-                <th>Patient / Service</th>
+                <th>{{ language().userTitle }} / Service</th>
                 <th>Pricing</th>
               <th class="num">User Paid</th>
               <th class="num">Refunded</th>

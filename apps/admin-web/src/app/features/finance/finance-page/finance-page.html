@@ -82,9 +82,9 @@
         <p class="loading-text">Loading period report…</p>
       } @else if (periodReport(); as report) {
         <div class="cards">
-          <div class="card"><div class="val">₹{{ paiseToK(report.totals.consultationRevenueInPaise) }}</div><div class="lbl">Consult Revenue</div></div>
+          <div class="card"><div class="val">₹{{ paiseToK(report.totals.consultationRevenueInPaise) }}</div><div class="lbl">{{ sessionTitleLabel() }} Revenue</div></div>
           <div class="card"><div class="val">₹{{ paiseToK(report.totals.medicineRevenueInPaise) }}</div><div class="lbl">Medicine Revenue</div></div>
-          <div class="card"><div class="val">₹{{ paiseToK(report.totals.pendingConsultationRevenueInPaise) }}</div><div class="lbl">Pending Consult</div></div>
+          <div class="card"><div class="val">₹{{ paiseToK(report.totals.pendingConsultationRevenueInPaise) }}</div><div class="lbl">Pending {{ sessionTitleLabel() }}</div></div>
           <div class="card"><div class="val">₹{{ paiseToK(report.totals.payrollCostInPaise) }}</div><div class="lbl">Payroll</div></div>
           <div class="card"><div class="val">₹{{ paiseToK(report.totals.storeExpensesInPaise + report.totals.clinicExpensesInPaise) }}</div><div class="lbl">Expenses</div></div>
           <div class="card net"><div class="val">₹{{ paiseToK(report.totals.netEstimateInPaise) }}</div><div class="lbl">Net Estimate</div></div>
@@ -97,7 +97,7 @@
               <thead>
                 <tr>
                   <th>Period</th>
-                  <th class="num">Consult</th>
+                  <th class="num">{{ sessionTitleLabel() }}</th>
                   <th class="num">Medicine</th>
                   <th class="num">Pending</th>
                   <th class="num">Payroll</th>
@@ -127,7 +127,7 @@
                   <strong>{{ b.label }}</strong>
                   <span [class.positive]="b.netEstimateInPaise >= 0" [class.negative]="b.netEstimateInPaise < 0">{{ formatPaise(b.netEstimateInPaise) }}</span>
                 </div>
-                <div class="card-row"><span>Consult</span><span>{{ formatPaise(b.consultationRevenueInPaise) }}</span></div>
+                <div class="card-row"><span>{{ sessionTitleLabel() }}</span><span>{{ formatPaise(b.consultationRevenueInPaise) }}</span></div>
                 <div class="card-row"><span>Medicine</span><span>{{ formatPaise(b.medicineRevenueInPaise) }}</span></div>
                 <div class="card-row"><span>Pending</span><span>{{ formatPaise(b.pendingConsultationRevenueInPaise) }}</span></div>
                 <div class="card-row"><span>Payroll</span><span>{{ formatPaise(b.payrollCostInPaise) }}</span></div>
@@ -145,7 +145,7 @@
                 <thead>
                   <tr>
                     <th>Location</th>
-                    <th class="num">Consult</th>
+                    <th class="num">{{ sessionTitleLabel() }}</th>
                     <th class="num">Medicine</th>
                     <th class="num">Payroll</th>
                     <th class="num">Expenses</th>
@@ -177,7 +177,7 @@
                     <span [class.positive]="row.netEstimateInPaise >= 0" [class.negative]="row.netEstimateInPaise < 0">{{ formatPaise(row.netEstimateInPaise) }}</span>
                   </div>
                   <div class="card-row"><span>{{ row.storeCode }}</span></div>
-                  <div class="card-row"><span>Consult</span><span>{{ formatPaise(row.consultationRevenueInPaise) }}</span></div>
+                  <div class="card-row"><span>{{ sessionTitleLabel() }}</span><span>{{ formatPaise(row.consultationRevenueInPaise) }}</span></div>
                   <div class="card-row"><span>Medicine</span><span>{{ formatPaise(row.medicineRevenueInPaise) }}</span></div>
                   <div class="card-row"><span>Payroll</span><span>{{ formatPaise(row.payrollCostInPaise) }}</span></div>
                   <div class="card-row"><span>Expenses</span><span>{{ formatPaise(row.storeExpensesInPaise + row.clinicExpensesInPaise) }}</span></div>
@@ -190,7 +190,7 @@
     }
     @case ('overview') {
       <div class="cards">
-        <div class="card"><div class="val">₹{{ paiseToK(summary()?.consultationRevenueInPaise ?? 0) }}</div><div class="lbl">Consultation Revenue</div></div>
+        <div class="card"><div class="val">₹{{ paiseToK(summary()?.consultationRevenueInPaise ?? 0) }}</div><div class="lbl">{{ sessionTitleLabel() }} Revenue</div></div>
         <div class="card"><div class="val">₹{{ paiseToK(summary()?.medicineRevenueInPaise ?? 0) }}</div><div class="lbl">Medicine Revenue</div></div>
         <div class="card"><div class="val">₹{{ paiseToK(summary()?.payrollCostInPaise ?? 0) }}</div><div class="lbl">Payroll Cost</div></div>
         <div class="card"><div class="val">₹{{ paiseToK(summary()?.clinicExpensesInPaise ?? 0) }}</div><div class="lbl">Clinic Expenses</div></div>
@@ -201,7 +201,7 @@
         <h3>Revenue Trend (6 months)</h3>
         <div class="table-wrap desktop-only">
           <table>
-            <thead><tr><th>Month</th><th class="num">Revenue (₹)</th><th class="num">Consultations</th></tr></thead>
+            <thead><tr><th>Month</th><th class="num">Revenue (₹)</th><th class="num">{{ sessionPluralTitleLabel() }}</th></tr></thead>
             <tbody>
               @for (row of trend(); track row.month) {
                 <tr><td>{{ row.month }}</td><td class="num">{{ formatPaise(row.revenueInPaise) }}</td><td class="num">{{ row.paidConsultations }}</td></tr>
@@ -213,7 +213,7 @@
           @for (row of trend(); track row.month) {
             <article class="mobile-row-card">
               <div class="card-head"><strong>{{ row.month }}</strong><span>{{ formatPaise(row.revenueInPaise) }}</span></div>
-              <div class="card-row"><span>Consultations</span><span>{{ row.paidConsultations }}</span></div>
+              <div class="card-row"><span>{{ sessionPluralTitleLabel() }}</span><span>{{ row.paidConsultations }}</span></div>
             </article>
           }
         </div>
@@ -222,7 +222,7 @@
     @case ('outstanding') {
       <div class="panel">
         <h3>Outstanding payments</h3>
-        <p class="branch-note">Consultations with pending or failed payment (latest 200).</p>
+        <p class="branch-note">{{ sessionPluralTitleLabel() }} with pending or failed payment (latest 200).</p>
         @if (!outstanding().length) {
           <p class="empty-state">No outstanding payments.</p>
         } @else {
@@ -230,9 +230,9 @@
             <table>
               <thead>
                 <tr>
-                  <th>Patient</th>
-                  <th>Disease</th>
-                  <th>Provider</th>
+                  <th>{{ consumerTitleLabel() }}</th>
+                  <th>{{ workspaceKey() === 'hope-hub' ? 'Support focus' : 'Disease' }}</th>
+                  <th>{{ providerTitleLabel() }}</th>
                   <th>Status</th>
                   <th class="num">Amount</th>
                   <th>Created</th>
@@ -260,8 +260,8 @@
                   <span>{{ payment.status }}</span>
                 </div>
                 <div class="card-row"><span>Amount</span><strong>{{ formatPaise(payment.amountInPaise) }}</strong></div>
-                <div class="card-row"><span>Disease</span><span>{{ payment.consultation?.disease?.name || '—' }}</span></div>
-                <div class="card-row"><span>Provider</span><span>{{ payment.consultation?.assignedDoctor?.name || 'Unassigned' }}</span></div>
+                <div class="card-row"><span>{{ workspaceKey() === 'hope-hub' ? 'Support focus' : 'Disease' }}</span><span>{{ payment.consultation?.disease?.name || '—' }}</span></div>
+                <div class="card-row"><span>{{ providerTitleLabel() }}</span><span>{{ payment.consultation?.assignedDoctor?.name || 'Unassigned' }}</span></div>
                 <div class="card-row"><span>Created</span><span>{{ payment.createdAt | date: 'mediumDate' }}</span></div>
               </article>
             }
@@ -281,7 +281,7 @@
               <thead>
                 <tr>
                   <th>Branch</th>
-                  <th class="num">Consultation (₹)</th>
+                  <th class="num">{{ sessionTitleLabel() }} (₹)</th>
                   <th class="num">Medicine (₹)</th>
                   <th class="num">Payroll (₹)</th>
                   <th class="num">Store Exp. (₹)</th>
@@ -328,7 +328,7 @@
                   <span [class.positive]="row.netEstimateInPaise >= 0" [class.negative]="row.netEstimateInPaise < 0">{{ formatPaise(row.netEstimateInPaise) }}</span>
                 </div>
                 <div class="card-row"><span>{{ row.storeCode }}</span></div>
-                <div class="card-row"><span>Consultation</span><span>{{ formatPaise(row.consultationRevenueInPaise) }}</span></div>
+                <div class="card-row"><span>{{ sessionTitleLabel() }}</span><span>{{ formatPaise(row.consultationRevenueInPaise) }}</span></div>
                 <div class="card-row"><span>Medicine</span><span>{{ formatPaise(row.medicineRevenueInPaise) }}</span></div>
                 <div class="card-row"><span>Payroll</span><span>{{ formatPaise(row.payrollCostInPaise) }}</span></div>
                 <div class="card-row"><span>Store Exp.</span><span>{{ formatPaise(row.storeExpensesInPaise) }}</span></div>
@@ -342,10 +342,10 @@
     @case ('consultation') {
       <div class="grid-2">
         <div class="panel">
-          <h3>By Provider</h3>
+          <h3>By {{ providerTitleLabel() }}</h3>
           <div class="table-wrap desktop-only">
             <table>
-              <thead><tr><th>Provider</th><th>Specialty</th><th class="num">Revenue (₹)</th></tr></thead>
+              <thead><tr><th>{{ providerTitleLabel() }}</th><th>{{ workspaceKey() === 'hope-hub' ? 'Support focus' : 'Specialty' }}</th><th class="num">Revenue (₹)</th></tr></thead>
               <tbody>
                 @for (row of byDoctor(); track row.doctorId) {
                   <tr><td>{{ row.doctorName }}</td><td>{{ row.specialty }}</td><td class="num">{{ formatPaise(row.revenueInPaise) }}</td></tr>
@@ -357,16 +357,16 @@
             @for (row of byDoctor(); track row.doctorId) {
               <article class="mobile-row-card">
                 <div class="card-head"><strong>{{ row.doctorName }}</strong><span>{{ formatPaise(row.revenueInPaise) }}</span></div>
-                <div class="card-row"><span>Specialty</span><span>{{ row.specialty }}</span></div>
+                <div class="card-row"><span>{{ workspaceKey() === 'hope-hub' ? 'Support focus' : 'Specialty' }}</span><span>{{ row.specialty }}</span></div>
               </article>
             }
           </div>
         </div>
         <div class="panel">
-          <h3>By Disease</h3>
+          <h3>By {{ workspaceKey() === 'hope-hub' ? 'Support focus' : 'Disease' }}</h3>
           <div class="table-wrap desktop-only">
             <table>
-              <thead><tr><th>Disease</th><th class="num">Revenue (₹)</th><th class="num">Count</th></tr></thead>
+              <thead><tr><th>{{ workspaceKey() === 'hope-hub' ? 'Support focus' : 'Disease' }}</th><th class="num">Revenue (₹)</th><th class="num">Count</th></tr></thead>
               <tbody>
                 @for (row of byDisease(); track row.diseaseId) {
                   <tr><td>{{ row.diseaseName }}</td><td class="num">{{ formatPaise(row.revenueInPaise) }}</td><td class="num">{{ row.count }}</td></tr>
@@ -430,7 +430,7 @@
     }
     @case ('provider-payouts') {
       <div class="cards">
-        <div class="card"><div class="val">₹{{ paiseToK(providerPayoutSummary()?.providerEarningInPaise ?? 0) }}</div><div class="lbl">Provider Earnings</div></div>
+        <div class="card"><div class="val">₹{{ paiseToK(providerPayoutSummary()?.providerEarningInPaise ?? 0) }}</div><div class="lbl">{{ providerTitleLabel() }} Earnings</div></div>
         <div class="card"><div class="val">₹{{ paiseToK(providerPayoutSummary()?.platformFeeInPaise ?? 0) }}</div><div class="lbl">Platform Fee</div></div>
         <div class="card warn"><div class="val">₹{{ paiseToK(providerPayoutSummary()?.pendingInPaise ?? 0) }}</div><div class="lbl">Pending Payout</div></div>
         <div class="card"><div class="val">₹{{ paiseToK(providerPayoutSummary()?.holdInPaise ?? 0) }}</div><div class="lbl">On Hold</div></div>
@@ -440,22 +440,22 @@
         <button class="btn-primary" type="button" (click)="backfillProviderPayouts()">Backfill old bookings</button>
       </div>
       <div class="panel">
-        <h3>Provider payout ledger</h3>
-        <p class="branch-note">Shows user paid amount, platform fee, provider earning, and payout status for care/provider sessions.</p>
+        <h3>{{ providerTitleLabel() }} payout ledger</h3>
+        <p class="branch-note">Shows {{ consumerSingularLabel() }} paid amount, platform fee, {{ providerSingularLabel() }} earning, and payout status for care/{{ providerSingularLabel() }} {{ sessionPluralLabel() }}.</p>
         @if (!providerPayouts().length) {
-          <p class="empty-state">No provider payout rows for this month yet. Use backfill after old assignments.</p>
+          <p class="empty-state">No {{ providerSingularLabel() }} payout rows for this month yet. Use backfill after old assignments.</p>
         } @else {
           <div class="table-wrap desktop-only">
             <table>
               <thead>
                 <tr>
                   <th>Date</th>
-                  <th>Provider</th>
-                  <th>Patient / Service</th>
+                  <th>{{ providerTitleLabel() }}</th>
+                  <th>{{ consumerTitleLabel() }} / Service</th>
                   <th>Pricing</th>
                   <th>Status</th>
                   <th class="num">User Paid</th>
-                  <th class="num">Provider</th>
+                  <th class="num">{{ providerTitleLabel() }}</th>
                   <th class="num">Platform</th>
                   <th>Payout</th>
                   <th></th>
@@ -468,7 +468,7 @@
                     <td>{{ row.doctor?.name || '—' }}</td>
                     <td>
                       <div>{{ row.patient?.name || '—' }}</div>
-                      <div class="branch-code">{{ row.serviceTitle || row.consultation?.disease?.name || 'Session' }}</div>
+                      <div class="branch-code">{{ row.serviceTitle || row.consultation?.disease?.name || sessionTitleLabel() }}</div>
                     </td>
                     <td>
                       {{ providerPricingText(row) || 'Standard' }}
@@ -506,15 +506,15 @@
           <div class="mobile-row-cards">
             @for (row of providerPayouts(); track row.id) {
               <article class="mobile-row-card">
-                <div class="card-head"><strong>{{ row.doctor?.name || 'Provider' }}</strong><span>{{ row.payoutStatus }}</span></div>
-                <div class="card-row"><span>Patient</span><span>{{ row.patient?.name || '—' }}</span></div>
-                <div class="card-row"><span>Service</span><span>{{ row.serviceTitle || row.consultation?.disease?.name || 'Session' }}</span></div>
+                <div class="card-head"><strong>{{ row.doctor?.name || providerTitleLabel() }}</strong><span>{{ row.payoutStatus }}</span></div>
+                <div class="card-row"><span>{{ consumerTitleLabel() }}</span><span>{{ row.patient?.name || '—' }}</span></div>
+                <div class="card-row"><span>Service</span><span>{{ row.serviceTitle || row.consultation?.disease?.name || sessionTitleLabel() }}</span></div>
                 <div class="card-row"><span>Pricing</span><span>{{ providerPricingText(row) || 'Standard' }}</span></div>
                 @if (row.billableMinutes) {
                   <div class="card-row"><span>Billable</span><span>{{ row.billableMinutes }} min</span></div>
                 }
                 <div class="card-row"><span>User paid</span><span>{{ formatPaise(row.grossAmountInPaise) }}</span></div>
-                <div class="card-row"><span>Provider</span><strong>{{ formatPaise(row.providerEarningInPaise) }}</strong></div>
+                <div class="card-row"><span>{{ providerTitleLabel() }}</span><strong>{{ formatPaise(row.providerEarningInPaise) }}</strong></div>
                 <div class="card-row"><span>Platform</span><span>{{ formatPaise(row.platformFeeInPaise) }}</span></div>
                 <div class="card-actions">
                   @if (row.payoutStatus !== 'PAID') {

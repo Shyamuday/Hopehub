@@ -43,7 +43,7 @@
                   <div class="lc-name">{{ empName(l) }}</div>
                   <div class="lc-meta">
                     <span class="emp-type" [class.doc]="l.employeeType === 'DOCTOR'">
-                      {{ l.employeeType === 'DOCTOR' ? '🩺' : '🏪' }} {{ l.employeeType === 'DOCTOR' ? 'Doctor' : (l.storeStaff?.store?.name ?? 'Staff') }}
+                      {{ l.employeeType === 'DOCTOR' ? '🩺' : '🏪' }} {{ l.employeeType === 'DOCTOR' ? 'Provider' : (l.storeStaff?.store?.name ?? 'Staff') }}
                     </span>
                     <span class="leave-type" [style.color]="leaveColor(l.type)">{{ leaveIcon(l.type) }} {{ l.type }}</span>
                   </div>
@@ -89,7 +89,7 @@
             <div class="fg">
               <label>Employee Type</label>
               <div class="toggle-row">
-                <button class="tog" [class.active]="addModel().employeeType === employeeTypes.DOCTOR" (click)="setAddEmployeeType(employeeTypes.DOCTOR)">🩺 Doctor</button>
+                <button class="tog" [class.active]="addModel().employeeType === employeeTypes.DOCTOR" (click)="setAddEmployeeType(employeeTypes.DOCTOR)">🩺 Provider</button>
                 <button class="tog" [class.active]="addModel().employeeType === employeeTypes.STORE_STAFF" (click)="setAddEmployeeType(employeeTypes.STORE_STAFF)">🏪 Store Staff</button>
               </div>
             </div>
