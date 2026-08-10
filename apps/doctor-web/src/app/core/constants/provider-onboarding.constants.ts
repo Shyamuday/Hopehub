@@ -13,8 +13,10 @@ export type ProviderOnboardingStep = {
   description: string;
   actionLabel: string;
   route: string;
+  queryParams?: Record<string, string>;
   complete: boolean;
   required: boolean;
+  missing?: string[];
 };
 
 export type ProviderOnboardingStatus = {
@@ -79,6 +81,26 @@ export function buildProviderOnboardingStatus(
   const providerLabel = hopeHub
     ? careTeamTypeLabel(primaryCareTeamType(profile)) || 'Hope Hub provider'
     : profile?.doctorTypeLabel || 'Professional provider';
+  const identityMissing = [
+    !profileImageUrl ? 'profile photo' : '',
+    !hasText(profile?.specialty) && !hopeHub ? 'specialty/focus' : '',
+    clinicalHopeHub && !hasText(mental?.qualifiedFrom) ? 'qualified/trained from' : '',
+    hopeHub && !hasList(mental?.languages) ? 'languages' : '',
+  ].filter(Boolean);
+  const bioMissing = [
+    !hasText(profile?.bio, 80) ? 'bio of at least 80 characters' : '',
+    hopeHub && !hasList(mental?.concernsHandled) ? 'concerns handled' : '',
+    hopeHub && !hasList(mental?.sessionTypes) ? 'session types' : '',
+    !hopeHub && !hasList(profile?.focusAreas) ? 'focus areas' : '',
+  ].filter(Boolean);
+  const safetyMissing = [
+    listener && !mental?.listenerSafetyAcknowledgedAt ? 'listener safety acknowledgement' : '',
+    !listener && hopeHub && !hasText(mental?.safetyEscalationNote, 20)
+      ? 'safety escalation note'
+      : '',
+  ].filter(Boolean);
+  const servicesMissing =
+    hopeHub && activeServiceCount(profile) <= 0 ? ['one active service/price'] : [];
 
   const steps: ProviderOnboardingStep[] = [
     {
@@ -89,6 +111,7 @@ export function buildProviderOnboardingStatus(
       route: `/${ROUTE_PATHS.DASHBOARD}`,
       complete: Boolean(profile),
       required: true,
+      missing: profile ? [] : ['admin approval'],
     },
     {
       id: 'identity',
@@ -96,12 +119,14 @@ export function buildProviderOnboardingStatus(
       description: 'Add your name, mobile number, profile photo, and public role.',
       actionLabel: 'Open profile',
       route: `/${ROUTE_PATHS.PROFILE}`,
+      queryParams: { step: 'identity' },
       complete:
         Boolean(profileImageUrl) &&
         hasText(profile?.specialty) &&
         (!clinicalHopeHub || hasText(mental?.qualifiedFrom)) &&
         (!hopeHub || hasList(mental?.languages)),
       required: true,
+      missing: identityMissing,
     },
     {
       id: 'bio',
@@ -111,12 +136,14 @@ export function buildProviderOnboardingStatus(
         : 'Add experience, focus areas, bio, and public consultation details.',
       actionLabel: 'Complete profile',
       route: `/${ROUTE_PATHS.PROFILE}`,
+      queryParams: { step: 'public' },
       complete:
         hasText(profile?.bio, 80) &&
         (hopeHub
           ? hasList(mental?.concernsHandled) && hasList(mental?.sessionTypes)
           : hasList(profile?.focusAreas)),
       required: true,
+      missing: bioMissing,
     },
     {
       id: 'safety',
@@ -126,12 +153,14 @@ export function buildProviderOnboardingStatus(
         : 'Add safety notes and define your support scope clearly.',
       actionLabel: 'Review safety',
       route: `/${ROUTE_PATHS.PROFILE}`,
+      queryParams: { step: 'safety' },
       complete: listener
         ? Boolean(mental?.listenerSafetyAcknowledgedAt)
         : hopeHub
           ? hasText(mental?.safetyEscalationNote, 20)
           : true,
       required: hopeHub,
+      missing: safetyMissing,
     },
     {
       id: 'services',
@@ -139,8 +168,10 @@ export function buildProviderOnboardingStatus(
       description: 'Add at least one active service users can book or request.',
       actionLabel: 'Add services',
       route: `/${ROUTE_PATHS.PROFILE}`,
+      queryParams: { step: 'services' },
       complete: hopeHub ? activeServiceCount(profile) > 0 : true,
       required: hopeHub,
+      missing: servicesMissing,
     },
     {
       id: 'availability',
@@ -150,6 +181,7 @@ export function buildProviderOnboardingStatus(
       route: `/${ROUTE_PATHS.SLOTS}`,
       complete: Boolean(profile?.isAvailable),
       required: true,
+      missing: profile?.isAvailable ? [] : ['availability enabled'],
     },
   ];
 

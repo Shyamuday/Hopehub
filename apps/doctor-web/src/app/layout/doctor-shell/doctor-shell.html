@@ -44,6 +44,12 @@
               <span class="specialty">{{ specialtyLabel }}</span>
             }
           </div>
+          @if (!onboardingComplete()) {
+            <a class="setup-mode-card" [routerLink]="['/', 'dashboard']" [queryParams]="{ onboarding: 'required' }">
+              <strong>Setup mode</strong>
+              <span>{{ onboardingPercent() }}% complete · finish profile to unlock tools</span>
+            </a>
+          }
         }
       </div>
 
@@ -53,13 +59,17 @@
             <button
               type="button"
               class="nav-action"
+              [class.nav-locked]="navItemLocked(item)"
               (click)="handleResumeCase()"
             >
               <span class="nav-icon" aria-hidden="true">{{ item.icon }}</span>
               <span class="nav-label">{{ resumeCaseLabel() }}</span>
+              @if (navItemLocked(item)) {
+                <span class="lock-label">Setup</span>
+              }
             </button>
           } @else if (isGroup(item)) {
-            <div class="nav-group" [class.is-expanded]="isGroupExpanded(item.id)" [class.is-active]="isGroupActive(item)">
+            <div class="nav-group" [class.is-expanded]="isGroupExpanded(item.id)" [class.is-active]="isGroupActive(item)" [class.nav-locked]="navItemLocked(item)">
               <button
                 type="button"
                 class="nav-group-toggle"
@@ -76,10 +86,14 @@
                     <a
                       href="#"
                       [class.active]="isChildLinkActive(child)"
+                      [class.nav-locked]="navChildLocked(child)"
                       (click)="onNavChildClick(child, $event)"
                     >
                       <span class="nav-sub-bullet" aria-hidden="true">•</span>
                       <span class="nav-label">{{ child.label }}</span>
+                      @if (navChildLocked(child)) {
+                        <span class="lock-label">Setup</span>
+                      }
                     </a>
                   }
                 </div>
@@ -90,9 +104,14 @@
               [routerLink]="item.path"
               [queryParams]="item.id === 'worklist' ? { view: null } : (item.queryParams || null)"
               [class.active]="isTopLinkActive(item)"
+              [class.nav-locked]="navItemLocked(item)"
+              (click)="onNavItemClick(item, $event)"
             >
               <span class="nav-icon" aria-hidden="true">{{ item.icon }}</span>
               <span class="nav-label">{{ item.label }}</span>
+              @if (navItemLocked(item)) {
+                <span class="lock-label">Setup</span>
+              }
             </a>
             @if (visibleChildren(item).length) {
               <div class="nav-subitems nav-subitems--attached">
@@ -100,10 +119,14 @@
                   <a
                     href="#"
                     [class.active]="isChildLinkActive(child)"
+                    [class.nav-locked]="navChildLocked(child)"
                     (click)="onNavChildClick(child, $event)"
                   >
                     <span class="nav-sub-bullet" aria-hidden="true">•</span>
                     <span class="nav-label">{{ child.label }}</span>
+                    @if (navChildLocked(child)) {
+                      <span class="lock-label">Setup</span>
+                    }
                   </a>
                 }
               </div>
@@ -149,6 +172,12 @@
           @if (specialtyLabel) {
             <span class="specialty">{{ specialtyLabel }}</span>
           }
+          @if (!onboardingComplete()) {
+            <a class="setup-mode-card drawer-setup-card" [routerLink]="['/', 'dashboard']" [queryParams]="{ onboarding: 'required' }" (click)="closeMenu()">
+              <strong>Setup mode</strong>
+              <span>{{ onboardingPercent() }}% complete · finish setup first</span>
+            </a>
+          }
         </div>
         <button type="button" class="drawer-close" aria-label="Close menu" (click)="closeMenu()">×</button>
       </div>
@@ -158,9 +187,12 @@
             <button type="button" class="nav-action" (click)="handleResumeCase()">
               <span class="nav-icon" aria-hidden="true">{{ item.icon }}</span>
               <span class="nav-label">{{ resumeCaseLabel() }}</span>
+              @if (navItemLocked(item)) {
+                <span class="lock-label">Setup</span>
+              }
             </button>
           } @else if (isGroup(item)) {
-            <div class="nav-group" [class.is-expanded]="isGroupExpanded(item.id)" [class.is-active]="isGroupActive(item)">
+            <div class="nav-group" [class.is-expanded]="isGroupExpanded(item.id)" [class.is-active]="isGroupActive(item)" [class.nav-locked]="navItemLocked(item)">
               <button
                 type="button"
                 class="nav-group-toggle"
@@ -177,10 +209,14 @@
                     <a
                       href="#"
                       [class.active]="isChildLinkActive(child)"
+                      [class.nav-locked]="navChildLocked(child)"
                       (click)="onNavChildClick(child, $event)"
                     >
                       <span class="nav-sub-bullet" aria-hidden="true">•</span>
                       <span class="nav-label">{{ child.label }}</span>
+                      @if (navChildLocked(child)) {
+                        <span class="lock-label">Setup</span>
+                      }
                     </a>
                   }
                 </div>
@@ -191,10 +227,14 @@
               [routerLink]="item.path"
               [queryParams]="item.id === 'worklist' ? { view: null } : (item.queryParams || null)"
               [class.active]="isTopLinkActive(item)"
-              (click)="closeMenu()"
+              [class.nav-locked]="navItemLocked(item)"
+              (click)="onNavItemClick(item, $event)"
             >
               <span class="nav-icon" aria-hidden="true">{{ item.icon }}</span>
               <span class="nav-label">{{ item.label }}</span>
+              @if (navItemLocked(item)) {
+                <span class="lock-label">Setup</span>
+              }
             </a>
             @if (visibleChildren(item).length) {
               <div class="nav-subitems nav-subitems--attached">
@@ -202,10 +242,14 @@
                   <a
                     href="#"
                     [class.active]="isChildLinkActive(child)"
+                    [class.nav-locked]="navChildLocked(child)"
                     (click)="onNavChildClick(child, $event)"
                   >
                     <span class="nav-sub-bullet" aria-hidden="true">•</span>
                     <span class="nav-label">{{ child.label }}</span>
+                    @if (navChildLocked(child)) {
+                      <span class="lock-label">Setup</span>
+                    }
                   </a>
                 }
               </div>
@@ -234,6 +278,8 @@
         [routerLink]="item.path"
         [queryParams]="item.queryParams || null"
         [class.active]="navLinkActive(item.path, item.queryParams)"
+        [class.nav-locked]="!onboardingComplete() && !isSetupAllowedPath(item.path)"
+        (click)="!onboardingComplete() && !isSetupAllowedPath(item.path) ? onNavItemClick(item, $event) : null"
         class="bottom-nav-item"
       >
         <span class="bottom-nav-icon" aria-hidden="true">{{ item.icon }}</span>

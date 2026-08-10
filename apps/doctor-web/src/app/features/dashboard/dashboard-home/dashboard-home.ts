@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { Component, inject, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { buildDetailRows, DetailRowsComponent } from '@hopehub/platform-ui';
 import { environment } from '../../../../environments/environment';
@@ -52,14 +52,20 @@ export class DashboardHome {
   readonly canPrescribe = signal(true);
   readonly listenerProfile = signal<DoctorProfileSummary | null>(null);
   readonly listenerProfileImageUrl = signal<string | null>(null);
+  readonly providerProfile = signal<DoctorProfileSummary | null>(null);
   readonly language = signal(PH_PROVIDER_LANGUAGE);
   readonly onboarding = signal<ProviderOnboardingStatus>(buildProviderOnboardingStatus(null, null));
+  readonly onboardingRequiredNotice = signal(false);
 
   constructor(
     private readonly http: HttpClient,
     private readonly worklistApi: WorklistApiService,
     private readonly session: DoctorSessionService,
+    route: ActivatedRoute,
   ) {
+    this.onboardingRequiredNotice.set(
+      route.snapshot.queryParamMap.get('onboarding') === 'required',
+    );
     void this.loadRole();
     void this.loadSummary();
     void this.loadWorklistCounts();
@@ -70,6 +76,7 @@ export class DashboardHome {
       await this.session.load();
       const snapshot = this.session.snapshot();
       this.canPrescribe.set(this.session.capabilities().prescribe);
+      this.providerProfile.set(snapshot?.doctorProfile ?? null);
       this.language.set(
         snapshot?.doctorProfile?.doctorType === 'PSYCHOLOGIST'
           ? PH_PROVIDER_LANGUAGE
@@ -85,8 +92,69 @@ export class DashboardHome {
     } catch {
       this.canPrescribe.set(true);
       this.language.set(HOMEOPATHY_PROVIDER_LANGUAGE);
+      this.providerProfile.set(null);
       this.onboarding.set(buildProviderOnboardingStatus(null, null));
     }
+  }
+
+  launchActions() {
+    const canPrescribe = this.canPrescribe();
+    const sessionTitle = this.language().sessionTitle;
+    const profile = this.providerProfile();
+    const isHopeHub = profile?.doctorType === 'PSYCHOLOGIST';
+    const actions = [
+      {
+        label: canPrescribe ? 'Open worklist' : `Open ${sessionTitle.toLowerCase()} worklist`,
+        description: canPrescribe
+          ? 'See assigned cases, active consults, and follow-ups.'
+          : 'See assigned support sessions and follow-ups.',
+        route: this.worklistPath,
+        queryParams: { view: 'ASSIGNED' },
+        primary: true,
+      },
+      {
+        label: isHopeHub ? 'Go live / pause' : 'Manage live availability',
+        description: isHopeHub
+          ? 'Turn chat, voice, or video availability on when you are ready.'
+          : 'Control instant consultation availability.',
+        route: `/${ROUTE_PATHS.ONLINE_DOCTOR}`,
+        queryParams: null,
+        primary: false,
+      },
+      {
+        label: 'Set slots',
+        description: 'Keep bookable availability clean so users can choose a time.',
+        route: `/${ROUTE_PATHS.SLOTS}`,
+        queryParams: null,
+        primary: false,
+      },
+      {
+        label: 'View earnings',
+        description: 'Track paid sessions, pending payouts, and provider share.',
+        route: `/${ROUTE_PATHS.EARNINGS}`,
+        queryParams: null,
+        primary: false,
+      },
+      {
+        label: 'Polish profile',
+        description: 'Update bio, services, safety note, language, and public listing details.',
+        route: `/${ROUTE_PATHS.PROFILE}`,
+        queryParams: null,
+        primary: false,
+      },
+    ];
+
+    if (canPrescribe) {
+      actions.splice(1, 0, {
+        label: 'Case analysis studio',
+        description: 'Open the clinical workspace for prescriptions and analysis.',
+        route: `/${ROUTE_PATHS.CASE_ANALYSIS_STUDIO}`,
+        queryParams: null,
+        primary: false,
+      });
+    }
+
+    return actions;
   }
 
   async loadWorklistCounts() {

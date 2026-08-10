@@ -17,6 +17,11 @@
   </div>
 
   @if (!onboarding().complete) {
+    @if (onboardingRequiredNotice()) {
+      <p class="onboarding-redirect-note">
+        That tool is locked for now. Complete setup below first, then your full provider console will open.
+      </p>
+    }
     <p class="onboarding-lock-note">
       Finish required tasks first. Worklist, live calls, earnings, and care tools unlock after setup.
     </p>
@@ -30,15 +35,45 @@
           <div>
             <h3>{{ step.title }}</h3>
             <p>{{ step.description }}</p>
+            @if (!step.complete && step.missing?.length) {
+              <small class="missing-fields">Missing: {{ step.missing?.join(', ') }}</small>
+            }
           </div>
           @if (!step.complete) {
-            <a class="step-action" [routerLink]="step.route">{{ step.actionLabel }}</a>
+            <a class="step-action" [routerLink]="step.route" [queryParams]="step.queryParams || null">{{ step.actionLabel }}</a>
           }
         </article>
       }
     }
   </div>
 </section>
+
+@if (onboarding().complete) {
+  <section class="panel launch-card">
+    <div class="panel-header">
+      <div>
+        <h2>Ready to work</h2>
+        <p class="muted">
+          Your setup is complete. Use these shortcuts for the next real action, not a maze of menus.
+        </p>
+      </div>
+    </div>
+
+    <div class="launch-grid">
+      @for (action of launchActions(); track action.label) {
+        <a
+          class="launch-action"
+          [class.primary]="action.primary"
+          [routerLink]="action.route"
+          [queryParams]="action.queryParams"
+        >
+          <strong>{{ action.label }}</strong>
+          <span>{{ action.description }}</span>
+        </a>
+      }
+    </div>
+  </section>
+}
 
 <section class="panel worklist-summary">
   <div class="panel-header">

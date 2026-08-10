@@ -1,6 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Component, inject, signal } from '@angular/core';
 import { form, FormField } from '@angular/forms/signals';
+import { ActivatedRoute } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { MultiSelectComponent, ProfileAvatarUploadComponent } from '@hopehub/platform-ui';
 import { environment } from '../../../../environments/environment';
@@ -30,6 +31,7 @@ const CARE_TEAM_TYPE_OPTIONS = [
 ] as const;
 type ProfileCareTeamType = (typeof CARE_TEAM_TYPE_OPTIONS)[number];
 type SelectableProfileCareTeamType = ProfileCareTeamType | 'OTHER';
+type ProfileSetupStepId = 'identity' | 'public' | 'care' | 'safety' | 'services';
 
 function emptyProfileModel() {
   return {
@@ -79,6 +81,7 @@ function emptyProfileModel() {
 export class ProfilePage {
   private readonly http = inject(HttpClient);
   private readonly session = inject(DoctorSessionService);
+  private readonly route = inject(ActivatedRoute);
   readonly apiBase = environment.apiUrl;
   readonly authTokenKey = AUTH_TOKEN_KEY;
   readonly profileImageUploadPath = API_PATHS.DOCTOR.PROFILE_IMAGE;
@@ -111,8 +114,12 @@ export class ProfilePage {
   error = '';
   isLoading = false;
   saving = false;
+  readonly activeSetupStep = signal<ProfileSetupStepId>('identity');
 
   constructor() {
+    this.route.queryParamMap.subscribe((params) => {
+      this.setSetupStepFromParam(params.get('step'));
+    });
     void this.loadProfile();
     void this.loadCarePricingTemplates();
   }
@@ -277,6 +284,158 @@ export class ProfilePage {
     return `${items.filter((item) => item.complete).length}/${items.length} complete`;
   }
 
+  setupStepItems() {
+    const form = this.profileModel();
+    const activeServices = this.careServices().filter((service) => service.isActive !== false);
+    const identityMissing = [
+      !this.profileImageUrl ? 'profile photo' : '',
+      !form.name.trim() ? 'name' : '',
+      !form.mobile.trim() ? 'mobile' : '',
+      !form.gender ? 'gender' : '',
+      !form.specialty.trim() && !this.isPsychologist ? 'specialty/focus' : '',
+    ].filter(Boolean);
+    const publicMissing = [
+      form.bio.trim().length < 80 ? 'bio of at least 80 characters' : '',
+      !this.isPsychologist && this.lines(form.focusAreasText).length <= 0 ? 'focus areas' : '',
+    ].filter(Boolean);
+    const careMissing = [
+      this.structuredProfileCareTeamTypes(form.careTeamTypes).length <= 0 ? 'provider subtype' : '',
+      this.lines(form.languagesText).length <= 0 ? 'languages' : '',
+      this.lines(form.sessionTypesText).length <= 0 ? 'session types' : '',
+      this.lines(form.concernsHandledText).length <= 0 ? 'concerns handled' : '',
+      this.isClinicalMentalHealthProfile() && !form.licenseCouncil.trim() ? 'license/council' : '',
+      this.isClinicalMentalHealthProfile() && !form.licenseNumber.trim()
+        ? 'license/registration number'
+        : '',
+    ].filter(Boolean);
+    const safetyMissing = [
+      this.isPsychologist && form.safetyEscalationNote.trim().length < 20
+        ? 'safety escalation note'
+        : '',
+      this.isListenerProfile() && !form.listenerSafetyAcknowledged
+        ? 'listener safety acknowledgement'
+        : '',
+    ].filter(Boolean);
+    const servicesMissing = activeServices.length <= 0 ? ['one active service/price'] : [];
+    const steps = [
+      {
+        id: 'identity' as const,
+        label: 'Identity',
+        title: 'Basic identity',
+        description: 'Name, mobile, gender, photo, availability, and role basics.',
+        complete:
+          Boolean(this.profileImageUrl) &&
+          Boolean(form.name.trim()) &&
+          Boolean(form.mobile.trim()) &&
+          Boolean(form.gender) &&
+          Boolean(form.specialty.trim() || this.isPsychologist),
+        missing: identityMissing,
+      },
+      {
+        id: 'public' as const,
+        label: 'Public profile',
+        title: 'Public profile',
+        description: 'Bio, experience, and focus areas shown to users.',
+        complete:
+          form.bio.trim().length >= 80 &&
+          (this.isPsychologist || this.lines(form.focusAreasText).length > 0),
+        missing: publicMissing,
+      },
+      {
+        id: 'care' as const,
+        label: 'Care details',
+        title: 'Care team details',
+        description: 'Subtype, qualification, languages, sessions, and concerns.',
+        complete:
+          !this.isPsychologist ||
+          (this.structuredProfileCareTeamTypes(form.careTeamTypes).length > 0 &&
+            this.lines(form.languagesText).length > 0 &&
+            this.lines(form.sessionTypesText).length > 0 &&
+            this.lines(form.concernsHandledText).length > 0 &&
+            (!this.isClinicalMentalHealthProfile() ||
+              (Boolean(form.licenseCouncil.trim()) && Boolean(form.licenseNumber.trim())))),
+        missing: careMissing,
+      },
+      {
+        id: 'safety' as const,
+        label: 'Safety',
+        title: 'Safety & scope',
+        description: 'Approach, escalation note, and listener acknowledgement.',
+        complete:
+          !this.isPsychologist ||
+          (form.safetyEscalationNote.trim().length >= 20 &&
+            (!this.isListenerProfile() || Boolean(form.listenerSafetyAcknowledged))),
+        missing: safetyMissing,
+      },
+      {
+        id: 'services' as const,
+        label: 'Services',
+        title: 'Services & pricing',
+        description: 'Booking settings, active plans, limits, and public availability.',
+        complete: !this.isPsychologist || activeServices.length > 0,
+        missing: servicesMissing,
+      },
+    ];
+
+    return this.isPsychologist
+      ? steps
+      : steps.filter((step) => step.id === 'identity' || step.id === 'public');
+  }
+
+  setupCompletionPercent() {
+    const steps = this.setupStepItems();
+    return Math.round(
+      (steps.filter((step) => step.complete).length / Math.max(steps.length, 1)) * 100,
+    );
+  }
+
+  setupStepTitle() {
+    return (
+      this.setupStepItems().find((step) => step.id === this.activeSetupStep())?.title ||
+      'Profile setup'
+    );
+  }
+
+  setupStepDescription() {
+    return (
+      this.setupStepItems().find((step) => step.id === this.activeSetupStep())?.description ||
+      'Complete your provider profile.'
+    );
+  }
+
+  activeSetupStepMissingItems() {
+    return this.setupStepItems().find((step) => step.id === this.activeSetupStep())?.missing || [];
+  }
+
+  setSetupStep(step: ProfileSetupStepId) {
+    if (this.setupStepItems().some((item) => item.id === step)) {
+      this.activeSetupStep.set(step);
+    }
+  }
+
+  setSetupStepFromParam(step: string | null) {
+    if (
+      step === 'identity' ||
+      step === 'public' ||
+      step === 'care' ||
+      step === 'safety' ||
+      step === 'services'
+    ) {
+      this.activeSetupStep.set(step);
+    }
+  }
+
+  async saveAndContinue() {
+    await this.saveProfile();
+    if (this.error) return;
+    const steps = this.setupStepItems();
+    const index = steps.findIndex((step) => step.id === this.activeSetupStep());
+    const next = steps.slice(index + 1).find((step) => !step.complete) || steps[index + 1] || null;
+    if (next) {
+      this.activeSetupStep.set(next.id);
+    }
+  }
+
   async loadCarePricingTemplates() {
     try {
       const res = await firstValueFrom(
@@ -437,6 +596,7 @@ export class ProfilePage {
         }),
       );
       await this.session.load(true);
+      await this.loadProfile();
       this.message = 'Profile updated successfully.';
     } catch {
       this.error = 'Could not save profile.';

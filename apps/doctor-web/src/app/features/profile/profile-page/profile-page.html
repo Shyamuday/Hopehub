@@ -9,7 +9,10 @@
       (profileImageChange)="onProfileImageChange($event)"
     />
     <div>
-      <h2>{{ isPsychologist ? 'Hope Hub Provider Profile' : 'Homeopathy Provider Profile' }}</h2>
+      <h2>{{ isPsychologist ? 'Hope Hub Provider Setup' : 'Provider Profile Setup' }}</h2>
+      <p class="section-hint">
+        Complete each step once. After this, your full professional dashboard becomes clear and usable.
+      </p>
       @if (isLoading) {
         <p class="loading-text">Loading profile...</p>
       }
@@ -22,119 +25,156 @@
       @if (specialtyFocusLabel) {
         <span class="focus-label">{{ specialtyFocusLabel }}</span>
       }
-      <p class="role-note">Role and grade are assigned by clinic admin or HR.</p>
+      <p class="role-note">Role and grade are assigned by admin. Your setup controls what users see and what tools unlock.</p>
     </div>
   }
 
-  <div class="grid" [class.dimmed]="isLoading">
-    <label for="name">Name</label>
-    <input id="name" [formField]="profileForm.name" />
-
-    <label for="email">Email</label>
-    <input id="email" name="email" [value]="profileModel().email" readonly />
-
-    <label for="mobile">Mobile</label>
-    <input id="mobile" [formField]="profileForm.mobile" />
-
-    <label for="gender">Gender</label>
-    <select id="gender" [formField]="profileForm.gender">
-      <option value="">Prefer not to show</option>
-      <option value="FEMALE">Female</option>
-      <option value="MALE">Male</option>
-      <option value="OTHER">Other</option>
-      <option value="PREFER_NOT_TO_SAY">Prefer not to say</option>
-    </select>
-
-    @if (!isPsychologist) {
-      <label for="specialty">{{ specialtyFieldLabel() }}</label>
-      <input id="specialty" [formField]="profileForm.specialty" />
-    }
-
-    @if (showRegistrationNumber()) {
-      <label for="registrationNo">{{ registrationFieldLabel() }}</label>
-      <input id="registrationNo" [formField]="profileForm.registrationNo" />
-    }
+  <div class="setup-progress-card">
+    <div>
+      <strong>{{ setupCompletionPercent() }}%</strong>
+      <span>profile setup complete</span>
+    </div>
+    <div class="setup-progress-bar">
+      <i [style.width.%]="setupCompletionPercent()"></i>
+    </div>
   </div>
 
-  <label class="checkbox">
-    <input type="checkbox" [formField]="profileForm.isAvailable" />
-    Available for consultations
-  </label>
+  <nav class="setup-stepper" aria-label="Provider profile setup steps">
+    @for (step of setupStepItems(); track step.id) {
+      <button
+        type="button"
+        [class.active]="activeSetupStep() === step.id"
+        [class.complete]="step.complete"
+        (click)="setSetupStep(step.id)"
+      >
+        <span>{{ step.complete ? '✓' : '•' }}</span>
+        {{ step.label }}
+      </button>
+    }
+  </nav>
 
-  @if (canPrescribe) {
-    <label for="defaultApproach">Default prescribing approach</label>
-    <select id="defaultApproach" [formField]="profileForm.defaultMethodOptionId">
-      <option value="">No default — choose per case</option>
-      @for (method of methodOptions; track method.id) {
-        <option [value]="method.id">{{ method.label }}</option>
+  <section class="setup-panel" [class.dimmed]="isLoading">
+    <header class="setup-panel-header">
+      <div>
+        <h3>{{ setupStepTitle() }}</h3>
+        <p>{{ setupStepDescription() }}</p>
+        @if (activeSetupStepMissingItems().length) {
+          <div class="step-missing-box">
+            <strong>Still needed:</strong>
+            <span>{{ activeSetupStepMissingItems().join(', ') }}</span>
+          </div>
+        }
+      </div>
+    </header>
+
+    @if (activeSetupStep() === 'identity') {
+      <div class="grid two-column">
+        <label for="name">Name</label>
+        <input id="name" [formField]="profileForm.name" />
+
+        <label for="email">Email</label>
+        <input id="email" name="email" [value]="profileModel().email" readonly />
+
+        <label for="mobile">Mobile</label>
+        <input id="mobile" [formField]="profileForm.mobile" />
+
+        <label for="gender">Gender</label>
+        <select id="gender" [formField]="profileForm.gender">
+          <option value="">Prefer not to show</option>
+          <option value="FEMALE">Female</option>
+          <option value="MALE">Male</option>
+          <option value="OTHER">Other</option>
+          <option value="PREFER_NOT_TO_SAY">Prefer not to say</option>
+        </select>
+
+        @if (!isPsychologist) {
+          <label for="specialty">{{ specialtyFieldLabel() }}</label>
+          <input id="specialty" [formField]="profileForm.specialty" />
+        }
+
+        @if (showRegistrationNumber()) {
+          <label for="registrationNo">{{ registrationFieldLabel() }}</label>
+          <input id="registrationNo" [formField]="profileForm.registrationNo" />
+        }
+      </div>
+
+      <label class="checkbox">
+        <input type="checkbox" [formField]="profileForm.isAvailable" />
+        Available for consultations / sessions
+      </label>
+
+      @if (canPrescribe) {
+        <label for="defaultApproach">Default prescribing approach</label>
+        <select id="defaultApproach" [formField]="profileForm.defaultMethodOptionId">
+          <option value="">No default — choose per case</option>
+          @for (method of methodOptions; track method.id) {
+            <option [value]="method.id">{{ method.label }}</option>
+          }
+        </select>
+        <p class="section-hint">Pre-selected when you open case analysis or start a new prescription.</p>
       }
-    </select>
-    <p class="section-hint">Pre-selected when you open case analysis or start a new prescription.</p>
-  }
+    }
 
-  <hr class="profile-divider" />
+    @if (activeSetupStep() === 'public') {
+      <div class="public-profile-section">
+        <p class="section-hint">
+          This information may appear on our website provider listing.
+          @if (showOnWebsite) {
+            <span class="visibility-badge visible">Currently visible on website</span>
+          } @else {
+            <span class="visibility-badge hidden">Not shown on website — contact admin to publish</span>
+          }
+        </p>
 
-  <div class="public-profile-section">
-    <h3>Public Profile</h3>
-    <p class="section-hint">
-      This information may appear on our website provider listing.
-      @if (showOnWebsite) {
-        <span class="visibility-badge visible">Currently visible on website</span>
-      } @else {
-        <span class="visibility-badge hidden">Not shown on website — contact admin to publish</span>
-      }
-    </p>
+        <label for="yearsOfExperience">Years of experience</label>
+        <input
+          id="yearsOfExperience"
+          type="number"
+          placeholder="e.g. 8"
+          [formField]="profileForm.yearsOfExperience"
+        />
 
-    <label for="yearsOfExperience">Years of experience</label>
-    <input
-      id="yearsOfExperience"
-      type="number"
-      placeholder="e.g. 8"
-      [formField]="profileForm.yearsOfExperience"
-    />
+        <label for="bio">Short bio</label>
+        <textarea
+          id="bio"
+          rows="5"
+          placeholder="Write a warm professional bio that will appear on the website (minimum 80 characters)…"
+          [formField]="profileForm.bio"
+        ></textarea>
+        <p class="char-hint">{{ profileModel().bio.length }} / 1200 · minimum 80 recommended</p>
 
-    <label for="bio">Short bio</label>
-    <textarea
-      id="bio"
-      rows="5"
-      placeholder="Write a short professional bio that will appear on the website (max 1200 characters)…"
-      [formField]="profileForm.bio"
-    ></textarea>
-    <p class="char-hint">{{ profileModel().bio.length }} / 1200</p>
+        <label for="focusAreas">Focus areas <span class="hint">(one per line)</span></label>
+        <textarea
+          id="focusAreas"
+          rows="4"
+          [placeholder]="focusAreasPlaceholder()"
+          [formField]="profileForm.focusAreasText"
+        ></textarea>
+      </div>
+    }
 
-    <label for="focusAreas">Focus areas <span class="hint">(one per line)</span></label>
-    <textarea
-      id="focusAreas"
-      rows="4"
-      [placeholder]="focusAreasPlaceholder()"
-      [formField]="profileForm.focusAreasText"
-    ></textarea>
-
-    @if (isPsychologist) {
+    @if (isPsychologist && activeSetupStep() === 'care') {
       <section class="mental-profile-section">
-        <h3>Care Team Public Details</h3>
-        <p class="section-hint">Shown on Hope Hub care team profile pages and used for session matching.</p>
+        <hopehub-multi-select
+          label="Hope Hub subtype"
+          hint="Select all that apply"
+          placeholder="Choose your Hope Hub subtype"
+          tone="hope"
+          [options]="careTeamTypeOptions"
+          [selected]="profileModel().careTeamTypes"
+          (selectedChange)="setProfileCareTeamTypes($event)"
+        />
+
+        @if (isProfileCareTeamTypeSelected('OTHER')) {
+          <label for="otherCareTeamType">Other subtype</label>
+          <input
+            id="otherCareTeamType"
+            [formField]="profileForm.otherCareTeamType"
+            placeholder="Write your provider subtype"
+          />
+        }
 
         <div class="grid two-column">
-          <hopehub-multi-select
-            label="Hope Hub subtype"
-            hint="Select all that apply"
-            placeholder="Choose your Hope Hub subtype"
-            tone="hope"
-            [options]="careTeamTypeOptions"
-            [selected]="profileModel().careTeamTypes"
-            (selectedChange)="setProfileCareTeamTypes($event)"
-          />
-
-          @if (isProfileCareTeamTypeSelected('OTHER')) {
-            <label for="otherCareTeamType">Other subtype</label>
-            <input
-              id="otherCareTeamType"
-              [formField]="profileForm.otherCareTeamType"
-              placeholder="Write your provider subtype"
-            />
-          }
-
           <label for="qualifications">Qualifications <span class="hint">(one per line)</span></label>
           <textarea id="qualifications" rows="3" [formField]="profileForm.qualificationsText"></textarea>
 
@@ -171,7 +211,11 @@
           <label for="concernsHandled">Concerns handled</label>
           <textarea id="concernsHandled" rows="4" [formField]="profileForm.concernsHandledText"></textarea>
         </div>
+      </section>
+    }
 
+    @if (isPsychologist && activeSetupStep() === 'safety') {
+      <section class="mental-profile-section">
         @if (isListenerProfile()) {
           <div class="listener-profile-checklist">
             <strong>Listener profile completion checklist · {{ listenerReadinessLabel() }}</strong>
@@ -195,7 +239,12 @@
         <textarea id="counsellingApproach" rows="5" [formField]="profileForm.counsellingApproach"></textarea>
 
         <label for="safetyEscalationNote">Safety escalation note</label>
-        <textarea id="safetyEscalationNote" rows="4" [formField]="profileForm.safetyEscalationNote"></textarea>
+        <textarea
+          id="safetyEscalationNote"
+          rows="4"
+          placeholder="Write what you will do if a user seems unsafe, in crisis, or outside your scope."
+          [formField]="profileForm.safetyEscalationNote"
+        ></textarea>
 
         @if (isListenerProfile()) {
           <div class="listener-safety-ack">
@@ -219,7 +268,11 @@
             Accepts high-risk cases with escalation support
           </label>
         }
+      </section>
+    }
 
+    @if (isPsychologist && activeSetupStep() === 'services') {
+      <section class="mental-profile-section">
         <label class="checkbox">
           <input type="checkbox" [formField]="profileForm.autoMatchEnabled" />
           Available for user auto-match
@@ -289,14 +342,17 @@
         <p class="section-hint">Use pricing mode for fixed, first free, discounted first, package, per-minute, or free emotional support listener support.</p>
       </section>
     }
-  </div>
+  </section>
 
   <div class="actions">
     <button type="button" (click)="loadProfile()" [disabled]="isLoading || saving">
       {{ isLoading ? 'Loading...' : 'Reload' }}
     </button>
     <button type="button" (click)="saveProfile()" [disabled]="isLoading || saving">
-      {{ saving ? 'Saving...' : 'Save Profile' }}
+      {{ saving ? 'Saving...' : 'Save' }}
+    </button>
+    <button type="button" class="primary-action" (click)="saveAndContinue()" [disabled]="isLoading || saving">
+      {{ saving ? 'Saving...' : 'Save & continue' }}
     </button>
   </div>
 

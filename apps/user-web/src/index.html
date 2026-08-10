@@ -72,48 +72,90 @@
 
   <body>
     <app-root>
-      <main style="font-family: Inter, Arial, sans-serif; line-height: 1.6; color: #102033; padding: 24px; max-width: 960px; margin: 0 auto;">
-        <header>
-          <p style="margin: 0 0 8px; color: #0f766e; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;">Doctor-led homeopathy</p>
-          <h1 style="margin: 0 0 12px; font-size: 32px;">HopeHub Care and Research Centre</h1>
-          <p style="margin: 0 0 20px; font-size: 18px;">
-            Personalised online homeopathic consultations for acute, chronic, skin, hair,
-            digestive, allergy, mental wellness, and preventive care concerns.
-          </p>
-          <p>
-            <a href="/treatments">Browse treatments</a> ·
-            <a href="/talk-to-doctor">Talk to a doctor</a> ·
-            <a href="/contact">Contact support</a>
-          </p>
-        </header>
+      <style>
+        .app-shell-loading {
+          min-height: 100vh;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 24px;
+          font-family: Inter, Arial, sans-serif;
+          color: #0f172a;
+          background:
+            radial-gradient(circle at 50% 18%, rgba(16, 185, 129, 0.14), transparent 260px),
+            linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+        }
 
-        <section>
-          <h2>How HopeHub Care works</h2>
-          <p>
-            Patients share their concern, complete a structured intake, and receive care from a
-            qualified doctor with prescription support and follow-up guidance.
-          </p>
-        </section>
+        .app-shell-loading__brand {
+          display: grid;
+          justify-items: center;
+          max-width: 520px;
+          text-align: center;
+        }
 
-        <section>
-          <h2>Consultations and payments</h2>
-          <p>
-            Consultation fees are shown before payment. Payments are processed through secure
-            Razorpay checkout and verified by our backend before a consultation is marked paid.
-          </p>
-        </section>
+        .app-shell-loading__logo {
+          width: 92px;
+          height: 92px;
+          border-radius: 28px;
+          object-fit: cover;
+          padding: 8px;
+          background: #ffffff;
+          box-shadow:
+            0 22px 70px rgba(15, 23, 42, 0.14),
+            0 0 0 1px rgba(16, 185, 129, 0.12);
+        }
 
-        <section>
-          <h2>Privacy, safety, and support</h2>
-          <p>
-            HopeHub Care is for planned consultation and follow-up, not emergency care. Read our
-            <a href="/privacy-policy">Privacy Policy</a>,
-            <a href="/terms-and-conditions">Terms & Conditions</a>,
-            <a href="/payment-policy">Payment Policy</a>, and
-            <a href="/cancellation-and-refund-policy">Cancellation & Refund Policy</a>.
-          </p>
-        </section>
-      </main>
+        .app-shell-loading strong {
+          display: block;
+          margin-top: 22px;
+          font-size: clamp(44px, 10vw, 78px);
+          font-weight: 900;
+          letter-spacing: -0.07em;
+          line-height: 0.95;
+        }
+
+        .app-shell-loading p {
+          margin: 18px 0 0;
+          max-width: 440px;
+          color: #475569;
+          font-size: clamp(17px, 3.5vw, 24px);
+          font-weight: 700;
+          line-height: 1.35;
+        }
+
+        .app-shell-loading__pulse {
+          margin-top: 28px;
+          width: 42px;
+          height: 4px;
+          border-radius: 999px;
+          background: linear-gradient(90deg, #10b981, #0ea5e9);
+          animation: hopehubShellPulse 1.2s ease-in-out infinite alternate;
+        }
+
+        @keyframes hopehubShellPulse {
+          from {
+            opacity: 0.35;
+            transform: scaleX(0.72);
+          }
+
+          to {
+            opacity: 1;
+            transform: scaleX(1);
+          }
+        }
+      </style>
+      <div class="app-shell-loading" aria-label="Loading Hope Hub">
+        <div class="app-shell-loading__brand">
+          <img
+            class="app-shell-loading__logo"
+            src="https://hopehub-public-assets-924479393196.s3.us-east-1.amazonaws.com/brand/hopehublogom.jpg"
+            alt="Hope Hub"
+          />
+          <strong>Hope Hub</strong>
+          <p>Healing becomes easier when you don&rsquo;t have to carry everything alone</p>
+          <span class="app-shell-loading__pulse" aria-hidden="true"></span>
+        </div>
+      </div>
     </app-root>
   </body>
 </html>

@@ -17,6 +17,7 @@ import {
   DOCTOR_NAV_ICONS,
 } from '../../core/constants/doctor-nav.constants';
 import { careTeamTypeLabel } from '../../core/constants/doctor-types.constants';
+import { buildProviderOnboardingStatus } from '../../core/constants/provider-onboarding.constants';
 import {
   HOMEOPATHY_PROVIDER_LANGUAGE,
   PH_PROVIDER_LANGUAGE,
@@ -67,6 +68,8 @@ export class DoctorShell implements OnInit, OnDestroy {
   menuOpen = signal(false);
   focusMode = signal(false);
   assignmentNotice = signal('');
+  onboardingComplete = signal(true);
+  onboardingPercent = signal(100);
   expandedGroupIds = signal<Set<string>>(new Set());
   lastWorkspace = signal<LastConsultationWorkspace | null>(null);
   currentUrl = signal('');
@@ -107,6 +110,12 @@ export class DoctorShell implements OnInit, OnDestroy {
             ''
           : profile.doctorProfile?.specialty || '';
       this.doctorTypeKey = profile.doctorProfile?.doctorType ?? null;
+      const onboarding = buildProviderOnboardingStatus(
+        profile.doctorProfile,
+        profile.profileImageUrl ?? null,
+      );
+      this.onboardingComplete.set(onboarding.complete);
+      this.onboardingPercent.set(onboarding.percent);
       this.navItems = this.buildNav(this.session.navItems());
     } catch {
       this.navItems = [];
@@ -243,10 +252,53 @@ export class DoctorShell implements OnInit, OnDestroy {
     return (item.children || []).filter((child) => child.enabled);
   }
 
+  isSetupAllowedPath(path?: string) {
+    if (!path) return false;
+    return (
+      path === `/${ROUTE_PATHS.DASHBOARD}` ||
+      path === `/${ROUTE_PATHS.PROFILE}` ||
+      path === `/${ROUTE_PATHS.SLOTS}` ||
+      path === `/${ROUTE_PATHS.NOTIFICATIONS_INBOX}`
+    );
+  }
+
+  navItemLocked(item: DoctorNavItemDef) {
+    if (this.onboardingComplete()) return false;
+    if (item.action === 'resume-case') return true;
+    if (item.path) return !this.isSetupAllowedPath(item.path);
+    return (item.children || []).some(
+      (child) => child.enabled && !this.isSetupAllowedPath(child.path),
+    );
+  }
+
+  navChildLocked(child: DoctorNavChildLink) {
+    return !this.onboardingComplete() && !this.isSetupAllowedPath(child.path);
+  }
+
   onNavChildClick(child: DoctorNavChildLink, event: MouseEvent) {
     event.preventDefault();
+    if (this.navChildLocked(child)) {
+      void this.router.navigate(['/', ROUTE_PATHS.DASHBOARD], {
+        queryParams: { onboarding: 'required' },
+      });
+      this.closeMenu();
+      return;
+    }
     void this.router.navigate([child.path], {
       queryParams: child.queryParams ?? { view: null },
+    });
+    this.closeMenu();
+  }
+
+  onNavItemClick(item: DoctorNavItemDef, event: MouseEvent) {
+    if (!this.navItemLocked(item)) {
+      this.closeMenu();
+      return;
+    }
+
+    event.preventDefault();
+    void this.router.navigate(['/', ROUTE_PATHS.DASHBOARD], {
+      queryParams: { onboarding: 'required' },
     });
     this.closeMenu();
   }
