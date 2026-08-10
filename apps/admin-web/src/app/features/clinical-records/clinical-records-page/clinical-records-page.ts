@@ -99,8 +99,8 @@ type CaseAnalysisDetail = CaseAnalysisListItem & {
 const PRESCRIPTION_SUMMARY_FIELDS: DetailFieldDef<PrescriptionDetail>[] = [
   { label: 'Patient', getValue: (p) => p.patient?.name },
   { label: 'Patient code', getValue: (p) => p.patient?.patientCode, omitWhenEmpty: true },
-  { label: 'Prescribing doctor', getValue: (p) => p.doctor?.name },
-  { label: 'Assigned doctor', getValue: (p) => p.assignedDoctor?.name, omitWhenEmpty: true },
+  { label: 'Prescribing provider', getValue: (p) => p.doctor?.name },
+  { label: 'Assigned provider', getValue: (p) => p.assignedDoctor?.name, omitWhenEmpty: true },
   { label: 'Approach / method', getValue: (p) => p.methodOption?.label },
   {
     label: 'Diagnosed disease',
@@ -128,8 +128,8 @@ const ANALYSIS_SUMMARY_FIELDS: DetailFieldDef<CaseAnalysisDetail>[] = [
     getValue: (a) => a.consultation?.patient?.patientCode,
     omitWhenEmpty: true,
   },
-  { label: 'Analysis doctor', getValue: (a) => a.doctor?.name },
-  { label: 'Assigned doctor', getValue: (a) => a.assignedDoctor?.name, omitWhenEmpty: true },
+  { label: 'Analysis provider', getValue: (a) => a.doctor?.name },
+  { label: 'Assigned provider', getValue: (a) => a.assignedDoctor?.name, omitWhenEmpty: true },
   { label: 'Approach / method', getValue: (a) => a.methodOption?.label },
   { label: 'Approach rationale', getValue: (a) => a.methodRationale, omitWhenEmpty: true },
   { label: 'Repertory source', getValue: (a) => a.source?.name, omitWhenEmpty: true },
@@ -280,7 +280,7 @@ export class ClinicalRecordsPage implements OnInit, OnDestroy {
   async loadMeta() {
     try {
       const [doctors, methods] = await Promise.all([
-        this.api.getActiveDoctors(),
+        this.api.getActiveDoctors({ workspace: 'homeopathy' }),
         this.api.listClinicalMethodOptions(),
       ]);
       this.doctors.set(doctors.doctors ?? []);

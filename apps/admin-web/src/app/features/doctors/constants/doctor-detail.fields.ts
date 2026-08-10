@@ -50,7 +50,7 @@ export const DOCTOR_DETAIL_FIELDS: DetailFieldDef<DoctorDetailSource>[] = [
   },
   { label: 'Mobile', getValue: (d) => d.mobile, emptyText: 'N/A' },
   {
-    label: 'Doctor type',
+    label: 'Provider type',
     getValue: (d) =>
       d.doctorProfile?.doctorType ? DOCTOR_TYPE_LABELS[d.doctorProfile.doctorType] : 'Not set',
   },
@@ -71,7 +71,11 @@ export const DOCTOR_DETAIL_FIELDS: DetailFieldDef<DoctorDetailSource>[] = [
     getValue: (d) => d.doctorProfile?.department ?? '',
     omitWhenEmpty: true,
   },
-  { label: 'Registration No', getValue: (d) => d.doctorProfile?.registrationNo, emptyText: 'N/A' },
+  {
+    label: 'License / Registration',
+    getValue: (d) => d.doctorProfile?.registrationNo,
+    emptyText: 'N/A',
+  },
   {
     label: 'Languages',
     getValue: (d) => (d.doctorProfile?.mentalHealthProfile?.languages ?? []).join(', '),

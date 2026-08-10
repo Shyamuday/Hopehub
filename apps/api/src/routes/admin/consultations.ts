@@ -1,6 +1,12 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { Role, ConsultationStatus, SupportNoteCategory, Prisma } from '@prisma/client';
+import {
+  Role,
+  ConsultationStatus,
+  SupportNoteCategory,
+  Prisma,
+  HomeopathicDoctorType
+} from '@prisma/client';
 import type { Server as SocketIoServer } from 'socket.io';
 import { authRequired, allowRoles } from '../../auth.js';
 import { getAuthorizedAdminWorkspace } from '../../admin-workspace-access.js';
@@ -31,6 +37,33 @@ function consultationWorkspaceWhere(workspace: string): Prisma.ConsultationWhere
   if (workspace === 'hope-hub') return { OR: hopeHubSources };
   if (workspace === 'homeopathy') return { NOT: hopeHubSources };
   return {};
+}
+
+function doctorWorkspaceWhere(workspace: string): Prisma.UserWhereInput {
+  if (workspace === 'hope-hub') {
+    return { doctorProfile: { is: { doctorType: HomeopathicDoctorType.PSYCHOLOGIST } } };
+  }
+  if (workspace === 'homeopathy') {
+    return {
+      doctorProfile: { is: { doctorType: { not: HomeopathicDoctorType.PSYCHOLOGIST } } }
+    };
+  }
+  return {};
+}
+
+function providerAssignedCopy(workspace: string, providerName: string) {
+  if (workspace === 'hope-hub') {
+    return {
+      title: 'Hope Hub provider assigned — HopeHub Care',
+      body: `${providerName} has been assigned to your Hope Hub session. You can now chat from the app.`,
+      auditSummary: `Assigned Hope Hub provider ${providerName}`
+    };
+  }
+  return {
+    title: 'Homeopathy provider assigned — HopeHub Care',
+    body: `Dr. ${providerName} has been assigned to your consultation. You can now chat with your provider in the app.`,
+    auditSummary: `Assigned homeopathy provider Dr. ${providerName}`
+  };
 }
 
 export function registerAdminConsultationRoutes(router: Router, io: SocketIoServer) {
@@ -299,13 +332,41 @@ export function registerAdminConsultationRoutes(router: Router, io: SocketIoServ
     allowRoles(Role.ADMIN),
     asyncRoute(async (req, res) => {
       const body = z.object({ doctorId: z.string().min(1) }).parse(req.body);
-      const doctor = await prisma.user.findFirstOrThrow({
-        where: { id: body.doctorId, role: Role.DOCTOR, isActive: true },
-        include: { doctorProfile: { select: { clinicStoreId: true } } }
+      const workspace = getAuthorizedAdminWorkspace(req, res);
+      if (workspace === null) return;
+      const doctor = await prisma.user.findFirst({
+        where: {
+          id: body.doctorId,
+          role: Role.DOCTOR,
+          isActive: true,
+          ...doctorWorkspaceWhere(workspace)
+        },
+        include: { doctorProfile: { select: { clinicStoreId: true, doctorType: true } } }
       });
+      if (!doctor) {
+        return res.status(400).json({
+          message:
+            workspace === 'hope-hub'
+              ? 'Select an active Hope Hub provider for this session.'
+              : 'Select an active homeopathy provider for this consultation.'
+        });
+      }
+
+      const existing = await prisma.consultation.findFirst({
+        where: { id: routeParam(req, 'id'), ...consultationWorkspaceWhere(workspace) },
+        select: { id: true }
+      });
+      if (!existing) {
+        return res.status(404).json({
+          message:
+            workspace === 'hope-hub'
+              ? 'Hope Hub session not found in this workspace.'
+              : 'Homeopathy consultation not found in this workspace.'
+        });
+      }
 
       const consultation = await prisma.consultation.update({
-        where: { id: routeParam(req, 'id') },
+        where: { id: existing.id },
         data: {
           assignedDoctorId: doctor.id,
           status: 'ASSIGNED' as const,
@@ -321,6 +382,7 @@ export function registerAdminConsultationRoutes(router: Router, io: SocketIoServ
       });
 
       const patient = consultation.patient;
+      const copy = providerAssignedCopy(workspace, doctor.name);
       if (patient) {
         void notificationService.sendBatch(
           enabledNotificationChannels.map((ch) => ({
@@ -330,8 +392,8 @@ export function registerAdminConsultationRoutes(router: Router, io: SocketIoServ
             recipientName: patient.name,
             recipientMobile: patient.mobile,
             recipientEmail: patient.email,
-            title: 'Doctor assigned — HopeHub Care',
-            body: `Dr. ${doctor.name} has been assigned to your consultation. You can now chat with your doctor in the app.`
+            title: copy.title,
+            body: copy.body
           }))
         );
         io.to(`user:${patient.id}`).emit('consultation:updated', {
@@ -354,10 +416,11 @@ export function registerAdminConsultationRoutes(router: Router, io: SocketIoServ
         action: 'consultation.assign_doctor',
         targetType: 'consultation',
         targetId: consultation.id,
-        summary: `Assigned Dr. ${doctor.name} to ${patient?.name || 'patient'} consultation.`,
+        summary: `${copy.auditSummary} to ${patient?.name || 'patient'} consultation.`,
         metadata: {
           doctorId: doctor.id,
           doctorName: doctor.name,
+          workspace,
           patientId: consultation.patientId,
           diseaseName: consultation.disease?.name ?? null
         }
@@ -377,11 +440,12 @@ export function registerAdminConsultationRoutes(router: Router, io: SocketIoServ
         properties: {
           consultationId: consultation.id,
           doctorId: doctor.id,
+          workspace,
           patientId: consultation.patientId
         }
       });
 
-      res.json({ consultation, message: 'Doctor assigned successfully.' });
+      res.json({ consultation, message: 'Provider assigned successfully.' });
     })
   );
 
