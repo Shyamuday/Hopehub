@@ -20,8 +20,10 @@ import {
 import { assertMethodOptionId } from '../../services/doctor-prescribing-preferences.js';
 import { PSYCHOLOGIST_CONSULTATION_SHARE_PERCENT } from '../../services/doctor-compensation.js';
 import { notifyAdminsAboutDoctorSignup } from '../../services/doctor-signup-notifications.js';
-import { asyncRoute, publicUserSelect, toAuthResponse, logAuthEvent } from '../../utils/helpers.js';
+import { asyncRoute, publicUserSelect, logAuthEvent } from '../../utils/helpers.js';
 import { enrichWithProfileImageUrl, userProfileImagePath } from '../../utils/profile-image-url.js';
+import { createEmailVerificationToken } from '../../services/email-verification.js';
+import { recordAuthProcess } from '../../services/auth-process-log.js';
 
 const LISTENER_SAFETY_ACKNOWLEDGEMENT_VERSION = 'listener-safety-v1-2026-08-07';
 
@@ -216,9 +218,31 @@ export function registerAuthDoctorRoutes(router: Router) {
         registrationNo: body.registrationNo || null
       });
 
+      const verification = await createEmailVerificationToken({
+        userId: doctor.id,
+        email: body.email,
+        portal: 'provider',
+        req
+      });
+      await recordAuthProcess({
+        processType: 'provider_enrollment',
+        step: 'signup',
+        status: 'success',
+        identifier: body.email.trim().toLowerCase(),
+        req,
+        metadata: {
+          userId: doctor.id,
+          careTeamTypes,
+          emailVerificationSent: verification.sent
+        }
+      });
+
       res.status(201).json({
         doctor,
         approvalStatus: 'PENDING',
+        emailVerificationRequired: true,
+        emailVerificationSent: verification.sent,
+        ...(verification.devVerifyUrl ? { devVerifyUrl: verification.devVerifyUrl } : {}),
         message: 'Enrollment submitted. Please wait for admin approval before login.'
       });
     })

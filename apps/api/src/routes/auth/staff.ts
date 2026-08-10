@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, type Request } from 'express';
 import { z } from 'zod';
 import { Prisma, Role } from '@prisma/client';
 import bcrypt from 'bcryptjs';
@@ -7,7 +7,6 @@ import { getMailTransporter, smtpFrom } from '../../services/mail.js';
 import {
   asyncRoute,
   publicUserSelect,
-  toAuthResponse,
   logAuthEvent,
   hashToken,
   randomToken
@@ -29,6 +28,8 @@ import {
   verifyOtp
 } from '../../services/otp.js';
 import { googleClient, googleClientId } from './shared.js';
+import { recordAuthProcess } from '../../services/auth-process-log.js';
+import { issueAuthSession, revokeAllAuthSessionsForUser } from '../../services/auth-sessions.js';
 
 const staffOtpKey = (email: string) => `staff:${email.trim().toLowerCase()}`;
 const googleStaffUserSelect = { ...publicUserSelect, isActive: true, authProvider: true } as const;
@@ -75,7 +76,7 @@ async function findActiveStaffAccount(email: string): Promise<ActiveStaffAccount
   return staff ? { kind: 'storeStaff', staff } : null;
 }
 
-async function buildStaffLoginResponse(email: string) {
+async function buildStaffLoginResponse(email: string, req?: Request) {
   const account = await findActiveStaffAccount(email);
   if (!account) return null;
 
@@ -124,10 +125,10 @@ async function buildStaffLoginResponse(email: string) {
     });
   }
   const withProfile = await attachStaffProfile(user);
-  return { ...toAuthResponse(withProfile), ...sessionPayloadForUser(withProfile) };
+  return { ...(await issueAuthSession(withProfile, req)), ...sessionPayloadForUser(withProfile) };
 }
 
-async function buildGoogleStaffLoginResponse(payload: GoogleStaffPayload) {
+async function buildGoogleStaffLoginResponse(payload: GoogleStaffPayload, req?: Request) {
   if (!payload.email || !payload.sub) return null;
   if (payload.email_verified !== true) {
     return { errorStatus: 401 as const, message: 'Google email is not verified.' };
@@ -233,7 +234,7 @@ async function buildGoogleStaffLoginResponse(payload: GoogleStaffPayload) {
   }
 
   const withProfile = await attachStaffProfile(updated);
-  return { ...toAuthResponse(withProfile), ...sessionPayloadForUser(withProfile) };
+  return { ...(await issueAuthSession(withProfile, req)), ...sessionPayloadForUser(withProfile) };
 }
 
 export function registerAuthStaffRoutes(router: Router) {
@@ -247,10 +248,28 @@ export function registerAuthStaffRoutes(router: Router) {
       const account = await findActiveStaffAccount(email);
 
       if (!account) {
+        await recordAuthProcess({
+          processType: 'staff_email_otp',
+          step: 'request',
+          status: 'success',
+          identifier: email,
+          req,
+          metadata: { outcome: 'generic_no_account' }
+        });
         return res.json({ message: 'If the staff account exists, an OTP has been sent.' });
       }
 
       if (account.kind === 'user' && !account.user.isActive) {
+        await recordAuthProcess({
+          processType: 'staff_email_otp',
+          step: 'request',
+          status: account.user.role === Role.DOCTOR ? 'blocked' : 'failure',
+          identifier: email,
+          reason:
+            account.user.role === Role.DOCTOR ? 'doctor_pending_approval' : 'inactive_account',
+          req,
+          metadata: { role: account.user.role, userId: account.user.id }
+        });
         return res.status(account.user.role === Role.DOCTOR ? 403 : 401).json({
           message:
             account.user.role === Role.DOCTOR
@@ -260,6 +279,14 @@ export function registerAuthStaffRoutes(router: Router) {
       }
 
       if (isProduction && !getMailTransporter()) {
+        await recordAuthProcess({
+          processType: 'staff_email_otp',
+          step: 'request',
+          status: 'blocked',
+          identifier: email,
+          reason: 'email_delivery_not_configured',
+          req
+        });
         return res.status(503).json({ message: 'Email delivery is not configured.' });
       }
 
@@ -271,6 +298,14 @@ export function registerAuthStaffRoutes(router: Router) {
         console.info(`[otp] DEV — Staff OTP for ${email}: ${otp}`);
       }
 
+      await recordAuthProcess({
+        processType: 'staff_email_otp',
+        step: 'request',
+        status: 'success',
+        identifier: email,
+        req,
+        metadata: { delivery: isProduction ? 'email' : 'dev', kind: account.kind }
+      });
       res.json({ message: 'OTP sent.', ...(!isProduction ? { devOtp: otp } : {}) });
     })
   );
@@ -282,23 +317,54 @@ export function registerAuthStaffRoutes(router: Router) {
       const email = body.email.trim().toLowerCase();
 
       if (!(await verifyOtp(staffOtpKey(email), body.otp))) {
+        await recordAuthProcess({
+          processType: 'staff_email_otp',
+          step: 'verify',
+          status: 'failure',
+          identifier: email,
+          reason: 'invalid_or_expired_otp',
+          req
+        });
         return res.status(401).json({ message: 'Invalid or expired OTP.' });
       }
 
-      const response = await buildStaffLoginResponse(email);
+      const response = await buildStaffLoginResponse(email, req);
       if (!response) {
         logAuthEvent('staff_login_failure', {
           email,
           reason: 'invalid_credentials',
           method: 'email_otp'
         });
+        await recordAuthProcess({
+          processType: 'staff_email_otp',
+          step: 'verify',
+          status: 'failure',
+          identifier: email,
+          reason: 'invalid_credentials',
+          req
+        });
         return res.status(401).json({ message: 'Invalid credentials' });
       }
       if ('errorStatus' in response) {
         const status = response.errorStatus ?? 401;
+        await recordAuthProcess({
+          processType: 'staff_email_otp',
+          step: 'verify',
+          status: status === 403 ? 'blocked' : 'failure',
+          identifier: email,
+          reason: response.message,
+          req
+        });
         return res.status(status).json({ message: response.message });
       }
 
+      await recordAuthProcess({
+        processType: 'staff_email_otp',
+        step: 'verify',
+        status: 'success',
+        identifier: email,
+        req
+      });
       res.json(response);
     })
   );
@@ -308,6 +374,14 @@ export function registerAuthStaffRoutes(router: Router) {
     asyncRoute(async (req, res) => {
       const body = z.object({ idToken: z.string().min(20) }).parse(req.body);
       if (!googleClient || !googleClientId) {
+        await recordAuthProcess({
+          processType: 'staff_google',
+          step: 'login',
+          status: 'blocked',
+          identifier: 'unknown',
+          reason: 'google_not_configured',
+          req
+        });
         return res
           .status(503)
           .json({ message: 'Google login is not configured. Set GOOGLE_CLIENT_ID.' });
@@ -320,19 +394,43 @@ export function registerAuthStaffRoutes(router: Router) {
           audience: googleClientId
         });
       } catch {
+        await recordAuthProcess({
+          processType: 'staff_google',
+          step: 'login',
+          status: 'failure',
+          identifier: 'unknown',
+          reason: 'invalid_google_token',
+          req
+        });
         return res.status(401).json({ message: 'Invalid Google sign-in token.' });
       }
       const payload = ticket.getPayload();
       if (!payload?.email || !payload.sub) {
+        await recordAuthProcess({
+          processType: 'staff_google',
+          step: 'login',
+          status: 'failure',
+          identifier: payload?.email || 'unknown',
+          reason: 'missing_google_email_or_subject',
+          req
+        });
         return res.status(401).json({ message: 'Google account email is required' });
       }
 
-      const response = await buildGoogleStaffLoginResponse(payload as GoogleStaffPayload);
+      const response = await buildGoogleStaffLoginResponse(payload as GoogleStaffPayload, req);
       if (!response) {
         logAuthEvent('staff_login_failure', {
           email: payload.email,
           reason: 'google_payload_missing_email',
           method: 'google'
+        });
+        await recordAuthProcess({
+          processType: 'staff_google',
+          step: 'login',
+          status: 'failure',
+          identifier: payload.email,
+          reason: 'google_payload_missing_email',
+          req
         });
         return res.status(401).json({ message: 'Google account email is required' });
       }
@@ -343,9 +441,25 @@ export function registerAuthStaffRoutes(router: Router) {
           reason: response.message,
           method: 'google'
         });
+        await recordAuthProcess({
+          processType: 'staff_google',
+          step: 'login',
+          status: status === 403 ? 'blocked' : 'failure',
+          identifier: payload.email,
+          reason: response.message,
+          req
+        });
         return res.status(status).json({ message: response.message });
       }
 
+      await recordAuthProcess({
+        processType: 'staff_google',
+        step: 'login',
+        status: 'success',
+        identifier: payload.email,
+        req,
+        metadata: { googleSubject: payload.sub }
+      });
       res.json(response);
     })
   );
@@ -370,12 +484,29 @@ export function registerAuthStaffRoutes(router: Router) {
 
         if (!staff) {
           logAuthEvent('staff_login_failure', { email, reason: 'invalid_credentials' });
+          await recordAuthProcess({
+            processType: 'staff_password',
+            step: 'login',
+            status: 'failure',
+            identifier: email,
+            reason: 'invalid_credentials',
+            req
+          });
           return res.status(401).json({ message: 'Invalid credentials' });
         }
 
         const staffValid = await bcrypt.compare(body.password, staff.pinHash);
         if (!staffValid) {
           logAuthEvent('staff_login_failure', { email, reason: 'invalid_credentials' });
+          await recordAuthProcess({
+            processType: 'staff_password',
+            step: 'login',
+            status: 'failure',
+            identifier: email,
+            reason: 'invalid_credentials',
+            req,
+            metadata: { kind: 'storeStaff' }
+          });
           return res.status(401).json({ message: 'Invalid credentials' });
         }
 
@@ -397,7 +528,34 @@ export function registerAuthStaffRoutes(router: Router) {
         });
 
         logAuthEvent('staff_login_success', { storeStaffId: staff.id, role: staff.role });
+        await recordAuthProcess({
+          processType: 'staff_password',
+          step: 'login',
+          status: 'success',
+          identifier: email,
+          req,
+          metadata: { kind: 'storeStaff', storeStaffId: staff.id, role: staff.role }
+        });
         return res.json({ token, ...session });
+      }
+
+      const isValid = await bcrypt.compare(body.password, user.passwordHash);
+      if (!isValid) {
+        logAuthEvent('staff_login_failure', {
+          userId: user.id,
+          role: user.role,
+          reason: 'invalid_credentials'
+        });
+        await recordAuthProcess({
+          processType: 'staff_password',
+          step: 'login',
+          status: 'failure',
+          identifier: email,
+          reason: 'invalid_credentials',
+          req,
+          metadata: { userId: user.id, role: user.role }
+        });
+        return res.status(401).json({ message: 'Invalid credentials' });
       }
 
       if (!user.isActive && user.role === Role.DOCTOR) {
@@ -405,6 +563,15 @@ export function registerAuthStaffRoutes(router: Router) {
           userId: user.id,
           role: user.role,
           reason: 'doctor_pending_approval'
+        });
+        await recordAuthProcess({
+          processType: 'staff_password',
+          step: 'login',
+          status: 'blocked',
+          identifier: email,
+          reason: 'doctor_pending_approval',
+          req,
+          metadata: { userId: user.id, role: user.role }
         });
         return res.status(403).json({ message: 'Doctor account is pending admin approval.' });
       }
@@ -415,15 +582,14 @@ export function registerAuthStaffRoutes(router: Router) {
           role: user.role,
           reason: 'inactive_account'
         });
-        return res.status(401).json({ message: 'Invalid credentials' });
-      }
-
-      const isValid = await bcrypt.compare(body.password, user.passwordHash);
-      if (!isValid) {
-        logAuthEvent('staff_login_failure', {
-          userId: user.id,
-          role: user.role,
-          reason: 'invalid_credentials'
+        await recordAuthProcess({
+          processType: 'staff_password',
+          step: 'login',
+          status: 'failure',
+          identifier: email,
+          reason: 'inactive_account',
+          req,
+          metadata: { userId: user.id, role: user.role }
         });
         return res.status(401).json({ message: 'Invalid credentials' });
       }
@@ -439,7 +605,18 @@ export function registerAuthStaffRoutes(router: Router) {
         });
       }
       const withProfile = await attachStaffProfile(safeUser);
-      res.json({ ...toAuthResponse(withProfile), ...sessionPayloadForUser(withProfile) });
+      await recordAuthProcess({
+        processType: 'staff_password',
+        step: 'login',
+        status: 'success',
+        identifier: email,
+        req,
+        metadata: { userId: safeUser.id, role: safeUser.role }
+      });
+      res.json({
+        ...(await issueAuthSession(withProfile, req)),
+        ...sessionPayloadForUser(withProfile)
+      });
     })
   );
 
@@ -456,6 +633,14 @@ export function registerAuthStaffRoutes(router: Router) {
       });
 
       if (!user || !user.isActive || user.role === Role.PATIENT) {
+        await recordAuthProcess({
+          processType: 'staff_password_reset',
+          step: 'request',
+          status: 'success',
+          identifier: email,
+          req,
+          metadata: { outcome: 'generic_no_active_staff' }
+        });
         return res.json({
           message: 'If the account exists, reset instructions have been generated.'
         });
@@ -474,6 +659,14 @@ export function registerAuthStaffRoutes(router: Router) {
         console.log(`[dev] Password reset token for ${body.email}: ${token}`);
       }
 
+      await recordAuthProcess({
+        processType: 'staff_password_reset',
+        step: 'request',
+        status: 'success',
+        identifier: email,
+        req,
+        metadata: { userId: user.id, role: user.role }
+      });
       res.json({ message: 'If the account exists, reset instructions have been sent.' });
     })
   );
@@ -490,6 +683,18 @@ export function registerAuthStaffRoutes(router: Router) {
       });
 
       if (!resetToken || resetToken.usedAt || resetToken.expiresAt < new Date()) {
+        await recordAuthProcess({
+          processType: 'staff_password_reset',
+          step: 'reset',
+          status: 'failure',
+          identifier: 'unknown',
+          reason: !resetToken
+            ? 'token_not_found'
+            : resetToken.usedAt
+              ? 'token_used'
+              : 'token_expired',
+          req
+        });
         return res.status(400).json({ message: 'Invalid or expired reset token' });
       }
 
@@ -501,8 +706,17 @@ export function registerAuthStaffRoutes(router: Router) {
           data: { usedAt: new Date() }
         })
       ]);
+      await revokeAllAuthSessionsForUser(resetToken.userId);
 
-      res.json(toAuthResponse(resetToken.user));
+      await recordAuthProcess({
+        processType: 'staff_password_reset',
+        step: 'reset',
+        status: 'success',
+        identifier: resetToken.user.email || resetToken.userId,
+        req,
+        metadata: { userId: resetToken.userId, role: resetToken.user.role }
+      });
+      res.json(await issueAuthSession(resetToken.user, req));
     })
   );
 }

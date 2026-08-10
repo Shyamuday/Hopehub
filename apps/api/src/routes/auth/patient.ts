@@ -8,12 +8,14 @@ import { createPatientRecord } from '../../services/patient-identity.js';
 import {
   asyncRoute,
   publicUserSelect,
-  toAuthResponse,
   logAuthEvent,
   hashToken,
   randomToken
 } from '../../utils/helpers.js';
 import { webOrigin } from './shared.js';
+import { issueAuthSession, revokeAllAuthSessionsForUser } from '../../services/auth-sessions.js';
+import { recordAuthProcess } from '../../services/auth-process-log.js';
+import { createEmailVerificationToken } from '../../services/email-verification.js';
 
 export function registerAuthPatientRoutes(router: Router) {
   // ─── Patient register / login-password / forgot ────────────────────────────────
@@ -37,6 +39,14 @@ export function registerAuthPatientRoutes(router: Router) {
         select: { id: true, role: true, passwordHash: true }
       });
       if (existingUser?.passwordHash) {
+        await recordAuthProcess({
+          processType: 'patient_password',
+          step: 'signup',
+          status: 'failure',
+          identifier: email,
+          reason: 'patient_account_exists',
+          req
+        });
         return res.status(409).json({
           code: 'PATIENT_ACCOUNT_EXISTS',
           message: 'This email is already registered. Please log in instead.'
@@ -55,12 +65,28 @@ export function registerAuthPatientRoutes(router: Router) {
           : await createPatientRecord({ name, email, passwordHash });
       } catch (error) {
         if (error instanceof Error && error.message === 'EMAIL_TAKEN') {
+          await recordAuthProcess({
+            processType: 'patient_password',
+            step: 'signup',
+            status: 'failure',
+            identifier: email,
+            reason: 'patient_account_exists',
+            req
+          });
           return res.status(409).json({
             code: 'PATIENT_ACCOUNT_EXISTS',
             message: 'This email is already registered. Please log in instead.'
           });
         }
         if (error instanceof Error && error.message === 'EMAIL_USED_BY_OTHER_ROLE') {
+          await recordAuthProcess({
+            processType: 'patient_password',
+            step: 'signup',
+            status: 'failure',
+            identifier: email,
+            reason: 'email_used_by_other_role',
+            req
+          });
           return res.status(409).json({
             code: 'EMAIL_REGISTERED_WITH_DIFFERENT_ROLE',
             message: 'This email is already registered with another Hope Hub role.'
@@ -70,7 +96,26 @@ export function registerAuthPatientRoutes(router: Router) {
       }
 
       logAuthEvent('patient_login', { userId: user.id, event: 'register' });
-      res.status(201).json(toAuthResponse({ ...user, role: Role.PATIENT }));
+      const verification = await createEmailVerificationToken({
+        userId: user.id,
+        email,
+        portal: 'patient',
+        req
+      });
+      await recordAuthProcess({
+        processType: 'patient_password',
+        step: 'signup',
+        status: 'success',
+        identifier: email,
+        req,
+        metadata: { userId: user.id, emailVerificationSent: verification.sent }
+      });
+      res.status(201).json({
+        ...(await issueAuthSession({ ...user, role: Role.PATIENT }, req)),
+        emailVerificationRequired: true,
+        emailVerificationSent: verification.sent,
+        ...(verification.devVerifyUrl ? { devVerifyUrl: verification.devVerifyUrl } : {})
+      });
     })
   );
 
@@ -88,6 +133,14 @@ export function registerAuthPatientRoutes(router: Router) {
 
       const activePatients = candidates.filter((user) => user.isActive);
       if (activePatients.length && activePatients.every((user) => !user.passwordHash)) {
+        await recordAuthProcess({
+          processType: 'patient_password',
+          step: 'login',
+          status: 'blocked',
+          identifier: email,
+          reason: 'password_not_set',
+          req
+        });
         return res.status(409).json({
           code: 'PATIENT_PASSWORD_NOT_SET',
           message: 'Password is not set for this account. Use email code or reset password.'
@@ -102,10 +155,26 @@ export function registerAuthPatientRoutes(router: Router) {
       }
 
       if (!matches.length) {
+        await recordAuthProcess({
+          processType: 'patient_password',
+          step: 'login',
+          status: 'failure',
+          identifier: email,
+          reason: 'invalid_credentials',
+          req
+        });
         return res.status(401).json({ message: 'Invalid credentials.' });
       }
 
       if (matches.length > 1) {
+        await recordAuthProcess({
+          processType: 'patient_password',
+          step: 'login',
+          status: 'success',
+          identifier: email,
+          req,
+          metadata: { outcome: 'patient_selection_required', patientCount: matches.length }
+        });
         return res.json({
           requiresPatientSelection: true,
           patients: matches.map(({ passwordHash: _ph, isActive: _ia, role: _r, ...safe }) => safe)
@@ -114,7 +183,15 @@ export function registerAuthPatientRoutes(router: Router) {
 
       const { passwordHash: _ph, isActive: _ia, ...safeUser } = matches[0];
       logAuthEvent('patient_login', { userId: safeUser.id, event: 'password_login' });
-      res.json(toAuthResponse(safeUser));
+      await recordAuthProcess({
+        processType: 'patient_password',
+        step: 'login',
+        status: 'success',
+        identifier: email,
+        req,
+        metadata: { userId: safeUser.id }
+      });
+      res.json(await issueAuthSession(safeUser, req));
     })
   );
 
@@ -140,6 +217,15 @@ export function registerAuthPatientRoutes(router: Router) {
       });
 
       if (user?.isActive && !user.passwordHash) {
+        await recordAuthProcess({
+          processType: 'patient_password',
+          step: 'select',
+          status: 'blocked',
+          identifier: email,
+          reason: 'password_not_set',
+          req,
+          metadata: { patientId: body.patientId }
+        });
         return res.status(409).json({
           code: 'PATIENT_PASSWORD_NOT_SET',
           message: 'Password is not set for this account. Use email code or reset password.'
@@ -147,17 +233,43 @@ export function registerAuthPatientRoutes(router: Router) {
       }
 
       if (!user?.passwordHash || !user.isActive) {
+        await recordAuthProcess({
+          processType: 'patient_password',
+          step: 'select',
+          status: 'failure',
+          identifier: email,
+          reason: 'invalid_credentials',
+          req,
+          metadata: { patientId: body.patientId }
+        });
         return res.status(401).json({ message: 'Invalid credentials.' });
       }
 
       const isValid = await bcrypt.compare(body.password, user.passwordHash);
       if (!isValid) {
+        await recordAuthProcess({
+          processType: 'patient_password',
+          step: 'select',
+          status: 'failure',
+          identifier: email,
+          reason: 'invalid_credentials',
+          req,
+          metadata: { patientId: body.patientId }
+        });
         return res.status(401).json({ message: 'Invalid credentials.' });
       }
 
       const { passwordHash: _ph, isActive: _ia, ...safeUser } = user;
       logAuthEvent('patient_login', { userId: safeUser.id, event: 'password_select' });
-      res.json(toAuthResponse(safeUser));
+      await recordAuthProcess({
+        processType: 'patient_password',
+        step: 'select',
+        status: 'success',
+        identifier: email,
+        req,
+        metadata: { userId: safeUser.id }
+      });
+      res.json(await issueAuthSession(safeUser, req));
     })
   );
 
@@ -168,6 +280,14 @@ export function registerAuthPatientRoutes(router: Router) {
       const email = body.email.trim().toLowerCase();
       const mailer = getMailTransporter();
       if (!mailer && process.env.NODE_ENV === 'production') {
+        await recordAuthProcess({
+          processType: 'patient_password_reset',
+          step: 'request',
+          status: 'blocked',
+          identifier: email,
+          reason: 'email_delivery_not_configured',
+          req
+        });
         return res.status(503).json({ message: 'Email delivery is not configured.' });
       }
 
@@ -177,6 +297,14 @@ export function registerAuthPatientRoutes(router: Router) {
       });
 
       if (!user || !user.isActive || user.role !== Role.PATIENT) {
+        await recordAuthProcess({
+          processType: 'patient_password_reset',
+          step: 'request',
+          status: 'success',
+          identifier: email,
+          req,
+          metadata: { outcome: 'generic_no_active_patient' }
+        });
         return res.json({ message: 'If the account exists, a reset link has been sent.' });
       }
 
@@ -203,6 +331,14 @@ export function registerAuthPatientRoutes(router: Router) {
         console.log(`[dev] Reset URL: ${resetUrl}`);
       }
 
+      await recordAuthProcess({
+        processType: 'patient_password_reset',
+        step: 'request',
+        status: 'success',
+        identifier: email,
+        req,
+        metadata: { userId: user.id, delivery: mailer ? 'email' : 'dev' }
+      });
       res.json({ message: 'If the account exists, a reset link has been sent.' });
     })
   );
@@ -219,10 +355,30 @@ export function registerAuthPatientRoutes(router: Router) {
       });
 
       if (!resetToken || resetToken.usedAt || resetToken.expiresAt < new Date()) {
+        await recordAuthProcess({
+          processType: 'patient_password_reset',
+          step: 'reset',
+          status: 'failure',
+          identifier: 'unknown',
+          reason: !resetToken
+            ? 'token_not_found'
+            : resetToken.usedAt
+              ? 'token_used'
+              : 'token_expired',
+          req
+        });
         return res.status(400).json({ message: 'Invalid or expired reset token.' });
       }
 
       if (resetToken.user.role !== Role.PATIENT) {
+        await recordAuthProcess({
+          processType: 'patient_password_reset',
+          step: 'reset',
+          status: 'failure',
+          identifier: resetToken.user.email || resetToken.userId,
+          reason: 'wrong_role',
+          req
+        });
         return res.status(400).json({ message: 'Invalid reset token.' });
       }
 
@@ -234,9 +390,18 @@ export function registerAuthPatientRoutes(router: Router) {
           data: { usedAt: new Date() }
         })
       ]);
+      await revokeAllAuthSessionsForUser(resetToken.userId);
 
       const { role: _r, ...safeUser } = resetToken.user;
-      res.json(toAuthResponse({ ...safeUser, role: resetToken.user.role }));
+      await recordAuthProcess({
+        processType: 'patient_password_reset',
+        step: 'reset',
+        status: 'success',
+        identifier: resetToken.user.email || resetToken.userId,
+        req,
+        metadata: { userId: resetToken.userId }
+      });
+      res.json(await issueAuthSession({ ...safeUser, role: resetToken.user.role }, req));
     })
   );
 }

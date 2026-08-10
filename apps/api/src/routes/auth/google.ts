@@ -3,8 +3,10 @@ import { z } from 'zod';
 import { Prisma, Role } from '@prisma/client';
 import { prisma } from '../../db.js';
 import { createPatientRecord } from '../../services/patient-identity.js';
-import { asyncRoute, publicUserSelect, toAuthResponse, logAuthEvent } from '../../utils/helpers.js';
+import { asyncRoute, publicUserSelect, logAuthEvent } from '../../utils/helpers.js';
 import { googleClient, googleClientId } from './shared.js';
+import { recordAuthProcess } from '../../services/auth-process-log.js';
+import { issueAuthSession } from '../../services/auth-sessions.js';
 
 const googleAuthUserSelect = {
   ...publicUserSelect,
@@ -26,6 +28,14 @@ export function registerAuthGoogleRoutes(router: Router) {
     asyncRoute(async (req, res) => {
       const body = z.object({ idToken: z.string().min(20) }).parse(req.body);
       if (!googleClient || !googleClientId) {
+        await recordAuthProcess({
+          processType: 'patient_google',
+          step: 'login',
+          status: 'blocked',
+          identifier: 'unknown',
+          reason: 'google_not_configured',
+          req
+        });
         return res
           .status(503)
           .json({ message: 'Google login is not configured. Set GOOGLE_CLIENT_ID.' });
@@ -38,10 +48,26 @@ export function registerAuthGoogleRoutes(router: Router) {
           audience: googleClientId
         });
       } catch {
+        await recordAuthProcess({
+          processType: 'patient_google',
+          step: 'login',
+          status: 'failure',
+          identifier: 'unknown',
+          reason: 'invalid_google_token',
+          req
+        });
         return res.status(401).json({ message: 'Invalid Google sign-in token.' });
       }
       const payload = ticket.getPayload();
       if (!payload?.email || !payload.sub) {
+        await recordAuthProcess({
+          processType: 'patient_google',
+          step: 'login',
+          status: 'failure',
+          identifier: payload?.email || 'unknown',
+          reason: 'missing_google_email_or_subject',
+          req
+        });
         return res.status(401).json({ message: 'Google account email is required' });
       }
       const now = new Date();
@@ -79,6 +105,15 @@ export function registerAuthGoogleRoutes(router: Router) {
           });
 
       if (existing && existing.role !== Role.PATIENT) {
+        await recordAuthProcess({
+          processType: 'patient_google',
+          step: 'login',
+          status: 'failure',
+          identifier: email,
+          reason: 'email_used_by_other_role',
+          req,
+          metadata: { role: existing.role }
+        });
         return res.status(409).json({
           code: 'EMAIL_REGISTERED_WITH_DIFFERENT_ROLE',
           message: `This Google email is already registered as ${existing.role}. Use the provider/admin portal or another email.`
@@ -109,6 +144,14 @@ export function registerAuthGoogleRoutes(router: Router) {
           error instanceof Error &&
           (error.message === 'EMAIL_TAKEN' || error.message === 'EMAIL_USED_BY_OTHER_ROLE')
         ) {
+          await recordAuthProcess({
+            processType: 'patient_google',
+            step: 'login',
+            status: 'failure',
+            identifier: email,
+            reason: 'email_used_by_other_role',
+            req
+          });
           return res.status(409).json({
             code: 'EMAIL_REGISTERED_WITH_DIFFERENT_ROLE',
             message: 'This Google email is already registered with another Hope Hub account.'
@@ -165,7 +208,15 @@ export function registerAuthGoogleRoutes(router: Router) {
         googleSubject: payload.sub,
         email
       });
-      res.json(toAuthResponse({ ...user, role: Role.PATIENT }));
+      await recordAuthProcess({
+        processType: 'patient_google',
+        step: existing ? 'login' : 'signup',
+        status: 'success',
+        identifier: email,
+        req,
+        metadata: { userId: user.id, googleSubject: payload.sub, emailVerified }
+      });
+      res.json(await issueAuthSession({ ...user, role: Role.PATIENT }, req));
     })
   );
 }

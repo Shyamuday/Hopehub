@@ -13,9 +13,10 @@ import {
 import { getMailTransporter } from '../../services/mail.js';
 import { createPatientRecord } from '../../services/patient-identity.js';
 import { attachReferralOnSignup } from '../../services/referral-codes.js';
-import { asyncRoute, publicUserSelect, toAuthResponse, logAuthEvent } from '../../utils/helpers.js';
+import { asyncRoute, publicUserSelect, logAuthEvent } from '../../utils/helpers.js';
 import { PRODUCT_EVENTS, trackProductEvent } from '../../services/product-analytics.js';
 import { recordAuthProcess } from '../../services/auth-process-log.js';
+import { issueAuthSession } from '../../services/auth-sessions.js';
 
 const staffOtpKey = (email: string) => `staff:${email.trim().toLowerCase()}`;
 
@@ -160,7 +161,7 @@ export function registerAuthOtpRoutes(router: Router) {
           actorRole: Role.PATIENT,
           properties: { email, method: 'email_otp' }
         });
-        return res.json(toAuthResponse(patients[0]));
+        return res.json(await issueAuthSession(patients[0], req));
       }
 
       const user = await createPatientRecord({
@@ -189,7 +190,7 @@ export function registerAuthOtpRoutes(router: Router) {
         actorRole: Role.PATIENT,
         properties: { email, method: 'email_otp_register' }
       });
-      res.json(toAuthResponse({ ...user, role: Role.PATIENT }));
+      res.json(await issueAuthSession({ ...user, role: Role.PATIENT }, req));
     })
   );
 
@@ -255,7 +256,7 @@ export function registerAuthOtpRoutes(router: Router) {
         actorRole: Role.PATIENT,
         properties: { email, method: 'email_otp_select' }
       });
-      res.json(toAuthResponse(user));
+      res.json(await issueAuthSession(user, req));
     })
   );
 }
