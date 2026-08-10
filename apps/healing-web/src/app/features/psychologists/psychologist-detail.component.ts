@@ -3,6 +3,10 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { environment } from '../../../environments/environment';
 import { BookingService, HopeHubProvider } from '../../core/services/booking.service';
+import {
+  supportPathForProvider,
+  supportPathMeta as getSupportPathMeta,
+} from '../../core/constants/support-paths.constants';
 import { NotificationService } from '../../core/services/notification.service';
 import { PublicCommunicationConfigService } from '../../core/services/public-communication-config.service';
 
@@ -63,6 +67,8 @@ export class PsychologistDetailComponent implements OnInit {
 
   book(provider: HopeHubProvider, service?: CareTeamService): void {
     const selectedService = service || null;
+    const supportPath = supportPathForProvider(provider);
+    const supportMeta = getSupportPathMeta(supportPath);
     this.router.navigate(['/contact'], {
       queryParams: {
         service: selectedService?.title || this.publicConfig.defaultServiceName,
@@ -70,6 +76,9 @@ export class PsychologistDetailComponent implements OnInit {
         consultant: provider.name,
         providerId: provider.id,
         careTeamServiceId: selectedService?.id || '',
+        supportPath,
+        supportPathLabel: supportMeta.label,
+        preferredExpertType: supportMeta.title,
         duration: selectedService
           ? `${selectedService.durationMinutes} minutes`
           : this.sessionLabel(provider),
@@ -83,6 +92,14 @@ export class PsychologistDetailComponent implements OnInit {
 
   sessionLabel(provider: HopeHubProvider): string {
     return provider.sessionDurationMinutes ? `${provider.sessionDurationMinutes} min session` : '';
+  }
+
+  supportPathMeta(provider: HopeHubProvider) {
+    return getSupportPathMeta(supportPathForProvider(provider));
+  }
+
+  isNonClinicalSupport(provider: HopeHubProvider): boolean {
+    return !this.supportPathMeta(provider).clinical;
   }
 
   providerRoleLabel(provider: HopeHubProvider): string {

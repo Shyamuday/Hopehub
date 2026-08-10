@@ -61,6 +61,26 @@
               {{ providerTierLabel(p) }} · {{ providerRoleLabel(p) }}
             </p>
             <h1 class="mt-2 text-3xl font-semibold text-gray-950">{{ p.name }}</h1>
+            @if (supportPathMeta(p); as path) {
+              <div class="mt-4 rounded-2xl border border-primary-100 bg-primary-50/70 p-4 text-sm leading-6 text-primary-950">
+                <div class="flex items-start gap-3">
+                  <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white text-xl shadow-sm">
+                    {{ path.icon }}
+                  </span>
+                  <div>
+                    <p class="text-xs font-black uppercase tracking-wide text-primary-700">{{ path.label }}</p>
+                    <h2 class="text-base font-black text-gray-950">{{ path.title }}</h2>
+                    <p class="mt-1 text-gray-700">{{ path.description }}</p>
+                    <p class="mt-2 text-xs font-bold text-primary-800">Best for: {{ path.bestFor }}</p>
+                    @if (!path.clinical) {
+                      <p class="mt-2 rounded-lg bg-white px-3 py-2 text-xs font-bold text-amber-900">
+                        Non-clinical support. If this feels urgent, unsafe, or severe, please choose professional care or emergency support.
+                      </p>
+                    }
+                  </div>
+                </div>
+              </div>
+            }
             <div class="mt-4 rounded-lg border border-gray-200 bg-gray-50 p-4 text-sm leading-6 text-gray-700">
               <strong class="text-gray-950">{{ providerRoleDescription(p) }}</strong>
               <p class="mt-2">{{ providerScope(p) }}</p>
@@ -116,7 +136,18 @@
 
             <div class="mt-6 flex flex-col gap-3 sm:flex-row">
               <button type="button" class="btn-primary" (click)="book(p)">{{ bookingCta(p) }}</button>
-              <a routerLink="/contact" [queryParams]="{ consultant: p.name, providerId: p.id, type: 'inquiry' }" class="btn-outline">
+              <a
+                routerLink="/contact"
+                [queryParams]="{
+                  consultant: p.name,
+                  providerId: p.id,
+                  type: 'inquiry',
+                  supportPath: supportPathMeta(p).value,
+                  supportPathLabel: supportPathMeta(p).label,
+                  preferredExpertType: supportPathMeta(p).title
+                }"
+                class="btn-outline"
+              >
                 Ask a question
               </a>
             </div>

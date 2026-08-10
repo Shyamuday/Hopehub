@@ -4,6 +4,11 @@ import { ActivatedRoute, RouterModule } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { debounceTime, firstValueFrom } from 'rxjs';
 import { NOTE_CONTENT } from '../../core/constants/note-content.constants';
+import {
+  CONSUMER_SUPPORT_PATHS,
+  supportPathForExpertPreference,
+  supportPathMeta,
+} from '../../core/constants/support-paths.constants';
 import { ContactForm } from '../../core/models/contact.model';
 import {
   LeadService,
@@ -118,17 +123,10 @@ export class ContactComponent implements OnInit {
   ];
   expertTypeOptions: FormDropdownOption[] = [
     { value: '', label: 'No preference' },
-    { value: 'Verified Mental Health Professional', label: 'Verified professional' },
-    { value: 'Qualified Counsellor', label: 'Qualified counsellor' },
-    {
-      value: 'Psychology Student Volunteer',
-      label: 'Psychology student emotional support listener',
-    },
-    { value: 'Peer Support Volunteer', label: 'Peer emotional support listener' },
-    { value: 'NLP Coach', label: 'NLP coach' },
-    { value: 'Life Coach', label: 'Life coach' },
-    { value: 'Meditation / Breathwork Guide', label: 'Meditation / breathwork guide' },
-    { value: 'Career / Study Mentor', label: 'Career / study mentor' },
+    ...CONSUMER_SUPPORT_PATHS.map((path) => ({
+      value: path.value,
+      label: `${path.label} - ${path.title}`,
+    })),
   ];
   sessionModeOptions: FormDropdownOption[] = [
     { value: 'live_chat', label: 'Live chat' },
@@ -214,6 +212,9 @@ export class ContactComponent implements OnInit {
         offeringId: params['offeringId'] || '',
         paymentMode: params['paymentMode'] || 'FULL',
         source: params['source'] || '',
+        supportPath: params['supportPath'] || '',
+        supportPathLabel: params['supportPathLabel'] || '',
+        preferredExpertType: params['preferredExpertType'] || '',
         mode: this.normalizeLiveConnectMode(params['mode'] || ''),
       });
       if (this.contactForm) {
@@ -291,7 +292,7 @@ export class ContactComponent implements OnInit {
       urgencyLevel: ['normal', [Validators.required]],
       preferredTime: [''],
       concernCategory: [''],
-      preferredExpertType: [''],
+      preferredExpertType: [this.initialPreferredExpertType()],
       sessionMode: [this.initialSessionMode()],
       preferredLanguage: [''],
       preferredProviderGender: [''],
@@ -448,7 +449,11 @@ export class ContactComponent implements OnInit {
     const data = this.prefilledData();
     if (data.source === 'live-connect') {
       const mode = this.normalizeLiveConnectMode(data.mode) || 'voice';
-      return `I tried Live Connect for ${mode} support, but no one was available. I want to book the next suitable consultation.`;
+      const supportPath = supportPathForExpertPreference(
+        data.supportPath || data.preferredExpertType,
+      );
+      const supportText = supportPath ? ` with ${supportPathMeta(supportPath).title}` : '';
+      return `I tried Live Connect for ${mode} support${supportText}, but no one was available. I want to book the next suitable consultation.`;
     }
 
     if (data.serviceName && data.consultant) {
@@ -460,6 +465,13 @@ export class ContactComponent implements OnInit {
 
       if (data.duration) {
         message += ` (${data.duration} session)`;
+      }
+
+      const supportPath = supportPathForExpertPreference(
+        data.supportPath || data.preferredExpertType,
+      );
+      if (supportPath) {
+        message += ` Preference: ${supportPathMeta(supportPath).label}`;
       }
 
       message += '.';
@@ -1154,13 +1166,7 @@ export class ContactComponent implements OnInit {
   }
 
   private roleGroupForExpertType(value: string): string {
-    if (/professional/i.test(value)) return 'PROFESSIONALS';
-    if (/counsellor/i.test(value)) return 'COUNSELLORS';
-    if (/student|peer|volunteer|listener/i.test(value)) return 'VOLUNTEERS';
-    if (/coach/i.test(value)) return 'COACHES';
-    if (/meditation|breathwork/i.test(value)) return 'WELLNESS_GUIDES';
-    if (/mentor|career|study/i.test(value)) return 'MENTORS';
-    return '';
+    return supportPathForExpertPreference(value);
   }
 
   private pickBestProvider(
@@ -1214,6 +1220,9 @@ export class ContactComponent implements OnInit {
     if (this.isLiveConnectFallback() && !this.contactForm.get('serviceInterest')?.value) {
       patch['serviceInterest'] = this.prefilledData().serviceName || 'Hope Hub Consultation';
     }
+    if (this.prefilledData().supportPath && !this.contactForm.get('preferredExpertType')?.value) {
+      patch['preferredExpertType'] = this.prefilledData().supportPath;
+    }
     if (this.isLiveConnectFallback() && !this.contactForm.get('message')?.value) {
       patch['message'] = this.generateInitialMessage();
     }
@@ -1225,6 +1234,12 @@ export class ContactComponent implements OnInit {
   private initialSessionMode(): string {
     const mode = this.normalizeLiveConnectMode(this.prefilledData().mode);
     return mode ? this.sessionModeForLiveConnectMode(mode) : 'online_audio';
+  }
+
+  private initialPreferredExpertType(): string {
+    return supportPathForExpertPreference(
+      this.prefilledData().supportPath || this.prefilledData().preferredExpertType,
+    );
   }
 
   private activeQuickTalkMode(): LiveConnectMode {

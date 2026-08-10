@@ -4,11 +4,18 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { BookingService, HopeHubProvider } from '../../core/services/booking.service';
+import {
+  CONSUMER_SUPPORT_PATHS,
+  ConsumerSupportPath,
+  isConsumerSupportPath,
+  supportPathForProvider,
+  supportPathMeta,
+} from '../../core/constants/support-paths.constants';
 import { PublicCommunicationConfigService } from '../../core/services/public-communication-config.service';
+import { NotificationService } from '../../core/services/notification.service';
 
 type CareTeamListService = NonNullable<HopeHubProvider['services']>[number];
-type RoleGroup = '' | 'PROFESSIONAL_CARE' | 'COACH_MENTOR' | 'EMOTIONAL_LISTENER';
-import { NotificationService } from '../../core/services/notification.service';
+type RoleGroup = '' | ConsumerSupportPath;
 
 @Component({
   selector: 'app-psychologists',
@@ -59,39 +66,7 @@ export class PsychologistsComponent implements OnInit {
     'Family support',
   ];
   readonly ageGroupOptions = ['', 'Adults', 'Teens', 'Children', 'Older adults'];
-  readonly roleTabs: Array<{
-    value: RoleGroup;
-    label: string;
-    title: string;
-    icon: string;
-    help: string;
-    bestFor: string;
-  }> = [
-    {
-      value: 'PROFESSIONAL_CARE',
-      label: 'Professional care',
-      title: 'Psychologist / counsellor',
-      icon: '🧠',
-      help: 'Structured mental-wellness support from professional care providers.',
-      bestFor: 'Anxiety, depression, panic, trauma, relationship stress.',
-    },
-    {
-      value: 'COACH_MENTOR',
-      label: 'Clarity & growth',
-      title: 'Life coach / mentor',
-      icon: '✨',
-      help: 'Non-clinical coaching, mentoring, mindfulness, study and career guidance.',
-      bestFor: 'Career, study pressure, confidence, habits, motivation.',
-    },
-    {
-      value: 'EMOTIONAL_LISTENER',
-      label: 'Talk now',
-      title: 'Emotional support listener',
-      icon: '💛',
-      help: 'Gentle non-clinical listening support for venting and feeling heard.',
-      bestFor: 'Loneliness, overthinking, heartbreak, hard days.',
-    },
-  ];
+  readonly roleTabs = CONSUMER_SUPPORT_PATHS;
 
   ngOnInit(): void {
     this.hydrateFiltersFromUrl();
@@ -198,7 +173,7 @@ export class PsychologistsComponent implements OnInit {
   }
 
   private isRoleGroup(value: string): value is RoleGroup {
-    return this.roleTabs.some((tab) => tab.value === value);
+    return value === '' || isConsumerSupportPath(value);
   }
 
   private loadRoleCounts(): void {
@@ -270,13 +245,13 @@ export class PsychologistsComponent implements OnInit {
       return 'No emotional support listeners match this filter right now. Try Professional care or send a general request so the team can guide you.';
     }
     if (this.roleGroup() === 'PROFESSIONAL_CARE') {
-      return 'No psychologist/counsellor match found for this filter. Try All support, adjust concern/language, or book a general request.';
+      return 'No psychologist/counsellor match found for this filter. Try another support path, adjust concern/language, or book a general request.';
     }
     if (this.roleGroup() === 'COACH_MENTOR') {
-      return 'No coach/mentor match found for this filter. Try All support or send a general request.';
+      return 'No coach/mentor match found for this filter. Try another support path or send a general request.';
     }
     if (this.roleGroup()) {
-      return `No ${tab?.label.toLowerCase()} match this filter right now. Try All or send a general request.`;
+      return `No ${tab?.label.toLowerCase()} match this filter right now. Try another support path or send a general request.`;
     }
     return 'No profiles match these filters. Try clearing filters or book a general request.';
   }
@@ -423,12 +398,17 @@ export class PsychologistsComponent implements OnInit {
   bookingQueryParams(provider: HopeHubProvider, service: CareTeamListService | null = null) {
     const directProviderPrice =
       (provider.sessionFeeInPaise ?? this.publicConfig.defaultSessionPriceInPaise) / 100;
+    const supportPath = supportPathForProvider(provider);
+    const supportMeta = supportPathMeta(supportPath);
     return {
       service: service?.title || this.publicConfig.defaultServiceName,
       serviceName: service?.title || this.publicConfig.defaultServiceName,
       consultant: provider.name,
       providerId: provider.id,
       careTeamServiceId: service?.id || '',
+      supportPath,
+      supportPathLabel: supportMeta.label,
+      preferredExpertType: supportMeta.title,
       duration: service
         ? `${service.durationMinutes} minutes`
         : this.publicConfig.defaultSessionLabel,
