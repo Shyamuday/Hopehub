@@ -1,3 +1,45 @@
+<section class="panel onboarding-card" [class.onboarding-card--complete]="onboarding().complete">
+  <div class="panel-header">
+    <div>
+      <h2>{{ onboarding().complete ? 'Provider setup complete' : onboarding().title }}</h2>
+      <p class="muted">
+        {{
+          onboarding().complete
+            ? 'Your full console is unlocked. Keep profile, services, and availability fresh.'
+            : onboarding().subtitle
+        }}
+      </p>
+    </div>
+    <div class="onboarding-meter">
+      <strong>{{ onboarding().percent }}%</strong>
+      <span>ready</span>
+    </div>
+  </div>
+
+  @if (!onboarding().complete) {
+    <p class="onboarding-lock-note">
+      Finish required tasks first. Worklist, live calls, earnings, and care tools unlock after setup.
+    </p>
+  }
+
+  <div class="onboarding-steps">
+    @for (step of onboarding().steps; track step.id) {
+      @if (step.required) {
+        <article class="onboarding-step" [class.done]="step.complete">
+          <span class="step-dot">{{ step.complete ? '✓' : '•' }}</span>
+          <div>
+            <h3>{{ step.title }}</h3>
+            <p>{{ step.description }}</p>
+          </div>
+          @if (!step.complete) {
+            <a class="step-action" [routerLink]="step.route">{{ step.actionLabel }}</a>
+          }
+        </article>
+      }
+    }
+  </div>
+</section>
+
 <section class="panel worklist-summary">
   <div class="panel-header">
     <div>

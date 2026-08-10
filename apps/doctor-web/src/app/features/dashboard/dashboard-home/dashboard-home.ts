@@ -9,6 +9,10 @@ import { API_PATHS } from '../../../core/constants/api-paths.constants';
 import { ROUTE_PATHS } from '../../../core/constants/app-routes.constants';
 import type { DoctorProfileSummary } from '../../../core/constants/doctor-types.constants';
 import {
+  buildProviderOnboardingStatus,
+  type ProviderOnboardingStatus,
+} from '../../../core/constants/provider-onboarding.constants';
+import {
   HOMEOPATHY_PROVIDER_LANGUAGE,
   PH_PROVIDER_LANGUAGE,
 } from '../../../core/constants/provider-language.constants';
@@ -49,6 +53,7 @@ export class DashboardHome {
   readonly listenerProfile = signal<DoctorProfileSummary | null>(null);
   readonly listenerProfileImageUrl = signal<string | null>(null);
   readonly language = signal(PH_PROVIDER_LANGUAGE);
+  readonly onboarding = signal<ProviderOnboardingStatus>(buildProviderOnboardingStatus(null, null));
 
   constructor(
     private readonly http: HttpClient,
@@ -74,9 +79,13 @@ export class DashboardHome {
         this.isListenerProfile(snapshot?.doctorProfile) ? (snapshot?.doctorProfile ?? null) : null,
       );
       this.listenerProfileImageUrl.set(snapshot?.profileImageUrl ?? null);
+      this.onboarding.set(
+        buildProviderOnboardingStatus(snapshot?.doctorProfile ?? null, snapshot?.profileImageUrl),
+      );
     } catch {
       this.canPrescribe.set(true);
       this.language.set(HOMEOPATHY_PROVIDER_LANGUAGE);
+      this.onboarding.set(buildProviderOnboardingStatus(null, null));
     }
   }
 

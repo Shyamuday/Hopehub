@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { doctorAuthGuard } from './core/guards/doctor-auth-guard';
 import { providerCapabilityGuard } from './core/guards/provider-capability-guard';
+import { providerOnboardingGuard } from './core/guards/provider-onboarding-guard';
 import { ROUTE_PATHS } from './core/constants/app-routes.constants';
 import { Login } from './features/auth/login/login';
 import { DoctorShell } from './layout/doctor-shell/doctor-shell';
@@ -35,8 +36,12 @@ export const routes: Routes = [
     component: DoctorShell,
     canActivate: [doctorAuthGuard],
     children: [
-      { path: '', pathMatch: 'full', redirectTo: ROUTE_PATHS.WORKLIST },
-      { path: ROUTE_PATHS.WORKLIST, component: WorklistPage },
+      { path: '', pathMatch: 'full', redirectTo: ROUTE_PATHS.DASHBOARD },
+      {
+        path: ROUTE_PATHS.WORKLIST,
+        component: WorklistPage,
+        canActivate: [providerOnboardingGuard],
+      },
       { path: ROUTE_PATHS.DASHBOARD, component: DashboardHome },
       {
         path: `${ROUTE_PATHS.CASE_ANALYSIS}/:consultationId`,
@@ -46,25 +51,25 @@ export const routes: Routes = [
       {
         path: `${ROUTE_PATHS.CASE_ANALYSIS}/:consultationId/case-analysis`,
         component: CaseAnalysisPage,
-        canActivate: [providerCapabilityGuard],
+        canActivate: [providerOnboardingGuard, providerCapabilityGuard],
         data: { capability: 'caseAnalysis' },
       },
       {
         path: `${ROUTE_PATHS.CASE_ANALYSIS}/:consultationId/prescription`,
         component: AppointmentsPage,
-        canActivate: [providerCapabilityGuard],
+        canActivate: [providerOnboardingGuard, providerCapabilityGuard],
         data: { capability: 'prescribe' },
       },
       {
         path: ROUTE_PATHS.APPOINTMENTS,
         component: AppointmentsPage,
-        canActivate: [providerCapabilityGuard],
+        canActivate: [providerOnboardingGuard, providerCapabilityGuard],
         data: { capability: 'prescribe' },
       },
       {
         path: ROUTE_PATHS.CASE_ANALYSIS_STUDIO,
         component: CaseAnalysisPage,
-        canActivate: [providerCapabilityGuard],
+        canActivate: [providerOnboardingGuard, providerCapabilityGuard],
         data: { standalone: true, capability: 'caseAnalysis' },
       },
       {
@@ -72,28 +77,32 @@ export const routes: Routes = [
         redirectTo: ROUTE_PATHS.CASE_ANALYSIS_STUDIO,
         pathMatch: 'full',
       },
-      { path: ROUTE_PATHS.PATIENTS, component: PatientsPage },
+      {
+        path: ROUTE_PATHS.PATIENTS,
+        component: PatientsPage,
+        canActivate: [providerOnboardingGuard],
+      },
       {
         path: ROUTE_PATHS.DISEASE_PAGES,
         component: DiseasePagesPage,
-        canActivate: [providerCapabilityGuard],
+        canActivate: [providerOnboardingGuard, providerCapabilityGuard],
         data: { capability: 'treatmentPages' },
       },
       {
         path: ROUTE_PATHS.BLOG,
         component: DoctorBlogPage,
-        canActivate: [providerCapabilityGuard],
+        canActivate: [providerOnboardingGuard, providerCapabilityGuard],
         data: { capability: 'content' },
       },
       {
         path: ROUTE_PATHS.ONLINE_DOCTOR,
         component: OnlineDoctorPage,
-        canActivate: [providerCapabilityGuard],
+        canActivate: [providerOnboardingGuard, providerCapabilityGuard],
         data: { capability: 'onlineConsult' },
       },
       {
         path: `${ROUTE_PATHS.SESSIONS}/:consultationId`,
-        canActivate: [providerCapabilityGuard],
+        canActivate: [providerOnboardingGuard, providerCapabilityGuard],
         data: { capability: 'onlineConsult' },
         loadComponent: () =>
           import('./features/live-session/doctor-live-session-page').then(
@@ -103,11 +112,11 @@ export const routes: Routes = [
       {
         path: ROUTE_PATHS.REPERTORY_BROWSER,
         component: RepertoryBrowserPage,
-        canActivate: [providerCapabilityGuard],
+        canActivate: [providerOnboardingGuard, providerCapabilityGuard],
         data: { capability: 'caseAnalysis' },
       },
       { path: ROUTE_PATHS.PROFILE, component: ProfilePage },
-      { path: ROUTE_PATHS.LEAVES, component: MyLeaves },
+      { path: ROUTE_PATHS.LEAVES, component: MyLeaves, canActivate: [providerOnboardingGuard] },
       {
         path: ROUTE_PATHS.SLOTS,
         component: SlotsPage,
@@ -117,20 +126,20 @@ export const routes: Routes = [
       {
         path: ROUTE_PATHS.EARNINGS,
         component: EarningsPage,
-        canActivate: [providerCapabilityGuard],
+        canActivate: [providerOnboardingGuard, providerCapabilityGuard],
         data: { capability: 'earnings' },
       },
       {
         path: ROUTE_PATHS.SCAN,
         component: DoctorPatientScanLauncherPage,
-        canActivate: [providerCapabilityGuard],
+        canActivate: [providerOnboardingGuard, providerCapabilityGuard],
         data: { capability: 'scan' },
       },
       { path: ROUTE_PATHS.NOTIFICATIONS_INBOX, component: NotificationsInboxPage },
       {
         path: `${ROUTE_PATHS.PATIENT_SCAN}/:patientCode`,
         component: PatientScanPage,
-        canActivate: [providerCapabilityGuard],
+        canActivate: [providerOnboardingGuard, providerCapabilityGuard],
         data: { capability: 'scan' },
       },
     ],
