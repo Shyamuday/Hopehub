@@ -41,11 +41,13 @@ export class Login {
     label: string;
     helper: string;
   }> = [
-    {
-      value: 'HOMEOPATHY',
-      label: 'Homeopathy provider',
-      helper: 'For homeopathy consultants, specialists, interns, and clinic care providers.',
-    },
+    // Homeopathy signup is paused for now. Keep this here so we can re-enable
+    // the path quickly when the provider onboarding split is ready again.
+    // {
+    //   value: 'HOMEOPATHY',
+    //   label: 'Homeopathy provider',
+    //   helper: 'For homeopathy consultants, specialists, interns, and clinic care providers.',
+    // },
     {
       value: 'HOPE_HUB',
       label: 'Hope Hub provider',
@@ -137,7 +139,7 @@ export class Login {
   readonly enrollModel = signal({
     name: '',
     mobile: '',
-    providerType: 'HOMEOPATHY' as ProviderSignupKind,
+    providerType: 'HOPE_HUB' as ProviderSignupKind,
     hopeHubGroup: 'PSYCHOLOGIST' as HopeHubProviderGroup,
     careTeamType: 'MENTAL_WELLNESS_PROFESSIONAL' as HopeHubCareTeamType,
     specialty: '',
@@ -154,7 +156,7 @@ export class Login {
   submitting = signal(false);
 
   isHealingHubSignup(): boolean {
-    return this.enrollModel().providerType === 'HOPE_HUB';
+    return true;
   }
 
   selectedProviderHelper(): string {
@@ -188,16 +190,12 @@ export class Login {
     return 'e.g. anxiety support, relationship stress, student counselling';
   }
 
-  onProviderTypeChange(value: ProviderSignupKind): void {
+  onProviderTypeChange(_value: ProviderSignupKind): void {
     this.enrollModel.update((current) => ({
       ...current,
-      providerType: value,
-      ...(value === 'HOPE_HUB'
-        ? {
-            hopeHubGroup: current.hopeHubGroup || 'PSYCHOLOGIST',
-            careTeamType: current.careTeamType || 'MENTAL_WELLNESS_PROFESSIONAL',
-          }
-        : {}),
+      providerType: 'HOPE_HUB',
+      hopeHubGroup: current.hopeHubGroup || 'PSYCHOLOGIST',
+      careTeamType: current.careTeamType || 'MENTAL_WELLNESS_PROFESSIONAL',
     }));
   }
 
@@ -321,8 +319,7 @@ export class Login {
   async enroll() {
     if (!this.canSignup()) return;
     const { email, password } = this.signInModel();
-    const { name, mobile, providerType, careTeamType, specialty, registrationNo } =
-      this.enrollModel();
+    const { name, mobile, careTeamType, specialty, registrationNo } = this.enrollModel();
     this.error.set('');
     this.message.set('');
     this.submitting.set(true);
@@ -334,7 +331,7 @@ export class Login {
         password,
         specialty,
         registrationNo: registrationNo || undefined,
-        careTeamType: providerType === 'HOPE_HUB' ? careTeamType : undefined,
+        careTeamType,
       });
 
       if (!result.ok) {

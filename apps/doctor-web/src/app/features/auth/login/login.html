@@ -67,9 +67,8 @@
 
   } @else {
     <h2>Provider Signup</h2>
-    <p>Choose exactly who you are joining as. This decides your workspace and visible role.</p>
+    <p>Create your Hope Hub provider account for emotional support, counselling, coaching, and mental-wellness sessions.</p>
     <div class="identity-guide" aria-label="Provider signup paths">
-      <span>Homeopathy care</span>
       <span>Hope Hub support</span>
     </div>
 
@@ -83,12 +82,11 @@
       <label for="mobile">Mobile</label>
       <input id="mobile" [formField]="enrollForm.mobile" />
 
-      <label for="providerType">Provider type</label>
-      <select id="providerType" [formField]="enrollForm.providerType" (change)="onProviderTypeChange($any($event.target).value)">
-        @for (option of providerTypeOptions; track option.value) {
-          <option [value]="option.value">{{ option.label }}</option>
-        }
-      </select>
+      <label>Provider type</label>
+      <div class="fixed-provider-type" aria-live="polite">
+        <strong>Hope Hub provider</strong>
+        <span>Fixed for now</span>
+      </div>
       @if (selectedProviderHelper()) {
         <p class="field-hint">{{ selectedProviderHelper() }}</p>
       }
