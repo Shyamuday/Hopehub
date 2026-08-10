@@ -17,6 +17,7 @@ import { HopeHubLiveGroup, HopeHubProvider } from '../../../../core/services/boo
 import { PaymentFlowState, PaymentStatusOverlayComponent } from '../../../../shared/components';
 
 type LiveConnectMode = 'chat' | 'voice' | 'video';
+type ConsumerSupportPath = '' | 'PROFESSIONAL_CARE' | 'COACH_MENTOR' | 'EMOTIONAL_LISTENER';
 type LiveConnectAlternativeMode = {
   mode: LiveConnectMode;
   label: string;
@@ -53,7 +54,7 @@ export class LiveConnectComponent implements OnInit {
   readonly startingProviderId = signal('');
   readonly view = signal<'providers' | 'groups'>('providers');
   readonly mode = signal<LiveConnectMode>('chat');
-  readonly roleGroup = signal('');
+  readonly roleGroup = signal<ConsumerSupportPath>('');
   readonly alternativeModes = signal<LiveConnectAlternativeMode[]>([]);
   readonly alternativeModesLoading = signal(false);
   readonly paymentFlowState = signal<PaymentFlowState>('IDLE');
@@ -72,13 +73,41 @@ export class LiveConnectComponent implements OnInit {
     { value: 'video', label: 'Video', icon: '🎥', copy: 'Face-to-face support' },
   ];
 
-  readonly tabs = [
-    { value: '', label: 'All live' },
-    { value: 'PROFESSIONALS', label: 'Psychologists' },
-    { value: 'COUNSELLORS', label: 'Counsellors' },
-    { value: 'VOLUNTEERS', label: 'Listeners' },
-    { value: 'COACHES', label: 'Coaches' },
-    { value: 'MENTORS', label: 'Mentors' },
+  readonly supportPaths: Array<{
+    value: ConsumerSupportPath;
+    label: string;
+    title: string;
+    icon: string;
+    description: string;
+    bestFor: string;
+  }> = [
+    {
+      value: 'PROFESSIONAL_CARE',
+      label: 'Professional care',
+      title: 'Psychologist / counsellor',
+      icon: '🧠',
+      description:
+        'Structured support for anxiety, low mood, panic, relationship stress, and deeper emotional concerns.',
+      bestFor: 'Anxiety · depression · panic · trauma · relationships',
+    },
+    {
+      value: 'COACH_MENTOR',
+      label: 'Clarity & growth',
+      title: 'Life coach / mentor',
+      icon: '✨',
+      description:
+        'Guidance for goals, confidence, study pressure, career direction, habits, and life clarity.',
+      bestFor: 'Career · study · motivation · habits · confidence',
+    },
+    {
+      value: 'EMOTIONAL_LISTENER',
+      label: 'Talk now',
+      title: 'Emotional support listener',
+      icon: '💛',
+      description:
+        'A gentle non-clinical space to vent, feel heard, and talk through a hard moment.',
+      bestFor: 'Loneliness · overthinking · heartbreak · hard day',
+    },
   ];
 
   ngOnInit(): void {
@@ -104,10 +133,16 @@ export class LiveConnectComponent implements OnInit {
     this.loadProviders();
   }
 
-  setRoleGroup(roleGroup: string): void {
+  setRoleGroup(roleGroup: ConsumerSupportPath): void {
     if (this.roleGroup() === roleGroup) return;
     this.roleGroup.set(roleGroup);
     this.loadProviders();
+  }
+
+  activeSupportPathTitle(): string {
+    return (
+      this.supportPaths.find((path) => path.value === this.roleGroup())?.title ?? 'Hope Hub support'
+    );
   }
 
   providerImageUrl(provider: HopeHubProvider): string | null {

@@ -33,15 +33,20 @@
           }
         </div>
 
-        <div class="live-tab-row" aria-label="Filter live providers">
-          @for (tab of tabs; track tab.value) {
+        <div class="live-support-path-grid" aria-label="Choose support path">
+          @for (path of supportPaths; track path.value) {
             <button
               type="button"
-              class="live-tab"
-              [class.live-tab--active]="roleGroup() === tab.value"
-              (click)="setRoleGroup(tab.value)"
+              class="live-support-path"
+              [class.live-support-path--active]="roleGroup() === path.value"
+              (click)="setRoleGroup(path.value)"
             >
-              {{ tab.label }}
+              <span class="live-support-path__icon">{{ path.icon }}</span>
+              <span class="live-support-path__copy">
+                <small>{{ path.label }}</small>
+                <strong>{{ path.title }}</strong>
+                <em>{{ path.bestFor }}</em>
+              </span>
             </button>
           }
         </div>
@@ -126,6 +131,7 @@
             <div class="live-empty-card__copy">
               <h3>{{ unavailableTitle() }}</h3>
               <p>{{ message() || unavailableMessage() }}</p>
+              <small>Selected path: {{ activeSupportPathTitle() }}</small>
               @if (alternativeModesLoading()) {
                 <small>Checking other live options...</small>
               } @else if (alternativeModes().length) {

@@ -9,9 +9,8 @@
           Meet the care team
         </h1>
         <p class="mt-3 max-w-3xl text-sm leading-6 text-gray-700 sm:text-base">
-          Choose from verified professionals, qualified counsellors, student listeners, peer
-          listeners, coaches, and wellness guides. Each profile clearly shows the support level and
-          scope before you book.
+          Choose the kind of support you need first: professional care, clarity and growth coaching,
+          or a gentle emotional support listener. Each profile clearly shows the scope before you book.
         </p>
       </div>
       <a routerLink="/contact" class="btn-primary btn-sm">Book session</a>
@@ -19,29 +18,33 @@
 
     <div class="mb-6 rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm leading-6 text-emerald-950">
       <strong>Clear roles, safer support:</strong>
-      professionals and counsellors can offer structured counselling support. Student and peer listeners,
-      mentor, and wellness-guide sessions are non-clinical and follow Hope Hub safety escalation
-      rules.
+      psychologists/counsellors can offer structured professional support. Coaches, mentors, wellness guides,
+      and emotional support listeners are non-clinical and follow Hope Hub safety escalation rules.
     </div>
 
     <div class="mb-6 rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-      <div class="mb-4 flex flex-wrap gap-2">
+      <div class="mb-4 grid gap-3 md:grid-cols-3">
         @for (tab of roleTabs; track tab.value) {
           <button
             type="button"
-            class="rounded-full border px-3 py-1.5 text-sm font-semibold transition"
+            class="rounded-2xl border p-3 text-left transition hover:-translate-y-0.5 hover:shadow-md"
             [class.border-primary-600]="roleGroup() === tab.value"
-            [class.bg-primary-600]="roleGroup() === tab.value"
-            [class.text-white]="roleGroup() === tab.value"
+            [class.bg-emerald-50]="roleGroup() === tab.value"
+            [class.text-emerald-950]="roleGroup() === tab.value"
             [class.border-gray-200]="roleGroup() !== tab.value"
             [class.bg-white]="roleGroup() !== tab.value"
             [class.text-gray-700]="roleGroup() !== tab.value"
             (click)="setRoleGroup(tab.value)"
             [title]="tab.help"
           >
-            {{ tab.label }}
-            <span class="ml-1 rounded-full bg-black/10 px-1.5 py-0.5 text-[11px]">
-              {{ roleCount(tab.value) }}
+            <span class="mb-2 inline-flex h-9 w-9 items-center justify-center rounded-full bg-gray-50 text-lg">
+              {{ tab.icon }}
+            </span>
+            <span class="block text-xs font-black uppercase tracking-wide text-primary-700">{{ tab.label }}</span>
+            <span class="mt-1 block text-sm font-black text-gray-950">{{ tab.title }}</span>
+            <span class="mt-1 block text-xs leading-5 text-gray-600">{{ tab.bestFor }}</span>
+            <span class="mt-2 inline-flex rounded-full bg-black/5 px-2 py-0.5 text-[11px] font-bold">
+              {{ roleCount(tab.value) }} available
             </span>
           </button>
         }

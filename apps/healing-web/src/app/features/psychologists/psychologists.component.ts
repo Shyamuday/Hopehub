@@ -7,8 +7,7 @@ import { BookingService, HopeHubProvider } from '../../core/services/booking.ser
 import { PublicCommunicationConfigService } from '../../core/services/public-communication-config.service';
 
 type CareTeamListService = NonNullable<HopeHubProvider['services']>[number];
-type RoleGroup =
-  '' | 'PROFESSIONALS' | 'COUNSELLORS' | 'VOLUNTEERS' | 'COACHES' | 'WELLNESS_GUIDES' | 'MENTORS';
+type RoleGroup = '' | 'PROFESSIONAL_CARE' | 'COACH_MENTOR' | 'EMOTIONAL_LISTENER';
 import { NotificationService } from '../../core/services/notification.service';
 
 @Component({
@@ -40,12 +39,9 @@ export class PsychologistsComponent implements OnInit {
   readonly totalPages = signal(1);
   readonly roleCounts = signal<Record<RoleGroup, number>>({
     '': 0,
-    PROFESSIONALS: 0,
-    COUNSELLORS: 0,
-    VOLUNTEERS: 0,
-    COACHES: 0,
-    WELLNESS_GUIDES: 0,
-    MENTORS: 0,
+    PROFESSIONAL_CARE: 0,
+    COACH_MENTOR: 0,
+    EMOTIONAL_LISTENER: 0,
   });
   readonly concernOptions = ['', 'Anxiety', 'Stress', 'Relationship concerns', 'Family concerns'];
   readonly languageOptions = ['', 'English', 'Hindi', 'Bengali', 'Tamil', 'Telugu'];
@@ -63,18 +59,38 @@ export class PsychologistsComponent implements OnInit {
     'Family support',
   ];
   readonly ageGroupOptions = ['', 'Adults', 'Teens', 'Children', 'Older adults'];
-  readonly roleTabs: Array<{ value: RoleGroup; label: string; help: string }> = [
-    { value: '', label: 'All', help: 'Show every published support option' },
-    { value: 'PROFESSIONALS', label: 'Professionals', help: 'Structured mental-wellness care' },
-    { value: 'COUNSELLORS', label: 'Counsellors', help: 'Guided counselling support' },
+  readonly roleTabs: Array<{
+    value: RoleGroup;
+    label: string;
+    title: string;
+    icon: string;
+    help: string;
+    bestFor: string;
+  }> = [
     {
-      value: 'VOLUNTEERS',
-      label: 'Emotional Support Listeners',
-      help: 'Non-clinical listening support',
+      value: 'PROFESSIONAL_CARE',
+      label: 'Professional care',
+      title: 'Psychologist / counsellor',
+      icon: '🧠',
+      help: 'Structured mental-wellness support from professional care providers.',
+      bestFor: 'Anxiety, depression, panic, trauma, relationship stress.',
     },
-    { value: 'COACHES', label: 'Coaches', help: 'Goals, habits, confidence' },
-    { value: 'WELLNESS_GUIDES', label: 'Wellness guides', help: 'Breathing and mindfulness' },
-    { value: 'MENTORS', label: 'Mentors', help: 'Study and career support' },
+    {
+      value: 'COACH_MENTOR',
+      label: 'Clarity & growth',
+      title: 'Life coach / mentor',
+      icon: '✨',
+      help: 'Non-clinical coaching, mentoring, mindfulness, study and career guidance.',
+      bestFor: 'Career, study pressure, confidence, habits, motivation.',
+    },
+    {
+      value: 'EMOTIONAL_LISTENER',
+      label: 'Talk now',
+      title: 'Emotional support listener',
+      icon: '💛',
+      help: 'Gentle non-clinical listening support for venting and feeling heard.',
+      bestFor: 'Loneliness, overthinking, heartbreak, hard days.',
+    },
   ];
 
   ngOnInit(): void {
@@ -210,18 +226,18 @@ export class PsychologistsComponent implements OnInit {
   recommendedHint(): string {
     const concern = `${this.concern()} ${this.q()}`.toLowerCase();
     if (/anxiety|stress|panic|depress|trauma|relationship|family/.test(concern)) {
-      return 'Recommended: start with Professionals or Counsellors for structured support.';
+      return 'Recommended: start with Professional care for structured support.';
     }
     if (/lonely|loneliness|breakup|motivation|heartbreak|friend/.test(concern)) {
-      return 'Recommended: Listener peers or Coaches may be a softer first step.';
+      return 'Recommended: Talk now is a softer first step when you mainly need to vent or feel heard.';
     }
     if (/study|career|exam|focus|job/.test(concern)) {
-      return 'Recommended: Career / Study Mentors first, then Counsellors if emotions feel heavy.';
+      return 'Recommended: Clarity & growth first, then Professional care if emotions feel heavy.';
     }
     if (/breath|sleep|relax|mindful|meditation/.test(concern)) {
-      return 'Recommended: Wellness guides for breathing and grounding practice.';
+      return 'Recommended: Clarity & growth for coaching, breathing, and grounding practice.';
     }
-    return 'Tip: choose a provider type tab if you already know the kind of support you want.';
+    return 'Tip: choose one of the three support paths if you already know what kind of help you want.';
   }
 
   roleCount(value: RoleGroup): number {
@@ -250,11 +266,14 @@ export class PsychologistsComponent implements OnInit {
 
   emptySuggestion(): string {
     const tab = this.roleTabs.find((item) => item.value === this.roleGroup());
-    if (this.roleGroup() === 'VOLUNTEERS') {
-      return 'No listeners match this filter right now. Try Counsellors or send a general request so the team can guide you.';
+    if (this.roleGroup() === 'EMOTIONAL_LISTENER') {
+      return 'No emotional support listeners match this filter right now. Try Professional care or send a general request so the team can guide you.';
     }
-    if (this.roleGroup() === 'PROFESSIONALS' || this.roleGroup() === 'COUNSELLORS') {
-      return 'No professional/counsellor match found for this filter. Try All, adjust concern/language, or book a general request.';
+    if (this.roleGroup() === 'PROFESSIONAL_CARE') {
+      return 'No psychologist/counsellor match found for this filter. Try All support, adjust concern/language, or book a general request.';
+    }
+    if (this.roleGroup() === 'COACH_MENTOR') {
+      return 'No coach/mentor match found for this filter. Try All support or send a general request.';
     }
     if (this.roleGroup()) {
       return `No ${tab?.label.toLowerCase()} match this filter right now. Try All or send a general request.`;
