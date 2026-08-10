@@ -165,6 +165,23 @@
           (selectedChange)="setProfileCareTeamTypes($event)"
         />
 
+        <div class="subtype-service-guide">
+          <div>
+            <strong>Services they can offer</strong>
+            <p>Based on selected subtype. Add these to pricing or use them as a safe service boundary.</p>
+          </div>
+          <div class="suggested-service-grid">
+            @for (service of suggestedServicesForSelectedSubtypes(); track service.title) {
+              <article class="suggested-service-card">
+                <small>{{ service.subtype }}</small>
+                <strong>{{ service.title }}</strong>
+                <span>{{ service.description }}</span>
+                <button type="button" (click)="addSuggestedService(service)">Add to services</button>
+              </article>
+            }
+          </div>
+        </div>
+
         @if (isProfileCareTeamTypeSelected('OTHER')) {
           <label for="otherCareTeamType">Other subtype</label>
           <input

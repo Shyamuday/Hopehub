@@ -33,6 +33,115 @@ type ProfileCareTeamType = (typeof CARE_TEAM_TYPE_OPTIONS)[number];
 type SelectableProfileCareTeamType = ProfileCareTeamType | 'OTHER';
 type ProfileSetupStepId = 'identity' | 'public' | 'care' | 'safety' | 'services';
 
+const SUGGESTED_SERVICES_BY_CARE_TEAM_TYPE: Record<
+  ProfileCareTeamType,
+  Array<{
+    title: string;
+    description: string;
+    pricingMode: string;
+    priceInPaise: number;
+    durationMinutes: number;
+  }>
+> = {
+  MENTAL_WELLNESS_PROFESSIONAL: [
+    {
+      title: 'Mental wellness consultation',
+      description:
+        'Structured support for anxiety, stress, mood, relationship, or emotional concerns.',
+      pricingMode: 'FIXED',
+      priceInPaise: 99900,
+      durationMinutes: 45,
+    },
+    {
+      title: 'Follow-up counselling session',
+      description: 'A focused follow-up to review progress, coping tools, and next steps.',
+      pricingMode: 'FIXED',
+      priceInPaise: 79900,
+      durationMinutes: 30,
+    },
+  ],
+  QUALIFIED_COUNSELLOR: [
+    {
+      title: 'Counselling session',
+      description:
+        'Supportive counselling for stress, relationships, self-esteem, grief, or life transitions.',
+      pricingMode: 'FIXED',
+      priceInPaise: 69900,
+      durationMinutes: 45,
+    },
+  ],
+  PSYCHOLOGY_STUDENT_VOLUNTEER: [
+    {
+      title: 'Supervised emotional support chat',
+      description: 'Non-clinical listening and emotional support under Hope Hub safety guidelines.',
+      pricingMode: 'FIXED',
+      priceInPaise: 9900,
+      durationMinutes: 30,
+    },
+    {
+      title: 'Supervised emotional support voice call',
+      description: 'Non-clinical voice support for users who need someone to listen.',
+      pricingMode: 'FIXED',
+      priceInPaise: 9900,
+      durationMinutes: 30,
+    },
+  ],
+  PEER_SUPPORT_VOLUNTEER: [
+    {
+      title: 'Peer support chat',
+      description:
+        'Non-clinical peer listening for venting, loneliness, breakup stress, and daily pressure.',
+      pricingMode: 'FIXED',
+      priceInPaise: 9900,
+      durationMinutes: 30,
+    },
+    {
+      title: 'Peer support voice call',
+      description: 'A gentle non-clinical support call focused on listening and grounding.',
+      pricingMode: 'FIXED',
+      priceInPaise: 9900,
+      durationMinutes: 30,
+    },
+  ],
+  NLP_COACH: [
+    {
+      title: 'Mindset coaching session',
+      description:
+        'Goal-focused coaching for confidence, patterns, motivation, and personal clarity.',
+      pricingMode: 'FIXED',
+      priceInPaise: 79900,
+      durationMinutes: 45,
+    },
+  ],
+  LIFE_COACH: [
+    {
+      title: 'Life coaching session',
+      description: 'Coaching for decisions, habits, boundaries, direction, and personal growth.',
+      pricingMode: 'FIXED',
+      priceInPaise: 79900,
+      durationMinutes: 45,
+    },
+  ],
+  MEDITATION_BREATHWORK_GUIDE: [
+    {
+      title: 'Breathwork / calming session',
+      description: 'Guided breathing, grounding, and relaxation practice for emotional regulation.',
+      pricingMode: 'FIXED',
+      priceInPaise: 49900,
+      durationMinutes: 30,
+    },
+  ],
+  CAREER_STUDY_MENTOR: [
+    {
+      title: 'Career / study mentoring',
+      description: 'Support for study pressure, career confusion, focus, planning, and confidence.',
+      pricingMode: 'FIXED',
+      priceInPaise: 49900,
+      durationMinutes: 30,
+    },
+  ],
+};
+
 function emptyProfileModel() {
   return {
     name: '',
@@ -161,6 +270,23 @@ export class ProfilePage {
 
   isProfileCareTeamTypeSelected(value: SelectableProfileCareTeamType): boolean {
     return this.profileModel().careTeamTypes.includes(value);
+  }
+
+  suggestedServicesForSelectedSubtypes() {
+    const seen = new Set<string>();
+    return this.selectedStructuredCareTeamTypes()
+      .flatMap((type) =>
+        (SUGGESTED_SERVICES_BY_CARE_TEAM_TYPE[type] || []).map((service) => ({
+          ...service,
+          subtype: CARE_TEAM_TYPE_LABELS[type],
+        })),
+      )
+      .filter((service) => {
+        const key = `${service.title}:${service.durationMinutes}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
   }
 
   private selectedStructuredCareTeamTypes(): ProfileCareTeamType[] {
@@ -678,6 +804,36 @@ export class ProfilePage {
         sortOrder: services.length,
       },
     ]);
+  }
+
+  addSuggestedService(service: {
+    title: string;
+    description: string;
+    pricingMode: string;
+    priceInPaise: number;
+    durationMinutes: number;
+  }) {
+    this.careServices.update((services) => [
+      ...services,
+      {
+        title: service.title,
+        description: service.description,
+        pricingMode: service.pricingMode,
+        priceInPaise: service.priceInPaise,
+        firstSessionPriceInPaise: null,
+        followUpPriceInPaise: null,
+        introSessionLimit: 1,
+        packageSessionCount: null,
+        packagePriceInPaise: null,
+        freeMinutes: 0,
+        pricePerMinuteInPaise: null,
+        durationMinutes: service.durationMinutes,
+        isFree: service.priceInPaise === 0,
+        isActive: true,
+        sortOrder: services.length,
+      },
+    ]);
+    this.activeSetupStep.set('services');
   }
 
   removeCareService(index: number) {
