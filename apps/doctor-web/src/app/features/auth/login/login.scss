@@ -48,26 +48,6 @@ p {
   line-height: var(--leading-relaxed);
 }
 
-.identity-guide {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 0.45rem;
-  margin: 0 0 1rem;
-}
-
-.identity-guide span {
-  display: inline-flex;
-  align-items: center;
-  min-height: 2.4rem;
-  border: 1px solid color-mix(in srgb, var(--color-brand) 22%, var(--color-border));
-  border-radius: var(--radius-sm);
-  background: color-mix(in srgb, var(--color-brand) 7%, var(--color-surface));
-  color: var(--color-text);
-  font-size: var(--text-sm);
-  font-weight: 700;
-  padding: 0.55rem 0.7rem;
-}
-
 form {
   display: grid;
   gap: 0.65rem;
@@ -81,33 +61,6 @@ select {
   color: var(--color-text);
   padding: 0.7rem 0.8rem;
   font: inherit;
-}
-
-.fixed-provider-type {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-  min-height: var(--touch-min);
-  border: 1px solid color-mix(in srgb, var(--color-brand) 25%, var(--color-border));
-  border-radius: var(--radius-sm);
-  background: color-mix(in srgb, var(--color-brand) 8%, var(--color-surface));
-  color: var(--color-text);
-  padding: 0.7rem 0.8rem;
-}
-
-.fixed-provider-type strong {
-  font-size: var(--text-sm);
-}
-
-.fixed-provider-type span {
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--color-brand) 14%, var(--color-surface));
-  color: var(--color-brand);
-  font-size: var(--text-xs);
-  font-weight: 800;
-  padding: 0.2rem 0.5rem;
-  white-space: nowrap;
 }
 
 .field-hint {
@@ -238,7 +191,4 @@ button[type='submit'] {
     padding: 2rem 1rem;
   }
 
-  .identity-guide {
-    grid-template-columns: 1fr 1fr;
-  }
 }

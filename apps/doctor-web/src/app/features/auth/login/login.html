@@ -7,10 +7,6 @@
   @if (mode() === 'signin') {
     <h2>{{ phLanguage.providerTitle }} login</h2>
     <p>Sign in to your Professional Help workspace for emotional support, counselling, coaching, and mental-wellness sessions.</p>
-    <div class="identity-guide" aria-label="Provider workspace types">
-      <span>Homeopathy provider account</span>
-      <span>{{ phLanguage.providerTitle }} account</span>
-    </div>
 
     <form (submit)="$event.preventDefault(); submit()">
       <div class="switcher">
