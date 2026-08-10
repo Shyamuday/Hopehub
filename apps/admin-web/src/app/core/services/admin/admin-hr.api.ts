@@ -270,11 +270,16 @@ export class AdminHrApi extends AdminApiBase {
     );
   }
 
-  assignConsultationDoctor(consultationId: string, doctorId: string) {
+  assignConsultationDoctor(
+    consultationId: string,
+    doctorId: string,
+    workspace?: 'homeopathy' | 'hope-hub',
+  ) {
     return firstValueFrom(
       this.http.put<{ consultation: any }>(
         `${this.apiBase}/admin/consultations/${consultationId}/assign`,
         { doctorId },
+        { params: { workspace: workspace ?? '' } },
       ),
     );
   }

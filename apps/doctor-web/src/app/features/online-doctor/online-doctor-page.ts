@@ -4,6 +4,11 @@ import { RouterLink } from '@angular/router';
 import { form, FormField } from '@angular/forms/signals';
 import { OnlineDoctorService } from '../../core/services/online-doctor.service';
 import { ROUTE_PATHS } from '../../core/constants/app-routes.constants';
+import {
+  isClinicalMentalHealthCareTeamType,
+  isCoachGuideCareTeamType,
+  isListenerCareTeamType,
+} from '../../core/constants/doctor-types.constants';
 
 type InstantConsult = {
   id: string;
@@ -64,7 +69,7 @@ export class OnlineDoctorPage implements OnInit, OnDestroy {
         this.startInboxRefresh();
       }
     } catch {
-      this.error.set('Could not load online doctor settings.');
+      this.error.set('Could not load online provider settings.');
     } finally {
       this.loading.set(false);
     }
@@ -111,6 +116,57 @@ export class OnlineDoctorPage implements OnInit, OnDestroy {
 
   isPsychologist() {
     return this.profile()?.doctorType === 'PSYCHOLOGIST';
+  }
+
+  isHomeopathyProvider() {
+    return !this.isPsychologist();
+  }
+
+  careTeamType() {
+    return this.profile()?.mentalHealthProfile?.careTeamType || '';
+  }
+
+  isClinicalMentalHealthProvider() {
+    return (
+      this.isPsychologist() &&
+      (!this.careTeamType() || isClinicalMentalHealthCareTeamType(this.careTeamType()))
+    );
+  }
+
+  isListenerProvider() {
+    return this.isPsychologist() && isListenerCareTeamType(this.careTeamType());
+  }
+
+  isCoachGuideProvider() {
+    return this.isPsychologist() && isCoachGuideCareTeamType(this.careTeamType());
+  }
+
+  workspaceTitle() {
+    if (this.isClinicalMentalHealthProvider()) return 'Clinical Hope Hub workspace';
+    if (this.isListenerProvider()) return 'Listener live workspace';
+    if (this.isCoachGuideProvider()) return 'Coaching live workspace';
+    if (this.isPsychologist()) return 'Hope Hub live workspace';
+    return 'Homeopathy provider — go live';
+  }
+
+  workspaceLead() {
+    if (this.isClinicalMentalHealthProvider()) {
+      return 'Review assigned mental-wellness sessions, support users by chat or call, record notes, and follow up safely.';
+    }
+    if (this.isListenerProvider()) {
+      return 'Offer safe emotional support listening by chat or call. Keep boundaries clear and escalate risk concerns.';
+    }
+    if (this.isCoachGuideProvider()) {
+      return 'Accept coaching, guidance, meditation, study, or life-support sessions by chat or call.';
+    }
+    return 'Show yourself online for instant patient consults (chat + voice & video). Separate from your clinic worklist.';
+  }
+
+  inboxTitle() {
+    if (this.isHomeopathyProvider()) return 'Live consult inbox';
+    if (this.isListenerProvider()) return 'Listener request inbox';
+    if (this.isCoachGuideProvider()) return 'Coaching session inbox';
+    return 'Live session inbox';
   }
 
   async saveSettings() {

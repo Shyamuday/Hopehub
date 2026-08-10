@@ -45,13 +45,13 @@ export class DiseasePagesPage {
       await this.session.load();
       if (!this.session.capabilities().treatmentPages) {
         this.canManageTreatmentPages.set(false);
-        this.error.set('Treatment page editing is available only for homeopathic doctors.');
+        this.error.set('Treatment page editing is available only for homeopathy providers.');
         return;
       }
       this.canManageTreatmentPages.set(true);
       await this.load();
     } catch {
-      this.error.set('Could not load doctor access.');
+      this.error.set('Could not load provider access.');
     } finally {
       this.loading.set(false);
     }

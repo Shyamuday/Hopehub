@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, computed, effect, inject, signal } from '@angular/core';
 import { form, FormField } from '@angular/forms/signals';
 import { RouterLink } from '@angular/router';
-import { buildDetailRows, DetailRowsComponent } from '@hopehub/platform-ui';
+import { buildDetailRows, DetailRowsComponent, MultiSelectComponent } from '@hopehub/platform-ui';
 import { AdminApi } from '../../../core/services/admin-api';
 import { adminRouteLink, ROUTE_PATHS } from '../../../core/constants/app-routes.constants';
 import { AdminWorkspaceService } from '../../../core/services/admin-workspace.service';
@@ -46,6 +46,7 @@ type Doctor = {
     focusAreas?: string[];
     mentalHealthProfile?: {
       careTeamType?: CareTeamMemberType;
+      careTeamTypes?: CareTeamMemberType[];
       qualifications?: string[];
       qualifiedFrom?: string | null;
       licenseNumber?: string | null;
@@ -114,7 +115,24 @@ const CARE_SERVICE_PRICING_MODES = new Set([
   'PER_MINUTE',
 ]);
 
-function psychologistProfileValue(value: string, fallback = 'Psychologist') {
+const CLINICAL_HOPE_HUB_TYPES = new Set<CareTeamMemberType>([
+  'MENTAL_WELLNESS_PROFESSIONAL',
+  'QUALIFIED_COUNSELLOR',
+]);
+
+const LISTENER_HOPE_HUB_TYPES = new Set<CareTeamMemberType>([
+  'PSYCHOLOGY_STUDENT_VOLUNTEER',
+  'PEER_SUPPORT_VOLUNTEER',
+]);
+
+const COACH_HOPE_HUB_TYPES = new Set<CareTeamMemberType>([
+  'NLP_COACH',
+  'LIFE_COACH',
+  'MEDITATION_BREATHWORK_GUIDE',
+  'CAREER_STUDY_MENTOR',
+]);
+
+function psychologistProfileValue(value: string, fallback = 'Hope Hub Provider') {
   const trimmed = value.trim();
   return !trimmed || STALE_PSYCHOLOGIST_PROFILE_TEXT.test(trimmed) ? fallback : trimmed;
 }
@@ -140,6 +158,7 @@ function emptyCreateModel() {
     ageGroupsText: '',
     concernsHandledText: '',
     careTeamType: 'MENTAL_WELLNESS_PROFESSIONAL' as CareTeamMemberType,
+    careTeamTypes: ['MENTAL_WELLNESS_PROFESSIONAL'] as CareTeamMemberType[],
     autoMatchEnabled: true,
     acceptingNewUsers: true,
     maxSessionsPerDay: '' as number | '',
@@ -167,6 +186,7 @@ function emptyEditModel() {
     yearsOfExperience: '' as number | '',
     focusAreasText: '',
     careTeamType: 'MENTAL_WELLNESS_PROFESSIONAL' as CareTeamMemberType,
+    careTeamTypes: ['MENTAL_WELLNESS_PROFESSIONAL'] as CareTeamMemberType[],
     qualificationsText: '',
     qualifiedFrom: '',
     licenseNumber: '',
@@ -190,7 +210,7 @@ function emptyEditModel() {
 
 @Component({
   selector: 'app-doctors-page',
-  imports: [CommonModule, FormField, DetailRowsComponent, RouterLink],
+  imports: [CommonModule, FormField, DetailRowsComponent, MultiSelectComponent, RouterLink],
   templateUrl: './doctors-page.html',
   styleUrl: './doctors-page.scss',
 })
@@ -200,6 +220,15 @@ export class DoctorsPage {
   readonly doctorTypeOptions = DOCTOR_TYPE_OPTIONS;
   readonly workspaceKey = this.workspace.selectedWorkspace;
   readonly workspaceLabel = this.workspace.workspaceLabel;
+  readonly providerSingularLabel = computed(() =>
+    this.workspace.isHopeHub() ? 'Hope Hub provider' : 'homeopathy doctor',
+  );
+  readonly providerPluralLabel = computed(() =>
+    this.workspace.isHopeHub() ? 'Hope Hub providers' : 'homeopathy providers',
+  );
+  readonly publicDirectoryLabel = computed(() =>
+    this.workspace.isHopeHub() ? 'Hope Hub provider directory' : 'Homeopathy provider directory',
+  );
   readonly workspaceDoctorTypeOptions = computed(() =>
     this.workspace.isHopeHub()
       ? this.doctorTypeOptions.filter((option) => option.value === 'PSYCHOLOGIST')
@@ -323,7 +352,7 @@ export class DoctorsPage {
       this.selectedDoctorId = this.selectedDoctorId || this.visibleDoctors()[0]?.id || '';
       this.syncEditFormFromSelectedDoctor();
     } catch {
-      this.error.set('Could not load doctors.');
+      this.error.set(`Could not load ${this.providerPluralLabel()}.`);
     } finally {
       this.loading.set(false);
     }
@@ -343,10 +372,10 @@ export class DoctorsPage {
     this.mutating.set(true);
     try {
       await this.api.approveDoctor(doctorId);
-      this.message.set('Doctor approved.');
+      this.message.set(`${this.providerSingularTitle()} approved.`);
       await this.load();
     } catch {
-      this.error.set('Could not approve doctor.');
+      this.error.set(`Could not approve ${this.providerSingularLabel()}.`);
     } finally {
       this.mutating.set(false);
     }
@@ -358,10 +387,10 @@ export class DoctorsPage {
     this.mutating.set(true);
     try {
       await this.api.rejectDoctor(doctorId);
-      this.message.set('Doctor kept as pending/inactive.');
+      this.message.set(`${this.providerSingularTitle()} kept as pending/inactive.`);
       await this.load();
     } catch {
-      this.error.set('Could not update doctor status.');
+      this.error.set(`Could not update ${this.providerSingularLabel()} status.`);
     } finally {
       this.mutating.set(false);
     }
@@ -373,12 +402,16 @@ export class DoctorsPage {
     this.mutating.set(true);
     try {
       await this.api.setDoctorStatus(doctorId, makeActive);
-      this.message.set(makeActive ? 'Doctor activated.' : 'Doctor deactivated.');
+      this.message.set(
+        makeActive
+          ? `${this.providerSingularTitle()} activated.`
+          : `${this.providerSingularTitle()} deactivated.`,
+      );
       await this.load();
       this.selectedDoctorId = doctorId;
       this.syncEditFormFromSelectedDoctor();
     } catch {
-      this.error.set('Could not update doctor status.');
+      this.error.set(`Could not update ${this.providerSingularLabel()} status.`);
     } finally {
       this.mutating.set(false);
     }
@@ -402,6 +435,9 @@ export class DoctorsPage {
     const editDepartment = this.isPsychologistType(edit.doctorType)
       ? psychologistProfileValue(edit.department)
       : edit.department.trim();
+    const editCareTeamTypes = this.normalizedCareTeamTypes(edit.careTeamType, edit.careTeamTypes);
+    const editIsClinicalHopeHub =
+      this.isPsychologistType(edit.doctorType) && this.hasClinicalHopeHubType(editCareTeamTypes);
     this.mutating.set(true);
     try {
       await this.api.updateDoctor(doctorId, {
@@ -410,7 +446,10 @@ export class DoctorsPage {
         gender: edit.gender || null,
         mobile: edit.mobile.trim(),
         specialty: editSpecialty,
-        registrationNo: edit.registrationNo.trim(),
+        registrationNo:
+          !this.isPsychologistType(edit.doctorType) || editIsClinicalHopeHub
+            ? edit.registrationNo.trim()
+            : '',
         designation: editDesignation,
         department: editDepartment,
         isAvailable: edit.isAvailable,
@@ -428,10 +467,11 @@ export class DoctorsPage {
         mentalHealthProfile: this.isPsychologistType(edit.doctorType)
           ? {
               qualifications: this.lines(edit.qualificationsText),
-              careTeamType: edit.careTeamType,
+              careTeamType: editCareTeamTypes[0],
+              careTeamTypes: editCareTeamTypes,
               qualifiedFrom: edit.qualifiedFrom.trim() || null,
-              licenseNumber: edit.licenseNumber.trim() || null,
-              licenseCouncil: edit.licenseCouncil.trim() || null,
+              licenseNumber: editIsClinicalHopeHub ? edit.licenseNumber.trim() || null : null,
+              licenseCouncil: editIsClinicalHopeHub ? edit.licenseCouncil.trim() || null : null,
               languages: this.lines(edit.languagesText),
               modalities: this.lines(edit.modalitiesText),
               sessionTypes: this.lines(edit.sessionTypesText),
@@ -440,7 +480,7 @@ export class DoctorsPage {
               introSessionTitle: edit.introSessionTitle.trim() || null,
               counsellingApproach: edit.counsellingApproach.trim() || null,
               safetyEscalationNote: edit.safetyEscalationNote.trim() || null,
-              acceptsHighRiskCases: edit.acceptsHighRiskCases,
+              acceptsHighRiskCases: editIsClinicalHopeHub ? edit.acceptsHighRiskCases : false,
               autoMatchEnabled: edit.autoMatchEnabled,
               acceptingNewUsers: edit.acceptingNewUsers,
               maxSessionsPerDay:
@@ -451,12 +491,12 @@ export class DoctorsPage {
             }
           : undefined,
       });
-      this.message.set('Doctor profile updated.');
+      this.message.set(`${this.providerSingularTitle()} profile updated.`);
       await this.load();
       this.selectedDoctorId = doctorId;
       this.syncEditFormFromSelectedDoctor();
     } catch {
-      this.error.set('Could not update doctor profile.');
+      this.error.set(`Could not update ${this.providerSingularLabel()} profile.`);
     } finally {
       this.mutating.set(false);
     }
@@ -475,6 +515,13 @@ export class DoctorsPage {
     const createDepartment = this.isPsychologistType(create.doctorType)
       ? psychologistProfileValue(create.department)
       : create.department.trim();
+    const createCareTeamTypes = this.normalizedCareTeamTypes(
+      create.careTeamType,
+      create.careTeamTypes,
+    );
+    const createIsClinicalHopeHub =
+      this.isPsychologistType(create.doctorType) &&
+      this.hasClinicalHopeHubType(createCareTeamTypes);
     this.mutating.set(true);
     try {
       await this.api.createDoctor({
@@ -484,7 +531,10 @@ export class DoctorsPage {
         mobile: create.mobile.trim(),
         password: create.password,
         specialty: createSpecialty,
-        registrationNo: create.registrationNo.trim(),
+        registrationNo:
+          !this.isPsychologistType(create.doctorType) || createIsClinicalHopeHub
+            ? create.registrationNo.trim()
+            : '',
         designation: createDesignation,
         department: createDepartment,
         doctorType: create.doctorType,
@@ -493,7 +543,8 @@ export class DoctorsPage {
         mentalHealthProfile: this.isPsychologistType(create.doctorType)
           ? {
               qualifications: this.lines(create.qualificationsText),
-              careTeamType: create.careTeamType,
+              careTeamType: createCareTeamTypes[0],
+              careTeamTypes: createCareTeamTypes,
               qualifiedFrom: create.qualifiedFrom.trim() || null,
               languages: this.lines(create.languagesText),
               modalities: this.lines(create.modalitiesText),
@@ -510,12 +561,12 @@ export class DoctorsPage {
             }
           : undefined,
       });
-      this.message.set('Doctor created successfully.');
+      this.message.set(`${this.providerSingularTitle()} created successfully.`);
       this.createModel.set(emptyCreateModel());
       this.createCareServices.set([]);
       await this.load();
     } catch {
-      this.error.set('Could not create doctor.');
+      this.error.set(`Could not create ${this.providerSingularLabel()}.`);
     } finally {
       this.mutating.set(false);
     }
@@ -569,7 +620,9 @@ export class DoctorsPage {
     this.mutating.set(true);
     try {
       await Promise.all(this.selectedPendingDoctorIds.map((id) => this.api.approveDoctor(id)));
-      this.message.set(`${this.selectedPendingDoctorIds.length} doctors approved.`);
+      this.message.set(
+        `${this.selectedPendingDoctorIds.length} ${this.providerPluralLabel()} approved.`,
+      );
       await this.load();
     } catch {
       this.error.set('Could not complete bulk approve.');
@@ -588,7 +641,9 @@ export class DoctorsPage {
     this.mutating.set(true);
     try {
       await Promise.all(this.selectedPendingDoctorIds.map((id) => this.api.rejectDoctor(id)));
-      this.message.set(`${this.selectedPendingDoctorIds.length} doctors kept pending.`);
+      this.message.set(
+        `${this.selectedPendingDoctorIds.length} ${this.providerPluralLabel()} kept pending.`,
+      );
       await this.load();
     } catch {
       this.error.set('Could not complete bulk reject.');
@@ -643,7 +698,7 @@ export class DoctorsPage {
   setSelectedDoctor(doctorId: string) {
     this.selectedDoctorId = doctorId;
     this.syncEditFormFromSelectedDoctor();
-    this.message.set('Doctor details loaded.');
+    this.message.set(`${this.providerSingularTitle()} details loaded.`);
     if (typeof document !== 'undefined') {
       setTimeout(() => {
         document.getElementById('doctor-profile-details')?.scrollIntoView({
@@ -717,6 +772,10 @@ export class DoctorsPage {
       focusAreasText: (selected.doctorProfile?.focusAreas ?? []).join('\n'),
       careTeamType:
         selected.doctorProfile?.mentalHealthProfile?.careTeamType ?? 'MENTAL_WELLNESS_PROFESSIONAL',
+      careTeamTypes: this.normalizedCareTeamTypes(
+        selected.doctorProfile?.mentalHealthProfile?.careTeamType,
+        selected.doctorProfile?.mentalHealthProfile?.careTeamTypes,
+      ),
       qualificationsText: (selected.doctorProfile?.mentalHealthProfile?.qualifications ?? []).join(
         '\n',
       ),
@@ -1010,14 +1069,174 @@ export class DoctorsPage {
     return type === 'PSYCHOLOGIST';
   }
 
+  isClinicalHopeHubType(type?: CareTeamMemberType | null) {
+    return !type || CLINICAL_HOPE_HUB_TYPES.has(type);
+  }
+
+  hasClinicalHopeHubType(types?: CareTeamMemberType[] | null) {
+    return !types?.length || types.some((type) => CLINICAL_HOPE_HUB_TYPES.has(type));
+  }
+
+  isListenerHopeHubType(type?: CareTeamMemberType | null) {
+    return Boolean(type && LISTENER_HOPE_HUB_TYPES.has(type));
+  }
+
+  hasListenerHopeHubType(types?: CareTeamMemberType[] | null) {
+    return Boolean(types?.some((type) => LISTENER_HOPE_HUB_TYPES.has(type)));
+  }
+
+  isCoachHopeHubType(type?: CareTeamMemberType | null) {
+    return Boolean(type && COACH_HOPE_HUB_TYPES.has(type));
+  }
+
+  hasCoachHopeHubType(types?: CareTeamMemberType[] | null) {
+    return Boolean(types?.some((type) => COACH_HOPE_HUB_TYPES.has(type)));
+  }
+
+  normalizedCareTeamTypes(
+    primary?: CareTeamMemberType | null,
+    selected?: CareTeamMemberType[] | null,
+  ): CareTeamMemberType[] {
+    const fallback = primary || 'MENTAL_WELLNESS_PROFESSIONAL';
+    return Array.from(new Set([fallback, ...(selected ?? [])]));
+  }
+
+  isCreateCareTeamTypeSelected(type: CareTeamMemberType) {
+    return this.createModel().careTeamTypes.includes(type);
+  }
+
+  isEditCareTeamTypeSelected(type: CareTeamMemberType) {
+    return this.editModel().careTeamTypes.includes(type);
+  }
+
+  toggleCreateCareTeamType(type: CareTeamMemberType, checked: boolean) {
+    const current = this.createModel();
+    const next = checked
+      ? Array.from(new Set([...current.careTeamTypes, type]))
+      : current.careTeamTypes.filter((item) => item !== type);
+    const careTeamTypes: CareTeamMemberType[] = next.length
+      ? next
+      : ['MENTAL_WELLNESS_PROFESSIONAL'];
+    this.createModel.set({
+      ...current,
+      careTeamTypes,
+      careTeamType: careTeamTypes[0],
+    });
+  }
+
+  setCreateCareTeamTypes(values: string[]) {
+    const current = this.createModel();
+    const careTeamTypes = this.normalizedSelectedCareTeamTypes(values);
+    this.createModel.set({
+      ...current,
+      careTeamTypes,
+      careTeamType: careTeamTypes[0],
+    });
+  }
+
+  toggleEditCareTeamType(type: CareTeamMemberType, checked: boolean) {
+    const current = this.editModel();
+    const next = checked
+      ? Array.from(new Set([...current.careTeamTypes, type]))
+      : current.careTeamTypes.filter((item) => item !== type);
+    const careTeamTypes: CareTeamMemberType[] = next.length
+      ? next
+      : ['MENTAL_WELLNESS_PROFESSIONAL'];
+    this.editModel.set({
+      ...current,
+      careTeamTypes,
+      careTeamType: careTeamTypes[0],
+    });
+  }
+
+  setEditCareTeamTypes(values: string[]) {
+    const current = this.editModel();
+    const careTeamTypes = this.normalizedSelectedCareTeamTypes(values);
+    this.editModel.set({
+      ...current,
+      careTeamTypes,
+      careTeamType: careTeamTypes[0],
+    });
+  }
+
+  private normalizedSelectedCareTeamTypes(values: string[]): CareTeamMemberType[] {
+    const allowed = new Set(this.careTeamTypeOptions.map((option) => option.value));
+    const selected = values.filter((value): value is CareTeamMemberType =>
+      allowed.has(value as CareTeamMemberType),
+    );
+    return selected.length ? selected : ['MENTAL_WELLNESS_PROFESSIONAL'];
+  }
+
+  providerSingularTitle() {
+    const label = this.providerSingularLabel();
+    return label.charAt(0).toUpperCase() + label.slice(1);
+  }
+
+  providerNamePlaceholder() {
+    return this.workspace.isHopeHub() ? 'Provider full name' : 'Doctor full name';
+  }
+
+  providerEmailPlaceholder() {
+    return this.workspace.isHopeHub() ? 'provider@hopehub.com' : 'doctor@clinic.com';
+  }
+
+  specialtyLabel(type?: HomeopathicDoctorType) {
+    return this.isPsychologistType(type || 'JUNIOR_DOCTOR')
+      ? 'Display role / speciality'
+      : 'Specialty (optional override)';
+  }
+
+  specialtyPlaceholder(type?: HomeopathicDoctorType) {
+    return this.isPsychologistType(type || 'JUNIOR_DOCTOR')
+      ? 'e.g. Clinical psychologist, Life coach, Peer listener'
+      : 'Display specialty';
+  }
+
+  designationPlaceholder(type?: HomeopathicDoctorType) {
+    return this.isPsychologistType(type || 'JUNIOR_DOCTOR')
+      ? 'e.g. Emotional support listener'
+      : 'e.g. Senior homeopathy consultant';
+  }
+
+  departmentPlaceholder(type?: HomeopathicDoctorType) {
+    return this.isPsychologistType(type || 'JUNIOR_DOCTOR')
+      ? 'e.g. Mental Wellness'
+      : 'e.g. Homeopathy';
+  }
+
+  focusAreasPlaceholder(type?: HomeopathicDoctorType, careTeamType?: CareTeamMemberType | null) {
+    if (!this.isPsychologistType(type || 'JUNIOR_DOCTOR')) {
+      return 'One per line — e.g. Skin Care, Paediatrics';
+    }
+    if (this.isListenerHopeHubType(careTeamType)) {
+      return 'One per line — e.g. Stress venting, loneliness, exam pressure';
+    }
+    if (this.isCoachHopeHubType(careTeamType)) {
+      return 'One per line — e.g. confidence, career clarity, habit building';
+    }
+    return 'One per line — e.g. anxiety, relationships, stress';
+  }
+
+  approachLabel(careTeamType?: CareTeamMemberType | null) {
+    if (this.isListenerHopeHubType(careTeamType)) return 'Listening approach';
+    if (this.isCoachHopeHubType(careTeamType)) return 'Coaching approach';
+    return 'Counselling approach';
+  }
+
+  modalitiesLabel(careTeamType?: CareTeamMemberType | null) {
+    if (this.isCoachHopeHubType(careTeamType)) return 'Coaching methods';
+    if (this.isListenerHopeHubType(careTeamType)) return 'Support style';
+    return 'Therapy modalities';
+  }
+
   private applyWorkspaceDefaults() {
     const create = this.createModel();
     if (this.workspace.isHopeHub() && create.doctorType !== 'PSYCHOLOGIST') {
       this.createModel.set({
         ...create,
         doctorType: 'PSYCHOLOGIST',
-        specialty: psychologistProfileValue(create.specialty, 'Psychologist'),
-        designation: psychologistProfileValue(create.designation, 'Psychologist'),
+        specialty: psychologistProfileValue(create.specialty, 'Hope Hub Provider'),
+        designation: psychologistProfileValue(create.designation, 'Hope Hub Provider'),
         department: psychologistProfileValue(create.department, 'Mental Wellness'),
       });
       return;

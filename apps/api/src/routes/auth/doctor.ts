@@ -34,6 +34,7 @@ function inferDoctorTypeFromSpecialty(specialty: string) {
 const mentalHealthProviderProfileSchema = z
   .object({
     careTeamType: z.nativeEnum(CareTeamMemberType).optional(),
+    careTeamTypes: z.array(z.nativeEnum(CareTeamMemberType)).max(12).optional(),
     qualifications: z.array(z.string().trim().min(1).max(160)).max(20).optional(),
     qualifiedFrom: z.string().trim().max(240).optional().nullable().or(z.literal('')),
     licenseNumber: z.string().trim().max(120).optional().nullable().or(z.literal('')),
@@ -103,6 +104,17 @@ function isListenerCareTeamType(type: CareTeamMemberType | undefined) {
   );
 }
 
+function normalizeCareTeamTypes(
+  primary: CareTeamMemberType | undefined,
+  selected: CareTeamMemberType[] | undefined
+): [CareTeamMemberType, ...CareTeamMemberType[]] {
+  const fallback = primary ?? CareTeamMemberType.MENTAL_WELLNESS_PROFESSIONAL;
+  return Array.from(new Set([fallback, ...(selected ?? [])])) as [
+    CareTeamMemberType,
+    ...CareTeamMemberType[]
+  ];
+}
+
 function listenerPublicProfileReady(input: {
   name: string;
   mobile?: string | null;
@@ -149,12 +161,19 @@ export function registerAuthDoctorRoutes(router: Router) {
           mobile: z.string().min(8).optional(),
           password: z.string().min(8),
           specialty: z.string().min(2),
-          registrationNo: z.string().optional()
+          registrationNo: z.string().optional(),
+          careTeamType: z.nativeEnum(CareTeamMemberType).optional(),
+          careTeamTypes: z.array(z.nativeEnum(CareTeamMemberType)).max(12).optional()
         })
         .parse(req.body);
 
       const passwordHash = await bcrypt.hash(body.password, 10);
-      const inferredDoctorType = inferDoctorTypeFromSpecialty(body.specialty);
+      const careTeamTypes = normalizeCareTeamTypes(body.careTeamType, body.careTeamTypes);
+      const isHopeHubProvider = Boolean(body.careTeamType || body.careTeamTypes?.length);
+      const primaryCareTeamType = careTeamTypes[0];
+      const inferredDoctorType = isHopeHubProvider
+        ? HomeopathicDoctorType.PSYCHOLOGIST
+        : inferDoctorTypeFromSpecialty(body.specialty);
       const doctor = await prisma.user.create({
         data: {
           name: body.name,
@@ -164,11 +183,25 @@ export function registerAuthDoctorRoutes(router: Router) {
           role: Role.DOCTOR,
           isActive: false,
           doctorProfile: {
-            create: toDoctorProfilePayload({
-              doctorType: inferredDoctorType,
-              specialty: body.specialty,
-              registrationNo: body.registrationNo
-            })
+            create: {
+              ...toDoctorProfilePayload({
+                doctorType: inferredDoctorType,
+                specialty: body.specialty,
+                registrationNo: body.registrationNo
+              }),
+              ...(isHopeHubProvider
+                ? {
+                    mentalHealthProfile: {
+                      create: {
+                        careTeamType: primaryCareTeamType,
+                        careTeamTypes,
+                        acceptingNewUsers: true,
+                        autoMatchEnabled: true
+                      }
+                    }
+                  }
+                : {})
+            }
           }
         },
         select: publicUserSelect
@@ -287,6 +320,10 @@ export function registerAuthDoctorRoutes(router: Router) {
               careTeamType:
                 body.mentalHealthProfile.careTeamType ??
                 CareTeamMemberType.MENTAL_WELLNESS_PROFESSIONAL,
+              careTeamTypes: normalizeCareTeamTypes(
+                body.mentalHealthProfile.careTeamType,
+                body.mentalHealthProfile.careTeamTypes
+              ),
               qualifiedFrom: cleanNullableText(body.mentalHealthProfile.qualifiedFrom),
               licenseNumber: cleanNullableText(body.mentalHealthProfile.licenseNumber),
               licenseCouncil: cleanNullableText(body.mentalHealthProfile.licenseCouncil),
@@ -345,7 +382,7 @@ export function registerAuthDoctorRoutes(router: Router) {
           : [];
       const isListenerProfile =
         profilePayload.doctorType === HomeopathicDoctorType.PSYCHOLOGIST &&
-        isListenerCareTeamType(mentalHealthProfile?.careTeamType);
+        mentalHealthProfile?.careTeamTypes.some((type) => isListenerCareTeamType(type));
       const listenerReadyForPublic =
         isListenerProfile && body.mentalHealthProfile
           ? listenerPublicProfileReady({

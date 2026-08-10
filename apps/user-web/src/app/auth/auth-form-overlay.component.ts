@@ -32,7 +32,7 @@ export class AuthFormOverlayComponent {
     typeof window !== 'undefined'
       ? new URLSearchParams(window.location.search).get('ref') || undefined
       : undefined;
-  readonly authView = signal<AuthView>('login');
+  readonly authView = signal<AuthView>('signup');
   readonly loginMode = signal<LoginMode>('otp');
   readonly signupMode = signal<SignupMode>('password');
   readonly loginOtpSent = signal(false);
@@ -72,7 +72,6 @@ export class AuthFormOverlayComponent {
   readonly forgotForm = form(this.forgotModel);
 
   readonly signupModel = signal({
-    name: '',
     email: '',
     otp: '',
     password: '',
@@ -100,19 +99,12 @@ export class AuthFormOverlayComponent {
 
   canRegisterPatient(): boolean {
     const signup = this.signupModel();
-    return !!(
-      signup.name.trim().length >= 2 &&
-      this.isEmail(signup.email) &&
-      this.signupOtpSent() &&
-      this.isSixDigitOtp(signup.otp)
-    );
+    return !!(this.isEmail(signup.email) && this.signupOtpSent() && this.isSixDigitOtp(signup.otp));
   }
 
   canRegisterPatientWithPassword(): boolean {
     const signup = this.signupModel();
-    return (
-      signup.name.trim().length >= 2 && this.isEmail(signup.email) && signup.password.length >= 8
-    );
+    return this.isEmail(signup.email) && signup.password.length >= 8;
   }
 
   canLoginWithEmailOtp(): boolean {
@@ -331,7 +323,7 @@ export class AuthFormOverlayComponent {
 
   registerPatient() {
     if (!this.canRegisterPatient()) {
-      this.showError('Enter your name, email, and code.');
+      this.showError('Enter your email and code.');
       return;
     }
 
@@ -339,7 +331,6 @@ export class AuthFormOverlayComponent {
     this.process(
       'Creating account...',
       this.auth.patientLogin({
-        name: signup.name.trim(),
         email: signup.email.trim().toLowerCase(),
         otp: signup.otp.trim(),
         referralCode: this.referralCodeFromUrl,
@@ -370,14 +361,13 @@ export class AuthFormOverlayComponent {
   registerPatientWithPassword() {
     const signup = this.signupModel();
     if (!this.canRegisterPatientWithPassword()) {
-      this.showError('Use your name, email, and an 8+ character password.');
+      this.showError('Use your email and an 8+ character password.');
       return;
     }
 
     this.process(
       'Creating account...',
       this.auth.patientRegister({
-        name: signup.name.trim(),
         email: signup.email.trim().toLowerCase(),
         password: signup.password,
       }),

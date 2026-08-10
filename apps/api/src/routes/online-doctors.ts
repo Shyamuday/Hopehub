@@ -9,6 +9,7 @@ import {
   ConsultationStatus
 } from '@prisma/client';
 import { authRequired, allowRoles } from '../auth.js';
+import { capabilitiesForDoctorProfile } from '../constants/homeopathic-doctor-types.js';
 import { getPublicIceServers } from '../constants/rtc.constants.js';
 import { prisma } from '../db.js';
 import {
@@ -69,17 +70,28 @@ export function createOnlineDoctorsRouter(io: SocketIoServer) {
               bio: true,
               yearsOfExperience: true,
               focusAreas: true,
-              isAvailable: true
+              isAvailable: true,
+              mentalHealthProfile: {
+                select: {
+                  careTeamType: true,
+                  careTeamTypes: true
+                }
+              }
             }
           }
         }
       });
 
-      const diseases = await prisma.disease.findMany({
-        where: { isActive: true },
-        select: { id: true, name: true, publicCategory: true },
-        orderBy: { name: 'asc' }
-      });
+      const canUseDiseaseSettings = capabilitiesForDoctorProfile(
+        full.doctor
+      ).diseaseSpecialtySettings;
+      const diseases = canUseDiseaseSettings
+        ? await prisma.disease.findMany({
+            where: { isActive: true },
+            select: { id: true, name: true, publicCategory: true },
+            orderBy: { name: 'asc' }
+          })
+        : [];
 
       res.json({ profile: mapLiveDoctor(full), diseases, stunServers: getPublicIceServers() });
     })
@@ -104,9 +116,30 @@ export function createOnlineDoctorsRouter(io: SocketIoServer) {
       const session = await ensureDoctorOnlineSession(req.user!.id);
       if (!session) return res.status(404).json({ message: 'Doctor profile not found.' });
 
+      const doctor = await prisma.doctor.findUniqueOrThrow({
+        where: { userId: req.user!.id },
+        select: {
+          doctorType: true,
+          mentalHealthProfile: { select: { careTeamType: true, careTeamTypes: true } }
+        }
+      });
+      const canUseDiseaseSettings = capabilitiesForDoctorProfile(doctor).diseaseSpecialtySettings;
+      const updateData = canUseDiseaseSettings
+        ? body
+        : {
+            ...(body.enabled !== undefined ? { enabled: body.enabled } : {}),
+            ...(body.acceptsChat !== undefined ? { acceptsChat: body.acceptsChat } : {}),
+            ...(body.acceptsVoiceCall !== undefined
+              ? { acceptsVoiceCall: body.acceptsVoiceCall }
+              : {}),
+            ...(body.acceptsVideoCall !== undefined
+              ? { acceptsVideoCall: body.acceptsVideoCall }
+              : {})
+          };
+
       const updated = await prisma.doctorOnlineSession.update({
         where: { id: session.id },
-        data: body,
+        data: updateData,
         include: {
           user: {
             select: {
@@ -125,7 +158,13 @@ export function createOnlineDoctorsRouter(io: SocketIoServer) {
               bio: true,
               yearsOfExperience: true,
               focusAreas: true,
-              isAvailable: true
+              isAvailable: true,
+              mentalHealthProfile: {
+                select: {
+                  careTeamType: true,
+                  careTeamTypes: true
+                }
+              }
             }
           }
         }
@@ -290,7 +329,13 @@ export function createOnlineDoctorsRouter(io: SocketIoServer) {
                 bio: true,
                 yearsOfExperience: true,
                 focusAreas: true,
-                isAvailable: true
+                isAvailable: true,
+                mentalHealthProfile: {
+                  select: {
+                    careTeamType: true,
+                    careTeamTypes: true
+                  }
+                }
               }
             }
           },

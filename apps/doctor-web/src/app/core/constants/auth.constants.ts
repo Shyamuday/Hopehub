@@ -2,14 +2,16 @@ export const AUTH_TOKEN_KEY = 'doctor_app_token';
 
 export const AUTH_PATHS = {
   STAFF_LOGIN: '/auth/staff-login',
+  STAFF_GOOGLE_LOGIN: '/auth/staff-login-google',
+  GOOGLE_CONFIG: '/auth/google-config',
   DOCTOR_ENROLL: '/doctor/enroll',
-  ME: '/me'
+  ME: '/me',
 } as const;
 
 export const AUTH_MESSAGES = {
   CREDENTIALS_REQUIRED: 'Email and password are required.',
   INVALID_LOGIN: 'Invalid login or API unavailable.',
-  ENROLL_REQUIRED_FIELDS: 'Name, email, password, and specialty are required.',
+  ENROLL_REQUIRED_FIELDS: 'Name, email, password, and specialty/support focus are required.',
   ENROLL_DEFAULT_SUCCESS: 'Enrollment submitted. Wait for admin approval.',
-  ENROLL_FAILED: 'Could not enroll doctor account.'
+  ENROLL_FAILED: 'Could not enroll provider account.',
 } as const;

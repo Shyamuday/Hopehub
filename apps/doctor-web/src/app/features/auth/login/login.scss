@@ -48,9 +48,73 @@ p {
   line-height: var(--leading-relaxed);
 }
 
+.identity-guide {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.45rem;
+  margin: 0 0 1rem;
+}
+
+.identity-guide span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.4rem;
+  border: 1px solid color-mix(in srgb, var(--color-brand) 22%, var(--color-border));
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--color-brand) 7%, var(--color-surface));
+  color: var(--color-text);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  padding: 0.55rem 0.7rem;
+}
+
 form {
   display: grid;
   gap: 0.65rem;
+}
+
+select {
+  min-height: var(--touch-min);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text);
+  padding: 0.7rem 0.8rem;
+  font: inherit;
+}
+
+.fixed-provider-type {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  min-height: var(--touch-min);
+  border: 1px solid color-mix(in srgb, var(--color-brand) 25%, var(--color-border));
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--color-brand) 8%, var(--color-surface));
+  color: var(--color-text);
+  padding: 0.7rem 0.8rem;
+}
+
+.fixed-provider-type strong {
+  font-size: var(--text-sm);
+}
+
+.fixed-provider-type span {
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-brand) 14%, var(--color-surface));
+  color: var(--color-brand);
+  font-size: var(--text-xs);
+  font-weight: 800;
+  padding: 0.2rem 0.5rem;
+  white-space: nowrap;
+}
+
+.field-hint {
+  margin: -0.25rem 0 0.15rem;
+  color: var(--color-text-secondary);
+  font-size: var(--text-xs);
+  line-height: var(--leading-relaxed);
 }
 
 button[type='submit'] {
@@ -64,6 +128,72 @@ button[type='submit'] {
   color: #fff;
   font-weight: 600;
   font-size: var(--text-base);
+}
+
+.login-divider {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0.25rem 0;
+  color: var(--color-text-secondary);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.login-divider::before,
+.login-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--color-border);
+}
+
+.google-login-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+  min-height: var(--touch-min);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 800;
+  box-shadow: 0 0.5rem 1.25rem color-mix(in srgb, #111827 7%, transparent);
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
+}
+
+.google-login-button:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--color-brand) 35%, var(--color-border));
+  box-shadow: 0 0.75rem 1.5rem color-mix(in srgb, var(--color-brand) 13%, transparent);
+  transform: translateY(-1px);
+}
+
+.google-login-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+.google-login-button__mark {
+  display: inline-grid;
+  place-items: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 999px;
+  background:
+    linear-gradient(#fff, #fff) padding-box,
+    conic-gradient(from -45deg, #4285f4, #34a853, #fbbc05, #ea4335, #4285f4) border-box;
+  border: 2px solid transparent;
+  color: #4285f4;
+  font-weight: 900;
+  font-size: var(--text-sm);
 }
 
 .password-input-wrap {
@@ -106,5 +236,9 @@ button[type='submit'] {
     align-items: center;
     justify-content: center;
     padding: 2rem 1rem;
+  }
+
+  .identity-guide {
+    grid-template-columns: 1fr 1fr;
   }
 }

@@ -18,7 +18,7 @@ describe('App', () => {
     const fixture = TestBed.createComponent(App);
     await fixture.whenStable();
     const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.textContent).toContain('Loading Doctor Console');
+    expect(compiled.textContent).toContain('Loading Provider Console');
     expect(compiled.querySelector('router-outlet')).toBeTruthy();
   });
 });

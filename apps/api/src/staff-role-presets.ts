@@ -51,7 +51,7 @@ export const STAFF_ROLE_PRESETS: readonly StaffRolePreset[] = [
   {
     id: 'hope_hub_manager',
     label: 'Hope Hub manager',
-    summary: 'Psychologists, listeners, assessments, consultations, and safety signals.',
+    summary: 'Hope Hub providers, listeners, assessments, consultations, and safety signals.',
     cluster: 'clinical_operations',
     permissionCodes: [
       PERMISSIONS.WORKSPACE_HOPE_HUB,

@@ -11,12 +11,12 @@ import { AUTH_TOKEN_KEY } from '../../core/constants/auth.constants';
 import { ROUTE_PATHS } from '../../core/constants/app-routes.constants';
 import {
   mobileBottomNavIds,
-  navItemsForDoctorType,
   profileNavItem,
   type DoctorNavChildLink,
   type DoctorNavItemDef,
   DOCTOR_NAV_ICONS,
 } from '../../core/constants/doctor-nav.constants';
+import { careTeamTypeLabel } from '../../core/constants/doctor-types.constants';
 import { Auth } from '../../core/services/auth';
 import {
   ConsultationNavigationService,
@@ -56,6 +56,7 @@ export class DoctorShell implements OnInit, OnDestroy {
   doctorName = '';
   doctorProfileImageUrl: string | null = null;
   doctorTypeLabel = '';
+  providerWorkspaceTitle = 'Provider Console';
   specialtyLabel = '';
   doctorTypeKey: string | null = null;
   loadingSession = true;
@@ -83,21 +84,28 @@ export class DoctorShell implements OnInit, OnDestroy {
   constructor(
     private readonly auth: Auth,
     private readonly session: DoctorSessionService,
-  ) {
-    this.navItems = this.buildNav(navItemsForDoctorType(null));
-  }
+  ) {}
 
   async ngOnInit() {
     try {
       const profile = await this.session.load();
       this.doctorName = profile.name;
       this.doctorProfileImageUrl = profile.profileImageUrl ?? null;
-      this.doctorTypeLabel = profile.doctorProfile?.doctorTypeLabel || 'Doctor';
-      this.specialtyLabel = profile.doctorProfile?.specialty || '';
+      this.doctorTypeLabel = profile.doctorProfile?.doctorTypeLabel || 'Provider';
+      this.providerWorkspaceTitle =
+        profile.doctorProfile?.doctorType === 'PSYCHOLOGIST'
+          ? 'Hope Hub Provider Console'
+          : 'Homeopathy Provider Console';
+      this.specialtyLabel =
+        profile.doctorProfile?.doctorType === 'PSYCHOLOGIST'
+          ? careTeamTypeLabel(profile.doctorProfile?.mentalHealthProfile?.careTeamType) ||
+            profile.doctorProfile?.specialty ||
+            ''
+          : profile.doctorProfile?.specialty || '';
       this.doctorTypeKey = profile.doctorProfile?.doctorType ?? null;
       this.navItems = this.buildNav(this.session.navItems());
     } catch {
-      this.navItems = this.buildNav(this.session.navItems());
+      this.navItems = [];
     } finally {
       this.loadingSession = false;
     }

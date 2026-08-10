@@ -19,7 +19,7 @@ export class PatientAuthService {
   }
 
   async register(payload: {
-    name: string;
+    name?: string;
     email: string;
     password: string;
   }): Promise<AuthResponse> {

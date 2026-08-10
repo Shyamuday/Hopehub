@@ -45,7 +45,7 @@ export function registerDoctorPrescriptionRoutes(router: Router, io: SocketIoSer
     allowRoles(Role.DOCTOR, Role.ADMIN),
     requireDoctorCapability(
       'prescribe',
-      'Prescription access is not available for your doctor role.'
+      'Prescription access is available only for homeopathy providers.'
     ),
     asyncRoute(async (req, res) => {
       const consultation = await prisma.consultation.findUnique({
@@ -83,7 +83,7 @@ export function registerDoctorPrescriptionRoutes(router: Router, io: SocketIoSer
     allowRoles(Role.DOCTOR, Role.ADMIN),
     requireDoctorCapability(
       'prescribe',
-      'Prescription creation is not available for your doctor role.'
+      'Prescription creation is available only for homeopathy providers.'
     ),
     asyncRoute(async (req, res) => {
       const body = prescriptionInputSchema.parse(req.body);
@@ -208,7 +208,6 @@ export function registerDoctorPrescriptionRoutes(router: Router, io: SocketIoSer
       });
 
       if (body.status === PrescriptionStatus.PUBLISHED) {
-         
         const rxPatient = (prescription as any).patient;
         if (rxPatient) {
           void notificationService.sendBatch(
@@ -250,7 +249,7 @@ export function registerDoctorPrescriptionRoutes(router: Router, io: SocketIoSer
     allowRoles(Role.DOCTOR, Role.ADMIN),
     requireDoctorCapability(
       'prescribe',
-      'Prescription editing is not available for your doctor role.'
+      'Prescription editing is available only for homeopathy providers.'
     ),
     asyncRoute(async (req, res) => {
       const body = prescriptionInputSchema.parse(req.body);
@@ -370,7 +369,6 @@ export function registerDoctorPrescriptionRoutes(router: Router, io: SocketIoSer
           data: { status: ConsultationStatus.PRESCRIPTION_UPLOADED }
         });
 
-         
         const updatedPatient = (updated as any).patient;
         if (updatedPatient) {
           void notificationService.sendBatch(
@@ -412,7 +410,7 @@ export function registerDoctorPrescriptionRoutes(router: Router, io: SocketIoSer
     allowRoles(Role.DOCTOR, Role.ADMIN),
     requireDoctorCapability(
       'prescribe',
-      'Prescription access is not available for your doctor role.'
+      'Prescription access is available only for homeopathy providers.'
     ),
     asyncRoute(async (req, res) => {
       const prescription = await prisma.prescription.findUnique({

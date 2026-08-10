@@ -1,5 +1,11 @@
 import { Router } from 'express';
-import { CaseAnalysisStatus, PrescriptionOptionType, PrescriptionStatus, Role } from '@prisma/client';
+import {
+  CaseAnalysisStatus,
+  HomeopathicDoctorType,
+  PrescriptionOptionType,
+  PrescriptionStatus,
+  Role
+} from '@prisma/client';
 import { authRequired, allowRoles } from '../../auth.js';
 import { prisma } from '../../db.js';
 import {
@@ -11,11 +17,18 @@ import {
   routeParam
 } from '../../utils/helpers.js';
 import { caseAnalysisInclude } from '../repertory/shared.js';
-import { clinicalMediaInclude, serializeClinicalMedia } from '../../services/clinical-media-shared.js';
+import {
+  clinicalMediaInclude,
+  serializeClinicalMedia
+} from '../../services/clinical-media-shared.js';
 
 function paginationMeta(page: number, pageSize: number, total: number) {
   return { page, pageSize, total, totalPages: Math.max(1, Math.ceil(total / pageSize)) };
 }
+
+const homeopathyProviderWhere = {
+  doctorProfile: { is: { doctorType: { not: HomeopathicDoctorType.PSYCHOLOGIST } } }
+} as const;
 
 export function registerAdminClinicalRecordsRoutes(router: Router) {
   router.get(
@@ -51,6 +64,7 @@ export function registerAdminClinicalRecordsRoutes(router: Router) {
         ...(latestOnly ? { isLatest: true } : {}),
         ...(patientId ? { patientId } : {}),
         ...(doctorId ? { uploadedById: doctorId } : {}),
+        uploadedBy: homeopathyProviderWhere,
         ...(methodOptionId ? { methodOptionId } : {}),
         ...(consultationId ? { consultationId } : {}),
         ...(status ? { status: status as PrescriptionStatus } : {}),
@@ -124,8 +138,8 @@ export function registerAdminClinicalRecordsRoutes(router: Router) {
     allowRoles(Role.ADMIN),
     asyncRoute(async (req, res) => {
       const id = routeParam(req, 'id');
-      const prescription = await prisma.prescription.findUnique({
-        where: { id },
+      const prescription = await prisma.prescription.findFirst({
+        where: { id, uploadedBy: homeopathyProviderWhere },
         include: {
           ...includePrescriptionRelations(),
           caseAnalysis: {
@@ -166,6 +180,7 @@ export function registerAdminClinicalRecordsRoutes(router: Router) {
 
       const where = {
         ...(doctorId ? { doctorId } : {}),
+        doctor: homeopathyProviderWhere,
         ...(methodOptionId ? { methodOptionId } : {}),
         ...(consultationId ? { consultationId } : {}),
         ...(status ? { status: status as CaseAnalysisStatus } : {}),
@@ -250,8 +265,8 @@ export function registerAdminClinicalRecordsRoutes(router: Router) {
     allowRoles(Role.ADMIN),
     asyncRoute(async (req, res) => {
       const id = routeParam(req, 'id');
-      const analysis = await prisma.caseAnalysis.findUnique({
-        where: { id },
+      const analysis = await prisma.caseAnalysis.findFirst({
+        where: { id, doctor: homeopathyProviderWhere },
         include: {
           ...caseAnalysisInclude,
           doctor: { select: publicUserSelect },

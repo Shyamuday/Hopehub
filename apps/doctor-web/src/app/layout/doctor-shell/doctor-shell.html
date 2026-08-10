@@ -3,11 +3,14 @@
     <div class="topbar-start">
       <button type="button" class="menu-btn" aria-label="Open menu" (click)="openMenu()">☰</button>
       <div class="identity">
-        <p class="app-title">Doctor Console</p>
+        <p class="app-title">{{ providerWorkspaceTitle }}</p>
         @if (!loadingSession) {
           <div class="doctor-meta">
             <strong>{{ doctorName }}</strong>
             <span class="type-badge">{{ doctorTypeLabel }}</span>
+            @if (specialtyLabel) {
+              <span class="specialty">{{ specialtyLabel }}</span>
+            }
           </div>
         }
       </div>
@@ -18,7 +21,7 @@
         <hopehub-profile-avatar
           [apiBase]="apiBase"
           [tokenKey]="authTokenKey"
-          [displayName]="doctorName || 'Doctor'"
+          [displayName]="doctorName || 'Provider'"
           [profileImageUrl]="doctorProfileImageUrl"
           size="md"
         />
@@ -30,12 +33,15 @@
   <div class="shell-body">
     <aside class="sidebar" aria-label="Main navigation">
       <div class="sidebar-brand">
-        <p class="app-title">Doctor Console</p>
+        <p class="app-title">{{ providerWorkspaceTitle }}</p>
         @if (!loadingSession) {
           <div class="sidebar-identity">
             <strong>{{ doctorName }}</strong>
             @if (doctorTypeLabel) {
               <span class="type-badge sidebar-badge">{{ doctorTypeLabel }}</span>
+            }
+            @if (specialtyLabel) {
+              <span class="specialty">{{ specialtyLabel }}</span>
             }
           </div>
         }
@@ -136,7 +142,7 @@
     <aside class="drawer mobile-nav-sheet" aria-label="Navigation menu">
       <div class="drawer-header">
         <div class="drawer-identity">
-          <strong>{{ doctorName || 'Doctor' }}</strong>
+          <strong>{{ doctorName || 'Provider' }}</strong>
           @if (doctorTypeLabel) {
             <span class="type-badge drawer-badge">{{ doctorTypeLabel }}</span>
           }

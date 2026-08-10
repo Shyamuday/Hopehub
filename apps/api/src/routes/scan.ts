@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { ConsultationStatus, Role } from '@prisma/client';
 import { authRequired, allowRoles } from '../auth.js';
 import { SERVER_CONFIG } from '../constants/config.constants.js';
+import { requireDoctorCapability } from '../doctor-capabilities.js';
 import { asyncRoute, routeParam } from '../utils/helpers.js';
 import {
   buildPatientScanUrl,
@@ -72,7 +73,7 @@ scanRouter.get(
       <p class="code">${escapeHtml(patient.patientCode)}</p>
       <p>Choose how you want to open this patient record.</p>
       <div class="actions">
-        <a class="btn doctor" href="${doctorUrl}">Doctor — prescribe / consult</a>
+        <a class="btn doctor" href="${doctorUrl}">Provider — consult / prescribe</a>
         <a class="btn store" href="${storeUrl}">Store staff — medicines to give</a>
         <a class="btn reception" href="${receptionUrl}">Reception — add to queue</a>
         <a class="btn scan" href="${scanHubUrl}">Staff scan hub</a>
@@ -183,6 +184,10 @@ scanRouter.get(
   '/scan/patient/:patientCode',
   authRequired,
   allowRoles(Role.DOCTOR, Role.ADMIN, Role.HR),
+  requireDoctorCapability(
+    'scan',
+    'Patient scan tools are available only for homeopathy providers.'
+  ),
   asyncRoute(async (req, res) => {
     const context = await buildPatientScanContext({
       patientCode: routeParam(req, 'patientCode'),

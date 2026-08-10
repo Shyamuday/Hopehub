@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { ConsultationStatus, PaymentStatus, Role, SupportNoteCategory } from '@prisma/client';
 import type { Server as SocketIoServer } from 'socket.io';
 import { authRequired, allowRoles } from '../auth.js';
+import { requireDoctorCapability } from '../doctor-capabilities.js';
 import { prisma } from '../db.js';
 import {
   asyncRoute,
@@ -483,6 +484,10 @@ export function createConsultationsRouter(io: SocketIoServer) {
     '/consultations/:id/assessment-summary',
     authRequired,
     allowRoles(Role.DOCTOR, Role.ADMIN),
+    requireDoctorCapability(
+      'clinicalMentalHealth',
+      'Assessment history is available only for clinical Hope Hub providers.'
+    ),
     asyncRoute(async (req, res) => {
       const consultation = await prisma.consultation.findUniqueOrThrow({
         where: { id: routeParam(req, 'id') },

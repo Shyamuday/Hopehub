@@ -62,6 +62,7 @@ model MentalHealthProviderProfile {
   id                    String   @id @default(cuid())
   doctorId              String   @unique
   careTeamType          CareTeamMemberType @default(MENTAL_WELLNESS_PROFESSIONAL)
+  careTeamTypes         CareTeamMemberType[] @default([])
   qualifications         String[] @default([])
   qualifiedFrom          String?
   licenseNumber          String?

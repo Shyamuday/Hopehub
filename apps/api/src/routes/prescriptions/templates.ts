@@ -15,7 +15,7 @@ export function registerPrescriptionTemplateRoutes(router: Router) {
     allowRoles(Role.DOCTOR, Role.ADMIN),
     requireDoctorCapability(
       'prescribe',
-      'Prescription templates are not available for your doctor role.'
+      'Prescription templates are available only for homeopathy providers.'
     ),
     asyncRoute(async (req, res) => {
       const templates = await prisma.prescriptionTemplate.findMany({
@@ -33,7 +33,7 @@ export function registerPrescriptionTemplateRoutes(router: Router) {
     allowRoles(Role.DOCTOR, Role.ADMIN),
     requireDoctorCapability(
       'prescribe',
-      'Prescription templates are not available for your doctor role.'
+      'Prescription templates are available only for homeopathy providers.'
     ),
     asyncRoute(async (req, res) => {
       const body = templateInputSchema.parse(req.body);
@@ -60,7 +60,7 @@ export function registerPrescriptionTemplateRoutes(router: Router) {
     allowRoles(Role.DOCTOR, Role.ADMIN),
     requireDoctorCapability(
       'prescribe',
-      'Prescription templates are not available for your doctor role.'
+      'Prescription templates are available only for homeopathy providers.'
     ),
     asyncRoute(async (req, res) => {
       const body = templateInputSchema.parse(req.body);
@@ -95,7 +95,7 @@ export function registerPrescriptionTemplateRoutes(router: Router) {
     allowRoles(Role.DOCTOR, Role.ADMIN),
     requireDoctorCapability(
       'prescribe',
-      'Prescription templates are not available for your doctor role.'
+      'Prescription templates are available only for homeopathy providers.'
     ),
     asyncRoute(async (req, res) => {
       const existing = await prisma.prescriptionTemplate.findUnique({

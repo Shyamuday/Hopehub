@@ -70,16 +70,35 @@ export async function allocatePatientCode(homeClinicStoreId?: string | null) {
     }
   });
 
-  return `${prefix}-${String(existing + 1).padStart(6, '0')}`;
+  let nextNumber = existing + 1;
+  for (let attempt = 0; attempt < 1000; attempt++) {
+    const patientCode = `${prefix}-${String(nextNumber).padStart(6, '0')}`;
+    const taken = await prisma.user.findUnique({
+      where: { patientCode },
+      select: { id: true }
+    });
+    if (!taken) return patientCode;
+    nextNumber++;
+  }
+
+  throw new Error('Could not allocate a unique patient code.');
+}
+
+function uniqueViolationTargets(error: unknown) {
+  if (!(error instanceof Prisma.PrismaClientKnownRequestError) || error.code !== 'P2002') {
+    return [];
+  }
+  const target = error.meta?.target;
+  if (Array.isArray(target)) return target.map(String);
+  if (typeof target === 'string') return [target];
+  return [];
 }
 
 export function buildPatientSearchOr(query: string): Prisma.UserWhereInput[] {
   const trimmed = query.trim();
   if (!trimmed) return [];
 
-  const clauses: Prisma.UserWhereInput[] = [
-    { name: { contains: trimmed, mode: 'insensitive' } }
-  ];
+  const clauses: Prisma.UserWhereInput[] = [{ name: { contains: trimmed, mode: 'insensitive' } }];
 
   if (isPatientCodeQuery(trimmed)) {
     clauses.push({ patientCode: { equals: trimmed.toUpperCase(), mode: 'insensitive' } });
@@ -103,10 +122,7 @@ export function buildPatientSearchOr(query: string): Prisma.UserWhereInput[] {
 
 export function clinicPatientScope(clinicStoreId: string): Prisma.UserWhereInput {
   return {
-    OR: [
-      { homeClinicStoreId: clinicStoreId },
-      { patientConsults: { some: { clinicStoreId } } }
-    ]
+    OR: [{ homeClinicStoreId: clinicStoreId }, { patientConsults: { some: { clinicStoreId } } }]
   };
 }
 
@@ -165,7 +181,10 @@ export async function searchPatients(params: {
   const limit = Math.min(params.limit ?? 25, 50);
   const orClause = buildPatientSearchOr(params.query);
   if (!orClause.length) {
-    return { patients: [] as Array<Prisma.UserGetPayload<{ select: typeof patientListSelect }>>, scopeUsed: 'none' as const };
+    return {
+      patients: [] as Array<Prisma.UserGetPayload<{ select: typeof patientListSelect }>>,
+      scopeUsed: 'none' as const
+    };
   }
 
   const baseWhere: Prisma.UserWhereInput = {
@@ -208,27 +227,37 @@ export async function createPatientRecord(data: {
   if (email) {
     const emailTaken = await prisma.user.findFirst({
       where: { email, role: Role.PATIENT },
-      select: { id: true }
+      select: { id: true, role: true }
     });
     if (emailTaken) {
       throw new Error('EMAIL_TAKEN');
     }
   }
 
-  const patientCode = await allocatePatientCode(data.homeClinicStoreId);
+  for (let attempt = 0; attempt < 20; attempt++) {
+    const patientCode = await allocatePatientCode(data.homeClinicStoreId);
+    try {
+      return await prisma.user.create({
+        data: {
+          name: data.name.trim(),
+          email,
+          mobile,
+          passwordHash: data.passwordHash ?? null,
+          role: Role.PATIENT,
+          patientCode,
+          homeClinicStoreId: data.homeClinicStoreId ?? null
+        },
+        select: patientListSelect
+      });
+    } catch (error) {
+      const targets = uniqueViolationTargets(error);
+      if (targets.some((target) => target.includes('patientCode'))) continue;
+      if (targets.some((target) => target.includes('email'))) throw new Error('EMAIL_TAKEN');
+      throw error;
+    }
+  }
 
-  return prisma.user.create({
-    data: {
-      name: data.name.trim(),
-      email,
-      mobile,
-      passwordHash: data.passwordHash ?? null,
-      role: Role.PATIENT,
-      patientCode,
-      homeClinicStoreId: data.homeClinicStoreId ?? null
-    },
-    select: patientListSelect
-  });
+  throw new Error('Could not create a patient with a unique patient code.');
 }
 
 export type PatientIdCard = {

@@ -13,7 +13,7 @@
           <span>
             {{
               workspaceKey() === 'hope-hub'
-                ? 'Showing mental wellness, quick talk, listener, and psychologist sessions only.'
+                ? 'Showing mental wellness, quick talk, listener, and Hope Hub provider sessions only.'
                 : 'Showing homeopathy consultations only. Hope Hub sessions stay in the Hope Hub workspace.'
             }}
           </span>
@@ -29,7 +29,7 @@
             {{
               workspaceKey() === 'hope-hub'
                 ? 'Assign unassigned Hope Hub sessions to available providers'
-                : 'Assign unassigned consultations to available homeopathy doctors'
+                : 'Assign unassigned consultations to available homeopathy providers'
             }}
           </p>
         </div>
@@ -107,7 +107,7 @@
                 <th>Status</th>
                 <th>Payment</th>
                 <th>Created</th>
-                <th>Assigned Doctor</th>
+                <th>Assigned Provider</th>
                 <th>Action</th>
               </tr>
             </thead>
@@ -200,8 +200,8 @@
                     @if (c.patient?.id) {
                       <div class="cross-links">
                         <a class="cross-link" [routerLink]="clinicalRecordsRoute" [queryParams]="clinicalQuery(c)">Clinical records</a>
-                        @if (showDoctorLinks(c.status)) {
-                          <a class="cross-link external" [href]="doctorAppointmentLink(c.id)" target="_blank" rel="noopener">Doctor app</a>
+                        @if (showHomeopathyClinicalLinks(c.status)) {
+                          <a class="cross-link external" [href]="doctorAppointmentLink(c.id)" target="_blank" rel="noopener">Provider app</a>
                           <a class="cross-link external" [href]="doctorCaseAnalysisLink(c.id)" target="_blank" rel="noopener">Case analysis</a>
                         }
                       </div>
@@ -311,8 +311,8 @@
               @if (isCardMenuOpen(c.id) && c.patient?.id) {
                 <div class="cross-links">
                   <a class="cross-link" [routerLink]="clinicalRecordsRoute" [queryParams]="clinicalQuery(c)">Clinical records</a>
-                  @if (showDoctorLinks(c.status)) {
-                    <a class="cross-link external" [href]="doctorAppointmentLink(c.id)" target="_blank" rel="noopener">Doctor app</a>
+                  @if (showHomeopathyClinicalLinks(c.status)) {
+                    <a class="cross-link external" [href]="doctorAppointmentLink(c.id)" target="_blank" rel="noopener">Provider app</a>
                     <a class="cross-link external" [href]="doctorCaseAnalysisLink(c.id)" target="_blank" rel="noopener">Case analysis</a>
                   }
                 </div>
@@ -339,7 +339,7 @@
         <div class="modal form-surface-dark" (click)="$event.stopPropagation()">
           <div class="mhdr">
             <div>
-              <h3>Assign Doctor</h3>
+              <h3>Assign {{ providerSingularTitle() }}</h3>
               <p class="mhdr-sub">{{ selectedConsult()!.patient?.name }} — {{ selectedConsult()!.disease?.name }}</p>
             </div>
             <button class="close-btn" (click)="closeModal()">✕</button>
@@ -348,7 +348,7 @@
             @if (doctorsLoading()) {
               <div class="loading"><div class="spinner"></div></div>
             } @else {
-              <input class="search" [formField]="doctorSearchForm.q" (input)="filterDoctors()" placeholder="🔍 Filter doctors…" style="margin-bottom:10px" />
+              <input class="search" [formField]="doctorSearchForm.q" (input)="filterDoctors()" [placeholder]="providerSearchPlaceholder()" style="margin-bottom:10px" />
               <div class="doc-list">
                 @for (d of filteredDoctors(); track d.id) {
                   <div class="doc-item" [class.selected]="selectedDoctorId() === d.id" (click)="selectedDoctorId.set(d.id)">
@@ -363,7 +363,7 @@
                   </div>
                 }
                 @if (filteredDoctors().length === 0) {
-                  <div class="empty-sm">No doctors found</div>
+                  <div class="empty-sm">No {{ providerPluralLabel() }} found</div>
                 }
               </div>
             }

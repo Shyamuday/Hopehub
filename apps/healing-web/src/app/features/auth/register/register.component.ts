@@ -39,10 +39,8 @@ export class RegisterComponent implements OnInit {
   constructor() {
     this.registerForm = this.fb.group(
       {
-        firstName: ['', [Validators.required]],
-        lastName: ['', [Validators.required]],
         email: ['', [Validators.required, Validators.email]],
-        password: ['', [Validators.required, Validators.minLength(6)]],
+        password: ['', [Validators.required, Validators.minLength(8)]],
         confirmPassword: ['', [Validators.required]],
         acceptTerms: [false, [Validators.requiredTrue]],
       },
@@ -94,9 +92,6 @@ export class RegisterComponent implements OnInit {
         const credentials: RegisterCredentials = {
           email: formValue.email,
           password: formValue.password,
-          displayName: `${formValue.firstName} ${formValue.lastName}`,
-          firstName: formValue.firstName,
-          lastName: formValue.lastName,
         };
 
         await this.authService.register(credentials);
@@ -120,7 +115,7 @@ export class RegisterComponent implements OnInit {
       Object.keys(this.registerForm.controls).forEach((key) => {
         this.registerForm.get(key)?.markAsTouched();
       });
-      this.notificationService.warning('Please complete the required account details.');
+      this.notificationService.warning('Please enter your email and password.');
     }
   }
 

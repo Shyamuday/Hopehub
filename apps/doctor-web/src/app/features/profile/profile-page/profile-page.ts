@@ -2,17 +2,34 @@ import { HttpClient } from '@angular/common/http';
 import { Component, inject, signal } from '@angular/core';
 import { form, FormField } from '@angular/forms/signals';
 import { firstValueFrom } from 'rxjs';
-import { ProfileAvatarUploadComponent } from '@hopehub/platform-ui';
+import { MultiSelectComponent, ProfileAvatarUploadComponent } from '@hopehub/platform-ui';
 import { environment } from '../../../../environments/environment';
 import { API_PATHS } from '../../../core/constants/api-paths.constants';
 import { AUTH_TOKEN_KEY } from '../../../core/constants/auth.constants';
 import {
-  capabilitiesForDoctorType,
+  CARE_TEAM_TYPE_LABELS,
+  capabilitiesForProvider,
+  careTeamTypeLabel,
+  isClinicalMentalHealthCareTeamType,
+  isCoachGuideCareTeamType,
+  isListenerCareTeamType,
   type DoctorProfileSummary,
 } from '../../../core/constants/doctor-types.constants';
 import { DoctorSessionService } from '../../../core/services/doctor-session';
 
 const LISTENER_SAFETY_ACKNOWLEDGEMENT_VERSION = 'listener-safety-v1-2026-08-07';
+const CARE_TEAM_TYPE_OPTIONS = [
+  'MENTAL_WELLNESS_PROFESSIONAL',
+  'QUALIFIED_COUNSELLOR',
+  'PSYCHOLOGY_STUDENT_VOLUNTEER',
+  'PEER_SUPPORT_VOLUNTEER',
+  'NLP_COACH',
+  'LIFE_COACH',
+  'MEDITATION_BREATHWORK_GUIDE',
+  'CAREER_STUDY_MENTOR',
+] as const;
+type ProfileCareTeamType = (typeof CARE_TEAM_TYPE_OPTIONS)[number];
+type SelectableProfileCareTeamType = ProfileCareTeamType | 'OTHER';
 
 function emptyProfileModel() {
   return {
@@ -27,6 +44,8 @@ function emptyProfileModel() {
     yearsOfExperience: '' as number | '',
     focusAreasText: '',
     careTeamType: 'MENTAL_WELLNESS_PROFESSIONAL',
+    careTeamTypes: ['MENTAL_WELLNESS_PROFESSIONAL'] as SelectableProfileCareTeamType[],
+    otherCareTeamType: '',
     qualificationsText: '',
     qualifiedFrom: '',
     licenseNumber: '',
@@ -53,7 +72,7 @@ function emptyProfileModel() {
 
 @Component({
   selector: 'app-profile-page',
-  imports: [FormField, ProfileAvatarUploadComponent],
+  imports: [FormField, ProfileAvatarUploadComponent, MultiSelectComponent],
   templateUrl: './profile-page.html',
   styleUrl: './profile-page.scss',
 })
@@ -75,6 +94,10 @@ export class ProfilePage {
     { value: 'FREE_VOLUNTEER', label: 'Free emotional support listener support' },
     { value: 'PER_MINUTE', label: 'Per-minute pricing' },
   ];
+  readonly careTeamTypeOptions: Array<{ value: SelectableProfileCareTeamType; label: string }> = [
+    ...CARE_TEAM_TYPE_OPTIONS.map((value) => ({ value, label: CARE_TEAM_TYPE_LABELS[value] })),
+    { value: 'OTHER', label: 'Other' },
+  ];
   readonly careServices = signal<Array<any>>([]);
   readonly carePricingTemplates = signal<Array<any>>([]);
 
@@ -95,8 +118,101 @@ export class ProfilePage {
   }
 
   isListenerProfile(): boolean {
-    const type = this.profileModel().careTeamType;
-    return type === 'PSYCHOLOGY_STUDENT_VOLUNTEER' || type === 'PEER_SUPPORT_VOLUNTEER';
+    return this.selectedStructuredCareTeamTypes().some((type) => isListenerCareTeamType(type));
+  }
+
+  isClinicalMentalHealthProfile(): boolean {
+    return (
+      this.isPsychologist &&
+      this.selectedStructuredCareTeamTypes().some((type) =>
+        isClinicalMentalHealthCareTeamType(type),
+      )
+    );
+  }
+
+  isCoachGuideProfile(): boolean {
+    return (
+      this.isPsychologist &&
+      this.selectedStructuredCareTeamTypes().some((type) => isCoachGuideCareTeamType(type))
+    );
+  }
+
+  specialtyFieldLabel(): string {
+    if (!this.isPsychologist) return 'Specialty';
+    if (this.isListenerProfile()) return 'Listening focus';
+    if (this.isCoachGuideProfile()) return 'Coaching / guide focus';
+    return 'Professional focus';
+  }
+
+  registrationFieldLabel(): string {
+    return this.isPsychologist ? 'Registration / certification number' : 'Registration Number';
+  }
+
+  showRegistrationNumber(): boolean {
+    return !this.isPsychologist || this.isClinicalMentalHealthProfile();
+  }
+
+  isProfileCareTeamTypeSelected(value: SelectableProfileCareTeamType): boolean {
+    return this.profileModel().careTeamTypes.includes(value);
+  }
+
+  private selectedStructuredCareTeamTypes(): ProfileCareTeamType[] {
+    return this.profileModel().careTeamTypes.filter(
+      (value): value is ProfileCareTeamType => value !== 'OTHER',
+    );
+  }
+
+  toggleProfileCareTeamType(value: SelectableProfileCareTeamType, checked: boolean): void {
+    this.profileModel.update((current) => {
+      const next = checked
+        ? Array.from(new Set([...current.careTeamTypes, value]))
+        : current.careTeamTypes.filter((item) => item !== value);
+      const careTeamTypes: SelectableProfileCareTeamType[] = next.length
+        ? next
+        : ['MENTAL_WELLNESS_PROFESSIONAL'];
+      return {
+        ...current,
+        careTeamTypes,
+        careTeamType: this.primaryProfileCareTeamType(careTeamTypes),
+        otherCareTeamType: value === 'OTHER' && !checked ? '' : current.otherCareTeamType,
+      };
+    });
+  }
+
+  setProfileCareTeamTypes(values: string[]): void {
+    this.profileModel.update((current) => {
+      const selected = values.filter((value): value is SelectableProfileCareTeamType =>
+        this.careTeamTypeOptions.some((option) => option.value === value),
+      );
+      const careTeamTypes: SelectableProfileCareTeamType[] = selected.length
+        ? selected
+        : ['MENTAL_WELLNESS_PROFESSIONAL'];
+      return {
+        ...current,
+        careTeamTypes,
+        careTeamType: this.primaryProfileCareTeamType(careTeamTypes),
+        otherCareTeamType: careTeamTypes.includes('OTHER') ? current.otherCareTeamType : '',
+      };
+    });
+  }
+
+  focusAreasPlaceholder(): string {
+    if (!this.isPsychologist) {
+      return 'e.g.\nChronic kidney disease\nDiabetes management\nHypertension';
+    }
+    if (this.isListenerProfile()) {
+      return 'e.g.\nLoneliness\nExam pressure\nRelationship venting';
+    }
+    if (this.isCoachGuideProfile()) {
+      return 'e.g.\nConfidence building\nCareer stress\nBreathwork practice';
+    }
+    return 'e.g.\nAnxiety support\nRelationship stress\nStudent counselling';
+  }
+
+  approachLabel(): string {
+    if (this.isListenerProfile()) return 'Listening approach';
+    if (this.isCoachGuideProfile()) return 'Coaching / guidance approach';
+    return 'Counselling approach';
   }
 
   listenerReadinessItems() {
@@ -191,7 +307,7 @@ export class ProfilePage {
       );
 
       const profile = response.profile;
-      this.canPrescribe = capabilitiesForDoctorType(profile.doctorProfile?.doctorType).prescribe;
+      this.canPrescribe = capabilitiesForProvider(profile.doctorProfile).prescribe;
       this.isPsychologist = profile.doctorProfile?.doctorType === 'PSYCHOLOGIST';
       const mental = profile.doctorProfile?.mentalHealthProfile;
       this.methodOptions = this.canPrescribe
@@ -204,6 +320,12 @@ export class ProfilePage {
             )
           ).options
         : [];
+      const profileSpecialty = profile.doctorProfile?.specialty || '';
+      const primaryCareTeamType =
+        (mental?.careTeamType as ProfileCareTeamType | undefined) || 'MENTAL_WELLNESS_PROFESSIONAL';
+      const careTeamTypes = mental?.careTeamTypes?.length
+        ? (mental.careTeamTypes as SelectableProfileCareTeamType[])
+        : this.inferProfileCareTeamTypes(primaryCareTeamType, profileSpecialty);
 
       this.profileModel.set({
         name: profile.name || '',
@@ -216,7 +338,9 @@ export class ProfilePage {
         bio: profile.doctorProfile?.bio || '',
         yearsOfExperience: profile.doctorProfile?.yearsOfExperience ?? '',
         focusAreasText: (profile.doctorProfile?.focusAreas ?? []).join('\n'),
-        careTeamType: mental?.careTeamType || 'MENTAL_WELLNESS_PROFESSIONAL',
+        careTeamType: primaryCareTeamType,
+        careTeamTypes,
+        otherCareTeamType: this.inferOtherCareTeamType(profileSpecialty),
         qualificationsText: (mental?.qualifications ?? []).join('\n'),
         qualifiedFrom: mental?.qualifiedFrom || '',
         licenseNumber: mental?.licenseNumber || '',
@@ -243,8 +367,10 @@ export class ProfilePage {
         defaultMethodOptionId: profile.doctorProfile?.defaultMethodOptionId || '',
       });
       this.careServices.set(this.normalizeServiceList(mental?.services ?? []));
-      this.doctorTypeLabel = profile.doctorProfile?.doctorTypeLabel || 'Doctor';
-      this.specialtyFocusLabel = profile.doctorProfile?.specialtyFocusLabel || '';
+      this.doctorTypeLabel = profile.doctorProfile?.doctorTypeLabel || 'Provider';
+      this.specialtyFocusLabel = this.isPsychologist
+        ? careTeamTypeLabel(mental?.careTeamType)
+        : profile.doctorProfile?.specialtyFocusLabel || '';
       this.showOnWebsite = profile.doctorProfile?.showOnWebsite ?? false;
       this.profileImageUrl =
         (profile as { profileImageUrl?: string | null }).profileImageUrl ?? null;
@@ -270,8 +396,8 @@ export class ProfilePage {
           name: form.name,
           gender: form.gender || null,
           mobile: form.mobile,
-          specialty: form.specialty,
-          registrationNo: form.registrationNo,
+          specialty: this.specialtyForProfileSave(form),
+          registrationNo: this.showRegistrationNumber() ? form.registrationNo : '',
           isAvailable: form.isAvailable,
           bio: form.bio.trim() || null,
           yearsOfExperience: form.yearsOfExperience !== '' ? Number(form.yearsOfExperience) : null,
@@ -282,7 +408,8 @@ export class ProfilePage {
           mentalHealthProfile: this.isPsychologist
             ? {
                 qualifications: this.lines(form.qualificationsText),
-                careTeamType: form.careTeamType as any,
+                careTeamType: this.primaryProfileCareTeamType(form.careTeamTypes) as any,
+                careTeamTypes: this.structuredProfileCareTeamTypes(form.careTeamTypes) as any,
                 qualifiedFrom: form.qualifiedFrom || null,
                 licenseNumber: form.licenseNumber || null,
                 licenseCouncil: form.licenseCouncil || null,
@@ -323,6 +450,50 @@ export class ProfilePage {
       .split('\n')
       .map((item) => item.trim())
       .filter(Boolean);
+  }
+
+  private primaryProfileCareTeamType(
+    selected: SelectableProfileCareTeamType[],
+  ): ProfileCareTeamType {
+    return (
+      (selected.find((value) => value !== 'OTHER') as ProfileCareTeamType | undefined) ||
+      'MENTAL_WELLNESS_PROFESSIONAL'
+    );
+  }
+
+  private structuredProfileCareTeamTypes(
+    selected: SelectableProfileCareTeamType[],
+  ): ProfileCareTeamType[] {
+    const structured = selected.filter((value): value is ProfileCareTeamType => value !== 'OTHER');
+    return structured.length ? structured : ['MENTAL_WELLNESS_PROFESSIONAL'];
+  }
+
+  private inferProfileCareTeamTypes(
+    primaryCareTeamType: ProfileCareTeamType,
+    specialty: string,
+  ): SelectableProfileCareTeamType[] {
+    const specialtyText = specialty.toLowerCase();
+    const selected: SelectableProfileCareTeamType[] = CARE_TEAM_TYPE_OPTIONS.filter((value) => {
+      const label = CARE_TEAM_TYPE_LABELS[value].toLowerCase();
+      return value === primaryCareTeamType || specialtyText.includes(label);
+    });
+    if (/other:/i.test(specialty)) selected.push('OTHER');
+    return selected.length ? Array.from(new Set(selected)) : [primaryCareTeamType];
+  }
+
+  private inferOtherCareTeamType(specialty: string): string {
+    return specialty.match(/other:\s*([^,]+)/i)?.[1]?.trim() || '';
+  }
+
+  private specialtyForProfileSave(form: ReturnType<typeof emptyProfileModel>): string {
+    if (!this.isPsychologist) return form.specialty;
+    const labels = form.careTeamTypes
+      .filter((value) => value !== 'OTHER')
+      .map((value) => CARE_TEAM_TYPE_LABELS[value as ProfileCareTeamType])
+      .filter(Boolean);
+    const other = form.otherCareTeamType.trim();
+    if (other) labels.push(`Other: ${other}`);
+    return labels.join(', ') || 'Hope Hub Provider';
   }
 
   addCareService() {

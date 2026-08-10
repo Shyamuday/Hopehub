@@ -50,9 +50,15 @@ const updateProfileSchema = z.object({
 function profileInclude(role: EcosystemRole) {
   switch (role) {
     case Role.BRANCH_OWNER:
-      return { branchOwnerProfile: { include: { store: { select: { id: true, name: true, code: true } } } } };
+      return {
+        branchOwnerProfile: { include: { store: { select: { id: true, name: true, code: true } } } }
+      };
     case Role.PATIENT_COORDINATOR:
-      return { patientCoordinatorProfile: { include: { store: { select: { id: true, name: true, code: true } } } } };
+      return {
+        patientCoordinatorProfile: {
+          include: { store: { select: { id: true, name: true, code: true } } }
+        }
+      };
     case Role.CALL_CENTER:
       return { callCenterProfile: true };
     case Role.MARKETING:
@@ -145,7 +151,9 @@ export function registerAdminEcosystemUserRoutes(router: Router) {
         })
         .parse(req.body);
 
-      const existing = await prisma.corporateAccount.findUnique({ where: { code: body.code.toUpperCase() } });
+      const existing = await prisma.corporateAccount.findUnique({
+        where: { code: body.code.toUpperCase() }
+      });
       if (existing) {
         return res.status(409).json({ message: 'Corporate code already exists.' });
       }
@@ -178,15 +186,20 @@ export function registerAdminEcosystemUserRoutes(router: Router) {
     allowRoles(Role.ADMIN),
     asyncRoute(async (req, res) => {
       const roleParam = queryText(req, 'role');
-      const roles = roleParam && ECOSYSTEM_ROLES.includes(roleParam as EcosystemRole)
-        ? [roleParam as EcosystemRole]
-        : [...ECOSYSTEM_ROLES];
+      const roles =
+        roleParam && ECOSYSTEM_ROLES.includes(roleParam as EcosystemRole)
+          ? [roleParam as EcosystemRole]
+          : [...ECOSYSTEM_ROLES];
 
       const users = await prisma.user.findMany({
         where: { role: { in: roles } },
         include: {
-          branchOwnerProfile: { include: { store: { select: { id: true, name: true, code: true } } } },
-          patientCoordinatorProfile: { include: { store: { select: { id: true, name: true, code: true } } } },
+          branchOwnerProfile: {
+            include: { store: { select: { id: true, name: true, code: true } } }
+          },
+          patientCoordinatorProfile: {
+            include: { store: { select: { id: true, name: true, code: true } } }
+          },
           callCenterProfile: true,
           marketingProfile: true,
           corporateWellnessProfile: { include: { corporate: true } },
@@ -213,16 +226,20 @@ export function registerAdminEcosystemUserRoutes(router: Router) {
         return res.status(400).json({ message: 'storeId is required for this role.' });
       }
       if (body.role === Role.CORPORATE_WELLNESS && !body.corporateId) {
-        return res.status(400).json({ message: 'corporateId is required for corporate wellness users.' });
+        return res
+          .status(400)
+          .json({ message: 'corporateId is required for corporate wellness users.' });
       }
       if (body.role === Role.INSURANCE_PARTNER && (!body.companyName || !body.companyCode)) {
-        return res.status(400).json({ message: 'companyName and companyCode are required for insurance partners.' });
+        return res
+          .status(400)
+          .json({ message: 'companyName and companyCode are required for insurance partners.' });
       }
 
       const email = body.email.trim().toLowerCase();
-      const existing = await prisma.user.findUnique({ where: { email } });
+      const existing = await prisma.user.findFirst({ where: { email, role: body.role } });
       if (existing) {
-        return res.status(409).json({ message: 'Email already in use.' });
+        return res.status(409).json({ message: 'Email already in use for this role.' });
       }
 
       const bcrypt = await import('bcryptjs');
@@ -310,7 +327,9 @@ export function registerAdminEcosystemUserRoutes(router: Router) {
           break;
         case Role.INSURANCE_PARTNER: {
           const code = body.companyCode!.trim().toUpperCase();
-          const dup = await prisma.insurancePartnerProfile.findUnique({ where: { companyCode: code } });
+          const dup = await prisma.insurancePartnerProfile.findUnique({
+            where: { companyCode: code }
+          });
           if (dup) {
             return res.status(409).json({ message: 'Insurance company code already exists.' });
           }
@@ -363,8 +382,12 @@ export function registerAdminEcosystemUserRoutes(router: Router) {
         where: { id },
         data: { isActive },
         include: {
-          branchOwnerProfile: { include: { store: { select: { id: true, name: true, code: true } } } },
-          patientCoordinatorProfile: { include: { store: { select: { id: true, name: true, code: true } } } },
+          branchOwnerProfile: {
+            include: { store: { select: { id: true, name: true, code: true } } }
+          },
+          patientCoordinatorProfile: {
+            include: { store: { select: { id: true, name: true, code: true } } }
+          },
           callCenterProfile: true,
           marketingProfile: true,
           corporateWellnessProfile: { include: { corporate: true } },
@@ -449,7 +472,8 @@ export function registerAdminEcosystemUserRoutes(router: Router) {
             const dup = await prisma.insurancePartnerProfile.findFirst({
               where: { companyCode: code, userId: { not: id } }
             });
-            if (dup) return res.status(409).json({ message: 'Insurance company code already exists.' });
+            if (dup)
+              return res.status(409).json({ message: 'Insurance company code already exists.' });
           }
           await prisma.insurancePartnerProfile.update({
             where: { userId: id },
@@ -464,8 +488,12 @@ export function registerAdminEcosystemUserRoutes(router: Router) {
       const user = await prisma.user.findUniqueOrThrow({
         where: { id },
         include: {
-          branchOwnerProfile: { include: { store: { select: { id: true, name: true, code: true } } } },
-          patientCoordinatorProfile: { include: { store: { select: { id: true, name: true, code: true } } } },
+          branchOwnerProfile: {
+            include: { store: { select: { id: true, name: true, code: true } } }
+          },
+          patientCoordinatorProfile: {
+            include: { store: { select: { id: true, name: true, code: true } } }
+          },
           callCenterProfile: true,
           marketingProfile: true,
           corporateWellnessProfile: { include: { corporate: true } },
@@ -497,7 +525,9 @@ export function registerAdminEcosystemUserRoutes(router: Router) {
       const enrollments = await prisma.corporateEnrollment.findMany({
         where: { corporateId },
         include: {
-          patient: { select: { id: true, name: true, email: true, patientCode: true, mobile: true } }
+          patient: {
+            select: { id: true, name: true, email: true, patientCode: true, mobile: true }
+          }
         },
         orderBy: { createdAt: 'desc' }
       });
@@ -521,7 +551,9 @@ export function registerAdminEcosystemUserRoutes(router: Router) {
         update: {},
         create: { corporateId, patientId },
         include: {
-          patient: { select: { id: true, name: true, email: true, patientCode: true, mobile: true } }
+          patient: {
+            select: { id: true, name: true, email: true, patientCode: true, mobile: true }
+          }
         }
       });
 
@@ -559,7 +591,14 @@ export function registerAdminEcosystemUserRoutes(router: Router) {
       const claims = await prisma.insuranceClaim.findMany({
         include: {
           patient: { select: { id: true, name: true, patientCode: true, mobile: true } },
-          partner: { select: { id: true, companyName: true, companyCode: true, user: { select: { email: true } } } }
+          partner: {
+            select: {
+              id: true,
+              companyName: true,
+              companyCode: true,
+              user: { select: { email: true } }
+            }
+          }
         },
         orderBy: { createdAt: 'desc' },
         take: 200

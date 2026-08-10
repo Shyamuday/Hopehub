@@ -1,12 +1,16 @@
 <section class="login-card">
   <div class="switcher">
-    <button type="button" [class.active]="mode() === 'signin'" (click)="mode.set('signin')">Sign in</button>
     <button type="button" [class.active]="mode() === 'signup'" (click)="mode.set('signup')">Sign up</button>
+    <button type="button" [class.active]="mode() === 'signin'" (click)="mode.set('signin')">Sign in</button>
   </div>
 
   @if (mode() === 'signin') {
-    <h2>Doctor Login</h2>
-    <p>Use your doctor account to access dashboard and patient workflows.</p>
+    <h2>Provider Login</h2>
+    <p>Sign in to your assigned workspace: Homeopathy provider or Hope Hub provider.</p>
+    <div class="identity-guide" aria-label="Provider workspace types">
+      <span>Homeopathy provider account</span>
+      <span>Hope Hub provider account</span>
+    </div>
 
     <form (submit)="$event.preventDefault(); submit()">
       <div class="switcher">
@@ -59,11 +63,21 @@
       <app-button type="submit" [disabled]="submitting() || (loginMode() === 'password' ? signInForm().invalid() : signInForm.email().invalid() || !otpSent() || otp().length < 4)" [loading]="submitting()" block>
         {{ submitting() ? 'Signing in...' : (loginMode() === 'otp' ? 'Verify OTP & sign in' : 'Sign in') }}
       </app-button>
+
+      <div class="login-divider"><span>or</span></div>
+
+      <button type="button" class="google-login-button" (click)="loginWithGoogle()" [disabled]="submitting()">
+        <span class="google-login-button__mark" aria-hidden="true">G</span>
+        <span>Continue with Google</span>
+      </button>
     </form>
 
   } @else {
-    <h2>Doctor Signup</h2>
-    <p>Create a doctor account with your specialty profile. Access starts after admin approval.</p>
+    <h2>Provider Signup</h2>
+    <p>Create your Hope Hub provider account for emotional support, counselling, coaching, and mental-wellness sessions.</p>
+    <div class="identity-guide" aria-label="Provider signup paths">
+      <span>Hope Hub support</span>
+    </div>
 
     <form (submit)="$event.preventDefault(); enroll()">
       <label for="name">Full name</label>
@@ -75,11 +89,59 @@
       <label for="mobile">Mobile</label>
       <input id="mobile" [formField]="enrollForm.mobile" />
 
-      <label for="specialty">Specialty</label>
-      <input id="specialty" [formField]="enrollForm.specialty" />
+      <label>Provider type</label>
+      <div class="fixed-provider-type" aria-live="polite">
+        <strong>Hope Hub provider</strong>
+        <span>Fixed for now</span>
+      </div>
+      @if (selectedProviderHelper()) {
+        <p class="field-hint">{{ selectedProviderHelper() }}</p>
+      }
 
-      <label for="registrationNo">Registration number</label>
-      <input id="registrationNo" [formField]="enrollForm.registrationNo" />
+      @if (isHealingHubSignup()) {
+        <label for="hopeHubGroup">Hope Hub provider category</label>
+        <select id="hopeHubGroup" [formField]="enrollForm.hopeHubGroup" (change)="onHopeHubGroupChange($any($event.target).value)">
+          @for (option of hopeHubGroupOptions; track option.value) {
+            <option [value]="option.value">{{ option.label }}</option>
+          }
+        </select>
+        @if (selectedHopeHubGroupHelper()) {
+          <p class="field-hint">{{ selectedHopeHubGroupHelper() }}</p>
+        }
+
+        <hopehub-multi-select
+          label="Subtype"
+          hint="Select all that apply"
+          placeholder="Choose Hope Hub subtype"
+          tone="hope"
+          [options]="careTeamTypeOptions()"
+          [selected]="enrollModel().careTeamTypes"
+          (selectedChange)="setCareTeamTypes($event)"
+        />
+        @if (isCareTeamTypeSelected('OTHER')) {
+          <label for="otherCareTeamType">Other subtype</label>
+          <input
+            id="otherCareTeamType"
+            [formField]="enrollForm.otherCareTeamType"
+            placeholder="Write your provider subtype"
+          />
+        }
+        @if (selectedCareTeamTypeHelper()) {
+          <p class="field-hint">{{ selectedCareTeamTypeHelper() }}</p>
+        }
+      }
+
+      @if (showRegistrationNumberOnSignup()) {
+        <label for="registrationNo">Registration number</label>
+        <input id="registrationNo" [formField]="enrollForm.registrationNo" />
+      }
+
+      @if (!isHealingHubSignup()) {
+        <label for="specialty">Specialty</label>
+        <input id="specialty" [formField]="enrollForm.specialty" placeholder="e.g. chronic care, pediatrics, skin, kidney care" />
+        <label for="registrationNo">Registration number</label>
+        <input id="registrationNo" [formField]="enrollForm.registrationNo" />
+      }
 
       <label for="enrollPassword">Password</label>
       <div class="password-input-wrap">

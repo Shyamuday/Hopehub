@@ -4,28 +4,28 @@
     <h2>
       {{
         workspaceKey() === 'hope-hub'
-          ? 'Psychologists & emotional support listeners'
-          : 'Homeopathy doctors'
+          ? 'Hope Hub providers'
+          : 'Homeopathy providers'
       }}
     </h2>
     <span>
       {{
         workspaceKey() === 'hope-hub'
-          ? 'Showing Hope Hub providers only. Create and pending lists are restricted to psychologist/listener roles.'
-          : 'Showing homeopathy doctors only. Psychologist/listener providers stay in Hope Hub.'
+          ? 'Showing Hope Hub providers only. Category and subtype decide whether someone appears as a psychologist, coach, guide, or listener.'
+          : 'Showing homeopathy providers only. Hope Hub providers stay in the Hope Hub workspace.'
       }}
     </span>
   </div>
 </section>
 
 <section class="panel website-settings-panel">
-  <h2>Website — Doctor List Settings</h2>
+  <h2>Website — {{ workspaceKey() === 'hope-hub' ? 'Provider Directory Settings' : 'Doctor List Settings' }}</h2>
   <p class="panel-hint">
-    Control how many doctors appear on the public <em>Our Doctors</em> page. Use the
-    <em>Display order</em> field per doctor below to set the listing sequence.
+    Control how many {{ providerPluralLabel() }} appear on the public
+    <em>{{ publicDirectoryLabel() }}</em>. Use the <em>Display order</em> field below to set the listing sequence.
   </p>
   <div class="config-row">
-    <label for="doctorListLimit">Max doctors shown on website (1–50)</label>
+    <label for="doctorListLimit">Max {{ providerPluralLabel() }} shown on website (1–50)</label>
     <input
       id="doctorListLimit"
       type="number"
@@ -45,15 +45,15 @@
 </section>
 
 <section class="panel">
-  <h2>{{ workspaceKey() === 'hope-hub' ? 'Create Hope Hub Provider' : 'Create Doctor' }}</h2>
+  <h2>{{ workspaceKey() === 'hope-hub' ? 'Create Hope Hub Provider' : 'Create Homeopathy Provider' }}</h2>
   <fieldset class="create-doctor-form form-grid" [disabled]="mutating()">
     <div class="field">
       <label class="field-label" for="doc-create-name">Name</label>
-      <input id="doc-create-name" [formField]="createForm.name" placeholder="Doctor full name" />
+      <input id="doc-create-name" [formField]="createForm.name" [placeholder]="providerNamePlaceholder()" />
     </div>
     <div class="field">
       <label class="field-label" for="doc-create-email">Email</label>
-      <input id="doc-create-email" [formField]="createForm.email" placeholder="doctor@clinic.com" />
+      <input id="doc-create-email" [formField]="createForm.email" [placeholder]="providerEmailPlaceholder()" />
     </div>
     <div class="field">
       <label class="field-label" for="doc-create-mobile">Mobile</label>
@@ -83,7 +83,7 @@
       </span>
     </div>
     <div class="field">
-      <label class="field-label" for="doc-create-type">Doctor type</label>
+      <label class="field-label" for="doc-create-type">Provider type</label>
       <select id="doc-create-type" [formField]="createForm.doctorType" (change)="onCreateDoctorTypeChange()">
         @for (option of workspaceDoctorTypeOptions(); track option.value) {
           <option [value]="option.value">{{ option.label }}</option>
@@ -102,27 +102,31 @@
       </div>
     }
     <div class="field">
-      <label class="field-label" for="doc-create-specialty">Specialty (optional override)</label>
+      <label class="field-label" for="doc-create-specialty">{{ specialtyLabel(createModel().doctorType) }}</label>
       <input
         id="doc-create-specialty"
         [formField]="createForm.specialty"
-        placeholder="Display specialty"
+        [placeholder]="specialtyPlaceholder(createModel().doctorType)"
       />
     </div>
-    <div class="field">
-      <label class="field-label" for="doc-create-reg">Registration No</label>
-      <input
-        id="doc-create-reg"
-        [formField]="createForm.registrationNo"
-        placeholder="Medical council registration"
-      />
-    </div>
+    @if (!isPsychologistType(createModel().doctorType) || hasClinicalHopeHubType(createModel().careTeamTypes)) {
+      <div class="field">
+        <label class="field-label" for="doc-create-reg">
+          {{ isPsychologistType(createModel().doctorType) ? 'License / registration no.' : 'Registration No' }}
+        </label>
+        <input
+          id="doc-create-reg"
+          [formField]="createForm.registrationNo"
+          [placeholder]="isPsychologistType(createModel().doctorType) ? 'Clinical license / registration number' : 'Medical council registration'"
+        />
+      </div>
+    }
     <div class="field">
       <label class="field-label" for="doc-create-designation">Designation</label>
       <input
         id="doc-create-designation"
         [formField]="createForm.designation"
-        placeholder="e.g. Clinical Psychologist"
+        [placeholder]="designationPlaceholder(createModel().doctorType)"
       />
     </div>
     <div class="field">
@@ -130,17 +134,20 @@
       <input
         id="doc-create-department"
         [formField]="createForm.department"
-        placeholder="e.g. Mental Wellness"
+        [placeholder]="departmentPlaceholder(createModel().doctorType)"
       />
     </div>
     @if (isPsychologistType(createModel().doctorType)) {
       <div class="field">
-        <label class="field-label" for="doc-create-care-team-type">Care team type</label>
-        <select id="doc-create-care-team-type" [formField]="createForm.careTeamType">
-          @for (option of careTeamTypeOptions; track option.value) {
-            <option [value]="option.value">{{ option.label }}</option>
-          }
-        </select>
+        <hopehub-multi-select
+          label="Hope Hub subtype"
+          hint="Select all that apply"
+          placeholder="Choose Hope Hub subtype"
+          tone="hope"
+          [options]="careTeamTypeOptions"
+          [selected]="createModel().careTeamTypes"
+          (selectedChange)="setCreateCareTeamTypes($event)"
+        />
       </div>
       <label class="website-toggle">
         <input type="checkbox" [formField]="createForm.autoMatchEnabled" />
@@ -185,12 +192,12 @@
         ></textarea>
       </div>
       <div class="field">
-        <label class="field-label" for="doc-create-modalities">Modalities</label>
+        <label class="field-label" for="doc-create-modalities">{{ modalitiesLabel(createModel().careTeamType) }}</label>
         <textarea
           id="doc-create-modalities"
           rows="3"
           [formField]="createForm.modalitiesText"
-          placeholder="CBT&#10;Supportive counselling"
+          [placeholder]="hasCoachHopeHubType(createModel().careTeamTypes) ? 'Goal setting&#10;Habit coaching' : hasListenerHopeHubType(createModel().careTeamTypes) ? 'Non-judgemental listening&#10;Grounding support' : 'CBT&#10;Supportive counselling'"
         ></textarea>
       </div>
       <div class="field">
@@ -254,13 +261,13 @@
       </div>
     }
     <button type="button" (click)="createDoctor()" [disabled]="mutating() || loading()">
-      {{ mutating() ? 'Creating...' : 'Create doctor' }}
+      {{ mutating() ? 'Creating...' : 'Create ' + providerSingularLabel() }}
     </button>
   </fieldset>
 </section>
 
 <section class="panel">
-  <h2>Pending Doctor Approvals</h2>
+  <h2>Pending {{ providerSingularTitle() }} Approvals</h2>
 
   @if (loading()) {
     <p class="loading-text">Loading...</p>
@@ -268,7 +275,7 @@
 
   <fieldset class="toolbar" [disabled]="loading()">
     <input
-      placeholder="Search pending doctors..."
+      [placeholder]="'Search pending ' + providerPluralLabel() + '...'"
       [formField]="pendingFilterForm.searchTerm"
       (change)="onPendingFilterChange()"
     />
@@ -334,7 +341,7 @@
         </div>
       </article>
     } @empty {
-      <p class="empty-state">No pending doctor enrollments.</p>
+      <p class="empty-state">No pending {{ providerSingularLabel() }} enrollments.</p>
     }
   }
   <div class="pagination">
@@ -347,10 +354,10 @@
 </section>
 
 <section class="panel">
-  <h2>All Doctors</h2>
+  <h2>All {{ providerPluralLabel() }}</h2>
   <div class="toolbar">
     <input
-      placeholder="Search doctors..."
+      [placeholder]="'Search ' + providerPluralLabel() + '...'"
       [formField]="listFilterForm.searchTerm"
       (change)="onListFilterChange()"
     />
@@ -392,7 +399,7 @@
         >
       </article>
     } @empty {
-      <p class="empty-state">No doctors found.</p>
+      <p class="empty-state">No {{ providerPluralLabel() }} found.</p>
     }
   }
   <div class="pagination">
@@ -405,7 +412,7 @@
 </section>
 
 <section id="doctor-profile-details" class="panel details-panel">
-  <h2>Doctor Profile Details</h2>
+  <h2>{{ providerSingularTitle() }} Profile Details</h2>
   @if (selectedDoctorDetails(); as selectedDoctor) {
     <article class="card">
       <div class="detail-header-row">
@@ -449,15 +456,15 @@
       </div>
     </article>
     <article class="card">
-      <h3>Edit Doctor</h3>
+      <h3>Edit {{ providerSingularTitle() }}</h3>
       <fieldset class="edit-doctor-form form-grid" [disabled]="mutating()">
         <div class="field">
           <label class="field-label" for="doc-edit-name">Name</label>
-          <input id="doc-edit-name" [formField]="editForm.name" placeholder="Doctor full name" />
+          <input id="doc-edit-name" [formField]="editForm.name" [placeholder]="providerNamePlaceholder()" />
         </div>
         <div class="field">
           <label class="field-label" for="doc-edit-email">Email</label>
-          <input id="doc-edit-email" [formField]="editForm.email" placeholder="doctor@clinic.com" />
+          <input id="doc-edit-email" [formField]="editForm.email" [placeholder]="providerEmailPlaceholder()" />
         </div>
         <div class="field">
           <label class="field-label" for="doc-edit-mobile">Mobile</label>
@@ -472,9 +479,9 @@
           </select>
         </div>
         <div class="field">
-          <label class="field-label" for="doc-edit-type">Doctor type</label>
+          <label class="field-label" for="doc-edit-type">Provider type</label>
           <select id="doc-edit-type" [formField]="editForm.doctorType" (change)="onEditDoctorTypeChange()">
-            @for (option of doctorTypeOptions; track option.value) {
+            @for (option of workspaceDoctorTypeOptions(); track option.value) {
               <option [value]="option.value">{{ option.label }}</option>
             }
           </select>
@@ -491,27 +498,31 @@
           </div>
         }
         <div class="field">
-          <label class="field-label" for="doc-edit-specialty">Specialty (optional override)</label>
+          <label class="field-label" for="doc-edit-specialty">{{ specialtyLabel(editModel().doctorType) }}</label>
           <input
             id="doc-edit-specialty"
             [formField]="editForm.specialty"
-            placeholder="Display specialty"
+            [placeholder]="specialtyPlaceholder(editModel().doctorType)"
           />
         </div>
-        <div class="field">
-          <label class="field-label" for="doc-edit-reg">Registration No</label>
-          <input
-            id="doc-edit-reg"
-            [formField]="editForm.registrationNo"
-            placeholder="Medical council registration"
-          />
-        </div>
+        @if (!isPsychologistType(editModel().doctorType) || hasClinicalHopeHubType(editModel().careTeamTypes)) {
+          <div class="field">
+            <label class="field-label" for="doc-edit-reg">
+              {{ isPsychologistType(editModel().doctorType) ? 'License / registration no.' : 'Registration No' }}
+            </label>
+            <input
+              id="doc-edit-reg"
+              [formField]="editForm.registrationNo"
+              [placeholder]="isPsychologistType(editModel().doctorType) ? 'Clinical license / registration number' : 'Medical council registration'"
+            />
+          </div>
+        }
         <div class="field">
           <label class="field-label" for="doc-edit-designation">Designation</label>
           <input
             id="doc-edit-designation"
             [formField]="editForm.designation"
-            placeholder="e.g. Clinical Psychologist"
+            [placeholder]="designationPlaceholder(editModel().doctorType)"
           />
         </div>
         <div class="field">
@@ -519,7 +530,7 @@
           <input
             id="doc-edit-department"
             [formField]="editForm.department"
-            placeholder="e.g. Mental Wellness"
+            [placeholder]="departmentPlaceholder(editModel().doctorType)"
           />
         </div>
         <label class="website-toggle">
@@ -530,7 +541,7 @@
         <p class="form-section-label">Public website profile</p>
         <label class="website-toggle">
           <input type="checkbox" [formField]="editForm.showOnWebsite" />
-          Show on website (Our Doctors page)
+          Show on website ({{ publicDirectoryLabel() }})
         </label>
         <div class="field">
           <label class="field-label" for="doc-edit-order">Display order</label>
@@ -555,7 +566,7 @@
           <textarea
             id="doc-edit-bio"
             rows="4"
-            placeholder="Shown on the public Our Doctors page (max 1200 chars)"
+            [placeholder]="'Shown on the public ' + publicDirectoryLabel() + ' (max 1200 chars)'"
             [formField]="editForm.bio"
           ></textarea>
         </div>
@@ -564,19 +575,22 @@
           <textarea
             id="doc-edit-focus-areas"
             rows="3"
-            placeholder="One per line — e.g. Skin Care, Paediatrics"
+            [placeholder]="focusAreasPlaceholder(editModel().doctorType, editModel().careTeamType)"
             [formField]="editForm.focusAreasText"
           ></textarea>
         </div>
         @if (isPsychologistType(editModel().doctorType)) {
           <p class="form-section-label">Care team public profile</p>
           <div class="field">
-            <label class="field-label" for="doc-edit-care-team-type">Care team type</label>
-            <select id="doc-edit-care-team-type" [formField]="editForm.careTeamType">
-              @for (option of careTeamTypeOptions; track option.value) {
-                <option [value]="option.value">{{ option.label }}</option>
-              }
-            </select>
+            <hopehub-multi-select
+              label="Hope Hub subtype"
+              hint="Select all that apply"
+              placeholder="Choose Hope Hub subtype"
+              tone="hope"
+              [options]="careTeamTypeOptions"
+              [selected]="editModel().careTeamTypes"
+              (selectedChange)="setEditCareTeamTypes($event)"
+            />
           </div>
           <div class="field">
             <label class="field-label" for="doc-edit-qualifications">Qualifications</label>
@@ -595,22 +609,24 @@
               placeholder="e.g. Delhi University / NLP Academy"
             />
           </div>
-          <div class="field">
-            <label class="field-label" for="doc-edit-license-number">License number</label>
-            <input
-              id="doc-edit-license-number"
-              [formField]="editForm.licenseNumber"
-              placeholder="Registration or license number"
-            />
-          </div>
-          <div class="field">
-            <label class="field-label" for="doc-edit-license-council">License council</label>
-            <input
-              id="doc-edit-license-council"
-              [formField]="editForm.licenseCouncil"
-              placeholder="Council / authority"
-            />
-          </div>
+          @if (hasClinicalHopeHubType(editModel().careTeamTypes)) {
+            <div class="field">
+              <label class="field-label" for="doc-edit-license-number">License number</label>
+              <input
+                id="doc-edit-license-number"
+                [formField]="editForm.licenseNumber"
+                placeholder="Registration or license number"
+              />
+            </div>
+            <div class="field">
+              <label class="field-label" for="doc-edit-license-council">License council</label>
+              <input
+                id="doc-edit-license-council"
+                [formField]="editForm.licenseCouncil"
+                placeholder="Council / authority"
+              />
+            </div>
+          }
           <div class="field">
             <label class="field-label" for="doc-edit-languages">Languages</label>
             <textarea
@@ -621,11 +637,11 @@
             ></textarea>
           </div>
           <div class="field">
-            <label class="field-label" for="doc-edit-modalities">Modalities</label>
+            <label class="field-label" for="doc-edit-modalities">{{ modalitiesLabel(editModel().careTeamType) }}</label>
             <textarea
               id="doc-edit-modalities"
               rows="3"
-              placeholder="CBT&#10;Supportive counselling"
+              [placeholder]="hasCoachHopeHubType(editModel().careTeamTypes) ? 'Goal setting&#10;Habit coaching' : hasListenerHopeHubType(editModel().careTeamTypes) ? 'Non-judgemental listening&#10;Grounding support' : 'CBT&#10;Supportive counselling'"
               [formField]="editForm.modalitiesText"
             ></textarea>
           </div>
@@ -661,11 +677,11 @@
             <input
               id="doc-edit-intro-title"
               [formField]="editForm.introSessionTitle"
-              placeholder="Counselling approach"
+              [placeholder]="approachLabel(editModel().careTeamType)"
             />
           </div>
           <div class="field">
-            <label class="field-label" for="doc-edit-approach">Counselling approach</label>
+            <label class="field-label" for="doc-edit-approach">{{ approachLabel(editModel().careTeamType) }}</label>
             <textarea
               id="doc-edit-approach"
               rows="4"
@@ -680,10 +696,12 @@
               [formField]="editForm.safetyEscalationNote"
             ></textarea>
           </div>
-          <label class="website-toggle">
-            <input type="checkbox" [formField]="editForm.acceptsHighRiskCases" />
-            Accept high-risk cases after team review
-          </label>
+          @if (hasClinicalHopeHubType(editModel().careTeamTypes)) {
+            <label class="website-toggle">
+              <input type="checkbox" [formField]="editForm.acceptsHighRiskCases" />
+              Accept high-risk cases after team review
+            </label>
+          }
           <label class="website-toggle">
             <input type="checkbox" [formField]="editForm.autoMatchEnabled" />
             Available for user auto-match
@@ -757,7 +775,7 @@
       </fieldset>
     </article>
   } @else {
-    <p>Select a doctor from the list to view profile details.</p>
+    <p>Select a {{ providerSingularLabel() }} from the list to view profile details.</p>
   }
 </section>
 

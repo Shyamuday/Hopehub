@@ -770,6 +770,7 @@ function careTeamServiceSelect() {
     mentalHealthProfile: {
       select: {
         careTeamType: true,
+        careTeamTypes: true,
         doctor: {
           select: {
             id: true,
@@ -931,6 +932,20 @@ function isListenerCareTeamType(careTeamType: string | null | undefined) {
   );
 }
 
+function normalizedCareTeamTypes(
+  mental?: {
+    careTeamType?: string | null;
+    careTeamTypes?: string[] | null;
+  } | null
+) {
+  const types = mental?.careTeamTypes?.length
+    ? mental.careTeamTypes
+    : mental?.careTeamType
+      ? [mental.careTeamType]
+      : [];
+  return Array.from(new Set(types));
+}
+
 function providerPublicPayload(
   provider: {
     id: string;
@@ -942,6 +957,7 @@ function providerPublicPayload(
     focusAreas: string[];
     mentalHealthProfile?: {
       careTeamType: string;
+      careTeamTypes?: string[];
       qualifications: string[];
       qualifiedFrom: string | null;
       licenseNumber: string | null;
@@ -1004,11 +1020,11 @@ function providerPublicPayload(
     .filter(Boolean)
     .join(' ')
     .toLowerCase();
-  const careTeamType = mental?.careTeamType ?? 'MENTAL_WELLNESS_PROFESSIONAL';
+  const careTeamTypes = normalizedCareTeamTypes(mental);
+  const careTeamType = careTeamTypes[0] ?? mental?.careTeamType ?? 'MENTAL_WELLNESS_PROFESSIONAL';
   const supportRole = careTeamType;
   const roleDisplay = careTeamRoleDisplay(careTeamType, defaults.careRoleLabel);
-  const isScreenedListener =
-    careTeamType === 'PSYCHOLOGY_STUDENT_VOLUNTEER' || careTeamType === 'PEER_SUPPORT_VOLUNTEER';
+  const isScreenedListener = careTeamTypes.some((type) => isListenerCareTeamType(type));
   const activeServices = (mental?.services ?? [])
     .filter((service) => service.isActive)
     .map((service) => {
@@ -1048,6 +1064,7 @@ function providerPublicPayload(
       ? 'Passed Hope Hub listener screening and follows non-clinical safety guidelines.'
       : null,
     careTeamType,
+    careTeamTypes,
     bio: provider.bio,
     yearsOfExperience: provider.yearsOfExperience,
     focusAreas,
@@ -1525,7 +1542,14 @@ function hopeHubProviderWhere(params: {
       ? {
           mentalHealthProfile: {
             is: {
-              ...(roleTypes.length ? { careTeamType: { in: roleTypes as any[] } } : {}),
+              ...(roleTypes.length
+                ? {
+                    OR: [
+                      { careTeamType: { in: roleTypes as any[] } },
+                      { careTeamTypes: { hasSome: roleTypes as any[] } }
+                    ]
+                  }
+                : {}),
               ...(autoMatchOnly ? { autoMatchEnabled: true, acceptingNewUsers: true } : {}),
               ...(concern ? { concernsHandled: { has: concern } } : {}),
               ...(language ? { languages: { has: language } } : {}),
@@ -1612,6 +1636,7 @@ async function activeHopeHubProviders(params: {
         mentalHealthProfile: {
           select: {
             careTeamType: true,
+            careTeamTypes: true,
             qualifications: true,
             qualifiedFrom: true,
             licenseNumber: true,
@@ -1820,6 +1845,7 @@ async function findLiveHopeHubProviderForQuickTalk(params: {
       mentalHealthProfile: {
         select: {
           careTeamType: true,
+          careTeamTypes: true,
           services: {
             where: { isActive: true },
             orderBy: [{ sortOrder: 'asc' }, { title: 'asc' }],
@@ -2755,6 +2781,7 @@ hopeHubRouter.get(
         mentalHealthProfile: {
           select: {
             careTeamType: true,
+            careTeamTypes: true,
             qualifications: true,
             qualifiedFrom: true,
             licenseNumber: true,
@@ -3385,20 +3412,29 @@ hopeHubRouter.post(
             id: true,
             userId: true,
             user: { select: { name: true } },
-            mentalHealthProfile: { select: { careTeamType: true } }
+            mentalHealthProfile: { select: { careTeamType: true, careTeamTypes: true } }
           }
         })
       : (selectedCareTeamService?.mentalHealthProfile.doctor ?? null);
     if (body.providerId && !requestedProvider) {
       return res.status(400).json({ message: 'Selected care team member is not available.' });
     }
-    const requestedProviderCareTeamType = body.providerId
-      ? (requestedProvider as { mentalHealthProfile?: { careTeamType?: string | null } } | null)
-          ?.mentalHealthProfile?.careTeamType
-      : selectedCareTeamService?.mentalHealthProfile?.careTeamType;
-    const bookingUsesListener =
-      isListenerCareTeamType(selectedCareTeamService?.mentalHealthProfile?.careTeamType) ||
-      isListenerCareTeamType(requestedProviderCareTeamType);
+    const requestedProviderCareTeamTypes = body.providerId
+      ? normalizedCareTeamTypes(
+          (
+            requestedProvider as {
+              mentalHealthProfile?: {
+                careTeamType?: string | null;
+                careTeamTypes?: string[] | null;
+              };
+            } | null
+          )?.mentalHealthProfile
+        )
+      : normalizedCareTeamTypes(selectedCareTeamService?.mentalHealthProfile);
+    const bookingUsesListener = [
+      ...normalizedCareTeamTypes(selectedCareTeamService?.mentalHealthProfile),
+      ...requestedProviderCareTeamTypes
+    ].some((type) => isListenerCareTeamType(type));
     if (bookingUsesListener && !body.listenerSupportConsent) {
       return res.status(400).json({
         message:

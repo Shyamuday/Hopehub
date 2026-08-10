@@ -17,7 +17,7 @@ export function registerPrescriptionOptionRoutes(router: Router) {
     allowRoles(Role.DOCTOR, Role.ADMIN),
     requireDoctorCapability(
       'prescribe',
-      'Prescription options are not available for your doctor role.'
+      'Prescription options are available only for homeopathy providers.'
     ),
     asyncRoute(async (req, res) => {
       const body = z
@@ -51,7 +51,7 @@ export function registerPrescriptionOptionRoutes(router: Router) {
     allowRoles(Role.DOCTOR, Role.ADMIN),
     requireDoctorCapability(
       'prescribe',
-      'Prescription options are not available for your doctor role.'
+      'Prescription options are available only for homeopathy providers.'
     ),
     asyncRoute(async (req, res) => {
       const query = z.object({ type: z.nativeEnum(PrescriptionOptionType) }).parse(req.query);

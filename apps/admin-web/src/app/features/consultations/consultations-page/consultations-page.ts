@@ -1,4 +1,4 @@
-import { Component, effect, inject, signal, OnInit } from '@angular/core';
+import { Component, computed, effect, inject, signal, OnInit } from '@angular/core';
 import { form, FormField } from '@angular/forms/signals';
 import { DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
@@ -44,6 +44,12 @@ export class ConsultationsPage implements OnInit {
   readonly doctorOrigins = { doctor: environment.doctorAppUrl };
   readonly workspaceKey = this.workspace.selectedWorkspace;
   readonly workspaceLabel = this.workspace.workspaceLabel;
+  readonly providerSingularLabel = computed(() =>
+    this.workspace.isHopeHub() ? 'Hope Hub provider' : 'homeopathy provider',
+  );
+  readonly providerPluralLabel = computed(() =>
+    this.workspace.isHopeHub() ? 'Hope Hub providers' : 'homeopathy providers',
+  );
 
   consultations = signal<any[]>([]);
   loading = signal(true);
@@ -405,6 +411,7 @@ export class ConsultationsPage implements OnInit {
       const r = await this.api.assignConsultationDoctor(
         this.selectedConsult()!.id,
         this.selectedDoctorId(),
+        this.workspace.selectedWorkspace(),
       );
       this.consultations.update((list) =>
         list.map((c) =>
@@ -415,7 +422,7 @@ export class ConsultationsPage implements OnInit {
       );
       this.modal.set(false);
       this.loadUnassignedCount();
-      this.showToast('Doctor assigned ✓');
+      this.showToast(`${this.providerSingularTitle()} assigned ✓`);
     } catch (e: any) {
       this.err.set(e?.error?.message ?? 'Assignment failed');
     } finally {
@@ -449,6 +456,19 @@ export class ConsultationsPage implements OnInit {
 
   showDoctorLinks(status: string) {
     return ['ASSIGNED', 'IN_PROGRESS', 'PRESCRIPTION_UPLOADED', 'COMPLETED'].includes(status);
+  }
+
+  showHomeopathyClinicalLinks(status: string) {
+    return this.workspace.isHomeopathy() && this.showDoctorLinks(status);
+  }
+
+  providerSingularTitle() {
+    const label = this.providerSingularLabel();
+    return label.charAt(0).toUpperCase() + label.slice(1);
+  }
+
+  providerSearchPlaceholder() {
+    return `🔍 Filter ${this.providerPluralLabel()}…`;
   }
 
   toggleCardMenu(consultationId: string) {

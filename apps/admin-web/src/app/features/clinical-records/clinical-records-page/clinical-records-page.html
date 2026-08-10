@@ -2,7 +2,7 @@
   <div class="toolbar spaced">
     <div>
       <h2>Clinical Records</h2>
-      <p class="subtitle">Browse prescriptions and case analyses by doctor, patient, and homeopathy approach.</p>
+      <p class="subtitle">Homeopathy-only records: browse prescriptions and case analyses by provider, patient, and approach.</p>
     </div>
   </div>
 
@@ -18,7 +18,7 @@
   <div class="filters toolbar">
     <input placeholder="Search diagnosis, notes, names…" [formField]="filterForm.q" (input)="onSearchInput()" />
     <select [formField]="filterForm.doctorId" (change)="onFilterChange()">
-      <option value="">All doctors</option>
+      <option value="">All homeopathy providers</option>
       @for (doc of doctors(); track doc.id) {
         <option [value]="doc.id">{{ doc.name }}</option>
       }
@@ -96,7 +96,7 @@
                 <span>{{ rx.createdAt | date:'dd MMM yyyy' }}</span>
               </div>
               <div class="card-sub">
-                Dr. {{ rx.doctor?.name || '—' }}
+                Provider: {{ rx.doctor?.name || '—' }}
                 @if (rx.diagnosis) { · {{ rx.diagnosis }} }
               </div>
               @if (rx.caseAnalysisId) {
@@ -120,7 +120,7 @@
                 <span>{{ a.createdAt | date:'dd MMM yyyy' }}</span>
               </div>
               <div class="card-sub">
-                Dr. {{ a.doctor?.name || '—' }}
+                Provider: {{ a.doctor?.name || '—' }}
                 @if (a.selectedRemedy) { · {{ a.selectedRemedy.name }} }
               </div>
               <small class="link-hint">{{ a.rubricCount }} rubrics · {{ a.resultCount }} results · {{ a.prescriptionCount }} Rx</small>

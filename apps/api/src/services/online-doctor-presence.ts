@@ -5,12 +5,17 @@ import {
   Prisma,
   LivePresenceStatus,
   OnlineDoctorCategory,
-  Role
+  Role,
+  CareTeamMemberType
 } from '@prisma/client';
 import { ONLINE_HEARTBEAT_TTL_MS } from '../constants/online-doctor.constants.js';
 import { SOCKET_EVENTS, SOCKET_ROOM_PREFIXES } from '../constants/socket.constants.js';
 import { prisma } from '../db.js';
-import { doctorTypeLabel, specialtyFocusLabel } from '../constants/homeopathic-doctor-types.js';
+import {
+  capabilitiesForDoctorProfile,
+  doctorTypeLabel,
+  specialtyFocusLabel
+} from '../constants/homeopathic-doctor-types.js';
 import { enrichWithProfileImageUrl, userProfileImagePath } from '../utils/profile-image-url.js';
 
 export function isHeartbeatFresh(lastHeartbeatAt: Date | null | undefined) {
@@ -50,7 +55,13 @@ const liveDoctorInclude = {
       bio: true,
       yearsOfExperience: true,
       focusAreas: true,
-      isAvailable: true
+      isAvailable: true,
+      mentalHealthProfile: {
+        select: {
+          careTeamType: true,
+          careTeamTypes: true
+        }
+      }
     }
   }
 } as const;
@@ -81,8 +92,13 @@ export function mapLiveDoctor(session: {
     yearsOfExperience: number | null;
     focusAreas: string[];
     isAvailable: boolean;
+    mentalHealthProfile?: {
+      careTeamType: CareTeamMemberType;
+      careTeamTypes: CareTeamMemberType[];
+    } | null;
   };
 }) {
+  const capabilities = capabilitiesForDoctorProfile(session.doctor);
   const profileImageUrl = enrichWithProfileImageUrl(
     {
       id: session.user.id,
@@ -99,9 +115,17 @@ export function mapLiveDoctor(session: {
     specialty: session.doctor.specialty,
     doctorType: session.doctor.doctorType,
     doctorTypeLabel: doctorTypeLabel(session.doctor.doctorType),
+    mentalHealthProfile: session.doctor.mentalHealthProfile
+      ? {
+          careTeamType: session.doctor.mentalHealthProfile.careTeamType,
+          careTeamTypes: session.doctor.mentalHealthProfile.careTeamTypes
+        }
+      : null,
     specialtyFocusLabel: specialtyFocusLabel(session.doctor.specialtyFocus),
-    category: session.category,
-    specialtyDiseaseIds: session.specialtyDiseaseIds,
+    category: capabilities.diseaseSpecialtySettings
+      ? session.category
+      : OnlineDoctorCategory.GENERALIST,
+    specialtyDiseaseIds: capabilities.diseaseSpecialtySettings ? session.specialtyDiseaseIds : [],
     liveStatus: session.liveStatus,
     acceptsChat: session.acceptsChat,
     acceptsVoiceCall: session.acceptsVoiceCall,

@@ -62,6 +62,7 @@ const careTeamServiceSchema = z.object({
 const mentalHealthProfileSchema = z
   .object({
     careTeamType: z.nativeEnum(CareTeamMemberType).optional(),
+    careTeamTypes: z.array(z.nativeEnum(CareTeamMemberType)).max(12).optional(),
     qualifications: textArraySchema,
     qualifiedFrom: z.string().trim().max(240).optional().nullable().or(z.literal('')),
     licenseNumber: z.string().trim().max(120).optional().nullable().or(z.literal('')),
@@ -114,8 +115,11 @@ function toMentalHealthProfilePayload(body: z.infer<typeof mentalHealthProfileSc
     isActive: service.isActive ?? true,
     sortOrder: service.sortOrder ?? index
   }));
+  const careTeamType = body?.careTeamType ?? CareTeamMemberType.MENTAL_WELLNESS_PROFESSIONAL;
+  const careTeamTypes = Array.from(new Set([careTeamType, ...(body?.careTeamTypes ?? [])]));
   return {
-    careTeamType: body?.careTeamType ?? CareTeamMemberType.MENTAL_WELLNESS_PROFESSIONAL,
+    careTeamType,
+    careTeamTypes,
     qualifications: compactTextArray(body?.qualifications),
     qualifiedFrom: body?.qualifiedFrom || null,
     licenseNumber: body?.licenseNumber || null,

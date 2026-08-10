@@ -1,7 +1,9 @@
 import { ROUTE_PATHS } from './app-routes.constants';
 import {
   capabilitiesForDoctorType,
+  capabilitiesForProvider,
   type DoctorCapabilities,
+  type DoctorProfileSummary,
   type HomeopathicDoctorType,
 } from './doctor-types.constants';
 
@@ -55,6 +57,12 @@ const MOBILE_BOTTOM_NAV_LABELS = ['Worklist', 'Case Analysis', 'Patients'] as co
 export function navItemsForDoctorType(type?: HomeopathicDoctorType | null): DoctorNavItemDef[] {
   const capabilities = capabilitiesForDoctorType(type);
   return buildDoctorNav(capabilities);
+}
+
+export function navItemsForDoctorProfile(
+  profile?: DoctorProfileSummary | null,
+): DoctorNavItemDef[] {
+  return buildDoctorNav(capabilitiesForProvider(profile));
 }
 
 export function profileNavItem(): DoctorNavItemDef {
@@ -172,7 +180,7 @@ function buildDoctorNav(capabilities: DoctorCapabilities): DoctorNavItemDef[] {
       path: `/${ROUTE_PATHS.SCAN}`,
       icon: DOCTOR_NAV_ICONS['Scan'].icon,
       shortLabel: DOCTOR_NAV_ICONS['Scan'].shortLabel,
-      enabled: true,
+      enabled: capabilities.scan,
     },
     {
       id: 'dashboard',
@@ -216,7 +224,7 @@ function buildDoctorNav(capabilities: DoctorCapabilities): DoctorNavItemDef[] {
       label: 'Content',
       icon: DOCTOR_NAV_ICONS['Content'].icon,
       shortLabel: DOCTOR_NAV_ICONS['Content'].shortLabel,
-      enabled: true,
+      enabled: capabilities.content,
       children: [
         {
           id: 'treatment-pages',
@@ -228,7 +236,7 @@ function buildDoctorNav(capabilities: DoctorCapabilities): DoctorNavItemDef[] {
           id: 'blog',
           label: 'Blog articles',
           path: `/${ROUTE_PATHS.BLOG}`,
-          enabled: true,
+          enabled: capabilities.content,
         },
       ],
     },
