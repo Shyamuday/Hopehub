@@ -292,11 +292,12 @@ export class AuthService {
   async register(credentials: RegisterCredentials): Promise<User> {
     this.updateState({ isLoading: true, error: null });
     try {
+      const name = (
+        credentials.displayName || `${credentials.firstName ?? ''} ${credentials.lastName ?? ''}`
+      ).trim();
       const resp = await firstValueFrom(
         this.http.post<ApiAuthResponse>(`${this.apiUrl}/auth/patient-register`, {
-          name:
-            credentials.displayName ||
-            `${credentials.firstName ?? ''} ${credentials.lastName ?? ''}`.trim(),
+          ...(name ? { name } : {}),
           email: credentials.email,
           password: credentials.password,
         }),

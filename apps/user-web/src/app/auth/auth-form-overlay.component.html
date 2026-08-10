@@ -74,15 +74,6 @@
         @if (signupMode() === 'password') {
           <form (submit)="$event.preventDefault(); registerPatientWithPassword()">
             <label>
-              Full name
-              <input [formField]="signupForm.name" placeholder="Patient name" autocomplete="name" />
-              <span class="auth-field-error">
-                @if (signupModel().name && signupModel().name.trim().length < 2) {
-                  Enter at least 2 characters
-                }
-              </span>
-            </label>
-            <label>
               Email
               <input [formField]="signupForm.email" type="email" placeholder="Email address" autocomplete="email" />
               <span class="auth-field-error">
@@ -110,15 +101,6 @@
         } @else {
           <form (submit)="$event.preventDefault(); registerPatient()">
             <label>
-              Full name
-              <input [formField]="signupForm.name" placeholder="Enter patient name" autocomplete="name" />
-              <span class="auth-field-error">
-                @if (signupModel().name && signupModel().name.trim().length < 2) {
-                  Enter at least 2 characters
-                }
-              </span>
-            </label>
-            <label>
               Email
               <input
                 [formField]="signupForm.email"
@@ -144,7 +126,7 @@
               <app-button type="submit" [disabled]="isProcessing() || !canRegisterPatient()" [loading]="isProcessing()" block>Create account</app-button>
               <app-button type="button" variant="secondary" [disabled]="isProcessing()" (click)="requestSignupOtp()" block>Resend code</app-button>
             } @else {
-              <app-button type="button" [disabled]="isProcessing() || !signupModel().name.trim() || !signupModel().email.trim()" [loading]="isProcessing()" (click)="requestSignupOtp()" block>Send code</app-button>
+              <app-button type="button" [disabled]="isProcessing() || !signupModel().email.trim()" [loading]="isProcessing()" (click)="requestSignupOtp()" block>Send code</app-button>
             }
           </form>
         }

@@ -23,13 +23,14 @@ export function registerAuthPatientRoutes(router: Router) {
     asyncRoute(async (req, res) => {
       const body = z
         .object({
-          name: z.string().min(2),
+          name: z.string().min(2).optional(),
           email: z.string().email(),
           password: z.string().min(8)
         })
         .parse(req.body);
 
       const email = body.email.trim().toLowerCase();
+      const name = body.name?.trim() || 'Patient';
 
       const existingEmail = await prisma.user.findFirst({
         where: { email, role: Role.PATIENT },
@@ -46,10 +47,10 @@ export function registerAuthPatientRoutes(router: Router) {
       const user = existingEmail
         ? await prisma.user.update({
             where: { id: existingEmail.id },
-            data: { name: body.name, passwordHash },
+            data: { name, passwordHash },
             select: publicUserSelect
           })
-        : await createPatientRecord({ name: body.name, email, passwordHash });
+        : await createPatientRecord({ name, email, passwordHash });
 
       logAuthEvent('patient_login', { userId: user.id, event: 'register' });
       res.status(201).json(toAuthResponse({ ...user, role: Role.PATIENT }));
