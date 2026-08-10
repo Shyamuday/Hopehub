@@ -45,10 +45,12 @@
       <option value="PREFER_NOT_TO_SAY">Prefer not to say</option>
     </select>
 
-    <label for="specialty">{{ specialtyFieldLabel() }}</label>
-    <input id="specialty" [formField]="profileForm.specialty" />
+    @if (!isPsychologist) {
+      <label for="specialty">{{ specialtyFieldLabel() }}</label>
+      <input id="specialty" [formField]="profileForm.specialty" />
+    }
 
-    @if (!isListenerProfile()) {
+    @if (showRegistrationNumber()) {
       <label for="registrationNo">{{ registrationFieldLabel() }}</label>
       <input id="registrationNo" [formField]="profileForm.registrationNo" />
     }
@@ -114,17 +116,28 @@
         <p class="section-hint">Shown on Hope Hub care team profile pages and used for session matching.</p>
 
         <div class="grid two-column">
-          <label for="careTeamType">Hope Hub subtype</label>
-          <select id="careTeamType" [formField]="profileForm.careTeamType">
-            <option value="MENTAL_WELLNESS_PROFESSIONAL">Mental wellness professional</option>
-            <option value="QUALIFIED_COUNSELLOR">Qualified counsellor</option>
-            <option value="PSYCHOLOGY_STUDENT_VOLUNTEER">Psychology student emotional support listener</option>
-            <option value="PEER_SUPPORT_VOLUNTEER">Peer emotional support listener</option>
-            <option value="NLP_COACH">NLP coach</option>
-            <option value="LIFE_COACH">Life coach</option>
-            <option value="MEDITATION_BREATHWORK_GUIDE">Meditation / breathwork guide</option>
-            <option value="CAREER_STUDY_MENTOR">Career / study mentor</option>
-          </select>
+          <label>Hope Hub subtype <span class="hint">(select all that apply)</span></label>
+          <div class="multi-check-grid">
+            @for (option of careTeamTypeOptions; track option.value) {
+              <label class="multi-check-option">
+                <input
+                  type="checkbox"
+                  [checked]="isProfileCareTeamTypeSelected(option.value)"
+                  (change)="toggleProfileCareTeamType(option.value, $any($event.target).checked)"
+                />
+                <span>{{ option.label }}</span>
+              </label>
+            }
+          </div>
+
+          @if (isProfileCareTeamTypeSelected('OTHER')) {
+            <label for="otherCareTeamType">Other subtype</label>
+            <input
+              id="otherCareTeamType"
+              [formField]="profileForm.otherCareTeamType"
+              placeholder="Write your provider subtype"
+            />
+          }
 
           <label for="qualifications">Qualifications <span class="hint">(one per line)</span></label>
           <textarea id="qualifications" rows="3" [formField]="profileForm.qualificationsText"></textarea>
