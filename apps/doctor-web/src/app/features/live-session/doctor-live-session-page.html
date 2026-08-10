@@ -67,12 +67,12 @@
         <h2>Session context</h2>
         <dl class="context-list">
           <div>
-            <dt>Patient</dt>
+            <dt>{{ userLabel() }}</dt>
             <dd>{{ patientName() }}</dd>
           </div>
           @if (patientCode()) {
             <div>
-              <dt>Patient code</dt>
+              <dt>{{ userCodeLabel() }}</dt>
               <dd>{{ patientCode() }}</dd>
             </div>
           }
@@ -330,7 +330,7 @@
           >
             {{ sessionNoteSaving() ? 'Saving...' : 'Save note' }}
           </button>
-          <span class="muted">Private to care/admin team. Not shown to patient by default.</span>
+          <span class="muted">Private to care/admin team. Not shown to {{ userLabel().toLowerCase() }} by default.</span>
         </div>
 
         @if (sessionNotesLoading() && !sessionNotes().length) {

@@ -27,7 +27,7 @@ const MOBILE_BOTTOM_NAV_LIMIT = 4;
 const NAV_SHORT_LABELS: Record<string, string> = {
   Dashboard: 'Home',
   'Command Center': 'Home',
-  Doctors: 'Doctors',
+  Doctors: 'Pro',
   Providers: 'Pro',
   Consumers: 'Users',
   'Users / Consumers': 'Users',

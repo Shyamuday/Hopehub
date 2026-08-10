@@ -27,7 +27,7 @@ export const roleByKind: Record<TelegramBotKind, Role> = {
 
 export const botNameByKind: Record<TelegramBotKind, string> = {
   [TelegramBotKind.USER]: 'Hope Hub Web Bot',
-  [TelegramBotKind.DOCTOR]: 'Hope Hub Doctor Bot',
+  [TelegramBotKind.DOCTOR]: 'Hope Hub Provider Bot',
   [TelegramBotKind.ADMIN]: 'Hope Hub Ops Bot'
 };
 
@@ -53,9 +53,9 @@ export const commandMenus: Record<TelegramBotKind, { command: string; descriptio
     { command: 'help', description: 'Get help' }
   ],
   [TelegramBotKind.DOCTOR]: [
-    { command: 'start', description: 'Open doctor menu' },
+    { command: 'start', description: 'Open provider menu' },
     { command: 'signup', description: 'Apply for care team/emotional support listener' },
-    { command: 'link', description: 'Link doctor account' },
+    { command: 'link', description: 'Link provider account' },
     { command: 'services', description: 'Manage services and pricing' },
     { command: 'availability', description: 'Manage weekly availability' },
     { command: 'assignments', description: 'Assigned support leads' },
@@ -64,7 +64,7 @@ export const commandMenus: Record<TelegramBotKind, { command: string; descriptio
     { command: 'online', description: 'Go online' },
     { command: 'offline', description: 'Go offline' },
     { command: 'me', description: 'Show linked account' },
-    { command: 'help', description: 'Doctor bot help' }
+    { command: 'help', description: 'Provider bot help' }
   ],
   [TelegramBotKind.ADMIN]: [
     { command: 'start', description: 'Open ops menu' },

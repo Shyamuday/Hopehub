@@ -16,8 +16,8 @@ export const RBAC_CAPABILITIES: RbacCapability[] = [
   },
   {
     id: 'admin.doctors',
-    label: 'Doctor onboarding',
-    description: 'Approve, reject, and manage doctor accounts',
+    label: 'Provider onboarding',
+    description: 'Approve, reject, and manage provider accounts',
     roles: [Role.ADMIN]
   },
   {
@@ -29,7 +29,7 @@ export const RBAC_CAPABILITIES: RbacCapability[] = [
   {
     id: 'admin.consultations',
     label: 'Consultation ops',
-    description: 'Assign doctors and override consultation status',
+    description: 'Assign providers and override consultation status',
     roles: [Role.ADMIN, Role.RECEPTIONIST, Role.CLINIC_MANAGER]
   },
   {
@@ -83,19 +83,21 @@ export const RBAC_CAPABILITIES: RbacCapability[] = [
   {
     id: 'admin.ecosystem_users',
     label: 'Ecosystem portal users',
-    description: 'Create and manage branch owner, coordinator, call center, marketing, corporate, and insurance accounts',
+    description:
+      'Create and manage branch owner, coordinator, call center, marketing, corporate, and insurance accounts',
     roles: [Role.ADMIN]
   },
   {
     id: 'admin.portal_users',
     label: 'Staff & partner portal users',
-    description: 'Create receptionist, clinic manager, accountant, supplier, warehouse, delivery, and diagnostic accounts',
+    description:
+      'Create receptionist, clinic manager, accountant, supplier, warehouse, delivery, and diagnostic accounts',
     roles: [Role.ADMIN]
   },
   {
     id: 'hr.portal',
     label: 'HR portal',
-    description: 'Doctor onboarding, employees, leaves, and payroll',
+    description: 'Provider onboarding, employees, leaves, and payroll',
     roles: [Role.HR, Role.ADMIN]
   },
   {
@@ -194,8 +196,8 @@ export const RBAC_CAPABILITIES: RbacCapability[] = [
   },
   {
     id: 'doctor.consult',
-    label: 'Doctor consultations',
-    description: 'Conduct consultations and prescribe',
+    label: 'Provider consultations',
+    description: 'Conduct consultations and prescribe when clinically allowed',
     roles: [Role.DOCTOR]
   },
   {

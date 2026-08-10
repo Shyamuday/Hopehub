@@ -12,6 +12,6 @@ function formatInr(paise: number) {
 
 export const ADMIN_DASHBOARD_STAT_FIELDS: DetailFieldDef<AdminDashboardStats>[] = [
   { label: 'Revenue Collected', getValue: (s) => formatInr(s.revenueInPaise) },
-  { label: 'Active Doctors', getValue: (s) => s.activeDoctors },
-  { label: 'Consultations', getValue: (s) => s.consultationsCount }
+  { label: 'Active Providers', getValue: (s) => s.activeDoctors },
+  { label: 'Consultations', getValue: (s) => s.consultationsCount },
 ];

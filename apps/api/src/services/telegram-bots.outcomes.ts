@@ -98,7 +98,7 @@ export async function showDoctorOutcomeSessions(kind: TelegramBotKind, session: 
     chat_id: session.chatId,
     text: [
       '<b>Close session with outcome</b>',
-      'Choose the session first. Keep clinical/private notes in the doctor portal.',
+      'Choose the session first. Keep clinical/private notes in the provider portal.',
       '',
       ...consultations.map((item, index) => {
         const money = moneyLine(item);

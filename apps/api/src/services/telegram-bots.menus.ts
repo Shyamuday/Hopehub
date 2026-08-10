@@ -69,7 +69,7 @@ export async function menuFor(kind: TelegramBotKind, linked: boolean): Promise<I
           ? { text: 'My account', callback_data: 'common:me' }
           : { text: 'Link account', callback_data: 'common:link' }
       ],
-      [{ text: 'Open doctor app', url: doctorUrl('/') }]
+      [{ text: 'Open provider portal', url: doctorUrl('/') }]
     ];
   }
 
@@ -118,7 +118,7 @@ export function helpText(kind: TelegramBotKind) {
   if (kind === 'DOCTOR') {
     return [
       '<b>Care team bot commands</b>',
-      '/link doctor@example.com - link doctor account',
+      '/link provider@example.com - link provider account',
       '/services - manage services and pricing',
       '/availability - manage weekly availability',
       '/assignments - assigned support leads',
@@ -161,7 +161,7 @@ export function startGuideText(kind: TelegramBotKind, session: MenuSession) {
       '• Open secure payment, retry payment, or donate',
       '',
       '<b>Safety guideline</b>',
-      'This bot is not an emergency service and does not replace a doctor, psychologist, or crisis helpline. If there is immediate danger, contact local emergency services now.',
+      'This bot is not an emergency service and does not replace a licensed clinician, psychologist, or crisis helpline. If there is immediate danger, contact local emergency services now.',
       '',
       '<b>Privacy guideline</b>',
       'Avoid sharing highly sensitive personal details in Telegram. For private records, use the Hope Hub app/profile.',
@@ -181,9 +181,9 @@ export function startGuideText(kind: TelegramBotKind, session: MenuSession) {
       'This bot helps care team members see their queue and manage live availability.',
       '',
       '<b>Guideline</b>',
-      'Keep clinical notes and sensitive records inside the doctor portal. Telegram is only for lightweight workflow updates.',
+      'Keep clinical notes and sensitive records inside the provider portal. Telegram is only for lightweight workflow updates.',
       '',
-      `<b>Doctor app</b>\n${doctorUrl('/')}`,
+      `<b>Provider portal</b>\n${doctorUrl('/')}`,
       '',
       'Start with /link, /queue, /online, or /help.'
     ].join('\n');

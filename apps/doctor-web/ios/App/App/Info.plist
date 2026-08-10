@@ -5,7 +5,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleDisplayName</key>
-        <string>HopeHub Doctor</string>
+        <string>HopeHub Professional Help</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -48,7 +48,7 @@
     <key>NSCameraUsageDescription</key>
     <string>Camera access lets you scan patient QR codes at the clinic.</string>
     <key>NSMicrophoneUsageDescription</key>
-    <string>Microphone access is required for voice and video consultations with patients.</string>
+    <string>Microphone access is required for voice and video consultations with users.</string>
     <key>NSPhotoLibraryUsageDescription</key>
     <string>Photo library access lets you attach clinical images when needed.</string>
     <key>NSPhotoLibraryAddUsageDescription</key>

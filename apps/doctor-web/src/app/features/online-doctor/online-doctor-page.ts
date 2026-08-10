@@ -159,7 +159,7 @@ export class OnlineDoctorPage implements OnInit, OnDestroy {
     if (this.isCoachGuideProvider()) {
       return 'Accept coaching, guidance, meditation, study, or life-support sessions by chat or call.';
     }
-    return 'Show yourself online for instant patient consults (chat + voice & video). Separate from your clinic worklist.';
+    return 'Show yourself online for instant user consults (chat + voice & video). Separate from your clinic worklist.';
   }
 
   inboxTitle() {
@@ -220,7 +220,7 @@ export class OnlineDoctorPage implements OnInit, OnDestroy {
       });
       this.online.profile.set(res.profile);
       this.online.connectRealtime();
-      this.message.set('You are now visible to patients.');
+      this.message.set('You are now visible to users.');
       void this.loadInbox();
       this.startInboxRefresh();
     } catch {

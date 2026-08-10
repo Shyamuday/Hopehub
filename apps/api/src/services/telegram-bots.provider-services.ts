@@ -62,7 +62,7 @@ export async function showProviderServices(kind: TelegramBotKind, session: Teleg
       reply_markup: {
         inline_keyboard: [
           [{ text: 'Apply / join care team', callback_data: 'doctor:signup' }],
-          [{ text: 'Open doctor app', url: doctorUrl('/') }]
+          [{ text: 'Open provider portal', url: doctorUrl('/') }]
         ]
       }
     });
@@ -95,7 +95,7 @@ export async function showProviderServices(kind: TelegramBotKind, session: Teleg
             callback_data: `provider:service:templates:${service.id}`
           }
         ]),
-        [{ text: 'Open doctor app', url: doctorUrl('/profile') }],
+        [{ text: 'Open provider portal', url: doctorUrl('/profile') }],
         [{ text: 'Main menu', callback_data: 'common:menu' }]
       ]
     }
@@ -145,7 +145,7 @@ export async function showProviderPricingTemplates(
     chat_id: session.chatId,
     text: [
       serviceId ? '<b>Update service pricing</b>' : '<b>Add service from template</b>',
-      'Choose a pricing template. You can fine-tune full details later in doctor app.',
+      'Choose a pricing template. You can fine-tune full details later in the provider portal.',
       '',
       ...templates.map(
         (template, index) =>

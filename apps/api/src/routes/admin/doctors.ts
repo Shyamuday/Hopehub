@@ -306,9 +306,9 @@ export function registerAdminDoctorRoutes(router: Router) {
         action: 'doctor.approve',
         targetType: 'doctor',
         targetId: doctor.id,
-        summary: 'Doctor approved by admin.'
+        summary: 'Provider approved by admin.'
       });
-      res.json({ doctor, message: 'Doctor approved successfully.' });
+      res.json({ doctor, message: 'Provider approved successfully.' });
     })
   );
 
@@ -329,9 +329,9 @@ export function registerAdminDoctorRoutes(router: Router) {
         action: 'doctor.reject',
         targetType: 'doctor',
         targetId: doctor.id,
-        summary: 'Doctor rejected by admin.'
+        summary: 'Provider rejected by admin.'
       });
-      res.json({ doctor, message: 'Doctor rejected.' });
+      res.json({ doctor, message: 'Provider rejected.' });
     })
   );
 
@@ -353,14 +353,14 @@ export function registerAdminDoctorRoutes(router: Router) {
         action: 'doctor.status_change',
         targetType: 'doctor',
         targetId: doctor.id,
-        summary: body.isActive ? 'Doctor activated by admin.' : 'Doctor deactivated by admin.',
+        summary: body.isActive ? 'Provider activated by admin.' : 'Provider deactivated by admin.',
         metadata: { isActive: body.isActive }
       });
       res.json({
         doctor,
         message: body.isActive
-          ? 'Doctor activated successfully.'
-          : 'Doctor deactivated successfully.'
+          ? 'Provider activated successfully.'
+          : 'Provider deactivated successfully.'
       });
     })
   );
@@ -436,7 +436,7 @@ export function registerAdminDoctorRoutes(router: Router) {
         action: 'doctor.create',
         targetType: 'doctor',
         targetId: doctor.id,
-        summary: 'Doctor account created by admin.',
+        summary: 'Provider account created by admin.',
         metadata: { specialty: profilePayload.specialty, doctorType: profilePayload.doctorType }
       });
       res.status(201).json({ doctor });
@@ -472,7 +472,7 @@ export function registerAdminDoctorRoutes(router: Router) {
           }
         }
       });
-      if (!existing) return res.status(404).json({ message: 'Doctor not found' });
+      if (!existing) return res.status(404).json({ message: 'Provider not found' });
 
       const body = z
         .object({
@@ -579,7 +579,7 @@ export function registerAdminDoctorRoutes(router: Router) {
         action: 'doctor.update',
         targetType: 'doctor',
         targetId: doctor.id,
-        summary: 'Doctor profile updated by admin.',
+        summary: 'Provider profile updated by admin.',
         metadata: {
           before: {
             name: existing.name,
@@ -610,7 +610,7 @@ export function registerAdminDoctorRoutes(router: Router) {
           }
         }
       });
-      res.json({ doctor, message: 'Doctor profile updated successfully.' });
+      res.json({ doctor, message: 'Provider profile updated successfully.' });
     })
   );
 
@@ -638,8 +638,8 @@ export function registerAdminDoctorRoutes(router: Router) {
         targetId: doctorId,
         summary:
           websiteOrder != null
-            ? `Doctor website order set to ${websiteOrder}.`
-            : 'Doctor website order cleared.'
+            ? `Provider website order set to ${websiteOrder}.`
+            : 'Provider website order cleared.'
       });
 
       res.json({ message: 'Website order updated.' });

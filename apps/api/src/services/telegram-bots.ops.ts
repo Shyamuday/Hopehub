@@ -95,7 +95,7 @@ export async function doctorQueue(kind: TelegramBotKind, session: TelegramSessio
 
   await sendTelegramMessage(kind, {
     chat_id: session.chatId,
-    text: [`<b>Doctor queue</b>`, countText, '', rows].join('\n'),
+    text: [`<b>Provider queue</b>`, countText, '', rows].join('\n'),
     parse_mode: 'HTML',
     reply_markup: {
       inline_keyboard: [[{ text: 'Open appointments', url: doctorUrl('/appointments') }]]
@@ -115,8 +115,8 @@ export async function setDoctorPresence(
   await sendTelegramMessage(kind, {
     chat_id: session.chatId,
     text: profile
-      ? `Doctor status updated: ${online ? 'ONLINE' : 'OFFLINE'}`
-      : 'Doctor profile was not found.'
+      ? `Provider status updated: ${online ? 'ONLINE' : 'OFFLINE'}`
+      : 'Provider profile was not found.'
   });
 }
 

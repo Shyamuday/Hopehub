@@ -42,7 +42,7 @@ export const PATIENT_FUNNEL_STEPS = [
   { key: PRODUCT_EVENTS.CONSULTATION_BOOKED, label: 'Consultation booked' },
   { key: PRODUCT_EVENTS.PAYMENT_INITIATED, label: 'Payment initiated' },
   { key: PRODUCT_EVENTS.PAYMENT_COMPLETED, label: 'Payment completed' },
-  { key: PRODUCT_EVENTS.CONSULTATION_ASSIGNED, label: 'Doctor assigned' },
+  { key: PRODUCT_EVENTS.CONSULTATION_ASSIGNED, label: 'Provider assigned' },
   { key: PRODUCT_EVENTS.PRESCRIPTION_PUBLISHED, label: 'Prescription published' },
   { key: PRODUCT_EVENTS.DOSE_TAKEN, label: 'First dose taken' }
 ] as const;

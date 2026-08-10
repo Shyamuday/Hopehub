@@ -113,11 +113,19 @@ export class DoctorLiveSessionPage implements OnInit, OnDestroy {
   }
 
   patientName(): string {
-    return this.consultation()?.patient?.name || 'Patient';
+    return this.consultation()?.patient?.name || this.userLabel();
   }
 
   patientCode(): string {
     return this.consultation()?.patient?.patientCode || '';
+  }
+
+  userLabel(): string {
+    return this.isPsychologist() ? 'User' : 'Patient';
+  }
+
+  userCodeLabel(): string {
+    return this.isPsychologist() ? 'User code' : 'Patient code';
   }
 
   serviceName(): string {

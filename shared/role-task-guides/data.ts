@@ -121,7 +121,7 @@ export const ROLE_TASK_GUIDES: RoleTaskGuide[] = [
       'Review assigned and live online sessions before starting work.',
       'Read the intake, chat context, and available assessment scores before each session.',
       'Document session notes, risk level, support given, and agreed next steps.',
-      'Set follow-up guidance or escalate to a medical doctor or emergency pathway when needed.',
+      'Set follow-up guidance or escalate to a licensed clinician or emergency pathway when needed.',
       'Keep your availability, public profile, and focus areas up to date.'
     ],
     dailyTasks: [
@@ -138,19 +138,19 @@ export const ROLE_TASK_GUIDES: RoleTaskGuide[] = [
       {
         title: 'Review intake and assessments',
         detail:
-          'Read the patient concern, prior messages, and mental health assessment scores before responding.',
+          'Read the user concern, prior messages, and mental health assessment scores before responding.',
         when: 'Per session'
       },
       {
         title: 'Add session notes',
         detail:
-          'Record what was discussed, interventions used, patient response, risk flags, and next step.',
+          'Record what was discussed, support used, user response, risk flags, and next step.',
         when: 'During or after session'
       },
       {
         title: 'Plan follow-up or escalation',
         detail:
-          'Recommend the next session, self-care plan, or escalation to a psychiatrist/doctor if risk or medication need appears.',
+          'Recommend the next session, self-care plan, or escalation to a psychiatrist/licensed clinician if risk or medication need appears.',
         when: 'End of session'
       }
     ],
@@ -167,7 +167,7 @@ export const ROLE_TASK_GUIDES: RoleTaskGuide[] = [
     roleTitle: 'Platform Administrator',
     tagline: 'You own clinic configuration, oversight, and compliance across HopeHub.',
     responsibilities: [
-      'Maintain doctor accounts, types, specialties, and HR records.',
+      'Maintain provider accounts, types, specialties, and HR records.',
       'Monitor consultations, payments, adherence risk, and audit logs.',
       'Configure diseases, billing plans, stores, and purchase orders.',
       'Approve payroll and finance entries with supporting documentation.'
@@ -246,7 +246,7 @@ export const ROLE_TASK_GUIDES: RoleTaskGuide[] = [
     boundaries: [
       'Do not share salary or personal data outside authorized channels.',
       'Do not mark employees active without completed onboarding checks.',
-      'Do not edit clinical credentials — coordinate with admin for doctor accounts.'
+      'Do not edit clinical credentials — coordinate with admin for provider accounts.'
     ]
   },
 

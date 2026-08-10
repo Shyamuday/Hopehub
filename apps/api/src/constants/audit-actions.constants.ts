@@ -1,10 +1,10 @@
 export const AUDIT_ACTION_LABELS: Record<string, string> = {
-  'doctor.approve': 'Doctor approved',
-  'doctor.reject': 'Doctor rejected',
-  'doctor.status_change': 'Doctor status changed',
-  'doctor.create': 'Doctor created',
-  'doctor.update': 'Doctor profile updated',
-  'consultation.assign_doctor': 'Doctor assigned to consultation'
+  'doctor.approve': 'Provider approved',
+  'doctor.reject': 'Provider rejected',
+  'doctor.status_change': 'Provider status changed',
+  'doctor.create': 'Provider created',
+  'doctor.update': 'Provider profile updated',
+  'consultation.assign_doctor': 'Provider assigned to consultation'
 };
 
 export function formatAuditAction(action: string) {
