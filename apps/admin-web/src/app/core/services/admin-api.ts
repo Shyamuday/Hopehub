@@ -884,6 +884,21 @@ export class AdminApi {
       ...(args as Parameters<AdminReportsApi['getAuthProcessLogs']>),
     );
   }
+  getAuthSessions(...args: Parameters<AdminReportsApi['getAuthSessions']>) {
+    return this.reports.getAuthSessions(
+      ...(args as Parameters<AdminReportsApi['getAuthSessions']>),
+    );
+  }
+  revokeAuthSession(...args: Parameters<AdminReportsApi['revokeAuthSession']>) {
+    return this.reports.revokeAuthSession(
+      ...(args as Parameters<AdminReportsApi['revokeAuthSession']>),
+    );
+  }
+  revokeUserAuthSessions(...args: Parameters<AdminReportsApi['revokeUserAuthSessions']>) {
+    return this.reports.revokeUserAuthSessions(
+      ...(args as Parameters<AdminReportsApi['revokeUserAuthSessions']>),
+    );
+  }
   purgeAuditLogs(...args: Parameters<AdminReportsApi['purgeAuditLogs']>) {
     return this.reports.purgeAuditLogs(...(args as Parameters<AdminReportsApi['purgeAuditLogs']>));
   }

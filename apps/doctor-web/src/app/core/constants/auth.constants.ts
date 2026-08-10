@@ -1,10 +1,16 @@
 export const AUTH_TOKEN_KEY = 'doctor_app_token';
+export const AUTH_REFRESH_TOKEN_KEY = 'doctor_app_refresh_token';
+export const AUTH_SESSION_ID_KEY = 'doctor_app_session_id';
 
 export const AUTH_PATHS = {
   STAFF_LOGIN: '/auth/staff-login',
   STAFF_GOOGLE_LOGIN: '/auth/staff-login-google',
   GOOGLE_CONFIG: '/auth/google-config',
   DOCTOR_ENROLL: '/doctor/enroll',
+  REFRESH: '/auth/refresh',
+  LOGOUT: '/auth/logout',
+  VERIFY_EMAIL: '/auth/verify-email',
+  RESEND_VERIFICATION: '/auth/resend-verification',
   ME: '/me',
 } as const;
 

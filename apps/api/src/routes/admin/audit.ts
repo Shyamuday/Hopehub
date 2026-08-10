@@ -2,7 +2,13 @@ import { Router } from 'express';
 import { Role, Prisma } from '@prisma/client';
 import { authRequired, allowRoles } from '../../auth.js';
 import { prisma } from '../../db.js';
-import { asyncRoute, queryPositiveInt, queryText, writeAuditLog } from '../../utils/helpers.js';
+import {
+  asyncRoute,
+  queryPositiveInt,
+  queryText,
+  routeParam,
+  writeAuditLog
+} from '../../utils/helpers.js';
 
 export function registerAdminAuditRoutes(router: Router) {
   router.get(
@@ -220,6 +226,125 @@ export function registerAdminAuditRoutes(router: Router) {
         total,
         logs
       });
+    })
+  );
+
+  router.get(
+    '/admin/auth-sessions',
+    authRequired,
+    allowRoles(Role.ADMIN),
+    asyncRoute(async (req, res) => {
+      const page = queryPositiveInt(req, 'page', 1);
+      const pageSize = queryPositiveInt(req, 'pageSize', 20, 1, 100);
+      const q = queryText(req, 'q').trim();
+      const status = queryText(req, 'status').trim();
+      const now = new Date();
+      const roleQuery = Object.values(Role).includes(q.toUpperCase() as Role)
+        ? (q.toUpperCase() as Role)
+        : null;
+
+      const where: Prisma.AuthSessionWhereInput = {
+        ...(status === 'active'
+          ? { revokedAt: null, expiresAt: { gt: now } }
+          : status === 'revoked'
+            ? { revokedAt: { not: null } }
+            : status === 'expired'
+              ? { expiresAt: { lte: now } }
+              : {}),
+        ...(q
+          ? {
+              OR: [
+                { user: { name: { contains: q, mode: 'insensitive' } } },
+                { user: { email: { contains: q, mode: 'insensitive' } } },
+                ...(roleQuery ? [{ user: { role: { equals: roleQuery } } }] : []),
+                { ipAddress: { contains: q, mode: 'insensitive' } },
+                { userAgent: { contains: q, mode: 'insensitive' } }
+              ]
+            }
+          : {})
+      };
+
+      const [total, sessions] = await Promise.all([
+        prisma.authSession.count({ where }),
+        prisma.authSession.findMany({
+          where,
+          orderBy: { createdAt: 'desc' },
+          skip: (page - 1) * pageSize,
+          take: pageSize,
+          include: {
+            user: { select: { id: true, name: true, email: true, role: true, isActive: true } }
+          }
+        })
+      ]);
+
+      res.json({
+        page,
+        pageSize,
+        total,
+        sessions: sessions.map((session) => ({
+          id: session.id,
+          userId: session.userId,
+          user: session.user,
+          userAgent: session.userAgent,
+          ipAddress: session.ipAddress,
+          expiresAt: session.expiresAt,
+          revokedAt: session.revokedAt,
+          lastUsedAt: session.lastUsedAt,
+          createdAt: session.createdAt,
+          status: session.revokedAt ? 'revoked' : session.expiresAt <= now ? 'expired' : 'active'
+        }))
+      });
+    })
+  );
+
+  router.patch(
+    '/admin/auth-sessions/:id/revoke',
+    authRequired,
+    allowRoles(Role.ADMIN),
+    asyncRoute(async (req, res) => {
+      const sessionId = routeParam(req, 'id');
+      const session = await prisma.authSession.update({
+        where: { id: sessionId },
+        data: { revokedAt: new Date() },
+        include: { user: { select: { id: true, name: true, email: true, role: true } } }
+      });
+
+      await writeAuditLog({
+        actorId: req.user?.id,
+        actorRole: req.user?.role,
+        action: 'AUTH_SESSION_REVOKE',
+        targetType: 'AuthSession',
+        targetId: session.id,
+        summary: `Revoked auth session for ${session.user.email || session.user.name}.`,
+        metadata: { userId: session.userId, role: session.user.role }
+      });
+
+      res.json({ session: { id: session.id, revokedAt: session.revokedAt } });
+    })
+  );
+
+  router.patch(
+    '/admin/users/:id/auth-sessions/revoke',
+    authRequired,
+    allowRoles(Role.ADMIN),
+    asyncRoute(async (req, res) => {
+      const userId = routeParam(req, 'id');
+      const result = await prisma.authSession.updateMany({
+        where: { userId, revokedAt: null },
+        data: { revokedAt: new Date() }
+      });
+
+      await writeAuditLog({
+        actorId: req.user?.id,
+        actorRole: req.user?.role,
+        action: 'AUTH_SESSION_REVOKE_USER',
+        targetType: 'User',
+        targetId: userId,
+        summary: `Revoked ${result.count} active auth sessions for user.`,
+        metadata: { count: result.count }
+      });
+
+      res.json({ revokedCount: result.count });
     })
   );
 }

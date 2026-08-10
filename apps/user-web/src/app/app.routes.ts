@@ -147,6 +147,13 @@ export const routes: Routes = [
       import('./auth/auth-reset-callback.component').then((m) => m.AuthResetCallbackComponent),
   },
   {
+    path: 'auth/verify-email',
+    loadComponent: () =>
+      import('./auth/email-verification-page.component').then(
+        (m) => m.EmailVerificationPageComponent,
+      ),
+  },
+  {
     path: 'patient/profile',
     redirectTo: 'patient/account/profile',
     pathMatch: 'full',

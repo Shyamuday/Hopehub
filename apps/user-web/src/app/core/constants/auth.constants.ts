@@ -1,4 +1,6 @@
 export const AUTH_TOKEN_KEY = 'clinic_token';
+export const AUTH_REFRESH_TOKEN_KEY = 'clinic_refresh_token';
+export const AUTH_SESSION_ID_KEY = 'clinic_session_id';
 
 export const AUTH_PATHS = {
   REQUEST_OTP: '/auth/request-otp',
@@ -10,6 +12,10 @@ export const AUTH_PATHS = {
   PATIENT_FORGOT_PASSWORD: '/auth/patient-forgot-password',
   PATIENT_RESET_PASSWORD: '/auth/patient-reset-password',
   GOOGLE: '/auth/google',
+  REFRESH: '/auth/refresh',
+  LOGOUT: '/auth/logout',
+  VERIFY_EMAIL: '/auth/verify-email',
+  RESEND_VERIFICATION: '/auth/resend-verification',
   ME: '/me',
 } as const;
 

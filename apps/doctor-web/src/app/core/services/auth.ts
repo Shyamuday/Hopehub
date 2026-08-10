@@ -2,12 +2,24 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { AUTH_MESSAGES, AUTH_PATHS, AUTH_TOKEN_KEY } from '../constants/auth.constants';
+import {
+  AUTH_MESSAGES,
+  AUTH_PATHS,
+  AUTH_REFRESH_TOKEN_KEY,
+  AUTH_SESSION_ID_KEY,
+  AUTH_TOKEN_KEY,
+} from '../constants/auth.constants';
 
 const GOOGLE_GSI_SRC = 'https://accounts.google.com/gsi/client';
 
 type GoogleCredentialResponse = {
   credential?: string;
+};
+
+type AuthResponse = {
+  token: string;
+  refreshToken?: string;
+  sessionId?: string;
 };
 
 type GooglePromptMomentNotification = {
@@ -61,13 +73,13 @@ export class Auth {
 
     try {
       const response = await firstValueFrom(
-        this.http.post<{ token: string }>(`${this.apiBase}${AUTH_PATHS.STAFF_LOGIN}`, {
+        this.http.post<AuthResponse>(`${this.apiBase}${AUTH_PATHS.STAFF_LOGIN}`, {
           email,
           password,
         }),
       );
 
-      localStorage.setItem(this.tokenKey, response.token);
+      this.persistSession(response);
       return { ok: true as const };
     } catch (error: any) {
       return { ok: false as const, message: error?.error?.message || AUTH_MESSAGES.INVALID_LOGIN };
@@ -96,10 +108,10 @@ export class Auth {
 
     try {
       const response = await firstValueFrom(
-        this.http.post<{ token: string }>(`${this.apiBase}/auth/staff-login-otp`, { email, otp }),
+        this.http.post<AuthResponse>(`${this.apiBase}/auth/staff-login-otp`, { email, otp }),
       );
 
-      localStorage.setItem(this.tokenKey, response.token);
+      this.persistSession(response);
       return { ok: true as const };
     } catch (error: any) {
       return { ok: false as const, message: error?.error?.message || AUTH_MESSAGES.INVALID_LOGIN };
@@ -110,12 +122,12 @@ export class Auth {
     try {
       const idToken = await this.getGoogleIdToken();
       const response = await firstValueFrom(
-        this.http.post<{ token: string }>(`${this.apiBase}${AUTH_PATHS.STAFF_GOOGLE_LOGIN}`, {
+        this.http.post<AuthResponse>(`${this.apiBase}${AUTH_PATHS.STAFF_GOOGLE_LOGIN}`, {
           idToken,
         }),
       );
 
-      localStorage.setItem(this.tokenKey, response.token);
+      this.persistSession(response);
       return { ok: true as const };
     } catch (error: any) {
       return {
@@ -160,11 +172,48 @@ export class Auth {
   }
 
   logout() {
-    localStorage.removeItem(this.tokenKey);
+    const refreshToken = this.refreshToken();
+    if (refreshToken) {
+      void firstValueFrom(
+        this.http.post(`${this.apiBase}${AUTH_PATHS.LOGOUT}`, { refreshToken }),
+      ).catch(() => undefined);
+    }
+    this.clearSession();
   }
 
   token() {
     return localStorage.getItem(this.tokenKey) || '';
+  }
+
+  refreshToken() {
+    return localStorage.getItem(AUTH_REFRESH_TOKEN_KEY) || '';
+  }
+
+  async refreshSession() {
+    const refreshToken = this.refreshToken();
+    if (!refreshToken) return false;
+    try {
+      const response = await firstValueFrom(
+        this.http.post<AuthResponse>(`${this.apiBase}${AUTH_PATHS.REFRESH}`, { refreshToken }),
+      );
+      this.persistSession(response);
+      return true;
+    } catch {
+      this.clearSession();
+      return false;
+    }
+  }
+
+  private persistSession(response: AuthResponse) {
+    if (response.token) localStorage.setItem(this.tokenKey, response.token);
+    if (response.refreshToken) localStorage.setItem(AUTH_REFRESH_TOKEN_KEY, response.refreshToken);
+    if (response.sessionId) localStorage.setItem(AUTH_SESSION_ID_KEY, response.sessionId);
+  }
+
+  private clearSession() {
+    localStorage.removeItem(this.tokenKey);
+    localStorage.removeItem(AUTH_REFRESH_TOKEN_KEY);
+    localStorage.removeItem(AUTH_SESSION_ID_KEY);
   }
 
   private async getGoogleClientId(): Promise<string> {

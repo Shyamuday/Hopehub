@@ -57,6 +57,13 @@ const guard = [adminPermissionGuard];
 export const routes: Routes = [
   { path: ROUTE_PATHS.LOGIN, component: AdminLogin },
   {
+    path: 'auth/verify-email',
+    loadComponent: () =>
+      import('./features/auth/email-verification/email-verification').then(
+        (m) => m.AdminEmailVerification,
+      ),
+  },
+  {
     path: '',
     component: AdminShell,
     canActivate: [adminAuthGuard],

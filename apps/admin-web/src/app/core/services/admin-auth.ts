@@ -4,6 +4,9 @@ import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
   AUTH_MESSAGES,
+  AUTH_PATHS,
+  AUTH_REFRESH_TOKEN_KEY,
+  AUTH_SESSION_ID_KEY,
   AUTH_TOKEN_KEY,
   AUTH_USER_KEY,
   STAFF_ROLES,
@@ -15,6 +18,7 @@ import type { StaffUser } from '../admin-permissions';
 export class AdminAuth {
   private readonly http = inject(HttpClient);
   private readonly tokenKey = AUTH_TOKEN_KEY;
+  private readonly refreshTokenKey = AUTH_REFRESH_TOKEN_KEY;
   private readonly userKey = AUTH_USER_KEY;
   private readonly apiBase = environment.apiUrl;
 
@@ -46,12 +50,47 @@ export class AdminAuth {
     return localStorage.getItem(this.tokenKey) || '';
   }
 
+  refreshToken() {
+    return localStorage.getItem(this.refreshTokenKey) || '';
+  }
+
   async refreshSession(): Promise<StaffUser | null> {
-    const session = await firstValueFrom(
-      this.http.get<{ user: StaffUser }>(`${this.apiBase}${API_PATHS.AUTH.ME}`),
-    );
-    this.setUser(session.user);
-    return session.user;
+    try {
+      const session = await firstValueFrom(
+        this.http.get<{ user: StaffUser }>(`${this.apiBase}${API_PATHS.AUTH.ME}`),
+      );
+      this.setUser(session.user);
+      return session.user;
+    } catch {
+      const refreshed = await this.refreshAccessToken();
+      if (!refreshed) throw new Error('Session expired');
+      const session = await firstValueFrom(
+        this.http.get<{ user: StaffUser }>(`${this.apiBase}${API_PATHS.AUTH.ME}`),
+      );
+      this.setUser(session.user);
+      return session.user;
+    }
+  }
+
+  async refreshAccessToken() {
+    const refreshToken = this.refreshToken();
+    if (!refreshToken) return false;
+    try {
+      const response = await firstValueFrom(
+        this.http.post<{
+          token: string;
+          refreshToken?: string;
+          sessionId?: string;
+          user: StaffUser;
+        }>(`${this.apiBase}${AUTH_PATHS.REFRESH}`, { refreshToken }),
+      );
+      this.persistAuthResponse(response);
+      return true;
+    } catch {
+      this.clearStoredSession();
+      this.setUser(null);
+      return false;
+    }
   }
 
   async login(email: string, password: string) {
@@ -67,7 +106,7 @@ export class AdminAuth {
         return { ok: false as const, message: AUTH_MESSAGES.ADMIN_ONLY };
       }
 
-      localStorage.setItem(this.tokenKey, response.token);
+      this.persistAuthResponse(response);
       this.setUser(response.user);
       return { ok: true as const };
     } catch (error: unknown) {
@@ -107,7 +146,7 @@ export class AdminAuth {
         return { ok: false as const, message: AUTH_MESSAGES.ADMIN_ONLY };
       }
 
-      localStorage.setItem(this.tokenKey, response.token);
+      this.persistAuthResponse(response);
       this.setUser(response.user);
       return { ok: true as const };
     } catch (error: unknown) {
@@ -125,8 +164,30 @@ export class AdminAuth {
   }
 
   logout() {
-    localStorage.removeItem(this.tokenKey);
-    localStorage.removeItem(this.userKey);
+    const refreshToken = this.refreshToken();
+    if (refreshToken) {
+      void firstValueFrom(
+        this.http.post(`${this.apiBase}${AUTH_PATHS.LOGOUT}`, { refreshToken }),
+      ).catch(() => undefined);
+    }
+    this.clearStoredSession();
     this.setUser(null);
+  }
+
+  private persistAuthResponse(response: {
+    token: string;
+    refreshToken?: string;
+    sessionId?: string;
+  }) {
+    localStorage.setItem(this.tokenKey, response.token);
+    if (response.refreshToken) localStorage.setItem(this.refreshTokenKey, response.refreshToken);
+    if (response.sessionId) localStorage.setItem(AUTH_SESSION_ID_KEY, response.sessionId);
+  }
+
+  private clearStoredSession() {
+    localStorage.removeItem(this.tokenKey);
+    localStorage.removeItem(this.refreshTokenKey);
+    localStorage.removeItem(AUTH_SESSION_ID_KEY);
+    localStorage.removeItem(this.userKey);
   }
 }

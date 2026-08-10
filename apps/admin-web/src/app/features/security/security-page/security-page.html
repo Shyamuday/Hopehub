@@ -79,6 +79,90 @@
     </div>
   } @else if (tab() === 'auth') {
     <div class="auth-log-panel">
+      <h3>Active sessions</h3>
+      <div class="auth-filters">
+        <label>
+          Search
+          <input
+            type="search"
+            [ngModel]="sessionSearch()"
+            (ngModelChange)="sessionSearch.set($event)"
+            (keyup.enter)="applySessionFilters()"
+            placeholder="Name, email, role, IP, browser"
+          />
+        </label>
+        <label>
+          Status
+          <select [ngModel]="sessionStatus()" (ngModelChange)="sessionStatus.set($event); applySessionFilters()">
+            <option value="">Any</option>
+            <option value="active">Active</option>
+            <option value="expired">Expired</option>
+            <option value="revoked">Revoked</option>
+          </select>
+        </label>
+        <div class="actions">
+          <button type="button" (click)="applySessionFilters()">Apply</button>
+          <button type="button" (click)="resetSessionFilters()">Reset</button>
+        </div>
+      </div>
+
+      <div class="auth-log-head">
+        <strong>{{ sessionTotal() }} sessions</strong>
+        <span>Page {{ sessionPage() }} of {{ sessionTotalPages() }}</span>
+      </div>
+
+      @if (sessionLoading()) {
+        <p>Loading sessions…</p>
+      } @else if (sessionError()) {
+        <p class="error">{{ sessionError() }}</p>
+      } @else if (!sessions().length) {
+        <p class="muted">No sessions match your filters.</p>
+      } @else {
+        <div class="auth-table-wrap">
+          <table class="auth-table">
+            <thead>
+              <tr>
+                <th>User</th>
+                <th>Status</th>
+                <th>Last used</th>
+                <th>IP / device</th>
+                <th>Expires</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (session of sessions(); track session.id) {
+                <tr>
+                  <td>
+                    <strong>{{ session.user?.name || 'User' }}</strong>
+                    <span>{{ session.user?.email || session.userId }} · {{ session.user?.role }}</span>
+                  </td>
+                  <td><span class="status" [class.failure]="session.status === 'revoked'" [class.blocked]="session.status === 'expired'">{{ session.status }}</span></td>
+                  <td>{{ (session.lastUsedAt || session.createdAt) | date:'short' }}</td>
+                  <td>
+                    {{ session.ipAddress || '-' }}
+                    <span>{{ session.userAgent || '-' }}</span>
+                  </td>
+                  <td>{{ session.expiresAt | date:'short' }}</td>
+                  <td>
+                    <button type="button" [disabled]="saving() || session.status !== 'active'" (click)="revokeSession(session)">Revoke</button>
+                    <button type="button" [disabled]="saving() || session.status !== 'active'" (click)="revokeUserSessions(session)">Revoke user</button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+
+      <div class="auth-pager">
+        <button type="button" [disabled]="sessionPage() <= 1" (click)="goSessionPage(-1)">Previous</button>
+        <button type="button" [disabled]="sessionPage() >= sessionTotalPages()" (click)="goSessionPage(1)">Next</button>
+      </div>
+    </div>
+
+    <div class="auth-log-panel">
+      <h3>Auth process logs</h3>
       <div class="auth-filters">
         <label>
           Search

@@ -108,6 +108,47 @@ export class AdminReportsApi extends AdminApiBase {
     );
   }
 
+  getAuthSessions(
+    params: {
+      page?: number;
+      pageSize?: number;
+      q?: string;
+      status?: string;
+    } = {},
+  ) {
+    return firstValueFrom(
+      this.http.get<{ sessions: Array<any>; page: number; pageSize: number; total: number }>(
+        `${this.apiBase}${API_PATHS.ADMIN.AUTH_SESSIONS}`,
+        {
+          params: {
+            page: String(params.page ?? 1),
+            pageSize: String(params.pageSize ?? PAGE_SIZES.AUDIT_LOGS_API_DEFAULT),
+            ...(params.q?.trim() ? { q: params.q.trim() } : {}),
+            ...(params.status?.trim() ? { status: params.status.trim() } : {}),
+          },
+        },
+      ),
+    );
+  }
+
+  revokeAuthSession(id: string) {
+    return firstValueFrom(
+      this.http.patch<{ session: any }>(
+        `${this.apiBase}${API_PATHS.ADMIN.AUTH_SESSION_REVOKE(id)}`,
+        {},
+      ),
+    );
+  }
+
+  revokeUserAuthSessions(userId: string) {
+    return firstValueFrom(
+      this.http.patch<{ revokedCount: number }>(
+        `${this.apiBase}${API_PATHS.ADMIN.USER_AUTH_SESSIONS_REVOKE(userId)}`,
+        {},
+      ),
+    );
+  }
+
   getAdherenceRisk(params: { days?: number; minDoses?: number } = {}) {
     return firstValueFrom(
       this.http.get<any>(`${this.apiBase}${API_PATHS.ADMIN.ADHERENCE_RISK}`, {

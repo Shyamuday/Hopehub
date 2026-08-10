@@ -8,6 +8,8 @@ import { StorePortalStaff } from '../models/store';
 import { ROUTE_PATHS } from '../core/constants/app-routes.constants';
 import {
   AUTH_TOKEN_KEY,
+  AUTH_REFRESH_TOKEN_KEY,
+  AUTH_SESSION_ID_KEY,
   AUTH_USER_KEY,
   AUTH_CAPABILITIES_KEY,
   AUTH_DEFAULT_ROUTE_KEY,
@@ -17,7 +19,11 @@ import {
 import { OPERATIONS_NAV_ITEMS, navItemsForCapabilities } from '@hopehub/platform-nav';
 
 export type StaffLoginResponse = AuthResponse &
-  Partial<SessionResponse> & { storeStaff?: StorePortalStaff };
+  Partial<SessionResponse> & {
+    storeStaff?: StorePortalStaff;
+    refreshToken?: string;
+    sessionId?: string;
+  };
 
 @Service()
 export class PlatformAuthService {
@@ -68,6 +74,10 @@ export class PlatformAuthService {
     return localStorage.getItem(AUTH_TOKEN_KEY);
   }
 
+  getRefreshToken(): string | null {
+    return localStorage.getItem(AUTH_REFRESH_TOKEN_KEY);
+  }
+
   isLoggedIn(): boolean {
     return !!this.getToken();
   }
@@ -95,6 +105,8 @@ export class PlatformAuthService {
 
   applyLoginResponse(res: StaffLoginResponse) {
     localStorage.setItem(AUTH_TOKEN_KEY, res.token);
+    if (res.refreshToken) localStorage.setItem(AUTH_REFRESH_TOKEN_KEY, res.refreshToken);
+    if (res.sessionId) localStorage.setItem(AUTH_SESSION_ID_KEY, res.sessionId);
     if (res.capabilities?.length) {
       this.persistSession(
         {
@@ -136,7 +148,15 @@ export class PlatformAuthService {
   }
 
   logout() {
+    const refreshToken = this.getRefreshToken();
+    if (refreshToken) {
+      this.http
+        .post(`${environment.apiUrl}${AUTH_PATHS.LOGOUT}`, { refreshToken })
+        .subscribe({ error: () => undefined });
+    }
     localStorage.removeItem(AUTH_TOKEN_KEY);
+    localStorage.removeItem(AUTH_REFRESH_TOKEN_KEY);
+    localStorage.removeItem(AUTH_SESSION_ID_KEY);
     localStorage.removeItem(AUTH_USER_KEY);
     localStorage.removeItem(AUTH_CAPABILITIES_KEY);
     localStorage.removeItem(AUTH_DEFAULT_ROUTE_KEY);
@@ -152,6 +172,14 @@ export class PlatformAuthService {
     return this.http
       .get<SessionResponse>(`${environment.apiUrl}${AUTH_PATHS.ME}`)
       .pipe(tap((session) => this.persistSession(session)));
+  }
+
+  refreshAccessToken() {
+    const refreshToken = this.getRefreshToken();
+    if (!refreshToken) return null;
+    return this.http
+      .post<StaffLoginResponse>(`${environment.apiUrl}${AUTH_PATHS.REFRESH}`, { refreshToken })
+      .pipe(tap((res) => this.applyLoginResponse(res)));
   }
 }
 

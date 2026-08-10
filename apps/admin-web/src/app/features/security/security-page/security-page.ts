@@ -45,6 +45,14 @@ export class SecurityPage implements OnInit {
   authSearch = signal('');
   authStatus = signal('');
   authReason = signal('');
+  sessionLoading = signal(false);
+  sessionError = signal('');
+  sessions = signal<Array<any>>([]);
+  sessionPage = signal(1);
+  sessionTotal = signal(0);
+  sessionPageSize = signal(20);
+  sessionSearch = signal('');
+  sessionStatus = signal('active');
 
   ngOnInit(): void {
     void this.load();
@@ -91,9 +99,31 @@ export class SecurityPage implements OnInit {
     }
   }
 
+  async loadSessions(page = this.sessionPage()) {
+    this.sessionLoading.set(true);
+    this.sessionError.set('');
+    try {
+      const response = await this.api.getAuthSessions({
+        page,
+        pageSize: this.sessionPageSize(),
+        q: this.sessionSearch(),
+        status: this.sessionStatus(),
+      });
+      this.sessions.set(response.sessions);
+      this.sessionPage.set(response.page);
+      this.sessionPageSize.set(response.pageSize);
+      this.sessionTotal.set(response.total);
+    } catch {
+      this.sessionError.set('Could not load auth sessions.');
+    } finally {
+      this.sessionLoading.set(false);
+    }
+  }
+
   openAuthLogs() {
     this.tab.set('auth');
     if (!this.authLogs().length) void this.loadAuthLogs(1);
+    if (!this.sessions().length) void this.loadSessions(1);
   }
 
   applyAuthFilters() {
@@ -112,6 +142,55 @@ export class SecurityPage implements OnInit {
     const totalPages = this.authTotalPages();
     if (next < 1 || next > totalPages) return;
     void this.loadAuthLogs(next);
+  }
+
+  applySessionFilters() {
+    void this.loadSessions(1);
+  }
+
+  resetSessionFilters() {
+    this.sessionSearch.set('');
+    this.sessionStatus.set('active');
+    void this.loadSessions(1);
+  }
+
+  goSessionPage(direction: -1 | 1) {
+    const next = this.sessionPage() + direction;
+    const totalPages = this.sessionTotalPages();
+    if (next < 1 || next > totalPages) return;
+    void this.loadSessions(next);
+  }
+
+  sessionTotalPages() {
+    return Math.max(1, Math.ceil(this.sessionTotal() / this.sessionPageSize()));
+  }
+
+  async revokeSession(session: any) {
+    if (!session?.id || session.status !== 'active') return;
+    this.saving.set(true);
+    try {
+      await this.api.revokeAuthSession(session.id);
+      this.showToast('Session revoked.');
+      await this.loadSessions(this.sessionPage());
+    } catch (e: any) {
+      this.sessionError.set(e?.error?.message || 'Could not revoke session.');
+    } finally {
+      this.saving.set(false);
+    }
+  }
+
+  async revokeUserSessions(session: any) {
+    if (!session?.userId) return;
+    this.saving.set(true);
+    try {
+      const response = await this.api.revokeUserAuthSessions(session.userId);
+      this.showToast(`Revoked ${response.revokedCount} session(s).`);
+      await this.loadSessions(this.sessionPage());
+    } catch (e: any) {
+      this.sessionError.set(e?.error?.message || 'Could not revoke user sessions.');
+    } finally {
+      this.saving.set(false);
+    }
   }
 
   authTotalPages() {

@@ -1,13 +1,22 @@
 import { computed, inject, Service } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom, from, tap } from 'rxjs';
-import { AUTH_PATHS, AUTH_TOKEN_KEY, ROLE_DASHBOARD_PATHS } from '../core/constants/auth.constants';
+import {
+  AUTH_PATHS,
+  AUTH_REFRESH_TOKEN_KEY,
+  AUTH_SESSION_ID_KEY,
+  AUTH_TOKEN_KEY,
+  ROLE_DASHBOARD_PATHS,
+} from '../core/constants/auth.constants';
 import { Role, User, type PatientSelectionResponse } from '../models';
 import { PatientAuthService } from './patient-auth.service';
 import { environment } from '../../environments/environment';
 
 type AuthResponse = {
   token: string;
+  refreshToken?: string;
+  sessionId?: string;
+  refreshTokenExpiresAt?: string;
   user: User;
 };
 
@@ -40,7 +49,9 @@ export class AuthService {
       this.patientAuth.setAuthenticatedUser(response.user);
       return response.user;
     } catch {
-      localStorage.removeItem(AUTH_TOKEN_KEY);
+      const refreshed = await this.refreshAuthSession();
+      if (refreshed) return refreshed;
+      this.clearSession();
       this.patientAuth.setAuthenticatedUser(null);
       return null;
     }
@@ -48,6 +59,10 @@ export class AuthService {
 
   get token() {
     return localStorage.getItem(AUTH_TOKEN_KEY);
+  }
+
+  get refreshToken() {
+    return localStorage.getItem(AUTH_REFRESH_TOKEN_KEY);
   }
 
   requestOtp(
@@ -132,8 +147,30 @@ export class AuthService {
   }
 
   logout() {
-    localStorage.removeItem(AUTH_TOKEN_KEY);
+    const refreshToken = this.refreshToken;
+    if (refreshToken) {
+      void firstValueFrom(
+        this.http.post(`${this.apiBase}${AUTH_PATHS.LOGOUT}`, { refreshToken }),
+      ).catch(() => undefined);
+    }
+    this.clearSession();
     this.patientAuth.setAuthenticatedUser(null);
+  }
+
+  async refreshAuthSession() {
+    const refreshToken = this.refreshToken;
+    if (!refreshToken) return null;
+    try {
+      const response = await firstValueFrom(
+        this.http.post<AuthResponse>(`${this.apiBase}${AUTH_PATHS.REFRESH}`, { refreshToken }),
+      );
+      this.persistSession(response);
+      return response.user;
+    } catch {
+      this.clearSession();
+      this.patientAuth.setAuthenticatedUser(null);
+      return null;
+    }
   }
 
   dashboardFor(role: Role) {
@@ -152,7 +189,19 @@ export class AuthService {
     if (response.token) {
       localStorage.setItem(AUTH_TOKEN_KEY, response.token);
     }
+    if (response.refreshToken) {
+      localStorage.setItem(AUTH_REFRESH_TOKEN_KEY, response.refreshToken);
+    }
+    if (response.sessionId) {
+      localStorage.setItem(AUTH_SESSION_ID_KEY, response.sessionId);
+    }
 
     this.patientAuth.setAuthenticatedUser(response.user);
+  }
+
+  private clearSession() {
+    localStorage.removeItem(AUTH_TOKEN_KEY);
+    localStorage.removeItem(AUTH_REFRESH_TOKEN_KEY);
+    localStorage.removeItem(AUTH_SESSION_ID_KEY);
   }
 }

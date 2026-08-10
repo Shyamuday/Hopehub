@@ -24,6 +24,13 @@ import { NotificationsInboxPage } from './features/notifications-inbox/notificat
 export const routes: Routes = [
   { path: ROUTE_PATHS.LOGIN, component: Login },
   {
+    path: 'auth/verify-email',
+    loadComponent: () =>
+      import('./features/auth/email-verification/email-verification').then(
+        (m) => m.ProviderEmailVerification,
+      ),
+  },
+  {
     path: '',
     component: DoctorShell,
     canActivate: [doctorAuthGuard],
