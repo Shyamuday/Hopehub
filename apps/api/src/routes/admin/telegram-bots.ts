@@ -7,6 +7,7 @@ import { asyncRoute, routeParam, writeAuditLog } from '../../utils/helpers.js';
 import {
   getTelegramWebhookInfo,
   setTelegramCommands,
+  setTelegramWebsiteMenuButton,
   setTelegramWebhook,
   telegramBotStatus
 } from '../../services/telegram-bots.client.js';
@@ -362,6 +363,33 @@ export function registerAdminTelegramBotRoutes(router: Router) {
   );
 
   router.post(
+    '/admin/telegram-bots/group-help/clear-menu',
+    authRequired,
+    allowRoles(Role.ADMIN),
+    asyncRoute(async (req, res) => {
+      if (!groupHelpBotToken()) {
+        return res.status(400).json({ message: 'TELEGRAM_HOPEHUBBOT_TOKEN is not configured.' });
+      }
+
+      const result = await callGroupHelpTelegramApi('setChatMenuButton', {
+        menu_button: { type: 'default' }
+      });
+
+      await writeAuditLog({
+        actorId: req.user!.id,
+        actorRole: req.user!.role,
+        action: 'telegram_group_help.clear_menu_button',
+        targetType: 'telegram_group_help',
+        targetId: 'bot_menu',
+        summary: 'Cleared website menu button from Group Help bot.',
+        metadata: { bot: 'Hopehubbot' }
+      });
+
+      res.json({ ok: true, result });
+    })
+  );
+
+  router.post(
     '/admin/telegram-bots/:bot/setup',
     authRequired,
     allowRoles(Role.ADMIN),
@@ -376,6 +404,8 @@ export function registerAdminTelegramBotRoutes(router: Router) {
       }
 
       await setTelegramCommands(kind);
+      const menuButton =
+        kind === TelegramBotKind.USER ? await setTelegramWebsiteMenuButton(kind) : null;
       const webhook = await setTelegramWebhook({
         kind,
         dropPendingUpdates: parsed.data.dropPendingUpdates,
@@ -388,11 +418,11 @@ export function registerAdminTelegramBotRoutes(router: Router) {
         action: 'telegram_bot.setup',
         targetType: 'telegram_bot',
         targetId: kind,
-        summary: `Updated Telegram commands and webhook for ${slug} bot.`,
+        summary: `Updated Telegram commands, menu button, and webhook for ${slug} bot.`,
         metadata: { slug, dropPendingUpdates: Boolean(parsed.data.dropPendingUpdates) }
       });
 
-      res.json({ ok: true, webhook });
+      res.json({ ok: true, webhook, menuButton });
     })
   );
 
@@ -409,12 +439,14 @@ export function registerAdminTelegramBotRoutes(router: Router) {
       const results = await Promise.all(
         Object.values(TelegramBotKind).map(async (kind) => {
           await setTelegramCommands(kind);
+          const menuButton =
+            kind === TelegramBotKind.USER ? await setTelegramWebsiteMenuButton(kind) : null;
           const webhook = await setTelegramWebhook({
             kind,
             dropPendingUpdates: parsed.data.dropPendingUpdates,
             publicApiUrl: parsed.data.publicApiUrl
           });
-          return { kind, webhook };
+          return { kind, webhook, menuButton };
         })
       );
 
@@ -424,7 +456,7 @@ export function registerAdminTelegramBotRoutes(router: Router) {
         action: 'telegram_bot.setup_all',
         targetType: 'telegram_bot',
         targetId: 'all',
-        summary: 'Updated Telegram commands and webhooks for all configured bots.',
+        summary: 'Updated Telegram commands, menu buttons, and webhooks for all configured bots.',
         metadata: { dropPendingUpdates: Boolean(parsed.data.dropPendingUpdates) }
       });
 

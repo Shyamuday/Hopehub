@@ -5,7 +5,7 @@ import {
   botTokenEnvByKind,
   commandMenus
 } from './telegram-bots.config.js';
-import { apiUrl } from './telegram-bots.ui.js';
+import { apiUrl, webUrl } from './telegram-bots.ui.js';
 import type { SendMessagePayload } from './telegram-bots.types.js';
 
 export function telegramWebhookSecret() {
@@ -69,6 +69,16 @@ export async function setTelegramWebhook(input: {
 export async function setTelegramCommands(kind: TelegramBotKind) {
   return callTelegramApi(kind, 'setMyCommands', {
     commands: commandMenus[kind]
+  });
+}
+
+export async function setTelegramWebsiteMenuButton(kind: TelegramBotKind) {
+  return callTelegramApi(kind, 'setChatMenuButton', {
+    menu_button: {
+      type: 'web_app',
+      text: 'Open Hope Hub',
+      web_app: { url: webUrl('/') }
+    }
   });
 }
 
