@@ -5,6 +5,7 @@ import { asyncRoute, routeParam } from '../utils/helpers.js';
 import {
   handleTelegramUpdate,
   setTelegramCommands,
+  setTelegramWebsiteMenuButton,
   setTelegramWebhook,
   telegramBotKindFromSlug,
   telegramBotStatus,
@@ -71,6 +72,7 @@ telegramBotsRouter.post(
       SERVER_CONFIG.ORIGINS.WEB;
 
     await setTelegramCommands(kind);
+    const menuButton = kind === 'USER' ? await setTelegramWebsiteMenuButton(kind) : null;
     const webhookResult = await setTelegramWebhook({
       kind,
       publicApiUrl,
@@ -81,6 +83,7 @@ telegramBotsRouter.post(
       ok: true,
       bot: kind,
       publicApiUrl,
+      menuButton,
       webhookResult
     });
   })
@@ -108,12 +111,14 @@ telegramBotsRouter.post(
       }
 
       await setTelegramCommands(status.kind);
+      const menuButton =
+        status.kind === 'USER' ? await setTelegramWebsiteMenuButton(status.kind) : null;
       const webhookResult = await setTelegramWebhook({
         kind: status.kind,
         publicApiUrl,
         dropPendingUpdates: body.dropPendingUpdates
       });
-      results.push({ bot: status.kind, skipped: false, webhookResult });
+      results.push({ bot: status.kind, skipped: false, menuButton, webhookResult });
     }
 
     res.json({ ok: true, publicApiUrl, results });

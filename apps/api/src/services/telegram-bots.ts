@@ -104,6 +104,7 @@ import {
 
 export {
   setTelegramCommands,
+  setTelegramWebsiteMenuButton,
   setTelegramWebhook,
   telegramBotStatus,
   telegramBotToken,

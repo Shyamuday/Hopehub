@@ -2,6 +2,7 @@ import 'dotenv/config';
 import { TelegramBotKind } from '@prisma/client';
 import {
   setTelegramCommands,
+  setTelegramWebsiteMenuButton,
   setTelegramWebhook,
   telegramBotStatus
 } from '../src/services/telegram-bots.js';
@@ -22,6 +23,9 @@ for (const status of telegramBotStatus()) {
   }
 
   await setTelegramCommands(status.kind as TelegramBotKind);
+  if (status.kind === TelegramBotKind.USER) {
+    await setTelegramWebsiteMenuButton(status.kind);
+  }
   await setTelegramWebhook({
     kind: status.kind as TelegramBotKind,
     publicApiUrl,
