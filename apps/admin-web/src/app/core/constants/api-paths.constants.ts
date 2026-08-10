@@ -19,6 +19,7 @@ export const API_PATHS = {
     TELEGRAM_BOTS_SETUP_ALL: '/admin/telegram-bots/setup-all',
     TELEGRAM_BOT_SESSION_UNLINK: (id: string) => `/admin/telegram-bots/sessions/${id}/unlink`,
     TELEGRAM_GROUP_HELP: '/admin/telegram-bots/group-help',
+    TELEGRAM_GROUP_HELP_TEST: '/admin/telegram-bots/group-help/test',
     TELEGRAM_GROUP_HELP_SEND: '/admin/telegram-bots/group-help/send',
     CONSULTATION_STATUS: (id: string) => `/admin/consultations/${id}/status`,
     SAFETY_FLAGS: '/admin/safety-flags',

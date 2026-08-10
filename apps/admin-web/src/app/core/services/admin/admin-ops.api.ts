@@ -259,6 +259,20 @@ export class AdminOpsApi extends AdminApiBase {
     );
   }
 
+  testTelegramGroupHelpConnection() {
+    return firstValueFrom(
+      this.http.post<{
+        tokenConfigured: boolean;
+        ok: boolean;
+        message?: string;
+        me?: unknown;
+        webhook?: unknown;
+        chat?: unknown;
+        chatError?: string | null;
+      }>(`${this.apiBase}${API_PATHS.ADMIN.TELEGRAM_GROUP_HELP_TEST}`, {}),
+    );
+  }
+
   sendTelegramGroupHelpMessage(payload: { message: string; pin?: boolean }) {
     return firstValueFrom(
       this.http.post<{ ok: boolean; message: any; pinned?: unknown }>(

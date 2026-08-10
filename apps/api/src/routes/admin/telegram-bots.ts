@@ -74,12 +74,16 @@ function linkedName(session: {
 }
 
 function groupHelpBotToken() {
-  return process.env.TELEGRAM_GROUP_HELP_BOT_TOKEN?.trim() || '';
+  return (
+    process.env.TELEGRAM_HOPEHUBBOT_TOKEN?.trim() ||
+    process.env.TELEGRAM_GROUP_HELP_BOT_TOKEN?.trim() ||
+    ''
+  );
 }
 
 async function callGroupHelpTelegramApi<T>(method: string, payload: unknown): Promise<T> {
   const token = groupHelpBotToken();
-  if (!token) throw new Error('TELEGRAM_GROUP_HELP_BOT_TOKEN is not configured.');
+  if (!token) throw new Error('TELEGRAM_HOPEHUBBOT_TOKEN is not configured.');
 
   const response = await fetch(`https://api.telegram.org/bot${token}/${method}`, {
     method: 'POST',
@@ -265,6 +269,47 @@ export function registerAdminTelegramBotRoutes(router: Router) {
   );
 
   router.post(
+    '/admin/telegram-bots/group-help/test',
+    authRequired,
+    allowRoles(Role.ADMIN, Role.HR),
+    asyncRoute(async (_req, res) => {
+      if (!groupHelpBotToken()) {
+        return res.json({
+          tokenConfigured: false,
+          ok: false,
+          message: 'TELEGRAM_HOPEHUBBOT_TOKEN is not configured.'
+        });
+      }
+
+      const values = await groupHelpConfigMap();
+      const chatId = values.telegramGroupHelpGroupChatId?.trim();
+      const [me, webhook] = await Promise.all([
+        callGroupHelpTelegramApi('getMe', {}),
+        callGroupHelpTelegramApi('getWebhookInfo', {})
+      ]);
+
+      let chat: unknown = null;
+      let chatError: string | null = null;
+      if (chatId) {
+        try {
+          chat = await callGroupHelpTelegramApi('getChat', { chat_id: chatId });
+        } catch (error) {
+          chatError = error instanceof Error ? error.message : 'Could not read Telegram chat.';
+        }
+      }
+
+      res.json({
+        tokenConfigured: true,
+        ok: true,
+        me,
+        webhook,
+        chat,
+        chatError
+      });
+    })
+  );
+
+  router.post(
     '/admin/telegram-bots/group-help/send',
     authRequired,
     allowRoles(Role.ADMIN),
@@ -277,9 +322,7 @@ export function registerAdminTelegramBotRoutes(router: Router) {
       const values = await groupHelpConfigMap();
       const chatId = values.telegramGroupHelpGroupChatId?.trim();
       if (!groupHelpBotToken()) {
-        return res
-          .status(400)
-          .json({ message: 'TELEGRAM_GROUP_HELP_BOT_TOKEN is not configured.' });
+        return res.status(400).json({ message: 'TELEGRAM_HOPEHUBBOT_TOKEN is not configured.' });
       }
       if (!chatId) {
         return res.status(400).json({ message: 'Telegram group chat ID is not configured.' });

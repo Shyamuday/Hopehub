@@ -240,7 +240,7 @@ export class GroupHelpPage {
       );
     } catch {
       this.error.set(
-        'Could not send. Check TELEGRAM_GROUP_HELP_BOT_TOKEN, group chat ID, and bot admin permissions.',
+        'Could not send. Check TELEGRAM_HOPEHUBBOT_TOKEN, group chat ID, and bot admin permissions.',
       );
     } finally {
       this.sending.set(false);
