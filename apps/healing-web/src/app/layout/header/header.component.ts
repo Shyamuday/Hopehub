@@ -50,6 +50,14 @@ import { CONSUMER_ROUTES } from '../../core/constants/consumer-routes.constants'
               {{ UX.cta.talkNow }}
             </a>
             <a
+              [routerLink]="ROUTES.links.support"
+              routerLinkActive="text-primary-600 border-b-2 border-primary-600"
+              class="text-gray-700 hover:text-primary-600 px-2 py-2 text-sm font-medium transition-colors duration-200 whitespace-nowrap"
+              [attr.aria-current]="isCurrentRoute(ROUTES.paths.support) ? 'page' : null"
+            >
+              Find support
+            </a>
+            <a
               [routerLink]="ROUTES.links.careTeam"
               routerLinkActive="text-primary-600 border-b-2 border-primary-600"
               class="text-gray-700 hover:text-primary-600 px-2 py-2 text-sm font-medium transition-colors duration-200 whitespace-nowrap"
@@ -282,6 +290,16 @@ import { CONSUMER_ROUTES } from '../../core/constants/consumer-routes.constants'
             aria-label="Mobile navigation menu"
           >
             <div class="flex flex-col space-y-2">
+              <a
+                [routerLink]="ROUTES.links.support"
+                (click)="closeMobileMenu()"
+                routerLinkActive="text-primary-600 bg-primary-50"
+                class="text-gray-700 hover:text-primary-600 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium transition-colors duration-200"
+                [attr.aria-current]="isCurrentRoute(ROUTES.paths.support) ? 'page' : null"
+                role="menuitem"
+              >
+                Find support
+              </a>
               <a
                 [routerLink]="ROUTES.links.services"
                 (click)="closeMobileMenu()"

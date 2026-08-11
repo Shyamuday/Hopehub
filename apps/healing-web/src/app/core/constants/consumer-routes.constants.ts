@@ -1,6 +1,7 @@
 export const CONSUMER_ROUTES = {
   paths: {
     home: '/',
+    support: '/support',
     bookSupport: '/contact',
     services: '/services',
     assessments: '/assessments',
@@ -24,6 +25,7 @@ export const CONSUMER_ROUTES = {
   },
   links: {
     home: ['/'],
+    support: ['/support'],
     bookSupport: ['/contact'],
     services: ['/services'],
     assessments: ['/assessments'],

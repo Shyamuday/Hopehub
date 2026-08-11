@@ -1,0 +1,102 @@
+<section class="support-guide">
+  <div class="support-guide__hero">
+    <p class="hope-eyebrow">Guided support</p>
+    <h1>Tell us what feels heavy today. We’ll show the clearest next step.</h1>
+    <p>
+      Choose one concern and move directly to a private test, live support, booking, matching care
+      team, or related service. No maze, no overthinking the website itself.
+    </p>
+  </div>
+
+  <div class="support-guide__layout">
+    <aside class="support-guide__concerns" aria-label="Choose your concern">
+      <p class="support-guide__label">Start with</p>
+      @for (concern of concernOptions(); track concern.key) {
+        <button
+          type="button"
+          class="support-guide__concern"
+          [class.support-guide__concern--active]="selectedKey() === concern.key"
+          (click)="selectConcern(concern.key)"
+        >
+          <span>{{ concern.shortLabel }}</span>
+          <small>{{ concern.assessment.label }}</small>
+        </button>
+      }
+    </aside>
+
+    <main class="support-guide__panel">
+      @let flow = selectedFlow();
+      <div class="support-guide__panel-head">
+        <div>
+          <p class="hope-eyebrow">{{ flow.shortLabel }} path</p>
+          <h2>{{ flow.label }}</h2>
+          <p>
+            This path connects your test, matching care team, related services, and booking flow.
+          </p>
+        </div>
+        <span class="support-guide__source">Source: {{ flowSource() }}</span>
+      </div>
+
+      <div class="support-guide__actions">
+        <a class="support-guide__action support-guide__action--primary" [routerLink]="flow.assessment.link">
+          <span>01</span>
+          <strong>{{ flow.assessment.label }}</strong>
+          <small>Start privately and understand what may be happening.</small>
+        </a>
+
+        <a
+          class="support-guide__action"
+          [routerLink]="ROUTES.links.home"
+          [fragment]="ROUTES.fragments.liveConnect"
+          [queryParams]="liveConnectQueryParams(flow)"
+        >
+          <span>02</span>
+          <strong>Talk now</strong>
+          <small>Open live chat, voice, or video options if someone is available.</small>
+        </a>
+
+        <a
+          class="support-guide__action"
+          [routerLink]="flow.bookingLink"
+          [queryParams]="flow.bookingQueryParams"
+        >
+          <span>03</span>
+          <strong>{{ UX.cta.bookSupport }}</strong>
+          <small>Go to booking with concern and support path already selected.</small>
+        </a>
+
+        <a
+          class="support-guide__action"
+          [routerLink]="flow.careTeamLink"
+          [queryParams]="flow.careTeamQueryParams"
+        >
+          <span>04</span>
+          <strong>{{ UX.cta.meetCareTeam }}</strong>
+          <small>See providers/listeners filtered for this concern.</small>
+        </a>
+
+        <a
+          class="support-guide__action"
+          [routerLink]="flow.servicesLink"
+          [queryParams]="flow.serviceQueryParams"
+        >
+          <span>05</span>
+          <strong>Related services</strong>
+          <small>
+            @if (flow.serviceMatches.length) {
+              {{ flow.serviceMatches.length }} service{{ flow.serviceMatches.length === 1 ? '' : 's' }} matched.
+            } @else {
+              Browse service options for this concern.
+            }
+          </small>
+        </a>
+      </div>
+
+      <div class="support-guide__note">
+        <strong>Gentle note:</strong>
+        These tests are self-checks, not diagnosis. If there is immediate danger or self-harm risk,
+        seek emergency help or a trusted local crisis service right away.
+      </div>
+    </main>
+  </div>
+</section>

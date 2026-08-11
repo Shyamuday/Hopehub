@@ -26,6 +26,18 @@ export const routes: Routes = [
     },
   },
   {
+    path: 'support',
+    loadComponent: () =>
+      import('./features/support/support-guide.component').then((m) => m.SupportGuideComponent),
+    title: 'Find Support - Hope Hub',
+    data: {
+      breadcrumb: 'Find support',
+      description:
+        'Choose a concern and quickly find the right Hope Hub test, live support, care team, or booking path',
+      keywords: 'find mental health support, anxiety support, stress support, Hope Hub',
+    },
+  },
+  {
     path: 'services/:id',
     loadComponent: () =>
       import('./features/services/service-detail.component').then((m) => m.ServiceDetailComponent),
