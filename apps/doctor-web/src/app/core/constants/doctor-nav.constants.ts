@@ -34,10 +34,12 @@ export const DOCTOR_NAV_ICONS: Record<string, { icon: string; shortLabel: string
   Worklist: { icon: '📋', shortLabel: 'Work' },
   'Resume case': { icon: '▶️', shortLabel: 'Resume' },
   Clinical: { icon: '🔬', shortLabel: 'Clinical' },
+  'Client care': { icon: '🤝', shortLabel: 'Care' },
   'Case Analysis': { icon: '🔬', shortLabel: 'Case' },
   'Repertory lookup': { icon: '📖', shortLabel: 'Rep' },
   'Materia Medica': { icon: '📚', shortLabel: 'MM' },
   Patients: { icon: '👥', shortLabel: 'Patients' },
+  Clients: { icon: '🤝', shortLabel: 'Clients' },
   'Go live': { icon: '📡', shortLabel: 'Live' },
   Scan: { icon: '📷', shortLabel: 'Scan' },
   Dashboard: { icon: '📊', shortLabel: 'Home' },
@@ -52,8 +54,6 @@ export const DOCTOR_NAV_ICONS: Record<string, { icon: string; shortLabel: string
   More: { icon: '⋯', shortLabel: 'More' },
 };
 
-const MOBILE_BOTTOM_NAV_LABELS = ['Worklist', 'Case Analysis', 'Patients'] as const;
-
 export function navItemsForDoctorType(type?: HomeopathicDoctorType | null): DoctorNavItemDef[] {
   const capabilities = capabilitiesForDoctorType(type);
   return buildDoctorNav(capabilities);
@@ -62,7 +62,7 @@ export function navItemsForDoctorType(type?: HomeopathicDoctorType | null): Doct
 export function navItemsForDoctorProfile(
   profile?: DoctorProfileSummary | null,
 ): DoctorNavItemDef[] {
-  return buildDoctorNav(capabilitiesForProvider(profile));
+  return buildDoctorNav(capabilitiesForProvider(profile), profile);
 }
 
 export function profileNavItem(): DoctorNavItemDef {
@@ -76,17 +76,12 @@ export function profileNavItem(): DoctorNavItemDef {
   };
 }
 
-const MOBILE_BOTTOM_NAV_IDS = ['worklist', 'case-analysis', 'patients'] as const;
-
-export function mobileBottomNavIds() {
-  return MOBILE_BOTTOM_NAV_IDS;
-}
-
-export function mobileBottomNavLabels() {
-  return MOBILE_BOTTOM_NAV_LABELS;
-}
-
-function buildDoctorNav(capabilities: DoctorCapabilities): DoctorNavItemDef[] {
+function buildDoctorNav(
+  capabilities: DoctorCapabilities,
+  profile?: DoctorProfileSummary | null,
+): DoctorNavItemDef[] {
+  const isHopeHub = profile?.doctorType === 'PSYCHOLOGIST';
+  const userListLabel = isHopeHub ? 'Clients' : 'Patients';
   const items: DoctorNavItemDef[] = [
     {
       id: 'worklist',
@@ -131,10 +126,11 @@ function buildDoctorNav(capabilities: DoctorCapabilities): DoctorNavItemDef[] {
     },
     {
       id: 'clinical',
-      label: 'Clinical',
-      icon: DOCTOR_NAV_ICONS['Clinical'].icon,
-      shortLabel: DOCTOR_NAV_ICONS['Clinical'].shortLabel,
-      enabled: capabilities.caseAnalysis,
+      label: isHopeHub ? 'Client care' : 'Clinical',
+      icon: (isHopeHub ? DOCTOR_NAV_ICONS['Client care'] : DOCTOR_NAV_ICONS['Clinical']).icon,
+      shortLabel: (isHopeHub ? DOCTOR_NAV_ICONS['Client care'] : DOCTOR_NAV_ICONS['Clinical'])
+        .shortLabel,
+      enabled: capabilities.caseAnalysis || capabilities.patients,
       defaultExpanded: true,
       children: [
         {
@@ -159,9 +155,9 @@ function buildDoctorNav(capabilities: DoctorCapabilities): DoctorNavItemDef[] {
         },
         {
           id: 'patients',
-          label: 'Patients',
+          label: userListLabel,
           path: `/${ROUTE_PATHS.PATIENTS}`,
-          enabled: true,
+          enabled: capabilities.patients,
           showInBottomNav: true,
         },
       ],
@@ -173,6 +169,7 @@ function buildDoctorNav(capabilities: DoctorCapabilities): DoctorNavItemDef[] {
       icon: DOCTOR_NAV_ICONS['Go live'].icon,
       shortLabel: DOCTOR_NAV_ICONS['Go live'].shortLabel,
       enabled: capabilities.onlineConsult,
+      showInBottomNav: true,
     },
     {
       id: 'scan',
@@ -189,6 +186,7 @@ function buildDoctorNav(capabilities: DoctorCapabilities): DoctorNavItemDef[] {
       icon: DOCTOR_NAV_ICONS['Dashboard'].icon,
       shortLabel: DOCTOR_NAV_ICONS['Dashboard'].shortLabel,
       enabled: true,
+      showInBottomNav: true,
     },
     {
       id: 'schedule',
@@ -207,7 +205,7 @@ function buildDoctorNav(capabilities: DoctorCapabilities): DoctorNavItemDef[] {
           id: 'leaves',
           label: 'Leaves',
           path: `/${ROUTE_PATHS.LEAVES}`,
-          enabled: true,
+          enabled: capabilities.leaves,
         },
       ],
     },
@@ -218,6 +216,7 @@ function buildDoctorNav(capabilities: DoctorCapabilities): DoctorNavItemDef[] {
       icon: DOCTOR_NAV_ICONS['Earnings'].icon,
       shortLabel: DOCTOR_NAV_ICONS['Earnings'].shortLabel,
       enabled: capabilities.earnings,
+      showInBottomNav: true,
     },
     {
       id: 'content',

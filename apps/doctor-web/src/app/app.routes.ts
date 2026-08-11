@@ -80,7 +80,8 @@ export const routes: Routes = [
       {
         path: ROUTE_PATHS.PATIENTS,
         component: PatientsPage,
-        canActivate: [providerOnboardingGuard],
+        canActivate: [providerOnboardingGuard, providerCapabilityGuard],
+        data: { capability: 'patients' },
       },
       {
         path: ROUTE_PATHS.DISEASE_PAGES,
@@ -116,7 +117,12 @@ export const routes: Routes = [
         data: { capability: 'caseAnalysis' },
       },
       { path: ROUTE_PATHS.PROFILE, component: ProfilePage },
-      { path: ROUTE_PATHS.LEAVES, component: MyLeaves, canActivate: [providerOnboardingGuard] },
+      {
+        path: ROUTE_PATHS.LEAVES,
+        component: MyLeaves,
+        canActivate: [providerOnboardingGuard, providerCapabilityGuard],
+        data: { capability: 'leaves' },
+      },
       {
         path: ROUTE_PATHS.SLOTS,
         component: SlotsPage,

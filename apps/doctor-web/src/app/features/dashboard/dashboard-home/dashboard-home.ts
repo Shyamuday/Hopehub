@@ -7,7 +7,11 @@ import { buildDetailRows, DetailRowsComponent } from '@hopehub/platform-ui';
 import { environment } from '../../../../environments/environment';
 import { API_PATHS } from '../../../core/constants/api-paths.constants';
 import { ROUTE_PATHS } from '../../../core/constants/app-routes.constants';
-import type { DoctorProfileSummary } from '../../../core/constants/doctor-types.constants';
+import {
+  capabilitiesForProvider,
+  type DoctorCapabilities,
+  type DoctorProfileSummary,
+} from '../../../core/constants/doctor-types.constants';
 import {
   buildProviderOnboardingStatus,
   type ProviderOnboardingStatus,
@@ -49,6 +53,7 @@ export class DashboardHome {
   readonly worklistError = signal('');
   readonly worklistCounts = signal({ assigned: 0, inProgress: 0, followUpDue: 0 });
   readonly summary = signal<PaymentSummary | null>(null);
+  readonly capabilities = signal<DoctorCapabilities>(capabilitiesForProvider(null));
   readonly canPrescribe = signal(true);
   readonly listenerProfile = signal<DoctorProfileSummary | null>(null);
   readonly listenerProfileImageUrl = signal<string | null>(null);
@@ -75,7 +80,9 @@ export class DashboardHome {
     try {
       await this.session.load();
       const snapshot = this.session.snapshot();
-      this.canPrescribe.set(this.session.capabilities().prescribe);
+      const capabilities = this.session.capabilities();
+      this.capabilities.set(capabilities);
+      this.canPrescribe.set(capabilities.prescribe);
       this.providerProfile.set(snapshot?.doctorProfile ?? null);
       this.language.set(
         snapshot?.doctorProfile?.doctorType === 'PSYCHOLOGIST'
@@ -90,7 +97,9 @@ export class DashboardHome {
         buildProviderOnboardingStatus(snapshot?.doctorProfile ?? null, snapshot?.profileImageUrl),
       );
     } catch {
-      this.canPrescribe.set(true);
+      const capabilities = capabilitiesForProvider(null);
+      this.capabilities.set(capabilities);
+      this.canPrescribe.set(capabilities.prescribe);
       this.language.set(HOMEOPATHY_PROVIDER_LANGUAGE);
       this.providerProfile.set(null);
       this.onboarding.set(buildProviderOnboardingStatus(null, null));
@@ -99,6 +108,7 @@ export class DashboardHome {
 
   launchActions() {
     const canPrescribe = this.canPrescribe();
+    const capabilities = this.capabilities();
     const sessionTitle = this.language().sessionTitle;
     const profile = this.providerProfile();
     const isHopeHub = profile?.doctorType === 'PSYCHOLOGIST';
@@ -111,6 +121,7 @@ export class DashboardHome {
         route: this.worklistPath,
         queryParams: { view: 'ASSIGNED' },
         primary: true,
+        enabled: true,
       },
       {
         label: isHopeHub ? 'Go live / pause' : 'Manage live availability',
@@ -120,6 +131,7 @@ export class DashboardHome {
         route: `/${ROUTE_PATHS.ONLINE_DOCTOR}`,
         queryParams: null,
         primary: false,
+        enabled: capabilities.onlineConsult,
       },
       {
         label: 'Set slots',
@@ -127,6 +139,7 @@ export class DashboardHome {
         route: `/${ROUTE_PATHS.SLOTS}`,
         queryParams: null,
         primary: false,
+        enabled: capabilities.slots,
       },
       {
         label: 'View earnings',
@@ -134,6 +147,7 @@ export class DashboardHome {
         route: `/${ROUTE_PATHS.EARNINGS}`,
         queryParams: null,
         primary: false,
+        enabled: capabilities.earnings,
       },
       {
         label: 'Polish profile',
@@ -141,6 +155,7 @@ export class DashboardHome {
         route: `/${ROUTE_PATHS.PROFILE}`,
         queryParams: null,
         primary: false,
+        enabled: true,
       },
     ];
 
@@ -151,10 +166,11 @@ export class DashboardHome {
         route: `/${ROUTE_PATHS.CASE_ANALYSIS_STUDIO}`,
         queryParams: null,
         primary: false,
+        enabled: capabilities.caseAnalysis,
       });
     }
 
-    return actions;
+    return actions.filter((action) => action.enabled);
   }
 
   async loadWorklistCounts() {

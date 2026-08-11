@@ -148,53 +148,55 @@
   </section>
 }
 
-<section class="panel">
-  <div class="panel-header">
-    <h2>{{ canPrescribe() ? 'Payment Dashboard' : language().sessionTitle + ' Payment Dashboard' }}</h2>
-    <button type="button" (click)="loadSummary()" [disabled]="loading()">
-      {{ loading() ? 'Refreshing...' : 'Refresh' }}
-    </button>
-  </div>
-
-  @if (loading() && !summary()) {
-    <p class="loading-text">Loading payment summary...</p>
-  } @else if (error()) {
-    <div class="error-row">
-      <p class="error">{{ error() }}</p>
-      <button type="button" class="retry-btn" (click)="loadSummary()">Retry</button>
+@if (capabilities().earnings) {
+  <section class="panel">
+    <div class="panel-header">
+      <h2>{{ canPrescribe() ? 'Payment Dashboard' : language().sessionTitle + ' Payment Dashboard' }}</h2>
+      <button type="button" (click)="loadSummary()" [disabled]="loading()">
+        {{ loading() ? 'Refreshing...' : 'Refresh' }}
+      </button>
     </div>
-  } @else if (summary(); as data) {
-    <hopehub-detail-rows variant="stat" [rows]="paymentStatRows(data)" />
-  } @else {
-    <p class="empty-state">No payment data available yet.</p>
-  }
-</section>
 
-<section class="panel">
-  <h3>Recent Paid {{ language().sessionPluralTitle }}</h3>
-  @if (loading() && !summary()) {
-    <p class="loading-text">Loading...</p>
-  } @else {
-    @for (item of summary()?.payments || []; track item.id) {
-      <article class="card">
-        <strong>{{ item.consultation?.patient?.name || language().userTitle }} — {{ item.consultation?.disease?.name || language().sessionTitle }}</strong>
-        <p>
-          {{ item.amountInPaise / 100 | currency: 'INR' }} | Plan: {{ item.billingPlanCode || 'ONE_TIME' }} |
-          {{ item.createdAt | date: 'mediumDate' }}
-        </p>
-        @if (item.consultation?.id) {
-          <div class="actions">
-            @if (canPrescribe()) {
-              <button type="button" (click)="openPaidConsultation(item.consultation.id)">Open prescription</button>
-              <button type="button" class="ghost" (click)="consultationNav.openCaseAnalysis(item.consultation.id)">Case analysis</button>
-            } @else {
-              <button type="button" (click)="openSession(item.consultation.id)">Open session</button>
-            }
-          </div>
-        }
-      </article>
-    } @empty {
-      <p class="empty-state">No paid {{ language().sessionPluralLower }} yet.</p>
+    @if (loading() && !summary()) {
+      <p class="loading-text">Loading payment summary...</p>
+    } @else if (error()) {
+      <div class="error-row">
+        <p class="error">{{ error() }}</p>
+        <button type="button" class="retry-btn" (click)="loadSummary()">Retry</button>
+      </div>
+    } @else if (summary(); as data) {
+      <hopehub-detail-rows variant="stat" [rows]="paymentStatRows(data)" />
+    } @else {
+      <p class="empty-state">No payment data available yet.</p>
     }
-  }
-</section>
+  </section>
+
+  <section class="panel">
+    <h3>Recent Paid {{ language().sessionPluralTitle }}</h3>
+    @if (loading() && !summary()) {
+      <p class="loading-text">Loading...</p>
+    } @else {
+      @for (item of summary()?.payments || []; track item.id) {
+        <article class="card">
+          <strong>{{ item.consultation?.patient?.name || language().userTitle }} — {{ item.consultation?.disease?.name || language().sessionTitle }}</strong>
+          <p>
+            {{ item.amountInPaise / 100 | currency: 'INR' }} | Plan: {{ item.billingPlanCode || 'ONE_TIME' }} |
+            {{ item.createdAt | date: 'mediumDate' }}
+          </p>
+          @if (item.consultation?.id) {
+            <div class="actions">
+              @if (canPrescribe()) {
+                <button type="button" (click)="openPaidConsultation(item.consultation.id)">Open prescription</button>
+                <button type="button" class="ghost" (click)="consultationNav.openCaseAnalysis(item.consultation.id)">Case analysis</button>
+              } @else {
+                <button type="button" (click)="openSession(item.consultation.id)">Open session</button>
+              }
+            </div>
+          }
+        </article>
+      } @empty {
+        <p class="empty-state">No paid {{ language().sessionPluralLower }} yet.</p>
+      }
+    }
+  </section>
+}

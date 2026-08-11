@@ -10,7 +10,6 @@ import { environment } from '../../../environments/environment';
 import { AUTH_TOKEN_KEY } from '../../core/constants/auth.constants';
 import { ROUTE_PATHS } from '../../core/constants/app-routes.constants';
 import {
-  mobileBottomNavIds,
   profileNavItem,
   type DoctorNavChildLink,
   type DoctorNavItemDef,
@@ -323,26 +322,23 @@ export class DoctorShell implements OnInit, OnDestroy {
     const picked: DoctorBottomNavItem[] = [];
     const used = new Set<string>();
 
-    for (const id of mobileBottomNavIds()) {
-      if (id === 'worklist') {
-        const item = items.find((entry) => entry.id === 'worklist' && entry.enabled && entry.path);
-        if (item?.path && !used.has(item.path)) {
-          picked.push({
-            id: item.id,
-            label: item.label,
-            path: item.path,
-            queryParams: item.queryParams,
-            icon: item.icon,
-            shortLabel: item.shortLabel,
-          });
-          used.add(item.path);
-        }
-        continue;
+    for (const item of items) {
+      if (picked.length >= 3) break;
+      if (item.enabled && item.path && item.showInBottomNav && !used.has(item.path)) {
+        picked.push({
+          id: item.id,
+          label: item.label,
+          path: item.path,
+          queryParams: item.queryParams,
+          icon: item.icon,
+          shortLabel: item.shortLabel,
+        });
+        used.add(item.path);
       }
 
-      const clinical = items.find((entry) => entry.id === 'clinical');
-      const child = clinical?.children?.find((entry) => entry.id === id && entry.enabled);
-      if (child && !used.has(child.path)) {
+      for (const child of item.children || []) {
+        if (picked.length >= 3) break;
+        if (!child.enabled || !child.showInBottomNav || used.has(child.path)) continue;
         const icons = DOCTOR_NAV_ICONS[child.label] ?? DOCTOR_NAV_ICONS['Clinical'];
         picked.push({
           id: child.id,
