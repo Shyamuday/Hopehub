@@ -1,0 +1,53 @@
+<aside
+  class="hope-guide"
+  [class.hope-guide--open]="guide.open()"
+  [class.hope-guide--disabled]="!guide.enabled()"
+  aria-label="Hope Guide"
+>
+  @if (guide.enabled() && guide.open()) {
+    <section class="hope-guide__panel">
+      <div class="hope-guide__head">
+        <div>
+          <p>Hope Guide</p>
+          <h2>Gentle help for this page</h2>
+        </div>
+        <button type="button" aria-label="Close Hope Guide" (click)="guide.setOpen(false)">×</button>
+      </div>
+
+      <div class="hope-guide__tips">
+        @for (tip of guide.tips(); track tip.title) {
+          <article class="hope-guide__tip" tabindex="0">
+            <strong>{{ tip.title }}</strong>
+            <p>{{ tip.body }}</p>
+            @if (tip.actionLabel && tip.actionLink) {
+              <a
+                [routerLink]="tip.actionLink"
+                [fragment]="tip.actionFragment || null"
+                [queryParams]="tip.actionQueryParams || null"
+              >
+                {{ tip.actionLabel }}
+              </a>
+            }
+          </article>
+        }
+      </div>
+
+      <div class="hope-guide__foot">
+        <span>For smart users who know the way: switch me off 🙂</span>
+        <button type="button" (click)="guide.toggleEnabled()">Turn off</button>
+      </div>
+    </section>
+  }
+
+  <button
+    type="button"
+    class="hope-guide__toggle"
+    [attr.aria-expanded]="guide.open()"
+    [attr.aria-label]="guide.enabled() ? 'Toggle Hope Guide' : 'Turn on Hope Guide'"
+    (click)="guide.enabled() ? guide.toggleOpen() : guide.toggleEnabled()"
+    (mouseenter)="guide.setOpen(true)"
+  >
+    <span class="hope-guide__spark">?</span>
+    <span class="hope-guide__text">{{ guide.enabled() ? 'Hope Guide' : 'Guide off' }}</span>
+  </button>
+</aside>

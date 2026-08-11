@@ -9,6 +9,7 @@ export * from './auth-modal.service';
 export * from './group-chat-teaser.service';
 export * from './live-connect-action.service';
 export * from './consumer-flow-preferences.service';
+export * from './hope-guide.service';
 export * from './auth.service';
 export * from './seo.service';
 export * from './notification.service';

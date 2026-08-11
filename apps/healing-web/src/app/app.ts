@@ -5,6 +5,7 @@ import { filter, take } from 'rxjs';
 import { HeaderComponent, FooterComponent } from './layout';
 import {
   GlobalLoadingComponent,
+  HopeGuideComponent,
   QuickAccessComponent,
   AuthModalComponent,
   ScrollToTopComponent,
@@ -22,6 +23,7 @@ import { FontLoader } from './core/utils/font-loader.util';
     HeaderComponent,
     FooterComponent,
     GlobalLoadingComponent,
+    HopeGuideComponent,
     QuickAccessComponent,
     AuthModalComponent,
     ScrollToTopComponent,
