@@ -237,7 +237,7 @@
             <p class="mb-3 mt-1 text-sm leading-6 text-slate-600">
               Use this when both you and the expert are ready. Browser may ask for mic/camera permission.
             </p>
-            <app-consultation-call-panel
+            <hopehub-consultation-call-panel
               [consultationId]="session.id"
               [targetUserId]="session.assignedDoctor?.id || ''"
               [socket]="socket()"
@@ -245,7 +245,7 @@
               [enabled]="canInteract()"
               [allowAudio]="allowAudioCall()"
               [allowVideo]="allowVideoCall()"
-            ></app-consultation-call-panel>
+            ></hopehub-consultation-call-panel>
           </div>
         } @else {
           <div class="side-card">

@@ -8,11 +8,8 @@ import type { ConsultationCallSession } from '../../core/services/booking.servic
 import { NotificationService } from '../../core/services/notification.service';
 import { HopeHubRealtimeService } from '../../core/services/realtime.service';
 import { User } from '../../core/models/auth.model';
-import { ConsultationCallPanelComponent } from '../../shared/components/consultation-call/consultation-call-panel.component';
-import type {
-  CallSignalingSocket,
-  IceServerConfig,
-} from '../../shared/components/consultation-call/webrtc-call.types';
+import type { CallSignalingSocket, IceServerConfig } from '@hopehub/platform-ui';
+import { ConsultationCallPanelComponent } from '@hopehub/platform-ui';
 
 type LiveSessionMessage = {
   id: string;

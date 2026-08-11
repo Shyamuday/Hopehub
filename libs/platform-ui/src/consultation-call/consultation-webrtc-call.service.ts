@@ -103,13 +103,15 @@ export class ConsultationWebrtcCallService {
     params.socket.emit(CALL_SOCKET_EVENTS.RING, {
       consultationId: params.consultationId,
       targetUserId: params.targetUserId,
-      mode: params.mode
+      mode: params.mode,
+      metadata: this.callMetadata()
     });
     params.socket.emit(CALL_SOCKET_EVENTS.OFFER, {
       consultationId: params.consultationId,
       targetUserId: params.targetUserId,
       mode: params.mode,
-      sdp: offer
+      sdp: offer,
+      metadata: this.callMetadata()
     });
     this.startAnswerTimeout();
   }
@@ -145,15 +147,23 @@ export class ConsultationWebrtcCallService {
     }
   }
 
-  rejectCall(params: { consultationId: string; targetUserId: string }) {
-    this.socket?.emit(CALL_SOCKET_EVENTS.REJECT, params);
+  rejectCall(params: { consultationId: string; targetUserId: string; reason?: string }) {
+    this.socket?.emit(CALL_SOCKET_EVENTS.REJECT, {
+      ...params,
+      reason: params.reason || 'rejected',
+      metadata: this.callMetadata()
+    });
     this.pendingOffer.set(null);
     this.incomingCall.set(false);
     this.cleanup('ended');
   }
 
-  endCall(params: { consultationId: string; targetUserId: string }) {
-    this.socket?.emit(CALL_SOCKET_EVENTS.END, params);
+  endCall(params: { consultationId: string; targetUserId: string; reason?: string }) {
+    this.socket?.emit(CALL_SOCKET_EVENTS.END, {
+      ...params,
+      reason: params.reason || 'ended_by_user',
+      metadata: this.callMetadata()
+    });
     this.cleanup('ended');
   }
 
@@ -264,10 +274,21 @@ export class ConsultationWebrtcCallService {
       iceServers: normalizeIceServers(iceServers),
       iceTransportPolicy: 'all'
     });
-    const stream = await navigator.mediaDevices.getUserMedia({
-      audio: true,
-      video: mode === 'video'
-    });
+    let stream: MediaStream;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({
+        audio: true,
+        video: mode === 'video'
+      });
+    } catch {
+      const message =
+        mode === 'video'
+          ? 'Camera and microphone access are required for video calls.'
+          : 'Microphone access is required for voice calls.';
+      this.error.set(message);
+      this.state.set('error');
+      throw new Error(message);
+    }
     this.localStream.set(stream);
 
     for (const track of stream.getTracks()) {
@@ -308,7 +329,10 @@ export class ConsultationWebrtcCallService {
     }
 
     if (connectionState === 'failed' || iceState === 'failed') {
-      this.failCall('Call connection failed. Please try again or continue in chat.');
+      this.failCall(
+        'connection_failed',
+        'Call connection failed. Please try again or continue in chat.'
+      );
       return;
     }
 
@@ -322,7 +346,7 @@ export class ConsultationWebrtcCallService {
     this.clearAnswerTimeout();
     this.answerTimeout = setTimeout(() => {
       if (this.state() !== 'ringing') return;
-      this.failCall('No answer yet. Please try again or send a message.');
+      this.failCall('no_answer', 'No answer yet. Please try again or send a message.');
     }, CALL_ANSWER_TIMEOUT_MS);
   }
 
@@ -330,7 +354,10 @@ export class ConsultationWebrtcCallService {
     this.clearMediaTimeout();
     this.mediaTimeout = setTimeout(() => {
       if (this.state() === 'connected' || this.state() === 'ended') return;
-      this.failCall('Call could not connect. Please try again or continue in chat.');
+      this.failCall(
+        'media_timeout',
+        'Call could not connect. Please try again or continue in chat.'
+      );
     }, MEDIA_CONNECT_TIMEOUT_MS);
   }
 
@@ -338,14 +365,21 @@ export class ConsultationWebrtcCallService {
     if (this.reconnectTimeout) return;
     this.reconnectTimeout = setTimeout(() => {
       if (this.state() !== 'reconnecting') return;
-      this.failCall('Call disconnected. Please try again or continue in chat.');
+      this.failCall(
+        'reconnect_timeout',
+        'Call disconnected. Please try again or continue in chat.'
+      );
     }, RECONNECT_GRACE_MS);
   }
 
-  private failCall(message: string) {
+  private failCall(reason: string, message: string) {
     const context = this.callContext;
     if (context) {
-      this.socket?.emit(CALL_SOCKET_EVENTS.END, context);
+      this.socket?.emit(CALL_SOCKET_EVENTS.END, {
+        ...context,
+        reason,
+        metadata: this.callMetadata()
+      });
     }
     this.cleanup('ended');
     this.error.set(message);
@@ -373,6 +407,22 @@ export class ConsultationWebrtcCallService {
     this.clearAnswerTimeout();
     this.clearMediaTimeout();
     this.clearReconnectTimeout();
+  }
+
+  private callMetadata(): Record<string, unknown> {
+    return {
+      userAgent:
+        typeof navigator !== 'undefined' && 'userAgent' in navigator
+          ? navigator.userAgent
+          : undefined,
+      platform:
+        typeof navigator !== 'undefined' && 'platform' in navigator
+          ? navigator.platform
+          : undefined,
+      connectionState: this.pc?.connectionState,
+      iceConnectionState: this.pc?.iceConnectionState,
+      mode: this.callMode()
+    };
   }
 
   private async defaultMediaAccess(mode: CallMode): Promise<MediaAccessResult> {

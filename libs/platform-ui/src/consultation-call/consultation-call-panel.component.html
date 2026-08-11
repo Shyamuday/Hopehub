@@ -10,6 +10,9 @@
           @if (allowVideo) {
             <button type="button" class="btn-video" (click)="start('video')" [disabled]="busy()">Video call</button>
           }
+          <button type="button" class="btn-test" (click)="testMedia(allowVideo ? 'video' : 'audio')" [disabled]="mediaChecking()">
+            {{ mediaChecking() ? 'Checking...' : 'Test mic/camera' }}
+          </button>
         }
         @if (call.state() === 'ringing' && call.incomingCall()) {
           <button type="button" class="btn-accept" (click)="accept()">Accept</button>
@@ -25,6 +28,12 @@
       </div>
       @if (call.error()) {
         <span class="call-error">{{ call.error() }}</span>
+        @if (showVoiceFallback()) {
+          <button type="button" class="btn-voice" (click)="tryVoiceFallback()" [disabled]="busy()">Try voice instead</button>
+        }
+      }
+      @if (mediaCheckMessage()) {
+        <span class="call-help">{{ mediaCheckMessage() }}</span>
       }
     </div>
 

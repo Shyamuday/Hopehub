@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, map, shareReplay } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import type { IceServerConfig } from '../../shared/components/consultation-call/webrtc-call.types';
+import type { IceServerConfig } from '@hopehub/platform-ui';
 
 export type HopeHubBookingPayload = {
   serviceName: string;

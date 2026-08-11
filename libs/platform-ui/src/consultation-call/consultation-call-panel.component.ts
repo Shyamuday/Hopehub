@@ -43,6 +43,8 @@ export class ConsultationCallPanelComponent implements OnChanges, OnDestroy {
   readonly busy = signal(false);
   readonly micOn = signal(true);
   readonly cameraOn = signal(true);
+  readonly mediaCheckMessage = signal('');
+  readonly mediaChecking = signal(false);
 
   constructor() {
     effect(() => {
@@ -113,6 +115,10 @@ export class ConsultationCallPanelComponent implements OnChanges, OnDestroy {
     return map[this.call.state()] ?? '';
   }
 
+  showVoiceFallback() {
+    return this.allowAudio && this.call.callMode() === 'video' && Boolean(this.call.error());
+  }
+
   async start(mode: CallMode) {
     if ((mode === 'audio' && !this.allowAudio) || (mode === 'video' && !this.allowVideo)) return;
     if (!this.socket || !this.consultationId || !this.targetUserId) return;
@@ -129,6 +135,31 @@ export class ConsultationCallPanelComponent implements OnChanges, OnDestroy {
       // service sets error state
     } finally {
       this.busy.set(false);
+    }
+  }
+
+  async tryVoiceFallback() {
+    this.call.cleanup('ended');
+    await this.start('audio');
+  }
+
+  async testMedia(mode: CallMode) {
+    if (this.mediaChecking()) return;
+    this.mediaChecking.set(true);
+    this.mediaCheckMessage.set('');
+    try {
+      const result = this.ensureMediaAccess
+        ? await this.ensureMediaAccess(mode)
+        : await this.defaultMediaCheck(mode);
+      this.mediaCheckMessage.set(
+        result.granted
+          ? mode === 'video'
+            ? 'Camera and mic look ready.'
+            : 'Mic looks ready.'
+          : result.message || 'Media access is blocked.'
+      );
+    } finally {
+      this.mediaChecking.set(false);
     }
   }
 
@@ -157,5 +188,27 @@ export class ConsultationCallPanelComponent implements OnChanges, OnDestroy {
     const next = !this.cameraOn();
     this.cameraOn.set(next);
     this.call.setCameraEnabled(next);
+  }
+
+  private async defaultMediaCheck(mode: CallMode): Promise<MediaAccessResult> {
+    if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) {
+      return { granted: false, message: 'Calls are not supported on this device/browser.' };
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: true,
+        video: mode === 'video'
+      });
+      stream.getTracks().forEach((track) => track.stop());
+      return { granted: true };
+    } catch {
+      return {
+        granted: false,
+        message:
+          mode === 'video'
+            ? 'Camera or mic is blocked. Allow access from browser settings, or try voice.'
+            : 'Mic is blocked. Allow microphone access from browser settings.'
+      };
+    }
   }
 }
