@@ -3,6 +3,7 @@ import { RouterModule } from '@angular/router';
 import { NOTE_CONTENT } from '../../../../core/constants/note-content.constants';
 import { CONSUMER_UX_COPY } from '../../../../core/constants/consumer-ux-copy.constants';
 import { CONSUMER_ROUTES } from '../../../../core/constants/consumer-routes.constants';
+import { PageHeaderComponent } from '../../../../shared/components';
 
 interface HowItWorksStep {
   title: string;
@@ -12,7 +13,7 @@ interface HowItWorksStep {
 @Component({
   selector: 'app-how-it-works',
   standalone: true,
-  imports: [RouterModule],
+  imports: [RouterModule, PageHeaderComponent],
   templateUrl: './how-it-works.component.html',
 })
 export class HowItWorksComponent {

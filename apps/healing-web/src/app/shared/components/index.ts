@@ -33,3 +33,4 @@ export * from './form-checkbox/form-checkbox.component';
 export * from './selectable-card/selectable-card.component';
 export * from './app-button/app-button.component';
 export * from './app-modal/app-modal.component';
+export * from './page-header/page-header.component';

@@ -1,12 +1,10 @@
 <section class="hope-section relative overflow-hidden border-b border-gray-100">
   <div class="hope-section-inner relative">
-    <div class="hope-section-header">
-      <p class="hope-eyebrow">Support options</p>
-      <h2 class="hope-section-title">{{ UX.service.supportOptionsTitle }}</h2>
-      <p class="hope-section-copy">
-        Choose the concern you want help with, then continue with the right Hope Hub {{ UX.supportPath.genericRouteText }}.
-      </p>
-    </div>
+    <app-page-header
+      eyebrow="Support options"
+      [title]="UX.service.supportOptionsTitle"
+      [description]="'Choose the concern you want help with, then continue with the right Hope Hub ' + UX.supportPath.genericRouteText + '.'"
+    />
 
     <div class="relative">
       <div class="overflow-hidden rounded-lg">

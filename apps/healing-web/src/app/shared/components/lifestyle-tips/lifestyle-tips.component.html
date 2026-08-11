@@ -1,13 +1,11 @@
 <section class="professional-page">
   <div class="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
     
-    <!-- Header -->
-    <div class="professional-header">
-      <h1 class="professional-title">Lifestyle tips</h1>
-      <p class="professional-copy">
-        Evidence-based lifestyle changes to support your mental health and well-being.
-      </p>
-    </div>
+    <app-page-header
+      [level]="1"
+      title="Lifestyle tips"
+      description="Evidence-based lifestyle changes to support your mental health and well-being."
+    />
 
     <!-- Recommended Tips (if coming from assessment) -->
     @if (recommendedTips().length > 0) {

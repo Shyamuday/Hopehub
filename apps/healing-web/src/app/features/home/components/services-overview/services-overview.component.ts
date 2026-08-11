@@ -1,6 +1,6 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
-import { ServiceCardComponent } from '../../../../shared/components';
+import { PageHeaderComponent, ServiceCardComponent } from '../../../../shared/components';
 import { Service, ServiceCategory } from '../../../../core/models';
 import { BookingService, HopeHubService } from '../../../../core/services/booking.service';
 import { CONSUMER_ROUTES } from '../../../../core/constants/consumer-routes.constants';
@@ -8,7 +8,7 @@ import { CONSUMER_ROUTES } from '../../../../core/constants/consumer-routes.cons
 @Component({
   selector: 'app-services-overview',
   standalone: true,
-  imports: [RouterModule, ServiceCardComponent],
+  imports: [RouterModule, ServiceCardComponent, PageHeaderComponent],
   templateUrl: './services-overview.component.html',
   styleUrl: './services-overview.component.scss',
 })

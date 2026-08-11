@@ -7,6 +7,7 @@ import { CONSUMER_UX_COPY } from '../../../core/constants/consumer-ux-copy.const
 import { BookingService, HopeHubService } from '../../../core/services/booking.service';
 import { PublicCommunicationConfigService } from '../../../core/services/public-communication-config.service';
 import { AppButtonComponent } from '../app-button/app-button.component';
+import { PageHeaderComponent } from '../page-header/page-header.component';
 
 export interface CarouselService {
   id: string;
@@ -28,7 +29,7 @@ export interface CarouselService {
 @Component({
   selector: 'app-services-carousel',
   standalone: true,
-  imports: [RouterModule, AppButtonComponent],
+  imports: [RouterModule, AppButtonComponent, PageHeaderComponent],
   templateUrl: './services-carousel.component.html',
   styleUrl: './services-carousel.component.scss',
 })

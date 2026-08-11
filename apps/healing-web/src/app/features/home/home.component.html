@@ -23,10 +23,12 @@
 <section class="hope-section hope-section--photo-story">
   <div class="hope-section-inner">
     <div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-      <div>
-        <p class="hope-eyebrow">What brings people here</p>
-        <h2 class="hope-section-title">Real life is messy. Support can still feel simple.</h2>
-      </div>
+      <app-page-header
+        align="left"
+        compact
+        eyebrow="What brings people here"
+        title="Real life is messy. Support can still feel simple."
+      />
       <a [routerLink]="ROUTES.links.support" class="btn-outline">{{ UX.cta.exploreSupportOptions }}</a>
     </div>
 
@@ -45,13 +47,11 @@
 
 <section class="hope-section hope-section--mist">
   <div class="hope-section-inner">
-    <div class="hope-section-header">
-      <p class="hope-eyebrow">Start here</p>
-      <h2 class="hope-section-title">Choose the support that feels right today</h2>
-      <p class="hope-section-copy">
-        Keep it simple. Start privately, join the community, or take a short test before deciding.
-      </p>
-    </div>
+    <app-page-header
+      eyebrow="Start here"
+      title="Choose the support that feels right today"
+      description="Keep it simple. Start privately, join the community, or take a short test before deciding."
+    />
 
     <div class="grid gap-4 md:grid-cols-3">
       <article class="hope-card hope-motion-card">
@@ -121,14 +121,13 @@
 <section class="hope-section">
   <div class="hope-section-inner">
     <div class="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-      <div>
-        <p class="hope-eyebrow">Care team</p>
-        <h2 class="hope-section-title">Talk with a Hope Hub expert</h2>
-        <p class="hope-section-copy max-w-2xl">
-          Browse verified professionals, counsellors, emotional support listeners, coaches, and wellness guides for
-          anxiety, relationship stress, overthinking, family concerns, and private guidance.
-        </p>
-      </div>
+      <app-page-header
+        align="left"
+        compact
+        eyebrow="Care team"
+        title="Talk with a Hope Hub expert"
+        description="Browse verified professionals, counsellors, emotional support listeners, coaches, and wellness guides for anxiety, relationship stress, overthinking, family concerns, and private guidance."
+      />
       <a [routerLink]="ROUTES.links.careTeam" class="btn-secondary">{{ UX.cta.meetCareTeam }}</a>
     </div>
 
@@ -167,11 +166,12 @@
 <section class="hope-section hope-section--sage">
   <div class="hope-section-inner">
     <div class="mx-auto max-w-3xl text-center sm:p-8">
-      <p class="hope-eyebrow">Next step</p>
-      <h2 class="hope-section-title">Start privately. Continue only when ready.</h2>
-      <p class="hope-section-copy">
-        No pressure to explain everything at once. {{ UX.cta.bookSupport }} or begin with a short test.
-      </p>
+      <app-page-header
+        compact
+        eyebrow="Next step"
+        title="Start privately. Continue only when ready."
+        [description]="'No pressure to explain everything at once. ' + UX.cta.bookSupport + ' or begin with a short test.'"
+      />
       <div class="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
         <a [routerLink]="ROUTES.links.bookSupport" class="btn-primary">{{ UX.cta.bookSupport }}</a>
         <a [routerLink]="ROUTES.links.support" class="btn-outline">{{ UX.cta.startTest }}</a>

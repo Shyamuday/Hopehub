@@ -19,6 +19,7 @@ import {
 } from '../form-dropdown/form-dropdown.component';
 import { AppButtonComponent } from '../app-button/app-button.component';
 import { EmptyStateComponent } from '../empty-state/empty-state.component';
+import { PageHeaderComponent } from '../page-header/page-header.component';
 
 @Component({
   selector: 'app-exercises',
@@ -29,18 +30,15 @@ import { EmptyStateComponent } from '../empty-state/empty-state.component';
     FormDropdownComponent,
     AppButtonComponent,
     EmptyStateComponent,
+    PageHeaderComponent,
   ],
   template: `
     <section class="professional-page">
       <div class="container mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-        <!-- Header -->
-        <div class="professional-header">
-          <h2 class="professional-title">Mental health exercises</h2>
-          <p class="professional-copy">
-            Discover evidence-based exercises to improve your mental well-being. Practice regularly
-            for best results.
-          </p>
-        </div>
+        <app-page-header
+          title="Mental health exercises"
+          description="Discover evidence-based exercises to improve your mental well-being. Practice regularly for best results."
+        />
 
         <!-- Filters and Search -->
         <div class="mb-6 rounded-lg border border-gray-200 bg-white p-5 shadow-sm">

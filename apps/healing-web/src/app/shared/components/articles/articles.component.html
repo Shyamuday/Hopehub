@@ -1,13 +1,11 @@
 <section class="professional-page">
   <div class="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
 
-    <!-- Header -->
-    <div class="professional-header">
-      <h1 class="professional-title">Mental health articles</h1>
-      <p class="professional-copy">
-        Evidence-based articles to help you understand and improve your mental health.
-      </p>
-    </div>
+    <app-page-header
+      [level]="1"
+      title="Mental health articles"
+      description="Evidence-based articles to help you understand and improve your mental health."
+    />
 
     <!-- Recommended Articles (if coming from assessment) -->
     @if (recommendedArticles().length > 0) {

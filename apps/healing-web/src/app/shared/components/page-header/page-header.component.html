@@ -1,0 +1,29 @@
+<header
+  class="page-header"
+  [class.page-header--left]="align === 'left'"
+  [class.page-header--compact]="compact"
+>
+  @if (eyebrow) {
+    <p class="page-header__eyebrow">{{ eyebrow }}</p>
+  }
+
+  @switch (level) {
+    @case (1) {
+      <h1 class="page-header__title">{{ title }}</h1>
+    }
+    @case (3) {
+      <h3 class="page-header__title">{{ title }}</h3>
+    }
+    @default {
+      <h2 class="page-header__title">{{ title }}</h2>
+    }
+  }
+
+  @if (description) {
+    <p class="page-header__description">{{ description }}</p>
+  }
+
+  <div class="page-header__actions">
+    <ng-content />
+  </div>
+</header>

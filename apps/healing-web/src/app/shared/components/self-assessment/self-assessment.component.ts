@@ -2,6 +2,7 @@ import { Component, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CONSUMER_UX_COPY } from '../../../core/constants/consumer-ux-copy.constants';
 import { AppButtonComponent } from '../app-button/app-button.component';
+import { PageHeaderComponent } from '../page-header/page-header.component';
 import { SelectableCardComponent } from '../selectable-card/selectable-card.component';
 
 interface AssessmentQuestion {
@@ -21,7 +22,7 @@ interface AssessmentResult {
 @Component({
   selector: 'app-self-assessment',
   standalone: true,
-  imports: [FormsModule, AppButtonComponent, SelectableCardComponent],
+  imports: [FormsModule, AppButtonComponent, PageHeaderComponent, SelectableCardComponent],
   templateUrl: './self-assessment.component.html',
   styleUrl: './self-assessment.component.scss',
 })

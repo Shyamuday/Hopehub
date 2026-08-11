@@ -1,13 +1,10 @@
 <section class="hope-section border-b border-gray-100">
   <div class="hope-section-inner">
-    <div class="hope-section-header">
-      <p class="hope-eyebrow">Services</p>
-      <h2 class="hope-section-title">Mental health services</h2>
-      <p class="hope-section-copy">
-        Comprehensive support for your mental health journey with professional, compassionate
-        care tailored to your unique needs.
-      </p>
-    </div>
+    <app-page-header
+      eyebrow="Services"
+      title="Mental health services"
+      description="Comprehensive support for your mental health journey with professional, compassionate care tailored to your unique needs."
+    />
 
     <div class="service-grid">
       @for (service of services(); track service.id) {

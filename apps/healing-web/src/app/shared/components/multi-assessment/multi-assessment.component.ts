@@ -27,6 +27,7 @@ import { CONSUMER_STORAGE_KEYS } from '../../../core/constants/storage-keys.cons
 import { firstValueFrom } from 'rxjs';
 import { AppButtonComponent } from '../app-button/app-button.component';
 import { CouponBoxComponent } from '../coupon-box/coupon-box.component';
+import { PageHeaderComponent } from '../page-header/page-header.component';
 import { SelectableCardComponent } from '../selectable-card/selectable-card.component';
 
 @Component({
@@ -38,6 +39,7 @@ import { SelectableCardComponent } from '../selectable-card/selectable-card.comp
     DatePipe,
     AppButtonComponent,
     CouponBoxComponent,
+    PageHeaderComponent,
     SelectableCardComponent,
   ],
   templateUrl: './multi-assessment.component.html',

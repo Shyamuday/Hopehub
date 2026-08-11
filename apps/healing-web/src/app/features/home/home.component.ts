@@ -7,6 +7,7 @@ import {
   FeedbackSectionComponent,
   GuidedSupportEntryComponent,
   OfferBannerCarouselComponent,
+  PageHeaderComponent,
   ProviderCardComponent,
 } from '../../shared/components';
 import { APP_CONSTANTS } from '../../core';
@@ -33,6 +34,7 @@ import { LiveConnectComponent } from './components/live-connect/live-connect.com
     HomeToolsComponent,
     LiveConnectComponent,
     OfferBannerCarouselComponent,
+    PageHeaderComponent,
     ProviderCardComponent,
     RouterModule,
   ],

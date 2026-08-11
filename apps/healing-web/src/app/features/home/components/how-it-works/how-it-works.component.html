@@ -1,12 +1,10 @@
 <section class="hope-section relative overflow-hidden border-b border-gray-100">
   <div class="hope-section-inner">
-    <div class="hope-section-header">
-      <p class="hope-eyebrow">How it works</p>
-      <h2 class="hope-section-title">A simple path to support</h2>
-      <p class="hope-section-copy">
-        A simple, low-pressure path from booking to support.
-      </p>
-    </div>
+    <app-page-header
+      eyebrow="How it works"
+      title="A simple path to support"
+      description="A simple, low-pressure path from booking to support."
+    />
 
     <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
       @for (step of steps; track step.title; let i = $index) {

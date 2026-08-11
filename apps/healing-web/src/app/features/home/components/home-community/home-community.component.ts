@@ -3,11 +3,12 @@ import { RouterModule } from '@angular/router';
 import { APP_CONSTANTS } from '../../../../core';
 import { CONSUMER_ROUTES } from '../../../../core/constants/consumer-routes.constants';
 import { Meetup } from '../../../../core/models';
+import { PageHeaderComponent } from '../../../../shared/components';
 
 @Component({
   selector: 'app-home-community',
   standalone: true,
-  imports: [RouterModule],
+  imports: [RouterModule, PageHeaderComponent],
   templateUrl: './home-community.component.html',
 })
 export class HomeCommunityComponent {

@@ -1,13 +1,10 @@
 <section class="professional-page">
   <div class="max-w-4xl mx-auto px-6">
     
-    <!-- Header -->
-    <div class="professional-header">
-      <h2 class="professional-title">Mental health self-assessment</h2>
-      <p class="professional-copy">
-        Take a moment to reflect on your emotional well-being. This assessment helps you understand your current state.
-      </p>
-    </div>
+    <app-page-header
+      title="Mental health self-assessment"
+      description="Take a moment to reflect on your emotional well-being. This assessment helps you understand your current state."
+    />
 
     <!-- Disclaimer -->
     @if (!assessmentStarted() && !showResults()) {

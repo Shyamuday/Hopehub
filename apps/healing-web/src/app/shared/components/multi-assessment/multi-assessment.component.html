@@ -1,13 +1,11 @@
 <section class="professional-page">
   <div class="container mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
 
-    <!-- Header -->
-    <div class="professional-header">
-      <h1 class="professional-title">Mental health assessments</h1>
-      <p class="professional-copy">
-        Pick a test and start. You only need to sign in after completing it to view and save the result.
-      </p>
-    </div>
+    <app-page-header
+      [level]="1"
+      title="Mental health assessments"
+      description="Pick a test and start. You only need to sign in after completing it to view and save the result."
+    />
 
     <!-- Assessment Selection -->
     @if (!selectedAssessment() && !showResults()) {
