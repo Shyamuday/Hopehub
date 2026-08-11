@@ -370,6 +370,24 @@ import {
                 </div>
               </div>
 
+              <section class="direct-test__human-result" aria-label="Result explanation">
+                <article>
+                  <p>What this may mean</p>
+                  <h2>{{ humanResultTitle() }}</h2>
+                  <span>{{ humanResultCopy() }}</span>
+                </article>
+                <article>
+                  <p>Best next step</p>
+                  <h2>{{ resultActionTitle() }}</h2>
+                  <span>{{ resultActionCopy() }}</span>
+                </article>
+                <article class="direct-test__human-result--safety">
+                  <p>Safety note</p>
+                  <h2>{{ resultSafetyTitle() }}</h2>
+                  <span>{{ resultSafetyCopy() }}</span>
+                </article>
+              </section>
+
               @if (result()!.safetyFlag) {
                 <div
                   class="mt-5 rounded-lg border border-red-200 bg-red-50 p-4 text-sm leading-6 text-red-800"
@@ -719,6 +737,48 @@ import {
         padding: 1rem;
       }
 
+      .direct-test__human-result {
+        display: grid;
+        gap: 0.85rem;
+        margin-top: 1.25rem;
+      }
+
+      .direct-test__human-result article {
+        border: 1px solid rgba(226, 232, 240, 0.95);
+        border-radius: 0.95rem;
+        background: linear-gradient(135deg, rgba(248, 250, 252, 0.96), rgba(255, 255, 255, 0.98));
+        padding: 0.95rem;
+      }
+
+      .direct-test__human-result article p {
+        margin: 0;
+        color: var(--brand-primary);
+        font-size: 0.72rem;
+        font-weight: 950;
+        letter-spacing: 0.07em;
+        text-transform: uppercase;
+      }
+
+      .direct-test__human-result article h2 {
+        margin: 0.25rem 0 0;
+        color: #0f172a;
+        font-size: 0.98rem;
+        font-weight: 950;
+      }
+
+      .direct-test__human-result article span {
+        display: block;
+        margin-top: 0.4rem;
+        color: #475569;
+        font-size: 0.9rem;
+        line-height: 1.6;
+      }
+
+      .direct-test__human-result--safety {
+        border-color: #fde68a !important;
+        background: #fffbeb !important;
+      }
+
       .direct-test__matched-head {
         display: flex;
         align-items: flex-start;
@@ -836,6 +896,10 @@ import {
       @media (min-width: 768px) {
         .direct-test__intro {
           grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .direct-test__human-result {
+          grid-template-columns: repeat(3, minmax(0, 1fr));
         }
 
         .direct-test__matched-grid {
@@ -1197,6 +1261,75 @@ export class DirectAssessmentComponent implements OnInit {
       : {};
   }
 
+  humanResultTitle(): string {
+    const result = this.result();
+    if (!result) return 'A snapshot, not a label';
+    const level = result.level.toLowerCase();
+    if (this.isHighResultLevel(level)) return 'Your system may be carrying a lot right now';
+    if (this.isModerateResultLevel(level)) return 'There may be a pattern worth supporting';
+    if (this.isLowResultLevel(level)) return 'You may be doing okay, with some signals to notice';
+    return 'A snapshot of how things feel lately';
+  }
+
+  humanResultCopy(): string {
+    const assessment = this.assessment();
+    const result = this.result();
+    if (!assessment || !result) return '';
+    const level = result.level.toLowerCase();
+    const concern = assessment.category || assessment.type || 'emotional wellness';
+    if (this.isHighResultLevel(level)) {
+      return `Your ${concern} score suggests things may feel intense or hard to manage. This does not define you, and it is not a diagnosis — it simply means support may be useful sooner rather than later.`;
+    }
+    if (this.isModerateResultLevel(level)) {
+      return `Your ${concern} score suggests this concern may be affecting your days enough to deserve attention. A calm conversation can help you understand what is happening and what to try next.`;
+    }
+    if (this.isLowResultLevel(level)) {
+      return `Your ${concern} score looks lower right now. Still, if something feels heavy, confusing, or repetitive, you can use this as an early signal and get gentle support.`;
+    }
+    return result.description;
+  }
+
+  resultActionTitle(): string {
+    const result = this.result();
+    if (!result) return 'Choose one next step';
+    const level = result.level.toLowerCase();
+    if (result.safetyFlag) return 'Speak to someone safe now';
+    if (this.isHighResultLevel(level)) return 'Book or start support today';
+    if (this.isModerateResultLevel(level)) return 'Try voice/chat or book a slot';
+    if (this.isLowResultLevel(level)) return 'Use self-care tools or a light check-in';
+    return 'Choose one simple next step';
+  }
+
+  resultActionCopy(): string {
+    const result = this.result();
+    if (!result) return '';
+    const level = result.level.toLowerCase();
+    if (result.safetyFlag) {
+      return 'If there is any risk of harm, contact emergency help first. If you are physically safe, use Hope Hub to connect with support and share this result.';
+    }
+    if (this.isHighResultLevel(level)) {
+      return 'A planned session or live support is better than trying to carry this alone. Pick the mode that feels easiest: chat, voice, or video.';
+    }
+    if (this.isModerateResultLevel(level)) {
+      return 'Start small. A short private conversation, matching provider, or guided exercise can help you turn the result into a practical next step.';
+    }
+    if (this.isLowResultLevel(level)) {
+      return 'You can save this result, retake later, and use exercises or lifestyle tips. If your experience feels worse than the score, choose support anyway.';
+    }
+    return 'Use the suggestions below, or connect with a provider if you want help interpreting this result.';
+  }
+
+  resultSafetyTitle(): string {
+    return this.result()?.safetyFlag ? 'Use urgent support first' : 'This is not emergency care';
+  }
+
+  resultSafetyCopy(): string {
+    if (this.result()?.safetyFlag) {
+      return 'If you may harm yourself or feel unsafe, call local emergency services now. In India, Tele MANAS is available at 14416.';
+    }
+    return 'Hope Hub can support reflection, coping, and connection. If there is immediate danger or medical emergency, use local emergency services first.';
+  }
+
   async connectFromResult(mode: ConnectOptionMode): Promise<void> {
     const queryParams = this.assessmentConnectQueryParams(mode);
     this.saveResultPreference(mode);
@@ -1300,6 +1433,18 @@ export class DirectAssessmentComponent implements OnInit {
       concern: assessment?.category || assessment?.type || '',
       serviceName: assessment ? `${assessment.title} support` : '',
     });
+  }
+
+  private isHighResultLevel(level: string): boolean {
+    return /high|severe|very|poor|critical|risk|intense/.test(level);
+  }
+
+  private isModerateResultLevel(level: string): boolean {
+    return /moderate|medium|elevated|mild|some/.test(level);
+  }
+
+  private isLowResultLevel(level: string): boolean {
+    return /low|minimal|normal|healthy|good|mild/.test(level);
   }
 
   private assessmentConnectQueryParams(mode: ConnectOptionMode) {
