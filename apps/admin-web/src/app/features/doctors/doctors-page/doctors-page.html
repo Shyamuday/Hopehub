@@ -534,6 +534,37 @@
         </a>
       </div>
       <hopehub-detail-rows [rows]="selectedDoctorDetailRows()" />
+      <div class="admin-readiness-box" [class.admin-readiness-box--ready]="selectedReadiness()?.ready">
+        <div class="admin-readiness-head">
+          <div>
+            <strong>
+              {{ selectedReadiness()?.ready ? 'Public/live ready' : 'Public/live blockers' }}
+            </strong>
+            <p>
+              @if (readinessLoading()) {
+                Checking provider readiness...
+              } @else {
+                {{ selectedReadiness()?.message || 'Could not load backend readiness.' }}
+              }
+            </p>
+          </div>
+          <button type="button" class="secondary" (click)="loadSelectedDoctorReadiness()" [disabled]="readinessLoading()">
+            {{ readinessLoading() ? '...' : 'Refresh' }}
+          </button>
+        </div>
+        @if (selectedReadiness()?.blockers?.length) {
+          <div class="admin-readiness-list">
+            @for (blocker of selectedReadiness()?.blockers || []; track blocker.code) {
+              <article>
+                <strong>{{ blocker.label }}</strong>
+                @if (blocker.action) {
+                  <span>{{ blocker.action }}</span>
+                }
+              </article>
+            }
+          </div>
+        }
+      </div>
       <div class="suspension-box" [class.suspension-box--active]="selectedDoctor.doctorProfile?.suspendedAt">
         @if (selectedDoctor.doctorProfile?.suspendedAt) {
           <div>

@@ -1,4 +1,5 @@
 import { TelegramBotKind } from '@prisma/client';
+import { providerPublicReadiness } from '../doctor-capabilities.js';
 import { prisma } from '../db.js';
 import {
   defaultGenerationRange,
@@ -38,6 +39,38 @@ async function providerDoctor(userId: string) {
       }
     }
   });
+}
+
+async function ensureAvailabilityReady(kind: TelegramBotKind, session: TelegramSession) {
+  const readiness = await providerPublicReadiness(session.linkedUserId!);
+  if (readiness.ready) return true;
+  const blockerRows = readiness.blockers
+    .slice(0, 6)
+    .map((blocker, index) => {
+      const action = blocker.action ? ` — ${escapeHtml(blocker.action)}` : '';
+      return `${index + 1}. ${escapeHtml(blocker.label)}${action}`;
+    })
+    .join('\n');
+
+  await sendTelegramMessage(kind, {
+    chat_id: session.chatId,
+    text: [
+      '<b>Availability locked for now</b>',
+      '',
+      escapeHtml(readiness.message),
+      blockerRows ? `\n${blockerRows}` : '',
+      '',
+      'Complete these items in your provider profile, then try again.'
+    ].join('\n'),
+    parse_mode: 'HTML',
+    reply_markup: {
+      inline_keyboard: [
+        [{ text: 'Open provider profile', url: doctorUrl('/profile') }],
+        [{ text: 'My availability', callback_data: 'provider:availability' }]
+      ]
+    }
+  });
+  return false;
 }
 
 export async function showProviderAvailability(kind: TelegramBotKind, session: TelegramSession) {
@@ -94,6 +127,7 @@ export async function showProviderAvailability(kind: TelegramBotKind, session: T
 
 export async function chooseAvailabilityService(kind: TelegramBotKind, session: TelegramSession) {
   if (!(await requireLinked(kind, session))) return;
+  if (!(await ensureAvailabilityReady(kind, session))) return;
   const doctor = await providerDoctor(session.linkedUserId!);
   const services = doctor?.mentalHealthProfile?.services ?? [];
   if (!doctor) {
@@ -126,6 +160,7 @@ export async function chooseAvailabilityDay(
   serviceId: string | null
 ) {
   if (!(await requireLinked(kind, session))) return;
+  if (!(await ensureAvailabilityReady(kind, session))) return;
   await sendTelegramMessage(kind, {
     chat_id: session.chatId,
     text: '<b>Choose day</b>\nSelect a weekly day for this availability.',
@@ -156,6 +191,7 @@ export async function chooseAvailabilityTime(
   weekday: number
 ) {
   if (!(await requireLinked(kind, session))) return;
+  if (!(await ensureAvailabilityReady(kind, session))) return;
   await sendTelegramMessage(kind, {
     chat_id: session.chatId,
     text: `<b>Choose time</b>\n${weekdays[weekday]} availability. Slots will be generated for next 30 days.`,
@@ -182,6 +218,7 @@ export async function createAvailabilityRuleFromPreset(
   presetKey: string
 ) {
   if (!(await requireLinked(kind, session))) return;
+  if (!(await ensureAvailabilityReady(kind, session))) return;
   const doctor = await providerDoctor(session.linkedUserId!);
   const preset = timePresets.find((item) => item.key === presetKey);
   if (!doctor || !preset || weekday < 0 || weekday > 6) {
@@ -263,6 +300,7 @@ export async function toggleAvailabilityRule(
     });
     return;
   }
+  if (!rule.isActive && !(await ensureAvailabilityReady(kind, session))) return;
   const updated = await prisma.providerAvailabilityRule.update({
     where: { id: rule.id },
     data: { isActive: !rule.isActive }
@@ -283,6 +321,7 @@ export async function generateAvailabilitySlots(
   ruleId: string
 ) {
   if (!(await requireLinked(kind, session))) return;
+  if (!(await ensureAvailabilityReady(kind, session))) return;
   const doctor = await providerDoctor(session.linkedUserId!);
   const rule = doctor
     ? await prisma.providerAvailabilityRule.findFirst({

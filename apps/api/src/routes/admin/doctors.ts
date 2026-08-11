@@ -11,6 +11,7 @@ import {
 import bcrypt from 'bcryptjs';
 import { authRequired, allowRoles } from '../../auth.js';
 import { getAuthorizedAdminWorkspace } from '../../admin-workspace-access.js';
+import { providerPublicReadiness } from '../../doctor-capabilities.js';
 import { prisma } from '../../db.js';
 import {
   asyncRoute,
@@ -557,6 +558,24 @@ export function registerAdminDoctorRoutes(router: Router) {
           ? 'Provider suspended and hidden from public/live access.'
           : 'Provider suspension removed.'
       });
+    })
+  );
+
+  router.get(
+    '/admin/doctors/:id/readiness',
+    authRequired,
+    allowRoles(Role.ADMIN),
+    asyncRoute(async (req, res) => {
+      const doctorId = routeParam(req, 'id');
+      const doctor = await prisma.user.findFirst({
+        where: { id: doctorId, role: Role.DOCTOR },
+        select: { id: true }
+      });
+      if (!doctor) {
+        return res.status(404).json({ message: 'Provider not found.' });
+      }
+      const readiness = await providerPublicReadiness(doctor.id);
+      res.json({ readiness });
     })
   );
 

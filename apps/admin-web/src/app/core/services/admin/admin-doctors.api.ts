@@ -96,6 +96,14 @@ export class AdminDoctorsApi extends AdminApiBase {
     );
   }
 
+  getDoctorReadiness(doctorId: string) {
+    return firstValueFrom(
+      this.http.get<{ readiness: any }>(
+        `${this.apiBase}${API_PATHS.ADMIN.DOCTORS}/${doctorId}/readiness`,
+      ),
+    );
+  }
+
   updateDoctor(
     doctorId: string,
     payload: {

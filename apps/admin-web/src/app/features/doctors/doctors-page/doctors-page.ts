@@ -82,6 +82,12 @@ type Doctor = {
 };
 
 type SiteConfigEntry = { key: string; value: string; label: string; description: string };
+type ProviderReadiness = {
+  ready: boolean;
+  code: string;
+  message: string;
+  blockers: Array<{ code: string; label: string; action?: string }>;
+};
 type ProviderGender = 'MALE' | 'FEMALE' | 'OTHER' | 'PREFER_NOT_TO_SAY';
 type CareTeamMemberType =
   | 'MENTAL_WELLNESS_PROFESSIONAL'
@@ -340,6 +346,8 @@ export class DoctorsPage {
   readonly createCareServices = signal<CareTeamService[]>([]);
   readonly editCareServices = signal<CareTeamService[]>([]);
   readonly suspensionReason = signal('');
+  readonly selectedReadiness = signal<ProviderReadiness | null>(null);
+  readonly readinessLoading = signal(false);
 
   pageSize = DOCTORS_PAGE_SIZE;
   doctorsPage = 1;
@@ -405,6 +413,7 @@ export class DoctorsPage {
       this.selectedPendingDoctorIds = [];
       this.selectedDoctorId = this.selectedDoctorId || this.visibleDoctors()[0]?.id || '';
       this.syncEditFormFromSelectedDoctor();
+      void this.loadSelectedDoctorReadiness();
     } catch {
       this.error.set(`Could not load ${this.providerPluralLabel()}.`);
     } finally {
@@ -464,6 +473,8 @@ export class DoctorsPage {
       await this.load();
       this.selectedDoctorId = doctorId;
       this.syncEditFormFromSelectedDoctor();
+      void this.loadSelectedDoctorReadiness();
+      void this.loadSelectedDoctorReadiness();
     } catch {
       this.error.set(`Could not update ${this.providerSingularLabel()} status.`);
     } finally {
@@ -495,6 +506,7 @@ export class DoctorsPage {
       await this.load();
       this.selectedDoctorId = doctorId;
       this.syncEditFormFromSelectedDoctor();
+      void this.loadSelectedDoctorReadiness();
     } catch {
       this.error.set(`Could not update ${this.providerSingularLabel()} suspension.`);
     } finally {
@@ -931,7 +943,25 @@ export class DoctorsPage {
     this.selectedDoctorId = doctorId;
     this.suspensionReason.set('');
     this.syncEditFormFromSelectedDoctor();
+    void this.loadSelectedDoctorReadiness();
     this.message.set(`${this.providerSingularTitle()} details loaded.`);
+  }
+
+  async loadSelectedDoctorReadiness() {
+    const doctorId = this.selectedDoctorId;
+    if (!doctorId) {
+      this.selectedReadiness.set(null);
+      return;
+    }
+    this.readinessLoading.set(true);
+    try {
+      const response = await this.api.getDoctorReadiness(doctorId);
+      this.selectedReadiness.set(response.readiness ?? null);
+    } catch {
+      this.selectedReadiness.set(null);
+    } finally {
+      this.readinessLoading.set(false);
+    }
   }
 
   onCreateDoctorTypeChange() {
