@@ -1,8 +1,11 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { AppButtonComponent } from '../app-button/app-button.component';
+import { FormFieldComponent } from '../form-field/form-field.component';
 
 @Component({
   selector: 'app-coupon-box',
   standalone: true,
+  imports: [AppButtonComponent, FormFieldComponent],
   templateUrl: './coupon-box.component.html',
   styleUrl: './coupon-box.component.scss',
 })

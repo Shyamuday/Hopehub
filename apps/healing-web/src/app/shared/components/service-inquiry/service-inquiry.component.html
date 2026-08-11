@@ -7,19 +7,16 @@
   </p>
 
   <form [formGroup]="inquiryForm" (submit)="$event.preventDefault(); onSubmit()" class="space-y-4">
-    <!-- Name Field -->
     <div>
-      <label for="inquiry-name" class="form-label">
-        Full Name *
-      </label>
-      <input
-        type="text"
-        id="inquiry-name"
+      <app-form-field
+        label="Full Name"
+        name="inquiry-name"
         formControlName="name"
-        class="form-input text-sm"
-        [class.border-red-500]="inquiryForm.get('name')?.invalid && inquiryForm.get('name')?.touched"
+        size="sm"
+        [required]="true"
+        [invalid]="!!(inquiryForm.get('name')?.invalid && inquiryForm.get('name')?.touched)"
         placeholder="Enter your full name"
-      >
+      />
       @if (inquiryForm.get('name')?.invalid && inquiryForm.get('name')?.touched) {
         <div class="form-error text-xs">
           Name is required
@@ -27,19 +24,17 @@
       }
     </div>
 
-    <!-- Email Field -->
     <div>
-      <label for="inquiry-email" class="form-label">
-        Email Address *
-      </label>
-      <input
+      <app-form-field
+        label="Email Address"
         type="email"
-        id="inquiry-email"
+        name="inquiry-email"
         formControlName="email"
-        class="form-input text-sm"
-        [class.border-red-500]="inquiryForm.get('email')?.invalid && inquiryForm.get('email')?.touched"
+        size="sm"
+        [required]="true"
+        [invalid]="!!(inquiryForm.get('email')?.invalid && inquiryForm.get('email')?.touched)"
         placeholder="Enter your email address"
-      >
+      />
       @if (inquiryForm.get('email')?.invalid && inquiryForm.get('email')?.touched) {
         <div class="form-error text-xs">
           @if (inquiryForm.get('email')?.errors?.['required']) {
@@ -52,32 +47,27 @@
       }
     </div>
 
-    <!-- Message Field -->
     <div>
-      <label for="inquiry-message" class="form-label">
-        Additional Information
-      </label>
-      <textarea
-        id="inquiry-message"
+      <app-form-field
+        kind="textarea"
+        label="Additional Information"
+        name="inquiry-message"
         formControlName="message"
         rows="3"
-        class="form-textarea text-sm"
+        size="sm"
         placeholder="Tell us more about your needs (optional)"
-      ></textarea>
+      />
     </div>
 
-    <!-- Submit Button -->
-    <button
+    <app-button
       type="submit"
       [disabled]="inquiryForm.invalid || isSubmitting()"
-      class="btn-primary btn-block btn-sm"
+      [loading]="isSubmitting()"
+      size="sm"
+      [block]="true"
     >
-      @if (!isSubmitting()) {
-        <span>Send request</span>
-      } @else {
-        <span>Sending...</span>
-      }
-    </button>
+      {{ isSubmitting() ? 'Sending...' : 'Send request' }}
+    </app-button>
   </form>
 
   <!-- Success Message -->

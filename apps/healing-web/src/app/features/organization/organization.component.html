@@ -13,16 +13,16 @@
   <section class="org-layout">
     <form class="org-form" (ngSubmit)="submit()">
       <div class="two">
-        <label>Organisation name <input name="organizationName" [(ngModel)]="form.organizationName" required /></label>
+        <app-form-field label="Organisation name" name="organizationName" [(ngModel)]="form.organizationName" [required]="true" />
         <label>Organisation type
           <select name="organizationType" [(ngModel)]="form.organizationType">
             @for (type of organizationTypes; track type) { <option [value]="type">{{ type }}</option> }
           </select>
         </label>
-        <label>Contact person <input name="contactName" [(ngModel)]="form.contactName" required /></label>
-        <label>Email <input type="email" name="contactEmail" [(ngModel)]="form.contactEmail" /></label>
-        <label>Phone <input name="contactPhone" [(ngModel)]="form.contactPhone" /></label>
-        <label>City <input name="city" [(ngModel)]="form.city" /></label>
+        <app-form-field label="Contact person" name="contactName" [(ngModel)]="form.contactName" [required]="true" />
+        <app-form-field label="Email" type="email" name="contactEmail" [(ngModel)]="form.contactEmail" />
+        <app-form-field label="Phone" type="tel" name="contactPhone" [(ngModel)]="form.contactPhone" />
+        <app-form-field label="City" name="city" [(ngModel)]="form.city" />
         <label>Approx people <input type="number" name="audienceSize" [(ngModel)]="form.audienceSize" /></label>
         <label>Need type
           <select name="needType" [(ngModel)]="form.needType">
@@ -31,13 +31,15 @@
         </label>
       </div>
 
-      <label>Preferred date/time <input name="preferredDate" [(ngModel)]="form.preferredDate" /></label>
-      <label>Notes <textarea rows="5" name="notes" [(ngModel)]="form.notes"></textarea></label>
+      <app-form-field label="Preferred date/time" name="preferredDate" [(ngModel)]="form.preferredDate" />
+      <app-form-field kind="textarea" label="Notes" rows="5" name="notes" [(ngModel)]="form.notes" />
 
       @if (success()) { <p class="success">{{ success() }}</p> }
       @if (error()) { <p class="error">{{ error() }}</p> }
 
-      <button type="submit" [disabled]="saving()">{{ saving() ? 'Sending...' : 'Request a call' }}</button>
+      <app-button type="submit" [disabled]="saving()" [loading]="saving()">
+        {{ saving() ? 'Sending...' : 'Request a call' }}
+      </app-button>
     </form>
 
     <aside class="org-panel">

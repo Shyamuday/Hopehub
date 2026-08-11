@@ -100,29 +100,26 @@
           </fieldset>
 
           <div class="grid gap-5 sm:grid-cols-2">
-            <label>
-              <span>Full name *</span>
-              <input type="text" formControlName="fullName" placeholder="Your full name" />
+            <div>
+              <app-form-field label="Full name" formControlName="fullName" [required]="true" [invalid]="hasError('fullName')" placeholder="Your full name" />
               @if (hasError('fullName')) {
                 <small>Full name is required.</small>
               }
-            </label>
+            </div>
 
-            <label>
-              <span>Email *</span>
-              <input type="email" formControlName="email" placeholder="you@example.com" />
+            <div>
+              <app-form-field label="Email" type="email" formControlName="email" [required]="true" [invalid]="hasError('email')" placeholder="you@example.com" />
               @if (hasError('email')) {
                 <small>Valid email is required.</small>
               }
-            </label>
+            </div>
 
-            <label>
-              <span>Phone / WhatsApp *</span>
-              <input type="tel" formControlName="phone" placeholder="+91..." />
+            <div>
+              <app-form-field label="Phone / WhatsApp" type="tel" formControlName="phone" [required]="true" [invalid]="hasError('phone')" placeholder="+91..." />
               @if (hasError('phone')) {
                 <small>Phone number is required.</small>
               }
-            </label>
+            </div>
 
             <label>
               <span>Gender</span>
@@ -133,29 +130,32 @@
               ></app-form-dropdown>
             </label>
 
-            <label>
-              <span>City / State *</span>
-              <input type="text" formControlName="city" placeholder="City, State" />
+            <div>
+              <app-form-field label="City / State" formControlName="city" [required]="true" [invalid]="hasError('city')" placeholder="City, State" />
               @if (hasError('city')) {
                 <small>City is required.</small>
               }
-            </label>
+            </div>
           </div>
 
           @if (isTrack('PROFESSIONAL_PSYCHOLOGIST') || isTrack('PSYCHOLOGY_STUDENT_VOLUNTEER')) {
             <div class="grid gap-5 sm:grid-cols-2">
-              <label>
-                <span>{{ isTrack('PROFESSIONAL_PSYCHOLOGIST') ? 'Highest qualification *' : 'Current course / qualification *' }}</span>
-                <input type="text" formControlName="qualification" placeholder="MA Psychology, MSW, diploma..." />
+              <div>
+                <app-form-field
+                  [label]="isTrack('PROFESSIONAL_PSYCHOLOGIST') ? 'Highest qualification' : 'Current course / qualification'"
+                  formControlName="qualification"
+                  [required]="true"
+                  [invalid]="hasError('qualification')"
+                  placeholder="MA Psychology, MSW, diploma..."
+                />
                 @if (hasError('qualification')) {
                   <small>Qualification is required.</small>
                 }
-              </label>
+              </div>
 
-              <label>
-                <span>Qualified from</span>
-                <input type="text" formControlName="qualifiedFrom" placeholder="University, institute, academy, or training body" />
-              </label>
+              <div>
+                <app-form-field label="Qualified from" formControlName="qualifiedFrom" placeholder="University, institute, academy, or training body" />
+              </div>
 
               <label>
                 <span>{{ isTrack('PROFESSIONAL_PSYCHOLOGIST') ? 'Specialization *' : 'Area of interest *' }}</span>
@@ -182,61 +182,70 @@
                   }
                 </label>
 
-                <label>
-                  <span>Registration / license {{ isType('MENTAL_WELLNESS_PROFESSIONAL') ? '*' : '(if applicable)' }}</span>
-                  <input type="text" formControlName="registrationDetails" placeholder="Registration number and council" />
+                <div>
+                  <app-form-field
+                    [label]="isType('MENTAL_WELLNESS_PROFESSIONAL') ? 'Registration / license' : 'Registration / license (if applicable)'"
+                    formControlName="registrationDetails"
+                    [required]="isType('MENTAL_WELLNESS_PROFESSIONAL')"
+                    [invalid]="hasError('registrationDetails')"
+                    placeholder="Registration number and council"
+                  />
                   @if (hasError('registrationDetails')) {
                     <small>Registration or license details are required.</small>
                   }
-                </label>
+                </div>
               }
 
               @if (isTrack('PSYCHOLOGY_STUDENT_VOLUNTEER')) {
-                <label class="sm:col-span-2">
-                  <span>Supervisor or faculty details *</span>
-                  <textarea
+                <div class="sm:col-span-2">
+                  <app-form-field
+                    kind="textarea"
+                    label="Supervisor or faculty details"
                     rows="3"
                     formControlName="supervisionDetails"
+                    [required]="true"
+                    [invalid]="hasError('supervisionDetails')"
                     placeholder="Share your institution, supervisor or faculty contact, and the scope of supervision."
-                  ></textarea>
+                  />
                   @if (hasError('supervisionDetails')) {
                     <small>Supervisor or faculty details are required.</small>
                   }
-                </label>
+                </div>
               }
             </div>
           }
 
           @if (isTrack('PEER_SUPPORT_VOLUNTEER')) {
-            <label>
-              <span>Relevant support or lived experience *</span>
-              <textarea
+            <div>
+              <app-form-field
+                kind="textarea"
+                label="Relevant support or lived experience"
                 rows="5"
                 formControlName="livedExperienceSummary"
-                 placeholder="Share why you would be a supportive peer listener. Please do not include private medical records or another person's identifying details."
-              ></textarea>
+                [required]="true"
+                [invalid]="hasError('livedExperienceSummary')"
+                placeholder="Share why you would be a supportive peer listener. Please do not include private medical records or another person's identifying details."
+              />
               @if (hasError('livedExperienceSummary')) {
                 <small>Please share the experience that prepares you for peer support.</small>
               }
-            </label>
+            </div>
           }
 
           <div class="grid gap-5 sm:grid-cols-2">
-            <label>
-              <span>Languages *</span>
-              <input type="text" formControlName="languages" placeholder="Hindi, English, Tamil..." />
+            <div>
+              <app-form-field label="Languages" formControlName="languages" [required]="true" [invalid]="hasError('languages')" placeholder="Hindi, English, Tamil..." />
               @if (hasError('languages')) {
                 <small>Languages are required.</small>
               }
-            </label>
+            </div>
 
-            <label>
-              <span>Availability *</span>
-              <input type="text" formControlName="availability" placeholder="Example: Weekdays 7-10 PM" />
+            <div>
+              <app-form-field label="Availability" formControlName="availability" [required]="true" [invalid]="hasError('availability')" placeholder="Example: Weekdays 7-10 PM" />
               @if (hasError('availability')) {
                 <small>Availability is required.</small>
               }
-            </label>
+            </div>
 
             <label>
               <span>Preferred contact *</span>
@@ -248,54 +257,49 @@
             </label>
 
             @if (isTrack('PROFESSIONAL_PSYCHOLOGIST')) {
-              <label>
-                <span>Resume / profile link *</span>
-                <input type="url" formControlName="resumeLink" placeholder="Google Drive, LinkedIn, website..." />
+              <div>
+                <app-form-field label="Resume / profile link" type="url" formControlName="resumeLink" [required]="true" [invalid]="hasError('resumeLink')" placeholder="Google Drive, LinkedIn, website..." />
                 @if (hasError('resumeLink')) {
                   <small>Resume or profile link is required.</small>
                 }
-              </label>
+              </div>
             }
           </div>
 
           @if (!isTrack('PEER_SUPPORT_VOLUNTEER')) {
-            <label>
-              <span>Portfolio / LinkedIn link</span>
-              <input type="url" formControlName="portfolioLink" placeholder="Optional additional link" />
-            </label>
+            <div>
+              <app-form-field label="Portfolio / LinkedIn link" type="url" formControlName="portfolioLink" placeholder="Optional additional link" />
+            </div>
           }
 
           @if (!isTrack('PROFESSIONAL_PSYCHOLOGIST')) {
-            <label class="consent">
-              <input type="checkbox" formControlName="agreesToNonClinicalRole" />
-              <span>
+            <app-form-checkbox formControlName="agreesToNonClinicalRole" tone="warning">
                 I understand this is a listening, non-clinical role. I will not present myself as a psychologist or therapist, diagnose, prescribe, or handle crisis concerns independently.
-              </span>
-            </label>
+            </app-form-checkbox>
             @if (hasError('agreesToNonClinicalRole')) {
                <small class="block text-red-700">This agreement is required for listener applications.</small>
              }
           }
 
-          <label>
-            <span>Why do you want to work with Hope Hub? *</span>
-            <textarea
+          <div>
+            <app-form-field
+              kind="textarea"
+              label="Why do you want to work with Hope Hub?"
               rows="5"
               formControlName="whyJoin"
+              [required]="true"
+              [invalid]="hasError('whyJoin')"
               placeholder="Tell us about your approach, values, and the people or community you want to support."
-            ></textarea>
+            />
             @if (hasError('whyJoin')) {
               <small>Please write at least 40 characters.</small>
             }
-          </label>
+          </div>
 
-          <label class="consent">
-            <input type="checkbox" formControlName="consent" />
-            <span>
+          <app-form-checkbox formControlName="consent" tone="success">
               I confirm the information shared is accurate and I agree that Hope Hub may contact me
               for verification and onboarding.
-            </span>
-          </label>
+          </app-form-checkbox>
           @if (hasError('consent')) {
             <small class="block text-red-700">Consent is required before submitting.</small>
           }
@@ -486,9 +490,9 @@
             </section>
           }
 
-          <button type="submit" [disabled]="isSubmitting()" class="submit-button">
+          <app-button type="submit" [disabled]="isSubmitting()" [loading]="isSubmitting()" [block]="true">
             {{ isSubmitting() ? 'Submitting application...' : 'Submit application' }}
-          </button>
+          </app-button>
         </form>
       </section>
     </div>

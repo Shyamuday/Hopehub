@@ -3,6 +3,11 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { LeadService } from '../../core/services/lead.service';
 import { NotificationService } from '../../core/services/notification.service';
+import {
+  AppButtonComponent,
+  FormCheckboxComponent,
+  FormFieldComponent,
+} from '../../shared/components';
 
 type FeedbackType = {
   value: 'IMPROVEMENT' | 'COMPLAINT' | 'BUG' | 'SERVICE_EXPERIENCE' | 'PRAISE' | 'OTHER';
@@ -13,7 +18,13 @@ type FeedbackType = {
 @Component({
   selector: 'app-feedback-page',
   standalone: true,
-  imports: [ReactiveFormsModule, RouterModule],
+  imports: [
+    ReactiveFormsModule,
+    RouterModule,
+    AppButtonComponent,
+    FormCheckboxComponent,
+    FormFieldComponent,
+  ],
   templateUrl: './feedback.component.html',
   styleUrl: './feedback.component.scss',
 })

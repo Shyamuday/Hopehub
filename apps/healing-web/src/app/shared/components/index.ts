@@ -28,3 +28,5 @@ export * from './empty-state/empty-state.component';
 export * from './checkout-summary/checkout-summary.component';
 export * from './status-chip/status-chip.component';
 export * from './booking-intent-summary/booking-intent-summary.component';
+export * from './form-field/form-field.component';
+export * from './form-checkbox/form-checkbox.component';

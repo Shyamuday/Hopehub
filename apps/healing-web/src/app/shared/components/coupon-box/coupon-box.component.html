@@ -5,23 +5,24 @@
       <strong>{{ subtitle }}</strong>
     </div>
     @if (showClear && normalizedValue()) {
-      <button type="button" class="coupon-box__clear" [disabled]="loading" (click)="clear.emit()">
+      <app-button type="button" variant="link" size="xs" [disabled]="loading" (click)="clear.emit()">
         Clear
-      </button>
+      </app-button>
     }
   </div>
 
   <div class="coupon-box__control">
-    <input
-      type="text"
+    <app-form-field
       [placeholder]="placeholder"
-      [value]="value"
+      [modelValue]="value"
       [disabled]="loading || disabled"
-      (input)="valueChange.emit($any($event.target).value)"
+      [uppercase]="true"
+      customClass="coupon-box__input"
+      (valueChange)="valueChange.emit($event)"
     />
-    <button type="button" class="btn-secondary" [disabled]="!canApply()" (click)="apply.emit()">
+    <app-button type="button" variant="secondary" [disabled]="!canApply()" [loading]="loading" (click)="apply.emit()">
       {{ loading ? checkingLabel : applyLabel }}
-    </button>
+    </app-button>
   </div>
 
   @if (success) {

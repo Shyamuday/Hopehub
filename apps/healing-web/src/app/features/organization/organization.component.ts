@@ -3,11 +3,12 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { BookingService } from '../../core/services/booking.service';
 import { NotificationService } from '../../core/services/notification.service';
+import { AppButtonComponent, FormFieldComponent } from '../../shared/components';
 
 @Component({
   selector: 'app-organization',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, AppButtonComponent, FormFieldComponent],
   templateUrl: './organization.component.html',
   styleUrl: './organization.component.scss',
 })

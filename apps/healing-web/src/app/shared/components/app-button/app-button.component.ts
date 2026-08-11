@@ -1,8 +1,8 @@
 import { booleanAttribute, Component, Input } from '@angular/core';
 
 type AppButtonType = 'button' | 'submit' | 'reset';
-type AppButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger';
-type AppButtonSize = 'sm' | 'md' | 'lg';
+type AppButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger' | 'link';
+type AppButtonSize = 'xs' | 'sm' | 'md' | 'lg';
 
 @Component({
   selector: 'app-button',
@@ -14,16 +14,26 @@ type AppButtonSize = 'sm' | 'md' | 'lg';
       [class.app-button--outline]="variant === 'outline'"
       [class.app-button--ghost]="variant === 'ghost'"
       [class.app-button--danger]="variant === 'danger'"
+      [class.app-button--link]="variant === 'link'"
+      [class.app-button--xs]="size === 'xs'"
       [class.app-button--sm]="size === 'sm'"
       [class.app-button--lg]="size === 'lg'"
       [class.app-button--block]="block"
+      [class.app-button--pill]="pill"
       [attr.type]="type"
+      [attr.aria-label]="ariaLabel || null"
       [disabled]="disabled || loading"
     >
       @if (loading) {
         <span class="app-button__spinner" aria-hidden="true"></span>
       }
+      @if (!loading && icon) {
+        <span class="app-button__icon" aria-hidden="true">{{ icon }}</span>
+      }
       <span class="app-button__content"><ng-content /></span>
+      @if (trailingIcon) {
+        <span class="app-button__icon" aria-hidden="true">{{ trailingIcon }}</span>
+      }
     </button>
   `,
   styles: [
@@ -43,8 +53,8 @@ type AppButtonSize = 'sm' | 'md' | 'lg';
         justify-content: center;
         gap: 0.5rem;
         border: 0;
-        border-radius: 0.5rem;
-        background: var(--color-primary-600, #2563eb);
+        border-radius: var(--hope-radius-md, 0.75rem);
+        background: var(--brand-primary, var(--color-primary-600, #059669));
         color: #ffffff;
         cursor: pointer;
         font: inherit;
@@ -57,16 +67,18 @@ type AppButtonSize = 'sm' | 'md' | 'lg';
           background-color 150ms ease,
           border-color 150ms ease,
           box-shadow 150ms ease,
-          color 150ms ease;
+          color 150ms ease,
+          transform 150ms ease;
       }
 
       .app-button:hover:not(:disabled) {
-        background: var(--color-primary-700, #1d4ed8);
-        box-shadow: 0 10px 24px rgba(37, 99, 235, 0.18);
+        background: var(--brand-primary-dark, var(--color-primary-700, #047857));
+        box-shadow: 0 10px 24px rgba(5, 150, 105, 0.18);
+        transform: translateY(-1px);
       }
 
       .app-button:focus-visible {
-        outline: 3px solid rgba(37, 99, 235, 0.24);
+        outline: 3px solid var(--hope-field-focus-ring, rgba(16, 185, 129, 0.18));
         outline-offset: 2px;
       }
 
@@ -76,24 +88,46 @@ type AppButtonSize = 'sm' | 'md' | 'lg';
       }
 
       .app-button--secondary {
-        border: 1px solid rgba(37, 99, 235, 0.2);
-        background: #eff6ff;
-        color: var(--color-primary-700, #1d4ed8);
+        border: 1px solid var(--hope-chip-border, rgba(16, 185, 129, 0.18));
+        background: var(--brand-primary-light, #ecfdf5);
+        color: var(--brand-primary, #047857);
       }
 
       .app-button--outline {
-        border: 1px solid rgba(37, 99, 235, 0.35);
+        border: 1px solid var(--hope-field-border, rgba(148, 163, 184, 0.35));
         background: #ffffff;
-        color: var(--color-primary-700, #1d4ed8);
+        color: var(--brand-primary, #047857);
       }
 
       .app-button--ghost {
         background: transparent;
-        color: var(--color-primary-700, #1d4ed8);
+        color: var(--brand-primary, #047857);
       }
 
       .app-button--danger {
         background: #dc2626;
+      }
+
+      .app-button--link {
+        min-height: auto;
+        background: transparent;
+        color: var(--brand-primary, #047857);
+        padding: 0;
+      }
+
+      .app-button--link:hover:not(:disabled) {
+        background: transparent;
+        box-shadow: none;
+        text-decoration: underline;
+        text-underline-offset: 3px;
+        transform: none;
+      }
+
+      .app-button--xs {
+        min-height: 1.9rem;
+        border-radius: 0.45rem;
+        font-size: 0.76rem;
+        padding: 0.35rem 0.6rem;
       }
 
       .app-button--sm {
@@ -111,6 +145,14 @@ type AppButtonSize = 'sm' | 'md' | 'lg';
 
       .app-button--block {
         width: 100%;
+      }
+
+      .app-button--pill {
+        border-radius: 999px;
+      }
+
+      .app-button__icon {
+        display: inline-flex;
       }
 
       .app-button__spinner {
@@ -137,7 +179,11 @@ export class AppButtonComponent {
   @Input() type: AppButtonType = 'button';
   @Input() variant: AppButtonVariant = 'primary';
   @Input() size: AppButtonSize = 'md';
+  @Input() icon = '';
+  @Input() trailingIcon = '';
+  @Input() ariaLabel = '';
   @Input({ transform: booleanAttribute }) disabled = false;
   @Input({ transform: booleanAttribute }) loading = false;
   @Input({ transform: booleanAttribute }) block = false;
+  @Input({ transform: booleanAttribute }) pill = false;
 }

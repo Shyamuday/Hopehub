@@ -55,27 +55,23 @@
             </select>
           </label>
 
-          <label>
-            Page, feature, service, or team member
-            <input
-              type="text"
-              formControlName="pageOrFeature"
-              placeholder="Optional, e.g. Telegram bot, payment, care team"
-            />
-          </label>
+          <app-form-field
+            label="Page, feature, service, or team member"
+            formControlName="pageOrFeature"
+            placeholder="Optional, e.g. Telegram bot, payment, care team"
+          />
         </div>
 
-        <label>
-          Your feedback *
-          <textarea
-            rows="7"
-            formControlName="message"
-            placeholder="Tell us what happened, what confused you, or what we should improve."
-          ></textarea>
-          @if (hasError('message')) {
-            <span class="feedback-form__error">Please write at least 15 characters.</span>
-          }
-        </label>
+        <app-form-field
+          kind="textarea"
+          label="Your feedback"
+          formControlName="message"
+          rows="7"
+          [required]="true"
+          [invalid]="hasError('message')"
+          [error]="hasError('message') ? 'Please write at least 15 characters.' : ''"
+          placeholder="Tell us what happened, what confused you, or what we should improve."
+        />
       </div>
 
       <div class="feedback-form__section">
@@ -85,23 +81,23 @@
         </div>
 
         <div class="feedback-form__grid">
-          <label>
-            Name
-            <input type="text" formControlName="name" placeholder="Optional" />
-          </label>
+          <app-form-field label="Name" formControlName="name" placeholder="Optional" />
 
-          <label>
-            Email
-            <input type="email" formControlName="email" placeholder="Optional" />
-            @if (hasError('email')) {
-              <span class="feedback-form__error">Please enter a valid email.</span>
-            }
-          </label>
+          <app-form-field
+            label="Email"
+            type="email"
+            formControlName="email"
+            [invalid]="hasError('email')"
+            [error]="hasError('email') ? 'Please enter a valid email.' : ''"
+            placeholder="Optional"
+          />
 
-          <label>
-            Phone / WhatsApp
-            <input type="tel" formControlName="phone" placeholder="Optional" />
-          </label>
+          <app-form-field
+            label="Phone / WhatsApp"
+            type="tel"
+            formControlName="phone"
+            placeholder="Optional"
+          />
 
           <label>
             Preferred follow-up
@@ -117,22 +113,17 @@
       </div>
 
       <div class="feedback-form__options">
-        <label class="feedback-form__check">
-          <input type="checkbox" formControlName="allowFollowUp" />
-          <span>Hope Hub may contact me about this feedback if needed.</span>
-        </label>
+        <app-form-checkbox formControlName="allowFollowUp">
+          Hope Hub may contact me about this feedback if needed.
+        </app-form-checkbox>
 
-        <label class="feedback-form__check">
-          <input type="checkbox" formControlName="isAnonymous" />
-          <span>Keep my name anonymous in internal review and any public display.</span>
-        </label>
+        <app-form-checkbox formControlName="isAnonymous">
+          Keep my name anonymous in internal review and any public display.
+        </app-form-checkbox>
 
-        <label class="feedback-form__check">
-          <input type="checkbox" formControlName="consentToPublish" />
-          <span>
-            If this is useful as a review, I allow Hope Hub to publish it after admin approval.
-          </span>
-        </label>
+        <app-form-checkbox formControlName="consentToPublish">
+          If this is useful as a review, I allow Hope Hub to publish it after admin approval.
+        </app-form-checkbox>
       </div>
 
       @if (successMessage()) {
@@ -144,9 +135,9 @@
       }
 
       <div class="feedback-form__actions">
-        <button type="submit" [disabled]="isSubmitting()">
+        <app-button type="submit" [disabled]="isSubmitting()" [loading]="isSubmitting()">
           {{ isSubmitting() ? 'Submitting...' : 'Submit feedback' }}
-        </button>
+        </app-button>
         <a routerLink="/">Back to home</a>
       </div>
     </form>

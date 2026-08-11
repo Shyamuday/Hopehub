@@ -1,0 +1,54 @@
+<label class="form-field" [class.form-field--invalid]="showInvalid()">
+  @if (label) {
+    <span class="form-field__label">
+      {{ label }}
+      @if (required) {
+        <span aria-hidden="true">*</span>
+      }
+    </span>
+  }
+
+  @if (kind === 'textarea') {
+    <textarea
+      class="form-field__control"
+      [ngClass]="['form-field__control--' + size, customClass]"
+      [class.form-field__control--uppercase]="uppercase"
+      [id]="controlId()"
+      [name]="name || null"
+      [placeholder]="placeholder"
+      [rows]="rows"
+      [maxlength]="maxLength"
+      [disabled]="disabled"
+      [required]="required"
+      [value]="value"
+      [attr.aria-invalid]="showInvalid()"
+      (input)="updateValue($any($event.target).value)"
+      (blur)="markTouched()"
+    ></textarea>
+  } @else {
+    <input
+      class="form-field__control"
+      [ngClass]="['form-field__control--' + size, customClass]"
+      [class.form-field__control--uppercase]="uppercase"
+      [id]="controlId()"
+      [name]="name || null"
+      [type]="type"
+      [placeholder]="placeholder"
+      [attr.autocomplete]="autocomplete || null"
+      [attr.inputmode]="inputMode || null"
+      [maxlength]="maxLength"
+      [disabled]="disabled"
+      [required]="required"
+      [value]="value"
+      [attr.aria-invalid]="showInvalid()"
+      (input)="updateValue($any($event.target).value)"
+      (blur)="markTouched()"
+    />
+  }
+
+  @if (error) {
+    <span class="form-field__message form-field__message--error">{{ error }}</span>
+  } @else if (helper) {
+    <span class="form-field__message">{{ helper }}</span>
+  }
+</label>

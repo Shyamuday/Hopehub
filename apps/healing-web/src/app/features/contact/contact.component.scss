@@ -344,26 +344,6 @@ form {
   margin-top: 1rem;
 }
 
-.safety-check {
-  display: flex;
-  gap: 0.6rem;
-  align-items: center;
-  border: 1px solid rgba(180, 83, 9, 0.24);
-  border-radius: 8px;
-  background: rgba(180, 83, 9, 0.08);
-  color: var(--surface-yellow-text);
-  font-size: 0.88rem;
-  font-weight: 700;
-  line-height: 1.4;
-  padding: 0.78rem 0.9rem;
-}
-
-.listener-consent {
-  border-color: #bbf7d0;
-  background: #f0fdf4;
-  color: #14532d;
-}
-
 .slot-panel {
   display: grid;
   gap: 1rem;

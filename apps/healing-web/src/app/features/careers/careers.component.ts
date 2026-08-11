@@ -12,7 +12,13 @@ import {
 } from '../../core/content/listener-training.content';
 import { ContactMethod } from '../../core/models/contact.model';
 import { LeadService, LoadingService, NotificationService } from '../../core/services';
-import { FormDropdownComponent, FormDropdownOption } from '../../shared/components';
+import {
+  AppButtonComponent,
+  FormCheckboxComponent,
+  FormDropdownComponent,
+  FormDropdownOption,
+  FormFieldComponent,
+} from '../../shared/components';
 
 type CareContributorTrack =
   'PROFESSIONAL_PSYCHOLOGIST' | 'PSYCHOLOGY_STUDENT_VOLUNTEER' | 'PEER_SUPPORT_VOLUNTEER';
@@ -34,7 +40,14 @@ type ListenerScreeningQuestion = {
 @Component({
   selector: 'app-careers',
   standalone: true,
-  imports: [ReactiveFormsModule, RouterModule, FormDropdownComponent],
+  imports: [
+    ReactiveFormsModule,
+    RouterModule,
+    AppButtonComponent,
+    FormCheckboxComponent,
+    FormDropdownComponent,
+    FormFieldComponent,
+  ],
   templateUrl: './careers.component.html',
   styleUrl: './careers.component.scss',
 })

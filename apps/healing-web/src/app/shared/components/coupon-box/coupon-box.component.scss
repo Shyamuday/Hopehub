@@ -39,32 +39,8 @@
   gap: 0.75rem;
 }
 
-.coupon-box__control input {
-  min-height: 2.75rem;
+.coupon-box__control app-form-field {
   flex: 1;
-  border: 1px solid var(--hope-field-border, rgba(148, 163, 184, 0.35));
-  border-radius: var(--hope-radius-md, 0.75rem);
-  background: white;
-  padding: 0.7rem 0.85rem;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: #0f172a;
-}
-
-.coupon-box__control input:focus {
-  border-color: var(--hope-field-focus-border, #059669);
-  box-shadow: 0 0 0 3px var(--hope-field-focus-ring, rgba(16, 185, 129, 0.14));
-  outline: none;
-}
-
-.coupon-box__clear {
-  border: 0;
-  background: transparent;
-  color: #047857;
-  cursor: pointer;
-  font-size: 0.8rem;
-  font-weight: 800;
 }
 
 .coupon-box p {

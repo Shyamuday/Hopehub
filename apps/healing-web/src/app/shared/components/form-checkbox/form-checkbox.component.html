@@ -1,0 +1,19 @@
+<label class="form-checkbox" [class]="'form-checkbox--' + tone">
+  <input
+    type="checkbox"
+    [checked]="checked"
+    [disabled]="disabled"
+    (change)="toggle($any($event.target).checked)"
+    (blur)="markTouched()"
+  />
+  <span class="form-checkbox__box" aria-hidden="true"></span>
+  <span class="form-checkbox__copy">
+    @if (label) {
+      <strong>{{ label }}</strong>
+    }
+    <span><ng-content /></span>
+    @if (helper) {
+      <small>{{ helper }}</small>
+    }
+  </span>
+</label>

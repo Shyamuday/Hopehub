@@ -4,6 +4,7 @@ import { FormArray, FormBuilder, ReactiveFormsModule, Validators } from '@angula
 import { AuthService } from '../../core/services/auth.service';
 import { AuthModalService } from '../../core/services/auth-modal.service';
 import { NotificationService } from '../../core/services/notification.service';
+import { FormFieldComponent } from '../../shared/components';
 import type {
   PatientDailyPlan,
   PatientDailyPlanTask,
@@ -16,7 +17,7 @@ type ProfileSection = 'basic' | 'emergency' | 'wellness' | 'health';
 @Component({
   selector: 'app-profile',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, FormFieldComponent],
   templateUrl: './profile.component.html',
 })
 export class ProfileComponent implements OnInit {

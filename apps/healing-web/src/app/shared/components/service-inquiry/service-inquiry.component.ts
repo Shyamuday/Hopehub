@@ -1,11 +1,13 @@
 import { Component, input, inject, signal } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { LeadService, LoadingService, NotificationService } from '../../../core/services';
+import { AppButtonComponent } from '../app-button/app-button.component';
+import { FormFieldComponent } from '../form-field/form-field.component';
 
 @Component({
   selector: 'app-service-inquiry',
   standalone: true,
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, AppButtonComponent, FormFieldComponent],
   templateUrl: './service-inquiry.component.html',
   styleUrl: './service-inquiry.component.scss',
 })
