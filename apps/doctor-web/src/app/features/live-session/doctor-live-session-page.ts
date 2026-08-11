@@ -197,6 +197,22 @@ export class DoctorLiveSessionPage implements OnInit, OnDestroy {
     return status ? status.replace(/_/g, ' ').toLowerCase() : 'unknown';
   }
 
+  callReasonLabel(reason?: string | null): string {
+    if (!reason) return '';
+    const labels: Record<string, string> = {
+      active_call_exists: 'Another call was already active',
+      consultation_call_already_active: 'Session already had an active call',
+      no_answer: 'No answer',
+      media_timeout: 'Media did not connect',
+      connection_failed: 'Connection failed',
+      reconnect_timeout: 'Disconnected during call',
+      rejected: 'Declined',
+      not_connected: 'Ended before connecting',
+      ended_by_user: 'Ended by participant',
+    };
+    return labels[reason] || reason.replace(/_/g, ' ');
+  }
+
   callDurationLabel(call: ConsultationCallSession): string {
     const seconds = Math.max(0, Number(call.durationSeconds || 0));
     if (!seconds) return call.endedAt ? '0s' : 'In progress';

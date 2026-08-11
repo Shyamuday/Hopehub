@@ -107,7 +107,7 @@ async function recordCallSignal(
     });
     if (existing) {
       const isSameInitiator = existing.initiatedByUserId === fromUserId;
-      if (!isSameInitiator && existing.status !== 'RINGING') {
+      if (!isSameInitiator) {
         return { relay: false, reason: 'active_call_exists' };
       }
       await prisma.consultationCallSession.update({
@@ -256,9 +256,6 @@ export function registerOnlineDoctorSockets(io: SocketIoServer, socket: Socket, 
       const payload = raw as CallSignalPayload;
       if (typeof payload.consultationId !== 'string' || typeof payload.targetUserId !== 'string')
         return;
-      if (event === SOCKET_EVENTS.CALL_RING || event === SOCKET_EVENTS.CALL_OFFER) {
-        void markConsultationInProgressFromCall(io, userId, payload);
-      }
       void recordCallSignal(userId, event, payload).then((result) => {
         if (!result.relay) {
           socket.emit(SOCKET_EVENTS.CALL_REJECT, {
@@ -268,6 +265,9 @@ export function registerOnlineDoctorSockets(io: SocketIoServer, socket: Socket, 
             reason: result.reason || 'call_unavailable'
           });
           return;
+        }
+        if (event === SOCKET_EVENTS.CALL_RING || event === SOCKET_EVENTS.CALL_OFFER) {
+          void markConsultationInProgressFromCall(io, userId, payload);
         }
         relayCallSignal(io, userId, relay, payload);
       });

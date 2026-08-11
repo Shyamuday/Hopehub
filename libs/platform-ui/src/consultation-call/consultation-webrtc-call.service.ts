@@ -28,6 +28,24 @@ function normalizeIceServers(iceServers: IceServerConfig[]) {
   });
 }
 
+function callReasonMessage(reason: unknown): string {
+  if (typeof reason !== 'string') return 'Call ended.';
+  const normalized = reason.trim().toLowerCase();
+  const messages: Record<string, string> = {
+    active_call_exists: 'Another call is already active in this session.',
+    consultation_call_already_active: 'A call is already active in this session.',
+    call_unavailable: 'Call is not available right now.',
+    rejected: 'Call was declined.',
+    no_answer: 'No answer yet. Please try again or send a message.',
+    media_timeout: 'Call could not connect. Please try again or continue in chat.',
+    connection_failed: 'Call connection failed. Please try again or continue in chat.',
+    reconnect_timeout: 'Call disconnected. Please try again or continue in chat.',
+    not_connected: 'Call ended before it connected.',
+    ended_by_user: 'Call ended.'
+  };
+  return messages[normalized] || normalized.replace(/_/g, ' ');
+}
+
 @Injectable({ providedIn: 'root' })
 export class ConsultationWebrtcCallService {
   readonly state = signal<CallState>('idle');
@@ -74,8 +92,8 @@ export class ConsultationWebrtcCallService {
       void this.onRemoteIce(raw);
     });
 
-    socket.on(CALL_SOCKET_EVENTS.END, () => this.cleanup('ended'));
-    socket.on(CALL_SOCKET_EVENTS.REJECT, () => this.cleanup('ended'));
+    socket.on(CALL_SOCKET_EVENTS.END, (raw: unknown) => this.onRemoteCallClosed(raw));
+    socket.on(CALL_SOCKET_EVENTS.REJECT, (raw: unknown) => this.onRemoteCallClosed(raw));
   }
 
   setMediaAccessHandler(handler: (mode: CallMode) => Promise<MediaAccessResult>) {
@@ -223,8 +241,13 @@ export class ConsultationWebrtcCallService {
   }
 
   private async onRemoteAnswer(raw: unknown) {
-    const payload = raw as { sdp?: RTCSessionDescriptionInit };
+    const payload = raw as {
+      consultationId?: string;
+      fromUserId?: string;
+      sdp?: RTCSessionDescriptionInit;
+    };
     if (!payload?.sdp || !this.pc) return;
+    if (!this.matchesCallContext(payload)) return;
     this.clearAnswerTimeout();
     await this.pc.setRemoteDescription(new RTCSessionDescription(payload.sdp));
     await this.flushIceQueue();
@@ -232,8 +255,13 @@ export class ConsultationWebrtcCallService {
   }
 
   private async onRemoteIce(raw: unknown) {
-    const payload = raw as { candidate?: RTCIceCandidateInit };
+    const payload = raw as {
+      consultationId?: string;
+      fromUserId?: string;
+      candidate?: RTCIceCandidateInit;
+    };
     if (!payload?.candidate) return;
+    if (!this.matchesCallContext(payload)) return;
     if (!this.pc?.remoteDescription) {
       this.iceQueue.push(payload.candidate);
       return;
@@ -243,6 +271,27 @@ export class ConsultationWebrtcCallService {
     } catch {
       // stale candidate after reconnect — safe to ignore
     }
+  }
+
+  private onRemoteCallClosed(raw: unknown) {
+    const payload = raw as { consultationId?: string; fromUserId?: string; reason?: string };
+    if (!this.matchesCallContext(payload)) return;
+    const message = callReasonMessage(payload?.reason);
+    this.cleanup('ended');
+    if (payload?.reason && payload.reason !== 'ended_by_user') {
+      this.error.set(message);
+    }
+  }
+
+  private matchesCallContext(payload: { consultationId?: string; fromUserId?: string }) {
+    if (!this.callContext) return true;
+    if (payload.consultationId && payload.consultationId !== this.callContext.consultationId) {
+      return false;
+    }
+    if (payload.fromUserId && payload.fromUserId !== this.callContext.targetUserId) {
+      return false;
+    }
+    return true;
   }
 
   private async flushIceQueue() {

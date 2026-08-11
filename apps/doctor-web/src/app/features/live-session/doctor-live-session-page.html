@@ -229,6 +229,9 @@
                 </div>
                 <small>
                   {{ call.startedAt | date: 'short' }} · {{ callDurationLabel(call) }}
+                  @if (callReasonLabel(call.endReason)) {
+                    · {{ callReasonLabel(call.endReason) }}
+                  }
                 </small>
               </article>
             }

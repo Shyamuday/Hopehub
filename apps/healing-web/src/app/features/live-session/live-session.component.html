@@ -293,7 +293,12 @@
                       <strong>{{ call.mode === 'video' ? 'Video' : 'Voice' }}</strong>
                       <span>{{ callStatusLabel(call.status) }}</span>
                     </div>
-                    <small>{{ call.startedAt | date: 'short' }} · {{ callDurationLabel(call) }}</small>
+                    <small>
+                      {{ call.startedAt | date: 'short' }} · {{ callDurationLabel(call) }}
+                      @if (callReasonLabel(call.endReason)) {
+                        · {{ callReasonLabel(call.endReason) }}
+                      }
+                    </small>
                   </article>
                 }
               </div>
