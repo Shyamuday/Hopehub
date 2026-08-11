@@ -51,6 +51,7 @@
            (click)="navigateToService(service.id)">
         <app-service-card 
           [service]="service"
+          [hidePricing]="true"
           [offerPrice]="singleSessionQuote()?.payableInPaise != null ? (singleSessionQuote()!.payableInPaise! / 100) : null"
           [originalPrice]="singleSessionQuote()?.grossInPaise != null ? (singleSessionQuote()!.grossInPaise! / 100) : null"
           [discountPercent]="singleSessionOffer()?.discountPercent || null"

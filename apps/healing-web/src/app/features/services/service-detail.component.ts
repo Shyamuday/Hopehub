@@ -2,6 +2,7 @@ import { Component, OnInit, signal, inject } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NOTE_CONTENT } from '../../core/constants/note-content.constants';
+import { CONSUMER_UX_COPY } from '../../core/constants/consumer-ux-copy.constants';
 import { Service, ServiceCategory } from '../../core/models';
 import { ServiceInquiryComponent } from '../../shared/components';
 import { BookingService, NotificationService, SEOService } from '../../core/services';
@@ -25,6 +26,7 @@ import {
 })
 export class ServiceDetailComponent implements OnInit {
   readonly notes = NOTE_CONTENT;
+  readonly UX = CONSUMER_UX_COPY;
   service = signal<Service | null>(null);
   singleSessionOffer = signal<HopeHubOffering | null>(null);
   singleSessionQuote = signal<HopeHubOfferingQuote | null>(null);

@@ -8,7 +8,7 @@
   </section>
 
   <div class="request-layout">
-    <section class="request-card" aria-label="Session booking form">
+    <section class="request-card" [attr.aria-label]="UX.booking.formAria">
       <form [formGroup]="contactForm" (submit)="$event.preventDefault(); onSubmit()">
         @if (isLiveConnectFallback()) {
           <section class="live-handoff-card" aria-label="Live Connect booking handoff">
@@ -176,6 +176,18 @@
           </div>
         </div>
 
+        <section class="support-path-panel" [attr.aria-label]="UX.supportPath.chooserAria">
+          <div class="support-path-panel__head">
+            <p>{{ UX.supportPath.chooserEyebrow }}</p>
+            <h2>{{ UX.supportPath.chooserTitle }}</h2>
+            <span>{{ UX.supportPath.chooserHint }}</span>
+          </div>
+          <app-support-path-selector
+            [selected]="activeSupportPathPreference()"
+            (selectedChange)="setSupportPathPreference($event)"
+          />
+        </section>
+
         <details class="optional-panel">
           <summary>Optional preferences</summary>
           <div class="form-grid two">
@@ -266,7 +278,7 @@
               [disabled]="quickTalkLoading() || isSubmitting() || !quickTalkProviders().length"
               (click)="startQuickTalk()"
             >
-              {{ quickTalkStartingProviderId() === 'auto' ? 'Starting...' : 'Talk now' }}
+              {{ quickTalkStartingProviderId() === 'auto' ? 'Starting...' : UX.cta.talkNow }}
             </button>
           </div>
 
@@ -435,14 +447,14 @@
           @if (!isSubmitting()) {
             <span>{{ paymentButtonLabel() }}</span>
           } @else {
-            <span>{{ selectedAppointment() ? 'Creating booking...' : 'Submitting...' }}</span>
+            <span>{{ selectedAppointment() ? UX.booking.creating : 'Submitting...' }}</span>
           }
         </button>
       </form>
 
       @if (showSuccessMessage()) {
         <div class="feedback success">
-          <strong>{{ errorMessage() || 'Booking sent.' }}</strong>
+          <strong>{{ errorMessage() || UX.booking.successTitle }}</strong>
           <span>We will contact you through your selected channel.</span>
           <a routerLink="/dashboard">View dashboard</a>
         </div>
@@ -463,7 +475,7 @@
           <li>
             <span>1</span>
             <div>
-              <strong>We review your booking</strong>
+              <strong>{{ UX.booking.reviewRequest }}</strong>
               <p>Service, preferred mode, and contact method.</p>
             </div>
           </li>

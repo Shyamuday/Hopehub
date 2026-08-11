@@ -135,6 +135,11 @@
   color: #ffffff;
 }
 
+.live-support-path-selector {
+  display: block;
+  margin: 1.25rem 0;
+}
+
 .live-support-path-grid {
   display: grid;
   gap: 0.75rem;
@@ -444,7 +449,7 @@
   margin-top: 0.9rem;
 }
 
-.price-dot {
+.service-dot {
   align-items: center;
   background: #f8fafc;
   border: 1px solid rgba(148, 163, 184, 0.18);
@@ -508,18 +513,6 @@
   content: '';
   height: 0.42rem;
   width: 0.42rem;
-}
-
-.free-dot {
-  align-items: center;
-  background: #fef3c7;
-  border-radius: 999px;
-  color: #92400e;
-  display: inline-flex;
-  font-size: 0.68rem;
-  font-weight: 900;
-  padding: 0.18rem 0.48rem;
-  text-transform: uppercase;
 }
 
 .live-mini-chip {

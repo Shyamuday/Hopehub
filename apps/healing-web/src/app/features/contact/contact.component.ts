@@ -20,6 +20,7 @@ import {
   NotificationService,
 } from '../../core/services';
 import { APP_CONSTANTS } from '../../core';
+import { CONSUMER_UX_COPY } from '../../core/constants/consumer-ux-copy.constants';
 import type {
   CareTeamServiceQuote,
   HopeHubOffering,
@@ -39,6 +40,7 @@ import {
   FormDropdownOption,
   PaymentFlowState,
   PaymentStatusOverlayComponent,
+  SupportPathSelectorComponent,
 } from '../../shared/components';
 import { User } from '../../core/models/auth.model';
 
@@ -53,12 +55,14 @@ type LiveConnectMode = 'chat' | 'voice' | 'video';
     AppointmentCalendarComponent,
     FormDropdownComponent,
     PaymentStatusOverlayComponent,
+    SupportPathSelectorComponent,
   ],
   templateUrl: './contact.component.html',
   styleUrl: './contact.component.scss',
 })
 export class ContactComponent implements OnInit {
   APP_CONSTANTS = APP_CONSTANTS;
+  readonly UX = CONSUMER_UX_COPY;
   readonly notes = NOTE_CONTENT;
   private readonly pendingBookingStorageKey = 'hope_hub_pending_booking';
 
@@ -337,15 +341,15 @@ export class ContactComponent implements OnInit {
   }
 
   liveConnectHeroTitle(): string {
-    if (!this.isLiveConnectFallback()) return 'Book a session';
-    return `Book a ${this.requestedLiveModeLabel()} consultation`;
+    if (!this.isLiveConnectFallback()) return CONSUMER_UX_COPY.booking.pageTitle;
+    return `Book ${this.requestedLiveModeLabel()} support`;
   }
 
   liveConnectHeroCopy(): string {
     if (!this.isLiveConnectFallback()) {
-      return 'Share a few preferences, choose a slot, and we will confirm your private Hope Hub session.';
+      return 'Share a few preferences, choose a slot, and continue with private Hope Hub support.';
     }
-    return `No live ${this.requestedLiveModeLabel()} expert was available immediately, so we brought you here to book the next suitable consultation without starting over.`;
+    return `No live ${this.requestedLiveModeLabel()} expert was available immediately, so we brought you here to book the next suitable ${CONSUMER_UX_COPY.booking.fallbackOption} without starting over.`;
   }
 
   liveConnectHandoffTitle(): string {
@@ -360,6 +364,22 @@ export class ContactComponent implements OnInit {
     this.prefilledData.set({ ...this.prefilledData(), mode });
     this.contactForm.patchValue({ sessionMode: this.sessionModeForLiveConnectMode(mode) });
     this.selectedAppointment.set(null);
+    void this.loadQuickTalkProviders();
+  }
+
+  activeSupportPathPreference() {
+    return supportPathForExpertPreference(
+      this.contactForm?.get('preferredExpertType')?.value ||
+        this.prefilledData().supportPath ||
+        this.prefilledData().preferredExpertType,
+    );
+  }
+
+  setSupportPathPreference(value: string): void {
+    if (!this.contactForm) return;
+    this.contactForm.patchValue({ preferredExpertType: value });
+    this.selectedAppointment.set(null);
+    void this.loadProviderMatch();
     void this.loadQuickTalkProviders();
   }
 
@@ -559,9 +579,7 @@ export class ContactComponent implements OnInit {
   quickTalkSessionMeta(provider: HopeHubProvider): string {
     const service = this.quickTalkServiceForProvider(provider);
     const duration = service?.durationMinutes || provider.sessionDurationMinutes || 30;
-    const amount = service?.effectivePriceInPaise ?? provider.sessionFeeInPaise ?? 0;
-    const price = amount <= 0 ? 'Free' : this.formatPaise(amount);
-    return `${duration} min live session · ${price}`;
+    return `${duration} min live session`;
   }
 
   quickTalkTitle(): string {
@@ -915,7 +933,7 @@ export class ContactComponent implements OnInit {
     if (!this.selectedAppointment()) {
       return this.contactForm.get('serviceInterest')?.value
         ? 'Choose slot to pay'
-        : 'Book a session';
+        : CONSUMER_UX_COPY.cta.bookSupport;
     }
     if (this.payTodayInPaise() <= 0) {
       return 'Confirm free booking';

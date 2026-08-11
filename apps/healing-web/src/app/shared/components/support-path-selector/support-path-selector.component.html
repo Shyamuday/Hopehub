@@ -1,0 +1,21 @@
+<div class="support-path-selector" [attr.aria-label]="ariaLabel">
+  @for (path of paths; track path.value) {
+    <button
+      type="button"
+      class="support-path-card"
+      [class.support-path-card--active]="selected === path.value"
+      (click)="select(path.value)"
+      [title]="path.help"
+    >
+      <span class="support-path-card__icon">{{ path.icon }}</span>
+      <span class="support-path-card__copy">
+        <small>{{ path.label }}</small>
+        <strong>{{ path.title }}</strong>
+        <em>{{ path.bestFor }}</em>
+        @if (showCounts) {
+          <b>{{ count(path.value) }} available</b>
+        }
+      </span>
+    </button>
+  }
+</div>

@@ -2,6 +2,7 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { RouterModule } from '@angular/router';
 import { FeedbackSectionComponent, OfferBannerCarouselComponent } from '../../shared/components';
 import { APP_CONSTANTS } from '../../core';
+import { CONSUMER_UX_COPY } from '../../core/constants/consumer-ux-copy.constants';
 import { IMAGE_ASSETS } from '../../core/constants/image-assets.constants';
 import { environment } from '../../../environments/environment';
 import { BookingService, HopeHubProvider } from '../../core/services/booking.service';
@@ -27,6 +28,7 @@ import { LiveConnectComponent } from './components/live-connect/live-connect.com
 })
 export class HomeComponent implements OnInit {
   readonly APP_CONSTANTS = APP_CONSTANTS;
+  readonly UX = CONSUMER_UX_COPY;
   private readonly bookingService = inject(BookingService);
 
   readonly psychologists = signal<HopeHubProvider[]>([]);

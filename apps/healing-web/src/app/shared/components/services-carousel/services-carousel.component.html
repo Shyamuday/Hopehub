@@ -2,9 +2,9 @@
   <div class="hope-section-inner relative">
     <div class="hope-section-header">
       <p class="hope-eyebrow">Support options</p>
-      <h2 class="hope-section-title">Expert support options</h2>
+      <h2 class="hope-section-title">{{ UX.service.supportOptionsTitle }}</h2>
       <p class="hope-section-copy">
-        Choose the concern you want help with, then book a session with the right Hope Hub expert.
+        Choose the concern you want help with, then continue with the right Hope Hub {{ UX.supportPath.genericRouteText }}.
       </p>
     </div>
 
@@ -31,16 +31,9 @@
                   </div>
 
                   <div class="offer-price-panel shrink-0 rounded-lg border border-gray-200 bg-white px-4 py-3 md:text-right">
-                    <p class="text-xs font-semibold uppercase text-gray-500">Limited offer</p>
-                    <p class="mt-1 text-lg font-semibold text-gray-950">
-                      {{ formatPrice(service.price, service.currency) }}
-                      @if (service.originalPrice) {
-                        <del>{{ formatPrice(service.originalPrice, service.currency) }}</del>
-                      }
-                    </p>
-                    @if (service.discount) {
-                      <p class="mt-1 text-sm font-semibold text-primary-700">{{ service.discount }}% off today</p>
-                    }
+                    <p class="text-xs font-semibold uppercase text-gray-500">Support path</p>
+                    <p class="mt-1 text-lg font-semibold text-gray-950">{{ UX.service.privateOneToOneCare }}</p>
+                    <p class="mt-1 text-sm font-semibold text-primary-700">{{ UX.service.guidedMatching }}</p>
                   </div>
                 </div>
               </div>
@@ -73,7 +66,7 @@
                     (mouseleave)="resumeAutoPlay()"
                     class="btn-primary btn-sm"
                   >
-                    Book session
+                    {{ UX.cta.bookSupport }}
                   </button>
                   <a
                     [href]="whatsappHref(service)"

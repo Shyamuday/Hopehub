@@ -23,6 +23,7 @@ import {
   LifestyleTipDifficulty,
 } from '../../../core/models/lifestyle-tip.model';
 import { LifestyleTipService } from '../../../core/services/lifestyle-tip.service';
+import { CONSUMER_UX_COPY } from '../../../core/constants/consumer-ux-copy.constants';
 
 @Component({
   selector: 'app-lifestyle-tips',
@@ -32,6 +33,7 @@ import { LifestyleTipService } from '../../../core/services/lifestyle-tip.servic
   styleUrl: './lifestyle-tips.component.scss',
 })
 export class LifestyleTipsComponent implements OnInit {
+  readonly UX = CONSUMER_UX_COPY;
   private route = inject(ActivatedRoute);
   private platformId = inject(PLATFORM_ID);
   private destroyRef = inject(DestroyRef);

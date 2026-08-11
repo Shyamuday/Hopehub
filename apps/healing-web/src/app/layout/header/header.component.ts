@@ -7,6 +7,7 @@ import { AuthModalService } from '../../core/services/auth-modal.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { User } from '../../core/models/auth.model';
 import { APP_CONSTANTS } from '../../core/constants/app.constants';
+import { CONSUMER_UX_COPY } from '../../core/constants/consumer-ux-copy.constants';
 
 @Component({
   selector: 'app-header',
@@ -41,12 +42,11 @@ import { APP_CONSTANTS } from '../../core/constants/app.constants';
           <!-- Desktop Navigation -->
           <div class="hidden md:flex items-center space-x-3 lg:space-x-4">
             <a
-              routerLink="/services"
-              routerLinkActive="text-primary-600 border-b-2 border-primary-600"
+              routerLink="/"
+              fragment="live-connect"
               class="text-gray-700 hover:text-primary-600 px-2 py-2 text-sm font-medium transition-colors duration-200 whitespace-nowrap"
-              [attr.aria-current]="isCurrentRoute('/services') ? 'page' : null"
             >
-              Services
+              {{ UX.cta.talkNow }}
             </a>
             <a
               routerLink="/care-team"
@@ -74,22 +74,6 @@ import { APP_CONSTANTS } from '../../core/constants/app.constants';
               [attr.aria-current]="isCurrentRoute('/community') ? 'page' : null"
             >
               Community
-            </a>
-            <a
-              routerLink="/telegram"
-              routerLinkActive="text-primary-600 border-b-2 border-primary-600"
-              class="text-gray-700 hover:text-primary-600 px-2 py-2 text-sm font-medium transition-colors duration-200 whitespace-nowrap"
-              [attr.aria-current]="isCurrentRoute('/telegram') ? 'page' : null"
-            >
-              Telegram
-            </a>
-            <a
-              routerLink="/about"
-              routerLinkActive="text-primary-600 border-b-2 border-primary-600"
-              class="text-gray-700 hover:text-primary-600 px-2 py-2 text-sm font-medium transition-colors duration-200 whitespace-nowrap"
-              [attr.aria-current]="isCurrentRoute('/about') ? 'page' : null"
-            >
-              About
             </a>
             <div class="relative group">
               <button
@@ -547,6 +531,7 @@ import { APP_CONSTANTS } from '../../core/constants/app.constants';
 })
 export class HeaderComponent implements OnInit {
   readonly APP_CONSTANTS = APP_CONSTANTS;
+  readonly UX = CONSUMER_UX_COPY;
   mobileMenuOpen = signal(false);
   navigationState = signal<NavigationState | null>(null);
   user = signal<User | null>(null);

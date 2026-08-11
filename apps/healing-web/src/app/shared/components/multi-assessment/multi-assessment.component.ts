@@ -22,6 +22,7 @@ import {
 } from '../../../core/services/assessment-definition.service';
 import { NotificationService } from '../../../core/services/notification.service';
 import { PaymentService } from '../../../core/services/payment.service';
+import { CONSUMER_UX_COPY } from '../../../core/constants/consumer-ux-copy.constants';
 import { firstValueFrom } from 'rxjs';
 
 @Component({
@@ -33,6 +34,7 @@ import { firstValueFrom } from 'rxjs';
 })
 export class MultiAssessmentComponent implements OnInit {
   Math = Math; // Make Math available in template
+  readonly UX = CONSUMER_UX_COPY;
   private readonly pendingStorageKey = 'hope_hub_pending_assessment_result';
 
   private router = inject(Router);

@@ -3,6 +3,7 @@ import { RouterModule, Router } from '@angular/router';
 import { interval } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { APP_CONSTANTS } from '../../../core/constants/app.constants';
+import { CONSUMER_UX_COPY } from '../../../core/constants/consumer-ux-copy.constants';
 import { BookingService, HopeHubService } from '../../../core/services/booking.service';
 import { PublicCommunicationConfigService } from '../../../core/services/public-communication-config.service';
 
@@ -31,6 +32,7 @@ export interface CarouselService {
   styleUrl: './services-carousel.component.scss',
 })
 export class ServicesCarouselComponent implements OnInit {
+  readonly UX = CONSUMER_UX_COPY;
   private router = inject(Router);
   private bookingService = inject(BookingService);
   private publicConfig = inject(PublicCommunicationConfigService);

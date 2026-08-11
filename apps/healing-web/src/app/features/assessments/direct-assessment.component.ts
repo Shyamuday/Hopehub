@@ -16,6 +16,7 @@ import {
 } from '../../core/services/assessment-definition.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { PaymentService } from '../../core/services/payment.service';
+import { CONSUMER_UX_COPY } from '../../core/constants/consumer-ux-copy.constants';
 
 @Component({
   selector: 'app-direct-assessment',
@@ -374,7 +375,25 @@ import { PaymentService } from '../../core/services/payment.service';
                 </div>
               </div>
 
-              <div class="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <div class="mt-6 rounded-xl border border-primary-100 bg-primary-50/70 p-4">
+                <h2 class="text-base font-semibold text-gray-950">{{ UX.assessment.nextTitle }}</h2>
+                <p class="mt-1 text-sm leading-6 text-gray-700">
+                  {{ UX.assessment.nextCopy }}
+                </p>
+                <div class="mt-4 grid gap-3 sm:grid-cols-3">
+                  <a routerLink="/" fragment="live-connect" class="btn-primary btn-sm">
+                    {{ UX.cta.talkNow }}
+                  </a>
+                  <a routerLink="/contact" class="btn-outline btn-sm">
+                    {{ UX.cta.bookSupport }}
+                  </a>
+                  <a routerLink="/care-team" class="btn-outline btn-sm">
+                    {{ UX.cta.meetCareTeam }}
+                  </a>
+                </div>
+              </div>
+
+              <div class="mt-4 grid gap-3 sm:grid-cols-3">
                 <a
                   [routerLink]="['/exercises']"
                   [queryParams]="recommendationQuery('exercises')"
@@ -393,7 +412,6 @@ import { PaymentService } from '../../core/services/payment.service';
                   class="btn-outline btn-sm"
                   >Articles</a
                 >
-                <a routerLink="/contact" class="btn-primary btn-sm">Book session</a>
               </div>
 
               <div class="mt-4 text-center">
@@ -594,6 +612,7 @@ import { PaymentService } from '../../core/services/payment.service';
   ],
 })
 export class DirectAssessmentComponent implements OnInit {
+  readonly UX = CONSUMER_UX_COPY;
   private readonly route = inject(ActivatedRoute);
   private readonly authService = inject(AuthService);
   private readonly authModalService = inject(AuthModalService);

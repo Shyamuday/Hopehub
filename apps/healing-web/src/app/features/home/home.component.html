@@ -10,7 +10,7 @@
         <p class="hope-eyebrow">What brings people here</p>
         <h2 class="hope-section-title">Real life is messy. Support can still feel simple.</h2>
       </div>
-      <a routerLink="/telegram" class="btn-outline">Explore support options</a>
+      <a routerLink="/telegram" class="btn-outline">{{ UX.cta.exploreSupportOptions }}</a>
     </div>
 
     <div class="support-moment-rail" aria-label="Hope Hub support moments">
@@ -45,7 +45,7 @@
         <p class="hope-card-copy">
           Pick a service, choose a slot, and continue with the right expert.
         </p>
-        <a routerLink="/contact" class="btn-primary mt-5">Book session</a>
+        <a routerLink="/contact" class="btn-primary mt-5">{{ UX.cta.bookSupport }}</a>
       </article>
 
       <article class="hope-card hope-motion-card">
@@ -74,7 +74,7 @@
         <p class="hope-card-copy">
           Complete a short assessment, then sign in to save your score and compare retests over time.
         </p>
-        <a routerLink="/assessments" class="btn-outline mt-5">Start test</a>
+        <a routerLink="/assessments" class="btn-outline mt-5">{{ UX.cta.startTest }}</a>
       </article>
     </div>
   </div>
@@ -93,7 +93,7 @@
           anxiety, relationship stress, overthinking, family concerns, and private guidance.
         </p>
       </div>
-      <a routerLink="/care-team" class="btn-secondary">Meet care team</a>
+      <a routerLink="/care-team" class="btn-secondary">{{ UX.cta.meetCareTeam }}</a>
     </div>
 
     @if (psychologistsLoading()) {
@@ -151,11 +151,11 @@
       <p class="hope-eyebrow">Next step</p>
       <h2 class="hope-section-title">Start privately. Continue only when ready.</h2>
       <p class="hope-section-copy">
-        No pressure to explain everything at once. Book a session or begin with a short test.
+        No pressure to explain everything at once. {{ UX.cta.bookSupport }} or begin with a short test.
       </p>
       <div class="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
-        <a routerLink="/contact" class="btn-primary">Book session</a>
-        <a routerLink="/assessments" class="btn-outline">Start test</a>
+        <a routerLink="/contact" class="btn-primary">{{ UX.cta.bookSupport }}</a>
+        <a routerLink="/assessments" class="btn-outline">{{ UX.cta.startTest }}</a>
       </div>
     </div>
   </div>

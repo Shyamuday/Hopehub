@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { RouterModule } from '@angular/router';
 import { NOTE_CONTENT } from '../../../../core/constants/note-content.constants';
+import { CONSUMER_UX_COPY } from '../../../../core/constants/consumer-ux-copy.constants';
 
 interface HowItWorksStep {
   title: string;
@@ -15,14 +16,15 @@ interface HowItWorksStep {
 })
 export class HowItWorksComponent {
   readonly notes = NOTE_CONTENT;
+  readonly UX = CONSUMER_UX_COPY;
   readonly steps: HowItWorksStep[] = [
     {
-      title: 'Book session',
+      title: 'Choose support',
       description: 'Choose the concern, preferred mode, and a time that works for you.',
     },
     {
       title: 'We confirm',
-      description: 'The Hope Hub team checks the booking and confirms the right support path.',
+      description: `The Hope Hub team checks the booking and confirms the right ${CONSUMER_UX_COPY.supportPath.genericRouteText}.`,
     },
     {
       title: 'Expert matched',
@@ -30,7 +32,7 @@ export class HowItWorksComponent {
     },
     {
       title: 'Confirm slot',
-      description: 'Review the suggested support path and continue when you feel ready.',
+      description: `Review the suggested ${CONSUMER_UX_COPY.supportPath.genericRouteText} and continue when you feel ready.`,
     },
     {
       title: 'Join session',

@@ -12,15 +12,19 @@ import {
   PaymentService,
 } from '../../../../core/services';
 import { IMAGE_ASSETS } from '../../../../core/constants/image-assets.constants';
+import { CONSUMER_UX_COPY } from '../../../../core/constants/consumer-ux-copy.constants';
 import {
-  CONSUMER_SUPPORT_PATHS,
   ConsumerSupportPath,
   supportPathForProvider,
   supportPathMeta,
 } from '../../../../core/constants/support-paths.constants';
 import { User } from '../../../../core/models/auth.model';
 import { HopeHubLiveGroup, HopeHubProvider } from '../../../../core/services/booking.service';
-import { PaymentFlowState, PaymentStatusOverlayComponent } from '../../../../shared/components';
+import {
+  PaymentFlowState,
+  PaymentStatusOverlayComponent,
+  SupportPathSelectorComponent,
+} from '../../../../shared/components';
 
 type LiveConnectMode = 'chat' | 'voice' | 'video';
 type LiveConnectRoleGroup = '' | ConsumerSupportPath;
@@ -34,11 +38,12 @@ type LiveConnectAlternativeMode = {
 @Component({
   selector: 'app-live-connect',
   standalone: true,
-  imports: [FormsModule, PaymentStatusOverlayComponent, RouterModule],
+  imports: [FormsModule, PaymentStatusOverlayComponent, RouterModule, SupportPathSelectorComponent],
   templateUrl: './live-connect.component.html',
   styleUrl: './live-connect.component.scss',
 })
 export class LiveConnectComponent implements OnInit {
+  readonly UX = CONSUMER_UX_COPY;
   private readonly bookingService = inject(BookingService);
   private readonly authService = inject(AuthService);
   private readonly authModalService = inject(AuthModalService);
@@ -78,8 +83,6 @@ export class LiveConnectComponent implements OnInit {
     { value: 'voice', label: 'Voice', icon: '🎧', copy: 'Speak without camera' },
     { value: 'video', label: 'Video', icon: '🎥', copy: 'Face-to-face support' },
   ];
-
-  readonly supportPaths = CONSUMER_SUPPORT_PATHS;
 
   ngOnInit(): void {
     this.authService.user$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((user) => {
@@ -144,10 +147,8 @@ export class LiveConnectComponent implements OnInit {
     return 'live_chat';
   }
 
-  buttonLabel(provider: HopeHubProvider): string {
-    const meta = this.sessionMeta(provider);
-    const prefix = this.isFreeProvider(provider) ? 'Start free' : 'Start';
-    return `${prefix} ${this.modeLabel().toLowerCase()}${meta ? ` · ${meta}` : ''}`;
+  buttonLabel(_provider: HopeHubProvider): string {
+    return `Start ${this.modeLabel().toLowerCase()} support`;
   }
 
   providerTrustLabel(provider: HopeHubProvider): string {
@@ -310,11 +311,9 @@ export class LiveConnectComponent implements OnInit {
   sessionMeta(provider: HopeHubProvider): string {
     const service = this.providerServiceForMode(provider);
     const duration = service?.durationMinutes || provider.sessionDurationMinutes;
-    const price =
-      service?.effectivePriceInPaise ?? service?.priceInPaise ?? provider.sessionFeeInPaise;
     const pieces: string[] = [];
     if (duration) pieces.push(`${duration} min`);
-    if (price != null) pieces.push(price <= 0 ? 'Free' : this.formatPaise(price));
+    pieces.push(CONSUMER_UX_COPY.service.privateOneToOne);
     return pieces.join(' · ');
   }
 
@@ -361,9 +360,7 @@ export class LiveConnectComponent implements OnInit {
 
       this.paymentFlowState.set('SUCCESS');
       this.message.set(
-        `${this.modeLabel()} session is ready with ${response.provider?.name || provider.name}.${
-          this.isFreeProvider(provider) ? ' No wallet or payment was needed.' : ''
-        }`,
+        `${this.modeLabel()} session is ready with ${response.provider?.name || provider.name}.`,
       );
       this.notificationService.success('Live session confirmed. Opening your session room.');
       void this.openLiveSession(response.consultation?.id);

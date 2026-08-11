@@ -32,50 +32,20 @@
           <h1 class="mb-4 text-2xl font-semibold text-gray-950 sm:text-3xl">{{ service()!.name }}</h1>
           <p class="mb-6 text-base leading-7 text-gray-700 sm:text-lg">{{ service()!.description }}</p>
           
-          <!-- Pricing Information -->
-          @if (service()!.pricing) {
-            <div class="mb-6">
-              <h3 class="text-lg font-semibold text-gray-900 mb-3">Session fee</h3>
-              <div class="space-y-2 rounded-lg border border-primary-100 bg-primary-50 p-4">
-                @if (hasActiveSessionDiscount()) {
-                  <div class="session-offer-banner">
-                    <strong>{{ singleSessionOffer()?.discountPercent }}% off first session</strong>
-                    <span>{{ currentSessionDuration() }} included</span>
-                  </div>
-                }
-                @if (service()!.pricing!.individual) {
-                  <div class="flex justify-between items-center">
-                    <span class="text-gray-700">30-minute support session + 15-minute follow-up</span>
-                    <span class="font-semibold">
-                      {{ formatPrice(currentSessionPrice(), service()!.pricing!.currency) }}
-                      @if (hasActiveSessionDiscount()) {
-                        <del class="ml-2 text-sm font-semibold text-gray-500">{{ formatPrice(currentOriginalPrice(), service()!.pricing!.currency) }}</del>
-                      }
-                    </span>
-                  </div>
-                }
-                @if (service()!.pricing!.couples) {
-                  <div class="flex justify-between items-center">
-                    <span class="text-gray-600">Couples Session:</span>
-                    <span class="font-semibold">{{ formatPrice(service()!.pricing!.couples, service()!.pricing!.currency) }}</span>
-                  </div>
-                }
-                @if (service()!.pricing!.group) {
-                  <div class="flex justify-between items-center">
-                    <span class="text-gray-600">Group Session:</span>
-                    <span class="font-semibold">{{ formatPrice(service()!.pricing!.group, service()!.pricing!.currency) }}</span>
-                  </div>
-                }
-              </div>
-            </div>
-          }
+          <div class="mb-6 rounded-lg border border-primary-100 bg-primary-50 p-4">
+            <h3 class="text-lg font-semibold text-gray-900 mb-2">How this support works</h3>
+            <p class="text-sm leading-6 text-gray-700">
+              Start with a private request. We help route you to the right support path, and the
+              checkout step shows the final session details before you confirm.
+            </p>
+          </div>
 
           <!-- Booking CTA -->
           <div class="space-y-3">
             <button 
               (click)="bookService()" 
               class="btn-primary btn-block">
-              Book 30-minute session
+              {{ UX.cta.bookSupport }}
             </button>
             <button 
               (click)="contactForInfo()" 
@@ -183,7 +153,7 @@
 
     <!-- Call to Action Section -->
     <div class="mt-10 rounded-lg border border-primary-100 bg-primary-50 p-6 text-center">
-      <h2 class="mb-4 text-xl font-semibold text-gray-900">Book session</h2>
+      <h2 class="mb-4 text-xl font-semibold text-gray-900">{{ UX.cta.bookSupport }}</h2>
       <p class="text-gray-600 mb-6 max-w-2xl mx-auto">
         Choose this service, select a slot, and continue with the right support path.
       </p>
@@ -191,7 +161,7 @@
         <button 
           (click)="bookService()" 
           class="btn-primary">
-          Book session
+          {{ UX.cta.bookSupport }}
         </button>
         <button 
           (click)="contactForInfo()" 

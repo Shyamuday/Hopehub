@@ -16,3 +16,4 @@ export * from './offer-banner-carousel/offer-banner-carousel.component';
 export * from './scroll-to-top/scroll-to-top.component';
 export * from './form-dropdown/form-dropdown.component';
 export * from './notification-center/notification-center.component';
+export * from './support-path-selector/support-path-selector.component';

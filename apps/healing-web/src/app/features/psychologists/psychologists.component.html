@@ -13,7 +13,7 @@
           or a gentle emotional support listener. Each profile clearly shows the scope before you book.
         </p>
       </div>
-      <a routerLink="/contact" class="btn-primary btn-sm">Book session</a>
+      <a routerLink="/contact" class="btn-primary btn-sm">{{ UX.cta.bookSupport }}</a>
     </div>
 
     <div class="mb-6 rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm leading-6 text-emerald-950">
@@ -23,32 +23,13 @@
     </div>
 
     <div class="mb-6 rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-      <div class="mb-4 grid gap-3 md:grid-cols-3">
-        @for (tab of roleTabs; track tab.value) {
-          <button
-            type="button"
-            class="rounded-2xl border p-3 text-left transition hover:-translate-y-0.5 hover:shadow-md"
-            [class.border-primary-600]="roleGroup() === tab.value"
-            [class.bg-emerald-50]="roleGroup() === tab.value"
-            [class.text-emerald-950]="roleGroup() === tab.value"
-            [class.border-gray-200]="roleGroup() !== tab.value"
-            [class.bg-white]="roleGroup() !== tab.value"
-            [class.text-gray-700]="roleGroup() !== tab.value"
-            (click)="setRoleGroup(tab.value)"
-            [title]="tab.help"
-          >
-            <span class="mb-2 inline-flex h-9 w-9 items-center justify-center rounded-full bg-gray-50 text-lg">
-              {{ tab.icon }}
-            </span>
-            <span class="block text-xs font-black uppercase tracking-wide text-primary-700">{{ tab.label }}</span>
-            <span class="mt-1 block text-sm font-black text-gray-950">{{ tab.title }}</span>
-            <span class="mt-1 block text-xs leading-5 text-gray-600">{{ tab.bestFor }}</span>
-            <span class="mt-2 inline-flex rounded-full bg-black/5 px-2 py-0.5 text-[11px] font-bold">
-              {{ roleCount(tab.value) }} available
-            </span>
-          </button>
-        }
-      </div>
+      <app-support-path-selector
+        class="mb-4 block"
+        [selected]="roleGroup()"
+        [counts]="roleCounts()"
+        [showCounts]="true"
+        (selectedChange)="setRoleGroup($event)"
+      />
       <label for="providerSearch" class="sr-only">Search care team</label>
       <input
         id="providerSearch"
@@ -187,8 +168,7 @@
                 }
                 @if (primaryService(provider); as service) {
                   <p class="mt-1 text-xs font-bold text-gray-700">
-                    {{ service.pricingLabel || (service.isFree ? 'Free' : ('₹' + ((service.effectivePriceInPaise ?? service.priceInPaise) / 100))) }} ·
-                    {{ service.durationMinutes }} min
+                    {{ service.durationMinutes }} min · private support
                   </p>
                 }
               </div>
@@ -231,7 +211,7 @@
                 @for (service of provider.services!.slice(0, 2); track service.id) {
                   <div class="flex items-center justify-between gap-3 rounded-md bg-gray-50 px-3 py-2">
                     <span class="font-semibold">{{ service.title }}</span>
-                    <span class="whitespace-nowrap">{{ service.pricingLabel || (service.isFree ? 'Free' : ('₹' + ((service.effectivePriceInPaise ?? service.priceInPaise) / 100))) }}</span>
+                    <span class="whitespace-nowrap">{{ service.durationMinutes }} min</span>
                   </div>
                 }
               </div>

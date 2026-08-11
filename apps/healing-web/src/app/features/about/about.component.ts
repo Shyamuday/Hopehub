@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
 import { RouterModule } from '@angular/router';
+import { CONSUMER_UX_COPY } from '../../core/constants/consumer-ux-copy.constants';
 
 @Component({
   selector: 'app-about',
@@ -33,7 +34,7 @@ import { RouterModule } from '@angular/router';
             <p class="mt-4 text-sm leading-7 text-gray-700 sm:text-base">
               We are building Hope Hub as a supportive bridge between self-help resources, community
               care, and professional mental wellness support. Our focus is not to make people feel
-              like they must immediately book a session. Our first goal is to help someone feel less
+              like they must immediately book support. Our first goal is to help someone feel less
               alone, understand what they are experiencing, and choose the next step that feels
               right.
             </p>
@@ -96,13 +97,15 @@ import { RouterModule } from '@angular/router';
             local emergency services.
           </p>
           <div class="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
-            <a routerLink="/assessments" class="btn-outline btn-sm">Start test</a>
+            <a routerLink="/assessments" class="btn-outline btn-sm">{{ UX.cta.startTest }}</a>
             <a routerLink="/community" class="btn-outline btn-sm">Join community</a>
-            <a routerLink="/contact" class="btn-primary btn-sm">Book session</a>
+            <a routerLink="/contact" class="btn-primary btn-sm">{{ UX.cta.bookSupport }}</a>
           </div>
         </div>
       </section>
     </main>
   `,
 })
-export class AboutComponent {}
+export class AboutComponent {
+  readonly UX = CONSUMER_UX_COPY;
+}

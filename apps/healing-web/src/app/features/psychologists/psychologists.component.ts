@@ -11,8 +11,10 @@ import {
   supportPathForProvider,
   supportPathMeta,
 } from '../../core/constants/support-paths.constants';
+import { CONSUMER_UX_COPY } from '../../core/constants/consumer-ux-copy.constants';
 import { PublicCommunicationConfigService } from '../../core/services/public-communication-config.service';
 import { NotificationService } from '../../core/services/notification.service';
+import { SupportPathSelectorComponent } from '../../shared/components';
 
 type CareTeamListService = NonNullable<HopeHubProvider['services']>[number];
 type RoleGroup = '' | ConsumerSupportPath;
@@ -20,10 +22,11 @@ type RoleGroup = '' | ConsumerSupportPath;
 @Component({
   selector: 'app-psychologists',
   standalone: true,
-  imports: [FormsModule, RouterLink],
+  imports: [FormsModule, RouterLink, SupportPathSelectorComponent],
   templateUrl: './psychologists.component.html',
 })
 export class PsychologistsComponent implements OnInit {
+  readonly UX = CONSUMER_UX_COPY;
   private readonly bookingService = inject(BookingService);
   readonly publicConfig = inject(PublicCommunicationConfigService);
   private readonly notificationService = inject(NotificationService);
@@ -204,7 +207,7 @@ export class PsychologistsComponent implements OnInit {
       return 'Recommended: start with Professional care for structured support.';
     }
     if (/lonely|loneliness|breakup|motivation|heartbreak|friend/.test(concern)) {
-      return 'Recommended: Talk now is a softer first step when you mainly need to vent or feel heard.';
+      return `Recommended: ${CONSUMER_UX_COPY.cta.talkNow} is a softer first step when you mainly need to vent or feel heard.`;
     }
     if (/study|career|exam|focus|job/.test(concern)) {
       return 'Recommended: Clarity & growth first, then Professional care if emotions feel heavy.';
@@ -420,6 +423,6 @@ export class PsychologistsComponent implements OnInit {
   }
 
   bookingCta(provider: HopeHubProvider): string {
-    return provider.bookingCtaLabel || 'Book session';
+    return provider.bookingCtaLabel || CONSUMER_UX_COPY.cta.bookSupport;
   }
 }
