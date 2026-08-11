@@ -1,0 +1,95 @@
+<section class="consumer-flows-page">
+  <header class="page-hero">
+    <div>
+      <p class="eyebrow">Hope Hub journey map</p>
+      <h1>Consumer flows</h1>
+      <p>
+        Checks that each concern has a working assessment, related services, care-team filter,
+        and booking path.
+      </p>
+    </div>
+    <button type="button" class="secondary" (click)="load()" [disabled]="loading()">
+      {{ loading() ? 'Refreshing…' : 'Refresh health' }}
+    </button>
+  </header>
+
+  @if (error()) {
+    <div class="alert error">{{ error() }}</div>
+  }
+
+  <div class="summary-grid">
+    <article>
+      <span>Total flows</span>
+      <strong>{{ flows().length }}</strong>
+    </article>
+    <article>
+      <span>Healthy</span>
+      <strong>{{ healthyCount() }}</strong>
+    </article>
+    <article [class.warn]="issueCount()">
+      <span>Issues</span>
+      <strong>{{ issueCount() }}</strong>
+    </article>
+    <article>
+      <span>Source</span>
+      <strong>{{ meta()?.source || '—' }}</strong>
+    </article>
+  </div>
+
+  @if (loading()) {
+    <div class="loading-card">Loading consumer flow health…</div>
+  } @else {
+    <div class="flow-table">
+      <div class="flow-row flow-row--head">
+        <span>Concern</span>
+        <span>Assessment</span>
+        <span>Services</span>
+        <span>Care team</span>
+        <span>Status</span>
+      </div>
+
+      @for (flow of flows(); track flow.key) {
+        <article class="flow-row">
+          <div>
+            <strong>{{ flow.label }}</strong>
+            <small>{{ flow.key }} · {{ flow.supportPath }}</small>
+          </div>
+
+          <div>
+            <strong [class.bad]="!flow.assessmentAvailable">
+              {{ flow.assessmentTitle || flow.assessmentId }}
+            </strong>
+            <small>{{ flow.routes.assessment }}</small>
+          </div>
+
+          <div>
+            <strong [class.bad]="!flow.serviceAvailable">
+              {{ flow.serviceMatches.length }} matched
+            </strong>
+            @if (flow.serviceMatches.length) {
+              <small>{{ serviceNames(flow) }}</small>
+            } @else {
+              <small>Terms: {{ flow.serviceSearchTerms.join(', ') }}</small>
+            }
+          </div>
+
+          <div>
+            <strong>{{ flow.queryParams.careTeam.concern }}</strong>
+            <small>{{ flow.routes.careTeam }}{{ queryPreview(flow.queryParams.careTeam) }}</small>
+          </div>
+
+          <div>
+            @if (flowHealthy(flow)) {
+              <span class="status ok">Healthy</span>
+            } @else {
+              <span class="status bad">Needs attention</span>
+              @for (issue of issuesFor(flow); track issue.issue + issue.concernKey) {
+                <small class="issue">{{ issue.issue }}</small>
+              }
+            }
+          </div>
+        </article>
+      }
+    </div>
+  }
+</section>

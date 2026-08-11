@@ -17,6 +17,7 @@ export const ROUTE_PATHS = {
   PAYROLL: 'payroll',
   RATES: 'rates',
   HOPE_HUB_OFFERS: 'hope-hub-offers',
+  CONSUMER_FLOWS: 'consumer-flows',
   LISTENER_SCREENING: 'listener-screening',
   ASSESSMENT_DEFINITIONS: 'assessment-definitions',
   PRACTICES: 'practices',
@@ -125,6 +126,11 @@ export const NAV_ITEMS = [
   {
     path: adminNavPath(ROUTE_PATHS.HOPE_HUB_OFFERS),
     label: '🧠 Hope Hub Offers',
+    workspaces: ['hope-hub'],
+  },
+  {
+    path: adminNavPath(ROUTE_PATHS.CONSUMER_FLOWS),
+    label: '🧭 Consumer Flows',
     workspaces: ['hope-hub'],
   },
   {
@@ -292,6 +298,7 @@ export const NAV_GROUPS: AdminNavGroup[] = [
     label: 'Hope Hub',
     segments: [
       ROUTE_PATHS.HOPE_HUB_OFFERS,
+      ROUTE_PATHS.CONSUMER_FLOWS,
       ROUTE_PATHS.LISTENER_SCREENING,
       ROUTE_PATHS.COUNSELLOR_APPLICATIONS,
       ROUTE_PATHS.ASSESSMENT_DEFINITIONS,

@@ -353,6 +353,16 @@ export class AdminCatalogApi extends AdminApiBase {
     );
   }
 
+  getHopeHubConsumerFlows() {
+    return firstValueFrom(
+      this.http.get<{
+        flows: Array<any>;
+        issues: Array<any>;
+        meta: { source: string; total: number; healthy: boolean };
+      }>(`${this.apiBase}${API_PATHS.ADMIN.HOPE_HUB_CONSUMER_FLOWS}`),
+    );
+  }
+
   getAssessmentAccessReport(
     params: {
       q?: string;
