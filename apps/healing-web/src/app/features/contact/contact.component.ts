@@ -110,6 +110,8 @@ export class ContactComponent implements OnInit {
   defaultSessionOffer = signal<HopeHubOffering | null>(null);
   defaultSessionQuote = signal<HopeHubOfferingQuote | null>(null);
   currentUser = signal<User | null>(null);
+  promoCode = signal('');
+  appliedPromoCode = signal('');
 
   careTeamProfileLink(provider: HopeHubProvider): string[] {
     return [...CONSUMER_ROUTES.links.careTeam, provider.slug || provider.id];
@@ -722,6 +724,7 @@ export class ContactComponent implements OnInit {
           offeringId: data.offeringId || selectedOffer?.id || '',
           offeringSlug: data.offering || selectedOffer?.slug || '',
           paymentMode: data.paymentMode === 'PARTIAL' ? 'PARTIAL' : 'FULL',
+          promoCode: this.checkoutPromoCode(),
           message: bookingMessage,
           appointmentDate: this.formatLocalDate(appointment.date),
           appointmentTime: appointment.time,
@@ -839,6 +842,7 @@ export class ContactComponent implements OnInit {
           previousTherapyOrMedication: formData.previousTherapyOrMedication || '',
           emergencyConsent: Boolean(formData.emergencyConsent),
           listenerSupportConsent: this.listenerSupportConsentAccepted(),
+          promoCode: this.checkoutPromoCode(),
           entryPage: typeof window === 'undefined' ? undefined : window.location.href,
         }),
       );
@@ -945,6 +949,38 @@ export class ContactComponent implements OnInit {
       return 'Confirm free booking';
     }
     return this.prefilledData().paymentMode === 'PARTIAL' ? 'Book and pay deposit' : 'Book and pay';
+  }
+
+  updatePromoCode(value: string): void {
+    this.promoCode.set(
+      value
+        .toUpperCase()
+        .replace(/[^A-Z0-9_-]/g, '')
+        .slice(0, 32),
+    );
+    if (this.appliedPromoCode() && this.appliedPromoCode() !== this.promoCode()) {
+      this.appliedPromoCode.set('');
+    }
+  }
+
+  applyPromoCode(): void {
+    const code = this.promoCode().trim().toUpperCase();
+    if (code.length < 2) {
+      this.appliedPromoCode.set('');
+      this.notificationService.info('Enter a valid coupon code.');
+      return;
+    }
+    this.appliedPromoCode.set(code);
+    this.notificationService.success('Coupon will be checked at secure checkout.');
+  }
+
+  clearPromoCode(): void {
+    this.promoCode.set('');
+    this.appliedPromoCode.set('');
+  }
+
+  checkoutPromoCode(): string {
+    return (this.appliedPromoCode() || this.promoCode()).trim().toUpperCase();
   }
 
   offerDiscountInPaise(): number {
@@ -1063,6 +1099,7 @@ export class ContactComponent implements OnInit {
       preferAnonymousTelegram: false,
       preferredContact: 'telegram',
     });
+    this.clearPromoCode();
     this.selectedAppointment.set(null);
 
     setTimeout(() => {

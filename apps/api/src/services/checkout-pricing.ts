@@ -12,7 +12,11 @@ import {
   listActiveCheckoutDiscountRules,
   ruleUsageAllows
 } from './reward-rules.js';
-import { getWalletBalance, resolveWalletRedeemCap, walletPolicyFromRule } from './patient-wallet.js';
+import {
+  getWalletBalance,
+  resolveWalletRedeemCap,
+  walletPolicyFromRule
+} from './patient-wallet.js';
 
 export type AppliedCheckoutRule = {
   ruleId: string;
@@ -84,7 +88,10 @@ export async function resolveGuestConsultationCheckout(input: {
   const hasReferrer = false;
 
   for (const rule of rules) {
-    if (rule.valueType !== RewardValueType.CHECKOUT_DISCOUNT_FLAT && rule.valueType !== RewardValueType.CHECKOUT_DISCOUNT_PERCENT) {
+    if (
+      rule.valueType !== RewardValueType.CHECKOUT_DISCOUNT_FLAT &&
+      rule.valueType !== RewardValueType.CHECKOUT_DISCOUNT_PERCENT
+    ) {
       continue;
     }
     if (rule.promoCode) {
@@ -111,7 +118,7 @@ export async function resolveGuestConsultationCheckout(input: {
   const afterDiscount = Math.max(0, grossInPaise - discountInPaise);
   const policyRule = await getActiveWalletPolicyRule();
   const policy = walletPolicyFromRule(policyRule);
-  const payableInPaise = Math.max(policy.minPayableInPaise, afterDiscount);
+  const payableInPaise = afterDiscount <= 0 ? 0 : Math.max(policy.minPayableInPaise, afterDiscount);
 
   return {
     grossAmountInPaise: grossInPaise,
@@ -124,7 +131,9 @@ export async function resolveGuestConsultationCheckout(input: {
   };
 }
 
-export async function resolveConsultationCheckout(input: CheckoutContext): Promise<ConsultationCheckoutQuote> {
+export async function resolveConsultationCheckout(
+  input: CheckoutContext
+): Promise<ConsultationCheckoutQuote> {
   const { patientId, grossInPaise } = input;
   if (grossInPaise <= 0) {
     return {
@@ -152,7 +161,10 @@ export async function resolveConsultationCheckout(input: CheckoutContext): Promi
 
   const promo = input.promoCode?.trim().toUpperCase();
   for (const rule of rules) {
-    if (rule.valueType !== RewardValueType.CHECKOUT_DISCOUNT_FLAT && rule.valueType !== RewardValueType.CHECKOUT_DISCOUNT_PERCENT) {
+    if (
+      rule.valueType !== RewardValueType.CHECKOUT_DISCOUNT_FLAT &&
+      rule.valueType !== RewardValueType.CHECKOUT_DISCOUNT_PERCENT
+    ) {
       continue;
     }
     if (rule.promoCode) {
@@ -160,7 +172,8 @@ export async function resolveConsultationCheckout(input: CheckoutContext): Promi
     }
     if (rule.minOrderInPaise != null && grossInPaise < rule.minOrderInPaise) continue;
     if (!(await triggerMatchesCheckout(rule, isFirstPayment))) continue;
-    if (!(await patientMatchesBeneficiary(rule, patientId, { isFirstPayment, hasReferrer }))) continue;
+    if (!(await patientMatchesBeneficiary(rule, patientId, { isFirstPayment, hasReferrer })))
+      continue;
     if (!(await ruleUsageAllows(rule, patientId))) continue;
 
     const amount = computeDiscountAmount(rule, remainingGross);
@@ -182,8 +195,12 @@ export async function resolveConsultationCheckout(input: CheckoutContext): Promi
   const policy = walletPolicyFromRule(policyRule);
   const maxWalletRedeemInPaise = resolveWalletRedeemCap(afterDiscount, walletBalance, policy);
   const requestedWallet = Math.max(0, input.walletRedeemInPaise ?? 0);
-  const walletRedeemedInPaise = Math.min(requestedWallet, maxWalletRedeemInPaise);
-  const payableInPaise = Math.max(policy.minPayableInPaise, afterDiscount - walletRedeemedInPaise);
+  const walletRedeemedInPaise =
+    afterDiscount <= 0 ? 0 : Math.min(requestedWallet, maxWalletRedeemInPaise);
+  const payableInPaise =
+    afterDiscount <= 0
+      ? 0
+      : Math.max(policy.minPayableInPaise, afterDiscount - walletRedeemedInPaise);
 
   return {
     grossAmountInPaise: grossInPaise,

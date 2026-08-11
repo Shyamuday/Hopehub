@@ -37,6 +37,7 @@ import {
 import { isFirstPaidConsultation } from '../services/referral-codes.js';
 import { getSiteConfigMap, getSiteConfigValue } from '../services/site-config.service.js';
 import { upsertProviderEarningForPayment } from '../services/provider-earnings.js';
+import { settleConsultationPaymentRewards } from '../services/reward-settlement.js';
 import { notifyConsultationBooked } from '../services/consultation-reminders.js';
 import { markDoctorBusy } from '../services/online-doctor-presence.js';
 import { emitHopeHubLiveGroupMessage } from '../services/hope-hub-live-groups-realtime.js';
@@ -128,6 +129,8 @@ const hopeHubBookingSchema = z.object({
   offeringId: z.string().trim().min(1).max(120).optional().or(z.literal('')),
   offeringSlug: z.string().trim().min(1).max(160).optional().or(z.literal('')),
   paymentMode: z.enum(['FULL', 'PARTIAL']).optional(),
+  promoCode: z.string().trim().min(2).max(32).optional().or(z.literal('')),
+  walletRedeemInPaise: z.number().int().min(0).optional(),
   concernCategory: z.string().trim().max(160).optional().or(z.literal('')),
   preferredExpertType: z.string().trim().max(160).optional().or(z.literal('')),
   sessionMode: z.string().trim().max(80).optional().or(z.literal('')),
@@ -160,6 +163,7 @@ const hopeHubQuickTalkSchema = z.object({
   emergencyConsent: z.boolean().optional(),
   listenerSupportConsent: z.boolean().optional().default(false),
   walletRedeemInPaise: z.number().int().min(0).optional(),
+  promoCode: z.string().trim().min(2).max(32).optional().or(z.literal('')),
   entryPage: z.string().trim().max(500).optional().or(z.literal(''))
 });
 
@@ -3031,12 +3035,13 @@ hopeHubRouter.post(
     const checkout = await resolveConsultationCheckout({
       patientId: req.user!.id,
       grossInPaise: amountInPaise,
-      walletRedeemInPaise: amountInPaise <= 0 ? 0 : body.walletRedeemInPaise
+      walletRedeemInPaise: amountInPaise <= 0 ? 0 : body.walletRedeemInPaise,
+      promoCode: body.promoCode || ''
     });
     const finalPayableInPaise = checkout.payableInPaise;
     const isFreeOrWalletPaid = finalPayableInPaise <= 0;
     const isFreeByPricing = amountInPaise <= 0;
-    const paymentProvider = isFreeByPricing ? 'internal_free' : 'razorpay';
+    const paymentProvider = isFreeOrWalletPaid ? 'internal_free' : 'razorpay';
     const grossRevenueSplit = hopeHubRevenueSplit(amountInPaise);
     const payableRevenueSplit = hopeHubRevenueSplit(finalPayableInPaise);
 
@@ -3066,6 +3071,7 @@ hopeHubRouter.post(
           careTeamPricingMode: careTeamService?.pricingMode || '',
           careTeamPricingLabel: quickTalkPricingLabel,
           careTeamPreviousUseCount: previousUseCount,
+          promoCode: body.promoCode || '',
           isFreeSession: isFreeByPricing,
           requiresPayment: !isFreeOrWalletPaid,
           concernCategory: body.concernCategory || '',
@@ -3096,6 +3102,7 @@ hopeHubRouter.post(
           careTeamPricingLabel: quickTalkPricingLabel,
           careTeamPricingRule: careTeamServicePricing?.appliedRule || null,
           careTeamPreviousUseCount: previousUseCount,
+          promoCode: body.promoCode || null,
           isFreeSession: isFreeByPricing,
           requiresPayment: !isFreeOrWalletPaid,
           sessionDurationMinutes: selectedServiceDurationMinutes,
@@ -3127,6 +3134,7 @@ hopeHubRouter.post(
               careTeamPricingLabel: quickTalkPricingLabel,
               careTeamPricingRule: careTeamServicePricing?.appliedRule || null,
               careTeamPreviousUseCount: previousUseCount,
+              promoCode: body.promoCode || null,
               isFreeSession: isFreeByPricing,
               requiresPayment: !isFreeOrWalletPaid,
               sessionDurationMinutes: selectedServiceDurationMinutes,
@@ -3150,6 +3158,9 @@ hopeHubRouter.post(
     if (isFreeOrWalletPaid && consultation.payment?.id) {
       await markDoctorBusy(provider.userId, 'BUSY');
       await upsertProviderEarningForPayment(consultation.payment.id);
+      void settleConsultationPaymentRewards(consultation.payment.id).catch((err) =>
+        console.error('[rewards] Quick Talk settlement failed after free checkout', err)
+      );
       void notifyConsultationBooked(consultation.id).catch((err) =>
         console.error('[booking-reminders] Quick Talk booking notification failed', err)
       );
@@ -3572,13 +3583,15 @@ hopeHubRouter.post(
 
     const checkout = await resolveConsultationCheckout({
       patientId: req.user!.id,
-      grossInPaise: partialPayment.payableInPaise
+      grossInPaise: partialPayment.payableInPaise,
+      walletRedeemInPaise: partialPayment.payableInPaise <= 0 ? 0 : body.walletRedeemInPaise,
+      promoCode: body.promoCode || ''
     });
     const chargeGrossInPaise = checkout.grossAmountInPaise;
     const finalPayableInPaise = checkout.payableInPaise;
     const isFreeByPricing = amountInPaise <= 0;
     const requiresPayment = finalPayableInPaise > 0;
-    const paymentProvider = isFreeByPricing ? 'internal_free' : 'razorpay';
+    const paymentProvider = requiresPayment ? 'razorpay' : 'internal_free';
     const totalDiscountInPaise = offerDiscount.discountInPaise + checkout.discountInPaise;
     const grossRevenueSplit = hopeHubRevenueSplit(amountInPaise);
     const payableRevenueSplit = hopeHubRevenueSplit(checkout.payableInPaise);
@@ -3621,6 +3634,7 @@ hopeHubRouter.post(
                 )
               : null,
           careTeamPreviousUseCount: careTeamServiceUseCount,
+          promoCode: body.promoCode || '',
           careTeamPackageConsultationId: activeCareTeamPackageBalance?.consultationId || '',
           careTeamPackageRemainingBefore: activeCareTeamPackageBalance?.remainingSessions ?? null,
           providerId: requestedProvider?.id || body.providerId || '',
@@ -3675,6 +3689,7 @@ hopeHubRouter.post(
           sessionFeeInPaise: amountInPaise,
           netAfterOfferDiscountInPaise,
           paymentMode: partialPayment.paymentMode,
+          promoCode: body.promoCode || null,
           balanceDueInPaise: partialPayment.balanceDueInPaise,
           packageUsage,
           sessionDurationMinutes:
@@ -3732,6 +3747,7 @@ hopeHubRouter.post(
                     )
                   : null,
               careTeamPreviousUseCount: careTeamServiceUseCount,
+              promoCode: body.promoCode || null,
               careTeamPackageConsultationId: activeCareTeamPackageBalance?.consultationId || null,
               careTeamPackageRemainingBefore:
                 activeCareTeamPackageBalance?.remainingSessions ?? null,
@@ -3781,6 +3797,9 @@ hopeHubRouter.post(
 
     if (consultation.payment?.status === PaymentStatus.PAID) {
       await upsertProviderEarningForPayment(consultation.payment.id);
+      void settleConsultationPaymentRewards(consultation.payment.id).catch((err) =>
+        console.error('[rewards] Hope Hub settlement failed after free checkout', err)
+      );
       void notifyConsultationBooked(consultation.id).catch((err) =>
         console.error('[booking-reminders] Hope Hub booking notification failed', err)
       );

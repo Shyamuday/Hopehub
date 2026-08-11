@@ -10,6 +10,8 @@ export type HopeHubBookingPayload = {
   offeringId?: string;
   offeringSlug?: string;
   paymentMode?: 'FULL' | 'PARTIAL';
+  promoCode?: string;
+  walletRedeemInPaise?: number;
   message?: string;
   appointmentDate: string;
   appointmentTime: string;
@@ -400,6 +402,7 @@ export class BookingService {
     emergencyConsent?: boolean;
     listenerSupportConsent?: boolean;
     walletRedeemInPaise?: number;
+    promoCode?: string;
     entryPage?: string;
   }): Observable<{ consultation: any; provider: { id: string; userId: string; name: string } }> {
     return this.http.post<{
