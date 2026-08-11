@@ -431,6 +431,11 @@ export class BookingService {
     grossInPaise: number;
     promoCode?: string;
     walletRedeemInPaise?: number;
+    serviceName?: string;
+    offeringId?: string;
+    careTeamServiceId?: string;
+    providerId?: string;
+    assessmentId?: string;
   }): Observable<{ quote: HopeHubCheckoutQuote }> {
     return this.http.post<{ quote: HopeHubCheckoutQuote }>(
       `${this.apiUrl}/hope-hub/checkout-quote`,

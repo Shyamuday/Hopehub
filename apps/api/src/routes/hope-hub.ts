@@ -170,7 +170,12 @@ const hopeHubQuickTalkSchema = z.object({
 const hopeHubCheckoutQuoteSchema = z.object({
   grossInPaise: z.number().int().min(0).max(10000000),
   promoCode: z.string().trim().min(2).max(32).optional().or(z.literal('')),
-  walletRedeemInPaise: z.number().int().min(0).optional()
+  walletRedeemInPaise: z.number().int().min(0).optional(),
+  serviceName: z.string().trim().max(160).optional().or(z.literal('')),
+  offeringId: z.string().trim().max(120).optional().or(z.literal('')),
+  careTeamServiceId: z.string().trim().max(120).optional().or(z.literal('')),
+  providerId: z.string().trim().max(120).optional().or(z.literal('')),
+  assessmentId: z.string().trim().max(120).optional().or(z.literal(''))
 });
 
 const organizationLeadSchema = z.object({
@@ -3042,7 +3047,10 @@ hopeHubRouter.post(
       patientId: req.user!.id,
       grossInPaise: amountInPaise,
       walletRedeemInPaise: amountInPaise <= 0 ? 0 : body.walletRedeemInPaise,
-      promoCode: body.promoCode || ''
+      promoCode: body.promoCode || '',
+      serviceName: effectiveServiceName,
+      careTeamServiceId: careTeamService?.id || null,
+      providerId: provider.id
     });
     const finalPayableInPaise = checkout.payableInPaise;
     const isFreeOrWalletPaid = finalPayableInPaise <= 0;
@@ -3333,7 +3341,12 @@ hopeHubRouter.post(
       patientId: req.user!.id,
       grossInPaise: body.grossInPaise,
       promoCode: body.promoCode || '',
-      walletRedeemInPaise: body.walletRedeemInPaise
+      walletRedeemInPaise: body.walletRedeemInPaise,
+      serviceName: body.serviceName || '',
+      offeringId: body.offeringId || null,
+      careTeamServiceId: body.careTeamServiceId || null,
+      providerId: body.providerId || null,
+      assessmentId: body.assessmentId || null
     });
 
     res.json({ quote });
@@ -3608,7 +3621,11 @@ hopeHubRouter.post(
       patientId: req.user!.id,
       grossInPaise: partialPayment.payableInPaise,
       walletRedeemInPaise: partialPayment.payableInPaise <= 0 ? 0 : body.walletRedeemInPaise,
-      promoCode: body.promoCode || ''
+      promoCode: body.promoCode || '',
+      serviceName: effectiveServiceName,
+      offeringId: selectedOffering?.id || body.offeringId || null,
+      careTeamServiceId: selectedCareTeamService?.id || body.careTeamServiceId || null,
+      providerId: requestedProvider?.id || body.providerId || null
     });
     const chargeGrossInPaise = checkout.grossAmountInPaise;
     const finalPayableInPaise = checkout.payableInPaise;

@@ -18,11 +18,18 @@
     <p>Loading…</p>
   } @else if (tab() === 'rules') {
     <section class="panel inner">
-      <h2>Add rule</h2>
-      <p class="hint">Flat amounts are in paise below (₹100 = 10000). Percent rules use basis points (10% = 1000).</p>
+      <h2>Add coupon / reward rule</h2>
+      <p class="hint">
+        For Hope Hub coupons use Kind = PROMO, Applies to = CONSULTATION, Beneficiary = PAYING_PATIENT.
+        Enter normal values: 10 means 10% off, 100 means free, and flat discounts are in rupees.
+      </p>
       <div class="form-grid">
-        <label>Code <input [formField]="createForm.code" placeholder="REF_WELCOME" /></label>
-        <label>Name <input [formField]="createForm.name" /></label>
+        <label>Internal code <input [formField]="createForm.code" placeholder="HOPE_FREE_100" /></label>
+        <label>Coupon name <input [formField]="createForm.name" placeholder="Free first Hope Hub session" /></label>
+        <label>Coupon code shown to user <input [formField]="createForm.promoCode" placeholder="FREEHELP" /></label>
+        <label>{{ valueAmountLabel(createModel()) }}
+          <input type="number" [formField]="createForm.valueAmount" [placeholder]="valueAmountPlaceholder(createModel())" />
+        </label>
         <label>Kind
           <select [formField]="createForm.kind">
             @for (k of kinds; track k) { <option [value]="k">{{ k }}</option> }
@@ -43,14 +50,26 @@
             @for (v of valueTypes; track v) { <option [value]="v">{{ v }}</option> }
           </select>
         </label>
-        <label>Value amount <input type="number" [formField]="createForm.valueAmount" /></label>
         <label>Applies to
           <select [formField]="createForm.appliesTo">
             @for (a of appliesToOptions; track a) { <option [value]="a">{{ a }}</option> }
           </select>
         </label>
-        <label>Promo code (optional) <input [formField]="createForm.promoCode" placeholder="SUMMER25" /></label>
         <label>Max uses / patient <input type="number" [formField]="createForm.maxUsesPerPatient" /></label>
+        <label>Max total uses <input type="number" [formField]="createForm.maxUsesGlobal" placeholder="Optional" /></label>
+        <label>Minimum order (₹) <input type="number" [formField]="createForm.minOrderInPaise" placeholder="Optional" /></label>
+        <label>Max discount cap (₹) <input type="number" [formField]="createForm.maxDiscountInPaise" placeholder="Optional" /></label>
+        <label>Coupon target
+          <select [formField]="createForm.targetType">
+            @for (target of targetTypes; track target.value) { <option [value]="target.value">{{ target.label }}</option> }
+          </select>
+        </label>
+        @if (createModel().targetType !== 'ALL') {
+          <label class="wide">Target values
+            <textarea [formField]="createForm.targetValues" rows="3" placeholder="One value per line, or comma separated"></textarea>
+            <small>{{ targetHint(createModel()) }}</small>
+          </label>
+        }
         <label>Priority <input type="number" [formField]="createForm.priority" /></label>
         <label class="check"><input type="checkbox" [formField]="createForm.isActive" /> Active</label>
       </div>
@@ -64,8 +83,31 @@
           <article class="rule-card" [class.inactive]="!rule.isActive">
             @if (editingId() === rule.id) {
               <div class="form-grid compact">
-                <label>Name <input [formField]="editForm.name" /></label>
-                <label>Value <input type="number" [formField]="editForm.valueAmount" /></label>
+                <label>Coupon name <input [formField]="editForm.name" /></label>
+                <label>Coupon code <input [formField]="editForm.promoCode" /></label>
+                <label>Value type
+                  <select [formField]="editForm.valueType">
+                    @for (v of valueTypes; track v) { <option [value]="v">{{ v }}</option> }
+                  </select>
+                </label>
+                <label>{{ valueAmountLabel(editModel()) }}
+                  <input type="number" [formField]="editForm.valueAmount" [placeholder]="valueAmountPlaceholder(editModel())" />
+                </label>
+                <label>Max uses / patient <input type="number" [formField]="editForm.maxUsesPerPatient" /></label>
+                <label>Max total uses <input type="number" [formField]="editForm.maxUsesGlobal" /></label>
+                <label>Minimum order (₹) <input type="number" [formField]="editForm.minOrderInPaise" /></label>
+                <label>Max discount cap (₹) <input type="number" [formField]="editForm.maxDiscountInPaise" /></label>
+                <label>Coupon target
+                  <select [formField]="editForm.targetType">
+                    @for (target of targetTypes; track target.value) { <option [value]="target.value">{{ target.label }}</option> }
+                  </select>
+                </label>
+                @if (editModel().targetType !== 'ALL') {
+                  <label class="wide">Target values
+                    <textarea [formField]="editForm.targetValues" rows="3" placeholder="One value per line, or comma separated"></textarea>
+                    <small>{{ targetHint(editModel()) }}</small>
+                  </label>
+                }
                 <label>Priority <input type="number" [formField]="editForm.priority" /></label>
                 <label class="check"><input type="checkbox" [formField]="editForm.isActive" /> Active</label>
               </div>
@@ -80,6 +122,12 @@
               </div>
               <p class="meta">{{ rule.kind }} · {{ rule.trigger }} · {{ rule.beneficiary }} · {{ formatValue(rule) }}</p>
               @if (rule.promoCode) { <p class="meta">Promo: {{ rule.promoCode }}</p> }
+              <p class="meta">
+                Uses: {{ rule.maxUsesPerPatient || '∞' }}/patient · {{ rule.maxUsesGlobal || '∞' }} total
+                @if (rule.minOrderInPaise) { · Min ₹{{ rule.minOrderInPaise / 100 }} }
+                @if (rule.maxDiscountInPaise) { · Cap ₹{{ rule.maxDiscountInPaise / 100 }} }
+              </p>
+              <p class="meta">Target: {{ targetSummary(rule) }}</p>
               <div class="row-actions">
                 <button type="button" (click)="startEdit(rule)">Edit</button>
                 <button type="button" class="danger" (click)="deleteRule(rule.id)">Delete</button>

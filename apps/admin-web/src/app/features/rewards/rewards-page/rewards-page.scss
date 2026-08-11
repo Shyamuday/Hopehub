@@ -43,6 +43,20 @@
   font-weight: 600;
 }
 
+.form-grid .wide {
+  grid-column: 1 / -1;
+}
+
+.form-grid textarea {
+  min-height: 5.5rem;
+  resize: vertical;
+}
+
+.form-grid small {
+  color: #64748b;
+  font-weight: 500;
+}
+
 .hint {
   font-size: 0.82rem;
   color: #64748b;

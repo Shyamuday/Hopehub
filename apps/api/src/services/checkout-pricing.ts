@@ -41,7 +41,17 @@ type CheckoutContext = {
   grossInPaise: number;
   promoCode?: string;
   walletRedeemInPaise?: number;
+  serviceName?: string;
+  offeringId?: string | null;
+  careTeamServiceId?: string | null;
+  providerId?: string | null;
+  assessmentId?: string | null;
 };
+
+type CheckoutScopeContext = Pick<
+  CheckoutContext,
+  'serviceName' | 'offeringId' | 'careTeamServiceId' | 'providerId' | 'assessmentId'
+>;
 
 async function patientMatchesBeneficiary(
   rule: RewardProgramRule,
@@ -61,10 +71,53 @@ async function triggerMatchesCheckout(rule: RewardProgramRule, isFirstPayment: b
   return false;
 }
 
+function conditionList(conditions: unknown, key: string): string[] {
+  if (!conditions || typeof conditions !== 'object') return [];
+  const value = (conditions as Record<string, unknown>)[key];
+  if (!Array.isArray(value)) return [];
+  return value.map((item) => String(item || '').trim()).filter(Boolean);
+}
+
+function matchesConditionValue(
+  allowed: string[],
+  value?: string | null,
+  opts: { caseInsensitive?: boolean } = {}
+) {
+  if (!allowed.length) return true;
+  const normalizedValue = String(value || '').trim();
+  if (!normalizedValue) return false;
+  if (!opts.caseInsensitive) return allowed.includes(normalizedValue);
+  const lower = normalizedValue.toLowerCase();
+  return allowed.some((item) => item.toLowerCase() === lower);
+}
+
+function ruleScopeMatchesCheckout(rule: RewardProgramRule, context: CheckoutScopeContext) {
+  const conditions = rule.conditions;
+  if (!conditions || typeof conditions !== 'object') return true;
+
+  return (
+    matchesConditionValue(conditionList(conditions, 'serviceNames'), context.serviceName, {
+      caseInsensitive: true
+    }) &&
+    matchesConditionValue(conditionList(conditions, 'offeringIds'), context.offeringId) &&
+    matchesConditionValue(
+      conditionList(conditions, 'careTeamServiceIds'),
+      context.careTeamServiceId
+    ) &&
+    matchesConditionValue(conditionList(conditions, 'providerIds'), context.providerId) &&
+    matchesConditionValue(conditionList(conditions, 'assessmentIds'), context.assessmentId)
+  );
+}
+
 /** Preview checkout for a brand-new walk-in (no patient record yet). */
 export async function resolveGuestConsultationCheckout(input: {
   grossInPaise: number;
   promoCode?: string;
+  serviceName?: string;
+  offeringId?: string | null;
+  careTeamServiceId?: string | null;
+  providerId?: string | null;
+  assessmentId?: string | null;
 }): Promise<ConsultationCheckoutQuote> {
   const { grossInPaise } = input;
   if (grossInPaise <= 0) {
@@ -97,6 +150,7 @@ export async function resolveGuestConsultationCheckout(input: {
     if (rule.promoCode) {
       if (!promo || rule.promoCode.toUpperCase() !== promo) continue;
     }
+    if (!ruleScopeMatchesCheckout(rule, input)) continue;
     if (rule.minOrderInPaise != null && grossInPaise < rule.minOrderInPaise) continue;
     if (!(await triggerMatchesCheckout(rule, isFirstPayment))) continue;
     if (rule.beneficiary !== RewardBeneficiary.PAYING_PATIENT) continue;
@@ -170,6 +224,7 @@ export async function resolveConsultationCheckout(
     if (rule.promoCode) {
       if (!promo || rule.promoCode.toUpperCase() !== promo) continue;
     }
+    if (!ruleScopeMatchesCheckout(rule, input)) continue;
     if (rule.minOrderInPaise != null && grossInPaise < rule.minOrderInPaise) continue;
     if (!(await triggerMatchesCheckout(rule, isFirstPayment))) continue;
     if (!(await patientMatchesBeneficiary(rule, patientId, { isFirstPayment, hasReferrer })))

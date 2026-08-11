@@ -1003,6 +1003,7 @@ export class ContactComponent implements OnInit {
         this.bookingService.checkoutQuote({
           grossInPaise,
           promoCode: code,
+          ...this.checkoutScope(),
         }),
       );
       this.appliedPromoCode.set(code);
@@ -1033,6 +1034,27 @@ export class ContactComponent implements OnInit {
 
   checkoutPromoCode(): string {
     return (this.appliedPromoCode() || this.promoCode()).trim().toUpperCase();
+  }
+
+  checkoutScope(): {
+    serviceName?: string;
+    offeringId?: string;
+    careTeamServiceId?: string;
+    providerId?: string;
+  } {
+    const data = this.prefilledData();
+    const selectedOffer = this.selectedOffering();
+    return {
+      serviceName:
+        this.contactForm?.get('serviceInterest')?.value ||
+        data.serviceName ||
+        data.service ||
+        selectedOffer?.title ||
+        '',
+      offeringId: data.offeringId || selectedOffer?.id || '',
+      careTeamServiceId: data.careTeamServiceId || '',
+      providerId: this.activeProviderId() || data.providerId || '',
+    };
   }
 
   offerDiscountInPaise(): number {
