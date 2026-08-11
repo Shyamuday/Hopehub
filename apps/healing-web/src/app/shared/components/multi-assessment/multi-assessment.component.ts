@@ -25,12 +25,21 @@ import { PaymentService } from '../../../core/services/payment.service';
 import { CONSUMER_UX_COPY } from '../../../core/constants/consumer-ux-copy.constants';
 import { CONSUMER_STORAGE_KEYS } from '../../../core/constants/storage-keys.constants';
 import { firstValueFrom } from 'rxjs';
+import { AppButtonComponent } from '../app-button/app-button.component';
 import { CouponBoxComponent } from '../coupon-box/coupon-box.component';
+import { SelectableCardComponent } from '../selectable-card/selectable-card.component';
 
 @Component({
   selector: 'app-multi-assessment',
   standalone: true,
-  imports: [FormsModule, RouterModule, DatePipe, CouponBoxComponent],
+  imports: [
+    FormsModule,
+    RouterModule,
+    DatePipe,
+    AppButtonComponent,
+    CouponBoxComponent,
+    SelectableCardComponent,
+  ],
   templateUrl: './multi-assessment.component.html',
   styleUrl: './multi-assessment.component.scss',
 })

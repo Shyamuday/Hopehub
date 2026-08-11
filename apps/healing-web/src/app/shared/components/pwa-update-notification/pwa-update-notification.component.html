@@ -32,16 +32,19 @@
 
     <!-- Actions -->
     <div class="flex space-x-3">
-      <button 
+      <app-button 
         (click)="update()"
-        class="btn-primary btn-sm flex-1">
+        size="sm"
+        block>
         Update Now
-      </button>
-      <button 
+      </app-button>
+      <app-button 
         (click)="dismiss()"
-        class="btn-ghost btn-sm text-green-700 hover:text-green-800">
+        variant="ghost"
+        size="sm"
+        block>
         Later
-      </button>
+      </app-button>
     </div>
   </div>
 }

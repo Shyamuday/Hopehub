@@ -1,0 +1,28 @@
+<button
+  type="button"
+  class="selectable-card"
+  [class.selectable-card--selected]="selected"
+  [class.selectable-card--compact]="compact"
+  [class.selectable-card--success]="tone === 'success'"
+  [class.selectable-card--warning]="tone === 'warning'"
+  [class.selectable-card--brand]="tone === 'brand'"
+  [disabled]="disabled"
+  [attr.aria-pressed]="selected"
+  (click)="selectedChange.emit()"
+>
+  @if (icon) {
+    <span class="selectable-card__icon" aria-hidden="true">{{ icon }}</span>
+  }
+  <span class="selectable-card__copy">
+    <strong>{{ title }}</strong>
+    @if (description) {
+      <span>{{ description }}</span>
+    }
+    @if (meta) {
+      <small>{{ meta }}</small>
+    }
+  </span>
+  @if (selected) {
+    <span class="selectable-card__check" aria-hidden="true">✓</span>
+  }
+</button>

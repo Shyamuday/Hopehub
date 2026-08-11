@@ -1,4 +1,5 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { AppButtonComponent } from '../app-button/app-button.component';
 
 export type PaymentFlowState =
   'IDLE' | 'CREATING_ORDER' | 'OPENING_CHECKOUT' | 'VERIFYING' | 'SUCCESS' | 'ERROR';
@@ -6,6 +7,7 @@ export type PaymentFlowState =
 @Component({
   selector: 'app-payment-status-overlay',
   standalone: true,
+  imports: [AppButtonComponent],
   template: `
     @if (state !== 'IDLE') {
       <section
@@ -44,17 +46,9 @@ export type PaymentFlowState =
           @if (state === 'SUCCESS' || state === 'ERROR') {
             <div class="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
               @if (state === 'ERROR' && canRetry) {
-                <button type="button" class="btn-primary btn-sm" (click)="retry.emit()">
-                  Retry payment
-                </button>
+                <app-button size="sm" (click)="retry.emit()"> Retry payment </app-button>
               }
-              <button
-                type="button"
-                class="btn-secondary btn-sm border-slate-300 text-slate-800 hover:border-primary-500"
-                (click)="close.emit()"
-              >
-                Close
-              </button>
+              <app-button variant="secondary" size="sm" (click)="close.emit()"> Close </app-button>
             </div>
           }
         </article>

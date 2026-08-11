@@ -108,7 +108,7 @@
 
   @if (showProfileLink && profileLink) {
     <div class="mt-5">
-      <a [routerLink]="profileLink" class="btn-secondary btn-sm w-full">View profile</a>
+      <app-button variant="secondary" size="sm" [block]="true" [routerLink]="profileLink">View profile</app-button>
     </div>
   }
 </article>

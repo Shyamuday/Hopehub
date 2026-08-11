@@ -31,6 +31,7 @@ import {
   EmptyStateComponent,
   GuidedSupportEntryComponent,
   ProviderCardComponent,
+  SelectableCardComponent,
 } from '../../shared/components';
 
 @Component({
@@ -44,6 +45,7 @@ import {
     EmptyStateComponent,
     GuidedSupportEntryComponent,
     ProviderCardComponent,
+    SelectableCardComponent,
   ],
   template: `
     <main class="direct-test bg-[var(--brand-surface)]">
@@ -219,17 +221,13 @@ import {
 
                   <div class="grid gap-2">
                     @for (option of assessment()!.responseOptions; track option.value) {
-                      <button
-                        type="button"
-                        class="direct-test__option"
-                        [class.direct-test__option--selected]="
-                          answers()[currentQuestion()] === option.value
-                        "
-                        [attr.aria-pressed]="answers()[currentQuestion()] === option.value"
-                        (click)="selectAnswer(option.value)"
-                      >
-                        {{ option.label }}
-                      </button>
+                      <app-selectable-card
+                        [title]="option.label"
+                        [selected]="answers()[currentQuestion()] === option.value"
+                        tone="success"
+                        [compact]="true"
+                        (selectedChange)="selectAnswer(option.value)"
+                      />
                     }
                   </div>
 
@@ -276,15 +274,13 @@ import {
 
                         <div class="grid gap-2 sm:grid-cols-2">
                           @for (option of assessment()!.responseOptions; track option.value) {
-                            <button
-                              type="button"
-                              class="direct-test__option"
-                              [class.direct-test__option--selected]="answers()[i] === option.value"
-                              [attr.aria-pressed]="answers()[i] === option.value"
-                              (click)="selectAnswerAt(i, option.value)"
-                            >
-                              {{ option.label }}
-                            </button>
+                            <app-selectable-card
+                              [title]="option.label"
+                              [selected]="answers()[i] === option.value"
+                              tone="success"
+                              [compact]="true"
+                              (selectedChange)="selectAnswerAt(i, option.value)"
+                            />
                           }
                         </div>
                       </section>
@@ -541,74 +537,6 @@ import {
   `,
   styles: [
     `
-      .direct-test__option {
-        position: relative;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 0.75rem;
-        min-height: 2.55rem;
-        border: 1px solid #d1d5db;
-        border-radius: 0.5rem;
-        background: #fff;
-        color: #1c2d37;
-        padding: 0.58rem 0.75rem;
-        text-align: left;
-        font-weight: 600;
-        line-height: 1.35;
-        transition:
-          border-color 160ms ease,
-          box-shadow 160ms ease,
-          background-color 160ms ease,
-          color 160ms ease,
-          transform 160ms ease;
-      }
-
-      .direct-test__option:hover,
-      .direct-test__option:focus-visible {
-        border-color: var(--brand-primary);
-        box-shadow: 0 0 0 3px rgba(74, 111, 165, 0.12);
-        outline: none;
-      }
-
-      .direct-test__option::after {
-        content: '✓';
-        display: grid;
-        width: 1.45rem;
-        height: 1.45rem;
-        flex: 0 0 auto;
-        place-items: center;
-        border-radius: 999px;
-        background: var(--hope-selected-soft);
-        color: var(--hope-selected-text);
-        font-size: 0.85rem;
-        font-weight: 900;
-        opacity: 0;
-        transform: scale(0.75);
-        transition:
-          opacity 160ms ease,
-          transform 160ms ease,
-          background-color 160ms ease,
-          color 160ms ease;
-      }
-
-      .direct-test__option--selected {
-        border-color: var(--hope-selected-border);
-        background: var(--hope-selected-bg);
-        color: var(--hope-selected-text);
-        box-shadow:
-          inset 0 0 0 1px var(--hope-selected-border),
-          var(--hope-selected-shadow);
-        transform: translateY(-1px);
-      }
-
-      .direct-test__option--selected::after {
-        background: var(--hope-selected-check-bg);
-        color: var(--hope-selected-check-text);
-        opacity: 1;
-        transform: scale(1);
-      }
-
       .direct-test__mode {
         display: inline-grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -872,14 +800,6 @@ import {
       .direct-test__availability--slot {
         background: #fef3c7;
         color: #92400e;
-      }
-
-      @media (max-width: 639px) {
-        .direct-test__option {
-          min-height: 2.45rem;
-          padding: 0.52rem 0.7rem;
-          font-size: 0.9rem;
-        }
       }
 
       @media (min-width: 768px) {

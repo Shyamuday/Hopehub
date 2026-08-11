@@ -66,50 +66,6 @@
   margin-bottom: 1rem;
 }
 
-.live-mode-card {
-  align-items: center;
-  border: 1px solid rgba(148, 163, 184, 0.24);
-  border-radius: 1.2rem;
-  background: rgba(255, 255, 255, 0.78);
-  color: #0f172a;
-  display: flex;
-  gap: 0.75rem;
-  padding: 0.9rem;
-  text-align: left;
-  transition:
-    border-color 0.2s ease,
-    box-shadow 0.2s ease,
-    transform 0.2s ease;
-
-  small {
-    color: #64748b;
-    display: block;
-    font-size: 0.76rem;
-    margin-top: 0.1rem;
-  }
-}
-
-.live-mode-card:hover,
-.live-mode-card--active {
-  border-color: rgba(16, 185, 129, 0.44);
-  box-shadow: 0 16px 36px rgba(16, 185, 129, 0.12);
-  transform: translateY(-1px);
-}
-
-.live-mode-card--active {
-  background: #ecfdf5;
-}
-
-.live-mode-icon {
-  align-items: center;
-  background: #ffffff;
-  border-radius: 999px;
-  display: inline-flex;
-  height: 2.25rem;
-  justify-content: center;
-  width: 2.25rem;
-}
-
 .live-tab-row {
   display: flex;
   gap: 0.5rem;

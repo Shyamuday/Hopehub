@@ -16,6 +16,7 @@ import {
   FormDropdownComponent,
   FormDropdownOption,
 } from '../form-dropdown/form-dropdown.component';
+import { AppButtonComponent } from '../app-button/app-button.component';
 import {
   LifestyleTip,
   LifestyleTipType,
@@ -28,7 +29,7 @@ import { CONSUMER_UX_COPY } from '../../../core/constants/consumer-ux-copy.const
 @Component({
   selector: 'app-lifestyle-tips',
   standalone: true,
-  imports: [FormsModule, RouterModule, FormDropdownComponent],
+  imports: [FormsModule, RouterModule, FormDropdownComponent, AppButtonComponent],
   templateUrl: './lifestyle-tips.component.html',
   styleUrl: './lifestyle-tips.component.scss',
 })

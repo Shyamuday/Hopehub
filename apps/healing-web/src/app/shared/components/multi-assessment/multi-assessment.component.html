@@ -80,10 +80,9 @@
           </div>
 
           <!-- Start Button -->
-          <button (click)="selectAssessment(assessment)"
-            class="btn-primary btn-block btn-sm mt-4">
+          <app-button class="mt-4 block" type="button" size="sm" [block]="true" (click)="selectAssessment(assessment)">
             {{ UX.cta.startTest }}
-          </button>
+          </app-button>
         </div>
         }
       </div>
@@ -94,12 +93,12 @@
     @if (assessmentStarted() && !showResults()) {
     <div class="mx-auto max-w-3xl rounded-lg border border-gray-200 bg-white p-4 shadow-sm sm:p-5">
       <div class="mb-4 border-b border-gray-100 pb-4">
-        <button (click)="goBack()" class="mb-3 inline-flex items-center text-sm font-semibold text-primary-700 hover:text-primary-800 whitespace-nowrap">
+        <app-button type="button" variant="link" size="sm" (click)="goBack()" class="mb-3 block">
           <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
           </svg>
           Back to tests
-        </button>
+        </app-button>
         <div class="flex flex-wrap items-center gap-2">
           <span class="rounded-md bg-primary-50 px-3 py-1 text-sm font-semibold text-primary-700 whitespace-nowrap">
             {{ selectedAssessment()!.type }}
@@ -187,16 +186,17 @@
         />
         }
         <div class="mt-4 flex flex-col gap-3 sm:flex-row">
-          <button type="button" class="btn-outline btn-sm" (click)="openLogin()">Sign in</button>
+          <app-button type="button" variant="outline" size="sm" (click)="openLogin()">Sign in</app-button>
           @if (selectedAccess()?.accessMode === 'PAID') {
-          <button
+          <app-button
             type="button"
-            class="btn-primary btn-sm"
+            size="sm"
             [disabled]="payingAssessment()"
+            [loading]="payingAssessment()"
             (click)="payAndUnlock()"
           >
             {{ payingAssessment() ? 'Opening payment...' : payAssessmentLabel() }}
-          </button>
+          </app-button>
           }
         </div>
       </div>
@@ -239,13 +239,13 @@
 
           <div class="grid gap-2">
             @for (option of selectedAssessment()!.responseOptions; track option.value) {
-            <button
-              type="button"
-              class="assessment-option"
-              [class.assessment-option--selected]="answers()[currentQuestion()] === option.value"
-              (click)="selectAnswer(option.value)">
-              {{ option.label }}
-            </button>
+            <app-selectable-card
+              [title]="option.label"
+              [selected]="answers()[currentQuestion()] === option.value"
+              tone="success"
+              [compact]="true"
+              (selectedChange)="selectAnswer(option.value)"
+            />
             }
           </div>
         </div>
@@ -253,23 +253,22 @@
         <!-- Navigation -->
         <div class="flex justify-between gap-3 pt-2">
           @if (currentQuestion() > 0) {
-          <button (click)="previousQuestion()"
-            class="btn-outline btn-sm whitespace-nowrap">
+          <app-button type="button" variant="outline" size="sm" (click)="previousQuestion()">
             Previous
-          </button>
+          </app-button>
           } @else {
           <div></div>
           }
-          @if (currentQuestion() < selectedAssessment()!.questions.length - 1) { <button (click)="nextQuestion()"
+          @if (currentQuestion() < selectedAssessment()!.questions.length - 1) { <app-button type="button" (click)="nextQuestion()"
             [disabled]="answers()[currentQuestion()] === undefined"
-            class="btn-primary btn-sm">
+            size="sm">
             Next
-            </button>
+            </app-button>
             } @else {
-            <button (click)="calculateResults()" [disabled]="!hasAllAnswers() || savingResult()"
-              class="btn-primary btn-sm">
+            <app-button type="button" (click)="calculateResults()" [disabled]="!hasAllAnswers() || savingResult()"
+              [loading]="savingResult()" size="sm">
               {{ savingResult() ? 'Saving...' : 'Get Results' }}
-            </button>
+            </app-button>
             }
         </div>
       } @else {
@@ -285,13 +284,13 @@
 
             <div class="grid gap-2 sm:grid-cols-2">
               @for (option of selectedAssessment()!.responseOptions; track option.value) {
-              <button
-                type="button"
-                class="assessment-option"
-                [class.assessment-option--selected]="answers()[i] === option.value"
-                (click)="selectAnswerAt(i, option.value)">
-                {{ option.label }}
-              </button>
+              <app-selectable-card
+                [title]="option.label"
+                [selected]="answers()[i] === option.value"
+                tone="success"
+                [compact]="true"
+                (selectedChange)="selectAnswerAt(i, option.value)"
+              />
               }
             </div>
           </section>
@@ -302,10 +301,10 @@
           <p class="text-sm font-semibold text-gray-600">
             {{ answeredCount() }} of {{ selectedAssessment()!.questions.length }} answered
           </p>
-          <button (click)="calculateResults()" [disabled]="!hasAllAnswers() || savingResult()"
-            class="btn-primary btn-sm">
+          <app-button type="button" (click)="calculateResults()" [disabled]="!hasAllAnswers() || savingResult()"
+            [loading]="savingResult()" size="sm">
             {{ savingResult() ? 'Saving...' : 'Get Results' }}
-          </button>
+          </app-button>
         </div>
       }
       }
@@ -360,14 +359,12 @@
         }
 
         <div class="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
-          <button (click)="openRegister()"
-            class="btn-primary">
+          <app-button type="button" (click)="openRegister()">
             Sign up
-          </button>
-          <button (click)="openLogin()"
-            class="btn-secondary border-slate-300 text-slate-800 hover:border-primary-500">
+          </app-button>
+          <app-button type="button" variant="secondary" (click)="openLogin()">
             Sign in
-          </button>
+          </app-button>
         </div>
 
         @if (savingResult()) {
@@ -479,30 +476,24 @@
 
     <!-- Action Buttons -->
     <div class="assessment-result-actions">
-      <button (click)="retakeAssessment()"
-        class="btn-outline btn-sm whitespace-nowrap">
+      <app-button type="button" variant="outline" size="sm" (click)="retakeAssessment()">
         Retake Assessment
-      </button>
-      <button (click)="takeAnotherAssessment()"
-        class="btn-primary btn-sm">
+      </app-button>
+      <app-button type="button" size="sm" (click)="takeAnotherAssessment()">
         Take Another Assessment
-      </button>
-      <button (click)="viewExercises()"
-        class="btn-primary btn-sm">
+      </app-button>
+      <app-button type="button" size="sm" (click)="viewExercises()">
         View Recommended Exercises
-      </button>
-      <button (click)="viewLifestyleTips()"
-        class="btn-primary btn-sm">
+      </app-button>
+      <app-button type="button" size="sm" (click)="viewLifestyleTips()">
         View Lifestyle Tips
-      </button>
-      <button (click)="viewArticles()"
-        class="btn-primary btn-sm">
+      </app-button>
+      <app-button type="button" size="sm" (click)="viewArticles()">
         Read Articles
-      </button>
-      <button routerLink="/contact"
-        class="btn-primary btn-sm">
+      </app-button>
+      <app-button type="button" size="sm" routerLink="/contact">
         {{ UX.cta.bookSupport }}
-      </button>
+      </app-button>
     </div>
     }
 

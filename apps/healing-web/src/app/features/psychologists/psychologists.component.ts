@@ -37,6 +37,7 @@ import { ConsumerFlowsService } from '../../core/services/consumer-flows.service
 import { LiveConnectActionService } from '../../core/services/live-connect-action.service';
 import {
   ConnectOptionMode,
+  AppButtonComponent,
   ContinueSupportBannerComponent,
   EmptyStateComponent,
   FormDropdownComponent,
@@ -54,6 +55,7 @@ type RoleGroup = '' | ConsumerSupportPath;
   imports: [
     FormsModule,
     RouterLink,
+    AppButtonComponent,
     SupportPathSelectorComponent,
     ContinueSupportBannerComponent,
     EmptyStateComponent,

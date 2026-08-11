@@ -7,6 +7,7 @@ import {
   AppButtonComponent,
   FormCheckboxComponent,
   FormFieldComponent,
+  SelectableCardComponent,
 } from '../../shared/components';
 
 type FeedbackType = {
@@ -24,6 +25,7 @@ type FeedbackType = {
     AppButtonComponent,
     FormCheckboxComponent,
     FormFieldComponent,
+    SelectableCardComponent,
   ],
   templateUrl: './feedback.component.html',
   styleUrl: './feedback.component.scss',

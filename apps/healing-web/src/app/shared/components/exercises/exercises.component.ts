@@ -17,11 +17,12 @@ import {
   FormDropdownComponent,
   FormDropdownOption,
 } from '../form-dropdown/form-dropdown.component';
+import { AppButtonComponent } from '../app-button/app-button.component';
 
 @Component({
   selector: 'app-exercises',
   standalone: true,
-  imports: [FormsModule, RouterModule, FormDropdownComponent],
+  imports: [FormsModule, RouterModule, FormDropdownComponent, AppButtonComponent],
   template: `
     <section class="professional-page">
       <div class="container mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
@@ -77,20 +78,15 @@ import {
           <!-- Quick Category Buttons -->
           <div class="flex flex-wrap gap-2 mt-4">
             @for (category of quickCategories; track category) {
-              <button
+              <app-button
                 (click)="selectQuickCategory(category)"
-                [class.bg-primary-600]="selectedCategory === category"
-                [class.text-white]="selectedCategory === category"
-                [class.bg-white]="selectedCategory !== category"
-                [class.text-gray-700]="selectedCategory !== category"
-                [class.border-primary-600]="selectedCategory === category"
-                [class.border-gray-300]="selectedCategory !== category"
-                class="rounded-md border px-3 py-2 text-sm font-semibold transition-colors hover:border-primary-600 hover:text-primary-700"
+                [variant]="selectedCategory === category ? 'primary' : 'outline'"
+                size="sm"
               >
                 {{ category }}
-              </button>
+              </app-button>
             }
-            <button (click)="clearFilters()" class="btn-outline btn-sm">Clear All</button>
+            <app-button variant="outline" size="sm" (click)="clearFilters()">Clear All</app-button>
           </div>
         </div>
 
@@ -129,7 +125,7 @@ import {
                       >{{ exercise.steps.length }} steps</span
                     >
                   </div>
-                  <button class="btn-primary btn-block btn-sm">Start exercise</button>
+                  <app-button size="sm" block>Start exercise</app-button>
                 </div>
               </div>
             }
@@ -154,7 +150,9 @@ import {
             </svg>
             <h3 class="text-xl font-semibold text-gray-950 mb-2">No exercises found</h3>
             <p class="text-gray-700 mb-4">Try adjusting your filters or search terms.</p>
-            <button (click)="clearFilters()" class="btn-outline btn-sm">Clear Filters</button>
+            <app-button variant="outline" size="sm" (click)="clearFilters()"
+              >Clear Filters</app-button
+            >
           </div>
         }
 
@@ -162,10 +160,7 @@ import {
         @if (selectedExercise()) {
           <div class="rounded-lg border border-gray-200 bg-white p-5 shadow-sm sm:p-6">
             <!-- Back Button -->
-            <button
-              (click)="goBack()"
-              class="mb-6 inline-flex items-center text-sm font-semibold text-primary-700 hover:text-primary-800"
-            >
+            <app-button variant="link" size="sm" class="mb-6" (click)="goBack()">
               <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path
                   stroke-linecap="round"
@@ -175,7 +170,7 @@ import {
                 />
               </svg>
               Back to exercises
-            </button>
+            </app-button>
 
             <!-- Exercise Header -->
             <div class="mb-8">
@@ -347,16 +342,15 @@ import {
 
             <!-- Action Buttons -->
             <div class="flex flex-col sm:flex-row gap-4 justify-center">
-              <button (click)="startExercise()" class="btn-primary btn-sm">Start exercise</button>
+              <app-button size="sm" (click)="startExercise()">Start exercise</app-button>
               @if (selectedExercise()) {
-                <button
-                  (click)="showCompletionDialog(selectedExercise()!)"
-                  class="btn-primary btn-sm"
-                >
+                <app-button size="sm" (click)="showCompletionDialog(selectedExercise()!)">
                   Mark completed
-                </button>
+                </app-button>
               }
-              <button (click)="goBack()" class="btn-outline btn-sm">Browse more exercises</button>
+              <app-button variant="outline" size="sm" (click)="goBack()"
+                >Browse more exercises</app-button
+              >
             </div>
           </div>
         }

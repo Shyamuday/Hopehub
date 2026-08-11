@@ -1,4 +1,5 @@
 import { booleanAttribute, Component, Input } from '@angular/core';
+import { RouterLink } from '@angular/router';
 
 type AppButtonType = 'button' | 'submit' | 'reset';
 type AppButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger' | 'link';
@@ -7,34 +8,90 @@ type AppButtonSize = 'xs' | 'sm' | 'md' | 'lg';
 @Component({
   selector: 'app-button',
   standalone: true,
+  imports: [RouterLink],
   template: `
-    <button
-      class="app-button"
-      [class.app-button--secondary]="variant === 'secondary'"
-      [class.app-button--outline]="variant === 'outline'"
-      [class.app-button--ghost]="variant === 'ghost'"
-      [class.app-button--danger]="variant === 'danger'"
-      [class.app-button--link]="variant === 'link'"
-      [class.app-button--xs]="size === 'xs'"
-      [class.app-button--sm]="size === 'sm'"
-      [class.app-button--lg]="size === 'lg'"
-      [class.app-button--block]="block"
-      [class.app-button--pill]="pill"
-      [attr.type]="type"
-      [attr.aria-label]="ariaLabel || null"
-      [disabled]="disabled || loading"
-    >
-      @if (loading) {
-        <span class="app-button__spinner" aria-hidden="true"></span>
-      }
-      @if (!loading && icon) {
-        <span class="app-button__icon" aria-hidden="true">{{ icon }}</span>
-      }
-      <span class="app-button__content"><ng-content /></span>
-      @if (trailingIcon) {
-        <span class="app-button__icon" aria-hidden="true">{{ trailingIcon }}</span>
-      }
-    </button>
+    @if (routerLink) {
+      <a
+        class="app-button"
+        [class.app-button--secondary]="variant === 'secondary'"
+        [class.app-button--outline]="variant === 'outline'"
+        [class.app-button--ghost]="variant === 'ghost'"
+        [class.app-button--danger]="variant === 'danger'"
+        [class.app-button--link]="variant === 'link'"
+        [class.app-button--xs]="size === 'xs'"
+        [class.app-button--sm]="size === 'sm'"
+        [class.app-button--lg]="size === 'lg'"
+        [class.app-button--block]="block"
+        [class.app-button--pill]="pill"
+        [routerLink]="routerLink"
+        [queryParams]="queryParams || null"
+        [fragment]="fragment || null"
+        [attr.aria-label]="ariaLabel || null"
+      >
+        @if (icon) {
+          <span class="app-button__icon" aria-hidden="true">{{ icon }}</span>
+        }
+        <span class="app-button__content"><ng-content /></span>
+        @if (trailingIcon) {
+          <span class="app-button__icon" aria-hidden="true">{{ trailingIcon }}</span>
+        }
+      </a>
+    } @else if (href) {
+      <a
+        class="app-button"
+        [class.app-button--secondary]="variant === 'secondary'"
+        [class.app-button--outline]="variant === 'outline'"
+        [class.app-button--ghost]="variant === 'ghost'"
+        [class.app-button--danger]="variant === 'danger'"
+        [class.app-button--link]="variant === 'link'"
+        [class.app-button--xs]="size === 'xs'"
+        [class.app-button--sm]="size === 'sm'"
+        [class.app-button--lg]="size === 'lg'"
+        [class.app-button--block]="block"
+        [class.app-button--pill]="pill"
+        [attr.href]="disabled ? null : href"
+        [attr.target]="target || null"
+        [attr.rel]="rel || null"
+        [attr.aria-label]="ariaLabel || null"
+        [attr.aria-disabled]="disabled || null"
+      >
+        @if (icon) {
+          <span class="app-button__icon" aria-hidden="true">{{ icon }}</span>
+        }
+        <span class="app-button__content"><ng-content /></span>
+        @if (trailingIcon) {
+          <span class="app-button__icon" aria-hidden="true">{{ trailingIcon }}</span>
+        }
+      </a>
+    } @else {
+      <button
+        class="app-button"
+        [class.app-button--secondary]="variant === 'secondary'"
+        [class.app-button--outline]="variant === 'outline'"
+        [class.app-button--ghost]="variant === 'ghost'"
+        [class.app-button--danger]="variant === 'danger'"
+        [class.app-button--link]="variant === 'link'"
+        [class.app-button--xs]="size === 'xs'"
+        [class.app-button--sm]="size === 'sm'"
+        [class.app-button--lg]="size === 'lg'"
+        [class.app-button--block]="block"
+        [class.app-button--pill]="pill"
+        [attr.type]="type"
+        [attr.aria-label]="ariaLabel || null"
+        [disabled]="disabled || loading"
+      >
+        @if (loading) {
+          <span class="app-button__spinner" aria-hidden="true"></span>
+        }
+        @if (!loading && icon) {
+          <span class="app-button__icon" aria-hidden="true">{{ icon }}</span>
+        }
+        <span class="app-button__content"><ng-content /></span>
+        @if (trailingIcon) {
+          <span class="app-button__icon" aria-hidden="true">{{ trailingIcon }}</span>
+        }
+      </button>
+    }
   `,
   styles: [
     `
@@ -63,6 +120,7 @@ type AppButtonSize = 'xs' | 'sm' | 'md' | 'lg';
         line-height: 1.2;
         padding: 0.7rem 1rem;
         text-align: center;
+        text-decoration: none;
         transition:
           background-color 150ms ease,
           border-color 150ms ease,
@@ -182,6 +240,12 @@ export class AppButtonComponent {
   @Input() icon = '';
   @Input() trailingIcon = '';
   @Input() ariaLabel = '';
+  @Input() routerLink: string | string[] | null = null;
+  @Input() queryParams: Record<string, unknown> | null = null;
+  @Input() fragment = '';
+  @Input() href = '';
+  @Input() target = '';
+  @Input() rel = '';
   @Input({ transform: booleanAttribute }) disabled = false;
   @Input({ transform: booleanAttribute }) loading = false;
   @Input({ transform: booleanAttribute }) block = false;

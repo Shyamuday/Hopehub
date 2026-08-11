@@ -14,13 +14,15 @@ import {
   ConsumerFlowPreferenceMode,
   ConsumerFlowPreferencesService,
 } from '../../../core/services/consumer-flow-preferences.service';
+import { AppButtonComponent } from '../app-button/app-button.component';
+import { SelectableCardComponent } from '../selectable-card/selectable-card.component';
 
 type GuidedAction = 'live' | 'test' | 'book' | 'providers';
 
 @Component({
   selector: 'app-guided-support-entry',
   standalone: true,
-  imports: [RouterModule],
+  imports: [RouterModule, AppButtonComponent, SelectableCardComponent],
   templateUrl: './guided-support-entry.component.html',
   styleUrl: './guided-support-entry.component.scss',
 })

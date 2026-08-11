@@ -1,0 +1,110 @@
+:host {
+  display: block;
+  min-width: 0;
+}
+
+.selectable-card {
+  display: flex;
+  width: 100%;
+  min-height: 5rem;
+  align-items: flex-start;
+  gap: 0.75rem;
+  position: relative;
+  border: 1px solid var(--hope-card-border, rgba(15, 23, 42, 0.1));
+  border-radius: var(--hope-radius-lg, 1rem);
+  background: #ffffff;
+  color: #334155;
+  cursor: pointer;
+  padding: 0.9rem;
+  text-align: left;
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
+}
+
+.selectable-card:hover:not(:disabled),
+.selectable-card:focus-visible {
+  border-color: var(--hope-selected-border, rgba(5, 150, 105, 0.36));
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
+  outline: none;
+  transform: translateY(-1px);
+}
+
+.selectable-card:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.selectable-card--compact {
+  min-height: 0;
+  padding: 0.75rem;
+}
+
+.selectable-card--selected {
+  border-color: var(--hope-selected-border, rgba(5, 150, 105, 0.42));
+  background: var(--hope-selected-bg, #ecfdf5);
+  box-shadow:
+    inset 0 0 0 1px var(--hope-selected-border-muted, rgba(5, 150, 105, 0.22)),
+    0 14px 30px rgba(5, 150, 105, 0.12);
+}
+
+.selectable-card--brand.selectable-card--selected {
+  background: var(--brand-primary-light, #ecfdf5);
+}
+
+.selectable-card--success.selectable-card--selected {
+  background: #f0fdf4;
+}
+
+.selectable-card--warning.selectable-card--selected {
+  border-color: #fde68a;
+  background: #fffbeb;
+}
+
+.selectable-card__icon {
+  display: grid;
+  width: 2rem;
+  height: 2rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--hope-chip-bg, #f1f5f9);
+}
+
+.selectable-card__copy {
+  display: grid;
+  min-width: 0;
+  gap: 0.24rem;
+}
+
+.selectable-card__copy strong {
+  color: #0f172a;
+  font-size: 0.94rem;
+  font-weight: 900;
+}
+
+.selectable-card__copy span,
+.selectable-card__copy small {
+  color: #64748b;
+  font-size: 0.8rem;
+  font-weight: 650;
+  line-height: 1.45;
+}
+
+.selectable-card__check {
+  display: grid;
+  width: 1.35rem;
+  height: 1.35rem;
+  flex: 0 0 auto;
+  place-items: center;
+  position: absolute;
+  right: 0.65rem;
+  top: 0.65rem;
+  border-radius: 999px;
+  background: var(--hope-selected-check-bg, #059669);
+  color: var(--hope-selected-check-text, #ffffff);
+  font-size: 0.78rem;
+  font-weight: 950;
+}

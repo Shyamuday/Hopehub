@@ -1,13 +1,14 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { PWAService, PWAUpdateNotification } from '../../../core/services/pwa.service';
+import { AppButtonComponent } from '../app-button/app-button.component';
 
 @Component({
   selector: 'app-pwa-update-notification',
   standalone: true,
-  imports: [],
+  imports: [AppButtonComponent],
   templateUrl: './pwa-update-notification.component.html',
-  styleUrl: './pwa-update-notification.component.scss'
+  styleUrl: './pwa-update-notification.component.scss',
 })
 export class PWAUpdateNotificationComponent implements OnInit {
   updateNotification = signal<PWAUpdateNotification | null>(null);

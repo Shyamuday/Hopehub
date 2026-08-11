@@ -34,11 +34,9 @@
     <!-- Start Assessment -->
     @if (!assessmentStarted() && !showResults()) {
       <div class="text-center">
-        <button 
-          (click)="startAssessment()"
-          class="btn-primary">
+        <app-button type="button" (click)="startAssessment()">
           {{ UX.cta.startTest }}
-        </button>
+        </app-button>
       </div>
     }
 
@@ -66,20 +64,15 @@
             {{ questions()[currentQuestion()].text }}
           </h3>
           
-          <div class="space-y-2">
+          <div class="grid gap-2">
             @for (option of responseOptions(); track option; let i = $index) {
-              <label class="flex cursor-pointer items-center rounded-lg border border-gray-200 bg-white px-3 py-2.5 transition-colors hover:border-primary-500 hover:bg-primary-50"
-                     [class.bg-primary-50]="answers()[currentQuestion()] === i"
-                     [class.border-primary-500]="answers()[currentQuestion()] === i">
-                <input 
-                  type="radio" 
-                  [value]="i" 
-                  [checked]="answers()[currentQuestion()] === i"
-                  (change)="selectAnswer(i)"
-                  [name]="'question_' + currentQuestion()"
-                  class="mr-3 text-primary-600">
-                <span class="font-medium text-gray-800">{{ option }}</span>
-              </label>
+              <app-selectable-card
+                [title]="option"
+                [selected]="answers()[currentQuestion()] === i"
+                tone="success"
+                [compact]="true"
+                (selectedChange)="selectAnswer(i)"
+              />
             }
           </div>
         </div>
@@ -87,28 +80,32 @@
         <!-- Navigation -->
         <div class="flex justify-between gap-3 pt-2">
           @if (currentQuestion() > 0) {
-            <button 
+            <app-button
+              type="button"
               (click)="previousQuestion()"
-              class="btn-outline btn-sm">
+              variant="outline"
+              size="sm">
               Previous
-            </button>
+            </app-button>
           } @else {
             <div></div>
           }
           @if (currentQuestion() < questions().length - 1) {
-            <button 
+            <app-button
+              type="button"
               (click)="nextQuestion()"
               [disabled]="answers()[currentQuestion()] === undefined"
-              class="btn-primary btn-sm">
+              size="sm">
               Next
-            </button>
+            </app-button>
           } @else {
-            <button 
+            <app-button
+              type="button"
               (click)="calculateResults()"
               [disabled]="answers()[currentQuestion()] === undefined"
-              class="btn-primary btn-sm">
+              size="sm">
               Get Results
-            </button>
+            </app-button>
           }
         </div>
       </div>
@@ -166,19 +163,18 @@
 
         <!-- Action Buttons -->
         <div class="flex flex-col sm:flex-row gap-4 justify-center">
-          <button 
+          <app-button
+            type="button"
             (click)="retakeAssessment()"
-            class="btn-outline">
+            variant="outline">
             Retake test
-          </button>
-          <button 
-            class="btn-primary">
+          </app-button>
+          <app-button type="button">
             {{ UX.cta.bookSupport }}
-          </button>
-          <button 
-            class="btn-primary">
+          </app-button>
+          <app-button type="button">
             {{ UX.cta.bookSupport }}
-          </button>
+          </app-button>
         </div>
       </div>
     }

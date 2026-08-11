@@ -49,16 +49,19 @@
 
     <!-- Actions -->
     <div class="flex space-x-3">
-      <button 
+      <app-button 
         (click)="install()"
-        class="btn-primary btn-sm flex-1">
+        size="sm"
+        block>
         Install App
-      </button>
-      <button 
+      </app-button>
+      <app-button 
         (click)="dismiss()"
-        class="btn-ghost btn-sm text-slate-600 hover:text-slate-800">
+        variant="ghost"
+        size="sm"
+        block>
         Not Now
-      </button>
+      </app-button>
     </div>
   </div>
 }

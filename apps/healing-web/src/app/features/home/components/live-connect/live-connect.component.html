@@ -18,18 +18,15 @@
       @if (view() === 'providers') {
         <div class="live-mode-grid">
           @for (modeItem of modes; track modeItem.value) {
-            <button
-              type="button"
-              class="live-mode-card"
-              [class.live-mode-card--active]="mode() === modeItem.value"
-              (click)="setMode(modeItem.value)"
-            >
-              <span class="live-mode-icon">{{ modeItem.icon }}</span>
-              <span>
-                <strong>{{ modeItem.label }}</strong>
-                <small>{{ modeItem.copy }}</small>
-              </span>
-            </button>
+            <app-selectable-card
+              [icon]="modeItem.icon"
+              [title]="modeItem.label"
+              [description]="modeItem.copy"
+              [selected]="mode() === modeItem.value"
+              tone="success"
+              [compact]="true"
+              (selectedChange)="setMode(modeItem.value)"
+            />
           }
         </div>
 

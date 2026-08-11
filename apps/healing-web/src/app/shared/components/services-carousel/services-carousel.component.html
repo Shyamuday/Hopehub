@@ -60,24 +60,25 @@
                   Choose a time and continue with a guided support session.
                 </p>
                 <div class="flex flex-col gap-3 sm:flex-row">
-                  <button
+                  <app-button
                     (click)="bookService(service)"
                     (mouseenter)="pauseAutoPlay()"
                     (mouseleave)="resumeAutoPlay()"
-                    class="btn-primary btn-sm"
+                    size="sm"
                   >
                     {{ UX.cta.bookSupport }}
-                  </button>
-                  <a
+                  </app-button>
+                  <app-button
+                    variant="secondary"
+                    size="sm"
                     [href]="whatsappHref(service)"
                     target="_blank"
                     rel="noopener"
                     (mouseenter)="pauseAutoPlay()"
                     (mouseleave)="resumeAutoPlay()"
-                    class="btn-secondary btn-sm"
                   >
                     Ask on WhatsApp
-                  </a>
+                  </app-button>
                 </div>
               </div>
             </div>

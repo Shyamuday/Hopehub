@@ -71,42 +71,6 @@
   text-transform: uppercase;
 }
 
-.support-guide__concern {
-  border: 1px solid #e2e8f0;
-  border-radius: 1rem;
-  background: #f8fafc;
-  cursor: pointer;
-  display: grid;
-  gap: 0.2rem;
-  padding: 0.85rem;
-  text-align: left;
-  transition:
-    background 160ms ease,
-    border-color 160ms ease,
-    box-shadow 160ms ease,
-    transform 160ms ease;
-}
-
-.support-guide__concern:hover,
-.support-guide__concern:focus-visible,
-.support-guide__concern--active {
-  background: #ecfdf5;
-  border-color: rgba(16, 185, 129, 0.42);
-  box-shadow: 0 12px 26px rgba(15, 23, 42, 0.08);
-  transform: translateY(-1px);
-}
-
-.support-guide__concern span {
-  color: #0f172a;
-  font-weight: 900;
-}
-
-.support-guide__concern small {
-  color: #64748b;
-  font-size: 0.78rem;
-  font-weight: 700;
-}
-
 .support-guide__panel {
   padding: clamp(1rem, 3vw, 1.5rem);
 }

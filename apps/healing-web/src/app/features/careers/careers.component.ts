@@ -18,6 +18,7 @@ import {
   FormDropdownComponent,
   FormDropdownOption,
   FormFieldComponent,
+  SelectableCardComponent,
 } from '../../shared/components';
 
 type CareContributorTrack =
@@ -47,6 +48,7 @@ type ListenerScreeningQuestion = {
     FormCheckboxComponent,
     FormDropdownComponent,
     FormFieldComponent,
+    SelectableCardComponent,
   ],
   templateUrl: './careers.component.html',
   styleUrl: './careers.component.scss',

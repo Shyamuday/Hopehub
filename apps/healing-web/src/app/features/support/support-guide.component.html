@@ -12,15 +12,14 @@
     <aside class="support-guide__concerns" aria-label="Choose your concern">
       <p class="support-guide__label">Start with</p>
       @for (concern of concernOptions(); track concern.key) {
-        <button
-          type="button"
-          class="support-guide__concern"
-          [class.support-guide__concern--active]="selectedKey() === concern.key"
-          (click)="selectConcern(concern.key)"
-        >
-          <span>{{ concern.shortLabel }}</span>
-          <small>{{ concern.assessment.label }}</small>
-        </button>
+        <app-selectable-card
+          [title]="concern.shortLabel"
+          [description]="concern.assessment.label"
+          [selected]="selectedKey() === concern.key"
+          tone="success"
+          [compact]="true"
+          (selectedChange)="selectConcern(concern.key)"
+        />
       }
     </aside>
 

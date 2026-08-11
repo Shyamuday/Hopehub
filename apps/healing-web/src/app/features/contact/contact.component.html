@@ -19,17 +19,15 @@
             </div>
             <div class="live-mode-choice-grid" aria-label="Choose consultation mode">
               @for (item of liveConnectModeOptions; track item.value) {
-                <button
-                  type="button"
-                  class="live-mode-choice"
-                  [class.live-mode-choice--active]="requestedLiveMode() === item.value"
-                  [attr.aria-pressed]="requestedLiveMode() === item.value"
-                  (click)="setLiveConnectMode(item.value)"
-                >
-                  <span>{{ item.icon }}</span>
-                  <strong>{{ item.label }}</strong>
-                  <small>{{ item.copy }}</small>
-                </button>
+                <app-selectable-card
+                  [icon]="item.icon"
+                  [title]="item.label"
+                  [description]="item.copy"
+                  [selected]="requestedLiveMode() === item.value"
+                  tone="success"
+                  [compact]="true"
+                  (selectedChange)="setLiveConnectMode(item.value)"
+                />
               }
             </div>
           </section>

@@ -30,14 +30,18 @@ import { NotificationService } from '../../core/services/notification.service';
 import { PublicCommunicationConfigService } from '../../core/services/public-communication-config.service';
 import { ConsumerFlowsService } from '../../core/services/consumer-flows.service';
 import { LiveConnectActionService } from '../../core/services/live-connect-action.service';
-import { ConnectOptionMode, ConnectOptionsComponent } from '../../shared/components';
+import {
+  AppButtonComponent,
+  ConnectOptionMode,
+  ConnectOptionsComponent,
+} from '../../shared/components';
 
 type CareTeamService = NonNullable<HopeHubProvider['services']>[number];
 
 @Component({
   selector: 'app-psychologist-detail',
   standalone: true,
-  imports: [CommonModule, RouterLink, ConnectOptionsComponent],
+  imports: [CommonModule, RouterLink, AppButtonComponent, ConnectOptionsComponent],
   templateUrl: './psychologist-detail.component.html',
 })
 export class PsychologistDetailComponent implements OnInit {

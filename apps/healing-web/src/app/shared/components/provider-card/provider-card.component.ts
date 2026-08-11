@@ -13,6 +13,7 @@ import {
   ConnectOptionMode,
   ConnectOptionsComponent,
 } from '../connect-options/connect-options.component';
+import { AppButtonComponent } from '../app-button/app-button.component';
 import { StatusChipComponent } from '../status-chip/status-chip.component';
 
 export type ProviderCardVariant = 'compact' | 'standard' | 'result';
@@ -20,7 +21,13 @@ export type ProviderCardVariant = 'compact' | 'standard' | 'result';
 @Component({
   selector: 'app-provider-card',
   standalone: true,
-  imports: [CommonModule, RouterLink, ConnectOptionsComponent, StatusChipComponent],
+  imports: [
+    CommonModule,
+    RouterLink,
+    AppButtonComponent,
+    ConnectOptionsComponent,
+    StatusChipComponent,
+  ],
   templateUrl: './provider-card.component.html',
 })
 export class ProviderCardComponent {

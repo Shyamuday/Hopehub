@@ -10,14 +10,13 @@
       <span class="guided-entry__label">What is closest today?</span>
       <div class="guided-entry__chips" role="list">
         @for (concern of concerns; track concern.key) {
-          <button
-            type="button"
-            class="guided-entry__chip"
-            [class.guided-entry__chip--active]="selectedConcern().key === concern.key"
-            (click)="selectConcern(concern)"
-          >
-            {{ concern.shortLabel }}
-          </button>
+          <app-selectable-card
+            [title]="concern.shortLabel"
+            [selected]="selectedConcern().key === concern.key"
+            tone="brand"
+            [compact]="true"
+            (selectedChange)="selectConcern(concern)"
+          />
         }
       </div>
     </div>
@@ -26,15 +25,14 @@
       <span class="guided-entry__label">How do you want to connect?</span>
       <div class="guided-entry__modes" role="list">
         @for (mode of modes; track mode.value) {
-          <button
-            type="button"
-            class="guided-entry__mode"
-            [class.guided-entry__mode--active]="selectedMode() === mode.value"
-            (click)="selectMode(mode.value)"
-          >
-            <strong>{{ mode.label }}</strong>
-            <small>{{ mode.hint }}</small>
-          </button>
+          <app-selectable-card
+            [title]="mode.label"
+            [description]="mode.hint"
+            [selected]="selectedMode() === mode.value"
+            tone="success"
+            [compact]="true"
+            (selectedChange)="selectMode(mode.value)"
+          />
         }
       </div>
     </div>
@@ -45,11 +43,11 @@
   </div>
 
   <div class="guided-entry__actions">
-    <button type="button" class="guided-entry__primary" (click)="start('live')">
+    <app-button type="button" size="sm" (click)="start('live')">
       Talk now
-    </button>
-    <button type="button" (click)="start('test')">Take matching test</button>
-    <button type="button" (click)="start('book')">Book slot</button>
-    <button type="button" (click)="start('providers')">See providers</button>
+    </app-button>
+    <app-button type="button" variant="outline" size="sm" (click)="start('test')">Take matching test</app-button>
+    <app-button type="button" variant="outline" size="sm" (click)="start('book')">Book slot</app-button>
+    <app-button type="button" variant="secondary" size="sm" (click)="start('providers')">See providers</app-button>
   </div>
 </section>

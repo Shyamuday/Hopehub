@@ -67,6 +67,7 @@ import {
   FormCheckboxComponent,
   FormFieldComponent,
   AppButtonComponent,
+  SelectableCardComponent,
 } from '../../shared/components';
 import { User } from '../../core/models/auth.model';
 
@@ -90,6 +91,7 @@ type SupportPathPreference = ReturnType<typeof supportPathForExpertPreference>;
     FormCheckboxComponent,
     FormFieldComponent,
     AppButtonComponent,
+    SelectableCardComponent,
   ],
   templateUrl: './contact.component.html',
   styleUrl: './contact.component.scss',

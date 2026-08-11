@@ -149,21 +149,22 @@
             }
 
             <div class="mt-6 flex flex-col gap-3 sm:flex-row">
-              <button type="button" class="btn-primary" (click)="book(p)">{{ bookingCta(p) }}</button>
-              <a
+              <app-button type="button" (click)="book(p)">{{ bookingCta(p) }}</app-button>
+              <app-button
+                variant="secondary"
                 [routerLink]="assessmentForProvider(p).link"
-                class="btn-secondary"
               >
                 {{ assessmentForProvider(p).label }}
-              </a>
-              <a
+              </app-button>
+              <app-button
+                variant="outline"
                 [routerLink]="flowForProvider(p).servicesLink"
                 [queryParams]="flowForProvider(p).serviceQueryParams"
-                class="btn-outline"
               >
                 Related services
-              </a>
-              <a
+              </app-button>
+              <app-button
+                variant="outline"
                 [routerLink]="ROUTES.links.bookSupport"
                 [queryParams]="{
                   consultant: p.name,
@@ -173,10 +174,9 @@
                   supportPathLabel: supportPathMeta(p).label,
                   preferredExpertType: supportPathMeta(p).title
                 }"
-                class="btn-outline"
               >
                 Ask a question
-              </a>
+              </app-button>
             </div>
           </div>
         </div>
@@ -202,13 +202,15 @@
                 <p class="mt-3 text-xs font-semibold uppercase tracking-wide text-gray-500">
                   Private support session
                 </p>
-                <button
+                <app-button
                   type="button"
-                  class="btn-outline btn-sm mt-4"
+                  class="mt-4 block"
+                  variant="outline"
+                  size="sm"
                   (click)="book(p, service)"
                 >
                   Book this service
-                </button>
+                </app-button>
                 <app-connect-options
                   class="mt-3 block"
                   [compact]="true"

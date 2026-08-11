@@ -77,24 +77,13 @@
             <legend class="font-semibold text-gray-900">Choose your pathway *</legend>
             <div class="mt-3 grid gap-3 md:grid-cols-3">
               @for (track of applicationTracks; track track.value) {
-                <label
-                  class="cursor-pointer rounded-lg border p-4 transition"
-                  [class.border-primary-600]="isType(track.value)"
-                  [class.bg-primary-50]="isType(track.value)"
-                  [class.border-gray-200]="!isType(track.value)"
-                  [class.bg-white]="!isType(track.value)"
-                >
-                  <input
-                    type="radio"
-                    name="careTeamType"
-                    [value]="track.value"
-                    [checked]="isType(track.value)"
-                    (change)="selectTrack(track.value)"
-                    class="sr-only"
-                  />
-                  <span class="block font-semibold text-gray-950">{{ track.title }}</span>
-                  <span class="mt-1 block text-sm leading-5 text-gray-700">{{ track.description }}</span>
-                </label>
+                <app-selectable-card
+                  [title]="track.title"
+                  [description]="track.description"
+                  [selected]="isType(track.value)"
+                  tone="brand"
+                  (selectedChange)="selectTrack(track.value)"
+                />
               }
             </div>
           </fieldset>

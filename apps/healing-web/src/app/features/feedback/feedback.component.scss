@@ -98,49 +98,6 @@
   gap: 0.75rem;
 }
 
-.feedback-type-card {
-  display: grid;
-  min-height: 112px;
-  gap: 0.4rem;
-  border: 1px solid #dbeafe;
-  border-radius: 1rem;
-  background: #f8fafc;
-  color: #0f172a;
-  padding: 0.9rem;
-  text-align: left;
-  cursor: pointer;
-  transition:
-    border-color 160ms ease,
-    box-shadow 160ms ease,
-    transform 160ms ease,
-    background 160ms ease;
-}
-
-.feedback-type-card:hover,
-.feedback-type-card:focus-visible {
-  border-color: var(--brand-primary);
-  box-shadow: 0 12px 28px rgba(74, 111, 165, 0.14);
-  outline: none;
-  transform: translateY(-1px);
-}
-
-.feedback-type-card--active {
-  border-color: var(--brand-primary);
-  background: #eff6ff;
-  box-shadow: inset 0 0 0 1px rgba(74, 111, 165, 0.25);
-}
-
-.feedback-type-card strong {
-  font-size: 0.93rem;
-}
-
-.feedback-type-card span {
-  color: #64748b;
-  font-size: 0.8rem;
-  font-weight: 650;
-  line-height: 1.45;
-}
-
 .feedback-form__grid > label {
   display: grid;
   gap: 0.4rem;

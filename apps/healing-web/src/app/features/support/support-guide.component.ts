@@ -11,11 +11,12 @@ import {
 import { CONSUMER_ROUTES } from '../../core/constants/consumer-routes.constants';
 import { CONSUMER_UX_COPY } from '../../core/constants/consumer-ux-copy.constants';
 import { ConsumerFlowsService } from '../../core/services/consumer-flows.service';
+import { SelectableCardComponent } from '../../shared/components';
 
 @Component({
   selector: 'app-support-guide',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, SelectableCardComponent],
   templateUrl: './support-guide.component.html',
   styleUrl: './support-guide.component.scss',
 })

@@ -1,10 +1,11 @@
 import { Component, input, output } from '@angular/core';
 import { Service } from '../../../core/models';
+import { AppButtonComponent } from '../app-button/app-button.component';
 
 @Component({
   selector: 'app-service-card',
   standalone: true,
-  imports: [],
+  imports: [AppButtonComponent],
   templateUrl: './service-card.component.html',
   styleUrl: './service-card.component.scss',
 })

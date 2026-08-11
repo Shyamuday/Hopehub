@@ -13,7 +13,7 @@
           or a gentle emotional support listener. Each profile clearly shows the scope before you book.
         </p>
       </div>
-      <a [routerLink]="ROUTES.links.bookSupport" class="btn-primary btn-sm">{{ UX.cta.bookSupport }}</a>
+      <app-button size="sm" [routerLink]="ROUTES.links.bookSupport">{{ UX.cta.bookSupport }}</app-button>
     </div>
 
     <div class="mb-6 rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm leading-6 text-emerald-950">
@@ -120,37 +120,34 @@
       </div>
 
       <div class="mt-8 flex flex-wrap items-center justify-center gap-2">
-        <button
+        <app-button
           type="button"
-          class="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 disabled:opacity-40 whitespace-nowrap"
+          variant="outline"
+          size="sm"
           [disabled]="page() <= 1"
           (click)="setPage(page() - 1)"
         >
           Previous
-        </button>
+        </app-button>
         @for (p of pages(); track p) {
-          <button
+          <app-button
             type="button"
-            class="rounded-lg border px-4 py-2 text-sm font-semibold whitespace-nowrap"
-            [class.border-primary-600]="page() === p"
-            [class.bg-primary-600]="page() === p"
-            [class.text-white]="page() === p"
-            [class.border-gray-300]="page() !== p"
-            [class.bg-white]="page() !== p"
-            [class.text-gray-700]="page() !== p"
+            [variant]="page() === p ? 'primary' : 'outline'"
+            size="sm"
             (click)="setPage(p)"
           >
             {{ p }}
-          </button>
+          </app-button>
         }
-        <button
+        <app-button
           type="button"
-          class="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 disabled:opacity-40 whitespace-nowrap"
+          variant="outline"
+          size="sm"
           [disabled]="page() >= totalPages()"
           (click)="setPage(page() + 1)"
         >
           Next
-        </button>
+        </app-button>
       </div>
     } @else {
       <app-empty-state
@@ -159,8 +156,8 @@
         [message]="emptySuggestion()"
         tone="soft"
       >
-        <button type="button" class="btn-secondary btn-sm" (click)="setRoleGroup('')">Show all</button>
-        <a [routerLink]="ROUTES.links.bookSupport" class="btn-primary btn-sm">Send request</a>
+        <app-button type="button" variant="secondary" size="sm" (click)="setRoleGroup('')">Show all</app-button>
+        <app-button size="sm" [routerLink]="ROUTES.links.bookSupport">Send request</app-button>
       </app-empty-state>
     }
 

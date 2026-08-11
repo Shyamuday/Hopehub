@@ -29,15 +29,14 @@
 
         <div class="feedback-type-grid" role="list">
           @for (type of feedbackTypes; track type.value) {
-            <button
-              type="button"
-              class="feedback-type-card"
-              [class.feedback-type-card--active]="selectedType() === type.value"
-              (click)="selectType(type.value)"
-            >
-              <strong>{{ type.label }}</strong>
-              <span>{{ type.description }}</span>
-            </button>
+            <app-selectable-card
+              [title]="type.label"
+              [description]="type.description"
+              [selected]="selectedType() === type.value"
+              tone="brand"
+              [compact]="true"
+              (selectedChange)="selectType(type.value)"
+            />
           }
         </div>
       </div>

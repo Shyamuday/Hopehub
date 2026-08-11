@@ -10,9 +10,7 @@
   font-weight: 700;
 }
 
-.careers-page input,
-.careers-page select,
-.careers-page textarea {
+.careers-page select {
   width: 100%;
   border: 1px solid #cbd5e1;
   border-radius: 0.5rem;
@@ -21,38 +19,12 @@
   padding: 0.8rem 0.9rem;
 }
 
-.careers-page textarea {
-  resize: vertical;
-}
-
 .careers-page small {
   display: block;
   margin-top: 0.35rem;
   color: #b91c1c;
   font-size: 0.8rem;
   font-weight: 600;
-}
-
-.consent {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.75rem;
-  border: 1px solid #ccfbf1;
-  border-radius: 0.5rem;
-  background: #f0fdfa;
-  padding: 1rem;
-}
-
-.consent input {
-  width: auto;
-  margin-top: 0.25rem;
-}
-
-.consent span {
-  margin: 0;
-  color: #134e4a;
-  font-size: 0.9rem;
-  line-height: 1.5;
 }
 
 .listener-screening {

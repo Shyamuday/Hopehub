@@ -1,13 +1,14 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { PWAService, PWAInstallPrompt } from '../../../core/services/pwa.service';
+import { AppButtonComponent } from '../app-button/app-button.component';
 
 @Component({
   selector: 'app-pwa-install-prompt',
   standalone: true,
-  imports: [],
+  imports: [AppButtonComponent],
   templateUrl: './pwa-install-prompt.component.html',
-  styleUrl: './pwa-install-prompt.component.scss'
+  styleUrl: './pwa-install-prompt.component.scss',
 })
 export class PWAInstallPromptComponent implements OnInit {
   installPrompt = signal<PWAInstallPrompt | null>(null);

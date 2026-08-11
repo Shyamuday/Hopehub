@@ -14,11 +14,12 @@ import {
   DailySuggestion,
 } from '../../../core/models/progress.model';
 import { CONSUMER_UX_COPY } from '../../../core/constants/consumer-ux-copy.constants';
+import { AppButtonComponent } from '../app-button/app-button.component';
 
 @Component({
   selector: 'app-progress-dashboard',
   standalone: true,
-  imports: [RouterModule, DatePipe, DecimalPipe, TitleCasePipe],
+  imports: [RouterModule, DatePipe, DecimalPipe, TitleCasePipe, AppButtonComponent],
   templateUrl: './progress-dashboard.component.html',
   styleUrl: './progress-dashboard.component.scss',
 })

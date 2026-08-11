@@ -38,6 +38,7 @@ import {
   EmptyStateComponent,
   SupportPathSelectorComponent,
   StatusChipComponent,
+  SelectableCardComponent,
 } from '../../../../shared/components';
 
 type LiveConnectMode = ConsumerLiveConnectMode;
@@ -59,6 +60,7 @@ type LiveConnectAlternativeMode = {
     EmptyStateComponent,
     SupportPathSelectorComponent,
     StatusChipComponent,
+    SelectableCardComponent,
   ],
   templateUrl: './live-connect.component.html',
   styleUrl: './live-connect.component.scss',
