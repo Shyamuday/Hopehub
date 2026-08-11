@@ -1,0 +1,81 @@
+.filter-bar {
+  margin-bottom: 2rem;
+  border: 1px solid var(--hope-card-border, rgba(148, 163, 184, 0.28));
+  border-radius: var(--hope-radius-xl, 1.25rem);
+  background: rgba(255, 255, 255, 0.92);
+  padding: 1rem;
+  box-shadow: var(--hope-card-shadow, 0 18px 45px rgba(15, 23, 42, 0.08));
+}
+
+.filter-bar--compact {
+  margin-bottom: 1.4rem;
+  padding: 0.85rem;
+}
+
+.filter-bar__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.85rem;
+}
+
+.filter-bar__field {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.filter-bar__label {
+  color: #64748b;
+  font-size: 0.74rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.filter-bar__search-wrap {
+  position: relative;
+  display: block;
+}
+
+.filter-bar__search {
+  width: 100%;
+  min-height: 2.85rem;
+  border: 1px solid var(--hope-field-border, rgba(148, 163, 184, 0.35));
+  border-radius: var(--hope-radius-md, 0.75rem);
+  background: #ffffff;
+  color: #0f172a;
+  font: inherit;
+  padding: 0.7rem 1rem 0.7rem 2.6rem;
+  transition:
+    border-color 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.filter-bar__search::placeholder {
+  color: #94a3b8;
+}
+
+.filter-bar__search:focus {
+  border-color: var(--brand-primary, #059669);
+  box-shadow: 0 0 0 3px var(--hope-field-focus-ring, rgba(16, 185, 129, 0.16));
+  outline: none;
+}
+
+.filter-bar__search-icon {
+  position: absolute;
+  left: 0.85rem;
+  top: 50%;
+  width: 1.15rem;
+  height: 1.15rem;
+  color: #94a3b8;
+  transform: translateY(-50%);
+}
+
+@media (min-width: 768px) {
+  .filter-bar__grid {
+    grid-template-columns: minmax(0, 1.4fr) repeat(var(--filter-count), minmax(12rem, 1fr));
+  }
+
+  .filter-bar__grid--dropdowns-only {
+    grid-template-columns: repeat(var(--filter-count), minmax(12rem, 1fr));
+  }
+}

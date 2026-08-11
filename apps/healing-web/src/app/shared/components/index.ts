@@ -34,3 +34,4 @@ export * from './selectable-card/selectable-card.component';
 export * from './app-button/app-button.component';
 export * from './app-modal/app-modal.component';
 export * from './page-header/page-header.component';
+export * from './filter-bar/filter-bar.component';

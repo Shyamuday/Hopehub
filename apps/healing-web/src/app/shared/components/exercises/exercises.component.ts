@@ -19,6 +19,7 @@ import {
 } from '../form-dropdown/form-dropdown.component';
 import { AppButtonComponent } from '../app-button/app-button.component';
 import { EmptyStateComponent } from '../empty-state/empty-state.component';
+import { FilterBarComponent } from '../filter-bar/filter-bar.component';
 import { PageHeaderComponent } from '../page-header/page-header.component';
 
 @Component({
@@ -30,6 +31,7 @@ import { PageHeaderComponent } from '../page-header/page-header.component';
     FormDropdownComponent,
     AppButtonComponent,
     EmptyStateComponent,
+    FilterBarComponent,
     PageHeaderComponent,
   ],
   template: `
@@ -40,59 +42,40 @@ import { PageHeaderComponent } from '../page-header/page-header.component';
           description="Discover evidence-based exercises to improve your mental well-being. Practice regularly for best results."
         />
 
-        <!-- Filters and Search -->
-        <div class="mb-6 rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
-          <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <!-- Search -->
-            <div class="md:col-span-2">
-              <label class="block text-sm font-semibold text-gray-700 mb-2">Search exercises</label>
-              <input
-                type="text"
-                [(ngModel)]="searchTerm"
-                (input)="filterExercises()"
-                placeholder="Search by name, benefits, or tags..."
-                class="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 placeholder:text-gray-500 focus:border-primary-600 focus:outline-none focus:ring-2 focus:ring-primary-100"
-              />
-            </div>
+        <app-filter-bar
+          [searchValue]="searchTerm"
+          searchPlaceholder="Search by name, benefits, or tags..."
+          [filters]="[
+            {
+              key: 'category',
+              label: 'Category',
+              placeholder: 'All Categories',
+              value: selectedCategory,
+              options: categoryOptions,
+            },
+            {
+              key: 'type',
+              label: 'Type',
+              placeholder: 'All Types',
+              value: selectedType,
+              options: typeOptions,
+            },
+          ]"
+          (searchValueChange)="updateExerciseSearch($event)"
+          (filterChange)="updateExerciseFilter($event)"
+        />
 
-            <!-- Category Filter -->
-            <div>
-              <label class="block text-sm font-semibold text-gray-700 mb-2">Category</label>
-              <app-form-dropdown
-                [(ngModel)]="selectedCategory"
-                (ngModelChange)="filterExercises()"
-                placeholder="All Categories"
-                [options]="categoryOptions"
-              >
-              </app-form-dropdown>
-            </div>
-
-            <!-- Type Filter -->
-            <div>
-              <label class="block text-sm font-semibold text-gray-700 mb-2">Type</label>
-              <app-form-dropdown
-                [(ngModel)]="selectedType"
-                (ngModelChange)="filterExercises()"
-                placeholder="All Types"
-                [options]="typeOptions"
-              >
-              </app-form-dropdown>
-            </div>
-          </div>
-
-          <!-- Quick Category Buttons -->
-          <div class="flex flex-wrap gap-2 mt-4">
-            @for (category of quickCategories; track category) {
-              <app-button
-                (click)="selectQuickCategory(category)"
-                [variant]="selectedCategory === category ? 'primary' : 'outline'"
-                size="sm"
-              >
-                {{ category }}
-              </app-button>
-            }
-            <app-button variant="outline" size="sm" (click)="clearFilters()">Clear All</app-button>
-          </div>
+        <div class="-mt-4 mb-6 flex flex-wrap gap-2">
+          @for (category of quickCategories; track category) {
+            <app-button
+              (click)="selectQuickCategory(category)"
+              [variant]="selectedCategory === category ? 'primary' : 'outline'"
+              size="sm"
+            >
+              {{ category }}
+            </app-button>
+          }
+          <app-button variant="outline" size="sm" (click)="clearFilters()">Clear All</app-button>
         </div>
 
         <!-- Exercise Grid -->
@@ -498,6 +481,23 @@ export class ExercisesComponent implements OnInit {
     }
 
     this.filteredExercises.set(filtered);
+  }
+
+  updateExerciseSearch(value: string): void {
+    this.searchTerm = value;
+    this.filterExercises();
+  }
+
+  updateExerciseFilter(event: { key: string; value: string }): void {
+    if (event.key === 'category') {
+      this.selectedCategory = event.value;
+    }
+
+    if (event.key === 'type') {
+      this.selectedType = event.value;
+    }
+
+    this.filterExercises();
   }
 
   selectQuickCategory(category: ExerciseCategory) {

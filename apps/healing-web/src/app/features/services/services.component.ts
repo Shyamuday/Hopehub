@@ -7,7 +7,7 @@ import { Service, ServiceCategory } from '../../core/models';
 import {
   ContinueSupportBannerComponent,
   EmptyStateComponent,
-  FormDropdownComponent,
+  FilterBarComponent,
   FormDropdownOption,
   ServiceCardComponent,
 } from '../../shared/components';
@@ -24,7 +24,7 @@ import {
   imports: [
     FormsModule,
     ServiceCardComponent,
-    FormDropdownComponent,
+    FilterBarComponent,
     ContinueSupportBannerComponent,
     EmptyStateComponent,
   ],
@@ -102,6 +102,17 @@ export class ServicesComponent implements OnInit {
   setNeed(value: string): void {
     this.searchTerm.set(value);
     this.selectedFilter.set(this.filterForConcern(value));
+  }
+
+  handleFilterChange(event: { key: string; value: string }): void {
+    if (event.key === 'need') {
+      this.setNeed(event.value);
+      return;
+    }
+
+    if (event.key === 'category') {
+      this.setFilter(event.value);
+    }
   }
 
   private loadPageData() {

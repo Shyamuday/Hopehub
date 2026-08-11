@@ -40,7 +40,7 @@ import {
   AppButtonComponent,
   ContinueSupportBannerComponent,
   EmptyStateComponent,
-  FormDropdownComponent,
+  FilterBarComponent,
   FormDropdownOption,
   ProviderCardComponent,
   SupportPathSelectorComponent,
@@ -59,7 +59,7 @@ type RoleGroup = '' | ConsumerSupportPath;
     SupportPathSelectorComponent,
     ContinueSupportBannerComponent,
     EmptyStateComponent,
-    FormDropdownComponent,
+    FilterBarComponent,
     ProviderCardComponent,
   ],
   templateUrl: './psychologists.component.html',
@@ -161,6 +161,23 @@ export class PsychologistsComponent implements OnInit {
     this[key].set(value);
     this.page.set(1);
     this.load({ refreshCounts: true });
+  }
+
+  handleFilterChange(event: { key: string; value: string }): void {
+    if (event.key === 'q') {
+      this.search(event.value);
+      return;
+    }
+
+    if (
+      event.key === 'concern' ||
+      event.key === 'language' ||
+      event.key === 'modality' ||
+      event.key === 'sessionType' ||
+      event.key === 'ageGroup'
+    ) {
+      this.setFilter(event.key, event.value);
+    }
   }
 
   setRoleGroup(value: RoleGroup): void {

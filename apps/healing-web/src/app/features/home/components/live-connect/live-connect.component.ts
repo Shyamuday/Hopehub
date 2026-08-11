@@ -36,6 +36,7 @@ import {
   PaymentFlowState,
   PaymentStatusOverlayComponent,
   EmptyStateComponent,
+  AppButtonComponent,
   SupportPathSelectorComponent,
   StatusChipComponent,
   SelectableCardComponent,
@@ -57,6 +58,7 @@ type LiveConnectAlternativeMode = {
   imports: [
     FormsModule,
     PaymentStatusOverlayComponent,
+    AppButtonComponent,
     RouterModule,
     EmptyStateComponent,
     SupportPathSelectorComponent,

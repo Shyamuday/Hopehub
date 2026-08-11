@@ -3,12 +3,12 @@ import { RouterModule } from '@angular/router';
 import { IMAGE_ASSETS } from '../../../../core/constants/image-assets.constants';
 import { CONSUMER_UX_COPY } from '../../../../core/constants/consumer-ux-copy.constants';
 import { CONSUMER_ROUTES } from '../../../../core/constants/consumer-routes.constants';
-import { PageHeaderComponent } from '../../../../shared/components';
+import { AppButtonComponent, PageHeaderComponent } from '../../../../shared/components';
 
 @Component({
   selector: 'app-home-tools',
   standalone: true,
-  imports: [RouterModule, PageHeaderComponent],
+  imports: [RouterModule, AppButtonComponent, PageHeaderComponent],
   templateUrl: './home-tools.component.html',
   styles: [
     `

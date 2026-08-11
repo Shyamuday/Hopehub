@@ -4,6 +4,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   ContinueSupportBannerComponent,
   EmptyStateComponent,
+  AppButtonComponent,
   FeedbackSectionComponent,
   GuidedSupportEntryComponent,
   OfferBannerCarouselComponent,
@@ -27,6 +28,7 @@ import { LiveConnectComponent } from './components/live-connect/live-connect.com
   imports: [
     ContinueSupportBannerComponent,
     EmptyStateComponent,
+    AppButtonComponent,
     FeedbackSectionComponent,
     GroupChatTeaserComponent,
     GuidedSupportEntryComponent,

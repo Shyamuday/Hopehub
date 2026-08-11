@@ -29,7 +29,9 @@
         eyebrow="What brings people here"
         title="Real life is messy. Support can still feel simple."
       />
-      <a [routerLink]="ROUTES.links.support" class="btn-outline">{{ UX.cta.exploreSupportOptions }}</a>
+      <app-button [routerLink]="ROUTES.links.support" variant="outline">
+        {{ UX.cta.exploreSupportOptions }}
+      </app-button>
     </div>
 
     <div class="support-moment-rail" aria-label="Hope Hub support moments">
@@ -62,7 +64,9 @@
         <p class="hope-card-copy">
           Pick a service, choose a slot, and continue with the right expert.
         </p>
-        <a [routerLink]="ROUTES.links.bookSupport" class="btn-primary mt-5">{{ UX.cta.bookSupport }}</a>
+        <app-button class="mt-5" [routerLink]="ROUTES.links.bookSupport">
+          {{ UX.cta.bookSupport }}
+        </app-button>
       </article>
 
       <article class="hope-card hope-motion-card">
@@ -73,14 +77,15 @@
         <p class="hope-card-copy">
           Join our Telegram community with a display name or username and talk at your comfort level.
         </p>
-        <a
+        <app-button
           [href]="APP_CONSTANTS.TELEGRAM.GROUP_URL"
           target="_blank"
           rel="noopener noreferrer"
-          class="btn-secondary mt-5"
+          class="mt-5"
+          variant="secondary"
         >
           Join community
-        </a>
+        </app-button>
       </article>
 
       <article class="hope-card hope-motion-card">
@@ -91,7 +96,9 @@
         <p class="hope-card-copy">
           Complete a short assessment, then sign in to save your score and compare retests over time.
         </p>
-        <a [routerLink]="ROUTES.links.support" class="btn-outline mt-5">{{ UX.cta.startTest }}</a>
+        <app-button class="mt-5" [routerLink]="ROUTES.links.support" variant="outline">
+          {{ UX.cta.startTest }}
+        </app-button>
       </article>
     </div>
 
@@ -128,7 +135,9 @@
         title="Talk with a Hope Hub expert"
         description="Browse verified professionals, counsellors, emotional support listeners, coaches, and wellness guides for anxiety, relationship stress, overthinking, family concerns, and private guidance."
       />
-      <a [routerLink]="ROUTES.links.careTeam" class="btn-secondary">{{ UX.cta.meetCareTeam }}</a>
+      <app-button [routerLink]="ROUTES.links.careTeam" variant="secondary">
+        {{ UX.cta.meetCareTeam }}
+      </app-button>
     </div>
 
     @if (psychologistsLoading()) {
@@ -173,8 +182,8 @@
         [description]="'No pressure to explain everything at once. ' + UX.cta.bookSupport + ' or begin with a short test.'"
       />
       <div class="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
-        <a [routerLink]="ROUTES.links.bookSupport" class="btn-primary">{{ UX.cta.bookSupport }}</a>
-        <a [routerLink]="ROUTES.links.support" class="btn-outline">{{ UX.cta.startTest }}</a>
+        <app-button [routerLink]="ROUTES.links.bookSupport">{{ UX.cta.bookSupport }}</app-button>
+        <app-button [routerLink]="ROUTES.links.support" variant="outline">{{ UX.cta.startTest }}</app-button>
       </div>
     </div>
   </div>

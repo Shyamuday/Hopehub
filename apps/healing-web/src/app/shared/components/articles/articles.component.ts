@@ -29,6 +29,7 @@ import {
 } from '../form-dropdown/form-dropdown.component';
 import { AppButtonComponent } from '../app-button/app-button.component';
 import { EmptyStateComponent } from '../empty-state/empty-state.component';
+import { FilterBarComponent } from '../filter-bar/filter-bar.component';
 import { PageHeaderComponent } from '../page-header/page-header.component';
 
 @Component({
@@ -41,6 +42,7 @@ import { PageHeaderComponent } from '../page-header/page-header.component';
     FormDropdownComponent,
     AppButtonComponent,
     EmptyStateComponent,
+    FilterBarComponent,
     PageHeaderComponent,
   ],
   templateUrl: './articles.component.html',

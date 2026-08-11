@@ -86,9 +86,10 @@
                   }
                 </div>
 
-                <button
+                <app-button
                   type="button"
-                  class="btn-primary mt-5 w-full justify-center"
+                  class="mt-5"
+                  block
                   [disabled]="startingProviderId() === provider.id"
                   (click)="start(provider)"
                 >
@@ -97,7 +98,7 @@
                       ? 'Starting...'
                       : buttonLabel(provider)
                   }}
-                </button>
+                </app-button>
               </article>
             }
           </div>
@@ -117,17 +118,16 @@
               }
             </div>
             @for (alternative of alternativeModes(); track alternative.mode) {
-              <button
+              <app-button
                 type="button"
-                class="btn-primary"
                 (click)="tryAlternativeMode(alternative.mode)"
               >
                 {{ alternative.icon }} Try {{ alternative.label.toLowerCase() }} now
-              </button>
+              </app-button>
             }
-            <button type="button" class="btn-secondary" (click)="bookConsultation()">
+            <app-button type="button" variant="secondary" (click)="bookConsultation()">
               Book {{ modeLabel().toLowerCase() }} consultation
-            </button>
+            </app-button>
           </app-empty-state>
         }
 
@@ -164,9 +164,9 @@
               <p class="live-group-create__note">
                 Support chats are text-only for now. Use 1:1 Live Connect for voice/video sessions.
               </p>
-              <button type="submit" class="btn-primary justify-center" [disabled]="creatingGroup() || !newGroupTitle().trim()">
+              <app-button type="submit" [disabled]="creatingGroup() || !newGroupTitle().trim()">
                 {{ creatingGroup() ? 'Opening...' : 'Open support chat' }}
-              </button>
+              </app-button>
             </div>
           </form>
 
@@ -201,9 +201,9 @@
                   <span>{{ group.messageCount }} messages</span>
                   <span>Group support</span>
                 </div>
-                <button type="button" class="btn-primary mt-5 w-full justify-center" (click)="joinGroup(group)">
+                <app-button type="button" class="mt-5" block (click)="joinGroup(group)">
                   Join support chat
-                </button>
+                </app-button>
               </article>
             }
           </div>
@@ -214,7 +214,7 @@
             message="You can still explore community support options."
             compact
           >
-            <a [routerLink]="ROUTES.links.community" class="btn-secondary">See community options</a>
+            <app-button [routerLink]="ROUTES.links.community" variant="secondary">See community options</app-button>
           </app-empty-state>
         }
       }

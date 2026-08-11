@@ -17,29 +17,26 @@
     </div>
   </div>
 
-  <div class="mb-8 rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-    <div class="grid gap-3 md:grid-cols-2">
-      <label class="grid gap-1 text-xs font-bold uppercase tracking-wide text-gray-500">
-        What do you need help with?
-        <app-form-dropdown
-          [options]="needOptions"
-          [ngModel]="searchTerm()"
-          (ngModelChange)="setNeed($event)"
-          placeholder="Any need"
-        />
-      </label>
-
-      <label class="grid gap-1 text-xs font-bold uppercase tracking-wide text-gray-500">
-        Service category
-        <app-form-dropdown
-          [options]="filters"
-          [ngModel]="selectedFilter()"
-          (ngModelChange)="setFilter($event)"
-          placeholder="All services"
-        />
-      </label>
-    </div>
-  </div>
+  <app-filter-bar
+    [showSearch]="false"
+    [filters]="[
+      {
+        key: 'need',
+        label: 'What do you need help with?',
+        placeholder: 'Any need',
+        value: searchTerm(),
+        options: needOptions
+      },
+      {
+        key: 'category',
+        label: 'Service category',
+        placeholder: 'All services',
+        value: selectedFilter(),
+        options: filters
+      }
+    ]"
+    (filterChange)="handleFilterChange($event)"
+  />
 
   <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
     @for (service of filteredServices(); track service.id) {

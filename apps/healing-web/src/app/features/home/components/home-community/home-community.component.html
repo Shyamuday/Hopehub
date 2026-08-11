@@ -44,14 +44,14 @@
             </li>
           </ul>
         </div>
-        <a
+        <app-button
           [href]="APP_CONSTANTS.TELEGRAM.GROUP_URL"
           target="_blank"
           rel="noopener noreferrer"
-          class="btn-primary btn-block sm:w-auto"
+          block
         >
           Join Telegram Group
-        </a>
+        </app-button>
       </div>
 
       <div
@@ -94,12 +94,12 @@
             }
           </div>
         </div>
-        <button
-          class="btn-primary btn-block sm:w-auto"
+        <app-button
           [routerLink]="ROUTES.links.community"
+          block
         >
           Learn More
-        </button>
+        </app-button>
       </div>
     </div>
 
