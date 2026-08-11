@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, inject } from '@angular/core';
+import { Component, DestroyRef, OnInit, signal, inject } from '@angular/core';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NOTE_CONTENT } from '../../core/constants/note-content.constants';
@@ -7,10 +7,19 @@ import {
   CONSUMER_ROUTES,
   ConsumerAssessmentRouteMatch,
 } from '../../core/constants/consumer-routes.constants';
-import { consumerAssessmentForText } from '../../core/constants/consumer-concerns.constants';
+import {
+  CONSUMER_CONCERN_FLOWS,
+  ConsumerConcernFlow,
+  ConsumerConcernKey,
+} from '../../core/constants/consumer-concerns.constants';
 import { Service, ServiceCategory } from '../../core/models';
 import { ServiceInquiryComponent } from '../../shared/components';
-import { BookingService, NotificationService, SEOService } from '../../core/services';
+import {
+  BookingService,
+  ConsumerFlowsService,
+  NotificationService,
+  SEOService,
+} from '../../core/services';
 import { PublicCommunicationConfigService } from '../../core/services/public-communication-config.service';
 import {
   HOPE_HUB_ANALYTICS_EVENTS,
@@ -37,6 +46,8 @@ export class ServiceDetailComponent implements OnInit {
   singleSessionOffer = signal<HopeHubOffering | null>(null);
   singleSessionQuote = signal<HopeHubOfferingQuote | null>(null);
   loading = signal(true);
+  readonly concernFlows =
+    signal<Record<ConsumerConcernKey, ConsumerConcernFlow>>(CONSUMER_CONCERN_FLOWS);
 
   private route = inject(ActivatedRoute);
   private router = inject(Router);
@@ -45,6 +56,8 @@ export class ServiceDetailComponent implements OnInit {
   private publicConfig = inject(PublicCommunicationConfigService);
   private notificationService = inject(NotificationService);
   private productAnalytics = inject(ProductAnalyticsService);
+  private consumerFlowsService = inject(ConsumerFlowsService);
+  private destroyRef = inject(DestroyRef);
 
   constructor() {
     this.route.params.pipe(takeUntilDestroyed()).subscribe((params: any) => {
@@ -54,6 +67,9 @@ export class ServiceDetailComponent implements OnInit {
   }
 
   ngOnInit() {
+    this.consumerFlowsService.state$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((state) => this.concernFlows.set(state.flows));
     this.loadSingleSessionQuote();
   }
 
@@ -87,7 +103,7 @@ export class ServiceDetailComponent implements OnInit {
   }
 
   assessmentForService(service: Service): ConsumerAssessmentRouteMatch {
-    return consumerAssessmentForText(
+    return this.consumerFlowsService.matchFlowForText(
       [
         service.name,
         service.description,
@@ -95,7 +111,8 @@ export class ServiceDetailComponent implements OnInit {
         service.category,
         ...(service.benefits ?? []),
       ].join(' '),
-    );
+      this.concernFlows(),
+    ).assessment;
   }
 
   formatPrice(amount: number | undefined, currency: string | undefined): string {

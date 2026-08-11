@@ -27,6 +27,9 @@ export type ConsumerConcernFlow = {
   label: string;
   shortLabel: string;
   searchTerms: string[];
+  assessmentId: ConsumerAssessmentRouteMatch['id'];
+  assessmentLabel: string;
+  supportPath: ConsumerSupportPath;
   assessment: ConsumerAssessmentRouteMatch;
   careTeamQueryParams: Record<string, string>;
   bookingQueryParams: Record<string, string>;
@@ -49,6 +52,9 @@ function concernFlow(params: {
     label: concern,
     shortLabel: params.shortLabel || concern,
     searchTerms: params.searchTerms,
+    assessmentId: params.assessment.id,
+    assessmentLabel: params.assessment.label,
+    supportPath,
     assessment: params.assessment,
     careTeamQueryParams: {
       concern,

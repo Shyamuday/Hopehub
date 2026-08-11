@@ -1,5 +1,6 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
 import { RouterModule } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FeedbackSectionComponent, OfferBannerCarouselComponent } from '../../shared/components';
 import { APP_CONSTANTS } from '../../core';
 import { CONSUMER_UX_COPY } from '../../core/constants/consumer-ux-copy.constants';
@@ -7,7 +8,7 @@ import { CONSUMER_ROUTES } from '../../core/constants/consumer-routes.constants'
 import { CONSUMER_CONCERN_FLOWS } from '../../core/constants/consumer-concerns.constants';
 import { IMAGE_ASSETS } from '../../core/constants/image-assets.constants';
 import { environment } from '../../../environments/environment';
-import { BookingService, HopeHubProvider } from '../../core/services/booking.service';
+import { BookingService, ConsumerFlowsService, HopeHubProvider } from '../../core/services';
 import { GroupChatTeaserComponent } from './components/group-chat-teaser/group-chat-teaser.component';
 import { HomeHeroComponent } from './components/home-hero/home-hero.component';
 import { HomeToolsComponent } from './components/home-tools/home-tools.component';
@@ -33,6 +34,8 @@ export class HomeComponent implements OnInit {
   readonly UX = CONSUMER_UX_COPY;
   readonly ROUTES = CONSUMER_ROUTES;
   private readonly bookingService = inject(BookingService);
+  private readonly consumerFlowsService = inject(ConsumerFlowsService);
+  private readonly destroyRef = inject(DestroyRef);
 
   readonly psychologists = signal<HopeHubProvider[]>([]);
   readonly psychologistsLoading = signal(false);
@@ -67,16 +70,29 @@ export class HomeComponent implements OnInit {
       route: CONSUMER_CONCERN_FLOWS.breakup.assessment.link,
     },
   ];
-  readonly concernShortcuts = [
+  readonly concernShortcuts = signal([
     CONSUMER_CONCERN_FLOWS.anxiety,
     CONSUMER_CONCERN_FLOWS.depression,
     CONSUMER_CONCERN_FLOWS.stress,
     CONSUMER_CONCERN_FLOWS.relationship,
     CONSUMER_CONCERN_FLOWS.sleep,
     CONSUMER_CONCERN_FLOWS.breakup,
-  ];
+  ]);
 
   ngOnInit(): void {
+    this.consumerFlowsService.state$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((state) => {
+        const flows = state.flows;
+        this.concernShortcuts.set([
+          flows.anxiety,
+          flows.depression,
+          flows.stress,
+          flows.relationship,
+          flows.sleep,
+          flows.breakup,
+        ]);
+      });
     this.loadPsychologists();
   }
 

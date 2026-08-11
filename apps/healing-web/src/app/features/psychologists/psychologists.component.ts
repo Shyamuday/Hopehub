@@ -1,6 +1,7 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { BookingService, HopeHubProvider } from '../../core/services/booking.service';
@@ -16,9 +17,14 @@ import {
   CONSUMER_ROUTES,
   ConsumerAssessmentRouteMatch,
 } from '../../core/constants/consumer-routes.constants';
-import { consumerAssessmentForText } from '../../core/constants/consumer-concerns.constants';
+import {
+  CONSUMER_CONCERN_FLOWS,
+  ConsumerConcernFlow,
+  ConsumerConcernKey,
+} from '../../core/constants/consumer-concerns.constants';
 import { PublicCommunicationConfigService } from '../../core/services/public-communication-config.service';
 import { NotificationService } from '../../core/services/notification.service';
+import { ConsumerFlowsService } from '../../core/services/consumer-flows.service';
 import { SupportPathSelectorComponent } from '../../shared/components';
 
 type CareTeamListService = NonNullable<HopeHubProvider['services']>[number];
@@ -36,6 +42,8 @@ export class PsychologistsComponent implements OnInit {
   private readonly bookingService = inject(BookingService);
   readonly publicConfig = inject(PublicCommunicationConfigService);
   private readonly notificationService = inject(NotificationService);
+  private readonly consumerFlowsService = inject(ConsumerFlowsService);
+  private readonly destroyRef = inject(DestroyRef);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
 
@@ -76,8 +84,13 @@ export class PsychologistsComponent implements OnInit {
   ];
   readonly ageGroupOptions = ['', 'Adults', 'Teens', 'Children', 'Older adults'];
   readonly roleTabs = CONSUMER_SUPPORT_PATHS;
+  readonly concernFlows =
+    signal<Record<ConsumerConcernKey, ConsumerConcernFlow>>(CONSUMER_CONCERN_FLOWS);
 
   ngOnInit(): void {
+    this.consumerFlowsService.state$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((state) => this.concernFlows.set(state.flows));
     this.hydrateFiltersFromUrl();
     this.load();
     this.loadRoleCounts();
@@ -154,7 +167,7 @@ export class PsychologistsComponent implements OnInit {
   }
 
   assessmentForProvider(provider: HopeHubProvider): ConsumerAssessmentRouteMatch {
-    return consumerAssessmentForText(
+    return this.consumerFlowsService.matchFlowForText(
       [
         provider.supportRoleLabel,
         provider.supportRoleDescription,
@@ -166,7 +179,8 @@ export class PsychologistsComponent implements OnInit {
           (service) => `${service.title} ${service.description ?? ''}`,
         ),
       ].join(' '),
-    );
+      this.concernFlows(),
+    ).assessment;
   }
 
   private hydrateFiltersFromUrl(): void {

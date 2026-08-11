@@ -12,3 +12,4 @@ export * from './seo.service';
 export * from './notification.service';
 export * from './product-analytics.service';
 export * from './public-communication-config.service';
+export * from './consumer-flows.service';

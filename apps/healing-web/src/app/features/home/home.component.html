@@ -84,7 +84,7 @@
         <h3>One tap to the right test and support path</h3>
       </div>
       <div class="concern-shortcuts__grid">
-        @for (concern of concernShortcuts; track concern.key) {
+        @for (concern of concernShortcuts(); track concern.key) {
           <a
             class="concern-shortcuts__chip"
             [routerLink]="concern.assessment.link"
