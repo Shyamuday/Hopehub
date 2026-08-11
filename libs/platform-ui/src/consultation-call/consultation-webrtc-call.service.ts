@@ -41,7 +41,13 @@ function callReasonMessage(reason: unknown): string {
     connection_failed: 'Call connection failed. Please try again or continue in chat.',
     reconnect_timeout: 'Call disconnected. Please try again or continue in chat.',
     not_connected: 'Call ended before it connected.',
-    ended_by_user: 'Call ended.'
+    ended_by_user: 'Call ended.',
+    consultation_not_found: 'This session could not be found.',
+    consultation_not_active: 'Calls are available only during an active session.',
+    provider_not_assigned: 'An expert is not assigned to this session yet.',
+    call_participant_mismatch: 'This call is not allowed for this session.',
+    call_mode_not_allowed: 'This session does not allow this call type.',
+    call_not_allowed: 'This call is not allowed.'
   };
   return messages[normalized] || normalized.replace(/_/g, ' ');
 }

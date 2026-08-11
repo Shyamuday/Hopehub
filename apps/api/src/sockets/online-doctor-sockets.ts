@@ -17,6 +17,11 @@ type CallSignalPayload = {
 const ACTIVE_CALL_STATUSES = ['RINGING', 'CONNECTING', 'CONNECTED', 'RECONNECTING'] as const;
 const CALL_SETUP_STALE_MS = 2 * 60 * 1000;
 const CONNECTED_CALL_STALE_MS = 6 * 60 * 60 * 1000;
+const CALL_ALLOWED_CONSULTATION_STATUSES: ConsultationStatus[] = [
+  ConsultationStatus.ASSIGNED,
+  ConsultationStatus.IN_PROGRESS,
+  ConsultationStatus.PRESCRIPTION_UPLOADED
+];
 
 function safeCallReason(reason: unknown, fallback: string): string {
   if (typeof reason !== 'string') return fallback;
@@ -26,6 +31,70 @@ function safeCallReason(reason: unknown, fallback: string): string {
     .replace(/[^a-z0-9:_-]/g, '_')
     .slice(0, 80);
   return trimmed || fallback;
+}
+
+function asRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
+}
+
+function normalizedCallMode(value: unknown): 'audio' | 'video' | '' {
+  const text = String(value || '').toLowerCase();
+  if (text.includes('video')) return 'video';
+  if (text.includes('voice') || text.includes('audio') || text.includes('call')) return 'audio';
+  return '';
+}
+
+function consultationAllowsCallMode(intakeAnswers: unknown, requestedMode?: string): boolean {
+  const mode = normalizedCallMode(requestedMode);
+  if (!mode) return true;
+
+  const intake = asRecord(intakeAnswers);
+  const sessionMode = normalizedCallMode(
+    intake['quickTalkMode'] || intake['sessionMode'] || intake['mode']
+  );
+  const rawSessionMode = String(
+    intake['quickTalkMode'] || intake['sessionMode'] || intake['mode'] || ''
+  ).toLowerCase();
+  if (rawSessionMode.includes('chat')) return false;
+  if (sessionMode === 'audio' && mode === 'video') return false;
+  return true;
+}
+
+async function validateCallSignalAccess(fromUserId: string, payload: CallSignalPayload) {
+  const consultation = await prisma.consultation.findUnique({
+    where: { id: payload.consultationId },
+    select: {
+      id: true,
+      status: true,
+      patientId: true,
+      assignedDoctorId: true,
+      intakeAnswers: true
+    }
+  });
+
+  if (!consultation) return { allowed: false, reason: 'consultation_not_found' };
+  if (!CALL_ALLOWED_CONSULTATION_STATUSES.includes(consultation.status)) {
+    return { allowed: false, reason: 'consultation_not_active' };
+  }
+  if (!consultation.assignedDoctorId) {
+    return { allowed: false, reason: 'provider_not_assigned' };
+  }
+
+  const isPatientCallingProvider =
+    fromUserId === consultation.patientId && payload.targetUserId === consultation.assignedDoctorId;
+  const isProviderCallingPatient =
+    fromUserId === consultation.assignedDoctorId && payload.targetUserId === consultation.patientId;
+  if (!isPatientCallingProvider && !isProviderCallingPatient) {
+    return { allowed: false, reason: 'call_participant_mismatch' };
+  }
+
+  if (!consultationAllowsCallMode(consultation.intakeAnswers, payload.mode)) {
+    return { allowed: false, reason: 'call_mode_not_allowed' };
+  }
+
+  return { allowed: true, reason: '' };
 }
 
 function relayCallSignal(
@@ -141,6 +210,9 @@ async function recordCallSignal(
   event: string,
   payload: CallSignalPayload
 ): Promise<{ relay: boolean; reason?: string }> {
+  const access = await validateCallSignalAccess(fromUserId, payload);
+  if (!access.allowed) return { relay: false, reason: access.reason || 'call_not_allowed' };
+
   if (event === SOCKET_EVENTS.CALL_RING || event === SOCKET_EVENTS.CALL_OFFER) {
     await expireStaleCallSessions(payload.consultationId);
 

@@ -211,6 +211,12 @@ export class DoctorLiveSessionPage implements OnInit, OnDestroy {
       ended_by_user: 'Ended by participant',
       stale_setup_cleanup: 'Previous call attempt expired',
       stale_connected_cleanup: 'Old active call auto-closed',
+      consultation_not_found: 'Session not found',
+      consultation_not_active: 'Session not active',
+      provider_not_assigned: 'Expert not assigned',
+      call_participant_mismatch: 'Participant mismatch',
+      call_mode_not_allowed: 'Call type not allowed',
+      call_not_allowed: 'Call not allowed',
     };
     return labels[reason] || reason.replace(/_/g, ' ');
   }
