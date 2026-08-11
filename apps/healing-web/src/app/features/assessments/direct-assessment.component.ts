@@ -1,5 +1,5 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
-import { ActivatedRoute, RouterModule } from '@angular/router';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { firstValueFrom } from 'rxjs';
 import { AssessmentConfig, AssessmentResult } from '../../core/models/assessment.model';
@@ -9,6 +9,7 @@ import { getArticleRecommendations } from '../../core/data/article-recommendatio
 import { AuthService } from '../../core/services/auth.service';
 import { AuthModalService } from '../../core/services/auth-modal.service';
 import { AssessmentAttemptsService } from '../../core/services/assessment-attempts.service';
+import { BookingService } from '../../core/services/booking.service';
 import {
   AssessmentAccess,
   AssessmentCouponQuote,
@@ -16,13 +17,15 @@ import {
 } from '../../core/services/assessment-definition.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { PaymentService } from '../../core/services/payment.service';
+import { LiveConnectActionService } from '../../core/services/live-connect-action.service';
 import { CONSUMER_UX_COPY } from '../../core/constants/consumer-ux-copy.constants';
 import { CONSUMER_ROUTES } from '../../core/constants/consumer-routes.constants';
+import { ConnectOptionMode, ConnectOptionsComponent } from '../../shared/components';
 
 @Component({
   selector: 'app-direct-assessment',
   standalone: true,
-  imports: [RouterModule],
+  imports: [RouterModule, ConnectOptionsComponent],
   template: `
     <main class="direct-test bg-[var(--brand-surface)]">
       @if (assessment()) {
@@ -381,6 +384,13 @@ import { CONSUMER_ROUTES } from '../../core/constants/consumer-routes.constants'
                 <p class="mt-1 text-sm leading-6 text-gray-700">
                   {{ UX.assessment.nextCopy }}
                 </p>
+                <app-connect-options
+                  class="mt-4 block"
+                  [title]="'Connect based on this result'"
+                  [subtitle]="'Choose chat, voice, video, or a planned slot. We carry this test context into booking.'"
+                  [bookLabel]="'Book slot'"
+                  (selected)="connectFromResult($event)"
+                />
                 <div class="mt-4 grid gap-3 sm:grid-cols-3">
                   <a
                     [routerLink]="ROUTES.links.home"
@@ -622,12 +632,15 @@ export class DirectAssessmentComponent implements OnInit {
   readonly UX = CONSUMER_UX_COPY;
   readonly ROUTES = CONSUMER_ROUTES;
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
   private readonly authService = inject(AuthService);
   private readonly authModalService = inject(AuthModalService);
+  private readonly bookingService = inject(BookingService);
   private readonly assessmentAttemptsService = inject(AssessmentAttemptsService);
   private readonly assessmentDefinitionService = inject(AssessmentDefinitionService);
   private readonly notificationService = inject(NotificationService);
   private readonly paymentService = inject(PaymentService);
+  private readonly liveConnectAction = inject(LiveConnectActionService);
   private readonly pendingStorageKey = 'hope_hub_direct_pending_assessment_result';
   private autoNextTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -957,6 +970,61 @@ export class DirectAssessmentComponent implements OnInit {
           level: result.level,
         }
       : {};
+  }
+
+  async connectFromResult(mode: ConnectOptionMode): Promise<void> {
+    const queryParams = this.assessmentConnectQueryParams(mode);
+    if (mode === 'book') {
+      await this.router.navigate(CONSUMER_ROUTES.links.bookSupport, { queryParams });
+      return;
+    }
+
+    const assessment = this.assessment();
+    const result = this.result();
+    try {
+      const response = await firstValueFrom(
+        this.bookingService.quickTalkProviders({
+          q: [assessment?.title, assessment?.type, assessment?.category, result?.level]
+            .filter(Boolean)
+            .join(' '),
+          concern: assessment?.category || assessment?.type || '',
+          mode,
+        }),
+      );
+      const provider = response.providers?.[0];
+      if (provider) {
+        await this.liveConnectAction.connect(provider, mode, { fallbackQueryParams: queryParams });
+        return;
+      }
+    } catch {
+      // Soft fallback below keeps the user moving.
+    }
+    this.notificationService.info('No matching expert is live right now. Choose a slot instead.');
+    await this.router.navigate(CONSUMER_ROUTES.links.bookSupport, { queryParams });
+  }
+
+  private assessmentConnectQueryParams(mode: ConnectOptionMode) {
+    const assessment = this.assessment();
+    const result = this.result();
+    const selectedMode = mode === 'book' ? 'voice' : mode;
+    const sessionMode =
+      selectedMode === 'video'
+        ? 'online_video'
+        : selectedMode === 'chat'
+          ? 'live_chat'
+          : 'online_audio';
+    return {
+      serviceName: `${assessment?.title || 'Assessment'} support`,
+      concernCategory: assessment?.category || assessment?.type || '',
+      message: result
+        ? `I completed ${assessment?.title || 'a Hope Hub test'} and got ${result.level} (${result.total}/${result.maxScore}). I want support with this.`
+        : '',
+      mode: selectedMode,
+      sessionMode,
+      assessmentId: assessment?.id || '',
+      assessmentLevel: result?.level || '',
+      source: `assessment-result-${selectedMode}`,
+    };
   }
 
   openLogin(): void {

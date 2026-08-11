@@ -25,7 +25,12 @@ import {
 import { PublicCommunicationConfigService } from '../../core/services/public-communication-config.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { ConsumerFlowsService } from '../../core/services/consumer-flows.service';
-import { SupportPathSelectorComponent } from '../../shared/components';
+import { LiveConnectActionService } from '../../core/services/live-connect-action.service';
+import {
+  ConnectOptionMode,
+  ConnectOptionsComponent,
+  SupportPathSelectorComponent,
+} from '../../shared/components';
 
 type CareTeamListService = NonNullable<HopeHubProvider['services']>[number];
 type RoleGroup = '' | ConsumerSupportPath;
@@ -33,7 +38,7 @@ type RoleGroup = '' | ConsumerSupportPath;
 @Component({
   selector: 'app-psychologists',
   standalone: true,
-  imports: [FormsModule, RouterLink, SupportPathSelectorComponent],
+  imports: [FormsModule, RouterLink, SupportPathSelectorComponent, ConnectOptionsComponent],
   templateUrl: './psychologists.component.html',
 })
 export class PsychologistsComponent implements OnInit {
@@ -43,6 +48,7 @@ export class PsychologistsComponent implements OnInit {
   readonly publicConfig = inject(PublicCommunicationConfigService);
   private readonly notificationService = inject(NotificationService);
   private readonly consumerFlowsService = inject(ConsumerFlowsService);
+  private readonly liveConnectAction = inject(LiveConnectActionService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
@@ -464,6 +470,31 @@ export class PsychologistsComponent implements OnInit {
         : directProviderPrice,
       source: service ? 'care-team-service-list' : 'care-team-list',
     };
+  }
+
+  connectQueryParams(
+    provider: HopeHubProvider,
+    mode: ConnectOptionMode,
+    service: CareTeamListService | null = null,
+  ) {
+    return {
+      ...this.bookingQueryParams(provider, service),
+      mode: mode === 'book' ? 'voice' : mode,
+      sessionMode:
+        mode === 'video' ? 'online_video' : mode === 'chat' ? 'live_chat' : 'online_audio',
+      source: `care-team-${mode}`,
+    };
+  }
+
+  connect(
+    provider: HopeHubProvider,
+    mode: ConnectOptionMode,
+    service: CareTeamListService | null = null,
+  ): void {
+    void this.liveConnectAction.connect(provider, mode, {
+      careTeamServiceId: service?.id || '',
+      fallbackQueryParams: this.connectQueryParams(provider, mode, service),
+    });
   }
 
   bookingCta(provider: HopeHubProvider): string {

@@ -20,13 +20,15 @@ import {
 import { NotificationService } from '../../core/services/notification.service';
 import { PublicCommunicationConfigService } from '../../core/services/public-communication-config.service';
 import { ConsumerFlowsService } from '../../core/services/consumer-flows.service';
+import { LiveConnectActionService } from '../../core/services/live-connect-action.service';
+import { ConnectOptionMode, ConnectOptionsComponent } from '../../shared/components';
 
 type CareTeamService = NonNullable<HopeHubProvider['services']>[number];
 
 @Component({
   selector: 'app-psychologist-detail',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, ConnectOptionsComponent],
   templateUrl: './psychologist-detail.component.html',
 })
 export class PsychologistDetailComponent implements OnInit {
@@ -35,6 +37,7 @@ export class PsychologistDetailComponent implements OnInit {
   private readonly booking = inject(BookingService);
   private readonly notificationService = inject(NotificationService);
   private readonly consumerFlowsService = inject(ConsumerFlowsService);
+  private readonly liveConnectAction = inject(LiveConnectActionService);
   private readonly destroyRef = inject(DestroyRef);
   readonly publicConfig = inject(PublicCommunicationConfigService);
 
@@ -108,6 +111,50 @@ export class PsychologistDetailComponent implements OnInit {
         source: selectedService ? 'care-team-service-profile' : 'care-team-profile',
       },
     });
+  }
+
+  connect(provider: HopeHubProvider, mode: ConnectOptionMode, service?: CareTeamService): void {
+    void this.liveConnectAction.connect(provider, mode, {
+      careTeamServiceId: service?.id || '',
+      fallbackQueryParams: this.bookingQueryParams(provider, mode, service),
+    });
+  }
+
+  private bookingQueryParams(
+    provider: HopeHubProvider,
+    mode: ConnectOptionMode,
+    service?: CareTeamService,
+  ) {
+    const selectedService = service || null;
+    const supportPath = supportPathForProvider(provider);
+    const supportMeta = getSupportPathMeta(supportPath);
+    const selectedMode = mode === 'book' ? 'voice' : mode;
+    return {
+      service: selectedService?.title || this.publicConfig.defaultServiceName,
+      serviceName: selectedService?.title || this.publicConfig.defaultServiceName,
+      consultant: provider.name,
+      providerId: provider.id,
+      careTeamServiceId: selectedService?.id || '',
+      supportPath,
+      supportPathLabel: supportMeta.label,
+      preferredExpertType: supportMeta.title,
+      duration: selectedService
+        ? `${selectedService.durationMinutes} minutes`
+        : this.sessionLabel(provider),
+      price: selectedService
+        ? (selectedService.effectivePriceInPaise ?? selectedService.priceInPaise) / 100
+        : (provider.sessionFeeInPaise ?? this.publicConfig.defaultSessionPriceInPaise) / 100,
+      mode: selectedMode,
+      sessionMode:
+        selectedMode === 'video'
+          ? 'online_video'
+          : selectedMode === 'chat'
+            ? 'live_chat'
+            : 'online_audio',
+      source: selectedService
+        ? `care-team-service-${selectedMode}`
+        : `care-team-profile-${selectedMode}`,
+    };
   }
 
   sessionLabel(provider: HopeHubProvider): string {

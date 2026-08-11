@@ -1,6 +1,7 @@
 import { Component, DestroyRef, OnInit, signal, inject } from '@angular/core';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { firstValueFrom } from 'rxjs';
 import { NOTE_CONTENT } from '../../core/constants/note-content.constants';
 import { CONSUMER_UX_COPY } from '../../core/constants/consumer-ux-copy.constants';
 import {
@@ -13,10 +14,15 @@ import {
   ConsumerConcernKey,
 } from '../../core/constants/consumer-concerns.constants';
 import { Service, ServiceCategory } from '../../core/models';
-import { ServiceInquiryComponent } from '../../shared/components';
+import {
+  ConnectOptionMode,
+  ConnectOptionsComponent,
+  ServiceInquiryComponent,
+} from '../../shared/components';
 import {
   BookingService,
   ConsumerFlowsService,
+  LiveConnectActionService,
   NotificationService,
   SEOService,
 } from '../../core/services';
@@ -34,7 +40,7 @@ import {
 @Component({
   selector: 'app-service-detail',
   standalone: true,
-  imports: [RouterModule, ServiceInquiryComponent],
+  imports: [RouterModule, ServiceInquiryComponent, ConnectOptionsComponent],
   templateUrl: './service-detail.component.html',
   styleUrl: './service-detail.component.scss',
 })
@@ -57,6 +63,7 @@ export class ServiceDetailComponent implements OnInit {
   private notificationService = inject(NotificationService);
   private productAnalytics = inject(ProductAnalyticsService);
   private consumerFlowsService = inject(ConsumerFlowsService);
+  private liveConnectAction = inject(LiveConnectActionService);
   private destroyRef = inject(DestroyRef);
 
   constructor() {
@@ -90,6 +97,57 @@ export class ServiceDetailComponent implements OnInit {
         source: 'service-detail',
       },
     });
+  }
+
+  async connect(mode: ConnectOptionMode): Promise<void> {
+    const queryParams = this.serviceConnectQueryParams(mode);
+    if (mode === 'book') {
+      this.bookService();
+      return;
+    }
+    const service = this.service();
+    if (service) {
+      try {
+        const response = await firstValueFrom(
+          this.bookingService.quickTalkProviders({
+            q: service.name,
+            concern: service.category || service.name,
+            mode,
+          }),
+        );
+        const provider = response.providers?.[0];
+        if (provider) {
+          await this.liveConnectAction.connect(provider, mode, {
+            fallbackQueryParams: queryParams,
+          });
+          return;
+        }
+      } catch {
+        // Soft fallback below keeps the user moving.
+      }
+    }
+    this.notificationService.info('No matching expert is live right now. Choose a slot instead.');
+    await this.router.navigate(CONSUMER_ROUTES.links.bookSupport, { queryParams });
+  }
+
+  private serviceConnectQueryParams(mode: ConnectOptionMode) {
+    const offering = this.publicConfig.defaultOfferingSlug;
+    const selectedMode = mode === 'book' ? 'voice' : mode;
+    return {
+      service: this.service()?.id,
+      serviceName: this.service()?.name,
+      ...(offering ? { offering } : {}),
+      price: this.currentSessionPrice(),
+      duration: this.currentSessionDuration(),
+      mode: selectedMode,
+      sessionMode:
+        selectedMode === 'video'
+          ? 'online_video'
+          : selectedMode === 'chat'
+            ? 'live_chat'
+            : 'online_audio',
+      source: `service-detail-${selectedMode}`,
+    };
   }
 
   contactForInfo() {

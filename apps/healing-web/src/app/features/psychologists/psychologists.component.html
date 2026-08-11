@@ -216,6 +216,15 @@
                 }
               </div>
             }
+            <app-connect-options
+              class="mt-4 block"
+              [compact]="true"
+              [chatAvailable]="provider.acceptsChat !== false"
+              [voiceAvailable]="provider.acceptsVoiceCall !== false"
+              [videoAvailable]="provider.acceptsVideoCall !== false"
+              [bookLabel]="'Slot'"
+              (selected)="connect(provider, $event, primaryService(provider))"
+            />
             <div class="mt-5 flex flex-col gap-2">
               <a
                 [routerLink]="careTeamProfileLink(provider)"

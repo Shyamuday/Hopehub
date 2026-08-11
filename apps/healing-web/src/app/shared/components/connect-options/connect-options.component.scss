@@ -1,0 +1,113 @@
+.connect-options {
+  display: grid;
+  gap: 0.8rem;
+  border: 1px solid rgba(74, 111, 165, 0.14);
+  border-radius: 1rem;
+  background:
+    linear-gradient(135deg, rgba(74, 111, 165, 0.07), rgba(255, 255, 255, 0.96)),
+    #fff;
+  padding: 1rem;
+}
+
+.connect-options--compact {
+  border-radius: 0.85rem;
+  padding: 0.65rem;
+}
+
+.connect-options__head {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.connect-options__head h3 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 1rem;
+  font-weight: 900;
+}
+
+.connect-options__head p {
+  margin: 0;
+  color: #64748b;
+  font-size: 0.86rem;
+  line-height: 1.5;
+}
+
+.connect-options__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.55rem;
+}
+
+.connect-options__grid--compact {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.connect-options__button {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.55rem;
+  border: 1px solid rgba(74, 111, 165, 0.18);
+  border-radius: 0.8rem;
+  background: rgba(255, 255, 255, 0.9);
+  color: #0f172a;
+  cursor: pointer;
+  padding: 0.7rem;
+  text-align: left;
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
+}
+
+.connect-options__button:hover,
+.connect-options__button:focus-visible {
+  border-color: var(--brand-primary);
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.08);
+  outline: none;
+  transform: translateY(-1px);
+}
+
+.connect-options__button--muted {
+  background: #f8fafc;
+}
+
+.connect-options__icon {
+  display: inline-grid;
+  width: 2rem;
+  height: 2rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 999px;
+  background: rgba(74, 111, 165, 0.1);
+  font-size: 1rem;
+}
+
+.connect-options__button strong,
+.connect-options__button small {
+  display: block;
+}
+
+.connect-options__button strong {
+  overflow: hidden;
+  color: #0f172a;
+  font-size: 0.88rem;
+  font-weight: 900;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.connect-options__button small {
+  color: #64748b;
+  font-size: 0.74rem;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+@media (max-width: 520px) {
+  .connect-options__grid,
+  .connect-options__grid--compact {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

@@ -1,0 +1,31 @@
+<section class="connect-options" [class.connect-options--compact]="compact">
+  @if (!compact) {
+    <div class="connect-options__head">
+      <h3>{{ title }}</h3>
+      <p>{{ subtitle }}</p>
+    </div>
+  }
+
+  <div class="connect-options__grid" [class.connect-options__grid--compact]="compact">
+    @for (option of options; track option.mode) {
+      @if (isVisible(option.mode)) {
+        <button
+          type="button"
+          class="connect-options__button"
+          [class.connect-options__button--muted]="!isAvailable(option.mode)"
+          (click)="choose(option.mode)"
+        >
+          <span class="connect-options__icon">{{ option.icon }}</span>
+          <span>
+            <strong>{{ labelFor(option.mode, option.label) }}</strong>
+            @if (!compact) {
+              <small>
+                {{ isAvailable(option.mode) ? option.description : 'Book the nearest slot' }}
+              </small>
+            }
+          </span>
+        </button>
+      }
+    }
+  </div>
+</section>
