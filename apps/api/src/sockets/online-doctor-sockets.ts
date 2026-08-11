@@ -15,6 +15,8 @@ type CallSignalPayload = {
 };
 
 const ACTIVE_CALL_STATUSES = ['RINGING', 'CONNECTING', 'CONNECTED', 'RECONNECTING'] as const;
+const CALL_SETUP_STALE_MS = 2 * 60 * 1000;
+const CONNECTED_CALL_STALE_MS = 6 * 60 * 60 * 1000;
 
 function safeCallReason(reason: unknown, fallback: string): string {
   if (typeof reason !== 'string') return fallback;
@@ -94,12 +96,54 @@ async function findActiveCallSession(input: {
   });
 }
 
+async function expireStaleCallSessions(consultationId: string) {
+  const now = new Date();
+  const setupCutoff = new Date(now.getTime() - CALL_SETUP_STALE_MS);
+  const connectedCutoff = new Date(now.getTime() - CONNECTED_CALL_STALE_MS);
+
+  const staleSessions = await prisma.consultationCallSession.findMany({
+    where: {
+      consultationId,
+      endedAt: null,
+      OR: [
+        {
+          status: { in: ['RINGING', 'CONNECTING', 'RECONNECTING'] },
+          updatedAt: { lt: setupCutoff }
+        },
+        { status: 'CONNECTED', updatedAt: { lt: connectedCutoff } }
+      ]
+    },
+    select: { id: true, startedAt: true, answeredAt: true, metadata: true }
+  });
+
+  for (const session of staleSessions) {
+    const startedFrom = session.answeredAt ?? session.startedAt;
+    const durationSeconds = Math.max(0, Math.round((now.getTime() - startedFrom.getTime()) / 1000));
+    await prisma.consultationCallSession.update({
+      where: { id: session.id },
+      data: {
+        status: session.answeredAt ? 'ENDED' : 'FAILED',
+        endedAt: now,
+        durationSeconds,
+        endReason: session.answeredAt ? 'stale_connected_cleanup' : 'stale_setup_cleanup',
+        lastSignalEvent: 'call:stale-cleanup',
+        metadata: {
+          ...((session.metadata as Record<string, unknown> | null) || {}),
+          staleCleanupAt: now.toISOString()
+        }
+      }
+    });
+  }
+}
+
 async function recordCallSignal(
   fromUserId: string,
   event: string,
   payload: CallSignalPayload
 ): Promise<{ relay: boolean; reason?: string }> {
   if (event === SOCKET_EVENTS.CALL_RING || event === SOCKET_EVENTS.CALL_OFFER) {
+    await expireStaleCallSessions(payload.consultationId);
+
     const existing = await findActiveCallSession({
       consultationId: payload.consultationId,
       userA: fromUserId,

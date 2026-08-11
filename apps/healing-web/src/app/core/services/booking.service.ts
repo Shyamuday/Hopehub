@@ -144,6 +144,17 @@ export type ConsultationCallSession = {
   durationSeconds?: number | null;
   endReason?: string | null;
   lastSignalEvent?: string | null;
+  metadata?: {
+    usedTurnRelay?: boolean;
+    localCandidateType?: string;
+    remoteCandidateType?: string;
+    transportProtocol?: string;
+    networkType?: string;
+    currentRoundTripTime?: number;
+    bytesSent?: number;
+    bytesReceived?: number;
+    [key: string]: unknown;
+  } | null;
 };
 
 export type HopeHubLiveGroup = {

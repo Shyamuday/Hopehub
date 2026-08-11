@@ -173,9 +173,12 @@ export class ConsultationCallPanelComponent implements OnChanges, OnDestroy {
     this.call.rejectCall({ consultationId: this.consultationId, targetUserId });
   }
 
-  hangUp() {
+  async hangUp() {
     if (!this.consultationId || !this.targetUserId) return;
-    this.call.endCall({ consultationId: this.consultationId, targetUserId: this.targetUserId });
+    await this.call.endCall({
+      consultationId: this.consultationId,
+      targetUserId: this.targetUserId
+    });
   }
 
   toggleMic() {

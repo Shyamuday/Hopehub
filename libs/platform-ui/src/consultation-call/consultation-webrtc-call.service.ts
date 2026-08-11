@@ -176,11 +176,11 @@ export class ConsultationWebrtcCallService {
     this.cleanup('ended');
   }
 
-  endCall(params: { consultationId: string; targetUserId: string; reason?: string }) {
+  async endCall(params: { consultationId: string; targetUserId: string; reason?: string }) {
     this.socket?.emit(CALL_SOCKET_EVENTS.END, {
       ...params,
       reason: params.reason || 'ended_by_user',
-      metadata: this.callMetadata()
+      metadata: await this.callMetadataWithStats()
     });
     this.cleanup('ended');
   }
@@ -378,7 +378,7 @@ export class ConsultationWebrtcCallService {
     }
 
     if (connectionState === 'failed' || iceState === 'failed') {
-      this.failCall(
+      void this.failCall(
         'connection_failed',
         'Call connection failed. Please try again or continue in chat.'
       );
@@ -395,7 +395,7 @@ export class ConsultationWebrtcCallService {
     this.clearAnswerTimeout();
     this.answerTimeout = setTimeout(() => {
       if (this.state() !== 'ringing') return;
-      this.failCall('no_answer', 'No answer yet. Please try again or send a message.');
+      void this.failCall('no_answer', 'No answer yet. Please try again or send a message.');
     }, CALL_ANSWER_TIMEOUT_MS);
   }
 
@@ -403,7 +403,7 @@ export class ConsultationWebrtcCallService {
     this.clearMediaTimeout();
     this.mediaTimeout = setTimeout(() => {
       if (this.state() === 'connected' || this.state() === 'ended') return;
-      this.failCall(
+      void this.failCall(
         'media_timeout',
         'Call could not connect. Please try again or continue in chat.'
       );
@@ -414,20 +414,20 @@ export class ConsultationWebrtcCallService {
     if (this.reconnectTimeout) return;
     this.reconnectTimeout = setTimeout(() => {
       if (this.state() !== 'reconnecting') return;
-      this.failCall(
+      void this.failCall(
         'reconnect_timeout',
         'Call disconnected. Please try again or continue in chat.'
       );
     }, RECONNECT_GRACE_MS);
   }
 
-  private failCall(reason: string, message: string) {
+  private async failCall(reason: string, message: string) {
     const context = this.callContext;
     if (context) {
       this.socket?.emit(CALL_SOCKET_EVENTS.END, {
         ...context,
         reason,
-        metadata: this.callMetadata()
+        metadata: await this.callMetadataWithStats()
       });
     }
     this.cleanup('ended');
@@ -472,6 +472,70 @@ export class ConsultationWebrtcCallService {
       iceConnectionState: this.pc?.iceConnectionState,
       mode: this.callMode()
     };
+  }
+
+  private async callMetadataWithStats(): Promise<Record<string, unknown>> {
+    return {
+      ...this.callMetadata(),
+      ...(await this.selectedCandidateMetadata())
+    };
+  }
+
+  private async selectedCandidateMetadata(): Promise<Record<string, unknown>> {
+    if (!this.pc?.getStats) return {};
+    try {
+      const stats = await this.pc.getStats();
+      let selectedPair: RTCStats | undefined;
+      stats.forEach((report) => {
+        const item = report as RTCStats & {
+          selected?: boolean;
+          nominated?: boolean;
+          state?: string;
+          localCandidateId?: string;
+          remoteCandidateId?: string;
+          currentRoundTripTime?: number;
+          bytesSent?: number;
+          bytesReceived?: number;
+        };
+        if (
+          item.type === 'candidate-pair' &&
+          (item.selected || (item.nominated && item.state === 'succeeded'))
+        ) {
+          selectedPair = item;
+        }
+      });
+      if (!selectedPair) return {};
+
+      const pair = selectedPair as RTCStats & {
+        localCandidateId?: string;
+        remoteCandidateId?: string;
+        currentRoundTripTime?: number;
+        bytesSent?: number;
+        bytesReceived?: number;
+      };
+      const local = pair.localCandidateId ? stats.get(pair.localCandidateId) : undefined;
+      const remote = pair.remoteCandidateId ? stats.get(pair.remoteCandidateId) : undefined;
+      const localCandidate = local as
+        | (RTCStats & { candidateType?: string; protocol?: string; networkType?: string })
+        | undefined;
+      const remoteCandidate = remote as
+        (RTCStats & { candidateType?: string; protocol?: string }) | undefined;
+      const localCandidateType = localCandidate?.candidateType;
+
+      return {
+        selectedCandidatePairId: pair.id,
+        localCandidateType,
+        remoteCandidateType: remoteCandidate?.candidateType,
+        transportProtocol: localCandidate?.protocol || remoteCandidate?.protocol,
+        networkType: localCandidate?.networkType,
+        usedTurnRelay: localCandidateType === 'relay' || remoteCandidate?.candidateType === 'relay',
+        currentRoundTripTime: pair.currentRoundTripTime,
+        bytesSent: pair.bytesSent,
+        bytesReceived: pair.bytesReceived
+      };
+    } catch {
+      return {};
+    }
   }
 
   private async defaultMediaAccess(mode: CallMode): Promise<MediaAccessResult> {

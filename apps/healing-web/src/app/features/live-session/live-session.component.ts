@@ -255,8 +255,23 @@ export class LiveSessionComponent implements OnInit, OnDestroy {
       rejected: 'Declined',
       not_connected: 'Ended before connecting',
       ended_by_user: 'Ended by participant',
+      stale_setup_cleanup: 'Previous call attempt expired',
+      stale_connected_cleanup: 'Old active call auto-closed',
     };
     return labels[reason] || reason.replaceAll('_', ' ');
+  }
+
+  callNetworkLabel(call: ConsultationCallSession): string {
+    const metadata = call.metadata;
+    if (!metadata) return '';
+    if (metadata.usedTurnRelay === true) return 'TURN relay';
+    if (
+      ['host', 'srflx', 'prflx'].includes(String(metadata.localCandidateType || '')) ||
+      ['host', 'srflx', 'prflx'].includes(String(metadata.remoteCandidateType || ''))
+    ) {
+      return 'Direct/P2P';
+    }
+    return '';
   }
 
   callDurationLabel(call: ConsultationCallSession): string {

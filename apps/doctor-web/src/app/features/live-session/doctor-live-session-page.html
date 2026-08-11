@@ -232,6 +232,9 @@
                   @if (callReasonLabel(call.endReason)) {
                     · {{ callReasonLabel(call.endReason) }}
                   }
+                  @if (callNetworkLabel(call)) {
+                    · {{ callNetworkLabel(call) }}
+                  }
                 </small>
               </article>
             }
