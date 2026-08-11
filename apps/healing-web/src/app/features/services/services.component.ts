@@ -5,6 +5,7 @@ import { NOTE_CONTENT } from '../../core/constants/note-content.constants';
 import { CONSUMER_ROUTES } from '../../core/constants/consumer-routes.constants';
 import { Service, ServiceCategory } from '../../core/models';
 import {
+  ContinueSupportBannerComponent,
   FormDropdownComponent,
   FormDropdownOption,
   ServiceCardComponent,
@@ -19,7 +20,12 @@ import {
 @Component({
   selector: 'app-services',
   standalone: true,
-  imports: [FormsModule, ServiceCardComponent, FormDropdownComponent],
+  imports: [
+    FormsModule,
+    ServiceCardComponent,
+    FormDropdownComponent,
+    ContinueSupportBannerComponent,
+  ],
   templateUrl: './services.component.html',
   styleUrl: './services.component.scss',
 })

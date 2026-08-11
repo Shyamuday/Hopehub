@@ -1,0 +1,23 @@
+@if (hasPreference() && !hidden()) {
+  <section
+    class="continue-support"
+    [class.continue-support--compact]="compact"
+    aria-label="Continue previous support choice"
+  >
+    <div class="continue-support__copy">
+      <p>Continue where you left off</p>
+      <h2>{{ title() }}</h2>
+      <span>
+        We saved your last support choice, so you can continue without choosing everything again.
+      </span>
+    </div>
+
+    <div class="continue-support__actions">
+      <button type="button" class="continue-support__primary" (click)="talkNow()">Talk now</button>
+      <button type="button" (click)="bookSlot()">Book slot</button>
+      <button type="button" (click)="seeProviders()">See providers</button>
+      <button type="button" (click)="takeTest()">Take test</button>
+      <button type="button" class="continue-support__dismiss" aria-label="Hide this suggestion" (click)="dismiss()">×</button>
+    </div>
+  </section>
+}

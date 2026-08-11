@@ -29,6 +29,7 @@ import { LiveConnectActionService } from '../../core/services/live-connect-actio
 import {
   ConnectOptionMode,
   ConnectOptionsComponent,
+  ContinueSupportBannerComponent,
   FormDropdownComponent,
   FormDropdownOption,
   SupportPathSelectorComponent,
@@ -45,6 +46,7 @@ type RoleGroup = '' | ConsumerSupportPath;
     RouterLink,
     SupportPathSelectorComponent,
     ConnectOptionsComponent,
+    ContinueSupportBannerComponent,
     FormDropdownComponent,
   ],
   templateUrl: './psychologists.component.html',

@@ -21,3 +21,4 @@ export * from './connect-options/connect-options.component';
 export * from './connect-fallback-panel/connect-fallback-panel.component';
 export * from './guided-support-entry/guided-support-entry.component';
 export * from './hope-guide/hope-guide.component';
+export * from './continue-support-banner/continue-support-banner.component';

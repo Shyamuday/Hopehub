@@ -2,6 +2,7 @@ import { Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
 import { RouterModule } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
+  ContinueSupportBannerComponent,
   FeedbackSectionComponent,
   GuidedSupportEntryComponent,
   OfferBannerCarouselComponent,
@@ -22,6 +23,7 @@ import { LiveConnectComponent } from './components/live-connect/live-connect.com
   selector: 'app-home',
   standalone: true,
   imports: [
+    ContinueSupportBannerComponent,
     FeedbackSectionComponent,
     GroupChatTeaserComponent,
     GuidedSupportEntryComponent,
