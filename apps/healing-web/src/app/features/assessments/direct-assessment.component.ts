@@ -25,12 +25,18 @@ import {
   ConnectFallbackPanelComponent,
   ConnectOptionMode,
   ConnectOptionsComponent,
+  GuidedSupportEntryComponent,
 } from '../../shared/components';
 
 @Component({
   selector: 'app-direct-assessment',
   standalone: true,
-  imports: [RouterModule, ConnectOptionsComponent, ConnectFallbackPanelComponent],
+  imports: [
+    RouterModule,
+    ConnectOptionsComponent,
+    ConnectFallbackPanelComponent,
+    GuidedSupportEntryComponent,
+  ],
   template: `
     <main class="direct-test bg-[var(--brand-surface)]">
       @if (assessment()) {
@@ -389,6 +395,15 @@ import {
                 <p class="mt-1 text-sm leading-6 text-gray-700">
                   {{ UX.assessment.nextCopy }}
                 </p>
+                <app-guided-support-entry
+                  class="mt-4 block"
+                  [compact]="true"
+                  [title]="'Choose your next step'"
+                  [subtitle]="'We will carry this test result context into support, booking, or provider matching.'"
+                  [contextConcern]="assessment()!.category || assessment()!.type"
+                  [contextServiceName]="assessment()!.title + ' support'"
+                  [contextAssessmentId]="assessment()!.id"
+                />
                 <app-connect-options
                   class="mt-4 block"
                   [title]="'Connect based on this result'"

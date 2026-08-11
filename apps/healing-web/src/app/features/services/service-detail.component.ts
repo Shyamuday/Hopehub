@@ -18,6 +18,7 @@ import {
   ConnectOptionMode,
   ConnectFallbackPanelComponent,
   ConnectOptionsComponent,
+  GuidedSupportEntryComponent,
   ServiceInquiryComponent,
 } from '../../shared/components';
 import {
@@ -47,6 +48,7 @@ import {
     ServiceInquiryComponent,
     ConnectOptionsComponent,
     ConnectFallbackPanelComponent,
+    GuidedSupportEntryComponent,
   ],
   templateUrl: './service-detail.component.html',
   styleUrl: './service-detail.component.scss',

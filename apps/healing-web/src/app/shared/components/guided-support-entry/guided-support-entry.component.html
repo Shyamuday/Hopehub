@@ -1,0 +1,55 @@
+<section class="guided-entry" [class.guided-entry--compact]="compact" aria-label="Guided support entry">
+  <div class="guided-entry__head">
+    <p>Guided start</p>
+    <h2>{{ title }}</h2>
+    <span>{{ subtitle }}</span>
+  </div>
+
+  <div class="guided-entry__body">
+    <div class="guided-entry__group">
+      <span class="guided-entry__label">What is closest today?</span>
+      <div class="guided-entry__chips" role="list">
+        @for (concern of concerns; track concern.key) {
+          <button
+            type="button"
+            class="guided-entry__chip"
+            [class.guided-entry__chip--active]="selectedConcern().key === concern.key"
+            (click)="selectConcern(concern)"
+          >
+            {{ concern.shortLabel }}
+          </button>
+        }
+      </div>
+    </div>
+
+    <div class="guided-entry__group">
+      <span class="guided-entry__label">How do you want to connect?</span>
+      <div class="guided-entry__modes" role="list">
+        @for (mode of modes; track mode.value) {
+          <button
+            type="button"
+            class="guided-entry__mode"
+            [class.guided-entry__mode--active]="selectedMode() === mode.value"
+            (click)="selectMode(mode.value)"
+          >
+            <strong>{{ mode.label }}</strong>
+            <small>{{ mode.hint }}</small>
+          </button>
+        }
+      </div>
+    </div>
+  </div>
+
+  <div class="guided-entry__summary">
+    <span>{{ selectedSummary() }}</span>
+  </div>
+
+  <div class="guided-entry__actions">
+    <button type="button" class="guided-entry__primary" (click)="start('live')">
+      Talk now
+    </button>
+    <button type="button" (click)="start('test')">Take matching test</button>
+    <button type="button" (click)="start('book')">Book slot</button>
+    <button type="button" (click)="start('providers')">See providers</button>
+  </div>
+</section>

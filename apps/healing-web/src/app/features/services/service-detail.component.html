@@ -40,6 +40,15 @@
             </p>
           </div>
 
+          <app-guided-support-entry
+            class="mb-6 block"
+            [compact]="true"
+            [title]="'Start ' + service()!.name + ' support'"
+            [subtitle]="'Choose chat, voice, video, test, booking, or matching providers from one place.'"
+            [contextConcern]="service()!.category || service()!.name"
+            [contextServiceName]="service()!.name"
+          />
+
           <app-connect-options
             class="mb-6 block"
             [bookLabel]="'Book slot'"

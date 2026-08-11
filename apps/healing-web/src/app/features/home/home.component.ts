@@ -1,7 +1,11 @@
 import { Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
 import { RouterModule } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { FeedbackSectionComponent, OfferBannerCarouselComponent } from '../../shared/components';
+import {
+  FeedbackSectionComponent,
+  GuidedSupportEntryComponent,
+  OfferBannerCarouselComponent,
+} from '../../shared/components';
 import { APP_CONSTANTS } from '../../core';
 import { CONSUMER_UX_COPY } from '../../core/constants/consumer-ux-copy.constants';
 import { CONSUMER_ROUTES } from '../../core/constants/consumer-routes.constants';
@@ -20,6 +24,7 @@ import { LiveConnectComponent } from './components/live-connect/live-connect.com
   imports: [
     FeedbackSectionComponent,
     GroupChatTeaserComponent,
+    GuidedSupportEntryComponent,
     HomeHeroComponent,
     HomeToolsComponent,
     LiveConnectComponent,

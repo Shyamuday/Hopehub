@@ -19,3 +19,4 @@ export * from './notification-center/notification-center.component';
 export * from './support-path-selector/support-path-selector.component';
 export * from './connect-options/connect-options.component';
 export * from './connect-fallback-panel/connect-fallback-panel.component';
+export * from './guided-support-entry/guided-support-entry.component';
