@@ -76,10 +76,12 @@ export class ConsultationWebrtcCallService {
     params.socket.emit(CALL_SOCKET_EVENTS.RING, {
       consultationId: params.consultationId,
       targetUserId: params.targetUserId,
+      mode: params.mode,
     });
     params.socket.emit(CALL_SOCKET_EVENTS.OFFER, {
       consultationId: params.consultationId,
       targetUserId: params.targetUserId,
+      mode: params.mode,
       sdp: offer,
     });
   }
@@ -163,15 +165,19 @@ export class ConsultationWebrtcCallService {
     const payload = raw as {
       fromUserId?: string;
       consultationId?: string;
+      mode?: CallMode;
       sdp?: RTCSessionDescriptionInit;
     };
     if (!payload?.fromUserId || !payload.consultationId || !payload.sdp?.sdp) return;
 
+    const mode =
+      payload.mode === 'video' ? 'video' : sdpHasVideo(payload.sdp.sdp) ? 'video' : 'audio';
+    this.callMode.set(mode);
     this.pendingOffer.set({
       fromUserId: payload.fromUserId,
       consultationId: payload.consultationId,
       sdp: payload.sdp,
-      mode: sdpHasVideo(payload.sdp.sdp) ? 'video' : 'audio',
+      mode,
     });
     this.incomingCall.set(true);
     this.state.set('ringing');
