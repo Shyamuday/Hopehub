@@ -109,94 +109,13 @@
     } @else if (providers().length) {
       <div class="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-4">
         @for (provider of providers(); track provider.id) {
-          <article
-            class="hope-motion-card flex h-full flex-col rounded-lg border border-gray-200 bg-white p-5 shadow-sm"
-          >
-            <div class="flex items-start gap-4">
-              @if (providerImageUrl(provider); as imageUrl) {
-                <img
-                  [src]="imageUrl"
-                  [alt]="provider.name"
-                  class="h-16 w-16 rounded-full object-cover"
-                />
-              } @else {
-                <div
-                  class="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-primary-600 text-xl font-bold text-white"
-                >
-                  {{ provider.name.charAt(0) }}
-                </div>
-              }
-              <div>
-                <h2 class="text-lg font-bold text-gray-900">{{ provider.name }}</h2>
-                <span
-                  class="mt-1 inline-flex rounded-full px-2.5 py-1 text-xs font-black ring-1"
-                  [class]="availabilityBadgeClass(provider)"
-                >
-                  {{ availabilityLabel(provider) }}
-                </span>
-                @if (bestMatchLabel(provider)) {
-                  <span class="mt-1 inline-flex rounded-full bg-blue-600 px-2 py-0.5 text-[11px] font-bold text-white">
-                    {{ bestMatchLabel(provider) }}
-                  </span>
-                }
-                <span
-                  class="mt-1 inline-flex rounded-full px-2.5 py-1 text-xs font-bold ring-1"
-                  [class]="providerRoleBadgeClass(provider)"
-                >
-                  {{ providerTierLabel(provider) }}
-                </span>
-                @if (provider.isScreenedListener) {
-                  <span class="mt-1 inline-flex rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700 ring-1 ring-emerald-200">
-                    {{ provider.listenerTrustLabel || 'Screened listener' }}
-                  </span>
-                }
-                @if (provider.yearsOfExperience) {
-                  <p class="mt-1 text-xs font-medium text-gray-500 whitespace-nowrap">
-                    {{ provider.yearsOfExperience }}+ years experience
-                  </p>
-                }
-                @if (genderLabel(provider) || languagesLabel(provider)) {
-                  <p class="mt-1 text-xs font-medium text-gray-600">
-                    @if (genderLabel(provider)) {
-                      <span>{{ genderLabel(provider) }}</span>
-                    }
-                    @if (genderLabel(provider) && languagesLabel(provider)) {
-                      <span> · </span>
-                    }
-                    @if (languagesLabel(provider)) {
-                      <span>{{ languagesLabel(provider) }}</span>
-                    }
-                  </p>
-                }
-              </div>
-            </div>
-            <div class="mt-4 rounded-md border border-gray-100 bg-gray-50 p-3 text-xs leading-5 text-gray-700">
-              <p class="font-bold text-gray-900">Best for</p>
-              <p>{{ providerBestFor(provider).slice(0, 2).join(' · ') }}</p>
-              @if (provider.isScreenedListener) {
-                <p class="mt-2 font-bold text-emerald-800">
-                  Screened for safe listening
-                </p>
-              }
-            </div>
-            <app-connect-options
-              class="mt-4 block"
-              [compact]="true"
-              [chatAvailable]="provider.acceptsChat !== false"
-              [voiceAvailable]="provider.acceptsVoiceCall !== false"
-              [videoAvailable]="provider.acceptsVideoCall !== false"
-              [bookLabel]="'Slot'"
-              (selected)="connect(provider, $event, primaryService(provider))"
-            />
-            <div class="mt-5">
-              <a
-                [routerLink]="careTeamProfileLink(provider)"
-                class="btn-secondary btn-sm w-full"
-              >
-                View profile
-              </a>
-            </div>
-          </article>
+          <app-provider-card
+            [provider]="provider"
+            [profileLink]="careTeamProfileLink(provider)"
+            [showBestMatch]="bestMatchLabel(provider)"
+            [bookLabel]="'Slot'"
+            (connectSelected)="connect(provider, $event, primaryService(provider))"
+          />
         }
       </div>
 

@@ -141,39 +141,14 @@
     } @else if (psychologists().length) {
       <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
         @for (provider of psychologists(); track provider.id) {
-          <article class="hope-card hope-motion-card">
-            <div class="flex items-center gap-3">
-              @if (providerImageUrl(provider); as imageUrl) {
-                <img
-                  [src]="imageUrl"
-                  [alt]="provider.name"
-                  class="h-12 w-12 rounded-md object-cover"
-                />
-              }
-              <div>
-                <h3 class="hope-card-title text-base">{{ provider.name }}</h3>
-                <span
-                  class="mt-1 inline-flex rounded-full px-2 py-0.5 text-[11px] font-bold ring-1"
-                  [class]="providerRoleBadgeClass(provider)"
-                >
-                  {{ providerTierLabel(provider) }}
-                </span>
-                <p class="mt-1 text-sm font-medium text-gray-600">
-                  {{ providerRoleLabel(provider) }}
-                </p>
-              </div>
-            </div>
-            @if (provider.focusAreas?.length || provider.concernsHandled?.length) {
-              <p class="hope-card-copy line-clamp-2">
-                Best for:
-                {{
-                  (provider.focusAreas?.length ? provider.focusAreas : provider.concernsHandled)!
-                    .slice(0, 3)
-                    .join(' · ')
-                }}
-              </p>
-            }
-          </article>
+          <app-provider-card
+            [provider]="provider"
+            variant="compact"
+            [showAvailability]="false"
+            [showConnectOptions]="false"
+            [showProfileLink]="false"
+            [bestForLimit]="3"
+          />
         }
       </div>
     } @else {

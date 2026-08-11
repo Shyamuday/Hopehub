@@ -19,7 +19,6 @@ import { NotificationService } from '../../core/services/notification.service';
 import { PaymentService } from '../../core/services/payment.service';
 import { LiveConnectActionService } from '../../core/services/live-connect-action.service';
 import { ConsumerFlowPreferencesService } from '../../core/services/consumer-flow-preferences.service';
-import { consumerProviderAvailabilityLabel } from '../../core/constants/consumer-availability.constants';
 import { CONSUMER_UX_COPY } from '../../core/constants/consumer-ux-copy.constants';
 import { CONSUMER_ROUTES } from '../../core/constants/consumer-routes.constants';
 import { consumerSessionModeFor } from '../../core/constants/consumer-form-options.constants';
@@ -29,6 +28,7 @@ import {
   ConnectOptionMode,
   ConnectOptionsComponent,
   GuidedSupportEntryComponent,
+  ProviderCardComponent,
 } from '../../shared/components';
 
 @Component({
@@ -39,6 +39,7 @@ import {
     ConnectOptionsComponent,
     ConnectFallbackPanelComponent,
     GuidedSupportEntryComponent,
+    ProviderCardComponent,
   ],
   template: `
     <main class="direct-test bg-[var(--brand-surface)]">
@@ -481,43 +482,16 @@ import {
                 } @else if (matchingProviders().length) {
                   <div class="direct-test__matched-grid">
                     @for (provider of matchingProviders(); track provider.id) {
-                      <article class="direct-test__provider-card">
-                        <div class="direct-test__provider-top">
-                          <div>
-                            <h3>{{ provider.name }}</h3>
-                            <p>
-                              {{
-                                provider.supportRoleLabel ||
-                                  provider.designation ||
-                                  provider.specialty ||
-                                  'Hope Hub provider'
-                              }}
-                            </p>
-                          </div>
-                          <span [class]="providerAvailabilityBadgeClass(provider)">
-                            {{ providerAvailabilityLabel(provider) }}
-                          </span>
-                        </div>
-                        @if (provider.focusAreas?.length || provider.concernsHandled?.length) {
-                          <p class="direct-test__provider-focus">
-                            {{
-                              (provider.focusAreas?.length
-                                ? provider.focusAreas
-                                : provider.concernsHandled)!
-                                .slice(0, 3)
-                                .join(' • ')
-                            }}
-                          </p>
-                        }
-                        <app-connect-options
-                          class="mt-3 block"
-                          [compact]="true"
-                          [showBook]="false"
-                          [title]="'Choose how to start'"
-                          [subtitle]="'Your assessment context will be carried forward.'"
-                          (selected)="connectMatchedProvider(provider, $event)"
-                        />
-                      </article>
+                      <app-provider-card
+                        [provider]="provider"
+                        variant="result"
+                        [showBook]="false"
+                        [showProfileLink]="false"
+                        [bestForSeparator]="' • '"
+                        [bestForLimit]="3"
+                        [connectSubtitle]="'Your assessment context will be carried forward.'"
+                        (connectSelected)="connectMatchedProvider(provider, $event)"
+                      />
                     }
                   </div>
                 } @else {
@@ -1450,19 +1424,6 @@ export class DirectAssessmentComponent implements OnInit {
     } finally {
       this.matchingProvidersLoading.set(false);
     }
-  }
-
-  providerAvailabilityLabel(provider: HopeHubProvider): string {
-    return consumerProviderAvailabilityLabel(provider);
-  }
-
-  providerAvailabilityBadgeClass(provider: HopeHubProvider): string {
-    const tone = provider.quickTalkAvailable
-      ? 'direct-test__availability direct-test__availability--live'
-      : provider.liveStatus === 'ONLINE'
-        ? 'direct-test__availability direct-test__availability--soon'
-        : 'direct-test__availability direct-test__availability--slot';
-    return tone;
   }
 
   private saveResultPreference(mode: ConnectOptionMode, providerId = ''): void {

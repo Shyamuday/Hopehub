@@ -6,14 +6,13 @@ import {
   FeedbackSectionComponent,
   GuidedSupportEntryComponent,
   OfferBannerCarouselComponent,
+  ProviderCardComponent,
 } from '../../shared/components';
 import { APP_CONSTANTS } from '../../core';
 import { CONSUMER_UX_COPY } from '../../core/constants/consumer-ux-copy.constants';
 import { CONSUMER_ROUTES } from '../../core/constants/consumer-routes.constants';
 import { CONSUMER_CONCERN_FLOWS } from '../../core/constants/consumer-concerns.constants';
-import { consumerProviderRoleBadgeClass } from '../../core/constants/consumer-provider-presentation.constants';
 import { IMAGE_ASSETS } from '../../core/constants/image-assets.constants';
-import { environment } from '../../../environments/environment';
 import { BookingService, ConsumerFlowsService, HopeHubProvider } from '../../core/services';
 import { GroupChatTeaserComponent } from './components/group-chat-teaser/group-chat-teaser.component';
 import { HomeHeroComponent } from './components/home-hero/home-hero.component';
@@ -32,6 +31,7 @@ import { LiveConnectComponent } from './components/live-connect/live-connect.com
     HomeToolsComponent,
     LiveConnectComponent,
     OfferBannerCarouselComponent,
+    ProviderCardComponent,
     RouterModule,
   ],
   templateUrl: './home.component.html',
@@ -102,28 +102,6 @@ export class HomeComponent implements OnInit {
         ]);
       });
     this.loadPsychologists();
-  }
-
-  providerImageUrl(provider: HopeHubProvider): string | null {
-    if (!provider.profileImageUrl) {
-      return null;
-    }
-    if (provider.profileImageUrl.startsWith('http')) {
-      return provider.profileImageUrl;
-    }
-    return `${environment.apiUrl}${provider.profileImageUrl}`;
-  }
-
-  providerTierLabel(provider: HopeHubProvider): string {
-    return provider.supportTierLabel ?? '';
-  }
-
-  providerRoleLabel(provider: HopeHubProvider): string {
-    return provider.supportRoleLabel ?? '';
-  }
-
-  providerRoleBadgeClass(provider: HopeHubProvider): string {
-    return consumerProviderRoleBadgeClass(provider, 'neutral');
   }
 
   private loadPsychologists(): void {

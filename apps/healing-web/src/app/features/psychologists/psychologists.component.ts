@@ -3,7 +3,6 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { firstValueFrom } from 'rxjs';
-import { environment } from '../../../environments/environment';
 import { BookingService, HopeHubProvider } from '../../core/services/booking.service';
 import {
   CONSUMER_SUPPORT_PATHS,
@@ -23,11 +22,6 @@ import {
   ConsumerConcernKey,
 } from '../../core/constants/consumer-concerns.constants';
 import {
-  consumerProviderAvailabilityClass,
-  consumerProviderAvailabilityLabel,
-} from '../../core/constants/consumer-availability.constants';
-import { consumerProviderRoleBadgeClass } from '../../core/constants/consumer-provider-presentation.constants';
-import {
   CONSUMER_AGE_GROUP_FILTER_OPTIONS,
   CONSUMER_CARE_TEAM_CONCERN_FILTER_OPTIONS,
   CONSUMER_LANGUAGE_FILTER_OPTIONS,
@@ -43,10 +37,10 @@ import { ConsumerFlowsService } from '../../core/services/consumer-flows.service
 import { LiveConnectActionService } from '../../core/services/live-connect-action.service';
 import {
   ConnectOptionMode,
-  ConnectOptionsComponent,
   ContinueSupportBannerComponent,
   FormDropdownComponent,
   FormDropdownOption,
+  ProviderCardComponent,
   SupportPathSelectorComponent,
 } from '../../shared/components';
 
@@ -60,9 +54,9 @@ type RoleGroup = '' | ConsumerSupportPath;
     FormsModule,
     RouterLink,
     SupportPathSelectorComponent,
-    ConnectOptionsComponent,
     ContinueSupportBannerComponent,
     FormDropdownComponent,
+    ProviderCardComponent,
   ],
   templateUrl: './psychologists.component.html',
 })
@@ -369,65 +363,6 @@ export class PsychologistsComponent implements OnInit {
     return Array.from({ length: this.totalPages() }, (_, index) => index + 1);
   }
 
-  providerImageUrl(provider: HopeHubProvider): string | null {
-    if (!provider.profileImageUrl) {
-      return null;
-    }
-    if (provider.profileImageUrl.startsWith('http')) {
-      return provider.profileImageUrl;
-    }
-    return `${environment.apiUrl}${provider.profileImageUrl}`;
-  }
-
-  providerRoleLabel(provider: HopeHubProvider): string {
-    return provider.supportRoleLabel || this.publicConfig.defaultCareRoleLabel;
-  }
-
-  providerRoleBadgeClass(provider: HopeHubProvider): string {
-    return consumerProviderRoleBadgeClass(provider);
-  }
-
-  providerTierLabel(provider: HopeHubProvider): string {
-    return provider.supportTierLabel || (provider.isClinicalCare ? 'Professional care' : 'Support');
-  }
-
-  genderLabel(provider: HopeHubProvider): string {
-    const labels: Record<string, string> = {
-      FEMALE: 'Female',
-      MALE: 'Male',
-      OTHER: 'Other',
-      PREFER_NOT_TO_SAY: 'Prefer not to say',
-    };
-    return provider.gender ? labels[provider.gender] || provider.gender : '';
-  }
-
-  languagesLabel(provider: HopeHubProvider, limit = 3): string {
-    const languages = provider.languages ?? [];
-    if (!languages.length) return '';
-    const visible = languages.slice(0, limit).join(', ');
-    const extra = languages.length > limit ? ` +${languages.length - limit}` : '';
-    return `${visible}${extra}`;
-  }
-
-  providerRoleDescription(provider: HopeHubProvider): string {
-    return (
-      provider.supportRoleDescription ||
-      'Hope Hub support for emotional wellness and guided conversation.'
-    );
-  }
-
-  providerBestFor(provider: HopeHubProvider): string[] {
-    return provider.supportBestFor?.length
-      ? provider.supportBestFor
-      : provider.focusAreas.slice(0, 3);
-  }
-
-  providerScope(provider: HopeHubProvider): string {
-    return (
-      provider.supportScope || 'Support scope depends on the person’s qualification and service.'
-    );
-  }
-
   primaryService(provider: HopeHubProvider) {
     return provider.services?.[0] ?? null;
   }
@@ -486,10 +421,6 @@ export class PsychologistsComponent implements OnInit {
     return provider.bookingCtaLabel || CONSUMER_UX_COPY.cta.bookSupport;
   }
 
-  availabilityLabel(provider: HopeHubProvider): string {
-    return consumerProviderAvailabilityLabel(provider);
-  }
-
   providerModeLabels(provider: HopeHubProvider): string[] {
     const modes: string[] = [];
     if (provider.acceptsChat !== false) modes.push(consumerModeLabel('chat'));
@@ -505,9 +436,5 @@ export class PsychologistsComponent implements OnInit {
     }
     if (provider.liveStatus === 'ONLINE') return 'Try quick talk or book a slot';
     return 'Book the nearest suitable slot';
-  }
-
-  availabilityBadgeClass(provider: HopeHubProvider): string {
-    return consumerProviderAvailabilityClass(provider);
   }
 }
