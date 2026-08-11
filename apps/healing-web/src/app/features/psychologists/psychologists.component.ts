@@ -22,6 +22,14 @@ import {
   ConsumerConcernFlow,
   ConsumerConcernKey,
 } from '../../core/constants/consumer-concerns.constants';
+import {
+  CONSUMER_AGE_GROUP_FILTER_OPTIONS,
+  CONSUMER_CARE_TEAM_CONCERN_FILTER_OPTIONS,
+  CONSUMER_LANGUAGE_FILTER_OPTIONS,
+  CONSUMER_MODALITY_FILTER_OPTIONS,
+  CONSUMER_QUICK_NEED_OPTIONS,
+  CONSUMER_SESSION_TYPE_FILTER_OPTIONS,
+} from '../../core/constants/consumer-form-options.constants';
 import { PublicCommunicationConfigService } from '../../core/services/public-communication-config.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { ConsumerFlowsService } from '../../core/services/consumer-flows.service';
@@ -83,54 +91,12 @@ export class PsychologistsComponent implements OnInit {
     COACH_MENTOR: 0,
     EMOTIONAL_LISTENER: 0,
   });
-  readonly quickNeedOptions: FormDropdownOption[] = [
-    { value: '', label: 'Any need' },
-    { value: 'anxiety overthinking panic', label: 'Anxiety / overthinking' },
-    { value: 'low mood depression sadness', label: 'Low mood / depression' },
-    { value: 'stress burnout pressure', label: 'Stress / burnout' },
-    { value: 'relationship trust communication', label: 'Relationship concerns' },
-    { value: 'breakup heartbreak closure', label: 'Breakup / heartbreak' },
-    { value: 'sleep insomnia night overthinking', label: 'Sleep trouble' },
-    { value: 'career study exam focus', label: 'Career / study stress' },
-  ];
-  readonly concernOptions: FormDropdownOption[] = [
-    { value: '', label: 'All concerns' },
-    { value: 'Anxiety', label: 'Anxiety' },
-    { value: 'Low mood', label: 'Low mood / depression' },
-    { value: 'Stress', label: 'Stress' },
-    { value: 'Relationship concerns', label: 'Relationship concerns' },
-    { value: 'Breakup recovery', label: 'Breakup recovery' },
-    { value: 'Sleep concerns', label: 'Sleep concerns' },
-    { value: 'Family concerns', label: 'Family concerns' },
-  ];
-  readonly languageOptions: FormDropdownOption[] = [
-    { value: '', label: 'Any language' },
-    { value: 'English', label: 'English' },
-    { value: 'Hindi', label: 'Hindi' },
-    { value: 'Bengali', label: 'Bengali' },
-    { value: 'Tamil', label: 'Tamil' },
-    { value: 'Telugu', label: 'Telugu' },
-  ];
-  readonly modalityOptions: FormDropdownOption[] = [
-    { value: '', label: 'Any method' },
-    { value: 'CBT', label: 'CBT' },
-    { value: 'Supportive counselling', label: 'Supportive counselling' },
-    { value: 'Mindfulness', label: 'Mindfulness' },
-    { value: 'Family counselling', label: 'Family counselling' },
-  ];
-  readonly sessionTypeOptions: FormDropdownOption[] = [
-    { value: '', label: 'Any session' },
-    { value: 'Individual session', label: 'Individual session' },
-    { value: 'Relationship support', label: 'Relationship support' },
-    { value: 'Family support', label: 'Family support' },
-  ];
-  readonly ageGroupOptions: FormDropdownOption[] = [
-    { value: '', label: 'Any age group' },
-    { value: 'Adults', label: 'Adults' },
-    { value: 'Teens', label: 'Teens' },
-    { value: 'Children', label: 'Children' },
-    { value: 'Older adults', label: 'Older adults' },
-  ];
+  readonly quickNeedOptions: FormDropdownOption[] = CONSUMER_QUICK_NEED_OPTIONS;
+  readonly concernOptions: FormDropdownOption[] = CONSUMER_CARE_TEAM_CONCERN_FILTER_OPTIONS;
+  readonly languageOptions: FormDropdownOption[] = CONSUMER_LANGUAGE_FILTER_OPTIONS;
+  readonly modalityOptions: FormDropdownOption[] = CONSUMER_MODALITY_FILTER_OPTIONS;
+  readonly sessionTypeOptions: FormDropdownOption[] = CONSUMER_SESSION_TYPE_FILTER_OPTIONS;
+  readonly ageGroupOptions: FormDropdownOption[] = CONSUMER_AGE_GROUP_FILTER_OPTIONS;
   readonly roleTabs = CONSUMER_SUPPORT_PATHS;
   readonly concernFlows =
     signal<Record<ConsumerConcernKey, ConsumerConcernFlow>>(CONSUMER_CONCERN_FLOWS);
@@ -491,8 +457,8 @@ export class PsychologistsComponent implements OnInit {
   }
 
   bookingQueryParams(provider: HopeHubProvider, service: CareTeamListService | null = null) {
-    const directProviderPrice =
-      (provider.sessionFeeInPaise ?? this.publicConfig.defaultSessionPriceInPaise) / 100;
+    const directProviderPriceInPaise =
+      provider.sessionFeeInPaise ?? this.publicConfig.defaultSessionPriceInPaise;
     const supportPath = supportPathForProvider(provider);
     const supportMeta = supportPathMeta(supportPath);
     return {
@@ -509,7 +475,9 @@ export class PsychologistsComponent implements OnInit {
         : this.publicConfig.defaultSessionLabel,
       price: service
         ? (service.effectivePriceInPaise ?? service.priceInPaise) / 100
-        : directProviderPrice,
+        : directProviderPriceInPaise
+          ? directProviderPriceInPaise / 100
+          : undefined,
       source: service ? 'care-team-service-list' : 'care-team-list',
     };
   }

@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { CONSUMER_STORAGE_KEYS } from '../constants/storage-keys.constants';
 
 export type ConsumerFlowPreferenceMode = 'chat' | 'voice' | 'video';
 
@@ -13,7 +14,7 @@ export type ConsumerFlowPreferences = {
 
 @Injectable({ providedIn: 'root' })
 export class ConsumerFlowPreferencesService {
-  private readonly storageKey = 'hopehub_consumer_flow_preferences';
+  private readonly storageKey = CONSUMER_STORAGE_KEYS.flowPreferences;
 
   read(): ConsumerFlowPreferences {
     if (typeof localStorage === 'undefined') return {};

@@ -21,8 +21,20 @@ import {
   ConsumerFlowPreferencesService,
 } from '../../core/services';
 import { APP_CONSTANTS } from '../../core';
+import {
+  CONSUMER_CONCERN_CATEGORY_OPTIONS,
+  CONSUMER_EXPERT_TYPE_OPTIONS,
+  CONSUMER_LANGUAGE_OPTIONS,
+  CONSUMER_LIVE_CONNECT_MODE_OPTIONS,
+  CONSUMER_PROVIDER_GENDER_OPTIONS,
+  CONSUMER_SAFETY_RISK_OPTIONS,
+  CONSUMER_SESSION_MODE_OPTIONS,
+  CONSUMER_URGENCY_OPTIONS,
+  type ConsumerLiveConnectMode,
+} from '../../core/constants/consumer-form-options.constants';
 import { CONSUMER_UX_COPY } from '../../core/constants/consumer-ux-copy.constants';
 import { CONSUMER_ROUTES } from '../../core/constants/consumer-routes.constants';
+import { CONSUMER_STORAGE_KEYS } from '../../core/constants/storage-keys.constants';
 import type {
   CareTeamServiceQuote,
   HopeHubCheckoutQuote,
@@ -47,7 +59,7 @@ import {
 } from '../../shared/components';
 import { User } from '../../core/models/auth.model';
 
-type LiveConnectMode = 'chat' | 'voice' | 'video';
+type LiveConnectMode = ConsumerLiveConnectMode;
 type SupportPathPreference = ReturnType<typeof supportPathForExpertPreference>;
 
 @Component({
@@ -69,7 +81,7 @@ export class ContactComponent implements OnInit {
   readonly UX = CONSUMER_UX_COPY;
   readonly ROUTES = CONSUMER_ROUTES;
   readonly notes = NOTE_CONTENT;
-  private readonly pendingBookingStorageKey = 'hope_hub_pending_booking';
+  private readonly pendingBookingStorageKey = CONSUMER_STORAGE_KEYS.pendingBooking;
 
   private formBuilder = inject(FormBuilder);
   private leadService = inject(LeadService);
@@ -125,63 +137,14 @@ export class ContactComponent implements OnInit {
   }
   services: HopeHubService[] = [];
   serviceOptions: FormDropdownOption[] = [{ value: '', label: 'Select a service (optional)' }];
-  urgencyOptions: FormDropdownOption[] = [
-    { value: 'low', label: 'Low - I can wait a few days' },
-    { value: 'normal', label: 'Normal - Please respond within 24 hours' },
-    { value: 'high', label: 'High - I need support soon' },
-  ];
-  concernCategoryOptions: FormDropdownOption[] = [
-    { value: '', label: 'Select concern category' },
-    { value: 'Anxiety', label: 'Anxiety' },
-    { value: 'Stress', label: 'Stress' },
-    { value: 'Relationship concerns', label: 'Relationship concerns' },
-    { value: 'Family concerns', label: 'Family concerns' },
-    { value: 'Child or teen support', label: 'Child or teen support' },
-    { value: 'Career or life guidance', label: 'Career or life guidance' },
-    { value: 'Other', label: 'Other' },
-  ];
-  expertTypeOptions: FormDropdownOption[] = [
-    { value: '', label: 'No preference' },
-    ...CONSUMER_SUPPORT_PATHS.map((path) => ({
-      value: path.value,
-      label: `${path.label} - ${path.title}`,
-    })),
-  ];
-  sessionModeOptions: FormDropdownOption[] = [
-    { value: 'live_chat', label: 'Live chat' },
-    { value: 'online_audio', label: 'Online audio' },
-    { value: 'online_video', label: 'Online video' },
-    { value: 'chat_followup', label: 'Chat follow-up' },
-  ];
-  readonly liveConnectModeOptions: Array<{
-    value: LiveConnectMode;
-    label: string;
-    icon: string;
-    copy: string;
-  }> = [
-    { value: 'chat', label: 'Chat', icon: '💬', copy: 'Private text support' },
-    { value: 'voice', label: 'Voice', icon: '🎧', copy: 'Talk without camera' },
-    { value: 'video', label: 'Video', icon: '🎥', copy: 'Face-to-face support' },
-  ];
-  languageOptions: FormDropdownOption[] = [
-    { value: '', label: 'No preference' },
-    { value: 'English', label: 'English' },
-    { value: 'Hindi', label: 'Hindi' },
-    { value: 'Bengali', label: 'Bengali' },
-    { value: 'Tamil', label: 'Tamil' },
-    { value: 'Telugu', label: 'Telugu' },
-  ];
-  providerGenderOptions: FormDropdownOption[] = [
-    { value: '', label: 'No preference' },
-    { value: 'FEMALE', label: 'Female provider' },
-    { value: 'MALE', label: 'Male provider' },
-    { value: 'OTHER', label: 'Other' },
-  ];
-  safetyRiskOptions: FormDropdownOption[] = [
-    { value: 'none', label: 'No immediate safety risk' },
-    { value: 'unsure', label: 'Not sure / prefer to discuss' },
-    { value: 'urgent', label: 'Urgent safety concern' },
-  ];
+  urgencyOptions: FormDropdownOption[] = CONSUMER_URGENCY_OPTIONS;
+  concernCategoryOptions: FormDropdownOption[] = CONSUMER_CONCERN_CATEGORY_OPTIONS;
+  expertTypeOptions: FormDropdownOption[] = CONSUMER_EXPERT_TYPE_OPTIONS;
+  sessionModeOptions: FormDropdownOption[] = CONSUMER_SESSION_MODE_OPTIONS;
+  readonly liveConnectModeOptions = CONSUMER_LIVE_CONNECT_MODE_OPTIONS;
+  languageOptions: FormDropdownOption[] = CONSUMER_LANGUAGE_OPTIONS;
+  providerGenderOptions: FormDropdownOption[] = CONSUMER_PROVIDER_GENDER_OPTIONS;
+  safetyRiskOptions: FormDropdownOption[] = CONSUMER_SAFETY_RISK_OPTIONS;
 
   constructor() {
     this.readQueryParameters();

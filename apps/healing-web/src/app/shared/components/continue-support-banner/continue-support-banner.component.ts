@@ -5,6 +5,7 @@ import {
   ConsumerConcernFlow,
 } from '../../../core/constants/consumer-concerns.constants';
 import { CONSUMER_ROUTES } from '../../../core/constants/consumer-routes.constants';
+import { CONSUMER_STORAGE_KEYS } from '../../../core/constants/storage-keys.constants';
 import {
   ConsumerFlowPreferenceMode,
   ConsumerFlowPreferences,
@@ -77,7 +78,7 @@ export class ContinueSupportBannerComponent {
   dismiss(): void {
     this.hidden.set(true);
     if (typeof localStorage !== 'undefined') {
-      localStorage.setItem('hopehub_continue_support_hidden', 'true');
+      localStorage.setItem(CONSUMER_STORAGE_KEYS.continueSupportHidden, 'true');
     }
   }
 
@@ -121,6 +122,6 @@ export class ContinueSupportBannerComponent {
 
   private readHidden(): boolean {
     if (typeof localStorage === 'undefined') return false;
-    return localStorage.getItem('hopehub_continue_support_hidden') === 'true';
+    return localStorage.getItem(CONSUMER_STORAGE_KEYS.continueSupportHidden) === 'true';
   }
 }

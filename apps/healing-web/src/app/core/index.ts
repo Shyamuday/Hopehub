@@ -5,3 +5,5 @@ export * from './constants/image-assets.constants';
 export * from './constants/consumer-ux-copy.constants';
 export * from './constants/consumer-routes.constants';
 export * from './constants/consumer-concerns.constants';
+export * from './constants/consumer-form-options.constants';
+export * from './constants/storage-keys.constants';

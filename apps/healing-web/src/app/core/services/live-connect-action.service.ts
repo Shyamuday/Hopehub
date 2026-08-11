@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { CONSUMER_ROUTES } from '../constants/consumer-routes.constants';
+import { CONSUMER_STORAGE_KEYS } from '../constants/storage-keys.constants';
 import { supportPathForProvider, supportPathMeta } from '../constants/support-paths.constants';
 import { AuthModalService } from './auth-modal.service';
 import { AuthService } from './auth.service';
@@ -28,7 +29,7 @@ export class LiveConnectActionService {
   private readonly paymentService = inject(PaymentService);
   private readonly preferences = inject(ConsumerFlowPreferencesService);
   private readonly router = inject(Router);
-  private readonly pendingStorageKey = 'hopehub_pending_live_connect_action';
+  private readonly pendingStorageKey = CONSUMER_STORAGE_KEYS.pendingLiveConnectAction;
   private replayingPending = false;
 
   constructor() {

@@ -2,6 +2,7 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { NavigationEnd, Router } from '@angular/router';
 import { filter } from 'rxjs';
 import { CONSUMER_ROUTES } from '../constants/consumer-routes.constants';
+import { CONSUMER_STORAGE_KEYS } from '../constants/storage-keys.constants';
 import { ConsumerFlowPreferencesService } from './consumer-flow-preferences.service';
 
 export type HopeGuideTip = {
@@ -15,7 +16,7 @@ export type HopeGuideTip = {
 
 @Injectable({ providedIn: 'root' })
 export class HopeGuideService {
-  private readonly storageKey = 'hopehub_guide_enabled';
+  private readonly storageKey = CONSUMER_STORAGE_KEYS.guideEnabled;
   private readonly router = inject(Router);
   private readonly preferences = inject(ConsumerFlowPreferencesService);
 

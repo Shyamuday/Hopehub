@@ -21,6 +21,7 @@ import { LiveConnectActionService } from '../../core/services/live-connect-actio
 import { ConsumerFlowPreferencesService } from '../../core/services/consumer-flow-preferences.service';
 import { CONSUMER_UX_COPY } from '../../core/constants/consumer-ux-copy.constants';
 import { CONSUMER_ROUTES } from '../../core/constants/consumer-routes.constants';
+import { CONSUMER_STORAGE_KEYS } from '../../core/constants/storage-keys.constants';
 import {
   ConnectFallbackPanelComponent,
   ConnectOptionMode,
@@ -963,7 +964,7 @@ export class DirectAssessmentComponent implements OnInit {
   private readonly paymentService = inject(PaymentService);
   private readonly liveConnectAction = inject(LiveConnectActionService);
   private readonly preferences = inject(ConsumerFlowPreferencesService);
-  private readonly pendingStorageKey = 'hope_hub_direct_pending_assessment_result';
+  private readonly pendingStorageKey = CONSUMER_STORAGE_KEYS.pendingDirectAssessmentResult;
   private autoNextTimer: ReturnType<typeof setTimeout> | null = null;
 
   assessment = signal<AssessmentConfig | null>(null);

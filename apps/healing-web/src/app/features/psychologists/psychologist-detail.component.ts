@@ -92,6 +92,8 @@ export class PsychologistDetailComponent implements OnInit {
     const selectedService = service || null;
     const supportPath = supportPathForProvider(provider);
     const supportMeta = getSupportPathMeta(supportPath);
+    const directProviderPriceInPaise =
+      provider.sessionFeeInPaise ?? this.publicConfig.defaultSessionPriceInPaise;
     this.router.navigate(CONSUMER_ROUTES.links.bookSupport, {
       queryParams: {
         service: selectedService?.title || this.publicConfig.defaultServiceName,
@@ -107,7 +109,9 @@ export class PsychologistDetailComponent implements OnInit {
           : this.sessionLabel(provider),
         price: selectedService
           ? (selectedService.effectivePriceInPaise ?? selectedService.priceInPaise) / 100
-          : (provider.sessionFeeInPaise ?? this.publicConfig.defaultSessionPriceInPaise) / 100,
+          : directProviderPriceInPaise
+            ? directProviderPriceInPaise / 100
+            : undefined,
         source: selectedService ? 'care-team-service-profile' : 'care-team-profile',
       },
     });
@@ -129,6 +133,8 @@ export class PsychologistDetailComponent implements OnInit {
     const supportPath = supportPathForProvider(provider);
     const supportMeta = getSupportPathMeta(supportPath);
     const selectedMode = mode === 'book' ? 'voice' : mode;
+    const directProviderPriceInPaise =
+      provider.sessionFeeInPaise ?? this.publicConfig.defaultSessionPriceInPaise;
     return {
       service: selectedService?.title || this.publicConfig.defaultServiceName,
       serviceName: selectedService?.title || this.publicConfig.defaultServiceName,
@@ -143,7 +149,9 @@ export class PsychologistDetailComponent implements OnInit {
         : this.sessionLabel(provider),
       price: selectedService
         ? (selectedService.effectivePriceInPaise ?? selectedService.priceInPaise) / 100
-        : (provider.sessionFeeInPaise ?? this.publicConfig.defaultSessionPriceInPaise) / 100,
+        : directProviderPriceInPaise
+          ? directProviderPriceInPaise / 100
+          : undefined,
       mode: selectedMode,
       sessionMode:
         selectedMode === 'video'

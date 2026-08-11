@@ -20,6 +20,7 @@ import {
   HopeHubRealtimeService,
 } from '../../../../core/services';
 import { CONSUMER_ROUTES } from '../../../../core/constants/consumer-routes.constants';
+import { CONSUMER_STORAGE_KEYS } from '../../../../core/constants/storage-keys.constants';
 import {
   HopeHubLiveGroup,
   HopeHubLiveGroupMessage,
@@ -117,8 +118,8 @@ export class GroupChatTeaserComponent implements OnInit {
   private openTimer: number | null = null;
   private socket: Socket | null = null;
   private subscribedGroupId = '';
-  private readonly dismissedStorageKey = 'hopehub-group-chat-teaser-dismissed';
-  private readonly pendingDraftStorageKey = 'hopehub-group-chat-teaser-pending-draft';
+  private readonly dismissedStorageKey = CONSUMER_STORAGE_KEYS.groupChatTeaserDismissed;
+  private readonly pendingDraftStorageKey = CONSUMER_STORAGE_KEYS.groupChatTeaserPendingDraft;
 
   private readonly handleIncomingMessage = (raw: unknown) => {
     const message = raw as HopeHubLiveGroupMessage;

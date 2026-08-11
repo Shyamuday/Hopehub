@@ -19,6 +19,14 @@ import {
   sanitizeListenerScreeningQuestions,
   scoreListenerScreening
 } from '../services/listener-screening-question-sets.js';
+import {
+  AUTO_APPROVED_LISTENER_PRICING,
+  LISTENER_GUIDELINES_VERSION,
+  LISTENER_SCREENING_COOLDOWN_HOURS,
+  LISTENER_TRAINING_VERSION,
+  MAX_FAILED_LISTENER_SCREENING_ATTEMPTS,
+  MINIMUM_LISTENER_GUIDELINES_READ_SECONDS
+} from '../constants/listener-onboarding.constants.js';
 import { asyncRoute, hashToken, randomToken, writeAuditLog } from '../utils/helpers.js';
 
 export const counsellorApplicationsRouter = Router();
@@ -28,15 +36,6 @@ const optionalDate = z.preprocess(
   (value) => (value === '' || value == null ? undefined : value),
   z.coerce.date().optional()
 );
-const LISTENER_GUIDELINES_VERSION = 'listener-guidelines-v1-2026-08-07';
-const LISTENER_TRAINING_VERSION = 'listener-training-v1-2026-08-07';
-const MINIMUM_LISTENER_GUIDELINES_READ_SECONDS = 5;
-const MAX_FAILED_LISTENER_SCREENING_ATTEMPTS = 3;
-const LISTENER_SCREENING_COOLDOWN_HOURS = 24;
-const AUTO_APPROVED_LISTENER_CHAT_VOICE_PRICE_IN_PAISE = 9900;
-const AUTO_APPROVED_LISTENER_VIDEO_PRICE_IN_PAISE = 29900;
-const AUTO_APPROVED_LISTENER_DURATION_MINUTES = 30;
-
 const listenerScreeningAnswerSchema = z.object({
   questionId: z.string().trim().min(1).max(80),
   optionId: z.string().trim().min(1).max(80)
@@ -347,19 +346,19 @@ async function autoApproveListenerApplication(
     {
       title: 'Chat listener support session',
       description: 'A 30-minute non-clinical emotional support listening chat session.',
-      priceInPaise: AUTO_APPROVED_LISTENER_CHAT_VOICE_PRICE_IN_PAISE,
+      priceInPaise: AUTO_APPROVED_LISTENER_PRICING.chatVoicePriceInPaise,
       sortOrder: 0
     },
     {
       title: 'Voice listener support session',
       description: 'A 30-minute non-clinical emotional support listening voice session.',
-      priceInPaise: AUTO_APPROVED_LISTENER_CHAT_VOICE_PRICE_IN_PAISE,
+      priceInPaise: AUTO_APPROVED_LISTENER_PRICING.chatVoicePriceInPaise,
       sortOrder: 1
     },
     {
       title: 'Video listener support session',
       description: 'A 30-minute non-clinical emotional support listening video session.',
-      priceInPaise: AUTO_APPROVED_LISTENER_VIDEO_PRICE_IN_PAISE,
+      priceInPaise: AUTO_APPROVED_LISTENER_PRICING.videoPriceInPaise,
       sortOrder: 2
     }
   ];
@@ -383,7 +382,7 @@ async function autoApproveListenerApplication(
       description: service.description,
       pricingMode: CareTeamServicePricingMode.FIXED,
       priceInPaise: service.priceInPaise,
-      durationMinutes: AUTO_APPROVED_LISTENER_DURATION_MINUTES,
+      durationMinutes: AUTO_APPROVED_LISTENER_PRICING.durationMinutes,
       isFree: false,
       isActive: true,
       sortOrder: service.sortOrder

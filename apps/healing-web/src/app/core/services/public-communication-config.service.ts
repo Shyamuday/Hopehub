@@ -21,7 +21,7 @@ function telegramHandle(username: string) {
 export class PublicCommunicationConfigService {
   defaultOfferingSlug = '';
   defaultServiceName = 'Mental wellness session';
-  defaultSessionPriceInPaise = 50000;
+  defaultSessionPriceInPaise: number | null = null;
   defaultSessionDurationMinutes = 30;
   defaultSessionLabel = '30 min + 15 min follow-up';
   defaultCareRoleLabel = 'Hope Hub care guide';
@@ -95,7 +95,8 @@ export class PublicCommunicationConfigService {
     if (defaultCareRoleLabel) this.defaultCareRoleLabel = defaultCareRoleLabel;
   }
 
-  defaultSessionPriceRupees(): number {
+  defaultSessionPriceRupees(): number | null {
+    if (!this.defaultSessionPriceInPaise) return null;
     return Math.round(this.defaultSessionPriceInPaise / 100);
   }
 }
