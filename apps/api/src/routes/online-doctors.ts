@@ -10,6 +10,7 @@ import {
 } from '@prisma/client';
 import { authRequired, allowRoles } from '../auth.js';
 import { capabilitiesForDoctorProfile } from '../constants/homeopathic-doctor-types.js';
+import { providerPublicReadiness } from '../doctor-capabilities.js';
 import { getPublicIceServers } from '../constants/rtc.constants.js';
 import { prisma } from '../db.js';
 import {
@@ -71,6 +72,8 @@ export function createOnlineDoctorsRouter(io: SocketIoServer) {
               yearsOfExperience: true,
               focusAreas: true,
               isAvailable: true,
+              showOnWebsite: true,
+              suspendedAt: true,
               mentalHealthProfile: {
                 select: {
                   careTeamType: true,
@@ -115,6 +118,12 @@ export function createOnlineDoctorsRouter(io: SocketIoServer) {
 
       const session = await ensureDoctorOnlineSession(req.user!.id);
       if (!session) return res.status(404).json({ message: 'Doctor profile not found.' });
+      if (body.enabled !== false) {
+        const readiness = await providerPublicReadiness(req.user!.id);
+        if (!readiness.ready) {
+          return res.status(409).json({ message: readiness.message, code: readiness.code });
+        }
+      }
 
       const doctor = await prisma.doctor.findUniqueOrThrow({
         where: { userId: req.user!.id },
@@ -159,6 +168,8 @@ export function createOnlineDoctorsRouter(io: SocketIoServer) {
               yearsOfExperience: true,
               focusAreas: true,
               isAvailable: true,
+              showOnWebsite: true,
+              suspendedAt: true,
               mentalHealthProfile: {
                 select: {
                   careTeamType: true,
@@ -202,6 +213,12 @@ export function createOnlineDoctorsRouter(io: SocketIoServer) {
         return res
           .status(400)
           .json({ message: 'Select at least one live mode before going online.' });
+      }
+      if (body.liveStatus !== LivePresenceStatus.OFFLINE) {
+        const readiness = await providerPublicReadiness(req.user!.id);
+        if (!readiness.ready) {
+          return res.status(409).json({ message: readiness.message, code: readiness.code });
+        }
       }
 
       const profile = await setDoctorLiveStatus(req.user!.id, body, io);
@@ -330,6 +347,8 @@ export function createOnlineDoctorsRouter(io: SocketIoServer) {
                 yearsOfExperience: true,
                 focusAreas: true,
                 isAvailable: true,
+                showOnWebsite: true,
+                suspendedAt: true,
                 mentalHealthProfile: {
                   select: {
                     careTeamType: true,

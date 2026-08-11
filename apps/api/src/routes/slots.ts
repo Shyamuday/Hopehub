@@ -1,8 +1,9 @@
 import { Router } from 'express';
+import type { Response } from 'express';
 import { z } from 'zod';
 import { Role } from '@prisma/client';
 import { authRequired, allowRoles } from '../auth.js';
-import { requireDoctorCapability } from '../doctor-capabilities.js';
+import { providerPublicReadiness, requireDoctorCapability } from '../doctor-capabilities.js';
 import { prisma } from '../db.js';
 import { asyncRoute, routeParam, queryText } from '../utils/helpers.js';
 import {
@@ -45,6 +46,13 @@ async function currentDoctor(userId: string) {
       }
     }
   });
+}
+
+async function requireBookingReady(userId: string, res: Response) {
+  const readiness = await providerPublicReadiness(userId);
+  if (readiness.ready) return true;
+  res.status(409).json({ message: readiness.message, code: readiness.code });
+  return false;
 }
 
 // GET /doctor/slots?date=YYYY-MM-DD — doctor views their own slots
@@ -104,6 +112,7 @@ router.post(
     if (body.endTime <= body.startTime) {
       return res.status(400).json({ message: 'End time must be after start time.' });
     }
+    if (!(await requireBookingReady(req.user!.id, res))) return;
     const doctor = await currentDoctor(req.user!.id);
     if (!doctor) return res.status(404).json({ message: 'Provider profile not found' });
     const careTeamServiceId = body.careTeamServiceId || null;
@@ -147,6 +156,7 @@ router.post(
   asyncRoute(async (req, res) => {
     const doctor = await currentDoctor(req.user!.id);
     if (!doctor) return res.status(404).json({ message: 'Provider profile not found' });
+    if (!(await requireBookingReady(req.user!.id, res))) return;
     const rule = await prisma.providerAvailabilityRule.findFirst({
       where: { id: routeParam(req, 'id'), doctorId: doctor.id },
       select: { id: true }
@@ -168,6 +178,7 @@ router.delete(
   asyncRoute(async (req, res) => {
     const doctor = await currentDoctor(req.user!.id);
     if (!doctor) return res.status(404).json({ message: 'Provider profile not found' });
+    if (!(await requireBookingReady(req.user!.id, res))) return;
     await prisma.providerAvailabilityRule.update({
       where: { id: routeParam(req, 'id'), doctorId: doctor.id },
       data: { isActive: false }
@@ -275,9 +286,19 @@ router.get(
     const dateStr = queryText(req, 'date');
     const doctor = await prisma.doctor.findUnique({
       where: { id: routeParam(req, 'id') },
-      select: { id: true }
+      select: {
+        id: true,
+        userId: true,
+        showOnWebsite: true,
+        suspendedAt: true,
+        user: { select: { isActive: true } }
+      }
     });
-    if (!doctor) return res.status(404).json({ message: 'Doctor not found' });
+    if (!doctor) return res.status(404).json({ message: 'Provider not found' });
+    const readiness = await providerPublicReadiness(doctor.userId);
+    if (!doctor.showOnWebsite || doctor.suspendedAt || !doctor.user.isActive || !readiness.ready) {
+      return res.status(404).json({ message: 'Provider is not accepting bookings right now.' });
+    }
 
     const where = {
       doctorId: doctor.id,

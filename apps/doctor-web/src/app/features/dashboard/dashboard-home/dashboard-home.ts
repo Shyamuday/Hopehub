@@ -134,8 +134,10 @@ export class DashboardHome {
         enabled: capabilities.onlineConsult,
       },
       {
-        label: 'Set slots',
-        description: 'Keep bookable availability clean so users can choose a time.',
+        label: isHopeHub ? 'Set available times' : 'Set slots',
+        description: isHopeHub
+          ? 'Keep your bookable support times clear so users can choose the right session.'
+          : 'Keep bookable availability clean so users can choose a time.',
         route: `/${ROUTE_PATHS.SLOTS}`,
         queryParams: null,
         primary: false,

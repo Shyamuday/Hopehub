@@ -82,6 +82,7 @@ function buildDoctorNav(
 ): DoctorNavItemDef[] {
   const isHopeHub = profile?.doctorType === 'PSYCHOLOGIST';
   const userListLabel = isHopeHub ? 'Clients' : 'Patients';
+  const availabilityLabel = isHopeHub ? 'Availability' : 'Slots';
   const items: DoctorNavItemDef[] = [
     {
       id: 'worklist',
@@ -197,7 +198,7 @@ function buildDoctorNav(
       children: [
         {
           id: 'slots',
-          label: 'Slots',
+          label: availabilityLabel,
           path: `/${ROUTE_PATHS.SLOTS}`,
           enabled: capabilities.slots,
         },

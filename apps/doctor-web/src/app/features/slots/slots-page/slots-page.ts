@@ -6,6 +6,7 @@ import { environment } from '../../../../environments/environment';
 import { API_PATHS } from '../../../core/constants/api-paths.constants';
 import { TOAST_DURATION_MS } from '../../../core/constants/timing.constants';
 import { Auth } from '../../../core/services/auth';
+import { DoctorSessionService } from '../../../core/services/doctor-session';
 import { SLOT_TEMPLATES, WEEKDAY_SHORT_LABELS } from '../constants/slot-templates.constants';
 
 interface Slot {
@@ -69,12 +70,14 @@ function generateSlots(
 export class SlotsPage implements OnInit {
   private http = inject(HttpClient);
   private auth = inject(Auth);
+  private session = inject(DoctorSessionService);
   private base = environment.apiUrl;
 
   slots = signal<Slot[]>([]);
   rules = signal<AvailabilityRule[]>([]);
   services = signal<CareService[]>([]);
   loading = signal(true);
+  isHopeHub = signal(false);
   toast = signal('');
   selectedDate = signal(this.today());
   weekStart = signal(this.mondayOf(new Date()));
@@ -107,7 +110,37 @@ export class SlotsPage implements OnInit {
   ];
 
   ngOnInit(): void {
+    void this.loadRoleLanguage();
     this.load();
+  }
+
+  private async loadRoleLanguage(): Promise<void> {
+    try {
+      const session = await this.session.load();
+      this.isHopeHub.set(session.doctorProfile?.doctorType === 'PSYCHOLOGIST');
+    } catch {
+      this.isHopeHub.set(false);
+    }
+  }
+
+  pageTitle() {
+    return this.isHopeHub() ? '📅 Availability' : '📅 Availability & Slots';
+  }
+
+  pageSubtitle() {
+    return this.isHopeHub()
+      ? 'Manage your available times — users can book open support sessions.'
+      : 'Manage your time slots — patients can see open slots when booking.';
+  }
+
+  addButtonLabel() {
+    return this.isHopeHub() ? '+ Add time' : '+ Add Slot';
+  }
+
+  emptyText() {
+    return this.isHopeHub()
+      ? `No available times for ${this.selectedDate()}. Use "Quick add" above or add manually.`
+      : `No slots for ${this.selectedDate()}. Use "Quick add" above or add manually.`;
   }
 
   today(): string {

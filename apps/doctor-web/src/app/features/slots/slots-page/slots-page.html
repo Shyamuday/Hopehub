@@ -2,8 +2,8 @@
     <div class="sp">
       <div class="sp-hdr">
         <div>
-          <h2 class="sp-title">📅 Availability & Slots</h2>
-          <p class="sp-sub">Manage your time slots — patients can see open slots when booking</p>
+          <h2 class="sp-title">{{ pageTitle() }}</h2>
+          <p class="sp-sub">{{ pageSubtitle() }}</p>
         </div>
       </div>
 
@@ -35,14 +35,14 @@
         <input type="time" [formField]="slotDraftForm.newStart" />
         <span>to</span>
         <input type="time" [formField]="slotDraftForm.newEnd" />
-        <button class="btn-primary" (click)="addSlot()">+ Add Slot</button>
+        <button class="btn-primary" (click)="addSlot()">{{ addButtonLabel() }}</button>
       </div>
 
       <section class="rules-panel">
         <div class="rules-head">
           <div>
             <h3>Recurring availability</h3>
-            <p>Create weekly rules and auto-generate the next 30 days of bookable slots.</p>
+            <p>Create weekly rules and auto-generate the next 30 days of bookable times.</p>
           </div>
         </div>
         <div class="rule-form">
@@ -117,7 +117,7 @@
         @if (slots().length === 0) {
           <div class="empty">
             <div>📅</div>
-            <p>No slots for {{ selectedDate() }}. Use "Quick add" above or add manually.</p>
+            <p>{{ emptyText() }}</p>
           </div>
         }
       }

@@ -40,6 +40,7 @@ import { upsertProviderEarningForPayment } from '../services/provider-earnings.j
 import { notifyConsultationBooked } from '../services/consultation-reminders.js';
 import { markDoctorBusy } from '../services/online-doctor-presence.js';
 import { emitHopeHubLiveGroupMessage } from '../services/hope-hub-live-groups-realtime.js';
+import { providerPublicReadiness } from '../doctor-capabilities.js';
 
 export const hopeHubRouter = Router();
 
@@ -2612,10 +2613,14 @@ hopeHubRouter.get(
     if (providerId) {
       const provider = await prisma.doctor.findFirst({
         where: { id: providerId, showOnWebsite: true, suspendedAt: null, user: { isActive: true } },
-        select: { id: true }
+        select: { id: true, userId: true }
       });
       if (!provider) {
         return res.status(404).json({ message: 'Expert not found.' });
+      }
+      const readiness = await providerPublicReadiness(provider.userId);
+      if (!readiness.ready) {
+        return res.status(404).json({ message: 'Expert is not accepting bookings right now.' });
       }
 
       const careTeamService = careTeamServiceId
@@ -3425,6 +3430,12 @@ hopeHubRouter.post(
       : (selectedCareTeamService?.mentalHealthProfile.doctor ?? null);
     if (body.providerId && !requestedProvider) {
       return res.status(400).json({ message: 'Selected care team member is not available.' });
+    }
+    if (requestedProvider) {
+      const readiness = await providerPublicReadiness(requestedProvider.userId);
+      if (!readiness.ready) {
+        return res.status(400).json({ message: 'Selected care team member is not available.' });
+      }
     }
     const requestedProviderCareTeamTypes = body.providerId
       ? normalizedCareTeamTypes(

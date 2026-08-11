@@ -184,8 +184,8 @@ export class OnlineDoctorPage implements OnInit, OnDestroy {
       });
       this.online.profile.set(res.profile);
       this.message.set('Settings saved.');
-    } catch {
-      this.error.set('Could not save settings.');
+    } catch (error: any) {
+      this.error.set(error?.error?.message || 'Could not save settings.');
     } finally {
       this.saving.set(false);
     }
@@ -223,8 +223,8 @@ export class OnlineDoctorPage implements OnInit, OnDestroy {
       this.message.set('You are now visible to users.');
       void this.loadInbox();
       this.startInboxRefresh();
-    } catch {
-      this.error.set('Could not go online.');
+    } catch (error: any) {
+      this.error.set(error?.error?.message || 'Could not go online.');
     } finally {
       this.saving.set(false);
     }

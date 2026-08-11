@@ -56,6 +56,8 @@ const liveDoctorInclude = {
       yearsOfExperience: true,
       focusAreas: true,
       isAvailable: true,
+      showOnWebsite: true,
+      suspendedAt: true,
       mentalHealthProfile: {
         select: {
           careTeamType: true,
@@ -92,6 +94,8 @@ export function mapLiveDoctor(session: {
     yearsOfExperience: number | null;
     focusAreas: string[];
     isAvailable: boolean;
+    showOnWebsite: boolean;
+    suspendedAt: Date | null;
     mentalHealthProfile?: {
       careTeamType: CareTeamMemberType;
       careTeamTypes: CareTeamMemberType[];
@@ -149,7 +153,12 @@ export async function listLiveOnlineDoctors(filters?: {
       liveStatus: { in: [LivePresenceStatus.ONLINE, LivePresenceStatus.ON_CALL] },
       lastHeartbeatAt: { gte: cutoff },
       user: { isActive: true, role: Role.DOCTOR },
-      doctor: { isAvailable: true, employeeStatus: 'ACTIVE' },
+      doctor: {
+        isAvailable: true,
+        showOnWebsite: true,
+        suspendedAt: null,
+        employeeStatus: 'ACTIVE'
+      },
       ...(filters?.category ? { category: filters.category } : {}),
       ...(filters?.diseaseId
         ? {
@@ -255,7 +264,12 @@ export async function isDoctorLiveForInstant(userId: string, diseaseId: string) 
       liveStatus: { in: [LivePresenceStatus.ONLINE, LivePresenceStatus.ON_CALL] },
       lastHeartbeatAt: { gte: cutoff },
       user: { isActive: true },
-      doctor: { isAvailable: true, employeeStatus: 'ACTIVE' },
+      doctor: {
+        isAvailable: true,
+        showOnWebsite: true,
+        suspendedAt: null,
+        employeeStatus: 'ACTIVE'
+      },
       OR: [
         { category: OnlineDoctorCategory.GENERALIST },
         { specialtyDiseaseIds: { has: diseaseId } }
