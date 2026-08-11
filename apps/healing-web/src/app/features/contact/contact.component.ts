@@ -63,6 +63,7 @@ import {
   CheckoutSummaryRow,
   SupportPathSelectorComponent,
   StatusChipComponent,
+  BookingIntentSummaryComponent,
 } from '../../shared/components';
 import { User } from '../../core/models/auth.model';
 
@@ -82,6 +83,7 @@ type SupportPathPreference = ReturnType<typeof supportPathForExpertPreference>;
     CheckoutSummaryComponent,
     SupportPathSelectorComponent,
     StatusChipComponent,
+    BookingIntentSummaryComponent,
   ],
   templateUrl: './contact.component.html',
   styleUrl: './contact.component.scss',

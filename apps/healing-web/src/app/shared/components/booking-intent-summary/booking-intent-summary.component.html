@@ -1,0 +1,13 @@
+@if (items.length) {
+  <section class="booking-intent-summary" aria-label="Your selected support">
+    <div>
+      <span>{{ eyebrow }}</span>
+      <strong>{{ title }}</strong>
+    </div>
+    <div class="booking-intent-summary__chips">
+      @for (item of items; track item) {
+        <app-status-chip [label]="item" />
+      }
+    </div>
+  </section>
+}
