@@ -8,7 +8,7 @@ export type HopeGuideTip = {
   title: string;
   body: string;
   actionLabel?: string;
-  actionLink?: string[];
+  actionLink?: readonly string[];
   actionFragment?: string;
   actionQueryParams?: Record<string, string>;
 };

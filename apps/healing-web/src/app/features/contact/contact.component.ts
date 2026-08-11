@@ -48,6 +48,7 @@ import {
 import { User } from '../../core/models/auth.model';
 
 type LiveConnectMode = 'chat' | 'voice' | 'video';
+type SupportPathPreference = ReturnType<typeof supportPathForExpertPreference>;
 
 @Component({
   selector: 'app-contact',
@@ -390,13 +391,15 @@ export class ContactComponent implements OnInit {
     const data = this.prefilledData();
     const form = this.contactForm;
     const concern = form?.get('concernCategory')?.value || data.concernCategory || '';
-    const duration = data.duration || this.selectedOfferingQuote()?.durationLabel || '';
+    const offer = this.selectedOffering();
+    const duration =
+      data.duration || (offer?.sessionDurationMinutes ? `${offer.sessionDurationMinutes} min` : '');
     const consultant = data.consultant || this.matchedProvider()?.name || '';
     const supportPathLabel =
       data.supportPathLabel ||
-      supportPathMeta(
+      this.supportPathLabelFromPreference(
         supportPathForExpertPreference(form?.get('preferredExpertType')?.value || data.supportPath),
-      ).label;
+      );
 
     return [
       concern ? `Concern: ${concern}` : '',
@@ -426,8 +429,12 @@ export class ContactComponent implements OnInit {
     if (!this.contactForm) return;
     this.contactForm.patchValue({ preferredExpertType: value });
     this.selectedAppointment.set(null);
-    void this.loadProviderMatch();
+    void this.updateProviderSuggestion();
     void this.loadQuickTalkProviders();
+  }
+
+  private supportPathLabelFromPreference(value: SupportPathPreference): string {
+    return value ? supportPathMeta(value).label : '';
   }
 
   private updateFormWithUserData(user: User | null): void {

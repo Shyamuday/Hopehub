@@ -36,9 +36,9 @@ export type ConsumerConcernFlow = {
   bookingQueryParams: Record<string, string>;
   serviceQueryParams: Record<string, string>;
   serviceMatches: Array<{ id: string; diseaseId?: string; slug?: string | null; name: string }>;
-  servicesLink: string[];
-  careTeamLink: string[];
-  bookingLink: string[];
+  servicesLink: readonly string[];
+  careTeamLink: readonly string[];
+  bookingLink: readonly string[];
 };
 
 function concernFlow(params: {
