@@ -1,0 +1,90 @@
+.coupon-box {
+  border: 1px solid var(--hope-card-border, rgba(15, 23, 42, 0.1));
+  border-radius: var(--hope-radius-lg, 1rem);
+  background: linear-gradient(135deg, #ffffff, var(--hope-selected-soft, rgba(220, 252, 231, 0.7)));
+  padding: 1rem;
+  box-shadow: var(--hope-card-shadow, 0 18px 45px rgba(15, 23, 42, 0.08));
+}
+
+.coupon-box--applied {
+  border-color: var(--hope-selected-border, rgba(34, 197, 94, 0.4));
+  box-shadow: var(--hope-selected-shadow-soft, 0 18px 45px rgba(34, 197, 94, 0.14));
+}
+
+.coupon-box__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.coupon-box span {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #047857;
+}
+
+.coupon-box strong {
+  display: block;
+  margin-top: 0.15rem;
+  color: #0f172a;
+}
+
+.coupon-box__control {
+  margin-top: 0.85rem;
+  display: flex;
+  gap: 0.75rem;
+}
+
+.coupon-box__control input {
+  min-height: 2.75rem;
+  flex: 1;
+  border: 1px solid var(--hope-field-border, rgba(148, 163, 184, 0.35));
+  border-radius: var(--hope-radius-md, 0.75rem);
+  background: white;
+  padding: 0.7rem 0.85rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #0f172a;
+}
+
+.coupon-box__control input:focus {
+  border-color: var(--hope-field-focus-border, #059669);
+  box-shadow: 0 0 0 3px var(--hope-field-focus-ring, rgba(16, 185, 129, 0.14));
+  outline: none;
+}
+
+.coupon-box__clear {
+  border: 0;
+  background: transparent;
+  color: #047857;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.coupon-box p {
+  margin: 0.65rem 0 0;
+  font-size: 0.82rem;
+  color: #475569;
+}
+
+.coupon-box__success {
+  color: #047857 !important;
+  font-weight: 800;
+}
+
+.coupon-box__error {
+  color: #b91c1c !important;
+  font-weight: 700;
+}
+
+@media (max-width: 640px) {
+  .coupon-box__control {
+    flex-direction: column;
+  }
+}

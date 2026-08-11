@@ -222,8 +222,7 @@
 }
 
 .live-provider-card,
-.live-group-card,
-.live-empty-card {
+.live-group-card {
   border: 1px solid rgba(16, 185, 129, 0.12);
   border-radius: 1.5rem;
   background: rgba(255, 255, 255, 0.92);
@@ -515,68 +514,6 @@
   width: 0.42rem;
 }
 
-.live-mini-chip {
-  background: #f1f5f9;
-  border-radius: 999px;
-  color: #475569;
-  padding: 0.28rem 0.55rem;
-}
-
-.live-mini-chip--active {
-  background: #dcfce7;
-  color: #047857;
-}
-
-.live-mini-chip--free {
-  background: #fffbeb;
-  color: #92400e;
-}
-
-.live-mini-chip--muted {
-  opacity: 0.42;
-}
-
-.live-empty-card {
-  align-items: center;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
-  justify-content: space-between;
-  color: #475569;
-
-  .live-empty-card__copy {
-    flex: 1 1 18rem;
-  }
-
-  h3 {
-    color: #0f172a;
-    font-size: 1rem;
-    font-weight: 900;
-    margin: 0;
-  }
-
-  p {
-    line-height: 1.6;
-    margin: 0.25rem 0 0;
-  }
-
-  small {
-    display: block;
-    color: #047857;
-    font-size: 0.82rem;
-    font-weight: 800;
-    margin-top: 0.45rem;
-  }
-}
-
-.live-empty-card__actions {
-  display: flex;
-  flex: 0 1 auto;
-  flex-wrap: wrap;
-  gap: 0.65rem;
-  justify-content: flex-end;
-}
-
 @media (max-width: 640px) {
   .live-connect-shell {
     border-radius: 1.35rem;
@@ -614,13 +551,4 @@
     grid-template-columns: 1fr;
   }
 
-  .live-empty-card {
-    align-items: stretch;
-  }
-
-  .live-empty-card__actions {
-    display: grid;
-    grid-template-columns: 1fr;
-    width: 100%;
-  }
 }

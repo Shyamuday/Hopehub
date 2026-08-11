@@ -153,24 +153,19 @@
         </button>
       </div>
     } @else {
-      <div class="professional-empty border-dashed">
-        <h2 class="text-xl font-semibold text-gray-900">No care team profiles available right now</h2>
-        <p class="mt-2 text-gray-700">
-          {{ emptySuggestion() }}
-        </p>
-        <div class="mt-4 flex flex-wrap justify-center gap-2">
-          <button type="button" class="btn-secondary btn-sm" (click)="setRoleGroup('')">Show all</button>
-          <a [routerLink]="ROUTES.links.bookSupport" class="btn-primary btn-sm">Send request</a>
-        </div>
-      </div>
+      <app-empty-state
+        icon="🤝"
+        title="No care team profiles available right now"
+        [message]="emptySuggestion()"
+        tone="soft"
+      >
+        <button type="button" class="btn-secondary btn-sm" (click)="setRoleGroup('')">Show all</button>
+        <a [routerLink]="ROUTES.links.bookSupport" class="btn-primary btn-sm">Send request</a>
+      </app-empty-state>
     }
 
     @if (error()) {
-      <div
-        class="mt-6 rounded-lg border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-700"
-      >
-        {{ error() }}
-      </div>
+      <app-empty-state class="mt-6 block" icon="⚠️" title="Could not load care team" [message]="error()" tone="danger" compact />
     }
   </div>
 </main>

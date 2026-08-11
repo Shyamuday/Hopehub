@@ -82,13 +82,11 @@
 
                 <div class="live-provider-card__modes" aria-label="Available live modes">
                   @for (badge of providerModeBadges(provider); track badge.mode) {
-                    <span
-                      class="live-mini-chip"
-                      [class.live-mini-chip--active]="badge.mode === mode() && badge.enabled"
-                      [class.live-mini-chip--muted]="!badge.enabled"
-                    >
-                      {{ badge.icon }} {{ badge.label }}
-                    </span>
+                    <app-status-chip
+                      [icon]="badge.icon"
+                      [label]="badge.label"
+                      [tone]="badge.mode === mode() && badge.enabled ? 'success' : !badge.enabled ? 'muted' : 'neutral'"
+                    />
                   }
                 </div>
 
@@ -108,10 +106,13 @@
             }
           </div>
         } @else {
-          <div class="live-empty-card">
-            <div class="live-empty-card__copy">
-              <h3>{{ unavailableTitle() }}</h3>
-              <p>{{ message() || unavailableMessage() }}</p>
+          <app-empty-state
+            icon="🎧"
+            [title]="unavailableTitle()"
+            [message]="message() || unavailableMessage()"
+            tone="soft"
+          >
+            <div empty-details>
               <small>Selected path: {{ activeSupportPathTitle() }}</small>
               @if (alternativeModesLoading()) {
                 <small>Checking other live options...</small>
@@ -119,21 +120,19 @@
                 <small>{{ alternativeModesMessage() }}</small>
               }
             </div>
-            <div class="live-empty-card__actions">
-              @for (alternative of alternativeModes(); track alternative.mode) {
-                <button
-                  type="button"
-                  class="btn-primary"
-                  (click)="tryAlternativeMode(alternative.mode)"
-                >
-                  {{ alternative.icon }} Try {{ alternative.label.toLowerCase() }} now
-                </button>
-              }
-              <button type="button" class="btn-secondary" (click)="bookConsultation()">
-                Book {{ modeLabel().toLowerCase() }} consultation
+            @for (alternative of alternativeModes(); track alternative.mode) {
+              <button
+                type="button"
+                class="btn-primary"
+                (click)="tryAlternativeMode(alternative.mode)"
+              >
+                {{ alternative.icon }} Try {{ alternative.label.toLowerCase() }} now
               </button>
-            </div>
-          </div>
+            }
+            <button type="button" class="btn-secondary" (click)="bookConsultation()">
+              Book {{ modeLabel().toLowerCase() }} consultation
+            </button>
+          </app-empty-state>
         }
 
         @if (message() && providers().length) {
@@ -145,7 +144,7 @@
         @if (canHostGroups()) {
           <form class="live-group-create" (submit)="$event.preventDefault(); createGroup()">
             <div>
-              <span class="live-mini-chip live-mini-chip--free">Provider/admin tool</span>
+              <app-status-chip label="Provider/admin tool" tone="warning" />
               <h3>Open a moderated support chat</h3>
               <p>Start a simple chat room for live emotional support. Voice/video can be added later with SFU media.</p>
             </div>
@@ -194,7 +193,7 @@
               <article class="live-group-card">
                 <div class="flex items-center justify-between gap-3">
                   <span class="live-dot">{{ groupStatusLabel(group) }}</span>
-                  <span class="live-mini-chip">{{ liveGroupModeLabel(group) }}</span>
+                  <app-status-chip [label]="liveGroupModeLabel(group)" />
                 </div>
                 <h3>{{ group.title }}</h3>
                 <p>{{ group.description || 'A moderated Hope Hub support room.' }}</p>
@@ -213,10 +212,14 @@
             }
           </div>
         } @else {
-          <div class="live-empty-card">
-            <p>No live support chats are open right now.</p>
+          <app-empty-state
+            icon="💬"
+            title="No live support chats are open right now"
+            message="You can still explore community support options."
+            compact
+          >
             <a [routerLink]="ROUTES.links.community" class="btn-secondary">See community options</a>
-          </div>
+          </app-empty-state>
         }
       }
     </div>

@@ -38,26 +38,23 @@
       </h3>
 
       @if (showAvailability) {
-        <span
-          class="mt-1 inline-flex rounded-full px-2.5 py-1 text-xs font-black ring-1"
-          [class]="availabilityClass()"
-        >
-          {{ availabilityLabel() }}
-        </span>
+        <app-status-chip
+          class="mt-1 block"
+          [label]="availabilityLabel()"
+          [customClass]="availabilityClass()"
+          [strong]="true"
+        />
       }
 
       @if (showBestMatch) {
-        <span class="mt-1 inline-flex rounded-full bg-blue-600 px-2 py-0.5 text-[11px] font-bold text-white">
-          {{ showBestMatch }}
-        </span>
+        <app-status-chip class="mt-1 block" [label]="showBestMatch" tone="info" [strong]="true" />
       }
 
-      <span
-        class="mt-1 inline-flex rounded-full px-2.5 py-1 text-xs font-bold ring-1"
-        [class]="roleBadgeClass()"
-      >
-        {{ tierLabel() }}
-      </span>
+      <app-status-chip
+        class="mt-1 block"
+        [label]="tierLabel()"
+        [customClass]="roleBadgeClass()"
+      />
 
       <p class="mt-1 text-sm font-medium text-gray-600" [class.line-clamp-1]="compact()">
         {{ roleLabel() }}
@@ -76,9 +73,12 @@
   </div>
 
   @if (provider.isScreenedListener) {
-    <span class="mt-3 inline-flex rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700 ring-1 ring-emerald-200">
-      {{ screenedListenerLabel() }}
-    </span>
+    <app-status-chip
+      class="mt-3 block"
+      [label]="screenedListenerLabel()"
+      tone="success"
+      icon="✓"
+    />
   }
 
   @if (bestFor().length || !compact()) {

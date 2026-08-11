@@ -1,0 +1,19 @@
+@if (label) {
+  <span
+    class="status-chip"
+    [ngClass]="[
+      'status-chip--' + tone,
+      'status-chip--' + size,
+      strong ? 'status-chip--strong' : '',
+      customClass
+    ]"
+  >
+    @if (dot) {
+      <span class="status-chip__dot" aria-hidden="true"></span>
+    }
+    @if (icon) {
+      <span aria-hidden="true">{{ icon }}</span>
+    }
+    <span>{{ label }}</span>
+  </span>
+}

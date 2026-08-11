@@ -57,7 +57,12 @@ import {
   FormDropdownOption,
   PaymentFlowState,
   PaymentStatusOverlayComponent,
+  CouponBoxComponent,
+  CheckoutSummaryComponent,
+  CheckoutSummaryNotice,
+  CheckoutSummaryRow,
   SupportPathSelectorComponent,
+  StatusChipComponent,
 } from '../../shared/components';
 import { User } from '../../core/models/auth.model';
 
@@ -73,7 +78,10 @@ type SupportPathPreference = ReturnType<typeof supportPathForExpertPreference>;
     AppointmentCalendarComponent,
     FormDropdownComponent,
     PaymentStatusOverlayComponent,
+    CouponBoxComponent,
+    CheckoutSummaryComponent,
     SupportPathSelectorComponent,
+    StatusChipComponent,
   ],
   templateUrl: './contact.component.html',
   styleUrl: './contact.component.scss',
@@ -1035,6 +1043,123 @@ export class ContactComponent implements OnInit {
     this.appliedPromoCode.set('');
     this.checkoutQuote.set(null);
     this.checkoutQuoteError.set('');
+  }
+
+  couponSuccessMessage(): string {
+    if (!this.appliedPromoCode() || this.checkoutQuoteError()) return '';
+    if (this.couponDiscountInPaise() > 0) {
+      const freeText =
+        this.payTodayInPaise() <= 0 ? ' Your booking can be confirmed without payment.' : '';
+      return `${this.appliedPromoCode()} applied: ${this.formatPaise(
+        this.couponDiscountInPaise(),
+      )} off.${freeText}`;
+    }
+    return `${this.appliedPromoCode()} will be validated by Hope Hub checkout. If it covers the full amount, your booking will be confirmed without payment.`;
+  }
+
+  couponHelperMessage(): string {
+    return this.appliedPromoCode()
+      ? ''
+      : 'Discount and free-session coupons are managed by admin and applied securely.';
+  }
+
+  checkoutEyebrow(): string {
+    if (this.selectedOffering()) {
+      return this.prefilledData().paymentMode === 'PARTIAL' ? 'Deposit checkout' : 'Full checkout';
+    }
+    return this.prefilledData().careTeamServiceId
+      ? 'Fixed service checkout'
+      : 'Direct provider checkout';
+  }
+
+  checkoutTitle(): string {
+    return (
+      this.selectedOffering()?.title ||
+      this.contactForm?.get('serviceInterest')?.value ||
+      this.prefilledData().serviceName ||
+      'Hope Hub session'
+    );
+  }
+
+  checkoutSummaryNotices(): CheckoutSummaryNotice[] {
+    const notices: CheckoutSummaryNotice[] = [];
+    const offer = this.selectedOffering();
+    if (offer && this.offerDiscountInPaise() > 0 && offer.type === 'INDIVIDUAL_SESSION') {
+      notices.push({
+        title: `${offer.discountPercent || 50}% off first session`,
+        message: '30 min private support + 15 min follow-up included.',
+      });
+    }
+    if (!offer && this.careTeamServiceQuoteLoading()) {
+      notices.push({
+        title: 'Checking your exact price…',
+        message: 'We are verifying first-session, follow-up, or package pricing.',
+      });
+    }
+    if (!offer && this.careTeamServiceQuoteError()) {
+      notices.push({
+        title: 'Exact price not loaded',
+        message: this.careTeamServiceQuoteError(),
+      });
+    }
+    return notices;
+  }
+
+  checkoutSummaryRows(): CheckoutSummaryRow[] {
+    const offer = this.selectedOffering();
+    const rows: CheckoutSummaryRow[] = [];
+    if (offer) {
+      rows.push({ label: 'Package price', value: this.formatPaise(offer.priceInPaise || 0) });
+      if (this.offerDiscountInPaise() > 0) {
+        rows.push({
+          label: offer.discountLabel || 'Offer discount',
+          value: `-${this.formatPaise(this.offerDiscountInPaise())}`,
+        });
+      }
+      rows.push({ label: 'Final price', value: this.formatPaise(this.offerFinalInPaise()) });
+    } else {
+      const serviceQuote = this.careTeamServiceQuote();
+      if (serviceQuote) {
+        rows.push({ label: 'Applied pricing', value: serviceQuote.quote.label });
+        if (serviceQuote.quote.previousUseCount > 0) {
+          rows.push({
+            label: 'Previous sessions',
+            value: String(serviceQuote.quote.previousUseCount),
+          });
+        }
+        if (serviceQuote.quote.packageBalance) {
+          rows.push({
+            label: 'Package balance',
+            value: `${serviceQuote.quote.packageBalance.remainingAfterThis} left after this`,
+          });
+        }
+      }
+      rows.push({
+        label: this.prefilledData().careTeamServiceId ? 'Service price' : 'Session price',
+        value: this.formatPaise(this.payTodayInPaise()),
+      });
+    }
+    rows.push({
+      label: this.couponDiscountInPaise() > 0 ? 'Pay today after coupon' : 'Pay today',
+      value: this.formatPaise(this.payTodayInPaise()),
+      highlight: true,
+    });
+    if (this.couponDiscountInPaise() > 0) {
+      rows.push({
+        label: 'Coupon discount',
+        value: `-${this.formatPaise(this.couponDiscountInPaise())}`,
+      });
+    }
+    if (offer && this.balanceDueInPaise() > 0) {
+      rows.push({ label: 'Balance later', value: this.formatPaise(this.balanceDueInPaise()) });
+    }
+    return rows;
+  }
+
+  checkoutIncludes(): string[] {
+    return this.selectedOffering()?.type === 'INDIVIDUAL_SESSION'
+      ? ['30 min private session', '15 min follow-up', 'Online audio by default']
+      : [];
   }
 
   checkoutPromoCode(): string {

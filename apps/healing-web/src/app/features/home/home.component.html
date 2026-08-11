@@ -152,9 +152,12 @@
         }
       </div>
     } @else {
-      <div class="rounded-lg border border-dashed border-gray-300 bg-white p-6 text-center text-gray-600">
-        Care team profiles will appear here after admin publishes them for the website.
-      </div>
+      <app-empty-state
+        icon="🌱"
+        title="Care team profiles are coming"
+        message="Care team profiles will appear here after admin publishes them for the website."
+        compact
+      />
     }
   </div>
 </section>

@@ -3,6 +3,7 @@ import { RouterModule } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   ContinueSupportBannerComponent,
+  EmptyStateComponent,
   FeedbackSectionComponent,
   GuidedSupportEntryComponent,
   OfferBannerCarouselComponent,
@@ -24,6 +25,7 @@ import { LiveConnectComponent } from './components/live-connect/live-connect.com
   standalone: true,
   imports: [
     ContinueSupportBannerComponent,
+    EmptyStateComponent,
     FeedbackSectionComponent,
     GroupChatTeaserComponent,
     GuidedSupportEntryComponent,

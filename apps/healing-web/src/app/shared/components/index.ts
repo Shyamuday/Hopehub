@@ -23,3 +23,7 @@ export * from './guided-support-entry/guided-support-entry.component';
 export * from './hope-guide/hope-guide.component';
 export * from './continue-support-banner/continue-support-banner.component';
 export * from './provider-card/provider-card.component';
+export * from './coupon-box/coupon-box.component';
+export * from './empty-state/empty-state.component';
+export * from './checkout-summary/checkout-summary.component';
+export * from './status-chip/status-chip.component';

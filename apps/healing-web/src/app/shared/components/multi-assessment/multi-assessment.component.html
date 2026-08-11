@@ -176,32 +176,15 @@
           {{ selectedAccess()?.accessNote || lockedAssessmentMessage() }}
         </p>
         @if (selectedAccess()?.accessMode === 'PAID') {
-        <div class="mt-4 flex flex-col gap-3 sm:flex-row">
-          <input
-            type="text"
-            class="min-h-10 flex-1 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-bold uppercase text-gray-950"
-            placeholder="Coupon code"
-            [value]="couponCode()"
-            (input)="couponCode.set($any($event.target).value)"
-          />
-          <button
-            type="button"
-            class="btn-primary btn-sm"
-            [disabled]="redeemingCoupon() || !couponCode().trim()"
-            (click)="redeemCoupon()"
-          >
-            {{ redeemingCoupon() ? 'Checking...' : 'Apply coupon' }}
-          </button>
-        </div>
-        @if (selectedAccess()?.couponLabel) {
-        <p class="mt-2 text-xs font-semibold text-gray-500">{{ selectedAccess()!.couponLabel }}</p>
-        }
-        @if (couponQuote()) {
-        <p class="mt-2 text-sm font-semibold text-green-700">
-          Coupon applied: save {{ assessmentAmountLabel(couponQuote()!.discountInPaise) }}.
-          Pay {{ assessmentAmountLabel(couponQuote()!.payableAmountInPaise) }}.
-        </p>
-        }
+        <app-coupon-box
+          class="mt-4 block"
+          [value]="couponCode()"
+          [loading]="redeemingCoupon()"
+          [success]="couponSuccessMessage()"
+          [helper]="selectedAccess()?.couponLabel || ''"
+          (valueChange)="couponCode.set($event)"
+          (apply)="redeemCoupon()"
+        />
         }
         <div class="mt-4 flex flex-col gap-3 sm:flex-row">
           <button type="button" class="btn-outline btn-sm" (click)="openLogin()">Sign in</button>

@@ -25,11 +25,12 @@ import { PaymentService } from '../../../core/services/payment.service';
 import { CONSUMER_UX_COPY } from '../../../core/constants/consumer-ux-copy.constants';
 import { CONSUMER_STORAGE_KEYS } from '../../../core/constants/storage-keys.constants';
 import { firstValueFrom } from 'rxjs';
+import { CouponBoxComponent } from '../coupon-box/coupon-box.component';
 
 @Component({
   selector: 'app-multi-assessment',
   standalone: true,
-  imports: [FormsModule, RouterModule, DatePipe],
+  imports: [FormsModule, RouterModule, DatePipe, CouponBoxComponent],
   templateUrl: './multi-assessment.component.html',
   styleUrl: './multi-assessment.component.scss',
 })
@@ -201,6 +202,14 @@ export class MultiAssessmentComponent implements OnInit {
   payAssessmentLabel(): string {
     const amount = this.couponQuote()?.payableAmountInPaise ?? this.selectedAccess()?.priceInPaise;
     return amount ? `Pay ${this.assessmentAmountLabel(amount)} and unlock` : 'Pay and unlock';
+  }
+
+  couponSuccessMessage(): string {
+    const quote = this.couponQuote();
+    if (!quote) return '';
+    return `Coupon applied: save ${this.assessmentAmountLabel(
+      quote.discountInPaise,
+    )}. Pay ${this.assessmentAmountLabel(quote.payableAmountInPaise)}.`;
   }
 
   lockedAssessmentMessage(): string {

@@ -1,0 +1,42 @@
+@if (showSummary) {
+<section class="checkout-summary" aria-label="Payment summary">
+  @for (notice of notices; track notice.title) {
+    <div class="checkout-summary__notice">
+      <strong>{{ notice.title }}</strong>
+      @if (notice.message) {
+        <span>{{ notice.message }}</span>
+      }
+    </div>
+  }
+
+  <div class="checkout-summary__head">
+    <span>{{ eyebrow }}</span>
+    <strong>{{ title }}</strong>
+  </div>
+
+  <div class="checkout-summary__rows">
+    @for (row of rows; track row.label + row.value) {
+      <div [class.checkout-summary__pay]="row.highlight">
+        <span>{{ row.label }}</span>
+        <strong>{{ row.value }}</strong>
+      </div>
+    }
+  </div>
+
+  @if (includes.length) {
+    <div class="checkout-summary__includes">
+      @for (item of includes; track item) {
+        <span>{{ item }}</span>
+      }
+    </div>
+  }
+</section>
+}
+
+@if (reassurance.length) {
+  <section class="checkout-reassurance" aria-label="Checkout reassurance">
+    @for (item of reassurance; track item) {
+      <span>{{ item }}</span>
+    }
+  </section>
+}

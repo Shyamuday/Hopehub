@@ -35,7 +35,9 @@ import { HopeHubLiveGroup, HopeHubProvider } from '../../../../core/services/boo
 import {
   PaymentFlowState,
   PaymentStatusOverlayComponent,
+  EmptyStateComponent,
   SupportPathSelectorComponent,
+  StatusChipComponent,
 } from '../../../../shared/components';
 
 type LiveConnectMode = ConsumerLiveConnectMode;
@@ -50,7 +52,14 @@ type LiveConnectAlternativeMode = {
 @Component({
   selector: 'app-live-connect',
   standalone: true,
-  imports: [FormsModule, PaymentStatusOverlayComponent, RouterModule, SupportPathSelectorComponent],
+  imports: [
+    FormsModule,
+    PaymentStatusOverlayComponent,
+    RouterModule,
+    EmptyStateComponent,
+    SupportPathSelectorComponent,
+    StatusChipComponent,
+  ],
   templateUrl: './live-connect.component.html',
   styleUrl: './live-connect.component.scss',
 })

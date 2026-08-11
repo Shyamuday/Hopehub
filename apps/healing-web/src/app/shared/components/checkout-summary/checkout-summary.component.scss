@@ -1,0 +1,121 @@
+.checkout-summary {
+  display: grid;
+  gap: 0.85rem;
+  border: 1px solid var(--color-primary-100);
+  border-radius: var(--hope-radius-lg, 1rem);
+  background: var(--brand-surface);
+  padding: 1rem;
+}
+
+.checkout-summary__head {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.checkout-summary__head span {
+  color: var(--brand-primary);
+  font-size: 0.76rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.checkout-summary__head strong {
+  color: var(--text-primary);
+  font-size: 1rem;
+}
+
+.checkout-summary__notice {
+  display: grid;
+  gap: 0.2rem;
+  border: 1px solid var(--brand-primary-border);
+  border-radius: var(--hope-radius-md, 0.75rem);
+  background: #ffffff;
+  padding: 0.8rem;
+}
+
+.checkout-summary__notice strong {
+  color: var(--brand-primary);
+  font-size: 1rem;
+}
+
+.checkout-summary__notice span {
+  color: var(--text-secondary);
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
+.checkout-summary__rows {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.checkout-summary__rows div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.checkout-summary__rows strong {
+  color: var(--text-primary);
+  text-align: right;
+  white-space: nowrap;
+}
+
+.checkout-summary__pay {
+  border-top: 1px solid var(--color-primary-100);
+  margin-top: 0.2rem;
+  padding-top: 0.75rem;
+}
+
+.checkout-summary__pay span,
+.checkout-summary__pay strong {
+  color: var(--brand-primary);
+  font-size: 1rem;
+  font-weight: 900;
+}
+
+.checkout-summary__includes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.checkout-summary__includes span,
+.checkout-reassurance span {
+  border: 1px solid var(--brand-primary-border);
+  border-radius: 999px;
+  background: #ffffff;
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+  font-weight: 800;
+  padding: 0.35rem 0.65rem;
+}
+
+.checkout-reassurance {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  border: 1px solid rgba(130, 155, 120, 0.2);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.78);
+  padding: 0.55rem;
+}
+
+.checkout-reassurance span {
+  background: rgba(130, 155, 120, 0.1);
+}
+
+@media (max-width: 640px) {
+  .checkout-summary__rows div {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.2rem;
+  }
+
+  .checkout-reassurance {
+    border-radius: var(--hope-radius-lg, 1rem);
+  }
+}

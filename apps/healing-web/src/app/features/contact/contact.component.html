@@ -13,7 +13,7 @@
         @if (isLiveConnectFallback()) {
           <section class="live-handoff-card" aria-label="Live Connect booking handoff">
             <div>
-              <span class="handoff-pill">No live expert available</span>
+              <app-status-chip label="No live expert available" tone="success" [strong]="true" />
               <h2>{{ liveConnectHandoffTitle() }}</h2>
               <p>{{ liveConnectHandoffCopy() }}</p>
             </div>
@@ -43,7 +43,7 @@
             </div>
             <div class="booking-intent-summary__chips">
               @for (item of bookingSummaryItems(); track item) {
-                <span>{{ item }}</span>
+                <app-status-chip [label]="item" />
               }
             </div>
           </section>
@@ -351,165 +351,50 @@
 
         @if (selectedOffering(); as offer) {
           @if (contactForm.get('serviceInterest')?.value || prefilledData().serviceName || prefilledData().offering) {
-          <section class="payment-summary" aria-label="Payment summary">
-            @if (offerDiscountInPaise() > 0 && offer.type === 'INDIVIDUAL_SESSION') {
-              <div class="payment-summary__offer">
-                <strong>{{ offer.discountPercent || 50 }}% off first session</strong>
-                <span>30 min private support + 15 min follow-up included.</span>
-              </div>
-            }
-            <div class="payment-summary__head">
-              <span>{{ prefilledData().paymentMode === 'PARTIAL' ? 'Deposit checkout' : 'Full checkout' }}</span>
-              <strong>{{ offer.title }}</strong>
-            </div>
-            <div class="payment-summary__rows">
-              <div>
-                <span>Package price</span>
-                <strong>{{ formatPaise(offer.priceInPaise || 0) }}</strong>
-              </div>
-              @if (offerDiscountInPaise() > 0) {
-                <div>
-                  <span>{{ offer.discountLabel || 'Offer discount' }}</span>
-                  <strong>-{{ formatPaise(offerDiscountInPaise()) }}</strong>
-                </div>
-              }
-              <div>
-                <span>Final price</span>
-                <strong>{{ formatPaise(offerFinalInPaise()) }}</strong>
-              </div>
-              <div class="payment-summary__pay">
-                <span>{{ couponDiscountInPaise() > 0 ? 'Pay today after coupon' : 'Pay today' }}</span>
-                <strong>{{ formatPaise(payTodayInPaise()) }}</strong>
-              </div>
-              @if (couponDiscountInPaise() > 0) {
-                <div>
-                  <span>Coupon discount</span>
-                  <strong>-{{ formatPaise(couponDiscountInPaise()) }}</strong>
-                </div>
-              }
-              @if (balanceDueInPaise() > 0) {
-                <div>
-                  <span>Balance later</span>
-                  <strong>{{ formatPaise(balanceDueInPaise()) }}</strong>
-                </div>
-              }
-            </div>
-            @if (offer.type === 'INDIVIDUAL_SESSION') {
-              <div class="booking-includes">
-                <span>30 min private session</span>
-                <span>15 min follow-up</span>
-                <span>Online audio by default</span>
-              </div>
-            }
-          </section>
+          <app-checkout-summary
+            [eyebrow]="checkoutEyebrow()"
+            [title]="checkoutTitle()"
+            [notices]="checkoutSummaryNotices()"
+            [rows]="checkoutSummaryRows()"
+            [includes]="checkoutIncludes()"
+            [reassurance]="[]"
+          />
           }
         } @else if (contactForm.get('serviceInterest')?.value || prefilledData().serviceName) {
-          <section class="payment-summary" aria-label="Payment summary">
-            @if (careTeamServiceQuoteLoading()) {
-              <div class="payment-summary__offer">
-                <strong>Checking your exact price…</strong>
-                <span>We are verifying first-session, follow-up, or package pricing.</span>
-              </div>
-            }
-            @if (careTeamServiceQuoteError()) {
-              <div class="payment-summary__offer">
-                <strong>Exact price not loaded</strong>
-                <span>{{ careTeamServiceQuoteError() }}</span>
-              </div>
-            }
-            <div class="payment-summary__head">
-              <span>{{ prefilledData().careTeamServiceId ? 'Fixed service checkout' : 'Direct provider checkout' }}</span>
-              <strong>{{ contactForm.get('serviceInterest')?.value || prefilledData().serviceName || 'Hope Hub session' }}</strong>
-            </div>
-            <div class="payment-summary__rows">
-              @if (careTeamServiceQuote(); as serviceQuote) {
-                <div>
-                  <span>Applied pricing</span>
-                  <strong>{{ serviceQuote.quote.label }}</strong>
-                </div>
-                @if (serviceQuote.quote.previousUseCount > 0) {
-                  <div>
-                    <span>Previous sessions</span>
-                    <strong>{{ serviceQuote.quote.previousUseCount }}</strong>
-                  </div>
-                }
-                @if (serviceQuote.quote.packageBalance) {
-                  <div>
-                    <span>Package balance</span>
-                    <strong>{{ serviceQuote.quote.packageBalance.remainingAfterThis }} left after this</strong>
-                  </div>
-                }
-              }
-              <div>
-                <span>{{ prefilledData().careTeamServiceId ? 'Service price' : 'Session price' }}</span>
-                <strong>{{ formatPaise(payTodayInPaise()) }}</strong>
-              </div>
-              <div class="payment-summary__pay">
-                <span>{{ couponDiscountInPaise() > 0 ? 'Pay today after coupon' : 'Pay today' }}</span>
-                <strong>{{ formatPaise(payTodayInPaise()) }}</strong>
-              </div>
-              @if (couponDiscountInPaise() > 0) {
-                <div>
-                  <span>Coupon discount</span>
-                  <strong>-{{ formatPaise(couponDiscountInPaise()) }}</strong>
-                </div>
-              }
-            </div>
-          </section>
+          <app-checkout-summary
+            [eyebrow]="checkoutEyebrow()"
+            [title]="checkoutTitle()"
+            [notices]="checkoutSummaryNotices()"
+            [rows]="checkoutSummaryRows()"
+            [includes]="checkoutIncludes()"
+            [reassurance]="[]"
+          />
         }
 
         @if (selectedAppointment() && (contactForm.get('serviceInterest')?.value || prefilledData().serviceName || selectedOffering())) {
-          <section
-            class="coupon-box"
-            [class.coupon-box--applied]="appliedPromoCode()"
-            aria-label="Coupon code"
-          >
-            <div>
-              <span>Have a coupon?</span>
-              <strong>Apply it at secure checkout</strong>
-            </div>
-            <div class="coupon-box__control">
-              <input
-                type="text"
-                [value]="promoCode()"
-                (input)="updatePromoCode($any($event.target).value)"
-                placeholder="Enter code"
-                autocomplete="off"
-                inputmode="text"
-              />
-              @if (appliedPromoCode()) {
-                <button type="button" class="btn-secondary" (click)="clearPromoCode()">Remove</button>
-              } @else {
-                <button type="button" class="btn-secondary" [disabled]="checkoutQuoteLoading()" (click)="applyPromoCode()">
-                  {{ checkoutQuoteLoading() ? 'Checking…' : 'Apply' }}
-                </button>
-              }
-            </div>
-            @if (checkoutQuoteError()) {
-              <p class="coupon-box__error">{{ checkoutQuoteError() }}</p>
-            } @else if (appliedPromoCode() && couponDiscountInPaise() > 0) {
-              <p>
-                <strong>{{ appliedPromoCode() }}</strong> applied:
-                {{ formatPaise(couponDiscountInPaise()) }} off.
-                @if (payTodayInPaise() <= 0) {
-                  Your booking can be confirmed without payment.
-                }
-              </p>
-            } @else if (appliedPromoCode()) {
-              <p>
-                <strong>{{ appliedPromoCode() }}</strong> will be validated by Hope Hub checkout.
-                If it covers the full amount, your booking will be confirmed without payment.
-              </p>
-            } @else {
-              <p>Discount and free-session coupons are managed by admin and applied securely.</p>
-            }
-          </section>
+          <app-coupon-box
+            [value]="promoCode()"
+            [applied]="!!appliedPromoCode()"
+            [loading]="checkoutQuoteLoading()"
+            [showClear]="!!appliedPromoCode()"
+            [placeholder]="'Enter code'"
+            [applyLabel]="'Apply'"
+            [checkingLabel]="'Checking…'"
+            [error]="checkoutQuoteError()"
+            [success]="couponSuccessMessage()"
+            [helper]="couponHelperMessage()"
+            (valueChange)="updatePromoCode($event)"
+            (apply)="applyPromoCode()"
+            (clear)="clearPromoCode()"
+          />
 
-          <section class="checkout-reassurance" aria-label="Checkout reassurance">
-            <span>🔒 Private and secure checkout</span>
-            <span>Support can help with reschedule requests</span>
-            <span>Refund or coupon rules are applied before confirmation</span>
-          </section>
+          <app-checkout-summary
+            [showSummary]="false"
+            [title]="''"
+            [rows]="[]"
+            [notices]="[]"
+            [includes]="[]"
+          />
         }
 
         <label class="safety-check">

@@ -38,6 +38,7 @@ import { LiveConnectActionService } from '../../core/services/live-connect-actio
 import {
   ConnectOptionMode,
   ContinueSupportBannerComponent,
+  EmptyStateComponent,
   FormDropdownComponent,
   FormDropdownOption,
   ProviderCardComponent,
@@ -55,6 +56,7 @@ type RoleGroup = '' | ConsumerSupportPath;
     RouterLink,
     SupportPathSelectorComponent,
     ContinueSupportBannerComponent,
+    EmptyStateComponent,
     FormDropdownComponent,
     ProviderCardComponent,
   ],

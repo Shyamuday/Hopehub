@@ -27,6 +27,8 @@ import {
   ConnectFallbackPanelComponent,
   ConnectOptionMode,
   ConnectOptionsComponent,
+  CouponBoxComponent,
+  EmptyStateComponent,
   GuidedSupportEntryComponent,
   ProviderCardComponent,
 } from '../../shared/components';
@@ -38,6 +40,8 @@ import {
     RouterModule,
     ConnectOptionsComponent,
     ConnectFallbackPanelComponent,
+    CouponBoxComponent,
+    EmptyStateComponent,
     GuidedSupportEntryComponent,
     ProviderCardComponent,
   ],
@@ -136,35 +140,15 @@ import {
                     {{ assessmentAccess()?.accessNote || lockedAssessmentMessage() }}
                   </p>
                   @if (assessmentAccess()?.accessMode === 'PAID') {
-                    <div class="mt-4 flex flex-col gap-3 sm:flex-row">
-                      <input
-                        type="text"
-                        class="direct-test__coupon"
-                        placeholder="Coupon code"
-                        [value]="couponCode()"
-                        (input)="couponCode.set($any($event.target).value)"
-                      />
-                      <button
-                        type="button"
-                        class="btn-primary btn-sm"
-                        [disabled]="redeemingCoupon() || !couponCode().trim()"
-                        (click)="redeemCoupon()"
-                      >
-                        {{ redeemingCoupon() ? 'Checking...' : 'Apply coupon' }}
-                      </button>
-                    </div>
-                    @if (assessmentAccess()?.couponLabel) {
-                      <p class="mt-2 text-xs font-semibold text-gray-500">
-                        {{ assessmentAccess()!.couponLabel }}
-                      </p>
-                    }
-                    @if (couponQuote()) {
-                      <p class="mt-2 text-sm font-semibold text-green-700">
-                        Coupon applied: save
-                        {{ assessmentAmountLabel(couponQuote()!.discountInPaise) }}. Pay
-                        {{ assessmentAmountLabel(couponQuote()!.payableAmountInPaise) }}.
-                      </p>
-                    }
+                    <app-coupon-box
+                      class="mt-4 block text-left"
+                      [value]="couponCode()"
+                      [loading]="redeemingCoupon()"
+                      [success]="couponSuccessMessage()"
+                      [helper]="assessmentAccess()?.couponLabel || ''"
+                      (valueChange)="couponCode.set($event)"
+                      (apply)="redeemCoupon()"
+                    />
                   }
                   <div class="mt-4 flex flex-col gap-3 sm:flex-row">
                     <button type="button" class="btn-outline btn-sm" (click)="openLogin()">
@@ -478,7 +462,12 @@ import {
                 </div>
 
                 @if (matchingProvidersLoading()) {
-                  <div class="direct-test__matched-empty">Finding the closest matches…</div>
+                  <app-empty-state
+                    icon="🔎"
+                    title="Finding the closest matches…"
+                    message="We are checking live and bookable care-team members for this result."
+                    compact
+                  />
                 } @else if (matchingProviders().length) {
                   <div class="direct-test__matched-grid">
                     @for (provider of matchingProviders(); track provider.id) {
@@ -495,10 +484,12 @@ import {
                     }
                   </div>
                 } @else {
-                  <div class="direct-test__matched-empty">
-                    No direct match is live right now. You can still book a slot with a matching
-                    provider.
-                  </div>
+                  <app-empty-state
+                    icon="📅"
+                    title="No direct match is live right now"
+                    message="You can still book a slot with a matching provider."
+                    compact
+                  />
                 }
               </section>
 
@@ -537,11 +528,13 @@ import {
         </section>
       } @else {
         <section class="container mx-auto px-4 py-16 text-center">
-          <h1 class="text-3xl font-semibold text-gray-950">Test not found</h1>
-          <p class="mt-3 text-gray-700">The test you are looking for is not available.</p>
-          <a [routerLink]="ROUTES.links.assessments" class="btn-primary btn-sm mt-6"
-            >View all tests</a
+          <app-empty-state
+            icon="🧭"
+            title="Test not found"
+            message="The test you are looking for is not available."
           >
+            <a [routerLink]="ROUTES.links.assessments" class="btn-primary btn-sm">View all tests</a>
+          </app-empty-state>
         </section>
       }
     </main>
@@ -668,18 +661,6 @@ import {
         border-radius: 0.75rem;
         background: rgba(74, 111, 165, 0.06);
         padding: 1rem;
-      }
-
-      .direct-test__coupon {
-        min-height: 2.5rem;
-        flex: 1 1 auto;
-        border: 1px solid #d1d5db;
-        border-radius: 0.5rem;
-        background: #fff;
-        padding: 0.55rem 0.75rem;
-        color: #111827;
-        font-weight: 700;
-        text-transform: uppercase;
       }
 
       .direct-test__summary {
@@ -893,15 +874,6 @@ import {
         color: #92400e;
       }
 
-      .direct-test__matched-empty {
-        border-radius: 0.85rem;
-        background: #f8fafc;
-        color: #475569;
-        font-size: 0.9rem;
-        font-weight: 700;
-        padding: 0.9rem;
-      }
-
       @media (max-width: 639px) {
         .direct-test__option {
           min-height: 2.45rem;
@@ -1030,6 +1002,14 @@ export class DirectAssessmentComponent implements OnInit {
     const amount =
       this.couponQuote()?.payableAmountInPaise ?? this.assessmentAccess()?.priceInPaise;
     return amount ? `Pay ${this.assessmentAmountLabel(amount)} and unlock` : 'Pay and unlock';
+  }
+
+  couponSuccessMessage(): string {
+    const quote = this.couponQuote();
+    if (!quote) return '';
+    return `Coupon applied: save ${this.assessmentAmountLabel(
+      quote.discountInPaise,
+    )}. Pay ${this.assessmentAmountLabel(quote.payableAmountInPaise)}.`;
   }
 
   lockedAssessmentMessage(): string {

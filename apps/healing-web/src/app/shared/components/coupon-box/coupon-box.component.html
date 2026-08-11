@@ -1,0 +1,36 @@
+<section class="coupon-box" [class.coupon-box--applied]="applied" aria-label="Coupon code">
+  <div class="coupon-box__head">
+    <div>
+      <span>{{ title }}</span>
+      <strong>{{ subtitle }}</strong>
+    </div>
+    @if (showClear && normalizedValue()) {
+      <button type="button" class="coupon-box__clear" [disabled]="loading" (click)="clear.emit()">
+        Clear
+      </button>
+    }
+  </div>
+
+  <div class="coupon-box__control">
+    <input
+      type="text"
+      [placeholder]="placeholder"
+      [value]="value"
+      [disabled]="loading || disabled"
+      (input)="valueChange.emit($any($event.target).value)"
+    />
+    <button type="button" class="btn-secondary" [disabled]="!canApply()" (click)="apply.emit()">
+      {{ loading ? checkingLabel : applyLabel }}
+    </button>
+  </div>
+
+  @if (success) {
+    <p class="coupon-box__success">{{ success }}</p>
+  }
+  @if (error) {
+    <p class="coupon-box__error">{{ error }}</p>
+  }
+  @if (helper) {
+    <p>{{ helper }}</p>
+  }
+</section>
