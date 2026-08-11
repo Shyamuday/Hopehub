@@ -1,0 +1,185 @@
+<section class="panel">
+  <div class="panel-head">
+    <div>
+      <p class="eyebrow">Hope Hub calls</p>
+      <h2>Call health</h2>
+      <p class="muted">
+        Track 1-to-1 chat, voice, and video call reliability: answer rate, failures, TURN usage,
+        and recent failed attempts.
+      </p>
+    </div>
+    <div class="toolbar">
+      <select [value]="windowDays()" (change)="setWindowDays($any($event.target).value)">
+        @for (opt of windowOptions; track opt.value) {
+          <option [value]="opt.value">{{ opt.label }}</option>
+        }
+      </select>
+      <button type="button" (click)="load()" [disabled]="loading()">Refresh</button>
+    </div>
+  </div>
+
+  @if (loading()) {
+    <p class="loading-text">Loading call health…</p>
+  } @else if (error()) {
+    <div class="error-row">
+      <p class="error">{{ error() }}</p>
+      <button type="button" class="retry-btn" (click)="load()">Retry</button>
+    </div>
+  } @else if (report(); as report) {
+    <div class="summary-cards">
+      <article class="card ok">
+        <div class="val">{{ report.summary.answerRate }}%</div>
+        <div class="lbl">Answer rate</div>
+      </article>
+      <article class="card danger">
+        <div class="val">{{ report.summary.failureRate }}%</div>
+        <div class="lbl">Failure rate</div>
+      </article>
+      <article class="card">
+        <div class="val">{{ report.summary.total }}</div>
+        <div class="lbl">Call attempts</div>
+      </article>
+      <article class="card ok">
+        <div class="val">{{ report.summary.answered }}</div>
+        <div class="lbl">Answered</div>
+      </article>
+      <article class="card warn">
+        <div class="val">{{ report.summary.turnRelayRate }}%</div>
+        <div class="lbl">TURN relay use</div>
+      </article>
+      <article class="card">
+        <div class="val">{{ duration(report.summary.averageDurationSeconds) }}</div>
+        <div class="lbl">Avg duration</div>
+      </article>
+    </div>
+
+    <div class="insight-grid">
+      <article>
+        <h3>Failure watch</h3>
+        <div class="mini-stats">
+          <span>No answer <strong>{{ report.summary.noAnswer }}</strong></span>
+          <span>Media issue <strong>{{ report.summary.mediaPermission }}</strong></span>
+          <span>Connection failed <strong>{{ report.summary.connectionFailed }}</strong></span>
+          <span>Reconnect timeout <strong>{{ report.summary.reconnectTimeout }}</strong></span>
+        </div>
+      </article>
+      <article>
+        <h3>Network route</h3>
+        <div class="mini-stats">
+          <span>Direct/STUN <strong>{{ report.summary.direct }}</strong></span>
+          <span>TURN relay <strong>{{ report.summary.turnRelay }}</strong></span>
+          <span>Unknown <strong>{{ report.summary.unknownRoute }}</strong></span>
+        </div>
+      </article>
+    </div>
+
+    <div class="split-grid">
+      <section>
+        <h3>By reason</h3>
+        <div class="table-wrap">
+          <table>
+            <tbody>
+              @for (row of report.byReason; track row.key) {
+                <tr>
+                  <td>{{ label(row.key) }}</td>
+                  <td class="num">{{ row.count }}</td>
+                </tr>
+              } @empty {
+                <tr><td>No call data yet.</td><td></td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </section>
+      <section>
+        <h3>By mode</h3>
+        <div class="table-wrap">
+          <table>
+            <tbody>
+              @for (row of report.byMode; track row.key) {
+                <tr>
+                  <td>{{ label(row.key) }}</td>
+                  <td class="num">{{ row.count }}</td>
+                </tr>
+              } @empty {
+                <tr><td>No call data yet.</td><td></td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <section class="section-block">
+      <h3>Provider reliability</h3>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Provider</th>
+              <th class="num">Calls</th>
+              <th class="num">Answered</th>
+              <th class="num">Failed</th>
+              <th class="num">TURN</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of report.byProvider; track row.providerId) {
+              <tr>
+                <td>{{ row.providerName }}</td>
+                <td class="num">{{ row.total }}</td>
+                <td class="num">{{ row.answered }}</td>
+                <td class="num">{{ row.failed }}</td>
+                <td class="num">{{ row.turnRelay }}</td>
+              </tr>
+            } @empty {
+              <tr><td colspan="5">No provider call data yet.</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="section-block">
+      <h3>Recent call attempts</h3>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Started</th>
+              <th>Mode</th>
+              <th>Status</th>
+              <th>Reason</th>
+              <th>Route</th>
+              <th>Provider</th>
+              <th>User</th>
+              <th class="num">Duration</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of report.recent; track row.id) {
+              <tr>
+                <td>{{ dateTime(row.startedAt) }}</td>
+                <td>{{ label(row.mode) }}</td>
+                <td>
+                  <span class="pill" [class.bad]="row.status === 'FAILED'">{{ label(row.status) }}</span>
+                </td>
+                <td>{{ label(row.endReason || row.lastSignalEvent) }}</td>
+                <td>{{ routeLabel(row) }}</td>
+                <td>{{ row.consultation.assignedDoctor?.name || 'Unassigned' }}</td>
+                <td>
+                  {{ row.consultation.patient?.name || row.consultation.patient?.patientCode || 'User' }}
+                </td>
+                <td class="num">{{ duration(row.durationSeconds) }}</td>
+              </tr>
+            } @empty {
+              <tr><td colspan="8">No recent calls in this window.</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  } @else {
+    <p class="muted">No report loaded.</p>
+  }
+</section>

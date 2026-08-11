@@ -70,6 +70,187 @@ export function registerAdminConsultationRoutes(router: Router, io: SocketIoServ
   // ─── Admin consultations ───────────────────────────────────────────────────────
 
   router.get(
+    '/admin/call-health',
+    authRequired,
+    allowRoles(Role.ADMIN),
+    asyncRoute(async (req, res) => {
+      const days = Math.max(1, Math.min(90, queryPositiveInt(req, 'days', 30)));
+      const workspace = getAuthorizedAdminWorkspace(req, res);
+      if (workspace === null) return;
+      const from = new Date();
+      from.setDate(from.getDate() - days);
+
+      const sessions = await prisma.consultationCallSession.findMany({
+        where: {
+          startedAt: { gte: from },
+          consultation: consultationWorkspaceWhere(workspace)
+        },
+        orderBy: { startedAt: 'desc' },
+        take: 500,
+        include: {
+          consultation: {
+            select: {
+              id: true,
+              status: true,
+              patient: { select: { id: true, name: true, mobile: true, patientCode: true } },
+              assignedDoctor: { select: { id: true, name: true, email: true, mobile: true } },
+              disease: { select: { id: true, name: true } }
+            }
+          }
+        }
+      });
+
+      const reasonCounts = new Map<string, number>();
+      const modeCounts = new Map<string, number>();
+      const providerCounts = new Map<
+        string,
+        {
+          providerId: string;
+          providerName: string;
+          total: number;
+          answered: number;
+          failed: number;
+          turnRelay: number;
+        }
+      >();
+
+      let answered = 0;
+      let failed = 0;
+      let rejected = 0;
+      let noAnswer = 0;
+      let mediaPermission = 0;
+      let connectionFailed = 0;
+      let reconnectTimeout = 0;
+      let turnRelay = 0;
+      let direct = 0;
+      let unknownRoute = 0;
+      let totalDuration = 0;
+      let durationCount = 0;
+
+      for (const session of sessions) {
+        const metadata =
+          session.metadata &&
+          typeof session.metadata === 'object' &&
+          !Array.isArray(session.metadata)
+            ? (session.metadata as Record<string, unknown>)
+            : {};
+        const reason = session.endReason || session.status || 'UNKNOWN';
+        const reasonKey = String(reason).toUpperCase();
+        const modeKey = String(session.mode || 'UNKNOWN').toUpperCase();
+        const wasAnswered = Boolean(session.answeredAt);
+        const wasFailed =
+          String(session.status).toUpperCase() === 'FAILED' ||
+          [
+            'NO_ANSWER',
+            'MEDIA_PERMISSION_DENIED',
+            'MEDIA_TIMEOUT',
+            'CONNECTION_FAILED',
+            'RECONNECT_TIMEOUT'
+          ].includes(reasonKey);
+        const usedTurn = metadata['usedTurnRelay'] === true;
+        const candidateTypes = Array.isArray(metadata['candidateTypes'])
+          ? (metadata['candidateTypes'] as unknown[])
+          : [];
+        const routeKnown =
+          typeof metadata['usedTurnRelay'] === 'boolean' || candidateTypes.length > 0;
+
+        reasonCounts.set(reasonKey, (reasonCounts.get(reasonKey) ?? 0) + 1);
+        modeCounts.set(modeKey, (modeCounts.get(modeKey) ?? 0) + 1);
+        if (wasAnswered) answered += 1;
+        if (wasFailed) failed += 1;
+        if (reasonKey === 'REJECTED' || reasonKey === 'DECLINED') rejected += 1;
+        if (reasonKey === 'NO_ANSWER') noAnswer += 1;
+        if (reasonKey === 'MEDIA_PERMISSION_DENIED' || reasonKey === 'MEDIA_TIMEOUT')
+          mediaPermission += 1;
+        if (reasonKey === 'CONNECTION_FAILED' || reasonKey === 'ICE_FAILED') connectionFailed += 1;
+        if (reasonKey === 'RECONNECT_TIMEOUT') reconnectTimeout += 1;
+        if (usedTurn) turnRelay += 1;
+        else if (routeKnown) direct += 1;
+        else unknownRoute += 1;
+        if (typeof session.durationSeconds === 'number' && session.durationSeconds > 0) {
+          totalDuration += session.durationSeconds;
+          durationCount += 1;
+        }
+
+        const providerId = session.consultation.assignedDoctor?.id ?? 'unassigned';
+        const existing = providerCounts.get(providerId) ?? {
+          providerId,
+          providerName: session.consultation.assignedDoctor?.name ?? 'Unassigned',
+          total: 0,
+          answered: 0,
+          failed: 0,
+          turnRelay: 0
+        };
+        existing.total += 1;
+        if (wasAnswered) existing.answered += 1;
+        if (wasFailed) existing.failed += 1;
+        if (usedTurn) existing.turnRelay += 1;
+        providerCounts.set(providerId, existing);
+      }
+
+      const total = sessions.length;
+      const toRows = (map: Map<string, number>) =>
+        Array.from(map.entries())
+          .map(([key, count]) => ({ key, count }))
+          .sort((a, b) => b.count - a.count);
+
+      res.json({
+        windowDays: days,
+        from: from.toISOString(),
+        summary: {
+          total,
+          answered,
+          failed,
+          rejected,
+          noAnswer,
+          mediaPermission,
+          connectionFailed,
+          reconnectTimeout,
+          turnRelay,
+          direct,
+          unknownRoute,
+          answerRate: total ? Math.round((answered / total) * 100) : 0,
+          failureRate: total ? Math.round((failed / total) * 100) : 0,
+          turnRelayRate: total ? Math.round((turnRelay / total) * 100) : 0,
+          averageDurationSeconds: durationCount ? Math.round(totalDuration / durationCount) : 0
+        },
+        byReason: toRows(reasonCounts),
+        byMode: toRows(modeCounts),
+        byProvider: Array.from(providerCounts.values())
+          .sort((a, b) => b.total - a.total)
+          .slice(0, 30),
+        recent: sessions.slice(0, 80).map((session) => {
+          const metadata =
+            session.metadata &&
+            typeof session.metadata === 'object' &&
+            !Array.isArray(session.metadata)
+              ? (session.metadata as Record<string, unknown>)
+              : {};
+          return {
+            id: session.id,
+            consultationId: session.consultationId,
+            mode: session.mode,
+            status: session.status,
+            endReason: session.endReason,
+            durationSeconds: session.durationSeconds,
+            startedAt: session.startedAt,
+            answeredAt: session.answeredAt,
+            endedAt: session.endedAt,
+            lastSignalEvent: session.lastSignalEvent,
+            usedTurnRelay: metadata['usedTurnRelay'] === true,
+            candidateTypes: Array.isArray(metadata['candidateTypes'])
+              ? metadata['candidateTypes']
+              : [],
+            averageRttMs:
+              typeof metadata['averageRttMs'] === 'number' ? metadata['averageRttMs'] : null,
+            consultation: session.consultation
+          };
+        })
+      });
+    })
+  );
+
+  router.get(
     '/admin/safety-flags',
     authRequired,
     allowRoles(Role.ADMIN),

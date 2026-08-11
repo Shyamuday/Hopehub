@@ -52,6 +52,7 @@ import { PracticesPage } from './features/practices/practices-page';
 import { LifestyleTipsAdminPage } from './features/lifestyle-tips-admin/lifestyle-tips-admin-page';
 import { TelegramBotsPage } from './features/telegram-bots/telegram-bots-page/telegram-bots-page';
 import { GroupHelpPage } from './features/group-help/group-help-page';
+import { CallHealthPage } from './features/call-health/call-health-page';
 
 const guard = [adminPermissionGuard];
 
@@ -124,6 +125,7 @@ export const routes: Routes = [
       { path: ROUTE_PATHS.FOLLOW_UPS, component: FollowUpsPage, canActivate: guard },
       { path: ROUTE_PATHS.SAFETY_FLAGS, component: SafetyFlagsPage, canActivate: guard },
       { path: ROUTE_PATHS.ONLINE_DOCTORS, component: OnlineDoctorsPage, canActivate: guard },
+      { path: ROUTE_PATHS.CALL_HEALTH, component: CallHealthPage, canActivate: guard },
       { path: ROUTE_PATHS.PAYMENTS, component: PaymentsPage, canActivate: guard },
       { path: ROUTE_PATHS.DONATIONS, component: DonationsPage, canActivate: guard },
       { path: ROUTE_PATHS.AUDIT, component: AuditPage, canActivate: guard },

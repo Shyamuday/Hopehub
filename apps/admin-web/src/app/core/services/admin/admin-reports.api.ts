@@ -176,6 +176,14 @@ export class AdminReportsApi extends AdminApiBase {
     );
   }
 
+  getCallHealth(params: { days?: number } = {}) {
+    return firstValueFrom(
+      this.http.get<any>(`${this.apiBase}${API_PATHS.ADMIN.CALL_HEALTH}`, {
+        params: { days: String(params.days ?? 30) },
+      }),
+    );
+  }
+
   getPayments(params: {
     page?: number;
     pageSize?: number;

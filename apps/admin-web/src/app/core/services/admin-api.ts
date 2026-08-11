@@ -40,6 +40,9 @@ export class AdminApi {
       ...(args as Parameters<AdminReportsApi['getHopeHubAnalytics']>),
     );
   }
+  getCallHealth(...args: Parameters<AdminReportsApi['getCallHealth']>) {
+    return this.reports.getCallHealth(...(args as Parameters<AdminReportsApi['getCallHealth']>));
+  }
   getPayments(...args: Parameters<AdminReportsApi['getPayments']>) {
     return this.reports.getPayments(...(args as Parameters<AdminReportsApi['getPayments']>));
   }
