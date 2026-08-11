@@ -377,6 +377,36 @@ export class ContactComponent implements OnInit {
     return 'Choose a slot below, or use Quick Talk if someone comes online before you book.';
   }
 
+  bookingSummaryTitle(): string {
+    return (
+      this.contactForm?.get('serviceInterest')?.value ||
+      this.prefilledData().serviceName ||
+      this.prefilledData().service ||
+      'Hope Hub support'
+    );
+  }
+
+  bookingSummaryItems(): string[] {
+    const data = this.prefilledData();
+    const form = this.contactForm;
+    const concern = form?.get('concernCategory')?.value || data.concernCategory || '';
+    const duration = data.duration || this.selectedOfferingQuote()?.durationLabel || '';
+    const consultant = data.consultant || this.matchedProvider()?.name || '';
+    const supportPathLabel =
+      data.supportPathLabel ||
+      supportPathMeta(
+        supportPathForExpertPreference(form?.get('preferredExpertType')?.value || data.supportPath),
+      ).label;
+
+    return [
+      concern ? `Concern: ${concern}` : '',
+      `Mode: ${this.requestedLiveModeLabel()}`,
+      duration ? `Duration: ${duration}` : '',
+      consultant ? `Provider: ${consultant}` : '',
+      supportPathLabel ? `Support: ${supportPathLabel}` : '',
+    ].filter(Boolean);
+  }
+
   setLiveConnectMode(mode: LiveConnectMode): void {
     this.prefilledData.set({ ...this.prefilledData(), mode });
     this.contactForm.patchValue({ sessionMode: this.sessionModeForLiveConnectMode(mode) });

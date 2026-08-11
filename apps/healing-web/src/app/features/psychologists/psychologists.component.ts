@@ -549,6 +549,23 @@ export class PsychologistsComponent implements OnInit {
     return 'Next slot available';
   }
 
+  providerModeLabels(provider: HopeHubProvider): string[] {
+    const modes: string[] = [];
+    if (provider.acceptsChat !== false) modes.push('Chat');
+    if (provider.acceptsVoiceCall !== false) modes.push('Voice');
+    if (provider.acceptsVideoCall !== false) modes.push('Video');
+    return modes.length ? modes : ['Slot booking'];
+  }
+
+  providerDecisionHint(provider: HopeHubProvider): string {
+    if (provider.quickTalkAvailable) {
+      const modes = this.providerModeLabels(provider).join(', ').toLowerCase();
+      return `Start now by ${modes}`;
+    }
+    if (provider.liveStatus === 'ONLINE') return 'Try quick talk or book a slot';
+    return 'Book the nearest suitable slot';
+  }
+
   availabilityBadgeClass(provider: HopeHubProvider): string {
     if (provider.quickTalkAvailable) return 'bg-emerald-50 text-emerald-700 ring-emerald-200';
     if (provider.liveStatus === 'ONLINE') return 'bg-blue-50 text-blue-700 ring-blue-200';

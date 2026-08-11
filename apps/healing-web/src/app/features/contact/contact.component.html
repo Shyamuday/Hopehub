@@ -34,6 +34,20 @@
           </section>
         }
 
+        @if (bookingSummaryItems().length) {
+          <section class="booking-intent-summary" aria-label="Your selected support">
+            <div>
+              <span>Your selection</span>
+              <strong>{{ bookingSummaryTitle() }}</strong>
+            </div>
+            <div class="booking-intent-summary__chips">
+              @for (item of bookingSummaryItems(); track item) {
+                <span>{{ item }}</span>
+              }
+            </div>
+          </section>
+        }
+
         <div class="form-grid two">
           <div>
             <label for="name" class="form-label">Name *</label>
