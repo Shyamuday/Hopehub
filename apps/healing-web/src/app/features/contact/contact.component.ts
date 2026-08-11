@@ -30,6 +30,8 @@ import {
   CONSUMER_SAFETY_RISK_OPTIONS,
   CONSUMER_SESSION_MODE_OPTIONS,
   CONSUMER_URGENCY_OPTIONS,
+  consumerModeMatchesText,
+  consumerSessionModeFor,
   type ConsumerLiveConnectMode,
 } from '../../core/constants/consumer-form-options.constants';
 import { CONSUMER_UX_COPY } from '../../core/constants/consumer-ux-copy.constants';
@@ -844,7 +846,7 @@ export class ContactComponent implements OnInit {
           message: formData.message || '',
           concernCategory: formData.concernCategory || '',
           preferredExpertType: formData.preferredExpertType || '',
-          sessionMode: formData.sessionMode || 'online_audio',
+          sessionMode: formData.sessionMode || consumerSessionModeFor('voice'),
           preferredLanguage: formData.preferredLanguage || '',
           preferredProviderGender: formData.preferredProviderGender || '',
           safetyRisk: formData.safetyRisk || '',
@@ -1183,7 +1185,7 @@ export class ContactComponent implements OnInit {
       preferredTime: '',
       concernCategory: '',
       preferredExpertType: '',
-      sessionMode: 'online_audio',
+      sessionMode: consumerSessionModeFor('voice'),
       preferredLanguage: '',
       preferredProviderGender: '',
       autoMatchProvider: true,
@@ -1391,7 +1393,7 @@ export class ContactComponent implements OnInit {
 
   private initialSessionMode(): string {
     const mode = this.normalizeLiveConnectMode(this.prefilledData().mode);
-    return mode ? this.sessionModeForLiveConnectMode(mode) : 'online_audio';
+    return mode ? this.sessionModeForLiveConnectMode(mode) : consumerSessionModeFor('voice');
   }
 
   private initialPreferredExpertType(): string {
@@ -1414,17 +1416,13 @@ export class ContactComponent implements OnInit {
     const mode = this.activeQuickTalkMode();
     const matched = services.find((service) => {
       const text = `${service.title || ''} ${service.description || ''}`.toLowerCase();
-      if (mode === 'chat') return /\b(chat|message|text)\b/.test(text);
-      if (mode === 'video') return /\b(video)\b/.test(text);
-      return /\b(voice|audio|call)\b/.test(text);
+      return consumerModeMatchesText(mode, text);
     });
     return matched || services[0] || null;
   }
 
   private sessionModeForLiveConnectMode(mode: LiveConnectMode): string {
-    if (mode === 'video') return 'online_video';
-    if (mode === 'chat') return 'live_chat';
-    return 'online_audio';
+    return consumerSessionModeFor(mode);
   }
 
   private normalizeLiveConnectMode(value: unknown): LiveConnectMode | '' {

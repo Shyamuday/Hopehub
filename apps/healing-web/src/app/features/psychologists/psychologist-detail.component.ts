@@ -17,6 +17,10 @@ import {
   ConsumerConcernFlow,
   ConsumerConcernKey,
 } from '../../core/constants/consumer-concerns.constants';
+import {
+  consumerLiveMode,
+  consumerSessionModeFor,
+} from '../../core/constants/consumer-form-options.constants';
 import { NotificationService } from '../../core/services/notification.service';
 import { PublicCommunicationConfigService } from '../../core/services/public-communication-config.service';
 import { ConsumerFlowsService } from '../../core/services/consumer-flows.service';
@@ -132,7 +136,7 @@ export class PsychologistDetailComponent implements OnInit {
     const selectedService = service || null;
     const supportPath = supportPathForProvider(provider);
     const supportMeta = getSupportPathMeta(supportPath);
-    const selectedMode = mode === 'book' ? 'voice' : mode;
+    const selectedMode = consumerLiveMode(mode);
     const directProviderPriceInPaise =
       provider.sessionFeeInPaise ?? this.publicConfig.defaultSessionPriceInPaise;
     return {
@@ -153,12 +157,7 @@ export class PsychologistDetailComponent implements OnInit {
           ? directProviderPriceInPaise / 100
           : undefined,
       mode: selectedMode,
-      sessionMode:
-        selectedMode === 'video'
-          ? 'online_video'
-          : selectedMode === 'chat'
-            ? 'live_chat'
-            : 'online_audio',
+      sessionMode: consumerSessionModeFor(selectedMode),
       source: selectedService
         ? `care-team-service-${selectedMode}`
         : `care-team-profile-${selectedMode}`,

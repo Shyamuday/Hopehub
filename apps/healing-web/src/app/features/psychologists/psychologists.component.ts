@@ -29,6 +29,8 @@ import {
   CONSUMER_MODALITY_FILTER_OPTIONS,
   CONSUMER_QUICK_NEED_OPTIONS,
   CONSUMER_SESSION_TYPE_FILTER_OPTIONS,
+  consumerModeLabel,
+  consumerSessionModeFor,
 } from '../../core/constants/consumer-form-options.constants';
 import { PublicCommunicationConfigService } from '../../core/services/public-communication-config.service';
 import { NotificationService } from '../../core/services/notification.service';
@@ -490,8 +492,7 @@ export class PsychologistsComponent implements OnInit {
     return {
       ...this.bookingQueryParams(provider, service),
       mode: mode === 'book' ? 'voice' : mode,
-      sessionMode:
-        mode === 'video' ? 'online_video' : mode === 'chat' ? 'live_chat' : 'online_audio',
+      sessionMode: consumerSessionModeFor(mode),
       source: `care-team-${mode}`,
     };
   }
@@ -521,9 +522,9 @@ export class PsychologistsComponent implements OnInit {
 
   providerModeLabels(provider: HopeHubProvider): string[] {
     const modes: string[] = [];
-    if (provider.acceptsChat !== false) modes.push('Chat');
-    if (provider.acceptsVoiceCall !== false) modes.push('Voice');
-    if (provider.acceptsVideoCall !== false) modes.push('Video');
+    if (provider.acceptsChat !== false) modes.push(consumerModeLabel('chat'));
+    if (provider.acceptsVoiceCall !== false) modes.push(consumerModeLabel('voice'));
+    if (provider.acceptsVideoCall !== false) modes.push(consumerModeLabel('video'));
     return modes.length ? modes : ['Slot booking'];
   }
 

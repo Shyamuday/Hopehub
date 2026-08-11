@@ -21,6 +21,7 @@ import { LiveConnectActionService } from '../../core/services/live-connect-actio
 import { ConsumerFlowPreferencesService } from '../../core/services/consumer-flow-preferences.service';
 import { CONSUMER_UX_COPY } from '../../core/constants/consumer-ux-copy.constants';
 import { CONSUMER_ROUTES } from '../../core/constants/consumer-routes.constants';
+import { consumerSessionModeFor } from '../../core/constants/consumer-form-options.constants';
 import { CONSUMER_STORAGE_KEYS } from '../../core/constants/storage-keys.constants';
 import {
   ConnectFallbackPanelComponent,
@@ -1492,12 +1493,7 @@ export class DirectAssessmentComponent implements OnInit {
     const assessment = this.assessment();
     const result = this.result();
     const selectedMode = mode === 'book' ? 'voice' : mode;
-    const sessionMode =
-      selectedMode === 'video'
-        ? 'online_video'
-        : selectedMode === 'chat'
-          ? 'live_chat'
-          : 'online_audio';
+    const sessionMode = consumerSessionModeFor(selectedMode);
     return {
       serviceName: `${assessment?.title || 'Assessment'} support`,
       concernCategory: assessment?.category || assessment?.type || '',

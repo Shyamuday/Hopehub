@@ -4,6 +4,10 @@ import {
   CONSUMER_CONCERN_FLOWS,
   ConsumerConcernFlow,
 } from '../../../core/constants/consumer-concerns.constants';
+import {
+  consumerModeSummaryLabel,
+  consumerSessionModeFor,
+} from '../../../core/constants/consumer-form-options.constants';
 import { CONSUMER_ROUTES } from '../../../core/constants/consumer-routes.constants';
 import { CONSUMER_STORAGE_KEYS } from '../../../core/constants/storage-keys.constants';
 import {
@@ -33,10 +37,7 @@ export class ContinueSupportBannerComponent {
   concernLabel = computed(() => this.preference().concern || 'support');
   mode = computed<ConsumerFlowPreferenceMode>(() => this.preference().mode || 'voice');
   modeLabel = computed(() => {
-    const mode = this.mode();
-    if (mode === 'chat') return 'chat';
-    if (mode === 'video') return 'video call';
-    return 'voice call';
+    return consumerModeSummaryLabel(this.mode());
   });
   flow = computed(() => this.findFlow(this.concernLabel()));
   title = computed(() => `Continue ${this.concernLabel()} by ${this.modeLabel()}`);
@@ -89,8 +90,7 @@ export class ContinueSupportBannerComponent {
       concern,
       concernCategory: concern,
       mode,
-      sessionMode:
-        mode === 'video' ? 'online_video' : mode === 'chat' ? 'live_chat' : 'online_audio',
+      sessionMode: consumerSessionModeFor(mode),
       serviceName: this.preference().serviceName || `${concern} support`,
       assessmentId: this.preference().assessmentId || this.flow()?.assessmentId || '',
       source: 'continue-last-choice',

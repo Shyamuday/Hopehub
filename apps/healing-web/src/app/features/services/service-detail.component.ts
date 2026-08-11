@@ -13,6 +13,7 @@ import {
   ConsumerConcernFlow,
   ConsumerConcernKey,
 } from '../../core/constants/consumer-concerns.constants';
+import { consumerSessionModeFor } from '../../core/constants/consumer-form-options.constants';
 import { Service, ServiceCategory } from '../../core/models';
 import {
   ConnectOptionMode,
@@ -160,12 +161,7 @@ export class ServiceDetailComponent implements OnInit {
       price: this.currentSessionPrice(),
       duration: this.currentSessionDuration(),
       mode: selectedMode,
-      sessionMode:
-        selectedMode === 'video'
-          ? 'online_video'
-          : selectedMode === 'chat'
-            ? 'live_chat'
-            : 'online_audio',
+      sessionMode: consumerSessionModeFor(selectedMode),
       source: `service-detail-${selectedMode}`,
     };
   }

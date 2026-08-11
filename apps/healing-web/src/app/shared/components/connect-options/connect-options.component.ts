@@ -1,4 +1,5 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { CONSUMER_CONNECT_MODE_META } from '../../../core/constants/consumer-form-options.constants';
 
 export type ConnectOptionMode = 'chat' | 'voice' | 'video' | 'book';
 
@@ -26,10 +27,10 @@ export class ConnectOptionsComponent {
     icon: string;
     description: string;
   }> = [
-    { mode: 'chat', label: 'Chat', icon: '💬', description: 'Private text support' },
-    { mode: 'voice', label: 'Voice', icon: '🎧', description: 'Speak without camera' },
-    { mode: 'video', label: 'Video', icon: '🎥', description: 'Face-to-face support' },
-    { mode: 'book', label: 'Book slot', icon: '📅', description: 'Choose a time' },
+    { mode: 'chat', ...CONSUMER_CONNECT_MODE_META.chat },
+    { mode: 'voice', ...CONSUMER_CONNECT_MODE_META.voice },
+    { mode: 'video', ...CONSUMER_CONNECT_MODE_META.video },
+    { mode: 'book', ...CONSUMER_CONNECT_MODE_META.book },
   ];
 
   isVisible(mode: ConnectOptionMode): boolean {

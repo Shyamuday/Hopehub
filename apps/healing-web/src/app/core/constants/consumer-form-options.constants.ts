@@ -7,6 +7,7 @@ export type ConsumerFormOption = {
 };
 
 export type ConsumerLiveConnectMode = 'chat' | 'voice' | 'video';
+export type ConsumerConnectMode = ConsumerLiveConnectMode | 'book';
 
 export type ConsumerLiveConnectModeOption = {
   value: ConsumerLiveConnectMode;
@@ -74,6 +75,62 @@ export const CONSUMER_LIVE_CONNECT_MODE_OPTIONS: ConsumerLiveConnectModeOption[]
   { value: 'video', label: 'Video', icon: '🎥', copy: 'Face-to-face support' },
 ];
 
+export const CONSUMER_CONNECT_MODE_META: Record<
+  ConsumerConnectMode,
+  { label: string; summaryLabel: string; icon: string; description: string }
+> = {
+  chat: {
+    label: 'Chat',
+    summaryLabel: 'private chat',
+    icon: '💬',
+    description: 'Private text support',
+  },
+  voice: {
+    label: 'Voice',
+    summaryLabel: 'voice call',
+    icon: '🎧',
+    description: 'Speak without camera',
+  },
+  video: {
+    label: 'Video',
+    summaryLabel: 'video call',
+    icon: '🎥',
+    description: 'Face-to-face support',
+  },
+  book: {
+    label: 'Book slot',
+    summaryLabel: 'booked session',
+    icon: '📅',
+    description: 'Choose a time',
+  },
+};
+
+export function consumerLiveMode(mode: ConsumerConnectMode): ConsumerLiveConnectMode {
+  return mode === 'book' ? 'voice' : mode;
+}
+
+export function consumerSessionModeFor(mode: ConsumerConnectMode): string {
+  const liveMode = consumerLiveMode(mode);
+  if (liveMode === 'video') return 'online_video';
+  if (liveMode === 'chat') return 'live_chat';
+  return 'online_audio';
+}
+
+export function consumerModeLabel(mode: ConsumerConnectMode): string {
+  return CONSUMER_CONNECT_MODE_META[mode].label;
+}
+
+export function consumerModeSummaryLabel(mode: ConsumerConnectMode): string {
+  return CONSUMER_CONNECT_MODE_META[consumerLiveMode(mode)].summaryLabel;
+}
+
+export function consumerModeMatchesText(mode: ConsumerLiveConnectMode, text: string): boolean {
+  const normalized = text.toLowerCase();
+  if (mode === 'chat') return /\b(chat|message|text)\b/.test(normalized);
+  if (mode === 'video') return /\bvideo\b/.test(normalized);
+  return /\b(voice|audio|call)\b/.test(normalized);
+}
+
 export const CONSUMER_LANGUAGE_OPTIONS: ConsumerFormOption[] = [
   { value: '', label: 'No preference' },
   { value: 'English', label: 'English' },
@@ -118,8 +175,8 @@ export const CONSUMER_SESSION_TYPE_FILTER_OPTIONS: ConsumerFormOption[] = [
 
 export const CONSUMER_AGE_GROUP_FILTER_OPTIONS: ConsumerFormOption[] = [
   { value: '', label: 'Any age group' },
-  { value: 'Adults', label: 'Adults' },
-  { value: 'Teens', label: 'Teens' },
-  { value: 'Children', label: 'Children' },
-  { value: 'Older adults', label: 'Older adults' },
+  { value: 'Children', label: 'Gen Alpha / kids' },
+  { value: 'Teens', label: 'Gen Z / teens' },
+  { value: 'Adults', label: 'Millennials & adults' },
+  { value: 'Older adults', label: 'Older adults / seniors' },
 ];

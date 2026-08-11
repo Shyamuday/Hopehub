@@ -4,6 +4,11 @@ import {
   CONSUMER_CONCERN_FLOWS,
   ConsumerConcernFlow,
 } from '../../../core/constants/consumer-concerns.constants';
+import {
+  CONSUMER_CONNECT_MODE_META,
+  consumerModeSummaryLabel,
+  consumerSessionModeFor,
+} from '../../../core/constants/consumer-form-options.constants';
 import { CONSUMER_ROUTES } from '../../../core/constants/consumer-routes.constants';
 import {
   ConsumerFlowPreferenceMode,
@@ -30,9 +35,9 @@ export class GuidedSupportEntryComponent {
 
   readonly ROUTES = CONSUMER_ROUTES;
   readonly modes: Array<{ value: ConsumerFlowPreferenceMode; label: string; hint: string }> = [
-    { value: 'chat', label: 'Chat', hint: 'Text privately' },
-    { value: 'voice', label: 'Voice', hint: 'Talk now' },
-    { value: 'video', label: 'Video', hint: 'Face-to-face' },
+    { value: 'chat', label: CONSUMER_CONNECT_MODE_META.chat.label, hint: 'Text privately' },
+    { value: 'voice', label: CONSUMER_CONNECT_MODE_META.voice.label, hint: 'Talk now' },
+    { value: 'video', label: CONSUMER_CONNECT_MODE_META.video.label, hint: 'Face-to-face' },
   ];
   readonly concerns = [
     CONSUMER_CONCERN_FLOWS.anxiety,
@@ -54,7 +59,7 @@ export class GuidedSupportEntryComponent {
   selectedSummary = computed(() => {
     const concern = this.contextConcern || this.selectedConcern().label;
     const mode = this.selectedMode();
-    return `${concern} • ${mode === 'chat' ? 'private chat' : mode === 'video' ? 'video call' : 'voice call'}`;
+    return `${concern} • ${consumerModeSummaryLabel(mode)}`;
   });
 
   selectConcern(flow: ConsumerConcernFlow): void {
@@ -112,8 +117,7 @@ export class GuidedSupportEntryComponent {
       concern,
       concernCategory: concern,
       mode,
-      sessionMode:
-        mode === 'video' ? 'online_video' : mode === 'chat' ? 'live_chat' : 'online_audio',
+      sessionMode: consumerSessionModeFor(mode),
       serviceName: this.contextServiceName || `${concern} support`,
       assessmentId: this.contextAssessmentId || flow.assessmentId,
       source: 'guided-support-entry',

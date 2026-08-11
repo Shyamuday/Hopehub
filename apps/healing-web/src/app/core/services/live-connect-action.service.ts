@@ -1,6 +1,11 @@
 import { Injectable, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
+import {
+  consumerModeLabel,
+  consumerModeMatchesText,
+  consumerSessionModeFor,
+} from '../constants/consumer-form-options.constants';
 import { CONSUMER_ROUTES } from '../constants/consumer-routes.constants';
 import { CONSUMER_STORAGE_KEYS } from '../constants/storage-keys.constants';
 import { supportPathForProvider, supportPathMeta } from '../constants/support-paths.constants';
@@ -91,7 +96,7 @@ export class LiveConnectActionService {
           sessionMode: this.sessionMode(mode),
           preferredLanguage: provider.languages?.[0] || '',
           listenerSupportConsent: this.needsListenerSupportConsent(provider),
-          message: `${this.modeLabel(mode)} Live Connect request`,
+          message: `${consumerModeLabel(mode)} Live Connect request`,
           entryPage: typeof window === 'undefined' ? undefined : window.location.href,
         }),
       );
@@ -101,7 +106,7 @@ export class LiveConnectActionService {
         await this.paymentService.payConsultation(response.consultation);
       }
 
-      this.notificationService.success(`${this.modeLabel(mode)} session confirmed.`);
+      this.notificationService.success(`${consumerModeLabel(mode)} session confirmed.`);
       await this.router.navigate(['/live-session', response.consultation?.id]);
     } catch (error) {
       const message = this.readErrorMessage(error);
@@ -198,9 +203,7 @@ export class LiveConnectActionService {
           .filter(Boolean)
           .join(' ')
           .toLowerCase();
-        if (mode === 'chat') return /\b(chat|message|text)\b/.test(text);
-        if (mode === 'video') return /\bvideo\b/.test(text);
-        return /\b(voice|audio|call)\b/.test(text);
+        return consumerModeMatchesText(mode, text);
       }) ||
       services[0] ||
       null
@@ -208,16 +211,11 @@ export class LiveConnectActionService {
   }
 
   private sessionMode(mode: Exclude<LiveConnectActionMode, 'book'>): string {
-    if (mode === 'video') return 'online_video';
-    if (mode === 'chat') return 'live_chat';
-    return 'online_audio';
+    return consumerSessionModeFor(mode);
   }
 
   private modeLabel(mode: LiveConnectActionMode): string {
-    if (mode === 'video') return 'Video';
-    if (mode === 'voice') return 'Voice';
-    if (mode === 'chat') return 'Chat';
-    return 'Booking';
+    return consumerModeLabel(mode);
   }
 
   private needsListenerSupportConsent(provider: HopeHubProvider): boolean {

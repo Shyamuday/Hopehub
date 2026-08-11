@@ -15,6 +15,13 @@ import { IMAGE_ASSETS } from '../../../../core/constants/image-assets.constants'
 import { CONSUMER_UX_COPY } from '../../../../core/constants/consumer-ux-copy.constants';
 import { CONSUMER_ROUTES } from '../../../../core/constants/consumer-routes.constants';
 import {
+  CONSUMER_CONNECT_MODE_META,
+  CONSUMER_LIVE_CONNECT_MODE_OPTIONS,
+  consumerModeMatchesText,
+  consumerSessionModeFor,
+  type ConsumerLiveConnectMode,
+} from '../../../../core/constants/consumer-form-options.constants';
+import {
   ConsumerSupportPath,
   supportPathForProvider,
   supportPathMeta,
@@ -27,7 +34,7 @@ import {
   SupportPathSelectorComponent,
 } from '../../../../shared/components';
 
-type LiveConnectMode = 'chat' | 'voice' | 'video';
+type LiveConnectMode = ConsumerLiveConnectMode;
 type LiveConnectRoleGroup = '' | ConsumerSupportPath;
 type LiveConnectAlternativeMode = {
   mode: LiveConnectMode;
@@ -75,16 +82,7 @@ export class LiveConnectComponent implements OnInit {
   readonly paymentFlowConsultation = signal<any | null>(null);
   readonly liveConnectImage = IMAGE_ASSETS.HEALING_HUB.PHOTOS.PHONE_SESSION;
 
-  readonly modes: Array<{
-    value: LiveConnectMode;
-    label: string;
-    icon: string;
-    copy: string;
-  }> = [
-    { value: 'chat', label: 'Chat', icon: '💬', copy: 'Private messages first' },
-    { value: 'voice', label: 'Voice', icon: '🎧', copy: 'Speak without camera' },
-    { value: 'video', label: 'Video', icon: '🎥', copy: 'Face-to-face support' },
-  ];
+  readonly modes = CONSUMER_LIVE_CONNECT_MODE_OPTIONS;
 
   ngOnInit(): void {
     this.authService.user$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((user) => {
@@ -143,10 +141,7 @@ export class LiveConnectComponent implements OnInit {
   }
 
   sessionMode(): string {
-    const mode = this.mode();
-    if (mode === 'video') return 'online_video';
-    if (mode === 'voice') return 'online_audio';
-    return 'live_chat';
+    return consumerSessionModeFor(this.mode());
   }
 
   buttonLabel(_provider: HopeHubProvider): string {
@@ -187,17 +182,22 @@ export class LiveConnectComponent implements OnInit {
     enabled: boolean;
   }> {
     return [
-      { mode: 'chat', label: 'Chat', icon: '💬', enabled: Boolean(provider.acceptsChat) },
+      {
+        mode: 'chat',
+        label: CONSUMER_CONNECT_MODE_META.chat.label,
+        icon: CONSUMER_CONNECT_MODE_META.chat.icon,
+        enabled: Boolean(provider.acceptsChat),
+      },
       {
         mode: 'voice',
-        label: 'Voice',
-        icon: '🎧',
+        label: CONSUMER_CONNECT_MODE_META.voice.label,
+        icon: CONSUMER_CONNECT_MODE_META.voice.icon,
         enabled: Boolean(provider.acceptsVoiceCall),
       },
       {
         mode: 'video',
-        label: 'Video',
-        icon: '🎥',
+        label: CONSUMER_CONNECT_MODE_META.video.label,
+        icon: CONSUMER_CONNECT_MODE_META.video.icon,
         enabled: Boolean(provider.acceptsVideoCall),
       },
     ];
@@ -488,9 +488,7 @@ export class LiveConnectComponent implements OnInit {
     const mode = this.mode();
     const matched = services.find((service) => {
       const text = `${service.title || ''} ${service.description || ''}`.toLowerCase();
-      if (mode === 'chat') return /\b(chat|message|text)\b/.test(text);
-      if (mode === 'video') return /\b(video)\b/.test(text);
-      return /\b(voice|audio|call)\b/.test(text);
+      return consumerModeMatchesText(mode, text);
     });
     return matched || services[0] || null;
   }
