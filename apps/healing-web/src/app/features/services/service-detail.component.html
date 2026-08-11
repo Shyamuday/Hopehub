@@ -58,8 +58,8 @@
           @if (liveFallback(); as fallback) {
             <app-connect-fallback-panel
               class="mb-6 block"
-              [title]="'No matching expert is live right now'"
-              [message]="'You can still book the nearest slot, see similar care-team members, or try another connection mode.'"
+              [title]="UX.messages.noLiveExpertTitle"
+              [message]="UX.messages.noLiveExpertServiceFallback"
               [bookQueryParams]="fallback.queryParams"
               [careTeamQueryParams]="flowForService(service()!).careTeamQueryParams"
               (tryMode)="connect($event)"

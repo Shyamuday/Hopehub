@@ -12,6 +12,10 @@ import {
   PaymentService,
 } from '../../../../core/services';
 import { IMAGE_ASSETS } from '../../../../core/constants/image-assets.constants';
+import {
+  CONSUMER_AVAILABILITY_COPY,
+  consumerProviderLiveLabel,
+} from '../../../../core/constants/consumer-availability.constants';
 import { CONSUMER_UX_COPY } from '../../../../core/constants/consumer-ux-copy.constants';
 import { CONSUMER_ROUTES } from '../../../../core/constants/consumer-routes.constants';
 import {
@@ -157,17 +161,12 @@ export class LiveConnectComponent implements OnInit {
   }
 
   providerLiveLabel(provider: HopeHubProvider): string {
-    const wentLiveAt = provider.wentLiveAt ? new Date(provider.wentLiveAt).getTime() : 0;
-    if (!wentLiveAt || Number.isNaN(wentLiveAt)) return 'Online now';
-    const minutes = Math.max(0, Math.floor((Date.now() - wentLiveAt) / 60_000));
-    if (minutes < 1) return 'Online just now';
-    if (minutes < 60) return `Online ${minutes} min`;
-    return 'Online today';
+    return consumerProviderLiveLabel(provider);
   }
 
   providerLanguagesLabel(provider: HopeHubProvider): string {
     const languages = provider.languages?.filter(Boolean).slice(0, 3) || [];
-    return languages.length ? languages.join(', ') : 'Language flexible';
+    return languages.length ? languages.join(', ') : CONSUMER_AVAILABILITY_COPY.languageFlexible;
   }
 
   providerFocusLabel(provider: HopeHubProvider): string {
@@ -204,7 +203,7 @@ export class LiveConnectComponent implements OnInit {
   }
 
   groupStatusLabel(group: HopeHubLiveGroup): string {
-    if (group.status === 'LIVE') return 'Live now';
+    if (group.status === 'LIVE') return CONSUMER_AVAILABILITY_COPY.liveNow;
     if (group.status === 'SCHEDULED') return 'Scheduled';
     return group.status;
   }
@@ -291,7 +290,7 @@ export class LiveConnectComponent implements OnInit {
           this.newGroupDescription.set('');
           this.creatingGroup.set(false);
           this.groupMessage.set('Support chat is live. Opening it now.');
-          this.notificationService.success('Support chat created.');
+          this.notificationService.success(CONSUMER_UX_COPY.messages.supportChatCreated);
           void this.router.navigate(['/live-groups', res.group.slug || res.group.id]);
         },
         error: (error) => {
@@ -322,7 +321,7 @@ export class LiveConnectComponent implements OnInit {
   async start(provider: HopeHubProvider): Promise<void> {
     if (this.startingProviderId()) return;
     if (!this.currentUser()) {
-      this.notificationService.info('Sign up or log in to start a live session.');
+      this.notificationService.info(CONSUMER_UX_COPY.messages.authRequiredLive);
       this.authModalService.openRegister();
       return;
     }
@@ -364,7 +363,7 @@ export class LiveConnectComponent implements OnInit {
       this.message.set(
         `${this.modeLabel()} session is ready with ${response.provider?.name || provider.name}.`,
       );
-      this.notificationService.success('Live session confirmed. Opening your session room.');
+      this.notificationService.success(CONSUMER_UX_COPY.messages.liveSessionConfirmed);
       void this.openLiveSession(response.consultation?.id);
     } catch (error) {
       const message = this.readErrorMessage(error);
@@ -476,7 +475,7 @@ export class LiveConnectComponent implements OnInit {
           this.alternativeModes.set([]);
           this.alternativeModesLoading.set(false);
           this.loading.set(false);
-          this.message.set('Live Connect is loading slowly. Please try again in a moment.');
+          this.message.set(CONSUMER_UX_COPY.messages.liveConnectSlow);
         },
       });
   }
@@ -570,6 +569,6 @@ export class LiveConnectComponent implements OnInit {
       if (inner?.message) return inner.message;
     }
     if (error instanceof Error && error.message) return error.message;
-    return 'Could not start Live Connect right now.';
+    return CONSUMER_UX_COPY.messages.couldNotStartLive;
   }
 }

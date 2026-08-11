@@ -227,7 +227,7 @@ export class MultiAssessmentComponent implements OnInit {
     const code = this.couponCode().trim();
     if (!assessment || !code) return;
     if (!this.authService.getToken()) {
-      this.notificationService.info('Please sign in before applying a coupon.');
+      this.notificationService.info(CONSUMER_UX_COPY.messages.signInBeforeCoupon);
       this.authModalService.openLogin();
       return;
     }
@@ -242,18 +242,20 @@ export class MultiAssessmentComponent implements OnInit {
       this.couponQuote.set(null);
       this.notificationService.success(
         response.alreadyRedeemed
-          ? 'This test is already unlocked.'
-          : 'Coupon applied. Test unlocked.',
+          ? CONSUMER_UX_COPY.messages.testAlreadyUnlocked
+          : CONSUMER_UX_COPY.messages.testCouponUnlocked,
       );
     } catch (error: any) {
       if (error?.status === 402 && error?.error?.quote) {
         this.couponQuote.set(error.error.quote);
         this.couponCode.set(error.error.quote.couponCode || code);
-        this.notificationService.success('Discount coupon applied.');
+        this.notificationService.success(CONSUMER_UX_COPY.messages.couponDiscountApplied);
         return;
       }
       this.notificationService.error(
-        error?.error?.message || error?.message || 'Could not apply coupon.',
+        error?.error?.message ||
+          error?.message ||
+          CONSUMER_UX_COPY.messages.couponCouldNotApplyShort,
       );
     } finally {
       this.redeemingCoupon.set(false);
@@ -264,7 +266,7 @@ export class MultiAssessmentComponent implements OnInit {
     const assessment = this.selectedAssessment();
     if (!assessment) return;
     if (!this.authService.getToken()) {
-      this.notificationService.info('Please sign in before payment.');
+      this.notificationService.info(CONSUMER_UX_COPY.messages.signInBeforePayment);
       this.authModalService.openLogin();
       return;
     }
@@ -279,9 +281,11 @@ export class MultiAssessmentComponent implements OnInit {
       if (access) this.selectedAccess.set(access);
       await this.refreshSelectedAccess();
       this.couponQuote.set(null);
-      this.notificationService.success('Payment verified. Test unlocked.');
+      this.notificationService.success(CONSUMER_UX_COPY.messages.testPaymentUnlocked);
     } catch (error: any) {
-      this.notificationService.error(error?.message || 'Payment could not be completed.');
+      this.notificationService.error(
+        error?.message || CONSUMER_UX_COPY.messages.paymentCouldNotComplete,
+      );
     } finally {
       this.payingAssessment.set(false);
     }

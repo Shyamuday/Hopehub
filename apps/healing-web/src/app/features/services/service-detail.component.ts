@@ -143,7 +143,7 @@ export class ServiceDetailComponent implements OnInit {
         // Soft fallback below keeps the user moving.
       }
     }
-    this.notificationService.info('No matching expert is live right now. Choose a slot instead.');
+    this.notificationService.info(CONSUMER_UX_COPY.messages.noLiveExpertBook);
     this.liveFallback.set({ mode, queryParams });
   }
 

@@ -34,4 +34,39 @@ export const CONSUMER_UX_COPY = {
     nextCopy:
       'You can start gently. Talk now if someone is live, book structured support, or use self-help resources at your pace.',
   },
+  messages: {
+    authRequiredLive: 'Sign up or log in to start a live session.',
+    authRequiredPayment: 'Sign up or log in to continue to secure payment.',
+    authRequiredCoupon: 'Sign up or log in to validate this coupon.',
+    signInBeforeCoupon: 'Please sign in before applying a coupon.',
+    signInBeforePayment: 'Please sign in before payment.',
+    providerNotLiveBook:
+      'This provider is not live right now. Choose a slot and we will route your request.',
+    modeUnavailableBook: (mode: string) =>
+      `${mode} is not available for this provider. Choose a slot instead.`,
+    noLiveExpertBook: 'No matching expert is live right now. Choose a slot instead.',
+    noLiveExpertTitle: 'No matching expert is live right now',
+    noLiveExpertServiceFallback:
+      'You can still book the nearest slot, see similar care-team members, or try another connection mode.',
+    noLiveExpertAssessmentFallback:
+      'Your result is saved here. You can book the nearest slot, see matching providers, or try another way to connect.',
+    liveSessionConfirmed: 'Live session confirmed. Opening your session room.',
+    quickTalkConfirmed: 'Quick Talk confirmed. Please open your dashboard to join.',
+    supportChatCreated: 'Support chat created.',
+    liveConnectSlow: 'Live Connect is loading slowly. Please try again in a moment.',
+    couldNotStartLive: 'Could not start this live session right now.',
+    couponInvalid: 'Enter a valid coupon code.',
+    couponSaved: 'Coupon saved for checkout.',
+    couponApplied: 'Coupon applied.',
+    couponDiscountApplied: 'Discount coupon applied.',
+    couponNoDiscount: 'No discount applies to this checkout.',
+    couponNoDiscountForCheckout: 'No coupon discount applies to this checkout.',
+    couponCouldNotApply: 'Coupon could not be applied.',
+    couponCouldNotApplyShort: 'Could not apply coupon.',
+    testAlreadyUnlocked: 'This test is already unlocked.',
+    testCouponUnlocked: 'Coupon applied. Test unlocked.',
+    testPaymentUnlocked: 'Payment verified. Test unlocked.',
+    paymentCouldNotComplete: 'Payment could not be completed.',
+    unexpectedError: 'An unexpected error occurred. Please try again.',
+  },
 } as const;

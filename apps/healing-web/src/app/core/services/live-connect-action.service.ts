@@ -7,6 +7,7 @@ import {
   consumerSessionModeFor,
 } from '../constants/consumer-form-options.constants';
 import { CONSUMER_ROUTES } from '../constants/consumer-routes.constants';
+import { CONSUMER_UX_COPY } from '../constants/consumer-ux-copy.constants';
 import { CONSUMER_STORAGE_KEYS } from '../constants/storage-keys.constants';
 import { supportPathForProvider, supportPathMeta } from '../constants/support-paths.constants';
 import { AuthModalService } from './auth-modal.service';
@@ -63,8 +64,8 @@ export class LiveConnectActionService {
     if (!canStartNow) {
       this.notificationService.info(
         canUseMode
-          ? 'This provider is not live right now. Choose a slot and we will route your request.'
-          : `${this.modeLabel(mode)} is not available for this provider. Choose a slot instead.`,
+          ? CONSUMER_UX_COPY.messages.providerNotLiveBook
+          : CONSUMER_UX_COPY.messages.modeUnavailableBook(this.modeLabel(mode)),
       );
       await this.openBooking(provider, mode, options);
       return;
@@ -77,7 +78,7 @@ export class LiveConnectActionService {
         careTeamServiceId: options.careTeamServiceId,
         fallbackQueryParams: options.fallbackQueryParams,
       });
-      this.notificationService.info('Sign up or log in to start this live session.');
+      this.notificationService.info(CONSUMER_UX_COPY.messages.authRequiredLive);
       this.authModalService.openRegister();
       return;
     }
@@ -246,6 +247,6 @@ export class LiveConnectActionService {
       if (inner?.message) return inner.message;
     }
     if (error instanceof Error && error.message) return error.message;
-    return 'Could not start this live session right now.';
+    return CONSUMER_UX_COPY.messages.couldNotStartLive;
   }
 }

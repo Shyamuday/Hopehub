@@ -696,9 +696,7 @@ export class ContactComponent implements OnInit {
   }
 
   private readErrorMessage(error: any): string {
-    return (
-      error?.error?.message || error?.message || 'An unexpected error occurred. Please try again.'
-    );
+    return error?.error?.message || error?.message || CONSUMER_UX_COPY.messages.unexpectedError;
   }
 
   private async submitBooking(formData: ContactForm, appointment: AppointmentSlot): Promise<void> {
@@ -706,13 +704,13 @@ export class ContactComponent implements OnInit {
     if (!user) {
       this.savePendingBooking(formData, appointment);
       this.waitingForAuthToBook.set(true);
-      this.notificationService.info('Sign up or log in to continue to secure payment.');
+      this.notificationService.info(CONSUMER_UX_COPY.messages.authRequiredPayment);
       this.productAnalytics.track(HOPE_HUB_ANALYTICS_EVENTS.LOGIN_REQUIRED, {
         serviceName: formData.serviceInterest || this.prefilledData().serviceName || '',
         offeringSlug: this.selectedOffering()?.slug || this.prefilledData().offering || '',
       });
       this.authModalService.openRegister();
-      throw new Error('Sign up or log in to continue to secure payment.');
+      throw new Error(CONSUMER_UX_COPY.messages.authRequiredPayment);
     }
 
     const data = this.prefilledData();
@@ -818,7 +816,7 @@ export class ContactComponent implements OnInit {
     if (this.isSubmitting() || this.quickTalkStartingProviderId()) return;
     const user = this.currentUser();
     if (!user) {
-      this.notificationService.info('Sign up or log in to start Quick Talk.');
+      this.notificationService.info(CONSUMER_UX_COPY.messages.authRequiredLive);
       this.authModalService.openRegister();
       return;
     }
@@ -873,7 +871,7 @@ export class ContactComponent implements OnInit {
       this.quickTalkMessage.set(
         `Quick Talk is ready with ${response.provider?.name || 'an available expert'}. Open your dashboard to join when assigned.`,
       );
-      this.notificationService.success('Quick Talk confirmed. Please open your dashboard to join.');
+      this.notificationService.success(CONSUMER_UX_COPY.messages.quickTalkConfirmed);
       void this.loadQuickTalkProviders();
     } catch (error) {
       const message = this.readErrorMessage(error);
@@ -981,7 +979,7 @@ export class ContactComponent implements OnInit {
     if (code.length < 2) {
       this.appliedPromoCode.set('');
       this.checkoutQuote.set(null);
-      this.notificationService.info('Enter a valid coupon code.');
+      this.notificationService.info(CONSUMER_UX_COPY.messages.couponInvalid);
       return;
     }
 
@@ -990,15 +988,15 @@ export class ContactComponent implements OnInit {
       this.appliedPromoCode.set(code);
       this.checkoutQuote.set(null);
       this.checkoutQuoteError.set('');
-      this.notificationService.success('Coupon saved for checkout.');
+      this.notificationService.success(CONSUMER_UX_COPY.messages.couponSaved);
       return;
     }
 
     if (!this.currentUser()) {
       this.appliedPromoCode.set(code);
       this.checkoutQuote.set(null);
-      this.checkoutQuoteError.set('Sign up or log in to validate this coupon.');
-      this.notificationService.info('Sign up or log in to validate this coupon.');
+      this.checkoutQuoteError.set(CONSUMER_UX_COPY.messages.authRequiredCoupon);
+      this.notificationService.info(CONSUMER_UX_COPY.messages.authRequiredCoupon);
       this.authModalService.openRegister();
       return;
     }
@@ -1016,16 +1014,16 @@ export class ContactComponent implements OnInit {
       this.appliedPromoCode.set(code);
       this.checkoutQuote.set(quote);
       if (quote.discountInPaise > 0) {
-        this.notificationService.success('Coupon applied.');
+        this.notificationService.success(CONSUMER_UX_COPY.messages.couponApplied);
       } else {
-        this.checkoutQuoteError.set('No coupon discount applies to this checkout.');
-        this.notificationService.info('No discount applies to this checkout.');
+        this.checkoutQuoteError.set(CONSUMER_UX_COPY.messages.couponNoDiscountForCheckout);
+        this.notificationService.info(CONSUMER_UX_COPY.messages.couponNoDiscount);
       }
     } catch (error) {
       this.appliedPromoCode.set('');
       this.checkoutQuote.set(null);
       const message = this.readErrorMessage(error);
-      this.checkoutQuoteError.set(message || 'Coupon could not be applied.');
+      this.checkoutQuoteError.set(message || CONSUMER_UX_COPY.messages.couponCouldNotApply);
       this.notificationService.error(this.checkoutQuoteError());
     } finally {
       this.checkoutQuoteLoading.set(false);

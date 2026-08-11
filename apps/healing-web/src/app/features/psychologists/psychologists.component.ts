@@ -23,6 +23,11 @@ import {
   ConsumerConcernKey,
 } from '../../core/constants/consumer-concerns.constants';
 import {
+  consumerProviderAvailabilityClass,
+  consumerProviderAvailabilityLabel,
+} from '../../core/constants/consumer-availability.constants';
+import { consumerProviderRoleBadgeClass } from '../../core/constants/consumer-provider-presentation.constants';
+import {
   CONSUMER_AGE_GROUP_FILTER_OPTIONS,
   CONSUMER_CARE_TEAM_CONCERN_FILTER_OPTIONS,
   CONSUMER_LANGUAGE_FILTER_OPTIONS,
@@ -379,38 +384,7 @@ export class PsychologistsComponent implements OnInit {
   }
 
   providerRoleBadgeClass(provider: HopeHubProvider): string {
-    switch (provider.supportTierTone) {
-      case 'professional':
-        return 'bg-emerald-50 text-emerald-700 ring-emerald-200';
-      case 'student':
-        return 'bg-sky-50 text-sky-700 ring-sky-200';
-      case 'volunteer':
-        return 'bg-purple-50 text-purple-700 ring-purple-200';
-      case 'coach':
-      case 'mentor':
-        return 'bg-amber-50 text-amber-800 ring-amber-200';
-      case 'wellness':
-        return 'bg-teal-50 text-teal-700 ring-teal-200';
-    }
-    switch (provider.supportRole) {
-      case 'MENTAL_WELLNESS_PROFESSIONAL':
-      case 'QUALIFIED_COUNSELLOR':
-      case 'PSYCHOLOGIST':
-        return 'bg-emerald-50 text-emerald-700 ring-emerald-200';
-      case 'PSYCHOLOGY_STUDENT_VOLUNTEER':
-      case 'STUDENT_VOLUNTEER':
-        return 'bg-sky-50 text-sky-700 ring-sky-200';
-      case 'PEER_SUPPORT_VOLUNTEER':
-        return 'bg-purple-50 text-purple-700 ring-purple-200';
-      case 'NLP_COACH':
-      case 'LIFE_COACH':
-      case 'CAREER_STUDY_MENTOR':
-        return 'bg-amber-50 text-amber-800 ring-amber-200';
-      case 'MEDITATION_BREATHWORK_GUIDE':
-        return 'bg-teal-50 text-teal-700 ring-teal-200';
-      default:
-        return 'bg-amber-50 text-amber-800 ring-amber-200';
-    }
+    return consumerProviderRoleBadgeClass(provider);
   }
 
   providerTierLabel(provider: HopeHubProvider): string {
@@ -513,11 +487,7 @@ export class PsychologistsComponent implements OnInit {
   }
 
   availabilityLabel(provider: HopeHubProvider): string {
-    if (provider.quickTalkAvailable) return 'Live now';
-    if (provider.liveStatus === 'ONLINE') return 'Usually replies soon';
-    const sessions = (provider.sessionTypes || []).join(' ').toLowerCase();
-    if (/evening|night|after work/.test(sessions)) return 'Usually available evenings';
-    return 'Next slot available';
+    return consumerProviderAvailabilityLabel(provider);
   }
 
   providerModeLabels(provider: HopeHubProvider): string[] {
@@ -538,8 +508,6 @@ export class PsychologistsComponent implements OnInit {
   }
 
   availabilityBadgeClass(provider: HopeHubProvider): string {
-    if (provider.quickTalkAvailable) return 'hope-status hope-status--live';
-    if (provider.liveStatus === 'ONLINE') return 'hope-status hope-status--online';
-    return 'hope-status hope-status--wait';
+    return consumerProviderAvailabilityClass(provider);
   }
 }

@@ -11,6 +11,7 @@ import { APP_CONSTANTS } from '../../core';
 import { CONSUMER_UX_COPY } from '../../core/constants/consumer-ux-copy.constants';
 import { CONSUMER_ROUTES } from '../../core/constants/consumer-routes.constants';
 import { CONSUMER_CONCERN_FLOWS } from '../../core/constants/consumer-concerns.constants';
+import { consumerProviderRoleBadgeClass } from '../../core/constants/consumer-provider-presentation.constants';
 import { IMAGE_ASSETS } from '../../core/constants/image-assets.constants';
 import { environment } from '../../../environments/environment';
 import { BookingService, ConsumerFlowsService, HopeHubProvider } from '../../core/services';
@@ -122,21 +123,7 @@ export class HomeComponent implements OnInit {
   }
 
   providerRoleBadgeClass(provider: HopeHubProvider): string {
-    switch (provider.supportTierTone) {
-      case 'professional':
-        return 'bg-emerald-50 text-emerald-700 ring-emerald-200';
-      case 'student':
-        return 'bg-sky-50 text-sky-700 ring-sky-200';
-      case 'volunteer':
-        return 'bg-purple-50 text-purple-700 ring-purple-200';
-      case 'coach':
-      case 'mentor':
-        return 'bg-amber-50 text-amber-800 ring-amber-200';
-      case 'wellness':
-        return 'bg-teal-50 text-teal-700 ring-teal-200';
-      default:
-        return 'bg-gray-50 text-gray-700 ring-gray-200';
-    }
+    return consumerProviderRoleBadgeClass(provider, 'neutral');
   }
 
   private loadPsychologists(): void {

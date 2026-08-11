@@ -19,6 +19,7 @@ import { NotificationService } from '../../core/services/notification.service';
 import { PaymentService } from '../../core/services/payment.service';
 import { LiveConnectActionService } from '../../core/services/live-connect-action.service';
 import { ConsumerFlowPreferencesService } from '../../core/services/consumer-flow-preferences.service';
+import { consumerProviderAvailabilityLabel } from '../../core/constants/consumer-availability.constants';
 import { CONSUMER_UX_COPY } from '../../core/constants/consumer-ux-copy.constants';
 import { CONSUMER_ROUTES } from '../../core/constants/consumer-routes.constants';
 import { consumerSessionModeFor } from '../../core/constants/consumer-form-options.constants';
@@ -436,8 +437,8 @@ import {
                 @if (liveFallback(); as fallback) {
                   <app-connect-fallback-panel
                     class="mt-4 block"
-                    [title]="'No matching expert is live right now'"
-                    [message]="'Your result is saved here. You can book the nearest slot, see matching providers, or try another way to connect.'"
+                    [title]="UX.messages.noLiveExpertTitle"
+                    [message]="UX.messages.noLiveExpertAssessmentFallback"
                     [bookQueryParams]="fallback.queryParams"
                     [careTeamQueryParams]="assessmentCareTeamQueryParams()"
                     (tryMode)="connectFromResult($event)"
@@ -1082,7 +1083,7 @@ export class DirectAssessmentComponent implements OnInit {
     const code = this.couponCode().trim();
     if (!assessment || !code) return;
     if (!this.authService.getToken()) {
-      this.notificationService.info('Please sign in before applying a coupon.');
+      this.notificationService.info(CONSUMER_UX_COPY.messages.signInBeforeCoupon);
       this.authModalService.openLogin();
       return;
     }
@@ -1097,18 +1098,20 @@ export class DirectAssessmentComponent implements OnInit {
       this.couponQuote.set(null);
       this.notificationService.success(
         response.alreadyRedeemed
-          ? 'This test is already unlocked.'
-          : 'Coupon applied. Test unlocked.',
+          ? CONSUMER_UX_COPY.messages.testAlreadyUnlocked
+          : CONSUMER_UX_COPY.messages.testCouponUnlocked,
       );
     } catch (error: any) {
       if (error?.status === 402 && error?.error?.quote) {
         this.couponQuote.set(error.error.quote);
         this.couponCode.set(error.error.quote.couponCode || code);
-        this.notificationService.success('Discount coupon applied.');
+        this.notificationService.success(CONSUMER_UX_COPY.messages.couponDiscountApplied);
         return;
       }
       this.notificationService.error(
-        error?.error?.message || error?.message || 'Could not apply coupon.',
+        error?.error?.message ||
+          error?.message ||
+          CONSUMER_UX_COPY.messages.couponCouldNotApplyShort,
       );
     } finally {
       this.redeemingCoupon.set(false);
@@ -1119,7 +1122,7 @@ export class DirectAssessmentComponent implements OnInit {
     const assessment = this.assessment();
     if (!assessment) return;
     if (!this.authService.getToken()) {
-      this.notificationService.info('Please sign in before payment.');
+      this.notificationService.info(CONSUMER_UX_COPY.messages.signInBeforePayment);
       this.authModalService.openLogin();
       return;
     }
@@ -1134,9 +1137,11 @@ export class DirectAssessmentComponent implements OnInit {
       if (access) this.assessmentAccess.set(access);
       await this.refreshAccess();
       this.couponQuote.set(null);
-      this.notificationService.success('Payment verified. Test unlocked.');
+      this.notificationService.success(CONSUMER_UX_COPY.messages.testPaymentUnlocked);
     } catch (error: any) {
-      this.notificationService.error(error?.message || 'Payment could not be completed.');
+      this.notificationService.error(
+        error?.message || CONSUMER_UX_COPY.messages.paymentCouldNotComplete,
+      );
     } finally {
       this.payingAssessment.set(false);
     }
@@ -1401,7 +1406,7 @@ export class DirectAssessmentComponent implements OnInit {
     } catch {
       // Soft fallback below keeps the user moving.
     }
-    this.notificationService.info('No matching expert is live right now. Choose a slot instead.');
+    this.notificationService.info(CONSUMER_UX_COPY.messages.noLiveExpertBook);
     this.liveFallback.set({ mode, queryParams });
   }
 
@@ -1448,11 +1453,7 @@ export class DirectAssessmentComponent implements OnInit {
   }
 
   providerAvailabilityLabel(provider: HopeHubProvider): string {
-    if (provider.quickTalkAvailable) return 'Live now';
-    if (provider.liveStatus === 'ONLINE') return 'Usually replies soon';
-    const sessionText = (provider.sessionTypes || []).join(' ').toLowerCase();
-    if (/evening|night|after work/.test(sessionText)) return 'Usually available evenings';
-    return 'Next slot available';
+    return consumerProviderAvailabilityLabel(provider);
   }
 
   providerAvailabilityBadgeClass(provider: HopeHubProvider): string {
