@@ -49,6 +49,32 @@
 </section>
 
 @if (onboarding().complete) {
+  @if (readiness(); as ready) {
+    <section class="panel readiness-card" [class.readiness-card--ready]="ready.ready">
+      <div class="panel-header">
+        <div>
+          <h2>{{ ready.ready ? 'Ready for users' : 'Before users can book or connect live' }}</h2>
+          <p class="muted">
+            {{ ready.ready ? 'Your profile can accept bookings and live requests.' : ready.message }}
+          </p>
+        </div>
+        <button type="button" (click)="loadReadiness()">Refresh</button>
+      </div>
+      @if (!ready.ready) {
+        <div class="readiness-list">
+          @for (blocker of ready.blockers; track blocker.code) {
+            <article class="readiness-item">
+              <strong>{{ blocker.label }}</strong>
+              @if (blocker.action) {
+                <span>{{ blocker.action }}</span>
+              }
+            </article>
+          }
+        </div>
+      }
+    </section>
+  }
+
   <section class="panel launch-card">
     <div class="panel-header">
       <div>

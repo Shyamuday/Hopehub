@@ -15,6 +15,19 @@ export type DoctorSession = {
   doctorProfile: DoctorProfileSummary | null;
 };
 
+export type ProviderReadinessBlocker = {
+  code: string;
+  label: string;
+  action?: string;
+};
+
+export type ProviderReadiness = {
+  ready: boolean;
+  code: string;
+  message: string;
+  blockers: ProviderReadinessBlocker[];
+};
+
 @Service()
 export class DoctorSessionService {
   private readonly apiBase = environment.apiUrl;
@@ -62,5 +75,14 @@ export class DoctorSessionService {
 
   capabilities() {
     return capabilitiesForProvider(this.session?.doctorProfile);
+  }
+
+  async readiness() {
+    const response = await firstValueFrom(
+      this.http.get<{ readiness: ProviderReadiness }>(
+        `${this.apiBase}${API_PATHS.DOCTOR.READINESS}`,
+      ),
+    );
+    return response.readiness;
   }
 }

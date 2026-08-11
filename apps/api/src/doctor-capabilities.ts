@@ -17,6 +17,29 @@ function hasList(values?: string[] | null) {
   return Boolean(values?.some((value) => value.trim().length > 0));
 }
 
+type ProviderReadinessBlocker = {
+  code: string;
+  label: string;
+  action?: string;
+};
+
+function readinessResult(blockers: ProviderReadinessBlocker[]) {
+  if (!blockers.length) {
+    return {
+      ready: true,
+      code: 'READY',
+      message: 'Ready.',
+      blockers
+    };
+  }
+  return {
+    ready: false,
+    code: blockers[0]?.code ?? 'NOT_READY',
+    message: blockers[0]?.label ?? 'Complete required setup before accepting users.',
+    blockers
+  };
+}
+
 async function latestListenerScreeningPassedForEmail(email?: string | null) {
   const normalizedEmail = email?.trim();
   if (!normalizedEmail) return false;
@@ -90,40 +113,47 @@ export async function providerPublicReadiness(userId: string) {
   });
 
   if (!profile) {
-    return {
-      ready: false,
-      code: 'DOCTOR_PROFILE_REQUIRED',
-      message: 'Provider profile not found.'
-    };
+    return readinessResult([
+      {
+        code: 'DOCTOR_PROFILE_REQUIRED',
+        label: 'Provider profile not found.',
+        action: 'Create or restore provider profile.'
+      }
+    ]);
   }
+  const blockers: ProviderReadinessBlocker[] = [];
   if (!profile.user.isActive) {
-    return { ready: false, code: 'PROVIDER_INACTIVE', message: 'Provider account is inactive.' };
+    blockers.push({
+      code: 'PROVIDER_INACTIVE',
+      label: 'Provider account is inactive.',
+      action: 'Ask admin to activate the account.'
+    });
   }
   if (profile.suspendedAt) {
-    return {
-      ready: false,
+    blockers.push({
       code: 'PROVIDER_SUSPENDED',
-      message: 'Provider account is under review and cannot accept sessions.'
-    };
+      label: 'Provider account is under review and cannot accept sessions.',
+      action: 'Contact Hope Hub support/admin.'
+    });
   }
   if (!profile.isAvailable) {
-    return {
-      ready: false,
+    blockers.push({
       code: 'PROVIDER_AVAILABILITY_OFF',
-      message: 'Turn on profile availability before accepting sessions.'
-    };
+      label: 'Profile availability is off.',
+      action: 'Turn on availability in your profile.'
+    });
   }
 
   const isHopeHub = profile.doctorType === HomeopathicDoctorType.PSYCHOLOGIST;
   if (!isHopeHub) {
     if (!hasText(profile.bio, 40)) {
-      return {
-        ready: false,
-        code: 'PROFILE_INCOMPLETE',
-        message: 'Complete your provider bio before accepting bookings.'
-      };
+      blockers.push({
+        code: 'PROFILE_BIO_REQUIRED',
+        label: 'Complete your provider bio before accepting bookings.',
+        action: 'Open Profile and add a short public bio.'
+      });
     }
-    return { ready: true, code: 'READY', message: 'Ready.' };
+    return readinessResult(blockers);
   }
 
   const mental = profile.mentalHealthProfile;
@@ -137,59 +167,101 @@ export async function providerPublicReadiness(userId: string) {
     careTeamTypes.length === 0 ||
     careTeamTypes.some((type) => isClinicalMentalHealthCareTeamType(type));
   const hasProfileImage = Boolean(profile.user.profileImageKey || profile.user.profileImageUrl);
-  const commonReady =
-    Boolean(profile.user.mobile?.trim()) &&
-    Boolean(profile.user.gender) &&
-    hasProfileImage &&
-    hasText(profile.bio, 80) &&
-    hasList(mental?.languages) &&
-    hasList(mental?.sessionTypes) &&
-    hasList(mental?.concernsHandled) &&
-    mental?.acceptingNewUsers !== false &&
-    Boolean(
-      mental?.services?.some((service) => service.title.trim() && service.durationMinutes >= 5)
-    );
-
-  if (!commonReady) {
-    return {
-      ready: false,
-      code: 'PROFILE_INCOMPLETE',
-      message:
-        'Complete profile, services, languages, concerns, and availability before accepting users.'
-    };
+  if (!profile.user.mobile?.trim()) {
+    blockers.push({
+      code: 'MOBILE_REQUIRED',
+      label: 'Mobile number is missing.',
+      action: 'Add mobile number in Profile.'
+    });
+  }
+  if (!profile.user.gender) {
+    blockers.push({
+      code: 'GENDER_REQUIRED',
+      label: 'Gender is missing.',
+      action: 'Add gender in Profile.'
+    });
+  }
+  if (!hasProfileImage) {
+    blockers.push({
+      code: 'PROFILE_PHOTO_REQUIRED',
+      label: 'Profile photo is missing.',
+      action: 'Upload a clear profile photo.'
+    });
+  }
+  if (!hasText(profile.bio, 80)) {
+    blockers.push({
+      code: 'PROFILE_BIO_REQUIRED',
+      label: 'Public bio must be at least 80 characters.',
+      action: 'Write a short, reassuring public bio.'
+    });
+  }
+  if (!hasList(mental?.languages)) {
+    blockers.push({
+      code: 'LANGUAGES_REQUIRED',
+      label: 'Languages are missing.',
+      action: 'Add languages you can support.'
+    });
+  }
+  if (!hasList(mental?.sessionTypes)) {
+    blockers.push({
+      code: 'SESSION_TYPES_REQUIRED',
+      label: 'Session types are missing.',
+      action: 'Choose chat, voice, video, or relevant session types.'
+    });
+  }
+  if (!hasList(mental?.concernsHandled)) {
+    blockers.push({
+      code: 'CONCERNS_REQUIRED',
+      label: 'Concerns handled are missing.',
+      action: 'Add concerns you can safely support.'
+    });
+  }
+  if (mental?.acceptingNewUsers === false) {
+    blockers.push({
+      code: 'NOT_ACCEPTING_USERS',
+      label: 'Accepting new users is turned off.',
+      action: 'Turn on accepting new users in Profile.'
+    });
+  }
+  if (!mental?.services?.some((service) => service.title.trim() && service.durationMinutes >= 5)) {
+    blockers.push({
+      code: 'ACTIVE_SERVICE_REQUIRED',
+      label: 'No active service/price is configured.',
+      action: 'Add at least one active service in Profile.'
+    });
   }
   if (isClinical && !hasText(mental?.qualifiedFrom)) {
-    return {
-      ready: false,
+    blockers.push({
       code: 'QUALIFICATION_REQUIRED',
-      message: 'Add qualification/training details before accepting users.'
-    };
+      label: 'Qualification/training details are missing.',
+      action: 'Add where you are qualified/trained from.'
+    });
   }
   if (!isListener && !hasText(mental?.safetyEscalationNote, 20)) {
-    return {
-      ready: false,
+    blockers.push({
       code: 'SAFETY_SCOPE_REQUIRED',
-      message: 'Add safety escalation notes before accepting users.'
-    };
+      label: 'Safety escalation note is missing.',
+      action: 'Add what you will do for crisis/high-risk situations.'
+    });
   }
   if (isListener) {
     if (!mental?.listenerSafetyAcknowledgedAt) {
-      return {
-        ready: false,
+      blockers.push({
         code: 'LISTENER_SAFETY_REQUIRED',
-        message: 'Accept listener safety rules before accepting users.'
-      };
+        label: 'Listener safety rules are not accepted.',
+        action: 'Read and accept listener safety rules.'
+      });
     }
     if (!(await latestListenerScreeningPassedForEmail(profile.user.email))) {
-      return {
-        ready: false,
+      blockers.push({
         code: 'LISTENER_SCREENING_REQUIRED',
-        message: 'Pass the listener screening test before accepting users.'
-      };
+        label: 'Listener screening test is not passed.',
+        action: 'Complete and pass the listener screening test.'
+      });
     }
   }
 
-  return { ready: true, code: 'READY', message: 'Ready.' };
+  return readinessResult(blockers);
 }
 
 export function requireDoctorCapability(

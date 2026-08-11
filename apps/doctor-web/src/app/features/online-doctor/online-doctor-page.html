@@ -6,6 +6,27 @@
 @if (loading()) {
   <p>Loading…</p>
 } @else {
+  @if (readiness(); as ready) {
+    <section class="panel readiness-panel" [class.ready]="ready.ready">
+      <div>
+        <h2>{{ ready.ready ? 'Ready to go live' : 'Complete before going live' }}</h2>
+        <p class="muted">{{ ready.ready ? 'You can accept live requests now.' : ready.message }}</p>
+      </div>
+      @if (!ready.ready) {
+        <div class="readiness-list">
+          @for (blocker of ready.blockers; track blocker.code) {
+            <article>
+              <strong>{{ blocker.label }}</strong>
+              @if (blocker.action) {
+                <span>{{ blocker.action }}</span>
+              }
+            </article>
+          }
+        </div>
+      }
+    </section>
+  }
+
   <section class="panel status-panel" [class.is-live]="isLive()">
     <div>
       <h2>Live status</h2>
@@ -14,7 +35,7 @@
     </div>
     <div class="actions">
       @if (!isLive()) {
-        <button type="button" (click)="goOnline()" [disabled]="saving() || !canAcceptAnyMode()">
+        <button type="button" (click)="goOnline()" [disabled]="saving() || !canAcceptAnyMode() || readiness()?.ready === false">
           Go online
         </button>
       } @else {

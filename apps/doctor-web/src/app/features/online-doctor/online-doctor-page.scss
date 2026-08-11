@@ -26,6 +26,42 @@
   margin: 0;
   padding: 0.65rem 0.8rem;
 }
+
+.readiness-panel {
+  border-color: #fed7aa;
+  background: linear-gradient(180deg, #fff7ed 0%, #ffffff 100%);
+}
+
+.readiness-panel.ready {
+  border-color: #bbf7d0;
+  background: linear-gradient(180deg, #f0fdf4 0%, #ffffff 100%);
+}
+
+.readiness-list {
+  display: grid;
+  gap: 0.55rem;
+  margin-top: 0.75rem;
+}
+
+.readiness-list article {
+  border: 1px solid #fed7aa;
+  border-radius: 0.75rem;
+  background: rgba(255, 255, 255, 0.86);
+  display: grid;
+  gap: 0.2rem;
+  padding: 0.65rem 0.75rem;
+}
+
+.readiness-list strong {
+  color: #9a3412;
+  font-size: 0.9rem;
+}
+
+.readiness-list span {
+  color: #7c2d12;
+  font-size: 0.84rem;
+}
+
 .mode-control-grid {
   display: grid;
   gap: 0.75rem;

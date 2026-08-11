@@ -24,6 +24,7 @@ import { asyncRoute, publicUserSelect, logAuthEvent } from '../../utils/helpers.
 import { enrichWithProfileImageUrl, userProfileImagePath } from '../../utils/profile-image-url.js';
 import { createEmailVerificationToken } from '../../services/email-verification.js';
 import { recordAuthProcess } from '../../services/auth-process-log.js';
+import { providerPublicReadiness } from '../../doctor-capabilities.js';
 
 const LISTENER_SAFETY_ACKNOWLEDGEMENT_VERSION = 'listener-safety-v1-2026-08-07';
 
@@ -357,6 +358,16 @@ export function registerAuthDoctorRoutes(router: Router) {
           userProfileImagePath
         )
       });
+    })
+  );
+
+  router.get(
+    '/doctor/readiness',
+    authRequired,
+    allowRoles(Role.DOCTOR),
+    asyncRoute(async (req, res) => {
+      const readiness = await providerPublicReadiness(req.user!.id);
+      res.json({ readiness });
     })
   );
 

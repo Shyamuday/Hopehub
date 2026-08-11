@@ -4,6 +4,7 @@ import { RouterLink } from '@angular/router';
 import { form, FormField } from '@angular/forms/signals';
 import { OnlineDoctorService } from '../../core/services/online-doctor.service';
 import { ROUTE_PATHS } from '../../core/constants/app-routes.constants';
+import { DoctorSessionService, type ProviderReadiness } from '../../core/services/doctor-session';
 import {
   isClinicalMentalHealthCareTeamType,
   isCoachGuideCareTeamType,
@@ -25,6 +26,7 @@ type InstantConsult = {
 })
 export class OnlineDoctorPage implements OnInit, OnDestroy {
   private readonly online = inject(OnlineDoctorService);
+  private readonly session = inject(DoctorSessionService);
 
   readonly sessionsPath = ROUTE_PATHS.SESSIONS;
   readonly loading = signal(true);
@@ -33,6 +35,7 @@ export class OnlineDoctorPage implements OnInit, OnDestroy {
   readonly error = signal('');
   readonly diseases = signal<Array<{ id: string; name: string }>>([]);
   readonly profile = this.online.profile;
+  readonly readiness = signal<ProviderReadiness | null>(null);
   readonly instantConsults = signal<InstantConsult[]>([]);
   readonly inboxLoading = signal(false);
 
@@ -68,10 +71,19 @@ export class OnlineDoctorPage implements OnInit, OnDestroy {
         void this.loadInbox();
         this.startInboxRefresh();
       }
+      await this.loadReadiness();
     } catch {
       this.error.set('Could not load online provider settings.');
     } finally {
       this.loading.set(false);
+    }
+  }
+
+  async loadReadiness() {
+    try {
+      this.readiness.set(await this.session.readiness());
+    } catch {
+      this.readiness.set(null);
     }
   }
 
@@ -183,6 +195,7 @@ export class OnlineDoctorPage implements OnInit, OnDestroy {
         acceptsVideoCall: m.acceptsVideoCall,
       });
       this.online.profile.set(res.profile);
+      await this.loadReadiness();
       this.message.set('Settings saved.');
     } catch (error: any) {
       this.error.set(error?.error?.message || 'Could not save settings.');

@@ -23,7 +23,10 @@ import {
 import { ConsultationNavigationService } from '../../../core/services/consultation-navigation.service';
 import { buildPaymentSummaryStatFields } from '../constants/dashboard-stat.fields';
 import { WorklistApiService } from '../../worklist/worklist-api.service';
-import { DoctorSessionService } from '../../../core/services/doctor-session';
+import {
+  DoctorSessionService,
+  type ProviderReadiness,
+} from '../../../core/services/doctor-session';
 
 type PaymentSummary = {
   doctorSharePercent: number;
@@ -60,6 +63,7 @@ export class DashboardHome {
   readonly providerProfile = signal<DoctorProfileSummary | null>(null);
   readonly language = signal(PH_PROVIDER_LANGUAGE);
   readonly onboarding = signal<ProviderOnboardingStatus>(buildProviderOnboardingStatus(null, null));
+  readonly readiness = signal<ProviderReadiness | null>(null);
   readonly onboardingRequiredNotice = signal(false);
 
   constructor(
@@ -72,8 +76,17 @@ export class DashboardHome {
       route.snapshot.queryParamMap.get('onboarding') === 'required',
     );
     void this.loadRole();
+    void this.loadReadiness();
     void this.loadSummary();
     void this.loadWorklistCounts();
+  }
+
+  async loadReadiness() {
+    try {
+      this.readiness.set(await this.session.readiness());
+    } catch {
+      this.readiness.set(null);
+    }
   }
 
   private async loadRole() {
