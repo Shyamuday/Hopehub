@@ -18,3 +18,4 @@ export * from './form-dropdown/form-dropdown.component';
 export * from './notification-center/notification-center.component';
 export * from './support-path-selector/support-path-selector.component';
 export * from './connect-options/connect-options.component';
+export * from './connect-fallback-panel/connect-fallback-panel.component';

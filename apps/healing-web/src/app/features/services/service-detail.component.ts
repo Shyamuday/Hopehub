@@ -16,6 +16,7 @@ import {
 import { Service, ServiceCategory } from '../../core/models';
 import {
   ConnectOptionMode,
+  ConnectFallbackPanelComponent,
   ConnectOptionsComponent,
   ServiceInquiryComponent,
 } from '../../shared/components';
@@ -40,7 +41,12 @@ import {
 @Component({
   selector: 'app-service-detail',
   standalone: true,
-  imports: [RouterModule, ServiceInquiryComponent, ConnectOptionsComponent],
+  imports: [
+    RouterModule,
+    ServiceInquiryComponent,
+    ConnectOptionsComponent,
+    ConnectFallbackPanelComponent,
+  ],
   templateUrl: './service-detail.component.html',
   styleUrl: './service-detail.component.scss',
 })
@@ -52,6 +58,10 @@ export class ServiceDetailComponent implements OnInit {
   singleSessionOffer = signal<HopeHubOffering | null>(null);
   singleSessionQuote = signal<HopeHubOfferingQuote | null>(null);
   loading = signal(true);
+  liveFallback = signal<{
+    mode: Exclude<ConnectOptionMode, 'book'>;
+    queryParams: Record<string, unknown>;
+  } | null>(null);
   readonly concernFlows =
     signal<Record<ConsumerConcernKey, ConsumerConcernFlow>>(CONSUMER_CONCERN_FLOWS);
 
@@ -101,6 +111,7 @@ export class ServiceDetailComponent implements OnInit {
 
   async connect(mode: ConnectOptionMode): Promise<void> {
     const queryParams = this.serviceConnectQueryParams(mode);
+    this.liveFallback.set(null);
     if (mode === 'book') {
       this.bookService();
       return;
@@ -127,7 +138,11 @@ export class ServiceDetailComponent implements OnInit {
       }
     }
     this.notificationService.info('No matching expert is live right now. Choose a slot instead.');
-    await this.router.navigate(CONSUMER_ROUTES.links.bookSupport, { queryParams });
+    this.liveFallback.set({ mode, queryParams });
+  }
+
+  dismissLiveFallback(): void {
+    this.liveFallback.set(null);
   }
 
   private serviceConnectQueryParams(mode: ConnectOptionMode) {

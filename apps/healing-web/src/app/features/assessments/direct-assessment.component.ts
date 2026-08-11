@@ -20,12 +20,16 @@ import { PaymentService } from '../../core/services/payment.service';
 import { LiveConnectActionService } from '../../core/services/live-connect-action.service';
 import { CONSUMER_UX_COPY } from '../../core/constants/consumer-ux-copy.constants';
 import { CONSUMER_ROUTES } from '../../core/constants/consumer-routes.constants';
-import { ConnectOptionMode, ConnectOptionsComponent } from '../../shared/components';
+import {
+  ConnectFallbackPanelComponent,
+  ConnectOptionMode,
+  ConnectOptionsComponent,
+} from '../../shared/components';
 
 @Component({
   selector: 'app-direct-assessment',
   standalone: true,
-  imports: [RouterModule, ConnectOptionsComponent],
+  imports: [RouterModule, ConnectOptionsComponent, ConnectFallbackPanelComponent],
   template: `
     <main class="direct-test bg-[var(--brand-surface)]">
       @if (assessment()) {
@@ -391,6 +395,17 @@ import { ConnectOptionMode, ConnectOptionsComponent } from '../../shared/compone
                   [bookLabel]="'Book slot'"
                   (selected)="connectFromResult($event)"
                 />
+                @if (liveFallback(); as fallback) {
+                  <app-connect-fallback-panel
+                    class="mt-4 block"
+                    [title]="'No matching expert is live right now'"
+                    [message]="'Your result is saved here. You can book the nearest slot, see matching providers, or try another way to connect.'"
+                    [bookQueryParams]="fallback.queryParams"
+                    [careTeamQueryParams]="assessmentCareTeamQueryParams()"
+                    (tryMode)="connectFromResult($event)"
+                    (dismissed)="dismissLiveFallback()"
+                  />
+                }
                 <div class="mt-4 grid gap-3 sm:grid-cols-3">
                   <a
                     [routerLink]="ROUTES.links.home"
@@ -650,6 +665,10 @@ export class DirectAssessmentComponent implements OnInit {
   couponCode = signal('');
   redeemingCoupon = signal(false);
   payingAssessment = signal(false);
+  liveFallback = signal<{
+    mode: Exclude<ConnectOptionMode, 'book'>;
+    queryParams: Record<string, unknown>;
+  } | null>(null);
   viewMode = signal<'single' | 'all'>('single');
   currentQuestion = signal(0);
   answers = signal<number[]>([]);
@@ -974,6 +993,7 @@ export class DirectAssessmentComponent implements OnInit {
 
   async connectFromResult(mode: ConnectOptionMode): Promise<void> {
     const queryParams = this.assessmentConnectQueryParams(mode);
+    this.liveFallback.set(null);
     if (mode === 'book') {
       await this.router.navigate(CONSUMER_ROUTES.links.bookSupport, { queryParams });
       return;
@@ -1000,7 +1020,20 @@ export class DirectAssessmentComponent implements OnInit {
       // Soft fallback below keeps the user moving.
     }
     this.notificationService.info('No matching expert is live right now. Choose a slot instead.');
-    await this.router.navigate(CONSUMER_ROUTES.links.bookSupport, { queryParams });
+    this.liveFallback.set({ mode, queryParams });
+  }
+
+  dismissLiveFallback(): void {
+    this.liveFallback.set(null);
+  }
+
+  assessmentCareTeamQueryParams(): Record<string, unknown> {
+    const assessment = this.assessment();
+    const result = this.result();
+    return {
+      concern: assessment?.category || assessment?.type || '',
+      q: [assessment?.title, result?.level].filter(Boolean).join(' '),
+    };
   }
 
   private assessmentConnectQueryParams(mode: ConnectOptionMode) {

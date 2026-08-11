@@ -1,0 +1,36 @@
+<section class="connect-fallback" [class.connect-fallback--compact]="compact">
+  <button
+    type="button"
+    class="connect-fallback__close"
+    aria-label="Hide live connection fallback"
+    (click)="dismissed.emit()"
+  >
+    ×
+  </button>
+  <div class="connect-fallback__icon">🌙</div>
+  <div class="connect-fallback__body">
+    <h3>{{ title }}</h3>
+    <p>{{ message }}</p>
+
+    @if (showTryModes) {
+      <div class="connect-fallback__modes">
+        @for (mode of modes; track mode.mode) {
+          <button type="button" (click)="tryMode.emit(mode.mode)">
+            <span>{{ mode.icon }}</span>
+            {{ mode.label }}
+          </button>
+        }
+      </div>
+    }
+
+    <div class="connect-fallback__actions">
+      <a [routerLink]="ROUTES.links.bookSupport" [queryParams]="bookQueryParams" class="primary">
+        Book nearest slot
+      </a>
+      <a [routerLink]="ROUTES.links.careTeam" [queryParams]="careTeamQueryParams">
+        See similar providers
+      </a>
+      <a [routerLink]="ROUTES.links.liveGroups">Open support chat</a>
+    </div>
+  </div>
+</section>
