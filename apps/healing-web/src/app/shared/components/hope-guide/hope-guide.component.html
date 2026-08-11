@@ -22,7 +22,7 @@
             @if (tip.actionLabel && tip.actionLink) {
               <a
                 [routerLink]="tip.actionLink"
-                [fragment]="tip.actionFragment || null"
+                [fragment]="tip.actionFragment || undefined"
                 [queryParams]="tip.actionQueryParams || null"
               >
                 {{ tip.actionLabel }}
