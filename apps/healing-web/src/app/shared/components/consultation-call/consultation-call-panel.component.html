@@ -89,7 +89,7 @@
             Decline
           </button>
         }
-        @if (call.state() === 'connected' || call.state() === 'connecting') {
+        @if (call.state() === 'connected' || call.state() === 'connecting' || call.state() === 'reconnecting') {
           <button type="button" class="call-btn bg-gray-700 hover:bg-gray-800" (click)="toggleMic()">
             {{ micOn() ? 'Mute' : 'Unmute' }}
           </button>
@@ -113,7 +113,7 @@
       </div>
     </div>
 
-    @if (call.state() === 'connected' || call.state() === 'connecting') {
+    @if (call.state() === 'connected' || call.state() === 'connecting' || call.state() === 'reconnecting') {
       <audio #remoteAudio autoplay></audio>
     }
 

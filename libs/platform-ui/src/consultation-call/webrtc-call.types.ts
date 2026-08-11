@@ -1,6 +1,7 @@
 export type CallMode = 'audio' | 'video';
 
-export type CallState = 'idle' | 'ringing' | 'connecting' | 'connected' | 'ended' | 'error';
+export type CallState =
+  'idle' | 'ringing' | 'connecting' | 'connected' | 'reconnecting' | 'ended' | 'error';
 
 export type IceServerConfig = { urls: string | string[]; username?: string; credential?: string };
 

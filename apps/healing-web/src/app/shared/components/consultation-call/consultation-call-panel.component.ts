@@ -102,7 +102,9 @@ export class ConsultationCallPanelComponent implements OnChanges, OnDestroy {
   isVideoActive(): boolean {
     return (
       this.call.callMode() === 'video' &&
-      (this.call.state() === 'connected' || this.call.state() === 'connecting')
+      (this.call.state() === 'connected' ||
+        this.call.state() === 'connecting' ||
+        this.call.state() === 'reconnecting')
     );
   }
 
@@ -118,6 +120,7 @@ export class ConsultationCallPanelComponent implements OnChanges, OnDestroy {
       ringing: this.call.incomingCall() ? 'Incoming call...' : 'Calling...',
       connecting: 'Connecting...',
       connected: this.call.callMode() === 'video' ? 'On video call' : 'On voice call',
+      reconnecting: 'Reconnecting...',
       ended: 'Call ended',
       error: 'Call error',
     };

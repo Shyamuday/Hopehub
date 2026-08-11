@@ -9,9 +9,22 @@ import {
 } from './webrtc-call.types';
 
 const DEFAULT_STUN: IceServerConfig[] = [{ urls: 'stun:stun.l.google.com:19302' }];
+const CALL_ANSWER_TIMEOUT_MS = 45_000;
+const MEDIA_CONNECT_TIMEOUT_MS = 25_000;
+const RECONNECT_GRACE_MS = 20_000;
 
 function sdpHasVideo(sdp: string): boolean {
   return /m=video /i.test(sdp);
+}
+
+function normalizeIceServers(iceServers: IceServerConfig[]): IceServerConfig[] {
+  return [...iceServers].sort((a, b) => {
+    const aUrls = Array.isArray(a.urls) ? a.urls : [a.urls];
+    const bUrls = Array.isArray(b.urls) ? b.urls : [b.urls];
+    const aIsTurn = aUrls.some((url) => url.startsWith('turn:') || url.startsWith('turns:'));
+    const bIsTurn = bUrls.some((url) => url.startsWith('turn:') || url.startsWith('turns:'));
+    return Number(aIsTurn) - Number(bIsTurn);
+  });
 }
 
 @Injectable({ providedIn: 'root' })
@@ -28,6 +41,9 @@ export class ConsultationWebrtcCallService {
   private socket: CallSignalingSocket | null = null;
   private callContext: { consultationId: string; targetUserId: string } | null = null;
   private iceQueue: RTCIceCandidateInit[] = [];
+  private answerTimeout: ReturnType<typeof setTimeout> | null = null;
+  private mediaTimeout: ReturnType<typeof setTimeout> | null = null;
+  private reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
 
   bindSocket(socket: CallSignalingSocket): void {
     if (this.socket === socket) return;
@@ -84,6 +100,7 @@ export class ConsultationWebrtcCallService {
       mode: params.mode,
       sdp: offer,
     });
+    this.startAnswerTimeout();
   }
 
   async acceptIncoming(iceServers: IceServerConfig[] = DEFAULT_STUN): Promise<void> {
@@ -110,7 +127,7 @@ export class ConsultationWebrtcCallService {
         sdp: answer,
       });
       this.pendingOffer.set(null);
-      this.state.set('connected');
+      this.startMediaTimeout();
     } catch (err) {
       this.error.set(err instanceof Error ? err.message : 'Could not join call.');
       this.state.set('error');
@@ -146,6 +163,7 @@ export class ConsultationWebrtcCallService {
   }
 
   cleanup(state: CallState = 'idle'): void {
+    this.clearCallTimers();
     this.localStream()
       ?.getTracks()
       .forEach((track) => track.stop());
@@ -186,9 +204,10 @@ export class ConsultationWebrtcCallService {
   private async onRemoteAnswer(raw: unknown): Promise<void> {
     const payload = raw as { sdp?: RTCSessionDescriptionInit };
     if (!payload?.sdp || !this.pc) return;
+    this.clearAnswerTimeout();
     await this.pc.setRemoteDescription(new RTCSessionDescription(payload.sdp));
     await this.flushIceQueue();
-    this.state.set('connected');
+    this.startMediaTimeout();
   }
 
   private async onRemoteIce(raw: unknown): Promise<void> {
@@ -227,7 +246,10 @@ export class ConsultationWebrtcCallService {
       throw new Error('Calls are not supported on this device.');
     }
 
-    this.pc = new RTCPeerConnection({ iceServers });
+    this.pc = new RTCPeerConnection({
+      iceServers: normalizeIceServers(iceServers),
+      iceTransportPolicy: 'all',
+    });
     const stream = await navigator.mediaDevices.getUserMedia({
       audio: true,
       video: mode === 'video',
@@ -252,7 +274,91 @@ export class ConsultationWebrtcCallService {
       });
     };
 
+    this.pc.onconnectionstatechange = () => this.handlePeerConnectionState();
+    this.pc.oniceconnectionstatechange = () => this.handlePeerConnectionState();
+
     this.state.set('connecting');
+  }
+
+  private handlePeerConnectionState(): void {
+    const pc = this.pc;
+    if (!pc) return;
+
+    const connectionState = pc.connectionState;
+    const iceState = pc.iceConnectionState;
+    if (connectionState === 'connected' || iceState === 'connected' || iceState === 'completed') {
+      this.clearMediaTimeout();
+      this.clearReconnectTimeout();
+      this.state.set('connected');
+      return;
+    }
+
+    if (connectionState === 'failed' || iceState === 'failed') {
+      this.failCall('Call connection failed. Please try again or continue in chat.');
+      return;
+    }
+
+    if (connectionState === 'disconnected' || iceState === 'disconnected') {
+      if (this.state() === 'connected') this.state.set('reconnecting');
+      this.startReconnectTimeout();
+    }
+  }
+
+  private startAnswerTimeout(): void {
+    this.clearAnswerTimeout();
+    this.answerTimeout = setTimeout(() => {
+      if (this.state() !== 'ringing') return;
+      this.failCall('No answer yet. Please try again or send a message.');
+    }, CALL_ANSWER_TIMEOUT_MS);
+  }
+
+  private startMediaTimeout(): void {
+    this.clearMediaTimeout();
+    this.mediaTimeout = setTimeout(() => {
+      if (this.state() === 'connected' || this.state() === 'ended') return;
+      this.failCall('Call could not connect. Please try again or continue in chat.');
+    }, MEDIA_CONNECT_TIMEOUT_MS);
+  }
+
+  private startReconnectTimeout(): void {
+    if (this.reconnectTimeout) return;
+    this.reconnectTimeout = setTimeout(() => {
+      if (this.state() !== 'reconnecting') return;
+      this.failCall('Call disconnected. Please try again or continue in chat.');
+    }, RECONNECT_GRACE_MS);
+  }
+
+  private failCall(message: string): void {
+    const context = this.callContext;
+    if (context) {
+      this.socket?.emit(CALL_SOCKET_EVENTS.END, context);
+    }
+    this.cleanup('ended');
+    this.error.set(message);
+  }
+
+  private clearAnswerTimeout(): void {
+    if (!this.answerTimeout) return;
+    clearTimeout(this.answerTimeout);
+    this.answerTimeout = null;
+  }
+
+  private clearMediaTimeout(): void {
+    if (!this.mediaTimeout) return;
+    clearTimeout(this.mediaTimeout);
+    this.mediaTimeout = null;
+  }
+
+  private clearReconnectTimeout(): void {
+    if (!this.reconnectTimeout) return;
+    clearTimeout(this.reconnectTimeout);
+    this.reconnectTimeout = null;
+  }
+
+  private clearCallTimers(): void {
+    this.clearAnswerTimeout();
+    this.clearMediaTimeout();
+    this.clearReconnectTimeout();
   }
 
   private unbindSocketListeners(): void {
