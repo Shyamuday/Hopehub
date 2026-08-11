@@ -257,7 +257,7 @@ export function registerAuthDoctorRoutes(router: Router) {
           mobile: body.mobile,
           passwordHash,
           role: Role.DOCTOR,
-          isActive: false,
+          isActive: true,
           doctorProfile: {
             create: {
               ...toDoctorProfilePayload({
@@ -313,11 +313,12 @@ export function registerAuthDoctorRoutes(router: Router) {
 
       res.status(201).json({
         doctor,
-        approvalStatus: 'PENDING',
+        approvalStatus: 'ACTIVE',
         emailVerificationRequired: true,
         emailVerificationSent: verification.sent,
         ...(verification.devVerifyUrl ? { devVerifyUrl: verification.devVerifyUrl } : {}),
-        message: 'Enrollment submitted. Please wait for admin approval before login.'
+        message:
+          'Provider account created. Log in to complete your setup before appearing on Hope Hub.'
       });
     })
   );
@@ -339,7 +340,7 @@ export function registerAuthDoctorRoutes(router: Router) {
         }
       });
 
-      if (!profile) return res.status(404).json({ message: 'Doctor profile not found' });
+      if (!profile) return res.status(404).json({ message: 'Provider profile not found' });
 
       const listenerScreening = await latestListenerScreeningForEmail(profile.email);
       const doctorProfile = profile.doctorProfile

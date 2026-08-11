@@ -312,6 +312,7 @@ async function isHopeHubProviderLiveForInstant(userId: string, mode: LiveConnect
       doctor: {
         isAvailable: true,
         showOnWebsite: true,
+        suspendedAt: null,
         employeeStatus: 'ACTIVE',
         mentalHealthProfile: { is: { acceptingNewUsers: true, autoMatchEnabled: true } }
       }
@@ -348,6 +349,7 @@ async function findBestHopeHubLiveProvider(consultation: {
         doctor: {
           isAvailable: true,
           showOnWebsite: true,
+          suspendedAt: null,
           employeeStatus: 'ACTIVE',
           ...(gender && gender !== 'PREFER_NOT_TO_SAY' ? { user: { gender: gender as any } } : {}),
           mentalHealthProfile: {

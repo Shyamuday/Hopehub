@@ -247,6 +247,9 @@ export const doctorProfileSelect = {
   websiteOrder: true,
   yearsOfExperience: true,
   focusAreas: true,
+  suspendedAt: true,
+  suspendedReason: true,
+  suspendedById: true,
   mentalHealthProfile: {
     select: {
       qualifications: true,

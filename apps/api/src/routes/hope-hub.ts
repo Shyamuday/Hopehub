@@ -792,6 +792,7 @@ async function findAvailableCareTeamService(id: string, providerId?: string) {
         doctor: {
           ...(providerId ? { id: providerId } : {}),
           showOnWebsite: true,
+          suspendedAt: null,
           user: { isActive: true }
         }
       }
@@ -1530,6 +1531,7 @@ function hopeHubProviderWhere(params: {
   const roleTypes = roleGroup ? roleGroupTypes[roleGroup] || [] : [];
   return {
     showOnWebsite: true,
+    suspendedAt: null,
     user: {
       isActive: true,
       ...(gender && gender !== 'PREFER_NOT_TO_SAY' ? { gender: gender as any } : {})
@@ -2609,7 +2611,7 @@ hopeHubRouter.get(
 
     if (providerId) {
       const provider = await prisma.doctor.findFirst({
-        where: { id: providerId, showOnWebsite: true, user: { isActive: true } },
+        where: { id: providerId, showOnWebsite: true, suspendedAt: null, user: { isActive: true } },
         select: { id: true }
       });
       if (!provider) {
@@ -2754,6 +2756,7 @@ hopeHubRouter.get(
       where: {
         id: providerId,
         showOnWebsite: true,
+        suspendedAt: null,
         user: { isActive: true },
         OR: [
           { doctorType: HomeopathicDoctorType.PSYCHOLOGIST },
@@ -3392,6 +3395,7 @@ hopeHubRouter.post(
           where: {
             id: body.providerId,
             showOnWebsite: true,
+            suspendedAt: null,
             user: { isActive: true },
             OR: [
               { doctorType: HomeopathicDoctorType.PSYCHOLOGIST },

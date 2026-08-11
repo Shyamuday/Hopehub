@@ -42,6 +42,7 @@ export async function listAssignableLeadProviders(params: { safety?: boolean } =
   const doctors = await prisma.doctor.findMany({
     where: {
       showOnWebsite: true,
+      suspendedAt: null,
       isAvailable: true,
       user: { isActive: true },
       OR: [

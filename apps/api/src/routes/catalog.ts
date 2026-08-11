@@ -356,7 +356,7 @@ router.get(
       : 12;
 
     const doctors = await prisma.doctor.findMany({
-      where: { showOnWebsite: true, user: { isActive: true } },
+      where: { showOnWebsite: true, suspendedAt: null, user: { isActive: true } },
       select: {
         id: true,
         specialty: true,

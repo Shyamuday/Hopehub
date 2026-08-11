@@ -35,13 +35,11 @@ export async function notifyAdminsAboutDoctorSignup(doctor: {
           `Registration: ${escapeHtml(doctor.registrationNo || 'Not provided')}`,
           `Provider: ${escapeHtml(doctor.id.slice(-8))}`,
           '',
-          'This provider is pending admin approval.'
+          'This provider can log in now. Review profile readiness and website visibility when needed.'
         ].join('\n'),
         parse_mode: 'HTML',
         reply_markup: {
-          inline_keyboard: [
-            [{ text: 'Review pending providers', url: adminUrl('/doctors/pending') }]
-          ]
+          inline_keyboard: [[{ text: 'Review providers', url: adminUrl('/doctors') }]]
         }
       })
     )

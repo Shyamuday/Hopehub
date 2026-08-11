@@ -22,6 +22,8 @@ export type DoctorDetailSource = {
     bio?: string | null;
     showOnWebsite?: boolean;
     websiteOrder?: number | null;
+    suspendedAt?: string | null;
+    suspendedReason?: string | null;
     focusAreas?: string[];
     mentalHealthProfile?: {
       languages?: string[];
@@ -114,7 +116,12 @@ export const DOCTOR_DETAIL_FIELDS: DetailFieldDef<DoctorDetailSource>[] = [
   },
   {
     label: 'Status',
-    getValue: (d) => (d.isActive ? 'Active' : 'Inactive'),
+    getValue: (d) =>
+      d.doctorProfile?.suspendedAt
+        ? `Suspended${d.doctorProfile.suspendedReason ? ` — ${d.doctorProfile.suspendedReason}` : ''}`
+        : d.isActive
+          ? 'Active'
+          : 'Inactive',
   },
   {
     label: 'Available',

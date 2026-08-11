@@ -287,7 +287,11 @@
 </section>
 
 <section class="panel">
-  <h2>Pending {{ providerSingularTitle() }} Approvals</h2>
+  <h2>{{ providerSingularTitle() }} Setup / Visibility Review</h2>
+  <p class="panel-hint">
+    Provider accounts can log in immediately. Use this area only to review setup readiness,
+    website visibility, and accounts that need attention.
+  </p>
 
   @if (loading()) {
     <p class="loading-text">Loading...</p>
@@ -295,7 +299,7 @@
 
   <fieldset class="toolbar" [disabled]="loading()">
     <input
-      [placeholder]="'Search pending ' + providerPluralLabel() + '...'"
+      [placeholder]="'Search setup review ' + providerPluralLabel() + '...'"
       [formField]="pendingFilterForm.searchTerm"
       (change)="onPendingFilterChange()"
     />
@@ -320,14 +324,14 @@
       (click)="bulkApproveSelected()"
       [disabled]="loading() || mutating() || !selectedPendingDoctorIds.length"
     >
-      {{ mutating() ? 'Working...' : 'Bulk Approve' }}
+      {{ mutating() ? 'Working...' : 'Bulk activate account' }}
     </button>
     <button
       type="button"
       (click)="bulkRejectSelected()"
       [disabled]="loading() || mutating() || !selectedPendingDoctorIds.length"
     >
-      Bulk Keep Pending
+      Bulk deactivate account
     </button>
   </fieldset>
 
@@ -359,6 +363,13 @@
             }
           </div>
         }
+        <div class="readiness-badges" [title]="providerReadinessSummary(doctor)">
+          @for (badge of providerReadinessBadges(doctor); track badge.label) {
+            <span class="readiness-badge" [class]="'readiness-badge--' + badge.tone">
+              {{ badge.label }}
+            </span>
+          }
+        </div>
         <div class="actions">
           <button
             type="button"
@@ -369,15 +380,15 @@
             View details
           </button>
           <button type="button" (click)="approveDoctor(doctor.id)" [disabled]="mutating()">
-            {{ mutating() ? '...' : 'Approve' }}
+            {{ mutating() ? '...' : 'Activate account' }}
           </button>
           <button type="button" (click)="rejectDoctor(doctor.id)" [disabled]="mutating()">
-            Keep Pending
+            Deactivate account
           </button>
         </div>
         </article>
       } @empty {
-        <p class="empty-state">No pending {{ providerSingularLabel() }} enrollments.</p>
+        <p class="empty-state">No {{ providerSingularLabel() }} accounts need setup review.</p>
       }
     </div>
   }
@@ -465,6 +476,13 @@
             }
           </div>
         }
+        <div class="readiness-badges" [title]="providerReadinessSummary(doctor)">
+          @for (badge of providerReadinessBadges(doctor); track badge.label) {
+            <span class="readiness-badge" [class]="'readiness-badge--' + badge.tone">
+              {{ badge.label }}
+            </span>
+          }
+        </div>
         </article>
       } @empty {
         <p class="empty-state">No {{ providerPluralLabel() }} found.</p>
@@ -493,6 +511,18 @@
       <div class="detail-header-row">
         <div>
           <strong>{{ selectedDoctor.name }}</strong>
+          <div class="readiness-badges" [title]="providerReadinessSummary(selectedDoctor)">
+            @for (badge of providerReadinessBadges(selectedDoctor); track badge.label) {
+              <span class="readiness-badge" [class]="'readiness-badge--' + badge.tone">
+                {{ badge.label }}
+              </span>
+            }
+          </div>
+          @if (providerReadinessIssues(selectedDoctor).length) {
+            <p class="readiness-summary">
+              Needs: {{ providerReadinessIssues(selectedDoctor).join(', ') }}
+            </p>
+          }
         </div>
         <a
           class="clinical-records-link"
@@ -503,6 +533,43 @@
         </a>
       </div>
       <hopehub-detail-rows [rows]="selectedDoctorDetailRows()" />
+      <div class="suspension-box" [class.suspension-box--active]="selectedDoctor.doctorProfile?.suspendedAt">
+        @if (selectedDoctor.doctorProfile?.suspendedAt) {
+          <div>
+            <strong>Provider suspended</strong>
+            <p>
+              {{ selectedDoctor.doctorProfile?.suspendedReason || 'No reason recorded.' }}
+            </p>
+          </div>
+          <button
+            type="button"
+            class="secondary"
+            (click)="setDoctorSuspension(selectedDoctor.id, false)"
+            [disabled]="mutating()"
+          >
+            {{ mutating() ? '...' : 'Remove suspension' }}
+          </button>
+        } @else {
+          <div class="field suspension-field">
+            <label class="field-label" for="provider-suspension-reason">Suspend provider</label>
+            <textarea
+              id="provider-suspension-reason"
+              rows="2"
+              [value]="suspensionReason()"
+              (input)="suspensionReason.set($any($event.target).value)"
+              placeholder="Reason shown internally and to provider at login"
+            ></textarea>
+          </div>
+          <button
+            type="button"
+            class="danger"
+            (click)="setDoctorSuspension(selectedDoctor.id, true)"
+            [disabled]="mutating()"
+          >
+            {{ mutating() ? '...' : 'Suspend' }}
+          </button>
+        }
+      </div>
       <div class="actions">
         @if (selectedDoctor.isActive) {
           <button
@@ -518,7 +585,7 @@
             (click)="approveSelectedDoctorWithProfile()"
             [disabled]="mutating()"
           >
-            {{ mutating() ? '...' : 'Save profile & approve' }}
+            {{ mutating() ? '...' : 'Save profile & activate' }}
           </button>
           <button
             type="button"

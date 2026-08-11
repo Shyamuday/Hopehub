@@ -105,6 +105,11 @@ export class AdminApi {
       ...(args as Parameters<AdminDoctorsApi['setDoctorStatus']>),
     );
   }
+  setDoctorSuspension(...args: Parameters<AdminDoctorsApi['setDoctorSuspension']>) {
+    return this.doctors.setDoctorSuspension(
+      ...(args as Parameters<AdminDoctorsApi['setDoctorSuspension']>),
+    );
+  }
   updateDoctor(...args: Parameters<AdminDoctorsApi['updateDoctor']>) {
     return this.doctors.updateDoctor(...(args as Parameters<AdminDoctorsApi['updateDoctor']>));
   }

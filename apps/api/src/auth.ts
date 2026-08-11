@@ -92,16 +92,23 @@ async function resolveAuthUser(token: string): Promise<AuthUser | null> {
       email: true,
       mobile: true,
       patientCode: true,
-      isActive: true
+      isActive: true,
+      doctorProfile: {
+        select: {
+          suspendedAt: true
+        }
+      }
     }
   });
 
   if (!user?.isActive) return null;
+  if (user.role === Role.DOCTOR && user.doctorProfile?.suspendedAt) return null;
 
   const staffProfile = await loadStaffProfileForUser(user.id, user.role);
+  const { doctorProfile: _doctorProfile, ...authUser } = user;
   return staffProfile === undefined
-    ? user
-    : { ...user, staffProfile: staffProfile as StaffProfileSummary | null };
+    ? authUser
+    : { ...authUser, staffProfile: staffProfile as StaffProfileSummary | null };
 }
 
 export function allowRoles(...roles: Role[]) {

@@ -1,7 +1,10 @@
 export const AUDIT_ACTION_OPTIONS = [
   { value: '', label: 'All actions' },
-  { value: 'doctor.approve', label: 'Provider approved' },
-  { value: 'doctor.reject', label: 'Provider rejected' },
+  { value: 'doctor.approve', label: 'Provider account activated' },
+  { value: 'doctor.reject', label: 'Provider account deactivated' },
+  { value: 'doctor.deactivate', label: 'Provider account deactivated' },
+  { value: 'doctor.suspend', label: 'Provider suspended' },
+  { value: 'doctor.unsuspend', label: 'Provider suspension removed' },
   { value: 'doctor.status_change', label: 'Provider status changed' },
   { value: 'doctor.create', label: 'Provider created' },
   { value: 'doctor.update', label: 'Provider profile updated' },

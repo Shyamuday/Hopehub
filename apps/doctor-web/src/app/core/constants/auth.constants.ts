@@ -18,6 +18,7 @@ export const AUTH_MESSAGES = {
   CREDENTIALS_REQUIRED: 'Email and password are required.',
   INVALID_LOGIN: 'Invalid login or API unavailable.',
   ENROLL_REQUIRED_FIELDS: 'Name, email, password, and specialty/support focus are required.',
-  ENROLL_DEFAULT_SUCCESS: 'Enrollment submitted. Wait for admin approval.',
+  ENROLL_DEFAULT_SUCCESS:
+    'Provider account created. Log in to complete your setup before appearing on Hope Hub.',
   ENROLL_FAILED: 'Could not enroll provider account.',
 } as const;

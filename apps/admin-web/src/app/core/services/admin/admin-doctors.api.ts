@@ -24,7 +24,7 @@ export class AdminDoctorsApi extends AdminApiBase {
     page?: number;
     pageSize?: number;
     q?: string;
-    status?: 'ALL' | 'ACTIVE' | 'INACTIVE';
+    status?: 'ALL' | 'ACTIVE' | 'INACTIVE' | 'SUSPENDED';
     sortBy?: DoctorSortField;
     sortDirection?: SortDirection;
     workspace?: 'homeopathy' | 'hope-hub';
@@ -87,6 +87,12 @@ export class AdminDoctorsApi extends AdminApiBase {
   setDoctorStatus(doctorId: string, isActive: boolean) {
     return firstValueFrom(
       this.http.put(`${this.apiBase}${API_PATHS.ADMIN.DOCTORS}/${doctorId}/status`, { isActive }),
+    );
+  }
+
+  setDoctorSuspension(doctorId: string, payload: { suspended: boolean; reason?: string | null }) {
+    return firstValueFrom(
+      this.http.put(`${this.apiBase}${API_PATHS.ADMIN.DOCTORS}/${doctorId}/suspension`, payload),
     );
   }
 

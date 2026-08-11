@@ -177,6 +177,81 @@ function doctorWorkspaceWhere(workspace: string): Prisma.UserWhereInput {
   return {};
 }
 
+async function latestListenerScreeningForEmail(email?: string | null) {
+  const normalizedEmail = email?.trim();
+  if (!normalizedEmail) return null;
+
+  const [attempt, application] = await Promise.all([
+    prisma.listenerScreeningAttempt.findFirst({
+      where: { email: { equals: normalizedEmail, mode: 'insensitive' } },
+      orderBy: { createdAt: 'desc' },
+      select: {
+        score: true,
+        maxScore: true,
+        passed: true,
+        createdAt: true,
+        questionSetVersion: true
+      }
+    }),
+    prisma.counsellorApplication.findFirst({
+      where: {
+        email: { equals: normalizedEmail, mode: 'insensitive' },
+        listenerScreeningCompletedAt: { not: null }
+      },
+      orderBy: { listenerScreeningCompletedAt: 'desc' },
+      select: {
+        listenerScreeningScore: true,
+        listenerScreeningMaxScore: true,
+        listenerScreeningPassed: true,
+        listenerScreeningCompletedAt: true,
+        listenerScreeningQuestionSetVersion: true
+      }
+    })
+  ]);
+
+  const applicationCompletedAt = application?.listenerScreeningCompletedAt ?? null;
+  const attemptCompletedAt = attempt?.createdAt ?? null;
+  const useApplication =
+    applicationCompletedAt &&
+    (!attemptCompletedAt || applicationCompletedAt.getTime() >= attemptCompletedAt.getTime());
+
+  if (useApplication && application) {
+    return {
+      score: application.listenerScreeningScore,
+      maxScore: application.listenerScreeningMaxScore,
+      passed: application.listenerScreeningPassed,
+      completedAt: applicationCompletedAt,
+      questionSetVersion: application.listenerScreeningQuestionSetVersion
+    };
+  }
+
+  if (!attempt) return null;
+  return {
+    score: attempt.score,
+    maxScore: attempt.maxScore,
+    passed: attempt.passed,
+    completedAt: attempt.createdAt,
+    questionSetVersion: attempt.questionSetVersion
+  };
+}
+
+async function withListenerScreeningForAdmin<
+  T extends { email?: string | null; doctorProfile?: any }
+>(provider: T) {
+  if (!provider.doctorProfile?.mentalHealthProfile) return provider;
+  const listenerScreening = await latestListenerScreeningForEmail(provider.email);
+  return {
+    ...provider,
+    doctorProfile: {
+      ...provider.doctorProfile,
+      mentalHealthProfile: {
+        ...provider.doctorProfile.mentalHealthProfile,
+        listenerScreening
+      }
+    }
+  };
+}
+
 export function registerAdminDoctorRoutes(router: Router) {
   // ─── Doctors ──────────────────────────────────────────────────────────────────
 
@@ -256,8 +331,10 @@ export function registerAdminDoctorRoutes(router: Router) {
         take: pageSize
       });
 
+      const doctorsWithReadiness = await Promise.all(doctors.map(withListenerScreeningForAdmin));
+
       res.json({
-        doctors,
+        doctors: doctorsWithReadiness,
         pagination: { page, pageSize, total, totalPages: Math.max(1, Math.ceil(total / pageSize)) }
       });
     })
@@ -327,8 +404,12 @@ export function registerAdminDoctorRoutes(router: Router) {
         take: pageSize
       });
 
+      const pendingDoctorsWithReadiness = await Promise.all(
+        pendingDoctors.map(withListenerScreeningForAdmin)
+      );
+
       res.json({
-        pendingDoctors,
+        pendingDoctors: pendingDoctorsWithReadiness,
         pagination: { page, pageSize, total, totalPages: Math.max(1, Math.ceil(total / pageSize)) }
       });
     })
@@ -351,9 +432,9 @@ export function registerAdminDoctorRoutes(router: Router) {
         action: 'doctor.approve',
         targetType: 'doctor',
         targetId: doctor.id,
-        summary: 'Provider approved by admin.'
+        summary: 'Provider account activated by admin.'
       });
-      res.json({ doctor, message: 'Provider approved successfully.' });
+      res.json({ doctor, message: 'Provider account activated successfully.' });
     })
   );
 
@@ -371,12 +452,12 @@ export function registerAdminDoctorRoutes(router: Router) {
       await writeAuditLog({
         actorId: req.user!.id,
         actorRole: req.user!.role,
-        action: 'doctor.reject',
+        action: 'doctor.deactivate',
         targetType: 'doctor',
         targetId: doctor.id,
-        summary: 'Provider rejected by admin.'
+        summary: 'Provider account deactivated by admin.'
       });
-      res.json({ doctor, message: 'Provider rejected.' });
+      res.json({ doctor, message: 'Provider account deactivated.' });
     })
   );
 
@@ -406,6 +487,71 @@ export function registerAdminDoctorRoutes(router: Router) {
         message: body.isActive
           ? 'Provider activated successfully.'
           : 'Provider deactivated successfully.'
+      });
+    })
+  );
+
+  router.put(
+    '/admin/doctors/:id/suspension',
+    authRequired,
+    allowRoles(Role.ADMIN),
+    asyncRoute(async (req, res) => {
+      const doctorId = routeParam(req, 'id');
+      const body = z
+        .object({
+          suspended: z.boolean(),
+          reason: z.string().trim().max(2000).optional().nullable()
+        })
+        .parse(req.body);
+
+      const reason = body.reason?.trim() || null;
+      const updatedProfile = await prisma.doctor.update({
+        where: { userId: doctorId },
+        data: body.suspended
+          ? {
+              suspendedAt: new Date(),
+              suspendedReason: reason || 'Suspended by admin.',
+              suspendedById: req.user!.id,
+              showOnWebsite: false,
+              isAvailable: false,
+              isOnline: false
+            }
+          : {
+              suspendedAt: null,
+              suspendedReason: null,
+              suspendedById: null
+            },
+        select: { id: true }
+      });
+
+      const doctor = await prisma.user.findUniqueOrThrow({
+        where: { id: doctorId },
+        select: {
+          ...publicUserSelect,
+          gender: true,
+          isActive: true,
+          createdAt: true,
+          doctorProfile: { select: doctorProfileSelect }
+        }
+      });
+
+      await writeAuditLog({
+        actorId: req.user!.id,
+        actorRole: req.user!.role,
+        action: body.suspended ? 'doctor.suspend' : 'doctor.unsuspend',
+        targetType: 'doctor',
+        targetId: doctor.id,
+        summary: body.suspended
+          ? 'Provider suspended by admin.'
+          : 'Provider suspension removed by admin.',
+        metadata: { doctorProfileId: updatedProfile.id, reason }
+      });
+
+      res.json({
+        doctor: await withListenerScreeningForAdmin(doctor),
+        message: body.suspended
+          ? 'Provider suspended and hidden from public/live access.'
+          : 'Provider suspension removed.'
       });
     })
   );

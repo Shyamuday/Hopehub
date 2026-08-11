@@ -108,13 +108,13 @@ export function buildProviderOnboardingStatus(
   const steps: ProviderOnboardingStep[] = [
     {
       id: 'approved',
-      title: 'Account approved',
-      description: 'Admin has approved your provider access.',
+      title: 'Provider account ready',
+      description: 'Your account is created. Complete setup to unlock your full provider console.',
       actionLabel: 'Done',
       route: `/${ROUTE_PATHS.DASHBOARD}`,
       complete: Boolean(profile),
       required: true,
-      missing: profile ? [] : ['admin approval'],
+      missing: profile ? [] : ['provider account'],
     },
     {
       id: 'identity',

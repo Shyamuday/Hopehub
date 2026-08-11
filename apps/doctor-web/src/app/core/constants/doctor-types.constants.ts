@@ -99,6 +99,9 @@ export type DoctorProfileSummary = {
     }>;
   } | null;
   showOnWebsite?: boolean;
+  suspendedAt?: string | null;
+  suspendedReason?: string | null;
+  suspendedById?: string | null;
   defaultMethodOptionId?: string | null;
   defaultMethodOption?: { id: string; label: string } | null;
 };

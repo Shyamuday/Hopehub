@@ -32,7 +32,19 @@ import { recordAuthProcess } from '../../services/auth-process-log.js';
 import { issueAuthSession, revokeAllAuthSessionsForUser } from '../../services/auth-sessions.js';
 
 const staffOtpKey = (email: string) => `staff:${email.trim().toLowerCase()}`;
-const googleStaffUserSelect = { ...publicUserSelect, isActive: true, authProvider: true } as const;
+const providerSuspensionSelect = {
+  suspendedAt: true,
+  suspendedReason: true
+} as const;
+const staffUserSelect = {
+  ...publicUserSelect,
+  isActive: true,
+  doctorProfile: { select: providerSuspensionSelect }
+} as const;
+const googleStaffUserSelect = {
+  ...staffUserSelect,
+  authProvider: true
+} as const;
 type GoogleStaffPayload = {
   sub: string;
   email: string;
@@ -56,7 +68,27 @@ type ActiveStaffAccount =
       }>;
     };
 
-const staffUserSelect = { ...publicUserSelect, isActive: true } as const;
+async function activateProviderAccountForLogin<
+  T extends { id: string; role: Role; isActive: boolean }
+>(user: T): Promise<T> {
+  if (user.role !== Role.DOCTOR || user.isActive) return user;
+  await prisma.user.update({ where: { id: user.id }, data: { isActive: true } });
+  return { ...user, isActive: true };
+}
+
+function providerSuspensionResponse(user: {
+  role: Role;
+  doctorProfile?: { suspendedAt?: Date | null; suspendedReason?: string | null } | null;
+}) {
+  if (user.role !== Role.DOCTOR || !user.doctorProfile?.suspendedAt) return null;
+  const reason = user.doctorProfile.suspendedReason?.trim();
+  return {
+    errorStatus: 403 as const,
+    message: reason
+      ? `Your provider account is under review: ${reason}`
+      : 'Your provider account is under review. Please contact Hope Hub support.'
+  };
+}
 
 async function findActiveStaffAccount(email: string): Promise<ActiveStaffAccount | null> {
   const user = await prisma.user.findFirst({
@@ -107,11 +139,11 @@ async function buildStaffLoginResponse(email: string, req?: Request) {
     return { token, ...session };
   }
 
-  const user = account.user;
-  if (!user.isActive && user.role === Role.DOCTOR) {
-    return { errorStatus: 403 as const, message: 'Doctor account is pending admin approval.' };
-  }
-  if (!user.isActive) {
+  const suspension = providerSuspensionResponse(account.user);
+  if (suspension) return suspension;
+
+  const user = await activateProviderAccountForLogin(account.user);
+  if (!user.isActive && user.role !== Role.DOCTOR) {
     return { errorStatus: 401 as const, message: 'Invalid credentials' };
   }
 
@@ -124,7 +156,8 @@ async function buildStaffLoginResponse(email: string, req?: Request) {
       properties: { method: 'email_otp' }
     });
   }
-  const withProfile = await attachStaffProfile(user);
+  const { doctorProfile: _doctorProfile, ...safeUser } = user;
+  const withProfile = await attachStaffProfile(safeUser);
   return { ...(await issueAuthSession(withProfile, req)), ...sessionPayloadForUser(withProfile) };
 }
 
@@ -144,13 +177,13 @@ async function buildGoogleStaffLoginResponse(payload: GoogleStaffPayload, req?: 
   if (!user || user.role === Role.PATIENT) {
     return {
       errorStatus: 401 as const,
-      message: 'No approved provider/admin account found for this Google email.'
+      message: 'No provider/admin account found for this Google email.'
     };
   }
-  if (!user.isActive && user.role === Role.DOCTOR) {
-    return { errorStatus: 403 as const, message: 'Doctor account is pending admin approval.' };
-  }
-  if (!user.isActive) {
+  const suspension = providerSuspensionResponse(user);
+  if (suspension) return suspension;
+
+  if (!user.isActive && user.role !== Role.DOCTOR) {
     return { errorStatus: 401 as const, message: 'Invalid credentials' };
   }
 
@@ -185,6 +218,7 @@ async function buildGoogleStaffLoginResponse(payload: GoogleStaffPayload, req?: 
   const updated = await prisma.user.update({
     where: { id: user.id },
     data: {
+      ...(user.role === Role.DOCTOR ? { isActive: true } : {}),
       emailVerified: true,
       authProvider: user.authProvider || 'GOOGLE',
       lastLoginAt: now,
@@ -259,23 +293,17 @@ export function registerAuthStaffRoutes(router: Router) {
         return res.json({ message: 'If the staff account exists, an OTP has been sent.' });
       }
 
-      if (account.kind === 'user' && !account.user.isActive) {
+      if (account.kind === 'user' && !account.user.isActive && account.user.role !== Role.DOCTOR) {
         await recordAuthProcess({
           processType: 'staff_email_otp',
           step: 'request',
-          status: account.user.role === Role.DOCTOR ? 'blocked' : 'failure',
+          status: 'failure',
           identifier: email,
-          reason:
-            account.user.role === Role.DOCTOR ? 'doctor_pending_approval' : 'inactive_account',
+          reason: 'inactive_account',
           req,
           metadata: { role: account.user.role, userId: account.user.id }
         });
-        return res.status(account.user.role === Role.DOCTOR ? 403 : 401).json({
-          message:
-            account.user.role === Role.DOCTOR
-              ? 'Doctor account is pending admin approval.'
-              : 'Invalid credentials'
-        });
+        return res.status(401).json({ message: 'Invalid credentials' });
       }
 
       if (isProduction && !getMailTransporter()) {
@@ -350,7 +378,7 @@ export function registerAuthStaffRoutes(router: Router) {
         await recordAuthProcess({
           processType: 'staff_email_otp',
           step: 'verify',
-          status: status === 403 ? 'blocked' : 'failure',
+          status: 'failure',
           identifier: email,
           reason: response.message,
           req
@@ -444,7 +472,7 @@ export function registerAuthStaffRoutes(router: Router) {
         await recordAuthProcess({
           processType: 'staff_google',
           step: 'login',
-          status: status === 403 ? 'blocked' : 'failure',
+          status: 'failure',
           identifier: payload.email,
           reason: response.message,
           req
@@ -473,7 +501,7 @@ export function registerAuthStaffRoutes(router: Router) {
       const email = body.email.trim().toLowerCase();
       const user = await prisma.user.findFirst({
         where: { email, role: { not: Role.PATIENT } },
-        select: { ...publicUserSelect, passwordHash: true, isActive: true }
+        select: { ...staffUserSelect, passwordHash: true }
       });
 
       if (!user?.passwordHash || user.role === Role.PATIENT) {
@@ -558,25 +586,21 @@ export function registerAuthStaffRoutes(router: Router) {
         return res.status(401).json({ message: 'Invalid credentials' });
       }
 
-      if (!user.isActive && user.role === Role.DOCTOR) {
-        logAuthEvent('staff_login_failure', {
-          userId: user.id,
-          role: user.role,
-          reason: 'doctor_pending_approval'
-        });
+      const suspension = providerSuspensionResponse(user);
+      if (suspension) {
         await recordAuthProcess({
           processType: 'staff_password',
           step: 'login',
-          status: 'blocked',
+          status: 'failure',
           identifier: email,
-          reason: 'doctor_pending_approval',
+          reason: 'provider_suspended',
           req,
           metadata: { userId: user.id, role: user.role }
         });
-        return res.status(403).json({ message: 'Doctor account is pending admin approval.' });
+        return res.status(suspension.errorStatus).json({ message: suspension.message });
       }
 
-      if (!user.isActive) {
+      if (!user.isActive && user.role !== Role.DOCTOR) {
         logAuthEvent('staff_login_failure', {
           userId: user.id,
           role: user.role,
@@ -594,7 +618,13 @@ export function registerAuthStaffRoutes(router: Router) {
         return res.status(401).json({ message: 'Invalid credentials' });
       }
 
-      const { passwordHash: _ph, isActive: _ia, ...safeUser } = user;
+      const activeUser = await activateProviderAccountForLogin(user);
+      const {
+        passwordHash: _ph,
+        isActive: _ia,
+        doctorProfile: _doctorProfile,
+        ...safeUser
+      } = activeUser;
       logAuthEvent('staff_login_success', { userId: safeUser.id, role: safeUser.role });
       if (safeUser.role === Role.DOCTOR) {
         void trackProductEvent({
@@ -632,7 +662,7 @@ export function registerAuthStaffRoutes(router: Router) {
         select: { id: true, role: true, email: true, isActive: true }
       });
 
-      if (!user || !user.isActive || user.role === Role.PATIENT) {
+      if (!user || (user.role !== Role.DOCTOR && !user.isActive) || user.role === Role.PATIENT) {
         await recordAuthProcess({
           processType: 'staff_password_reset',
           step: 'request',

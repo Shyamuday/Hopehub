@@ -99,6 +99,9 @@ model Doctor {
   websiteOrder     Int?
   yearsOfExperience Int?
   focusAreas       String[]       @default([])
+  suspendedAt      DateTime?
+  suspendedReason  String?        @db.Text
+  suspendedById    String?
 
   /// Default homeopathic approach / method pre-selected in case taking and prescriptions.
   defaultMethodOptionId String?
@@ -113,6 +116,9 @@ model Doctor {
   salaryStructure  EmployeeSalary?
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
+
+  @@index([suspendedAt])
+  @@index([suspendedById])
 }
 
 model HrProfile {

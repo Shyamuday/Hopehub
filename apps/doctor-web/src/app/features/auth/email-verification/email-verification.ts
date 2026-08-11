@@ -91,7 +91,7 @@ export class ProviderEmailVerification {
       await firstValueFrom(this.http.post(`${this.apiBase}${AUTH_PATHS.VERIFY_EMAIL}`, { token }));
       this.title.set('Email verified');
       this.message.set(
-        'Your provider email is verified. You can sign in once your account is approved.',
+        'Your provider email is verified. You can sign in and complete your setup now.',
       );
     } catch (error: any) {
       this.title.set('Could not verify email');

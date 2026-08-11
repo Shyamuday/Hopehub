@@ -45,6 +45,9 @@ type Doctor = {
     websiteOrder?: number | null;
     yearsOfExperience?: number | null;
     focusAreas?: string[];
+    suspendedAt?: string | null;
+    suspendedReason?: string | null;
+    suspendedById?: string | null;
     mentalHealthProfile?: {
       careTeamType?: CareTeamMemberType;
       careTeamTypes?: CareTeamMemberType[];
@@ -65,6 +68,14 @@ type Doctor = {
       acceptingNewUsers?: boolean;
       maxSessionsPerDay?: number | null;
       maxSessionsPerWeek?: number | null;
+      listenerSafetyAcknowledgedAt?: string | null;
+      listenerScreening?: {
+        score?: number | null;
+        maxScore?: number | null;
+        passed?: boolean | null;
+        completedAt?: string | null;
+        questionSetVersion?: string | null;
+      } | null;
       services?: CareTeamService[];
     } | null;
   };
@@ -328,6 +339,7 @@ export class DoctorsPage {
   readonly editForm = form(this.editModel);
   readonly createCareServices = signal<CareTeamService[]>([]);
   readonly editCareServices = signal<CareTeamService[]>([]);
+  readonly suspensionReason = signal('');
 
   pageSize = DOCTORS_PAGE_SIZE;
   doctorsPage = 1;
@@ -414,10 +426,10 @@ export class DoctorsPage {
     this.mutating.set(true);
     try {
       await this.api.approveDoctor(doctorId);
-      this.message.set(`${this.providerSingularTitle()} approved.`);
+      this.message.set(`${this.providerSingularTitle()} account activated.`);
       await this.load();
     } catch {
-      this.error.set(`Could not approve ${this.providerSingularLabel()}.`);
+      this.error.set(`Could not activate ${this.providerSingularLabel()}.`);
     } finally {
       this.mutating.set(false);
     }
@@ -429,7 +441,7 @@ export class DoctorsPage {
     this.mutating.set(true);
     try {
       await this.api.rejectDoctor(doctorId);
-      this.message.set(`${this.providerSingularTitle()} kept as pending/inactive.`);
+      this.message.set(`${this.providerSingularTitle()} account deactivated.`);
       await this.load();
     } catch {
       this.error.set(`Could not update ${this.providerSingularLabel()} status.`);
@@ -454,6 +466,37 @@ export class DoctorsPage {
       this.syncEditFormFromSelectedDoctor();
     } catch {
       this.error.set(`Could not update ${this.providerSingularLabel()} status.`);
+    } finally {
+      this.mutating.set(false);
+    }
+  }
+
+  async setDoctorSuspension(doctorId: string, suspended: boolean) {
+    this.message.set('');
+    this.error.set('');
+    const reason = this.suspensionReason().trim();
+    if (suspended && !reason) {
+      this.error.set('Add a short suspension reason first.');
+      return;
+    }
+
+    this.mutating.set(true);
+    try {
+      await this.api.setDoctorSuspension(doctorId, {
+        suspended,
+        reason: suspended ? reason : null,
+      });
+      this.message.set(
+        suspended
+          ? `${this.providerSingularTitle()} suspended and hidden from live/public access.`
+          : `${this.providerSingularTitle()} suspension removed.`,
+      );
+      this.suspensionReason.set('');
+      await this.load();
+      this.selectedDoctorId = doctorId;
+      this.syncEditFormFromSelectedDoctor();
+    } catch {
+      this.error.set(`Could not update ${this.providerSingularLabel()} suspension.`);
     } finally {
       this.mutating.set(false);
     }
@@ -663,11 +706,11 @@ export class DoctorsPage {
     try {
       await Promise.all(this.selectedPendingDoctorIds.map((id) => this.api.approveDoctor(id)));
       this.message.set(
-        `${this.selectedPendingDoctorIds.length} ${this.providerPluralLabel()} approved.`,
+        `${this.selectedPendingDoctorIds.length} ${this.providerPluralLabel()} activated.`,
       );
       await this.load();
     } catch {
-      this.error.set('Could not complete bulk approve.');
+      this.error.set('Could not activate selected providers.');
     } finally {
       this.mutating.set(false);
     }
@@ -684,11 +727,11 @@ export class DoctorsPage {
     try {
       await Promise.all(this.selectedPendingDoctorIds.map((id) => this.api.rejectDoctor(id)));
       this.message.set(
-        `${this.selectedPendingDoctorIds.length} ${this.providerPluralLabel()} kept pending.`,
+        `${this.selectedPendingDoctorIds.length} ${this.providerPluralLabel()} deactivated.`,
       );
       await this.load();
     } catch {
-      this.error.set('Could not complete bulk reject.');
+      this.error.set('Could not deactivate selected providers.');
     } finally {
       this.mutating.set(false);
     }
@@ -749,6 +792,71 @@ export class DoctorsPage {
         (type) => this.careTeamTypeOptions.find((option) => option.value === type)?.label || type,
       )
       .join(', ');
+  }
+
+  providerReadinessIssues(doctor: Doctor): string[] {
+    const profile = doctor.doctorProfile;
+    const mental = profile?.mentalHealthProfile;
+    const types = mental?.careTeamTypes?.length
+      ? mental.careTeamTypes
+      : mental?.careTeamType
+        ? [mental.careTeamType]
+        : [];
+    const isHopeHub = profile?.doctorType === 'PSYCHOLOGIST';
+    const isListener = types.some((type) => LISTENER_HOPE_HUB_TYPES.has(type));
+    const isClinical = !types.length || types.some((type) => CLINICAL_HOPE_HUB_TYPES.has(type));
+    const activeServices = mental?.services?.filter((service) => service.isActive !== false) ?? [];
+    const issues = [
+      profile?.suspendedAt ? 'account suspended' : '',
+      !doctor.isActive ? 'account inactive' : '',
+      !profile ? 'provider profile missing' : '',
+      !doctor.mobile ? 'mobile missing' : '',
+      !profile?.isAvailable ? 'availability off' : '',
+      !profile?.bio || profile.bio.trim().length < 80 ? 'public bio too short' : '',
+      isHopeHub && !mental?.languages?.length ? 'languages missing' : '',
+      isHopeHub && !mental?.sessionTypes?.length ? 'session types missing' : '',
+      isHopeHub && !mental?.concernsHandled?.length ? 'concerns missing' : '',
+      isHopeHub && activeServices.length <= 0 ? 'active service missing' : '',
+      isHopeHub && isClinical && !mental?.qualifiedFrom ? 'qualification source missing' : '',
+      isListener && !mental?.listenerScreening?.passed ? 'listener test missing' : '',
+      isListener && !mental?.listenerSafetyAcknowledgedAt ? 'listener safety missing' : '',
+    ].filter(Boolean);
+    return issues;
+  }
+
+  providerReadinessBadges(doctor: Doctor) {
+    const issues = this.providerReadinessIssues(doctor);
+    const hidden = !doctor.doctorProfile?.showOnWebsite;
+    const badges: Array<{ label: string; tone: 'good' | 'warn' | 'muted' | 'danger' }> = [];
+    if (doctor.doctorProfile?.suspendedAt) {
+      badges.push({ label: 'Suspended', tone: 'danger' });
+    }
+    badges.push(
+      doctor.isActive
+        ? { label: 'Account active', tone: 'good' }
+        : { label: 'Account inactive', tone: 'danger' },
+    );
+    if (hidden) {
+      badges.push({ label: 'Hidden from website', tone: 'muted' });
+    } else if (!issues.length) {
+      badges.push({ label: 'Visible on website', tone: 'good' });
+    } else {
+      badges.push({ label: 'Visible but incomplete', tone: 'warn' });
+    }
+    if (issues.length) {
+      badges.push({
+        label: `${issues.length} setup gap${issues.length === 1 ? '' : 's'}`,
+        tone: 'warn',
+      });
+    } else {
+      badges.push({ label: 'Setup ready', tone: 'good' });
+    }
+    return badges;
+  }
+
+  providerReadinessSummary(doctor: Doctor) {
+    const issues = this.providerReadinessIssues(doctor);
+    return issues.length ? issues.join(', ') : 'No setup gaps found.';
   }
 
   doctorsTotalPages() {
@@ -821,6 +929,7 @@ export class DoctorsPage {
 
   setSelectedDoctor(doctorId: string) {
     this.selectedDoctorId = doctorId;
+    this.suspensionReason.set('');
     this.syncEditFormFromSelectedDoctor();
     this.message.set(`${this.providerSingularTitle()} details loaded.`);
   }
@@ -857,7 +966,7 @@ export class DoctorsPage {
 
     await this.saveDoctorEdits();
     if (!this.error()) {
-      await this.approveDoctor(doctorId);
+      await this.toggleDoctorStatus(doctorId, true);
       this.selectedDoctorId = doctorId;
       this.syncEditFormFromSelectedDoctor();
     }
