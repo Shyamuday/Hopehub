@@ -137,15 +137,15 @@
       </div>
 
       @if (filteredTips().length === 0) {
-        <div class="professional-empty">
-          <h2 class="text-xl font-semibold text-gray-950">No tips found</h2>
-          <p class="mx-auto mt-2 max-w-md text-sm leading-6 text-gray-700">
-            Try another keyword or switch the filter back to all tips.
-          </p>
+        <app-empty-state
+          icon="🌿"
+          title="No tips found"
+          message="Try another keyword or switch the filter back to all tips."
+        >
           <app-button class="mt-5" variant="outline" size="sm" (click)="searchQuery.set(''); setFilter('all')">
             Reset search
           </app-button>
-        </div>
+        </app-empty-state>
       }
     }
 

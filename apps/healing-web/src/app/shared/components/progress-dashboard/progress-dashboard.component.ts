@@ -15,11 +15,19 @@ import {
 } from '../../../core/models/progress.model';
 import { CONSUMER_UX_COPY } from '../../../core/constants/consumer-ux-copy.constants';
 import { AppButtonComponent } from '../app-button/app-button.component';
+import { EmptyStateComponent } from '../empty-state/empty-state.component';
 
 @Component({
   selector: 'app-progress-dashboard',
   standalone: true,
-  imports: [RouterModule, DatePipe, DecimalPipe, TitleCasePipe, AppButtonComponent],
+  imports: [
+    RouterModule,
+    DatePipe,
+    DecimalPipe,
+    TitleCasePipe,
+    AppButtonComponent,
+    EmptyStateComponent,
+  ],
   templateUrl: './progress-dashboard.component.html',
   styleUrl: './progress-dashboard.component.scss',
 })

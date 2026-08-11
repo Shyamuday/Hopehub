@@ -58,9 +58,12 @@
   </div>
 
   @if (!filteredServices().length) {
-    <div class="professional-empty text-gray-700">
-      No services matched your search. Try anxiety, relationship, sleep, family, or career.
-    </div>
+    <app-empty-state
+      class="mt-6 block"
+      icon="💛"
+      title="No services matched"
+      message="Try anxiety, relationship, sleep, family, or career."
+    />
   }
 </div>
 

@@ -5,7 +5,9 @@
   [class.empty-state--warning]="tone === 'warning'"
   [class.empty-state--danger]="tone === 'danger'"
 >
-  <div class="empty-state__icon" aria-hidden="true">{{ icon }}</div>
+  @if (showIcon) {
+    <div class="empty-state__icon" aria-hidden="true">{{ icon }}</div>
+  }
   @if (eyebrow) {
     <p class="empty-state__eyebrow">{{ eyebrow }}</p>
   }

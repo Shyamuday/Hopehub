@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { booleanAttribute, Component, Input } from '@angular/core';
 
 export type EmptyStateTone = 'neutral' | 'soft' | 'warning' | 'danger';
 
@@ -14,5 +14,6 @@ export class EmptyStateComponent {
   @Input() title = 'Nothing here yet';
   @Input() message = '';
   @Input() tone: EmptyStateTone = 'neutral';
-  @Input() compact = false;
+  @Input({ transform: booleanAttribute }) compact = false;
+  @Input({ transform: booleanAttribute }) showIcon = true;
 }

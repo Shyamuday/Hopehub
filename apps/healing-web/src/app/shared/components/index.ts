@@ -31,3 +31,5 @@ export * from './booking-intent-summary/booking-intent-summary.component';
 export * from './form-field/form-field.component';
 export * from './form-checkbox/form-checkbox.component';
 export * from './selectable-card/selectable-card.component';
+export * from './app-button/app-button.component';
+export * from './app-modal/app-modal.component';

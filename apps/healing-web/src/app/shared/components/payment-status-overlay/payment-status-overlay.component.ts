@@ -1,5 +1,6 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { AppButtonComponent } from '../app-button/app-button.component';
+import { AppModalComponent } from '../app-modal/app-modal.component';
 
 export type PaymentFlowState =
   'IDLE' | 'CREATING_ORDER' | 'OPENING_CHECKOUT' | 'VERIFYING' | 'SUCCESS' | 'ERROR';
@@ -7,16 +8,17 @@ export type PaymentFlowState =
 @Component({
   selector: 'app-payment-status-overlay',
   standalone: true,
-  imports: [AppButtonComponent],
+  imports: [AppButtonComponent, AppModalComponent],
   template: `
     @if (state !== 'IDLE') {
-      <section
-        class="fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/45 px-4 py-6"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="paymentStatusTitle"
+      <app-modal
+        [open]="state !== 'IDLE'"
+        [showClose]="state === 'SUCCESS' || state === 'ERROR'"
+        [closeOnBackdrop]="state === 'SUCCESS' || state === 'ERROR'"
+        labelledBy="paymentStatusTitle"
+        (closed)="close.emit()"
       >
-        <article class="w-full max-w-md rounded-xl bg-white p-6 text-center shadow-2xl">
+        <div class="text-center">
           @if (
             state === 'CREATING_ORDER' || state === 'OPENING_CHECKOUT' || state === 'VERIFYING'
           ) {
@@ -51,8 +53,8 @@ export type PaymentFlowState =
               <app-button variant="secondary" size="sm" (click)="close.emit()"> Close </app-button>
             </div>
           }
-        </article>
-      </section>
+        </div>
+      </app-modal>
     }
   `,
 })

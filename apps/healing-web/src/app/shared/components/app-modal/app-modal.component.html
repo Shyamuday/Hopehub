@@ -1,0 +1,49 @@
+@if (open) {
+  <section
+    class="app-modal"
+    role="dialog"
+    aria-modal="true"
+    [attr.aria-labelledby]="labelledBy || null"
+    [attr.aria-describedby]="description ? labelledBy + 'Description' : null"
+  >
+    <button
+      type="button"
+      class="app-modal__backdrop"
+      aria-label="Close modal"
+      (click)="onBackdropClick()"
+    ></button>
+
+    <article
+      class="app-modal__panel"
+      [class.app-modal__panel--sm]="size === 'sm'"
+      [class.app-modal__panel--lg]="size === 'lg'"
+      [class.app-modal__panel--xl]="size === 'xl'"
+      [ngClass]="panelClass"
+    >
+      @if (showClose) {
+        <button type="button" class="app-modal__close" aria-label="Close" (click)="close()">
+          ×
+        </button>
+      }
+
+      @if (title || description) {
+        <header class="app-modal__header">
+          @if (title) {
+            <h2 class="app-modal__title" [id]="labelledBy">{{ title }}</h2>
+          }
+          @if (description) {
+            <p class="app-modal__description" [id]="labelledBy + 'Description'">
+              {{ description }}
+            </p>
+          }
+        </header>
+      }
+
+      <div class="app-modal__body" [ngClass]="bodyClass">
+        <ng-content></ng-content>
+      </div>
+
+      <ng-content select="[modalFooter]"></ng-content>
+    </article>
+  </section>
+}

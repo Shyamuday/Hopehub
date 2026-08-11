@@ -18,11 +18,18 @@ import {
   FormDropdownOption,
 } from '../form-dropdown/form-dropdown.component';
 import { AppButtonComponent } from '../app-button/app-button.component';
+import { EmptyStateComponent } from '../empty-state/empty-state.component';
 
 @Component({
   selector: 'app-exercises',
   standalone: true,
-  imports: [FormsModule, RouterModule, FormDropdownComponent, AppButtonComponent],
+  imports: [
+    FormsModule,
+    RouterModule,
+    FormDropdownComponent,
+    AppButtonComponent,
+    EmptyStateComponent,
+  ],
   template: `
     <section class="professional-page">
       <div class="container mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
@@ -134,26 +141,15 @@ import { AppButtonComponent } from '../app-button/app-button.component';
 
         <!-- No Results -->
         @if (filteredExercises().length === 0 && !selectedExercise()) {
-          <div class="professional-empty">
-            <svg
-              class="w-16 h-16 text-slate-400 mx-auto mb-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M9.172 16.172a4 4 0 015.656 0M9 12h6m-6-4h6m2 5.291A7.962 7.962 0 0112 15c-2.34 0-4.47.881-6.08 2.33l-.147.083A7.994 7.994 0 0112 21.001z"
-              />
-            </svg>
-            <h3 class="text-xl font-semibold text-gray-950 mb-2">No exercises found</h3>
-            <p class="text-gray-700 mb-4">Try adjusting your filters or search terms.</p>
+          <app-empty-state
+            icon="🧘"
+            title="No exercises found"
+            message="Try adjusting your filters or search terms."
+          >
             <app-button variant="outline" size="sm" (click)="clearFilters()"
               >Clear Filters</app-button
             >
-          </div>
+          </app-empty-state>
         }
 
         <!-- Selected Exercise Detail -->

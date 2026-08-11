@@ -28,11 +28,19 @@ import {
   FormDropdownOption,
 } from '../form-dropdown/form-dropdown.component';
 import { AppButtonComponent } from '../app-button/app-button.component';
+import { EmptyStateComponent } from '../empty-state/empty-state.component';
 
 @Component({
   selector: 'app-articles',
   standalone: true,
-  imports: [FormsModule, RouterModule, DatePipe, FormDropdownComponent, AppButtonComponent],
+  imports: [
+    FormsModule,
+    RouterModule,
+    DatePipe,
+    FormDropdownComponent,
+    AppButtonComponent,
+    EmptyStateComponent,
+  ],
   templateUrl: './articles.component.html',
   styleUrl: './articles.component.scss',
 })

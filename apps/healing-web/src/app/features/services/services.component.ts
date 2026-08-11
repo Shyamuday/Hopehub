@@ -6,6 +6,7 @@ import { CONSUMER_ROUTES } from '../../core/constants/consumer-routes.constants'
 import { Service, ServiceCategory } from '../../core/models';
 import {
   ContinueSupportBannerComponent,
+  EmptyStateComponent,
   FormDropdownComponent,
   FormDropdownOption,
   ServiceCardComponent,
@@ -25,6 +26,7 @@ import {
     ServiceCardComponent,
     FormDropdownComponent,
     ContinueSupportBannerComponent,
+    EmptyStateComponent,
   ],
   templateUrl: './services.component.html',
   styleUrl: './services.component.scss',

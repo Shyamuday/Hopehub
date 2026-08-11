@@ -143,30 +143,6 @@
                 </div>
             </div>
 
-            <!-- Terms and Conditions -->
-            <div class="auth-compact-terms flex items-start">
-                <input
-                    id="acceptTerms"
-                    name="acceptTerms"
-                    type="checkbox"
-                    formControlName="acceptTerms"
-                    class="h-4 w-4 text-primary-600 focus:ring-primary-600 border-gray-300 rounded mt-1"
-                />
-                <label for="acceptTerms" class="ml-2 block text-sm text-gray-900">
-                    I agree to the
-                    <a href="/terms" class="text-primary-600 hover:text-primary-700 transition-colors" target="_blank">Terms and Conditions</a>
-                    and
-                    <a href="/privacy" class="text-primary-600 hover:text-primary-700 transition-colors" target="_blank">Privacy Policy</a>
-                </label>
-            </div>
-            @if (registerForm.get('acceptTerms')?.invalid && registerForm.get('acceptTerms')?.touched) {
-                <div class="text-sm text-red-600">
-                    @if (registerForm.get('acceptTerms')?.errors?.['required']) {
-                        <span>You must accept the terms and conditions</span>
-                    }
-                </div>
-            }
-
             <div>
                 <app-button
                     type="submit"
