@@ -360,9 +360,15 @@
                 <strong>{{ formatPaise(offerFinalInPaise()) }}</strong>
               </div>
               <div class="payment-summary__pay">
-                <span>Pay today</span>
+                <span>{{ couponDiscountInPaise() > 0 ? 'Pay today after coupon' : 'Pay today' }}</span>
                 <strong>{{ formatPaise(payTodayInPaise()) }}</strong>
               </div>
+              @if (couponDiscountInPaise() > 0) {
+                <div>
+                  <span>Coupon discount</span>
+                  <strong>-{{ formatPaise(couponDiscountInPaise()) }}</strong>
+                </div>
+              }
               @if (balanceDueInPaise() > 0) {
                 <div>
                   <span>Balance later</span>
@@ -421,9 +427,15 @@
                 <strong>{{ formatPaise(payTodayInPaise()) }}</strong>
               </div>
               <div class="payment-summary__pay">
-                <span>Pay today</span>
+                <span>{{ couponDiscountInPaise() > 0 ? 'Pay today after coupon' : 'Pay today' }}</span>
                 <strong>{{ formatPaise(payTodayInPaise()) }}</strong>
               </div>
+              @if (couponDiscountInPaise() > 0) {
+                <div>
+                  <span>Coupon discount</span>
+                  <strong>-{{ formatPaise(couponDiscountInPaise()) }}</strong>
+                </div>
+              }
             </div>
           </section>
         }
@@ -446,10 +458,22 @@
               @if (appliedPromoCode()) {
                 <button type="button" class="btn-secondary" (click)="clearPromoCode()">Remove</button>
               } @else {
-                <button type="button" class="btn-secondary" (click)="applyPromoCode()">Apply</button>
+                <button type="button" class="btn-secondary" [disabled]="checkoutQuoteLoading()" (click)="applyPromoCode()">
+                  {{ checkoutQuoteLoading() ? 'Checking…' : 'Apply' }}
+                </button>
               }
             </div>
-            @if (appliedPromoCode()) {
+            @if (checkoutQuoteError()) {
+              <p class="coupon-box__error">{{ checkoutQuoteError() }}</p>
+            } @else if (appliedPromoCode() && couponDiscountInPaise() > 0) {
+              <p>
+                <strong>{{ appliedPromoCode() }}</strong> applied:
+                {{ formatPaise(couponDiscountInPaise()) }} off.
+                @if (payTodayInPaise() <= 0) {
+                  Your booking can be confirmed without payment.
+                }
+              </p>
+            } @else if (appliedPromoCode()) {
               <p>
                 <strong>{{ appliedPromoCode() }}</strong> will be validated by Hope Hub checkout.
                 If it covers the full amount, your booking will be confirmed without payment.

@@ -167,6 +167,12 @@ const hopeHubQuickTalkSchema = z.object({
   entryPage: z.string().trim().max(500).optional().or(z.literal(''))
 });
 
+const hopeHubCheckoutQuoteSchema = z.object({
+  grossInPaise: z.number().int().min(0).max(10000000),
+  promoCode: z.string().trim().min(2).max(32).optional().or(z.literal('')),
+  walletRedeemInPaise: z.number().int().min(0).optional()
+});
+
 const organizationLeadSchema = z.object({
   organizationName: z.string().trim().min(2).max(160),
   organizationType: z.string().trim().min(2).max(80),
@@ -3314,6 +3320,23 @@ hopeHubRouter.get(
     });
 
     res.json({ attempt: latest ? serializeAssessmentAttempt(latest) : null });
+  })
+);
+
+hopeHubRouter.post(
+  '/hope-hub/checkout-quote',
+  authRequired,
+  allowRoles(Role.PATIENT),
+  asyncRoute(async (req, res) => {
+    const body = hopeHubCheckoutQuoteSchema.parse(req.body);
+    const quote = await resolveConsultationCheckout({
+      patientId: req.user!.id,
+      grossInPaise: body.grossInPaise,
+      promoCode: body.promoCode || '',
+      walletRedeemInPaise: body.walletRedeemInPaise
+    });
+
+    res.json({ quote });
   })
 );
 

@@ -106,6 +106,22 @@ export type HopeHubOfferingQuote = {
   rule?: Record<string, unknown> | null;
 };
 
+export type HopeHubCheckoutQuote = {
+  grossAmountInPaise: number;
+  discountInPaise: number;
+  walletRedeemedInPaise: number;
+  payableInPaise: number;
+  walletBalanceInPaise: number;
+  maxWalletRedeemInPaise: number;
+  appliedRules: Array<{
+    ruleId: string;
+    code: string;
+    name: string;
+    amountInPaise: number;
+    valueType: string;
+  }>;
+};
+
 export type CareTeamServiceQuote = {
   service: {
     id: string;
@@ -409,6 +425,17 @@ export class BookingService {
       consultation: any;
       provider: { id: string; userId: string; name: string };
     }>(`${this.apiUrl}/hope-hub/quick-talk`, payload);
+  }
+
+  checkoutQuote(payload: {
+    grossInPaise: number;
+    promoCode?: string;
+    walletRedeemInPaise?: number;
+  }): Observable<{ quote: HopeHubCheckoutQuote }> {
+    return this.http.post<{ quote: HopeHubCheckoutQuote }>(
+      `${this.apiUrl}/hope-hub/checkout-quote`,
+      payload,
+    );
   }
 
   dashboard(): Observable<{

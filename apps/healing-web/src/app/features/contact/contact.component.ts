@@ -24,6 +24,7 @@ import { CONSUMER_UX_COPY } from '../../core/constants/consumer-ux-copy.constant
 import { CONSUMER_ROUTES } from '../../core/constants/consumer-routes.constants';
 import type {
   CareTeamServiceQuote,
+  HopeHubCheckoutQuote,
   HopeHubOffering,
   HopeHubOfferingQuote,
   HopeHubProvider,
@@ -112,6 +113,9 @@ export class ContactComponent implements OnInit {
   currentUser = signal<User | null>(null);
   promoCode = signal('');
   appliedPromoCode = signal('');
+  checkoutQuote = signal<HopeHubCheckoutQuote | null>(null);
+  checkoutQuoteLoading = signal(false);
+  checkoutQuoteError = signal('');
 
   careTeamProfileLink(provider: HopeHubProvider): string[] {
     return [...CONSUMER_ROUTES.links.careTeam, provider.slug || provider.id];
@@ -961,22 +965,70 @@ export class ContactComponent implements OnInit {
     if (this.appliedPromoCode() && this.appliedPromoCode() !== this.promoCode()) {
       this.appliedPromoCode.set('');
     }
+    this.checkoutQuote.set(null);
+    this.checkoutQuoteError.set('');
   }
 
-  applyPromoCode(): void {
+  async applyPromoCode(): Promise<void> {
     const code = this.promoCode().trim().toUpperCase();
     if (code.length < 2) {
       this.appliedPromoCode.set('');
+      this.checkoutQuote.set(null);
       this.notificationService.info('Enter a valid coupon code.');
       return;
     }
-    this.appliedPromoCode.set(code);
-    this.notificationService.success('Coupon will be checked at secure checkout.');
+
+    const grossInPaise = this.basePayTodayInPaise();
+    if (grossInPaise <= 0) {
+      this.appliedPromoCode.set(code);
+      this.checkoutQuote.set(null);
+      this.checkoutQuoteError.set('');
+      this.notificationService.success('Coupon saved for checkout.');
+      return;
+    }
+
+    if (!this.currentUser()) {
+      this.appliedPromoCode.set(code);
+      this.checkoutQuote.set(null);
+      this.checkoutQuoteError.set('Sign up or log in to validate this coupon.');
+      this.notificationService.info('Sign up or log in to validate this coupon.');
+      this.authModalService.openRegister();
+      return;
+    }
+
+    this.checkoutQuoteLoading.set(true);
+    this.checkoutQuoteError.set('');
+    try {
+      const { quote } = await firstValueFrom(
+        this.bookingService.checkoutQuote({
+          grossInPaise,
+          promoCode: code,
+        }),
+      );
+      this.appliedPromoCode.set(code);
+      this.checkoutQuote.set(quote);
+      if (quote.discountInPaise > 0) {
+        this.notificationService.success('Coupon applied.');
+      } else {
+        this.checkoutQuoteError.set('No coupon discount applies to this checkout.');
+        this.notificationService.info('No discount applies to this checkout.');
+      }
+    } catch (error) {
+      this.appliedPromoCode.set('');
+      this.checkoutQuote.set(null);
+      const message = this.readErrorMessage(error);
+      this.checkoutQuoteError.set(message || 'Coupon could not be applied.');
+      this.notificationService.error(this.checkoutQuoteError());
+    } finally {
+      this.checkoutQuoteLoading.set(false);
+    }
   }
 
   clearPromoCode(): void {
     this.promoCode.set('');
     this.appliedPromoCode.set('');
+    this.checkoutQuote.set(null);
+    this.checkoutQuoteError.set('');
   }
 
   checkoutPromoCode(): string {
@@ -1011,7 +1063,13 @@ export class ContactComponent implements OnInit {
     return Math.max(0, offer.priceInPaise - this.offerDiscountInPaise());
   }
 
-  payTodayInPaise(): number {
+  couponDiscountInPaise(): number {
+    const quote = this.checkoutQuote();
+    if (!quote || !this.appliedPromoCode()) return 0;
+    return quote.grossAmountInPaise === this.basePayTodayInPaise() ? quote.discountInPaise : 0;
+  }
+
+  basePayTodayInPaise(): number {
     const serviceQuote = this.careTeamServiceQuote();
     if (serviceQuote) return serviceQuote.quote.payableInPaise;
     const offer = this.selectedOffering();
@@ -1035,8 +1093,17 @@ export class ContactComponent implements OnInit {
     return finalAmount;
   }
 
+  payTodayInPaise(): number {
+    const quote = this.checkoutQuote();
+    const basePayable = this.basePayTodayInPaise();
+    if (quote && this.appliedPromoCode() && quote.grossAmountInPaise === basePayable) {
+      return quote.payableInPaise;
+    }
+    return basePayable;
+  }
+
   balanceDueInPaise(): number {
-    return Math.max(0, this.offerFinalInPaise() - this.payTodayInPaise());
+    return Math.max(0, this.offerFinalInPaise() - this.basePayTodayInPaise());
   }
 
   formatPaise(value: number): string {

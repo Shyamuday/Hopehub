@@ -482,6 +482,11 @@ form {
   line-height: 1.45;
 }
 
+.coupon-box__error {
+  color: #b91c1c !important;
+  font-weight: 800;
+}
+
 .feedback {
   display: grid;
   gap: 0.25rem;
