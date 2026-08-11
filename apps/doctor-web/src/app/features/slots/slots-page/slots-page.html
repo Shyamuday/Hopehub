@@ -7,6 +7,28 @@
         </div>
       </div>
 
+      @if (readiness(); as ready) {
+        <section class="readiness-panel" [class.ready]="ready.ready">
+          <div class="readiness-head">
+            <div>
+              <p class="readiness-kicker">{{ ready.ready ? 'Ready' : 'Setup needed' }}</p>
+              <h3>{{ ready.ready ? 'Availability can be opened' : 'Before users can book you' }}</h3>
+              <p>{{ readinessMessage() }}</p>
+            </div>
+            <button type="button" class="refresh-btn" (click)="loadReadiness()" [disabled]="readinessLoading()">
+              {{ readinessLoading() ? 'Checking…' : 'Refresh' }}
+            </button>
+          </div>
+          @if (!ready.ready && ready.blockers.length) {
+            <ul class="readiness-list">
+              @for (blocker of ready.blockers.slice(0, 5); track blocker.code) {
+                <li>{{ blocker.message }}</li>
+              }
+            </ul>
+          }
+        </section>
+      }
+
       <!-- Date nav -->
       <div class="date-nav">
         <button class="nav-btn" (click)="prevWeek()">‹</button>
@@ -25,7 +47,7 @@
       <div class="template-row">
         <span class="tmpl-lbl">Quick add:</span>
         @for (t of templates; track t.label) {
-          <button class="tmpl-btn" (click)="addTemplate(t)">{{ t.label }}</button>
+          <button class="tmpl-btn" (click)="addTemplate(t)" [disabled]="readinessBlocksActions()">{{ t.label }}</button>
         }
         <button class="tmpl-btn danger" (click)="clearDay()">🗑 Clear day</button>
       </div>
@@ -35,7 +57,7 @@
         <input type="time" [formField]="slotDraftForm.newStart" />
         <span>to</span>
         <input type="time" [formField]="slotDraftForm.newEnd" />
-        <button class="btn-primary" (click)="addSlot()">{{ addButtonLabel() }}</button>
+        <button class="btn-primary" (click)="addSlot()" [disabled]="readinessBlocksActions()">{{ addButtonLabel() }}</button>
       </div>
 
       <section class="rules-panel">
@@ -65,7 +87,7 @@
               <option [value]="service.id">{{ service.title }} · {{ service.durationMinutes }} min</option>
             }
           </select>
-          <button class="btn-primary" type="button" (click)="addRule()">Save & generate</button>
+          <button class="btn-primary" type="button" (click)="addRule()" [disabled]="readinessBlocksActions()">Save & generate</button>
         </div>
         @if (rules().length) {
           <div class="rule-list">
@@ -79,7 +101,7 @@
                   @if (rule.maxSessionsPerDay) { · Max {{ rule.maxSessionsPerDay }}/day }
                 </small>
                 <div class="rule-actions">
-                  <button type="button" (click)="generateRule(rule)" [disabled]="!rule.isActive">Generate</button>
+                  <button type="button" (click)="generateRule(rule)" [disabled]="!rule.isActive || readinessBlocksActions()">Generate</button>
                   <button type="button" class="danger" (click)="deleteRule(rule)" [disabled]="!rule.isActive">Disable</button>
                 </div>
               </article>
@@ -105,7 +127,7 @@
               </div>
               <div class="slot-actions">
                 @if (!s.isBooked) {
-                  <button class="icon-btn" (click)="toggleBlock(s)" [title]="s.isBlocked ? 'Unblock' : 'Block'">
+                  <button class="icon-btn" (click)="toggleBlock(s)" [disabled]="s.isBlocked && readinessBlocksActions()" [title]="s.isBlocked ? 'Unblock' : 'Block'">
                     {{ s.isBlocked ? '🔓' : '🔒' }}
                   </button>
                   <button class="icon-btn danger" (click)="deleteSlot(s.id)" title="Delete">✕</button>

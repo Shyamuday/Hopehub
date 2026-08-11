@@ -6,7 +6,10 @@ import { environment } from '../../../../environments/environment';
 import { API_PATHS } from '../../../core/constants/api-paths.constants';
 import { TOAST_DURATION_MS } from '../../../core/constants/timing.constants';
 import { Auth } from '../../../core/services/auth';
-import { DoctorSessionService } from '../../../core/services/doctor-session';
+import {
+  DoctorSessionService,
+  type ProviderReadiness,
+} from '../../../core/services/doctor-session';
 import { SLOT_TEMPLATES, WEEKDAY_SHORT_LABELS } from '../constants/slot-templates.constants';
 
 interface Slot {
@@ -78,6 +81,8 @@ export class SlotsPage implements OnInit {
   services = signal<CareService[]>([]);
   loading = signal(true);
   isHopeHub = signal(false);
+  readiness = signal<ProviderReadiness | null>(null);
+  readinessLoading = signal(false);
   toast = signal('');
   selectedDate = signal(this.today());
   weekStart = signal(this.mondayOf(new Date()));
@@ -111,6 +116,7 @@ export class SlotsPage implements OnInit {
 
   ngOnInit(): void {
     void this.loadRoleLanguage();
+    void this.loadReadiness();
     this.load();
   }
 
@@ -141,6 +147,36 @@ export class SlotsPage implements OnInit {
     return this.isHopeHub()
       ? `No available times for ${this.selectedDate()}. Use "Quick add" above or add manually.`
       : `No slots for ${this.selectedDate()}. Use "Quick add" above or add manually.`;
+  }
+
+  readinessBlocksActions(): boolean {
+    return this.readiness()?.ready === false;
+  }
+
+  readinessMessage(): string {
+    const readiness = this.readiness();
+    if (!readiness) return '';
+    return readiness.ready
+      ? 'Your availability can be shown to users when you are online and accepting sessions.'
+      : readiness.message ||
+          'Complete the required provider setup before opening new availability.';
+  }
+
+  async loadReadiness(): Promise<void> {
+    this.readinessLoading.set(true);
+    try {
+      this.readiness.set(await this.session.readiness());
+    } catch {
+      this.readiness.set(null);
+    } finally {
+      this.readinessLoading.set(false);
+    }
+  }
+
+  private stopIfNotReady(): boolean {
+    if (!this.readinessBlocksActions()) return false;
+    this.showToast(this.readinessMessage());
+    return true;
   }
 
   today(): string {
@@ -203,6 +239,7 @@ export class SlotsPage implements OnInit {
   }
 
   async addSlot(): Promise<void> {
+    if (this.stopIfNotReady()) return;
     const { newStart, newEnd } = this.slotDraftModel();
     if (!newStart || !newEnd || newEnd <= newStart) {
       this.showToast('Invalid time range');
@@ -228,6 +265,7 @@ export class SlotsPage implements OnInit {
   }
 
   async addRule(): Promise<void> {
+    if (this.stopIfNotReady()) return;
     const body = this.ruleModel();
     if (!body.label || !body.startTime || !body.endTime || body.endTime <= body.startTime) {
       this.showToast('Invalid availability rule');
@@ -259,6 +297,7 @@ export class SlotsPage implements OnInit {
   }
 
   async generateRule(rule: AvailabilityRule): Promise<void> {
+    if (this.stopIfNotReady()) return;
     const token = this.auth.token();
     const result = await firstValueFrom(
       this.http.post<{ generated: { generated: number } }>(
@@ -289,6 +328,7 @@ export class SlotsPage implements OnInit {
   }
 
   async addTemplate(t: { start: string; end: string; step: number }): Promise<void> {
+    if (this.stopIfNotReady()) return;
     const slotsToCreate = generateSlots(t.start, t.end, t.step);
     const token = this.auth.token();
     let added = 0;
@@ -329,6 +369,7 @@ export class SlotsPage implements OnInit {
   }
 
   async toggleBlock(s: Slot): Promise<void> {
+    if (s.isBlocked && this.stopIfNotReady()) return;
     const token = this.auth.token();
     await firstValueFrom(
       this.http.patch(

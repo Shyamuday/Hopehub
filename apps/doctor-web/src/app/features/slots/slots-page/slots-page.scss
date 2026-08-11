@@ -4,6 +4,19 @@
     .sp-title { font-size: 20px; font-weight: 800; margin: 0 0 4px; }
     .sp-sub { font-size: 13px; color: #94a3b8; margin: 0; }
 
+    .readiness-panel { margin: 0 0 16px; border: 1px solid rgba(251,191,36,0.28); background: linear-gradient(135deg,rgba(251,191,36,0.12),rgba(15,23,42,0.55)); border-radius: 16px; padding: 14px; box-shadow: 0 16px 40px rgba(0,0,0,0.18); }
+    .readiness-panel.ready { border-color: rgba(74,222,128,0.28); background: linear-gradient(135deg,rgba(74,222,128,0.1),rgba(15,23,42,0.55)); }
+    .readiness-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+    .readiness-kicker { margin: 0 0 4px; color: #fbbf24; font-size: 11px; text-transform: uppercase; letter-spacing: 0.12em; font-weight: 800; }
+    .readiness-panel.ready .readiness-kicker { color: #4ade80; }
+    .readiness-head h3 { margin: 0; font-size: 15px; }
+    .readiness-head p { margin: 5px 0 0; color: #cbd5e1; font-size: 12px; line-height: 1.45; }
+    .refresh-btn { border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.05); color: #e2e8f0; border-radius: 999px; padding: 7px 11px; font-size: 12px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+    .refresh-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+    .readiness-list { display: grid; gap: 6px; margin: 12px 0 0; padding: 0; list-style: none; }
+    .readiness-list li { position: relative; padding-left: 18px; color: #fde68a; font-size: 12px; line-height: 1.35; }
+    .readiness-list li::before { content: '•'; position: absolute; left: 4px; color: #fbbf24; }
+
     .date-nav { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 16px; padding: 10px 14px; }
     .nav-btn { width: 32px; height: 32px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); background: transparent; color: #a5b4fc; font-size: 18px; cursor: pointer; flex-shrink: 0; }
     .week-dates { display: flex; gap: 6px; flex: 1; justify-content: center; flex-wrap: wrap; }
@@ -14,11 +27,13 @@
     .template-row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin-bottom: 10px; }
     .tmpl-lbl { font-size: 12px; color: #94a3b8; font-weight: 600; }
     .tmpl-btn { padding: 6px 12px; border-radius: 8px; border: 1px solid rgba(99,102,241,0.25); background: rgba(99,102,241,0.06); color: #a5b4fc; font-size: 12px; font-weight: 600; cursor: pointer; &.danger { border-color: rgba(248,113,113,0.25); background: rgba(248,113,113,0.06); color: #f87171; } }
+    .tmpl-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
     .manual-add { display: flex; align-items: center; gap: 8px; margin-bottom: 20px; }
     .manual-add input { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 8px 10px; color: white; font-size: 13px; outline: none; &:focus { border-color: rgba(99,102,241,0.5); } }
     .manual-add span { color: #94a3b8; font-size: 13px; }
     .btn-primary { padding: 9px 16px; border-radius: 9px; border: none; background: linear-gradient(135deg,#6366f1,#4f46e5); color: white; font-size: 13px; font-weight: 700; cursor: pointer; }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; filter: grayscale(0.3); }
 
     .rules-panel { margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); border-radius: 16px; padding: 14px; }
     .rules-head h3 { margin: 0; font-size: 15px; }
@@ -46,6 +61,7 @@
     .slot-status .badge { padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; &.open { background: rgba(74,222,128,0.12); color: #4ade80; } &.booked { background: rgba(251,146,60,0.12); color: #fb923c; } &.blocked { background: rgba(148,163,184,0.12); color: #94a3b8; } }
     .slot-actions { display: flex; gap: 5px; margin-top: 4px; }
     .icon-btn { width: 26px; height: 26px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.08); background: transparent; color: #94a3b8; font-size: 12px; cursor: pointer; &.danger { border-color: rgba(248,113,113,0.2); color: #f87171; } }
+    .icon-btn:disabled { opacity: 0.45; cursor: not-allowed; }
 
     .empty { text-align: center; padding: 40px; color: #94a3b8; }
     .empty > div:first-child { font-size: 36px; margin-bottom: 10px; }
@@ -54,6 +70,7 @@
 
     @media (max-width: 768px) {
       .sp { padding: 1rem; }
+      .readiness-head { flex-direction: column; }
       .manual-add { flex-wrap: wrap; align-items: stretch; }
       .manual-add input, .manual-add select, .manual-add button { width: 100%; }
       .rule-form { grid-template-columns: 1fr; }
