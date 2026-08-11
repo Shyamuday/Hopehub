@@ -12,7 +12,7 @@
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
       <div
         class="hope-card hope-motion-card cursor-pointer group"
-        routerLink="/assessments"
+        [routerLink]="ROUTES.links.assessments"
       >
         <img class="mb-5 aspect-[16/10] w-full rounded-xl object-cover" [src]="images.assessment" alt="Words and prompts for naming difficult feelings" loading="lazy" />
         <div
@@ -40,7 +40,7 @@
 
       <div
         class="hope-card hope-motion-card cursor-pointer group"
-        routerLink="/exercises"
+        [routerLink]="ROUTES.links.exercises"
       >
         <div
           class="hope-icon-box mb-4"
@@ -68,7 +68,7 @@
 
       <div
         class="hope-card hope-motion-card cursor-pointer group"
-        routerLink="/lifestyle-tips"
+        [routerLink]="ROUTES.links.lifestyleTips"
       >
         <div
           class="hope-icon-box mb-4"
@@ -96,7 +96,7 @@
 
       <div
         class="hope-card hope-motion-card cursor-pointer group"
-        routerLink="/articles"
+        [routerLink]="ROUTES.links.articles"
       >
         <div
           class="hope-icon-box mb-4"
@@ -133,7 +133,7 @@
           tips, and educational content.
         </p>
         <a
-          routerLink="/assessments"
+          [routerLink]="ROUTES.links.assessments"
           class="btn-primary btn-lg text-base sm:text-lg"
         >
           {{ UX.cta.startTest }}

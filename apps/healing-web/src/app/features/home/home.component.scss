@@ -94,6 +94,62 @@
   margin: 0.55rem 0 0;
 }
 
+.concern-shortcuts {
+  margin-top: 1.25rem;
+  display: grid;
+  gap: 1rem;
+  border-radius: 1.25rem;
+  border: 1px solid rgba(16, 185, 129, 0.16);
+  background: rgba(255, 255, 255, 0.74);
+  padding: 1rem;
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.06);
+}
+
+.concern-shortcuts h3 {
+  margin: 0.25rem 0 0;
+  color: #0f172a;
+  font-size: 1.05rem;
+  font-weight: 900;
+}
+
+.concern-shortcuts__grid {
+  display: grid;
+  gap: 0.65rem;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+}
+
+.concern-shortcuts__chip {
+  display: grid;
+  gap: 0.25rem;
+  border-radius: 1rem;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  background: #ffffff;
+  padding: 0.8rem 0.9rem;
+  text-decoration: none;
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
+}
+
+.concern-shortcuts__chip:hover,
+.concern-shortcuts__chip:focus-visible {
+  border-color: rgba(16, 185, 129, 0.42);
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.1);
+  transform: translateY(-1px);
+}
+
+.concern-shortcuts__chip span {
+  color: #0f172a;
+  font-weight: 900;
+}
+
+.concern-shortcuts__chip small {
+  color: #64748b;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
 @media (max-width: 640px) {
   .hope-section {
     padding-top: 2.25rem;
@@ -145,5 +201,13 @@
 
   .support-moment-card {
     min-height: 20rem;
+  }
+
+  .concern-shortcuts {
+    padding: 0.85rem;
+  }
+
+  .concern-shortcuts__grid {
+    grid-template-columns: 1fr 1fr;
   }
 }

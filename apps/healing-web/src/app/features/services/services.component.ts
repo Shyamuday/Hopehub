@@ -2,6 +2,7 @@ import { Component, OnInit, computed, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { NOTE_CONTENT } from '../../core/constants/note-content.constants';
+import { CONSUMER_ROUTES } from '../../core/constants/consumer-routes.constants';
 import { Service, ServiceCategory } from '../../core/models';
 import { ServiceCardComponent } from '../../shared/components';
 import {
@@ -62,7 +63,7 @@ export class ServicesComponent implements OnInit {
   }
 
   navigateToService(serviceId: string) {
-    this.router.navigate(['/services', serviceId]);
+    this.router.navigate([...CONSUMER_ROUTES.links.services, serviceId]);
   }
 
   setFilter(filter: string): void {

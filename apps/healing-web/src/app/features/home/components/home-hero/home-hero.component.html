@@ -23,26 +23,26 @@
           Choose what feels easiest right now. You can talk, book, or understand your feelings first.
         </p>
         <div class="home-hero__decision-grid hope-animate-fade-up hope-delay-4">
-          <a class="home-hero__decision home-hero__decision--primary" routerLink="/" fragment="live-connect">
+          <a class="home-hero__decision home-hero__decision--primary" [routerLink]="ROUTES.links.home" [fragment]="ROUTES.fragments.liveConnect">
             <span>💬</span>
             <strong>I need to talk now</strong>
             <small>See who is live for private 1:1 support</small>
           </a>
-          <a class="home-hero__decision" routerLink="/contact">
+          <a class="home-hero__decision" [routerLink]="ROUTES.links.bookSupport">
             <span>🗓️</span>
             <strong>I want to {{ UX.cta.bookSupport.toLowerCase() }}</strong>
             <small>Choose a slot and continue calmly</small>
           </a>
-          <a class="home-hero__decision" routerLink="/assessments">
+          <a class="home-hero__decision" [routerLink]="ROUTES.links.assessments">
             <span>🧭</span>
             <strong>I want to understand myself</strong>
             <small>Start with a short private test</small>
           </a>
         </div>
         <div class="home-hero__trust hope-animate-fade-up hope-delay-4">
-          <a routerLink="/" fragment="live-connect">Live chat, voice, or video</a>
-          <a routerLink="/community">Daily 9 PM voice circle</a>
-          <a routerLink="/dashboard">Private result tracking</a>
+          <a [routerLink]="ROUTES.links.home" [fragment]="ROUTES.fragments.liveConnect">Live chat, voice, or video</a>
+          <a [routerLink]="ROUTES.links.community">Daily 9 PM voice circle</a>
+          <a [routerLink]="ROUTES.links.dashboard">Private result tracking</a>
         </div>
       </div>
 

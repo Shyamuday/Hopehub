@@ -13,7 +13,7 @@
           or a gentle emotional support listener. Each profile clearly shows the scope before you book.
         </p>
       </div>
-      <a routerLink="/contact" class="btn-primary btn-sm">{{ UX.cta.bookSupport }}</a>
+      <a [routerLink]="ROUTES.links.bookSupport" class="btn-primary btn-sm">{{ UX.cta.bookSupport }}</a>
     </div>
 
     <div class="mb-6 rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm leading-6 text-emerald-950">
@@ -218,13 +218,19 @@
             }
             <div class="mt-5 flex flex-col gap-2">
               <a
-                [routerLink]="['/care-team', provider.slug || provider.id]"
+                [routerLink]="careTeamProfileLink(provider)"
                 class="btn-secondary btn-sm"
               >
                 View profile
               </a>
               <a
-                routerLink="/contact"
+                [routerLink]="assessmentForProvider(provider).link"
+                class="btn-outline btn-sm"
+              >
+                {{ assessmentForProvider(provider).label }}
+              </a>
+              <a
+                [routerLink]="ROUTES.links.bookSupport"
                 [queryParams]="bookingQueryParams(provider, primaryService(provider))"
                 class="btn-outline btn-sm"
               >
@@ -276,7 +282,7 @@
         </p>
         <div class="mt-4 flex flex-wrap justify-center gap-2">
           <button type="button" class="btn-secondary btn-sm" (click)="setRoleGroup('')">Show all</button>
-          <a routerLink="/contact" class="btn-primary btn-sm">Send request</a>
+          <a [routerLink]="ROUTES.links.bookSupport" class="btn-primary btn-sm">Send request</a>
         </div>
       </div>
     }

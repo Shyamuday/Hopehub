@@ -99,7 +99,7 @@
         </div>
         <button
           class="btn-primary btn-block sm:w-auto"
-          routerLink="/community"
+          [routerLink]="ROUTES.links.community"
         >
           Learn More
         </button>
@@ -112,7 +112,7 @@
       </h3>
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 max-w-4xl mx-auto">
         <a
-          routerLink="/community"
+          [routerLink]="ROUTES.links.community"
           class="hope-card block transition-colors hover:border-primary-200 sm:p-6"
         >
           <div
@@ -133,7 +133,7 @@
           </p>
         </a>
         <a
-          routerLink="/articles"
+          [routerLink]="ROUTES.links.articles"
           class="hope-card block transition-colors hover:border-primary-200 sm:p-6"
         >
           <div
@@ -156,7 +156,7 @@
           </p>
         </a>
         <a
-          routerLink="/contact"
+          [routerLink]="ROUTES.links.bookSupport"
           class="hope-card block transition-colors hover:border-primary-200 sm:p-6"
         >
           <div

@@ -10,12 +10,12 @@
         <p class="hope-eyebrow">What brings people here</p>
         <h2 class="hope-section-title">Real life is messy. Support can still feel simple.</h2>
       </div>
-      <a routerLink="/telegram" class="btn-outline">{{ UX.cta.exploreSupportOptions }}</a>
+      <a [routerLink]="ROUTES.links.telegram" class="btn-outline">{{ UX.cta.exploreSupportOptions }}</a>
     </div>
 
     <div class="support-moment-rail" aria-label="Hope Hub support moments">
       @for (moment of supportMoments; track moment.title) {
-        <a class="support-moment-card" [routerLink]="moment.route">
+        <a class="support-moment-card" [routerLink]="moment.route" [queryParams]="moment.queryParams || null">
           <img [src]="moment.image" [alt]="moment.title" loading="lazy" />
           <span>{{ moment.label }}</span>
           <h3>{{ moment.title }}</h3>
@@ -45,7 +45,7 @@
         <p class="hope-card-copy">
           Pick a service, choose a slot, and continue with the right expert.
         </p>
-        <a routerLink="/contact" class="btn-primary mt-5">{{ UX.cta.bookSupport }}</a>
+        <a [routerLink]="ROUTES.links.bookSupport" class="btn-primary mt-5">{{ UX.cta.bookSupport }}</a>
       </article>
 
       <article class="hope-card hope-motion-card">
@@ -74,8 +74,27 @@
         <p class="hope-card-copy">
           Complete a short assessment, then sign in to save your score and compare retests over time.
         </p>
-        <a routerLink="/assessments" class="btn-outline mt-5">{{ UX.cta.startTest }}</a>
+        <a [routerLink]="ROUTES.links.assessments" class="btn-outline mt-5">{{ UX.cta.startTest }}</a>
       </article>
+    </div>
+
+    <div class="concern-shortcuts" aria-label="Start by concern">
+      <div>
+        <p class="hope-eyebrow">Or start by concern</p>
+        <h3>One tap to the right test and support path</h3>
+      </div>
+      <div class="concern-shortcuts__grid">
+        @for (concern of concernShortcuts; track concern.key) {
+          <a
+            class="concern-shortcuts__chip"
+            [routerLink]="concern.assessment.link"
+            [attr.aria-label]="'Open ' + concern.assessment.label"
+          >
+            <span>{{ concern.shortLabel }}</span>
+            <small>{{ concern.assessment.label }}</small>
+          </a>
+        }
+      </div>
     </div>
   </div>
 </section>
@@ -93,7 +112,7 @@
           anxiety, relationship stress, overthinking, family concerns, and private guidance.
         </p>
       </div>
-      <a routerLink="/care-team" class="btn-secondary">{{ UX.cta.meetCareTeam }}</a>
+      <a [routerLink]="ROUTES.links.careTeam" class="btn-secondary">{{ UX.cta.meetCareTeam }}</a>
     </div>
 
     @if (psychologistsLoading()) {
@@ -154,8 +173,8 @@
         No pressure to explain everything at once. {{ UX.cta.bookSupport }} or begin with a short test.
       </p>
       <div class="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
-        <a routerLink="/contact" class="btn-primary">{{ UX.cta.bookSupport }}</a>
-        <a routerLink="/assessments" class="btn-outline">{{ UX.cta.startTest }}</a>
+        <a [routerLink]="ROUTES.links.bookSupport" class="btn-primary">{{ UX.cta.bookSupport }}</a>
+        <a [routerLink]="ROUTES.links.assessments" class="btn-outline">{{ UX.cta.startTest }}</a>
       </div>
     </div>
   </div>

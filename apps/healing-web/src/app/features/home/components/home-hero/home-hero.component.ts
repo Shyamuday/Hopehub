@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { RouterModule } from '@angular/router';
 import { IMAGE_ASSETS } from '../../../../core/constants/image-assets.constants';
 import { CONSUMER_UX_COPY } from '../../../../core/constants/consumer-ux-copy.constants';
+import { CONSUMER_ROUTES } from '../../../../core/constants/consumer-routes.constants';
 
 @Component({
   selector: 'app-home-hero',
@@ -12,6 +13,7 @@ import { CONSUMER_UX_COPY } from '../../../../core/constants/consumer-ux-copy.co
 })
 export class HomeHeroComponent {
   readonly UX = CONSUMER_UX_COPY;
+  readonly ROUTES = CONSUMER_ROUTES;
   readonly heroSlides = [
     {
       src: IMAGE_ASSETS.HEALING_HUB.PHOTOS.EXPERT_SUPPORT,

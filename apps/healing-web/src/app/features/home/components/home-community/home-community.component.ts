@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { RouterModule } from '@angular/router';
 import { APP_CONSTANTS } from '../../../../core';
+import { CONSUMER_ROUTES } from '../../../../core/constants/consumer-routes.constants';
 import { Meetup } from '../../../../core/models';
 
 @Component({
@@ -11,6 +12,7 @@ import { Meetup } from '../../../../core/models';
 })
 export class HomeCommunityComponent {
   readonly APP_CONSTANTS = APP_CONSTANTS;
+  readonly ROUTES = CONSUMER_ROUTES;
 
   readonly nextMeetup: Meetup = {
     id: '1',

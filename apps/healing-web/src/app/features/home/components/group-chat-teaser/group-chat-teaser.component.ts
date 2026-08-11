@@ -19,6 +19,7 @@ import {
   GroupChatTeaserService,
   HopeHubRealtimeService,
 } from '../../../../core/services';
+import { CONSUMER_ROUTES } from '../../../../core/constants/consumer-routes.constants';
 import {
   HopeHubLiveGroup,
   HopeHubLiveGroupMessage,
@@ -51,6 +52,7 @@ export class GroupChatTeaserComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
   private readonly platformId = inject(PLATFORM_ID);
+  readonly ROUTES = CONSUMER_ROUTES;
 
   readonly isOpen = signal(false);
   readonly isMinimized = signal(false);
@@ -202,9 +204,11 @@ export class GroupChatTeaserComponent implements OnInit {
     if (this.isAuthenticated()) {
       const group = this.activeGroup();
       if (group) {
-        void this.router.navigate(['/live-groups', group.slug || group.id]);
+        void this.router.navigate([...CONSUMER_ROUTES.links.liveGroups, group.slug || group.id]);
       } else {
-        void this.router.navigate(['/'], { fragment: 'live-connect' });
+        void this.router.navigate(CONSUMER_ROUTES.links.home, {
+          fragment: CONSUMER_ROUTES.fragments.liveConnect,
+        });
       }
       return;
     }

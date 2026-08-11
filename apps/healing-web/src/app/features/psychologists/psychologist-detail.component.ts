@@ -7,6 +7,11 @@ import {
   supportPathForProvider,
   supportPathMeta as getSupportPathMeta,
 } from '../../core/constants/support-paths.constants';
+import {
+  CONSUMER_ROUTES,
+  ConsumerAssessmentRouteMatch,
+} from '../../core/constants/consumer-routes.constants';
+import { consumerAssessmentForText } from '../../core/constants/consumer-concerns.constants';
 import { NotificationService } from '../../core/services/notification.service';
 import { PublicCommunicationConfigService } from '../../core/services/public-communication-config.service';
 
@@ -31,6 +36,7 @@ export class PsychologistDetailComponent implements OnInit {
   readonly expandedBio = signal(false);
   readonly expandedApproach = signal(false);
   readonly expandedSections = signal<Record<string, boolean>>({});
+  readonly ROUTES = CONSUMER_ROUTES;
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
@@ -69,7 +75,7 @@ export class PsychologistDetailComponent implements OnInit {
     const selectedService = service || null;
     const supportPath = supportPathForProvider(provider);
     const supportMeta = getSupportPathMeta(supportPath);
-    this.router.navigate(['/contact'], {
+    this.router.navigate(CONSUMER_ROUTES.links.bookSupport, {
       queryParams: {
         service: selectedService?.title || this.publicConfig.defaultServiceName,
         serviceName: selectedService?.title || this.publicConfig.defaultServiceName,
@@ -175,6 +181,22 @@ export class PsychologistDetailComponent implements OnInit {
 
   bookingCta(provider: HopeHubProvider): string {
     return provider.bookingCtaLabel ?? '';
+  }
+
+  assessmentForProvider(provider: HopeHubProvider): ConsumerAssessmentRouteMatch {
+    return consumerAssessmentForText(
+      [
+        provider.supportRoleLabel,
+        provider.supportRoleDescription,
+        provider.supportScope,
+        ...(provider.focusAreas ?? []),
+        ...(provider.concernsHandled ?? []),
+        ...(provider.supportBestFor ?? []),
+        ...(provider.services ?? []).map(
+          (service) => `${service.title} ${service.description ?? ''}`,
+        ),
+      ].join(' '),
+    );
   }
 
   servicePriceLabel(service: {

@@ -8,6 +8,7 @@ import { NotificationService } from '../../core/services/notification.service';
 import { User } from '../../core/models/auth.model';
 import { APP_CONSTANTS } from '../../core/constants/app.constants';
 import { CONSUMER_UX_COPY } from '../../core/constants/consumer-ux-copy.constants';
+import { CONSUMER_ROUTES } from '../../core/constants/consumer-routes.constants';
 
 @Component({
   selector: 'app-header',
@@ -24,7 +25,7 @@ import { CONSUMER_UX_COPY } from '../../core/constants/consumer-ux-copy.constant
           <!-- Logo and Brand -->
           <div class="flex items-center">
             <a
-              routerLink="/"
+              [routerLink]="ROUTES.links.home"
               class="flex items-center"
               (click)="closeMobileMenu()"
               aria-label="Hope Hub - Go to homepage"
@@ -42,36 +43,38 @@ import { CONSUMER_UX_COPY } from '../../core/constants/consumer-ux-copy.constant
           <!-- Desktop Navigation -->
           <div class="hidden md:flex items-center space-x-3 lg:space-x-4">
             <a
-              routerLink="/"
-              fragment="live-connect"
+              [routerLink]="ROUTES.links.home"
+              [fragment]="ROUTES.fragments.liveConnect"
               class="text-gray-700 hover:text-primary-600 px-2 py-2 text-sm font-medium transition-colors duration-200 whitespace-nowrap"
             >
               {{ UX.cta.talkNow }}
             </a>
             <a
-              routerLink="/care-team"
+              [routerLink]="ROUTES.links.careTeam"
               routerLinkActive="text-primary-600 border-b-2 border-primary-600"
               class="text-gray-700 hover:text-primary-600 px-2 py-2 text-sm font-medium transition-colors duration-200 whitespace-nowrap"
               [attr.aria-current]="
-                isCurrentRoute('/care-team') || isCurrentRoute('/psychologists') ? 'page' : null
+                isCurrentRoute(ROUTES.paths.careTeam) || isCurrentRoute('/psychologists')
+                  ? 'page'
+                  : null
               "
             >
               Care team
             </a>
 
             <a
-              routerLink="/assessments"
+              [routerLink]="ROUTES.links.assessments"
               routerLinkActive="text-primary-600 border-b-2 border-primary-600"
               class="text-gray-700 hover:text-primary-600 px-2 py-2 text-sm font-medium transition-colors duration-200 whitespace-nowrap"
-              [attr.aria-current]="isCurrentRoute('/assessments') ? 'page' : null"
+              [attr.aria-current]="isCurrentRoute(ROUTES.paths.assessments) ? 'page' : null"
             >
               Assessments
             </a>
             <a
-              routerLink="/community"
+              [routerLink]="ROUTES.links.community"
               routerLinkActive="text-primary-600 border-b-2 border-primary-600"
               class="text-gray-700 hover:text-primary-600 px-2 py-2 text-sm font-medium transition-colors duration-200 whitespace-nowrap"
-              [attr.aria-current]="isCurrentRoute('/community') ? 'page' : null"
+              [attr.aria-current]="isCurrentRoute(ROUTES.paths.community) ? 'page' : null"
             >
               Community
             </a>
@@ -96,67 +99,67 @@ import { CONSUMER_UX_COPY } from '../../core/constants/consumer-ux-copy.constant
                 role="menu"
               >
                 <a
-                  routerLink="/exercises"
+                  [routerLink]="ROUTES.links.exercises"
                   class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-primary-600"
                   role="menuitem"
                   >Exercises</a
                 >
                 <a
-                  routerLink="/lifestyle-tips"
+                  [routerLink]="ROUTES.links.lifestyleTips"
                   class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-primary-600"
                   role="menuitem"
                   >Lifestyle tips</a
                 >
                 <a
-                  routerLink="/articles"
+                  [routerLink]="ROUTES.links.articles"
                   class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-primary-600"
                   role="menuitem"
                   >Articles</a
                 >
                 <a
-                  routerLink="/packages"
+                  [routerLink]="ROUTES.links.packages"
                   routerLinkActive="text-primary-600 bg-primary-50"
                   class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-primary-600"
                   role="menuitem"
                   >Packages</a
                 >
                 <a
-                  routerLink="/events"
+                  [routerLink]="ROUTES.links.events"
                   routerLinkActive="text-primary-600 bg-primary-50"
                   class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-primary-600"
                   role="menuitem"
                   >Events</a
                 >
                 <a
-                  routerLink="/resources"
+                  [routerLink]="ROUTES.links.resources"
                   routerLinkActive="text-primary-600 bg-primary-50"
                   class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-primary-600"
                   role="menuitem"
                   >Recorded sessions</a
                 >
                 <a
-                  routerLink="/organization"
+                  [routerLink]="ROUTES.links.organization"
                   routerLinkActive="text-primary-600 bg-primary-50"
                   class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-primary-600"
                   role="menuitem"
                   >Organisation</a
                 >
                 <a
-                  routerLink="/feedback"
+                  [routerLink]="ROUTES.links.feedback"
                   routerLinkActive="text-primary-600 bg-primary-50"
                   class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-primary-600"
                   role="menuitem"
                   >Share feedback</a
                 >
                 <a
-                  routerLink="/donate"
+                  [routerLink]="ROUTES.links.donate"
                   routerLinkActive="text-primary-600 bg-primary-50"
                   class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-primary-600"
                   role="menuitem"
                   >Support us</a
                 >
                 <a
-                  routerLink="/careers"
+                  [routerLink]="ROUTES.links.careers"
                   routerLinkActive="text-primary-600 bg-primary-50"
                   class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-primary-600"
                   role="menuitem"
@@ -166,7 +169,11 @@ import { CONSUMER_UX_COPY } from '../../core/constants/consumer-ux-copy.constant
             </div>
             <!-- Authentication Section -->
             <div class="flex items-center space-x-2">
-              <a routerLink="/contact" class="btn-outline btn-sm whitespace-nowrap">Book session</a>
+              <a
+                [routerLink]="ROUTES.links.bookSupport"
+                class="btn-outline btn-sm whitespace-nowrap"
+                >{{ UX.cta.bookSupport }}</a
+              >
 
               <!-- Authenticated User -->
               @if (user()) {
@@ -196,13 +203,13 @@ import { CONSUMER_UX_COPY } from '../../core/constants/consumer-ux-copy.constant
                   >
                     <div class="py-1">
                       <a
-                        routerLink="/dashboard"
+                        [routerLink]="ROUTES.links.dashboard"
                         class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-primary-600"
                       >
                         My Consultations
                       </a>
                       <a
-                        routerLink="/profile"
+                        [routerLink]="ROUTES.links.profile"
                         class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-primary-600"
                       >
                         Profile Settings
@@ -276,22 +283,24 @@ import { CONSUMER_UX_COPY } from '../../core/constants/consumer-ux-copy.constant
           >
             <div class="flex flex-col space-y-2">
               <a
-                routerLink="/services"
+                [routerLink]="ROUTES.links.services"
                 (click)="closeMobileMenu()"
                 routerLinkActive="text-primary-600 bg-primary-50"
                 class="text-gray-700 hover:text-primary-600 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium transition-colors duration-200"
-                [attr.aria-current]="isCurrentRoute('/services') ? 'page' : null"
+                [attr.aria-current]="isCurrentRoute(ROUTES.paths.services) ? 'page' : null"
                 role="menuitem"
               >
                 Services
               </a>
               <a
-                routerLink="/care-team"
+                [routerLink]="ROUTES.links.careTeam"
                 (click)="closeMobileMenu()"
                 routerLinkActive="text-primary-600 bg-primary-50"
                 class="text-gray-700 hover:text-primary-600 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium transition-colors duration-200"
                 [attr.aria-current]="
-                  isCurrentRoute('/care-team') || isCurrentRoute('/psychologists') ? 'page' : null
+                  isCurrentRoute(ROUTES.paths.careTeam) || isCurrentRoute('/psychologists')
+                    ? 'page'
+                    : null
                 "
                 role="menuitem"
               >
@@ -299,7 +308,7 @@ import { CONSUMER_UX_COPY } from '../../core/constants/consumer-ux-copy.constant
               </a>
 
               <a
-                routerLink="/assessments"
+                [routerLink]="ROUTES.links.assessments"
                 (click)="closeMobileMenu()"
                 routerLinkActive="text-primary-600 bg-primary-50"
                 class="text-gray-700 hover:text-primary-600 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium transition-colors duration-200"
@@ -308,31 +317,31 @@ import { CONSUMER_UX_COPY } from '../../core/constants/consumer-ux-copy.constant
                 Assessments
               </a>
               <a
-                routerLink="/community"
+                [routerLink]="ROUTES.links.community"
                 (click)="closeMobileMenu()"
                 routerLinkActive="text-primary-600 bg-primary-50"
                 class="text-gray-700 hover:text-primary-600 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium transition-colors duration-200"
-                [attr.aria-current]="isCurrentRoute('/community') ? 'page' : null"
+                [attr.aria-current]="isCurrentRoute(ROUTES.paths.community) ? 'page' : null"
                 role="menuitem"
               >
                 Community
               </a>
               <a
-                routerLink="/telegram"
+                [routerLink]="ROUTES.links.telegram"
                 (click)="closeMobileMenu()"
                 routerLinkActive="text-primary-600 bg-primary-50"
                 class="text-gray-700 hover:text-primary-600 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium transition-colors duration-200"
-                [attr.aria-current]="isCurrentRoute('/telegram') ? 'page' : null"
+                [attr.aria-current]="isCurrentRoute(ROUTES.paths.telegram) ? 'page' : null"
                 role="menuitem"
               >
                 Telegram
               </a>
               <a
-                routerLink="/about"
+                [routerLink]="ROUTES.links.about"
                 (click)="closeMobileMenu()"
                 routerLinkActive="text-primary-600 bg-primary-50"
                 class="text-gray-700 hover:text-primary-600 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium transition-colors duration-200"
-                [attr.aria-current]="isCurrentRoute('/about') ? 'page' : null"
+                [attr.aria-current]="isCurrentRoute(ROUTES.paths.about) ? 'page' : null"
                 role="menuitem"
               >
                 About
@@ -342,7 +351,7 @@ import { CONSUMER_UX_COPY } from '../../core/constants/consumer-ux-copy.constant
                   Resources
                 </div>
                 <a
-                  routerLink="/exercises"
+                  [routerLink]="ROUTES.links.exercises"
                   (click)="closeMobileMenu()"
                   routerLinkActive="text-primary-600 bg-primary-50"
                   class="block rounded-md px-3 py-2 text-base font-medium text-gray-700 transition-colors duration-200 hover:bg-gray-50 hover:text-primary-600"
@@ -351,7 +360,7 @@ import { CONSUMER_UX_COPY } from '../../core/constants/consumer-ux-copy.constant
                   Exercises
                 </a>
                 <a
-                  routerLink="/lifestyle-tips"
+                  [routerLink]="ROUTES.links.lifestyleTips"
                   (click)="closeMobileMenu()"
                   routerLinkActive="text-primary-600 bg-primary-50"
                   class="block rounded-md px-3 py-2 text-base font-medium text-gray-700 transition-colors duration-200 hover:bg-gray-50 hover:text-primary-600"
@@ -360,7 +369,7 @@ import { CONSUMER_UX_COPY } from '../../core/constants/consumer-ux-copy.constant
                   Lifestyle tips
                 </a>
                 <a
-                  routerLink="/articles"
+                  [routerLink]="ROUTES.links.articles"
                   (click)="closeMobileMenu()"
                   routerLinkActive="text-primary-600 bg-primary-50"
                   class="block rounded-md px-3 py-2 text-base font-medium text-gray-700 transition-colors duration-200 hover:bg-gray-50 hover:text-primary-600"
@@ -369,7 +378,7 @@ import { CONSUMER_UX_COPY } from '../../core/constants/consumer-ux-copy.constant
                   Articles
                 </a>
                 <a
-                  routerLink="/packages"
+                  [routerLink]="ROUTES.links.packages"
                   (click)="closeMobileMenu()"
                   routerLinkActive="text-primary-600 bg-primary-50"
                   class="block rounded-md px-3 py-2 text-base font-medium text-gray-700 transition-colors duration-200 hover:bg-gray-50 hover:text-primary-600"
@@ -378,7 +387,7 @@ import { CONSUMER_UX_COPY } from '../../core/constants/consumer-ux-copy.constant
                   Packages
                 </a>
                 <a
-                  routerLink="/events"
+                  [routerLink]="ROUTES.links.events"
                   (click)="closeMobileMenu()"
                   routerLinkActive="text-primary-600 bg-primary-50"
                   class="block rounded-md px-3 py-2 text-base font-medium text-gray-700 transition-colors duration-200 hover:bg-gray-50 hover:text-primary-600"
@@ -387,7 +396,7 @@ import { CONSUMER_UX_COPY } from '../../core/constants/consumer-ux-copy.constant
                   Events
                 </a>
                 <a
-                  routerLink="/resources"
+                  [routerLink]="ROUTES.links.resources"
                   (click)="closeMobileMenu()"
                   routerLinkActive="text-primary-600 bg-primary-50"
                   class="block rounded-md px-3 py-2 text-base font-medium text-gray-700 transition-colors duration-200 hover:bg-gray-50 hover:text-primary-600"
@@ -396,7 +405,7 @@ import { CONSUMER_UX_COPY } from '../../core/constants/consumer-ux-copy.constant
                   Recorded sessions
                 </a>
                 <a
-                  routerLink="/organization"
+                  [routerLink]="ROUTES.links.organization"
                   (click)="closeMobileMenu()"
                   routerLinkActive="text-primary-600 bg-primary-50"
                   class="block rounded-md px-3 py-2 text-base font-medium text-gray-700 transition-colors duration-200 hover:bg-gray-50 hover:text-primary-600"
@@ -405,7 +414,7 @@ import { CONSUMER_UX_COPY } from '../../core/constants/consumer-ux-copy.constant
                   Organisation
                 </a>
                 <a
-                  routerLink="/feedback"
+                  [routerLink]="ROUTES.links.feedback"
                   (click)="closeMobileMenu()"
                   routerLinkActive="text-primary-600 bg-primary-50"
                   class="block rounded-md px-3 py-2 text-base font-medium text-gray-700 transition-colors duration-200 hover:bg-gray-50 hover:text-primary-600"
@@ -414,7 +423,7 @@ import { CONSUMER_UX_COPY } from '../../core/constants/consumer-ux-copy.constant
                   Share feedback
                 </a>
                 <a
-                  routerLink="/donate"
+                  [routerLink]="ROUTES.links.donate"
                   (click)="closeMobileMenu()"
                   routerLinkActive="text-primary-600 bg-primary-50"
                   class="block rounded-md px-3 py-2 text-base font-medium text-gray-700 transition-colors duration-200 hover:bg-gray-50 hover:text-primary-600"
@@ -423,7 +432,7 @@ import { CONSUMER_UX_COPY } from '../../core/constants/consumer-ux-copy.constant
                   Support us
                 </a>
                 <a
-                  routerLink="/careers"
+                  [routerLink]="ROUTES.links.careers"
                   (click)="closeMobileMenu()"
                   routerLinkActive="text-primary-600 bg-primary-50"
                   class="block rounded-md px-3 py-2 text-base font-medium text-gray-700 transition-colors duration-200 hover:bg-gray-50 hover:text-primary-600"
@@ -434,7 +443,7 @@ import { CONSUMER_UX_COPY } from '../../core/constants/consumer-ux-copy.constant
               </div>
 
               <a
-                routerLink="/contact"
+                [routerLink]="ROUTES.links.bookSupport"
                 (click)="closeMobileMenu()"
                 routerLinkActive="text-primary-600 bg-primary-50"
                 class="btn-outline btn-sm justify-start text-base"
@@ -446,7 +455,7 @@ import { CONSUMER_UX_COPY } from '../../core/constants/consumer-ux-copy.constant
               @if (user()) {
                 <div class="border-t border-gray-200 mt-2 pt-2"></div>
                 <a
-                  routerLink="/dashboard"
+                  [routerLink]="ROUTES.links.dashboard"
                   (click)="closeMobileMenu()"
                   routerLinkActive="text-primary-600 bg-primary-50"
                   class="text-gray-700 hover:text-primary-600 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-semibold transition-colors duration-200"
@@ -455,7 +464,7 @@ import { CONSUMER_UX_COPY } from '../../core/constants/consumer-ux-copy.constant
                   My Consultations
                 </a>
                 <a
-                  routerLink="/profile"
+                  [routerLink]="ROUTES.links.profile"
                   (click)="closeMobileMenu()"
                   routerLinkActive="text-primary-600 bg-primary-50"
                   class="text-gray-700 hover:text-primary-600 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-semibold transition-colors duration-200"
@@ -532,6 +541,7 @@ import { CONSUMER_UX_COPY } from '../../core/constants/consumer-ux-copy.constant
 export class HeaderComponent implements OnInit {
   readonly APP_CONSTANTS = APP_CONSTANTS;
   readonly UX = CONSUMER_UX_COPY;
+  readonly ROUTES = CONSUMER_ROUTES;
   mobileMenuOpen = signal(false);
   navigationState = signal<NavigationState | null>(null);
   user = signal<User | null>(null);

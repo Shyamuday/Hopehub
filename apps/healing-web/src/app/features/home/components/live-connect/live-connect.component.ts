@@ -13,6 +13,7 @@ import {
 } from '../../../../core/services';
 import { IMAGE_ASSETS } from '../../../../core/constants/image-assets.constants';
 import { CONSUMER_UX_COPY } from '../../../../core/constants/consumer-ux-copy.constants';
+import { CONSUMER_ROUTES } from '../../../../core/constants/consumer-routes.constants';
 import {
   ConsumerSupportPath,
   supportPathForProvider,
@@ -44,6 +45,7 @@ type LiveConnectAlternativeMode = {
 })
 export class LiveConnectComponent implements OnInit {
   readonly UX = CONSUMER_UX_COPY;
+  readonly ROUTES = CONSUMER_ROUTES;
   private readonly bookingService = inject(BookingService);
   private readonly authService = inject(AuthService);
   private readonly authModalService = inject(AuthModalService);

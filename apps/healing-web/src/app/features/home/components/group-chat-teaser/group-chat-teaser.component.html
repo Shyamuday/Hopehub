@@ -64,9 +64,9 @@
           {{ primaryActionLabel() }}
         </button>
         @if (hasRealChat()) {
-          <a routerLink="/" fragment="live-connect">{{ footerLinkLabel() }}</a>
+          <a [routerLink]="ROUTES.links.home" [fragment]="ROUTES.fragments.liveConnect">{{ footerLinkLabel() }}</a>
         } @else {
-          <a routerLink="/telegram">{{ footerLinkLabel() }}</a>
+          <a [routerLink]="ROUTES.links.telegram">{{ footerLinkLabel() }}</a>
         }
       </div>
     </aside>

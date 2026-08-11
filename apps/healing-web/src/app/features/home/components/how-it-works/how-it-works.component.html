@@ -39,13 +39,13 @@
 
     <div class="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
       <a
-        routerLink="/contact"
+        [routerLink]="ROUTES.links.bookSupport"
         class="btn-primary text-sm"
       >
         {{ UX.cta.bookSupport }}
       </a>
       <a
-        routerLink="/community"
+        [routerLink]="ROUTES.links.community"
         class="btn-secondary text-sm"
       >
         See community support

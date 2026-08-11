@@ -3,6 +3,8 @@ import { RouterModule } from '@angular/router';
 import { FeedbackSectionComponent, OfferBannerCarouselComponent } from '../../shared/components';
 import { APP_CONSTANTS } from '../../core';
 import { CONSUMER_UX_COPY } from '../../core/constants/consumer-ux-copy.constants';
+import { CONSUMER_ROUTES } from '../../core/constants/consumer-routes.constants';
+import { CONSUMER_CONCERN_FLOWS } from '../../core/constants/consumer-concerns.constants';
 import { IMAGE_ASSETS } from '../../core/constants/image-assets.constants';
 import { environment } from '../../../environments/environment';
 import { BookingService, HopeHubProvider } from '../../core/services/booking.service';
@@ -29,6 +31,7 @@ import { LiveConnectComponent } from './components/live-connect/live-connect.com
 export class HomeComponent implements OnInit {
   readonly APP_CONSTANTS = APP_CONSTANTS;
   readonly UX = CONSUMER_UX_COPY;
+  readonly ROUTES = CONSUMER_ROUTES;
   private readonly bookingService = inject(BookingService);
 
   readonly psychologists = signal<HopeHubProvider[]>([]);
@@ -39,29 +42,38 @@ export class HomeComponent implements OnInit {
       label: 'Work stress',
       title: 'When the day feels too loud',
       copy: 'Move from silent pressure to a private conversation with someone calm.',
-      route: '/contact',
+      route: CONSUMER_CONCERN_FLOWS.stress.bookingLink,
+      queryParams: CONSUMER_CONCERN_FLOWS.stress.bookingQueryParams,
     },
     {
       image: IMAGE_ASSETS.HEALING_HUB.PHOTOS.FEELING_WORDS,
       label: 'Self-check',
       title: 'Name what is happening inside',
       copy: 'Use tests and prompts to understand your mood before you explain it to anyone.',
-      route: '/assessments',
+      route: CONSUMER_CONCERN_FLOWS.general.assessment.link,
     },
     {
       image: IMAGE_ASSETS.HEALING_HUB.PHOTOS.COMMUNITY_SUPPORT,
       label: 'Community',
       title: 'Sit with people who get it',
       copy: 'Join low-pressure support spaces where venting can become lighter.',
-      route: '/telegram',
+      route: CONSUMER_ROUTES.links.telegram,
     },
     {
       image: IMAGE_ASSETS.HEALING_HUB.PHOTOS.HEARTBREAK_SUPPORT,
       label: 'Emotional pain',
       title: 'For heartbreak, guilt, anger, and overwhelm',
       copy: 'Start with support that does not judge your pace or your story.',
-      route: '/articles',
+      route: CONSUMER_CONCERN_FLOWS.breakup.assessment.link,
     },
+  ];
+  readonly concernShortcuts = [
+    CONSUMER_CONCERN_FLOWS.anxiety,
+    CONSUMER_CONCERN_FLOWS.depression,
+    CONSUMER_CONCERN_FLOWS.stress,
+    CONSUMER_CONCERN_FLOWS.relationship,
+    CONSUMER_CONCERN_FLOWS.sleep,
+    CONSUMER_CONCERN_FLOWS.breakup,
   ];
 
   ngOnInit(): void {

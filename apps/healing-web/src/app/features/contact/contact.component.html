@@ -256,7 +256,7 @@
                 <strong class="block text-gray-950">{{ activeProviderNotice() }}</strong>
                 <span class="text-gray-600">{{ matchedProviderMeta(provider) }}</span>
               </div>
-              <a class="font-semibold text-primary-700" [routerLink]="['/care-team', provider.slug || provider.id]">View profile</a>
+              <a class="font-semibold text-primary-700" [routerLink]="careTeamProfileLink(provider)">View profile</a>
             } @else {
               <p>{{ activeProviderNotice() || 'Add preferences to auto-match a provider.' }}</p>
             }
@@ -456,7 +456,7 @@
         <div class="feedback success">
           <strong>{{ errorMessage() || UX.booking.successTitle }}</strong>
           <span>We will contact you through your selected channel.</span>
-          <a routerLink="/dashboard">View dashboard</a>
+          <a [routerLink]="ROUTES.links.dashboard">View dashboard</a>
         </div>
       }
 

@@ -52,6 +52,12 @@
               class="btn-outline btn-block">
               Ask a question
             </button>
+            <a
+              [routerLink]="assessmentForService(service()!).link"
+              class="btn-secondary btn-block text-center"
+            >
+              {{ assessmentForService(service()!).label }}
+            </a>
           </div>
         </div>
       </div>
@@ -168,6 +174,12 @@
           class="btn-outline">
           Ask a question
         </button>
+        <a
+          [routerLink]="assessmentForService(service()!).link"
+          class="btn-secondary"
+        >
+          {{ assessmentForService(service()!).label }}
+        </a>
       </div>
     </div>
   </div>

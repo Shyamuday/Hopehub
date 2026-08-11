@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { RouterModule } from '@angular/router';
 import { NOTE_CONTENT } from '../../../../core/constants/note-content.constants';
 import { CONSUMER_UX_COPY } from '../../../../core/constants/consumer-ux-copy.constants';
+import { CONSUMER_ROUTES } from '../../../../core/constants/consumer-routes.constants';
 
 interface HowItWorksStep {
   title: string;
@@ -17,6 +18,7 @@ interface HowItWorksStep {
 export class HowItWorksComponent {
   readonly notes = NOTE_CONTENT;
   readonly UX = CONSUMER_UX_COPY;
+  readonly ROUTES = CONSUMER_ROUTES;
   readonly steps: HowItWorksStep[] = [
     {
       title: 'Choose support',

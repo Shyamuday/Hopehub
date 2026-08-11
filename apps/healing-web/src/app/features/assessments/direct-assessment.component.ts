@@ -17,6 +17,7 @@ import {
 import { NotificationService } from '../../core/services/notification.service';
 import { PaymentService } from '../../core/services/payment.service';
 import { CONSUMER_UX_COPY } from '../../core/constants/consumer-ux-copy.constants';
+import { CONSUMER_ROUTES } from '../../core/constants/consumer-routes.constants';
 
 @Component({
   selector: 'app-direct-assessment',
@@ -28,7 +29,7 @@ import { CONSUMER_UX_COPY } from '../../core/constants/consumer-ux-copy.constant
         <section class="mx-auto w-full max-w-3xl px-4 py-4 sm:px-6 sm:py-6 lg:px-8">
           <div class="mb-3 flex items-center justify-between gap-3">
             <a
-              routerLink="/assessments"
+              [routerLink]="ROUTES.links.assessments"
               class="text-sm font-semibold text-primary-700 hover:text-primary-800"
             >
               All tests
@@ -381,13 +382,17 @@ import { CONSUMER_UX_COPY } from '../../core/constants/consumer-ux-copy.constant
                   {{ UX.assessment.nextCopy }}
                 </p>
                 <div class="mt-4 grid gap-3 sm:grid-cols-3">
-                  <a routerLink="/" fragment="live-connect" class="btn-primary btn-sm">
+                  <a
+                    [routerLink]="ROUTES.links.home"
+                    [fragment]="ROUTES.fragments.liveConnect"
+                    class="btn-primary btn-sm"
+                  >
                     {{ UX.cta.talkNow }}
                   </a>
-                  <a routerLink="/contact" class="btn-outline btn-sm">
+                  <a [routerLink]="ROUTES.links.bookSupport" class="btn-outline btn-sm">
                     {{ UX.cta.bookSupport }}
                   </a>
-                  <a routerLink="/care-team" class="btn-outline btn-sm">
+                  <a [routerLink]="ROUTES.links.careTeam" class="btn-outline btn-sm">
                     {{ UX.cta.meetCareTeam }}
                   </a>
                 </div>
@@ -395,19 +400,19 @@ import { CONSUMER_UX_COPY } from '../../core/constants/consumer-ux-copy.constant
 
               <div class="mt-4 grid gap-3 sm:grid-cols-3">
                 <a
-                  [routerLink]="['/exercises']"
+                  [routerLink]="ROUTES.links.exercises"
                   [queryParams]="recommendationQuery('exercises')"
                   class="btn-outline btn-sm"
                   >Exercises</a
                 >
                 <a
-                  [routerLink]="['/lifestyle-tips']"
+                  [routerLink]="ROUTES.links.lifestyleTips"
                   [queryParams]="recommendationQuery('tips')"
                   class="btn-outline btn-sm"
                   >Lifestyle tips</a
                 >
                 <a
-                  [routerLink]="['/articles']"
+                  [routerLink]="ROUTES.links.articles"
                   [queryParams]="recommendationQuery('articles')"
                   class="btn-outline btn-sm"
                   >Articles</a
@@ -430,7 +435,9 @@ import { CONSUMER_UX_COPY } from '../../core/constants/consumer-ux-copy.constant
         <section class="container mx-auto px-4 py-16 text-center">
           <h1 class="text-3xl font-semibold text-gray-950">Test not found</h1>
           <p class="mt-3 text-gray-700">The test you are looking for is not available.</p>
-          <a routerLink="/assessments" class="btn-primary btn-sm mt-6">View all tests</a>
+          <a [routerLink]="ROUTES.links.assessments" class="btn-primary btn-sm mt-6"
+            >View all tests</a
+          >
         </section>
       }
     </main>
@@ -613,6 +620,7 @@ import { CONSUMER_UX_COPY } from '../../core/constants/consumer-ux-copy.constant
 })
 export class DirectAssessmentComponent implements OnInit {
   readonly UX = CONSUMER_UX_COPY;
+  readonly ROUTES = CONSUMER_ROUTES;
   private readonly route = inject(ActivatedRoute);
   private readonly authService = inject(AuthService);
   private readonly authModalService = inject(AuthModalService);

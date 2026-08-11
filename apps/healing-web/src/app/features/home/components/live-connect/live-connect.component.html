@@ -215,7 +215,7 @@
         } @else {
           <div class="live-empty-card">
             <p>No live support chats are open right now.</p>
-            <a routerLink="/community" class="btn-secondary">See community options</a>
+            <a [routerLink]="ROUTES.links.community" class="btn-secondary">See community options</a>
           </div>
         }
       }

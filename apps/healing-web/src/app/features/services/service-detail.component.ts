@@ -1,8 +1,13 @@
 import { Component, OnInit, signal, inject } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NOTE_CONTENT } from '../../core/constants/note-content.constants';
 import { CONSUMER_UX_COPY } from '../../core/constants/consumer-ux-copy.constants';
+import {
+  CONSUMER_ROUTES,
+  ConsumerAssessmentRouteMatch,
+} from '../../core/constants/consumer-routes.constants';
+import { consumerAssessmentForText } from '../../core/constants/consumer-concerns.constants';
 import { Service, ServiceCategory } from '../../core/models';
 import { ServiceInquiryComponent } from '../../shared/components';
 import { BookingService, NotificationService, SEOService } from '../../core/services';
@@ -20,13 +25,14 @@ import {
 @Component({
   selector: 'app-service-detail',
   standalone: true,
-  imports: [ServiceInquiryComponent],
+  imports: [RouterModule, ServiceInquiryComponent],
   templateUrl: './service-detail.component.html',
   styleUrl: './service-detail.component.scss',
 })
 export class ServiceDetailComponent implements OnInit {
   readonly notes = NOTE_CONTENT;
   readonly UX = CONSUMER_UX_COPY;
+  readonly ROUTES = CONSUMER_ROUTES;
   service = signal<Service | null>(null);
   singleSessionOffer = signal<HopeHubOffering | null>(null);
   singleSessionQuote = signal<HopeHubOfferingQuote | null>(null);
@@ -52,13 +58,13 @@ export class ServiceDetailComponent implements OnInit {
   }
 
   goBack() {
-    this.router.navigate(['/services']);
+    this.router.navigate(CONSUMER_ROUTES.links.services);
   }
 
   bookService() {
     const offering = this.publicConfig.defaultOfferingSlug;
     // Navigate to contact form with service pre-selected
-    this.router.navigate(['/contact'], {
+    this.router.navigate(CONSUMER_ROUTES.links.bookSupport, {
       queryParams: {
         service: this.service()?.id,
         serviceName: this.service()?.name,
@@ -72,12 +78,24 @@ export class ServiceDetailComponent implements OnInit {
 
   contactForInfo() {
     // Navigate to contact form with inquiry type
-    this.router.navigate(['/contact'], {
+    this.router.navigate(CONSUMER_ROUTES.links.bookSupport, {
       queryParams: {
         service: this.service()?.name,
         type: 'inquiry',
       },
     });
+  }
+
+  assessmentForService(service: Service): ConsumerAssessmentRouteMatch {
+    return consumerAssessmentForText(
+      [
+        service.name,
+        service.description,
+        service.detailedDescription,
+        service.category,
+        ...(service.benefits ?? []),
+      ].join(' '),
+    );
   }
 
   formatPrice(amount: number | undefined, currency: string | undefined): string {

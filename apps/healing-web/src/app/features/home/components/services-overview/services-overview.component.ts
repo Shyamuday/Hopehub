@@ -3,6 +3,7 @@ import { Router, RouterModule } from '@angular/router';
 import { ServiceCardComponent } from '../../../../shared/components';
 import { Service, ServiceCategory } from '../../../../core/models';
 import { BookingService, HopeHubService } from '../../../../core/services/booking.service';
+import { CONSUMER_ROUTES } from '../../../../core/constants/consumer-routes.constants';
 
 @Component({
   selector: 'app-services-overview',
@@ -14,6 +15,7 @@ import { BookingService, HopeHubService } from '../../../../core/services/bookin
 export class ServicesOverviewComponent implements OnInit {
   private readonly bookingService = inject(BookingService);
   readonly services = signal<Service[]>([]);
+  readonly ROUTES = CONSUMER_ROUTES;
 
   constructor(private readonly router: Router) {}
 
@@ -27,7 +29,7 @@ export class ServicesOverviewComponent implements OnInit {
   }
 
   navigateToService(serviceId: string): void {
-    this.router.navigate(['/services', serviceId]);
+    this.router.navigate([...CONSUMER_ROUTES.links.services, serviceId]);
   }
 
   private toService(service: HopeHubService): Service {

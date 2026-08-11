@@ -21,6 +21,7 @@ import {
 } from '../../core/services';
 import { APP_CONSTANTS } from '../../core';
 import { CONSUMER_UX_COPY } from '../../core/constants/consumer-ux-copy.constants';
+import { CONSUMER_ROUTES } from '../../core/constants/consumer-routes.constants';
 import type {
   CareTeamServiceQuote,
   HopeHubOffering,
@@ -63,6 +64,7 @@ type LiveConnectMode = 'chat' | 'voice' | 'video';
 export class ContactComponent implements OnInit {
   APP_CONSTANTS = APP_CONSTANTS;
   readonly UX = CONSUMER_UX_COPY;
+  readonly ROUTES = CONSUMER_ROUTES;
   readonly notes = NOTE_CONTENT;
   private readonly pendingBookingStorageKey = 'hope_hub_pending_booking';
 
@@ -108,6 +110,10 @@ export class ContactComponent implements OnInit {
   defaultSessionOffer = signal<HopeHubOffering | null>(null);
   defaultSessionQuote = signal<HopeHubOfferingQuote | null>(null);
   currentUser = signal<User | null>(null);
+
+  careTeamProfileLink(provider: HopeHubProvider): string[] {
+    return [...CONSUMER_ROUTES.links.careTeam, provider.slug || provider.id];
+  }
   services: HopeHubService[] = [];
   serviceOptions: FormDropdownOption[] = [{ value: '', label: 'Select a service (optional)' }];
   urgencyOptions: FormDropdownOption[] = [

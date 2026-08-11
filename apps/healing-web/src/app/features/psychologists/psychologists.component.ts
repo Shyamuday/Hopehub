@@ -12,6 +12,11 @@ import {
   supportPathMeta,
 } from '../../core/constants/support-paths.constants';
 import { CONSUMER_UX_COPY } from '../../core/constants/consumer-ux-copy.constants';
+import {
+  CONSUMER_ROUTES,
+  ConsumerAssessmentRouteMatch,
+} from '../../core/constants/consumer-routes.constants';
+import { consumerAssessmentForText } from '../../core/constants/consumer-concerns.constants';
 import { PublicCommunicationConfigService } from '../../core/services/public-communication-config.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { SupportPathSelectorComponent } from '../../shared/components';
@@ -27,6 +32,7 @@ type RoleGroup = '' | ConsumerSupportPath;
 })
 export class PsychologistsComponent implements OnInit {
   readonly UX = CONSUMER_UX_COPY;
+  readonly ROUTES = CONSUMER_ROUTES;
   private readonly bookingService = inject(BookingService);
   readonly publicConfig = inject(PublicCommunicationConfigService);
   private readonly notificationService = inject(NotificationService);
@@ -141,6 +147,26 @@ export class PsychologistsComponent implements OnInit {
     this.roleGroup.set('');
     this.page.set(1);
     this.load({ refreshCounts: true });
+  }
+
+  careTeamProfileLink(provider: HopeHubProvider): string[] {
+    return [...CONSUMER_ROUTES.links.careTeam, provider.slug || provider.id];
+  }
+
+  assessmentForProvider(provider: HopeHubProvider): ConsumerAssessmentRouteMatch {
+    return consumerAssessmentForText(
+      [
+        provider.supportRoleLabel,
+        provider.supportRoleDescription,
+        provider.supportScope,
+        ...(provider.focusAreas ?? []),
+        ...(provider.concernsHandled ?? []),
+        ...(provider.supportBestFor ?? []),
+        ...(provider.services ?? []).map(
+          (service) => `${service.title} ${service.description ?? ''}`,
+        ),
+      ].join(' '),
+    );
   }
 
   private hydrateFiltersFromUrl(): void {
