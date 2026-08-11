@@ -420,6 +420,7 @@
       <option value="ALL">All status</option>
       <option value="ACTIVE">Active only</option>
       <option value="INACTIVE">Inactive only</option>
+      <option value="SUSPENDED">Suspended only</option>
     </select>
     @if (workspaceKey() === 'hope-hub') {
       <select [formField]="listFilterForm.supportPath" (change)="onListFilterChange()">

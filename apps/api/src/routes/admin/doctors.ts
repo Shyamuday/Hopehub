@@ -271,32 +271,36 @@ export function registerAdminDoctorRoutes(router: Router) {
       if (workspace === null) return;
       const sortDirection =
         queryText(req, 'sortDirection').toLowerCase() === 'asc' ? 'asc' : 'desc';
+      const andFilters: Prisma.UserWhereInput[] = [];
+      const workspaceWhere = doctorWorkspaceWhere(workspace);
+      if (Object.keys(workspaceWhere).length) {
+        andFilters.push(workspaceWhere);
+      }
+      if (status === 'SUSPENDED') {
+        andFilters.push({ doctorProfile: { is: { suspendedAt: { not: null } } } });
+      }
+      if (supportPathTypes.length) {
+        andFilters.push({
+          doctorProfile: {
+            is: {
+              mentalHealthProfile: {
+                is: {
+                  OR: [
+                    { careTeamType: { in: supportPathTypes } },
+                    { careTeamTypes: { hasSome: supportPathTypes } }
+                  ]
+                }
+              }
+            }
+          }
+        });
+      }
 
       const where: Prisma.UserWhereInput = {
         role: Role.DOCTOR,
-        ...doctorWorkspaceWhere(workspace),
         ...(status === 'ACTIVE' ? { isActive: true } : {}),
         ...(status === 'INACTIVE' ? { isActive: false } : {}),
-        ...(supportPathTypes.length
-          ? {
-              AND: [
-                {
-                  doctorProfile: {
-                    is: {
-                      mentalHealthProfile: {
-                        is: {
-                          OR: [
-                            { careTeamType: { in: supportPathTypes } },
-                            { careTeamTypes: { hasSome: supportPathTypes } }
-                          ]
-                        }
-                      }
-                    }
-                  }
-                }
-              ]
-            }
-          : {}),
+        ...(andFilters.length ? { AND: andFilters } : {}),
         ...(query
           ? {
               OR: [
