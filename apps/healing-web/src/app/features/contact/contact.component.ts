@@ -18,6 +18,7 @@ import {
   BookingService,
   PaymentService,
   NotificationService,
+  ConsumerFlowPreferencesService,
 } from '../../core/services';
 import { APP_CONSTANTS } from '../../core';
 import { CONSUMER_UX_COPY } from '../../core/constants/consumer-ux-copy.constants';
@@ -81,6 +82,7 @@ export class ContactComponent implements OnInit {
   private destroyRef = inject(DestroyRef);
   private productAnalytics = inject(ProductAnalyticsService);
   private publicConfig = inject(PublicCommunicationConfigService);
+  private preferences = inject(ConsumerFlowPreferencesService);
 
   contactForm!: FormGroup;
 
@@ -215,6 +217,8 @@ export class ContactComponent implements OnInit {
 
   private readQueryParameters(): void {
     this.route.queryParams.pipe(takeUntilDestroyed()).subscribe((params: any) => {
+      const saved = this.preferences.read();
+      const mode = this.normalizeLiveConnectMode(params['mode'] || saved.mode || '');
       this.prefilledData.set({
         service: params['service'] || '',
         serviceName: params['serviceName'] || '',
@@ -231,7 +235,8 @@ export class ContactComponent implements OnInit {
         supportPath: params['supportPath'] || '',
         supportPathLabel: params['supportPathLabel'] || '',
         preferredExpertType: params['preferredExpertType'] || '',
-        mode: this.normalizeLiveConnectMode(params['mode'] || ''),
+        concernCategory: params['concernCategory'] || params['concern'] || saved.concern || '',
+        mode,
       });
       if (this.contactForm) {
         this.applyLiveConnectPrefill();
@@ -1372,6 +1377,9 @@ export class ContactComponent implements OnInit {
     }
     if (this.prefilledData().supportPath && !this.contactForm.get('preferredExpertType')?.value) {
       patch['preferredExpertType'] = this.prefilledData().supportPath;
+    }
+    if (this.prefilledData().concernCategory && !this.contactForm.get('concernCategory')?.value) {
+      patch['concernCategory'] = this.prefilledData().concernCategory;
     }
     if (this.isLiveConnectFallback() && !this.contactForm.get('message')?.value) {
       patch['message'] = this.generateInitialMessage();

@@ -9,7 +9,7 @@ import { getArticleRecommendations } from '../../core/data/article-recommendatio
 import { AuthService } from '../../core/services/auth.service';
 import { AuthModalService } from '../../core/services/auth-modal.service';
 import { AssessmentAttemptsService } from '../../core/services/assessment-attempts.service';
-import { BookingService } from '../../core/services/booking.service';
+import { BookingService, HopeHubProvider } from '../../core/services/booking.service';
 import {
   AssessmentAccess,
   AssessmentCouponQuote,
@@ -18,6 +18,7 @@ import {
 import { NotificationService } from '../../core/services/notification.service';
 import { PaymentService } from '../../core/services/payment.service';
 import { LiveConnectActionService } from '../../core/services/live-connect-action.service';
+import { ConsumerFlowPreferencesService } from '../../core/services/consumer-flow-preferences.service';
 import { CONSUMER_UX_COPY } from '../../core/constants/consumer-ux-copy.constants';
 import { CONSUMER_ROUTES } from '../../core/constants/consumer-routes.constants';
 import {
@@ -423,6 +424,72 @@ import {
                 </div>
               </div>
 
+              <section class="direct-test__matched-providers" aria-label="Matched providers">
+                <div class="direct-test__matched-head">
+                  <div>
+                    <p>Matched from your result</p>
+                    <h2>Care team you can speak with next</h2>
+                  </div>
+                  <a
+                    [routerLink]="ROUTES.links.careTeam"
+                    [queryParams]="assessmentCareTeamQueryParams()"
+                  >
+                    See all
+                  </a>
+                </div>
+
+                @if (matchingProvidersLoading()) {
+                  <div class="direct-test__matched-empty">Finding the closest matches…</div>
+                } @else if (matchingProviders().length) {
+                  <div class="direct-test__matched-grid">
+                    @for (provider of matchingProviders(); track provider.id) {
+                      <article class="direct-test__provider-card">
+                        <div class="direct-test__provider-top">
+                          <div>
+                            <h3>{{ provider.name }}</h3>
+                            <p>
+                              {{
+                                provider.supportRoleLabel ||
+                                  provider.designation ||
+                                  provider.specialty ||
+                                  'Hope Hub provider'
+                              }}
+                            </p>
+                          </div>
+                          <span [class]="providerAvailabilityBadgeClass(provider)">
+                            {{ providerAvailabilityLabel(provider) }}
+                          </span>
+                        </div>
+                        @if (provider.focusAreas?.length || provider.concernsHandled?.length) {
+                          <p class="direct-test__provider-focus">
+                            {{
+                              (provider.focusAreas?.length
+                                ? provider.focusAreas
+                                : provider.concernsHandled)!
+                                .slice(0, 3)
+                                .join(' • ')
+                            }}
+                          </p>
+                        }
+                        <app-connect-options
+                          class="mt-3 block"
+                          [compact]="true"
+                          [showBook]="false"
+                          [title]="'Choose how to start'"
+                          [subtitle]="'Your assessment context will be carried forward.'"
+                          (selected)="connectMatchedProvider(provider, $event)"
+                        />
+                      </article>
+                    }
+                  </div>
+                } @else {
+                  <div class="direct-test__matched-empty">
+                    No direct match is live right now. You can still book a slot with a matching
+                    provider.
+                  </div>
+                }
+              </section>
+
               <div class="mt-4 grid gap-3 sm:grid-cols-3">
                 <a
                   [routerLink]="ROUTES.links.exercises"
@@ -627,6 +694,122 @@ import {
         padding: 0.8rem 0.95rem;
       }
 
+      .direct-test__matched-providers {
+        display: grid;
+        gap: 0.9rem;
+        margin-top: 1.5rem;
+        border: 1px solid rgba(74, 111, 165, 0.14);
+        border-radius: 1rem;
+        background: linear-gradient(135deg, rgba(74, 111, 165, 0.06), rgba(255, 255, 255, 0.96));
+        padding: 1rem;
+      }
+
+      .direct-test__matched-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 1rem;
+      }
+
+      .direct-test__matched-head p,
+      .direct-test__provider-top p,
+      .direct-test__provider-focus {
+        margin: 0;
+      }
+
+      .direct-test__matched-head p {
+        color: var(--brand-primary);
+        font-size: 0.76rem;
+        font-weight: 900;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+
+      .direct-test__matched-head h2 {
+        margin: 0.2rem 0 0;
+        color: #0f172a;
+        font-size: 1rem;
+        font-weight: 900;
+      }
+
+      .direct-test__matched-head a {
+        flex: 0 0 auto;
+        color: var(--brand-primary);
+        font-size: 0.82rem;
+        font-weight: 900;
+      }
+
+      .direct-test__matched-grid {
+        display: grid;
+        gap: 0.75rem;
+      }
+
+      .direct-test__provider-card {
+        border: 1px solid rgba(226, 232, 240, 0.95);
+        border-radius: 0.9rem;
+        background: rgba(255, 255, 255, 0.94);
+        padding: 0.9rem;
+        box-shadow: 0 14px 35px rgba(15, 23, 42, 0.06);
+      }
+
+      .direct-test__provider-top {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 0.75rem;
+      }
+
+      .direct-test__provider-top h3 {
+        margin: 0;
+        color: #0f172a;
+        font-size: 0.98rem;
+        font-weight: 900;
+      }
+
+      .direct-test__provider-top p,
+      .direct-test__provider-focus {
+        color: #64748b;
+        font-size: 0.82rem;
+        line-height: 1.45;
+      }
+
+      .direct-test__provider-focus {
+        margin-top: 0.55rem;
+      }
+
+      .direct-test__availability {
+        flex: 0 0 auto;
+        border-radius: 999px;
+        padding: 0.28rem 0.55rem;
+        font-size: 0.68rem;
+        font-weight: 950;
+        white-space: nowrap;
+      }
+
+      .direct-test__availability--live {
+        background: #dcfce7;
+        color: #166534;
+      }
+
+      .direct-test__availability--soon {
+        background: #dbeafe;
+        color: #1d4ed8;
+      }
+
+      .direct-test__availability--slot {
+        background: #fef3c7;
+        color: #92400e;
+      }
+
+      .direct-test__matched-empty {
+        border-radius: 0.85rem;
+        background: #f8fafc;
+        color: #475569;
+        font-size: 0.9rem;
+        font-weight: 700;
+        padding: 0.9rem;
+      }
+
       @media (max-width: 639px) {
         .direct-test__option {
           min-height: 2.45rem;
@@ -638,6 +821,10 @@ import {
       @media (min-width: 768px) {
         .direct-test__intro {
           grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .direct-test__matched-grid {
+          grid-template-columns: repeat(3, minmax(0, 1fr));
         }
       }
     `,
@@ -656,6 +843,7 @@ export class DirectAssessmentComponent implements OnInit {
   private readonly notificationService = inject(NotificationService);
   private readonly paymentService = inject(PaymentService);
   private readonly liveConnectAction = inject(LiveConnectActionService);
+  private readonly preferences = inject(ConsumerFlowPreferencesService);
   private readonly pendingStorageKey = 'hope_hub_direct_pending_assessment_result';
   private autoNextTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -665,6 +853,8 @@ export class DirectAssessmentComponent implements OnInit {
   couponCode = signal('');
   redeemingCoupon = signal(false);
   payingAssessment = signal(false);
+  matchingProviders = signal<HopeHubProvider[]>([]);
+  matchingProvidersLoading = signal(false);
   liveFallback = signal<{
     mode: Exclude<ConnectOptionMode, 'book'>;
     queryParams: Record<string, unknown>;
@@ -959,6 +1149,7 @@ export class DirectAssessmentComponent implements OnInit {
       this.clearPendingResult();
       this.resultLocked.set(false);
       this.showResults.set(true);
+      void this.loadMatchingProviders();
       this.notificationService.success('Your test result is saved.');
     } catch (error: any) {
       this.notificationService.error(
@@ -993,6 +1184,7 @@ export class DirectAssessmentComponent implements OnInit {
 
   async connectFromResult(mode: ConnectOptionMode): Promise<void> {
     const queryParams = this.assessmentConnectQueryParams(mode);
+    this.saveResultPreference(mode);
     this.liveFallback.set(null);
     if (mode === 'book') {
       await this.router.navigate(CONSUMER_ROUTES.links.bookSupport, { queryParams });
@@ -1023,6 +1215,12 @@ export class DirectAssessmentComponent implements OnInit {
     this.liveFallback.set({ mode, queryParams });
   }
 
+  async connectMatchedProvider(provider: HopeHubProvider, mode: ConnectOptionMode): Promise<void> {
+    const queryParams = this.assessmentConnectQueryParams(mode);
+    this.saveResultPreference(mode, provider.id);
+    await this.liveConnectAction.connect(provider, mode, { fallbackQueryParams: queryParams });
+  }
+
   dismissLiveFallback(): void {
     this.liveFallback.set(null);
   }
@@ -1034,6 +1232,59 @@ export class DirectAssessmentComponent implements OnInit {
       concern: assessment?.category || assessment?.type || '',
       q: [assessment?.title, result?.level].filter(Boolean).join(' '),
     };
+  }
+
+  private async loadMatchingProviders(): Promise<void> {
+    const assessment = this.assessment();
+    const result = this.result();
+    if (!assessment || !result) return;
+
+    this.matchingProvidersLoading.set(true);
+    try {
+      const response = await firstValueFrom(
+        this.bookingService.providers({
+          q: [assessment.title, assessment.type, result.level].filter(Boolean).join(' '),
+          concern: assessment.category || assessment.type || '',
+          pageSize: 3,
+          autoMatchOnly: true,
+        }),
+      );
+      this.matchingProviders.set(response.providers.slice(0, 3));
+    } catch {
+      this.matchingProviders.set([]);
+    } finally {
+      this.matchingProvidersLoading.set(false);
+    }
+  }
+
+  providerAvailabilityLabel(provider: HopeHubProvider): string {
+    if (provider.quickTalkAvailable) return 'Live now';
+    if (provider.liveStatus === 'ONLINE') return 'Usually replies soon';
+    const sessionText = (provider.sessionTypes || []).join(' ').toLowerCase();
+    if (/evening|night|after work/.test(sessionText)) return 'Usually available evenings';
+    return 'Next slot available';
+  }
+
+  providerAvailabilityBadgeClass(provider: HopeHubProvider): string {
+    const tone = provider.quickTalkAvailable
+      ? 'direct-test__availability direct-test__availability--live'
+      : provider.liveStatus === 'ONLINE'
+        ? 'direct-test__availability direct-test__availability--soon'
+        : 'direct-test__availability direct-test__availability--slot';
+    return tone;
+  }
+
+  private saveResultPreference(mode: ConnectOptionMode, providerId = ''): void {
+    const assessment = this.assessment();
+    const result = this.result();
+    const selectedMode = mode === 'book' ? 'voice' : mode;
+    this.preferences.update({
+      mode: selectedMode,
+      providerId,
+      assessmentId: assessment?.id || '',
+      concern: assessment?.category || assessment?.type || '',
+      serviceName: assessment ? `${assessment.title} support` : '',
+    });
   }
 
   private assessmentConnectQueryParams(mode: ConnectOptionMode) {

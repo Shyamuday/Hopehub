@@ -487,6 +487,25 @@ form {
   font-weight: 800;
 }
 
+.checkout-reassurance {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  border: 1px solid rgba(130, 155, 120, 0.2);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.78);
+  padding: 0.55rem;
+}
+
+.checkout-reassurance span {
+  border-radius: 999px;
+  background: rgba(130, 155, 120, 0.1);
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+  font-weight: 850;
+  padding: 0.35rem 0.6rem;
+}
+
 .feedback {
   display: grid;
   gap: 0.25rem;

@@ -23,6 +23,7 @@ import {
 import {
   BookingService,
   ConsumerFlowsService,
+  ConsumerFlowPreferencesService,
   LiveConnectActionService,
   NotificationService,
   SEOService,
@@ -74,6 +75,7 @@ export class ServiceDetailComponent implements OnInit {
   private productAnalytics = inject(ProductAnalyticsService);
   private consumerFlowsService = inject(ConsumerFlowsService);
   private liveConnectAction = inject(LiveConnectActionService);
+  private preferences = inject(ConsumerFlowPreferencesService);
   private destroyRef = inject(DestroyRef);
 
   constructor() {
@@ -111,6 +113,7 @@ export class ServiceDetailComponent implements OnInit {
 
   async connect(mode: ConnectOptionMode): Promise<void> {
     const queryParams = this.serviceConnectQueryParams(mode);
+    this.saveServicePreference(mode);
     this.liveFallback.set(null);
     if (mode === 'book') {
       this.bookService();
@@ -163,6 +166,16 @@ export class ServiceDetailComponent implements OnInit {
             : 'online_audio',
       source: `service-detail-${selectedMode}`,
     };
+  }
+
+  private saveServicePreference(mode: ConnectOptionMode): void {
+    const service = this.service();
+    const selectedMode = mode === 'book' ? 'voice' : mode;
+    this.preferences.update({
+      mode: selectedMode,
+      serviceName: service?.name || '',
+      concern: service?.category || service?.name || '',
+    });
   }
 
   contactForInfo() {

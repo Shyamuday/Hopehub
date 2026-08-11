@@ -8,6 +8,7 @@ import { AuthService } from './auth.service';
 import { BookingService, HopeHubProvider } from './booking.service';
 import { NotificationService } from './notification.service';
 import { PaymentService } from './payment.service';
+import { ConsumerFlowPreferencesService } from './consumer-flow-preferences.service';
 
 export type LiveConnectActionMode = 'chat' | 'voice' | 'video' | 'book';
 
@@ -25,6 +26,7 @@ export class LiveConnectActionService {
   private readonly bookingService = inject(BookingService);
   private readonly notificationService = inject(NotificationService);
   private readonly paymentService = inject(PaymentService);
+  private readonly preferences = inject(ConsumerFlowPreferencesService);
   private readonly router = inject(Router);
   private readonly pendingStorageKey = 'hopehub_pending_live_connect_action';
   private replayingPending = false;
@@ -48,6 +50,7 @@ export class LiveConnectActionService {
       await this.openBooking(provider, 'voice', options);
       return;
     }
+    this.savePreference(provider, mode, options.fallbackQueryParams);
 
     const canUseMode = this.providerAcceptsMode(provider, mode);
     const canStartNow = Boolean(provider.quickTalkAvailable) && canUseMode;
@@ -114,6 +117,7 @@ export class LiveConnectActionService {
       careTeamServiceId?: string;
     } = {},
   ): Promise<void> {
+    this.savePreference(provider, mode, options.fallbackQueryParams);
     await this.router.navigate(CONSUMER_ROUTES.links.bookSupport, {
       queryParams: {
         ...(options.fallbackQueryParams || {}),
@@ -154,6 +158,23 @@ export class LiveConnectActionService {
   private savePendingAction(action: PendingLiveConnectAction): void {
     if (typeof sessionStorage === 'undefined') return;
     sessionStorage.setItem(this.pendingStorageKey, JSON.stringify(action));
+  }
+
+  private savePreference(
+    provider: HopeHubProvider,
+    mode: Exclude<LiveConnectActionMode, 'book'>,
+    fallbackQueryParams?: Record<string, unknown>,
+  ): void {
+    this.preferences.update({
+      mode,
+      providerId: provider.id,
+      serviceName: String(
+        fallbackQueryParams?.['serviceName'] || fallbackQueryParams?.['service'] || '',
+      ),
+      concern: String(
+        fallbackQueryParams?.['concernCategory'] || fallbackQueryParams?.['concern'] || '',
+      ),
+    });
   }
 
   private providerAcceptsMode(
