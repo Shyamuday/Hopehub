@@ -58,6 +58,13 @@
             >
               {{ assessmentForService(service()!).label }}
             </a>
+            <a
+              [routerLink]="flowForService(service()!).careTeamLink"
+              [queryParams]="flowForService(service()!).careTeamQueryParams"
+              class="btn-outline btn-block text-center"
+            >
+              Meet matching care team
+            </a>
           </div>
         </div>
       </div>
@@ -179,6 +186,13 @@
           class="btn-secondary"
         >
           {{ assessmentForService(service()!).label }}
+        </a>
+        <a
+          [routerLink]="flowForService(service()!).careTeamLink"
+          [queryParams]="flowForService(service()!).careTeamQueryParams"
+          class="btn-outline"
+        >
+          Meet matching care team
         </a>
       </div>
     </div>

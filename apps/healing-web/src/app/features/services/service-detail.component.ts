@@ -103,6 +103,10 @@ export class ServiceDetailComponent implements OnInit {
   }
 
   assessmentForService(service: Service): ConsumerAssessmentRouteMatch {
+    return this.flowForService(service).assessment;
+  }
+
+  flowForService(service: Service): ConsumerConcernFlow {
     return this.consumerFlowsService.matchFlowForText(
       [
         service.name,
@@ -112,7 +116,7 @@ export class ServiceDetailComponent implements OnInit {
         ...(service.benefits ?? []),
       ].join(' '),
       this.concernFlows(),
-    ).assessment;
+    );
   }
 
   formatPrice(amount: number | undefined, currency: string | undefined): string {

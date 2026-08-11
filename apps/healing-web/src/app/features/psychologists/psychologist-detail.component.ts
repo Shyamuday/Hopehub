@@ -198,6 +198,10 @@ export class PsychologistDetailComponent implements OnInit {
   }
 
   assessmentForProvider(provider: HopeHubProvider): ConsumerAssessmentRouteMatch {
+    return this.flowForProvider(provider).assessment;
+  }
+
+  flowForProvider(provider: HopeHubProvider): ConsumerConcernFlow {
     return this.consumerFlowsService.matchFlowForText(
       [
         provider.supportRoleLabel,
@@ -211,7 +215,7 @@ export class PsychologistDetailComponent implements OnInit {
         ),
       ].join(' '),
       this.concernFlows(),
-    ).assessment;
+    );
   }
 
   servicePriceLabel(service: {

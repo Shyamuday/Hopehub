@@ -1,6 +1,6 @@
 import { Component, OnInit, computed, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { NOTE_CONTENT } from '../../core/constants/note-content.constants';
 import { CONSUMER_ROUTES } from '../../core/constants/consumer-routes.constants';
 import { Service, ServiceCategory } from '../../core/models';
@@ -55,10 +55,12 @@ export class ServicesComponent implements OnInit {
 
   constructor(
     private router: Router,
+    private route: ActivatedRoute,
     private bookingService: BookingService,
   ) {}
 
   ngOnInit() {
+    this.hydrateFromQueryParams();
     this.loadPageData();
   }
 
@@ -87,6 +89,16 @@ export class ServicesComponent implements OnInit {
         this.singleSessionQuote.set(null);
       },
     });
+  }
+
+  private hydrateFromQueryParams(): void {
+    const q = this.route.snapshot.queryParamMap.get('q');
+    const concern = this.route.snapshot.queryParamMap.get('concern');
+    const search = q || concern || '';
+    if (search) {
+      this.searchTerm.set(search);
+      this.selectedFilter.set(this.filterForConcern(search));
+    }
   }
 
   private toService(service: HopeHubService): Service {
@@ -151,5 +163,16 @@ export class ServicesComponent implements OnInit {
     }
 
     return true;
+  }
+
+  private filterForConcern(value: string): string {
+    const text = value.toLowerCase();
+    if (/relationship|breakup|heartbreak|partner|marriage/.test(text)) return 'relationship';
+    if (/anxiety|stress|panic|burnout|overthinking|pressure/.test(text)) return 'anxiety-stress';
+    if (/career|study|exam|job/.test(text)) return 'career';
+    if (/family|parenting/.test(text)) return 'family';
+    if (/habit|addiction/.test(text)) return 'habits';
+    if (/sleep|insomnia/.test(text)) return 'sleep';
+    return 'all';
   }
 }

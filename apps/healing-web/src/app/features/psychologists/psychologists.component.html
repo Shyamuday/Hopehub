@@ -230,6 +230,13 @@
                 {{ assessmentForProvider(provider).label }}
               </a>
               <a
+                [routerLink]="flowForProvider(provider).servicesLink"
+                [queryParams]="flowForProvider(provider).serviceQueryParams"
+                class="btn-outline btn-sm"
+              >
+                Related services
+              </a>
+              <a
                 [routerLink]="ROUTES.links.bookSupport"
                 [queryParams]="bookingQueryParams(provider, primaryService(provider))"
                 class="btn-outline btn-sm"

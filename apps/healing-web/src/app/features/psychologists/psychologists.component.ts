@@ -167,6 +167,10 @@ export class PsychologistsComponent implements OnInit {
   }
 
   assessmentForProvider(provider: HopeHubProvider): ConsumerAssessmentRouteMatch {
+    return this.flowForProvider(provider).assessment;
+  }
+
+  flowForProvider(provider: HopeHubProvider): ConsumerConcernFlow {
     return this.consumerFlowsService.matchFlowForText(
       [
         provider.supportRoleLabel,
@@ -180,7 +184,7 @@ export class PsychologistsComponent implements OnInit {
         ),
       ].join(' '),
       this.concernFlows(),
-    ).assessment;
+    );
   }
 
   private hydrateFiltersFromUrl(): void {

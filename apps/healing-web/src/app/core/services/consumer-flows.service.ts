@@ -15,12 +15,16 @@ type ConsumerFlowApiItem = {
   label: string;
   shortLabel: string;
   searchTerms: string[];
+  serviceSearchTerms: string[];
   assessmentId: ConsumerConcernFlow['assessmentId'];
   assessmentLabel: string;
   supportPath: ConsumerConcernFlow['supportPath'];
   assessmentAvailable: boolean;
   assessmentTitle?: string | null;
+  serviceAvailable: boolean;
+  serviceMatches?: ConsumerConcernFlow['serviceMatches'];
   queryParams?: {
+    services?: Record<string, string>;
     careTeam?: Record<string, string>;
     booking?: Record<string, string>;
   };
@@ -82,6 +86,7 @@ export class ConsumerFlowsService {
         label: flow.label,
         shortLabel: flow.shortLabel,
         searchTerms: flow.searchTerms,
+        serviceSearchTerms: flow.serviceSearchTerms,
         assessmentId: flow.assessmentId,
         assessmentLabel: flow.assessmentLabel,
         supportPath: flow.supportPath,
@@ -99,6 +104,12 @@ export class ConsumerFlowsService {
           supportPath: flow.supportPath,
           source: 'concern-flow',
         },
+        serviceQueryParams: flow.queryParams?.services ?? {
+          concern: flow.label,
+          q: flow.serviceSearchTerms?.[0] || flow.label,
+        },
+        serviceMatches: flow.serviceMatches ?? [],
+        servicesLink: CONSUMER_CONCERN_FLOWS.general.servicesLink,
         careTeamLink: CONSUMER_CONCERN_FLOWS.general.careTeamLink,
         bookingLink: CONSUMER_CONCERN_FLOWS.general.bookingLink,
       };

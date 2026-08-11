@@ -143,6 +143,13 @@
                 {{ assessmentForProvider(p).label }}
               </a>
               <a
+                [routerLink]="flowForProvider(p).servicesLink"
+                [queryParams]="flowForProvider(p).serviceQueryParams"
+                class="btn-outline"
+              >
+                Related services
+              </a>
+              <a
                 [routerLink]="ROUTES.links.bookSupport"
                 [queryParams]="{
                   consultant: p.name,
