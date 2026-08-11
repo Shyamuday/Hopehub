@@ -16,32 +16,26 @@
   </div>
 
   <div class="mb-8 rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-    <label for="serviceSearch" class="sr-only">Search services</label>
-    <input
-      id="serviceSearch"
-      type="search"
-      [ngModel]="searchTerm()"
-      (ngModelChange)="updateSearch($event)"
-      class="form-input"
-      placeholder="Search breakup, anxiety, sleep, study pressure..."
-    />
+    <div class="grid gap-3 md:grid-cols-2">
+      <label class="grid gap-1 text-xs font-bold uppercase tracking-wide text-gray-500">
+        What do you need help with?
+        <app-form-dropdown
+          [options]="needOptions"
+          [ngModel]="searchTerm()"
+          (ngModelChange)="setNeed($event)"
+          placeholder="Any need"
+        />
+      </label>
 
-    <div class="mt-4 flex flex-wrap gap-2">
-      @for (filter of filters; track filter.id) {
-        <button
-          type="button"
-          (click)="setFilter(filter.id)"
-          class="rounded-full border px-4 py-2 text-sm font-semibold transition"
-          [class.border-primary-600]="selectedFilter() === filter.id"
-          [class.bg-primary-600]="selectedFilter() === filter.id"
-          [class.text-white]="selectedFilter() === filter.id"
-          [class.border-gray-300]="selectedFilter() !== filter.id"
-          [class.bg-white]="selectedFilter() !== filter.id"
-          [class.text-gray-700]="selectedFilter() !== filter.id"
-        >
-          {{ filter.label }}
-        </button>
-      }
+      <label class="grid gap-1 text-xs font-bold uppercase tracking-wide text-gray-500">
+        Service category
+        <app-form-dropdown
+          [options]="filters"
+          [ngModel]="selectedFilter()"
+          (ngModelChange)="setFilter($event)"
+          placeholder="All services"
+        />
+      </label>
     </div>
   </div>
 

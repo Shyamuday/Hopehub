@@ -4,7 +4,11 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { NOTE_CONTENT } from '../../core/constants/note-content.constants';
 import { CONSUMER_ROUTES } from '../../core/constants/consumer-routes.constants';
 import { Service, ServiceCategory } from '../../core/models';
-import { ServiceCardComponent } from '../../shared/components';
+import {
+  FormDropdownComponent,
+  FormDropdownOption,
+  ServiceCardComponent,
+} from '../../shared/components';
 import {
   BookingService,
   HopeHubOffering,
@@ -15,7 +19,7 @@ import {
 @Component({
   selector: 'app-services',
   standalone: true,
-  imports: [FormsModule, ServiceCardComponent],
+  imports: [FormsModule, ServiceCardComponent, FormDropdownComponent],
   templateUrl: './services.component.html',
   styleUrl: './services.component.scss',
 })
@@ -27,7 +31,18 @@ export class ServicesComponent implements OnInit {
   singleSessionOffer = signal<HopeHubOffering | null>(null);
   singleSessionQuote = signal<HopeHubOfferingQuote | null>(null);
 
-  filters = [
+  needOptions: FormDropdownOption[] = [
+    { value: '', label: 'Any need' },
+    { value: 'anxiety overthinking panic', label: 'Anxiety / overthinking' },
+    { value: 'low mood depression sadness', label: 'Low mood / depression' },
+    { value: 'stress burnout pressure', label: 'Stress / burnout' },
+    { value: 'relationship breakup heartbreak partner', label: 'Relationship / breakup' },
+    { value: 'sleep insomnia night overthinking', label: 'Sleep trouble' },
+    { value: 'career study exam job focus', label: 'Career / study stress' },
+    { value: 'family parenting home conflict', label: 'Family concerns' },
+  ];
+
+  filters: FormDropdownOption[] = [
     { id: 'all', label: 'All' },
     { id: 'relationship', label: 'Relationship' },
     { id: 'anxiety-stress', label: 'Anxiety / Stress' },
@@ -35,7 +50,7 @@ export class ServicesComponent implements OnInit {
     { id: 'family', label: 'Family' },
     { id: 'habits', label: 'Habits' },
     { id: 'sleep', label: 'Sleep / Overthinking' },
-  ];
+  ].map((filter) => ({ value: filter.id, label: filter.label }));
 
   filteredServices = computed(() => {
     const query = this.searchTerm().trim().toLowerCase();
@@ -74,6 +89,11 @@ export class ServicesComponent implements OnInit {
 
   updateSearch(value: string): void {
     this.searchTerm.set(value);
+  }
+
+  setNeed(value: string): void {
+    this.searchTerm.set(value);
+    this.selectedFilter.set(this.filterForConcern(value));
   }
 
   private loadPageData() {

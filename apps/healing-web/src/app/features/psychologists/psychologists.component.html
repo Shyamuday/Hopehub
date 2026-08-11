@@ -30,61 +30,61 @@
         [showCounts]="true"
         (selectedChange)="setRoleGroup($event)"
       />
-      <label for="providerSearch" class="sr-only">Search care team</label>
-      <input
-        id="providerSearch"
-        type="search"
-        [ngModel]="q()"
-        (ngModelChange)="search($event)"
-        class="form-input"
-        placeholder="Search by name, anxiety, stress, relationship, family..."
-      />
-      <div class="mt-4 grid gap-3 md:grid-cols-5">
-        <select
-          class="form-input"
-          [ngModel]="concern()"
-          (ngModelChange)="setFilter('concern', $event)"
-        >
-          @for (option of concernOptions; track option) {
-            <option [value]="option">{{ option || 'All concerns' }}</option>
-          }
-        </select>
-        <select
-          class="form-input"
-          [ngModel]="language()"
-          (ngModelChange)="setFilter('language', $event)"
-        >
-          @for (option of languageOptions; track option) {
-            <option [value]="option">{{ option || 'Any language' }}</option>
-          }
-        </select>
-        <select
-          class="form-input"
-          [ngModel]="modality()"
-          (ngModelChange)="setFilter('modality', $event)"
-        >
-          @for (option of modalityOptions; track option) {
-            <option [value]="option">{{ option || 'Any method' }}</option>
-          }
-        </select>
-        <select
-          class="form-input"
-          [ngModel]="sessionType()"
-          (ngModelChange)="setFilter('sessionType', $event)"
-        >
-          @for (option of sessionTypeOptions; track option) {
-            <option [value]="option">{{ option || 'Any session' }}</option>
-          }
-        </select>
-        <select
-          class="form-input"
-          [ngModel]="ageGroup()"
-          (ngModelChange)="setFilter('ageGroup', $event)"
-        >
-          @for (option of ageGroupOptions; track option) {
-            <option [value]="option">{{ option || 'Any age group' }}</option>
-          }
-        </select>
+      <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+        <label class="grid gap-1 text-xs font-bold uppercase tracking-wide text-gray-500">
+          Quick need
+          <app-form-dropdown
+            [options]="quickNeedOptions"
+            [ngModel]="q()"
+            (ngModelChange)="search($event)"
+            placeholder="Any need"
+          />
+        </label>
+        <label class="grid gap-1 text-xs font-bold uppercase tracking-wide text-gray-500">
+          Concern
+          <app-form-dropdown
+            [options]="concernOptions"
+            [ngModel]="concern()"
+            (ngModelChange)="setFilter('concern', $event)"
+            placeholder="All concerns"
+          />
+        </label>
+        <label class="grid gap-1 text-xs font-bold uppercase tracking-wide text-gray-500">
+          Language
+          <app-form-dropdown
+            [options]="languageOptions"
+            [ngModel]="language()"
+            (ngModelChange)="setFilter('language', $event)"
+            placeholder="Any language"
+          />
+        </label>
+        <label class="grid gap-1 text-xs font-bold uppercase tracking-wide text-gray-500">
+          Method
+          <app-form-dropdown
+            [options]="modalityOptions"
+            [ngModel]="modality()"
+            (ngModelChange)="setFilter('modality', $event)"
+            placeholder="Any method"
+          />
+        </label>
+        <label class="grid gap-1 text-xs font-bold uppercase tracking-wide text-gray-500">
+          Session
+          <app-form-dropdown
+            [options]="sessionTypeOptions"
+            [ngModel]="sessionType()"
+            (ngModelChange)="setFilter('sessionType', $event)"
+            placeholder="Any session"
+          />
+        </label>
+        <label class="grid gap-1 text-xs font-bold uppercase tracking-wide text-gray-500">
+          Age group
+          <app-form-dropdown
+            [options]="ageGroupOptions"
+            [ngModel]="ageGroup()"
+            (ngModelChange)="setFilter('ageGroup', $event)"
+            placeholder="Any age group"
+          />
+        </label>
       </div>
       <div class="mt-3 rounded-md bg-blue-50 px-3 py-2 text-sm font-medium text-blue-900">
         {{ recommendedHint() }}

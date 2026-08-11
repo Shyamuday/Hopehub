@@ -29,6 +29,8 @@ import { LiveConnectActionService } from '../../core/services/live-connect-actio
 import {
   ConnectOptionMode,
   ConnectOptionsComponent,
+  FormDropdownComponent,
+  FormDropdownOption,
   SupportPathSelectorComponent,
 } from '../../shared/components';
 
@@ -38,7 +40,13 @@ type RoleGroup = '' | ConsumerSupportPath;
 @Component({
   selector: 'app-psychologists',
   standalone: true,
-  imports: [FormsModule, RouterLink, SupportPathSelectorComponent, ConnectOptionsComponent],
+  imports: [
+    FormsModule,
+    RouterLink,
+    SupportPathSelectorComponent,
+    ConnectOptionsComponent,
+    FormDropdownComponent,
+  ],
   templateUrl: './psychologists.component.html',
 })
 export class PsychologistsComponent implements OnInit {
@@ -73,22 +81,54 @@ export class PsychologistsComponent implements OnInit {
     COACH_MENTOR: 0,
     EMOTIONAL_LISTENER: 0,
   });
-  readonly concernOptions = ['', 'Anxiety', 'Stress', 'Relationship concerns', 'Family concerns'];
-  readonly languageOptions = ['', 'English', 'Hindi', 'Bengali', 'Tamil', 'Telugu'];
-  readonly modalityOptions = [
-    '',
-    'CBT',
-    'Supportive counselling',
-    'Mindfulness',
-    'Family counselling',
+  readonly quickNeedOptions: FormDropdownOption[] = [
+    { value: '', label: 'Any need' },
+    { value: 'anxiety overthinking panic', label: 'Anxiety / overthinking' },
+    { value: 'low mood depression sadness', label: 'Low mood / depression' },
+    { value: 'stress burnout pressure', label: 'Stress / burnout' },
+    { value: 'relationship trust communication', label: 'Relationship concerns' },
+    { value: 'breakup heartbreak closure', label: 'Breakup / heartbreak' },
+    { value: 'sleep insomnia night overthinking', label: 'Sleep trouble' },
+    { value: 'career study exam focus', label: 'Career / study stress' },
   ];
-  readonly sessionTypeOptions = [
-    '',
-    'Individual session',
-    'Relationship support',
-    'Family support',
+  readonly concernOptions: FormDropdownOption[] = [
+    { value: '', label: 'All concerns' },
+    { value: 'Anxiety', label: 'Anxiety' },
+    { value: 'Low mood', label: 'Low mood / depression' },
+    { value: 'Stress', label: 'Stress' },
+    { value: 'Relationship concerns', label: 'Relationship concerns' },
+    { value: 'Breakup recovery', label: 'Breakup recovery' },
+    { value: 'Sleep concerns', label: 'Sleep concerns' },
+    { value: 'Family concerns', label: 'Family concerns' },
   ];
-  readonly ageGroupOptions = ['', 'Adults', 'Teens', 'Children', 'Older adults'];
+  readonly languageOptions: FormDropdownOption[] = [
+    { value: '', label: 'Any language' },
+    { value: 'English', label: 'English' },
+    { value: 'Hindi', label: 'Hindi' },
+    { value: 'Bengali', label: 'Bengali' },
+    { value: 'Tamil', label: 'Tamil' },
+    { value: 'Telugu', label: 'Telugu' },
+  ];
+  readonly modalityOptions: FormDropdownOption[] = [
+    { value: '', label: 'Any method' },
+    { value: 'CBT', label: 'CBT' },
+    { value: 'Supportive counselling', label: 'Supportive counselling' },
+    { value: 'Mindfulness', label: 'Mindfulness' },
+    { value: 'Family counselling', label: 'Family counselling' },
+  ];
+  readonly sessionTypeOptions: FormDropdownOption[] = [
+    { value: '', label: 'Any session' },
+    { value: 'Individual session', label: 'Individual session' },
+    { value: 'Relationship support', label: 'Relationship support' },
+    { value: 'Family support', label: 'Family support' },
+  ];
+  readonly ageGroupOptions: FormDropdownOption[] = [
+    { value: '', label: 'Any age group' },
+    { value: 'Adults', label: 'Adults' },
+    { value: 'Teens', label: 'Teens' },
+    { value: 'Children', label: 'Children' },
+    { value: 'Older adults', label: 'Older adults' },
+  ];
   readonly roleTabs = CONSUMER_SUPPORT_PATHS;
   readonly concernFlows =
     signal<Record<ConsumerConcernKey, ConsumerConcernFlow>>(CONSUMER_CONCERN_FLOWS);
