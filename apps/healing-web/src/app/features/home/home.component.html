@@ -163,9 +163,14 @@
                 </p>
               </div>
             </div>
-            @if (provider.supportRoleDescription || provider.bio) {
-              <p class="hope-card-copy line-clamp-3">
-                {{ provider.supportRoleDescription || provider.bio }}
+            @if (provider.focusAreas?.length || provider.concernsHandled?.length) {
+              <p class="hope-card-copy line-clamp-2">
+                Best for:
+                {{
+                  (provider.focusAreas?.length ? provider.focusAreas : provider.concernsHandled)!
+                    .slice(0, 3)
+                    .join(' · ')
+                }}
               </p>
             }
           </article>

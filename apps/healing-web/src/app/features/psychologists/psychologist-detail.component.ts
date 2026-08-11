@@ -318,8 +318,8 @@ export class PsychologistDetailComponent implements OnInit {
   }
 
   availabilityBadgeClass(provider: HopeHubProvider): string {
-    if (provider.quickTalkAvailable) return 'bg-emerald-50 text-emerald-700 ring-emerald-200';
-    if (provider.liveStatus === 'ONLINE') return 'bg-blue-50 text-blue-700 ring-blue-200';
-    return 'bg-amber-50 text-amber-800 ring-amber-200';
+    if (provider.quickTalkAvailable) return 'hope-status hope-status--live';
+    if (provider.liveStatus === 'ONLINE') return 'hope-status hope-status--online';
+    return 'hope-status hope-status--wait';
   }
 }

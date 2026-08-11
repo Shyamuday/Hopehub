@@ -237,6 +237,7 @@ import {
                         [class.direct-test__option--selected]="
                           answers()[currentQuestion()] === option.value
                         "
+                        [attr.aria-pressed]="answers()[currentQuestion()] === option.value"
                         (click)="selectAnswer(option.value)"
                       >
                         {{ option.label }}
@@ -291,6 +292,7 @@ import {
                               type="button"
                               class="direct-test__option"
                               [class.direct-test__option--selected]="answers()[i] === option.value"
+                              [attr.aria-pressed]="answers()[i] === option.value"
                               (click)="selectAnswerAt(i, option.value)"
                             >
                               {{ option.label }}
@@ -570,6 +572,11 @@ import {
   styles: [
     `
       .direct-test__option {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
         min-height: 2.55rem;
         border: 1px solid #d1d5db;
         border-radius: 0.5rem;
@@ -582,7 +589,9 @@ import {
         transition:
           border-color 160ms ease,
           box-shadow 160ms ease,
-          background-color 160ms ease;
+          background-color 160ms ease,
+          color 160ms ease,
+          transform 160ms ease;
       }
 
       .direct-test__option:hover,
@@ -592,11 +601,42 @@ import {
         outline: none;
       }
 
+      .direct-test__option::after {
+        content: '✓';
+        display: grid;
+        width: 1.45rem;
+        height: 1.45rem;
+        flex: 0 0 auto;
+        place-items: center;
+        border-radius: 999px;
+        background: var(--hope-selected-soft);
+        color: var(--hope-selected-text);
+        font-size: 0.85rem;
+        font-weight: 900;
+        opacity: 0;
+        transform: scale(0.75);
+        transition:
+          opacity 160ms ease,
+          transform 160ms ease,
+          background-color 160ms ease,
+          color 160ms ease;
+      }
+
       .direct-test__option--selected {
-        border-color: var(--brand-primary);
-        background: rgba(74, 111, 165, 0.11);
-        color: var(--brand-primary);
-        box-shadow: inset 0 0 0 1px var(--brand-primary);
+        border-color: var(--hope-selected-border);
+        background: var(--hope-selected-bg);
+        color: var(--hope-selected-text);
+        box-shadow:
+          inset 0 0 0 1px var(--hope-selected-border),
+          var(--hope-selected-shadow);
+        transform: translateY(-1px);
+      }
+
+      .direct-test__option--selected::after {
+        background: var(--hope-selected-check-bg);
+        color: var(--hope-selected-check-text);
+        opacity: 1;
+        transform: scale(1);
       }
 
       .direct-test__mode {

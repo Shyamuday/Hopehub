@@ -17,8 +17,8 @@
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
-  border: 1px solid #cbd5e1;
-  border-radius: 0.5rem;
+  border: 1px solid var(--hope-field-border);
+  border-radius: var(--hope-radius-sm);
   background: #ffffff;
   color: #0f172a;
   padding: 0.75rem 0.9rem;
@@ -29,8 +29,8 @@
 }
 
 .form-dropdown__button:focus-visible {
-  border-color: var(--brand-primary, #4a6fa5);
-  box-shadow: 0 0 0 3px rgba(74, 111, 165, 0.18);
+  border-color: var(--hope-field-focus-border);
+  box-shadow: var(--hope-field-focus-ring);
   outline: none;
 }
 
@@ -74,18 +74,21 @@
   right: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
-  border: 1px solid #cbd5e1;
-  border-radius: 0.5rem;
+  border: 1px solid var(--hope-field-border);
+  border-radius: var(--hope-radius-sm);
   background: #ffffff;
   box-shadow: 0 16px 32px rgba(15, 23, 42, 0.14);
   padding: 0.35rem;
 }
 
 .form-dropdown__option {
-  display: block;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
   width: 100%;
   border: 0;
-  border-radius: 0.4rem;
+  border-radius: var(--hope-radius-sm);
   background: transparent;
   color: #1c2d37;
   padding: 0.65rem 0.7rem;
@@ -101,7 +104,22 @@
 }
 
 .form-dropdown__option--selected {
-  background: rgba(74, 111, 165, 0.12);
-  color: var(--brand-primary, #4a6fa5);
-  font-weight: 700;
+  background: var(--hope-selected-bg);
+  color: var(--hope-selected-text);
+  font-weight: 800;
+  box-shadow: inset 0 0 0 1px var(--hope-selected-border-muted);
+}
+
+.form-dropdown__option--selected::after {
+  content: '✓';
+  display: grid;
+  width: 1.25rem;
+  height: 1.25rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--hope-selected-check-bg);
+  color: var(--hope-selected-check-text);
+  font-size: 0.75rem;
+  font-weight: 900;
 }

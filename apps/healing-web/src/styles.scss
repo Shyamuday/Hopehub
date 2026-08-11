@@ -55,6 +55,42 @@
   --brand-success: #829b78;
   --brand-warning: #b45309;
   --brand-error: #b91c1c;
+  --hope-selected-bg: linear-gradient(135deg, #ecfdf5, #ffffff);
+  --hope-selected-soft: #ecfdf5;
+  --hope-selected-pill-bg: #d1fae5;
+  --hope-selected-border: #10b981;
+  --hope-selected-border-soft: rgba(16, 185, 129, 0.38);
+  --hope-selected-border-muted: rgba(16, 185, 129, 0.24);
+  --hope-selected-text: #065f46;
+  --hope-selected-shadow: 0 12px 24px rgba(16, 185, 129, 0.16);
+  --hope-selected-shadow-soft: 0 14px 30px rgba(16, 185, 129, 0.1);
+  --hope-selected-ring: 0 0 0 3px rgba(16, 185, 129, 0.14);
+  --hope-selected-check-bg: #10b981;
+  --hope-selected-check-text: #ffffff;
+  --hope-radius-sm: 0.5rem;
+  --hope-radius-md: 0.75rem;
+  --hope-radius-lg: 1rem;
+  --hope-radius-xl: 1.25rem;
+  --hope-card-bg: #ffffff;
+  --hope-card-border: rgba(28, 45, 55, 0.1);
+  --hope-card-border-hover: var(--brand-primary-border);
+  --hope-card-shadow: none;
+  --hope-card-shadow-hover: 0 16px 36px rgba(28, 45, 55, 0.08);
+  --hope-field-border: #cbd5e1;
+  --hope-field-focus-border: var(--brand-primary);
+  --hope-field-focus-ring: 0 0 0 3px rgba(74, 111, 165, 0.12);
+  --hope-chip-bg: #f8fafc;
+  --hope-chip-border: #e2e8f0;
+  --hope-chip-text: #334155;
+  --hope-status-live-bg: #ecfdf5;
+  --hope-status-live-text: #047857;
+  --hope-status-live-border: #a7f3d0;
+  --hope-status-online-bg: #eff6ff;
+  --hope-status-online-text: #1d4ed8;
+  --hope-status-online-border: #bfdbfe;
+  --hope-status-wait-bg: #fffbeb;
+  --hope-status-wait-text: #92400e;
+  --hope-status-wait-border: #fde68a;
   --text-primary: #1c2d37;
   --text-secondary: #334854;
   --text-muted: #5d6c74;
@@ -417,11 +453,11 @@ a:focus {
 }
 
 .hope-card {
-  border: 1px solid rgba(28, 45, 55, 0.1);
-  border-radius: 1rem;
-  background: #ffffff;
+  border: 1px solid var(--hope-card-border);
+  border-radius: var(--hope-radius-lg);
+  background: var(--hope-card-bg);
   padding: 1.5rem;
-  box-shadow: none;
+  box-shadow: var(--hope-card-shadow);
   transition:
     transform 220ms ease,
     border-color 220ms ease,
@@ -429,8 +465,8 @@ a:focus {
 }
 
 .hope-card:hover {
-  border-color: var(--brand-primary-border);
-  box-shadow: 0 16px 36px rgba(28, 45, 55, 0.08);
+  border-color: var(--hope-card-border-hover);
+  box-shadow: var(--hope-card-shadow-hover);
 }
 
 .hope-card-title {
@@ -445,14 +481,63 @@ a:focus {
   @apply flex h-10 w-10 items-center justify-center rounded-full border border-primary-100 bg-white text-primary-700;
 }
 
+.hope-chip,
+.hope-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  border: 1px solid var(--hope-chip-border);
+  border-radius: 999px;
+  background: var(--hope-chip-bg);
+  color: var(--hope-chip-text);
+  font-size: 0.75rem;
+  font-weight: 800;
+  line-height: 1;
+  padding: 0.35rem 0.6rem;
+  white-space: nowrap;
+}
+
+.hope-status {
+  font-weight: 900;
+}
+
+.hope-status--live {
+  border-color: var(--hope-status-live-border);
+  background: var(--hope-status-live-bg);
+  color: var(--hope-status-live-text);
+}
+
+.hope-status--online {
+  border-color: var(--hope-status-online-border);
+  background: var(--hope-status-online-bg);
+  color: var(--hope-status-online-text);
+}
+
+.hope-status--wait {
+  border-color: var(--hope-status-wait-border);
+  background: var(--hope-status-wait-bg);
+  color: var(--hope-status-wait-text);
+}
+
 /* Form styling consistency */
 .form-input {
-  @apply min-h-[44px] w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 placeholder-gray-600 transition-colors focus:border-primary-600 focus:ring-2 focus:ring-primary-100;
+  @apply min-h-[44px] w-full bg-white px-4 py-3 text-gray-900 placeholder-gray-600 transition-colors;
+  border: 1px solid var(--hope-field-border);
+  border-radius: var(--hope-radius-sm);
 }
 
 .form-textarea {
-  @apply w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 placeholder-gray-600 transition-colors focus:border-primary-600 focus:ring-2 focus:ring-primary-100;
+  @apply w-full bg-white px-4 py-3 text-gray-900 placeholder-gray-600 transition-colors;
+  border: 1px solid var(--hope-field-border);
+  border-radius: var(--hope-radius-sm);
   resize: vertical;
+}
+
+.form-input:focus,
+.form-textarea:focus {
+  border-color: var(--hope-field-focus-border);
+  box-shadow: var(--hope-field-focus-ring);
+  outline: none;
 }
 
 .form-label {
