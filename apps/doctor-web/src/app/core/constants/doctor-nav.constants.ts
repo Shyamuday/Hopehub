@@ -81,6 +81,49 @@ function buildDoctorNav(
   profile?: DoctorProfileSummary | null,
 ): DoctorNavItemDef[] {
   const isHopeHub = profile?.doctorType === 'PSYCHOLOGIST';
+  if (isHopeHub) {
+    // Keep the Professional Help workspace intentionally small. The profile link in the
+    // sidebar/footer is the fifth core item; payments live on the home activity rail.
+    return [
+      {
+        id: 'dashboard',
+        label: 'Home',
+        path: `/${ROUTE_PATHS.DASHBOARD}`,
+        icon: DOCTOR_NAV_ICONS['Dashboard'].icon,
+        shortLabel: 'Home',
+        enabled: true,
+        showInBottomNav: true,
+      },
+      {
+        id: 'worklist',
+        label: 'Your sessions',
+        path: `/${ROUTE_PATHS.WORKLIST}`,
+        icon: DOCTOR_NAV_ICONS['Worklist'].icon,
+        shortLabel: 'Sessions',
+        enabled: true,
+        showInBottomNav: true,
+      },
+      {
+        id: 'go-live',
+        label: 'Go live',
+        path: `/${ROUTE_PATHS.ONLINE_DOCTOR}`,
+        icon: DOCTOR_NAV_ICONS['Go live'].icon,
+        shortLabel: DOCTOR_NAV_ICONS['Go live'].shortLabel,
+        enabled: capabilities.onlineConsult,
+        showInBottomNav: true,
+      },
+      {
+        id: 'availability',
+        label: 'Availability',
+        path: `/${ROUTE_PATHS.SLOTS}`,
+        icon: DOCTOR_NAV_ICONS['Slots'].icon,
+        shortLabel: 'Times',
+        enabled: capabilities.slots,
+        showInBottomNav: true,
+      },
+    ];
+  }
+
   const userListLabel = isHopeHub ? 'Clients' : 'Patients';
   const availabilityLabel = isHopeHub ? 'Availability' : 'Slots';
   const items: DoctorNavItemDef[] = [

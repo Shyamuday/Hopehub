@@ -469,9 +469,9 @@ export class ProfilePage {
       },
       {
         id: 'care' as const,
-        label: 'Care details',
-        title: 'Care team details',
-        description: 'Subtype, qualification, languages, sessions, and concerns.',
+        label: 'Support details',
+        title: 'How you support people',
+        description: 'Your support type, background, languages, session styles, and focus areas.',
         complete:
           !this.isPsychologist ||
           (this.structuredProfileCareTeamTypes(form.careTeamTypes).length > 0 &&

@@ -196,9 +196,9 @@ export function buildProviderOnboardingStatus(
     },
     {
       id: 'availability',
-      title: 'Availability setup',
-      description: 'Add slots or keep your live availability ready before accepting users.',
-      actionLabel: 'Set availability',
+      title: 'Choose your available times',
+      description: 'Add times people can book, or turn on live availability when you are ready.',
+      actionLabel: 'Choose times',
       route: `/${ROUTE_PATHS.SLOTS}`,
       complete: Boolean(profile?.isAvailable),
       required: true,

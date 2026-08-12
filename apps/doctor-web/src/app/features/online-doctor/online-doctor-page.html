@@ -35,7 +35,11 @@
     </div>
     <div class="actions">
       @if (!isLive()) {
-        <button type="button" (click)="goOnline()" [disabled]="saving() || !canAcceptAnyMode() || readiness()?.ready === false">
+        <button
+          type="button"
+          (click)="goOnline()"
+          [disabled]="saving() || !canAcceptAnyMode() || readiness()?.ready === false"
+        >
           Go online
         </button>
       } @else {
@@ -67,10 +71,7 @@
           <ul class="inbox-list">
             @for (c of instantConsults(); track c.id) {
               <li>
-                <a
-                  class="inbox-item"
-                  [routerLink]="['/', sessionsPath, c.id]"
-                >
+                <a class="inbox-item" [routerLink]="['/', sessionsPath, c.id]">
                   <strong>{{ c.patient.name }}</strong>
                   <span>{{ c.disease.name }} · {{ c.status }}</span>
                   <em>Open live room →</em>
@@ -87,16 +88,17 @@
     <h2>{{ isHomeopathyProvider() ? 'How patients see you' : 'How Hope Hub users see you' }}</h2>
     <fieldset class="form-grid" [disabled]="saving()">
       @if (isHomeopathyProvider()) {
-      <div class="field">
-        <label>Category</label>
-        <select [formField]="settingsForm.category">
-          <option value="GENERALIST">General physician</option>
-          <option value="SPECIALIST">Disease specialist</option>
-        </select>
-      </div>
+        <div class="field">
+          <label>Category</label>
+          <select [formField]="settingsForm.category">
+            <option value="GENERALIST">General physician</option>
+            <option value="SPECIALIST">Disease specialist</option>
+          </select>
+        </div>
       } @else {
         <p class="muted full">
-          Your Hope Hub category comes from your selected provider subtype. Live settings here only control availability and modes.
+          Your support type is set in your profile. Here, simply choose when you are available and
+          which ways people can connect with you.
         </p>
       }
       <div class="mode-control-grid full" aria-label="Live Connect modes">

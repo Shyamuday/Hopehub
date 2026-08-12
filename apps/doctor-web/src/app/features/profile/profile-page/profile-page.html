@@ -59,7 +59,8 @@
     </nav>
   } @else {
     <p class="section-hint setup-step-count">
-      Step {{ currentSetupStepPosition() }} of {{ setupStepItems().length }} · one small section at a time
+      Step {{ currentSetupStepPosition() }} of {{ setupStepItems().length }} · one small section at
+      a time
     </p>
   }
 
@@ -170,9 +171,9 @@
     @if (isPsychologist && activeSetupStep() === 'care') {
       <section class="mental-profile-section">
         <hopehub-multi-select
-          label="Hope Hub subtype"
+          label="How you support people"
           hint="Select all that apply"
-          placeholder="Choose your Hope Hub subtype"
+          placeholder="Choose the support types that fit you"
           tone="hope"
           [options]="careTeamTypeOptions"
           [selected]="profileModel().careTeamTypes"
@@ -181,10 +182,10 @@
 
         <div class="subtype-service-guide">
           <div>
-            <strong>Services they can offer</strong>
+            <strong>Suggested support services</strong>
             <p>
-              Based on selected subtype. Add these to pricing or use them as a safe service
-              boundary.
+              Based on your selection. Add any that you genuinely offer, or use them to keep your
+              public scope clear.
             </p>
           </div>
           <div class="suggested-service-grid">
@@ -202,11 +203,11 @@
         </div>
 
         @if (isProfileCareTeamTypeSelected('OTHER')) {
-          <label for="otherCareTeamType">Other subtype</label>
+          <label for="otherCareTeamType">Other support type</label>
           <input
             id="otherCareTeamType"
             [formField]="profileForm.otherCareTeamType"
-            placeholder="Write your provider subtype"
+            placeholder="Write how you support people"
           />
         }
 
