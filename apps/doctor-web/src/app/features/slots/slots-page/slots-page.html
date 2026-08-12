@@ -22,7 +22,7 @@
           @if (!ready.ready && ready.blockers.length) {
             <ul class="readiness-list">
               @for (blocker of ready.blockers.slice(0, 5); track blocker.code) {
-                <li>{{ blocker.message }}</li>
+                <li>{{ blocker.label }}</li>
               }
             </ul>
           }

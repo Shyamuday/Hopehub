@@ -36,6 +36,7 @@ export type DoctorBottomNavItem = {
   queryParams?: Record<string, string>;
   icon: string;
   shortLabel: string;
+  enabled: boolean;
 };
 
 const EXPANDED_GROUPS_KEY = 'doctor:nav-expanded-groups';
@@ -332,6 +333,7 @@ export class DoctorShell implements OnInit, OnDestroy {
           queryParams: item.queryParams,
           icon: item.icon,
           shortLabel: item.shortLabel,
+          enabled: item.enabled,
         });
         used.add(item.path);
       }
@@ -347,6 +349,7 @@ export class DoctorShell implements OnInit, OnDestroy {
           queryParams: child.queryParams,
           icon: icons.icon,
           shortLabel: icons.shortLabel,
+          enabled: child.enabled,
         });
         used.add(child.path);
       }
