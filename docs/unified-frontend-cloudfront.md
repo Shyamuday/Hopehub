@@ -12,6 +12,7 @@ user.hopehub.in         -> /patient/index.html
 patient.hopehub.in      -> /patient/index.html
 admin.hopehub.in        -> /admin/index.html
 earn.hopehub.in         -> /doctor/index.html
+support.hopehub.in      -> /doctor/index.html (opens Provider Help Centre)
 ops.hopehub.in          -> /operations/index.html
 operations.hopehub.in   -> /operations/index.html
 healing.hopehub.in      -> /healing/index.html
@@ -77,6 +78,7 @@ www.hopehub.in
 mind.hopehub.in
 admin.hopehub.in
 earn.hopehub.in
+support.hopehub.in
 ops.hopehub.in
 ```
 

@@ -29,6 +29,10 @@
     </p>
   }
 
+  @if (onboarding().complete && setupCompleteNotice()) {
+    <p class="setup-complete-notice">✓ Setup complete — your provider workspace is ready.</p>
+  }
+
   @if (nextOnboardingStep(); as step) {
     @if (completedOnboardingSteps().length) {
       <div class="onboarding-history" aria-label="Completed setup steps">

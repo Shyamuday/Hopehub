@@ -23,6 +23,7 @@ import { OnlineDoctorPage } from './features/online-doctor/online-doctor-page';
 import { NotificationsInboxPage } from './features/notifications-inbox/notifications-inbox-page';
 import { ProviderPathPage } from './features/onboarding/provider-path-page/provider-path-page';
 import { ProviderSupportPage } from './features/support/provider-support-page/provider-support-page';
+import { ProviderSupportHomeRedirect } from './features/support/provider-support-home-redirect';
 
 export const routes: Routes = [
   { path: ROUTE_PATHS.LOGIN, component: Login },
@@ -33,12 +34,13 @@ export const routes: Routes = [
         (m) => m.ProviderEmailVerification,
       ),
   },
+  { path: ROUTE_PATHS.SUPPORT, component: ProviderSupportPage },
+  { path: '', pathMatch: 'full', component: ProviderSupportHomeRedirect },
   {
     path: '',
     component: DoctorShell,
     canActivate: [doctorAuthGuard],
     children: [
-      { path: '', pathMatch: 'full', redirectTo: ROUTE_PATHS.DASHBOARD },
       { path: ROUTE_PATHS.WELCOME, component: ProviderPathPage },
       {
         path: ROUTE_PATHS.WORKLIST,
@@ -120,7 +122,6 @@ export const routes: Routes = [
         data: { capability: 'caseAnalysis' },
       },
       { path: ROUTE_PATHS.PROFILE, component: ProfilePage },
-      { path: ROUTE_PATHS.SUPPORT, component: ProviderSupportPage },
       {
         path: ROUTE_PATHS.LEAVES,
         component: MyLeaves,

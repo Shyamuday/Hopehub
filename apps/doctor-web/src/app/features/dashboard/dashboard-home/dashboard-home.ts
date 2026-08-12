@@ -66,6 +66,7 @@ export class DashboardHome {
   readonly onboarding = signal<ProviderOnboardingStatus>(buildProviderOnboardingStatus(null, null));
   readonly readiness = signal<ProviderReadiness | null>(null);
   readonly onboardingRequiredNotice = signal(false);
+  readonly setupCompleteNotice = signal(false);
 
   constructor(
     private readonly http: HttpClient,
@@ -76,6 +77,7 @@ export class DashboardHome {
     this.onboardingRequiredNotice.set(
       route.snapshot.queryParamMap.get('onboarding') === 'required',
     );
+    this.setupCompleteNotice.set(route.snapshot.queryParamMap.get('setup') === 'complete');
     void this.loadRole();
     void this.loadReadiness();
     void this.loadSummary();

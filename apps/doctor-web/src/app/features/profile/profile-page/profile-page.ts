@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Component, inject, signal } from '@angular/core';
 import { form, FormField } from '@angular/forms/signals';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { MultiSelectComponent, ProfileAvatarUploadComponent } from '@hopehub/platform-ui';
 import { environment } from '../../../../environments/environment';
@@ -190,6 +190,7 @@ function emptyProfileModel() {
 export class ProfilePage {
   private readonly http = inject(HttpClient);
   private readonly session = inject(DoctorSessionService);
+  private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   readonly apiBase = environment.apiUrl;
   readonly authTokenKey = AUTH_TOKEN_KEY;
@@ -572,10 +573,15 @@ export class ProfilePage {
   }
 
   async saveAndContinue() {
+    const activeStep = this.activeSetupStep();
     await this.saveProfile();
     if (this.error) return;
+    if (this.setupIsComplete()) {
+      await this.router.navigate(['/dashboard'], { queryParams: { setup: 'complete' } });
+      return;
+    }
     const steps = this.setupStepItems();
-    const index = steps.findIndex((step) => step.id === this.activeSetupStep());
+    const index = steps.findIndex((step) => step.id === activeStep);
     const next = steps.slice(index + 1).find((step) => !step.complete) || steps[index + 1] || null;
     if (next) {
       this.activeSetupStep.set(next.id);
