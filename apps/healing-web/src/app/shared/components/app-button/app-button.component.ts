@@ -252,7 +252,8 @@ export class AppButtonComponent {
   @Input({ transform: booleanAttribute }) pill = false;
 
   normalizedRouterLink(): string | string[] | null {
-    if (Array.isArray(this.routerLink)) return [...this.routerLink];
-    return this.routerLink;
+    const link = this.routerLink;
+    if (!link || typeof link === 'string') return link;
+    return [...link];
   }
 }

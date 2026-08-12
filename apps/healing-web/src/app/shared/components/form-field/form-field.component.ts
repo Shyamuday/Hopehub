@@ -6,6 +6,7 @@ import {
   Output,
   booleanAttribute,
   forwardRef,
+  numberAttribute,
 } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
@@ -36,7 +37,7 @@ export class FormFieldComponent implements ControlValueAccessor {
   @Input() autocomplete = '';
   @Input() inputMode = '';
   @Input() name = '';
-  @Input() rows = 3;
+  @Input({ transform: numberAttribute }) rows = 3;
   @Input() maxLength: number | null = null;
   @Input() size: FormFieldSize = 'md';
   @Input() customClass = '';
