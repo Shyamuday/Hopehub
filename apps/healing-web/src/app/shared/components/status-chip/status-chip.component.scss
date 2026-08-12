@@ -9,19 +9,19 @@
 }
 
 .status-chip--sm {
-  font-size: 0.72rem;
-  font-weight: 800;
+  font-size: var(--hope-font-size-xs);
+  font-weight: var(--hope-font-weight-label);
   padding: 0.32rem 0.62rem;
 }
 
 .status-chip--md {
-  font-size: 0.82rem;
-  font-weight: 800;
+  font-size: var(--hope-font-size-sm);
+  font-weight: var(--hope-font-weight-label);
   padding: 0.45rem 0.78rem;
 }
 
 .status-chip--strong {
-  font-weight: 950;
+  font-weight: var(--hope-font-weight-title);
   text-transform: uppercase;
 }
 

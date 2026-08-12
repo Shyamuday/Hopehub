@@ -42,21 +42,21 @@
 
 .day-button span,
 .slot-button span {
-  font-size: 0.8rem;
-  font-weight: 700;
+  font-size: var(--hope-font-size-sm);
+  font-weight: var(--hope-font-weight-label);
 }
 
 .day-button strong {
   color: var(--text-primary);
-  font-size: 0.82rem;
-  font-weight: 800;
+  font-size: var(--hope-font-size-sm);
+  font-weight: var(--hope-font-weight-title);
 }
 
 .day-button small,
 .slot-button small {
   color: var(--text-muted);
-  font-size: 0.72rem;
-  font-weight: 700;
+  font-size: var(--hope-font-size-xs);
+  font-weight: var(--hope-font-weight-body);
   white-space: nowrap;
 }
 
@@ -105,7 +105,7 @@
   background: var(--hope-selected-check-bg);
   color: var(--hope-selected-check-text);
   font-size: 0.75rem;
-  font-weight: 900;
+  font-weight: var(--hope-font-weight-title);
 }
 
 .slot-button.selected::after {
@@ -130,15 +130,15 @@
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  border-radius: 0.5rem;
+  border-radius: var(--hope-radius-md);
   background: rgba(130, 155, 120, 0.12);
   padding: 0.75rem 1rem;
   color: var(--surface-green-text);
-  font-size: 0.875rem;
+  font-size: var(--hope-font-size-sm);
 }
 
 .slot-summary strong {
-  font-size: 1rem;
+  font-size: var(--hope-font-size-card-title);
 }
 
 .slot-grid {

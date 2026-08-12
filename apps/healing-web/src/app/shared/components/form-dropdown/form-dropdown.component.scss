@@ -11,7 +11,7 @@
 
 .form-dropdown__button {
   display: flex;
-  min-height: 48px;
+  min-height: 2.75rem;
   width: 100%;
   min-width: 0;
   align-items: center;
@@ -106,7 +106,7 @@
 .form-dropdown__option--selected {
   background: var(--hope-selected-bg);
   color: var(--hope-selected-text);
-  font-weight: 800;
+  font-weight: var(--hope-font-weight-label);
   box-shadow: inset 0 0 0 1px var(--hope-selected-border-muted);
 }
 
@@ -121,5 +121,5 @@
   background: var(--hope-selected-check-bg);
   color: var(--hope-selected-check-text);
   font-size: 0.75rem;
-  font-weight: 900;
+  font-weight: var(--hope-font-weight-title);
 }

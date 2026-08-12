@@ -11,8 +11,8 @@
 
 .form-field__label {
   color: var(--text-secondary, #334155);
-  font-size: 0.86rem;
-  font-weight: 800;
+  font-size: var(--hope-font-size-sm);
+  font-weight: var(--hope-font-weight-label);
 }
 
 .form-field__label span {
@@ -50,7 +50,7 @@
 }
 
 .form-field__control--uppercase {
-  font-weight: 800;
+  font-weight: var(--hope-font-weight-label);
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -81,9 +81,9 @@ textarea.form-field__control {
 
 .form-field__message {
   color: #64748b;
-  font-size: 0.78rem;
-  font-weight: 650;
-  line-height: 1.4;
+  font-size: var(--hope-font-size-xs);
+  font-weight: var(--hope-font-weight-body);
+  line-height: var(--hope-line-copy);
 }
 
 .form-field__message--error {

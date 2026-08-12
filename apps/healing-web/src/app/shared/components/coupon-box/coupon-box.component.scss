@@ -2,7 +2,7 @@
   border: 1px solid var(--hope-card-border, rgba(15, 23, 42, 0.1));
   border-radius: var(--hope-radius-lg, 1rem);
   background: linear-gradient(135deg, #ffffff, var(--hope-selected-soft, rgba(220, 252, 231, 0.7)));
-  padding: 1rem;
+  padding: var(--hope-space-3);
   box-shadow: var(--hope-card-shadow, 0 18px 45px rgba(15, 23, 42, 0.08));
 }
 
@@ -20,9 +20,9 @@
 
 .coupon-box span {
   display: block;
-  font-size: 0.75rem;
-  font-weight: 800;
-  letter-spacing: 0.08em;
+  font-size: var(--hope-font-size-xs);
+  font-weight: var(--hope-font-weight-label);
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   color: #047857;
 }
@@ -31,6 +31,8 @@
   display: block;
   margin-top: 0.15rem;
   color: #0f172a;
+  font-size: var(--hope-font-size-card-title);
+  font-weight: var(--hope-font-weight-title);
 }
 
 .coupon-box__control {
@@ -45,18 +47,18 @@
 
 .coupon-box p {
   margin: 0.65rem 0 0;
-  font-size: 0.82rem;
+  font-size: var(--hope-font-size-sm);
   color: #475569;
 }
 
 .coupon-box__success {
   color: #047857 !important;
-  font-weight: 800;
+  font-weight: var(--hope-font-weight-label);
 }
 
 .coupon-box__error {
   color: #b91c1c !important;
-  font-weight: 700;
+  font-weight: var(--hope-font-weight-label);
 }
 
 @media (max-width: 640px) {

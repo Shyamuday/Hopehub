@@ -1,9 +1,9 @@
 .filter-bar {
   margin-bottom: 2rem;
   border: 1px solid var(--hope-card-border, rgba(148, 163, 184, 0.28));
-  border-radius: var(--hope-radius-xl, 1.25rem);
+  border-radius: var(--hope-radius-lg);
   background: rgba(255, 255, 255, 0.92);
-  padding: 1rem;
+  padding: var(--hope-space-3);
   box-shadow: var(--hope-card-shadow, 0 18px 45px rgba(15, 23, 42, 0.08));
 }
 
@@ -25,9 +25,9 @@
 
 .filter-bar__label {
   color: #64748b;
-  font-size: 0.74rem;
-  font-weight: 900;
-  letter-spacing: 0.08em;
+  font-size: var(--hope-font-size-xs);
+  font-weight: var(--hope-font-weight-label);
+  letter-spacing: 0.06em;
   text-transform: uppercase;
 }
 
