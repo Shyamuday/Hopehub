@@ -1,4 +1,4 @@
-import { booleanAttribute, Component, EventEmitter, Input, Output } from '@angular/core';
+import { booleanAttribute, Component, EventEmitter, Input, Output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import {
   FormDropdownComponent,
@@ -26,9 +26,11 @@ export class FilterBarComponent {
   @Input() filters: FilterBarFilter[] = [];
   @Input({ transform: booleanAttribute }) showSearch = true;
   @Input({ transform: booleanAttribute }) compact = false;
+  @Input({ transform: booleanAttribute }) collapsible = true;
 
   @Output() searchValueChange = new EventEmitter<string>();
   @Output() filterChange = new EventEmitter<{ key: string; value: string }>();
+  readonly expanded = signal(false);
 
   onSearch(value: string): void {
     this.searchValueChange.emit(value);
@@ -48,5 +50,9 @@ export class FilterBarComponent {
 
   clearFilter(key: string): void {
     this.filterChange.emit({ key, value: '' });
+  }
+
+  toggleExpanded(): void {
+    this.expanded.update((value) => !value);
   }
 }

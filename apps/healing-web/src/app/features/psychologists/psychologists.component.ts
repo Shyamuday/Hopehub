@@ -89,7 +89,6 @@ export class PsychologistsComponent implements OnInit {
   readonly modality = signal('');
   readonly sessionType = signal('');
   readonly ageGroup = signal('');
-  readonly showMoreFilters = signal(false);
   readonly roleGroup = signal<RoleGroup>('');
   readonly page = signal(1);
   readonly pageSize = 20;
@@ -202,10 +201,6 @@ export class PsychologistsComponent implements OnInit {
     this.roleGroup.set('');
     this.page.set(1);
     this.load({ refreshCounts: true });
-  }
-
-  toggleMoreFilters(): void {
-    this.showMoreFilters.update((visible) => !visible);
   }
 
   roleSelectionOptions() {

@@ -1,5 +1,16 @@
 <section class="filter-bar" [class.filter-bar--compact]="compact">
-  <p class="filter-bar__heading">Refine results</p>
+  @if (collapsible) {
+    <div class="filter-bar__trigger-row">
+      <button type="button" class="filter-bar__trigger" (click)="toggleExpanded()" [attr.aria-expanded]="expanded()">
+        {{ expanded() ? 'Hide filters' : 'Refine results' }}
+        @if (selectedFilters().length) { <span>{{ selectedFilters().length }}</span> }
+      </button>
+    </div>
+  } @else {
+    <p class="filter-bar__heading">Refine results</p>
+  }
+
+  @if (!collapsible || expanded()) {
   <div
     class="filter-bar__grid"
     [class.filter-bar__grid--dropdowns-only]="!showSearch"
@@ -40,6 +51,7 @@
       </label>
     }
   </div>
+  }
   @if (selectedFilters().length) {
     <div class="filter-bar__selected" aria-label="Selected filters">
       @for (filter of selectedFilters(); track filter.key) {

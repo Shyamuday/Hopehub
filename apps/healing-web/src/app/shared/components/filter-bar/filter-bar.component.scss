@@ -24,6 +24,12 @@
   text-transform: uppercase;
 }
 
+.filter-bar__trigger-row { display: flex; align-items: center; justify-content: space-between; }
+.filter-bar__trigger { display: inline-flex; align-items: center; gap: .45rem; border: 0; background: transparent; color: var(--brand-primary-hover); cursor: pointer; font: inherit; font-size: var(--hope-font-size-sm); font-weight: var(--hope-font-weight-label); padding: .15rem 0; }
+.filter-bar__trigger::after { content: '⌄'; font-size: 1rem; transition: transform 160ms ease; }
+.filter-bar__trigger[aria-expanded='true']::after { transform: rotate(180deg); }
+.filter-bar__trigger span { display: inline-grid; min-width: 1.15rem; place-items: center; border-radius: 999px; background: var(--brand-primary-light); font-size: .7rem; }
+
 .filter-bar--compact .filter-bar__heading { display: none; }
 
 .filter-bar__grid {
