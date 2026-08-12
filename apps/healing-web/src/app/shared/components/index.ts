@@ -35,4 +35,6 @@ export * from './selectable-card/selectable-card.component';
 export * from './app-button/app-button.component';
 export * from './app-modal/app-modal.component';
 export * from './page-header/page-header.component';
+export * from './consumer-page-shell/consumer-page-shell.component';
+export * from './consumer-selection-rail/consumer-selection-rail.component';
 export * from './filter-bar/filter-bar.component';

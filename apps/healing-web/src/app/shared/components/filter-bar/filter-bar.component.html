@@ -1,4 +1,5 @@
 <section class="filter-bar" [class.filter-bar--compact]="compact">
+  <p class="filter-bar__heading">Refine results</p>
   <div
     class="filter-bar__grid"
     [class.filter-bar__grid--dropdowns-only]="!showSearch"
@@ -39,4 +40,13 @@
       </label>
     }
   </div>
+  @if (selectedFilters().length) {
+    <div class="filter-bar__selected" aria-label="Selected filters">
+      @for (filter of selectedFilters(); track filter.key) {
+        <button type="button" class="filter-bar__chip" (click)="clearFilter(filter.key)">
+          {{ selectedLabel(filter) }} <span aria-hidden="true">×</span>
+        </button>
+      }
+    </div>
+  }
 </section>

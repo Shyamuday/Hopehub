@@ -1,23 +1,18 @@
-<section class="support-guide">
-  <div class="support-guide__hero">
-    <p class="hope-eyebrow">Guided support</p>
-    <h1>What are you carrying today?</h1>
-    <p>Choose one concern. We’ll suggest the clearest next step.</p>
-  </div>
-
+<app-consumer-page-shell
+  eyebrow="Guided support"
+  title="What are you carrying today?"
+  description="Choose one concern. We’ll suggest the clearest next step."
+  tone="soft"
+>
   <div class="support-guide__layout">
     <aside class="support-guide__concerns" aria-label="Choose your concern">
       <p class="support-guide__label">Start with</p>
-      @for (concern of concernOptions(); track concern.key) {
-        <app-selectable-card
-          [title]="concern.shortLabel"
-          [description]="concern.assessment.label"
-          [selected]="selectedKey() === concern.key"
-          tone="success"
-          [compact]="true"
-          (selectedChange)="selectConcern(concern.key)"
-        />
-      }
+      <app-consumer-selection-rail
+        [options]="concernSelectionOptions()"
+        [selected]="selectedKey()"
+        ariaLabel="Choose your concern"
+        (selectedChange)="selectConcern($any($event))"
+      />
     </aside>
 
     <main class="support-guide__panel">
@@ -95,4 +90,4 @@
       </div>
     </main>
   </div>
-</section>
+</app-consumer-page-shell>

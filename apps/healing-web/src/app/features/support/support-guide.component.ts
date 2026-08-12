@@ -11,12 +11,15 @@ import {
 import { CONSUMER_ROUTES } from '../../core/constants/consumer-routes.constants';
 import { CONSUMER_UX_COPY } from '../../core/constants/consumer-ux-copy.constants';
 import { ConsumerFlowsService } from '../../core/services/consumer-flows.service';
-import { SelectableCardComponent } from '../../shared/components';
+import {
+  ConsumerPageShellComponent,
+  ConsumerSelectionRailComponent,
+} from '../../shared/components';
 
 @Component({
   selector: 'app-support-guide',
   standalone: true,
-  imports: [CommonModule, RouterModule, SelectableCardComponent],
+  imports: [CommonModule, RouterModule, ConsumerPageShellComponent, ConsumerSelectionRailComponent],
   templateUrl: './support-guide.component.html',
   styleUrl: './support-guide.component.scss',
 })
@@ -33,6 +36,13 @@ export class SupportGuideComponent implements OnInit {
 
   readonly concernOptions = computed(() =>
     CONSUMER_CONCERN_ORDER.map((key) => this.flows()[key]).filter(Boolean),
+  );
+  readonly concernSelectionOptions = computed(() =>
+    this.concernOptions().map((concern) => ({
+      value: concern.key,
+      label: concern.shortLabel,
+      description: concern.assessment.label,
+    })),
   );
   readonly selectedFlow = computed(() => this.flows()[this.selectedKey()] || this.flows().general);
 

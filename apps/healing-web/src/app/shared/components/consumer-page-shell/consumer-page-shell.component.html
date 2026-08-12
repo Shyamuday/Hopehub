@@ -1,0 +1,11 @@
+<section class="consumer-page" [class.consumer-page--soft]="tone === 'soft'">
+  <div class="consumer-page__inner">
+    <header class="consumer-page__header">
+      @if (eyebrow) { <p class="consumer-page__eyebrow">{{ eyebrow }}</p> }
+      <h1 class="consumer-page__title">{{ title }}</h1>
+      @if (description) { <p class="consumer-page__description">{{ description }}</p> }
+      <div class="consumer-page__actions"><ng-content select="[page-actions]" /></div>
+    </header>
+    <div class="consumer-page__content"><ng-content /></div>
+  </div>
+</section>

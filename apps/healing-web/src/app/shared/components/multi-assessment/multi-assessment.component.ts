@@ -29,6 +29,7 @@ import { AppButtonComponent } from '../app-button/app-button.component';
 import { CouponBoxComponent } from '../coupon-box/coupon-box.component';
 import { PageHeaderComponent } from '../page-header/page-header.component';
 import { SelectableCardComponent } from '../selectable-card/selectable-card.component';
+import { ConsumerSelectionRailComponent } from '../consumer-selection-rail/consumer-selection-rail.component';
 
 @Component({
   selector: 'app-multi-assessment',
@@ -41,6 +42,7 @@ import { SelectableCardComponent } from '../selectable-card/selectable-card.comp
     CouponBoxComponent,
     PageHeaderComponent,
     SelectableCardComponent,
+    ConsumerSelectionRailComponent,
   ],
   templateUrl: './multi-assessment.component.html',
   styleUrl: './multi-assessment.component.scss',
@@ -138,6 +140,18 @@ export class MultiAssessmentComponent implements OnInit {
 
   showAllAssessments() {
     this.selectedCategory.set(null);
+  }
+
+  assessmentCategoryOptions() {
+    return [
+      { value: '', label: 'All check-ins', description: 'Browse every self-check' },
+      ...this.categories().map((category) => ({ value: category, label: category })),
+    ];
+  }
+
+  selectAssessmentCategory(value: string): void {
+    if (!value) this.showAllAssessments();
+    else this.filterByCategory(value as AssessmentCategory);
   }
 
   selectAssessment(assessment: AssessmentConfig) {

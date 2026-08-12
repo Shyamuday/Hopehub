@@ -35,15 +35,17 @@ import { PublicCommunicationConfigService } from '../../core/services/public-com
 import { NotificationService } from '../../core/services/notification.service';
 import { ConsumerFlowsService } from '../../core/services/consumer-flows.service';
 import { LiveConnectActionService } from '../../core/services/live-connect-action.service';
+import { ConsumerFlowPreferencesService } from '../../core/services/consumer-flow-preferences.service';
 import {
   ConnectOptionMode,
   AppButtonComponent,
   ContinueSupportBannerComponent,
+  ConsumerPageShellComponent,
+  ConsumerSelectionRailComponent,
   EmptyStateComponent,
   FilterBarComponent,
   FormDropdownOption,
   ProviderCardComponent,
-  SupportPathSelectorComponent,
 } from '../../shared/components';
 
 type CareTeamListService = NonNullable<HopeHubProvider['services']>[number];
@@ -56,8 +58,9 @@ type RoleGroup = '' | ConsumerSupportPath;
     FormsModule,
     RouterLink,
     AppButtonComponent,
-    SupportPathSelectorComponent,
     ContinueSupportBannerComponent,
+    ConsumerPageShellComponent,
+    ConsumerSelectionRailComponent,
     EmptyStateComponent,
     FilterBarComponent,
     ProviderCardComponent,
@@ -72,6 +75,7 @@ export class PsychologistsComponent implements OnInit {
   private readonly notificationService = inject(NotificationService);
   private readonly consumerFlowsService = inject(ConsumerFlowsService);
   private readonly liveConnectAction = inject(LiveConnectActionService);
+  private readonly preferences = inject(ConsumerFlowPreferencesService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
@@ -112,6 +116,7 @@ export class PsychologistsComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((state) => this.concernFlows.set(state.flows));
     this.hydrateFiltersFromUrl();
+    this.applySavedPreferences();
     this.load();
     this.loadRoleCounts();
   }
@@ -203,6 +208,16 @@ export class PsychologistsComponent implements OnInit {
     this.showMoreFilters.update((visible) => !visible);
   }
 
+  roleSelectionOptions() {
+    return this.roleTabs.map((path) => ({
+      value: path.value,
+      label: path.label,
+      description: path.title,
+      icon: path.icon,
+      meta: String(this.roleCount(path.value)),
+    }));
+  }
+
   careTeamProfileLink(provider: HopeHubProvider): string[] {
     return [...CONSUMER_ROUTES.links.careTeam, provider.slug || provider.id];
   }
@@ -240,6 +255,14 @@ export class PsychologistsComponent implements OnInit {
     this.roleGroup.set(this.isRoleGroup(role) ? role : '');
     const page = Number(params.get('page') || 1);
     this.page.set(Number.isFinite(page) && page > 0 ? page : 1);
+  }
+
+  private applySavedPreferences(): void {
+    const saved = this.preferences.read();
+    if (!this.concern() && saved.concern) this.concern.set(saved.concern);
+    if (!this.sessionType() && saved.mode) {
+      this.sessionType.set(consumerSessionModeFor(saved.mode));
+    }
   }
 
   private syncUrl(): void {

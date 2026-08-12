@@ -37,4 +37,16 @@ export class FilterBarComponent {
   onFilterChange(key: string, value: string): void {
     this.filterChange.emit({ key, value });
   }
+
+  selectedFilters(): FilterBarFilter[] {
+    return this.filters.filter((filter) => Boolean(filter.value));
+  }
+
+  selectedLabel(filter: FilterBarFilter): string {
+    return filter.options.find((option) => option.value === filter.value)?.label || filter.value;
+  }
+
+  clearFilter(key: string): void {
+    this.filterChange.emit({ key, value: '' });
+  }
 }

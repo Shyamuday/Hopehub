@@ -3,8 +3,11 @@
 
     <app-page-header
       [level]="1"
+      align="left"
+      compact
+      eyebrow="Private self-checks"
       title="Mental health assessments"
-      description="Pick a test and start. You only need to sign in after completing it to view and save the result."
+      description="Choose a short self-check. It can help you decide what support feels right."
     />
 
     <!-- Assessment Selection -->
@@ -12,26 +15,12 @@
     <div class="space-y-5">
 
       <!-- Categories -->
-      <div class="flex flex-wrap justify-center gap-2">
-        <button (click)="showAllAssessments()" [class.bg-primary-600]="!selectedCategory()"
-          [class.text-white]="!selectedCategory()" [class.bg-white]="selectedCategory()"
-          [class.text-gray-700]="selectedCategory()"
-          [class.border-primary-600]="!selectedCategory()"
-          [class.border-gray-300]="selectedCategory()"
-          class="rounded-md border px-3 py-2 text-sm font-semibold transition-colors hover:border-primary-600 hover:text-primary-700 whitespace-nowrap">
-          All
-        </button>
-        @for (category of categories(); track category) {
-        <button (click)="filterByCategory(category)" [class.bg-primary-600]="selectedCategory() === category"
-          [class.text-white]="selectedCategory() === category" [class.bg-white]="selectedCategory() !== category"
-          [class.text-gray-700]="selectedCategory() !== category"
-          [class.border-primary-600]="selectedCategory() === category"
-          [class.border-gray-300]="selectedCategory() !== category"
-          class="rounded-md border px-3 py-2 text-sm font-semibold transition-colors hover:border-primary-600 hover:text-primary-700 whitespace-nowrap">
-          {{ category }}
-        </button>
-        }
-      </div>
+      <app-consumer-selection-rail
+        [options]="assessmentCategoryOptions()"
+        [selected]="selectedCategory() || ''"
+        ariaLabel="Filter assessments"
+        (selectedChange)="selectAssessmentCategory($event)"
+      />
 
       <!-- Assessment Cards -->
       <div class="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">

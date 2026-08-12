@@ -1,0 +1,10 @@
+.consumer-page { min-height: 100%; background: #fff; padding: 1.5rem 0 2.25rem; }
+.consumer-page--soft { background: #f8fafc; }
+.consumer-page__inner { width: min(100% - 2rem, 72rem); margin: 0 auto; }
+.consumer-page__header { max-width: 44rem; margin-bottom: 1.5rem; }
+.consumer-page__eyebrow { margin: 0 0 .35rem; color: var(--brand-primary); font-size: var(--hope-font-size-xs); font-weight: var(--hope-font-weight-label); letter-spacing: .07em; text-transform: uppercase; }
+.consumer-page__title { margin: 0; color: var(--text-primary); font-size: var(--hope-font-size-page-title); font-weight: var(--hope-font-weight-title); letter-spacing: -.025em; line-height: var(--hope-line-heading); }
+.consumer-page__description { max-width: 38rem; margin: .5rem 0 0; color: var(--text-secondary); font-size: var(--hope-font-size-base); line-height: var(--hope-line-copy); }
+.consumer-page__actions { display: flex; flex-wrap: wrap; gap: .65rem; margin-top: 1rem; }
+.consumer-page__actions:empty { display: none; }
+@media (max-width: 640px) { .consumer-page { padding: 1rem 0 1.75rem; } .consumer-page__header { margin-bottom: 1.25rem; } .consumer-page__actions > * { flex: 1 1 100%; } }

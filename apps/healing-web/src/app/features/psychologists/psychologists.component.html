@@ -1,19 +1,9 @@
-<main class="professional-page">
-  <div class="container mx-auto px-4 sm:px-6 lg:px-8">
-    <div class="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-      <div>
-        <p class="text-sm font-semibold uppercase tracking-wide text-primary-700">
-          Hope Hub support team
-        </p>
-        <h1 class="mt-2 text-2xl font-semibold text-gray-950 sm:text-3xl">
-          Meet the care team
-        </h1>
-        <p class="mt-3 max-w-3xl text-sm leading-6 text-gray-700 sm:text-base">
-          Start with the kind of support that feels right. You can refine the list only if you need to.
-        </p>
-      </div>
-      <app-button size="sm" [routerLink]="ROUTES.links.bookSupport">{{ UX.cta.bookSupport }}</app-button>
-    </div>
+<app-consumer-page-shell
+  eyebrow="Hope Hub support team"
+  title="Meet the care team"
+  description="Start with the kind of support that feels right. Refine only if you need to."
+>
+    <app-button page-actions size="sm" [routerLink]="ROUTES.links.bookSupport">{{ UX.cta.bookSupport }}</app-button>
 
     <div class="mb-6 rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm leading-6 text-emerald-950">
       <strong>Clear roles, safer support:</strong>
@@ -24,12 +14,12 @@
     <app-continue-support-banner class="mb-6 block" [compact]="true" />
 
     <div class="mb-6 rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-      <app-support-path-selector
+      <app-consumer-selection-rail
         class="mb-4 block"
+        [options]="roleSelectionOptions()"
         [selected]="roleGroup()"
-        [counts]="roleCounts()"
-        [showCounts]="true"
-        (selectedChange)="setRoleGroup($event)"
+        ariaLabel="Choose care team type"
+        (selectedChange)="setRoleGroup($any($event))"
       />
       <app-filter-bar
         [showSearch]="false"
@@ -175,5 +165,4 @@
     @if (error()) {
       <app-empty-state class="mt-6 block" icon="⚠️" title="Could not load care team" [message]="error()" tone="danger" compact />
     }
-  </div>
-</main>
+</app-consumer-page-shell>
