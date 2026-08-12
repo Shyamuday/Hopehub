@@ -53,206 +53,210 @@
 </section>
 
 @if (onboarding().complete) {
-  @if (readiness(); as ready) {
-    <section class="panel readiness-card" [class.readiness-card--ready]="ready.ready">
-      <div class="panel-header">
-        <div>
-          <h2>{{ ready.ready ? 'Ready for users' : 'Before users can book or connect live' }}</h2>
-          <p class="muted">
-            {{
-              ready.ready ? 'Your profile can accept bookings and live requests.' : ready.message
-            }}
-          </p>
-        </div>
-        <button type="button" (click)="loadReadiness()">Refresh</button>
-      </div>
-      @if (!ready.ready) {
-        <div class="readiness-list">
-          @for (blocker of ready.blockers; track blocker.code) {
-            <article class="readiness-item">
-              <strong>{{ blocker.label }}</strong>
-              @if (blocker.action) {
-                <span>{{ blocker.action }}</span>
-              }
-            </article>
+  <div class="dashboard-board">
+    @if (capabilities().earnings) {
+      <aside class="dashboard-side" aria-label="Payments and recent activity">
+        <section class="panel side-panel">
+          <div class="panel-header">
+            <h2>
+              {{
+                canPrescribe()
+                  ? 'Payment Dashboard'
+                  : language().sessionTitle + ' Payment Dashboard'
+              }}
+            </h2>
+            <button type="button" (click)="loadSummary()" [disabled]="loading()">
+              {{ loading() ? 'Refreshing...' : 'Refresh' }}
+            </button>
+          </div>
+
+          @if (loading() && !summary()) {
+            <p class="loading-text">Loading payment summary...</p>
+          } @else if (error()) {
+            <div class="error-row">
+              <p class="error">{{ error() }}</p>
+              <button type="button" class="retry-btn" (click)="loadSummary()">Retry</button>
+            </div>
+          } @else if (summary(); as data) {
+            <hopehub-detail-rows variant="stat" [rows]="paymentStatRows(data)" />
+          } @else {
+            <p class="empty-state">No payment data available yet.</p>
           }
-        </div>
-      }
-    </section>
-  }
+        </section>
 
-  <section class="panel launch-card">
-    <div class="panel-header">
-      <div>
-        <h2>Ready to work</h2>
-        <p class="muted">
-          Your setup is complete. Use these shortcuts for the next real action, not a maze of menus.
-        </p>
-      </div>
-    </div>
-
-    <div class="launch-grid">
-      @for (action of launchActions(); track action.label) {
-        <a
-          class="launch-action"
-          [class.primary]="action.primary"
-          [routerLink]="action.route"
-          [queryParams]="action.queryParams"
-        >
-          <strong>{{ action.label }}</strong>
-          <span>{{ action.description }}</span>
-        </a>
-      }
-    </div>
-  </section>
-}
-
-<section class="panel worklist-summary">
-  <div class="panel-header">
-    <div>
-      <h2>Today&apos;s workload</h2>
-      <p class="muted">
-        {{
-          canPrescribe()
-            ? 'Open your worklist for assigned cases, active consults, and follow-ups.'
-            : 'Open your worklist for assigned sessions, active conversations, and follow-ups.'
-        }}
-      </p>
-    </div>
-    <a class="primary-link" [routerLink]="worklistPath">Open worklist</a>
-  </div>
-
-  @if (worklistLoading() && !worklistCounts().followUpDue) {
-    <p class="loading-text">Loading worklist...</p>
-  } @else if (worklistError()) {
-    <p class="error">{{ worklistError() }}</p>
-  } @else {
-    <div class="stats">
-      <a class="card stat-link" [routerLink]="worklistPath" [queryParams]="{ view: 'ASSIGNED' }">
-        <h3>Assigned</h3>
-        <p>{{ worklistCounts().assigned }}</p>
-      </a>
-      <a class="card stat-link" [routerLink]="worklistPath" [queryParams]="{ view: 'IN_PROGRESS' }">
-        <h3>In progress</h3>
-        <p>{{ worklistCounts().inProgress }}</p>
-      </a>
-      <a
-        class="card stat-link urgent"
-        [routerLink]="worklistPath"
-        [queryParams]="{ view: 'FOLLOW_UP_DUE' }"
-      >
-        <h3>Follow-up due</h3>
-        <p>{{ worklistCounts().followUpDue }}</p>
-      </a>
-    </div>
-  }
-</section>
-
-@if (listenerProfile(); as listener) {
-  <section class="panel listener-dashboard-card">
-    <div class="panel-header">
-      <div>
-        <h2>Listener readiness</h2>
-        <p class="muted">
-          Keep your public listener profile safe, complete, and ready for live users.
-        </p>
-      </div>
-      <a class="primary-link" routerLink="/profile">Complete profile</a>
-    </div>
-
-    <div class="listener-meter">
-      <strong>{{ listenerCompletionPercent(listener) }}%</strong>
-      <span>profile completion</span>
-    </div>
-
-    <div class="listener-dashboard-grid">
-      <div class="listener-dashboard-chip">
-        <span>Default plans</span>
-        <strong>₹99 chat/voice · ₹299 video</strong>
-      </div>
-      <div class="listener-dashboard-chip">
-        <span>Public visibility</span>
-        <strong>{{ listener.showOnWebsite ? 'Visible' : 'Hidden until complete' }}</strong>
-      </div>
-      <div class="listener-dashboard-chip">
-        <span>Live availability</span>
-        <strong>{{ listener.isAvailable ? 'On' : 'Off' }}</strong>
-      </div>
-    </div>
-
-    <div class="listener-links">
-      <a href="https://hopehub.in/listener-guidelines" target="_blank" rel="noopener">Guidelines</a>
-      <a href="https://hopehub.in/listener-training" target="_blank" rel="noopener">Training</a>
-      <a routerLink="/online-doctor">Go live / pause</a>
-    </div>
-  </section>
-}
-
-@if (capabilities().earnings) {
-  <section class="panel">
-    <div class="panel-header">
-      <h2>
-        {{ canPrescribe() ? 'Payment Dashboard' : language().sessionTitle + ' Payment Dashboard' }}
-      </h2>
-      <button type="button" (click)="loadSummary()" [disabled]="loading()">
-        {{ loading() ? 'Refreshing...' : 'Refresh' }}
-      </button>
-    </div>
-
-    @if (loading() && !summary()) {
-      <p class="loading-text">Loading payment summary...</p>
-    } @else if (error()) {
-      <div class="error-row">
-        <p class="error">{{ error() }}</p>
-        <button type="button" class="retry-btn" (click)="loadSummary()">Retry</button>
-      </div>
-    } @else if (summary(); as data) {
-      <hopehub-detail-rows variant="stat" [rows]="paymentStatRows(data)" />
-    } @else {
-      <p class="empty-state">No payment data available yet.</p>
-    }
-  </section>
-
-  <section class="panel">
-    <h3>Recent Paid {{ language().sessionPluralTitle }}</h3>
-    @if (loading() && !summary()) {
-      <p class="loading-text">Loading...</p>
-    } @else {
-      @for (item of summary()?.payments || []; track item.id) {
-        <article class="card">
-          <strong
-            >{{ item.consultation?.patient?.name || language().userTitle }} —
-            {{ item.consultation?.disease?.name || language().sessionTitle }}</strong
-          >
-          <p>
-            {{ item.amountInPaise / 100 | currency: 'INR' }} | Plan:
-            {{ item.billingPlanCode || 'ONE_TIME' }} |
-            {{ item.createdAt | date: 'mediumDate' }}
-          </p>
-          @if (item.consultation?.id) {
-            <div class="actions">
-              @if (canPrescribe()) {
-                <button type="button" (click)="openPaidConsultation(item.consultation.id)">
-                  Open prescription
-                </button>
-                <button
-                  type="button"
-                  class="ghost"
-                  (click)="consultationNav.openCaseAnalysis(item.consultation.id)"
+        <section class="panel side-panel recent-payments-panel">
+          <div class="panel-header">
+            <h3>Recent paid {{ language().sessionPluralTitle }}</h3>
+            <a class="side-link" routerLink="/earnings">View all</a>
+          </div>
+          @if (loading() && !summary()) {
+            <p class="loading-text">Loading...</p>
+          } @else {
+            @for (item of summary()?.payments || []; track item.id) {
+              <article class="card recent-payment-card">
+                <strong
+                  >{{ item.consultation?.patient?.name || language().userTitle }} —
+                  {{ item.consultation?.disease?.name || language().sessionTitle }}</strong
                 >
-                  Case analysis
-                </button>
-              } @else {
-                <button type="button" (click)="openSession(item.consultation.id)">
-                  Open session
-                </button>
+                <p>
+                  {{ item.amountInPaise / 100 | currency: 'INR' }} | Plan:
+                  {{ item.billingPlanCode || 'ONE_TIME' }} |
+                  {{ item.createdAt | date: 'mediumDate' }}
+                </p>
+                @if (item.consultation?.id) {
+                  <div class="actions">
+                    @if (canPrescribe()) {
+                      <button type="button" (click)="openPaidConsultation(item.consultation.id)">
+                        Open
+                      </button>
+                    } @else {
+                      <button type="button" (click)="openSession(item.consultation.id)">
+                        Open session
+                      </button>
+                    }
+                  </div>
+                }
+              </article>
+            } @empty {
+              <p class="empty-state">No paid {{ language().sessionPluralLower }} yet.</p>
+            }
+          }
+        </section>
+      </aside>
+    }
+
+    <main class="dashboard-main">
+      @if (readiness(); as ready) {
+        <section class="panel readiness-card" [class.readiness-card--ready]="ready.ready">
+          <div class="panel-header">
+            <div>
+              <h2>
+                {{ ready.ready ? 'Ready for users' : 'Before users can book or connect live' }}
+              </h2>
+              <p class="muted">
+                {{
+                  ready.ready
+                    ? 'Your profile can accept bookings and live requests.'
+                    : ready.message
+                }}
+              </p>
+            </div>
+            <button type="button" (click)="loadReadiness()">Refresh</button>
+          </div>
+          @if (!ready.ready) {
+            <div class="readiness-list">
+              @for (blocker of ready.blockers; track blocker.code) {
+                <article class="readiness-item">
+                  <strong>{{ blocker.label }}</strong>
+                  @if (blocker.action) {
+                    <span>{{ blocker.action }}</span>
+                  }
+                </article>
               }
             </div>
           }
-        </article>
-      } @empty {
-        <p class="empty-state">No paid {{ language().sessionPluralLower }} yet.</p>
+        </section>
       }
-    }
-  </section>
+
+      <section class="panel launch-card">
+        <div class="panel-header">
+          <div>
+            <h2>Ready to work</h2>
+            <p class="muted">Choose one clear next action.</p>
+          </div>
+        </div>
+        <div class="launch-grid">
+          @for (action of launchActions(); track action.label) {
+            <a
+              class="launch-action"
+              [class.primary]="action.primary"
+              [routerLink]="action.route"
+              [queryParams]="action.queryParams"
+              ><strong>{{ action.label }}</strong
+              ><span>{{ action.description }}</span></a
+            >
+          }
+        </div>
+      </section>
+
+      <section class="panel worklist-summary">
+        <div class="panel-header">
+          <div>
+            <h2>Today&apos;s workload</h2>
+            <p class="muted">
+              {{
+                canPrescribe()
+                  ? 'Assigned cases, active consults, and follow-ups.'
+                  : 'Assigned sessions, active conversations, and follow-ups.'
+              }}
+            </p>
+          </div>
+          <a class="primary-link" [routerLink]="worklistPath">Open worklist</a>
+        </div>
+        @if (worklistLoading() && !worklistCounts().followUpDue) {
+          <p class="loading-text">Loading worklist...</p>
+        } @else if (worklistError()) {
+          <p class="error">{{ worklistError() }}</p>
+        } @else {
+          <div class="stats">
+            <a
+              class="card stat-link"
+              [routerLink]="worklistPath"
+              [queryParams]="{ view: 'ASSIGNED' }"
+              ><h3>Assigned</h3>
+              <p>{{ worklistCounts().assigned }}</p></a
+            ><a
+              class="card stat-link"
+              [routerLink]="worklistPath"
+              [queryParams]="{ view: 'IN_PROGRESS' }"
+              ><h3>In progress</h3>
+              <p>{{ worklistCounts().inProgress }}</p></a
+            ><a
+              class="card stat-link urgent"
+              [routerLink]="worklistPath"
+              [queryParams]="{ view: 'FOLLOW_UP_DUE' }"
+              ><h3>Follow-up due</h3>
+              <p>{{ worklistCounts().followUpDue }}</p></a
+            >
+          </div>
+        }
+      </section>
+
+      @if (listenerProfile(); as listener) {
+        <section class="panel listener-dashboard-card">
+          <div class="panel-header">
+            <div>
+              <h2>Listener readiness</h2>
+              <p class="muted">Keep your public listener profile safe and ready for users.</p>
+            </div>
+            <a class="primary-link" routerLink="/profile">Complete profile</a>
+          </div>
+          <div class="listener-meter">
+            <strong>{{ listenerCompletionPercent(listener) }}%</strong
+            ><span>profile completion</span>
+          </div>
+          <div class="listener-dashboard-grid">
+            <div class="listener-dashboard-chip">
+              <span>Default plans</span><strong>₹99 chat/voice · ₹299 video</strong>
+            </div>
+            <div class="listener-dashboard-chip">
+              <span>Public visibility</span
+              ><strong>{{ listener.showOnWebsite ? 'Visible' : 'Hidden until complete' }}</strong>
+            </div>
+            <div class="listener-dashboard-chip">
+              <span>Live availability</span
+              ><strong>{{ listener.isAvailable ? 'On' : 'Off' }}</strong>
+            </div>
+          </div>
+          <div class="listener-links">
+            <a href="https://hopehub.in/listener-guidelines" target="_blank" rel="noopener"
+              >Guidelines</a
+            ><a href="https://hopehub.in/listener-training" target="_blank" rel="noopener"
+              >Training</a
+            ><a routerLink="/online-doctor">Go live / pause</a>
+          </div>
+        </section>
+      }
+    </main>
+  </div>
 }
