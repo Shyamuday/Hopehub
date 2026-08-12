@@ -6,20 +6,13 @@ function handler(event) {
   var uri = request.uri || '/';
   var prefix = 'healing';
 
-  if (host === 'mind.hopehub.in' || host === 'user.hopehub.in' || host === 'patient.hopehub.in') {
-    prefix = 'patient';
-  } else if (host === 'admin.hopehub.in') {
+  if (host === 'admin.hopehub.in') {
     prefix = 'admin';
   } else if (host === 'earn.hopehub.in') {
     prefix = 'doctor';
-  } else if (host === 'ops.hopehub.in' || host === 'operations.hopehub.in') {
+  } else if (host === 'ops.hopehub.in') {
     prefix = 'operations';
-  } else if (
-    host === 'hopehub.in' ||
-    host === 'www.hopehub.in' ||
-    host === 'healing.hopehub.in' ||
-    host === 'hub.hopehub.in'
-  ) {
+  } else if (host === 'hopehub.in' || host === 'www.hopehub.in') {
     prefix = 'healing';
   }
 
