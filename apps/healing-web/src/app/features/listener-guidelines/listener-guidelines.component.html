@@ -1,20 +1,20 @@
 <main class="listener-guidelines-page">
   <section class="listener-guidelines-hero">
-    <p>Hope Hub listener rules</p>
-    <h1>Emotional support listener guidelines</h1>
-    <span>Version: {{ version }}</span>
+    <p>Listener onboarding</p>
+    <h1>Guidelines for caring listeners</h1>
+    <span>Read this anytime while you support people on Hope Hub.</span>
   </section>
 
   <section class="listener-guidelines-card" aria-label="Listener guidelines">
-    @for (section of sections; track section.title) {
-      <article>
-        <h2>{{ section.title }}</h2>
+    @for (section of sections; track section.title; let first = $first) {
+      <details [open]="first">
+        <summary>{{ section.title }}</summary>
         <ul>
           @for (point of section.points; track point) {
             <li>{{ point }}</li>
           }
         </ul>
-      </article>
+      </details>
     }
 
     <div class="listener-guidelines-note">
@@ -26,5 +26,6 @@
       <a routerLink="/listener-training">Open listener training</a>
       <a routerLink="/careers">Back to listener application</a>
     </div>
+    <p class="listener-guidelines-version-note">Guideline version: {{ version }}</p>
   </section>
 </main>

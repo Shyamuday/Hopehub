@@ -1,14 +1,14 @@
 <main class="listener-training-page">
   <section class="listener-training-hero">
-    <p>Hope Hub listener orientation</p>
-    <h1>Practical training for emotional support listeners</h1>
-    <span>Version: {{ version }}</span>
+    <p>Listener onboarding</p>
+    <h1>Learn the basics, one example at a time</h1>
+    <span>Short practical examples for caring, safe support.</span>
   </section>
 
   <section class="listener-training-grid" aria-label="Listener training modules">
     @for (module of modules; track module.title) {
-      <article class="listener-training-card">
-        <h2>{{ module.title }}</h2>
+      <details class="listener-training-card">
+        <summary>{{ module.title }}</summary>
         <ul>
           @for (point of module.points; track point) {
             <li>{{ point }}</li>
@@ -18,9 +18,10 @@
           <p><strong>Use:</strong> {{ module.example.good }}</p>
           <p><strong>Avoid:</strong> {{ module.example.avoid }}</p>
         </div>
-      </article>
+      </details>
     }
   </section>
+  <p class="listener-training-version-note">Training version: {{ version }}</p>
 
   <section class="listener-training-note">
     <h2>Golden rule</h2>

@@ -3,10 +3,8 @@
     <div class="mb-8 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
       <div>
         <p class="text-sm font-semibold uppercase tracking-wide text-primary-700">My profile</p>
-        <h1 class="mt-2 text-xl font-semibold text-gray-950 sm:text-2xl">Profile, plans, and daily review</h1>
-        <p class="mt-3 max-w-3xl text-sm leading-6 text-gray-700">
-          Keep important details updated in small sections. Edit only the card you need, then come back to your plan.
-        </p>
+        <h1 class="mt-2 text-xl font-semibold text-gray-950 sm:text-2xl">Your profile</h1>
+        <p class="mt-2 max-w-3xl text-sm leading-6 text-gray-700">Edit only what you want to update.</p>
       </div>
       @if (patientCode()) {
         <div class="rounded-lg border border-primary-100 bg-primary-50 px-4 py-3 text-sm font-semibold text-primary-800">
@@ -52,34 +50,25 @@
             </div>
 
             @if (editingSection() === 'basic') {
-              <div class="mt-4 grid grid-cols-1 gap-4">
-                <app-form-field label="Full name" formControlName="name" />
-                <app-form-field label="Email" type="email" formControlName="email" />
-                <app-form-field label="Alternate mobile" type="tel" formControlName="alternateMobile" />
-                <app-form-field label="Date of birth" type="date" formControlName="dateOfBirth" />
-                <label class="block">
-                  <span class="text-sm font-semibold text-gray-700">Gender</span>
-                  <select class="form-input mt-1" formControlName="gender">
-                    <option value="">Prefer not to say</option>
-                    <option value="FEMALE">Female</option>
-                    <option value="MALE">Male</option>
-                    <option value="OTHER">Other</option>
-                    <option value="PREFER_NOT_TO_SAY">Prefer not to say</option>
-                  </select>
-                </label>
-                <app-form-field label="Preferred language" formControlName="preferredLanguage" placeholder="Hindi, English, etc." />
-                <app-form-field label="Occupation" formControlName="occupation" />
-                <label class="block">
-                  <span class="text-sm font-semibold text-gray-700">Marital status</span>
-                  <select class="form-input mt-1" formControlName="maritalStatus">
-                    <option value="">Prefer not to say</option>
-                    <option value="SINGLE">Single</option>
-                    <option value="MARRIED">Married</option>
-                    <option value="DIVORCED">Divorced</option>
-                    <option value="WIDOWED">Widowed</option>
-                    <option value="PREFER_NOT_TO_SAY">Prefer not to say</option>
-                  </select>
-                </label>
+              <div class="mt-4 space-y-3">
+                <details open class="rounded-md border border-gray-200 p-3">
+                  <summary class="cursor-pointer text-sm font-semibold text-gray-900">Contact details</summary>
+                  <div class="mt-3 grid grid-cols-1 gap-3">
+                    <app-form-field label="Full name" formControlName="name" />
+                    <app-form-field label="Email" type="email" formControlName="email" />
+                    <app-form-field label="Alternate mobile" type="tel" formControlName="alternateMobile" />
+                    <app-form-field label="Date of birth" type="date" formControlName="dateOfBirth" />
+                  </div>
+                </details>
+                <details class="rounded-md border border-gray-200 p-3">
+                  <summary class="cursor-pointer text-sm font-semibold text-gray-900">Preferences</summary>
+                  <div class="mt-3 grid grid-cols-1 gap-3">
+                    <label class="block"><span class="text-sm font-semibold text-gray-700">Gender</span><select class="form-input mt-1" formControlName="gender"><option value="">Prefer not to say</option><option value="FEMALE">Female</option><option value="MALE">Male</option><option value="OTHER">Other</option><option value="PREFER_NOT_TO_SAY">Prefer not to say</option></select></label>
+                    <app-form-field label="Preferred language" formControlName="preferredLanguage" placeholder="Hindi, English, etc." />
+                    <app-form-field label="Occupation" formControlName="occupation" />
+                    <label class="block"><span class="text-sm font-semibold text-gray-700">Marital status</span><select class="form-input mt-1" formControlName="maritalStatus"><option value="">Prefer not to say</option><option value="SINGLE">Single</option><option value="MARRIED">Married</option><option value="DIVORCED">Divorced</option><option value="WIDOWED">Widowed</option><option value="PREFER_NOT_TO_SAY">Prefer not to say</option></select></label>
+                  </div>
+                </details>
               </div>
               <div class="mt-4 flex gap-2">
                 <app-button type="button" size="sm" (click)="saveProfile()" [disabled]="saving()" [loading]="saving()">
@@ -141,13 +130,12 @@
         </aside>
 
         <section class="space-y-6">
-          <section class="rounded-lg border border-primary-100 bg-white p-5 shadow-sm">
+          <details class="rounded-lg border border-primary-100 bg-white p-5 shadow-sm">
+            <summary class="cursor-pointer text-lg font-semibold text-gray-900">Daily plan and review</summary>
+            <p class="mt-1 text-sm leading-6 text-gray-600">Create a plan, review tasks, or add a note.</p>
             <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
               <div>
-                <h2 class="text-lg font-semibold text-gray-900">Daily plan and review</h2>
-                <p class="mt-1 text-sm leading-6 text-gray-600">
-                  Create a daily plan, tick tasks, add review notes, and upload images.
-                </p>
+                <span class="sr-only">Daily plan workspace</span>
               </div>
               @if (dailyPlansLoading()) {
                 <span class="text-sm font-semibold text-gray-500">Loading plans...</span>
@@ -301,7 +289,7 @@
                 }
               </div>
             </div>
-          </section>
+          </details>
 
           <section class="rounded-lg border border-gray-200 bg-white p-5 shadow-sm" [formGroup]="profileForm">
             <div class="flex items-start justify-between gap-3">
@@ -315,14 +303,10 @@
             </div>
 
             @if (editingSection() === 'wellness') {
-              <div class="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
-                <app-form-field kind="textarea" rows="4" formControlName="patientNotes" placeholder="What support are you looking for?" />
-                <app-form-field kind="textarea" rows="4" formControlName="sleepPattern" placeholder="Sleep pattern" />
-                <app-form-field kind="textarea" rows="4" formControlName="stressTriggers" placeholder="Stress triggers" />
-                <app-form-field kind="textarea" rows="4" formControlName="fearsPhobias" placeholder="Fears, panic, or phobias" />
-                <app-form-field kind="textarea" rows="4" formControlName="mentalTemperament" placeholder="Mood and temperament" />
-                <app-form-field kind="textarea" rows="4" formControlName="concentrationMemory" placeholder="Focus, memory, or concentration" />
-                <app-form-field class="md:col-span-2" kind="textarea" rows="4" formControlName="socialBehaviour" placeholder="Social or relationship context" />
+              <div class="mt-4 space-y-3">
+                <details open class="rounded-md border border-gray-200 p-3"><summary class="cursor-pointer text-sm font-semibold text-gray-900">What you need right now</summary><app-form-field class="mt-3 block" kind="textarea" rows="3" formControlName="patientNotes" placeholder="What support are you looking for?" /></details>
+                <details class="rounded-md border border-gray-200 p-3"><summary class="cursor-pointer text-sm font-semibold text-gray-900">Sleep, stress, and mood</summary><div class="mt-3 grid grid-cols-1 gap-3"><app-form-field kind="textarea" rows="3" formControlName="sleepPattern" placeholder="Sleep pattern" /><app-form-field kind="textarea" rows="3" formControlName="stressTriggers" placeholder="Stress triggers" /><app-form-field kind="textarea" rows="3" formControlName="mentalTemperament" placeholder="Mood and temperament" /></div></details>
+                <details class="rounded-md border border-gray-200 p-3"><summary class="cursor-pointer text-sm font-semibold text-gray-900">Optional details</summary><div class="mt-3 grid grid-cols-1 gap-3"><app-form-field kind="textarea" rows="3" formControlName="fearsPhobias" placeholder="Fears, panic, or phobias" /><app-form-field kind="textarea" rows="3" formControlName="concentrationMemory" placeholder="Focus or concentration" /><app-form-field kind="textarea" rows="3" formControlName="socialBehaviour" placeholder="Social or relationship context" /></div></details>
               </div>
               <div class="mt-4 flex gap-2">
                 <app-button type="button" size="sm" (click)="saveProfile()" [disabled]="saving()" [loading]="saving()">Save</app-button>

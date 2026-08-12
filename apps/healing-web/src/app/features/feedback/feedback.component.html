@@ -42,7 +42,7 @@
       </div>
 
       <div class="feedback-form__section">
-        <div class="feedback-form__grid">
+        <div class="feedback-form__grid feedback-form__grid--rating">
           <label>
             Rating
             <select formControlName="rating">
@@ -54,11 +54,6 @@
             </select>
           </label>
 
-          <app-form-field
-            label="Page, feature, service, or team member"
-            formControlName="pageOrFeature"
-            placeholder="Optional, e.g. Telegram bot, payment, care team"
-          />
         </div>
 
         <app-form-field
@@ -73,13 +68,16 @@
         />
       </div>
 
-      <div class="feedback-form__section">
-        <div>
-          <h2>Contact preference</h2>
-          <p>Keep it anonymous, or allow the team to follow up if needed.</p>
-        </div>
+      <details class="feedback-form__details">
+        <summary>Add details (optional)</summary>
+        <p>Share context or a contact method only if you want a reply.</p>
 
         <div class="feedback-form__grid">
+          <app-form-field
+            label="Page, feature, service, or team member"
+            formControlName="pageOrFeature"
+            placeholder="For example: payment or care team"
+          />
           <app-form-field label="Name" formControlName="name" placeholder="Optional" />
 
           <app-form-field
@@ -109,7 +107,7 @@
             </select>
           </label>
         </div>
-      </div>
+      </details>
 
       <div class="feedback-form__options">
         <app-form-checkbox formControlName="allowFollowUp">

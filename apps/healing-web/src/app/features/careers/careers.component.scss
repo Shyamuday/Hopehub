@@ -299,3 +299,35 @@
     display: grid;
   }
 }
+.careers-page__before-start {
+  margin-bottom: 1rem;
+  border: 1px solid var(--brand-primary-border);
+  border-radius: 0.5rem;
+  background: #ffffff;
+  color: #475569;
+  font-size: 0.9rem;
+  line-height: 1.55;
+  padding: 0.85rem 1rem;
+}
+
+.careers-page__before-start summary {
+  color: var(--brand-primary);
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.careers-page__before-start ul {
+  display: grid;
+  gap: 0.4rem;
+  margin: 0.75rem 0 0;
+  padding-left: 1.1rem;
+}
+
+.careers-page__before-start p {
+  margin: 0.75rem 0 0;
+}
+
+.careers-page__before-start a {
+  color: var(--brand-primary);
+  font-weight: 750;
+}

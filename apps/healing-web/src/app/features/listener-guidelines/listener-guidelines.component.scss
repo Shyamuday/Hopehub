@@ -1,17 +1,15 @@
 .listener-guidelines-page {
   max-width: 980px;
   margin: 0 auto;
-  padding: 2rem 1rem 3rem;
+  padding: 1.25rem 1rem 2rem;
 }
 
 .listener-guidelines-hero {
-  border: 1px solid #d1fae5;
-  border-radius: 1.5rem;
-  background:
-    radial-gradient(circle at 8% 0%, rgba(16, 185, 129, 0.16), transparent 16rem),
-    #ffffff;
-  box-shadow: 0 22px 60px rgba(15, 23, 42, 0.08);
-  padding: clamp(1.25rem, 4vw, 2.25rem);
+  border: 1px solid var(--brand-primary-border);
+  border-radius: 0.5rem;
+  background: #ffffff;
+  box-shadow: var(--hope-shadow-card);
+  padding: clamp(1rem, 3vw, 1.5rem);
 }
 
 .listener-guidelines-hero p {
@@ -47,6 +45,20 @@
   border-radius: 1rem;
   background: #ffffff;
   padding: 1rem;
+}
+
+.listener-guidelines-card details {
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  background: #ffffff;
+  padding: 0.9rem 1rem;
+}
+
+.listener-guidelines-card summary {
+  color: #0f172a;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 800;
 }
 
 .listener-guidelines-card h2 {
@@ -90,4 +102,10 @@
   font-weight: 900;
   text-decoration: underline;
   text-underline-offset: 3px;
+}
+
+.listener-guidelines-version-note {
+  margin: 0;
+  color: #64748b;
+  font-size: 0.8rem;
 }

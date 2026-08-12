@@ -92,6 +92,10 @@
   gap: 1rem;
 }
 
+.feedback-form__grid--rating {
+  grid-template-columns: minmax(0, 15rem);
+}
+
 .feedback-type-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -126,6 +130,26 @@
 .feedback-form__options {
   display: grid;
   gap: 0.65rem;
+}
+
+.feedback-form__details {
+  display: grid;
+  gap: 1rem;
+  border-top: 1px solid #e5e7eb;
+  padding-top: 1rem;
+}
+
+.feedback-form__details summary {
+  color: var(--brand-primary);
+  cursor: pointer;
+  font-size: 0.92rem;
+  font-weight: 800;
+}
+
+.feedback-form__details > p {
+  margin: -0.55rem 0 0;
+  color: #64748b;
+  font-size: 0.88rem;
 }
 
 .feedback-form__error,

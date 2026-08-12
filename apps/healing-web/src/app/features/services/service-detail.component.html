@@ -32,30 +32,20 @@
             }
           </div>
           <h1 class="mb-4 text-xl font-semibold text-gray-950 sm:text-2xl">{{ service()!.name }}</h1>
-          <p class="mb-6 text-base leading-7 text-gray-700 sm:text-lg">{{ service()!.description }}</p>
-          
-          <div class="mb-6 rounded-lg border border-primary-100 bg-primary-50 p-4">
-            <h3 class="text-lg font-semibold text-gray-900 mb-2">How this support works</h3>
-            <p class="text-sm leading-6 text-gray-700">
-              Start with a private request. We help route you to the right support path, and the
-              checkout step shows the final session details before you confirm.
-            </p>
-          </div>
-
-          <app-guided-support-entry
-            class="mb-6 block"
-            [compact]="true"
-            [title]="'Start ' + service()!.name + ' support'"
-            [subtitle]="'Choose chat, voice, video, test, booking, or matching providers from one place.'"
-            [contextConcern]="service()!.category || service()!.name"
-            [contextServiceName]="service()!.name"
-          />
-
           <app-connect-options
-            class="mb-6 block"
+            class="mb-4 block"
             [bookLabel]="'Book slot'"
             (selected)="connect($event)"
           />
+
+          <app-button (click)="bookService()" block>{{ UX.cta.bookSupport }}</app-button>
+
+          <details class="mt-4 rounded-md border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-700">
+            <summary class="cursor-pointer font-semibold text-primary-700">About this support</summary>
+            <p class="mt-3 leading-6">{{ service()!.description }}</p>
+            <p class="mt-3 leading-6">Start with a private request. The checkout step shows final session details before you confirm.</p>
+            <app-guided-support-entry class="mt-4 block" [compact]="true" [title]="'Start ' + service()!.name + ' support'" [subtitle]="'Choose the path that feels easiest.'" [contextConcern]="service()!.category || service()!.name" [contextServiceName]="service()!.name" />
+          </details>
 
           @if (liveFallback(); as fallback) {
             <app-connect-fallback-panel
@@ -69,41 +59,22 @@
             />
           }
 
-          <!-- Booking CTA -->
-          <div class="space-y-3">
-            <app-button
-              (click)="bookService()" 
-              block>
-              {{ UX.cta.bookSupport }}
-            </app-button>
-            <app-button
-              (click)="contactForInfo()" 
-              variant="outline"
-              block>
-              Ask a question
-            </app-button>
-            <app-button
-              [routerLink]="assessmentForService(service()!).link"
-              variant="secondary"
-              block
-            >
-              {{ assessmentForService(service()!).label }}
-            </app-button>
-            <app-button
-              [routerLink]="flowForService(service()!).careTeamLink"
-              [queryParams]="flowForService(service()!).careTeamQueryParams"
-              variant="outline"
-              block
-            >
-              Meet matching care team
-            </app-button>
-          </div>
+          <details class="mt-4 rounded-md border border-gray-200 px-4 py-3">
+            <summary class="cursor-pointer text-sm font-semibold text-primary-700">Other ways to continue</summary>
+            <div class="mt-3 grid gap-2">
+              <app-button (click)="contactForInfo()" variant="outline" block>Ask a question</app-button>
+              <app-button [routerLink]="assessmentForService(service()!).link" variant="secondary" block>{{ assessmentForService(service()!).label }}</app-button>
+              <app-button [routerLink]="flowForService(service()!).careTeamLink" [queryParams]="flowForService(service()!).careTeamQueryParams" variant="outline" block>Meet matching care team</app-button>
+            </div>
+          </details>
         </div>
       </div>
     </div>
 
     <!-- Detailed Information -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <details class="mt-5 rounded-lg border border-gray-200 bg-white p-4">
+      <summary class="cursor-pointer text-sm font-semibold text-primary-700">Service details, approach, and common questions</summary>
+    <div class="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
       <div class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
         <h2 class="mb-4 text-xl font-semibold text-gray-900">Who this is for</h2>
         <ul class="space-y-3">
@@ -191,39 +162,7 @@
         </div>
       </div>
     </div>
-
-    <!-- Call to Action Section -->
-    <div class="mt-10 rounded-lg border border-primary-100 bg-primary-50 p-6 text-center">
-      <h2 class="mb-4 text-xl font-semibold text-gray-900">{{ UX.cta.bookSupport }}</h2>
-      <p class="text-gray-600 mb-6 max-w-2xl mx-auto">
-        Choose this service, select a slot, and continue with the right support path.
-      </p>
-      <div class="flex flex-col justify-center gap-3 sm:flex-row">
-        <app-button
-          (click)="bookService()" 
-        >
-          {{ UX.cta.bookSupport }}
-        </app-button>
-        <app-button
-          (click)="contactForInfo()" 
-          variant="outline">
-          Ask a question
-        </app-button>
-        <app-button
-          [routerLink]="assessmentForService(service()!).link"
-          variant="secondary"
-        >
-          {{ assessmentForService(service()!).label }}
-        </app-button>
-        <app-button
-          [routerLink]="flowForService(service()!).careTeamLink"
-          [queryParams]="flowForService(service()!).careTeamQueryParams"
-          variant="outline"
-        >
-          Meet matching care team
-        </app-button>
-      </div>
-    </div>
+    </details>
 
     <div class="fixed inset-x-0 bottom-0 z-40 border-t border-gray-200 bg-white/95 px-3 py-2 shadow-[0_-12px_30px_rgba(15,23,42,0.12)] backdrop-blur sm:hidden">
       <app-connect-options

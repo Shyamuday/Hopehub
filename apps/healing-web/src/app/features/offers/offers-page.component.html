@@ -17,45 +17,38 @@
         <article class="offer-card" [class.offer-card--highlight]="discountInPaise(offer) > 0 && offer.type === 'INDIVIDUAL_SESSION'">
           <div>
             <span class="offer-card__type">{{ offer.type.replace('_', ' ') }}</span>
-            @if (discountInPaise(offer) > 0 && offer.type === 'INDIVIDUAL_SESSION') {
-              <span class="offer-card__badge">{{ offer.discountPercent || 50 }}% off</span>
-            }
             <h2>{{ offer.title }}</h2>
             @if (offer.subtitle) {
               <p>{{ offer.subtitle }}</p>
             }
           </div>
 
-          <div class="offer-card__price">
-            <strong>{{ formatEffectivePrice(offer) }}</strong>
-            @if (discountInPaise(offer) > 0) {
-              <span>{{ offer.discountLabel || 'Offer applied' }}</span>
-            }
-            @if (offer.compareAtPriceInPaise || discountInPaise(offer) > 0) {
-              <del>{{ formatPrice({ ...offer, priceInPaise: offer.compareAtPriceInPaise || offer.priceInPaise }) }}</del>
-            }
-          </div>
-
           <div class="offer-card__meta">
             @if (offer.sessionCount) { <span>{{ offer.sessionCount }} sessions</span> }
             @if (offer.sessionDurationMinutes) { <span>{{ offer.sessionDurationMinutes }} min</span> }
-            @if (offer.validityDays) { <span>{{ offer.validityDays }} days</span> }
             @if (offer.eventStartsAt) { <span>{{ offer.eventStartsAt | date: 'mediumDate' }}</span> }
-            @if (offer.seatsRemaining != null) { <span>{{ offer.seatsRemaining }} left</span> }
-            @if (offer.partialPaymentEnabled) { <span>{{ offer.partialPaymentLabel || 'Partial payment' }}</span> }
-            @if (mediaLinkCount(offer)) { <span>{{ mediaLinkCount(offer) }} media links</span> }
           </div>
 
-          <ul>
-            @for (benefit of offer.benefits.slice(0, 3); track benefit) {
-              <li>{{ benefit }}</li>
-            }
-          </ul>
+          @if (offer.benefits.length || discountInPaise(offer) > 0) {
+            <details class="offer-card__details">
+              <summary>What’s included</summary>
+              @if (discountInPaise(offer) > 0) {
+                <p>{{ offer.discountLabel || 'An offer will be applied at checkout.' }}</p>
+              }
+              @if (offer.benefits.length) {
+                <ul>
+                  @for (benefit of offer.benefits.slice(0, 3); track benefit) {
+                    <li>{{ benefit }}</li>
+                  }
+                </ul>
+              }
+            </details>
+          }
 
           @if (offer.isFull) {
             <span class="offer-card__cta disabled">Full</span>
           } @else {
-            <a [routerLink]="offerLink(offer)" class="offer-card__cta">{{ offer.ctaLabel }}</a>
+            <a [routerLink]="offerLink(offer)" class="offer-card__cta">Choose this package</a>
           }
         </article>
       } @empty {
