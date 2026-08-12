@@ -14,128 +14,24 @@ import { AppButtonComponent } from '../../shared/components';
     <div class="min-h-screen bg-[var(--brand-surface)]">
       <div class="container mx-auto px-4 py-10 sm:px-6 lg:px-8">
         <!-- Hero Section -->
-        <div class="mx-auto mb-10 max-w-3xl text-center">
-          <h1 class="mb-4 text-3xl font-semibold text-gray-950 sm:text-4xl">
-            Join Our Healing Community
-          </h1>
-          <p class="mx-auto max-w-2xl text-base leading-7 text-gray-700 sm:text-lg">
-            Join low-pressure support spaces for mental wellness, emotional healing, and practical
-            coping. Share only what feels safe, and choose Telegram when identity privacy matters.
+        <div class="mx-auto mb-6 max-w-3xl text-center">
+          <h1 class="mb-2 text-2xl font-semibold text-gray-950 sm:text-3xl">Community</h1>
+          <p class="text-sm leading-6 text-gray-700">
+            Choose the space that feels comfortable for you.
           </p>
         </div>
 
-        <!-- Community Benefits Section -->
-        <div class="mb-12">
-          <h2 class="text-center text-2xl font-semibold text-gray-950 mb-6">
-            Why Join Our Community?
-          </h2>
-          <div class="grid md:grid-cols-3 gap-8">
-            <div
-              class="hope-motion-card rounded-lg border border-gray-200 bg-white p-6 text-center shadow-sm"
-            >
-              <div
-                class="hope-motion-icon mx-auto mb-4 flex h-10 w-10 items-center justify-center rounded-md bg-primary-50 text-sm font-semibold text-primary-700"
-              >
-                ID
-              </div>
-              <h3 class="mb-2 text-lg font-semibold text-gray-950">Low-Identity Support</h3>
-              <p class="text-sm leading-6 text-gray-700">
-                Use a display name or username and talk only as much as you feel comfortable
-                sharing.
-              </p>
-            </div>
-            <div
-              class="hope-motion-card rounded-lg border border-gray-200 bg-white p-6 text-center shadow-sm"
-            >
-              <div
-                class="hope-motion-icon mx-auto mb-4 flex h-10 w-10 items-center justify-center rounded-md bg-primary-50 text-sm font-semibold text-primary-700"
-              >
-                01
-              </div>
-              <h3 class="mb-2 text-lg font-semibold text-gray-950">Resources & Tips</h3>
-              <p class="text-sm leading-6 text-gray-700">
-                Get coping prompts, self-care ideas, and service guidance without pressure to book.
-              </p>
-            </div>
-            <div
-              class="hope-motion-card rounded-lg border border-gray-200 bg-white p-6 text-center shadow-sm"
-            >
-              <div
-                class="hope-motion-icon mx-auto mb-4 flex h-10 w-10 items-center justify-center rounded-md bg-primary-50 text-sm font-semibold text-primary-700"
-              >
-                30
-              </div>
-              <h3 class="mb-2 text-lg font-semibold text-gray-950">Growth Together</h3>
-              <p class="text-sm leading-6 text-gray-700">
-                Move from chat to a 30-minute paid support session when you want focused help.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div class="mb-12 rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
-          <div class="grid gap-6 md:grid-cols-3">
-            <div>
-              <h2 class="text-2xl font-semibold text-gray-900">Community Safety Rules</h2>
-              <div class="group relative mt-3 inline-flex">
-                <button
-                  type="button"
-                  class="rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-bold text-amber-900"
-                >
-                  {{ notes.communitySafety.label }}
-                </button>
-                <div
-                  class="invisible absolute left-0 top-full z-20 mt-2 w-80 max-w-[calc(100vw-2rem)] rounded-lg border border-amber-200 bg-white p-3 text-sm leading-6 text-amber-900 opacity-0 shadow-xl transition group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100"
-                >
-                  {{ notes.communitySafety.text }}
-                </div>
-              </div>
-            </div>
-            <ul class="space-y-3 text-sm leading-6 text-gray-700 md:col-span-2">
-              <li class="rounded-md bg-slate-50 p-3">
-                Do not share full address, private documents, payment screenshots, or passwords in
-                any group.
-              </li>
-              <li class="rounded-md bg-slate-50 p-3">
-                Telegram is preferred for low-identity discussion; your privacy still depends on
-                your Telegram settings.
-              </li>
-              <li class="rounded-md bg-slate-50 p-3">
-                For paid help, use the request form so the team can confirm payment, concern type,
-                and contact preference properly.
-              </li>
-            </ul>
-          </div>
-        </div>
-
         <!-- Community Channels Section -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
+        <div class="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2">
           <!-- Telegram Card -->
           <div
-            class="hope-motion-card rounded-lg border border-gray-200 bg-white p-6 text-gray-800 shadow-sm sm:p-8"
+            class="hope-motion-card rounded-lg border border-primary-200 bg-white p-5 text-gray-800 shadow-sm"
           >
             <div>
-              <h2 class="text-2xl font-semibold mb-3 text-gray-950">Anonymous-Friendly Telegram</h2>
-              <ul class="mb-4 space-y-3 text-sm leading-6 text-gray-700">
-                <li class="rounded-lg bg-gray-50 p-3">
-                  Daily 9 PM voice chat with Hope Hub experts.
-                </li>
-                <li class="rounded-lg bg-gray-50 p-3">
-                  24/7 chat support for low-pressure conversation and guidance.
-                </li>
-                <li class="rounded-lg bg-gray-50 p-3">
-                  Join with a username or display name if identity privacy matters.
-                </li>
-              </ul>
-              <div class="flex justify-center mb-4">
-                <img
-                  [src]="APP_CONSTANTS.TELEGRAM.QR_CODE"
-                  [alt]="'Scan to join ' + APP_CONSTANTS.TELEGRAM.SUPPORT_HANDLE + ' on Telegram'"
-                  class="w-36 h-36 rounded-xl object-contain border border-gray-100"
-                />
-              </div>
-              <p class="text-center text-xs text-gray-400 mb-3">
-                Scan or click to join <strong>{{ APP_CONSTANTS.TELEGRAM.SUPPORT_HANDLE }}</strong>
+              <span class="hope-chip mb-3">Recommended</span>
+              <h2 class="text-lg font-semibold text-gray-950">Telegram community</h2>
+              <p class="mb-4 mt-1 text-sm leading-6 text-gray-700">
+                Daily 9 PM voice circle. Use a username when you want more privacy.
               </p>
               <app-button (click)="joinTelegramGroup()" block>
                 <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
@@ -145,36 +41,28 @@ import { AppButtonComponent } from '../../shared/components';
                 </svg>
                 Join {{ APP_CONSTANTS.TELEGRAM.SUPPORT_HANDLE }}
               </app-button>
+              <details class="mt-3 text-center">
+                <summary class="cursor-pointer text-xs font-medium text-primary-700">
+                  Show QR code
+                </summary>
+                <img
+                  [src]="APP_CONSTANTS.TELEGRAM.QR_CODE"
+                  [alt]="'Scan to join ' + APP_CONSTANTS.TELEGRAM.SUPPORT_HANDLE + ' on Telegram'"
+                  class="mx-auto mt-3 h-28 w-28 rounded-md border border-gray-100 object-contain"
+                />
+              </details>
             </div>
           </div>
 
           <!-- WhatsApp Card -->
           <div
-            class="hope-motion-card rounded-lg border border-gray-200 bg-white p-6 text-gray-800 shadow-sm sm:p-8"
+            class="hope-motion-card rounded-lg border border-gray-200 bg-white p-5 text-gray-800 shadow-sm"
           >
             <div>
-              <h2 class="text-2xl font-semibold mb-3 text-gray-950">Join Our WhatsApp Group</h2>
-              <ul class="mb-4 space-y-3 text-sm leading-6 text-gray-700">
-                <li class="rounded-lg bg-gray-50 p-3">
-                  Good for quick updates, reminders, and follow-up messages.
-                </li>
-                <li class="rounded-lg bg-gray-50 p-3">
-                  Use it when you are comfortable with WhatsApp group identity visibility.
-                </li>
-                <li class="rounded-lg bg-gray-50 p-3">
-                  Your phone number may be visible according to WhatsApp group settings.
-                </li>
-                <li class="rounded-lg bg-gray-50 p-3">
-                  For sensitive concerns, Telegram is better for low-identity discussion.
-                </li>
-              </ul>
-              <div class="flex justify-center mb-4">
-                <img
-                  [src]="APP_CONSTANTS.WHATSAPP.QR_CODE"
-                  alt="WhatsApp Group QR Code"
-                  class="w-32 h-32 rounded-lg bg-white p-1"
-                />
-              </div>
+              <h2 class="text-lg font-semibold text-gray-950">WhatsApp updates</h2>
+              <p class="mb-4 mt-1 text-sm leading-6 text-gray-700">
+                For reminders and updates. Your phone number may be visible to the group.
+              </p>
               <app-button
                 [href]="APP_CONSTANTS.WHATSAPP.GROUP_URL"
                 target="_blank"
@@ -188,9 +76,29 @@ import { AppButtonComponent } from '../../shared/components';
                 </svg>
                 Join WhatsApp Group
               </app-button>
+              <details class="mt-3 text-center">
+                <summary class="cursor-pointer text-xs font-medium text-primary-700">
+                  Show QR code
+                </summary>
+                <img
+                  [src]="APP_CONSTANTS.WHATSAPP.QR_CODE"
+                  alt="WhatsApp Group QR Code"
+                  class="mx-auto mt-3 h-28 w-28 rounded-md border border-gray-100 object-contain"
+                />
+              </details>
             </div>
           </div>
         </div>
+
+        <details
+          class="mb-8 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900"
+        >
+          <summary class="cursor-pointer font-semibold">Group safety</summary>
+          <p class="mb-0 mt-2 leading-6">
+            {{ notes.communitySafety.text }} Do not share addresses, documents, payment screenshots,
+            passwords, or other personal information.
+          </p>
+        </details>
 
         <!-- Monthly Meetup Section -->
         <div class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm sm:p-8">
