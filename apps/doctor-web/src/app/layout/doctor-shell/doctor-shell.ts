@@ -262,9 +262,7 @@ export class DoctorShell implements OnInit, OnDestroy {
     return (
       path === `/${ROUTE_PATHS.DASHBOARD}` ||
       path === `/${ROUTE_PATHS.PROFILE}` ||
-      path === `/${ROUTE_PATHS.SUPPORT}` ||
-      path === `/${ROUTE_PATHS.SLOTS}` ||
-      path === `/${ROUTE_PATHS.NOTIFICATIONS_INBOX}`
+      path === `/${ROUTE_PATHS.SUPPORT}`
     );
   }
 

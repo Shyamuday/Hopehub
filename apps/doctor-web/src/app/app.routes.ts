@@ -131,7 +131,7 @@ export const routes: Routes = [
       {
         path: ROUTE_PATHS.SLOTS,
         component: SlotsPage,
-        canActivate: [providerCapabilityGuard],
+        canActivate: [providerOnboardingGuard, providerCapabilityGuard],
         data: { capability: 'slots' },
       },
       {
@@ -146,7 +146,11 @@ export const routes: Routes = [
         canActivate: [providerOnboardingGuard, providerCapabilityGuard],
         data: { capability: 'scan' },
       },
-      { path: ROUTE_PATHS.NOTIFICATIONS_INBOX, component: NotificationsInboxPage },
+      {
+        path: ROUTE_PATHS.NOTIFICATIONS_INBOX,
+        component: NotificationsInboxPage,
+        canActivate: [providerOnboardingGuard],
+      },
       {
         path: `${ROUTE_PATHS.PATIENT_SCAN}/:patientCode`,
         component: PatientScanPage,

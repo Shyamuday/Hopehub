@@ -13,6 +13,7 @@
     "shared"
   ],
   "scripts": {
+    "start": "npm run dev:healing",
     "dev": "npm run dev --prefix apps/api",
     "dev:user": "npm start --prefix apps/user-web",
     "dev:user:mobile": "npm run build:mobile --prefix apps/user-web",

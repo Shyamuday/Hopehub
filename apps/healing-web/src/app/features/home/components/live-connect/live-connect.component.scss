@@ -470,6 +470,82 @@
   width: 0.42rem;
 }
 
+.live-connect__directory-link {
+  margin-top: 1.25rem;
+  text-align: center;
+
+  a {
+    color: #047857;
+    font-size: 0.9rem;
+    font-weight: 800;
+    text-decoration: none;
+  }
+
+  a:hover {
+    color: #065f46;
+    text-decoration: underline;
+  }
+
+  span {
+    margin-left: 0.2rem;
+  }
+}
+
+.connect-mode-picker {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.connect-mode-picker__option {
+  align-items: center;
+  background: #fff;
+  border: 1px solid rgba(148, 163, 184, 0.26);
+  border-radius: 0.9rem;
+  color: #0f172a;
+  display: grid;
+  gap: 0.7rem;
+  grid-template-columns: 2rem minmax(0, 1fr) auto;
+  padding: 0.8rem;
+  text-align: left;
+  transition: border-color 0.18s ease, background-color 0.18s ease, transform 0.18s ease;
+
+  > span:first-child {
+    font-size: 1.35rem;
+    text-align: center;
+  }
+
+  strong,
+  small {
+    display: block;
+  }
+
+  strong {
+    font-size: 0.92rem;
+  }
+
+  small {
+    color: #64748b;
+    font-size: 0.76rem;
+    margin-top: 0.14rem;
+  }
+
+  b {
+    color: #047857;
+    font-size: 0.72rem;
+  }
+
+  &:hover:not(:disabled) {
+    background: #f0fdf4;
+    border-color: rgba(16, 185, 129, 0.52);
+    transform: translateY(-1px);
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.45;
+  }
+}
+
 @media (max-width: 640px) {
   .live-connect-shell {
     border-radius: 1.35rem;

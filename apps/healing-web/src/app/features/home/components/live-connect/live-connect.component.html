@@ -6,8 +6,8 @@
           align="left"
           compact
           eyebrow="Live Connect"
-          [title]="UX.cta.talkNow + ' with someone who is actually available'"
-          description="Pick private 1:1 chat, voice, or video support. We show only live Hope Hub experts and emotional support listeners who are accepting that mode right now."
+          title="Talk to someone who is available now"
+          description="Choose the kind of support you need. Pick chat, voice, or video only after you select a person."
         />
         <figure class="live-connect-intro__visual">
           <img [src]="liveConnectImage" alt="Private live support session on a phone" loading="lazy" />
@@ -15,25 +15,13 @@
       </div>
 
       @if (view() === 'providers') {
-        <div class="live-mode-grid">
-          @for (modeItem of modes; track modeItem.value) {
-            <app-selectable-card
-              [icon]="modeItem.icon"
-              [title]="modeItem.label"
-              [description]="modeItem.copy"
-              [selected]="mode() === modeItem.value"
-              tone="success"
-              [compact]="true"
-              (selectedChange)="setMode(modeItem.value)"
-            />
-          }
-        </div>
-
-        <app-support-path-selector
-          class="live-support-path-selector"
-          [selected]="roleGroup()"
-          (selectedChange)="setRoleGroup($event)"
-        />
+        @if (showSupportPathChooser) {
+          <app-support-path-selector
+            class="live-support-path-selector"
+            [selected]="roleGroup()"
+            (selectedChange)="setRoleGroup($event)"
+          />
+        }
 
         @if (loading()) {
           <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -62,28 +50,11 @@
 
                 <div class="live-provider-card__status-row">
                   <span class="live-dot">{{ providerLiveLabel(provider) }}</span>
-                  <span class="service-dot">{{ sessionMeta(provider) }}</span>
                 </div>
-
-                @if (provider.supportRoleDescription || provider.bio) {
-                  <p class="live-provider-card__bio">
-                    {{ provider.supportRoleDescription || provider.bio }}
-                  </p>
-                }
 
                 <div class="live-provider-card__meta">
                   <span>🌐 {{ providerLanguagesLabel(provider) }}</span>
                   <span>✨ {{ providerFocusLabel(provider) }}</span>
-                </div>
-
-                <div class="live-provider-card__modes" aria-label="Available live modes">
-                  @for (badge of providerModeBadges(provider); track badge.mode) {
-                    <app-status-chip
-                      [icon]="badge.icon"
-                      [label]="badge.label"
-                      [tone]="badge.mode === mode() && badge.enabled ? 'success' : !badge.enabled ? 'muted' : 'neutral'"
-                    />
-                  }
                 </div>
 
                 <app-button
@@ -102,6 +73,9 @@
               </article>
             }
           </div>
+          <div class="live-connect__directory-link">
+            <a [routerLink]="ROUTES.links.careTeam">View all support team <span aria-hidden="true">→</span></a>
+          </div>
         } @else {
           <app-empty-state
             icon="🎧"
@@ -110,23 +84,10 @@
             tone="soft"
           >
             <div empty-details>
-              <small>Selected path: {{ activeSupportPathTitle() }}</small>
-              @if (alternativeModesLoading()) {
-                <small>Checking other live options...</small>
-              } @else if (alternativeModes().length) {
-                <small>{{ alternativeModesMessage() }}</small>
-              }
+              <small>Try another support path or book a private session.</small>
             </div>
-            @for (alternative of alternativeModes(); track alternative.mode) {
-              <app-button
-                type="button"
-                (click)="tryAlternativeMode(alternative.mode)"
-              >
-                {{ alternative.icon }} Try {{ alternative.label.toLowerCase() }} now
-              </app-button>
-            }
             <app-button type="button" variant="secondary" (click)="bookConsultation()">
-              Book {{ modeLabel().toLowerCase() }} consultation
+              Book a consultation
             </app-button>
           </app-empty-state>
         }
@@ -232,8 +193,44 @@
 ></app-payment-status-overlay>
 
 <app-connect-comfort-dialog
-  [open]="pendingProvider() !== null"
-  [mode]="mode()"
+  [open]="pendingMode() !== null"
+  [mode]="pendingMode() || 'chat'"
   (confirmed)="confirmStart()"
-  (cancelled)="cancelStart()"
+  (cancelled)="pendingMode.set(null)"
 />
+
+<app-modal
+  [open]="pendingProvider() !== null && pendingMode() === null"
+  [showClose]="true"
+  title="How would you feel comfortable connecting?"
+  description="Choose what feels easiest today. You can use any option this provider is accepting."
+  (closed)="cancelStart()"
+>
+  @if (pendingProvider(); as provider) {
+    <div class="connect-mode-picker">
+      @for (option of providerModes(provider); track option.mode) {
+        <button
+          type="button"
+          class="connect-mode-picker__option"
+          [disabled]="!option.enabled"
+          (click)="chooseConnectionMode(option.mode)"
+        >
+          <span>{{ option.icon }}</span>
+          <span>
+            <strong>{{ option.label }}</strong>
+            <small>
+              {{
+                option.mode === 'chat'
+                  ? 'Private text support'
+                  : option.mode === 'voice'
+                    ? 'Talk without camera'
+                    : 'Face-to-face support'
+              }}
+            </small>
+          </span>
+          <b>{{ option.enabled ? 'Choose' : 'Unavailable' }}</b>
+        </button>
+      }
+    </div>
+  }
+</app-modal>

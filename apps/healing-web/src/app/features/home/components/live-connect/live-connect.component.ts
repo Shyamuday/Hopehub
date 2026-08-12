@@ -39,9 +39,9 @@ import {
   AppButtonComponent,
   SupportPathSelectorComponent,
   StatusChipComponent,
-  SelectableCardComponent,
   PageHeaderComponent,
   ConnectComfortDialogComponent,
+  AppModalComponent,
 } from '../../../../shared/components';
 
 type LiveConnectMode = ConsumerLiveConnectMode;
@@ -64,9 +64,9 @@ type LiveConnectAlternativeMode = {
     EmptyStateComponent,
     SupportPathSelectorComponent,
     StatusChipComponent,
-    SelectableCardComponent,
     PageHeaderComponent,
     ConnectComfortDialogComponent,
+    AppModalComponent,
   ],
   templateUrl: './live-connect.component.html',
   styleUrl: './live-connect.component.scss',
@@ -94,15 +94,18 @@ export class LiveConnectComponent implements OnInit {
   readonly newGroupDescription = signal('');
   readonly startingProviderId = signal('');
   readonly pendingProvider = signal<HopeHubProvider | null>(null);
+  readonly pendingMode = signal<LiveConnectMode | null>(null);
   readonly view = signal<'providers' | 'groups'>('providers');
   readonly mode = signal<LiveConnectMode>('chat');
-  readonly roleGroup = signal<LiveConnectRoleGroup>('');
+  readonly roleGroup = signal<LiveConnectRoleGroup>('EMOTIONAL_LISTENER');
   readonly alternativeModes = signal<LiveConnectAlternativeMode[]>([]);
   readonly alternativeModesLoading = signal(false);
   readonly paymentFlowState = signal<PaymentFlowState>('IDLE');
   readonly paymentFlowError = signal('');
   readonly paymentFlowConsultation = signal<any | null>(null);
   readonly liveConnectImage = IMAGE_ASSETS.HEALING_HUB.PHOTOS.PHONE_SESSION;
+  // Keep the full care-team selector ready for a later homepage expansion.
+  readonly showSupportPathChooser = false;
 
   readonly modes = CONSUMER_LIVE_CONNECT_MODE_OPTIONS;
 
@@ -167,7 +170,7 @@ export class LiveConnectComponent implements OnInit {
   }
 
   buttonLabel(_provider: HopeHubProvider): string {
-    return `Start ${this.modeLabel().toLowerCase()} support`;
+    return 'Connect now';
   }
 
   providerTrustLabel(provider: HopeHubProvider): string {
@@ -192,7 +195,7 @@ export class LiveConnectComponent implements OnInit {
     return focus?.filter(Boolean).slice(0, 2).join(' · ') || 'Emotional support';
   }
 
-  providerModeBadges(provider: HopeHubProvider): Array<{
+  providerModes(provider: HopeHubProvider): Array<{
     mode: LiveConnectMode;
     label: string;
     icon: string;
@@ -231,11 +234,11 @@ export class LiveConnectComponent implements OnInit {
   }
 
   unavailableTitle(): string {
-    return `No ${this.modeLabel().toLowerCase()} expert is live right now`;
+    return `No ${this.activeSupportPathTitle().toLowerCase()} is live right now`;
   }
 
   unavailableMessage(): string {
-    return `You can still book a consultation and we will route you to the right Hope Hub expert for ${this.modeLabel().toLowerCase()} support.`;
+    return 'You can book a private session and we will help you find the right person.';
   }
 
   alternativeModesMessage(): string {
@@ -339,15 +342,31 @@ export class LiveConnectComponent implements OnInit {
   requestStart(provider: HopeHubProvider): void {
     if (this.startingProviderId()) return;
     this.pendingProvider.set(provider);
+    this.pendingMode.set(null);
   }
 
   cancelStart(): void {
     this.pendingProvider.set(null);
+    this.pendingMode.set(null);
+  }
+
+  chooseConnectionMode(mode: LiveConnectMode): void {
+    const provider = this.pendingProvider();
+    if (
+      !provider ||
+      !this.providerModes(provider).some((item) => item.mode === mode && item.enabled)
+    ) {
+      return;
+    }
+    this.pendingMode.set(mode);
   }
 
   async confirmStart(): Promise<void> {
     const provider = this.pendingProvider();
-    if (!provider) return;
+    const selectedMode = this.pendingMode();
+    if (!provider || !selectedMode) return;
+    this.mode.set(selectedMode);
+    this.pendingMode.set(null);
     this.pendingProvider.set(null);
     if (this.startingProviderId()) return;
     if (!this.currentUser()) {
@@ -489,7 +508,6 @@ export class LiveConnectComponent implements OnInit {
     this.bookingService
       .quickTalkProviders({
         roleGroup: this.roleGroup(),
-        mode: this.mode(),
       })
       .subscribe({
         next: (res) => {
@@ -497,7 +515,6 @@ export class LiveConnectComponent implements OnInit {
           this.loading.set(false);
           if (!res.providers.length) {
             this.message.set(this.unavailableMessage());
-            void this.loadAlternativeModes(this.mode(), this.roleGroup());
           }
         },
         error: () => {
