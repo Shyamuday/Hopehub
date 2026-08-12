@@ -3,7 +3,7 @@ import { z } from 'zod';
 import bcrypt from 'bcryptjs';
 import { Role } from '@prisma/client';
 import { prisma } from '../../db.js';
-import { getMailTransporter, smtpFrom } from '../../services/mail.js';
+import { getMailTransporter, smtpFrom, supportReplyTo } from '../../services/mail.js';
 import { createPatientRecord } from '../../services/patient-identity.js';
 import {
   asyncRoute,
@@ -321,6 +321,7 @@ export function registerAuthPatientRoutes(router: Router) {
       if (mailer) {
         await mailer.sendMail({
           from: smtpFrom,
+          replyTo: supportReplyTo,
           to: email,
           subject: 'Reset your HopeHub Care password',
           html: `<p>Click the link below to reset your password. It expires in 30 minutes.</p>

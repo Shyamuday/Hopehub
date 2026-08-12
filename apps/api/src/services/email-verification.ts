@@ -3,7 +3,7 @@ import { prisma } from '../db.js';
 import { SERVER_CONFIG } from '../constants/config.constants.js';
 import { hashToken, randomToken } from '../utils/helpers.js';
 import { isProduction } from './otp.js';
-import { getMailTransporter, smtpFrom } from './mail.js';
+import { getMailTransporter, smtpFrom, supportReplyTo } from './mail.js';
 import { recordAuthProcess } from './auth-process-log.js';
 
 const EMAIL_VERIFICATION_TOKEN_TTL_MS =
@@ -38,6 +38,7 @@ export async function createEmailVerificationToken(input: {
   if (mailer) {
     await mailer.sendMail({
       from: smtpFrom,
+      replyTo: supportReplyTo,
       to: email,
       subject: 'Verify your HopeHub email',
       html: `<p>Welcome to HopeHub.</p><p>Please verify your email address:</p><p><a href="${verifyUrl}">${verifyUrl}</a></p><p>This link expires in 24 hours.</p>`

@@ -1,5 +1,5 @@
 import nodemailer from 'nodemailer';
-import { SERVER_CONFIG } from '../constants/config.constants.js';
+import { CONTACT_IDENTITY, SERVER_CONFIG } from '../constants/config.constants.js';
 
 const cleanEnv = (value: string | undefined) => (value || '').replace(/^\uFEFF/, '').trim();
 
@@ -9,6 +9,8 @@ const smtpUser = cleanEnv(process.env.AWS_SES_SMTP_USERNAME);
 const smtpPass = cleanEnv(process.env.AWS_SES_SMTP_PASSWORD);
 
 export const smtpFrom = cleanEnv(process.env.SMTP_FROM) || SERVER_CONFIG.SMTP.DEFAULT_FROM;
+/** Replies to automated emails go to the monitored support inbox. */
+export const supportReplyTo = cleanEnv(process.env.CONTACT_REPLY_FROM) || CONTACT_IDENTITY.EMAIL;
 
 export type SendEmailInput = {
   to: string | string[];
@@ -63,6 +65,6 @@ export async function sendEmail(input: SendEmailInput): Promise<void> {
     subject: input.subject,
     text: input.text,
     html: input.html,
-    replyTo: input.replyTo
+    replyTo: input.replyTo || supportReplyTo
   });
 }
