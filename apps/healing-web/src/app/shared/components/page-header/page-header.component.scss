@@ -1,6 +1,6 @@
 .page-header {
   max-width: 52rem;
-  margin: 0 auto 2rem;
+  margin: 0 auto var(--hope-space-5, 2rem);
   text-align: center;
 }
 
@@ -11,14 +11,14 @@
 }
 
 .page-header--compact {
-  margin-bottom: 1.2rem;
+  margin-bottom: var(--hope-space-4, 1.5rem);
 }
 
 .page-header__eyebrow {
   margin: 0 0 0.55rem;
   color: var(--brand-primary, #047857);
-  font-size: 0.78rem;
-  font-weight: 900;
+  font-size: var(--hope-font-size-xs, 0.75rem);
+  font-weight: 750;
   letter-spacing: 0.1em;
   text-transform: uppercase;
 }
@@ -26,18 +26,18 @@
 .page-header__title {
   margin: 0;
   color: var(--text-primary, #0f172a);
-  font-size: clamp(1.85rem, 4vw, 3.25rem);
-  font-weight: 850;
-  letter-spacing: -0.04em;
-  line-height: 1.04;
+  font-size: var(--hope-font-size-section-title, clamp(1.5rem, 2.3vw, 2rem));
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  line-height: var(--hope-line-heading, 1.13);
 }
 
 .page-header__description {
   max-width: 42rem;
-  margin: 0.85rem auto 0;
+  margin: var(--hope-space-2, 0.75rem) auto 0;
   color: var(--text-secondary, #475569);
-  font-size: clamp(0.96rem, 1.4vw, 1.08rem);
-  line-height: 1.7;
+  font-size: var(--hope-font-size-base, 0.9375rem);
+  line-height: var(--hope-line-copy, 1.58);
 }
 
 .page-header--left .page-header__description {

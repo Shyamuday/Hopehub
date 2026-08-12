@@ -1,6 +1,5 @@
 <section class="guided-entry" [class.guided-entry--compact]="compact" aria-label="Guided support entry">
   <div class="guided-entry__head">
-    <p>Guided start</p>
     <h2>{{ title }}</h2>
     <span>{{ subtitle }}</span>
   </div>
@@ -46,8 +45,7 @@
     <app-button type="button" size="sm" (click)="start('live')">
       Talk now
     </app-button>
-    <app-button type="button" variant="outline" size="sm" (click)="start('test')">Take matching test</app-button>
-    <app-button type="button" variant="outline" size="sm" (click)="start('book')">Book slot</app-button>
-    <app-button type="button" variant="secondary" size="sm" (click)="start('providers')">See providers</app-button>
+    <app-button type="button" variant="outline" size="sm" (click)="start('book')">Book a time</app-button>
+    <app-button type="button" variant="link" size="sm" (click)="start('test')">Take a self-check</app-button>
   </div>
 </section>

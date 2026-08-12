@@ -1,10 +1,10 @@
 .checkout-summary {
   display: grid;
-  gap: 0.85rem;
+  gap: var(--hope-space-2);
   border: 1px solid var(--color-primary-100);
   border-radius: var(--hope-radius-lg, 1rem);
   background: var(--brand-surface);
-  padding: 1rem;
+  padding: var(--hope-space-3);
 }
 
 .checkout-summary__head {
@@ -14,14 +14,15 @@
 
 .checkout-summary__head span {
   color: var(--brand-primary);
-  font-size: 0.76rem;
-  font-weight: 800;
+  font-size: var(--hope-font-size-xs);
+  font-weight: var(--hope-font-weight-label);
   text-transform: uppercase;
 }
 
 .checkout-summary__head strong {
   color: var(--text-primary);
-  font-size: 1rem;
+  font-size: var(--hope-font-size-card-title);
+  font-weight: var(--hope-font-weight-title);
 }
 
 .checkout-summary__notice {
@@ -35,13 +36,14 @@
 
 .checkout-summary__notice strong {
   color: var(--brand-primary);
-  font-size: 1rem;
+  font-size: var(--hope-font-size-card-title);
+  font-weight: var(--hope-font-weight-title);
 }
 
 .checkout-summary__notice span {
   color: var(--text-secondary);
-  font-size: 0.88rem;
-  line-height: 1.45;
+  font-size: var(--hope-font-size-sm);
+  line-height: var(--hope-line-copy);
 }
 
 .checkout-summary__rows {
@@ -55,7 +57,7 @@
   justify-content: space-between;
   gap: 1rem;
   color: var(--text-secondary);
-  font-size: 0.9rem;
+  font-size: var(--hope-font-size-sm);
 }
 
 .checkout-summary__rows strong {
@@ -73,8 +75,8 @@
 .checkout-summary__pay span,
 .checkout-summary__pay strong {
   color: var(--brand-primary);
-  font-size: 1rem;
-  font-weight: 900;
+  font-size: var(--hope-font-size-card-title);
+  font-weight: var(--hope-font-weight-title);
 }
 
 .checkout-summary__includes {
@@ -89,8 +91,8 @@
   border-radius: 999px;
   background: #ffffff;
   color: var(--text-secondary);
-  font-size: 0.78rem;
-  font-weight: 800;
+  font-size: var(--hope-font-size-xs);
+  font-weight: var(--hope-font-weight-label);
   padding: 0.35rem 0.65rem;
 }
 

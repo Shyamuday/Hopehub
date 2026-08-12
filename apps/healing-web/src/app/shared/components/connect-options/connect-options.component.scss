@@ -2,11 +2,11 @@
   display: grid;
   gap: 0.8rem;
   border: 1px solid rgba(74, 111, 165, 0.14);
-  border-radius: 1rem;
+  border-radius: var(--hope-radius-lg);
   background:
     linear-gradient(135deg, rgba(74, 111, 165, 0.07), rgba(255, 255, 255, 0.96)),
     #fff;
-  padding: 1rem;
+  padding: var(--hope-space-3);
 }
 
 .connect-options--compact {
@@ -22,15 +22,15 @@
 .connect-options__head h3 {
   margin: 0;
   color: #0f172a;
-  font-size: 1rem;
-  font-weight: 900;
+  font-size: var(--hope-font-size-card-title);
+  font-weight: var(--hope-font-weight-title);
 }
 
 .connect-options__head p {
   margin: 0;
   color: #64748b;
-  font-size: 0.86rem;
-  line-height: 1.5;
+  font-size: var(--hope-font-size-sm);
+  line-height: var(--hope-line-copy);
 }
 
 .connect-options__grid {
@@ -49,7 +49,7 @@
   align-items: center;
   gap: 0.55rem;
   border: 1px solid rgba(74, 111, 165, 0.18);
-  border-radius: 0.8rem;
+  border-radius: var(--hope-radius-md);
   background: rgba(255, 255, 255, 0.9);
   color: #0f172a;
   cursor: pointer;
@@ -92,17 +92,17 @@
 .connect-options__button strong {
   overflow: hidden;
   color: #0f172a;
-  font-size: 0.88rem;
-  font-weight: 900;
+  font-size: var(--hope-font-size-sm);
+  font-weight: var(--hope-font-weight-title);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .connect-options__button small {
   color: #64748b;
-  font-size: 0.74rem;
-  font-weight: 700;
-  line-height: 1.35;
+  font-size: var(--hope-font-size-xs);
+  font-weight: var(--hope-font-weight-body);
+  line-height: var(--hope-line-copy);
 }
 
 @media (max-width: 520px) {

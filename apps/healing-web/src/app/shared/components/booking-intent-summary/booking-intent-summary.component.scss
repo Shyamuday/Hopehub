@@ -2,13 +2,13 @@
   display: grid;
   gap: 0.75rem;
   border: 1px solid rgba(74, 111, 165, 0.18);
-  border-radius: 14px;
+  border-radius: var(--hope-radius-lg);
   background:
     radial-gradient(circle at top left, rgba(130, 155, 120, 0.16), transparent 22rem),
     #ffffff;
-  box-shadow: 0 16px 36px rgba(15, 23, 42, 0.06);
+  box-shadow: var(--hope-card-shadow);
   margin-bottom: 1rem;
-  padding: 0.95rem;
+  padding: var(--hope-space-3);
 }
 
 .booking-intent-summary > div:first-child {
@@ -18,15 +18,16 @@
 
 .booking-intent-summary > div:first-child span {
   color: var(--brand-primary);
-  font-size: 0.74rem;
-  font-weight: 950;
+  font-size: var(--hope-font-size-xs);
+  font-weight: var(--hope-font-weight-label);
   letter-spacing: 0.07em;
   text-transform: uppercase;
 }
 
 .booking-intent-summary strong {
   color: var(--text-primary);
-  font-size: 1rem;
+  font-size: var(--hope-font-size-card-title);
+  font-weight: var(--hope-font-weight-title);
 }
 
 .booking-intent-summary__chips {

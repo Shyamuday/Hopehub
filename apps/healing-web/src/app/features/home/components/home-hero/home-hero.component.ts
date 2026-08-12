@@ -1,18 +1,17 @@
 import { Component } from '@angular/core';
 import { RouterModule } from '@angular/router';
 import { IMAGE_ASSETS } from '../../../../core/constants/image-assets.constants';
-import { CONSUMER_UX_COPY } from '../../../../core/constants/consumer-ux-copy.constants';
 import { CONSUMER_ROUTES } from '../../../../core/constants/consumer-routes.constants';
+import { AppButtonComponent } from '../../../../shared/components';
 
 @Component({
   selector: 'app-home-hero',
   standalone: true,
-  imports: [RouterModule],
+  imports: [RouterModule, AppButtonComponent],
   templateUrl: './home-hero.component.html',
   styleUrl: './home-hero.component.scss',
 })
 export class HomeHeroComponent {
-  readonly UX = CONSUMER_UX_COPY;
   readonly ROUTES = CONSUMER_ROUTES;
   readonly heroSlides = [
     {

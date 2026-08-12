@@ -6,16 +6,16 @@
 .selectable-card {
   display: flex;
   width: 100%;
-  min-height: 5rem;
+  min-height: 4.75rem;
   align-items: flex-start;
   gap: 0.75rem;
   position: relative;
   border: 1px solid var(--hope-card-border, rgba(15, 23, 42, 0.1));
-  border-radius: var(--hope-radius-lg, 1rem);
+  border-radius: var(--hope-radius-lg, 0.875rem);
   background: #ffffff;
   color: #334155;
   cursor: pointer;
-  padding: 0.9rem;
+  padding: var(--hope-space-3, 1rem);
   text-align: left;
   transition:
     background-color 160ms ease,
@@ -81,16 +81,16 @@
 
 .selectable-card__copy strong {
   color: #0f172a;
-  font-size: 0.94rem;
-  font-weight: 900;
+  font-size: var(--hope-font-size-card-title, 1rem);
+  font-weight: 700;
 }
 
 .selectable-card__copy span,
 .selectable-card__copy small {
   color: #64748b;
-  font-size: 0.8rem;
-  font-weight: 650;
-  line-height: 1.45;
+  font-size: var(--hope-font-size-sm, 0.875rem);
+  font-weight: 500;
+  line-height: var(--hope-line-copy, 1.58);
 }
 
 .selectable-card__check {

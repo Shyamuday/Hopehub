@@ -103,15 +103,15 @@ type AppButtonSize = 'xs' | 'sm' | 'md' | 'lg';
         justify-content: center;
         gap: 0.5rem;
         border: 0;
-        border-radius: var(--hope-radius-md, 0.75rem);
+        border-radius: var(--hope-radius-md, 0.625rem);
         background: var(--brand-primary, var(--color-primary-600, #059669));
         color: #ffffff;
         cursor: pointer;
         font: inherit;
-        font-size: 0.875rem;
-        font-weight: 700;
-        line-height: 1.2;
-        padding: 0.7rem 1rem;
+        font-size: var(--hope-font-size-sm, 0.875rem);
+        font-weight: 650;
+        line-height: 1.25;
+        padding: 0.68rem 1rem;
         text-align: center;
         text-decoration: none;
         transition:
@@ -176,21 +176,21 @@ type AppButtonSize = 'xs' | 'sm' | 'md' | 'lg';
 
       .app-button--xs {
         min-height: 1.9rem;
-        border-radius: 0.45rem;
-        font-size: 0.76rem;
+        border-radius: var(--hope-radius-sm, 0.5rem);
+        font-size: var(--hope-font-size-xs, 0.75rem);
         padding: 0.35rem 0.6rem;
       }
 
       .app-button--sm {
         min-height: 2.25rem;
-        border-radius: 0.45rem;
-        font-size: 0.82rem;
+        border-radius: var(--hope-radius-sm, 0.5rem);
+        font-size: var(--hope-font-size-sm, 0.875rem);
         padding: 0.55rem 0.8rem;
       }
 
       .app-button--lg {
         min-height: 3rem;
-        font-size: 1rem;
+        font-size: var(--hope-font-size-lg, 1.0625rem);
         padding: 0.9rem 1.25rem;
       }
 

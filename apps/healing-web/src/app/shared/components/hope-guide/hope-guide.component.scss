@@ -38,7 +38,7 @@
   margin: 0;
   color: var(--brand-primary);
   font-size: 0.72rem;
-  font-weight: 950;
+  font-weight: var(--hope-font-weight-label, 600);
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -47,7 +47,7 @@
   margin: 0.2rem 0 0;
   color: #0f172a;
   font-size: 1rem;
-  font-weight: 950;
+  font-weight: var(--hope-font-weight-title, 700);
 }
 
 .hope-guide__head button {
@@ -100,7 +100,7 @@
 .hope-guide__tip p {
   margin: 0.25rem 0 0;
   color: #64748b;
-  font-size: 0.82rem;
+  font-size: var(--hope-font-size-sm, 0.875rem);
   line-height: 1.5;
 }
 
@@ -108,8 +108,8 @@
   display: inline-flex;
   margin-top: 0.55rem;
   color: var(--brand-primary);
-  font-size: 0.8rem;
-  font-weight: 900;
+  font-size: var(--hope-font-size-sm, 0.875rem);
+  font-weight: var(--hope-font-weight-label, 600);
 }
 
 .hope-guide__foot {
@@ -159,12 +159,12 @@
   height: 2.1rem;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.18);
-  font-weight: 950;
+  font-weight: var(--hope-font-weight-title, 700);
 }
 
 .hope-guide__text {
-  font-size: 0.84rem;
-  font-weight: 950;
+  font-size: var(--hope-font-size-sm, 0.875rem);
+  font-weight: var(--hope-font-weight-label, 600);
   white-space: nowrap;
 }
 

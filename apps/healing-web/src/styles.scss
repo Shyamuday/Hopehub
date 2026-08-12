@@ -44,6 +44,26 @@
 
 /* Hope Hub Brand Variables */
 :root {
+  /* Hope Hub design system: change these tokens to update the whole consumer app. */
+  --hope-font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, system-ui, sans-serif;
+  --hope-font-size-xs: 0.75rem;
+  --hope-font-size-sm: 0.875rem;
+  --hope-font-size-base: 0.9375rem;
+  --hope-font-size-lg: 1.0625rem;
+  --hope-font-size-card-title: 1rem;
+  --hope-font-size-section-title: clamp(1.5rem, 2.3vw, 2rem);
+  --hope-font-size-page-title: clamp(1.9rem, 3.5vw, 2.75rem);
+  --hope-font-weight-body: 400;
+  --hope-font-weight-label: 600;
+  --hope-font-weight-title: 700;
+  --hope-line-copy: 1.58;
+  --hope-line-heading: 1.13;
+  --hope-space-1: 0.5rem;
+  --hope-space-2: 0.75rem;
+  --hope-space-3: 1rem;
+  --hope-space-4: 1.5rem;
+  --hope-space-5: 2rem;
+  --hope-space-6: 3rem;
   --brand-primary: #4a6fa5;
   --brand-primary-hover: #3d5b88;
   --brand-primary-light: #e3ebf2;
@@ -68,14 +88,14 @@
   --hope-selected-check-bg: #10b981;
   --hope-selected-check-text: #ffffff;
   --hope-radius-sm: 0.5rem;
-  --hope-radius-md: 0.75rem;
-  --hope-radius-lg: 1rem;
-  --hope-radius-xl: 1.25rem;
+  --hope-radius-md: 0.625rem;
+  --hope-radius-lg: 0.875rem;
+  --hope-radius-xl: 1rem;
   --hope-card-bg: #ffffff;
-  --hope-card-border: rgba(28, 45, 55, 0.1);
-  --hope-card-border-hover: var(--brand-primary-border);
-  --hope-card-shadow: none;
-  --hope-card-shadow-hover: 0 16px 36px rgba(28, 45, 55, 0.08);
+  --hope-card-border: rgba(28, 45, 55, 0.09);
+  --hope-card-border-hover: rgba(74, 111, 165, 0.3);
+  --hope-card-shadow: 0 1px 2px rgba(15, 23, 42, 0.025);
+  --hope-card-shadow-hover: 0 12px 28px rgba(15, 23, 42, 0.08);
   --hope-field-border: #cbd5e1;
   --hope-field-focus-border: var(--brand-primary);
   --hope-field-focus-ring: 0 0 0 3px rgba(74, 111, 165, 0.12);
@@ -101,8 +121,8 @@
   --surface-red-text: #7f1d1d;
   
   /* Font Family Variables */
-  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Fira Sans', 'Droid Sans', 'Helvetica Neue', system-ui, sans-serif;
-  --font-display: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, system-ui, sans-serif;
+  --font-sans: var(--hope-font-family);
+  --font-display: var(--hope-font-family);
   --font-serif: 'Playfair Display', Georgia, 'Times New Roman', Times, serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
   
@@ -124,7 +144,8 @@ html {
 body {
   font-family: var(--font-sans);
   font-weight: var(--font-weight-normal);
-  line-height: 1.5;
+  font-size: var(--hope-font-size-base);
+  line-height: var(--hope-line-copy);
   color: var(--text-primary);
   background-color: #ffffff;
 }
@@ -174,15 +195,23 @@ body {
 /* Heading Styles with Display Font */
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-sans);
-  font-weight: var(--font-weight-semibold);
-  line-height: 1.18;
-  letter-spacing: 0;
+  font-weight: var(--hope-font-weight-title);
+  line-height: var(--hope-line-heading);
+  letter-spacing: -0.018em;
   color: var(--text-primary);
 }
 
 h1 {
-  font-weight: var(--font-weight-bold);
-  letter-spacing: 0;
+  font-weight: var(--hope-font-weight-title);
+  font-size: var(--hope-font-size-page-title);
+}
+
+h2 {
+  font-size: var(--hope-font-size-section-title);
+}
+
+h3 {
+  font-size: var(--hope-font-size-card-title);
 }
 
 /* Ensure proper font rendering across browsers */
@@ -421,7 +450,7 @@ a:focus {
 
 .hope-section {
   background-color: #ffffff;
-  @apply py-14 sm:py-16 lg:py-20;
+  @apply py-12 sm:py-14 lg:py-16;
 }
 
 .hope-section--mist {
@@ -437,26 +466,38 @@ a:focus {
 }
 
 .hope-section-header {
-  @apply mx-auto mb-10 max-w-3xl text-center sm:mb-12;
+  @apply mx-auto mb-8 max-w-3xl text-center sm:mb-10;
 }
 
 .hope-eyebrow {
-  @apply text-sm font-semibold uppercase tracking-wide text-primary-700;
+  color: var(--brand-primary);
+  font-size: var(--hope-font-size-xs);
+  font-weight: var(--hope-font-weight-label);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
 .hope-section-title {
-  @apply mt-3 text-3xl font-semibold text-gray-950 sm:text-4xl;
+  margin-top: var(--hope-space-2);
+  color: var(--text-primary);
+  font-size: var(--hope-font-size-section-title);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: var(--hope-line-heading);
 }
 
 .hope-section-copy {
-  @apply mt-4 text-base leading-7 text-gray-700 sm:text-lg;
+  margin-top: var(--hope-space-2);
+  color: var(--text-secondary);
+  font-size: var(--hope-font-size-base);
+  line-height: var(--hope-line-copy);
 }
 
 .hope-card {
   border: 1px solid var(--hope-card-border);
   border-radius: var(--hope-radius-lg);
   background: var(--hope-card-bg);
-  padding: 1.5rem;
+  padding: var(--hope-space-4);
   box-shadow: var(--hope-card-shadow);
   transition:
     transform 220ms ease,
@@ -470,11 +511,42 @@ a:focus {
 }
 
 .hope-card-title {
-  @apply text-lg font-semibold text-gray-950;
+  color: var(--text-primary);
+  font-size: var(--hope-font-size-card-title);
+  font-weight: var(--hope-font-weight-title);
+  letter-spacing: -0.012em;
+  line-height: 1.3;
 }
 
 .hope-card-copy {
-  @apply mt-2 text-sm leading-6 text-gray-600;
+  margin-top: var(--hope-space-1);
+  color: var(--text-muted);
+  font-size: var(--hope-font-size-sm);
+  line-height: var(--hope-line-copy);
+}
+
+/* Card reading rule: one clear title, one calm supporting text, and one action. */
+.hope-card :is(h3, h4, h5, h6) {
+  font-size: var(--hope-font-size-card-title);
+  font-weight: var(--hope-font-weight-title);
+  line-height: 1.3;
+}
+
+.hope-card :is(p, small) {
+  line-height: var(--hope-line-copy);
+}
+
+.hope-card .hope-eyebrow,
+.hope-card .hope-chip,
+.hope-card .hope-status {
+  font-weight: var(--hope-font-weight-label);
+}
+
+.hope-surface-card {
+  border: 1px solid var(--hope-card-border);
+  border-radius: var(--hope-radius-lg);
+  background: var(--hope-card-bg);
+  box-shadow: var(--hope-card-shadow);
 }
 
 .hope-icon-box {
@@ -541,7 +613,11 @@ a:focus {
 }
 
 .form-label {
-  @apply block text-sm font-semibold text-gray-800 mb-2;
+  color: var(--text-primary);
+  font-size: var(--hope-font-size-sm);
+  font-weight: 650;
+  line-height: 1.35;
+  margin-bottom: var(--hope-space-1);
 }
 
 .form-error {

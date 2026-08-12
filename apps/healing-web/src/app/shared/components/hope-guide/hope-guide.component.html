@@ -5,20 +5,20 @@
   aria-label="Hope Guide"
 >
   @if (guide.enabled() && guide.open()) {
-    <section class="hope-guide__panel">
+    <section id="hope-guide-panel" class="hope-guide__panel" role="dialog" aria-label="How this page works">
       <div class="hope-guide__head">
         <div>
-          <p>Hope Guide</p>
-          <h2>Gentle help for this page</h2>
+          <p>Help guide</p>
+          <h2>How this page works</h2>
         </div>
         <button type="button" aria-label="Close Hope Guide" (click)="guide.setOpen(false)">×</button>
       </div>
 
       <div class="hope-guide__tips">
-        @for (tip of guide.tips(); track tip.title) {
+        @for (tip of guide.tips(); track tip.question) {
           <article class="hope-guide__tip" tabindex="0">
-            <strong>{{ tip.title }}</strong>
-            <p>{{ tip.body }}</p>
+            <strong>Q. {{ tip.question }}</strong>
+            <p>{{ tip.answer }}</p>
             @if (tip.actionLabel && tip.actionLink) {
               <a
                 [routerLink]="tip.actionLink"
@@ -33,7 +33,7 @@
       </div>
 
       <div class="hope-guide__foot">
-        <span>For smart users who know the way: switch me off 🙂</span>
+        <span>Prefer to explore on your own?</span>
         <button type="button" (click)="guide.toggleEnabled()">Turn off</button>
       </div>
     </section>
@@ -43,11 +43,13 @@
     type="button"
     class="hope-guide__toggle"
     [attr.aria-expanded]="guide.open()"
-    [attr.aria-label]="guide.enabled() ? 'Toggle Hope Guide' : 'Turn on Hope Guide'"
+    [attr.aria-controls]="guide.enabled() ? 'hope-guide-panel' : null"
+    [attr.aria-label]="guide.enabled() ? 'Open help guide: how this page works' : 'Turn on help guide'"
     (click)="guide.enabled() ? guide.toggleOpen() : guide.toggleEnabled()"
     (mouseenter)="guide.setOpen(true)"
+    (focus)="guide.setOpen(true)"
   >
     <span class="hope-guide__spark">?</span>
-    <span class="hope-guide__text">{{ guide.enabled() ? 'Hope Guide' : 'Guide off' }}</span>
+    <span class="hope-guide__text">{{ guide.enabled() ? 'How this works' : 'Guide off' }}</span>
   </button>
 </aside>

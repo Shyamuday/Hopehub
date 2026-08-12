@@ -7,42 +7,27 @@
         <p class="hero-kicker hope-animate-fade-up hope-eyebrow mb-5">
           Calm, confidential support at your pace
         </p>
-        <h1
-          class="hope-animate-fade-up hope-delay-1 mb-5 max-w-2xl text-4xl font-semibold text-gray-950 sm:text-5xl"
-        >
+        <h1 class="home-hero__title hope-animate-fade-up hope-delay-1">
           Feel <span class="text-primary-700">supported</span> when life feels heavy
         </h1>
-        <p
-          class="home-hero__lead hope-animate-fade-up hope-delay-2 mb-3 max-w-xl text-base leading-7 text-gray-700 sm:text-lg"
-        >
-          Private mental wellness support with Hope Hub experts.
+        <p class="home-hero__lead hope-animate-fade-up hope-delay-2">
+          Private support at your pace. Talk to someone, book a time, or begin with a short self-check.
         </p>
-        <p
-          class="home-hero__sublead hope-animate-fade-up hope-delay-3 mb-6 max-w-xl text-base leading-7 text-gray-600 sm:mb-8"
-        >
-          Choose what feels easiest right now. You can talk, book, or understand your feelings first.
-        </p>
-        <div class="home-hero__decision-grid hope-animate-fade-up hope-delay-4">
-          <a class="home-hero__decision home-hero__decision--primary" [routerLink]="ROUTES.links.home" [fragment]="ROUTES.fragments.liveConnect">
-            <span>💬</span>
-            <strong>I need to talk now</strong>
-            <small>See who is live for private 1:1 support</small>
-          </a>
-          <a class="home-hero__decision" [routerLink]="ROUTES.links.bookSupport">
-            <span>🗓️</span>
-            <strong>I want to {{ UX.cta.bookSupport.toLowerCase() }}</strong>
-            <small>Choose a slot and continue calmly</small>
-          </a>
-          <a class="home-hero__decision" [routerLink]="ROUTES.links.assessments">
-            <span>🧭</span>
-            <strong>I want to understand myself</strong>
-            <small>Start with a short private test</small>
+        <div class="home-hero__actions hope-animate-fade-up hope-delay-3">
+          <app-button [routerLink]="ROUTES.links.home" [fragment]="ROUTES.fragments.liveConnect">
+            Talk to someone now
+          </app-button>
+          <app-button [routerLink]="ROUTES.links.bookSupport" variant="outline">
+            Book a time
+          </app-button>
+          <a class="home-hero__self-check" [routerLink]="ROUTES.links.assessments">
+            Take a short self-check
           </a>
         </div>
         <div class="home-hero__trust hope-animate-fade-up hope-delay-4">
-          <a [routerLink]="ROUTES.links.home" [fragment]="ROUTES.fragments.liveConnect">Live chat, voice, or video</a>
+          <span>Chat, voice, or video</span>
           <a [routerLink]="ROUTES.links.community">Daily 9 PM voice circle</a>
-          <a [routerLink]="ROUTES.links.dashboard">Private result tracking</a>
+          <span>Private by default</span>
         </div>
       </div>
 
