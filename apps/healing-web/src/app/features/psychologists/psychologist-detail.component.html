@@ -32,6 +32,18 @@
                 {{ providerScope(p) }}
               </p>
               <p class="font-semibold">{{ p.designation || p.specialty }}</p>
+              @if (p.yearsOfExperience) {
+                <p>{{ p.yearsOfExperience }}+ years experience</p>
+              }
+              <button
+                type="button"
+                class="pt-1 text-left text-sm font-semibold text-primary-700 hover:text-primary-800"
+                (click)="toggleProfileDetails()"
+              >
+                {{ showProfileDetails() ? 'Hide profile details' : 'View profile details' }}
+              </button>
+              @if (showProfileDetails()) {
+                <div class="space-y-2 border-t border-primary-100 pt-3 text-xs leading-5">
               @if (p.qualifications?.length) {
                 <p>{{ p.qualifications!.join(', ') }}</p>
               }
@@ -44,14 +56,13 @@
               @if (p.licenseNumber || p.licenseCouncil) {
                 <p>{{ p.licenseCouncil }}: {{ p.licenseNumber }}</p>
               }
-              @if (p.yearsOfExperience) {
-                <p>{{ p.yearsOfExperience }}+ years experience</p>
-              }
               @if (genderLabel(p)) {
                 <p>Gender: {{ genderLabel(p) }}</p>
               }
               @if (p.sessionDurationMinutes) {
                 <p>{{ p.sessionDurationMinutes }} min · {{ sessionLabel(p) }}</p>
+              }
+                </div>
               }
             </div>
           </div>
@@ -151,19 +162,6 @@
             <div class="mt-6 flex flex-col gap-3 sm:flex-row">
               <app-button type="button" (click)="book(p)">{{ bookingCta(p) }}</app-button>
               <app-button
-                variant="secondary"
-                [routerLink]="assessmentForProvider(p).link"
-              >
-                {{ assessmentForProvider(p).label }}
-              </app-button>
-              <app-button
-                variant="outline"
-                [routerLink]="flowForProvider(p).servicesLink"
-                [queryParams]="flowForProvider(p).serviceQueryParams"
-              >
-                Related services
-              </app-button>
-              <app-button
                 variant="outline"
                 [routerLink]="ROUTES.links.bookSupport"
                 [queryParams]="{
@@ -178,6 +176,24 @@
                 Ask a question
               </app-button>
             </div>
+            <details class="mt-4 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
+              <summary class="cursor-pointer text-sm font-semibold text-primary-700">More ways to continue</summary>
+              <div class="mt-3 flex flex-col gap-3 sm:flex-row">
+              <app-button
+                variant="secondary"
+                [routerLink]="assessmentForProvider(p).link"
+              >
+                {{ assessmentForProvider(p).label }}
+              </app-button>
+              <app-button
+                variant="outline"
+                [routerLink]="flowForProvider(p).servicesLink"
+                [queryParams]="flowForProvider(p).serviceQueryParams"
+              >
+                Related services
+              </app-button>
+              </div>
+            </details>
           </div>
         </div>
       </section>

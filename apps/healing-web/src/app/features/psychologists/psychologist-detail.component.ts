@@ -60,6 +60,7 @@ export class PsychologistDetailComponent implements OnInit {
   readonly expandedBio = signal(false);
   readonly expandedApproach = signal(false);
   readonly expandedSections = signal<Record<string, boolean>>({});
+  readonly showProfileDetails = signal(false);
   readonly ROUTES = CONSUMER_ROUTES;
   readonly concernFlows =
     signal<Record<ConsumerConcernKey, ConsumerConcernFlow>>(CONSUMER_CONCERN_FLOWS);
@@ -83,6 +84,7 @@ export class PsychologistDetailComponent implements OnInit {
         this.expandedBio.set(false);
         this.expandedApproach.set(false);
         this.expandedSections.set({});
+        this.showProfileDetails.set(false);
         this.loading.set(false);
       },
       error: () => {
@@ -275,6 +277,10 @@ export class PsychologistDetailComponent implements OnInit {
 
   toggleApproach(): void {
     this.expandedApproach.update((value) => !value);
+  }
+
+  toggleProfileDetails(): void {
+    this.showProfileDetails.update((visible) => !visible);
   }
 
   visibleItems(key: string, items: string[] | undefined, limit = 6): string[] {
