@@ -15,17 +15,6 @@ contains_app() {
   esac
 }
 
-app_bucket() {
-  case "$1" in
-    patient) echo "${PATIENT_BUCKET:-}" ;;
-    admin) echo "${ADMIN_BUCKET:-}" ;;
-    doctor) echo "${DOCTOR_BUCKET:-}" ;;
-    operations) echo "${OPERATIONS_BUCKET:-}" ;;
-    healing) echo "${HEALING_BUCKET:-}" ;;
-    *) return 1 ;;
-  esac
-}
-
 app_domain() {
   case "$1" in
     admin) echo "${HOPEHUB_ADMIN_ORIGIN:-https://admin.hopehub.in}" ;;
@@ -63,13 +52,6 @@ verify_local_app() {
 
 verify_s3_app() {
   local app="$1"
-  local bucket
-  bucket="$(app_bucket "$app")"
-  if [ "${VERIFY_INDIVIDUAL_BUCKETS:-false}" = "true" ] && [ -n "$bucket" ]; then
-    echo "==> Verifying s3://${bucket}/hopehub-app.json"
-    assert_json_marker "$app" "$(aws s3 cp "s3://${bucket}/hopehub-app.json" -)"
-  fi
-
   if [ "${VERIFY_UNIFIED_BUCKET:-true}" = "true" ] && [ -n "${FRONTEND_BUCKET:-}" ]; then
     echo "==> Verifying s3://${FRONTEND_BUCKET}/${app}/hopehub-app.json"
     assert_json_marker "$app" "$(aws s3 cp "s3://${FRONTEND_BUCKET}/${app}/hopehub-app.json" -)"
