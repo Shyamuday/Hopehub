@@ -23,18 +23,10 @@ export class OffersPageComponent implements OnInit {
   readonly loading = signal(true);
 
   readonly title = computed(() =>
-    this.mode() === 'events'
-      ? 'Workshops, meetups and group care'
-      : this.mode() === 'resources'
-        ? 'Recorded sessions and community media'
-        : 'Choose a care package',
+    this.mode() === 'events' ? 'Events' : this.mode() === 'resources' ? 'Resources' : 'Packages',
   );
   readonly subtitle = computed(() =>
-    this.mode() === 'events'
-      ? 'Join fixed-date group sessions, workshops, webinars, and community meetups.'
-      : this.mode() === 'resources'
-        ? 'Watch or listen to selected Telegram group recordings, uploaded sessions, and YouTube sessions.'
-        : 'Choose what feels right for you.',
+    this.mode() === 'events' ? '' : this.mode() === 'resources' ? '' : '',
   );
 
   ngOnInit(): void {

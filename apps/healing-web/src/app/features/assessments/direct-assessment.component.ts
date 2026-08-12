@@ -82,57 +82,59 @@ import {
                 }
               </div>
 
-              <section class="direct-test__summary">
-                <p>{{ assessment()!.description }}</p>
-                <p>{{ assessment()!.instructions }}</p>
-              </section>
-
               @if (hasAssessmentIntro()) {
-                <section class="direct-test__intro">
-                  @if (assessment()!.whoShouldTake?.length) {
-                    <article>
-                      <h2>Who should take this test?</h2>
-                      <ul>
-                        @for (item of assessment()!.whoShouldTake; track item) {
-                          <li>{{ item }}</li>
-                        }
-                      </ul>
-                    </article>
+                <details class="direct-test__intro-toggle">
+                  <summary>About this test</summary>
+                  <section class="direct-test__summary">
+                    <p>{{ assessment()!.description }}</p>
+                    <p>{{ assessment()!.instructions }}</p>
+                  </section>
+                  <section class="direct-test__intro">
+                    @if (assessment()!.whoShouldTake?.length) {
+                      <article>
+                        <h2>Who should take this test?</h2>
+                        <ul>
+                          @for (item of assessment()!.whoShouldTake; track item) {
+                            <li>{{ item }}</li>
+                          }
+                        </ul>
+                      </article>
+                    }
+                    @if (assessment()!.possibleSymptoms?.length) {
+                      <article>
+                        <h2>Possible symptoms / signs</h2>
+                        <ul>
+                          @for (item of assessment()!.possibleSymptoms; track item) {
+                            <li>{{ item }}</li>
+                          }
+                        </ul>
+                      </article>
+                    }
+                    @if (assessment()!.whatThisTestChecks?.length) {
+                      <article>
+                        <h2>What this test checks</h2>
+                        <ul>
+                          @for (item of assessment()!.whatThisTestChecks; track item) {
+                            <li>{{ item }}</li>
+                          }
+                        </ul>
+                      </article>
+                    }
+                    @if (assessment()!.beforeYouStart?.length) {
+                      <article>
+                        <h2>Before you start</h2>
+                        <ul>
+                          @for (item of assessment()!.beforeYouStart; track item) {
+                            <li>{{ item }}</li>
+                          }
+                        </ul>
+                      </article>
+                    }
+                  </section>
+                  @if (assessment()!.disclaimer) {
+                    <p class="direct-test__disclaimer">{{ assessment()!.disclaimer }}</p>
                   }
-                  @if (assessment()!.possibleSymptoms?.length) {
-                    <article>
-                      <h2>Possible symptoms / signs</h2>
-                      <ul>
-                        @for (item of assessment()!.possibleSymptoms; track item) {
-                          <li>{{ item }}</li>
-                        }
-                      </ul>
-                    </article>
-                  }
-                  @if (assessment()!.whatThisTestChecks?.length) {
-                    <article>
-                      <h2>What this test checks</h2>
-                      <ul>
-                        @for (item of assessment()!.whatThisTestChecks; track item) {
-                          <li>{{ item }}</li>
-                        }
-                      </ul>
-                    </article>
-                  }
-                  @if (assessment()!.beforeYouStart?.length) {
-                    <article>
-                      <h2>Before you start</h2>
-                      <ul>
-                        @for (item of assessment()!.beforeYouStart; track item) {
-                          <li>{{ item }}</li>
-                        }
-                      </ul>
-                    </article>
-                  }
-                </section>
-                @if (assessment()!.disclaimer) {
-                  <p class="direct-test__disclaimer">{{ assessment()!.disclaimer }}</p>
-                }
+                </details>
               }
 
               @if (!canStartAssessment()) {
@@ -592,10 +594,25 @@ import {
       .direct-test__summary {
         display: grid;
         gap: 0.45rem;
-        margin: 0 0 1rem;
+        margin: 0.8rem 0 1rem;
         border-radius: 0.75rem;
         background: #f8fafc;
         padding: 0.85rem;
+      }
+
+      .direct-test__intro-toggle {
+        margin: 0 0 1rem;
+        border: 1px solid #e5e7eb;
+        border-radius: 0.75rem;
+        background: #ffffff;
+        padding: 0.8rem;
+      }
+
+      .direct-test__intro-toggle summary {
+        color: var(--brand-primary);
+        cursor: pointer;
+        font-size: 0.86rem;
+        font-weight: 850;
       }
 
       .direct-test__summary p {
@@ -647,7 +664,7 @@ import {
         font-size: 0.82rem;
         font-weight: 650;
         line-height: 1.6;
-        margin: 0 0 1rem;
+        margin: 0;
         padding: 0.8rem 0.95rem;
       }
 

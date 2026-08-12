@@ -2,12 +2,6 @@
   <h1 class="mb-3 text-center text-2xl font-semibold text-gray-950 sm:text-3xl">
     Services
   </h1>
-  <app-continue-support-banner class="mb-6 block" [compact]="true" />
-
-  <details class="mb-4 inline-block rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
-    <summary class="cursor-pointer font-semibold">{{ notes.care.label }}</summary>
-    <p class="mb-0 mt-2 max-w-xl leading-6">{{ notes.care.text }}</p>
-  </details>
 
   <app-filter-bar
     [showSearch]="false"
@@ -54,5 +48,12 @@
       message="Try anxiety, relationship, sleep, family, or career."
     />
   }
+
+  <app-continue-support-banner class="mt-6 block" [compact]="true" />
+
+  <details class="mt-4 inline-block rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+    <summary class="cursor-pointer font-semibold">{{ notes.care.label }}</summary>
+    <p class="mb-0 mt-2 max-w-xl leading-6">{{ notes.care.text }}</p>
+  </details>
 </div>
 

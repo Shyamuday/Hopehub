@@ -86,10 +86,25 @@
   padding: 0.5rem 0.65rem;
 }
 
+.assessment-intro-toggle {
+  margin: 0 0 1rem;
+  border: 1px solid #e5e7eb;
+  border-radius: var(--hope-radius-md);
+  background: #fff;
+  padding: 0.85rem;
+}
+
+.assessment-intro-toggle summary {
+  color: var(--brand-primary);
+  cursor: pointer;
+  font-size: var(--hope-font-size-sm);
+  font-weight: var(--hope-font-weight-label);
+}
+
 .assessment-intro-grid {
   display: grid;
   gap: 0.8rem;
-  margin: 0 0 1rem;
+  margin: 0.8rem 0 1rem;
 }
 
 .assessment-intro-card {

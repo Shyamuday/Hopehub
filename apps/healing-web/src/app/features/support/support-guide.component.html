@@ -4,27 +4,14 @@
   tone="soft"
 >
   <div class="support-guide__layout">
-    <aside class="support-guide__concerns" aria-label="Choose your concern">
-      <p class="support-guide__label">Start with</p>
-      <app-consumer-selection-rail
-        [options]="concernSelectionOptions()"
-        [selected]="selectedKey()"
-        ariaLabel="Choose your concern"
-        (selectedChange)="selectConcern($any($event))"
-      />
-    </aside>
-
     <main class="support-guide__panel">
       @let flow = selectedFlow();
       <div class="support-guide__panel-head">
         <div>
           <p class="hope-eyebrow">{{ flow.shortLabel }} path</p>
           <h2>{{ flow.label }}</h2>
-          <p>
-            This path connects your test, matching care team, related services, and booking flow.
-          </p>
         </div>
-        <span class="support-guide__source">Source: {{ flowSource() }}</span>
+        <span class="support-guide__source">{{ flowSource() }}</span>
       </div>
 
       <div class="support-guide__actions">
@@ -81,6 +68,16 @@
           </small>
         </a>
       </div>
+
+      <details class="support-guide__concerns" aria-label="Choose your concern">
+        <summary>Change concern</summary>
+        <app-consumer-selection-rail
+          [options]="concernSelectionOptions()"
+          [selected]="selectedKey()"
+          ariaLabel="Choose your concern"
+          (selectedChange)="selectConcern($any($event))"
+        />
+      </details>
 
       <div class="support-guide__note">
         <strong>Gentle note:</strong>
