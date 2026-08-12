@@ -18,6 +18,12 @@ import {
   ProductAnalyticsService,
 } from '../../core/services/product-analytics.service';
 import { environment } from '../../../environments/environment';
+import {
+  AppButtonComponent,
+  CheckoutSummaryComponent,
+  CheckoutSummaryNotice,
+  CheckoutSummaryRow,
+} from '../../shared/components';
 
 type MediaLink = {
   label: string;
@@ -29,7 +35,7 @@ type MediaLink = {
 @Component({
   selector: 'app-offer-detail',
   standalone: true,
-  imports: [DatePipe, RouterLink],
+  imports: [DatePipe, RouterLink, AppButtonComponent, CheckoutSummaryComponent],
   templateUrl: './offer-detail.component.html',
   styleUrl: './offer-detail.component.scss',
 })
@@ -311,6 +317,54 @@ export class OfferDetailComponent implements OnInit {
     if (state === 'VERIFYING') return 'Verifying payment...';
     if (state === 'SUCCESS') return 'Payment verified';
     return defaultLabel;
+  }
+
+  checkoutRows(offer: HopeHubOffering): CheckoutSummaryRow[] {
+    const rows: CheckoutSummaryRow[] = [
+      {
+        label: offer.type === 'RECORDED_SESSION' ? 'Access' : 'Pay today',
+        value: this.formatNetPrice(offer),
+        highlight: true,
+      },
+    ];
+    if (this.discountInPaise(offer) > 0) {
+      rows.splice(0, 0, {
+        label: 'Discount',
+        value: `-${this.formatPrice({ ...offer, priceInPaise: this.discountInPaise(offer) })}`,
+      });
+    }
+    if (offer.compareAtPriceInPaise || this.discountInPaise(offer) > 0) {
+      rows.splice(0, 0, {
+        label: 'Original',
+        value: this.formatPrice({
+          ...offer,
+          priceInPaise: offer.compareAtPriceInPaise || offer.priceInPaise,
+        }),
+      });
+    }
+    if (this.partialAmountInPaise(offer)) {
+      rows.push({ label: 'Partial option', value: this.formatPartialAmount(offer) });
+    }
+    return rows;
+  }
+
+  checkoutNotices(offer: HopeHubOffering): CheckoutSummaryNotice[] {
+    if (this.checkoutError()) return [{ title: 'Checkout issue', message: this.checkoutError() }];
+    if (this.discountInPaise(offer) > 0) {
+      return [{ title: offer.discountLabel || 'Offer applied' }];
+    }
+    return [];
+  }
+
+  checkoutIncludes(offer: HopeHubOffering): string[] {
+    return [
+      offer.sessionCount
+        ? `${offer.sessionCount} session${offer.sessionCount === 1 ? '' : 's'}`
+        : '',
+      offer.sessionDurationMinutes ? `${offer.sessionDurationMinutes} min` : '',
+      offer.validityDays ? `${offer.validityDays} days validity` : '',
+      offer.partialPaymentLabel || '',
+    ].filter(Boolean);
   }
 
   private load(slug: string): void {

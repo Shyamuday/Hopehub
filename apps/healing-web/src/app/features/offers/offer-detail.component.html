@@ -63,7 +63,7 @@
               <div class="media-locked">
                 <strong>{{ mediaAccessMessage(offer) }}</strong>
                 @if (access()?.reason === 'LOGIN_REQUIRED') {
-                  <button type="button" (click)="openLogin()">Sign in</button>
+                  <app-button type="button" size="sm" (click)="openLogin()">Sign in</app-button>
                 }
               </div>
             }
@@ -72,23 +72,13 @@
       </div>
 
       <aside class="checkout-card">
-        @if (discountInPaise(offer) > 0 && offer.type === 'INDIVIDUAL_SESSION') {
-          <div class="session-offer-banner">
-            <strong>{{ offer.discountPercent || 50 }}% off</strong>
-            <span>30 min session + 15 min follow-up</span>
-          </div>
-        }
-        <span>{{ offer.type === 'RECORDED_SESSION' ? 'Access' : 'Starting at' }}</span>
-        <strong>{{ formatNetPrice(offer) }}</strong>
-        @if (discountInPaise(offer) > 0) {
-          <small>{{ offer.discountLabel || 'Offer applied' }}</small>
-        }
-        @if (offer.compareAtPriceInPaise || discountInPaise(offer) > 0) {
-          <del>{{ formatPrice({ ...offer, priceInPaise: offer.compareAtPriceInPaise || offer.priceInPaise }) }}</del>
-        }
-        @if (checkoutError()) {
-          <small class="checkout-error">{{ checkoutError() }}</small>
-        }
+        <app-checkout-summary
+          [eyebrow]="offer.type === 'RECORDED_SESSION' ? 'Access' : 'Checkout'"
+          [title]="offer.title"
+          [rows]="checkoutRows(offer)"
+          [notices]="checkoutNotices(offer)"
+          [includes]="checkoutIncludes(offer)"
+        />
 
         @if (offer.type === 'RECORDED_SESSION' && !offer.priceInPaise) {
           @if (hasMediaLinks(offer) && canAccessMedia(offer)) {
@@ -112,27 +102,31 @@
           <span class="sold-out">Full</span>
         } @else if (isEventOffer(offer)) {
           @if (partialAmountInPaise(offer)) {
-            <button type="button" [disabled]="checkoutState() !== 'IDLE'" (click)="payEvent(offer, 'PARTIAL')">
+            <app-button type="button" [block]="true" [disabled]="checkoutState() !== 'IDLE'" (click)="payEvent(offer, 'PARTIAL')">
               {{ checkoutLabel('Pay ' + formatPartialAmount(offer)) }}
-            </button>
-            <button type="button" class="secondary" [disabled]="checkoutState() !== 'IDLE'" (click)="payEvent(offer, 'FULL')">
-              {{ checkoutLabel('Pay full') }}
-            </button>
-            <small>{{ offer.partialPaymentLabel || 'Balance can be paid later' }}</small>
+            </app-button>
+            <details class="checkout-card__secondary">
+              <summary>Other payment option</summary>
+              <app-button type="button" variant="outline" size="sm" [block]="true" [disabled]="checkoutState() !== 'IDLE'" (click)="payEvent(offer, 'FULL')">
+                {{ checkoutLabel('Pay full') }}
+              </app-button>
+            </details>
           } @else {
-            <button type="button" [disabled]="checkoutState() !== 'IDLE'" (click)="payEvent(offer, 'FULL')">
+            <app-button type="button" [block]="true" [disabled]="checkoutState() !== 'IDLE'" (click)="payEvent(offer, 'FULL')">
               {{ checkoutLabel(offer.ctaLabel || 'Pay now') }}
-            </button>
+            </app-button>
           }
         } @else {
           @if (partialAmountInPaise(offer)) {
             <a routerLink="/contact" [queryParams]="bookingQuery(offer, 'PARTIAL')">
               Pay {{ formatPartialAmount(offer) }}
             </a>
-            <a class="secondary" routerLink="/contact" [queryParams]="bookingQuery(offer, 'FULL')">
-              Pay full
-            </a>
-            <small>{{ offer.partialPaymentLabel || 'Balance can be paid later' }}</small>
+            <details class="checkout-card__secondary">
+              <summary>Other payment option</summary>
+              <a class="secondary" routerLink="/contact" [queryParams]="bookingQuery(offer, 'FULL')">
+                Pay full
+              </a>
+            </details>
           } @else {
             <a routerLink="/contact" [queryParams]="bookingQuery(offer, 'FULL')">
               {{ offer.ctaLabel || 'Book now' }}
