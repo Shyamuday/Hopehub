@@ -77,10 +77,21 @@
             tone="soft"
           >
             <div empty-details>
-              <small>Try another support path or book a private session.</small>
+              <small>Good support is worth waiting a little for.</small>
             </div>
             <app-button type="button" variant="secondary" (click)="bookConsultation()">
-              Book a consultation
+              Find a time to talk
+            </app-button>
+            <app-button [routerLink]="ROUTES.links.careTeam" variant="outline">
+              Explore support team
+            </app-button>
+            <app-button
+              [href]="APP_CONSTANTS.TELEGRAM.GROUP_URL"
+              target="_blank"
+              rel="noopener noreferrer"
+              variant="outline"
+            >
+              Join daily 9 PM Voice Circle
             </app-button>
           </app-empty-state>
         }

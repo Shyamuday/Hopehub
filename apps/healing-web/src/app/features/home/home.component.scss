@@ -150,6 +150,57 @@
   font-weight: 700;
 }
 
+.hope-section--trust {
+  background: linear-gradient(135deg, #f0fdf8 0%, #ffffff 62%, #f8fafc 100%);
+}
+
+.trust-points {
+  display: grid;
+  gap: 0.9rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-top: 1.75rem;
+}
+
+.trust-points article {
+  border: 1px solid rgba(15, 118, 110, 0.14);
+  border-radius: 1.1rem;
+  background: rgba(255, 255, 255, 0.78);
+  padding: 1.15rem;
+}
+
+.trust-points span {
+  display: inline-grid;
+  width: 2rem;
+  height: 2rem;
+  place-items: center;
+  border-radius: 50%;
+  background: #d1fae5;
+  color: #047857;
+  font-size: 1.15rem;
+}
+
+.trust-points h3 {
+  margin: 0.85rem 0 0;
+  color: #0f172a;
+  font-size: 1rem;
+  font-weight: 850;
+}
+
+.trust-points p {
+  margin: 0.38rem 0 0;
+  color: #64748b;
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+
+.trust-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: center;
+  margin-top: 1.5rem;
+}
+
 @media (max-width: 640px) {
   .hope-section {
     padding-top: 2.25rem;
@@ -188,5 +239,9 @@
 
   .concern-shortcuts__grid {
     grid-template-columns: 1fr 1fr;
+  }
+
+  .trust-points {
+    grid-template-columns: 1fr;
   }
 }

@@ -2,11 +2,11 @@
   <div class="hope-section-inner">
     <app-page-header
       eyebrow="Self-help tools"
-      title="Mental health tools and resources"
-      description="Simple tools to support your mental wellness, from assessments and exercises to lifestyle tips and educational articles."
+      title="Small tools for difficult moments"
+      description="Use one when you want a quiet place to begin."
     />
 
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
+    <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
       <div
         class="hope-card hope-motion-card cursor-pointer group"
         [routerLink]="ROUTES.links.assessments"
@@ -25,10 +25,7 @@
           </svg>
         </div>
         <h3 class="hope-card-title">Mental health assessments</h3>
-        <p class="hope-card-copy mb-4">
-          Take clinically validated assessments to understand your mental health status and get
-          personalized recommendations.
-        </p>
+        <p class="hope-card-copy mb-4">A private check-in to put words to what you are feeling.</p>
         <div class="flex items-center text-sm font-semibold text-primary-700">
           <span>{{ UX.cta.startTest }}</span>
           <span class="ml-2 transition-transform group-hover:translate-x-1">→</span>
@@ -65,34 +62,6 @@
 
       <div
         class="hope-card hope-motion-card cursor-pointer group"
-        [routerLink]="ROUTES.links.lifestyleTips"
-      >
-        <div
-          class="hope-icon-box mb-4"
-        >
-          <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M13 10V3L4 14h7v7l9-11h-7z"
-            />
-          </svg>
-        </div>
-        <img class="mb-5 aspect-[16/10] w-full rounded-xl object-cover" [src]="images.lifestyle" alt="Outdoor reset moment for lifestyle and mood support" loading="lazy" />
-        <h3 class="hope-card-title">Lifestyle tips</h3>
-        <p class="hope-card-copy mb-4">
-          Discover practical lifestyle changes for better sleep, nutrition, social connections,
-          and work-life balance.
-        </p>
-        <div class="flex items-center text-sm font-semibold text-primary-700">
-          <span>Explore tips</span>
-          <span class="ml-2 transition-transform group-hover:translate-x-1">→</span>
-        </div>
-      </div>
-
-      <div
-        class="hope-card hope-motion-card cursor-pointer group"
         [routerLink]="ROUTES.links.articles"
       >
         <div
@@ -109,10 +78,7 @@
         </div>
         <img class="mb-5 aspect-[16/10] w-full rounded-xl object-cover" [src]="images.articles" alt="Broken heart visual for emotional healing articles" loading="lazy" />
         <h3 class="hope-card-title">Educational articles</h3>
-        <p class="hope-card-copy mb-4">
-          Read evidence-based articles about depression, anxiety, stress management, and
-          self-care from mental health professionals.
-        </p>
+        <p class="hope-card-copy mb-4">Clear, gentle reading for when you want to understand more.</p>
         <div class="flex items-center text-sm font-semibold text-primary-700">
           <span>Read articles</span>
           <span class="ml-2 transition-transform group-hover:translate-x-1">→</span>
@@ -120,22 +86,5 @@
       </div>
     </div>
 
-    <div class="text-center mt-8 sm:mt-12">
-      <div class="hope-card mx-auto max-w-2xl p-6 text-center sm:p-8">
-        <h3 class="hope-card-title text-xl">
-          Start with a simple mental health test
-        </h3>
-        <p class="hope-card-copy mb-6">
-          Take a quick assessment to get personalized recommendations for exercises, lifestyle
-          tips, and educational content.
-        </p>
-        <app-button
-          [routerLink]="ROUTES.links.assessments"
-          size="lg"
-        >
-          {{ UX.cta.startTest }}
-        </app-button>
-      </div>
-    </div>
   </div>
 </section>

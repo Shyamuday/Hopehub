@@ -1,22 +1,4 @@
 <app-home-hero />
-<app-offer-banner-carousel />
-
-<section class="hope-section py-4">
-  <div class="hope-section-inner">
-    <app-continue-support-banner />
-  </div>
-</section>
-
-<!-- Guided start is paused on home UI for now; keep component/code for reuse later.
-<section class="hope-section hope-section--guided-start">
-  <div class="hope-section-inner">
-    <app-guided-support-entry
-      title="Tell us what you need today"
-      subtitle="Pick your concern and preferred way to connect once. We will keep that context as you move through Hope Hub."
-    />
-  </div>
-</section>
--->
 
 <app-live-connect />
 
@@ -27,7 +9,8 @@
         align="left"
         compact
         eyebrow="What brings people here"
-        title="Real life is messy. Support can still feel simple."
+      title="You do not have to carry it alone."
+      description="Begin in the way that feels easiest today. You can keep it private, go at your own pace, and choose more support whenever you are ready."
       />
       <app-button [routerLink]="ROUTES.links.support" variant="outline">
         {{ UX.cta.exploreSupportOptions }}
@@ -50,62 +33,15 @@
 <section class="hope-section hope-section--mist">
   <div class="hope-section-inner">
     <app-page-header
-      eyebrow="Start here"
-      title="Choose the support that feels right today"
-      description="Keep it simple. Start privately, join the community, or take a short test before deciding."
+      eyebrow="A gentle next step"
+      title="A little clarity can make the next step easier"
+      description="A short self-check can help you name what is going on. It is private and never a diagnosis."
     />
-
-    <div class="grid gap-4 md:grid-cols-3">
-      <article class="hope-card hope-motion-card">
-        <div class="hope-icon-box mb-4">
-          <span class="text-sm font-semibold">01</span>
-        </div>
-        <h3 class="hope-card-title">Book expert session</h3>
-        <p class="hope-card-copy">
-          Pick a service, choose a slot, and continue with the right expert.
-        </p>
-        <app-button class="mt-5" [routerLink]="ROUTES.links.bookSupport">
-          {{ UX.cta.bookSupport }}
-        </app-button>
-      </article>
-
-      <article class="hope-card hope-motion-card">
-        <div class="hope-icon-box mb-4">
-          <span class="text-sm font-semibold">02</span>
-        </div>
-        <h3 class="hope-card-title">Join the 9 PM voice circle</h3>
-        <p class="hope-card-copy">
-          Join our Telegram community with a display name or username and talk at your comfort level.
-        </p>
-        <app-button
-          [href]="APP_CONSTANTS.TELEGRAM.GROUP_URL"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="mt-5"
-          variant="secondary"
-        >
-          Join community
-        </app-button>
-      </article>
-
-      <article class="hope-card hope-motion-card">
-        <div class="hope-icon-box mb-4">
-          <span class="text-sm font-semibold">03</span>
-        </div>
-        <h3 class="hope-card-title">Take a mental health test</h3>
-        <p class="hope-card-copy">
-          Complete a short assessment, then sign in to save your score and compare retests over time.
-        </p>
-        <app-button class="mt-5" [routerLink]="ROUTES.links.support" variant="outline">
-          {{ UX.cta.startTest }}
-        </app-button>
-      </article>
-    </div>
 
     <div class="concern-shortcuts" aria-label="Start by concern">
       <div>
-        <p class="hope-eyebrow">Or start by concern</p>
-        <h3>One tap to the right test and support path</h3>
+        <p class="hope-eyebrow">Start by what is on your mind</p>
+        <h3>Choose a check-in that fits today</h3>
       </div>
       <div class="concern-shortcuts__grid">
         @for (concern of concernShortcuts(); track concern.key) {
@@ -125,66 +61,39 @@
 
 <app-home-tools />
 
-<section class="hope-section">
+<section class="hope-section hope-section--trust">
   <div class="hope-section-inner">
-    <div class="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-      <app-page-header
-        align="left"
-        compact
-        eyebrow="Care team"
-        title="Talk with a Hope Hub expert"
-        description="Browse verified professionals, counsellors, emotional support listeners, coaches, and wellness guides for anxiety, relationship stress, overthinking, family concerns, and private guidance."
-      />
+    <app-page-header
+      eyebrow="The Hope Hub way"
+      title="Support that stays on your terms"
+      description="There is no pressure to share everything, turn on a camera, or know the perfect words."
+    />
+
+    <div class="trust-points">
+      <article>
+        <span aria-hidden="true">◌</span>
+        <h3>Private by default</h3>
+        <p>Start with as much or as little as you want to share.</p>
+      </article>
+      <article>
+        <span aria-hidden="true">⌁</span>
+        <h3>Your pace matters</h3>
+        <p>Choose a listener now, explore tools, or book for later.</p>
+      </article>
+      <article>
+        <span aria-hidden="true">✦</span>
+        <h3>Clear next steps</h3>
+        <p>When you need more, the full care team is one tap away.</p>
+      </article>
+    </div>
+
+    <div class="trust-actions">
       <app-button [routerLink]="ROUTES.links.careTeam" variant="secondary">
         {{ UX.cta.meetCareTeam }}
       </app-button>
-    </div>
-
-    @if (psychologistsLoading()) {
-      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
-        @for (item of [1, 2, 3, 4, 5]; track item) {
-          <div class="h-48 animate-pulse rounded-lg border border-gray-200 bg-white"></div>
-        }
-      </div>
-    } @else if (psychologists().length) {
-      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
-        @for (provider of psychologists(); track provider.id) {
-          <app-provider-card
-            [provider]="provider"
-            variant="compact"
-            [showAvailability]="false"
-            [showConnectOptions]="false"
-            [showProfileLink]="false"
-            [bestForLimit]="3"
-          />
-        }
-      </div>
-    } @else {
-      <app-empty-state
-        icon="🌱"
-        title="Care team profiles are coming"
-        message="Care team profiles will appear here after admin publishes them for the website."
-        compact
-      />
-    }
-  </div>
-</section>
-
-<app-feedback-section />
-
-<section class="hope-section hope-section--sage">
-  <div class="hope-section-inner">
-    <div class="mx-auto max-w-3xl text-center sm:p-8">
-      <app-page-header
-        compact
-        eyebrow="Next step"
-        title="Start privately. Continue only when ready."
-        [description]="'No pressure to explain everything at once. ' + UX.cta.bookSupport + ' or begin with a short test.'"
-      />
-      <div class="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
-        <app-button [routerLink]="ROUTES.links.bookSupport">{{ UX.cta.bookSupport }}</app-button>
-        <app-button [routerLink]="ROUTES.links.support" variant="outline">{{ UX.cta.startTest }}</app-button>
-      </div>
+      <app-button [routerLink]="ROUTES.links.bookSupport" variant="outline">
+        {{ UX.cta.bookSupport }}
+      </app-button>
     </div>
   </div>
 </section>

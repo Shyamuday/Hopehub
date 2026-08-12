@@ -1,3 +1,4 @@
+import { NgTemplateOutlet } from '@angular/common';
 import { booleanAttribute, Component, Input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
@@ -8,8 +9,18 @@ type AppButtonSize = 'xs' | 'sm' | 'md' | 'lg';
 @Component({
   selector: 'app-button',
   standalone: true,
-  imports: [RouterLink],
+  imports: [RouterLink, NgTemplateOutlet],
   template: `
+    <ng-template #buttonContent>
+      @if (icon && !loading) {
+        <span class="app-button__icon" aria-hidden="true">{{ icon }}</span>
+      }
+      <span class="app-button__content"><ng-content /></span>
+      @if (trailingIcon) {
+        <span class="app-button__icon" aria-hidden="true">{{ trailingIcon }}</span>
+      }
+    </ng-template>
+
     @if (normalizedRouterLink()) {
       <a
         class="app-button"
@@ -28,13 +39,7 @@ type AppButtonSize = 'xs' | 'sm' | 'md' | 'lg';
         [fragment]="fragment || undefined"
         [attr.aria-label]="ariaLabel || null"
       >
-        @if (icon) {
-          <span class="app-button__icon" aria-hidden="true">{{ icon }}</span>
-        }
-        <span class="app-button__content"><ng-content /></span>
-        @if (trailingIcon) {
-          <span class="app-button__icon" aria-hidden="true">{{ trailingIcon }}</span>
-        }
+        <ng-container [ngTemplateOutlet]="buttonContent" />
       </a>
     } @else if (href) {
       <a
@@ -55,13 +60,7 @@ type AppButtonSize = 'xs' | 'sm' | 'md' | 'lg';
         [attr.aria-label]="ariaLabel || null"
         [attr.aria-disabled]="disabled || null"
       >
-        @if (icon) {
-          <span class="app-button__icon" aria-hidden="true">{{ icon }}</span>
-        }
-        <span class="app-button__content"><ng-content /></span>
-        @if (trailingIcon) {
-          <span class="app-button__icon" aria-hidden="true">{{ trailingIcon }}</span>
-        }
+        <ng-container [ngTemplateOutlet]="buttonContent" />
       </a>
     } @else {
       <button
@@ -83,13 +82,7 @@ type AppButtonSize = 'xs' | 'sm' | 'md' | 'lg';
         @if (loading) {
           <span class="app-button__spinner" aria-hidden="true"></span>
         }
-        @if (!loading && icon) {
-          <span class="app-button__icon" aria-hidden="true">{{ icon }}</span>
-        }
-        <span class="app-button__content"><ng-content /></span>
-        @if (trailingIcon) {
-          <span class="app-button__icon" aria-hidden="true">{{ trailingIcon }}</span>
-        }
+        <ng-container [ngTemplateOutlet]="buttonContent" />
       </button>
     }
   `,
