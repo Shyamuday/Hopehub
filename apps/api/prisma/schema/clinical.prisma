@@ -89,8 +89,28 @@ model Consultation {
   providerEarning ProviderEarning?
   reminders       ConsultationReminder[]
   callSessions    ConsultationCallSession[]
+  feedback        ConsultationFeedback[]
   createdAt       DateTime           @default(now())
   updatedAt       DateTime           @updatedAt
+}
+
+model ConsultationFeedback {
+  id               String       @id @default(cuid())
+  consultationId   String
+  actorUserId      String
+  actorRole        String
+  rating           Int
+  helpful          Boolean?
+  followUpNeeded   Boolean?
+  tags             Json?
+  message          String?      @db.Text
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+  consultation     Consultation @relation(fields: [consultationId], references: [id], onDelete: Cascade)
+
+  @@unique([consultationId, actorUserId])
+  @@index([consultationId, actorRole])
+  @@index([actorUserId, createdAt])
 }
 
 model ConsultationCallSession {

@@ -75,6 +75,9 @@
               <p>{{ closedCopy() }}</p>
             </div>
           </div>
+          @if (session.status === 'COMPLETED') {
+            <app-session-feedback [consultationId]="session.id" />
+          }
         }
 
         <div class="chat-scroll">

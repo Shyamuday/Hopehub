@@ -465,6 +465,16 @@ export class BookingService {
     );
   }
 
+  submitConsultationFeedback(
+    consultationId: string,
+    payload: { rating: number; helpful?: boolean; followUpNeeded?: boolean; message?: string },
+  ): Observable<{ feedback: unknown }> {
+    return this.http.post<{ feedback: unknown }>(
+      `${this.apiUrl}/consultations/${encodeURIComponent(consultationId)}/feedback`,
+      payload,
+    );
+  }
+
   sendConsultationMessage(consultationId: string, body: string): Observable<{ message: any }> {
     return this.http.post<{ message: any }>(
       `${this.apiUrl}/consultations/${encodeURIComponent(consultationId)}/messages`,

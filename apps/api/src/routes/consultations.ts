@@ -580,6 +580,75 @@ export function createConsultationsRouter(io: SocketIoServer) {
 
   // POST /consultations/:id/complete
   router.post(
+    '/consultations/:id/feedback',
+    authRequired,
+    asyncRoute(async (req, res) => {
+      const body = z
+        .object({
+          rating: z.number().int().min(1).max(5),
+          helpful: z.boolean().optional(),
+          followUpNeeded: z.boolean().optional(),
+          tags: z.array(z.string().trim().min(1).max(80)).max(8).optional(),
+          message: z.string().trim().min(2).max(2000).optional()
+        })
+        .parse(req.body);
+      const consultation = await prisma.consultation.findUniqueOrThrow({
+        where: { id: routeParam(req, 'id') },
+        select: { id: true, patientId: true, assignedDoctorId: true, status: true }
+      });
+      const isPatient = consultation.patientId === req.user!.id;
+      const isAssignedProvider = consultation.assignedDoctorId === req.user!.id;
+      const isAdmin = req.user!.role === Role.ADMIN;
+      if (!isPatient && !isAssignedProvider && !isAdmin) {
+        return res
+          .status(403)
+          .json({ message: 'You do not have access to this consultation feedback.' });
+      }
+      if (consultation.status !== ConsultationStatus.COMPLETED) {
+        return res
+          .status(409)
+          .json({ message: 'Feedback becomes available after the session is completed.' });
+      }
+
+      const feedback = await prisma.consultationFeedback.upsert({
+        where: {
+          consultationId_actorUserId: {
+            consultationId: consultation.id,
+            actorUserId: req.user!.id
+          }
+        },
+        create: {
+          consultationId: consultation.id,
+          actorUserId: req.user!.id,
+          actorRole: isPatient ? 'CONSUMER' : 'PROVIDER',
+          rating: body.rating,
+          helpful: body.helpful,
+          followUpNeeded: body.followUpNeeded,
+          tags: body.tags || [],
+          message: body.message || null
+        },
+        update: {
+          rating: body.rating,
+          helpful: body.helpful,
+          followUpNeeded: body.followUpNeeded,
+          tags: body.tags || [],
+          message: body.message || null
+        },
+        select: {
+          id: true,
+          rating: true,
+          helpful: true,
+          followUpNeeded: true,
+          tags: true,
+          message: true,
+          updatedAt: true
+        }
+      });
+      res.status(201).json({ feedback });
+    })
+  );
+
+  router.post(
     '/consultations/:id/complete',
     authRequired,
     allowRoles(Role.DOCTOR, Role.ADMIN),

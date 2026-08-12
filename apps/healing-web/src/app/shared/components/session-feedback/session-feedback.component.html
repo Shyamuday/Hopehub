@@ -1,0 +1,23 @@
+@if (!dismissed() && !submitted()) {
+  <section class="session-feedback" aria-label="Session feedback">
+    <div>
+      <h3>How did this support feel?</h3>
+      <p>Your feedback is private and helps Hope Hub improve.</p>
+    </div>
+    <div class="session-feedback__stars" aria-label="Choose a rating from 1 to 5">
+      @for (star of [1, 2, 3, 4, 5]; track star) {
+        <button type="button" [class.active]="rating() >= star" [attr.aria-label]="star + ' out of 5'" (click)="rating.set(star)">★</button>
+      }
+    </div>
+    @if (rating()) {
+      <textarea [ngModel]="note()" (ngModelChange)="note.set($event)" maxlength="500" placeholder="Anything you would like us to know? (optional)"></textarea>
+      <div class="session-feedback__actions">
+        <button type="button" class="session-feedback__submit" [disabled]="saving()" (click)="submit()">{{ saving() ? 'Saving…' : 'Send feedback' }}</button>
+        <button type="button" class="session-feedback__later" (click)="dismissed.set(true)">Not now</button>
+      </div>
+    }
+    @if (error()) { <p class="session-feedback__error">{{ error() }}</p> }
+  </section>
+} @else if (submitted()) {
+  <p class="session-feedback__thanks">Thank you for sharing feedback.</p>
+}
