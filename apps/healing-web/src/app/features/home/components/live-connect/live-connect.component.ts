@@ -37,7 +37,6 @@ import {
   PaymentStatusOverlayComponent,
   EmptyStateComponent,
   AppButtonComponent,
-  SupportPathSelectorComponent,
   StatusChipComponent,
   PageHeaderComponent,
   ConnectComfortDialogComponent,
@@ -62,7 +61,6 @@ type LiveConnectAlternativeMode = {
     AppButtonComponent,
     RouterModule,
     EmptyStateComponent,
-    SupportPathSelectorComponent,
     StatusChipComponent,
     PageHeaderComponent,
     ConnectComfortDialogComponent,
@@ -104,8 +102,6 @@ export class LiveConnectComponent implements OnInit {
   readonly paymentFlowError = signal('');
   readonly paymentFlowConsultation = signal<any | null>(null);
   readonly liveConnectImage = IMAGE_ASSETS.HEALING_HUB.PHOTOS.PHONE_SESSION;
-  // Keep the full care-team selector ready for a later homepage expansion.
-  readonly showSupportPathChooser = false;
 
   readonly modes = CONSUMER_LIVE_CONNECT_MODE_OPTIONS;
 

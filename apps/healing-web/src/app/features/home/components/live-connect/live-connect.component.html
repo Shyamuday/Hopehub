@@ -15,14 +15,6 @@
       </div>
 
       @if (view() === 'providers') {
-        @if (showSupportPathChooser) {
-          <app-support-path-selector
-            class="live-support-path-selector"
-            [selected]="roleGroup()"
-            (selectedChange)="setRoleGroup($event)"
-          />
-        }
-
         @if (loading()) {
           <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             @for (item of [1, 2, 3, 4]; track item) {
@@ -50,6 +42,7 @@
 
                 <div class="live-provider-card__status-row">
                   <span class="live-dot">{{ providerLiveLabel(provider) }}</span>
+                  <span class="live-provider-card__private-note">Private 1:1 support</span>
                 </div>
 
                 <div class="live-provider-card__meta">
