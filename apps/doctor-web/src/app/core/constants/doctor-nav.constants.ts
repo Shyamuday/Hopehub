@@ -125,8 +125,8 @@ function buildDoctorNav(
       {
         id: 'more',
         label: 'More',
-        icon: DOCTOR_NAV_ICONS.More.icon,
-        shortLabel: DOCTOR_NAV_ICONS.More.shortLabel,
+        icon: DOCTOR_NAV_ICONS['More'].icon,
+        shortLabel: DOCTOR_NAV_ICONS['More'].shortLabel,
         enabled: capabilities.earnings,
         children: [
           {
@@ -326,8 +326,8 @@ function buildDoctorNav(
     ? {
         id: 'more',
         label: 'More',
-        icon: DOCTOR_NAV_ICONS.More.icon,
-        shortLabel: DOCTOR_NAV_ICONS.More.shortLabel,
+        icon: DOCTOR_NAV_ICONS['More'].icon,
+        shortLabel: DOCTOR_NAV_ICONS['More'].shortLabel,
         enabled: true,
         children: moreChildren,
       }
