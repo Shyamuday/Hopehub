@@ -17,6 +17,7 @@ import { consumerSessionModeFor } from '../../core/constants/consumer-form-optio
 import { Service, ServiceCategory } from '../../core/models';
 import {
   ConnectOptionMode,
+  AppButtonComponent,
   ConnectFallbackPanelComponent,
   ConnectOptionsComponent,
   GuidedSupportEntryComponent,
@@ -46,6 +47,7 @@ import {
   standalone: true,
   imports: [
     RouterModule,
+    AppButtonComponent,
     ServiceInquiryComponent,
     ConnectOptionsComponent,
     ConnectFallbackPanelComponent,

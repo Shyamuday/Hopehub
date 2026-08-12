@@ -16,6 +16,7 @@ import {
   PaymentFlowState,
   PaymentStatusOverlayComponent,
 } from '../../shared/components/payment-status-overlay/payment-status-overlay.component';
+import { AppButtonComponent } from '../../shared/components/app-button/app-button.component';
 
 type HopeHubConsultation = {
   id: string;
@@ -137,7 +138,13 @@ type DashboardPackage = {
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterModule, ProgressDashboardComponent, PaymentStatusOverlayComponent],
+  imports: [
+    CommonModule,
+    RouterModule,
+    ProgressDashboardComponent,
+    PaymentStatusOverlayComponent,
+    AppButtonComponent,
+  ],
   template: `
     <div class="min-h-screen bg-gray-50">
       <!-- Header -->
@@ -582,14 +589,15 @@ type DashboardPackage = {
                       <p class="mt-1">{{ nextStepFor(consultation) }}</p>
                     </div>
                     @if (canRetryPayment(consultation)) {
-                      <button
+                      <app-button
                         type="button"
-                        class="btn-primary btn-sm mt-3"
+                        class="mt-3"
+                        size="sm"
                         [disabled]="isPaying()"
                         (click)="retryPayment(consultation)"
                       >
                         {{ isPaying() ? 'Opening payment...' : 'Retry payment' }}
-                      </button>
+                      </app-button>
                     }
                     <div class="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
                       @for (step of timelineSteps(consultation); track step.label) {

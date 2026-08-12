@@ -2,11 +2,12 @@ import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { APP_CONSTANTS, IMAGE_ASSETS } from '../../core';
 import { NotificationService, PaymentService } from '../../core/services';
+import { AppButtonComponent } from '../../shared/components';
 
 @Component({
   selector: 'app-donate',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, AppButtonComponent],
   template: `
     <div class="min-h-screen bg-[var(--brand-surface)]">
       <!-- Hero -->
@@ -86,7 +87,7 @@ import { NotificationService, PaymentService } from '../../core/services';
                 <span class="break-all font-mono text-base font-semibold text-gray-800 sm:text-lg"
                   >9304471227&#64;upi</span
                 >
-                <button (click)="copyUpiId()" class="btn-outline btn-sm">
+                <app-button (click)="copyUpiId()" variant="outline" size="sm">
                   @if (copied()) {
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path
@@ -108,7 +109,7 @@ import { NotificationService, PaymentService } from '../../core/services';
                     </svg>
                     Copy
                   }
-                </button>
+                </app-button>
               </div>
             </div>
 
@@ -133,11 +134,12 @@ import { NotificationService, PaymentService } from '../../core/services';
             </div>
 
             <div class="px-6 pb-6 sm:px-8">
-              <button
+              <app-button
                 type="button"
                 (click)="paySelectedAmount()"
                 [disabled]="!selectedAmount() || isPaying()"
-                class="btn-primary btn-block btn-sm"
+                size="sm"
+                block
               >
                 @if (isPaying()) {
                   Opening secure payment...
@@ -146,7 +148,7 @@ import { NotificationService, PaymentService } from '../../core/services';
                 } @else {
                   Select an amount to donate
                 }
-              </button>
+              </app-button>
 
               @if (paymentMessage()) {
                 <p

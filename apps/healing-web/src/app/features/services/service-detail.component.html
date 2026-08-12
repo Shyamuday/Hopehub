@@ -1,14 +1,16 @@
 @if (service()) {
   <div class="container mx-auto px-4 py-8 pb-28 sm:px-6 sm:pb-8 lg:px-8">
     <!-- Back Navigation -->
-    <button 
+    <app-button
       (click)="goBack()" 
-      class="mb-6 inline-flex items-center text-sm font-semibold text-primary-700 hover:text-primary-800 transition-colors duration-200">
+      variant="link"
+      size="sm"
+      class="mb-6">
       <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
       </svg>
       Back to services
-    </button>
+    </app-button>
 
     <!-- Service Header -->
     <div class="mb-8 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
@@ -69,29 +71,32 @@
 
           <!-- Booking CTA -->
           <div class="space-y-3">
-            <button 
+            <app-button
               (click)="bookService()" 
-              class="btn-primary btn-block">
+              block>
               {{ UX.cta.bookSupport }}
-            </button>
-            <button 
+            </app-button>
+            <app-button
               (click)="contactForInfo()" 
-              class="btn-outline btn-block">
+              variant="outline"
+              block>
               Ask a question
-            </button>
-            <a
+            </app-button>
+            <app-button
               [routerLink]="assessmentForService(service()!).link"
-              class="btn-secondary btn-block text-center"
+              variant="secondary"
+              block
             >
               {{ assessmentForService(service()!).label }}
-            </a>
-            <a
+            </app-button>
+            <app-button
               [routerLink]="flowForService(service()!).careTeamLink"
               [queryParams]="flowForService(service()!).careTeamQueryParams"
-              class="btn-outline btn-block text-center"
+              variant="outline"
+              block
             >
               Meet matching care team
-            </a>
+            </app-button>
           </div>
         </div>
       </div>
@@ -198,29 +203,29 @@
         Choose this service, select a slot, and continue with the right support path.
       </p>
       <div class="flex flex-col justify-center gap-3 sm:flex-row">
-        <button 
+        <app-button
           (click)="bookService()" 
-          class="btn-primary">
+        >
           {{ UX.cta.bookSupport }}
-        </button>
-        <button 
+        </app-button>
+        <app-button
           (click)="contactForInfo()" 
-          class="btn-outline">
+          variant="outline">
           Ask a question
-        </button>
-        <a
+        </app-button>
+        <app-button
           [routerLink]="assessmentForService(service()!).link"
-          class="btn-secondary"
+          variant="secondary"
         >
           {{ assessmentForService(service()!).label }}
-        </a>
-        <a
+        </app-button>
+        <app-button
           [routerLink]="flowForService(service()!).careTeamLink"
           [queryParams]="flowForService(service()!).careTeamQueryParams"
-          class="btn-outline"
+          variant="outline"
         >
           Meet matching care team
-        </a>
+        </app-button>
       </div>
     </div>
 
@@ -240,11 +245,11 @@
   <div class="container mx-auto px-4 py-8 text-center">
     <h1 class="mb-4 text-2xl font-semibold text-gray-900">Service not found</h1>
     <p class="text-gray-600 mb-6">The service you're looking for doesn't exist or has been removed.</p>
-    <button 
+    <app-button
       (click)="goBack()" 
-      class="btn-primary">
+    >
       Back to services
-    </button>
+    </app-button>
   </div>
 }
 

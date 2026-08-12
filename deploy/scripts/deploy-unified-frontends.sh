@@ -46,9 +46,17 @@ if should_deploy healing; then deploy_app healing; fi
 
 if [ -n "${FRONTEND_CLOUDFRONT_DISTRIBUTION_ID:-}" ]; then
   echo "==> Invalidating unified CloudFront distribution ${FRONTEND_CLOUDFRONT_DISTRIBUTION_ID}"
-  aws cloudfront create-invalidation \
+  invalidation_id="$(
+    aws cloudfront create-invalidation \
     --distribution-id "$FRONTEND_CLOUDFRONT_DISTRIBUTION_ID" \
-    --paths "/*"
+      --paths "/*" \
+      --query 'Invalidation.Id' \
+      --output text
+  )"
+  echo "==> Waiting for CloudFront invalidation ${invalidation_id}"
+  aws cloudfront wait invalidation-completed \
+    --distribution-id "$FRONTEND_CLOUDFRONT_DISTRIBUTION_ID" \
+    --id "$invalidation_id"
 else
   echo "FRONTEND_CLOUDFRONT_DISTRIBUTION_ID is not set; skipped CloudFront invalidation."
 fi

@@ -1,11 +1,12 @@
 import { Component } from '@angular/core';
 import { RouterModule } from '@angular/router';
 import { APP_CONSTANTS } from '../../core';
+import { AppButtonComponent } from '../../shared/components';
 
 @Component({
   selector: 'app-telegram',
   standalone: true,
-  imports: [RouterModule],
+  imports: [RouterModule, AppButtonComponent],
   template: `
     <main class="bg-gradient-to-b from-sky-50 via-white to-white">
       <section class="container mx-auto px-4 py-14 sm:px-6 lg:px-8">
@@ -61,14 +62,15 @@ import { APP_CONSTANTS } from '../../core';
               <p class="mt-5 rounded-2xl bg-gray-50 px-4 py-3 font-mono text-sm text-gray-800">
                 {{ bot.handle }}
               </p>
-              <a
+              <app-button
                 [href]="bot.url"
                 target="_blank"
                 rel="noopener noreferrer"
-                class="btn-primary mt-5 w-full justify-center bg-[#229ed9] hover:bg-[#1d8ec3]"
+                class="mt-5"
+                block
               >
                 Open {{ bot.title }}
-              </a>
+              </app-button>
             </article>
           }
         </div>
@@ -87,14 +89,15 @@ import { APP_CONSTANTS } from '../../core';
                   class="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
                 >
                   <span class="font-mono text-sm text-gray-800">{{ group.handle }}</span>
-                  <a
+                  <app-button
                     [href]="group.url"
                     target="_blank"
                     rel="noopener noreferrer"
-                    class="btn-outline btn-sm justify-center"
+                    variant="outline"
+                    size="sm"
                   >
                     Join group
-                  </a>
+                  </app-button>
                 </div>
               </article>
             }
@@ -106,9 +109,9 @@ import { APP_CONSTANTS } from '../../core';
                 clinical records, payments, and sensitive documents, use the Hope Hub web app or the
                 official admin or care-team dashboards.
               </p>
-              <a routerLink="/community" class="btn-outline btn-sm mt-5 justify-center">
+              <app-button routerLink="/community" variant="outline" size="sm" class="mt-5">
                 View community page
-              </a>
+              </app-button>
             </article>
           </div>
         </section>

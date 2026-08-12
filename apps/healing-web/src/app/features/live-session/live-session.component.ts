@@ -10,6 +10,7 @@ import { HopeHubRealtimeService } from '../../core/services/realtime.service';
 import { User } from '../../core/models/auth.model';
 import type { CallSignalingSocket, IceServerConfig } from '@hopehub/platform-ui';
 import { ConsultationCallPanelComponent } from '@hopehub/platform-ui';
+import { AppButtonComponent } from '../../shared/components';
 
 type LiveSessionMessage = {
   id: string;
@@ -58,7 +59,7 @@ type LiveSessionConsultation = {
 @Component({
   selector: 'app-live-session',
   standalone: true,
-  imports: [CommonModule, DatePipe, RouterLink, ConsultationCallPanelComponent],
+  imports: [CommonModule, DatePipe, RouterLink, ConsultationCallPanelComponent, AppButtonComponent],
   templateUrl: './live-session.component.html',
   styleUrl: './live-session.component.scss',
 })

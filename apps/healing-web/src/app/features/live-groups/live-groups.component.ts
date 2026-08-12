@@ -17,6 +17,7 @@ import {
   HopeHubLiveGroupMessage,
   HopeHubLiveGroupModeration,
 } from '../../core/services/booking.service';
+import { AppButtonComponent } from '../../shared/components';
 
 const GROUP_MESSAGE_EVENT = 'hopehub-group:message:new';
 const GROUP_TYPING_EVENT = 'hopehub-group:typing';
@@ -24,7 +25,7 @@ const GROUP_TYPING_EVENT = 'hopehub-group:typing';
 @Component({
   selector: 'app-live-groups',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [CommonModule, FormsModule, RouterModule, AppButtonComponent],
   templateUrl: './live-groups.component.html',
   styleUrl: './live-groups.component.scss',
 })

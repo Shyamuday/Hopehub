@@ -1,10 +1,11 @@
 import { Component } from '@angular/core';
 import { RouterModule } from '@angular/router';
+import { AppButtonComponent } from '../../shared/components';
 
 @Component({
   selector: 'app-not-found',
   standalone: true,
-  imports: [RouterModule],
+  imports: [RouterModule, AppButtonComponent],
   template: `
     <div class="min-h-screen flex items-center justify-center bg-gray-50 px-4">
       <div class="max-w-md w-full text-center">
@@ -17,9 +18,9 @@ import { RouterModule } from '@angular/router';
         </div>
 
         <div class="space-y-4">
-          <a routerLink="/" class="btn-primary btn-block"> Go to Home </a>
+          <app-button routerLink="/" block> Go to Home </app-button>
 
-          <a routerLink="/services" class="btn-outline btn-block"> Browse Services </a>
+          <app-button routerLink="/services" variant="outline" block> Browse Services </app-button>
         </div>
 
         <div class="mt-8">

@@ -30,6 +30,7 @@ import {
   CouponBoxComponent,
   EmptyStateComponent,
   GuidedSupportEntryComponent,
+  AppButtonComponent,
   ProviderCardComponent,
   SelectableCardComponent,
 } from '../../shared/components';
@@ -44,6 +45,7 @@ import {
     CouponBoxComponent,
     EmptyStateComponent,
     GuidedSupportEntryComponent,
+    AppButtonComponent,
     ProviderCardComponent,
     SelectableCardComponent,
   ],
@@ -153,18 +155,18 @@ import {
                     />
                   }
                   <div class="mt-4 flex flex-col gap-3 sm:flex-row">
-                    <button type="button" class="btn-outline btn-sm" (click)="openLogin()">
+                    <app-button type="button" variant="outline" size="sm" (click)="openLogin()">
                       Sign in
-                    </button>
+                    </app-button>
                     @if (assessmentAccess()?.accessMode === 'PAID') {
-                      <button
+                      <app-button
                         type="button"
-                        class="btn-primary btn-sm"
+                        size="sm"
                         [disabled]="payingAssessment()"
                         (click)="payAndUnlock()"
                       >
                         {{ payingAssessment() ? 'Opening payment...' : payAssessmentLabel() }}
-                      </button>
+                      </app-button>
                     }
                   </div>
                 </div>
@@ -232,33 +234,34 @@ import {
                   </div>
 
                   <div class="flex items-center justify-between gap-3 pt-4">
-                    <button
+                    <app-button
                       type="button"
-                      class="btn-outline btn-sm"
+                      variant="outline"
+                      size="sm"
                       [disabled]="currentQuestion() === 0"
                       (click)="previousQuestion()"
                     >
                       Previous
-                    </button>
+                    </app-button>
 
                     @if (currentQuestion() < assessment()!.questions.length - 1) {
-                      <button
+                      <app-button
                         type="button"
-                        class="btn-primary btn-sm"
+                        size="sm"
                         [disabled]="!hasCurrentAnswer()"
                         (click)="nextQuestion()"
                       >
                         Next
-                      </button>
+                      </app-button>
                     } @else {
-                      <button
+                      <app-button
                         type="button"
-                        class="btn-primary btn-sm"
+                        size="sm"
                         [disabled]="!hasAllAnswers() || savingResult()"
                         (click)="completeAssessment()"
                       >
                         {{ savingResult() ? 'Saving...' : 'See result' }}
-                      </button>
+                      </app-button>
                     }
                   </div>
                 } @else {
@@ -293,14 +296,14 @@ import {
                     <p class="text-sm font-semibold text-gray-600">
                       {{ answeredCount() }} of {{ assessment()!.questions.length }} answered
                     </p>
-                    <button
+                    <app-button
                       type="button"
-                      class="btn-primary btn-sm"
+                      size="sm"
                       [disabled]="!hasAllAnswers() || savingResult()"
                       (click)="completeAssessment()"
                     >
                       {{ savingResult() ? 'Saving...' : 'See result' }}
-                    </button>
+                    </app-button>
                   </div>
                 }
               }
@@ -317,12 +320,10 @@ import {
                 answers on this device, so you will not need to retake the test.
               </p>
               <div class="mt-4 flex flex-col justify-center gap-3 sm:flex-row">
-                <button type="button" class="btn-outline btn-sm" (click)="openLogin()">
+                <app-button type="button" variant="outline" size="sm" (click)="openLogin()">
                   Sign in
-                </button>
-                <button type="button" class="btn-primary btn-sm" (click)="openRegister()">
-                  Sign up
-                </button>
+                </app-button>
+                <app-button type="button" size="sm" (click)="openRegister()"> Sign up </app-button>
               </div>
             </div>
           }
@@ -427,19 +428,19 @@ import {
                   />
                 }
                 <div class="mt-4 grid gap-3 sm:grid-cols-3">
-                  <a
+                  <app-button
                     [routerLink]="ROUTES.links.home"
                     [fragment]="ROUTES.fragments.liveConnect"
-                    class="btn-primary btn-sm"
+                    size="sm"
                   >
                     {{ UX.cta.talkNow }}
-                  </a>
-                  <a [routerLink]="ROUTES.links.bookSupport" class="btn-outline btn-sm">
+                  </app-button>
+                  <app-button [routerLink]="ROUTES.links.bookSupport" variant="outline" size="sm">
                     {{ UX.cta.bookSupport }}
-                  </a>
-                  <a [routerLink]="ROUTES.links.careTeam" class="btn-outline btn-sm">
+                  </app-button>
+                  <app-button [routerLink]="ROUTES.links.careTeam" variant="outline" size="sm">
                     {{ UX.cta.meetCareTeam }}
-                  </a>
+                  </app-button>
                 </div>
               </div>
 
@@ -490,23 +491,26 @@ import {
               </section>
 
               <div class="mt-4 grid gap-3 sm:grid-cols-3">
-                <a
+                <app-button
                   [routerLink]="ROUTES.links.exercises"
                   [queryParams]="recommendationQuery('exercises')"
-                  class="btn-outline btn-sm"
-                  >Exercises</a
+                  variant="outline"
+                  size="sm"
+                  >Exercises</app-button
                 >
-                <a
+                <app-button
                   [routerLink]="ROUTES.links.lifestyleTips"
                   [queryParams]="recommendationQuery('tips')"
-                  class="btn-outline btn-sm"
-                  >Lifestyle tips</a
+                  variant="outline"
+                  size="sm"
+                  >Lifestyle tips</app-button
                 >
-                <a
+                <app-button
                   [routerLink]="ROUTES.links.articles"
                   [queryParams]="recommendationQuery('articles')"
-                  class="btn-outline btn-sm"
-                  >Articles</a
+                  variant="outline"
+                  size="sm"
+                  >Articles</app-button
                 >
               </div>
 
@@ -529,7 +533,9 @@ import {
             title="Test not found"
             message="The test you are looking for is not available."
           >
-            <a [routerLink]="ROUTES.links.assessments" class="btn-primary btn-sm">View all tests</a>
+            <app-button [routerLink]="ROUTES.links.assessments" size="sm"
+              >View all tests</app-button
+            >
           </app-empty-state>
         </section>
       }

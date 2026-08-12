@@ -1,11 +1,12 @@
 import { Component } from '@angular/core';
 import { RouterModule } from '@angular/router';
 import { CONSUMER_UX_COPY } from '../../core/constants/consumer-ux-copy.constants';
+import { AppButtonComponent } from '../../shared/components';
 
 @Component({
   selector: 'app-about',
   standalone: true,
-  imports: [RouterModule],
+  imports: [RouterModule, AppButtonComponent],
   template: `
     <main class="min-h-screen bg-[var(--brand-surface)]">
       <section class="border-b border-gray-200">
@@ -97,9 +98,13 @@ import { CONSUMER_UX_COPY } from '../../core/constants/consumer-ux-copy.constant
             local emergency services.
           </p>
           <div class="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
-            <a routerLink="/assessments" class="btn-outline btn-sm">{{ UX.cta.startTest }}</a>
-            <a routerLink="/community" class="btn-outline btn-sm">Join community</a>
-            <a routerLink="/contact" class="btn-primary btn-sm">{{ UX.cta.bookSupport }}</a>
+            <app-button routerLink="/assessments" variant="outline" size="sm">{{
+              UX.cta.startTest
+            }}</app-button>
+            <app-button routerLink="/community" variant="outline" size="sm"
+              >Join community</app-button
+            >
+            <app-button routerLink="/contact" size="sm">{{ UX.cta.bookSupport }}</app-button>
           </div>
         </div>
       </section>

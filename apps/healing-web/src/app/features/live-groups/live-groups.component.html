@@ -14,9 +14,9 @@
         <div class="group-status">
           <span>{{ room.status }}</span>
           <strong>{{ groupModeLabel() }}</strong>
-          <button type="button" class="btn-secondary" (click)="shareRoom()">Share link</button>
+          <app-button type="button" variant="secondary" size="sm" (click)="shareRoom()">Share link</app-button>
           @if (canHostGroups()) {
-            <button type="button" class="btn-secondary" (click)="openRoomSettings()">Room settings</button>
+            <app-button type="button" variant="secondary" size="sm" (click)="openRoomSettings()">Room settings</app-button>
           }
         </div>
       </header>
@@ -87,10 +87,10 @@
             </label>
           </div>
           <div class="group-call-actions">
-            <button type="submit" class="btn-primary" [disabled]="savingRoomSettings()">
+            <app-button type="submit" [disabled]="savingRoomSettings()">
               {{ savingRoomSettings() ? 'Saving...' : 'Save settings' }}
-            </button>
-            <button type="button" class="btn-secondary" (click)="roomSettingsOpen.set(false)">Cancel</button>
+            </app-button>
+            <app-button type="button" variant="secondary" (click)="roomSettingsOpen.set(false)">Cancel</app-button>
           </div>
         </form>
       }
@@ -115,11 +115,11 @@
         </div>
 
         <div class="group-call-actions">
-          <a routerLink="/" fragment="live-connect" class="btn-secondary">Start private 1:1 support</a>
+          <app-button routerLink="/" fragment="live-connect" variant="secondary">Start private 1:1 support</app-button>
           @if (!currentUser()) {
-            <button type="button" class="btn-primary" (click)="signUpForFreeChat()">
+            <app-button type="button" (click)="signUpForFreeChat()">
               Sign up free to chat
-            </button>
+            </app-button>
           }
         </div>
       </section>
@@ -139,9 +139,9 @@
                 <span>
                   To protect this support chat from spam, sign up free when you want to send a message.
                 </span>
-                <button type="button" class="btn-primary" (click)="signUpForFreeChat()">
+                <app-button type="button" (click)="signUpForFreeChat()">
                   Sign up free to chat
-                </button>
+                </app-button>
               </div>
             }
             @if (messages().length) {
@@ -205,9 +205,9 @@
 
           <form class="composer" (submit)="$event.preventDefault(); sendMessage()">
             @if (!currentUser()) {
-              <button type="button" class="btn-secondary" (click)="signUpForFreeChat()">
+              <app-button type="button" variant="secondary" (click)="signUpForFreeChat()">
                 Sign up free
-              </button>
+              </app-button>
             }
             <textarea
               name="groupMessage"
@@ -219,9 +219,9 @@
               (keydown.control.enter)="sendMessage()"
               (keydown.meta.enter)="sendMessage()"
             ></textarea>
-            <button type="submit" class="btn-primary" [disabled]="!canSend()">
+            <app-button type="submit" [disabled]="!canSend()">
               {{ sending() ? 'Sending...' : 'Send' }}
-            </button>
+            </app-button>
           </form>
         </section>
 
@@ -236,14 +236,14 @@
               <li>For private help, use 1:1 Live Connect with a provider.</li>
             </ul>
           }
-          <a routerLink="/" fragment="live-connect" class="btn-secondary">Find 1:1 support</a>
+          <app-button routerLink="/" fragment="live-connect" variant="secondary">Find 1:1 support</app-button>
         </aside>
       </div>
     } @else {
       <div class="group-card">
         <h1>Support chat not found</h1>
         <p>{{ error() || 'This chat may be closed or unavailable.' }}</p>
-        <a routerLink="/" fragment="live-connect" class="btn-primary">Back to Live Connect</a>
+        <app-button routerLink="/" fragment="live-connect">Back to Live Connect</app-button>
       </div>
     }
   </div>
