@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import {
   Component,
   EventEmitter,
@@ -16,7 +15,6 @@ export type FormFieldSize = 'sm' | 'md' | 'lg';
 @Component({
   selector: 'app-form-field',
   standalone: true,
-  imports: [CommonModule],
   templateUrl: './form-field.component.html',
   styleUrl: './form-field.component.scss',
   providers: [
@@ -95,5 +93,16 @@ export class FormFieldComponent implements ControlValueAccessor {
 
   showInvalid(): boolean {
     return this.invalid || Boolean(this.error);
+  }
+
+  controlCssClass(): string {
+    return [
+      'form-field__control',
+      `form-field__control--${this.size}`,
+      this.uppercase ? 'form-field__control--uppercase' : '',
+      this.customClass,
+    ]
+      .filter(Boolean)
+      .join(' ');
   }
 }

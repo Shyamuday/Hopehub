@@ -3,6 +3,7 @@ import { CONSUMER_CONNECT_MODE_META } from '../../../core/constants/consumer-for
 import { ConnectComfortDialogComponent } from '../connect-comfort-dialog/connect-comfort-dialog.component';
 
 export type ConnectOptionMode = 'chat' | 'voice' | 'video' | 'book';
+type DirectConnectOptionMode = Exclude<ConnectOptionMode, 'book'>;
 
 @Component({
   selector: 'app-connect-options',
@@ -22,7 +23,7 @@ export class ConnectOptionsComponent {
   @Input() bookLabel = 'Book slot';
 
   @Output() selected = new EventEmitter<ConnectOptionMode>();
-  readonly pendingMode = signal<ConnectOptionMode | null>(null);
+  readonly pendingMode = signal<DirectConnectOptionMode | null>(null);
 
   readonly options: Array<{
     mode: ConnectOptionMode;

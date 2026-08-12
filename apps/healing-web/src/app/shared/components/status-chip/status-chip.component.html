@@ -1,12 +1,6 @@
 @if (label) {
   <span
-    class="status-chip"
-    [ngClass]="[
-      'status-chip--' + tone,
-      'status-chip--' + size,
-      strong ? 'status-chip--strong' : '',
-      customClass
-    ]"
+    [class]="cssClass()"
   >
     @if (dot) {
       <span class="status-chip__dot" aria-hidden="true"></span>

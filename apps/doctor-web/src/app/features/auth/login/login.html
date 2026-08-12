@@ -135,8 +135,15 @@
       <label for="enrollEmail">Email</label>
       <input id="enrollEmail" [formField]="signInForm.email" type="email" />
 
-      <label for="mobile">Mobile</label>
-      <input id="mobile" [formField]="enrollForm.mobile" />
+      <label for="mobile">Mobile number</label>
+      <input
+        id="mobile"
+        [formField]="enrollForm.mobile"
+        type="tel"
+        inputmode="tel"
+        autocomplete="tel"
+        placeholder="Your mobile number"
+      />
 
       <label for="enrollPassword">Password</label>
       <div class="password-input-wrap">

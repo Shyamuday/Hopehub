@@ -12,10 +12,7 @@ import { isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import {
-  FormDropdownComponent,
-  FormDropdownOption,
-} from '../form-dropdown/form-dropdown.component';
+import type { FormDropdownOption } from '../form-dropdown/form-dropdown.component';
 import { AppButtonComponent } from '../app-button/app-button.component';
 import { EmptyStateComponent } from '../empty-state/empty-state.component';
 import { FilterBarComponent } from '../filter-bar/filter-bar.component';
@@ -35,7 +32,6 @@ import { CONSUMER_UX_COPY } from '../../../core/constants/consumer-ux-copy.const
   imports: [
     FormsModule,
     RouterModule,
-    FormDropdownComponent,
     AppButtonComponent,
     EmptyStateComponent,
     FilterBarComponent,

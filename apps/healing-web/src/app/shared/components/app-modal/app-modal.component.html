@@ -14,11 +14,7 @@
     ></button>
 
     <article
-      class="app-modal__panel"
-      [class.app-modal__panel--sm]="size === 'sm'"
-      [class.app-modal__panel--lg]="size === 'lg'"
-      [class.app-modal__panel--xl]="size === 'xl'"
-      [ngClass]="panelClass"
+      [class]="panelCssClass()"
     >
       @if (showClose) {
         <button type="button" class="app-modal__close" aria-label="Close" (click)="close()">
@@ -39,7 +35,7 @@
         </header>
       }
 
-      <div class="app-modal__body" [ngClass]="bodyClass">
+      <div [class]="bodyCssClass()">
         <ng-content></ng-content>
       </div>
 

@@ -1,5 +1,4 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AuthService } from '../../core/services/auth.service';
@@ -139,7 +138,6 @@ type DashboardPackage = {
   selector: 'app-dashboard',
   standalone: true,
   imports: [
-    CommonModule,
     RouterModule,
     ProgressDashboardComponent,
     PaymentStatusOverlayComponent,
@@ -416,12 +414,12 @@ type DashboardPackage = {
                   </div>
                   @if (item.lastRedeemedAt) {
                     <p class="mt-3 text-xs text-gray-500">
-                      Last used {{ item.lastRedeemedAt | date: 'mediumDate' }}
+                      Last used {{ formatMediumDate(item.lastRedeemedAt) }}
                     </p>
                   }
                   @if (item.validUntil) {
                     <p class="mt-1 text-xs text-gray-500">
-                      Valid till {{ item.validUntil | date: 'mediumDate' }}
+                      Valid till {{ formatMediumDate(item.validUntil) }}
                     </p>
                   }
                   <a
@@ -458,7 +456,7 @@ type DashboardPackage = {
                           {{ consultation.disease?.name || 'Consultation' }}
                         </p>
                         <p class="text-sm text-gray-500">
-                          {{ consultation.createdAt | date: 'mediumDate' }}
+                          {{ formatMediumDate(consultation.createdAt) }}
                         </p>
                       </div>
                       <span
@@ -471,7 +469,7 @@ type DashboardPackage = {
                       <p class="mt-2 text-sm text-gray-600">
                         Payment: {{ consultation.payment.status }}
                         @if (consultation.payment.amountInPaise != null) {
-                          · ₹{{ consultation.payment.amountInPaise! / 100 | number: '1.0-0' }}
+                          · {{ formatPaise(consultation.payment.amountInPaise!) }}
                         }
                       </p>
                     }
@@ -516,9 +514,7 @@ type DashboardPackage = {
                             sessions left
                           </p>
                           @if (usage.validUntil) {
-                            <p class="mt-1">
-                              Valid till {{ usage.validUntil | date: 'mediumDate' }}
-                            </p>
+                            <p class="mt-1">Valid till {{ formatMediumDate(usage.validUntil) }}</p>
                           }
                         }
                         @if (balanceDueInPaise(consultation) > 0) {
@@ -543,7 +539,7 @@ type DashboardPackage = {
                             </p>
                             @if (followUp.expiresAt && followUp.status === 'AVAILABLE') {
                               <p class="mt-1 text-emerald-800">
-                                Available till {{ followUp.expiresAt | date: 'mediumDate' }}
+                                Available till {{ formatMediumDate(followUp.expiresAt) }}
                               </p>
                             }
                           </div>
@@ -1083,6 +1079,17 @@ export class DashboardComponent implements OnInit {
       currency: 'INR',
       maximumFractionDigits: 0,
     }).format((value || 0) / 100);
+  }
+
+  formatMediumDate(value?: string | null): string {
+    if (!value) return '';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return value;
+    return new Intl.DateTimeFormat('en-IN', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    }).format(date);
   }
 
   async logout(): Promise<void> {

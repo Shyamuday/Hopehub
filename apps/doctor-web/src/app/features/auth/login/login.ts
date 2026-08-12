@@ -41,6 +41,7 @@ export class Login {
   });
   readonly enrollForm = form(this.enrollModel, (schema) => {
     required(schema.name, { message: 'Name is required' });
+    required(schema.mobile, { message: 'Mobile number is required' });
   });
 
   error = signal('');
@@ -65,6 +66,7 @@ export class Login {
     return !!(
       !this.signInForm().invalid() &&
       !this.enrollForm().invalid() &&
+      enroll.mobile.trim().length >= 8 &&
       password.length >= 8 &&
       password === enroll.confirmPassword
     );
@@ -183,7 +185,7 @@ export class Login {
       const result = await this.auth.enrollDoctor({
         name,
         email,
-        mobile: mobile || undefined,
+        mobile: mobile.trim(),
         password,
         registrationNo: undefined,
       });

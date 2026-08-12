@@ -10,9 +10,7 @@
 
   @if (kind === 'textarea') {
     <textarea
-      class="form-field__control"
-      [ngClass]="['form-field__control--' + size, customClass]"
-      [class.form-field__control--uppercase]="uppercase"
+      [class]="controlCssClass()"
       [id]="controlId()"
       [name]="name || null"
       [placeholder]="placeholder"
@@ -27,9 +25,7 @@
     ></textarea>
   } @else {
     <input
-      class="form-field__control"
-      [ngClass]="['form-field__control--' + size, customClass]"
-      [class.form-field__control--uppercase]="uppercase"
+      [class]="controlCssClass()"
       [id]="controlId()"
       [name]="name || null"
       [type]="type"

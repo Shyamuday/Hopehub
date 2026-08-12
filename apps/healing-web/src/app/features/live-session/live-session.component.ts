@@ -1,6 +1,5 @@
-import { CommonModule, DatePipe } from '@angular/common';
 import { Component, DestroyRef, OnDestroy, OnInit, inject, signal } from '@angular/core';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AuthService } from '../../core/services/auth.service';
 import { BookingService } from '../../core/services/booking.service';
@@ -59,7 +58,7 @@ type LiveSessionConsultation = {
 @Component({
   selector: 'app-live-session',
   standalone: true,
-  imports: [CommonModule, DatePipe, RouterLink, ConsultationCallPanelComponent, AppButtonComponent],
+  imports: [ConsultationCallPanelComponent, AppButtonComponent],
   templateUrl: './live-session.component.html',
   styleUrl: './live-session.component.scss',
 })
@@ -122,6 +121,33 @@ export class LiveSessionComponent implements OnInit, OnDestroy {
     this.socket()?.off?.('consultation:updated', this.handleConsultationUpdated);
     this.stopAutoRefresh();
     this.realtimeService.disconnect();
+  }
+
+  goToDashboard(): void {
+    void this.router.navigate(['/dashboard']);
+  }
+
+  formatShortTime(value?: string | null): string {
+    if (!value) return '';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return value;
+    return new Intl.DateTimeFormat('en-IN', {
+      hour: 'numeric',
+      minute: '2-digit',
+    }).format(date);
+  }
+
+  formatShortDate(value?: string | null): string {
+    if (!value) return '';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return value;
+    return new Intl.DateTimeFormat('en-IN', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+    }).format(date);
   }
 
   providerName(): string {

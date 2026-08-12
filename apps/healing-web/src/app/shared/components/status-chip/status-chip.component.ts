@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import { Component, Input } from '@angular/core';
 
 export type StatusChipTone =
@@ -7,7 +6,6 @@ export type StatusChipTone =
 @Component({
   selector: 'app-status-chip',
   standalone: true,
-  imports: [CommonModule],
   templateUrl: './status-chip.component.html',
   styleUrl: './status-chip.component.scss',
 })
@@ -19,4 +17,16 @@ export class StatusChipComponent {
   @Input() strong = false;
   @Input() dot = false;
   @Input() customClass = '';
+
+  cssClass(): string {
+    return [
+      'status-chip',
+      `status-chip--${this.tone}`,
+      `status-chip--${this.size}`,
+      this.strong ? 'status-chip--strong' : '',
+      this.customClass,
+    ]
+      .filter(Boolean)
+      .join(' ');
+  }
 }

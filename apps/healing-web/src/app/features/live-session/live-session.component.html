@@ -26,7 +26,7 @@
         <p class="mt-2 text-sm text-slate-600">
           Open your dashboard and join from an assigned consultation.
         </p>
-        <app-button routerLink="/dashboard" class="mt-6">Go to dashboard</app-button>
+        <app-button class="mt-6" (click)="goToDashboard()">Go to dashboard</app-button>
       </div>
     </main>
   } @else if (consultation(); as session) {
@@ -118,7 +118,7 @@
                     {{ message.sender?.name || (isOwnMessage(message) ? 'You' : providerName()) }}
                   </p>
                   <p class="message-body">{{ message.body }}</p>
-                  <p class="message-time">{{ message.createdAt | date: 'shortTime' }}</p>
+                  <p class="message-time">{{ formatShortTime(message.createdAt) }}</p>
                 </article>
               </div>
             }
@@ -294,7 +294,7 @@
                       <span>{{ callStatusLabel(call.status) }}</span>
                     </div>
                     <small>
-                      {{ call.startedAt | date: 'short' }} · {{ callDurationLabel(call) }}
+                      {{ formatShortDate(call.startedAt) }} · {{ callDurationLabel(call) }}
                       @if (callReasonLabel(call.endReason)) {
                         · {{ callReasonLabel(call.endReason) }}
                       }

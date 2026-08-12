@@ -1,12 +1,10 @@
 import { booleanAttribute, Component, EventEmitter, Input, Output } from '@angular/core';
-import { NgClass } from '@angular/common';
 
 type AppModalSize = 'sm' | 'md' | 'lg' | 'xl';
 
 @Component({
   selector: 'app-modal',
   standalone: true,
-  imports: [NgClass],
   templateUrl: './app-modal.component.html',
   styleUrl: './app-modal.component.scss',
 })
@@ -31,5 +29,21 @@ export class AppModalComponent {
     if (this.closeOnBackdrop) {
       this.close();
     }
+  }
+
+  panelCssClass(): string {
+    return [
+      'app-modal__panel',
+      this.size === 'sm' ? 'app-modal__panel--sm' : '',
+      this.size === 'lg' ? 'app-modal__panel--lg' : '',
+      this.size === 'xl' ? 'app-modal__panel--xl' : '',
+      this.panelClass,
+    ]
+      .filter(Boolean)
+      .join(' ');
+  }
+
+  bodyCssClass(): string {
+    return ['app-modal__body', this.bodyClass].filter(Boolean).join(' ');
   }
 }

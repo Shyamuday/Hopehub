@@ -13,10 +13,7 @@ import { ProgressService } from '../../../core/services/progress.service';
 import { NotificationService } from '../../../core/services/notification.service';
 import { PracticeService } from '../../../core/services/practice.service';
 import { MoodRating } from '../../../core/models/progress.model';
-import {
-  FormDropdownComponent,
-  FormDropdownOption,
-} from '../form-dropdown/form-dropdown.component';
+import type { FormDropdownOption } from '../form-dropdown/form-dropdown.component';
 import { AppButtonComponent } from '../app-button/app-button.component';
 import { EmptyStateComponent } from '../empty-state/empty-state.component';
 import { FilterBarComponent } from '../filter-bar/filter-bar.component';
@@ -28,7 +25,6 @@ import { PageHeaderComponent } from '../page-header/page-header.component';
   imports: [
     FormsModule,
     RouterModule,
-    FormDropdownComponent,
     AppButtonComponent,
     EmptyStateComponent,
     FilterBarComponent,

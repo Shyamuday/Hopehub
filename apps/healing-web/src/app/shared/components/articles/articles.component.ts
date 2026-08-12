@@ -23,10 +23,7 @@ import {
   getPopularArticles,
 } from '../../../core/data/article-configs';
 import { getArticleRecommendations } from '../../../core/data/article-recommendations';
-import {
-  FormDropdownComponent,
-  FormDropdownOption,
-} from '../form-dropdown/form-dropdown.component';
+import type { FormDropdownOption } from '../form-dropdown/form-dropdown.component';
 import { AppButtonComponent } from '../app-button/app-button.component';
 import { EmptyStateComponent } from '../empty-state/empty-state.component';
 import { FilterBarComponent } from '../filter-bar/filter-bar.component';
@@ -39,7 +36,6 @@ import { PageHeaderComponent } from '../page-header/page-header.component';
     FormsModule,
     RouterModule,
     DatePipe,
-    FormDropdownComponent,
     AppButtonComponent,
     EmptyStateComponent,
     FilterBarComponent,

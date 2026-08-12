@@ -235,7 +235,7 @@ export function registerAuthDoctorRoutes(router: Router) {
         .object({
           name: z.string().min(2),
           email: z.string().email(),
-          mobile: z.string().min(8).optional(),
+          mobile: z.string().trim().min(8, 'Mobile number is required'),
           password: z.string().min(8),
           specialty: z.string().min(2).optional(),
           registrationNo: z.string().optional(),

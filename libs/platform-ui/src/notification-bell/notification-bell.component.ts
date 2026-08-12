@@ -12,14 +12,13 @@ import {
   viewChild
 } from '@angular/core';
 import { Menu, MenuItem, MenuTrigger } from '@angular/aria/menu';
-import { RouterLink } from '@angular/router';
 import { io, type Socket } from 'socket.io-client';
 import type { InAppNotificationItem, NotificationBellConfig } from './types';
 
 @Component({
   selector: 'app-shared-notification-bell',
   standalone: true,
-  imports: [CommonModule, DatePipe, Menu, MenuTrigger, MenuItem, RouterLink],
+  imports: [CommonModule, DatePipe, Menu, MenuTrigger, MenuItem],
   templateUrl: './notification-bell.component.html',
   styleUrl: './notification-bell.component.scss'
 })
