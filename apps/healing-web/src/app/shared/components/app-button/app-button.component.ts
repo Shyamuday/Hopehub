@@ -10,7 +10,7 @@ type AppButtonSize = 'xs' | 'sm' | 'md' | 'lg';
   standalone: true,
   imports: [RouterLink],
   template: `
-    @if (routerLink) {
+    @if (normalizedRouterLink()) {
       <a
         class="app-button"
         [class.app-button--secondary]="variant === 'secondary'"
@@ -23,9 +23,9 @@ type AppButtonSize = 'xs' | 'sm' | 'md' | 'lg';
         [class.app-button--lg]="size === 'lg'"
         [class.app-button--block]="block"
         [class.app-button--pill]="pill"
-        [routerLink]="routerLink"
+        [routerLink]="normalizedRouterLink()"
         [queryParams]="queryParams || null"
-        [fragment]="fragment || null"
+        [fragment]="fragment || undefined"
         [attr.aria-label]="ariaLabel || null"
       >
         @if (icon) {
@@ -240,7 +240,7 @@ export class AppButtonComponent {
   @Input() icon = '';
   @Input() trailingIcon = '';
   @Input() ariaLabel = '';
-  @Input() routerLink: string | string[] | null = null;
+  @Input() routerLink: string | readonly string[] | null = null;
   @Input() queryParams: Record<string, unknown> | null = null;
   @Input() fragment = '';
   @Input() href = '';
@@ -250,4 +250,9 @@ export class AppButtonComponent {
   @Input({ transform: booleanAttribute }) loading = false;
   @Input({ transform: booleanAttribute }) block = false;
   @Input({ transform: booleanAttribute }) pill = false;
+
+  normalizedRouterLink(): string | string[] | null {
+    if (Array.isArray(this.routerLink)) return [...this.routerLink];
+    return this.routerLink;
+  }
 }

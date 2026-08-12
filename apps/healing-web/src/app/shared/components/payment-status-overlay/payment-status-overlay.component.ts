@@ -12,7 +12,7 @@ export type PaymentFlowState =
   template: `
     @if (state !== 'IDLE') {
       <app-modal
-        [open]="state !== 'IDLE'"
+        [open]="true"
         [showClose]="state === 'SUCCESS' || state === 'ERROR'"
         [closeOnBackdrop]="state === 'SUCCESS' || state === 'ERROR'"
         labelledBy="paymentStatusTitle"
