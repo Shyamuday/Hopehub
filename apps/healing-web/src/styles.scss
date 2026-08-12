@@ -215,6 +215,24 @@ h3 {
   font-size: var(--hope-font-size-card-title);
 }
 
+/* Consumer hierarchy: reserve strong weight for headings and actions only. */
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+}
+
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+:where(button, [role='button'], .app-button):focus-visible {
+  outline: 3px solid rgba(74, 111, 165, 0.2);
+  outline-offset: 2px;
+}
+
 /* Ensure proper font rendering across browsers */
 * {
   -webkit-font-smoothing: antialiased;

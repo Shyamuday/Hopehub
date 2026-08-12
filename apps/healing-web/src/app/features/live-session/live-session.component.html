@@ -3,7 +3,7 @@
     <button type="button" class="ghost-btn" (click)="backToDashboard()">← Dashboard</button>
     <div class="min-w-0">
       <p class="text-xs font-bold uppercase tracking-[0.2em] text-emerald-700">Hope Hub Live</p>
-      <h1 class="truncate text-xl font-black text-slate-950 sm:text-2xl">{{ serviceName() }}</h1>
+      <h1 class="truncate text-xl font-semibold text-slate-950 sm:text-2xl">{{ serviceName() }}</h1>
     </div>
     <button type="button" class="ghost-btn" (click)="refresh()">Refresh</button>
   </header>
@@ -36,7 +36,7 @@
           <div class="flex min-w-0 items-center gap-3">
             <div class="expert-avatar">{{ providerName().slice(0, 1) }}</div>
             <div class="min-w-0">
-              <h2 class="truncate text-lg font-black text-slate-950">{{ providerName() }}</h2>
+              <h2 class="truncate text-lg font-semibold text-slate-950">{{ providerName() }}</h2>
               <p class="text-sm font-medium text-slate-600">
                 {{ sessionModeLabel() }} · {{ statusLabel() }}
               </p>
@@ -88,7 +88,7 @@
               >
                 🌿
               </div>
-              <h3 class="text-lg font-black text-slate-950">You are in the right place</h3>
+              <h3 class="text-lg font-semibold text-slate-950">You are in the right place</h3>
               <p class="mx-auto mt-2 max-w-sm text-sm leading-6 text-slate-600">
                 Keep this room open. Chat and call controls will unlock automatically when the session is ready.
               </p>
@@ -100,7 +100,7 @@
               >
                 ✓
               </div>
-              <h3 class="text-lg font-black text-slate-950">Session closed</h3>
+              <h3 class="text-lg font-semibold text-slate-950">Session closed</h3>
               <p class="mx-auto mt-2 max-w-sm text-sm leading-6 text-slate-600">
                 This room is now read-only. You can start another live connect from the home page when needed.
               </p>
@@ -130,7 +130,7 @@
               <div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-50 text-2xl">
                 💬
               </div>
-              <h3 class="text-lg font-black text-slate-950">Start with a simple hello</h3>
+              <h3 class="text-lg font-semibold text-slate-950">Start with a simple hello</h3>
               <p class="mx-auto mt-2 max-w-sm text-sm leading-6 text-slate-600">
                 Share what is happening right now. Keep it short if that feels easier.
               </p>
@@ -185,7 +185,7 @@
 
         <div class="side-card safety-card">
           <p class="side-eyebrow">Safety</p>
-          <h2 class="mt-1 text-lg font-black text-slate-950">Need urgent help?</h2>
+          <h2 class="mt-1 text-lg font-semibold text-slate-950">Need urgent help?</h2>
           <p class="mt-2 text-sm leading-6 text-slate-600">
             If you may hurt yourself or someone else, or you are in immediate danger, contact local
             emergency services now. This chat is supportive, not emergency care.

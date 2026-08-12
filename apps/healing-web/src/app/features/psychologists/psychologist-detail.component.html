@@ -73,7 +73,7 @@
             </p>
             <h1 class="mt-2 text-xl font-semibold text-gray-950 sm:text-2xl">{{ p.name }}</h1>
             <span
-              class="mt-3 inline-flex rounded-full px-3 py-1 text-xs font-black ring-1"
+              class="mt-3 inline-flex rounded-full px-3 py-1 text-xs font-semibold ring-1"
               [class]="availabilityBadgeClass(p)"
             >
               {{ availabilityLabel(p) }}
@@ -85,8 +85,8 @@
                     {{ path.icon }}
                   </span>
                   <div>
-                    <p class="text-xs font-black uppercase tracking-wide text-primary-700">{{ path.label }}</p>
-                    <h2 class="text-base font-black text-gray-950">{{ path.title }}</h2>
+                    <p class="text-xs font-semibold uppercase tracking-wide text-primary-700">{{ path.label }}</p>
+                    <h2 class="text-base font-semibold text-gray-950">{{ path.title }}</h2>
                     <p class="mt-1 text-gray-700">{{ path.description }}</p>
                     <p class="mt-2 text-xs font-bold text-primary-800">Best for: {{ path.bestFor }}</p>
                     @if (!path.clinical) {
