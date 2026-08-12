@@ -36,6 +36,7 @@ export class ProviderCardComponent {
   @Input() profileLink: string[] | null = null;
   @Input() showProfileLink = true;
   @Input() showConnectOptions = true;
+  @Input() singleAction = true;
   @Input() showAvailability = true;
   @Input() showBestMatch = '';
   @Input() showBook = true;
@@ -135,5 +136,21 @@ export class ProviderCardComponent {
 
   languageFallback(): string {
     return CONSUMER_AVAILABILITY_COPY.languageFlexible;
+  }
+
+  canTalkNow(): boolean {
+    return Boolean(this.provider?.quickTalkAvailable || this.provider?.liveStatus === 'ONLINE');
+  }
+
+  primaryActionLabel(): string {
+    return this.canTalkNow() ? 'Talk now' : 'Book a time';
+  }
+
+  primaryActionMode(): ConnectOptionMode {
+    if (!this.canTalkNow()) return 'book';
+    if (this.provider?.acceptsChat !== false) return 'chat';
+    if (this.provider?.acceptsVoiceCall !== false) return 'voice';
+    if (this.provider?.acceptsVideoCall !== false) return 'video';
+    return 'book';
   }
 }

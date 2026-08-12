@@ -151,6 +151,7 @@ export class ContactComponent implements OnInit {
   checkoutQuote = signal<HopeHubCheckoutQuote | null>(null);
   checkoutQuoteLoading = signal(false);
   checkoutQuoteError = signal('');
+  readonly bookingStep = signal<1 | 2 | 3>(1);
 
   careTeamProfileLink(provider: HopeHubProvider): string[] {
     return [...CONSUMER_ROUTES.links.careTeam, provider.slug || provider.id];
@@ -181,6 +182,10 @@ export class ContactComponent implements OnInit {
       offeringSlug: this.prefilledData().offering || '',
       paymentMode: this.prefilledData().paymentMode || 'FULL',
     });
+  }
+
+  goToBookingStep(step: 1 | 2 | 3): void {
+    this.bookingStep.set(step);
   }
 
   private loadUserData(): void {
@@ -317,7 +322,18 @@ export class ContactComponent implements OnInit {
       .subscribe(() => this.applyDefaultSessionOffer());
     this.contactForm.valueChanges
       .pipe(debounceTime(250), takeUntilDestroyed(this.destroyRef))
-      .subscribe(() => {
+      .subscribe((value) => {
+        const sessionMode = String(value.sessionMode || '').toLowerCase();
+        this.preferences.update({
+          concern: value.concernCategory || undefined,
+          serviceName: value.serviceInterest || undefined,
+          mode: sessionMode.includes('video')
+            ? 'video'
+            : sessionMode.includes('voice')
+              ? 'voice'
+              : 'chat',
+          providerId: this.prefilledData().providerId || undefined,
+        });
         void this.updateProviderSuggestion();
         void this.loadQuickTalkProviders();
       });
@@ -331,7 +347,7 @@ export class ContactComponent implements OnInit {
 
   requestedLiveMode(): LiveConnectMode {
     if (this.contactForm) return this.activeQuickTalkMode();
-    return this.normalizeLiveConnectMode(this.prefilledData().mode) || 'voice';
+    return this.normalizeLiveConnectMode(this.prefilledData().mode) || 'chat';
   }
 
   requestedLiveModeLabel(): string {
@@ -1526,7 +1542,7 @@ export class ContactComponent implements OnInit {
 
   private initialSessionMode(): string {
     const mode = this.normalizeLiveConnectMode(this.prefilledData().mode);
-    return mode ? this.sessionModeForLiveConnectMode(mode) : consumerSessionModeFor('voice');
+    return mode ? this.sessionModeForLiveConnectMode(mode) : consumerSessionModeFor('chat');
   }
 
   private initialPreferredExpertType(): string {

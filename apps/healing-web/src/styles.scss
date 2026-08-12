@@ -450,7 +450,7 @@ a:focus {
 
 .hope-section {
   background-color: #ffffff;
-  @apply py-12 sm:py-14 lg:py-16;
+  @apply py-8 sm:py-10 lg:py-12;
 }
 
 .hope-section--mist {
@@ -625,7 +625,7 @@ a:focus {
 }
 
 .professional-page {
-  @apply min-h-screen bg-white py-8 sm:py-10;
+  @apply min-h-screen bg-white py-6 sm:py-8;
 }
 
 .professional-header {

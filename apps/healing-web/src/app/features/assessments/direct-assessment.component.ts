@@ -26,7 +26,6 @@ import { CONSUMER_STORAGE_KEYS } from '../../core/constants/storage-keys.constan
 import {
   ConnectFallbackPanelComponent,
   ConnectOptionMode,
-  ConnectOptionsComponent,
   CouponBoxComponent,
   EmptyStateComponent,
   GuidedSupportEntryComponent,
@@ -40,7 +39,6 @@ import {
   standalone: true,
   imports: [
     RouterModule,
-    ConnectOptionsComponent,
     ConnectFallbackPanelComponent,
     CouponBoxComponent,
     EmptyStateComponent,
@@ -400,22 +398,23 @@ import {
                 <p class="mt-1 text-sm leading-6 text-gray-700">
                   {{ UX.assessment.nextCopy }}
                 </p>
-                <app-guided-support-entry
-                  class="mt-4 block"
-                  [compact]="true"
-                  [title]="'Choose your next step'"
-                  [subtitle]="'We will carry this test result context into support, booking, or provider matching.'"
-                  [contextConcern]="assessment()!.category || assessment()!.type"
-                  [contextServiceName]="assessment()!.title + ' support'"
-                  [contextAssessmentId]="assessment()!.id"
-                />
-                <app-connect-options
-                  class="mt-4 block"
-                  [title]="'Connect based on this result'"
-                  [subtitle]="'Choose chat, voice, video, or a planned slot. We carry this test context into booking.'"
-                  [bookLabel]="'Book slot'"
-                  (selected)="connectFromResult($event)"
-                />
+                <app-button type="button" class="mt-4 block" (click)="connectFromResult('chat')">
+                  Talk to a caring listener
+                </app-button>
+                <details class="mt-3 rounded-lg border border-primary-100 bg-white px-3 py-2">
+                  <summary class="cursor-pointer text-sm font-semibold text-primary-700">
+                    Choose another support option
+                  </summary>
+                  <app-guided-support-entry
+                    class="mt-3 block"
+                    [compact]="true"
+                    [title]="'Choose your next step'"
+                    [subtitle]="'We will carry this result context with you.'"
+                    [contextConcern]="assessment()!.category || assessment()!.type"
+                    [contextServiceName]="assessment()!.title + ' support'"
+                    [contextAssessmentId]="assessment()!.id"
+                  />
+                </details>
                 @if (liveFallback(); as fallback) {
                   <app-connect-fallback-panel
                     class="mt-4 block"
@@ -427,24 +426,12 @@ import {
                     (dismissed)="dismissLiveFallback()"
                   />
                 }
-                <div class="mt-4 grid gap-3 sm:grid-cols-3">
-                  <app-button
-                    [routerLink]="ROUTES.links.home"
-                    [fragment]="ROUTES.fragments.liveConnect"
-                    size="sm"
-                  >
-                    {{ UX.cta.talkNow }}
-                  </app-button>
-                  <app-button [routerLink]="ROUTES.links.bookSupport" variant="outline" size="sm">
-                    {{ UX.cta.bookSupport }}
-                  </app-button>
-                  <app-button [routerLink]="ROUTES.links.careTeam" variant="outline" size="sm">
-                    {{ UX.cta.meetCareTeam }}
-                  </app-button>
-                </div>
               </div>
 
-              <section class="direct-test__matched-providers" aria-label="Matched providers">
+              <details class="direct-test__matched-providers" aria-label="Matched providers">
+                <summary class="cursor-pointer text-sm font-semibold text-primary-700">
+                  See providers matched to this result
+                </summary>
                 <div class="direct-test__matched-head">
                   <div>
                     <p>Matched from your result</p>
@@ -488,31 +475,36 @@ import {
                     compact
                   />
                 }
-              </section>
+              </details>
 
-              <div class="mt-4 grid gap-3 sm:grid-cols-3">
-                <app-button
-                  [routerLink]="ROUTES.links.exercises"
-                  [queryParams]="recommendationQuery('exercises')"
-                  variant="outline"
-                  size="sm"
-                  >Exercises</app-button
-                >
-                <app-button
-                  [routerLink]="ROUTES.links.lifestyleTips"
-                  [queryParams]="recommendationQuery('tips')"
-                  variant="outline"
-                  size="sm"
-                  >Lifestyle tips</app-button
-                >
-                <app-button
-                  [routerLink]="ROUTES.links.articles"
-                  [queryParams]="recommendationQuery('articles')"
-                  variant="outline"
-                  size="sm"
-                  >Articles</app-button
-                >
-              </div>
+              <details class="mt-4 rounded-lg border border-gray-200 bg-white px-4 py-3">
+                <summary class="cursor-pointer text-sm font-semibold text-gray-700">
+                  Self-help resources
+                </summary>
+                <div class="mt-3 grid gap-3 sm:grid-cols-3">
+                  <app-button
+                    [routerLink]="ROUTES.links.exercises"
+                    [queryParams]="recommendationQuery('exercises')"
+                    variant="outline"
+                    size="sm"
+                    >Exercises</app-button
+                  >
+                  <app-button
+                    [routerLink]="ROUTES.links.lifestyleTips"
+                    [queryParams]="recommendationQuery('tips')"
+                    variant="outline"
+                    size="sm"
+                    >Lifestyle tips</app-button
+                  >
+                  <app-button
+                    [routerLink]="ROUTES.links.articles"
+                    [queryParams]="recommendationQuery('articles')"
+                    variant="outline"
+                    size="sm"
+                    >Articles</app-button
+                  >
+                </div>
+              </details>
 
               <div class="mt-4 text-center">
                 <button

@@ -153,9 +153,7 @@ type DashboardPackage = {
               <h1 class="text-3xl font-bold text-gray-900">
                 Welcome back, {{ user()?.name || 'User' }}!
               </h1>
-              <p class="mt-1 text-sm text-gray-600">
-                Track your mental health journey and access personalized resources
-              </p>
+              <p class="mt-1 text-sm text-gray-600">Your next support step is kept here.</p>
             </div>
             <div class="flex items-center space-x-4">
               <button
@@ -178,7 +176,7 @@ type DashboardPackage = {
       </div>
 
       <!-- Main Content -->
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div class="max-w-7xl mx-auto px-4 py-5 sm:px-6 sm:py-6 lg:px-8">
         @if (notice()) {
           <div
             class="mb-6 rounded-md border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-medium text-blue-900"
@@ -187,8 +185,7 @@ type DashboardPackage = {
           </div>
         }
 
-        <!-- Quick Actions -->
-        <div class="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-6">
+        <div class="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-3">
           @for (item of summaryCards(); track item.label) {
             <div class="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
               <p class="text-xs font-semibold uppercase text-gray-500">{{ item.label }}</p>
@@ -198,139 +195,157 @@ type DashboardPackage = {
           }
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <a
-            routerLink="/assessments"
-            class="bg-white overflow-hidden shadow rounded-lg hover:shadow-md transition-shadow duration-200"
-          >
-            <div class="p-5">
-              <div class="flex items-center">
-                <div class="flex-shrink-0">
-                  <div class="w-8 h-8 bg-blue-100 rounded-md flex items-center justify-center">
-                    <svg
-                      class="w-5 h-5 text-blue-600"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"
-                      />
-                    </svg>
-                  </div>
-                </div>
-                <div class="ml-5 w-0 flex-1">
-                  <dl>
-                    <dt class="text-sm font-medium text-gray-500 truncate">Take Assessment</dt>
-                    <dd class="text-lg font-medium text-gray-900">Check Your Mood</dd>
-                  </dl>
-                </div>
-              </div>
-            </div>
-          </a>
+        <section class="mb-8 rounded-lg border border-primary-100 bg-primary-50/50 p-5">
+          <p class="text-sm font-semibold text-primary-900">What would help right now?</p>
+          <div class="mt-4 flex flex-col gap-3 sm:flex-row">
+            <app-button routerLink="/care-team" [queryParams]="{ roleGroup: 'EMOTIONAL_LISTENER' }">
+              Talk to a caring listener
+            </app-button>
+            <app-button variant="outline" routerLink="/contact">Book a time</app-button>
+            <app-button variant="outline" routerLink="/assessments"
+              >Take a short self-check</app-button
+            >
+          </div>
+        </section>
 
-          <a
-            routerLink="/exercises"
-            class="bg-white overflow-hidden shadow rounded-lg hover:shadow-md transition-shadow duration-200"
-          >
-            <div class="p-5">
-              <div class="flex items-center">
-                <div class="flex-shrink-0">
-                  <div class="w-8 h-8 bg-green-100 rounded-md flex items-center justify-center">
-                    <svg
-                      class="w-5 h-5 text-green-600"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-                      />
-                    </svg>
+        <details class="mb-8 rounded-lg border border-gray-200 bg-white px-5 py-4">
+          <summary class="cursor-pointer text-sm font-semibold text-gray-700">
+            More self-help tools
+          </summary>
+          <div class="mt-4 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+            <a
+              routerLink="/assessments"
+              class="bg-white overflow-hidden shadow rounded-lg hover:shadow-md transition-shadow duration-200"
+            >
+              <div class="p-5">
+                <div class="flex items-center">
+                  <div class="flex-shrink-0">
+                    <div class="w-8 h-8 bg-blue-100 rounded-md flex items-center justify-center">
+                      <svg
+                        class="w-5 h-5 text-blue-600"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"
+                        />
+                      </svg>
+                    </div>
+                  </div>
+                  <div class="ml-5 w-0 flex-1">
+                    <dl>
+                      <dt class="text-sm font-medium text-gray-500 truncate">Take Assessment</dt>
+                      <dd class="text-lg font-medium text-gray-900">Check Your Mood</dd>
+                    </dl>
                   </div>
                 </div>
-                <div class="ml-5 w-0 flex-1">
-                  <dl>
-                    <dt class="text-sm font-medium text-gray-500 truncate">Practice Exercises</dt>
-                    <dd class="text-lg font-medium text-gray-900">Mindfulness & More</dd>
-                  </dl>
-                </div>
               </div>
-            </div>
-          </a>
+            </a>
 
-          <a
-            routerLink="/lifestyle-tips"
-            class="bg-white overflow-hidden shadow rounded-lg hover:shadow-md transition-shadow duration-200"
-          >
-            <div class="p-5">
-              <div class="flex items-center">
-                <div class="flex-shrink-0">
-                  <div class="w-8 h-8 bg-purple-100 rounded-md flex items-center justify-center">
-                    <svg
-                      class="w-5 h-5 text-purple-600"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M13 10V3L4 14h7v7l9-11h-7z"
-                      />
-                    </svg>
+            <a
+              routerLink="/exercises"
+              class="bg-white overflow-hidden shadow rounded-lg hover:shadow-md transition-shadow duration-200"
+            >
+              <div class="p-5">
+                <div class="flex items-center">
+                  <div class="flex-shrink-0">
+                    <div class="w-8 h-8 bg-green-100 rounded-md flex items-center justify-center">
+                      <svg
+                        class="w-5 h-5 text-green-600"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                        />
+                      </svg>
+                    </div>
+                  </div>
+                  <div class="ml-5 w-0 flex-1">
+                    <dl>
+                      <dt class="text-sm font-medium text-gray-500 truncate">Practice Exercises</dt>
+                      <dd class="text-lg font-medium text-gray-900">Mindfulness & More</dd>
+                    </dl>
                   </div>
                 </div>
-                <div class="ml-5 w-0 flex-1">
-                  <dl>
-                    <dt class="text-sm font-medium text-gray-500 truncate">Lifestyle Tips</dt>
-                    <dd class="text-lg font-medium text-gray-900">Improve Wellness</dd>
-                  </dl>
-                </div>
               </div>
-            </div>
-          </a>
+            </a>
 
-          <a
-            routerLink="/articles"
-            class="bg-white overflow-hidden shadow rounded-lg hover:shadow-md transition-shadow duration-200"
-          >
-            <div class="p-5">
-              <div class="flex items-center">
-                <div class="flex-shrink-0">
-                  <div class="w-8 h-8 bg-yellow-100 rounded-md flex items-center justify-center">
-                    <svg
-                      class="w-5 h-5 text-yellow-600"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
-                      />
-                    </svg>
+            <a
+              routerLink="/lifestyle-tips"
+              class="bg-white overflow-hidden shadow rounded-lg hover:shadow-md transition-shadow duration-200"
+            >
+              <div class="p-5">
+                <div class="flex items-center">
+                  <div class="flex-shrink-0">
+                    <div class="w-8 h-8 bg-purple-100 rounded-md flex items-center justify-center">
+                      <svg
+                        class="w-5 h-5 text-purple-600"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M13 10V3L4 14h7v7l9-11h-7z"
+                        />
+                      </svg>
+                    </div>
+                  </div>
+                  <div class="ml-5 w-0 flex-1">
+                    <dl>
+                      <dt class="text-sm font-medium text-gray-500 truncate">Lifestyle Tips</dt>
+                      <dd class="text-lg font-medium text-gray-900">Improve Wellness</dd>
+                    </dl>
                   </div>
                 </div>
-                <div class="ml-5 w-0 flex-1">
-                  <dl>
-                    <dt class="text-sm font-medium text-gray-500 truncate">Read Articles</dt>
-                    <dd class="text-lg font-medium text-gray-900">Learn & Grow</dd>
-                  </dl>
+              </div>
+            </a>
+
+            <a
+              routerLink="/articles"
+              class="bg-white overflow-hidden shadow rounded-lg hover:shadow-md transition-shadow duration-200"
+            >
+              <div class="p-5">
+                <div class="flex items-center">
+                  <div class="flex-shrink-0">
+                    <div class="w-8 h-8 bg-yellow-100 rounded-md flex items-center justify-center">
+                      <svg
+                        class="w-5 h-5 text-yellow-600"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
+                        />
+                      </svg>
+                    </div>
+                  </div>
+                  <div class="ml-5 w-0 flex-1">
+                    <dl>
+                      <dt class="text-sm font-medium text-gray-500 truncate">Read Articles</dt>
+                      <dd class="text-lg font-medium text-gray-900">Learn & Grow</dd>
+                    </dl>
+                  </div>
                 </div>
               </div>
-            </div>
-          </a>
-        </div>
+            </a>
+          </div>
+        </details>
 
         <!-- Progress Dashboard -->
         <app-progress-dashboard></app-progress-dashboard>
@@ -806,16 +821,9 @@ export class DashboardComponent implements OnInit {
   summaryCards(): Array<{ label: string; value: string; help: string }> {
     const summary = this.summary();
     return [
-      { label: 'Bookings', value: String(summary.totalBookings), help: 'Total sessions' },
       { label: 'Pending pay', value: String(summary.pendingPaymentCount), help: 'Need action' },
       { label: 'Follow-ups', value: String(summary.availableFollowUpCount), help: 'Available now' },
       { label: 'Packages', value: String(summary.activePackageCount), help: 'Active plans' },
-      { label: 'Balance', value: this.formatPaise(summary.balanceDueInPaise), help: 'Due later' },
-      {
-        label: 'Refunded',
-        value: this.formatPaise(summary.refundedInPaise || 0),
-        help: 'Returned amount',
-      },
     ];
   }
 

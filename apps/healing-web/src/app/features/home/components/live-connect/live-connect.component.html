@@ -80,18 +80,7 @@
               <small>Good support is worth waiting a little for.</small>
             </div>
             <app-button type="button" variant="secondary" (click)="bookConsultation()">
-              Find a time to talk
-            </app-button>
-            <app-button [routerLink]="ROUTES.links.careTeam" variant="outline">
-              Explore support team
-            </app-button>
-            <app-button
-              [href]="APP_CONSTANTS.TELEGRAM.GROUP_URL"
-              target="_blank"
-              rel="noopener noreferrer"
-              variant="outline"
-            >
-              Join daily 9 PM Voice Circle
+              See next available time
             </app-button>
           </app-empty-state>
         }

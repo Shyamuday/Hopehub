@@ -1,12 +1,5 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
-import {
-  ReactiveFormsModule,
-  FormBuilder,
-  FormGroup,
-  Validators,
-  AbstractControl,
-  ValidationErrors,
-} from '@angular/forms';
+import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { RouterModule, Router } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AuthService } from '../../../core/services/auth.service';
@@ -32,19 +25,14 @@ export class RegisterComponent implements OnInit {
   registerForm: FormGroup;
   isLoading = signal(false);
   showPassword = signal(false);
-  showConfirmPassword = signal(false);
   errorMessage = signal<string | null>(null);
   successMessage = signal<string | null>(null);
 
   constructor() {
-    this.registerForm = this.fb.group(
-      {
-        email: ['', [Validators.required, Validators.email]],
-        password: ['', [Validators.required, Validators.minLength(8)]],
-        confirmPassword: ['', [Validators.required]],
-      },
-      { validators: this.passwordMatchValidator },
-    );
+    this.registerForm = this.fb.group({
+      email: ['', [Validators.required, Validators.email]],
+      password: ['', [Validators.required, Validators.minLength(8)]],
+    });
 
     // Clear messages when form values change
     this.registerForm.valueChanges.pipe(takeUntilDestroyed()).subscribe(() => {
@@ -67,21 +55,6 @@ export class RegisterComponent implements OnInit {
 
   ngOnInit(): void {
     // Component initialization
-  }
-
-  passwordMatchValidator(form: AbstractControl): ValidationErrors | null {
-    const password = form.get('password');
-    const confirmPassword = form.get('confirmPassword');
-
-    if (password && confirmPassword && password.value !== confirmPassword.value) {
-      confirmPassword.setErrors({ passwordMismatch: true });
-    } else if (confirmPassword?.errors?.['passwordMismatch']) {
-      delete confirmPassword.errors['passwordMismatch'];
-      if (Object.keys(confirmPassword.errors).length === 0) {
-        confirmPassword.setErrors(null);
-      }
-    }
-    return null;
   }
 
   async onSubmit(): Promise<void> {

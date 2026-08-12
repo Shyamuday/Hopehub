@@ -12,7 +12,6 @@ import {
   PaymentService,
 } from '../../../../core/services';
 import { IMAGE_ASSETS } from '../../../../core/constants/image-assets.constants';
-import { APP_CONSTANTS } from '../../../../core/constants/app.constants';
 import {
   CONSUMER_AVAILABILITY_COPY,
   consumerProviderLiveLabel,
@@ -71,7 +70,6 @@ type LiveConnectAlternativeMode = {
   styleUrl: './live-connect.component.scss',
 })
 export class LiveConnectComponent implements OnInit {
-  readonly APP_CONSTANTS = APP_CONSTANTS;
   readonly UX = CONSUMER_UX_COPY;
   readonly ROUTES = CONSUMER_ROUTES;
   private readonly bookingService = inject(BookingService);

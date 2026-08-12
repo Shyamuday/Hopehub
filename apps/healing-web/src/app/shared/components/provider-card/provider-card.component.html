@@ -92,18 +92,30 @@
   }
 
   @if (showConnectOptions) {
-    <app-connect-options
-      class="mt-4 block"
-      [compact]="true"
-      [showBook]="showBook"
-      [chatAvailable]="provider.acceptsChat !== false"
-      [voiceAvailable]="provider.acceptsVoiceCall !== false"
-      [videoAvailable]="provider.acceptsVideoCall !== false"
-      [bookLabel]="bookLabel"
-      [title]="connectTitle"
-      [subtitle]="connectSubtitle"
-      (selected)="connectSelected.emit($event)"
-    />
+    @if (singleAction) {
+      <app-button
+        type="button"
+        class="mt-4 block"
+        [block]="true"
+        [variant]="canTalkNow() ? 'primary' : 'secondary'"
+        (click)="connectSelected.emit(primaryActionMode())"
+      >
+        {{ primaryActionLabel() }}
+      </app-button>
+    } @else {
+      <app-connect-options
+        class="mt-4 block"
+        [compact]="true"
+        [showBook]="showBook"
+        [chatAvailable]="provider.acceptsChat !== false"
+        [voiceAvailable]="provider.acceptsVoiceCall !== false"
+        [videoAvailable]="provider.acceptsVideoCall !== false"
+        [bookLabel]="bookLabel"
+        [title]="connectTitle"
+        [subtitle]="connectSubtitle"
+        (selected)="connectSelected.emit($event)"
+      />
+    }
   }
 
   @if (showProfileLink && profileLink) {
