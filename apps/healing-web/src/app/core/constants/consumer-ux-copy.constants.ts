@@ -1,6 +1,6 @@
 export const CONSUMER_UX_COPY = {
   cta: {
-    talkNow: 'Talk now',
+    talkNow: 'Talk to a caring listener',
     bookSupport: 'Book support',
     startTest: 'Start a test',
     meetCareTeam: 'Meet care team',
