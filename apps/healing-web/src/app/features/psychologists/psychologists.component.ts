@@ -89,6 +89,7 @@ export class PsychologistsComponent implements OnInit {
   readonly modality = signal('');
   readonly sessionType = signal('');
   readonly ageGroup = signal('');
+  readonly filtersOpen = signal(false);
   readonly roleGroup = signal<RoleGroup>('');
   readonly page = signal(1);
   readonly pageSize = 20;
@@ -211,6 +212,10 @@ export class PsychologistsComponent implements OnInit {
       icon: path.icon,
       meta: String(this.roleCount(path.value)),
     }));
+  }
+
+  toggleFilters(): void {
+    this.filtersOpen.update((open) => !open);
   }
 
   careTeamProfileLink(provider: HopeHubProvider): string[] {

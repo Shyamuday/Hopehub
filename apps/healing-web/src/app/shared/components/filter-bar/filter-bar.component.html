@@ -1,8 +1,11 @@
-<section class="filter-bar" [class.filter-bar--compact]="compact">
+@if (collapsible && expanded()) {
+  <button type="button" class="filter-bar__backdrop" aria-label="Close filters" (click)="toggleExpanded()"></button>
+}
+<section class="filter-bar" [class.filter-bar--compact]="compact" [class.filter-bar--open]="expanded()">
   @if (collapsible) {
     <div class="filter-bar__trigger-row">
-      <button type="button" class="filter-bar__trigger" (click)="toggleExpanded()" [attr.aria-expanded]="expanded()">
-        {{ expanded() ? 'Hide filters' : 'Refine results' }}
+      <button type="button" class="filter-bar__trigger" (click)="toggleExpanded()" [attr.aria-expanded]="expanded()" aria-label="Filter results">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 6h16M7 12h10m-7 6h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" /></svg>
         @if (selectedFilters().length) { <span>{{ selectedFilters().length }}</span> }
       </button>
     </div>
