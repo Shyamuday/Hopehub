@@ -819,6 +819,12 @@ async function findAvailableCareTeamService(id: string, providerId?: string) {
   });
 }
 
+function isBackendCareTeamServiceId(id?: string | null) {
+  const value = String(id || '').trim();
+  if (!value) return false;
+  return !/^(listener|provider|quick|support|default)-/i.test(value);
+}
+
 function careTeamRoleDisplay(careTeamType: string, defaultLabel: string) {
   const map: Record<
     string,
@@ -2622,7 +2628,10 @@ hopeHubRouter.get(
   asyncRoute(async (req, res) => {
     const date = queryText(req, 'date');
     const providerId = queryText(req, 'providerId').trim();
-    const careTeamServiceId = queryText(req, 'careTeamServiceId').trim();
+    const rawCareTeamServiceId = queryText(req, 'careTeamServiceId').trim();
+    const careTeamServiceId = isBackendCareTeamServiceId(rawCareTeamServiceId)
+      ? rawCareTeamServiceId
+      : '';
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
       return res.status(400).json({ message: 'date must be in YYYY-MM-DD format.' });
     }
@@ -2944,6 +2953,9 @@ hopeHubRouter.get(
   asyncRoute(async (req, res) => {
     const id = routeParam(req, 'id');
     const providerId = queryText(req, 'providerId').trim();
+    if (!isBackendCareTeamServiceId(id)) {
+      return res.status(404).json({ message: 'Selected care team service is not available.' });
+    }
     const service = await findAvailableCareTeamService(id, providerId || undefined);
     if (!service) {
       return res.status(404).json({ message: 'Selected care team service is not available.' });
@@ -3007,10 +3019,13 @@ hopeHubRouter.post(
           ? 'VOLUNTEERS'
           : '';
 
-    const selectedCareTeamService = body.careTeamServiceId
-      ? await findAvailableCareTeamService(body.careTeamServiceId, body.providerId || undefined)
+    const requestedCareTeamServiceId = isBackendCareTeamServiceId(body.careTeamServiceId)
+      ? body.careTeamServiceId
+      : '';
+    const selectedCareTeamService = requestedCareTeamServiceId
+      ? await findAvailableCareTeamService(requestedCareTeamServiceId, body.providerId || undefined)
       : null;
-    if (body.careTeamServiceId && !selectedCareTeamService) {
+    if (requestedCareTeamServiceId && !selectedCareTeamService) {
       return res.status(400).json({ message: 'Selected quick-talk service is not available.' });
     }
 
@@ -3388,7 +3403,9 @@ hopeHubRouter.post(
       walletRedeemInPaise: body.walletRedeemInPaise,
       serviceName: body.serviceName || '',
       offeringId: body.offeringId || null,
-      careTeamServiceId: body.careTeamServiceId || null,
+      careTeamServiceId: isBackendCareTeamServiceId(body.careTeamServiceId)
+        ? body.careTeamServiceId
+        : null,
       providerId: body.providerId || null,
       assessmentId: body.assessmentId || null
     });
@@ -3435,10 +3452,13 @@ hopeHubRouter.post(
         return res.status(409).json({ message: 'This event is full.' });
       }
     }
-    const selectedCareTeamService = body.careTeamServiceId
-      ? await findAvailableCareTeamService(body.careTeamServiceId, body.providerId || undefined)
+    const requestedCareTeamServiceId = isBackendCareTeamServiceId(body.careTeamServiceId)
+      ? body.careTeamServiceId
+      : '';
+    const selectedCareTeamService = requestedCareTeamServiceId
+      ? await findAvailableCareTeamService(requestedCareTeamServiceId, body.providerId || undefined)
       : null;
-    if (body.careTeamServiceId && !selectedCareTeamService) {
+    if (requestedCareTeamServiceId && !selectedCareTeamService) {
       return res.status(400).json({ message: 'Selected care team service is not available.' });
     }
     const [careTeamServiceUseCount, activeCareTeamPackageBalance] = selectedCareTeamService
@@ -3668,7 +3688,7 @@ hopeHubRouter.post(
       promoCode: body.promoCode || '',
       serviceName: effectiveServiceName,
       offeringId: selectedOffering?.id || body.offeringId || null,
-      careTeamServiceId: selectedCareTeamService?.id || body.careTeamServiceId || null,
+      careTeamServiceId: selectedCareTeamService?.id || null,
       providerId: requestedProvider?.id || body.providerId || null,
       careTeamTypes: [
         ...normalizedCareTeamTypes(selectedCareTeamService?.mentalHealthProfile),
@@ -3705,7 +3725,7 @@ hopeHubRouter.post(
           offeringSlug: selectedOffering?.slug || body.offeringSlug || '',
           offeringTitle: selectedOffering?.title || '',
           offeringType: selectedOffering?.type || '',
-          careTeamServiceId: selectedCareTeamService?.id || body.careTeamServiceId || '',
+          careTeamServiceId: selectedCareTeamService?.id || '',
           careTeamServiceTitle: selectedCareTeamService?.title || '',
           careTeamPricingMode: selectedCareTeamService?.pricingMode || '',
           careTeamPricingLabel: careTeamServicePricing?.label || '',
