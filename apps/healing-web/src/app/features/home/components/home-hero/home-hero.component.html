@@ -11,10 +11,10 @@
           You don’t have to carry the weight of the world <span class="text-primary-700">alone.</span>
         </h1>
         <div class="home-hero__actions hope-animate-fade-up hope-delay-2">
-          <app-button [routerLink]="ROUTES.links.home" [fragment]="ROUTES.fragments.liveConnect">
+          <app-button [routerLink]="ROUTES.links.home" [fragment]="ROUTES.fragments.liveConnect" [block]="true">
             {{ UX.cta.talkNow }}
           </app-button>
-          <app-button [routerLink]="ROUTES.links.bookSupport" variant="outline">
+          <app-button [routerLink]="ROUTES.links.bookSupport" variant="outline" [block]="true">
             Book a time
           </app-button>
           <a class="home-hero__self-check" [routerLink]="ROUTES.links.assessments">

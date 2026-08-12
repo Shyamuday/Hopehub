@@ -140,8 +140,8 @@
 @media (max-width: 639px) {
   .home-hero {
     min-height: auto;
-    padding-top: 2.75rem;
-    padding-bottom: 2.75rem;
+    padding-top: 2rem;
+    padding-bottom: 2rem;
   }
 
   .home-hero .hope-eyebrow {
@@ -152,9 +152,14 @@
 
   .home-hero__grid {
     display: grid;
-    gap: 2rem;
+    gap: 0;
     grid-template-columns: 1fr;
     text-align: center;
+  }
+
+  .home-hero__title {
+    font-size: clamp(2rem, 9vw, 2.55rem);
+    line-height: 1.1;
   }
 
   .home-hero__content {
@@ -162,27 +167,39 @@
   }
 
   .home-hero__visual {
-    min-height: 17rem;
+    display: none;
   }
 
   .home-hero__visual img {
-    min-height: 17rem;
+    min-height: 0;
   }
 
   .home-hero__trust {
     justify-content: center;
-    align-items: stretch;
-    flex-direction: column;
-    gap: 0.5rem;
-    margin-top: 1.25rem;
+    align-items: center;
+    flex-direction: row;
+    column-gap: 0.65rem;
+    row-gap: 0.35rem;
+    margin-top: 1rem;
   }
 
-  .home-hero__trust a {
-    width: 100%;
-    text-align: center;
+  .home-hero__trust :is(a, span) {
+    font-size: 0.72rem;
   }
 
   .home-hero__actions {
-    justify-content: center;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.6rem;
+    margin-top: 1.25rem;
+  }
+
+  .home-hero__actions > :first-child,
+  .home-hero__self-check {
+    grid-column: 1 / -1;
+  }
+
+  .home-hero__self-check {
+    padding: 0.25rem;
   }
 }

@@ -1,5 +1,5 @@
-<div class="auth-compact-card p-6 sm:p-8 max-h-[90vh] overflow-y-auto">
-    <div class="auth-compact-stack w-full space-y-6">
+<div class="auth-compact-card p-3 sm:p-4 max-h-[90vh] overflow-y-auto">
+    <div class="auth-compact-stack w-full space-y-3">
         <!-- Header -->
         <div class="auth-compact-header">
             <div class="auth-compact-icon mx-auto h-12 w-12 flex items-center justify-center rounded-full bg-primary-600 shadow-lg">
@@ -53,8 +53,8 @@
         }
 
         <!-- Register Form -->
-        <form class="auth-compact-form mt-6 space-y-5" [formGroup]="registerForm" (submit)="$event.preventDefault(); onSubmit()">
-            <div class="auth-compact-fields space-y-4">
+        <form class="auth-compact-form mt-3 space-y-3" [formGroup]="registerForm" (submit)="$event.preventDefault(); onSubmit()">
+            <div class="auth-compact-fields space-y-2">
                 <!-- Email -->
                 <div>
                     <label for="email" class="block text-sm font-medium text-gray-700">Email Address</label>
@@ -125,7 +125,7 @@
             </div>
 
             <!-- Divider -->
-            <div class="auth-compact-divider mt-6">
+            <div class="auth-compact-divider mt-3">
                 <div class="relative">
                     <div class="absolute inset-0 flex items-center">
                         <div class="w-full border-t border-gray-300"></div>
@@ -135,7 +135,7 @@
                     </div>
                 </div>
 
-                <div class="auth-social-action mt-6">
+                <div class="auth-social-action mt-3">
                     <button
                         type="button"
                         (click)="registerWithGoogle()"
