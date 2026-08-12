@@ -6,7 +6,6 @@ export const MAX_FAILED_LISTENER_SCREENING_ATTEMPTS = 3;
 export const LISTENER_SCREENING_COOLDOWN_HOURS = 24;
 
 export const AUTO_APPROVED_LISTENER_PRICING = {
-  chatVoicePriceInPaise: 9900,
-  videoPriceInPaise: 29900,
+  allModesPriceInPaise: 9900,
   durationMinutes: 30
 } as const;

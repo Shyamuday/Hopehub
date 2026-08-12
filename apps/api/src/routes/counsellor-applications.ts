@@ -346,19 +346,19 @@ async function autoApproveListenerApplication(
     {
       title: 'Chat listener support session',
       description: 'A 30-minute non-clinical emotional support listening chat session.',
-      priceInPaise: AUTO_APPROVED_LISTENER_PRICING.chatVoicePriceInPaise,
+      priceInPaise: AUTO_APPROVED_LISTENER_PRICING.allModesPriceInPaise,
       sortOrder: 0
     },
     {
       title: 'Voice listener support session',
       description: 'A 30-minute non-clinical emotional support listening voice session.',
-      priceInPaise: AUTO_APPROVED_LISTENER_PRICING.chatVoicePriceInPaise,
+      priceInPaise: AUTO_APPROVED_LISTENER_PRICING.allModesPriceInPaise,
       sortOrder: 1
     },
     {
       title: 'Video listener support session',
       description: 'A 30-minute non-clinical emotional support listening video session.',
-      priceInPaise: AUTO_APPROVED_LISTENER_PRICING.videoPriceInPaise,
+      priceInPaise: AUTO_APPROVED_LISTENER_PRICING.allModesPriceInPaise,
       sortOrder: 2
     }
   ];
@@ -423,7 +423,7 @@ async function autoApproveListenerApplication(
       activatedAt: now,
       platformAccountLinkedAt: now,
       onboardingNote:
-        'Auto-approved after passing the listener screening test. Non-clinical listener scope only. Default plans: chat/voice ₹99 for 30 minutes, video ₹299 for 30 minutes.'
+        'Auto-approved after passing the listener screening test. Non-clinical listener scope only. Chat, voice, and video are ₹99 for 30 minutes.'
     }
   });
 
