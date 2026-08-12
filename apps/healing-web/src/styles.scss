@@ -96,6 +96,7 @@
   --hope-card-border-hover: rgba(74, 111, 165, 0.3);
   --hope-card-shadow: 0 1px 2px rgba(15, 23, 42, 0.025);
   --hope-card-shadow-hover: 0 12px 28px rgba(15, 23, 42, 0.08);
+  --hope-card-padding: 1.25rem;
   --hope-field-border: #cbd5e1;
   --hope-field-focus-border: var(--brand-primary);
   --hope-field-focus-ring: 0 0 0 3px rgba(74, 111, 165, 0.12);
@@ -493,11 +494,12 @@ a:focus {
   line-height: var(--hope-line-copy);
 }
 
-.hope-card {
+.hope-card,
+.consumer-card {
   border: 1px solid var(--hope-card-border);
   border-radius: var(--hope-radius-lg);
   background: var(--hope-card-bg);
-  padding: var(--hope-space-4);
+  padding: var(--hope-card-padding);
   box-shadow: var(--hope-card-shadow);
   transition:
     transform 220ms ease,
@@ -505,7 +507,8 @@ a:focus {
     box-shadow 220ms ease;
 }
 
-.hope-card:hover {
+.hope-card:hover,
+.consumer-card--interactive:hover {
   border-color: var(--hope-card-border-hover);
   box-shadow: var(--hope-card-shadow-hover);
 }
@@ -541,6 +544,12 @@ a:focus {
 .hope-card .hope-status {
   font-weight: var(--hope-font-weight-label);
 }
+
+.consumer-card { display: flex; flex-direction: column; min-height: 100%; }
+.consumer-card__meta { color: var(--text-muted); font-size: var(--hope-font-size-xs); font-weight: var(--hope-font-weight-label); }
+.consumer-card__title { margin: .65rem 0 0; color: var(--text-primary); font-size: var(--hope-font-size-card-title); font-weight: var(--hope-font-weight-title); line-height: 1.3; }
+.consumer-card__copy { margin: .4rem 0 0; color: var(--text-muted); font-size: var(--hope-font-size-sm); line-height: var(--hope-line-copy); }
+.consumer-card__action { margin-top: auto; padding-top: 1rem; }
 
 .hope-surface-card {
   border: 1px solid var(--hope-card-border);
@@ -745,4 +754,9 @@ a:focus {
 .rounded-2xl,
 .rounded-3xl {
   border-radius: 0.5rem !important;
+}
+
+@media (max-width: 640px) {
+  :root { --hope-card-padding: 1rem; }
+  .consumer-card__action { padding-top: .85rem; }
 }
