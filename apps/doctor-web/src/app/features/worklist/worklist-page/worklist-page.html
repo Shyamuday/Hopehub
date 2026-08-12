@@ -1,12 +1,8 @@
-<section class="hero">
-  <div>
-    <h2>{{ pageTitle() }}</h2>
-    <p class="muted">{{ pageDescription() }}</p>
-  </div>
-  <button type="button" (click)="load()" [disabled]="loading() || refreshing()">
+<app-page-header [title]="pageTitle()" [description]="pageDescription()">
+  <app-button pageAction type="button" variant="outline" (click)="load()" [disabled]="loading() || refreshing()">
     {{ loading() ? 'Loading…' : refreshing() ? 'Refreshing…' : 'Refresh' }}
-  </button>
-</section>
+  </app-button>
+</app-page-header>
 
 <section class="count-row">
   <button type="button" class="count-card" [class.active]="filterModel().view === 'ALL'" (click)="setView('ALL')">
@@ -33,24 +29,19 @@
 </section>
 
 <section class="panel">
-  <div class="toolbar">
-    <input
-      [placeholder]="searchPlaceholder()"
-      [formField]="filterForm.search"
-      (keyup.enter)="load()"
-    />
+  <app-filter-toolbar [query]="filterModel().search" [placeholder]="searchPlaceholder()" (queryChange)="setSearch($event)">
     <select class="view-filter-select" [formField]="filterForm.view" (change)="setView(filterModel().view)">
       <option value="ALL">All sections</option>
       <option value="ASSIGNED">Assigned only</option>
       <option value="IN_PROGRESS">In-progress only</option>
       <option value="FOLLOW_UP_DUE">Follow-up due only</option>
     </select>
-    <button type="button" (click)="load()" [disabled]="loading() || refreshing()">Search</button>
-  </div>
+    <app-button type="button" size="sm" (click)="load()" [disabled]="loading() || refreshing()">Search</app-button>
+  </app-filter-toolbar>
   @if (error()) {
     <div class="error-row">
       <p class="error">{{ error() }}</p>
-      <button type="button" class="retry-btn" (click)="load()">Retry</button>
+      <app-button type="button" size="sm" variant="outline" (click)="load()">Retry</app-button>
     </div>
   }
 </section>
@@ -66,9 +57,9 @@
       <div class="card-head">
         <strong>{{ item.patient?.name || userTitle() }} — {{ item.disease?.name || sessionTitle() }}</strong>
         @if (item.followUpUrgency === 'OVERDUE') {
-          <span class="badge overdue">Overdue</span>
+          <app-status-chip label="Overdue" tone="danger"></app-status-chip>
         } @else if (item.followUpUrgency === 'DUE_TODAY') {
-          <span class="badge due-today">Due today</span>
+          <app-status-chip label="Due today" tone="warning"></app-status-chip>
         }
       </div>
       <hopehub-detail-rows [rows]="worklistMetaRows(item)" />
@@ -135,7 +126,7 @@
     </article>
   } @empty {
     @if (!loading()) {
-      <p class="empty-state">No follow-ups due right now.</p>
+      <app-empty-state title="No follow-ups due right now." description="New follow-up work will appear here."></app-empty-state>
     }
   }
 </section>
@@ -206,7 +197,7 @@
     </article>
   } @empty {
     @if (!loading()) {
-      <p class="empty-state">No newly assigned {{ sessionTitleLowerPlural() }}.</p>
+      <app-empty-state [title]="'No newly assigned ' + sessionTitleLowerPlural()" description="New assignments will appear here."></app-empty-state>
     }
   }
 </section>
@@ -280,7 +271,7 @@
     </article>
   } @empty {
     @if (!loading()) {
-      <p class="empty-state">No in-progress {{ sessionTitleLowerPlural() }}.</p>
+      <app-empty-state [title]="'No in-progress ' + sessionTitleLowerPlural()" description="Open an assigned item when you are ready to begin."></app-empty-state>
     }
   }
 </section>

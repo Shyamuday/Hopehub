@@ -13,10 +13,26 @@ import {
   type WorklistView,
 } from '../worklist-api.service';
 import { worklistItemMetaFields } from '../constants/worklist-detail.fields';
+import { AppButtonComponent } from '../../../shared/ui/app-button.component';
+import { AppEmptyStateComponent } from '../../../shared/ui/app-empty-state.component';
+import { AppFilterToolbarComponent } from '../../../shared/ui/app-filter-toolbar.component';
+import { AppPageHeaderComponent } from '../../../shared/ui/app-page-header.component';
+import { AppStatusChipComponent } from '../../../shared/ui/app-status-chip.component';
 
 @Component({
   selector: 'app-worklist-page',
-  imports: [CommonModule, DatePipe, FormField, RouterLink, DetailRowsComponent],
+  imports: [
+    CommonModule,
+    DatePipe,
+    FormField,
+    RouterLink,
+    DetailRowsComponent,
+    AppButtonComponent,
+    AppEmptyStateComponent,
+    AppFilterToolbarComponent,
+    AppPageHeaderComponent,
+    AppStatusChipComponent,
+  ],
   templateUrl: './worklist-page.html',
   styleUrl: './worklist-page.scss',
 })
@@ -137,6 +153,10 @@ export class WorklistPage {
 
   showSection(section: 'ASSIGNED' | 'IN_PROGRESS' | 'FOLLOW_UP_DUE') {
     return this.filterModel().view === 'ALL' || this.filterModel().view === section;
+  }
+
+  setSearch(search: string) {
+    this.filterModel.update((model) => ({ ...model, search }));
   }
 
   pageTitle() {
