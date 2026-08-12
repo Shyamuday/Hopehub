@@ -46,11 +46,17 @@ type CheckoutContext = {
   careTeamServiceId?: string | null;
   providerId?: string | null;
   assessmentId?: string | null;
+  careTeamTypes?: string[];
 };
 
 type CheckoutScopeContext = Pick<
   CheckoutContext,
-  'serviceName' | 'offeringId' | 'careTeamServiceId' | 'providerId' | 'assessmentId'
+  | 'serviceName'
+  | 'offeringId'
+  | 'careTeamServiceId'
+  | 'providerId'
+  | 'assessmentId'
+  | 'careTeamTypes'
 >;
 
 async function patientMatchesBeneficiary(
@@ -78,6 +84,13 @@ function conditionList(conditions: unknown, key: string): string[] {
   return value.map((item) => String(item || '').trim()).filter(Boolean);
 }
 
+function conditionNumber(conditions: unknown, key: string): number | null {
+  if (!conditions || typeof conditions !== 'object') return null;
+  const value = (conditions as Record<string, unknown>)[key];
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? Math.max(0, Math.round(parsed)) : null;
+}
+
 function matchesConditionValue(
   allowed: string[],
   value?: string | null,
@@ -91,11 +104,62 @@ function matchesConditionValue(
   return allowed.some((item) => item.toLowerCase() === lower);
 }
 
-function ruleScopeMatchesCheckout(rule: RewardProgramRule, context: CheckoutScopeContext) {
+async function careTeamTypesForCheckout(context: CheckoutScopeContext): Promise<string[]> {
+  if (context.careTeamTypes?.length) return context.careTeamTypes;
+
+  if (context.careTeamServiceId) {
+    const service = await prisma.careTeamService.findUnique({
+      where: { id: context.careTeamServiceId },
+      select: {
+        mentalHealthProfile: {
+          select: {
+            careTeamType: true,
+            careTeamTypes: true
+          }
+        }
+      }
+    });
+    const profile = service?.mentalHealthProfile;
+    return [
+      ...(profile?.careTeamType ? [profile.careTeamType] : []),
+      ...(profile?.careTeamTypes ?? [])
+    ].filter(Boolean);
+  }
+
+  if (context.providerId) {
+    const provider = await prisma.doctor.findUnique({
+      where: { id: context.providerId },
+      select: {
+        mentalHealthProfile: {
+          select: {
+            careTeamType: true,
+            careTeamTypes: true
+          }
+        }
+      }
+    });
+    const profile = provider?.mentalHealthProfile;
+    return [
+      ...(profile?.careTeamType ? [profile.careTeamType] : []),
+      ...(profile?.careTeamTypes ?? [])
+    ].filter(Boolean);
+  }
+
+  return [];
+}
+
+async function ruleScopeMatchesCheckout(rule: RewardProgramRule, context: CheckoutScopeContext) {
   const conditions = rule.conditions;
   if (!conditions || typeof conditions !== 'object') return true;
+  const allowedCareTeamTypes = conditionList(conditions, 'providerCareTeamTypes');
+  const careTeamTypeMatches =
+    !allowedCareTeamTypes.length ||
+    (await careTeamTypesForCheckout(context)).some((type) =>
+      matchesConditionValue(allowedCareTeamTypes, type, { caseInsensitive: true })
+    );
 
   return (
+    careTeamTypeMatches &&
     matchesConditionValue(conditionList(conditions, 'serviceNames'), context.serviceName, {
       caseInsensitive: true
     }) &&
@@ -107,6 +171,14 @@ function ruleScopeMatchesCheckout(rule: RewardProgramRule, context: CheckoutScop
     matchesConditionValue(conditionList(conditions, 'providerIds'), context.providerId) &&
     matchesConditionValue(conditionList(conditions, 'assessmentIds'), context.assessmentId)
   );
+}
+
+function checkoutDiscountAmount(rule: RewardProgramRule, remainingGrossInPaise: number) {
+  const targetPayableInPaise = conditionNumber(rule.conditions, 'targetPayableInPaise');
+  if (targetPayableInPaise !== null) {
+    return Math.max(0, remainingGrossInPaise - targetPayableInPaise);
+  }
+  return computeDiscountAmount(rule, remainingGrossInPaise);
 }
 
 /** Preview checkout for a brand-new walk-in (no patient record yet). */
@@ -150,12 +222,12 @@ export async function resolveGuestConsultationCheckout(input: {
     if (rule.promoCode) {
       if (!promo || rule.promoCode.toUpperCase() !== promo) continue;
     }
-    if (!ruleScopeMatchesCheckout(rule, input)) continue;
+    if (!(await ruleScopeMatchesCheckout(rule, input))) continue;
     if (rule.minOrderInPaise != null && grossInPaise < rule.minOrderInPaise) continue;
     if (!(await triggerMatchesCheckout(rule, isFirstPayment))) continue;
     if (rule.beneficiary !== RewardBeneficiary.PAYING_PATIENT) continue;
 
-    const amount = computeDiscountAmount(rule, remainingGross);
+    const amount = checkoutDiscountAmount(rule, remainingGross);
     if (amount <= 0) continue;
 
     discountInPaise += amount;
@@ -224,14 +296,14 @@ export async function resolveConsultationCheckout(
     if (rule.promoCode) {
       if (!promo || rule.promoCode.toUpperCase() !== promo) continue;
     }
-    if (!ruleScopeMatchesCheckout(rule, input)) continue;
+    if (!(await ruleScopeMatchesCheckout(rule, input))) continue;
     if (rule.minOrderInPaise != null && grossInPaise < rule.minOrderInPaise) continue;
     if (!(await triggerMatchesCheckout(rule, isFirstPayment))) continue;
     if (!(await patientMatchesBeneficiary(rule, patientId, { isFirstPayment, hasReferrer })))
       continue;
     if (!(await ruleUsageAllows(rule, patientId))) continue;
 
-    const amount = computeDiscountAmount(rule, remainingGross);
+    const amount = checkoutDiscountAmount(rule, remainingGross);
     if (amount <= 0) continue;
 
     discountInPaise += amount;

@@ -45,6 +45,7 @@ import type {
   HopeHubProvider,
   HopeHubService,
 } from '../../core/services/booking.service';
+import { isBackendCareTeamServiceId } from '../../core/services/booking.service';
 import {
   HOPE_HUB_ANALYTICS_EVENTS,
   ProductAnalyticsService,
@@ -237,7 +238,7 @@ export class ContactComponent implements OnInit {
 
   private loadCareTeamServiceQuote(): void {
     const data = this.prefilledData();
-    if (!data.careTeamServiceId || !this.currentUser()) {
+    if (!isBackendCareTeamServiceId(data.careTeamServiceId) || !this.currentUser()) {
       this.careTeamServiceQuote.set(null);
       this.careTeamServiceQuoteLoading.set(false);
       this.careTeamServiceQuoteError.set('');

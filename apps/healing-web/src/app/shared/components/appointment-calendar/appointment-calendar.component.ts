@@ -1,6 +1,7 @@
 import { Component, OnInit, output, input, signal, inject } from '@angular/core';
 import { catchError, forkJoin, of } from 'rxjs';
 import { BookingService, NotificationService } from '../../../core/services';
+import type { HopeHubSlotDay, HopeHubSlotDayStatus } from '../../../core/services';
 
 export interface TimeSlot {
   time: string;
@@ -20,8 +21,23 @@ interface AppointmentDay {
   label: string;
   shortLabel: string;
   slots: TimeSlot[];
+  dayStatus?: HopeHubSlotDayStatus | 'LOAD_ERROR';
+  dayStatusLabel?: string;
+  emptyMessage?: string;
+  capacityMessage?: string;
   loading: boolean;
 }
+
+type CalendarSlotDay =
+  | HopeHubSlotDay
+  | {
+      date: string;
+      dayStatus: 'LOAD_ERROR';
+      dayStatusLabel: string;
+      emptyMessage: string;
+      capacityMessage?: string;
+      slots: [];
+    };
 
 @Component({
   selector: 'app-appointment-calendar',
@@ -97,6 +113,28 @@ export class AppointmentCalendarComponent implements OnInit {
     return day.slots.filter((slot) => slot.available).length;
   }
 
+  dayStatus(day: AppointmentDay): string {
+    if (day.loading) return 'Loading';
+    if (day.dayStatusLabel) return day.dayStatusLabel;
+    const available = this.availableCount(day);
+    if (available) return `${available} slots`;
+    return day.slots.length ? 'Full' : 'No slots';
+  }
+
+  emptySlotsMessage(): string {
+    const days = this.appointmentDays();
+    const backendMessage = days.find((day) => day.emptyMessage)?.emptyMessage;
+    if (backendMessage) return backendMessage;
+    const capacityMessage = days.find((day) => day.capacityMessage)?.capacityMessage;
+    if (capacityMessage) return capacityMessage;
+    const hasSlots = days.some((day) => day.slots.length);
+    if (!hasSlots && this.providerId()) {
+      return 'This provider has not opened slots in the next three days.';
+    }
+    if (!hasSlots) return 'No open slots in the next three days.';
+    return 'All listed slots are booked in the next three days.';
+  }
+
   private loadNextThreeDays(): void {
     const days = Array.from({ length: 3 }, (_, index) => {
       const date = new Date();
@@ -125,8 +163,12 @@ export class AppointmentCalendarComponent implements OnInit {
       days.map((day) =>
         this.bookingService.slots(day.dateKey, this.providerId(), this.careTeamServiceId()).pipe(
           catchError(() =>
-            of({
+            of<CalendarSlotDay>({
               date: day.dateKey,
+              dayStatus: 'LOAD_ERROR' as const,
+              dayStatusLabel: 'Unavailable',
+              emptyMessage: 'Could not load appointment slots right now.',
+              capacityMessage: undefined,
               slots: [],
             }),
           ),
@@ -136,6 +178,10 @@ export class AppointmentCalendarComponent implements OnInit {
       next: (responses) => {
         const updatedDays = days.map((day, index) => ({
           ...day,
+          dayStatus: responses[index].dayStatus,
+          dayStatusLabel: responses[index].dayStatusLabel,
+          emptyMessage: responses[index].emptyMessage,
+          capacityMessage: responses[index].capacityMessage,
           slots: responses[index].slots.map((slot) => ({
             time: slot.time,
             available: slot.available,

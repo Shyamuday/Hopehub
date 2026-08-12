@@ -50,6 +50,8 @@ const HOPE_HUB_SESSION_DURATION_MINUTES = 30;
 const HOPE_HUB_PSYCHOLOGIST_SHARE_PERCENT = 50;
 const HOPE_HUB_PLATFORM_SHARE_PERCENT = 100 - HOPE_HUB_PSYCHOLOGIST_SHARE_PERCENT;
 
+type HopeHubSlotDayStatus = 'AVAILABLE' | 'FULL' | 'NO_SLOTS' | 'CAPACITY_FULL' | 'CLOSED';
+
 type HopeHubPublicDefaults = {
   serviceName: string;
   sessionPriceInPaise: number;
@@ -2648,9 +2650,7 @@ hopeHubRouter.get(
             select: { id: true, durationMinutes: true }
           })
         : null;
-      if (careTeamServiceId && !careTeamService) {
-        return res.status(404).json({ message: 'Service not found for this expert.' });
-      }
+      const effectiveCareTeamServiceId = careTeamService?.id ?? '';
 
       const [slots, capacity] = await Promise.all([
         prisma.doctorSlot.findMany({
@@ -2659,39 +2659,65 @@ hopeHubRouter.get(
         }),
         providerBookingCapacityStatus(provider.id, date)
       ]);
+      const matchingSlots = slots.filter((slot) => {
+        if (
+          effectiveCareTeamServiceId &&
+          slot.careTeamServiceId &&
+          slot.careTeamServiceId !== effectiveCareTeamServiceId
+        ) {
+          return false;
+        }
+        if (
+          careTeamService &&
+          minutesBetweenTimes(slot.startTime, slot.endTime) < careTeamService.durationMinutes
+        ) {
+          return false;
+        }
+        return true;
+      });
+      const hasAvailableSlot = matchingSlots.some((slot) => capacity.available && !slot.isBooked);
+      const providerDayStatus: HopeHubSlotDayStatus = hasAvailableSlot
+        ? 'AVAILABLE'
+        : !capacity.available
+          ? 'CAPACITY_FULL'
+          : matchingSlots.length
+            ? 'FULL'
+            : 'NO_SLOTS';
+      const providerDayStatusLabel =
+        providerDayStatus === 'AVAILABLE'
+          ? `${matchingSlots.filter((slot) => capacity.available && !slot.isBooked).length} slots`
+          : providerDayStatus === 'CAPACITY_FULL'
+            ? 'Full'
+            : providerDayStatus === 'FULL'
+              ? 'Full'
+              : 'No slots';
+      const providerEmptyMessage =
+        providerDayStatus === 'CAPACITY_FULL'
+          ? capacity.message || 'This provider is fully booked for this day.'
+          : providerDayStatus === 'FULL'
+            ? 'All slots are booked for this day.'
+            : providerDayStatus === 'NO_SLOTS'
+              ? 'This provider has not opened slots for this day.'
+              : '';
 
       return res.json({
         date,
         providerId,
         careTeamServiceId: careTeamService?.id ?? undefined,
+        dayStatus: providerDayStatus,
+        dayStatusLabel: providerDayStatusLabel,
+        emptyMessage: providerEmptyMessage,
         capacityMessage: capacity.message || undefined,
-        slots: slots
-          .filter((slot) => {
-            if (
-              careTeamServiceId &&
-              slot.careTeamServiceId &&
-              slot.careTeamServiceId !== careTeamServiceId
-            ) {
-              return false;
-            }
-            if (
-              careTeamService &&
-              minutesBetweenTimes(slot.startTime, slot.endTime) < careTeamService.durationMinutes
-            ) {
-              return false;
-            }
-            return true;
-          })
-          .map((slot) => {
-            const time = displayTimeFrom24Hour(slot.startTime);
-            const available = capacity.available && !slot.isBooked;
-            return {
-              time,
-              period: periodForTime(time),
-              available,
-              booked: !available
-            };
-          })
+        slots: matchingSlots.map((slot) => {
+          const time = displayTimeFrom24Hour(slot.startTime);
+          const available = capacity.available && !slot.isBooked;
+          return {
+            time,
+            period: periodForTime(time),
+            available,
+            booked: !available
+          };
+        })
       });
     }
 
@@ -2713,15 +2739,29 @@ hopeHubRouter.get(
 
     const selectedDate = new Date(`${date}T00:00:00`);
     const isWeekend = selectedDate.getDay() === 0 || selectedDate.getDay() === 6;
+    const genericSlots = HOPE_HUB_TIME_SLOTS.map((slot) => ({
+      time: slot.time,
+      period: slot.period,
+      available: !isWeekend && !bookedTimes.has(slot.time),
+      booked: bookedTimes.has(slot.time)
+    }));
+    const availableCount = genericSlots.filter((slot) => slot.available).length;
+    const genericDayStatus: HopeHubSlotDayStatus = availableCount
+      ? 'AVAILABLE'
+      : isWeekend
+        ? 'CLOSED'
+        : 'FULL';
 
     res.json({
       date,
-      slots: HOPE_HUB_TIME_SLOTS.map((slot) => ({
-        time: slot.time,
-        period: slot.period,
-        available: !isWeekend && !bookedTimes.has(slot.time),
-        booked: bookedTimes.has(slot.time)
-      }))
+      dayStatus: genericDayStatus,
+      dayStatusLabel: availableCount ? `${availableCount} slots` : isWeekend ? 'Closed' : 'Full',
+      emptyMessage: availableCount
+        ? ''
+        : isWeekend
+          ? 'Bookings are closed for this day.'
+          : 'All slots are booked for this day.',
+      slots: genericSlots
     });
   })
 );
@@ -3050,7 +3090,11 @@ hopeHubRouter.post(
       promoCode: body.promoCode || '',
       serviceName: effectiveServiceName,
       careTeamServiceId: careTeamService?.id || null,
-      providerId: provider.id
+      providerId: provider.id,
+      careTeamTypes: [
+        ...normalizedCareTeamTypes(provider.mentalHealthProfile),
+        ...normalizedCareTeamTypes(careTeamService?.mentalHealthProfile)
+      ]
     });
     const finalPayableInPaise = checkout.payableInPaise;
     const isFreeOrWalletPaid = finalPayableInPaise <= 0;
@@ -3625,7 +3669,11 @@ hopeHubRouter.post(
       serviceName: effectiveServiceName,
       offeringId: selectedOffering?.id || body.offeringId || null,
       careTeamServiceId: selectedCareTeamService?.id || body.careTeamServiceId || null,
-      providerId: requestedProvider?.id || body.providerId || null
+      providerId: requestedProvider?.id || body.providerId || null,
+      careTeamTypes: [
+        ...normalizedCareTeamTypes(selectedCareTeamService?.mentalHealthProfile),
+        ...requestedProviderCareTeamTypes
+      ]
     });
     const chargeGrossInPaise = checkout.grossAmountInPaise;
     const finalPayableInPaise = checkout.payableInPaise;

@@ -13,13 +13,7 @@
           <strong>{{ day.shortLabel }}</strong>
         </span>
         <small class="day-status">
-          @if (day.loading) {
-            Loading
-          } @else if (availableCount(day)) {
-            {{ availableCount(day) }} slots
-          } @else {
-            Full
-          }
+          {{ dayStatus(day) }}
         </small>
       </button>
     }
@@ -52,6 +46,6 @@
       }
     </div>
   } @else if (!isLoadingSlots()) {
-    <p class="empty-slots">No open slots in the next three days.</p>
+    <p class="empty-slots">{{ emptySlotsMessage() }}</p>
   }
 </div>

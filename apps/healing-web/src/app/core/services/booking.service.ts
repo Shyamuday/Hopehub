@@ -149,6 +149,29 @@ export type CareTeamServiceQuote = {
   };
 };
 
+export type HopeHubSlotDayStatus = 'AVAILABLE' | 'FULL' | 'NO_SLOTS' | 'CAPACITY_FULL' | 'CLOSED';
+
+export type HopeHubSlotDay = {
+  date: string;
+  providerId?: string;
+  dayStatus?: HopeHubSlotDayStatus;
+  dayStatusLabel?: string;
+  emptyMessage?: string;
+  capacityMessage?: string;
+  slots: Array<{
+    time: string;
+    period: 'morning' | 'afternoon' | 'evening';
+    available: boolean;
+    booked: boolean;
+  }>;
+};
+
+export function isBackendCareTeamServiceId(id?: string | null): id is string {
+  const value = String(id || '').trim();
+  if (!value) return false;
+  return !/^(listener|provider|quick|support|default)-/i.test(value);
+}
+
 export type ConsultationCallSession = {
   id: string;
   consultationId: string;
@@ -401,7 +424,12 @@ export class BookingService {
   }
 
   createBooking(payload: HopeHubBookingPayload): Observable<{ consultation: any }> {
-    return this.http.post<{ consultation: any }>(`${this.apiUrl}/hope-hub/bookings`, payload);
+    return this.http.post<{ consultation: any }>(`${this.apiUrl}/hope-hub/bookings`, {
+      ...payload,
+      careTeamServiceId: isBackendCareTeamServiceId(payload.careTeamServiceId)
+        ? payload.careTeamServiceId
+        : undefined,
+    });
   }
 
   createQuickTalk(payload: {
@@ -424,7 +452,12 @@ export class BookingService {
     return this.http.post<{
       consultation: any;
       provider: { id: string; userId: string; name: string };
-    }>(`${this.apiUrl}/hope-hub/quick-talk`, payload);
+    }>(`${this.apiUrl}/hope-hub/quick-talk`, {
+      ...payload,
+      careTeamServiceId: isBackendCareTeamServiceId(payload.careTeamServiceId)
+        ? payload.careTeamServiceId
+        : undefined,
+    });
   }
 
   checkoutQuote(payload: {
@@ -439,7 +472,12 @@ export class BookingService {
   }): Observable<{ quote: HopeHubCheckoutQuote }> {
     return this.http.post<{ quote: HopeHubCheckoutQuote }>(
       `${this.apiUrl}/hope-hub/checkout-quote`,
-      payload,
+      {
+        ...payload,
+        careTeamServiceId: isBackendCareTeamServiceId(payload.careTeamServiceId)
+          ? payload.careTeamServiceId
+          : undefined,
+      },
     );
   }
 
@@ -807,35 +845,18 @@ export class BookingService {
     return this.http.get<{ iceServers: IceServerConfig[] }>(`${this.apiUrl}/rtc/ice-servers`);
   }
 
-  slots(
-    date: string,
-    providerId?: string,
-    careTeamServiceId?: string,
-  ): Observable<{
-    date: string;
-    providerId?: string;
-    capacityMessage?: string;
-    slots: Array<{
-      time: string;
-      period: 'morning' | 'afternoon' | 'evening';
-      available: boolean;
-      booked: boolean;
-    }>;
-  }> {
-    return this.http.get<{
-      date: string;
-      providerId?: string;
-      capacityMessage?: string;
-      slots: Array<{
-        time: string;
-        period: 'morning' | 'afternoon' | 'evening';
-        available: boolean;
-        booked: boolean;
-      }>;
-    }>(
+  slots(date: string, providerId?: string, careTeamServiceId?: string): Observable<HopeHubSlotDay> {
+    const backendCareTeamServiceId = isBackendCareTeamServiceId(careTeamServiceId)
+      ? careTeamServiceId
+      : '';
+    return this.http.get<HopeHubSlotDay>(
       `${this.apiUrl}/hope-hub/slots?date=${encodeURIComponent(date)}${
         providerId ? `&providerId=${encodeURIComponent(providerId)}` : ''
-      }${careTeamServiceId ? `&careTeamServiceId=${encodeURIComponent(careTeamServiceId)}` : ''}`,
+      }${
+        backendCareTeamServiceId
+          ? `&careTeamServiceId=${encodeURIComponent(backendCareTeamServiceId)}`
+          : ''
+      }`,
     );
   }
 }

@@ -36,6 +36,25 @@ export const DEFAULT_REWARD_RULES = [
     maxUsesPerPatient: null
   },
   {
+    code: 'FIRSTTALK1_LISTENER_TEST',
+    name: 'First Talk ₹1 listener test',
+    description: 'Test coupon that lets patients book listener support for ₹1 any number of times.',
+    kind: RewardProgramKind.PROMO,
+    trigger: RewardTrigger.CONSULTATION_PAID,
+    beneficiary: RewardBeneficiary.PAYING_PATIENT,
+    valueType: RewardValueType.CHECKOUT_DISCOUNT_PERCENT,
+    valueAmount: 10_000,
+    appliesTo: RewardAppliesTo.CONSULTATION,
+    promoCode: 'FIRSTTALK1',
+    priority: 100,
+    maxUsesPerPatient: null,
+    minPayableInPaise: 100,
+    conditions: {
+      targetPayableInPaise: 100,
+      providerCareTeamTypes: ['PEER_SUPPORT_VOLUNTEER', 'PSYCHOLOGY_STUDENT_VOLUNTEER']
+    }
+  },
+  {
     code: 'WALLET_REDEEM_POLICY',
     name: 'Wallet redeem policy',
     description: 'Controls max wallet redemption per consultation order.',
@@ -51,6 +70,16 @@ export const DEFAULT_REWARD_RULES = [
   }
 ] as const;
 
+function optionalRuleString(rule: unknown, key: string) {
+  const value = (rule as Record<string, unknown>)[key];
+  return typeof value === 'string' && value.trim() ? value : null;
+}
+
+function optionalRuleInt(rule: unknown, key: string) {
+  const value = (rule as Record<string, unknown>)[key];
+  return typeof value === 'number' && Number.isFinite(value) ? Math.round(value) : null;
+}
+
 export async function ensureDefaultRewardRules() {
   await Promise.all(
     DEFAULT_REWARD_RULES.map((rule) =>
@@ -65,8 +94,12 @@ export async function ensureDefaultRewardRules() {
           valueType: rule.valueType,
           valueAmount: rule.valueAmount,
           appliesTo: rule.appliesTo,
+          promoCode: optionalRuleString(rule, 'promoCode'),
           priority: rule.priority,
-          maxUsesPerPatient: 'maxUsesPerPatient' in rule ? rule.maxUsesPerPatient ?? null : null,
+          maxUsesPerPatient: optionalRuleInt(rule, 'maxUsesPerPatient'),
+          maxUsesGlobal: optionalRuleInt(rule, 'maxUsesGlobal'),
+          maxDiscountInPaise: optionalRuleInt(rule, 'maxDiscountInPaise'),
+          minOrderInPaise: optionalRuleInt(rule, 'minOrderInPaise'),
           minPayableInPaise: 'minPayableInPaise' in rule ? rule.minPayableInPaise : 100,
           conditions: 'conditions' in rule ? rule.conditions : undefined,
           isActive: true
@@ -81,8 +114,12 @@ export async function ensureDefaultRewardRules() {
           valueType: rule.valueType,
           valueAmount: rule.valueAmount,
           appliesTo: rule.appliesTo,
+          promoCode: optionalRuleString(rule, 'promoCode'),
           priority: rule.priority,
-          maxUsesPerPatient: 'maxUsesPerPatient' in rule ? rule.maxUsesPerPatient ?? null : null,
+          maxUsesPerPatient: optionalRuleInt(rule, 'maxUsesPerPatient'),
+          maxUsesGlobal: optionalRuleInt(rule, 'maxUsesGlobal'),
+          maxDiscountInPaise: optionalRuleInt(rule, 'maxDiscountInPaise'),
+          minOrderInPaise: optionalRuleInt(rule, 'minOrderInPaise'),
           minPayableInPaise: 'minPayableInPaise' in rule ? rule.minPayableInPaise : 100,
           conditions: 'conditions' in rule ? rule.conditions : undefined,
           isActive: true
@@ -147,7 +184,9 @@ export async function listActiveCheckoutDiscountRules() {
     where: {
       isActive: true,
       appliesTo: { in: [RewardAppliesTo.CONSULTATION, RewardAppliesTo.ANY] },
-      valueType: { in: [RewardValueType.CHECKOUT_DISCOUNT_FLAT, RewardValueType.CHECKOUT_DISCOUNT_PERCENT] }
+      valueType: {
+        in: [RewardValueType.CHECKOUT_DISCOUNT_FLAT, RewardValueType.CHECKOUT_DISCOUNT_PERCENT]
+      }
     },
     orderBy: [{ priority: 'desc' }, { createdAt: 'asc' }]
   });
@@ -160,7 +199,13 @@ export async function listActiveSettlementRules(trigger: RewardTrigger) {
     where: {
       isActive: true,
       trigger,
-      valueType: { in: [RewardValueType.WALLET_CREDIT_FLAT, RewardValueType.CHECKOUT_DISCOUNT_PERCENT, RewardValueType.CHECKOUT_DISCOUNT_FLAT] }
+      valueType: {
+        in: [
+          RewardValueType.WALLET_CREDIT_FLAT,
+          RewardValueType.CHECKOUT_DISCOUNT_PERCENT,
+          RewardValueType.CHECKOUT_DISCOUNT_FLAT
+        ]
+      }
     },
     orderBy: [{ priority: 'desc' }, { createdAt: 'asc' }]
   });
@@ -168,7 +213,11 @@ export async function listActiveSettlementRules(trigger: RewardTrigger) {
 }
 
 export const rewardRuleInputSchema = {
-  code: (v: string) => v.trim().toUpperCase().replace(/[^A-Z0-9_]/g, '_'),
+  code: (v: string) =>
+    v
+      .trim()
+      .toUpperCase()
+      .replace(/[^A-Z0-9_]/g, '_'),
   kinds: Object.values(RewardProgramKind),
   triggers: Object.values(RewardTrigger),
   beneficiaries: Object.values(RewardBeneficiary),
