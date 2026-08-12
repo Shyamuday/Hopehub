@@ -16,7 +16,7 @@
   align-items: start;
   border: 1px solid var(--notification-border);
   border-left-width: 4px;
-  border-radius: 0.5rem;
+  border-radius: var(--hope-radius-md);
   background: #ffffff;
   color: var(--text-primary);
   box-shadow: 0 18px 38px rgba(15, 23, 42, 0.16);
@@ -33,8 +33,8 @@
   border-radius: 999px;
   background: var(--notification-soft);
   color: var(--notification-strong);
-  font-size: 0.95rem;
-  font-weight: 800;
+  font-size: var(--hope-font-size-base);
+  font-weight: var(--hope-font-weight-title);
 }
 
 .notification__content {
@@ -44,15 +44,15 @@
 .notification__content strong {
   display: block;
   color: var(--notification-strong);
-  font-size: 0.9rem;
+  font-size: var(--hope-font-size-sm);
   line-height: 1.3;
 }
 
 .notification__content p {
   margin: 0.25rem 0 0;
   color: var(--text-secondary);
-  font-size: 0.875rem;
-  line-height: 1.45;
+  font-size: var(--hope-font-size-sm);
+  line-height: var(--hope-line-copy);
 }
 
 .notification__close {
@@ -65,8 +65,8 @@
   background: transparent;
   color: var(--text-muted);
   cursor: pointer;
-  font-size: 0.95rem;
-  font-weight: 800;
+  font-size: var(--hope-font-size-base);
+  font-weight: var(--hope-font-weight-label);
   transition:
     background-color 160ms ease,
     color 160ms ease;

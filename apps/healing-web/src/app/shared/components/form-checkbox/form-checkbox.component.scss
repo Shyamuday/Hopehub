@@ -11,9 +11,9 @@
   background: #ffffff;
   color: #334155;
   cursor: pointer;
-  font-size: 0.9rem;
-  font-weight: 700;
-  line-height: 1.45;
+  font-size: var(--hope-font-size-sm);
+  font-weight: var(--hope-font-weight-body);
+  line-height: var(--hope-line-copy);
   padding: 0.82rem 0.95rem;
 }
 
@@ -44,7 +44,7 @@
   content: '✓';
   color: #ffffff;
   font-size: 0.78rem;
-  font-weight: 950;
+  font-weight: var(--hope-font-weight-title);
 }
 
 .form-checkbox input:focus-visible + .form-checkbox__box {
@@ -58,12 +58,13 @@
 
 .form-checkbox__copy strong {
   color: #0f172a;
+  font-weight: var(--hope-font-weight-title);
 }
 
 .form-checkbox__copy small {
   color: #64748b;
-  font-size: 0.78rem;
-  font-weight: 650;
+  font-size: var(--hope-font-size-xs);
+  font-weight: var(--hope-font-weight-body);
 }
 
 .form-checkbox--success {

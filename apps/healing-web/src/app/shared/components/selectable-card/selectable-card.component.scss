@@ -106,5 +106,5 @@
   background: var(--hope-selected-check-bg, #059669);
   color: var(--hope-selected-check-text, #ffffff);
   font-size: 0.78rem;
-  font-weight: 950;
+  font-weight: var(--hope-font-weight-title);
 }

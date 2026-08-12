@@ -8,12 +8,12 @@
   align-items: flex-start;
   background: rgba(255, 255, 255, 0.92);
   border: 1px solid rgba(148, 163, 184, 0.22);
-  border-radius: var(--hope-radius-xl);
+  border-radius: var(--hope-radius-lg);
   color: #0f172a;
   display: flex;
   gap: 0.7rem;
-  min-height: 7.25rem;
-  padding: 0.9rem;
+  min-height: 6.5rem;
+  padding: var(--hope-space-3);
   text-align: left;
   position: relative;
   transition:
@@ -50,7 +50,7 @@
   background: var(--hope-selected-check-bg);
   color: var(--hope-selected-check-text);
   font-size: 0.8rem;
-  font-weight: 900;
+  font-weight: var(--hope-font-weight-title);
 }
 
 .support-path-card__icon {
@@ -76,25 +76,26 @@
 
   small {
     color: #047857;
-    font-size: 0.68rem;
-    font-weight: 900;
+    font-size: var(--hope-font-size-xs);
+    font-weight: var(--hope-font-weight-label);
     letter-spacing: 0.06em;
     text-transform: uppercase;
   }
 
   strong {
     color: #0f172a;
-    font-size: 0.92rem;
+    font-size: var(--hope-font-size-card-title);
+    font-weight: var(--hope-font-weight-title);
     line-height: 1.2;
     margin-top: 0.18rem;
   }
 
   em {
     color: #64748b;
-    font-size: 0.74rem;
+    font-size: var(--hope-font-size-xs);
     font-style: normal;
-    font-weight: 700;
-    line-height: 1.35;
+    font-weight: var(--hope-font-weight-body);
+    line-height: var(--hope-line-copy);
     margin-top: 0.35rem;
   }
 
@@ -102,7 +103,7 @@
     background: rgba(15, 23, 42, 0.06);
     border-radius: 999px;
     color: #334155;
-    font-size: 0.68rem;
+    font-size: var(--hope-font-size-xs);
     margin-top: 0.55rem;
     padding: 0.2rem 0.5rem;
     width: fit-content;

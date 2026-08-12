@@ -2,12 +2,12 @@
   display: grid;
   gap: 1rem;
   border: 1px solid rgba(74, 111, 165, 0.16);
-  border-radius: 1.1rem;
+  border-radius: var(--hope-radius-lg);
   background:
     radial-gradient(circle at top left, rgba(130, 155, 120, 0.18), transparent 24rem),
     linear-gradient(135deg, #ffffff, rgba(248, 250, 252, 0.96));
-  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.08);
-  padding: 1rem;
+  box-shadow: var(--hope-card-shadow);
+  padding: var(--hope-space-3);
 }
 
 .continue-support__copy {
@@ -18,8 +18,8 @@
 .continue-support__copy p {
   margin: 0;
   color: var(--brand-primary);
-  font-size: 0.74rem;
-  font-weight: 950;
+  font-size: var(--hope-font-size-xs);
+  font-weight: var(--hope-font-weight-label);
   letter-spacing: 0.07em;
   text-transform: uppercase;
 }
@@ -27,15 +27,15 @@
 .continue-support__copy h2 {
   margin: 0;
   color: #0f172a;
-  font-size: clamp(1.05rem, 2vw, 1.35rem);
-  font-weight: 950;
-  line-height: 1.2;
+  font-size: var(--hope-font-size-card-title);
+  font-weight: var(--hope-font-weight-title);
+  line-height: var(--hope-line-heading);
 }
 
 .continue-support__copy span {
   color: #64748b;
-  font-size: 0.9rem;
-  line-height: 1.55;
+  font-size: var(--hope-font-size-sm);
+  line-height: var(--hope-line-copy);
 }
 
 .continue-support__actions {
@@ -50,8 +50,8 @@
   background: #ffffff;
   color: #334155;
   cursor: pointer;
-  font-size: 0.84rem;
-  font-weight: 900;
+  font-size: var(--hope-font-size-sm);
+  font-weight: var(--hope-font-weight-label);
   padding: 0.62rem 0.85rem;
   transition:
     transform 160ms ease,

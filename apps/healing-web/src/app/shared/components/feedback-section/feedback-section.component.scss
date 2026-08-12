@@ -39,16 +39,16 @@
 .feedback-section h2 {
   margin: 0;
   color: var(--text-primary);
-  font-size: clamp(1.8rem, 4vw, 3rem);
-  font-weight: 800;
-  line-height: 1.12;
+  font-size: var(--hope-font-size-section-title);
+  font-weight: var(--hope-font-weight-title);
+  line-height: var(--hope-line-heading);
 }
 
 .feedback-section__intro > p:not(.feedback-section__eyebrow) {
   margin: 1rem 0 0;
   color: var(--text-secondary);
-  font-size: 1rem;
-  line-height: 1.7;
+  font-size: var(--hope-font-size-base);
+  line-height: var(--hope-line-copy);
 }
 
 .feedback-section__actions {
@@ -64,7 +64,7 @@
   align-items: center;
   justify-content: center;
   min-height: 46px;
-  border-radius: 0.5rem;
+  border-radius: var(--hope-radius-md);
   padding: 0.75rem 1rem;
   font-weight: 700;
   text-decoration: none;
@@ -105,7 +105,7 @@
   display: block;
   color: #0f172a;
   font-size: 1.2rem;
-  font-weight: 900;
+  font-weight: var(--hope-font-weight-title);
   line-height: 1.1;
 }
 
@@ -114,7 +114,7 @@
   margin-top: 0.3rem;
   color: #64748b;
   font-size: 0.78rem;
-  font-weight: 800;
+  font-weight: var(--hope-font-weight-label);
   line-height: 1.25;
 }
 
@@ -136,7 +136,7 @@
   min-height: 14.5rem;
   align-content: space-between;
   border: 1px solid rgba(28, 45, 55, 0.1);
-  border-radius: 1rem;
+  border-radius: var(--hope-radius-lg);
   background: #ffffff;
   padding: 1rem;
   box-shadow: none;
@@ -174,7 +174,7 @@
   background: var(--brand-primary-light);
   color: var(--brand-primary);
   font-size: 0.68rem;
-  font-weight: 900;
+  font-weight: var(--hope-font-weight-label);
   padding: 0.25rem 0.45rem;
   text-overflow: ellipsis;
   white-space: nowrap;

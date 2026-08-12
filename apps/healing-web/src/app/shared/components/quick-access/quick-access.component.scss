@@ -84,7 +84,7 @@
   color: #ffffff;
   display: inline-flex;
   font-size: 0.7rem;
-  font-weight: 900;
+  font-weight: var(--hope-font-weight-title);
   height: 1.35rem;
   justify-content: center;
   min-width: 1.35rem;
@@ -99,8 +99,8 @@
   border-radius: 999px;
   background: #ffffff;
   color: #1f2937;
-  font-size: 0.875rem;
-  font-weight: 700;
+  font-size: var(--hope-font-size-sm);
+  font-weight: var(--hope-font-weight-label);
   padding: 0.35rem 0.75rem;
   white-space: nowrap;
   box-shadow: 0 10px 24px rgba(15, 23, 42, 0.14);
@@ -187,8 +187,8 @@
   }
 
   .quick-action-bar__item strong {
-    font-size: 0.72rem;
-    font-weight: 900;
+    font-size: var(--hope-font-size-xs);
+    font-weight: var(--hope-font-weight-label);
   }
 }
 

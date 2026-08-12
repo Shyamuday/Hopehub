@@ -20,21 +20,21 @@
 .offer-banner__copy p {
   margin: 0;
   color: var(--brand-primary);
-  font-size: 0.74rem;
-  font-weight: 900;
+  font-size: var(--hope-font-size-xs);
+  font-weight: var(--hope-font-weight-label);
   text-transform: uppercase;
 }
 
 .offer-banner__copy h2 {
   margin: 0;
-  font-size: clamp(1.15rem, 2.4vw, 1.65rem);
-  font-weight: 850;
-  line-height: 1.15;
+  font-size: var(--hope-font-size-section-title);
+  font-weight: var(--hope-font-weight-title);
+  line-height: var(--hope-line-heading);
 }
 
 .offer-banner__copy span {
   color: #475569;
-  font-weight: 650;
+  font-weight: var(--hope-font-weight-body);
 }
 
 .offer-banner__actions {
@@ -46,11 +46,11 @@
 .offer-banner__actions > button {
   min-height: 42px;
   border: 0;
-  border-radius: 0.5rem;
+  border-radius: var(--hope-radius-md);
   background: var(--brand-primary);
   color: #ffffff;
   padding: 0.65rem 0.9rem;
-  font-weight: 850;
+  font-weight: var(--hope-font-weight-label);
   cursor: pointer;
   white-space: nowrap;
 }

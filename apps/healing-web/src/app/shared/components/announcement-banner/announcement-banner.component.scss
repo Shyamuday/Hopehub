@@ -71,7 +71,7 @@
 .announcement__copy a {
   color: var(--announcement-accent);
   font-size: 0.85rem;
-  font-weight: 800;
+  font-weight: var(--hope-font-weight-label);
   text-decoration: none;
 }
 
@@ -110,7 +110,7 @@
   gap: 2rem;
   padding: 0.55rem 0;
   font-size: 0.875rem;
-  font-weight: 800;
+  font-weight: var(--hope-font-weight-label);
   animation: announcement-scroll 34s linear infinite;
 }
 
