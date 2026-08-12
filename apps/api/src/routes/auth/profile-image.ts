@@ -95,7 +95,10 @@ export function registerProfileImageRoutes(router: Router) {
 
         await prisma.user.update({
           where: { id: userId },
-          data: { profileImageKey: saved.storageKey, profileImageUrl: userProfileImagePath(userId) }
+          data: {
+            profileImageKey: saved.storageKey,
+            profileImageUrl: saved.imageUrl || userProfileImagePath(userId)
+          }
         });
 
         if (existing.profileImageKey && existing.profileImageKey !== saved.storageKey) {
@@ -117,7 +120,9 @@ export function registerProfileImageRoutes(router: Router) {
         });
 
         res.json({
-          profileImageUrl: await assetAccessUrl(saved.storageKey, userProfileImagePath(userId)),
+          profileImageUrl:
+            saved.imageUrl ||
+            (await assetAccessUrl(saved.storageKey, userProfileImagePath(userId))),
           message: 'Profile photo saved.'
         });
       } catch (error) {
@@ -165,13 +170,15 @@ export function registerProfileImageRoutes(router: Router) {
       const userId = req.user!.id;
       const user = await prisma.user.findUniqueOrThrow({
         where: { id: userId },
-        select: { profileImageKey: true }
+        select: { profileImageKey: true, profileImageUrl: true }
       });
 
       res.json({
-        profileImageUrl: user.profileImageKey
-          ? await assetAccessUrl(user.profileImageKey, userProfileImagePath(userId))
-          : null
+        profileImageUrl:
+          user.profileImageUrl ||
+          (user.profileImageKey
+            ? await assetAccessUrl(user.profileImageKey, userProfileImagePath(userId))
+            : null)
       });
     })
   );
@@ -234,7 +241,7 @@ export function registerStoreProfileImageRoutes(router: Router) {
           where: { id: staffId },
           data: {
             profileImageKey: saved.storageKey,
-            profileImageUrl: storeStaffProfileImagePath(staffId)
+            profileImageUrl: saved.imageUrl || storeStaffProfileImagePath(staffId)
           }
         });
 
@@ -257,10 +264,9 @@ export function registerStoreProfileImageRoutes(router: Router) {
         });
 
         res.json({
-          profileImageUrl: await assetAccessUrl(
-            saved.storageKey,
-            storeStaffProfileImagePath(staffId)
-          ),
+          profileImageUrl:
+            saved.imageUrl ||
+            (await assetAccessUrl(saved.storageKey, storeStaffProfileImagePath(staffId))),
           message: 'Profile photo saved.'
         });
       } catch (error) {

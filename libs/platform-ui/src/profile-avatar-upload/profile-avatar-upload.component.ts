@@ -75,16 +75,14 @@ export class ProfileAvatarUploadComponent implements OnChanges, OnDestroy {
     this.uploading.set(true);
     this.error.set('');
     try {
-      const dataBase64 = await this.readFileAsBase64(file);
+      const formData = new FormData();
+      formData.append('file', file, file.name);
+      formData.append('fileName', file.name);
       const response = await this.apiFetch<{ profileImageUrl: string | null; message?: string }>(
         this.uploadPath,
         {
           method: 'PUT',
-          body: JSON.stringify({
-            mimeType: file.type,
-            fileName: file.name,
-            dataBase64
-          })
+          body: formData
         }
       );
       this.profileImageChange.emit(response.profileImageUrl ?? null);
@@ -123,6 +121,11 @@ export class ProfileAvatarUploadComponent implements OnChanges, OnDestroy {
       return;
     }
 
+    if (/^https?:\/\//i.test(url)) {
+      this.previewUrl.set(url);
+      return;
+    }
+
     try {
       const token = localStorage.getItem(this.tokenKey) || '';
       const res = await fetch(`${this.apiBase}${url}`, {
@@ -145,7 +148,7 @@ export class ProfileAvatarUploadComponent implements OnChanges, OnDestroy {
     const res = await fetch(`${this.apiBase}${path}`, {
       ...init,
       headers: {
-        'Content-Type': 'application/json',
+        ...(init.body instanceof FormData ? {} : { 'Content-Type': 'application/json' }),
         Authorization: `Bearer ${token}`,
         ...(init.headers || {})
       }
@@ -155,19 +158,6 @@ export class ProfileAvatarUploadComponent implements OnChanges, OnDestroy {
       throw new Error((data as { message?: string }).message || 'Request failed');
     }
     return data as T;
-  }
-
-  private readFileAsBase64(file: File) {
-    return new Promise<string>((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => {
-        const result = String(reader.result || '');
-        const comma = result.indexOf(',');
-        resolve(comma >= 0 ? result.slice(comma + 1) : result);
-      };
-      reader.onerror = () => reject(new Error('Could not read image file.'));
-      reader.readAsDataURL(file);
-    });
   }
 
   private revokeObjectUrl() {

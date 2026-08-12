@@ -1,10 +1,13 @@
 import { createHash, randomUUID } from 'node:crypto';
 import path from 'node:path';
 import {
+  assetPublicUrl,
   assetObjectUrl,
+  deletePublicAssetObject,
   deleteAssetObject,
+  readPublicAssetObject,
   readAssetObject,
-  writeAssetObject
+  writePublicAssetObject
 } from './asset-storage.js';
 
 const UPLOAD_ROOT = path.resolve(process.cwd(), 'uploads', 'profile-images');
@@ -59,7 +62,9 @@ async function saveProfileImage(
 
   const ext = extensionForMime(input.mimeType) || path.extname(input.fileName || '') || '.bin';
   const storageKey = `profile-images/${scope}/${ownerId}/${randomUUID()}${ext}`;
-  await writeAssetObject({
+  // Profile photos used on public provider listings belong in the public asset bucket.
+  // The helper still falls back to the configured asset bucket for older environments.
+  await writePublicAssetObject({
     storageKey,
     body: buffer,
     contentType: input.mimeType,
@@ -74,7 +79,7 @@ async function saveProfileImage(
 
   return {
     storageKey,
-    imageUrl: assetObjectUrl(storageKey),
+    imageUrl: assetPublicUrl(storageKey) ?? assetObjectUrl(storageKey),
     byteSize: buffer.length,
     sha256: createHash('sha256').update(buffer).digest('hex'),
     mimeType: input.mimeType
@@ -82,17 +87,20 @@ async function saveProfileImage(
 }
 
 export async function readProfileImageFile(storageKey: string) {
-  return readAssetObject(
-    storageKey,
-    storageKey.startsWith('profile-images/') ? undefined : UPLOAD_ROOT
-  );
+  const legacyRoot = storageKey.startsWith('profile-images/') ? undefined : UPLOAD_ROOT;
+  try {
+    return await readPublicAssetObject(storageKey, legacyRoot);
+  } catch {
+    return readAssetObject(storageKey, legacyRoot);
+  }
 }
 
 export async function deleteProfileImageFile(storageKey: string) {
-  await deleteAssetObject(
-    storageKey,
-    storageKey.startsWith('profile-images/') ? undefined : UPLOAD_ROOT
-  );
+  const legacyRoot = storageKey.startsWith('profile-images/') ? undefined : UPLOAD_ROOT;
+  await Promise.all([
+    deletePublicAssetObject(storageKey, legacyRoot),
+    deleteAssetObject(storageKey, legacyRoot)
+  ]);
 }
 
 export function profileImageMimeType(storageKey: string) {
