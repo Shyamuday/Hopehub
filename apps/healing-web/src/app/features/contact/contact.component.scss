@@ -22,9 +22,9 @@
 .request-hero h1 {
   margin: 0;
   color: var(--text-primary);
-  font-size: clamp(2rem, 4vw, 3.6rem);
-  font-weight: 800;
-  line-height: 1.05;
+  font-size: var(--hope-font-size-page-title);
+  font-weight: var(--hope-font-weight-title);
+  line-height: var(--hope-line-heading);
 }
 
 .request-hero p {
@@ -388,8 +388,8 @@ form {
   }
 
   .request-hero h1 {
-    font-size: 1.75rem;
-    line-height: 1.14;
+    font-size: 1.45rem;
+    line-height: 1.2;
   }
 
   .request-hero p {

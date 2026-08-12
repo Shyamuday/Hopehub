@@ -25,9 +25,9 @@
 .listener-guidelines-hero h1 {
   margin: 0.5rem 0;
   color: #0f172a;
-  font-size: clamp(2rem, 4vw, 3.5rem);
-  font-weight: 900;
-  line-height: 1.05;
+  font-size: var(--hope-font-size-page-title);
+  font-weight: var(--hope-font-weight-title);
+  line-height: var(--hope-line-heading);
 }
 
 .listener-guidelines-hero span {

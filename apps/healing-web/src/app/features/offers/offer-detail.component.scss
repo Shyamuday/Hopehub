@@ -49,9 +49,9 @@ h2,
 }
 
 h1 {
-  font-size: clamp(2rem, 5vw, 3.4rem);
-  font-weight: 850;
-  line-height: 1.08;
+  font-size: var(--hope-font-size-page-title);
+  font-weight: var(--hope-font-weight-title);
+  line-height: var(--hope-line-heading);
 }
 
 .detail-copy > span,
@@ -304,8 +304,8 @@ h1 {
   }
 
   h1 {
-    font-size: 1.75rem;
-    line-height: 1.14;
+    font-size: 1.45rem;
+    line-height: 1.2;
   }
 
   .detail-copy > span,

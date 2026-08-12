@@ -27,9 +27,9 @@
 
 .offers-hero h1 {
   margin: 0;
-  font-size: clamp(2rem, 5vw, 3.3rem);
-  font-weight: 850;
-  line-height: 1.08;
+  font-size: clamp(1.45rem, 3vw, 2rem);
+  font-weight: var(--hope-font-weight-title);
+  line-height: 1.2;
 }
 
 .offers-hero span {
@@ -164,8 +164,8 @@
   }
 
   .offers-hero h1 {
-    font-size: 1.75rem;
-    line-height: 1.14;
+    font-size: 1.35rem;
+    line-height: 1.25;
   }
 
   .offers-hero span {

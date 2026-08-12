@@ -39,9 +39,9 @@
 
   h1 {
     color: #0f172a;
-    font-size: clamp(2rem, 5vw, 4rem);
-    font-weight: 900;
-    line-height: 0.95;
+    font-size: var(--hope-font-size-page-title);
+    font-weight: var(--hope-font-weight-title);
+    line-height: var(--hope-line-heading);
     margin: 0.35rem 0 0;
   }
 
@@ -130,8 +130,8 @@
 
   h2 {
     color: #0f172a;
-    font-size: clamp(1.3rem, 3vw, 2rem);
-    font-weight: 900;
+    font-size: var(--hope-font-size-section-title);
+    font-weight: var(--hope-font-weight-title);
     margin: 0.25rem 0 0;
   }
 
