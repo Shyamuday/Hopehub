@@ -1,7 +1,10 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
 import { ROUTE_PATHS } from '../constants/app-routes.constants';
-import { buildProviderOnboardingStatus } from '../constants/provider-onboarding.constants';
+import {
+  buildProviderOnboardingStatus,
+  needsProviderPathSelection,
+} from '../constants/provider-onboarding.constants';
 import { DoctorSessionService } from '../services/doctor-session';
 
 export const providerOnboardingGuard: CanActivateFn = async () => {
@@ -10,6 +13,9 @@ export const providerOnboardingGuard: CanActivateFn = async () => {
 
   try {
     const loaded = await session.load();
+    if (needsProviderPathSelection(loaded.doctorProfile)) {
+      return router.createUrlTree(['/', ROUTE_PATHS.WELCOME]);
+    }
     const status = buildProviderOnboardingStatus(
       loaded.doctorProfile,
       loaded.profileImageUrl ?? null,

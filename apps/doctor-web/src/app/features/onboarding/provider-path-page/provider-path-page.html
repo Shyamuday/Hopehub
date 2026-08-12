@@ -1,0 +1,70 @@
+<section class="path-card" aria-labelledby="provider-path-title">
+  <div class="progress" aria-label="Setup progress">
+    <span [class.current]="step() >= 1"></span>
+    <span [class.current]="step() >= 2"></span>
+    <span [class.current]="step() >= 3"></span>
+  </div>
+
+  @if (step() === 1) {
+    <p class="eyebrow">A quick start</p>
+    <h1 id="provider-path-title">How would you like to support people?</h1>
+    <p class="intro">
+      Choose what feels closest. We will shape your workspace around it, and you can refine it
+      later.
+    </p>
+    <div class="choice-list">
+      <button type="button" (click)="chooseStyle('LISTEN')">
+        <strong>I listen and offer peer support</strong>
+        <span>Safe, non-clinical emotional support through active listening.</span>
+      </button>
+      <button type="button" (click)="chooseStyle('GUIDE')">
+        <strong>I guide growth and life goals</strong>
+        <span>Coaching, habits, mindfulness, study, career, or personal growth.</span>
+      </button>
+      <button type="button" (click)="chooseStyle('COUNSEL')">
+        <strong>I offer counselling or mental-wellness support</strong>
+        <span>Structured emotional and mental-wellness support for individuals.</span>
+      </button>
+    </div>
+  } @else if (step() === 2) {
+    <p class="eyebrow">One small detail</p>
+    <h1 id="provider-path-title">Do you have formal training in this area?</h1>
+    <p class="intro">
+      This only helps us show the right setup. It does not publish any qualification claim for you.
+    </p>
+    <div class="choice-list">
+      <button type="button" (click)="chooseTraining('YES')"><strong>Yes, completed</strong></button>
+      <button type="button" (click)="chooseTraining('IN_PROGRESS')">
+        <strong>I am currently training</strong>
+      </button>
+      <button type="button" (click)="chooseTraining('NO')">
+        <strong>Not formally trained</strong>
+      </button>
+    </div>
+    <button type="button" class="back-link" (click)="step.set(1)">Back</button>
+  } @else {
+    <p class="eyebrow">Your suggested path</p>
+    <h1 id="provider-path-title">{{ recommendation() }}</h1>
+    <p class="intro">
+      Next, we will only ask for the profile, safety, services, and availability details needed for
+      this path.
+    </p>
+    <div class="recommendation">
+      <span>✓</span>
+      <p>You can change or add support areas later from your profile.</p>
+    </div>
+    @if (error()) {
+      <p class="error">{{ error() }}</p>
+    }
+    <app-button type="button" block [loading]="saving()" (click)="continue()">
+      {{ saving() ? 'Saving your path...' : 'Continue setup' }}
+    </app-button>
+    <button
+      type="button"
+      class="back-link"
+      (click)="step.set(supportStyle() === 'COUNSEL' ? 2 : 1)"
+    >
+      Back
+    </button>
+  }
+</section>

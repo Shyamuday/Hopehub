@@ -21,6 +21,7 @@ import { DiseasePagesPage } from './features/disease-pages/disease-pages-page';
 import { DoctorBlogPage } from './features/blog/doctor-blog-page';
 import { OnlineDoctorPage } from './features/online-doctor/online-doctor-page';
 import { NotificationsInboxPage } from './features/notifications-inbox/notifications-inbox-page';
+import { ProviderPathPage } from './features/onboarding/provider-path-page/provider-path-page';
 
 export const routes: Routes = [
   { path: ROUTE_PATHS.LOGIN, component: Login },
@@ -37,6 +38,7 @@ export const routes: Routes = [
     canActivate: [doctorAuthGuard],
     children: [
       { path: '', pathMatch: 'full', redirectTo: ROUTE_PATHS.DASHBOARD },
+      { path: ROUTE_PATHS.WELCOME, component: ProviderPathPage },
       {
         path: ROUTE_PATHS.WORKLIST,
         component: WorklistPage,

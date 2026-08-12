@@ -288,6 +288,7 @@ export const doctorProfileSelect = {
       safetyEscalationNote: true,
       listenerSafetyAcknowledgedAt: true,
       listenerSafetyAcknowledgedVersion: true,
+      onboardingPathSelectedAt: true,
       acceptsHighRiskCases: true,
       autoMatchEnabled: true,
       acceptingNewUsers: true,

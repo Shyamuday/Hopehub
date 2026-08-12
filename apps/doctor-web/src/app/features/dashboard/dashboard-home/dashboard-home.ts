@@ -14,6 +14,7 @@ import {
 } from '../../../core/constants/doctor-types.constants';
 import {
   buildProviderOnboardingStatus,
+  type ProviderOnboardingStep,
   type ProviderOnboardingStatus,
 } from '../../../core/constants/provider-onboarding.constants';
 import {
@@ -186,6 +187,10 @@ export class DashboardHome {
     }
 
     return actions.filter((action) => action.enabled);
+  }
+
+  nextOnboardingStep(): ProviderOnboardingStep | null {
+    return this.onboarding().steps.find((step) => step.required && !step.complete) || null;
   }
 
   async loadWorklistCounts() {

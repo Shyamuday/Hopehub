@@ -27,6 +27,14 @@ export type ProviderOnboardingStatus = {
   steps: ProviderOnboardingStep[];
 };
 
+export function needsProviderPathSelection(profile?: DoctorProfileSummary | null): boolean {
+  return (
+    profile?.doctorType === 'PSYCHOLOGIST' &&
+    profile.specialty === 'Professional Help provider' &&
+    !profile.mentalHealthProfile?.onboardingPathSelectedAt
+  );
+}
+
 function hasText(value?: string | null, minLength = 2) {
   return Boolean(value && value.trim().length >= minLength);
 }

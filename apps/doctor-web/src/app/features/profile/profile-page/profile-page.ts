@@ -515,6 +515,20 @@ export class ProfilePage {
     );
   }
 
+  setupIsComplete() {
+    return this.setupStepItems().every((step) => step.complete);
+  }
+
+  nextSetupStep() {
+    return this.setupStepItems().find((step) => !step.complete) || null;
+  }
+
+  currentSetupStepPosition() {
+    const steps = this.setupStepItems();
+    const active = this.activeSetupStep();
+    return Math.max(steps.findIndex((step) => step.id === active) + 1, 1);
+  }
+
   setupStepTitle() {
     return (
       this.setupStepItems().find((step) => step.id === this.activeSetupStep())?.title ||
@@ -534,18 +548,24 @@ export class ProfilePage {
   }
 
   setSetupStep(step: ProfileSetupStepId) {
-    if (this.setupStepItems().some((item) => item.id === step)) {
+    const nextStep = this.nextSetupStep();
+    if (
+      this.setupStepItems().some((item) => item.id === step) &&
+      (this.setupIsComplete() || nextStep?.id === step)
+    ) {
       this.activeSetupStep.set(step);
     }
   }
 
   setSetupStepFromParam(step: string | null) {
+    const nextStep = this.nextSetupStep();
     if (
-      step === 'identity' ||
-      step === 'public' ||
-      step === 'care' ||
-      step === 'safety' ||
-      step === 'services'
+      (step === 'identity' ||
+        step === 'public' ||
+        step === 'care' ||
+        step === 'safety' ||
+        step === 'services') &&
+      (this.setupIsComplete() || nextStep?.id === step)
     ) {
       this.activeSetupStep.set(step);
     }
@@ -659,6 +679,7 @@ export class ProfilePage {
       this.showOnWebsite = profile.doctorProfile?.showOnWebsite ?? false;
       this.profileImageUrl =
         (profile as { profileImageUrl?: string | null }).profileImageUrl ?? null;
+      this.activeSetupStep.set(this.nextSetupStep()?.id || 'identity');
     } catch {
       this.error = 'Could not load profile.';
     } finally {

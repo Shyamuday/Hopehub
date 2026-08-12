@@ -6,18 +6,6 @@ import { PH_PROVIDER_LANGUAGE } from '../../../core/constants/provider-language.
 import { Auth } from '../../../core/services/auth';
 import { AppButtonComponent } from '../../../shared/ui/app-button.component';
 
-type ProviderSignupKind = 'HOMEOPATHY' | 'HOPE_HUB';
-type HopeHubProviderGroup = 'PSYCHOLOGIST' | 'LIFE_COACH' | 'PEER_SUPPORT';
-type HopeHubCareTeamType =
-  | 'MENTAL_WELLNESS_PROFESSIONAL'
-  | 'QUALIFIED_COUNSELLOR'
-  | 'PSYCHOLOGY_STUDENT_VOLUNTEER'
-  | 'PEER_SUPPORT_VOLUNTEER'
-  | 'NLP_COACH'
-  | 'LIFE_COACH'
-  | 'MEDITATION_BREATHWORK_GUIDE'
-  | 'CAREER_STUDY_MENTOR';
-
 @Component({
   selector: 'app-login',
   imports: [FormField, AppButtonComponent],
@@ -37,56 +25,6 @@ export class Login {
   showPassword = signal(false);
   showEnrollPassword = signal(false);
   showConfirmPassword = signal(false);
-  readonly providerTypeOptions: Array<{
-    value: ProviderSignupKind;
-    label: string;
-    helper: string;
-  }> = [
-    // Homeopathy signup is paused for now. Keep this here so we can re-enable
-    // the path quickly when the provider onboarding split is ready again.
-    // {
-    //   value: 'HOMEOPATHY',
-    //   label: 'Homeopathy provider',
-    //   helper: 'For homeopathy consultants, specialists, interns, and clinic care providers.',
-    // },
-    {
-      value: 'HOPE_HUB',
-      label: 'Professional Help',
-      helper: 'For emotional support, counselling, coaching, and mental-wellness sessions.',
-    },
-  ];
-  readonly hopeHubGroupOptions: Array<{
-    value: HopeHubProviderGroup;
-    label: string;
-    helper: string;
-  }> = [
-    {
-      value: 'PSYCHOLOGIST',
-      label: 'Psychologist / counsellor',
-      helper: 'For qualified mental-health professionals and counsellors.',
-    },
-    {
-      value: 'LIFE_COACH',
-      label: 'Life coach / guide',
-      helper: 'For life coaching, NLP, meditation, breathwork, career, and study support.',
-    },
-    {
-      value: 'PEER_SUPPORT',
-      label: 'Peer support listener',
-      helper: 'For trained listeners who support users through safe active listening.',
-    },
-  ];
-  private readonly defaultCareTeamTypeByGroup: Record<HopeHubProviderGroup, HopeHubCareTeamType> = {
-    PSYCHOLOGIST: 'MENTAL_WELLNESS_PROFESSIONAL',
-    LIFE_COACH: 'LIFE_COACH',
-    PEER_SUPPORT: 'PEER_SUPPORT_VOLUNTEER',
-  };
-  private readonly defaultSpecialtyByGroup: Record<HopeHubProviderGroup, string> = {
-    PSYCHOLOGIST: 'Psychologist / counsellor',
-    LIFE_COACH: 'Life coach / guide',
-    PEER_SUPPORT: 'Peer emotional support listener',
-  };
-
   readonly signInModel = signal({
     email: '',
     password: '',
@@ -99,11 +37,6 @@ export class Login {
   readonly enrollModel = signal({
     name: '',
     mobile: '',
-    providerType: 'HOPE_HUB' as ProviderSignupKind,
-    hopeHubGroup: 'PSYCHOLOGIST' as HopeHubProviderGroup,
-    careTeamType: 'MENTAL_WELLNESS_PROFESSIONAL' as HopeHubCareTeamType,
-    careTeamTypes: ['MENTAL_WELLNESS_PROFESSIONAL'] as HopeHubCareTeamType[],
-    specialty: '',
     confirmPassword: '',
   });
   readonly enrollForm = form(this.enrollModel, (schema) => {
@@ -114,42 +47,6 @@ export class Login {
   message = signal('');
   submitting = signal(false);
   readonly phLanguage = PH_PROVIDER_LANGUAGE;
-
-  isHealingHubSignup(): boolean {
-    return true;
-  }
-
-  selectedProviderHelper(): string {
-    const selected = this.enrollModel().providerType;
-    return this.providerTypeOptions.find((option) => option.value === selected)?.helper || '';
-  }
-
-  selectedHopeHubGroupHelper(): string {
-    const selected = this.enrollModel().hopeHubGroup;
-    return this.hopeHubGroupOptions.find((option) => option.value === selected)?.helper || '';
-  }
-
-  onProviderTypeChange(_value: ProviderSignupKind): void {
-    this.enrollModel.update((current) => ({
-      ...current,
-      providerType: 'HOPE_HUB',
-      hopeHubGroup: current.hopeHubGroup || 'PSYCHOLOGIST',
-      careTeamType: current.careTeamType || 'MENTAL_WELLNESS_PROFESSIONAL',
-      careTeamTypes: current.careTeamTypes?.length
-        ? current.careTeamTypes
-        : ['MENTAL_WELLNESS_PROFESSIONAL'],
-    }));
-  }
-
-  onHopeHubGroupChange(value: HopeHubProviderGroup): void {
-    const defaultCareTeamType = this.defaultCareTeamTypeForGroup(value);
-    this.enrollModel.update((current) => ({
-      ...current,
-      hopeHubGroup: value,
-      careTeamType: defaultCareTeamType,
-      careTeamTypes: [defaultCareTeamType],
-    }));
-  }
 
   setLoginMode(mode: 'otp' | 'password'): void {
     this.loginMode.set(mode);
@@ -278,8 +175,7 @@ export class Login {
   async enroll() {
     if (!this.canSignup()) return;
     const { email, password } = this.signInModel();
-    const { name, mobile, hopeHubGroup } = this.enrollModel();
-    const defaultCareTeamType = this.defaultCareTeamTypeForGroup(hopeHubGroup);
+    const { name, mobile } = this.enrollModel();
     this.error.set('');
     this.message.set('');
     this.submitting.set(true);
@@ -289,10 +185,7 @@ export class Login {
         email,
         mobile: mobile || undefined,
         password,
-        specialty: this.specialtyForEnrollment(),
         registrationNo: undefined,
-        careTeamType: defaultCareTeamType,
-        careTeamTypes: [defaultCareTeamType],
       });
 
       if (!result.ok) {
@@ -300,19 +193,15 @@ export class Login {
         return;
       }
 
+      const login = await this.auth.login(email, password);
+      if (login.ok) {
+        await this.router.navigate(['/welcome']);
+        return;
+      }
       this.mode.set('signin');
-      this.message.set(result.message);
+      this.message.set('Account created. Sign in to choose your support path.');
     } finally {
       this.submitting.set(false);
     }
-  }
-
-  private defaultCareTeamTypeForGroup(group: HopeHubProviderGroup): HopeHubCareTeamType {
-    return this.defaultCareTeamTypeByGroup[group];
-  }
-
-  private specialtyForEnrollment(): string {
-    const form = this.enrollModel();
-    return this.defaultSpecialtyByGroup[form.hopeHubGroup] || 'Professional Help';
   }
 }

@@ -5,6 +5,8 @@ export const ROUTE_PATHS = {
 
   DASHBOARD: 'dashboard',
 
+  WELCOME: 'welcome',
+
   APPOINTMENTS: 'appointments',
 
   REPERTORY: 'repertory',

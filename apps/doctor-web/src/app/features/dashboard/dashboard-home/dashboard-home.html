@@ -19,33 +19,37 @@
   @if (!onboarding().complete) {
     @if (onboardingRequiredNotice()) {
       <p class="onboarding-redirect-note">
-        That tool is locked for now. Complete setup below first, then your full provider console will open.
+        That tool is locked for now. Complete setup below first, then your full provider console
+        will open.
       </p>
     }
     <p class="onboarding-lock-note">
-      Finish required tasks first. Worklist, live calls, earnings, and care tools unlock after setup.
+      Finish required tasks first. Worklist, live calls, earnings, and care tools unlock after
+      setup.
     </p>
   }
 
-  <div class="onboarding-steps">
-    @for (step of onboarding().steps; track step.id) {
-      @if (step.required) {
-        <article class="onboarding-step" [class.done]="step.complete">
-          <span class="step-dot">{{ step.complete ? '✓' : '•' }}</span>
-          <div>
-            <h3>{{ step.title }}</h3>
-            <p>{{ step.description }}</p>
-            @if (!step.complete && step.missing?.length) {
-              <small class="missing-fields">Missing: {{ step.missing?.join(', ') }}</small>
-            }
-          </div>
-          @if (!step.complete) {
-            <a class="step-action" [routerLink]="step.route" [queryParams]="step.queryParams || null">{{ step.actionLabel }}</a>
+  @if (nextOnboardingStep(); as step) {
+    <div class="onboarding-steps">
+      <article class="onboarding-step">
+        <span class="step-dot">→</span>
+        <div>
+          <p class="step-kicker">Your next step</p>
+          <h3>{{ step.title }}</h3>
+          <p>{{ step.description }}</p>
+          @if (step.missing?.length) {
+            <small class="missing-fields">You will need: {{ step.missing?.join(', ') }}</small>
           }
-        </article>
-      }
-    }
-  </div>
+        </div>
+        <a class="step-action" [routerLink]="step.route" [queryParams]="step.queryParams || null">{{
+          step.actionLabel
+        }}</a>
+      </article>
+    </div>
+    <p class="muted onboarding-count">
+      {{ onboarding().percent }}% complete · we will show the next task when this one is saved.
+    </p>
+  }
 </section>
 
 @if (onboarding().complete) {
@@ -55,7 +59,9 @@
         <div>
           <h2>{{ ready.ready ? 'Ready for users' : 'Before users can book or connect live' }}</h2>
           <p class="muted">
-            {{ ready.ready ? 'Your profile can accept bookings and live requests.' : ready.message }}
+            {{
+              ready.ready ? 'Your profile can accept bookings and live requests.' : ready.message
+            }}
           </p>
         </div>
         <button type="button" (click)="loadReadiness()">Refresh</button>
@@ -106,9 +112,11 @@
     <div>
       <h2>Today&apos;s workload</h2>
       <p class="muted">
-        {{ canPrescribe()
-          ? 'Open your worklist for assigned cases, active consults, and follow-ups.'
-          : 'Open your worklist for assigned sessions, active conversations, and follow-ups.' }}
+        {{
+          canPrescribe()
+            ? 'Open your worklist for assigned cases, active consults, and follow-ups.'
+            : 'Open your worklist for assigned sessions, active conversations, and follow-ups.'
+        }}
       </p>
     </div>
     <a class="primary-link" [routerLink]="worklistPath">Open worklist</a>
@@ -128,7 +136,11 @@
         <h3>In progress</h3>
         <p>{{ worklistCounts().inProgress }}</p>
       </a>
-      <a class="card stat-link urgent" [routerLink]="worklistPath" [queryParams]="{ view: 'FOLLOW_UP_DUE' }">
+      <a
+        class="card stat-link urgent"
+        [routerLink]="worklistPath"
+        [queryParams]="{ view: 'FOLLOW_UP_DUE' }"
+      >
         <h3>Follow-up due</h3>
         <p>{{ worklistCounts().followUpDue }}</p>
       </a>
@@ -141,7 +153,9 @@
     <div class="panel-header">
       <div>
         <h2>Listener readiness</h2>
-        <p class="muted">Keep your public listener profile safe, complete, and ready for live users.</p>
+        <p class="muted">
+          Keep your public listener profile safe, complete, and ready for live users.
+        </p>
       </div>
       <a class="primary-link" routerLink="/profile">Complete profile</a>
     </div>
@@ -177,7 +191,9 @@
 @if (capabilities().earnings) {
   <section class="panel">
     <div class="panel-header">
-      <h2>{{ canPrescribe() ? 'Payment Dashboard' : language().sessionTitle + ' Payment Dashboard' }}</h2>
+      <h2>
+        {{ canPrescribe() ? 'Payment Dashboard' : language().sessionTitle + ' Payment Dashboard' }}
+      </h2>
       <button type="button" (click)="loadSummary()" [disabled]="loading()">
         {{ loading() ? 'Refreshing...' : 'Refresh' }}
       </button>
@@ -204,18 +220,32 @@
     } @else {
       @for (item of summary()?.payments || []; track item.id) {
         <article class="card">
-          <strong>{{ item.consultation?.patient?.name || language().userTitle }} — {{ item.consultation?.disease?.name || language().sessionTitle }}</strong>
+          <strong
+            >{{ item.consultation?.patient?.name || language().userTitle }} —
+            {{ item.consultation?.disease?.name || language().sessionTitle }}</strong
+          >
           <p>
-            {{ item.amountInPaise / 100 | currency: 'INR' }} | Plan: {{ item.billingPlanCode || 'ONE_TIME' }} |
+            {{ item.amountInPaise / 100 | currency: 'INR' }} | Plan:
+            {{ item.billingPlanCode || 'ONE_TIME' }} |
             {{ item.createdAt | date: 'mediumDate' }}
           </p>
           @if (item.consultation?.id) {
             <div class="actions">
               @if (canPrescribe()) {
-                <button type="button" (click)="openPaidConsultation(item.consultation.id)">Open prescription</button>
-                <button type="button" class="ghost" (click)="consultationNav.openCaseAnalysis(item.consultation.id)">Case analysis</button>
+                <button type="button" (click)="openPaidConsultation(item.consultation.id)">
+                  Open prescription
+                </button>
+                <button
+                  type="button"
+                  class="ghost"
+                  (click)="consultationNav.openCaseAnalysis(item.consultation.id)"
+                >
+                  Case analysis
+                </button>
               } @else {
-                <button type="button" (click)="openSession(item.consultation.id)">Open session</button>
+                <button type="button" (click)="openSession(item.consultation.id)">
+                  Open session
+                </button>
               }
             </div>
           }

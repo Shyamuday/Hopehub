@@ -237,7 +237,7 @@ export function registerAuthDoctorRoutes(router: Router) {
           email: z.string().email(),
           mobile: z.string().min(8).optional(),
           password: z.string().min(8),
-          specialty: z.string().min(2),
+          specialty: z.string().min(2).optional(),
           registrationNo: z.string().optional(),
           careTeamType: z.nativeEnum(CareTeamMemberType).optional(),
           careTeamTypes: z.array(z.nativeEnum(CareTeamMemberType)).max(12).optional()
@@ -245,12 +245,13 @@ export function registerAuthDoctorRoutes(router: Router) {
         .parse(req.body);
 
       const passwordHash = await bcrypt.hash(body.password, 10);
+      // A new provider starts with a simple account only. Their support path is selected
+      // in the guided onboarding conversation after their first sign-in.
       const careTeamTypes = normalizeCareTeamTypes(body.careTeamType, body.careTeamTypes);
-      const isHopeHubProvider = Boolean(body.careTeamType || body.careTeamTypes?.length);
+      const isHopeHubProvider = true;
       const primaryCareTeamType = careTeamTypes[0];
-      const inferredDoctorType = isHopeHubProvider
-        ? HomeopathicDoctorType.PSYCHOLOGIST
-        : inferDoctorTypeFromSpecialty(body.specialty);
+      const inferredDoctorType = HomeopathicDoctorType.PSYCHOLOGIST;
+      const specialty = body.specialty || 'Professional Help provider';
       const doctor = await prisma.user.create({
         data: {
           name: body.name,
@@ -263,7 +264,7 @@ export function registerAuthDoctorRoutes(router: Router) {
             create: {
               ...toDoctorProfilePayload({
                 doctorType: inferredDoctorType,
-                specialty: body.specialty,
+                specialty,
                 registrationNo: body.registrationNo
               }),
               ...(isHopeHubProvider
@@ -289,7 +290,7 @@ export function registerAuthDoctorRoutes(router: Router) {
         name: body.name,
         email: body.email,
         mobile: doctor.mobile,
-        specialty: body.specialty,
+        specialty,
         registrationNo: body.registrationNo || null
       });
 
@@ -320,6 +321,79 @@ export function registerAuthDoctorRoutes(router: Router) {
         ...(verification.devVerifyUrl ? { devVerifyUrl: verification.devVerifyUrl } : {}),
         message:
           'Provider account created. Log in to complete your setup before appearing on Hope Hub.'
+      });
+    })
+  );
+
+  router.put(
+    '/doctor/onboarding-path',
+    authRequired,
+    allowRoles(Role.DOCTOR),
+    asyncRoute(async (req, res) => {
+      const body = z
+        .object({
+          supportStyle: z.enum(['LISTEN', 'GUIDE', 'COUNSEL']),
+          formalTraining: z.enum(['YES', 'IN_PROGRESS', 'NO']).optional()
+        })
+        .parse(req.body);
+
+      const selection =
+        body.supportStyle === 'LISTEN'
+          ? {
+              careTeamType: CareTeamMemberType.PEER_SUPPORT_VOLUNTEER,
+              specialty: 'Peer emotional support listener'
+            }
+          : body.supportStyle === 'GUIDE'
+            ? {
+                careTeamType: CareTeamMemberType.LIFE_COACH,
+                specialty: 'Life coach / guide'
+              }
+            : {
+                careTeamType:
+                  body.formalTraining === 'YES'
+                    ? CareTeamMemberType.MENTAL_WELLNESS_PROFESSIONAL
+                    : body.formalTraining === 'IN_PROGRESS'
+                      ? CareTeamMemberType.PSYCHOLOGY_STUDENT_VOLUNTEER
+                      : CareTeamMemberType.PEER_SUPPORT_VOLUNTEER,
+                specialty:
+                  body.formalTraining === 'YES'
+                    ? 'Counselling / mental-wellness support'
+                    : body.formalTraining === 'IN_PROGRESS'
+                      ? 'Psychology student listener'
+                      : 'Peer emotional support listener'
+              };
+
+      const updated = await prisma.doctor.update({
+        where: { userId: req.user!.id },
+        data: {
+          doctorType: HomeopathicDoctorType.PSYCHOLOGIST,
+          specialty: selection.specialty,
+          mentalHealthProfile: {
+            upsert: {
+              create: {
+                careTeamType: selection.careTeamType,
+                careTeamTypes: [selection.careTeamType],
+                onboardingPathSelectedAt: new Date(),
+                acceptingNewUsers: true,
+                autoMatchEnabled: true
+              },
+              update: {
+                careTeamType: selection.careTeamType,
+                careTeamTypes: [selection.careTeamType],
+                onboardingPathSelectedAt: new Date()
+              }
+            }
+          }
+        },
+        select: doctorProfileSelect
+      });
+
+      res.json({
+        doctorProfile: {
+          ...updated,
+          doctorTypeLabel: doctorTypeLabel(updated.doctorType),
+          specialtyFocusLabel: specialtyFocusLabel(updated.specialtyFocus)
+        }
       });
     })
   );

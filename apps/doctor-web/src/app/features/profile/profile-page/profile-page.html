@@ -11,7 +11,8 @@
     <div>
       <h2>{{ isPsychologist ? 'Hope Hub Provider Setup' : 'Provider Profile Setup' }}</h2>
       <p class="section-hint">
-        Complete each step once. After this, your full professional dashboard becomes clear and usable.
+        Complete each step once. After this, your full professional dashboard becomes clear and
+        usable.
       </p>
       @if (isLoading) {
         <p class="loading-text">Loading profile...</p>
@@ -25,7 +26,10 @@
       @if (specialtyFocusLabel) {
         <span class="focus-label">{{ specialtyFocusLabel }}</span>
       }
-      <p class="role-note">Role and grade are assigned by admin. Your setup controls what users see and what tools unlock.</p>
+      <p class="role-note">
+        Your support path controls what users see and which tools unlock. You can refine it later
+        from your profile.
+      </p>
     </div>
   }
 
@@ -39,19 +43,25 @@
     </div>
   </div>
 
-  <nav class="setup-stepper" aria-label="Provider profile setup steps">
-    @for (step of setupStepItems(); track step.id) {
-      <button
-        type="button"
-        [class.active]="activeSetupStep() === step.id"
-        [class.complete]="step.complete"
-        (click)="setSetupStep(step.id)"
-      >
-        <span>{{ step.complete ? '✓' : '•' }}</span>
-        {{ step.label }}
-      </button>
-    }
-  </nav>
+  @if (setupIsComplete()) {
+    <nav class="setup-stepper" aria-label="Provider profile setup steps">
+      @for (step of setupStepItems(); track step.id) {
+        <button
+          type="button"
+          [class.active]="activeSetupStep() === step.id"
+          [class.complete]="step.complete"
+          (click)="setSetupStep(step.id)"
+        >
+          <span>✓</span>
+          {{ step.label }}
+        </button>
+      }
+    </nav>
+  } @else {
+    <p class="section-hint setup-step-count">
+      Step {{ currentSetupStepPosition() }} of {{ setupStepItems().length }} · one small section at a time
+    </p>
+  }
 
   <section class="setup-panel" [class.dimmed]="isLoading">
     <header class="setup-panel-header">
@@ -111,7 +121,9 @@
             <option [value]="method.id">{{ method.label }}</option>
           }
         </select>
-        <p class="section-hint">Pre-selected when you open case analysis or start a new prescription.</p>
+        <p class="section-hint">
+          Pre-selected when you open case analysis or start a new prescription.
+        </p>
       }
     }
 
@@ -122,7 +134,9 @@
           @if (showOnWebsite) {
             <span class="visibility-badge visible">Currently visible on website</span>
           } @else {
-            <span class="visibility-badge hidden">Not shown on website — contact admin to publish</span>
+            <span class="visibility-badge hidden"
+              >Not shown on website — contact admin to publish</span
+            >
           }
         </p>
 
@@ -168,7 +182,10 @@
         <div class="subtype-service-guide">
           <div>
             <strong>Services they can offer</strong>
-            <p>Based on selected subtype. Add these to pricing or use them as a safe service boundary.</p>
+            <p>
+              Based on selected subtype. Add these to pricing or use them as a safe service
+              boundary.
+            </p>
           </div>
           <div class="suggested-service-grid">
             @for (service of suggestedServicesForSelectedSubtypes(); track service.title) {
@@ -176,7 +193,9 @@
                 <small>{{ service.subtype }}</small>
                 <strong>{{ service.title }}</strong>
                 <span>{{ service.description }}</span>
-                <button type="button" (click)="addSuggestedService(service)">Add to services</button>
+                <button type="button" (click)="addSuggestedService(service)">
+                  Add to services
+                </button>
               </article>
             }
           </div>
@@ -192,17 +211,31 @@
         }
 
         <div class="grid two-column">
-          <label for="qualifications">Qualifications <span class="hint">(one per line)</span></label>
-          <textarea id="qualifications" rows="3" [formField]="profileForm.qualificationsText"></textarea>
+          <label for="qualifications"
+            >Qualifications <span class="hint">(one per line)</span></label
+          >
+          <textarea
+            id="qualifications"
+            rows="3"
+            [formField]="profileForm.qualificationsText"
+          ></textarea>
 
           @if (!isListenerProfile()) {
             <label for="qualifiedFrom">Qualified / trained from</label>
-            <input id="qualifiedFrom" [formField]="profileForm.qualifiedFrom" placeholder="University, institute, academy, or training body" />
+            <input
+              id="qualifiedFrom"
+              [formField]="profileForm.qualifiedFrom"
+              placeholder="University, institute, academy, or training body"
+            />
           }
 
           @if (isClinicalMentalHealthProfile()) {
             <label for="licenseCouncil">License / council</label>
-            <input id="licenseCouncil" [formField]="profileForm.licenseCouncil" placeholder="e.g. RCI, state council" />
+            <input
+              id="licenseCouncil"
+              [formField]="profileForm.licenseCouncil"
+              placeholder="e.g. RCI, state council"
+            />
 
             <label for="licenseNumber">License / registration number</label>
             <input id="licenseNumber" [formField]="profileForm.licenseNumber" />
@@ -212,7 +245,9 @@
           <textarea id="languages" rows="3" [formField]="profileForm.languagesText"></textarea>
 
           @if (isClinicalMentalHealthProfile()) {
-            <label for="modalities">Modalities <span class="hint">(CBT, DBT, ACT, etc.)</span></label>
+            <label for="modalities"
+              >Modalities <span class="hint">(CBT, DBT, ACT, etc.)</span></label
+            >
             <textarea id="modalities" rows="3" [formField]="profileForm.modalitiesText"></textarea>
           } @else if (isCoachGuideProfile()) {
             <label for="modalities">Coaching / guidance methods</label>
@@ -220,13 +255,21 @@
           }
 
           <label for="sessionTypes">Session types <span class="hint">(one per line)</span></label>
-          <textarea id="sessionTypes" rows="3" [formField]="profileForm.sessionTypesText"></textarea>
+          <textarea
+            id="sessionTypes"
+            rows="3"
+            [formField]="profileForm.sessionTypesText"
+          ></textarea>
 
           <label for="ageGroups">Age groups served</label>
           <textarea id="ageGroups" rows="3" [formField]="profileForm.ageGroupsText"></textarea>
 
           <label for="concernsHandled">Concerns handled</label>
-          <textarea id="concernsHandled" rows="4" [formField]="profileForm.concernsHandledText"></textarea>
+          <textarea
+            id="concernsHandled"
+            rows="4"
+            [formField]="profileForm.concernsHandledText"
+          ></textarea>
         </div>
       </section>
     }
@@ -237,7 +280,8 @@
           <div class="listener-profile-checklist">
             <strong>Listener profile completion checklist · {{ listenerReadinessLabel() }}</strong>
             <p class="section-hint">
-              Self-service listeners become visible only after these trust and safety fields are complete.
+              Self-service listeners become visible only after these trust and safety fields are
+              complete.
             </p>
             <ul>
               @for (item of listenerReadinessItems(); track item.key) {
@@ -250,10 +294,18 @@
         }
 
         <label for="introSessionTitle">Intro session title</label>
-        <input id="introSessionTitle" [formField]="profileForm.introSessionTitle" placeholder="e.g. Calm first conversation" />
+        <input
+          id="introSessionTitle"
+          [formField]="profileForm.introSessionTitle"
+          placeholder="e.g. Calm first conversation"
+        />
 
         <label for="counsellingApproach">{{ approachLabel() }}</label>
-        <textarea id="counsellingApproach" rows="5" [formField]="profileForm.counsellingApproach"></textarea>
+        <textarea
+          id="counsellingApproach"
+          rows="5"
+          [formField]="profileForm.counsellingApproach"
+        ></textarea>
 
         <label for="safetyEscalationNote">Safety escalation note</label>
         <textarea
@@ -303,11 +355,21 @@
         <div class="grid two">
           <div>
             <label for="maxSessionsPerDay">Max bookings per day</label>
-            <input id="maxSessionsPerDay" type="number" [formField]="profileForm.maxSessionsPerDay" placeholder="No daily limit" />
+            <input
+              id="maxSessionsPerDay"
+              type="number"
+              [formField]="profileForm.maxSessionsPerDay"
+              placeholder="No daily limit"
+            />
           </div>
           <div>
             <label for="maxSessionsPerWeek">Max bookings per week</label>
-            <input id="maxSessionsPerWeek" type="number" [formField]="profileForm.maxSessionsPerWeek" placeholder="No weekly limit" />
+            <input
+              id="maxSessionsPerWeek"
+              type="number"
+              [formField]="profileForm.maxSessionsPerWeek"
+              placeholder="No weekly limit"
+            />
           </div>
         </div>
 
@@ -315,7 +377,11 @@
         <div class="service-editor">
           @for (service of careServices(); track $index) {
             <article class="service-editor-card">
-              <input [value]="service.title" placeholder="Service title" (input)="updateCareService($index, 'title', $any($event.target).value)" />
+              <input
+                [value]="service.title"
+                placeholder="Service title"
+                (input)="updateCareService($index, 'title', $any($event.target).value)"
+              />
               <div class="template-row">
                 <select #serviceTemplate>
                   <option value="">Choose ready plan</option>
@@ -323,40 +389,118 @@
                     <option [value]="template.id">{{ template.title }}</option>
                   }
                 </select>
-                <button type="button" (click)="applyPricingTemplate($index, serviceTemplate.value)">Use plan</button>
+                <button type="button" (click)="applyPricingTemplate($index, serviceTemplate.value)">
+                  Use plan
+                </button>
               </div>
-              <select [value]="service.pricingMode || 'FIXED'" (change)="updateCareService($index, 'pricingMode', $any($event.target).value)">
+              <select
+                [value]="service.pricingMode || 'FIXED'"
+                (change)="updateCareService($index, 'pricingMode', $any($event.target).value)"
+              >
                 @for (mode of servicePricingModeOptions; track mode.value) {
                   <option [value]="mode.value">{{ mode.label }}</option>
                 }
               </select>
-              @if (service.pricingMode !== 'FREE_VOLUNTEER' && service.pricingMode !== 'PER_MINUTE') {
-                <input type="number" [value]="rupees(service.priceInPaise)" placeholder="Base ₹" (input)="updateCareService($index, 'priceInPaise', $any($event.target).value)" />
+              @if (
+                service.pricingMode !== 'FREE_VOLUNTEER' && service.pricingMode !== 'PER_MINUTE'
+              ) {
+                <input
+                  type="number"
+                  [value]="rupees(service.priceInPaise)"
+                  placeholder="Base ₹"
+                  (input)="updateCareService($index, 'priceInPaise', $any($event.target).value)"
+                />
               }
               @if (showFirstPrice(service)) {
-                <input type="number" [value]="rupees(service.firstSessionPriceInPaise)" placeholder="First ₹" (input)="updateCareService($index, 'firstSessionPriceInPaise', $any($event.target).value)" />
+                <input
+                  type="number"
+                  [value]="rupees(service.firstSessionPriceInPaise)"
+                  placeholder="First ₹"
+                  (input)="
+                    updateCareService($index, 'firstSessionPriceInPaise', $any($event.target).value)
+                  "
+                />
               }
               @if (showFollowUpPrice(service)) {
-                <input type="number" [value]="rupees(service.followUpPriceInPaise)" placeholder="Follow-up ₹" (input)="updateCareService($index, 'followUpPriceInPaise', $any($event.target).value)" />
-                <input type="number" [value]="service.introSessionLimit || 1" placeholder="Intro limit" (input)="updateCareService($index, 'introSessionLimit', $any($event.target).value)" />
+                <input
+                  type="number"
+                  [value]="rupees(service.followUpPriceInPaise)"
+                  placeholder="Follow-up ₹"
+                  (input)="
+                    updateCareService($index, 'followUpPriceInPaise', $any($event.target).value)
+                  "
+                />
+                <input
+                  type="number"
+                  [value]="service.introSessionLimit || 1"
+                  placeholder="Intro limit"
+                  (input)="
+                    updateCareService($index, 'introSessionLimit', $any($event.target).value)
+                  "
+                />
               }
               @if (showPackageFields(service)) {
-                <input type="number" [value]="service.packageSessionCount || ''" placeholder="Package sessions" (input)="updateCareService($index, 'packageSessionCount', $any($event.target).value)" />
-                <input type="number" [value]="rupees(service.packagePriceInPaise)" placeholder="Package ₹" (input)="updateCareService($index, 'packagePriceInPaise', $any($event.target).value)" />
+                <input
+                  type="number"
+                  [value]="service.packageSessionCount || ''"
+                  placeholder="Package sessions"
+                  (input)="
+                    updateCareService($index, 'packageSessionCount', $any($event.target).value)
+                  "
+                />
+                <input
+                  type="number"
+                  [value]="rupees(service.packagePriceInPaise)"
+                  placeholder="Package ₹"
+                  (input)="
+                    updateCareService($index, 'packagePriceInPaise', $any($event.target).value)
+                  "
+                />
               }
               @if (showPerMinuteFields(service)) {
-                <input type="number" [value]="service.freeMinutes || 0" placeholder="Free minutes" (input)="updateCareService($index, 'freeMinutes', $any($event.target).value)" />
-                <input type="number" [value]="rupees(service.pricePerMinuteInPaise)" placeholder="₹ per minute" (input)="updateCareService($index, 'pricePerMinuteInPaise', $any($event.target).value)" />
+                <input
+                  type="number"
+                  [value]="service.freeMinutes || 0"
+                  placeholder="Free minutes"
+                  (input)="updateCareService($index, 'freeMinutes', $any($event.target).value)"
+                />
+                <input
+                  type="number"
+                  [value]="rupees(service.pricePerMinuteInPaise)"
+                  placeholder="₹ per minute"
+                  (input)="
+                    updateCareService($index, 'pricePerMinuteInPaise', $any($event.target).value)
+                  "
+                />
               }
-              <input type="number" [value]="service.durationMinutes || 30" placeholder="Minutes" (input)="updateCareService($index, 'durationMinutes', $any($event.target).value)" />
-              <input [value]="service.description || ''" placeholder="Description" (input)="updateCareService($index, 'description', $any($event.target).value)" />
-              <label><input type="checkbox" [checked]="service.isActive !== false" (change)="updateCareService($index, 'isActive', $any($event.target).checked)" /> Active</label>
+              <input
+                type="number"
+                [value]="service.durationMinutes || 30"
+                placeholder="Minutes"
+                (input)="updateCareService($index, 'durationMinutes', $any($event.target).value)"
+              />
+              <input
+                [value]="service.description || ''"
+                placeholder="Description"
+                (input)="updateCareService($index, 'description', $any($event.target).value)"
+              />
+              <label
+                ><input
+                  type="checkbox"
+                  [checked]="service.isActive !== false"
+                  (change)="updateCareService($index, 'isActive', $any($event.target).checked)"
+                />
+                Active</label
+              >
               <button type="button" (click)="removeCareService($index)">Remove</button>
             </article>
           }
           <button type="button" (click)="addCareService()">Add service</button>
         </div>
-        <p class="section-hint">Use pricing mode for fixed, first free, discounted first, package, per-minute, or free emotional support listener support.</p>
+        <p class="section-hint">
+          Use pricing mode for fixed, first free, discounted first, package, per-minute, or free
+          emotional support listener support.
+        </p>
       </section>
     }
   </section>
@@ -368,7 +512,12 @@
     <button type="button" (click)="saveProfile()" [disabled]="isLoading || saving">
       {{ saving ? 'Saving...' : 'Save' }}
     </button>
-    <button type="button" class="primary-action" (click)="saveAndContinue()" [disabled]="isLoading || saving">
+    <button
+      type="button"
+      class="primary-action"
+      (click)="saveAndContinue()"
+      [disabled]="isLoading || saving"
+    >
       {{ saving ? 'Saving...' : 'Save & continue' }}
     </button>
   </div>

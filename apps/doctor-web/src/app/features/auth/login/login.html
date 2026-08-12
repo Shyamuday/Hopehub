@@ -1,17 +1,32 @@
 <section class="login-card">
   <div class="switcher">
-    <button type="button" [class.active]="mode() === 'signup'" (click)="mode.set('signup')">Sign up</button>
-    <button type="button" [class.active]="mode() === 'signin'" (click)="mode.set('signin')">Sign in</button>
+    <button type="button" [class.active]="mode() === 'signup'" (click)="mode.set('signup')">
+      Sign up
+    </button>
+    <button type="button" [class.active]="mode() === 'signin'" (click)="mode.set('signin')">
+      Sign in
+    </button>
   </div>
 
   @if (mode() === 'signin') {
     <h2>{{ phLanguage.providerTitle }} login</h2>
-    <p>Sign in to your Professional Help workspace for emotional support, counselling, coaching, and mental-wellness sessions.</p>
+    <p>
+      Sign in to your Professional Help workspace for emotional support, counselling, coaching, and
+      mental-wellness sessions.
+    </p>
 
     <form (submit)="$event.preventDefault(); submit()">
       <div class="switcher">
-        <button type="button" [class.active]="loginMode() === 'otp'" (click)="setLoginMode('otp')">Email OTP</button>
-        <button type="button" [class.active]="loginMode() === 'password'" (click)="setLoginMode('password')">Password</button>
+        <button type="button" [class.active]="loginMode() === 'otp'" (click)="setLoginMode('otp')">
+          Email OTP
+        </button>
+        <button
+          type="button"
+          [class.active]="loginMode() === 'password'"
+          (click)="setLoginMode('password')"
+        >
+          Password
+        </button>
       </div>
 
       <label for="email">Email</label>
@@ -27,7 +42,12 @@
       @if (loginMode() === 'password') {
         <label for="password">Password</label>
         <div class="password-input-wrap">
-          <input id="password" [formField]="signInForm.password" [type]="showPassword() ? 'text' : 'password'" autocomplete="current-password" />
+          <input
+            id="password"
+            [formField]="signInForm.password"
+            [type]="showPassword() ? 'text' : 'password'"
+            autocomplete="current-password"
+          />
           <button type="button" class="password-toggle" (click)="showPassword.set(!showPassword())">
             {{ showPassword() ? 'Hide' : 'Show' }}
           </button>
@@ -40,12 +60,25 @@
           </p>
         }
       } @else {
-        <app-button type="button" variant="secondary" (click)="sendOtp()" [disabled]="submitting() || signInForm.email().invalid()" [loading]="submitting()" block>
+        <app-button
+          type="button"
+          variant="secondary"
+          (click)="sendOtp()"
+          [disabled]="submitting() || signInForm.email().invalid()"
+          [loading]="submitting()"
+          block
+        >
           {{ otpSent() ? 'Resend OTP' : 'Send OTP' }}
         </app-button>
         @if (otpSent()) {
           <label for="otp">OTP</label>
-          <input id="otp" [value]="otp()" (input)="otp.set($any($event.target).value)" inputmode="numeric" autocomplete="one-time-code" />
+          <input
+            id="otp"
+            [value]="otp()"
+            (input)="otp.set($any($event.target).value)"
+            inputmode="numeric"
+            autocomplete="one-time-code"
+          />
         }
       }
 
@@ -56,21 +89,44 @@
         <p class="success">{{ message() }}</p>
       }
 
-      <app-button type="submit" [disabled]="submitting() || (loginMode() === 'password' ? signInForm().invalid() : signInForm.email().invalid() || !otpSent() || otp().length < 4)" [loading]="submitting()" block>
-        {{ submitting() ? 'Signing in...' : (loginMode() === 'otp' ? 'Verify OTP & sign in' : 'Sign in') }}
+      <app-button
+        type="submit"
+        [disabled]="
+          submitting() ||
+          (loginMode() === 'password'
+            ? signInForm().invalid()
+            : signInForm.email().invalid() || !otpSent() || otp().length < 4)
+        "
+        [loading]="submitting()"
+        block
+      >
+        {{
+          submitting()
+            ? 'Signing in...'
+            : loginMode() === 'otp'
+              ? 'Verify OTP & sign in'
+              : 'Sign in'
+        }}
       </app-button>
 
       <div class="login-divider"><span>or</span></div>
 
-      <button type="button" class="google-login-button" (click)="loginWithGoogle()" [disabled]="submitting()">
+      <button
+        type="button"
+        class="google-login-button"
+        (click)="loginWithGoogle()"
+        [disabled]="submitting()"
+      >
         <span class="google-login-button__mark" aria-hidden="true">G</span>
         <span>Continue with Google</span>
       </button>
     </form>
-
   } @else {
     <h2>Create account</h2>
-    <p>Create your Professional Help account. You can add credentials, category, and verification details after signup.</p>
+    <p>
+      Create your account first. We will ask a few simple questions and guide the rest one step at a
+      time.
+    </p>
 
     <form (submit)="$event.preventDefault(); enroll()">
       <label for="name">Full name</label>
@@ -82,41 +138,45 @@
       <label for="mobile">Mobile</label>
       <input id="mobile" [formField]="enrollForm.mobile" />
 
-      @if (isHealingHubSignup()) {
-        <label for="hopeHubGroup">Professional category</label>
-        <select id="hopeHubGroup" [formField]="enrollForm.hopeHubGroup" (change)="onHopeHubGroupChange($any($event.target).value)">
-          @for (option of hopeHubGroupOptions; track option.value) {
-            <option [value]="option.value">{{ option.label }}</option>
-          }
-        </select>
-        @if (selectedHopeHubGroupHelper()) {
-          <p class="field-hint">{{ selectedHopeHubGroupHelper() }}</p>
-        }
-
-      }
-
-      @if (!isHealingHubSignup()) {
-        <label for="specialty">Specialty</label>
-        <input id="specialty" [formField]="enrollForm.specialty" placeholder="e.g. chronic care, pediatrics, skin, kidney care" />
-      }
-
       <label for="enrollPassword">Password</label>
       <div class="password-input-wrap">
-        <input id="enrollPassword" [formField]="signInForm.password" [type]="showEnrollPassword() ? 'text' : 'password'" autocomplete="new-password" />
-        <button type="button" class="password-toggle" (click)="showEnrollPassword.set(!showEnrollPassword())">
+        <input
+          id="enrollPassword"
+          [formField]="signInForm.password"
+          [type]="showEnrollPassword() ? 'text' : 'password'"
+          autocomplete="new-password"
+        />
+        <button
+          type="button"
+          class="password-toggle"
+          (click)="showEnrollPassword.set(!showEnrollPassword())"
+        >
           {{ showEnrollPassword() ? 'Hide' : 'Show' }}
         </button>
       </div>
 
       <label for="confirmPassword">Confirm password</label>
       <div class="password-input-wrap">
-        <input id="confirmPassword" [formField]="enrollForm.confirmPassword" [type]="showConfirmPassword() ? 'text' : 'password'" autocomplete="new-password" />
-        <button type="button" class="password-toggle" (click)="showConfirmPassword.set(!showConfirmPassword())">
+        <input
+          id="confirmPassword"
+          [formField]="enrollForm.confirmPassword"
+          [type]="showConfirmPassword() ? 'text' : 'password'"
+          autocomplete="new-password"
+        />
+        <button
+          type="button"
+          class="password-toggle"
+          (click)="showConfirmPassword.set(!showConfirmPassword())"
+        >
           {{ showConfirmPassword() ? 'Hide' : 'Show' }}
         </button>
       </div>
 
-      @if (signInModel().password && enrollModel().confirmPassword && signInModel().password !== enrollModel().confirmPassword) {
+      @if (
+        signInModel().password &&
+        enrollModel().confirmPassword &&
+        signInModel().password !== enrollModel().confirmPassword
+      ) {
         <p class="error">Passwords do not match</p>
       }
 
@@ -127,7 +187,12 @@
         <p class="success">{{ message() }}</p>
       }
 
-      <app-button type="submit" [disabled]="submitting() || !canSignup()" [loading]="submitting()" block>
+      <app-button
+        type="submit"
+        [disabled]="submitting() || !canSignup()"
+        [loading]="submitting()"
+        block
+      >
         {{ submitting() ? 'Creating account...' : 'Create account' }}
       </app-button>
     </form>

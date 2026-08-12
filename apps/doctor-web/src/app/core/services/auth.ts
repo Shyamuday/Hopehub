@@ -145,12 +145,12 @@ export class Auth {
     email: string;
     mobile?: string;
     password: string;
-    specialty: string;
+    specialty?: string;
     registrationNo?: string;
     careTeamType?: string;
     careTeamTypes?: string[];
   }) {
-    if (!payload.name || !payload.email || !payload.password || !payload.specialty) {
+    if (!payload.name || !payload.email || !payload.password) {
       return { ok: false as const, message: AUTH_MESSAGES.ENROLL_REQUIRED_FIELDS };
     }
 
