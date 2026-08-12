@@ -122,6 +122,21 @@ function buildDoctorNav(
         enabled: capabilities.slots,
         showInBottomNav: true,
       },
+      {
+        id: 'more',
+        label: 'More',
+        icon: DOCTOR_NAV_ICONS.More.icon,
+        shortLabel: DOCTOR_NAV_ICONS.More.shortLabel,
+        enabled: capabilities.earnings,
+        children: [
+          {
+            id: 'earnings',
+            label: 'Earnings',
+            path: `/${ROUTE_PATHS.EARNINGS}`,
+            enabled: capabilities.earnings,
+          },
+        ],
+      },
     ];
   }
 
@@ -234,25 +249,21 @@ function buildDoctorNav(
       showInBottomNav: true,
     },
     {
-      id: 'schedule',
-      label: 'Schedule',
-      icon: DOCTOR_NAV_ICONS['Schedule'].icon,
-      shortLabel: DOCTOR_NAV_ICONS['Schedule'].shortLabel,
-      enabled: true,
-      children: [
-        {
-          id: 'slots',
-          label: availabilityLabel,
-          path: `/${ROUTE_PATHS.SLOTS}`,
-          enabled: capabilities.slots,
-        },
-        {
-          id: 'leaves',
-          label: 'Leaves',
-          path: `/${ROUTE_PATHS.LEAVES}`,
-          enabled: capabilities.leaves,
-        },
-      ],
+      id: 'availability',
+      label: availabilityLabel,
+      path: `/${ROUTE_PATHS.SLOTS}`,
+      icon: DOCTOR_NAV_ICONS['Slots'].icon,
+      shortLabel: DOCTOR_NAV_ICONS['Slots'].shortLabel,
+      enabled: capabilities.slots,
+      showInBottomNav: true,
+    },
+    {
+      id: 'leaves',
+      label: 'Leaves',
+      path: `/${ROUTE_PATHS.LEAVES}`,
+      icon: DOCTOR_NAV_ICONS['Leaves'].icon,
+      shortLabel: DOCTOR_NAV_ICONS['Leaves'].shortLabel,
+      enabled: capabilities.leaves,
     },
     {
       id: 'earnings',
@@ -286,7 +297,43 @@ function buildDoctorNav(
     },
   ];
 
-  return items.filter((item) => item.enabled && (item.children ? hasEnabledChild(item) : true));
+  const enabledItems = items.filter(
+    (item) => item.enabled && (item.children ? hasEnabledChild(item) : true),
+  );
+  const coreOrder = ['dashboard', 'worklist', 'go-live', 'availability'];
+  const coreIds = new Set(coreOrder);
+  const coreItems = coreOrder
+    .map((id) => enabledItems.find((item) => item.id === id))
+    .filter((item): item is DoctorNavItemDef => !!item);
+  const resumeItem = enabledItems.find((item) => item.id === 'resume-case');
+  const moreChildren: DoctorNavChildLink[] = enabledItems
+    .filter((item) => !coreIds.has(item.id) && item.id !== 'resume-case')
+    .flatMap((item) => {
+      if (item.children?.length) return item.children.filter((child) => child.enabled);
+      if (!item.path) return [];
+      return [
+        {
+          id: item.id,
+          label: item.label,
+          path: item.path,
+          queryParams: item.queryParams,
+          enabled: item.enabled,
+        },
+      ];
+    });
+
+  const moreItem: DoctorNavItemDef | null = moreChildren.length
+    ? {
+        id: 'more',
+        label: 'More',
+        icon: DOCTOR_NAV_ICONS.More.icon,
+        shortLabel: DOCTOR_NAV_ICONS.More.shortLabel,
+        enabled: true,
+        children: moreChildren,
+      }
+    : null;
+
+  return [...coreItems, ...(resumeItem ? [resumeItem] : []), ...(moreItem ? [moreItem] : [])];
 }
 
 function hasEnabledChild(item: DoctorNavItemDef) {

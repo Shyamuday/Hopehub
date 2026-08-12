@@ -67,11 +67,9 @@ export class GroupChatTeaserComponent implements OnInit {
   readonly displayedMessages = computed(() =>
     this.hasRealChat() ? this.realMessages() : this.fallbackMessages,
   );
-  readonly roomTitle = computed(
-    () => this.activeGroup()?.title || 'See how Hope Hub support chat feels',
-  );
+  readonly roomTitle = computed(() => this.activeGroup()?.title || 'Live user chat');
   readonly teaserLabel = computed(() =>
-    this.hasRealChat() ? 'Live support chat' : 'Sample support chat',
+    this.hasRealChat() ? 'Live user chat' : 'Community chat preview',
   );
   readonly footerLinkLabel = computed(() =>
     this.hasRealChat() ? 'See live support' : 'Explore support options',

@@ -330,7 +330,7 @@ export class DoctorShell implements OnInit, OnDestroy {
     const used = new Set<string>();
 
     for (const item of items) {
-      if (picked.length >= 3) break;
+      if (picked.length >= 4) break;
       if (item.enabled && item.path && item.showInBottomNav && !used.has(item.path)) {
         picked.push({
           id: item.id,
@@ -345,7 +345,7 @@ export class DoctorShell implements OnInit, OnDestroy {
       }
 
       for (const child of item.children || []) {
-        if (picked.length >= 3) break;
+        if (picked.length >= 4) break;
         if (!child.enabled || !child.showInBottomNav || used.has(child.path)) continue;
         const icons = DOCTOR_NAV_ICONS[child.label] ?? DOCTOR_NAV_ICONS['Clinical'];
         picked.push({
@@ -361,7 +361,7 @@ export class DoctorShell implements OnInit, OnDestroy {
       }
     }
 
-    this.bottomNavItems = picked.slice(0, 3);
+    this.bottomNavItems = picked.slice(0, 4);
     this.overflowNavCount = Math.max(0, items.length - this.bottomNavItems.length);
   }
 

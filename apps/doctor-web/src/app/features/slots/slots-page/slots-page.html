@@ -1,11 +1,10 @@
 
     <div class="sp">
-      <div class="sp-hdr">
-        <div>
-          <h2 class="sp-title">{{ pageTitle() }}</h2>
-          <p class="sp-sub">{{ pageSubtitle() }}</p>
-        </div>
-      </div>
+      <app-page-header
+        [title]="pageTitle()"
+        eyebrow="Scheduling"
+        [description]="pageSubtitle()"
+      />
 
       @if (readiness(); as ready) {
         <section class="readiness-panel" [class.ready]="ready.ready">
@@ -49,7 +48,7 @@
         @for (t of templates; track t.label) {
           <button class="tmpl-btn" (click)="addTemplate(t)" [disabled]="readinessBlocksActions()">{{ t.label }}</button>
         }
-        <button class="tmpl-btn danger" (click)="clearDay()">🗑 Clear day</button>
+        <button class="tmpl-btn danger" (click)="askToClearDay()">🗑 Clear day</button>
       </div>
 
       <!-- Manual add -->
@@ -102,7 +101,7 @@
                 </small>
                 <div class="rule-actions">
                   <button type="button" (click)="generateRule(rule)" [disabled]="!rule.isActive || readinessBlocksActions()">Generate</button>
-                  <button type="button" class="danger" (click)="deleteRule(rule)" [disabled]="!rule.isActive">Disable</button>
+                  <button type="button" class="danger" (click)="askToDisableRule(rule)" [disabled]="!rule.isActive">Disable</button>
                 </div>
               </article>
             }
@@ -121,28 +120,34 @@
                 <div class="slot-service">{{ s.careTeamService.title }}</div>
               }
               <div class="slot-status">
-                @if (s.isBooked) { <span class="badge booked">Booked</span> }
-                @else if (s.isBlocked) { <span class="badge blocked">Blocked</span> }
-                @else { <span class="badge open">Open</span> }
+                @if (s.isBooked) { <app-status-chip label="Booked" tone="warning" /> }
+                @else if (s.isBlocked) { <app-status-chip label="Blocked" tone="neutral" /> }
+                @else { <app-status-chip label="Open" tone="success" /> }
               </div>
               <div class="slot-actions">
                 @if (!s.isBooked) {
                   <button class="icon-btn" (click)="toggleBlock(s)" [disabled]="s.isBlocked && readinessBlocksActions()" [title]="s.isBlocked ? 'Unblock' : 'Block'">
                     {{ s.isBlocked ? '🔓' : '🔒' }}
                   </button>
-                  <button class="icon-btn danger" (click)="deleteSlot(s.id)" title="Delete">✕</button>
+                  <button class="icon-btn danger" (click)="askToDeleteSlot(s.id)" title="Delete">✕</button>
                 }
               </div>
             </div>
           }
         </div>
         @if (slots().length === 0) {
-          <div class="empty">
-            <div>📅</div>
-            <p>{{ emptyText() }}</p>
-          </div>
+          <app-empty-state icon="📅" title="No availability yet" [description]="emptyText()" />
         }
       }
     </div>
     @if (toast()) { <div class="toast">{{ toast() }}</div> }
+    <app-confirm-dialog
+      [open]="!!pendingConfirmation()"
+      [title]="confirmationTitle()"
+      [message]="confirmationMessage()"
+      confirmLabel="Continue"
+      [danger]="true"
+      (confirm)="confirmPendingAction()"
+      (cancel)="pendingConfirmation.set(null)"
+    />
   

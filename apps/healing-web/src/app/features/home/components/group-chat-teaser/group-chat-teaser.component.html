@@ -5,7 +5,7 @@
       Open support chat
     </button>
   } @else {
-    <aside class="chat-teaser" [attr.aria-label]="hasRealChat() ? 'Hope Hub live support chat' : 'Hope Hub sample support chat'">
+    <aside class="chat-teaser" [attr.aria-label]="hasRealChat() ? 'Hope Hub live user chat' : 'Hope Hub community chat preview'">
       <header class="chat-teaser__header">
         <div>
           <span class="chat-teaser__eyebrow">
@@ -19,9 +19,9 @@
             } @else if (hasRealChat()) {
               Real members are chatting now. Read quietly, then sign up free to reply.
             } @else if (isAuthenticated()) {
-              You are signed in. You can reply here or open the full support area.
+              No members are chatting right now. This preview shows the kind of supportive conversation you can join.
             } @else {
-              No active support chat is happening yet, so this is only a sample. Sign up free when you want to join.
+              No members are chatting right now. This preview shows how the space feels — sign up free when you want to join.
             }
           </p>
         </div>
