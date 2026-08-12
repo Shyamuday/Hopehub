@@ -1,16 +1,15 @@
 <section class="support-hero">
-  <p class="eyebrow">Hope Hub provider support</p>
-  <h1>How can we help?</h1>
-  <p>Clear answers for setting up your profile, supporting users, availability, safety, and earnings.</p>
-  <label class="support-search">
-    <span aria-hidden="true">⌕</span>
-    <input
-      type="search"
-      placeholder="Search profile, sessions, safety, payments..."
-      [value]="query()"
-      (input)="onSearch($event)"
-    />
-  </label>
+  <app-page-header
+    eyebrow="Hope Hub provider support"
+    title="How can we help?"
+    description="Clear answers for setting up your profile, supporting users, availability, safety, and earnings."
+  ></app-page-header>
+  <app-filter-toolbar
+    class="support-search"
+    [query]="query()"
+    placeholder="Search profile, sessions, safety, payments..."
+    (queryChange)="query.set($event)"
+  ></app-filter-toolbar>
 </section>
 
 <section class="quick-links" aria-label="Quick links">
@@ -45,10 +44,11 @@
       </div>
     </article>
   } @empty {
-    <div class="empty-search">
-      <strong>No support article found.</strong>
-      <span>Try a simpler word such as “profile”, “safety”, “slots”, or “payment”.</span>
-    </div>
+    <app-empty-state
+      icon="⌕"
+      title="No support article found"
+      description="Try a simpler word such as profile, safety, slots, or payment."
+    ></app-empty-state>
   }
 </section>
 

@@ -29,3 +29,10 @@
     }
   </div>
 </section>
+
+<app-connect-comfort-dialog
+  [open]="pendingMode() !== null"
+  [mode]="pendingMode() || 'chat'"
+  (confirmed)="confirmChoice()"
+  (cancelled)="cancelChoice()"
+/>

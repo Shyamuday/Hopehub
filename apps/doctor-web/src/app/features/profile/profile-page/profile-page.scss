@@ -413,25 +413,7 @@
 }
 
 .actions {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-button {
-  border: 0;
-  border-radius: var(--radius-sm);
-  min-height: var(--touch-min);
-  padding: 0.55rem 0.85rem;
-  cursor: pointer;
-  background: var(--color-brand);
-  color: #fff;
-  font-weight: 600;
-  font-size: var(--text-sm);
-}
-
-.primary-action {
-  background: #0f766e;
+  display: block;
 }
 
 .success {
@@ -446,11 +428,10 @@ button {
 
 @media (min-width: 480px) {
   .actions {
-    flex-direction: row;
-    flex-wrap: wrap;
+    display: block;
   }
 
-  .actions button {
+  .actions app-button {
     flex: 1 1 8rem;
   }
 }

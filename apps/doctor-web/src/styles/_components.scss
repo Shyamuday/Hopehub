@@ -17,7 +17,7 @@
   padding: 1rem;
   margin-bottom: 0.85rem;
   background: var(--color-surface);
-  box-shadow: var(--shadow-sm);
+  box-shadow: none;
 }
 
 .panel-header {
@@ -36,6 +36,15 @@
   background: var(--color-surface);
 }
 
+.text-link {
+  color: var(--color-brand);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  text-decoration: none;
+
+  &:hover { color: var(--color-brand-dark); text-decoration: underline; }
+}
+
 .btn {
   display: inline-flex;
   align-items: center;
@@ -48,12 +57,8 @@
   font-size: var(--text-sm);
   border: 0;
   cursor: pointer;
-  transition: background var(--transition), transform 0.1s ease, opacity var(--transition);
+  transition: background var(--transition), border-color var(--transition), opacity var(--transition);
   -webkit-tap-highlight-color: transparent;
-
-  &:active:not(:disabled) {
-    transform: scale(0.98);
-  }
 
   &:disabled {
     opacity: 0.55;
@@ -75,10 +80,11 @@
   @extend .btn;
   background: var(--color-surface);
   color: var(--color-brand);
-  border: 1px solid var(--color-brand-muted);
+  border: 1px solid var(--color-border-strong);
   text-decoration: none;
 
   &:hover:not(:disabled) {
+    border-color: var(--color-brand);
     background: var(--color-brand-soft);
   }
 }

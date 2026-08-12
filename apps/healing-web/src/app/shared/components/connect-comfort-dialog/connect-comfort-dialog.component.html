@@ -1,0 +1,21 @@
+<app-modal
+  [open]="open"
+  size="sm"
+  [title]="'Comfortable with ' + label() + '?'"
+  description="Choose the way that feels easiest right now. You stay in control."
+  (closed)="cancelled.emit()"
+>
+  <div class="comfort-dialog">
+    <div class="comfort-dialog__mode"><span>{{ icon() }}</span><strong>{{ label() }}</strong></div>
+    <p>{{ comfortCopy() }}</p>
+    <div class="comfort-dialog__note">
+      <span aria-hidden="true">♡</span>
+      <span>Private 1:1 support. You can pause or end the session at any time.</span>
+    </div>
+  </div>
+
+  <footer modalFooter class="comfort-dialog__actions">
+    <button type="button" class="comfort-dialog__change" (click)="cancelled.emit()">Choose another way</button>
+    <button type="button" class="comfort-dialog__continue" (click)="confirm()">Yes, continue</button>
+  </footer>
+</app-modal>

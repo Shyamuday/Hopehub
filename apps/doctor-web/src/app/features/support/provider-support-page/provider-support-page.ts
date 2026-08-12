@@ -1,5 +1,8 @@
 import { Component, computed, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { AppEmptyStateComponent } from '../../../shared/ui/app-empty-state.component';
+import { AppPageHeaderComponent } from '../../../shared/ui/app-page-header.component';
+import { AppFilterToolbarComponent } from '../../../shared/ui/app-filter-toolbar.component';
 
 type SupportArticle = {
   title: string;
@@ -104,7 +107,7 @@ const PROVIDER_SUPPORT_TOPICS: SupportTopic[] = [
 
 @Component({
   selector: 'app-provider-support-page',
-  imports: [RouterLink],
+  imports: [RouterLink, AppEmptyStateComponent, AppPageHeaderComponent, AppFilterToolbarComponent],
   templateUrl: './provider-support-page.html',
   styleUrl: './provider-support-page.scss',
 })
@@ -125,8 +128,4 @@ export class ProviderSupportPage {
       }))
       .filter((topic) => topic.articles.length > 0);
   });
-
-  onSearch(event: Event) {
-    this.query.set((event.target as HTMLInputElement).value);
-  }
 }

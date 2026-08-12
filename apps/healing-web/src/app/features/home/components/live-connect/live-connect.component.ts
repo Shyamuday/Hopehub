@@ -41,6 +41,7 @@ import {
   StatusChipComponent,
   SelectableCardComponent,
   PageHeaderComponent,
+  ConnectComfortDialogComponent,
 } from '../../../../shared/components';
 
 type LiveConnectMode = ConsumerLiveConnectMode;
@@ -65,6 +66,7 @@ type LiveConnectAlternativeMode = {
     StatusChipComponent,
     SelectableCardComponent,
     PageHeaderComponent,
+    ConnectComfortDialogComponent,
   ],
   templateUrl: './live-connect.component.html',
   styleUrl: './live-connect.component.scss',
@@ -91,6 +93,7 @@ export class LiveConnectComponent implements OnInit {
   readonly newGroupTitle = signal('');
   readonly newGroupDescription = signal('');
   readonly startingProviderId = signal('');
+  readonly pendingProvider = signal<HopeHubProvider | null>(null);
   readonly view = signal<'providers' | 'groups'>('providers');
   readonly mode = signal<LiveConnectMode>('chat');
   readonly roleGroup = signal<LiveConnectRoleGroup>('');
@@ -333,7 +336,19 @@ export class LiveConnectComponent implements OnInit {
     return pieces.join(' · ');
   }
 
-  async start(provider: HopeHubProvider): Promise<void> {
+  requestStart(provider: HopeHubProvider): void {
+    if (this.startingProviderId()) return;
+    this.pendingProvider.set(provider);
+  }
+
+  cancelStart(): void {
+    this.pendingProvider.set(null);
+  }
+
+  async confirmStart(): Promise<void> {
+    const provider = this.pendingProvider();
+    if (!provider) return;
+    this.pendingProvider.set(null);
     if (this.startingProviderId()) return;
     if (!this.currentUser()) {
       this.notificationService.info(CONSUMER_UX_COPY.messages.authRequiredLive);

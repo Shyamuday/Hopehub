@@ -506,22 +506,21 @@
     }
   </section>
 
-  <div class="actions">
-    <button type="button" (click)="loadProfile()" [disabled]="isLoading || saving">
+  <app-action-bar class="actions">
+    <app-button type="button" variant="outline" (click)="loadProfile()" [disabled]="isLoading || saving">
       {{ isLoading ? 'Loading...' : 'Reload' }}
-    </button>
-    <button type="button" (click)="saveProfile()" [disabled]="isLoading || saving">
+    </app-button>
+    <app-button type="button" variant="secondary" (click)="saveProfile()" [disabled]="isLoading || saving">
       {{ saving ? 'Saving...' : 'Save' }}
-    </button>
-    <button
+    </app-button>
+    <app-button
       type="button"
-      class="primary-action"
       (click)="saveAndContinue()"
       [disabled]="isLoading || saving"
     >
       {{ saving ? 'Saving...' : 'Save & continue' }}
-    </button>
-  </div>
+    </app-button>
+  </app-action-bar>
 
   @if (message) {
     <p class="success">{{ message }}</p>
@@ -530,7 +529,7 @@
     <div class="error-row">
       <p class="error">{{ error }}</p>
       @if (!saving) {
-        <button type="button" class="retry-btn" (click)="loadProfile()">Retry</button>
+        <app-button type="button" size="sm" variant="outline" (click)="loadProfile()">Retry</app-button>
       }
     </div>
   }

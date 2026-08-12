@@ -111,25 +111,21 @@
 }
 
 .onboarding-card {
-  border-color: #c7d2fe;
-  background:
-    radial-gradient(circle at 0% 0%, rgba(79, 70, 229, 0.12), transparent 14rem),
-    linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  border-color: var(--color-brand-muted);
+  background: var(--color-surface);
 }
 
 .onboarding-card--complete {
-  border-color: #bbf7d0;
-  background:
-    radial-gradient(circle at 0% 0%, rgba(16, 185, 129, 0.12), transparent 14rem),
-    linear-gradient(180deg, #ffffff 0%, #f7fee7 100%);
+  border-color: var(--color-success-border);
+  background: var(--color-surface);
 }
 
 .onboarding-meter {
   align-items: baseline;
-  background: #eef2ff;
-  border: 1px solid #c7d2fe;
+  background: var(--color-brand-soft);
+  border: 1px solid var(--color-brand-muted);
   border-radius: 999px;
-  color: #3730a3;
+  color: var(--color-brand-dark);
   display: inline-flex;
   gap: 0.35rem;
   padding: 0.45rem 0.75rem;
@@ -210,8 +206,8 @@
 
 .onboarding-step {
   align-items: center;
-  background: rgba(255, 255, 255, 0.82);
-  border: 1px solid #e2e8f0;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   display: grid;
   gap: 0.65rem;
@@ -252,9 +248,9 @@
 
 .step-dot {
   align-items: center;
-  background: #e0e7ff;
+  background: var(--color-brand-soft);
   border-radius: 999px;
-  color: #3730a3;
+  color: var(--color-brand-dark);
   display: inline-flex;
   font-weight: 900;
   height: 2rem;
@@ -283,10 +279,8 @@
 }
 
 .launch-card {
-  border-color: #99f6e4;
-  background:
-    radial-gradient(circle at 100% 0%, rgba(20, 184, 166, 0.16), transparent 12rem),
-    var(--color-surface);
+  border-color: var(--color-border);
+  background: var(--color-surface);
 }
 
 .readiness-card {

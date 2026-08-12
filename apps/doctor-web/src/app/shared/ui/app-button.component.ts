@@ -43,13 +43,14 @@ type AppButtonSize = 'sm' | 'md' | 'lg';
         justify-content: center;
         gap: 0.5rem;
         border: 0;
-        border-radius: 0.75rem;
-        background: #2563eb;
+        border: 1px solid var(--color-brand);
+        border-radius: var(--radius-sm);
+        background: var(--color-brand);
         color: #ffffff;
         cursor: pointer;
         font: inherit;
         font-size: 0.92rem;
-        font-weight: 800;
+        font-weight: 600;
         line-height: 1.2;
         padding: 0.75rem 1.05rem;
         text-align: center;
@@ -61,12 +62,12 @@ type AppButtonSize = 'sm' | 'md' | 'lg';
       }
 
       .app-button:hover:not(:disabled) {
-        background: #1d4ed8;
-        box-shadow: 0 10px 24px rgba(37, 99, 235, 0.2);
+        border-color: var(--color-brand-dark);
+        background: var(--color-brand-dark);
       }
 
       .app-button:focus-visible {
-        outline: 3px solid rgba(59, 130, 246, 0.28);
+        outline: 3px solid rgba(56, 126, 209, 0.24);
         outline-offset: 2px;
       }
 
@@ -76,20 +77,20 @@ type AppButtonSize = 'sm' | 'md' | 'lg';
       }
 
       .app-button--secondary {
-        border: 1px solid #bfdbfe;
-        background: #eff6ff;
-        color: #1d4ed8;
+        border: 1px solid var(--color-border-strong);
+        background: var(--color-brand-soft);
+        color: var(--color-brand-dark);
       }
 
       .app-button--outline {
-        border: 1px solid #93c5fd;
+        border: 1px solid var(--color-border-strong);
         background: #ffffff;
-        color: #2563eb;
+        color: var(--color-brand);
       }
 
       .app-button--ghost {
         background: transparent;
-        color: #2563eb;
+        color: var(--color-brand);
       }
 
       .app-button--danger {
@@ -98,7 +99,7 @@ type AppButtonSize = 'sm' | 'md' | 'lg';
 
       .app-button--sm {
         min-height: 2.2rem;
-        border-radius: 0.6rem;
+        border-radius: var(--radius-sm);
         font-size: 0.82rem;
         padding: 0.5rem 0.75rem;
       }

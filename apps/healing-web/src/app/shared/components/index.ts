@@ -18,6 +18,7 @@ export * from './form-dropdown/form-dropdown.component';
 export * from './notification-center/notification-center.component';
 export * from './support-path-selector/support-path-selector.component';
 export * from './connect-options/connect-options.component';
+export * from './connect-comfort-dialog/connect-comfort-dialog.component';
 export * from './connect-fallback-panel/connect-fallback-panel.component';
 export * from './guided-support-entry/guided-support-entry.component';
 export * from './hope-guide/hope-guide.component';

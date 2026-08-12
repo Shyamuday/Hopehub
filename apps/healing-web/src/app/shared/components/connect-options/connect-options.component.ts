@@ -1,11 +1,13 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output, signal } from '@angular/core';
 import { CONSUMER_CONNECT_MODE_META } from '../../../core/constants/consumer-form-options.constants';
+import { ConnectComfortDialogComponent } from '../connect-comfort-dialog/connect-comfort-dialog.component';
 
 export type ConnectOptionMode = 'chat' | 'voice' | 'video' | 'book';
 
 @Component({
   selector: 'app-connect-options',
   standalone: true,
+  imports: [ConnectComfortDialogComponent],
   templateUrl: './connect-options.component.html',
   styleUrl: './connect-options.component.scss',
 })
@@ -20,6 +22,7 @@ export class ConnectOptionsComponent {
   @Input() bookLabel = 'Book slot';
 
   @Output() selected = new EventEmitter<ConnectOptionMode>();
+  readonly pendingMode = signal<ConnectOptionMode | null>(null);
 
   readonly options: Array<{
     mode: ConnectOptionMode;
@@ -49,6 +52,21 @@ export class ConnectOptionsComponent {
   }
 
   choose(mode: ConnectOptionMode): void {
+    if (mode !== 'book') {
+      this.pendingMode.set(mode);
+      return;
+    }
     this.selected.emit(mode);
+  }
+
+  confirmChoice(): void {
+    const mode = this.pendingMode();
+    if (!mode) return;
+    this.pendingMode.set(null);
+    this.selected.emit(mode);
+  }
+
+  cancelChoice(): void {
+    this.pendingMode.set(null);
   }
 }

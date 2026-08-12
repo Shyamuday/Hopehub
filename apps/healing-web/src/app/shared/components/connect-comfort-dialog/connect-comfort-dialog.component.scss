@@ -1,0 +1,10 @@
+.comfort-dialog { display: grid; gap: 0.85rem; }
+.comfort-dialog__mode { align-items: center; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 0.85rem; color: #166534; display: flex; gap: 0.55rem; padding: 0.7rem; }
+.comfort-dialog__mode span { align-items: center; background: #dcfce7; border-radius: 999px; display: inline-flex; height: 2rem; justify-content: center; width: 2rem; }
+.comfort-dialog p { color: #475569; font-size: 0.9rem; line-height: 1.6; margin: 0; }
+.comfort-dialog__note { align-items: flex-start; background: #f8fafc; border-radius: 0.75rem; color: #64748b; display: flex; font-size: 0.8rem; gap: 0.45rem; line-height: 1.45; padding: 0.7rem; }
+.comfort-dialog__actions { border-top: 1px solid #e2e8f0; display: flex; gap: 0.65rem; justify-content: flex-end; padding: 0 1.5rem 1.5rem; }
+.comfort-dialog__actions button { border-radius: 0.65rem; cursor: pointer; font-size: 0.86rem; font-weight: 800; min-height: 2.5rem; padding: 0.55rem 0.8rem; }
+.comfort-dialog__change { background: #fff; border: 1px solid #cbd5e1; color: #475569; }
+.comfort-dialog__continue { background: var(--brand-primary, #2563eb); border: 1px solid var(--brand-primary, #2563eb); color: #fff; }
+@media (max-width: 420px) { .comfort-dialog__actions { flex-direction: column-reverse; } .comfort-dialog__actions button { width: 100%; } }

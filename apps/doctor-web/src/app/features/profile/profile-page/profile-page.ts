@@ -17,6 +17,8 @@ import {
   type DoctorProfileSummary,
 } from '../../../core/constants/doctor-types.constants';
 import { DoctorSessionService } from '../../../core/services/doctor-session';
+import { AppButtonComponent } from '../../../shared/ui/app-button.component';
+import { AppActionBarComponent } from '../../../shared/ui/app-action-bar.component';
 
 const LISTENER_SAFETY_ACKNOWLEDGEMENT_VERSION = 'listener-safety-v1-2026-08-07';
 const CARE_TEAM_TYPE_OPTIONS = [
@@ -183,7 +185,13 @@ function emptyProfileModel() {
 
 @Component({
   selector: 'app-profile-page',
-  imports: [FormField, ProfileAvatarUploadComponent, MultiSelectComponent],
+  imports: [
+    FormField,
+    ProfileAvatarUploadComponent,
+    MultiSelectComponent,
+    AppButtonComponent,
+    AppActionBarComponent,
+  ],
   templateUrl: './profile-page.html',
   styleUrl: './profile-page.scss',
 })

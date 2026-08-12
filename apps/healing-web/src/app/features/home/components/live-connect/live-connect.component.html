@@ -91,7 +91,7 @@
                   class="mt-5"
                   block
                   [disabled]="startingProviderId() === provider.id"
-                  (click)="start(provider)"
+                  (click)="requestStart(provider)"
                 >
                   {{
                     startingProviderId() === provider.id
@@ -230,3 +230,10 @@
   (retry)="retryPayment()"
   (close)="closePaymentOverlay()"
 ></app-payment-status-overlay>
+
+<app-connect-comfort-dialog
+  [open]="pendingProvider() !== null"
+  [mode]="mode()"
+  (confirmed)="confirmStart()"
+  (cancelled)="cancelStart()"
+/>

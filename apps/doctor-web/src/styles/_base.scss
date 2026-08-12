@@ -22,7 +22,12 @@ body {
 }
 
 a {
-  color: inherit;
+  color: var(--color-brand);
+  text-decoration: none;
+
+  &:hover {
+    color: var(--color-brand-dark);
+  }
 }
 
 button,
@@ -52,7 +57,7 @@ textarea {
   &:focus {
     outline: none;
     border-color: var(--color-brand-light);
-    box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.2);
+    box-shadow: 0 0 0 3px rgba(56, 126, 209, 0.18);
   }
 }
 
