@@ -78,14 +78,9 @@
             >
               {{ availabilityLabel(p) }}
             </span>
-            <app-connect-options
-              class="mt-4 block"
-              [chatAvailable]="p.acceptsChat !== false"
-              [voiceAvailable]="p.acceptsVoiceCall !== false"
-              [videoAvailable]="p.acceptsVideoCall !== false"
-              [bookLabel]="'Book slot'"
-              (selected)="connect(p, $event)"
-            />
+            <app-button type="button" class="mt-4 block" (click)="book(p)">
+              {{ bookingCta(p) }}
+            </app-button>
             <details class="mt-4 rounded-md border border-gray-200 bg-gray-50 px-4 py-3">
               <summary class="cursor-pointer text-sm font-semibold text-primary-700">About {{ p.name }}</summary>
             @if (supportPathMeta(p); as path) {
@@ -165,7 +160,15 @@
             <details class="mt-4 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
               <summary class="cursor-pointer text-sm font-semibold text-primary-700">More ways to continue</summary>
               <div class="mt-3 flex flex-col gap-3 sm:flex-row">
-              <app-button type="button" (click)="book(p)">{{ bookingCta(p) }}</app-button>
+              <app-connect-options
+                class="block"
+                [compact]="true"
+                [chatAvailable]="p.acceptsChat !== false"
+                [voiceAvailable]="p.acceptsVoiceCall !== false"
+                [videoAvailable]="p.acceptsVideoCall !== false"
+                [bookLabel]="'Slot'"
+                (selected)="connect(p, $event)"
+              />
               <app-button variant="outline" [routerLink]="ROUTES.links.bookSupport" [queryParams]="{ consultant: p.name, providerId: p.id, type: 'inquiry', supportPath: supportPathMeta(p).value, supportPathLabel: supportPathMeta(p).label, preferredExpertType: supportPathMeta(p).title }">Ask a question</app-button>
               <app-button
                 variant="secondary"
@@ -215,15 +218,18 @@
                 >
                   Book this service
                 </app-button>
-                <app-connect-options
-                  class="mt-3 block"
-                  [compact]="true"
-                  [chatAvailable]="p.acceptsChat !== false"
-                  [voiceAvailable]="p.acceptsVoiceCall !== false"
-                  [videoAvailable]="p.acceptsVideoCall !== false"
-                  [bookLabel]="'Slot'"
-                  (selected)="connect(p, $event, service)"
-                />
+                <details class="mt-3 rounded-md border border-gray-200 bg-white px-3 py-2">
+                  <summary class="cursor-pointer text-sm font-semibold text-primary-700">Other ways</summary>
+                  <app-connect-options
+                    class="mt-3 block"
+                    [compact]="true"
+                    [chatAvailable]="p.acceptsChat !== false"
+                    [voiceAvailable]="p.acceptsVoiceCall !== false"
+                    [videoAvailable]="p.acceptsVideoCall !== false"
+                    [bookLabel]="'Slot'"
+                    (selected)="connect(p, $event, service)"
+                  />
+                </details>
               </article>
             }
           </div>
@@ -318,14 +324,7 @@
       }
 
       <div class="fixed inset-x-0 bottom-0 z-40 border-t border-gray-200 bg-white/95 px-3 py-2 shadow-[0_-12px_30px_rgba(15,23,42,0.12)] backdrop-blur sm:hidden">
-        <app-connect-options
-          [compact]="true"
-          [chatAvailable]="p.acceptsChat !== false"
-          [voiceAvailable]="p.acceptsVoiceCall !== false"
-          [videoAvailable]="p.acceptsVideoCall !== false"
-          [bookLabel]="'Slot'"
-          (selected)="connect(p, $event)"
-        />
+        <app-button type="button" block (click)="book(p)">{{ bookingCta(p) }}</app-button>
       </div>
     } @else {
       <div class="rounded-lg border border-red-200 bg-red-50 p-6 text-red-700">{{ error() || 'Care team profile not found.' }}</div>

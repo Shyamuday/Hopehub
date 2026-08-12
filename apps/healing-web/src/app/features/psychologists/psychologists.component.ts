@@ -41,7 +41,6 @@ import {
   AppButtonComponent,
   ContinueSupportBannerComponent,
   ConsumerPageShellComponent,
-  ConsumerSelectionRailComponent,
   EmptyStateComponent,
   FilterBarComponent,
   FormDropdownOption,
@@ -60,7 +59,6 @@ type RoleGroup = '' | ConsumerSupportPath;
     AppButtonComponent,
     ContinueSupportBannerComponent,
     ConsumerPageShellComponent,
-    ConsumerSelectionRailComponent,
     EmptyStateComponent,
     FilterBarComponent,
     ProviderCardComponent,
@@ -176,13 +174,18 @@ export class PsychologistsComponent implements OnInit {
     }
 
     if (
+      event.key === 'roleGroup' ||
       event.key === 'concern' ||
       event.key === 'language' ||
       event.key === 'modality' ||
       event.key === 'sessionType' ||
       event.key === 'ageGroup'
     ) {
-      this.setFilter(event.key, event.value);
+      if (event.key === 'roleGroup') {
+        this.setRoleGroup(this.isRoleGroup(event.value) ? event.value : '');
+      } else {
+        this.setFilter(event.key, event.value);
+      }
     }
   }
 
@@ -212,6 +215,16 @@ export class PsychologistsComponent implements OnInit {
       icon: path.icon,
       meta: String(this.roleCount(path.value)),
     }));
+  }
+
+  roleFilterOptions(): FormDropdownOption[] {
+    return [
+      { value: '', label: 'All support' },
+      ...this.roleTabs.map((path) => ({
+        value: path.value,
+        label: `${path.label} (${this.roleCount(path.value)})`,
+      })),
+    ];
   }
 
   toggleFilters(): void {

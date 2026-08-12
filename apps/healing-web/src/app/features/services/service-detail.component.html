@@ -32,18 +32,11 @@
             }
           </div>
           <h1 class="mb-4 text-xl font-semibold text-gray-950 sm:text-2xl">{{ service()!.name }}</h1>
-          <app-connect-options
-            class="mb-4 block"
-            [bookLabel]="'Book slot'"
-            (selected)="connect($event)"
-          />
-
           <app-button (click)="bookService()" block>{{ UX.cta.bookSupport }}</app-button>
 
           <details class="mt-4 rounded-md border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-700">
             <summary class="cursor-pointer font-semibold text-primary-700">About this support</summary>
             <p class="mt-3 leading-6">{{ service()!.description }}</p>
-            <p class="mt-3 leading-6">Start with a private request. The checkout step shows final session details before you confirm.</p>
             <app-guided-support-entry class="mt-4 block" [compact]="true" [title]="'Start ' + service()!.name + ' support'" [subtitle]="'Choose the path that feels easiest.'" [contextConcern]="service()!.category || service()!.name" [contextServiceName]="service()!.name" />
           </details>
 
@@ -62,6 +55,11 @@
           <details class="mt-4 rounded-md border border-gray-200 px-4 py-3">
             <summary class="cursor-pointer text-sm font-semibold text-primary-700">Other ways to continue</summary>
             <div class="mt-3 grid gap-2">
+              <app-connect-options
+                [compact]="true"
+                [bookLabel]="'Slot'"
+                (selected)="connect($event)"
+              />
               <app-button (click)="contactForInfo()" variant="outline" block>Ask a question</app-button>
               <app-button [routerLink]="assessmentForService(service()!).link" variant="secondary" block>{{ assessmentForService(service()!).label }}</app-button>
               <app-button [routerLink]="flowForService(service()!).careTeamLink" [queryParams]="flowForService(service()!).careTeamQueryParams" variant="outline" block>Meet matching care team</app-button>
@@ -165,12 +163,7 @@
     </details>
 
     <div class="fixed inset-x-0 bottom-0 z-40 border-t border-gray-200 bg-white/95 px-3 py-2 shadow-[0_-12px_30px_rgba(15,23,42,0.12)] backdrop-blur sm:hidden">
-      <app-connect-options
-        [compact]="true"
-        [showBook]="true"
-        [bookLabel]="'Slot'"
-        (selected)="connect($event)"
-      />
+      <app-button type="button" block (click)="bookService()">{{ UX.cta.bookSupport }}</app-button>
     </div>
   </div>
 }

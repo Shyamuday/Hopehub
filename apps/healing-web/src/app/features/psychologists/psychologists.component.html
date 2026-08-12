@@ -5,39 +5,17 @@
     <app-button page-actions size="sm" [routerLink]="ROUTES.links.bookSupport">{{ UX.cta.bookSupport }}</app-button>
 
     <div class="mb-5 flex items-center justify-between gap-3">
-      <button
-        type="button"
-        class="relative inline-grid h-10 w-10 shrink-0 place-items-center rounded-md border border-gray-200 bg-white text-primary-700 shadow-sm transition hover:border-primary-300 hover:bg-primary-50"
-        (click)="toggleFilters()"
-        [attr.aria-expanded]="filtersOpen()"
-        aria-label="Filter care team"
-      >
-        <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-          <path d="M4 6h16M7 12h10m-7 6h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
-        </svg>
-      </button>
-      <div class="rounded-md bg-blue-50 px-3 py-2 text-right text-sm font-medium text-blue-900">
-        {{ recommendedHint() }}
-      </div>
-    </div>
-      @if (filtersOpen()) {
-        <section class="mb-6 rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-          <div class="mb-3 flex items-center justify-between">
-            <p class="text-sm font-semibold text-gray-900">Filter care team</p>
-            <button type="button" class="text-sm font-medium text-primary-700" (click)="toggleFilters()">Done</button>
-          </div>
-          <app-consumer-selection-rail
-            class="mb-4 block"
-            [options]="roleSelectionOptions()"
-            [selected]="roleGroup()"
-            ariaLabel="Choose care team type"
-            (selectedChange)="setRoleGroup($any($event))"
-          />
-          <app-filter-bar
-            [showSearch]="false"
-            [collapsible]="false"
-            compact
-            [filters]="[
+      <app-filter-bar
+        class="block"
+        [showSearch]="false"
+        [filters]="[
+          {
+            key: 'roleGroup',
+            label: 'Support type',
+            placeholder: 'All support',
+            value: roleGroup(),
+            options: roleFilterOptions()
+          },
           {
             key: 'q',
             label: 'Quick need',
@@ -80,11 +58,13 @@
             value: ageGroup(),
             options: ageGroupOptions
           }
-            ]"
-            (filterChange)="handleFilterChange($event)"
-          />
-        </section>
-      }
+        ]"
+        (filterChange)="handleFilterChange($event)"
+      />
+      <div class="rounded-md bg-blue-50 px-3 py-2 text-right text-sm font-medium text-blue-900">
+        {{ recommendedHint() }}
+      </div>
+    </div>
     @if (roleGroup() || q() || concern() || language() || modality() || sessionType() || ageGroup()) {
       <button type="button" class="mb-5 text-sm font-medium text-gray-600 hover:text-gray-900" (click)="clearFilters()">Clear filters</button>
     }

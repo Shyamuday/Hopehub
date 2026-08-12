@@ -14,12 +14,18 @@
     @if (!selectedAssessment() && !showResults()) {
     <div class="space-y-5">
 
-      <!-- Categories -->
-      <app-consumer-selection-rail
-        [options]="assessmentCategoryOptions()"
-        [selected]="selectedCategory() || ''"
-        ariaLabel="Filter assessments"
-        (selectedChange)="selectAssessmentCategory($event)"
+      <app-filter-bar
+        [showSearch]="false"
+        [filters]="[
+          {
+            key: 'category',
+            label: 'Test type',
+            placeholder: 'All check-ins',
+            value: selectedCategory() || '',
+            options: assessmentCategoryOptions()
+          }
+        ]"
+        (filterChange)="handleFilterChange($event)"
       />
 
       <!-- Assessment Cards -->

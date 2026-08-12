@@ -29,7 +29,7 @@ import { AppButtonComponent } from '../app-button/app-button.component';
 import { CouponBoxComponent } from '../coupon-box/coupon-box.component';
 import { PageHeaderComponent } from '../page-header/page-header.component';
 import { SelectableCardComponent } from '../selectable-card/selectable-card.component';
-import { ConsumerSelectionRailComponent } from '../consumer-selection-rail/consumer-selection-rail.component';
+import { FilterBarComponent } from '../filter-bar/filter-bar.component';
 
 @Component({
   selector: 'app-multi-assessment',
@@ -42,7 +42,7 @@ import { ConsumerSelectionRailComponent } from '../consumer-selection-rail/consu
     CouponBoxComponent,
     PageHeaderComponent,
     SelectableCardComponent,
-    ConsumerSelectionRailComponent,
+    FilterBarComponent,
   ],
   templateUrl: './multi-assessment.component.html',
   styleUrl: './multi-assessment.component.scss',
@@ -152,6 +152,12 @@ export class MultiAssessmentComponent implements OnInit {
   selectAssessmentCategory(value: string): void {
     if (!value) this.showAllAssessments();
     else this.filterByCategory(value as AssessmentCategory);
+  }
+
+  handleFilterChange(event: { key: string; value: string }): void {
+    if (event.key === 'category') {
+      this.selectAssessmentCategory(event.value);
+    }
   }
 
   selectAssessment(assessment: AssessmentConfig) {
