@@ -1,15 +1,13 @@
 <app-consumer-page-shell
   eyebrow="Hope Hub support team"
   title="Meet the care team"
-  description="Start with the kind of support that feels right. Refine only if you need to."
 >
     <app-button page-actions size="sm" [routerLink]="ROUTES.links.bookSupport">{{ UX.cta.bookSupport }}</app-button>
 
-    <div class="mb-6 rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm leading-6 text-emerald-950">
-      <strong>Clear roles, safer support:</strong>
-      psychologists/counsellors can offer structured professional support. Coaches, mentors, wellness guides,
-      and emotional support listeners are non-clinical and follow Hope Hub safety escalation rules.
-    </div>
+    <details class="mb-5 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm leading-6 text-emerald-950">
+      <summary class="cursor-pointer font-semibold">About our support roles</summary>
+      <p class="mb-0 mt-2">Psychologists/counsellors offer structured professional support. Coaches, mentors, wellness guides, and emotional support listeners are non-clinical and follow Hope Hub safety escalation rules.</p>
+    </details>
 
     <app-continue-support-banner class="mb-6 block" [compact]="true" />
 

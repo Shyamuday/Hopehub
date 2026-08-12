@@ -34,7 +34,7 @@ export class OffersPageComponent implements OnInit {
       ? 'Join fixed-date group sessions, workshops, webinars, and community meetups.'
       : this.mode() === 'resources'
         ? 'Watch or listen to selected Telegram group recordings, uploaded sessions, and YouTube sessions.'
-        : 'Pick a single session or a care package. Admin can update these prices anytime.',
+        : 'Choose what feels right for you.',
   );
 
   ngOnInit(): void {
