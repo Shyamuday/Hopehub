@@ -51,13 +51,15 @@ export class PatientClinicalMediaService {
 
   loadMeta() {
     return firstValueFrom(
-      this.http.get<ClinicalMediaMeta>(`${this.apiBase}${API_PATHS.PATIENT.CLINICAL_MEDIA_META}`)
+      this.http.get<ClinicalMediaMeta>(`${this.apiBase}${API_PATHS.PATIENT.CLINICAL_MEDIA_META}`),
     );
   }
 
   list() {
     return firstValueFrom(
-      this.http.get<{ media: PatientClinicalMediaItem[] }>(`${this.apiBase}${API_PATHS.PATIENT.CLINICAL_MEDIA}`)
+      this.http.get<{ media: PatientClinicalMediaItem[] }>(
+        `${this.apiBase}${API_PATHS.PATIENT.CLINICAL_MEDIA}`,
+      ),
     ).then((r) => r.media);
   }
 
@@ -67,27 +69,45 @@ export class PatientClinicalMediaService {
     observations?: string;
     diseaseId?: string;
     conditionLabel?: string;
-    mimeType: string;
-    fileName?: string;
-    dataBase64: string;
+    file: File;
   }) {
+    const formData = new FormData();
+    formData.append('file', payload.file, payload.file.name);
+    formData.append('fileName', payload.file.name);
+    formData.append('mediaType', payload.mediaType);
+    for (const [key, value] of Object.entries(payload)) {
+      if (key !== 'file' && key !== 'mediaType' && value) formData.append(key, value);
+    }
     return firstValueFrom(
-      this.http.post<{ media: PatientClinicalMediaItem }>(`${this.apiBase}${API_PATHS.PATIENT.CLINICAL_MEDIA}`, payload)
+      this.http.post<{ media: PatientClinicalMediaItem }>(
+        `${this.apiBase}${API_PATHS.PATIENT.CLINICAL_MEDIA}`,
+        formData,
+      ),
     ).then((r) => r.media);
   }
 
-  update(mediaId: string, payload: { bodyRegion?: string; observations?: string; diseaseId?: string | null; conditionLabel?: string | null }) {
+  update(
+    mediaId: string,
+    payload: {
+      bodyRegion?: string;
+      observations?: string;
+      diseaseId?: string | null;
+      conditionLabel?: string | null;
+    },
+  ) {
     return firstValueFrom(
       this.http.patch<{ media: PatientClinicalMediaItem }>(
         `${this.apiBase}${API_PATHS.PATIENT.CLINICAL_MEDIA_ITEM(mediaId)}`,
-        payload
-      )
+        payload,
+      ),
     ).then((r) => r.media);
   }
 
   remove(mediaId: string) {
     return firstValueFrom(
-      this.http.delete<{ ok: boolean }>(`${this.apiBase}${API_PATHS.PATIENT.CLINICAL_MEDIA_ITEM(mediaId)}`)
+      this.http.delete<{ ok: boolean }>(
+        `${this.apiBase}${API_PATHS.PATIENT.CLINICAL_MEDIA_ITEM(mediaId)}`,
+      ),
     );
   }
 
@@ -98,8 +118,8 @@ export class PatientClinicalMediaService {
   loadAiPreview(mediaId: string) {
     return firstValueFrom(
       this.http.get<{ preview: PatientImagingPreview; interpretationId: string | null }>(
-        `${this.apiBase}${API_PATHS.PATIENT.CLINICAL_MEDIA_AI_PREVIEW(mediaId)}`
-      )
+        `${this.apiBase}${API_PATHS.PATIENT.CLINICAL_MEDIA_AI_PREVIEW(mediaId)}`,
+      ),
     );
   }
 }

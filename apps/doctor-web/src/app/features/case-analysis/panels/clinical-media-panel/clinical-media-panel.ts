@@ -1,11 +1,20 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, OnChanges, OnDestroy, Output, inject, signal } from '@angular/core';
+import {
+  Component,
+  EventEmitter,
+  Input,
+  OnChanges,
+  OnDestroy,
+  Output,
+  inject,
+  signal,
+} from '@angular/core';
 import { form, FormField } from '@angular/forms/signals';
 import {
   CLINICAL_MEDIA_BODY_REGIONS,
   CLINICAL_MEDIA_TYPE_LABELS,
   suggestRubricSearchPhrases,
-  type ClinicalMediaType
+  type ClinicalMediaType,
 } from '@hopehub/homeopathy-approaches';
 import { CaseAnalysisApiService } from '../../case-analysis-api.service';
 import type { ClinicalMediaImageAnalysis, ClinicalMediaItem } from '../../clinical-media.types';
@@ -17,7 +26,7 @@ import { ClinicalMediaAnalysisPanelComponent } from '../clinical-media-analysis-
   selector: 'app-clinical-media-panel',
   imports: [CommonModule, FormField, DiseasePickerComponent, ClinicalMediaAnalysisPanelComponent],
   templateUrl: './clinical-media-panel.html',
-  styleUrl: './clinical-media-panel.scss'
+  styleUrl: './clinical-media-panel.scss',
 })
 export class ClinicalMediaPanelComponent implements OnChanges, OnDestroy {
   private readonly api = inject(CaseAnalysisApiService);
@@ -26,7 +35,9 @@ export class ClinicalMediaPanelComponent implements OnChanges, OnDestroy {
   @Output() rubricPhraseSelected = new EventEmitter<string>();
   @Output() interpretationApplied = new EventEmitter<CaseAnalysis>();
 
-  readonly mediaTypes = Object.entries(CLINICAL_MEDIA_TYPE_LABELS) as Array<[ClinicalMediaType, string]>;
+  readonly mediaTypes = Object.entries(CLINICAL_MEDIA_TYPE_LABELS) as Array<
+    [ClinicalMediaType, string]
+  >;
   readonly media = signal<ClinicalMediaItem[]>([]);
   readonly loading = signal(false);
   readonly uploading = signal(false);
@@ -48,7 +59,7 @@ export class ClinicalMediaPanelComponent implements OnChanges, OnDestroy {
     diseaseId: '',
     conditionLabel: '',
     observations: '',
-    patientConsent: false
+    patientConsent: false,
   });
   readonly uploadForm = form(this.uploadModel);
 
@@ -132,7 +143,6 @@ export class ClinicalMediaPanelComponent implements OnChanges, OnDestroy {
     this.error.set('');
     this.message.set('');
     try {
-      const dataBase64 = await this.readFileAsBase64(file);
       await this.api.uploadClinicalMedia(this.analysisId, {
         mediaType: form.mediaType,
         bodyRegion: form.bodyRegion.trim() || undefined,
@@ -140,9 +150,7 @@ export class ClinicalMediaPanelComponent implements OnChanges, OnDestroy {
         conditionLabel: form.conditionLabel.trim() || undefined,
         observations: form.observations.trim() || undefined,
         patientConsent: true,
-        mimeType: file.type,
-        fileName: file.name,
-        dataBase64
+        file,
       });
       this.uploadModel.set({
         mediaType: form.mediaType,
@@ -150,7 +158,7 @@ export class ClinicalMediaPanelComponent implements OnChanges, OnDestroy {
         diseaseId: '',
         conditionLabel: '',
         observations: '',
-        patientConsent: false
+        patientConsent: false,
       });
       this.selectedFile = null;
       this.revokeSelectedPreview();
@@ -168,7 +176,7 @@ export class ClinicalMediaPanelComponent implements OnChanges, OnDestroy {
     this.error.set('');
     try {
       const updated = await this.api.updateClinicalMedia(this.analysisId, item.id, {
-        observations: observations.trim()
+        observations: observations.trim(),
       });
       this.media.update((rows) => rows.map((row) => (row.id === item.id ? updated : row)));
       await this.refreshSuggestions(updated);
@@ -223,16 +231,20 @@ export class ClinicalMediaPanelComponent implements OnChanges, OnDestroy {
     this.message.set('');
     try {
       const response = await this.api.analyzeClinicalMediaImage(this.analysisId, item.id, {
-        saveObservations
+        saveObservations,
       });
       this.imageAnalysisPreview.set(response.analysis);
       if (response.media) {
-        this.media.update((rows) => rows.map((row) => (row.id === item.id ? response.media! : row)));
+        this.media.update((rows) =>
+          rows.map((row) => (row.id === item.id ? response.media! : row)),
+        );
       }
-      this.message.set(saveObservations ? 'Vision text saved to observations.' : response.analysis.summary);
+      this.message.set(
+        saveObservations ? 'Vision text saved to observations.' : response.analysis.summary,
+      );
     } catch {
       this.error.set(
-        'Image analysis failed. Ensure Ollama is running locally and the vision model is pulled (ollama pull qwen2.5-vl:7b).'
+        'Image analysis failed. Ensure Ollama is running locally and the vision model is pulled (ollama pull qwen2.5-vl:7b).',
       );
     } finally {
       this.analyzingMediaId.set('');
@@ -246,9 +258,11 @@ export class ClinicalMediaPanelComponent implements OnChanges, OnDestroy {
     this.savingMediaId.set(item.id);
     this.error.set('');
     try {
-      const merged = [item.observations?.trim(), preview.extractedSymptoms].filter(Boolean).join('\n\n');
+      const merged = [item.observations?.trim(), preview.extractedSymptoms]
+        .filter(Boolean)
+        .join('\n\n');
       const updated = await this.api.updateClinicalMedia(this.analysisId, item.id, {
-        observations: merged
+        observations: merged,
       });
       this.media.update((rows) => rows.map((row) => (row.id === item.id ? updated : row)));
       await this.refreshSuggestions(updated);
@@ -268,10 +282,10 @@ export class ClinicalMediaPanelComponent implements OnChanges, OnDestroy {
     this.error.set('');
     try {
       const result = await this.api.applyImagingInterpretation(this.analysisId, item.id, {
-        interpretationId: preview.interpretationId
+        interpretationId: preview.interpretationId,
       });
       this.message.set(
-        `Applied ${result.rubricsAdded} rubric(s) and imaging findings to case sheet (${preview.suggestedCaseSheetField}).`
+        `Applied ${result.rubricsAdded} rubric(s) and imaging findings to case sheet (${preview.suggestedCaseSheetField}).`,
       );
       this.imageAnalysisPreview.set(null);
       await this.reload();
@@ -281,16 +295,6 @@ export class ClinicalMediaPanelComponent implements OnChanges, OnDestroy {
     } finally {
       this.applyingInterpretation.set(false);
     }
-  }
-
-  private async readFileAsBase64(file: File) {
-    const buffer = await file.arrayBuffer();
-    let binary = '';
-    const bytes = new Uint8Array(buffer);
-    for (let i = 0; i < bytes.length; i += 1) {
-      binary += String.fromCharCode(bytes[i] ?? 0);
-    }
-    return btoa(binary);
   }
 
   private revokePreviewUrls() {

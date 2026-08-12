@@ -10,14 +10,16 @@ import { DiseasePickerComponent } from '../disease-picker/disease-picker.compone
   selector: 'app-doctor-patient-clinical-media-panel',
   imports: [CommonModule, FormField, DiseasePickerComponent],
   templateUrl: './doctor-patient-clinical-media-panel.html',
-  styleUrl: './doctor-patient-clinical-media-panel.scss'
+  styleUrl: './doctor-patient-clinical-media-panel.scss',
 })
 export class DoctorPatientClinicalMediaPanelComponent implements OnChanges, OnDestroy {
   private readonly api = inject(CaseAnalysisApiService);
 
   @Input({ required: true }) patientId!: string;
 
-  readonly mediaTypes = Object.entries(CLINICAL_MEDIA_TYPE_LABELS) as Array<[ClinicalMediaType, string]>;
+  readonly mediaTypes = Object.entries(CLINICAL_MEDIA_TYPE_LABELS) as Array<
+    [ClinicalMediaType, string]
+  >;
   readonly media = signal<ClinicalMediaItem[]>([]);
   readonly bodyRegionMap = signal<Record<string, string[]>>({});
   readonly loading = signal(false);
@@ -32,7 +34,7 @@ export class DoctorPatientClinicalMediaPanelComponent implements OnChanges, OnDe
     diseaseId: '',
     conditionLabel: '',
     observations: '',
-    patientConsent: false
+    patientConsent: false,
   });
   readonly uploadForm = form(this.uploadModel);
 
@@ -107,7 +109,6 @@ export class DoctorPatientClinicalMediaPanelComponent implements OnChanges, OnDe
     this.uploading.set(true);
     this.error.set('');
     try {
-      const dataBase64 = await this.readFileAsBase64(file);
       await this.api.uploadPatientClinicalMedia(this.patientId, {
         mediaType: form.mediaType,
         bodyRegion: form.bodyRegion.trim() || undefined,
@@ -115,9 +116,7 @@ export class DoctorPatientClinicalMediaPanelComponent implements OnChanges, OnDe
         conditionLabel: form.conditionLabel.trim() || undefined,
         observations: form.observations.trim() || undefined,
         patientConsent: true,
-        mimeType: file.type,
-        fileName: file.name,
-        dataBase64
+        file,
       });
       this.selectedFile = null;
       if (this.previewObjectUrl) URL.revokeObjectURL(this.previewObjectUrl);
@@ -140,19 +139,6 @@ export class DoctorPatientClinicalMediaPanelComponent implements OnChanges, OnDe
     } finally {
       this.deletingId.set('');
     }
-  }
-
-  private readFileAsBase64(file: File) {
-    return new Promise<string>((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => {
-        const result = String(reader.result || '');
-        const comma = result.indexOf(',');
-        resolve(comma >= 0 ? result.slice(comma + 1) : result);
-      };
-      reader.onerror = () => reject(new Error('read failed'));
-      reader.readAsDataURL(file);
-    });
   }
 
   private revokePreviewUrls() {

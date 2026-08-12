@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { authRequired, allowRoles } from '../../auth.js';
 import { prisma } from '../../db.js';
 import { asyncRoute, routeParam, writeAuditLog } from '../../utils/helpers.js';
+import { parseMultipartForm } from '../../utils/multipart.js';
 import { saveHopeHubMedia } from '../../services/hope-hub-media-storage.js';
 import {
   getTelegramWebhookInfo,
@@ -46,16 +47,7 @@ const groupHelpSendSchema = z.object({
   pin: z.boolean().optional()
 });
 
-const groupHelpMediaUploadSchema = z.object({
-  mimeType: z.enum(['image/jpeg', 'image/png', 'image/webp', 'image/gif']),
-  fileName: z.string().max(180).optional(),
-  dataBase64: z.string().min(20)
-});
-
-function decodeBase64Upload(dataBase64: string) {
-  const payload = dataBase64.includes(',') ? dataBase64.split(',').pop() || '' : dataBase64;
-  return Buffer.from(payload, 'base64');
-}
+const GROUP_HELP_IMAGE_MIME_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
 
 type WebhookSnapshot =
   | {
@@ -398,16 +390,18 @@ export function registerAdminTelegramBotRoutes(router: Router) {
     authRequired,
     allowRoles(Role.ADMIN, Role.HR, Role.MARKETING),
     asyncRoute(async (req, res) => {
-      const parsed = groupHelpMediaUploadSchema.safeParse(req.body ?? {});
-      if (!parsed.success) {
-        return res.status(400).json({ message: 'Invalid Group Help image upload payload.' });
-      }
-
       try {
+        const form = await parseMultipartForm(req, { maxFileBytes: 5 * 1024 * 1024 });
+        if (!form.file) return res.status(400).json({ message: 'Choose an image to upload.' });
+        if (!GROUP_HELP_IMAGE_MIME_TYPES.has(form.file.mimeType)) {
+          return res
+            .status(400)
+            .json({ message: 'Only JPG, PNG, WebP, and GIF images are allowed.' });
+        }
         const saved = await saveHopeHubMedia({
-          mimeType: parsed.data.mimeType,
-          fileName: parsed.data.fileName,
-          data: decodeBase64Upload(parsed.data.dataBase64),
+          mimeType: form.file.mimeType,
+          fileName: form.fields['fileName'] || form.file.fileName || undefined,
+          data: form.file.buffer,
           uploadedById: req.user!.id
         });
 
@@ -417,7 +411,7 @@ export function registerAdminTelegramBotRoutes(router: Router) {
           action: 'telegram_group_help.image_upload',
           targetType: 'telegram_group_help_media',
           targetId: saved.storageKey,
-          summary: `Uploaded Group Help image "${parsed.data.fileName || saved.storageKey}".`
+          summary: `Uploaded Group Help image "${form.fields['fileName'] || form.file.fileName || saved.storageKey}".`
         });
 
         res.status(201).json(saved);

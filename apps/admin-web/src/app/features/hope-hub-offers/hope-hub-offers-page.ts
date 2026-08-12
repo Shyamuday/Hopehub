@@ -255,12 +255,7 @@ export class HopeHubOffersPage implements OnInit {
 
     this.uploadingMedia.set(field);
     try {
-      const dataBase64 = await this.fileToBase64(file);
-      const uploaded = await this.api.uploadHopeHubMedia({
-        mimeType: file.type || 'application/octet-stream',
-        fileName: file.name,
-        dataBase64,
-      });
+      const uploaded = await this.api.uploadHopeHubMedia(file);
       this.offerForm.update((form) => ({ ...form, [field]: uploaded.fileUrl }));
       this.showToast(field === 'recordedAudioUrl' ? 'Audio uploaded' : 'Video uploaded');
     } catch {
@@ -498,18 +493,6 @@ export class HopeHubOffersPage implements OnInit {
       ),
     );
     return Object.keys(clean).length ? clean : null;
-  }
-
-  private fileToBase64(file: File): Promise<string> {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => {
-        const value = String(reader.result || '');
-        resolve(value.includes(',') ? value.split(',').pop() || '' : value);
-      };
-      reader.onerror = () => reject(reader.error);
-      reader.readAsDataURL(file);
-    });
   }
 
   private slugify(value: string): string {

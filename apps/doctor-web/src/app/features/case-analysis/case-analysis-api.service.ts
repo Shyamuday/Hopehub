@@ -14,7 +14,7 @@ import type {
   RemedySuggestionPreview,
   RepertorySource,
   RubricSearchResult,
-  RubricSuggestion
+  RubricSuggestion,
 } from './case-analysis-page.types';
 
 @Service()
@@ -25,13 +25,17 @@ export class CaseAnalysisApiService {
 
   loadSources() {
     return firstValueFrom(
-      this.http.get<{ sources: RepertorySource[] }>(`${this.apiBase}${API_PATHS.DOCTOR.REPERTORY_SOURCES}`)
+      this.http.get<{ sources: RepertorySource[] }>(
+        `${this.apiBase}${API_PATHS.DOCTOR.REPERTORY_SOURCES}`,
+      ),
     ).then((response) => response.sources);
   }
 
   loadMateriaMedicaSources() {
     return firstValueFrom(
-      this.http.get<{ sources: MateriaMedicaSource[] }>(`${this.apiBase}${API_PATHS.DOCTOR.REPERTORY_MM_SOURCES}`)
+      this.http.get<{ sources: MateriaMedicaSource[] }>(
+        `${this.apiBase}${API_PATHS.DOCTOR.REPERTORY_MM_SOURCES}`,
+      ),
     ).then((response) => response.sources);
   }
 
@@ -39,59 +43,79 @@ export class CaseAnalysisApiService {
     return firstValueFrom(
       this.http.get<{ results: MateriaMedicaSearchResult[]; totalResults?: number }>(
         `${this.apiBase}${API_PATHS.DOCTOR.REPERTORY_MM_SEARCH}`,
-        { params: { q, sourceId, page: String(page), limit: '30' } }
-      )
+        { params: { q, sourceId, page: String(page), limit: '30' } },
+      ),
     );
   }
 
   searchRubrics(q: string, sourceId?: string) {
     return firstValueFrom(
-      this.http.get<{ rubrics: RubricSearchResult[] }>(`${this.apiBase}${API_PATHS.DOCTOR.REPERTORY_RUBRICS_SEARCH}`, {
-        params: {
-          q,
-          ...(sourceId ? { sourceId } : {})
-        }
-      })
+      this.http.get<{ rubrics: RubricSearchResult[] }>(
+        `${this.apiBase}${API_PATHS.DOCTOR.REPERTORY_RUBRICS_SEARCH}`,
+        {
+          params: {
+            q,
+            ...(sourceId ? { sourceId } : {}),
+          },
+        },
+      ),
     ).then((response) => response.rubrics);
   }
 
   suggestRubrics(q: string, sourceId?: string) {
     return firstValueFrom(
-      this.http.get<{ suggestions: RubricSuggestion[] }>(`${this.apiBase}${API_PATHS.DOCTOR.REPERTORY_RUBRICS_SUGGEST}`, {
-        params: {
-          q,
-          ...(sourceId ? { sourceId } : {})
-        }
-      })
+      this.http.get<{ suggestions: RubricSuggestion[] }>(
+        `${this.apiBase}${API_PATHS.DOCTOR.REPERTORY_RUBRICS_SUGGEST}`,
+        {
+          params: {
+            q,
+            ...(sourceId ? { sourceId } : {}),
+          },
+        },
+      ),
     ).then((response) => response.suggestions);
   }
 
   loadOrCreatePracticeSession() {
     return firstValueFrom(
-      this.http.get<{ analysis: CaseAnalysis }>(`${this.apiBase}${API_PATHS.DOCTOR.REPERTORY_PRACTICE_SESSION}`)
+      this.http.get<{ analysis: CaseAnalysis }>(
+        `${this.apiBase}${API_PATHS.DOCTOR.REPERTORY_PRACTICE_SESSION}`,
+      ),
     ).then((response) => response.analysis);
   }
 
   createPracticeSession(payload?: { notes?: string; sourceId?: string }) {
     return firstValueFrom(
-      this.http.post<{ analysis: CaseAnalysis }>(`${this.apiBase}${API_PATHS.DOCTOR.REPERTORY_PRACTICE_SESSION}`, payload ?? {})
+      this.http.post<{ analysis: CaseAnalysis }>(
+        `${this.apiBase}${API_PATHS.DOCTOR.REPERTORY_PRACTICE_SESSION}`,
+        payload ?? {},
+      ),
     ).then((response) => response.analysis);
   }
 
   loadConsultationAnalyses(consultationId: string) {
     return firstValueFrom(
       this.http.get<{ consultation: ConsultationSummary; analyses: CaseAnalysis[] }>(
-        `${this.apiBase}${API_PATHS.DOCTOR.CONSULTATION_CASE_ANALYSES(consultationId)}`
-      )
+        `${this.apiBase}${API_PATHS.DOCTOR.CONSULTATION_CASE_ANALYSES(consultationId)}`,
+      ),
     );
   }
 
-  createAnalysis(consultationId: string, payload: { notes?: string; sourceId?: string; methodOptionId?: string; methodRationale?: string | null; rubrics?: Array<{ rubricId: string; weight: number }> }) {
+  createAnalysis(
+    consultationId: string,
+    payload: {
+      notes?: string;
+      sourceId?: string;
+      methodOptionId?: string;
+      methodRationale?: string | null;
+      rubrics?: Array<{ rubricId: string; weight: number }>;
+    },
+  ) {
     return firstValueFrom(
       this.http.post<{ analysis: CaseAnalysis }>(
         `${this.apiBase}${API_PATHS.DOCTOR.CONSULTATION_CASE_ANALYSES(consultationId)}`,
-        payload
-      )
+        payload,
+      ),
     ).then((response) => response.analysis);
   }
 
@@ -105,36 +129,51 @@ export class CaseAnalysisApiService {
       methodOptionId?: string | null;
       methodRationale?: string | null;
       rubrics?: Array<{ rubricId: string; weight: number }>;
-    }
+    },
   ) {
     return firstValueFrom(
-      this.http.patch<{ analysis: CaseAnalysis }>(`${this.apiBase}${API_PATHS.DOCTOR.CASE_ANALYSIS(analysisId)}`, payload)
+      this.http.patch<{ analysis: CaseAnalysis }>(
+        `${this.apiBase}${API_PATHS.DOCTOR.CASE_ANALYSIS(analysisId)}`,
+        payload,
+      ),
     ).then((response) => response.analysis);
   }
 
   repertorize(analysisId: string) {
     return firstValueFrom(
-      this.http.post<{ analysis: CaseAnalysis }>(`${this.apiBase}${API_PATHS.DOCTOR.CASE_ANALYSIS_REPERTORIZE(analysisId)}`, {})
+      this.http.post<{ analysis: CaseAnalysis }>(
+        `${this.apiBase}${API_PATHS.DOCTOR.CASE_ANALYSIS_REPERTORIZE(analysisId)}`,
+        {},
+      ),
     ).then((response) => response.analysis);
   }
 
   selectRemedy(analysisId: string, remedyId: string, overrideRationale?: string | null) {
     return firstValueFrom(
-      this.http.patch<{ analysis: CaseAnalysis }>(`${this.apiBase}${API_PATHS.DOCTOR.CASE_ANALYSIS_SELECT_REMEDY(analysisId)}`, {
-        remedyId,
-        ...(overrideRationale !== undefined ? { overrideRationale } : {})
-      })
+      this.http.patch<{ analysis: CaseAnalysis }>(
+        `${this.apiBase}${API_PATHS.DOCTOR.CASE_ANALYSIS_SELECT_REMEDY(analysisId)}`,
+        {
+          remedyId,
+          ...(overrideRationale !== undefined ? { overrideRationale } : {}),
+        },
+      ),
     ).then((response) => response.analysis);
   }
 
-  loadMateriaMedica(remedyId: string, options?: { analysisId?: string; repertorySourceId?: string }) {
+  loadMateriaMedica(
+    remedyId: string,
+    options?: { analysisId?: string; repertorySourceId?: string },
+  ) {
     return firstValueFrom(
-      this.http.get<MateriaMedicaResponse>(`${this.apiBase}${API_PATHS.DOCTOR.REPERTORY_REMEDY_MATERIA_MEDICA(remedyId)}`, {
-        params: {
-          ...(options?.analysisId ? { analysisId: options.analysisId } : {}),
-          ...(options?.repertorySourceId ? { repertorySourceId: options.repertorySourceId } : {})
-        }
-      })
+      this.http.get<MateriaMedicaResponse>(
+        `${this.apiBase}${API_PATHS.DOCTOR.REPERTORY_REMEDY_MATERIA_MEDICA(remedyId)}`,
+        {
+          params: {
+            ...(options?.analysisId ? { analysisId: options.analysisId } : {}),
+            ...(options?.repertorySourceId ? { repertorySourceId: options.repertorySourceId } : {}),
+          },
+        },
+      ),
     );
   }
 
@@ -142,24 +181,24 @@ export class CaseAnalysisApiService {
     return firstValueFrom(
       this.http.get<{ options: Array<{ id: string; label: string; normalizedLabel: string }> }>(
         `${this.apiBase}${API_PATHS.DOCTOR.PRESCRIPTION_OPTIONS}`,
-        { params: { type: 'METHOD' } }
-      )
+        { params: { type: 'METHOD' } },
+      ),
     ).then((response) => response.options);
   }
 
   loadPatientCaseHistory(patientId: string) {
     return firstValueFrom(
       this.http.get<PatientCaseHistory>(
-        `${this.apiBase}${API_PATHS.DOCTOR.PATIENT_CASE_HISTORY(patientId)}`
-      )
+        `${this.apiBase}${API_PATHS.DOCTOR.PATIENT_CASE_HISTORY(patientId)}`,
+      ),
     );
   }
 
   listClinicalMedia(analysisId: string) {
     return firstValueFrom(
       this.http.get<{ media: ClinicalMediaItem[] }>(
-        `${this.apiBase}${API_PATHS.DOCTOR.CASE_ANALYSIS_CLINICAL_MEDIA(analysisId)}`
-      )
+        `${this.apiBase}${API_PATHS.DOCTOR.CASE_ANALYSIS_CLINICAL_MEDIA(analysisId)}`,
+      ),
     ).then((response) => response.media);
   }
 
@@ -172,16 +211,15 @@ export class CaseAnalysisApiService {
       patientConsent: boolean;
       diseaseId?: string;
       conditionLabel?: string;
-      mimeType: string;
-      fileName?: string;
-      dataBase64: string;
-    }
+      file: File;
+    },
   ) {
+    const formData = this.clinicalMediaFormData(payload);
     return firstValueFrom(
       this.http.post<{ media: ClinicalMediaItem }>(
         `${this.apiBase}${API_PATHS.DOCTOR.CASE_ANALYSIS_CLINICAL_MEDIA(analysisId)}`,
-        payload
-      )
+        formData,
+      ),
     ).then((response) => response.media);
   }
 
@@ -194,29 +232,29 @@ export class CaseAnalysisApiService {
       patientConsent?: boolean;
       diseaseId?: string | null;
       conditionLabel?: string | null;
-    }
+    },
   ) {
     return firstValueFrom(
       this.http.patch<{ media: ClinicalMediaItem }>(
         `${this.apiBase}${API_PATHS.DOCTOR.CASE_ANALYSIS_CLINICAL_MEDIA_ITEM(analysisId, mediaId)}`,
-        payload
-      )
+        payload,
+      ),
     ).then((response) => response.media);
   }
 
   deleteClinicalMedia(analysisId: string, mediaId: string) {
     return firstValueFrom(
       this.http.delete<{ ok: boolean }>(
-        `${this.apiBase}${API_PATHS.DOCTOR.CASE_ANALYSIS_CLINICAL_MEDIA_ITEM(analysisId, mediaId)}`
-      )
+        `${this.apiBase}${API_PATHS.DOCTOR.CASE_ANALYSIS_CLINICAL_MEDIA_ITEM(analysisId, mediaId)}`,
+      ),
     );
   }
 
   loadClinicalMediaFile(fileUrl: string) {
     return firstValueFrom(
       this.http.get(`${this.apiBase}${fileUrl}`, {
-        responseType: 'blob'
-      })
+        responseType: 'blob',
+      }),
     );
   }
 
@@ -226,13 +264,15 @@ export class CaseAnalysisApiService {
         mediaTypes: Array<{ value: string; label: string }>;
         bodyRegions: Record<string, string[]>;
         diseases: Array<{ id: string; name: string; publicCategory: string | null }>;
-      }>(`${this.apiBase}${API_PATHS.DOCTOR.CLINICAL_MEDIA_META}`)
+      }>(`${this.apiBase}${API_PATHS.DOCTOR.CLINICAL_MEDIA_META}`),
     );
   }
 
   listPatientClinicalMedia(patientId: string) {
     return firstValueFrom(
-      this.http.get<{ media: ClinicalMediaItem[] }>(`${this.apiBase}${API_PATHS.DOCTOR.PATIENT_CLINICAL_MEDIA(patientId)}`)
+      this.http.get<{ media: ClinicalMediaItem[] }>(
+        `${this.apiBase}${API_PATHS.DOCTOR.PATIENT_CLINICAL_MEDIA(patientId)}`,
+      ),
     ).then((response) => response.media);
   }
 
@@ -245,58 +285,86 @@ export class CaseAnalysisApiService {
       patientConsent: boolean;
       diseaseId?: string;
       conditionLabel?: string;
-      mimeType: string;
-      fileName?: string;
-      dataBase64: string;
-    }
+      file: File;
+    },
   ) {
+    const formData = this.clinicalMediaFormData(payload);
     return firstValueFrom(
       this.http.post<{ media: ClinicalMediaItem }>(
         `${this.apiBase}${API_PATHS.DOCTOR.PATIENT_CLINICAL_MEDIA(patientId)}`,
-        payload
-      )
+        formData,
+      ),
     ).then((response) => response.media);
+  }
+
+  private clinicalMediaFormData(payload: {
+    mediaType: string;
+    bodyRegion?: string;
+    observations?: string;
+    patientConsent: boolean;
+    diseaseId?: string;
+    conditionLabel?: string;
+    file: File;
+  }) {
+    const formData = new FormData();
+    formData.append('file', payload.file, payload.file.name);
+    formData.append('fileName', payload.file.name);
+    formData.append('mediaType', payload.mediaType);
+    formData.append('patientConsent', String(payload.patientConsent));
+    for (const [key, value] of Object.entries(payload)) {
+      if (key !== 'file' && key !== 'mediaType' && key !== 'patientConsent' && value) {
+        formData.append(key, String(value));
+      }
+    }
+    return formData;
   }
 
   deletePatientClinicalMedia(patientId: string, mediaId: string) {
     return firstValueFrom(
       this.http.delete<{ ok: boolean }>(
-        `${this.apiBase}${API_PATHS.DOCTOR.PATIENT_CLINICAL_MEDIA_ITEM(patientId, mediaId)}`
-      )
+        `${this.apiBase}${API_PATHS.DOCTOR.PATIENT_CLINICAL_MEDIA_ITEM(patientId, mediaId)}`,
+      ),
     );
   }
 
-  suggestClinicalMediaPhrases(payload: { mediaType: string; observations?: string; bodyRegion?: string }) {
+  suggestClinicalMediaPhrases(payload: {
+    mediaType: string;
+    observations?: string;
+    bodyRegion?: string;
+  }) {
     return firstValueFrom(
-      this.http.post<{ phrases: string[] }>(`${this.apiBase}${API_PATHS.DOCTOR.CLINICAL_MEDIA_SUGGEST_PHRASES}`, payload)
+      this.http.post<{ phrases: string[] }>(
+        `${this.apiBase}${API_PATHS.DOCTOR.CLINICAL_MEDIA_SUGGEST_PHRASES}`,
+        payload,
+      ),
     ).then((response) => response.phrases);
   }
 
   clinicalMediaVisionStatus() {
     return firstValueFrom(
       this.http.get<{ available: boolean; baseUrl: string; model: string }>(
-        `${this.apiBase}${API_PATHS.DOCTOR.CLINICAL_MEDIA_VISION_STATUS}`
-      )
+        `${this.apiBase}${API_PATHS.DOCTOR.CLINICAL_MEDIA_VISION_STATUS}`,
+      ),
     );
   }
 
   analyzeClinicalMediaImage(
     analysisId: string,
     mediaId: string,
-    payload?: { saveObservations?: boolean }
+    payload?: { saveObservations?: boolean },
   ) {
     return firstValueFrom(
       this.http.post<{ analysis: ClinicalMediaImageAnalysis; media?: ClinicalMediaItem }>(
         `${this.apiBase}${API_PATHS.DOCTOR.CASE_ANALYSIS_CLINICAL_MEDIA_ANALYZE(analysisId, mediaId)}`,
-        payload ?? {}
-      )
+        payload ?? {},
+      ),
     );
   }
 
   applyImagingInterpretation(
     analysisId: string,
     mediaId: string,
-    payload: { interpretationId: string; overrideRationale?: string | null }
+    payload: { interpretationId: string; overrideRationale?: string | null },
   ) {
     return firstValueFrom(
       this.http.post<{
@@ -305,8 +373,8 @@ export class CaseAnalysisApiService {
         rubricsAdded: number;
       }>(
         `${this.apiBase}${API_PATHS.DOCTOR.CASE_ANALYSIS_CLINICAL_MEDIA_APPLY_INTERPRETATION(analysisId, mediaId)}`,
-        payload
-      )
+        payload,
+      ),
     );
   }
 
@@ -319,25 +387,25 @@ export class CaseAnalysisApiService {
       currentValue?: string;
       panelComponent?: string;
       extractFrom?: string[];
-    }
+    },
   ) {
     return firstValueFrom(
       this.http.post<{ suggestion: string; source: string; confidence?: number }>(
         `${this.apiBase}${API_PATHS.DOCTOR.CASE_ANALYSIS_FIELD_SUGGESTIONS(analysisId)}`,
-        payload
-      )
+        payload,
+      ),
     );
   }
 
   suggestRemediesFromApproach(
     analysisId: string,
-    payload?: { apply?: boolean; maxPhrases?: number; maxRubrics?: number }
+    payload?: { apply?: boolean; maxPhrases?: number; maxRubrics?: number },
   ) {
     return firstValueFrom(
       this.http.post<RemedySuggestionPreview & { analysis?: CaseAnalysis }>(
         `${this.apiBase}${API_PATHS.DOCTOR.CASE_ANALYSIS_SUGGEST_REMEDIES(analysisId)}`,
-        payload ?? { apply: false }
-      )
+        payload ?? { apply: false },
+      ),
     );
   }
 }

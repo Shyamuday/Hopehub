@@ -10,7 +10,7 @@ import {
   PatientClinicalMediaService,
   type ClinicalMediaMeta,
   type PatientClinicalMediaItem,
-  type PatientImagingPreview
+  type PatientImagingPreview,
 } from './patient-clinical-media.service';
 
 @Component({
@@ -18,7 +18,7 @@ import {
   standalone: true,
   imports: [CommonModule, FormField, RouterLink],
   templateUrl: './patient-clinical-media-panel.html',
-  styleUrl: './patient-clinical-media-panel.scss'
+  styleUrl: './patient-clinical-media-panel.scss',
 })
 export class PatientClinicalMediaPanelComponent implements OnInit, OnDestroy {
   private readonly api = inject(PatientClinicalMediaService);
@@ -26,7 +26,9 @@ export class PatientClinicalMediaPanelComponent implements OnInit, OnDestroy {
 
   readonly isNative = Capacitor.isNativePlatform();
 
-  readonly mediaTypes = Object.entries(CLINICAL_MEDIA_TYPE_LABELS) as Array<[ClinicalMediaType, string]>;
+  readonly mediaTypes = Object.entries(CLINICAL_MEDIA_TYPE_LABELS) as Array<
+    [ClinicalMediaType, string]
+  >;
   readonly meta = signal<ClinicalMediaMeta | null>(null);
   readonly media = signal<PatientClinicalMediaItem[]>([]);
   readonly loading = signal(false);
@@ -43,7 +45,7 @@ export class PatientClinicalMediaPanelComponent implements OnInit, OnDestroy {
     bodyRegion: '',
     diseaseId: '',
     conditionLabel: '',
-    observations: ''
+    observations: '',
   });
   readonly uploadForm = form(this.uploadModel);
 
@@ -126,7 +128,7 @@ export class PatientClinicalMediaPanelComponent implements OnInit, OnDestroy {
         quality: 85,
         allowEditing: false,
         resultType: CameraResultType.DataUrl,
-        source: CameraSource.Camera
+        source: CameraSource.Camera,
       });
       if (!photo.dataUrl) {
         this.error.set('Could not capture photo.');
@@ -135,7 +137,7 @@ export class PatientClinicalMediaPanelComponent implements OnInit, OnDestroy {
       const blob = await (await fetch(photo.dataUrl)).blob();
       const ext = photo.format === 'png' ? 'png' : 'jpg';
       this.selectedFile = new File([blob], `health-photo-${Date.now()}.${ext}`, {
-        type: blob.type || `image/${ext}`
+        type: blob.type || `image/${ext}`,
       });
       this.revokeSelectedPreview();
       this.previewObjectUrl = URL.createObjectURL(this.selectedFile);
@@ -157,13 +159,13 @@ export class PatientClinicalMediaPanelComponent implements OnInit, OnDestroy {
         quality: 85,
         allowEditing: false,
         resultType: CameraResultType.DataUrl,
-        source: CameraSource.Photos
+        source: CameraSource.Photos,
       });
       if (!photo.dataUrl) return;
       const blob = await (await fetch(photo.dataUrl)).blob();
       const ext = photo.format === 'png' ? 'png' : 'jpg';
       this.selectedFile = new File([blob], `health-photo-${Date.now()}.${ext}`, {
-        type: blob.type || `image/${ext}`
+        type: blob.type || `image/${ext}`,
       });
       this.revokeSelectedPreview();
       this.previewObjectUrl = URL.createObjectURL(this.selectedFile);
@@ -184,16 +186,13 @@ export class PatientClinicalMediaPanelComponent implements OnInit, OnDestroy {
     this.error.set('');
     this.message.set('');
     try {
-      const dataBase64 = await this.readFileAsBase64(file);
       const saved = await this.api.upload({
         mediaType: form.mediaType,
         bodyRegion: form.bodyRegion.trim() || undefined,
         diseaseId: form.diseaseId || undefined,
         conditionLabel: form.conditionLabel.trim() || undefined,
         observations: form.observations.trim() || undefined,
-        mimeType: file.type,
-        fileName: file.name,
-        dataBase64
+        file,
       });
       this.selectedFile = null;
       this.revokeSelectedPreview();
@@ -232,7 +231,7 @@ export class PatientClinicalMediaPanelComponent implements OnInit, OnDestroy {
         item.aiPreviewStatus === 'processing' ||
         item.aiPreviewStatus === 'pending' ||
         item.aiPreviewStatus === 'ready' ||
-        item.aiPreviewStatus === 'failed'
+        item.aiPreviewStatus === 'failed',
     );
     if (!targets.length) {
       this.aiPreviews.set({});
@@ -247,7 +246,7 @@ export class PatientClinicalMediaPanelComponent implements OnInit, OnDestroy {
         } catch {
           return null;
         }
-      })
+      }),
     );
 
     const next: Record<string, PatientImagingPreview> = {};
@@ -259,7 +258,7 @@ export class PatientClinicalMediaPanelComponent implements OnInit, OnDestroy {
 
   private syncPolling() {
     const needsPoll = this.media().some(
-      (item) => item.aiPreviewStatus === 'processing' || item.aiPreviewStatus === 'pending'
+      (item) => item.aiPreviewStatus === 'processing' || item.aiPreviewStatus === 'pending',
     );
     if (!needsPoll) {
       this.stopPolling();
@@ -282,25 +281,16 @@ export class PatientClinicalMediaPanelComponent implements OnInit, OnDestroy {
       const items = await this.api.list();
       this.media.set(items);
       await this.refreshAiPreviews(items);
-      if (!items.some((item) => item.aiPreviewStatus === 'processing' || item.aiPreviewStatus === 'pending')) {
+      if (
+        !items.some(
+          (item) => item.aiPreviewStatus === 'processing' || item.aiPreviewStatus === 'pending',
+        )
+      ) {
         this.stopPolling();
       }
     } catch {
       // keep polling on transient errors
     }
-  }
-
-  private readFileAsBase64(file: File) {
-    return new Promise<string>((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => {
-        const result = String(reader.result || '');
-        const comma = result.indexOf(',');
-        resolve(comma >= 0 ? result.slice(comma + 1) : result);
-      };
-      reader.onerror = () => reject(new Error('Could not read image.'));
-      reader.readAsDataURL(file);
-    });
   }
 
   private revokePreviewUrls() {

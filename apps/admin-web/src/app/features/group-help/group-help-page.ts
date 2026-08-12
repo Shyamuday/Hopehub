@@ -252,11 +252,7 @@ export class GroupHelpPage {
     this.error.set('');
     this.message.set('');
     try {
-      const uploaded = await this.api.uploadTelegramGroupHelpImage({
-        mimeType: file.type || 'image/jpeg',
-        fileName: file.name,
-        dataBase64: await this.fileToBase64(file),
-      });
+      const uploaded = await this.api.uploadTelegramGroupHelpImage(file);
       this.update(item.imageUrlKey, uploaded.fileUrl);
       this.message.set(`${item.title} image uploaded. Save config to keep it.`);
     } catch {
@@ -301,14 +297,5 @@ export class GroupHelpPage {
     } finally {
       this.sending.set(false);
     }
-  }
-
-  private fileToBase64(file: File): Promise<string> {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(String(reader.result || ''));
-      reader.onerror = () => reject(reader.error);
-      reader.readAsDataURL(file);
-    });
   }
 }

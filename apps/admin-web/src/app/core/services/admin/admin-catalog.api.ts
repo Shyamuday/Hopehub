@@ -267,7 +267,10 @@ export class AdminCatalogApi extends AdminApiBase {
     );
   }
 
-  uploadHopeHubMedia(payload: { mimeType: string; fileName?: string; dataBase64: string }) {
+  uploadHopeHubMedia(file: File) {
+    const formData = new FormData();
+    formData.append('file', file, file.name);
+    formData.append('fileName', file.name);
     return firstValueFrom(
       this.http.post<{
         storageKey: string;
@@ -275,7 +278,7 @@ export class AdminCatalogApi extends AdminApiBase {
         byteSize: number;
         sha256: string;
         mimeType: string;
-      }>(`${this.apiBase}${API_PATHS.ADMIN.HOPE_HUB_MEDIA}`, payload),
+      }>(`${this.apiBase}${API_PATHS.ADMIN.HOPE_HUB_MEDIA}`, formData),
     );
   }
 

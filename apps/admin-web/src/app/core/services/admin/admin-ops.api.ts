@@ -273,11 +273,10 @@ export class AdminOpsApi extends AdminApiBase {
     );
   }
 
-  uploadTelegramGroupHelpImage(payload: {
-    mimeType: string;
-    fileName?: string;
-    dataBase64: string;
-  }) {
+  uploadTelegramGroupHelpImage(file: File) {
+    const formData = new FormData();
+    formData.append('file', file, file.name);
+    formData.append('fileName', file.name);
     return firstValueFrom(
       this.http.post<{
         storageKey: string;
@@ -285,7 +284,7 @@ export class AdminOpsApi extends AdminApiBase {
         byteSize: number;
         sha256: string;
         mimeType: string;
-      }>(`${this.apiBase}${API_PATHS.ADMIN.TELEGRAM_GROUP_HELP_MEDIA}`, payload),
+      }>(`${this.apiBase}${API_PATHS.ADMIN.TELEGRAM_GROUP_HELP_MEDIA}`, formData),
     );
   }
 
