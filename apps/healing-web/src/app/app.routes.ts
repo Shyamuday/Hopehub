@@ -637,6 +637,17 @@ export const routes: Routes = [
     },
   },
   {
+    path: 'my-support-plan',
+    loadComponent: () =>
+      import('./features/support-plan/support-plan.component').then((m) => m.SupportPlanComponent),
+    title: 'My Support Plan - Hope Hub',
+    data: {
+      breadcrumb: 'My support plan',
+      description: 'Your saved Hope Hub support preferences and next best step',
+      keywords: 'personal support plan, mental wellness support, Hope Hub',
+    },
+  },
+  {
     path: 'dashboard',
     loadComponent: () =>
       import('./features/dashboard/dashboard.component').then((m) => m.DashboardComponent),

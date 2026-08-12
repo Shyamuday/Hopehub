@@ -137,14 +137,6 @@
   text-underline-offset: 0.24rem;
 }
 
-.home-hero__lead {
-  max-width: 37rem;
-  margin: 0.9rem 0 0;
-  color: var(--text-secondary);
-  font-size: var(--hope-font-size-lg);
-  line-height: var(--hope-line-copy);
-}
-
 @media (max-width: 639px) {
   .home-hero {
     min-height: auto;
@@ -175,10 +167,6 @@
 
   .home-hero__visual img {
     min-height: 17rem;
-  }
-
-  .home-hero__lead {
-    font-size: var(--hope-font-size-base);
   }
 
   .home-hero__trust {

@@ -76,6 +76,11 @@ export class ContinueSupportBannerComponent {
     });
   }
 
+  async viewPlan(): Promise<void> {
+    this.saveFreshPreference();
+    await this.router.navigate(CONSUMER_ROUTES.links.supportPlan);
+  }
+
   dismiss(): void {
     this.hidden.set(true);
     if (typeof localStorage !== 'undefined') {

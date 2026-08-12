@@ -1,0 +1,113 @@
+:host {
+  display: block;
+}
+
+.support-plan__inner {
+  max-width: 68rem;
+}
+
+.support-plan__summary,
+.support-plan__next {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--hope-space-4);
+  border: 1px solid var(--hope-card-border);
+  border-radius: var(--hope-radius-lg);
+  background: #ffffff;
+  box-shadow: var(--hope-card-shadow);
+  padding: var(--hope-space-4);
+}
+
+.support-plan__summary span,
+.support-plan__next .hope-eyebrow {
+  display: block;
+  margin: 0;
+}
+
+.support-plan__summary h2,
+.support-plan__next h2 {
+  margin: 0.35rem 0 0;
+  font-size: var(--hope-font-size-section-title);
+  font-weight: var(--hope-font-weight-title);
+}
+
+.support-plan__summary p,
+.support-plan__next > p:not(.hope-eyebrow) {
+  max-width: 42rem;
+  margin: 0.5rem 0 0;
+  color: var(--text-secondary);
+  font-size: var(--hope-font-size-base);
+  line-height: var(--hope-line-copy);
+}
+
+.support-plan__summary button {
+  flex: 0 0 auto;
+  border: 0;
+  background: transparent;
+  color: var(--brand-primary);
+  cursor: pointer;
+  font: inherit;
+  font-size: var(--hope-font-size-sm);
+  font-weight: var(--hope-font-weight-label);
+  padding: 0.4rem;
+  text-decoration: underline;
+  text-underline-offset: 0.2rem;
+}
+
+.support-plan__next {
+  display: block;
+  margin-top: var(--hope-space-3);
+  background: linear-gradient(135deg, #ecfdf5, #ffffff 70%);
+  border-color: rgba(16, 185, 129, 0.2);
+}
+
+.support-plan__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--hope-space-2);
+  margin-top: var(--hope-space-3);
+}
+
+.support-plan__grid {
+  display: grid;
+  gap: var(--hope-space-3);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-top: var(--hope-space-3);
+}
+
+.support-plan__grid .hope-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.support-plan__grid h3 {
+  margin: 0.45rem 0 0;
+}
+
+.support-plan__grid a {
+  width: fit-content;
+  margin-top: auto;
+  padding-top: var(--hope-space-3);
+  color: var(--brand-primary);
+  font-size: var(--hope-font-size-sm);
+  font-weight: var(--hope-font-weight-label);
+  text-decoration: none;
+}
+
+.support-plan__grid a:hover,
+.support-plan__grid a:focus-visible {
+  text-decoration: underline;
+  text-underline-offset: 0.2rem;
+}
+
+@media (max-width: 760px) {
+  .support-plan__summary {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .support-plan__grid {
+    grid-template-columns: 1fr;
+  }
+}

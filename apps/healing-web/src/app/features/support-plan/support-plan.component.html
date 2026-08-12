@@ -1,0 +1,67 @@
+<section class="support-plan hope-section">
+  <div class="hope-section-inner support-plan__inner">
+    <app-page-header
+      align="left"
+      eyebrow="Your support plan"
+      title="One gentle next step at a time"
+      description="Hope Hub keeps the choices you have already made, so you do not have to start from the beginning."
+    />
+
+    @if (hasPlan()) {
+      <section class="support-plan__summary" aria-label="Your saved support choices">
+        <div>
+          <span>What you have shared</span>
+          <h2>{{ concernLabel() }} · {{ modeLabel() }}</h2>
+          <p>We will use this to make your next steps feel more relevant.</p>
+        </div>
+        <button type="button" (click)="refresh()">Refresh plan</button>
+      </section>
+    } @else {
+      <section class="support-plan__summary" aria-label="Start your support plan">
+        <div>
+          <span>Your plan starts here</span>
+          <h2>You do not need to have everything figured out.</h2>
+          <p>Choose a concern or a way to connect once, and Hope Hub will keep that context for you.</p>
+        </div>
+        <app-button [routerLink]="ROUTES.links.support" variant="outline">Choose what feels closest</app-button>
+      </section>
+    }
+
+    <section class="support-plan__next" aria-label="Your next support step">
+      <p class="hope-eyebrow">Your next best step</p>
+      <h2>Talk to a caring listener</h2>
+      <p>Choose chat, voice, or video after you select someone who is available.</p>
+      <div class="support-plan__actions">
+        <app-button [routerLink]="ROUTES.links.home" [fragment]="ROUTES.fragments.liveConnect">
+          Talk to a caring listener
+        </app-button>
+        <app-button [routerLink]="ROUTES.links.bookSupport" [queryParams]="bookingQuery()" variant="outline">
+          Book a time
+        </app-button>
+      </div>
+    </section>
+
+    <div class="support-plan__grid">
+      <article class="hope-card">
+        <p class="hope-eyebrow">Private check-in</p>
+        <h3>{{ assessmentLabel() }}</h3>
+        <p class="hope-card-copy">A short check-in can help you put words to what you are feeling. It is not a diagnosis.</p>
+        <a [routerLink]="assessmentLink()">Start self-check →</a>
+      </article>
+
+      <article class="hope-card">
+        <p class="hope-eyebrow">More support, when ready</p>
+        <h3>Explore the wider care team</h3>
+        <p class="hope-card-copy">See people who match your concern and choose a time that feels right for you.</p>
+        <a [routerLink]="ROUTES.links.careTeam" [queryParams]="careTeamQuery()">See care team →</a>
+      </article>
+
+      <article class="hope-card">
+        <p class="hope-eyebrow">For today</p>
+        <h3>Give yourself a small pause</h3>
+        <p class="hope-card-copy">Try one gentle exercise when a full conversation does not feel possible yet.</p>
+        <a [routerLink]="ROUTES.links.exercises">Explore exercises →</a>
+      </article>
+    </div>
+  </div>
+</section>
