@@ -1,0 +1,17 @@
+{
+  "name": "hopehub-contact-bot",
+  "version": "1.0.0",
+  "description": "HopeHub Contact & Support Telegram Bot",
+  "main": "bot.js",
+  "type": "module",
+  "scripts": {
+    "start": "node bot.js",
+    "dev": "node --watch bot.js"
+  },
+  "author": "HopeHub",
+  "license": "MIT",
+  "dependencies": {
+    "dotenv": "16.4.5",
+    "node-telegram-bot-api": "1.2.0"
+  }
+}
