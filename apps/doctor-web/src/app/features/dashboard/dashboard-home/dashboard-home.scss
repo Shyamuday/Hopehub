@@ -173,6 +173,30 @@
   gap: 0.65rem;
 }
 
+.onboarding-history {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0 0 0.65rem;
+
+  > span {
+    color: var(--color-text-muted);
+    font-size: var(--text-xs);
+    font-weight: 800;
+    text-transform: uppercase;
+  }
+
+  b {
+    background: #ecfdf5;
+    border: 1px solid #a7f3d0;
+    border-radius: 999px;
+    color: #047857;
+    font-size: var(--text-xs);
+    padding: 0.3rem 0.55rem;
+  }
+}
+
 .onboarding-step {
   align-items: center;
   background: rgba(255, 255, 255, 0.82);

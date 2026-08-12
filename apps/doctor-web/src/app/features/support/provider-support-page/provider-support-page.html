@@ -1,0 +1,61 @@
+<section class="support-hero">
+  <p class="eyebrow">Hope Hub provider support</p>
+  <h1>How can we help?</h1>
+  <p>Clear answers for setting up your profile, supporting users, availability, safety, and earnings.</p>
+  <label class="support-search">
+    <span aria-hidden="true">⌕</span>
+    <input
+      type="search"
+      placeholder="Search profile, sessions, safety, payments..."
+      [value]="query()"
+      (input)="onSearch($event)"
+    />
+  </label>
+</section>
+
+<section class="quick-links" aria-label="Quick links">
+  <a routerLink="/dashboard">Finish setup</a>
+  <a routerLink="/profile">Edit profile</a>
+  <a routerLink="/slots">Set availability</a>
+  <a routerLink="/online-doctor">Go live</a>
+</section>
+
+<section class="support-topics" aria-label="Support topics">
+  @for (topic of filteredTopics(); track topic.title) {
+    <article class="topic-card">
+      <div class="topic-heading">
+        <span class="topic-icon" aria-hidden="true">{{ topic.icon }}</span>
+        <div>
+          <h2>{{ topic.title }}</h2>
+          <p>{{ topic.description }}</p>
+        </div>
+      </div>
+      <div class="article-list">
+        @for (article of topic.articles; track article.title) {
+          @if (article.externalUrl) {
+            <a class="article-link" [href]="article.externalUrl" target="_blank" rel="noopener">
+              <strong>{{ article.title }}</strong><span>{{ article.description }}</span><i>→</i>
+            </a>
+          } @else {
+            <a class="article-link" [routerLink]="article.route!.split('?')[0]">
+              <strong>{{ article.title }}</strong><span>{{ article.description }}</span><i>→</i>
+            </a>
+          }
+        }
+      </div>
+    </article>
+  } @empty {
+    <div class="empty-search">
+      <strong>No support article found.</strong>
+      <span>Try a simpler word such as “profile”, “safety”, “slots”, or “payment”.</span>
+    </div>
+  }
+</section>
+
+<section class="support-footer-card">
+  <div>
+    <h2>Still need help?</h2>
+    <p>Use the in-app notification centre to stay updated while your profile or session is being reviewed.</p>
+  </div>
+  <a routerLink="/notifications-inbox">Open notifications</a>
+</section>

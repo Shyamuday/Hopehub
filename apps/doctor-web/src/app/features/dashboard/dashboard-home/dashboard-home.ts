@@ -193,6 +193,10 @@ export class DashboardHome {
     return this.onboarding().steps.find((step) => step.required && !step.complete) || null;
   }
 
+  completedOnboardingSteps(): ProviderOnboardingStep[] {
+    return this.onboarding().steps.filter((step) => step.required && step.complete);
+  }
+
   async loadWorklistCounts() {
     this.worklistError.set('');
     this.worklistLoading.set(true);

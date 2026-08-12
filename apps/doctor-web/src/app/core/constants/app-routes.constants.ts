@@ -40,6 +40,8 @@ export const ROUTE_PATHS = {
   SESSIONS: 'sessions',
 
   NOTIFICATIONS_INBOX: 'notifications-inbox',
+
+  SUPPORT: 'support',
 } as const;
 
 export const DEFAULT_AUTHED_ROUTE = ROUTE_PATHS.WORKLIST;

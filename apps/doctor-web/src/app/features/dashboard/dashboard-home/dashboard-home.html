@@ -30,6 +30,14 @@
   }
 
   @if (nextOnboardingStep(); as step) {
+    @if (completedOnboardingSteps().length) {
+      <div class="onboarding-history" aria-label="Completed setup steps">
+        <span>Done</span>
+        @for (completedStep of completedOnboardingSteps(); track completedStep.id) {
+          <b>✓ {{ completedStep.title }}</b>
+        }
+      </div>
+    }
     <div class="onboarding-steps">
       <article class="onboarding-step">
         <span class="step-dot">→</span>

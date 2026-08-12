@@ -22,6 +22,7 @@ import { DoctorBlogPage } from './features/blog/doctor-blog-page';
 import { OnlineDoctorPage } from './features/online-doctor/online-doctor-page';
 import { NotificationsInboxPage } from './features/notifications-inbox/notifications-inbox-page';
 import { ProviderPathPage } from './features/onboarding/provider-path-page/provider-path-page';
+import { ProviderSupportPage } from './features/support/provider-support-page/provider-support-page';
 
 export const routes: Routes = [
   { path: ROUTE_PATHS.LOGIN, component: Login },
@@ -119,6 +120,7 @@ export const routes: Routes = [
         data: { capability: 'caseAnalysis' },
       },
       { path: ROUTE_PATHS.PROFILE, component: ProfilePage },
+      { path: ROUTE_PATHS.SUPPORT, component: ProviderSupportPage },
       {
         path: ROUTE_PATHS.LEAVES,
         component: MyLeaves,

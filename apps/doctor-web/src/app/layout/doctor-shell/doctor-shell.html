@@ -54,7 +54,7 @@
       </div>
 
       <nav class="sidebar-nav">
-        @for (item of navItems; track item.id) {
+        @for (item of visibleNavItems(); track item.id) {
           @if (showResumeCase(item)) {
             <button
               type="button"
@@ -144,6 +144,10 @@
           <span class="nav-icon" aria-hidden="true">{{ profileItem.icon }}</span>
           <span class="nav-label">{{ profileItem.label }}</span>
         </a>
+        <a class="sidebar-help" [routerLink]="['/', 'support']">
+          <span class="nav-icon" aria-hidden="true">❔</span>
+          <span class="nav-label">Help centre</span>
+        </a>
         <button type="button" class="sidebar-logout" (click)="logout()">Sign out</button>
       </div>
     </aside>
@@ -182,7 +186,7 @@
         <button type="button" class="drawer-close" aria-label="Close menu" (click)="closeMenu()">×</button>
       </div>
       <nav class="drawer-nav">
-        @for (item of navItems; track item.id) {
+        @for (item of visibleNavItems(); track item.id) {
           @if (showResumeCase(item)) {
             <button type="button" class="nav-action" (click)="handleResumeCase()">
               <span class="nav-icon" aria-hidden="true">{{ item.icon }}</span>
@@ -265,6 +269,10 @@
           <span class="nav-icon" aria-hidden="true">{{ profileItem.icon }}</span>
           <span class="nav-label">{{ profileItem.label }}</span>
         </a>
+        <a class="drawer-profile" [routerLink]="['/', 'support']" (click)="closeMenu()">
+          <span class="nav-icon" aria-hidden="true">❔</span>
+          <span class="nav-label">Help centre</span>
+        </a>
       </nav>
       <div class="drawer-footer">
         <button type="button" class="drawer-logout" (click)="logout()">Sign out</button>
@@ -272,7 +280,7 @@
     </aside>
   }
 
-  <nav class="bottom-nav" aria-label="Quick navigation" [class.is-hidden]="focusMode()">
+  <nav class="bottom-nav" aria-label="Quick navigation" [class.is-hidden]="focusMode() || !onboardingComplete()">
     @for (item of bottomNavItems; track item.id) {
       <a
         [routerLink]="item.path"

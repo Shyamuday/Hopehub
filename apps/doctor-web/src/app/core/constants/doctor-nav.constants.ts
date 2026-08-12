@@ -51,6 +51,7 @@ export const DOCTOR_NAV_ICONS: Record<string, { icon: string; shortLabel: string
   'Treatment pages': { icon: '📝', shortLabel: 'Pages' },
   'Blog articles': { icon: '✍️', shortLabel: 'Blog' },
   Profile: { icon: '👤', shortLabel: 'Profile' },
+  Support: { icon: '❔', shortLabel: 'Help' },
   More: { icon: '⋯', shortLabel: 'More' },
 };
 

@@ -252,11 +252,17 @@ export class DoctorShell implements OnInit, OnDestroy {
     return (item.children || []).filter((child) => child.enabled);
   }
 
+  visibleNavItems() {
+    if (this.onboardingComplete()) return this.navItems;
+    return this.navItems.filter((item) => item.id === 'dashboard');
+  }
+
   isSetupAllowedPath(path?: string) {
     if (!path) return false;
     return (
       path === `/${ROUTE_PATHS.DASHBOARD}` ||
       path === `/${ROUTE_PATHS.PROFILE}` ||
+      path === `/${ROUTE_PATHS.SUPPORT}` ||
       path === `/${ROUTE_PATHS.SLOTS}` ||
       path === `/${ROUTE_PATHS.NOTIFICATIONS_INBOX}`
     );
