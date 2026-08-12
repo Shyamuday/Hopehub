@@ -6,6 +6,7 @@ import TelegramBot from 'node-telegram-bot-api';
 const token = process.env.BOT_TOKEN;
 const adminChatId = process.env.ADMIN_CHAT_ID;
 const confessionChannelId = process.env.CONFESSION_CHANNEL_ID;
+const approvalGroupId = process.env.APPROVAL_GROUP_ID || null;
 const confessionStartNumber = parseInt(process.env.CONFESSION_START_NUMBER || '1000', 10);
 
 if (!token) throw new Error('BOT_TOKEN is missing in .env');
@@ -16,7 +17,16 @@ const bot = new TelegramBot(token, {
   polling: {
     interval: 1000,
     autoStart: true,
-    params: { timeout: 10 }
+    params: {
+      timeout: 10,
+      allowed_updates: JSON.stringify([
+        'message',
+        'callback_query',
+        'my_chat_member',
+        'chat_member',
+        'channel_post'
+      ])
+    }
   }
 });
 
@@ -57,7 +67,7 @@ function makeConfessionId() {
 }
 
 function isAdmin(chatId) {
-  return String(chatId) === String(adminChatId);
+  return String(chatId) === String(adminChatId) || String(chatId) === String(approvalGroupId);
 }
 
 // ─── /start ───────────────────────────────────────────────────────────────────
@@ -73,8 +83,10 @@ bot.onText(/^\/start$/, async (msg) => {
     `You don't have to use your name or explain everything. Just write what's on your mind. 🫂\n\n` +
     `🔒 *Your confession is completely anonymous.*\n` +
     `We won't publicly display your Telegram name, username, or profile.\n\n` +
+    `🌐 *Website:* [hopehub.in](https://hopehub.in)\n` +
+    `📬 *Contact us:* [t.me/Contacthopehubbot](https://t.me/Contacthopehubbot)\n\n` +
     `⚠️ *Please remember:*\n` +
-    `This bot is for anonymous confessions and emotional support. It is not a substitute for professional medical advice or emergency help.\n\n` +
+    `This bot is for anonymous confessions only. It is not a substitute for professional medical advice or emergency help.\n\n` +
     `👇 When you're ready, tap *Send Confession* below.`;
 
   await bot.sendMessage(chatId, welcomeMessage, {
@@ -161,7 +173,7 @@ bot.on('callback_query', async (query) => {
     return;
   }
 
-  // ── Submit (user confirmed preview) — direct publish, no review ──────────
+  // ── Submit (user confirmed preview) → send to admin DM for approval ────────
 
   if (data.startsWith('submit_')) {
     const confessionId = data.replace('submit_', '');
@@ -177,28 +189,43 @@ bot.on('callback_query', async (query) => {
     }
 
     userStates.delete(chatId);
+    confession.status = 'pending';
 
-    // Publish directly to channel — no review
-    const publicPost =
-      `🕊 *Anonymous Confession #${confession.number}*\n\n` +
+    // Send to approval group (or fallback to admin DM)
+    const approvalTarget = approvalGroupId || adminChatId;
+
+    const adminMessage =
+      `🔔 *NEW ANONYMOUS CONFESSION*\n\n` +
+      `🆔 Confession #${confession.number}\n` +
+      `━━━━━━━━━━━━━━\n\n` +
       `${confession.text}\n\n` +
-      `━━━━━━━━━━━━━━\n` +
-      `💙 *HopeHub Anonymous Confessions*\n` +
-      `_t.me/Hopehubconfessionbot_`;
+      `━━━━━━━━━━━━━━`;
+
+    const adminKeyboard = {
+      reply_markup: {
+        inline_keyboard: [
+          [
+            { text: '✅ Approve & Publish', callback_data: `approve_${confessionId}` },
+            { text: '❌ Reject', callback_data: `reject_${confessionId}` }
+          ]
+        ]
+      }
+    };
 
     try {
-      await bot.sendMessage(confessionChannelId, publicPost, {
-        parse_mode: 'Markdown'
+      await bot.sendMessage(approvalTarget, adminMessage, {
+        parse_mode: 'Markdown',
+        ...adminKeyboard
       });
     } catch (err) {
-      console.error('[channel_post_error]', err.message);
+      console.error('[admin_notify_error]', err.message);
     }
 
-    pendingConfessions.delete(confessionId);
-
+    // Confirm receipt to user
     await bot.sendMessage(
       chatId,
-      `💙 *Your confession has been published anonymously.*\n\n` +
+      `💙 *Your confession has been received.*\n\n` +
+        `It will be reviewed and published anonymously if approved.\n\n` +
         `Thank you for trusting us with something personal. 🫂\n\n` +
         `You can send another confession anytime.`,
       { parse_mode: 'Markdown', ...mainKeyboard }
@@ -414,3 +441,4 @@ process.on('unhandledRejection', (reason) => {
 console.log('💙 HopeHub Anonymous Confession Bot is running...');
 console.log(`   Admin: ${adminChatId}`);
 console.log(`   Channel: ${confessionChannelId}`);
+console.log(`   Approval Group: ${approvalGroupId || 'admin DM'}`);
