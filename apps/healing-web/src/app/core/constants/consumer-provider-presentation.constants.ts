@@ -1,4 +1,5 @@
 import type { HopeHubProvider } from '../services/booking.service';
+import { providerRoleDefinition } from '@hopehub/contracts';
 
 export const CONSUMER_PROVIDER_BADGE_CLASSES = {
   professional: 'bg-emerald-50 text-emerald-700 ring-emerald-200',
@@ -13,6 +14,15 @@ export function consumerProviderRoleBadgeClass(
   provider: Pick<HopeHubProvider, 'supportTierTone' | 'supportRole'>,
   fallback: keyof typeof CONSUMER_PROVIDER_BADGE_CLASSES = 'coach',
 ): string {
+  const canonicalTone = providerRoleDefinition(provider.supportRole)?.tone;
+  if (canonicalTone === 'professional') return CONSUMER_PROVIDER_BADGE_CLASSES.professional;
+  if (canonicalTone === 'student') return CONSUMER_PROVIDER_BADGE_CLASSES.student;
+  if (canonicalTone === 'listener') return CONSUMER_PROVIDER_BADGE_CLASSES.volunteer;
+  if (canonicalTone === 'coach' || canonicalTone === 'mentor') {
+    return CONSUMER_PROVIDER_BADGE_CLASSES.coach;
+  }
+  if (canonicalTone === 'wellness') return CONSUMER_PROVIDER_BADGE_CLASSES.wellness;
+
   switch (provider.supportTierTone) {
     case 'professional':
       return CONSUMER_PROVIDER_BADGE_CLASSES.professional;

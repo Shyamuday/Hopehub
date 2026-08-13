@@ -3,6 +3,14 @@ import { Component, computed, effect, inject, signal } from '@angular/core';
 import { form, FormField } from '@angular/forms/signals';
 import { RouterLink } from '@angular/router';
 import { buildDetailRows, DetailRowsComponent, MultiSelectComponent } from '@hopehub/platform-ui';
+import {
+  PROVIDER_ROLE_GROUPS,
+  PROVIDER_ROLE_OPTIONS,
+  normalizeProviderRoles,
+  providerHasRoleCategory,
+  type ProviderRoleCategory,
+  type ProviderRoleCode,
+} from '@hopehub/contracts';
 import { AdminApi } from '../../../core/services/admin-api';
 import { adminRouteLink, ROUTE_PATHS } from '../../../core/constants/app-routes.constants';
 import { AdminWorkspaceService } from '../../../core/services/admin-workspace.service';
@@ -89,16 +97,9 @@ type ProviderReadiness = {
   blockers: Array<{ code: string; label: string; action?: string }>;
 };
 type ProviderGender = 'MALE' | 'FEMALE' | 'OTHER' | 'PREFER_NOT_TO_SAY';
-type CareTeamMemberType =
-  | 'MENTAL_WELLNESS_PROFESSIONAL'
-  | 'QUALIFIED_COUNSELLOR'
-  | 'PSYCHOLOGY_STUDENT_VOLUNTEER'
-  | 'PEER_SUPPORT_VOLUNTEER'
-  | 'NLP_COACH'
-  | 'LIFE_COACH'
-  | 'MEDITATION_BREATHWORK_GUIDE'
-  | 'CAREER_STUDY_MENTOR';
+type CareTeamMemberType = ProviderRoleCode;
 type CareTeamService = {
+  providerRole?: CareTeamMemberType | null;
   title: string;
   description?: string | null;
   pricingMode?:
@@ -122,7 +123,7 @@ type CareTeamPricingTemplate = CareTeamService & {
   title: string;
   sortOrder?: number;
 };
-type HopeHubSupportPath = 'PROFESSIONAL_CARE' | 'COACH_MENTOR' | 'EMOTIONAL_LISTENER';
+type HopeHubSupportPath = ProviderRoleCategory;
 type HopeHubSupportPathFilter = '' | HopeHubSupportPath;
 
 const STALE_PSYCHOLOGIST_PROFILE_TEXT = /homeopathic|doctor|clinical operations/i;
@@ -135,23 +136,6 @@ const CARE_SERVICE_PRICING_MODES = new Set([
   'PER_MINUTE',
 ]);
 
-const CLINICAL_HOPE_HUB_TYPES = new Set<CareTeamMemberType>([
-  'MENTAL_WELLNESS_PROFESSIONAL',
-  'QUALIFIED_COUNSELLOR',
-]);
-
-const LISTENER_HOPE_HUB_TYPES = new Set<CareTeamMemberType>([
-  'PSYCHOLOGY_STUDENT_VOLUNTEER',
-  'PEER_SUPPORT_VOLUNTEER',
-]);
-
-const COACH_HOPE_HUB_TYPES = new Set<CareTeamMemberType>([
-  'NLP_COACH',
-  'LIFE_COACH',
-  'MEDITATION_BREATHWORK_GUIDE',
-  'CAREER_STUDY_MENTOR',
-]);
-
 const HOPE_HUB_SUPPORT_PATHS: Array<{
   value: HopeHubSupportPath;
   label: string;
@@ -162,19 +146,19 @@ const HOPE_HUB_SUPPORT_PATHS: Array<{
     value: 'PROFESSIONAL_CARE',
     label: 'Professional care',
     title: 'Psychologist / counsellor',
-    types: ['MENTAL_WELLNESS_PROFESSIONAL', 'QUALIFIED_COUNSELLOR'],
+    types: [...PROVIDER_ROLE_GROUPS.PROFESSIONAL_CARE],
   },
   {
     value: 'COACH_MENTOR',
     label: 'Clarity & growth',
     title: 'Life coach / mentor',
-    types: ['NLP_COACH', 'LIFE_COACH', 'MEDITATION_BREATHWORK_GUIDE', 'CAREER_STUDY_MENTOR'],
+    types: [...PROVIDER_ROLE_GROUPS.COACH_MENTOR],
   },
   {
     value: 'EMOTIONAL_LISTENER',
     label: 'Talk now',
     title: 'Emotional support listener',
-    types: ['PSYCHOLOGY_STUDENT_VOLUNTEER', 'PEER_SUPPORT_VOLUNTEER'],
+    types: [...PROVIDER_ROLE_GROUPS.EMOTIONAL_LISTENER],
   },
 ];
 
@@ -289,19 +273,7 @@ export class DoctorsPage {
     { value: 'FREE_VOLUNTEER', label: 'Free emotional support listener support' },
     { value: 'PER_MINUTE', label: 'Per-minute pricing' },
   ];
-  readonly careTeamTypeOptions: Array<{ value: CareTeamMemberType; label: string }> = [
-    { value: 'MENTAL_WELLNESS_PROFESSIONAL', label: 'Mental wellness professional' },
-    { value: 'QUALIFIED_COUNSELLOR', label: 'Qualified counsellor' },
-    {
-      value: 'PSYCHOLOGY_STUDENT_VOLUNTEER',
-      label: 'Psychology student emotional support listener',
-    },
-    { value: 'PEER_SUPPORT_VOLUNTEER', label: 'Peer emotional support listener' },
-    { value: 'NLP_COACH', label: 'NLP coach' },
-    { value: 'LIFE_COACH', label: 'Life coach' },
-    { value: 'MEDITATION_BREATHWORK_GUIDE', label: 'Meditation / breathwork guide' },
-    { value: 'CAREER_STUDY_MENTOR', label: 'Career / study mentor' },
-  ];
+  readonly careTeamTypeOptions = PROVIDER_ROLE_OPTIONS;
   readonly supportPathOptions: Array<{ value: HopeHubSupportPathFilter; label: string }> = [
     { value: '', label: 'All Hope Hub categories' },
     ...HOPE_HUB_SUPPORT_PATHS.map((path) => ({
@@ -815,8 +787,8 @@ export class DoctorsPage {
         ? [mental.careTeamType]
         : [];
     const isHopeHub = profile?.doctorType === 'PSYCHOLOGIST';
-    const isListener = types.some((type) => LISTENER_HOPE_HUB_TYPES.has(type));
-    const isClinical = !types.length || types.some((type) => CLINICAL_HOPE_HUB_TYPES.has(type));
+    const isListener = providerHasRoleCategory(types, 'EMOTIONAL_LISTENER');
+    const isClinical = !types.length || providerHasRoleCategory(types, 'PROFESSIONAL_CARE');
     const activeServices = mental?.services?.filter((service) => service.isActive !== false) ?? [];
     const issues = [
       profile?.suspendedAt ? 'account suspended' : '',
@@ -1325,35 +1297,34 @@ export class DoctorsPage {
   }
 
   isClinicalHopeHubType(type?: CareTeamMemberType | null) {
-    return !type || CLINICAL_HOPE_HUB_TYPES.has(type);
+    return !type || providerHasRoleCategory([type], 'PROFESSIONAL_CARE');
   }
 
   hasClinicalHopeHubType(types?: CareTeamMemberType[] | null) {
-    return !types?.length || types.some((type) => CLINICAL_HOPE_HUB_TYPES.has(type));
+    return !types?.length || providerHasRoleCategory(types, 'PROFESSIONAL_CARE');
   }
 
   isListenerHopeHubType(type?: CareTeamMemberType | null) {
-    return Boolean(type && LISTENER_HOPE_HUB_TYPES.has(type));
+    return providerHasRoleCategory(type ? [type] : [], 'EMOTIONAL_LISTENER');
   }
 
   hasListenerHopeHubType(types?: CareTeamMemberType[] | null) {
-    return Boolean(types?.some((type) => LISTENER_HOPE_HUB_TYPES.has(type)));
+    return providerHasRoleCategory(types, 'EMOTIONAL_LISTENER');
   }
 
   isCoachHopeHubType(type?: CareTeamMemberType | null) {
-    return Boolean(type && COACH_HOPE_HUB_TYPES.has(type));
+    return providerHasRoleCategory(type ? [type] : [], 'COACH_MENTOR');
   }
 
   hasCoachHopeHubType(types?: CareTeamMemberType[] | null) {
-    return Boolean(types?.some((type) => COACH_HOPE_HUB_TYPES.has(type)));
+    return providerHasRoleCategory(types, 'COACH_MENTOR');
   }
 
   normalizedCareTeamTypes(
     primary?: CareTeamMemberType | null,
     selected?: CareTeamMemberType[] | null,
   ): CareTeamMemberType[] {
-    const fallback = primary || 'MENTAL_WELLNESS_PROFESSIONAL';
-    return Array.from(new Set([fallback, ...(selected ?? [])]));
+    return normalizeProviderRoles(primary, selected, 'MENTAL_WELLNESS_PROFESSIONAL');
   }
 
   isCreateCareTeamTypeSelected(type: CareTeamMemberType) {
@@ -1372,20 +1343,42 @@ export class DoctorsPage {
     const careTeamTypes: CareTeamMemberType[] = next.length
       ? next
       : ['MENTAL_WELLNESS_PROFESSIONAL'];
+    const primary = careTeamTypes.includes(current.careTeamType)
+      ? current.careTeamType
+      : careTeamTypes[0];
     this.createModel.set({
       ...current,
-      careTeamTypes,
-      careTeamType: careTeamTypes[0],
+      careTeamTypes: [primary, ...careTeamTypes.filter((role) => role !== primary)],
+      careTeamType: primary,
     });
   }
 
   setCreateCareTeamTypes(values: string[]) {
     const current = this.createModel();
     const careTeamTypes = this.normalizedSelectedCareTeamTypes(values);
+    const primary = careTeamTypes.includes(current.careTeamType)
+      ? current.careTeamType
+      : careTeamTypes[0];
     this.createModel.set({
       ...current,
-      careTeamTypes,
-      careTeamType: careTeamTypes[0],
+      careTeamTypes: [primary, ...careTeamTypes.filter((role) => role !== primary)],
+      careTeamType: primary,
+    });
+  }
+
+  selectedCreateProviderRoleOptions() {
+    const selected = new Set(this.createModel().careTeamTypes);
+    return this.careTeamTypeOptions.filter((option) => selected.has(option.value));
+  }
+
+  setCreatePrimaryProviderRole(value: string) {
+    const role = value as CareTeamMemberType;
+    const current = this.createModel();
+    if (!current.careTeamTypes.includes(role)) return;
+    this.createModel.set({
+      ...current,
+      careTeamType: role,
+      careTeamTypes: [role, ...current.careTeamTypes.filter((item) => item !== role)],
     });
   }
 
@@ -1397,20 +1390,42 @@ export class DoctorsPage {
     const careTeamTypes: CareTeamMemberType[] = next.length
       ? next
       : ['MENTAL_WELLNESS_PROFESSIONAL'];
+    const primary = careTeamTypes.includes(current.careTeamType)
+      ? current.careTeamType
+      : careTeamTypes[0];
     this.editModel.set({
       ...current,
-      careTeamTypes,
-      careTeamType: careTeamTypes[0],
+      careTeamTypes: [primary, ...careTeamTypes.filter((role) => role !== primary)],
+      careTeamType: primary,
     });
   }
 
   setEditCareTeamTypes(values: string[]) {
     const current = this.editModel();
     const careTeamTypes = this.normalizedSelectedCareTeamTypes(values);
+    const primary = careTeamTypes.includes(current.careTeamType)
+      ? current.careTeamType
+      : careTeamTypes[0];
     this.editModel.set({
       ...current,
-      careTeamTypes,
-      careTeamType: careTeamTypes[0],
+      careTeamTypes: [primary, ...careTeamTypes.filter((role) => role !== primary)],
+      careTeamType: primary,
+    });
+  }
+
+  selectedEditProviderRoleOptions() {
+    const selected = new Set(this.editModel().careTeamTypes);
+    return this.careTeamTypeOptions.filter((option) => selected.has(option.value));
+  }
+
+  setEditPrimaryProviderRole(value: string) {
+    const role = value as CareTeamMemberType;
+    const current = this.editModel();
+    if (!current.careTeamTypes.includes(role)) return;
+    this.editModel.set({
+      ...current,
+      careTeamType: role,
+      careTeamTypes: [role, ...current.careTeamTypes.filter((item) => item !== role)],
     });
   }
 

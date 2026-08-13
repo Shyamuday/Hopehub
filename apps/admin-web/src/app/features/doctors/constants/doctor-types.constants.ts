@@ -28,7 +28,7 @@ export const DOCTOR_TYPE_LABELS: Record<HomeopathicDoctorType, string> = {
   TELEMEDICINE_DOCTOR: 'Telemedicine Homeopathy Provider',
   MEDICAL_INTERN: 'Medical Intern',
   RESIDENT_MEDICAL_OFFICER: 'Resident Care Officer (RMO)',
-  PSYCHOLOGIST: 'Hope Hub Provider',
+  PSYCHOLOGIST: 'Hope Hub',
 };
 
 export const SPECIALTY_FOCUS_LABELS: Record<HomeopathicSpecialtyFocus, string> = {

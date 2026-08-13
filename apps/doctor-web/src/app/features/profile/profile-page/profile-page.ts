@@ -4,6 +4,7 @@ import { form, FormField } from '@angular/forms/signals';
 import { ActivatedRoute, Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { MultiSelectComponent, ProfileAvatarUploadComponent } from '@hopehub/platform-ui';
+import { PROVIDER_ROLE_CODES, type ProviderRoleCode } from '@hopehub/contracts';
 import { environment } from '../../../../environments/environment';
 import { API_PATHS } from '../../../core/constants/api-paths.constants';
 import { ROUTE_PATHS } from '../../../core/constants/app-routes.constants';
@@ -23,17 +24,8 @@ import { AppButtonComponent } from '../../../shared/ui/app-button.component';
 import { AppActionBarComponent } from '../../../shared/ui/app-action-bar.component';
 
 const LISTENER_SAFETY_ACKNOWLEDGEMENT_VERSION = 'listener-safety-v1-2026-08-07';
-const CARE_TEAM_TYPE_OPTIONS = [
-  'MENTAL_WELLNESS_PROFESSIONAL',
-  'QUALIFIED_COUNSELLOR',
-  'PSYCHOLOGY_STUDENT_VOLUNTEER',
-  'PEER_SUPPORT_VOLUNTEER',
-  'NLP_COACH',
-  'LIFE_COACH',
-  'MEDITATION_BREATHWORK_GUIDE',
-  'CAREER_STUDY_MENTOR',
-] as const;
-type ProfileCareTeamType = (typeof CARE_TEAM_TYPE_OPTIONS)[number];
+const CARE_TEAM_TYPE_OPTIONS = PROVIDER_ROLE_CODES;
+type ProfileCareTeamType = ProviderRoleCode;
 type SelectableProfileCareTeamType = ProfileCareTeamType | 'OTHER';
 type ProfileSetupStepId = 'identity' | 'public' | 'care' | 'safety' | 'services';
 
@@ -306,6 +298,7 @@ export class ProfilePage implements OnDestroy {
       .flatMap((type) =>
         (SUGGESTED_SERVICES_BY_CARE_TEAM_TYPE[type] || []).map((service) => ({
           ...service,
+          providerRole: type,
           subtype: CARE_TEAM_TYPE_LABELS[type],
         })),
       )
@@ -331,13 +324,20 @@ export class ProfilePage implements OnDestroy {
       const careTeamTypes: SelectableProfileCareTeamType[] = next.length
         ? next
         : ['MENTAL_WELLNESS_PROFESSIONAL'];
+      const structured = careTeamTypes.filter(
+        (item): item is ProfileCareTeamType => item !== 'OTHER',
+      );
+      const primary = structured.includes(current.careTeamType as ProfileCareTeamType)
+        ? (current.careTeamType as ProfileCareTeamType)
+        : this.primaryProfileCareTeamType(careTeamTypes);
       return {
         ...current,
-        careTeamTypes,
-        careTeamType: this.primaryProfileCareTeamType(careTeamTypes),
+        careTeamTypes: [primary, ...careTeamTypes.filter((item) => item !== primary)],
+        careTeamType: primary,
         otherCareTeamType: value === 'OTHER' && !checked ? '' : current.otherCareTeamType,
       };
     });
+    this.reconcileServiceRoles();
   }
 
   setProfileCareTeamTypes(values: string[]): void {
@@ -348,13 +348,55 @@ export class ProfilePage implements OnDestroy {
       const careTeamTypes: SelectableProfileCareTeamType[] = selected.length
         ? selected
         : ['MENTAL_WELLNESS_PROFESSIONAL'];
+      const structured = careTeamTypes.filter(
+        (item): item is ProfileCareTeamType => item !== 'OTHER',
+      );
+      const primary = structured.includes(current.careTeamType as ProfileCareTeamType)
+        ? (current.careTeamType as ProfileCareTeamType)
+        : this.primaryProfileCareTeamType(careTeamTypes);
       return {
         ...current,
-        careTeamTypes,
-        careTeamType: this.primaryProfileCareTeamType(careTeamTypes),
+        careTeamTypes: [primary, ...careTeamTypes.filter((item) => item !== primary)],
+        careTeamType: primary,
         otherCareTeamType: careTeamTypes.includes('OTHER') ? current.otherCareTeamType : '',
       };
     });
+    this.reconcileServiceRoles();
+  }
+
+  selectedProviderRoleOptions() {
+    const selected = new Set(this.selectedStructuredCareTeamTypes());
+    return this.careTeamTypeOptions.filter(
+      (option): option is { value: ProfileCareTeamType; label: string } =>
+        option.value !== 'OTHER' && selected.has(option.value),
+    );
+  }
+
+  setPrimaryProviderRole(value: string): void {
+    const selected = this.selectedStructuredCareTeamTypes();
+    if (!selected.includes(value as ProfileCareTeamType)) return;
+    this.profileModel.update((current) => {
+      const otherSelected = current.careTeamTypes.includes('OTHER');
+      const reordered: SelectableProfileCareTeamType[] = [
+        value as ProfileCareTeamType,
+        ...selected.filter((role) => role !== value),
+        ...(otherSelected ? (['OTHER'] as const) : []),
+      ];
+      return { ...current, careTeamType: value, careTeamTypes: reordered };
+    });
+  }
+
+  private reconcileServiceRoles(): void {
+    const allowed = new Set(this.selectedStructuredCareTeamTypes());
+    const fallback = this.profileModel().careTeamType as ProfileCareTeamType;
+    this.careServices.update((services) =>
+      services.map((service) => ({
+        ...service,
+        providerRole: allowed.has(service.providerRole as ProfileCareTeamType)
+          ? service.providerRole
+          : fallback,
+      })),
+    );
   }
 
   focusAreasPlaceholder(): string {
@@ -473,7 +515,7 @@ export class ProfilePage implements OnDestroy {
       !this.isPsychologist && this.lines(form.focusAreasText).length <= 0 ? 'focus areas' : '',
     ].filter(Boolean);
     const careMissing = [
-      this.structuredProfileCareTeamTypes(form.careTeamTypes).length <= 0 ? 'provider subtype' : '',
+      this.structuredProfileCareTeamTypes(form.careTeamTypes).length <= 0 ? 'provider role' : '',
       this.lines(form.languagesText).length <= 0 ? 'languages' : '',
       this.lines(form.sessionTypesText).length <= 0 ? 'session types' : '',
       this.lines(form.concernsHandledText).length <= 0 ? 'concerns handled' : '',
@@ -1013,19 +1055,15 @@ export class ProfilePage implements OnDestroy {
 
   private specialtyForProfileSave(form: ReturnType<typeof emptyProfileModel>): string {
     if (!this.isPsychologist) return form.specialty;
-    const labels = form.careTeamTypes
-      .filter((value) => value !== 'OTHER')
-      .map((value) => CARE_TEAM_TYPE_LABELS[value as ProfileCareTeamType])
-      .filter(Boolean);
     const other = form.otherCareTeamType.trim();
-    if (other) labels.push(`Other: ${other}`);
-    return labels.join(', ') || 'Hope Hub Provider';
+    return other ? `Hope Hub Support · ${other}` : 'Hope Hub Support';
   }
 
   addCareService() {
     this.careServices.update((services) => [
       ...services,
       {
+        providerRole: this.profileModel().careTeamType,
         title: '',
         pricingMode: 'FIXED',
         priceInPaise: 50000,
@@ -1047,6 +1085,7 @@ export class ProfilePage implements OnDestroy {
   }
 
   addSuggestedService(service: {
+    providerRole: ProfileCareTeamType;
     title: string;
     description: string;
     pricingMode: string;
@@ -1056,6 +1095,7 @@ export class ProfilePage implements OnDestroy {
     this.careServices.update((services) => [
       ...services,
       {
+        providerRole: service.providerRole,
         title: service.title,
         description: service.description,
         pricingMode: service.pricingMode,
@@ -1167,6 +1207,8 @@ export class ProfilePage implements OnDestroy {
   private normalizeServiceList(services: Array<any>) {
     return services.map((service, index) => ({
       ...service,
+      providerRole:
+        service.providerRole || this.profileModel().careTeamType || 'MENTAL_WELLNESS_PROFESSIONAL',
       pricingMode: service.pricingMode || 'FIXED',
       priceInPaise: service.priceInPaise ?? 0,
       introSessionLimit: service.introSessionLimit || 1,

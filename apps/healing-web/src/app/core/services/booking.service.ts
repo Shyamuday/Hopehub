@@ -125,6 +125,7 @@ export type HopeHubCheckoutQuote = {
 export type CareTeamServiceQuote = {
   service: {
     id: string;
+    providerRole?: string | null;
     title: string;
     providerId: string;
     providerName: string;
@@ -312,6 +313,8 @@ export type HopeHubProvider = {
   listenerTrustLabel?: string | null;
   listenerTrustNote?: string | null;
   careTeamType?: string;
+  careTeamTypes?: string[];
+  providerClassification?: ProviderClassification;
   bio?: string | null;
   yearsOfExperience?: number | null;
   focusAreas: string[];
@@ -334,6 +337,7 @@ export type HopeHubProvider = {
   maxSessionsPerWeek?: number | null;
   services?: Array<{
     id: string;
+    providerRole?: string | null;
     title: string;
     description?: string | null;
     pricingMode?:
@@ -860,3 +864,4 @@ export class BookingService {
     );
   }
 }
+import type { ProviderClassification } from '@hopehub/contracts';

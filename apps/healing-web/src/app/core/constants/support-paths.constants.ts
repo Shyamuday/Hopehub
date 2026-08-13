@@ -1,6 +1,7 @@
 import type { HopeHubProvider } from '../services/booking.service';
+import { supportPathForProviderRole, type ProviderRoleCategory } from '@hopehub/contracts';
 
-export type ConsumerSupportPath = 'PROFESSIONAL_CARE' | 'COACH_MENTOR' | 'EMOTIONAL_LISTENER';
+export type ConsumerSupportPath = ProviderRoleCategory;
 
 export type ConsumerSupportPathMeta = {
   value: ConsumerSupportPath;
@@ -48,20 +49,6 @@ export const CONSUMER_SUPPORT_PATHS: ConsumerSupportPathMeta[] = [
   },
 ];
 
-const supportPathByRole: Record<string, ConsumerSupportPath> = {
-  MENTAL_WELLNESS_PROFESSIONAL: 'PROFESSIONAL_CARE',
-  QUALIFIED_COUNSELLOR: 'PROFESSIONAL_CARE',
-  PSYCHOLOGIST: 'PROFESSIONAL_CARE',
-  NLP_COACH: 'COACH_MENTOR',
-  LIFE_COACH: 'COACH_MENTOR',
-  MEDITATION_BREATHWORK_GUIDE: 'COACH_MENTOR',
-  CAREER_STUDY_MENTOR: 'COACH_MENTOR',
-  PSYCHOLOGY_STUDENT_VOLUNTEER: 'EMOTIONAL_LISTENER',
-  PEER_SUPPORT_VOLUNTEER: 'EMOTIONAL_LISTENER',
-  STUDENT_VOLUNTEER: 'EMOTIONAL_LISTENER',
-  VOLUNTEER: 'EMOTIONAL_LISTENER',
-};
-
 export function isConsumerSupportPath(
   value: string | null | undefined,
 ): value is ConsumerSupportPath {
@@ -85,7 +72,8 @@ export function supportPathForProvider(
   >,
 ): ConsumerSupportPath {
   const role = provider.supportRole || provider.careTeamType || '';
-  if (supportPathByRole[role]) return supportPathByRole[role];
+  const canonicalPath = supportPathForProviderRole(role);
+  if (canonicalPath) return canonicalPath;
 
   const text = [
     provider.supportRoleLabel,

@@ -1,4 +1,11 @@
 import { CareTeamMemberType, Prisma, TelegramBotKind } from '@prisma/client';
+import {
+  PROVIDER_ROLE_CODES,
+  PROVIDER_ROLE_DEFINITIONS,
+  PROVIDER_APPLICATION_TRACK_LABELS,
+  providerApplicationTrackForRole,
+  type ProviderApplicationTrack
+} from '@hopehub/contracts';
 import { prisma } from '../db.js';
 import {
   assertAssessmentAccess,
@@ -1081,53 +1088,17 @@ async function markTelegramLeadFollowUp(
   });
 }
 
-type ProviderApplicationTrack =
-  'PROFESSIONAL_PSYCHOLOGIST' | 'PSYCHOLOGY_STUDENT_VOLUNTEER' | 'PEER_SUPPORT_VOLUNTEER';
-
-const providerTrackLabels: Record<ProviderApplicationTrack, string> = {
-  PROFESSIONAL_PSYCHOLOGIST: 'Professional psychologist',
-  PSYCHOLOGY_STUDENT_VOLUNTEER: 'Psychology student emotional support listener',
-  PEER_SUPPORT_VOLUNTEER: 'Peer emotional support listener'
-};
+const providerTrackLabels = PROVIDER_APPLICATION_TRACK_LABELS;
 
 const careTeamTypeOptions: Array<{
   type: CareTeamMemberType;
   track: ProviderApplicationTrack;
   label: string;
-}> = [
-  {
-    type: CareTeamMemberType.MENTAL_WELLNESS_PROFESSIONAL,
-    track: 'PROFESSIONAL_PSYCHOLOGIST',
-    label: 'Mental wellness professional'
-  },
-  {
-    type: CareTeamMemberType.QUALIFIED_COUNSELLOR,
-    track: 'PROFESSIONAL_PSYCHOLOGIST',
-    label: 'Qualified counsellor'
-  },
-  {
-    type: CareTeamMemberType.PSYCHOLOGY_STUDENT_VOLUNTEER,
-    track: 'PSYCHOLOGY_STUDENT_VOLUNTEER',
-    label: 'Psychology student emotional support listener'
-  },
-  {
-    type: CareTeamMemberType.PEER_SUPPORT_VOLUNTEER,
-    track: 'PEER_SUPPORT_VOLUNTEER',
-    label: 'Peer emotional support listener'
-  },
-  { type: CareTeamMemberType.NLP_COACH, track: 'PROFESSIONAL_PSYCHOLOGIST', label: 'NLP coach' },
-  { type: CareTeamMemberType.LIFE_COACH, track: 'PROFESSIONAL_PSYCHOLOGIST', label: 'Life coach' },
-  {
-    type: CareTeamMemberType.MEDITATION_BREATHWORK_GUIDE,
-    track: 'PROFESSIONAL_PSYCHOLOGIST',
-    label: 'Meditation / breathwork guide'
-  },
-  {
-    type: CareTeamMemberType.CAREER_STUDY_MENTOR,
-    track: 'PROFESSIONAL_PSYCHOLOGIST',
-    label: 'Career / study mentor'
-  }
-];
+}> = PROVIDER_ROLE_CODES.map((role) => ({
+  type: role as CareTeamMemberType,
+  track: providerApplicationTrackForRole(role),
+  label: PROVIDER_ROLE_DEFINITIONS[role].label
+}));
 
 const careTeamTypeLabels = Object.fromEntries(
   careTeamTypeOptions.map((option) => [option.type, option.label])

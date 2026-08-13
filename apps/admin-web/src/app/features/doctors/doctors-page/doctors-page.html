@@ -9,7 +9,7 @@
     <span>
       {{
         workspaceKey() === 'hope-hub'
-          ? 'Showing ' + providerPluralLabel() + ' only. Category and subtype decide whether someone appears as a psychologist, coach, guide, or listener.'
+          ? 'Showing ' + providerPluralLabel() + ' only. Provider roles decide whether someone appears as a psychologist, coach, guide, or listener.'
           : 'Showing ' + providerPluralLabel() + ' only. ' + hopeHubProviderPluralLabel + ' stay in the Hope Hub workspace.'
       }}
     </span>
@@ -159,14 +159,26 @@
     @if (isPsychologistType(createModel().doctorType)) {
       <div class="field">
         <hopehub-multi-select
-          label="Hope Hub subtype"
+          label="Provider roles"
           hint="Select all that apply"
-          placeholder="Choose Hope Hub subtype"
+          placeholder="Choose one or more roles"
           tone="hope"
           [options]="careTeamTypeOptions"
           [selected]="createModel().careTeamTypes"
           (selectedChange)="setCreateCareTeamTypes($event)"
         />
+        @if (selectedCreateProviderRoleOptions().length > 1) {
+          <label class="field-label" for="doc-create-primary-role">Primary public role</label>
+          <select
+            id="doc-create-primary-role"
+            [value]="createModel().careTeamType"
+            (change)="setCreatePrimaryProviderRole($any($event.target).value)"
+          >
+            @for (option of selectedCreateProviderRoleOptions(); track option.value) {
+              <option [value]="option.value">{{ option.label }}</option>
+            }
+          </select>
+        }
       </div>
       <label class="website-toggle">
         <input type="checkbox" [formField]="createForm.autoMatchEnabled" />
@@ -757,14 +769,26 @@
           <p class="form-section-label">Care team public profile</p>
           <div class="field">
             <hopehub-multi-select
-              label="Hope Hub subtype"
+              label="Provider roles"
               hint="Select all that apply"
-              placeholder="Choose Hope Hub subtype"
+              placeholder="Choose one or more roles"
               tone="hope"
               [options]="careTeamTypeOptions"
               [selected]="editModel().careTeamTypes"
               (selectedChange)="setEditCareTeamTypes($event)"
             />
+            @if (selectedEditProviderRoleOptions().length > 1) {
+              <label class="field-label" for="doc-edit-primary-role">Primary public role</label>
+              <select
+                id="doc-edit-primary-role"
+                [value]="editModel().careTeamType"
+                (change)="setEditPrimaryProviderRole($any($event.target).value)"
+              >
+                @for (option of selectedEditProviderRoleOptions(); track option.value) {
+                  <option [value]="option.value">{{ option.label }}</option>
+                }
+              </select>
+            }
           </div>
           <div class="field">
             <label class="field-label" for="doc-edit-qualifications">Qualifications</label>

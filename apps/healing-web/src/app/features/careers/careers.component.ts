@@ -1,6 +1,13 @@
 import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterModule } from '@angular/router';
+import {
+  PROVIDER_ROLE_CODES,
+  PROVIDER_ROLE_DEFINITIONS,
+  providerApplicationTrackForRole,
+  type ProviderApplicationTrack,
+  type ProviderRoleCode,
+} from '@hopehub/contracts';
 import { NOTE_CONTENT } from '../../core/constants/note-content.constants';
 import {
   LISTENER_GUIDELINES_SECTIONS,
@@ -21,17 +28,8 @@ import {
   SelectableCardComponent,
 } from '../../shared/components';
 
-type CareContributorTrack =
-  'PROFESSIONAL_PSYCHOLOGIST' | 'PSYCHOLOGY_STUDENT_VOLUNTEER' | 'PEER_SUPPORT_VOLUNTEER';
-type CareTeamMemberType =
-  | 'MENTAL_WELLNESS_PROFESSIONAL'
-  | 'QUALIFIED_COUNSELLOR'
-  | 'PSYCHOLOGY_STUDENT_VOLUNTEER'
-  | 'PEER_SUPPORT_VOLUNTEER'
-  | 'NLP_COACH'
-  | 'LIFE_COACH'
-  | 'MEDITATION_BREATHWORK_GUIDE'
-  | 'CAREER_STUDY_MENTOR';
+type CareContributorTrack = ProviderApplicationTrack;
+type CareTeamMemberType = ProviderRoleCode;
 type ListenerScreeningQuestion = {
   id: string;
   text: string;
@@ -87,57 +85,12 @@ export class CareersComponent implements OnInit, OnDestroy {
     track: CareContributorTrack;
     title: string;
     description: string;
-  }> = [
-    {
-      value: 'MENTAL_WELLNESS_PROFESSIONAL',
-      track: 'PROFESSIONAL_PSYCHOLOGIST',
-      title: 'Mental wellness professional',
-      description: 'Verified professional pathway for paid Hope Hub consultations.',
-    },
-    {
-      value: 'QUALIFIED_COUNSELLOR',
-      track: 'PROFESSIONAL_PSYCHOLOGIST',
-      title: 'Qualified counsellor',
-      description: 'Counselling qualification or experience for structured support sessions.',
-    },
-    {
-      value: 'PSYCHOLOGY_STUDENT_VOLUNTEER',
-      track: 'PSYCHOLOGY_STUDENT_VOLUNTEER',
-      title: 'Psychology student emotional support listener',
-      description:
-        'Supervised, non-clinical emotional support listening and community learning pathway.',
-    },
-    {
-      value: 'PEER_SUPPORT_VOLUNTEER',
-      track: 'PEER_SUPPORT_VOLUNTEER',
-      title: 'Peer emotional support listener',
-      description: 'Non-clinical listening, community support, and guided escalation.',
-    },
-    {
-      value: 'NLP_COACH',
-      track: 'PROFESSIONAL_PSYCHOLOGIST',
-      title: 'NLP coach',
-      description: 'Mindset, confidence, habits, communication, and change-work support.',
-    },
-    {
-      value: 'LIFE_COACH',
-      track: 'PROFESSIONAL_PSYCHOLOGIST',
-      title: 'Life coach',
-      description: 'Goals, clarity, emotional direction, and practical life guidance.',
-    },
-    {
-      value: 'MEDITATION_BREATHWORK_GUIDE',
-      track: 'PROFESSIONAL_PSYCHOLOGIST',
-      title: 'Meditation / breathwork guide',
-      description: 'Grounding, relaxation, breathing, mindfulness, and calming practices.',
-    },
-    {
-      value: 'CAREER_STUDY_MENTOR',
-      track: 'PROFESSIONAL_PSYCHOLOGIST',
-      title: 'Career / study mentor',
-      description: 'Career confusion, study pressure, confidence, and student guidance.',
-    },
-  ];
+  }> = PROVIDER_ROLE_CODES.map((value) => ({
+    value,
+    track: providerApplicationTrackForRole(value),
+    title: PROVIDER_ROLE_DEFINITIONS[value].label,
+    description: PROVIDER_ROLE_DEFINITIONS[value].description,
+  }));
   readonly specializationOptions: FormDropdownOption[] = [
     { value: '', label: 'Select specialization' },
     { value: 'Anxiety and stress', label: 'Anxiety and stress' },

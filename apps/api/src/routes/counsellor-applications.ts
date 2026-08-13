@@ -28,6 +28,7 @@ import {
   MINIMUM_LISTENER_GUIDELINES_READ_SECONDS
 } from '../constants/listener-onboarding.constants.js';
 import { asyncRoute, hashToken, randomToken, writeAuditLog } from '../utils/helpers.js';
+import { providerRoleLabel } from '@hopehub/contracts';
 
 export const counsellorApplicationsRouter = Router();
 
@@ -195,10 +196,7 @@ function splitList(value: string | null | undefined) {
 }
 
 function listenerTitle(type: CareTeamMemberType) {
-  if (type === CareTeamMemberType.PSYCHOLOGY_STUDENT_VOLUNTEER) {
-    return 'Psychology student emotional support listener';
-  }
-  return 'Peer emotional support listener';
+  return providerRoleLabel(type) || 'Emotional support listener';
 }
 
 function listenerScope(track: string) {
@@ -262,7 +260,7 @@ async function autoApproveListenerApplication(
     create: {
       userId: user.id,
       doctorType: HomeopathicDoctorType.PSYCHOLOGIST,
-      specialty: title,
+      specialty: 'Hope Hub Support',
       designation: title,
       department: 'Hope Hub Emotional Support',
       isAvailable: true,
@@ -274,7 +272,7 @@ async function autoApproveListenerApplication(
     },
     update: {
       doctorType: HomeopathicDoctorType.PSYCHOLOGIST,
-      specialty: title,
+      specialty: 'Hope Hub Support',
       designation: title,
       department: 'Hope Hub Emotional Support',
       isAvailable: true,

@@ -31,6 +31,7 @@ import { enrichWithProfileImageUrl, userProfileImagePath } from '../../utils/pro
 import { createEmailVerificationToken } from '../../services/email-verification.js';
 import { recordAuthProcess } from '../../services/auth-process-log.js';
 import { providerPublicReadiness } from '../../doctor-capabilities.js';
+import { normalizeProviderRoles, providerClassificationFromLegacy } from '@hopehub/contracts';
 import {
   publicListenerScreeningQuestionSet,
   sanitizeListenerScreeningQuestions,
@@ -76,6 +77,7 @@ const mentalHealthProviderProfileFieldsSchema = z.object({
   services: z
     .array(
       z.object({
+        providerRole: z.nativeEnum(CareTeamMemberType).optional().nullable(),
         title: z.string().trim().min(2).max(120),
         description: z.string().trim().max(1000).optional().nullable().or(z.literal('')),
         pricingMode: z
@@ -147,11 +149,11 @@ function normalizeCareTeamTypes(
   primary: CareTeamMemberType | undefined,
   selected: CareTeamMemberType[] | undefined
 ): [CareTeamMemberType, ...CareTeamMemberType[]] {
-  const fallback = primary ?? CareTeamMemberType.MENTAL_WELLNESS_PROFESSIONAL;
-  return Array.from(new Set([fallback, ...(selected ?? [])])) as [
-    CareTeamMemberType,
-    ...CareTeamMemberType[]
-  ];
+  return normalizeProviderRoles(
+    primary,
+    selected,
+    CareTeamMemberType.MENTAL_WELLNESS_PROFESSIONAL
+  ) as [CareTeamMemberType, ...CareTeamMemberType[]];
 }
 
 async function latestListenerScreeningForEmail(email?: string | null) {
@@ -250,7 +252,7 @@ export function registerAuthDoctorRoutes(router: Router) {
       const isHopeHubProvider = true;
       const primaryCareTeamType = careTeamTypes[0];
       const inferredDoctorType = HomeopathicDoctorType.PSYCHOLOGIST;
-      const specialty = body.specialty || 'Professional Help provider';
+      const specialty = body.specialty || 'Hope Hub Support';
       const doctor = await prisma.user.create({
         data: {
           name: body.name,
@@ -391,7 +393,8 @@ export function registerAuthDoctorRoutes(router: Router) {
         doctorProfile: {
           ...updated,
           doctorTypeLabel: doctorTypeLabel(updated.doctorType),
-          specialtyFocusLabel: specialtyFocusLabel(updated.specialtyFocus)
+          specialtyFocusLabel: specialtyFocusLabel(updated.specialtyFocus),
+          providerClassification: providerClassificationFromLegacy(updated)
         }
       });
     })
@@ -421,7 +424,8 @@ export function registerAuthDoctorRoutes(router: Router) {
         ? {
             ...profile.doctorProfile,
             doctorTypeLabel: doctorTypeLabel(profile.doctorProfile.doctorType),
-            specialtyFocusLabel: specialtyFocusLabel(profile.doctorProfile.specialtyFocus)
+            specialtyFocusLabel: specialtyFocusLabel(profile.doctorProfile.specialtyFocus),
+            providerClassification: providerClassificationFromLegacy(profile.doctorProfile)
           }
         : null;
 
@@ -642,15 +646,16 @@ export function registerAuthDoctorRoutes(router: Router) {
           mental.careTeamType ??
           existing.mentalHealthProfile?.careTeamType ??
           CareTeamMemberType.MENTAL_WELLNESS_PROFESSIONAL;
+        const providerRoles = normalizeCareTeamTypes(
+          primary,
+          mental.careTeamTypes ?? existing.mentalHealthProfile?.careTeamTypes
+        );
         if (body.specialty !== undefined) doctorData.specialty = body.specialty;
         if (body.registrationNo !== undefined) {
           doctorData.registrationNo = body.registrationNo || null;
         }
         mentalData.careTeamType = primary;
-        mentalData.careTeamTypes = normalizeCareTeamTypes(
-          primary,
-          mental.careTeamTypes ?? existing.mentalHealthProfile?.careTeamTypes
-        );
+        mentalData.careTeamTypes = providerRoles;
         if (mental.qualifications !== undefined) {
           mentalData.qualifications = cleanList(mental.qualifications);
         }
@@ -699,6 +704,13 @@ export function registerAuthDoctorRoutes(router: Router) {
       }
 
       if (body.step === 'services' && mental) {
+        const servicePrimary =
+          existing.mentalHealthProfile?.careTeamType ??
+          CareTeamMemberType.MENTAL_WELLNESS_PROFESSIONAL;
+        const serviceProviderRoles = normalizeCareTeamTypes(
+          servicePrimary,
+          existing.mentalHealthProfile?.careTeamTypes
+        );
         if (mental.autoMatchEnabled !== undefined) {
           mentalData.autoMatchEnabled = mental.autoMatchEnabled;
         }
@@ -713,6 +725,10 @@ export function registerAuthDoctorRoutes(router: Router) {
         }
         if (mental.services !== undefined) {
           const services = mental.services.map((service, index) => ({
+            providerRole:
+              service.providerRole && serviceProviderRoles.includes(service.providerRole)
+                ? service.providerRole
+                : servicePrimary,
             title: service.title,
             description: service.description || null,
             pricingMode: service.pricingMode ?? CareTeamServicePricingMode.FIXED,
@@ -894,6 +910,12 @@ export function registerAuthDoctorRoutes(router: Router) {
       const mentalHealthServices =
         profilePayload.doctorType === HomeopathicDoctorType.PSYCHOLOGIST && body.mentalHealthProfile
           ? (body.mentalHealthProfile.services ?? []).map((service, index) => ({
+              providerRole:
+                service.providerRole &&
+                mentalHealthProfile?.careTeamTypes.includes(service.providerRole)
+                  ? service.providerRole
+                  : (mentalHealthProfile?.careTeamType ??
+                    CareTeamMemberType.MENTAL_WELLNESS_PROFESSIONAL),
               title: service.title,
               description: service.description || null,
               pricingMode: service.pricingMode ?? CareTeamServicePricingMode.FIXED,
@@ -1004,7 +1026,8 @@ export function registerAuthDoctorRoutes(router: Router) {
         ? {
             ...updated.doctorProfile,
             doctorTypeLabel: doctorTypeLabel(updated.doctorProfile.doctorType),
-            specialtyFocusLabel: specialtyFocusLabel(updated.doctorProfile.specialtyFocus)
+            specialtyFocusLabel: specialtyFocusLabel(updated.doctorProfile.specialtyFocus),
+            providerClassification: providerClassificationFromLegacy(updated.doctorProfile)
           }
         : null;
 

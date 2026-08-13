@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { normalizeProviderRoles } from '@hopehub/contracts';
 import { z } from 'zod';
 import {
   CareTeamMemberType,
@@ -41,6 +42,7 @@ import { PSYCHOLOGIST_CONSULTATION_SHARE_PERCENT } from '../../services/doctor-c
 
 const textArraySchema = z.array(z.string().trim().min(1).max(160)).max(40).optional();
 const careTeamServiceSchema = z.object({
+  providerRole: z.nativeEnum(CareTeamMemberType).optional().nullable(),
   title: z.string().trim().min(2).max(120),
   description: z.string().trim().max(1000).optional().nullable().or(z.literal('')),
   pricingMode: z
@@ -91,7 +93,17 @@ function compactTextArray(items?: string[]) {
 }
 
 function toMentalHealthProfilePayload(body: z.infer<typeof mentalHealthProfileSchema>) {
+  const careTeamType = body?.careTeamType ?? CareTeamMemberType.MENTAL_WELLNESS_PROFESSIONAL;
+  const careTeamTypes = normalizeProviderRoles(
+    careTeamType,
+    body?.careTeamTypes,
+    'MENTAL_WELLNESS_PROFESSIONAL'
+  ) as CareTeamMemberType[];
   const services = (body?.services ?? []).map((service, index) => ({
+    providerRole:
+      service.providerRole && careTeamTypes.includes(service.providerRole)
+        ? service.providerRole
+        : careTeamType,
     title: service.title,
     description: service.description || null,
     pricingMode: service.pricingMode ?? CareTeamServicePricingMode.FIXED,
@@ -117,8 +129,6 @@ function toMentalHealthProfilePayload(body: z.infer<typeof mentalHealthProfileSc
     isActive: service.isActive ?? true,
     sortOrder: service.sortOrder ?? index
   }));
-  const careTeamType = body?.careTeamType ?? CareTeamMemberType.MENTAL_WELLNESS_PROFESSIONAL;
-  const careTeamTypes = Array.from(new Set([careTeamType, ...(body?.careTeamTypes ?? [])]));
   return {
     careTeamType,
     careTeamTypes,

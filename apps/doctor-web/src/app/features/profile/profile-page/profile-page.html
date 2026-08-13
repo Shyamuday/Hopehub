@@ -180,6 +180,20 @@
           (selectedChange)="setProfileCareTeamTypes($event)"
         />
 
+        @if (selectedProviderRoleOptions().length > 1) {
+          <label for="primaryProviderRole">Primary public role</label>
+          <select
+            id="primaryProviderRole"
+            [value]="profileModel().careTeamType"
+            (change)="setPrimaryProviderRole($any($event.target).value)"
+          >
+            @for (option of selectedProviderRoleOptions(); track option.value) {
+              <option [value]="option.value">{{ option.label }}</option>
+            }
+          </select>
+          <p class="field-hint">This is the first role people will see. Your other roles remain active.</p>
+        }
+
         <div class="subtype-service-guide">
           <div>
             <strong>Suggested support services</strong>
@@ -378,6 +392,17 @@
         <div class="service-editor">
           @for (service of careServices(); track $index) {
             <article class="service-editor-card">
+              @if (selectedProviderRoleOptions().length > 1) {
+                <select
+                  aria-label="Role for this service"
+                  [value]="service.providerRole || profileModel().careTeamType"
+                  (change)="updateCareService($index, 'providerRole', $any($event.target).value)"
+                >
+                  @for (option of selectedProviderRoleOptions(); track option.value) {
+                    <option [value]="option.value">For {{ option.label }}</option>
+                  }
+                </select>
+              }
               <input
                 [value]="service.title"
                 placeholder="Service title"

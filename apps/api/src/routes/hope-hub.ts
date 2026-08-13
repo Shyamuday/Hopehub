@@ -42,6 +42,15 @@ import { notifyConsultationBooked } from '../services/consultation-reminders.js'
 import { markDoctorBusy } from '../services/online-doctor-presence.js';
 import { emitHopeHubLiveGroupMessage } from '../services/hope-hub-live-groups-realtime.js';
 import { providerPublicReadiness } from '../doctor-capabilities.js';
+import {
+  PROVIDER_ROLE_CODES,
+  PROVIDER_ROLE_DEFINITIONS,
+  PROVIDER_ROLE_GROUPS,
+  normalizeProviderRoles,
+  providerClassificationFromLegacy,
+  providerRoleDefinition,
+  supportPathForProviderRole
+} from '@hopehub/contracts';
 
 export const hopeHubRouter = Router();
 
@@ -772,6 +781,7 @@ function careTeamPackageRedemptionPricing(packageBalance: CareTeamPackageBalance
 function careTeamServiceSelect() {
   return {
     id: true,
+    providerRole: true,
     title: true,
     description: true,
     pricingMode: true,
@@ -826,135 +836,40 @@ function isBackendCareTeamServiceId(id?: string | null) {
 }
 
 function careTeamRoleDisplay(careTeamType: string, defaultLabel: string) {
-  const map: Record<
-    string,
-    {
-      label: string;
-      tierLabel: string;
-      tone: string;
-      description: string;
-      scope: string;
-      bestFor: string[];
-      notFor: string[];
-      ctaLabel: string;
-      isClinicalCare: boolean;
-    }
-  > = {
-    MENTAL_WELLNESS_PROFESSIONAL: {
-      label: 'Verified Mental Health Professional',
-      tierLabel: 'Professional care',
-      tone: 'professional',
-      description: 'Qualified support for structured mental-wellness consultations.',
-      scope:
-        'Can support structured counselling and mental-wellness care within their qualification.',
-      bestFor: ['anxiety or stress support', 'relationship concerns', 'structured counselling'],
-      notFor: [
-        'medical emergencies',
-        'instant diagnosis without assessment',
-        'psychiatric prescription'
-      ],
-      ctaLabel: 'Book consultation',
-      isClinicalCare: true
-    },
-    QUALIFIED_COUNSELLOR: {
-      label: 'Qualified Counsellor',
-      tierLabel: 'Counselling support',
-      tone: 'professional',
-      description: 'Trained counselling support for emotional concerns and guided conversations.',
-      scope: 'Can provide counselling-style support and practical coping guidance.',
-      bestFor: ['emotional clarity', 'stress and relationship support', 'guided coping tools'],
-      notFor: ['emergency crisis care', 'medicine or prescription advice', 'formal diagnosis'],
-      ctaLabel: 'Book counselling session',
-      isClinicalCare: true
-    },
-    PSYCHOLOGY_STUDENT_VOLUNTEER: {
-      label: 'Psychology Student Listener',
-      tierLabel: 'Supervised emotional support listener',
-      tone: 'student',
-      description: 'Student listener support for listening, reflection, and non-clinical guidance.',
-      scope: 'Non-clinical support. Works within Hope Hub guidance and escalation rules.',
-      bestFor: ['listening support', 'study stress', 'daily emotional check-ins'],
-      notFor: ['diagnosis', 'therapy replacement', 'high-risk or emergency concerns'],
-      ctaLabel: 'Request student listener support',
-      isClinicalCare: false
-    },
-    PEER_SUPPORT_VOLUNTEER: {
-      label: 'Peer Support Listener',
-      tierLabel: 'Peer support',
-      tone: 'listener',
-      description:
-        'Lived-experience or peer emotional support listening for safe, human conversation.',
-      scope: 'Non-clinical peer listening. Escalates safety concerns to the Hope Hub team.',
-      bestFor: ['loneliness', 'breakup recovery', 'motivation and encouragement'],
-      notFor: ['clinical treatment', 'diagnosis', 'crisis or emergency support'],
-      ctaLabel: 'Request peer support',
-      isClinicalCare: false
-    },
-    NLP_COACH: {
-      label: 'NLP Coach',
-      tierLabel: 'Coaching support',
-      tone: 'coach',
-      description: 'Coaching-oriented support for goals, reframing, habits, and confidence.',
-      scope: 'Coaching support, not clinical therapy or medical care.',
-      bestFor: ['confidence', 'habit change', 'goal clarity'],
-      notFor: ['clinical diagnosis', 'emergency care', 'medical treatment'],
-      ctaLabel: 'Book coaching session',
-      isClinicalCare: false
-    },
-    LIFE_COACH: {
-      label: 'Life Coach',
-      tierLabel: 'Coaching support',
-      tone: 'coach',
-      description: 'Practical coaching for decisions, motivation, routines, and life direction.',
-      scope: 'Coaching support, not clinical therapy or medical care.',
-      bestFor: ['life direction', 'motivation', 'routine planning'],
-      notFor: ['diagnosis', 'prescription', 'crisis intervention'],
-      ctaLabel: 'Book coaching session',
-      isClinicalCare: false
-    },
-    MEDITATION_BREATHWORK_GUIDE: {
-      label: 'Meditation / Breathwork Guide',
-      tierLabel: 'Wellness guide',
-      tone: 'wellness',
-      description: 'Guided relaxation, breathwork, mindfulness, and grounding support.',
-      scope: 'Wellness practice guidance. Not a replacement for mental-health treatment.',
-      bestFor: ['relaxation', 'breathing practice', 'mindfulness routines'],
-      notFor: ['acute panic emergency', 'clinical treatment', 'medical advice'],
-      ctaLabel: 'Book guided practice',
-      isClinicalCare: false
-    },
-    CAREER_STUDY_MENTOR: {
-      label: 'Career / Study Mentor',
-      tierLabel: 'Mentor support',
-      tone: 'mentor',
-      description: 'Mentoring support for study pressure, focus, confidence, and career direction.',
-      scope: 'Mentoring and practical guidance. Not clinical counselling.',
-      bestFor: ['study stress', 'career confusion', 'focus and planning'],
-      notFor: ['clinical therapy', 'diagnosis', 'emergency support'],
-      ctaLabel: 'Book mentoring session',
-      isClinicalCare: false
-    }
+  const canonical = providerRoleDefinition(careTeamType);
+  if (canonical) {
+    return {
+      label: canonical.label,
+      tierLabel:
+        canonical.category === 'PROFESSIONAL_CARE'
+          ? 'Professional care'
+          : canonical.category === 'EMOTIONAL_LISTENER'
+            ? 'Emotional support listener'
+            : 'Coaching and guidance',
+      tone: canonical.tone,
+      description: canonical.description,
+      scope: canonical.scope,
+      bestFor: [...canonical.bestFor],
+      notFor: [...canonical.notFor],
+      ctaLabel: canonical.ctaLabel,
+      isClinicalCare: canonical.isClinicalCare
+    };
+  }
+  return {
+    label: defaultLabel,
+    tierLabel: 'Hope Hub support',
+    tone: 'support',
+    description: 'Hope Hub support for emotional wellness and guided conversation.',
+    scope: 'Support scope depends on the provider’s qualification and selected service.',
+    bestFor: ['emotional support', 'wellness guidance'],
+    notFor: ['emergency care', 'medical crisis'],
+    ctaLabel: 'Book session',
+    isClinicalCare: false
   };
-
-  return (
-    map[careTeamType] || {
-      label: defaultLabel,
-      tierLabel: 'Hope Hub support',
-      tone: 'support',
-      description: 'Hope Hub support for emotional wellness and guided conversation.',
-      scope: 'Support scope depends on the person’s qualification and service.',
-      bestFor: ['emotional support', 'wellness guidance'],
-      notFor: ['emergency care', 'medical crisis'],
-      ctaLabel: 'Book session',
-      isClinicalCare: false
-    }
-  );
 }
 
 function isListenerCareTeamType(careTeamType: string | null | undefined) {
-  return (
-    careTeamType === 'PSYCHOLOGY_STUDENT_VOLUNTEER' || careTeamType === 'PEER_SUPPORT_VOLUNTEER'
-  );
+  return providerRoleDefinition(careTeamType)?.requiresListenerScreening ?? false;
 }
 
 function normalizedCareTeamTypes(
@@ -963,12 +878,25 @@ function normalizedCareTeamTypes(
     careTeamTypes?: string[] | null;
   } | null
 ) {
-  const types = mental?.careTeamTypes?.length
-    ? mental.careTeamTypes
-    : mental?.careTeamType
-      ? [mental.careTeamType]
-      : [];
-  return Array.from(new Set(types));
+  return normalizeProviderRoles(mental?.careTeamType, mental?.careTeamTypes);
+}
+
+function providerRoleForSession(types: readonly string[], preferredExpertType?: string | null) {
+  const preference = String(preferredExpertType || '').toLowerCase();
+  const preferredCategory = /listener|volunteer|peer|talk now/.test(preference)
+    ? 'EMOTIONAL_LISTENER'
+    : /coach|mentor|growth|meditation|career|study|nlp/.test(preference)
+      ? 'COACH_MENTOR'
+      : /professional|psychologist|counsellor|counselor|mental/.test(preference)
+        ? 'PROFESSIONAL_CARE'
+        : null;
+  return (
+    (preferredCategory
+      ? types.find((role) => supportPathForProviderRole(role) === preferredCategory)
+      : null) ??
+    types[0] ??
+    null
+  );
 }
 
 function providerPublicPayload(
@@ -1090,6 +1018,10 @@ function providerPublicPayload(
       : null,
     careTeamType,
     careTeamTypes,
+    providerClassification: providerClassificationFromLegacy({
+      doctorType: 'PSYCHOLOGIST',
+      mentalHealthProfile: mental
+    }),
     bio: provider.bio,
     yearsOfExperience: provider.yearsOfExperience,
     focusAreas,
@@ -2021,6 +1953,19 @@ function moderationSummary(moderation: Awaited<ReturnType<typeof liveGroupModera
     reason: moderation?.reason ?? null
   };
 }
+
+hopeHubRouter.get('/provider-taxonomy', (_req, res) => {
+  res.json({
+    domains: ['HOMEOPATHY', 'HOPE_HUB'],
+    roles: PROVIDER_ROLE_CODES.map((code) => PROVIDER_ROLE_DEFINITIONS[code]),
+    roleGroups: PROVIDER_ROLE_GROUPS,
+    legacy: {
+      hopeHubDoctorType: 'PSYCHOLOGIST',
+      primaryRoleField: 'careTeamType',
+      rolesField: 'careTeamTypes'
+    }
+  });
+});
 
 hopeHubRouter.get(
   '/hope-hub/live-groups',
@@ -2974,6 +2919,7 @@ hopeHubRouter.get(
     res.json({
       service: {
         id: service.id,
+        providerRole: service.providerRole,
         title: service.title,
         providerId: service.mentalHealthProfile.doctor.id,
         providerName: service.mentalHealthProfile.doctor.user.name,
@@ -3049,9 +2995,18 @@ hopeHubRouter.post(
     const careTeamService =
       selectedCareTeamService ||
       pickQuickTalkCareTeamService(provider.mentalHealthProfile?.services, quickTalkMode);
-    const quickTalkUsesListener =
-      isListenerCareTeamType(provider.mentalHealthProfile?.careTeamType) ||
-      isListenerCareTeamType(careTeamService?.mentalHealthProfile?.careTeamType);
+    const sessionProviderRoles = normalizeProviderRoles(
+      careTeamService?.providerRole ?? provider.mentalHealthProfile?.careTeamType,
+      [
+        ...normalizedCareTeamTypes(provider.mentalHealthProfile),
+        ...normalizedCareTeamTypes(careTeamService?.mentalHealthProfile)
+      ]
+    );
+    const sessionProviderRole = providerRoleForSession(
+      sessionProviderRoles,
+      body.preferredExpertType
+    );
+    const quickTalkUsesListener = isListenerCareTeamType(sessionProviderRole);
     if (quickTalkUsesListener && !body.listenerSupportConsent) {
       return res.status(400).json({
         message:
@@ -3106,10 +3061,7 @@ hopeHubRouter.post(
       serviceName: effectiveServiceName,
       careTeamServiceId: careTeamService?.id || null,
       providerId: provider.id,
-      careTeamTypes: [
-        ...normalizedCareTeamTypes(provider.mentalHealthProfile),
-        ...normalizedCareTeamTypes(careTeamService?.mentalHealthProfile)
-      ]
+      careTeamTypes: sessionProviderRoles
     });
     const finalPayableInPaise = checkout.payableInPaise;
     const isFreeOrWalletPaid = finalPayableInPaise <= 0;
@@ -3149,6 +3101,8 @@ hopeHubRouter.post(
           requiresPayment: !isFreeOrWalletPaid,
           concernCategory: body.concernCategory || '',
           preferredExpertType: body.preferredExpertType || '',
+          providerRole: sessionProviderRole,
+          providerRoles: sessionProviderRoles,
           sessionMode: normalizedSessionMode,
           quickTalkMode,
           preferredLanguage: body.preferredLanguage || '',
@@ -3560,10 +3514,15 @@ hopeHubRouter.post(
           )?.mentalHealthProfile
         )
       : normalizedCareTeamTypes(selectedCareTeamService?.mentalHealthProfile);
-    const bookingUsesListener = [
+    const sessionProviderRoles = normalizeProviderRoles(selectedCareTeamService?.providerRole, [
       ...normalizedCareTeamTypes(selectedCareTeamService?.mentalHealthProfile),
       ...requestedProviderCareTeamTypes
-    ].some((type) => isListenerCareTeamType(type));
+    ]);
+    const sessionProviderRole = providerRoleForSession(
+      sessionProviderRoles,
+      body.preferredExpertType
+    );
+    const bookingUsesListener = isListenerCareTeamType(sessionProviderRole);
     if (bookingUsesListener && !body.listenerSupportConsent) {
       return res.status(400).json({
         message:
@@ -3690,10 +3649,7 @@ hopeHubRouter.post(
       offeringId: selectedOffering?.id || body.offeringId || null,
       careTeamServiceId: selectedCareTeamService?.id || null,
       providerId: requestedProvider?.id || body.providerId || null,
-      careTeamTypes: [
-        ...normalizedCareTeamTypes(selectedCareTeamService?.mentalHealthProfile),
-        ...requestedProviderCareTeamTypes
-      ]
+      careTeamTypes: sessionProviderRoles
     });
     const chargeGrossInPaise = checkout.grossAmountInPaise;
     const finalPayableInPaise = checkout.payableInPaise;
@@ -3749,6 +3705,8 @@ hopeHubRouter.post(
           requestedProviderName: requestedProvider?.user.name || '',
           concernCategory: body.concernCategory || '',
           preferredExpertType: body.preferredExpertType || '',
+          providerRole: sessionProviderRole,
+          providerRoles: sessionProviderRoles,
           sessionMode: body.sessionMode || '',
           preferredLanguage: body.preferredLanguage || '',
           preferredProviderGender: body.preferredProviderGender || '',

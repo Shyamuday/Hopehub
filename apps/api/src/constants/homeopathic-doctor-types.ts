@@ -4,6 +4,12 @@ import {
   HomeopathicSpecialtyFocus
 } from '@prisma/client';
 import { z } from 'zod';
+import {
+  PROVIDER_ROLE_GROUPS,
+  normalizeProviderRoles,
+  providerClassificationFromLegacy,
+  providerHasRoleCategory
+} from '@hopehub/contracts';
 
 export const HOMEOPATHIC_DOCTOR_TYPE_LABELS: Record<HomeopathicDoctorType, string> = {
   CHIEF_CONSULTANT: 'Homeopathy Chief Consultant',
@@ -13,7 +19,7 @@ export const HOMEOPATHIC_DOCTOR_TYPE_LABELS: Record<HomeopathicDoctorType, strin
   TELEMEDICINE_DOCTOR: 'Telemedicine Homeopathy Provider',
   MEDICAL_INTERN: 'Homeopathy Intern',
   RESIDENT_MEDICAL_OFFICER: 'Resident Care Officer (RMO)',
-  PSYCHOLOGIST: 'Hope Hub Provider'
+  PSYCHOLOGIST: 'Hope Hub'
 };
 
 export const HOMEOPATHIC_SPECIALTY_FOCUS_LABELS: Record<HomeopathicSpecialtyFocus, string> = {
@@ -174,22 +180,12 @@ export const DOCTOR_TYPE_CAPABILITIES: Record<HomeopathicDoctorType, DoctorTypeC
   }
 };
 
-export const CLINICAL_MENTAL_HEALTH_CARE_TEAM_TYPES = [
-  CareTeamMemberType.MENTAL_WELLNESS_PROFESSIONAL,
-  CareTeamMemberType.QUALIFIED_COUNSELLOR
-] as const;
-
-export const LISTENER_CARE_TEAM_TYPES = [
-  CareTeamMemberType.PSYCHOLOGY_STUDENT_VOLUNTEER,
-  CareTeamMemberType.PEER_SUPPORT_VOLUNTEER
-] as const;
-
-export const COACH_GUIDE_CARE_TEAM_TYPES = [
-  CareTeamMemberType.NLP_COACH,
-  CareTeamMemberType.LIFE_COACH,
-  CareTeamMemberType.MEDITATION_BREATHWORK_GUIDE,
-  CareTeamMemberType.CAREER_STUDY_MENTOR
-] as const;
+export const CLINICAL_MENTAL_HEALTH_CARE_TEAM_TYPES =
+  PROVIDER_ROLE_GROUPS.PROFESSIONAL_CARE as readonly CareTeamMemberType[];
+export const LISTENER_CARE_TEAM_TYPES =
+  PROVIDER_ROLE_GROUPS.EMOTIONAL_LISTENER as readonly CareTeamMemberType[];
+export const COACH_GUIDE_CARE_TEAM_TYPES =
+  PROVIDER_ROLE_GROUPS.COACH_MENTOR as readonly CareTeamMemberType[];
 
 export const HOPE_HUB_SUPPORT_PATH_TYPES = {
   PROFESSIONAL_CARE: CLINICAL_MENTAL_HEALTH_CARE_TEAM_TYPES,
@@ -205,15 +201,15 @@ export function hopeHubCareTeamTypesForSupportPath(path?: string | null): CareTe
 }
 
 export function isClinicalMentalHealthCareTeamType(type?: CareTeamMemberType | null) {
-  return CLINICAL_MENTAL_HEALTH_CARE_TEAM_TYPES.includes(type as any);
+  return providerHasRoleCategory(type ? [type] : [], 'PROFESSIONAL_CARE');
 }
 
 export function isListenerCareTeamType(type?: CareTeamMemberType | null) {
-  return LISTENER_CARE_TEAM_TYPES.includes(type as any);
+  return providerHasRoleCategory(type ? [type] : [], 'EMOTIONAL_LISTENER');
 }
 
 export function isCoachGuideCareTeamType(type?: CareTeamMemberType | null) {
-  return COACH_GUIDE_CARE_TEAM_TYPES.includes(type as any);
+  return providerHasRoleCategory(type ? [type] : [], 'COACH_MENTOR');
 }
 
 export function capabilitiesForDoctorProfile(input?: {
@@ -227,11 +223,12 @@ export function capabilitiesForDoctorProfile(input?: {
   const base = DOCTOR_TYPE_CAPABILITIES[doctorType];
   if (doctorType !== HomeopathicDoctorType.PSYCHOLOGIST) return base;
 
-  const careTeamTypes = input?.mentalHealthProfile?.careTeamTypes?.length
-    ? input.mentalHealthProfile.careTeamTypes
-    : input?.mentalHealthProfile?.careTeamType
-      ? [input.mentalHealthProfile.careTeamType]
-      : [];
+  const classification = providerClassificationFromLegacy(input);
+  const careTeamTypes = normalizeProviderRoles(
+    classification.primaryRole,
+    classification.roles,
+    'MENTAL_WELLNESS_PROFESSIONAL'
+  ) as CareTeamMemberType[];
   const clinical =
     careTeamTypes.length === 0 ||
     careTeamTypes.some((type) => isClinicalMentalHealthCareTeamType(type));
@@ -298,6 +295,7 @@ export const doctorProfileSelect = {
         orderBy: { sortOrder: 'asc' },
         select: {
           id: true,
+          providerRole: true,
           title: true,
           description: true,
           pricingMode: true,

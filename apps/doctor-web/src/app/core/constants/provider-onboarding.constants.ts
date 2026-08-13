@@ -34,9 +34,7 @@ export type ProviderReadinessSnapshot = {
 
 export function needsProviderPathSelection(profile?: DoctorProfileSummary | null): boolean {
   return (
-    profile?.doctorType === 'PSYCHOLOGIST' &&
-    profile.specialty === 'Professional Help provider' &&
-    !profile.mentalHealthProfile?.onboardingPathSelectedAt
+    profile?.doctorType === 'PSYCHOLOGIST' && !profile.mentalHealthProfile?.onboardingPathSelectedAt
   );
 }
 
@@ -57,6 +55,7 @@ function activeServiceCount(profile?: DoctorProfileSummary | null) {
 
 function primaryCareTeamType(profile?: DoctorProfileSummary | null) {
   return (
+    profile?.providerClassification?.primaryRole ||
     profile?.mentalHealthProfile?.careTeamType ||
     profile?.mentalHealthProfile?.careTeamTypes?.[0] ||
     null
@@ -64,6 +63,9 @@ function primaryCareTeamType(profile?: DoctorProfileSummary | null) {
 }
 
 function isListenerProfile(profile?: DoctorProfileSummary | null) {
+  if (profile?.providerClassification) {
+    return profile.providerClassification.roles.some((type) => isListenerCareTeamType(type));
+  }
   const mental = profile?.mentalHealthProfile;
   const types = mental?.careTeamTypes?.length
     ? mental.careTeamTypes
@@ -74,6 +76,11 @@ function isListenerProfile(profile?: DoctorProfileSummary | null) {
 }
 
 function isClinicalHopeHubProfile(profile?: DoctorProfileSummary | null) {
+  if (profile?.providerClassification) {
+    return profile.providerClassification.roles.some((type) =>
+      isClinicalMentalHealthCareTeamType(type),
+    );
+  }
   const mental = profile?.mentalHealthProfile;
   const types = mental?.careTeamTypes?.length
     ? mental.careTeamTypes

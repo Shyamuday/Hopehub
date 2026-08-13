@@ -100,6 +100,7 @@ model CareTeamService {
   mentalHealthProfileId  String
   title                  String
   description            String?  @db.Text
+  providerRole           CareTeamMemberType?
   pricingMode            CareTeamServicePricingMode @default(FIXED)
   priceInPaise           Int      @default(0)
   firstSessionPriceInPaise Int?
@@ -122,6 +123,7 @@ model CareTeamService {
   slots                  DoctorSlot[]
 
   @@index([mentalHealthProfileId, isActive, sortOrder])
+  @@index([providerRole, isActive])
 }
 
 model CareTeamPricingTemplate {

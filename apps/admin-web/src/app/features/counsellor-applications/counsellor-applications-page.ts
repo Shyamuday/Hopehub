@@ -2,6 +2,11 @@ import { DatePipe } from '@angular/common';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AdminApi } from '../../core/services/admin-api';
+import {
+  PROVIDER_APPLICATION_TRACK_LABELS,
+  providerRoleLabel,
+  type ProviderApplicationTrack,
+} from '@hopehub/contracts';
 
 type StatusFilter = 'ALL' | 'NEW' | 'REVIEWING' | 'SHORTLISTED' | 'REJECTED' | 'ONBOARDED';
 type ContributorStatus = 'ACTIVE' | 'SUSPENDED' | 'INACTIVE';
@@ -166,26 +171,11 @@ export class CounsellorApplicationsPage implements OnInit {
   }
 
   trackLabel(track: string): string {
-    const labels: Record<string, string> = {
-      PROFESSIONAL_PSYCHOLOGIST: 'Professional psychologist',
-      PSYCHOLOGY_STUDENT_VOLUNTEER: 'Psychology student emotional support listener',
-      PEER_SUPPORT_VOLUNTEER: 'Peer emotional support listener',
-    };
-    return labels[track] || track;
+    return PROVIDER_APPLICATION_TRACK_LABELS[track as ProviderApplicationTrack] || track;
   }
 
   careTeamTypeLabel(type: string): string {
-    const labels: Record<string, string> = {
-      MENTAL_WELLNESS_PROFESSIONAL: 'Mental wellness professional',
-      QUALIFIED_COUNSELLOR: 'Qualified counsellor',
-      PSYCHOLOGY_STUDENT_VOLUNTEER: 'Psychology student emotional support listener',
-      PEER_SUPPORT_VOLUNTEER: 'Peer emotional support listener',
-      NLP_COACH: 'NLP coach',
-      LIFE_COACH: 'Life coach',
-      MEDITATION_BREATHWORK_GUIDE: 'Meditation / breathwork guide',
-      CAREER_STUDY_MENTOR: 'Career / study mentor',
-    };
-    return labels[type] || type || 'Care team member';
+    return providerRoleLabel(type) || type || 'Care team member';
   }
 
   genderLabel(gender: string | null | undefined): string {
