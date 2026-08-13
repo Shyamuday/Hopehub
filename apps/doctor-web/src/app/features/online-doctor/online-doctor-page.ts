@@ -266,6 +266,7 @@ export class OnlineDoctorPage implements OnInit, OnDestroy {
     }
     this.saving.set(true);
     this.error.set('');
+    this.requestAssignmentNotifications();
     try {
       await this.saveSettings();
       const res = await this.online.setLiveStatus({
@@ -284,6 +285,11 @@ export class OnlineDoctorPage implements OnInit, OnDestroy {
     } finally {
       this.saving.set(false);
     }
+  }
+
+  private requestAssignmentNotifications() {
+    if (typeof Notification === 'undefined' || Notification.permission !== 'default') return;
+    void Notification.requestPermission().catch(() => undefined);
   }
 
   async goOffline() {

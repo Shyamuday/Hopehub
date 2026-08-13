@@ -44,6 +44,7 @@ import {
   markDoctorBusy
 } from '../services/online-doctor-presence.js';
 import { emitHopeHubLiveGroupMessage } from '../services/hope-hub-live-groups-realtime.js';
+import { emitConsultationAssignedToDoctor } from '../services/consultation-realtime.js';
 import {
   normalizeQuickTalkMode,
   quickTalkAvailabilityWhere,
@@ -3341,6 +3342,15 @@ hopeHubRouter.post(
 
     if (isFreeOrWalletPaid && consultation.payment?.id) {
       await markDoctorBusy(provider.userId, 'BUSY');
+      emitConsultationAssignedToDoctor(provider.userId, {
+        consultationId: consultation.id,
+        patientCode: consultation.patient?.patientCode,
+        patientName: consultation.patient?.name,
+        diseaseName: consultation.disease?.name,
+        status: consultation.status,
+        consultationMode: ConsultationMode.INSTANT_ONLINE,
+        sessionMode: quickTalkMode
+      });
       await upsertProviderEarningForPayment(consultation.payment.id);
       void settleConsultationPaymentRewards(consultation.payment.id).catch((err) =>
         console.error('[rewards] Quick Talk settlement failed after free checkout', err)

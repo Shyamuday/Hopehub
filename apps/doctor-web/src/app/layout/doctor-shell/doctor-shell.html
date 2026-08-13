@@ -302,3 +302,35 @@
     }
   </nav>
 </main>
+
+@if (incomingAssignment(); as incoming) {
+  <div class="incoming-session-backdrop" role="presentation">
+    <section
+      class="incoming-session-card"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="incoming-session-title"
+      aria-describedby="incoming-session-description"
+    >
+      <div class="incoming-session-pulse" aria-hidden="true">
+        <span>{{ incomingAssignmentIcon(incoming.sessionMode) }}</span>
+      </div>
+      <p class="incoming-session-eyebrow">Hope Hub Live</p>
+      <h2 id="incoming-session-title">{{ incomingAssignmentTitle(incoming.sessionMode) }}</h2>
+      <p class="incoming-session-user">{{ incomingUserLabel(incoming) }}</p>
+      @if (incoming.diseaseName) {
+        <p id="incoming-session-description" class="incoming-session-context">
+          {{ incoming.diseaseName }}
+        </p>
+      } @else {
+        <p id="incoming-session-description" class="incoming-session-context">
+          The user is ready and waiting in the private room.
+        </p>
+      }
+      <button type="button" class="incoming-session-open" (click)="openIncomingAssignment()">
+        Open session
+      </button>
+      <small>Opening the room lets you respond by the modes enabled for this session.</small>
+    </section>
+  </div>
+}

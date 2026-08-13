@@ -64,6 +64,7 @@ export class LiveGroupsComponent implements OnInit, OnDestroy {
   );
 
   private groupId = '';
+  private subscribedGroupId = '';
   private socket: Socket | null = null;
   private typingStopTimer: ReturnType<typeof setTimeout> | null = null;
   private typingClearTimers = new Map<string, ReturnType<typeof setTimeout>>();
@@ -120,6 +121,7 @@ export class LiveGroupsComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.socket?.off?.(GROUP_MESSAGE_EVENT, this.handleIncomingMessage);
     this.socket?.off?.(GROUP_TYPING_EVENT, this.handleTyping);
+    this.realtime.unsubscribeLiveGroup(this.subscribedGroupId);
     if (this.typingStopTimer) clearTimeout(this.typingStopTimer);
     this.typingClearTimers.forEach((timer) => clearTimeout(timer));
     this.emitTyping(false);
@@ -293,7 +295,11 @@ export class LiveGroupsComponent implements OnInit, OnDestroy {
   private bindRealtime(groupId: string): void {
     this.socket?.off?.(GROUP_MESSAGE_EVENT, this.handleIncomingMessage);
     if (!this.currentUser()) return;
+    if (this.subscribedGroupId && this.subscribedGroupId !== groupId) {
+      this.realtime.unsubscribeLiveGroup(this.subscribedGroupId);
+    }
     this.realtime.subscribeLiveGroup(groupId);
+    this.subscribedGroupId = groupId;
     this.socket = this.realtime.getSocket();
     this.socket?.off?.(GROUP_MESSAGE_EVENT, this.handleIncomingMessage);
     this.socket?.on?.(GROUP_MESSAGE_EVENT, this.handleIncomingMessage);

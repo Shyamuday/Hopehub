@@ -469,6 +469,107 @@
   }
 }
 
+.incoming-session-backdrop {
+  align-items: center;
+  background: rgba(15, 23, 42, 0.62);
+  backdrop-filter: blur(8px);
+  display: flex;
+  inset: 0;
+  justify-content: center;
+  padding: 1rem;
+  position: fixed;
+  z-index: 200;
+}
+
+.incoming-session-card {
+  background: #fff;
+  border: 1px solid #a7f3d0;
+  border-radius: 1.5rem;
+  box-shadow: 0 30px 90px rgba(15, 23, 42, 0.3);
+  max-width: 24rem;
+  padding: 1.5rem;
+  text-align: center;
+  width: 100%;
+}
+
+.incoming-session-pulse {
+  align-items: center;
+  background: #d1fae5;
+  border-radius: 50%;
+  color: #047857;
+  display: flex;
+  font-size: 2rem;
+  height: 5rem;
+  justify-content: center;
+  margin: 0 auto 1rem;
+  position: relative;
+  width: 5rem;
+}
+
+.incoming-session-pulse::before,
+.incoming-session-pulse::after {
+  animation: incomingPulse 1.8s ease-out infinite;
+  border: 2px solid #34d399;
+  border-radius: 50%;
+  content: '';
+  inset: 0;
+  position: absolute;
+}
+
+.incoming-session-pulse::after { animation-delay: 0.6s; }
+
+@keyframes incomingPulse {
+  0% { opacity: 0.75; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1.65); }
+}
+
+.incoming-session-eyebrow {
+  color: #047857;
+  font-size: var(--text-xs);
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  margin: 0 0 0.4rem;
+  text-transform: uppercase;
+}
+
+.incoming-session-card h2 {
+  color: #0f172a;
+  font-size: 1.35rem;
+  margin: 0;
+}
+
+.incoming-session-user {
+  color: #0f172a;
+  font-weight: 700;
+  margin: 0.7rem 0 0;
+}
+
+.incoming-session-context {
+  color: #64748b;
+  font-size: var(--text-sm);
+  line-height: 1.5;
+  margin: 0.35rem 0 1.15rem;
+}
+
+.incoming-session-open {
+  background: #059669;
+  border: 0;
+  border-radius: 999px;
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 800;
+  min-height: 3rem;
+  padding: 0.7rem 1.4rem;
+  width: 100%;
+}
+
+.incoming-session-card small {
+  color: #64748b;
+  display: block;
+  line-height: 1.45;
+  margin-top: 0.75rem;
+}
+
 .drawer-footer {
   padding: 0.75rem 1rem;
   padding-bottom: calc(0.75rem + var(--safe-bottom));

@@ -89,6 +89,7 @@ export class DoctorLiveSessionPage implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.realtime.clearConsultationUpdatedHandler(this.handleConsultationUpdated);
+    this.realtime.unsubscribeConsultation(this.consultationId);
   }
 
   async load(options: { silent?: boolean } = {}): Promise<void> {

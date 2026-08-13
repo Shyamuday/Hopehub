@@ -26,7 +26,10 @@ import {
   ConsultationNavigationService,
   type LastConsultationWorkspace,
 } from '../../core/services/consultation-navigation.service';
-import { DoctorRealtimeService } from '../../core/services/doctor-realtime.service';
+import {
+  DoctorRealtimeService,
+  type ConsultationAssignedPayload,
+} from '../../core/services/doctor-realtime.service';
 import { DoctorSessionService } from '../../core/services/doctor-session';
 
 export type DoctorBottomNavItem = {
@@ -68,6 +71,7 @@ export class DoctorShell implements OnInit, OnDestroy {
   menuOpen = signal(false);
   focusMode = signal(false);
   assignmentNotice = signal('');
+  incomingAssignment = signal<ConsultationAssignedPayload | null>(null);
   onboardingComplete = signal(true);
   onboardingPercent = signal(100);
   expandedGroupIds = signal<Set<string>>(new Set());
@@ -133,17 +137,11 @@ export class DoctorShell implements OnInit, OnDestroy {
         ? `${payload.patientName ?? 'Patient'} (${payload.patientCode})`
         : (payload.patientName ?? 'New patient');
       this.assignmentNotice.set(`New case: ${label}`);
+      this.showAssignmentNotification(payload, label);
       if (payload.consultationMode === 'INSTANT_ONLINE') {
-        void this.router.navigate(['/', ROUTE_PATHS.ONLINE_DOCTOR], {
-          queryParams: { consultationId: payload.consultationId },
-        });
+        this.incomingAssignment.set(payload);
       } else {
-        void this.router.navigate([
-          '/',
-          ROUTE_PATHS.CASE_ANALYSIS,
-          payload.consultationId,
-          'case-analysis',
-        ]);
+        void this.router.navigate(this.assignmentRoute(payload));
       }
       window.setTimeout(() => this.assignmentNotice.set(''), 5000);
     });
@@ -165,6 +163,75 @@ export class DoctorShell implements OnInit, OnDestroy {
           this.refreshLastWorkspace();
         }
       });
+  }
+
+  private showAssignmentNotification(
+    payload: {
+      consultationId: string;
+      consultationMode?: 'CLINIC_QUEUE' | 'INSTANT_ONLINE';
+      diseaseName?: string | null;
+      sessionMode?: 'chat' | 'voice' | 'video';
+    },
+    label: string,
+  ) {
+    if (
+      typeof document === 'undefined' ||
+      !document.hidden ||
+      typeof Notification === 'undefined' ||
+      Notification.permission !== 'granted'
+    ) {
+      return;
+    }
+    const notification = new Notification(this.incomingAssignmentTitle(payload.sessionMode), {
+      body: `${label}${payload.diseaseName ? ` · ${payload.diseaseName}` : ''}`,
+      tag: `hopehub-assignment-${payload.consultationId}`,
+      requireInteraction: true,
+    });
+    notification.onclick = () => {
+      window.focus();
+      notification.close();
+      this.incomingAssignment.set(null);
+      void this.router.navigate(this.assignmentRoute(payload));
+    };
+    navigator.vibrate?.([180, 80, 180]);
+  }
+
+  incomingAssignmentTitle(mode?: string): string {
+    if (mode === 'video') return 'Incoming video session';
+    if (mode === 'voice') return 'Incoming voice session';
+    if (mode === 'chat') return 'Incoming private chat';
+    return 'Incoming Hope Hub session';
+  }
+
+  incomingAssignmentIcon(mode?: string): string {
+    if (mode === 'video') return '🎥';
+    if (mode === 'voice') return '🎧';
+    return '💬';
+  }
+
+  incomingUserLabel(assignment: ConsultationAssignedPayload): string {
+    if (assignment.patientCode) {
+      return `${assignment.patientName || 'Hope Hub user'} · ${assignment.patientCode}`;
+    }
+    return assignment.patientName || 'A Hope Hub user';
+  }
+
+  openIncomingAssignment(): void {
+    const assignment = this.incomingAssignment();
+    if (!assignment) return;
+    this.incomingAssignment.set(null);
+    this.assignmentNotice.set('');
+    void this.router.navigate(this.assignmentRoute(assignment));
+  }
+
+  private assignmentRoute(payload: {
+    consultationId: string;
+    consultationMode?: 'CLINIC_QUEUE' | 'INSTANT_ONLINE';
+  }): string[] {
+    if (payload.consultationMode === 'INSTANT_ONLINE') {
+      return ['/', ROUTE_PATHS.SESSIONS, payload.consultationId];
+    }
+    return ['/', ROUTE_PATHS.CASE_ANALYSIS, payload.consultationId, 'case-analysis'];
   }
 
   ngOnDestroy(): void {

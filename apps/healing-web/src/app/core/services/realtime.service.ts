@@ -14,6 +14,9 @@ export class HopeHubRealtimeService implements OnDestroy {
   private readonly auth = inject(AuthService);
   private readonly platformId = inject(PLATFORM_ID);
   private socket: Socket | null = null;
+  private socketToken = '';
+  private readonly consultationSubscriptions = new Set<string>();
+  private readonly liveGroupSubscriptions = new Set<string>();
 
   connect(): Socket | null {
     if (!isPlatformBrowser(this.platformId)) return null;
@@ -21,15 +24,17 @@ export class HopeHubRealtimeService implements OnDestroy {
     const token = this.auth.getToken();
     if (!token) return null;
 
-    if (this.socket?.connected || this.socket?.active) {
+    if ((this.socket?.connected || this.socket?.active) && this.socketToken === token) {
       return this.socket;
     }
 
     this.socket?.disconnect();
+    this.socketToken = token;
     this.socket = io(environment.apiUrl, {
       auth: { token },
       transports: [...SOCKET_TRANSPORTS],
     });
+    this.socket.on('connect', () => this.restoreSubscriptions());
 
     return this.socket;
   }
@@ -39,11 +44,25 @@ export class HopeHubRealtimeService implements OnDestroy {
   }
 
   subscribeConsultation(consultationId: string): void {
-    this.connect()?.emit(SUBSCRIBE_CONSULTATION, consultationId);
+    if (!consultationId) return;
+    this.consultationSubscriptions.add(consultationId);
+    const socket = this.connect();
+    if (socket?.connected) socket.emit(SUBSCRIBE_CONSULTATION, consultationId);
+  }
+
+  unsubscribeConsultation(consultationId: string): void {
+    this.consultationSubscriptions.delete(consultationId);
   }
 
   subscribeLiveGroup(groupId: string): void {
-    this.connect()?.emit(SUBSCRIBE_HOPE_HUB_GROUP, groupId);
+    if (!groupId) return;
+    this.liveGroupSubscriptions.add(groupId);
+    const socket = this.connect();
+    if (socket?.connected) socket.emit(SUBSCRIBE_HOPE_HUB_GROUP, groupId);
+  }
+
+  unsubscribeLiveGroup(groupId: string): void {
+    this.liveGroupSubscriptions.delete(groupId);
   }
 
   sendLiveGroupTyping(groupId: string, displayName: string, isTyping: boolean): void {
@@ -53,6 +72,16 @@ export class HopeHubRealtimeService implements OnDestroy {
   disconnect(): void {
     this.socket?.disconnect();
     this.socket = null;
+    this.socketToken = '';
+    this.consultationSubscriptions.clear();
+    this.liveGroupSubscriptions.clear();
+  }
+
+  private restoreSubscriptions(): void {
+    const socket = this.socket;
+    if (!socket?.connected) return;
+    this.consultationSubscriptions.forEach((id) => socket.emit(SUBSCRIBE_CONSULTATION, id));
+    this.liveGroupSubscriptions.forEach((id) => socket.emit(SUBSCRIBE_HOPE_HUB_GROUP, id));
   }
 
   ngOnDestroy(): void {

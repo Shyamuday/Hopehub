@@ -19,6 +19,10 @@ import {
 import { enrichWithProfileImageUrl, userProfileImagePath } from '../utils/profile-image-url.js';
 
 let onlineDoctorPresenceSocket: SocketIoServer | null = null;
+let waitingAssignmentDrain: Promise<unknown> | null = null;
+let queuedWaitingAssignmentDrain: { io: SocketIoServer; reason: string } | null = null;
+let lastWaitingAssignmentDrainAt = 0;
+const WAITING_ASSIGNMENT_DRAIN_THROTTLE_MS = 5_000;
 
 export function setOnlineDoctorPresenceSocket(io: SocketIoServer) {
   onlineDoctorPresenceSocket = io;
@@ -219,6 +223,9 @@ export async function setDoctorLiveStatus(
 
   const realtime = io ?? onlineDoctorPresenceSocket;
   if (realtime) broadcastPresence(realtime, updated);
+  if (payload.liveStatus === LivePresenceStatus.ONLINE && realtime) {
+    scheduleWaitingInstantAssignments(realtime, 'provider went online', true);
+  }
   return mapLiveDoctor(updated);
 }
 
@@ -232,7 +239,10 @@ export async function heartbeatDoctor(userId: string, io?: SocketIoServer) {
     include: liveDoctorInclude
   });
   const realtime = io ?? onlineDoctorPresenceSocket;
-  if (realtime) broadcastPresence(realtime, updated);
+  if (realtime) {
+    broadcastPresence(realtime, updated);
+    scheduleWaitingInstantAssignments(realtime, 'provider heartbeat');
+  }
   return mapLiveDoctor(updated);
 }
 
@@ -322,6 +332,7 @@ export async function restoreDoctorOnlineAfterInstantConsultation(
       include: liveDoctorInclude
     });
     if (session) broadcastPresence(realtime, session);
+    scheduleWaitingInstantAssignments(realtime, 'session ended', true);
   }
   return true;
 }
@@ -551,7 +562,9 @@ export async function tryAssignInstantConsultation(io: SocketIoServer, consultat
     patientName: consultation.patient.name,
     diseaseName: consultation.disease?.name ?? null,
     status: updated.status,
-    consultationMode: ConsultationMode.INSTANT_ONLINE
+    consultationMode: ConsultationMode.INSTANT_ONLINE,
+    sessionMode:
+      mode ?? normalizeLiveConnectMode(asRecord(consultation.intakeAnswers)['sessionMode'])
   });
 
   io.to(`${SOCKET_ROOM_PREFIXES.USER}${consultation.patientId}`).emit(
@@ -565,4 +578,46 @@ export async function tryAssignInstantConsultation(io: SocketIoServer, consultat
   );
 
   return updated;
+}
+
+export async function tryAssignWaitingInstantConsultations(io: SocketIoServer, limit = 10) {
+  const waiting = await prisma.consultation.findMany({
+    where: {
+      consultationMode: ConsultationMode.INSTANT_ONLINE,
+      status: ConsultationStatus.PAID,
+      assignedDoctorId: null
+    },
+    select: { id: true },
+    orderBy: { createdAt: 'asc' },
+    take: Math.max(1, Math.min(limit, 50))
+  });
+
+  let assignedCount = 0;
+  for (const consultation of waiting) {
+    const assigned = await tryAssignInstantConsultation(io, consultation.id);
+    if (assigned) assignedCount += 1;
+  }
+  return { checkedCount: waiting.length, assignedCount };
+}
+
+function scheduleWaitingInstantAssignments(io: SocketIoServer, reason: string, force = false) {
+  const now = Date.now();
+  if (waitingAssignmentDrain) {
+    if (force) queuedWaitingAssignmentDrain = { io, reason };
+    return;
+  }
+  if (!force && now - lastWaitingAssignmentDrainAt < WAITING_ASSIGNMENT_DRAIN_THROTTLE_MS) {
+    return;
+  }
+  lastWaitingAssignmentDrainAt = now;
+  waitingAssignmentDrain = tryAssignWaitingInstantConsultations(io)
+    .catch((error) => {
+      console.error(`[instant] Could not process waiting live requests after ${reason}`, error);
+    })
+    .finally(() => {
+      waitingAssignmentDrain = null;
+      const queued = queuedWaitingAssignmentDrain;
+      queuedWaitingAssignmentDrain = null;
+      if (queued) scheduleWaitingInstantAssignments(queued.io, queued.reason, true);
+    });
 }

@@ -113,6 +113,9 @@ export class LiveSessionComponent implements OnInit, OnDestroy {
         this.loading.set(false);
         return;
       }
+      if (this.consultationId && this.consultationId !== id) {
+        this.realtimeService.unsubscribeConsultation(this.consultationId);
+      }
       this.consultationId = id;
       this.connectRealtime();
       this.realtimeService.subscribeConsultation(id);
@@ -124,7 +127,7 @@ export class LiveSessionComponent implements OnInit, OnDestroy {
     this.socket()?.off?.('message:new', this.handleIncomingMessage);
     this.socket()?.off?.('consultation:updated', this.handleConsultationUpdated);
     this.stopAutoRefresh();
-    this.realtimeService.disconnect();
+    this.realtimeService.unsubscribeConsultation(this.consultationId);
   }
 
   goToDashboard(): void {

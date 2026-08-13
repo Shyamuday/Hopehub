@@ -11,6 +11,7 @@ export type ConsultationAssignedPayload = {
   diseaseName?: string | null;
   status?: string;
   consultationMode?: 'CLINIC_QUEUE' | 'INSTANT_ONLINE';
+  sessionMode?: 'chat' | 'voice' | 'video';
 };
 
 export type ConsultationUpdatedPayload = {
@@ -21,45 +22,70 @@ export type ConsultationUpdatedPayload = {
 @Injectable({ providedIn: 'root' })
 export class DoctorRealtimeService implements OnDestroy {
   private socket: Socket | null = null;
-  private onAssigned: ((payload: ConsultationAssignedPayload) => void) | null = null;
-  private onMessage: ((message: unknown) => void) | null = null;
-  private onUpdated: ((payload: ConsultationUpdatedPayload) => void) | null = null;
+  private socketToken = '';
+  private readonly assignedHandlers = new Set<(payload: ConsultationAssignedPayload) => void>();
+  private readonly messageHandlers = new Set<(message: unknown) => void>();
+  private readonly updatedHandlers = new Set<(payload: ConsultationUpdatedPayload) => void>();
+  private readonly consultationSubscriptions = new Map<string, number>();
 
   connect(
     handler?: (payload: ConsultationAssignedPayload) => void,
     onMessage?: (message: unknown) => void,
     onUpdated?: (payload: ConsultationUpdatedPayload) => void,
   ): void {
-    if (handler) this.onAssigned = handler;
-    if (onMessage) this.onMessage = onMessage;
-    if (onUpdated) this.onUpdated = onUpdated;
-    const token = localStorage.getItem(AUTH_TOKEN_KEY);
+    if (handler) this.assignedHandlers.add(handler);
+    if (onMessage) this.messageHandlers.add(onMessage);
+    if (onUpdated) this.updatedHandlers.add(onUpdated);
+    if (typeof window === 'undefined') return;
+    const token = window.localStorage.getItem(AUTH_TOKEN_KEY);
     if (!token) return;
 
-    if (this.socket?.connected || this.socket?.active) return;
+    if ((this.socket?.connected || this.socket?.active) && this.socketToken === token) return;
 
+    this.socket?.removeAllListeners();
+    this.socket?.disconnect();
+    this.socketToken = token;
     this.socket = io(environment.apiUrl, {
       auth: { token },
       transports: ['websocket', 'polling'],
     });
 
+    this.socket.on('connect', () => this.restoreConsultationSubscriptions());
     this.socket.on(SOCKET_EVENTS.CONSULTATION_ASSIGNED, (payload: ConsultationAssignedPayload) => {
-      this.onAssigned?.(payload);
+      this.assignedHandlers.forEach((callback) => callback(payload));
     });
     this.socket.on(SOCKET_EVENTS.MESSAGE_NEW, (message: unknown) => {
-      this.onMessage?.(message);
+      this.messageHandlers.forEach((callback) => callback(message));
     });
     this.socket.on(SOCKET_EVENTS.CONSULTATION_UPDATED, (payload: ConsultationUpdatedPayload) => {
-      this.onUpdated?.(payload);
+      this.updatedHandlers.forEach((callback) => callback(payload));
     });
   }
 
   subscribeConsultation(consultationId: string) {
-    this.socket?.emit(SOCKET_EVENTS.SUBSCRIBE_CONSULTATION, consultationId);
+    if (!consultationId) return;
+    const currentCount = this.consultationSubscriptions.get(consultationId) ?? 0;
+    this.consultationSubscriptions.set(consultationId, currentCount + 1);
+    if (currentCount === 0 && this.socket?.connected) {
+      this.socket.emit(SOCKET_EVENTS.SUBSCRIBE_CONSULTATION, consultationId);
+    }
+  }
+
+  unsubscribeConsultation(consultationId: string) {
+    const currentCount = this.consultationSubscriptions.get(consultationId) ?? 0;
+    if (currentCount <= 1) {
+      this.consultationSubscriptions.delete(consultationId);
+      return;
+    }
+    this.consultationSubscriptions.set(consultationId, currentCount - 1);
   }
 
   clearConsultationUpdatedHandler(handler: (payload: ConsultationUpdatedPayload) => void): void {
-    if (this.onUpdated === handler) this.onUpdated = null;
+    this.updatedHandlers.delete(handler);
+  }
+
+  clearMessageHandler(handler: (message: unknown) => void): void {
+    this.messageHandlers.delete(handler);
   }
 
   getSocket() {
@@ -69,9 +95,18 @@ export class DoctorRealtimeService implements OnDestroy {
   disconnect(): void {
     this.socket?.disconnect();
     this.socket = null;
-    this.onAssigned = null;
-    this.onMessage = null;
-    this.onUpdated = null;
+    this.socketToken = '';
+    this.assignedHandlers.clear();
+    this.messageHandlers.clear();
+    this.updatedHandlers.clear();
+    this.consultationSubscriptions.clear();
+  }
+
+  private restoreConsultationSubscriptions(): void {
+    if (!this.socket?.connected) return;
+    this.consultationSubscriptions.forEach((_count, consultationId) => {
+      this.socket?.emit(SOCKET_EVENTS.SUBSCRIBE_CONSULTATION, consultationId);
+    });
   }
 
   ngOnDestroy(): void {

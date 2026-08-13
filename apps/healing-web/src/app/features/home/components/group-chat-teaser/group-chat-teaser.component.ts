@@ -176,6 +176,7 @@ export class GroupChatTeaserComponent implements OnInit {
       if (this.openTimer) window.clearTimeout(this.openTimer);
       if (this.revealTimer) window.clearInterval(this.revealTimer);
       this.socket?.off?.(GROUP_MESSAGE_EVENT, this.handleIncomingMessage);
+      this.realtime.unsubscribeLiveGroup(this.subscribedGroupId);
     });
   }
 

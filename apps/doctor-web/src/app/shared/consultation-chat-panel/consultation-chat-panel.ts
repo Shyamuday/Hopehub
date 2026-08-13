@@ -37,25 +37,34 @@ export class ConsultationChatPanelComponent implements OnChanges, OnDestroy {
   readonly iceServers = signal<IceServerConfig[]>([{ urls: 'stun:stun.l.google.com:19302' }]);
   readonly draftModel = signal({ body: '' });
   readonly draftForm = form(this.draftModel);
+  private subscribedConsultationId = '';
+  private readonly handleMessage = () => {
+    if (this.consultationId) void this.load();
+  };
 
   ngOnChanges() {
     if (this.consultationId) {
-      this.realtime.subscribeConsultation(this.consultationId);
+      if (this.subscribedConsultationId !== this.consultationId) {
+        this.realtime.unsubscribeConsultation(this.subscribedConsultationId);
+        this.realtime.subscribeConsultation(this.consultationId);
+        this.subscribedConsultationId = this.consultationId;
+      }
       void this.load();
     } else {
+      this.realtime.unsubscribeConsultation(this.subscribedConsultationId);
+      this.subscribedConsultationId = '';
       this.messages.set([]);
       this.patientUserId.set('');
     }
   }
 
   ngOnDestroy() {
-    // socket owned by shell — do not disconnect here
+    this.realtime.unsubscribeConsultation(this.subscribedConsultationId);
+    this.realtime.clearMessageHandler(this.handleMessage);
   }
 
   constructor() {
-    this.realtime.connect(undefined, () => {
-      if (this.consultationId) void this.load();
-    });
+    this.realtime.connect(undefined, this.handleMessage);
     void this.loadIceServers();
   }
 
