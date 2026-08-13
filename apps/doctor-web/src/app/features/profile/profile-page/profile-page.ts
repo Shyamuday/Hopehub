@@ -226,6 +226,7 @@ export class ProfilePage {
   doctorTypeLabel = '';
   specialtyFocusLabel = '';
   showOnWebsite = false;
+  listenerScreeningPassed = false;
   canPrescribe = false;
   isPsychologist = false;
   message = '';
@@ -359,12 +360,22 @@ export class ProfilePage {
 
   listenerReadinessItems() {
     const form = this.profileModel();
-    const activeServices = this.careServices().filter((service) => service.isActive !== false);
+    const activeServices = this.careServices().filter(
+      (service) =>
+        service.isActive !== false &&
+        String(service.title || '').trim().length >= 2 &&
+        Number(service.durationMinutes) >= 5,
+    );
     return [
       {
         key: 'photo',
         label: 'Profile photo added',
         complete: Boolean(this.profileImageUrl),
+      },
+      {
+        key: 'mobile',
+        label: 'Mobile number added',
+        complete: form.mobile.trim().length >= 8,
       },
       {
         key: 'gender',
@@ -394,12 +405,17 @@ export class ProfilePage {
       {
         key: 'safety',
         label: 'Safety escalation note added',
-        complete: Boolean(form.safetyEscalationNote.trim()),
+        complete: form.safetyEscalationNote.trim().length >= 20,
       },
       {
         key: 'safetyAcknowledgement',
         label: 'Safety acknowledgement accepted',
         complete: Boolean(form.listenerSafetyAcknowledged),
+      },
+      {
+        key: 'screening',
+        label: 'Listener screening test passed',
+        complete: this.listenerScreeningPassed,
       },
       {
         key: 'availability',
@@ -421,11 +437,16 @@ export class ProfilePage {
 
   setupStepItems() {
     const form = this.profileModel();
-    const activeServices = this.careServices().filter((service) => service.isActive !== false);
+    const activeServices = this.careServices().filter(
+      (service) =>
+        service.isActive !== false &&
+        String(service.title || '').trim().length >= 2 &&
+        Number(service.durationMinutes) >= 5,
+    );
     const identityMissing = [
       !this.profileImageUrl ? 'profile photo' : '',
-      !form.name.trim() ? 'name' : '',
-      !form.mobile.trim() ? 'mobile' : '',
+      form.name.trim().length < 2 ? 'name' : '',
+      form.mobile.trim().length < 8 ? 'valid mobile number' : '',
       !form.gender ? 'gender' : '',
       !form.specialty.trim() && !this.isPsychologist ? 'specialty/focus' : '',
     ].filter(Boolean);
@@ -438,6 +459,9 @@ export class ProfilePage {
       this.lines(form.languagesText).length <= 0 ? 'languages' : '',
       this.lines(form.sessionTypesText).length <= 0 ? 'session types' : '',
       this.lines(form.concernsHandledText).length <= 0 ? 'concerns handled' : '',
+      this.isClinicalMentalHealthProfile() && !form.qualifiedFrom.trim()
+        ? 'qualification/training details'
+        : '',
       this.isClinicalMentalHealthProfile() && !form.licenseCouncil.trim() ? 'license/council' : '',
       this.isClinicalMentalHealthProfile() && !form.licenseNumber.trim()
         ? 'license/registration number'
@@ -460,8 +484,8 @@ export class ProfilePage {
         description: 'Name, mobile, gender, photo, availability, and role basics.',
         complete:
           Boolean(this.profileImageUrl) &&
-          Boolean(form.name.trim()) &&
-          Boolean(form.mobile.trim()) &&
+          form.name.trim().length >= 2 &&
+          form.mobile.trim().length >= 8 &&
           Boolean(form.gender) &&
           Boolean(form.specialty.trim() || this.isPsychologist),
         missing: identityMissing,
@@ -488,7 +512,9 @@ export class ProfilePage {
             this.lines(form.sessionTypesText).length > 0 &&
             this.lines(form.concernsHandledText).length > 0 &&
             (!this.isClinicalMentalHealthProfile() ||
-              (Boolean(form.licenseCouncil.trim()) && Boolean(form.licenseNumber.trim())))),
+              (Boolean(form.qualifiedFrom.trim()) &&
+                Boolean(form.licenseCouncil.trim()) &&
+                Boolean(form.licenseNumber.trim())))),
         missing: careMissing,
       },
       {
@@ -691,6 +717,7 @@ export class ProfilePage {
         ? careTeamTypeLabel(mental?.careTeamType)
         : profile.doctorProfile?.specialtyFocusLabel || '';
       this.showOnWebsite = profile.doctorProfile?.showOnWebsite ?? false;
+      this.listenerScreeningPassed = Boolean(mental?.listenerScreening?.passed);
       this.profileImageUrl =
         (profile as { profileImageUrl?: string | null }).profileImageUrl ?? null;
       this.activeSetupStep.set(this.nextSetupStep()?.id || 'identity');

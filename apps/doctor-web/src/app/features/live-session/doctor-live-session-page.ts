@@ -246,26 +246,47 @@ export class DoctorLiveSessionPage implements OnInit, OnDestroy {
     return this.profile()?.doctorType === 'PSYCHOLOGIST';
   }
 
-  careTeamType(): string {
-    return this.profile()?.mentalHealthProfile?.careTeamType || '';
+  careTeamTypes(): string[] {
+    const mental = this.profile()?.mentalHealthProfile;
+    return mental?.careTeamTypes?.length
+      ? mental.careTeamTypes
+      : mental?.careTeamType
+        ? [mental.careTeamType]
+        : [];
   }
 
   isClinicalMentalHealthProvider(): boolean {
     return (
       this.isPsychologist() &&
-      (!this.careTeamType() || isClinicalMentalHealthCareTeamType(this.careTeamType()))
+      (this.careTeamTypes().length === 0 ||
+        this.careTeamTypes().some((type) => isClinicalMentalHealthCareTeamType(type)))
     );
   }
 
   isListenerProvider(): boolean {
-    return this.isPsychologist() && isListenerCareTeamType(this.careTeamType());
+    return (
+      this.isPsychologist() && this.careTeamTypes().some((type) => isListenerCareTeamType(type))
+    );
   }
 
   isCoachGuideProvider(): boolean {
-    return this.isPsychologist() && isCoachGuideCareTeamType(this.careTeamType());
+    return (
+      this.isPsychologist() && this.careTeamTypes().some((type) => isCoachGuideCareTeamType(type))
+    );
+  }
+
+  isMultiRoleProvider(): boolean {
+    return (
+      [
+        this.isClinicalMentalHealthProvider(),
+        this.isListenerProvider(),
+        this.isCoachGuideProvider(),
+      ].filter(Boolean).length > 1
+    );
   }
 
   sessionNotesTitle(): string {
+    if (this.isMultiRoleProvider()) return 'Hope Hub session notes';
     if (this.isClinicalMentalHealthProvider()) return 'Clinical support notes';
     if (this.isListenerProvider()) return 'Listener support notes';
     if (this.isCoachGuideProvider()) return 'Coaching session notes';
@@ -273,6 +294,9 @@ export class DoctorLiveSessionPage implements OnInit, OnDestroy {
   }
 
   sessionNotesHint(): string {
+    if (this.isMultiRoleProvider()) {
+      return 'Record the support requested, what you provided, response, safety context, and next step.';
+    }
     if (this.isClinicalMentalHealthProvider()) {
       return 'Record discussion, support given, response, risk level, and next step.';
     }
@@ -288,6 +312,9 @@ export class DoctorLiveSessionPage implements OnInit, OnDestroy {
   }
 
   sessionNotesPlaceholder(): string {
+    if (this.isMultiRoleProvider()) {
+      return 'Write a concise private note about the support provided, safety context, and agreed next step.';
+    }
     if (this.isClinicalMentalHealthProvider()) {
       return 'Example: User shared anxiety triggers. Provided grounding exercise. No immediate safety risk shared. Next: follow up in 7 days.';
     }

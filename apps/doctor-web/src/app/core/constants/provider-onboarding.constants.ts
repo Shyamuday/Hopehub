@@ -27,6 +27,11 @@ export type ProviderOnboardingStatus = {
   steps: ProviderOnboardingStep[];
 };
 
+export type ProviderReadinessSnapshot = {
+  ready: boolean;
+  blockers: Array<{ code: string; label: string }>;
+};
+
 export function needsProviderPathSelection(profile?: DoctorProfileSummary | null): boolean {
   return (
     profile?.doctorType === 'PSYCHOLOGIST' &&
@@ -81,6 +86,7 @@ function isClinicalHopeHubProfile(profile?: DoctorProfileSummary | null) {
 export function buildProviderOnboardingStatus(
   profile: DoctorProfileSummary | null | undefined,
   profileImageUrl?: string | null,
+  readiness?: ProviderReadinessSnapshot | null,
 ): ProviderOnboardingStatus {
   const hopeHub = isHopeHubProvider(profile);
   const listener = isListenerProfile(profile);
@@ -96,6 +102,8 @@ export function buildProviderOnboardingStatus(
   const bioMissing = [
     !hasText(profile?.bio, 80) ? 'bio of at least 80 characters' : '',
     clinicalHopeHub && !hasText(mental?.qualifiedFrom) ? 'qualified/trained from' : '',
+    clinicalHopeHub && !hasText(mental?.licenseCouncil) ? 'registration council' : '',
+    clinicalHopeHub && !hasText(mental?.licenseNumber) ? 'registration number' : '',
     hopeHub && !hasList(mental?.languages) ? 'languages' : '',
     hopeHub && !hasList(mental?.concernsHandled) ? 'concerns handled' : '',
     hopeHub && !hasList(mental?.sessionTypes) ? 'session types' : '',
@@ -103,9 +111,7 @@ export function buildProviderOnboardingStatus(
   ].filter(Boolean);
   const safetyMissing = [
     listener && !mental?.listenerSafetyAcknowledgedAt ? 'listener safety acknowledgement' : '',
-    !listener && hopeHub && !hasText(mental?.safetyEscalationNote, 20)
-      ? 'safety escalation note'
-      : '',
+    hopeHub && !hasText(mental?.safetyEscalationNote, 20) ? 'safety escalation note' : '',
   ].filter(Boolean);
   const servicesMissing =
     hopeHub && activeServiceCount(profile) <= 0 ? ['one active service/price'] : [];
@@ -172,7 +178,7 @@ export function buildProviderOnboardingStatus(
       route: `/${ROUTE_PATHS.PROFILE}`,
       queryParams: { step: 'safety' },
       complete: listener
-        ? Boolean(mental?.listenerSafetyAcknowledgedAt)
+        ? Boolean(mental?.listenerSafetyAcknowledgedAt) && hasText(mental?.safetyEscalationNote, 20)
         : hopeHub
           ? hasText(mental?.safetyEscalationNote, 20)
           : true,
@@ -202,6 +208,35 @@ export function buildProviderOnboardingStatus(
     },
   ];
 
+  const blockerStep: Record<string, string> = {
+    PROVIDER_INACTIVE: 'approved',
+    PROVIDER_SUSPENDED: 'approved',
+    NAME_REQUIRED: 'identity',
+    MOBILE_REQUIRED: 'identity',
+    GENDER_REQUIRED: 'identity',
+    PROFILE_PHOTO_REQUIRED: 'identity',
+    PROFILE_BIO_REQUIRED: 'bio',
+    LANGUAGES_REQUIRED: 'bio',
+    SESSION_TYPES_REQUIRED: 'bio',
+    CONCERNS_REQUIRED: 'bio',
+    QUALIFICATION_REQUIRED: 'bio',
+    LICENSE_COUNCIL_REQUIRED: 'bio',
+    LICENSE_NUMBER_REQUIRED: 'bio',
+    SAFETY_SCOPE_REQUIRED: 'safety',
+    LISTENER_SAFETY_REQUIRED: 'safety',
+    LISTENER_SCREENING_REQUIRED: 'screening',
+    ACTIVE_SERVICE_REQUIRED: 'services',
+    PROVIDER_AVAILABILITY_OFF: 'availability',
+    NOT_ACCEPTING_USERS: 'availability',
+  };
+  for (const blocker of readiness?.blockers ?? []) {
+    const stepId = blockerStep[blocker.code];
+    const step = steps.find((item) => item.id === stepId);
+    if (!step) continue;
+    step.complete = false;
+    step.missing = Array.from(new Set([...(step.missing ?? []), blocker.label]));
+  }
+
   const requiredSteps = steps.filter((step) => step.required);
   const completedRequired = requiredSteps.filter((step) => step.complete).length;
   const percent = Math.round((completedRequired / Math.max(requiredSteps.length, 1)) * 100);
@@ -210,7 +245,7 @@ export function buildProviderOnboardingStatus(
     title: `${providerLabel} onboarding`,
     subtitle: 'Finish these tasks first. Then the full provider console will unlock.',
     percent,
-    complete: completedRequired === requiredSteps.length,
+    complete: readiness ? readiness.ready : completedRequired === requiredSteps.length,
     steps,
   };
 }

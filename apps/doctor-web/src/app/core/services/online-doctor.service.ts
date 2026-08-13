@@ -19,7 +19,16 @@ export type OnlineDoctorProfile = {
   specialty: string;
   doctorType?: HomeopathicDoctorType;
   doctorTypeLabel?: string;
-  mentalHealthProfile?: { careTeamType?: string | null } | null;
+  mentalHealthProfile?: {
+    careTeamType?: string | null;
+    careTeamTypes?: string[] | null;
+  } | null;
+  profileImageUrl?: string | null;
+  bio?: string | null;
+  yearsOfExperience?: number | null;
+  focusAreas?: string[];
+  isAvailable?: boolean;
+  wentLiveAt?: string | null;
 };
 
 @Injectable({ providedIn: 'root' })

@@ -134,26 +134,47 @@ export class OnlineDoctorPage implements OnInit, OnDestroy {
     return !this.isPsychologist();
   }
 
-  careTeamType() {
-    return this.profile()?.mentalHealthProfile?.careTeamType || '';
+  careTeamTypes() {
+    const mental = this.profile()?.mentalHealthProfile;
+    return mental?.careTeamTypes?.length
+      ? mental.careTeamTypes
+      : mental?.careTeamType
+        ? [mental.careTeamType]
+        : [];
   }
 
   isClinicalMentalHealthProvider() {
     return (
       this.isPsychologist() &&
-      (!this.careTeamType() || isClinicalMentalHealthCareTeamType(this.careTeamType()))
+      (this.careTeamTypes().length === 0 ||
+        this.careTeamTypes().some((type) => isClinicalMentalHealthCareTeamType(type)))
     );
   }
 
   isListenerProvider() {
-    return this.isPsychologist() && isListenerCareTeamType(this.careTeamType());
+    return (
+      this.isPsychologist() && this.careTeamTypes().some((type) => isListenerCareTeamType(type))
+    );
   }
 
   isCoachGuideProvider() {
-    return this.isPsychologist() && isCoachGuideCareTeamType(this.careTeamType());
+    return (
+      this.isPsychologist() && this.careTeamTypes().some((type) => isCoachGuideCareTeamType(type))
+    );
+  }
+
+  isMultiRoleProvider() {
+    return (
+      [
+        this.isClinicalMentalHealthProvider(),
+        this.isListenerProvider(),
+        this.isCoachGuideProvider(),
+      ].filter(Boolean).length > 1
+    );
   }
 
   workspaceTitle() {
+    if (this.isMultiRoleProvider()) return 'Hope Hub multi-role workspace';
     if (this.isClinicalMentalHealthProvider()) return 'Clinical Hope Hub workspace';
     if (this.isListenerProvider()) return 'Listener live workspace';
     if (this.isCoachGuideProvider()) return 'Coaching live workspace';
@@ -162,6 +183,9 @@ export class OnlineDoctorPage implements OnInit, OnDestroy {
   }
 
   workspaceLead() {
+    if (this.isMultiRoleProvider()) {
+      return 'Accept sessions that match your selected support roles and the live modes you enable.';
+    }
     if (this.isClinicalMentalHealthProvider()) {
       return 'Review assigned mental-wellness sessions, support users by chat or call, record notes, and follow up safely.';
     }
@@ -176,6 +200,7 @@ export class OnlineDoctorPage implements OnInit, OnDestroy {
 
   inboxTitle() {
     if (this.isHomeopathyProvider()) return 'Live consult inbox';
+    if (this.isMultiRoleProvider()) return 'Support request inbox';
     if (this.isListenerProvider()) return 'Listener request inbox';
     if (this.isCoachGuideProvider()) return 'Coaching session inbox';
     return 'Live session inbox';

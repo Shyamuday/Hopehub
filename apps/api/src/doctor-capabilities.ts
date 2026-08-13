@@ -84,6 +84,7 @@ export async function providerPublicReadiness(userId: string) {
       focusAreas: true,
       user: {
         select: {
+          name: true,
           email: true,
           mobile: true,
           gender: true,
@@ -97,6 +98,8 @@ export async function providerPublicReadiness(userId: string) {
           careTeamType: true,
           careTeamTypes: true,
           qualifiedFrom: true,
+          licenseNumber: true,
+          licenseCouncil: true,
           languages: true,
           sessionTypes: true,
           concernsHandled: true,
@@ -167,7 +170,14 @@ export async function providerPublicReadiness(userId: string) {
     careTeamTypes.length === 0 ||
     careTeamTypes.some((type) => isClinicalMentalHealthCareTeamType(type));
   const hasProfileImage = Boolean(profile.user.profileImageKey || profile.user.profileImageUrl);
-  if (!profile.user.mobile?.trim()) {
+  if (!hasText(profile.user.name)) {
+    blockers.push({
+      code: 'NAME_REQUIRED',
+      label: 'Provider name is missing.',
+      action: 'Add your name in Profile.'
+    });
+  }
+  if (!hasText(profile.user.mobile, 8)) {
     blockers.push({
       code: 'MOBILE_REQUIRED',
       label: 'Mobile number is missing.',
@@ -237,7 +247,21 @@ export async function providerPublicReadiness(userId: string) {
       action: 'Add where you are qualified/trained from.'
     });
   }
-  if (!isListener && !hasText(mental?.safetyEscalationNote, 20)) {
+  if (isClinical && !hasText(mental?.licenseCouncil)) {
+    blockers.push({
+      code: 'LICENSE_COUNCIL_REQUIRED',
+      label: 'Registration council is missing.',
+      action: 'Add your registration council in Profile.'
+    });
+  }
+  if (isClinical && !hasText(mental?.licenseNumber)) {
+    blockers.push({
+      code: 'LICENSE_NUMBER_REQUIRED',
+      label: 'Registration number is missing.',
+      action: 'Add your registration number in Profile.'
+    });
+  }
+  if (!hasText(mental?.safetyEscalationNote, 20)) {
     blockers.push({
       code: 'SAFETY_SCOPE_REQUIRED',
       label: 'Safety escalation note is missing.',

@@ -45,6 +45,11 @@ interface AvailabilityRule {
   isActive: boolean;
   careTeamService?: { id: string; title: string; durationMinutes: number } | null;
 }
+interface SlotsResponse {
+  slots: Slot[];
+  rules: AvailabilityRule[];
+  services: CareService[];
+}
 
 function addMinutes(time: string, mins: number): string {
   const [h, m] = time.split(':').map(Number);
@@ -238,15 +243,15 @@ export class SlotsPage implements OnInit {
     this.loading.set(true);
     const token = this.auth.token();
     firstValueFrom(
-      this.http.get<{ slots: Slot[] }>(`${this.base}${API_PATHS.DOCTOR.SLOTS}`, {
+      this.http.get<SlotsResponse>(`${this.base}${API_PATHS.DOCTOR.SLOTS}`, {
         params: { date: this.selectedDate() },
         headers: { Authorization: `Bearer ${token}` },
       }),
     )
       .then((r) => {
         this.slots.set(r.slots);
-        this.rules.set((r as any).rules ?? this.rules());
-        this.services.set((r as any).services ?? this.services());
+        this.rules.set(r.rules);
+        this.services.set(r.services);
         this.loading.set(false);
       })
       .catch(() => this.loading.set(false));

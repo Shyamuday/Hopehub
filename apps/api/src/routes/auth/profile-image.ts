@@ -1,5 +1,7 @@
 import { Router } from 'express';
+import { Role } from '@prisma/client';
 import { authRequired } from '../../auth.js';
+import { providerPublicReadiness } from '../../doctor-capabilities.js';
 import { STORE_ROLES } from '../../constants/store-api-routes.constants.js';
 import { prisma } from '../../db.js';
 import {
@@ -26,6 +28,15 @@ import {
 import { getStoreStaff, storeAuthMiddleware } from '../store/shared.js';
 
 const MAX_PROFILE_IMAGE_BYTES = 2 * 1024 * 1024;
+
+async function syncProviderVisibility(userId: string, role: Role) {
+  if (role !== Role.DOCTOR) return;
+  const readiness = await providerPublicReadiness(userId);
+  await prisma.doctor.updateMany({
+    where: { userId },
+    data: { showOnWebsite: readiness.ready }
+  });
+}
 
 async function parseProfileImageUpload(req: import('express').Request) {
   const form = await parseMultipartForm(req, { maxFileBytes: MAX_PROFILE_IMAGE_BYTES });
@@ -100,6 +111,7 @@ export function registerProfileImageRoutes(router: Router) {
             profileImageUrl: saved.imageUrl || userProfileImagePath(userId)
           }
         });
+        await syncProviderVisibility(userId, req.user!.role);
 
         if (existing.profileImageKey && existing.profileImageKey !== saved.storageKey) {
           await deleteProfileImageFile(existing.profileImageKey);
@@ -148,6 +160,7 @@ export function registerProfileImageRoutes(router: Router) {
           where: { id: userId },
           data: { profileImageKey: null, profileImageUrl: null }
         });
+        await syncProviderVisibility(userId, req.user!.role);
         await writeAuditLog({
           actorId: userId,
           actorRole: req.user!.role,

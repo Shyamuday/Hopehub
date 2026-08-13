@@ -11,18 +11,25 @@ export const providerOnboardingGuard: CanActivateFn = async () => {
   const session = inject(DoctorSessionService);
   const router = inject(Router);
 
+  let loaded: Awaited<ReturnType<DoctorSessionService['load']>>;
   try {
-    const loaded = await session.load();
-    if (needsProviderPathSelection(loaded.doctorProfile)) {
-      return router.createUrlTree(['/', ROUTE_PATHS.WELCOME]);
-    }
+    loaded = await session.load();
+  } catch {
+    return router.createUrlTree(['/', ROUTE_PATHS.LOGIN]);
+  }
+
+  if (needsProviderPathSelection(loaded.doctorProfile)) {
+    return router.createUrlTree(['/', ROUTE_PATHS.WELCOME]);
+  }
+  try {
     const status = buildProviderOnboardingStatus(
       loaded.doctorProfile,
       loaded.profileImageUrl ?? null,
+      await session.readiness(),
     );
     if (status.complete) return true;
   } catch {
-    return router.createUrlTree(['/', ROUTE_PATHS.LOGIN]);
+    // Keep authenticated providers in the guided area when readiness cannot be verified.
   }
 
   return router.createUrlTree(['/', ROUTE_PATHS.DASHBOARD], {

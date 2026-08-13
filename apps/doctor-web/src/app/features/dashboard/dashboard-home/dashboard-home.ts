@@ -79,14 +79,22 @@ export class DashboardHome {
     );
     this.setupCompleteNotice.set(route.snapshot.queryParamMap.get('setup') === 'complete');
     void this.loadRole();
-    void this.loadReadiness();
     void this.loadSummary();
     void this.loadWorklistCounts();
   }
 
   async loadReadiness() {
     try {
-      this.readiness.set(await this.session.readiness());
+      const readiness = await this.session.readiness();
+      const snapshot = this.session.snapshot();
+      this.readiness.set(readiness);
+      this.onboarding.set(
+        buildProviderOnboardingStatus(
+          snapshot?.doctorProfile ?? null,
+          snapshot?.profileImageUrl,
+          readiness,
+        ),
+      );
     } catch {
       this.readiness.set(null);
     }
@@ -109,8 +117,14 @@ export class DashboardHome {
         this.isListenerProfile(snapshot?.doctorProfile) ? (snapshot?.doctorProfile ?? null) : null,
       );
       this.listenerProfileImageUrl.set(snapshot?.profileImageUrl ?? null);
+      const readiness = await this.session.readiness().catch(() => null);
+      this.readiness.set(readiness);
       this.onboarding.set(
-        buildProviderOnboardingStatus(snapshot?.doctorProfile ?? null, snapshot?.profileImageUrl),
+        buildProviderOnboardingStatus(
+          snapshot?.doctorProfile ?? null,
+          snapshot?.profileImageUrl,
+          readiness,
+        ),
       );
     } catch {
       const capabilities = capabilitiesForProvider(null);

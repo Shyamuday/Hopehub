@@ -118,13 +118,6 @@ function cleanNullableText(value: string | null | undefined) {
   return value?.trim() || null;
 }
 
-function isListenerCareTeamType(type: CareTeamMemberType | undefined) {
-  return (
-    type === CareTeamMemberType.PSYCHOLOGY_STUDENT_VOLUNTEER ||
-    type === CareTeamMemberType.PEER_SUPPORT_VOLUNTEER
-  );
-}
-
 function normalizeCareTeamTypes(
   primary: CareTeamMemberType | undefined,
   selected: CareTeamMemberType[] | undefined
@@ -134,43 +127,6 @@ function normalizeCareTeamTypes(
     CareTeamMemberType,
     ...CareTeamMemberType[]
   ];
-}
-
-function listenerPublicProfileReady(input: {
-  name: string;
-  mobile?: string | null;
-  gender?: PatientGender | null;
-  bio?: string | null;
-  isAvailable: boolean;
-  hasProfileImage: boolean;
-  mentalHealthProfile: NonNullable<z.infer<typeof mentalHealthProviderProfileSchema>> & {
-    listenerSafetyAcknowledgedAt?: Date | string | null;
-  };
-  listenerScreeningPassed: boolean;
-  services: Array<{ isActive: boolean; title: string; durationMinutes: number }>;
-}) {
-  const mental = input.mentalHealthProfile;
-  const hasSafetyAcknowledgement = Boolean(
-    mental.listenerSafetyAcknowledged || mental.listenerSafetyAcknowledgedAt
-  );
-  return Boolean(
-    input.name.trim().length >= 2 &&
-    input.mobile?.trim() &&
-    input.gender &&
-    input.hasProfileImage &&
-    (input.bio?.trim().length ?? 0) >= 80 &&
-    cleanList(mental.languages).length > 0 &&
-    cleanList(mental.sessionTypes).length > 0 &&
-    cleanList(mental.concernsHandled).length > 0 &&
-    cleanNullableText(mental.safetyEscalationNote) &&
-    hasSafetyAcknowledgement &&
-    input.listenerScreeningPassed &&
-    input.isAvailable &&
-    (mental.acceptingNewUsers ?? true) &&
-    input.services.some(
-      (service) => service.isActive && service.title.trim() && service.durationMinutes >= 5
-    )
-  );
 }
 
 async function latestListenerScreeningForEmail(email?: string | null) {
@@ -790,30 +746,6 @@ export function registerAuthDoctorRoutes(router: Router) {
               sortOrder: service.sortOrder ?? index
             }))
           : [];
-      const isListenerProfile =
-        profilePayload.doctorType === HomeopathicDoctorType.PSYCHOLOGIST &&
-        mentalHealthProfile?.careTeamTypes.some((type) => isListenerCareTeamType(type));
-      const listenerScreening = await latestListenerScreeningForEmail(req.user!.email);
-      const listenerReadyForPublic =
-        isListenerProfile && body.mentalHealthProfile
-          ? listenerPublicProfileReady({
-              name: body.name,
-              mobile: body.mobile || null,
-              gender: body.gender ?? null,
-              bio: body.bio ?? null,
-              isAvailable: body.isAvailable,
-              hasProfileImage: Boolean(
-                existing?.user.profileImageKey || existing?.user.profileImageUrl
-              ),
-              mentalHealthProfile: {
-                ...body.mentalHealthProfile,
-                listenerSafetyAcknowledgedAt:
-                  mentalHealthProfile?.listenerSafetyAcknowledgedAt ?? null
-              },
-              listenerScreeningPassed: Boolean(listenerScreening?.passed),
-              services: mentalHealthServices
-            })
-          : false;
       const mentalHealthProfileCreate = mentalHealthProfile
         ? {
             ...mentalHealthProfile,
@@ -844,7 +776,6 @@ export function registerAuthDoctorRoutes(router: Router) {
             upsert: {
               create: {
                 ...profilePayload,
-                ...(isListenerProfile ? { showOnWebsite: listenerReadyForPublic } : {}),
                 ...compensationFields,
                 ...publicFields,
                 ...(mentalHealthProfileCreate
@@ -856,7 +787,6 @@ export function registerAuthDoctorRoutes(router: Router) {
                 specialty: profilePayload.specialty,
                 registrationNo: profilePayload.registrationNo,
                 isAvailable: profilePayload.isAvailable,
-                ...(isListenerProfile ? { showOnWebsite: listenerReadyForPublic } : {}),
                 ...compensationFields,
                 ...(body.defaultMethodOptionId !== undefined
                   ? { defaultMethodOptionId: body.defaultMethodOptionId }
@@ -885,6 +815,15 @@ export function registerAuthDoctorRoutes(router: Router) {
           doctorProfile: { select: doctorProfileSelect }
         }
       });
+
+      const readiness = await providerPublicReadiness(req.user!.id);
+      if (updated.doctorProfile?.showOnWebsite !== readiness.ready) {
+        await prisma.doctor.update({
+          where: { userId: req.user!.id },
+          data: { showOnWebsite: readiness.ready }
+        });
+        if (updated.doctorProfile) updated.doctorProfile.showOnWebsite = readiness.ready;
+      }
 
       const refreshedListenerScreening = await latestListenerScreeningForEmail(updated.email);
       const doctorProfile = updated.doctorProfile

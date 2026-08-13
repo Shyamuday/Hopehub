@@ -110,9 +110,11 @@ export class DoctorShell implements OnInit, OnDestroy {
             ''
           : profile.doctorProfile?.specialty || '';
       this.doctorTypeKey = profile.doctorProfile?.doctorType ?? null;
+      const readiness = await this.session.readiness().catch(() => null);
       const onboarding = buildProviderOnboardingStatus(
         profile.doctorProfile,
         profile.profileImageUrl ?? null,
+        readiness,
       );
       this.onboardingComplete.set(onboarding.complete);
       this.onboardingPercent.set(onboarding.percent);
