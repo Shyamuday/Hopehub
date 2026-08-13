@@ -5,7 +5,7 @@
       <h2>Listener screening test</h2>
       <span>Admin-editable questions used for listener auto-approval.</span>
     </div>
-    <button type="button" class="primary" (click)="newDraft()">New draft</button>
+    <button type="button" class="primary" [adminCan]="managePermission" (click)="newDraft()">New draft</button>
   </header>
 
   @if (toast()) {
@@ -23,7 +23,7 @@
   }
 
   <section class="grid-layout">
-    <form class="panel editor" (ngSubmit)="save()">
+    <form class="panel editor" [adminCan]="managePermission" (ngSubmit)="save()">
       <div class="panel-head">
         <div>
           <h3>{{ form().id ? 'Edit listener test' : 'Create listener test' }}</h3>
@@ -245,10 +245,10 @@
               <span class="status" [class.live]="questionSet.isActive">
                 {{ questionSet.isActive ? 'Live' : 'Draft' }}
               </span>
-              <button type="button" (click)="edit(questionSet)">Edit</button>
-              <button type="button" (click)="duplicateAsDraft(questionSet)">Duplicate</button>
+              <button type="button" [adminCan]="managePermission" (click)="edit(questionSet)">Edit</button>
+              <button type="button" [adminCan]="managePermission" (click)="duplicateAsDraft(questionSet)">Duplicate</button>
               @if (!questionSet.isActive) {
-                <button type="button" class="publish" (click)="publish(questionSet)">
+                <button type="button" class="publish" [adminCan]="managePermission" (click)="publish(questionSet)">
                   Publish
                 </button>
               }
@@ -300,10 +300,10 @@
           </div>
           @if (report.status === 'OPEN') {
             <div class="row-actions">
-              <button type="button" class="publish" (click)="reviewLiveGroupReport(report, 'REVIEWED')">
+              <button type="button" class="publish" [adminCan]="managePermission" (click)="reviewLiveGroupReport(report, 'REVIEWED')">
                 Mark reviewed
               </button>
-              <button type="button" (click)="reviewLiveGroupReport(report, 'DISMISSED')">
+              <button type="button" [adminCan]="managePermission" (click)="reviewLiveGroupReport(report, 'DISMISSED')">
                 Dismiss
               </button>
             </div>

@@ -22,7 +22,7 @@
     @switch (tab()) {
       @case ('offers') {
         <section class="grid-layout">
-          <form class="panel edit-form" (ngSubmit)="saveOffer()">
+          <form class="panel edit-form" [adminCan]="managePermission" (ngSubmit)="saveOffer()">
             <h3>{{ offerForm().id ? 'Edit offer' : 'New offer' }}</h3>
 
             <section class="form-section">
@@ -214,7 +214,7 @@
                   <div class="row-actions">
                     @if (offer.isActive) { <span class="badge">Active</span> } @else { <span class="badge off">Off</span> }
                     @if (offer.isFeatured) { <span class="badge feature">Featured</span> }
-                    <button type="button" (click)="editOffer(offer)">Edit</button>
+                    <button type="button" [adminCan]="managePermission" (click)="editOffer(offer)">Edit</button>
                   </div>
                 </article>
               }
@@ -225,7 +225,7 @@
 
       @case ('banners') {
         <section class="grid-layout">
-          <form class="panel edit-form" (ngSubmit)="saveBanner()">
+          <form class="panel edit-form" [adminCan]="managePermission" (ngSubmit)="saveBanner()">
             <h3>{{ bannerForm().id ? 'Edit banner' : 'New banner' }}</h3>
             <div class="two">
               <label>Title <input name="bannerTitle" [(ngModel)]="bannerForm().title" required /></label>
@@ -266,7 +266,7 @@
                   </div>
                   <div class="row-actions">
                     @if (banner.isActive) { <span class="badge">Active</span> } @else { <span class="badge off">Off</span> }
-                    <button type="button" (click)="editBanner(banner)">Edit</button>
+                    <button type="button" [adminCan]="managePermission" (click)="editBanner(banner)">Edit</button>
                   </div>
                 </article>
               }
@@ -292,7 +292,7 @@
                     @for (status of leadStatuses; track status) { <option [value]="status">{{ status }}</option> }
                   </select>
                   <textarea rows="2" [(ngModel)]="lead.followUpNotes" [name]="'lead-notes-' + lead.id" placeholder="Follow-up notes"></textarea>
-                  <button type="button" class="primary" (click)="saveLead(lead)">Save</button>
+                  <button type="button" class="primary" [adminCan]="managePermission" (click)="saveLead(lead)">Save</button>
                 </div>
               </article>
             } @empty {

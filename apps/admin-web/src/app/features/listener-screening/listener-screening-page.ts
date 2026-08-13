@@ -1,6 +1,8 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AdminApi } from '../../core/services/admin-api';
+import { AdminCanDirective } from '../../core/directives/admin-can.directive';
+import { ADMIN_PERMISSIONS } from '../../core/admin-permissions';
 
 type ListenerScreeningOptionForm = {
   id: string;
@@ -27,11 +29,12 @@ type ListenerScreeningSetForm = {
 @Component({
   selector: 'app-listener-screening-page',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, AdminCanDirective],
   templateUrl: './listener-screening-page.html',
   styleUrl: './listener-screening-page.scss',
 })
 export class ListenerScreeningPage implements OnInit {
+  readonly managePermission = ADMIN_PERMISSIONS.CATALOG_WRITE;
   private readonly api = inject(AdminApi);
 
   readonly loading = signal(true);

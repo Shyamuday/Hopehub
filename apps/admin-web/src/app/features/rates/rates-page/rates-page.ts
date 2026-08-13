@@ -4,16 +4,22 @@ import { form, FormField } from '@angular/forms/signals';
 import { AdminApi } from '../../../core/services/admin-api';
 import { ROUTE_PATHS, adminRouteLink } from '../../../core/constants/app-routes.constants';
 import { formatPaise } from '../../finance/constants/finance.constants';
+import { AdminCanDirective } from '../../../core/directives/admin-can.directive';
+import { ADMIN_PERMISSIONS } from '../../../core/admin-permissions';
 
 type Tab = 'fees' | 'plans' | 'pay';
 
 @Component({
   selector: 'app-rates-page',
-  imports: [FormField, RouterLink],
+  imports: [FormField, RouterLink, AdminCanDirective],
   templateUrl: './rates-page.html',
-  styleUrl: './rates-page.scss'
+  styleUrl: './rates-page.scss',
 })
 export class RatesPage implements OnInit {
+  readonly managePermissions = [
+    ADMIN_PERMISSIONS.DISEASES_WRITE,
+    ADMIN_PERMISSIONS.PAYMENTS_READ,
+  ] as const;
   private api = inject(AdminApi);
 
   tab = signal<Tab>('fees');
@@ -48,7 +54,7 @@ export class RatesPage implements OnInit {
         this.api.getDiseases(),
         this.api.getAdminStores(),
         this.api.getLocationFees(),
-        this.api.getBillingPlansAdmin()
+        this.api.getBillingPlansAdmin(),
       ]);
       this.diseases.set(diseasesRes.diseases);
       this.stores.set(storesRes.stores ?? []);
@@ -121,7 +127,7 @@ export class RatesPage implements OnInit {
     try {
       await this.api.updateBillingPlan(plan.id, {
         priceInPaise: Math.round(edit.priceRupees * 100),
-        isActive: edit.isActive
+        isActive: edit.isActive,
       });
       this.showToast(`${plan.name} updated`);
       await this.load();
@@ -132,10 +138,14 @@ export class RatesPage implements OnInit {
     }
   }
 
-  updatePlanField(planId: string, field: 'priceRupees' | 'isActive', value: number | boolean): void {
+  updatePlanField(
+    planId: string,
+    field: 'priceRupees' | 'isActive',
+    value: number | boolean,
+  ): void {
     this.planEdits.update((m) => ({
       ...m,
-      [planId]: { ...m[planId], [field]: value }
+      [planId]: { ...m[planId], [field]: value },
     }));
   }
 

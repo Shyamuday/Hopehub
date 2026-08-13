@@ -2,6 +2,8 @@ import { CommonModule } from '@angular/common';
 import { Component, signal } from '@angular/core';
 import { form, FormField } from '@angular/forms/signals';
 import { AdminApi } from '../../../core/services/admin-api';
+import { AdminCanDirective } from '../../../core/directives/admin-can.directive';
+import { ADMIN_PERMISSIONS } from '../../../core/admin-permissions';
 
 type RewardRule = {
   id: string;
@@ -135,11 +137,15 @@ function targetValuesFromConditions(conditions?: Record<string, unknown> | null)
 
 @Component({
   selector: 'app-rewards-page',
-  imports: [CommonModule, FormField],
+  imports: [CommonModule, FormField, AdminCanDirective],
   templateUrl: './rewards-page.html',
   styleUrl: './rewards-page.scss',
 })
 export class RewardsPage {
+  readonly managePermissions = [
+    ADMIN_PERMISSIONS.PAYMENTS_READ,
+    ADMIN_PERMISSIONS.CATALOG_WRITE,
+  ] as const;
   readonly rules = signal<RewardRule[]>([]);
   readonly referrals = signal<unknown[]>([]);
   readonly loading = signal(false);

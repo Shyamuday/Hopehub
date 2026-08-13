@@ -50,7 +50,7 @@
               <h3>{{ disease.name }} — location fees</h3>
               <p class="muted">Default: {{ formatPaise(disease.feeInPaise ?? 0) }} when no override exists.</p>
 
-              <div class="fee-form">
+              <div class="fee-form" [adminCan]="managePermissions" adminCanMatch="any">
                 <label>
                   Location
                   <select [formField]="feeForm.locationKey">
@@ -84,7 +84,7 @@
                       <td>{{ locationLabel(f.locationKey) }}</td>
                       <td class="num">{{ formatPaise(f.feeInPaise) }}</td>
                       <td class="actions">
-                        <button type="button" class="btn-link danger" (click)="removeLocationFee(disease.id, f.locationKey)">Remove</button>
+                        <button type="button" class="btn-link danger" [adminCan]="managePermissions" adminCanMatch="any" (click)="removeLocationFee(disease.id, f.locationKey)">Remove</button>
                       </td>
                     </tr>
                   } @empty {
@@ -99,7 +99,7 @@
                 @for (f of feesForDisease(disease.id); track f.locationKey) {
                   <article class="mobile-row-card">
                     <div class="card-head"><strong>{{ locationLabel(f.locationKey) }}</strong><strong>{{ formatPaise(f.feeInPaise) }}</strong></div>
-                    <button type="button" class="btn-link danger" (click)="removeLocationFee(disease.id, f.locationKey)">Remove</button>
+                    <button type="button" class="btn-link danger" [adminCan]="managePermissions" adminCanMatch="any" (click)="removeLocationFee(disease.id, f.locationKey)">Remove</button>
                   </article>
                 }
               </div>
@@ -156,7 +156,7 @@
                     />
                   </td>
                   <td>
-                    <button type="button" class="btn-primary sm" [disabled]="saving()" (click)="savePlan(p)">Save</button>
+                    <button type="button" class="btn-primary sm" [adminCan]="managePermissions" adminCanMatch="any" [disabled]="saving()" (click)="savePlan(p)">Save</button>
                   </td>
                 </tr>
               } @empty {
@@ -181,7 +181,7 @@
                 </label>
                 <div class="card-row"><span>Consult limit</span><span>{{ p.consultationsLimit ?? '—' }}</span></div>
                 <label class="check"><input type="checkbox" [checked]="edit?.isActive ?? false" (change)="updatePlanField(p.id, 'isActive', $any($event.target).checked)" /> Active</label>
-                <button type="button" class="btn-primary sm" [disabled]="saving()" (click)="savePlan(p)">Save</button>
+                <button type="button" class="btn-primary sm" [adminCan]="managePermissions" adminCanMatch="any" [disabled]="saving()" (click)="savePlan(p)">Save</button>
               </article>
             }
           </div>

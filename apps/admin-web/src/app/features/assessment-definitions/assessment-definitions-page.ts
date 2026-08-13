@@ -1,6 +1,8 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AdminApi } from '../../core/services/admin-api';
+import { AdminCanDirective } from '../../core/directives/admin-can.directive';
+import { ADMIN_PERMISSIONS } from '../../core/admin-permissions';
 
 type DefinitionForm = {
   id: string;
@@ -27,11 +29,12 @@ type DefinitionForm = {
 @Component({
   selector: 'app-assessment-definitions-page',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, AdminCanDirective],
   templateUrl: './assessment-definitions-page.html',
   styleUrl: './assessment-definitions-page.scss',
 })
 export class AssessmentDefinitionsPage implements OnInit {
+  readonly managePermission = ADMIN_PERMISSIONS.CATALOG_WRITE;
   private readonly api = inject(AdminApi);
 
   readonly loading = signal(true);

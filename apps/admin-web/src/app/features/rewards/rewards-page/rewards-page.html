@@ -73,7 +73,7 @@
         <label>Priority <input type="number" [formField]="createForm.priority" /></label>
         <label class="check"><input type="checkbox" [formField]="createForm.isActive" /> Active</label>
       </div>
-      <button type="button" class="btn" [disabled]="mutating()" (click)="createRule()">Create rule</button>
+      <button type="button" class="btn" [adminCan]="managePermissions" adminCanMatch="any" [disabled]="mutating()" (click)="createRule()">Create rule</button>
     </section>
 
     <section class="panel inner">
@@ -111,7 +111,7 @@
                 <label>Priority <input type="number" [formField]="editForm.priority" /></label>
                 <label class="check"><input type="checkbox" [formField]="editForm.isActive" /> Active</label>
               </div>
-              <div class="row-actions">
+              <div class="row-actions" [adminCan]="managePermissions" adminCanMatch="any">
                 <button type="button" (click)="saveEdit()">Save</button>
                 <button type="button" class="ghost" (click)="cancelEdit()">Cancel</button>
               </div>
@@ -128,7 +128,7 @@
                 @if (rule.maxDiscountInPaise) { · Cap ₹{{ rule.maxDiscountInPaise / 100 }} }
               </p>
               <p class="meta">Target: {{ targetSummary(rule) }}</p>
-              <div class="row-actions">
+              <div class="row-actions" [adminCan]="managePermissions" adminCanMatch="any">
                 <button type="button" (click)="startEdit(rule)">Edit</button>
                 <button type="button" class="danger" (click)="deleteRule(rule.id)">Delete</button>
               </div>

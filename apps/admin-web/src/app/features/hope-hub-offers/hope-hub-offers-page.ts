@@ -1,6 +1,8 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AdminApi } from '../../core/services/admin-api';
+import { AdminCanDirective } from '../../core/directives/admin-can.directive';
+import { ADMIN_PERMISSIONS } from '../../core/admin-permissions';
 
 type Tab = 'offers' | 'banners' | 'leads';
 
@@ -37,11 +39,12 @@ const MEDIA_ACCESS_MODES = ['PUBLIC', 'LOGIN_REQUIRED', 'PAID_ONLY'];
 @Component({
   selector: 'app-hope-hub-offers-page',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, AdminCanDirective],
   templateUrl: './hope-hub-offers-page.html',
   styleUrl: './hope-hub-offers-page.scss',
 })
 export class HopeHubOffersPage implements OnInit {
+  readonly managePermission = ADMIN_PERMISSIONS.CATALOG_WRITE;
   private readonly api = inject(AdminApi);
 
   readonly tab = signal<Tab>('offers');

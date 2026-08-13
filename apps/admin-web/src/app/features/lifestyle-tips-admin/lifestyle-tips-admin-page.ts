@@ -1,6 +1,8 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AdminApi } from '../../core/services/admin-api';
+import { AdminCanDirective } from '../../core/directives/admin-can.directive';
+import { ADMIN_PERMISSIONS } from '../../core/admin-permissions';
 
 const TIP_TYPES = [
   'SLEEP',
@@ -62,7 +64,7 @@ type RuleForm = {
 @Component({
   selector: 'app-lifestyle-tips-admin-page',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, AdminCanDirective],
   template: `
     <main class="admin-page">
       <section class="page-head">
@@ -70,7 +72,7 @@ type RuleForm = {
           <p>Catalog</p>
           <h1>Lifestyle tips</h1>
         </div>
-        <button type="button" (click)="newDraft()">New tip</button>
+        <button type="button" [adminCan]="managePermission" (click)="newDraft()">New tip</button>
       </section>
 
       <section class="filters">
@@ -279,9 +281,22 @@ type RuleForm = {
             ></textarea>
           </label>
           <div class="actions">
-            <button type="button" (click)="save()" [disabled]="saving()">Save tip</button>
+            <button
+              type="button"
+              [adminCan]="managePermission"
+              (click)="save()"
+              [disabled]="saving()"
+            >
+              Save tip
+            </button>
             @if (form().id) {
-              <button type="button" class="ghost" (click)="archive()" [disabled]="saving()">
+              <button
+                type="button"
+                class="ghost"
+                [adminCan]="managePermission"
+                (click)="archive()"
+                [disabled]="saving()"
+              >
                 Archive
               </button>
             }
@@ -349,7 +364,12 @@ type RuleForm = {
             />
             Active</label
           >
-          <button type="button" (click)="saveRule()" [disabled]="saving() || !form().id">
+          <button
+            type="button"
+            [adminCan]="managePermission"
+            (click)="saveRule()"
+            [disabled]="saving() || !form().id"
+          >
             Save rule
           </button>
         </div>
@@ -498,6 +518,7 @@ type RuleForm = {
   ],
 })
 export class LifestyleTipsAdminPage implements OnInit {
+  readonly managePermission = ADMIN_PERMISSIONS.CATALOG_WRITE;
   private readonly api = inject(AdminApi);
   readonly tips = signal<any[]>([]);
   readonly loading = signal(false);
