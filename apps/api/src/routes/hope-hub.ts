@@ -45,6 +45,7 @@ import {
 } from '../services/online-doctor-presence.js';
 import { emitHopeHubLiveGroupMessage } from '../services/hope-hub-live-groups-realtime.js';
 import { emitConsultationAssignedToDoctor } from '../services/consultation-realtime.js';
+import { INSTANT_ASSIGNMENT_RESPONSE_TIMEOUT_MS } from '../constants/online-doctor.constants.js';
 import {
   normalizeQuickTalkMode,
   quickTalkAvailabilityWhere,
@@ -3349,7 +3350,10 @@ hopeHubRouter.post(
         diseaseName: consultation.disease?.name,
         status: consultation.status,
         consultationMode: ConsultationMode.INSTANT_ONLINE,
-        sessionMode: quickTalkMode
+        sessionMode: quickTalkMode,
+        responseDeadlineAt: new Date(
+          consultation.updatedAt.getTime() + INSTANT_ASSIGNMENT_RESPONSE_TIMEOUT_MS
+        ).toISOString()
       });
       await upsertProviderEarningForPayment(consultation.payment.id);
       void settleConsultationPaymentRewards(consultation.payment.id).catch((err) =>

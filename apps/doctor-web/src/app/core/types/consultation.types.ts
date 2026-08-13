@@ -76,6 +76,7 @@ export type ConsultationCallSession = {
 export type DoctorConsultation = {
   id: string;
   status: string;
+  consultationMode?: 'CLINIC_QUEUE' | 'INSTANT_ONLINE' | string;
   pricingSnapshot?: {
     sessionOutcome?: ConsultationSessionOutcome | null;
     [key: string]: unknown;

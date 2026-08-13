@@ -8,7 +8,10 @@ import {
   Role,
   CareTeamMemberType
 } from '@prisma/client';
-import { ONLINE_HEARTBEAT_TTL_MS } from '../constants/online-doctor.constants.js';
+import {
+  INSTANT_ASSIGNMENT_RESPONSE_TIMEOUT_MS,
+  ONLINE_HEARTBEAT_TTL_MS
+} from '../constants/online-doctor.constants.js';
 import { SOCKET_EVENTS, SOCKET_ROOM_PREFIXES } from '../constants/socket.constants.js';
 import { prisma } from '../db.js';
 import {
@@ -23,9 +26,74 @@ let waitingAssignmentDrain: Promise<unknown> | null = null;
 let queuedWaitingAssignmentDrain: { io: SocketIoServer; reason: string } | null = null;
 let lastWaitingAssignmentDrainAt = 0;
 const WAITING_ASSIGNMENT_DRAIN_THROTTLE_MS = 5_000;
+const scheduledOfflineTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
 export function setOnlineDoctorPresenceSocket(io: SocketIoServer) {
   onlineDoctorPresenceSocket = io;
+}
+
+export function cancelScheduledDoctorOffline(userId: string) {
+  const timer = scheduledOfflineTimers.get(userId);
+  if (timer) clearTimeout(timer);
+  scheduledOfflineTimers.delete(userId);
+}
+
+export function scheduleDoctorOfflineAfterDisconnect(userId: string, io?: SocketIoServer) {
+  cancelScheduledDoctorOffline(userId);
+  const realtime = io ?? onlineDoctorPresenceSocket;
+
+  const schedulePresenceCheck = (delayMs: number) => {
+    scheduledOfflineTimers.set(
+      userId,
+      setTimeout(() => {
+        void checkPresence().catch((error) => {
+          scheduledOfflineTimers.delete(userId);
+          console.error('Failed to reconcile provider presence after disconnect', {
+            userId,
+            error
+          });
+        });
+      }, delayMs)
+    );
+  };
+
+  const checkPresence = async () => {
+    scheduledOfflineTimers.delete(userId);
+    const session = await prisma.doctorOnlineSession.findUnique({
+      where: { userId },
+      include: liveDoctorInclude
+    });
+    if (!session || session.liveStatus === LivePresenceStatus.OFFLINE) return;
+
+    const heartbeatAge = session.lastHeartbeatAt
+      ? Date.now() - session.lastHeartbeatAt.getTime()
+      : ONLINE_HEARTBEAT_TTL_MS + 1;
+    if (heartbeatAge <= ONLINE_HEARTBEAT_TTL_MS) {
+      const remaining = ONLINE_HEARTBEAT_TTL_MS - heartbeatAge + 500;
+      schedulePresenceCheck(remaining);
+      return;
+    }
+
+    const expired = await prisma.doctorOnlineSession.updateMany({
+      where: {
+        id: session.id,
+        liveStatus: { not: LivePresenceStatus.OFFLINE },
+        OR: [
+          { lastHeartbeatAt: null },
+          { lastHeartbeatAt: { lt: new Date(Date.now() - ONLINE_HEARTBEAT_TTL_MS) } }
+        ]
+      },
+      data: { liveStatus: LivePresenceStatus.OFFLINE, wentLiveAt: null }
+    });
+    if (!expired.count || !realtime) return;
+    const updated = await prisma.doctorOnlineSession.findUnique({
+      where: { id: session.id },
+      include: liveDoctorInclude
+    });
+    if (updated) broadcastPresence(realtime, updated);
+  };
+
+  schedulePresenceCheck(ONLINE_HEARTBEAT_TTL_MS + 500);
 }
 
 export function isHeartbeatFresh(lastHeartbeatAt: Date | null | undefined) {
@@ -196,6 +264,7 @@ export async function setDoctorLiveStatus(
   },
   io?: SocketIoServer
 ) {
+  cancelScheduledDoctorOffline(userId);
   const session = await ensureDoctorOnlineSession(userId);
   if (!session) return null;
 
@@ -230,6 +299,7 @@ export async function setDoctorLiveStatus(
 }
 
 export async function heartbeatDoctor(userId: string, io?: SocketIoServer) {
+  cancelScheduledDoctorOffline(userId);
   const session = await ensureDoctorOnlineSession(userId);
   if (!session || session.liveStatus === LivePresenceStatus.OFFLINE) return null;
 
@@ -335,6 +405,102 @@ export async function restoreDoctorOnlineAfterInstantConsultation(
     scheduleWaitingInstantAssignments(realtime, 'session ended', true);
   }
   return true;
+}
+
+export async function releaseInstantConsultationAssignment(input: {
+  consultationId: string;
+  providerUserId: string;
+  reason: string;
+  io: SocketIoServer;
+}) {
+  const consultation = await prisma.consultation.findUnique({
+    where: { id: input.consultationId },
+    select: {
+      id: true,
+      patientId: true,
+      assignedDoctorId: true,
+      consultationMode: true,
+      status: true,
+      intakeAnswers: true
+    }
+  });
+  if (!consultation) return { released: false as const, code: 'NOT_FOUND' as const };
+  if (
+    consultation.consultationMode !== ConsultationMode.INSTANT_ONLINE ||
+    consultation.assignedDoctorId !== input.providerUserId
+  ) {
+    return { released: false as const, code: 'NOT_ASSIGNED' as const };
+  }
+  if (consultation.status !== ConsultationStatus.ASSIGNED) {
+    return { released: false as const, code: 'ALREADY_STARTED' as const };
+  }
+
+  const intake = asRecord(consultation.intakeAnswers);
+  const declinedProviderUserIds = Array.from(
+    new Set([...asStringList(intake['declinedProviderUserIds']), input.providerUserId])
+  );
+  const released = await prisma.consultation.updateMany({
+    where: {
+      id: consultation.id,
+      assignedDoctorId: input.providerUserId,
+      status: ConsultationStatus.ASSIGNED
+    },
+    data: {
+      assignedDoctorId: null,
+      preferredDoctorUserId: null,
+      status: ConsultationStatus.PAID,
+      intakeAnswers: {
+        ...intake,
+        declinedProviderUserIds,
+        lastProviderDecline: {
+          providerUserId: input.providerUserId,
+          reason: input.reason,
+          declinedAt: new Date().toISOString()
+        }
+      } as Prisma.InputJsonObject
+    }
+  });
+  if (!released.count) return { released: false as const, code: 'CHANGED' as const };
+
+  await restoreDoctorOnlineAfterInstantConsultation(input.providerUserId, input.io);
+  const updatePayload = {
+    consultationId: consultation.id,
+    status: ConsultationStatus.PAID,
+    assignedDoctorId: null
+  };
+  input.io
+    .to(`${SOCKET_ROOM_PREFIXES.USER}${consultation.patientId}`)
+    .emit(SOCKET_EVENTS.CONSULTATION_UPDATED, updatePayload);
+  input.io
+    .to(`${SOCKET_ROOM_PREFIXES.CONSULTATION}${consultation.id}`)
+    .emit(SOCKET_EVENTS.CONSULTATION_UPDATED, updatePayload);
+  return { released: true as const, code: 'RELEASED' as const };
+}
+
+async function expireUnacceptedInstantAssignments(io: SocketIoServer, limit = 20) {
+  const stale = await prisma.consultation.findMany({
+    where: {
+      consultationMode: ConsultationMode.INSTANT_ONLINE,
+      status: ConsultationStatus.ASSIGNED,
+      assignedDoctorId: { not: null },
+      updatedAt: { lte: new Date(Date.now() - INSTANT_ASSIGNMENT_RESPONSE_TIMEOUT_MS) }
+    },
+    select: { id: true, assignedDoctorId: true },
+    orderBy: { updatedAt: 'asc' },
+    take: Math.max(1, Math.min(limit, 50))
+  });
+  let releasedCount = 0;
+  for (const consultation of stale) {
+    if (!consultation.assignedDoctorId) continue;
+    const result = await releaseInstantConsultationAssignment({
+      consultationId: consultation.id,
+      providerUserId: consultation.assignedDoctorId,
+      reason: 'Provider did not respond before the incoming request expired',
+      io
+    });
+    if (result.released) releasedCount += 1;
+  }
+  return releasedCount;
 }
 
 export async function isDoctorLiveForInstant(userId: string, diseaseId: string) {
@@ -581,7 +747,10 @@ export async function tryAssignInstantConsultation(io: SocketIoServer, consultat
     status: updated.status,
     consultationMode: ConsultationMode.INSTANT_ONLINE,
     sessionMode:
-      mode ?? normalizeLiveConnectMode(asRecord(consultation.intakeAnswers)['sessionMode'])
+      mode ?? normalizeLiveConnectMode(asRecord(consultation.intakeAnswers)['sessionMode']),
+    responseDeadlineAt: new Date(
+      updated.updatedAt.getTime() + INSTANT_ASSIGNMENT_RESPONSE_TIMEOUT_MS
+    ).toISOString()
   });
 
   io.to(`${SOCKET_ROOM_PREFIXES.USER}${consultation.patientId}`).emit(
@@ -598,6 +767,7 @@ export async function tryAssignInstantConsultation(io: SocketIoServer, consultat
 }
 
 export async function tryAssignWaitingInstantConsultations(io: SocketIoServer, limit = 10) {
+  await expireUnacceptedInstantAssignments(io);
   const waiting = await prisma.consultation.findMany({
     where: {
       consultationMode: ConsultationMode.INSTANT_ONLINE,

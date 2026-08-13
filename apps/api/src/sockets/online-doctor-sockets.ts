@@ -3,7 +3,10 @@ import { consultationAllowsCallMode } from '../services/quick-talk-modes.js';
 import { ConsultationStatus, LivePresenceStatus, Role } from '@prisma/client';
 import { SOCKET_EVENTS, SOCKET_ROOM_PREFIXES } from '../constants/socket.constants.js';
 import { prisma } from '../db.js';
-import { heartbeatDoctor, setDoctorLiveStatus } from '../services/online-doctor-presence.js';
+import {
+  heartbeatDoctor,
+  scheduleDoctorOfflineAfterDisconnect
+} from '../services/online-doctor-presence.js';
 
 type CallSignalPayload = {
   consultationId: string;
@@ -323,10 +326,7 @@ export function registerOnlineDoctorSockets(io: SocketIoServer, socket: Socket, 
   socket.on('disconnect', async () => {
     const user = await prisma.user.findUnique({ where: { id: userId }, select: { role: true } });
     if (user?.role !== Role.DOCTOR) return;
-    const session = await prisma.doctorOnlineSession.findUnique({ where: { userId } });
-    if (session && session.liveStatus !== LivePresenceStatus.OFFLINE) {
-      await setDoctorLiveStatus(userId, { liveStatus: LivePresenceStatus.OFFLINE }, io);
-    }
+    scheduleDoctorOfflineAfterDisconnect(userId, io);
   });
 
   const callEvents: Array<{ event: string; relay: string }> = [

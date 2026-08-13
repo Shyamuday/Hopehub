@@ -190,6 +190,15 @@ export class OnlineDoctorService implements OnDestroy {
     );
   }
 
+  acceptInstantConsultation(consultationId: string) {
+    return firstValueFrom(
+      this.http.post<{ ok: boolean; status: string }>(
+        `${this.apiBase}${API_PATHS.DOCTOR.ACCEPT_INSTANT_CONSULTATION(consultationId)}`,
+        {},
+      ),
+    );
+  }
+
   ngOnDestroy() {
     this.disconnectRealtime();
   }

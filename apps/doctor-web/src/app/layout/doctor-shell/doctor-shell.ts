@@ -74,6 +74,8 @@ export class DoctorShell implements OnInit, OnDestroy {
   assignmentNotice = signal('');
   incomingAssignment = signal<ConsultationAssignedPayload | null>(null);
   decliningIncomingAssignment = signal(false);
+  acceptingIncomingAssignment = signal(false);
+  incomingSecondsRemaining = signal(60);
   incomingAssignmentError = signal('');
   onboardingComplete = signal(true);
   onboardingPercent = signal(100);
@@ -86,6 +88,7 @@ export class DoctorShell implements OnInit, OnDestroy {
   private readonly consultationNav = inject(ConsultationNavigationService);
   private readonly onlineDoctor = inject(OnlineDoctorService);
   private navSubscription?: { unsubscribe: () => void };
+  private incomingCountdownTimer: ReturnType<typeof setInterval> | null = null;
 
   readonly bellConfig = {
     apiBase: environment.apiUrl,
@@ -145,6 +148,7 @@ export class DoctorShell implements OnInit, OnDestroy {
       if (payload.consultationMode === 'INSTANT_ONLINE') {
         this.incomingAssignmentError.set('');
         this.incomingAssignment.set(payload);
+        this.startIncomingCountdown(payload);
       } else {
         void this.router.navigate(this.assignmentRoute(payload));
       }
@@ -195,8 +199,11 @@ export class DoctorShell implements OnInit, OnDestroy {
     notification.onclick = () => {
       window.focus();
       notification.close();
-      this.incomingAssignment.set(null);
-      void this.router.navigate(this.assignmentRoute(payload));
+      if (payload.consultationMode === 'INSTANT_ONLINE') {
+        void this.openIncomingAssignment();
+      } else {
+        void this.router.navigate(this.assignmentRoute(payload));
+      }
     };
     navigator.vibrate?.([180, 80, 180]);
   }
@@ -221,28 +228,48 @@ export class DoctorShell implements OnInit, OnDestroy {
     return assignment.patientName || 'A Hope Hub user';
   }
 
-  openIncomingAssignment(): void {
+  async openIncomingAssignment(): Promise<void> {
     const assignment = this.incomingAssignment();
-    if (!assignment) return;
-    this.incomingAssignment.set(null);
-    this.assignmentNotice.set('');
-    void this.router.navigate(this.assignmentRoute(assignment));
+    if (!assignment || this.acceptingIncomingAssignment() || this.decliningIncomingAssignment()) {
+      return;
+    }
+    this.acceptingIncomingAssignment.set(true);
+    this.incomingAssignmentError.set('');
+    try {
+      await this.onlineDoctor.acceptInstantConsultation(assignment.consultationId);
+      this.clearIncomingAssignment();
+      void this.router.navigate(this.assignmentRoute(assignment));
+    } catch (error: any) {
+      this.incomingAssignmentError.set(
+        error?.error?.message || 'This request is no longer available. Check your live inbox.',
+      );
+    } finally {
+      this.acceptingIncomingAssignment.set(false);
+    }
   }
 
-  async declineIncomingAssignment(): Promise<void> {
+  async declineIncomingAssignment(automatic = false): Promise<void> {
     const assignment = this.incomingAssignment();
-    if (!assignment || this.decliningIncomingAssignment()) return;
+    if (!assignment || this.decliningIncomingAssignment() || this.acceptingIncomingAssignment()) {
+      return;
+    }
     this.decliningIncomingAssignment.set(true);
     this.incomingAssignmentError.set('');
     try {
       await this.onlineDoctor.declineInstantConsultation(
         assignment.consultationId,
-        'Provider unavailable for this incoming live request',
+        automatic
+          ? 'Provider did not respond before the incoming request expired'
+          : 'Provider unavailable for this incoming live request',
       );
-      this.incomingAssignment.set(null);
+      this.clearIncomingAssignment();
       this.assignmentNotice.set('Request returned for matching with another available provider.');
       window.setTimeout(() => this.assignmentNotice.set(''), 5000);
     } catch (error: any) {
+      if (automatic && error?.status === 409) {
+        this.clearIncomingAssignment();
+        return;
+      }
       this.incomingAssignmentError.set(
         error?.error?.message ||
           'Could not return this request. Open the session and check its status.',
@@ -250,6 +277,37 @@ export class DoctorShell implements OnInit, OnDestroy {
     } finally {
       this.decliningIncomingAssignment.set(false);
     }
+  }
+
+  private startIncomingCountdown(assignment: ConsultationAssignedPayload): void {
+    this.stopIncomingCountdown();
+    const parsedDeadline = assignment.responseDeadlineAt
+      ? new Date(assignment.responseDeadlineAt).getTime()
+      : Date.now() + 60_000;
+    const deadline = Number.isFinite(parsedDeadline) ? parsedDeadline : Date.now() + 60_000;
+    const refresh = () => {
+      const seconds = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
+      this.incomingSecondsRemaining.set(seconds);
+      if (seconds === 0) {
+        this.stopIncomingCountdown();
+        void this.declineIncomingAssignment(true);
+      }
+    };
+    refresh();
+    if (this.incomingSecondsRemaining() > 0) {
+      this.incomingCountdownTimer = setInterval(refresh, 1000);
+    }
+  }
+
+  private stopIncomingCountdown(): void {
+    if (this.incomingCountdownTimer) clearInterval(this.incomingCountdownTimer);
+    this.incomingCountdownTimer = null;
+  }
+
+  private clearIncomingAssignment(): void {
+    this.stopIncomingCountdown();
+    this.incomingAssignment.set(null);
+    this.assignmentNotice.set('');
   }
 
   private assignmentRoute(payload: {
@@ -263,6 +321,7 @@ export class DoctorShell implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.stopIncomingCountdown();
     this.realtime.disconnect();
     this.navSubscription?.unsubscribe();
   }

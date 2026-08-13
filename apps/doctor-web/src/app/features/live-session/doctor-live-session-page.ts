@@ -96,10 +96,18 @@ export class DoctorLiveSessionPage implements OnInit, OnDestroy {
     if (!options.silent) this.loading.set(true);
     this.error.set('');
     try {
-      const [profile, consultation] = await Promise.all([
+      const [profile, loadedConsultation] = await Promise.all([
         this.online.loadProfile().catch(() => null),
         this.consultationApi.loadConsultation(this.consultationId),
       ]);
+      let consultation = loadedConsultation;
+      if (
+        consultation.consultationMode === 'INSTANT_ONLINE' &&
+        consultation.status === 'ASSIGNED'
+      ) {
+        await this.online.acceptInstantConsultation(consultation.id);
+        consultation = { ...consultation, status: 'IN_PROGRESS' };
+      }
       if (profile?.profile) this.online.profile.set(profile.profile);
       this.consultation.set(consultation);
       await Promise.all([

@@ -327,13 +327,21 @@
           The user is ready and waiting in the private room.
         </p>
       }
-      <button type="button" class="incoming-session-open" (click)="openIncomingAssignment()">
-        Open session
+      <p class="incoming-session-timer" role="timer">
+        Respond in {{ incomingSecondsRemaining() }}s
+      </p>
+      <button
+        type="button"
+        class="incoming-session-open"
+        [disabled]="acceptingIncomingAssignment() || decliningIncomingAssignment()"
+        (click)="openIncomingAssignment()"
+      >
+        {{ acceptingIncomingAssignment() ? 'Opening secure room…' : 'Open session' }}
       </button>
       <button
         type="button"
         class="incoming-session-decline"
-        [disabled]="decliningIncomingAssignment()"
+        [disabled]="decliningIncomingAssignment() || acceptingIncomingAssignment()"
         (click)="declineIncomingAssignment()"
       >
         {{ decliningIncomingAssignment() ? 'Finding another provider…' : 'I can’t take this now' }}

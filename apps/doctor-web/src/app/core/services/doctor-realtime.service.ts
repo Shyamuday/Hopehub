@@ -12,6 +12,7 @@ export type ConsultationAssignedPayload = {
   status?: string;
   consultationMode?: 'CLINIC_QUEUE' | 'INSTANT_ONLINE';
   sessionMode?: 'chat' | 'voice' | 'video';
+  responseDeadlineAt?: string;
 };
 
 export type ConsultationUpdatedPayload = {

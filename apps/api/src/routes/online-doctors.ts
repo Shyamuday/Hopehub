@@ -6,8 +6,7 @@ import {
   OnlineDoctorCategory,
   Role,
   ConsultationMode,
-  ConsultationStatus,
-  Prisma
+  ConsultationStatus
 } from '@prisma/client';
 import { authRequired, allowRoles } from '../auth.js';
 import { capabilitiesForDoctorProfile } from '../constants/homeopathic-doctor-types.js';
@@ -21,17 +20,10 @@ import {
   heartbeatDoctor,
   listLiveOnlineDoctors,
   mapLiveDoctor,
-  restoreDoctorOnlineAfterInstantConsultation,
+  releaseInstantConsultationAssignment,
   setDoctorLiveStatus
 } from '../services/online-doctor-presence.js';
-import { SOCKET_EVENTS, SOCKET_ROOM_PREFIXES } from '../constants/socket.constants.js';
 import { asyncRoute, routeParam } from '../utils/helpers.js';
-
-function jsonRecord(value: unknown): Record<string, unknown> {
-  return value && typeof value === 'object' && !Array.isArray(value)
-    ? (value as Record<string, unknown>)
-    : {};
-}
 
 export function createOnlineDoctorsRouter(io: SocketIoServer) {
   const router = Router();
@@ -365,82 +357,63 @@ export function createOnlineDoctorsRouter(io: SocketIoServer) {
   );
 
   router.post(
+    '/doctor/instant-consultations/:id/accept',
+    authRequired,
+    allowRoles(Role.DOCTOR),
+    asyncRoute(async (req, res) => {
+      const consultationId = routeParam(req, 'id');
+      const accepted = await prisma.consultation.updateMany({
+        where: {
+          id: consultationId,
+          assignedDoctorId: req.user!.id,
+          consultationMode: ConsultationMode.INSTANT_ONLINE,
+          status: ConsultationStatus.ASSIGNED
+        },
+        data: { status: ConsultationStatus.IN_PROGRESS }
+      });
+      if (!accepted.count) {
+        return res.status(409).json({
+          message: 'This request is no longer waiting for acceptance. Refresh your live inbox.'
+        });
+      }
+      const updatePayload = {
+        consultationId,
+        status: ConsultationStatus.IN_PROGRESS,
+        assignedDoctorId: req.user!.id
+      };
+      io.to(`consultation:${consultationId}`).emit('consultation:updated', updatePayload);
+      const consultation = await prisma.consultation.findUnique({
+        where: { id: consultationId },
+        select: { patientId: true }
+      });
+      if (consultation) {
+        io.to(`user:${consultation.patientId}`).emit('consultation:updated', updatePayload);
+      }
+      res.json({ ok: true, status: ConsultationStatus.IN_PROGRESS });
+    })
+  );
+
+  router.post(
     '/doctor/instant-consultations/:id/decline',
     authRequired,
     allowRoles(Role.DOCTOR),
     asyncRoute(async (req, res) => {
       const body = z.object({ reason: z.string().trim().max(200).optional() }).parse(req.body);
-      const consultationId = routeParam(req, 'id');
-      const consultation = await prisma.consultation.findUnique({
-        where: { id: consultationId },
-        select: {
-          id: true,
-          patientId: true,
-          assignedDoctorId: true,
-          consultationMode: true,
-          status: true,
-          intakeAnswers: true
-        }
+      const result = await releaseInstantConsultationAssignment({
+        consultationId: routeParam(req, 'id'),
+        providerUserId: req.user!.id,
+        reason: body.reason || 'Provider unavailable',
+        io
       });
-      if (!consultation) return res.status(404).json({ message: 'Live request not found.' });
-      if (
-        consultation.consultationMode !== ConsultationMode.INSTANT_ONLINE ||
-        consultation.assignedDoctorId !== req.user!.id
-      ) {
-        return res.status(403).json({ message: 'This live request is not assigned to you.' });
-      }
-      if (consultation.status !== ConsultationStatus.ASSIGNED) {
-        return res.status(409).json({ message: 'A started or closed session cannot be declined.' });
-      }
-
-      const intake = jsonRecord(consultation.intakeAnswers);
-      const declinedProviderUserIds = Array.from(
-        new Set([
-          ...(Array.isArray(intake['declinedProviderUserIds'])
-            ? intake['declinedProviderUserIds'].map((value) => String(value))
-            : []),
-          req.user!.id
-        ])
-      );
-      const released = await prisma.consultation.updateMany({
-        where: {
-          id: consultation.id,
-          assignedDoctorId: req.user!.id,
-          status: ConsultationStatus.ASSIGNED
-        },
-        data: {
-          assignedDoctorId: null,
-          preferredDoctorUserId: null,
-          status: ConsultationStatus.PAID,
-          intakeAnswers: {
-            ...intake,
-            declinedProviderUserIds,
-            lastProviderDecline: {
-              providerUserId: req.user!.id,
-              reason: body.reason || 'Provider unavailable',
-              declinedAt: new Date().toISOString()
-            }
-          } as Prisma.InputJsonObject
+      if (!result.released) {
+        if (result.code === 'NOT_FOUND') {
+          return res.status(404).json({ message: 'Live request not found.' });
         }
-      });
-      if (!released.count) {
-        return res.status(409).json({ message: 'This request has already changed.' });
+        if (result.code === 'NOT_ASSIGNED') {
+          return res.status(403).json({ message: 'This live request is not assigned to you.' });
+        }
+        return res.status(409).json({ message: 'This request has already started or changed.' });
       }
-
-      await restoreDoctorOnlineAfterInstantConsultation(req.user!.id, io);
-      const updatePayload = {
-        consultationId: consultation.id,
-        status: ConsultationStatus.PAID,
-        assignedDoctorId: null
-      };
-      io.to(`${SOCKET_ROOM_PREFIXES.USER}${consultation.patientId}`).emit(
-        SOCKET_EVENTS.CONSULTATION_UPDATED,
-        updatePayload
-      );
-      io.to(`${SOCKET_ROOM_PREFIXES.CONSULTATION}${consultation.id}`).emit(
-        SOCKET_EVENTS.CONSULTATION_UPDATED,
-        updatePayload
-      );
       res.json({ ok: true, status: ConsultationStatus.PAID });
     })
   );
