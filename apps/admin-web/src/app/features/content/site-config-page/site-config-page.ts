@@ -3,31 +3,15 @@ import { Component, signal } from '@angular/core';
 import { AdminApi } from '../../../core/services/admin-api';
 import { AdminCanDirective } from '../../../core/directives/admin-can.directive';
 import { ADMIN_PERMISSIONS } from '../../../core/admin-permissions';
+import type { CarePricingTemplateDto, ProviderRoleDefinitionDto } from '@hopehub/contracts';
 
 type ConfigEntry = { key: string; value: string; label: string; description: string };
-type PricingMode =
-  'FIXED' | 'FREE_INTRO' | 'DISCOUNTED_FIRST' | 'PACKAGE' | 'FREE_VOLUNTEER' | 'PER_MINUTE';
-type CarePricingTemplate = {
-  id?: string;
-  title: string;
-  description?: string | null;
-  pricingMode: PricingMode;
-  priceInPaise: number;
-  firstSessionPriceInPaise?: number | null;
-  followUpPriceInPaise?: number | null;
-  introSessionLimit: number;
-  packageSessionCount?: number | null;
-  packagePriceInPaise?: number | null;
-  freeMinutes?: number;
-  pricePerMinuteInPaise?: number | null;
-  durationMinutes: number;
-  isFree: boolean;
-  isActive: boolean;
-  sortOrder: number;
-};
+type PricingMode = CarePricingTemplateDto['pricingMode'];
+type CarePricingTemplate = Omit<CarePricingTemplateDto, 'id'> & { id?: string };
 
 function emptyTemplate(): CarePricingTemplate {
   return {
+    applicableRoleCodes: [],
     title: '',
     description: '',
     pricingMode: 'FIXED',
@@ -73,6 +57,7 @@ export class SiteConfigPage {
 
   readonly localValues = signal<Record<string, string>>({});
   readonly templates = signal<CarePricingTemplate[]>([]);
+  readonly providerRoles = signal<ProviderRoleDefinitionDto[]>([]);
   readonly templateDraft = signal<CarePricingTemplate>(emptyTemplate());
   readonly savingTemplate = signal<string | null>(null);
   readonly pricingModeOptions: Array<{ value: PricingMode; label: string }> = [
@@ -87,6 +72,7 @@ export class SiteConfigPage {
   constructor(private readonly api: AdminApi) {
     void this.load();
     void this.loadTemplates();
+    void this.loadProviderRoles();
   }
 
   isMultiline(key: string) {
@@ -134,10 +120,44 @@ export class SiteConfigPage {
   async loadTemplates() {
     try {
       const res = await this.api.listAdminCarePricingTemplates();
-      this.templates.set(res.templates);
+      this.templates.set(
+        res.templates.map((template) => ({
+          ...template,
+          applicableRoleCodes: template.applicableRoleCodes ?? [],
+        })),
+      );
     } catch {
       this.error.set('Could not load care pricing templates.');
     }
+  }
+
+  async loadProviderRoles() {
+    try {
+      const response = await this.api.listProviderRoles();
+      this.providerRoles.set(response.roles);
+    } catch {
+      this.error.set('Could not load provider roles for pricing templates.');
+    }
+  }
+
+  toggleTemplateRole(
+    template: CarePricingTemplate,
+    roleCode: string,
+    checked: boolean,
+    index?: number,
+  ) {
+    const applicableRoleCodes = checked
+      ? Array.from(new Set([...template.applicableRoleCodes, roleCode]))
+      : template.applicableRoleCodes.filter((code) => code !== roleCode);
+    if (index == null) {
+      this.templateDraft.update((draft) => ({ ...draft, applicableRoleCodes }));
+      return;
+    }
+    this.templates.update((templates) =>
+      templates.map((item, itemIndex) =>
+        itemIndex === index ? { ...item, applicableRoleCodes } : item,
+      ),
+    );
   }
 
   updateLocal(key: string, value: string) {
@@ -273,6 +293,7 @@ export class SiteConfigPage {
 
   private cleanTemplate(template: CarePricingTemplate) {
     return {
+      applicableRoleCodes: [...template.applicableRoleCodes],
       title: template.title.trim(),
       description: template.description?.trim() || null,
       pricingMode: template.pricingMode,

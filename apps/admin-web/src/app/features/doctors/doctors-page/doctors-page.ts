@@ -7,6 +7,9 @@ import {
   PROVIDER_ROLE_GROUPS,
   PROVIDER_ROLE_OPTIONS,
   providerHasRoleCategory,
+  type CarePricingTemplateDto,
+  type CareTeamServiceDto,
+  type ProviderReadinessDto,
   type ProviderRoleCategory,
   type ProviderRoleCode,
 } from '@hopehub/contracts';
@@ -109,40 +112,11 @@ type Doctor = {
 };
 
 type SiteConfigEntry = { key: string; value: string; label: string; description: string };
-type ProviderReadiness = {
-  ready: boolean;
-  code: string;
-  message: string;
-  blockers: Array<{ code: string; label: string; action?: string }>;
-};
+type ProviderReadiness = ProviderReadinessDto;
 type ProviderGender = 'MALE' | 'FEMALE' | 'OTHER' | 'PREFER_NOT_TO_SAY';
 type CareTeamMemberType = string;
-type CareTeamService = {
-  providerRole?: CareTeamMemberType | null;
-  providerRoleCode?: string | null;
-  title: string;
-  description?: string | null;
-  pricingMode?:
-    'FIXED' | 'FREE_INTRO' | 'DISCOUNTED_FIRST' | 'PACKAGE' | 'FREE_VOLUNTEER' | 'PER_MINUTE';
-  priceInPaise: number;
-  firstSessionPriceInPaise?: number | null;
-  followUpPriceInPaise?: number | null;
-  introSessionLimit?: number;
-  packageSessionCount?: number | null;
-  packagePriceInPaise?: number | null;
-  freeMinutes?: number;
-  pricePerMinuteInPaise?: number | null;
-  currency?: string;
-  durationMinutes: number;
-  isFree?: boolean;
-  isActive?: boolean;
-  sortOrder?: number;
-};
-type CareTeamPricingTemplate = CareTeamService & {
-  id: string;
-  title: string;
-  sortOrder?: number;
-};
+type CareTeamService = CareTeamServiceDto;
+type CareTeamPricingTemplate = CarePricingTemplateDto;
 type HopeHubSupportPath = ProviderRoleCategory;
 type HopeHubSupportPathFilter = '' | HopeHubSupportPath;
 
@@ -397,12 +371,12 @@ export class DoctorsPage {
   async loadProviderRoles() {
     try {
       const response = await this.api.listProviderRoles();
-      this.careTeamTypeOptions = (response.roles || []).map((role: any) => ({
+      this.careTeamTypeOptions = (response.roles || []).map((role) => ({
         value: role.code,
         label: role.label,
       }));
       this.roleCategoryByCode = new Map(
-        (response.roles || []).map((role: any) => [role.code, role.category]),
+        (response.roles || []).map((role) => [role.code, role.category]),
       );
     } catch {
       this.careTeamTypeOptions = PROVIDER_ROLE_OPTIONS;

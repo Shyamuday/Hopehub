@@ -38,83 +38,12 @@ export const SPECIALTY_FOCUS_LABELS: Record<HomeopathicSpecialtyFocus, string> =
   CHRONIC_DISEASES: 'Chronic Diseases',
 };
 
-export type DoctorProfileSummary = {
-  providerDomain?: 'HOMEOPATHY' | 'HOPE_HUB';
-  specialty?: string;
-  registrationNo?: string | null;
-  isAvailable?: boolean;
+export type DoctorProfileSummary = Omit<
+  ProviderProfileSummaryDto,
+  'doctorType' | 'specialtyFocus'
+> & {
   doctorType?: HomeopathicDoctorType;
   specialtyFocus?: HomeopathicSpecialtyFocus | null;
-  doctorTypeLabel?: string;
-  specialtyFocusLabel?: string | null;
-  designation?: string | null;
-  bio?: string | null;
-  yearsOfExperience?: number | null;
-  focusAreas?: string[];
-  mentalHealthProfile?: {
-    careTeamType?: string;
-    careTeamTypes?: string[];
-    qualifications: string[];
-    qualifiedFrom?: string | null;
-    licenseNumber?: string | null;
-    licenseCouncil?: string | null;
-    languages: string[];
-    modalities: string[];
-    sessionTypes: string[];
-    ageGroups: string[];
-    concernsHandled: string[];
-    introSessionTitle?: string | null;
-    counsellingApproach?: string | null;
-    safetyEscalationNote?: string | null;
-    listenerSafetyAcknowledgedAt?: string | null;
-    listenerSafetyAcknowledgedVersion?: string | null;
-    onboardingPathSelectedAt?: string | null;
-    listenerScreening?: {
-      score?: number | null;
-      maxScore?: number | null;
-      passed?: boolean | null;
-      completedAt?: string | null;
-      questionSetVersion?: string | null;
-    } | null;
-    acceptsHighRiskCases: boolean;
-    autoMatchEnabled?: boolean;
-    acceptingNewUsers?: boolean;
-    maxSessionsPerDay?: number | null;
-    maxSessionsPerWeek?: number | null;
-    services?: Array<{
-      providerRole?: string | null;
-      title: string;
-      description?: string | null;
-      pricingMode?:
-        'FIXED' | 'FREE_INTRO' | 'DISCOUNTED_FIRST' | 'PACKAGE' | 'FREE_VOLUNTEER' | 'PER_MINUTE';
-      priceInPaise: number;
-      firstSessionPriceInPaise?: number | null;
-      followUpPriceInPaise?: number | null;
-      introSessionLimit?: number;
-      packageSessionCount?: number | null;
-      packagePriceInPaise?: number | null;
-      freeMinutes?: number;
-      pricePerMinuteInPaise?: number | null;
-      durationMinutes: number;
-      isFree?: boolean;
-      isActive?: boolean;
-      sortOrder?: number;
-    }>;
-  } | null;
-  providerClassification?: ProviderClassification;
-  roleAssignments?: Array<{
-    roleCode: string;
-    isPrimary: boolean;
-    status: string;
-    credentialStatus: string;
-    role: { category: string; label: string; isClinicalCare: boolean };
-  }>;
-  showOnWebsite?: boolean;
-  suspendedAt?: string | null;
-  suspendedReason?: string | null;
-  suspendedById?: string | null;
-  defaultMethodOptionId?: string | null;
-  defaultMethodOption?: { id: string; label: string } | null;
 };
 
 export const CLINICAL_MENTAL_HEALTH_CARE_TEAM_TYPES = PROVIDER_ROLE_GROUPS.PROFESSIONAL_CARE;
@@ -360,4 +289,5 @@ import {
   providerHasRoleCategory,
   providerRoleLabel,
   type ProviderClassification,
+  type ProviderProfileSummaryDto,
 } from '@hopehub/contracts';

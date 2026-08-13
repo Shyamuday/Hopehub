@@ -6,6 +6,7 @@ import { API_PATHS } from '../constants/api-paths.constants';
 import type { DoctorProfileSummary } from '../constants/doctor-types.constants';
 import { capabilitiesForProvider } from '../constants/doctor-types.constants';
 import { navItemsForDoctorProfile } from '../constants/doctor-nav.constants';
+import type { ProviderReadinessDto } from '@hopehub/contracts';
 
 export type DoctorSession = {
   name: string;
@@ -15,18 +16,7 @@ export type DoctorSession = {
   doctorProfile: DoctorProfileSummary | null;
 };
 
-export type ProviderReadinessBlocker = {
-  code: string;
-  label: string;
-  action?: string;
-};
-
-export type ProviderReadiness = {
-  ready: boolean;
-  code: string;
-  message: string;
-  blockers: ProviderReadinessBlocker[];
-};
+export type ProviderReadiness = ProviderReadinessDto;
 
 @Service()
 export class DoctorSessionService {

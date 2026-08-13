@@ -5,6 +5,7 @@ import { CLINIC_API_BASE_URL } from '@hopehub/clinic-api';
 import { AdminCanDirective } from '../../core/directives/admin-can.directive';
 import { ADMIN_PERMISSIONS, staffHasAllPermissions } from '../../core/admin-permissions';
 import { AdminAuth } from '../../core/services/admin-auth';
+import type { ProviderRoleDefinitionDto, ProviderSessionMode } from '@hopehub/contracts';
 
 type ProviderRoleForm = {
   code: string;
@@ -17,7 +18,7 @@ type ProviderRoleForm = {
   bestForText: string;
   notForText: string;
   ctaLabel: string;
-  supportedModes: string[];
+  supportedModes: ProviderSessionMode[];
   requiresCredentials: boolean;
   requiresListenerScreening: boolean;
   isClinicalCare: boolean;
@@ -42,7 +43,7 @@ export class ProviderRolesPage implements OnInit {
     staffHasAllPermissions(this.auth.user(), this.managePermission),
   );
 
-  readonly roles = signal<any[]>([]);
+  readonly roles = signal<ProviderRoleDefinitionDto[]>([]);
   readonly loading = signal(true);
   readonly saving = signal(false);
   readonly error = signal('');
@@ -56,7 +57,9 @@ export class ProviderRolesPage implements OnInit {
   load(): void {
     this.loading.set(true);
     this.http
-      .get<{ roles: any[] }>(`${this.apiBase}/admin/provider-roles?includeInactive=true`)
+      .get<{ roles: ProviderRoleDefinitionDto[] }>(
+        `${this.apiBase}/admin/provider-roles?includeInactive=true`,
+      )
       .subscribe({
         next: ({ roles }) => {
           this.roles.set(roles);
@@ -70,7 +73,7 @@ export class ProviderRolesPage implements OnInit {
       });
   }
 
-  edit(role: any): void {
+  edit(role: ProviderRoleDefinitionDto): void {
     this.form.set({
       ...role,
       bestForText: (role.bestFor || []).join('\n'),
@@ -89,7 +92,7 @@ export class ProviderRolesPage implements OnInit {
     this.form.update((form) => ({ ...form, [key]: value }));
   }
 
-  toggleMode(mode: string): void {
+  toggleMode(mode: ProviderSessionMode): void {
     const current = this.form().supportedModes;
     this.setField(
       'supportedModes',
@@ -105,16 +108,14 @@ export class ProviderRolesPage implements OnInit {
       return;
     }
     const exists = this.roles().some((role) => role.code === form.code);
+    const { bestForText, notForText, version: _version, code, ...fields } = form;
     const payload = {
-      ...form,
+      ...fields,
       domain: 'HOPE_HUB',
-      bestFor: this.lines(form.bestForText),
-      notFor: this.lines(form.notForText),
-    } as any;
-    delete payload.bestForText;
-    delete payload.notForText;
-    delete payload.version;
-    if (exists) delete payload.code;
+      ...(!exists ? { code } : {}),
+      bestFor: this.lines(bestForText),
+      notFor: this.lines(notForText),
+    };
 
     this.saving.set(true);
     this.error.set('');

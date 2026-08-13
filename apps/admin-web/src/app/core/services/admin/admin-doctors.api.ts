@@ -7,6 +7,11 @@ import { FILTER_ALL, SORT_DIRECTIONS } from '../../../shared/constants/filter.co
 import { PAGE_SIZES } from '../../constants/pagination.constants';
 import type { DoctorSortField } from '../../../features/doctors/constants/doctors-list.constants';
 import type { SortDirection } from '../../../shared/constants/filter.constants';
+import type {
+  CarePricingTemplateDto,
+  ProviderReadinessDto,
+  ProviderRoleDefinitionDto,
+} from '@hopehub/contracts';
 
 import { AdminApiBase } from './admin-api-base';
 
@@ -14,9 +19,12 @@ import { AdminApiBase } from './admin-api-base';
 export class AdminDoctorsApi extends AdminApiBase {
   listProviderRoles() {
     return firstValueFrom(
-      this.http.get<{ roles: Array<any> }>(`${this.apiBase}/admin/provider-roles`, {
-        params: { includeInactive: 'false' },
-      }),
+      this.http.get<{ roles: ProviderRoleDefinitionDto[] }>(
+        `${this.apiBase}/admin/provider-roles`,
+        {
+          params: { includeInactive: 'false' },
+        },
+      ),
     );
   }
 
@@ -112,7 +120,7 @@ export class AdminDoctorsApi extends AdminApiBase {
 
   getDoctorReadiness(doctorId: string) {
     return firstValueFrom(
-      this.http.get<{ readiness: any }>(
+      this.http.get<{ readiness: ProviderReadinessDto }>(
         `${this.apiBase}${API_PATHS.ADMIN.DOCTORS}/${doctorId}/readiness`,
       ),
     );
@@ -273,7 +281,7 @@ export class AdminDoctorsApi extends AdminApiBase {
 
   listCareTeamPricingTemplates() {
     return firstValueFrom(
-      this.http.get<{ templates: Array<any> }>(
+      this.http.get<{ templates: CarePricingTemplateDto[] }>(
         `${this.apiBase}/hope-hub/care-team-pricing-templates`,
       ),
     );
@@ -281,24 +289,29 @@ export class AdminDoctorsApi extends AdminApiBase {
 
   listAdminCarePricingTemplates() {
     return firstValueFrom(
-      this.http.get<{ templates: Array<any> }>(
+      this.http.get<{ templates: CarePricingTemplateDto[] }>(
         `${this.apiBase}/admin/hope-hub/care-pricing-templates`,
       ),
     );
   }
 
-  createCarePricingTemplate(payload: any) {
+  createCarePricingTemplate(
+    payload: Omit<CarePricingTemplateDto, 'id' | 'createdAt' | 'updatedAt'>,
+  ) {
     return firstValueFrom(
-      this.http.post<{ template: any }>(
+      this.http.post<{ template: CarePricingTemplateDto }>(
         `${this.apiBase}/admin/hope-hub/care-pricing-templates`,
         payload,
       ),
     );
   }
 
-  updateCarePricingTemplate(id: string, payload: any) {
+  updateCarePricingTemplate(
+    id: string,
+    payload: Partial<Omit<CarePricingTemplateDto, 'id' | 'createdAt' | 'updatedAt'>>,
+  ) {
     return firstValueFrom(
-      this.http.put<{ template: any }>(
+      this.http.put<{ template: CarePricingTemplateDto }>(
         `${this.apiBase}/admin/hope-hub/care-pricing-templates/${encodeURIComponent(id)}`,
         payload,
       ),
@@ -307,7 +320,7 @@ export class AdminDoctorsApi extends AdminApiBase {
 
   deactivateCarePricingTemplate(id: string) {
     return firstValueFrom(
-      this.http.delete<{ template: any }>(
+      this.http.delete<{ template: CarePricingTemplateDto }>(
         `${this.apiBase}/admin/hope-hub/care-pricing-templates/${encodeURIComponent(id)}`,
       ),
     );

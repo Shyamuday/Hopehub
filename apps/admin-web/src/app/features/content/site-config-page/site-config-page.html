@@ -50,6 +50,19 @@
       placeholder="Template title"
       (input)="updateDraft('title', $any($event.target).value)"
     />
+    <fieldset class="template-role-scope">
+      <legend>Available to roles (none selected = all roles)</legend>
+      @for (role of providerRoles(); track role.code) {
+        <label>
+          <input
+            type="checkbox"
+            [checked]="templateDraft().applicableRoleCodes.includes(role.code)"
+            (change)="toggleTemplateRole(templateDraft(), role.code, $any($event.target).checked)"
+          />
+          {{ role.label }}
+        </label>
+      }
+    </fieldset>
     <select
       [value]="templateDraft().pricingMode"
       (change)="updateDraft('pricingMode', $any($event.target).value)"
@@ -88,6 +101,19 @@
     @for (template of templates(); track template.id; let i = $index) {
       <article class="template-card" [class.template-card--inactive]="!template.isActive">
         <input [value]="template.title" placeholder="Template title" (input)="updateTemplate(i, 'title', $any($event.target).value)" />
+        <fieldset class="template-role-scope">
+          <legend>Available to roles (none selected = all roles)</legend>
+          @for (role of providerRoles(); track role.code) {
+            <label>
+              <input
+                type="checkbox"
+                [checked]="template.applicableRoleCodes.includes(role.code)"
+                (change)="toggleTemplateRole(template, role.code, $any($event.target).checked, i)"
+              />
+              {{ role.label }}
+            </label>
+          }
+        </fieldset>
         <select [value]="template.pricingMode" (change)="updateTemplate(i, 'pricingMode', $any($event.target).value)">
           @for (mode of pricingModeOptions; track mode.value) {
             <option [value]="mode.value">{{ mode.label }}</option>

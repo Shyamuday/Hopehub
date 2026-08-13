@@ -66,11 +66,15 @@ export function supportPathForProvider(
     | 'supportTierTone'
     | 'careTeamType'
     | 'supportRoleLabel'
+    | 'supportRoleCategory'
     | 'supportTierLabel'
     | 'isClinicalCare'
     | 'isScreenedListener'
   >,
 ): ConsumerSupportPath {
+  if (isConsumerSupportPath(provider.supportRoleCategory)) {
+    return provider.supportRoleCategory;
+  }
   const role = provider.supportRole || provider.careTeamType || '';
   const canonicalPath = supportPathForProviderRole(role);
   if (canonicalPath) return canonicalPath;

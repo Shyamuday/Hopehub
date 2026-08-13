@@ -109,6 +109,15 @@ const leadUpdateSchema = z.object({
 });
 
 const carePricingTemplateSchema = z.object({
+  applicableRoleCodes: z
+    .array(
+      z
+        .string()
+        .trim()
+        .regex(/^[A-Z][A-Z0-9_]{2,63}$/)
+    )
+    .max(30)
+    .default([]),
   title: z.string().trim().min(2).max(160),
   description: emptyToNull,
   pricingMode: z.nativeEnum(CareTeamServicePricingMode).default(CareTeamServicePricingMode.FIXED),
@@ -127,6 +136,16 @@ const carePricingTemplateSchema = z.object({
 });
 
 const MAX_HOPE_HUB_MEDIA_BYTES = 5 * 1024 * 1024;
+
+async function invalidPricingTemplateRoles(roleCodes: readonly string[]) {
+  if (!roleCodes.length) return [];
+  const roles = await prisma.providerRoleDefinition.findMany({
+    where: { code: { in: [...roleCodes] }, isActive: true },
+    select: { code: true }
+  });
+  const valid = new Set(roles.map((role) => role.code));
+  return roleCodes.filter((code) => !valid.has(code));
+}
 
 async function parseHopeHubMediaUpload(req: import('express').Request) {
   const form = await parseMultipartForm(req, { maxFileBytes: MAX_HOPE_HUB_MEDIA_BYTES });
@@ -183,6 +202,12 @@ export function registerAdminHopeHubOfferingRoutes(router: Router) {
     allowRoles(Role.ADMIN, Role.MARKETING),
     asyncRoute(async (req, res) => {
       const body = carePricingTemplateSchema.parse(req.body);
+      const invalidRoles = await invalidPricingTemplateRoles(body.applicableRoleCodes);
+      if (invalidRoles.length) {
+        return res.status(400).json({
+          message: `Unknown or inactive provider role: ${invalidRoles.join(', ')}`
+        });
+      }
       const template = await prisma.careTeamPricingTemplate.create({ data: body });
       await writeAuditLog({
         actorId: req.user!.id,
@@ -203,6 +228,12 @@ export function registerAdminHopeHubOfferingRoutes(router: Router) {
     asyncRoute(async (req, res) => {
       const id = routeParam(req, 'id');
       const body = carePricingTemplateSchema.partial().parse(req.body);
+      const invalidRoles = await invalidPricingTemplateRoles(body.applicableRoleCodes ?? []);
+      if (invalidRoles.length) {
+        return res.status(400).json({
+          message: `Unknown or inactive provider role: ${invalidRoles.join(', ')}`
+        });
+      }
       const template = await prisma.careTeamPricingTemplate.update({ where: { id }, data: body });
       await writeAuditLog({
         actorId: req.user!.id,

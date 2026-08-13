@@ -34,6 +34,31 @@ function readyProfile(careTeamTypes: string[]): DoctorProfileSummary {
 const readySnapshot = { ready: true, blockers: [] };
 
 describe('provider onboarding role flows', () => {
+  it('renders backend-authored onboarding steps without recalculating requirements', () => {
+    const backendStep = {
+      id: 'care',
+      title: 'Support details',
+      description: 'Configured by the readiness API.',
+      actionLabel: 'Continue',
+      route: '/profile',
+      queryParams: { step: 'care' },
+      complete: false,
+      required: true,
+      missing: ['Choose an active provider role.'],
+    };
+    const status = buildProviderOnboardingStatus(null, null, {
+      ready: false,
+      title: 'Peer listener onboarding',
+      subtitle: 'Complete one step at a time.',
+      percent: 40,
+      blockers: [],
+      steps: [backendStep],
+    });
+    expect(status.title).toBe('Peer listener onboarding');
+    expect(status.percent).toBe(40);
+    expect(status.steps).toEqual([backendStep]);
+  });
+
   it('completes a psychologist when backend readiness is ready', () => {
     const status = buildProviderOnboardingStatus(
       readyProfile(['MENTAL_WELLNESS_PROFESSIONAL']),

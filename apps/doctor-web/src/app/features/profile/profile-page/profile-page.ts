@@ -4,7 +4,12 @@ import { form, FormField } from '@angular/forms/signals';
 import { ActivatedRoute, Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { MultiSelectComponent, ProfileAvatarUploadComponent } from '@hopehub/platform-ui';
-import { PROVIDER_ROLE_CODES } from '@hopehub/contracts';
+import {
+  PROVIDER_ROLE_CODES,
+  type CarePricingTemplateDto,
+  type ProviderRoleDefinitionDto,
+  type ProviderTaxonomyResponse,
+} from '@hopehub/contracts';
 import { environment } from '../../../../environments/environment';
 import { API_PATHS } from '../../../core/constants/api-paths.constants';
 import { ROUTE_PATHS } from '../../../core/constants/app-routes.constants';
@@ -28,117 +33,6 @@ const CARE_TEAM_TYPE_OPTIONS = PROVIDER_ROLE_CODES;
 type ProfileCareTeamType = string;
 type SelectableProfileCareTeamType = ProfileCareTeamType | 'OTHER';
 type ProfileSetupStepId = 'identity' | 'public' | 'care' | 'safety' | 'services';
-
-const SUGGESTED_SERVICES_BY_CARE_TEAM_TYPE: Partial<
-  Record<
-    ProfileCareTeamType,
-    Array<{
-      title: string;
-      description: string;
-      pricingMode: string;
-      priceInPaise: number;
-      durationMinutes: number;
-    }>
-  >
-> = {
-  MENTAL_WELLNESS_PROFESSIONAL: [
-    {
-      title: 'Mental wellness consultation',
-      description:
-        'Structured support for anxiety, stress, mood, relationship, or emotional concerns.',
-      pricingMode: 'FIXED',
-      priceInPaise: 99900,
-      durationMinutes: 45,
-    },
-    {
-      title: 'Follow-up counselling session',
-      description: 'A focused follow-up to review progress, coping tools, and next steps.',
-      pricingMode: 'FIXED',
-      priceInPaise: 79900,
-      durationMinutes: 30,
-    },
-  ],
-  QUALIFIED_COUNSELLOR: [
-    {
-      title: 'Counselling session',
-      description:
-        'Supportive counselling for stress, relationships, self-esteem, grief, or life transitions.',
-      pricingMode: 'FIXED',
-      priceInPaise: 69900,
-      durationMinutes: 45,
-    },
-  ],
-  PSYCHOLOGY_STUDENT_VOLUNTEER: [
-    {
-      title: 'Supervised emotional support chat',
-      description: 'Non-clinical listening and emotional support under Hope Hub safety guidelines.',
-      pricingMode: 'FIXED',
-      priceInPaise: 9900,
-      durationMinutes: 30,
-    },
-    {
-      title: 'Supervised emotional support voice call',
-      description: 'Non-clinical voice support for users who need someone to listen.',
-      pricingMode: 'FIXED',
-      priceInPaise: 9900,
-      durationMinutes: 30,
-    },
-  ],
-  PEER_SUPPORT_VOLUNTEER: [
-    {
-      title: 'Peer support chat',
-      description:
-        'Non-clinical peer listening for venting, loneliness, breakup stress, and daily pressure.',
-      pricingMode: 'FIXED',
-      priceInPaise: 9900,
-      durationMinutes: 30,
-    },
-    {
-      title: 'Peer support voice call',
-      description: 'A gentle non-clinical support call focused on listening and grounding.',
-      pricingMode: 'FIXED',
-      priceInPaise: 9900,
-      durationMinutes: 30,
-    },
-  ],
-  NLP_COACH: [
-    {
-      title: 'Mindset coaching session',
-      description:
-        'Goal-focused coaching for confidence, patterns, motivation, and personal clarity.',
-      pricingMode: 'FIXED',
-      priceInPaise: 79900,
-      durationMinutes: 45,
-    },
-  ],
-  LIFE_COACH: [
-    {
-      title: 'Life coaching session',
-      description: 'Coaching for decisions, habits, boundaries, direction, and personal growth.',
-      pricingMode: 'FIXED',
-      priceInPaise: 79900,
-      durationMinutes: 45,
-    },
-  ],
-  MEDITATION_BREATHWORK_GUIDE: [
-    {
-      title: 'Breathwork / calming session',
-      description: 'Guided breathing, grounding, and relaxation practice for emotional regulation.',
-      pricingMode: 'FIXED',
-      priceInPaise: 49900,
-      durationMinutes: 30,
-    },
-  ],
-  CAREER_STUDY_MENTOR: [
-    {
-      title: 'Career / study mentoring',
-      description: 'Support for study pressure, career confusion, focus, planning, and confidence.',
-      pricingMode: 'FIXED',
-      priceInPaise: 49900,
-      durationMinutes: 30,
-    },
-  ],
-};
 
 function emptyProfileModel() {
   return {
@@ -216,9 +110,9 @@ export class ProfilePage implements OnDestroy {
     ...CARE_TEAM_TYPE_OPTIONS.map((value) => ({ value, label: CARE_TEAM_TYPE_LABELS[value] })),
     { value: 'OTHER', label: 'Other' },
   ];
-  private roleDefinitions = new Map<string, any>();
+  private roleDefinitions = new Map<string, ProviderRoleDefinitionDto>();
   readonly careServices = signal<Array<any>>([]);
-  readonly carePricingTemplates = signal<Array<any>>([]);
+  readonly carePricingTemplates = signal<CarePricingTemplateDto[]>([]);
 
   methodOptions: Array<{ id: string; label: string }> = [];
   doctorTypeLabel = '';
@@ -304,16 +198,26 @@ export class ProfilePage implements OnDestroy {
 
   suggestedServicesForSelectedSubtypes() {
     const seen = new Set<string>();
-    return this.selectedStructuredCareTeamTypes()
-      .flatMap((type) =>
-        (SUGGESTED_SERVICES_BY_CARE_TEAM_TYPE[type] || []).map((service) => ({
-          ...service,
-          providerRole: type,
-          subtype: this.roleLabel(type),
-        })),
+    const selectedRoles = this.selectedStructuredCareTeamTypes();
+    return this.carePricingTemplates()
+      .filter(
+        (template) =>
+          !template.applicableRoleCodes.length ||
+          template.applicableRoleCodes.some((role) => selectedRoles.includes(role)),
       )
+      .map((template) => {
+        const providerRole =
+          template.applicableRoleCodes.find((role) => selectedRoles.includes(role)) ||
+          selectedRoles[0] ||
+          this.profileModel().careTeamType;
+        return {
+          ...template,
+          providerRole,
+          subtype: this.roleLabel(providerRole),
+        };
+      })
       .filter((service) => {
-        const key = `${service.title}:${service.durationMinutes}`;
+        const key = service.id;
         if (seen.has(key)) return false;
         seen.add(key);
         return true;
@@ -704,11 +608,16 @@ export class ProfilePage implements OnDestroy {
   async loadCarePricingTemplates() {
     try {
       const res = await firstValueFrom(
-        this.http.get<{ templates: Array<any> }>(
+        this.http.get<{ templates: CarePricingTemplateDto[] }>(
           `${this.apiBase}/hope-hub/care-team-pricing-templates`,
         ),
       );
-      this.carePricingTemplates.set(res.templates);
+      this.carePricingTemplates.set(
+        res.templates.map((template) => ({
+          ...template,
+          applicableRoleCodes: template.applicableRoleCodes ?? [],
+        })),
+      );
     } catch {
       this.carePricingTemplates.set([]);
     }
@@ -717,9 +626,11 @@ export class ProfilePage implements OnDestroy {
   async loadProviderTaxonomy() {
     try {
       const taxonomy = await firstValueFrom(
-        this.http.get<{ roles: any[] }>(`${this.apiBase}/provider-taxonomy`),
+        this.http.get<ProviderTaxonomyResponse>(`${this.apiBase}/provider-taxonomy`),
       );
-      this.roleDefinitions = new Map((taxonomy.roles || []).map((role) => [role.code, role]));
+      this.roleDefinitions = new Map<string, ProviderRoleDefinitionDto>(
+        (taxonomy.roles || []).map((role) => [role.code, role]),
+      );
       this.careTeamTypeOptions = [
         ...(taxonomy.roles || []).map((role) => ({ value: role.code, label: role.label })),
         { value: 'OTHER', label: 'Other' },
@@ -1104,7 +1015,7 @@ export class ProfilePage implements OnDestroy {
         providerRole: this.profileModel().careTeamType,
         title: '',
         pricingMode: 'FIXED',
-        priceInPaise: 50000,
+        priceInPaise: 0,
         firstSessionPriceInPaise: null,
         followUpPriceInPaise: null,
         introSessionLimit: 1,
@@ -1125,28 +1036,36 @@ export class ProfilePage implements OnDestroy {
   addSuggestedService(service: {
     providerRole: ProfileCareTeamType;
     title: string;
-    description: string;
-    pricingMode: string;
+    description?: string | null;
+    pricingMode: CarePricingTemplateDto['pricingMode'];
     priceInPaise: number;
+    firstSessionPriceInPaise?: number | null;
+    followUpPriceInPaise?: number | null;
+    introSessionLimit?: number;
+    packageSessionCount?: number | null;
+    packagePriceInPaise?: number | null;
+    freeMinutes?: number;
+    pricePerMinuteInPaise?: number | null;
     durationMinutes: number;
+    isFree?: boolean;
   }) {
     this.careServices.update((services) => [
       ...services,
       {
         providerRole: service.providerRole,
         title: service.title,
-        description: service.description,
+        description: service.description || '',
         pricingMode: service.pricingMode,
         priceInPaise: service.priceInPaise,
-        firstSessionPriceInPaise: null,
-        followUpPriceInPaise: null,
-        introSessionLimit: 1,
-        packageSessionCount: null,
-        packagePriceInPaise: null,
-        freeMinutes: 0,
-        pricePerMinuteInPaise: null,
+        firstSessionPriceInPaise: service.firstSessionPriceInPaise ?? null,
+        followUpPriceInPaise: service.followUpPriceInPaise ?? null,
+        introSessionLimit: service.introSessionLimit ?? 1,
+        packageSessionCount: service.packageSessionCount ?? null,
+        packagePriceInPaise: service.packagePriceInPaise ?? null,
+        freeMinutes: service.freeMinutes ?? 0,
+        pricePerMinuteInPaise: service.pricePerMinuteInPaise ?? null,
         durationMinutes: service.durationMinutes,
-        isFree: service.priceInPaise === 0,
+        isFree: service.isFree || service.priceInPaise === 0,
         isActive: true,
         sortOrder: services.length,
       },
@@ -1219,6 +1138,14 @@ export class ProfilePage implements OnDestroy {
             }
           : service,
       ),
+    );
+  }
+
+  pricingTemplatesForRole(roleCode?: string | null): CarePricingTemplateDto[] {
+    return this.carePricingTemplates().filter(
+      (template) =>
+        !template.applicableRoleCodes.length ||
+        Boolean(roleCode && template.applicableRoleCodes.includes(roleCode)),
     );
   }
 

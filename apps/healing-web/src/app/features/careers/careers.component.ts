@@ -1,13 +1,17 @@
 import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import {
   PROVIDER_ROLE_CODES,
   PROVIDER_ROLE_DEFINITIONS,
   providerApplicationTrackForRole,
+  type ProviderRoleDefinitionDto,
+  type ProviderTaxonomyResponse,
   type ProviderApplicationTrack,
-  type ProviderRoleCode,
 } from '@hopehub/contracts';
+import { firstValueFrom } from 'rxjs';
+import { environment } from '../../../environments/environment';
 import { NOTE_CONTENT } from '../../core/constants/note-content.constants';
 import {
   LISTENER_GUIDELINES_SECTIONS,
@@ -29,7 +33,7 @@ import {
 } from '../../shared/components';
 
 type CareContributorTrack = ProviderApplicationTrack;
-type CareTeamMemberType = ProviderRoleCode;
+type CareTeamMemberType = string;
 type ListenerScreeningQuestion = {
   id: string;
   text: string;
@@ -57,6 +61,7 @@ export class CareersComponent implements OnInit, OnDestroy {
   private readonly leadService = inject(LeadService);
   private readonly loadingService = inject(LoadingService);
   private readonly notificationService = inject(NotificationService);
+  private readonly http = inject(HttpClient);
 
   readonly isSubmitting = signal(false);
   readonly successMessage = signal('');
@@ -80,7 +85,7 @@ export class CareersComponent implements OnInit, OnDestroy {
   readonly listenerTrainingModules = LISTENER_TRAINING_MODULES;
   private listenerGuidelinesTimerId: ReturnType<typeof setInterval> | null = null;
   private listenerGuidelinesReadStartedAtMs: number | null = null;
-  readonly applicationTracks: Array<{
+  applicationTracks: Array<{
     value: CareTeamMemberType;
     track: CareContributorTrack;
     title: string;
@@ -158,7 +163,36 @@ export class CareersComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    void this.loadProviderTaxonomy();
     this.loadListenerScreeningQuestionSet();
+  }
+
+  private async loadProviderTaxonomy(): Promise<void> {
+    try {
+      const taxonomy = await firstValueFrom(
+        this.http.get<ProviderTaxonomyResponse>(`${environment.apiUrl}/provider-taxonomy`),
+      );
+      const roles = taxonomy.roles.filter((role) => role.domain === 'HOPE_HUB' && role.isActive);
+      if (!roles.length) return;
+      this.applicationTracks = roles.map((role) => ({
+        value: role.code,
+        track: this.applicationTrackForDefinition(role),
+        title: role.label,
+        description: role.description,
+      }));
+    } catch {
+      // Built-in roles remain as a resilient fallback during staggered deployments.
+    }
+  }
+
+  private applicationTrackForDefinition(role: ProviderRoleDefinitionDto): CareContributorTrack {
+    if (role.code === 'PSYCHOLOGY_STUDENT_VOLUNTEER') {
+      return 'PSYCHOLOGY_STUDENT_VOLUNTEER';
+    }
+    if (role.requiresListenerScreening || role.category === 'EMOTIONAL_LISTENER') {
+      return 'PEER_SUPPORT_VOLUNTEER';
+    }
+    return 'PROFESSIONAL_PSYCHOLOGIST';
   }
 
   ngOnDestroy(): void {

@@ -192,6 +192,7 @@ model CareTeamService {
 
 model CareTeamPricingTemplate {
   id                       String   @id @default(cuid())
+  applicableRoleCodes      String[] @default([])
   title                    String
   description              String?  @db.Text
   pricingMode              CareTeamServicePricingMode @default(FIXED)

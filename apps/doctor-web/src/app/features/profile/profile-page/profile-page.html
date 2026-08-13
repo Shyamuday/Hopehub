@@ -411,7 +411,7 @@
               <div class="template-row">
                 <select #serviceTemplate>
                   <option value="">Choose ready plan</option>
-                  @for (template of carePricingTemplates(); track template.id) {
+                  @for (template of pricingTemplatesForRole(service.providerRole); track template.id) {
                     <option [value]="template.id">{{ template.title }}</option>
                   }
                 </select>

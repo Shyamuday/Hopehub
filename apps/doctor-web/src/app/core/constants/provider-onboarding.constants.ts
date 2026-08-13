@@ -6,6 +6,7 @@ import {
   type DoctorProfileSummary,
 } from './doctor-types.constants';
 import { ROUTE_PATHS } from './app-routes.constants';
+import type { ProviderOnboardingStepDto } from '@hopehub/contracts';
 
 export type ProviderOnboardingStep = {
   id: string;
@@ -30,6 +31,10 @@ export type ProviderOnboardingStatus = {
 export type ProviderReadinessSnapshot = {
   ready: boolean;
   blockers: Array<{ code: string; label: string }>;
+  title?: string;
+  subtitle?: string;
+  percent?: number;
+  steps?: ProviderOnboardingStepDto[];
 };
 
 export function needsProviderPathSelection(profile?: DoctorProfileSummary | null): boolean {
@@ -95,6 +100,18 @@ export function buildProviderOnboardingStatus(
   profileImageUrl?: string | null,
   readiness?: ProviderReadinessSnapshot | null,
 ): ProviderOnboardingStatus {
+  // The API owns onboarding requirements. The local calculation below is only a
+  // compatibility fallback for older deployments and isolated unit fixtures.
+  if (readiness?.steps?.length) {
+    return {
+      title: readiness.title || 'Provider onboarding',
+      subtitle:
+        readiness.subtitle || 'Complete one step at a time to unlock your provider console.',
+      percent: readiness.percent ?? 0,
+      complete: readiness.ready,
+      steps: readiness.steps.map((step) => ({ ...step })),
+    };
+  }
   const hopeHub = isHopeHubProvider(profile);
   const listener = isListenerProfile(profile);
   const clinicalHopeHub = hopeHub && isClinicalHopeHubProfile(profile);

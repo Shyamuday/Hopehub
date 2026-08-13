@@ -1050,6 +1050,7 @@ function providerPublicPayload(
     designation: provider.designation,
     department: provider.department,
     supportRole,
+    supportRoleCategory: assignedDefinition?.category ?? null,
     supportRoleLabel: roleDisplay.label,
     supportTierLabel: roleDisplay.tierLabel,
     supportTierTone: roleDisplay.tone,
@@ -2974,12 +2975,27 @@ hopeHubRouter.get(
 
 hopeHubRouter.get(
   '/hope-hub/care-team-pricing-templates',
-  asyncRoute(async (_req, res) => {
+  asyncRoute(async (req, res) => {
+    const roleCodes = queryText(req, 'roleCodes')
+      .split(',')
+      .map((value) => value.trim())
+      .filter(Boolean);
     const templates = await prisma.careTeamPricingTemplate.findMany({
-      where: { isActive: true },
+      where: {
+        isActive: true,
+        ...(roleCodes.length
+          ? {
+              OR: [
+                { applicableRoleCodes: { isEmpty: true } },
+                { applicableRoleCodes: { hasSome: roleCodes } }
+              ]
+            }
+          : {})
+      },
       orderBy: [{ sortOrder: 'asc' }, { title: 'asc' }],
       select: {
         id: true,
+        applicableRoleCodes: true,
         title: true,
         description: true,
         pricingMode: true,

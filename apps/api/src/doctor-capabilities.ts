@@ -8,6 +8,11 @@ import {
   type DoctorTypeCapabilities
 } from './constants/homeopathic-doctor-types.js';
 import { prisma } from './db.js';
+import type {
+  ProviderOnboardingStepDto,
+  ProviderReadinessBlockerDto,
+  ProviderReadinessDto
+} from '@hopehub/contracts';
 
 function hasText(value?: string | null, minLength = 2) {
   return Boolean(value && value.trim().length >= minLength);
@@ -17,26 +22,150 @@ function hasList(values?: string[] | null) {
   return Boolean(values?.some((value) => value.trim().length > 0));
 }
 
-type ProviderReadinessBlocker = {
-  code: string;
-  label: string;
-  action?: string;
+type ProviderReadinessBlocker = ProviderReadinessBlockerDto;
+
+const BLOCKER_STEP: Record<string, string> = {
+  DOCTOR_PROFILE_REQUIRED: 'account',
+  PROVIDER_INACTIVE: 'account',
+  PROVIDER_SUSPENDED: 'account',
+  ACTIVE_PROVIDER_ROLE_REQUIRED: 'care',
+  NAME_REQUIRED: 'identity',
+  MOBILE_REQUIRED: 'identity',
+  GENDER_REQUIRED: 'identity',
+  PROFILE_PHOTO_REQUIRED: 'identity',
+  PROFILE_BIO_REQUIRED: 'public',
+  LANGUAGES_REQUIRED: 'care',
+  SESSION_TYPES_REQUIRED: 'care',
+  CONCERNS_REQUIRED: 'care',
+  QUALIFICATION_REQUIRED: 'care',
+  LICENSE_COUNCIL_REQUIRED: 'care',
+  LICENSE_NUMBER_REQUIRED: 'care',
+  SAFETY_SCOPE_REQUIRED: 'safety',
+  LISTENER_SAFETY_REQUIRED: 'safety',
+  LISTENER_SCREENING_REQUIRED: 'screening',
+  ACTIVE_SERVICE_REQUIRED: 'services',
+  SERVICE_ROLE_MISMATCH: 'services',
+  PROVIDER_AVAILABILITY_OFF: 'availability',
+  NOT_ACCEPTING_USERS: 'availability'
 };
 
-function readinessResult(blockers: ProviderReadinessBlocker[]) {
-  if (!blockers.length) {
-    return {
-      ready: true,
-      code: 'READY',
-      message: 'Ready.',
-      blockers
-    };
+function readinessResult(
+  rawBlockers: ProviderReadinessBlocker[],
+  options: { providerLabel?: string; hopeHub?: boolean; listener?: boolean } = {}
+): ProviderReadinessDto {
+  const blockers = rawBlockers.map((blocker) => ({
+    ...blocker,
+    stepId: blocker.stepId ?? BLOCKER_STEP[blocker.code]
+  }));
+  const blockedSteps = new Map<string, string[]>();
+  for (const blocker of blockers) {
+    if (!blocker.stepId) continue;
+    const missing = blockedSteps.get(blocker.stepId) ?? [];
+    missing.push(blocker.label);
+    blockedSteps.set(blocker.stepId, missing);
   }
+  const step = (
+    definition: Omit<ProviderOnboardingStepDto, 'complete' | 'missing'>
+  ): ProviderOnboardingStepDto => ({
+    ...definition,
+    complete: !blockedSteps.has(definition.id),
+    missing: blockedSteps.get(definition.id) ?? []
+  });
+  const steps: ProviderOnboardingStepDto[] = [
+    step({
+      id: 'account',
+      title: 'Provider account ready',
+      description: 'Your provider account is active and ready for setup.',
+      actionLabel: 'View setup',
+      route: '/dashboard',
+      required: true
+    }),
+    step({
+      id: 'identity',
+      title: 'Basic identity',
+      description: 'Add your name, mobile number, gender, and profile photo.',
+      actionLabel: 'Complete identity',
+      route: '/profile',
+      queryParams: { step: 'identity' },
+      required: true
+    }),
+    step({
+      id: 'public',
+      title: 'Public profile',
+      description: 'Write a clear public bio so users know how you can help.',
+      actionLabel: 'Complete profile',
+      route: '/profile',
+      queryParams: { step: 'public' },
+      required: true
+    }),
+    ...(options.hopeHub
+      ? [
+          step({
+            id: 'care',
+            title: 'Support details',
+            description: 'Choose your roles, languages, session modes, concerns, and credentials.',
+            actionLabel: 'Add support details',
+            route: '/profile',
+            queryParams: { step: 'care' },
+            required: true
+          }),
+          ...(options.listener
+            ? [
+                step({
+                  id: 'screening',
+                  title: 'Listener screening',
+                  description: 'Complete the listener screening before supporting users.',
+                  actionLabel: 'Open screening',
+                  route: '/listener-screening',
+                  required: true
+                })
+              ]
+            : []),
+          step({
+            id: 'safety',
+            title: 'Safety and scope',
+            description: 'Confirm your boundaries and escalation process.',
+            actionLabel: 'Review safety',
+            route: '/profile',
+            queryParams: { step: 'safety' },
+            required: true
+          }),
+          step({
+            id: 'services',
+            title: 'Services and pricing',
+            description: 'Add at least one active service linked to an active provider role.',
+            actionLabel: 'Add services',
+            route: '/profile',
+            queryParams: { step: 'services' },
+            required: true
+          })
+        ]
+      : []),
+    step({
+      id: 'availability',
+      title: 'Availability',
+      description: 'Choose bookable times or turn on live availability.',
+      actionLabel: 'Set availability',
+      route: '/slots',
+      required: true
+    })
+  ];
+  const required = steps.filter((item) => item.required);
+  const completeCount = required.filter((item) => item.complete).length;
+  const ready = blockers.length === 0;
   return {
-    ready: false,
-    code: blockers[0]?.code ?? 'NOT_READY',
-    message: blockers[0]?.label ?? 'Complete required setup before accepting users.',
-    blockers
+    ready,
+    code: ready ? 'READY' : (blockers[0]?.code ?? 'NOT_READY'),
+    message: ready
+      ? 'Ready.'
+      : (blockers[0]?.label ?? 'Complete required setup before accepting users.'),
+    title: `${options.providerLabel || 'Provider'} onboarding`,
+    subtitle: ready
+      ? 'Your profile is ready for users.'
+      : 'Complete one step at a time to unlock your provider console.',
+    percent: Math.round((completeCount / Math.max(required.length, 1)) * 100),
+    blockers,
+    steps
   };
 }
 
@@ -176,7 +305,7 @@ export async function providerPublicReadiness(userId: string) {
         action: 'Open Profile and add a short public bio.'
       });
     }
-    return readinessResult(blockers);
+    return readinessResult(blockers, { providerLabel: 'Homeopathy provider' });
   }
 
   const mental = profile.mentalHealthProfile;
@@ -326,7 +455,13 @@ export async function providerPublicReadiness(userId: string) {
     }
   }
 
-  return readinessResult(blockers);
+  const primaryAssignment =
+    assignedRoles.find((assignment) => assignment.isPrimary) ?? assignedRoles[0];
+  return readinessResult(blockers, {
+    providerLabel: primaryAssignment?.role.label || 'Hope Hub provider',
+    hopeHub: true,
+    listener: isListener
+  });
 }
 
 export function requireDoctorCapability(

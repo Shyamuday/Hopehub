@@ -301,6 +301,7 @@ export type HopeHubProvider = {
     | 'STUDENT_VOLUNTEER'
     | 'VOLUNTEER';
   supportRoleLabel?: string;
+  supportRoleCategory?: string | null;
   supportTierLabel?: string;
   supportTierTone?: string;
   supportRoleDescription?: string;

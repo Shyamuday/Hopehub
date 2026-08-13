@@ -70,6 +70,36 @@
   }
 }
 
+.template-role-scope {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem 0.9rem;
+  margin: 0;
+  padding: 0.65rem;
+  border: 1px solid #dbe3ee;
+  border-radius: 8px;
+
+  legend {
+    padding: 0 0.3rem;
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: #475569;
+  }
+
+  label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.8rem;
+    color: #334155;
+  }
+
+  input {
+    min-height: auto;
+  }
+}
+
 .config-row {
   display: flex;
   gap: 1.5rem;
