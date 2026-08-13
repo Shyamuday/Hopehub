@@ -1,5 +1,5 @@
 <main class="screening-page">
-  <a class="back-link" [routerLink]="dashboardPath">← Back to setup</a>
+  <a class="back-link" [routerLink]="dashboardPath" [queryParams]="{ step: 'services' }">← Back to profile</a>
 
   @if (loading()) {
     <section class="screening-card"><p>Loading your screening test…</p></section>

@@ -45,7 +45,7 @@ export class ListenerScreeningPage {
   private readonly session = inject(DoctorSessionService);
   private readonly apiBase = environment.apiUrl;
 
-  readonly dashboardPath = `/${ROUTE_PATHS.DASHBOARD}`;
+  readonly dashboardPath = `/${ROUTE_PATHS.PROFILE}`;
   readonly availabilityPath = `/${ROUTE_PATHS.SLOTS}`;
   readonly loading = signal(true);
   readonly submitting = signal(false);

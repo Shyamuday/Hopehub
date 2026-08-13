@@ -1,9 +1,14 @@
 import { Component, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { form, FormField, required } from '@angular/forms/signals';
-import { DEFAULT_AUTHED_ROUTE } from '../../../core/constants/app-routes.constants';
+import { DEFAULT_AUTHED_ROUTE, ROUTE_PATHS } from '../../../core/constants/app-routes.constants';
+import {
+  buildProviderOnboardingStatus,
+  needsProviderPathSelection,
+} from '../../../core/constants/provider-onboarding.constants';
 import { PH_PROVIDER_LANGUAGE } from '../../../core/constants/provider-language.constants';
 import { Auth } from '../../../core/services/auth';
+import { DoctorSessionService } from '../../../core/services/doctor-session';
 import { AppButtonComponent } from '../../../shared/ui/app-button.component';
 
 @Component({
@@ -16,6 +21,7 @@ export class Login {
   private readonly auth = inject(Auth);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
+  private readonly session = inject(DoctorSessionService);
 
   mode = signal<'signin' | 'signup'>('signup');
   signupStep = signal<1 | 2>(1);
@@ -104,11 +110,39 @@ export class Login {
     this.signupStep.set(1);
   }
 
-  private navigateAfterLogin(): void {
+  private async navigateAfterLogin(): Promise<void> {
     const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl');
-    void this.router.navigateByUrl(
-      returnUrl && returnUrl.startsWith('/') ? returnUrl : `/${DEFAULT_AUTHED_ROUTE}`,
-    );
+    if (returnUrl && returnUrl.startsWith('/')) {
+      await this.router.navigateByUrl(returnUrl);
+      return;
+    }
+
+    try {
+      const profile = await this.session.load(true);
+      if (needsProviderPathSelection(profile.doctorProfile)) {
+        await this.router.navigate(['/', ROUTE_PATHS.WELCOME]);
+        return;
+      }
+      const readiness = await this.session.readiness();
+      const onboarding = buildProviderOnboardingStatus(
+        profile.doctorProfile,
+        profile.profileImageUrl ?? null,
+        readiness,
+      );
+      const nextStep = onboarding.steps.find((step) => step.required && !step.complete);
+      if (nextStep) {
+        await this.router.navigateByUrl(
+          this.router.createUrlTree([nextStep.route], {
+            queryParams: nextStep.queryParams || null,
+          }),
+        );
+        return;
+      }
+    } catch {
+      // Route guards provide a safe fallback if onboarding state cannot be loaded.
+    }
+
+    await this.router.navigateByUrl(`/${DEFAULT_AUTHED_ROUTE}`);
   }
 
   async submit() {
@@ -128,7 +162,7 @@ export class Login {
         this.error.set(result.message);
         return;
       }
-      void this.navigateAfterLogin();
+      await this.navigateAfterLogin();
     } finally {
       this.submitting.set(false);
     }
@@ -144,7 +178,7 @@ export class Login {
         this.error.set(result.message);
         return;
       }
-      void this.navigateAfterLogin();
+      await this.navigateAfterLogin();
     } finally {
       this.submitting.set(false);
     }
@@ -200,7 +234,7 @@ export class Login {
         this.error.set(result.message);
         return;
       }
-      void this.navigateAfterLogin();
+      await this.navigateAfterLogin();
     } finally {
       this.submitting.set(false);
     }

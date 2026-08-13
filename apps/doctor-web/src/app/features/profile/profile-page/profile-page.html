@@ -131,13 +131,14 @@
         ></textarea>
         <p class="char-hint">{{ profileModel().bio.length }} / 1200 · minimum 80 recommended</p>
 
-        <label for="focusAreas">Focus areas <span class="hint">(one per line)</span></label>
-        <textarea
-          id="focusAreas"
-          rows="4"
+        <label>Focus areas</label>
+        <app-tag-input
+          ariaLabel="Add a focus area"
           [placeholder]="focusAreasPlaceholder()"
-          [formField]="profileForm.focusAreasText"
-        ></textarea>
+          [suggestions]="concernSuggestions()"
+          [value]="profileModel().focusAreasText"
+          (valueChange)="setListField('focusAreasText', $event)"
+        />
       </div>
     }
 
@@ -200,14 +201,13 @@
         }
 
         <div class="grid two-column">
-          <label for="qualifications"
-            >Qualifications <span class="hint">(one per line)</span></label
-          >
-          <textarea
-            id="qualifications"
-            rows="3"
-            [formField]="profileForm.qualificationsText"
-          ></textarea>
+          <label>Qualifications</label>
+          <app-tag-input
+            ariaLabel="Add a qualification"
+            placeholder="e.g. MA Psychology"
+            [value]="profileModel().qualificationsText"
+            (valueChange)="setListField('qualificationsText', $event)"
+          />
 
           @if (!isListenerProfile()) {
             <label for="qualifiedFrom">Qualified / trained from</label>
@@ -230,17 +230,33 @@
             <input id="licenseNumber" [formField]="profileForm.licenseNumber" />
           }
 
-          <label for="languages">Languages <span class="hint">(one per line)</span></label>
-          <textarea id="languages" rows="3" [formField]="profileForm.languagesText"></textarea>
+          <label>Languages</label>
+          <app-tag-input
+            ariaLabel="Add a language"
+            placeholder="e.g. English"
+            [suggestions]="languageSuggestions"
+            [value]="profileModel().languagesText"
+            (valueChange)="setListField('languagesText', $event)"
+          />
 
           @if (isClinicalMentalHealthProfile()) {
-            <label for="modalities"
-              >Modalities <span class="hint">(CBT, DBT, ACT, etc.)</span></label
-            >
-            <textarea id="modalities" rows="3" [formField]="profileForm.modalitiesText"></textarea>
+            <label>Modalities</label>
+            <app-tag-input
+              ariaLabel="Add a therapeutic modality"
+              placeholder="e.g. CBT"
+              [suggestions]="methodSuggestions()"
+              [value]="profileModel().modalitiesText"
+              (valueChange)="setListField('modalitiesText', $event)"
+            />
           } @else if (isCoachGuideProfile()) {
-            <label for="modalities">Coaching / guidance methods</label>
-            <textarea id="modalities" rows="3" [formField]="profileForm.modalitiesText"></textarea>
+            <label>Coaching / guidance methods</label>
+            <app-tag-input
+              ariaLabel="Add a coaching or guidance method"
+              placeholder="e.g. Goal setting"
+              [suggestions]="methodSuggestions()"
+              [value]="profileModel().modalitiesText"
+              (valueChange)="setListField('modalitiesText', $event)"
+            />
           }
 
           <fieldset class="session-mode-options">
@@ -260,15 +276,23 @@
             }
           </fieldset>
 
-          <label for="ageGroups">Age groups served</label>
-          <textarea id="ageGroups" rows="3" [formField]="profileForm.ageGroupsText"></textarea>
+          <label>Age groups served</label>
+          <app-tag-input
+            ariaLabel="Add an age group"
+            placeholder="e.g. Adults"
+            [suggestions]="ageGroupSuggestions"
+            [value]="profileModel().ageGroupsText"
+            (valueChange)="setListField('ageGroupsText', $event)"
+          />
 
-          <label for="concernsHandled">Concerns handled</label>
-          <textarea
-            id="concernsHandled"
-            rows="4"
-            [formField]="profileForm.concernsHandledText"
-          ></textarea>
+          <label>Concerns handled</label>
+          <app-tag-input
+            ariaLabel="Add a concern"
+            placeholder="e.g. Anxiety"
+            [suggestions]="concernSuggestions()"
+            [value]="profileModel().concernsHandledText"
+            (valueChange)="setListField('concernsHandledText', $event)"
+          />
         </div>
       </section>
     }

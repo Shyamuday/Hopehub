@@ -62,7 +62,9 @@ export class ProviderPathPage {
         }),
       );
       await this.session.load(true);
-      await this.router.navigate(['/', ROUTE_PATHS.DASHBOARD]);
+      await this.router.navigate(['/', ROUTE_PATHS.PROFILE], {
+        queryParams: { step: 'identity' },
+      });
     } catch (error: any) {
       this.error.set(
         error?.error?.message || 'We could not save your support path. Please try again.',

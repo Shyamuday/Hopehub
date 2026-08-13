@@ -29,8 +29,16 @@ import {
 } from '../../../core/constants/doctor-types.constants';
 import { DoctorSessionService } from '../../../core/services/doctor-session';
 import { ProviderOnboardingDraftService } from '../../../core/services/provider-onboarding-draft.service';
+import {
+  PROVIDER_AGE_GROUP_SUGGESTIONS,
+  PROVIDER_CLINICAL_METHOD_SUGGESTIONS,
+  PROVIDER_COACHING_METHOD_SUGGESTIONS,
+  PROVIDER_LANGUAGE_SUGGESTIONS,
+  PROVIDER_LISTENER_METHOD_SUGGESTIONS,
+} from '../../../core/constants/provider-profile-options.constants';
 import { AppButtonComponent } from '../../../shared/ui/app-button.component';
 import { AppActionBarComponent } from '../../../shared/ui/app-action-bar.component';
+import { AppTagInputComponent } from '../../../shared/ui/app-tag-input.component';
 
 const LISTENER_SAFETY_ACKNOWLEDGEMENT_VERSION = 'listener-safety-v1-2026-08-07';
 const CARE_TEAM_TYPE_OPTIONS = PROVIDER_ROLE_CODES;
@@ -85,12 +93,15 @@ function emptyProfileModel() {
     MultiSelectComponent,
     AppButtonComponent,
     AppActionBarComponent,
+    AppTagInputComponent,
   ],
   templateUrl: './profile-page.html',
   styleUrl: './profile-page.scss',
 })
 export class ProfilePage implements OnDestroy {
   readonly sessionModes = PROVIDER_SESSION_MODES;
+  readonly languageSuggestions = PROVIDER_LANGUAGE_SUGGESTIONS;
+  readonly ageGroupSuggestions = PROVIDER_AGE_GROUP_SUGGESTIONS;
   private readonly http = inject(HttpClient);
   private readonly session = inject(DoctorSessionService);
   private readonly router = inject(Router);
@@ -353,6 +364,20 @@ export class ProfilePage implements OnDestroy {
       return 'e.g.\nConfidence building\nCareer stress\nBreathwork practice';
     }
     return 'e.g.\nAnxiety support\nRelationship stress\nStudent counselling';
+  }
+
+  concernSuggestions(): string[] {
+    const suggestions = this.selectedStructuredCareTeamTypes().flatMap(
+      (role) => this.roleDefinitions.get(role)?.bestFor ?? [],
+    );
+    return Array.from(new Set(suggestions));
+  }
+
+  methodSuggestions(): readonly string[] {
+    if (this.isListenerProfile()) return PROVIDER_LISTENER_METHOD_SUGGESTIONS;
+    if (this.isCoachGuideProfile()) return PROVIDER_COACHING_METHOD_SUGGESTIONS;
+    if (this.isClinicalMentalHealthProfile()) return PROVIDER_CLINICAL_METHOD_SUGGESTIONS;
+    return [];
   }
 
   approachLabel(): string {
@@ -653,6 +678,19 @@ export class ProfilePage implements OnDestroy {
     if (!lastStep) return 'Continue';
     if (this.isListenerProfile() && !this.listenerScreeningPassed) return 'Continue to screening';
     return 'Continue to availability';
+  }
+
+  setListField(
+    field:
+      | 'focusAreasText'
+      | 'qualificationsText'
+      | 'languagesText'
+      | 'modalitiesText'
+      | 'ageGroupsText'
+      | 'concernsHandledText',
+    value: string,
+  ) {
+    this.profileModel.update((current) => ({ ...current, [field]: value }));
   }
 
   primaryActiveService() {
