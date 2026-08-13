@@ -100,7 +100,11 @@ import {
 import { enabledNotificationChannels } from './services/notification-service.js';
 import { setNotificationSocket } from './services/in-app-notifications.js';
 import { setHopeHubLiveGroupSocket } from './services/hope-hub-live-groups-realtime.js';
-import { setOnlineDoctorPresenceSocket } from './services/online-doctor-presence.js';
+import {
+  expireStaleDoctorPresence,
+  setOnlineDoctorPresenceSocket
+} from './services/online-doctor-presence.js';
+import { ONLINE_PRESENCE_SWEEP_INTERVAL_MS } from './constants/online-doctor.constants.js';
 import { setConsultationRealtimeSocket } from './services/consultation-realtime.js';
 
 // ── App & HTTP server ──────────────────────────────────────────────────────────
@@ -383,6 +387,9 @@ httpServer.listen(port, () => {
   void runConsultationReminderSchedulers().catch((e) =>
     console.error('[scheduler] Initial consultation reminder scheduler run failed', e)
   );
+  void expireStaleDoctorPresence(io).catch((e) =>
+    console.error('[scheduler] Initial provider presence sweep failed', e)
+  );
 
   const doseTimer = setInterval(() => {
     void runDoseSchedulers().catch((e) =>
@@ -404,6 +411,13 @@ httpServer.listen(port, () => {
     );
   }, consultationReminderSweepIntervalMs);
   consultationReminderTimer.unref();
+
+  const providerPresenceTimer = setInterval(() => {
+    void expireStaleDoctorPresence(io).catch((e) =>
+      console.error('[scheduler] Provider presence sweep failed', e)
+    );
+  }, ONLINE_PRESENCE_SWEEP_INTERVAL_MS);
+  providerPresenceTimer.unref();
 
   void restoreEmployeesFromLeave().catch((e) =>
     console.error('[scheduler] Leave restore failed', e)

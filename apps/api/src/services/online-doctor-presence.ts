@@ -96,6 +96,40 @@ export function scheduleDoctorOfflineAfterDisconnect(userId: string, io?: Socket
   schedulePresenceCheck(ONLINE_HEARTBEAT_TTL_MS + 500);
 }
 
+export async function expireStaleDoctorPresence(io?: SocketIoServer) {
+  const cutoff = new Date(Date.now() - ONLINE_HEARTBEAT_TTL_MS);
+  const staleSessions = await prisma.doctorOnlineSession.findMany({
+    where: {
+      liveStatus: { not: LivePresenceStatus.OFFLINE },
+      OR: [{ lastHeartbeatAt: null }, { lastHeartbeatAt: { lt: cutoff } }]
+    },
+    select: { id: true, userId: true }
+  });
+  if (!staleSessions.length) return 0;
+
+  const realtime = io ?? onlineDoctorPresenceSocket;
+  let expiredCount = 0;
+  for (const session of staleSessions) {
+    const expired = await prisma.doctorOnlineSession.updateMany({
+      where: {
+        id: session.id,
+        liveStatus: { not: LivePresenceStatus.OFFLINE },
+        OR: [{ lastHeartbeatAt: null }, { lastHeartbeatAt: { lt: cutoff } }]
+      },
+      data: { liveStatus: LivePresenceStatus.OFFLINE, wentLiveAt: null }
+    });
+    if (!expired.count) continue;
+
+    expiredCount += expired.count;
+    cancelScheduledDoctorOffline(session.userId);
+    realtime
+      ?.to(SOCKET_ROOM_PREFIXES.ONLINE_DOCTORS_WATCHERS)
+      .emit(SOCKET_EVENTS.DOCTOR_OFFLINE, { userId: session.userId });
+  }
+
+  return expiredCount;
+}
+
 export function isHeartbeatFresh(lastHeartbeatAt: Date | null | undefined) {
   if (!lastHeartbeatAt) return false;
   return Date.now() - lastHeartbeatAt.getTime() <= ONLINE_HEARTBEAT_TTL_MS;
