@@ -30,6 +30,13 @@ import {
   type HomeopathicSpecialtyFocus,
 } from '../constants/doctor-types.constants';
 import type { SortDirection } from '../../../shared/constants/filter.constants';
+import { AdminCanDirective } from '../../../core/directives/admin-can.directive';
+import {
+  ADMIN_PERMISSIONS,
+  staffHasAllPermissions,
+  staffHasAnyPermission,
+} from '../../../core/admin-permissions';
+import { AdminAuth } from '../../../core/services/admin-auth';
 
 type Doctor = {
   id: string;
@@ -253,11 +260,30 @@ function emptyEditModel() {
 
 @Component({
   selector: 'app-doctors-page',
-  imports: [CommonModule, FormField, DetailRowsComponent, MultiSelectComponent, RouterLink],
+  imports: [
+    CommonModule,
+    FormField,
+    DetailRowsComponent,
+    MultiSelectComponent,
+    RouterLink,
+    AdminCanDirective,
+  ],
   templateUrl: './doctors-page.html',
   styleUrl: './doctors-page.scss',
 })
 export class DoctorsPage {
+  private readonly auth = inject(AdminAuth);
+  readonly manageProviderPermission = ADMIN_PERMISSIONS.DOCTORS_WRITE;
+  readonly manageDirectoryPermissions = [
+    ADMIN_PERMISSIONS.CATALOG_WRITE,
+    ADMIN_PERMISSIONS.HR_WRITE,
+  ] as const;
+  readonly canManageProviders = computed(() =>
+    staffHasAllPermissions(this.auth.user(), this.manageProviderPermission),
+  );
+  readonly canManageDirectory = computed(() =>
+    staffHasAnyPermission(this.auth.user(), ...this.manageDirectoryPermissions),
+  );
   private readonly workspace = inject(AdminWorkspaceService);
 
   readonly doctorTypeOptions = DOCTOR_TYPE_OPTIONS;
@@ -432,6 +458,7 @@ export class DoctorsPage {
   }
 
   async approveDoctor(doctorId: string) {
+    if (!this.canManageProviders()) return;
     this.message.set('');
     this.error.set('');
     this.mutating.set(true);
@@ -447,6 +474,7 @@ export class DoctorsPage {
   }
 
   async rejectDoctor(doctorId: string) {
+    if (!this.canManageProviders()) return;
     this.message.set('');
     this.error.set('');
     this.mutating.set(true);
@@ -462,6 +490,7 @@ export class DoctorsPage {
   }
 
   async toggleDoctorStatus(doctorId: string, makeActive: boolean) {
+    if (!this.canManageProviders()) return;
     this.message.set('');
     this.error.set('');
     this.mutating.set(true);
@@ -485,6 +514,7 @@ export class DoctorsPage {
   }
 
   async setDoctorSuspension(doctorId: string, suspended: boolean) {
+    if (!this.canManageProviders()) return;
     this.message.set('');
     this.error.set('');
     const reason = this.suspensionReason().trim();
@@ -517,6 +547,7 @@ export class DoctorsPage {
   }
 
   async saveDoctorEdits() {
+    if (!this.canManageProviders()) return;
     this.message.set('');
     this.error.set('');
     const doctorId = this.selectedDoctorId;
@@ -609,6 +640,7 @@ export class DoctorsPage {
   }
 
   async createDoctor() {
+    if (!this.canManageProviders()) return;
     this.message.set('');
     this.error.set('');
     const create = this.createModel();
@@ -724,6 +756,7 @@ export class DoctorsPage {
   }
 
   async bulkApproveSelected() {
+    if (!this.canManageProviders()) return;
     if (!this.selectedPendingDoctorIds.length) {
       return;
     }
@@ -745,6 +778,7 @@ export class DoctorsPage {
   }
 
   async bulkRejectSelected() {
+    if (!this.canManageProviders()) return;
     if (!this.selectedPendingDoctorIds.length) {
       return;
     }
@@ -1003,6 +1037,7 @@ export class DoctorsPage {
   }
 
   async approveSelectedDoctorWithProfile() {
+    if (!this.canManageProviders()) return;
     const doctorId = this.selectedDoctorId;
     if (!doctorId) {
       return;
@@ -1307,6 +1342,7 @@ export class DoctorsPage {
   }
 
   async saveDoctorListLimit() {
+    if (!this.canManageDirectory()) return;
     this.configMessage.set('');
     this.savingConfig.set(true);
     try {
@@ -1321,6 +1357,7 @@ export class DoctorsPage {
   }
 
   async saveDoctorWebsiteOrder(doctorId: string, rawValue: number | '') {
+    if (!this.canManageProviders()) return;
     const websiteOrder = rawValue !== '' ? Number(rawValue) : null;
     this.message.set('');
     this.mutating.set(true);

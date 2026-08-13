@@ -8,7 +8,7 @@
         Showing {{ totalCount() }} diseases from the database.
       </p>
     </div>
-    <div class="header-actions">
+    <div class="header-actions" [adminCan]="managePermissions" adminCanMatch="any">
       <button type="button" class="btn-secondary" (click)="reconcileOptions()" [disabled]="reconciling()">
         {{ reconciling() ? 'Reconciling…' : 'Reconcile diagnosis options' }}
       </button>
@@ -37,7 +37,7 @@
   </div>
 
   @if (showCreateForm) {
-    <div class="create-form">
+    <div class="create-form" [adminCan]="managePermissions" adminCanMatch="any">
       <h3>New Disease</h3>
       <div class="field-row">
         <label class="field">
@@ -175,7 +175,7 @@
         }
         <span class="category-badge">{{ categoryLabel(disease.publicCategory) }}</span>
       </div>
-      <button type="button" class="btn-edit" (click)="startEdit(diseaseById(disease.id) || disease)">Edit</button>
+      <button type="button" class="btn-edit" [adminCan]="managePermissions" adminCanMatch="any" (click)="startEdit(diseaseById(disease.id) || disease)">Edit</button>
     </div>
     <p class="disease-desc">{{ disease.description }}</p>
     @if (disease.publicDescription) {

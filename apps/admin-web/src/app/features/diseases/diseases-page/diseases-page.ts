@@ -12,6 +12,9 @@ import {
 import { ViewportService } from '@hopehub/platform-ui';
 import { DiseasePublicPageFormComponent } from '../disease-public-page-form/disease-public-page-form';
 import { publicPageFormToPayload } from '../disease-public-page-form/disease-public-page-form.model';
+import { AdminCanDirective } from '../../../core/directives/admin-can.directive';
+import { ADMIN_PERMISSIONS, staffHasAnyPermission } from '../../../core/admin-permissions';
+import { AdminAuth } from '../../../core/services/admin-auth';
 
 type DiseaseFaqItem = { question: string; answer: string };
 
@@ -79,11 +82,26 @@ function emptyNew() {
 
 @Component({
   selector: 'app-diseases-page',
-  imports: [CommonModule, NgTemplateOutlet, FormField, RouterLink, DiseasePublicPageFormComponent],
+  imports: [
+    CommonModule,
+    NgTemplateOutlet,
+    FormField,
+    RouterLink,
+    DiseasePublicPageFormComponent,
+    AdminCanDirective,
+  ],
   templateUrl: './diseases-page.html',
   styleUrl: './diseases-page.scss',
 })
 export class DiseasesPage {
+  private readonly auth = inject(AdminAuth);
+  readonly managePermissions = [
+    ADMIN_PERMISSIONS.DISEASES_WRITE,
+    ADMIN_PERMISSIONS.CATALOG_WRITE,
+  ] as const;
+  readonly canManage = computed(() =>
+    staffHasAnyPermission(this.auth.user(), ...this.managePermissions),
+  );
   private readonly viewport = inject(ViewportService);
   private readonly publicPageForm = viewChild(DiseasePublicPageFormComponent);
 
@@ -179,6 +197,7 @@ export class DiseasesPage {
   }
 
   async syncCatalog() {
+    if (!this.canManage()) return;
     if (
       !confirm(
         'Import the standard disease catalog? Existing diseases are kept; only missing names are added.',
@@ -203,6 +222,7 @@ export class DiseasesPage {
   }
 
   async reconcileOptions() {
+    if (!this.canManage()) return;
     if (!confirm('Sync prescription diagnosis options from the disease catalog?')) {
       return;
     }
@@ -263,6 +283,7 @@ export class DiseasesPage {
   }
 
   async savePublicPage() {
+    if (!this.canManage()) return;
     const editor = this.publicPageForm();
     if (!editor || !this.editingId) return;
     this.savingPublicPage.set(true);
@@ -334,6 +355,7 @@ export class DiseasesPage {
   }
 
   async saveEdit() {
+    if (!this.canManage()) return;
     const draft = this.draftModel();
     if (!this.editingId || !draft.name || !draft.description || !draft.feeRupees) return;
     this.saving.set(true);
@@ -388,6 +410,7 @@ export class DiseasesPage {
   }
 
   async createDisease() {
+    if (!this.canManage()) return;
     const newDisease = this.newDiseaseModel();
     if (
       !newDisease.name ||
