@@ -168,11 +168,29 @@ export class DoctorShell implements OnInit, OnDestroy {
         this.currentUrl.set(url);
         this.syncFocusMode(url);
         this.syncExpandedGroups(url);
+        if (!this.onboardingComplete()) void this.refreshOnboardingState();
         if (this.consultationNav.isConsultationWorkspaceUrl(url)) {
           this.consultationNav.rememberWorkspaceFromUrl(url);
           this.refreshLastWorkspace();
         }
       });
+  }
+
+  private async refreshOnboardingState(): Promise<void> {
+    try {
+      const profile = await this.session.load(true);
+      const readiness = await this.session.readiness();
+      const onboarding = buildProviderOnboardingStatus(
+        profile.doctorProfile,
+        profile.profileImageUrl ?? null,
+        readiness,
+      );
+      this.onboardingComplete.set(onboarding.complete);
+      this.onboardingPercent.set(onboarding.percent);
+      this.navItems = this.buildNav(this.session.navItems());
+    } catch {
+      // Keep setup mode active until readiness can be verified safely.
+    }
   }
 
   private showAssignmentNotification(

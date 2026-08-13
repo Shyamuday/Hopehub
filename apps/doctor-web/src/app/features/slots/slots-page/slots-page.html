@@ -1,12 +1,12 @@
 
-    <div class="sp">
+    <div class="sp" [class.setup-flow]="setupMode()">
       <app-page-header
         [title]="pageTitle()"
-        eyebrow="Scheduling"
+        [eyebrow]="setupMode() ? 'Final setup step' : 'Scheduling'"
         [description]="pageSubtitle()"
       />
 
-      @if (readiness(); as ready) {
+      @if (!setupMode() && readiness(); as ready) {
         <section class="readiness-panel" [class.ready]="ready.ready">
           <div class="readiness-head">
             <div>
@@ -44,22 +44,38 @@
 
       <!-- Bulk template -->
       <div class="template-row">
-        <span class="tmpl-lbl">Quick add:</span>
+        <span class="tmpl-lbl">Choose a comfortable time</span>
         @for (t of templates; track t.label) {
           <button class="tmpl-btn" (click)="addTemplate(t)" [disabled]="readinessBlocksActions()">{{ t.label }}</button>
         }
-        <button class="tmpl-btn danger" (click)="askToClearDay()">🗑 Clear day</button>
+        @if (!setupMode()) {
+          <button class="tmpl-btn danger" (click)="askToClearDay()">🗑 Clear day</button>
+        }
       </div>
 
-      <!-- Manual add -->
-      <div class="manual-add">
-        <input type="time" [formField]="slotDraftForm.newStart" />
-        <span>to</span>
-        <input type="time" [formField]="slotDraftForm.newEnd" />
-        <button class="btn-primary" (click)="addSlot()" [disabled]="readinessBlocksActions()">{{ addButtonLabel() }}</button>
-      </div>
+      @if (setupMode() && hasAvailability() && !readinessBlocksActions()) {
+        <section class="setup-complete-card">
+          <span>✓</span>
+          <div>
+            <strong>Your first available time is ready</strong>
+            <p>You can add more times later from your workspace.</p>
+          </div>
+          <button type="button" class="btn-primary" (click)="finishSetup()">Finish setup</button>
+        </section>
+      }
 
-      <section class="rules-panel">
+      <details class="advanced-scheduling" [open]="!setupMode()">
+        <summary>{{ setupMode() ? 'Choose a custom time or recurring schedule' : 'Scheduling options' }}</summary>
+        <div class="advanced-scheduling-body">
+          <!-- Manual add -->
+          <div class="manual-add">
+            <input type="time" [formField]="slotDraftForm.newStart" />
+            <span>to</span>
+            <input type="time" [formField]="slotDraftForm.newEnd" />
+            <button class="btn-primary" (click)="addSlot()" [disabled]="readinessBlocksActions()">{{ addButtonLabel() }}</button>
+          </div>
+
+          <section class="rules-panel">
         <div class="rules-head">
           <div>
             <h3>Recurring availability</h3>
@@ -107,7 +123,9 @@
             }
           </div>
         }
-      </section>
+          </section>
+        </div>
+      </details>
 
       @if (loading()) {
         <div class="loading"><div class="spinner"></div></div>

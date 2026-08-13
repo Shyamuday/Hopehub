@@ -1,5 +1,5 @@
 
-    .sp { padding: 24px; max-width: 800px; margin: 0 auto; color: white; }
+    .sp { padding: 24px; max-width: 800px; margin: 0 auto; color: var(--color-text); }
     .sp-hdr { margin-bottom: 20px; }
     .sp-title { font-size: 20px; font-weight: 800; margin: 0 0 4px; }
     .sp-sub { font-size: 13px; color: #94a3b8; margin: 0; }
@@ -68,6 +68,74 @@
 
     .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: rgba(74,222,128,0.12); border: 1px solid rgba(74,222,128,0.3); color: #4ade80; padding: 10px 20px; border-radius: 12px; font-size: 13px; font-weight: 600; z-index: 600; }
 
+    .advanced-scheduling {
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      background: var(--color-surface);
+      margin-bottom: 1rem;
+      padding: 0.8rem;
+    }
+
+    .advanced-scheduling > summary {
+      color: var(--color-brand);
+      cursor: pointer;
+      font-size: var(--text-sm);
+      font-weight: 700;
+    }
+
+    .advanced-scheduling-body {
+      margin-top: 0.85rem;
+    }
+
+    .setup-complete-card {
+      align-items: center;
+      background: color-mix(in srgb, var(--color-success) 9%, var(--color-surface));
+      border: 1px solid color-mix(in srgb, var(--color-success) 35%, var(--color-border));
+      border-radius: var(--radius-md);
+      display: grid;
+      gap: 0.75rem;
+      grid-template-columns: auto 1fr auto;
+      margin: 0.75rem 0 1rem;
+      padding: 0.85rem;
+    }
+
+    .setup-complete-card > span {
+      align-items: center;
+      background: var(--color-success);
+      border-radius: 999px;
+      color: #fff;
+      display: inline-flex;
+      height: 2rem;
+      justify-content: center;
+      width: 2rem;
+    }
+
+    .setup-complete-card strong { font-size: var(--text-sm); }
+    .setup-complete-card p { color: var(--color-text-muted); font-size: var(--text-xs); margin: 0.15rem 0 0; }
+
+    .setup-flow {
+      max-width: 44rem;
+    }
+
+    .setup-flow .date-nav,
+    .setup-flow .slot-card,
+    .setup-flow .advanced-scheduling,
+    .setup-flow .rules-panel {
+      background: var(--color-surface);
+      border-color: var(--color-border);
+      color: var(--color-text);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .setup-flow .day-btn { color: var(--color-text-muted); }
+    .setup-flow .day-btn.active { background: var(--color-brand-soft); border-color: var(--color-brand-muted); color: var(--color-brand-dark); }
+    .setup-flow .nav-btn { border-color: var(--color-border); color: var(--color-brand); }
+    .setup-flow .tmpl-btn { background: var(--color-brand-soft); border-color: var(--color-brand-muted); color: var(--color-brand-dark); min-height: var(--touch-min); }
+    .setup-flow .manual-add input,
+    .setup-flow .rule-form input,
+    .setup-flow .rule-form select { background: var(--color-surface); border-color: var(--color-border); color: var(--color-text); }
+    .setup-flow .rules-head p { color: var(--color-text-muted); }
+
     @media (max-width: 768px) {
       .sp { padding: 1rem; }
       .readiness-head { flex-direction: column; }
@@ -76,5 +144,7 @@
       .rule-form { grid-template-columns: 1fr; }
       .date-nav { flex-wrap: wrap; }
       .slot-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+      .setup-complete-card { grid-template-columns: auto 1fr; }
+      .setup-complete-card .btn-primary { grid-column: 1 / -1; width: 100%; }
     }
   

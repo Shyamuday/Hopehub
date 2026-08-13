@@ -55,6 +55,40 @@ async function requireBookingReady(userId: string, res: Response) {
   return false;
 }
 
+const availabilitySetupBlockers = new Set(['PROVIDER_AVAILABILITY_OFF', 'NOT_ACCEPTING_USERS']);
+
+async function activateAvailabilityDuringSetup(userId: string, res: Response) {
+  const readiness = await providerPublicReadiness(userId);
+  const blockingProfileIssue = readiness.blockers.find(
+    (blocker) => !availabilitySetupBlockers.has(blocker.code)
+  );
+  if (blockingProfileIssue) {
+    res.status(409).json({
+      message: blockingProfileIssue.label,
+      code: blockingProfileIssue.code
+    });
+    return false;
+  }
+
+  const doctor = await prisma.doctor.findUnique({
+    where: { userId },
+    select: { id: true }
+  });
+  if (!doctor) {
+    res.status(404).json({ message: 'Provider profile not found' });
+    return false;
+  }
+
+  await prisma.$transaction([
+    prisma.doctor.update({ where: { id: doctor.id }, data: { isAvailable: true } }),
+    prisma.mentalHealthProviderProfile.updateMany({
+      where: { doctorId: doctor.id },
+      data: { acceptingNewUsers: true }
+    })
+  ]);
+  return true;
+}
+
 // GET /doctor/slots?date=YYYY-MM-DD — doctor views their own slots
 router.get(
   '/doctor/slots',
@@ -112,7 +146,7 @@ router.post(
     if (body.endTime <= body.startTime) {
       return res.status(400).json({ message: 'End time must be after start time.' });
     }
-    if (!(await requireBookingReady(req.user!.id, res))) return;
+    if (!(await activateAvailabilityDuringSetup(req.user!.id, res))) return;
     const doctor = await currentDoctor(req.user!.id);
     if (!doctor) return res.status(404).json({ message: 'Provider profile not found' });
     const careTeamServiceId = body.careTeamServiceId || null;
@@ -205,6 +239,7 @@ router.post(
 
     const doctor = await currentDoctor(req.user!.id);
     if (!doctor) return res.status(404).json({ message: 'Provider profile not found' });
+    if (!(await activateAvailabilityDuringSetup(req.user!.id, res))) return;
     const careTeamServiceId = body.careTeamServiceId || null;
     if (
       careTeamServiceId &&

@@ -655,6 +655,47 @@ export class ProfilePage implements OnDestroy {
     return 'Continue to availability';
   }
 
+  primaryActiveService() {
+    return this.careServices().find(
+      (service) => service.isActive !== false && String(service.title || '').trim().length >= 2,
+    );
+  }
+
+  profilePreviewRole() {
+    const selected = this.selectedProviderRoleOptions();
+    return (
+      selected.find((option) => option.value === this.profileModel().careTeamType)?.label ||
+      selected[0]?.label ||
+      this.doctorTypeLabel ||
+      'Hope Hub provider'
+    );
+  }
+
+  profilePreviewConcerns() {
+    const form = this.profileModel();
+    const concerns = this.isPsychologist
+      ? this.lines(form.concernsHandledText)
+      : this.lines(form.focusAreasText);
+    return concerns.slice(0, 3);
+  }
+
+  profilePreviewLanguages() {
+    return this.lines(this.profileModel().languagesText).slice(0, 3);
+  }
+
+  profilePreviewBio() {
+    const bio = this.profileModel().bio.trim();
+    return bio.length > 150 ? `${bio.slice(0, 147).trim()}…` : bio;
+  }
+
+  servicePreviewPrice(service: any) {
+    if (service.pricingMode === 'FREE_VOLUNTEER' || service.isFree) return 'Free';
+    if (service.pricingMode === 'PER_MINUTE') {
+      return `₹${this.rupees(service.pricePerMinuteInPaise) || '0'}/min`;
+    }
+    return `₹${this.rupees(service.priceInPaise) || '0'}`;
+  }
+
   async loadCarePricingTemplates() {
     try {
       const res = await firstValueFrom(

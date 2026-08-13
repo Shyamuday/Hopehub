@@ -434,6 +434,51 @@
             </div>
           </div>
         </details>
+
+        @if (primaryActiveService(); as previewService) {
+          <section class="public-card-preview" aria-labelledby="public-preview-title">
+            <div class="preview-heading">
+              <div>
+                <span>Public preview</span>
+                <strong id="public-preview-title">How people will see you</strong>
+              </div>
+              <small>Preview</small>
+            </div>
+            <article class="provider-preview-card">
+              <div class="preview-identity">
+                @if (profileImageUrl) {
+                  <img [src]="profileImageUrl" [alt]="profileModel().name" />
+                } @else {
+                  <span class="preview-avatar">{{ profileModel().name.charAt(0) || 'H' }}</span>
+                }
+                <div>
+                  <h4>{{ profileModel().name || 'Your name' }}</h4>
+                  <p>{{ profilePreviewRole() }}</p>
+                </div>
+              </div>
+              @if (profilePreviewBio()) {
+                <p class="preview-bio">{{ profilePreviewBio() }}</p>
+              }
+              @if (profilePreviewConcerns().length) {
+                <div class="preview-tags">
+                  @for (concern of profilePreviewConcerns(); track concern) {
+                    <span>{{ concern }}</span>
+                  }
+                </div>
+              }
+              <div class="preview-service">
+                <div>
+                  <strong>{{ previewService.title }}</strong>
+                  <span>{{ previewService.durationMinutes || 30 }} minutes</span>
+                </div>
+                <b>{{ servicePreviewPrice(previewService) }}</b>
+              </div>
+              @if (profilePreviewLanguages().length) {
+                <small class="preview-languages">Available in {{ profilePreviewLanguages().join(', ') }}</small>
+              }
+            </article>
+          </section>
+        }
       </section>
     }
   </section>

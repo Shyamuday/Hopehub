@@ -1,4 +1,5 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
 import { form, FormField } from '@angular/forms/signals';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
@@ -89,6 +90,8 @@ export class SlotsPage implements OnInit {
   private http = inject(HttpClient);
   private auth = inject(Auth);
   private session = inject(DoctorSessionService);
+  private route = inject(ActivatedRoute);
+  private router = inject(Router);
   private base = environment.apiUrl;
 
   slots = signal<Slot[]>([]);
@@ -99,6 +102,7 @@ export class SlotsPage implements OnInit {
   readiness = signal<ProviderReadiness | null>(null);
   readinessLoading = signal(false);
   toast = signal('');
+  setupMode = signal(false);
   pendingConfirmation = signal<{
     kind: 'clear-day' | 'delete-slot' | 'disable-rule';
     id?: string;
@@ -134,6 +138,7 @@ export class SlotsPage implements OnInit {
   ];
 
   ngOnInit(): void {
+    this.setupMode.set(this.route.snapshot.queryParamMap.get('setup') === 'availability');
     void this.loadRoleLanguage();
     void this.loadReadiness();
     this.load();
@@ -149,10 +154,12 @@ export class SlotsPage implements OnInit {
   }
 
   pageTitle() {
+    if (this.setupMode()) return 'When can people reach you?';
     return this.isHopeHub() ? 'Availability' : 'Availability & slots';
   }
 
   pageSubtitle() {
+    if (this.setupMode()) return 'Choose a day and a comfortable time. You can change it anytime.';
     return this.isHopeHub()
       ? 'Manage your available times — users can book open support sessions.'
       : 'Manage your time slots — patients can see open slots when booking.';
@@ -169,7 +176,10 @@ export class SlotsPage implements OnInit {
   }
 
   readinessBlocksActions(): boolean {
-    return this.readiness()?.ready === false;
+    const allowedDuringSetup = new Set(['PROVIDER_AVAILABILITY_OFF', 'NOT_ACCEPTING_USERS']);
+    return Boolean(
+      this.readiness()?.blockers.some((blocker) => !allowedDuringSetup.has(blocker.code)),
+    );
   }
 
   readinessMessage(): string {
@@ -278,6 +288,7 @@ export class SlotsPage implements OnInit {
         ),
       );
       this.load();
+      await this.loadReadiness();
     } catch (e: any) {
       this.showToast(e?.error?.message ?? 'Failed to add slot');
     }
@@ -310,6 +321,7 @@ export class SlotsPage implements OnInit {
       );
       this.showToast(`Rule saved · ${result.generated.generated} slots generated`);
       this.load();
+      await this.loadReadiness();
     } catch (e: any) {
       this.showToast(e?.error?.message ?? 'Failed to save availability rule');
     }
@@ -375,6 +387,22 @@ export class SlotsPage implements OnInit {
     }
     this.showToast(`Added ${added} slot${added !== 1 ? 's' : ''} ✓`);
     this.load();
+    await this.loadReadiness();
+  }
+
+  hasAvailability(): boolean {
+    return (
+      this.slots().some((slot) => !slot.isBlocked) || this.rules().some((rule) => rule.isActive)
+    );
+  }
+
+  async finishSetup(): Promise<void> {
+    if (!this.hasAvailability()) {
+      this.showToast('Choose at least one available time first.');
+      return;
+    }
+    await this.session.load(true);
+    await this.router.navigate(['/dashboard'], { queryParams: { setup: 'complete' } });
   }
 
   async clearDay(): Promise<void> {
