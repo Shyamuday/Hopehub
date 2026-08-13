@@ -8,6 +8,7 @@ export const API_PATHS = {
     PROFILE: '/doctor/profile',
     ONBOARDING_PATH: '/doctor/onboarding-path',
     READINESS: '/doctor/readiness',
+    LISTENER_SCREENING: '/doctor/listener-screening',
     PROFILE_IMAGE: '/me/profile-image',
     PAYMENTS_SUMMARY: '/doctor/payments/summary',
     MY_PAYSLIP: '/doctor/my-payslip',

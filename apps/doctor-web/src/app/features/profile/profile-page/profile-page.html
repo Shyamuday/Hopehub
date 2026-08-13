@@ -507,17 +507,28 @@
   </section>
 
   <app-action-bar class="actions">
-    <app-button type="button" variant="outline" (click)="loadProfile()" [disabled]="isLoading || saving">
+    @if (autosaveLabel()) {
+      <span class="autosave-status" [class.autosave-status--error]="autosaveStatus() === 'error'">
+        {{ autosaveLabel() }}
+      </span>
+    }
+    <app-button
+      type="button"
+      variant="outline"
+      (click)="loadProfile()"
+      [disabled]="isLoading || saving"
+    >
       {{ isLoading ? 'Loading...' : 'Reload' }}
-    </app-button>
-    <app-button type="button" variant="secondary" (click)="saveProfile()" [disabled]="isLoading || saving">
-      {{ saving ? 'Saving...' : 'Save' }}
     </app-button>
     <app-button
       type="button"
-      (click)="saveAndContinue()"
+      variant="secondary"
+      (click)="saveProfile()"
       [disabled]="isLoading || saving"
     >
+      {{ saving ? 'Saving...' : 'Save' }}
+    </app-button>
+    <app-button type="button" (click)="saveAndContinue()" [disabled]="isLoading || saving">
       {{ saving ? 'Saving...' : 'Save & continue' }}
     </app-button>
   </app-action-bar>
@@ -529,7 +540,9 @@
     <div class="error-row">
       <p class="error">{{ error }}</p>
       @if (!saving) {
-        <app-button type="button" size="sm" variant="outline" (click)="loadProfile()">Retry</app-button>
+        <app-button type="button" size="sm" variant="outline" (click)="loadProfile()"
+          >Retry</app-button
+        >
       }
     </div>
   }

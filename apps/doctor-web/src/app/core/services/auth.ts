@@ -1,6 +1,7 @@
-import { Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
+import { ProviderOnboardingDraftService } from './provider-onboarding-draft.service';
 import { environment } from '../../../environments/environment';
 import {
   AUTH_MESSAGES,
@@ -55,6 +56,7 @@ type GoogleWindow = Window &
   providedIn: 'root',
 })
 export class Auth {
+  private readonly onboardingDrafts = inject(ProviderOnboardingDraftService);
   private readonly tokenKey = AUTH_TOKEN_KEY;
   private readonly apiBase = environment.apiUrl;
   private googleScriptPromise: Promise<void> | null = null;
@@ -214,6 +216,7 @@ export class Auth {
     localStorage.removeItem(this.tokenKey);
     localStorage.removeItem(AUTH_REFRESH_TOKEN_KEY);
     localStorage.removeItem(AUTH_SESSION_ID_KEY);
+    this.onboardingDrafts.clearAll();
   }
 
   private async getGoogleClientId(): Promise<string> {

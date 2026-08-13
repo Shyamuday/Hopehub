@@ -1,11 +1,12 @@
 import { HttpClient } from '@angular/common/http';
-import { Component, inject, signal } from '@angular/core';
+import { Component, effect, inject, OnDestroy, signal } from '@angular/core';
 import { form, FormField } from '@angular/forms/signals';
 import { ActivatedRoute, Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { MultiSelectComponent, ProfileAvatarUploadComponent } from '@hopehub/platform-ui';
 import { environment } from '../../../../environments/environment';
 import { API_PATHS } from '../../../core/constants/api-paths.constants';
+import { ROUTE_PATHS } from '../../../core/constants/app-routes.constants';
 import { AUTH_TOKEN_KEY } from '../../../core/constants/auth.constants';
 import {
   CARE_TEAM_TYPE_LABELS,
@@ -17,6 +18,7 @@ import {
   type DoctorProfileSummary,
 } from '../../../core/constants/doctor-types.constants';
 import { DoctorSessionService } from '../../../core/services/doctor-session';
+import { ProviderOnboardingDraftService } from '../../../core/services/provider-onboarding-draft.service';
 import { AppButtonComponent } from '../../../shared/ui/app-button.component';
 import { AppActionBarComponent } from '../../../shared/ui/app-action-bar.component';
 
@@ -195,11 +197,12 @@ function emptyProfileModel() {
   templateUrl: './profile-page.html',
   styleUrl: './profile-page.scss',
 })
-export class ProfilePage {
+export class ProfilePage implements OnDestroy {
   private readonly http = inject(HttpClient);
   private readonly session = inject(DoctorSessionService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
+  private readonly onboardingDrafts = inject(ProviderOnboardingDraftService);
   readonly apiBase = environment.apiUrl;
   readonly authTokenKey = AUTH_TOKEN_KEY;
   readonly profileImageUploadPath = API_PATHS.DOCTOR.PROFILE_IMAGE;
@@ -234,6 +237,10 @@ export class ProfilePage {
   isLoading = false;
   saving = false;
   readonly activeSetupStep = signal<ProfileSetupStepId>('identity');
+  readonly autosaveStatus = signal<'idle' | 'local' | 'saving' | 'saved' | 'error'>('idle');
+  private profileLoaded = false;
+  private autosaveTimer: ReturnType<typeof setTimeout> | null = null;
+  private lastServerPayload = '';
 
   constructor() {
     this.route.queryParamMap.subscribe((params) => {
@@ -241,6 +248,17 @@ export class ProfilePage {
     });
     void this.loadProfile();
     void this.loadCarePricingTemplates();
+    effect(() => {
+      const model = this.profileModel();
+      const services = this.careServices();
+      const step = this.activeSetupStep();
+      if (!this.profileLoaded) return;
+      this.persistDraftAndQueueAutosave(step, model, services);
+    });
+  }
+
+  ngOnDestroy(): void {
+    if (this.autosaveTimer) clearTimeout(this.autosaveTimer);
   }
 
   isListenerProfile(): boolean {
@@ -608,9 +626,18 @@ export class ProfilePage {
 
   async saveAndContinue() {
     const activeStep = this.activeSetupStep();
+    const missing = this.activeSetupStepMissingItems();
+    if (missing.length) {
+      this.error = `Complete this step first: ${missing.join(', ')}.`;
+      return;
+    }
     await this.saveProfile();
     if (this.error) return;
     if (this.setupIsComplete()) {
+      if (this.isListenerProfile() && !this.listenerScreeningPassed) {
+        await this.router.navigate(['/', ROUTE_PATHS.LISTENER_SCREENING]);
+        return;
+      }
       await this.router.navigate(['/dashboard'], { queryParams: { setup: 'complete' } });
       return;
     }
@@ -636,6 +663,7 @@ export class ProfilePage {
   }
 
   async loadProfile() {
+    this.profileLoaded = false;
     this.isLoading = true;
     this.error = '';
     try {
@@ -720,7 +748,32 @@ export class ProfilePage {
       this.listenerScreeningPassed = Boolean(mental?.listenerScreening?.passed);
       this.profileImageUrl =
         (profile as { profileImageUrl?: string | null }).profileImageUrl ?? null;
-      this.activeSetupStep.set(this.nextSetupStep()?.id || 'identity');
+      const nextServerStep = this.nextSetupStep()?.id || 'identity';
+      const serverPayload = JSON.stringify(
+        this.profileStepPayload(nextServerStep, this.profileModel()),
+      );
+      const draft = this.onboardingDrafts.load<ReturnType<typeof emptyProfileModel>, any>(
+        this.profileModel().email,
+      );
+      const resumableStep = this.profileSetupStep(draft?.step);
+      const restoredDraft = Boolean(draft?.model && resumableStep);
+      if (draft?.model && resumableStep) {
+        this.profileModel.update((current) => ({ ...current, ...draft.model }));
+        this.careServices.set(Array.isArray(draft.services) ? draft.services : this.careServices());
+        this.activeSetupStep.set(resumableStep);
+        this.autosaveStatus.set('local');
+      } else {
+        this.activeSetupStep.set(nextServerStep);
+      }
+      this.profileLoaded = true;
+      this.lastServerPayload = serverPayload;
+      if (restoredDraft) {
+        this.persistDraftAndQueueAutosave(
+          this.activeSetupStep(),
+          this.profileModel(),
+          this.careServices(),
+        );
+      }
     } catch {
       this.error = 'Could not load profile.';
     } finally {
@@ -730,6 +783,13 @@ export class ProfilePage {
 
   onProfileImageChange(profileImageUrl: string | null) {
     this.profileImageUrl = profileImageUrl;
+    if (this.profileLoaded) {
+      this.persistDraftAndQueueAutosave(
+        this.activeSetupStep(),
+        this.profileModel(),
+        this.careServices(),
+      );
+    }
   }
 
   async saveProfile(step: ProfileSetupStepId = this.activeSetupStep()) {
@@ -737,6 +797,7 @@ export class ProfilePage {
     this.message = '';
     this.error = '';
     this.saving = true;
+    if (this.autosaveTimer) clearTimeout(this.autosaveTimer);
     try {
       await firstValueFrom(
         this.http.patch(
@@ -744,6 +805,8 @@ export class ProfilePage {
           this.profileStepPayload(step, form),
         ),
       );
+      this.onboardingDrafts.clear(form.email);
+      this.autosaveStatus.set('saved');
       await this.session.load(true);
       await this.loadProfile();
       this.message = 'Profile updated successfully.';
@@ -751,6 +814,72 @@ export class ProfilePage {
       this.error = this.profileSaveErrorMessage(error);
     } finally {
       this.saving = false;
+    }
+  }
+
+  autosaveLabel(): string {
+    switch (this.autosaveStatus()) {
+      case 'local':
+        return 'Draft saved on this device';
+      case 'saving':
+        return 'Saving…';
+      case 'saved':
+        return 'Saved';
+      case 'error':
+        return 'Draft kept on this device';
+      default:
+        return '';
+    }
+  }
+
+  private profileSetupStep(value?: string | null): ProfileSetupStepId | null {
+    return value === 'identity' ||
+      value === 'public' ||
+      value === 'care' ||
+      value === 'safety' ||
+      value === 'services'
+      ? value
+      : null;
+  }
+
+  private persistDraftAndQueueAutosave(
+    step: ProfileSetupStepId,
+    model: ReturnType<typeof emptyProfileModel>,
+    services: Array<any>,
+  ): void {
+    if (!model.email.trim()) return;
+    this.onboardingDrafts.save(model.email, { step, model, services });
+    this.autosaveStatus.set('local');
+    if (this.autosaveTimer) clearTimeout(this.autosaveTimer);
+    if (this.activeSetupStepMissingItems().length) return;
+    const payload = JSON.stringify(this.profileStepPayload(step, model));
+    if (payload === this.lastServerPayload) return;
+    this.autosaveTimer = setTimeout(
+      () => void this.autosaveValidStep(step, model.email, payload),
+      900,
+    );
+  }
+
+  private async autosaveValidStep(
+    step: ProfileSetupStepId,
+    email: string,
+    serializedPayload: string,
+  ): Promise<void> {
+    if (this.saving || step !== this.activeSetupStep()) return;
+    this.autosaveStatus.set('saving');
+    try {
+      await firstValueFrom(
+        this.http.patch(
+          `${this.apiBase}${API_PATHS.DOCTOR.PROFILE}`,
+          JSON.parse(serializedPayload),
+        ),
+      );
+      this.lastServerPayload = serializedPayload;
+      this.onboardingDrafts.clear(email);
+      await this.session.load(true);
+      this.autosaveStatus.set('saved');
+    } catch {
+      this.autosaveStatus.set('error');
     }
   }
 

@@ -1,0 +1,82 @@
+<main class="screening-page">
+  <a class="back-link" [routerLink]="dashboardPath">← Back to setup</a>
+
+  @if (loading()) {
+    <section class="screening-card"><p>Loading your screening test…</p></section>
+  } @else if (result()?.passed) {
+    <section class="screening-card result-card result-card--passed">
+      <span class="result-icon">✓</span>
+      <h1>Listener screening passed</h1>
+      <p>You scored {{ result()?.score }}/{{ result()?.maxScore }}. This step is complete.</p>
+      <app-button [routerLink]="dashboardPath">Continue setup</app-button>
+    </section>
+  } @else if (questionSet(); as test) {
+    <header class="screening-header">
+      <span class="eyebrow">Required listener step</span>
+      <h1>{{ test.title }}</h1>
+      <p>{{ test.description || 'Choose the safest response for each support situation.' }}</p>
+      <div class="progress-row">
+        <span>{{ answeredCount() }}/{{ test.questions.length }} answered</span>
+        <strong>{{ progressPercent() }}%</strong>
+      </div>
+      <div class="progress-track"><i [style.width.%]="progressPercent()"></i></div>
+    </header>
+
+    @if (currentQuestion(); as question) {
+      <section class="screening-card">
+        <small>Question {{ currentQuestionIndex() + 1 }} of {{ test.questions.length }}</small>
+        <h2>{{ question.text }}</h2>
+        <div class="answer-list">
+          @for (option of question.options; track option.id) {
+            <label [class.selected]="selectedOption(question.id) === option.id">
+              <input
+                type="radio"
+                [name]="question.id"
+                [value]="option.id"
+                [checked]="selectedOption(question.id) === option.id"
+                (change)="selectAnswer(question.id, option.id)"
+              />
+              <span>{{ option.text }}</span>
+            </label>
+          }
+        </div>
+      </section>
+    }
+
+    @if (error()) {
+      <p class="error-message">{{ error() }}</p>
+    }
+
+    <footer class="screening-actions">
+      <app-button
+        variant="outline"
+        (click)="previous()"
+        [disabled]="currentQuestionIndex() === 0 || submitting()"
+        >Back</app-button
+      >
+      @if (currentQuestionIndex() < test.questions.length - 1) {
+        <app-button (click)="next()">Next</app-button>
+      } @else {
+        <app-button (click)="submit()" [disabled]="submitting()">
+          {{ submitting() ? 'Submitting…' : 'Submit test' }}
+        </app-button>
+      }
+    </footer>
+
+    @if (result() && !result()?.passed) {
+      <section class="screening-card result-card">
+        <h2>Not passed yet</h2>
+        <p>
+          Score: {{ result()?.score }}/{{ result()?.maxScore }}. Review Hope Hub safety guidance
+          before trying again.
+        </p>
+      </section>
+    }
+  } @else if (error()) {
+    <section class="screening-card result-card">
+      <h1>Screening unavailable</h1>
+      <p>{{ error() }}</p>
+      <app-button variant="outline" (click)="load()">Try again</app-button>
+    </section>
+  }
+</main>

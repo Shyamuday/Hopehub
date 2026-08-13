@@ -7,6 +7,8 @@ export const ROUTE_PATHS = {
 
   WELCOME: 'welcome',
 
+  LISTENER_SCREENING: 'listener-screening',
+
   APPOINTMENTS: 'appointments',
 
   REPERTORY: 'repertory',

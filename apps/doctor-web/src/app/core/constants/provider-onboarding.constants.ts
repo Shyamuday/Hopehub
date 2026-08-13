@@ -153,7 +153,13 @@ export function buildProviderOnboardingStatus(
       complete:
         hasText(profile?.bio, 80) &&
         (hopeHub
-          ? hasList(mental?.concernsHandled) && hasList(mental?.sessionTypes)
+          ? hasList(mental?.languages) &&
+            hasList(mental?.concernsHandled) &&
+            hasList(mental?.sessionTypes) &&
+            (!clinicalHopeHub ||
+              (hasText(mental?.qualifiedFrom) &&
+                hasText(mental?.licenseCouncil) &&
+                hasText(mental?.licenseNumber)))
           : hasList(profile?.focusAreas)),
       required: true,
       missing: bioMissing,
@@ -163,7 +169,7 @@ export function buildProviderOnboardingStatus(
       title: 'Listener screening test passed',
       description: 'Complete the listener screening test before you can support users.',
       actionLabel: 'Review status',
-      route: `/${ROUTE_PATHS.DASHBOARD}`,
+      route: `/${ROUTE_PATHS.LISTENER_SCREENING}`,
       complete: listener ? Boolean(mental?.listenerScreening?.passed) : true,
       required: listener,
       missing: screeningMissing,

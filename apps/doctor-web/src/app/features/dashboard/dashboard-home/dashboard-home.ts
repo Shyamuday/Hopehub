@@ -144,24 +144,24 @@ export class DashboardHome {
     const isHopeHub = profile?.doctorType === 'PSYCHOLOGIST';
     const actions = [
       {
-        label: canPrescribe ? 'Open worklist' : `Open ${sessionTitle.toLowerCase()} worklist`,
-        description: canPrescribe
-          ? 'See assigned cases, active consults, and follow-ups.'
-          : 'See assigned support sessions and follow-ups.',
-        route: this.worklistPath,
-        queryParams: { view: 'ASSIGNED' },
-        primary: true,
-        enabled: true,
-      },
-      {
         label: isHopeHub ? 'Go live / pause' : 'Manage live availability',
         description: isHopeHub
           ? 'Turn chat, voice, or video availability on when you are ready.'
           : 'Control instant consultation availability.',
         route: `/${ROUTE_PATHS.ONLINE_DOCTOR}`,
         queryParams: null,
-        primary: false,
+        primary: isHopeHub,
         enabled: capabilities.onlineConsult,
+      },
+      {
+        label: canPrescribe ? 'Open worklist' : `Open ${sessionTitle.toLowerCase()} worklist`,
+        description: canPrescribe
+          ? 'See assigned cases, active consults, and follow-ups.'
+          : 'See assigned support sessions and follow-ups.',
+        route: this.worklistPath,
+        queryParams: { view: 'ASSIGNED' },
+        primary: !isHopeHub,
+        enabled: true,
       },
       {
         label: isHopeHub ? 'Set available times' : 'Set slots',
@@ -192,7 +192,7 @@ export class DashboardHome {
     ];
 
     if (canPrescribe) {
-      actions.splice(1, 0, {
+      actions.splice(2, 0, {
         label: 'Case analysis studio',
         description: 'Open the clinical workspace for prescriptions and analysis.',
         route: `/${ROUTE_PATHS.CASE_ANALYSIS_STUDIO}`,

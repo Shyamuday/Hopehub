@@ -24,6 +24,7 @@ import { NotificationsInboxPage } from './features/notifications-inbox/notificat
 import { ProviderPathPage } from './features/onboarding/provider-path-page/provider-path-page';
 import { ProviderSupportPage } from './features/support/provider-support-page/provider-support-page';
 import { ProviderSupportHomeRedirect } from './features/support/provider-support-home-redirect';
+import { ListenerScreeningPage } from './features/onboarding/listener-screening-page/listener-screening-page';
 
 export const routes: Routes = [
   { path: ROUTE_PATHS.LOGIN, component: Login },
@@ -42,6 +43,7 @@ export const routes: Routes = [
     canActivate: [doctorAuthGuard],
     children: [
       { path: ROUTE_PATHS.WELCOME, component: ProviderPathPage },
+      { path: ROUTE_PATHS.LISTENER_SCREENING, component: ListenerScreeningPage },
       {
         path: ROUTE_PATHS.WORKLIST,
         component: WorklistPage,

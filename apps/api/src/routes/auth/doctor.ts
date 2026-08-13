@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import {
+  CounsellorApplicationTrack,
   CareTeamMemberType,
   CareTeamServicePricingMode,
   HomeopathicDoctorType,
@@ -14,9 +15,14 @@ import {
   doctorProfileSchema,
   doctorProfileSelect,
   doctorTypeLabel,
+  isListenerCareTeamType,
   specialtyFocusLabel,
   toDoctorProfilePayload
 } from '../../constants/homeopathic-doctor-types.js';
+import {
+  MAX_FAILED_LISTENER_SCREENING_ATTEMPTS,
+  LISTENER_SCREENING_COOLDOWN_HOURS
+} from '../../constants/listener-onboarding.constants.js';
 import { assertMethodOptionId } from '../../services/doctor-prescribing-preferences.js';
 import { PSYCHOLOGIST_CONSULTATION_SHARE_PERCENT } from '../../services/doctor-compensation.js';
 import { notifyAdminsAboutDoctorSignup } from '../../services/doctor-signup-notifications.js';
@@ -25,6 +31,11 @@ import { enrichWithProfileImageUrl, userProfileImagePath } from '../../utils/pro
 import { createEmailVerificationToken } from '../../services/email-verification.js';
 import { recordAuthProcess } from '../../services/auth-process-log.js';
 import { providerPublicReadiness } from '../../doctor-capabilities.js';
+import {
+  publicListenerScreeningQuestionSet,
+  sanitizeListenerScreeningQuestions,
+  scoreListenerScreening
+} from '../../services/listener-screening-question-sets.js';
 
 const LISTENER_SAFETY_ACKNOWLEDGEMENT_VERSION = 'listener-safety-v1-2026-08-07';
 
@@ -95,7 +106,7 @@ const mentalHealthProviderProfilePatchSchema = mentalHealthProviderProfileFields
   listenerSafetyAcknowledged: z.boolean().optional()
 });
 
-const doctorProfileStepPatchSchema = z.object({
+export const doctorProfileStepPatchSchema = z.object({
   step: z.enum(['identity', 'public', 'care', 'safety', 'services']),
   name: z.string().trim().min(2).optional(),
   gender: z.nativeEnum(PatientGender).optional().nullable(),
@@ -108,6 +119,20 @@ const doctorProfileStepPatchSchema = z.object({
   focusAreas: z.array(z.string().trim().min(1)).max(40).optional(),
   mentalHealthProfile: mentalHealthProviderProfilePatchSchema.optional(),
   defaultMethodOptionId: z.string().min(1).nullable().optional()
+});
+
+export const doctorListenerScreeningSubmissionSchema = z.object({
+  questionSetId: z.string().trim().min(1).max(120),
+  questionSetVersion: z.string().trim().min(1).max(120),
+  answers: z
+    .array(
+      z.object({
+        questionId: z.string().trim().min(1).max(80),
+        optionId: z.string().trim().min(1).max(80)
+      })
+    )
+    .min(1)
+    .max(60)
 });
 
 function cleanList(items: string[] | undefined) {
@@ -416,6 +441,155 @@ export function registerAuthDoctorRoutes(router: Router) {
     asyncRoute(async (req, res) => {
       const readiness = await providerPublicReadiness(req.user!.id);
       res.json({ readiness });
+    })
+  );
+
+  router.get(
+    '/doctor/listener-screening',
+    authRequired,
+    allowRoles(Role.DOCTOR),
+    asyncRoute(async (req, res) => {
+      const provider = await prisma.doctor.findUnique({
+        where: { userId: req.user!.id },
+        select: {
+          mentalHealthProfile: { select: { careTeamType: true, careTeamTypes: true } }
+        }
+      });
+      const types = provider?.mentalHealthProfile?.careTeamTypes?.length
+        ? provider.mentalHealthProfile.careTeamTypes
+        : provider?.mentalHealthProfile?.careTeamType
+          ? [provider.mentalHealthProfile.careTeamType]
+          : [];
+      if (!types.some((type) => isListenerCareTeamType(type))) {
+        return res.status(403).json({
+          message: 'Listener screening is only available for listener support roles.',
+          code: 'LISTENER_ROLE_REQUIRED'
+        });
+      }
+
+      const [questionSet, latestAttempt] = await Promise.all([
+        prisma.listenerScreeningQuestionSet.findFirst({
+          where: { isActive: true },
+          orderBy: [{ publishedAt: 'desc' }, { createdAt: 'desc' }]
+        }),
+        latestListenerScreeningForEmail(req.user!.email)
+      ]);
+      if (!questionSet) {
+        return res.status(503).json({
+          message: 'Listener screening test is not available right now. Please try again later.'
+        });
+      }
+
+      res.json({
+        questionSet: publicListenerScreeningQuestionSet(questionSet),
+        latestAttempt
+      });
+    })
+  );
+
+  router.post(
+    '/doctor/listener-screening',
+    authRequired,
+    allowRoles(Role.DOCTOR),
+    asyncRoute(async (req, res) => {
+      const body = doctorListenerScreeningSubmissionSchema.parse(req.body);
+      const provider = await prisma.doctor.findUniqueOrThrow({
+        where: { userId: req.user!.id },
+        select: {
+          mentalHealthProfile: { select: { careTeamType: true, careTeamTypes: true } },
+          user: { select: { email: true, mobile: true } }
+        }
+      });
+      const types = provider.mentalHealthProfile?.careTeamTypes?.length
+        ? provider.mentalHealthProfile.careTeamTypes
+        : provider.mentalHealthProfile?.careTeamType
+          ? [provider.mentalHealthProfile.careTeamType]
+          : [];
+      const listenerType = types.find((type) => isListenerCareTeamType(type));
+      if (!listenerType) {
+        return res.status(403).json({
+          message: 'Listener screening is only available for listener support roles.',
+          code: 'LISTENER_ROLE_REQUIRED'
+        });
+      }
+      const providerEmail = provider.user.email?.trim();
+      if (!providerEmail) {
+        return res.status(400).json({
+          message: 'Add an email address before taking the listener screening test.',
+          code: 'EMAIL_REQUIRED'
+        });
+      }
+
+      const cooldownStart = new Date(
+        Date.now() - LISTENER_SCREENING_COOLDOWN_HOURS * 60 * 60 * 1000
+      );
+      const failedAttempts = await prisma.listenerScreeningAttempt.count({
+        where: {
+          email: { equals: providerEmail, mode: 'insensitive' },
+          passed: false,
+          createdAt: { gte: cooldownStart }
+        }
+      });
+      if (failedAttempts >= MAX_FAILED_LISTENER_SCREENING_ATTEMPTS) {
+        return res.status(429).json({
+          message: `Please wait ${LISTENER_SCREENING_COOLDOWN_HOURS} hours before trying the screening again.`,
+          code: 'LISTENER_SCREENING_COOLDOWN'
+        });
+      }
+
+      const questionSet = await prisma.listenerScreeningQuestionSet.findFirst({
+        where: { id: body.questionSetId, isActive: true }
+      });
+      if (!questionSet || questionSet.version !== body.questionSetVersion) {
+        return res.status(409).json({
+          message: 'The screening test changed. Reload and complete the latest test.',
+          code: 'LISTENER_SCREENING_CHANGED'
+        });
+      }
+      const questions = sanitizeListenerScreeningQuestions(questionSet.questions);
+      const expectedIds = new Set(questions.map((question) => question.id));
+      const answerIds = new Set(body.answers.map((answer) => answer.questionId));
+      if (
+        body.answers.length !== questions.length ||
+        answerIds.size !== expectedIds.size ||
+        [...expectedIds].some((id) => !answerIds.has(id))
+      ) {
+        return res.status(400).json({
+          message: 'Answer every question before submitting the screening test.',
+          code: 'LISTENER_SCREENING_INCOMPLETE'
+        });
+      }
+
+      const result = scoreListenerScreening(questions, body.answers, questionSet.passScore);
+      const applicationTrack =
+        listenerType === CareTeamMemberType.PSYCHOLOGY_STUDENT_VOLUNTEER
+          ? CounsellorApplicationTrack.PSYCHOLOGY_STUDENT_VOLUNTEER
+          : CounsellorApplicationTrack.PEER_SUPPORT_VOLUNTEER;
+      await prisma.listenerScreeningAttempt.create({
+        data: {
+          questionSetId: questionSet.id,
+          questionSetVersion: questionSet.version,
+          applicationTrack,
+          email: providerEmail,
+          phone: provider.user.mobile || '',
+          score: result.score,
+          maxScore: result.maxScore,
+          passed: result.passed,
+          cooldownExpiresAt: result.passed
+            ? null
+            : new Date(Date.now() + LISTENER_SCREENING_COOLDOWN_HOURS * 60 * 60 * 1000),
+          source: 'doctor-web',
+          ipAddress: req.ip || null,
+          userAgent: req.get('user-agent') || null
+        }
+      });
+
+      const readiness = await providerPublicReadiness(req.user!.id);
+      await prisma.doctor.update({
+        where: { userId: req.user!.id },
+        data: { showOnWebsite: readiness.ready }
+      });
+      res.status(201).json({ result, readiness });
     })
   );
 
