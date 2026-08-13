@@ -50,10 +50,17 @@
 
 .btn-mic,
 .btn-cam,
+.btn-switch,
 .btn-test {
   background: #fff;
   color: #1e3a8a;
   border: 1px solid #bfdbfe !important;
+}
+
+.btn-switch {
+  background: #dbeafe;
+  color: #1d4ed8;
+  border: 1px solid #93c5fd !important;
 }
 
 .call-error {

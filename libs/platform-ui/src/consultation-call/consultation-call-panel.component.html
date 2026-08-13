@@ -23,6 +23,12 @@
           @if (call.callMode() === 'video') {
             <button type="button" class="btn-cam" (click)="toggleCamera()">{{ cameraOn() ? 'Camera off' : 'Camera on' }}</button>
           }
+          @if (call.state() === 'connected' && call.callMode() === 'audio' && allowVideo) {
+            <button type="button" class="btn-switch" (click)="switchMode('video')" [disabled]="busy()">Switch to video</button>
+          }
+          @if (call.state() === 'connected' && call.callMode() === 'video' && allowAudio) {
+            <button type="button" class="btn-switch" (click)="switchMode('audio')" [disabled]="busy()">Switch to voice</button>
+          }
           <button type="button" class="btn-end" (click)="hangUp()">End call</button>
         }
       </div>
@@ -34,6 +40,9 @@
       }
       @if (mediaCheckMessage()) {
         <span class="call-help">{{ mediaCheckMessage() }}</span>
+      }
+      @if (allowAudio && allowVideo && (call.state() === 'idle' || call.state() === 'ended')) {
+        <span class="call-help">You can switch between voice and video during this session.</span>
       }
     </div>
 

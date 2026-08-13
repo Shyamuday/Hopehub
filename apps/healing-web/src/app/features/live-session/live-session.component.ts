@@ -303,6 +303,8 @@ export class LiveSessionComponent implements OnInit, OnDestroy {
       rejected: 'Declined',
       not_connected: 'Ended before connecting',
       ended_by_user: 'Ended by participant',
+      switch_to_video: 'Switched to video',
+      switch_to_voice: 'Switched to voice',
       stale_setup_cleanup: 'Previous call attempt expired',
       stale_connected_cleanup: 'Old active call auto-closed',
       consultation_not_found: 'Session not found',

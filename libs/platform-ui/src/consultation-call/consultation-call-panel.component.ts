@@ -143,6 +143,33 @@ export class ConsultationCallPanelComponent implements OnChanges, OnDestroy {
     await this.start('audio');
   }
 
+  async switchMode(mode: CallMode) {
+    if (this.busy() || this.call.callMode() === mode) return;
+    if ((mode === 'audio' && !this.allowAudio) || (mode === 'video' && !this.allowVideo)) return;
+    if (!this.socket || !this.consultationId || !this.targetUserId) return;
+
+    this.busy.set(true);
+    try {
+      await this.call.endCall({
+        consultationId: this.consultationId,
+        targetUserId: this.targetUserId,
+        reason: mode === 'video' ? 'switch_to_video' : 'switch_to_voice'
+      });
+      await new Promise<void>((resolve) => setTimeout(resolve, 200));
+      await this.call.startCall({
+        socket: this.socket,
+        consultationId: this.consultationId,
+        targetUserId: this.targetUserId,
+        mode,
+        iceServers: this.iceServers
+      });
+    } catch {
+      // service exposes the actionable media/signalling error
+    } finally {
+      this.busy.set(false);
+    }
+  }
+
   async testMedia(mode: CallMode) {
     if (this.mediaChecking()) return;
     this.mediaChecking.set(true);

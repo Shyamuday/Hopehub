@@ -42,6 +42,8 @@ function callReasonMessage(reason: unknown): string {
     reconnect_timeout: 'Call disconnected. Please try again or continue in chat.',
     not_connected: 'Call ended before it connected.',
     ended_by_user: 'Call ended.',
+    switch_to_video: 'Switching to video.',
+    switch_to_voice: 'Switching to voice.',
     consultation_not_found: 'This session could not be found.',
     consultation_not_active: 'Calls are available only during an active session.',
     provider_not_assigned: 'An expert is not assigned to this session yet.',
@@ -284,7 +286,11 @@ export class ConsultationWebrtcCallService {
     if (!this.matchesCallContext(payload)) return;
     const message = callReasonMessage(payload?.reason);
     this.cleanup('ended');
-    if (payload?.reason && payload.reason !== 'ended_by_user') {
+    if (
+      payload?.reason &&
+      payload.reason !== 'ended_by_user' &&
+      !payload.reason.startsWith('switch_to_')
+    ) {
       this.error.set(message);
     }
   }
