@@ -1,286 +1,214 @@
 <app-page-header [title]="pageTitle()" [description]="pageDescription()">
-  <app-button pageAction type="button" variant="outline" (click)="load()" [disabled]="loading() || refreshing()">
-    {{ loading() ? 'Loading…' : refreshing() ? 'Refreshing…' : 'Refresh' }}
+  <app-button
+    pageAction
+    type="button"
+    variant="outline"
+    (click)="load()"
+    [disabled]="loading() || refreshing()"
+  >
+    {{ refreshing() ? 'Refreshing…' : 'Refresh' }}
   </app-button>
 </app-page-header>
 
-<section class="count-row">
-  <button type="button" class="count-card" [class.active]="filterModel().view === 'ALL'" (click)="setView('ALL')">
-    <span class="count">{{ counts().assigned + counts().inProgress + counts().followUpDue }}</span>
-    <span class="label">All active</span>
-  </button>
-  <button type="button" class="count-card" [class.active]="filterModel().view === 'ASSIGNED'" (click)="setView('ASSIGNED')">
-    <span class="count">{{ counts().assigned }}</span>
-    <span class="label">Assigned</span>
-  </button>
-  <button type="button" class="count-card" [class.active]="filterModel().view === 'IN_PROGRESS'" (click)="setView('IN_PROGRESS')">
-    <span class="count">{{ counts().inProgress }}</span>
-    <span class="label">In progress</span>
+<nav class="worklist-tabs" aria-label="Session status">
+  <button type="button" [class.active]="filterModel().view === 'ALL'" (click)="setView('ALL')">
+    <strong>{{ counts().assigned + counts().inProgress + counts().followUpDue }}</strong>
+    <span>All</span>
   </button>
   <button
     type="button"
-    class="count-card urgent"
+    [class.active]="filterModel().view === 'ASSIGNED'"
+    (click)="setView('ASSIGNED')"
+  >
+    <strong>{{ counts().assigned }}</strong><span>New</span>
+  </button>
+  <button
+    type="button"
+    [class.active]="filterModel().view === 'IN_PROGRESS'"
+    (click)="setView('IN_PROGRESS')"
+  >
+    <strong>{{ counts().inProgress }}</strong><span>Active</span>
+  </button>
+  <button
+    type="button"
+    class="urgent"
     [class.active]="filterModel().view === 'FOLLOW_UP_DUE'"
     (click)="setView('FOLLOW_UP_DUE')"
   >
-    <span class="count">{{ counts().followUpDue }}</span>
-    <span class="label">Follow-up due</span>
+    <strong>{{ counts().followUpDue }}</strong><span>Follow-up</span>
   </button>
-</section>
+</nav>
 
-<section class="panel">
-  <app-filter-toolbar [query]="filterModel().search" [placeholder]="searchPlaceholder()" (queryChange)="setSearch($event)">
-    <select class="view-filter-select" [formField]="filterForm.view" (change)="setView(filterModel().view)">
-      <option value="ALL">All sections</option>
-      <option value="ASSIGNED">Assigned only</option>
-      <option value="IN_PROGRESS">In-progress only</option>
-      <option value="FOLLOW_UP_DUE">Follow-up due only</option>
-    </select>
-    <app-button type="button" size="sm" (click)="load()" [disabled]="loading() || refreshing()">Search</app-button>
-  </app-filter-toolbar>
-  @if (error()) {
-    <div class="error-row">
-      <p class="error">{{ error() }}</p>
-      <app-button type="button" size="sm" variant="outline" (click)="load()">Retry</app-button>
-    </div>
-  }
-</section>
+<details class="worklist-search">
+  <summary>Search sessions</summary>
+  <div>
+    <input
+      type="search"
+      [value]="filterModel().search"
+      [placeholder]="searchPlaceholder()"
+      (input)="setSearch($any($event.target).value)"
+      (keydown.enter)="load()"
+    />
+    <app-button type="button" size="sm" (click)="load()" [disabled]="loading() || refreshing()">
+      Search
+    </app-button>
+  </div>
+</details>
 
-@if (showSection('FOLLOW_UP_DUE')) {
-<section class="panel follow-up-panel">
-  <h3>Follow-up due</h3>
-  @if (loading() && !followUpDue().length) {
-    <p class="loading-text">Loading worklist…</p>
-  }
-  @for (item of followUpDue(); track item.id) {
-    <article class="card follow-up-card" [class.urgent]="item.followUpUrgency === 'OVERDUE' || item.followUpUrgency === 'DUE_TODAY'">
-      <div class="card-head">
-        <strong>{{ item.patient?.name || userTitle() }} — {{ item.disease?.name || sessionTitle() }}</strong>
-        @if (item.followUpUrgency === 'OVERDUE') {
-          <app-status-chip label="Overdue" tone="danger"></app-status-chip>
-        } @else if (item.followUpUrgency === 'DUE_TODAY') {
-          <app-status-chip label="Due today" tone="warning"></app-status-chip>
-        }
+@if (error()) {
+  <div class="error-row">
+    <p class="error">{{ error() }}</p>
+    <app-button type="button" size="sm" variant="outline" (click)="load()">Retry</app-button>
+  </div>
+}
+
+<ng-template #sessionCard let-item let-section="section">
+  <article
+    class="session-card"
+    [class.session-card--urgent]="
+      item.followUpUrgency === 'OVERDUE' || item.followUpUrgency === 'DUE_TODAY'
+    "
+  >
+    <div class="session-card__head">
+      <div>
+        <strong>{{ item.patient?.name || userTitle() }}</strong>
+        <span>{{ item.disease?.name || sessionTitle() }}</span>
       </div>
-      <hopehub-detail-rows [rows]="worklistMetaRows(item)" />
-      @if (pricingInsight(item); as pricing) {
-        <div class="pricing-chip">
-          <strong>{{ pricing.headline }}</strong>
-          <span>{{ pricing.subline }}</span>
-          @if (pricing.billableMinutes) {
-            <span>{{ pricing.billableMinutes }} billable min</span>
-          }
-          @if (pricing.balanceDueLabel) {
-            <span>Balance due {{ pricing.balanceDueLabel }}</span>
-          }
-          @if (pricing.refundedLabel) {
-            <span>Refunded {{ pricing.refundedLabel }}</span>
-          }
-          @if (pricing.payoutLabel) {
-            <span>Payout {{ pricing.payoutLabel }}</span>
-          }
-        </div>
+      @if (item.followUpUrgency === 'OVERDUE') {
+        <app-status-chip label="Overdue" tone="danger" />
+      } @else if (item.followUpUrgency === 'DUE_TODAY') {
+        <app-status-chip label="Due today" tone="warning" />
+      } @else if (section === 'IN_PROGRESS') {
+        <app-status-chip label="In progress" tone="success" />
+      } @else {
+        <app-status-chip label="Assigned" tone="neutral" />
       }
-      <small class="muted">
-        {{ userCodeTitle() }} {{ item.patient?.patientCode || item.patient?.id }}
-        @if (item.followUpDate) {
-          · Follow-up {{ item.followUpDate | date: 'mediumDate' }}
+    </div>
+
+    <button type="button" class="session-card__primary" (click)="performPrimaryAction(section, item)">
+      {{ primaryActionLabel(section) }}
+    </button>
+
+    <details class="session-card__details">
+      <summary>Details</summary>
+      <div>
+        <hopehub-detail-rows [rows]="worklistMetaRows(item)" />
+        @if (pricingInsight(item); as pricing) {
+          <div class="pricing-chip">
+            <strong>{{ pricing.headline }}</strong>
+            <span>{{ pricing.subline }}</span>
+            @if (pricing.billableMinutes) {
+              <span>{{ pricing.billableMinutes }} billable min</span>
+            }
+            @if (pricing.balanceDueLabel) {
+              <span>Balance due {{ pricing.balanceDueLabel }}</span>
+            }
+            @if (pricing.refundedLabel) {
+              <span>Refunded {{ pricing.refundedLabel }}</span>
+            }
+            @if (pricing.payoutLabel) {
+              <span>Payout {{ pricing.payoutLabel }}</span>
+            }
+          </div>
         }
-      </small>
-      <div class="actions actions-mobile">
-        <div class="actions-primary">
-          @if (!canPrescribe() && !canCaseAnalysis()) {
-            <button type="button" class="btn-primary" (click)="openOnlineSession(item.id)">Review session</button>
-          } @else if (primaryAction('FOLLOW_UP_DUE') === 'prescribe') {
-            @if (canPrescribe()) {
-              <button type="button" class="btn-primary" (click)="openPrescription(item.id, item.patient?.name)">Prescribe</button>
-            }
-            @if (canCaseAnalysis()) {
-              <button type="button" (click)="openCaseAnalysis(item.id, item.patient?.name)">Case</button>
-            }
-          } @else {
-            @if (canCaseAnalysis()) {
-              <button type="button" class="btn-primary" (click)="openCaseAnalysis(item.id, item.patient?.name)">Case</button>
-            }
-            @if (canPrescribe()) {
-              <button type="button" (click)="openPrescription(item.id, item.patient?.name)">Prescribe</button>
-            }
+        <small class="muted">
+          {{ userCodeTitle() }} {{ item.patient?.patientCode || item.patient?.id }}
+          @if (item.followUpDate) {
+            · Follow-up {{ item.followUpDate | date: 'mediumDate' }}
           }
-        </div>
-        <button type="button" class="ghost actions-more" (click)="toggleCardMenu(item.id)">
-          {{ isCardMenuOpen(item.id) ? 'Less' : 'More' }}
-        </button>
-        @if (isCardMenuOpen(item.id)) {
-          <div class="actions-secondary">
-            @if (!canPrescribe() && !canCaseAnalysis()) {
-              <button type="button" class="ghost" (click)="openOnlineSession(item.id)">Open session</button>
-            } @else {
-              <button type="button" class="ghost" (click)="openConsultationContext(item.id)">Intake &amp; chat</button>
+        </small>
+        @if (canPrescribe() || canCaseAnalysis()) {
+          <div class="session-card__secondary">
+            <button type="button" class="ghost" (click)="openConsultationContext(item.id)">
+              Intake &amp; chat
+            </button>
+            @if (canPrescribe() && canCaseAnalysis()) {
+              <button
+                type="button"
+                class="ghost"
+                (click)="
+                  primaryAction(section) === 'prescribe'
+                    ? openCaseAnalysis(item.id, item.patient?.name)
+                    : openPrescription(item.id, item.patient?.name)
+                "
+              >
+                {{ primaryAction(section) === 'prescribe' ? 'Case analysis' : 'Prescribe' }}
+              </button>
             }
-            @if ((canPrescribe() || canCaseAnalysis()) && item.patient?.patientCode) {
-              <button type="button" class="ghost" (click)="scanPatient(item.patient?.patientCode)">Scan {{ userTitleLower() }}</button>
+            @if (item.patient?.patientCode) {
+              <button type="button" class="ghost" (click)="scanPatient(item.patient?.patientCode)">
+                Scan {{ userTitleLower() }}
+              </button>
             }
           </div>
         }
       </div>
-    </article>
-  } @empty {
-    @if (!loading()) {
-      <app-empty-state title="No follow-ups due right now." description="New follow-up work will appear here."></app-empty-state>
+    </details>
+  </article>
+</ng-template>
+
+@if (showSection('FOLLOW_UP_DUE')) {
+  <section class="worklist-section worklist-section--follow-up">
+    <h2>Follow-up due</h2>
+    @for (item of followUpDue(); track item.id) {
+      <ng-container
+        [ngTemplateOutlet]="sessionCard"
+        [ngTemplateOutletContext]="{ $implicit: item, section: 'FOLLOW_UP_DUE' }"
+      />
+    } @empty {
+      @if (!loading()) {
+        <app-empty-state title="No follow-ups due" description="You are caught up for now." />
+      }
     }
-  }
-</section>
+  </section>
 }
 
 @if (showSection('ASSIGNED')) {
-<section class="panel">
-  <h3>Assigned</h3>
-  @if (loading() && !assigned().length) {
-    <p class="loading-text">Loading assigned {{ sessionTitleLowerPlural() }}…</p>
-  }
-  @for (item of assigned(); track item.id) {
-    <article class="card">
-      <strong>{{ item.patient?.name || userTitle() }} — {{ item.disease?.name || sessionTitle() }}</strong>
-      <hopehub-detail-rows [rows]="worklistMetaRows(item)" />
-      @if (pricingInsight(item); as pricing) {
-        <div class="pricing-chip">
-          <strong>{{ pricing.headline }}</strong>
-          <span>{{ pricing.subline }}</span>
-          @if (pricing.billableMinutes) {
-            <span>{{ pricing.billableMinutes }} billable min</span>
-          }
-          @if (pricing.balanceDueLabel) {
-            <span>Balance due {{ pricing.balanceDueLabel }}</span>
-          }
-          @if (pricing.refundedLabel) {
-            <span>Refunded {{ pricing.refundedLabel }}</span>
-          }
-          @if (pricing.payoutLabel) {
-            <span>Payout {{ pricing.payoutLabel }}</span>
-          }
-        </div>
+  <section class="worklist-section">
+    <h2>Assigned</h2>
+    @for (item of assigned(); track item.id) {
+      <ng-container
+        [ngTemplateOutlet]="sessionCard"
+        [ngTemplateOutletContext]="{ $implicit: item, section: 'ASSIGNED' }"
+      />
+    } @empty {
+      @if (!loading()) {
+        <app-empty-state
+          [title]="'No newly assigned ' + sessionTitleLowerPlural()"
+          description="New assignments will appear here."
+        />
       }
-      <small class="muted">{{ userCodeTitle() }} {{ item.patient?.patientCode || item.patient?.id }}</small>
-      <div class="actions actions-mobile">
-        <div class="actions-primary">
-          @if (!canPrescribe() && !canCaseAnalysis()) {
-            <button type="button" class="btn-primary" (click)="openOnlineSession(item.id)">Start session</button>
-          } @else if (primaryAction('ASSIGNED') === 'prescribe') {
-            @if (canPrescribe()) {
-              <button type="button" class="btn-primary" (click)="openPrescription(item.id, item.patient?.name)">Prescribe</button>
-            }
-            @if (canCaseAnalysis()) {
-              <button type="button" (click)="openCaseAnalysis(item.id, item.patient?.name)">Case</button>
-            }
-          } @else {
-            @if (canCaseAnalysis()) {
-              <button type="button" class="btn-primary" (click)="openCaseAnalysis(item.id, item.patient?.name)">Case</button>
-            }
-            @if (canPrescribe()) {
-              <button type="button" (click)="openPrescription(item.id, item.patient?.name)">Prescribe</button>
-            }
-          }
-        </div>
-        <button type="button" class="ghost actions-more" (click)="toggleCardMenu(item.id)">
-          {{ isCardMenuOpen(item.id) ? 'Less' : 'More' }}
-        </button>
-        @if (isCardMenuOpen(item.id)) {
-          <div class="actions-secondary">
-            @if (!canPrescribe() && !canCaseAnalysis()) {
-              <button type="button" class="ghost" (click)="openOnlineSession(item.id)">Open session</button>
-            } @else {
-              <button type="button" class="ghost" (click)="openConsultationContext(item.id)">Intake &amp; chat</button>
-            }
-          </div>
-        }
-      </div>
-    </article>
-  } @empty {
-    @if (!loading()) {
-      <app-empty-state [title]="'No newly assigned ' + sessionTitleLowerPlural()" description="New assignments will appear here."></app-empty-state>
     }
-  }
-</section>
+  </section>
 }
 
 @if (showSection('IN_PROGRESS')) {
-<section class="panel">
-  <h3>In progress</h3>
-  @if (loading() && !inProgress().length) {
-    <p class="loading-text">Loading in-progress {{ sessionTitleLowerPlural() }}…</p>
-  }
-  @for (item of inProgress(); track item.id) {
-    <article class="card">
-      <strong>{{ item.patient?.name || userTitle() }} — {{ item.disease?.name || sessionTitle() }}</strong>
-      <hopehub-detail-rows [rows]="worklistMetaRows(item)" />
-      @if (pricingInsight(item); as pricing) {
-        <div class="pricing-chip">
-          <strong>{{ pricing.headline }}</strong>
-          <span>{{ pricing.subline }}</span>
-          @if (pricing.billableMinutes) {
-            <span>{{ pricing.billableMinutes }} billable min</span>
-          }
-          @if (pricing.balanceDueLabel) {
-            <span>Balance due {{ pricing.balanceDueLabel }}</span>
-          }
-          @if (pricing.refundedLabel) {
-            <span>Refunded {{ pricing.refundedLabel }}</span>
-          }
-          @if (pricing.payoutLabel) {
-            <span>Payout {{ pricing.payoutLabel }}</span>
-          }
-        </div>
+  <section class="worklist-section">
+    <h2>In progress</h2>
+    @for (item of inProgress(); track item.id) {
+      <ng-container
+        [ngTemplateOutlet]="sessionCard"
+        [ngTemplateOutletContext]="{ $implicit: item, section: 'IN_PROGRESS' }"
+      />
+    } @empty {
+      @if (!loading()) {
+        <app-empty-state
+          [title]="'No in-progress ' + sessionTitleLowerPlural()"
+          description="Open an assigned item when you are ready."
+        />
       }
-      <small class="muted">{{ userCodeTitle() }} {{ item.patient?.patientCode || item.patient?.id }}</small>
-      <div class="actions actions-mobile">
-        <div class="actions-primary">
-          @if (!canPrescribe() && !canCaseAnalysis()) {
-            <button type="button" class="btn-primary" (click)="openOnlineSession(item.id)">Continue session</button>
-          } @else if (primaryAction('IN_PROGRESS') === 'prescribe') {
-            @if (canPrescribe()) {
-              <button type="button" class="btn-primary" (click)="openPrescription(item.id, item.patient?.name)">Prescribe</button>
-            }
-            @if (canCaseAnalysis()) {
-              <button type="button" (click)="openCaseAnalysis(item.id, item.patient?.name)">Case</button>
-            }
-          } @else {
-            @if (canCaseAnalysis()) {
-              <button type="button" class="btn-primary" (click)="openCaseAnalysis(item.id, item.patient?.name)">Case</button>
-            }
-            @if (canPrescribe()) {
-              <button type="button" (click)="openPrescription(item.id, item.patient?.name)">Prescribe</button>
-            }
-          }
-        </div>
-        <button type="button" class="ghost actions-more" (click)="toggleCardMenu(item.id)">
-          {{ isCardMenuOpen(item.id) ? 'Less' : 'More' }}
-        </button>
-        @if (isCardMenuOpen(item.id)) {
-          <div class="actions-secondary">
-            @if (!canPrescribe() && !canCaseAnalysis()) {
-              <button type="button" class="ghost" (click)="openOnlineSession(item.id)">Open session</button>
-            } @else {
-              <button type="button" class="ghost" (click)="openConsultationContext(item.id)">Intake &amp; chat</button>
-            }
-            @if ((canPrescribe() || canCaseAnalysis()) && item.patient?.patientCode) {
-              <button type="button" class="ghost" (click)="scanPatient(item.patient?.patientCode)">Scan {{ userTitleLower() }}</button>
-            }
-          </div>
-        }
-      </div>
-    </article>
-  } @empty {
-    @if (!loading()) {
-      <app-empty-state [title]="'No in-progress ' + sessionTitleLowerPlural()" description="Open an assigned item when you are ready to begin."></app-empty-state>
     }
-  }
-</section>
+  </section>
+}
+
+@if (loading()) {
+  <p class="loading-text">Loading your worklist…</p>
 }
 
 <p class="footer-link">
   @if (canPrescribe() || canCaseAnalysis()) {
     Need patient search or adherence? <a [routerLink]="['/', 'patients']">Go to Patients</a>
   } @else {
-    Need live support controls? <a [routerLink]="['/', 'online-doctor']">Go to online inbox</a>
+    Need live controls? <a [routerLink]="['/', 'online-doctor']">Manage availability</a>
   }
 </p>

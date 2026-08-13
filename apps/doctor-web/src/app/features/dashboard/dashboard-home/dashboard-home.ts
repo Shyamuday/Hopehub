@@ -23,7 +23,7 @@ import {
 } from '../../../core/constants/provider-language.constants';
 import { ConsultationNavigationService } from '../../../core/services/consultation-navigation.service';
 import { buildPaymentSummaryStatFields } from '../constants/dashboard-stat.fields';
-import { WorklistApiService } from '../../worklist/worklist-api.service';
+import { WorklistApiService, type WorklistItem } from '../../worklist/worklist-api.service';
 import {
   DoctorSessionService,
   type ProviderReadiness,
@@ -56,6 +56,7 @@ export class DashboardHome {
   readonly error = signal('');
   readonly worklistError = signal('');
   readonly worklistCounts = signal({ assigned: 0, inProgress: 0, followUpDue: 0 });
+  readonly nextWorkItem = signal<WorklistItem | null>(null);
   readonly summary = signal<PaymentSummary | null>(null);
   readonly capabilities = signal<DoctorCapabilities>(capabilitiesForProvider(null));
   readonly canPrescribe = signal(true);
@@ -67,6 +68,7 @@ export class DashboardHome {
   readonly readiness = signal<ProviderReadiness | null>(null);
   readonly onboardingRequiredNotice = signal(false);
   readonly setupCompleteNotice = signal(false);
+  readonly capabilityRedirectNotice = signal(false);
 
   constructor(
     private readonly http: HttpClient,
@@ -78,6 +80,9 @@ export class DashboardHome {
       route.snapshot.queryParamMap.get('onboarding') === 'required',
     );
     this.setupCompleteNotice.set(route.snapshot.queryParamMap.get('setup') === 'complete');
+    this.capabilityRedirectNotice.set(
+      route.snapshot.queryParamMap.get('access') === 'not-available',
+    );
     void this.loadRole();
     void this.loadSummary();
     void this.loadWorklistCounts();
@@ -205,6 +210,57 @@ export class DashboardHome {
     return actions.filter((action) => action.enabled);
   }
 
+  isHopeHubProvider(): boolean {
+    return this.providerProfile()?.doctorType === 'PSYCHOLOGIST';
+  }
+
+  activeSessionCount(): number {
+    const counts = this.worklistCounts();
+    return counts.assigned + counts.inProgress + counts.followUpDue;
+  }
+
+  primaryDashboardAction() {
+    const counts = this.worklistCounts();
+    if (counts.inProgress > 0) {
+      return {
+        label: 'Continue active session',
+        description: `${counts.inProgress} session${counts.inProgress === 1 ? '' : 's'} in progress`,
+        route: this.worklistPath,
+        queryParams: { view: 'IN_PROGRESS' },
+      };
+    }
+    if (counts.assigned > 0) {
+      return {
+        label: 'Start next session',
+        description: `${counts.assigned} new session${counts.assigned === 1 ? '' : 's'} waiting`,
+        route: this.worklistPath,
+        queryParams: { view: 'ASSIGNED' },
+      };
+    }
+    if (counts.followUpDue > 0) {
+      return {
+        label: 'Review follow-ups',
+        description: `${counts.followUpDue} follow-up${counts.followUpDue === 1 ? '' : 's'} due`,
+        route: this.worklistPath,
+        queryParams: { view: 'FOLLOW_UP_DUE' },
+      };
+    }
+    return {
+      label: 'Go available',
+      description: 'Open Live Connect when you are ready to support someone.',
+      route: `/${ROUTE_PATHS.ONLINE_DOCTOR}`,
+      queryParams: null,
+    };
+  }
+
+  estimatedEarnings(): number {
+    return Number(this.summary()?.totals?.estimatedDoctorEarningsInPaise || 0);
+  }
+
+  pendingEarnings(): number {
+    return Number(this.summary()?.totals?.pendingEarningsInPaise || 0);
+  }
+
   nextOnboardingStep(): ProviderOnboardingStep | null {
     return this.onboarding().steps.find((step) => step.required && !step.complete) || null;
   }
@@ -219,6 +275,12 @@ export class DashboardHome {
     try {
       const response = await this.worklistApi.loadWorklist();
       this.worklistCounts.set(response.counts);
+      this.nextWorkItem.set(
+        response.sections.inProgress[0] ||
+          response.sections.assigned[0] ||
+          response.sections.followUpDue[0] ||
+          null,
+      );
     } catch {
       this.worklistError.set('Could not load worklist summary.');
     } finally {

@@ -1,6 +1,5 @@
 import { CommonModule, DatePipe, formatDate } from '@angular/common';
 import { Component, inject, signal } from '@angular/core';
-import { form, FormField } from '@angular/forms/signals';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { buildDetailRows, DetailRowsComponent } from '@hopehub/platform-ui';
 import { ROUTE_PATHS } from '../../../core/constants/app-routes.constants';
@@ -15,7 +14,6 @@ import {
 import { worklistItemMetaFields } from '../constants/worklist-detail.fields';
 import { AppButtonComponent } from '../../../shared/ui/app-button.component';
 import { AppEmptyStateComponent } from '../../../shared/ui/app-empty-state.component';
-import { AppFilterToolbarComponent } from '../../../shared/ui/app-filter-toolbar.component';
 import { AppPageHeaderComponent } from '../../../shared/ui/app-page-header.component';
 import { AppStatusChipComponent } from '../../../shared/ui/app-status-chip.component';
 
@@ -24,12 +22,10 @@ import { AppStatusChipComponent } from '../../../shared/ui/app-status-chip.compo
   imports: [
     CommonModule,
     DatePipe,
-    FormField,
     RouterLink,
     DetailRowsComponent,
     AppButtonComponent,
     AppEmptyStateComponent,
-    AppFilterToolbarComponent,
     AppPageHeaderComponent,
     AppStatusChipComponent,
   ],
@@ -54,12 +50,10 @@ export class WorklistPage {
     search: '',
     view: this.initialView(),
   });
-  readonly filterForm = form(this.filterModel);
   readonly counts = signal({ assigned: 0, inProgress: 0, followUpDue: 0 });
   readonly assigned = signal<WorklistItem[]>([]);
   readonly inProgress = signal<WorklistItem[]>([]);
   readonly followUpDue = signal<WorklistItem[]>([]);
-  readonly expandedCardId = signal<string | null>(null);
   readonly canPrescribe = signal(true);
   readonly canCaseAnalysis = signal(true);
 
@@ -249,6 +243,36 @@ export class WorklistPage {
     return this.consultationNav.primaryActionForSection(section);
   }
 
+  primaryActionLabel(section: 'ASSIGNED' | 'IN_PROGRESS' | 'FOLLOW_UP_DUE'): string {
+    if (!this.canPrescribe() && !this.canCaseAnalysis()) {
+      if (section === 'ASSIGNED') return 'Start session';
+      if (section === 'IN_PROGRESS') return 'Continue session';
+      return 'Review session';
+    }
+    return this.primaryAction(section) === 'prescribe' && this.canPrescribe()
+      ? 'Prescribe'
+      : 'Open case';
+  }
+
+  performPrimaryAction(
+    section: 'ASSIGNED' | 'IN_PROGRESS' | 'FOLLOW_UP_DUE',
+    item: WorklistItem,
+  ): void {
+    if (!this.canPrescribe() && !this.canCaseAnalysis()) {
+      this.openOnlineSession(item.id);
+      return;
+    }
+    if (this.primaryAction(section) === 'prescribe' && this.canPrescribe()) {
+      this.openPrescription(item.id, item.patient?.name);
+      return;
+    }
+    if (this.canCaseAnalysis()) {
+      this.openCaseAnalysis(item.id, item.patient?.name);
+      return;
+    }
+    this.openPrescription(item.id, item.patient?.name);
+  }
+
   openConsultationContext(consultationId: string) {
     void this.consultationNav.openPrescriptionContext(consultationId);
   }
@@ -318,13 +342,5 @@ export class WorklistPage {
       currency: 'INR',
       maximumFractionDigits: 0,
     }).format((value || 0) / 100);
-  }
-
-  toggleCardMenu(consultationId: string) {
-    this.expandedCardId.update((current) => (current === consultationId ? null : consultationId));
-  }
-
-  isCardMenuOpen(consultationId: string) {
-    return this.expandedCardId() === consultationId;
   }
 }

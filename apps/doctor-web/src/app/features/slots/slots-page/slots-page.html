@@ -79,30 +79,93 @@
         <div class="rules-head">
           <div>
             <h3>Recurring availability</h3>
-            <p>Create weekly rules and auto-generate the next 30 days of bookable times.</p>
+            <p>Set a weekly routine in three short steps.</p>
           </div>
         </div>
-        <div class="rule-form">
-          <input [formField]="ruleForm.label" placeholder="Rule label" />
-          <select [formField]="ruleForm.weekday">
-            @for (day of weekdayOptions; track day.value) {
-              <option [value]="day.value">{{ day.label }}</option>
+        <div class="rule-stepper" aria-label="Recurring availability progress">
+          <span [class.active]="ruleStep() === 1" [class.done]="ruleStep() > 1">1 · Days</span>
+          <span [class.active]="ruleStep() === 2" [class.done]="ruleStep() > 2">2 · Time</span>
+          <span [class.active]="ruleStep() === 3">3 · Details</span>
+        </div>
+
+        <div class="rule-form rule-form--guided">
+          @if (ruleStep() === 1) {
+            <div class="rule-step-content">
+              <strong>Which days are comfortable?</strong>
+              <div class="weekday-picker">
+                @for (day of weekdayOptions; track day.value) {
+                  <button
+                    type="button"
+                    [class.selected]="ruleWeekdaySelected(day.value)"
+                    (click)="toggleRuleWeekday(day.value)"
+                  >
+                    {{ day.label }}
+                  </button>
+                }
+              </div>
+            </div>
+          } @else if (ruleStep() === 2) {
+            <div class="rule-step-content">
+              <strong>What time works?</strong>
+              <div class="rule-time-row">
+                <label>From <input type="time" [formField]="ruleForm.startTime" /></label>
+                <label>To <input type="time" [formField]="ruleForm.endTime" /></label>
+                <label>Session length
+                  <select
+                    [value]="ruleModel().slotDurationMinutes"
+                    (change)="setRuleNumber('slotDurationMinutes', $any($event.target).value)"
+                  >
+                    <option value="15">15 minutes</option>
+                    <option value="30">30 minutes</option>
+                    <option value="45">45 minutes</option>
+                    <option value="60">60 minutes</option>
+                  </select>
+                </label>
+              </div>
+            </div>
+          } @else {
+            <div class="rule-step-content">
+              <strong>Confirm your routine</strong>
+              <input [formField]="ruleForm.label" placeholder="Name, e.g. Evening availability" />
+              <div class="rule-detail-grid">
+                <label>Start from <input type="date" [formField]="ruleForm.startsOn" /></label>
+                <label>End date <span>(optional)</span><input type="date" [formField]="ruleForm.endsOn" /></label>
+                <label>Break between sessions
+                  <select
+                    [value]="ruleModel().bufferMinutes"
+                    (change)="setRuleNumber('bufferMinutes', $any($event.target).value)"
+                  >
+                    <option value="0">No break</option>
+                    <option value="5">5 minutes</option>
+                    <option value="10">10 minutes</option>
+                    <option value="15">15 minutes</option>
+                  </select>
+                </label>
+                <label>Maximum per day
+                  <input type="number" [formField]="ruleForm.maxSessionsPerDay" />
+                </label>
+                <label class="rule-service">Service
+                  <select [formField]="ruleForm.careTeamServiceId">
+                    <option value="">All services</option>
+                    @for (service of services(); track service.id) {
+                      <option [value]="service.id">{{ service.title }} · {{ service.durationMinutes }} min</option>
+                    }
+                  </select>
+                </label>
+              </div>
+            </div>
+          }
+
+          <div class="rule-step-actions">
+            @if (ruleStep() > 1) {
+              <button type="button" class="rule-back" (click)="previousRuleStep()">Back</button>
             }
-          </select>
-          <input type="time" [formField]="ruleForm.startTime" />
-          <input type="time" [formField]="ruleForm.endTime" />
-          <input type="number" [formField]="ruleForm.slotDurationMinutes" title="Slot minutes" />
-          <input type="number" [formField]="ruleForm.bufferMinutes" title="Buffer minutes" />
-          <input type="number" [formField]="ruleForm.maxSessionsPerDay" title="Max sessions/day" />
-          <input type="date" [formField]="ruleForm.startsOn" />
-          <input type="date" [formField]="ruleForm.endsOn" title="Optional end date" />
-          <select [formField]="ruleForm.careTeamServiceId">
-            <option value="">All services</option>
-            @for (service of services(); track service.id) {
-              <option [value]="service.id">{{ service.title }} · {{ service.durationMinutes }} min</option>
+            @if (ruleStep() < 3) {
+              <button type="button" class="btn-primary" (click)="nextRuleStep()">Continue</button>
+            } @else {
+              <button class="btn-primary" type="button" (click)="addRule()" [disabled]="readinessBlocksActions()">Save weekly availability</button>
             }
-          </select>
-          <button class="btn-primary" type="button" (click)="addRule()" [disabled]="readinessBlocksActions()">Save & generate</button>
+          </div>
         </div>
         @if (rules().length) {
           <div class="rule-list">

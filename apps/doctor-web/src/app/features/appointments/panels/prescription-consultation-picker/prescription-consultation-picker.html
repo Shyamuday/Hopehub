@@ -17,7 +17,7 @@
           <div>
             <strong>{{ item.patient?.name || 'Patient' }}</strong>
             @if (item.patient?.patientCode) {
-              <span class="muted"> · {{ item.patient?.patientCode }}</span>
+          <span class="muted"> · {{ item.patient.patientCode }}</span>
             }
             <p class="muted">{{ item.disease?.name || 'Consultation' }} · {{ sectionLabel(item) }}</p>
           </div>

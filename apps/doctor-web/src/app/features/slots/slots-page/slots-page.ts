@@ -103,6 +103,8 @@ export class SlotsPage implements OnInit {
   readinessLoading = signal(false);
   toast = signal('');
   setupMode = signal(false);
+  ruleStep = signal<1 | 2 | 3>(1);
+  selectedRuleWeekdays = signal<string[]>([String(new Date().getDay())]);
   pendingConfirmation = signal<{
     kind: 'clear-day' | 'delete-slot' | 'disable-rule';
     id?: string;
@@ -297,34 +299,87 @@ export class SlotsPage implements OnInit {
   async addRule(): Promise<void> {
     if (this.stopIfNotReady()) return;
     const body = this.ruleModel();
-    if (!body.label || !body.startTime || !body.endTime || body.endTime <= body.startTime) {
+    const weekdays = this.selectedRuleWeekdays();
+    if (
+      !weekdays.length ||
+      !body.label ||
+      !body.startTime ||
+      !body.endTime ||
+      body.endTime <= body.startTime
+    ) {
       this.showToast('Invalid availability rule');
       return;
     }
     const token = this.auth.token();
     try {
-      const result = await firstValueFrom(
-        this.http.post<{ generated: { generated: number } }>(
-          `${this.base}${API_PATHS.DOCTOR.AVAILABILITY_RULES}`,
-          {
-            ...body,
-            weekday: Number(body.weekday),
-            slotDurationMinutes: Number(body.slotDurationMinutes),
-            bufferMinutes: Number(body.bufferMinutes),
-            maxSessionsPerDay: body.maxSessionsPerDay ? Number(body.maxSessionsPerDay) : null,
-            careTeamServiceId: body.careTeamServiceId || null,
-            endsOn: body.endsOn || null,
-            generateNow: true,
-          },
-          { headers: { Authorization: `Bearer ${token}` } },
-        ),
+      let generated = 0;
+      for (const weekday of weekdays) {
+        const result = await firstValueFrom(
+          this.http.post<{ generated: { generated: number } }>(
+            `${this.base}${API_PATHS.DOCTOR.AVAILABILITY_RULES}`,
+            {
+              ...body,
+              label:
+                weekdays.length > 1
+                  ? `${body.label} · ${this.weekdayLabel(Number(weekday))}`
+                  : body.label,
+              weekday: Number(weekday),
+              slotDurationMinutes: Number(body.slotDurationMinutes),
+              bufferMinutes: Number(body.bufferMinutes),
+              maxSessionsPerDay: body.maxSessionsPerDay ? Number(body.maxSessionsPerDay) : null,
+              careTeamServiceId: body.careTeamServiceId || null,
+              endsOn: body.endsOn || null,
+              generateNow: true,
+            },
+            { headers: { Authorization: `Bearer ${token}` } },
+          ),
+        );
+        generated += result.generated.generated;
+      }
+      this.showToast(
+        `${weekdays.length} weekly rule${weekdays.length === 1 ? '' : 's'} saved · ${generated} slots generated`,
       );
-      this.showToast(`Rule saved · ${result.generated.generated} slots generated`);
+      this.ruleStep.set(1);
       this.load();
       await this.loadReadiness();
     } catch (e: any) {
       this.showToast(e?.error?.message ?? 'Failed to save availability rule');
     }
+  }
+
+  toggleRuleWeekday(value: string): void {
+    this.selectedRuleWeekdays.update((selected) =>
+      selected.includes(value) ? selected.filter((day) => day !== value) : [...selected, value],
+    );
+  }
+
+  ruleWeekdaySelected(value: string): boolean {
+    return this.selectedRuleWeekdays().includes(value);
+  }
+
+  nextRuleStep(): void {
+    if (this.ruleStep() === 1 && !this.selectedRuleWeekdays().length) {
+      this.showToast('Choose at least one day.');
+      return;
+    }
+    if (
+      this.ruleStep() === 2 &&
+      (!this.ruleModel().startTime ||
+        !this.ruleModel().endTime ||
+        this.ruleModel().endTime <= this.ruleModel().startTime)
+    ) {
+      this.showToast('Choose a valid start and end time.');
+      return;
+    }
+    this.ruleStep.update((step) => Math.min(3, step + 1) as 1 | 2 | 3);
+  }
+
+  previousRuleStep(): void {
+    this.ruleStep.update((step) => Math.max(1, step - 1) as 1 | 2 | 3);
+  }
+
+  setRuleNumber(field: 'slotDurationMinutes' | 'bufferMinutes', value: string): void {
+    this.ruleModel.update((rule) => ({ ...rule, [field]: Number(value) }));
   }
 
   async generateRule(rule: AvailabilityRule): Promise<void> {

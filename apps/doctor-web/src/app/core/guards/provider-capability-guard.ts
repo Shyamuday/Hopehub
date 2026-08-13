@@ -18,5 +18,7 @@ export const providerCapabilityGuard: CanActivateFn = async (route) => {
     return router.createUrlTree(['/', ROUTE_PATHS.LOGIN]);
   }
 
-  return router.createUrlTree(['/', ROUTE_PATHS.DASHBOARD]);
+  return router.createUrlTree(['/', ROUTE_PATHS.DASHBOARD], {
+    queryParams: { access: 'not-available' },
+  });
 };

@@ -1,100 +1,60 @@
-<section class="panel">
-  <h1>{{ workspaceTitle() }}</h1>
-  <p class="lead">{{ workspaceLead() }}</p>
-</section>
-
 @if (loading()) {
-  <p>Loading…</p>
+  <section class="panel"><p class="muted">Loading availability…</p></section>
 } @else {
+  <header class="live-page-header">
+    <div>
+      <small>Live Connect</small>
+      <h1>{{ isHomeopathyProvider() ? 'Live consultations' : 'Live support' }}</h1>
+    </div>
+  </header>
+
   @if (readiness(); as ready) {
-    <section class="panel readiness-panel" [class.ready]="ready.ready">
+    @if (!ready.ready) {
+    <section class="panel readiness-panel">
       <div>
-        <h2>{{ ready.ready ? 'Ready to go live' : 'Complete before going live' }}</h2>
-        <p class="muted">{{ ready.ready ? 'You can accept live requests now.' : ready.message }}</p>
+        <h2>Complete setup before going live</h2>
+        <p class="muted">{{ ready.message }}</p>
       </div>
-      @if (!ready.ready) {
-        <div class="readiness-list">
-          @for (blocker of ready.blockers; track blocker.code) {
-            <article>
-              <strong>{{ blocker.label }}</strong>
-              @if (blocker.action) {
-                <span>{{ blocker.action }}</span>
-              }
-            </article>
-          }
-        </div>
-      }
+      <div class="readiness-list">
+        @for (blocker of ready.blockers; track blocker.code) {
+          <article>
+            <strong>{{ blocker.label }}</strong>
+            @if (blocker.action) { <span>{{ blocker.action }}</span> }
+          </article>
+        }
+      </div>
     </section>
+    }
   }
 
-  <section class="panel status-panel" [class.is-live]="isLive()">
-    <div>
-      <h2>Live status</h2>
-      <p class="status">{{ statusLabel() }}</p>
-      <p class="muted">Current modes: {{ acceptedModesLabel() }}</p>
+  <section class="availability-card" [class.is-live]="isLive()">
+    <div class="availability-copy">
+      <span class="availability-dot" aria-hidden="true"></span>
+      <div>
+        <h2>{{ availabilityTitle() }}</h2>
+        <p>{{ availabilityDescription() }}</p>
+      </div>
       @if (isLive()) {
-        <p
-          class="connection-health"
-          [class.connection-health--active]="heartbeatHealthy()"
-          role="status"
-        >
+        <small class="connection-health" [class.connection-health--active]="heartbeatHealthy()" role="status">
           <span aria-hidden="true"></span>{{ connectionLabel() }}
-        </p>
+        </small>
       }
     </div>
-    <div class="actions">
-      @if (!isLive()) {
-        <button
-          type="button"
-          (click)="goOnline()"
-          [disabled]="saving() || !canAcceptAnyMode() || readiness()?.ready === false"
-        >
-          Go online
-        </button>
-      } @else {
-        <button type="button" class="danger" (click)="goOffline()" [disabled]="saving()">
-          Pause new requests
-        </button>
-      }
-    </div>
+    <button
+      type="button"
+      class="availability-toggle"
+      [class.availability-toggle--live]="isLive()"
+      (click)="toggleLiveStatus()"
+      [disabled]="saving() || availabilityLocked() || (!isLive() && (!canAcceptAnyMode() || readiness()?.ready === false))"
+      [attr.aria-pressed]="isLive()"
+    >
+      <span></span>
+      {{ availabilityActionLabel() }}
+    </button>
   </section>
 
-  @if (isLive()) {
-    <section class="panel inbox-panel">
-      <div class="inbox-head">
-        <h2>{{ inboxTitle() }}</h2>
-        @if (isLive()) {
-          <button type="button" class="ghost" (click)="loadInbox()" [disabled]="inboxLoading()">
-            Refresh
-          </button>
-        }
-      </div>
-      @if (isLive()) {
-        @if (inboxLoading() && !instantConsults().length) {
-          <p class="muted">Loading active consults…</p>
-        } @else if (!instantConsults().length) {
-          <p class="muted">
-            No active instant consults yet. Users will appear here when assigned to you.
-          </p>
-        } @else {
-          <ul class="inbox-list">
-            @for (c of instantConsults(); track c.id) {
-              <li>
-                <a class="inbox-item" [routerLink]="['/', sessionsPath, c.id]">
-                  <strong>{{ c.patient.name }}</strong>
-                  <span>{{ c.disease.name }} · {{ c.status }}</span>
-                  <em>Open live room →</em>
-                </a>
-              </li>
-            }
-          </ul>
-        }
-      }
-    </section>
-  }
-
-  <section class="panel">
-    <h2>{{ isHomeopathyProvider() ? 'How patients see you' : 'How Hope Hub users see you' }}</h2>
+  <details class="connection-preferences">
+    <summary>Connection preferences · {{ acceptedModesLabel() }}</summary>
     <fieldset class="form-grid" [disabled]="saving()">
       @if (isHomeopathyProvider()) {
         <div class="field">
@@ -104,27 +64,37 @@
             <option value="SPECIALIST">Disease specialist</option>
           </select>
         </div>
-      } @else {
-        <p class="muted full">
-          Your support type is set in your profile. Here, simply choose when you are available and
-          which ways people can connect with you.
-        </p>
       }
       <div class="mode-control-grid full" aria-label="Live Connect modes">
         <label class="mode-control-card" [class.mode-control-card--unavailable]="!modeAllowed('CHAT')">
-          <input type="checkbox" [formField]="settingsForm.acceptsChat" [disabled]="!modeAllowed('CHAT')" />
+          <input
+            type="checkbox"
+            [checked]="settingsModel().acceptsChat"
+            [disabled]="!modeAllowed('CHAT')"
+            (change)="setModePreference('acceptsChat', $any($event.target).checked)"
+          />
           <span>💬</span>
           <strong>Accept chat</strong>
           <small>{{ modeAllowed('CHAT') ? 'Private text support requests.' : 'Not available for your selected role.' }}</small>
         </label>
         <label class="mode-control-card" [class.mode-control-card--unavailable]="!modeAllowed('VOICE')">
-          <input type="checkbox" [formField]="settingsForm.acceptsVoiceCall" [disabled]="!modeAllowed('VOICE')" />
+          <input
+            type="checkbox"
+            [checked]="settingsModel().acceptsVoiceCall"
+            [disabled]="!modeAllowed('VOICE')"
+            (change)="setModePreference('acceptsVoiceCall', $any($event.target).checked)"
+          />
           <span>🎧</span>
           <strong>Accept voice</strong>
           <small>{{ modeAllowed('VOICE') ? 'Audio sessions without camera.' : 'Not available for your selected role.' }}</small>
         </label>
         <label class="mode-control-card" [class.mode-control-card--unavailable]="!modeAllowed('VIDEO')">
-          <input type="checkbox" [formField]="settingsForm.acceptsVideoCall" [disabled]="!modeAllowed('VIDEO')" />
+          <input
+            type="checkbox"
+            [checked]="settingsModel().acceptsVideoCall"
+            [disabled]="!modeAllowed('VIDEO')"
+            (change)="setModePreference('acceptsVideoCall', $any($event.target).checked)"
+          />
           <span>🎥</span>
           <strong>Accept video</strong>
           <small>{{ modeAllowed('VIDEO') ? 'Face-to-face sessions.' : 'Not available for your selected role.' }}</small>
@@ -150,10 +120,74 @@
           </div>
         </div>
       }
-      <button type="button" class="ghost" (click)="saveSettings()" [disabled]="saving()">
-        Save profile
+      <button type="button" class="save-preferences" (click)="saveSettings()" [disabled]="saving()">
+        {{ saving() ? 'Saving…' : 'Save preferences' }}
       </button>
     </fieldset>
+  </details>
+
+  <section class="panel inbox-panel">
+    <div class="inbox-head">
+      <div>
+        <h2>{{ inboxTitle() }}</h2>
+        <p class="muted">Assigned live requests appear here.</p>
+      </div>
+      @if (isLive()) {
+        <button type="button" class="ghost" (click)="loadInbox()" [disabled]="inboxLoading()">Refresh</button>
+      }
+    </div>
+    @if (!isLive()) {
+      <p class="muted">Go available when you are ready to receive a request.</p>
+    } @else if (inboxLoading() && !instantConsults().length) {
+      <p class="muted">Checking for requests…</p>
+    } @else if (inboxError() && !instantConsults().length) {
+      <div class="inbox-error" role="alert">
+        <p>{{ inboxError() }}</p>
+        <button type="button" class="ghost" (click)="loadInbox()" [disabled]="inboxLoading()">
+          Try again
+        </button>
+      </div>
+    } @else if (!instantConsults().length) {
+      <div class="waiting-state"><span>✓</span><p>You are live. New requests will appear automatically.</p></div>
+    } @else {
+      @if (inboxError()) {
+        <p class="inbox-inline-error" role="alert">{{ inboxError() }}</p>
+      }
+      <ul class="inbox-list">
+        @for (c of instantConsults(); track c.id) {
+          <li>
+            <article class="inbox-item" [class.inbox-item--waiting]="isWaitingConsultation(c)">
+              <div class="inbox-item__copy">
+                <strong>{{ c.patient.name }}</strong>
+                <span>{{ c.disease.name }} · {{ consultationStatusLabel(c) }}</span>
+              </div>
+              @if (isWaitingConsultation(c)) {
+                <div class="inbox-item__actions">
+                  <button
+                    type="button"
+                    class="decline-action"
+                    (click)="declineConsultation(c)"
+                    [disabled]="respondingConsultationId() !== null"
+                  >
+                    Decline
+                  </button>
+                  <button
+                    type="button"
+                    class="accept-action"
+                    (click)="acceptConsultation(c)"
+                    [disabled]="respondingConsultationId() !== null"
+                  >
+                    {{ respondingConsultationId() === c.id ? 'Opening…' : 'Accept' }}
+                  </button>
+                </div>
+              } @else {
+                <a class="continue-action" [routerLink]="['/', sessionsPath, c.id]">Continue session →</a>
+              }
+            </article>
+          </li>
+        }
+      </ul>
+    }
   </section>
 }
 

@@ -94,7 +94,7 @@
             @if (hasConsultationContext()) {
               <button type="button" class="btn-secondary" (click)="addRubricToCase(rubric)">Add to case</button>
             }
-            @if (rubric.remedies?.length) {
+            @if (rubric.remedies.length) {
               <div class="remedy-chips">
                 @for (link of rubric.remedies; track link.remedy.id) {
                   <button type="button" class="chip" [attr.data-grade]="link.grade" (click)="openMateriaMedicaFromRubric(link.remedy)">

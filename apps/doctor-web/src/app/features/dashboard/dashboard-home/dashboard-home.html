@@ -50,7 +50,7 @@
           <h3>{{ step.title }}</h3>
           <p>{{ step.description }}</p>
           @if (step.missing?.length) {
-            <small class="missing-fields">You will need: {{ step.missing?.join(', ') }}</small>
+            <small class="missing-fields">You will need: {{ step.missing.join(', ') }}</small>
           }
         </div>
         <a class="step-action" [routerLink]="step.route" [queryParams]="step.queryParams || null">{{
@@ -65,6 +65,89 @@
 </section>
 
 @if (onboarding().complete) {
+  @if (capabilityRedirectNotice()) {
+    <p class="workspace-access-note">
+      That tool is not part of your provider role. Here are the actions available to you.
+    </p>
+  }
+  @if (isHopeHubProvider()) {
+    <main class="hope-dashboard">
+      @if (readiness(); as ready) {
+        @if (!ready.ready) {
+          <section class="panel readiness-card">
+            <div class="panel-header">
+              <div>
+                <h2>One thing needs attention</h2>
+                <p class="muted">{{ ready.message }}</p>
+              </div>
+              <a class="primary-link" routerLink="/profile">Review setup</a>
+            </div>
+          </section>
+        }
+      }
+
+      <section class="hope-dashboard__primary">
+        <div>
+          <small>Your next step</small>
+          <h1>{{ primaryDashboardAction().label }}</h1>
+          <p>{{ primaryDashboardAction().description }}</p>
+        </div>
+        <a
+          [routerLink]="primaryDashboardAction().route"
+          [queryParams]="primaryDashboardAction().queryParams"
+        >
+          {{ primaryDashboardAction().label }}
+        </a>
+      </section>
+
+      <section class="hope-dashboard__grid">
+        <a class="hope-summary-card hope-summary-card--availability" routerLink="/online-doctor">
+          <span>Availability</span>
+          <strong>{{ providerProfile()?.isAvailable ? 'Available' : 'Paused' }}</strong>
+          <small>Manage Live Connect</small>
+        </a>
+
+        <a class="hope-summary-card" [routerLink]="worklistPath">
+          <span>Sessions</span>
+          <strong>{{ activeSessionCount() }}</strong>
+          <small>{{ worklistCounts().inProgress }} active · {{ worklistCounts().assigned }} new</small>
+        </a>
+
+        <a class="hope-summary-card" routerLink="/earnings">
+          <span>Earnings</span>
+          <strong>{{ estimatedEarnings() / 100 | currency: 'INR' : 'symbol' : '1.0-0' }}</strong>
+          <small>
+            {{ pendingEarnings() / 100 | currency: 'INR' : 'symbol' : '1.0-0' }} pending
+          </small>
+        </a>
+      </section>
+
+      @if (nextWorkItem(); as next) {
+        <section class="panel next-session-card">
+          <div>
+            <small>Next in your worklist</small>
+            <h2>{{ next.patient?.name || 'Hope Hub user' }}</h2>
+            <p>{{ next.disease?.name || 'Support session' }}</p>
+          </div>
+          <a class="primary-link" [routerLink]="worklistPath">Open session</a>
+        </section>
+      } @else {
+        <section class="panel calm-empty-state">
+          <span>✓</span>
+          <div>
+            <strong>You are caught up</strong>
+            <p>No sessions need attention right now.</p>
+          </div>
+        </section>
+      }
+
+      <nav class="hope-dashboard__secondary" aria-label="Provider shortcuts">
+        <a routerLink="/slots">Set available times</a>
+        <a routerLink="/profile">Update profile</a>
+        <a routerLink="/earnings">View all earnings</a>
+      </nav>
+    </main>
+  } @else {
   <div class="dashboard-board">
     @if (capabilities().earnings) {
       <aside class="dashboard-side" aria-label="Payments and recent activity">
@@ -271,4 +354,5 @@
       }
     </main>
   </div>
+  }
 }

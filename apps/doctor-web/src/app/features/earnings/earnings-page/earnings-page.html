@@ -1,8 +1,14 @@
 <div class="earn-page">
   <div class="earn-hdr">
     <div>
-      <h2>My Earnings</h2>
-      <p>Salary, {{ language().sessionLower }} fee, applicable sales, and payment status</p>
+      <h2>{{ isHopeHubProvider() ? 'Earnings' : 'My Earnings' }}</h2>
+      <p>
+        {{
+          isHopeHubProvider()
+            ? 'Your session earnings and payout status.'
+            : 'Salary, consultation fees, applicable sales, and payment status.'
+        }}
+      </p>
     </div>
     <input type="month" [formField]="monthForm.selectedMonth" (change)="load()" />
   </div>
@@ -12,7 +18,8 @@
   } @else if (error()) {
     <div class="error">{{ error() }}</div>
   } @else {
-    <div class="cards">
+    @if (!isHopeHubProvider()) {
+      <div class="cards">
       <div class="card">
         <div class="lbl">Monthly Salary (Net)</div>
         <div class="val">₹{{ formatPaise(payslip()?.salary?.netPaise ?? 0) }}</div>
@@ -38,9 +45,10 @@
         <div class="val">₹{{ formatPaise(payslip()?.totalEstimatedPayInPaise ?? 0) }}</div>
         <div class="sub">Salary net + earned consult & medicine share</div>
       </div>
-    </div>
+      </div>
+    }
 
-    @if (providerRows().length) {
+    @if (isHopeHubProvider() && providerRows().length) {
       <div class="provider-earnings-strip">
         <div>
           <span>Care-team sessions</span>
@@ -53,19 +61,26 @@
           <small>Awaiting payout</small>
         </div>
         <div>
-          <span>On hold</span>
-          <strong>₹{{ formatPaise(providerSummary().hold) }}</strong>
-          <small>Needs admin review</small>
-        </div>
-        <div>
           <span>Paid</span>
           <strong>₹{{ formatPaise(providerSummary().paid) }}</strong>
           <small>Marked paid by admin</small>
         </div>
       </div>
+      @if (providerSummary().hold > 0) {
+        <p class="payout-hold-note">
+          ₹{{ formatPaise(providerSummary().hold) }} is under review. Hope Hub support will update
+          the payout status.
+        </p>
+      }
+    } @else if (isHopeHubProvider()) {
+      <section class="panel earnings-empty">
+        <strong>No session earnings yet</strong>
+        <p>Your completed paid sessions will appear here.</p>
+      </section>
     }
 
-    <div class="panel">
+    @if (!isHopeHubProvider()) {
+      <div class="panel">
       <h3>Last 3 Months</h3>
       <div class="table-scroll desktop-only">
       <table>
@@ -101,9 +116,9 @@
           </article>
         }
       </div>
-    </div>
+      </div>
 
-    @if (consultationSummary()?.lineItems?.length) {
+      @if (consultationSummary()?.lineItems?.length) {
       <div class="panel">
         <h3>Income Breakdown</h3>
         <p class="sub">
@@ -176,72 +191,51 @@
           }
         </div>
       </div>
+      }
     }
 
-    @if (providerRows().length) {
+    @if (isHopeHubProvider() && providerRows().length) {
       <div class="panel">
-        <h3>Care-team payout ledger</h3>
+        <h3>Session earnings</h3>
         <p class="sub">
-          Shows how each {{ language().userLower }} booking converts into your earning, platform fee, and payout status.
+          Completed sessions and their payout status.
         </p>
-        <div class="table-scroll desktop-only">
-          <table>
-            <thead>
-              <tr>
-                <th>Date</th>
-                <th>{{ language().userTitle }} / Service</th>
-                <th>Pricing</th>
-              <th class="num">User Paid</th>
-              <th class="num">Refunded</th>
-              <th class="num">Your Share</th>
-                <th class="num">Platform</th>
-                <th>Payout</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (row of providerRows(); track row.id) {
-                <tr>
-                  <td>{{ row.createdAt | date: 'dd MMM yyyy' }}</td>
-                  <td>
-                    <strong>{{ row.patientName || 'User' }}</strong>
-                    <div class="sub">{{ row.serviceTitle || row.label }}</div>
-                  </td>
-                  <td>
-                    {{ pricingText(row) || 'Standard session' }}
-                    @if (row.packageUsage) {
-                      <div class="sub">Package session</div>
-                    }
-                    @if (row.billableMinutes) {
-                      <div class="sub">{{ row.billableMinutes }} billable min</div>
-                    }
-                  </td>
-                  <td class="num">₹{{ formatPaise(row.netPaidInPaise ?? row.totalGrossInPaise) }}</td>
-                  <td class="num">₹{{ formatPaise(row.refundedAmountInPaise || 0) }}</td>
-                  <td class="num"><strong>₹{{ formatPaise(row.doctorEarningsInPaise) }}</strong></td>
-                  <td class="num">₹{{ formatPaise(row.platformFeeInPaise || 0) }}</td>
-                  <td>
-                    <span class="payout-pill" [class.paid]="row.payoutStatus === 'PAID'" [class.hold]="row.payoutStatus === 'HOLD'">{{ row.payoutStatus || 'PENDING' }}</span>
-                    @if (row.payoutReference) { <div class="sub">{{ row.payoutReference }}</div> }
-                    @if (row.paidAt) { <div class="sub">{{ row.paidAt | date: 'dd MMM yyyy' }}</div> }
-                  </td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        </div>
-        <div class="mobile-row-cards">
+        <div class="provider-session-list">
           @for (row of providerRows(); track row.id) {
-            <article class="mobile-row-card">
-              <div class="card-head"><strong>{{ row.patientName || 'User' }}</strong><strong>₹{{ formatPaise(row.doctorEarningsInPaise) }}</strong></div>
-              <div class="card-row"><span>Service</span><span>{{ row.serviceTitle || row.label }}</span></div>
-              <div class="card-row"><span>Pricing</span><span>{{ pricingText(row) || 'Standard session' }}</span></div>
-              <div class="card-row"><span>Net paid</span><span>₹{{ formatPaise(row.netPaidInPaise ?? row.totalGrossInPaise) }}</span></div>
-              <div class="card-row"><span>Refunded</span><span>₹{{ formatPaise(row.refundedAmountInPaise || 0) }}</span></div>
-              <div class="card-row"><span>Platform</span><span>₹{{ formatPaise(row.platformFeeInPaise || 0) }}</span></div>
-              <div class="card-row"><span>Payout</span><span>{{ row.payoutStatus || 'PENDING' }}</span></div>
-              @if (row.payoutReference) {
-                <div class="card-row"><span>Reference</span><span>{{ row.payoutReference }}</span></div>
-              }
+            <article class="provider-session-row">
+              <div class="provider-session-main">
+                <div>
+                  <strong>{{ row.patientName || 'User' }}</strong>
+                  <span>{{ row.serviceTitle || row.label }}</span>
+                  <small>{{ row.createdAt | date: 'dd MMM yyyy' }}</small>
+                </div>
+                <div class="provider-session-amount">
+                  <strong>₹{{ formatPaise(row.doctorEarningsInPaise) }}</strong>
+                  <span
+                    class="payout-pill"
+                    [class.paid]="row.payoutStatus === 'PAID'"
+                    [class.hold]="row.payoutStatus === 'HOLD'"
+                    >{{ row.payoutStatus || 'PENDING' }}</span
+                  >
+                </div>
+              </div>
+              <details>
+                <summary>Payment details</summary>
+                <div class="provider-payment-details">
+                  <span>Pricing <b>{{ pricingText(row) || 'Standard session' }}</b></span>
+                  <span
+                    >User paid
+                    <b>₹{{ formatPaise(row.netPaidInPaise ?? row.totalGrossInPaise) }}</b></span
+                  >
+                  @if (row.refundedAmountInPaise) {
+                    <span>Refunded <b>₹{{ formatPaise(row.refundedAmountInPaise) }}</b></span>
+                  }
+                  <span>Platform fee <b>₹{{ formatPaise(row.platformFeeInPaise || 0) }}</b></span>
+                  @if (row.payoutReference) {
+                    <span>Reference <b>{{ row.payoutReference }}</b></span>
+                  }
+                </div>
+              </details>
             </article>
           }
         </div>

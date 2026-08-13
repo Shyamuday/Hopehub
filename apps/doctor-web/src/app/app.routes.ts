@@ -43,7 +43,12 @@ export const routes: Routes = [
     canActivate: [doctorAuthGuard],
     children: [
       { path: ROUTE_PATHS.WELCOME, component: ProviderPathPage },
-      { path: ROUTE_PATHS.LISTENER_SCREENING, component: ListenerScreeningPage },
+      {
+        path: ROUTE_PATHS.LISTENER_SCREENING,
+        component: ListenerScreeningPage,
+        canActivate: [providerCapabilityGuard],
+        data: { capability: 'listenerSupport' },
+      },
       {
         path: ROUTE_PATHS.WORKLIST,
         component: WorklistPage,

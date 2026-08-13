@@ -241,6 +241,15 @@ export function createOnlineDoctorsRouter(io: SocketIoServer) {
 
       const session = await ensureDoctorOnlineSession(req.user!.id);
       if (!session) return res.status(404).json({ message: 'Doctor profile not found.' });
+      if (
+        body.liveStatus === LivePresenceStatus.OFFLINE &&
+        (session.liveStatus === LivePresenceStatus.BUSY ||
+          session.liveStatus === LivePresenceStatus.ON_CALL)
+      ) {
+        return res.status(409).json({
+          message: 'Finish or return the active request before pausing availability.'
+        });
+      }
       const allowedModes = await providerAllowedSessionModes(req.user!.id);
       const unsupportedRequestedModes = [
         body.acceptsChat && !modeAllowed(allowedModes, 'CHAT') ? 'Chat' : '',

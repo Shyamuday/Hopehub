@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject, OnDestroy, OnInit, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { form, FormField } from '@angular/forms/signals';
 import { OnlineDoctorService } from '../../core/services/online-doctor.service';
 import { ROUTE_PATHS } from '../../core/constants/app-routes.constants';
@@ -32,6 +32,7 @@ type InstantConsult = {
 export class OnlineDoctorPage implements OnInit, OnDestroy {
   private readonly online = inject(OnlineDoctorService);
   private readonly session = inject(DoctorSessionService);
+  private readonly router = inject(Router);
 
   readonly sessionsPath = ROUTE_PATHS.SESSIONS;
   readonly loading = signal(true);
@@ -45,6 +46,8 @@ export class OnlineDoctorPage implements OnInit, OnDestroy {
   readonly readiness = signal<ProviderReadiness | null>(null);
   readonly instantConsults = signal<InstantConsult[]>([]);
   readonly inboxLoading = signal(false);
+  readonly inboxError = signal('');
+  readonly respondingConsultationId = signal<string | null>(null);
 
   readonly settingsModel = signal({
     category: 'GENERALIST' as 'GENERALIST' | 'SPECIALIST',
@@ -98,13 +101,61 @@ export class OnlineDoctorPage implements OnInit, OnDestroy {
   async loadInbox() {
     if (!this.isLive()) return;
     this.inboxLoading.set(true);
+    this.inboxError.set('');
     try {
       const res = await this.online.loadInstantConsultations();
       this.instantConsults.set(res.consultations);
     } catch {
-      this.instantConsults.set([]);
+      this.inboxError.set('Could not check for new requests. Your availability is unchanged.');
     } finally {
       this.inboxLoading.set(false);
+    }
+  }
+
+  isWaitingConsultation(consultation: InstantConsult): boolean {
+    return consultation.status === 'ASSIGNED';
+  }
+
+  consultationStatusLabel(consultation: InstantConsult): string {
+    if (consultation.status === 'ASSIGNED') return 'Waiting for your response';
+    if (consultation.status === 'IN_PROGRESS') return 'Session in progress';
+    if (consultation.status === 'PRESCRIPTION_UPLOADED') return 'Ready to complete';
+    return consultation.status.toLowerCase().replaceAll('_', ' ');
+  }
+
+  async acceptConsultation(consultation: InstantConsult): Promise<void> {
+    if (this.respondingConsultationId()) return;
+    this.respondingConsultationId.set(consultation.id);
+    this.inboxError.set('');
+    try {
+      await this.online.acceptInstantConsultation(consultation.id);
+      await this.router.navigate(['/', this.sessionsPath, consultation.id]);
+    } catch (error: any) {
+      this.inboxError.set(
+        error?.error?.message || 'This request is no longer available. Refresh the inbox.',
+      );
+      await this.loadInbox();
+    } finally {
+      this.respondingConsultationId.set(null);
+    }
+  }
+
+  async declineConsultation(consultation: InstantConsult): Promise<void> {
+    if (this.respondingConsultationId()) return;
+    this.respondingConsultationId.set(consultation.id);
+    this.inboxError.set('');
+    try {
+      await this.online.declineInstantConsultation(
+        consultation.id,
+        'Provider unavailable for this incoming live request',
+      );
+      this.instantConsults.update((items) => items.filter((item) => item.id !== consultation.id));
+      this.message.set('Request returned for matching with another available provider.');
+    } catch (error: any) {
+      this.inboxError.set(error?.error?.message || 'Could not return this request. Try again.');
+      await this.loadInbox();
+    } finally {
+      this.respondingConsultationId.set(null);
     }
   }
 
@@ -129,6 +180,43 @@ export class OnlineDoctorPage implements OnInit, OnDestroy {
     return 'Offline — hidden from Live Connect';
   }
 
+  availabilityTitle(): string {
+    const status = this.profile()?.liveStatus ?? 'OFFLINE';
+    if (status === 'BUSY') return 'You are busy';
+    if (status === 'ON_CALL') return 'You are on a call';
+    return this.isLive() ? 'You are available' : 'You are paused';
+  }
+
+  availabilityDescription(): string {
+    const status = this.profile()?.liveStatus ?? 'OFFLINE';
+    if (status === 'BUSY') {
+      return 'Respond to the assigned request before changing your availability.';
+    }
+    if (status === 'ON_CALL') {
+      return 'Your availability will return automatically when this session ends.';
+    }
+    if (this.isLive()) return `Accepting ${this.acceptedModesLabel()} requests.`;
+    return 'You are hidden from Live Connect and will not receive new requests.';
+  }
+
+  availabilityLocked(): boolean {
+    return ['BUSY', 'ON_CALL'].includes(this.profile()?.liveStatus ?? 'OFFLINE');
+  }
+
+  availabilityActionLabel(): string {
+    if (this.saving()) return 'Updating…';
+    const status = this.profile()?.liveStatus ?? 'OFFLINE';
+    if (status === 'BUSY') return 'Request assigned';
+    if (status === 'ON_CALL') return 'Session active';
+    return status === 'ONLINE' ? 'Pause' : 'Go available';
+  }
+
+  async toggleLiveStatus(): Promise<void> {
+    if (this.availabilityLocked()) return;
+    if (this.isLive()) await this.goOffline();
+    else await this.goOnline();
+  }
+
   acceptedModesLabel() {
     const modes = [
       this.settingsModel().acceptsChat ? 'chat' : '',
@@ -136,6 +224,13 @@ export class OnlineDoctorPage implements OnInit, OnDestroy {
       this.settingsModel().acceptsVideoCall ? 'video' : '',
     ].filter((mode): mode is 'chat' | 'voice' | 'video' => Boolean(mode));
     return modes.length ? providerConsumerSessionModeListLabel(modes) : 'No live mode selected';
+  }
+
+  setModePreference(
+    field: 'acceptsChat' | 'acceptsVoiceCall' | 'acceptsVideoCall',
+    enabled: boolean,
+  ): void {
+    this.settingsModel.update((settings) => ({ ...settings, [field]: enabled }));
   }
 
   connectionLabel() {
@@ -227,24 +322,29 @@ export class OnlineDoctorPage implements OnInit, OnDestroy {
   async saveSettings() {
     this.saving.set(true);
     this.message.set('');
+    this.error.set('');
     try {
-      const m = this.settingsModel();
-      const res = await this.online.saveProfile({
-        enabled: true,
-        category: m.category,
-        specialtyDiseaseIds: m.specialtyDiseaseIds,
-        acceptsChat: m.acceptsChat,
-        acceptsVoiceCall: m.acceptsVoiceCall,
-        acceptsVideoCall: m.acceptsVideoCall,
-      });
-      this.online.profile.set(res.profile);
-      await this.loadReadiness();
-      this.message.set('Settings saved.');
+      await this.persistConnectionPreferences();
+      this.message.set('Connection preferences saved.');
     } catch (error: any) {
       this.error.set(error?.error?.message || 'Could not save settings.');
     } finally {
       this.saving.set(false);
     }
+  }
+
+  private async persistConnectionPreferences(): Promise<void> {
+    const settings = this.settingsModel();
+    const response = await this.online.saveProfile({
+      enabled: true,
+      category: settings.category,
+      specialtyDiseaseIds: settings.specialtyDiseaseIds,
+      acceptsChat: settings.acceptsChat,
+      acceptsVoiceCall: settings.acceptsVoiceCall,
+      acceptsVideoCall: settings.acceptsVideoCall,
+    });
+    this.online.profile.set(response.profile);
+    await this.loadReadiness();
   }
 
   toggleDisease(id: string) {
@@ -268,7 +368,7 @@ export class OnlineDoctorPage implements OnInit, OnDestroy {
     this.error.set('');
     this.requestAssignmentNotifications();
     try {
-      await this.saveSettings();
+      await this.persistConnectionPreferences();
       const res = await this.online.setLiveStatus({
         liveStatus: 'ONLINE',
         acceptsChat: this.settingsModel().acceptsChat,
@@ -293,6 +393,10 @@ export class OnlineDoctorPage implements OnInit, OnDestroy {
   }
 
   async goOffline() {
+    if (this.availabilityLocked()) {
+      this.error.set('Finish or return the active request before pausing availability.');
+      return;
+    }
     this.saving.set(true);
     try {
       const res = await this.online.setLiveStatus({ liveStatus: 'OFFLINE' });

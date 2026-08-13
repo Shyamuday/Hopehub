@@ -3,6 +3,162 @@
   background: linear-gradient(180deg, var(--color-info-bg) 0%, var(--color-surface) 100%);
 }
 
+.workspace-access-note {
+  background: var(--color-info-bg);
+  border: 1px solid var(--color-info-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+  margin: 0 0 0.75rem;
+  padding: 0.65rem 0.75rem;
+}
+
+.hope-dashboard {
+  display: grid;
+  gap: 0.85rem;
+  margin: 0 auto;
+  max-width: 62rem;
+}
+
+.hope-dashboard__primary {
+  align-items: center;
+  background: linear-gradient(135deg, var(--color-brand-dark), var(--color-brand));
+  border-radius: var(--radius-lg);
+  color: #fff;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+  padding: 1rem;
+}
+
+.hope-dashboard__primary small {
+  font-size: var(--text-xs);
+  font-weight: 800;
+  opacity: 0.78;
+  text-transform: uppercase;
+}
+
+.hope-dashboard__primary h1 {
+  font-size: var(--text-xl);
+  margin: 0.15rem 0;
+}
+
+.hope-dashboard__primary p {
+  font-size: var(--text-sm);
+  margin: 0;
+  opacity: 0.86;
+}
+
+.hope-dashboard__primary > a {
+  background: #fff;
+  border-radius: var(--radius-sm);
+  color: var(--color-brand-dark);
+  flex: 0 0 auto;
+  font-size: var(--text-sm);
+  font-weight: 800;
+  min-height: var(--touch-min);
+  padding: 0.65rem 0.85rem;
+  text-decoration: none;
+}
+
+.hope-dashboard__grid {
+  display: grid;
+  gap: 0.65rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.hope-summary-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  color: inherit;
+  display: grid;
+  gap: 0.15rem;
+  padding: 0.85rem;
+  text-decoration: none;
+}
+
+.hope-summary-card span,
+.hope-summary-card small {
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+}
+
+.hope-summary-card strong {
+  color: var(--color-text);
+  font-size: var(--text-lg);
+}
+
+.hope-summary-card--availability strong {
+  color: var(--color-success);
+}
+
+.next-session-card,
+.calm-empty-state {
+  align-items: center;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+  margin-bottom: 0;
+}
+
+.next-session-card small {
+  color: var(--color-brand);
+  font-size: var(--text-xs);
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.next-session-card h2,
+.next-session-card p,
+.calm-empty-state p {
+  margin: 0;
+}
+
+.next-session-card h2 {
+  font-size: var(--text-base);
+  margin-top: 0.15rem;
+}
+
+.next-session-card p,
+.calm-empty-state p {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  margin-top: 0.1rem;
+}
+
+.calm-empty-state {
+  justify-content: flex-start;
+}
+
+.calm-empty-state > span {
+  align-items: center;
+  background: var(--color-success-bg);
+  border-radius: 50%;
+  color: var(--color-success);
+  display: inline-flex;
+  flex: 0 0 auto;
+  height: 2.25rem;
+  justify-content: center;
+  width: 2.25rem;
+}
+
+.hope-dashboard__secondary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.hope-dashboard__secondary a {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  color: var(--color-text-secondary);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  padding: 0.4rem 0.65rem;
+  text-decoration: none;
+}
+
 .muted {
   color: var(--color-text-muted);
   font-size: var(--text-sm);
@@ -500,6 +656,23 @@ button {
 }
 
 @media (max-width: 480px) {
+  .hope-dashboard__primary,
+  .next-session-card {
+    align-items: stretch;
+    display: grid;
+  }
+
+  .hope-dashboard__primary > a,
+  .next-session-card .primary-link {
+    justify-content: center;
+    text-align: center;
+    width: 100%;
+  }
+
+  .hope-dashboard__grid {
+    grid-template-columns: 1fr;
+  }
+
   .stats {
     grid-template-columns: 1fr;
   }

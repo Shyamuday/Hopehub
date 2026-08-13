@@ -15,7 +15,7 @@
         <span class="muted">Active approach</span>
         <strong>{{ approach.title }}</strong>
         <p class="muted">{{ approach.shortDescription }}</p>
-        @if (approach.prescription?.potencyGuidance) {
+        @if (approach.prescription.potencyGuidance) {
           <p class="potency-guidance"><strong>Potency:</strong> {{ approach.prescription.potencyGuidance }}</p>
         }
       </div>

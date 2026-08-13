@@ -35,22 +35,22 @@ export class EarningsPage implements OnInit {
   readonly formatPaise = formatPaise;
   readonly paiseToK = paiseToK;
   readonly language = signal(PH_PROVIDER_LANGUAGE);
+  readonly isHopeHubProvider = signal(true);
 
-  ngOnInit(): void {
-    void this.loadLanguage();
-    void this.load();
+  async ngOnInit(): Promise<void> {
+    await this.loadProviderContext();
+    await this.load();
   }
 
-  private async loadLanguage(): Promise<void> {
+  private async loadProviderContext(): Promise<void> {
     try {
       await this.session.load();
       const profile = this.session.snapshot()?.doctorProfile;
-      this.language.set(
-        profile?.doctorType === 'PSYCHOLOGIST'
-          ? PH_PROVIDER_LANGUAGE
-          : HOMEOPATHY_PROVIDER_LANGUAGE,
-      );
+      const isHopeHub = profile?.doctorType === 'PSYCHOLOGIST';
+      this.isHopeHubProvider.set(isHopeHub);
+      this.language.set(isHopeHub ? PH_PROVIDER_LANGUAGE : HOMEOPATHY_PROVIDER_LANGUAGE);
     } catch {
+      this.isHopeHubProvider.set(true);
       this.language.set(PH_PROVIDER_LANGUAGE);
     }
   }
@@ -59,20 +59,21 @@ export class EarningsPage implements OnInit {
     this.loading.set(true);
     this.error.set('');
     try {
-      const [payslipRes, summary] = await Promise.all([
-        firstValueFrom(
-          this.http.get<any>(`${this.apiBase}${API_PATHS.DOCTOR.MY_PAYSLIP}`, {
-            params: { month: this.monthModel().selectedMonth },
-          }),
-        ),
-        firstValueFrom(
-          this.http.get<any>(`${this.apiBase}${API_PATHS.DOCTOR.PAYMENTS_SUMMARY}`, {
-            params: { month: this.monthModel().selectedMonth },
-          }),
-        ),
-      ]);
-      this.payslip.set(payslipRes.payslip);
-      this.history.set(payslipRes.history ?? []);
+      const summaryRequest = firstValueFrom(
+        this.http.get<any>(`${this.apiBase}${API_PATHS.DOCTOR.PAYMENTS_SUMMARY}`, {
+          params: { month: this.monthModel().selectedMonth },
+        }),
+      );
+      const payslipRequest = this.isHopeHubProvider()
+        ? Promise.resolve(null)
+        : firstValueFrom(
+            this.http.get<any>(`${this.apiBase}${API_PATHS.DOCTOR.MY_PAYSLIP}`, {
+              params: { month: this.monthModel().selectedMonth },
+            }),
+          );
+      const [payslipRes, summary] = await Promise.all([payslipRequest, summaryRequest]);
+      this.payslip.set(payslipRes?.payslip ?? null);
+      this.history.set(payslipRes?.history ?? []);
       this.consultationSummary.set(summary);
     } catch {
       this.error.set('Could not load earnings data.');
