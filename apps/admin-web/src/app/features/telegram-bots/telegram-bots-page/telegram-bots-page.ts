@@ -3,15 +3,18 @@ import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AdminApi } from '../../../core/services/admin-api';
 import { TOAST_DURATION_MS } from '../../../core/constants/timing.constants';
+import { AdminCanDirective } from '../../../core/directives/admin-can.directive';
+import { ADMIN_PERMISSIONS } from '../../../core/admin-permissions';
 
 @Component({
   selector: 'app-telegram-bots-page',
-  imports: [DatePipe, FormsModule],
+  imports: [DatePipe, FormsModule, AdminCanDirective],
   templateUrl: './telegram-bots-page.html',
   styleUrl: './telegram-bots-page.scss',
 })
 export class TelegramBotsPage implements OnInit {
   private api = inject(AdminApi);
+  readonly managePermission = ADMIN_PERMISSIONS.NOTIFICATIONS_WRITE;
 
   bots = signal<any[]>([]);
   sessions = signal<any[]>([]);

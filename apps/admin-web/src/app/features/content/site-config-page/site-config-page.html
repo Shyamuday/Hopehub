@@ -28,6 +28,8 @@
         }
         <button
           type="button"
+          [adminCan]="managePermissions"
+          adminCanMatch="any"
           (click)="save(entry.key)"
           [disabled]="saving() === entry.key"
         >
@@ -42,7 +44,7 @@
   <h2>Care pricing templates</h2>
   <p class="page-hint">Providers can choose these ready plans and still customize per service.</p>
 
-  <article class="template-card template-card--new">
+  <article class="template-card template-card--new" [adminCan]="managePermissions" adminCanMatch="any">
     <input
       [value]="templateDraft().title"
       placeholder="Template title"
@@ -116,10 +118,10 @@
           <input type="checkbox" [checked]="template.isActive" (change)="updateTemplate(i, 'isActive', $any($event.target).checked)" />
           Active
         </label>
-        <button type="button" (click)="saveTemplate(template)" [disabled]="savingTemplate() === template.id">
+        <button type="button" [adminCan]="managePermissions" adminCanMatch="any" (click)="saveTemplate(template)" [disabled]="savingTemplate() === template.id">
           {{ savingTemplate() === template.id ? 'Saving…' : 'Save' }}
         </button>
-        <button type="button" class="danger" (click)="deactivateTemplate(template)" [disabled]="savingTemplate() === template.id || !template.isActive">
+        <button type="button" class="danger" [adminCan]="managePermissions" adminCanMatch="any" (click)="deactivateTemplate(template)" [disabled]="savingTemplate() === template.id || !template.isActive">
           Deactivate
         </button>
       </article>

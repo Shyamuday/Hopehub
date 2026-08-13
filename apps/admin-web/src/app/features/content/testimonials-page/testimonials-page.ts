@@ -2,6 +2,8 @@ import { CommonModule } from '@angular/common';
 import { Component, signal } from '@angular/core';
 import { form, FormField } from '@angular/forms/signals';
 import { AdminApi } from '../../../core/services/admin-api';
+import { AdminCanDirective } from '../../../core/directives/admin-can.directive';
+import { ADMIN_PERMISSIONS } from '../../../core/admin-permissions';
 
 type Testimonial = {
   id: string;
@@ -38,11 +40,15 @@ function emptyModel() {
 
 @Component({
   selector: 'app-testimonials-page',
-  imports: [CommonModule, FormField],
+  imports: [CommonModule, FormField, AdminCanDirective],
   templateUrl: './testimonials-page.html',
   styleUrl: './testimonials-page.scss',
 })
 export class TestimonialsPage {
+  readonly managePermissions = [
+    ADMIN_PERMISSIONS.CATALOG_WRITE,
+    ADMIN_PERMISSIONS.HR_WRITE,
+  ] as const;
   readonly testimonials = signal<Testimonial[]>([]);
   readonly loading = signal(false);
   readonly mutating = signal(false);

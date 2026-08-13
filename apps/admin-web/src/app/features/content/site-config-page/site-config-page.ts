@@ -1,6 +1,8 @@
 import { CommonModule } from '@angular/common';
 import { Component, signal } from '@angular/core';
 import { AdminApi } from '../../../core/services/admin-api';
+import { AdminCanDirective } from '../../../core/directives/admin-can.directive';
+import { ADMIN_PERMISSIONS } from '../../../core/admin-permissions';
 
 type ConfigEntry = { key: string; value: string; label: string; description: string };
 type PricingMode =
@@ -54,11 +56,15 @@ const MULTILINE_KEYS = new Set([
 
 @Component({
   selector: 'app-site-config-page',
-  imports: [CommonModule],
+  imports: [CommonModule, AdminCanDirective],
   templateUrl: './site-config-page.html',
   styleUrl: './site-config-page.scss',
 })
 export class SiteConfigPage {
+  readonly managePermissions = [
+    ADMIN_PERMISSIONS.CATALOG_WRITE,
+    ADMIN_PERMISSIONS.HR_WRITE,
+  ] as const;
   readonly config = signal<ConfigEntry[]>([]);
   readonly loading = signal(false);
   readonly saving = signal<string | null>(null);

@@ -2,6 +2,8 @@ import { CommonModule } from '@angular/common';
 import { Component, signal } from '@angular/core';
 import { form, FormField } from '@angular/forms/signals';
 import { AdminApi } from '../../../core/services/admin-api';
+import { AdminCanDirective } from '../../../core/directives/admin-can.directive';
+import { ADMIN_PERMISSIONS } from '../../../core/admin-permissions';
 
 type BlogPost = {
   id: string;
@@ -55,17 +57,21 @@ function emptyModel() {
     sortOrder: 0,
     isPublished: false,
     isHidden: false,
-    isFeatured: false
+    isFeatured: false,
   };
 }
 
 @Component({
   selector: 'app-blog-page',
-  imports: [CommonModule, FormField],
+  imports: [CommonModule, FormField, AdminCanDirective],
   templateUrl: './blog-page.html',
-  styleUrl: './blog-page.scss'
+  styleUrl: './blog-page.scss',
 })
 export class BlogPage {
+  readonly managePermissions = [
+    ADMIN_PERMISSIONS.CATALOG_WRITE,
+    ADMIN_PERMISSIONS.HR_WRITE,
+  ] as const;
   readonly posts = signal<BlogPost[]>([]);
   readonly categories = signal<string[]>([]);
   readonly stats = signal<BlogStats | null>(null);
@@ -95,7 +101,7 @@ export class BlogPage {
       const [postsRes, statsRes, commentsRes] = await Promise.all([
         this.api.listBlogPosts(),
         this.api.getBlogStats(),
-        this.api.listBlogComments(this.commentFilter())
+        this.api.listBlogComments(this.commentFilter()),
       ]);
       this.posts.set(postsRes.posts);
       this.categories.set(postsRes.categories ?? []);
@@ -124,7 +130,10 @@ export class BlogPage {
 
   autoSlug() {
     const title = this.createModel().title;
-    const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    const slug = title
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '');
     this.createModel.update((m) => ({ ...m, slug }));
   }
 
@@ -139,7 +148,7 @@ export class BlogPage {
         readTime: m.readTime || null,
         authorName: m.authorName || null,
         authorRole: m.authorRole || null,
-        sortOrder: Number(m.sortOrder) || 0
+        sortOrder: Number(m.sortOrder) || 0,
       });
       this.message.set('Post created.');
       this.createModel.set(emptyModel());
@@ -165,10 +174,12 @@ export class BlogPage {
       sortOrder: p.sortOrder,
       isPublished: p.isPublished,
       isHidden: p.isHidden,
-      isFeatured: p.isFeatured
+      isFeatured: p.isFeatured,
     });
   }
-  cancelEdit() { this.editingId.set(null); }
+  cancelEdit() {
+    this.editingId.set(null);
+  }
 
   async saveEdit() {
     const id = this.editingId();
@@ -183,7 +194,7 @@ export class BlogPage {
         readTime: m.readTime || null,
         authorName: m.authorName || null,
         authorRole: m.authorRole || null,
-        sortOrder: Number(m.sortOrder) || 0
+        sortOrder: Number(m.sortOrder) || 0,
       });
       this.message.set('Post updated.');
       this.editingId.set(null);

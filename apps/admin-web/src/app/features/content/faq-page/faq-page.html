@@ -1,4 +1,4 @@
-<section class="panel">
+<section class="panel" [adminCan]="managePermissions" adminCanMatch="any">
   <h2>Add FAQ Entry</h2>
   <fieldset class="form-grid" [disabled]="mutating()">
     <div class="field">
@@ -69,13 +69,13 @@
             </div>
             <label class="checkbox-label"><input type="checkbox" [formField]="editForm.isPublished" /> Published</label>
           </div>
-          <div class="actions">
+          <div class="actions" [adminCan]="managePermissions" adminCanMatch="any">
             <button type="button" (click)="saveEdit()" [disabled]="mutating()">Save</button>
             <button type="button" class="ghost" (click)="cancelEdit()">Cancel</button>
           </div>
         </fieldset>
       } @else {
-        <div class="actions">
+        <div class="actions" [adminCan]="managePermissions" adminCanMatch="any">
           <button type="button" (click)="startEdit(e)" [disabled]="mutating()">Edit</button>
           <button type="button" class="ghost" (click)="togglePublish(e)" [disabled]="mutating()">
             {{ e.isPublished ? 'Hide' : 'Show' }}

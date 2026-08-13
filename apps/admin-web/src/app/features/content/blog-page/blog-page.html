@@ -10,7 +10,7 @@
   </section>
 }
 
-<section class="panel">
+<section class="panel" [adminCan]="managePermissions" adminCanMatch="any">
   <h2>New Blog Post</h2>
   <fieldset class="form-grid" [disabled]="mutating()">
     <div class="field">
@@ -93,7 +93,7 @@
       </p>
       <p class="excerpt-preview">{{ p.excerpt }}</p>
 
-      <button type="button" class="ghost expand-btn" (click)="toggleExpand(p.id)">
+      <button type="button" class="ghost expand-btn" [adminCan]="managePermissions" adminCanMatch="any" (click)="toggleExpand(p.id)">
         {{ expandedId() === p.id ? 'Collapse' : 'Manage' }}
       </button>
 
@@ -134,13 +134,13 @@
           <label class="checkbox-label"><input type="checkbox" [formField]="editForm.isPublished" /> Published</label>
           <label class="checkbox-label"><input type="checkbox" [formField]="editForm.isFeatured" /> Featured</label>
           <label class="checkbox-label"><input type="checkbox" [formField]="editForm.isHidden" /> Hidden</label>
-          <div class="actions">
+          <div class="actions" [adminCan]="managePermissions" adminCanMatch="any">
             <button type="button" (click)="saveEdit()" [disabled]="mutating()">Save</button>
             <button type="button" class="ghost" (click)="cancelEdit()">Cancel</button>
           </div>
         </fieldset>
       } @else if (expandedId() === p.id) {
-        <div class="actions">
+        <div class="actions" [adminCan]="managePermissions" adminCanMatch="any">
           <button type="button" (click)="startEdit(p)" [disabled]="mutating()">Edit fields</button>
           <button type="button" class="ghost" (click)="quickToggle(p, 'isPublished')" [disabled]="mutating()">
             {{ p.isPublished ? 'Unpublish' : 'Publish' }}
@@ -179,7 +179,7 @@
         · <span class="badge" [class.published]="c.isApproved" [class.draft]="!c.isApproved">{{ c.isApproved ? 'Approved' : 'Pending' }}</span>
       </p>
       <p>{{ c.body }}</p>
-      <div class="actions">
+      <div class="actions" [adminCan]="managePermissions" adminCanMatch="any">
         @if (!c.isApproved) {
           <button type="button" (click)="approveComment(c.id)" [disabled]="mutating()">Approve</button>
         } @else {

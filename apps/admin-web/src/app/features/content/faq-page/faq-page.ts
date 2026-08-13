@@ -2,6 +2,8 @@ import { CommonModule } from '@angular/common';
 import { Component, signal } from '@angular/core';
 import { form, FormField } from '@angular/forms/signals';
 import { AdminApi } from '../../../core/services/admin-api';
+import { AdminCanDirective } from '../../../core/directives/admin-can.directive';
+import { ADMIN_PERMISSIONS } from '../../../core/admin-permissions';
 
 type FaqEntry = {
   id: string;
@@ -13,16 +15,26 @@ type FaqEntry = {
 };
 
 function emptyModel() {
-  return { question: '', answer: '', category: 'General', isPublished: true, sortOrder: '' as number | '' };
+  return {
+    question: '',
+    answer: '',
+    category: 'General',
+    isPublished: true,
+    sortOrder: '' as number | '',
+  };
 }
 
 @Component({
   selector: 'app-faq-page',
-  imports: [CommonModule, FormField],
+  imports: [CommonModule, FormField, AdminCanDirective],
   templateUrl: './faq-page.html',
-  styleUrl: './faq-page.scss'
+  styleUrl: './faq-page.scss',
 })
 export class FaqPage {
+  readonly managePermissions = [
+    ADMIN_PERMISSIONS.CATALOG_WRITE,
+    ADMIN_PERMISSIONS.HR_WRITE,
+  ] as const;
   readonly entries = signal<FaqEntry[]>([]);
   readonly loading = signal(false);
   readonly mutating = signal(false);
@@ -39,7 +51,9 @@ export class FaqPage {
     return [...new Set(this.entries().map((e) => e.category))].sort();
   }
 
-  constructor(private readonly api: AdminApi) { void this.load(); }
+  constructor(private readonly api: AdminApi) {
+    void this.load();
+  }
 
   async load() {
     this.loading.set(true);
@@ -59,7 +73,10 @@ export class FaqPage {
     this.mutating.set(true);
     this.message.set('');
     try {
-      await this.api.createFaqEntry({ ...m, sortOrder: m.sortOrder !== '' ? Number(m.sortOrder) : null });
+      await this.api.createFaqEntry({
+        ...m,
+        sortOrder: m.sortOrder !== '' ? Number(m.sortOrder) : null,
+      });
       this.message.set('FAQ entry added.');
       this.createModel.set(emptyModel());
       await this.load();
@@ -72,9 +89,17 @@ export class FaqPage {
 
   startEdit(e: FaqEntry) {
     this.editingId.set(e.id);
-    this.editModel.set({ question: e.question, answer: e.answer, category: e.category, isPublished: e.isPublished, sortOrder: e.sortOrder ?? '' });
+    this.editModel.set({
+      question: e.question,
+      answer: e.answer,
+      category: e.category,
+      isPublished: e.isPublished,
+      sortOrder: e.sortOrder ?? '',
+    });
   }
-  cancelEdit() { this.editingId.set(null); }
+  cancelEdit() {
+    this.editingId.set(null);
+  }
 
   async saveEdit() {
     const id = this.editingId();
@@ -83,7 +108,10 @@ export class FaqPage {
     this.mutating.set(true);
     this.message.set('');
     try {
-      await this.api.updateFaqEntry(id, { ...m, sortOrder: m.sortOrder !== '' ? Number(m.sortOrder) : null });
+      await this.api.updateFaqEntry(id, {
+        ...m,
+        sortOrder: m.sortOrder !== '' ? Number(m.sortOrder) : null,
+      });
       this.message.set('Entry updated.');
       this.editingId.set(null);
       await this.load();

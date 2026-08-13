@@ -1,7 +1,10 @@
 import { HttpClient } from '@angular/common/http';
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, computed, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CLINIC_API_BASE_URL } from '@hopehub/clinic-api';
+import { AdminCanDirective } from '../../core/directives/admin-can.directive';
+import { ADMIN_PERMISSIONS, staffHasAllPermissions } from '../../core/admin-permissions';
+import { AdminAuth } from '../../core/services/admin-auth';
 
 type ProviderRoleForm = {
   code: string;
@@ -26,13 +29,18 @@ type ProviderRoleForm = {
 @Component({
   selector: 'app-provider-roles-page',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, AdminCanDirective],
   templateUrl: './provider-roles-page.html',
   styleUrl: './provider-roles-page.scss',
 })
 export class ProviderRolesPage implements OnInit {
   private readonly http = inject(HttpClient);
   private readonly apiBase = inject(CLINIC_API_BASE_URL);
+  private readonly auth = inject(AdminAuth);
+  readonly managePermission = ADMIN_PERMISSIONS.DOCTORS_WRITE;
+  readonly canManage = computed(() =>
+    staffHasAllPermissions(this.auth.user(), this.managePermission),
+  );
 
   readonly roles = signal<any[]>([]);
   readonly loading = signal(true);
@@ -90,6 +98,7 @@ export class ProviderRolesPage implements OnInit {
   }
 
   save(): void {
+    if (!this.canManage()) return;
     const form = this.form();
     if (!form.code || !form.label || !form.supportedModes.length) {
       this.error.set('Code, label, and at least one session mode are required.');
