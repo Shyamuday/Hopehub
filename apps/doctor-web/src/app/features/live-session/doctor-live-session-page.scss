@@ -49,7 +49,7 @@
 .session-layout {
   display: grid;
   gap: 1rem;
-  grid-template-columns: minmax(0, 1fr) 26rem;
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .session-main,
@@ -59,15 +59,73 @@
   align-content: start;
 }
 
+.session-sidebar {
+  grid-template-columns: minmax(0, 1fr) minmax(16rem, 22rem);
+}
+
+.session-details {
+  border: 1px solid #dbeafe;
+  border-radius: 14px;
+  grid-column: 1 / -1;
+  overflow: hidden;
+}
+
+.session-details > summary {
+  background: #fff;
+  color: #2563eb;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 800;
+  padding: 0.85rem 1rem;
+}
+
+.session-details-body {
+  background: #f8fafc;
+  border-top: 1px solid #dbeafe;
+  display: grid;
+  gap: 1rem;
+  padding: 1rem;
+}
+
 .panel,
 .session-notes-card,
 .assessment-summary-card,
-.session-outcome-card,
+.session-completion-card,
 .call-history-card {
   border: 1px solid #dbeafe;
   border-radius: 14px;
   background: #fff;
   padding: 1rem;
+}
+
+.session-completion-card {
+  align-items: center;
+  border-color: #bfdbfe;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+}
+
+.session-completion-card strong,
+.session-completion-card p {
+  margin: 0;
+}
+
+.session-completion-card p {
+  font-size: 0.85rem;
+  margin-top: 0.2rem;
+}
+
+.session-completion-card .btn-primary,
+.outcome-form .btn-primary {
+  background: #2563eb;
+  border: 1px solid #2563eb;
+  border-radius: 8px;
+  color: #fff;
+  cursor: pointer;
+  font-weight: 800;
+  min-height: 44px;
+  padding: 0.55rem 0.85rem;
 }
 
 .chat-panel {
@@ -166,11 +224,6 @@
   opacity: 0.55;
 }
 
-.session-outcome-card {
-  border-color: #fde68a;
-  background: #fffbeb;
-}
-
 .outcome-form {
   display: grid;
   gap: 0.75rem;
@@ -183,6 +236,14 @@
   font-size: 0.78rem;
   font-weight: 800;
   text-transform: uppercase;
+}
+
+.outcome-form label > span {
+  color: #94a3b8;
+  font-size: 0.7rem;
+  font-weight: 600;
+  margin-left: 0.25rem;
+  text-transform: none;
 }
 
 .outcome-form input,
@@ -219,6 +280,19 @@
 .outcome-form .full-width {
   width: 100%;
   justify-content: center;
+}
+
+.private-outcome-note {
+  border-top: 1px solid #e2e8f0;
+  padding-top: 0.65rem;
+}
+
+.private-outcome-note summary {
+  color: #475569;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 700;
+  margin-bottom: 0.65rem;
 }
 
 .outcome-saved {
@@ -423,8 +497,13 @@
 }
 
 @media (max-width: 980px) {
-  .session-layout {
+  .session-layout,
+  .session-sidebar {
     grid-template-columns: 1fr;
+  }
+
+  .session-details {
+    grid-column: auto;
   }
 }
 

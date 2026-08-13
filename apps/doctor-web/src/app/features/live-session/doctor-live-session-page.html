@@ -100,14 +100,7 @@
         </dl>
       </section>
 
-      <section class="session-outcome-card">
-        <div class="session-notes-head">
-          <div>
-            <h3>Session lifecycle</h3>
-            <p class="muted">Close the live session with the right outcome.</p>
-          </div>
-        </div>
-
+      <section class="session-completion-card">
         @if (sessionOutcome(); as savedOutcome) {
           <div class="outcome-saved">
             <span class="status-badge completed">Closed</span>
@@ -126,85 +119,27 @@
             }
           </div>
         } @else {
-          <div class="outcome-form">
-            <label>
-              Outcome
-              <select
-                [value]="outcome()"
-                (change)="outcome.set($any($event.target).value)"
-                [disabled]="closingSession() || isSessionClosed()"
-              >
-                <option value="COMPLETED">Completed</option>
-                <option value="USER_MISSED">User missed</option>
-                <option value="PROVIDER_NO_SHOW">Provider no-show</option>
-                <option value="RESCHEDULE_NEEDED">Reschedule needed</option>
-              </select>
-            </label>
-
-            <label>
-              Summary for record
-              <textarea
-                rows="2"
-                placeholder="Short summary or what was discussed..."
-                [value]="outcomeUserSummary()"
-                (input)="outcomeUserSummary.set($any($event.target).value)"
-                [disabled]="closingSession() || isSessionClosed()"
-              ></textarea>
-            </label>
-
-            <label>
-              Recommended next step
-              <input
-                placeholder="Follow-up, self-care task, reschedule..."
-                [value]="outcomeRecommendedNextStep()"
-                (input)="outcomeRecommendedNextStep.set($any($event.target).value)"
-                [disabled]="closingSession() || isSessionClosed()"
-              />
-            </label>
-
-            <label>
-              Private note
-              <textarea
-                rows="2"
-                placeholder="Internal care/admin note..."
-                [value]="outcomePrivateNote()"
-                (input)="outcomePrivateNote.set($any($event.target).value)"
-                [disabled]="closingSession() || isSessionClosed()"
-              ></textarea>
-            </label>
-
-            <label class="check-row">
-              <input
-                type="checkbox"
-                [checked]="outcomeRestorePackageSession()"
-                (change)="outcomeRestorePackageSession.set($any($event.target).checked)"
-                [disabled]="closingSession() || isSessionClosed()"
-              />
-              Restore package/session credit
-            </label>
-
-            <label class="check-row">
-              <input
-                type="checkbox"
-                [checked]="outcomeHoldProviderPayout()"
-                (change)="outcomeHoldProviderPayout.set($any($event.target).checked)"
-                [disabled]="closingSession() || isSessionClosed()"
-              />
-              Hold provider payout
-            </label>
-
-            <button
-              type="button"
-              class="btn-primary full-width"
-              (click)="closeSession()"
-              [disabled]="closingSession() || isSessionClosed()"
-            >
-              {{ closingSession() ? 'Closing...' : 'Save outcome & close' }}
-            </button>
+          <div>
+            <strong>When you are finished</strong>
+            <p class="muted">Save a short outcome and close this session.</p>
           </div>
+          <button
+            type="button"
+            class="btn-primary"
+            (click)="completionOpen.set(true)"
+            [disabled]="isSessionClosed()"
+          >
+            Complete session
+          </button>
         }
       </section>
 
+      <details class="session-details" (toggle)="onSessionDetailsToggle($event)">
+        <summary>Session notes and history</summary>
+        <div class="session-details-body">
+          @if (sessionDetailsLoading()) {
+            <p class="muted">Loading session details…</p>
+          }
       <section class="call-history-card">
         <div class="session-notes-head">
           <div>
@@ -361,8 +296,74 @@
           </div>
         }
       </section>
+        </div>
+      </details>
     </aside>
   </section>
+
+  <app-modal
+    [open]="completionOpen()"
+    eyebrow="Session outcome"
+    title="Complete this session"
+    (closed)="completionOpen.set(false)"
+  >
+    <div class="outcome-form">
+      <label>
+        What happened?
+        <select
+          [value]="outcome()"
+          (change)="outcome.set($any($event.target).value)"
+          [disabled]="closingSession()"
+        >
+          <option value="COMPLETED">Completed</option>
+          <option value="USER_MISSED">User missed</option>
+          <option value="PROVIDER_NO_SHOW">Provider could not attend</option>
+          <option value="RESCHEDULE_NEEDED">Reschedule needed</option>
+        </select>
+      </label>
+
+      <label>
+        Short summary <span>Optional</span>
+        <textarea
+          rows="3"
+          placeholder="What was discussed or completed?"
+          [value]="outcomeUserSummary()"
+          (input)="outcomeUserSummary.set($any($event.target).value)"
+          [disabled]="closingSession()"
+        ></textarea>
+      </label>
+
+      <label>
+        Next step <span>Optional</span>
+        <input
+          placeholder="Follow-up, self-care task, or reschedule"
+          [value]="outcomeRecommendedNextStep()"
+          (input)="outcomeRecommendedNextStep.set($any($event.target).value)"
+          [disabled]="closingSession()"
+        />
+      </label>
+
+      <details class="private-outcome-note">
+        <summary>Add a private note</summary>
+        <textarea
+          rows="2"
+          placeholder="Visible only to the care/admin team"
+          [value]="outcomePrivateNote()"
+          (input)="outcomePrivateNote.set($any($event.target).value)"
+          [disabled]="closingSession()"
+        ></textarea>
+      </details>
+
+      <button
+        type="button"
+        class="btn-primary full-width"
+        (click)="closeSession()"
+        [disabled]="closingSession()"
+      >
+        {{ closingSession() ? 'Completing…' : 'Complete session' }}
+      </button>
+    </div>
+  </app-modal>
 }
 
 @if (message()) {

@@ -24,13 +24,14 @@ import type {
   DoctorConsultation,
 } from '../../core/types/consultation.types';
 import { providerConsumerSessionModeListLabel } from '@hopehub/contracts';
+import { AppModalComponent } from '../../shared/ui/app-modal.component';
 
 type LiveSessionOutcome = 'COMPLETED' | 'USER_MISSED' | 'PROVIDER_NO_SHOW' | 'RESCHEDULE_NEEDED';
 
 @Component({
   selector: 'app-doctor-live-session-page',
   standalone: true,
-  imports: [CommonModule, RouterLink, ConsultationChatPanelComponent],
+  imports: [CommonModule, RouterLink, ConsultationChatPanelComponent, AppModalComponent],
   templateUrl: './doctor-live-session-page.html',
   styleUrl: './doctor-live-session-page.scss',
 })
@@ -59,9 +60,10 @@ export class DoctorLiveSessionPage implements OnInit, OnDestroy {
   readonly outcomeUserSummary = signal('');
   readonly outcomeRecommendedNextStep = signal('');
   readonly outcomePrivateNote = signal('');
-  readonly outcomeRestorePackageSession = signal(false);
-  readonly outcomeHoldProviderPayout = signal(false);
   readonly closingSession = signal(false);
+  readonly completionOpen = signal(false);
+  readonly sessionDetailsLoaded = signal(false);
+  readonly sessionDetailsLoading = signal(false);
   readonly outcomeLabels: Record<LiveSessionOutcome | string, string> = {
     COMPLETED: 'Completed',
     USER_MISSED: 'User missed',
@@ -110,11 +112,6 @@ export class DoctorLiveSessionPage implements OnInit, OnDestroy {
       }
       if (profile?.profile) this.online.profile.set(profile.profile);
       this.consultation.set(consultation);
-      await Promise.all([
-        this.loadSessionNotes(),
-        this.loadAssessmentSummary(),
-        this.loadCallSessions(),
-      ]);
     } catch {
       this.error.set('Could not open this live session.');
     } finally {
@@ -379,6 +376,22 @@ export class DoctorLiveSessionPage implements OnInit, OnDestroy {
     }
   }
 
+  async loadSessionDetails(): Promise<void> {
+    if (this.sessionDetailsLoaded() || this.sessionDetailsLoading()) return;
+    this.sessionDetailsLoading.set(true);
+    await Promise.all([
+      this.loadSessionNotes(),
+      this.loadCallSessions(),
+      ...(this.isClinicalMentalHealthProvider() ? [this.loadAssessmentSummary()] : []),
+    ]);
+    this.sessionDetailsLoaded.set(true);
+    this.sessionDetailsLoading.set(false);
+  }
+
+  onSessionDetailsToggle(event: Event): void {
+    if ((event.currentTarget as HTMLDetailsElement).open) void this.loadSessionDetails();
+  }
+
   async loadCallSessions(): Promise<void> {
     if (!this.consultationId) return;
     this.callSessionsLoading.set(true);
@@ -455,16 +468,11 @@ export class DoctorLiveSessionPage implements OnInit, OnDestroy {
         privateNote: this.outcomePrivateNote().trim() || undefined,
         userSummary: this.outcomeUserSummary().trim() || undefined,
         recommendedNextStep: this.outcomeRecommendedNextStep().trim() || undefined,
-        restorePackageSession:
-          this.outcomeRestorePackageSession() ||
-          outcome === 'PROVIDER_NO_SHOW' ||
-          outcome === 'RESCHEDULE_NEEDED',
-        holdProviderPayout:
-          this.outcomeHoldProviderPayout() ||
-          outcome === 'PROVIDER_NO_SHOW' ||
-          outcome === 'RESCHEDULE_NEEDED',
+        restorePackageSession: outcome === 'PROVIDER_NO_SHOW' || outcome === 'RESCHEDULE_NEEDED',
+        holdProviderPayout: outcome === 'PROVIDER_NO_SHOW' || outcome === 'RESCHEDULE_NEEDED',
       });
       if (response.consultation) this.consultation.set(response.consultation);
+      this.completionOpen.set(false);
       this.message.set('Session outcome saved. Your live availability has been released.');
     } catch {
       this.error.set('Could not close this session.');
