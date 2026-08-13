@@ -102,23 +102,23 @@
         </p>
       }
       <div class="mode-control-grid full" aria-label="Live Connect modes">
-        <label class="mode-control-card">
-          <input type="checkbox" [formField]="settingsForm.acceptsChat" />
+        <label class="mode-control-card" [class.mode-control-card--unavailable]="!modeAllowed('CHAT')">
+          <input type="checkbox" [formField]="settingsForm.acceptsChat" [disabled]="!modeAllowed('CHAT')" />
           <span>💬</span>
           <strong>Accept chat</strong>
-          <small>Private text support requests.</small>
+          <small>{{ modeAllowed('CHAT') ? 'Private text support requests.' : 'Not available for your selected role.' }}</small>
         </label>
-        <label class="mode-control-card">
-          <input type="checkbox" [formField]="settingsForm.acceptsVoiceCall" />
+        <label class="mode-control-card" [class.mode-control-card--unavailable]="!modeAllowed('VOICE')">
+          <input type="checkbox" [formField]="settingsForm.acceptsVoiceCall" [disabled]="!modeAllowed('VOICE')" />
           <span>🎧</span>
           <strong>Accept voice</strong>
-          <small>Audio sessions without camera.</small>
+          <small>{{ modeAllowed('VOICE') ? 'Audio sessions without camera.' : 'Not available for your selected role.' }}</small>
         </label>
-        <label class="mode-control-card">
-          <input type="checkbox" [formField]="settingsForm.acceptsVideoCall" />
+        <label class="mode-control-card" [class.mode-control-card--unavailable]="!modeAllowed('VIDEO')">
+          <input type="checkbox" [formField]="settingsForm.acceptsVideoCall" [disabled]="!modeAllowed('VIDEO')" />
           <span>🎥</span>
           <strong>Accept video</strong>
-          <small>Face-to-face sessions.</small>
+          <small>{{ modeAllowed('VIDEO') ? 'Face-to-face sessions.' : 'Not available for your selected role.' }}</small>
         </label>
       </div>
       @if (!canAcceptAnyMode()) {

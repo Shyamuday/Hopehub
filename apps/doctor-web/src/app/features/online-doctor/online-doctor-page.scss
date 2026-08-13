@@ -93,6 +93,12 @@
 .mode-control-card:has(input:not(:checked)) {
   opacity: 0.6;
 }
+.mode-control-card--unavailable {
+  cursor: not-allowed;
+  background: #f8fafc;
+  border-color: #e2e8f0;
+  opacity: 0.55;
+}
 .inbox-head { display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; }
 .inbox-list { list-style: none; margin: 0.75rem 0; padding: 0; display: grid; gap: 0.4rem; }
 .inbox-item {

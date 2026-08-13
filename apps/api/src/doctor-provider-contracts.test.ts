@@ -49,3 +49,10 @@ test('slot API response includes slots, rules, and services', () => {
   const slotRoutes = fs.readFileSync(path.join(sourceRoot, 'routes/slots.ts'), 'utf8');
   assert.match(slotRoutes, /res\.json\(\{ slots, rules, services:/);
 });
+
+test('provider live modes are constrained by the assigned role taxonomy', () => {
+  const onlineRoutes = fs.readFileSync(path.join(sourceRoot, 'routes/online-doctors.ts'), 'utf8');
+  assert.match(onlineRoutes, /providerAllowedSessionModes/);
+  assert.match(onlineRoutes, /unsupportedRequestedModes/);
+  assert.match(onlineRoutes, /profileWithAllowedModes/);
+});

@@ -6,6 +6,7 @@ import { environment } from '../../../environments/environment';
 import { API_PATHS } from '../constants/api-paths.constants';
 import { AUTH_TOKEN_KEY } from '../constants/auth.constants';
 import type { HomeopathicDoctorType } from '../constants/doctor-types.constants';
+import type { ProviderSessionMode } from '@hopehub/contracts';
 
 export type OnlineDoctorProfile = {
   userId: string;
@@ -16,6 +17,7 @@ export type OnlineDoctorProfile = {
   acceptsChat: boolean;
   acceptsVoiceCall: boolean;
   acceptsVideoCall: boolean;
+  allowedModes: ProviderSessionMode[];
   specialty: string;
   doctorType?: HomeopathicDoctorType;
   doctorTypeLabel?: string;

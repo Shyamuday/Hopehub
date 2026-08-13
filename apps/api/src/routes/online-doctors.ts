@@ -11,6 +11,8 @@ import {
 import { authRequired, allowRoles } from '../auth.js';
 import { capabilitiesForDoctorProfile } from '../constants/homeopathic-doctor-types.js';
 import { providerPublicReadiness } from '../doctor-capabilities.js';
+import { providerAllowedSessionModes } from '../services/provider-taxonomy.service.js';
+import type { ProviderSessionMode } from '@hopehub/contracts';
 import { getPublicIceServers } from '../constants/rtc.constants.js';
 import { prisma } from '../db.js';
 import {
@@ -24,6 +26,22 @@ import { asyncRoute } from '../utils/helpers.js';
 
 export function createOnlineDoctorsRouter(io: SocketIoServer) {
   const router = Router();
+
+  const modeAllowed = (modes: readonly ProviderSessionMode[], mode: ProviderSessionMode) =>
+    modes.includes(mode);
+  const unsupportedModeMessage = (modes: string[]) =>
+    `${modes.join(', ')} ${modes.length === 1 ? 'is' : 'are'} not available for your selected provider role.`;
+
+  const profileWithAllowedModes = <T extends ReturnType<typeof mapLiveDoctor>>(
+    profile: T,
+    allowedModes: ProviderSessionMode[]
+  ) => ({
+    ...profile,
+    allowedModes,
+    acceptsChat: modeAllowed(allowedModes, 'CHAT') && profile.acceptsChat,
+    acceptsVoiceCall: modeAllowed(allowedModes, 'VOICE') && profile.acceptsVoiceCall,
+    acceptsVideoCall: modeAllowed(allowedModes, 'VIDEO') && profile.acceptsVideoCall
+  });
 
   router.get(
     '/online-doctors',
@@ -96,7 +114,12 @@ export function createOnlineDoctorsRouter(io: SocketIoServer) {
           })
         : [];
 
-      res.json({ profile: mapLiveDoctor(full), diseases, stunServers: getPublicIceServers() });
+      const allowedModes = await providerAllowedSessionModes(req.user!.id);
+      res.json({
+        profile: profileWithAllowedModes(mapLiveDoctor(full), allowedModes),
+        diseases,
+        stunServers: getPublicIceServers()
+      });
     })
   );
 
@@ -132,18 +155,34 @@ export function createOnlineDoctorsRouter(io: SocketIoServer) {
           mentalHealthProfile: { select: { careTeamType: true, careTeamTypes: true } }
         }
       });
+      const allowedModes = await providerAllowedSessionModes(req.user!.id);
+      const unsupportedRequestedModes = [
+        body.acceptsChat && !modeAllowed(allowedModes, 'CHAT') ? 'Chat' : '',
+        body.acceptsVoiceCall && !modeAllowed(allowedModes, 'VOICE') ? 'Voice' : '',
+        body.acceptsVideoCall && !modeAllowed(allowedModes, 'VIDEO') ? 'Video' : ''
+      ].filter(Boolean);
+      if (unsupportedRequestedModes.length) {
+        return res.status(400).json({
+          message: unsupportedModeMessage(unsupportedRequestedModes)
+        });
+      }
       const canUseDiseaseSettings = capabilitiesForDoctorProfile(doctor).diseaseSpecialtySettings;
+      const modeSettings = {
+        acceptsChat: modeAllowed(allowedModes, 'CHAT')
+          ? (body.acceptsChat ?? session.acceptsChat)
+          : false,
+        acceptsVoiceCall: modeAllowed(allowedModes, 'VOICE')
+          ? (body.acceptsVoiceCall ?? session.acceptsVoiceCall)
+          : false,
+        acceptsVideoCall: modeAllowed(allowedModes, 'VIDEO')
+          ? (body.acceptsVideoCall ?? session.acceptsVideoCall)
+          : false
+      };
       const updateData = canUseDiseaseSettings
-        ? body
+        ? { ...body, ...modeSettings }
         : {
             ...(body.enabled !== undefined ? { enabled: body.enabled } : {}),
-            ...(body.acceptsChat !== undefined ? { acceptsChat: body.acceptsChat } : {}),
-            ...(body.acceptsVoiceCall !== undefined
-              ? { acceptsVoiceCall: body.acceptsVoiceCall }
-              : {}),
-            ...(body.acceptsVideoCall !== undefined
-              ? { acceptsVideoCall: body.acceptsVideoCall }
-              : {})
+            ...modeSettings
           };
 
       const updated = await prisma.doctorOnlineSession.update({
@@ -181,7 +220,7 @@ export function createOnlineDoctorsRouter(io: SocketIoServer) {
         }
       });
 
-      res.json({ profile: mapLiveDoctor(updated) });
+      res.json({ profile: profileWithAllowedModes(mapLiveDoctor(updated), allowedModes) });
     })
   );
 
@@ -201,9 +240,26 @@ export function createOnlineDoctorsRouter(io: SocketIoServer) {
 
       const session = await ensureDoctorOnlineSession(req.user!.id);
       if (!session) return res.status(404).json({ message: 'Doctor profile not found.' });
-      const nextAcceptsChat = body.acceptsChat ?? session.acceptsChat;
-      const nextAcceptsVoiceCall = body.acceptsVoiceCall ?? session.acceptsVoiceCall;
-      const nextAcceptsVideoCall = body.acceptsVideoCall ?? session.acceptsVideoCall;
+      const allowedModes = await providerAllowedSessionModes(req.user!.id);
+      const unsupportedRequestedModes = [
+        body.acceptsChat && !modeAllowed(allowedModes, 'CHAT') ? 'Chat' : '',
+        body.acceptsVoiceCall && !modeAllowed(allowedModes, 'VOICE') ? 'Voice' : '',
+        body.acceptsVideoCall && !modeAllowed(allowedModes, 'VIDEO') ? 'Video' : ''
+      ].filter(Boolean);
+      if (unsupportedRequestedModes.length) {
+        return res.status(400).json({
+          message: unsupportedModeMessage(unsupportedRequestedModes)
+        });
+      }
+      const nextAcceptsChat = modeAllowed(allowedModes, 'CHAT')
+        ? (body.acceptsChat ?? session.acceptsChat)
+        : false;
+      const nextAcceptsVoiceCall = modeAllowed(allowedModes, 'VOICE')
+        ? (body.acceptsVoiceCall ?? session.acceptsVoiceCall)
+        : false;
+      const nextAcceptsVideoCall = modeAllowed(allowedModes, 'VIDEO')
+        ? (body.acceptsVideoCall ?? session.acceptsVideoCall)
+        : false;
       if (
         body.liveStatus !== LivePresenceStatus.OFFLINE &&
         !nextAcceptsChat &&
@@ -221,9 +277,18 @@ export function createOnlineDoctorsRouter(io: SocketIoServer) {
         }
       }
 
-      const profile = await setDoctorLiveStatus(req.user!.id, body, io);
+      const profile = await setDoctorLiveStatus(
+        req.user!.id,
+        {
+          ...body,
+          acceptsChat: nextAcceptsChat,
+          acceptsVoiceCall: nextAcceptsVoiceCall,
+          acceptsVideoCall: nextAcceptsVideoCall
+        },
+        io
+      );
       if (!profile) return res.status(404).json({ message: 'Doctor profile not found.' });
-      res.json({ profile });
+      res.json({ profile: profileWithAllowedModes(profile, allowedModes) });
     })
   );
 

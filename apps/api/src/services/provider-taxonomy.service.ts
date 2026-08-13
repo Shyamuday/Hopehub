@@ -2,6 +2,8 @@ import { CareTeamMemberType, CredentialVerificationStatus, Prisma } from '@prism
 import {
   PROVIDER_ROLE_CODES,
   PROVIDER_ROLE_DEFINITIONS,
+  PROVIDER_SESSION_MODES,
+  type ProviderSessionMode,
   type ProviderRoleCode
 } from '@hopehub/contracts';
 import { prisma } from '../db.js';
@@ -172,6 +174,50 @@ export async function providerRoleSnapshot(
     supportedModes: role.supportedModes,
     version: role.version
   };
+}
+
+export async function providerAllowedSessionModes(userId: string): Promise<ProviderSessionMode[]> {
+  const doctor = await prisma.doctor.findUnique({
+    where: { userId },
+    select: {
+      providerDomain: true,
+      doctorType: true,
+      mentalHealthProfile: { select: { careTeamType: true, careTeamTypes: true } },
+      roleAssignments: {
+        where: { status: 'ACTIVE', role: { isActive: true } },
+        select: { role: { select: { supportedModes: true } } }
+      }
+    }
+  });
+  if (!doctor) return [];
+  const assigned = new Set(doctor.roleAssignments.flatMap((item) => item.role.supportedModes));
+  if (doctor.roleAssignments.length) {
+    return PROVIDER_SESSION_MODES.filter((mode) => assigned.has(mode));
+  }
+
+  const legacyRoleCodes = Array.from(
+    new Set(
+      [
+        doctor.mentalHealthProfile?.careTeamType,
+        ...(doctor.mentalHealthProfile?.careTeamTypes || [])
+      ]
+        .filter(Boolean)
+        .map(String)
+    )
+  );
+  if (legacyRoleCodes.length) {
+    const legacyRoles = await prisma.providerRoleDefinition.findMany({
+      where: { code: { in: legacyRoleCodes }, isActive: true },
+      select: { supportedModes: true }
+    });
+    const legacyModes = new Set(legacyRoles.flatMap((role) => role.supportedModes));
+    if (legacyRoles.length) {
+      return PROVIDER_SESSION_MODES.filter((mode) => legacyModes.has(mode));
+    }
+  }
+
+  // Unmigrated profiles retain their historical modes until an explicit role is assigned.
+  return [...PROVIDER_SESSION_MODES];
 }
 
 /** Seeds development/test databases that predate the taxonomy migration. */

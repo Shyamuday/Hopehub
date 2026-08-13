@@ -10,6 +10,11 @@ import {
   isCoachGuideCareTeamType,
   isListenerCareTeamType,
 } from '../../core/constants/doctor-types.constants';
+import {
+  PROVIDER_SESSION_MODES,
+  providerConsumerSessionModeListLabel,
+  type ProviderSessionMode,
+} from '@hopehub/contracts';
 
 type InstantConsult = {
   id: string;
@@ -63,9 +68,9 @@ export class OnlineDoctorPage implements OnInit, OnDestroy {
       this.settingsModel.set({
         category: res.profile.category,
         specialtyDiseaseIds: [...res.profile.specialtyDiseaseIds],
-        acceptsChat: res.profile.acceptsChat,
-        acceptsVoiceCall: res.profile.acceptsVoiceCall,
-        acceptsVideoCall: res.profile.acceptsVideoCall,
+        acceptsChat: this.modeAllowed('CHAT') && res.profile.acceptsChat,
+        acceptsVoiceCall: this.modeAllowed('VOICE') && res.profile.acceptsVoiceCall,
+        acceptsVideoCall: this.modeAllowed('VIDEO') && res.profile.acceptsVideoCall,
       });
       if (this.isLive()) {
         void this.loadInbox();
@@ -109,6 +114,10 @@ export class OnlineDoctorPage implements OnInit, OnDestroy {
     return settings.acceptsChat || settings.acceptsVoiceCall || settings.acceptsVideoCall;
   }
 
+  modeAllowed(mode: ProviderSessionMode): boolean {
+    return (this.profile()?.allowedModes || PROVIDER_SESSION_MODES).includes(mode);
+  }
+
   statusLabel() {
     const status = this.profile()?.liveStatus ?? 'OFFLINE';
     if (status === 'ONLINE') return 'Online and accepting new live requests';
@@ -122,8 +131,8 @@ export class OnlineDoctorPage implements OnInit, OnDestroy {
       this.settingsModel().acceptsChat ? 'chat' : '',
       this.settingsModel().acceptsVoiceCall ? 'voice' : '',
       this.settingsModel().acceptsVideoCall ? 'video' : '',
-    ].filter(Boolean);
-    return modes.length ? modes.join(' + ') : 'No live mode selected';
+    ].filter((mode): mode is 'chat' | 'voice' | 'video' => Boolean(mode));
+    return modes.length ? providerConsumerSessionModeListLabel(modes) : 'No live mode selected';
   }
 
   isPsychologist() {
