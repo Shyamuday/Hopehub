@@ -130,6 +130,7 @@ export class DoctorShell implements OnInit, OnDestroy {
       this.onboardingComplete.set(onboarding.complete);
       this.onboardingPercent.set(onboarding.percent);
       this.navItems = this.buildNav(this.session.navItems());
+      void this.restoreLivePresence();
     } catch {
       this.navItems = [];
     } finally {
@@ -323,13 +324,27 @@ export class DoctorShell implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.stopIncomingCountdown();
     this.realtime.disconnect();
+    this.onlineDoctor.disconnectRealtime();
     this.navSubscription?.unsubscribe();
   }
 
   logout() {
+    this.onlineDoctor.disconnectRealtime();
     this.session.clear();
     this.auth.logout();
     void this.router.navigate(['/', ROUTE_PATHS.LOGIN]);
+  }
+
+  private async restoreLivePresence(): Promise<void> {
+    try {
+      const response = await this.onlineDoctor.loadProfile();
+      this.onlineDoctor.profile.set(response.profile);
+      if (['ONLINE', 'BUSY', 'ON_CALL'].includes(response.profile.liveStatus)) {
+        this.onlineDoctor.connectRealtime();
+      }
+    } catch {
+      // Live presence is optional and must not block the provider workspace.
+    }
   }
 
   openMenu() {

@@ -39,6 +39,7 @@ export class OnlineDoctorService implements OnDestroy {
   private readonly apiBase = environment.apiUrl;
   private heartbeatTimer: ReturnType<typeof setInterval> | null = null;
   private socket: Socket | null = null;
+  private connectedToken: string | null = null;
   private heartbeatInFlight = false;
   private recoveryListenersAttached = false;
 
@@ -95,7 +96,15 @@ export class OnlineDoctorService implements OnDestroy {
       return;
     }
 
+    if (this.socket && this.connectedToken === token) {
+      this.attachRecoveryListeners();
+      this.ensureHeartbeatTimer();
+      this.recoverRealtimeConnection();
+      return;
+    }
+
     this.stopTransport();
+    this.connectedToken = token;
     this.socket = io(this.apiBase, { auth: { token }, transports: ['websocket', 'polling'] });
     this.socket.on('connect', () => {
       this.realtimeConnected.set(true);
@@ -106,7 +115,7 @@ export class OnlineDoctorService implements OnDestroy {
 
     this.attachRecoveryListeners();
     void this.sendHeartbeat();
-    this.heartbeatTimer = setInterval(() => void this.sendHeartbeat(), 30_000);
+    this.ensureHeartbeatTimer();
   }
 
   disconnectRealtime() {
@@ -122,6 +131,7 @@ export class OnlineDoctorService implements OnDestroy {
     this.socket?.removeAllListeners();
     this.socket?.disconnect();
     this.socket = null;
+    this.connectedToken = null;
     this.realtimeConnected.set(false);
     this.heartbeatInFlight = false;
   }
@@ -147,6 +157,11 @@ export class OnlineDoctorService implements OnDestroy {
     if (!this.socket) return;
     if (!this.socket.connected) this.socket.connect();
     void this.sendHeartbeat();
+  }
+
+  private ensureHeartbeatTimer() {
+    if (this.heartbeatTimer) return;
+    this.heartbeatTimer = setInterval(() => void this.sendHeartbeat(), 30_000);
   }
 
   private attachRecoveryListeners() {
