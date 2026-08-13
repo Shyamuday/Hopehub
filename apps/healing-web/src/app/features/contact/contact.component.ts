@@ -71,6 +71,7 @@ import {
   SelectableCardComponent,
 } from '../../shared/components';
 import { User } from '../../core/models/auth.model';
+import { providerNeedsListenerSupportConsent } from '../../core/utils/live-connect-provider.utils';
 
 type LiveConnectMode = ConsumerLiveConnectMode;
 type SupportPathPreference = ReturnType<typeof supportPathForExpertPreference>;
@@ -599,21 +600,13 @@ export class ContactComponent implements OnInit {
 
   needsListenerSupportConsent(provider?: HopeHubProvider | null): boolean {
     const selectedProvider = provider || this.matchedProvider();
-    const text = [
-      selectedProvider?.supportRole,
-      selectedProvider?.careTeamType,
-      selectedProvider?.supportRoleLabel,
-      selectedProvider?.supportTierLabel,
+    return providerNeedsListenerSupportConsent(selectedProvider, [
       this.prefilledData().serviceName,
       this.prefilledData().service,
       this.prefilledData().consultant,
       this.contactForm?.get('preferredExpertType')?.value,
       this.contactForm?.get('serviceInterest')?.value,
-    ]
-      .filter(Boolean)
-      .join(' ')
-      .toLowerCase();
-    return /listener|volunteer|peer support/.test(text);
+    ]);
   }
 
   listenerSupportConsentAccepted(): boolean {

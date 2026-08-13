@@ -9,3 +9,4 @@ export * from './constants/consumer-form-options.constants';
 export * from './constants/consumer-availability.constants';
 export * from './constants/consumer-provider-presentation.constants';
 export * from './constants/storage-keys.constants';
+export * from './utils/live-connect-provider.utils';

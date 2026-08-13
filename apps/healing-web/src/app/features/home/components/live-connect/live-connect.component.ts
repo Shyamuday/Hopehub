@@ -21,7 +21,6 @@ import { CONSUMER_ROUTES } from '../../../../core/constants/consumer-routes.cons
 import {
   CONSUMER_CONNECT_MODE_META,
   CONSUMER_LIVE_CONNECT_MODE_OPTIONS,
-  consumerModeMatchesText,
   consumerSessionModeFor,
   type ConsumerLiveConnectMode,
 } from '../../../../core/constants/consumer-form-options.constants';
@@ -32,6 +31,12 @@ import {
 } from '../../../../core/constants/support-paths.constants';
 import { User } from '../../../../core/models/auth.model';
 import { HopeHubLiveGroup, HopeHubProvider } from '../../../../core/services/booking.service';
+import {
+  LISTENER_SUPPORT_CONSENT_MESSAGE,
+  providerAcceptsLiveConnectMode,
+  providerNeedsListenerSupportConsent,
+  providerServiceForLiveConnectMode,
+} from '../../../../core/utils/live-connect-provider.utils';
 import {
   PaymentFlowState,
   PaymentStatusOverlayComponent,
@@ -202,19 +207,19 @@ export class LiveConnectComponent implements OnInit {
         mode: 'chat',
         label: CONSUMER_CONNECT_MODE_META.chat.label,
         icon: CONSUMER_CONNECT_MODE_META.chat.icon,
-        enabled: Boolean(provider.acceptsChat),
+        enabled: providerAcceptsLiveConnectMode(provider, 'chat'),
       },
       {
         mode: 'voice',
         label: CONSUMER_CONNECT_MODE_META.voice.label,
         icon: CONSUMER_CONNECT_MODE_META.voice.icon,
-        enabled: Boolean(provider.acceptsVoiceCall),
+        enabled: providerAcceptsLiveConnectMode(provider, 'voice'),
       },
       {
         mode: 'video',
         label: CONSUMER_CONNECT_MODE_META.video.label,
         icon: CONSUMER_CONNECT_MODE_META.video.icon,
-        enabled: Boolean(provider.acceptsVideoCall),
+        enabled: providerAcceptsLiveConnectMode(provider, 'video'),
       },
     ];
   }
@@ -422,25 +427,12 @@ export class LiveConnectComponent implements OnInit {
   }
 
   private needsListenerSupportConsent(provider: HopeHubProvider): boolean {
-    return /listener|volunteer|peer support/i.test(
-      [
-        provider.supportRole,
-        provider.careTeamType,
-        provider.supportRoleLabel,
-        provider.supportTierLabel,
-        provider.specialty,
-        provider.designation,
-      ]
-        .filter(Boolean)
-        .join(' '),
-    );
+    return providerNeedsListenerSupportConsent(provider);
   }
 
   private confirmListenerSupportConsent(): boolean {
     if (typeof window === 'undefined') return true;
-    return window.confirm(
-      'Emotional support listeners are non-clinical. They cannot diagnose, prescribe, or handle emergencies alone. Safety concerns may be escalated to Hope Hub/professional support. Continue?',
-    );
+    return window.confirm(LISTENER_SUPPORT_CONSENT_MESSAGE);
   }
 
   retryPayment(): void {
@@ -504,6 +496,7 @@ export class LiveConnectComponent implements OnInit {
     this.bookingService
       .quickTalkProviders({
         roleGroup: this.roleGroup(),
+        mode: this.mode(),
       })
       .subscribe({
         next: (res) => {
@@ -526,13 +519,7 @@ export class LiveConnectComponent implements OnInit {
   private providerServiceForMode(
     provider: HopeHubProvider,
   ): NonNullable<HopeHubProvider['services']>[number] | null {
-    const services = provider.services || [];
-    const mode = this.mode();
-    const matched = services.find((service) => {
-      const text = `${service.title || ''} ${service.description || ''}`.toLowerCase();
-      return consumerModeMatchesText(mode, text);
-    });
-    return matched || services[0] || null;
+    return providerServiceForLiveConnectMode(provider, this.mode());
   }
 
   private async loadAlternativeModes(
